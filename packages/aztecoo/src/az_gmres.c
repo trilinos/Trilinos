@@ -51,6 +51,11 @@
 #include "az_blas_wrappers.h"
 #include "az_lapack_wrappers.h"
 
+#ifdef HAVE_AZTECOO_TEUCHOS
+#include "AztecOO_config.h"
+#include "Teuchos_CTimeMonitor.h"
+#endif
+
 extern int az_iterate_id;
 
 void AZ_pgmres (double b[], double x[],double weight[], int options[],
@@ -302,15 +307,45 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
       if (iter == 1) init_time = AZ_second();
 
-      if (precond_flag) precond->prec_function(temp,options,proc_config,params,Amat,precond);
+      if (precond_flag) {
+#ifdef HAVE_AZTECOO_TEUCHOS
+      // Start timer.
+      static int precID = -1;
+      precID = Teuchos_startTimer( "Operation Prec*x", precID );
+#endif
+
+        precond->prec_function(temp,options,proc_config,params,Amat,precond);
+
+#ifdef HAVE_AZTECOO_TEUCHOS
+      // Stop timer.
+      Teuchos_stopTimer( precID );
+#endif
+      }
 
       if (iter == 1) status[AZ_first_precond] = AZ_second() - init_time;
 
+#ifdef HAVE_AZTECOO_TEUCHOS
+      // Start timer.
+      static int matvecID = -1;
+      matvecID = Teuchos_startTimer( "Operation Op*x", matvecID );
+#endif
+
       Amat->matvec(temp, v[i1], Amat, proc_config);
+
+#ifdef HAVE_AZTECOO_TEUCHOS
+      // Stop timer.
+      Teuchos_stopTimer( matvecID );
+#endif
+
       /* Use ||v[i1]|| as estimate for ||A|| in checks below for breakdown. */
 
-
       /* Gram-Schmidt orthogonalization */
+
+#ifdef HAVE_AZTECOO_TEUCHOS
+      // Start the timer.
+      static int orthoID = -1;
+      orthoID = Teuchos_startTimer( "Orthogonalization", orthoID );
+#endif
 
       if (type_orthog==0) { /* Classical. Actually, we do */
 	                    /* this twice. DGKS method */
@@ -351,6 +386,11 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
         dble_tmp = 0.0;
 
       DSCAL_F77(&N, &dble_tmp, v[i1], &one);
+
+#ifdef HAVE_AZTECOO_TEUCHOS
+      // Stop the timer.
+      Teuchos_stopTimer( orthoID );
+#endif
 
       /* update factorization of hh by plane rotation */
 
