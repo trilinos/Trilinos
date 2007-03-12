@@ -273,6 +273,11 @@ namespace Belos {
 		  bool completeBasis, int howMany = -1 ) const;
     
     //! Routine to compute the block orthogonalization
+    bool blkOrtho1 ( MV &X, Teuchos::RefCountPtr<MV> MX, 
+		     Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+		     Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const;
+
+    //! Routine to compute the block orthogonalization
     bool blkOrtho ( MV &X, Teuchos::RefCountPtr<MV> MX, 
 		    Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
 		    Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const;
@@ -382,35 +387,48 @@ namespace Belos {
       tmpMX = MVT::CloneCopy(*MX);
     }
 
-    // Use the cheaper block orthogonalization.
-    dep_flg = blkOrtho( X, MX, C, Q );
+    if (xc == 1) {
 
-    // If a dependency has been detected in this block, then perform
-    // the more expensive single-vector orthogonalization.
-    if (dep_flg) {
-      rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
+      // Use the cheaper block orthogonalization.
+      // NOTE: Don't check for dependencies because the update has one vector.
+      dep_flg = blkOrtho1( X, MX, C, Q );
 
-      // Copy tmpX back into X.
-      MVT::MvAddMv( ONE, *tmpX, ZERO, *tmpX, X );
-      if (this->_hasOp) {
-	MVT::MvAddMv( ONE, *tmpMX, ZERO, *tmpMX, *MX );
-      }
+      // Orthonormalize the new block X
+      rank = findBasis( X, MX, B, false );
+
     } 
     else {
-      // There is no dependency, so orthonormalize new block X
-      rank = findBasis( X, MX, B, false );
-      if (rank < xc) {
-	// A dependency was found during orthonormalization of X,
-	// rerun orthogonalization using more expensive single-vector orthogonalization.
-	rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
 
-	// Copy tmpX back into X.
-	MVT::MvAddMv( ONE, *tmpX, ZERO, *tmpX, X );
-	if (this->_hasOp) {
+      // Use the cheaper block orthogonalization.
+      dep_flg = blkOrtho( X, MX, C, Q );
+
+      // If a dependency has been detected in this block, then perform
+      // the more expensive single-vector orthogonalization.
+      if (dep_flg) {
+        rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
+
+        // Copy tmpX back into X.
+        MVT::MvAddMv( ONE, *tmpX, ZERO, *tmpX, X );
+        if (this->_hasOp) {
 	  MVT::MvAddMv( ONE, *tmpMX, ZERO, *tmpMX, *MX );
-	}
-      }    
-    }
+        }
+      } 
+      else {
+        // There is no dependency, so orthonormalize new block X
+        rank = findBasis( X, MX, B, false );
+        if (rank < xc) {
+	  // A dependency was found during orthonormalization of X,
+	  // rerun orthogonalization using more expensive single-vector orthogonalization.
+	  rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
+
+	  // Copy tmpX back into X.
+	  MVT::MvAddMv( ONE, *tmpX, ZERO, *tmpX, X );
+	  if (this->_hasOp) {
+	    MVT::MvAddMv( ONE, *tmpMX, ZERO, *tmpMX, *MX );
+	  }
+        }    
+      }
+    } // if (xc == 1) {
 
     // this should not raise an exception; but our post-conditions oblige us to check
     TEST_FOR_EXCEPTION( rank > xc || rank < 0, std::logic_error, 
@@ -758,6 +776,75 @@ namespace Belos {
     } // for (j = 0; j < xc; ++j)
 
     return xc;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Routine to compute the block orthogonalization
+  template<class ScalarType, class MV, class OP>
+  bool 
+  ICGSOrthoManager<ScalarType, MV, OP>::blkOrtho1 ( MV &X, Teuchos::RefCountPtr<MV> MX, 
+						    Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+						    Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const
+  {
+    int nq = Q.length();
+    int xc = MVT::GetNumberVecs( X );
+    const ScalarType ONE  = SCT::one();
+
+    std::vector<int> qcs( nq );
+    for (int i=0; i<nq; i++) {
+      qcs[i] = MVT::GetNumberVecs( *Q[i] );
+    }
+
+    // Perform the Gram-Schmidt transformation for a block of vectors
+
+    Teuchos::Array<Teuchos::RefCountPtr<MV> > MQ(nq);
+    // Define the product Q^T * (Op*X)
+    for (int i=0; i<nq; i++) {
+      // Multiply Q' with MX
+      innerProd(*Q[i],X,MX,*C[i]);
+      // Multiply by Q and subtract the result in X
+      MVT::MvTimesMatAddMv( -ONE, *Q[i], *C[i], ONE, X );
+
+      // Update MX, with the least number of applications of Op as possible
+      if (this->_hasOp) {
+        if (xc <= qcs[i]) {
+          OPT::Apply( *(this->_Op), X, *MX);
+        }
+        else {
+          // this will possibly be used again below; don't delete it
+          MQ[i] = MVT::Clone( *Q[i], qcs[i] );
+          OPT::Apply( *(this->_Op), *Q[i], *MQ[i] );
+          MVT::MvTimesMatAddMv( -ONE, *MQ[i], *C[i], ONE, *MX );
+        }
+      }
+    }
+
+    // Do as many steps of classical Gram-Schmidt as required by max_ortho_steps_
+    for (int j = 1; j < max_ortho_steps_; ++j) {
+      
+      for (int i=0; i<nq; i++) {
+	Teuchos::SerialDenseMatrix<int,ScalarType> C2(*C[i]);
+        
+	// Apply another step of classical Gram-Schmidt
+	innerProd(*Q[i],X,MX,C2);
+	*C[i] += C2;
+	MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, X );
+        
+	// Update MX, with the least number of applications of Op as possible
+	if (this->_hasOp) {
+	  if (MQ[i].get()) {
+	    // MQ was allocated and computed above; use it
+	    MVT::MvTimesMatAddMv( -ONE, *MQ[i], C2, ONE, *MX );
+	  }
+	  else if (xc <= qcs[i]) {
+	    // MQ was not allocated and computed above; it was cheaper to use X before and it still is
+	    OPT::Apply( *(this->_Op), X, *MX);
+	  }
+	}
+      } // for (int i=0; i<nq; i++)
+    } // for (int j = 0; j < max_ortho_steps; ++j)
+  
+    return false;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
