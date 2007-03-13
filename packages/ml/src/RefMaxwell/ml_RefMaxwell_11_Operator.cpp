@@ -121,7 +121,8 @@ int  ML_Epetra::ML_RefMaxwell_11_Operator::MatrixMatrix_Multiply(const Epetra_Cr
   //  printf("[%d] RM11: SM Part of Matmat commencing\n",A.Comm().MyPID());
   SM_ML = ML_Operator_Create(comm);
   temp1 = ML_Operator_Create(comm);
-  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)SM_Matrix_,SM_ML);
+  //  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)SM_Matrix_,SM_ML);
+  ML_Operator_WrapEpetraMatrix((Epetra_CrsMatrix*)SM_Matrix_,SM_ML);
   ML_2matmult(SM_ML,A_ML,temp1,ML_CSR_MATRIX);
 
 
@@ -129,7 +130,7 @@ int  ML_Epetra::ML_RefMaxwell_11_Operator::MatrixMatrix_Multiply(const Epetra_Cr
   ML_Matrix_Print(temp1,*Comm_,*RangeMap_,"smp.dat");
 
   
-#define SANITY_CHECK 1
+  //#define SANITY_CHECK
 #ifdef SANITY_CHECK
   /* DEBUG */
   Epetra_CrsMatrix C_EP(Copy,*DomainMap_,0);
@@ -163,7 +164,14 @@ int  ML_Epetra::ML_RefMaxwell_11_Operator::MatrixMatrix_Multiply(const Epetra_Cr
   
   /* Add the matrices together */
   //  printf("[%d] RM11: Final Matrix Add commencing\n",A.Comm().MyPID());
-  ML_Operator_Add(temp1,temp2,*C,ML_CSR_MATRIX,1.0);
+  //  ML_Operator_Add(temp1,temp2,*C,ML_CSR_MATRIX,1.0);
+
+  ML_Operator_Add(temp2,temp1,*C,ML_CSR_MATRIX,1.0);
+  //  Epetra_CrsMatrix *temp3=dynamic_cast<Epetra_CrsMatrix*>(*C)->data;
+  //  (*C)->data=NULL;
+  //  printf("temp3=%#x C=%#x\n",temp3,C);
+  //  printf("*C=%#x\n",*C);
+  //  ML_Operator_WrapEpetraMatrix(temp3, *C);
   // THIS IS WRONG!!!!! Check out ml_operator.c:1825.  We'll need to hack that
   // right :(
 

@@ -15,7 +15,7 @@
 #define RefMaxwellPreconditioner ML_RMP
 //hax
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) 
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)  && defined(HAVE_ML_IFPACK)
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -23,6 +23,8 @@
 #include "ml_RefMaxwell_11_Operator.h"
 #include "ml_Preconditioner.h"
 #include "ml_MultiLevelPreconditioner.h"//HAQ
+#include "Ifpack_Preconditioner.h"
+
 
 namespace ML_Epetra
 {
@@ -137,6 +139,9 @@ namespace ML_Epetra
   private:
 
     //@{ \name Internal functions   
+
+    //! Sets the Edge Smoother (if needed)
+    int SetEdgeSmoother(Teuchos::ParameterList &List_);
     
     //! Implicitly applies in the inverse in a 2-1-2 format
     int ApplyInverse_Implicit_212(const Epetra_MultiVector& B, Epetra_MultiVector& X) const;
@@ -184,6 +189,10 @@ namespace ML_Epetra
     //    ML_Preconditioner * NodePC;
     MultiLevelPreconditioner * NodePC; // This is a HAQ
 
+    //! Outer Edge Smoother(s)
+    MultiLevelPreconditioner *PreEdgeSmoother;
+    MultiLevelPreconditioner *PostEdgeSmoother;
+    
     //! Solver mode
     string mode;
     
@@ -196,6 +205,12 @@ namespace ML_Epetra
 
     //! Epetra communicator object
     const Epetra_Comm* Comm_;
+
+
+    //! Stuff for smoothing
+    void** nodal_args_,** edge_args_;
+    ML * ml_;
+
     
     //@}
     

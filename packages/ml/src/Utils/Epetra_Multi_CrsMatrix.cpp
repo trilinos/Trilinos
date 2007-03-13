@@ -8,8 +8,12 @@
 #include "Epetra_Comm.h"
 //#include "EpetraExt_MatrixMatrix.h"//haq
 
+#define NO_OUTPUT
+#ifdef NO_OUTPUT
+#define Epetra_CrsMatrix_Print(x,y) ;
+#else
 extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os);//haq
-
+#endif
 
 void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname){
   Epetra_CrsMatrix *Temp_;
@@ -75,15 +79,18 @@ int ML_Epetra::Epetra_Multi_CrsMatrix::Apply(const Epetra_MultiVector& X, Epetra
 // Computes C= <me> * A
 int  ML_Epetra::Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply(const Epetra_CrsMatrix & A, ML_Comm *comm, ML_Operator **C) const
 {
+
   int rv=0;
   //  printf("[%d] Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply[ML] called\n",A.Comm().MyPID());
   ML_Comm* temp = global_comm;
+
   
   /* Setup for 1st Matmat */
   ML_Operator * MV[2]={0,0},*CV;
   MV[(NumMatrices_-1)%2]= ML_Operator_Create(comm);  
   //  printf("[%d] MATMAT: Prewrap called\n",A.Comm().MyPID());
-  rv=ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&A,MV[(NumMatrices_-1)%2]);
+  //  rv=ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&A,MV[(NumMatrices_-1)%2]);
+  rv=ML_Operator_WrapEpetraMatrix((Epetra_CrsMatrix*)&A,MV[(NumMatrices_-1)%2]);
   ML_CHK_ERR(rv);
 
   /* Do the matmats */
@@ -92,13 +99,15 @@ int  ML_Epetra::Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply(const Epetra_CrsMa
     if(MV[(i+1)%2] && i!=NumMatrices_-1) ML_Operator_Destroy(&MV[(i+1)%2]);
     MV[(i+1)%2]=ML_Operator_Create(comm);
     CV=ML_Operator_Create(comm);
-    rv=ML_Operator_WrapEpetraCrsMatrix(CrsMatrices_[i],CV);
+    //    rv=ML_Operator_WrapEpetraCrsMatrix(CrsMatrices_[i],CV);
+    rv=ML_Operator_WrapEpetraMatrix(CrsMatrices_[i],CV);    
     ML_CHK_ERR(rv);
 
 
     //    printf("[%d] Matmat %d/%d Prewrapped\n",A.Comm().MyPID(),NumMatrices_-i,NumMatrices_);
     //    printf("[%d] MV[i%%2]=%#x MV[(i+1)%%2]=%#x\n",A.Comm().MyPID(),MV[i%2],MV[(i+1)%2]);
-
+    fflush(stdout);//CMS
+    
     ML_2matmult(CV,MV[i%2],MV[(i+1)%2],ML_CSR_MATRIX);
 
     /* DEBUG */

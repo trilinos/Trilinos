@@ -11,12 +11,23 @@
 //mucho hax
 void cms_residual_check(const char * tag, const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
 double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
+
+//#define NO_OUTPUT
+
+#ifdef NO_OUTPUT
+#define MVOUT2(x,y,z) ;
+#define MVOUT(x,y) ;
+#define IVOUT(x,y) ;
+#define Epetra_CrsMatrix_Print(x,y) ;
+#else
 extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os);
 extern void MVOUT (const Epetra_MultiVector & A, ostream & os);
 extern void IVOUT(const Epetra_IntVector & A, ostream & os);
 extern void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx);
+#endif
 
 #define OLD_INTERNAL_AGGREGATION
+
 
 
 // ================================================ ====== ==== ==== == =
@@ -99,6 +110,8 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
 
   /* Parameter List Options */
   int OutputLevel = List_.get("ML output", -47);
+  int SmootherSweeps = List_.get("smoother: sweeps", 0);
+
   if (OutputLevel == -47) OutputLevel = List_.get("output", 10);
   num_cycles  = List_.get("cycle applications",1);
   ML_Set_PrintLevel(OutputLevel);
@@ -119,13 +132,19 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
   printf("Inverse Diagonal Norm = %6.4e\n",nrm);
   
   /* Do the eigenvalue estimation for Chebyshev */
-  printf("EMFP: Doing Smoother Setup\n");
-  ML_CHK_ERR(SetupSmoother());
+  if(SmootherSweeps) {
+    printf("EMFP: Doing Smoother Setup\n");
+    ML_CHK_ERR(SetupSmoother());
+  }/*end if*/
 
   /* Build the Nullspace */
   printf("EMFP: Building Nullspace\n");
   Epetra_MultiVector *nullspace=BuildNullspace();
   if(!nullspace) ML_CHK_ERR(-1);
+
+  ofstream of0("nullspace.dat");
+  MVOUT(*nullspace,of0);
+
   
   /* Build the prolongator */
   printf("EMFP: Building Prolongator\n");
@@ -167,6 +186,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
 
   /* Parameter-list Options */
   int PolynomialDegree = List_.get("smoother: degree", 3);
+  PolynomialDegree = List_.get("smoother: sweeps", 3);// override if need be  
   int MaximumIterations = List_.get("eigen-analysis: max iters", 10);
   string EigenType_ = List_.get("eigen-analysis: type", "cg");
   double boost = List_.get("eigen-analysis: boost for lambda max", 1.0);
@@ -242,7 +262,10 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
   double ** d_coords=new double* [3];
   d_coords[0]=xcoord; d_coords[1]=ycoord; d_coords[2]=zcoord;
   Epetra_MultiVector e_coords(View,*NodeDomainMap_,d_coords,dim);
-
+  ofstream of0("coords.dat");
+  MVOUT(e_coords,of0);
+  
+  
   /* Build the Nullspace */
   Epetra_MultiVector * nullspace=new Epetra_MultiVector(*EdgeDomainMap_,dim,false);  
 
@@ -274,6 +297,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   //and pull it's aggregates and then pass them into here, so we don't need to
   //aggregate the same thing twice.
 
+  //NTS: Actually, we don't want to do this.  We really want to be aggregating
+  //on the matrix D0^T M_1(1) D_0, not D0^T M_1(\sigma) D_0.
+  
 #ifdef OLD_INTERNAL_AGGREGATION
   /* Wrap TMT_Matrix in a ML_Operator */
   ML_Operator* TMT_ML = ML_Operator_Create(ml_comm_);
@@ -320,44 +346,36 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   printf("Num Aggregates = %d\n",NumAggregates);
   if(P==0) {printf("ERROR: No tentative prolongator found\n");exit(1);}
   
-  /* DEBUG: Dump aggregates */
+#ifndef NO_OUTPUT
+  /* DEBUG: Dump aggregates */ 
   Epetra_IntVector AGG(View,*NodeDomainMap_,MLAggr->aggr_info[0]);
   ofstream of0("agg.dat");
-  IVOUT(AGG,of0);
-
-
-
-  
-  /* Calculate Edge Weights */
-#ifdef STUFF_I_DONT_ACTUALLY_NEED
-  int lookup=17445;//haq
-  int NumEntries, *Indices;
-  double *Values;
-  Epetra_IntVector Edge_Weights(*EdgeRangeMap_);
-  for(int i=0;i<D0_Matrix_->NumMyRows();i++){
-    D0_Matrix_->ExtractMyRowView(i,NumEntries,Values,Indices);
-    if(i==lookup) printf("lookup: ");
-    for(int j=0;j<NumEntries;j++){
-      if(i==lookup) printf("%6.4e ",Values[j]);                
-      if(Values[j]!=0) Edge_Weights[i]++;
-    }
-    if(i==lookup) printf("\n");
-  }/*end for*/
+  IVOUT(AGG,of0);  
+  /* DEBUG: Testing Stuff */
+  ML_Operator_Print(P,"p.dat");//CMS
+  ofstream of22("test.dat");
+  Epetra_CrsMatrix_Print(*D0_Matrix_,of22);
+  ofstream of23("test_clean.dat");
+  Epetra_CrsMatrix_Print(*D0_Clean_Matrix_,of23);
 #endif
-  
   
   /* Create wrapper to do abs(T) */
   // NTS: Assume D0 has already been reindexed by now.
   printf("[%d] EMFP: abs(T) prewrap\n",Comm_->MyPID());
   ML_Operator* AbsD0_ML = ML_Operator_Create(ml_comm_);
-  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)D0_Matrix_,AbsD0_ML);
-  ML_Operator_Set_Getrow(AbsD0_ML,AbsD0_ML->outvec_leng, CSR_getrow_ones);
-
+  //  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)D0_Matrix_,AbsD0_ML);
+  ML_Operator_WrapEpetraMatrix((Epetra_CrsMatrix*)D0_Matrix_,AbsD0_ML);
+  ML_Operator_Set_Getrow(AbsD0_ML,AbsD0_ML->outvec_leng,ML_Epetra_CrsMatrix_get_one_row);
+    
   /* Form abs(T) * P_n */
   printf("[%d] EMFP: Building abs(T) * P_n\n",Comm_->MyPID());
   ML_Operator* AbsD0P = ML_Operator_Create(ml_comm_);
 
-  printf("%#x %#x %#x\n",AbsD0_ML,P,AbsD0P);
+  //  printf("%#x %#x %#x\n",AbsD0_ML,P,AbsD0P);
+
+  //  ML_Operator_Print(AbsD0_ML,"absd0_ml.dat");//CMS
+  
+  
   ML_2matmult(AbsD0_ML,P,AbsD0P, ML_CSR_MATRIX);
 
   /* Wrap P_n into Epetra-land */
@@ -371,11 +389,13 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   Apply_BCsToMatrixColumns(BCedges_,numBCedges_,*Psparse);
   
   /* DEBUG: output*/
+#ifndef NO_OUTPUT
   ofstream of1("psparse.dat");
   Epetra_CrsMatrix_Print(*Psparse,of1);
   ofstream of2("nullspace.dat");
   MVOUT(nullspace,of2);
-
+#endif
+  
   /* Build the DomainMap of the new operator*/
   const Epetra_Map & FineColMap = Psparse->ColMap();
   CoarseMap_=new Epetra_Map(-1,NumAggregates*dim,0,*Comm_);
@@ -459,7 +479,8 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   
   /* Build ML_Operator version of Prolongator, Restriction Operator */
   printf("EMFP: Prolongator Prewrap\n");
-  ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix(Prolongator,P));
+  //  ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix(Prolongator,P));
+  ML_CHK_ERR(ML_Operator_WrapEpetraMatrix(Prolongator,P));
   printf("EMFP: Prolongator Transpose\n");
   //NTS: ML_CHK_ERR won't work on this: it returns 1
   ML_Operator_Transpose_byrow(P, R);
@@ -476,10 +497,15 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   
   /* Do R * AP */
   printf("EMFP: RAP\n");
-  ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix(Temp,Temp_ML));
+  ML_CHK_ERR(ML_Operator_WrapEpetraMatrix(Temp,Temp_ML));
   ML_2matmult(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
   Epetra_CrsMatrix_Wrap_ML_Operator(CoarseMat_ML,*Comm_,*CoarseMap_,&CoarseMatrix);
 
+
+  //  /* Fix OAZ issues */
+  //  Remove_Zeroed_Rows(*CoarseMatrix);
+
+  
   /* Cleanup */
   ML_Operator_Destroy(&P);
   ML_Operator_Destroy(&R);
@@ -529,15 +555,12 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
   Epetra_MultiVector e_node(*CoarseMap_,NumVectors,false);
   Epetra_MultiVector r_node(*CoarseMap_,NumVectors,false);
 
-  // NTS: Matrices appear to be correct.  Add debugging output in here to see
-  // what is breaking.  FIX!!!!!
   for(int i=0;i<num_cycles;i++){    
     /* Pre-smoothing */
     MVOUT2(X,"xinit11",iteration);
-    
-
+   
     double re0=cms_compute_residual(Operator_,B,X);
-    ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
+    if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
 
     MVOUT2(X,"sm11-1",iteration);
 
@@ -579,7 +602,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
     
     
     /* Post-Smoothing*/
-    ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
+    if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
 
     double re3=cms_compute_residual(Operator_,B,X);
     
