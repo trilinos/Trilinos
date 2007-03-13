@@ -1,4 +1,4 @@
-// @HEADER
+/* @HEADER
 // ***********************************************************************
 // 
 //                    Teuchos: Common Tools Package
@@ -25,6 +25,7 @@
 // 
 // ***********************************************************************
 // @HEADER
+*/
 
 #ifndef TEUCHOS_CTIMEMONITOR_H
 #define TEUCHOS_CTIMEMONITOR_H
@@ -76,7 +77,7 @@ int Teuchos_startTimer( char timerName[], int timerID );
 void Teuchos_stopTimer( int timerID );
 
 #ifdef __cplusplus
-} // extern "C"
+} /* extern "C" */
 #endif
 
-#endif // TEUCHOS_CTIMEMONITOR_H
+#endif /* TEUCHOS_CTIMEMONITOR_H */

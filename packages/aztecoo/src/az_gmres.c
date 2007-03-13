@@ -309,7 +309,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
       if (precond_flag) {
 #ifdef HAVE_AZTECOO_TEUCHOS
-      // Start timer.
+        /* Start timer. */
       static int precID = -1;
       precID = Teuchos_startTimer( "Operation Prec*x", precID );
 #endif
@@ -317,7 +317,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
         precond->prec_function(temp,options,proc_config,params,Amat,precond);
 
 #ifdef HAVE_AZTECOO_TEUCHOS
-      // Stop timer.
+      /* Stop timer. */
       Teuchos_stopTimer( precID );
 #endif
       }
@@ -325,7 +325,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
       if (iter == 1) status[AZ_first_precond] = AZ_second() - init_time;
 
 #ifdef HAVE_AZTECOO_TEUCHOS
-      // Start timer.
+      /* Start timer. */
       static int matvecID = -1;
       matvecID = Teuchos_startTimer( "Operation Op*x", matvecID );
 #endif
@@ -333,7 +333,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
       Amat->matvec(temp, v[i1], Amat, proc_config);
 
 #ifdef HAVE_AZTECOO_TEUCHOS
-      // Stop timer.
+      /* Stop timer. */
       Teuchos_stopTimer( matvecID );
 #endif
 
@@ -342,7 +342,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
       /* Gram-Schmidt orthogonalization */
 
 #ifdef HAVE_AZTECOO_TEUCHOS
-      // Start the timer.
+      /* Start the timer. */
       static int orthoID = -1;
       orthoID = Teuchos_startTimer( "Orthogonalization", orthoID );
 #endif
@@ -388,7 +388,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
       DSCAL_F77(&N, &dble_tmp, v[i1], &one);
 
 #ifdef HAVE_AZTECOO_TEUCHOS
-      // Stop the timer.
+      /* Stop the timer. */
       Teuchos_stopTimer( orthoID );
 #endif
 
