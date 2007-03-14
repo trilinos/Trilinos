@@ -193,7 +193,7 @@ namespace Belos {
     _os(om->GetOStream()),
     _iter(0),
     _restartTimers(true),
-    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time"))
+    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Belos: Total time"))
   { 
   }
   

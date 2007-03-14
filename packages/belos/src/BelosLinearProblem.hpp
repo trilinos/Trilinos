@@ -381,8 +381,8 @@ namespace Belos {
   
   template <class ScalarType, class MV, class OP>
   LinearProblem<ScalarType,MV,OP>::LinearProblem(void) : 
-    timerOp_(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
-    timerPrec_(Teuchos::TimeMonitor::getNewTimer("Operation Prec*x")),
+    timerOp_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Op*x")),
+    timerPrec_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Prec*x")),
     default_blocksize_(1),
     blocksize_(1),
     num_to_solve_(0),
@@ -406,8 +406,8 @@ namespace Belos {
     A_(A),
     X_(X),
     B_(B),
-    timerOp_(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
-    timerPrec_(Teuchos::TimeMonitor::getNewTimer("Operation Prec*x")),
+    timerOp_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Op*x")),
+    timerPrec_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Prec*x")),
     default_blocksize_(1),
     blocksize_(1),
     num_to_solve_(1),

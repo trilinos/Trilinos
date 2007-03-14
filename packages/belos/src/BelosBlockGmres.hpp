@@ -253,8 +253,8 @@ namespace Belos {
     _flexible( (_pl->isParameter("Variant"))&&(Teuchos::getParameter<std::string>(*_pl, "Variant")=="Flexible") ),
     _orthoType( "DGKS" ),
     _restartTimers(true),
-    _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Orthogonalization")),
-    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time"))    
+    _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Belos: Orthogonalization")),
+    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Belos: Total time"))    
   {
     if (_pl->isParameter("Ortho Type")) {
       _orthoType = Teuchos::getParameter<std::string>(*_pl, "Ortho Type" );

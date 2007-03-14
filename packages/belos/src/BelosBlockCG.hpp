@@ -220,8 +220,8 @@ private:
     _prec(1.0), 
     _dep_tol(1.0),
     _restartTimers(true),
-    _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Orthogonalization")),
-    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time"))
+    _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Belos: Orthogonalization")),
+    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Belos: Total time"))
   { 
     //
     // Set the block orthogonality tolerances
