@@ -311,7 +311,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 #ifdef HAVE_AZTECOO_TEUCHOS
         /* Start timer. */
       static int precID = -1;
-      precID = Teuchos_startTimer( "Operation Prec*x", precID );
+      precID = Teuchos_startTimer( "AztecOO: Operation Prec*x", precID );
 #endif
 
         precond->prec_function(temp,options,proc_config,params,Amat,precond);
@@ -327,7 +327,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 #ifdef HAVE_AZTECOO_TEUCHOS
       /* Start timer. */
       static int matvecID = -1;
-      matvecID = Teuchos_startTimer( "Operation Op*x", matvecID );
+      matvecID = Teuchos_startTimer( "AztecOO: Operation Op*x", matvecID );
 #endif
 
       Amat->matvec(temp, v[i1], Amat, proc_config);
@@ -344,7 +344,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 #ifdef HAVE_AZTECOO_TEUCHOS
       /* Start the timer. */
       static int orthoID = -1;
-      orthoID = Teuchos_startTimer( "Orthogonalization", orthoID );
+      orthoID = Teuchos_startTimer( "AztecOO: Orthogonalization", orthoID );
 #endif
 
       if (type_orthog==0) { /* Classical. Actually, we do */
