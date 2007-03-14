@@ -73,13 +73,15 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
       const std::vector<Scalar>& time_vec_
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec_
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec_
-      ,std::vector<ScalarMag>* accuracy_vec_) const;
+      ,std::vector<ScalarMag>* accuracy_vec_
+      ) const;
 
     /// This is a pass-through to the underlying InterpolationBufferBase:
     bool SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper
-      ,const InterpolationBufferBase<Scalar>& IB_);
+      ,const InterpolationBufferBase<Scalar>& IB_
+      );
 
     /// This is a pass-through to the underlying InterpolationBufferBase:
     bool GetNodes(std::vector<Scalar>* time_vec) const;
@@ -146,11 +148,13 @@ InterpolationBufferAsStepper<Scalar>::InterpolationBufferAsStepper(
   out->setShowLinePrefix(true);
   out->setTabIndentStr("    ");
   *out << "Initializing InterpolationBufferAsStepper" << std::endl;
-  if (outputLevel >= 3)
+  if (outputLevel >= 3) {
     *out << "Calling setStepper..." << std::endl;
+  }
   setStepper(stepper_);
-  if (outputLevel >= 3)
+  if (outputLevel >= 3) {
     *out << "Calling setInterpolationBuffer..." << std::endl;
+  }
   setInterpolationBuffer(IB_);
 }
 
@@ -179,8 +183,9 @@ void InterpolationBufferAsStepper<Scalar>::setStepper(
   stepper = stepper_;
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IBAS::setStepper");
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "stepper = " << stepper->description() << std::endl;
+  }
 }
 
 template<class Scalar>
@@ -200,8 +205,9 @@ void InterpolationBufferAsStepper<Scalar>::setInterpolationBuffer(
   IB = IB_;
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IBAS::setInterpolationBuffer");
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "IB = " << IB->description() << std::endl;
+  }
 }
 
 
@@ -227,58 +233,56 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IBAS::GetPoints");
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-  {
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "time_vec_ = " << std::endl;
-    for (unsigned int i=0 ; i<time_vec_.size() ; ++i)
+    for (unsigned int i=0 ; i<time_vec_.size() ; ++i) {
       *out << "time_vec_[" << i << "] = " << time_vec_[i] << std::endl;
-    if (x_vec_ptr_ == NULL)
+    }
+    if (x_vec_ptr_ == NULL) {
       *out << "x_vec_ptr_ = NULL" << std::endl;
-    else if (x_vec_ptr_->size() == 0)
+    } else if (x_vec_ptr_->size() == 0) {
       *out << "x_vec_ptr_ = ptr to empty vector" << std::endl;
-    else
-    {
+    } else {
       *out << "x_vec_ptr_ = " << std::endl;
-      for (unsigned int i=0 ; i<x_vec_ptr_->size() ; ++i)
-      {
+      for (unsigned int i=0 ; i<x_vec_ptr_->size() ; ++i) {
         *out << "x_vec[" << i << "] = " << std::endl;
         (*x_vec_ptr_)[i]->describe(*out,Teuchos::VERB_EXTREME);
       }
     }
-    if (xdot_vec_ptr_ == NULL)
+    if (xdot_vec_ptr_ == NULL) {
       *out << "xdot_vec_ptr_ = NULL" << std::endl;
-    else if (xdot_vec_ptr_->size() == 0)
+    } else if (xdot_vec_ptr_->size() == 0) {
       *out << "xdot_vec_ptr_ = ptr to empty vector" << std::endl;
-    else
-    {
+    } else {
       *out << "xdot_vec = " << std::endl;
-      for (unsigned int i=0 ; i<xdot_vec_ptr_->size() ; ++i)
-      {
-        if ((*xdot_vec_ptr_)[i] == Teuchos::null)
+      for (unsigned int i=0 ; i<xdot_vec_ptr_->size() ; ++i) {
+        if ((*xdot_vec_ptr_)[i] == Teuchos::null) {
           *out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
-        else
-        {
+        } else {
           *out << "xdot_vec[" << i << "] = " << std::endl;
           (*xdot_vec_ptr_)[i]->describe(*out,Teuchos::VERB_EXTREME);
         }
       }
     }
-    if (accuracy_vec_ptr_ == NULL)
+    if (accuracy_vec_ptr_ == NULL) {
       *out << "accuracy_vec_ptr_ = NULL" << std::endl;
-    else if (accuracy_vec_ptr_->size() == 0)
+    } else if (accuracy_vec_ptr_->size() == 0) {
       *out << "accuracy_vec_ptr_ = ptr to empty vector" << std::endl;
-    else
-    {
+    } else {
       *out << "accuracy_vec = " << std::endl;
-      for (unsigned int i=0 ; i<accuracy_vec_ptr_->size() ; ++i)
+      for (unsigned int i=0 ; i<accuracy_vec_ptr_->size() ; ++i) {
         *out << "accuracy_vec[" << i << "] = " << (*accuracy_vec_ptr_)[i] << std::endl;
+      }
     }
   }
   bool status = IB->GetPoints(time_vec_,x_vec_ptr_,xdot_vec_ptr_,accuracy_vec_ptr_);
-  if (status) return(status);
+  if (status) {
+    return(status); 
+  }
   x_vec_ptr_->clear();
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "IB->GetPoints unsuccessful" << std::endl;
+  }
   status = true;
   std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > &x_vec = *x_vec_ptr_;
   std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > &xdot_vec = *xdot_vec_ptr_;
@@ -286,135 +290,152 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
   // Sort time_vec_
   std::vector<Scalar> local_time_vec = time_vec_;
   std::sort(local_time_vec.begin(),local_time_vec.end());
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-  {
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "sorted local time_vec:" << std::endl;
-    for (unsigned int i=0 ; i<local_time_vec.size() ; ++i)
+    for (unsigned int i=0 ; i<local_time_vec.size() ; ++i) {
       *out << "local_time_vec[" << i << "] = " << local_time_vec[i] << std::endl;
+    }
   }
   // Get nodes out of IB:
   std::vector<Scalar> node_vec; 
   status = IB->GetNodes(&node_vec); 
-  if (!status) return(status);
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-  {
-    if (node_vec.size() == 0)
+  if (!status) {
+    return(status);
+  }
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
+    if (node_vec.size() == 0) {
       *out << "IB->GetNodes: node_vec = empty vector" << std::endl;
-    else
-    {
+    } else {
       *out << "IB->GetNodes:" << std::endl;
-      for (unsigned int i=0 ; i<node_vec.size() ; ++i)
+      for (unsigned int i=0 ; i<node_vec.size() ; ++i) {
         *out << "node_vec[" << i << "] = " << node_vec[i] << std::endl;
+      }
     }
   }
-  if (node_vec.size() == 0)
-  {
+  if (node_vec.size() == 0) {
     // Initialization case for an empty InterpolationBuffer
     std::vector<Scalar> stepper_vec;
     status = stepper->GetNodes(&stepper_vec);
-    if (!status) return(status);
-    if (stepper_vec.size() < 2)
-    {
+    if (!status) {
+      return(status);
+    }
+    if (stepper_vec.size() < 2) {
       // Stepper and IB are basically empty
-      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
         *out << "Initializing empty Stepper and InterpolationBuffer" << std::endl;
+      }
       Scalar step_taken;
-      if (parameterList->isParameter("fixed_dt"))
+      if (parameterList->isParameter("fixed_dt")) {
         step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"),FIXED_STEP);
-      else
+      } else {
         step_taken = stepper->TakeStep(ST::zero(),VARIABLE_STEP);
+      }
       // Pass information from stepper to IB:
       status = stepper->GetNodes(&stepper_vec);
-      if (!status) return(status);
+      if (!status) {
+        return(status);
+      }
       Scalar stepper_begin = stepper_vec.front();
       Scalar stepper_end = stepper_vec.back();
-      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-      {
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
         *out << "stepper_begin = " << stepper_begin << std::endl;
         *out << "stepper_end = " << stepper_end << std::endl;
       }
       status = IB->SetRange(stepper_begin,stepper_end,*stepper);
-      if (!status) return(status);
+      if (!status) {
+        return(status);
+      }
       status = IB->GetNodes(&node_vec);
-      if (!status) return(status);
-    }
-    else 
-    {
+      if (!status) {
+        return(status);
+      }
+    } else {
       // Just the IB is empty
-      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
         *out << "Initializing empty InterpolationBuffer" << std::endl;
+      }
       std::vector<Scalar> stepper_vec;
       status = stepper->GetNodes(&stepper_vec);
-      if (!status) return(status);
+      if (!status) {
+        return(status);
+      }
       Scalar stepper_begin = stepper_vec.front();
       Scalar stepper_end = stepper_vec.back();
-      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-      {
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
         *out << "stepper_begin = " << stepper_begin << std::endl;
         *out << "stepper_end = " << stepper_end << std::endl;
       }
       status = IB->SetRange(stepper_begin,stepper_end,*stepper);
-      if (!status) return(status);
+      if (!status) {
+        return(status);
+      }
       status = IB->GetNodes(&node_vec);
-      if (!status) return(status);
+      if (!status) {
+        return(status);
+      }
     }
   }
   Scalar node_begin = node_vec.front();
   Scalar node_end = node_vec.back();
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-  {
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "node_begin = " << node_begin << std::endl;
     *out << "node_end = " << node_end << std::endl;
   }
   // Check for valid input of local_time_vec:  (check initialization conditions)
-  if ((*(local_time_vec.end()) < node_vec[0]) || (*(local_time_vec.begin()) < node_vec[0]))
+  if ((*(local_time_vec.end()) < node_vec[0]) || (*(local_time_vec.begin()) < node_vec[0])) {
     return(false);
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+  }
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "Requested times are valid." << std::endl;
+  }
   // Get time out of stepper:
   std::vector<Scalar> stepper_vec;
   status = stepper->GetNodes(&stepper_vec);
-  if (!status) return(status);
-  if (stepper_vec.size() < 2)
-  {
+  if (!status) {
+    return(status);
+  }
+  if (stepper_vec.size() < 2) {
     // Initialization case for an empty Stepper
-    if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+    if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
       *out << "Initializing empty Stepper" << std::endl;
+    }
     Scalar stepper_begin = *(stepper_vec.begin()); // There must be an IC in the stepper.
     Scalar step_taken;
-    if (parameterList->isParameter("fixed_dt"))
+    if (parameterList->isParameter("fixed_dt")) {
       step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"),FIXED_STEP);
-    else
+    } else {
       step_taken = stepper->TakeStep(ST::zero(),VARIABLE_STEP);
+    }
     status = stepper->GetNodes(&stepper_vec);
-    if (!status) return(status);
+    if (!status) {
+      return(status);
+    }
     // Pass information from stepper to IB:
     status = IB->SetRange(stepper_begin,stepper_begin+step_taken,*stepper);
-    if (!status) return(status);
+    if (!status) { 
+      return(status);
+    }
     status = IB->GetNodes(&node_vec); 
-    if (!status) return(status);
+    if (!status) { 
+      return(status);
+    }
     node_begin = node_vec[0];
     node_end = node_vec[node_vec.size()-1];
-    if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-    {
+    if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
       *out << "node_begin = " << node_begin << std::endl;
       *out << "node_end = " << node_end << std::endl;
     }
   }
   Scalar stepper_begin = stepper_vec[0];
   Scalar stepper_end = stepper_vec[stepper_vec.size()-1];
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-  {
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "stepper_begin = " << stepper_begin << std::endl;
     *out << "stepper_end = " << stepper_end << std::endl;
   }
   int num = local_time_vec.size();
-  for (int i=0; i<num ; ++i)
-  {
-    if ( ( node_begin <= local_time_vec[i] ) && ( local_time_vec[i] <= node_end ) )
-    {
-      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-      {
+  for (int i=0; i<num ; ++i) {
+    if ( ( node_begin <= local_time_vec[i] ) && ( local_time_vec[i] <= node_end ) ) {
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
         *out << "Requested local_time_vec[" << i << "] = " << 
           local_time_vec[i] << " available in IB[" << 
           node_begin << "," << node_end << "]" << std::endl;
@@ -428,26 +449,23 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       x_vec.push_back(tmp_x_vec[0]);
       xdot_vec.push_back(tmp_xdot_vec[0]);
       accuracy_vec.push_back(tmp_accuracy_vec[0]);
-      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-      {
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
         *out << "IB->GetPoints returned:" << std::endl;
         *out << "tmp_x_vec = " << std::endl;
         tmp_x_vec[0]->describe(*out,Teuchos::VERB_EXTREME);
-        if (tmp_xdot_vec[0] == Teuchos::null)
+        if (tmp_xdot_vec[0] == Teuchos::null) {
           *out << "tmp_xdot_vec = Teuchos::null" << std::endl;
-        else
-        {
+        } else {
           *out << "tmp_xdot_vec = " << std::endl;
           tmp_xdot_vec[0]->describe(*out,Teuchos::VERB_EXTREME);
         }
         *out << "tmp_accuracy_vec = " << accuracy_vec[0] << std::endl;
       }
-      if (!status) return(status);
-    }
-    else if ( ( stepper_begin <= local_time_vec[i] ) && ( local_time_vec[i] <= stepper_end ) )
-    {
-      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-      {
+      if (!status) { 
+        return(status);
+      }
+    } else if ( ( stepper_begin <= local_time_vec[i] ) && ( local_time_vec[i] <= stepper_end ) ) {
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
         *out << "Requested local_time_vec[" << i << "] = " << 
           local_time_vec[i] << " available in stepper[" << 
           stepper_begin << "," << stepper_end << "]" << std::endl;
@@ -460,56 +478,53 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       x_vec.push_back(tmp_x_vec[0]);
       xdot_vec.push_back(tmp_xdot_vec[0]);
       accuracy_vec.push_back(tmp_accuracy_vec[0]);
-      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-      {
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
         *out << "stepper->GetPoints returned:" << std::endl;
         *out << "tmp_x_vec = " << std::endl;
         tmp_x_vec[0]->describe(*out,Teuchos::VERB_EXTREME);
-        if (tmp_xdot_vec[0] == Teuchos::null)
+        if (tmp_xdot_vec[0] == Teuchos::null) {
           *out << "tmp_xdot_vec = Teuchos::null" << std::endl;
-        else
-        {
+        } else {
           *out << "tmp_xdot_vec = " << std::endl;
           tmp_xdot_vec[0]->describe(*out,Teuchos::VERB_EXTREME);
         }
         *out << "tmp_accuracy_vec = " << tmp_accuracy_vec[0] << std::endl;
       }
-      if (!status) return(status);
-    }
-    else
-    {
-      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-      {
+      if (!status) { 
+        return(status);
+      }
+    } else {
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
         *out << "Requested local_time_vec[" << i << "] = " <<
           local_time_vec[i] << " not available in IB or stepper" << std::endl;
         *out << "Integrating forward with stepper" << std::endl;
       }
       int num_local_steps_taken = 0;
-      while (stepper_end < local_time_vec[i])
-      {
+      while (stepper_end < local_time_vec[i]) {
         // integrate forward with stepper 
         Scalar step_taken;
-        if (parameterList->isParameter("fixed_dt"))
+        if (parameterList->isParameter("fixed_dt")) {
           step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"),FIXED_STEP);
-        else
+        } else {
           step_taken = stepper->TakeStep(ST::zero(),VARIABLE_STEP);
+        }
         num_local_steps_taken++;
-        if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_MEDIUM) )
+        if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_MEDIUM) ) {
           *out << "Took step of size " << step_taken << " with stepper" << std::endl;
+        }
         // Pass information from stepper to IB:
         status = IB->SetRange(stepper_end+step_taken,stepper_end+step_taken,*stepper);
-        if (!status) return(status);
+        if (!status) { 
+          return(status);
+        }
         // Check to see if we're past the current requested local_time_vec[i] point:
-        if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-        {
+        if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
           *out << "Checking to see if we're past the current requested time" << std::endl;
           *out << "local_time_vec[" << i << "] = " << local_time_vec[i] 
             << " <= " << stepper_end+step_taken << " stepper_end+step_taken" << std::endl;
         }
-        if (local_time_vec[i] <= stepper_end+step_taken)
-        {
-          if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-          {
+        if (local_time_vec[i] <= stepper_end+step_taken) {
+          if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
             *out << "We've integrated past local_time_vec[" << i << "] = " 
               << local_time_vec[i] << "!" << std::endl;
           }
@@ -521,15 +536,18 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
           x_vec.push_back(tmp_x_vec[0]);
           xdot_vec.push_back(tmp_xdot_vec[0]);
           accuracy_vec.push_back(tmp_accuracy_vec[0]);
-          if (!status) return(status);
+          if (!status) { 
+            return(status);
+          }
         }
         // Update end-points:
         node_end += step_taken;
         stepper_begin = stepper_end;
         stepper_end += step_taken;
       }
-      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_LOW) )
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_LOW) ) {
         *out << "Took " << num_local_steps_taken << " steps with " << stepper->description() << std::endl;
+      }
     }
   }
   return(status);
@@ -544,8 +562,7 @@ bool InterpolationBufferAsStepper<Scalar>::SetRange(
 {
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IBAS::SetRange");
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-  {
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "time_lower = " << time_lower << std::endl;
     *out << "time_upper = " << time_upper << std::endl;
     *out << "IB = " << IB_.description() << std::endl;
@@ -560,8 +577,9 @@ bool InterpolationBufferAsStepper<Scalar>::GetNodes(
 {
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IBAS::GetNodes");
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << this->description() << std::endl;
+  }
   return(IB->GetNodes(time_vec));
 }
 
@@ -594,35 +612,28 @@ void InterpolationBufferAsStepper<Scalar>::describe(
 {
   if ( (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_DEFAULT) ) ||
        (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)     )
-     )
-  {
+     ) {
     out << description() << "::describe" << std::endl;
     out << "interpolation buffer = " << IB->description() << std::endl;
     out << "stepper = " << stepper->description() << std::endl;
-  }
-  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-  {
-  }
-  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM))
-  {
+  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)) {
+  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM)) {
     out << "parameterList = " << parameterList->print(out) << std::endl;
-  }
-  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH))
-  {
+  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH)) {
   }
 }
 
 template <class Scalar>
 void InterpolationBufferAsStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& parameterList_)
 {
-  if (parameterList_ == Teuchos::null)
+  if (parameterList_ == Teuchos::null) {
     parameterList = Teuchos::rcp(new Teuchos::ParameterList);
-  else
+  } else {
     parameterList = parameterList_;
+  }
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IBAS::setParameterList");
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-  {
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "parameterList = " << parameterList->print(*out) << std::endl;
   }
 }

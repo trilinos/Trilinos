@@ -150,8 +150,7 @@ ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RefCountPtr<const Th
   k_vector_.reserve(stages_);
   Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
     f_space = model_->get_f_space();
-  for (int i=0 ; i<stages_ ; ++i)
-  {
+  for (int i=0 ; i<stages_ ; ++i) {
     k_vector_.push_back(Thyra::createMember(f_space));
   }
   ktemp_vector_ = Thyra::createMember(f_space);
@@ -173,8 +172,7 @@ ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RefCountPtr<const Th
   b_c_.push_back(zero);
   b_c_.push_back(zero);
   // fill A with zeros
-  for (int i=0 ; i<stages_ ; ++i)
-  {
+  for (int i=0 ; i<stages_ ; ++i) {
     b_A_.push_back(b_b_);
   }
 
@@ -299,24 +297,21 @@ Scalar ExplicitRKStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
   }
 
   // Compute stage solutions
-  for (int s=0 ; s < stages_ ; ++s)
-  {
+  for (int s=0 ; s < stages_ ; ++s) {
     Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
-    for (int j=0 ; j < s ; ++j) // assuming Butcher matix is strictly lower triangular
-    {
+    for (int j=0 ; j < s ; ++j) { // assuming Butcher matix is strictly lower triangular
       if (b_A_[s][j] != ST::zero())
         Thyra::Vp_StV(&*ktemp_vector_, b_A_[s][j], *k_vector_[j]); // ktemp = ktemp + a_{s+1,j+1}*k_{j+1}
     }
     ScalarMag ts = t_ + b_c_[s]*dt;
     Thyra::eval_f<Scalar>(*model_,*ktemp_vector_,ts,&*k_vector_[s]);
     Thyra::Vt_S(&*k_vector_[s],dt); // k_s = k_s*dt
-  
   } 
   // Sum for solution:
-  for (int s=0 ; s < stages_ ; ++s)
-  {
-    if (b_b_[s] != ST::zero())
+  for (int s=0 ; s < stages_ ; ++s) {
+    if (b_b_[s] != ST::zero()) {
       Thyra::Vp_StV(&*solution_vector_, b_b_[s], *k_vector_[s]); // solution_vector += b_{s+1}*k_{s+1}
+    }
   }
 
   // update current time:
@@ -348,38 +343,34 @@ std::ostream& ExplicitRKStepper<Scalar>::describe(
 {
   if ( (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_DEFAULT) ) ||
        (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)     )
-     )
-  {
+     ) {
     out << description() << "::describe" << std::endl;
     out << "model = " << model_->description() << std::endl;
     out << stages_ << " stage Explicit RK method" << std::endl;
-  }
-  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-  {
+  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)) {
     out << "solution_vector = " << std::endl;
     solution_vector_->describe(out,verbLevel,leadingIndent,indentSpacer); 
-  }
-  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM))
-  {
-  }
-  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH))
-  {
+  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM)) {
+  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH)) {
     out << "model = " << std::endl;
     model_->describe(out,verbLevel,leadingIndent,indentSpacer); 
-    for (int i=0 ; i<stages_ ; ++i)
-    {
+    for (int i=0 ; i<stages_ ; ++i) {
       out << "k_vector[" << i << "] = " << std::endl;
       out << k_vector_[i]->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
     }
     out << "ktemp_vector = " << std::endl;
     ktemp_vector_->describe(out,verbLevel,leadingIndent,indentSpacer); 
-    for (int i=0 ; i<stages_ ; ++i)
-      for (int j=0 ; j<stages_ ; ++j)
+    for (int i=0 ; i<stages_ ; ++i) {
+      for (int j=0 ; j<stages_ ; ++j) {
         out << "b_A_[" << i << "][" << j << "] = " << b_A_[i][j] << std::endl;
-    for (int i=0 ; i<stages_ ; ++i)
+      }
+    }
+    for (int i=0 ; i<stages_ ; ++i) {
       out << "b_b_[" << i << "] = " << b_b_[i] << std::endl;
-    for (int i=0 ; i<stages_ ; ++i)
+    }
+    for (int i=0 ; i<stages_ ; ++i) {
       out << "b_c_[" << i << "] = " << b_c_[i] << std::endl;
+    }
     out << "t = " << t_ << std::endl;
   }
   return(out);

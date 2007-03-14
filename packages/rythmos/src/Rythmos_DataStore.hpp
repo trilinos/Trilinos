@@ -241,14 +241,12 @@ void DataStore<Scalar>::describe(
       ,const Teuchos::EVerbosityLevel      verbLevel
       ) const
 {
-  if (verbLevel == Teuchos::VERB_EXTREME)
-  {
+  if (verbLevel == Teuchos::VERB_EXTREME) {
     out << description() << "::describe:" << std::endl;
     out << "time = " << time << std::endl;
     out << "x = " << std::endl;
     x->describe(out,verbLevel);
-    if (xdot != Teuchos::null)
-    {
+    if (xdot != Teuchos::null) {
       out << "xdot = " << std::endl;
       xdot->describe(out,verbLevel);
     }
@@ -270,8 +268,7 @@ void DataStoreVectorToVector(
   xdot_vec->clear();
   accuracy_vec->clear();
   int N = ds.size();
-  for (int i=0; i<N ; ++i)
-  {
+  for (int i=0; i<N ; ++i) {
     time_vec->push_back(ds[i].time);
     x_vec->push_back(ds[i].x);
     xdot_vec->push_back(ds[i].xdot);
@@ -292,14 +289,12 @@ void VectorToDataStoreVector(
   int Nx = x_vec.size();
   int Nxdot = xdot_vec.size();
   int Nacc = accuracy_vec.size();
-  if ( (N != Nx) || (N != Nxdot) || (N != Nacc) )
-  {
+  if ( (N != Nx) || (N != Nxdot) || (N != Nacc) ) {
     ds = NULL;
     return;
   }
   ds->clear();
-  for (int i=0; i<N ; ++i)
-  {
+  for (int i=0; i<N ; ++i) {
     Scalar time_temp = time_vec[i];
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_temp = x_vec[i];
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp = xdot_vec[i];
@@ -321,14 +316,12 @@ void VectorToDataStoreList(
   int Nx = x_vec.size();
   int Nxdot = xdot_vec.size();
   int Nacc = accuracy_vec.size();
-  if ( (N != Nx) || (N != Nxdot) || (N != Nacc) )
-  {
+  if ( (N != Nx) || (N != Nxdot) || (N != Nacc) ) {
     ds = NULL;
     return;
   }
   ds->clear();
-  for (int i=0; i<N ; ++i)
-  {
+  for (int i=0; i<N ; ++i) {
     Scalar time_temp = time_vec[i];
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_temp = x_vec[i];
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp = xdot_vec[i];
@@ -349,8 +342,9 @@ void VectorToDataStoreList(
   std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> accuracy_vec;
   int N = time_vec.size();
   accuracy_vec.reserve(N);
-  for (int i=0 ; i<N ; ++i)
+  for (int i=0 ; i<N ; ++i) {
     accuracy_vec.push_back(ST::zero());
+  }
   VectorToDataStoreList(time_vec,x_vec,xdot_vec,accuracy_vec,ds);
 }
 

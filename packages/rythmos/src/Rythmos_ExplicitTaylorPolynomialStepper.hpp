@@ -141,7 +141,7 @@ namespace Rythmos {
   template<class Scalar>
   class ExplicitTaylorPolynomialStepper : public Stepper<Scalar>
   {
-  public:
+    public:
 
     //! Typename of magnitude of scalars
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
@@ -150,7 +150,10 @@ namespace Rythmos {
      * Constructor.  See description above for the list of parameters this
      * class uses in \c params.
      */
-    ExplicitTaylorPolynomialStepper(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model, Teuchos::ParameterList& params);
+    ExplicitTaylorPolynomialStepper(
+        const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model, 
+        Teuchos::ParameterList& params
+        );
 
     /** \brief . */
     void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
@@ -180,20 +183,23 @@ namespace Rythmos {
     bool SetPoints(
       const std::vector<Scalar>& time_list
       ,const std::vector<Thyra::VectorBase<Scalar> >& x_list
-      ,const std::vector<Thyra::VectorBase<Scalar> >& xdot_list);
+      ,const std::vector<Thyra::VectorBase<Scalar> >& xdot_list
+      );
 
     /// Get values from buffer
     bool GetPoints(
       const std::vector<Scalar>& time_list
       ,std::vector<Thyra::VectorBase<Scalar> >* x_list
       ,std::vector<Thyra::VectorBase<Scalar> >* xdot_list
-      ,std::vector<ScalarMag>* accuracy_list) const;
+      ,std::vector<ScalarMag>* accuracy_list
+      ) const;
 
     /// Fill data in from another interpolation buffer
     bool SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper
-      ,const InterpolationBufferBase<Scalar> & IB);
+      ,const InterpolationBufferBase<Scalar> & IB
+      );
 
     /// Get interpolation nodes
     bool GetNodes(std::vector<Scalar>* time_list) const;
@@ -204,7 +210,7 @@ namespace Rythmos {
     /// Get order of interpolation
     int GetOrder() const;
 
-  private:
+    private:
 
     //! Computes a local Taylor series solution to the ODE
     void computeTaylorSeriesSolution_();
@@ -267,69 +273,69 @@ namespace Rythmos {
    * \f]
    */
   template <typename Scalar>
-  class ROpLogNormInf : public RTOpPack::ROpScalarReductionBase<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> {
-  public:
+    class ROpLogNormInf : public RTOpPack::ROpScalarReductionBase<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> {
+      public:
 
-    /** \brief . */
-    ROpLogNormInf() : RTOpPack::RTOpT<Scalar>("ROpLogInfNorm"){}
+        /** \brief . */
+        ROpLogNormInf() : RTOpPack::RTOpT<Scalar>("ROpLogInfNorm"){}
 
-    /** \brief . */
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
-    operator() (const RTOpPack::ReductTarget& reduct_obj) const { 
-      return this->getRawVal(reduct_obj); 
-    }
+        /** \brief . */
+        typename Teuchos::ScalarTraits<Scalar>::magnitudeType 
+          operator() (const RTOpPack::ReductTarget& reduct_obj) const { 
+            return this->getRawVal(reduct_obj); 
+          }
 
-    /** @name Overridden from RTOpT */
-    //@{
+        /** @name Overridden from RTOpT */
+        //@{
 
-    /** \brief . */
-    void reduce_reduct_objs(const RTOpPack::ReductTarget& _in_reduct_obj, 
-			    RTOpPack::ReductTarget* _inout_reduct_obj) const
-    {
-      const RTOpPack::ReductTargetScalar<Scalar>& in_reduct_obj = 
-	Teuchos::dyn_cast<const RTOpPack::ReductTargetScalar<Scalar> >(_in_reduct_obj);
-      RTOpPack::ReductTargetScalar<Scalar>& inout_reduct_obj = 
-	Teuchos::dyn_cast<RTOpPack::ReductTargetScalar<Scalar> >(*_inout_reduct_obj);
-      if(in_reduct_obj.get() > inout_reduct_obj.get()) 
-	inout_reduct_obj.set(in_reduct_obj.get());
-    }
-
-    /** \brief . */
-    void apply_op(const int num_vecs, 
-		  const RTOpPack::SubVectorT<Scalar> sub_vecs[],
-		  const int num_targ_vecs, 
-		  const RTOpPack::MutableSubVectorT<Scalar> targ_sub_vecs[], 
-		  RTOpPack::ReductTarget *_reduct_obj) const
-    {
-      RTOpPack::ReductTargetScalar<Scalar>& reduct_obj = 
-	Teuchos::dyn_cast<RTOpPack::ReductTargetScalar<Scalar> >(*_reduct_obj);
- 
-      RTOP_APPLY_OP_1_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-
-      typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm_inf = 
-	reduct_obj.get();
-
-      // unit stride
-      if(v0_s == 1)
-        for(RTOp_index_type i=0; i<subDim; i++) {
-          typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-            mag = Teuchos::ScalarTraits<Scalar>::magnitude(*v0_val++);
-	  mag = std::log(Teuchos::ScalarTraits<Scalar>::one() + mag);
-          norm_inf = mag > norm_inf ? mag : norm_inf;
-        }
-      else 
-        for(RTOp_index_type i=0; i<subDim; i++, v0_val+=v0_s) {
-          typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-            mag = Teuchos::ScalarTraits<Scalar>::magnitude(*v0_val);
-	  mag = std::log(Teuchos::ScalarTraits<Scalar>::one() + mag);
-          norm_inf = mag > norm_inf ? mag : norm_inf;
+        /** \brief . */
+        void reduce_reduct_objs(const RTOpPack::ReductTarget& _in_reduct_obj, 
+            RTOpPack::ReductTarget* _inout_reduct_obj) const
+        {
+          const RTOpPack::ReductTargetScalar<Scalar>& in_reduct_obj = 
+            Teuchos::dyn_cast<const RTOpPack::ReductTargetScalar<Scalar> >(_in_reduct_obj);
+          RTOpPack::ReductTargetScalar<Scalar>& inout_reduct_obj = 
+            Teuchos::dyn_cast<RTOpPack::ReductTargetScalar<Scalar> >(*_inout_reduct_obj);
+          if(in_reduct_obj.get() > inout_reduct_obj.get()) 
+            inout_reduct_obj.set(in_reduct_obj.get());
         }
 
-      reduct_obj.set(norm_inf);
-    }
-    //@}
+        /** \brief . */
+        void apply_op(const int num_vecs, 
+            const RTOpPack::SubVectorT<Scalar> sub_vecs[],
+            const int num_targ_vecs, 
+            const RTOpPack::MutableSubVectorT<Scalar> targ_sub_vecs[], 
+            RTOpPack::ReductTarget *_reduct_obj) const
+        {
+          RTOpPack::ReductTargetScalar<Scalar>& reduct_obj = 
+            Teuchos::dyn_cast<RTOpPack::ReductTargetScalar<Scalar> >(*_reduct_obj);
 
-  }; // class ROpLogNormInf
+          RTOP_APPLY_OP_1_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
+
+          typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm_inf = 
+            reduct_obj.get();
+
+          // unit stride
+          if(v0_s == 1) {
+            for(RTOp_index_type i=0; i<subDim; i++) {
+              typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+                mag = Teuchos::ScalarTraits<Scalar>::magnitude(*v0_val++);
+              mag = std::log(Teuchos::ScalarTraits<Scalar>::one() + mag);
+              norm_inf = mag > norm_inf ? mag : norm_inf;
+            }
+          } else {
+            for(RTOp_index_type i=0; i<subDim; i++, v0_val+=v0_s) {
+              typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+                mag = Teuchos::ScalarTraits<Scalar>::magnitude(*v0_val);
+              mag = std::log(Teuchos::ScalarTraits<Scalar>::one() + mag);
+              norm_inf = mag > norm_inf ? mag : norm_inf;
+            }
+          }
+          reduct_obj.set(norm_inf);
+        }
+        //@}
+
+    }; // class ROpLogNormInf
 
   //! Computs logarithmic infinity norm of a vector using ROpLogNormInf.
   template <typename Scalar>
@@ -531,8 +537,9 @@ namespace Rythmos {
     magnitude_type tmp;
     for (unsigned int k=degree_/2; k<=degree_; k++) {
       tmp = log_norm_inf(*(x_poly_->getCoefficient(k))) / k;
-      if (tmp > rho)
-	rho = tmp;
+      if (tmp > rho) {
+        rho = tmp;
+      }
     }
     return rho;
   }
@@ -552,8 +559,7 @@ namespace Rythmos {
         ,const std::string          indentSpacer
         ) const
   {
-    if (verbLevel == Teuchos::VERB_EXTREME)
-    {
+    if (verbLevel == Teuchos::VERB_EXTREME) {
       out << description() << "::describe" << std::endl;
       out << "model_ = " << std::endl;
       out << model_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;

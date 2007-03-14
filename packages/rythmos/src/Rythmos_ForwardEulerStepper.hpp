@@ -89,13 +89,15 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
       const std::vector<Scalar>& time_vec
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
-      ,std::vector<ScalarMag>* accuracy_vec) const;
+      ,std::vector<ScalarMag>* accuracy_vec
+      ) const;
 
     /// Fill data in from another interpolation buffer
     bool SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper
-      ,const InterpolationBufferBase<Scalar> & IB);
+      ,const InterpolationBufferBase<Scalar> & IB
+      );
 
     /// Get interpolation nodes
     bool GetNodes(std::vector<Scalar>* time_vec) const;
@@ -211,19 +213,12 @@ std::ostream& ForwardEulerStepper<Scalar>::describe(
 {
   if ( (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_DEFAULT) ) ||
        (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)     )
-     )
-  {
+     ) {
     out << description() << "::describe" << std::endl;
     out << "model = " << model_->description() << std::endl;
-  }
-  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-  {
-  }
-  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM))
-  {
-  }
-  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH))
-  {
+  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)) {
+  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM)) {
+  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH)) {
     out << "model = " << std::endl;
     model_->describe(out,verbLevel,leadingIndent,indentSpacer);
     out << "solution_vector = " << std::endl;

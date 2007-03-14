@@ -100,37 +100,30 @@ bool LinearInterpolator<Scalar>::interpolate(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"LI::interpolator");
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-  {
-    if (data_in.size() == 0)
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
+    if (data_in.size() == 0) {
       *out << "data_in = empty vector" << std::endl;
-    else
-    {
+    } else {
       *out << "data_in:" << std::endl;
-      for (unsigned int i=0 ; i<data_in.size() ; ++i)
-      {
+      for (unsigned int i=0 ; i<data_in.size() ; ++i) {
         *out << "data_in[" << i << "] = " << std::endl;
         data_in[i].describe(*out,Teuchos::VERB_EXTREME);
       }
     }
-    if (t_values.size() == 0)
+    if (t_values.size() == 0) {
       *out << "t_values = empty vector" << std::endl;
-    else
-    {
+    } else {
       *out << "t_values = " << std::endl;
-      for (unsigned int i=0 ; i<t_values.size() ; ++i)
-      {
+      for (unsigned int i=0 ; i<t_values.size() ; ++i) {
         *out << "t_values[" << i << "] = " << t_values[i] << std::endl;
       }
     }
-    if (data_out == NULL)
+    if (data_out == NULL) {
       *out << "data_out = NULL" << std::endl;
-    else if (data_out->size() == 0)
+    } else if (data_out->size() == 0) {
       *out << "data_out = empty vector" << std::endl;
-    else
-    {
-      for (unsigned int i=0; i<data_out->size() ; ++i)
-      {
+    } else {
+      for (unsigned int i=0; i<data_out->size() ; ++i) {
         *out << "data_out[" << i << "] = " << std::endl;
         (*data_out)[i].describe(*out,Teuchos::VERB_EXTREME);
       }
@@ -148,38 +141,36 @@ bool LinearInterpolator<Scalar>::interpolate(
   local_t_values.sort();
   // Check for node values to pass out directly:
   typename std::list<Scalar>::iterator time_it = local_t_values.begin();
-  while (time_it != local_t_values.end())
-  {
+  while (time_it != local_t_values.end()) {
     typename DataStore<Scalar>::DataStoreVector_t::iterator data_in_it;
     data_in_it = std::find(local_data_in.begin(),local_data_in.end(),*time_it);
-    if (data_in_it != local_data_in.end())
-    {
-      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+    if (data_in_it != local_data_in.end()) {
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
         *out << "Passing out data (w/o interpolating) for t = " << *time_it << std::endl;
+      }
       data_out->push_back(*data_in_it);
       time_it = local_t_values.erase(time_it);
-    }
-    else
-    {
+    } else {
       time_it++;
     }
   }
-  if (local_t_values.size() == 0)
+  if (local_t_values.size() == 0) {
     return(true);
+  }
   // If there are fewer than 2 points in data_in, then return failure
-  if (local_data_in.size() < 2)
+  if (local_data_in.size() < 2) {
     return(false);
+  }
 
   // If local_t_values are outside range of data_in, then return failure
   if ( ! ( (local_data_in.front() <= local_t_values.front()) && 
-           (local_data_in.back()  >= local_t_values.back() ) )    )
+           (local_data_in.back()  >= local_t_values.back() ) )    ) {
     return(false);
+  }
   // Find t values on either side of time
   time_it = local_t_values.begin();
-  for (unsigned int i=0 ; i<local_data_in.size()-1 ; ++i)
-  {
-    while ( (local_data_in[i] <= *time_it) && (local_data_in[i+1] >= *time_it) )
-    {
+  for (unsigned int i=0 ; i<local_data_in.size()-1 ; ++i) {
+    while ( (local_data_in[i] <= *time_it) && (local_data_in[i+1] >= *time_it) ) {
       Scalar& t = *time_it;
       Scalar& ti = local_data_in[i].time;
       Scalar& tip1 = local_data_in[i+1].time;
@@ -201,16 +192,15 @@ bool LinearInterpolator<Scalar>::interpolate(
       Thyra::V_StVpStV(&*x, ST::one(), *xi, t-ti, *tmp_vec);
       DS.x = x;
       // Check that xdot != Teuchos::null
-      if ( (xdoti != Teuchos::null) && (xdotip1 != Teuchos::null) )
-      {
+      if ( (xdoti != Teuchos::null) && (xdotip1 != Teuchos::null) ) {
         // Then we work on xdot.
         Thyra::V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),*xdoti,Scalar(-ST::one()/h),*xdotip1);
         Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot = xdoti->clone_v();
         Thyra::V_StVpStV(&*xdot, ST::one(), *xdoti, t-ti, *tmp_vec);
         DS.xdot = xdot;
-      }
-      else
+      } else {
         DS.xdot = xdoti;
+      }
       // And finally we estimate our order of accuracy
       DS.accuracy = h;
       // Push DataStore object onto vector:
@@ -243,18 +233,11 @@ void LinearInterpolator<Scalar>::describe(
 {
   if ( (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_DEFAULT) ) ||
        (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)     )
-     )
-  {
+     ) {
     out << description() << "::describe" << std::endl;
-  }
-  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-  {
-  }
-  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM))
-  {
-  }
-  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH))
-  {
+  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)) {
+  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM)) {
+  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH)) {
   }
 }
 

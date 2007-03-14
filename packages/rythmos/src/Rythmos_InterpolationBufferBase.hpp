@@ -63,7 +63,8 @@ class InterpolationBufferBase
       const std::vector<Scalar>& time_vec
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
-      ,std::vector<ScalarMag>* accuracy_vec) const =0;
+      ,std::vector<ScalarMag>* accuracy_vec
+      ) const =0;
 
     /// Fill data in from another interpolation buffer
     /// The time points in the interval [time_lower,time_upper] will be
@@ -71,7 +72,8 @@ class InterpolationBufferBase
     virtual bool SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper
-      ,const InterpolationBufferBase<Scalar>& IB) =0;
+      ,const InterpolationBufferBase<Scalar>& IB
+      ) =0;
 
     /// Get interpolation nodes
     virtual bool GetNodes(std::vector<Scalar>* time_vec) const =0;
