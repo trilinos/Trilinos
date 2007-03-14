@@ -204,60 +204,58 @@ namespace Rythmos {
     /// Get order of interpolation
     int GetOrder() const;
 
-  protected:
+  private:
 
     //! Computes a local Taylor series solution to the ODE
-    void computeTaylorSeriesSolution();
+    void computeTaylorSeriesSolution_();
 
     /*! 
      * \brief Computes of log of the estimated radius of convergence of the 
      * Taylor series.
      */
-    magnitude_type estimateLogRadius();
-
-  protected:
+    magnitude_type estimateLogRadius_();
 
     //! Underlying model
-    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model;
+    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
 
     //! Current solution vector
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_vector;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_vector_;
 
     //! Vector store approximation to \f$dx/dt\f$
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_vector;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_vector_;
 
     //! Vector store ODE residual
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > f_vector;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > f_vector_;
 
     //! Polynomial for x
-    Teuchos::RefCountPtr<Teuchos::Polynomial<Thyra::VectorBase<Scalar> > > x_poly;
+    Teuchos::RefCountPtr<Teuchos::Polynomial<Thyra::VectorBase<Scalar> > > x_poly_;
 
     //! Polynomial for f
-    Teuchos::RefCountPtr<Teuchos::Polynomial<Thyra::VectorBase<Scalar> > > f_poly;
+    Teuchos::RefCountPtr<Teuchos::Polynomial<Thyra::VectorBase<Scalar> > > f_poly_;
 
     //! Current time
-    Scalar t;
+    Scalar t_;
 
     //! Initial integration time
-    Scalar t_initial;
+    Scalar t_initial_;
 
     //! Final integration time
-    Scalar t_final;
+    Scalar t_final_;
 
     //! Local error tolerance for each time step
-    magnitude_type local_error_tolerance;
+    magnitude_type local_error_tolerance_;
 
     //! Smallest acceptable time step size
-    Scalar min_step_size;
+    Scalar min_step_size_;
 
     //! Largest acceptable time step size
-    Scalar max_step_size;
+    Scalar max_step_size_;
 
     //! Degree of local Taylor series expansion
-    unsigned int degree;
+    unsigned int degree_;
 
     //! Used in time step size computation
-    Scalar linc;
+    Scalar linc_;
   };
 
   //! Reduction operator for a logarithmic infinity norm
@@ -357,39 +355,39 @@ namespace Rythmos {
     typedef Teuchos::ScalarTraits<Scalar> ST;
 
     // Get initial time
-    t_initial = params.get("Initial Time", ST::zero());
+    t_initial_ = params.get("Initial Time", ST::zero());
 
     // Get final time
-    t_final = params.get("Final Time", ST::one());
+    t_final_ = params.get("Final Time", ST::one());
 
     // Get local error tolerance
-    local_error_tolerance = 
+    local_error_tolerance_ = 
       params.get("Local Error Tolerance", magnitude_type(1.0e-10));
 
     // Get minimum step size
-    min_step_size = params.get("Minimum Step Size", Scalar(1.0e-10));
+    min_step_size_ = params.get("Minimum Step Size", Scalar(1.0e-10));
 
     // Get maximum step size
-    max_step_size = params.get("Maximum Step Size", Scalar(1.0));
+    max_step_size_ = params.get("Maximum Step Size", Scalar(1.0));
 
-    // Get degree of Taylor polynomial expansion
-    degree = params.get("Taylor Polynomial Degree", 40);
+    // Get degree_ of Taylor polynomial expansion
+    degree_ = params.get("Taylor Polynomial Degree", 40);
 
-    linc = Scalar(-16.0*std::log(10.0)/degree);
+    linc_ = Scalar(-16.0*std::log(10.0)/degree_);
   
-    model = m;
-    t = t_initial;
-    x_vector = model->getNominalValues().get_x()->clone_v();
-    x_dot_vector = Thyra::createMember(model->get_x_space());
-    f_vector = Thyra::createMember(model->get_f_space());
-    x_poly = 
+    model_ = m;
+    t_ = t_initial_;
+    x_vector_ = model_->getNominalValues().get_x()->clone_v();
+    x_dot_vector_ = Thyra::createMember(model_->get_x_space());
+    f_vector_ = Thyra::createMember(model_->get_f_space());
+    x_poly_ = 
       Teuchos::rcp(new Teuchos::Polynomial<Thyra::VectorBase<Scalar> >(0, 
-								     *x_vector,
-								     degree));
-    f_poly = 
+								     *x_vector_,
+								     degree_));
+    f_poly_ = 
       Teuchos::rcp(new Teuchos::Polynomial<Thyra::VectorBase<Scalar> >(0, 
-								     *f_vector,
-								     degree));
+								     *f_vector_,
+								     degree_));
   }
 
   template<class Scalar>
@@ -402,88 +400,88 @@ namespace Rythmos {
   ExplicitTaylorPolynomialStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
   {
     if (flag == VARIABLE_STEP) {
-      // If t > t_final, we're done
-      if (t > t_final) {
+      // If t_ > t_final_, we're done
+      if (t_ > t_final_) {
         return Teuchos::ScalarTraits<Scalar>::zero();
       }
 
       // Compute a local truncated Taylor series solution to system
-      computeTaylorSeriesSolution();
+      computeTaylorSeriesSolution_();
 
       // Estimate log of radius of convergence of Taylor series
-      Scalar rho = estimateLogRadius();
+      Scalar rho = estimateLogRadius_();
 
       // Set step size
-      Scalar dt = std::exp(linc - rho);
+      Scalar dt = std::exp(linc_ - rho);
 
       // If step size is too big, reduce
-      if (dt > max_step_size) {
-        dt = max_step_size;
+      if (dt > max_step_size_) {
+        dt = max_step_size_;
       }
 
-      // If step goes past t_final, reduce
-      if (t+dt > t_final) {
-        dt = t_final-t;
+      // If step goes past t_final_, reduce
+      if (t_+dt > t_final_) {
+        dt = t_final_-t_;
       }
 
       magnitude_type local_error;
 
       do {
 
-        // compute x(t+dt), xdot(t+dt)
-        x_poly->evaluate(dt, x_vector.get(), x_dot_vector.get());
+        // compute x(t_+dt), xdot(t_+dt)
+        x_poly_->evaluate(dt, x_vector_.get(), x_dot_vector_.get());
 
-        // compute f( x(t+dt), t+dt )
-        Thyra::eval_f(*model, *x_vector, t+dt, f_vector.get());
+        // compute f( x(t_+dt), t_+dt )
+        Thyra::eval_f(*model_, *x_vector_, t_+dt, f_vector_.get());
 
-        // compute || xdot(t+dt) - f( x(t+dt), t+dt ) ||
-        Thyra::Vp_StV(x_dot_vector.get(), -Teuchos::ScalarTraits<Scalar>::one(),
-          *f_vector);
-        local_error = norm_inf(*x_dot_vector);
+        // compute || xdot(t_+dt) - f( x(t_+dt), t_+dt ) ||
+        Thyra::Vp_StV(x_dot_vector_.get(), -Teuchos::ScalarTraits<Scalar>::one(),
+          *f_vector_);
+        local_error = norm_inf(*x_dot_vector_);
 
-        if (local_error > local_error_tolerance) {
+        if (local_error > local_error_tolerance_) {
           dt *= 0.7;
         }
 
-      } while (local_error > local_error_tolerance && dt > min_step_size);
+      } while (local_error > local_error_tolerance_ && dt > min_step_size_);
 
       // Check if minimum step size was reached
-      TEST_FOR_EXCEPTION(dt < min_step_size, 
+      TEST_FOR_EXCEPTION(dt < min_step_size_, 
             std::runtime_error,
             "ExplicitTaylorPolynomialStepper<Scalar>::takeStep(): " 
             << "Step size reached minimum step size " 
-            << min_step_size << ".  Failing step." );
+            << min_step_size_ << ".  Failing step." );
 
-      // Increment t
-      t += dt;
+      // Increment t_
+      t_ += dt;
 
       return dt;
 
     } else {
 
-      // If t > t_final, we're done
-      if (t > t_final) {
+      // If t_ > t_final_, we're done
+      if (t_ > t_final_) {
         return Teuchos::ScalarTraits<Scalar>::zero();
       }
 
       // Compute a local truncated Taylor series solution to system
-      computeTaylorSeriesSolution();
+      computeTaylorSeriesSolution_();
 
       // If step size is too big, reduce
-      if (dt > max_step_size) {
-        dt = max_step_size;
+      if (dt > max_step_size_) {
+        dt = max_step_size_;
       }
 
-      // If step goes past t_final, reduce
-      if (t+dt > t_final) {
-        dt = t_final-t;
+      // If step goes past t_final_, reduce
+      if (t_+dt > t_final_) {
+        dt = t_final_-t_;
       }
 
-      // compute x(t+dt)
-      x_poly->evaluate(dt, x_vector.get());
+      // compute x(t_+dt)
+      x_poly_->evaluate(dt, x_vector_.get());
 
-      // Increment t
-      t += dt;
+      // Increment t_
+      t_ += dt;
 
       return dt;
     }
@@ -493,33 +491,33 @@ namespace Rythmos {
   Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
   ExplicitTaylorPolynomialStepper<Scalar>::get_solution() const
   {
-    return x_vector;
+    return x_vector_;
   }
 
   template<class Scalar>
   void
-  ExplicitTaylorPolynomialStepper<Scalar>::computeTaylorSeriesSolution()
+  ExplicitTaylorPolynomialStepper<Scalar>::computeTaylorSeriesSolution_()
   {
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > tmp;
 
-    // Set degree of polynomials to 0
-    x_poly->setDegree(0);
-    f_poly->setDegree(0);
+    // Set degree_ of polynomials to 0
+    x_poly_->setDegree(0);
+    f_poly_->setDegree(0);
 
-    // Set degree 0 coefficient
-    x_poly->setCoefficient(0, *x_vector);
+    // Set degree_ 0 coefficient
+    x_poly_->setCoefficient(0, *x_vector_);
 
-    for (unsigned int k=1; k<=degree; k++) {
+    for (unsigned int k=1; k<=degree_; k++) {
 
       // compute [f] = f([x])
-      Thyra::eval_f_poly(*model, *x_poly, t, f_poly.get());
+      Thyra::eval_f_poly(*model_, *x_poly_, t_, f_poly_.get());
 
-      x_poly->setDegree(k);
-      f_poly->setDegree(k);
+      x_poly_->setDegree(k);
+      f_poly_->setDegree(k);
       
       // x[k] = f[k-1] / k
-      tmp = x_poly->getCoefficient(k);
-      copy(*(f_poly->getCoefficient(k-1)), tmp.get());
+      tmp = x_poly_->getCoefficient(k);
+      copy(*(f_poly_->getCoefficient(k-1)), tmp.get());
       scale(Scalar(1.0)/Scalar(k), tmp.get());
     }
 
@@ -527,12 +525,12 @@ namespace Rythmos {
 
   template<class Scalar>
   typename ExplicitTaylorPolynomialStepper<Scalar>::magnitude_type
-  ExplicitTaylorPolynomialStepper<Scalar>::estimateLogRadius()
+  ExplicitTaylorPolynomialStepper<Scalar>::estimateLogRadius_()
   {
     magnitude_type rho = 0;
     magnitude_type tmp;
-    for (unsigned int k=degree/2; k<=degree; k++) {
-      tmp = log_norm_inf(*(x_poly->getCoefficient(k))) / k;
+    for (unsigned int k=degree_/2; k<=degree_; k++) {
+      tmp = log_norm_inf(*(x_poly_->getCoefficient(k))) / k;
       if (tmp > rho)
 	rho = tmp;
     }
@@ -557,26 +555,26 @@ namespace Rythmos {
     if (verbLevel == Teuchos::VERB_EXTREME)
     {
       out << description() << "::describe" << std::endl;
-      out << "model = " << std::endl;
-      out << model->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
-      out << "x_vector = " << std::endl;
-      out << x_vector->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
-      out << "x_dot_vector = " << std::endl;
-      out << x_dot_vector->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
-      out << "f_vector = " << std::endl;
-      out << f_vector->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
-      out << "x_poly = " << std::endl;
-      out << x_poly->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
-      out << "f_poly = " << std::endl;
-      out << f_poly->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
-      out << "t = " << t << std::endl;
-      out << "t_initial = " << t_initial << std::endl;
-      out << "t_final = " << t_final << std::endl;
-      out << "local_error_tolerance = " << local_error_tolerance << std::endl;
-      out << "min_step_size = " << min_step_size << std::endl;
-      out << "max_step_size = " << max_step_size << std::endl;
-      out << "degree = " << degree << std::endl;
-      out << "linc = " << linc << std::endl;
+      out << "model_ = " << std::endl;
+      out << model_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+      out << "x_vector_ = " << std::endl;
+      out << x_vector_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+      out << "x_dot_vector_ = " << std::endl;
+      out << x_dot_vector_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+      out << "f_vector_ = " << std::endl;
+      out << f_vector_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+      out << "x_poly_ = " << std::endl;
+      out << x_poly_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+      out << "f_poly_ = " << std::endl;
+      out << f_poly_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+      out << "t_ = " << t_ << std::endl;
+      out << "t_initial_ = " << t_initial_ << std::endl;
+      out << "t_final_ = " << t_final_ << std::endl;
+      out << "local_error_tolerance_ = " << local_error_tolerance_ << std::endl;
+      out << "min_step_size_ = " << min_step_size_ << std::endl;
+      out << "max_step_size_ = " << max_step_size_ << std::endl;
+      out << "degree_ = " << degree_ << std::endl;
+      out << "linc_ = " << linc_ << std::endl;
     }
     return(out);
   }
@@ -630,10 +628,10 @@ int ExplicitTaylorPolynomialStepper<Scalar>::GetOrder() const
 }
 
 template<class Scalar>
-void ExplicitTaylorPolynomialStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model_)
+void ExplicitTaylorPolynomialStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
 {
-  TEST_FOR_EXCEPT(model_ == Teuchos::null)
-  model = model_;
+  TEST_FOR_EXCEPT(model == Teuchos::null)
+  model_ = model;
 }
 
 

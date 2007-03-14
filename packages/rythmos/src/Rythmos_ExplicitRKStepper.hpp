@@ -122,9 +122,9 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > ktemp_vector_;
 
     int stages_; // Number of stages of RK
-    std::vector<std::vector<Scalar> > b_A; // Butcher tableau A matrix
-    std::vector<Scalar> b_b; // Butcher b vector
-    std::vector<Scalar> b_c; // Butcher c vector
+    std::vector<std::vector<Scalar> > b_A_; // Butcher tableau A matrix
+    std::vector<Scalar> b_b_; // Butcher b vector
+    std::vector<Scalar> b_c_; // Butcher c vector
 
     Scalar t_;
 
@@ -158,24 +158,24 @@ ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RefCountPtr<const Th
 
   // initialize the Butcher tableau and its vectors
   Scalar zero = ST::zero();
-  b_A.reserve(stages_);
-  b_b.reserve(stages_);
-  b_c.reserve(stages_);
+  b_A_.reserve(stages_);
+  b_b_.reserve(stages_);
+  b_c_.reserve(stages_);
 
   // fill b with zeros
-  b_b.push_back(zero); 
-  b_b.push_back(zero); 
-  b_b.push_back(zero);
-  b_b.push_back(zero);
+  b_b_.push_back(zero); 
+  b_b_.push_back(zero); 
+  b_b_.push_back(zero);
+  b_b_.push_back(zero);
   // fill c with zeros
-  b_c.push_back(zero); 
-  b_c.push_back(zero); 
-  b_c.push_back(zero);
-  b_c.push_back(zero);
+  b_c_.push_back(zero); 
+  b_c_.push_back(zero); 
+  b_c_.push_back(zero);
+  b_c_.push_back(zero);
   // fill A with zeros
   for (int i=0 ; i<stages_ ; ++i)
   {
-    b_A.push_back(b_b);
+    b_A_.push_back(b_b_);
   }
 
   // Runge-Kutta methods in Butcher tableau form:
@@ -197,38 +197,38 @@ ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RefCountPtr<const Th
   Scalar one_eighth   = Scalar(ST::one()/(8*ST::one()));
   Scalar three_eighth = Scalar(3*ST::one()/(8*ST::one()));
 
-  // fill b_A
-  b_A[0][0] = zero;
-  b_A[0][1] = zero;
-  b_A[0][2] = zero;
-  b_A[0][3] = zero;
+  // fill b_A_
+  b_A_[0][0] = zero;
+  b_A_[0][1] = zero;
+  b_A_[0][2] = zero;
+  b_A_[0][3] = zero;
 
-  b_A[1][0] = one_third;
-  b_A[1][1] = zero;
-  b_A[1][2] = zero;
-  b_A[1][3] = zero;
+  b_A_[1][0] = one_third;
+  b_A_[1][1] = zero;
+  b_A_[1][2] = zero;
+  b_A_[1][3] = zero;
 
-  b_A[2][0] = Scalar(-one_third);
-  b_A[2][1] = one;
-  b_A[2][2] = zero;
-  b_A[2][3] = zero;
+  b_A_[2][0] = Scalar(-one_third);
+  b_A_[2][1] = one;
+  b_A_[2][2] = zero;
+  b_A_[2][3] = zero;
 
-  b_A[3][0] = one;
-  b_A[3][1] = Scalar(-one);
-  b_A[3][2] = one;
-  b_A[3][3] = zero;
+  b_A_[3][0] = one;
+  b_A_[3][1] = Scalar(-one);
+  b_A_[3][2] = one;
+  b_A_[3][3] = zero;
 
-  // fill b_b
-  b_b[0] = one_eighth;
-  b_b[1] = three_eighth;
-  b_b[2] = three_eighth;
-  b_b[3] = one_eighth;
+  // fill b_b_
+  b_b_[0] = one_eighth;
+  b_b_[1] = three_eighth;
+  b_b_[2] = three_eighth;
+  b_b_[3] = one_eighth;
   
-  // fill b_c
-  b_c[0] = zero;
-  b_c[1] = one_third;
-  b_c[2] = two_third;
-  b_c[3] = one;
+  // fill b_c_
+  b_c_[0] = zero;
+  b_c_[1] = one_third;
+  b_c_[2] = two_third;
+  b_c_[3] = one;
 */
 
 
@@ -244,38 +244,38 @@ ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RefCountPtr<const Th
   Scalar onesixth = ST::one()/(6*ST::one());
   Scalar onethird = ST::one()/(3*ST::one());
 
-  // fill b_A
-  b_A[0][0] = zero;
-  b_A[0][1] = zero;
-  b_A[0][2] = zero;
-  b_A[0][3] = zero;
+  // fill b_A_
+  b_A_[0][0] = zero;
+  b_A_[0][1] = zero;
+  b_A_[0][2] = zero;
+  b_A_[0][3] = zero;
 
-  b_A[1][0] = onehalf;
-  b_A[1][1] = zero;
-  b_A[1][2] = zero;
-  b_A[1][3] = zero;
+  b_A_[1][0] = onehalf;
+  b_A_[1][1] = zero;
+  b_A_[1][2] = zero;
+  b_A_[1][3] = zero;
 
-  b_A[2][0] = zero;
-  b_A[2][1] = onehalf;
-  b_A[2][2] = zero;
-  b_A[2][3] = zero;
+  b_A_[2][0] = zero;
+  b_A_[2][1] = onehalf;
+  b_A_[2][2] = zero;
+  b_A_[2][3] = zero;
 
-  b_A[3][0] = zero;
-  b_A[3][1] = zero;
-  b_A[3][2] = one;
-  b_A[3][3] = zero;
+  b_A_[3][0] = zero;
+  b_A_[3][1] = zero;
+  b_A_[3][2] = one;
+  b_A_[3][3] = zero;
 
-  // fill b_b
-  b_b[0] = onesixth;
-  b_b[1] = onethird;
-  b_b[2] = onethird;
-  b_b[3] = onesixth;
+  // fill b_b_
+  b_b_[0] = onesixth;
+  b_b_[1] = onethird;
+  b_b_[2] = onethird;
+  b_b_[3] = onesixth;
   
-  // fill b_c
-  b_c[0] = zero;
-  b_c[1] = onehalf;
-  b_c[2] = onehalf;
-  b_c[3] = one;
+  // fill b_c_
+  b_c_[0] = zero;
+  b_c_[1] = onehalf;
+  b_c_[2] = onehalf;
+  b_c_[3] = one;
 
 }
 
@@ -304,10 +304,10 @@ Scalar ExplicitRKStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
     Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
     for (int j=0 ; j < s ; ++j) // assuming Butcher matix is strictly lower triangular
     {
-      if (b_A[s][j] != ST::zero())
-        Thyra::Vp_StV(&*ktemp_vector_, b_A[s][j], *k_vector_[j]); // ktemp = ktemp + a_{s+1,j+1}*k_{j+1}
+      if (b_A_[s][j] != ST::zero())
+        Thyra::Vp_StV(&*ktemp_vector_, b_A_[s][j], *k_vector_[j]); // ktemp = ktemp + a_{s+1,j+1}*k_{j+1}
     }
-    ScalarMag ts = t_ + b_c[s]*dt;
+    ScalarMag ts = t_ + b_c_[s]*dt;
     Thyra::eval_f<Scalar>(*model_,*ktemp_vector_,ts,&*k_vector_[s]);
     Thyra::Vt_S(&*k_vector_[s],dt); // k_s = k_s*dt
   
@@ -315,8 +315,8 @@ Scalar ExplicitRKStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
   // Sum for solution:
   for (int s=0 ; s < stages_ ; ++s)
   {
-    if (b_b[s] != ST::zero())
-      Thyra::Vp_StV(&*solution_vector_, b_b[s], *k_vector_[s]); // solution_vector += b_{s+1}*k_{s+1}
+    if (b_b_[s] != ST::zero())
+      Thyra::Vp_StV(&*solution_vector_, b_b_[s], *k_vector_[s]); // solution_vector += b_{s+1}*k_{s+1}
   }
 
   // update current time:
@@ -375,11 +375,11 @@ std::ostream& ExplicitRKStepper<Scalar>::describe(
     ktemp_vector_->describe(out,verbLevel,leadingIndent,indentSpacer); 
     for (int i=0 ; i<stages_ ; ++i)
       for (int j=0 ; j<stages_ ; ++j)
-        out << "b_A[" << i << "][" << j << "] = " << b_A[i][j] << std::endl;
+        out << "b_A_[" << i << "][" << j << "] = " << b_A_[i][j] << std::endl;
     for (int i=0 ; i<stages_ ; ++i)
-      out << "b_b[" << i << "] = " << b_b[i] << std::endl;
+      out << "b_b_[" << i << "] = " << b_b_[i] << std::endl;
     for (int i=0 ; i<stages_ ; ++i)
-      out << "b_c[" << i << "] = " << b_c[i] << std::endl;
+      out << "b_c_[" << i << "] = " << b_c_[i] << std::endl;
     out << "t = " << t_ << std::endl;
   }
   return(out);
