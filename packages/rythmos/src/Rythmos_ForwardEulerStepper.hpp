@@ -48,6 +48,9 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     /** \brief . */
     ForwardEulerStepper();
     ForwardEulerStepper(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
+
+    /** \brief . */
+    void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
     
     /** \brief . */
     ~ForwardEulerStepper();
@@ -300,6 +303,13 @@ Teuchos::RefCountPtr<Teuchos::ParameterList> ForwardEulerStepper<Scalar>::unsetP
   Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList_;
   parameterList_ = Teuchos::null;
   return(temp_param_list);
+}
+
+template<class Scalar>
+void ForwardEulerStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
+{
+  TEST_FOR_EXCEPT(model == Teuchos::null)
+  model_ = model;
 }
 
 

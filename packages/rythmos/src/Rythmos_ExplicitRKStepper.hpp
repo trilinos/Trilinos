@@ -48,6 +48,9 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     /** \brief . */
     ExplicitRKStepper();
     ExplicitRKStepper(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model_);
+
+    /** \brief . */
+    void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
     
     /** \brief . */
     ~ExplicitRKStepper();
@@ -451,6 +454,13 @@ Teuchos::RefCountPtr<Teuchos::ParameterList> ExplicitRKStepper<Scalar>::unsetPar
   Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList_;
   parameterList_ = Teuchos::null;
   return(temp_param_list);
+}
+
+template<class Scalar>
+void ExplicitRKStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
+{
+  TEST_FOR_EXCEPT(model == Teuchos::null)
+  model_ = model;
 }
 
 } // namespace Rythmos

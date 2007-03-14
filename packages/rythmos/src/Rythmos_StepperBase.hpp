@@ -50,6 +50,8 @@ class StepperBase : virtual public InterpolationBufferBase<Scalar>
     /// Destructor
     virtual ~StepperBase() {};
     
+    /// Specify the model problem to integrate
+    virtual void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model) =0;
 
     /// Take a step 
     virtual Scalar TakeStep(Scalar dt, StepSizeType flag) =0;

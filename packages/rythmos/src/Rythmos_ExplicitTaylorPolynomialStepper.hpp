@@ -151,6 +151,9 @@ namespace Rythmos {
      * class uses in \c params.
      */
     ExplicitTaylorPolynomialStepper(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model, Teuchos::ParameterList& params);
+
+    /** \brief . */
+    void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
     
     //! Destructor
     ~ExplicitTaylorPolynomialStepper();
@@ -624,6 +627,13 @@ template<class Scalar>
 int ExplicitTaylorPolynomialStepper<Scalar>::GetOrder() const
 {
   return(4);
+}
+
+template<class Scalar>
+void ExplicitTaylorPolynomialStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model_)
+{
+  TEST_FOR_EXCEPT(model_ == Teuchos::null)
+  model = model_;
 }
 
 
