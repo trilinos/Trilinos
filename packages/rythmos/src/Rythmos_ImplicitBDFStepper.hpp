@@ -147,6 +147,7 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
     /** \brief . */
     Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
 
+    /** \brief . */
     Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
 
   private:
