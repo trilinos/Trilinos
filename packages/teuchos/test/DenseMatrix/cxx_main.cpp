@@ -26,14 +26,9 @@
 // ***********************************************************************
 // @HEADER
 
-#include <iostream>
-#include <string>
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_Version.hpp"
-
-using namespace std;
-using namespace Teuchos;
 
 #define OTYPE int
 #define STYPE double
@@ -43,8 +38,8 @@ int PrintTestResults(string, TYPE, TYPE, bool);
 
 int ReturnCodeCheck(string, int, int, bool);
 
-typedef SerialDenseMatrix<OTYPE, STYPE> DMatrix;
-typedef SerialDenseVector<OTYPE, STYPE> DVector;
+typedef Teuchos::SerialDenseMatrix<OTYPE, STYPE> DMatrix;
+typedef Teuchos::SerialDenseVector<OTYPE, STYPE> DVector;
 
 int main(int argc, char* argv[]) 
 {
@@ -97,7 +92,7 @@ int main(int argc, char* argv[])
   Con2Test1ExpRes(0, 0) = 0;  Con2Test1ExpRes(0, 1) = 2; Con2Test1ExpRes(0, 2) = 4;
   Con2Test1ExpRes(1, 0) = 1;  Con2Test1ExpRes(1, 1) = 3; Con2Test1ExpRes(1, 2) = 5;
   
-  DMatrix Con2Test1(Copy, a, 2, 2, 3);
+  DMatrix Con2Test1(Teuchos::Copy, a, 2, 2, 3);
   numberFailedTests += PrintTestResults("constructor 2 -- construct matrix from array subrange", Con2Test1, Con2Test1ExpRes, verbose);
   
   
@@ -123,18 +118,18 @@ int main(int argc, char* argv[])
 
   // constructor 4 (submatrix)
 
-  DMatrix Con4TestOrig(Copy, a, 3, 3, 3);
+  DMatrix Con4TestOrig(Teuchos::Copy, a, 3, 3, 3);
   DMatrix Con4TestSubmatrix;
   Con4TestSubmatrix.shape(2, 2);
   Con4TestSubmatrix(0, 0) = 4; Con4TestSubmatrix(0, 1) = 7; 
   Con4TestSubmatrix(1, 0) = 5; Con4TestSubmatrix(1, 1) = 8;
-  DMatrix Con4TestCopy1(Copy, Con4TestOrig, 2, 2, 1, 1);
+  DMatrix Con4TestCopy1(Teuchos::Copy, Con4TestOrig, 2, 2, 1, 1);
   numberFailedTests += PrintTestResults("constructor 4 -- submatrix copy", Con4TestCopy1, Con4TestSubmatrix, verbose);
-  DMatrix Con4TestCopy2(Copy, Con4TestOrig, 3, 3, 0, 0);
+  DMatrix Con4TestCopy2(Teuchos::Copy, Con4TestOrig, 3, 3, 0, 0);
   numberFailedTests += PrintTestResults("constructor 4 -- full matrix copy", Con4TestCopy2, Con4TestOrig, verbose);
-  DMatrix Con4TestView1(View, Con4TestOrig, 2, 2, 1, 1);
+  DMatrix Con4TestView1(Teuchos::View, Con4TestOrig, 2, 2, 1, 1);
   numberFailedTests += PrintTestResults("constructor 4 -- full matrix view", Con4TestView1, Con4TestSubmatrix, verbose);
-  DMatrix Con4TestView2(View, Con4TestOrig, 3, 3, 0, 0);
+  DMatrix Con4TestView2(Teuchos::View, Con4TestOrig, 3, 3, 0, 0);
   numberFailedTests += PrintTestResults("constructor 4 -- submatrix view", Con4TestView2, Con4TestOrig, verbose);
 
   // Norm Tests
@@ -175,31 +170,31 @@ int main(int argc, char* argv[])
   DimTest2x3Result.shape(2, 3);
   DimTest3x3Result.shape(3, 3);
 
-  returnCode = DimTest2x2Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest2x2A, DimTest2x2B, 1);
+  returnCode = DimTest2x2Result.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, DimTest2x2A, DimTest2x2B, 1);
   testName = "multiply() -- dimensions -- compatible square matrices";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
-  returnCode = DimTest2x3Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest2x2A, DimTest3x3, 1);
+  returnCode = DimTest2x3Result.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, DimTest2x2A, DimTest3x3, 1);
   testName = "multiply() -- dimensions -- incompatible square matrices";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 1, verbose);
-  returnCode = DimTest1x1Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest1x2, DimTest2x1, 1);
+  returnCode = DimTest1x1Result.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, DimTest1x2, DimTest2x1, 1);
   testName = "multiply() -- dimensions -- compatible nonsquare matrices";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
-  returnCode = DimTest2x2Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest2x1, DimTest1x2, 1);
+  returnCode = DimTest2x2Result.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, DimTest2x1, DimTest1x2, 1);
   testName = "multiply() -- dimensions -- compatible nonsquare matrices";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
-  returnCode = DimTest2x1Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest2x1, DimTest2x1, 1);
+  returnCode = DimTest2x1Result.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, DimTest2x1, DimTest2x1, 1);
   testName = "multiply() -- dimensions -- incompatible nonsquare matrices";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 1, verbose);
-  returnCode = DimTest1x2Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest1x2, DimTest1x2, 1);
+  returnCode = DimTest1x2Result.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, DimTest1x2, DimTest1x2, 1);
   testName = "multiply() -- dimensions -- incompatible nonsquare matrices";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 1, verbose);
-  returnCode = DimTest2x2Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest2x0, DimTest2x2A, 1);
+  returnCode = DimTest2x2Result.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, DimTest2x0, DimTest2x2A, 1);
   testName = "multiply() -- dimensions -- first operand bad numCols";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 1, verbose);
-  returnCode = DimTest0x2Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest2x2A, DimTest0x2, 1);
+  returnCode = DimTest0x2Result.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, DimTest2x2A, DimTest0x2, 1);
   testName = "multiply() -- dimensions -- second operand bad numRows";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 1, verbose);
-  returnCode = DimTest2x2Result.multiply(NO_TRANS, NO_TRANS, 1, DimTest2x2A, DimTest2x0, 1);
+  returnCode = DimTest2x2Result.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, DimTest2x2A, DimTest2x0, 1);
   testName = "multiply() -- dimensions -- second operand bad numCols";
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 1, verbose);
 
@@ -284,21 +279,21 @@ int main(int argc, char* argv[])
   MultTest3x2BTimes2x3AExpResult(1, 0) = 28; MultTest3x2BTimes2x3AExpResult(1, 1) = 38; MultTest3x2BTimes2x3AExpResult(1, 2) = 48;
   MultTest3x2BTimes2x3AExpResult(2, 0) = 48; MultTest3x2BTimes2x3AExpResult(2, 1) = 66; MultTest3x2BTimes2x3AExpResult(2, 2) = 84;
 
-  MultTest2x2ATimes2x2B.multiply(NO_TRANS, NO_TRANS, 1, MultTest2x2A, MultTest2x2B, 1);
+  MultTest2x2ATimes2x2B.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, MultTest2x2A, MultTest2x2B, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 2x2 * 2x2", MultTest2x2ATimes2x2B, MultTest2x2ATimes2x2BExpResult, verbose);
-  MultTest2x2BTimes2x2A.multiply(NO_TRANS, NO_TRANS, 1, MultTest2x2B, MultTest2x2A, 1);
+  MultTest2x2BTimes2x2A.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, MultTest2x2B, MultTest2x2A, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 2x2 * 2x2", MultTest2x2BTimes2x2A, MultTest2x2BTimes2x2AExpResult, verbose);
-  MultTest3x3ATimes3x3B.multiply(NO_TRANS, NO_TRANS, 1, MultTest3x3A, MultTest3x3B, 1);
+  MultTest3x3ATimes3x3B.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, MultTest3x3A, MultTest3x3B, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 3x3 * 3x3", MultTest3x3ATimes3x3B, MultTest3x3ATimes3x3BExpResult, verbose);
-  MultTest3x3BTimes3x3A.multiply(NO_TRANS, NO_TRANS, 1, MultTest3x3B, MultTest3x3A, 1);
+  MultTest3x3BTimes3x3A.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, MultTest3x3B, MultTest3x3A, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 3x3 * 3x3", MultTest3x3BTimes3x3A, MultTest3x3BTimes3x3AExpResult, verbose);
-  MultTest2x3ATimes3x2B.multiply(NO_TRANS, NO_TRANS, 1, MultTest2x3A, MultTest3x2B, 1);
+  MultTest2x3ATimes3x2B.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, MultTest2x3A, MultTest3x2B, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 2x3 * 3x2", MultTest2x3ATimes3x2B, MultTest2x3ATimes3x2BExpResult, verbose);
-  MultTest2x3BTimes3x2A.multiply(NO_TRANS, NO_TRANS, 1, MultTest2x3B, MultTest3x2A, 1);
+  MultTest2x3BTimes3x2A.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, MultTest2x3B, MultTest3x2A, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 2x3 * 3x2", MultTest2x3BTimes3x2A, MultTest2x3BTimes3x2AExpResult, verbose);
-  MultTest3x2ATimes2x3B.multiply(NO_TRANS, NO_TRANS, 1, MultTest3x2A, MultTest2x3B, 1);
+  MultTest3x2ATimes2x3B.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, MultTest3x2A, MultTest2x3B, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 3x2 * 2x3", MultTest3x2ATimes2x3B, MultTest3x2ATimes2x3BExpResult, verbose);
-  MultTest3x2BTimes2x3A.multiply(NO_TRANS, NO_TRANS, 1, MultTest3x2B, MultTest2x3A, 1);
+  MultTest3x2BTimes2x3A.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, MultTest3x2B, MultTest2x3A, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- 3x2 * 2x3", MultTest3x2BTimes2x3A, MultTest3x2BTimes2x3AExpResult, verbose);
 
   DMatrix MultTestHugeA, MultTestHugeB, MultTestHugeATimesHugeBExpResult, MultTestHugeATimesHugeB;
@@ -317,7 +312,7 @@ int main(int argc, char* argv[])
 	}
     }
 
-  MultTestHugeATimesHugeB.multiply(NO_TRANS, NO_TRANS, 1, MultTestHugeA, MultTestHugeB, 1);
+  MultTestHugeATimesHugeB.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1, MultTestHugeA, MultTestHugeB, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- huge * huge", MultTestHugeATimesHugeB, MultTestHugeATimesHugeBExpResult, verbose);
   //
   //  Check scale methods.
@@ -463,7 +458,7 @@ int main(int argc, char* argv[])
 	
   // constructor 2 (from array) tests
 
-  DVector Con2Test1V(Copy, a, 4);
+  DVector Con2Test1V(Teuchos::Copy, a, 4);
   if (verbose) cout <<"constructor 2 -- construct vector from array subrange ";
   if ( Con2Test1V.numRows()!=4 || Con2Test1V.numCols()!=1 || Con2Test1V[ 2 ]!=2.0 ) {
         if (verbose) cout << "unsuccessful."<<endl;

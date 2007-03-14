@@ -42,8 +42,8 @@ The test routine for TRSM is still being developed; all of the others are more o
 #include "Teuchos_Time.hpp"
 #include "Teuchos_Version.hpp"
 
-using namespace std;
-using namespace Teuchos;
+using Teuchos::BLAS;
+using Teuchos::ScalarTraits;
 
 // SType1 and SType2 define the datatypes for which BLAS output will be compared.
 // SType2 should generally be a control datatype "officially" supported by the BLAS; SType1 should be the experimental type being checked.

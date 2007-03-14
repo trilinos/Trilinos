@@ -32,6 +32,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Handle.hpp"
 #include "Teuchos_Handleable.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_MPIContainerComm.hpp"
 #include "Teuchos_ErrorPolling.hpp"
 #include "Teuchos_StrUtils.hpp"
@@ -278,10 +279,10 @@ int main(int argc, char** argv)
   int state = 0;
   cout << Teuchos::Teuchos_Version() << endl << endl;
 
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
   try
     {
-      MPISession::init(&argc, (void***) &argv);
-
       VectorSpace space = new VecSpaceA(3);
       Vector x = space.create();
       Vector y = space.create();
@@ -326,7 +327,6 @@ int main(int argc, char** argv)
       cerr << e.what() << endl;
       state = 1;
     }
-  MPISession::finalize();
 
   if (state != 0)
     {

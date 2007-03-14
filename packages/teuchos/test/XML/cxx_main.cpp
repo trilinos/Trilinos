@@ -28,25 +28,27 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_XMLObject.hpp"
-#include "Teuchos_MPISession.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_StringInputSource.hpp"
 #include "Teuchos_FileInputSource.hpp"
 #include "Teuchos_Version.hpp"
 
 
-using namespace Teuchos;
 using std::string;
+using Teuchos::XMLObject;
+using Teuchos::StringInputSource;
+using Teuchos::FileInputSource;
 
 /* Test of Teuchos XML handling classes */
 
-int main(int argc, void** argv)
+int main(int argc, char** argv)
 {
   cout << Teuchos::Teuchos_Version() << endl << endl;
 
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
   try
     {
-      MPISession::init(&argc, &argv);
-
       /* create an XML object */
       XMLObject problem("Problem");
       XMLObject solver("Solver");
@@ -88,5 +90,4 @@ int main(int argc, void** argv)
     {
       cerr << e.what() << endl;
     }
-  MPISession::finalize();
 }

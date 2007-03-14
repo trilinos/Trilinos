@@ -29,28 +29,34 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_XMLParser.hpp"
 #include "Teuchos_XMLObject.hpp"
-#include "Teuchos_MPISession.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_StringInputSource.hpp"
 #include "Teuchos_Version.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListWriter.hpp"
 #include "Teuchos_XMLParameterListReader.hpp"
 
-using namespace Teuchos;
 using std::string;
+using Teuchos::ParameterList;
+using Teuchos::XMLObject;
+using Teuchos::XMLParser;
+using Teuchos::XMLParameterListReader;
+using Teuchos::XMLParameterListWriter;
+using Teuchos::StringInputSource;
 
 /* Test of Teuchos XMLParser class */
 
-int main(int argc, void** argv)
+int main(int argc, char** argv)
 {
   cout << Teuchos::Teuchos_Version() << endl << endl;
 
   bool testfailed = false;
   double tmp;
+      
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   try
     {
-      MPISession::init(&argc, &argv);
 
       /* create a ParameterList object */
       ParameterList problem("Problem");
@@ -119,7 +125,6 @@ int main(int argc, void** argv)
       cerr << e.what() << endl;
       testfailed = true;
     }
-  MPISession::finalize();
 
   if (testfailed) {
     cout << "End Result: TEST FAILED" << endl;

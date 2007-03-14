@@ -44,7 +44,10 @@
 #include "mpi.h"
 #endif
 
-using namespace Teuchos;
+using Teuchos::CommandLineProcessor;
+using Teuchos::ParameterList;
+using Teuchos::ParameterEntry;
+using Teuchos::OSTab;
 
 void print_break() { cout << "---------------------------------------------------" << endl; }
 double Plus ( double a, double b ) { return a+b; }
@@ -412,8 +415,8 @@ int main( int argc, char *argv[] )
     double alpha_fact = 0.0;
     tempMeth = true;
     try {
-      def_step = getParameter<int>(PL_Polynomial, "Default Step");
-      alpha_fact = getParameter<double>(PL_Polynomial, "Alpha Factor");
+      def_step = Teuchos::getParameter<int>(PL_Polynomial, "Default Step");
+      alpha_fact = Teuchos::getParameter<double>(PL_Polynomial, "Alpha Factor");
     }
     catch( const Teuchos::Exceptions::InvalidParameter& e ) { tempMeth = false; }
     if (verbose && def_step==1) {
@@ -452,8 +455,8 @@ int main( int argc, char *argv[] )
     // Check the 'isParameterType' helper function.
     //-----------------------------------------------------------
     bool PT4, PT5;
-    PT4 = isParameterType<double>(PL_Polynomial, "Max Bounds Factor");
-    PT5 = isParameterType<float>(PL_Polynomial, "Max Bounds Factor");    
+    PT4 = Teuchos::isParameterType<double>(PL_Polynomial, "Max Bounds Factor");
+    PT5 = Teuchos::isParameterType<float>(PL_Polynomial, "Max Bounds Factor");    
     if (verbose) {
       cout<< "Is the helper function 'isParameterType' functional ... "<<endl;
       cout<< "  Is the 'Max Bounds Factor' of type 'double' ... ";
@@ -472,7 +475,7 @@ int main( int argc, char *argv[] )
     double * tempvec1 = new double[10];
     for (int i=0; i<10; i++) { tempvec1[i] = i; }
     PL_Main.set( "Address of Norm Vector", tempvec1 );
-    double* tempvec2 = getParameter<double*>( PL_Main, "Address of Norm Vector" );
+    double* tempvec2 = Teuchos::getParameter<double*>( PL_Main, "Address of Norm Vector" );
     tempvec1[4] = 2.0; tempvec1[6] = 1.0;
     if (verbose) {
       cout<< "Can we pass a pointer to a vector to a parameter list ... ";
@@ -599,7 +602,7 @@ int main( int argc, char *argv[] )
 #ifndef JANUS_STLPORT 
     double (*pt2Function) (double, double);
     PL_Main.set( "Address to Simple Function", &Plus );
-    pt2Function = getParameter<double(*)(double,double)>( PL_Main, "Address to Simple Function" ); 
+    pt2Function = Teuchos::getParameter<double(*)(double,double)>( PL_Main, "Address to Simple Function" ); 
     if (verbose) {
       cout<< "Can we pass a pointer to a function to a parameter list ... ";
     }
@@ -633,7 +636,7 @@ int main( int argc, char *argv[] )
     if (val.isList())
     {
       if (verbose) cout << name << endl;
-      const ParameterList& sublist = getValue<ParameterList>(val);
+      const ParameterList& sublist = Teuchos::getValue<ParameterList>(val);
       ParameterList::ConstIterator i;
       for (i=sublist.begin(); i != sublist.end(); ++i)
       {
@@ -642,7 +645,7 @@ int main( int argc, char *argv[] )
         if (v.isList())
         {
           if (verbose) cout << "  " << nm << endl;
-          if (verbose) getValue<ParameterList>(v).print(cout, 6);
+          if (verbose) Teuchos::getValue<ParameterList>(v).print(cout, 6);
         }
         else
         {
@@ -746,7 +749,7 @@ int main( int argc, char *argv[] )
     print_break();
   }
   try {
-    getParameter<int>(PL_Main.sublist("Direction").sublist("Newton").sublist("Linear Solver"),"Tolerances");
+    Teuchos::getParameter<int>(PL_Main.sublist("Direction").sublist("Newton").sublist("Linear Solver"),"Tolerances");
     if (verbose) cout << "Did not throw exception, error!\n";
     ++FailedTests;
   }
@@ -770,7 +773,7 @@ int main( int argc, char *argv[] )
     print_break();
   }
   try {
-    getParameter<int>(PL_Main.sublist("Direction").sublist("Newton").sublist("Linear Solver"),"Tolerance");
+    Teuchos::getParameter<int>(PL_Main.sublist("Direction").sublist("Newton").sublist("Linear Solver"),"Tolerance");
     if (verbose) cout << "Did not throw exception, error!\n";
     ++FailedTests;
   }

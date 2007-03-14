@@ -35,8 +35,11 @@
 #include <mpi.h>
 #endif
 
-using namespace Teuchos;
 using std::string;
+using Teuchos::TimeMonitor;
+using Teuchos::Time;
+using Teuchos::RefCountPtr;
+using Teuchos::ScalarTraits;
 
 /* Test of Teuchos timing classes */
 
