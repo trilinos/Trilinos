@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
       // Integrate forward with fixed step sizes:
       for (int i=1 ; i<=N ; ++i)
       {
-        double dt_taken = stepper.TakeStep(dt);
+        double dt_taken = stepper.TakeStep(dt,Rythmos::FIXED_STEP);
         numSteps++;
         if (dt_taken != dt)
         {
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
     {
       while (time < finalTime)
       {
-        double dt_taken = stepper.TakeStep();
+        double dt_taken = stepper.TakeStep(0.0,Rythmos::VARIABLE_STEP);
         numSteps++;
         if (outputLevel >= 3)
         {

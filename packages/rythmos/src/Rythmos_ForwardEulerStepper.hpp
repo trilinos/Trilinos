@@ -53,10 +53,7 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     ~ForwardEulerStepper();
 
     /** \brief . */
-    Scalar TakeStep(Scalar dt);
-   
-    /** \brief . */
-    Scalar TakeStep();
+    Scalar TakeStep(Scalar dt, StepSizeType flag);
 
     /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
@@ -155,16 +152,13 @@ ForwardEulerStepper<Scalar>::~ForwardEulerStepper()
 }
 
 template<class Scalar>
-Scalar ForwardEulerStepper<Scalar>::TakeStep()
+Scalar ForwardEulerStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
 {
-  // print something out about this method not supporting automatic variable step-size
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  return(-ST::one());
-}
-
-template<class Scalar>
-Scalar ForwardEulerStepper<Scalar>::TakeStep(Scalar dt)
-{
+  if (flag == VARIABLE_STEP) { 
+    // print something out about this method not supporting automatic variable step-size
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    return(-ST::one());
+  }
 /*
   Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs  = model_->createInArgs();
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs = model_->createOutArgs();

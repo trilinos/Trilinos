@@ -224,6 +224,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       ,std::vector<ScalarMag>* accuracy_vec_ptr_
       ) const
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IBAS::GetPoints");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
@@ -319,9 +320,9 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
         *out << "Initializing empty Stepper and InterpolationBuffer" << std::endl;
       Scalar step_taken;
       if (parameterList->isParameter("fixed_dt"))
-        step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"));
+        step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"),FIXED_STEP);
       else
-        step_taken = stepper->TakeStep();
+        step_taken = stepper->TakeStep(ST::zero(),VARIABLE_STEP);
       // Pass information from stepper to IB:
       status = stepper->GetNodes(&stepper_vec);
       if (!status) return(status);
@@ -382,9 +383,9 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
     Scalar stepper_begin = *(stepper_vec.begin()); // There must be an IC in the stepper.
     Scalar step_taken;
     if (parameterList->isParameter("fixed_dt"))
-      step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"));
+      step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"),FIXED_STEP);
     else
-      step_taken = stepper->TakeStep();
+      step_taken = stepper->TakeStep(ST::zero(),VARIABLE_STEP);
     status = stepper->GetNodes(&stepper_vec);
     if (!status) return(status);
     // Pass information from stepper to IB:
@@ -489,9 +490,9 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
         // integrate forward with stepper 
         Scalar step_taken;
         if (parameterList->isParameter("fixed_dt"))
-          step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"));
+          step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"),FIXED_STEP);
         else
-          step_taken = stepper->TakeStep();
+          step_taken = stepper->TakeStep(ST::zero(),VARIABLE_STEP);
         num_local_steps_taken++;
         if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_MEDIUM) )
           *out << "Took step of size " << step_taken << " with stepper" << std::endl;

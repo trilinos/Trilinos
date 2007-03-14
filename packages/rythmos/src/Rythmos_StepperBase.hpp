@@ -37,6 +37,9 @@
 #include "Rythmos_InterpolationBufferBase.hpp"
 
 namespace Rythmos {
+    
+/// enum for Stepper::TakeStep
+enum StepSizeType { FIXED_STEP, VARIABLE_STEP };
 
 /** \brief Base class for defining stepper functionality. */
 template<class Scalar> 
@@ -46,16 +49,14 @@ class StepperBase : virtual public InterpolationBufferBase<Scalar>
     
     /// Destructor
     virtual ~StepperBase() {};
+    
 
-    /// Take a step _no larger_ than dt 
-    virtual Scalar TakeStep(Scalar dt)=0;
-   
     /// Take a step 
-    virtual Scalar TakeStep()=0;
+    virtual Scalar TakeStep(Scalar dt, StepSizeType flag) =0;
 
     /// Get solution vector
     virtual Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > 
-      get_solution() const = 0;
+      get_solution() const =0;
 
     /// Specify initial condition
     virtual void setInitialCondition(const 

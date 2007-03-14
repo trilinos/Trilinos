@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
         // Integrate forward with fixed step sizes:
         for (int i=1 ; i<=N ; ++i)
         {
-          double dt_taken = stepper.TakeStep(dt);
+          double dt_taken = stepper.TakeStep(dt,Rythmos::FIXED_STEP);
           time += dt_taken;
           numSteps++;
           if (outputLevel >= 3)
@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
 
         while (time < finalTime)
         {
-          double dt_taken = stepper.TakeStep();
+          double dt_taken = stepper.TakeStep(0.0,Rythmos::VARIABLE_STEP);
           numSteps++;
           if (outputLevel >= 3)
             stepper.describe(*out,static_cast<Teuchos::EVerbosityLevel>(outputLevel));

@@ -156,10 +156,7 @@ namespace Rythmos {
     ~ExplicitTaylorPolynomialStepper();
     
     //! Take a time step of magnitude \c dt
-    Scalar TakeStep(Scalar dt);
-   
-    //! Take a time step with implicitly chosen time step.
-    Scalar TakeStep();
+    Scalar TakeStep(Scalar dt, StepSizeType flag);
 
     //! Return solution vector at current time
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
@@ -399,89 +396,94 @@ namespace Rythmos {
 
   template<class Scalar>
   Scalar 
-  ExplicitTaylorPolynomialStepper<Scalar>::TakeStep()
+  ExplicitTaylorPolynomialStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
   {
-    // If t > t_final, we're done
-    if (t > t_final)
-      return Teuchos::ScalarTraits<Scalar>::zero();
+    if (flag == VARIABLE_STEP) {
+      // If t > t_final, we're done
+      if (t > t_final) {
+        return Teuchos::ScalarTraits<Scalar>::zero();
+      }
 
-    // Compute a local truncated Taylor series solution to system
-    computeTaylorSeriesSolution();
+      // Compute a local truncated Taylor series solution to system
+      computeTaylorSeriesSolution();
 
-    // Estimate log of radius of convergence of Taylor series
-    Scalar rho = estimateLogRadius();
+      // Estimate log of radius of convergence of Taylor series
+      Scalar rho = estimateLogRadius();
 
-    // Set step size
-    Scalar dt = std::exp(linc - rho);
+      // Set step size
+      Scalar dt = std::exp(linc - rho);
 
-    // If step size is too big, reduce
-    if (dt > max_step_size)
-      dt = max_step_size;
+      // If step size is too big, reduce
+      if (dt > max_step_size) {
+        dt = max_step_size;
+      }
 
-    // If step goes past t_final, reduce
-    if (t+dt > t_final)
-      dt = t_final-t;
+      // If step goes past t_final, reduce
+      if (t+dt > t_final) {
+        dt = t_final-t;
+      }
 
-    magnitude_type local_error;
+      magnitude_type local_error;
 
-    do {
+      do {
 
-      // compute x(t+dt), xdot(t+dt)
-      x_poly->evaluate(dt, x_vector.get(), x_dot_vector.get());
+        // compute x(t+dt), xdot(t+dt)
+        x_poly->evaluate(dt, x_vector.get(), x_dot_vector.get());
 
-      // compute f( x(t+dt), t+dt )
-      Thyra::eval_f(*model, *x_vector, t+dt, f_vector.get());
+        // compute f( x(t+dt), t+dt )
+        Thyra::eval_f(*model, *x_vector, t+dt, f_vector.get());
 
-      // compute || xdot(t+dt) - f( x(t+dt), t+dt ) ||
-      Thyra::Vp_StV(x_dot_vector.get(), -Teuchos::ScalarTraits<Scalar>::one(),
-		    *f_vector);
-      local_error = norm_inf(*x_dot_vector);
+        // compute || xdot(t+dt) - f( x(t+dt), t+dt ) ||
+        Thyra::Vp_StV(x_dot_vector.get(), -Teuchos::ScalarTraits<Scalar>::one(),
+          *f_vector);
+        local_error = norm_inf(*x_dot_vector);
 
-      if (local_error > local_error_tolerance)
-	dt *= 0.7;
+        if (local_error > local_error_tolerance) {
+          dt *= 0.7;
+        }
 
+      } while (local_error > local_error_tolerance && dt > min_step_size);
+
+      // Check if minimum step size was reached
+      TEST_FOR_EXCEPTION(dt < min_step_size, 
+            std::runtime_error,
+            "ExplicitTaylorPolynomialStepper<Scalar>::takeStep(): " 
+            << "Step size reached minimum step size " 
+            << min_step_size << ".  Failing step." );
+
+      // Increment t
+      t += dt;
+
+      return dt;
+
+    } else {
+
+      // If t > t_final, we're done
+      if (t > t_final) {
+        return Teuchos::ScalarTraits<Scalar>::zero();
+      }
+
+      // Compute a local truncated Taylor series solution to system
+      computeTaylorSeriesSolution();
+
+      // If step size is too big, reduce
+      if (dt > max_step_size) {
+        dt = max_step_size;
+      }
+
+      // If step goes past t_final, reduce
+      if (t+dt > t_final) {
+        dt = t_final-t;
+      }
+
+      // compute x(t+dt)
+      x_poly->evaluate(dt, x_vector.get());
+
+      // Increment t
+      t += dt;
+
+      return dt;
     }
-    while (local_error > local_error_tolerance && dt > min_step_size);
-
-    // Check if minimum step size was reached
-    TEST_FOR_EXCEPTION(dt < min_step_size, 
-		       std::runtime_error,
-		       "ExplicitTaylorPolynomialStepper<Scalar>::takeStep(): " 
-		       << "Step size reached minimum step size " 
-		       << min_step_size << ".  Failing step." );
-
-    // Increment t
-    t += dt;
-
-    return dt;
-  }
-
-  template<class Scalar>
-  Scalar 
-  ExplicitTaylorPolynomialStepper<Scalar>::TakeStep(Scalar dt)
-  {
-    // If t > t_final, we're done
-    if (t > t_final)
-      return Teuchos::ScalarTraits<Scalar>::zero();
-
-    // Compute a local truncated Taylor series solution to system
-    computeTaylorSeriesSolution();
-
-    // If step size is too big, reduce
-    if (dt > max_step_size)
-      dt = max_step_size;
-
-    // If step goes past t_final, reduce
-    if (t+dt > t_final)
-      dt = t_final-t;
-
-    // compute x(t+dt)
-    x_poly->evaluate(dt, x_vector.get());
-
-    // Increment t
-    t += dt;
-
-    return dt;
   }
 
   template<class Scalar>

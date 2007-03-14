@@ -79,10 +79,7 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
         );
 
     /** \brief . */
-    Scalar TakeStep(Scalar dt);
-   
-    /** \brief . */
-    Scalar TakeStep();
+    Scalar TakeStep(Scalar dt, StepSizeType flag);
 
     /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
@@ -279,6 +276,7 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   // Now we instantiate the model and the solver
   setModel(model);
   setSolver(solver);
+  haveInitialCondition = false;
   isInitialized=false;
 }
 
@@ -291,6 +289,7 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   // Now we instantiate the model and the solver
   setModel(model);
   setSolver(solver);
+  haveInitialCondition = false;
   isInitialized=false;
 }
 
@@ -345,7 +344,6 @@ void ImplicitBDFStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra
   typedef Teuchos::ScalarTraits<Scalar> ST;
   TEST_FOR_EXCEPT(model_ == Teuchos::null)
   model = model_;
-  time = ST::zero();
 }
 
 template<class Scalar>
@@ -356,6 +354,7 @@ void ImplicitBDFStepper<Scalar>::getInitialCondition()
     TEST_FOR_EXCEPT(model->getNominalValues().get_x_dot()==Teuchos::null);
     xn0 = model->getNominalValues().get_x()->clone_v();
     xpn0 = model->getNominalValues().get_x_dot()->clone_v(); 
+    haveInitialCondition = true;
   }
 }
 
@@ -371,20 +370,37 @@ void ImplicitBDFStepper<Scalar>::setInitialCondition(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
     )
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   TEST_FOR_EXCEPT(initialCondition.get_x()==Teuchos::null);
   TEST_FOR_EXCEPT(initialCondition.get_x_dot()==Teuchos::null);
   xn0 = initialCondition.get_x()->clone_v();
   xpn0 = initialCondition.get_x_dot()->clone_v(); 
+  //time = initialCondition.get_t();
+  time = ST::zero(); // 03/13/07 tscoffe:  Get this from initial condition.
   haveInitialCondition = true;
 }
 
 template<class Scalar>
-Scalar ImplicitBDFStepper<Scalar>::TakeStep()
+Scalar ImplicitBDFStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   if (!isInitialized) {
     initialize(); 
   }
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  if (flag == FIXED_STEP) {
+    constantStepSize = true;
+    if (dt != ST::zero()) {
+      hh = dt;
+    }
+    if (hh == ST::zero()) {
+      return(Scalar(-ST::one()));
+    }
+  } else {
+    constantStepSize = false;
+  }
+  if ((flag == VARIABLE_STEP) && (dt != ST::zero())) {
+    h_max_inv = 1/dt;
+  }
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"TakeStep");
@@ -465,15 +481,6 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
 
   completeStep();  
   return(usedStep);
-}
-
-template<class Scalar>
-Scalar ImplicitBDFStepper<Scalar>::TakeStep(Scalar dt)
-{
-  constantStepSize = true;
-  hh = dt;
-  dt = TakeStep();
-  return(dt);
 }
 
 template<class Scalar>
@@ -779,8 +786,8 @@ void ImplicitBDFStepper<Scalar>::initialize()
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Thyra::createMember;
 
-  TEST_FOR_EXCEPT(model != Teuchos::null)
-  TEST_FOR_EXCEPT(solver != Teuchos::null)
+  TEST_FOR_EXCEPT(model == Teuchos::null)
+  TEST_FOR_EXCEPT(solver == Teuchos::null)
 
   if (parameterList == Teuchos::null) {
     Teuchos::RefCountPtr<Teuchos::ParameterList> emptyParameterList;

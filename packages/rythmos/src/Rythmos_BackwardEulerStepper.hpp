@@ -68,10 +68,7 @@ class BackwardEulerStepper : virtual public StepperBase<Scalar>
     Teuchos::RefCountPtr<InterpolatorBase<Scalar> > unsetInterpolator();
 
     /** \brief . */
-    Scalar TakeStep(Scalar dt);
-   
-    /** \brief . */
-    Scalar TakeStep();
+    Scalar TakeStep(Scalar dt, StepSizeType flag);
 
     /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
@@ -218,22 +215,19 @@ Teuchos::RefCountPtr<InterpolatorBase<Scalar> > BackwardEulerStepper<Scalar>::un
 }
 
 template<class Scalar>
-Scalar BackwardEulerStepper<Scalar>::TakeStep()
+Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"BES::TakeStep()");
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_LOW) )
-    *out << "This is not valid for BackwardEulerStepper at this time." << std::endl;
-  // print something out about this method not supporting automatic variable step-size
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  return(-ST::one());
-}
-
-template<class Scalar>
-Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt)
-{
+  if ((flag == VARIABLE_STEP) || (dt == ST::zero())) {
+    Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"BES::TakeStep");
+    if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_LOW) )
+      *out << "The arguments to TakeStep are not valid for BackwardEulerStepper at this time." << std::endl;
+    // print something out about this method not supporting automatic variable step-size
+    return(Scalar(-ST::one()));
+  }
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"BES::TakeStep(dt)");
+  Teuchos::OSTab ostab(out,1,"BES::TakeStep");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
     *out << "dt = " << dt << std::endl;
   typedef Teuchos::ScalarTraits<Scalar> ST;

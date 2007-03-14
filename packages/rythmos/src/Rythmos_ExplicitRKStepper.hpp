@@ -53,10 +53,7 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     ~ExplicitRKStepper();
 
     /** \brief . */
-    Scalar TakeStep(Scalar dt);
-   
-    /** \brief . */
-    Scalar TakeStep();
+    Scalar TakeStep(Scalar dt, StepSizeType flag);
 
     /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
@@ -290,18 +287,13 @@ ExplicitRKStepper<Scalar>::~ExplicitRKStepper()
 }
 
 template<class Scalar>
-Scalar ExplicitRKStepper<Scalar>::TakeStep()
-{
-  // print something out about this method not supporting automatic variable step-size
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  return(-ST::one());
-}
-
-template<class Scalar>
-Scalar ExplicitRKStepper<Scalar>::TakeStep(Scalar dt)
+Scalar ExplicitRKStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
+  if ((flag == VARIABLE_STEP) || (dt == ST::zero())) {
+    return(Scalar(-ST::one()));
+  }
 
   // Compute stage solutions
   for (int s=0 ; s < stages_ ; ++s)
