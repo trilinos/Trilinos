@@ -232,6 +232,7 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,
 
 
 namespace ML_Epetra{
+
   //! Finds the Dirichlet rows in a square matrix that got the one-and-zeros
   //treatment
   /*! Returns the local Dirichlet rows for a square matrix that go the
@@ -276,7 +277,7 @@ namespace ML_Epetra{
   Epetra_IntVector * FindLocalDirichletColumnsFromRows(const int *dirichletRows, int numBCRows,const Epetra_CrsMatrix & Matrix);
 
   //! Drops a 1 on the diagonal of zero'd our rows
-  void ML_Epetra::Remove_Zeroed_Rows(const Epetra_CrsMatrix & Matrix);
+  void Remove_Zeroed_Rows(const Epetra_CrsMatrix & Matrix);
 
 }
 
