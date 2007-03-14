@@ -74,7 +74,8 @@ int Epetra_ML_GetCrsDataptrs(ML_Operator *data, double **values, int **cols, int
   Epetra_CrsMatrix * CrsA = NULL;
 
   CrsA = dynamic_cast<Epetra_CrsMatrix *>(A);
-  if( CrsA != NULL ) CrsA->ExtractCrsDataPointers(*rowptr, *cols, *values);
+  if( CrsA != NULL ) 
+    CrsA->ExtractCrsDataPointers(*rowptr, *cols, *values);
 
   return 0;
 }
@@ -407,6 +408,49 @@ int ML_Epetra_CrsMatrix_getrow(ML_Operator *data, int N_requested_rows,
 
   return(1);
 } //ML_Epetra_CrsMatrix_getrow
+
+// ====================================================================== 
+// Specialized getrow for Epetra_CrsMatrix class.
+// ====================================================================== 
+
+int ML_Epetra_CrsMatrix_get_one_row(ML_Operator *data, int N_requested_rows,
+                                    int requested_rows[], 
+                                    int allocated_space, int columns[], double values[],
+                                    int row_lengths[])
+{
+  int nz_ptr = 0;
+  int NumEntries;
+  //int MaxPerRow = 0;
+  ML_Operator *mat_in;
+
+  mat_in = (ML_Operator *) data;
+
+  Epetra_CrsMatrix *Acrs =  (Epetra_CrsMatrix *) ML_Get_MyGetrowData(mat_in);
+  
+  for (int i = 0; i < N_requested_rows; i++)
+  {
+    int LocalRow = requested_rows[i];
+    int *Indices;
+    double *Values;
+
+    int ierr = Acrs->ExtractMyRowView(LocalRow, NumEntries, Values, Indices);
+    if (ierr)
+      return(0); //JJH I think this is the correct thing to return if
+                 //    A->ExtractMyRowCopy returns something nonzero ..
+
+    row_lengths[i] = NumEntries;
+    if (nz_ptr + NumEntries > allocated_space)
+      return(0);
+      
+    for (int j=0; j<NumEntries; j++) {
+      columns[nz_ptr] = Indices[j];
+      values[nz_ptr++] = 1.0;
+    }
+  }
+
+  return(1);
+} //ML_Epetra_CrsMatrix_getrow
+
 
 // ====================================================================== 
 // Specialized getrow for Epetra_VbrMatrix class.
@@ -1041,6 +1085,35 @@ void ML_Epetra::Apply_BCsToMatrixColumns(const Epetra_RowMatrix & iBoundaryMatri
 
 
 
+// ====================================================================== 
+void ML_Epetra::Remove_Zeroed_Rows(const Epetra_CrsMatrix & Matrix)
+{
+  /* Finds zeroed out rows and plops a 1 on the diagonal
+     rows/columns to nuke.
+     Input:
+         Matrix             matrix
+     Output:
+         Grad               matrix with zerod out rows getting a one
+
+     Comments: The graph of Matrix is unchanged.
+  */
+  int i,j,N=Matrix.NumMyRows();
+  int numEntries, gridx,cidx;
+  double *vals;
+  int *cols;
+
+  /* Zero the rows, add ones to diagonal */
+  for (i=0; i < N; i++) {
+    Matrix.ExtractMyRowView(i,numEntries,vals,cols);
+    gridx=Matrix.GRID(i);
+    for (j=0, cidx=-1; j < numEntries; j++){
+      if(vals[j]!=0) break;
+      if(gridx == Matrix.GCID(cols[j])) cidx=j;      
+    }/*end for*/
+    if(cidx!=-1) vals[cidx]=1.0;
+  }/*end for*/
+  
+}/*end Apply_OAZToMatrix*/
 
 
 

@@ -10,11 +10,11 @@
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT) && defined(HAVE_ML_IFPACK)
 #include "EpetraExt_MatrixMatrix.h" //haq
 #include "EpetraExt_CrsMatrixIn.h"//haq
-#include "Ifpack_Hiptmair.h"
+//#include "Ifpack_Hiptmair.h"
 
 static int c_iteration=0;//DEBUG
 
-//#define NO_OUTPUT
+#define NO_OUTPUT
 
 
 extern "C"{

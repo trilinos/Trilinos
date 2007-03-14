@@ -102,11 +102,16 @@ int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows,
                                int requested_rows[], int allocated_space, 
                                int columns[], double values[],
                                int row_lengths[]);
-
+  
 int ML_Epetra_CrsMatrix_getrow(ML_Operator *data, int N_requested_rows,
             int requested_rows[], 
 		    int allocated_space, int columns[], double values[],
-		    int row_lengths[]);
+                               int row_lengths[]);
+int ML_Epetra_CrsMatrix_get_one_row(ML_Operator *data, int N_requested_rows,
+                                    int requested_rows[], 
+                                    int allocated_space, int columns[], double values[],
+                                    int row_lengths[]);
+  
 
 int ML_Epetra_VbrMatrix_getrow(ML_Operator *data,
             int N_requested_rows, int requested_rows[], 
@@ -269,7 +274,10 @@ namespace ML_Epetra{
 
     //! Finds Dirichlet the local Dirichlet columns, given the local Dirichlet rows
   Epetra_IntVector * FindLocalDirichletColumnsFromRows(const int *dirichletRows, int numBCRows,const Epetra_CrsMatrix & Matrix);
-  
+
+  //! Drops a 1 on the diagonal of zero'd our rows
+  void ML_Epetra::Remove_Zeroed_Rows(const Epetra_CrsMatrix & Matrix);
+
 }
 
 
