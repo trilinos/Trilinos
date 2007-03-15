@@ -168,6 +168,9 @@ namespace Rythmos {
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
 
     /** \brief . */
+    Scalar get_time() const;
+
+    /** \brief . */
     std::string description() const;
 
     /** \brief . */
@@ -498,6 +501,12 @@ namespace Rythmos {
   ExplicitTaylorPolynomialStepper<Scalar>::get_solution() const
   {
     return x_vector_;
+  }
+
+  template<class Scalar>
+  Scalar ExplicitTaylorPolynomialStepper<Scalar>::get_time() const
+  {
+    return(t_);
   }
 
   template<class Scalar>

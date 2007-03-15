@@ -63,6 +63,9 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
 
     /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
+
+    /** \brief . */
+    Scalar get_time() const;
     
     /** \brief . */
     std::string description() const;
@@ -194,6 +197,12 @@ template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ForwardEulerStepper<Scalar>::get_residual() const
 {
   return(residual_vector_);
+}
+
+template<class Scalar>
+Scalar ForwardEulerStepper<Scalar>::get_time() const
+{
+  return(t_);
 }
 
 template<class Scalar>

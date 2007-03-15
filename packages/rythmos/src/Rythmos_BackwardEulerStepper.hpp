@@ -76,6 +76,9 @@ class BackwardEulerStepper : virtual public StepperBase<Scalar>
     /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
 
+    /** \brief . */
+    Scalar get_time() const;
+
     /// Redefined from describable
     /** \brief . */
     std::string description() const;
@@ -315,6 +318,16 @@ Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > BackwardEulerStepper<Scal
     }
   }
   return(x_);
+}
+
+template<class Scalar>
+Scalar BackwardEulerStepper<Scalar>::get_time() const
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  if (!isInitialized_) {
+    return(Scalar(-ST::one()));
+  }
+  return(t_);
 }
 
 template<class Scalar>

@@ -60,6 +60,9 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
 
     /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
+
+    /** \brief . */
+    Scalar get_time() const;
     
     /** \brief . */
     std::string description() const;
@@ -324,6 +327,12 @@ template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ExplicitRKStepper<Scalar>::get_solution() const
 {
   return(solution_vector_);
+}
+
+template<class Scalar>
+Scalar ExplicitRKStepper<Scalar>::get_time() const
+{
+  return(t_);
 }
 
 template<class Scalar>

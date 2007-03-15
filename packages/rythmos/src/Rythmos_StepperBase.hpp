@@ -60,6 +60,9 @@ class StepperBase : virtual public InterpolationBufferBase<Scalar>
     virtual Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > 
       get_solution() const =0;
 
+    /// Get current solution time
+    virtual Scalar get_time() const =0;
+
     /// Specify initial condition
     virtual void setInitialCondition(const 
         Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition

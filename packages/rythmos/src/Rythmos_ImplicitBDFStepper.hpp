@@ -88,6 +88,9 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
 
     /** \brief . */
+    Scalar get_time() const;
+
+    /** \brief . */
     std::string description() const;
 
     /** \brief . */
@@ -349,11 +352,13 @@ void ImplicitBDFStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::getInitialCondition_()
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   if (!haveInitialCondition_) {
     TEST_FOR_EXCEPT(model_->getNominalValues().get_x()==Teuchos::null);
     TEST_FOR_EXCEPT(model_->getNominalValues().get_x_dot()==Teuchos::null);
     xn0_ = model_->getNominalValues().get_x()->clone_v();
     xpn0_ = model_->getNominalValues().get_x_dot()->clone_v(); 
+    time_ = ST::zero();
     haveInitialCondition_ = true;
   }
 }
@@ -375,8 +380,12 @@ void ImplicitBDFStepper<Scalar>::setInitialCondition(
   TEST_FOR_EXCEPT(initialCondition.get_x_dot()==Teuchos::null);
   xn0_ = initialCondition.get_x()->clone_v();
   xpn0_ = initialCondition.get_x_dot()->clone_v(); 
-  //time_ = initialCondition.get_t();
-  time_ = ST::zero(); // 03/13/07 tscoffe:  Get this from initial condition.
+  typedef Thyra::ModelEvaluatorBase MEB;
+  if (initialCondition.supports(MEB::IN_ARG_t)) { 
+    time_ = initialCondition.get_t();
+  } else {
+    time_ = ST::zero(); 
+  }
   haveInitialCondition_ = true;
 }
 
@@ -512,6 +521,16 @@ Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ImplicitBDFStepper<Scalar
     return(emptyRFC); 
   }
   return(residual_);
+}
+
+template<class Scalar>
+Scalar ImplicitBDFStepper<Scalar>::get_time() const
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  if (!isInitialized_) {
+    return(Scalar(-ST::one()));
+  }
+  return(time_);
 }
 
 template<class Scalar>
