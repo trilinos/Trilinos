@@ -111,6 +111,12 @@
 #include <vector.h>
 #endif
 
+#ifdef HAVE_NUMERIC
+#include <numeric>
+#else
+#include <algo.h>
+#endif
+
 #ifdef HAVE_COMPLEX
 #include <complex>
 #else
@@ -173,6 +179,7 @@ using namespace std;
 #include <map>
 #include <deque>
 #include <algorithm>
+#include <numeric>
 
 using namespace std;
 
