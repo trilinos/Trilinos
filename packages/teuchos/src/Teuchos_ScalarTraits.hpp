@@ -144,6 +144,8 @@ namespace Teuchos {
     static inline std::string name()           { (void)UndefinedScalarTraits<T>::notDefined(); return 0; };
     //! Returns a number of magnitudeType that is the square root of this scalar type \c x. 
     static inline T squareroot(T x) { return UndefinedScalarTraits<T>::notDefined(); };
+    //! Returns the result of raising one scalar \c x to the power \c y.
+    static inline T pow(T x, T y) { return UndefinedScalarTraits<T>::notDefined(); };
   };
   
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -167,6 +169,7 @@ namespace Teuchos {
     static inline char random() { return rand(); };             // RAB: This version should be used for an unsigned char, not char
     static inline std::string name() { return "char"; };
     static inline char squareroot(char x) { return (char) ::sqrt((double) x); };
+    static inline char pow(char x, char y) { return (char) ::pow((double)x,(double)y); };
   };
 
   template<>
@@ -188,6 +191,7 @@ namespace Teuchos {
     static inline int random() { return rand(); };             // RAB: This version should be used for an unsigned int, not int
     static inline std::string name() { return "int"; };
     static inline int squareroot(int x) { return (int) ::sqrt((double) x); };
+    static inline int pow(int x, int y) { return (int) ::pow((double)x,(double)y); };
   };
 
 #ifndef __sun
@@ -293,7 +297,8 @@ namespace Teuchos {
     static inline void seedrandom(unsigned int s) { srand(s); };
     static inline float random() { float rnd = (float) rand() / RAND_MAX; return (float)(-1.0 + 2.0 * rnd); };
     static inline std::string name() { return "float"; };
-    static inline float squareroot(float x) { return sqrt(x); };
+    static inline float squareroot(float x) { return ::sqrtf(x); };
+    static inline float pow(float x, float y) { return ::powf(x,y); };
   };
 
 #ifndef __sun
@@ -400,6 +405,7 @@ namespace Teuchos {
     static inline double random() { double rnd = (double) rand() / RAND_MAX; return (double)(-1.0 + 2.0 * rnd); };
     static inline std::string name() { return "double"; };
     static inline double squareroot(double x) { return ::sqrt(x); };
+    static inline double pow(double x, double y) { return ::pow(x,y); };
   };
 
 #ifdef HAVE_TEUCHOS_GNU_MP
@@ -430,6 +436,7 @@ namespace Teuchos {
     };
     static inline std::string name() { return "mpf_class"; };
     static inline mpf_class squareroot(mpf_class x) { return sqrt(x); };
+    static inline mpf_class pow(mpf_class x, mpf_class y) { return powf(x,y); };
     // Todo: RAB: 2004/05/28: Add nan() and isnaninf() functions when needed!
   };
 
@@ -459,6 +466,7 @@ namespace Teuchos {
     static inline mp_real random() { return mp_rand(); };
     static inline std::string name() { return "mp_real"; };
     static inline mp_real squareroot(mp_real x) { return sqrt(x); };
+    static inline mp_real pow(mp_real x, mp_real y) { return powf(x,y); };
     // Todo: RAB: 2004/05/28: Add nan() and isnaninf() functions when needed!
   };
   
@@ -521,6 +529,7 @@ namespace Teuchos {
       const T ni = STMT::squareroot((a-r)/2);
       return ComplexT(nr,ni);
     };
+    static inline ComplexT pow(ComplexT x, ComplexT y) { return pow(x,y); };
   };
 
 #endif //  HAVE_COMPLEX || HAVE_COMPLEX_H
