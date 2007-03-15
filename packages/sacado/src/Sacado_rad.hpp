@@ -6,11 +6,31 @@
 #define SACADO_RAD_H
 
 #include <stddef.h>
+#include <cmath>
 #include <math.h>
 
 //#ifndef SACADO_NO_NAMESPACE
 //namespace Sacado {
 //#endif
+
+  // Bring math functions into scope
+  using std::exp;
+  using std::log;
+  using std::log10;
+  using std::sqrt;
+  using std::cos;
+  using std::sin;
+  using std::tan;
+  using std::acos;
+  using std::asin;
+  using std::atan;
+  using std::cosh;
+  using std::sinh;
+  using std::tanh;
+  using std::abs;
+  using std::fabs;
+  using std::atan2;
+  using std::pow;
 
  class ADvar;
  class ADvari;
@@ -78,28 +98,28 @@ Derp {		// one derivative-propagation operation
 	static Derp *LastDerp;
 	Derp *next;
 	const double *a;
-	ADvari *b;
-	ADvari *c;
+	const ADvari *b;
+	const ADvari *c;
 	void *operator new(size_t);
 	void operator delete(void*) {} /*Should never be called.*/
 	inline Derp(){};
-	Derp(ADvari *);
-	Derp(const double *, ADvari *);
-	Derp(const double *, ADvari *, ADvari *);
+	Derp(const ADvari *);
+	Derp(const double *, const ADvari *);
+	Derp(const double *, const ADvari *, const ADvari *);
 	/* c->aval += a * b->aval; */
 	};
 
-inline Derp::Derp(ADvari *c1): c(c1) {
+inline Derp::Derp(const ADvari *c1): c(c1) {
 		next = LastDerp;
 		LastDerp = this;
 		}
 
-inline Derp::Derp(const double *a1, ADvari *c1): a(a1), c(c1) {
+inline Derp::Derp(const double *a1, const ADvari *c1): a(a1), c(c1) {
 		next = LastDerp;
 		LastDerp = this;
 		}
 
-inline Derp::Derp(const double *a1, ADvari *b1, ADvari *c1): a(a1), b(b1), c(c1) {
+inline Derp::Derp(const double *a1, const ADvari *b1, const ADvari *c1): a(a1), b(b1), c(c1) {
 		next = LastDerp;
 		LastDerp = this;
 		}
@@ -107,8 +127,8 @@ inline Derp::Derp(const double *a1, ADvari *b1, ADvari *c1): a(a1), b(b1), c(c1)
  class
 ADvari {	// implementation of an ADvar
  public:
-	double Val;	// result of this operation
-	double aval;	// adjoint -- partial of final result w.r.t. this Val
+	double Val;		// result of this operation
+	mutable double aval;	// adjoint -- partial of final result w.r.t. this Val
 	void *operator new(size_t len) { return ADvari::adc.Memalloc(len); }
 	void operator delete(void*) {} /*Should never be called.*/
 	inline ADvari(double t): Val(t), aval(0.) {}
@@ -129,56 +149,57 @@ ADvari {	// implementation of an ADvar
  public:
 	ADvari(const IndepADvar *, double);
 #endif
+#define F friend
+#define R ADvari&
+#define Ai const ADvari&
+#define T1(r,f) F r f(Ai);
+#define T2(r,f) \
+F r f(Ai,Ai); \
+F r f(double,Ai); \
+F r f(Ai,double);
+	T1(R,operator+)
+	T2(R,operator+)
+	T1(R,operator-)
+	T2(R,operator-)
+	T2(R,operator*)
+	T2(R,operator/)
+	T1(R,abs)
+	T1(R,acos)
+	T1(R,acosh)
+	T1(R,asin)
+	T1(R,asinh)
+	T1(R,atan)
+	T1(R,atanh)
+	T2(R,atan2)
+	T2(R,max)
+	T2(R,min)
+	T1(R,cos)
+	T1(R,cosh)
+	T1(R,exp)
+	T1(R,log)
+	T1(R,log10)
+	T2(R,pow)
+	T1(R,sin)
+	T1(R,sinh)
+	T1(R,sqrt)
+	T1(R,tan)
+	T1(R,tanh)
+	T1(R,fabs)
+	T1(R,copy)
+	T2(int,operator<)
+	T2(int,operator<=)
+	T2(int,operator==)
+	T2(int,operator!=)
+	T2(int,operator>=)
+	T2(int,operator>)
+#undef T2
+#undef T1
+#undef Ai
+#undef R
+#undef F
 
-	friend ADvari&  operator+(ADvari&);
-	friend ADvari&  operator-(ADvari&);
-	friend ADvari&  operator+ (ADvari&, ADvari&);
-	friend ADvari&  operator+ (ADvari&, double);
-	friend ADvari&  operator+ (double L, ADvari &R);
-	friend ADvari&  operator- (ADvari&, ADvari&);
-	friend ADvari&  operator- (ADvari&, double);
-	friend ADvari&  operator- (double L, ADvari &R);
-	friend ADvari&  operator* (ADvari&, ADvari&);
-	friend ADvari&  operator* (ADvari&, double);
-	friend ADvari&  operator* (double L, ADvari &R);
-	friend ADvari&  operator/ (ADvari&, ADvari&);
-	friend ADvari&  operator/ (ADvari&, double);
-	friend ADvari&  operator/ (double, ADvari&);
-	friend ADvari& atan(ADvari&);
-	friend ADvari& atan2(ADvari&, ADvari&);
-	friend ADvari& atan2(double, ADvari&);
-	friend ADvari& atan2(ADvari&, double);
-	friend ADvari& cos (ADvari&);
-	friend ADvari& exp (ADvari&);
-	friend ADvari& log (ADvari&);
-	friend ADvari& pow (ADvari&, ADvari&);
-	friend ADvari& pow (double, ADvari&);
-	friend ADvari& pow (ADvari&, double);
-	friend ADvari& sin (ADvari&);
-	friend ADvari& sqrt(ADvari&);
-	friend ADvari& tan (ADvari&);
-	friend ADvari& fabs(ADvari&);
-	friend int operator<(const ADvari&, const ADvari&);
-	friend int operator<(const ADvari&, double);
-	friend int operator<(double, const ADvari&);
-	friend int operator<=(const ADvari&, const ADvari&);
-	friend int operator<=(const ADvari&, double);
-	friend int operator<=(double,const ADvari&);
-	friend int operator==(const ADvari&, const ADvari&);
-	friend int operator==(const ADvari&, double);
-	friend int operator==(double, const ADvari&);
-	friend int operator!=(const ADvari&, const ADvari&);
-	friend int operator!=(const ADvari&, double);
-	friend int operator!=(double, const ADvari&);
-	friend int operator>=(const ADvari&, const ADvari&);
-	friend int operator>=(const ADvari&, double);
-	friend int operator>=(double, const ADvari&);
-	friend int operator>(const ADvari&, const ADvari&);
-	friend int operator>(const ADvari&, double);
-	friend int operator>(double, const ADvari&);
-
-	friend ADvari& ADf1(double f, double g, ADvari &x);
-	friend ADvari& ADf2(double f, double gx, double gy, ADvari &x, ADvari &y);
+	friend ADvari& ADf1(double f, double g, const ADvari &x);
+	friend ADvari& ADf2(double f, double gx, double gy, const ADvari &x, const ADvari &y);
 	friend ADvari& ADfn(double f, int n, const ADvar *x, const double *g);
 	};
 
@@ -190,11 +211,11 @@ ADvar1: public ADvari {	// simplest unary ops
  public:
 	Derp d;
 	ADvar1(double val1): ADvari(val1) {}
-	ADvar1(double val1, ADvari *c1): d(c1) { Val = val1; }
-	ADvar1(double val1, const double *a1, ADvari *c1): d(a1,this,c1) { Val = val1; }
+	ADvar1(double val1, const ADvari *c1): d(c1) { Val = val1; }
+	ADvar1(double val1, const double *a1, const ADvari *c1): d(a1,this,c1) { Val = val1; }
 #ifdef RAD_AUTO_AD_Const
 	ADvar1(const IndepADvar *, const IndepADvar &);
-	ADvar1(const IndepADvar *, ADvari &);
+	ADvar1(const IndepADvar *, const ADvari &);
 #endif
 	};
 
@@ -263,7 +284,6 @@ IndepADvar
 #endif
 
 	friend void AD_Const(const IndepADvar&);
-	friend ADvari& copy(const IndepADvar&);
 
 	inline operator ADvari&() { return *cv; }
 	inline operator ADvari&() const { return *(ADvari*)cv; }
@@ -274,6 +294,64 @@ IndepADvar
 	static inline void aval_reset() { ConstADvari::aval_reset(); }
 	static inline void Weighted_Gradcomp(int n, ADvar **v, double *w)
 				{ ADcontext::Weighted_Gradcomp(n, v, w); }
+
+
+#define Ai const ADvari&
+#define AI const IndepADvar&
+#define T2(r,f) \
+ r f(AI,AI);\
+ r f(Ai,AI);\
+ r f(AI,Ai);\
+ r f(double,AI);\
+ r f(AI,double);
+#define T1(f) friend ADvari& f(AI);
+
+#define F friend ADvari&
+T2(F, operator+)
+T2(F, operator-)
+T2(F, operator*)
+T2(F, operator/)
+T2(F, atan2)
+T2(F, max)
+T2(F, min)
+T2(F, pow)
+#undef F
+#define F friend int
+T2(F, operator<)
+T2(F, operator<=)
+T2(F, operator==)
+T2(F, operator!=)
+T2(F, operator>=)
+T2(F, operator>)
+
+T1(operator+)
+T1(operator-)
+T1(abs)
+T1(acos)
+T1(acosh)
+T1(asin)
+T1(asinh)
+T1(atan)
+T1(atanh)
+T1(cos)
+T1(cosh)
+T1(exp)
+T1(log)
+T1(log10)
+T1(sin)
+T1(sinh)
+T1(sqrt)
+T1(tan)
+T1(tanh)
+T1(fabs)
+T1(copy)
+
+#undef T1
+#undef T2
+#undef F
+#undef Ai
+#undef AI
+
 	};
 
  class
@@ -288,14 +366,14 @@ ADvar: public IndepADvar {		// an "active" variable
 #ifdef RAD_AUTO_AD_Const
 	friend class ADvar1;
 	inline ADvar(const IndepADvar &x) { cv = x.cv ? new ADvar1(this, x) : 0; }
-	inline ADvar(ADvari &x) { cv = &x; x.padv = this; }
+	inline ADvar(const ADvari &x) { cv = &x; x.padv = this; }
 	inline ADvar& operator=(const IndepADvar &x) {
 		if (cv)
 			cv->padv = 0;
 		cv = new ADvar1(this,x);
 		return *this;
 		}
-	inline ADvar& operator=(ADvari &x) {
+	inline ADvar& operator=(const ADvari &x) {
 		if (cv)
 			cv->padv = 0;
 		cv = new ADvar1(this, x);
@@ -306,25 +384,25 @@ ADvar: public IndepADvar {		// an "active" variable
 	friend void AD_Indep(const ADvar&);
 #ifdef RAD_NO_EQ_ALIAS
 	ADvar(const IndepADvar &x) { cv = x.cv ? new ADvar1(x.cv->Val, &CADcontext::One, x.cv) : 0; }
-	ADvar(ADvari &x) { cv = new ADvar1(x.Val, &CADcontext::One, &x); }
+	ADvar(const ADvari &x) { cv = new ADvar1(x.Val, &CADcontext::One, &x); }
 	inline ADvar& operator=(const ADvari &x) { return ADvar_operatoreq(this,x); }
 	inline ADvar& operator=(const IndepADvar &x)    { return ADvar_operatoreq(this,*x.cv); }
 #else
 	/* allow aliasing v and w after "v = w;" */
 	inline ADvar(const IndepADvar &x) { cv = x.cv; }
-	inline ADvar(ADvari &x) { cv = &x; }
+	inline ADvar(const ADvari &x) { cv = (ADvari*)&x; }
 	inline ADvar& operator=(const ADvari &x) { cv = (ADvari*)&x;   return *this; }
 	inline ADvar& operator=(const IndepADvar &x)  { cv = (ADvari*)x.cv; return *this; }
 #endif /* RAD_NO_EQ_ALIAS */
 #endif /* RAD_AUTO_AD_Const */
 	ADvar& operator=(double);
-	ADvar& operator+=(ADvari&);
+	ADvar& operator+=(const ADvari&);
 	ADvar& operator+=(double);
-	ADvar& operator-=(ADvari&);
+	ADvar& operator-=(const ADvari&);
 	ADvar& operator-=(double);
-	ADvar& operator*=(ADvari&);
+	ADvar& operator*=(const ADvari&);
 	ADvar& operator*=(double);
-	ADvar& operator/=(ADvari&);
+	ADvar& operator/=(const ADvari&);
 	ADvar& operator/=(double);
 	inline static bool get_fpval_implies_const(void)
 		{ return ConstADvari::cadc.fpval_implies_const; }
@@ -362,7 +440,7 @@ ConstADvar: public ADvar {
 	inline ConstADvar(double d)	{ ConstADvar_ctr(d); }
 	inline ConstADvar(int i)	{ ConstADvar_ctr((double)i); }
 	inline ConstADvar(long i)	{ ConstADvar_ctr((double)i); }
-	ConstADvar(ADvari &x);
+	ConstADvar(const ADvari &x);
 #ifdef RAD_AUTO_AD_Const
 	ConstADvar(const IndepADvar &x) { cv = new ADvar1(this,x); }
 #endif
@@ -379,7 +457,7 @@ ConstADvar: public ADvar {
 ADvar1s: public ADvar1 { // unary ops with partial "a"
  public:
 	double a;
-	ADvar1s(double val1, double a1, ADvari *c1): ADvar1(val1,&a,c1), a(a1) {}
+	ADvar1s(double val1, double a1, const ADvari *c1): ADvar1(val1,&a,c1), a(a1) {}
 	};
 
  class
@@ -387,8 +465,8 @@ ADvar2: public ADvari {	// basic binary ops
  public:
 	Derp dL, dR;
 	ADvar2(double val1): ADvari(val1) {}
-	ADvar2(double val1, ADvari *Lcv, const double *Lc, ADvari *Rcv, const double *Rc):
-			ADvari(val1) {
+	ADvar2(double val1, const ADvari *Lcv, const double *Lc, const ADvari *Rcv,
+			const double *Rc): ADvari(val1) {
 		dR.next = Derp::LastDerp;
 		dL.next = &dR;
 		Derp::LastDerp = &dL;
@@ -404,7 +482,7 @@ ADvar2: public ADvari {	// basic binary ops
 ADvar2q: public ADvar2 { // binary ops with partials "a", "b"
  public:
 	double a, b;
-	ADvar2q(double val1, double Lp, double Rp, ADvari *Lcv, ADvari *Rcv):
+	ADvar2q(double val1, double Lp, double Rp, const ADvari *Lcv, const ADvari *Rcv):
 			ADvar2(val1), a(Lp), b(Rp) {
 		dR.next = Derp::LastDerp;
 		dL.next = &dR;
@@ -427,6 +505,7 @@ ADvarn: public ADvari { // n-ary ops with partials "a"
 	};
 
 inline ADvari &operator+(ADvari &T) { return T; }
+inline ADvari &operator+(const ADvari &T) { return (ADvari&) T; }
 
 inline int operator<(const ADvari &L, const ADvari &R) { return L.Val < R.Val; }
 inline int operator<(const ADvari &L, double R) { return L.Val < R; }
@@ -458,7 +537,75 @@ inline double Adj(const AD_IndepVlist *x) { return x->v->aval; }
 #endif
 
 inline ADvari& copy(const IndepADvar &x)
-{ return *(new ADvar1(x.cv->Val, &CADcontext::One, (ADvari*)x.cv)); }
+{ return *(new ADvar1(x.cv->Val, &CADcontext::One, x.cv)); }
+
+inline ADvari& copy(const ADvari &x)
+{ return *(new ADvar1(x.Val, &CADcontext::One, &x)); }
+
+inline ADvari& abs(const ADvari &x)
+{ return fabs(x); }
+
+#define A (ADvari*)
+#define T inline
+#define F ADvari&
+#define Ai const ADvari&
+#define AI const IndepADvar&
+#define D double
+#define T2(r,f) \
+ T r f(Ai L, AI R) { return f(L, *A R.cv); }\
+ T r f(AI L, Ai R) { return f(*A L.cv, R); }\
+ T r f(AI L, AI R) { return f(*A L.cv, *A R.cv); }\
+ T r f(AI L, D R) { return f(*A L.cv, R); }\
+ T r f(D L, AI R) { return f(L, *A R.cv); }
+
+T2(F, operator+)
+T2(F, operator-)
+T2(F, operator*)
+T2(F, operator/)
+T2(F, atan2)
+T2(F, pow)
+T2(F, max)
+T2(F, min)
+T2(int, operator<)
+T2(int, operator<=)
+T2(int, operator==)
+T2(int, operator!=)
+T2(int, operator>=)
+T2(int, operator>)
+
+#undef T2
+#undef D
+
+#define T1(f)\
+ T F f(AI x) { return f(*A x.cv); }
+
+T1(operator+)
+T1(operator-)
+T1(abs)
+T1(acos)
+T1(acosh)
+T1(asin)
+T1(asinh)
+T1(atan)
+T1(atanh)
+T1(cos)
+T1(cosh)
+T1(exp)
+T1(log)
+T1(log10)
+T1(sin)
+T1(sinh)
+T1(sqrt)
+T1(tan)
+T1(tanh)
+T1(fabs)
+
+#undef T1
+#undef AI
+#undef Ai
+#undef F
+#undef T
+#undef A
 
 //#ifndef SACADO_NO_NAMESPACE
 //} /* namespace Sacado */

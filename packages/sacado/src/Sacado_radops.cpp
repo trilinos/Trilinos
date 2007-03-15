@@ -267,7 +267,7 @@ ConstADvar::ConstADvar_ctr(double d)
 	ConstADvari *x = new ConstADvari(d);
 	cv = x;
 	}
-ConstADvar::ConstADvar(ADvari &x)
+ConstADvar::ConstADvar(const ADvari &x)
 {
 	ConstADvari *y = new ConstADvari(x.Val);
 	Derp *d = new Derp(&CADcontext::One, y, &x);
@@ -308,7 +308,7 @@ ADvar1::ADvar1(const IndepADvar *x, const IndepADvar &y):
 	padv = (IndepADvar*)x;
 	}
 
-ADvar1::ADvar1(const IndepADvar *x, ADvari &y):
+ADvar1::ADvar1(const IndepADvar *x, const ADvari &y):
 	ADvari(y.Val), d(&CADcontext::One, this, &y)
 {
 	*ADvari::Last_ADvari = this;
@@ -358,17 +358,17 @@ ADvar::operator=(double d)
 	}
 
  ADvari&
-operator-(ADvari &T) {
+operator-(const ADvari &T) {
 	return *(new ADvar1(-T.Val, &CADcontext::negOne, &T));
 	}
 
  ADvari&
-operator+(ADvari &L, ADvari &R) {
+operator+(const ADvari &L, const ADvari &R) {
 	return *(new ADvar2(L.Val + R.Val, &L, &CADcontext::One, &R, &CADcontext::One));
 	}
 
  ADvar&
-ADvar::operator+=(ADvari &R) {
+ADvar::operator+=(const ADvari &R) {
 	ADvari *Lcv = cv;
 #ifdef RAD_AUTO_AD_Const
 	Lcv->padv = 0;
@@ -378,7 +378,7 @@ ADvar::operator+=(ADvari &R) {
 	}
 
  ADvari&
-operator+(ADvari &L, double R) {
+operator+(const ADvari &L, double R) {
 	return *(new ADvar1(L.Val + R, &CADcontext::One, &L));
 	}
 
@@ -393,17 +393,17 @@ ADvar::operator+=(double R) {
 	}
 
  ADvari&
-operator+(double L, ADvari &R) {
+operator+(double L, const ADvari &R) {
 	return *(new ADvar1(L + R.Val, &CADcontext::One, &R));
 	}
 
  ADvari&
-operator-(ADvari &L, ADvari &R) {
+operator-(const ADvari &L, const ADvari &R) {
 	return *(new ADvar2(L.Val - R.Val, &L, &CADcontext::One, &R, &CADcontext::negOne));
 	}
 
  ADvar&
-ADvar::operator-=(ADvari &R) {
+ADvar::operator-=(const ADvari &R) {
 	ADvari *Lcv = cv;
 #ifdef RAD_AUTO_AD_Const
 	Lcv->padv = 0;
@@ -413,7 +413,7 @@ ADvar::operator-=(ADvari &R) {
 	}
 
  ADvari&
-operator-(ADvari &L, double R) {
+operator-(const ADvari &L, double R) {
 	return *(new ADvar1(L.Val - R, &CADcontext::One, &L));
 	}
 
@@ -428,17 +428,17 @@ ADvar::operator-=(double R) {
 	}
 
  ADvari&
-operator-(double L, ADvari &R) {
+operator-(double L, const ADvari &R) {
 	return *(new ADvar1(L - R.Val, &CADcontext::negOne, &R));
 	}
 
  ADvari&
-operator*(ADvari &L, ADvari &R) {
+operator*(const ADvari &L, const ADvari &R) {
 	return *(new ADvar2(L.Val * R.Val, &L, &R.Val, &R, &L.Val));
 	}
 
  ADvar&
-ADvar::operator*=(ADvari &R) {
+ADvar::operator*=(const ADvari &R) {
 	ADvari *Lcv = cv;
 #ifdef RAD_AUTO_AD_Const
 	Lcv->padv = 0;
@@ -448,7 +448,7 @@ ADvar::operator*=(ADvari &R) {
 	}
 
  ADvari&
-operator*(ADvari &L, double R) {
+operator*(const ADvari &L, double R) {
 	return *(new ADvar1s(L.Val * R, R, &L));
 	}
 
@@ -463,18 +463,18 @@ ADvar::operator*=(double R) {
 	}
 
  ADvari&
-operator*(double L, ADvari &R) {
+operator*(double L, const ADvari &R) {
 	return *(new ADvar1s(L * R.Val, L, &R));
 	}
 
  ADvari&
-operator/(ADvari &L, ADvari &R) {
+operator/(const ADvari &L, const ADvari &R) {
 	double Lv = L.Val, Rv = R.Val, pL = 1. / Rv, q = Lv/Rv;
 	return *(new ADvar2q(q, pL, -q*pL, &L, &R));
 	}
 
  ADvar&
-ADvar::operator/=(ADvari &R) {
+ADvar::operator/=(const ADvari &R) {
 	ADvari *Lcv = cv;
 #ifdef RAD_AUTO_AD_Const
 	Lcv->padv = 0;
@@ -485,12 +485,12 @@ ADvar::operator/=(ADvari &R) {
 	}
 
  ADvari&
-operator/(ADvari &L, double R) {
+operator/(const ADvari &L, double R) {
 	return *(new ADvar1s(L.Val / R, 1./R, &L));
 	}
 
  ADvari&
-operator/(double L, ADvari &R) {
+operator/(double L, const ADvari &R) {
 	double recip = 1. / R.Val;
 	double q = L * recip;
 	return *(new ADvar1s(q, -q*recip, &R));
@@ -507,36 +507,115 @@ ADvar::operator/=(double R) {
 	}
 
  ADvari&
-atan(ADvari &v) {
+acos(const ADvari &v) {
+	double t = v.Val;
+	return *(new ADvar1s(acos(t), -1./sqrt(1. - t*t), &v));
+	}
+
+ ADvari&
+acosh(const ADvari &v) {
+	double t = v.Val, t1 = sqrt(t*t - 1.);
+	return *(new ADvar1s(log(t + t1), 1./t1, &v));
+	}
+
+ ADvari&
+asin(const ADvari &v) {
+	double t = v.Val;
+	return *(new ADvar1s(asin(t), 1./sqrt(1. - t*t), &v));
+	}
+
+ ADvari&
+asinh(const ADvari &v) {
+	double t = v.Val, td = 1., t1 = sqrt(t*t + 1.);
+	if (t < 0.) {
+		t = -t;
+		td = -1.;
+		}
+	return *(new ADvar1s(td*log(t + t1), 1./t1, &v));
+	}
+
+ ADvari&
+atan(const ADvari &v) {
 	double t = v.Val;
 	return *(new ADvar1s(atan(t), 1./(1. + t*t), &v));
 	}
 
  ADvari&
-atan2(ADvari &L, ADvari &R) {
+atanh(const ADvari &v) {
+	double t = v.Val;
+	return *(new ADvar1s(0.5*log((1.+t)/(1.-t)), 1./(1. - t*t), &v));
+	}
+
+ ADvari&
+max(const ADvari &L, const ADvari &R) {
+	const ADvari &x = L.Val >= R.Val ? L : R;
+	return *(new ADvar1(x.Val, &CADcontext::One, &x));
+	}
+
+ ADvari&
+max(double L, const ADvari &R) {
+	if (L >= R.Val)
+		return *(new ADvari(L));
+	return *(new ADvar1(R.Val, &CADcontext::One, &R));
+	}
+
+ ADvari&
+max(const ADvari &L, double R) {
+	if (L.Val >= R)
+		return *(new ADvar1(L.Val, &CADcontext::One, &L));
+	return *(new ADvari(R));
+	}
+
+ ADvari&
+min(const ADvari &L, const ADvari &R) {
+	const ADvari &x = L.Val <= R.Val ? L : R;
+	return *(new ADvar1(x.Val, &CADcontext::One, &x));
+	}
+
+ ADvari&
+min(double L, const ADvari &R) {
+	if (L <= R.Val)
+		return *(new ADvari(L));
+	return *(new ADvar1(R.Val, &CADcontext::One, &R));
+	}
+
+ ADvari&
+min(const ADvari &L, double R) {
+	if (L.Val <= R)
+		return *(new ADvar1(L.Val, &CADcontext::One, &L));
+	return *(new ADvari(R));
+	}
+
+ ADvari&
+atan2(const ADvari &L, const ADvari &R) {
 	double x = L.Val, y = R.Val, t = x*x + y*y;
 	return *(new ADvar2q(atan2(x,y), y/t, -x/t, &L, &R));
 	}
 
  ADvari&
-atan2(double x, ADvari &R) {
+atan2(double x, const ADvari &R) {
 	double y = R.Val, t = x*x + y*y;
 	return *(new ADvar1s(atan2(x,y), -x/t, &R));
 	}
 
  ADvari&
-atan2(ADvari &L, double y) {
+atan2(const ADvari &L, double y) {
 	double x = L.Val, t = x*x + y*y;
 	return *(new ADvar1s(atan2(x,y), y/t, &L));
 	}
 
  ADvari&
-cos(ADvari &v) {
+cos(const ADvari &v) {
 	return *(new ADvar1s(cos(v.Val), -sin(v.Val), &v));
 	}
 
  ADvari&
-exp(ADvari &v) {
+cosh(const ADvari &v) {
+	return *(new ADvar1s(cosh(v.Val), sinh(v.Val), &v));
+	}
+
+ ADvari&
+exp(const ADvari &v) {
 	ADvar1* rcv = new ADvar1(exp(v.Val), &v);
 	rcv->d.a = &rcv->Val;
 	rcv->d.b = rcv;
@@ -544,48 +623,66 @@ exp(ADvari &v) {
 	}
 
  ADvari&
-log(ADvari &v) {
+log(const ADvari &v) {
 	double x = v.Val;
 	return *(new ADvar1s(log(x), 1. / x, &v));
 	}
 
  ADvari&
-pow(ADvari &L, ADvari &R) {
+log10(const ADvari &v) {
+	static double num = 1. / log(10.);
+	double x = v.Val;
+	return *(new ADvar1s(log10(x), num / x, &v));
+	}
+
+ ADvari&
+pow(const ADvari &L, const ADvari &R) {
 	double x = L.Val, y = R.Val, t = pow(x,y);
 	return *(new ADvar2q(t, y*t/x, t*log(x), &L, &R));
 	}
 
  ADvari&
-pow(double x, ADvari &R) {
+pow(double x, const ADvari &R) {
 	double t = pow(x,R.Val);
 	return *(new ADvar1s(t, t*log(x), &R));
 	}
 
  ADvari&
-pow(ADvari &L, double y) {
+pow(const ADvari &L, double y) {
 	double x = L.Val, t = pow(x,y);
 	return *(new ADvar1s(t, y*t/x, &L));
 	}
 
  ADvari&
-sin(ADvari &v) {
+sin(const ADvari &v) {
 	return *(new ADvar1s(sin(v.Val), cos(v.Val), &v));
 	}
 
  ADvari&
-sqrt(ADvari &v) {
+sinh(const ADvari &v) {
+	return *(new ADvar1s(sinh(v.Val), cosh(v.Val), &v));
+	}
+
+ ADvari&
+sqrt(const ADvari &v) {
 	double t = sqrt(v.Val);
 	return *(new ADvar1s(t, 0.5/t, &v));
 	}
 
  ADvari&
-tan(ADvari &v) {
+tan(const ADvari &v) {
 	double t = cos(v.Val);
 	return *(new ADvar1s(tan(v.Val), 1./(t*t), &v));
 	}
 
  ADvari&
-fabs(ADvari &v) {	// "fabs" is not the best choice of name,
+tanh(const ADvari &v) {
+	double t = 1. / cosh(v.Val);
+	return *(new ADvar1s(tanh(v.Val), t*t, &v));
+	}
+
+ ADvari&
+fabs(const ADvari &v) {	// "fabs" is not the best choice of name,
 			// but this name is used at Sandia.
 	double t, p;
 	p = 1;
@@ -597,12 +694,12 @@ fabs(ADvari &v) {	// "fabs" is not the best choice of name,
 	}
 
  ADvari&
-ADf1(double f, double g, ADvari &x) {
+ADf1(double f, double g, const ADvari &x) {
 	return *(new ADvar1s(f, g, &x));
 	}
 
  ADvari&
-ADf2(double f, double gx, double gy, ADvari &x, ADvari &y) {
+ADf2(double f, double gx, double gy, const ADvari &x, const ADvari &y) {
 	return *(new ADvar2q(f, gx, gy, &x, &y));
 	}
 
