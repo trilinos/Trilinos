@@ -578,12 +578,12 @@ T1(tanh)
 T1(fabs)
 T1(copy)
 
+#undef F
 #undef T1
 #undef T2
-#undef F
 #undef D
-#undef Ai
 #undef AI
+#undef Ai
 
 	};
 
@@ -1556,7 +1556,7 @@ atan2(const ADvari<Double> &L, Double y) {
  ADvari<Double>&
 max(const ADvari<Double> &L, const ADvari<Double> &R) {
 	const ADvari<Double> &x = L.Val >= R.Val ? L : R;
-	return *(new ADvar1<Double>(STDCC x.Val, &x.adc.One, &x));
+	return *(new ADvar1<Double>(x.Val, &x.adc.One, &x));
 	}
 
  template<typename Double>
@@ -1564,14 +1564,14 @@ max(const ADvari<Double> &L, const ADvari<Double> &R) {
 max(Double L, const ADvari<Double> &R) {
 	if (L >= R.Val)
 		return *(new ADvari<Double>(L));
-	return *(new ADvar1<Double>(STDCC R.Val, &R.adc.One, &R));
+	return *(new ADvar1<Double>(R.Val, &R.adc.One, &R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 max(const ADvari<Double> &L, Double R) {
 	if (L.Val >= R)
-		return *(new ADvar1<Double>(STDCC L.Val, &L.adc.One, &L));
+		return *(new ADvar1<Double>(L.Val, &L.adc.One, &L));
 	return *(new ADvari<Double>(R));
 	}
 
@@ -1579,7 +1579,7 @@ max(const ADvari<Double> &L, Double R) {
  ADvari<Double>&
 min(const ADvari<Double> &L, const ADvari<Double> &R) {
 	const ADvari<Double> &x = L.Val <= R.Val ? L : R;
-	return *(new ADvar1<Double>(STDCC x.Val, &x.adc.One, &x));
+	return *(new ADvar1<Double>(x.Val, &x.adc.One, &x));
 	}
 
  template<typename Double>
@@ -1587,14 +1587,14 @@ min(const ADvari<Double> &L, const ADvari<Double> &R) {
 min(Double L, const ADvari<Double> &R) {
 	if (L <= R.Val)
 		return *(new ADvari<Double>(L));
-	return *(new ADvar1<Double>(STDCC R.Val, &R.adc.One, &R));
+	return *(new ADvar1<Double>(R.Val, &R.adc.One, &R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 min(const ADvari<Double> &L, Double R) {
 	if (L.Val <= R)
-		return *(new ADvar1<Double>(STDCC L.Val, &L.adc.One, &L));
+		return *(new ADvar1<Double>(L.Val, &L.adc.One, &L));
 	return *(new ADvari<Double>(R));
 	}
 
