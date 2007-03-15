@@ -176,6 +176,7 @@ AC_CHECK_HEADERS([vector vector.h], [break],)
 AC_CHECK_HEADERS([complex complex.h], [break],)
 AC_CHECK_HEADERS([algorithm algo.h algorithm.h], [break],)
 AC_CHECK_HEADERS([stdexcept stdexcept.h], [break],)
+AC_CHECK_HEADERS([numeric algo.h],[break],)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Anasazi requires at least one or the other.]])
@@ -193,10 +194,6 @@ if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "
   AC_MSG_ERROR([[Cannot find string or string.h.  Anasazi requires at least one or the other.]])
 fi
 
-if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find string or string.h.  Anasazi requires at least one or the other.]])
-fi
-
 if test "X$ac_cv_header_iterator" != "Xyes" && test "X$ac_cv_header_iterator_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find iterator or iterator.h.  Anasazi requires at least one or the other.]])
 fi
@@ -207,6 +204,14 @@ fi
 
 if test "X$ac_cv_header_complex" != "Xyes" && test "X$ac_cv_header_complex_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find complex or complex.h.  Anasazi requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_algorithm" != "Xyes" && test "X$ac_cv_header_algorithm_h" != "Xyes" && test "X$ac_cv_header_algo_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find complex or complex.h.  Anasazi requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_numeric" != "Xyes" && test "X$ac_cv_header_algo_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find numeric or algo.h.  Anasazi requires at least one or the other.]])
 fi
 
 if test "X${host}" != "Xtflop"; then
