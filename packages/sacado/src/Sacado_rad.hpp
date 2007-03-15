@@ -366,7 +366,7 @@ ADvar: public IndepADvar {		// an "active" variable
 #ifdef RAD_AUTO_AD_Const
 	friend class ADvar1;
 	inline ADvar(const IndepADvar &x) { cv = x.cv ? new ADvar1(this, x) : 0; }
-	inline ADvar(const ADvari &x) { cv = &x; x.padv = this; }
+	inline ADvar(ADvari &x) { cv = &x; x.padv = this; }
 	inline ADvar& operator=(const IndepADvar &x) {
 		if (cv)
 			cv->padv = 0;
