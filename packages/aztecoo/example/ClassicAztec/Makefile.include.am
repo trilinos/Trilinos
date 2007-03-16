@@ -30,6 +30,8 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = ClassicAztec Dummy
 
+CCLD = $(CXX)
+
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/In_inputToClassicAztec  inputToClassicAztec
 

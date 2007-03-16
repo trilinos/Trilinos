@@ -120,7 +120,6 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ClassicAztec-main.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(ClassicAztec_SOURCES) $(Dummy_SOURCES)
 DIST_SOURCES = $(ClassicAztec_SOURCES) $(Dummy_SOURCES)
@@ -259,6 +258,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+CCLD = $(CXX)
 ClassicAztec_SOURCES = $(srcdir)/main.c $(srcdir)/az_app_utils.c $(srcdir)/az_examples.c
 Dummy_SOURCES = Dummy
 ClassicAztec_CFLAGS = -I$(top_srcdir)/src
