@@ -708,7 +708,7 @@ namespace Anasazi {
                          "Anasazi::LOBPCG::setBlockSize(): eigenproblem did not specify initial vectors to clone from.");
     }
 
-    TEST_FOR_EXCEPTION(blockSize <= 0, std::invalid_argument, "Anasazi::LOBPCG::setBlockSize(): block size must be strictly postive.");
+    TEST_FOR_EXCEPTION(blockSize <= 0 || blockSize > MVT::GetVecLength(*tmp), std::invalid_argument, "Anasazi::LOBPCG::setBlockSize(): block size must be strictly postive.");
     if (blockSize == blockSize_) {
       // do nothing
       return;
@@ -809,7 +809,7 @@ namespace Anasazi {
 
       // grow/allocate vectors
       theta_.resize(3*blockSize,NANVAL);
-      ritz2norms_.resize(3*blockSize_,NANVAL);
+      ritz2norms_.resize(3*blockSize,NANVAL);
       Rnorms_.resize(blockSize,NANVAL);
       R2norms_.resize(blockSize,NANVAL);
       
