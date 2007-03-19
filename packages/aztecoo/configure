@@ -888,6 +888,9 @@ Optional Features:
   --enable-aztecoo-capture-matrix
                           Enable Aztec's capture-matrix feature. Default is
                           no.
+  --enable-aztecoo-timemonitor
+                          Enable Teuchos TimeMonitors within Aztec solvers.
+                          Default is no.
   --enable-teuchos        Build Teuchos ParameterList support in AztecOO. Can
                           be overridden with --disable-aztecoo-teuchos.
   --enable-aztecoo-teuchos
@@ -3845,7 +3848,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3848:" \
+echo "$as_me:3851:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7551,6 +7554,32 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+#The following section decides whether to enable the Teuchos time monitor to capture profiling information
+# Check whether --enable-aztecoo-timemonitor or --disable-aztecoo-timemonitor was given.
+if test "${enable_aztecoo_timemonitor+set}" = set; then
+  enableval="$enable_aztecoo_timemonitor"
+  ac_cv_aztecoo_timemonitor=$enableval
+else
+  ac_cv_aztecoo_timemonitor=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to enable aztecoo-timemonitor" >&5
+echo $ECHO_N "checking whether to enable aztecoo-timemonitor... $ECHO_C" >&6
+
+if test "X$ac_cv_aztecoo_timemonitor" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define AZ_ENABLE_TIMEMONITOR
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
 # ------------------------------------------------------------------------
 # Optional package dependency
 # ------------------------------------------------------------------------
@@ -8103,7 +8132,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8106: \"$ac_link\") >&5
+(eval echo $as_me:8135: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8181,7 +8210,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8184: \"$ac_link\") >&5
+(eval echo $as_me:8213: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11153,7 +11182,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11156: \"$ac_link\") >&5
+(eval echo $as_me:11185: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11231,7 +11260,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11234: \"$ac_link\") >&5
+(eval echo $as_me:11263: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

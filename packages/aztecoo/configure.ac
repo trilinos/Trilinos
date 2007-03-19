@@ -266,6 +266,21 @@ else
   AC_MSG_RESULT(no)
 fi
 
+#The following section decides whether to enable the Teuchos time monitor to capture profiling information
+AC_ARG_ENABLE(aztecoo-timemonitor,
+ [AC_HELP_STRING([--enable-aztecoo-timemonitor], [Enable Teuchos TimeMonitors within Aztec solvers. Default is no.])],
+ ac_cv_aztecoo_timemonitor=$enableval,ac_cv_aztecoo_timemonitor=no)
+
+AC_MSG_CHECKING(whether to enable aztecoo-timemonitor)
+
+if test "X$ac_cv_aztecoo_timemonitor" != "Xno"; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE([AZ_ENABLE_TIMEMONITOR],,[Define to enable Teuchos TimeMonitors within Aztec solvers])
+else
+  AC_MSG_RESULT(no)
+fi
+
+
 # ------------------------------------------------------------------------
 # Optional package dependency
 # ------------------------------------------------------------------------

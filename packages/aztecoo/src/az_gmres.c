@@ -308,43 +308,52 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
       if (iter == 1) init_time = AZ_second();
 
       if (precond_flag) {
+
+#ifdef AZ_ENABLE_TIMEMONITOR
 #ifdef HAVE_AZTECOO_TEUCHOS
         /* Start timer. */
       static int precID = -1;
       precID = Teuchos_startTimer( "AztecOO: Operation Prec*x", precID );
 #endif
-
+#endif
         precond->prec_function(temp,options,proc_config,params,Amat,precond);
 
+#ifdef AZ_ENABLE_TIMEMONITOR
 #ifdef HAVE_AZTECOO_TEUCHOS
       /* Stop timer. */
       Teuchos_stopTimer( precID );
+#endif
 #endif
       }
 
       if (iter == 1) status[AZ_first_precond] = AZ_second() - init_time;
 
+#ifdef AZ_ENABLE_TIMEMONITOR
 #ifdef HAVE_AZTECOO_TEUCHOS
       /* Start timer. */
       static int matvecID = -1;
       matvecID = Teuchos_startTimer( "AztecOO: Operation Op*x", matvecID );
 #endif
+#endif
 
       Amat->matvec(temp, v[i1], Amat, proc_config);
 
+#ifdef AZ_ENABLE_TIMEMONITOR
 #ifdef HAVE_AZTECOO_TEUCHOS
       /* Stop timer. */
       Teuchos_stopTimer( matvecID );
 #endif
-
+#endif
       /* Use ||v[i1]|| as estimate for ||A|| in checks below for breakdown. */
 
       /* Gram-Schmidt orthogonalization */
 
+#ifdef AZ_ENABLE_TIMEMONITOR
 #ifdef HAVE_AZTECOO_TEUCHOS
       /* Start the timer. */
       static int orthoID = -1;
       orthoID = Teuchos_startTimer( "AztecOO: Orthogonalization", orthoID );
+#endif
 #endif
 
       if (type_orthog==0) { /* Classical. Actually, we do */
@@ -387,9 +396,11 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
       DSCAL_F77(&N, &dble_tmp, v[i1], &one);
 
+#ifdef AZ_ENABLE_TIMEMONITOR
 #ifdef HAVE_AZTECOO_TEUCHOS
       /* Stop the timer. */
       Teuchos_stopTimer( orthoID );
+#endif
 #endif
 
       /* update factorization of hh by plane rotation */

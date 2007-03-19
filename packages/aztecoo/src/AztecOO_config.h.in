@@ -3,6 +3,9 @@
 /* Define to enable capture-matrix feature */
 #undef AZ_ENABLE_CAPTURE_MATRIX
 
+/* Define to enable Teuchos TimeMonitors within Aztec solvers */
+#undef AZ_ENABLE_TIMEMONITOR
+
 /* Define to dummy `main' function (if any) required to link to the Fortran
    libraries. */
 #undef F77_DUMMY_MAIN
