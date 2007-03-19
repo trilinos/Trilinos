@@ -10,6 +10,7 @@ _GALERI_INCLUDES = \
 	-I@abs_top_srcdir@/src \
 	-I@abs_top_srcdir@/src/Maps \
 	-I@abs_top_srcdir@/src/CrsMatrices \
+	-I@abs_top_srcdir@/src/FiniteElements \
 	-I@abs_top_srcdir@/src-fem \
 	-I@abs_top_srcdir@/src-pfem \
 	-I@abs_top_builddir@/src
