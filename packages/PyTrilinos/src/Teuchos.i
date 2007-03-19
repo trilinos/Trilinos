@@ -65,13 +65,13 @@ in-depth information."
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
 
-// Teuchos python interface includes
-#include "Teuchos_PythonParameter.h"
-
 // Backward compatibility for python < 2.5
 #if (PY_VERSION_HEX < 0x02050000)
 typedef int Py_ssize_t;
 #endif
+
+// Teuchos python interface includes
+#include "Teuchos_PythonParameter.h"
 %}
 
 // Global swig features
