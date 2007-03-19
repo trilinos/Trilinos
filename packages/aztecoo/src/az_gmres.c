@@ -53,7 +53,9 @@
 
 #ifdef HAVE_AZTECOO_TEUCHOS
 #include "AztecOO_config.h"
+#ifdef AZ_ENABLE_TIMEMONITOR
 #include "Teuchos_CTimeMonitor.h"
+#endif
 #endif
 
 extern int az_iterate_id;
