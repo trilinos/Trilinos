@@ -466,6 +466,7 @@ namespace Teuchos {
   ParameterList * pyDictToNewParameterList(PyObject * dict,
 					   ResponseToIllegalParameters flag) {
 
+    ParameterList * plist = 0;
     // The dict pointer must point to a dictionary
     if (!PyDict_Check(dict)) {
       PyErr_SetString(PyExc_ValueError, "Expected a dictionary");
@@ -474,7 +475,7 @@ namespace Teuchos {
 
     // Create a new ParameterList and synchronize it with the python
     // dictionary
-    ParameterList * plist = new ParameterList();
+    plist = new ParameterList();
     if (!updateParameterListWithPyDict(dict,*plist,flag)) {
 
       // If update failed, behavior is determined by flag
