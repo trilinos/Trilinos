@@ -35,41 +35,38 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_TimeMonitor.hpp"
 
-namespace {
-
-Teuchos::RefCountPtr<Teuchos::Time> overallSolveTimer;
-
-} // namespace
 
 namespace Thyra {
 
+
 // Constructors/initializers/accessors
 
+
 AmesosLinearOpWithSolve::AmesosLinearOpWithSolve()
-{
-  initializeTimers();
-}
+{}
+
 
 AmesosLinearOpWithSolve::AmesosLinearOpWithSolve(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >          &fwdOp
-  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >   &fwdOpSrc
-  ,const Teuchos::RefCountPtr<Epetra_LinearProblem>                &epetraLP
-  ,const Teuchos::RefCountPtr<Amesos_BaseSolver>                   &amesosSolver
-  ,const ETransp                                                   amesosSolverTransp
-  ,const double                                                    amesosSolverScalar
+  const Teuchos::RefCountPtr<const LinearOpBase<double> > &fwdOp,
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOpSrc,
+  const Teuchos::RefCountPtr<Epetra_LinearProblem> &epetraLP,
+  const Teuchos::RefCountPtr<Amesos_BaseSolver> &amesosSolver,
+  const ETransp amesosSolverTransp,
+  const double amesosSolverScalar
   )
 {
-  initializeTimers();
-  this->initialize(fwdOp,fwdOpSrc,epetraLP,amesosSolver,amesosSolverTransp,amesosSolverScalar);
+  this->initialize(fwdOp,fwdOpSrc,epetraLP,amesosSolver,
+    amesosSolverTransp,amesosSolverScalar);
 }
 
+
 void AmesosLinearOpWithSolve::initialize(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >          &fwdOp
-  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >   &fwdOpSrc
-  ,const Teuchos::RefCountPtr<Epetra_LinearProblem>                &epetraLP
-  ,const Teuchos::RefCountPtr<Amesos_BaseSolver>                   &amesosSolver
-  ,const ETransp                                                   amesosSolverTransp
-  ,const double                                                    amesosSolverScalar
+  const Teuchos::RefCountPtr<const LinearOpBase<double> > &fwdOp,
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOpSrc,
+  const Teuchos::RefCountPtr<Epetra_LinearProblem> &epetraLP,
+  const Teuchos::RefCountPtr<Amesos_BaseSolver> &amesosSolver,
+  const ETransp amesosSolverTransp,
+  const double amesosSolverScalar
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -80,49 +77,57 @@ void AmesosLinearOpWithSolve::initialize(
   TEST_FOR_EXCEPT(epetraLP->GetLHS()!=NULL);
   TEST_FOR_EXCEPT(epetraLP->GetRHS()!=NULL);
 #endif
-  fwdOp_              = fwdOp;
-  fwdOpSrc_           = fwdOpSrc;
-  epetraLP_           = epetraLP;
-  amesosSolver_       = amesosSolver;
+  fwdOp_ = fwdOp;
+  fwdOpSrc_ = fwdOpSrc;
+  epetraLP_ = epetraLP;
+  amesosSolver_ = amesosSolver;
   amesosSolverTransp_ = amesosSolverTransp;
   amesosSolverScalar_ = amesosSolverScalar;
+  const std::string fwdOpLabel = fwdOp_->getObjectLabel();
+  if(fwdOpLabel.length())
+    this->setObjectLabel( "lows("+fwdOpLabel+")" );
 }
+
 
 Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
 AmesosLinearOpWithSolve::extract_fwdOpSrc()
 {
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > _fwdOpSrc = fwdOpSrc_;
+  Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+    _fwdOpSrc = fwdOpSrc_;
   fwdOpSrc_ = Teuchos::null;
   return _fwdOpSrc;
 }
 
+
 void AmesosLinearOpWithSolve::uninitialize(
-  Teuchos::RefCountPtr<const LinearOpBase<double> >          *fwdOp
-  ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >   *fwdOpSrc
-  ,Teuchos::RefCountPtr<Epetra_LinearProblem>                *epetraLP
-  ,Teuchos::RefCountPtr<Amesos_BaseSolver>                   *amesosSolver
-  ,ETransp                                                   *amesosSolverTransp
-  ,double                                                    *amesosSolverScalar
+  Teuchos::RefCountPtr<const LinearOpBase<double> > *fwdOp,
+  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > *fwdOpSrc,
+  Teuchos::RefCountPtr<Epetra_LinearProblem> *epetraLP,
+  Teuchos::RefCountPtr<Amesos_BaseSolver> *amesosSolver,
+  ETransp *amesosSolverTransp,
+  double *amesosSolverScalar
   )
 {
 
-  if(fwdOp)              *fwdOp              = fwdOp_;
-  if(fwdOpSrc)           *fwdOpSrc           = fwdOpSrc_;
-  if(epetraLP)           *epetraLP           = epetraLP_;
-  if(amesosSolver)       *amesosSolver       = amesosSolver_;
+  if(fwdOp) *fwdOp = fwdOp_;
+  if(fwdOpSrc) *fwdOpSrc = fwdOpSrc_;
+  if(epetraLP) *epetraLP = epetraLP_;
+  if(amesosSolver) *amesosSolver = amesosSolver_;
   if(amesosSolverTransp) *amesosSolverTransp = amesosSolverTransp_;
   if(amesosSolverScalar) *amesosSolverScalar = amesosSolverScalar_;
 
-  fwdOp_              = Teuchos::null;
-  fwdOpSrc_           = Teuchos::null;
-  epetraLP_           = Teuchos::null;
-  amesosSolver_       = Teuchos::null;
+  fwdOp_ = Teuchos::null;
+  fwdOpSrc_ = Teuchos::null;
+  epetraLP_ = Teuchos::null;
+  amesosSolver_ = Teuchos::null;
   amesosSolverTransp_ = NOTRANS;
   amesosSolverScalar_ = 0.0;
 
 }
 
+
 // Overridden from LinearOpBase
+
 
 Teuchos::RefCountPtr< const VectorSpaceBase<double> >
 AmesosLinearOpWithSolve::range() const
@@ -130,11 +135,13 @@ AmesosLinearOpWithSolve::range() const
   return ( fwdOp_.get() ? fwdOp_->range() : Teuchos::null );
 }
 
+
 Teuchos::RefCountPtr< const VectorSpaceBase<double> >
 AmesosLinearOpWithSolve::domain() const
 {
   return  ( fwdOp_.get() ? fwdOp_->domain() : Teuchos::null );
 }
+
 
 Teuchos::RefCountPtr<const LinearOpBase<double> >
 AmesosLinearOpWithSolve::clone() const
@@ -142,86 +149,139 @@ AmesosLinearOpWithSolve::clone() const
   return Teuchos::null; // Not supported yet but could be
 }
 
+
 // Overridden from Teuchos::Describable
+
 
 std::string AmesosLinearOpWithSolve::description() const
 {
   std::ostringstream oss;
-  oss << "Thyra::AmesosLinearOpWithSolve";
-  if(amesosSolver_.get()) {
-    oss << "(fwdOp=\'"<<fwdOp_->description()<<"\'"
-        << ",amesosSolver=\'"<<typeName(*amesosSolver_)<<"\')";
+  oss << Teuchos::Describable::description();
+  if(!is_null(amesosSolver_)) {
+    oss
+      << "{fwdOp="<<fwdOp_->description()
+      << ",amesosSolver="<<typeName(*amesosSolver_)<<"}";
   }
   return oss.str();
 }
 
+
+void AmesosLinearOpWithSolve::describe(
+  Teuchos::FancyOStream &out,
+  const Teuchos::EVerbosityLevel verbLevel
+  ) const
+{
+  using Teuchos::OSTab;
+  using Teuchos::typeName;
+  using Teuchos::describe;
+  switch(verbLevel) {
+    case Teuchos::VERB_DEFAULT:
+    case Teuchos::VERB_LOW:
+      out << this->description() << std::endl;
+      break;
+    case Teuchos::VERB_MEDIUM:
+    case Teuchos::VERB_HIGH:
+    case Teuchos::VERB_EXTREME:
+    {
+      out
+        << Teuchos::Describable::description() << "{"
+        << "rangeDim=" << this->range()->dim()
+        << ",domainDim="<< this->domain()->dim() << "}\n";
+      OSTab tab(out);
+      if(!is_null(fwdOp_)) {
+        out << "fwdOp = " << describe(*fwdOp_,verbLevel);
+      }
+      if(!is_null(amesosSolver_)) {
+        out << "amesosSolver=" << typeName(*amesosSolver_) << "\n";
+      }
+      break;
+    }
+    default:
+      TEST_FOR_EXCEPT(true); // Should never get here!
+  }
+}
+
+
 // protected
 
+
 // Overridden from SingleScalarLinearOpBase
+
 
 bool AmesosLinearOpWithSolve::opSupported(ETransp M_trans) const
 {
   return ::Thyra::opSupported(*fwdOp_,M_trans);
 }
 
+
 void AmesosLinearOpWithSolve::apply(
-  const ETransp                     M_trans
-  ,const MultiVectorBase<double>    &X
-  ,MultiVectorBase<double>          *Y
-  ,const double                     alpha
-  ,const double                     beta
+  const ETransp M_trans,
+  const MultiVectorBase<double> &X,
+  MultiVectorBase<double> *Y,
+  const double alpha,
+  const double beta
   ) const
 {
   Thyra::apply( *fwdOp_, M_trans, X, Y, alpha, beta );
 }
 
+
 // Overridden from SingleScalarLinearOpWithSolveBase
+
 
 bool AmesosLinearOpWithSolve::solveSupportsTrans(ETransp M_trans) const
 {
   return true; // ToDo: Determine if the solver supports adjoints or not!
 }
 
-bool AmesosLinearOpWithSolve::solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const
+
+bool AmesosLinearOpWithSolve::solveSupportsSolveMeasureType(
+  ETransp M_trans, const SolveMeasureType& solveMeasureType
+  ) const
 {
   return true; // I am a direct solver so I should be able to do it all!
 }
 
+
 // Overridden from SingleRhsLinearOpWithSolveBase
 
+
 void AmesosLinearOpWithSolve::solve(
-  const ETransp                              M_trans
-  ,const MultiVectorBase<double>             &B
-  ,MultiVectorBase<double>                   *X
-  ,const int                                 numBlocks
-  ,const BlockSolveCriteria<double>          blockSolveCriteria[]
-  ,SolveStatus<double>                       blockSolveStatus[]
+  const ETransp M_trans,
+  const MultiVectorBase<double> &B,
+  MultiVectorBase<double> *X,
+  const int numBlocks,
+  const BlockSolveCriteria<double> blockSolveCriteria[],
+  SolveStatus<double> blockSolveStatus[]
   ) const
 {
   using Teuchos::OSTab;
-  typedef SolveCriteria<double>  SC;
-  typedef SolveStatus<double>    SS;
+  typedef SolveCriteria<double> SC;
+  typedef SolveStatus<double> SS;
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(X==NULL);
   TEST_FOR_EXCEPT(blockSolveCriteria==NULL && blockSolveStatus!=NULL);
 #endif
   Teuchos::Time totalTimer("");
   totalTimer.start(true);
-  Teuchos::TimeMonitor timeMonitor(*overallSolveTimer);
+  TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWS");
   //
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>  out = this->getOStream();
-  Teuchos::EVerbosityLevel                     verbLevel = this->getVerbLevel();
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
-    *out << "\nSolving block system using Amesos solver " << typeName(*amesosSolver_) << " ...\n\n";
+    *out << "\nSolving block system using Amesos solver "
+         << typeName(*amesosSolver_) << " ...\n\n";
   //
   // Get the op(...) range and domain maps
   //
   const ETransp amesosOpTransp = real_trans(trans_trans(amesosSolverTransp_,M_trans));
   const Epetra_Operator *amesosOp = epetraLP_->GetOperator();
   const Epetra_Map
-    &opRangeMap  = ( amesosOpTransp == NOTRANS ? amesosOp->OperatorRangeMap()  : amesosOp->OperatorDomainMap() ),
-    &opDomainMap = ( amesosOpTransp == NOTRANS ? amesosOp->OperatorDomainMap() : amesosOp->OperatorRangeMap()  );
+    &opRangeMap  = ( amesosOpTransp == NOTRANS
+      ? amesosOp->OperatorRangeMap()  : amesosOp->OperatorDomainMap() ),
+    &opDomainMap = ( amesosOpTransp == NOTRANS
+      ? amesosOp->OperatorDomainMap() : amesosOp->OperatorRangeMap()  );
   //
   // Get Epetra_MultiVector views of B and X
   //
@@ -233,7 +293,8 @@ void AmesosLinearOpWithSolve::solve(
   // Set B and X in the linear problem
   //
   epetraLP_->SetLHS(&*epetra_X);
-  epetraLP_->SetRHS(const_cast<Epetra_MultiVector*>(&*epetra_B)); // Should be okay but cross your fingers!
+  epetraLP_->SetRHS(const_cast<Epetra_MultiVector*>(&*epetra_B));
+  // Above should be okay but cross your fingers!
   //
   // Solve the linear system
   //
@@ -276,15 +337,6 @@ void AmesosLinearOpWithSolve::solve(
       << "\nTotal solve time = "<<totalTimer.totalElapsedTime()<<" sec\n";
 }
 
-// private
-
-void AmesosLinearOpWithSolve::initializeTimers()
-{
-  if(!overallSolveTimer.get()) {
-    overallSolveTimer    = Teuchos::TimeMonitor::getNewTimer("AmesosLOWS");
-  }
-
-}
 
 }	// end namespace Thyra
 

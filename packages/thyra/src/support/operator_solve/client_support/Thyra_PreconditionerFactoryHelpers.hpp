@@ -29,11 +29,14 @@
 #ifndef THYRA_PRECONDITIONER_FACTORY_HELPERS_DECL_HPP
 #define THYRA_PRECONDITIONER_FACTORY_HELPERS_DECL_HPP
 
+
 #include "Thyra_PreconditionerFactoryBase.hpp"
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_DefaultPreconditioner.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Initialize a preconditioner from a forward linear operator.
  */
@@ -41,12 +44,13 @@ template <class Scalar>
 void initializePrec(
   const PreconditionerFactoryBase<Scalar>                    &precFactory
   ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &fwdOp
-  ,PreconditionerBase<Scalar>                                *precOp
+  ,PreconditionerBase<Scalar>                                *prec
   ,const ESupportSolveUse                                    supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
   )
 {
-  precFactory.initializePrec(defaultLinearOpSource(fwdOp),precOp,supportSolveUse);
+  precFactory.initializePrec(defaultLinearOpSource(fwdOp),prec,supportSolveUse);
 }
+
 
 /** \brief Uninitialize a preconditioner and optionally extra what was used to
  * create it.
@@ -64,6 +68,25 @@ void uninitializePrec(
   if(fwdOp) *fwdOp = fwdOpSrc->getOp();
 }
 
+
+/** \brief Create and initialize a preconditioner from a forward linear operator.
+ */
+template <class Scalar>
+Teuchos::RefCountPtr<PreconditionerBase<Scalar> >
+prec(
+  const PreconditionerFactoryBase<Scalar>                    &precFactory
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &fwdOp
+  ,const ESupportSolveUse                                    supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
+  )
+{
+  Teuchos::RefCountPtr<PreconditionerBase<Scalar> >
+    prec = precFactory.createPrec();
+  precFactory.initializePrec(defaultLinearOpSource(fwdOp),&*prec,supportSolveUse);
+  return prec;
+}
+
+
 } // namespace Thyra
+
 
 #endif // THYRA_PRECONDITIONER_FACTORY_HELPERS_DECL_HPP

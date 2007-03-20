@@ -36,9 +36,9 @@
 #include "Teuchos_Time.hpp"
 #include "Teuchos_implicit_cast.hpp"
 
+
 namespace {
 
-Teuchos::RefCountPtr<Teuchos::Time> overallSolveTimer, individualSolveTimer;
 
 inline
 Teuchos::ETransp convert( Thyra::ETransp trans_in )
@@ -57,15 +57,19 @@ Teuchos::ETransp convert( Thyra::ETransp trans_in )
   return trans_out;
 }
 
+
 class SetAztecOStream {
 public:
   SetAztecOStream( 
     const Teuchos::RefCountPtr<AztecOO> &aztecSolver,
-    const Teuchos::RefCountPtr<Teuchos::FancyOStream> &fancyOStream
+    const Teuchos::RefCountPtr<Teuchos::FancyOStream> &fancyOStream,
+    const Teuchos::EVerbosityLevel verbLevel
     )
     :aztecSolver_(aztecSolver.assert_not_null())
     {
-      if(!is_null(fancyOStream)) {
+      verbLevel_ = verbLevel;
+      if( Teuchos::VERB_NONE != verbLevel_ ) {
+        if(!is_null(fancyOStream)) {
         // AztecOO puts in two tabs before it prints anything.  Therefore,
         // there is not much that we can do to improve the layout of the
         // indentation so just leave it!
@@ -82,27 +86,43 @@ public:
         // treading on each others print statements.  However, since the
         // AztecOO object is most likely owned by these Thyra wrappers, this
         // should not be a problem.
+        }
+      }
+      else {
+        outputFrequency_ = aztecSolver_->GetAllAztecOptions()[AZ_output];
+        aztecSolver_->SetAztecOption(AZ_output,0);
       }
     }
   ~SetAztecOStream()
     {
-      if(!is_null(fancyOStream_)) {
-        aztecSolver_->SetOutputStream(std::cout);
-        aztecSolver_->SetErrorStream(std::cerr);
-        *fancyOStream_ << "\n";
+      if( Teuchos::VERB_NONE != verbLevel_ ) {
+        if(!is_null(fancyOStream_)) {
+          aztecSolver_->SetOutputStream(std::cout);
+          aztecSolver_->SetErrorStream(std::cerr);
+          *fancyOStream_ << "\n";
+        }
+      }
+      else {
+        aztecSolver_->SetAztecOption(AZ_output,outputFrequency_);
       }
     }
 private:
   Teuchos::RefCountPtr<AztecOO> aztecSolver_;
   Teuchos::RefCountPtr<Teuchos::FancyOStream>  fancyOStream_;
+  Teuchos::EVerbosityLevel verbLevel_;
+  int outputFrequency_;
   SetAztecOStream(); // Not defined and not to be called!
 };
 
+
 } // namespace
+
 
 namespace Thyra {
 
+
 // Constructors/initializers/accessors
+
 
 AztecOOLinearOpWithSolve::AztecOOLinearOpWithSolve(
   const int       fwdDefaultMaxIterations
@@ -120,9 +140,8 @@ AztecOOLinearOpWithSolve::AztecOOLinearOpWithSolve(
   ,allowInexactFwdSolve_(false)
   ,allowInexactAdjSolve_(false)
   ,aztecSolverScalar_(0.0)
-{
-  initializeTimers();
-}
+{}
+
 
 void AztecOOLinearOpWithSolve::initialize(
   const Teuchos::RefCountPtr<const LinearOpBase<double> >                 &fwdOp
@@ -152,7 +171,11 @@ void AztecOOLinearOpWithSolve::initialize(
   aztecAdjSolver_ = aztecAdjSolver;
   allowInexactAdjSolve_ = allowInexactAdjSolve;
   aztecSolverScalar_ = aztecSolverScalar;
+  const std::string fwdOpLabel = fwdOp_->getObjectLabel();
+  if(fwdOpLabel.length())
+    this->setObjectLabel( "lows("+fwdOpLabel+")" );
 }
+
 
 Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
 AztecOOLinearOpWithSolve::extract_fwdOpSrc()
@@ -163,6 +186,7 @@ AztecOOLinearOpWithSolve::extract_fwdOpSrc()
   return _fwdOpSrc;
 }
 
+
 Teuchos::RefCountPtr<const PreconditionerBase<double> >
 AztecOOLinearOpWithSolve::extract_prec()
 {
@@ -172,10 +196,12 @@ AztecOOLinearOpWithSolve::extract_prec()
   return _prec;
 }
 
+
 bool AztecOOLinearOpWithSolve::isExternalPrec() const
 {
   return isExternalPrec_;
 }
+
 
 Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
 AztecOOLinearOpWithSolve::extract_approxFwdOpSrc()
@@ -186,17 +212,18 @@ AztecOOLinearOpWithSolve::extract_approxFwdOpSrc()
   return _approxFwdOpSrc;
 }
 
+
 void AztecOOLinearOpWithSolve::uninitialize(
-  Teuchos::RefCountPtr<const LinearOpBase<double> >                 *fwdOp
-  ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >          *fwdOpSrc
-  ,Teuchos::RefCountPtr<const PreconditionerBase<double> >          *prec
-  ,bool                                                             *isExternalPrec
-  ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >          *approxFwdOpSrc
-  ,Teuchos::RefCountPtr<AztecOO>                                    *aztecFwdSolver
-  ,bool                                                             *allowInexactFwdSolve
-  ,Teuchos::RefCountPtr<AztecOO>                                    *aztecAdjSolver
-  ,bool                                                             *allowInexactAdjSolve
-  ,double                                                           *aztecSolverScalar
+  Teuchos::RefCountPtr<const LinearOpBase<double> > *fwdOp,
+  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > *fwdOpSrc,
+  Teuchos::RefCountPtr<const PreconditionerBase<double> > *prec,
+  bool *isExternalPrec,
+  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > *approxFwdOpSrc,
+  Teuchos::RefCountPtr<AztecOO> *aztecFwdSolver,
+  bool *allowInexactFwdSolve,
+  Teuchos::RefCountPtr<AztecOO> *aztecAdjSolver,
+  bool *allowInexactAdjSolve,
+  double *aztecSolverScalar
   )
 {
   if(fwdOp) *fwdOp = fwdOp_;
@@ -222,7 +249,9 @@ void AztecOOLinearOpWithSolve::uninitialize(
   aztecSolverScalar_ = 0.0;
 }
 
+
 // Overridden from LinearOpBase
+
 
 Teuchos::RefCountPtr< const VectorSpaceBase<double> >
 AztecOOLinearOpWithSolve::range() const
@@ -230,11 +259,13 @@ AztecOOLinearOpWithSolve::range() const
   return ( fwdOp_.get() ? fwdOp_->range() : Teuchos::null );
 }
 
+
 Teuchos::RefCountPtr< const VectorSpaceBase<double> >
 AztecOOLinearOpWithSolve::domain() const
 {
   return  ( fwdOp_.get() ? fwdOp_->domain() : Teuchos::null );
 }
+
 
 Teuchos::RefCountPtr<const LinearOpBase<double> >
 AztecOOLinearOpWithSolve::clone() const
@@ -242,32 +273,112 @@ AztecOOLinearOpWithSolve::clone() const
   return Teuchos::null; // Not supported yet but could be
 }
 
+
 // Overridden from Teuchos::Describable
+
 
 std::string AztecOOLinearOpWithSolve::description() const
 {
   std::ostringstream oss;
-  oss << "Thyra::AztecOOLinearOpWithSolve";
+  oss << Teuchos::Describable::description();
   if(fwdOp_.get()) {
     oss << "{";
-    oss << "fwdOp=\'"<<fwdOp_->description()<<"\'";
+    oss << "fwdOp="<<fwdOp_->description()<<"";
     oss << "}";
   }
   return oss.str();
 }
 
+
+void AztecOOLinearOpWithSolve::describe(
+  Teuchos::FancyOStream &out,
+  const Teuchos::EVerbosityLevel verbLevel
+  ) const
+{
+  using Teuchos::OSTab;
+  using Teuchos::typeName;
+  using Teuchos::describe;
+  switch(verbLevel) {
+    case Teuchos::VERB_DEFAULT:
+    case Teuchos::VERB_LOW:
+      out << this->description() << std::endl;
+      break;
+    case Teuchos::VERB_MEDIUM:
+    case Teuchos::VERB_HIGH:
+    case Teuchos::VERB_EXTREME:
+    {
+      out
+        << Teuchos::Describable::description() << "{"
+        << "rangeDim=" << this->range()->dim()
+        << ",domainDim="<< this->domain()->dim() << "}\n";
+      OSTab tab(out);
+      if(!is_null(fwdOp_)) {
+        out << "fwdOp = " << describe(*fwdOp_,verbLevel);
+      }
+      if(!is_null(prec_)) {
+        out << "prec = " << describe(*prec_,verbLevel);
+      }
+      if(!is_null(aztecFwdSolver_)) {
+        if(aztecFwdSolver_->GetUserOperator())
+          out
+            << "Aztec Fwd Op = "
+            << typeName(*aztecFwdSolver_->GetUserOperator()) << "\n";
+        if(aztecFwdSolver_->GetUserMatrix())
+          out
+            << "Aztec Fwd Mat = "
+            << typeName(*aztecFwdSolver_->GetUserMatrix()) << "\n";
+        if(aztecFwdSolver_->GetPrecOperator())
+          out
+            << "Aztec Fwd Prec Op = "
+            << typeName(*aztecFwdSolver_->GetPrecOperator()) << "\n";
+        if(aztecFwdSolver_->GetPrecMatrix())
+          out
+            << "Aztec Fwd Prec Mat = "
+            << typeName(*aztecFwdSolver_->GetPrecMatrix()) << "\n";
+      }
+      if(!is_null(aztecAdjSolver_)) {
+        if(aztecAdjSolver_->GetUserOperator())
+          out
+            << "Aztec Adj Op = "
+            << typeName(*aztecAdjSolver_->GetUserOperator()) << "\n";
+        if(aztecAdjSolver_->GetUserMatrix())
+          out
+            << "Aztec Adj Mat = "
+            << typeName(*aztecAdjSolver_->GetUserMatrix()) << "\n";
+        if(aztecAdjSolver_->GetPrecOperator())
+          out
+            << "Aztec Adj Prec Op = "
+            << typeName(*aztecAdjSolver_->GetPrecOperator()) << "\n";
+        if(aztecAdjSolver_->GetPrecMatrix())
+          out
+            << "Aztec Adj Prec Mat = "
+            << typeName(*aztecAdjSolver_->GetPrecMatrix()) << "\n";
+      }
+      break;
+    }
+    default:
+      TEST_FOR_EXCEPT(true); // Should never get here!
+  }
+}
+
+
 // ToDo: Add more detailed describe() function override to show all of the good stuff!
+
 
 // protected
 
+
 // Overridden from SingleScalarLinearOpBase
+
 
 bool AztecOOLinearOpWithSolve::opSupported(ETransp M_trans) const
 {
   return ::Thyra::opSupported(*fwdOp_,M_trans);
 }
 
+
 // Overridden from SingleRhsLinearOpBase
+
 
 void AztecOOLinearOpWithSolve::apply(
   const ETransp                M_trans
@@ -280,7 +391,9 @@ void AztecOOLinearOpWithSolve::apply(
   Thyra::apply( *fwdOp_, M_trans, x, y, alpha, beta );
 }
 
+
 // Overridden from SingleScalarLinearOpWithSolveBase
+
 
 bool AztecOOLinearOpWithSolve::solveSupportsTrans(ETransp M_trans) const
 {
@@ -288,7 +401,10 @@ bool AztecOOLinearOpWithSolve::solveSupportsTrans(ETransp M_trans) const
   return (aztecAdjSolver_.get()!=NULL);
 }
 
-bool AztecOOLinearOpWithSolve::solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const
+
+bool AztecOOLinearOpWithSolve::solveSupportsSolveMeasureType(
+  ETransp M_trans, const SolveMeasureType& solveMeasureType
+  ) const
 {
   if(real_trans(M_trans)==NOTRANS) {
     return (
@@ -315,24 +431,26 @@ bool AztecOOLinearOpWithSolve::solveSupportsSolveMeasureType(ETransp M_trans, co
     );
 }
 
+
 // Overridden from SingleRhsLinearOpWithSolveBase
 
+
 void AztecOOLinearOpWithSolve::solve(
-  const ETransp                         M_trans
-  ,const MultiVectorBase<double>        &B
-  ,MultiVectorBase<double>              *X
-  ,const int                            numBlocks
-  ,const BlockSolveCriteria<double>     blockSolveCriteria[]
-  ,SolveStatus<double>                  blockSolveStatus[]
+  const ETransp                         M_trans,
+  const MultiVectorBase<double>        &B,
+  MultiVectorBase<double>              *X,
+  const int                            numBlocks,
+  const BlockSolveCriteria<double>     blockSolveCriteria[],
+  SolveStatus<double>                  blockSolveStatus[]
   ) const
 {
   using Teuchos::OSTab;
   typedef SolveCriteria<double>  SC;
   typedef SolveStatus<double>    SS;
 
+  TEUCHOS_FUNC_TIME_MONITOR("AztecOOLOWS");
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
-  Teuchos::TimeMonitor timeMonitor(*overallSolveTimer);
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream>  out = this->getOStream();
   Teuchos::EVerbosityLevel                     verbLevel = this->getVerbLevel();
@@ -409,7 +527,9 @@ void AztecOOLinearOpWithSolve::solve(
   const int m = B.domain()->dim();
 
   for( int j = 0; j < m; ++j ) {
-    Teuchos::TimeMonitor timeMonitor(*individualSolveTimer);
+
+    TEUCHOS_FUNC_TIME_MONITOR("AztecOOLOWS:SingeSolve");
+
     //
     // Get Epetra_Vector views of B(:,j) and X(:,j)
     // How this is done will depend on whether we have a true Epetra operator
@@ -450,7 +570,7 @@ void AztecOOLinearOpWithSolve::solve(
     //
     timer.start(true);
     {
-      SetAztecOStream setAztecOStream(aztecSolver,out);
+      SetAztecOStream setAztecOStream(aztecSolver,out,verbLevel);
       aztecSolver->Iterate( maxIterations, tol ); // We ignore the returned status but get it below
     }
     timer.stop();
@@ -550,15 +670,6 @@ void AztecOOLinearOpWithSolve::solve(
       << "\nTotal solve time = "<<totalTimer.totalElapsedTime()<<" sec\n";
 }
 
-// private
-
-void AztecOOLinearOpWithSolve::initializeTimers()
-{
-  if(!overallSolveTimer.get()) {
-    overallSolveTimer    = Teuchos::TimeMonitor::getNewTimer("AztecOOLOWS");
-    individualSolveTimer = Teuchos::TimeMonitor::getNewTimer("AztecOOLOWS:SingleSolve");
-  }
-}
 
 }	// end namespace Thyra
 

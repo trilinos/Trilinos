@@ -157,6 +157,10 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   if (rangeMap != 0 && domainMap != 0) {
     A->FillComplete(*domainMap, *rangeMap);
   }
+  else if (M!=N) {
+    Epetra_Map newDomainMap(N,rowMap1.IndexBase(), comm);
+    A->FillComplete(newDomainMap, rowMap1);
+  }
   else {
     A->FillComplete();
   }

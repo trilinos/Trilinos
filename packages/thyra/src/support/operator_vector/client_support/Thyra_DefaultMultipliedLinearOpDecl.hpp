@@ -35,7 +35,9 @@
 #include "Teuchos_arrayArg.hpp"
 #include "Teuchos_Handleable.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Concrete composite <tt>LinearOpBase</tt> subclass that creates an
  * implicitly multiplied linear operator out of one or more constituent
@@ -106,9 +108,9 @@ namespace Thyra {
  */
 template<class Scalar>
 class DefaultMultipliedLinearOp
-  : virtual public MultipliedLinearOpBase<Scalar>        // Public interface
-  , virtual protected SingleScalarLinearOpBase<Scalar>   // Implementation detail
-  , virtual public Teuchos::Handleable<LinearOpBase<Scalar> >
+  : virtual public MultipliedLinearOpBase<Scalar>,        // Public interface
+    virtual protected SingleScalarLinearOpBase<Scalar>,   // Implementation detail
+    virtual public Teuchos::Handleable<LinearOpBase<Scalar> >
 {
 public:
   /* */
@@ -134,8 +136,8 @@ public:
    * functions described \ref Thyra_Op_Vec_MultipliedLinearOp_helpers_grp "here".
    */
   DefaultMultipliedLinearOp(
-    const int                                                   numOps
-    ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]
+    const int numOps,
+    const Teuchos::RefCountPtr<LinearOpBase<Scalar> > Ops[]
     );
 
   /** Calls <tt>initialize()</tt>.
@@ -144,8 +146,8 @@ public:
    * functions described \ref Thyra_Op_Vec_MultipliedLinearOp_helpers_grp "here".
    */
   DefaultMultipliedLinearOp(
-    const int                                                   numOps
-    ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    Ops[]
+    const int numOps,
+    const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > Ops[]
     );
 
   /** \brief Initialize given a list of non-const linear operators.
@@ -168,8 +170,8 @@ public:
    * </ul>
    */
   void initialize(
-    const int                                                   numOps
-    ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]
+    const int numOps,
+    const Teuchos::RefCountPtr<LinearOpBase<Scalar> > Ops[]
     );
 
   /** \brief Initialize given a list of const linear operators.
@@ -192,8 +194,8 @@ public:
    * </ul>
    */
   void initialize(
-    const int                                                   numOps
-    ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    Ops[]
+    const int numOps,
+    const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > Ops[]
     );
 
   /** \brief Set to uninitialized.
@@ -254,8 +256,8 @@ public:
    * ToDo: Finish documentation!
    */
   void describe(
-    Teuchos::FancyOStream                &out
-    ,const Teuchos::EVerbosityLevel      verbLevel
+    Teuchos::FancyOStream &out,
+    const Teuchos::EVerbosityLevel verbLevel
     ) const;
 
   //@}
@@ -272,27 +274,29 @@ protected:
 
   /** \brief . */
   void apply(
-    const ETransp                     M_trans
-    ,const MultiVectorBase<Scalar>    &X
-    ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                     alpha
-    ,const Scalar                     beta
+    const ETransp M_trans,
+    const MultiVectorBase<Scalar> &X,
+    MultiVectorBase<Scalar> *Y,
+    const Scalar alpha,
+    const Scalar beta
     ) const;
 
   //@}
 
 private:
 
-  std::vector<Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > >   Ops_;
+  Teuchos::Array<Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > > Ops_;
 
   void assertInitialized() const;
   void validateOps();
+  void setupDefaultObjectLabel();
 
   // Not defined and not to be called
   DefaultMultipliedLinearOp(const DefaultMultipliedLinearOp&);
   DefaultMultipliedLinearOp& operator=(const DefaultMultipliedLinearOp&);
 
 };
+
 
 /** \brief Form an implicit multiplication of two linear operators: <tt>M = A * B</tt>.
  *
@@ -301,9 +305,11 @@ private:
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
 nonconstMultiply(
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &B
+  const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &A,
+  const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &B,
+  const std::string &M_label = ""
   );
+
 
 /** \brief Form an implicit multiplication of two linear operators: <tt>M = A * B</tt>.
  *
@@ -312,9 +318,25 @@ nonconstMultiply(
 template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
 multiply(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &B
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &A,
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &B,
+  const std::string &M_label = ""
   );
+
+
+/** \brief Form an implicit multiplication of three linear operators: <tt>M = A * B * C</tt>.
+ *
+ * \relates DefaultMultipliedLinearOp
+ */
+template<class Scalar>
+Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+multiply(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &A,
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &B,
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &C,
+  const std::string &M_label = ""
+  );
+
 
 // /////////////////////////////////
 // Inline members

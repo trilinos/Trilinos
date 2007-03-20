@@ -66,31 +66,34 @@ public:
 
   /** \brief Calls <tt>this->initialize()</tt>. */
   AmesosLinearOpWithSolve(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> >          &fwdOp
-    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >   &fwdOpSrc
-    ,const Teuchos::RefCountPtr<Epetra_LinearProblem>                &epetraLP
-    ,const Teuchos::RefCountPtr<Amesos_BaseSolver>                   &amesosSolver
-    ,const ETransp                                                   amesosSolverTransp
-    ,const double                                                    amesosSolverScalar
+    const Teuchos::RefCountPtr<const LinearOpBase<double> > &fwdOp,
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOpSrc,
+    const Teuchos::RefCountPtr<Epetra_LinearProblem> &epetraLP,
+    const Teuchos::RefCountPtr<Amesos_BaseSolver> &amesosSolver,
+    const ETransp amesosSolverTransp,
+    const double amesosSolverScalar
     );
 
   /** \brief First initialization.
    *
    * \param  fwdOp
-   *                    [in] The forward operator for which the factorization exists.
-   * \param  epetraLP   [in] The <tt>Epetra_LinearProblem</tt> object that was
-   *                    used to create the <tt>Amesos_BaseSolver</tt> object
-   *                    <tt>*amesosSolver</tt>.  Note that the RHS and the LHS
-   *                    multi-vector pointers in this object will be set and unset
-   *                    here.
+   *           [in] The forward operator for which the factorization exists.
+   * \param  epetraLP
+   *           [in] The <tt>Epetra_LinearProblem</tt> object that was used to
+   *           create the <tt>Amesos_BaseSolver</tt> object
+   *           <tt>*amesosSolver</tt>.  Note that the RHS and the LHS
+   *           multi-vector pointers in this object will be set and unset
+   *           here.
    * \param  amesosSolver
-   *                    [in] Contains the factored, and ready to go, <tt>Amesos_BaseSolver</tt>
-   *                    object ready to solve linear system.
+   *           [in] Contains the factored, and ready to go,
+   *           <tt>Amesos_BaseSolver</tt> object ready to solve linear system.
    * \param  amesosSolverTransp
-   *                    [in] Determines if the %Amesos solver should be used as its transpose or not.
+   *           [in] Determines if the %Amesos solver should be used as its
+   *           transpose or not.
    * \param  amesosSolverScalar
-   *                    [in] Determines the scaling factor associated with the %Amesos solver.  The solution
-   *                    to the linear solve is scaled by <tt>1/amesosSolverScalar</tt>.
+   *           [in] Determines the scaling factor associated with the %Amesos
+   *           solver.  The solution to the linear solve is scaled by
+   *           <tt>1/amesosSolverScalar</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>fwdOp.get()!=NULL</tt>
@@ -112,12 +115,12 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> >          &fwdOp
-    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >   &fwdOpSrc
-    ,const Teuchos::RefCountPtr<Epetra_LinearProblem>                &epetraLP
-    ,const Teuchos::RefCountPtr<Amesos_BaseSolver>                   &amesosSolver
-    ,const ETransp                                                   amesosSolverTransp
-    ,const double                                                    amesosSolverScalar
+    const Teuchos::RefCountPtr<const LinearOpBase<double> > &fwdOp,
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOpSrc,
+    const Teuchos::RefCountPtr<Epetra_LinearProblem> &epetraLP,
+    const Teuchos::RefCountPtr<Amesos_BaseSolver> &amesosSolver,
+    const ETransp amesosSolverTransp,
+    const double amesosSolverScalar
     );
 
   /** \brief Extract the <tt>LinearOpSourceBase<double></tt> object so that it can be modified.
@@ -150,12 +153,12 @@ public:
   /** \brief Uninitialize.
    */
   void uninitialize(
-    Teuchos::RefCountPtr<const LinearOpBase<double> >          *fwdOp              = NULL
-    ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >   *fwdOpSrc           = NULL
-    ,Teuchos::RefCountPtr<Epetra_LinearProblem>                *epetraLP           = NULL
-    ,Teuchos::RefCountPtr<Amesos_BaseSolver>                   *amesosSolver       = NULL
-    ,ETransp                                                   *amesosSolverTransp = NULL
-    ,double                                                    *amesosSolverScalar = NULL
+    Teuchos::RefCountPtr<const LinearOpBase<double> > *fwdOp = NULL,
+    Teuchos::RefCountPtr<const LinearOpSourceBase<double> > *fwdOpSrc = NULL,
+    Teuchos::RefCountPtr<Epetra_LinearProblem> *epetraLP = NULL,
+    Teuchos::RefCountPtr<Amesos_BaseSolver> *amesosSolver = NULL,
+    ETransp *amesosSolverTransp = NULL,
+    double *amesosSolverScalar = NULL
     );
   
   //@}
@@ -174,6 +177,11 @@ public:
   //@{
   /** \brief . */
   std::string description() const;
+  /** \brief . */
+  void describe(
+    Teuchos::FancyOStream &out,
+    const Teuchos::EVerbosityLevel verbLevel
+    ) const;
   //@}
 
 protected:
@@ -184,11 +192,11 @@ protected:
   bool opSupported(ETransp M_trans) const;
   /** \brief . */
   void apply(
-    const ETransp                     M_trans
-    ,const MultiVectorBase<double>    &X
-    ,MultiVectorBase<double>          *Y
-    ,const double                     alpha
-    ,const double                     beta
+    const ETransp M_trans,
+    const MultiVectorBase<double> &X,
+    MultiVectorBase<double> *Y,
+    const double alpha,
+    const double beta
     ) const;
   //@}
 
@@ -197,30 +205,30 @@ protected:
   /** \brief . */
   bool solveSupportsTrans(ETransp M_trans) const;
   /** \brief . */
-  bool solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const;
+  bool solveSupportsSolveMeasureType(
+    ETransp M_trans, const SolveMeasureType& solveMeasureType
+    ) const;
   /** \brief . */
   void solve(
-    const ETransp                              M_trans
-    ,const MultiVectorBase<double>             &B
-    ,MultiVectorBase<double>                   *X
-    ,const int                                 numBlocks
-    ,const BlockSolveCriteria<double>          blockSolveCriteria[]
-    ,SolveStatus<double>                       blockSolveStatus[]
+    const ETransp M_trans,
+    const MultiVectorBase<double> &B,
+    MultiVectorBase<double> *X,
+    const int numBlocks,
+    const BlockSolveCriteria<double> blockSolveCriteria[],
+    SolveStatus<double> blockSolveStatus[]
     ) const;
   //@}
 
 private:
 
-  Teuchos::RefCountPtr<const LinearOpBase<double> >         fwdOp_;
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> >   fwdOpSrc_;
-  Teuchos::RefCountPtr<Epetra_LinearProblem>                epetraLP_;
-  Teuchos::RefCountPtr<Amesos_BaseSolver>                   amesosSolver_;
-  ETransp                                                   amesosSolverTransp_;
-  double                                                    amesosSolverScalar_;
+  Teuchos::RefCountPtr<const LinearOpBase<double> > fwdOp_;
+  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > fwdOpSrc_;
+  Teuchos::RefCountPtr<Epetra_LinearProblem> epetraLP_;
+  Teuchos::RefCountPtr<Amesos_BaseSolver> amesosSolver_;
+  ETransp amesosSolverTransp_;
+  double amesosSolverScalar_;
 
   void assertInitialized() const;
-
-  static void initializeTimers();
 
 };
 

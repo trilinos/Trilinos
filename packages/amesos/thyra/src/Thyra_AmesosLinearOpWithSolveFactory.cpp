@@ -38,6 +38,7 @@
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 #ifdef HAVE_AMESOS_KLU
 #include "Amesos_Klu.h"
@@ -78,8 +79,6 @@
 
 namespace {
 
-Teuchos::RefCountPtr<Teuchos::Time> overallTimer, constructTimer, symbolicTimer, factorTimer;
-
 const std::string epetraFwdOp_str = "epetraFwdOp";
 
 } // namespace
@@ -118,9 +117,7 @@ AmesosLinearOpWithSolveFactory::AmesosLinearOpWithSolveFactory(
   ,solverType_(solverType)
   ,refactorizationPolicy_(refactorizationPolicy)
   ,throwOnPrecInput_(throwOnPrecInput)
-{
-  initializeTimers();
-}
+{}
 
 // Overridden from LinearOpWithSolveFactoryBase
 
@@ -156,7 +153,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
   ,const ESupportSolveUse                                          supportSolveUse
   ) const
 {
-  Teuchos::TimeMonitor overallTimeMonitor(*overallTimer);
+  TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWSF");
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
 #endif
@@ -208,7 +205,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     Teuchos::RefCountPtr<Amesos_BaseSolver>
       amesosSolver;
     {
-      Teuchos::TimeMonitor constructTimeMonitor(*constructTimer);
+      TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWSF:InitConstruct");
       switch(solverType_) {
         case Thyra::Amesos::LAPACK :
           amesosSolver = Teuchos::rcp(new Amesos_Lapack(*epetraLP));
@@ -279,14 +276,14 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     if(paramList_.get()) amesosSolver->SetParameters(paramList_->sublist("Amesos Settings"));
     // Do the initial factorization
     {
-      Teuchos::TimeMonitor symbolicTimeMonitor(*symbolicTimer);
+      TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWSF:Symbolic");
       const int err = amesosSolver->SymbolicFactorization();
       TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
         "Error, SymbolicFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
         "returned error code "<<err<<"!" );
     }
     {
-      Teuchos::TimeMonitor factorTimeMonitor(*factorTimer);
+      TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWSF:Factor");
       const int err = amesosSolver->NumericFactorization();
       TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
         "Error, NumericFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
@@ -313,19 +310,23 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     if(paramList_.get()) amesosSolver->SetParameters(paramList_->sublist(Amesos_Settings_name));
     // Repivot if asked
     if(refactorizationPolicy_==Amesos::REPIVOT_ON_REFACTORIZATION) {
-      Teuchos::TimeMonitor symbolicTimeMonitor(*symbolicTimer);
+      TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWSF:Symbolic");
       const int err = amesosSolver->SymbolicFactorization();
       TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
         "Error, SymbolicFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
         "returned error code "<<err<<"!" );
     }
     {
-      Teuchos::TimeMonitor factorTimeMonitor(*factorTimer);
+      TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWSF::Factor");
       const int err = amesosSolver->NumericFactorization();
       TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
         "Error, NumericFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
         "returned error code "<<err<<"!" );
     }
+    /* ToDo: Put this back in once PrintStatus accepts an std::ostream!
+    OsTab tab(out);
+    amesosSolver->PrintStatus()
+    */
     // Reinitialize the LOWS object and we are done! (we must do this to get the
     // possibly new transpose and scaling factors back in)
     amesosOp->initialize(fwdOp,fwdOpSrc,epetraLP,amesosSolver,epetraFwdOpTransp,epetraFwdOpScalar);
@@ -427,6 +428,7 @@ void AmesosLinearOpWithSolveFactory::setParameterList(
       ,paramList_->name()+"->"+RefactorizationPolicy_name
       );
   throwOnPrecInput_ = paramList_->get(ThrowOnPreconditionerInput_name,throwOnPrecInput_);
+  Teuchos::readVerboseObjectSublist(&*paramList_,this);
 }
 
 Teuchos::RefCountPtr<Teuchos::ParameterList>
@@ -468,17 +470,6 @@ std::string AmesosLinearOpWithSolveFactory::description() const
 
 // private
 
-
-void AmesosLinearOpWithSolveFactory::initializeTimers()
-{
-  if(!overallTimer.get()) {
-    overallTimer    = Teuchos::TimeMonitor::getNewTimer("AmesosLOWSF");
-    constructTimer  = Teuchos::TimeMonitor::getNewTimer("AmesosLOWSF:InitConstruct");
-    symbolicTimer   = Teuchos::TimeMonitor::getNewTimer("AmesosLOWSF:Symbolic");
-    factorTimer     = Teuchos::TimeMonitor::getNewTimer("AmesosLOWSF:Factor");
-  }
-}
-
 Teuchos::RefCountPtr<const Teuchos::ParameterList>
 AmesosLinearOpWithSolveFactory::generateAndGetValidParameters()
 {
@@ -496,6 +487,7 @@ AmesosLinearOpWithSolveFactory::generateAndGetValidParameters()
     validParamList->set(RefactorizationPolicy_name,Amesos::toString(Amesos::REPIVOT_ON_REFACTORIZATION));
     validParamList->set(ThrowOnPreconditionerInput_name,bool(true));
     validParamList->sublist(Amesos_Settings_name).setParameters(::Amesos::GetValidParameters());
+    Teuchos::setupVerboseObjectSublist(&*validParamList);
   }
   return validParamList;
 }

@@ -19,43 +19,36 @@
 //  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307// USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_Describable.hpp"
-#include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_LabeledObject.hpp"
 
 
 namespace Teuchos {
 
 
-const EVerbosityLevel Describable::verbLevel_default = VERB_DEFAULT;
+LabeledObject::LabeledObject()
+  : objectLabel_("")
+{}
 
 
-std::string Describable::description() const
+LabeledObject::~LabeledObject()
+{}
+
+
+void LabeledObject::setObjectLabel( const std::string &objectLabel )
 {
-  std::string objectLabel = this->getObjectLabel();
-  std::ostringstream oss;
-  if(objectLabel.length()) {
-    oss << "\""<<objectLabel<<"\": ";
-  }
-  oss << typeName(*this);
-  return oss.str();
+  objectLabel_ = objectLabel;
 }
 
 
-void Describable::describe(
-	FancyOStream                &out_arg
-	,const EVerbosityLevel      verbLevel
-	) const
+std::string LabeledObject::getObjectLabel() const
 {
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
-  OSTab tab(out);
-  *out << this->description() << std::endl;
+  return objectLabel_;
 }
 
 

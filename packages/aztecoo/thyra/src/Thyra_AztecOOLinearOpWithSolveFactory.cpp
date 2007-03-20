@@ -37,6 +37,7 @@
 #include "Thyra_EpetraLinearOpBase.hpp"
 #include "Thyra_EpetraOperatorWrapper.hpp"
 #include "EpetraExt_ProductOperator.h"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "AztecOOParameterList.hpp"
@@ -264,6 +265,7 @@ void AztecOOLinearOpWithSolveFactory::setParameterList(Teuchos::RefCountPtr<Teuc
       precFactory_->setParameterList(Teuchos::sublist(paramList_,precFactoryName_));
     }
   }
+  Teuchos::readVerboseObjectSublist(&*paramList_,this);
 }
 
 Teuchos::RefCountPtr<Teuchos::ParameterList>
@@ -364,6 +366,7 @@ void AztecOOLinearOpWithSolveFactory::updateThisValidParamList()
       thisValidParamList_->sublist(precFactoryName_).setParameters(*precFactoryValidParamList);
     }
   }
+  Teuchos::setupVerboseObjectSublist(&*thisValidParamList_);
 }
 
 void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
@@ -404,25 +407,21 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   Teuchos::RefCountPtr<const LinearOpBase<double> > approxFwdOp;
 
   // 
-  // Determine whether the operator is an Epetra operator. If so, we're good to go.
-  // If not, we need to wrap it. 
+  // Determine whether the operators are EpetraLinearOp objects. If so, we're
+  // good to go.  If not, we need to wrap it.
   //
-  const EpetraLinearOpBase* epFwdOp 
-    = dynamic_cast<const EpetraLinearOpBase*>(tmpFwdOp.get());
 
-  //const EpetraLinearOpBase* epApproxFwdOp 
-  //  = dynamic_cast<const EpetraLinearOpBase*>(tmpApproxFwdOp.get());
-  
-  if (epFwdOp!=0)
-    {
-      fwdOp = tmpFwdOp;
-      approxFwdOp = tmpApproxFwdOp;
-    }
+  if ( dynamic_cast<const EpetraLinearOpBase*>(tmpFwdOp.get())!=0 )
+  {
+    fwdOp = tmpFwdOp;
+    approxFwdOp = tmpApproxFwdOp;
+  }
   else
-    {
-      fwdOp = makeEpetraWrapper(ConstLinearOperator<double>(tmpFwdOp));
-      if (tmpApproxFwdOp.get()) approxFwdOp = makeEpetraWrapper(ConstLinearOperator<double>(tmpApproxFwdOp));
-    }
+  {
+    fwdOp = makeEpetraWrapper(ConstLinearOperator<double>(tmpFwdOp));
+    if (tmpApproxFwdOp.get() && dynamic_cast<const EpetraLinearOpBase*>(&*tmpApproxFwdOp.get()) )
+      approxFwdOp = makeEpetraWrapper(ConstLinearOperator<double>(tmpApproxFwdOp));
+  }
   
   //
   // Get the AztecOOLinearOpWithSolve object
@@ -507,7 +506,14 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   EAdjointEpetraOp                             epetra_epetraPrecOpAdjointSupport;
   ETransp                                      overall_epetra_epetraPrecOpTransp;
   if(rightPrecOp.get()) {
-    unwrap(rightPrecOp,&wrappedPrecOpScalar,&wrappedPrecOpTransp,&wrappedPrecOp);
+    RefCountPtr<const LinearOpBase<double> > tmpWrappedPrecOp;
+    unwrap(rightPrecOp,&wrappedPrecOpScalar,&wrappedPrecOpTransp,&tmpWrappedPrecOp);
+    if( dynamic_cast<const EpetraLinearOpBase*>(&*tmpWrappedPrecOp) ) {
+      wrappedPrecOp = tmpWrappedPrecOp;
+    }
+    else {
+      wrappedPrecOp = makeEpetraWrapper(ConstLinearOperator<double>(tmpWrappedPrecOp));
+    }
     epetraPrecOp = rcp_dynamic_cast<const EpetraLinearOpBase>(wrappedPrecOp,true);
     epetraPrecOp->getEpetraOpView(&epetra_epetraPrecOp,&epetra_epetraPrecOpTransp,&epetra_epetraPrecOpApplyAs,&epetra_epetraPrecOpAdjointSupport);
     TEST_FOR_EXCEPTION(

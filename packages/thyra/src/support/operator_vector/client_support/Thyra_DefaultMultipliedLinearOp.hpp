@@ -33,14 +33,18 @@
 #include "Thyra_AssertOp.hpp"
 #include "Teuchos_Utils.hpp"
 
+
 namespace Thyra {
 
+
 // Constructors/initializers/accessors
+
 
 template<class Scalar>
 DefaultMultipliedLinearOp<Scalar>::DefaultMultipliedLinearOp()
 {}
 
+
 template<class Scalar>
 DefaultMultipliedLinearOp<Scalar>::DefaultMultipliedLinearOp(
   const int                                                   numOps
@@ -50,6 +54,7 @@ DefaultMultipliedLinearOp<Scalar>::DefaultMultipliedLinearOp(
   initialize(numOps,Ops);
 }
 
+
 template<class Scalar>
 DefaultMultipliedLinearOp<Scalar>::DefaultMultipliedLinearOp(
   const int                                                   numOps
@@ -58,6 +63,7 @@ DefaultMultipliedLinearOp<Scalar>::DefaultMultipliedLinearOp(
 {
   initialize(numOps,Ops);
 }
+
 
 template<class Scalar>
 void DefaultMultipliedLinearOp<Scalar>::initialize(
@@ -69,7 +75,9 @@ void DefaultMultipliedLinearOp<Scalar>::initialize(
   for( int k = 0; k < numOps; ++k )
     Ops_[k].initialize(Ops[k]);
   validateOps();
+  setupDefaultObjectLabel();
 }
+
 
 template<class Scalar>
 void DefaultMultipliedLinearOp<Scalar>::initialize(
@@ -81,21 +89,27 @@ void DefaultMultipliedLinearOp<Scalar>::initialize(
   for( int k = 0; k < numOps; ++k )
     Ops_[k].initialize(Ops[k]);
   validateOps();
+  setupDefaultObjectLabel();
 }
+
 
 template<class Scalar>
 void DefaultMultipliedLinearOp<Scalar>::uninitialize()
 {
   Ops_.resize(0);
+  setupDefaultObjectLabel();
 }
 
+
 // Overridden form MultipliedLinearOpBase
+
 
 template<class Scalar>
 int DefaultMultipliedLinearOp<Scalar>::numOps() const
 {
   return Ops_.size();
 }
+
 
 template<class Scalar>
 bool DefaultMultipliedLinearOp<Scalar>::opIsConst(const int k) const
@@ -105,6 +119,7 @@ bool DefaultMultipliedLinearOp<Scalar>::opIsConst(const int k) const
 #endif
   return Ops_[k].isConst();
 }
+
 
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
@@ -116,6 +131,7 @@ DefaultMultipliedLinearOp<Scalar>::getNonconstOp(const int k)
   return Ops_[k].getNonconstObj();
 }
 
+
 template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
 DefaultMultipliedLinearOp<Scalar>::getOp(const int k) const
@@ -126,7 +142,9 @@ DefaultMultipliedLinearOp<Scalar>::getOp(const int k) const
   return Ops_[k].getConstObj();
 }
 
+
 // Overridden from LinearOpBase
+
 
 template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
@@ -136,6 +154,7 @@ DefaultMultipliedLinearOp<Scalar>::range() const
   return getOp(0)->range();
 }
 
+
 template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
 DefaultMultipliedLinearOp<Scalar>::domain() const
@@ -144,6 +163,7 @@ DefaultMultipliedLinearOp<Scalar>::domain() const
   return getOp(numOps()-1)->domain();
 }
 
+
 template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
 DefaultMultipliedLinearOp<Scalar>::clone() const
@@ -151,7 +171,9 @@ DefaultMultipliedLinearOp<Scalar>::clone() const
   return Teuchos::null; // Not supported yet but could be!
 }
 
+
 // Overridden from Teuchos::Describable
+
                                                 
 template<class Scalar>
 std::string DefaultMultipliedLinearOp<Scalar>::description() const
@@ -159,7 +181,7 @@ std::string DefaultMultipliedLinearOp<Scalar>::description() const
   assertInitialized();
   typedef Teuchos::ScalarTraits<Scalar>  ST;
   std::ostringstream oss;
-  oss << "Thyra::DefaultMultipliedLinearOp<" << ST::name() << ">{numOps = "<<numOps()<<"}";
+  oss << Teuchos::Describable::description() << "{numOps = "<<numOps()<<"}";
   return oss.str();
 }
 
@@ -187,16 +209,16 @@ void DefaultMultipliedLinearOp<Scalar>::describe(
     case Teuchos::VERB_EXTREME:
     {
       *out
-        << "Thyra::DefaultMultipliedLinearOp<" << ST::name() << ">{"
+        << Teuchos::Describable::description() << "{"
         << "rangeDim=" << this->range()->dim()
         << ",domainDim="<< this->domain()->dim() << "}\n";
       OSTab tab(out);
       *out
-        <<  "numOps="<< numOps << std::endl
+        <<  "numOps = "<< numOps << std::endl
         <<  "Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:\n";
       tab.incrTab();
       for( int k = 0; k < numOps; ++k ) {
-        *out << "Op["<<k<<"] =\n" << Teuchos::describe(*getOp(k),verbLevel);
+        *out << "Op["<<k<<"] = " << Teuchos::describe(*getOp(k),verbLevel);
       }
       break;
     }
@@ -205,9 +227,12 @@ void DefaultMultipliedLinearOp<Scalar>::describe(
   }
 }
 
+
 // protected
 
+
 // Overridden from SingleScalarLinearOpBase
+
 
 template<class Scalar>
 bool DefaultMultipliedLinearOp<Scalar>::opSupported(ETransp M_trans) const
@@ -218,6 +243,7 @@ bool DefaultMultipliedLinearOp<Scalar>::opSupported(ETransp M_trans) const
   return opSupported;
   // ToDo: Cache these?
 }
+
 
 template<class Scalar>
 void DefaultMultipliedLinearOp<Scalar>::apply(
@@ -277,7 +303,9 @@ void DefaultMultipliedLinearOp<Scalar>::apply(
   }
 }
 
+
 // private
+
 
 template<class Scalar>
 void DefaultMultipliedLinearOp<Scalar>::validateOps()
@@ -305,40 +333,95 @@ void DefaultMultipliedLinearOp<Scalar>::validateOps()
 #endif
 }
 
+
+template<class Scalar>
+void DefaultMultipliedLinearOp<Scalar>::setupDefaultObjectLabel()
+{
+  std::ostringstream label;
+  const int numOps = Ops_.size();
+  for( int k = 0; k < numOps; ++k ) {
+    std::string Op_k_label = Ops_[k].getConstObj()->getObjectLabel();
+    if (Op_k_label.length() == 0)
+      Op_k_label = "ANYM";
+    if (k > 0)
+      label << "*";
+    label << "("<<Op_k_label<<")";
+  }
+  this->setObjectLabel(label.str());
+  validateOps();
+}
+
 }	// end namespace Thyra
+
 
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstMultiply(
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &B
+  const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &A,
+  const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &B,
+  const std::string &M_label
   )
 {
   using Teuchos::arrayArg;
   using Teuchos::RefCountPtr;
-  return Teuchos::rcp(
+  Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+    multOp = Teuchos::rcp(
     new DefaultMultipliedLinearOp<Scalar>(
       2
       ,arrayArg<RefCountPtr<LinearOpBase<Scalar> > >(A,B)()
       )
     );
+  if(M_label.length())
+    multOp->setObjectLabel(M_label);
+  return multOp;
 }
+
 
 template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
 Thyra::multiply(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &B
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &A,
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &B,
+  const std::string &M_label
   )
 {
   using Teuchos::arrayArg;
   using Teuchos::RefCountPtr;
-  return Teuchos::rcp(
+  Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+    multOp = Teuchos::rcp(
     new DefaultMultipliedLinearOp<Scalar>(
       2
       ,arrayArg<RefCountPtr<const LinearOpBase<Scalar> > >(A,B)()
       )
     );
+  if(M_label.length())
+    multOp->setObjectLabel(M_label);
+  return multOp;
 }
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+Thyra::multiply(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &A,
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &B,
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &C,
+  const std::string &M_label
+  )
+{
+  using Teuchos::arrayArg;
+  using Teuchos::RefCountPtr;
+  Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+    multOp = Teuchos::rcp(
+    new DefaultMultipliedLinearOp<Scalar>(
+      3
+      ,arrayArg<RefCountPtr<const LinearOpBase<Scalar> > >(A,B,C)()
+      )
+    );
+  if(M_label.length())
+    multOp->setObjectLabel(M_label);
+  return multOp;
+}
+
 
 #endif	// THYRA_DEFAULT_MULTIPLICATIVE_LINEAR_OP_HPP

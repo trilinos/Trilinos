@@ -30,7 +30,7 @@ EXEEXT = .exe
 
 # The following line helps the test harness recover from build errors.
 
-all-local: generate-sample-output.pl
+all-local: generate-sample-output.pl amesos.klu.xml MixedOrderPhysicsBasedPreconditioner.Base.xml
 	@echo ""
 	@echo "Trilinos package stratimikos subdirectory example built successfully."
 	@echo ""
@@ -39,17 +39,17 @@ generate-sample-output.pl : generate-sample-output.pl.stub
 	cp generate-sample-output.pl.stub generate-sample-output.pl
 	chmod a+x generate-sample-output.pl
 
-
 #
 # Actual programs
 #
 
 SIMPLE_STRATIMIKOS_EXAMPLE = simple_stratimikos_example
+MIXED_ORDER_PHYSICS_BASED_PRECONDITIONER = MixedOrderPhysicsBasedPreconditioner
 
-noinst_PROGRAMS = $(SIMPLE_STRATIMIKOS_EXAMPLE)
+noinst_PROGRAMS = $(SIMPLE_STRATIMIKOS_EXAMPLE) $(MIXED_ORDER_PHYSICS_BASED_PRECONDITIONER)
 
 simple_stratimikos_example_SOURCES = $(srcdir)/simple_stratimikos_example.cpp
-simple_stratimikos_example_DEPENDENCIES = $(common_dependencies) amesos.klu.xml
+simple_stratimikos_example_DEPENDENCIES = $(common_dependencies)
 simple_stratimikos_example_LDADD = $(common_ldadd)
 
 amesos.klu.xml:
@@ -59,6 +59,23 @@ amesos.klu.xml:
 	cp $(srcdir)/_belos.ifpack.xml belos.ifpack.xml
 	cp $(srcdir)/_belos.ifpack.xml belos.ml.xml
 	cp $(top_srcdir)/../amesos/test/Test_Basic/In_FourByFour.mtx FourByFour.mtx
+
+MixedOrderPhysicsBasedPreconditioner_SOURCES = $(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp
+MixedOrderPhysicsBasedPreconditioner_DEPENDENCIES = $(common_dependencies)
+MixedOrderPhysicsBasedPreconditioner_LDADD = $(common_ldadd)
+
+MixedOrderPhysicsBasedPreconditioner.Base.xml:
+	cp $(srcdir)/_MixedOrderPhysicsBasedPreconditioner.Base.xml MixedOrderPhysicsBasedPreconditioner.Base.xml
+	cp $(srcdir)/_MixedOrderPhysicsBasedPreconditioner.AllSolveOutput.xml MixedOrderPhysicsBasedPreconditioner.AllSolveOutput.xml
+	cp $(srcdir)/_MixedOrderPhysicsBasedPreconditioner.P2SolveOutputMSolveOutputToFile.xml MixedOrderPhysicsBasedPreconditioner.P2SolveOutputMSolveOutputToFile.xml
+	cp $(srcdir)/_MixedOrderPhysicsBasedPreconditioner.P2SolveOutput.xml MixedOrderPhysicsBasedPreconditioner.P2SolveOutput.xml
+	cp $(srcdir)/_MixedOrderPhysicsBasedPreconditioner.Belos.xml MixedOrderPhysicsBasedPreconditioner.Belos.xml
+	cp $(srcdir)/_P2.mtx P2.mtx
+	cp $(srcdir)/_P1.mtx P1.mtx
+	cp $(srcdir)/_M11.mtx M11.mtx
+	cp $(srcdir)/_M12.mtx M12.mtx
+	cp $(srcdir)/_M21.mtx M21.mtx
+	cp $(srcdir)/_M22.mtx M22.mtx
 
 #
 # Common stuff
@@ -86,7 +103,19 @@ common_ldadd = $(STRATIMIKOS_LIBS)
 EXTRA_DIST = $(srcdir)/simple_stratimikos_example.cpp \
 	$(srcdir)/_amesos.klu.xml \
 	$(srcdir)/_aztecoo.ifpack.xml \
-	$(srcdir)/_belos.ifpack.xml
+	$(srcdir)/_belos.ifpack.xml \
+	$(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp \
+	$(srcdir)/_MixedOrderPhysicsBasedPreconditioner.Base.xml \
+	$(srcdir)/_MixedOrderPhysicsBasedPreconditioner.AllSolveOutput.xml \
+	$(srcdir)/_MixedOrderPhysicsBasedPreconditioner.P2SolveOutputMSolveOutputToFile.xml \
+	$(srcdir)/_MixedOrderPhysicsBasedPreconditioner.P2SolveOutput.xml \
+	$(srcdir)/_MixedOrderPhysicsBasedPreconditioner.Belos.xml \
+	$(srcdir)/_P2.mtx \
+	$(srcdir)/_P1.mtx \
+	$(srcdir)/_M11.mtx \
+	$(srcdir)/_M12.mtx \
+	$(srcdir)/_M21.mtx \
+	$(srcdir)/_M22.mtx
 
 # This is already added part of STRATIMIKOS_LIBS and therefore automake does not need to add this again!
 LIBS =

@@ -36,11 +36,13 @@
 
 namespace Thyra {
 
+
 /** \brief . */
 enum EThrowOnSolveFailure {
   THROW_ON_SOLVE_FAILURE=1 ///< Throw an exception if a solve fails to converge
   ,IGNORE_SOLVE_FAILURE=0  ///< Don't throw an exception if a solve fails to converge
 };
+
 
 /** \brief Concrete <tt>LinearOpBase</tt> subclass that creates an implicit
  * <tt>LinearOpBase</tt> object using the inverse action of a
@@ -67,8 +69,8 @@ enum EThrowOnSolveFailure {
  */
 template<class Scalar>
 class DefaultInverseLinearOp
-  : virtual public InverseLinearOpBase<Scalar>             // Public interface
-  , virtual protected SingleScalarLinearOpBase<Scalar>     // Implementation detail
+  : virtual public InverseLinearOpBase<Scalar>,            // Public interface
+    virtual protected SingleScalarLinearOpBase<Scalar>     // Implementation detail
 {
 public:
 
@@ -86,11 +88,11 @@ public:
   /** Calls <tt>initialize()</tt>.
    */
   DefaultInverseLinearOp(
-    const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >      &lows
-    ,const SolveCriteria<Scalar>                                    *fwdSolveCriteria       = NULL
-    ,const EThrowOnSolveFailure                                     throwOnFwdSolveFailure  = THROW_ON_SOLVE_FAILURE
-    ,const SolveCriteria<Scalar>                                    *adjSolveCriteria       = NULL
-    ,const EThrowOnSolveFailure                                     throwOnAdjSolveFailure  = THROW_ON_SOLVE_FAILURE
+    const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &lows,
+    const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
+    const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
+    const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
+    const EThrowOnSolveFailure throwOnAdjSolveFailure = THROW_ON_SOLVE_FAILURE
     );
 
   /** Calls <tt>initialize()</tt>.
@@ -99,37 +101,42 @@ public:
    * functions described \ref Thyra_Op_Vec_AddedLinearOp_helpers_grp "here".
    */
   DefaultInverseLinearOp(
-    const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >      &lows
-    ,const SolveCriteria<Scalar>                                          *fwdSolveCriteria       = NULL
-    ,const EThrowOnSolveFailure                                           throwOnFwdSolveFailure  = THROW_ON_SOLVE_FAILURE
-    ,const SolveCriteria<Scalar>                                          *adjSolveCriteria       = NULL
-    ,const EThrowOnSolveFailure                                           throwOnAdjSolveFailure  = THROW_ON_SOLVE_FAILURE
+    const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &lows,
+    const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
+    const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
+    const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
+    const EThrowOnSolveFailure throwOnAdjSolveFailure  = THROW_ON_SOLVE_FAILURE
     );
 
   /** \brief Initialize given a non-const <tt>LinearOpWithSolveBase</tt>
    * object and an optional <tt>.
    *
-   * \param  lows    [in] The <tt>LinearOpWithSolveBase</tt> object that will
-   *                 <tt>solve(...)</tt> and/or <tt>solveTranspose(...)</tt> will
-   *                 be called on.  Note that <tt>*this</tt> may give up
-   *                 non-const views of <tt>*lows</tt> so that <tt>*lows</tt>
-   *                 may be changed through clients of this object.
+   * \param  lows
+   *           [in] The <tt>LinearOpWithSolveBase</tt> object that will
+   *           <tt>solve(...)</tt> and/or <tt>solveTranspose(...)</tt> will be
+   *           called on.  Note that <tt>*this</tt> may give up non-const
+   *           views of <tt>*lows</tt> so that <tt>*lows</tt> may be changed
+   *           through clients of this object.
    * \param  fwdSolveCriteria
-   *                 [in] The criteria used to call <tt>lows->solve(...)</tt>.
-   *                 If <tt>fwdSolveCriteria==NULL</tt> then the default solve
-   *                 criteria built into <tt>*lows<tt> will be used.
-   *                 If <tt>fwdSolveCriteria!=NULL</tt> then <tt>*fwdSolveCriteria</tt>
-   *                 will be copied internally.  <b>Warning!</b> If shallow copy
-   *                 is used by any parameters in <tt>fwdSolveCriteria->extraParameter</tt>
-   *                 these these parameters will be "remembered" by <tt>*this</tt>.
+   *           [in] The criteria used to call <tt>lows->solve(...)</tt>.  If
+   *           <tt>fwdSolveCriteria==NULL</tt> then the default solve criteria
+   *           built into <tt>*lows<tt> will be used.  If
+   *           <tt>fwdSolveCriteria!=NULL</tt> then <tt>*fwdSolveCriteria</tt>
+   *           will be copied internally.  <b>Warning!</b> If shallow copy is
+   *           used by any parameters in
+   *           <tt>fwdSolveCriteria->extraParameter</tt> these these
+   *           parameters will be "remembered" by <tt>*this</tt>.
+
    * \param  adjSolveCriteria
-   *                 [in] The criteria used to call <tt>lows->solveTranspose(...)</tt>.
-   *                 If <tt>adjSolveCriteria==NULL</tt> then the default solve
-   *                 criteria built into <tt>*lows<tt> will be used.
-   *                 If <tt>adjSolveCriteria!=NULL</tt> then <tt>*adjSolveCriteria</tt>
-   *                 will be copied internally.  <b>Warning!</b> If shallow copy
-   *                 is used by any parameters in <tt>adjSolveCriteria->extraParameter</tt>
-   *                 these these parameters will be "remembered" by <tt>*this</tt>.
+   *           [in] The criteria used to call
+   *           <tt>lows->solveTranspose(...)</tt>.  If
+   *           <tt>adjSolveCriteria==NULL</tt> then the default solve criteria
+   *           built into <tt>*lows<tt> will be used.  If
+   *           <tt>adjSolveCriteria!=NULL</tt> then <tt>*adjSolveCriteria</tt>
+   *           will be copied internally.  <b>Warning!</b> If shallow copy is
+   *           used by any parameters in
+   *           <tt>adjSolveCriteria->extraParameter</tt> these these
+   *           parameters will be "remembered" by <tt>*this</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>lows.get() != NULL</tt>
@@ -141,37 +148,41 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >      &lows
-    ,const SolveCriteria<Scalar>                                    *fwdSolveCriteria       = NULL
-    ,const EThrowOnSolveFailure                                     throwOnFwdSolveFailure  = THROW_ON_SOLVE_FAILURE
-    ,const SolveCriteria<Scalar>                                    *adjSolveCriteria       = NULL
-    ,const EThrowOnSolveFailure                                     throwOnAdjSolveFailure  = THROW_ON_SOLVE_FAILURE
+    const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &lows,
+    const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
+    const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
+    const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
+    const EThrowOnSolveFailure throwOnAdjSolveFailure = THROW_ON_SOLVE_FAILURE
     );
 
   /** \brief Initialize given a non-const <tt>LinearOpWithSolveBase</tt>
    * object and an optional <tt>.
    *
-   * \param  lows    [in] The <tt>LinearOpWithSolveBase</tt> object that will
-   *                 <tt>solve(...)</tt> and/or <tt>solveTranspose(...)</tt> will
-   *                 be called on.  Note that <tt>*this</tt> may give up
-   *                 non-const views of <tt>*lows</tt> so that <tt>*lows</tt>
-   *                 may be changed through clients of this object.
+   * \param  lows
+   *           [in] The <tt>LinearOpWithSolveBase</tt> object that will
+   *           <tt>solve(...)</tt> and/or <tt>solveTranspose(...)</tt> will be
+   *           called on.  Note that <tt>*this</tt> may give up non-const
+   *           views of <tt>*lows</tt> so that <tt>*lows</tt> may be changed
+   *           through clients of this object.
    * \param  fwdSolveCriteria
-   *                 [in] The criteria used to call <tt>lows->solve(...)</tt>.
-   *                 If <tt>fwdSolveCriteria==NULL</tt> then the default solve
-   *                 criteria built into <tt>*lows<tt> will be used.
-   *                 If <tt>fwdSolveCriteria!=NULL</tt> then <tt>*fwdSolveCriteria</tt>
-   *                 will be copied internally.  <b>Warning!</b> If shallow copy
-   *                 is used by any parameters in <tt>fwdSolveCriteria->extraParameter</tt>
-   *                 these these parameters will be "remembered" by <tt>*this</tt>.
+   *           [in] The criteria used to call <tt>lows->solve(...)</tt>.  If
+   *           <tt>fwdSolveCriteria==NULL</tt> then the default solve criteria
+   *           built into <tt>*lows<tt> will be used.  If
+   *           <tt>fwdSolveCriteria!=NULL</tt> then <tt>*fwdSolveCriteria</tt>
+   *           will be copied internally.  <b>Warning!</b> If shallow copy is
+   *           used by any parameters in
+   *           <tt>fwdSolveCriteria->extraParameter</tt> these these
+   *           parameters will be "remembered" by <tt>*this</tt>.
    * \param  adjSolveCriteria
-   *                 [in] The criteria used to call <tt>lows->solveTranspose(...)</tt>.
-   *                 If <tt>adjSolveCriteria==NULL</tt> then the default solve
-   *                 criteria built into <tt>*lows<tt> will be used.
-   *                 If <tt>adjSolveCriteria!=NULL</tt> then <tt>*adjSolveCriteria</tt>
-   *                 will be copied internally.  <b>Warning!</b> If shallow copy
-   *                 is used by any parameters in <tt>adjSolveCriteria->extraParameter</tt>
-   *                 these these parameters will be "remembered" by <tt>*this</tt>.
+   *           [in] The criteria used to call
+   *           <tt>lows->solveTranspose(...)</tt>.  If
+   *           <tt>adjSolveCriteria==NULL</tt> then the default solve criteria
+   *           built into <tt>*lows<tt> will be used.  If
+   *           <tt>adjSolveCriteria!=NULL</tt> then <tt>*adjSolveCriteria</tt>
+   *           will be copied internally.  <b>Warning!</b> If shallow copy is
+   *           used by any parameters in
+   *           <tt>adjSolveCriteria->extraParameter</tt> these these
+   *           parameters will be "remembered" by <tt>*this</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>lows.get() != NULL</tt>
@@ -183,11 +194,11 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >      &lows
-    ,const SolveCriteria<Scalar>                                          *fwdSolveCriteria       = NULL
-    ,const EThrowOnSolveFailure                                           throwOnFwdSolveFailure  = THROW_ON_SOLVE_FAILURE
-    ,const SolveCriteria<Scalar>                                          *adjSolveCriteria       = NULL
-    ,const EThrowOnSolveFailure                                           throwOnAdjSolveFailure  = THROW_ON_SOLVE_FAILURE
+    const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &lows,
+    const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
+    const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
+    const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
+    const EThrowOnSolveFailure throwOnAdjSolveFailure = THROW_ON_SOLVE_FAILURE
     );
 
   /** \brief Set to uninitialized.
@@ -244,8 +255,8 @@ public:
 
   /** \brief . */
   void describe(
-    Teuchos::FancyOStream                &out
-    ,const Teuchos::EVerbosityLevel      verbLevel
+    Teuchos::FancyOStream &out,
+    const Teuchos::EVerbosityLevel verbLevel
     ) const;
 
   //@}
@@ -262,32 +273,32 @@ protected:
 
   /** \brief . */
   void apply(
-    const ETransp                     M_trans
-    ,const MultiVectorBase<Scalar>    &X
-    ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                     alpha
-    ,const Scalar                     beta
+    const ETransp M_trans,
+    const MultiVectorBase<Scalar> &X,
+    MultiVectorBase<Scalar> *Y,
+    const Scalar alpha,
+    const Scalar beta
     ) const;
 
   //@}
 
 private:
 
-  Teuchos::ConstNonconstObjectContainer<LinearOpWithSolveBase<Scalar> >   lows_;
-  Teuchos::RefCountPtr<SolveCriteria<Scalar> >                            fwdSolveCriteria_;
-  EThrowOnSolveFailure                                                    throwOnFwdSolveFailure_;
-  Teuchos::RefCountPtr<SolveCriteria<Scalar> >                            adjSolveCriteria_;
-  EThrowOnSolveFailure                                                    throwOnAdjSolveFailure_;
-
+  Teuchos::ConstNonconstObjectContainer<LinearOpWithSolveBase<Scalar> > lows_;
+  Teuchos::RefCountPtr<SolveCriteria<Scalar> > fwdSolveCriteria_;
+  EThrowOnSolveFailure throwOnFwdSolveFailure_;
+  Teuchos::RefCountPtr<SolveCriteria<Scalar> > adjSolveCriteria_;
+  EThrowOnSolveFailure throwOnAdjSolveFailure_;
+  
   void assertInitialized() const;
 
   template<class LOWS>
   void initializeImpl(
-    const Teuchos::RefCountPtr<LOWS>      &lows
-    ,const SolveCriteria<Scalar>          *fwdSolveCriteria
-    ,const EThrowOnSolveFailure           throwOnFwdSolveFailure
-    ,const SolveCriteria<Scalar>          *adjSolveCriteria
-    ,const EThrowOnSolveFailure           throwOnAdjSolveFailure
+    const Teuchos::RefCountPtr<LOWS> &lows,
+    const SolveCriteria<Scalar> *fwdSolveCriteria,
+    const EThrowOnSolveFailure throwOnFwdSolveFailure,
+    const SolveCriteria<Scalar> *adjSolveCriteria,
+    const EThrowOnSolveFailure throwOnAdjSolveFailure
     );
 
   // Not defined and not to be called
@@ -296,36 +307,40 @@ private:
 
 };
 
-/** \brief Form a non-const implicit inverse operator: <tt>M = inv(A)</tt>.
+
+/** \brief Form a non-const implicit inverse operator <tt>M = inv(A)</tt>.
  *
  * \relates DefaultInverseLinearOp
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
 nonconstInverse(
-  const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >    &A
-  ,const SolveCriteria<Scalar>                                  *fwdSolveCriteria       = NULL
-  ,const EThrowOnSolveFailure                                   throwOnFwdSolveFailure  = THROW_ON_SOLVE_FAILURE
-  ,const SolveCriteria<Scalar>                                  *adjSolveCriteria       = NULL
-  ,const EThrowOnSolveFailure                                   throwOnAdjSolveFailure  = THROW_ON_SOLVE_FAILURE
+ const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &A,
+ const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
+ const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
+ const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
+ const EThrowOnSolveFailure throwOnAdjSolveFailure = THROW_ON_SOLVE_FAILURE
   );
 
-/** \brief Form a const implicit inverse operator: <tt>M = inv(A)</tt>.
+
+/** \brief Form a const implicit inverse operator <tt>M = inv(A)</tt>.
  *
  * \relates DefaultInverseLinearOp
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
 inverse(
-  const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >     &A
-  ,const SolveCriteria<Scalar>                                         *fwdSolveCriteria       = NULL
-  ,const EThrowOnSolveFailure                                          throwOnFwdSolveFailure  = THROW_ON_SOLVE_FAILURE
-  ,const SolveCriteria<Scalar>                                         *adjSolveCriteria       = NULL
-  ,const EThrowOnSolveFailure                                          throwOnAdjSolveFailure  = THROW_ON_SOLVE_FAILURE
+  const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &A,
+  const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
+  const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
+  const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
+  const EThrowOnSolveFailure throwOnAdjSolveFailure = THROW_ON_SOLVE_FAILURE
   );
+
 
 // /////////////////////////////////
 // Inline members
+
 
 template<class Scalar>
 inline
@@ -336,6 +351,8 @@ void DefaultInverseLinearOp<Scalar>::assertInitialized() const
 #endif
 }
 
+
 } // end namespace Thyra
+
 
 #endif	// THYRA_DEFAULT_INVERSE_LINEAR_OP_DECL_HPP

@@ -188,7 +188,7 @@ template<class Scalar>
 std::string BelosLinearOpWithSolve<Scalar>::description() const
 {
   std::ostringstream oss;
-  oss << "Thyra::BelosLinearOpWithSolve<"<<Teuchos::ScalarTraits<Scalar>::name()<<">";
+  oss << Teuchos::Describable::description();
   if(lp_->GetOperator().get()) {
     oss << "{";
     oss << "iterativeSolver=\'"<<iterativeSolver_->description()<<"\'";
@@ -227,17 +227,18 @@ void BelosLinearOpWithSolve<Scalar>::describe(
     case Teuchos::VERB_EXTREME:
     {
       *out
-        << "type = \'Thyra::BelosLinearOpWithSolve<" << ST::name() << ">\', "
-        << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl;
+        << Teuchos::Describable::description()<< "{"
+        << "rangeDim=" << this->range()->dim()
+        << ",domainDim=" << this->domain()->dim() << "}\n";
       if(lp_->GetOperator().get()) {
         OSTab tab(out);
         *out
-          << "iterativeSolver:\n"<<describe(*iterativeSolver_,verbLevel)
-          << "fwdOp:\n" << describe(*lp_->GetOperator(),verbLevel);
+          << "iterativeSolver = "<<describe(*iterativeSolver_,verbLevel)
+          << "fwdOp = " << describe(*lp_->GetOperator(),verbLevel);
         if(lp_->GetLeftPrec().get())
-          *out << "leftPrecOp:\n"<<describe(*lp_->GetLeftPrec(),verbLevel);
+          *out << "leftPrecOp = "<<describe(*lp_->GetLeftPrec(),verbLevel);
         if(lp_->GetRightPrec().get())
-          *out << "rightPrecOp:\n"<<describe(*lp_->GetRightPrec(),verbLevel);
+          *out << "rightPrecOp = "<<describe(*lp_->GetRightPrec(),verbLevel);
       }
       break;
     }
@@ -305,6 +306,7 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   using Teuchos::rcp;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
+  using Teuchos::describe;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   Teuchos::Time totalTimer(""), timer("");
@@ -319,10 +321,13 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   Teuchos::RefCountPtr<Teuchos::FancyOStream>  out = this->getOStream();
   Teuchos::EVerbosityLevel                     verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
-  if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
-    *out
-      << "\nStarting iterations with Belos solver of type \""<<iterativeSolver_->description()<<"\""
-      << ", #Eqns="<<numEquations<<", #RHSs="<<numRhs<<" ...\n";
+  if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE)) {
+    *out << "\nStarting iterations with Belos:\n";
+    OSTab tab(out);
+    *out << "Using forward operator = " << describe(*fwdOpSrc_->getOp(),verbLevel);
+    *out << "Using iterative solver = " << describe(*iterativeSolver_,verbLevel);
+    *out << "With #Eqns="<<numEquations<<", #RHSs="<<numRhs<<" ...\n";
+  }
 
   //
   // Temporarily reset the blocksize if we are allowed to due so

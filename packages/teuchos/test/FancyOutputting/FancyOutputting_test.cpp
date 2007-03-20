@@ -2,6 +2,8 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_ParameterListAcceptor.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_Version.hpp"
 
@@ -45,14 +47,68 @@ void someLessDumbFunction( std::ostream &out_arg )
 // outputting.  Note that the use of the OSTab class requires initialization
 // using VerboseObject::getOSTab(...) which takes care of the hassles and is
 // easy to use.
-class AlgorithmA : public Teuchos::VerboseObject<AlgorithmA> {
+//
+// This class also derives from ParameterListAcceptor and uses helper
+// functio  ns to read options for VerboseObject from a parameter sublist.
+class AlgorithmA
+  : public Teuchos::VerboseObject<AlgorithmA>,
+    public Teuchos::ParameterListAcceptor
+          
+{
 public:
-  //
+
+  // Constructor(s)
+
   AlgorithmA()
     {
       this->setLinePrefix("ALGO_A"); // I tell me who I am for line prefix outputting
     }
-  //
+
+  // Overridden from ParameterListAccpetor
+
+  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+    {
+      TEST_FOR_EXCEPT(is_null(paramList));
+      paramList_ = paramList;
+      paramList_->validateParameters(*this->getValidParameters(),0);
+      Teuchos::readVerboseObjectSublist(&*paramList_,this);
+      #ifdef TEUCHOS_DEBUG
+      paramList_->validateParameters(*this->getValidParameters());
+      #endif
+    }
+
+  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList()
+    {
+      return paramList_;
+    }
+
+  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList()
+    {
+      Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = paramList_;
+      paramList_ = Teuchos::null;
+      return paramList;
+    }
+
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const
+    {
+      return paramList_;
+    }
+
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const
+    {
+      using Teuchos::RefCountPtr; using Teuchos::ParameterList;
+      static RefCountPtr<const ParameterList> validParams;
+      if (is_null(validParams)) {
+        RefCountPtr<ParameterList>
+          pl = Teuchos::rcp(new ParameterList("AlgorithmA"));
+        Teuchos::setupVerboseObjectSublist(&*pl);
+        validParams = pl;
+      }
+      return validParams;
+    }
+
+  // Other functions
+
   void doAlgorithm()
     {
       using Teuchos::OSTab;
@@ -66,7 +122,7 @@ public:
       // the most sense.
       OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
       if(out.get() && verbLevel!=Teuchos::VERB_NONE)
-        *out << "\nEntering AlgorithmA::doAlgorithm()\n";
+        *out << "\nEntering AlgorithmA::doAlgorithm() with verbLevel="<<toString(verbLevel)<<"\n";
       {
         // Here I use a simple macro for the typical case of one tab indent to
         // save typing.  The idea is that this should be as easy to write as
@@ -106,16 +162,23 @@ public:
       if(out.get() && verbLevel!=Teuchos::VERB_NONE)
         *out << "\nLeaving AlgorithmA::doAlgorithm()\n";
     }
+
+private:
+
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_;
+  
 };
 
 // Here is a simple driver function that I call over and over to show
 // different features of FancyOStream
-void doAlgorithmStuff()
+void doAlgorithmStuff( Teuchos::ParameterList *algoParams = 0 )
 {
 
   // Here I just create the algorithm object that derives from VerboseObject.
   // By default, this object will print to *Verbose::getDefaultOStream()
   AlgorithmA algoA;
+  if(algoParams)
+    algoA.setParameterList(Teuchos::rcp(algoParams,false));
   // Note that here I could change the stream just this object prints to
   // by calling algoA.setOStream(...).
   
@@ -241,6 +304,25 @@ int main(int argc, char* argv[])
     out->setShowAllFrontMatter(false).setShowProcRank(true).setShowLinePrefix(true).setShowTabCount(true);
     doAlgorithmStuff();
     Teuchos::VerboseObject<AlgorithmA>::setDefaultVerbLevel(Teuchos::VERB_DEFAULT);
+
+    Teuchos::ParameterList algoParams("AlgorithmA");
+
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << "\n*** Set AlgorithmA verbosity level to extreme through a parameter list\n\n";
+    algoParams.sublist("VerboseObject").set("Verbosity Level","extreme");
+    doAlgorithmStuff(&algoParams);
+
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << "\n*** Set AlgorithmA verbosity level to medium and the output file \"AlgorithmA.out\" through a parameter list\n\n";
+    algoParams.sublist("VerboseObject").set("Verbosity Level","medium");
+    algoParams.sublist("VerboseObject").set("Output File","AlgorithmA.out");
+    doAlgorithmStuff(&algoParams);
+
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
+    *out << "\n*** Set AlgorithmA verbosity level to low and the output back to default through a parameter list\n\n";
+    algoParams.sublist("VerboseObject").set("Verbosity Level","low");
+    algoParams.sublist("VerboseObject").set("Output File","none");
+    doAlgorithmStuff(&algoParams);
 
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n***\n*** Do some more simple tests to make sure things work correctly\n***\n\n";

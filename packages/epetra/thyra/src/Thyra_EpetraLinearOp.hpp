@@ -80,12 +80,12 @@ public:
 
   /// Calls <tt>initialize()</tt>.
   EpetraLinearOp(
-    const Teuchos::RefCountPtr<Epetra_Operator>                        &op
-    ,ETransp                                                           opTrans         = NOTRANS
-    ,EApplyEpetraOpAs                                                  applyAs         = EPETRA_OP_APPLY_APPLY
-    ,EAdjointEpetraOp                                                  adjointSupport  = EPETRA_OP_ADJOINT_SUPPORTED
-    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   &spmdRange       = Teuchos::null
-    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   &spmdDomain      = Teuchos::null
+    const Teuchos::RefCountPtr<Epetra_Operator> &op,
+    ETransp opTrans = NOTRANS,
+    EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
+    EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
+    const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > &spmdRange = Teuchos::null,
+    const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > &spmdDomain = Teuchos::null
     );
 
   /** \brief Initialize
@@ -129,12 +129,12 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<Epetra_Operator>                        &op
-    ,ETransp                                                           opTrans         = NOTRANS
-    ,EApplyEpetraOpAs                                                  applyAs         = EPETRA_OP_APPLY_APPLY
-    ,EAdjointEpetraOp                                                  adjointSupport  = EPETRA_OP_ADJOINT_SUPPORTED
-    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   &spmdRange       = Teuchos::null
-    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   &spmdDomain      = Teuchos::null
+    const Teuchos::RefCountPtr<Epetra_Operator> &op,
+    ETransp opTrans = NOTRANS,
+    EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
+    EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
+    const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > &spmdRange = Teuchos::null,
+    const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > &spmdDomain = Teuchos::null
     );
   
   /** \brief Set to uninitialized and optionally return the current state.
@@ -145,12 +145,12 @@ public:
    * </ul>
    */
   void uninitialize(
-    Teuchos::RefCountPtr<Epetra_Operator>                       *op             = NULL
-    ,ETransp                                                    *opTrans        = NULL
-    ,EApplyEpetraOpAs                                           *applyAs        = NULL
-    ,EAdjointEpetraOp                                           *adjointSupport = NULL
-    ,Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >  *spmdRange       = NULL
-    ,Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >  *spmdDomain      = NULL
+    Teuchos::RefCountPtr<Epetra_Operator> *op= NULL,
+    ETransp *opTrans = NULL,
+    EApplyEpetraOpAs *applyAs = NULL,
+    EAdjointEpetraOp *adjointSupport = NULL,
+    Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > *spmdRange = NULL,
+    Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > *spmdDomain = NULL
     );
 
   /** \brief Return a smart pointer to the SpmdVectorSpaceBase object for the range.
@@ -184,17 +184,17 @@ public:
 
   /** \brief . */
   void getEpetraOpView(
-    Teuchos::RefCountPtr<Epetra_Operator>   *epetraOp
-    ,ETransp                                *epetraOpTransp
-    ,EApplyEpetraOpAs                       *epetraOpApplyAs
-    ,EAdjointEpetraOp                       *epetraOpAdjointSupport
+    Teuchos::RefCountPtr<Epetra_Operator> *epetraOp,
+    ETransp *epetraOpTransp,
+    EApplyEpetraOpAs *epetraOpApplyAs,
+    EAdjointEpetraOp *epetraOpAdjointSupport
     );
   /** \brief . */
   void getEpetraOpView(
-    Teuchos::RefCountPtr<const Epetra_Operator>   *epetraOp
-    ,ETransp                                      *epetraOpTransp
-    ,EApplyEpetraOpAs                             *epetraOpApplyAs
-    ,EAdjointEpetraOp                             *epetraOpAdjointSupport
+    Teuchos::RefCountPtr<const Epetra_Operator> *epetraOp,
+    ETransp *epetraOpTransp,
+    EApplyEpetraOpAs *epetraOpApplyAs,
+    EAdjointEpetraOp *epetraOpAdjointSupport
     ) const;
 
   //@}
@@ -216,11 +216,11 @@ public:
   Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
   /** \brief . */
   void euclideanApply(
-    const ETransp                     M_trans
-    ,const MultiVectorBase<Scalar>    &X
-    ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                     alpha
-    ,const Scalar                     beta
+    const ETransp M_trans,
+    const MultiVectorBase<Scalar> &X,
+    MultiVectorBase<Scalar> *Y,
+    const Scalar alpha,
+    const Scalar beta
     ) const;
 
   //@}
@@ -240,8 +240,8 @@ public:
   std::string description() const;
   /** \brief . */
   void describe(
-    Teuchos::FancyOStream                &out
-    ,const Teuchos::EVerbosityLevel      verbLevel
+ Teuchos::FancyOStream &out,
+    const Teuchos::EVerbosityLevel verbLevel
     ) const;
   
   //@}
@@ -263,8 +263,8 @@ protected:
    */
   virtual Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > 
   allocateDomain(
-    const Teuchos::RefCountPtr<Epetra_Operator>  &op 
-    ,ETransp                                     op_trans 
+    const Teuchos::RefCountPtr<Epetra_Operator> &op, 
+    ETransp op_trans 
     ) const; 
   
   /** \brief Allocate the range space of the operator.
@@ -279,8 +279,8 @@ protected:
    */
   virtual Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >
   allocateRange( 
-    const Teuchos::RefCountPtr<Epetra_Operator>  &op 
-    ,ETransp                                     op_trans 
+    const Teuchos::RefCountPtr<Epetra_Operator> &op, 
+    ETransp op_trans 
     ) const; 
 
   //@}
@@ -290,14 +290,15 @@ private:
   // ////////////////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<Epetra_Operator>                     op_;
-  ETransp                                                   opTrans_;
-  EApplyEpetraOpAs                                          applyAs_;
-  EAdjointEpetraOp                                          adjointSupport_;
-  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >  range_;
-  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >  domain_;
-  Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >  sp_range_;
-  Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >  sp_domain_;
+  Teuchos::RefCountPtr<Epetra_Operator> op_;
+  ETransp opTrans_;
+  EApplyEpetraOpAs applyAs_;
+  EAdjointEpetraOp adjointSupport_;
+  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > range_;
+  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > domain_;
+  Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > sp_range_;
+  Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > sp_domain_;
+
   // ////////////////////////////////////
   // Private member functions
 
@@ -306,6 +307,114 @@ private:
 
 };	// end class EpetraLinearOp
 
+
+/** \brief Dynamically allocate an const EpetraLinearOp to wrap a const
+ * Epetra_Operator object.
+ *
+ * \relates EpetraLinearOp
+ */
+inline
+Teuchos::RefCountPtr<EpetraLinearOp>
+nonconstEpetraLinearOp(
+  const Teuchos::RefCountPtr<Epetra_Operator> &op,
+  ETransp opTrans = NOTRANS,
+  EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
+  EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
+  const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
+  const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
+  )
+{
+  return Teuchos::rcp(
+    new EpetraLinearOp(
+      op,opTrans, applyAs, adjointSupport, spmdRange, spmdDomain
+      )
+    );
+}
+
+
+/** \brief Dynamically allocate a nonconst EpetraLinearOp to wrap a const
+ * Epetra_Operator object.
+ *
+ * \relates EpetraLinearOp
+ */
+inline
+Teuchos::RefCountPtr<const EpetraLinearOp>
+epetraLinearOp(
+  const Teuchos::RefCountPtr<const Epetra_Operator> &op,
+  ETransp opTrans = NOTRANS,
+  EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
+  EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
+  const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
+  const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
+  )
+{
+  return Teuchos::rcp(
+    new EpetraLinearOp(
+      Teuchos::rcp_const_cast<Epetra_Operator>(op), // Safe cast due to return type!
+      opTrans, applyAs, adjointSupport, spmdRange, spmdDomain
+      )
+    );
+}
+
+
+/** \brief Dynamically allocate an const EpetraLinearOp to wrap a const
+ * Epetra_Operator object and give it a string label.
+ *
+ * \relates EpetraLinearOp
+ */
+inline
+Teuchos::RefCountPtr<EpetraLinearOp>
+nonconstEpetraLinearOp(
+  const Teuchos::RefCountPtr<Epetra_Operator> &op,
+  const std::string &label,
+  ETransp opTrans = NOTRANS,
+  EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
+  EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
+  const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
+  const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
+  )
+{
+  Teuchos::RefCountPtr<EpetraLinearOp>
+    thyra_op = Teuchos::rcp(
+      new EpetraLinearOp(
+        op,opTrans, applyAs, adjointSupport, spmdRange, spmdDomain
+        )
+      );
+  thyra_op->setObjectLabel(label);
+  return thyra_op;
+}
+
+
+/** \brief Dynamically allocate a nonconst EpetraLinearOp to wrap a const
+ * Epetra_Operator object.
+ *
+ * \relates EpetraLinearOp
+ */
+inline
+Teuchos::RefCountPtr<const EpetraLinearOp>
+epetraLinearOp(
+  const Teuchos::RefCountPtr<const Epetra_Operator> &op,
+  const std::string &label,
+  ETransp opTrans = NOTRANS,
+  EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
+  EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
+  const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<double> > &spmdRange = Teuchos::null,
+  const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<double> > &spmdDomain = Teuchos::null
+  )
+{
+  Teuchos::RefCountPtr<EpetraLinearOp>
+    thyra_op = Teuchos::rcp(
+      new EpetraLinearOp(
+        Teuchos::rcp_const_cast<Epetra_Operator>(op), // Safe cast due to return type!
+        opTrans, applyAs, adjointSupport, spmdRange, spmdDomain
+        )
+      );
+  thyra_op->setObjectLabel(label);
+  return thyra_op;
+}
+
+
 }	// end namespace Thyra
+
 
 #endif	// THYRA_EPETRA_LINEAR_OP_HPP

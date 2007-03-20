@@ -29,9 +29,12 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
+
 namespace Teuchos {
 
+
 // Private static data members
+
 
 RefCountPtr<FancyOStream>& VerboseObjectBase::privateDefaultOStream()
 {
@@ -45,12 +48,17 @@ RefCountPtr<FancyOStream>& VerboseObjectBase::privateDefaultOStream()
   return defaultOStream;
 }
 
+
 // Public static member functions
 
-void VerboseObjectBase::setDefaultOStream( const RefCountPtr<FancyOStream> &defaultOStream )
+
+void VerboseObjectBase::setDefaultOStream(
+  const RefCountPtr<FancyOStream> &defaultOStream
+  )
 {
   privateDefaultOStream() = defaultOStream;
 }
+
 
 RefCountPtr<FancyOStream>
 VerboseObjectBase::getDefaultOStream()
@@ -58,14 +66,18 @@ VerboseObjectBase::getDefaultOStream()
   return privateDefaultOStream();
 }
 
+
 // Constructors/Initializers
+
 
 VerboseObjectBase::VerboseObjectBase(
   const RefCountPtr<FancyOStream>   &oStream
   )
+  : thisOverridingOStream_(null)
 {
   this->initializeVerboseObjectBase(oStream);
 }
+
 
 void VerboseObjectBase::initializeVerboseObjectBase(
   const RefCountPtr<FancyOStream>   &oStream
@@ -74,38 +86,65 @@ void VerboseObjectBase::initializeVerboseObjectBase(
   thisOStream_ = oStream;
 }
 
-const VerboseObjectBase& VerboseObjectBase::setOStream(const RefCountPtr<FancyOStream> &oStream) const
+
+const VerboseObjectBase&
+VerboseObjectBase::setOStream(const RefCountPtr<FancyOStream> &oStream) const
 {
   thisOStream_ = oStream;
   return *this;
 }
 
-VerboseObjectBase& VerboseObjectBase::setLinePrefix(const std::string &linePrefix)
+
+const VerboseObjectBase&
+VerboseObjectBase::setOverridingOStream(
+  const RefCountPtr<FancyOStream> &oStream
+  ) const
+{
+  thisOverridingOStream_ = oStream;
+  return *this;
+}
+
+
+VerboseObjectBase&
+VerboseObjectBase::setLinePrefix(const std::string &linePrefix)
 {
   thisLinePrefix_ = linePrefix;
   return *this;
 }
 
+
 // Query functions
+
 
 RefCountPtr<FancyOStream>
 VerboseObjectBase::getOStream() const
 {
-  if(!thisOStream_.get())
+  if(!is_null(thisOverridingOStream_))
+    return thisOverridingOStream_;
+  if(is_null(thisOStream_))
     return getDefaultOStream();
   return thisOStream_;
 }
+
 
 std::string VerboseObjectBase::getLinePrefix() const
 {
   return thisLinePrefix_;
 }
 
+
 // Utility functions
 
-OSTab VerboseObjectBase::getOSTab(const int tabs,const std::string &linePrefix) const
+
+OSTab VerboseObjectBase::getOSTab(
+  const int tabs,const std::string &linePrefix
+  ) const
 {
-  return OSTab( this->getOStream(), tabs, linePrefix.length() ? linePrefix : this->getLinePrefix() );
+  return OSTab(
+    this->getOStream(), tabs, linePrefix.length()
+    ? linePrefix : this->getLinePrefix()
+    );
 }
+
 
 } // namespace Teuchos

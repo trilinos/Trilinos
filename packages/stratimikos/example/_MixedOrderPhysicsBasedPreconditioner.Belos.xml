@@ -1,0 +1,133 @@
+<ParameterList>
+
+  <ParameterList name="M11 Solver">
+    <Parameter name="Linear Solver Type" type="string" value="Amesos"/>
+    <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
+    <ParameterList name="Linear Solver Types">
+      <ParameterList name="Belos">
+        <Parameter name="Default Rel Res Norm" type="double" value="1e-08"/>
+        <Parameter name="Max Iters" type="int" value="400"/>
+        <Parameter name="Solver Type" type="string" value="CG"/>
+        <ParameterList name="GMRES">
+          <Parameter name="Variant" type="string" value="Standard"/>
+        </ParameterList>
+        <ParameterList name="Outputter">
+          <Parameter name="Output Frequency" type="int" value="5"/>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="none"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Preconditioner Types">
+      <ParameterList name="Ifpack">
+        <Parameter name="Overlap" type="int" value="0"/>
+        <Parameter name="Prec Type" type="string" value="IC"/>
+        <ParameterList name="Ifpack Settings">
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="medium"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="M22 Solver">
+    <Parameter name="Linear Solver Type" type="string" value="Amesos"/>
+    <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
+    <ParameterList name="Linear Solver Types">
+      <ParameterList name="Belos">
+        <Parameter name="Default Rel Res Norm" type="double" value="1e-14"/>
+        <Parameter name="Max Iters" type="int" value="400"/>
+        <Parameter name="Solver Type" type="string" value="CG"/>
+        <ParameterList name="GMRES">
+          <Parameter name="Variant" type="string" value="Standard"/>
+        </ParameterList>
+        <ParameterList name="Outputter">
+          <Parameter name="Output Frequency" type="int" value="5"/>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="none"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Preconditioner Types">
+      <ParameterList name="Ifpack">
+        <Parameter name="Overlap" type="int" value="0"/>
+        <Parameter name="Prec Type" type="string" value="IC"/>
+        <ParameterList name="Ifpack Settings">
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="medium"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="P1 Solver">
+    <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+    <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
+    <ParameterList name="Linear Solver Types">
+      <ParameterList name="Belos">
+        <Parameter name="Default Rel Res Norm" type="double" value="1e-08"/>
+        <Parameter name="Max Iters" type="int" value="400"/>
+        <Parameter name="Solver Type" type="string" value="GMRES"/>
+        <ParameterList name="GMRES">
+          <Parameter name="Variant" type="string" value="Standard"/>
+        </ParameterList>
+        <ParameterList name="Outputter">
+          <Parameter name="Output Frequency" type="int" value="2"/>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="medium"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Preconditioner Types">
+      <ParameterList name="Ifpack">
+        <Parameter name="Overlap" type="int" value="0"/>
+        <Parameter name="Prec Type" type="string" value="ILU"/>
+        <ParameterList name="Ifpack Settings">
+          <Parameter name="fact: level-of-fill" type="int" value="3"/>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="medium"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="P2 Solver">
+    <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+    <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
+    <ParameterList name="Linear Solver Types">
+      <ParameterList name="Belos">
+        <Parameter name="Default Rel Res Norm" type="double" value="1e-08"/>
+        <Parameter name="Max Iters" type="int" value="400"/>
+        <Parameter name="Solver Type" type="string" value="GMRES"/>
+        <ParameterList name="GMRES">
+          <Parameter name="Variant" type="string" value="Flexible"/>
+        </ParameterList>
+        <ParameterList name="Outputter">
+          <Parameter name="Output Frequency" type="int" value="1"/>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="medium"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Preconditioner Types">
+      <ParameterList name="Ifpack">
+        <Parameter name="Overlap" type="int" value="0"/>
+        <Parameter name="Prec Type" type="string" value="ILU"/>
+        <ParameterList name="Ifpack Settings">
+          <Parameter name="fact: level-of-fill" type="int" value="3"/>
+        </ParameterList>
+        <ParameterList name="VerboseObject">
+          <Parameter name="Verbosity Level" type="string" value="medium"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+</ParameterList>

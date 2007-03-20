@@ -78,6 +78,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_GlobalMPISession.hpp \
 	$(srcdir)/Teuchos_Handle.hpp \
 	$(srcdir)/Teuchos_Handleable.hpp \
+	$(srcdir)/Teuchos_LabeledObject.hpp \
 	$(srcdir)/Teuchos_LAPACK.hpp \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
 	$(srcdir)/Teuchos_MPIComm.hpp \
@@ -129,6 +130,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_TypeNameTraits.hpp \
 	$(srcdir)/Teuchos_Utils.hpp \
 	$(srcdir)/Teuchos_VerboseObject.hpp \
+	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.hpp \
 	$(srcdir)/Teuchos_VerbosityLevel.hpp \
 	$(srcdir)/Teuchos_any.hpp \
 	$(srcdir)/Teuchos_arrayArg.hpp \
@@ -152,6 +154,7 @@ CORE = \
 	$(srcdir)/Teuchos_exit.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
+	$(srcdir)/Teuchos_LabeledObject.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp \
 	$(srcdir)/Teuchos_MPISession.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
@@ -172,6 +175,7 @@ CORE = \
 	$(srcdir)/Teuchos_TimeMonitor.cpp \
 	$(srcdir)/Teuchos_Utils.cpp \
 	$(srcdir)/Teuchos_VerboseObject.cpp \
+	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.cpp \
 	$(srcdir)/Teuchos_Workspace.cpp
 
 EXTRA_EXTENDED_H = \

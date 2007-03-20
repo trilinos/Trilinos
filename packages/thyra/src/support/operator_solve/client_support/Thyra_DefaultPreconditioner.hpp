@@ -229,6 +229,71 @@ DefaultPreconditioner<RangeScalar,DomainScalar>::getUnspecifiedPrecOp() const
   return unspecifiedPrecOp_.getConstObj();
 }
 
+
+// Overridden from Teuchos::Describable
+
+                                                
+template <class RangeScalar, class DomainScalar>
+std::string DefaultPreconditioner<RangeScalar,DomainScalar>::description() const
+{
+  std::ostringstream oss;
+  oss << Teuchos::typeName(*this) << "{";
+  bool wroteOne = false;
+  if(!is_null(leftPrecOp_.getConstObj())) {
+    if(wroteOne) oss << ",";
+    oss << "leftPrecOp=" << leftPrecOp_.getConstObj()->description();
+    wroteOne = true;
+  }
+  if(!is_null(rightPrecOp_.getConstObj())) {
+    if(wroteOne) oss << ",";
+    oss << "rightPrecOp=" << rightPrecOp_.getConstObj()->description();
+    wroteOne = true;
+  }
+  if(!is_null(unspecifiedPrecOp_.getConstObj())) {
+    if(wroteOne) oss << ",";
+    oss << "unspecifiedPrecOp=" << unspecifiedPrecOp_.getConstObj()->description();
+    wroteOne = true;
+  }
+  oss << "}";
+  return oss.str();
+}
+
+template <class RangeScalar, class DomainScalar>
+void DefaultPreconditioner<RangeScalar,DomainScalar>::describe(
+  Teuchos::FancyOStream                &out
+  ,const Teuchos::EVerbosityLevel      verbLevel
+  ) const
+{
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
+  using Teuchos::describe;
+  OSTab tab(out);
+  switch(verbLevel) {
+    case Teuchos::VERB_DEFAULT:
+    case Teuchos::VERB_LOW:
+      out << this->description() << std::endl;
+      break;
+    case Teuchos::VERB_MEDIUM:
+    case Teuchos::VERB_HIGH:
+    case Teuchos::VERB_EXTREME:
+    {
+      out
+        << Teuchos::typeName(*this) << "\n";
+      OSTab tab(out);
+      if(!is_null(leftPrecOp_.getConstObj()))
+        out << "leftPrecOp=" << describe(*leftPrecOp_.getConstObj(),verbLevel);
+      if(!is_null(rightPrecOp_.getConstObj()))
+        out << "rig htPrecOp=" << describe(*rightPrecOp_.getConstObj(),verbLevel);
+      if(!is_null(unspecifiedPrecOp_.getConstObj()))
+        out << "unspecifiedPrecOp=" << describe(*unspecifiedPrecOp_.getConstObj(),verbLevel);
+      break;
+    }
+    default:
+      TEST_FOR_EXCEPT(true); // Should never get here!
+  }
+}
+
+
 } // namespace Thyra
 
 #endif // THYRA_DEFUALT_PRECONDITIONER_HPP

@@ -42,7 +42,7 @@
 # ************************************************************************
 # @HEADER
 
-SOURCES = $(simple_stratimikos_example_SOURCES)
+SOURCES = $(MixedOrderPhysicsBasedPreconditioner_SOURCES) $(simple_stratimikos_example_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2)
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/generate-sample-output.pl.stub.in
@@ -88,23 +88,31 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Stratimikos_Config.h
 CONFIG_CLEAN_FILES = generate-sample-output.pl.stub
 am__EXEEXT_1 = simple_stratimikos_example$(EXEEXT)
+am__EXEEXT_2 = MixedOrderPhysicsBasedPreconditioner$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
+am_MixedOrderPhysicsBasedPreconditioner_OBJECTS =  \
+	MixedOrderPhysicsBasedPreconditioner.$(OBJEXT)
+MixedOrderPhysicsBasedPreconditioner_OBJECTS =  \
+	$(am_MixedOrderPhysicsBasedPreconditioner_OBJECTS)
+am__DEPENDENCIES_1 =
 am_simple_stratimikos_example_OBJECTS =  \
 	simple_stratimikos_example.$(OBJEXT)
 simple_stratimikos_example_OBJECTS =  \
 	$(am_simple_stratimikos_example_OBJECTS)
-am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/simple_stratimikos_example.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/MixedOrderPhysicsBasedPreconditioner.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/simple_stratimikos_example.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(simple_stratimikos_example_SOURCES)
-DIST_SOURCES = $(simple_stratimikos_example_SOURCES)
+SOURCES = $(MixedOrderPhysicsBasedPreconditioner_SOURCES) \
+	$(simple_stratimikos_example_SOURCES)
+DIST_SOURCES = $(MixedOrderPhysicsBasedPreconditioner_SOURCES) \
+	$(simple_stratimikos_example_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -248,9 +256,13 @@ target_vendor = @target_vendor@
 # Actual programs
 #
 SIMPLE_STRATIMIKOS_EXAMPLE = simple_stratimikos_example
+MIXED_ORDER_PHYSICS_BASED_PRECONDITIONER = MixedOrderPhysicsBasedPreconditioner
 simple_stratimikos_example_SOURCES = $(srcdir)/simple_stratimikos_example.cpp
-simple_stratimikos_example_DEPENDENCIES = $(common_dependencies) amesos.klu.xml
+simple_stratimikos_example_DEPENDENCIES = $(common_dependencies)
 simple_stratimikos_example_LDADD = $(common_ldadd)
+MixedOrderPhysicsBasedPreconditioner_SOURCES = $(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp
+MixedOrderPhysicsBasedPreconditioner_DEPENDENCIES = $(common_dependencies)
+MixedOrderPhysicsBasedPreconditioner_LDADD = $(common_ldadd)
 
 #
 # Common stuff
@@ -262,7 +274,19 @@ common_ldadd = $(STRATIMIKOS_LIBS)
 EXTRA_DIST = $(srcdir)/simple_stratimikos_example.cpp \
 	$(srcdir)/_amesos.klu.xml \
 	$(srcdir)/_aztecoo.ifpack.xml \
-	$(srcdir)/_belos.ifpack.xml
+	$(srcdir)/_belos.ifpack.xml \
+	$(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp \
+	$(srcdir)/_MixedOrderPhysicsBasedPreconditioner.Base.xml \
+	$(srcdir)/_MixedOrderPhysicsBasedPreconditioner.AllSolveOutput.xml \
+	$(srcdir)/_MixedOrderPhysicsBasedPreconditioner.P2SolveOutputMSolveOutputToFile.xml \
+	$(srcdir)/_MixedOrderPhysicsBasedPreconditioner.P2SolveOutput.xml \
+	$(srcdir)/_MixedOrderPhysicsBasedPreconditioner.Belos.xml \
+	$(srcdir)/_P2.mtx \
+	$(srcdir)/_P1.mtx \
+	$(srcdir)/_M11.mtx \
+	$(srcdir)/_M12.mtx \
+	$(srcdir)/_M21.mtx \
+	$(srcdir)/_M22.mtx
 
 all: all-am
 
@@ -302,6 +326,9 @@ generate-sample-output.pl.stub: $(top_builddir)/config.status $(srcdir)/generate
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+MixedOrderPhysicsBasedPreconditioner$(EXEEXT): $(MixedOrderPhysicsBasedPreconditioner_OBJECTS) $(MixedOrderPhysicsBasedPreconditioner_DEPENDENCIES) 
+	@rm -f MixedOrderPhysicsBasedPreconditioner$(EXEEXT)
+	$(CXXLINK) $(MixedOrderPhysicsBasedPreconditioner_LDFLAGS) $(MixedOrderPhysicsBasedPreconditioner_OBJECTS) $(MixedOrderPhysicsBasedPreconditioner_LDADD) $(LIBS)
 simple_stratimikos_example$(EXEEXT): $(simple_stratimikos_example_OBJECTS) $(simple_stratimikos_example_DEPENDENCIES) 
 	@rm -f simple_stratimikos_example$(EXEEXT)
 	$(CXXLINK) $(simple_stratimikos_example_LDFLAGS) $(simple_stratimikos_example_OBJECTS) $(simple_stratimikos_example_LDADD) $(LIBS)
@@ -312,6 +339,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MixedOrderPhysicsBasedPreconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_stratimikos_example.Po@am__quote@
 
 .cpp.o:
@@ -329,6 +357,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+MixedOrderPhysicsBasedPreconditioner.o: $(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MixedOrderPhysicsBasedPreconditioner.o -MD -MP -MF "$(DEPDIR)/MixedOrderPhysicsBasedPreconditioner.Tpo" -c -o MixedOrderPhysicsBasedPreconditioner.o `test -f '$(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MixedOrderPhysicsBasedPreconditioner.Tpo" "$(DEPDIR)/MixedOrderPhysicsBasedPreconditioner.Po"; else rm -f "$(DEPDIR)/MixedOrderPhysicsBasedPreconditioner.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp' object='MixedOrderPhysicsBasedPreconditioner.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MixedOrderPhysicsBasedPreconditioner.Po' tmpdepfile='$(DEPDIR)/MixedOrderPhysicsBasedPreconditioner.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MixedOrderPhysicsBasedPreconditioner.o `test -f '$(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp
+
+MixedOrderPhysicsBasedPreconditioner.obj: $(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MixedOrderPhysicsBasedPreconditioner.obj -MD -MP -MF "$(DEPDIR)/MixedOrderPhysicsBasedPreconditioner.Tpo" -c -o MixedOrderPhysicsBasedPreconditioner.obj `if test -f '$(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MixedOrderPhysicsBasedPreconditioner.Tpo" "$(DEPDIR)/MixedOrderPhysicsBasedPreconditioner.Po"; else rm -f "$(DEPDIR)/MixedOrderPhysicsBasedPreconditioner.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp' object='MixedOrderPhysicsBasedPreconditioner.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MixedOrderPhysicsBasedPreconditioner.Po' tmpdepfile='$(DEPDIR)/MixedOrderPhysicsBasedPreconditioner.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o MixedOrderPhysicsBasedPreconditioner.obj `if test -f '$(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MixedOrderPhysicsBasedPreconditioner.cpp'; fi`
 
 simple_stratimikos_example.o: $(srcdir)/simple_stratimikos_example.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT simple_stratimikos_example.o -MD -MP -MF "$(DEPDIR)/simple_stratimikos_example.Tpo" -c -o simple_stratimikos_example.o `test -f '$(srcdir)/simple_stratimikos_example.cpp' || echo '$(srcdir)/'`$(srcdir)/simple_stratimikos_example.cpp; \
@@ -512,7 +556,7 @@ uninstall-am: uninstall-info-am
 
 # The following line helps the test harness recover from build errors.
 
-all-local: generate-sample-output.pl
+all-local: generate-sample-output.pl amesos.klu.xml MixedOrderPhysicsBasedPreconditioner.Base.xml
 	@echo ""
 	@echo "Trilinos package stratimikos subdirectory example built successfully."
 	@echo ""
@@ -528,6 +572,19 @@ amesos.klu.xml:
 	cp $(srcdir)/_belos.ifpack.xml belos.ifpack.xml
 	cp $(srcdir)/_belos.ifpack.xml belos.ml.xml
 	cp $(top_srcdir)/../amesos/test/Test_Basic/In_FourByFour.mtx FourByFour.mtx
+
+MixedOrderPhysicsBasedPreconditioner.Base.xml:
+	cp $(srcdir)/_MixedOrderPhysicsBasedPreconditioner.Base.xml MixedOrderPhysicsBasedPreconditioner.Base.xml
+	cp $(srcdir)/_MixedOrderPhysicsBasedPreconditioner.AllSolveOutput.xml MixedOrderPhysicsBasedPreconditioner.AllSolveOutput.xml
+	cp $(srcdir)/_MixedOrderPhysicsBasedPreconditioner.P2SolveOutputMSolveOutputToFile.xml MixedOrderPhysicsBasedPreconditioner.P2SolveOutputMSolveOutputToFile.xml
+	cp $(srcdir)/_MixedOrderPhysicsBasedPreconditioner.P2SolveOutput.xml MixedOrderPhysicsBasedPreconditioner.P2SolveOutput.xml
+	cp $(srcdir)/_MixedOrderPhysicsBasedPreconditioner.Belos.xml MixedOrderPhysicsBasedPreconditioner.Belos.xml
+	cp $(srcdir)/_P2.mtx P2.mtx
+	cp $(srcdir)/_P1.mtx P1.mtx
+	cp $(srcdir)/_M11.mtx M11.mtx
+	cp $(srcdir)/_M12.mtx M12.mtx
+	cp $(srcdir)/_M21.mtx M21.mtx
+	cp $(srcdir)/_M22.mtx M22.mtx
 
 @ENABLE_STRATIMIKOS_ML_NOX_TRUE@@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@$(top_builddir)/../nox/src/libnox.a:
 @ENABLE_STRATIMIKOS_ML_NOX_TRUE@@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@	cd $(top_builddir)/../nox; make all-libs

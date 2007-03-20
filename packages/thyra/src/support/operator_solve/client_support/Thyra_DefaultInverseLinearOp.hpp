@@ -33,37 +33,27 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Teuchos_Utils.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
+
 
 namespace Thyra {
 
+
 // Constructors/initializers/accessors
+
 
 template<class Scalar>
 DefaultInverseLinearOp<Scalar>::DefaultInverseLinearOp()
 {}
 
-template<class Scalar>
-DefaultInverseLinearOp<Scalar>::DefaultInverseLinearOp(
-  const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >      &lows
-  ,const SolveCriteria<Scalar>                                    *fwdSolveCriteria
-  ,const EThrowOnSolveFailure                                     throwOnFwdSolveFailure
-  ,const SolveCriteria<Scalar>                                    *adjSolveCriteria
-  ,const EThrowOnSolveFailure                                     throwOnAdjSolveFailure
-  )
-{
-  initializeImpl(
-    lows,fwdSolveCriteria,throwOnFwdSolveFailure
-    ,adjSolveCriteria,throwOnAdjSolveFailure
-    );
-}
 
 template<class Scalar>
 DefaultInverseLinearOp<Scalar>::DefaultInverseLinearOp(
-  const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >      &lows
-  ,const SolveCriteria<Scalar>                                          *fwdSolveCriteria
-  ,const EThrowOnSolveFailure                                           throwOnFwdSolveFailure
-  ,const SolveCriteria<Scalar>                                          *adjSolveCriteria
-  ,const EThrowOnSolveFailure                                           throwOnAdjSolveFailure
+  const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &lows,
+  const SolveCriteria<Scalar> *fwdSolveCriteria,
+  const EThrowOnSolveFailure throwOnFwdSolveFailure,
+  const SolveCriteria<Scalar> *adjSolveCriteria,
+  const EThrowOnSolveFailure throwOnAdjSolveFailure
   )
 {
   initializeImpl(
@@ -72,13 +62,14 @@ DefaultInverseLinearOp<Scalar>::DefaultInverseLinearOp(
     );
 }
 
+
 template<class Scalar>
-void DefaultInverseLinearOp<Scalar>::initialize(
-  const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >      &lows
-  ,const SolveCriteria<Scalar>                                    *fwdSolveCriteria
-  ,const EThrowOnSolveFailure                                     throwOnFwdSolveFailure
-  ,const SolveCriteria<Scalar>                                    *adjSolveCriteria
-  ,const EThrowOnSolveFailure                                     throwOnAdjSolveFailure
+DefaultInverseLinearOp<Scalar>::DefaultInverseLinearOp(
+  const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &lows,
+  const SolveCriteria<Scalar> *fwdSolveCriteria,
+  const EThrowOnSolveFailure throwOnFwdSolveFailure,
+  const SolveCriteria<Scalar> *adjSolveCriteria,
+  const EThrowOnSolveFailure throwOnAdjSolveFailure
   )
 {
   initializeImpl(
@@ -87,13 +78,14 @@ void DefaultInverseLinearOp<Scalar>::initialize(
     );
 }
 
+
 template<class Scalar>
 void DefaultInverseLinearOp<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >      &lows
-  ,const SolveCriteria<Scalar>                                          *fwdSolveCriteria
-  ,const EThrowOnSolveFailure                                           throwOnFwdSolveFailure
-  ,const SolveCriteria<Scalar>                                          *adjSolveCriteria
-  ,const EThrowOnSolveFailure                                           throwOnAdjSolveFailure
+  const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &lows,
+  const SolveCriteria<Scalar> *fwdSolveCriteria,
+  const EThrowOnSolveFailure throwOnFwdSolveFailure,
+  const SolveCriteria<Scalar> *adjSolveCriteria,
+  const EThrowOnSolveFailure throwOnAdjSolveFailure
   )
 {
   initializeImpl(
@@ -101,6 +93,23 @@ void DefaultInverseLinearOp<Scalar>::initialize(
     ,adjSolveCriteria,throwOnAdjSolveFailure
     );
 }
+
+
+template<class Scalar>
+void DefaultInverseLinearOp<Scalar>::initialize(
+  const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &lows,
+  const SolveCriteria<Scalar> *fwdSolveCriteria,
+  const EThrowOnSolveFailure throwOnFwdSolveFailure,
+  const SolveCriteria<Scalar> *adjSolveCriteria,
+  const EThrowOnSolveFailure throwOnAdjSolveFailure
+  )
+{
+  initializeImpl(
+    lows,fwdSolveCriteria,throwOnFwdSolveFailure
+    ,adjSolveCriteria,throwOnAdjSolveFailure
+    );
+}
+
 
 template<class Scalar>
 void DefaultInverseLinearOp<Scalar>::uninitialize()
@@ -110,13 +119,16 @@ void DefaultInverseLinearOp<Scalar>::uninitialize()
   adjSolveCriteria_ = Teuchos::null;
 }
 
+
 // Overridden form InverseLinearOpBase
+
 
 template<class Scalar>
 bool DefaultInverseLinearOp<Scalar>::isLowsConst() const
 {
   return lows_.isConst();
 }
+
 
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
@@ -125,6 +137,7 @@ DefaultInverseLinearOp<Scalar>::getNonconstLows()
   return lows_.getNonconstObj();
 }
 
+
 template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >
 DefaultInverseLinearOp<Scalar>::getLows() const
@@ -132,7 +145,9 @@ DefaultInverseLinearOp<Scalar>::getLows() const
   return lows_.getConstObj();
 }
 
+
 // Overridden from LinearOpBase
+
 
 template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
@@ -142,6 +157,7 @@ DefaultInverseLinearOp<Scalar>::range() const
   return lows_.getConstObj()->domain();
 }
 
+
 template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
 DefaultInverseLinearOp<Scalar>::domain() const
@@ -150,6 +166,7 @@ DefaultInverseLinearOp<Scalar>::domain() const
   return lows_.getConstObj()->range();
 }
 
+
 template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
 DefaultInverseLinearOp<Scalar>::clone() const
@@ -157,17 +174,17 @@ DefaultInverseLinearOp<Scalar>::clone() const
   return Teuchos::null; // Not supported yet but could be!
 }
 
+
 // Overridden from Teuchos::Describable
+
                                                 
 template<class Scalar>
 std::string DefaultInverseLinearOp<Scalar>::description() const
 {
   assertInitialized();
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
   std::ostringstream oss;
   oss
-    << "Thyra::DefaultInverseLinearOp<" << ST::name() << ">"
-    << "{"
+    << Teuchos::Describable::description() << "{"
     << "lows="<<lows_.getConstObj()->description()
     << ",fwdSolveCriteria="<<(fwdSolveCriteria_.get()?"...":"DEFAULT")
     << ",adjSolveCriteria="<<(adjSolveCriteria_.get()?"...":"DEFAULT")
@@ -175,13 +192,13 @@ std::string DefaultInverseLinearOp<Scalar>::description() const
   return oss.str();
 }
 
+
 template<class Scalar>
 void DefaultInverseLinearOp<Scalar>::describe(
-  Teuchos::FancyOStream                &out
-  ,const Teuchos::EVerbosityLevel      verbLevel
+  Teuchos::FancyOStream &out,
+  const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
   using Teuchos::RefCountPtr;
   using Teuchos::OSTab;
   assertInitialized();
@@ -196,17 +213,16 @@ void DefaultInverseLinearOp<Scalar>::describe(
     case Teuchos::VERB_EXTREME:
     {
       out
-        << "DefaulInverseLinearOp<" << ST::name() << ">{"
+        << Teuchos::Describable::description() << "{"
         << "rangeDim=" << this->range()->dim()
         << ",domainDim=" << this->domain()->dim() << "}:\n";
       OSTab tab(out);
-      out
-        <<  "lows:";
+      out <<  "lows = ";
       if(!lows_.getConstObj().get()) {
         out << " NULL\n";
       }
       else {
-        OSTab(out).o() << "\n" << Teuchos::describe(*lows_.getConstObj(),verbLevel);
+        out << Teuchos::describe(*lows_.getConstObj(),verbLevel);
 /*
   // ToDo: Implement printing of solve criteria!
         out << "fwdSolveCriteria:";
@@ -227,9 +243,12 @@ void DefaultInverseLinearOp<Scalar>::describe(
   }
 }
 
+
 // protected
 
+
 // Overridden from SingleScalarLinearOpBase
+
 
 template<class Scalar>
 bool DefaultInverseLinearOp<Scalar>::opSupported(ETransp M_trans) const
@@ -238,13 +257,14 @@ bool DefaultInverseLinearOp<Scalar>::opSupported(ETransp M_trans) const
   return solveSupports(*lows_.getConstObj(),M_trans);
 }
 
+
 template<class Scalar>
 void DefaultInverseLinearOp<Scalar>::apply(
-  const ETransp                     M_trans
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                     alpha
-  ,const Scalar                     beta
+  const ETransp M_trans,
+  const MultiVectorBase<Scalar> &X,
+  MultiVectorBase<Scalar> *Y,
+  const Scalar alpha,
+  const Scalar beta
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -303,16 +323,18 @@ void DefaultInverseLinearOp<Scalar>::apply(
   }
 }
 
+
 // private
+
 
 template<class Scalar>
 template<class LOWS>
 void DefaultInverseLinearOp<Scalar>::initializeImpl(
-  const Teuchos::RefCountPtr<LOWS>      &lows
-  ,const SolveCriteria<Scalar>          *fwdSolveCriteria
-  ,const EThrowOnSolveFailure           throwOnFwdSolveFailure
-  ,const SolveCriteria<Scalar>          *adjSolveCriteria
-  ,const EThrowOnSolveFailure           throwOnAdjSolveFailure
+  const Teuchos::RefCountPtr<LOWS> &lows,
+  const SolveCriteria<Scalar> *fwdSolveCriteria,
+  const EThrowOnSolveFailure throwOnFwdSolveFailure,
+  const SolveCriteria<Scalar> *adjSolveCriteria,
+  const EThrowOnSolveFailure throwOnAdjSolveFailure
   )
 {
   lows_.initialize(lows);
@@ -326,20 +348,26 @@ void DefaultInverseLinearOp<Scalar>::initializeImpl(
     adjSolveCriteria_ = Teuchos::null;
   throwOnFwdSolveFailure_ = throwOnFwdSolveFailure;
   throwOnAdjSolveFailure_ = throwOnAdjSolveFailure;
+  const std::string lowsLabel = lows_.getConstObj()->getObjectLabel();
+  if(lowsLabel.length())
+    this->setObjectLabel( "inv("+lowsLabel+")" );
 }
+
 
 } // end namespace Thyra
 
+
 // Related non-member functions
+
 
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstInverse(
-  const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >    &A
-  ,const SolveCriteria<Scalar>                                  *fwdSolveCriteria
-  ,const EThrowOnSolveFailure                                   throwOnFwdSolveFailure
-  ,const SolveCriteria<Scalar>                                  *adjSolveCriteria
-  ,const EThrowOnSolveFailure                                   throwOnAdjSolveFailure
+  const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &A,
+  const SolveCriteria<Scalar> *fwdSolveCriteria,
+  const EThrowOnSolveFailure throwOnFwdSolveFailure,
+  const SolveCriteria<Scalar> *adjSolveCriteria,
+  const EThrowOnSolveFailure throwOnAdjSolveFailure
   )
 {
   return Teuchos::rcp(
@@ -353,11 +381,11 @@ Thyra::nonconstInverse(
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
 Thyra::inverse(
-  const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >     &A
-  ,const SolveCriteria<Scalar>                                         *fwdSolveCriteria
-  ,const EThrowOnSolveFailure                                          throwOnFwdSolveFailure
-  ,const SolveCriteria<Scalar>                                         *adjSolveCriteria
-  ,const EThrowOnSolveFailure                                          throwOnAdjSolveFailure
+ const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &A,
+ const SolveCriteria<Scalar> *fwdSolveCriteria,
+ const EThrowOnSolveFailure throwOnFwdSolveFailure,
+ const SolveCriteria<Scalar> *adjSolveCriteria,
+ const EThrowOnSolveFailure throwOnAdjSolveFailure
   )
 {
   return Teuchos::rcp(
@@ -367,5 +395,6 @@ Thyra::inverse(
       )
     );
 }
+
 
 #endif	// THYRA_DEFAULT_INVERSE_LINEAR_OP_HPP

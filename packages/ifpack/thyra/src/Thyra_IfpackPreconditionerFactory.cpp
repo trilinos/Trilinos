@@ -37,7 +37,9 @@
 #include "Epetra_RowMatrix.h"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_dyn_cast.hpp"
+#include "Teuchos_implicit_cast.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 namespace {
 
@@ -122,13 +124,14 @@ void IfpackPreconditionerFactory::initializePrec(
   using Teuchos::rcp_const_cast;
   using Teuchos::set_extra_data;
   using Teuchos::get_optional_extra_data;
+  using Teuchos::implicit_cast;
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
   Teuchos::TimeMonitor overallTimeMonitor(*overallTimer);
   const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
   const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::IfpackPreconditionerFactory::initializePrec(...) ...\n";
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
@@ -193,7 +196,7 @@ void IfpackPreconditionerFactory::initializePrec(
   // Rob H. said that he will check in a fix the the development branch when
   // he can.
   if(startingOver) {
-    if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
       *out << "\nCreating the initial Ifpack_Preconditioner object of type \'"<<Ifpack::toString(precType_)<<"\' ...\n";
     timer.start(true);
     Teuchos::TimeMonitor creationTimeMonitor(*creationTimer);
@@ -206,7 +209,7 @@ void IfpackPreconditionerFactory::initializePrec(
         )
       );
     timer.stop();
-    if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
       OSTab(out).o() <<"\n=> Creation time = "<<timer.totalElapsedTime()<<" sec\n";
     // Set parameters if the list exists
     if(paramList_.get()) {
@@ -228,13 +231,13 @@ void IfpackPreconditionerFactory::initializePrec(
   // Update the factorization
   //
   {
-    if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
       *out << "\nComputing the factorization of the preconditioner ...\n";
     Teuchos::TimeMonitor factorizationTimeMonitor(*factorizationTimer);
     timer.start(true);
     TEST_FOR_EXCEPT(0!=ifpack_precOp->Compute());
     timer.stop();
-    if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
       OSTab(out).o() <<"\n=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
   }
   //
@@ -259,6 +262,12 @@ void IfpackPreconditionerFactory::initializePrec(
     ,EPETRA_OP_APPLY_APPLY_INVERSE
     ,EPETRA_OP_ADJOINT_UNSUPPORTED  // ToDo: Look into adjoints again.
     );
+  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_MEDIUM)) {
+    *out << "\nDescription of created preconditioner:\n";
+    OSTab tab(out);
+    ifpack_precOp->Print(*out);
+  }
+
   //
   // Initialize the preconditioner
   //
@@ -266,7 +275,7 @@ void IfpackPreconditionerFactory::initializePrec(
     Teuchos::rcp_implicit_cast<LinearOpBase<double> >(epetra_precOp)
     );
   totalTimer.stop();
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
     *out
       << "\nTotal time = "<<totalTimer.totalElapsedTime()<<" sec\n"
       << "\nLeaving Thyra::IfpackPreconditionerFactory::initializePrec(...) ...\n";
@@ -298,6 +307,7 @@ void IfpackPreconditionerFactory::setParameterList(Teuchos::RefCountPtr<Teuchos:
       ? precTypeValidator->getIntegralValue(*paramList_,PrecType_name,PrecTypeName_default)
       : PrecType_default
       );
+  Teuchos::readVerboseObjectSublist(&*paramList_,this);
 #ifdef TEUCHOS_DEBUG
   // Validate my use of the parameters!
   paramList->validateParameters(*this->getValidParameters(),1);
@@ -372,6 +382,7 @@ IfpackPreconditionerFactory::getValidParameters() const
     // Ifpack_Preconditioner objects themselves should do validation but we do
     // it ourselves taking the return from the Ifpack_GetValidParameters()
     // function as gospel!
+    Teuchos::setupVerboseObjectSublist(&*validParamList);
   }
   return validParamList;
 }

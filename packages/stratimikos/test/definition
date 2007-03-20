@@ -8,14 +8,12 @@
       --linear-solver-params-file=../example/amesos.klu.xml      --matrix-file=../example/FourByFour.mtx --tol=1e-13,
       --linear-solver-params-file=../example/aztecoo.ifpack.xml  --matrix-file=../example/FourByFour.mtx --tol=1e-13,
       --linear-solver-params-file=../example/aztecoo.ml.xml      --matrix-file=../example/FourByFour.mtx --tol=1e-13,
+      --linear-solver-params-file=../example/belos.ifpack.xml    --matrix-file=../example/FourByFour.mtx --tol=1e-13,
+      --linear-solver-params-file=../example/belos.ml.xml        --matrix-file=../example/FourByFour.mtx --tol=1e-13,
       --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/></ParameterList>"  --matrix-file=../example/FourByFour.mtx --tol=1e-10 --linear-solver-params-used-file=lowsf.aztecoo.used.xml,
       --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>"  --matrix-file=../example/FourByFour.mtx --tol=1e-10 --linear-solver-params-used-file=lowsf.amesos.used.xml;
     COMM = MPI(1),SERIAL;
 }
-
-# ToDo: Put the belos tests into the test harness in the development branch!
-#      --linear-solver-params-file=../example/belos.ifpack.xml    --matrix-file=../example/FourByFour.mtx --tol=1e-13,
-#      --linear-solver-params-file=../example/belos.ml.xml        --matrix-file=../example/FourByFour.mtx --tol=1e-13,
 
 (FRAMEWORK, INSTALL) {
     TESTS = ./test_single_stratimikos_solver_driver.exe;
@@ -23,6 +21,18 @@
            --input-file=FourByFour.amesos.xml,
            --input-file=FourByFour.aztecoo.np.xml,
            --input-file=FourByFour.aztecoo.ifpack.xml;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK, INSTALL) {
+    TESTS = ../example/MixedOrderPhysicsBasedPreconditioner.exe;
+    ARGS = --params-file=MixedOrderPhysicsBasedPreconditioner.Base.xml --base-dir=../example --solve-tol=1.0,
+      --params-file=MixedOrderPhysicsBasedPreconditioner.Base.xml --extra-params-file=MixedOrderPhysicsBasedPreconditioner.P2SolveOutput.xml --base-dir=../example --solve-tol=1.0,
+      --params-file=MixedOrderPhysicsBasedPreconditioner.Base.xml --extra-params-file=MixedOrderPhysicsBasedPreconditioner.AllSolveOutput.xml --base-dir=../example --solve-tol=1.0,
+      --params-file=MixedOrderPhysicsBasedPreconditioner.Base.xml --extra-params-file=MixedOrderPhysicsBasedPreconditioner.P2SolveOutputMSolveOutputToFile.xml --base-dir=../example --solve-tol=1.0,
+      --params-file=MixedOrderPhysicsBasedPreconditioner.Base.xml --extra-params-file=MixedOrderPhysicsBasedPreconditioner.P2SolveOutput.xml --base-dir=../example --use-algebraic-prec --solve-tol=1.0,
+      --params-file=MixedOrderPhysicsBasedPreconditioner.Belos.xml --base-dir=../example --use-algebraic-prec --solve-tol=1e+5,
+      --params-file=MixedOrderPhysicsBasedPreconditioner.Belos.xml --base-dir=../example --invert-P1 --solve-tol=1e+5;
     COMM = MPI(1),SERIAL;
 }
 

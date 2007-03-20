@@ -28,13 +28,55 @@
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
+Teuchos::RefCountPtr<
+  Teuchos::StringToIntegralParameterEntryValidator<Teuchos::EVerbosityLevel>
+  >
+Teuchos::verbosityLevelParameterEntryValidator(
+  std::string const& defaultParameterName
+  )
+{
+  return rcp(
+    new StringToIntegralParameterEntryValidator<Teuchos::EVerbosityLevel>(
+      tuple<std::string>(
+        "default",
+        "none",
+        "low",
+        "medium",
+        "high",
+        "extreme"
+        ),
+      tuple<std::string>(
+        "Use level set in code",
+        "Produce no output",
+        "Produce minimal output",
+        "Produce a little more output",
+        "Produce a higher level of output",
+        "Produce the highest level of output"
+        ),
+      tuple<EVerbosityLevel>(
+        Teuchos::VERB_DEFAULT,
+        Teuchos::VERB_NONE,
+        Teuchos::VERB_LOW,
+        Teuchos::VERB_MEDIUM,
+        Teuchos::VERB_HIGH,
+        Teuchos::VERB_EXTREME
+        ),
+      defaultParameterName
+      )
+    );
+}
+
+
 namespace Teuchos {
+
 
 //
 // AnyNumberParameterEntryValidator
 //
 
+
 // Constructors
+
 
 AnyNumberParameterEntryValidator::AnyNumberParameterEntryValidator(
   AcceptedTypes    const& acceptedTypes
@@ -60,7 +102,9 @@ AnyNumberParameterEntryValidator::AnyNumberParameterEntryValidator(
   acceptedTypesString_ = oss.str();
 }
 
+
 //  Local non-virtual validated lookup functions
+
 
 int AnyNumberParameterEntryValidator::getInt(
   const ParameterEntry &entry, const std::string &paramName
@@ -78,6 +122,7 @@ int AnyNumberParameterEntryValidator::getInt(
   return 0; // Will never get here!
 }
 
+
 double AnyNumberParameterEntryValidator::getDouble(
   const ParameterEntry &entry, const std::string &paramName
   ,const std::string &sublistName, const bool activeQuery
@@ -93,6 +138,7 @@ double AnyNumberParameterEntryValidator::getDouble(
   throwTypeError(entry,paramName,sublistName);
   return 0.0; // Will never get here!
 }
+
 
 std::string AnyNumberParameterEntryValidator::getString(
   const ParameterEntry &entry, const std::string &paramName
@@ -110,6 +156,7 @@ std::string AnyNumberParameterEntryValidator::getString(
   return ""; // Will never get here!
 }
 
+
 int AnyNumberParameterEntryValidator::getInt(
   ParameterList &paramList, const std::string &paramName
   ,const int defaultValue
@@ -119,6 +166,7 @@ int AnyNumberParameterEntryValidator::getInt(
   if(entry) return getInt(*entry,paramName,paramList.name(),true);
   return paramList.get(paramName,defaultValue);
 }
+
 
 double AnyNumberParameterEntryValidator::getDouble(
   ParameterList &paramList, const std::string &paramName
@@ -130,6 +178,7 @@ double AnyNumberParameterEntryValidator::getDouble(
   return paramList.get(paramName,defaultValue);
 }
 
+
 std::string AnyNumberParameterEntryValidator::getString(
   ParameterList &paramList, const std::string &paramName
   ,const std::string &defaultValue
@@ -139,8 +188,10 @@ std::string AnyNumberParameterEntryValidator::getString(
   if(entry) return getString(*entry,paramName,paramList.name(),true);
   return paramList.get(paramName,defaultValue);
 }
+
   
 // Overridden from ParameterEntryValidator
+
 
 void AnyNumberParameterEntryValidator::printDoc(
   std::string         const& docString
@@ -151,11 +202,13 @@ void AnyNumberParameterEntryValidator::printDoc(
   out << "#  Accepted types: " << acceptedTypesString_ << ".\n";
 }
 
+
 Teuchos::RefCountPtr<const Array<std::string> >
 AnyNumberParameterEntryValidator::validStringValues() const
 {
   return null;
 }
+
 
 void AnyNumberParameterEntryValidator::validate(
   ParameterEntry  const& entry
@@ -167,7 +220,9 @@ void AnyNumberParameterEntryValidator::validate(
   getInt(entry,paramName,sublistName,false);
 }
 
+
 // private
+
 
 void AnyNumberParameterEntryValidator::throwTypeError(
   ParameterEntry  const& entry
@@ -184,5 +239,6 @@ void AnyNumberParameterEntryValidator::throwTypeError(
     << "\n\nThe accepted types are: " << acceptedTypesString_ << "!";
     );
 }
+
 
 } // namespace Teuchos

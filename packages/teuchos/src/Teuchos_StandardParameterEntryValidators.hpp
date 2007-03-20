@@ -32,10 +32,13 @@
 #include "Teuchos_ParameterEntryValidator.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterListExceptions.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_StrUtils.hpp"
 
+
 namespace Teuchos {
+
 
 /** \brief Standard implementation of a ParameterEntryValidator that maps from
  * a list of strings to some integral type value.
@@ -62,8 +65,8 @@ public:
    *             [in] The default name of the parameter (used in error messages)
    */
   StringToIntegralParameterEntryValidator(
-    Array<std::string>   const& strings
-    ,std::string         const& defaultParameterName
+    Array<std::string> const& strings,
+    std::string const& defaultParameterName
     );
 
   /** \brief Construct with a mapping from strings to aribitrary typed
@@ -82,9 +85,9 @@ public:
    * </ul>
    */
   StringToIntegralParameterEntryValidator(
-    Array<std::string>    const& strings
-    ,Array<IntegralType>  const& integralValues 
-    ,std::string          const& defaultParameterName
+    Array<std::string> const& strings,
+    Array<IntegralType> const& integralValues, 
+    std::string const& defaultParameterName
     );
 
   /** \brief Construct with a mapping from strings (with documentation) to
@@ -106,10 +109,10 @@ public:
    * </ul>
    */
   StringToIntegralParameterEntryValidator(
-    Array<std::string>    const& strings
-    ,Array<std::string>   const& stringsDocs
-    ,Array<IntegralType>  const& integralValues 
-    ,std::string          const& defaultParameterName
+    Array<std::string> const& strings,
+    Array<std::string> const& stringsDocs,
+    Array<IntegralType> const& integralValues, 
+    std::string const& defaultParameterName
     );
 
   //@}
@@ -128,8 +131,8 @@ public:
    * thrown with a very descriptive error message.
    */
   IntegralType getIntegralValue(
-    const std::string &str, const std::string &paramName = ""
-    ,const std::string &sublistName = ""
+    const std::string &str, const std::string &paramName = "",
+    const std::string &sublistName = ""
     ) const;
 
   /** \brief Perform a mapping from a string value embedded in a
@@ -147,8 +150,8 @@ public:
    * thrown with a very descriptive error message.
    */
   IntegralType getIntegralValue(
-    const ParameterEntry &entry, const std::string &paramName = ""
-    ,const std::string &sublistName = "", const bool activeQuery = true
+    const ParameterEntry &entry, const std::string &paramName = "",
+    const std::string &sublistName = "", const bool activeQuery = true
     ) const;
 
   /** \brief Lookup a parameter from a parameter list, perform a mapping from
@@ -156,16 +159,16 @@ public:
    * its associated integral value.
    */
   IntegralType getIntegralValue(
-    ParameterList &paramList, const std::string &paramName
-    ,const std::string &defaultValue
+    ParameterList &paramList, const std::string &paramName,
+    const std::string &defaultValue
     ) const;
 
   /** \brief Lookup a parameter from a parameter list, validate the string
    * value, and return the string value.
    */
   std::string getStringValue(
-    ParameterList &paramList, const std::string &paramName
-    ,const std::string &defaultValue
+    ParameterList &paramList, const std::string &paramName,
+    const std::string &defaultValue
     ) const;
 
   /** \brief Validate the string and pass it on..
@@ -178,8 +181,8 @@ public:
    * thrown with a very descriptive error message.
    */
   std::string validateString(
-    const std::string &str, const std::string &paramName = ""
-    ,const std::string &sublistName = ""
+    const std::string &str, const std::string &paramName = "",
+    const std::string &sublistName = ""
     ) const;
 
   //@}
@@ -189,8 +192,8 @@ public:
 
   /** \brief . */
   void printDoc(
-    std::string         const& docString
-    ,std::ostream            & out
+    std::string const& docString,
+    std::ostream & out
     ) const;
 
   /** \brief . */
@@ -199,9 +202,9 @@ public:
 
   /** \brief . */
   void validate(
-    ParameterEntry  const& entry
-    ,std::string    const& paramName
-    ,std::string    const& sublistName
+    ParameterEntry const& entry,
+    std::string const& paramName,
+    std::string const& sublistName
     ) const;
 
   //@}
@@ -209,21 +212,25 @@ public:
 private:
 
   typedef std::map<std::string,IntegralType> map_t;
-  std::string                             defaultParameterName_;
-  std::string                             validValues_;
-  RefCountPtr<const Array<std::string> >  validStringValues_;
-  RefCountPtr<const Array<std::string> >  validStringValuesDocs_;
-  map_t                                   map_;
+  std::string defaultParameterName_;
+  std::string validValues_;
+  RefCountPtr<const Array<std::string> > validStringValues_;
+  RefCountPtr<const Array<std::string> > validStringValuesDocs_;
+  map_t map_;
 
   void setValidValues(
-    Array<std::string>   const& strings
-    ,Array<std::string>  const* stringsDocs = NULL
+    Array<std::string> const& strings,
+    Array<std::string> const* stringsDocs = NULL
     );
 
   // Not defined and not to be called.
   StringToIntegralParameterEntryValidator();
 
 };
+
+/** \brief Return a validator for <tt>EVerbosityLevel</tt>. */
+RefCountPtr<StringToIntegralParameterEntryValidator<EVerbosityLevel> >
+verbosityLevelParameterEntryValidator(std::string const& defaultParameterName);
 
 /** \brief Standard implementation of a ParameterEntryValidator that accepts
  * numbers from a number of different formats and converts them to numbers
@@ -247,8 +254,8 @@ public:
   public:
     /** \brief Allow all types or not on construction. */
     AcceptedTypes( bool allowAllTypesByDefault = true )
-      :allowInt_(allowAllTypesByDefault),allowDouble_(allowAllTypesByDefault)
-       ,allowString_(allowAllTypesByDefault)
+      :allowInt_(allowAllTypesByDefault),allowDouble_(allowAllTypesByDefault),
+       allowString_(allowAllTypesByDefault)
       {}
     /** \brief Set allow an <tt>int</tt> value or not */
     AcceptedTypes& allowInt( bool _allowInt )
@@ -278,7 +285,7 @@ public:
 
   /** \brief Construct with allowed input and output types. */
   AnyNumberParameterEntryValidator(
-    AcceptedTypes    const& acceptedTypes
+    AcceptedTypes const& acceptedTypes
     );
 
   //@}
@@ -288,44 +295,44 @@ public:
 
   /** \brief Get an integer value from a parameter entry. */
   int getInt(
-    const ParameterEntry &entry, const std::string &paramName = ""
-    ,const std::string &sublistName = "", const bool activeQuery = true
+    const ParameterEntry &entry, const std::string &paramName = "",
+    const std::string &sublistName = "", const bool activeQuery = true
     ) const;
 
   /** \brief Get a double value from a parameter entry. */
   double getDouble(
-    const ParameterEntry &entry, const std::string &paramName = ""
-    ,const std::string &sublistName = "", const bool activeQuery = true
+    const ParameterEntry &entry, const std::string &paramName = "",
+    const std::string &sublistName = "", const bool activeQuery = true
     ) const;
 
   /** \brief Get a string value from a parameter entry. */
   std::string getString(
-    const ParameterEntry &entry, const std::string &paramName = ""
-    ,const std::string &sublistName = "", const bool activeQuery = true
+    const ParameterEntry &entry, const std::string &paramName = "",
+    const std::string &sublistName = "", const bool activeQuery = true
     ) const;
 
   /** \brief Lookup parameter from a parameter list and return as an int
    * value.
    */
   int getInt(
-    ParameterList &paramList, const std::string &paramName
-    ,const int defaultValue
+    ParameterList &paramList, const std::string &paramName,
+    const int defaultValue
     ) const;
 
   /** \brief Lookup parameter from a parameter list and return as an double
    * value.
    */
   double getDouble(
-    ParameterList &paramList, const std::string &paramName
-    ,const double defaultValue
+    ParameterList &paramList, const std::string &paramName,
+    const double defaultValue
     ) const;
 
   /** \brief Lookup parameter from a parameter list and return as an string
    * value.
    */
   std::string getString(
-    ParameterList &paramList, const std::string &paramName
-    ,const std::string &defaultValue
+    ParameterList &paramList, const std::string &paramName,
+    const std::string &defaultValue
     ) const;
   
   //@}
@@ -335,8 +342,8 @@ public:
 
   /** \brief . */
   void printDoc(
-    std::string         const& docString
-    ,std::ostream            & out
+    std::string const& docString,
+    std::ostream & out
     ) const;
 
   /** \brief . */
@@ -345,22 +352,22 @@ public:
 
   /** \brief . */
   void validate(
-    ParameterEntry  const& entry
-    ,std::string    const& paramName
-    ,std::string    const& sublistName
+    ParameterEntry const& entry,
+    std::string const& paramName,
+    std::string const& sublistName
     ) const;
 
   //@}
 
 private:
 
-  AcceptedTypes    const   acceptedTypes_;
-  std::string              acceptedTypesString_;
+  const AcceptedTypes acceptedTypes_;
+  std::string acceptedTypesString_;
 
   void throwTypeError(
-    ParameterEntry  const& entry
-    ,std::string    const& paramName
-    ,std::string    const& sublistName
+    ParameterEntry const& entry,
+    std::string const& paramName,
+    std::string const& sublistName
     ) const;
 
   // Not defined and not to be called.
@@ -368,14 +375,18 @@ private:
 
 };
 
+
 // ///////////////////////////
 // Implementations
+
 
 //
 // StringToIntegralParameterEntryValidator
 //
 
+
 // Constructors
+
 
 template<class IntegralType>
 StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameterEntryValidator(
@@ -394,6 +405,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   }
   setValidValues(strings);
 }
+
 
 template<class IntegralType>
 StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameterEntryValidator(
@@ -416,6 +428,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   }
   setValidValues(strings);
 }
+
 
 template<class IntegralType>
 StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameterEntryValidator(
@@ -442,7 +455,9 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   setValidValues(strings,&stringsDocs);
 }
 
+
 // Lookup functions
+
 
 template<class IntegralType>
 IntegralType
@@ -465,6 +480,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
   return (*itr).second;	
 }
 
+
 template<class IntegralType>
 IntegralType
 StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
@@ -486,6 +502,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
   return getIntegralValue(strValue,paramName,sublistName); // This will validate the value and throw!
 }
 
+
 template<class IntegralType>
 IntegralType
 StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
@@ -497,6 +514,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
     &strValue = paramList.get(paramName,defaultValue);
   return getIntegralValue(strValue,paramName,paramList.name());
 }
+
 
 template<class IntegralType>
 std::string
@@ -511,6 +529,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::getStringValue(
   return strValue;
 }
 
+
 template<class IntegralType>
 std::string
 StringToIntegralParameterEntryValidator<IntegralType>::validateString(
@@ -522,7 +541,9 @@ StringToIntegralParameterEntryValidator<IntegralType>::validateString(
   return str;
 }
 
+
 // Overridden from ParameterEntryValidator
+
 
 template<class IntegralType>
 void StringToIntegralParameterEntryValidator<IntegralType>::printDoc(
@@ -547,12 +568,14 @@ void StringToIntegralParameterEntryValidator<IntegralType>::printDoc(
   out << "#     }\n";
 }
 
+
 template<class IntegralType>
 Teuchos::RefCountPtr<const Array<std::string> >
 StringToIntegralParameterEntryValidator<IntegralType>::validStringValues() const
 {
   return validStringValues_;
 }
+
 
 template<class IntegralType>
 void StringToIntegralParameterEntryValidator<IntegralType>::validate(
@@ -564,7 +587,9 @@ void StringToIntegralParameterEntryValidator<IntegralType>::validate(
   this->getIntegralValue(entry,paramName,sublistName,false);
 }
 
+
 // private
+
 
 template<class IntegralType>
 void StringToIntegralParameterEntryValidator<IntegralType>::setValidValues(
@@ -586,6 +611,8 @@ void StringToIntegralParameterEntryValidator<IntegralType>::setValidValues(
   validValues_ = oss.str();
 }
 
+
 } // namespace Teuchos
+
 
 #endif // TEUCHOS_STANDARD_PARAMETER_ENTRY_VALIDATORS_H

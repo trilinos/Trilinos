@@ -15,6 +15,7 @@
 #include "BelosStatusTestResNorm.hpp"
 #include "BelosStatusTestOutputter.hpp"
 #include "BelosStatusTestCombo.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
@@ -267,6 +268,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(Teuchos::RefCountPt
       ,"Error, \"Solver Type\" = \"" << solverType << "\" is not recognized!"
       "  Valid values are \"GMRES\" and \"CG\""
       );
+  Teuchos::readVerboseObjectSublist(&*paramList_,this);
   // ToDo: Replace above with Teuchos::StringToIntMap ...
 }
 
@@ -353,6 +355,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::updateThisValidParamList()
       thisValidParamList_->sublist(precFactoryName_).setParameters(*precFactoryValidParamList);
     }
   }
+  Teuchos::setupVerboseObjectSublist(&*thisValidParamList_);
 }
 
 template<class Scalar>

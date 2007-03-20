@@ -40,8 +40,12 @@
 #endif
 #include "Thyra_EpetraThyraWrappers.hpp"
 
-using namespace Thyra;
+
+namespace Thyra { 
+
+
 using namespace Teuchos;
+
 
 EpetraOperatorWrapper::EpetraOperatorWrapper(const ConstLinearOperator<double>& thyraOp)
   : useTranspose_(false),
@@ -54,12 +58,14 @@ EpetraOperatorWrapper::EpetraOperatorWrapper(const ConstLinearOperator<double>& 
     label_(thyraOp_.description())
 {;}
 
+
 double EpetraOperatorWrapper::NormInf() const 
 {
   TEST_FOR_EXCEPTION(true, runtime_error,
                      "EpetraOperatorWrapper::NormInf not implemated");
   return 1.0;
 }
+
 
 RefCountPtr<Epetra_Map> 
 EpetraOperatorWrapper
@@ -221,8 +227,6 @@ copyThyraIntoEpetra(const ConstVector<double>& thyraVec,
 }
 
 
-
-
 int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
@@ -271,6 +275,7 @@ int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X, Epetra_MultiVector
   return 0;
 }
 
+
 int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& X, 
                                       Epetra_MultiVector& Y) const
 {
@@ -278,6 +283,7 @@ int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& X,
                      "EpetraOperatorWrapper::ApplyInverse not implemented");
   return 1;
 }
+
 
 RefCountPtr<Epetra_Comm> 
 EpetraOperatorWrapper::getEpetraComm(const ConstLinearOperator<double>& thyraOp) const
@@ -325,14 +331,13 @@ EpetraOperatorWrapper::getEpetraComm(const ConstLinearOperator<double>& thyraOp)
 }
 
 
-namespace Thyra
-{
-  RefCountPtr<const LinearOpBase<double> > 
-  makeEpetraWrapper(const ConstLinearOperator<double>& thyraOp)
-  {
-    RefCountPtr<const LinearOpBase<double> > rtn 
-      = rcp(new EpetraLinearOp(rcp(new EpetraOperatorWrapper(thyraOp))));
-    return rtn;
-  }
+} // namespace Thyra
 
+
+Teuchos::RefCountPtr<const Thyra::LinearOpBase<double> > 
+Thyra::makeEpetraWrapper(const ConstLinearOperator<double>& thyraOp)
+{
+  RefCountPtr<const LinearOpBase<double> > rtn 
+    = rcp(new EpetraLinearOp(rcp(new EpetraOperatorWrapper(thyraOp))));
+  return rtn;
 }

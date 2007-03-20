@@ -33,14 +33,16 @@
     \brief .
 */
 
-#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_TestForException.hpp"
+
 
 namespace Teuchos {
 
-/** \brief Verbosity level.
 
-\ingroup teuchos_outputting_grp
-*/
+/** \brief Verbosity level.
+ *
+ * \ingroup teuchos_outputting_grp
+ */
 enum EVerbosityLevel {
 	VERB_DEFAULT=-1  ///< Generate output as defined by the object
 	,VERB_NONE=0     ///< Generate no output
@@ -49,6 +51,35 @@ enum EVerbosityLevel {
 	,VERB_HIGH=3     ///< Generate a high level of output
 	,VERB_EXTREME=4  ///< Generate the most output possible
 };
+
+
+/** \brief Return a string representation of the verbosity level.
+ *
+ * \ingroup teuchos_outputting_grp
+ */
+inline
+std::string toString(const EVerbosityLevel verbLevel)
+{
+  switch(verbLevel) {
+    case VERB_DEFAULT:
+      return "VERB_DEFAULT";
+    case VERB_NONE:
+      return "VERB_NONE";
+    case VERB_LOW:
+      return "VERB_LOW";
+    case VERB_MEDIUM:
+      return "VERB_MEDIUM";
+    case VERB_HIGH:
+      return "VERB_HIGH";
+    case VERB_EXTREME:
+      return "VERB_EXTREME";
+    default:
+      TEST_FOR_EXCEPT("Should never get here!");
+  }
+  return ""; // Never get here!
+
+}
+
 
 } // namespace Teuchos
 

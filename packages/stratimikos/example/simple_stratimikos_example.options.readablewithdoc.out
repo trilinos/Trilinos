@@ -40,15 +40,61 @@
           ScaleMethod : int = 0
           TrustMe : bool = 0
           Lapack -> 
-            [empty list]
+            Equilibrate : bool = 1
           Mumps -> 
-            [empty list]
+            ColScaling : double* = 0
+            Equilibrate : bool = 1
+            RowScaling : double* = 0
           Pardiso -> 
-            [empty list]
+            IPARM(1) : int = 0
+            IPARM(10) : int = 0
+            IPARM(11) : int = 0
+            IPARM(18) : int = 0
+            IPARM(19) : int = 0
+            IPARM(2) : int = 0
+            IPARM(21) : int = 0
+            IPARM(3) : int = 0
+            IPARM(4) : int = 0
+            IPARM(8) : int = 0
+            MSGLVL : int = 0
           Scalapack -> 
-            [empty list]
+            2D distribution : bool = 1
+            grid_nb : int = 32
           Superludist -> 
-            [empty list]
+            ColPerm : string = NOT SET
+            Equil : bool = 0
+            Fact : string = SamePattern
+            IterRefine : string = NOT SET
+            PrintNonzeros : bool = 0
+            ReplaceTinyPivot : bool = 1
+            ReuseSymbolic : bool = 0
+            RowPerm : string = NOT SET
+            perm_c : int* = 0
+            perm_r : int* = 0
+        VerboseObject -> 
+          Output File : string = none
+            # The file to send output to.  If the value "none" is used, then
+            # whatever is set in code will be used.  However, any other string value
+            # will be used to create an std::ofstream object to a file with the given name.
+            # Therefore, any valid file name is a valid string value for this parameter.
+          Verbosity Level : string = default
+            # The verbosity level to use to override whatever is set in code.
+            # The value of "default" will allow the level set in code to be used.
+            #   Valid string values:
+            #     {
+            #       "default"
+            #          Use level set in code
+            #       "none"
+            #          Produce no output
+            #       "low"
+            #          Produce minimal output
+            #       "medium"
+            #          Produce a little more output
+            #       "high"
+            #          Produce a higher level of output
+            #       "extreme"
+            #          Produce the highest level of output
+            #     }
       AztecOO -> 
         Output Every RHS : bool = 0
           # Determines if output is created for each individual RHS (true or 1) or if output
@@ -215,6 +261,30 @@
             Steps : int = 3
               # Number of steps taken for the "Jacobi" or the "Symmetric Gauss-Seidel"
               # internal preconditioners for each preconditioner application.
+        VerboseObject -> 
+          Output File : string = none
+            # The file to send output to.  If the value "none" is used, then
+            # whatever is set in code will be used.  However, any other string value
+            # will be used to create an std::ofstream object to a file with the given name.
+            # Therefore, any valid file name is a valid string value for this parameter.
+          Verbosity Level : string = default
+            # The verbosity level to use to override whatever is set in code.
+            # The value of "default" will allow the level set in code to be used.
+            #   Valid string values:
+            #     {
+            #       "default"
+            #          Use level set in code
+            #       "none"
+            #          Produce no output
+            #       "low"
+            #          Produce minimal output
+            #       "medium"
+            #          Produce a little more output
+            #       "high"
+            #          Produce a higher level of output
+            #       "extreme"
+            #          Produce the highest level of output
+            #     }
       Belos -> 
         Adjustable Block Size : bool = 1
         Block Size : int = 1
@@ -228,6 +298,30 @@
         Outputter -> 
           Output Frequency : int = 10
           Output Max Res Only : bool = 1
+        VerboseObject -> 
+          Output File : string = none
+            # The file to send output to.  If the value "none" is used, then
+            # whatever is set in code will be used.  However, any other string value
+            # will be used to create an std::ofstream object to a file with the given name.
+            # Therefore, any valid file name is a valid string value for this parameter.
+          Verbosity Level : string = default
+            # The verbosity level to use to override whatever is set in code.
+            # The value of "default" will allow the level set in code to be used.
+            #   Valid string values:
+            #     {
+            #       "default"
+            #          Use level set in code
+            #       "none"
+            #          Produce no output
+            #       "low"
+            #          Produce minimal output
+            #       "medium"
+            #          Produce a little more output
+            #       "high"
+            #          Produce a higher level of output
+            #       "extreme"
+            #          Produce the highest level of output
+            #     }
     Preconditioner Types -> 
       Ifpack -> 
         Overlap : int = 0
@@ -245,7 +339,7 @@
           #       "block relaxation stand-alone (Amesos)"
           #       "block relaxation (Amesos)"
           #       "Amesos"
-          #       "LU"
+          #       "Amesos stand-alone"
           #       "IC"
           #       "IC stand-alone"
           #       "ICT"
@@ -286,24 +380,45 @@
           schwarz: compute condest : bool = 1
           schwarz: filter singletons : bool = 0
           schwarz: reordering type : string = none
+        VerboseObject -> 
+          Output File : string = none
+            # The file to send output to.  If the value "none" is used, then
+            # whatever is set in code will be used.  However, any other string value
+            # will be used to create an std::ofstream object to a file with the given name.
+            # Therefore, any valid file name is a valid string value for this parameter.
+          Verbosity Level : string = default
+            # The verbosity level to use to override whatever is set in code.
+            # The value of "default" will allow the level set in code to be used.
+            #   Valid string values:
+            #     {
+            #       "default"
+            #          Use level set in code
+            #       "none"
+            #          Produce no output
+            #       "low"
+            #          Produce minimal output
+            #       "medium"
+            #          Produce a little more output
+            #       "high"
+            #          Produce a higher level of output
+            #       "extreme"
+            #          Produce the highest level of output
+            #     }
       ML -> 
-        PDE equations : int = 1
         aggregation: damping factor : double = 1.333
-        aggregation: local aggregates : int = 128
-        aggregation: threshold : double = 0
+        aggregation: local aggregates : int = 1
         aggregation: type : string = METIS
         coarse: max size : int = 128
         coarse: type : string = Amesos-KLU
         default values : string = DD
+        eigen-analysis: iterations : int = 20
+        eigen-analysis: type : string = power-method
         increasing or decreasing : string = increasing
         max levels : int = 2
-        output : int = 8
         prec type : string = MGV
-        print unused : int = -2
         smoother: Aztec as solver : bool = 0
-        smoother: Aztec options : int* = 0xa97380
-        smoother: Aztec params : double* = 0xa97450
-        smoother: damping factor : double = 0.67
+        smoother: Aztec options : int* = 0xad0db0
+        smoother: Aztec params : double* = 0xad0e80
         smoother: pre or post : string = both
-        smoother: sweeps : int = 2
+        smoother: sweeps : int = 1
         smoother: type : string = Aztec

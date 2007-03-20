@@ -30,8 +30,11 @@
 
 #include "Teuchos_VerbosityLevel.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_LabeledObject.hpp"
+
 
 namespace Teuchos {
+
 
 /** \brief Base class for all objects that can describe themselves and
  * their current state.
@@ -40,44 +43,45 @@ namespace Teuchos {
  * allowing subclasses to optionally provide detailed debug-style information
  * about their current state.  This interface has just two virtual member
  * functions, <tt>describe(void)</tt> and <tt>description()</tt>, which both
- * have default implementations.  The shorter version of
- * <tt>describe(void)</tt> (which takes no arguments and returns an
- * <tt>std::string</tt> object) is meant for very short descriptions while the
- * longer version of <tt>description()</tt> takes and returns a
- * <tt>FancyOStream</tt> object and is designed for more detailed formated
- * output.
+ * have default implementations.  The shorter version <tt>description()</tt>
+ * (which takes no arguments and returns an <tt>std::string</tt> object) is
+ * meant for very short one-line descriptions while the longer version
+ * <tt>describe()</tt> takes and returns a <tt>FancyOStream</tt> object and is
+ * designed for more detailed multi-line formated output.
  *
- * Since both of these <tt>description()</tt> functions have reasonable
- * default implementations, when a subclass inherits from this base
- * class, no virtual functions need to be overridden to start with.
- * However, when debugging time comes, one or both of these functions
- * should be overridden to provide more useful information.
+ * Since both of these functions have reasonable default implementations, when
+ * a subclass inherits from this base class, no virtual functions need to be
+ * overridden to start with.  However, when debugging time comes, one or both
+ * of these functions should be overridden to provide more useful information.
+ *
+ * This interface derives from the <tt>LabeledObject</tt> interface and
+ * therefore a user can set an object-specific label on every
+ * <tt>Describable</tt> object that will be incorporated in the the
+ * description of the object.
  *
  * ToDo: Include an example/testing function for a few different use
  * cases to demonstrate how to use this interface properly.
  *
  * \ingroup teuchos_outputting_grp
  */
-class Describable {
+class Describable : virtual public LabeledObject {
 public:
 
   /// Default value for <tt>verLevel</tt> in <tt>description()</tt>
   static const EVerbosityLevel   verbLevel_default;
 
-  /** \brief . */
-  virtual ~Describable() {}
-
   //! @name Public virtual member functions 
   //@{
 
-  /** \brief Return a simple description (usually just one line) of this object.
+  /** \brief Return a simple one-line description of this object.
    *
-   * The default implementation just returns <tt>typeName(*this)</tt> but
-   * a subclass can modify this if needed.  Note that some compilers return a
-   * mangled name from <tt>std::type_info::name()</tt> (e.g. g++ version 3.4.x
-   * and before) that is hard for non-g++ developers to read.  Therefore, it
-   * is usually beneficial to override this function to build a more
-   * human-readable name for a subclass, especially if templating is used.
+   * The default implementation just returns <tt>typeName(*this)</tt>, along
+   * with the object's label if defined.  The function
+   * <tt>typeName(*this)</tt> guarantees that a demangled, human-readable
+   * name is returned on most platforms.  Even if subclasses choose to
+   * override this function, this default implementation can still be called
+   * as <tt>Teuchos::Describable::description()</tt> in order to print the
+   * label name along with the class name.
    */
   virtual std::string description() const;
 
@@ -85,15 +89,16 @@ public:
    * <tt>FancyOStream</tt> object.
    *
    * \param  out   
-   *               [in] The <tt>FancyOStream</tt> object that output is sent to.
+   *           [in] The <tt>FancyOStream</tt> object that output is sent to.
    * \param  verbLevel
-   *               [in] Determines the level of verbosity for which the
-   *               the object will be printed.  If <tt>verbLevel==VERB_DEFAULT</tt>
-   *               (which is the default value), then the verbosity level will
-   *               be determined by the <tt>*this</tt> object (i.e. perhaps through the
-   *               <tt>ObjectWithVerbosity</tt> interface).  It is up to <tt>*this</tt>
-   *               how to interpret the level represented by <tt>verbLevel</tt>.
-   *               The default value is <tt>VERB_DEFAULT</tt>.
+   *           [in] Determines the level of verbosity for which the the object
+   *           will be printed.  If <tt>verbLevel==VERB_DEFAULT</tt> (which is
+   *           the default value), then the verbosity level will be determined
+   *           by the <tt>*this</tt> object (i.e. perhaps through the
+   *           <tt>ObjectWithVerbosity</tt> interface).  It is up to
+   *           <tt>*this</tt> how to interpret the level represented by
+   *           <tt>verbLevel</tt>.  The default value is
+   *           <tt>VERB_DEFAULT</tt>.
    *
    * In order for this function to work effectively for independently
    * developed classes, a general consensus needs be reached as to
@@ -101,41 +106,48 @@ public:
    * <tt>verbLevel</tt> mean in relation to the amount of output
    * produced.
    *
+   * It is expected that the subclass implementation will tab the output one
+   * increment using the <tt>OSTab</tt> class.  This convention results in
+   * orderly output from independently written subclasses.
+   *
    * A default implementation of this function is provided that simply
    * performs:
-   \verbatim
+   \code
 
-   return out << this->description() << std::endl; \endverbatim
+   OSTab tab(out);
+   return out << this->description() << std::endl; \endcode
    *
    * A subclass should override this function to provide more
    * interesting and more useful information about the object.
    */
   virtual void describe(
-    FancyOStream                &out
-    ,const EVerbosityLevel      verbLevel     = verbLevel_default
+    FancyOStream &out,
+    const EVerbosityLevel verbLevel = verbLevel_default
     ) const;
   
 };
+
 
 // Describable stream manipulator state class
 //
 // This is not a class that a user needs to see and that is why it is not
 // being given doxygen documentation!
 struct DescribableStreamManipulatorState {
-  const Describable          &describable;
-  const EVerbosityLevel      verbLevel;
+  const Describable &describable;
+  const EVerbosityLevel verbLevel;
   DescribableStreamManipulatorState(
-    const Describable          &_describable
-    ,const EVerbosityLevel     _verbLevel=VERB_MEDIUM
+    const Describable &_describable,
+    const EVerbosityLevel _verbLevel = VERB_MEDIUM
     )
     :describable(_describable)
     ,verbLevel(_verbLevel)
     {}
 };
 
-/** \brief Describable output stream maniuplator.
+
+/** \brief Describable output stream manipulator.
  *
- * This simple function allows you to insert ouptut from
+ * This simple function allows you to insert output from
  * <tt>Describable::describe()</tt> right in the middle of a chain of
  * insertion operations.  For example, you can write:
  
@@ -144,7 +156,9 @@ struct DescribableStreamManipulatorState {
   void someFunc( const Teuchos::Describable &obj )
   {
     ...
-    std::cout << "The object is described as " << describe(obj,Teuchos::VERB_MEDIUM);
+    std::cout
+      << "The object is described as "
+      << describe(obj,Teuchos::VERB_MEDIUM);
     ...
   }
 
@@ -153,12 +167,13 @@ struct DescribableStreamManipulatorState {
  * \relates Describable
  */
 inline DescribableStreamManipulatorState describe(
-  const Describable          &describable
-  ,const EVerbosityLevel     verbLevel     = Describable::verbLevel_default
+  const Describable &describable,
+  const EVerbosityLevel verbLevel = Describable::verbLevel_default
   )
 {
   return DescribableStreamManipulatorState(describable,verbLevel);
 }
+
 
 /** \brief Output stream operator for Describable manipulator.
  *
@@ -169,7 +184,9 @@ inline DescribableStreamManipulatorState describe(
   void someFunc( const Teuchos::Describable &obj )
   {
     ...
-    std::cout << "The object is described as " << describe(obj,Teuchos::VERB_MEDIUM);
+    std::cout
+      << "The object is described as "
+      << describe(obj,Teuchos::VERB_MEDIUM);
     ...
   }
 
@@ -185,7 +202,9 @@ inline DescribableStreamManipulatorState describe(
  * \relates Describable
  */
 inline
-std::ostream& operator<<( std::ostream& os, const DescribableStreamManipulatorState& d )
+std::ostream& operator<<(
+  std::ostream& os, const DescribableStreamManipulatorState& d
+  )
 {
   d.describable.describe(*getFancyOStream(Teuchos::rcp(&os,false)),d.verbLevel);
   return os;
@@ -194,7 +213,7 @@ std::ostream& operator<<( std::ostream& os, const DescribableStreamManipulatorSt
 //
 // RAB: Note: The above function works with an std::ostream object even
 // through Describable::describe(...) requires a FancyOStream object.  We must
-// write the stream manipulator in terms of std::ostream, or compound right
+// write the stream manipulator in terms of std::ostream, or compound output
 // statements like:
 //
 //  void foo( FancyOStream &out, Describable &d, EVerbLevel verbLevel )
@@ -202,7 +221,7 @@ std::ostream& operator<<( std::ostream& os, const DescribableStreamManipulatorSt
 //      out << "\nThis is the describable object d:" << describe(d,verbLevel);
 //    }
 //
-// will not work currectly.  The problem is that the first output
+// will not work correctly.  The problem is that the first output
 //
 //   out << "\nThis is the describable object d:"
 //
@@ -213,8 +232,10 @@ std::ostream& operator<<( std::ostream& os, const DescribableStreamManipulatorSt
 //
 // should not even compile.  However, under gcc 3.4.3, the code did compile
 // but did not call the above function.  Instead, it set up some type of
-// infinite recursion that resulted in a segfault.
+// infinite recursion that resulted in a segfault due to the presence of the
+// Teuchos::any class!
 //
+
 
 } // namespace Teuchos
 

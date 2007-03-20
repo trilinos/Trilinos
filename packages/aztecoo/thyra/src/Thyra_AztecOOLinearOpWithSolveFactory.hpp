@@ -35,9 +35,12 @@
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
 
+
 namespace Teuchos { class ParameterList; }
 
+
 namespace Thyra {
+
 
 /** \brief <tt>LinearOpWithSolveFactoryBase</tt> subclass implemented in terms
  * of <tt>AztecOO</tt>.
@@ -101,15 +104,15 @@ public:
   bool acceptsPreconditionerFactory() const;
   /** \brief . */
   void setPreconditionerFactory(
-    const Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >  &precFactory
-    ,const std::string                                              &precFactoryName
+    const Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >  &precFactory,
+    const std::string  &precFactoryName
     );
   /** \brief . */
   Teuchos::RefCountPtr<PreconditionerFactoryBase<double> > getPreconditionerFactory() const;
   /** \brief . */
   void unsetPreconditionerFactory(
-    Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >  *precFactory
-    ,std::string                                              *precFactoryName
+    Teuchos::RefCountPtr<PreconditionerFactoryBase<double> > *precFactory,
+    std::string *precFactoryName
     );
   /** \brief . */
   bool isCompatible( const LinearOpSourceBase<double> &fwdOpSrc ) const;
@@ -117,38 +120,38 @@ public:
   Teuchos::RefCountPtr<LinearOpWithSolveBase<double> > createOp() const;
   /** \brief . */
   void initializeOp(
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    &fwdOpSrc
-    ,LinearOpWithSolveBase<double>                                   *Op
-    ,const ESupportSolveUse                                           supportSolveUse
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOpSrc,
+    LinearOpWithSolveBase<double> *Op,
+    const ESupportSolveUse supportSolveUse
     ) const;
   /** \brief . */
   void initializeAndReuseOp(
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    &fwdOpSrc
-    ,LinearOpWithSolveBase<double>                                   *Op
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOpSrc,
+    LinearOpWithSolveBase<double> *Op
     ) const;
   /** \brief . */
   void uninitializeOp(
-    LinearOpWithSolveBase<double>                               *Op
-    ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    *fwdOpSrc
-    ,Teuchos::RefCountPtr<const PreconditionerBase<double> >    *prec
-    ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    *approxFwdOpSrc
-    ,ESupportSolveUse                                           *supportSolveUse
+    LinearOpWithSolveBase<double> *Op,
+    Teuchos::RefCountPtr<const LinearOpSourceBase<double> > *fwdOpSrc,
+    Teuchos::RefCountPtr<const PreconditionerBase<double> > *prec,
+    Teuchos::RefCountPtr<const LinearOpSourceBase<double> > *approxFwdOpSrc,
+    ESupportSolveUse *supportSolveUse
     ) const;
   /** \brief . */
   bool supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const;
   /** \brief . */
   void initializePreconditionedOp(
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >       &fwdOpSrc
-    ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >      &prec
-    ,LinearOpWithSolveBase<double>                                      *Op
-    ,const ESupportSolveUse                                             supportSolveUse
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOpSrc,
+    const Teuchos::RefCountPtr<const PreconditionerBase<double> > &prec,
+    LinearOpWithSolveBase<double> *Op,
+    const ESupportSolveUse supportSolveUse
     ) const;
   /** \brief . */
   void initializeApproxPreconditionedOp(
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >       &fwdOpSrc
-    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >      &approxFwdOpSrc
-    ,LinearOpWithSolveBase<double>                                      *Op
-    ,const ESupportSolveUse                                             supportSolveUse
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOpSrc,
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &approxFwdOpSrc,
+    LinearOpWithSolveBase<double> *Op,
+    const ESupportSolveUse supportSolveUse
     ) const;
   //@}
 
@@ -181,16 +184,16 @@ private:
   // /////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >  precFactory_;
-  std::string                                               precFactoryName_;
-  Teuchos::RefCountPtr<Teuchos::ParameterList>              thisValidParamList_;
-  Teuchos::RefCountPtr<Teuchos::ParameterList>              paramList_;
+  Teuchos::RefCountPtr<PreconditionerFactoryBase<double> > precFactory_;
+  std::string precFactoryName_;
+  Teuchos::RefCountPtr<Teuchos::ParameterList> thisValidParamList_;
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_;
 
-  int                                           defaultFwdMaxIterations_;
-  double                                        defaultFwdTolerance_;
-  int                                           defaultAdjMaxIterations_;
-  double                                        defaultAdjTolerance_;
-  bool                                          outputEveryRhs_;
+  int defaultFwdMaxIterations_;
+  double defaultFwdTolerance_;
+  int defaultAdjMaxIterations_;
+  double defaultAdjTolerance_;
+  bool outputEveryRhs_;
 
   bool useAztecPrec_;
 
@@ -201,11 +204,11 @@ private:
   void updateThisValidParamList();
 
   void initializeOp_impl(
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >       &fwdOpSrc
-    ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >      &prec
-    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >      &approxFwdOpSrc
-    ,const bool                                                         reusePrec
-    ,LinearOpWithSolveBase<double>                                      *Op
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOpSrc,
+    const Teuchos::RefCountPtr<const PreconditionerBase<double> > &prec,
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &approxFwdOpSrc,
+    const bool reusePrec,
+    LinearOpWithSolveBase<double> *Op
     ) const;
 
 };

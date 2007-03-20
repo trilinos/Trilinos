@@ -64,6 +64,7 @@ void EpetraLinearOp::initialize(
   ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   &spmdDomain
   )
 {
+
   // Validate input, allocate spaces, validate ...
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION( op.get()==NULL, std::invalid_argument, "EpetraLinearOp::initialize(...): Error!" );
@@ -80,6 +81,7 @@ void EpetraLinearOp::initialize(
   Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<EpetraLinearOp::Scalar> >
     sp_range = Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<EpetraLinearOp::Scalar> >(range),
     sp_domain = Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<EpetraLinearOp::Scalar> >(domain);
+
   // Set data (no exceptions should be thrown now)
   op_      = op;
   opTrans_ = opTrans;
@@ -89,6 +91,7 @@ void EpetraLinearOp::initialize(
   domain_ = domain;
   sp_range_ = sp_range;
   sp_domain_ = sp_domain;
+
 }
 
 void EpetraLinearOp::uninitialize(
@@ -305,10 +308,11 @@ EpetraLinearOp::clone() const
 std::string EpetraLinearOp::description() const
 {
   std::ostringstream oss;
-  oss << "Thyra::EpetraLinearOp";
-  oss << "{";
+  oss << Teuchos::Describable::description() << "{";
   if(op_.get()) {
     oss << "op=\'"<<typeName(*op_)<<"\'";
+    oss << ",dimRange="<<this->range()->dim();
+    oss << ",dimDomain="<<this->domain()->dim();
   }
   else {
     oss << "op=NULL";
@@ -339,11 +343,11 @@ void EpetraLinearOp::describe(
     case Teuchos::VERB_EXTREME:
     {
       *out
-        << "type = \'Thyra::EpetraLinearOp\', "
-        << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl;
+        << Teuchos::Describable::description() << "{"
+        << "rangeDim=" << this->range()->dim() << ",domainDim=" << this->domain()->dim() << "}\n";
       OSTab tab(out);
       if(op_.get()) {
-        *out << "op=\'"<<typeName(*op_)<<"\'\n";
+        *out << "op="<<typeName(*op_)<<"\n";
         *out << "opTrans="<<toString(opTrans_)<<"\n";
         *out << "applyAs="<<toString(applyAs_)<<"\n";
         *out << "adjointSupport="<<toString(adjointSupport_)<<"\n";
