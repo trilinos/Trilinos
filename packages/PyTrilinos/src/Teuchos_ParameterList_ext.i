@@ -235,7 +235,7 @@ namespace Teuchos {
       return result;
     fail:
       Py_XDECREF(dict);
-      return NULL;
+      return result;
     }
 
     /******************************************************************/
