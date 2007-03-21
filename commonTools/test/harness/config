@@ -31,6 +31,7 @@ RUN (beowulf-nightly-mpi) {
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 16;
     MPI-START           = lamboot /home/mnphenow/.lamhosts;
+    MPI-GO              = mpirun -x LD_LIBRARY_PATH -np ;
     MPI-PING            = mpitask;
     MPI-STOP            = lamhalt;    
     TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
@@ -53,72 +54,6 @@ RUN (beowulf-coverage) {
    #TEST-CATEGORY       = COVERAGE; # set up later
     TEST-CATEGORY       = FRAMEWORK;
     TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
-
-}
-
-###############################################################################
-#
-# beowulf-n6 nightly mpi
-#
-###############################################################################
-
-RUN (beowulf-n6-nightly-mpi) {
-    
-    BUILD-LABEL         = default;
-    BUILD-DIR           = MPI;
-    COMM                = mpi;
-    INVOKE-CONFIGURE    = linux-beowulf-mpi;
-    TEST-CATEGORY       = FRAMEWORK;
-    MAX-PROC            = 2;
-    MPI-START           = lamboot /home/mnphenow/.lamhosts_n6-n7;
-    MPI-PING            = mpitask;
-    MPI-STOP            = lamhalt;    
-    TTR-DIR             = /local/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
-
-}
-
-###############################################################################
-#
-# beowulf-n8 nightly mpi
-#
-###############################################################################
-
-RUN (beowulf-n8-nightly-mpi) {
-    
-    BUILD-LABEL         = default;
-    BUILD-DIR           = MPI;
-    COMM                = mpi;
-    INVOKE-CONFIGURE    = linux-beowulf-mpi;
-    TEST-CATEGORY       = FRAMEWORK;
-    MAX-PROC            = 2;
-    MPI-START           = lamboot /home/mnphenow/.lamhosts_n8-n9;
-    MPI-PING            = mpitask;
-    MPI-STOP            = lamhalt;    
-    TTR-DIR             = /local/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnpheno;
-
-}
-
-###############################################################################
-#
-# beowulf-n10 nightly mpi
-#
-###############################################################################
-
-RUN (beowulf-n10-nightly-mpi) {
-    
-    BUILD-LABEL         = default;
-    BUILD-DIR           = MPI;
-    COMM                = mpi;
-    INVOKE-CONFIGURE    = linux-beowulf-mpi;
-    TEST-CATEGORY       = FRAMEWORK;
-    MAX-PROC            = 2;
-    MPI-START           = lamboot /home/mnphenow/.lamhosts_n10-n11;
-    MPI-PING            = mpitask;
-    MPI-STOP            = lamhalt;    
-    TTR-DIR             = /local/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnpheno;
 
 }
