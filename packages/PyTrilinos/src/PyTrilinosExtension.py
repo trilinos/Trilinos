@@ -157,7 +157,7 @@ def makePyTrilinosExtensions(moduleName):
         if moduleName in ("EpetraExt","TriUtils","AztecOO","Galeri","IFPACK"):
             sources.extend(epetraNumPyVectorSrc)
         if extName in ("PyTrilinos.NOX.Epetra.___init__",
-                       "PyTrilinos.NOX.Epetra.Interface"):
+                       "PyTrilinos.NOX.Epetra._Interface"):
             sources.extend(epetraNumPyVectorSrc)
 
         # Create the Extension object and add it to the list

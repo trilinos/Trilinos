@@ -29,6 +29,15 @@
 #ifndef TEUCHOS_PYTHONPARAMETER
 #define TEUCHOS_PYTHONPARAMETER
 
+// Include python headers
+#include "Python.h"
+
+// Backward compatibility for python < 2.5
+#if (PY_VERSION_HEX < 0x02050000)
+typedef int Py_ssize_t;
+#endif
+
+// Include Teuchos::ParameterList prototypes
 #include "Teuchos_ParameterList.hpp"
 
 // ****************************************************************** //

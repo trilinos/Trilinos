@@ -92,6 +92,7 @@ Solver.Iterate(1550, 1e-5)
 
 // Epetra includes
 #include "Epetra_Map.h"
+#include "Epetra_LocalMap.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_InvOperator.h"
 #include "Epetra_BasicRowMatrix.h"

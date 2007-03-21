@@ -65,6 +65,9 @@ from   MakefileVariables   import *
 from   PyTrilinosExtension import *
 import SharedUtils
 
+# Package name
+PyTrilinos = "PyTrilinos"
+
 # Build the __init__.py file
 def buildInitFile(filename,depfile,pyTrilinosModules,
                   pyTrilinosVersion,trilinosVersion):
@@ -91,7 +94,7 @@ def version(): return 'Trilinos version: %s\\nPyTrilinos version: ' + __version_
 if __name__ == "__main__":
 
     # Initialization
-    initFileName = os.path.join("PyTrilinos", "__init__.py")
+    initFileName = os.path.join(PyTrilinos, "__init__.py")
 
     # Command-line arguments
     command = sys.argv[1]
@@ -121,7 +124,7 @@ if __name__ == "__main__":
     mkdir             = makeMacros["mkdir_p"]
     libDir            = os.path.join(prefix, "lib")
     pyTrilinosDir     = os.path.join(pythonPrefix, "lib", pyVersion, "site-packages",
-                                     "PyTrilinos")
+                                     PyTrilinos)
 
     ######################################################
     # Build/clean/install/uninstall the shared libraries #
@@ -202,7 +205,7 @@ if __name__ == "__main__":
         from numpy import __version__ as numpy_version
         if numpy_version == "0.9.8":
             userArraySrc = os.path.join(srcdir,"UserArray.patch")
-            userArrayTrg = "UserArrayFix.py"
+            userArrayTrg = os.path.join(PyTrilinos,"UserArrayFix.py")
             if SharedUtils.needsToBeBuilt(userArrayTrg, [userArraySrc]):
                 print "copying %s -> %s" % (userArraySrc, userArrayTrg)
                 open(userArrayTrg,"w").write(open(userArraySrc,"r").read())
@@ -218,14 +221,14 @@ if __name__ == "__main__":
 
     # Build the list of package names
     extModNames = [mod.name for mod in ext_modules]
-    packages = ["PyTrilinos"]
+    packages = [PyTrilinos]
     for extModName in extModNames:
         if extModName.endswith(".___init__"):
             packages.append(extModName[:-10])
 
     # Call the distutils setup function.  This defines the PyTrilinos package to
     # distutils and distutils takes over from here.
-    setup(name         = "PyTrilinos",
+    setup(name         = PyTrilinos,
           version      = pyTrilinosVersion,
           description  = "Python interface to Trilinos",
           author       = "Bill Spotz",
