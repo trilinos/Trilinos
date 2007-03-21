@@ -12,7 +12,7 @@
 void cms_residual_check(const char * tag, const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
 double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
 
-//#define NO_OUTPUT
+#define NO_OUTPUT
 
 #ifdef NO_OUTPUT
 #define MVOUT2(x,y,z) ;
@@ -20,9 +20,9 @@ double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector&
 #define IVOUT(x,y) ;
 #define Epetra_CrsMatrix_Print(x,y) ;
 #else
-extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os);
-extern void MVOUT (const Epetra_MultiVector & A, ostream & os);
-extern void IVOUT(const Epetra_IntVector & A, ostream & os);
+extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of);
+extern void MVOUT (const Epetra_MultiVector & A, char * of);
+extern void IVOUT(const Epetra_IntVector & A, char * of);
 extern void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx);
 #endif
 
@@ -142,17 +142,14 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
   Epetra_MultiVector *nullspace=BuildNullspace();
   if(!nullspace) ML_CHK_ERR(-1);
 
-  ofstream of0("nullspace.dat");
-  MVOUT(*nullspace,of0);
-
+  MVOUT(*nullspace,"nullspace.dat");
   
   /* Build the prolongator */
   printf("EMFP: Building Prolongator\n");
   ML_CHK_ERR(BuildProlongator(*nullspace));
 
   /* DEBUG: Output matrices */
-  ofstream of1("prolongator.dat");
-  Epetra_CrsMatrix_Print(*Prolongator,of1);
+  Epetra_CrsMatrix_Print(*Prolongator,"prolongator.dat");
   
   /* Form the coarse matrix */
   printf("EMFP: Building Coarse Matrix\n");
@@ -165,9 +162,8 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
   if(!CoarsePC) ML_CHK_ERR(-2);
 
   /* DEBUG: Output matrices */
-  ofstream of2("coarsemat.dat");
-  Epetra_CrsMatrix_Print(*CoarseMatrix,of2);
-  
+  Epetra_CrsMatrix_Print(*CoarseMatrix,"coarsemat.dat");
+
   
   /* Clean Up */
   delete nullspace;
@@ -193,8 +189,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
   //  double omega_ = List_.get("smoother: damping", 1.0);
 
 
-  ofstream ofs("inv_diagonal.dat");
-  MVOUT(*InvDiagonal_,ofs);
+  MVOUT(*InvDiagonal_,"inv_diagonal.dat");
   
   /* Do the eigenvalue estimation*/
   if (EigenType_ == "power-method"){   
@@ -262,9 +257,9 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
   double ** d_coords=new double* [3];
   d_coords[0]=xcoord; d_coords[1]=ycoord; d_coords[2]=zcoord;
   Epetra_MultiVector e_coords(View,*NodeDomainMap_,d_coords,dim);
-  ofstream of0("coords.dat");
-  MVOUT(e_coords,of0);
-  
+
+  MVOUT(e_coords,"coords.dat");
+
   
   /* Build the Nullspace */
   Epetra_MultiVector * nullspace=new Epetra_MultiVector(*EdgeDomainMap_,dim,false);  
@@ -349,14 +344,11 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
 #ifndef NO_OUTPUT
   /* DEBUG: Dump aggregates */ 
   Epetra_IntVector AGG(View,*NodeDomainMap_,MLAggr->aggr_info[0]);
-  ofstream of0("agg.dat");
-  IVOUT(AGG,of0);  
+  IVOUT(AGG,"agg.dat");  
   /* DEBUG: Testing Stuff */
   ML_Operator_Print(P,"p.dat");//CMS
-  ofstream of22("test.dat");
-  Epetra_CrsMatrix_Print(*D0_Matrix_,of22);
-  ofstream of23("test_clean.dat");
-  Epetra_CrsMatrix_Print(*D0_Clean_Matrix_,of23);
+  Epetra_CrsMatrix_Print(*D0_Matrix_,"test.dat");
+  Epetra_CrsMatrix_Print(*D0_Clean_Matrix_,"test_clean.dat");
 #endif
   
   /* Create wrapper to do abs(T) */
@@ -390,10 +382,8 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   
   /* DEBUG: output*/
 #ifndef NO_OUTPUT
-  ofstream of1("psparse.dat");
-  Epetra_CrsMatrix_Print(*Psparse,of1);
-  ofstream of2("nullspace.dat");
-  MVOUT(nullspace,of2);
+  Epetra_CrsMatrix_Print(*Psparse,"psparse.dat");
+  MVOUT(nullspace,"nullspace.dat");
 #endif
   
   /* Build the DomainMap of the new operator*/
@@ -492,8 +482,9 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
 
 
   /* DEBUG: output*/
-  ofstream of1("coarse_temp.dat");
-  Epetra_CrsMatrix_Print(*Temp,of1);
+#ifndef NO_OUTPUT
+  Epetra_CrsMatrix_Print(*Temp,"coarse_temp.dat);
+#endif
   
   /* Do R * AP */
   printf("EMFP: RAP\n");

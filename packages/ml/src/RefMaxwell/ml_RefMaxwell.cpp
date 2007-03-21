@@ -41,7 +41,8 @@ void cms_vec_dump3(double *x,int N,char* fname, int iteration){
   fclose(f);
 }
 
-void MVOUT(const Epetra_MultiVector & A, ostream & os){
+void MVOUT(const Epetra_MultiVector & A, char *of){
+  ofstream os(of);
   int i,j;
   int NumProc=A.Map().Comm().NumProc();
   int MyPID  =A.Map().Comm().MyPID();
@@ -73,11 +74,11 @@ void MVOUT(const Epetra_MultiVector & A, ostream & os){
 void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx){
   char c[80];
   sprintf(c,"%s.%d.dat",pref,idx);
-  ofstream ofs(c);
-  MVOUT(A,ofs);
+  MVOUT(A,c);
 }/* end MVOUT2*/
 
-void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os) {
+void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of) {
+  ofstream os(of);
   int MyPID = A.RowMap().Comm().MyPID();
   int NumProc = A.RowMap().Comm().NumProc();
        
@@ -96,9 +97,9 @@ void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os) {
         
 	for (j = 0; j < NumIndices ; j++) {   
 	  os.width(10);
-	  os <<  Row +1; os << "    ";	
+	  os <<  Row + (1-A.RowMap().IndexBase()); os << "    ";	
 	  os.width(10);
-	  os <<  Indices[j]+1; os << "    ";
+	  os <<  Indices[j]+(1-A.RowMap().IndexBase()); os << "    ";
 	  os.width(20);os.precision(16);os.setf(ios_base::scientific,ios_base::floatfield);
 	  os <<  Values[j]; os << "    ";
 	  os << endl;
@@ -118,7 +119,9 @@ void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os) {
 	
   return;
 }/*end Epetra_CrsMatrix_Print*/
-void IVOUT(const Epetra_IntVector & A, ostream & os){
+
+void IVOUT(const Epetra_IntVector & A, char *of){
+  ofstream os(of);
   int i;
   int NumProc=A.Map().Comm().NumProc();
   int MyPID  =A.Map().Comm().MyPID();
@@ -157,17 +160,20 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
                                                               const Teuchos::ParameterList& List,
                                                               const bool ComputePrec):
   ML_Preconditioner(),SM_Matrix_(&SM_Matrix),D0_Matrix_(0), D0_Clean_Matrix_(&D0_Clean_Matrix),Ms_Matrix_(&Ms_Matrix),
-  //  M0inv_Matrix_(&M0inv_Matrix),M1_Matrix_(&M1_Matrix),TMT_Matrix_(&TMT_Matrix),Diagonal_(0),Operator11_(0)
-  M0inv_Matrix_(&M0inv_Matrix),M1_Matrix_(&M1_Matrix),TMT_Matrix_(0),Diagonal_(0),Operator11_(0),BCrows(0),numBCrows(0),EdgePC(0),NodePC(0)
+  M0inv_Matrix_(&M0inv_Matrix),M1_Matrix_(&M1_Matrix),TMT_Matrix_(0),//TMT_Agg_Matrix_(0),
+  Diagonal_(0),Operator11_(0),BCrows(0),numBCrows(0),EdgePC(0),NodePC(0)
 {
   /* Set the Epetra Goodies */
   Comm_ = &(SM_Matrix_->Comm());
   DomainMap_ = &(SM_Matrix_->OperatorDomainMap());
   RangeMap_ = &(SM_Matrix_->OperatorRangeMap());
   NodeMap_ = &(M0inv_Matrix_->OperatorDomainMap());
-  
+
   Label_=strdup("ML reformulated Maxwell preconditioner");
   List_=List;
+
+  exit(1);
+
   
   if(ComputePrec) ML_CHK_ERRV(ComputePreconditioner());
 }/*end constructor*/
@@ -208,14 +214,26 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   int numBCnodes=0;
   for(int i=0;i<Nn;i++)
     if((*BCnodes)[i]) BCnodes_int[numBCnodes++]=i;
-  
+
+  /* Sanity Check: We have at least some Dirichlet nodes */
+  /* NTS: This should get fixed later for robustness */
+  int HasInterior = numBCnodes != Nn;
+  printf("HasInterior = %d %d/%d\n",HasInterior,Nn-numBCnodes,Nn);
+  int globalInterior=HasInterior;
+#ifdef DOESNT_WORK_DONT_KNOW_WHY
+  Comm_->MaxAll(&HasInterior,&globalInterior,1);  
+  //  if(!globalInterior){
+#endif
+  if(!HasInterior){
+    if(!Comm_->MyPID()) printf("ERROR: All nodes are Dirichlet nodes!  RefMaxwell code currently doesn't handle that\n");
+    exit(1);
+  }
+    
   /* Do the Nuking for D0_Matrix_ */
   D0_Matrix_ = new Epetra_CrsMatrix(*D0_Clean_Matrix_);
   Apply_BCsToMatrixRows(BCrows,numBCrows,*D0_Matrix_);
   Apply_BCsToMatrixColumns(*BCnodes,*D0_Matrix_);   
 
-
-  
   /* Build the TMT Matrix */
   /* NTS: When ALEGRA builds this matrix itself, we get rid of these lines */
   Epetra_CrsMatrix temp1(Copy,*RangeMap_,0);
@@ -226,6 +244,19 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   TMT_Matrix_->OptimizeStorage();
 
 
+  /* Build the TMT-Agg Matrix  (used for aggregating the (1,1) block*/
+  /* NTS: When ALEGRA builds this matrix itself, we get rid of these lines */
+#ifdef WHY_WONT_THIS_WORK
+  Epetra_CrsMatrix temp2(Copy,*RangeMap_,0);
+  TMT_Agg_Matrix_=new Epetra_CrsMatrix(Copy,*NodeMap_,0);  
+  EpetraExt::MatrixMatrix::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,temp2);
+  EpetraExt::MatrixMatrix::Multiply(*D0_Matrix_,true,temp2,false,*TMT_Agg_Matrix_);
+  //  Apply_OAZToMatrix(BCnodes_int,numBCnodes,*TMT_Agg_Matrix_);  
+  TMT_Agg_Matrix_->OptimizeStorage();
+  Epetra_CrsMatrix_Print(*TMT_Agg_Matrix_,"tmt_agg_matrix.dat");
+  exit(1);
+#endif
+  
   // NTS: SHOULD M0 Be nuked in here???
   
   /* Boundary nuke the edge matrices */
@@ -235,14 +266,11 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 
   /* DEBUG: Output matrices */
 #ifndef NO_OUTPUT
-  ofstream of0("sm_matrix.dat");
-  Epetra_CrsMatrix_Print(*SM_Matrix_,of0);  
-  ofstream of1("tmt_matrix.dat");
-  Epetra_CrsMatrix_Print(*TMT_Matrix_,of1);
-  ofstream of2("m1_nuked.dat");  
-  Epetra_CrsMatrix_Print(*M1_Matrix_,of2);
-  ofstream of3("d9_nuked.dat");  
-  Epetra_CrsMatrix_Print(*D0_Matrix_,of3);
+  Epetra_CrsMatrix_Print(*SM_Matrix_,"sm_matrix.dat");
+  Epetra_CrsMatrix_Print(*TMT_Matrix_,"tmt_matrix.dat");
+  Epetra_CrsMatrix_Print(*M1_Matrix_,"m1_nuked.dat");  
+  Epetra_CrsMatrix_Print(*D0_Matrix_,"d9_nuked.dat");  
+  Epetra_CrsMatrix_Print(*D0_Clean_Matrix_,"d0_clean.dat");  
 #endif
   
   /* Cleanup from the Boundary Conditions */
@@ -283,16 +311,17 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   EpetraExt::MatrixMatrix::Multiply(temp_matrix1,true,temp_matrix2,false,temp_matrix3);
   temp_matrix3.ExtractDiagonalCopy(*Diagonal_);
 
-  ofstream ofs1("addon_diagonal.dat");
-  MVOUT(*Diagonal_,ofs1);
-
-
+#ifndef NO_OUTPUT
+  MVOUT(*Diagonal_,"addon_diagonal.dat");
+#endif
+ 
   SM_Matrix_->ExtractDiagonalCopy(temp_edge2);
   Diagonal_->Update(1.0,temp_edge2,1.0);
+
+#ifndef NO_OUTPUT
+  MVOUT(*Diagonal_,"diagonal.dat");
+#endif
   
-  ofstream ofs2("diagonal.dat");
-  MVOUT(*Diagonal_,ofs2);
-    
   /* Sanity Check the Diagonal */
   double min_val; Diagonal_->MinValue(&min_val);
   if(Comm_->MyPID()==0 && min_val <1e-16) {printf("ERROR: Minimum Estimated Diagonal <1e-16 (%6.4e)\n",min_val);
@@ -317,8 +346,10 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   string solver11=List_.get("refmaxwell: 11solver","edge matrix free");
   Teuchos::ParameterList List11=List_.get("refmaxwell: 11list",dummy);
   //  if(solver11=="edge matrix free") EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Matrix_,List11,true);
-  if(solver11=="edge matrix free") EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Matrix_,nodal_aggregates,BCrows,numBCrows,List11,true);
-  else {printf("RefMaxwellPreconditioner: ERROR - Illegal (1,1) block preconditioner\n");return -1;}
+  if(solver11=="edge matrix free")
+    EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Matrix_,nodal_aggregates,BCrows,numBCrows,List11,true);
+    //   EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Agg_Matrix_,nodal_aggregates,BCrows,numBCrows,List11,true);
+    else {printf("RefMaxwellPreconditioner: ERROR - Illegal (1,1) block preconditioner\n");return -1;}
 
   /* Pull Solver Mode */
   mode=List_.get("refmaxwell: mode","212");
@@ -352,8 +383,10 @@ int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
   if(NodePC) {delete NodePC; NodePC=0;}
   if(D0_Matrix_) {delete D0_Matrix_; D0_Matrix_=0;}
   if(TMT_Matrix_) {delete TMT_Matrix_; TMT_Matrix_=0;}
+#ifdef WHY_WONT_THIS_WORK
+  if(TMT_Agg_Matrix_) {delete TMT_Agg_Matrix_; TMT_Agg_Matrix_=0;}
+#endif
   if(BCrows) {delete [] BCrows; BCrows=0;numBCrows=0;}
-  //  if(EdgeSmoother) {delete EdgeSmoother; EdgeSmoother=0;}
   if(PreEdgeSmoother)  {delete PreEdgeSmoother; PreEdgeSmoother=0;}
   if(PostEdgeSmoother) {delete PostEdgeSmoother; PostEdgeSmoother=0;}
 }/*end DestroyPreconditioner*/
@@ -621,22 +654,48 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_121(const Epetra
 int ML_Epetra::SetDefaultsRefMaxwell(ParameterList & inList, 
 			  int * options, double * params, bool OverWrite)
 {
-  /* Build Teuchos List: (1,1) */  
+  /* Build Teuchos List: (1,1) */
+  int dim=3, smooth=3;
   Teuchos::ParameterList List11;
-  SetDefaultsSA(List11);
+  ML_Epetra::SetDefaultsSA(List11);
   List11.set("cycle applications",1);
   List11.set("aggregation: type","Uncoupled");
   List11.set("PDE equations",dim);
-  List11.set("smoother: type","symmetric Gauss-Seidel");  
+  List11.set("smoother: type","ML symmetric Gauss-Seidel");
+  List11.set("smoother: sweeps (level 0)",0);
+  //        List11.set("smoother: type","Chebyshev");  
+  List11.set("smoother: sweeps",smooth);
+  List11.set("x-coordinates",coordx);
+  List11.set("y-coordinates",coordy);
+  if(dim==3) List11.set("z-coordinates",coordz);
+  else List11.set("z-coordinates",(double*)0);
   List11.set("output",10);
   
   /* Build Teuchos List: (2,2) */  
-  Teuchos::ParameterList List22;  
+  Teuchos::ParameterList List22;
+  ML_Epetra::SetDefaultsSA(List22);  
   List22.set("cycle applications",1);
-  List22.set("smoother: type","symmetric Gauss-Seidel");
+  List22.set("smoother: type","ML symmetric Gauss-Seidel");
+  //List22.set("smoother: type","Chebyshev");  
+  List22.set("smoother: sweeps (level 0)",0);
   List22.set("smoother: sweeps",smooth);
+  List22.set("x-coordinates",coordx);
+  List22.set("y-coordinates",coordy); 
+  if(dim==3) List22.set("z-coordinates",coordz);
+  else List22.set("z-coordinates",(double*)0); 
   List22.set("output",10);
-
+  
+  /* Build Teuchos List: Fine Smoother */
+  Teuchos::ParameterList ListSM;
+  ListSM.set("coarse: type","Hiptmair");
+  ListSM.set("coarse: sweeps",1);
+  ListSM.set("smoother: Hiptmair efficient symmetric",true);
+  ListSM.set("coarse: subsmoother type","symmetric Gauss-Seidel");
+  ListSM.set("coarse: edge sweeps",smooth);
+  ListSM.set("coarse: node sweeps",smooth);  
+  ListSM.set("zero starting solution",false);  
+  
+  
   /* Build Teuchos List: Overall */  
   Teuchos::ParameterList ListRF;
   ListRF.set("refmaxwell: 11solver","edge matrix free");
@@ -644,8 +703,8 @@ int ML_Epetra::SetDefaultsRefMaxwell(ParameterList & inList,
   ListRF.set("refmaxwell: 22solver","multilevel");
   ListRF.set("refmaxwell: 22list",List22);
   ListRF.set("refmaxwell: mode","additive");
-  ListRF.set("default values","refmaxwell");
-
+  ListRF.set("refmaxwell: additive smoother",ListSM);
+  
   for(ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
     if ( inList.isParameter(inList.name(param)) == false || OverWrite )
       inList.setEntry( inList.name(param) , inList.entry(param) );
