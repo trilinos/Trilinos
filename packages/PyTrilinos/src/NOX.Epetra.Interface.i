@@ -34,6 +34,9 @@
 	implicitconv = "1") Interface
 
 %{
+// NumPy includes
+#include "NumPyImporter.h"
+
 // Teuchos includes
 #include "Teuchos_PythonParameter.h"
 
