@@ -58,12 +58,15 @@
        (arglist-cont-nonempty . +) ;;; Indent args after blah( int arg1 on next line one offset
        (arglist-close . +) ;;; Align the closing ')' with arguments
        ))
-    (c-tab-always-indent t) ;;; The tab always indents
     (c-label-minimum-indentation 0) ;;; Was in "stroustrup" stype
     (c-basic-indent 2) ;;; Indent 2 spaces by default
     )
   "Default C++ coding style for Thyra"
   )
+
+;;; NOTE: I had to remove the option (c-tab-always-indent t) since it was
+;;; causing string behavior in putting in tabs inside of comments.
+;;; Instead, I have added this to the main emacs style ???
 
 (defun thyra-c-mode-common-hook ()
   (c-add-style "thyra" thyra-c-style t) ;;; 't' == make default
