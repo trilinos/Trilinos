@@ -30,10 +30,11 @@
 #define EPETRA_EXT_MODEL_EVALUATOR_HPP
 
 #include "EpetraExt_ConfigDefs.h"
+#include "EpetraExt_PolynomialVectorTraits.h"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_Polynomial.hpp"
-#include "EpetraExt_PolynomialVectorTraits.h"
+#include "Teuchos_Array.hpp"
 
 class Epetra_Map;
 class Epetra_Vector;
@@ -114,7 +115,7 @@ public:
     void _setSupports( EInArgsMembers arg, bool supports );
   private:
     // types
-    typedef std::vector<Teuchos::RefCountPtr<const Epetra_Vector> > p_t;
+    typedef Teuchos::Array<Teuchos::RefCountPtr<const Epetra_Vector> > p_t;
     // data
     std::string                                modelEvalDescription_;
     Teuchos::RefCountPtr<const Epetra_Vector>  x_dot_;
@@ -392,6 +393,8 @@ public:
     void set_f_poly( const Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > &f_poly );
     /** \brief .  */
     Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > get_f_poly() const;
+    /** \brief Return true if the function or its derivatives are set. */
+    bool funcOrDerivesAreSet(EOutArgsMembers arg) const;
   protected:
     /** \brief . */
     void _setModelEvalDescription( const std::string &modelEvalDescription );
@@ -415,10 +418,10 @@ public:
     void _set_DgDp_properties( int j, int l, const DerivativeProperties &properties );
   private:
     // types
-    typedef std::vector<Evaluation<Epetra_Vector> >           g_t;
-    typedef std::vector<Derivative>                           deriv_t;
-    typedef std::vector<DerivativeProperties>                 deriv_properties_t;
-    typedef std::vector<DerivativeSupport>                    supports_t;
+    typedef Teuchos::Array<Evaluation<Epetra_Vector> >           g_t;
+    typedef Teuchos::Array<Derivative>                           deriv_t;
+    typedef Teuchos::Array<DerivativeProperties>                 deriv_properties_t;
+    typedef Teuchos::Array<DerivativeSupport>                    supports_t;
     // data
     std::string                            modelEvalDescription_;
     bool                                   supports_[NUM_E_OUT_ARGS_MEMBERS];
@@ -600,6 +603,9 @@ protected:
 
 /** \brief . */
 std::string toString( ModelEvaluator::EDerivativeMultiVectorOrientation orientation );
+
+/** \brief . */
+std::string toString( ModelEvaluator::EOutArgsMembers outArg );
 
 /** \brief . */
 Teuchos::RefCountPtr<Epetra_Operator>

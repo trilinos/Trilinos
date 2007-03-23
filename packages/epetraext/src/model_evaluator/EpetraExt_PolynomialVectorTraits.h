@@ -29,6 +29,7 @@
 #ifndef EPETRA_EXT_POLYNOMIAL_VECTOR_TRAITS_H
 #define EPETRA_EXT_POLYNOMIAL_VECTOR_TRAITS_H
 
+#include "Teuchos_PolynomialTraits.hpp"
 #include "Epetra_Vector.h"
 
 namespace Teuchos {

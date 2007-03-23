@@ -27,6 +27,7 @@
 // @HEADER
 
 #include "EpetraExt_ModelEvaluator.h"
+#include "Teuchos_implicit_cast.hpp"
 
 namespace {
 
@@ -161,6 +162,26 @@ ModelEvaluator::OutArgs::supports(EOutArgsDgDp arg, int j, int l) const
   assert_j(j);
   assert_l(l);
   return supports_DgDp_[ j*Np() + l ];
+}
+
+bool ModelEvaluator::OutArgs::funcOrDerivesAreSet(EOutArgsMembers arg) const
+{
+  using Teuchos::implicit_cast;
+  bool areSet = false;
+  switch(arg) {
+    case OUT_ARG_f: {
+      if (!is_null(f_)) areSet = true;
+      if (!is_null(W_)) areSet = true;
+      for ( int l = 0; l < implicit_cast<int>(DfDp_.size()); ++l )
+        if(!DfDp_[l].isEmpty()) areSet = true;
+      break;
+    }
+    default:
+      TEST_FOR_EXCEPTION(true,std::logic_error,
+        "ModelEvaluator::OutArgs::funcOrDerivesAreSet(arg): Error, we can not handle"
+        " the argument " << toString(arg) << "yet!");
+  }
+  return areSet;
 }
 
 void ModelEvaluator::OutArgs::_setModelEvalDescription( const std::string &modelEvalDescription )
@@ -396,7 +417,9 @@ ModelEvaluator::create_DgDp_op( int j, int l ) const
 // Helper functions
 //
 
-std::string EpetraExt::toString( ModelEvaluator::EDerivativeMultiVectorOrientation orientation )
+std::string EpetraExt::toString(
+   ModelEvaluator::EDerivativeMultiVectorOrientation orientation
+   )
 {
   switch(orientation) {
     case ModelEvaluator::DERIV_MV_BY_COL:
@@ -407,6 +430,21 @@ std::string EpetraExt::toString( ModelEvaluator::EDerivativeMultiVectorOrientati
       TEST_FOR_EXCEPT(true);
   }
   return ""; // Should never be called
+}
+
+std::string EpetraExt::toString( ModelEvaluator::EOutArgsMembers outArg )
+{
+  switch(outArg) {
+    case  ModelEvaluator::OUT_ARG_f:
+      return "OUT_ARG_f";
+    case ModelEvaluator::OUT_ARG_W:
+      return "OUT_ARG_W";
+    case ModelEvaluator::OUT_ARG_f_poly:
+      return "OUT_ARG_f_poly";
+    default:
+      TEST_FOR_EXCEPT("Invalid outArg!");
+  }
+  return ""; // Will never be executed!
 }
 
 Teuchos::RefCountPtr<Epetra_Operator>

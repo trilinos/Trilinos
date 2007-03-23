@@ -35,10 +35,129 @@
 #include "EpetraExt_ModelEvaluator.h"
 #include "Epetra_Map.h"
 
+
 namespace Thyra {
 
-/** \brief . */
-class EpetraModelEvaluator : public ModelEvaluator<double> {
+
+/** \brief Concrete Adapter subclass that takes an
+ * <tt>EpetraExt::ModelEvaluator</tt> object and wraps it as a
+ * <tt>Thyra::ModelEvaluator</tt> object.
+ *
+ * This class takes care of the basic details of wrapping and unwrapping
+ * Epetra from Thyra objects.  This class is highly configurable and will be
+ * maintained and modified in the future as the basic link between the Epetra
+ * world and the Thyra world for nonlinear models and nonlinear algorithms.
+ *
+ * \section Thyra_EpetraModelEvaluator_Scaling_sec Scaling
+ *
+ * This class can handle scaling of the state function f(...) and of the state
+ * variables x and all of the affected derivatives.
+ *
+ * The scaling for the state function can be set manually using
+ * <tt>setStateFunctionScalingVec()</tt> or can be computed automatically
+ * using the parameter <tt>"State Function Scaling"</tt> (see documentation
+ * output from <tt>this->getValidParameters()->print(...)</tt>) in the input
+ * parameter list set by <tt>setParameterList()</tt>.  Reguardless of how the
+ * state function scaling is computed, it will compute a positive vector
+ * <tt>s_f</tt> that defines a diagonal matrix <tt>S_f = diag(s_f)</tt> that
+ * transforms the state function:
+ 
+ \verbatim
+
+    f(...) = S_f * f_hat(...)
+
+ \endverbatim
+
+ * where <tt>f_hat(...)</tt> is the original state function as computed by the
+ * underlying <tt>EpetraExt::ModelEvaluator</tt> object and <tt>f(...)</tt> is
+ * the state function as computed by <tt>evalModel()</tt>.
+ *
+ * The scaling for the state variables must be set manually using
+ * <tt>Thyra::setStateVariableScalingVec()</tt>.  The vector that is set
+ * <tt>s_x>/tt> defines a diagonal scaling matrix <tt>S_x = diag(s_x)</tt>
+ * that transforms the variables as:
+ 
+ \verbatim
+
+    x = S_x * x_hat
+
+ \endverbatim
+
+ * where <tt>x_hat</tt> is the original unscaled state variable vector as
+ * defined by the underlying <tt>EpetraExt::ModelEvaluator</tt> object and
+ * <tt>x</tt> is the scaled state varaible vector as returned from
+ * <tt>getNominalValues()</tt> and as accepted by <tt>evalModel()</tt>.  Note
+ * that when the scaled variables <tt>x</tt> are passed into
+ * <tt>evalModel</tt> that they are unscaled as:
+ 
+ \verbatim
+
+    x_hat = inv(S_x) * x
+
+ \endverbatim
+
+ * where <tt>inv(S_x)</tt> is the inverse of the diagonals of <tt>S_x</tt>
+ * which is stored as a vector <tt>inv_s_x</tt>.
+ *
+ * Note how these scalings affect the state function:
+ 
+ \verbatim
+
+    f(x,...) = S_f * f_hat( inv(S_x)*x...)
+
+ \endverbatim
+
+ * which as the state/state Jacobian:
+ 
+ \verbatim
+
+    W = d(f)/d(x) = S_f * d(f_hat)/d(x_hat) * inv(S_x)
+
+ \endverbatim
+
+ * Currently, this class does not handle scalings of the parameters
+ * <tt>p(l)</tt> or of the auxilary response functions <tt>g(j)(...)</tt>.
+ *
+ * The state varaible and state function scaling gives the following scaled
+ * quantities:
+ 
+ \verbatim
+
+    f = S_f * f_hat
+
+    W = S_f * W_hat * inv(S_x)
+
+    DfDp(l) = S_f * DfDp_hat(l)
+
+    g(j) = g_hat(j)
+
+    DgDx(j) = DgDx_hat(j) * inv(S_x)
+    
+    DgDp(j,l) = DgDp_hat(j,l)
+
+ \endverbatim
+
+ * Since the scaling is done explicitly, the client never even sees the
+ * orginal scaling and the linear solver (and contained preconditioner) are
+ * computed from the scaled W shown above.
+ *
+ * ToDo: Describe how scaling affects the Hessian-vector products an how you just
+ * need to scale the Lagrange mutipliers as:
+ 
+ \verbatim
+
+  u^T * f(...) = u^T * (S_f * f_hat(...)) = u_f^T * f_hat(...)
+
+ \endverbatim
+
+ * where <tt>u_f = S_f * u</tt>.
+ *
+ * ToDo: Finish documentation!
+ */
+class EpetraModelEvaluator
+  : public ModelEvaluator<double>,
+    virtual public Teuchos::ParameterListAcceptor
+{
 public:
 
   /** \name Constructors/initializers/accessors/utilities. */
@@ -49,14 +168,14 @@ public:
 
   /** \brief . */
   EpetraModelEvaluator(
-    const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>         &epetraModel
-    ,const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >  &W_factory
+    const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> &epetraModel,
+    const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > &W_factory
     );
 
   /** \brief . */
   void initialize(
-    const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>         &epetraModel
-    ,const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >  &W_factory
+    const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> &epetraModel,
+    const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > &W_factory
     );
 
   /** \brief . */
@@ -64,18 +183,52 @@ public:
 
   /** \brief . */
   void setInitialGuess( const ModelEvaluatorBase::InArgs<double>& initialGuess );
+  
+  /** \brief Set the state variable scaling vector <tt>s_x</tt> (see above). */
+  void setStateVariableScalingVec(
+    const Teuchos::RefCountPtr<const Epetra_Vector> &stateVariableScalingVec
+    );
+  
+  /** \brief Get the state variable scaling vector <tt>s_x</tt> (see above). */
+  Teuchos::RefCountPtr<const Epetra_Vector>
+  getStateVariableScalingVec() const;
+  
+  /** \brief Set the state function scaling vector <tt>s_f</tt> (see above). */
+  void setStateFunctionScalingVec(
+    const Teuchos::RefCountPtr<const Epetra_Vector> &stateFunctionScalingVec
+    );
+  
+  /** \brief Get the state function scaling vector <tt>s_f</tt> (see above). */
+  Teuchos::RefCountPtr<const Epetra_Vector>
+  getStateFunctionScalingVec() const;
 
   /** \brief . */
   void uninitialize(
-    Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>         *epetraModel = NULL
-    ,Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >  *W_factory   = NULL
+    Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> *epetraModel = NULL,
+    Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > *W_factory = NULL
     );
-
+  
   /** \brief . */
   const ModelEvaluatorBase::InArgs<double>& getFinalPoint() const;
 
   /** \brief . */
   bool finalPointWasSolved() const;
+
+  //@}
+
+  /** @name Overridden from ParameterListAcceptor */
+  //@{
+
+  /** \brief . */
+  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
@@ -135,6 +288,10 @@ public:
 
   //@}
 
+  // Made public to simplify implementation but this is harmless to be public.
+  // Clients should not deal with this type.
+  enum EStateFunctionScaling { STATE_FUNC_SCALING_NONE, STATE_FUNC_SCALING_ROW_SUM };
+
 private:
 
   // ////////////////////
@@ -143,58 +300,100 @@ private:
   typedef std::vector<Teuchos::RefCountPtr<const Epetra_Map> > p_map_t;
   typedef std::vector<Teuchos::RefCountPtr<const Epetra_Map> > g_map_t;
 
-  typedef std::vector<Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > > p_space_t;
-  typedef std::vector<Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > > g_space_t;
+  typedef std::vector<Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > >
+  p_space_t;
+  typedef std::vector<Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > >
+  g_space_t;
 
-  // ////////////////////
-  // Private data mebers
+  // /////////////////////
+  // Private data members
 
-  Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>              epetraModel_;
-  Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >        W_factory_;
-  Teuchos::RefCountPtr<const Epetra_Map>                             x_map_;
-  p_map_t                                                            p_map_;
-  g_map_t                                                            g_map_;
-  Teuchos::RefCountPtr<const Epetra_Map>                             f_map_;
-  Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> >     x_space_;
-  p_space_t                                                          p_space_;
-  Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> >     f_space_;
-  g_space_t                                                          g_space_;
-  ModelEvaluatorBase::InArgs<double>                                 initialGuess_;
-  ModelEvaluatorBase::InArgs<double>                                 lowerBounds_;
-  ModelEvaluatorBase::InArgs<double>                                 upperBounds_;
-  ModelEvaluatorBase::InArgs<double>                                 finalPoint_;
-  bool                                                               finalPointWasSolved_;
+  Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> epetraModel_;
+
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_;
+
+  Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > W_factory_;
+
+  Teuchos::RefCountPtr<const Epetra_Map> x_map_;
+  p_map_t p_map_;
+  g_map_t g_map_;
+  Teuchos::RefCountPtr<const Epetra_Map> f_map_;
+
+  Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > x_space_;
+  p_space_t p_space_;
+  Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > f_space_;
+  g_space_t g_space_;
+
+  ModelEvaluatorBase::InArgs<double> initialGuess_;
+  ModelEvaluatorBase::InArgs<double> lowerBounds_;
+  ModelEvaluatorBase::InArgs<double> upperBounds_;
+  ModelEvaluatorBase::InArgs<double> finalPoint_;
+
+  EStateFunctionScaling stateFunctionScaling_;
+  mutable Teuchos::RefCountPtr<const Epetra_Vector> stateFunctionScalingVec_;
+
+  Teuchos::RefCountPtr<const Epetra_Vector> stateVariableScalingVec_; // S_x
+  Teuchos::RefCountPtr<Epetra_Vector> invStateVariableScalingVec_; // inv(S_x)
+
+  bool doStateVariableScalingFirst_;
+
+  mutable Teuchos::RefCountPtr<Epetra_Vector> x_unscaled_;
+  mutable Teuchos::RefCountPtr<Epetra_Vector> x_dot_unscaled_;
+
+  bool finalPointWasSolved_;
+
+  // //////////////////////////
+  // Private member functions
+
   
 };
+
 
 //
 // Utility functions
 //
 
-/** \brief . */
+
+/** \brief .
+ * \relates EpetraModelEvaluator
+ */
 ModelEvaluatorBase::EDerivativeMultiVectorOrientation
 convert( const EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation &mvOrientation );
 
-/** \brief . */
+
+/** \brief .
+ * \relates EpetraModelEvaluator
+ */
 EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation
 convert( const ModelEvaluatorBase::EDerivativeMultiVectorOrientation &mvOrientation );
 
-/** \brief . */
+
+/** \brief .
+ * \relates EpetraModelEvaluator
+ */
 ModelEvaluatorBase::DerivativeProperties
 convert( const EpetraExt::ModelEvaluator::DerivativeProperties &derivativeProperties );
 
-/** \brief . */
+
+/** \brief .
+ * \relates EpetraModelEvaluator
+ */
 ModelEvaluatorBase::DerivativeSupport
 convert( const EpetraExt::ModelEvaluator::DerivativeSupport &derivativeSupport );
 
-/** \brief . */
+
+/** \brief .
+ * \relates EpetraModelEvaluator
+ */
 EpetraExt::ModelEvaluator::Derivative
 convert(
-  const ModelEvaluatorBase::Derivative<double>        &derivative
-  ,const Teuchos::RefCountPtr<const Epetra_Map>       &fnc_map
-  ,const Teuchos::RefCountPtr<const Epetra_Map>       &var_map
+  const ModelEvaluatorBase::Derivative<double> &derivative,
+  const Teuchos::RefCountPtr<const Epetra_Map> &fnc_map,
+  const Teuchos::RefCountPtr<const Epetra_Map> &var_map
   );
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_EPETRA_MODEL_EVALUATOR_HPP
