@@ -856,6 +856,13 @@ ComputePreconditioner(const bool CheckPreconditioner)
   
   ML_Aggregate_Create(&agg_);
   ML_Comm_Create(&ml_comm_);
+#ifdef EMIN_IN_PAPER
+printf("this is garbage for NSR \n");
+ML_Aggregate_Set_Reuse(agg_);
+agg_->keep_agg_information = 1;
+agg_->keep_P_tentative = 1;
+#endif
+
 
   if( SolvingMaxwell_ == false ) {
 
