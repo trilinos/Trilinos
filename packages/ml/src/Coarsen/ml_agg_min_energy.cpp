@@ -533,8 +533,15 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 
   // Compute 'column-based' Omega's (with safeguard)
 
+#ifdef EMIN_IN_PAPER
+FILE *fp;
+fp = fopen("colomega","w");
+#endif
   for (int i = 0 ; i < NComputedOmegas ; ++i) {
     ColBasedOmega[i] = Numerator[i]/Denominator[i];
+#ifdef EMIN_IN_PAPER
+fprintf(fp,"%20.13e\n",ColBasedOmega[i]);
+#endif
     double& val = ColBasedOmega[i];
     if (val < 0.0) {
       val = 0.0;
@@ -543,6 +550,9 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     if (val < min_local) min_local = val;
     if (val > max_local) max_local = val;
   }
+#ifdef EMIN_IN_PAPER
+fclose(fp);
+#endif
   if (Denominator != NULL) ML_free(Denominator);
   if (Numerator   != NULL) ML_free(Numerator);
 
@@ -582,6 +592,9 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
      ML_exchange_bdry(&ColBasedOmega[0],DinvAP0->getrow->pre_comm, n_0,
                       DinvAP0->comm, ML_OVERWRITE,NULL);
 
+#ifdef EMIN_IN_PAPER
+fp = fopen("rowomega","w");
+#endif
   int AtLeastOneDefined, NRowOmegasSet = 0;
   for (int row = 0 ; row < n ; row++) {
      RowOmega[row] = -666.;            // RowOmega not set
@@ -600,7 +613,13 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
        NRowOmegasSet++;
        if (RowOmega[row] < 0.) RowOmega[row] = 0.;
     }
+#ifdef EMIN_IN_PAPER
+fprintf(fp,"%20.13e\n",RowOmega[row]);
+#endif
   }
+#ifdef EMIN_IN_PAPER
+fclose(fp);
+#endif
 
   // If only a subset of column omegas are computed then we might not have
   // all of the RowOmega's defined. We need to loop a few times to get them.
@@ -666,6 +685,17 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 
   ML_Operator_Set_1Levels(&(ml->Pmat[clevel]), &(ml->SingleLevel[clevel]),
                           &(ml->SingleLevel[level]));
+
+#ifdef EMIN_IN_PAPER
+// load in the matlab version of omega
+system("/usr/local/matlab/bin/matlab -nodisplay < omegar.m >> outfile");
+system("ls");
+fp = fopen("newomegas","r");
+for (int i = 0; i < Amat->invec_leng; i++) {
+  fscanf(fp,"%lf",&(RowOmega[i]));
+}
+fclose(fp);
+#endif
 
   if (bindx != NULL)    ML_free(bindx);
   if (val   != NULL)    ML_free(val);
