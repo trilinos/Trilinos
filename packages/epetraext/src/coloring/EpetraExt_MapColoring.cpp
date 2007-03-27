@@ -355,7 +355,8 @@ operator()( OriginalTypeRef orig  )
         for( int j = 0 ; iterIS != iendIS; ++iterIS, ++j ) ColVec[j] = *iterIS;
         Adj2->InsertMyIndices( i, nCols2, &ColVec[0] );
       }
-      assert( Adj2->FillComplete() == 0 );
+      int flag = Adj2->FillComplete();
+      assert( flag == 0 );
       RowMap.Comm().Barrier();
       if( verbosity_ > 1 ) cout << "Adjacency 2 Graph!\n" << *Adj2;
     }
