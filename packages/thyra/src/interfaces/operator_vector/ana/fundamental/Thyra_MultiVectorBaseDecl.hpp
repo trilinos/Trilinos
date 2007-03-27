@@ -464,7 +464,7 @@ namespace Thyra {
  * 
  * This is a fairly bare-bones interface class without much in the way of
  * default function implementations.  The subclass
- * <tt>MultiVectorDefaultBase</tt> (contined in the Operator/Vector Support
+ * <tt>MultiVectorDefaultBase</tt> (contained in the Operator/Vector Support
  * Software collection) uses a default multi-vector implementation to provide
  * overrides of many of the functions and should be the first choice for
  * subclasses implementations to derive their implementations from rather than
