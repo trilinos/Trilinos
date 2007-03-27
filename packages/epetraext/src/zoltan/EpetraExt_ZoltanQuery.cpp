@@ -133,10 +133,11 @@ int EpetraExt::ZoltanQuery::Number_Edges  ( void * data,
     int IndiceCountReturn;
 
     vector<int> nbr_edges( NumIndices );
-    assert( graph_.ExtractGlobalRowCopy( ((int) *global_id),
+    int flag = graph_.ExtractGlobalRowCopy( ((int) *global_id),
                                          NumIndices,
                                          IndiceCountReturn,
-                                         &(nbr_edges[0]) ) == 0 );
+                                         &(nbr_edges[0]) );
+    assert( flag == 0 );
     assert( NumIndices == IndiceCountReturn );
     sort( nbr_edges.begin(), nbr_edges.end() );
 
@@ -155,10 +156,11 @@ int EpetraExt::ZoltanQuery::Number_Edges  ( void * data,
       int tNumIndices = tgraph_->NumMyIndices( LocalRow );
       vector<int> t_nbr_edges( tNumIndices );
 
-      assert( tgraph_->ExtractGlobalRowCopy( ((int) *global_id),
+      flag = tgraph_->ExtractGlobalRowCopy( ((int) *global_id),
                                            tNumIndices,
                                            IndiceCountReturn,
-                                           &(t_nbr_edges[0]) ) == 0 );
+                                           &(t_nbr_edges[0]) );
+      assert( flag == 0 );
       assert( tNumIndices == IndiceCountReturn );
 
       for( int i = 0; i < tNumIndices; ++i )
@@ -198,10 +200,11 @@ void EpetraExt::ZoltanQuery::Edge_List    ( void * data,
   if( NumIndices != -1 )
   {
     vector<int> nbr_edges( NumIndices );
-    assert( graph_.ExtractGlobalRowCopy( ((int) *global_id), 
+    int flag = graph_.ExtractGlobalRowCopy( ((int) *global_id), 
                                          NumIndices,
                                          IndiceCountReturn,
-                                         &(nbr_edges[0]) ) == 0 );
+                                         &(nbr_edges[0]) );
+    assert( flag == 0 );
     assert( NumIndices == IndiceCountReturn );
 
     int ii = 0;
@@ -221,10 +224,11 @@ void EpetraExt::ZoltanQuery::Edge_List    ( void * data,
       int tNumIndices = tgraph_->NumMyIndices( ((int) *local_id) );
       vector<int> t_nbr_edges( tNumIndices );
 
-      assert( tgraph_->ExtractGlobalRowCopy( ((int) *global_id),
+      flag = tgraph_->ExtractGlobalRowCopy( ((int) *global_id),
                                            tNumIndices,
                                            IndiceCountReturn,
-                                           &(t_nbr_edges[0]) ) == 0 );
+                                           &(t_nbr_edges[0]) );
+      assert( flag == 0 );
       assert( tNumIndices == IndiceCountReturn );
 
       for( int i = 0; i < tNumIndices; ++i )
@@ -297,7 +301,8 @@ int EpetraExt::ZoltanQuery::HG_Edge_List   ( void * data,
   int loc = 0;
   for( int i = 0; i < NumHEs; ++i )
   {
-    assert( graph_.ExtractGlobalRowCopy( graph_.GRID(i), maxEntries, numIndices, &indices[0] ) == 0 );
+    int flag = graph_.ExtractGlobalRowCopy( graph_.GRID(i), maxEntries, numIndices, &indices[0] );
+    assert( flag == 0 );
 
     edge_sizes[i] = numIndices;
     for( int j = 0; j < numIndices; ++j )

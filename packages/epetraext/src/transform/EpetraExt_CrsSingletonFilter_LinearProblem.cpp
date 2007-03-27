@@ -97,7 +97,8 @@ analyze( LinearProblem_CrsSingletonFilter::OriginalTypeRef orig )
 
   FullMatrix_ = orig.GetMatrix();
 
-  assert( Analyze( FullMatrix_ ) >= 0 );
+  int flag = Analyze( FullMatrix_ );
+  assert( flag >= 0 );
 
   if( verbose_ )
   {
@@ -130,7 +131,8 @@ construct()
 {
   if( !origObj_ ) abort();
 
-  assert( ConstructReducedProblem( origObj_ ) >= 0 );
+  int flag = ConstructReducedProblem( origObj_ );
+  assert( flag >= 0 );
 
   newObj_ = ReducedProblem();
 
