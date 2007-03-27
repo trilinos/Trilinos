@@ -29,7 +29,7 @@ RUN (beowulf-nightly-mpi) {
     COMM                = mpi;
     INVOKE-CONFIGURE    = linux-beowulf-mpi;
     TEST-CATEGORY       = FRAMEWORK;
-    MAX-PROC            = 16;
+    MAX-PROC            = 12;
     MPI-START           = lamboot /home/mnphenow/.lamhosts;
     MPI-GO              = mpirun -x LD_LIBRARY_PATH -np ;
     MPI-PING            = mpitask;
