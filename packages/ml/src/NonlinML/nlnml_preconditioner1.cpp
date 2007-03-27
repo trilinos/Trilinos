@@ -303,6 +303,8 @@ bool NLNML::NLNML_Preconditioner::compPrec(const Epetra_Vector& x)
     fineJac_ = rcp(interface_->getJacobian());
     fineJac_.release();
     interface_->computeJacobian(x,*fineJac_);
+    fineJac_ = rcp(interface_->getJacobian());
+    fineJac_.release();
     // check for zero diagonal entries
     if (getParameter("nlnML Jacobian fix diagonal",true)==true)
       fix_MainDiagonal(fineJac_,0);
@@ -391,7 +393,7 @@ bool NLNML::NLNML_Preconditioner::compPrec(const Epetra_Vector& x)
   
   // get nullspace
   int nummyrows = fineJac_->NumMyRows();
-  int dimnullsp = getParameter("nlnML null space: dimension2",1);
+  int dimnullsp = getParameter("nlnML null space: dimension",1);
   int blocksize = getParameter("nlnML PDE equations",1);
   double* nullsp = interface_->Get_Nullspace(nummyrows,blocksize,dimnullsp);
   
@@ -408,7 +410,7 @@ bool NLNML::NLNML_Preconditioner::compPrec(const Epetra_Vector& x)
   {
     dimnullsp = getParameter("nlnML null space: dimension",1);
     ML_Aggregate_Set_NullSpace(ag_,blocksize,dimnullsp,nullsp,nummyrows);
-    delete nullsp; nullsp = NULL;
+    delete [] nullsp; nullsp = NULL;
   }
   else
   {
