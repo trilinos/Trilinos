@@ -97,6 +97,10 @@ int MatrixMarketFileToMultiVector( const char *filename, const Epetra_BlockMap &
       if(sscanf(line, "%lg\n", &V)==0) return(-1);
       v[i] = V;
     }
+    // Now read in the rest of the lines to discard
+    for (int i=0; i < M-numMyPoints-offset; i++) {
+      if(fgets(line, lineLength, handle)==0) return(-1);
+    }
   }
 
   if (fclose(handle)) return(-1);
