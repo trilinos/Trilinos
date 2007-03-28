@@ -948,7 +948,6 @@ Epetra_IntVector * ML_Epetra::FindLocalDirichletColumnsFromRows(const int *diric
   Epetra_IntVector globColsToZero(globalMap);
   // create a vector of local column indices that we will export from
   Epetra_IntVector *myColsToZero= new Epetra_IntVector(ColMap);
-  //  myColsToZero->PutScalar(0);
   myColsToZero->PutValue(0);  
 
   // for each local column j in a local dirichlet row, set myColsToZero[j]=1
@@ -1102,13 +1101,13 @@ void ML_Epetra::Remove_Zeroed_Rows(const Epetra_CrsMatrix & Matrix)
   double *vals;
   int *cols;
 
-  /* Zero the rows, add ones to diagonal */
+  /* Find zero'd the rows, add ones to diagonal */
   for (i=0; i < N; i++) {
     Matrix.ExtractMyRowView(i,numEntries,vals,cols);
     gridx=Matrix.GRID(i);
     for (j=0, cidx=-1; j < numEntries; j++){
-      if(vals[j]!=0) break;
-      if(gridx == Matrix.GCID(cols[j])) cidx=j;      
+      if(vals[j]!=0) {cidx=-1;break;}
+      if(gridx == Matrix.GCID(cols[j])) cidx=j;
     }/*end for*/
     if(cidx!=-1) vals[cidx]=1.0;
   }/*end for*/
@@ -1131,33 +1130,28 @@ void ML_Epetra::Apply_OAZToMatrix(int *dirichletRows, int numBCRows, const Epetr
      Comments: The graph of Matrix is unchanged.
   */
 
-  int numEntries;
+  int numEntries,grid;
   double *vals;
   int *cols;
 
   /* Find the local column numbers to nuke */
   Epetra_IntVector *dirichletColumns=LocalRowstoColumns(dirichletRows,numBCRows,Matrix);
-
+  
   /* Zero the columns */
-  //  FILE *f=fopen("dcols.dat","w");
   for (int i=0; i < Matrix.NumMyRows(); i++) {
     Matrix.ExtractMyRowView(i,numEntries,vals,cols);
     for (int j=0; j < numEntries; j++) 
-      if ((*dirichletColumns)[ cols[j] ] > 0){
-        vals[j] = 0.0;
-        //        fprintf(f,"%d\n",cols[j]);
-      }
-    
+      if ((*dirichletColumns)[ cols[j] ] > 0)
+        vals[j] = 0.0;          
   }/*end for*/
   
   /* Zero the rows, add ones to diagonal */
   for (int i=0; i < numBCRows; i++) {
     Matrix.ExtractMyRowView(dirichletRows[i],numEntries,vals,cols);
     for (int j=0; j < numEntries; j++)
-      if(Matrix.GRID(dirichletRows[i])==Matrix.GCID(cols[j])) vals[j]=1.0;
+      if(grid==Matrix.GCID(cols[j])) vals[j]=1.0;
       else vals[j] = 0.0;
   }/*end for*/
-
 
   delete dirichletColumns;  
 }/*end Apply_OAZToMatrix*/

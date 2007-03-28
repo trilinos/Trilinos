@@ -123,13 +123,14 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
     ML_CHK_ERR(-1); // only square matrices
 
   /* Invert non-zeros on the diagonal */
-  for (int i = 0; i < InvDiagonal_->MyLength(); ++i)
-    if ((*InvDiagonal_)[i] != 0.0)
-      (*InvDiagonal_)[i] = 1.0 / (*InvDiagonal_)[i];
-
-  double nrm;
-  InvDiagonal_->Norm2(&nrm);
-  printf("Inverse Diagonal Norm = %6.4e\n",nrm);
+  if(InvDiagonal_){
+    for (int i = 0; i < InvDiagonal_->MyLength(); ++i)
+      if ((*InvDiagonal_)[i] != 0.0)
+        (*InvDiagonal_)[i] = 1.0 / (*InvDiagonal_)[i];   
+    double nrm;
+    InvDiagonal_->Norm2(&nrm);
+    printf("Inverse Diagonal Norm = %6.4e\n",nrm);
+  }/*end if*/
   
   /* Do the eigenvalue estimation for Chebyshev */
   if(SmootherSweeps) {
@@ -157,13 +158,12 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
 
   /* Setup Preconditioner on Coarse Matrix */
   printf("EMFP: Building Coarse Precond\n");
-  List_.print(cout);
+  //  List_.print(cout);
   CoarsePC = new MultiLevelPreconditioner(*CoarseMatrix,List_);
   if(!CoarsePC) ML_CHK_ERR(-2);
 
   /* DEBUG: Output matrices */
   Epetra_CrsMatrix_Print(*CoarseMatrix,"coarsemat.dat");
-
   
   /* Clean Up */
   delete nullspace;

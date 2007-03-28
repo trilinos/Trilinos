@@ -168,7 +168,7 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
   Comm_ = &(SM_Matrix_->Comm());
   DomainMap_ = &(SM_Matrix_->OperatorDomainMap());
   RangeMap_ = &(SM_Matrix_->OperatorRangeMap());
-  NodeMap_ = &(M0inv_Matrix_->OperatorDomainMap());
+  NodeMap_ = &(D0_Clean_Matrix_->OperatorDomainMap());
 
   Label_=strdup("ML reformulated Maxwell preconditioner");
   List_=List;
@@ -198,6 +198,9 @@ void ML_Epetra::RefMaxwellPreconditioner::Print(const char *whichHierarchy){
 int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckFiltering)
 {
   Teuchos::ParameterList dummy;
+
+  /* Pull Solver Mode */
+  mode=List_.get("refmaxwell: mode","212");
   
   /* Nuke everything if we've done this already */
   if(IsComputePreconditionerOK_) DestroyPreconditioner();
@@ -205,13 +208,29 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   /* Find the Dirichlet Rows (using SM_Matrix_) and columns (using D0_Clean_Matrix_) */
   BCrows=FindLocalDiricheltRowsFromOnesAndZeros(*SM_Matrix_,numBCrows);
   Epetra_IntVector * BCnodes=FindLocalDirichletColumnsFromRows(BCrows,numBCrows,*D0_Clean_Matrix_);
-  
+   
+#ifdef STUFF_WE_PROBABLY_DONT_NEED
   /* Convert to Dirichlet node list */
   int Nn=BCnodes->MyLength();
   int *BCnodes_int= new int[Nn];
   int numBCnodes=0;
   for(int i=0;i<Nn;i++)
-    if((*BCnodes)[i]) BCnodes_int[numBCnodes++]=i;
+    if((*BCnodes)[i]) {
+      int cid=D0_Clean_Matrix_->GCID(i);
+      int lid=NodeMap_->LID(cid);
+      if(cid==0) fprintf(stderr,"[%d] Error gcid %d map fails\n",Comm_->MyPID(),i);
+      else if(lid==-1) fprintf(stderr,"[%d] Error nlid %d/%d map fails\n",Comm_->MyPID(),i,cid);      
+      BCnodes_int[numBCnodes++]=lid;
+    }
+  for(int i=0;i<numBCnodes;i++){
+    if(BCnodes_int[i] == -1) fprintf(stderr,"[%d] Error row %d/%d map fails\n",Comm_->MyPID(),i,BCnodes_int[i]);
+  }
+#else
+  int Nn=BCnodes->MyLength();
+  int numBCnodes=0;
+  for(int i=0;i<Nn;i++) if((*BCnodes)[i]) numBCnodes++;
+#endif
+
 
   /* Sanity Check: We have at least some Dirichlet nodes */
   /* NTS: This should get fixed later for robustness */
@@ -235,14 +254,14 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
     Apply_BCsToMatrixColumns(*BCnodes,*D0_Matrix_);   
   }/*end if*/
 
-  /* Build the TMT Matrix */
+  /* Build the TMT Matrix */  
   /* NTS: When ALEGRA builds this matrix itself, we get rid of these lines */
-  Epetra_CrsMatrix temp1(Copy,*RangeMap_,0);
-  TMT_Matrix_=new Epetra_CrsMatrix(Copy,*NodeMap_,0);  
+  Epetra_CrsMatrix temp1(Copy,*RangeMap_,1);
+  TMT_Matrix_=new Epetra_CrsMatrix(Copy,*NodeMap_,1);
   EpetraExt::MatrixMatrix::Multiply(*Ms_Matrix_,false,*D0_Matrix_,false,temp1);
   EpetraExt::MatrixMatrix::Multiply(*D0_Matrix_,true,temp1,false,*TMT_Matrix_);
-  if(!HasOnlyDirichletNodes)
-    Apply_OAZToMatrix(BCnodes_int,numBCnodes,*TMT_Matrix_);  
+  //  if(!HasOnlyDirichletNodes) Apply_OAZToMatrix(BCnodes_int,numBCnodes,*TMT_Matrix_);  
+  Remove_Zeroed_Rows(*TMT_Matrix_);
   TMT_Matrix_->OptimizeStorage();
 
   /* Build the TMT-Agg Matrix  (used for aggregating the (1,1) block*/
@@ -251,13 +270,16 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   TMT_Agg_Matrix_=new Epetra_CrsMatrix(Copy,*NodeMap_,0);  
   EpetraExt::MatrixMatrix::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,temp2);
   EpetraExt::MatrixMatrix::Multiply(*D0_Matrix_,true,temp2,false,*TMT_Agg_Matrix_);
-  //  Apply_OAZToMatrix(BCnodes_int,numBCnodes,*TMT_Agg_Matrix_);  
+  Remove_Zeroed_Rows(*TMT_Agg_Matrix_);
   TMT_Agg_Matrix_->OptimizeStorage();
+
+  // NTS: Should I be building w/ D0_Clean for aggregation?  
+  
 #ifndef NO_OUTPUT
   Epetra_CrsMatrix_Print(*TMT_Agg_Matrix_,"tmt_agg_matrix.dat");
 #endif
   // NTS: SHOULD M0 Be nuked in here???
-  
+
   /* Boundary nuke the edge matrices */
   if(!HasOnlyDirichletNodes){
     Apply_OAZToMatrix(BCrows,numBCrows,*Ms_Matrix_);
@@ -275,59 +297,69 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   
   /* Cleanup from the Boundary Conditions */
   delete BCnodes; 
+#ifdef STUFF_WE_PROBABLY_DONT_NEED
   delete [] BCnodes_int;
+#endif
   
   /* Build the (1,1) Block Operator */
   Operator11_ = new ML_RefMaxwell_11_Operator(*SM_Matrix_,*D0_Matrix_,*M0inv_Matrix_,*M1_Matrix_);
-
-  /* Approximate the Diagonal of the (1,1) Block Operator */
-  /*  M1L=spdiags(M1*ones(Ne,1),0,Ne,Ne);
-      M1LT=M1L*T;
-      DIAG11=diag(SM)+diag(M1LT*(M0L\M1LT')); */
-  Epetra_Vector temp_edge1(*DomainMap_,false);
-  Epetra_Vector temp_edge2(*DomainMap_,false);
-  Diagonal_=new Epetra_Vector(*DomainMap_,false);
-  temp_edge1.PutScalar(1.0);
-
-  /* Build a lumped approximation of M1 */
-  M1_Matrix_->Multiply(false,temp_edge1,temp_edge2);
-  Epetra_CrsMatrix M1diag(Copy,*DomainMap_,1,true);
-  for(int i=0;i<M1diag.NumMyRows();i++){
-    int gid=DomainMap_->GID(i);
-    M1diag.InsertGlobalValues(gid,1,&(temp_edge2[i]),&gid);
-  }/*end for*/
-  M1diag.FillComplete();
-  M1diag.OptimizeStorage();
-
-  //  ofstream ofs0("m1l.dat");
-  //  MVOUT(temp_edge2,ofs0);
   
-  /* Build lumped-M1 approximation of the whole matrix and pull the diagonal */
-  Epetra_CrsMatrix temp_matrix1(Copy,*NodeMap_,0);
-  Epetra_CrsMatrix temp_matrix2(Copy,*NodeMap_,0);
-  Epetra_CrsMatrix temp_matrix3(Copy,*DomainMap_,0);
-  EpetraExt::MatrixMatrix::Multiply(*D0_Matrix_,true,M1diag,false,temp_matrix1);
-  EpetraExt::MatrixMatrix::Multiply(*M0inv_Matrix_,false,temp_matrix1,false,temp_matrix2);
-  EpetraExt::MatrixMatrix::Multiply(temp_matrix1,true,temp_matrix2,false,temp_matrix3);
-  temp_matrix3.ExtractDiagonalCopy(*Diagonal_);
-
+  if(mode!="additive"){  
+    /* Approximate the Diagonal of the (1,1) Block Operator */
+    /*  M1L=spdiags(M1*ones(Ne,1),0,Ne,Ne);
+        M1LT=M1L*T;
+        DIAG11=diag(SM)+diag(M1LT*(M0L\M1LT')); */
+    Epetra_Vector temp_edge1(*DomainMap_,false);
+    Epetra_Vector temp_edge2(*DomainMap_,false);
+    Diagonal_=new Epetra_Vector(*DomainMap_,false);
+    temp_edge1.PutScalar(1.0);
+    
+    
+    /* Build a lumped approximation of M1 */
+    M1_Matrix_->Multiply(false,temp_edge1,temp_edge2);
+    Epetra_CrsMatrix M1diag(Copy,*DomainMap_,1,true);
+    for(int i=0;i<M1diag.NumMyRows();i++){
+      int gid=DomainMap_->GID(i);
+      M1diag.InsertGlobalValues(gid,1,&(temp_edge2[i]),&gid);
+    }/*end for*/
+    M1diag.FillComplete();
+    M1diag.OptimizeStorage();
+    
+    //  ofstream ofs0("m1l.dat");
+    //  MVOUT(temp_edge2,ofs0);
+    
+    
+    /* Build lumped-M1 approximation of the whole matrix and pull the diagonal */
+    Epetra_CrsMatrix temp_matrix1(Copy,*NodeMap_,0);
+    Epetra_CrsMatrix temp_matrix2(Copy,*NodeMap_,0);
+    Epetra_CrsMatrix temp_matrix3(Copy,*DomainMap_,0);
+    EpetraExt::MatrixMatrix::Multiply(*D0_Matrix_,true,M1diag,false,temp_matrix1);
+    EpetraExt::MatrixMatrix::Multiply(*M0inv_Matrix_,false,temp_matrix1,false,temp_matrix2);
+    EpetraExt::MatrixMatrix::Multiply(temp_matrix1,true,temp_matrix2,false,temp_matrix3);
+    temp_matrix3.ExtractDiagonalCopy(*Diagonal_);
+    
 #ifndef NO_OUTPUT
-  MVOUT(*Diagonal_,"addon_diagonal.dat");
+    MVOUT(*Diagonal_,"addon_diagonal.dat");
 #endif
  
-  SM_Matrix_->ExtractDiagonalCopy(temp_edge2);
-  Diagonal_->Update(1.0,temp_edge2,1.0);
-
+    SM_Matrix_->ExtractDiagonalCopy(temp_edge2);
+    Diagonal_->Update(1.0,temp_edge2,1.0);
+    
 #ifndef NO_OUTPUT
-  MVOUT(*Diagonal_,"diagonal.dat");
+    MVOUT(*Diagonal_,"diagonal.dat");
 #endif
   
   /* Sanity Check the Diagonal */
-  double min_val; Diagonal_->MinValue(&min_val);
-  if(Comm_->MyPID()==0 && min_val <1e-16) {printf("ERROR: Minimum Estimated Diagonal <1e-16 (%6.4e)\n",min_val);
-  exit(1);
-  return -2;}
+    double min_val; Diagonal_->MinValue(&min_val);
+    if(Comm_->MyPID()==0 && min_val <1e-16) {printf("ERROR: Minimum Estimated Diagonal <1e-16 (%6.4e)\n",min_val);return -2;}
+  }/*end if*/
+  else{
+    // THIS IS A HACK!!!!!
+    Diagonal_=new Epetra_Vector(*DomainMap_,false);
+    Diagonal_->PutScalar(1.0);
+  }
 
+    
   /* Build the (2,2) Block Preconditioner */
   ML_reseed_random_vec(8675309);//DEBUG
   string solver22=List_.get("refmaxwell: 22solver","multilevel");
@@ -338,8 +370,8 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   //NTS: Add Adaptive, MatrixFree
 
 
-    const ML_Aggregate* nodal_aggregates=NodePC->GetML_Aggregate();
-
+  const ML_Aggregate* nodal_aggregates=NodePC->GetML_Aggregate();
+  // NTS: Delete me
     
   /* Build the (1,1) Block Preconditioner */ 
   ML_reseed_random_vec(8675309);//DEBUG 
@@ -351,23 +383,15 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
     EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Agg_Matrix_,nodal_aggregates,BCrows,numBCrows,List11,true);
     else {printf("RefMaxwellPreconditioner: ERROR - Illegal (1,1) block preconditioner\n");return -1;}
 
-  /* Pull Solver Mode */
-  mode=List_.get("refmaxwell: mode","212");
 
   /* Setup the Hiptmair smoother in additive mode */
   if(mode=="additive"){
     SetEdgeSmoother(List_);
-    //    EdgeSmoother=new Ifpack_Hiptmair(SM_Matrix_,D0_Matrix_,TMT_Matrix_);
-    //    Teuchos::ParameterList ListSM = List_.get("refmaxwell: additive smoother",dummy);
-    //    ML_CHK_ERR(EdgeSmoother->SetParameters(ListSM));
-    //    ML_CHK_ERR(EdgeSmoother->Initialize());
-    //    ML_CHK_ERR(EdgeSmoother->Compute());
   }/*end if*/
   
 
   
   IsComputePreconditionerOK_=true;
-  
   return 0;
 }/*end ComputePreconditioner*/
 
