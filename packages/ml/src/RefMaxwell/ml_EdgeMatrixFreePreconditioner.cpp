@@ -78,7 +78,7 @@ int CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[
 //ML_Epetra::EdgeMatrixFreePreconditioner::EdgeMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal, const Epetra_CrsMatrix & D0_Matrix,const Epetra_CrsMatrix & D0_Clean_Matrix,const Epetra_CrsMatrix & TMT_Matrix, const Teuchos::ParameterList &List,const bool ComputePrec):
 //  ML_Preconditioner(),Operator_(&Operator),D0_Matrix_(&D0_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix),TMT_Matrix_(&TMT_Matrix),Prolongator(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0)
 ML_Epetra::EdgeMatrixFreePreconditioner::EdgeMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal, const Epetra_CrsMatrix & D0_Matrix,const Epetra_CrsMatrix & D0_Clean_Matrix,const Epetra_CrsMatrix &TMT_Matrix,const ML_Aggregate * Nodal_Aggregates,const int* BCedges, const int numBCedges, const Teuchos::ParameterList &List,const bool ComputePrec):
-  ML_Preconditioner(),Operator_(&Operator),D0_Matrix_(&D0_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix),TMT_Matrix_(&TMT_Matrix),MLAggr(Nodal_Aggregates),BCedges_(BCedges),numBCedges_(numBCedges),Prolongator(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0)    
+  ML_Preconditioner(),Operator_(&Operator),D0_Matrix_(&D0_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix),TMT_Matrix_(&TMT_Matrix),MLAggr(Nodal_Aggregates),BCedges_(BCedges),numBCedges_(numBCedges),Prolongator(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),Smoother_(0) 
 {
   /* Set the Epetra Goodies */
   Comm_ = &(Operator_->Comm());
@@ -110,7 +110,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
 
   /* Parameter List Options */
   int OutputLevel = List_.get("ML output", -47);
-  int SmootherSweeps = List_.get("smoother: sweeps", 0);
+  int SmootherSweeps = List_.get("smoother: sweeps (level 0)", 0);
 
   if (OutputLevel == -47) OutputLevel = List_.get("output", 10);
   num_cycles  = List_.get("cycle applications",1);
@@ -483,7 +483,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
 
   /* DEBUG: output*/
 #ifndef NO_OUTPUT
-  Epetra_CrsMatrix_Print(*Temp,"coarse_temp.dat);
+  Epetra_CrsMatrix_Print(*Temp,"coarse_temp.dat");
 #endif
   
   /* Do R * AP */

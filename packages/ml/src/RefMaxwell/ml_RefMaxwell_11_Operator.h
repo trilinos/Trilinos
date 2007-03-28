@@ -14,7 +14,7 @@
 
 #ifndef ML_REFMAXWELL_11_OPERATOR_H
 #define ML_REFMAXWELL_11_OPERATOR_H
-#if defined(HAVE_ML_EPETRA)
+#if defined(HAVE_ML_EPETRA) && defined (HAVE_ML_EPETRAEXT)
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Operator.h"
@@ -23,9 +23,12 @@
 #include "ml_Preconditioner.h"
 #include "Epetra_Operator_With_MatMat.h"
 #include "Epetra_Multi_CrsMatrix.h"
-
+#include "EpetraExt_Reindex_CrsMatrix.h"
+#include "EpetraExt_Transpose_RowMatrix.h"
 namespace ML_Epetra{
 
+  //#define USE_ML_TRANSPOSE
+  
 /*! ML_RefMaxwell_11_Operator encapsulates the reformulated (1,1) block
   operator of the system described in Bochev, Hu, Siefert and Tuminaro, 2007.
   It inherits from Epetra_Operator_With_MatMat, and provides encapsulation for
@@ -125,8 +128,23 @@ private:
   //! Matrix: M1 D0^T M0inv D0 M1
   Epetra_CrsMatrix ** Addon_Matrix_;
 
+
+#ifdef USE_CORE_MATRIX
   //! Matrix: D0^T M0inv D0
   Epetra_CrsMatrix * Core_Matrix_;
+
+  //! Reindexed Matrix: D0^T M0inv D0
+  Epetra_CrsMatrix * Core_Matrix_Reindex_;
+
+  //! Reindexer for Matrix: D0^T M0inv D0
+  EpetraExt::CrsMatrix_Reindex * Core_Matrix_Reindexer_;
+#else
+  //! Matrix: D0^T
+  Epetra_CrsMatrix * D0T_Matrix_;
+  EpetraExt::RowMatrix_Transpose * D0_Matrix_Transposer_;
+#endif
+
+  
   
   //! Multi_Crs_Matrix
   Epetra_Multi_CrsMatrix *Addon_;

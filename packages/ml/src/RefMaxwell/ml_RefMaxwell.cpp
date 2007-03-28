@@ -89,6 +89,7 @@ void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of) {
       int * Indices  = new int[MaxNumIndices];
       double * Values  = new double[MaxNumIndices];
       int NumIndices;
+
       int i, j;
       
       for (i=0; i<NumMyRows1; i++) {
@@ -160,8 +161,8 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
                                                               const Teuchos::ParameterList& List,
                                                               const bool ComputePrec):
   ML_Preconditioner(),SM_Matrix_(&SM_Matrix),D0_Matrix_(0), D0_Clean_Matrix_(&D0_Clean_Matrix),Ms_Matrix_(&Ms_Matrix),
-  M0inv_Matrix_(&M0inv_Matrix),M1_Matrix_(&M1_Matrix),TMT_Matrix_(0),//TMT_Agg_Matrix_(0),
-  Diagonal_(0),Operator11_(0),BCrows(0),numBCrows(0),EdgePC(0),NodePC(0)
+  M0inv_Matrix_(&M0inv_Matrix),M1_Matrix_(&M1_Matrix),TMT_Matrix_(0),TMT_Agg_Matrix_(0),
+  Diagonal_(0),Operator11_(0),BCrows(0),numBCrows(0),EdgePC(0),NodePC(0),HasOnlyDirichletNodes(false)
 {
   /* Set the Epetra Goodies */
   Comm_ = &(SM_Matrix_->Comm());
@@ -171,9 +172,6 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
 
   Label_=strdup("ML reformulated Maxwell preconditioner");
   List_=List;
-
-  exit(1);
-
   
   if(ComputePrec) ML_CHK_ERRV(ComputePreconditioner());
 }/*end constructor*/
@@ -224,15 +222,18 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   Comm_->MaxAll(&HasInterior,&globalInterior,1);  
   //  if(!globalInterior){
 #endif
-  if(!HasInterior){
-    if(!Comm_->MyPID()) printf("ERROR: All nodes are Dirichlet nodes!  RefMaxwell code currently doesn't handle that\n");
+  if(!globalInterior){
+    HasOnlyDirichletNodes=true;
+    if(!Comm_->MyPID()) printf("WARNING: All nodes are Dirichlet nodes!  Switching to alternative boundary handling\n");
     exit(1);
   }
-    
-  /* Do the Nuking for D0_Matrix_ */
+
   D0_Matrix_ = new Epetra_CrsMatrix(*D0_Clean_Matrix_);
-  Apply_BCsToMatrixRows(BCrows,numBCrows,*D0_Matrix_);
-  Apply_BCsToMatrixColumns(*BCnodes,*D0_Matrix_);   
+  if(!HasOnlyDirichletNodes){
+    /* Do the Nuking for D0_Matrix_ */
+    Apply_BCsToMatrixRows(BCrows,numBCrows,*D0_Matrix_);
+    Apply_BCsToMatrixColumns(*BCnodes,*D0_Matrix_);   
+  }/*end if*/
 
   /* Build the TMT Matrix */
   /* NTS: When ALEGRA builds this matrix itself, we get rid of these lines */
@@ -240,29 +241,28 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   TMT_Matrix_=new Epetra_CrsMatrix(Copy,*NodeMap_,0);  
   EpetraExt::MatrixMatrix::Multiply(*Ms_Matrix_,false,*D0_Matrix_,false,temp1);
   EpetraExt::MatrixMatrix::Multiply(*D0_Matrix_,true,temp1,false,*TMT_Matrix_);
-  Apply_OAZToMatrix(BCnodes_int,numBCnodes,*TMT_Matrix_);  
+  if(!HasOnlyDirichletNodes)
+    Apply_OAZToMatrix(BCnodes_int,numBCnodes,*TMT_Matrix_);  
   TMT_Matrix_->OptimizeStorage();
-
 
   /* Build the TMT-Agg Matrix  (used for aggregating the (1,1) block*/
   /* NTS: When ALEGRA builds this matrix itself, we get rid of these lines */
-#ifdef WHY_WONT_THIS_WORK
   Epetra_CrsMatrix temp2(Copy,*RangeMap_,0);
   TMT_Agg_Matrix_=new Epetra_CrsMatrix(Copy,*NodeMap_,0);  
   EpetraExt::MatrixMatrix::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,temp2);
   EpetraExt::MatrixMatrix::Multiply(*D0_Matrix_,true,temp2,false,*TMT_Agg_Matrix_);
   //  Apply_OAZToMatrix(BCnodes_int,numBCnodes,*TMT_Agg_Matrix_);  
   TMT_Agg_Matrix_->OptimizeStorage();
+#ifndef NO_OUTPUT
   Epetra_CrsMatrix_Print(*TMT_Agg_Matrix_,"tmt_agg_matrix.dat");
-  exit(1);
 #endif
-  
   // NTS: SHOULD M0 Be nuked in here???
   
   /* Boundary nuke the edge matrices */
-  Apply_OAZToMatrix(BCrows,numBCrows,*Ms_Matrix_);
-  Apply_OAZToMatrix(BCrows,numBCrows,*M1_Matrix_);    
-
+  if(!HasOnlyDirichletNodes){
+    Apply_OAZToMatrix(BCrows,numBCrows,*Ms_Matrix_);
+    Apply_OAZToMatrix(BCrows,numBCrows,*M1_Matrix_);    
+  }/*end if*/
 
   /* DEBUG: Output matrices */
 #ifndef NO_OUTPUT
@@ -338,7 +338,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   //NTS: Add Adaptive, MatrixFree
 
 
-  const ML_Aggregate* nodal_aggregates=NodePC->GetML_Aggregate();
+    const ML_Aggregate* nodal_aggregates=NodePC->GetML_Aggregate();
 
     
   /* Build the (1,1) Block Preconditioner */ 
@@ -347,8 +347,8 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   Teuchos::ParameterList List11=List_.get("refmaxwell: 11list",dummy);
   //  if(solver11=="edge matrix free") EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Matrix_,List11,true);
   if(solver11=="edge matrix free")
-    EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Matrix_,nodal_aggregates,BCrows,numBCrows,List11,true);
-    //   EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Agg_Matrix_,nodal_aggregates,BCrows,numBCrows,List11,true);
+    //    EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Matrix_,nodal_aggregates,BCrows,numBCrows,List11,true);
+    EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Agg_Matrix_,nodal_aggregates,BCrows,numBCrows,List11,true);
     else {printf("RefMaxwellPreconditioner: ERROR - Illegal (1,1) block preconditioner\n");return -1;}
 
   /* Pull Solver Mode */
@@ -383,12 +383,11 @@ int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
   if(NodePC) {delete NodePC; NodePC=0;}
   if(D0_Matrix_) {delete D0_Matrix_; D0_Matrix_=0;}
   if(TMT_Matrix_) {delete TMT_Matrix_; TMT_Matrix_=0;}
-#ifdef WHY_WONT_THIS_WORK
   if(TMT_Agg_Matrix_) {delete TMT_Agg_Matrix_; TMT_Agg_Matrix_=0;}
-#endif
   if(BCrows) {delete [] BCrows; BCrows=0;numBCrows=0;}
   if(PreEdgeSmoother)  {delete PreEdgeSmoother; PreEdgeSmoother=0;}
   if(PostEdgeSmoother) {delete PostEdgeSmoother; PostEdgeSmoother=0;}
+  return 0;
 }/*end DestroyPreconditioner*/
 
 
@@ -407,7 +406,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse(const Epetra_MultiVector& 
   double *norm=new double[B.NumVectors()]; 
   B.Norm2(norm);
   for(int i=0;norm0==true && i<B.NumVectors();i++) norm0=norm0 && (norm[i]==0);
-  delete norm;
+  delete [] norm;
   if(norm0) return 0;
   
   

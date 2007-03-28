@@ -195,7 +195,7 @@ int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix
 //! Wraps a ML_Operator into a Epetra_CrsMatrix.
 /*! This is a somewhat cheap wrap in that the pointers get dumped into the Epetra_CrsMatrix.  
  */
-void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm, const Epetra_Map &RowMap,Epetra_CrsMatrix **Result,Epetra_DataAccess CV=View);
+void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm, const Epetra_Map &RowMap,Epetra_CrsMatrix **Result,Epetra_DataAccess CV=View,int base=0);
 //void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, Epetra_CrsMatrix *Result);
 
 
@@ -215,7 +215,7 @@ int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);
  */
 int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
 				CrsMatrix, int & MaxNumNonzeros,
-				bool CheckNonzeroRow, double &);
+				bool CheckNonzeroRow, double &, int base=0);
 
 inline int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
 				CrsMatrix)

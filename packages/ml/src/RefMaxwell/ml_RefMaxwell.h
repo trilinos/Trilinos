@@ -170,13 +170,14 @@ namespace ML_Epetra
     //! Matrix: M1(1)
     const Epetra_CrsMatrix * M1_Matrix_;
     //! Matrix: D0' M1(sigma) D0
-    //    const Epetra_CrsMatrix * TMT_Matrix_;
     Epetra_CrsMatrix * TMT_Matrix_;
+    //! Matrix: D0' M1(1) D0
+    Epetra_CrsMatrix * TMT_Agg_Matrix_;
 
     //! Dirichelt Edges
-    int* BCrows;
+    int* BCrows; 
     int numBCrows;
-
+    bool HasOnlyDirichletNodes;
     
     //! Vector: Diagonal of reformulated operator
     Epetra_Vector* Diagonal_;

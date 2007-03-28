@@ -54,6 +54,16 @@
 #include "ml_utils.h"
 #include "ml_op_utils.h"
 
+extern void cms_vec_dump2(double *x,int N,char* fname);//DEBUG
+void cms_vec_dump(double *x,int N,char* fname, int pre_or_post){
+  char fn[80];
+  int id;
+  if(pre_or_post == ML_TAG_PRESM) id=0;
+  else id=1;
+  sprintf(fn,"%s-%d",fname,id);
+  cms_vec_dump2(x,N,fn);
+}
+
 /* A special version of dgetrs which is supposed to be optimized. */
 /* NOTE: it is assumed that ML_permute_for_dgetrs_special() has   */
 /* been called before to shuffle around the LU factors produced by*/
@@ -1249,6 +1259,12 @@ int ML_Smoother_BlockHiptmair(ML_Smoother *sm, int inlen, double x[], int outlen
 /* Point Hiptmair smoother                                                   */
 /*****************************************************************************/
 
+
+// CMS Debug HAX
+//#define ML_DEBUG_SMOOTHER
+//#define PRINTITNOW
+
+
 int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen, 
                             double rhs[])
 {
@@ -1266,7 +1282,9 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
 #endif
 
    smooth_ptr = (ML_Smoother *) sm;
-
+   cms_vec_dump(x,inlen,"hs-xe0",smooth_ptr->pre_or_post);//DEBUG
+  
+   
    Ke_mat = smooth_ptr->my_level->Amat;
    Nrows = Ke_mat->getrow->Nrows;
 
@@ -1342,6 +1360,10 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
       }
       init_guess = ML_NONZERO;
 
+
+      cms_vec_dump(x,inlen,"hs-xe1",smooth_ptr->pre_or_post);//DEBUG
+
+      
       ML_Comm_Envelope_Increment_Tag(envelope);
    
       /* calculate initial residual */ 
@@ -1353,7 +1375,11 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
                         x, Ke_mat->outvec_leng,res_edge);
 
       for (kk = 0; kk < Nrows; kk++) res_edge[kk] = rhs[kk] - res_edge[kk];
-   
+
+      cms_vec_dump(res_edge,inlen,"hs-re1",smooth_ptr->pre_or_post);//DEBUG
+
+
+      
 #ifdef ML_DEBUG_SMOOTHER
       printf("After SGS on edges\n");
       printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
@@ -1397,6 +1423,9 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
 			TtATmat->invec_leng, x_nodal,
 			TtATmat->outvec_leng, rhs_nodal,ML_ZERO);
 
+      cms_vec_dump(x_nodal,TtATmat->invec_leng,"hs-xn",smooth_ptr->pre_or_post);//DEBUG
+      cms_vec_dump(rhs_nodal,TtATmat->outvec_leng,"hs-rn",smooth_ptr->pre_or_post);//DEBUG
+      
 #ifdef ML_DEBUG_SMOOTHER
       printf("After SGS on nodes\n");
       printf("\t%d: ||x_nodal|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
@@ -1430,6 +1459,7 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
 #ifdef ML_DEBUG_SMOOTHER
 #ifdef PRINTITNOW
             printf("Hiptmair: post edge smoothing\n");
+           
 #endif
 #endif
             ML_Smoother_Apply(&(dataptr->ml_edge->pre_smoother[0]),
@@ -1447,6 +1477,8 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
 #endif
       }
 
+      cms_vec_dump(x,inlen,"hs-xe2",smooth_ptr->pre_or_post);//DEBUG
+      
 #ifdef ML_DEBUG_SMOOTHER
       printf("After updating edge solution\n");
       printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
@@ -1638,6 +1670,7 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
   if (Amat->diagonal == NULL) {
     if (Amat_MsrBindx == NULL) {  /* use getrow to extract diagonal */
       tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
+      for (i = 0; i < Amat->outvec_leng; i++) tdiag[i]=0.;
       for (i = 0; i < Amat->outvec_leng; i++) {
 	while(ML_Operator_Getrow(Amat,1,&i,allocated_space,
 				 cols,vals,&n) == 0) {

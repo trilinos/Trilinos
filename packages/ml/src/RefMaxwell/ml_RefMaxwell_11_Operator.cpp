@@ -6,17 +6,25 @@
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_EPETRAEXT)
 #include "EpetraExt_Transpose_RowMatrix.h"
 #include "EpetraExt_SolverMap_CrsMatrix.h"
-
 #include "EpetraExt_MatrixMatrix.h" //haq
-
-
 #include "EpetraExt_RowMatrixOut.h"// debugging
 
 #include "EpetraExt_Transpose_RowMatrix.h" //haq?
 #include "EpetraExt_SolverMap_CrsMatrix.h" //haq?
 
+#define NO_OUTPUT
 
-
+#ifdef NO_OUTPUT
+#define MVOUT2(x,y,z) ;
+#define MVOUT(x,y) ;
+#define IVOUT(x,y) ;
+#define Epetra_CrsMatrix_Print(x,y) ;
+#else
+extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of);
+extern void MVOUT (const Epetra_MultiVector & A, char * of);
+extern void IVOUT(const Epetra_IntVector & A, char * of);
+extern void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx);
+#endif
 
 extern Epetra_RowMatrix* ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
                                                   EpetraExt::CrsMatrix_SolverMap &transform);//haq
@@ -30,7 +38,12 @@ ML_Epetra::ML_RefMaxwell_11_Operator::ML_RefMaxwell_11_Operator(const Epetra_Crs
                                                              const Epetra_CrsMatrix& D0_Matrix,    //T or D0
                                                              const Epetra_CrsMatrix& M0inv_Matrix, //M0^{-1}
                                                              const Epetra_CrsMatrix& M1_Matrix):   //M1(1)
-  SM_Matrix_(&SM_Matrix),Addon_Matrix_(0),Core_Matrix_(0)
+  SM_Matrix_(&SM_Matrix),Addon_Matrix_(0)
+#ifdef USE_CORE_MATRIX
+  ,Core_Matrix_(0),Core_Matrix_Reindex_(0),Core_Matrix_Reindexer_(0)
+#else
+  ,D0T_Matrix_(0)
+#endif
 {
   Label_=strdup("ML_RefMaxwell_11_Operator");
   Comm_ = &(SM_Matrix_->Comm());
@@ -43,6 +56,9 @@ ML_Epetra::ML_RefMaxwell_11_Operator::ML_RefMaxwell_11_Operator(const Epetra_Crs
   //  EpetraExt::RowMatrix_Transpose transposer(true,(Epetra_Map*)&M0inv_Matrix.OperatorRangeMap());
   //  Epetra_CrsMatrix &D0_Matrix_transpose= dynamic_cast<Epetra_CrsMatrix&>(transposer((Epetra_CrsMatrix&)D0_Matrix));
 
+
+#ifdef USE_CORE_MATRIX  
+  printf("Building Core Matrix\n");
   /* Build the DO M0 D0^T Core */
   //  Epetra_CrsMatrix *core_temp[2] = {(Epetra_CrsMatrix*)&D0_Matrix,(Epetra_CrsMatrix*)&M0inv_Matrix};
   //  Epetra_Multi_CrsMatrix CoreTemp(2,core_temp);
@@ -51,30 +67,50 @@ ML_Epetra::ML_RefMaxwell_11_Operator::ML_RefMaxwell_11_Operator(const Epetra_Crs
   //  else  printf("[%d] ML_RefMaxwell_11_Operator: Core Built\n",Comm_->MyPID());
   
   /* Build the D0 M0 D0^T Core with EpetraExt */
-  Epetra_CrsMatrix temp1(Copy,M0inv_Matrix.RangeMap(),0);
-  Core_Matrix_=new Epetra_CrsMatrix(Copy,*RangeMap_,0);
+  Epetra_CrsMatrix temp1(Copy,M0inv_Matrix.RangeMap(),1);
+  Core_Matrix_=new Epetra_CrsMatrix(Copy,*RangeMap_,1);
   
   EpetraExt::MatrixMatrix::Multiply(M0inv_Matrix,false,D0_Matrix,true,temp1);
   EpetraExt::MatrixMatrix::Multiply(D0_Matrix,false,temp1,false,*Core_Matrix_);
-
+  Core_Matrix_->OptimizeStorage();
   //NTS: For whatever reason ML's wrap routines die *horribly* when we play with
   //the transposed matrix created by EpetraExt::RowMatrix_Transpose.  This
   //should be fixed eventually.  As for now, we'll just use EpetraExt to build
   //the core.
+
+  // Deal w/ reindexing garbage for the core matrix
+  Epetra_Map RangeMap_Consec(-1,DomainMap_->NumMyElements(),1,*Comm_);
+  Core_Matrix_Reindexer_=new EpetraExt::CrsMatrix_Reindex(RangeMap_Consec);    
+  Core_Matrix_Reindex_=&((*Core_Matrix_Reindexer_)(*Core_Matrix_));
   
   //  printf("[%d] ML_RefMaxwell_11_Operator: MCRS Constructor Done\n",Comm_->MyPID());
 
-  Core_Matrix_->OptimizeStorage();
-  
+#ifndef NO_OUTPUT
+  Epetra_CrsMatrix_Print(*Core_Matrix_,"core_matrix.dat");
+#endif
   
   /* Build the Epetra_Multi_CrsMatrix */
   Addon_Matrix_=new Epetra_CrsMatrix*[3];
   Addon_Matrix_[0]=Addon_Matrix_[2]=(Epetra_CrsMatrix*)&M1_Matrix;
-  Addon_Matrix_[1]=Core_Matrix_;
+  //  Addon_Matrix_[1]=Core_Matrix_;
+  Addon_Matrix_[1]=Core_Matrix_Reindex_;  
   Addon_=new Epetra_Multi_CrsMatrix(3,Addon_Matrix_);
 
   //  printf("[%d] ML_RefMaxwell_11_Operator: Multi_CrsMatrix Built\n",Comm_->MyPID());
+#else
+  printf("Avoiding Building Core Matrix\n");
+
+  /* Transpose D0 */
+  D0_Matrix_Transposer_= new EpetraExt::RowMatrix_Transpose(true,(Epetra_Map*)&M0inv_Matrix.OperatorRangeMap());
+  D0T_Matrix_= dynamic_cast<Epetra_CrsMatrix*>( & ((*D0_Matrix_Transposer_)((Epetra_CrsMatrix&)D0_Matrix)));
   
+  /* Build the Epetra_Multi_CrsMatrix */
+  Addon_Matrix_=new Epetra_CrsMatrix*[5];
+  Addon_Matrix_[0]=Addon_Matrix_[4]=(Epetra_CrsMatrix*)&M1_Matrix;
+  Addon_Matrix_[1]=(Epetra_CrsMatrix*)&D0_Matrix;Addon_Matrix_[3]=D0T_Matrix_;
+  Addon_Matrix_[2]=(Epetra_CrsMatrix*)&M0inv_Matrix;
+  Addon_=new Epetra_Multi_CrsMatrix(5,Addon_Matrix_);
+#endif  
 }/*end Constructor*/ 
 
 // ================================================ ====== ==== ==== == = 
@@ -84,7 +120,13 @@ ML_Epetra::ML_RefMaxwell_11_Operator::~ML_RefMaxwell_11_Operator()
   if(Label_) free(Label_);
   if(Addon_Matrix_) delete [] Addon_Matrix_;
   if(Addon_) delete Addon_;
+#ifdef USE_CORE_MATRIX
   if(Core_Matrix_) delete Core_Matrix_;
+  if(Core_Matrix_Reindexer_) delete Core_Matrix_Reindexer_;
+#else
+  if(D0T_Matrix_) delete D0T_Matrix_;
+  if(D0_Matrix_Transposer_) delete D0_Matrix_Transposer_;
+#endif
 }/*end destructor*/
 
 
@@ -128,7 +170,7 @@ int  ML_Epetra::ML_RefMaxwell_11_Operator::MatrixMatrix_Multiply(const Epetra_Cr
 
   /* DEBUG: Output */
   ML_Matrix_Print(temp1,*Comm_,*RangeMap_,"smp.dat");
-
+  
   
   //#define SANITY_CHECK
 #ifdef SANITY_CHECK
@@ -160,20 +202,10 @@ int  ML_Epetra::ML_RefMaxwell_11_Operator::MatrixMatrix_Multiply(const Epetra_Cr
   ML_Matrix_Print(temp2,*Comm_,*RangeMap_,"add_p.dat");
   
   //  ML_Operator_Print_UsingGlobalOrdering(temp2,"addon.ml",0,0);
-
   
   /* Add the matrices together */
-  //  printf("[%d] RM11: Final Matrix Add commencing\n",A.Comm().MyPID());
-  //  ML_Operator_Add(temp1,temp2,*C,ML_CSR_MATRIX,1.0);
-
   ML_Operator_Add(temp2,temp1,*C,ML_CSR_MATRIX,1.0);
-  //  Epetra_CrsMatrix *temp3=dynamic_cast<Epetra_CrsMatrix*>(*C)->data;
-  //  (*C)->data=NULL;
-  //  printf("temp3=%#x C=%#x\n",temp3,C);
-  //  printf("*C=%#x\n",*C);
-  //  ML_Operator_WrapEpetraMatrix(temp3, *C);
-  // THIS IS WRONG!!!!! Check out ml_operator.c:1825.  We'll need to hack that
-  // right :(
+
 
   ML_Matrix_Print(*C,*Comm_,*RangeMap_,"tfinal.dat");
   

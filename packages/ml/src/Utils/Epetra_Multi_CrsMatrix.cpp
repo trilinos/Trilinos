@@ -12,14 +12,13 @@
 #ifdef NO_OUTPUT
 #define Epetra_CrsMatrix_Print(x,y) ;
 #else
-extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os);//haq
+extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of);//haq
 #endif
 
 void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname){
   Epetra_CrsMatrix *Temp_;
-  ofstream ofs(fname);
   Epetra_CrsMatrix_Wrap_ML_Operator(ML,Comm,Map,&Temp_,View);
-  Epetra_CrsMatrix_Print(*Temp_,ofs);
+  Epetra_CrsMatrix_Print(*Temp_,fname);
   delete Temp_;
 }
 
@@ -61,6 +60,8 @@ int ML_Epetra::Epetra_Multi_CrsMatrix::Apply(const Epetra_MultiVector& X, Epetra
     //    printf("[%d] MCRS: Matvec %d / %d ov=%d iv=%d mat=%dx%d\n",Comm_->MyPID(),i,NumMatrices_,           
     //           MV[(i+1)%2]->GlobalLength(),MV[i%2]->GlobalLength(),
     //           CrsMatrices_[i]->NumGlobalRows(),CrsMatrices_[i]->NumGlobalCols());
+    //    printf("%d %d/%d %d/%d\n",i,CrsMatrices_[i]->RangeMap().MinAllGID(),CrsMatrices_[i]->RangeMap().MaxAllGID(),
+    //           CrsMatrices_[i]->DomainMap().MinAllGID(),CrsMatrices_[i]->DomainMap().MaxAllGID());
     CrsMatrices_[i]->Apply(*MV[i%2],*MV[(i+1)%2]);
     //    printf("[%d] MCRS: matvec complete\n",Comm_->MyPID());
   }/*end for*/
@@ -81,6 +82,10 @@ int  ML_Epetra::Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply(const Epetra_CrsMa
 {
 
   int rv=0;
+  /* DEBUG*/
+  char str[80];
+
+
   //  printf("[%d] Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply[ML] called\n",A.Comm().MyPID());
   ML_Comm* temp = global_comm;
 
@@ -107,11 +112,15 @@ int  ML_Epetra::Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply(const Epetra_CrsMa
     //    printf("[%d] Matmat %d/%d Prewrapped\n",A.Comm().MyPID(),NumMatrices_-i,NumMatrices_);
     //    printf("[%d] MV[i%%2]=%#x MV[(i+1)%%2]=%#x\n",A.Comm().MyPID(),MV[i%2],MV[(i+1)%2]);
     fflush(stdout);//CMS
+
+    /* DEBUG */
+    sprintf(str,"cv11.%d.dat",NumMatrices_-1-i);
+    ML_Matrix_Print(CV,A.Comm(),CrsMatrices_[i]->RowMap(),str);
+    
     
     ML_2matmult(CV,MV[i%2],MV[(i+1)%2],ML_CSR_MATRIX);
 
     /* DEBUG */
-    char str[80];
     sprintf(str,"op11.%d.dat",NumMatrices_-1-i);
     ML_Matrix_Print(MV[(i+1)%2],A.Comm(),CrsMatrices_[i]->RangeMap(),str);
 

@@ -867,11 +867,11 @@ int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix
 // disasterous consequences.  We assume that the ML_Operator will persist until
 // after the Epetra_CrsMatrix is destroyed, if this is set in View mode.
 // -Chris Siefert 11/20/2006.
-void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm, const Epetra_Map &RowMap,Epetra_CrsMatrix **Result,Epetra_DataAccess CV){ 
+void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm, const Epetra_Map &RowMap,Epetra_CrsMatrix **Result,Epetra_DataAccess CV,int base){ 
 
   double bob;
   int mnz=10000;
-  ML_Operator2EpetraCrsMatrix(A,*Result,mnz,false,bob);
+  ML_Operator2EpetraCrsMatrix(A,*Result,mnz,false,bob,base);
 
 
   //  printf("[%d] ML->Epetra Wrap [global] %dx%d\n",Comm.MyPID(),(*Result)->NumGlobalRows(),(*Result)->NumGlobalCols());
@@ -1139,13 +1139,13 @@ void ML_Epetra::Apply_OAZToMatrix(int *dirichletRows, int numBCRows, const Epetr
   Epetra_IntVector *dirichletColumns=LocalRowstoColumns(dirichletRows,numBCRows,Matrix);
 
   /* Zero the columns */
-  FILE *f=fopen("dcols.dat","w");
+  //  FILE *f=fopen("dcols.dat","w");
   for (int i=0; i < Matrix.NumMyRows(); i++) {
     Matrix.ExtractMyRowView(i,numEntries,vals,cols);
     for (int j=0; j < numEntries; j++) 
       if ((*dirichletColumns)[ cols[j] ] > 0){
         vals[j] = 0.0;
-        fprintf(f,"%d\n",cols[j]);
+        //        fprintf(f,"%d\n",cols[j]);
       }
     
   }/*end for*/
@@ -1889,7 +1889,7 @@ void ML_DestroyQt( void )
 // ======================================================================
 int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
 				CrsMatrix, int & MaxNumNonzeros,
-				bool CheckNonzeroRow, double & CPUTime)
+				bool CheckNonzeroRow, double & CPUTime, int base)
 {
   int    isize_offset, osize_offset;
   int Nghost;
@@ -1922,8 +1922,8 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   int isize = Amat->invec_leng;
   int osize = Amat->outvec_leng;
 
-  EpetraComm.ScanSum(&isize,&isize_offset,1); isize_offset-=isize;
-  EpetraComm.ScanSum(&osize,&osize_offset,1); osize_offset-=osize;
+  EpetraComm.ScanSum(&isize,&isize_offset,1); isize_offset-=isize + base;
+  EpetraComm.ScanSum(&osize,&osize_offset,1); osize_offset-=osize + base;
 
   vector<double> global_isize; global_isize.resize(isize+Nghost+1);
   vector<int>    global_isize_as_int; global_isize_as_int.resize(isize+Nghost+1);
@@ -1942,8 +1942,8 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   }
   for (int i = 0 ; i < Nghost; i++) global_isize[i+isize] = -1;
   
-  Epetra_Map  rangemap( -1, osize, &global_osize_as_int[0], 0, EpetraComm ) ; 
-  Epetra_Map  domainmap( -1, isize, &global_isize_as_int[0], 0, EpetraComm ) ; 
+  Epetra_Map  rangemap( -1, osize, &global_osize_as_int[0], base, EpetraComm ) ; 
+  Epetra_Map  domainmap( -1, isize, &global_isize_as_int[0], base, EpetraComm ) ; 
   
   CrsMatrix = new Epetra_CrsMatrix( Copy, rangemap, 0 ); 
   
