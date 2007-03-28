@@ -124,7 +124,6 @@ ML_Epetra::ML_RefMaxwell_11_Operator::~ML_RefMaxwell_11_Operator()
   if(Core_Matrix_) delete Core_Matrix_;
   if(Core_Matrix_Reindexer_) delete Core_Matrix_Reindexer_;
 #else
-  if(D0T_Matrix_) delete D0T_Matrix_;
   if(D0_Matrix_Transposer_) delete D0_Matrix_Transposer_;
 #endif
 }/*end destructor*/
