@@ -365,12 +365,37 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
         for (ii = 0 ; ii < num_orthog_steps; ii++ ) {
           if (N == 0) for (k = 0; k <= i; k++) dots[k] = 0.0;
           dble_tmp = 0.0; mm = i+1;
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      /* Start the timer. */
+      static int orthoInnerProdID = -1;
+      orthoInnerProdID = Teuchos_startTimer( "AztecOO: Ortho (Inner Product)", orthoInnerProdID );
+#endif
+#endif
           DGEMV_F77(CHAR_MACRO(T[0]), &N, &mm, &doubleone, vblock, &aligned_N_total,
                     v[i1], &one, &dble_tmp, dots, &one);
           AZ_gdot_vec(i1, dots, tmp, proc_config);
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      Teuchos_stopTimer( orthoInnerProdID );
+#endif
+#endif
           for (k = 0; k <= i; k++) hh[k][i] += dots[k];
+
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      /* Start the timer. */
+      static int orthoUpdateID = -1;
+      orthoUpdateID = Teuchos_startTimer( "AztecOO: Ortho (Update)", orthoUpdateID );
+#endif
+#endif
           DGEMV_F77(CHAR_MACRO(T2[0]), &N, &mm, &minusone, vblock, &aligned_N_total,
                     dots, &one, &doubleone, v[i1], &one);
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      Teuchos_stopTimer( orthoUpdateID );
+#endif
+#endif
         }
       }
       else {                    /* modified */
@@ -386,7 +411,18 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
       /* normalize vector */
 
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      static int orthoNormID = -1;
+      orthoNormID = Teuchos_startTimer( "AztecOO: Ortho (Norm)", orthoNormID );
+#endif
+#endif
       hh[i1][i] = dble_tmp = sqrt(AZ_gdot(N, v[i1], v[i1], proc_config));
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      Teuchos_stopTimer( orthoNormID );
+#endif
+#endif
       /* Relative size doesn't matter here, it just needs to be nonzero.
          Some very, very tiny number, such as DBL_MIN, might cause trouble,
          so check for that.
