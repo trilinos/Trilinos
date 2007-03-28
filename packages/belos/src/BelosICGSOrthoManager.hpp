@@ -72,7 +72,10 @@ namespace Belos {
       : MatOrthoManager<ScalarType,MV,OP>(Op), 
 	max_ortho_steps_( max_ortho_steps ),
 	blk_tol_( blk_tol ),
-	sing_tol_( sing_tol ) {};
+	sing_tol_( sing_tol ),
+        timerUpdate_( Teuchos::TimeMonitor::getNewTimer("Belos: Ortho (Update)")),
+        timerNorm_( Teuchos::TimeMonitor::getNewTimer("Belos: Ortho (Norm)")),
+        timerInnerProd_( Teuchos::TimeMonitor::getNewTimer("Belos: Ortho (Inner Product)")) {};
 
     //! Destructor
     ~ICGSOrthoManager() {};
@@ -266,6 +269,8 @@ namespace Belos {
     int max_ortho_steps_;
     MagnitudeType blk_tol_;
     MagnitudeType sing_tol_;
+
+    Teuchos::RefCountPtr<Teuchos::Time> timerUpdate_, timerNorm_, timerScale_, timerInnerProd_;
   
     //! Routine to find an orthonormal basis for X
     int findBasis(MV &X, Teuchos::RefCountPtr<MV> MX, 
@@ -393,8 +398,22 @@ namespace Belos {
       // NOTE: Don't check for dependencies because the update has one vector.
       dep_flg = blkOrtho1( X, MX, C, Q );
 
-      // Orthonormalize the new block X
-      rank = findBasis( X, MX, B, false );
+      // Normalize the new block X
+      {
+        Teuchos::TimeMonitor normTimer( *timerNorm_ );
+        if ( B == Teuchos::null ) {
+          B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
+        }
+        std::vector<ScalarType> diag(xc);
+        MVT::MvDot( X, *MX, &diag );
+        (*B)(0,0) = SCT::squareroot(SCT::magnitude(diag[0]));
+        rank = 1; 
+        MVT::MvAddMv( ONE/(*B)(0,0), X, ZERO, X, X );
+        if (this->_hasOp) {
+          // Update MXj.
+	  MVT::MvAddMv( ONE/(*B)(0,0), *MX, ZERO, *MX, *MX );
+        }
+      }
 
     } 
     else {
@@ -559,6 +578,8 @@ namespace Belos {
     //
     //
 
+    Teuchos::TimeMonitor normTimer( *timerNorm_ );
+
     const ScalarType ONE  = SCT::one();
     const MagnitudeType ZERO = SCT::magnitude(SCT::zero());
 
@@ -665,17 +686,24 @@ namespace Belos {
 	for (int i=0; i<max_ortho_steps_; ++i) {
 	  
 	  // product <- prevX^T MXj
-	  innerProd(*prevX,*Xj,MXj,P2);
+          {
+            Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+	    innerProd(*prevX,*Xj,MXj,P2);
+          }
 	  
 	  // Xj <- Xj - prevX prevX^T MXj   
 	  //     = Xj - prevX product
-	  MVT::MvTimesMatAddMv( -ONE, *prevX, P2, ONE, *Xj );
+          {
+            Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+	    MVT::MvTimesMatAddMv( -ONE, *prevX, P2, ONE, *Xj );
+          }
 	  
 	  // Update MXj
 	  if (this->_hasOp) {
 	    // MXj <- Op*Xj_new
 	    //      = Op*(Xj_old - prevX prevX^T MXj)
 	    //      = MXj - prevMX product
+            Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 	    MVT::MvTimesMatAddMv( -ONE, *prevMX, P2, ONE, *MXj );
 	  }
 	  
@@ -717,9 +745,16 @@ namespace Belos {
 	  MVT::MvDot( *tempXj, *tempMXj, &oldDot );
 	  //
 	  for (int num_orth=0; num_orth<max_ortho_steps_; num_orth++){
-	    innerProd(*prevX,*tempXj,tempMXj,product);
-	    MVT::MvTimesMatAddMv( -ONE, *prevX, product, ONE, *tempXj );
+            {
+              Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+	      innerProd(*prevX,*tempXj,tempMXj,product);
+            }
+            {
+              Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+	      MVT::MvTimesMatAddMv( -ONE, *prevX, product, ONE, *tempXj );
+            }
 	    if (this->_hasOp) {
+              Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
 	      MVT::MvTimesMatAddMv( -ONE, *prevMX, product, ONE, *tempMXj );
 	    }
 	  }
@@ -751,11 +786,12 @@ namespace Belos {
       // Normalize Xj.
       // Xj <- Xj / sqrt(newDot)
       ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
-      
-      MVT::MvAddMv( ONE/diag, *Xj, ZERO, *Xj, *Xj );
-      if (this->_hasOp) {
-	// Update MXj.
-	MVT::MvAddMv( ONE/diag, *MXj, ZERO, *MXj, *MXj );
+      {
+        MVT::MvAddMv( ONE/diag, *Xj, ZERO, *Xj, *Xj );
+        if (this->_hasOp) {
+	  // Update MXj.
+	  MVT::MvAddMv( ONE/diag, *MXj, ZERO, *MXj, *MXj );
+        }
       }
 
       // If we've added a random vector, enter a zero in the j'th diagonal element.
@@ -801,9 +837,15 @@ namespace Belos {
     // Define the product Q^T * (Op*X)
     for (int i=0; i<nq; i++) {
       // Multiply Q' with MX
-      innerProd(*Q[i],X,MX,*C[i]);
+      {
+        Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+        innerProd(*Q[i],X,MX,*C[i]);
+      }
       // Multiply by Q and subtract the result in X
-      MVT::MvTimesMatAddMv( -ONE, *Q[i], *C[i], ONE, X );
+      {
+        Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+        MVT::MvTimesMatAddMv( -ONE, *Q[i], *C[i], ONE, X );
+      }
 
       // Update MX, with the least number of applications of Op as possible
       if (this->_hasOp) {
@@ -826,9 +868,15 @@ namespace Belos {
 	Teuchos::SerialDenseMatrix<int,ScalarType> C2(*C[i]);
         
 	// Apply another step of classical Gram-Schmidt
-	innerProd(*Q[i],X,MX,C2);
+	{
+          Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+          innerProd(*Q[i],X,MX,C2);
+        }
 	*C[i] += C2;
-	MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, X );
+        {
+          Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+	  MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, X );
+        }
         
 	// Update MX, with the least number of applications of Op as possible
 	if (this->_hasOp) {
