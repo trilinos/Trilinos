@@ -192,7 +192,7 @@ namespace ML_Epetra
     
     //! Number of V-cycles to run
     int num_cycles;
-    
+    int MaxLevels;
     
     //@}  
   };//ML_EdgeMatrixFreePreconditioner

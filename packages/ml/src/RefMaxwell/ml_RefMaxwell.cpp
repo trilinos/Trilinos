@@ -15,7 +15,7 @@
 
 static int c_iteration=0;//DEBUG
 
-//#define NO_OUTPUT
+#define NO_OUTPUT
 
 
 extern "C"{
@@ -79,6 +79,23 @@ void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx){
 }/* end MVOUT2*/
 
 void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of) {
+  if(A.Comm().NumProc()==1){
+    int MaxNumIndices = A.MaxNumEntries();
+    int* Indices  = new int[MaxNumIndices];
+    double* Values = new double[MaxNumIndices];
+    int NumIndices;
+    int i, j,NumMyRows=A.NumMyRows();
+    FILE *f=fopen(of,"w");  
+    for (i=0; i<NumMyRows; i++) {
+      int Row = A.GRID(i); // Get global row number
+      A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, Values, Indices);      
+      for (j = 0; j < NumIndices ; j++)
+        fprintf(f,"%8d %8d %22.16e\n",Row,Indices[j],Values[j]);   
+    }/*end for*/ 
+    fclose(f);
+  }/*end if*/
+  else
+
   EpetraExt::RowMatrixToMatlabFile(of,A);      
 }/*end Epetra_CrsMatrix_Print*/
 

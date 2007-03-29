@@ -12,7 +12,7 @@
 void cms_residual_check(const char * tag, const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
 double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
 
-//#define NO_OUTPUT
+#define NO_OUTPUT
 
 #ifdef NO_OUTPUT
 #define MVOUT2(x,y,z) ;
@@ -111,7 +111,8 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
   /* Parameter List Options */
   int OutputLevel = List_.get("ML output", -47);
   int SmootherSweeps = List_.get("smoother: sweeps (level 0)", 0);
-
+  MaxLevels = List_.get("max levels",10); 
+  
   if (OutputLevel == -47) OutputLevel = List_.get("output", 10);
   num_cycles  = List_.get("cycle applications",1);
   ML_Set_PrintLevel(OutputLevel);
@@ -138,35 +139,39 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
     ML_CHK_ERR(SetupSmoother());
   }/*end if*/
 
-  /* Build the Nullspace */
-  printf("EMFP: Building Nullspace\n");
-  Epetra_MultiVector *nullspace=BuildNullspace();
-  if(!nullspace) ML_CHK_ERR(-1);
 
-  MVOUT(*nullspace,"nullspace.dat");
+  if(MaxLevels > 1) {  
+    /* Build the Nullspace */
+    printf("EMFP: Building Nullspace\n");
+    Epetra_MultiVector *nullspace=BuildNullspace();
+    if(!nullspace) ML_CHK_ERR(-1);
+    
+    MVOUT(*nullspace,"nullspace.dat");
+    
+    /* Build the prolongator */
+    printf("EMFP: Building Prolongator\n");
+    ML_CHK_ERR(BuildProlongator(*nullspace));
+    
+    /* DEBUG: Output matrices */
+    Epetra_CrsMatrix_Print(*Prolongator,"prolongator.dat");
+    
+    /* Form the coarse matrix */
+    printf("EMFP: Building Coarse Matrix\n");
+    ML_CHK_ERR(FormCoarseMatrix());
+    
+    /* Setup Preconditioner on Coarse Matrix */
+    printf("EMFP: Building Coarse Precond\n");
+    //  List_.print(cout);
+    CoarsePC = new MultiLevelPreconditioner(*CoarseMatrix,List_);
+    if(!CoarsePC) ML_CHK_ERR(-2);
+
+    /* DEBUG: Output matrices */
+    Epetra_CrsMatrix_Print(*CoarseMatrix,"coarsemat.dat");
   
-  /* Build the prolongator */
-  printf("EMFP: Building Prolongator\n");
-  ML_CHK_ERR(BuildProlongator(*nullspace));
-
-  /* DEBUG: Output matrices */
-  Epetra_CrsMatrix_Print(*Prolongator,"prolongator.dat");
-  
-  /* Form the coarse matrix */
-  printf("EMFP: Building Coarse Matrix\n");
-  ML_CHK_ERR(FormCoarseMatrix());
-
-  /* Setup Preconditioner on Coarse Matrix */
-  printf("EMFP: Building Coarse Precond\n");
-  //  List_.print(cout);
-  CoarsePC = new MultiLevelPreconditioner(*CoarseMatrix,List_);
-  if(!CoarsePC) ML_CHK_ERR(-2);
-
-  /* DEBUG: Output matrices */
-  Epetra_CrsMatrix_Print(*CoarseMatrix,"coarsemat.dat");
-  
-  /* Clean Up */
-  delete nullspace;
+    /* Clean Up */
+    delete nullspace;
+  }/*end if*/
+    
   return 0;
 }/*end ComputePreconditioner*/
 
@@ -389,11 +394,11 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   const Epetra_Map & FineColMap = Psparse->ColMap();
   CoarseMap_=new Epetra_Map(-1,NumAggregates*dim,0,*Comm_);
 
-
   
   /* Allocate the Prolongator */
   printf("[%d] EMFP: Building Prolongator\n",Comm_->MyPID());
-  Prolongator=new Epetra_CrsMatrix(Copy,*EdgeRangeMap_,0);
+  //  Prolongator=new Epetra_CrsMatrix(Copy,*EdgeRangeMap_,0);
+  Prolongator=new Epetra_CrsMatrix(Copy,*EdgeRangeMap_,0);  
   int ne1, *idx1, *idx2;
   idx2=new int [dim*AbsD0P->max_nz_per_row];
   double *vals1, *vals2;
@@ -531,9 +536,8 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::DestroyPreconditioner(){
 // ================================================ ====== ==== ==== == = 
 //! Apply the preconditioner to an Epetra_MultiVector X, puts the result in Y
 int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X) const{
-
   static int iteration=0;  //HAQ
-
+  double re1=0,rn1=0,re2=0,re3=0;
 
   /* Sanity Checks */
   int NumVectors=B.NumVectors();
@@ -551,50 +555,48 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
    
     double re0=cms_compute_residual(Operator_,B,X);
     if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
-
+    re1=cms_compute_residual(Operator_,B,X);
+    
     MVOUT2(X,"sm11-1",iteration);
 
-    //cms_residual_check("(1,1)-S1",Operator_,X,Y);//DEBUG
-    double re1=cms_compute_residual(Operator_,B,X);
+    if(MaxLevels > 1){
 
-    /* Calculate Residual (r_e = b - (S+M+Addon) * x) */
-    ML_CHK_ERR(Operator_->Apply(X,r_edge));
-    ML_CHK_ERR(r_edge.Update(1.0,B,-1.0));
-
-    MVOUT2(r_edge,"re11",iteration);
-
-    /* Xfer to coarse grid (r_n = P' * r_e) */
-    ML_CHK_ERR(Prolongator->Multiply(true,r_edge,r_node));
-
-    MVOUT2(r_node,"rn11",iteration);
-    
-    /* AMG on coarse grid  (e_n = (CoarseMatrix)^{-1} r_n) */
-    ML_CHK_ERR(CoarsePC->ApplyInverse(r_node,e_node));
-
-    MVOUT2(e_node,"en11",iteration);
-    
-    double rn1=cms_compute_residual(CoarseMatrix,r_node,e_node);
-
-    
-    //    cms_residual_check("(1,1)-C ",CoarseMatrix,r_node,e_node);//DEBUG
-
-    /* Xfer back to fine grid (e_e = P * e_n) */
-    ML_CHK_ERR(Prolongator->Multiply(false,e_node,e_edge));
-
-    MVOUT2(e_edge,"ee11",iteration);
-    
-    /* Add in correction (x = x + e_e) */
-    ML_CHK_ERR(X.Update(1.0,e_edge,1.0));
-
-    MVOUT2(X,"xup11",iteration);
-    
-    double re2=cms_compute_residual(Operator_,B,X);
-    
+      /* Calculate Residual (r_e = b - (S+M+Addon) * x) */
+      ML_CHK_ERR(Operator_->Apply(X,r_edge));
+      ML_CHK_ERR(r_edge.Update(1.0,B,-1.0));
+      
+      MVOUT2(r_edge,"re11",iteration);
+      
+      /* Xfer to coarse grid (r_n = P' * r_e) */
+      ML_CHK_ERR(Prolongator->Multiply(true,r_edge,r_node));
+      
+      MVOUT2(r_node,"rn11",iteration);
+      
+      /* AMG on coarse grid  (e_n = (CoarseMatrix)^{-1} r_n) */
+      ML_CHK_ERR(CoarsePC->ApplyInverse(r_node,e_node));
+      
+      MVOUT2(e_node,"en11",iteration);
+      
+      rn1=cms_compute_residual(CoarseMatrix,r_node,e_node);
+      
+      
+      /* Xfer back to fine grid (e_e = P * e_n) */
+      ML_CHK_ERR(Prolongator->Multiply(false,e_node,e_edge));
+      
+      MVOUT2(e_edge,"ee11",iteration);
+      
+      /* Add in correction (x = x + e_e) */
+      ML_CHK_ERR(X.Update(1.0,e_edge,1.0));
+      
+      MVOUT2(X,"xup11",iteration);
+      
+      re2=cms_compute_residual(Operator_,B,X);
+    }/*end if*/
     
     /* Post-Smoothing*/
     if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
 
-    double re3=cms_compute_residual(Operator_,B,X);
+    re3=cms_compute_residual(Operator_,B,X);
     
     //    cms_residual_check("(1,1)-S1",Operator_,temp_edge2,Y);//DEBUG    
 
