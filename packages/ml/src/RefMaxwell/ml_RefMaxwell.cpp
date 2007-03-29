@@ -15,7 +15,7 @@
 
 static int c_iteration=0;//DEBUG
 
-//#define NO_OUTPUT
+#define NO_OUTPUT
 
 
 extern "C"{
@@ -381,12 +381,12 @@ int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
 
 // ================================================ ====== ==== ==== == = 
 // Apply the preconditioner to an Epetra_MultiVector X, puts the result in Y
-int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X) const
+int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X_) const
 {
   int rv;
   /* Sanity Checks */
   if (!B.Map().SameAs(*DomainMap_)) ML_CHK_ERR(-1);
-  if (B.NumVectors() != X.NumVectors()) ML_CHK_ERR(-1);
+  if (B.NumVectors() != X_.NumVectors()) ML_CHK_ERR(-1);
 
   /* Check for zero RHS */
   bool norm0=true;
@@ -396,12 +396,9 @@ int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse(const Epetra_MultiVector& 
   delete [] norm;
   if(norm0) return 0;
 
-  /* Build new work vector if X and B are the same */
-  //  Epetra_MultiVector *X=&X_;
-  //  if(&X_==&B)
-  //    X=new Epetra_MultiVector(X_);
-  //X=new Epetra_MultiVector(X_.Map(),X_.NumVectors(),true);
-
+  /* Build new work vector X */
+  Epetra_MultiVector X(X_);
+  X.PutScalar(0);
   
   /* What mode to run in? */
   if(mode=="212") rv=ApplyInverse_Implicit_212(B,X);
@@ -410,11 +407,8 @@ int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse(const Epetra_MultiVector& 
   else {fprintf(stderr,"RefMaxwellPreconditioner ERROR: Invalid ApplyInverse mode set in Teuchos list");ML_CHK_ERR(-2);}
   ML_CHK_ERR(rv);
 
-  /* Copy work vector to output if needed */
-  //  if(&X_==&B) {
-  //    X_=*X;
-  //    delete X;
-  //  }/*end if*/
+  /* Copy work vector to output */
+  X_=X;
   
   return 0;
 }/*end ApplyInverse*/
@@ -582,11 +576,11 @@ int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_212(const Epetra_
 
 // ================================================ ====== ==== ==== == = 
 //! Implicitly applies in the inverse in an additive format
-int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const Epetra_MultiVector& B, Epetra_MultiVector& X_) const
+int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const Epetra_MultiVector& B, Epetra_MultiVector& X) const
 {
 
   int NumVectors=B.NumVectors();
-  Epetra_MultiVector X(X_);
+  //  Epetra_MultiVector X(X_);
   Epetra_MultiVector TempE1(X.Map(),NumVectors,false);
   Epetra_MultiVector TempE2(X.Map(),NumVectors,true);
   Epetra_MultiVector TempN1(*NodeMap_,NumVectors,false);
@@ -646,7 +640,7 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const E
   if(Comm_->MyPID()==0)
     printf("Residual Norms: %22.16e / %22.16e / %22.16e / %22.16e / %22.16e\n",r1/r0,r2,r3,r4/r0,r5/r0);
 
-  X_=X;
+  //  X_=X;
   
   return 0;
 }
