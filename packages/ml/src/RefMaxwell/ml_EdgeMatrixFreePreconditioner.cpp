@@ -12,7 +12,7 @@
 void cms_residual_check(const char * tag, const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
 double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
 
-#define NO_OUTPUT
+//#define NO_OUTPUT
 
 #ifdef NO_OUTPUT
 #define MVOUT2(x,y,z) ;
@@ -26,7 +26,7 @@ extern void IVOUT(const Epetra_IntVector & A, char * of);
 extern void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx);
 #endif
 
-#define OLD_INTERNAL_AGGREGATION
+#define INTERNAL_AGGREGATION
 
 
 
@@ -123,7 +123,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
     ML_CHK_ERR(-1); // only square matrices
 
   /* Invert non-zeros on the diagonal */
-  if(InvDiagonal_){
+  if(SmootherSweeps){
     for (int i = 0; i < InvDiagonal_->MyLength(); ++i)
       if ((*InvDiagonal_)[i] != 0.0)
         (*InvDiagonal_)[i] = 1.0 / (*InvDiagonal_)[i];   
@@ -263,8 +263,6 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
   
   /* Build the Nullspace */
   Epetra_MultiVector * nullspace=new Epetra_MultiVector(*EdgeDomainMap_,dim,false);  
-
-  // OLD: D0_Matrix_->Multiply(false,e_coords,*nullspace);  
   D0_Clean_Matrix_->Multiply(false,e_coords,*nullspace);  
 
   /* TEST: Nuke the BC edges */
@@ -295,7 +293,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   //NTS: Actually, we don't want to do this.  We really want to be aggregating
   //on the matrix D0^T M_1(1) D_0, not D0^T M_1(\sigma) D_0.
   
-#ifdef OLD_INTERNAL_AGGREGATION
+#ifdef INTERNAL_AGGREGATION
   /* Wrap TMT_Matrix in a ML_Operator */
   ML_Operator* TMT_ML = ML_Operator_Create(ml_comm_);
   ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)TMT_Matrix_,TMT_ML);
@@ -378,7 +376,8 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   
   /* TEST: Nuke the rows in Psparse */
   Apply_BCsToMatrixRows(BCedges_,numBCedges_,*Psparse);
-  Apply_BCsToMatrixColumns(BCedges_,numBCedges_,*Psparse);
+  //  Apply_BCsToMatrixColumns(BCedges_,numBCedges_,*Psparse);
+  // NTS: Try commenting out the above line.
   
   /* DEBUG: output*/
 #ifndef NO_OUTPUT
@@ -493,7 +492,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   Epetra_CrsMatrix_Wrap_ML_Operator(CoarseMat_ML,*Comm_,*CoarseMap_,&CoarseMatrix);
 
 
-  //  /* Fix OAZ issues */
+  /* Fix OAZ issues */
   //  Remove_Zeroed_Rows(*CoarseMatrix);
 
   
