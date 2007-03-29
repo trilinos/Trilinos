@@ -15,7 +15,7 @@
 
 static int c_iteration=0;//DEBUG
 
-#define NO_OUTPUT
+//#define NO_OUTPUT
 
 
 extern "C"{
@@ -580,7 +580,6 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const E
 {
 
   int NumVectors=B.NumVectors();
-  //  Epetra_MultiVector X(X_);
   Epetra_MultiVector TempE1(X.Map(),NumVectors,false);
   Epetra_MultiVector TempE2(X.Map(),NumVectors,true);
   Epetra_MultiVector TempN1(*NodeMap_,NumVectors,false);
@@ -590,10 +589,8 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const E
   double r0,r1,r,r2,r3,r4,r5;
   r0=cms_compute_residual(SM_Matrix_,B,X);//DEBUG
 
-
   MVOUT2(X,"a-x0",c_iteration);//DEBUG 
   MVOUT2(B,"a-b1",c_iteration);//DEBUG 
-
   
   /* Pre-Smoothing */
   ML_CHK_ERR(PreEdgeSmoother->ApplyInverse(B,X));
@@ -639,8 +636,6 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const E
   
   if(Comm_->MyPID()==0)
     printf("Residual Norms: %22.16e / %22.16e / %22.16e / %22.16e / %22.16e\n",r1/r0,r2,r3,r4/r0,r5/r0);
-
-  //  X_=X;
   
   return 0;
 }
