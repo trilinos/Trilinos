@@ -1136,7 +1136,7 @@ void ML_Epetra::Apply_OAZToMatrix(int *dirichletRows, int numBCRows, const Epetr
 
   /* Find the local column numbers to nuke */
   Epetra_IntVector *dirichletColumns=LocalRowstoColumns(dirichletRows,numBCRows,Matrix);
-  
+
   /* Zero the columns */
   for (int i=0; i < Matrix.NumMyRows(); i++) {
     Matrix.ExtractMyRowView(i,numEntries,vals,cols);
@@ -1144,10 +1144,12 @@ void ML_Epetra::Apply_OAZToMatrix(int *dirichletRows, int numBCRows, const Epetr
       if ((*dirichletColumns)[ cols[j] ] > 0)
         vals[j] = 0.0;          
   }/*end for*/
+
   
   /* Zero the rows, add ones to diagonal */
   for (int i=0; i < numBCRows; i++) {
     Matrix.ExtractMyRowView(dirichletRows[i],numEntries,vals,cols);
+    grid=Matrix.GRID(dirichletRows[i]);
     for (int j=0; j < numEntries; j++)
       if(grid==Matrix.GCID(cols[j])) vals[j]=1.0;
       else vals[j] = 0.0;
