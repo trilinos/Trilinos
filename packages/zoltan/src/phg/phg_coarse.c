@@ -168,7 +168,11 @@ static void identicalOperator(void *va, void *vb, int *len, MPI_Datatype *dt)
    match are clustered to a single vertex. Currently, we allow more
    than two vertices to be merged/grouped locally on a proc, but
    allow only pairs of two to be merged between processors.
-   All hyperedges are kept; identical hyperedges are not collapsed. 
+   If a coarse vertex constitutes a fixed fine vertex; coarse vertex is fixed
+   in the same part (note that if a coarse vertex constitues of multiple fixed
+   vertices; since they have to be fixed in the "same" side of bisection; the
+   coarse vertex is fixed in the "first" fixed part).
+   Identical hyperedges are identified and collapsed into single one. 
    The array LevelMap is the mapping of
    the old vertices to the new vertices. It will be used to pass a partition
    of the coarse graph back to the original graph.                         */
