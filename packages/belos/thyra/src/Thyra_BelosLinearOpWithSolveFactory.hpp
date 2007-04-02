@@ -28,6 +28,10 @@ const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverType_name = "Solv
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverType_default = "GMRES";
 template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::OrthoType_name = "Ortho Type";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::OrthoType_default = "DGKS";
+template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::MaxIters_name = "Max Iters";
 template<class Scalar>
 const int         BelosLinearOpWithSolveFactory<Scalar>::MaxIters_default = 400;
@@ -325,6 +329,7 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("BelosLinearOpWithSolveFactory"));
     validParamList->set(SolverType_name,SolverType_default);
+    validParamList->set(OrthoType_name,OrthoType_default);
     validParamList->set(MaxIters_name,MaxIters_default);
     validParamList->set(MaxRestarts_name,MaxRestarts_default);
     validParamList->set(BlockSize_name,BlockSize_default);
