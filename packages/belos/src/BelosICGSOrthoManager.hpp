@@ -923,10 +923,15 @@ namespace Belos {
     // Define the product Q^T * (Op*X)
     for (int i=0; i<nq; i++) {
       // Multiply Q' with MX
-      innerProd(*Q[i],X,MX,*C[i]);
+      {
+        Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+        innerProd(*Q[i],X,MX,*C[i]);
+      }
       // Multiply by Q and subtract the result in X
-      MVT::MvTimesMatAddMv( -ONE, *Q[i], *C[i], ONE, X );
-
+      {
+        Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+        MVT::MvTimesMatAddMv( -ONE, *Q[i], *C[i], ONE, X );
+      }
       // Update MX, with the least number of applications of Op as possible
       if (this->_hasOp) {
         if (xc <= qcs[i]) {
@@ -948,9 +953,15 @@ namespace Belos {
 	Teuchos::SerialDenseMatrix<int,ScalarType> C2(*C[i]);
         
 	// Apply another step of classical Gram-Schmidt
-	innerProd(*Q[i],X,MX,C2);
+        {
+          Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+	  innerProd(*Q[i],X,MX,C2);
+        }
 	*C[i] += C2;
-	MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, X );
+        {
+          Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+	  MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, X );
+        }
         
 	// Update MX, with the least number of applications of Op as possible
 	if (this->_hasOp) {
