@@ -40,16 +40,31 @@ typedef struct triplet {
     
 static HGraph *HG_Ptr;
 
-
+/*
+  Matching is NOT restricted (called as MATCH_OK) if
+  1- we are not doing fixed vertex partitioning, or partitioning with preferred parts
+     (i.e. !hgp->UsePrefPart)
+  2- if one of the vertices is free (i.e. fv? < 0);
+     in other words, it is OK if only one of them is fixed
+  3- if both vertices are fixed in the "same" part; note that since we are achieving k-way
+     partitioning via recursive bisection; "same" is defined as both vertices are on the
+     same side of that level's bisection. For example for 4-way partitioning since
+     bisec_split will be 2 in the first bisection; we'll allow vertices fixed in parts
+     {0, 1} are matched among themselves, also the vertices fixed in {2, 3} are allowed to
+     be matched among themselves. 
+ */   
 #define MATCH_OK(hgp, hg, fv1, fv2) \
         (!((hgp)->UsePrefPart)   ||     \
          ((fv1) < 0) ||     \
          ((fv2) < 0) ||     \
          ((((fv1) < (hg)->bisec_split) ? 0 : 1) == (((fv2) < (hg)->bisec_split) ? 0 : 1)))
     
-    /* candf: should be candidate's prefpart
-       to reduce comm; we will only allow matching if cand is free or
-       it matches with other's part */
+/*
+ In addition to above conditions, in Agglomerative matching, in order to reduce the extra
+ communication, we will only allow matching if candidate vertex is free or its fixed part
+ matches with the other vertex's fixed part. Hence the signature of the AGG_MATCH_OK is
+ changed to identify which of two argument is candidate vertex's fixed part.
+*/
 #define AGG_MATCH_OK(hgp, hg, candf, fv2) \
     (!((hgp)->UsePrefPart) || (((candf) < 0) ||  \
      (((fv2)>=0) && ((((candf) < (hg)->bisec_split) ? 0 : 1) == (((fv2) < (hg)->bisec_split) ? 0 : 1)))))
