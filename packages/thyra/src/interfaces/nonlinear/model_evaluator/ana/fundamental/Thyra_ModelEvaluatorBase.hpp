@@ -64,7 +64,10 @@ public:
   /** \brief .  */
   static const int NUM_E_IN_ARGS_MEMBERS=7;
 
-  /** \brief . */
+  /** \brief Input arguments to a model.
+   *
+   * Note: The default copy constructor is allowed and does the right thing.
+   */
   template<class Scalar>
   class InArgs : public Teuchos::Describable {
   public:
@@ -325,7 +328,10 @@ public:
     OUT_ARG_DgDp   ///< .
   };
   
-  /** \brief . */
+  /** \brief Output arguments to a model.
+   *
+   * Note: The default copy constructor is allowed and does the right thing.
+   */
   template<class Scalar>
   class OutArgs : public Teuchos::Describable {
   public:

@@ -39,7 +39,7 @@ namespace Thyra {
  * overide the state contained in the nominal values and the upper and lower
  * bounds.
  *
- * Hint: To only overide some of the nominal values and bounds you can do:
+ * To only override selected nominal values and bounds, do the following:
  *
  \code
  
@@ -50,19 +50,30 @@ namespace Thyra {
      ...
      )
    {
+
+     using Teuchos::RefCountPtr;
+     using Teuchos::rcp;
+     typedef Thyra::ModelEvaluatorBase MEB;
+
      // Get the defaults
-     typedef ModelEvaluatorBase MEB;
-     MEB::InArgs<Scalar>  nominalValues = thyraModel->getNominalValues();
-     MEB::InArgs<Scalar>  lowerBounds   = thyraModel->getLowerBounds();
-     MEB::InArgs<Scalar>  upperBounds   = thyraModel->getUpperBounds();
+     Teuchos::RefCountPtr<MEB::InArgs<Scalar> >
+       nominalValues = clone(thyraModel->getNominalValues()),
+       lowerBounds = clone(thyraModel->getLowerBounds()),
+       upperBounds = clone(thyraModel->getUpperBounds());
+
      // Override selected components ...
      ...
+
      // Initialize the overridden state
-     return Teuchos::rcp(
-       new DefaultNominalBoundsOverrideModelEvaluator<Scalar>(
-         thyraModel,nominalValues,lowerBounds,upperBounds
-         )
-       );
+     RefCountPtr<DefaultNominalBoundsOverrideModelEvaluator<Scalar> >
+       defaultOverridder = rcp(
+         new DefaultNominalBoundsOverrideModelEvaluator<Scalar>(thyraModel));
+     defaultOverridder->setNominalValues(nominalValues);
+     defaultOverridder->setLowerBounds(lowerBounds);
+     defaultOverridder->setUpperBounds(upperBounds);
+     
+     return defaultOverridder;
+
    }
  
  \endcode
@@ -121,6 +132,16 @@ public:
   /** \brief Set only nominal values. */
   void setNominalValues(
     const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
+    );
+  
+  /** \brief Set only lower bounds. */
+  void setLowerBounds(
+    const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
+    );
+  
+  /** \brief Set only upper bounds. */
+  void setUpperBounds(
+    const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
     );
   
   // ToDo: Add functions to reset lower and upper bounds when needed!
@@ -202,13 +223,30 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::setNominalValues(
   nominalValues_ = nominalValues;
 }
 
+template<class Scalar>
+void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::setLowerBounds(
+  const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
+  )
+{
+  lowerBounds_ = lowerBounds;
+}
+
+template<class Scalar>
+void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::setUpperBounds(
+  const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
+  )
+{
+  upperBounds_ = upperBounds;
+}
+
 // Overridden from ModelEvaulator.
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 DefaultNominalBoundsOverrideModelEvaluator<Scalar>::getNominalValues() const
 {
-  if(nominalValues_.get()) return *nominalValues_;
+  if(nominalValues_.get())
+    return *nominalValues_;
   return this->getUnderlyingModel()->getNominalValues();
 }
 
@@ -216,7 +254,8 @@ template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 DefaultNominalBoundsOverrideModelEvaluator<Scalar>::getLowerBounds() const
 {
-  if(lowerBounds_.get()) return *lowerBounds_;
+  if(lowerBounds_.get())
+    return *lowerBounds_;
   return this->getUnderlyingModel()->getLowerBounds();
 }
 
@@ -224,7 +263,8 @@ template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 DefaultNominalBoundsOverrideModelEvaluator<Scalar>::getUpperBounds() const
 {
-  if(upperBounds_.get()) return *upperBounds_;
+  if(upperBounds_.get())
+    return *upperBounds_;
   return this->getUnderlyingModel()->getUpperBounds();
 }
 

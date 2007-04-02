@@ -37,14 +37,6 @@
 
 namespace Thyra {
 
-  using Teuchos::ParameterList;
-  using Teuchos::RefCountPtr;
-
-  /** These can be used to choose one of ML's predefined default parameter sets */
-  enum EMLProblemType {ML_SmoothedAggregation, 
-                       ML_DomainDecomposition,
-                       ML_DomainDecompositionML,
-                       ML_Maxwell};
 
 /** \brief Concrete preconditioner factory subclass based on ML.
  *
@@ -58,17 +50,6 @@ public:
 
   /** \brief . */
   MLPreconditionerFactory();
-
-  /** \brief . */
-  MLPreconditionerFactory(const RefCountPtr<ParameterList>& params);
-
-  /** \brief . */
-  MLPreconditionerFactory(const EMLProblemType& probType,
-                          const ParameterList& revisions=ParameterList());
-
-  /** \brief . */
-  MLPreconditionerFactory(const std::string& probType,
-                          const ParameterList& revisions=ParameterList());
     
   /** \brief Set the strategy object used to extract an
    * <tt>Epetra_Operator</tt> view of an input forward operator.
@@ -78,7 +59,8 @@ public:
    *
    * The default implementation used is <tt>EpetraOperatorViewExtractorBase</tt>.
    */
-  STANDARD_COMPOSITION_MEMBERS( EpetraOperatorViewExtractorBase, epetraFwdOpViewExtractor );
+  STANDARD_COMPOSITION_MEMBERS(
+    EpetraOperatorViewExtractorBase, epetraFwdOpViewExtractor );
 
   //@}
 
@@ -92,35 +74,36 @@ public:
   /** \brief . */
   bool applyTransposeSupportsConj(EConj conj) const;
   /** \brief . */
-  RefCountPtr<PreconditionerBase<double> > createPrec() const;
+  Teuchos::RefCountPtr<PreconditionerBase<double> > createPrec() const;
   /** \brief . */
   void initializePrec(
-    const RefCountPtr<const LinearOpSourceBase<double> >    &fwdOp
-    ,PreconditionerBase<double>                                *prec
-    ,const ESupportSolveUse                                    supportSolveUse
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOp,
+    PreconditionerBase<double> *prec,
+    const ESupportSolveUse supportSolveUse
     ) const;
   /** \brief . */
   void uninitializePrec(
-    PreconditionerBase<double>                          *prec
-    ,RefCountPtr<const LinearOpSourceBase<double> >  *fwdOp
-    ,ESupportSolveUse                                   *supportSolveUse
+    PreconditionerBase<double> *prec
+    ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> > *fwdOp
+    ,ESupportSolveUse *supportSolveUse
     ) const;
 
   //@}
 
-  /** @name Overridden from ParameterListAcceptor */
+  /** @name Overridden from Teuchos::ParameterListAcceptor */
   //@{
 
   /** \brief . */
-  void setParameterList(RefCountPtr<ParameterList> const& paramList);
+  void setParameterList(
+    Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  RefCountPtr<ParameterList> getParameterList();
+  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
   /** \brief . */
-  RefCountPtr<ParameterList> unsetParameterList();
+  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
-  RefCountPtr<const ParameterList> getParameterList() const;
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
   /** \brief . */
-  RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
   //@}
 
   /** \name Public functions overridden from Describable. */
@@ -129,33 +112,18 @@ public:
   /** \brief . */
   std::string description() const;
 
+  // ToDo: Add an override of describe(...) to give more detail!
+
   //@}
 
 private:
 
-  RefCountPtr<ParameterList> reviseDefaultList(const ParameterList& defaults, 
-                                               const ParameterList& revisions) const;
-
-  std::string probToString(const EMLProblemType& probType) const ;
-
-  RefCountPtr<ParameterList> defaultParameters(const EMLProblemType& probType) const ;
-
-  RefCountPtr<ParameterList> defaultParameters(const string& probType) const ;
-
-  // ////////////////////////////////
-  // Private data members
-
-  mutable RefCountPtr<ParameterList>  validPL_;
-  RefCountPtr<ParameterList>          paramList_;
-
-
-  // ////////////////////////////////
-  // Private member functions
-
-  static RefCountPtr<const ParameterList> generateAndGetValidParameters();
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_;
 
 };
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_ML_PRECONDITIONER_FACTORY_DECL_HPP

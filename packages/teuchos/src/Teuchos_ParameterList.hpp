@@ -161,6 +161,17 @@ public:
    */
   ParameterList& setParameters(const ParameterList& source);
   
+  /** Set the parameters in <tt>source</tt> that are not already set in
+   * <tt>*this</tt>.
+   *
+   * Note, this function will set the parameters and sublists from
+   * <tt>source</tt> into <tt>*this</tt> but will not result in parameters
+   * being removed from <tt>*this</tt> or in parameters already set in
+   * <tt>*this</tt> being overrided.  Parameters in <tt>*this</tt> with the
+   * same names as those in <tt>source</tt> will not be overwritten.
+   */
+  ParameterList& setParametersNotAlreadySet(const ParameterList& source);
+  
   /*! \brief Sets different types of parameters. The type depends on the second entry.  
     
     \note <ul>

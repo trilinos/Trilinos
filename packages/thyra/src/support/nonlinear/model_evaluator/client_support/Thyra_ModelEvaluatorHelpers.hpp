@@ -33,6 +33,23 @@
 
 namespace Thyra {
 
+/** \brief Create a clone of an InArgs object.
+ *
+ * Warning!  This function only creates a shallow copy of the underlying input
+ * objects.  Therefore, be careful if you try to modify any of these.
+ *
+ * \relates ModelEvaluator
+ */
+template<class Scalar>
+Teuchos::RefCountPtr<ModelEvaluatorBase::InArgs<Scalar> >
+clone( const ModelEvaluatorBase::InArgs<Scalar> &inArgs )
+{
+  Teuchos::RefCountPtr<ModelEvaluatorBase::InArgs<Scalar> >
+    newInArgs = Teuchos::rcp(new ModelEvaluatorBase::InArgs<Scalar>);
+  *newInArgs = inArgs;
+  return newInArgs;
+}
+
 /** \relates ModelEvaluator */
 template<class Scalar>
 ModelEvaluatorBase::DerivativeMultiVector<Scalar>

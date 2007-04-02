@@ -87,7 +87,7 @@ ParameterList& ParameterList::operator=(const ParameterList& source)
   return *this;
 }
 
-ParameterList& ParameterList::setParameters(const ParameterList& source) 
+ParameterList& ParameterList::setParameters(const ParameterList& source)
 {
   for( ConstIterator i = source.begin(); i != source.end(); ++i ) {
     const std::string     &name_i  = this->name(i);
@@ -97,6 +97,30 @@ ParameterList& ParameterList::setParameters(const ParameterList& source)
     }
     else {
       this->setEntry(name_i,entry_i);
+    }
+  }
+  this->updateSubListNames();
+  return *this;
+}
+
+ParameterList& ParameterList::setParametersNotAlreadySet(
+  const ParameterList& source
+  ) 
+{
+  for( ConstIterator i = source.begin(); i != source.end(); ++i ) {
+    const std::string     &name_i  = this->name(i);
+    const ParameterEntry  &entry_i = this->entry(i);
+    if(entry_i.isList()) {
+      this->sublist(name_i).setParametersNotAlreadySet(
+        getValue<ParameterList>(entry_i));
+    }
+    else {
+      const ParameterEntry
+        *thisEntryPtr = this->getEntryPtr(name_i);
+      // If the entry does not already exist, then set it.  Otherwise, leave the
+      // existing intery allow
+      if(!thisEntryPtr)
+        this->setEntry(name_i,entry_i);
     }
   }
   this->updateSubListNames();

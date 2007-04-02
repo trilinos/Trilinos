@@ -620,6 +620,13 @@ public:
    * argument.  Therefore, just because
    * <tt>returnVal.supports(IN_ARG_blah)==true</tt>, the client should not
    * assume that <tt>returnVal.get_blah()!=null</tt>.
+   *
+   * <b>Warning!</b> Clients should not try to modify the state of the
+   * contained objects.  Doing so might invalidate the state of <tt>*this</tt>
+   * model or of other clients.  This is a hole in the const support and the
+   * use of InArgs.  If a client wants to modify a value, then a clone of that
+   * value should be created and reset on the returned InArgs object.  Do
+   * *not* modify the values in place!
    */
   virtual ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const = 0;
   
@@ -628,6 +635,13 @@ public:
    * It is not required for the client to supply lower bounds for every input
    * argument.  If a lower bound object for an input argument is null, then
    * the bounds of negative infinity should be assumed by the client.
+   *
+   * <b>Warning!</b> Clients should not try to modify the state of the
+   * contained objects.  Doing so might invalidate the state of <tt>*this</tt>
+   * model or of other clients.  This is a hole in the const support and the
+   * use of InArgs.  If a client wants to modify a value, then a clone of that
+   * value should be created and reset on the returned InArgs object.  Do
+   * *not* modify the values in place!
    */
   virtual ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const = 0;
   
@@ -636,6 +650,13 @@ public:
    * It is not required for the client to supply upper bounds for every input
    * argument.  If an upper bound object for an input argument is null, then
    * the bounds of positive infinity should be assumed by the client.
+   *
+   * <b>Warning!</b> Clients should not try to modify the state of the
+   * contained objects.  Doing so might invalidate the state of <tt>*this</tt>
+   * model or of other clients.  This is a hole in the const support and the
+   * use of InArgs.  If a client wants to modify a value, then a clone of that
+   * value should be created and reset on the returned InArgs object.  Do
+   * *not* modify the values in place!
    */
   virtual ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const = 0;
 

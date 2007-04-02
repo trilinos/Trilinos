@@ -56,9 +56,10 @@ namespace Thyra {
  * <tt>setParameterList()</tt> without first setting any of these two objects.
  * In other words, this object can accept a parameter list without knowing
  * anything about the actually type of the (multi)vector that will be read
- * using the <tt>readMultiVector()</tt> or <tt>readVector()</tt> functions.
+ * using the <tt>readMultiVector()</tt> or <tt>readVector()</tt> functions
+ * called later.
  *
- * This simple utility class is not ment to be too fancy so please just study
+ * This simple utility class is not meant to be too fancy so please just study
  * the actual implementation to see what this class does.
  *
  * ToDo: When needed, implement a function that can read a multi-vector of any
