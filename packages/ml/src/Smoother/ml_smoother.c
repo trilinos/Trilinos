@@ -54,7 +54,7 @@
 #include "ml_utils.h"
 #include "ml_op_utils.h"
 
-extern void cms_vec_dump2(double *x,int N,char* fname);//DEBUG
+extern void cms_vec_dump2(double *x,int N,char* fname); /*DEBUG*/
 void cms_vec_dump(double *x,int N,char* fname, int pre_or_post){
   char fn[80];
   int id;
@@ -1260,9 +1260,11 @@ int ML_Smoother_BlockHiptmair(ML_Smoother *sm, int inlen, double x[], int outlen
 /*****************************************************************************/
 
 
+/*
 // CMS Debug HAX
 //#define ML_DEBUG_SMOOTHER
 //#define PRINTITNOW
+*/
 
 
 int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen, 
@@ -1282,7 +1284,7 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
 #endif
 
    smooth_ptr = (ML_Smoother *) sm;
-   cms_vec_dump(x,inlen,"hs-xe0",smooth_ptr->pre_or_post);//DEBUG
+   cms_vec_dump(x,inlen,"hs-xe0",smooth_ptr->pre_or_post);/*DEBUG*/
   
    
    Ke_mat = smooth_ptr->my_level->Amat;
@@ -1361,7 +1363,7 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
       init_guess = ML_NONZERO;
 
 
-      cms_vec_dump(x,inlen,"hs-xe1",smooth_ptr->pre_or_post);//DEBUG
+      cms_vec_dump(x,inlen,"hs-xe1",smooth_ptr->pre_or_post);/*DEBUG*/
 
       
       ML_Comm_Envelope_Increment_Tag(envelope);
@@ -1376,7 +1378,7 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
 
       for (kk = 0; kk < Nrows; kk++) res_edge[kk] = rhs[kk] - res_edge[kk];
 
-      cms_vec_dump(res_edge,inlen,"hs-re1",smooth_ptr->pre_or_post);//DEBUG
+      cms_vec_dump(res_edge,inlen,"hs-re1",smooth_ptr->pre_or_post);/*DEBUG*/
 
 
       
@@ -1423,8 +1425,8 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
 			TtATmat->invec_leng, x_nodal,
 			TtATmat->outvec_leng, rhs_nodal,ML_ZERO);
 
-      cms_vec_dump(x_nodal,TtATmat->invec_leng,"hs-xn",smooth_ptr->pre_or_post);//DEBUG
-      cms_vec_dump(rhs_nodal,TtATmat->outvec_leng,"hs-rn",smooth_ptr->pre_or_post);//DEBUG
+      cms_vec_dump(x_nodal,TtATmat->invec_leng,"hs-xn",smooth_ptr->pre_or_post);/*DEBUG*/
+      cms_vec_dump(rhs_nodal,TtATmat->outvec_leng,"hs-rn",smooth_ptr->pre_or_post);/*DEBUG*/
       
 #ifdef ML_DEBUG_SMOOTHER
       printf("After SGS on nodes\n");
@@ -1477,7 +1479,7 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
 #endif
       }
 
-      cms_vec_dump(x,inlen,"hs-xe2",smooth_ptr->pre_or_post);//DEBUG
+      cms_vec_dump(x,inlen,"hs-xe2",smooth_ptr->pre_or_post);/*DEBUG*/
       
 #ifdef ML_DEBUG_SMOOTHER
       printf("After updating edge solution\n");
