@@ -71,7 +71,6 @@ int main(int argc, char *argv[])
   bool shortrun = false;
   bool fullOrtho = true;
   bool testRecovery = false;
-  std::string filename("mhd1280b.cua");
   std::string which("LM");
 
   CommandLineProcessor cmdp(false,true);

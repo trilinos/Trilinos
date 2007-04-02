@@ -533,7 +533,6 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
           MVT::SetBlock( *oldF, curind, *newF );
           newF = Teuchos::null;
 
-
           // Update the Krylov-Schur quasi-triangular matrix.
           //
           // Create storage for the new Schur matrix of the Krylov-Schur factorization
@@ -586,6 +585,8 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
       }
     }
 
+    //
+    // free temporary space
     workMV = Teuchos::null;
   
     // Get the most current Ritz values before we return

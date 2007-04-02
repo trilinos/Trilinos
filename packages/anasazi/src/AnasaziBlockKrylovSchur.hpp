@@ -494,7 +494,8 @@ namespace Anasazi {
     bool initialized_;
     //
     // curDim_ reflects how much of the current basis is valid 
-    // NOTE: 0 <= curDim_ <= blockSize_*numBlocks_
+    // NOTE: for hermitian, 0 <= curDim_ <= blockSize_*numBlocks_
+    //   for non-hermitian, 0 <= curDim_ <= blockSize_*numBlocks_ + 1
     // this also tells us how many of the values in _theta are valid Ritz values
     int curDim_;
     //
@@ -1115,13 +1116,10 @@ namespace Anasazi {
 
     ////////////////////////////////////////////////////////////////
     // iterate until the status test tells us to stop.
+    //
     // also break if our basis is full
     //
-    // NOTE: this is assuming that curDim_+blockSize_ <= searchDim
-    // this is satisfied by the interaction in BlockKrylovSchurSolMgr
-    // furthermore, the absence of this assumption should be caught in MVT::CloneView() below
-    //
-    while (tester_->checkStatus(this) != Passed && curDim_ < searchDim) {
+    while (tester_->checkStatus(this) != Passed && curDim_+blockSize_ <= searchDim) {
 
       iter_++;
 
