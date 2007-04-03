@@ -152,20 +152,6 @@
           Output File : string = none
           Verbosity Level : string = default
       ML -> 
-        aggregation: damping factor : double = 1.333
-        aggregation: local aggregates : int = 1
-        aggregation: type : string = METIS
-        coarse: max size : int = 128
-        coarse: type : string = Amesos-KLU
-        default values : string = DD
-        eigen-analysis: iterations : int = 20
-        eigen-analysis: type : string = power-method
-        increasing or decreasing : string = increasing
-        max levels : int = 2
-        prec type : string = MGV
-        smoother: Aztec as solver : bool = 0
-        smoother: Aztec options : int* = 0xad0db0
-        smoother: Aztec params : double* = 0xad0e80
-        smoother: pre or post : string = both
-        smoother: sweeps : int = 1
-        smoother: type : string = Aztec
+        Base Method Defaults : string = DD
+        ML Settings -> 
+          [empty list]

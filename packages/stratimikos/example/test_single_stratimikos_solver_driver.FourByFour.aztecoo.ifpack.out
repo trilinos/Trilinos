@@ -80,6 +80,9 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
           RowPerm : string = NOT SET
           perm_c : int* = 0
           perm_r : int* = 0
+      VerboseObject -> 
+        Output File : string = none
+        Verbosity Level : string = default
     AztecOO -> 
       Output Every RHS : bool = 0
       Adjoint Solve -> 
@@ -171,24 +174,13 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
         schwarz: compute condest : bool = 1
         schwarz: filter singletons : bool = 0
         schwarz: reordering type : string = none
+      VerboseObject -> 
+        Output File : string = none
+        Verbosity Level : string = default
     ML -> 
-      aggregation: damping factor : double = 1.333
-      aggregation: local aggregates : int = 1
-      aggregation: type : string = METIS
-      coarse: max size : int = 128
-      coarse: type : string = Amesos-KLU
-      default values : string = DD
-      eigen-analysis: iterations : int = 20
-      eigen-analysis: type : string = power-method
-      increasing or decreasing : string = increasing
-      max levels : int = 2
-      prec type : string = MGV
-      smoother: Aztec as solver : bool = 0
-      smoother: Aztec options : int* = 0xadda70
-      smoother: Aztec params : double* = 0xaddb40
-      smoother: pre or post : string = both
-      smoother: sweeps : int = 1
-      smoother: type : string = Aztec
+      Base Method Defaults : string = DD
+      ML Settings -> 
+        [empty list]
 
 Creating the LinearOpWithSolveFactoryBase object lowsFactory ...
 
@@ -206,7 +198,7 @@ Running example use cases ...
     Solve status:
       solveStatus = SOLVE_STATUS_UNKNOWN
       achievedTol = unknownTolerance()
-      message: "AztecOO solver converged on m = 1 RHSs using 1 cumulative iterations for an average of 1 iterations/RHS and total CPU time of 0.000517 sec."
+      message: "AztecOO solver converged on m = 1 RHSs using 1 cumulative iterations for an average of 1 iterations/RHS and total CPU time of 0.000538 sec."
       extraParameters: NONE
     
     Performing a solve, changing the operator, then performing another solve ...
@@ -267,6 +259,9 @@ Printing the parameter list (showing what was used) ...
           schwarz: compute condest : bool = 1   [default]
           schwarz: filter singletons : bool = 0   [default]
           schwarz: reordering type : string = none   [default]
+        VerboseObject -> 
+          Output File : string = none   [default]
+          Verbosity Level : string = default   [default]
   LinearOpTester -> 
     [empty list]
   LinearOpWithSolveTester -> 
