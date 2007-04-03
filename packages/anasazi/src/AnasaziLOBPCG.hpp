@@ -1265,7 +1265,7 @@ namespace Anasazi {
       // allocated the workspace
       tmpMV_ = MVT::Clone(*X_,blockSize_);
     }
-    else if (fullOrth_==false) {
+    else if (fullOrtho_==false) {
       // free the workspace
       tmpMV_ = Teuchos::null;
     }
