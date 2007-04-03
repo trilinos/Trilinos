@@ -454,6 +454,20 @@ LOCA::Epetra::Group::getParam(string paramID) const
 }
 
 void
+LOCA::Epetra::Group:: preProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  userInterface->preProcessContinuationStep(stepStatus, *this);
+}
+
+void
+LOCA::Epetra::Group:: postProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  userInterface->postProcessContinuationStep(stepStatus, *this);
+}
+
+void
 LOCA::Epetra::Group::projectToDraw(const NOX::Abstract::Vector& x,
 				   double *px) const
 {

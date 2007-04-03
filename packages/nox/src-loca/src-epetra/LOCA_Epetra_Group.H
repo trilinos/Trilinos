@@ -304,6 +304,26 @@ namespace LOCA {
       //! Return copy of parameter indexed by paramID
       virtual double getParam(string paramID) const;
 
+      //! Perform any preprocessing before a continuation step starts.
+      /*!
+       * The \c stepStatus argument indicates whether the previous step was
+       * successful.  The implementation here is to call the corresponding
+       * method in the interface.
+       */
+      virtual void 
+      preProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus);
+
+      //! Perform any postprocessing after a continuation step finishes.
+      /*!
+       * The \c stepStatus argument indicates whether the step was
+       * successful. The implementation here is to call the corresponding
+       * method in the interface.
+       */
+      virtual void 
+      postProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus);
+
       //! Projects solution to a few scalars for multiparameter continuation
       /*! 
        * This method is called every time a solution is saved by the 
