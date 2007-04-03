@@ -256,8 +256,14 @@ namespace Belos {
     _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Belos: Orthogonalization")),
     _timerTotal(Teuchos::TimeMonitor::getNewTimer("Belos: Total time"))    
   {
+    // Check the parameter list to see if another type of orthogonalization is specified.
     if (_pl->isParameter("Ortho Type")) {
       _orthoType = Teuchos::getParameter<std::string>(*_pl, "Ortho Type" );
+    }
+
+    // Check the parameter list to see if the timers should be restarted each solve.
+    if (_pl->isParameter("Restart Timers")) {
+      _restartTimers = Teuchos::getParameter<bool>(*_pl, "Restart Timers" );
     }
   }
     
@@ -775,7 +781,8 @@ namespace Belos {
     std::ostringstream oss;
     oss << "Belos::BlockGmres<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
     oss << "{";
-    oss << "Variant=\'"<<(_flexible?"Flexible":"Standard")<<"\'";
+    oss << "Variant=\'"<<(_flexible?"Flexible":"Standard")<<"\',";
+    oss << "Ortho Type='"<<_orthoType<<"\'";
     oss << "}";
     return oss.str();
   }
