@@ -74,7 +74,7 @@ operator()( OriginalTypeRef orig )
   int NumMyColElements = OldColMap.NumMyElements();
   int NumGlobalColElements = OldColMap.NumGlobalElements();
 
-  NewColMap_ = new Epetra_Map( NumGlobalColElements, NumMyColElements, NewColIndices[0], 0, OldColMap.Comm() );
+  NewColMap_ = new Epetra_Map( NumGlobalColElements, NumMyColElements, NewColIndices[0], OldColMap.IndexBase(), OldColMap.Comm() );
 
   //intial construction of matrix 
   Epetra_CrsMatrix * NewMatrix = new Epetra_CrsMatrix( View, NewRowMap_, *NewColMap_, 0 );
