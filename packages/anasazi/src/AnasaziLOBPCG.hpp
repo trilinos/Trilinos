@@ -584,9 +584,16 @@ namespace Anasazi {
     Teuchos::RefCountPtr<MV> X_, KX_, MX_, R_,
                              H_, KH_, MH_,
                              P_, KP_, MP_;
-    // tmpMV is needed only if fullOrtho_ == true
-    // because is depends on fullOrtho_, which is easily toggled by the user, we will allocate it 
-    // and deallocate it inside of iterate()
+    //
+    // if fullOrtho_ == true, then we must produce the following on every iteration:
+    // [newX newP] = [X H P] [CX;CP]
+    // the structure of [CX;CP] when using full orthogonalization does not allow us to 
+    // do this in situ, and R_ does not have enough storage for newX and newP. therefore, 
+    // we must allocate additional storage for this.
+    // otherwise, when not using full orthogonalization, the structure
+    // [newX newP] = [X H P] [CX1  0 ]
+    //                       [CX2 CP2]  allows us to work using only R as work space
+    //                       [CX3 CP3] 
     Teuchos::RefCountPtr<MV> tmpMV_;        
     // 
     // auxiliary vectors
@@ -790,7 +797,7 @@ namespace Anasazi {
       else {
         MH_ = H_;
       }
-    } 
+    }
     else {  // blockSize > blockSize_
       // this is also the scenario for our initial call to setBlockSize(), in the constructor
       initialized_ = false;
@@ -841,6 +848,11 @@ namespace Anasazi {
         MP_ = P_;
       }
       blockSize_ = blockSize;
+    }
+
+    tmpMV_ = Teuchos::null;
+    if (fullOrtho_) {
+      tmpMV_ = MVT::Clone(*X_,blockSize_);
     }
   }
 
@@ -1200,6 +1212,9 @@ namespace Anasazi {
       }
     }
 
+
+
+
     // finally, we are initialized
     initialized_ = true;
 
@@ -1235,13 +1250,25 @@ namespace Anasazi {
     if ( fullOrtho_ == true || initialized_ == false || fullOrtho == fullOrtho_ ) {
       // state is already orthogonalized or solver is not initialized
       fullOrtho_ = fullOrtho;
-      return;
+    }
+    else {
+      // solver is initialized, state is not fully orthogonalized, and user has requested full orthogonalization
+      // ergo, we must throw away data in P
+      fullOrtho_ = true;
+      hasP_ = false;
     }
 
-    // solver is initialized, state is not fully orthogonalized, and user has requested full orthogonalization
-    fullOrtho_ = true;
-    // throw away data in P
-    hasP_ = false;
+    // the user has called setFullOrtho, so the class has been instantiated
+    // ergo, the data has already been allocated, i.e., setBlockSize() has been called
+    // if it is already allocated, it should be the proper size
+    if (fullOrtho_ && tmpMV_ == Teuchos::null) {
+      // allocated the workspace
+      tmpMV_ = MVT::Clone(*X_,blockSize_);
+    }
+    else if (fullOrth_==false) {
+      // free the workspace
+      tmpMV_ = Teuchos::null;
+    }
   }
 
 
@@ -1255,24 +1282,6 @@ namespace Anasazi {
     //
     if (initialized_ == false) {
       initialize();
-    }
-
-    // if fullOrtho_ == true, then we must produce the following on every iteration:
-    // [newX newP] = [X H P] [CX;CP]
-    // the structure of [CX;CP] when using full orthogonalization does not allow us to 
-    // do this in situ, and R_ does not have enough storage for newX and newP. therefore, 
-    // we must allocate additional storage for this.
-    // otherwise, when not using full orthogonalization, the structure
-    // [newX newP] = [X H P] [CX1  0 ]
-    //                       [CX2 CP2]  allows us to work using only R as work space
-    //                       [CX3 CP3] 
-    if (fullOrtho_) {
-      if (tmpMV_ == Teuchos::null || MVT::GetNumberVecs(*tmpMV_) != blockSize_) {
-        tmpMV_ = MVT::Clone(*X_,blockSize_);
-      }
-    }
-    else {
-      tmpMV_ = Teuchos::null;
     }
 
     //
@@ -1430,9 +1439,11 @@ namespace Anasazi {
         // and therefore telling us which of [X H P] to use in computing the new iterates below.
         // we will not tolerate this ill-conditioning, and will throw an exception.
       }
-      om_->stream(Debug) << " After directSolve: localSize == " << localSize << " \tnevLocal == " << nevLocal_ << endl;
+      if (om_->isVerbosity(Debug)) {
+        om_->stream(Debug) << " After directSolve: localSize == " << localSize << " \tnevLocal == " << nevLocal_ << endl;
+      }
       TEST_FOR_EXCEPTION(nevLocal_ != localSize, LOBPCGRitzFailure, 
-                           "Anasazi::LOBPCG::iterate(): indefiniteness detected in projecteded mass matrix." );
+                           "Anasazi::LOBPCG::iterate(): indefiniteness detected in projected mass matrix." );
 
       Teuchos::LAPACK<int,ScalarType> lapack;
       Teuchos::BLAS<int,ScalarType> blas;
