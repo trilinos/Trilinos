@@ -981,8 +981,12 @@ LOCA::MultiContinuation::ConstrainedGroup::printSolution(
   }
   grpPtr->printSolution(*mx.getXVec(), conParam);
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
-    globalData->locaUtils->out() << "\tPrinting constraint parameters\n";
-    mx.getScalars()->print(globalData->locaUtils->out());
+    const LOCA::ParameterVector& pvec = grpPtr->getParams();
+    globalData->locaUtils->out() << "\tPrinting constraint parameters:\n";
+    for (int i=0; i<numParams; i++)
+      globalData->locaUtils->out() << "\t\t" << 
+	pvec.getLabel(constraintParamIDs[i]) << " = " <<
+	globalData->locaUtils->sciformat(mx.getScalar(i)) << std::endl;
   }
 }
 
