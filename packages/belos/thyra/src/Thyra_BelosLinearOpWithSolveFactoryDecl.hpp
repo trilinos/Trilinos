@@ -60,6 +60,10 @@ public:
   static const std::string  DefaultRelResNorm_name;
   /** \brief . */
   static const MagnitudeType DefaultRelResNorm_default;
+  /** \brief . */           
+  static const std::string  Restart_Timers_name;
+  /** \brief . */           
+  static const bool         Restart_Timers_default;
   /** \brief . */
   static const std::string  GMRES_name;
   /** \brief . */           

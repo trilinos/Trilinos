@@ -53,6 +53,10 @@ template<class Scalar>
 const typename BelosLinearOpWithSolveFactory<Scalar>::MagnitudeType
                   BelosLinearOpWithSolveFactory<Scalar>::DefaultRelResNorm_default = 1e-6;
 template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::Restart_Timers_name= "Restart Timers";
+template<class Scalar>
+const bool        BelosLinearOpWithSolveFactory<Scalar>::Restart_Timers_default = "true";
+template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_name = "GMRES";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_MaxNumberOfKrylovVectors_name = "Max Number of Krylov Vectors";
@@ -335,6 +339,7 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
     validParamList->set(BlockSize_name,BlockSize_default);
     validParamList->set(AdjustableBlockSize_name,AdjustableBlockSize_default);
     validParamList->set(DefaultRelResNorm_name,DefaultRelResNorm_default);
+    validParamList->set(Restart_Timers_name,Restart_Timers_default);
     Teuchos::ParameterList
       &gmresSL = validParamList->sublist(GMRES_name);
     gmresSL.set(GMRES_MaxNumberOfKrylovVectors_name,GMRES_MaxNumberOfKrylovVectors_default);
