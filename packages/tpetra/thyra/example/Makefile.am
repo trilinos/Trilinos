@@ -35,7 +35,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../thyra/example/operator_vector $(EXPORT_INCLUDES
 
 common_ldadd = $(EXPORT_LIBS)
 
-EXTRA_DIST =
+EXTRA_DIST = $(srcdir)/createExampleTridiagTpetraLinearOp.hpp
 
 # This is already added part of TPETRA_LIBS and therefore automake does not need to add this again!
 LIBS =

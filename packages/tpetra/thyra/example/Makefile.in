@@ -245,7 +245,7 @@ common_dependencies = $(top_builddir)/src/libtpetra.a
 @USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(TPETRA_LIBS))
 AM_CPPFLAGS = -I$(top_srcdir)/../thyra/example/operator_vector $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
-EXTRA_DIST = 
+EXTRA_DIST = $(srcdir)/createExampleTridiagTpetraLinearOp.hpp
 all: all-am
 
 .SUFFIXES:
@@ -374,6 +374,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/$(srcdir)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
