@@ -395,15 +395,14 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 
   typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<Scalar> > VOTSPF;
   VOTSPF precFactoryOutputTempState(precFactory_,out,verbLevel);
-	
-#ifdef TEUCHOS_DEBUG
+  
   TEST_FOR_EXCEPT(Op==NULL);
   TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
   TEST_FOR_EXCEPT(fwdOpSrc->getOp().get()==NULL);
-#endif
   Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
     fwdOp = fwdOpSrc->getOp(),
     approxFwdOp = ( approxFwdOpSrc.get() ? approxFwdOpSrc->getOp() : Teuchos::null );
+
   //
   // Get the BelosLinearOpWithSolve interface
   //
@@ -459,31 +458,32 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >   oldIterSolver = Teuchos::null;
   RefCountPtr<Belos::OutputManager<Scalar> >               oldOutputManager = Teuchos::null;
   RefCountPtr<const LinearOpSourceBase<Scalar> >           oldFwdOpSrc = Teuchos::null;
-  RefCountPtr<const PreconditionerBase<Scalar> >           oldPrec = Teuchos::null;
-  RefCountPtr<const LinearOpSourceBase<Scalar> >           oldApproxFwdOpSrc = Teuchos::null;
+  RefCountPtr<const LinearOpSourceBase<Scalar> >           oldApproxFwdOpSrc = Teuchos::null;   
   ESupportSolveUse                                         oldSupportSolveUse = SUPPORT_SOLVE_UNSPECIFIED;
 
-  belosOp->uninitialize( &oldLP, 
-			 &oldAdjustableBlockSize,
-			 &oldMaxNumberOfKrylovVectors,
-			 NULL,
-			 NULL,
-			 &oldIterSolver,
-			 &oldOutputManager,
-			 &oldFwdOpSrc,
-			 &oldPrec,
-			 &oldIsExternalPrec,
-			 &oldApproxFwdOpSrc,
-			 &oldSupportSolveUse );
+  belosOp->uninitialize( &oldLP,
+                         &oldAdjustableBlockSize,
+                         &oldMaxNumberOfKrylovVectors,
+                         NULL,
+                         NULL,
+                         &oldIterSolver,
+                         &oldOutputManager,
+                         &oldFwdOpSrc,
+                         NULL,
+                         &oldIsExternalPrec,
+                         &oldApproxFwdOpSrc,
+                         &oldSupportSolveUse );
   //
-  // Update the Belos linear problem or create a new one.
+  // Create the Belos linear problem
   //
-  typedef Belos::LinearProblem<Scalar,MV_t,LO_t> LinearProblem_t;
-  RefCountPtr<LinearProblem_t> lp;
-  if (oldLP != Teuchos::null)
+  typedef Belos::LinearProblem<Scalar,MV_t,LO_t> LP_t;
+  RefCountPtr<LP_t> lp;
+  if (oldLP != Teuchos::null) {
     lp = oldLP;
-  else
-    lp = rcp(new LinearProblem_t());
+  }
+  else {
+    lp = rcp(new LP_t());
+  }
   //
   // Set the operator
   //
@@ -514,10 +514,12 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     }
   }
   if(myPrec.get()) {
-    set_extra_data<RefCountPtr<PreconditionerBase<Scalar> > >(myPrec,"Belos::InternalPrec",&lp);
+    set_extra_data<RefCountPtr<PreconditionerBase<Scalar> > >(myPrec,"Belos::InternalPrec",
+							      &lp, Teuchos::POST_DESTROY, false);
   }
   else if(prec.get()) {
-    set_extra_data<RefCountPtr<const PreconditionerBase<Scalar> > >(prec,"Belos::ExternalPrec",&lp);
+    set_extra_data<RefCountPtr<const PreconditionerBase<Scalar> > >(prec,"Belos::ExternalPrec",
+								    &lp, Teuchos::POST_DESTROY, false);
   }
   //
   // Set the block size
@@ -528,7 +530,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   }
   lp->SetBlockSize(blockSize);
   //
-  // Update the output manager or create a new one.
+  // Create the output manager 
   //
   typedef Belos::OutputManager<Scalar> OutputManager_t;
   const int belosVerbLevel =
@@ -537,16 +539,8 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       ? Belos::Warnings | Belos::FinalSummary | Belos::IterationDetails
       : Belos::Errors
       );
-  RefCountPtr<OutputManager_t> outputManager;
-  if (oldOutputManager != Teuchos::null) {
-    outputManager = oldOutputManager;
-    outputManager->SetVerbosity( belosVerbLevel );
-  }
-  else {
+  RefCountPtr<OutputManager_t>
     outputManager = rcp(new OutputManager_t(0,belosVerbLevel));
-  }
-    
-  //
   // Note: The stream itself will be set in the BelosLinearOpWithSolve object!
   //
   // Create the default status test
@@ -592,16 +586,14 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   set_extra_data(maxItersOrRestartsST,"maxItersOrRestartsST",&comboST);
   set_extra_data(outputterResNormST,"resNormST",&comboST);
   //
-  // Reset the solver
+  // Generate the solver
   //
   typedef Belos::IterativeSolver<Scalar,MV_t,LO_t> IterativeSolver_t;
-  RefCountPtr<IterativeSolver_t> iterativeSolver;
-  if (oldIterSolver != Teuchos::null)
-    iterativeSolver = oldIterSolver;
+  RefCountPtr<IterativeSolver_t> iterativeSolver = Teuchos::null;
   RefCountPtr<Teuchos::ParameterList> gmresPL;
   int maxNumberOfKrylovVectors = -1; // Only gets used if getPL.get()!=NULL
-  bool Restart_Timers = Restart_Timers_default;
-  std::string OrthoType = OrthoType_default;
+  bool restartTimers = Restart_Timers_default;
+  std::string orthoType = OrthoType_default;
   if(useGmres_) {
     // Set the PL
     gmresPL = Teuchos::rcp(new Teuchos::ParameterList());
@@ -617,21 +609,14 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
         &_gmresPL = paramList_->sublist(GMRES_name);
       maxNumberOfKrylovVectors = _gmresPL.get(GMRES_MaxNumberOfKrylovVectors_name,GMRES_MaxNumberOfKrylovVectors_default);
       GMRES_Variant = _gmresPL.get(GMRES_Variant_name,GMRES_Variant_default);
-      OrthoType = _gmresPL.get(OrthoType_name,OrthoType_default);
-      Restart_Timers = _gmresPL.get(Restart_Timers_name,Restart_Timers_default);
+      restartTimers = _gmresPL.get(Restart_Timers_name,Restart_Timers_default);
+      orthoType = _gmresPL.get(OrthoType_name,OrthoType_default);
     }
     gmresPL->set(GMRES_Variant_name,GMRES_Variant);
-    gmresPL->set(OrthoType_name,OrthoType);
-    gmresPL->set(Restart_Timers_name,Restart_Timers);
-
-    if (iterativeSolver != Teuchos::null) {
-      iterativeSolver->GetLinearProblem() = lp;
-      iterativeSolver->GetStatusTest() = comboST;
-      iterativeSolver->Reset( gmresPL );
-    }
-    else {
-      iterativeSolver = rcp(new Belos::BlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
-    }
+    gmresPL->set(OrthoType_name, orthoType);
+    gmresPL->set(Restart_Timers_name, restartTimers);
+    // Create the solver!
+    iterativeSolver = rcp(new Belos::BlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
   }
   else {
     iterativeSolver = rcp(new Belos::BlockCG<Scalar,MV_t,LO_t>(lp,comboST,outputManager));
