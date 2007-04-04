@@ -19,11 +19,13 @@ double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector&
 #define MVOUT(x,y) ;
 #define IVOUT(x,y) ;
 #define Epetra_CrsMatrix_Print(x,y) ;
+#define ML_Matrix_Print(w,x,y,z) ;
 #else
 extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of);
 extern void MVOUT (const Epetra_MultiVector & A, char * of);
 extern void IVOUT(const Epetra_IntVector & A, char * of);
 extern void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx);
+extern void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname);
 #endif
 
 #define INTERNAL_AGGREGATION
@@ -76,9 +78,9 @@ int CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[
 
 // ================================================ ====== ==== ==== == = 
 //ML_Epetra::EdgeMatrixFreePreconditioner::EdgeMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal, const Epetra_CrsMatrix & D0_Matrix,const Epetra_CrsMatrix & D0_Clean_Matrix,const Epetra_CrsMatrix & TMT_Matrix, const Teuchos::ParameterList &List,const bool ComputePrec):
-//  ML_Preconditioner(),Operator_(&Operator),D0_Matrix_(&D0_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix),TMT_Matrix_(&TMT_Matrix),Prolongator(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0)
+//  ML_Preconditioner(),Operator_(&Operator),D0_Matrix_(&D0_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix),TMT_Matrix_(&TMT_Matrix),Prolongator_(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0)
 ML_Epetra::EdgeMatrixFreePreconditioner::EdgeMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal, const Epetra_CrsMatrix & D0_Matrix,const Epetra_CrsMatrix & D0_Clean_Matrix,const Epetra_CrsMatrix &TMT_Matrix,const ML_Aggregate * Nodal_Aggregates,const int* BCedges, const int numBCedges, const Teuchos::ParameterList &List,const bool ComputePrec):
-  ML_Preconditioner(),Operator_(&Operator),D0_Matrix_(&D0_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix),TMT_Matrix_(&TMT_Matrix),MLAggr(Nodal_Aggregates),BCedges_(BCedges),numBCedges_(numBCedges),Prolongator(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),Smoother_(0) 
+  ML_Preconditioner(),Operator_(&Operator),D0_Matrix_(&D0_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix),TMT_Matrix_(&TMT_Matrix),MLAggr(Nodal_Aggregates),BCedges_(BCedges),numBCedges_(numBCedges),Prolongator_(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),Smoother_(0) 
 {
   /* Set the Epetra Goodies */
   Comm_ = &(Operator_->Comm());
@@ -105,6 +107,9 @@ ML_Epetra::EdgeMatrixFreePreconditioner::~EdgeMatrixFreePreconditioner(){
 // Computes the preconditioner
 int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool CheckFiltering)
 {
+  Teuchos::ParameterList dummy, ListCoarse;
+  ListCoarse=List_.get("edge matrix free: coarse",dummy);
+  
   /* ML Communicator */
   ML_Comm_Create(&ml_comm_);
 
@@ -153,20 +158,22 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
     ML_CHK_ERR(BuildProlongator(*nullspace));
     
     /* DEBUG: Output matrices */
-    Epetra_CrsMatrix_Print(*Prolongator,"prolongator.dat");
+    Epetra_CrsMatrix_Print(*Prolongator_,"prolongator.dat");
     
     /* Form the coarse matrix */
     printf("EMFP: Building Coarse Matrix\n");
     ML_CHK_ERR(FormCoarseMatrix());
-    
-    /* Setup Preconditioner on Coarse Matrix */
-    printf("EMFP: Building Coarse Precond\n");
-    //  List_.print(cout);
-    CoarsePC = new MultiLevelPreconditioner(*CoarseMatrix,List_);
-    if(!CoarsePC) ML_CHK_ERR(-2);
+
 
     /* DEBUG: Output matrices */
     Epetra_CrsMatrix_Print(*CoarseMatrix,"coarsemat.dat");
+
+    //    exit(1);
+    
+    /* Setup Preconditioner on Coarse Matrix */
+    printf("EMFP: Building Coarse Precond\n");
+    CoarsePC = new MultiLevelPreconditioner(*CoarseMatrix,ListCoarse);
+    if(!CoarsePC) ML_CHK_ERR(-2);
   
     /* Clean Up */
     delete nullspace;
@@ -376,7 +383,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   /* Wrap P_n into Epetra-land */
   printf("[%d] EMFP: Wrapping to PSparse\n",Comm_->MyPID());
   Epetra_CrsMatrix *Psparse;
-  Epetra_CrsMatrix_Wrap_ML_Operator(AbsD0P,*Comm_,*EdgeRangeMap_,&Psparse);
+  Epetra_CrsMatrix_Wrap_ML_Operator(AbsD0P,*Comm_,*EdgeRangeMap_,&Psparse,Copy,0);
 
   
   /* TEST: Nuke the rows in Psparse */
@@ -393,19 +400,19 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   /* Build the DomainMap of the new operator*/
   const Epetra_Map & FineColMap = Psparse->ColMap();
   CoarseMap_=new Epetra_Map(-1,NumAggregates*dim,0,*Comm_);
-
+  //  CoarseMap_=new Epetra_Map(-1,NumAggregates*dim,1,*Comm_);
   
-  /* Allocate the Prolongator */
+  /* Allocate the Prolongator_ */
   printf("[%d] EMFP: Building Prolongator\n",Comm_->MyPID());
-  //  Prolongator=new Epetra_CrsMatrix(Copy,*EdgeRangeMap_,0);
-  Prolongator=new Epetra_CrsMatrix(Copy,*EdgeRangeMap_,0);  
+  Prolongator_=new Epetra_CrsMatrix(Copy,*EdgeRangeMap_,0);
+  //Prolongator_=new Epetra_CrsMatrix(Copy,*EdgeRangeMap_,1);  
   int ne1, *idx1, *idx2;
   idx2=new int [dim*AbsD0P->max_nz_per_row];
   double *vals1, *vals2;
   vals2=new double[dim*AbsD0P->max_nz_per_row];
   int nonzeros;
   
-  for(int i=0;i<Prolongator->NumMyRows();i++){
+  for(int i=0;i<Prolongator_->NumMyRows();i++){
     Psparse->ExtractMyRowView(i,ne1,vals1,idx1);
     nonzeros=0;
     for(int j=0;j<ne1;j++) nonzeros+=vals1[j]>0;
@@ -415,8 +422,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
 
     for(int j=0;j<ne1;j++){
       for(int k=0;k<dim;k++) {
-          idx2[j*dim+k]=FineColMap.GID(idx1[j])*dim+k;
-          //FIX: This works only because there's an implicit linear mapping which
+        idx2[j*dim+k]=FineColMap.GID(idx1[j])*dim+k;
+        //      idx2[j*dim+k]=(FineColMap.GID(idx1[j]))*dim+k+1;
+        //FIX: This works only because there's an implicit linear mapping which
           //we're exploiting.
           if(idx2[j*dim+k]==-1) printf("[%d] ERROR: idx1[j]=%d / idx1[j]*dim+k=%d does not have a GID!\n",Comm_->MyPID(),idx1[j],idx1[j]*dim+k);
           //if(Edge_Weights[i] == 0 || vals1[j]==0 ) vals2[j*dim+k]=0;
@@ -432,19 +440,24 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
       }/*end for*/
     }
     //      if(i==lookup) printf("\n");
-      Prolongator->InsertGlobalValues(EdgeRangeMap_->GID(i),dim*ne1,vals2,idx2);
+      Prolongator_->InsertGlobalValues(EdgeRangeMap_->GID(i),dim*ne1,vals2,idx2);
   }/*end for*/
   
 
   /* FillComplete / OptimizeStorage for Prolongator*/
   printf("[%d] EMFP: Optimizing Prolongator\n",Comm_->MyPID());
-  Prolongator->FillComplete(*CoarseMap_,*EdgeRangeMap_);
-  Prolongator->OptimizeStorage();
+  Prolongator_->FillComplete(*CoarseMap_,*EdgeRangeMap_);
+  Prolongator_->OptimizeStorage();
+  
+  /* Post-wrapping to convert to ML indexing */
+#ifdef HAVE_ML_EPETRAEXT
+  Prolongator_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Prolongator_,ProlongatorColMapTrans_,"Prolongator",true));
+#endif
   
   /* Cleanup */
   printf("[%d] EMFP: BuildProlongator Cleanup\n",Comm_->MyPID());
 
-#ifdef OLD_INTERNAL_AGGREGATION
+#ifdef INTERNAL_AGGREGATION
   ML_Aggregate_Destroy(&MLAggr);
   ML_Operator_Destroy(&TMT_ML);
   ML_Operator_Destroy(&P);
@@ -456,7 +469,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   delete [] idx2;
   delete [] vals2;
   return 0;
-}/*end BuildProlongator*/
+}/*end BuildProlongator_*/
   
 
 
@@ -468,45 +481,56 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   ML_Operator *R= ML_Operator_Create(ml_comm_);
   ML_Operator *P= ML_Operator_Create(ml_comm_);
   ML_Operator *CoarseMat_ML = ML_Operator_Create(ml_comm_);
-  ML_Operator *Temp_ML = ML_Operator_Create(ml_comm_);
+  ML_Operator *Temp_ML;
+  //  ML_Operator *Temp_ML = ML_Operator_Create(ml_comm_);
   CoarseMat_ML->data_destroy=free;
   
-  /* Build ML_Operator version of Prolongator, Restriction Operator */
+  /* Build ML_Operator version of Prolongator_, Restriction Operator */
   printf("EMFP: Prolongator Prewrap\n");
-  //  ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix(Prolongator,P));
-  ML_CHK_ERR(ML_Operator_WrapEpetraMatrix(Prolongator,P));
+  //  ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix(Prolongator_,P));
+  ML_CHK_ERR(ML_Operator_WrapEpetraMatrix(Prolongator_,P));
   printf("EMFP: Prolongator Transpose\n");
   //NTS: ML_CHK_ERR won't work on this: it returns 1
   ML_Operator_Transpose_byrow(P, R);
 
   /* Do the A*P */
   printf("EMFP: AP\n");
-  Epetra_CrsMatrix *Temp;
-  ML_CHK_ERR(Operator_->MatrixMatrix_Multiply(*Prolongator,&Temp));  
+  //  ML_CHK_ERR(Operator_->MatrixMatrix_Multiply(*Prolongator_,&Temp));  
+  ML_CHK_ERR(Operator_->MatrixMatrix_Multiply(*Prolongator_,ml_comm_,&Temp_ML));  
 
-
+ 
   /* DEBUG: output*/
 #ifndef NO_OUTPUT
-  Epetra_CrsMatrix_Print(*Temp,"coarse_temp.dat");
+  //  Epetra_CrsMatrix_Print(*Temp,"coarse_temp.dat");
+  ML_Matrix_Print(Temp_ML,*Comm_,*EdgeRangeMap_,"coarse_temp.dat");
 #endif
   
   /* Do R * AP */
   printf("EMFP: RAP\n");
-  ML_CHK_ERR(ML_Operator_WrapEpetraMatrix(Temp,Temp_ML));
+  //  ML_CHK_ERR(ML_Operator_WrapEpetraMatrix(Temp,Temp_ML));
   ML_2matmult(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
+
+#ifndef NO_OUTPUT
+  ML_Matrix_Print(CoarseMat_ML,*Comm_,*EdgeRangeMap_,"coarsemat.dat");  
+#endif
+  
   Epetra_CrsMatrix_Wrap_ML_Operator(CoarseMat_ML,*Comm_,*CoarseMap_,&CoarseMatrix);
 
 
   /* Fix OAZ issues */
   //  Remove_Zeroed_Rows(*CoarseMatrix);
+  //HAQ?
 
-  
+#ifndef NO_OUTPUT
+  Epetra_CrsMatrix_Print(*CoarseMatrix,"coarsemat0.dat");
+#endif
+
   /* Cleanup */
   ML_Operator_Destroy(&P);
   ML_Operator_Destroy(&R);
   ML_Operator_Destroy(&CoarseMat_ML);
   ML_Operator_Destroy(&Temp_ML);
-  delete Temp;
+  //  delete Temp;
   return 0;
 }/*end FormCoarseMatrix*/
 
@@ -522,7 +546,7 @@ void ML_Epetra::EdgeMatrixFreePreconditioner::Print(const char *whichHierarchy)
 // Destroys all structures allocated in \c ComputePreconditioner() if the preconditioner has been computed.
 int ML_Epetra::EdgeMatrixFreePreconditioner::DestroyPreconditioner(){
   if (ml_comm_) { ML_Comm_Destroy(&ml_comm_); ml_comm_ = 0; }// will need this
-  if (Prolongator) {delete Prolongator; Prolongator=0;}
+  if (Prolongator_) {delete Prolongator_; Prolongator_=0;}
   if (InvDiagonal_) {delete InvDiagonal_; InvDiagonal_=0;}    
   if (CoarseMatrix) {delete CoarseMatrix; CoarseMatrix=0;}
   if (CoarsePC) {delete CoarsePC; CoarsePC=0;}
@@ -568,7 +592,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
       MVOUT2(r_edge,"re11",iteration);
       
       /* Xfer to coarse grid (r_n = P' * r_e) */
-      ML_CHK_ERR(Prolongator->Multiply(true,r_edge,r_node));
+      ML_CHK_ERR(Prolongator_->Multiply(true,r_edge,r_node));
       
       MVOUT2(r_node,"rn11",iteration);
       
@@ -581,7 +605,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
       
       
       /* Xfer back to fine grid (e_e = P * e_n) */
-      ML_CHK_ERR(Prolongator->Multiply(false,e_node,e_edge));
+      ML_CHK_ERR(Prolongator_->Multiply(false,e_node,e_edge));
       
       MVOUT2(e_edge,"ee11",iteration);
       

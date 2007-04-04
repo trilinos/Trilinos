@@ -11,22 +11,11 @@
 #define NO_OUTPUT
 #ifdef NO_OUTPUT
 #define Epetra_CrsMatrix_Print(x,y) ;
+#define ML_Matrix_Print(w,x,y,z) ;
 #else
 extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of);//haq
+extern void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname);
 #endif
-
-void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname){
-  Epetra_CrsMatrix *Temp_;
-  Epetra_CrsMatrix_Wrap_ML_Operator(ML,Comm,Map,&Temp_,View);
-  Epetra_CrsMatrix_Print(*Temp_,fname);
-  delete Temp_;
-}
-
-
-
-
-
-
 
 // ================================================ ====== ==== ==== == = 
 // Constructor
@@ -54,20 +43,12 @@ int ML_Epetra::Epetra_Multi_CrsMatrix::Apply(const Epetra_MultiVector& X, Epetra
 
   /* Do the first n-1 matvecs */
   for(int i=NumMatrices_-1;i>0;i--){
-    //    printf("[%d] MCRS: matvec %d begins\n",Comm_->MyPID(),i);
     if(MV[(i+1)%2] && MV[(i+1)%2]!=&X) delete MV[(i+1)%2];
     MV[(i+1)%2]=new Epetra_MultiVector(CrsMatrices_[i]->RangeMap(),nv,false);
-    //    printf("[%d] MCRS: Matvec %d / %d ov=%d iv=%d mat=%dx%d\n",Comm_->MyPID(),i,NumMatrices_,           
-    //           MV[(i+1)%2]->GlobalLength(),MV[i%2]->GlobalLength(),
-    //           CrsMatrices_[i]->NumGlobalRows(),CrsMatrices_[i]->NumGlobalCols());
-    //    printf("%d %d/%d %d/%d\n",i,CrsMatrices_[i]->RangeMap().MinAllGID(),CrsMatrices_[i]->RangeMap().MaxAllGID(),
-    //           CrsMatrices_[i]->DomainMap().MinAllGID(),CrsMatrices_[i]->DomainMap().MaxAllGID());
     CrsMatrices_[i]->Apply(*MV[i%2],*MV[(i+1)%2]);
-    //    printf("[%d] MCRS: matvec complete\n",Comm_->MyPID());
   }/*end for*/
 
   /* Final matvec */
-  //  printf("[%d] MCRS: Matvec %d / %d \n",Comm_->MyPID(),0,NumMatrices_);  
   CrsMatrices_[0]->Apply(*MV[0],Y);    
 
   /* Cleanup */
@@ -150,7 +131,7 @@ int ML_Epetra::Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply(const Epetra_CrsMat
   ML_Comm_Create(&comm);
   ML_Operator *C_;
   int rv=MatrixMatrix_Multiply(A,comm,&C_);
-  Epetra_CrsMatrix_Wrap_ML_Operator(C_,*Comm_,*RangeMap_,C,Copy);
+  Epetra_CrsMatrix_Wrap_ML_Operator(C_,*Comm_,*RangeMap_,C,Copy);//,A.IndexBase());
   ML_Operator_Destroy(&C_);
   ML_Comm_Destroy(&comm);
   return rv;

@@ -15,16 +15,22 @@
 #define RefMaxwellPreconditioner ML_RMP
 //hax
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)  && defined(HAVE_ML_IFPACK)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)  
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "ml_RefMaxwell_11_Operator.h"
 #include "ml_Preconditioner.h"
-#include "ml_MultiLevelPreconditioner.h"//HAQ
-#include "Ifpack_Preconditioner.h"
+#include "ml_MultiLevelPreconditioner.h"
 
+#ifdef HAVE_ML_IFPACK
+#include "Ifpack_Preconditioner.h"
+#endif
+
+#ifdef HAVE_ML_EPETRAEXT
+#include "EpetraExt_SolverMap_CrsMatrix.h"
+#endif
 
 namespace ML_Epetra
 {
@@ -174,6 +180,28 @@ namespace ML_Epetra
     //! Matrix: D0' M1(1) D0
     Epetra_CrsMatrix * TMT_Agg_Matrix_;
 
+
+#ifdef HAVE_ML_EPETRAEXT
+    //! Structure for compatibility between Epetra and ML column maps.
+    EpetraExt::CrsMatrix_SolverMap SM_Matrix_Trans_;
+    //! Structure for compatibility between Epetra and ML column maps.    
+    EpetraExt::CrsMatrix_SolverMap D0_Matrix_Trans_;
+    //! Structure for compatibility between Epetra and ML column maps.    
+    EpetraExt::CrsMatrix_SolverMap D0_Clean_Matrix_Trans_;
+    //! Structure for compatibility between Epetra and ML column maps.    
+    EpetraExt::CrsMatrix_SolverMap Ms_Matrix_Trans_;
+    //! Structure for compatibility between Epetra and ML column maps.
+    EpetraExt::CrsMatrix_SolverMap M0inv_Matrix_Trans_;
+    //! Structure for compatibility between Epetra and ML column maps.    
+    EpetraExt::CrsMatrix_SolverMap M1_Matrix_Trans_;
+    //! Structure for compatibility between Epetra and ML column maps.   
+    EpetraExt::CrsMatrix_SolverMap TMT_Matrix_Trans_;
+    //! Structure for compatibility between Epetra and ML column maps.
+    EpetraExt::CrsMatrix_SolverMap TMT_Agg_Matrix_Trans_;    
+#endif
+
+
+    
     //! Dirichelt Edges
     int* BCrows; 
     int numBCrows;

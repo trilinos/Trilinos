@@ -81,22 +81,24 @@ void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx){
 void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of) {
   if(A.Comm().NumProc()==1){
     int MaxNumIndices = A.MaxNumEntries();
-    int* Indices  = new int[MaxNumIndices];
-    double* Values = new double[MaxNumIndices];
+    int* Indices;// = new int[MaxNumIndices];
+    double* Values; //= new double[MaxNumIndices];
     int NumIndices;
     int i, j,NumMyRows=A.NumMyRows();
     FILE *f=fopen(of,"w");  
     for (i=0; i<NumMyRows; i++) {
       int Row = A.GRID(i); // Get global row number
-      A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, Values, Indices);      
+      //      A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, Values, Indices);      
+      A.ExtractMyRowView(i, NumIndices, Values, Indices);      
       for (j = 0; j < NumIndices ; j++)
-        fprintf(f,"%8d %8d %22.16e\n",Row,Indices[j],Values[j]);   
+        fprintf(f,"%8d %8d %22.16e\n",Row,A.GCID(Indices[j]),Values[j]);   
     }/*end for*/ 
     fclose(f);
+    //  delete [] Indices;
+    //  delete [] Values;
   }/*end if*/
   else
-
-  EpetraExt::RowMatrixToMatlabFile(of,A);      
+    EpetraExt::RowMatrixToMatlabFile(of,A);      
 }/*end Epetra_CrsMatrix_Print*/
 
 void IVOUT(const Epetra_IntVector & A, char *of){
@@ -121,10 +123,14 @@ void IVOUT(const Epetra_IntVector & A, char *of){
   }/*end for*/
 }/*end MultiVectorToMatlabFile*/
 
-//#else
-//extern void MVOUT (const Epetra_MultiVector & A, ostream & os);//HAQ
-//extern void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx);//HAQ
-//extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os);//HAQ
+
+void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname){
+  ML_Operator_Print(ML,fname);
+  //  Epetra_CrsMatrix *Temp_;
+  //  Epetra_CrsMatrix_Wrap_ML_Operator(ML,Comm,Map,&Temp_,View);
+  //  Epetra_CrsMatrix_Print(*Temp_,fname);
+  //  delete Temp_;
+}
 #endif
 
 
@@ -140,7 +146,7 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
                                                               const bool ComputePrec):
   ML_Preconditioner(),SM_Matrix_(&SM_Matrix),D0_Matrix_(0), D0_Clean_Matrix_(&D0_Clean_Matrix),Ms_Matrix_(&Ms_Matrix),
   M0inv_Matrix_(&M0inv_Matrix),M1_Matrix_(&M1_Matrix),TMT_Matrix_(0),TMT_Agg_Matrix_(0),
-  Diagonal_(0),Operator11_(0),BCrows(0),numBCrows(0),EdgePC(0),NodePC(0),HasOnlyDirichletNodes(false)
+  Diagonal_(0),BCrows(0),numBCrows(0),HasOnlyDirichletNodes(false),Operator11_(0),EdgePC(0),NodePC(0),PreEdgeSmoother(0),PostEdgeSmoother(0)
 {
   /* Set the Epetra Goodies */
   Comm_ = &(SM_Matrix_->Comm());
@@ -185,30 +191,10 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 
   /* Find the Dirichlet Rows (using SM_Matrix_) and columns (using D0_Clean_Matrix_) */
   BCrows=FindLocalDiricheltRowsFromOnesAndZeros(*SM_Matrix_,numBCrows);
-  Epetra_IntVector * BCnodes=FindLocalDirichletColumnsFromRows(BCrows,numBCrows,*D0_Clean_Matrix_);
-   
-#ifdef STUFF_WE_PROBABLY_DONT_NEED
-  /* Convert to Dirichlet node list */
-  int Nn=BCnodes->MyLength();
-  int *BCnodes_int= new int[Nn];
-  int numBCnodes=0;
-  for(int i=0;i<Nn;i++)
-    if((*BCnodes)[i]) {
-      int cid=D0_Clean_Matrix_->GCID(i);
-      int lid=NodeMap_->LID(cid);
-      if(cid==0) fprintf(stderr,"[%d] Error gcid %d map fails\n",Comm_->MyPID(),i);
-      else if(lid==-1) fprintf(stderr,"[%d] Error nlid %d/%d map fails\n",Comm_->MyPID(),i,cid);      
-      BCnodes_int[numBCnodes++]=lid;
-    }
-  for(int i=0;i<numBCnodes;i++){
-    if(BCnodes_int[i] == -1) fprintf(stderr,"[%d] Error row %d/%d map fails\n",Comm_->MyPID(),i,BCnodes_int[i]);
-  }
-#else
+  Epetra_IntVector * BCnodes=FindLocalDirichletColumnsFromRows(BCrows,numBCrows,*D0_Clean_Matrix_);   
   int Nn=BCnodes->MyLength();
   int numBCnodes=0;
   for(int i=0;i<Nn;i++) if((*BCnodes)[i]) numBCnodes++;
-#endif
-
 
   /* Sanity Check: We have at least some Dirichlet nodes */
   /* NTS: This should get fixed later for robustness */
@@ -249,8 +235,6 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   //EpetraExt::MatrixMatrix::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,temp2);
   //  EpetraExt::MatrixMatrix::Multiply(*D0_Matrix_,true,temp2,false,*TMT_Agg_Matrix_);
   Remove_Zeroed_Rows(*TMT_Agg_Matrix_);
-
-
   TMT_Agg_Matrix_->OptimizeStorage();
 
   // NTS: Should I be building w/ D0_Clean for aggregation?  
@@ -263,10 +247,13 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   
   // NTS: SHOULD M0 Be nuked in here???
 
+  printf("numBCrows=%d\n",numBCrows);
+  
   /* Boundary nuke the edge matrices */
   Apply_OAZToMatrix(BCrows,numBCrows,*Ms_Matrix_);
   Apply_OAZToMatrix(BCrows,numBCrows,*M1_Matrix_);    
 
+  
   /* DEBUG: Output matrices */
 #ifndef NO_OUTPUT
   Epetra_CrsMatrix_Print(*SM_Matrix_,"sm_matrix.dat");
@@ -277,9 +264,19 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   
   /* Cleanup from the Boundary Conditions */
   delete BCnodes; 
-#ifdef STUFF_WE_PROBABLY_DONT_NEED
-  delete [] BCnodes_int;
+
+#ifdef HAVE_ML_EPETRAEXT
+  /* Fix the solver maps for ML / Epetra compatibility */
+  SM_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*SM_Matrix_,SM_Matrix_Trans_,"SM",true));
+  D0_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Matrix_,D0_Matrix_Trans_,"D0",true));
+  D0_Clean_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*D0_Clean_Matrix_,D0_Clean_Matrix_Trans_,"D0Clean",true));
+  Ms_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*Ms_Matrix_,Ms_Matrix_Trans_,"Ms",true));
+  M1_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M1_Matrix_,M1_Matrix_Trans_,"M1",true));
+  M0inv_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M0inv_Matrix_,M0inv_Matrix_Trans_,"M0inv",true));
+  TMT_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Matrix_,TMT_Matrix_Trans_,"TMT",true));
+  TMT_Agg_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Agg_Matrix_,TMT_Agg_Matrix_Trans_,"TMTA",true));
 #endif
+
   
   /* Build the (1,1) Block Operator */
   Operator11_ = new ML_RefMaxwell_11_Operator(*SM_Matrix_,*D0_Matrix_,*M0inv_Matrix_,*M1_Matrix_);
@@ -520,10 +517,8 @@ double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector&
 int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_212(const Epetra_MultiVector& B, Epetra_MultiVector& X) const
 {
   int NumVectors=B.NumVectors();
-  double r0,r1,r2,r3,r4;
+  double r0=1,r1=1,r2=1,r3=1,r4=1;
 
-  double norm;
-  
   MVOUT2(B,"b",c_iteration);//DEBUG
 
   r0=cms_compute_residual(SM_Matrix_,B,X);//DEBUG  
@@ -603,7 +598,7 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const E
   Epetra_MultiVector TempN2(*NodeMap_,NumVectors,true);
   Epetra_MultiVector Resid(B);
   
-  double r0,r1,r,r2,r3,r4,r5;
+  double r0=1,r1=1,r2=1,r3=1,r4=1,r5=1;
   r0=cms_compute_residual(SM_Matrix_,B,X);//DEBUG
 
   MVOUT2(X,"a-x0",c_iteration);//DEBUG 

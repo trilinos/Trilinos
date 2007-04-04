@@ -13,7 +13,7 @@
 
 #ifndef ML_EPETRA_MULTI_CRS_MATRIX_H
 #define ML_EPETRA_MULTI_CRS_MATRIX_H
-#if defined(HAVE_ML_EPETRA)
+#if defined(HAVE_ML_EPETRA) 
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Operator.h"
@@ -125,7 +125,7 @@ private:
 
   //! Pointers to the CRS matrices.  They are applied from right to left
   Epetra_CrsMatrix ** CrsMatrices_;
-  
+
   //! Label for this object
   char* Label_;
 

@@ -25,6 +25,7 @@
 #include "Epetra_Multi_CrsMatrix.h"
 #include "EpetraExt_Reindex_CrsMatrix.h"
 #include "EpetraExt_Transpose_RowMatrix.h"
+#include "EpetraExt_SolverMap_CrsMatrix.h"
 namespace ML_Epetra{
 
   //#define USE_ML_TRANSPOSE
@@ -142,6 +143,7 @@ private:
   //! Matrix: D0^T
   Epetra_CrsMatrix * D0T_Matrix_;
   EpetraExt::RowMatrix_Transpose * D0_Matrix_Transposer_;
+  EpetraExt::CrsMatrix_SolverMap D0T_Matrix_Trans_;
 #endif
 
   

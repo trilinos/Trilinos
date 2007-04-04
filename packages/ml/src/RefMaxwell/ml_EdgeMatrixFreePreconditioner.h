@@ -25,6 +25,9 @@
 
 #include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"//HAQ
+#ifdef HAVE_ML_EPETRAEXT
+#include "EpetraExt_SolverMap_CrsMatrix.h"
+#endif
 
 class Ifpack_Chebyshev;// wha??
 
@@ -160,8 +163,11 @@ namespace ML_Epetra
     const int numBCedges_;
     
     //! Prolongator
-    Epetra_CrsMatrix * Prolongator;
-
+    Epetra_CrsMatrix * Prolongator_;
+#ifdef HAVE_ML_EPETRAEXT
+    EpetraExt::CrsMatrix_SolverMap ProlongatorColMapTrans_;
+#endif
+    
     //! Inverse Diagonal
     Epetra_Vector * InvDiagonal_;
 
