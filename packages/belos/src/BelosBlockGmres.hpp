@@ -577,7 +577,6 @@ namespace Belos {
     // Set new parameter list if one is passed in.
     if (pl.get() != 0 )  
       _pl = pl;
-    _length = _pl->get("Length",25);
     _blocksize = 0;
     _restartiter = 0; 
     _totaliter = 0;
@@ -587,6 +586,11 @@ namespace Belos {
     //
     if (_pl->isParameter("Variant"))
       _flexible = (Teuchos::getParameter<std::string>(*_pl, "Variant")=="Flexible");
+    _length = _pl->get("Length", 25);
+    if (_pl->isParameter("Ortho Type"))
+      _orthoType = Teuchos::getParameter<std::string>(*_pl,"Ortho Type");
+    if (_pl->isParameter("Restart Timers"))
+      _restartTimers = Teuchos::getParameter<bool>(*_pl,"Restart Timers"); 
     return 0;
   }
 
