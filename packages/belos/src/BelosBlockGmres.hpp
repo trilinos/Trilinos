@@ -260,6 +260,13 @@ namespace Belos {
     if (_pl->isParameter("Ortho Type")) {
       _orthoType = Teuchos::getParameter<std::string>(*_pl, "Ortho Type" );
     }
+    //
+    // Create the orthogonalization manager.
+    //
+    if (_orthoType=="ICGS")
+      _ortho = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>() );
+    else 
+      _ortho = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>() );
 
     // Check the parameter list to see if the timers should be restarted each solve.
     if (_pl->isParameter("Restart Timers")) {
@@ -356,13 +363,6 @@ namespace Belos {
     bool restart_flg = true;
     Teuchos::LAPACK<int, ScalarType> lapack;
     Teuchos::BLAS<int, ScalarType> blas;
-    //
-    // Create the orthogonalization manager.
-    //
-    if (_orthoType=="ICGS")
-      _ortho = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>() );
-    else 
-      _ortho = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>() );
     //
     // Obtain the output stream from the OutputManager.
     //
@@ -584,13 +584,23 @@ namespace Belos {
     //
     // If there is a "Variant" parameter in the list, check to see if it's "Flexible" (i.e. flexible GMRES)
     //
-    if (_pl->isParameter("Variant"))
+    if (_pl->isParameter("Variant")) {
       _flexible = (Teuchos::getParameter<std::string>(*_pl, "Variant")=="Flexible");
+    }
     _length = _pl->get("Length", 25);
-    if (_pl->isParameter("Ortho Type"))
-      _orthoType = Teuchos::getParameter<std::string>(*_pl,"Ortho Type");
-    if (_pl->isParameter("Restart Timers"))
+    if (_pl->isParameter("Ortho Type")) {
+      std::string newOrthoType = Teuchos::getParameter<std::string>(*_pl,"Ortho Type");
+      if (newOrthoType != _orthoType) {
+        if (newOrthoType=="ICGS")
+          _ortho = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>() );
+        else 
+          _ortho = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>() );
+        _orthoType = newOrthoType;
+      }
+    }
+    if (_pl->isParameter("Restart Timers")) {
       _restartTimers = Teuchos::getParameter<bool>(*_pl,"Restart Timers"); 
+    }
     return 0;
   }
 
