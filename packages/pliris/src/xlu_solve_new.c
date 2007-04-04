@@ -183,8 +183,13 @@ void XLU_SOLVE_ (DATA_TYPE *matrix, int *matrix_size, int *num_procsr,
   factor(mat);
   if (nrhs > 0) {
 
+    /* Delele Unneccesary temp variables  */
+
+   
+    free(row2);
+
     /* Perform the backsolve  */
-      free(row2);
+     
       back_solve6(mat, rhs);
 
     /* Permute the results -- undo the torus map    */
@@ -247,6 +252,8 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
   DATA_TYPE *temp_s;
   DATA_TYPE *rhs_temp;
 
+  DATA_TYPE *my_rhs_temp;
+
   
    my_rhs=*num_my_rhs;
 
@@ -265,6 +272,13 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
 	exit(-1);
     }
 
+    
+    my_rhs_temp = (DATA_TYPE *) malloc((my_rows*(my_rhs+1)) * sizeof(DATA_TYPE));
+
+    if (my_rhs_temp == NULL) {
+	fprintf(stderr, "Node %d: Out of memory for rhs_temp vector\n", me);
+	exit(-1);
+    }
 
 
   
@@ -324,11 +338,11 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
 
         if( dest == me ) {
 
-         XCOPY(my_rhs, ptr1, my_rows, (row1 + next), one);
+         XCOPY(my_rhs, ptr1, my_rows, (my_rhs_temp + next), one);
 #ifdef COMPLEX
-         (*(row1+ next + my_rhs)).r = local_index + 0.1;
+         (*(my_rhs_temp+ next + my_rhs)).r = local_index + 0.1;
 #else
-         *(row1+ next + my_rhs) = local_index + 0.1;
+         *(my_rhs_temp+ next + my_rhs) = local_index + 0.1;
 #endif
           change_nosend++;
 
@@ -386,18 +400,18 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
     inc = 0;
     for (i = 0; i < change_nosend; i++) {
 #ifdef COMPLEX
-      local_index = (*(row1+next+my_rhs)).r;
+      local_index = (*(my_rhs_temp+next+my_rhs)).r;
 #else
-      local_index = *(row1+next+my_rhs);
+      local_index = *(my_rhs_temp+next+my_rhs);
 #endif
-      XCOPY(my_rhs,(row1 + next),one,(vec+local_index),my_rows);
+      XCOPY(my_rhs,(my_rhs_temp + next),one,(vec+local_index),my_rows);
        inc++;
        next = inc * (my_rhs+1);
     }
     
     
   }
-  
+  free(my_rhs_temp);
   free(rhs_temp);
   free(temp_s);
 } 
