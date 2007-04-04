@@ -156,7 +156,31 @@ void BelosLinearOpWithSolve<Scalar>::uninitialize(
   ,ESupportSolveUse                                                     *supportSolveUse
   )
 {
-  TEST_FOR_EXCEPT(true); // ToDo: Implement when needed!
+  if(lp) *lp = lp_;
+  if(adjustableBlockSize) *adjustableBlockSize = adjustableBlockSize_;
+  if(maxNumberOfKrylovVectors) *maxNumberOfKrylovVectors = maxNumberOfKrylovVectors_;
+  if(gmresPL) *gmresPL = gmresPL_;
+  if(resNormST) *resNormST = resNormST_;
+  if(iterativeSolver) *iterativeSolver = iterativeSolver_;
+  if(outputManager) *outputManager = outputManager_;
+  if(fwdOpSrc) *fwdOpSrc = fwdOpSrc_;
+  if(prec) *prec = prec_;
+  if(isExternalPrec) *isExternalPrec = isExternalPrec_;
+  if(approxFwdOpSrc) *approxFwdOpSrc = approxFwdOpSrc_;
+  if(supportSolveUse) *supportSolveUse = supportSolveUse_;
+
+  lp_ = Teuchos::null;
+  adjustableBlockSize_ = false;
+  maxNumberOfKrylovVectors_ = 0;
+  gmresPL_ = Teuchos::null;
+  resNormST_ = Teuchos::null;
+  iterativeSolver_ = Teuchos::null;
+  outputManager_ = Teuchos::null;
+  fwdOpSrc_ = Teuchos::null;
+  prec_ = Teuchos::null;
+  isExternalPrec_ = false;
+  approxFwdOpSrc_ = Teuchos::null;
+  supportSolveUse_ = SUPPORT_SOLVE_UNSPECIFIED;
 }
 
 // Overridden from LinearOpBase
