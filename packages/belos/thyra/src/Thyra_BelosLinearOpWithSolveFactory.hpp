@@ -28,10 +28,6 @@ const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverType_name = "Solv
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverType_default = "GMRES";
 template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::OrthoType_name = "Ortho Type";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::OrthoType_default = "DGKS";
-template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::MaxIters_name = "Max Iters";
 template<class Scalar>
 const int         BelosLinearOpWithSolveFactory<Scalar>::MaxIters_default = 400;
@@ -52,6 +48,10 @@ const std::string BelosLinearOpWithSolveFactory<Scalar>::DefaultRelResNorm_name 
 template<class Scalar>
 const typename BelosLinearOpWithSolveFactory<Scalar>::MagnitudeType
                   BelosLinearOpWithSolveFactory<Scalar>::DefaultRelResNorm_default = 1e-6;
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::OrthoType_name = "Ortho Type";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::OrthoType_default = "DGKS";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::Restart_Timers_name= "Restart Timers";
 template<class Scalar>
@@ -333,17 +333,17 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("BelosLinearOpWithSolveFactory"));
     validParamList->set(SolverType_name,SolverType_default);
-    validParamList->set(OrthoType_name,OrthoType_default);
     validParamList->set(MaxIters_name,MaxIters_default);
     validParamList->set(MaxRestarts_name,MaxRestarts_default);
     validParamList->set(BlockSize_name,BlockSize_default);
     validParamList->set(AdjustableBlockSize_name,AdjustableBlockSize_default);
     validParamList->set(DefaultRelResNorm_name,DefaultRelResNorm_default);
-    validParamList->set(Restart_Timers_name,Restart_Timers_default);
     Teuchos::ParameterList
       &gmresSL = validParamList->sublist(GMRES_name);
     gmresSL.set(GMRES_MaxNumberOfKrylovVectors_name,GMRES_MaxNumberOfKrylovVectors_default);
     gmresSL.set(GMRES_Variant_name,GMRES_Variant_default);
+    gmresSL.set(OrthoType_name,OrthoType_default);
+    gmresSL.set(Restart_Timers_name,Restart_Timers_default);
     Teuchos::ParameterList
       &outputterSL = validParamList->sublist(Outputter_name);
     outputterSL.set(Outputter_OutputFrequency_name,Outputter_OutputFrequency_default);

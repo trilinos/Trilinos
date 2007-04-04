@@ -36,10 +36,6 @@ public:
   static const std::string  SolverType_name;
   /** \brief . */           
   static const std::string  SolverType_default;
-  /** \brief . */
-  static const std::string  OrthoType_name;
-  /** \brief . */           
-  static const std::string  OrthoType_default;
   /** \brief . */           
   static const std::string  MaxIters_name;
   /** \brief . */           
@@ -60,6 +56,10 @@ public:
   static const std::string  DefaultRelResNorm_name;
   /** \brief . */
   static const MagnitudeType DefaultRelResNorm_default;
+  /** \brief . */
+  static const std::string  OrthoType_name;
+  /** \brief . */           
+  static const std::string  OrthoType_default;
   /** \brief . */           
   static const std::string  Restart_Timers_name;
   /** \brief . */           
