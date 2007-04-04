@@ -40,12 +40,16 @@ namespace Teuchos {
 #include "ml_include.h"
 #include <iostream>
 
+#ifdef HAVE_ML_EPETRAEXT
+#include "EpetraExt_SolverMap_CrsMatrix.h"
+#endif
+
+
 #ifndef ML_CPP
 extern "C" {
 #endif
 
 #include "Epetra_DataAccess.h"
-
   
 // ====================================================================== 
 //! Matrix-vector function for Epetra matrices.
@@ -279,6 +283,23 @@ namespace ML_Epetra{
   //! Drops a 1 on the diagonal of zero'd our rows
   void Remove_Zeroed_Rows(const Epetra_CrsMatrix & Matrix);
 
+
+  //! Transforms Epetra matrix column map (if necessary) to be compatible with
+  /*! how ML handles column indices.  Any matrix that cannot be dynamically
+      cast to an Epetra_CrsMatrix will not be changed.
+
+      \param A - (In) Matrix that is to be transformed.
+      \param transform - (In) EpetraExt widget that does the transformation.
+      \param matrixName - (In) Optional label for the incoming matrix.
+   */
+
+#ifdef HAVE_ML_EPETRAEXT
+  Epetra_RowMatrix* ModifyEpetraMatrixColMap( const Epetra_RowMatrix &A,
+                                   EpetraExt::CrsMatrix_SolverMap &transform,
+                                   const char* matrixName=0, bool verbose=false);
+#endif
+
+  
 }
 
 

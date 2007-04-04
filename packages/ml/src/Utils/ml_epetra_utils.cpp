@@ -40,6 +40,7 @@
 #include "Teuchos_ParameterList.hpp"
 #endif
 
+
 using namespace std;
 
 
@@ -1221,6 +1222,34 @@ void ML_Epetra::Apply_BCsToGradient(
   delete [] dirichletEdges;
 } //Apply_BCsToGradient
 
+
+
+// ============================================================================
+
+#ifdef HAVE_ML_EPETRAEXT
+Epetra_RowMatrix* ML_Epetra::ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
+                         EpetraExt::CrsMatrix_SolverMap &transform,
+                         const char *matrixLabel, bool verbose)
+{
+    Epetra_RowMatrix *B;
+    Epetra_CrsMatrix *Acrs;
+
+    const Epetra_CrsMatrix *Atmp = dynamic_cast<const Epetra_CrsMatrix*>(&A);
+    if (Atmp != 0) {
+      Acrs = const_cast<Epetra_CrsMatrix*>(Atmp);
+      B = &(transform(*Acrs));
+    }
+    else B = const_cast<Epetra_RowMatrix *>(&A);
+
+    if (verbose) 
+      if (B != &A) printf("** Transforming column map of %s matrix\n", matrixLabel);
+      else printf("** Leaving column map of %s matrix unchanged\n",matrixLabel);
+
+    return B;
+} //ModifyEpetraMatrixColMap()
+#endif
+
+
 // ====================================================================== 
 
 int ML_Epetra_CrsGraph_matvec(ML_Operator *data, int in, double *p,
@@ -1941,7 +1970,7 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   Epetra_Map  rangemap( -1, osize, &global_osize_as_int[0], base, EpetraComm ) ; 
   Epetra_Map  domainmap( -1, isize, &global_isize_as_int[0], base, EpetraComm ) ; 
   
-  CrsMatrix = new Epetra_CrsMatrix( Copy, rangemap, 0 ); 
+  CrsMatrix = new Epetra_CrsMatrix( Copy, rangemap, base ); 
   
   ML_exchange_bdry(&global_isize[0],Amat->getrow->pre_comm, 
  		 Amat->invec_leng,comm,ML_OVERWRITE,NULL);
