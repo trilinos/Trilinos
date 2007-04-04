@@ -35,7 +35,31 @@
 
 namespace Thyra {
 
+
 // Overridden from Teuchos::Describable
+
+
+template<class RangeScalar, class DomainScalar>
+std::string LinearOpDefaultBase<RangeScalar,DomainScalar>::description() const
+{
+  std::ostringstream oss;
+  const Teuchos::RefCountPtr<const VectorSpaceBase<RangeScalar> >
+    range = this->range();
+  const Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> >
+    domain = this->domain();
+  oss << Teuchos::Describable::description();
+  if(!range.get()) {
+    oss << "{range=NULL,domain=NULL}"; 
+  }
+  else {
+    const Index dimDomain = domain->dim(), dimRange = range->dim();
+    oss
+      << "{rangeDim=" << dimRange
+      << ",domainDim=" << dimDomain << "}";
+  }
+  return oss.str();
+}
+
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpDefaultBase<RangeScalar,DomainScalar>::describe(
@@ -45,6 +69,7 @@ void LinearOpDefaultBase<RangeScalar,DomainScalar>::describe(
 {
   describeLinearOp(*this,out,verbLevel);
 }
+
 
 }	// end namespace Thyra
 

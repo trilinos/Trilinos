@@ -96,6 +96,9 @@ public:
     ,RefCountPtr<const ParameterEntryValidator> const& validator = null
     );
 
+  /*! \brief Set the documentation string. */
+  void setDocString(const std::string &docString);
+
   //! Create a parameter entry that is an empty list.
   ParameterList& setList(
     bool isDefault = false

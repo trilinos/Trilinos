@@ -235,14 +235,20 @@ DefaultRealLinearSolverBuilder::getValidParameters() const
         + LinearSolverTypes_name + "\"").c_str()
       ,lowsfValidator
       );
-    Teuchos::RefCountPtr<Teuchos::ParameterList>
-      linearSolverTypesSL = sublist(validParamList,LinearSolverTypes_name);
+    Teuchos::ParameterList &linearSolverTypesSL = validParamList->sublist(
+      LinearSolverTypes_name,false,
+      "Sublists for each of the linear solver types set using the parameter\n"
+      "\"" + LinearSolverType_name + "\".  Note that the options for each\n"
+      "linear solver type given below will only be used if linear solvers\n"
+      "of that type are created.  It is fine to list parameter sublists for\n"
+      "linear solver types that are not used."
+      );
     for( int i = 0; i < static_cast<int>(lowsfArray_.size()); ++i ) {
       const std::string
         &lsname = validLowsfNames_[i];
       const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
         lowsf = lowsfArray_[i]->create();
-      linearSolverTypesSL->sublist(lsname).setParameters(*lowsf->getValidParameters());
+      linearSolverTypesSL.sublist(lsname).setParameters(*lowsf->getValidParameters());
     }
     // Preconditioner Type
     pfValidator = Teuchos::rcp(
@@ -259,14 +265,20 @@ DefaultRealLinearSolverBuilder::getValidParameters() const
         + PreconditionerTypes_name + "\"").c_str()
       ,pfValidator
       );
-    Teuchos::RefCountPtr<Teuchos::ParameterList>
-      precTypesSL = sublist(validParamList,PreconditionerTypes_name);
+    Teuchos::ParameterList &precTypesSL = validParamList->sublist(
+        PreconditionerTypes_name,false,
+        "Sublists for each of the preconditioner types set using the parameter\n"
+        "\"" + PreconditionerType_name + "\".  Note that the options for each\n"
+        "preconditioner type given below will only be used if preconditioners\n"
+        "of that type are created.  It is fine to list parameter sublists for\n"
+        "preconditioner types that are not used."
+        );
     for( int i = 0; i < static_cast<int>(pfArray_.size()); ++i ) {
       const std::string
         &pfname = validPfNames_[i+1]; // "None" is the 0th entry!
       const Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
         pf = pfArray_[i]->create();
-      precTypesSL->sublist(pfname).setParameters(*pf->getValidParameters());
+      precTypesSL.sublist(pfname).setParameters(*pf->getValidParameters());
     }
     validParamList_ = validParamList;
   }

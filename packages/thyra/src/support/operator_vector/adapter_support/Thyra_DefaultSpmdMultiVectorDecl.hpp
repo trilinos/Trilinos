@@ -31,7 +31,9 @@
 
 #include "Thyra_SpmdMultiVectorBaseDecl.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Efficient concrete implementation subclass for SPMD multi-vectors.
  *
@@ -66,16 +68,16 @@ public:
 
   /// Calls <tt>initialize()</tt>
   DefaultSpmdMultiVector(
-    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >          &spmdRangeSpace
-    ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >   &domainSpace
+    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
+    const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace
     );
 
   /// Calls <tt>initialize()</tt>
   DefaultSpmdMultiVector(
-    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >          &spmdRangeSpace
-    ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >   &domainSpace
-    ,const Teuchos::RefCountPtr<Scalar>                                     &localValues
-    ,const Index                                                            leadingDim
+    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
+    const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
+    const Teuchos::RefCountPtr<Scalar> &localValues,
+    const Index leadingDim
     );
 
   /** \brief Initialize only with vector spaces where storage is allocated
@@ -95,8 +97,8 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
-    ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
+    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
+    const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace
     );
 
   /** \brief Initialize using externally allocated storage.
@@ -126,10 +128,10 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
-    ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
-    ,const Teuchos::RefCountPtr<Scalar>                                    &localValues
-    ,const Index                                                           leadingDim
+    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
+    const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
+    const Teuchos::RefCountPtr<Scalar> &localValues,
+    const Index leadingDim
     );
 
   /** \brief Set to an uninitialized state.
@@ -138,18 +140,12 @@ public:
    * <li><tt>this->spmdSpace().get() == NULL</tt>.
    */
   void uninitialize(
-    Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >         *spmdRangeSpace = NULL
-    ,Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  *domainSpace    = NULL
-    ,Teuchos::RefCountPtr<Scalar>                                    *localValues    = NULL
-    ,Index                                                           *leadingDim     = NULL
+    Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > *spmdRangeSpace = NULL,
+    Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > *domainSpace = NULL,
+    Teuchos::RefCountPtr<Scalar> *localValues = NULL,
+    Index *leadingDim = NULL
     );
 
-  //@}
-
-  /** @name Overridden form Teuchos::Describable */
-  //@{
-  /** \brief . */
-  std::string description() const;
   //@}
 
   /** @name Overridden from EuclideanLinearOpBase */
@@ -195,10 +191,10 @@ private:
   // ///////////////////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >         spmdRangeSpace_;
-  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >   domainSpace_;
-  Teuchos::RefCountPtr<Scalar>                                     localValues_;
-  Index                                                            leadingDim_;
+  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > spmdRangeSpace_;
+  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > domainSpace_;
+  Teuchos::RefCountPtr<Scalar> localValues_;
+  Index leadingDim_;
   
   // ///////////////////////////////////////
   // Private member functions
@@ -209,6 +205,8 @@ private:
   
 }; // end class DefaultSpmdMultiVector
 
+
 } // end namespace Thyra
+
 
 #endif // THYRA_Spmd_MULTI_VECTOR_STD_DECL_HPP

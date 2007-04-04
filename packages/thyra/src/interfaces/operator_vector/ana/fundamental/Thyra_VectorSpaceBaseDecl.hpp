@@ -32,7 +32,9 @@
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Teuchos_Describable.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Helper function that clones a <tt>VectorSpaceBase</tt> object if
  * the <tt>RefCountPtr</tt> does not have ownership.
@@ -43,6 +45,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
 makeHaveOwnership( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs );
 
+
 /** \brief Create a vector member from the vector space.
  *
  * Calls <tt>VectorSpaceBase::createMember()</tt> on <tt>vs</tt> but
@@ -52,7 +55,11 @@ makeHaveOwnership( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &v
  */
 template<class Scalar>
 Teuchos::RefCountPtr< VectorBase<Scalar> >
-createMember( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs );
+createMember(
+  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+  const std::string &label=""
+  );
+
 
 /** \brief Calls <tt>createMember(Teuchos::rcp(&vs,false))</tt>.
  *
@@ -60,7 +67,8 @@ createMember( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs );
  */
 template<class Scalar>
 Teuchos::RefCountPtr< VectorBase<Scalar> >
-createMember( const VectorSpaceBase<Scalar> &vs );
+createMember( const VectorSpaceBase<Scalar> &vs, const std::string &label="" );
+
 
 /** \brief Create a set of vector members (a <tt>MultiVectorBase</tt>) from the vector space.
  *
@@ -71,7 +79,11 @@ createMember( const VectorSpaceBase<Scalar> &vs );
  */
 template<class Scalar>
 Teuchos::RefCountPtr< MultiVectorBase<Scalar> >
-createMembers( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, int numMembers );
+createMembers(
+  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, int numMembers,
+  const std::string &label=""
+  );
+
 
 /** \brief Calls <tt>createMembers(Teuchos::rcp(&vs,false),numMembers)</tt>.
  *
@@ -79,7 +91,11 @@ createMembers( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, i
  */
 template<class Scalar>
 Teuchos::RefCountPtr< MultiVectorBase<Scalar> >
-createMembers( const VectorSpaceBase<Scalar> &vs, int numMembers );
+createMembers(
+  const VectorSpaceBase<Scalar> &vs, int numMembers,
+  const std::string &label=""
+  );
+
 
 /** \brief Create a vector member that is a non-<tt>const</tt> view of raw data.
  *
@@ -90,7 +106,12 @@ createMembers( const VectorSpaceBase<Scalar> &vs, int numMembers );
  */
 template<class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >
-createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubVectorView<Scalar> &raw_v );
+createMemberView(
+  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+  const RTOpPack::SubVectorView<Scalar> &raw_v,
+  const std::string &label=""
+  );
+
 
 /** \brief Calls <tt>createMemberView(Teuchos::rcp(&vs,false),raw_v)</tt>.
  *
@@ -98,7 +119,12 @@ createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs
  */
 template<class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >
-createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubVectorView<Scalar> &raw_v );
+createMemberView(
+  const VectorSpaceBase<Scalar> &vs,
+  const RTOpPack::SubVectorView<Scalar> &raw_v,
+  const std::string &label=""
+  );
+
 
 /** \brief Create a vector member that is a <tt>const</tt> view of raw data.
  *
@@ -109,7 +135,12 @@ createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubVectorVi
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
-createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::ConstSubVectorView<Scalar> &raw_v );
+createMemberView(
+  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+  const RTOpPack::ConstSubVectorView<Scalar> &raw_v,
+  const std::string &label=""
+  );
+
 
 /** \brief Calls <tt>createMemberView(Teuchos::rcp(&vs,false),raw_v)</tt>.
  *
@@ -117,7 +148,12 @@ createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
-createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::ConstSubVectorView<Scalar> &raw_v );
+createMemberView(
+  const VectorSpaceBase<Scalar> &vs,
+  const RTOpPack::ConstSubVectorView<Scalar> &raw_v,
+  const std::string &label=""
+  );
+
 
 /** \brief Create a multi-vector member that is a non-<tt>const</tt> view of raw data.
  *
@@ -128,7 +164,12 @@ createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::ConstSubVec
  */
 template<class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
-createMembersView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubMultiVectorView<Scalar> &raw_mv );
+createMembersView(
+  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+  const RTOpPack::SubMultiVectorView<Scalar> &raw_mv,
+  const std::string &label=""
+  );
+
 
 /** \brief Calls <tt>createMembersView(Teuchos::rcp(&vs,false),raw_mv)</tt>.
  *
@@ -136,7 +177,12 @@ createMembersView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &v
  */
 template<class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
-createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubMultiVectorView<Scalar> &raw_mv );
+createMembersView(
+  const VectorSpaceBase<Scalar> &vs,
+  const RTOpPack::SubMultiVectorView<Scalar> &raw_mv,
+  const std::string &label=""
+  );
+
 
 /** \brief Create a multi-vector member that is a <tt>const</tt> view of raw data.
  *
@@ -147,7 +193,12 @@ createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubMultiVe
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
-createMembersView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv );
+createMembersView(
+  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+  const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv,
+  const std::string &label=""
+  );
+
 
 /** \brief Calls <tt>createMembersView(Teuchos::rcp(&vs,false),raw_mv)</tt>.
  *
@@ -155,7 +206,12 @@ createMembersView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &v
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
-createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv );
+createMembersView(
+  const VectorSpaceBase<Scalar> &vs,
+  const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv,
+  const std::string &label=""
+  );
+
 
 /** \brief Abstract interface for objects that represent a space for vectors.
  *
@@ -274,7 +330,10 @@ public:
    * <li><tt>X.domain()->isCompatible(*Y.domain())</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * </ul>
    */
-  virtual void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const = 0;
+  virtual void scalarProds(
+    const MultiVectorBase<Scalar>& X,
+    const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[]
+    ) const = 0;
 
   //@}
 
@@ -352,22 +411,44 @@ public:
   //@{
 
   friend Teuchos::RefCountPtr< VectorBase<Scalar> >
-  createMember<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs );
+  createMember<>( 
+    const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+    const std::string &label
+    );
 
   friend Teuchos::RefCountPtr< MultiVectorBase<Scalar> >
-  createMembers<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, int numMembers );
+  createMembers<>(
+    const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+    int numMembers, const std::string &label
+    );
 
   friend Teuchos::RefCountPtr<VectorBase<Scalar> >
-  createMemberView<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubVectorView<Scalar> &raw_v );
+  createMemberView<>(
+    const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+    const RTOpPack::SubVectorView<Scalar> &raw_v,
+    const std::string &label
+    );
 
   friend Teuchos::RefCountPtr<const VectorBase<Scalar> >
-  createMemberView<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::ConstSubVectorView<Scalar> &raw_v );
+  createMemberView<>(
+    const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+    const RTOpPack::ConstSubVectorView<Scalar> &raw_v,
+    const std::string &label
+    );
 
   friend Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
-  createMembersView<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubMultiVectorView<Scalar> &raw_mv );
+  createMembersView<>(
+    const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+    const RTOpPack::SubMultiVectorView<Scalar> &raw_mv,
+    const std::string &label
+    );
 
   friend Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
-  createMembersView<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv );
+  createMembersView<>(
+    const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+    const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv,
+    const std::string &label
+    );
 
   //@}
 
@@ -423,7 +504,8 @@ protected:
    * <tt>returnVal->range().get()==this</tt> does not have to be true but will
    * be in may cases.
    */
-  virtual Teuchos::RefCountPtr< MultiVectorBase<Scalar> > createMembers(int numMembers) const = 0;
+  virtual Teuchos::RefCountPtr< MultiVectorBase<Scalar> >
+  createMembers(int numMembers) const = 0;
 
   /** \brief Create a vector member that is a non-<tt>const</tt> view of raw vector data.
    *
@@ -450,7 +532,8 @@ protected:
    * that temporarily copies data into and out of a <tt>VectorBase</tt> object
    * using explicit vector access.
    */
-  virtual Teuchos::RefCountPtr<VectorBase<Scalar> > createMemberView( const RTOpPack::SubVectorView<Scalar> &raw_v ) const = 0;
+  virtual Teuchos::RefCountPtr<VectorBase<Scalar> >
+  createMemberView( const RTOpPack::SubVectorView<Scalar> &raw_v ) const = 0;
 
   /** \brief Create a vector member that is a <tt>const</tt> view of raw vector data.
    *
@@ -472,7 +555,8 @@ protected:
    * <li>See <tt>this->createMember()</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<const VectorBase<Scalar> > createMemberView( const RTOpPack::ConstSubVectorView<Scalar> &raw_v ) const = 0;
+  virtual Teuchos::RefCountPtr<const VectorBase<Scalar> >
+  createMemberView( const RTOpPack::ConstSubVectorView<Scalar> &raw_v ) const = 0;
 
   /** \brief Create a multi-vector member that is a non-<tt>const</tt> view of raw multi-vector data.
    *
@@ -497,7 +581,8 @@ protected:
    * implementation that temporarily copies data into and out of a
    * <tt>MultiVectorBase</tt> object using explicit vector access.
    */
-  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const = 0;
+  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const = 0;
 
   /** \brief Create a multi-vector member that is a <tt>const</tt> view of raw multi-vector data.
    *
@@ -519,7 +604,8 @@ protected:
    * <li>See <tt>this->createMember()</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const = 0;
+  virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+  createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const = 0;
 
   //@}
 

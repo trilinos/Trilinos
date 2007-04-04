@@ -59,6 +59,11 @@ ParameterEntry& ParameterEntry::operator=(const ParameterEntry& source)
   return *this;
 }
 
+void ParameterEntry::setDocString(const std::string &docString)
+{
+  docString_ = docString;
+}
+
 ParameterList& ParameterEntry::setList(bool isDefault, const std::string &docString)
 {
   val_ = ParameterList();

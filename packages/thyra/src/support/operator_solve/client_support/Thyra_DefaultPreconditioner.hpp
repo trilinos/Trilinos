@@ -237,7 +237,7 @@ template <class RangeScalar, class DomainScalar>
 std::string DefaultPreconditioner<RangeScalar,DomainScalar>::description() const
 {
   std::ostringstream oss;
-  oss << Teuchos::typeName(*this) << "{";
+  oss << Teuchos::Describable::description() << "{";
   bool wroteOne = false;
   if(!is_null(leftPrecOp_.getConstObj())) {
     if(wroteOne) oss << ",";
@@ -271,7 +271,7 @@ void DefaultPreconditioner<RangeScalar,DomainScalar>::describe(
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:
     case Teuchos::VERB_LOW:
-      out << this->description() << std::endl;
+      out << Teuchos::Describable::description() << std::endl;
       break;
     case Teuchos::VERB_MEDIUM:
     case Teuchos::VERB_HIGH:

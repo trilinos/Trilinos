@@ -127,12 +127,19 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
     Belos -> 
       Adjustable Block Size : bool = 1
       Block Size : int = 1
-      Default Rel Res Norm : double = 1e-06
+      Def*** Caught standard exception : /home/rabartl/PROJECTS/Trilinos.base/Trilinos/packages/teuchos/src/Teuchos_RefCountPtr.cpp:59:
+
+Throw test that evaluated to true: itr != extra_data_map_->end()
+
+Error, the type:name pair 'RefCountPtr<Thyra::PreconditionerBase<double, double>>:Belos::InternalPrec' already exists and force_unique==true!
+ault Rel Res Norm : double = 1e-06
       Max Iters : int = 400
       Max Restarts : int = 25
       Solver Type : string = GMRES
       GMRES -> 
         Max Number of Krylov Vectors : int = 300
+        Ortho Type : string = DGKS
+        Restart Timers : bool = 1
         Variant : string = Standard
       Outputter -> 
         Output Frequency : int = 10
@@ -180,7 +187,32 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
     ML -> 
       Base Method Defaults : string = DD
       ML Settings -> 
-        [empty list]
+        aggregation: damping factor : double = 1.333
+        aggregation: edge prolongator drop threshold : double = 0
+        aggregation: local aggregates : int = 1
+        aggregation: next-level aggregates per process : int = 128
+        aggregation: nodes per aggregate : int = 512
+        aggregation: type : string = Uncoupled-MIS
+        coarse: max size : int = 128
+        coarse: type : string = Amesos-KLU
+        default values : string = maxwell
+        eigen-analysis: iterations : int = 10
+        eigen-analysis: type : string = cg
+        increasing or decreasing : string = decreasing
+        max levels : int = 10
+        prec type : string = MGV
+        smoother: Aztec as solver : bool = 0
+        smoother: Aztec options : int* = 0xb234d0
+        smoother: Aztec params : double* = 0xb23d90
+        smoother: Hiptmair efficient symmetric : bool = 1
+        smoother: damping factor : double = 1
+        smoother: pre or post : string = both
+        smoother: sweeps : int = 1
+        smoother: type : string = Hiptmair
+        subsmoother: Chebyshev alpha : double = 27
+        subsmoother: edge sweeps : int = 4
+        subsmoother: node sweeps : int = 4
+        subsmoother: type : string = Chebyshev
 
 Creating the LinearOpWithSolveFactoryBase object lowsFactory ...
 
@@ -197,52 +229,9 @@ Running example use cases ...
     Solve status:
       solveStatus = SOLVE_STATUS_UNKNOWN
       achievedTol = unknownTolerance()
-      message: "The Belos solver of type "Belos::BlockGmres<...,double>{Variant='Standard'}" returned a solve status of "Converged" in 1 iterations and achieved an approximate max tolerance of 0 with total CPU time of 0.002553 sec"
+      message: "The Belos solver of type "Belos::BlockGmres<...,double>{Variant='Standard',Ortho Type='DGKS'}" returned a solve status of "Converged" in 1 iterations and achieved an approximate max tolerance of 0 with total CPU time of 0.002527 sec"
       extraParameters: NONE
     
     Performing a solve, changing the operator, then performing another solve ...
-    
-    Performing a solve, changing the operator in a very small way, then performing another solve ...
-    
-    Performing a solve, changing the operator in a major way, then performing another solve ...
 
-Printing the parameter list (showing what was used) ...
-  Matrix File : string = FourByFour.mtx
-  Linear Solver Builder -> 
-    Linear Solver Type : string = Belos
-    Preconditioner Type : string = Ifpack
-    Linear Solver Types -> 
-      Belos -> 
-        Adjustable Block Size : bool = 1   [default]
-        Block Size : int = 1   [default]
-        Default Rel Res Norm : double = 1e-06   [default]
-        Max Iters : int = 400   [default]
-        Max Restarts : int = 25   [default]
-        Solver Type : string = GMRES   [default]
-        GMRES -> 
-          Max Number of Krylov Vectors : int = 300   [default]
-          Variant : string = Standard   [default]
-        Outputter -> 
-          Output Frequency : int = 10   [default]
-          Output Max Res Only : bool = 1   [default]
-        VerboseObject -> 
-          Output File : string = none   [default]
-          Verbosity Level : string = default   [default]
-    Preconditioner Types -> 
-      Ifpack -> 
-        Overlap : int = 0   [default]
-        Prec Type : string = ILU   [default]
-        Ifpack Settings -> 
-          schwarz: combine mode : string = Zero   [default]
-          schwarz: compute condest : bool = 1   [default]
-          schwarz: filter singletons : bool = 0   [default]
-          schwarz: reordering type : string = none   [default]
-        VerboseObject -> 
-          Output File : string = none   [default]
-          Verbosity Level : string = default   [default]
-  LinearOpTester -> 
-    [empty list]
-  LinearOpWithSolveTester -> 
-    [empty list]
-
-Congratulations! All of the tests checked out!
+Oh no! At least one of the tests failed!

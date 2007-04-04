@@ -175,16 +175,6 @@ void DefaultSpmdMultiVector<Scalar>::uninitialize(
   this->updateSpmdSpace();
 }
 
-// Overridden from Teuchos::Describable
-
-template<class Scalar>
-std::string DefaultSpmdMultiVector<Scalar>::description() const
-{
-  std::ostringstream oss;
-  oss<<"DefaultSpmdMultiVector<"<<Teuchos::ScalarTraits<Scalar>::name()<<">";
-  return oss.str();
-}
-
 // Overridden from EuclideanLinearOpBase
 
 template<class Scalar>

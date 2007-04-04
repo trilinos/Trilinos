@@ -46,6 +46,7 @@
 
 using Teuchos::CommandLineProcessor;
 using Teuchos::ParameterList;
+typedef ParameterList::PrintOptions PLPrintOptions;
 using Teuchos::ParameterEntry;
 using Teuchos::OSTab;
 
@@ -87,7 +88,8 @@ int main( int argc, char *argv[] )
   //-----------------------------------------------------------
 
   ParameterList PL_Main("PL_Main");
-  ParameterList& PL_Direction = PL_Main.sublist("Direction");
+  const std::string Direction_Doc = "This sublist controls how direction is computed.";
+  ParameterList& PL_Direction = PL_Main.sublist("Direction",false,Direction_Doc);
   ParameterList& PL_Newton = PL_Direction.sublist("Newton");
   ParameterList& PL_LinSol = PL_Newton.sublist("Linear Solver");
   ParameterList& PL_LineSearch = PL_Main.sublist("Line Search");
@@ -129,6 +131,25 @@ int main( int argc, char *argv[] )
     if (verbose) cout << "no"<< endl;
     FailedTests++;        
   }
+
+  if (verbose) cout << "Is subist documentation string maintained ...\n";
+  {
+    Teuchos::OSTab tab(cout);
+    const Teuchos::ParameterEntry
+      *paramEntry = PL_Main.getEntryPtr("Direction");
+    TEST_FOR_EXCEPT(0==paramEntry);
+    const std::string extracted_Direction_Doc = paramEntry->docString();
+    if (verbose) tab.o() << "Expected doc string = \"" << Direction_Doc << "\"\n";
+    if (verbose) tab.o() << "Extracted doc string = \"" << extracted_Direction_Doc << "\"\n";
+    if (extracted_Direction_Doc == Direction_Doc) {
+      if (verbose) tab.o() << "passed!  They match :-)\n";
+    }
+    else {
+      if (verbose) tab.o() << "failed!  They do not match :-("<< endl;
+      FailedTests++;        
+    }
+  }
+  
 
   //-----------------------------------------------------------
   // Fill in Direction Sublist
@@ -1215,9 +1236,9 @@ int main( int argc, char *argv[] )
 
   if (verbose) {
     print_break();
-    cout << "The Final Parameter List with Types" << endl;
+    cout << "The Final Parameter List with Types and Documentation" << endl;
     print_break();
-    PL_Main.print(cout,0,true);
+    PL_Main.print(cout,PLPrintOptions().showTypes(true).showDoc(true));
     print_break();
     cout << "The unused parameters" << endl;
     PL_Main.unused(cout);

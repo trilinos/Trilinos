@@ -89,7 +89,7 @@ std::string DefaultScaledAdjointLinearOp<Scalar>::description() const
   assertInitialized();
   typedef Teuchos::ScalarTraits<Scalar>  ST;
   std::ostringstream oss;
-  oss << "DefaultScaledAdjointLinearOp<" << ST::name() << ">{"
+  oss << Teuchos::Describable::description() << "{"
       << overallScalar() << ","<<toString(overallTransp())<<","
       << origOp_.getConstObj()->description() << "}";
   return oss.str();
@@ -118,7 +118,7 @@ void DefaultScaledAdjointLinearOp<Scalar>::describe(
     case Teuchos::VERB_EXTREME:
     {
       *out
-        << "DefaultScaledAdjointLinearOp<" << ST::name() << ">{"
+        << Teuchos::Describable::description() << "{"
         << "rangeDim=" << this->range()->dim()
         << ",domainDim=" << this->domain()->dim() << "}\n";
       OSTab tab(out);
@@ -139,7 +139,7 @@ void DefaultScaledAdjointLinearOp<Scalar>::describe(
           *out << "no-transformation\n";
       }
       tab.incrTab(my_index_+2);
-      *out << "origOp =\n" << Teuchos::describe(*origOp_.getConstObj(),verbLevel);
+      *out << "origOp = " << Teuchos::describe(*origOp_.getConstObj(),verbLevel);
       break;
     }
     default:
@@ -263,6 +263,30 @@ void DefaultScaledAdjointLinearOp<Scalar>::initializeImpl(
     allScalarETransp_  = Teuchos::rcp(new allScalarETransp_t());
   }
   allScalarETransp_->push_back(ScalarETransp<Scalar>(scalar,transp));
+  // Set the object label
+  std::string Op_label = Op->getObjectLabel();
+  if(Op_label.length()==0)
+    Op_label = "ANYM";
+  std::ostringstream label;
+  if(scalar!=ST::one())
+    label << scalar << "*";
+  switch(transp) {
+    case NOTRANS:
+      break; // No output
+    case CONJ:
+      label << "conj";
+      break;
+    case TRANS:
+      label << "trans";
+      break;
+    case CONJTRANS:
+      label << "adj";
+      break;
+    default:
+      TEST_FOR_EXCEPT("Invalid ETransp value!");
+  }
+  label << "(" << Op_label << ")";
+  this->setObjectLabel(label.str());
 }
 
 

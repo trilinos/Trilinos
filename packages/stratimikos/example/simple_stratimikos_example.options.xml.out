@@ -118,6 +118,8 @@
       <Parameter name="Default Rel Res Norm" type="double" value="1e-06"/>
       <ParameterList name="GMRES">
         <Parameter name="Max Number of Krylov Vectors" type="int" value="300"/>
+        <Parameter name="Ortho Type" type="string" value="DGKS"/>
+        <Parameter name="Restart Timers" type="bool" value="1"/>
         <Parameter name="Variant" type="string" value="Standard"/>
       </ParameterList>
       <Parameter name="Max Iters" type="int" value="400"/>
@@ -176,7 +178,34 @@
     </ParameterList>
     <ParameterList name="ML">
       <Parameter name="Base Method Defaults" type="string" value="DD"/>
-      <ParameterList name="ML Settings"/>
+      <ParameterList name="ML Settings">
+        <Parameter name="aggregation: damping factor" type="double" value="1.333"/>
+        <Parameter name="aggregation: edge prolongator drop threshold" type="double" value="0"/>
+        <Parameter name="aggregation: local aggregates" type="int" value="1"/>
+        <Parameter name="aggregation: next-level aggregates per process" type="int" value="128"/>
+        <Parameter name="aggregation: nodes per aggregate" type="int" value="512"/>
+        <Parameter name="aggregation: type" type="string" value="Uncoupled-MIS"/>
+        <Parameter name="coarse: max size" type="int" value="128"/>
+        <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+        <Parameter name="default values" type="string" value="maxwell"/>
+        <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
+        <Parameter name="eigen-analysis: type" type="string" value="cg"/>
+        <Parameter name="increasing or decreasing" type="string" value="decreasing"/>
+        <Parameter name="max levels" type="int" value="10"/>
+        <Parameter name="prec type" type="string" value="MGV"/>
+        <Parameter name="smoother: Aztec as solver" type="bool" value="0"/>
+        <Parameter name="smoother: Aztec options" type="any" value="0xb13ee0   [unused]"/>
+        <Parameter name="smoother: Aztec params" type="any" value="0xb147a0   [unused]"/>
+        <Parameter name="smoother: Hiptmair efficient symmetric" type="bool" value="1"/>
+        <Parameter name="smoother: damping factor" type="double" value="1"/>
+        <Parameter name="smoother: pre or post" type="string" value="both"/>
+        <Parameter name="smoother: sweeps" type="int" value="1"/>
+        <Parameter name="smoother: type" type="string" value="Hiptmair"/>
+        <Parameter name="subsmoother: Chebyshev alpha" type="double" value="27"/>
+        <Parameter name="subsmoother: edge sweeps" type="int" value="4"/>
+        <Parameter name="subsmoother: node sweeps" type="int" value="4"/>
+        <Parameter name="subsmoother: type" type="string" value="Chebyshev"/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 </ParameterList>

@@ -85,6 +85,9 @@ public:
   /** @name Public functions overridden from Teuchos::Describable */
   //@{
 
+  /** \brief Default description that gives the label, type, and dimenstion . */
+  std::string description() const;
+
   /** \brief Generates a default outputting for all vectors.
    *
    * Calls on the <tt>this->describe(void)</tt> function for the name of the

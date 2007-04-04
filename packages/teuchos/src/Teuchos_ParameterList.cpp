@@ -93,7 +93,8 @@ ParameterList& ParameterList::setParameters(const ParameterList& source)
     const std::string     &name_i  = this->name(i);
     const ParameterEntry  &entry_i = this->entry(i);
     if(entry_i.isList()) {
-      this->sublist(name_i).setParameters(getValue<ParameterList>(entry_i));
+      this->sublist(name_i,false,entry_i.docString()).setParameters(
+        getValue<ParameterList>(entry_i) );
     }
     else {
       this->setEntry(name_i,entry_i);
@@ -111,8 +112,8 @@ ParameterList& ParameterList::setParametersNotAlreadySet(
     const std::string     &name_i  = this->name(i);
     const ParameterEntry  &entry_i = this->entry(i);
     if(entry_i.isList()) {
-      this->sublist(name_i).setParametersNotAlreadySet(
-        getValue<ParameterList>(entry_i));
+      this->sublist(name_i,false,entry_i.docString()).setParametersNotAlreadySet(
+        getValue<ParameterList>(entry_i) );
     }
     else {
       const ParameterEntry
@@ -210,14 +211,26 @@ ParameterList& ParameterList::sublist(
     ,"The sublist "<<this->name()<<"->\""<<name<<"\" does not exist!"
     );
   const ParameterList newSubList(this->name()+std::string("->")+name);
-  return any_cast<ParameterList>(
-    params_.insert(
-      Map::value_type(name,ParameterEntry(newSubList,false,true,docString))
-      ).first->second.getAny(false)
+  ParameterEntry &newParamEntry = params_.insert(
+    Map::value_type(name,ParameterEntry(newSubList,false,true,docString))
+    ).first->second;
+  // Make sure we set the documentation string!
+#ifdef TEUCHOS_DEBUG
+  {
+    ParameterEntry *newNewParamEntry = this->getEntryPtr(name);
+    TEST_FOR_EXCEPTION(
+      0 == newNewParamEntry, std::logic_error,
+      "Error, the parameter was not set for sublist \"" << name << "\"!"
+      );
+    const std::string newDocString = newNewParamEntry->docString();
+  TEST_FOR_EXCEPTION(
+    newDocString != docString, std::logic_error,
+    "Error, the set documentation string is not equal to the pass in string for\n"
+    "the sublist \"" << name << "\"."
     );
-  // Note that above I am very careful to construct the parameter list entry
-  // directly in the insertion call to avoid the creation of a tempory list
-  // object.  This looks ugly but it should be fast.
+  }
+#endif
+  return any_cast<ParameterList>(newParamEntry.getAny(false));
 }
 
 const ParameterList& ParameterList::sublist(const string& name) const
@@ -262,13 +275,14 @@ ostream& ParameterList::print(ostream& os, const PrintOptions &printOptions ) co
     // Print parameters first
     for (ConstIterator i = params_.begin(); i != params_.end(); ++i) 
     {
+      const string &name = this->name(i);
       const ParameterEntry &entry_i = entry(i);
       RefCountPtr<const ParameterEntryValidator>
         validator = entry_i.validator();
       if(entry_i.isList())
         continue;
+      *out << name;
       const string &docString = entry_i.docString();
-      *out << name(i);
       if(showTypes)
         *out << " : " << entry_i.getAny(false).typeName();
       *out << " = "; entry_i.leftshift(os,showFlags); *out << endl;
@@ -288,7 +302,8 @@ ostream& ParameterList::print(ostream& os, const PrintOptions &printOptions ) co
       if(!entry_i.isList())
         continue;
       const string &docString = entry_i.docString();
-      *out << name(i) << " -> " << endl;
+      const string &name = this->name(i);
+      *out << name << " -> " << endl;
       if( docString.length() && showDoc ) {
         StrUtils::printLines(OSTab(out).o(),"# ",docString);
       }

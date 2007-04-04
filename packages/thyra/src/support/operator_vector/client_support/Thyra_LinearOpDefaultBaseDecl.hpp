@@ -41,7 +41,7 @@ namespace Thyra {
 template<class RangeScalar, class DomainScalar = RangeScalar>
 class LinearOpDefaultBase : virtual public LinearOpBase<RangeScalar,DomainScalar> {
 public:
-
+  
   /** \brief . */
   using LinearOpBase<RangeScalar,DomainScalar>::apply;
   /** \brief . */
@@ -49,6 +49,9 @@ public:
 
   /** @name Public functions overridden from Teuchos::Describable */
   //@{
+
+  /** \brief Default description that gives the label, type, and dimenstion . */
+  std::string description() const;
 
   /** \brief Generates a default outputting for all linear operators.
    *

@@ -765,6 +765,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Teuchos::OSTab;
+  using Teuchos::describe;
   typedef Teuchos::RefCountPtr<const VectorBase<Scalar> > CV_ptr;
   if(verbLevel == Teuchos::VERB_NONE)
     return;
@@ -785,7 +786,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
         *out << "x_dot =";
         CV_ptr x_dot = this->get_x_dot();
         if(x_dot.get())
-          *out << "\n" << Teuchos::describe(*x_dot,verbLevel);
+          *out << "\n" << describe(*x_dot,verbLevel);
         else
           *out << " NULL\n";
       }
@@ -793,7 +794,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
         *out << "x =";
         CV_ptr x = this->get_x();
         if(x.get())
-          *out << "\n" << Teuchos::describe(*x,verbLevel);
+          *out << "\n" << describe(*x,verbLevel);
         else
           *out << " NULL\n";
       }
@@ -801,7 +802,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
         *out << "p("<<l<<") =";
         CV_ptr p_l = this->get_p(l);
         if(p_l.get())
-          *out << "\n" << Teuchos::describe(*p_l,verbLevel);
+          *out << "\n" << describe(*p_l,verbLevel);
         else
           *out << " NULL\n";
       }
@@ -1159,6 +1160,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
   ) const
 {
   using Teuchos::OSTab;
+  using Teuchos::describe;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Teuchos::RefCountPtr<const VectorBase<Scalar> > CV_ptr;
   typedef Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > CLOWS_ptr;
@@ -1183,7 +1185,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
         *out << "f =";
         CV_ptr f = this->get_f();
         if(f.get())
-          *out << "\n" << Teuchos::describe(*f,verbLevel);
+          *out << "\n" << describe(*f,verbLevel);
         else
           *out << " NULL\n";
       }
@@ -1191,7 +1193,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
         *out << "g("<<j<<") =";
         CV_ptr g_j = this->get_g(j);
         if(g_j.get())
-          *out << "\n" << Teuchos::describe(*g_j,verbLevel);
+          *out << "\n" << describe(*g_j,verbLevel);
         else
           *out << " NULL\n";
       }
@@ -1199,7 +1201,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
         *out << "W =";
         CLOWS_ptr W = this->get_W();
         if(W.get())
-          *out << "\n" << Teuchos::describe(*W,verbLevel);
+          *out << "\n" << describe(*W,verbLevel);
         else
           *out << " NULL\n";
       }
@@ -1210,13 +1212,13 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
           if(!DfDp_l.isEmpty()) {
             *out << "\n";
             if(DfDp_l.getLinearOp().get()) {
-              *out << Teuchos::describe(*DfDp_l.getLinearOp(),verbLevel);
+              *out << describe(*DfDp_l.getLinearOp(),verbLevel);
             }
             else {
               OSTab(out).o()
                 << "orientation="
                 << toString(DfDp_l.getDerivativeMultiVector().getOrientation()) << "\n";
-              *out << Teuchos::describe(*DfDp_l.getDerivativeMultiVector().getMultiVector(),verbLevel);
+              *out << describe(*DfDp_l.getDerivativeMultiVector().getMultiVector(),verbLevel);
             }
           }
           else {

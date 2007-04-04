@@ -100,7 +100,7 @@ bool run_composite_linear_ops_tests(
   
   if(out.get()) *out << "\nCreating random n x (n/2) multi-vector origA ...\n";
   RefCountPtr<Thyra::MultiVectorBase<Scalar> >
-    mvOrigA = createMembers(space,n/2);
+    mvOrigA = createMembers(space,n/2,"origA");
   Thyra::seed_randomize<Scalar>(0);
   Thyra::randomize( Scalar(Scalar(-1)*ST::one()), Scalar(Scalar(+1)*ST::one()), &*mvOrigA );
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >

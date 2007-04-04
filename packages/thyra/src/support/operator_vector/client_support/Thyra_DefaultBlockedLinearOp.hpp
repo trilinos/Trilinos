@@ -274,8 +274,7 @@ std::string DefaultBlockedLinearOp<Scalar>::description() const
   assertBlockFillIsActive(false);
   std::ostringstream oss;
   oss
-    << "Thyra::DefaultBlockedLinearOp<" << ST::name() << ">"
-    << "{"
+    << Teuchos::Describable::description() << "{"
     << "numRowBlocks="<<numRowBlocks_
     << ",numColBlocks="<<numColBlocks_
     << "}";
@@ -305,7 +304,7 @@ void DefaultBlockedLinearOp<Scalar>::describe(
     case Teuchos::VERB_EXTREME:
     {
       *out
-        << "Thyra::DefaultBlockedLinearOp<" << ST::name() << ">{"
+        << Teuchos::Describable::description() << "{"
         << "rangeDim=" << this->range()->dim()
         << ",domainDim=" << this->domain()->dim()
         << ",numRowBlocks=" << numRowBlocks_
@@ -322,7 +321,7 @@ void DefaultBlockedLinearOp<Scalar>::describe(
           Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
             block_i_j = getBlock(i,j);
           if(block_i_j.get())
-            *out << "\n" << Teuchos::describe(*getBlock(i,j),verbLevel);
+            *out << Teuchos::describe(*getBlock(i,j),verbLevel);
           else
             *out << "NULL\n";
         }

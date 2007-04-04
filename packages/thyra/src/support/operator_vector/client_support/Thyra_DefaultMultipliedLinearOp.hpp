@@ -351,6 +351,7 @@ void DefaultMultipliedLinearOp<Scalar>::setupDefaultObjectLabel()
   validateOps();
 }
 
+
 }	// end namespace Thyra
 
 

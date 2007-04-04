@@ -247,6 +247,7 @@ private:
 
   void assertInitialized() const;
   void validateOps();
+  void setupDefaultObjectLabel();
 
   // Not defined and not to be called
   DefaultAddedLinearOp(const DefaultAddedLinearOp&);

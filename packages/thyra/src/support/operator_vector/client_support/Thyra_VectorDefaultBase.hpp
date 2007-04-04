@@ -50,9 +50,30 @@
      Teuchos::RefCountPtr<Teuchos::FancyOStream> dbgout = Teuchos::VerboseObjectBase::getDefaultOStream()
 #endif // THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
 
+
 namespace Thyra {
 
+
 // Overridden from Teuchos::Describable
+
+
+template<class Scalar>
+std::string VectorDefaultBase<Scalar>::description() const
+{
+  std::ostringstream oss;
+  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+    space = this->space();
+  oss << Teuchos::Describable::description();
+  if(is_null(space)) {
+    oss << "{space=NULL}"; 
+  }
+  else {
+    const Index dim = space->dim();
+    oss << "{dim=" << dim << "}";
+  }
+  return oss.str();
+}
+
 
 template<class Scalar>
 void VectorDefaultBase<Scalar>::describe(
@@ -65,11 +86,9 @@ void VectorDefaultBase<Scalar>::describe(
   using Teuchos::OSTab;
   RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
-  *out
-    << this->description()
-    << "{dim="<<this->space()->dim()<<"}\n";
+  *out << this->description() << "\n";
   tab.incrTab();
-  if(verbLevel >= Teuchos::VERB_HIGH) {
+  if (verbLevel >= Teuchos::VERB_HIGH) {
     RTOpPack::ConstSubVectorView<Scalar> sv;
     this->acquireDetachedView(Range1D(),&sv);
     for( Index i = 0; i < sv.subDim(); ++i )
@@ -77,6 +96,7 @@ void VectorDefaultBase<Scalar>::describe(
     this->releaseDetachedView(&sv);
   }
 }
+
 
 // Overridden from LinearOpBase
 

@@ -72,6 +72,7 @@ void DefaultAddedLinearOp<Scalar>::initialize(
   for( int k = 0; k < numOps; ++k )
     Ops_[k].initialize(Ops[k]);
   validateOps();
+  setupDefaultObjectLabel();
 }
 
 template<class Scalar>
@@ -87,12 +88,14 @@ void DefaultAddedLinearOp<Scalar>::initialize(
   for( int k = 0; k < numOps; ++k )
     Ops_[k].initialize(Ops[k]);
   validateOps();
+  setupDefaultObjectLabel();
 }
 
 template<class Scalar>
 void DefaultAddedLinearOp<Scalar>::uninitialize()
 {
   Ops_.resize(0);
+  setupDefaultObjectLabel();
 }
 
 // Overridden form AddedLinearOpBase
@@ -163,9 +166,8 @@ template<class Scalar>
 std::string DefaultAddedLinearOp<Scalar>::description() const
 {
   assertInitialized();
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
   std::ostringstream oss;
-  oss << "Thyra::DefaultAddedLinearOp<" << ST::name() << ">{numOps = "<<numOps()<<"}";
+  oss << Teuchos::Describable::description() << "{numOps = "<<numOps()<<"}";
   return oss.str();
 }
 
@@ -193,7 +195,7 @@ void DefaultAddedLinearOp<Scalar>::describe(
     case Teuchos::VERB_EXTREME:
     {
       *out
-        << "Thyra::DefaultAddedLinearOp<" << ST::name() << ">{"
+        << Teuchos::Describable::description() << "{"
         << "rangeDim=" << this->range()->dim()
         << ",domainDim="<< this->domain()->dim() << "}\n";
       OSTab tab(out);
@@ -202,7 +204,7 @@ void DefaultAddedLinearOp<Scalar>::describe(
         <<  "Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:\n";
       tab.incrTab();
       for( int k = 0; k < numOps; ++k ) {
-        *out << "Op["<<k<<"] =\n" << Teuchos::describe(*getOp(k),verbLevel);
+        *out << "Op["<<k<<"] = " << Teuchos::describe(*getOp(k),verbLevel);
       }
       break;
     }
@@ -247,7 +249,9 @@ void DefaultAddedLinearOp<Scalar>::apply(
     Thyra::apply(*getOp(j),M_trans,X,Y,alpha,j==0?beta:ST::one());
 }
 
+
 // private
+
 
 template<class Scalar>
 void DefaultAddedLinearOp<Scalar>::validateOps()
@@ -280,7 +284,27 @@ void DefaultAddedLinearOp<Scalar>::validateOps()
 #endif
 }
 
+
+template<class Scalar>
+void DefaultAddedLinearOp<Scalar>::setupDefaultObjectLabel()
+{
+  std::ostringstream label;
+  const int numOps = Ops_.size();
+  for( int k = 0; k < numOps; ++k ) {
+    std::string Op_k_label = Ops_[k].getConstObj()->getObjectLabel();
+    if (Op_k_label.length() == 0)
+      Op_k_label = "ANYM";
+    if (k > 0)
+      label << "+";
+    label << "("<<Op_k_label<<")";
+  }
+  this->setObjectLabel(label.str());
+  validateOps();
+}
+
+
 }	// end namespace Thyra
+
 
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
