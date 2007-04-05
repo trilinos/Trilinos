@@ -38,6 +38,14 @@ extern "C" {
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
 
+//
+//  Hack to deal with Bug #1418  - circular dependencies in amesos, umfpack and amd libraries 
+//
+#include "Amesos_Klu.h"
+extern "C" {
+#include "amd.h"  
+}
+
 //=============================================================================
 Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
   Symbolic(0),
@@ -53,6 +61,18 @@ Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
   // MS // set up before calling Comm()
   Teuchos::ParameterList ParamList ;
   SetParameters( ParamList ) ; 
+
+  //
+  //  Hack to deal with Bug #1418  - circular dependencies in amesos, umfpack and amd libraries 
+  //  This causes the amd files to be pulled in from libamesos.a
+  //
+  if ( UseTranspose_ ) {
+    double control[3];
+    //  This should never be called
+    Amesos_Klu Nothing(*Problem_); 
+    amd_defaults(control);
+  }
+
 }
 
 //=============================================================================
@@ -64,6 +84,7 @@ Amesos_Umfpack::~Amesos_Umfpack(void)
   // print out some information if required by the user
   if ((verbose_ && PrintTiming_) || verbose_ == 2) PrintTiming();
   if ((verbose_ && PrintStatus_) || verbose_ == 2) PrintStatus();
+
 }
 
 //=============================================================================

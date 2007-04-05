@@ -688,8 +688,11 @@ int Amesos_Scalapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   if (ParameterList.isSublist("Scalapack") ) {
     const Teuchos::ParameterList ScalapackParams = ParameterList.sublist("Scalapack") ;
-    TwoD_distribution_ = ScalapackParams.get<bool>("2D distribution");
-    grid_nb_ = ScalapackParams.get<int>("grid_nb");
+    //  Fix Bug #3251 
+    if ( ScalapackParams.isParameter("2D distribution") )
+      TwoD_distribution_ = ScalapackParams.get<bool>("2D distribution");
+    if ( ScalapackParams.isParameter("grid_nb") )
+      grid_nb_ = ScalapackParams.get<int>("grid_nb");
   }  
   
   return 0;

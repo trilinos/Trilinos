@@ -58,8 +58,8 @@ Organization of Amesos tests:
   solve A^3 x = b.
 
 
-- Test_KLU, Test_UMFPACK, Test_SuperLU, Test_SuperLU_DIST, Test_MUMPS
-  ==================================================================
+- Test_KLU, Test_UMFPACK, Test_SuperLU, Test_SuperLU_DIST, Test_MUMPS, Test_PARAKLETE
+  ===================================================================================
 
   The linear system matrix in an Epetra_RowMatrix object, that is not
   derived from the Epetra_CrsMatrix class. The linear system matrix

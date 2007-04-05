@@ -41,7 +41,8 @@
            Test_LAPACK,
            Test_UMFPACK,
            Test_DSCPACK,
-           Test_MUMPS;
+           Test_MUMPS,
+           Test_PARAKLETE;
     COMM = SERIAL, MPI(1-4); 
 }
 
