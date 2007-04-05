@@ -33,6 +33,7 @@ CORE_H = \
 	$(srcdir)/BelosOperatorTraits.hpp \
 	$(srcdir)/BelosOrthoManager.hpp \
 	$(srcdir)/BelosOutputManager.hpp \
+	$(srcdir)/BelosPseudoBlockGmres.hpp \
 	$(srcdir)/BelosStatusTest.hpp \
 	$(srcdir)/BelosStatusTestCombo.hpp \
 	$(srcdir)/BelosStatusTestMaxIters.hpp \
@@ -105,7 +106,9 @@ DIST =
 
 COMP_H = \
 	$(srcdir)/BelosBlockCG.hpp \
-	$(srcdir)/BelosBlockGmres.hpp
+	$(srcdir)/BelosBlockGmres.hpp \
+        $(srcdir)/BelosCG.hpp \
+        $(srcdir)/BelosPseudoBlockGmres.hpp
 
 COMP = 
 

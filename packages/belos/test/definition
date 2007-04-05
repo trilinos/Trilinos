@@ -24,7 +24,8 @@
 }
 
 (FRAMEWORK,INSTALL) {
-    TESTS = BlockGmres/bl_gmres_diag.exe;
+    TESTS = BlockGmres/gmres_diag.exe,
+            BlockGmres/bl_gmres_diag.exe;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI;
 }

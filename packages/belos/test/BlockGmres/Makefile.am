@@ -17,11 +17,11 @@ EXEEXT = .exe
 
 if BUILD_TRIUTILS
 if BUILD_IFPACK
-BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb bl_fgmres_hb
+BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb bl_fgmres_hb bl_pseudo_pgmres_hb
 endif
 BELOS_BGMRES_NOPREC_EX = bl_gmres_hb Dummy 
 endif
-BELOS_BGMRES_EX = bl_gmres_diag
+BELOS_BGMRES_EX = gmres_diag bl_gmres_diag
 
 if BUILD_TRIUTILS
 if BUILD_TEUCHOS_COMPLEX
@@ -48,9 +48,13 @@ bl_pgmres_hb_SOURCES = $(srcdir)/test_bl_pgmres_hb.cpp $(srcdir)/createEpetraPro
 
 bl_fgmres_hb_SOURCES = $(srcdir)/test_bl_fgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
+bl_pseudo_pgmres_hb_SOURCES = $(srcdir)/test_bl_pseudo_pgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
+
 bl_gmres_hb_SOURCES = $(srcdir)/test_bl_gmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
 bl_gmres_diag_SOURCES = $(srcdir)/test_bl_gmres_diag.cpp
+
+gmres_diag_SOURCES = $(srcdir)/test_gmres_diag.cpp
 
 bl_gmres_complex_hb_SOURCES = $(srcdir)/test_bl_gmres_complex_hb.cpp
 
@@ -62,11 +66,19 @@ bl_fgmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a			
 
+bl_pseudo_pgmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a			
+
 bl_gmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
 bl_gmres_diag_DEPENDENCIES = \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+gmres_diag_DEPENDENCIES = \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -78,9 +90,13 @@ bl_pgmres_hb_CXXFLAGS = -I$(top_srcdir)/src
 
 bl_fgmres_hb_CXXFLAGS = -I$(top_srcdir)/src 
 
+bl_pseudo_pgmres_hb_CXXFLAGS = -I$(top_srcdir)/src 
+
 bl_gmres_hb_CXXFLAGS = 	-I$(top_srcdir)/src 
 
 bl_gmres_diag_CXXFLAGS = -I$(top_srcdir)/src
+
+gmres_diag_CXXFLAGS = -I$(top_srcdir)/src
 
 bl_gmres_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
@@ -88,9 +104,13 @@ bl_pgmres_hb_LDADD = $(EXPORT_LIBS)
 
 bl_fgmres_hb_LDADD = $(EXPORT_LIBS)
 
+bl_pseudo_pgmres_hb_LDADD = $(EXPORT_LIBS)
+
 bl_gmres_hb_LDADD = $(EXPORT_LIBS)
 
 bl_gmres_diag_LDADD = $(EXPORT_LIBS)
+
+gmres_diag_LDADD = $(EXPORT_LIBS)
 
 bl_gmres_complex_hb_LDADD = $(EXPORT_LIBS)
 
