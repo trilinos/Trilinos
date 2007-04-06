@@ -129,6 +129,12 @@ IF PACKAGE epetraext THEN
 REMOVE --enable-epetraext
 REMOVE --enable-moertel
 REMOVE --enable-webtrilinos
+REMOVE --enable-aztecoo
+REMOVE --enable-komplex
+REMOVE --enable-meros
+REMOVE --enable-ml_aztecoo
+REMOVE --enable-nox-epetra
+REMOVE --enable-nox-epetra-examples
 DONE
 
 # REMOVE --enable-thyra
