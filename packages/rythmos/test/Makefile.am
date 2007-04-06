@@ -41,3 +41,6 @@ all-local:
 #np# test1/ rather than this file.
 
 #SUBDIRS = unitTests
+
+EXTRA_DIST = definition
+
