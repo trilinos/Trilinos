@@ -278,6 +278,20 @@ public:
   template<typename T>
   const T* getPtr(const string& name) const;  
   
+  /*! \brief Retrieves an entry with the name <tt>name</tt>.
+   *
+   * Throws <tt>Exceptions::InvalidParameterName</tt> if this parameter does
+   * not exist.
+   */
+  ParameterEntry& getEntry(const string& name);  
+  
+  /*! \brief Retrieves a const entry with the name <tt>name</tt>.
+   *
+   * Throws <tt>Exceptions::InvalidParameterName</tt> if this parameter does
+   * not exist.
+   */
+  const ParameterEntry& getEntry(const string& name) const;  
+  
   /*! \brief Retrieves the pointer for an entry with the name <tt>name</tt> if
    *  it exists. */
   ParameterEntry* getEntryPtr(const string& name);  
@@ -438,16 +452,51 @@ public:
    * one sublist before moving into nested subslist.
    */
   void validateParameters(
-    ParameterList        const& validParamList
-    ,int                 const  depth            = 1000
-    ,EValidateUsed       const  validateUsed     = VALIDATE_USED_ENABLED
-    ,EValidateDefaults   const  validateDefaults = VALIDATE_DEFAULTS_ENABLED
+    ParameterList const& validParamList,
+    int const depth = 1000,
+    EValidateUsed const validateUsed = VALIDATE_USED_ENABLED,
+    EValidateDefaults const validateDefaults = VALIDATE_DEFAULTS_ENABLED
     ) const;
+
+  /** \brief Validate the parameters is this list given valid selections in
+   * the input list and set defaults for those not set.
+   *
+   * \param  validParamList
+   *              [in] This is the list that the parameters and sublist in <tt>*this</tt>
+   *              are compared against.
+   * \param  depth
+   *              [in] Determines the number of levels of depth that the validation will
+   *              recurse into.  A value of <tt>dpeth=0</tt> means that only the top level
+   *              parameters and sublists will be checked.  Default: <tt>depth = large number</tt>.
+   *
+   * If a parameter in <tt>*this</tt> is not found in <tt>validParamList</tt>
+   * then an exception of type <tt>Exceptions::InvalidParameterName</tt> will
+   * be thrown which will contain an excellent error message returned by
+   * <tt>excpt.what()</tt>.  If the parameter exists but has the wrong type,
+   * then an exception type <tt>Exceptions::InvalidParameterType</tt> will be
+   * thrown.  If the parameter exists and has the right type, but the value is
+   * not valid then an exception type
+   * <tt>Exceptions::InvalidParameterValue</tt> will be thrown.  If a
+   * parameter in <tt>validParamList</tt> does not exist in <tt>*this</tt>,
+   * then it will be set at its default value as determined by
+   * <tt>validParamList</tt>.
+   *
+   * A breath-first search is performed to validate all of the parameters in
+   * one sublist before moving into nested subslist.
+   */
+  void validateParametersAndSetDefaults(
+    ParameterList const& validParamList,
+    int const depth = 1000
+    );
 
   //@}
   
 private: // Functions
-  
+ 
+  //! An iterator pointing to the first entry
+  Iterator nonconstBegin();
+  //! An iterator pointing beyond the last entry
+  Iterator nonconstEnd();
   //! Access to ParameterEntry (i.e., returns i->second)
   ParameterEntry& entry(Iterator i);
   //! Validate that a parameter exists
@@ -491,6 +540,16 @@ bool operator!=( const ParameterList& list1, const ParameterList& list2 )
 {
   return !( list1 == list2 );
 }
+
+/** \brief Returns true if two parameter lists have the same values.
+ *
+ * Two parameter lists may have the same values but may not be identical.  For
+ * example, two parameters can have the same values but not have the same
+ * documentation strings or the same validators.
+ *
+ * \relates ParameterList
+ */
+bool haveSameValues( const ParameterList& list1, const ParameterList& list2 );
 
 // /////////////////////////////////////////////////////
 // Inline and Template Function Definitions
@@ -609,6 +668,22 @@ const T* ParameterList::getPtr(const string& name) const
 }
 
 inline
+ParameterEntry& ParameterList::getEntry(const string& name)
+{
+  ParameterEntry *entry = this->getEntryPtr(name);
+  validateEntryExists("get",name,entry);
+  return *entry;
+}
+  
+inline
+const ParameterEntry& ParameterList::getEntry(const string& name) const
+{
+  const ParameterEntry *entry = this->getEntryPtr(name);
+  validateEntryExists("get",name,entry);
+  return *entry;
+}
+
+inline
 ParameterEntry*
 ParameterList::getEntryPtr(const string& name)
 {
@@ -658,27 +733,21 @@ bool ParameterList::isType(const string& name) const
   return entry(i).getAny().type() == typeid(T);
 }
 
+
 // private
 
-inline
-void ParameterList::validateEntryExists( const std::string &funcName, const std::string &name, const ParameterEntry *entry ) const
-{
-  TEST_FOR_EXCEPTION_PURE_MSG(
-    entry==NULL, Exceptions::InvalidParameterName
-    ,"Error!  The parameter \""<<name<<"\" does not exist"\
-    "\nin the parameter (sub)list \""<<this->name()<<"\"."
-    "\n\nThe current parameters set in (sub)list \""<<this->name()<<"\" are:\n\n"
-    << this->currentParametersString()
-    );
-}
 
 template<typename T>
-void ParameterList::validateEntryType( const std::string &funcName, const std::string &name, const ParameterEntry &entry ) const
+inline
+void ParameterList::validateEntryType(
+  const std::string &funcName, const std::string &name,
+  const ParameterEntry &entry
+  ) const
 {
   TEST_FOR_EXCEPTION_PURE_MSG(
     entry.getAny().type() != typeid(T), Exceptions::InvalidParameterType
     ,"Error!  An attempt was made to access parameter \""<<name<<"\""
-    "of type \""<<entry.getAny().typeName()<<"\""
+    " of type \""<<entry.getAny().typeName()<<"\""
     "\nin the parameter (sub)list \""<<this->name()<<"\""
     "\nusing the incorrect type \""<<TypeNameTraits<T>::name()<<"\"!"
     );

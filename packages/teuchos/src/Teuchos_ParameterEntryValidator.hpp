@@ -30,18 +30,22 @@
 #ifndef TEUCHOS_PARAMETER_ENTRY_VALIDATOR_H
 #define TEUCHOS_PARAMETER_ENTRY_VALIDATOR_H
 
-#include "Teuchos_Array.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_Array.hpp"
 
 namespace Teuchos {
+
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 class ParameterEntry;
 #endif
 
-/** \brief Abstract interface for an object that can validate a ParameterEntry
- * object's value.
+
+/** \brief Abstract interface for an object that can validate a
+ *  ParameterEntry's value.
  *
+ * Not only can a validator validate and entry but it can also help to set
+ * and/or adjust the default value.
  */
 class ParameterEntryValidator {
 public:
@@ -55,7 +59,6 @@ public:
    *           [in] (Multi-line) documentation string.
    * \param  out
    *           [out] The std::ostream used for the output
-   *
    *
    * The purpose of this function is to augment what is in <tt>docString</tt>
    * with some description of what valid values this parameter validator will
@@ -89,13 +92,38 @@ public:
    *            that is used to build error messages.
    */
   virtual void validate(
-    ParameterEntry  const& entry
-    ,std::string    const& paramName
-    ,std::string    const& sublistName
+    ParameterEntry  const& entry,
+    std::string const& paramName,
+    std::string const& sublistName
     ) const = 0;
 
+  /** \brief Validate and perhaps modify a parameter entry's value.
+   *
+   * \param  paramName
+   *            [in] The name of the ParameterEntry that is used to build error messages.
+   * \param  sublistName
+   *            [in] The name of the ParameterList that <tt>paramName</tt> exists in
+   *            that is used to build error messages.
+   * \param  entry
+   *            [in/out] The ParameterEntry who's type and value is being validated and
+   *            perhaps even changed as a result of calling this function.
+   *
+   * The default implementation simply calls <tt>this->validate()</tt>.
+   */
+  virtual void validateAndModify(
+    std::string const& paramName,
+    std::string const& sublistName,
+    ParameterEntry * entry
+    ) const
+    {
+      TEST_FOR_EXCEPT(0==entry);
+      this->validate(*entry,paramName,sublistName);
+    }
+  
 };
 
+
 } // namespace Teuchos
+
 
 #endif // TEUCHOS_PARAMETER_ENTRY_VALIDATOR_H

@@ -66,9 +66,9 @@ public:
   //! Templated constructor
   template<typename T>
   explicit ParameterEntry(
-    T value, bool isDefault = false, bool isList = false
-    ,const std::string &docString = ""
-    ,RefCountPtr<const ParameterEntryValidator> const& validator = null
+    T value, bool isDefault = false, bool isList = false,
+    const std::string &docString = "",
+    RefCountPtr<const ParameterEntryValidator> const& validator = null
     );
 
   //! Destructor
@@ -91,9 +91,24 @@ public:
   */
   template<typename T>
   void setValue(
-    T value, bool isDefault = false
-    ,const std::string &docString = ""
-    ,RefCountPtr<const ParameterEntryValidator> const& validator = null
+    T value, bool isDefault = false,
+    const std::string &docString = "",
+    RefCountPtr<const ParameterEntryValidator> const& validator = null
+    );
+
+  /*! \brief Set the value as an any object.
+  *
+  * This wipes all other data including documentation strings.
+  *
+  * Warning! Do not use function ths to set a sublist!
+  */
+  void setAnyValue(
+    const any &value, bool isDefault = false
+    );
+
+  /*! \brief Set the validator. */
+  void setValidator(
+    RefCountPtr<const ParameterEntryValidator> const& validator
     );
 
   /*! \brief Set the documentation string. */
@@ -101,8 +116,8 @@ public:
 
   //! Create a parameter entry that is an empty list.
   ParameterList& setList(
-    bool isDefault = false
-    ,const std::string &docString = ""
+    bool isDefault = false,
+    const std::string &docString = ""
     );
 
   //@}

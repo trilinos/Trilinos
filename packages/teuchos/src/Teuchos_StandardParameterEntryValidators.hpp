@@ -35,6 +35,7 @@
 #include "Teuchos_VerbosityLevel.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_StrUtils.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 
 namespace Teuchos {
@@ -228,25 +229,151 @@ private:
 
 };
 
-/** \brief Return a validator for <tt>EVerbosityLevel</tt>. */
+
+/** \brief Nonmember constructor (see implementation).
+ *
+ * \relates StringToIntegralParameterEntryValidator
+ */
+template<class IntegralType>
+RefCountPtr<StringToIntegralParameterEntryValidator<IntegralType> >
+stringToIntegralParameterEntryValidator(
+  Array<std::string> const& strings,
+  std::string const& defaultParameterName
+  );
+
+
+/** \brief Nonmember constructor (see implementation).
+ *
+ * \relates StringToIntegralParameterEntryValidator
+ */
+template<class IntegralType>
+RefCountPtr<StringToIntegralParameterEntryValidator<IntegralType> >
+stringToIntegralParameterEntryValidator(
+  Array<std::string> const& strings,
+  Array<IntegralType> const& integralValues, 
+  std::string const& defaultParameterName
+  );
+
+
+/** \brief Nonmember constructor (see implementation).
+ *
+ * \relates StringToIntegralParameterEntryValidator
+ */
+template<class IntegralType>
+RefCountPtr<StringToIntegralParameterEntryValidator<IntegralType> >
+stringToIntegralParameterEntryValidator(
+  Array<std::string> const& strings,
+  Array<std::string> const& stringsDocs,
+  Array<IntegralType> const& integralValues, 
+  std::string const& defaultParameterName
+  );
+
+
+/** \brief Set up a string parameter that will use an embedded validator to
+ * allow the extraction of an integral value.
+ *
+ * The function <tt>getIntegralValue()</tt> can then be used to extract the
+ * integral value of the string parameter.  In this case, the integral value
+ * return will just be the zero-based index of the string value in the list
+ * <tt>strings</tt>.
+ *
+ * \relates ParameterList
+ */
+template<class IntegralType>
+void setStringToIntegralParameter(
+  std::string const& paramName,
+  std::string const& defaultValue,
+  std::string const& docString,
+  Array<std::string> const& strings,
+  ParameterList * paramList
+  );
+
+
+/** \brief Set up a string parameter that will use an embedded validator to
+ * allow the extraction of an integral value from a list of integral values.
+ *
+ * The function <tt>getIntegralValue()</tt> can then be used to extract the
+ * integral value of the string parameter.  In this case, the integral value
+ * return will just be the zero-based index of the string value in the list
+ * <tt>strings</tt>.
+ *
+ * \relates ParameterList
+ */
+template<class IntegralType>
+void setStringToIntegralParameter(
+  std::string const& paramName,
+  std::string const& defaultValue,
+  std::string const& docString,
+  Array<std::string> const& strings,
+  Array<IntegralType> const& integralValues, 
+  ParameterList * paramList
+  );
+
+
+/** \brief Set up a string parameter with documentation strings for each valid
+ * value that will use an embedded validator to allow the extraction of an
+ * integral value from a list of integral values.
+ *
+ * The function <tt>getIntegralValue()</tt> can then be used to extract the
+ * integral value of the string parameter.  In this case, the integral value
+ * return will just be the zero-based index of the string value in the list
+ * <tt>strings</tt>.
+ *
+ * \relates ParameterList
+ */
+template<class IntegralType>
+void setStringToIntegralParameter(
+  std::string const& paramName,
+  std::string const& defaultValue,
+  std::string const& docString,
+  Array<std::string> const& strings,
+  Array<std::string> const& stringsDocs,
+  Array<IntegralType> const& integralValues, 
+  ParameterList * paramList
+  );
+
+
+/** \brief Get an integral value for a parameter that is assumed to already be set.
+ *
+ * This function does a dynamic cast to get the underlying valiator of type
+ * StringToIntegralParameterEntryValidator.  If this dynamic cast failes then
+ * an <tt>Exceptions::InvalidParameterType</tt> exception is thrown with an
+ * excellent error message.
+ *
+ * \relates ParameterList
+ */
+template<class IntegralType>
+IntegralType getIntegralValue(
+  ParameterList const& paramList, std::string const& paramName
+  );
+
+
+/** \brief Return a validator for <tt>EVerbosityLevel</tt>.
+ *
+ * \relates EVerbosityLevel
+ */
 RefCountPtr<StringToIntegralParameterEntryValidator<EVerbosityLevel> >
 verbosityLevelParameterEntryValidator(std::string const& defaultParameterName);
 
+
 /** \brief Standard implementation of a ParameterEntryValidator that accepts
- * numbers from a number of different formats and converts them to numbers
- * from another format.
+ * numbers from a number of different formats and converts them to numbers in
+ * another format.
  *
  * Objects of this type are meant to be used as both abstract objects passed
  * to <tt>Teuchos::ParameterList</tt> objects to be used to validate parameter
  * types and values, and to be used by the code that reads parameter values.
  * Having a single definition for the types of valids input and outputs for a
- * parameter value makes it easier to write error free validated code.
+ * parameter value makes it easier to write error-free validated code.
  */
 class AnyNumberParameterEntryValidator : public ParameterEntryValidator {
 public:
 
   /** \name Public types */
   //@{
+
+  /** \brief Determines what type is the preferred type. */
+  enum EPreferredType { PREFER_INT, PREFER_DOUBLE, PREFER_STRING };
 
   /** \brief Determines the types that are accepted.
    */
@@ -283,9 +410,18 @@ public:
   /** \name Constructors */
   //@{
 
-  /** \brief Construct with allowed input and output types. */
+  /** \brief Construct with allowed input and output types and the preferred
+   * type.
+   *
+   * \param acceptedType
+   *          [in] Determines the types that are allowed in the parameter list.
+   * \param preferredType
+   *          [in] Determines the preferred type.  This enum value is used to 
+   *          set the default value in the override <tt>validateAndModify()</tt>.
+   */
   AnyNumberParameterEntryValidator(
-    AcceptedTypes const& acceptedTypes
+    EPreferredType const preferredType = PREFER_DOUBLE,
+    AcceptedTypes const& acceptedTypes = AcceptedTypes()
     );
 
   //@}
@@ -357,10 +493,18 @@ public:
     std::string const& sublistName
     ) const;
 
+  /** \brief . */
+  void validateAndModify(
+    std::string const& paramName,
+    std::string const& sublistName,
+    ParameterEntry * entry
+    ) const;
+
   //@}
 
 private:
 
+  EPreferredType preferredType_;
   const AcceptedTypes acceptedTypes_;
   std::string acceptedTypesString_;
 
@@ -370,10 +514,122 @@ private:
     std::string const& sublistName
     ) const;
 
-  // Not defined and not to be called.
-  AnyNumberParameterEntryValidator();
-
 };
+
+
+// Nonmember helper functions
+
+
+/** \brief Nonmember constructor AnyNumberParameterEntryValidator.
+ *
+ * \relates AnyNumberParameterEntryValidator
+ */
+RefCountPtr<AnyNumberParameterEntryValidator>
+anyNumberParameterEntryValidator(
+  AnyNumberParameterEntryValidator::EPreferredType const preferredType,
+  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
+  );
+
+
+/** \brief Set an integer parameter that allows for (nearly) any input
+ * parameter type that is convertible to an int.
+ *
+ * \relates ParameterList
+ */
+void setIntParameter(
+  std::string const& paramName,
+  int const value, std::string const& docString,
+  ParameterList *paramList,
+  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
+  = AnyNumberParameterEntryValidator::AcceptedTypes()
+  );
+
+
+/** \brief Set an double parameter that allows for (nearly) any input
+ * parameter type that is convertible to a double.
+ *
+ * \relates ParameterList
+ */
+void setDoubleParameter(
+  std::string const& paramName,
+  double const& value, std::string const& docString,
+  ParameterList *paramList,
+  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
+  = AnyNumberParameterEntryValidator::AcceptedTypes()
+  );
+
+
+/** \brief Set an numeric parameter preferred as a string that allows for
+ * (nearly) any input parameter type that is convertible to a string.
+ *
+ * \relates ParameterList
+ */
+void setNumericStringParameter(
+  std::string const& paramName,
+  std::string const& value, std::string const& docString,
+  ParameterList *paramList,
+  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
+  = AnyNumberParameterEntryValidator::AcceptedTypes()
+  );
+
+
+/** \brief Get an integer parameter.
+ *
+ * If the underlying parameter type is already an integer, then all is good.
+ * However, if it is not, then a AnyNumberParameterEntryValidator object is
+ * looked for to extract the type correctly.  If no validator is attached to
+ * the entry, then a new AnyNumberParameterEntryValidator object will be
+ * created that that will allow the conversion from any supported type.
+ *
+ * The parameter must exist or an <tt>Exceptions::InvalidParameterName</tt>
+ * object will be thrown.  The parameters type must be acceptable, or an
+ * <tt>Exceptions::InvalidParameterType</tt> object will be thown.
+ *
+ * \relates ParameterList
+ */
+int getIntParameter(
+  ParameterList const& paramList, std::string const& paramName
+  );
+
+
+/** \brief Get double integer parameter.
+ *
+ * If the underlying parameter type is already a double, then all is good.
+ * However, if it is not, then a AnyNumberParameterEntryValidator object is
+ * looked for to extract the type correctly.  If no validator is attached to
+ * the entry, then a new AnyNumberParameterEntryValidator object will be
+ * created that that will allow the conversion from any supported type.
+ *
+ * The parameter must exist or an <tt>Exceptions::InvalidParameterName</tt>
+ * object will be thrown.  The parameters type must be acceptable, or an
+ * <tt>Exceptions::InvalidParameterType</tt> object will be thown.
+ *
+ * \relates ParameterList
+ */
+double getDoubleParameter(
+  ParameterList const& paramList,
+  std::string const& paramName
+  );
+
+
+/** \brief Get string numeric parameter.
+ *
+ * If the underlying parameter type is already a string, then all is good.
+ * However, if it is not, then a AnyNumberParameterEntryValidator object is
+ * looked for to extract the type correctly.  If no validator is attached to
+ * the entry, then a new AnyNumberParameterEntryValidator object will be
+ * created that that will allow the conversion from any supported type.
+ *
+ * The parameter must exist or an <tt>Exceptions::InvalidParameterName</tt>
+ * object will be thrown.  The parameters type must be acceptable, or an
+ * <tt>Exceptions::InvalidParameterType</tt> object will be thown.
+ *
+ * \relates ParameterList
+ */
+std::string getNumericStringParameter(
+  ParameterList const& paramList,
+  std::string const& paramName
+  );
 
 
 // ///////////////////////////
@@ -613,6 +869,159 @@ void StringToIntegralParameterEntryValidator<IntegralType>::setValidValues(
 
 
 } // namespace Teuchos
+
+
+//
+// Nonmember function implementations for StringToIntegralParameterEntryValidator
+//
+
+
+template<class IntegralType>
+inline
+Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
+Teuchos::stringToIntegralParameterEntryValidator(
+  Array<std::string> const& strings,
+  std::string const& defaultParameterName
+  )
+{
+  return rcp(
+    new StringToIntegralParameterEntryValidator<IntegralType>(
+      strings, defaultParameterName
+      )
+    );
+}
+
+
+template<class IntegralType>
+inline
+Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
+Teuchos::stringToIntegralParameterEntryValidator(
+  Array<std::string> const& strings,
+  Array<IntegralType> const& integralValues, 
+  std::string const& defaultParameterName
+  )
+{
+  return rcp(
+    new StringToIntegralParameterEntryValidator<IntegralType>(
+      strings, integralValues, defaultParameterName
+      )
+    );
+}
+
+
+template<class IntegralType>
+inline
+Teuchos::RefCountPtr< Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
+Teuchos::stringToIntegralParameterEntryValidator(
+  Array<std::string> const& strings,
+  Array<std::string> const& stringsDocs,
+  Array<IntegralType> const& integralValues, 
+  std::string const& defaultParameterName
+  )
+{
+  return rcp(
+    new StringToIntegralParameterEntryValidator<IntegralType>(
+      strings, stringsDocs, integralValues, defaultParameterName
+      )
+    );
+}
+
+
+template<class IntegralType>
+void Teuchos::setStringToIntegralParameter(
+  std::string const& paramName,
+  std::string const& defaultValue,
+  std::string const& docString,
+  Array<std::string> const& strings,
+  ParameterList * paramList
+  )
+{
+  TEST_FOR_EXCEPT(0==paramList);
+  paramList->set(
+    paramName, defaultValue, docString,
+    stringToIntegralParameterEntryValidator<IntegralType>(
+      strings, paramName
+      )
+    );
+}
+
+
+template<class IntegralType>
+void Teuchos::setStringToIntegralParameter(
+  std::string const& paramName,
+  std::string const& defaultValue,
+  std::string const& docString,
+  Array<std::string> const& strings,
+  Array<IntegralType> const& integralValues, 
+  ParameterList * paramList
+  )
+{
+  TEST_FOR_EXCEPT(0==paramList);
+  paramList->set(
+    paramName, defaultValue, docString,
+    stringToIntegralParameterEntryValidator<IntegralType>(
+      strings, integralValues, paramName
+      )
+    );
+}
+
+
+template<class IntegralType>
+void Teuchos::setStringToIntegralParameter(
+  std::string const& paramName,
+  std::string const& defaultValue,
+  std::string const& docString,
+  Array<std::string> const& strings,
+  Array<std::string> const& stringsDocs,
+  Array<IntegralType> const& integralValues, 
+  ParameterList * paramList
+  )
+
+{
+  TEST_FOR_EXCEPT(0==paramList);
+  paramList->set(
+    paramName, defaultValue, docString,
+    stringToIntegralParameterEntryValidator<IntegralType>(
+      strings, stringsDocs, integralValues, paramName
+      )
+    );
+}
+
+
+template<class IntegralType>
+IntegralType Teuchos::getIntegralValue(
+  ParameterList const& paramList, std::string const& paramName
+  )
+{
+  const ParameterEntry &entry = paramList.getEntry(paramName);
+  RefCountPtr<const ParameterEntryValidator>
+    validator = entry.validator();
+  TEST_FOR_EXCEPTION_PURE_MSG(
+    is_null(validator), Exceptions::InvalidParameterType,
+    "Error!  The parameter \""<<paramName<<"\" exists\n"
+    "in the parameter (sub)list \""<<paramList.name()<<"\"\n"
+    "but it does not contain any validator needed to extract\n"
+    "an integral value of type \""<<TypeNameTraits<IntegralType>::name()<<"\"!"
+    );
+
+  RefCountPtr<const StringToIntegralParameterEntryValidator<IntegralType> >
+    integralValidator
+    =
+    rcp_dynamic_cast<const StringToIntegralParameterEntryValidator<IntegralType> >(
+      validator
+      );
+  TEST_FOR_EXCEPTION_PURE_MSG(
+    is_null(integralValidator), Exceptions::InvalidParameterType,
+    "Error!  The parameter \""<<paramName<<"\" exists\n"
+    "in the parameter (sub)list \""<<paramList.name()<<"\"\n"
+    "but it contains the wrong type of validator.  The expected validator type\n"
+    "is \""<<TypeNameTraits<StringToIntegralParameterEntryValidator<IntegralType> >::name()<<"\"\n"
+    "but the contained validator type is \""<<typeName(*validator)<<"\"!"
+    );
+  return integralValidator->getIntegralValue(
+    entry, paramName, paramList.name(), true
+    );
+}
 
 
 #endif // TEUCHOS_STANDARD_PARAMETER_ENTRY_VALIDATORS_H

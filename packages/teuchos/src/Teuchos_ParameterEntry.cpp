@@ -59,6 +59,25 @@ ParameterEntry& ParameterEntry::operator=(const ParameterEntry& source)
   return *this;
 }
 
+void ParameterEntry::setAnyValue(
+  const any &value, bool isDefault
+  )
+{
+  val_ = value;
+  isDefault_ = isDefault;
+  validator_ = null;
+  isList_ = false;
+  isUsed_ = false;
+  docString_ = "";
+}
+
+void ParameterEntry::setValidator(
+  RefCountPtr<const ParameterEntryValidator> const& validator
+  )
+{
+  validator_ = validator;
+}
+
 void ParameterEntry::setDocString(const std::string &docString)
 {
   docString_ = docString;

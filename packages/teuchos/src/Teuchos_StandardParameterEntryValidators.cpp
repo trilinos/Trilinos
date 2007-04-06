@@ -79,9 +79,10 @@ namespace Teuchos {
 
 
 AnyNumberParameterEntryValidator::AnyNumberParameterEntryValidator(
-  AcceptedTypes    const& acceptedTypes
+  EPreferredType const preferredType,
+  AcceptedTypes const& acceptedTypes
   )
-  :acceptedTypes_(acceptedTypes)
+  :preferredType_(preferredType), acceptedTypes_(acceptedTypes)
 {
   std::ostringstream oss;
   bool addedType = false;
@@ -221,6 +222,38 @@ void AnyNumberParameterEntryValidator::validate(
 }
 
 
+void AnyNumberParameterEntryValidator::validateAndModify(
+  std::string const& paramName,
+  std::string const& sublistName,
+  ParameterEntry * entry
+  ) const
+{
+  TEST_FOR_EXCEPT(0==entry);
+  switch(preferredType_) {
+    case PREFER_INT:
+      entry->setValue(
+        getInt(*entry,paramName,sublistName,false),
+        false // isDefault
+        );
+      break;
+    case PREFER_DOUBLE:
+      entry->setValue(
+        getDouble(*entry,paramName,sublistName,false),
+        false // isDefault
+        );
+      break;
+    case PREFER_STRING:
+      entry->setValue(
+        getString(*entry,paramName,sublistName,false),
+        false // isDefault
+        );
+      break;
+    default:
+      TEST_FOR_EXCEPT("Error, Invalid EPreferredType value!");
+  }
+}
+
+
 // private
 
 
@@ -242,3 +275,131 @@ void AnyNumberParameterEntryValidator::throwTypeError(
 
 
 } // namespace Teuchos
+
+
+// Nonmmeber helper functions
+
+Teuchos::RefCountPtr<Teuchos::AnyNumberParameterEntryValidator>
+Teuchos::anyNumberParameterEntryValidator(
+  AnyNumberParameterEntryValidator::EPreferredType const preferredType,
+  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
+  )
+{
+  return rcp(
+    new AnyNumberParameterEntryValidator(
+      preferredType, acceptedTypes
+      )
+    );
+}
+
+
+void Teuchos::setIntParameter(
+  std::string const& paramName,
+  int const value, std::string const& docString,
+  ParameterList *paramList,
+  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
+  )
+{
+  TEST_FOR_EXCEPT(0==paramList);
+  paramList->set(
+    paramName,value,docString,
+    anyNumberParameterEntryValidator(
+      AnyNumberParameterEntryValidator::PREFER_INT, acceptedTypes
+      )
+    );
+}
+
+
+void Teuchos::setDoubleParameter(
+  std::string const& paramName,
+  double const& value, std::string const& docString,
+  ParameterList *paramList,
+  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
+  )
+{
+  TEST_FOR_EXCEPT(0==paramList);
+  paramList->set(
+    paramName,value,docString,
+    anyNumberParameterEntryValidator(
+      AnyNumberParameterEntryValidator::PREFER_DOUBLE, acceptedTypes
+      )
+    );
+}
+
+
+void Teuchos::setNumericStringParameter(
+  std::string const& paramName,
+  std::string const& value, std::string const& docString,
+  ParameterList *paramList,
+  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
+  )
+{
+  TEST_FOR_EXCEPT(0==paramList);
+  paramList->set(
+    paramName,value,docString,
+    anyNumberParameterEntryValidator(
+      AnyNumberParameterEntryValidator::PREFER_STRING, acceptedTypes
+      )
+    );
+}
+
+
+int Teuchos::getIntParameter(
+  ParameterList const& paramList,
+  std::string const& paramName
+  )
+{
+  const ParameterEntry &entry = paramList.getEntry(paramName);
+  RefCountPtr<const AnyNumberParameterEntryValidator>
+    anyNumValidator = rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(
+      entry.validator()
+      );
+  if ( !is_null(anyNumValidator) )
+    return anyNumValidator->getInt(entry,paramName,paramList.name());
+  if ( typeid(int) == entry.getAny().type() )
+    return any_cast<int>(entry.getAny());
+  // Try the do the conversion which might fail!
+  const AnyNumberParameterEntryValidator myAnyNumValidator;
+  return myAnyNumValidator.getInt(entry,paramName,paramList.name());
+}
+
+
+double Teuchos::getDoubleParameter(
+  ParameterList const& paramList,
+  std::string const& paramName
+  )
+{
+  const ParameterEntry &entry = paramList.getEntry(paramName);
+  RefCountPtr<const AnyNumberParameterEntryValidator>
+    anyNumValidator = rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(
+      entry.validator()
+      );
+  if ( !is_null(anyNumValidator) )
+    return anyNumValidator->getDouble(entry,paramName,paramList.name());
+  if ( typeid(double) == entry.getAny().type() )
+    return any_cast<double>(entry.getAny());
+  // Try the do the conversion which might fail!
+  const AnyNumberParameterEntryValidator myAnyNumValidator;
+  return myAnyNumValidator.getDouble(entry,paramName,paramList.name());
+}
+
+
+std::string Teuchos::getNumericStringParameter(
+  ParameterList const& paramList,
+  std::string const& paramName
+  )
+{
+  const ParameterEntry &entry = paramList.getEntry(paramName);
+  RefCountPtr<const AnyNumberParameterEntryValidator>
+    anyNumValidator = rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(
+      entry.validator()
+      );
+  if ( !is_null(anyNumValidator) )
+    return anyNumValidator->getString(entry,paramName,paramList.name());
+  if ( typeid(std::string) == entry.getAny().type() )
+    return any_cast<std::string>(entry.getAny());
+  // Try the do the conversion which might fail!
+  const AnyNumberParameterEntryValidator myAnyNumValidator;
+  return myAnyNumValidator.getString(entry,paramName,paramList.name());
+}
+

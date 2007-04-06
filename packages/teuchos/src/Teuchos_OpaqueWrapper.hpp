@@ -41,6 +41,64 @@ namespace Teuchos {
 
 /** \brief Base class for wrapped opaque objects.
  *
+ * This base class allows opaque objects to be wrapped by a real object that
+ * you can then take an address off.  This is needed in order to wrap an
+ * opaque object in a RefCountPtr for example.
+ *
+ * For example, MPI uses the opaque object idiom for handling things like
+ * MPI_Comm, and MPI_Op.  Some implementations implement these opaque object
+ * handles and just integers.  This causes many problems with used with the
+ * RefCountPtr (just try wrapping an MPI_Comm object directly in a RefCountPtr
+ * and see what happens yourself and see what happens).
+ *
+ * For example, to wrap MPI_COMM_WORLD in a RefCountPtr, you would do
+ * <tt>opaqueWrapper(MPI_COMM_WORLD)</tt> and that is it.
+ *
+ * Consider what would happen if you tried to directly wrap the MPI_Comm
+ * MPI_COMM_WORLD in a RefCountPtr.  On some implementations like MPICH,
+ * MPI_Comm is just a typedef to an integer and MPI_COMM_WORLD is just a define
+ * to a literal interger.  In this case, the expression
+ * <tt>rcp(&MPI_COMM_WORLD)</tt> would not even compile (try this on your
+ * version of MPICH).  To make this compile, we might try something like:
+ 
+ \code
+
+  Teuchos::RefCountPtr<MPI_Comm> getMpiCommPtr()
+  {
+    MPI_Comm comm = MPI_COMM_WORLD;
+    return Teuchos::rcp(&comm,false);
+  }
+
+ \endcode
+
+ * Of course the above code would result in a disaster when the stack variable
+ * <tt>comm</tt>, which is just an integer in MPICH, was destroyed and
+ * reclaimed.  The <tt>RefCountPtr</tt> returned from getMpiCommPtr() would
+ * contain a raw pointer an <tt>int</tt> object that was now being used for
+ * something else and would no longer have the integer value of a valid
+ * MPI_Comm object.
+ *
+ * The following implementation would most likely work but is pretty ugly:
+ 
+ \code
+
+  Teuchos::RefCountPtr<MPI_Comm> getMpiCommPtr()
+  {
+    MPI_Comm *comm = new MPI_Comm(MPI_COMM_WORLD);
+    return Teuchos::rcp(&comm);
+  }
+
+ \endcode
+
+ * The above implementation of getMPiCommPtr() would work with MPICH but it is
+ * unclear how this would work with other implementations of MPI (but it
+ * should work for these also).  However, this is pretty ugly to do.
+ *
+ * There are other issues that crop up also when you play these types of games.
+ *
+ * Therefore, just use <tt>opaqueWrapper()</tt> create wrap opaque objects in
+ * RefCountPtr objects and be sure that this will go smoothly.
+ *
  * \ingroup teuchos_mem_mng_grp
  */
 template <class Opaque>
@@ -65,6 +123,18 @@ private:
 }; 
 
 /** \brief Subclass for wrapped opaque objects with a free function.
+ *
+ * This subclass allows a client to easily wrap any opaque object that needs a
+ * function to free it.  This function (or function object) must be callable
+ * as:
+
+ \code
+  opaqueFree(&opaque);
+ \endcode
+
+ * Again, this is typical for the opaque objects implemented in MPI for
+ * instance.  For example, in order to delete an MPI_Comm object created by
+ * the user (not MPI_COMM_WORLD), you must call the function MPI_Comm_free().
  *
  * \relates OpaqueWrapper
  */

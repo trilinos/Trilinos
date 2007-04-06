@@ -3,6 +3,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_Version.hpp"
@@ -53,124 +54,219 @@ void someLessDumbFunction( std::ostream &out_arg )
 class AlgorithmA
   : public Teuchos::VerboseObject<AlgorithmA>,
     public Teuchos::ParameterListAcceptor
-          
 {
 public:
 
   // Constructor(s)
 
-  AlgorithmA()
-    {
-      this->setLinePrefix("ALGO_A"); // I tell me who I am for line prefix outputting
-    }
+  AlgorithmA();
 
   // Overridden from ParameterListAccpetor
 
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
-    {
-      TEST_FOR_EXCEPT(is_null(paramList));
-      paramList_ = paramList;
-      paramList_->validateParameters(*this->getValidParameters(),0);
-      Teuchos::readVerboseObjectSublist(&*paramList_,this);
-      #ifdef TEUCHOS_DEBUG
-      paramList_->validateParameters(*this->getValidParameters());
-      #endif
-    }
+  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList()
-    {
-      return paramList_;
-    }
+  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList()
-    {
-      Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = paramList_;
-      paramList_ = Teuchos::null;
-      return paramList;
-    }
+  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
 
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const
-    {
-      return paramList_;
-    }
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
 
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const
-    {
-      using Teuchos::RefCountPtr; using Teuchos::ParameterList;
-      static RefCountPtr<const ParameterList> validParams;
-      if (is_null(validParams)) {
-        RefCountPtr<ParameterList>
-          pl = Teuchos::rcp(new ParameterList("AlgorithmA"));
-        Teuchos::setupVerboseObjectSublist(&*pl);
-        validParams = pl;
-      }
-      return validParams;
-    }
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
 
   // Other functions
 
-  void doAlgorithm()
-    {
-      using Teuchos::OSTab;
-      // Get the verbosity that we are going to use
-      Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-      // Here I grab the stream that I will use for outputting.  It is a good
-      // idea to grab the RCP to this object just to be safe.
-      Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-      // Here I set my line prefix and a single indent.  The convention will
-      // be that a called function will set its own indent.  This convention makes
-      // the most sense.
-      OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-      if(out.get() && verbLevel!=Teuchos::VERB_NONE)
-        *out << "\nEntering AlgorithmA::doAlgorithm() with verbLevel="<<toString(verbLevel)<<"\n";
-      {
-        // Here I use a simple macro for the typical case of one tab indent to
-        // save typing.  The idea is that this should be as easy to write as
-        // OSTab tab; but is more general.
-        TEUCHOS_OSTAB;
-        if(out.get() && verbLevel!=Teuchos::VERB_NONE)
-          *out << "\nI am \"smart\" code that knows about FancyOStream and OSTab ...\n";
-        {
-          // Here I temporaraly turn off tabbing so that I can print an imporant warning message.
-          OSTab tab = this->getOSTab(OSTab::DISABLE_TABBING);
-          if(out.get() && verbLevel!=Teuchos::VERB_NONE)
-            *out << "\n***\n*** Warning, I am doing something very dangerous so watch out!!!\n***\n";
-        }
-        if(out.get() && verbLevel!=Teuchos::VERB_NONE)
-          *out << "\nHere I am doing some more stuff and printing with indenting turned back on!\n";
-        {
-          // Here I am going to be calling a dumb piece of code that does not
-          // know about the FancyOStream system and will not use tabs or
-          // anything like that.  There is a lot of code in Trilinos that
-          // falls in this category.  The first thing I do is manually indent
-          // the stream one tab and set a line prefix for the dumb code since
-          // it may not do this itself.
-          OSTab tab = this->getOSTab(1,"DUMBALGO");
-          // Now a Pass in the updated FancyOStream object, which is properly
-          // indented now, through the std::ostream interface.  I also pass in
-          // the string that is being used for creating tabs.  The output from
-          // this function will be indented correctly without the dumb code
-          // knowing it!
-          someDumbFunction(*out,out->getTabIndentStr());
-        }
-        // Here I am calling a less dumb piece of code who's interface does
-        // not support FancyOStream but the implementation does.  Note that
-        // this function also follows the convention of doing an initial
-        // indent.
-        someLessDumbFunction(*out);
-      }
-      if(out.get() && verbLevel!=Teuchos::VERB_NONE)
-        *out << "\nLeaving AlgorithmA::doAlgorithm()\n";
-    }
+  void doAlgorithm();
 
 private:
 
+  enum EAlgoType { ALGO_BOB, ALGO_JOHN, ALGO_HARRY };
+
+  static const std::string toString( AlgorithmA::EAlgoType algoType );
+
   Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_;
+  EAlgoType algoType_;
+  double algoTol_;
   
 };
 
+
+// Implementations for AlgorithmA
+
+namespace {
+
+const std::string AlgoType_name = "Algo Type";
+const std::string AlgoType_default = "Bob";
+
+const std::string AlgoTol_name = "Algo Tol";
+const double AlgoTol_default = 1e-5;
+
+} // namespace
+
+const std::string AlgorithmA::toString( AlgorithmA::EAlgoType algoType )
+{
+  switch(algoType) {
+    case ALGO_BOB: return "Bob";
+    case ALGO_JOHN: return "John";
+    case ALGO_HARRY: return "Harry";
+    default: TEST_FOR_EXCEPT("Should never get here!");
+  }
+  return ""; // never be called!
+}
+
+
+AlgorithmA::AlgorithmA()
+  : algoType_(ALGO_BOB), algoTol_(AlgoTol_default)
+{
+  this->setLinePrefix("ALGO_A"); // I tell me who I am for line prefix outputting
+}
+
+
+void AlgorithmA::setParameterList(
+  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  )
+{
+  TEST_FOR_EXCEPT(is_null(paramList));
+  // Validate and set the parameter defaults.  Here, the parameters are
+  // validated and the state of *this is not changed unless the parameter
+  // validation succeeds.  Also, any validators that are defined for various
+  // parameters are passed along so that they can be used in extracting
+  // values!
+  paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
+  paramList_ = paramList;
+  // Get the enum value for the algorithm type. Here, the actual type stored
+  // for the algorithm type in the parameter list is an std::string but this
+  // helper function does all the work of extracting the validator set in
+  // getValidParameters() and set on *paramList_ through the
+  // validateParametersAndSetDefaults(...) function above!
+  algoType_ = Teuchos::getIntegralValue<EAlgoType>(*paramList_,AlgoType_name);
+  // Get the tolerance for the algorithm.  Here, the actual type of the
+  // parameter stored on input could be many different types.  Here, I can
+  // just assume that it is a double since it would have been converted to a
+  // double above in validateParametersAndSetDefaults(...).
+  algoTol_ = Teuchos::getParameter<double>(*paramList_,AlgoTol_name);
+  // Read the sublist for verbosity settings.
+  Teuchos::readVerboseObjectSublist(&*paramList_,this);
+#ifdef TEUCHOS_DEBUG
+  paramList_->validateParameters(*this->getValidParameters());
+#endif
+}
+
+
+Teuchos::RefCountPtr<Teuchos::ParameterList>
+AlgorithmA::getParameterList()
+{
+  return paramList_;
+}
+
+
+Teuchos::RefCountPtr<Teuchos::ParameterList>
+AlgorithmA::unsetParameterList()
+{
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = paramList_;
+  paramList_ = Teuchos::null;
+  return paramList;
+}
+
+
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+AlgorithmA::getParameterList() const
+{
+  return paramList_;
+}
+
+
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+AlgorithmA::getValidParameters() const
+{
+  using Teuchos::RefCountPtr; using Teuchos::ParameterList;
+  using Teuchos::setStringToIntegralParameter;
+  using Teuchos::tuple;
+  static RefCountPtr<const ParameterList> validParams;
+  if (is_null(validParams)) {
+    RefCountPtr<ParameterList>
+      pl = Teuchos::rcp(new ParameterList("AlgorithmA"));
+    setStringToIntegralParameter(
+      AlgoType_name, AlgoType_default,
+      "The algorithm type to use",
+      tuple<std::string>("Bob", "John", "Harry"),
+      tuple<EAlgoType>(ALGO_BOB, ALGO_JOHN, ALGO_HARRY),
+      &*pl
+      );
+    Teuchos::setDoubleParameter(
+      AlgoTol_name, AlgoTol_default,
+      "The tolerance for the algorithm.",
+      &*pl
+      );
+    Teuchos::setupVerboseObjectSublist(&*pl);
+    validParams = pl;
+  }
+  return validParams;
+}
+
+
+void AlgorithmA::doAlgorithm()
+{
+  using Teuchos::OSTab;
+  // Get the verbosity that we are going to use
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  // Here I grab the stream that I will use for outputting.  It is a good
+  // idea to grab the RCP to this object just to be safe.
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  // Here I set my line prefix and a single indent.  The convention will
+  // be that a called function will set its own indent.  This convention makes
+  // the most sense.
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+  if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+    *out << "\nEntering AlgorithmA::doAlgorithm() with verbLevel="<<Teuchos::toString(verbLevel)<<"\n";
+  {
+    // Here I use a simple macro for the typical case of one tab indent to
+    // save typing.  The idea is that this should be as easy to write as
+    // OSTab tab; but is more general.
+    TEUCHOS_OSTAB;
+    if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+      *out
+        << "\nI am \"smart\" code that knows about FancyOStream and OSTab ...\n"
+        << "\nDoing algorithm of type \""<<toString(algoType_)<<"\""
+        << "\nUsing tolerance of " << algoTol_ << "\n";
+    {
+      // Here I temporaraly turn off tabbing so that I can print an imporant warning message.
+      OSTab tab = this->getOSTab(OSTab::DISABLE_TABBING);
+      if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+        *out << "\n***\n*** Warning, I am doing something very dangerous so watch out!!!\n***\n";
+    }
+    if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+      *out << "\nHere I am doing some more stuff and printing with indenting turned back on!\n";
+    {
+      // Here I am going to be calling a dumb piece of code that does not
+      // know about the FancyOStream system and will not use tabs or
+      // anything like that.  There is a lot of code in Trilinos that
+      // falls in this category.  The first thing I do is manually indent
+      // the stream one tab and set a line prefix for the dumb code since
+      // it may not do this itself.
+      OSTab tab = this->getOSTab(1,"DUMBALGO");
+      // Now a Pass in the updated FancyOStream object, which is properly
+      // indented now, through the std::ostream interface.  I also pass in
+      // the string that is being used for creating tabs.  The output from
+      // this function will be indented correctly without the dumb code
+      // knowing it!
+      someDumbFunction(*out,out->getTabIndentStr());
+    }
+    // Here I am calling a less dumb piece of code who's interface does
+    // not support FancyOStream but the implementation does.  Note that
+    // this function also follows the convention of doing an initial
+    // indent.
+    someLessDumbFunction(*out);
+  }
+  if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+    *out << "\nLeaving AlgorithmA::doAlgorithm()\n";
+}
+
+
+//
 // Here is a simple driver function that I call over and over to show
 // different features of FancyOStream
+//
+
 void doAlgorithmStuff( Teuchos::ParameterList *algoParams = 0 )
 {
 
@@ -305,23 +401,30 @@ int main(int argc, char* argv[])
     doAlgorithmStuff();
     Teuchos::VerboseObject<AlgorithmA>::setDefaultVerbLevel(Teuchos::VERB_DEFAULT);
 
+    *out << "\n*** Running the algorithm by setting parameters in the parameter list ...\n";
+
     Teuchos::ParameterList algoParams("AlgorithmA");
 
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n*** Set AlgorithmA verbosity level to extreme through a parameter list\n\n";
     algoParams.sublist("VerboseObject").set("Verbosity Level","extreme");
+    algoParams.set("Algo Type","Harry");
+    algoParams.set("Algo Tol",0.3);
     doAlgorithmStuff(&algoParams);
 
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n*** Set AlgorithmA verbosity level to medium and the output file \"AlgorithmA.out\" through a parameter list\n\n";
     algoParams.sublist("VerboseObject").set("Verbosity Level","medium");
     algoParams.sublist("VerboseObject").set("Output File","AlgorithmA.out");
+    algoParams.set("Algo Type","John");
+    algoParams.set("Algo Tol",10);
     doAlgorithmStuff(&algoParams);
 
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n*** Set AlgorithmA verbosity level to low and the output back to default through a parameter list\n\n";
     algoParams.sublist("VerboseObject").set("Verbosity Level","low");
     algoParams.sublist("VerboseObject").set("Output File","none");
+    algoParams.set("Algo Tol","20");
     doAlgorithmStuff(&algoParams);
 
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);

@@ -840,6 +840,7 @@ int main( int argc, char *argv[] )
   Teuchos::RefCountPtr<Teuchos::AnyNumberParameterEntryValidator>
     linesearchMaxItersValiator = rcp(
       new Teuchos::AnyNumberParameterEntryValidator(
+        Teuchos::AnyNumberParameterEntryValidator::PREFER_INT, // Not used here!
         AcceptedTypes(false).allowInt(true).allowDouble(true).allowString(true)
         )
       );
@@ -855,6 +856,7 @@ int main( int argc, char *argv[] )
   Teuchos::RefCountPtr<Teuchos::AnyNumberParameterEntryValidator>
     linSolveTolValidator = rcp(
       new Teuchos::AnyNumberParameterEntryValidator(
+        Teuchos::AnyNumberParameterEntryValidator::PREFER_INT, // Not used here!
         AcceptedTypes(false).allowDouble(true).allowString(true)
         )
       );
@@ -1034,8 +1036,53 @@ int main( int argc, char *argv[] )
     ++FailedTests;
   }
 
+  //-----------------------------------------------------------
+  // Validate and set defaults
+  //-----------------------------------------------------------
+
+  // Set the default parameters for an emplty list
+  ParameterList validatedPL;
+
+  if (verbose) {
+    print_break();
+    cout << "Validating and setting defaults for an empty parameter list (should not throw) ...\n";
+    print_break();
+  }
+  try {
+    validatedPL.validateParametersAndSetDefaults(PL_Main_valid);
+    if (verbose) cout << "Did not throw exception, success!\n\n";
+  }
+  catch(const std::exception &e) {
+    if(verbose) {
+      cerr << "caught unexpected exception:\n\n";
+      OSTab(cerr).o() << e.what() << endl;
+    }
+    ++FailedTests;
+  }
+
+  if (verbose) {
+    print_break();
+    cout << "Parameter list with defaults set:" << endl;
+    print_break();
+    validatedPL.print(cout,PLPrintOptions().showTypes(true).showDoc(true));
+    print_break();
+  }
+
+  if (verbose) {
+    print_break();
+    cout << "Checking that validatedPL and PL_Main_valid have the same values : ";
+  }
+  result = haveSameValues(validatedPL,PL_Main_valid);
+  if(!result)
+    ++FailedTests;
+  if (verbose) {
+    cout << ( result ? "passed" : "failed" ) << "\n";
+    print_break();
+  }
+
   //
-  // Testing access of numbers using validator
+  // Testing access of numbers using validator where validator is not buried
+  // in the parameter
   //
 
   for( int type_i = 0; type_i < 3; ++type_i ) {
@@ -1044,6 +1091,8 @@ int main( int argc, char *argv[] )
       = PL_Main.sublist("Line Search",true).sublist("Polynomial",true);
     
     std::string typeName;
+
+    // Set the input type
 
     switch(type_i) {
       case 0:
@@ -1062,9 +1111,11 @@ int main( int argc, char *argv[] )
         TEST_FOR_EXCEPT(true);
     }
 
+    // Extract using external validator
+
     if (verbose) {
       print_break();
-      cout << "Use the number validator to access a "<<typeName<<" as an int ...\n";
+      cout << "Use the external number validator to access a "<<typeName<<" as an int ...\n";
       print_break();
     }
     try {
@@ -1091,7 +1142,7 @@ int main( int argc, char *argv[] )
 
     if (verbose) {
       print_break();
-      cout << "Use the number validator to access a "<<typeName<<" as a double ...\n";
+      cout << "Use the external number validator to access a "<<typeName<<" as a double ...\n";
       print_break();
     }
     try {
@@ -1118,7 +1169,7 @@ int main( int argc, char *argv[] )
 
     if (verbose) {
       print_break();
-      cout << "Use the number validator to access a "<<typeName<<" as a string ...\n";
+      cout << "Use the external number validator to access a "<<typeName<<" as a string ...\n";
       print_break();
     }
     try {
@@ -1127,6 +1178,341 @@ int main( int argc, char *argv[] )
         = linesearchMaxItersValiator->getString(
           PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
           ,"Max Iters","0"
+          );
+      const bool
+        result = (lineserchMaxIters == "3");
+      cout
+        << "Read value = \"" << lineserchMaxIters << "\" == \"3\" : "
+        << ( result ? "passed" : "failed") << "\n";
+      if(!result) ++FailedTests;
+    }
+    catch(const std::exception &e) {
+      if(verbose) {
+        cerr << "caught unexpected exception:\n\n";
+        OSTab(cerr).o() << e.what() << endl;
+      }
+      ++FailedTests;
+    }
+
+    // Extract using nonmember functions
+
+    if (verbose) {
+      print_break();
+      cout << "Use the nomember help function to access a "<<typeName<<" as an int ...\n";
+      print_break();
+    }
+    try {
+      const int
+        lineserchMaxIters
+        = Teuchos::getIntParameter(
+          PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+          ,"Max Iters"
+          );
+      const bool
+        result = (lineserchMaxIters == int(3));
+      cout
+        << "Read value = " << lineserchMaxIters << " == 3 : "
+        << ( result ? "passed" : "failed") << "\n";
+      if(!result) ++FailedTests;
+    }
+    catch(const std::exception &e) {
+      if(verbose) {
+        cerr << "caught unexpected exception:\n\n";
+        OSTab(cerr).o() << e.what() << endl;
+      }
+      ++FailedTests;
+    }
+
+    if (verbose) {
+      print_break();
+      cout << "Use the nomember help function to access a "<<typeName<<" as a double ...\n";
+      print_break();
+    }
+    try {
+      const double
+        lineserchMaxIters
+        = Teuchos::getDoubleParameter(
+          PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+          ,"Max Iters"
+          );
+      const bool
+        result = (lineserchMaxIters == double(3.0));
+      cout
+        << "Read value = " << lineserchMaxIters << " == 3 : "
+        << ( result ? "passed" : "failed") << "\n";
+      if(!result) ++FailedTests;
+    }
+    catch(const std::exception &e) {
+      if(verbose) {
+        cerr << "caught unexpected exception:\n\n";
+        OSTab(cerr).o() << e.what() << endl;
+      }
+      ++FailedTests;
+    }
+
+    if (verbose) {
+      print_break();
+      cout << "Use the nomember help function to access a "<<typeName<<" as a string ...\n";
+      print_break();
+    }
+    try {
+      const std::string
+        lineserchMaxIters
+        = Teuchos::getNumericStringParameter(
+          PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+          ,"Max Iters"
+          );
+      const bool
+        result = (lineserchMaxIters == "3");
+      cout
+        << "Read value = \"" << lineserchMaxIters << "\" == \"3\" : "
+        << ( result ? "passed" : "failed") << "\n";
+      if(!result) ++FailedTests;
+    }
+    catch(const std::exception &e) {
+      if(verbose) {
+        cerr << "caught unexpected exception:\n\n";
+        OSTab(cerr).o() << e.what() << endl;
+      }
+      ++FailedTests;
+    }
+
+  }
+
+  //
+  // Testing access of numbers using validator where validator is buried in
+  // the parameter
+  //
+
+  for( int type_i = 0; type_i < 3; ++type_i ) {
+
+    ParameterList &Polynomial_sublist
+      = PL_Main.sublist("Line Search",true).sublist("Polynomial",true);
+    
+    std::string typeName;
+
+    // Set the input type
+
+    switch(type_i) {
+      case 0:
+        typeName = "int";
+        Teuchos::setIntParameter("Max Iters",3,"",&Polynomial_sublist);
+        break;
+      case 1:
+        typeName = "double";
+        Teuchos::setDoubleParameter("Max Iters",3.0,"",&Polynomial_sublist);
+        break;
+      case 2:
+        typeName = "string";
+        Teuchos::setNumericStringParameter("Max Iters","3","",&Polynomial_sublist);
+        break;
+      default:
+        TEST_FOR_EXCEPT(true);
+    }
+
+    // Extract using nonmember functions (which should use the internal validator)
+
+    if (verbose) {
+      print_break();
+      cout << "Use the nomember help function to access a "<<typeName<<" as an int ...\n";
+      print_break();
+    }
+    try {
+      const int
+        lineserchMaxIters
+        = Teuchos::getIntParameter(
+          PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+          ,"Max Iters"
+          );
+      const bool
+        result = (lineserchMaxIters == int(3));
+      cout
+        << "Read value = " << lineserchMaxIters << " == 3 : "
+        << ( result ? "passed" : "failed") << "\n";
+      if(!result) ++FailedTests;
+    }
+    catch(const std::exception &e) {
+      if(verbose) {
+        cerr << "caught unexpected exception:\n\n";
+        OSTab(cerr).o() << e.what() << endl;
+      }
+      ++FailedTests;
+    }
+
+    if (verbose) {
+      print_break();
+      cout << "Use the nomember help function to access a "<<typeName<<" as a double ...\n";
+      print_break();
+    }
+    try {
+      const double
+        lineserchMaxIters
+        = Teuchos::getDoubleParameter(
+          PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+          ,"Max Iters"
+          );
+      const bool
+        result = (lineserchMaxIters == double(3.0));
+      cout
+        << "Read value = " << lineserchMaxIters << " == 3 : "
+        << ( result ? "passed" : "failed") << "\n";
+      if(!result) ++FailedTests;
+    }
+    catch(const std::exception &e) {
+      if(verbose) {
+        cerr << "caught unexpected exception:\n\n";
+        OSTab(cerr).o() << e.what() << endl;
+      }
+      ++FailedTests;
+    }
+
+    if (verbose) {
+      print_break();
+      cout << "Use the nomember help function to access a "<<typeName<<" as a string ...\n";
+      print_break();
+    }
+    try {
+      const std::string
+        lineserchMaxIters
+        = Teuchos::getNumericStringParameter(
+          PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+          ,"Max Iters"
+          );
+      const bool
+        result = (lineserchMaxIters == "3");
+      cout
+        << "Read value = \"" << lineserchMaxIters << "\" == \"3\" : "
+        << ( result ? "passed" : "failed") << "\n";
+      if(!result) ++FailedTests;
+    }
+    catch(const std::exception &e) {
+      if(verbose) {
+        cerr << "caught unexpected exception:\n\n";
+        OSTab(cerr).o() << e.what() << endl;
+      }
+      ++FailedTests;
+    }
+
+  }
+
+  //
+  // Testing access of numbers where correct number is set using
+  // validateParametersAndSetDefaults(...) with no special access.
+  //
+
+  for( int type_i = 0; type_i < 3; ++type_i ) {
+
+    ParameterList valid_PL_Main(PL_Main);
+
+    ParameterList &Polynomial_sublist
+      = PL_Main.sublist("Line Search",true).sublist("Polynomial",true);
+    
+    std::string typeName;
+
+    // Set the input type
+
+    switch(type_i) {
+      case 0:
+        typeName = "int";
+        Teuchos::setIntParameter("Max Iters",3,"",&Polynomial_sublist);
+        break;
+      case 1:
+        typeName = "double";
+        Teuchos::setDoubleParameter("Max Iters",3.0,"",&Polynomial_sublist);
+        break;
+      case 2:
+        typeName = "string";
+        Teuchos::setNumericStringParameter("Max Iters","3","",&Polynomial_sublist);
+        break;
+      default:
+        TEST_FOR_EXCEPT(true);
+    }
+
+    // Extract using nonmember functions (which should use the internal validator)
+
+    if (verbose) {
+      print_break();
+      cout << "Use validateParemetersAndSetDefaults(...) to access a "<<typeName<<" as an int ...\n";
+      print_break();
+    }
+    try {
+      Teuchos::setIntParameter(
+        "Max Iters", 0, "",
+        &valid_PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+        );
+      ParameterList copied_PL_Main(PL_Main);
+      copied_PL_Main.validateParametersAndSetDefaults(valid_PL_Main);
+      const int
+        lineserchMaxIters
+        = Teuchos::getParameter<int>(
+          copied_PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+          ,"Max Iters"
+          );
+      const bool
+        result = (lineserchMaxIters == int(3));
+      cout
+        << "Read value = " << lineserchMaxIters << " == 3 : "
+        << ( result ? "passed" : "failed") << "\n";
+      if(!result) ++FailedTests;
+    }
+    catch(const std::exception &e) {
+      if(verbose) {
+        cerr << "caught unexpected exception:\n\n";
+        OSTab(cerr).o() << e.what() << endl;
+      }
+      ++FailedTests;
+    }
+
+    if (verbose) {
+      print_break();
+      cout << "Use validateParemetersAndSetDefaults(...) to access a "<<typeName<<" as a double ...\n";
+      print_break();
+    }
+    try {
+      Teuchos::setDoubleParameter(
+        "Max Iters", 0.0, "",
+        &valid_PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+        );
+      ParameterList copied_PL_Main(PL_Main);
+      copied_PL_Main.validateParametersAndSetDefaults(valid_PL_Main);
+      const double
+        lineserchMaxIters
+        = Teuchos::getParameter<double>(
+          copied_PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+          ,"Max Iters"
+          );
+      const bool
+        result = (lineserchMaxIters == double(3.0));
+      cout
+        << "Read value = " << lineserchMaxIters << " == 3 : "
+        << ( result ? "passed" : "failed") << "\n";
+      if(!result) ++FailedTests;
+    }
+    catch(const std::exception &e) {
+      if(verbose) {
+        cerr << "caught unexpected exception:\n\n";
+        OSTab(cerr).o() << e.what() << endl;
+      }
+      ++FailedTests;
+    }
+
+    if (verbose) {
+      print_break();
+      cout << "Use validateParemetersAndSetDefaults(...) to access a "<<typeName<<" as a string ...\n";
+      print_break();
+    }
+    try {
+      Teuchos::setNumericStringParameter(
+        "Max Iters", "0", "",
+        &valid_PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+        );
+      ParameterList copied_PL_Main(PL_Main);
+      copied_PL_Main.validateParametersAndSetDefaults(valid_PL_Main);
+      const std::string
+        lineserchMaxIters
+        = Teuchos::getParameter<std::string>(
+          copied_PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+          ,"Max Iters"
           );
       const bool
         result = (lineserchMaxIters == "3");
@@ -1196,7 +1582,7 @@ int main( int argc, char *argv[] )
     print_break();
     cout << "Checking that PL_Main == PL_Main == true : ";
   }
-  result = PL_Main == PL_Main;
+  result = (PL_Main == PL_Main);
   if(!result)
     ++FailedTests;
   if (verbose) {
@@ -1209,6 +1595,18 @@ int main( int argc, char *argv[] )
     cout << "Checking that PL_Main != PL_Main == false : ";
   }
   result = !(PL_Main != PL_Main);
+  if(!result)
+    ++FailedTests;
+  if (verbose) {
+    cout << ( result ? "passed" : "failed" ) << "\n";
+    print_break();
+  }
+
+  if (verbose) {
+    print_break();
+    cout << "Checking that PL_Main and PL_Main have the same values : ";
+  }
+  result = haveSameValues(PL_Main,PL_Main);
   if(!result)
     ++FailedTests;
   if (verbose) {

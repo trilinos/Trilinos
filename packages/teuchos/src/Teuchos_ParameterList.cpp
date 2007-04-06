@@ -359,18 +359,20 @@ const ParameterEntry& ParameterList::entry(ConstIterator i) const
 
 #endif // defined(TFLOP)
 
+
 void ParameterList::validateParameters(
-  ParameterList        const& validParamList
-  ,int                 const  depth
-  ,EValidateUsed       const  validateUsed
-  ,EValidateDefaults   const  validateDefaults
+  ParameterList const& validParamList,
+  int const depth,
+  EValidateUsed const validateUsed,
+  EValidateDefaults const validateDefaults
   ) const
 {
   typedef std::deque<ListPlusValidList> sublist_list_t;
 #ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
   RefCountPtr<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
   OSTab tab(out);
-  *out << "\n*** Entering ParameterList::validateParameters(...) for this->name()=\""<<this->name()<<"\"...\n";
+  *out << "\n*** Entering ParameterList::validateParameters(...) for "
+    "this->name()=\""<<this->name()<<"\"...\n";
 #endif
   //
   // First loop through and validate the parameters at this level.
@@ -397,25 +399,33 @@ void ParameterList::validateParameters(
     const ParameterEntry *validEntry = validParamList.getEntryPtr(entryName);
     TEST_FOR_EXCEPTION_PURE_MSG(
       !validEntry, Exceptions::InvalidParameterName
-      ,"Error, the parameter {name=\""<<entryName<<"\",type=\""<<entry.getAny(false).typeName()<<"\""
+      ,"Error, the parameter {name=\""<<entryName<<"\","
+      "type=\""<<entry.getAny(false).typeName()<<"\""
       ",value=\""<<filterValueToString(entry)<<"\"}"
       "\nin the parameter (sub)list \""<<this->name()<<"\""
       "\nwas not found in the list of valid parameters!"
-      "\n\nThe valid parameters and types are:\n"<<validParamList.currentParametersString()
+      "\n\nThe valid parameters and types are:\n"
+      <<validParamList.currentParametersString()
       );
     RefCountPtr<const ParameterEntryValidator> validator;
     if( (validator=validEntry->validator()).get() ) {
       validator->validate( entry, entryName, this->name() ); 
     }
     else {
-      const bool validType = ( validEntry!=NULL ? entry.getAny(false).type() == validEntry->getAny(false).type() : false );
+      const bool validType =
+        ( validEntry!=NULL
+          ? entry.getAny(false).type() == validEntry->getAny(false).type()
+          : false
+          );
       TEST_FOR_EXCEPTION_PURE_MSG(
         !validType, Exceptions::InvalidParameterType
-        ,"Error, the parameter {name=\""<<entryName<<"\",type=\""<<entry.getAny(false).typeName()<<"\""
+        ,"Error, the parameter {name=\""<<entryName<<"\","
+        "type=\""<<entry.getAny(false).typeName()<<"\""
         ",value=\""<<filterValueToString(entry)<<"\"}"
         "\nin the parameter (sub)list \""<<this->name()<<"\""
         "\nexists in the list of valid parameters but has the wrong type."
-        "\n\nThe correct type is \"" << validEntry->getAny(false).typeName() << "\"."
+        "\n\nThe correct type is \""
+        << validEntry->getAny(false).typeName() << "\"."
         );
     }
     if( entry.isList() && depth > 0 ) {
@@ -429,7 +439,12 @@ void ParameterList::validateParameters(
   //
   // Now loop through the sublists and validate their parameters
   //
-  for( sublist_list_t::const_iterator sl_itr = sublist_list.begin(); sl_itr != sublist_list.end(); ++sl_itr ) {
+  for(
+    sublist_list_t::const_iterator sl_itr = sublist_list.begin();
+    sl_itr != sublist_list.end();
+    ++sl_itr
+    )
+  {
     sl_itr->list->validateParameters(
       *sl_itr->validList
       ,depth-1
@@ -438,11 +453,143 @@ void ParameterList::validateParameters(
       );
   }
 #ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
-  *out << "\n*** Existing ParameterList::validateParameters(...) for this->name()=\""<<this->name()<<"\"...\n";
+  *out << "\n*** Existing ParameterList::validateParameters(...) for "
+    "this->name()=\""<<this->name()<<"\"...\n";
 #endif
 }
 
+
+void ParameterList::validateParametersAndSetDefaults(
+  ParameterList const& validParamList,
+  int const depth
+  )
+{
+  typedef std::deque<ListPlusValidList> sublist_list_t;
+#ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
+  RefCountPtr<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
+  OSTab tab(out);
+  *out << "\n*** Entering ParameterList::validateParametersAndSetDefaults(...) "
+    "for this->name()=\""<<this->name()<<"\"...\n";
+#endif
+  //
+  // First loop through and validate the parameters at this level.
+  //
+  // Here we generate a list of sublists that we will search next
+  //
+  sublist_list_t sublist_list;
+  {
+    Iterator itr;
+    for( itr = this->nonconstBegin(); itr != this->nonconstEnd(); ++itr ) {
+      const std::string  &entryName = this->name(itr);
+      ParameterEntry &entry = this->entry(itr);
+#ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
+      OSTab tab(out);
+      *out << "\nentryName=\""<<entryName<<"\"\n";
+#endif
+      const ParameterEntry *validEntry = validParamList.getEntryPtr(entryName);
+      TEST_FOR_EXCEPTION_PURE_MSG(
+        !validEntry, Exceptions::InvalidParameterName
+        ,"Error, the parameter {name=\""<<entryName<<"\","
+        "type=\""<<entry.getAny(false).typeName()<<"\""
+        ",value=\""<<filterValueToString(entry)<<"\"}"
+        "\nin the parameter (sub)list \""<<this->name()<<"\""
+        "\nwas not found in the list of valid parameters!"
+        "\n\nThe valid parameters and types are:\n"
+        <<validParamList.currentParametersString()
+        );
+      RefCountPtr<const ParameterEntryValidator> validator;
+      if( (validator=validEntry->validator()).get() ) {
+        validator->validateAndModify( entryName, this->name(), &entry );
+        entry.setValidator(validator);
+      }
+      else {
+        const bool validType =
+          ( validEntry!=NULL
+            ? entry.getAny(false).type() == validEntry->getAny(false).type()
+            : false
+            );
+        TEST_FOR_EXCEPTION_PURE_MSG(
+          !validType, Exceptions::InvalidParameterType
+          ,"Error, the parameter {name=\""<<entryName<<"\","
+          "type=\""<<entry.getAny(false).typeName()<<"\""
+          ",value=\""<<filterValueToString(entry)<<"\"}"
+          "\nin the parameter (sub)list \""<<this->name()<<"\""
+          "\nexists in the list of valid parameters but has the wrong type."
+          "\n\nThe correct type is \""
+          << validEntry->getAny(false).typeName() << "\"."
+          );
+        // Note: If there is no validator for this item, then we can not
+        // validate the value of the parameter, only its type!
+      }
+      if( entry.isList() && depth > 0 ) {
+        sublist_list.push_back(
+          ListPlusValidList(
+            &getValue<ParameterList>(entry),
+            &getValue<ParameterList>(*validEntry)
+            )
+          );
+      }
+    }
+  }
+  //
+  // Second, loop through the valid parameters at this level that are not set
+  // in *this, and set their defaults.
+  //
+  {
+    ConstIterator itr;
+    for( itr = validParamList.begin(); itr != validParamList.end(); ++itr ) {
+      const std::string  &validEntryName = validParamList.name(itr);
+      const ParameterEntry &validEntry = validParamList.entry(itr);
+      const ParameterEntry *entry = this->getEntryPtr(validEntryName);
+      if(!entry) {
+        // This entry does not exist, so add it.  Here we will only set the
+        // value of the entry and its validator and and leave off the
+        // documentation.  The reason that the validator is set is so that it
+        // can be used to extract and validate entries in the transformed list
+        // *this without having to refer back to the valid parameter list.
+        ParameterEntry newEntry;
+        newEntry.setAnyValue(
+          validEntry.getAny(),
+          true // isDefault
+          );
+        newEntry.setValidator(validEntry.validator());
+        this->setEntry(validEntryName,newEntry);
+      }
+    }
+  }
+  //
+  // Now loop through the sublists and validate their parameters and set their
+  // defaults!
+  //
+  for(
+    sublist_list_t::iterator sl_itr = sublist_list.begin();
+    sl_itr != sublist_list.end();
+    ++sl_itr
+    )
+  {
+    sl_itr->list->validateParametersAndSetDefaults(*sl_itr->validList,depth-1);
+  }
+#ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
+  *out << "\n*** Existing ParameterList::validateParametersAndSetDefaults(...) "
+    "for this->name()=\""<<this->name()<<"\"...\n";
+#endif
+}
+
+
 // private
+
+
+ParameterList::Iterator ParameterList::nonconstBegin()
+{
+  return params_.begin();
+}
+
+
+ParameterList::Iterator ParameterList::nonconstEnd()
+{
+  return params_.end();
+}
+
 
 void ParameterList::updateSubListNames(int depth)
 {
@@ -460,11 +607,27 @@ void ParameterList::updateSubListNames(int depth)
   }
 }
 
+
+void ParameterList::validateEntryExists(
+  const std::string &funcName, const std::string &name,
+  const ParameterEntry *entry
+  ) const
+{
+  TEST_FOR_EXCEPTION_PURE_MSG(
+    entry==NULL, Exceptions::InvalidParameterName
+    ,"Error!  The parameter \""<<name<<"\" does not exist"\
+    "\nin the parameter (sub)list \""<<this->name()<<"\"."
+    "\n\nThe current parameters set in (sub)list \""<<this->name()<<"\" are:\n\n"
+    << this->currentParametersString()
+    );
+}
+
+
 } // namespace Teuchos
+
 
 bool Teuchos::operator==( const ParameterList& list1, const ParameterList& list2 )
 {
-  bool isSame = true;
   ParameterList::ConstIterator itr1, itr2;
   for(
     itr1 = list1.begin(), itr2 = list2.begin();
@@ -476,14 +639,56 @@ bool Teuchos::operator==( const ParameterList& list1, const ParameterList& list2
     const std::string    &entryName2   = list2.name(itr2);
     const ParameterEntry &entry1       = list1.entry(itr1);
     const ParameterEntry &entry2       = list2.entry(itr2);
-    if( entryName1 != entryName2 )
-      isSame = false;
-    else if( entry1 != entry2 )
-      isSame = false;
+    if( entryName1 != entryName2 ) {
+      return false;
+    }
+    else if( entry1 != entry2 ) {
+      return false;
+    }
     // Note that the above statement automatically recursively compare the
     // sublists since ParameterList objects are stored in the 'any' variable
     // held by the ParameterEntry object and this same comparison operator will
     // be used.
   }
-  return isSame;
+  return true;
+}
+
+
+bool Teuchos::haveSameValues( const ParameterList& list1, const ParameterList& list2 )
+{
+  ParameterList::ConstIterator itr1, itr2;
+  for(
+    itr1 = list1.begin(), itr2 = list2.begin();
+    itr1 != list1.end() && itr2 != list2.end();
+    ++itr1, ++itr2
+    )
+  {
+    const std::string    &entryName1   = list1.name(itr1);
+    const std::string    &entryName2   = list2.name(itr2);
+    const ParameterEntry &entry1       = list1.entry(itr1);
+    const ParameterEntry &entry2       = list2.entry(itr2);
+    if( entryName1 != entryName2 ) {
+      return false;
+    }
+    if( entry1.isList() && entry2.isList() ) {
+      if (
+        !haveSameValues(
+          getValue<ParameterList>(entry1),
+          getValue<ParameterList>(entry2))
+        )
+      {
+        // Note: Above we cast to a non-const ParameterList even through we
+        // only need a const ParameterList.  We have to do this since a
+        // non-const ParameterList is always added initially which determines
+        // the value.
+        return false;
+      }
+    }
+    else {
+      if( entry1.getAny() != entry2.getAny() ) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
