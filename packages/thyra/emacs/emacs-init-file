@@ -7,7 +7,6 @@
 ;; Set my style to the Thyra style!
 (setq c-set-style "thyra")
 
-
 ;;; Load the C++ function menue
 (add-to-list 'load-path (expand-file-name "~/elisp/"))
 (require 'cpp-func-menu)
@@ -38,9 +37,13 @@
  '(require-final-newline t)
  '(show-paren-mode t nil (paren))
  '(transient-mark-mode t)
- '(user-mail-address "rabartl@sandia.gov"))
+ '(indent-tabs-mode nil))
 (custom-set-faces
  '(default ((t (:family "Clean" :size "12pt"))) t))
+
 ;; I can't remember what this does?
 (setq minibuffer-max-depth nil)
 
+;; Setup the PSGML mode to indent elements automatically!
+(setq sgml-indent-data t)
+(setq sgml-indent-step 2)
