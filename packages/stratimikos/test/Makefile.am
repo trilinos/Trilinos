@@ -90,7 +90,8 @@ EXTRA_DIST = $(srcdir)/test_single_stratimikos_solver.hpp \
 	$(srcdir)/_FourByFour.aztecoo.np.xml \
 	$(srcdir)/_FourByFour.belos.ifpack.xml \
 	$(srcdir)/_FourByFour.belos.ml.xml \
-	$(srcdir)/_FourByFour.belos.np.xml
+	$(srcdir)/_FourByFour.belos.np.xml \
+	$(srcdir)/definition
 
 # This is already added part of STRATIMIKOS_LIBS and therefore automake does not need to add this again!
 LIBS =

@@ -270,7 +270,8 @@ EXTRA_DIST = $(srcdir)/test_single_stratimikos_solver.hpp \
 	$(srcdir)/_FourByFour.aztecoo.np.xml \
 	$(srcdir)/_FourByFour.belos.ifpack.xml \
 	$(srcdir)/_FourByFour.belos.ml.xml \
-	$(srcdir)/_FourByFour.belos.np.xml
+	$(srcdir)/_FourByFour.belos.np.xml \
+	$(srcdir)/definition
 
 all: all-am
 
