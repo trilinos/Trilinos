@@ -336,7 +336,7 @@ namespace Belos {
 		   _hessmatrix[i].values(), _hessmatrix[i].stride(), y.values(), y.stride() );
 	
 	RefCountPtr<const MV> Vjp1 = MVT::CloneView( *_basisvecs[i], index2 );
-	MVT::MvTimesMatAddMv( one, *Vjp1, y, one, *cur_sol_copy );
+	MVT::MvTimesMatAddMv( one, *Vjp1, y, one, *cur_block_copy_vec );
       }
     }
     return cur_sol_copy;
@@ -439,10 +439,11 @@ namespace Belos {
 	  _z[i].putScalar();
         }
         for (i=0; i<_blocksize; ++i) {
- 	  index2[i] = i;
-          _ortho->normalize( *MVT::CloneView( *_basisvecs[i], index2 ),
-			     Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>
-					   (Teuchos::View, _z[i].values(), 1) ) );
+	  index2[0] = i;
+	  tmp_vec = MVT::CloneView( *_U_vec, index2 );
+          _ortho->normalize( *tmp_vec, Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>
+						     (Teuchos::View, _z[i].values(), 1) ) );
+	  MVT::MvAddMv( one, *tmp_vec, zero, *tmp_vec, *MVT::CloneView( *_basisvecs[i], index ) );
 	}
 	//
 	//	
@@ -698,13 +699,18 @@ namespace Belos {
     // system to upper-triangular form.  
     // NOTE:  When _iter==0, storage will be created for the transformations.
     //
+    if (_iter==0 && (int)cs.size()!=_blocksize) {
+      cs.resize(_blocksize);
+      sn.resize(_blocksize);
+    }
+
     for (i=0; i<_blocksize; ++i) {
       //
       //  Update the least-squares QR for each linear system.
       //
-      if (_iter==0 && (int)cs[i].length() != _length+1) {
-	cs[i].resize( _length+1 );
-	sn[i].resize( _length+1 );
+      if ( _iter==0 ) {
+	cs[i].shapeUninitialized(_length+1, 1);
+	sn[i].shapeUninitialized(_length+1, 1);
       }
       //
       // QR factorization of Least-Squares system with Givens rotations
