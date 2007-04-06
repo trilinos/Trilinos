@@ -396,16 +396,21 @@ namespace Belos {
       //
       _basisvecs.resize(_blocksize);
       for (i=0; i<_blocksize; ++i) {
-        _basisvecs[i] = MVT::Clone(*_cur_block_rhs,_length+1);
+	_basisvecs[i] = MVT::Clone(*_cur_block_rhs,_length+1);
       }
+      _U_vec = MVT::Clone(*_cur_block_rhs, _blocksize);
       //
       // Create the rectangular Hessenberg matrix and right-hand side of least squares problem.
       //
-      _hessmatrix.resize(_blocksize);
-      _z.resize(_blocksize);
-      for (i=0; i<_blocksize; ++i) {
-	_hessmatrix[i].shapeUninitialized(_length+1, _length);
-        _z[i].shapeUninitialized(_length+1, 1); 
+      if ((int)_hessmatrix.size() != _blocksize) {
+	_hessmatrix.resize(_blocksize);
+	_z.resize(_blocksize);
+      }
+      if ((int)_z[0].length() != (_length+1) ) {
+	for (i=0; i<_blocksize; ++i) {
+	  _hessmatrix[i].shapeUninitialized(_length+1, _length);
+	  _z[i].shapeUninitialized(_length+1, 1); 
+	}
       }
       //
       // Outer restart loop begins here.
@@ -418,7 +423,6 @@ namespace Belos {
 	index.resize(1);
 	index2.resize(1);
 	index[0] = 0;
-	_U_vec = MVT::Clone( *_basisvecs[0], _blocksize );
         for (i=0; i<_blocksize; ++i) {
 	  index2[0] = i;
 	  tmp_vec = MVT::CloneView( *_basisvecs[i], index );
@@ -436,10 +440,8 @@ namespace Belos {
 	// Re-initialize RHS of the least squares system and create a view.
 	//
         for (i=0; i<_blocksize; ++i) {
-	  _z[i].putScalar();
-        }
-        for (i=0; i<_blocksize; ++i) {
 	  index2[0] = i;
+	  _z[i].putScalar();
 	  tmp_vec = MVT::CloneView( *_U_vec, index2 );
           _ortho->normalize( *tmp_vec, Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>
 						     (Teuchos::View, _z[i].values(), 1) ) );
@@ -603,29 +605,22 @@ namespace Belos {
     //
     int i;	
     bool flg = false;
-    std::vector<int> index, index2;
+    std::vector<int> index, index2(1);
     RefCountPtr<MV> tmp_vec;
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     //
-    // Associate each of the _iter-th block of _basisvecs[i] with _U_vec[i]
-    //
-    index.resize(1);
-    index2.resize(1);
-    index[0] = _iter;
-    for (i=0; i<_blocksize; ++i) {
-      index2[0] = i;
-      tmp_vec = MVT::CloneView( *_basisvecs[i], index );
-      MVT::MvAddMv( one, *tmp_vec, zero, *tmp_vec, *MVT::CloneView( *_U_vec, index2 ) );
-    }
+    // NOTE:  _U_vec is assumed to be already associated with 
+    //        each of the _iter-th block of _basisvecs[i].
     //
     // Create _AU_vec to hold A*_U_vec.
     //
     if (_AU_vec == Teuchos::null) {
       _AU_vec = MVT::Clone( *_basisvecs[0], _blocksize );
     }
-
+    //
     // Apply the operator to _work_vector
+    //
     _lp->Apply( *_U_vec, *_AU_vec );
     //
     // Resize index.
@@ -674,10 +669,12 @@ namespace Belos {
       MVT::MvAddMv( one, *V_new, zero, *V_new, *tmp_vec );
     }
     // 
-    // Now _AU*vec is the new _U*vec 
-    // Note: Right now the solver shouldn't do this because it already copies in the _U_vec above.
-    //	
-    //_U_vec = _AU*vec;
+    // Now _AU_vec is the new _U_vec, so swap these two vectors.
+    // NOTE: This alleviates the need for allocating a vector for _AU_vec each time we enter this code.
+    // 
+    RefCountPtr<MV> tmp_AU_vec = _U_vec;
+    _U_vec = _AU_vec;
+    _AU_vec = tmp_AU_vec;
     //
     return flg;
     //
