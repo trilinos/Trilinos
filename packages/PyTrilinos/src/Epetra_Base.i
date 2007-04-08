@@ -221,17 +221,8 @@ except ImportError:
   $1 = &_object;
 }
 %typemap(argout) ClassName *& {
-  PyObject * obj1;
-  PyObject * obj2;
-  obj1 = SWIG_NewPointerObj((void*)(*$1), $descriptor(ClassName*), 1);
-  if ($result == Py_None) {
-    Py_DECREF($result);
-    $result = obj1;
-  } else {
-    if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
-    obj2 = Py_BuildValue("(O)", obj1);
-    $result = PySequence_Concat($result,obj2);
-  }
+  PyObject * obj = SWIG_NewPointerObj((void*)(*$1), $descriptor(ClassName*), 1);
+  $result = SWIG_Python_AppendOutput($result,obj);
 }
 %enddef
 
@@ -243,18 +234,10 @@ except ImportError:
   $1 = &_object;
 }
 %typemap(argout) Epetra_ ## ClassName *& {
-  PyObject * obj1;
-  PyObject * obj2;
+  PyObject * obj;
   Epetra_NumPy ## ClassName * npa = new Epetra_NumPy ## ClassName(**$1);
-  obj1 = SWIG_NewPointerObj((void*)npa, $descriptor(Epetra_NumPy ## ClassName*), 1);
-  if ($result == Py_None) {
-    Py_DECREF($result);
-    $result = obj1;
-  } else {
-    if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
-    obj2 = Py_BuildValue("(O)", obj1);
-    $result = PySequence_Concat($result,obj2);
-  }
+  obj = SWIG_NewPointerObj((void*)npa, $descriptor(Epetra_NumPy ## ClassName*), 1);
+  $result = SWIG_Python_AppendOutput($result,obj);
 }
 %enddef
 
