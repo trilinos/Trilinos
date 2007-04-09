@@ -1665,8 +1665,7 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
   cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
   vals = (double *) ML_allocate(allocated_space*sizeof(double));
   if (vals == NULL) {
-    printf("Not enough space to in ML_Smoother_NewGS.\n");
-    exit(1);
+    pr_error("Not enough space to in ML_Smoother_NewGS.\n");
   }
 
   if (Amat->diagonal == NULL) {
@@ -1686,6 +1685,7 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 	    exit(1);
 	  }
 	}
+    tdiag[i] = 1.0; /*guard against diagonal not being found*/
 	for (j = 0; j < n; j++) if (cols[j] == i) tdiag[i] = vals[j];
 	if (tdiag[i] == 0.) tdiag[i] = 1.;
       }
@@ -1695,6 +1695,9 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
     else ML_Operator_Set_Diag(Amat, Amat->matvec->Nrows, Amat_MsrVal);
   }
   ML_DVector_GetDataPtr( Amat->diagonal, &thediagonal);
+  /* Diagonal may have been set elsewhere (not above), so check for zeros. */
+  for (i=0; i<Amat->outvec_leng; i++)
+    if (thediagonal[i] == 0.) thediagonal[i] = 1.0;
 
   if (Amat_MsrBindx == NULL) {
     if (Amat->getrow->func_ptr == CSR_getrow) {
@@ -1720,7 +1723,7 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
     x2 = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)
 				*sizeof(double));
     if (x2 == NULL) {
-      printf("Not enough space in Gauss-Seidel\n"); exit(1);
+      pr_error("Not enough space in Gauss-Seidel\n");
     }
     for (i = 0; i < inlen; i++) x2[i] = x[i];
   }
@@ -1738,7 +1741,8 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 	dtemp = rhs[i];
 	for (j = Amat_CrsRowptr[i]; j < Amat_CrsRowptr[i+1]; j++) 
 	  dtemp -= (*valptr++)*x2[*colptr++];
-	(*xptr++) += (dtemp)*diagvalue;
+	*xptr += (dtemp)*diagvalue;
+	xptr++;
       } 
     }
     else if (Amat_MsrBindx != NULL) {
@@ -1749,7 +1753,8 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 	length = Amat_MsrBindx[i+1] -  Amat_MsrBindx[i];
 	dtemp  = rhs[i] - Amat_MsrVal[i]*x2[i];
 	for (j = 0; j < length; j++) dtemp -= (*valptr++)*x2[*colptr++];
-	(*xptr++) += dtemp*diagvalue;
+	*xptr += dtemp*diagvalue;
+	xptr++;
       }
     }
     else {
@@ -1760,7 +1765,8 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 			  &length, 0);
 	valptr = vals; colptr = cols;
 	for (j = 0; j < length; j++) dtemp -= (*valptr++)*x2[*colptr++]; 
-	(*xptr++) += dtemp*diagvalue;
+	*xptr += dtemp*diagvalue;
+	xptr++;
       }
     }
     /* symmetrize it  */
@@ -1775,7 +1781,8 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 	    dtemp = rhs[i];
 	    for (j = Amat_CrsRowptr[i]; j < Amat_CrsRowptr[i+1]; j++) 
 	      dtemp -= (*valptr--)*x2[*colptr--];
-	    (*xptr--) += (dtemp*diagvalue);
+	    *xptr += (dtemp*diagvalue);
+	    xptr--;
 	  }
 	} else if (Amat_MsrBindx != NULL) {
 	  colptr = &(Amat_MsrBindx[Amat_MsrBindx[Nrows]]);  colptr--;
@@ -1785,7 +1792,8 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 	    length = Amat_MsrBindx[i+1] -  Amat_MsrBindx[i];
 	    dtemp = rhs[i] - Amat_MsrVal[i]*x2[i];
 	    for (j = 0; j < length; j++) dtemp -= (*valptr--)*x2[*colptr--];
-	    (*xptr--) += omega*dtemp/diagvalue;
+	    *xptr += omega*dtemp/diagvalue;
+	    xptr++;
 	  }
 	} else {
 	  for (i = Nrows- 1; i >= 0; i--) {
@@ -1795,7 +1803,8 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 			      &length, 0);
 	    valptr = vals; colptr = cols;
 	    for (j = 0; j < length; j++) dtemp -= (*valptr++)*x2[*colptr++]; 
-	    (*xptr--) += dtemp*diagvalue;
+	    *xptr += dtemp*diagvalue;
+	    xptr--;
 	  }
 	}
       } /*if (smooth_ptr->symmetric_sweep == 1) */
