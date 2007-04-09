@@ -56,20 +56,20 @@ public:
 
   /** \brief . */
   DefaultStateEliminationModelEvaluator(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 &thyraModel
-    ,const Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> >           &stateSolver
+    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> > &thyraModel,
+    const Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> > &stateSolver
     );
 
   /** \brief . */
   void initialize(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 &thyraModel
-    ,const Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> >           &stateSolver
+    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> > &thyraModel,
+    const Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> > &stateSolver
     );
 
   /** \brief . */
   void uninitialize(
-    Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 *thyraModel  = NULL
-    ,Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> >           *stateSolver = NULL
+    Teuchos::RefCountPtr<ModelEvaluator<Scalar> > *thyraModel = NULL,
+    Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> > *stateSolver = NULL
     );
 
   //@}
@@ -117,12 +117,12 @@ public:
 
 private:
 
-  Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                thyraModel_;
-  Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> >           stateSolver_;
+  Teuchos::RefCountPtr<ModelEvaluator<Scalar> > thyraModel_;
+  Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> > stateSolver_;
 
-  Teuchos::RefCountPtr<DefaultNominalBoundsOverrideModelEvaluator<Scalar> >  wrappedThyraModel_;
+  Teuchos::RefCountPtr<DefaultNominalBoundsOverrideModelEvaluator<Scalar> > wrappedThyraModel_;
 
-  mutable Teuchos::RefCountPtr<VectorBase<Scalar> >            x_guess_solu_;
+  mutable Teuchos::RefCountPtr<VectorBase<Scalar> > x_guess_solu_;
   
 };
 
@@ -153,15 +153,7 @@ void DefaultStateEliminationModelEvaluator<Scalar>::initialize(
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
   TEST_FOR_EXCEPT(!stateSolver.get());
   stateSolver_ = stateSolver;
-  const ModelEvaluatorBase::InArgs<Scalar>
-    nominalValues = thyraModel->getNominalValues();
-  if(nominalValues.get_x().get()) {
-    x_guess_solu_ = nominalValues.get_x()->clone_v();
-  }
-  else {
-    x_guess_solu_ = createMember(thyraModel->get_x_space());
-    assign(&*x_guess_solu_,Scalar(0.0));
-  }
+  x_guess_solu_ = Teuchos::null; // We will get the guess at the last possible moment!
   wrappedThyraModel_ = rcp(
     new DefaultNominalBoundsOverrideModelEvaluator<Scalar>(
       Teuchos::rcp_const_cast<ModelEvaluator<Scalar> >(thyraModel)
@@ -318,8 +310,8 @@ void DefaultStateEliminationModelEvaluator<Scalar>::evalModel(
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
 
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
-  const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
+  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::DefaultStateEliminationModelEvaluator<Scalar>::evalModel(...) ...\n";
@@ -328,6 +320,19 @@ void DefaultStateEliminationModelEvaluator<Scalar>::evalModel(
     thyraModel = this->getUnderlyingModel();
 
   const int Np = outArgs.Np(), Ng = outArgs.Ng();
+
+  // Get the intial state guess if not already gotten
+  if (is_null(x_guess_solu_)) {
+    const ModelEvaluatorBase::InArgs<Scalar>
+      nominalValues = thyraModel->getNominalValues();
+    if(nominalValues.get_x().get()) {
+      x_guess_solu_ = nominalValues.get_x()->clone_v();
+    }
+    else {
+      x_guess_solu_ = createMember(thyraModel->get_x_space());
+      assign(&*x_guess_solu_,Scalar(0.0));
+    }
+  }
 
   // Reset the nominal values
   MEB::InArgs<Scalar> wrappedNominalValues = thyraModel->getNominalValues();
