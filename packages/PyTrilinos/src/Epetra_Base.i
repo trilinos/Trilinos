@@ -130,8 +130,8 @@ except ImportError:
 // Raw data buffer handling //
 //////////////////////////////
 
-// Define macros for converting a method that returns a pointer to
-// an array of doubles (or ints) to returning a NumPy array
+// Define a macro for converting a method that returns a pointer to
+// a 1D array of ints to returning a NumPy array
 %define %epetra_intarray1d_output_method(className,methodName,dimMethod)
 %ignore className::methodName() const;
 %extend className {
@@ -153,7 +153,8 @@ except ImportError:
 }
 %enddef
 
-// Provide a mechnism for converting 1D array output to numpy array
+// Define a macro for converting a method that returns a pointer to
+// a 1D array of doubles to returning a NumPy array
 %define %epetra_array1d_output_method(className,methodName,dimMethod)
 %ignore className::methodName() const;
 %extend className {
@@ -175,7 +176,8 @@ except ImportError:
 }
 %enddef
 
-// Provide a mechnism for converting 2D array output to numpy array
+// Define a macro for converting a method that returns a pointer to
+// a 2D array of doubles to returning a NumPy array
 %define %epetra_array2d_output_method(className,methodName,dimMethod1,dimMethod2)
 %ignore className::methodName() const;
 %extend className {
@@ -378,11 +380,12 @@ __version__ = Version().split()[2]
       int myDefaultColor = (int) PyInt_AsLong(elementColors);
       mapColoring = new Epetra_MapColoring(map,myDefaultColor);
     } else {
-      PyArrayObject * colorArray = (PyArrayObject*) PyArray_ContiguousFromObject(elementColors,
-										 'i',0,0);
+      int is_new = 0;
+      PyArrayObject * colorArray = obj_to_array_contiguous_allow_conversion(elementColors,
+									    PyArray_INT, &is_new);
       if (colorArray) colors = (int*)(colorArray->data);
       mapColoring = new Epetra_MapColoring(map,colors,defaultColor);
-      Py_XDECREF(colorArray);
+      if (is_new) Py_XDECREF(colorArray);
     }
     return mapColoring;
   }
@@ -399,7 +402,7 @@ __version__ = Version().split()[2]
     int      * list    = self->ListOfColors();
     intp       dims[ ] = { self->NumColors() };
     int      * data;
-    PyObject * retObj  = PyArray_SimpleNew(1,dims,'i');
+    PyObject * retObj  = PyArray_SimpleNew(1,dims,PyArray_INT);
     if (retObj == NULL) goto fail;
     data = (int*)(((PyArrayObject*)(retObj))->data);
     for (int i = 0; i<dims[0]; i++) data[i] = list[i];
@@ -413,7 +416,7 @@ __version__ = Version().split()[2]
     int      * list    = self->ColorLIDList(color);
     intp       dims[ ] = { self->NumElementsWithColor(color) };
     int      * data;
-    PyObject * retObj  = PyArray_SimpleNew(1,dims,'i');
+    PyObject * retObj  = PyArray_SimpleNew(1,dims,PyArray_INT);
     if (retObj == NULL) goto fail;
     data = (int*)(((PyArrayObject*)(retObj))->data);
     for (int i = 0; i<dims[0]; i++) data[i] = list[i];
@@ -427,7 +430,7 @@ __version__ = Version().split()[2]
     int      * list    = self->ElementColors();
     intp       dims[ ] = { self->Map().NumMyElements() };
     int      * data;
-    PyObject * retObj  = PyArray_SimpleNew(1,dims,'i');
+    PyObject * retObj  = PyArray_SimpleNew(1,dims,PyArray_INT);
     if (retObj == NULL) goto fail;
     data = (int*)(((PyArrayObject*)(retObj))->data);
     for (int i = 0; i<dims[0]; i++) data[i] = list[i];

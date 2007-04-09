@@ -37,21 +37,9 @@
 // Typemap directives //
 ////////////////////////
 
-// Begin input typemap collection for (int NumIndices, int * Indices)
-%typecheck(SWIG_TYPECHECK_INT32_ARRAY) (int NumIndices, int * Indices) {
-  $1 = ($input != 0);
-}
-%typemap(in) (int NumIndices, int * Indices) (PyArrayObject * array = NULL)
-{
-  array = (PyArrayObject*) PyArray_ContiguousFromObject($input, 'i', 0, 0);
-  if (array == NULL) SWIG_exception(SWIG_ValueError,"Invalid sequence of indices");
-  $1 = (int) PyArray_MultiplyList(array->dimensions,array->nd);
-  $2 = (int *) (array->data);
-}
-%typemap(freearg) (int NumIndices, int * Indices) {
-  Py_XDECREF(array$argnum);
-}
-// End input typemap collection for (int NumIndices, int * Indices)
+// Apply the numpy.i (int DIM1, int* IN_ARRAY1) typemap to
+// the (int NumIndices, int* Indices) argument signature
+%apply (int DIM1, int* IN_ARRAY1) {(int NumIndices, int* Indices)};
 
 // Begin argout typemap collection for (int & NumIndices, int *& Indices)
 %typecheck(SWIG_TYPECHECK_INT32_ARRAY) (int & NumIndices, int *& Indices) {
@@ -64,7 +52,7 @@
   if (result == -1) SWIG_exception(SWIG_ValueError,   "Invalid row index"  );
   if (result == -2) SWIG_exception(SWIG_RuntimeError, "Graph not completed");
   intp dims[ ] = { *$1 };
-  $result = PyArray_SimpleNewFromData(1,dims,'i',(void*)(*$2));
+  $result = PyArray_SimpleNewFromData(1,dims,PyArray_INT,(void*)(*$2));
   if ($result == NULL) SWIG_exception(SWIG_RuntimeError, "Error creating integer array");
 }
 // End argout typemap collection for (int & NumIndices, int * Indices)
@@ -101,15 +89,17 @@
     Epetra_CrsGraph * returnCrsGraph     = NULL;
     int               constIndicesPerRow = 0;
     int               listSize           = 0;
+    int               is_new             = 0;
 
     if (PyInt_Check(numIndicesList)) {
       constIndicesPerRow = (int) PyInt_AsLong(numIndicesList);
       returnCrsGraph     = new Epetra_CrsGraph(CV,rowMap,constIndicesPerRow,staticProfile);
     } else {
-      numIndicesArray = (PyArrayObject*) PyArray_ContiguousFromObject(numIndicesList,'i',0,0);
-      if (numIndicesArray == NULL) goto fail;
+      numIndicesArray = obj_to_array_contiguous_allow_conversion(numIndicesList,
+								 PyArray_INT, &is_new);
+      if (!numIndicesArray || !require_dimensions(numIndicesArray,1)) goto fail;
       numIndicesPerRow = (int*) (numIndicesArray->data);
-      listSize = (int) PyArray_MultiplyList(numIndicesArray->dimensions,numIndicesArray->nd);
+      listSize = (int) array_size(numIndicesArray,0);
       if (listSize != rowMap.NumMyElements()) {
 	PyErr_Format(PyExc_ValueError,
 		     "Row map has %d elements, list of number of indices has %d",
@@ -117,12 +107,12 @@
 	goto fail;
       }
       returnCrsGraph = new Epetra_CrsGraph(CV,rowMap,numIndicesPerRow,staticProfile);
-      Py_DECREF(numIndicesArray);
+      if (is_new) Py_DECREF(numIndicesArray);
     }
     return returnCrsGraph;
 
   fail:
-    Py_XDECREF(numIndicesArray);
+    if (is_new) Py_XDECREF(numIndicesArray);
     return NULL;
   }
 
@@ -137,15 +127,17 @@
     Epetra_CrsGraph * returnCrsGraph     = NULL;
     int               constIndicesPerRow = 0;
     int               listSize           = 0;
+    int               is_new             = 0;
 
     if (PyInt_Check(numIndicesList)) {
       constIndicesPerRow = (int) PyInt_AsLong(numIndicesList);
       returnCrsGraph     = new Epetra_CrsGraph(CV,rowMap,colMap,constIndicesPerRow,staticProfile);
     } else {
-      numIndicesArray = (PyArrayObject*) PyArray_ContiguousFromObject(numIndicesList,'i',0,0);
-      if (numIndicesArray == NULL) goto fail;
-      numIndicesPerRow = (int*) numIndicesArray->data;
-      listSize = (int) PyArray_MultiplyList(numIndicesArray->dimensions,numIndicesArray->nd);
+      numIndicesArray = obj_to_array_contiguous_allow_conversion(numIndicesList,
+								 PyArray_INT, &is_new);
+      if (!numIndicesArray || !require_dimensions(numIndicesArray,1)) goto fail;
+      numIndicesPerRow = (int*) (numIndicesArray->data);
+      listSize = (int) array_size(numIndicesArray,0);
       if (listSize != rowMap.NumMyElements()) {
 	PyErr_Format(PyExc_ValueError,
 		     "Row map has %d elements, list of number of indices has %d",
@@ -153,12 +145,12 @@
 	goto fail;
       }
       returnCrsGraph = new Epetra_CrsGraph(CV,rowMap,colMap,numIndicesPerRow,staticProfile);
-      Py_DECREF(numIndicesArray);
+      if (is_new) Py_DECREF(numIndicesArray);
     }
     return returnCrsGraph;
 
   fail:
-    Py_XDECREF(numIndicesArray);
+    if (is_new) Py_XDECREF(numIndicesArray);
     return NULL;
   }
 
@@ -176,7 +168,7 @@
       goto fail;
     }
     dimensions[0] = self->NumMyIndices(lrid);
-    indicesArray  = PyArray_SimpleNew(1,dimensions,'i');
+    indicesArray  = PyArray_SimpleNew(1,dimensions,PyArray_INT);
     indices       = (int *) ((PyArrayObject *)indicesArray)->data;
     result        = self->ExtractGlobalRowCopy(globalRow, dimensions[0], numIndices, indices);
     if (result == -2) {
@@ -205,7 +197,7 @@
       goto fail;
     }
     dimensions[0] = self->NumMyIndices(localRow);
-    indicesArray  = PyArray_SimpleNew(1,dimensions,'i');
+    indicesArray  = PyArray_SimpleNew(1,dimensions,PyArray_INT);
     indices       = (int *) ((PyArrayObject *)indicesArray)->data;
     result        = self->ExtractMyRowCopy(localRow, dimensions[0], numIndices, indices);
     if (result == -2) {
