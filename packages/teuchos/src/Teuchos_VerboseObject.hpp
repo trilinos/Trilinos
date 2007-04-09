@@ -112,10 +112,18 @@ public:
   //! @name Query functions 
   //@{
 
-  /** \brief Return the output stream to be used.
-   *
+  /** \brief Return the output stream to be used for out for <tt>*this</tt>
+   * object.
    */
   virtual RefCountPtr<FancyOStream> getOStream() const;
+
+  /** \brief Return the the overriding output stream if set.
+   *
+   * This is the output stream tthat will be returned from
+   * <tt>getOStream()</tt> regardless that stream is set by
+   * <tt>setOStream()</tt>.
+   */
+  virtual RefCountPtr<FancyOStream> getOverridingOStream() const;
 
   /** \brief Get the line prefix for this object */
   virtual std::string getLinePrefix() const;

@@ -127,6 +127,13 @@ VerboseObjectBase::getOStream() const
 }
 
 
+RefCountPtr<FancyOStream>
+VerboseObjectBase::getOverridingOStream() const
+{
+  return thisOverridingOStream_;
+}
+
+
 std::string VerboseObjectBase::getLinePrefix() const
 {
   return thisLinePrefix_;
