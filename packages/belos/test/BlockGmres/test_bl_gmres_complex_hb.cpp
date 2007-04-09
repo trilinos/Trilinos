@@ -41,6 +41,7 @@
 #include "BelosStatusTestOutputter.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosBlockGmres.hpp"
+#include "BelosPseudoBlockGmres.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
 // I/O for Harwell-Boeing files
@@ -89,6 +90,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
+  bool pseudo = false; // use pseudo block GMRES to solve the linear system
   int frequency = -1;  // how often residuals are printed by solver
   int blocksize = 1;
   int numrhs = 1;
@@ -99,12 +101,13 @@ int main(int argc, char *argv[]) {
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block GMRES to solve the linear system.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
   cmdp.setOption("num-restarts",&numrestarts,"Number of restarts allowed for the GMRES solver.");
-  cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
+  cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
   cmdp.setOption("subspace-length",&length,"Maximum dimension of block-subspace used by GMRES solver.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
@@ -206,8 +209,11 @@ int main(int argc, char *argv[]) {
     rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, test1, test2 ) );
   My_Test->AddStatusTest( test4 );
   //
-  Belos::BlockGmres<ST,MV,OP>
-    MyBlockGmres( My_LP, My_Test, My_OM, My_PL );
+  RefCountPtr<Belos::IterativeSolver<ST,MV,OP> > Solver;
+  if (pseudo)
+    Solver = rcp( new Belos::PseudoBlockGmres<ST,MV,OP>( My_LP, My_Test, My_OM, My_PL ) );
+  else
+    Solver = rcp( new Belos::BlockGmres<ST,MV,OP>( My_LP, My_Test, My_OM, My_PL ) );
   //
   // **********Print out information about problem*******************
   //
@@ -223,8 +229,10 @@ int main(int argc, char *argv[]) {
   //
   //
   if (proc_verbose) {
-    cout << endl << endl;
-    cout << "Running Block Gmres -- please wait" << endl;
+    cout << endl << endl << "Running ";
+    if (pseudo)
+      cout << "Pseudo ";
+    cout << "Block Gmres -- please wait" << endl;
     cout << (numrhs+blocksize-1)/blocksize 
 	 << " pass(es) through the solver required to solve for " << endl; 
     cout << numrhs << " right-hand side(s) -- using a block size of " << blocksize
@@ -234,7 +242,7 @@ int main(int argc, char *argv[]) {
   // 
   // Perform solve.
   //
-  MyBlockGmres.Solve();
+  Solver->Solve();
 
   RefCountPtr<MyMultiVec<ST> > temp = rcp( new MyMultiVec<ST>(dim,numrhs) );
   OPT::Apply( *A, *soln, *temp );

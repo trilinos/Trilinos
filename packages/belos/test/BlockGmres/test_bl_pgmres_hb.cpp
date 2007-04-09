@@ -50,6 +50,7 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosBlockGmres.hpp"
+#include "BelosPseudoBlockGmres.hpp"
 #include "createEpetraProblem.hpp"
 #include "Ifpack_IlukGraph.h"
 #include "Ifpack_CrsRiluk.h"
@@ -78,22 +79,26 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
+  bool pseudo = false; // use pseudo block GMRES solver to solve these linear systems
   int frequency = -1;  // how often residuals are printed by solver
   int blocksize = 4;
   int numrhs = 15;
   int numrestarts = 15; // number of restarts allowed 
   int length = 25;
+  int maxiters = -1;    // maximum iterations allowed
   std::string filename("orsirr1.hb");
   MT tol = 1.0e-5;  // relative residual tolerance
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block GMRES to solve the linear systems.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
   cmdp.setOption("num-restarts",&numrestarts,"Number of restarts allowed for GMRES solver.");
-  cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
+  cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
+  cmdp.setOption("maxiters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
   cmdp.setOption("subspace-size",&length,"Dimension of Krylov subspace used by GMRES.");  
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
@@ -161,7 +166,8 @@ int main(int argc, char *argv[]) {
   // *****************(can be user specified)******************
   //
   const int NumGlobalElements = Map.NumGlobalElements();
-  int maxits = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
+  if (maxiters = -1)
+    maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
   //
   ParameterList My_PL;
   My_PL.set( "Length", length );
@@ -184,7 +190,7 @@ int main(int argc, char *argv[]) {
 
   typedef Belos::StatusTestCombo<double,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestResNorm<double,MV,OP>  StatusTestResNorm_t;
-  Belos::StatusTestMaxIters<double,MV,OP> test1( maxits );
+  Belos::StatusTestMaxIters<double,MV,OP> test1( maxiters );
   Belos::StatusTestMaxRestarts<double,MV,OP> test2( numrestarts );
   StatusTestCombo_t BasicTest( StatusTestCombo_t::OR, test1, test2 );
   StatusTestResNorm_t test3( tol );
@@ -201,8 +207,13 @@ int main(int argc, char *argv[]) {
   // *************Start the block Gmres iteration*************************
   // *******************************************************************
   //
-  Belos::BlockGmres<double,MV,OP>
-    MyBlockGmres( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false));
+  RefCountPtr< Belos::IterativeSolver<double,MV,OP> > Solver;
+  if (pseudo)
+    Solver = rcp( new Belos::PseudoBlockGmres<double,MV,OP> 
+                      ( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false) ) );
+  else
+    Solver = rcp( new Belos::BlockGmres<double,MV,OP>
+                      ( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false) ) );
   //
   // **********Print out information about problem*******************
   //
@@ -213,7 +224,7 @@ int main(int argc, char *argv[]) {
     cout << "Block size used by solver: " << blocksize << endl;
     cout << "Number of restarts allowed: " << numrestarts << endl;
     cout << "Length of block Arnoldi factorization: " << length*blocksize << " ( "<< length << " blocks ) " <<endl;
-    cout << "Max number of Gmres iterations: " << maxits << endl; 
+    cout << "Max number of Gmres iterations: " << maxiters << endl; 
     cout << "Relative residual tolerance: " << tol << endl;
     cout << endl;
   }
@@ -231,7 +242,7 @@ int main(int argc, char *argv[]) {
   //
   // Perform solve
   //
-  MyBlockGmres.Solve();
+  Solver->Solve();
 
   //
   // Compute actual residuals.

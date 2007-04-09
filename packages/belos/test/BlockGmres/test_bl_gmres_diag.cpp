@@ -66,7 +66,7 @@ class Vector_Operator
 {
 public:
   
-  Vector_Operator(unsigned m, unsigned n) : m(m), n(n) {};
+  Vector_Operator(int m, int n) : m(m), n(n) {};
   
   virtual ~Vector_Operator() {};
   
@@ -76,7 +76,7 @@ public:
   
 protected:
   
-  unsigned m, n;        // an (m x n) operator 
+  int m, n;        // an (m x n) operator 
   
 private:
   
@@ -92,7 +92,7 @@ class Diagonal_Operator : public Vector_Operator
 {
 public:
   
-  Diagonal_Operator(unsigned n, double v) : Vector_Operator(n, n), v(v) { };
+  Diagonal_Operator(int n, double v) : Vector_Operator(n, n), v(v) { };
   
   ~Diagonal_Operator() { };
   
@@ -112,14 +112,14 @@ class Diagonal_Operator_2 : public Vector_Operator
 {
 public:
   
-  Diagonal_Operator_2(unsigned n, double v) : Vector_Operator(n, n), v(v) { };
+  Diagonal_Operator_2(int n, double v) : Vector_Operator(n, n), v(v) { };
   
   ~Diagonal_Operator_2() { };
   
   void operator () (const Epetra_MultiVector &x, Epetra_MultiVector &y)
   {
-    for (unsigned j=0; j < x.NumVectors(); ++j) {
-      for (unsigned i=0; i < m; ++i) (*y(j))[i] = (i+1)*v*(*x(j))[i];  // NOTE: square operator!
+    for (int j=0; j < x.NumVectors(); ++j) {
+      for (int i=0; i < m; ++i) (*y(j))[i] = (i+1)*v*(*x(j))[i];  // NOTE: square operator!
     }
   };
   
@@ -134,7 +134,7 @@ class Composed_Operator : public Vector_Operator
 {
 public:
   
-  Composed_Operator(unsigned n, 
+  Composed_Operator(int n, 
 		    const Teuchos::RefCountPtr<Vector_Operator>& pA, 
 		    const Teuchos::RefCountPtr<Vector_Operator>& pB);
   
@@ -148,7 +148,7 @@ private:
   Teuchos::RefCountPtr<Vector_Operator> pB; 
 };
 
-Composed_Operator::Composed_Operator(unsigned n, 
+Composed_Operator::Composed_Operator(int n, 
                                      const Teuchos::RefCountPtr<Vector_Operator>& pA, 
                                      const Teuchos::RefCountPtr<Vector_Operator>& pB) 
   : Vector_Operator(n, n), pA(pA), pB(pB) 
@@ -226,7 +226,7 @@ class Iterative_Inverse_Operator : public Vector_Operator
   
 public:
   
-  Iterative_Inverse_Operator(unsigned n, int blocksize, 
+  Iterative_Inverse_Operator(int n, int blocksize, 
 			     const Teuchos::RefCountPtr<Vector_Operator>& pA, 
 			     string opString="Iterative Solver", bool print=false);              
   
@@ -256,7 +256,7 @@ private:
   Teuchos::RefCountPtr<BlockGmres<double,MV,OP> >      pBelos;
 };
 
-Iterative_Inverse_Operator::Iterative_Inverse_Operator(unsigned n, int blocksize,
+Iterative_Inverse_Operator::Iterative_Inverse_Operator(int n, int blocksize,
                                                        const Teuchos::RefCountPtr<Vector_Operator>& pA, 
                                                        string opString, bool print)
   : Vector_Operator(n, n),      // square operator
@@ -265,7 +265,7 @@ Iterative_Inverse_Operator::Iterative_Inverse_Operator(unsigned n, int blocksize
     timer(opString)
 {
   
-  unsigned n_global;
+  int n_global;
   
 #ifdef EPETRA_MPI
   MPI_Allreduce(&n, &n_global, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
   
   pid = Comm.MyPID();
 
-  unsigned int n(10);
+  int n(10);
   int numRHS=1;
   
   Epetra_Map Map = Epetra_Map(n, 0, Comm);

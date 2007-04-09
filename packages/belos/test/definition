@@ -24,8 +24,15 @@
 }
 
 (FRAMEWORK,INSTALL) {
-    TESTS = BlockGmres/gmres_diag.exe,
-            BlockGmres/bl_gmres_diag.exe;
+    TESTS = BlockGmres/bl_gmres_hb.exe,
+            BlockGmres/bl_pgmres_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockGmres/orsirr1.hb" --pseudo;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockGmres/bl_gmres_diag.exe;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI;
 }
@@ -35,6 +42,13 @@
             BlockGmres/bl_gmres_complex_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --filename="./BlockCG/mhd1280b.cua";
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockGmres/bl_gmres_complex_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockCG/mhd1280b.cua" --pseudo;
     COMM = SERIAL, MPI;
 }
 
