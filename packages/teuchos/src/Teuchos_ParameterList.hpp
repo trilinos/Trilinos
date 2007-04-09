@@ -515,6 +515,31 @@ private: // Data members
   Map params_;
 };
 
+
+/** \brief Nonmember constructor. */
+inline
+RefCountPtr<ParameterList> parameterList()
+{
+  return rcp(new ParameterList);
+}
+
+
+/** \brief Nonmember constructor. */
+inline
+RefCountPtr<ParameterList> parameterList(const std::string &name)
+{
+  return rcp(new ParameterList(name));
+}
+  
+/** \brief Nonmember constructor. */
+inline
+RefCountPtr<ParameterList> parameterList(const ParameterList& source)
+{
+  return rcp(new ParameterList(source));
+}
+
+
+
 /** \brief Traits specialization.
  *
  * \relates ParameterList
