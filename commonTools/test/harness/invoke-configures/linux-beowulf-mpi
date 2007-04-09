@@ -3,12 +3,13 @@ CXXFLAGS=-O3 \
 CFLAGS=-O3 \
 FFLAGS=-O3 \
 --with-libs="-L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/dscpack-1.0 -ldscdbl_linux_lam \
-/common/TrilinosTestHarness/Trilinos3PL/prebuilt/pardiso-1.2.3/libpardiso_GNU_IA32.so \
 -L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/taucs-2.2 -ltaucs_linux_lam \
 -L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4 -lumfpack_linux_lam \
 -lamd_linux_lam \
 -L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0.july05 -lsuperlu_linux_lam \
 -L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/metis-4.0 -lmetis_linux \
+-L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/scalapack-1.7 -lscalapack_linux_beowulf \
+-L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/blacs -lblacs_F77_linux_beowulf \
 -L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0.1 -lsuperludist_linux_beowulf \
 -lexpat -llapack -lcblas -lf77blas -latlas -lgfortran" \
 --with-incdirs="-I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/dscpack-1.0 \
@@ -24,12 +25,14 @@ FFLAGS=-O3 \
 --enable-amesos \
 --enable-amesos-umfpack \
 --enable-amesos-dscpack \
---disable-amesos-paraklete \
+--enable-amesos-paraklete \
 --disable-amesos-pardiso \
 --enable-amesos-superlu \
 --enable-amesos-superludist \
 --enable-amesos-taucs \
 --enable-amesos-tests \
+--disable-amesos-mumps \
+--enable-amesos-scalapack \
 --enable-anasazi \
 --enable-aztecoo \
 --enable-belos \
