@@ -8,6 +8,7 @@
 #include "Thyra_BelosLinearOpWithSolve.hpp"
 #include "Thyra_ScaledAdjointLinearOpBase.hpp"
 #include "BelosBlockGmres.hpp"
+#include "BelosPseudoBlockGmres.hpp"
 #include "BelosBlockCG.hpp"
 #include "BelosThyraAdapter.hpp"
 #include "BelosStatusTestMaxIters.hpp"
@@ -612,11 +613,16 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       restartTimers = _gmresPL.get(Restart_Timers_name,Restart_Timers_default);
       orthoType = _gmresPL.get(OrthoType_name,OrthoType_default);
     }
-    gmresPL->set(GMRES_Variant_name,GMRES_Variant);
     gmresPL->set(OrthoType_name, orthoType);
     gmresPL->set(Restart_Timers_name, restartTimers);
     // Create the solver!
-    iterativeSolver = rcp(new Belos::BlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
+    if (GMRES_Variant == "Pseudo") {
+      iterativeSolver = rcp(new Belos::PseudoBlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
+    }
+    else {
+      gmresPL->set(GMRES_Variant_name,GMRES_Variant);
+      iterativeSolver = rcp(new Belos::BlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
+    }
   }
   else {
     iterativeSolver = rcp(new Belos::BlockCG<Scalar,MV_t,LO_t>(lp,comboST,outputManager));
