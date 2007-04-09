@@ -830,6 +830,8 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   aztecOp->adjDefaultTol(defaultAdjTolerance_);
   aztecOp->outputEveryRhs(outputEveryRhs_);
   aztecOp->setOStream(this->getOStream());
+  if(!is_null(this->getOverridingOStream()))
+    aztecOp->setOverridingOStream(this->getOverridingOStream());
   aztecOp->setVerbLevel(this->getVerbLevel());
 #ifdef TEUCHOS_DEBUG
   if(paramList_.get())
