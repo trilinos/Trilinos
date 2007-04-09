@@ -118,8 +118,9 @@ public:
   
   void operator () (const Epetra_MultiVector &x, Epetra_MultiVector &y)
   {
+    int myCols = y.MyLength();
     for (int j=0; j < x.NumVectors(); ++j) {
-      for (int i=0; i < m; ++i) (*y(j))[i] = (i+1)*v*(*x(j))[i];  // NOTE: square operator!
+      for (int i=0; i < myCols; ++i) (*y(j))[i] = (i+1)*v*(*x(j))[i];  // NOTE: square operator!
     }
   };
   
@@ -357,7 +358,7 @@ int main(int argc, char *argv[])
   Epetra_Map Map = Epetra_Map(n, 0, Comm);
   Epetra_MultiVector X(Map, numRHS, false), Y(Map, numRHS, false);
   X.PutScalar( 1.0 );
-  
+
   // Inner computes inv(D2)*y
   Teuchos::RefCountPtr<Diagonal_Operator_2> D2 = Teuchos::rcp(new Diagonal_Operator_2(n, 1.0));
   Iterative_Inverse_Operator A2(n, 1, D2, "Belos (inv(D2))", true); 
