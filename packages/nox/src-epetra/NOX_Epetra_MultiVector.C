@@ -41,6 +41,8 @@
 
 #include "NOX_Epetra_MultiVector.H"
 #include "NOX_Epetra_Vector.H"
+#include "NOX_Epetra_VectorSpace.H"
+#include "NOX_Epetra_VectorSpace_L2.H"
 
 #include "Epetra_LocalMap.h"
 #include "Epetra_MultiVector.h"
@@ -56,9 +58,15 @@ NOX::Epetra::MultiVector::MultiVector(int numvecs)
 NOX::Epetra::MultiVector::
 MultiVector(const Teuchos::RefCountPtr<Epetra_MultiVector>& source, 
 	    NOX::CopyType type,
-	    NOX::Epetra::MultiVector::MemoryType memoryType)
+	    NOX::Epetra::MultiVector::MemoryType memoryType,
+	    Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vs)
   : noxEpetraVectors(source->NumVectors())
 {
+  if (Teuchos::is_null(vs))
+    vectorSpace = Teuchos::rcp(new NOX::Epetra::VectorSpaceL2);
+  else
+    vectorSpace = vs;
+
   if (memoryType == NOX::Epetra::MultiVector::CreateView) {
     epetraMultiVec = source;
   }
@@ -84,10 +92,17 @@ MultiVector(const Teuchos::RefCountPtr<Epetra_MultiVector>& source,
     noxEpetraVectors[i] = NULL;
 }
 
-NOX::Epetra::MultiVector::MultiVector(const Epetra_MultiVector& source, 
-				      NOX::CopyType type) 
+NOX::Epetra::MultiVector::
+MultiVector(const Epetra_MultiVector& source, 
+	    NOX::CopyType type,
+	    Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vs) 
   : noxEpetraVectors(source.NumVectors())
 {
+  if (Teuchos::is_null(vs))
+    vectorSpace = Teuchos::rcp(new NOX::Epetra::VectorSpaceL2);
+  else
+    vectorSpace = vs;
+
   switch (type) {
 
   case DeepCopy:		// default behavior
@@ -109,7 +124,8 @@ NOX::Epetra::MultiVector::MultiVector(const Epetra_MultiVector& source,
 
 NOX::Epetra::MultiVector::MultiVector(const NOX::Epetra::MultiVector& source, 
 				      NOX::CopyType type) 
-  : noxEpetraVectors(source.epetraMultiVec->NumVectors())
+  : vectorSpace(source.vectorSpace),
+    noxEpetraVectors(source.epetraMultiVec->NumVectors())
 {
 
   switch (type) {
@@ -261,7 +277,8 @@ NOX::Epetra::MultiVector::operator [] (int i)
     Teuchos::RefCountPtr<Epetra_Vector> epetra_vec = 
       Teuchos::rcp(epetraMultiVec->operator() (i), false);
     noxEpetraVectors[i] = 
-      new NOX::Epetra::Vector(epetra_vec, NOX::Epetra::Vector::CreateView);
+      new NOX::Epetra::Vector(epetra_vec, NOX::Epetra::Vector::CreateView,
+			      NOX::DeepCopy, vectorSpace);
   }
   return *(noxEpetraVectors[i]);
 }
@@ -278,7 +295,8 @@ NOX::Epetra::MultiVector::operator [] (int i) const
     Teuchos::RefCountPtr<Epetra_Vector> epetra_vec = 
       Teuchos::rcp(epetraMultiVec->operator() (i), false);
     noxEpetraVectors[i] = 
-      new NOX::Epetra::Vector(epetra_vec, NOX::Epetra::Vector::CreateView);
+      new NOX::Epetra::Vector(epetra_vec, NOX::Epetra::Vector::CreateView,
+			      NOX::DeepCopy, vectorSpace);
   }
   return *(noxEpetraVectors[i]);
 }
@@ -376,7 +394,8 @@ Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
 NOX::Epetra::MultiVector::clone(CopyType type) const
 {
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> newVec = 
-    Teuchos::rcp(new NOX::Epetra::MultiVector(*epetraMultiVec, type));
+    Teuchos::rcp(new NOX::Epetra::MultiVector(*epetraMultiVec, type,
+					      vectorSpace));
   return newVec;
 }
 
@@ -387,6 +406,7 @@ NOX::Epetra::MultiVector::clone(int numvecs) const
     Teuchos::rcp(new NOX::Epetra::MultiVector(numvecs));
   newVec->epetraMultiVec = 
     Teuchos::rcp(new Epetra_MultiVector(epetraMultiVec->Map(), numvecs));
+  newVec->vectorSpace = vectorSpace;
   return newVec;
 }
 
@@ -400,6 +420,7 @@ NOX::Epetra::MultiVector::subCopy(const vector<int>& index) const
     Teuchos::rcp(new Epetra_MultiVector(Copy, *epetraMultiVec,
 					const_cast<int*>(&index[0]), 
 					numvecs));
+  newVec->vectorSpace = vectorSpace;
   return newVec;
 }
 
@@ -413,6 +434,7 @@ NOX::Epetra::MultiVector::subView(const vector<int>& index) const
     Teuchos::rcp(new Epetra_MultiVector(View, *epetraMultiVec,
 					const_cast<int*>(&index[0]), 
 					numvecs));
+  newVec->vectorSpace = vectorSpace;
   return newVec;
 }
 
@@ -420,18 +442,8 @@ void
 NOX::Epetra::MultiVector::norm(vector<double>& result,
 			       NOX::Abstract::Vector::NormType type) const
 {
-  switch (type) {
-  case NOX::Abstract::Vector::MaxNorm:
-    epetraMultiVec->NormInf(&result[0]);
-    break;
-  case NOX::Abstract::Vector::OneNorm:
-    epetraMultiVec->Norm1(&result[0]);
-    break;
-  case NOX::Abstract::Vector::TwoNorm:
-  default:
-    epetraMultiVec->Norm2(&result[0]);
-    break;
-  }
+  for (int i=0; i<epetraMultiVec->NumVectors(); i++)
+    result[i] = vectorSpace->norm(*((*epetraMultiVec)(i)), type);
 }
 
 void 

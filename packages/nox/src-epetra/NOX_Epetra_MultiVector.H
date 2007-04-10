@@ -51,6 +51,7 @@ class Epetra_MultiVector;
 namespace NOX {
   namespace Epetra {
     class Vector;
+    class VectorSpace;
   }
 }
 
@@ -87,11 +88,15 @@ namespace NOX {
       MultiVector(const Teuchos::RefCountPtr<Epetra_MultiVector>& source, 
 		  NOX::CopyType type = NOX::DeepCopy,
 		  NOX::Epetra::MultiVector::MemoryType memoryType = 
-		  NOX::Epetra::MultiVector::CreateCopy);
+		  NOX::Epetra::MultiVector::CreateCopy,
+		  Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vs = 
+		  Teuchos::null);
 
       //! Construct by copying map and/or elements of an Epetra_MultiVector.
       MultiVector(const Epetra_MultiVector& source, 
-		  NOX::CopyType type = NOX::DeepCopy);
+		  NOX::CopyType type = NOX::DeepCopy,
+		  Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vs = 
+		  Teuchos::null);
 
       //! Copy constructor.
       MultiVector(const NOX::Epetra::MultiVector& source, 
@@ -287,8 +292,11 @@ namespace NOX {
 
     protected:
 
-       //! Pointer to petra vector owned by this object
+      //! Pointer to petra vector owned by this object
       Teuchos::RefCountPtr<Epetra_MultiVector> epetraMultiVec;
+
+      //! Pointer to the vector space. 
+      Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vectorSpace;
 
       //! NOX::Epetra::Vector's for each column of the multivector
       /*!
