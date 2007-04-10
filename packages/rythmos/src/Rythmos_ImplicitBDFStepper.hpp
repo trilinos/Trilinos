@@ -408,7 +408,7 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
     constantStepSize_ = false;
   }
   if ((flag == VARIABLE_STEP) && (dt != ST::zero())) {
-    h_max_inv_ = 1/dt;
+    h_max_inv_ = Scalar(ST::one()/dt);
   }
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
@@ -953,8 +953,8 @@ BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep_()
           << "  Maximum number of local error test failures.  " << endl;
     return(REP_ERR_FAIL);
   }
+  initialPhase_ = false;
   if (adjustStep) {
-    initialPhase_ = false;
     if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
       *out << "initialPhase_ = " << initialPhase_ << endl;
     }
