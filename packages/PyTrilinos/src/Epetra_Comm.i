@@ -88,16 +88,16 @@ PyObject* Finalize();
     if (!myArray || !require_contiguous(myArray)) goto fail;
     count = PyArray_SIZE(myArray);
     type  = array_type(myArray);
-    if (type == PyArray_INT) {
-      int* myVals = (int*)myArray->data;
+    if (type == NPY_INT) {
+      int* myVals = (int*) array_data(myArray);
       result = self->Broadcast(myVals,count,root);
     }
-    else if (type == PyArray_LONG) {
-      long* myVals = (long*)myArray->data;
+    else if (type == NPY_LONG) {
+      long* myVals = (long*) array_data(myArray);
       result = self->Broadcast(myVals,count,root);
     }
-    else if (type == PyArray_DOUBLE) {
-      double* myVals = (double*)myArray->data;
+    else if (type == NPY_DOUBLE) {
+      double* myVals = (double*) array_data(myArray);
       result = self->Broadcast(myVals,count,root);
     }
     else {
@@ -123,27 +123,27 @@ PyObject* Finalize();
     if (!myArray) goto fail;
     type    = array_type(myArray);
     myCount = PyArray_SIZE(myArray);
-    allND   = myArray->nd + 1;
+    allND   = array_numdims(myArray) + 1;
     { // Scope this to make allDims array temporary
       intp allDims[allND];
       allDims[0] = self->NumProc();
-      for (int i=1; i<allND; ++i) allDims[i] = myArray->dimensions[i-1];
+      for (int i=1; i<allND; ++i) allDims[i] = array_size(myArray,i-1);
       allObj = PyArray_SimpleNew(allND, allDims, type);
     }
     if (!allObj) goto fail;
-    if (type == PyArray_INT) {
-      int* myVals  = (int*)myArray->data;
-      int* allVals = (int*)((PyArrayObject*)allObj)->data;
+    if (type == NPY_INT) {
+      int* myVals  = (int*) array_data(myArray);
+      int* allVals = (int*) array_data(allObj);
       result = self->GatherAll(myVals,allVals,myCount);
     }
-    else if (type == PyArray_LONG) {
-      long* myVals  = (long*)myArray->data;
-      long* allVals = (long*)((PyArrayObject*)allObj)->data;
+    else if (type == NPY_LONG) {
+      long* myVals  = (long*) array_data(myArray);
+      long* allVals = (long*) array_data(allObj);
       result = self->GatherAll(myVals,allVals,myCount);
     }
-    else if (type == PyArray_DOUBLE) {
-      double* myVals  = (double*)myArray->data;
-      double* allVals = (double*)((PyArrayObject*)allObj)->data;
+    else if (type == NPY_DOUBLE) {
+      double* myVals  = (double*) array_data(myArray);
+      double* allVals = (double*) array_data(allObj);
       result = self->GatherAll(myVals,allVals,myCount);
     }
     else {
@@ -171,20 +171,21 @@ PyObject* Finalize();
     if (!partialArray) goto fail;
     type      = array_type(partialArray);
     count     = PyArray_SIZE(partialArray);
-    globalObj = PyArray_SimpleNew(partialArray->nd, partialArray->dimensions, type);
-    if (type == PyArray_INT) {
-      int* partialVals = (int*)partialArray->data;
-      int* globalVals  = (int*)((PyArrayObject*)globalObj)->data;
+    globalObj = PyArray_SimpleNew(array_numdims(partialArray),
+				  array_dimensions(partialArray), type);
+    if (type == NPY_INT) {
+      int* partialVals = (int*) array_data(partialArray);
+      int* globalVals  = (int*) array_data(globalObj);
       result = self->SumAll(partialVals,globalVals,count);
     }
-    else if (type == PyArray_LONG) {
-      long* partialVals = (long*)partialArray->data;
-      long* globalVals  = (long*)((PyArrayObject*)globalObj)->data;
+    else if (type == NPY_LONG) {
+      long* partialVals = (long*) array_data(partialArray);
+      long* globalVals  = (long*) array_data(globalObj);
       result = self->SumAll(partialVals,globalVals,count);
     }
-    else if (type == PyArray_DOUBLE) {
-      double* partialVals = (double*)partialArray->data;
-      double* globalVals  = (double*)((PyArrayObject*)globalObj)->data;
+    else if (type == NPY_DOUBLE) {
+      double* partialVals = (double*) array_data(partialArray);
+      double* globalVals  = (double*) array_data(globalObj);
       result = self->SumAll(partialVals,globalVals,count);
     }
     else {
@@ -212,20 +213,21 @@ PyObject* Finalize();
     if (!partialArray) goto fail;
     type      = array_type(partialArray);
     count     = PyArray_SIZE(partialArray);
-    globalObj = PyArray_SimpleNew(partialArray->nd, partialArray->dimensions, type);
-    if (type == PyArray_INT) {
-      int* partialMaxs = (int*)partialArray->data;
-      int* globalMaxs  = (int*)((PyArrayObject*)globalObj)->data;
+    globalObj = PyArray_SimpleNew(array_numdims(partialArray),
+				  array_dimensions(partialArray), type);
+    if (type == NPY_INT) {
+      int* partialMaxs = (int*) array_data(partialArray);
+      int* globalMaxs  = (int*) array_data(globalObj);
       result = self->MaxAll(partialMaxs,globalMaxs,count);
     }
-    else if (type == PyArray_LONG) {
-      long* partialMaxs = (long*)partialArray->data;
-      long* globalMaxs  = (long*)((PyArrayObject*)globalObj)->data;
+    else if (type == NPY_LONG) {
+      long* partialMaxs = (long*) array_data(partialArray);
+      long* globalMaxs  = (long*) array_data(globalObj);
       result = self->MaxAll(partialMaxs,globalMaxs,count);
     }
-    else if (type == PyArray_DOUBLE) {
-      double* partialMaxs = (double*)partialArray->data;
-      double* globalMaxs  = (double*)((PyArrayObject*)globalObj)->data;
+    else if (type == NPY_DOUBLE) {
+      double* partialMaxs = (double*) array_data(partialArray);
+      double* globalMaxs  = (double*) array_data(globalObj);
       result = self->MaxAll(partialMaxs,globalMaxs,count);
     }
     else {
@@ -253,20 +255,21 @@ PyObject* Finalize();
     if (!partialArray) goto fail;
     type      = array_type(partialArray);
     count     = PyArray_SIZE(partialArray);
-    globalObj = PyArray_SimpleNew(partialArray->nd, partialArray->dimensions, type);
-    if (type == PyArray_INT) {
-      int* partialMins = (int*)partialArray->data;
-      int* globalMins  = (int*)((PyArrayObject*)globalObj)->data;
+    globalObj = PyArray_SimpleNew(array_numdims(partialArray),
+				  array_dimensions(partialArray), type);
+    if (type == NPY_INT) {
+      int* partialMins = (int*) array_data(partialArray);
+      int* globalMins  = (int*) array_data(globalObj);
       result = self->MinAll(partialMins,globalMins,count);
     }
-    else if (type == PyArray_LONG) {
-      long* partialMins = (long*)partialArray->data;
-      long* globalMins  = (long*)((PyArrayObject*)globalObj)->data;
+    else if (type == NPY_LONG) {
+      long* partialMins = (long*) array_data(partialArray);
+      long* globalMins  = (long*) array_data(globalObj);
       result = self->MinAll(partialMins,globalMins,count);
     }
-    else if (type == PyArray_DOUBLE) {
-      double* partialMins = (double*)partialArray->data;
-      double* globalMins  = (double*)((PyArrayObject*)globalObj)->data;
+    else if (type == NPY_DOUBLE) {
+      double* partialMins = (double*) array_data(partialArray);
+      double* globalMins  = (double*) array_data(globalObj);
       result = self->MinAll(partialMins,globalMins,count);
     }
     else {
@@ -294,20 +297,21 @@ PyObject* Finalize();
     if (!myArray) goto fail;
     type    = array_type(myArray);
     count   = PyArray_SIZE(myArray);
-    scanObj = PyArray_SimpleNew(myArray->nd, myArray->dimensions, type);
-    if (type == PyArray_INT) {
-      int* myVals   = (int*)myArray->data;
-      int* scanSums = (int*)((PyArrayObject*)scanObj)->data;
+    scanObj = PyArray_SimpleNew(array_numdims(myArray),
+				array_dimensions(myArray), type);
+    if (type == NPY_INT) {
+      int* myVals   = (int*) array_data(myArray);
+      int* scanSums = (int*) array_data(scanObj);
       result = self->ScanSum(myVals,scanSums,count);
     }
-    else if (type == PyArray_LONG) {
-      long* myVals   = (long*)myArray->data;
-      long* scanSums = (long*)((PyArrayObject*)scanObj)->data;
+    else if (type == NPY_LONG) {
+      long* myVals   = (long*) array_data(myArray);
+      long* scanSums = (long*) array_data(scanObj);
       result = self->ScanSum(myVals,scanSums,count);
     }
-    else if (type == PyArray_DOUBLE) {
-      double* myVals   = (double*)myArray->data;
-      double* scanSums = (double*)((PyArrayObject*)scanObj)->data;
+    else if (type == NPY_DOUBLE) {
+      double* myVals   = (double*) array_data(myArray);
+      double* scanSums = (double*) array_data(scanObj);
       result = self->ScanSum(myVals,scanSums,count);
     }
     else {

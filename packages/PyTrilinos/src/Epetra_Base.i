@@ -140,11 +140,11 @@ except ImportError:
     if (result == NULL) return Py_BuildValue("");
     int * data   = NULL;
     intp dims[ ] = { self->dimMethod() };
-    PyArray_Descr * dtype = PyArray_DescrFromType(PyArray_INT);
+    PyArray_Descr * dtype = PyArray_DescrFromType(NPY_INT);
     PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 1, dims, NULL,
 						NULL, FARRAY_FLAGS, NULL);
     if (returnObj == NULL) goto fail;
-    data = (int*) (((PyArrayObject*)returnObj)->data);
+    data = (int*) array_data(returnObj);
     for (int i=0; i<dims[0]; ++i) data[i] = result[i];
     return PyArray_Return((PyArrayObject*)returnObj);
   fail:
@@ -163,11 +163,11 @@ except ImportError:
     if (result == NULL) return Py_BuildValue("");
     double * data   = NULL;
     intp dims[ ] = { self->dimMethod() };
-    PyArray_Descr * dtype = PyArray_DescrFromType(PyArray_DOUBLE);
+    PyArray_Descr * dtype = PyArray_DescrFromType(NPY_DOUBLE);
     PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 1, dims, NULL,
 						NULL, FARRAY_FLAGS, NULL);
     if (returnObj == NULL) goto fail;
-    data = (double*) (((PyArrayObject*)returnObj)->data);
+    data = (double*) array_data(returnObj);
     for (int i=0; i<dims[0]; ++i) data[i] = result[i];
     return PyArray_Return((PyArrayObject*)returnObj);
   fail:
@@ -186,11 +186,11 @@ except ImportError:
     if (result == NULL) return Py_BuildValue("");
     double * data   = NULL;
     intp dims[ ] = { self->dimMethod1(), self->dimMethod2() };
-    PyArray_Descr * dtype = PyArray_DescrFromType(PyArray_DOUBLE);
+    PyArray_Descr * dtype = PyArray_DescrFromType(NPY_DOUBLE);
     PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 2, dims, NULL,
 						NULL, FARRAY_FLAGS, NULL);
     if (returnObj == NULL) goto fail;
-    data = (double*) (((PyArrayObject*)returnObj)->data);
+    data = (double*) array_data(returnObj);
     for (int i=0; i<dims[0]*dims[1]; ++i) data[i] = result[i];
     return PyArray_Return((PyArrayObject*)returnObj);
   fail:
@@ -382,8 +382,8 @@ __version__ = Version().split()[2]
     } else {
       int is_new = 0;
       PyArrayObject * colorArray = obj_to_array_contiguous_allow_conversion(elementColors,
-									    PyArray_INT, &is_new);
-      if (colorArray) colors = (int*)(colorArray->data);
+									    NPY_INT, &is_new);
+      if (colorArray) colors = (int*) array_data(colorArray);
       mapColoring = new Epetra_MapColoring(map,colors,defaultColor);
       if (is_new) Py_XDECREF(colorArray);
     }
@@ -402,9 +402,9 @@ __version__ = Version().split()[2]
     int      * list    = self->ListOfColors();
     intp       dims[ ] = { self->NumColors() };
     int      * data;
-    PyObject * retObj  = PyArray_SimpleNew(1,dims,PyArray_INT);
+    PyObject * retObj  = PyArray_SimpleNew(1,dims,NPY_INT);
     if (retObj == NULL) goto fail;
-    data = (int*)(((PyArrayObject*)(retObj))->data);
+    data = (int*) array_data(retObj);
     for (int i = 0; i<dims[0]; i++) data[i] = list[i];
     return PyArray_Return((PyArrayObject*)retObj);
   fail:
@@ -416,9 +416,9 @@ __version__ = Version().split()[2]
     int      * list    = self->ColorLIDList(color);
     intp       dims[ ] = { self->NumElementsWithColor(color) };
     int      * data;
-    PyObject * retObj  = PyArray_SimpleNew(1,dims,PyArray_INT);
+    PyObject * retObj  = PyArray_SimpleNew(1,dims,NPY_INT);
     if (retObj == NULL) goto fail;
-    data = (int*)(((PyArrayObject*)(retObj))->data);
+    data = (int*) array_data(retObj);
     for (int i = 0; i<dims[0]; i++) data[i] = list[i];
     return PyArray_Return((PyArrayObject*)retObj);
   fail:
@@ -430,9 +430,9 @@ __version__ = Version().split()[2]
     int      * list    = self->ElementColors();
     intp       dims[ ] = { self->Map().NumMyElements() };
     int      * data;
-    PyObject * retObj  = PyArray_SimpleNew(1,dims,PyArray_INT);
+    PyObject * retObj  = PyArray_SimpleNew(1,dims,NPY_INT);
     if (retObj == NULL) goto fail;
-    data = (int*)(((PyArrayObject*)(retObj))->data);
+    data = (int*) array_data(retObj);
     for (int i = 0; i<dims[0]; i++) data[i] = list[i];
     return PyArray_Return((PyArrayObject*)retObj);
   fail:

@@ -58,21 +58,23 @@ int method(int row, PyObject * values, PyObject * indices) {
   PyArrayObject * valArray = NULL;
   PyArrayObject * indArray = NULL;
   // Create the array of values
-  valArray = (PyArrayObject*) PyArray_ContiguousFromObject(values,'d',0,0);
+  valArray = (PyArrayObject*) PyArray_ContiguousFromObject(values,NPY_DOUBLE,0,0);
   if (valArray == NULL) goto fail;
-  numValEntries = (int) PyArray_MultiplyList(valArray->dimensions,valArray->nd);
+  numValEntries = (int) PyArray_MultiplyList(array_dimensions(valArray),
+					     array_numdims(valArray));
   // Create the array of indeces
-  indArray = (PyArrayObject*) PyArray_ContiguousFromObject(indices,'i',0,0);
+  indArray = (PyArrayObject*) PyArray_ContiguousFromObject(indices,NPY_INT,0,0);
   if (indArray == NULL) goto fail;
-  numIndEntries = (int) PyArray_MultiplyList(indArray->dimensions,indArray->nd);
+  numIndEntries = (int) PyArray_MultiplyList(array_dimensions(indArray),
+					     array_numdims(indArray));
   if (numIndEntries != numValEntries) {
     PyErr_Format(PyExc_ValueError, "values length of %d not equal to indices length %d", 
 		 numValEntries, numIndEntries);
     goto fail;
   }
   // Manipulate the row values
-  result = self->method(row, numValEntries, (double*)valArray->data,
-			(int*)indArray->data);
+  result = self->method(row, numValEntries, (double*) array_data(valArray),
+			(int*) array_data(indArray));
   Py_DECREF(valArray);
   Py_DECREF(indArray);
   return result;
@@ -97,21 +99,23 @@ int method(int row, PyObject * values, PyObject * indices) {
     goto fail;
   }
   // Create the array of values
-  valArray = (PyArrayObject*) PyArray_ContiguousFromObject(values,'d',0,0);
+  valArray = (PyArrayObject*) PyArray_ContiguousFromObject(values,NPY_DOUBLE,0,0);
   if (valArray == NULL) goto fail;
-  numValEntries = (int) PyArray_MultiplyList(valArray->dimensions,valArray->nd);
+  numValEntries = (int) PyArray_MultiplyList(array_dimensions(valArray),
+					     array_numdims(valArray));
   // Create the array of indeces
-  indArray = (PyArrayObject*) PyArray_ContiguousFromObject(indices,'i',0,0);
+  indArray = (PyArrayObject*) PyArray_ContiguousFromObject(indices,NPY_INT,0,0);
   if (indArray == NULL) goto fail;
-  numIndEntries = (int) PyArray_MultiplyList(indArray->dimensions,indArray->nd);
+  numIndEntries = (int) PyArray_MultiplyList(array_dimensions(indArray),
+					     array_numdims(indArray));
   if (numIndEntries != numValEntries) {
     PyErr_Format(PyExc_ValueError, "values length of %d not equal to indices length %d", 
 		 numValEntries, numIndEntries);
     goto fail;
   }
   // Manipulate the row values
-  result = self->method(row, numValEntries, (double*)valArray->data,
-			(int*)indArray->data);
+  result = self->method(row, numValEntries, (double*) array_data(valArray),
+			(int*) array_data(indArray));
   Py_DECREF(valArray);
   Py_DECREF(indArray);
   return result;
@@ -153,15 +157,15 @@ int method(int row, PyObject * values, PyObject * indices) {
 // NumEntries[0].
 %typemap(directorin) int &NumEntries %{
   intp dims$argnum[ ] = { (intp) 1 };
-  $input = PyArray_SimpleNewFromData(1, dims$argnum, PyArray_INT, (void*)&$1_name);
+  $input = PyArray_SimpleNewFromData(1, dims$argnum, NPY_INT, (void*)&$1_name);
 %}
 %typemap(directorin) double *Values %{
   intp dims$argnum[ ] = { (intp) Length };
-  $input = PyArray_SimpleNewFromData(1, dims$argnum, PyArray_DOUBLE, (void*)$1_name);
+  $input = PyArray_SimpleNewFromData(1, dims$argnum, NPY_DOUBLE, (void*)$1_name);
 %}
 %typemap(directorin) int *Indices %{
   intp dims$argnum[ ] = { (intp) Length };
-  $input = PyArray_SimpleNewFromData(1, dims$argnum, PyArray_INT, (void*)$1_name);
+  $input = PyArray_SimpleNewFromData(1, dims$argnum, NPY_INT, (void*)$1_name);
 %}
 %include "Epetra_RowMatrix.h"
 
@@ -175,7 +179,7 @@ int method(int row, PyObject * values, PyObject * indices) {
 // Typemap for double * & Value
 %typemap(directorin) double *&Value %{
   intp dims$argnum[ ] = { (intp) 1 };
-  $input = PyArray_SimpleNewFromData(1, dims$argnum, PyArray_DOUBLE, (void*)$1_name);
+  $input = PyArray_SimpleNewFromData(1, dims$argnum, NPY_DOUBLE, (void*)$1_name);
 %}
 // Apply the referenced int typemap for NumEntries to RowIndex and ColIndex
 %apply int &NumEntries {int &RowIndex, int &ColIndex};
@@ -249,10 +253,11 @@ int method(int row, PyObject * values, PyObject * indices) {
       constEntriesPerRow = (int) PyInt_AsLong(numEntriesList);
       returnCrsMatrix    = new Epetra_CrsMatrix(CV,rowMap,constEntriesPerRow,staticProfile);
     } else {
-      numEntriesArray = (PyArrayObject*) PyArray_ContiguousFromObject(numEntriesList,'i',0,0);
+      numEntriesArray = (PyArrayObject*) PyArray_ContiguousFromObject(numEntriesList,NPY_INT,0,0);
       if (numEntriesArray == NULL) goto fail;
-      numEntriesPerRow = (int*) (numEntriesArray->data);
-      listSize = (int) PyArray_MultiplyList(numEntriesArray->dimensions,numEntriesArray->nd);
+      numEntriesPerRow = (int*) array_data(numEntriesArray);
+      listSize = (int) PyArray_MultiplyList(array_dimensions(numEntriesArray),
+					    array_numdims(numEntriesArray));
       if (listSize != rowMap.NumMyElements()) {
 	PyErr_Format(PyExc_ValueError,
 		     "Row map has %d elements, list of number of entries has %d",
@@ -285,10 +290,11 @@ int method(int row, PyObject * values, PyObject * indices) {
       constEntriesPerRow = (int) PyInt_AsLong(numEntriesList);
       returnCrsMatrix    = new Epetra_CrsMatrix(CV,rowMap,colMap,constEntriesPerRow,staticProfile);
     } else {
-      numEntriesArray = (PyArrayObject*) PyArray_ContiguousFromObject(numEntriesList,'i',0,0);
+      numEntriesArray = (PyArrayObject*) PyArray_ContiguousFromObject(numEntriesList,NPY_INT,0,0);
       if (numEntriesArray == NULL) goto fail;
-      numEntriesPerRow = (int*) numEntriesArray->data;
-      listSize = (int) PyArray_MultiplyList(numEntriesArray->dimensions,numEntriesArray->nd);
+      numEntriesPerRow = (int*) array_data(numEntriesArray);
+      listSize = (int) PyArray_MultiplyList(array_dimensions(numEntriesArray),
+					    array_numdims(numEntriesArray));
       if (listSize != rowMap.NumMyElements()) {
 	PyErr_Format(PyExc_ValueError,
 		     "Row map has %d elements, list of number of entries has %d",
@@ -329,10 +335,10 @@ int method(int row, PyObject * values, PyObject * indices) {
       goto fail;
     }
     dimensions[0] = self->NumMyEntries(lrid);
-    valuesArray   = PyArray_SimpleNew(1,dimensions,'d');
-    indicesArray  = PyArray_SimpleNew(1,dimensions,'i');
-    values        = (double *) ((PyArrayObject *)valuesArray )->data;
-    indices       = (int    *) ((PyArrayObject *)indicesArray)->data;
+    valuesArray   = PyArray_SimpleNew(1,dimensions,NPY_DOUBLE);
+    indicesArray  = PyArray_SimpleNew(1,dimensions,NPY_INT   );
+    values        = (double*) array_data(valuesArray );
+    indices       = (int   *) array_data(indicesArray);
     result        = self->ExtractGlobalRowCopy(globalRow, dimensions[0], numEntries,
 					       values, indices);
     if (result == -2) {
@@ -360,10 +366,10 @@ int method(int row, PyObject * values, PyObject * indices) {
       goto fail;
     }
     dimensions[0] = self->NumMyEntries(localRow);
-    valuesArray   = PyArray_SimpleNew(1,dimensions,'d');
-    indicesArray  = PyArray_SimpleNew(1,dimensions,'i');
-    values        = (double *) ((PyArrayObject *)valuesArray )->data;
-    indices       = (int    *) ((PyArrayObject *)indicesArray)->data;
+    valuesArray   = PyArray_SimpleNew(1,dimensions,NPY_DOUBLE);
+    indicesArray  = PyArray_SimpleNew(1,dimensions,NPY_INT   );
+    values        = (double*) array_data(valuesArray );
+    indices       = (int   *) array_data(indicesArray);
     result        = self->ExtractMyRowCopy(localRow, dimensions[0], numEntries,
 					   values, indices);
     if (result == -2) {
@@ -407,9 +413,9 @@ int method(int row, PyObject * values, PyObject * indices) {
     if (PyInt_Check(args)) {
       grid = (int) PyInt_AsLong(args);
       dimensions[0] = self->NumMyCols();
-      returnObj = PyArray_SimpleNew(1,dimensions,'d');
+      returnObj = PyArray_SimpleNew(1,dimensions,NPY_DOUBLE);
       if (returnObj == NULL) goto fail;
-      data = (double*) ((PyArrayObject*) returnObj)->data;
+      data = (double*) array_data(returnObj);
       for (int i=0; i<dimensions[0]; ++i) data[i] = 0.0;
       returnObj = PyArray_Return((PyArrayObject*)returnObj);
 

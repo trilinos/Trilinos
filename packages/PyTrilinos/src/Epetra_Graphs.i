@@ -52,7 +52,7 @@
   if (result == -1) SWIG_exception(SWIG_ValueError,   "Invalid row index"  );
   if (result == -2) SWIG_exception(SWIG_RuntimeError, "Graph not completed");
   intp dims[ ] = { *$1 };
-  $result = PyArray_SimpleNewFromData(1,dims,PyArray_INT,(void*)(*$2));
+  $result = PyArray_SimpleNewFromData(1,dims,NPY_INT,(void*)(*$2));
   if ($result == NULL) SWIG_exception(SWIG_RuntimeError, "Error creating integer array");
 }
 // End argout typemap collection for (int & NumIndices, int * Indices)
@@ -96,9 +96,9 @@
       returnCrsGraph     = new Epetra_CrsGraph(CV,rowMap,constIndicesPerRow,staticProfile);
     } else {
       numIndicesArray = obj_to_array_contiguous_allow_conversion(numIndicesList,
-								 PyArray_INT, &is_new);
+								 NPY_INT, &is_new);
       if (!numIndicesArray || !require_dimensions(numIndicesArray,1)) goto fail;
-      numIndicesPerRow = (int*) (numIndicesArray->data);
+      numIndicesPerRow = (int*) array_data(numIndicesArray);
       listSize = (int) array_size(numIndicesArray,0);
       if (listSize != rowMap.NumMyElements()) {
 	PyErr_Format(PyExc_ValueError,
@@ -134,9 +134,9 @@
       returnCrsGraph     = new Epetra_CrsGraph(CV,rowMap,colMap,constIndicesPerRow,staticProfile);
     } else {
       numIndicesArray = obj_to_array_contiguous_allow_conversion(numIndicesList,
-								 PyArray_INT, &is_new);
+								 NPY_INT, &is_new);
       if (!numIndicesArray || !require_dimensions(numIndicesArray,1)) goto fail;
-      numIndicesPerRow = (int*) (numIndicesArray->data);
+      numIndicesPerRow = (int*) array_data(numIndicesArray);
       listSize = (int) array_size(numIndicesArray,0);
       if (listSize != rowMap.NumMyElements()) {
 	PyErr_Format(PyExc_ValueError,
@@ -168,8 +168,8 @@
       goto fail;
     }
     dimensions[0] = self->NumMyIndices(lrid);
-    indicesArray  = PyArray_SimpleNew(1,dimensions,PyArray_INT);
-    indices       = (int *) ((PyArrayObject *)indicesArray)->data;
+    indicesArray  = PyArray_SimpleNew(1,dimensions,NPY_INT);
+    indices       = (int*) array_data(indicesArray);
     result        = self->ExtractGlobalRowCopy(globalRow, dimensions[0], numIndices, indices);
     if (result == -2) {
       PyErr_SetString(PyExc_RuntimeError, "Graph not completed");
@@ -197,8 +197,8 @@
       goto fail;
     }
     dimensions[0] = self->NumMyIndices(localRow);
-    indicesArray  = PyArray_SimpleNew(1,dimensions,PyArray_INT);
-    indices       = (int *) ((PyArrayObject *)indicesArray)->data;
+    indicesArray  = PyArray_SimpleNew(1,dimensions,NPY_INT);
+    indices       = (int*) array_data(indicesArray);
     result        = self->ExtractMyRowCopy(localRow, dimensions[0], numIndices, indices);
     if (result == -2) {
       PyErr_SetString(PyExc_RuntimeError, "Graph not completed");

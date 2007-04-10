@@ -177,7 +177,7 @@ __version__ = AztecOO_Version().split()[2]
 %aztecoo_exception(AztecOO,SetParameters)
 %aztecoo_exception(AztecOO,Iterate      )
 %ignore AztecOO::GetAllAztecStatus(double*);
-%aztecoo_return_array(AztecOO, GetAllAztecOptions, int,    PyArray_INT,    AZ_OPTIONS_SIZE)
-%aztecoo_return_array(AztecOO, GetAllAztecParams,  double, PyArray_DOUBLE, AZ_PARAMS_SIZE )
-%aztecoo_return_array(AztecOO, GetAztecStatus,     double, PyArray_DOUBLE, AZ_STATUS_SIZE )
+%aztecoo_return_array(AztecOO, GetAllAztecOptions, int,    NPY_INT,    AZ_OPTIONS_SIZE)
+%aztecoo_return_array(AztecOO, GetAllAztecParams,  double, NPY_DOUBLE, AZ_PARAMS_SIZE )
+%aztecoo_return_array(AztecOO, GetAztecStatus,     double, NPY_DOUBLE, AZ_STATUS_SIZE )
 %include "AztecOO.h"
