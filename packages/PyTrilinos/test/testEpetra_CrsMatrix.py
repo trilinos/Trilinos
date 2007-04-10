@@ -143,7 +143,7 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
         ident = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 1, True)
         for lrid in range(ident.NumMyRows()):
             grid = ident.GRID(lrid)
-            ident.InsertGlobalValues(grid,1.0,grid)
+            ident.InsertGlobalValues(grid,[1.0],[grid])
         ident.FillComplete()
         return ident
 

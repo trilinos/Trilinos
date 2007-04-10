@@ -69,7 +69,7 @@ def main():
     A    = Epetra.CrsMatrix(Epetra.Copy, map, 0)
     rows = map.MyGlobalElements()
     for i in rows:
-        err = A.InsertGlobalValues(i, 2.0, i)
+        err = A.InsertGlobalValues(i, [2.0], [i])
         if err < 0:
             raise RunTimeError, "Processor %d, global row %d of A, error code %d" \
                   % (comm.MyPID(), i, err)

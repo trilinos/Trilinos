@@ -52,21 +52,21 @@
 ////////////////
 %define %epetra_global_row_method(method)
 int method(int row, PyObject * values, PyObject * indices) {
-  int numValEntries;
-  int numIndEntries;
-  int result;
+  int             numValEntries;
+  int             numIndEntries;
+  int             result;
+  int             is_new_v = 0;
+  int             is_new_i = 0;
   PyArrayObject * valArray = NULL;
   PyArrayObject * indArray = NULL;
   // Create the array of values
-  valArray = (PyArrayObject*) PyArray_ContiguousFromObject(values,NPY_DOUBLE,0,0);
-  if (valArray == NULL) goto fail;
-  numValEntries = (int) PyArray_MultiplyList(array_dimensions(valArray),
-					     array_numdims(valArray));
+  valArray = obj_to_array_contiguous_allow_conversion(values, NPY_DOUBLE, &is_new_v);
+  if (!valArray || !require_dimensions(valArray,1)) goto fail;
+  numValEntries = (int) array_size(valArray,0);
   // Create the array of indeces
-  indArray = (PyArrayObject*) PyArray_ContiguousFromObject(indices,NPY_INT,0,0);
-  if (indArray == NULL) goto fail;
-  numIndEntries = (int) PyArray_MultiplyList(array_dimensions(indArray),
-					     array_numdims(indArray));
+  indArray = obj_to_array_contiguous_allow_conversion(indices, NPY_INT, &is_new_i);
+  if (!indArray || !require_dimensions(indArray,1)) goto fail;
+  numIndEntries = (int) array_size(indArray,0);
   if (numIndEntries != numValEntries) {
     PyErr_Format(PyExc_ValueError, "values length of %d not equal to indices length %d", 
 		 numValEntries, numIndEntries);
@@ -75,21 +75,23 @@ int method(int row, PyObject * values, PyObject * indices) {
   // Manipulate the row values
   result = self->method(row, numValEntries, (double*) array_data(valArray),
 			(int*) array_data(indArray));
-  Py_DECREF(valArray);
-  Py_DECREF(indArray);
+  if (is_new_v) Py_DECREF(valArray);
+  if (is_new_i) Py_DECREF(indArray);
   return result;
  fail:
-  Py_XDECREF(valArray);
-  Py_XDECREF(indArray);
+  if (is_new_v) Py_XDECREF(valArray);
+  if (is_new_i) Py_XDECREF(indArray);
   return -1;
 }
 %enddef
 
 %define %epetra_my_row_method(method)
 int method(int row, PyObject * values, PyObject * indices) {
-  int numValEntries;
-  int numIndEntries;
-  int result;
+  int             numValEntries;
+  int             numIndEntries;
+  int             result;
+  int             is_new_v = 0;
+  int             is_new_i = 0;
   PyArrayObject * valArray = NULL;
   PyArrayObject * indArray = NULL;
   // Check for column map
@@ -99,15 +101,13 @@ int method(int row, PyObject * values, PyObject * indices) {
     goto fail;
   }
   // Create the array of values
-  valArray = (PyArrayObject*) PyArray_ContiguousFromObject(values,NPY_DOUBLE,0,0);
-  if (valArray == NULL) goto fail;
-  numValEntries = (int) PyArray_MultiplyList(array_dimensions(valArray),
-					     array_numdims(valArray));
+  valArray = obj_to_array_contiguous_allow_conversion(values, NPY_DOUBLE, &is_new_v);
+  if (!valArray || !require_dimensions(valArray,1)) goto fail;
+  numValEntries = (int) array_size(valArray,0);
   // Create the array of indeces
-  indArray = (PyArrayObject*) PyArray_ContiguousFromObject(indices,NPY_INT,0,0);
-  if (indArray == NULL) goto fail;
-  numIndEntries = (int) PyArray_MultiplyList(array_dimensions(indArray),
-					     array_numdims(indArray));
+  indArray = obj_to_array_contiguous_allow_conversion(indices, NPY_INT, &is_new_i);
+  if (!indArray || !require_dimensions(indArray,1)) goto fail;
+  numIndEntries = (int) array_size(indArray,0);
   if (numIndEntries != numValEntries) {
     PyErr_Format(PyExc_ValueError, "values length of %d not equal to indices length %d", 
 		 numValEntries, numIndEntries);
@@ -116,12 +116,12 @@ int method(int row, PyObject * values, PyObject * indices) {
   // Manipulate the row values
   result = self->method(row, numValEntries, (double*) array_data(valArray),
 			(int*) array_data(indArray));
-  Py_DECREF(valArray);
-  Py_DECREF(indArray);
+  if (is_new_v) Py_DECREF(valArray);
+  if (is_new_i) Py_DECREF(indArray);
   return result;
  fail:
-  Py_XDECREF(valArray);
-  Py_XDECREF(indArray);
+  if (is_new_v) Py_XDECREF(valArray);
+  if (is_new_i) Py_XDECREF(indArray);
   return -1;
 }
 %enddef
@@ -246,6 +246,7 @@ int method(int row, PyObject * values, PyObject * indices) {
     PyArrayObject    * numEntriesArray    = NULL;
     int              * numEntriesPerRow   = NULL;
     Epetra_CrsMatrix * returnCrsMatrix    = NULL;
+    int                is_new             = 0;
     int                constEntriesPerRow = 0;
     int                listSize           = 0;
 
@@ -253,11 +254,11 @@ int method(int row, PyObject * values, PyObject * indices) {
       constEntriesPerRow = (int) PyInt_AsLong(numEntriesList);
       returnCrsMatrix    = new Epetra_CrsMatrix(CV,rowMap,constEntriesPerRow,staticProfile);
     } else {
-      numEntriesArray = (PyArrayObject*) PyArray_ContiguousFromObject(numEntriesList,NPY_INT,0,0);
-      if (numEntriesArray == NULL) goto fail;
+      numEntriesArray = obj_to_array_contiguous_allow_conversion(numEntriesList,
+								 NPY_INT, &is_new);
+      if (!numEntriesArray || !require_dimensions(numEntriesArray,1)) goto fail;
+      listSize = (int) array_size(numEntriesArray,0);
       numEntriesPerRow = (int*) array_data(numEntriesArray);
-      listSize = (int) PyArray_MultiplyList(array_dimensions(numEntriesArray),
-					    array_numdims(numEntriesArray));
       if (listSize != rowMap.NumMyElements()) {
 	PyErr_Format(PyExc_ValueError,
 		     "Row map has %d elements, list of number of entries has %d",
@@ -265,12 +266,12 @@ int method(int row, PyObject * values, PyObject * indices) {
 	goto fail;
       }
       returnCrsMatrix = new Epetra_CrsMatrix(CV,rowMap,numEntriesPerRow,staticProfile);
-      Py_DECREF(numEntriesArray);
+      if (is_new) Py_DECREF(numEntriesArray);
     }
     return returnCrsMatrix;
 
   fail:
-    Py_XDECREF(numEntriesArray);
+    if (is_new) Py_XDECREF(numEntriesArray);
     return NULL;
   }
 
@@ -283,18 +284,20 @@ int method(int row, PyObject * values, PyObject * indices) {
     PyArrayObject    * numEntriesArray    = NULL;
     int              * numEntriesPerRow   = NULL;
     Epetra_CrsMatrix * returnCrsMatrix    = NULL;
+    int                is_new             = 0;
     int                constEntriesPerRow = 0;
     int                listSize           = 0;
 
     if (PyInt_Check(numEntriesList)) {
       constEntriesPerRow = (int) PyInt_AsLong(numEntriesList);
-      returnCrsMatrix    = new Epetra_CrsMatrix(CV,rowMap,colMap,constEntriesPerRow,staticProfile);
+      returnCrsMatrix    = new Epetra_CrsMatrix(CV,rowMap,colMap,constEntriesPerRow,
+						staticProfile);
     } else {
-      numEntriesArray = (PyArrayObject*) PyArray_ContiguousFromObject(numEntriesList,NPY_INT,0,0);
-      if (numEntriesArray == NULL) goto fail;
+      numEntriesArray = obj_to_array_contiguous_allow_conversion(numEntriesList,
+								 NPY_INT, &is_new);
+      if (!numEntriesArray || !require_dimensions(numEntriesArray,1)) goto fail;
       numEntriesPerRow = (int*) array_data(numEntriesArray);
-      listSize = (int) PyArray_MultiplyList(array_dimensions(numEntriesArray),
-					    array_numdims(numEntriesArray));
+      listSize = (int) array_size(numEntriesArray,0);
       if (listSize != rowMap.NumMyElements()) {
 	PyErr_Format(PyExc_ValueError,
 		     "Row map has %d elements, list of number of entries has %d",
@@ -302,12 +305,12 @@ int method(int row, PyObject * values, PyObject * indices) {
 	goto fail;
       }
       returnCrsMatrix = new Epetra_CrsMatrix(CV,rowMap,colMap,numEntriesPerRow,staticProfile);
-      Py_DECREF(numEntriesArray);
+      if (is_new) Py_DECREF(numEntriesArray);
     }
     return returnCrsMatrix;
 
   fail:
-    Py_XDECREF(numEntriesArray);
+    if (is_new) Py_XDECREF(numEntriesArray);
     return NULL;
   }
 
