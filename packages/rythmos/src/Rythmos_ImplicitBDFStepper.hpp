@@ -263,6 +263,8 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
 template<class Scalar>
 ImplicitBDFStepper<Scalar>::ImplicitBDFStepper()
 {
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  out->setMaxLenLinePrefix(30);
   haveInitialCondition_ = false;
   isInitialized_=false;
 }
@@ -274,6 +276,8 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   ,Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList
   )
 {
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  out->setMaxLenLinePrefix(30);
   if( parameterList != Teuchos::null ) {
     this->setParameterList(parameterList);
   }
@@ -290,6 +294,8 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
 {
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  out->setMaxLenLinePrefix(30);
   // Now we instantiate the model and the solver
   setModel(model);
   setSolver(solver);
@@ -1352,11 +1358,11 @@ void ImplicitBDFStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::
   outputLevel = min(max(outputLevel,-1),4);
   this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"setParameterList");
   out->precision(15);
 
   setDefaultMagicNumbers_(parameterList_->sublist("magicNumbers"));
 
-  Teuchos::OSTab ostab(out,1,"setParameterList");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "maxOrder_ = " << maxOrder_ << endl;
     *out << "currentOrder_ = " << currentOrder_ << endl;
