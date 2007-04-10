@@ -78,8 +78,8 @@ class EpetraImportTestCase(unittest.TestCase):
         self.gids.shape = (self.globalN,self.globalN)
         self.start      = self.myN * self.myPID
         self.end        = self.start + self.myN
-        self.trgMap     = Epetra.Map(-1,self.gids[:,self.start:self.end],0,self.comm)
-        self.srcMap     = Epetra.Map(-1,self.gids[self.start:self.end,:],0,self.comm)
+        self.trgMap     = Epetra.Map(-1,self.gids[:,self.start:self.end].ravel(),0,self.comm)
+        self.srcMap     = Epetra.Map(-1,self.gids[self.start:self.end,:].ravel(),0,self.comm)
         self.importer   = Epetra.Import(self.trgMap, self.srcMap)
         self.numSameIDs = 0
         if self.myPID   == 0: self.numSameIDs = self.myN
@@ -266,8 +266,8 @@ class EpetraExportTestCase(unittest.TestCase):
         self.gids.shape = (self.globalN,self.globalN)
         self.start      = self.myN * self.myPID
         self.end        = self.start + self.myN
-        self.trgMap     = Epetra.Map(-1,self.gids[:,self.start:self.end],0,self.comm)
-        self.srcMap     = Epetra.Map(-1,self.gids[self.start:self.end,:],0,self.comm)
+        self.trgMap     = Epetra.Map(-1,self.gids[:,self.start:self.end].ravel(),0,self.comm)
+        self.srcMap     = Epetra.Map(-1,self.gids[self.start:self.end,:].ravel(),0,self.comm)
         self.exporter   = Epetra.Export(self.srcMap, self.trgMap)
         self.numSameIDs = 0
         if self.myPID   == 0: self.numSameIDs = self.myN

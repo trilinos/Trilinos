@@ -225,7 +225,7 @@
     int result;
     int elementID;
     int elementOffset;
-    result   = self->FindLocalElementID(pointID,elementID,elementOffset);
+    result = self->FindLocalElementID(pointID,elementID,elementOffset);
     if (result != 0) {
       PyErr_Format(PyExc_RuntimeError,"Bad FindLocalElementID return code = %d", result);
       goto fail;
@@ -331,20 +331,22 @@
 	     int                 indexBase,
 	     const Epetra_Comm & comm) {
     // Declarations
-    int          numMyElements;
-    int        * myGlobalElements = NULL;
-    PyObject   * elementArray     = NULL;
-    Epetra_Map * returnMap        = NULL;
+    int             numMyElements;
+    int           * myGlobalElements = NULL;
+    PyArrayObject * elementArray     = NULL;
+    Epetra_Map    * returnMap        = NULL;
+    int             is_new           = 0;
+
     // Check for integer PyObject in the argument list
     if (PyInt_Check(myGlobalElementArray)) {
       numMyElements = (int) PyInt_AsLong(myGlobalElementArray);
       returnMap = new Epetra_Map(numGlobalElements,numMyElements,indexBase,comm);
     } else {
       // Obtain a numpy element array and check
-      elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,NPY_INT,0,0);
-      if (elementArray == NULL) goto fail;
-      numMyElements    = (int) PyArray_MultiplyList(array_dimensions(elementArray),
-						    array_numdims(elementArray));
+      elementArray = obj_to_array_contiguous_allow_conversion(myGlobalElementArray,
+							      NPY_INT, &is_new);
+      if (!elementArray || !require_dimensions(elementArray,1)) goto fail;
+      numMyElements    = (int) array_size(elementArray,0);
       myGlobalElements = (int*) array_data(elementArray);
       returnMap = new Epetra_Map(numGlobalElements,numMyElements,myGlobalElements,
 				 indexBase,comm);
@@ -352,7 +354,7 @@
     }
     return returnMap;
   fail:
-    Py_XDECREF(elementArray);
+    if (is_new) Py_XDECREF(elementArray);
     return NULL;
   }
 }
@@ -384,7 +386,7 @@
 // Import/Export extensions are done with a couple of nested macros
 %define %epetra_mover_method(methodName, numMethod)
   PyObject * methodName() {
-    intp       numIDs[]    = {self->numMethod()};
+    intp       numIDs[ ]   = { self->numMethod() };
     int      * ids         = NULL;
     int      * returnData  = NULL;
     PyObject * returnArray = PyArray_SimpleNew(1,numIDs,NPY_INT);
