@@ -269,7 +269,7 @@ NOX::Epetra::Vector::createMultiVector(
   Epetra_MultiVector epetra_mv(View, map, v, numVecs+1);
 
   Teuchos::RefCountPtr<NOX::Epetra::MultiVector> mv = 
-    Teuchos::rcp(new NOX::Epetra::MultiVector(epetra_mv, type, vectorSpace));
+    Teuchos::rcp(new NOX::Epetra::MultiVector(epetra_mv, type));
 
   delete [] v;
 
@@ -300,7 +300,7 @@ NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
   }
 
   Teuchos::RefCountPtr<NOX::Epetra::MultiVector> mv = 
-    Teuchos::rcp(new NOX::Epetra::MultiVector(*epetra_mv, type, vectorSpace));
+    Teuchos::rcp(new NOX::Epetra::MultiVector(*epetra_mv, type));
 
   delete epetra_mv;
 
