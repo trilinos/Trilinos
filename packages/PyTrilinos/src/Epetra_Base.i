@@ -369,25 +369,23 @@ __version__ = Version().split()[2]
 %ignore Epetra_MapColoring::ListOfColors() const;
 %ignore Epetra_MapColoring::ColorLIDList(int) const;
 %ignore Epetra_MapColoring::ElementColors() const;
+%apply (int DIM1, int* IN_ARRAY1) {(int numColors, int* elementColors)};
 %extend Epetra_MapColoring {
 
   Epetra_MapColoring(const Epetra_BlockMap & map,
-		     PyObject * elementColors,
+		     int numColors, int* elementColors,
 		     const int defaultColor=0) {
     Epetra_MapColoring * mapColoring;
-    int * colors = 0;
-    if (PyInt_Check(elementColors)) {
-      int myDefaultColor = (int) PyInt_AsLong(elementColors);
-      mapColoring = new Epetra_MapColoring(map,myDefaultColor);
-    } else {
-      int is_new = 0;
-      PyArrayObject * colorArray = obj_to_array_contiguous_allow_conversion(elementColors,
-									    NPY_INT, &is_new);
-      if (colorArray) colors = (int*) array_data(colorArray);
-      mapColoring = new Epetra_MapColoring(map,colors,defaultColor);
-      if (is_new) Py_XDECREF(colorArray);
+    if (numColors != map.NumMyElements()) {
+      PyErr_Format(PyExc_ValueError,
+		   "Epetra.BlockMap has %d elements, while elementColors has %d",
+		   map.NumMyElements(), numColors);
+      goto fail;
     }
+    mapColoring = new Epetra_MapColoring(map, elementColors, defaultColor);
     return mapColoring;
+  fail:
+    return NULL;
   }
 
   int __getitem__(int i) {
@@ -441,3 +439,4 @@ __version__ = Version().split()[2]
   }
 }
 %include "Epetra_MapColoring.h"
+%clear (int numColors, int* elementColors);
