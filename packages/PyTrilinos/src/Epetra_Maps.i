@@ -83,8 +83,10 @@
     // Declarations
     int              numMyElements;
     int             *myGlobalElements = NULL;
-    PyObject        *elementArray     = NULL;
+    PyArrayObject   *elementArray     = NULL;
     Epetra_BlockMap *returnBlockMap   = NULL;
+    int              is_new           = 0;
+
     // Check for integer PyObjects in the argument list
     if (PyInt_Check(myGlobalElementArray)) {
       numMyElements   = (int) PyInt_AsLong(myGlobalElementArray);
@@ -92,19 +94,19 @@
       returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,elementSize,
 					   indexBase,comm);
     } else {
-      elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
-      if (elementArray == NULL) goto fail;
-      numMyElements    = (int) PyArray_MultiplyList(((PyArrayObject*)elementArray)->dimensions,
-						    ((PyArrayObject*)elementArray)->nd);
-      myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
+      elementArray = obj_to_array_contiguous_allow_conversion(myGlobalElementArray,
+							      PyArray_INT, &is_new);
+      if (!elementArray || !require_dimensions(elementArray,1)) goto fail;
+      numMyElements    = (int) array_size(elementArray,0);
+      myGlobalElements = (int *) (elementArray->data);
       // Constructor for user-defined, arbitrary distribution of constant-size elements
       returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,myGlobalElements,
 					   elementSize,indexBase,comm);
-      Py_DECREF(elementArray);
+      if (is_new) Py_DECREF(elementArray);
     }
     return returnBlockMap;
   fail:
-    Py_XDECREF(elementArray);
+    if (is_new) Py_XDECREF(elementArray);
     return NULL;
   }
 
@@ -118,9 +120,12 @@
     int              numMyElementSizes;
     int             *myGlobalElements = NULL;
     int             *elementSizeList  = NULL;
-    PyObject        *elementArray     = NULL;
-    PyObject        *elementSizeArray = NULL;
+    PyArrayObject   *elementArray     = NULL;
+    PyArrayObject   *elementSizeArray = NULL;
     Epetra_BlockMap *returnBlockMap   = NULL;
+    int              is_new_ea        = 0;
+    int              is_new_esa       = 0;
+
     // Check for integer PyObjects in the argument list
     if (PyInt_Check(myElementSizes)) {
       int elementSize = (int) PyInt_AsLong(myElementSizes);
@@ -130,11 +135,11 @@
 	returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,elementSize,
 					     indexBase,comm);
       } else {
-	elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
-	if (elementArray == NULL) goto fail;
-	numMyElements    = (int) PyArray_MultiplyList(((PyArrayObject*)elementArray)->dimensions,
-						      ((PyArrayObject*)elementArray)->nd);
-	myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
+	elementArray = obj_to_array_contiguous_allow_conversion(myGlobalElementArray,
+								PyArray_INT, &is_new_ea);
+	if (!elementArray || !require_dimensions(elementArray,1)) goto fail;
+	numMyElements    = (int) array_size(elementArray,0);
+	myGlobalElements = (int *) (elementArray->data);
 	// Constructor for user-defined, arbitrary distribution of constant-size elements
 	returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,myGlobalElements,
 					     elementSize,indexBase,comm);
@@ -142,73 +147,74 @@
       }
     } else {
       // Obtain a numpy element array and check
-      elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
-      if (elementArray == NULL) goto fail;
-      numMyElements    = (int) PyArray_MultiplyList(((PyArrayObject*)elementArray)->dimensions,
-						    ((PyArrayObject*)elementArray)->nd);
-      myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
-      // Obtain a Numric element size array and check
-      elementSizeArray = PyArray_ContiguousFromObject(myElementSizes,'i',0,0);
-      if (elementArray == NULL) goto fail;
-      numMyElementSizes = (int) PyArray_MultiplyList(((PyArrayObject*)elementSizeArray)->dimensions,
-						     ((PyArrayObject*)elementSizeArray)->nd);
+      elementArray = obj_to_array_contiguous_allow_conversion(myGlobalElementArray,
+							      PyArray_INT, &is_new_ea);
+      if (!elementArray || !require_dimensions(elementArray,1)) goto fail;
+      numMyElements    = (int) array_size(elementArray,0);
+      myGlobalElements = (int *) (elementArray->data);
+      // Obtain a numpy element size array and check
+      elementSizeArray = obj_to_array_contiguous_allow_conversion(myElementSizes,
+								  PyArray_INT, &is_new_esa);
+      if (!elementArray || !require_dimensions(elementSizeArray,1)) goto fail;
+      numMyElementSizes = (int) array_size(elementSizeArray,0);
       if (numMyElements != numMyElementSizes) {
 	PyErr_Format(PyExc_ValueError,
 		     "Element and element size arrays must have same lengths\n"
 		     "Lengths = %d, %d", numMyElements, numMyElementSizes);
 	goto fail;
       }
-      elementSizeList = (int *) (((PyArrayObject*)elementSizeArray)->data);
+      elementSizeList = (int *) (elementSizeArray->data);
       // Obtain a new Epetra_BlockMap
       returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,myGlobalElements,
 					   elementSizeList,indexBase,comm);
-      Py_DECREF(elementArray);
-      Py_DECREF(elementSizeArray);
+      if (is_new_ea ) Py_DECREF(elementArray);
+      if (is_new_esa) Py_DECREF(elementSizeArray);
     }
     return returnBlockMap;
   fail:
-    Py_XDECREF(elementArray);
-    Py_XDECREF(elementSizeArray);
+    if (is_new_ea ) Py_XDECREF(elementArray);
+    if (is_new_esa) Py_XDECREF(elementSizeArray);
     return NULL;
   }
 
   PyObject * RemoteIDList(PyObject * GIDList) {
-    intp       numIDs[1];
-    int        result;
-    int      * GIDData 	 = NULL;
-    int      * PIDData 	 = NULL;
-    int      * LIDData 	 = NULL;
-    int      * sizeData  = NULL;
-    PyObject * GIDArray  = NULL;
-    PyObject * PIDArray  = NULL;
-    PyObject * LIDArray  = NULL;
-    PyObject * sizeArray = NULL;
-    PyObject * returnObj = NULL;
-    GIDArray = PyArray_ContiguousFromObject(GIDList,'i',0,0);
-    if (GIDArray == NULL) goto fail;
-    numIDs[0] = PyArray_MultiplyList(((PyArrayObject*)GIDArray)->dimensions,
-				     ((PyArrayObject*)GIDArray)->nd);
-    PIDArray  = PyArray_SimpleNew(1,numIDs,PyArray_INT);
+    intp            numIDs[1];
+    int             result;
+    int           * GIDData   = NULL;
+    int           * PIDData   = NULL;
+    int           * LIDData   = NULL;
+    int           * sizeData  = NULL;
+    PyArrayObject * GIDArray  = NULL;
+    PyArrayObject * PIDArray  = NULL;
+    PyArrayObject * LIDArray  = NULL;
+    PyArrayObject * sizeArray = NULL;
+    PyObject      * returnObj = NULL;
+    int             is_new    = 0;
+
+    GIDArray = obj_to_array_contiguous_allow_conversion(GIDList, PyArray_INT, &is_new);
+    if (!GIDArray || !require_dimensions(GIDArray,1)) goto fail;
+    numIDs[0] = (int) array_size(GIDArray,0);
+    PIDArray  = (PyArrayObject*) PyArray_SimpleNew(1,numIDs,PyArray_INT);
     if (PIDArray == NULL) goto fail;
-    LIDArray  = PyArray_SimpleNew(1,numIDs,PyArray_INT);
+    LIDArray  = (PyArrayObject*) PyArray_SimpleNew(1,numIDs,PyArray_INT);
     if (LIDArray == NULL) goto fail;
-    sizeArray = PyArray_SimpleNew(1,numIDs,PyArray_INT);
+    sizeArray = (PyArrayObject*) PyArray_SimpleNew(1,numIDs,PyArray_INT);
     if (sizeArray == NULL) goto fail;
-    GIDData  = (int*) (((PyArrayObject*)GIDArray)->data);
-    PIDData  = (int*) (((PyArrayObject*)PIDArray)->data);
-    LIDData  = (int*) (((PyArrayObject*)LIDArray)->data);
-    sizeData = (int*) (((PyArrayObject*)sizeArray)->data);
+    GIDData  = (int*) (GIDArray->data);
+    PIDData  = (int*) (PIDArray->data);
+    LIDData  = (int*) (LIDArray->data);
+    sizeData = (int*) (sizeArray->data);
     result   = self->RemoteIDList(numIDs[0],GIDData,PIDData,LIDData,sizeData);
     if (result != 0) {
       PyErr_Format(PyExc_RuntimeError,"Bad RemoteIDList return code = %d", result);
       goto fail;
     }
     returnObj = Py_BuildValue("(OOO)",PIDArray,LIDArray,sizeArray);
-    Py_DECREF(GIDArray );
-    return PyArray_Return((PyArrayObject*)returnObj);
+    if (is_new) Py_DECREF(GIDArray );
+    return returnObj;
 
   fail:
-    Py_XDECREF(GIDArray );
+    if (is_new) Py_XDECREF(GIDArray );
     Py_XDECREF(PIDArray );
     Py_XDECREF(LIDArray );
     Py_XDECREF(sizeArray);
