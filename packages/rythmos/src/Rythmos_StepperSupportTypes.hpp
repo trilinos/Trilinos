@@ -129,7 +129,7 @@ std::ostream& operator<<( std::ostream& out_arg, const StepStatus<Scalar> &stepS
     *out << "NONE" << std::endl;
   }
   return out_arg;
-};
+}
 
 } // namespace Rythmos
 

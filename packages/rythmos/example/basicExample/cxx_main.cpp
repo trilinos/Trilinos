@@ -397,7 +397,7 @@ int main(int argc, char *argv[])
           if (outputLevel >= 3)
           {
             // Get solution out of stepper:
-            Rythmos::StepStatus<double> stepStatus = stepper.getStepStatus();
+            stepStatus = stepper.getStepStatus();
             x_computed_thyra_ptr = stepStatus.solution;
             // Convert Thyra::VectorBase to Epetra_Vector
             x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
@@ -452,7 +452,7 @@ int main(int argc, char *argv[])
           *out << "Took stepsize of: " << dt_taken << " time = " << time << endl;
         }
         // Get solution out of stepper:
-        Rythmos::StepStatus<double> stepStatus = stepper.getStepStatus();
+        stepStatus = stepper.getStepStatus();
         x_computed_thyra_ptr = stepStatus.solution;
       }
     }
