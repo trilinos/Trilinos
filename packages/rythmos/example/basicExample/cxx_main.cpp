@@ -325,7 +325,8 @@ int main(int argc, char *argv[])
           }
         }
         // Get solution out of stepper:
-        x_computed_thyra_ptr = stepper.get_solution();
+        Rythmos::StepStatus<double> stepStatus = stepper.getStepStatus();
+        x_computed_thyra_ptr = stepStatus.solution;
       }
     }
     else // (step_method_val == VARIABLE_STEP)
@@ -368,7 +369,8 @@ int main(int argc, char *argv[])
       {
         // HIGH output data structures:
         // Create a place to store the computed solutions
-        x_computed_thyra_ptr = stepper.get_solution();
+        Rythmos::StepStatus<double> stepStatus = stepper.getStepStatus();
+        x_computed_thyra_ptr = stepStatus.solution;
         // Convert Thyra::VectorBase to Epetra_Vector
         Teuchos::RefCountPtr<const Epetra_Vector> x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
         // Create a place to store the exact numerical solution
@@ -395,7 +397,8 @@ int main(int argc, char *argv[])
           if (outputLevel >= 3)
           {
             // Get solution out of stepper:
-            x_computed_thyra_ptr = stepper.get_solution();
+            Rythmos::StepStatus<double> stepStatus = stepper.getStepStatus();
+            x_computed_thyra_ptr = stepStatus.solution;
             // Convert Thyra::VectorBase to Epetra_Vector
             x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
             if ((method_val == METHOD_BDF) && (maxOrder == 1))
@@ -449,7 +452,8 @@ int main(int argc, char *argv[])
           *out << "Took stepsize of: " << dt_taken << " time = " << time << endl;
         }
         // Get solution out of stepper:
-        x_computed_thyra_ptr = stepper.get_solution();
+        Rythmos::StepStatus<double> stepStatus = stepper.getStepStatus();
+        x_computed_thyra_ptr = stepStatus.solution;
       }
     }
     *out << "Integrated to time = " << time << endl;

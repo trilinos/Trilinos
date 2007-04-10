@@ -82,6 +82,9 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
     Scalar TakeStep(Scalar dt, StepSizeType flag);
 
     /** \brief . */
+    const StepStatus<Scalar> getStepStatus();
+
+    /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
 
     /** \brief . */
@@ -207,8 +210,11 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
                       // note:   $h_n$ = current step size, n = current time step
     Scalar alpha_0_;     // $-\sum_{j=1}^k \alpha_j(n)$ coefficient used in local error test
     Scalar cj_ ;        // $-\alpha_s/h_n$ coefficient used in local error test
-    Scalar ck_ ;        // local error coefficient gamma[0] = 0; // $\gamma_j(n)=\sum_{l=1}^{j-1}1/\psi_l(n)$ coefficient used to
-    vector<Scalar> gamma_;    // calculate time derivative of history array for predictor 
+    Scalar ck_ ;        // local error coefficient gamma[0] = 0; 
+    Scalar ck_enorm_;   // ck * enorm
+    EStepLETStatus stepLETStatus_; // Local Error Test Status
+    vector<Scalar> gamma_;    // $\gamma_j(n)=\sum_{l=1}^{j-1}1/\psi_l(n)$ coefficient used to
+                              // calculate time derivative of history array for predictor 
     vector<Scalar> beta_;     // coefficients used to evaluate predictor from history array
     vector<Scalar> psi_;      // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to 
                       // compute $\beta_j(n)$
@@ -467,6 +473,7 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
 
     // check error and evaluate LTE
     Scalar enorm = checkReduceOrder_();
+    ck_enorm_ = ck_*enorm;
     
     if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
       *out << "xn0_ = " << std::endl;
@@ -481,12 +488,14 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
       }
       *out << "ck_ = " << ck_ << endl;
       *out << "enorm = " << enorm << endl;
-      *out << "Local Truncation Error Check: (ck*enorm) < 1:  (" << ck_*enorm << ") <?= 1" << endl;
+      *out << "Local Truncation Error Check: (ck*enorm) < 1:  (" << ck_enorm_ << ") <?= 1" << endl;
     }
     // Check LTE here:
-    if ((ck_*enorm) > ST::one()) {
+    if ((ck_enorm_) > ST::one()) {
+      stepLETStatus_ = STEP_LET_STATUS_FAILED;
       status = rejectStep_(); 
     } else {
+      stepLETStatus_ = STEP_LET_STATUS_PASSED;
       break;
     }
     if (status == CONTINUE_ANYWAY) {
@@ -502,41 +511,37 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ImplicitBDFStepper<Scalar>::get_solution() const
-{
-  if (!isInitialized_) {
-    if (model_ == Teuchos::null) {
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > emptyRFC;
-      return(emptyRFC); 
-    } else {
-      Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > 
-        x_space = model_->get_x_space();
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > 
-        x_temp = createMember(x_space);
-      return(x_temp);
-    }
-  }
-  return(xHistory_[0]);
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ImplicitBDFStepper<Scalar>::get_residual() const
-{
-  if (!isInitialized_) {
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > emptyRFC;
-    return(emptyRFC); 
-  }
-  return(residual_);
-}
-
-template<class Scalar>
-Scalar ImplicitBDFStepper<Scalar>::get_time() const
+const StepStatus<Scalar> ImplicitBDFStepper<Scalar>::getStepStatus()
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
+  StepStatus<Scalar> stepStatus;
   if (!isInitialized_) {
-    return(Scalar(-ST::one()));
+    stepStatus.message = "This stepper is uninitialized.";
+    stepStatus.stepStatus = STEP_STATUS_UNINITIALIZED;
+    stepStatus.stepSize = Scalar(-ST::one());
+    stepStatus.order = -1;
+    stepStatus.time = Scalar(-ST::one());
+    if (model_ != Teuchos::null) {
+      stepStatus.solution = Thyra::createMember(model_->get_x_space());
+    }
+    return(stepStatus);
   }
-  return(time_);
+
+  if (numberOfSteps_ > 0) {
+    stepStatus.stepStatus = STEP_STATUS_CONVERGED; 
+  } else {
+    stepStatus.stepStatus = STEP_STATUS_UNKNOWN;
+  }
+  stepStatus.stepLETStatus = stepLETStatus_;
+  stepStatus.stepSize = usedStep_; 
+  stepStatus.order = currentOrder_;
+  stepStatus.time = time_;
+  stepStatus.stepLETValue = ck_enorm_; 
+  stepStatus.solution = xHistory_[0];
+  stepStatus.solutionDot = xHistory_[1];
+  stepStatus.residual = residual_;
+
+  return(stepStatus);
 }
 
 template<class Scalar>

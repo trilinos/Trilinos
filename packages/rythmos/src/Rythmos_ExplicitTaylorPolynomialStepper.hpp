@@ -164,11 +164,8 @@ namespace Rythmos {
     //! Take a time step of magnitude \c dt
     Scalar TakeStep(Scalar dt, StepSizeType flag);
 
-    //! Return solution vector at current time
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
-
     /** \brief . */
-    Scalar get_time() const;
+    const StepStatus<Scalar> getStepStatus();
 
     /** \brief . */
     std::string description() const;
@@ -244,6 +241,9 @@ namespace Rythmos {
 
     //! Current time
     Scalar t_;
+
+    //! Current step size
+    Scalar dt_;
 
     //! Initial integration time
     Scalar t_initial_;
@@ -411,7 +411,8 @@ namespace Rythmos {
     if (flag == VARIABLE_STEP) {
       // If t_ > t_final_, we're done
       if (t_ > t_final_) {
-        return Teuchos::ScalarTraits<Scalar>::zero();
+        dt_ = Teuchos::ScalarTraits<Scalar>::zero();
+        return dt_;
       }
 
       // Compute a local truncated Taylor series solution to system
@@ -464,13 +465,16 @@ namespace Rythmos {
       // Increment t_
       t_ += dt;
 
+      dt_ = dt;
+
       return dt;
 
     } else {
 
       // If t_ > t_final_, we're done
       if (t_ > t_final_) {
-        return Teuchos::ScalarTraits<Scalar>::zero();
+        dt_ = Teuchos::ScalarTraits<Scalar>::zero();
+        return dt_;
       }
 
       // Compute a local truncated Taylor series solution to system
@@ -492,22 +496,29 @@ namespace Rythmos {
       // Increment t_
       t_ += dt;
 
+      dt_ = dt;
+
       return dt;
     }
   }
 
-  template<class Scalar>
-  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
-  ExplicitTaylorPolynomialStepper<Scalar>::get_solution() const
-  {
-    return x_vector_;
-  }
 
   template<class Scalar>
-  Scalar ExplicitTaylorPolynomialStepper<Scalar>::get_time() const
+  const StepStatus<Scalar> ExplicitTaylorPolynomialStepper<Scalar>::getStepStatus()
   {
-    return(t_);
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    StepStatus<Scalar> stepStatus;
+
+    stepStatus.stepSize = dt_;
+    stepStatus.order = this->GetOrder();
+    stepStatus.time = t_;
+    stepStatus.solution = x_vector_;
+    stepStatus.solutionDot = x_dot_vector_;
+    stepStatus.residual = f_vector_;
+
+    return(stepStatus);
   }
+
 
   template<class Scalar>
   void

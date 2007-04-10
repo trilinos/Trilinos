@@ -59,14 +59,8 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     Scalar TakeStep(Scalar dt, StepSizeType flag);
 
     /** \brief . */
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
+    const StepStatus<Scalar> getStepStatus();
 
-    /** \brief . */
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
-
-    /** \brief . */
-    Scalar get_time() const;
-    
     /** \brief . */
     std::string description() const;
 
@@ -127,6 +121,7 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
     Scalar t_;
+    Scalar dt_;
 
     Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
 
@@ -184,25 +179,25 @@ Scalar ForwardEulerStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
   Thyra::Vp_StV(&*solution_vector_,dt,*residual_vector_); 
   t_ += dt;
 
+  dt_ = dt;
+
   return(dt);
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ForwardEulerStepper<Scalar>::get_solution() const
+const StepStatus<Scalar> ForwardEulerStepper<Scalar>::getStepStatus()
 {
-  return(solution_vector_);
-}
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  StepStatus<Scalar> stepStatus;
 
-template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ForwardEulerStepper<Scalar>::get_residual() const
-{
-  return(residual_vector_);
-}
+  stepStatus.stepSize = dt_; 
+  stepStatus.order = 1;
+  stepStatus.time = t_;
+  stepStatus.stepLETValue = Scalar(-ST::one()); 
+  stepStatus.solution = solution_vector_;
+  stepStatus.residual = residual_vector_;
 
-template<class Scalar>
-Scalar ForwardEulerStepper<Scalar>::get_time() const
-{
-  return(t_);
+  return(stepStatus);
 }
 
 template<class Scalar>

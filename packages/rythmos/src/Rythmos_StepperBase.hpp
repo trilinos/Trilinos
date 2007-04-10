@@ -35,6 +35,7 @@
 #include "Thyra_ModelEvaluator.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Rythmos_InterpolationBufferBase.hpp"
+#include "Rythmos_StepperSupportTypes.hpp"
 
 namespace Rythmos {
     
@@ -56,12 +57,8 @@ class StepperBase : virtual public InterpolationBufferBase<Scalar>
     /// Take a step 
     virtual Scalar TakeStep(Scalar dt, StepSizeType flag) =0;
 
-    /// Get solution vector
-    virtual Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > 
-      get_solution() const =0;
-
-    /// Get current solution time
-    virtual Scalar get_time() const =0;
+    /// Get current stepper status
+    virtual const StepStatus<Scalar> getStepStatus() =0;
 
     /// Specify initial condition
     virtual void setInitialCondition(const 
@@ -69,6 +66,7 @@ class StepperBase : virtual public InterpolationBufferBase<Scalar>
         ) {};
 
 };
+
 
 } // namespace Rythmos
 

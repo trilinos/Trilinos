@@ -274,7 +274,8 @@ int main(int argc, char *argv[])
     }
     *out << "Integrated to time = " << time << endl;
     // Get solution out of stepper:
-    Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_computed_thyra_ptr = stepper.get_solution();
+    const Rythmos::StepStatus<double> stepStatus = stepper.getStepStatus();
+    Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_computed_thyra_ptr = stepStatus.solution;
     // Convert Thyra::VectorBase to Epetra_Vector
     Teuchos::RefCountPtr<const Epetra_Vector>
       x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);

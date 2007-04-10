@@ -74,10 +74,7 @@ class BackwardEulerStepper : virtual public StepperBase<Scalar>
     Scalar TakeStep(Scalar dt, StepSizeType flag);
 
     /** \brief . */
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
-
-    /** \brief . */
-    Scalar get_time() const;
+    const StepStatus<Scalar> getStepStatus();
 
     /// Redefined from describable
     /** \brief . */
@@ -149,6 +146,7 @@ class BackwardEulerStepper : virtual public StepperBase<Scalar>
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > scaled_x_old_;
     Scalar t_;
     Scalar t_old_;
+    Scalar dt_;
     int numSteps;
 
     Teuchos::RefCountPtr<Thyra::SingleResidSSDAEModelEvaluator<Scalar> >  neModel_;
@@ -255,6 +253,7 @@ Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
   if (!isInitialized_) {
     initialize_(); 
   }
+  dt_ = dt;
   if ((flag == VARIABLE_STEP) || (dt == ST::zero())) {
     Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"BES::TakeStep");
@@ -303,31 +302,31 @@ Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > BackwardEulerStepper<Scalar>::get_solution() const
-{
-  if (!isInitialized_) {
-    if (model_ == Teuchos::null) {
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > emptyRFC;
-      return(emptyRFC); 
-    } else {
-      Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > 
-        x_space = model_->get_x_space();
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > 
-        x_temp = createMember(x_space);
-      return(x_temp);
-    }
-  }
-  return(x_);
-}
-
-template<class Scalar>
-Scalar BackwardEulerStepper<Scalar>::get_time() const
+const StepStatus<Scalar> BackwardEulerStepper<Scalar>::getStepStatus()
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
+  StepStatus<Scalar> stepStatus;
   if (!isInitialized_) {
-    return(Scalar(-ST::one()));
+    stepStatus.message = "This stepper is uninitialized.";
+    stepStatus.stepStatus = STEP_STATUS_UNINITIALIZED;
+    stepStatus.stepSize = Scalar(-ST::one());
+    stepStatus.order = -1;
+    stepStatus.time = Scalar(-ST::one());
+    if (model_ != Teuchos::null) {
+      stepStatus.solution = Thyra::createMember(model_->get_x_space());
+    }
+    return(stepStatus);
   }
-  return(t_);
+
+  if (numSteps > 0) {
+    stepStatus.stepStatus = STEP_STATUS_CONVERGED; 
+  }
+  stepStatus.stepSize = dt_;
+  stepStatus.order = 1;
+  stepStatus.time = t_;
+  stepStatus.solution = x_;
+
+  return(stepStatus);
 }
 
 template<class Scalar>

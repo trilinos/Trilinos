@@ -52,6 +52,7 @@ all-local:
 CORE_H = \
 	$(srcdir)/Rythmos_ConfigDefs.h \
 	$(srcdir)/Rythmos_StepperBase.hpp \
+	$(srcdir)/Rythmos_StepperSupportTypes.hpp \
 	$(srcdir)/Rythmos_BackwardEulerStepper.hpp \
 	$(srcdir)/Rythmos_ForwardEulerStepper.hpp \
 	$(srcdir)/Rythmos_ExplicitRKStepper.hpp \

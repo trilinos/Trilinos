@@ -59,11 +59,8 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     Scalar TakeStep(Scalar dt, StepSizeType flag);
 
     /** \brief . */
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
+    const StepStatus<Scalar> getStepStatus();
 
-    /** \brief . */
-    Scalar get_time() const;
-    
     /** \brief . */
     std::string description() const;
 
@@ -130,6 +127,7 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     std::vector<Scalar> b_c_; // Butcher c vector
 
     Scalar t_;
+    Scalar dt_;
 
     Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
 
@@ -298,6 +296,7 @@ Scalar ExplicitRKStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
   if ((flag == VARIABLE_STEP) || (dt == ST::zero())) {
     return(Scalar(-ST::one()));
   }
+  dt_ = dt;
 
   // Compute stage solutions
   for (int s=0 ; s < stages_ ; ++s) {
@@ -324,15 +323,17 @@ Scalar ExplicitRKStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ExplicitRKStepper<Scalar>::get_solution() const
+const StepStatus<Scalar> ExplicitRKStepper<Scalar>::getStepStatus()
 {
-  return(solution_vector_);
-}
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  StepStatus<Scalar> stepStatus;
 
-template<class Scalar>
-Scalar ExplicitRKStepper<Scalar>::get_time() const
-{
-  return(t_);
+  stepStatus.stepSize = dt_;
+  stepStatus.order = -1;
+  stepStatus.time = t_;
+  stepStatus.solution = solution_vector_;
+
+  return(stepStatus);
 }
 
 template<class Scalar>
