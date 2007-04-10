@@ -1353,10 +1353,6 @@ void ImplicitBDFStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::
   this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
-  out->setMaxLenLinePrefix(28);
-  out->pushLinePrefix("Rythmos::ImplicitBDFStepper");
-  out->setShowLinePrefix(true);
-  out->setTabIndentStr("    ");
 
   setDefaultMagicNumbers_(parameterList_->sublist("magicNumbers"));
 
