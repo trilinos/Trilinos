@@ -872,12 +872,8 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
 
   double bob;
   int mnz=10000;
-  ML_Operator2EpetraCrsMatrix(A,*Result,mnz,false,bob,base);
 
-
-  //  printf("[%d] ML->Epetra Wrap [global] %dx%d\n",Comm.MyPID(),(*Result)->NumGlobalRows(),(*Result)->NumGlobalCols());
-  //  printf("[%d] ML->Epetra Wrap [local ] %dx%d\n",Comm.MyPID(),(*Result)->NumMyRows(),(*Result)->NumMyCols());
-  
+  //#define THIS_CODE_DOESNT_WORK  
 #ifdef THIS_CODE_DOESNT_WORK
   /* This is a very dangerous way to do this.  Live on the edge. */
   int *cols, *gcols;
@@ -888,13 +884,8 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
   int *global_colmap;
   Epetra_Map *RowMap2, *DomainMap;
   ML_Build_Epetra_Maps(A,&DomainMap,&RowMap2);
-  //  int num_local_cols=ML_build_global_numbering(A,&global_colmap,"cols");
-  //  Epetra_Map ColMap(-1,num_local_cols,global_colmap,0,Comm);
-  //  printf("[%d] ML->Epetra Local (R/C) %dx%d\n",Comm.MyPID(),RowMap2->NumMyElements(),ColMap->NumMyElements());
   
   /* Allocate the Epetra_CrsMatrix Object */
-  //  *Result=new Epetra_CrsMatrix(CV,*RowMap2,*ColMap,0);
-  //  *Result=new Epetra_CrsMatrix(CV,RowMap,ColMap,0);
   *Result=new Epetra_CrsMatrix(CV,*RowMap2,0);
   
   /* Fill the matrix. */
@@ -903,16 +894,15 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
     vals=&(M_->values[M_->rowptr[row]]);
     (*Result)->InsertMyValues(row,M_->rowptr[row+1]-M_->rowptr[row],vals,cols);
   }/*end for*/
-  //  (*Result)->FillComplete(*ColMap,*RowMap2);//hax
   (*Result)->FillComplete(*DomainMap,*RowMap2);//hax
 
   printf("[%d] ML->Epetra Wrap [global] %dx%d\n",Comm.MyPID(),(*Result)->NumGlobalRows(),(*Result)->NumGlobalCols());
   printf("[%d] ML->Epetra Wrap [local ] %dx%d\n",Comm.MyPID(),(*Result)->NumMyRows(),(*Result)->NumMyCols());
-
     
   /* Cleanup */
   delete DomainMap; delete RowMap2;
-  //  free(global_colmap);
+#else
+  ML_Operator2EpetraCrsMatrix(A,*Result,mnz,false,bob,base);
 #endif
 }/*end Epetra_CrsMatrix_Wrap_ML_Operator*/
 
@@ -1911,10 +1901,11 @@ void ML_DestroyQt( void )
 #endif
 #endif
 
+
 // ======================================================================
 int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
-				CrsMatrix, int & MaxNumNonzeros,
-				bool CheckNonzeroRow, double & CPUTime, int base)
+                                CrsMatrix, int & MaxNumNonzeros,
+                                bool CheckNonzeroRow, double & CPUTime, int base)
 {
   int    isize_offset, osize_offset;
   int Nghost;
@@ -1966,18 +1957,24 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
     global_osize_as_int[i] = osize_offset + i;
   }
   for (int i = 0 ; i < Nghost; i++) global_isize[i+isize] = -1;
-  
+
   Epetra_Map  rangemap( -1, osize, &global_osize_as_int[0], base, EpetraComm ) ; 
   Epetra_Map  domainmap( -1, isize, &global_isize_as_int[0], base, EpetraComm ) ; 
-  
-  CrsMatrix = new Epetra_CrsMatrix( Copy, rangemap, base ); 
-  
+
+
+  /* Build the column map first to make sure we get communication patterns
+     correct */
   ML_exchange_bdry(&global_isize[0],Amat->getrow->pre_comm, 
  		 Amat->invec_leng,comm,ML_OVERWRITE,NULL);
 
   for ( int j = isize; j < isize+Nghost; j++ ) { 
     global_isize_as_int[j] = (int) global_isize[j];
   }
+  
+  Epetra_Map  colmap( -1, isize+Nghost, &global_isize_as_int[0], base, EpetraComm ) ; 
+  
+  CrsMatrix = new Epetra_CrsMatrix( Copy, rangemap, colmap, base ); 
+  
 
   // MS // introduced variable allocation for colInd and colVal
   // MS // improved efficiency in InsertGlobalValues
@@ -2013,13 +2010,13 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
 
     // MS // check out how many nonzeros we have
     // MS // NOTE: this may result in a non-symmetric pattern for CrsMatrix
-
+    
     NumNonzeros = 0;
     for (int j = 0; j < ncnt; j++) {
       if (colVal[j] != 0.0) {
-	    colInd[NumNonzeros] = global_isize_as_int[colInd[j]];
-	    colVal[NumNonzeros] = colVal[j];
-	    NumNonzeros++;
+        colInd[NumNonzeros] = global_isize_as_int[colInd[j]];
+        colVal[NumNonzeros] = colVal[j];
+        NumNonzeros++;
       }
     }
     if( NumNonzeros == 0 && CheckNonzeroRow ) {
@@ -2047,6 +2044,10 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   return 0;
   
 } /* ML_Operator2EpetraCrsMatrix for rectangular matrices*/
+
+
+
+
 
 #if 0
 // FIXME: delete me ???
