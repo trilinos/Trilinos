@@ -182,12 +182,12 @@ public:
 
   /** \brief . */
   void initialize(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >       &thyraModel
+    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> > &thyraModel
     );
 
   /** \brief . */
   void uninitialize(
-    Teuchos::RefCountPtr<ModelEvaluator<Scalar> >             *thyraModel
+    Teuchos::RefCountPtr<ModelEvaluator<Scalar> > *thyraModel
     );
 
   //@}
@@ -232,8 +232,8 @@ public:
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
   /** \brief . */
   void evalModel(
-    const ModelEvaluatorBase::InArgs<Scalar>    &inArgs
-    ,const ModelEvaluatorBase::OutArgs<Scalar>  &outArgs
+    const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+    const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
     ) const;
 
   //@}
@@ -256,12 +256,12 @@ private:
 
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > inv_g_space_;
 
-  int            obs_idx_;
-  int            p_idx_;
-  int            Ng_;
+  int obs_idx_;
+  int p_idx_;
+  int Ng_;
 
-  double         observationMultiplier_;
-  double         parameterMultiplier_; 
+  double observationMultiplier_;
+  double parameterMultiplier_; 
 
   mutable ParameterDrivenMultiVectorInput<Scalar> observationTargetReader_;
   mutable ParameterDrivenMultiVectorInput<Scalar> parameterBaseReader_;
@@ -669,35 +669,44 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
           ,Scalar(observationMultiplier_*(1.0/no))
           );
       }
+      if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+        *out << "\n||DgDx_trans||inf = " << norm_inf(*DgDx_inv_trans_out->col(0)) << "\n";
     }
     if(DgDp_inv_trans_out) {
       if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
         *out << "\nComputing inverse response function derivative DgDp_trans ...\n";
-      if( obs_idx_ < 0 ) {
-        // DgDp^T = parameterMultiplier*(1/np)*diff_p
-        V_StV(
-          &*DgDp_inv_trans_out->col(0)
-          ,Scalar(parameterMultiplier_*(1.0/np))
-          ,*diff_p
-          );
-      }
-      else {
-        // DgDp^T = (observationMultiplier*(1/no)) * (DoDp^T) * diff_o
-        //          + (parameterMultiplier*(1.0/np)) * diff_p
-        apply(
-          *wrapped_DoDp_trans.getMultiVector(), NOTRANS
-          ,*diff_o
-          ,&*DgDp_inv_trans_out->col(0)
-          ,Scalar(observationMultiplier_*(1.0/no))
-          );
-        if( parameterMultiplier_ != ST::zero() ) {
-          Vp_StV(
+      if( parameterMultiplier_ != ST::zero() ) {
+        if( obs_idx_ < 0 ) {
+          // DgDp^T = parameterMultiplier*(1/np)*diff_p
+          V_StV(
             &*DgDp_inv_trans_out->col(0)
             ,Scalar(parameterMultiplier_*(1.0/np))
             ,*diff_p
             );
         }
+        else {
+          // DgDp^T = (observationMultiplier*(1/no)) * (DoDp^T) * diff_o
+          //          + (parameterMultiplier*(1.0/np)) * diff_p
+          apply(
+            *wrapped_DoDp_trans.getMultiVector(), NOTRANS
+            ,*diff_o
+            ,&*DgDp_inv_trans_out->col(0)
+            ,Scalar(observationMultiplier_*(1.0/no))
+            );
+          if( parameterMultiplier_ != ST::one() ) {
+            Vp_StV(
+              &*DgDp_inv_trans_out->col(0)
+              ,Scalar(parameterMultiplier_*(1.0/np))
+              ,*diff_p
+              );
+          }
+        }
       }
+      else {
+        assign(&*DgDp_inv_trans_out,ST::zero());
+      }
+      if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+        *out << "\n||DgDp_trans||inf = " << norm_inf(*DgDp_inv_trans_out->col(0)) << "\n";
     }
   }
   

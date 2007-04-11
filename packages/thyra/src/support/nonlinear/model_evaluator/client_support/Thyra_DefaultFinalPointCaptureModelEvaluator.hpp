@@ -97,8 +97,8 @@ public:
 
 private:
 
-  ModelEvaluatorBase::InArgs<Scalar>  finalPoint_;
-  bool                                finalPointWasSolved_;
+  ModelEvaluatorBase::InArgs<Scalar> finalPoint_;
+  bool finalPointWasSolved_;
   
 };
 
