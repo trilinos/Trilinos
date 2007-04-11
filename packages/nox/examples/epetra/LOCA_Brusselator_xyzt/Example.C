@@ -179,9 +179,11 @@ int main(int argc, char *argv[])
   // function (F) and Jacobian evaluation routines.
   Brusselator::OverlapType OType = Brusselator::ELEMENTS;
   Brusselator Problem(NumGlobalNodes, Comm, OType);
+  double dt = 0.5;
 
   // Get the vector from the Problem
   Epetra_Vector& soln = Problem.getSolution();
+  Epetra_Vector& initCond = soln;
 
   // Begin Nonlinear Solver ************************************
 
@@ -371,10 +373,10 @@ int main(int argc, char *argv[])
 			NOX::Utils::Warning);
 
   Teuchos::RefCountPtr<LOCA::Epetra::Interface::xyzt> ixyzt = 
-    Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface, interface, 
-						   interface,
-						   initGuess, A, A, 
+    Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface, 
+						   initGuess, A,
 						   globalComm, 
+                                                   initCond, dt,
 						   precPrintParams.get(), precLSParams.get()));
 
   Teuchos::RefCountPtr<Epetra_RowMatrix> Axyzt =
@@ -395,10 +397,11 @@ int main(int argc, char *argv[])
 						      solnxyzt));
 #else
   Teuchos::RefCountPtr<LOCA::Epetra::Interface::xyzt> ixyzt = 
-    Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface, interface, 
-						   interface,
-						   initGuess, A, A, 
+    Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface, 
+						   initGuess, A,
+                                                   initCond, dt,
 						   globalComm));
+
   Teuchos::RefCountPtr<Epetra_RowMatrix> Axyzt =
      Teuchos::rcp(&(ixyzt->getJacobian()),false);
   Epetra_Vector& solnxyzt = ixyzt->getSolution();
@@ -485,7 +488,6 @@ int main(int argc, char *argv[])
 #endif
   int timeStep = 0;
   double time = 0.;
-  double dt = Problem.getdt();
   
   // Time integration loop
   while(timeStep < maxTimeSteps) {

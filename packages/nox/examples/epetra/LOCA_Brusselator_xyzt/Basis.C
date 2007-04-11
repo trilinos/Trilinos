@@ -49,14 +49,14 @@ Basis::Basis(int numSpec) :
   wt(0.0),
   uu(NULL),
   duu(NULL),
-  uuold(NULL),
-  duuold(NULL),
+  uudot(NULL),
+  duudot(NULL),
   dx(0.0)
 {
   uu = new double[numSpec];
   duu = new double[numSpec];
-  uuold = new double[numSpec];
-  duuold = new double[numSpec];
+  uudot = new double[numSpec];
+  duudot = new double[numSpec];
   phi = new double[2];
   dphide = new double[2];
 }
@@ -65,14 +65,14 @@ Basis::Basis(int numSpec) :
 Basis::~Basis() {
   delete [] uu;
   delete [] duu;
-  delete [] uuold;
-  delete [] duuold;
+  delete [] uudot;
+  delete [] duudot;
   delete [] phi;
   delete [] dphide;
 }
 
 // Calculates a linear 1D basis
-void Basis::getBasis(int gp, double *x, double *u, double *uold) {
+void Basis::getBasis(int gp, double *x, double *u, double *udot) {
 
   int N = 2;
   if (gp==0) {eta=-1.0/sqrt(3.0); wt=1.0;}
@@ -88,15 +88,15 @@ void Basis::getBasis(int gp, double *x, double *u, double *uold) {
   dx=0.5*(x[1]-x[0]);
   xx=0.0;
   for (int k=0; k<NumSpecies; k++)
-    uu[k] = duu[k] = uuold[k] = duuold[k] = 0.0;
+    uu[k] = duu[k] = uudot[k] = duudot[k] = 0.0;
 
   for (int i=0; i < N; i++) {
     xx += x[i] * phi[i];
     for (int k=0; k<NumSpecies; k++) {
       uu[k] += u[NumSpecies * i + k] * phi[i];
       duu[k] += u[NumSpecies * i + k] * dphide[i];
-      uuold[k] += uold[NumSpecies * i + k] * phi[i];
-      duuold[k] += uold[NumSpecies * i + k] * dphide[i];
+      uudot[k] += udot[NumSpecies * i + k] * phi[i];
+      duudot[k] += udot[NumSpecies * i + k] * dphide[i];
     }
   }
 
