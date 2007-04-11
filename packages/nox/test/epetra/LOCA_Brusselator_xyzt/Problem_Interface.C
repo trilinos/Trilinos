@@ -51,8 +51,7 @@
 Problem_Interface::Problem_Interface(Brusselator& Problem) :
   problem(Problem),
   conStep(0),
-  timeStep(1),
-  oldSolnOrig(Problem.getOldSoln())
+  timeStep(1)
 { }
 
 Problem_Interface::~Problem_Interface()
@@ -61,13 +60,13 @@ Problem_Interface::~Problem_Interface()
 bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec, 
                        NOX::Epetra::Interface::Required::FillType fillType) 
 {
-  return problem.evaluate(fillType, &x, &FVec, NULL);
+  return problem.evaluate(fillType, &x, &FVec, NULL, 0.0, 0.0);
 }
 
 bool Problem_Interface::computeJacobian(const Epetra_Vector& x,
 					Epetra_Operator& Jac)
 {
-  return problem.evaluate(NOX::Epetra::Interface::Required::Jac, &x, 0, 0);
+  return problem.evaluate(NOX::Epetra::Interface::Required::Jac, &x, 0, 0, 1.0, 0.0);
 }
 
 void Problem_Interface::setParameters(const LOCA::ParameterVector& params)
@@ -77,10 +76,9 @@ void Problem_Interface::setParameters(const LOCA::ParameterVector& params)
  
 void Problem_Interface::printSolution(const Epetra_Vector& x, double conParam)
 {
-  
-  /*
+ /*
    if (timeStep==1)
-     cout << "Writing solution at continuation step " << conStep
+      cout << "Writing solution at continuation step " << conStep
            << "  for parameter = " << conParam << endl;
    char file_name[25];
    FILE *ifp;
@@ -93,8 +91,8 @@ void Problem_Interface::printSolution(const Epetra_Vector& x, double conParam)
      fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, xMesh[i],
                        x[2*i], x[2*i+1]);
    fclose(ifp);
-   timeStep++; 
-  */
+   timeStep++; //for time integration runs
+ */
 }
 
 void Problem_Interface::dataForPrintSolution(const int conStep_,
@@ -120,45 +118,20 @@ bool Problem_Interface::computePreconditioner(const Epetra_Vector& x,
 
 bool Problem_Interface::computeMassMatrix(const Epetra_Vector& x)
 {
-  int ierr = 0;
-  double dtOrig = problem.getdt();
-
-  // Create temp copy of Jacobian for dt=dtOrig
-  ierr += problem.evaluate(NOX::Epetra::Interface::Required::Jac, &x, 0, 0);
-  Epetra_CrsMatrix tmpJac(problem.getJacobian());
-
-  // Create Jacobian for dt= 2 * dtOrig
-  problem.setdt(2.0*dtOrig);
-  ierr += problem.evaluate(NOX::Epetra::Interface::Required::Jac, &x, 0, 0);
-  Epetra_CrsMatrix& JacRef = problem.getJacobian();
-  problem.setdt(dtOrig);
-
-  // Construct mass matrix by:  M/dt =  -2*(J - M/dt) + 2*(J - M/(2*dt)) 
-#ifdef HAVE_NOX_EPETRAEXT
-  ierr = EpetraExt::MatrixMatrix::Add(tmpJac, false, -2.0, JacRef, 2.0);
-#else
-  ierr = -10;
-#endif
-
-  if (ierr != 0) {
-    cout << "ERROR: Problem_Interface::computeMassMatrix: ierr != 0:   " << ierr << endl;
-    throw 1;
-  }
-  return true;
+  return problem.evaluate(NOX::Epetra::Interface::Required::Jac, &x, 0, 0, 0.0, 1.0);
 }
 
-void Problem_Interface::setOldSolution(const Epetra_Vector& xOld,
-		                       const int timeStep)
+bool Problem_Interface::computeShiftedMatrix(double alpha, double beta,
+                                    const Epetra_Vector& x, Epetra_Operator& shMat)
 {
-  problem.reset(xOld);
-  // Can set time as a function of timeStep for nonautonomous systems
+    return problem.evaluate(NOX::Epetra::Interface::Required::Jac, &x, 0, 0, alpha, beta);
 }
 
-void Problem_Interface::setOldSolutionFirstStep()
+void Problem_Interface::setXdot(const Epetra_Vector& xDot, const double time_)
 {
-  // Grab previous solution of first time step
+   problem.setxDot(xDot);
 
-  setOldSolution(oldSolnOrig, 0);
+  // Can set time for nonautonomous systems
 }
 //-----------------------------------------------------------------------------
 

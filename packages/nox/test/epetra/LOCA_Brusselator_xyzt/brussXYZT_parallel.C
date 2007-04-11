@@ -222,12 +222,12 @@ int main(int argc, char *argv[])
 	
     // Create the XYZT object
     Teuchos::RefCountPtr<LOCA::Epetra::Interface::xyzt> ixyzt = 
-      Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface, interface, 
-						     interface,
-						     initGuess, A, A, 
-						     globalComm, 
-						     precPrintParams.get(), 
-						     precLSParams.get()));
+      Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface,
+                                                     initGuess, A,
+                                                     globalComm,
+                                                     soln, 0.5,
+                                                     precPrintParams.get(),
+                                                     precLSParams.get()));
 
     // Create the XYZT operator, solution, and preconditioner
     Teuchos::RefCountPtr<Epetra_RowMatrix> Axyzt =

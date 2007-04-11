@@ -52,7 +52,7 @@ class Basis {
   ~Basis();
 
   // Calculates the values of u and x at the specified gauss point
-  void getBasis(int gp, double *x, double *u, double *uold);
+  void getBasis(int gp, double *x, double *u, double *udot);
 
  private:
   // Private to prohibit copying
@@ -65,7 +65,7 @@ class Basis {
   double *phi, *dphide; 
   double xx, eta, wt;
   double *uu, *duu;
-  double *uuold, *duuold;
+  double *uudot, *duudot;
   double dx;
 };
 

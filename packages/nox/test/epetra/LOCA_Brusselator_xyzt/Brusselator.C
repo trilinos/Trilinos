@@ -52,7 +52,6 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
                          OverlapType OType_) :
   xmin(0.0),
   xmax(1.0),
-  dt(5.0e-1),
   Comm(&comm),
   overlapType(OType_),
   NumGlobalNodes(numGlobalNodes),
@@ -204,7 +203,7 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
   Importer = new Epetra_Import(*OverlapMap, *StandardMap);
   nodeImporter = new Epetra_Import(*OverlapNodeMap, *StandardNodeMap);
   initialSolution = new Epetra_Vector(*StandardMap);
-  oldSolution = new Epetra_Vector(*StandardMap);
+  solnDot = new Epetra_Vector(*StandardMap);
   AA = new Epetra_CrsGraph(Copy, *StandardMap, 0);
 
   // Allocate the memory for a matrix dynamically (i.e. the graph is dynamic).
@@ -247,16 +246,16 @@ Brusselator::~Brusselator()
   delete AA;
   delete xptr;
   delete initialSolution;
-  delete oldSolution;
+  delete solnDot;
   delete Importer;
   delete OverlapMap;
   delete StandardMap;
 }
 
 // Reset function
-void Brusselator::reset(const Epetra_Vector& x)
+void Brusselator::setxDot(const Epetra_Vector& xdot)
 {
-  *oldSolution = x;
+  *solnDot = xdot;
 }
 
 // Set initialSolution to desired initial condition
@@ -265,30 +264,24 @@ void Brusselator::initializeSoln()
   Epetra_Vector& soln = *initialSolution;
   Epetra_Vector& x = *xptr;
 
-  for (int i=0; i<x.MyLength(); i++) {
-    soln[2*i]   = alpha;
-    soln[2*i+1] = beta/alpha;
-  }
-
   // Here we do a sinusoidal perturbation of the unstable
   // steady state.
 
-  //double pi = 4.*atan(1.0);
+  for (int i=0; i<x.MyLength(); i++) {
+    soln[2*i] = alpha;
+    soln[2*i+1] = beta/alpha;
+  }
 
-  //for (int i=0; i<x.MyLength(); i++) {
-  //  soln[2*i] = 0.6 + 1.e-1*sin(1.0*pi*x[i]);
-  //  soln[2*i+1] = 10.0/3.0 + 1.e-1*sin(1.0*pi*x[i]);
-  //}
+/*
+  double pi = 4.*atan(1.0);
 
-  //soln.PutScalar(0.0);
-  *oldSolution = soln;
+  for (int i=0; i<x.MyLength(); i++) {
+    soln[2*i] = 0.6 + 1.e-1*sin(1.0*pi*x[i]);
+    soln[2*i+1] = 10.0/3.0 + 1.e-1*sin(1.0*pi*x[i]);
+  }
+*/
+  solnDot->PutScalar(0.0);
 } 
-
-// Change time step
-void Brusselator::setdt(const double newDt)
-{
-  dt = newDt;
-}
 
 void Brusselator::setParameters(const double alpha_, const double beta_)
 {
@@ -301,7 +294,8 @@ void Brusselator::setParameters(const double alpha_, const double beta_)
 bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType, 
 				    const Epetra_Vector* soln, 
 				    Epetra_Vector* tmp_rhs, 
-				    Epetra_RowMatrix* tmp_matrix)
+				    Epetra_RowMatrix* tmp_matrix,
+                                    double jac_coeff, double mass_coeff)
 {
 
   if( fType == NOX::Epetra::Interface::Required::Jac ) {
@@ -326,7 +320,7 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
 
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
-  Epetra_Vector uold(*OverlapMap);
+  Epetra_Vector udot(*OverlapMap);
   Epetra_Vector xvec(*OverlapNodeMap);
 
   // Export Solution to Overlap vector
@@ -336,7 +330,7 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   // needs to be sent to an OverlapMap (ghosted) vector.  The conditional
   // treatment for the current soution vector arises from use of
   // FD coloring in parallel.
-  uold.Import(*oldSolution, *Importer, Insert);
+  udot.Import(*solnDot, *Importer, Insert);
   xvec.Import(*xptr, *nodeImporter, Insert);
   if( (overlapType == ELEMENTS) && 
       (fType == NOX::Epetra::Interface::Required::FD_Res) )
@@ -364,7 +358,7 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   double jac11, jac12, jac21, jac22;
   double xx[2];
   double uu[2*NUMSPECIES]; // Use of the anonymous enum is needed for SGI builds
-  double uuold[2*NUMSPECIES];
+  double uudot[2*NUMSPECIES];
   Basis basis(NumSpecies);
 
   
@@ -383,23 +377,23 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
       for (int k=0; k<NumSpecies; k++) {
         uu[NumSpecies * 0 + k] = u[NumSpecies * ne + k];
         uu[NumSpecies * 1 + k] = u[NumSpecies * (ne+1) + k];
-        uuold[NumSpecies * 0 + k] = uold[NumSpecies * ne + k];
-        uuold[NumSpecies * 1 + k] = uold[NumSpecies * (ne+1) + k];
+        uudot[NumSpecies * 0 + k] = udot[NumSpecies * ne + k];
+        uudot[NumSpecies * 1 + k] = udot[NumSpecies * (ne+1) + k];
       }
       // Calculate the basis function at the gauss point
-      basis.getBasis(gp, xx, uu, uuold);
+      basis.getBasis(gp, xx, uu, uudot);
 	            
       // Loop over Nodes in Element
       for (i=0; i< 2; i++) {
 	row1=OverlapMap->GID(NumSpecies * (ne+i));
 	row2=OverlapMap->GID(NumSpecies * (ne+i) + 1);
-        term1 = basis.wt*basis.dx
-  	      *((basis.uu[0] - basis.uuold[0])/dt * basis.phi[i] 
+        term1 = basis.wt*basis.dx * (
+  	       basis.uudot[0] * basis.phi[i] 
               +(1.0/(basis.dx*basis.dx))*Dcoeff1*basis.duu[0]*basis.dphide[i]
               + basis.phi[i] * ( -alpha + (beta+1.0)*basis.uu[0]
               - basis.uu[0]*basis.uu[0]*basis.uu[1]) );
-        term2 = basis.wt*basis.dx
-              *((basis.uu[1] - basis.uuold[1])/dt * basis.phi[i] 
+        term2 = basis.wt*basis.dx * (
+              basis.uudot[1] * basis.phi[i] 
               +(1.0/(basis.dx*basis.dx))*Dcoeff2*basis.duu[1]*basis.dphide[i]
               + basis.phi[i] * ( -beta*basis.uu[0]
               + basis.uu[0]*basis.uu[0]*basis.uu[1]) );
@@ -425,21 +419,23 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
               column1=OverlapMap->GID(NumSpecies * (ne+j));
               column2=OverlapMap->GID(NumSpecies * (ne+j) + 1);
               jac11=basis.wt*basis.dx*(
-                      basis.phi[j]/dt*basis.phi[i]
-                      +(1.0/(basis.dx*basis.dx))*Dcoeff1*basis.dphide[j]*
+                      mass_coeff*basis.phi[j]*basis.phi[i]
+                      +jac_coeff*
+                      +((1.0/(basis.dx*basis.dx))*Dcoeff1*basis.dphide[j]*
                                                         basis.dphide[i]
                       + basis.phi[i] * ( (beta+1.0)*basis.phi[j]
-                      - 2.0*basis.uu[0]*basis.phi[j]*basis.uu[1]) );
+                      - 2.0*basis.uu[0]*basis.phi[j]*basis.uu[1])) );
               jac12=basis.wt*basis.dx*(
-                      basis.phi[i] * ( -basis.uu[0]*basis.uu[0]*basis.phi[j]) );
+                      jac_coeff*basis.phi[i] * ( -basis.uu[0]*basis.uu[0]*basis.phi[j]) );
               jac21=basis.wt*basis.dx*(
-                      basis.phi[i] * ( -beta*basis.phi[j]
+                      jac_coeff*basis.phi[i] * ( -beta*basis.phi[j]
                       + 2.0*basis.uu[0]*basis.phi[j]*basis.uu[1]) );
               jac22=basis.wt*basis.dx*(
-                      basis.phi[j]/dt*basis.phi[i]
-                      +(1.0/(basis.dx*basis.dx))*Dcoeff2*basis.dphide[j]*
+                      mass_coeff*basis.phi[j]*basis.phi[i]
+                      +jac_coeff*
+                      +((1.0/(basis.dx*basis.dx))*Dcoeff2*basis.dphide[j]*
                                                         basis.dphide[i]
-                      + basis.phi[i] * basis.uu[0]*basis.uu[0]*basis.phi[j] );
+                      + basis.phi[i] * basis.uu[0]*basis.uu[0]*basis.phi[j] ));
               ierr=A->SumIntoGlobalValues(row1, 1, &jac11, &column1);
               column1++;
               ierr=A->SumIntoGlobalValues(row1, 1, &jac12, &column1);
@@ -457,16 +453,12 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   // U(0)=1
   if (MyPID==0) {
     if ((flag == F_ONLY)    || (flag == ALL)) {
-      // For no perturbation
       (*rhs)[0]= (*soln)[0] - alpha;
       (*rhs)[1]= (*soln)[1] - beta/alpha;
-      // For sinusoidal perturbation
-      //(*rhs)[0]= (*soln)[0] - 0.6;
-      //(*rhs)[1]= (*soln)[1] - 10.0/3.0;
     }
     if ((flag == MATRIX_ONLY) || (flag == ALL)) {
       int column=0;
-      double jac=1.0;
+      double jac=1.0*jac_coeff;
       A->ReplaceGlobalValues(0, 1, &jac, &column);
       column++;
       A->ReplaceGlobalValues(1, 1, &jac, &column);
@@ -487,17 +479,13 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   if ( StandardMap->LID(StandardMap->MaxAllGID()) >= 0 ) {
     int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
     if ((flag == F_ONLY)    || (flag == ALL)) {
-      // For no perturbation
       (*rhs)[lastDof - 1] = (*soln)[lastDof - 1] - alpha;
       (*rhs)[lastDof] = (*soln)[lastDof] - beta/alpha;
-      // For sinusoidal perturbation
-      //(*rhs)[lastDof - 1] = (*soln)[lastDof - 1] - 0.6;
-      //(*rhs)[lastDof] = (*soln)[lastDof] - 10.0/3.0;
     }
     if ((flag == MATRIX_ONLY) || (flag == ALL)) {
       int row=StandardMap->MaxAllGID() - 1;
       int column = row;
-      double jac = 1.0;
+      double jac = 1.0*jac_coeff;
       A->ReplaceGlobalValues(row++, 1, &jac, &column);
       column++;
       A->ReplaceGlobalValues(row, 1, &jac, &column);
@@ -548,16 +536,11 @@ Epetra_Vector& Brusselator::getMesh()
   return *xptr;
 }
 
-Epetra_Vector& Brusselator::getOldSoln()
+Epetra_Vector& Brusselator::getSolnDot()
 {
-  return *oldSolution;
+  return *solnDot;
 } 
   
-double Brusselator::getdt()
-{
-  return dt;
-}
-
 Epetra_CrsGraph& Brusselator::getGraph()
 {
   return *AA;

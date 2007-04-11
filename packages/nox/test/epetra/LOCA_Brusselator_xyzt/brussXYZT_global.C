@@ -222,10 +222,10 @@ int main(int argc, char *argv[])
 	
     // Create the XYZT object
     Teuchos::RefCountPtr<LOCA::Epetra::Interface::xyzt> ixyzt = 
-      Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface, interface, 
-						     interface,
-						     initGuess, A, A, 
+      Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface,
+						     initGuess, A,
 						     globalComm, 
+						     soln, 0.5,
 						     precPrintParams.get(), 
 						     precLSParams.get()));
 

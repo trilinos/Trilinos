@@ -52,15 +52,14 @@
 #include "LOCA_Epetra_Interface_Required.H" // base class
 #include "NOX_Epetra_Interface_Jacobian.H" // base class
 #include "NOX_Epetra_Interface_Preconditioner.H" // base class
-#include "LOCA_Epetra_Interface_MassMatrix.H" // base class
+#include "LOCA_Epetra_Interface_TimeDependent.H" // base class
 
 // ---------- Forward Declarations ----------
 class Brusselator;
 
-class Problem_Interface : public LOCA::Epetra::Interface::Required,
-                          public NOX::Epetra::Interface::Jacobian,
+class Problem_Interface : public NOX::Epetra::Interface::Jacobian,
                           public NOX::Epetra::Interface::Preconditioner,
-                          public LOCA::Epetra::Interface::MassMatrix
+                          public LOCA::Epetra::Interface::TimeDependent
 {
 public:
   Problem_Interface(Brusselator& Problem);
@@ -91,12 +90,13 @@ public:
 			     Epetra_Operator& Prec,
 			     Teuchos::ParameterList* p);
 
-  //! Compute an explicit MassMatrix (LOCA::Epetra::Interface::MassMatrix)
-  bool computeMassMatrix(const Epetra_Vector& x);
+  //! Compute a Time Dependent Shifted Matrix (LOCA::Epetra::Interface::TimeDependent)
+  bool computeShiftedMatrix(double alpha, double beta, const Epetra_Vector& x,
+                            Epetra_Operator& shMat);
 
-  //! Set the old solution, the one from the preious time step (LOCA::Epetra::Interface::MassMatrix)
-  void setOldSolution(const Epetra_Vector& xOld, const int timeStep);
-  void setOldSolutionFirstStep();
+  //! Set the time derivative of the solution for use in the computeF routine
+  //  (LOCA::Epetra::Interface::TimeDependent), and absolut time as well
+  void setXdot(const Epetra_Vector& xDot, const double time);
 
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 
@@ -107,9 +107,11 @@ public:
   Brusselator& problem;
 
 private:
+  // temporarily keep this routine around while incrementally refactoring
+  bool computeMassMatrix(const Epetra_Vector& x);
+
   int conStep;  // Output continuation step index
   int timeStep;  // Output time step index
-  Epetra_Vector oldSolnOrig; // Initial value of solution vector, used as Xold for first time step
 };
 
 #endif
