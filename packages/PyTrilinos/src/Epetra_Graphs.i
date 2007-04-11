@@ -37,10 +37,6 @@
 // Typemap directives //
 ////////////////////////
 
-// Apply the numpy.i (int DIM1, int* IN_ARRAY1) typemap to
-// the (int NumIndices, int* Indices) argument signature
-%apply (int DIM1, int* IN_ARRAY1) {(int NumIndices, int* Indices)};
-
 // Begin argout typemap collection for (int & NumIndices, int *& Indices)
 %typecheck(SWIG_TYPECHECK_INT32_ARRAY) (int & NumIndices, int *& Indices) {
   $1 = ($input != 0);
@@ -76,82 +72,37 @@
 %rename(CrsGraph) Epetra_CrsGraph;
 %epetra_exception(Epetra_CrsGraph,Epetra_CrsGraph)
 %epetra_exception(Epetra_CrsGraph,OptimizeStorage)
-%include "Epetra_CrsGraph.h"
+%apply (int DIM1, int* IN_ARRAY1) {(int NumRows,    const int * NumIndicesPerRow)};
+%apply (int DIM1, int* IN_ARRAY1) {(int NumIndices, int       * Indices         )};
 %extend Epetra_CrsGraph {
 
   Epetra_CrsGraph(Epetra_DataAccess       CV,
-		  const Epetra_BlockMap & rowMap,
-		  PyObject              * numIndicesList,
-		  bool                    staticProfile=false) {
-    // Declarations
-    PyArrayObject   * numIndicesArray    = NULL;
-    int             * numIndicesPerRow   = NULL;
-    Epetra_CrsGraph * returnCrsGraph     = NULL;
-    int               constIndicesPerRow = 0;
-    int               listSize           = 0;
-    int               is_new             = 0;
-
-    if (PyInt_Check(numIndicesList)) {
-      constIndicesPerRow = (int) PyInt_AsLong(numIndicesList);
-      returnCrsGraph     = new Epetra_CrsGraph(CV,rowMap,constIndicesPerRow,staticProfile);
-    } else {
-      numIndicesArray = obj_to_array_contiguous_allow_conversion(numIndicesList,
-								 NPY_INT, &is_new);
-      if (!numIndicesArray || !require_dimensions(numIndicesArray,1)) goto fail;
-      numIndicesPerRow = (int*) array_data(numIndicesArray);
-      listSize = (int) array_size(numIndicesArray,0);
-      if (listSize != rowMap.NumMyElements()) {
+		  const Epetra_BlockMap & RowMap,
+		  int                     NumRows,
+		  const int             * NumIndicesPerRow,
+		  bool                    StaticProfile=false) {
+    if (NumRows != RowMap.NumMyElements()) {
 	PyErr_Format(PyExc_ValueError,
-		     "Row map has %d elements, list of number of indices has %d",
-		     rowMap.NumMyElements(), listSize);
-	goto fail;
+		     "Row map has %d elements, NumIndicesPerRow has %d",
+		     RowMap.NumMyElements(), NumRows);
+	return NULL;
       }
-      returnCrsGraph = new Epetra_CrsGraph(CV,rowMap,numIndicesPerRow,staticProfile);
-      if (is_new) Py_DECREF(numIndicesArray);
-    }
-    return returnCrsGraph;
-
-  fail:
-    if (is_new) Py_XDECREF(numIndicesArray);
-    return NULL;
+    return new Epetra_CrsGraph(CV, RowMap, NumIndicesPerRow, StaticProfile);
   }
 
   Epetra_CrsGraph(Epetra_DataAccess       CV,
-		  const Epetra_BlockMap & rowMap,
-		  const Epetra_BlockMap & colMap,
-		  PyObject              * numIndicesList,
-		  bool                    staticProfile=false) {
-    // Declarations
-    PyArrayObject   * numIndicesArray    = NULL;
-    int             * numIndicesPerRow   = NULL;
-    Epetra_CrsGraph * returnCrsGraph     = NULL;
-    int               constIndicesPerRow = 0;
-    int               listSize           = 0;
-    int               is_new             = 0;
-
-    if (PyInt_Check(numIndicesList)) {
-      constIndicesPerRow = (int) PyInt_AsLong(numIndicesList);
-      returnCrsGraph     = new Epetra_CrsGraph(CV,rowMap,colMap,constIndicesPerRow,staticProfile);
-    } else {
-      numIndicesArray = obj_to_array_contiguous_allow_conversion(numIndicesList,
-								 NPY_INT, &is_new);
-      if (!numIndicesArray || !require_dimensions(numIndicesArray,1)) goto fail;
-      numIndicesPerRow = (int*) array_data(numIndicesArray);
-      listSize = (int) array_size(numIndicesArray,0);
-      if (listSize != rowMap.NumMyElements()) {
+		  const Epetra_BlockMap & RowMap,
+		  const Epetra_BlockMap & ColMap,
+		  int                     NumRows,
+		  const int             * NumIndicesPerRow,
+		  bool                    StaticProfile=false) {
+    if (NumRows != RowMap.NumMyElements()) {
 	PyErr_Format(PyExc_ValueError,
-		     "Row map has %d elements, list of number of indices has %d",
-		     rowMap.NumMyElements(), listSize);
-	goto fail;
+		     "Row map has %d elements, NumIndicesPerRow has %d",
+		     RowMap.NumMyElements(), NumRows);
+	return NULL;
       }
-      returnCrsGraph = new Epetra_CrsGraph(CV,rowMap,colMap,numIndicesPerRow,staticProfile);
-      if (is_new) Py_DECREF(numIndicesArray);
-    }
-    return returnCrsGraph;
-
-  fail:
-    if (is_new) Py_XDECREF(numIndicesArray);
-    return NULL;
+    return new Epetra_CrsGraph(CV, RowMap, ColMap, NumIndicesPerRow, StaticProfile);
   }
 
   PyObject * ExtractGlobalRowCopy(int globalRow) const {
@@ -214,6 +165,10 @@
     return self->operator[](i);
   }
 }
+%include "Epetra_CrsGraph.h"
+%clear (const int * NumIndicesPerRow, int    NumRows);
+%clear (int         NumIndices,       int *  Indices);
+%clear (int       & NumIndices,       int *& Indices);
 
 ////////////////////////////////
 // Epetra_OffsetIndex support //
@@ -228,7 +183,3 @@
 //#include "Epetra_FECrsGraph.h"
 //%rename(FECrsGraph) Epetra_FECrsGraph;
 //%include "Epetra_FECrsGraph.h"
-
-// Clear the typemaps
-%clear (int   NumIndices, int *  Indices);
-%clear (int & NumIndices, int *& Indices);

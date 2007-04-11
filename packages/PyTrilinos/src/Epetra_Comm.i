@@ -40,32 +40,60 @@
 PyObject* Init_Argv(PyObject *args);
 PyObject* Finalize();
 
-// General ignore directives
+// General ignore directive
 %ignore *::operator=;
-%ignore *::Broadcast(int*   ,int    ,int) const;  // These are replaced by %extend below:
-%ignore *::Broadcast(long*  ,int    ,int) const;  //   Broadcast(PyObject*,int)
-%ignore *::Broadcast(double*,int    ,int) const;
-%ignore *::GatherAll(int*   ,int*   ,int) const;  // These are replaced by %extend below:
-%ignore *::GatherAll(long*  ,long*  ,int) const;  //   GatherAll(PyObject*)
-%ignore *::GatherAll(double*,double*,int) const;
-%ignore *::SumAll(   int*   ,int*   ,int) const;  // These are replaced by %extend below:
-%ignore *::SumAll(   long*  ,long*  ,int) const;  //   SumAll(PyObject*)
-%ignore *::SumAll(   double*,double*,int) const;
-%ignore *::MaxAll(   int*   ,int*   ,int) const;  // These are replaced by %extend below:
-%ignore *::MaxAll(   long*  ,long*  ,int) const;  //   MaxAll(PyObject*)
-%ignore *::MaxAll(   double*,double*,int) const;
-%ignore *::MinAll(   int*   ,int*   ,int) const;  // These are replaced by %extend below:
-%ignore *::MinAll(   long*  ,long*  ,int) const;  //   MinAll(PyObject*)
-%ignore *::MinAll(   double*,double*,int) const;
-%ignore *::ScanSum(  int*   ,int*   ,int) const;  // These are replaced by %extend below:
-%ignore *::ScanSum(  long*  ,long*  ,int) const;  //   ScanSum(PyObject*)
-%ignore *::ScanSum(  double*,double*,int) const;
 
 /////////////////////////
 // Epetra_Comm support //
 /////////////////////////
 %rename(Comm) Epetra_Comm;
-%include "Epetra_Comm.h"
+// Several of the Epetra_Comm methods require the same coding pattern
+// for their wrappers and can be collapsed into a macro
+%define %epetra_comm_reduce_method(methodName)
+  PyObject* methodName(PyObject* partialObj) {
+    int is_new_object, type, count, result;
+    PyObject* globalObj = NULL;
+    PyArrayObject* partialArray;
+    partialArray= obj_to_array_contiguous_allow_conversion(partialObj, NPY_NOTYPE,
+							   &is_new_object);
+    if (!partialArray) goto fail;
+    type      = array_type(partialArray);
+    count     = PyArray_SIZE(partialArray);
+    globalObj = PyArray_SimpleNew(array_numdims(partialArray),
+				  array_dimensions(partialArray), type);
+    if (type == NPY_INT) {
+      int* partialVals = (int*) array_data(partialArray);
+      int* globalVals  = (int*) array_data(globalObj);
+      result = self->methodName(partialVals,globalVals,count);
+    }
+    else if (type == NPY_LONG) {
+      long* partialVals = (long*) array_data(partialArray);
+      long* globalVals  = (long*) array_data(globalObj);
+      result = self->methodName(partialVals,globalVals,count);
+    }
+    else if (type == NPY_DOUBLE) {
+      double* partialVals = (double*) array_data(partialArray);
+      double* globalVals  = (double*) array_data(globalObj);
+      result = self->methodName(partialVals,globalVals,count);
+    }
+    else {
+      PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
+		   typecode_string(type));
+      goto fail;
+    }
+    if (result) {
+      PyErr_Format(PyExc_RuntimeError, "methodName returned error code %d", result);
+      goto fail;
+    }
+    if (is_new_object && partialArray) Py_DECREF(partialArray);
+    return PyArray_Return((PyArrayObject*)globalObj);
+  fail:
+    if (is_new_object && partialArray) Py_DECREF(partialArray);
+    Py_XDECREF(globalObj);
+    return NULL;
+  }
+%enddef
+
 // Many of the communicator methods take C arrays as input or output
 // arguments.  Here I allow the python user to use numpy arrays
 // instead, and for pure input arrays, any python object that can be
@@ -83,8 +111,8 @@ PyObject* Finalize();
 
   PyObject* Broadcast(PyObject* myObj, int root) {
     int count, type, result;
-    PyArrayObject* myArray;
-    myArray = obj_to_array_no_conversion(myObj, PyArray_NOTYPE);
+    PyArrayObject* myArray = NULL;
+    myArray = obj_to_array_no_conversion(myObj, NPY_NOTYPE);
     if (!myArray || !require_contiguous(myArray)) goto fail;
     count = PyArray_SIZE(myArray);
     type  = array_type(myArray);
@@ -116,9 +144,9 @@ PyObject* Finalize();
 
   PyObject* GatherAll(PyObject* myObj) {
     int is_new_object, type, myCount, allND, result;
-    PyObject* allObj;
+    PyObject* allObj = NULL;
     PyArrayObject* myArray;
-    myArray = obj_to_array_contiguous_allow_conversion(myObj, PyArray_NOTYPE,
+    myArray = obj_to_array_contiguous_allow_conversion(myObj, NPY_NOTYPE,
 						       &is_new_object);
     if (!myArray) goto fail;
     type    = array_type(myArray);
@@ -159,177 +187,23 @@ PyObject* Finalize();
     return PyArray_Return((PyArrayObject*)allObj);
   fail:
     if (is_new_object && myArray) Py_DECREF(myArray);
+    Py_XDECREF(allObj);
     return NULL;
   }
 
-  PyObject* SumAll(PyObject* partialObj) {
-    int is_new_object, type, count, result;
-    PyObject* globalObj;
-    PyArrayObject* partialArray;
-    partialArray= obj_to_array_contiguous_allow_conversion(partialObj, PyArray_NOTYPE,
-							   &is_new_object);
-    if (!partialArray) goto fail;
-    type      = array_type(partialArray);
-    count     = PyArray_SIZE(partialArray);
-    globalObj = PyArray_SimpleNew(array_numdims(partialArray),
-				  array_dimensions(partialArray), type);
-    if (type == NPY_INT) {
-      int* partialVals = (int*) array_data(partialArray);
-      int* globalVals  = (int*) array_data(globalObj);
-      result = self->SumAll(partialVals,globalVals,count);
-    }
-    else if (type == NPY_LONG) {
-      long* partialVals = (long*) array_data(partialArray);
-      long* globalVals  = (long*) array_data(globalObj);
-      result = self->SumAll(partialVals,globalVals,count);
-    }
-    else if (type == NPY_DOUBLE) {
-      double* partialVals = (double*) array_data(partialArray);
-      double* globalVals  = (double*) array_data(globalObj);
-      result = self->SumAll(partialVals,globalVals,count);
-    }
-    else {
-      PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
-		   typecode_string(type));
-      goto fail;
-    }
-    if (result) {
-      PyErr_Format(PyExc_RuntimeError, "SumAll returned error code %d", result);
-      goto fail;
-    }
-    if (is_new_object && partialArray) Py_DECREF(partialArray);
-    return PyArray_Return((PyArrayObject*)globalObj);
-  fail:
-    if (is_new_object && partialArray) Py_DECREF(partialArray);
-    return NULL;
-  }
-
-  PyObject* MaxAll(PyObject* partialObj) {
-    int is_new_object, type, count, result;
-    PyObject* globalObj;
-    PyArrayObject* partialArray;
-    partialArray = obj_to_array_contiguous_allow_conversion(partialObj, PyArray_NOTYPE,
-							    &is_new_object);
-    if (!partialArray) goto fail;
-    type      = array_type(partialArray);
-    count     = PyArray_SIZE(partialArray);
-    globalObj = PyArray_SimpleNew(array_numdims(partialArray),
-				  array_dimensions(partialArray), type);
-    if (type == NPY_INT) {
-      int* partialMaxs = (int*) array_data(partialArray);
-      int* globalMaxs  = (int*) array_data(globalObj);
-      result = self->MaxAll(partialMaxs,globalMaxs,count);
-    }
-    else if (type == NPY_LONG) {
-      long* partialMaxs = (long*) array_data(partialArray);
-      long* globalMaxs  = (long*) array_data(globalObj);
-      result = self->MaxAll(partialMaxs,globalMaxs,count);
-    }
-    else if (type == NPY_DOUBLE) {
-      double* partialMaxs = (double*) array_data(partialArray);
-      double* globalMaxs  = (double*) array_data(globalObj);
-      result = self->MaxAll(partialMaxs,globalMaxs,count);
-    }
-    else {
-      PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
-		   typecode_string(type));
-      goto fail;
-    }
-    if (result) {
-      PyErr_Format(PyExc_RuntimeError, "MaxAll returned error code %d", result);
-      goto fail;
-    }
-    if (is_new_object && partialArray) Py_DECREF(partialArray);
-    return PyArray_Return((PyArrayObject*)globalObj);
-  fail:
-    if (is_new_object && partialArray) Py_DECREF(partialArray);
-    return NULL;
-  }
-
-  PyObject* MinAll(PyObject* partialObj) {
-    int is_new_object, type, count, result;
-    PyObject* globalObj;
-    PyArrayObject* partialArray;
-    partialArray = obj_to_array_contiguous_allow_conversion(partialObj, PyArray_NOTYPE,
-							    &is_new_object);
-    if (!partialArray) goto fail;
-    type      = array_type(partialArray);
-    count     = PyArray_SIZE(partialArray);
-    globalObj = PyArray_SimpleNew(array_numdims(partialArray),
-				  array_dimensions(partialArray), type);
-    if (type == NPY_INT) {
-      int* partialMins = (int*) array_data(partialArray);
-      int* globalMins  = (int*) array_data(globalObj);
-      result = self->MinAll(partialMins,globalMins,count);
-    }
-    else if (type == NPY_LONG) {
-      long* partialMins = (long*) array_data(partialArray);
-      long* globalMins  = (long*) array_data(globalObj);
-      result = self->MinAll(partialMins,globalMins,count);
-    }
-    else if (type == NPY_DOUBLE) {
-      double* partialMins = (double*) array_data(partialArray);
-      double* globalMins  = (double*) array_data(globalObj);
-      result = self->MinAll(partialMins,globalMins,count);
-    }
-    else {
-      PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
-		   typecode_string(type));
-      goto fail;
-    }
-    if (result) {
-      PyErr_Format(PyExc_RuntimeError, "MinAll returned error code %d", result);
-      goto fail;
-    }
-    if (is_new_object && partialArray) Py_DECREF(partialArray);
-    return PyArray_Return((PyArrayObject*)globalObj);
-  fail:
-    if (is_new_object && partialArray) Py_DECREF(partialArray);
-    return NULL;
-  }
-
-  PyObject* ScanSum(PyObject* myObj) {
-    int is_new_object, type, count, result;
-    PyObject* scanObj;
-    PyArrayObject* myArray;
-    myArray= obj_to_array_contiguous_allow_conversion(myObj, PyArray_NOTYPE,
-						      &is_new_object);
-    if (!myArray) goto fail;
-    type    = array_type(myArray);
-    count   = PyArray_SIZE(myArray);
-    scanObj = PyArray_SimpleNew(array_numdims(myArray),
-				array_dimensions(myArray), type);
-    if (type == NPY_INT) {
-      int* myVals   = (int*) array_data(myArray);
-      int* scanSums = (int*) array_data(scanObj);
-      result = self->ScanSum(myVals,scanSums,count);
-    }
-    else if (type == NPY_LONG) {
-      long* myVals   = (long*) array_data(myArray);
-      long* scanSums = (long*) array_data(scanObj);
-      result = self->ScanSum(myVals,scanSums,count);
-    }
-    else if (type == NPY_DOUBLE) {
-      double* myVals   = (double*) array_data(myArray);
-      double* scanSums = (double*) array_data(scanObj);
-      result = self->ScanSum(myVals,scanSums,count);
-    }
-    else {
-      PyErr_Format(PyExc_TypeError, "Require int, long or double array, got %s array",
-		   typecode_string(type));
-      goto fail;
-    }
-    if (result) {
-      PyErr_Format(PyExc_RuntimeError, "SumAll returned error code %d", result);
-      goto fail;
-    }
-    if (is_new_object && myArray) Py_DECREF(myArray);
-    return PyArray_Return((PyArrayObject*)scanObj);
-  fail:
-    if (is_new_object && myArray) Py_DECREF(myArray);
-    return NULL;
-  }
+  %epetra_comm_reduce_method(SumAll )
+  %epetra_comm_reduce_method(MaxAll )
+  %epetra_comm_reduce_method(MinAll )
+  %epetra_comm_reduce_method(ScanSum)
 }
+// Ignore any future declarations of these function names
+%ignore Epetra_Comm::Broadcast const;
+%ignore Epetra_Comm::GatherAll const;
+%ignore Epetra_Comm::SumAll    const;
+%ignore Epetra_Comm::MaxAll    const;
+%ignore Epetra_Comm::MinAll    const;
+%ignore Epetra_Comm::ScanSum   const;
+%include "Epetra_Comm.h"
 
 ///////////////////////////////
 // Epetra_SerialComm support //

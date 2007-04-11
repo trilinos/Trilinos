@@ -55,7 +55,6 @@
 /////////////////////////////
 // Epetra_BlockMap support //
 /////////////////////////////
-%ignore Epetra_BlockMap::Epetra_BlockMap(int,int,const int*,int, int,const Epetra_Comm&);
 %ignore Epetra_BlockMap::Epetra_BlockMap(int,int,const int*,const int*,int,const Epetra_Comm&);
 %ignore Epetra_BlockMap::RemoteIDList(int,const int*,int*,int*) const;
 %ignore Epetra_BlockMap::RemoteIDList(int,const int*,int*,int*,int*) const;
@@ -73,108 +72,25 @@
 %rename(BlockMap) Epetra_BlockMap;
 %epetra_exception(Epetra_BlockMap, Epetra_BlockMap )
 %epetra_exception(Epetra_BlockMap, MyGlobalElements)
-%include "Epetra_BlockMap.h"
+%apply (int DIM1, int * IN_ARRAY1) {(int NumMyElements, const int * MyGlobalElements)};
+%apply (int DIM1, int * IN_ARRAY1) {(int NumElements,   const int * ElementSizeList )};
 %extend Epetra_BlockMap {
-  Epetra_BlockMap(int                 numGlobalElements,
-		  PyObject *          myGlobalElementArray,
-		  int                 elementSize,
-		  int                 indexBase,
-		  const Epetra_Comm & comm                ) {
-    // Declarations
-    int              numMyElements;
-    int             *myGlobalElements = NULL;
-    PyArrayObject   *elementArray     = NULL;
-    Epetra_BlockMap *returnBlockMap   = NULL;
-    int              is_new           = 0;
 
-    // Check for integer PyObjects in the argument list
-    if (PyInt_Check(myGlobalElementArray)) {
-      numMyElements   = (int) PyInt_AsLong(myGlobalElementArray);
-      // Constructor for user-defined, linear distribution of constant-size elements
-      returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,elementSize,
-					   indexBase,comm);
-    } else {
-      elementArray = obj_to_array_contiguous_allow_conversion(myGlobalElementArray,
-							      NPY_INT, &is_new);
-      if (!elementArray || !require_dimensions(elementArray,1)) goto fail;
-      numMyElements    = (int) array_size(elementArray,0);
-      myGlobalElements = (int *) array_data(elementArray);
-      // Constructor for user-defined, arbitrary distribution of constant-size elements
-      returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,myGlobalElements,
-					   elementSize,indexBase,comm);
-      if (is_new) Py_DECREF(elementArray);
+  Epetra_BlockMap(int                 NumGlobalElements,
+		  int                 NumMyElements,
+		  const int         * MyGlobalElements,
+		  int                 NumElements,
+		  const int         * ElementSizeList,
+		  int                 IndexBase,
+		  const Epetra_Comm & Comm              ) {
+    if (NumMyElements != NumElements) {
+      PyErr_Format(PyExc_ValueError,
+		   "MyGlobalElements and ElementSizeList must have same lengths\n"
+		   "Lengths = %d, %d", NumMyElements, NumElements);
+      return NULL;
     }
-    return returnBlockMap;
-  fail:
-    if (is_new) Py_XDECREF(elementArray);
-    return NULL;
-  }
-
-  Epetra_BlockMap(int                 numGlobalElements,
-		  PyObject *          myGlobalElementArray,
-		  PyObject *          myElementSizes,
-		  int                 indexBase,
-		  const Epetra_Comm & comm                ) {
-    // Declarations
-    int              numMyElements;
-    int              numMyElementSizes;
-    int             *myGlobalElements = NULL;
-    int             *elementSizeList  = NULL;
-    PyArrayObject   *elementArray     = NULL;
-    PyArrayObject   *elementSizeArray = NULL;
-    Epetra_BlockMap *returnBlockMap   = NULL;
-    int              is_new_ea        = 0;
-    int              is_new_esa       = 0;
-
-    // Check for integer PyObjects in the argument list
-    if (PyInt_Check(myElementSizes)) {
-      int elementSize = (int) PyInt_AsLong(myElementSizes);
-      if (PyInt_Check(myGlobalElementArray)) {
-	numMyElements   = (int) PyInt_AsLong(myGlobalElementArray);
-	// Constructor for user-defined, linear distribution of constant-size elements
-	returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,elementSize,
-					     indexBase,comm);
-      } else {
-	elementArray = obj_to_array_contiguous_allow_conversion(myGlobalElementArray,
-								NPY_INT, &is_new_ea);
-	if (!elementArray || !require_dimensions(elementArray,1)) goto fail;
-	numMyElements    = (int) array_size(elementArray,0);
-	myGlobalElements = (int*) array_data(elementArray);
-	// Constructor for user-defined, arbitrary distribution of constant-size elements
-	returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,myGlobalElements,
-					     elementSize,indexBase,comm);
-	Py_DECREF(elementArray);
-      }
-    } else {
-      // Obtain a numpy element array and check
-      elementArray = obj_to_array_contiguous_allow_conversion(myGlobalElementArray,
-							      NPY_INT, &is_new_ea);
-      if (!elementArray || !require_dimensions(elementArray,1)) goto fail;
-      numMyElements    = (int) array_size(elementArray,0);
-      myGlobalElements = (int*) array_data(elementArray);
-      // Obtain a numpy element size array and check
-      elementSizeArray = obj_to_array_contiguous_allow_conversion(myElementSizes,
-								  NPY_INT, &is_new_esa);
-      if (!elementArray || !require_dimensions(elementSizeArray,1)) goto fail;
-      numMyElementSizes = (int) array_size(elementSizeArray,0);
-      if (numMyElements != numMyElementSizes) {
-	PyErr_Format(PyExc_ValueError,
-		     "Element and element size arrays must have same lengths\n"
-		     "Lengths = %d, %d", numMyElements, numMyElementSizes);
-	goto fail;
-      }
-      elementSizeList = (int*) array_data(elementSizeArray);
-      // Obtain a new Epetra_BlockMap
-      returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,myGlobalElements,
-					   elementSizeList,indexBase,comm);
-      if (is_new_ea ) Py_DECREF(elementArray);
-      if (is_new_esa) Py_DECREF(elementSizeArray);
-    }
-    return returnBlockMap;
-  fail:
-    if (is_new_ea ) Py_XDECREF(elementArray);
-    if (is_new_esa) Py_XDECREF(elementSizeArray);
-    return NULL;
+    return new Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,
+			       ElementSizeList, IndexBase, Comm);
   }
 
   PyObject * RemoteIDList(PyObject * GIDList) {
@@ -316,48 +232,17 @@
     return NULL;
   }
 }
+%include "Epetra_BlockMap.h"
+%clear (int NumElements, const int * ElementSizeList);
 
 ////////////////////////
 // Epetra_Map support //
 ////////////////////////
-%ignore Epetra_Map::Epetra_Map(int,int,const int*,int,const Epetra_Comm&);
 %rename(Map) Epetra_Map;
 %epetra_exception(Epetra_Map, Epetra_Map      )
 %epetra_exception(Epetra_Map, MyGlobalElements)
 %include "Epetra_Map.h"
-%extend Epetra_Map {
-  Epetra_Map(int                 numGlobalElements,
-	     PyObject          * myGlobalElementArray,
-	     int                 indexBase,
-	     const Epetra_Comm & comm) {
-    // Declarations
-    int             numMyElements;
-    int           * myGlobalElements = NULL;
-    PyArrayObject * elementArray     = NULL;
-    Epetra_Map    * returnMap        = NULL;
-    int             is_new           = 0;
-
-    // Check for integer PyObject in the argument list
-    if (PyInt_Check(myGlobalElementArray)) {
-      numMyElements = (int) PyInt_AsLong(myGlobalElementArray);
-      returnMap = new Epetra_Map(numGlobalElements,numMyElements,indexBase,comm);
-    } else {
-      // Obtain a numpy element array and check
-      elementArray = obj_to_array_contiguous_allow_conversion(myGlobalElementArray,
-							      NPY_INT, &is_new);
-      if (!elementArray || !require_dimensions(elementArray,1)) goto fail;
-      numMyElements    = (int) array_size(elementArray,0);
-      myGlobalElements = (int*) array_data(elementArray);
-      returnMap = new Epetra_Map(numGlobalElements,numMyElements,myGlobalElements,
-				 indexBase,comm);
-      Py_DECREF(elementArray);
-    }
-    return returnMap;
-  fail:
-    if (is_new) Py_XDECREF(elementArray);
-    return NULL;
-  }
-}
+%clear (int NumMyElements, const int * MyGlobalElements);
 
 /////////////////////////////
 // Epetra_LocalMap support //
