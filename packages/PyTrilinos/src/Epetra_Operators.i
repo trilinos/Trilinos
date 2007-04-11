@@ -51,78 +51,30 @@
 // Macro code //
 ////////////////
 %define %epetra_global_row_method(method)
-int method(int row, PyObject * values, PyObject * indices) {
-  int             numValEntries;
-  int             numIndEntries;
-  int             result;
-  int             is_new_v = 0;
-  int             is_new_i = 0;
-  PyArrayObject * valArray = NULL;
-  PyArrayObject * indArray = NULL;
-  // Create the array of values
-  valArray = obj_to_array_contiguous_allow_conversion(values, NPY_DOUBLE, &is_new_v);
-  if (!valArray || !require_dimensions(valArray,1)) goto fail;
-  numValEntries = (int) array_size(valArray,0);
-  // Create the array of indeces
-  indArray = obj_to_array_contiguous_allow_conversion(indices, NPY_INT, &is_new_i);
-  if (!indArray || !require_dimensions(indArray,1)) goto fail;
-  numIndEntries = (int) array_size(indArray,0);
-  if (numIndEntries != numValEntries) {
-    PyErr_Format(PyExc_ValueError, "values length of %d not equal to indices length %d", 
-		 numValEntries, numIndEntries);
-    goto fail;
+int method(int Row, double* Values, int NumValues, int* Indices, int NumIndices) {
+  if (NumValues != NumIndices) {
+    PyErr_Format(PyExc_ValueError, "Values length %d not equal to Indices length %d", 
+ 		 NumValues, NumIndices);
+    return -1;
   }
-  // Manipulate the row values
-  result = self->method(row, numValEntries, (double*) array_data(valArray),
-			(int*) array_data(indArray));
-  if (is_new_v) Py_DECREF(valArray);
-  if (is_new_i) Py_DECREF(indArray);
-  return result;
- fail:
-  if (is_new_v) Py_XDECREF(valArray);
-  if (is_new_i) Py_XDECREF(indArray);
-  return -1;
+  return self->method(Row, NumValues, Values, Indices);
 }
 %enddef
 
 %define %epetra_my_row_method(method)
-int method(int row, PyObject * values, PyObject * indices) {
-  int             numValEntries;
-  int             numIndEntries;
-  int             result;
-  int             is_new_v = 0;
-  int             is_new_i = 0;
-  PyArrayObject * valArray = NULL;
-  PyArrayObject * indArray = NULL;
+int method(int Row, double* Values, int NumValues, int* Indices, int NumIndices) {
   // Check for column map
   if (!self->HaveColMap()) {
-    PyErr_SetString(PyExc_RuntimeError, "method" " cannot be called on a CrsMatrix"
+    PyErr_SetString(PyExc_RuntimeError, "method cannot be called on a CrsMatrix"
 		    " that does not have a column map");
-    goto fail;
+    return -2;
   }
-  // Create the array of values
-  valArray = obj_to_array_contiguous_allow_conversion(values, NPY_DOUBLE, &is_new_v);
-  if (!valArray || !require_dimensions(valArray,1)) goto fail;
-  numValEntries = (int) array_size(valArray,0);
-  // Create the array of indeces
-  indArray = obj_to_array_contiguous_allow_conversion(indices, NPY_INT, &is_new_i);
-  if (!indArray || !require_dimensions(indArray,1)) goto fail;
-  numIndEntries = (int) array_size(indArray,0);
-  if (numIndEntries != numValEntries) {
-    PyErr_Format(PyExc_ValueError, "values length of %d not equal to indices length %d", 
-		 numValEntries, numIndEntries);
-    goto fail;
+  if (NumValues != NumIndices) {
+    PyErr_Format(PyExc_ValueError, "Values length %d not equal to Indices length %d", 
+ 		 NumValues, NumIndices);
+    return -1;
   }
-  // Manipulate the row values
-  result = self->method(row, numValEntries, (double*) array_data(valArray),
-			(int*) array_data(indArray));
-  if (is_new_v) Py_DECREF(valArray);
-  if (is_new_i) Py_DECREF(indArray);
-  return result;
- fail:
-  if (is_new_v) Py_XDECREF(valArray);
-  if (is_new_i) Py_XDECREF(indArray);
-  return -1;
+  return self->method(Row, NumValues, Values, Indices);
 }
 %enddef
 
@@ -200,30 +152,6 @@ int method(int row, PyObject * values, PyObject * indices) {
 //////////////////////////////
 // Epetra_CrsMatrix support //
 //////////////////////////////
-%ignore Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess,
-					   const Epetra_Map &,
-					   const int *,
-					   bool);
-%ignore Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess,
-					   const Epetra_Map &,
-					   const Epetra_Map &,
-					   const int *,
-					   bool);
-%ignore Epetra_CrsMatrix::InsertGlobalValues( int,int,double*,int);
-%ignore Epetra_CrsMatrix::ReplaceGlobalValues(int,int,double*,int);
-%ignore Epetra_CrsMatrix::SumIntoGlobalValues(int,int,double*,int);
-%ignore Epetra_CrsMatrix::InsertMyValues(     int,int,double*,int);
-%ignore Epetra_CrsMatrix::ReplaceMyValues(    int,int,double*,int);
-%ignore Epetra_CrsMatrix::SumIntoMyValues(    int,int,double*,int);
-%ignore Epetra_CrsMatrix::ExtractGlobalRowCopy(int,int,int&,double* ,int*);
-%ignore Epetra_CrsMatrix::ExtractMyRowCopy(    int,int,int&,double* ,int*);
-%ignore Epetra_CrsMatrix::ExtractGlobalRowCopy(int,int,int&,double*);
-%ignore Epetra_CrsMatrix::ExtractMyRowCopy(    int,int,int&,double*);
-%ignore Epetra_CrsMatrix::ExtractGlobalRowView(int,int,int&,double*&,int*&);
-%ignore Epetra_CrsMatrix::ExtractMyRowView(    int,int,int&,double*&,int*&);
-%ignore Epetra_CrsMatrix::ExtractGlobalRowView(int,int,int&,double*&);
-%ignore Epetra_CrsMatrix::ExtractMyRowView(    int,int,int&,double*&);
-%ignore Epetra_CrsMatrix::ExtractCrsDataPointers(int*&,int*&,double*&);
 %rename(CrsMatrix) Epetra_CrsMatrix;
 %epetra_exception(Epetra_CrsMatrix, Epetra_CrsMatrix   )
 %epetra_exception(Epetra_CrsMatrix, InsertGlobalValues )
@@ -235,86 +163,41 @@ int method(int row, PyObject * values, PyObject * indices) {
 %epetra_exception(Epetra_CrsMatrix, OptimizeStorage    )
 %epetra_exception(Epetra_CrsMatrix, __setitem__        )
 %feature("compactdefaultargs", "0");  // Turn compact default arguments off: leads to error
-%include "Epetra_CrsMatrix.h"
+%apply (int*    IN_ARRAY1, int DIM1) {(const int* NumEntriesPerRow, int NumRows   )};
+%apply (double* IN_ARRAY1, int DIM1) {(double*    Values,  	    int NumValues )};
+%apply (int*    IN_ARRAY1, int DIM1) {(int*       Indices,          int NumIndices)};
 %extend Epetra_CrsMatrix {
 
   Epetra_CrsMatrix(Epetra_DataAccess   CV,
-		   const Epetra_Map  & rowMap,
-		   PyObject          * numEntriesList,
-		   bool                staticProfile=false) {
-    // Declarations
-    PyArrayObject    * numEntriesArray    = NULL;
-    int              * numEntriesPerRow   = NULL;
-    Epetra_CrsMatrix * returnCrsMatrix    = NULL;
-    int                is_new             = 0;
-    int                constEntriesPerRow = 0;
-    int                listSize           = 0;
-
-    if (PyInt_Check(numEntriesList)) {
-      constEntriesPerRow = (int) PyInt_AsLong(numEntriesList);
-      returnCrsMatrix    = new Epetra_CrsMatrix(CV,rowMap,constEntriesPerRow,staticProfile);
-    } else {
-      numEntriesArray = obj_to_array_contiguous_allow_conversion(numEntriesList,
-								 NPY_INT, &is_new);
-      if (!numEntriesArray || !require_dimensions(numEntriesArray,1)) goto fail;
-      listSize = (int) array_size(numEntriesArray,0);
-      numEntriesPerRow = (int*) array_data(numEntriesArray);
-      if (listSize != rowMap.NumMyElements()) {
-	PyErr_Format(PyExc_ValueError,
-		     "Row map has %d elements, list of number of entries has %d",
-		     rowMap.NumMyElements(), listSize);
-	goto fail;
-      }
-      returnCrsMatrix = new Epetra_CrsMatrix(CV,rowMap,numEntriesPerRow,staticProfile);
-      if (is_new) Py_DECREF(numEntriesArray);
+		   const Epetra_Map  & RowMap,
+		   const int         * NumEntriesPerRow,
+		   int                 NumRows,
+		   bool                StaticProfile=false) {
+    if (NumRows != RowMap.NumMyElements()) {
+      PyErr_Format(PyExc_ValueError,
+		   "RowMap has %d rows and NumEntriesPerRow has %d elements",
+		   RowMap.NumMyElements(), NumRows);
+      return NULL;
     }
-    return returnCrsMatrix;
-
-  fail:
-    if (is_new) Py_XDECREF(numEntriesArray);
-    return NULL;
+    return new Epetra_CrsMatrix(CV, RowMap, NumEntriesPerRow, StaticProfile);
   }
 
   Epetra_CrsMatrix(Epetra_DataAccess   CV,
-		   const Epetra_Map  & rowMap,
-		   const Epetra_Map  & colMap,
-		   PyObject          * numEntriesList,
-		   bool                staticProfile=false) {
-    // Declarations
-    PyArrayObject    * numEntriesArray    = NULL;
-    int              * numEntriesPerRow   = NULL;
-    Epetra_CrsMatrix * returnCrsMatrix    = NULL;
-    int                is_new             = 0;
-    int                constEntriesPerRow = 0;
-    int                listSize           = 0;
-
-    if (PyInt_Check(numEntriesList)) {
-      constEntriesPerRow = (int) PyInt_AsLong(numEntriesList);
-      returnCrsMatrix    = new Epetra_CrsMatrix(CV,rowMap,colMap,constEntriesPerRow,
-						staticProfile);
-    } else {
-      numEntriesArray = obj_to_array_contiguous_allow_conversion(numEntriesList,
-								 NPY_INT, &is_new);
-      if (!numEntriesArray || !require_dimensions(numEntriesArray,1)) goto fail;
-      numEntriesPerRow = (int*) array_data(numEntriesArray);
-      listSize = (int) array_size(numEntriesArray,0);
-      if (listSize != rowMap.NumMyElements()) {
-	PyErr_Format(PyExc_ValueError,
-		     "Row map has %d elements, list of number of entries has %d",
-		     rowMap.NumMyElements(), listSize);
-	goto fail;
-      }
-      returnCrsMatrix = new Epetra_CrsMatrix(CV,rowMap,colMap,numEntriesPerRow,staticProfile);
-      if (is_new) Py_DECREF(numEntriesArray);
+		   const Epetra_Map  & RowMap,
+		   const Epetra_Map  & ColMap,
+		   const int         * NumEntriesPerRow,
+		   int                 NumRows,
+		   bool                StaticProfile=false) {
+    if (NumRows != RowMap.NumMyElements()) {
+      PyErr_Format(PyExc_ValueError,
+		   "RowMap has %d rows and NumEntriesPerRow has %d elements",
+		   RowMap.NumMyElements(), NumRows);
+      return NULL;
     }
-    return returnCrsMatrix;
-
-  fail:
-    if (is_new) Py_XDECREF(numEntriesArray);
-    return NULL;
+    return new Epetra_CrsMatrix(CV, RowMap, ColMap, NumEntriesPerRow, StaticProfile);
   }
 
-  // These macros expand into code for the various methods
+  // These macros expand into code for the various row methods
   %epetra_global_row_method(InsertGlobalValues)
   %epetra_global_row_method(ReplaceGlobalValues)
   %epetra_global_row_method(SumIntoGlobalValues)
@@ -521,6 +404,28 @@ int method(int row, PyObject * values, PyObject * indices) {
     return NULL;
   }
 }
+%ignore Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess,
+					   const Epetra_Map &,
+					   const int *,
+					   bool);
+%ignore Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess,
+					   const Epetra_Map &,
+					   const Epetra_Map &,
+					   const int *,
+					   bool);
+%ignore Epetra_CrsMatrix::InsertGlobalValues;
+%ignore Epetra_CrsMatrix::ReplaceGlobalValues;
+%ignore Epetra_CrsMatrix::SumIntoGlobalValues;
+%ignore Epetra_CrsMatrix::InsertMyValues;
+%ignore Epetra_CrsMatrix::ReplaceMyValues;
+%ignore Epetra_CrsMatrix::SumIntoMyValues;
+%ignore Epetra_CrsMatrix::ExtractGlobalRowCopy;
+%ignore Epetra_CrsMatrix::ExtractMyRowCopy;
+%ignore Epetra_CrsMatrix::ExtractCrsDataPointers;
+%include "Epetra_CrsMatrix.h"
+%clear (const int* NumEntriesPerRow, int NumRows   );
+%clear (double*    Values,           int NumValues );
+%clear (int*       Indices,          int NumIndices);
 %feature("compactdefaultargs");  // Turn compact default arguments back on
 
 ////////////////////////////////
