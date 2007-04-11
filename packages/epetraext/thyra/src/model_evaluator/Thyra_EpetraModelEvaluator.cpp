@@ -30,6 +30,7 @@
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_DetachedMultiVectorView.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_implicit_cast.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -104,6 +105,7 @@ void EpetraModelEvaluator::initialize(
   const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > &W_factory
   )
 {
+  using Teuchos::RefCountPtr;
   using Teuchos::implicit_cast;
   typedef ModelEvaluatorBase MEB;
   //
@@ -116,13 +118,23 @@ void EpetraModelEvaluator::initialize(
   //
   EpetraExt::ModelEvaluator::InArgs inArgs = epetraModel_->createInArgs();
   p_map_.resize(inArgs.Np()); p_space_.resize(inArgs.Np());
-  for( int l = 0; l < implicit_cast<int>(p_space_.size()); ++l )
-    p_space_[l] = create_VectorSpace( p_map_[l] = epetraModel_->get_p_map(l) );
+  p_map_is_local_.resize(inArgs.Np(),false);
+  for( int l = 0; l < implicit_cast<int>(p_space_.size()); ++l ) {
+    RefCountPtr<const Epetra_Map>
+      p_map_l = ( p_map_[l] = epetraModel_->get_p_map(l) );
+    p_map_is_local_[l] = !p_map_l->DistributedGlobal();
+    p_space_[l] = create_VectorSpace(p_map_l);
+  }
   //
   EpetraExt::ModelEvaluator::OutArgs outArgs = epetraModel_->createOutArgs();
   g_map_.resize(outArgs.Ng()); g_space_.resize(outArgs.Ng());
-  for( int j = 0; j < implicit_cast<int>(g_space_.size()); ++j )
-    g_space_[j] = create_VectorSpace( g_map_[j] = epetraModel_->get_g_map(j) );
+  g_map_is_local_.resize(outArgs.Ng(),false);
+  for( int j = 0; j < implicit_cast<int>(g_space_.size()); ++j ) {
+    RefCountPtr<const Epetra_Map>
+      g_map_j = ( g_map_[j] = epetraModel_->get_g_map(j) );
+    g_map_is_local_[j] = !g_map_j->DistributedGlobal();
+    g_space_[j] = create_VectorSpace( g_map_j );
+  }
   //
   initialGuess_ = this->createInArgs();
   lowerBounds_ = this->createInArgs();
@@ -510,7 +522,27 @@ ModelEvaluatorBase::OutArgs<double> EpetraModelEvaluator::createOutArgs() const
       outArgs.set_DgDx_properties(j,convert(epetraOutArgs.get_DgDx_properties(j)));
   }
   for(int j=0; j<Ng; ++j) for(int l=0; l<Np; ++l) {
-    outArgs.setSupports(OUT_ARG_DgDp,j,l,convert(epetraOutArgs.supports(EME::OUT_ARG_DgDp,j,l)));
+    const EME::DerivativeSupport
+      epetra_DgDp_j_l_support = epetraOutArgs.supports(EME::OUT_ARG_DgDp,j,l);
+    DerivativeSupport
+      DgDp_j_l_support = convert(epetra_DgDp_j_l_support);
+    if(
+      ( g_map_is_local_[j] && p_map_is_local_[l] )
+      &&
+      (
+        epetra_DgDp_j_l_support.supports(EME::DERIV_MV_BY_COL)
+        ||
+        epetra_DgDp_j_l_support.supports(EME::DERIV_TRANS_MV_BY_ROW)
+        )
+      )
+    {
+      // Both maps are local and any of the multi-vector forms are supported
+      // then we can support both forms with a transpose copy.
+      DgDp_j_l_support.plus(DERIV_MV_BY_COL);
+      DgDp_j_l_support.plus(DERIV_TRANS_MV_BY_ROW);
+      
+    }
+    outArgs.setSupports(OUT_ARG_DgDp,j,l,DgDp_j_l_support);
     if(!outArgs.supports(OUT_ARG_DgDp,j,l).none())
       outArgs.set_DgDp_properties(j,l,convert(epetraOutArgs.get_DgDp_properties(j,l)));
   }
@@ -729,14 +761,80 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const Out
     }
   }
 
+  bool created_temp_DgDp = false;
   {
+    DerivativeSupport DgDp_j_l_support;
     Derivative<double> DgDp_j_l;
-    for(int j = 0;  j < outArgs.Ng(); ++j ) {
-      for(int l = 0;  l < outArgs.Np(); ++l ) {
-        if( !outArgs.supports(OUT_ARG_DgDp,j,l).none()
-          && !(DgDp_j_l = outArgs.get_DgDp(j,l)).isEmpty() )
+    for (int j = 0;  j < outArgs.Ng(); ++j ) {
+      for (int l = 0;  l < outArgs.Np(); ++l ) {
+        if (
+          !(DgDp_j_l_support = outArgs.supports(OUT_ARG_DgDp,j,l)).none()
+          &&
+          !(DgDp_j_l = outArgs.get_DgDp(j,l)).isEmpty()
+          )
         {
-          epetraOutArgs.set_DgDp(j,l,convert(DgDp_j_l,g_map_[j],p_map_[l]));
+          const EME::DerivativeSupport
+            epetra_DgDp_j_l_support = epetraOutArgs.supports(EME::OUT_ARG_DgDp,j,l);
+          if (
+            !is_null(DgDp_j_l.getDerivativeMultiVector().getMultiVector())
+            &&
+            (
+              ( 
+                DgDp_j_l.getDerivativeMultiVector().getOrientation() == DERIV_MV_BY_COL
+                &&
+                !epetra_DgDp_j_l_support.supports(EME::DERIV_MV_BY_COL)
+                )
+              ||
+              ( 
+                DgDp_j_l.getDerivativeMultiVector().getOrientation() == DERIV_TRANS_MV_BY_ROW
+                &&
+                !epetra_DgDp_j_l_support.supports(EME::DERIV_TRANS_MV_BY_ROW)
+                )
+              )
+            )
+          {
+            // If you get here, then an explicit transpose must be allowed or
+            // the supports objects above would not be set the way that they
+            // are set.  Therefore, we will just go with the temp transpose
+            // and the the explicit copy later.
+            created_temp_DgDp = true;
+            RefCountPtr<Epetra_MultiVector> temp_epetra_DgDp_j_l;
+            EME::EDerivativeMultiVectorOrientation temp_epetra_DgDp_j_l_orientation;
+            if( epetra_DgDp_j_l_support.supports(EME::DERIV_MV_BY_COL) )
+            {
+              temp_epetra_DgDp_j_l = rcp(
+                new Epetra_MultiVector(
+                  *g_map_[j], p_map_[l]->NumGlobalElements(), false
+                  )
+                );
+              temp_epetra_DgDp_j_l_orientation = EME::DERIV_MV_BY_COL;
+            }
+            else if( epetra_DgDp_j_l_support.supports(EME::DERIV_TRANS_MV_BY_ROW) )
+            {
+              temp_epetra_DgDp_j_l = rcp(
+                new Epetra_MultiVector(
+                  *p_map_[l], g_map_[j]->NumGlobalElements(), false
+                  )
+                );
+              temp_epetra_DgDp_j_l_orientation = EME::DERIV_TRANS_MV_BY_ROW;
+            }
+            else {
+              TEST_FOR_EXCEPT("Should not get here!");
+            }
+            epetraOutArgs.set_DgDp(
+              j,l,
+              EME::Derivative(
+                EME::DerivativeMultiVector(
+                  temp_epetra_DgDp_j_l,
+                  temp_epetra_DgDp_j_l_orientation
+                  )
+                )
+              );
+          }
+          else {
+            // Just assume that we can compute the object in place
+            epetraOutArgs.set_DgDp(j,l,convert(DgDp_j_l,g_map_[j],p_map_[l]));
+          }
         }
       }
     }
@@ -948,10 +1046,33 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const Out
     {
       EME::Derivative DgDx_j;
       for(int j = 0;  j < epetraOutArgs.Ng(); ++j ) {
-        if( !epetraOutArgs.supports(EME::OUT_ARG_DgDx,j).none()
-          && !(DgDx_j = epetraOutArgs.get_DgDx(j)).isEmpty() )
+        if (
+          !epetraOutArgs.supports(EME::OUT_ARG_DgDx,j).none()
+          &&
+          !(DgDx_j = epetraOutArgs.get_DgDx(j)).isEmpty()
+          )
         {
-          TEST_FOR_EXCEPT("Can't scale DgDx yet!");
+          const RefCountPtr<Epetra_MultiVector>
+            e_mv_DgDx_j = DgDx_j.getDerivativeMultiVector().getMultiVector();
+          const EME::EDerivativeMultiVectorOrientation
+            e_mv_DgDx_j_orientation = DgDx_j.getDerivativeMultiVector().getOrientation();
+          if(!is_null(e_mv_DgDx_j)) {
+            if ( e_mv_DgDx_j_orientation == EME::DERIV_TRANS_MV_BY_ROW )
+            {
+              // trans(DgDx) = trans(DgDx)*inv(S_x)
+              e_mv_DgDx_j->Multiply(1.0, *invStateVariableScalingVec_, *e_mv_DgDx_j, 0.0);
+            }
+            else if ( e_mv_DgDx_j_orientation == EME::DERIV_MV_BY_COL )
+            {
+              TEST_FOR_EXCEPT("We can't scale DgDx when oriented by column!");
+            }
+            else {
+              TEST_FOR_EXCEPT("Should not get here!");
+            }
+          }
+          else {
+            TEST_FOR_EXCEPT("Can't scale DgDx when DgDx is just a linear operator!!");
+          }
         }
       }
     }
@@ -980,6 +1101,55 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const Out
     }
     else {
       rcp_dynamic_cast<EpetraLinearOp>(W_op,true)->initialize(eW);
+    }
+  }
+
+  if ( created_temp_DgDp ) {
+    DerivativeSupport DgDp_j_l_support;
+    Derivative<double> DgDp_j_l;
+    for (int j = 0;  j < outArgs.Ng(); ++j ) {
+      for (int l = 0;  l < outArgs.Np(); ++l ) {
+        if (
+          !(DgDp_j_l_support = outArgs.supports(OUT_ARG_DgDp,j,l)).none()
+          &&
+          !(DgDp_j_l = outArgs.get_DgDp(j,l)).isEmpty()
+          )
+        {
+          RefCountPtr<MultiVectorBase<double> >
+            DgDp_mv_j_l = DgDp_j_l.getDerivativeMultiVector().getMultiVector();
+          EDerivativeMultiVectorOrientation
+            DgDp_mv_j_l_orientation = DgDp_j_l.getDerivativeMultiVector().getOrientation();
+          EME::Derivative
+            e_DgDp_j_l = epetraOutArgs.get_DgDp(j,l); // Can't be empty if we are here!
+          EME::EDerivativeMultiVectorOrientation
+            e_DgDp_mv_j_l_orientation = e_DgDp_j_l.getDerivativeMultiVector().getOrientation();
+          if (
+            !is_null(DgDp_mv_j_l)
+            &&
+            DgDp_mv_j_l_orientation != convert(e_DgDp_mv_j_l_orientation)
+            )
+          {
+            // We must do an explicit multi-vector transpose copy here!
+            RefCountPtr<Epetra_MultiVector>
+              e_DgDp_mv_j_l = e_DgDp_j_l.getDerivativeMultiVector().getMultiVector();
+            DetachedMultiVectorView<double>
+              d_DgDp_mv_j_l(*DgDp_mv_j_l);
+            const int m = d_DgDp_mv_j_l.subDim();
+            const int n = d_DgDp_mv_j_l.numSubCols();
+            TEST_FOR_EXCEPT( m != e_DgDp_mv_j_l->NumVectors() );
+            TEST_FOR_EXCEPT( n != e_DgDp_mv_j_l->Map().NumMyElements() );
+            for( int i = 0; i < m; ++i ) {
+              for( int j = 0; j < n; ++j ) {
+                (*e_DgDp_mv_j_l)[i][j] = d_DgDp_mv_j_l(i,j);
+                // Note: Above [i][j] returns the entry for the ith column and
+                // the jth row for the Epetra_MultiVector object!  This looks
+                // very backward but that is how Epetra_MultiVector is
+                // defined!
+              }
+            }
+          }
+        }
+      }
     }
   }
 

@@ -299,6 +299,8 @@ private:
 
   typedef std::vector<Teuchos::RefCountPtr<const Epetra_Map> > p_map_t;
   typedef std::vector<Teuchos::RefCountPtr<const Epetra_Map> > g_map_t;
+  typedef std::vector<bool> p_map_is_local_t;
+  typedef std::vector<bool> g_map_is_local_t;
 
   typedef std::vector<Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > >
   p_space_t;
@@ -317,6 +319,8 @@ private:
   Teuchos::RefCountPtr<const Epetra_Map> x_map_;
   p_map_t p_map_;
   g_map_t g_map_;
+  p_map_is_local_t p_map_is_local_;
+  p_map_is_local_t g_map_is_local_;
   Teuchos::RefCountPtr<const Epetra_Map> f_map_;
 
   Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > x_space_;

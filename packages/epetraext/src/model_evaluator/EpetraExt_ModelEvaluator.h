@@ -81,11 +81,15 @@ public:
     void set_x( const Teuchos::RefCountPtr<const Epetra_Vector> &x );
     /** \brief. */
     Teuchos::RefCountPtr<const Epetra_Vector> get_x() const;
-    void set_x_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > &x_poly );
+    void set_x_poly(
+      const Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > &x_poly
+      );
     /** \brief .  */
     Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > get_x_poly() const;
     /** \brief .  */
-    void set_x_dot_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > &x_dot_poly );
+    void set_x_dot_poly(
+      const Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > &x_dot_poly
+      );
     /** \brief .  */
     Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > get_x_dot_poly() const;
     /** \brief. */
@@ -186,15 +190,21 @@ public:
       ,supportsTransMVByRow_(mvOrientation==DERIV_TRANS_MV_BY_ROW)
       {}
     /** \brief . */
-    DerivativeSupport( EDerivativeLinearOp, EDerivativeMultiVectorOrientation mvOrientation )
+    DerivativeSupport(
+      EDerivativeLinearOp, EDerivativeMultiVectorOrientation mvOrientation )
       :supportsLinearOp_(true), supportsMVByCol_(mvOrientation==DERIV_MV_BY_COL)
       ,supportsTransMVByRow_(mvOrientation==DERIV_TRANS_MV_BY_ROW)
       {}
     /** \brief . */
-    DerivativeSupport( EDerivativeMultiVectorOrientation mvOrientation1, EDerivativeMultiVectorOrientation mvOrientation2 )
+    DerivativeSupport(
+      EDerivativeMultiVectorOrientation mvOrientation1,
+      EDerivativeMultiVectorOrientation mvOrientation2
+      )
       :supportsLinearOp_(false)
-      ,supportsMVByCol_(mvOrientation1==DERIV_MV_BY_COL||mvOrientation2==DERIV_MV_BY_COL)
-      ,supportsTransMVByRow_(mvOrientation1==DERIV_TRANS_MV_BY_ROW||mvOrientation2==DERIV_TRANS_MV_BY_ROW)
+      ,supportsMVByCol_(
+        mvOrientation1==DERIV_MV_BY_COL||mvOrientation2==DERIV_MV_BY_COL )
+      ,supportsTransMVByRow_(
+        mvOrientation1==DERIV_TRANS_MV_BY_ROW||mvOrientation2==DERIV_TRANS_MV_BY_ROW )
       {}
     /** \brief . */
     DerivativeSupport& plus(EDerivativeLinearOp)
@@ -248,11 +258,11 @@ public:
   /** \brief . */
   struct DerivativeProperties {
     /** \brief . */
-    EDerivativeLinearity     linearity;
+    EDerivativeLinearity linearity;
     /** \brief . */
-    ERankStatus              rank;
+    ERankStatus rank;
     /** \brief . */
-    bool                     supportsAdjoint;
+    bool supportsAdjoint;
     /** \brief . */
     DerivativeProperties()
       :linearity(DERIV_LINEARITY_UNKNOWN),rank(DERIV_RANK_UNKNOWN),supportsAdjoint(false) {}
@@ -271,8 +281,8 @@ public:
     DerivativeMultiVector() {}
     /** \brief . */
     DerivativeMultiVector(
-      const Teuchos::RefCountPtr<Epetra_MultiVector>  &mv
-      ,const EDerivativeMultiVectorOrientation        orientation = DERIV_MV_BY_COL
+      const Teuchos::RefCountPtr<Epetra_MultiVector> &mv
+      ,const EDerivativeMultiVectorOrientation orientation = DERIV_MV_BY_COL
       ) : mv_(mv), orientation_(orientation) {}
     /** \brief . */
     void changeOrientation( const EDerivativeMultiVectorOrientation orientation )
@@ -284,8 +294,8 @@ public:
     EDerivativeMultiVectorOrientation getOrientation() const
       { return orientation_; }
   private:
-    Teuchos::RefCountPtr<Epetra_MultiVector>   mv_;
-    EDerivativeMultiVectorOrientation          orientation_;
+    Teuchos::RefCountPtr<Epetra_MultiVector> mv_;
+    EDerivativeMultiVectorOrientation orientation_;
   };
 
   /** \brief Simple aggregate class that stores a derivative object
@@ -311,8 +321,8 @@ public:
     bool isEmpty() const
         { return !lo_.get() && !dmv_.getMultiVector().get(); }
   private:
-    Teuchos::RefCountPtr<Epetra_Operator>   lo_;
-    DerivativeMultiVector                   dmv_;
+    Teuchos::RefCountPtr<Epetra_Operator> lo_;
+    DerivativeMultiVector dmv_;
   };
 
   /** \brief.  */
@@ -418,26 +428,26 @@ public:
     void _set_DgDp_properties( int j, int l, const DerivativeProperties &properties );
   private:
     // types
-    typedef Teuchos::Array<Evaluation<Epetra_Vector> >           g_t;
-    typedef Teuchos::Array<Derivative>                           deriv_t;
-    typedef Teuchos::Array<DerivativeProperties>                 deriv_properties_t;
-    typedef Teuchos::Array<DerivativeSupport>                    supports_t;
+    typedef Teuchos::Array<Evaluation<Epetra_Vector> > g_t;
+    typedef Teuchos::Array<Derivative> deriv_t;
+    typedef Teuchos::Array<DerivativeProperties> deriv_properties_t;
+    typedef Teuchos::Array<DerivativeSupport> supports_t;
     // data
-    std::string                            modelEvalDescription_;
-    bool                                   supports_[NUM_E_OUT_ARGS_MEMBERS];
-    supports_t                             supports_DfDp_;   // Np
-    supports_t                             supports_DgDx_;   // Ng
-    supports_t                             supports_DgDp_;   // Ng x Np
-    Evaluation<Epetra_Vector>              f_;
-    g_t                                    g_;
-    Teuchos::RefCountPtr<Epetra_Operator>  W_;
-    DerivativeProperties                   W_properties_;
-    deriv_t                                DfDp_;            // Np
-    deriv_properties_t                     DfDp_properties_; // Np
-    deriv_t                                DgDx_;            // Ng
-    deriv_properties_t                     DgDx_properties_; // Ng
-    deriv_t                                DgDp_;            // Ng x Np
-    deriv_properties_t                     DgDp_properties_; // Ng x Np
+    std::string modelEvalDescription_;
+    bool supports_[NUM_E_OUT_ARGS_MEMBERS];
+    supports_t supports_DfDp_; // Np
+    supports_t supports_DgDx_; // Ng
+    supports_t supports_DgDp_; // Ng x Np
+    Evaluation<Epetra_Vector> f_;
+    g_t g_;
+    Teuchos::RefCountPtr<Epetra_Operator> W_;
+    DerivativeProperties W_properties_;
+    deriv_t DfDp_; // Np
+    deriv_properties_t DfDp_properties_; // Np
+    deriv_t DgDx_; // Ng
+    deriv_properties_t DgDx_properties_; // Ng
+    deriv_t DgDp_; // Ng x Np
+    deriv_properties_t DgDp_properties_; // Ng x Np
     Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > f_poly_;
     // functions
     void assert_supports(EOutArgsMembers arg) const;
@@ -609,33 +619,50 @@ std::string toString( ModelEvaluator::EOutArgsMembers outArg );
 
 /** \brief . */
 Teuchos::RefCountPtr<Epetra_Operator>
+getLinearOp(
+  const std::string &modelEvalDescription,
+  const ModelEvaluator::Derivative &deriv,
+  const std::string &derivName
+  );
+
+/** \brief . */
+Teuchos::RefCountPtr<Epetra_MultiVector>
+getMultiVector(
+  const std::string &modelEvalDescription,
+  const ModelEvaluator::Derivative &deriv,
+  const std::string &derivName,
+  const ModelEvaluator::EDerivativeMultiVectorOrientation mvOrientation
+  );
+
+/** \brief . */
+Teuchos::RefCountPtr<Epetra_Operator>
 get_DfDp_op(
-  const int                                                            l
-  ,const ModelEvaluator::OutArgs                                       &outArgs
+  const int l
+  ,const ModelEvaluator::OutArgs &outArgs
   );
 
 /** \brief . */
 Teuchos::RefCountPtr<Epetra_MultiVector>
 get_DfDp_mv(
-  const int                                                            l
-  ,const ModelEvaluator::OutArgs                                       &outArgs
+  const int l
+  ,const ModelEvaluator::OutArgs &outArgs
   );
 
 /** \brief . */
 Teuchos::RefCountPtr<Epetra_MultiVector>
 get_DgDx_mv(
-  const int                                                            j
-  ,const ModelEvaluator::OutArgs                                       &outArgs
-  ,const EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation  mvOrientation
+  const int j
+  ,const ModelEvaluator::OutArgs &outArgs
+  ,const ModelEvaluator::EDerivativeMultiVectorOrientation mvOrientation
   );
 
 /** \brief . */
 Teuchos::RefCountPtr<Epetra_MultiVector>
 get_DgDp_mv(
-  const int                                                            j
-  ,const int                                                           l
-  ,const ModelEvaluator::OutArgs                                       &outArgs
-  ,const EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation  mvOrientation
+  const int j
+  ,const int l
+  ,const ModelEvaluator::OutArgs &outArgs
+  ,const ModelEvaluator::EDerivativeMultiVectorOrientation mvOrientation
   );
 
 // ///////////////////////////
