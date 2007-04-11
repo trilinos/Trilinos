@@ -44,25 +44,21 @@
 #include "Epetra_VbrMatrix.h"
 
 LOCA::Epetra::Interface::xyzt::
-xyzt(
-       const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> &iReq_,
-       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> &iJac_,
-       const Teuchos::RefCountPtr<LOCA::Epetra::Interface::MassMatrix> &iMass_,
+xyzt( const Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent> &interface_,
        const Epetra_MultiVector &splitMultiVec_, 
        const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitJac_,
-       const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitMass_, 
        const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> &globalComm_,
+       const Epetra_Vector &initialCondVec_, 
+       double dt_,
        Teuchos::ParameterList *precPrintParams_,
        Teuchos::ParameterList *precLSParams_) :
-  iReq(iReq_), 
-  iJac(iJac_), 
-  iMass(iMass_),
+  interface(interface_),
   splitJac(splitJac_), 
-  splitMass(splitMass_), 
   globalComm(globalComm_),
   splitVec(*(splitMultiVec_(0))),
   splitRes(*(splitMultiVec_(0))), 
   splitVecOld(*(splitMultiVec_(0))), 
+  initialCondVec(initialCondVec_),
   jacobian(0), 
   solution(0),
   solutionOverlap(0), 
@@ -77,7 +73,8 @@ xyzt(
   precLSParams(precLSParams_),
   isCrsMatrix(true),
   floquetFillFlag(false),
-  savedSplitMassForFloquet(0)
+  savedSplitMassForFloquet(0),
+  dt(dt_)
 {
    if (precLSParams)
      isPeriodic = precLSParams_->get("Periodic",false);
@@ -142,16 +139,12 @@ xyzt(
         splitJacCrs = (Epetra_CrsMatrix *)
 	   new EpetraExt::BlockCrsMatrix(*splitJac, row, col, 
 					 splitJac->Comm());
-        splitMassCrs = (Epetra_CrsMatrix *)
-	   new EpetraExt::BlockCrsMatrix(*splitMass, row, col, 
-					 splitMass->Comm());
      }
-     else splitMassCrs = dynamic_cast<Epetra_CrsMatrix *>(splitMass.get());
 
      preconditioner = 
-       new LOCA::Epetra::xyztPrec(*jacobian, *splitJacCrs, *splitMassCrs, 
-				  *solution, *solutionOverlap, *overlapImporter,
-				  *precPrintParams, *precLSParams, globalComm);
+       new LOCA::Epetra::xyztPrec(*jacobian, *splitJacCrs, *solution,
+                                  *solutionOverlap, *overlapImporter,
+                                  *precPrintParams, *precLSParams, globalComm);
    }
 }
 
@@ -180,20 +173,24 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
 
   for (int i=0; i < timeStepsOnTimeDomain; i++) {
 
+    solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
+
+    /* get solution vector at previous step */
     if (i==0 && timeDomain==0 && !isPeriodic) {
-      iMass->setOldSolutionFirstStep();
+      splitVecOld = initialCondVec;
     }
     else {
       int blockRowOld = (*rowIndex)[i] + (*rowStencil)[i][0];
       solutionOverlap->ExtractBlockValues(splitVecOld, blockRowOld);
-      iMass->setOldSolution(splitVecOld, 
-			    i + globalComm->FirstTimeStepOnDomain());
     }
 
-    solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
+    /* calc xDot using two vectors -- generalize later */
+    Epetra_Vector& vecDot = splitRes; //use Res as temp space for xdot
+    vecDot.Update(1.0/dt, splitVec, -1.0/dt, splitVecOld, 0.0);
+    interface->setXdot(vecDot, dt*(i+globalComm->FirstTimeStepOnDomain()));
 
     splitRes.PutScalar(0.0);
-    stat = stat && iReq->computeF(splitVec,  splitRes, fillFlag);
+    stat = stat && interface->computeF(splitVec,  splitRes, fillFlag);
 
     residual.LoadBlockValues(splitRes, (*rowIndex)[i]);
   }
@@ -219,19 +216,23 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 
   for (int i=0; i < timeStepsOnTimeDomain; i++) {
 
+    solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
+
+    /* get solution vector at previous step */
     if (i==0 && timeDomain==0 && !isPeriodic) {
-      //First time step gets static Xold, not part of block solution vector
-      iMass->setOldSolutionFirstStep();
+      splitVecOld = initialCondVec;
     }
     else {
       int blockRowOld = (*rowIndex)[i] + (*rowStencil)[i][0];
       solutionOverlap->ExtractBlockValues(splitVecOld, blockRowOld);
-      iMass->setOldSolution(splitVecOld, 
-			    i + globalComm->FirstTimeStepOnDomain());
     }
+
+    /* calc xDot using two vectors -- generalize later */
+    Epetra_Vector& vecDot = splitRes; //use Res as temp space for xdot
+    vecDot.Update(1.0/dt, splitVec, -1.0/dt, splitVecOld, 0.0);
+    interface->setXdot(vecDot, dt*(i+globalComm->FirstTimeStepOnDomain()));
   
-    solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
-    stat =  stat && iJac->computeJacobian( splitVec, *splitJac );
+    stat =  stat && interface->computeShiftedMatrix(1.0, 1.0/dt, splitVec, *splitJac );
 
     // Hardwired for -1 0 stencil meaning [M J]
     if (i==0 && timeDomain==0 && !isPeriodic) {
@@ -239,11 +240,11 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
     }
     else {
       jacobian->LoadBlock(*splitJac, i, 1);
-      stat = stat && iMass->computeMassMatrix( splitVecOld );
+      stat = stat && interface->computeShiftedMatrix(0.0, -1.0/dt,  splitVecOld, *splitJac );
       // Floquet fills, save first mass matrix instead of loading it
       if (i==0 && timeDomain==0 && isPeriodic && floquetFillFlag)
-              (*savedSplitMassForFloquet) = *(splitMass.get()); 
-      else jacobian->LoadBlock(*splitMass, i, 0); //Normal case
+              (*savedSplitMassForFloquet) = *(splitJac.get()); 
+      else jacobian->LoadBlock(*splitJac, i, 0); //Normal case
     }
   }
 
@@ -253,7 +254,7 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 void LOCA::Epetra::Interface::xyzt::
 setParameters(const LOCA::ParameterVector& params)
 {
-   iReq->setParameters(params);
+   interface->setParameters(params);
 }
 
 void LOCA::Epetra::Interface::xyzt::
@@ -267,9 +268,9 @@ printSolution(const Epetra_Vector& x, double conParam)
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
     // Pass indexing data for possible application use in 
     // output naming convention
-    iMass->dataForPrintSolution(conStep, (*rowIndex)[i], 
+    interface->dataForPrintSolution(conStep, (*rowIndex)[i], 
 				globalComm->NumTimeSteps());
-    iReq->printSolution(splitVec, conParam);
+    interface->printSolution(splitVec, conParam);
   }
   for (int j=timeDomain; j<numTimeDomains-1; j++) globalComm->Barrier();
 
@@ -283,9 +284,9 @@ setFloquetFillFlag(bool fff)
      floquetFillFlag = true;
      // allocate saved Mass matrix
      if (isCrsMatrix)
-       savedSplitMassForFloquet = new Epetra_CrsMatrix(dynamic_cast<Epetra_CrsMatrix&>(*(splitMass.get())));
+       savedSplitMassForFloquet = new Epetra_CrsMatrix(dynamic_cast<Epetra_CrsMatrix&>(*(splitJac.get())));
      else
-       savedSplitMassForFloquet = new Epetra_VbrMatrix(dynamic_cast<Epetra_VbrMatrix&>(*(splitMass.get())));
+       savedSplitMassForFloquet = new Epetra_VbrMatrix(dynamic_cast<Epetra_VbrMatrix&>(*(splitJac.get())));
    }
    else {
      floquetFillFlag = false;
@@ -298,7 +299,7 @@ void LOCA::Epetra::Interface::xyzt::
 beginFloquetOperatorApplication(Epetra_Vector& v)
 {
   if (!isPeriodic)
-    cout << "\n\n\t Must be periodic for FLoquet theory\n" << endl;
+    cout << "\n\n\t Must be periodic for Floquet theory\n" << endl;
   // Take perturbation in final time step, apply the saved
   // mass matrix, and put as forcing of first time step
 

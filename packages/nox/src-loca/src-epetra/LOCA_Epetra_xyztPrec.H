@@ -116,7 +116,6 @@ namespace LOCA {
       */
       xyztPrec(EpetraExt::BlockCrsMatrix& jacobian, 
 	       Epetra_CrsMatrix &splitJac,
-	       Epetra_CrsMatrix &splitMass,
 	       EpetraExt::BlockVector& solution,
 	       EpetraExt::BlockVector& solutionOverlap,
 	       Epetra_Import &overlapImporter,
@@ -192,9 +191,6 @@ namespace LOCA {
       
       //! Reference to split (spatial) Jacobian matrix.
       Epetra_CrsMatrix &splitJac;
-      
-      //! Reference to split (spatial) mass matrix.
-      Epetra_CrsMatrix &splitMass;
       
       //! Reference to global XYZT solution.
       EpetraExt::BlockVector& solution;

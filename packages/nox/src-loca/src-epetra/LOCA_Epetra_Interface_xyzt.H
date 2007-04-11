@@ -42,9 +42,8 @@
 #include "LOCA.H"
 #include "NOX_Common.H"
 #include "LOCA_Epetra_Interface_Required.H"
-#include "NOX_Epetra_Interface_Jacobian.H"
 #include "NOX_Epetra_Interface_Preconditioner.H"
-#include "LOCA_Epetra_Interface_MassMatrix.H"
+#include "LOCA_Epetra_Interface_TimeDependent.H"
 #include "LOCA_Epetra_xyztPrec.H"
 
 #ifdef HAVE_NOX_EPETRAEXT
@@ -116,16 +115,13 @@ namespace LOCA {
 	  decomposed problem. The MultiMpiCOmm communicator gives this
 	  class the information needed to construct the space-time system. 
 	*/
-	xyzt(const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> 
-	     &iReq,
-	     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> 
-	     &iJac,
-	     const Teuchos::RefCountPtr<LOCA::Epetra::Interface::MassMatrix> 
-	     &iMass,
+	xyzt( const Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent> 
+	     &interface,
 	     const Epetra_MultiVector &splitMultiVec,
 	     const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitJac,
-	     const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitMass,
 	     const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> &globalComm,
+	     const Epetra_Vector &initialCondVec,
+             double dt,
 	     Teuchos::ParameterList *precPrintParams = 0, 
 	     Teuchos::ParameterList *precLSParams = 0);
 	
@@ -183,24 +179,11 @@ namespace LOCA {
 	
       private:
 	
-	//! Pointer to required information from split (spatial) problem.
-	Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq;
-	
-	//! Pointer to Jacobian information from split (spatial) problem.
-	Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac;
-	
-	//! Pointer to mass matrix information from split (spatial) problem.
-	Teuchos::RefCountPtr<LOCA::Epetra::Interface::MassMatrix> iMass;
+	//! Pointer to interface for usual time-dependent problem
+	Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent> interface;
 	
 	//! Pointer to split (spatial) Jacobian matrix.
 	Teuchos::RefCountPtr<Epetra_RowMatrix> splitJac;
-	
-	/*! 
-	  \brief Pointer to split (spatial) mass matrix.
-	  
-	  This can be same object as splitJac.
-	*/
-	Teuchos::RefCountPtr<Epetra_RowMatrix> splitMass; 
 	
 	//! Pointer to the global (full XYZT) communicator.
 	Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm;
@@ -213,6 +196,9 @@ namespace LOCA {
 	
 	//! Split (spatial) input vector from previous step.
 	Epetra_Vector splitVecOld; //tmp space
+	
+	//! Split (spatial) vector with initial condition of transient runs
+	const Epetra_Vector initialCondVec;
 	
 	//! Pointer to global XYZT Jacobian matrix
 	EpetraExt::BlockCrsMatrix* jacobian;
@@ -267,9 +253,6 @@ namespace LOCA {
 	//! Pointer to split (spatial) Jacobian matrix in CRS matrix form.
 	Epetra_CrsMatrix* splitJacCrs;
 	
-	//! Pointer to split (spatial) mass matrix in CRS matrix form.
-	Epetra_CrsMatrix* splitMassCrs;
-	
 	//! Pointer to split (spatial) mass matrix saved for Floquet operation.
 	Epetra_RowMatrix* savedSplitMassForFloquet;
 	
@@ -281,6 +264,11 @@ namespace LOCA {
 	
 	//! Flag indicating Jacobian fill needs to be altered for Floquet calcs
 	bool floquetFillFlag;
+
+	//! Time step size for computing time derivative -- generalize later
+        double dt;
+
+
 	
       };
 

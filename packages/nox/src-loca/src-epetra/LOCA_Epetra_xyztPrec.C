@@ -47,7 +47,6 @@
 LOCA::Epetra::xyztPrec::
 xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_, 
 	 Epetra_CrsMatrix &splitJac_,
-	 Epetra_CrsMatrix &splitMass_,
 	 EpetraExt::BlockVector &solution_,
          EpetraExt::BlockVector &solutionOverlap_,
 	 Epetra_Import &overlapImporter_,
@@ -56,7 +55,6 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
 	 const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm_) :  
   jacobian(jacobian_),
   splitJac(splitJac_),
-  splitMass(splitMass_),
   solution(solution_),
   solutionOverlap(solutionOverlap_),
   overlapImporter(overlapImporter_),
@@ -138,7 +136,7 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
       jacobianBlock[i] = Teuchos::rcp(new Epetra_CrsMatrix(splitJac));
       jacobianBlock[i]->PutScalar(0.0);
       if (prec != "BlockDiagonal") {
-        massBlock[i] = Teuchos::rcp(new Epetra_CrsMatrix(splitMass));
+        massBlock[i] = Teuchos::rcp(new Epetra_CrsMatrix(splitJac));
         massBlock[i]->PutScalar(0.0);
       }
       linSys[i] = new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams, 

@@ -83,6 +83,35 @@ namespace LOCA {
 			     const Epetra_Vector& x,
 			     Epetra_Operator& A) = 0;
 
+        /*!
+          \brief Routine used in XYZT to set x_dot and time in the interface.
+
+          The computeF() routine for XYZT problems needs to be a function
+          of x_dot, but th NOX/LOCA computeF() does not take x_dot as an 
+          argument. This is used to set x_dot in the application interface
+          so the subsequent call to computeF has the correct x_dot value.
+          The  timeStep  argument is sent so the use can set the global time,
+          for cases when computeF, computeJacobian, computeMassMatrix fills
+          are functions of time (nonautonomous systems).
+        */
+        virtual void setXdot(const Epetra_Vector& xdot, const double time) {
+          cout << "WARNING: "
+               << "LOCA::Epetra::Interface::TimeDependent::setXdot"
+               << "\n\tempty default implementation not overloaded!" << endl;
+        };
+
+
+        /*!
+          \brief Provides data to application for output files.
+
+          This routine is called from Interface::xyzt::printSolution() just
+          before the call to Interface::Required::printSolution(x,param),
+          and gives the application some indices that can be used for
+          creating a unique name/index for the output files.
+        */
+        virtual void dataForPrintSolution(const int conStep, const int timeStep,
+                                          const int totalTimeSteps) {};
+
       };
     } // namespace Interface
   } // namespace Epetra
