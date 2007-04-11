@@ -60,6 +60,9 @@ class StepperBase : virtual public InterpolationBufferBase<Scalar>
     /// Get current stepper status
     virtual const StepStatus<Scalar> getStepStatus() =0;
 
+    /// Re-Initialize the Stepper (for use after a breakpoint)
+    virtual void reInitialize() =0;
+
     /// Specify initial condition
     virtual void setInitialCondition(const 
         Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition

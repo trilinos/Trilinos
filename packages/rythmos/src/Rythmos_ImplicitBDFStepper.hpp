@@ -74,6 +74,9 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
     void setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver);
 
     /** \brief . */
+    void reInitialize();
+
+    /** \brief . */
     void setInitialCondition(const 
         Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
         );
@@ -89,9 +92,6 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
 
     /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
-
-    /** \brief . */
-    Scalar get_time() const;
 
     /** \brief . */
     std::string description() const;
@@ -380,6 +380,12 @@ void ImplicitBDFStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<Thyra::Non
 {
   TEST_FOR_EXCEPT(solver == Teuchos::null)
   solver_ = solver;
+}
+
+template<class Scalar>
+void ImplicitBDFStepper<Scalar>::reInitialize()
+{
+  initialize_();
 }
 
 template<class Scalar>
