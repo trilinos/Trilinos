@@ -1678,6 +1678,94 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
       ML_exchange_rows( Mat1Mat2, &Mat1Mat2comm, Mat1->getrow->post_comm);
    }
    else Mat1Mat2comm = Mat1Mat2;
+   
+   if (matrix_type == ML_CSR_MATRIX)
+     ML_back_to_csrlocal(Mat1Mat2comm, Result, max_per_proc);
+   else if (matrix_type == ML_MSR_MATRIX) {
+     if (Mat1Mat2->invec_leng != Mat1Mat2->outvec_leng) 
+       pr_error("ML_2matmult: MSR format only valid for square matrices.\n");
+     ML_back_to_local(Mat1Mat2, Result, max_per_proc);
+   }
+   else if (matrix_type == ML_EpetraCRS_MATRIX)
+#ifdef ML_WITH_EPETRA
+     ML_back_to_epetraCrs(Mat1Mat2, Result, Mat1, Mat2);
+#else
+     pr_error("ML_2matmult: ML_EpetraCRS_MATRIX requires epetra to be compiled in.\n");
+#endif
+   else pr_error("ML_2matmult: Unknown matrix type\n");
+
+
+   ML_RECUR_CSR_MSRdata_Destroy(Mat1Mat2comm);
+   ML_Operator_Destroy(&Mat1Mat2comm);
+}
+
+
+
+/* ******************************************************************** */
+/* multiplying two matrices together - w/ blocking                      */
+/* -------------------------------------------------------------------- */
+void ML_2matmult_block(ML_Operator *Mat1, ML_Operator *Mat2,
+                 ML_Operator *Result, int matrix_type)
+{
+   int N_input_vector, max_per_proc;
+   ML_CommInfoOP *getrow_comm;
+   ML_Operator   *Mat2comm, *Mat1Mat2, *tptr, *Mat1Mat2comm;
+   ML_Comm       *comm;
+   char          label1[80],label2[80];
+
+   if (Mat1->invec_leng != Mat2->outvec_leng)
+   {
+     if (Mat1->label == NULL) sprintf(label1,"%s","mat1_not_labeled");
+     else sprintf(label1,"%s",Mat1->label);
+     if (Mat2->label == NULL) sprintf(label2,"%s","mat2_not_labeled");
+     else sprintf(label2,"%s",Mat2->label);
+     pr_error("In ML_2matmult: matrix dimensions do not agree:\n\tMat1->invec_leng = %d, Mat2->outvec_leng = %d, (%s & %s)\n", Mat1->invec_leng, Mat2->outvec_leng,label1,label2);
+   }
+
+   comm = Mat1->comm;
+   N_input_vector = Mat2->invec_leng;
+   getrow_comm    = Mat2->getrow->pre_comm;
+
+   if (matrix_type != ML_EpetraCRS_MATRIX)
+     ML_create_unique_col_id(N_input_vector, &(Mat2->getrow->loc_glob_map),
+                             getrow_comm, &max_per_proc, comm);
+   else
+#ifdef ML_WITH_EPETRA
+     ML_create_unique_col_id_exactoffset(N_input_vector, &(Mat2->getrow->loc_glob_map),
+                                         getrow_comm, &max_per_proc, comm);
+#else
+     pr_error("ML_2matmult: ML_EpetraCRS_MATRIX requires epetra to be compiled in.\n");
+#endif
+
+   Mat2->getrow->use_loc_glob_map = ML_YES;
+
+   if (matrix_type != ML_EpetraCRS_MATRIX)
+     if (max_per_proc == 0 && comm->ML_mypid == 0) {
+       pr_error("ERROR: In ML_2matmult, maximum number of local unknowns\n       on any processor (max_per_proc) is zero !\n");
+     }
+
+   if (Mat1->getrow->pre_comm != NULL)
+      ML_exchange_rows( Mat2, &Mat2comm, Mat1->getrow->pre_comm);
+   else Mat2comm = Mat2;
+         
+   ML_matmat_mult(Mat1, Mat2comm , &Mat1Mat2);
+
+   ML_free(Mat2->getrow->loc_glob_map); Mat2->getrow->loc_glob_map = NULL;
+
+   Mat2->getrow->use_loc_glob_map = ML_NO;
+   if (Mat1->getrow->pre_comm != NULL) {
+      tptr = Mat2comm;
+      while ( (tptr!= NULL) && (tptr->sub_matrix != Mat2))
+         tptr = tptr->sub_matrix;
+      if (tptr != NULL) tptr->sub_matrix = NULL;
+      ML_RECUR_CSR_MSRdata_Destroy(Mat2comm);
+      ML_Operator_Destroy(&Mat2comm);
+   }
+
+   if (Mat1->getrow->post_comm != NULL) {
+      ML_exchange_rows( Mat1Mat2, &Mat1Mat2comm, Mat1->getrow->post_comm);
+   }
+   else Mat1Mat2comm = Mat1Mat2;
 
 
    /* Copy over the num_PDEs and num_rigid info */

@@ -443,8 +443,6 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
 
 // ================================================ ====== ==== ==== == = 
 // Forms the coarse matrix, given the prolongator
-//extern "C"{void ML_2matmult_block(ML_Operator *Mat1, ML_Operator *Mat2,
-//                       ML_Operator *Result, int matrix_type);}
 int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
 {
   ML_Operator *R= ML_Operator_Create(ml_comm_);
@@ -477,9 +475,9 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   /* Do R * AP */
   if(verbose_ && !Comm_->MyPID()) printf("EMFP: RAP\n");
   R->num_rigid=R->num_PDEs=3;
-  ML_2matmult(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
-  //ML_2matmult_block(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
-  //  ML_CommInfoOP_Print(CoarseMat_ML->getrow->pre_comm,"RAP");
+  //  ML_2matmult(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
+  ML_2matmult_block(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
+  ML_CommInfoOP_Print(CoarseMat_ML->getrow->pre_comm,"RAP");
      
   Epetra_CrsMatrix_Wrap_ML_Operator(CoarseMat_ML,*Comm_,*CoarseMap_,&CoarseMatrix); 
   

@@ -67,6 +67,8 @@ extern void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
 extern void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
 			ML_Operator *Result, int matrix_type);
+extern void ML_2matmult_block(ML_Operator *Mat1, ML_Operator *Mat2,
+                              ML_Operator *Result, int matrix_type);
 
 extern void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
         int requested_rows[], int *allocated_space, int **columns,
