@@ -2101,7 +2101,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   ML_Aggregate_Viz_Stats *grid_info;
   int N_dimensions;
   int haveCoordinates = 0;
-  double t0,delta;
+  double t0=0.0,delta=0.0;
 
   StartTimer(&t0);
 

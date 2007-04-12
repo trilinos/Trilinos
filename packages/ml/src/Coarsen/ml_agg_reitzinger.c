@@ -85,8 +85,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
   int nzctr;
 
-  double t0;
-  double time1, delta1;
+  double t0=0.0;
+  double time1=0.0, delta1=0.0;
 
   ML_Aggregate_Viz_Stats * grid_info;
 
