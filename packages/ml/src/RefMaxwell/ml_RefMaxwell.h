@@ -34,6 +34,13 @@
 
 namespace ML_Epetra
 {
+
+  int UpdateList(Teuchos::ParameterList &source, Teuchos::ParameterList &dest, bool OverWrite=true);
+  //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
+  int SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWrite=true);
+
+
+  
   /*! The preconditioner(s) for the Eddy Current Maxwell's equations using
     compatible discretizations (edge elements).  Since the preconditioners
     involve both an edge and nodal component, different combinations of additive
@@ -235,11 +242,13 @@ namespace ML_Epetra
     //! Epetra communicator object
     const Epetra_Comm* Comm_;
 
-
+    
     //! Stuff for smoothing
-    void** nodal_args_,** edge_args_;
-    ML * ml_;
+    //    void** nodal_args_,** edge_args_;
+    //    ML * ml_;
 
+    //! Verbosity flag
+    bool verbose_;
     
     //@}
     
