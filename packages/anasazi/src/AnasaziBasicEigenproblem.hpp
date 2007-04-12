@@ -119,7 +119,7 @@ namespace Anasazi {
     /*! \brief Specify that this eigenproblem is fully defined.
      *
      * This routine serves multiple purpose:
-     *    - sanity check that the eigenproblem has been fully and constently defined
+     *    - sanity check that the eigenproblem has been fully and consistently defined
      *    - opportunity for the eigenproblem to allocate internal storage for eigenvalues
      * and eigenvectors (to be used by eigensolvers and solver managers)
      * </ul>

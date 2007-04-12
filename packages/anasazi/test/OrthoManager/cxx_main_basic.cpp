@@ -418,9 +418,10 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM,
 
     if (t & 1) {
       C = rcp( new SerialDenseMatrix<int,ST>(sizeQ,sizeX) );
-      C->putScalar(ZERO);
       R = rcp( new SerialDenseMatrix<int,ST>(sizeX,sizeX) );
-      R->putScalar(ZERO);
+      // whatever is here should be overwritten
+      C->random();
+      R->random();
     }
     else {
       C = null;
@@ -563,6 +564,8 @@ int testProject(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM,
 
     if (t & 1) {
       C = rcp( new SerialDenseMatrix<int,ST>(sizeQ,sizeX) );
+      // whatever is here should be overwritten
+      C->random();
     }
     else {
       C = null;
@@ -666,7 +669,8 @@ int testNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, RefCountPtr<MV> X)
 
     if (t & 1) {
       R = rcp( new SerialDenseMatrix<int,ST>(sizeX,sizeX) );
-      R->putScalar(ZERO);
+      // whatever is here should be overwritten
+      R->random();
     }
     else {
       R = null;

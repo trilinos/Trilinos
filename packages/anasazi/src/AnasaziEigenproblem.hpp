@@ -111,7 +111,7 @@ namespace Anasazi {
      *
      * This routine serves multiple purpose:
      * <ul>
-     * <li> sanity check that the eigenproblem has been fully and constently defined
+     * <li> sanity check that the eigenproblem has been fully and consistently defined
      * <li> opportunity for the eigenproblem to allocate internal storage for eigenvalues
      * and eigenvectors (to be used by eigensolvers and solver managers)
      * </ul>

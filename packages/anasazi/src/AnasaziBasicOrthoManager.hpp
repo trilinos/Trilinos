@@ -41,7 +41,7 @@
       \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
-// #define ORTHO_DEBUG
+// #define ANASAZI_BASICORTHO_DEBUG
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziMultiVecTraits.hpp"
@@ -419,7 +419,7 @@ namespace Anasazi {
         numTries--;
 
         // randomize troubled direction
-#ifdef ORTHO_DEBUG
+#ifdef ANASAZI_BASICORTHO_DEBUG
         cout << "Random for column " << rank << endl;
 #endif
         Teuchos::RefCountPtr<MV> curX, curMX;
@@ -439,7 +439,7 @@ namespace Anasazi {
       }
     } while (1);
 
-    // this should not raise an exception; but our post-conditions oblige us to check
+    // this should never raise an exception; but our post-conditions oblige us to check
     TEST_FOR_EXCEPTION( rank > xc || rank < 0, std::logic_error, 
                         "Anasazi::BasicOrthoManager::projectAndNormalize(): Debug error in rank variable." );
     return rank;
@@ -683,14 +683,20 @@ namespace Anasazi {
 
     for (int j = xstart; j < xc; j++) {
 
-      // numX is 
-      // * number of currently orthonormal columns of X
-      // * the index of the current column of X
+      // numX represents the number of currently orthonormal columns of X
       int numX = j;
+      // j represents the index of the current column of X
+      // these are different interpretations of the same value
+
+      // 
+      // set the lower triangular part of R to zero
+      for (int i=j+1; i<xc; ++i) {
+        (*B)(i,j) = ZERO;
+      }
 
       // Get a view of the vector currently being worked on.
       std::vector<int> index(1);
-      index[0] = numX;
+      index[0] = j;
       Teuchos::RefCountPtr<MV> Xj = MVT::CloneView( X, index );
       Teuchos::RefCountPtr<MV> MXj;
       if ((this->_hasOp)) {
@@ -707,9 +713,7 @@ namespace Anasazi {
       Teuchos::RefCountPtr<const MV> prevX, prevMX;
 
       if (numX > 0) {
-        for (int i=0; i<numX; i++) {
-          prev_idx[i] = i;
-        }
+        for (int i=0; i<numX; ++i) prev_idx[i] = i;
         prevX = MVT::CloneView( X, prev_idx );
         if (this->_hasOp) {
           prevMX = MVT::CloneView( *MX, prev_idx );
@@ -784,11 +788,11 @@ namespace Anasazi {
         }
 
         // Check if Xj has any directional information left after the orthogonalization.
-#ifdef ORTHO_DEBUG
+#ifdef ANASAZI_BASICORTHO_DEBUG
         cout << "olddot: " << SCT::magnitude(oldDot[0]) << "    newdot: " << SCT::magnitude(newDot[0]);
 #endif
         if ( SCT::magnitude(newDot[0]) > SCT::magnitude(oldDot[0]*EPS*EPS) && SCT::real(newDot[0]) > ZERO ) {
-#ifdef ORTHO_DEBUG
+#ifdef ANASAZI_BASICORTHO_DEBUG
           cout << " ACCEPTED" << endl;
 #endif
           // Normalize Xj.
@@ -811,7 +815,7 @@ namespace Anasazi {
           break;
         }
         else {
-#ifdef ORTHO_DEBUG
+#ifdef ANASAZI_BASICORTHO_DEBUG
           cout << " REJECTED" << endl;
 #endif
           // There was nothing left in Xj after orthogonalizing against previous columns in X.
@@ -821,7 +825,7 @@ namespace Anasazi {
 
           if (completeBasis) {
             // Fill it with random information and keep going.
-#ifdef ORTHO_DEBUG
+#ifdef ANASAZI_BASICORTHO_DEBUG
             cout << "Random for column " << j << endl;
 #endif
             MVT::MvRandom( *Xj );
@@ -840,7 +844,6 @@ namespace Anasazi {
 
       // if rankDef == true, then quit and notify user of rank obtained
       if (rankDef == true) {
-        (*B)(j,j) = ZERO;
         MVT::MvInit( *Xj, ZERO );
         if (this->_hasOp) {
           MVT::MvInit( *MXj, ZERO );
