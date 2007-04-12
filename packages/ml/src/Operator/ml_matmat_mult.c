@@ -1616,7 +1616,6 @@ void ML_expand_accum(int accum_size, int **accum_col, double **accum_val,
 /* ******************************************************************** */
 /* multiplying two matrices together                                    */
 /* -------------------------------------------------------------------- */
-
 void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
                  ML_Operator *Result, int matrix_type)
 {
@@ -1660,7 +1659,7 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    if (Mat1->getrow->pre_comm != NULL)
       ML_exchange_rows( Mat2, &Mat2comm, Mat1->getrow->pre_comm);
    else Mat2comm = Mat2;
-
+         
    ML_matmat_mult(Mat1, Mat2comm , &Mat1Mat2);
 
    ML_free(Mat2->getrow->loc_glob_map); Mat2->getrow->loc_glob_map = NULL;
@@ -1680,6 +1679,12 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    }
    else Mat1Mat2comm = Mat1Mat2;
 
+
+   /* Copy over the num_PDEs and num_rigid info */
+   Mat1Mat2comm->num_PDEs = Result->num_PDEs = Mat1->num_PDEs;
+   Mat1Mat2comm->num_rigid = Result->num_rigid = Mat1->num_rigid;
+
+   
    if (matrix_type == ML_CSR_MATRIX)
      ML_back_to_csrlocal(Mat1Mat2comm, Result, max_per_proc);
    else if (matrix_type == ML_MSR_MATRIX) {
@@ -1699,6 +1704,7 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    ML_RECUR_CSR_MSRdata_Destroy(Mat1Mat2comm);
    ML_Operator_Destroy(&Mat1Mat2comm);
 }
+
 
 /*
 Memory improvements:
