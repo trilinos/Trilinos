@@ -50,6 +50,7 @@
 #include "ml_lapack.h"
 #include "ml_utils.h"
 #include "ml_op_utils.h"
+//#define JJH_prerelease /*TODO*/
 #ifdef JJH_prerelease
 #include "ml_ifpack_wrap.h"
 #endif
@@ -1259,6 +1260,10 @@ int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen,
    ML_Sm_Hiptmair_Data *dataptr;
    ML_Comm_Envelope *envelope;
    int reduced_smoother_flag;
+/*
+#define ML_DEBUG_SMOOTHER
+#define PRINTITNOW
+*/
 #ifdef ML_DEBUG_SMOOTHER
    int i,j;
    double *res2, res_norm;
@@ -1771,7 +1776,7 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 	    dtemp = rhs[i] - Amat_MsrVal[i]*x2[i];
 	    for (j = 0; j < length; j++) dtemp -= (*valptr--)*x2[*colptr--];
 	    *xptr += omega*dtemp/diagvalue;
-	    xptr++;
+	    xptr--;
 	  }
 	} else {
 	  for (i = Nrows- 1; i >= 0; i--) {
