@@ -863,6 +863,7 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
 {
    int    lower, upper, next_nz, col, i, j, k, Nexternal, ii;
    int    *bindx, *externals, *rowptr;
+   int    count,lowest,num_PDEs;
    double *val, dtemp;
    struct ML_CSR_MSRdata *temp;
    int    allocated, row_length;
@@ -873,6 +874,8 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
    lower = max_per_proc*comm->ML_mypid;
    upper = lower + max_per_proc;
 
+   omatrix->num_rigid = omatrix->num_PDEs = num_PDEs = imatrix->num_rigid;
+   
    allocated = imatrix->N_nonzeros+2;
    rowptr = (int   *)  ML_allocate( (1+imatrix->getrow->Nrows)*sizeof(int));
    bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
@@ -896,8 +899,36 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
    }
    ML_az_sort(bindx, Nexternal, NULL, NULL);
    ML_rm_duplicates(bindx, &Nexternal);
-   externals = (int *) ML_allocate( (Nexternal+1)*sizeof(int));
-   for (i = 0; i < Nexternal; i++) externals[i] = bindx[i];
+
+
+   /* Make sure that for each block (for block matrices), we either have */
+   /* no point entries or all the point entries in the external list.    */
+   count = 0; i = 0;
+   while (i < Nexternal) {
+      lowest = (int) floor( .000001 + ((double)bindx[i])/ ((double) num_PDEs) );
+      lowest *= num_PDEs;
+      for (j = 0; j < num_PDEs; j++) {
+         count++;      
+         if (i < Nexternal) {
+            if (bindx[i] == lowest+j) i++;
+         }
+         else i++;
+      }
+   }
+   externals = (int *) ML_allocate( (count+1)*sizeof(int));
+   count = 0; i = 0;
+   while (i < Nexternal) {
+      lowest = (int) floor( .000001 + ((double)bindx[i])/ ((double) num_PDEs) );
+      lowest *= num_PDEs;
+      for (j = 0; j < num_PDEs; j++) {
+         externals[count++] = lowest+j;
+         if (i < Nexternal) {
+            if (bindx[i] == lowest+j) i++;
+         }
+         else i++;
+      }
+   }
+   Nexternal = count;
 
    rowptr[0] = 0;
    next_nz   = 0;
@@ -952,8 +983,8 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
 
    ML_CommInfoOP_GenUsingGIDExternals(Nexternal, externals, max_per_proc,omatrix);
 
-   ML_free(externals);
-
+   ML_free(externals);  
+   
 }
 #ifdef ML_FUNCTION_NAME
 #undef ML_FUNCTION_NAME
