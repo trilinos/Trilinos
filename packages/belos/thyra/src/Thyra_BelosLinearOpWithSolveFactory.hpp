@@ -476,7 +476,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
                          &oldSupportSolveUse );
   //
   // Create the Belos linear problem
-  //
+  // NOTE:  If one exists already, reuse it.
   typedef Belos::LinearProblem<Scalar,MV_t,LO_t> LP_t;
   RefCountPtr<LP_t> lp;
   if (oldLP != Teuchos::null) {
@@ -587,7 +587,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   set_extra_data(maxItersOrRestartsST,"maxItersOrRestartsST",&comboST);
   set_extra_data(outputterResNormST,"resNormST",&comboST);
   //
-  // Generate the solver
+  // Generate the parameter list
   //
   typedef Belos::IterativeSolver<Scalar,MV_t,LO_t> IterativeSolver_t;
   RefCountPtr<IterativeSolver_t> iterativeSolver = Teuchos::null;
@@ -606,8 +606,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     maxNumberOfKrylovVectors = GMRES_MaxNumberOfKrylovVectors_default;
     std::string GMRES_Variant = GMRES_Variant_default;
     if(paramList_.get()) {
-      Teuchos::ParameterList
-        &_gmresPL = paramList_->sublist(GMRES_name);
+      Teuchos::ParameterList &_gmresPL = paramList_->sublist(GMRES_name);
       maxNumberOfKrylovVectors = _gmresPL.get(GMRES_MaxNumberOfKrylovVectors_name,GMRES_MaxNumberOfKrylovVectors_default);
       GMRES_Variant = _gmresPL.get(GMRES_Variant_name,GMRES_Variant_default);
       restartTimers = _gmresPL.get(Restart_Timers_name,Restart_Timers_default);
@@ -615,18 +614,29 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     }
     gmresPL->set(OrthoType_name, orthoType);
     gmresPL->set(Restart_Timers_name, restartTimers);
-    // Create the solver!
-    if (GMRES_Variant == "Pseudo") {
-      iterativeSolver = rcp(new Belos::PseudoBlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
-    }
-    else {
+    if (GMRES_Variant != "Pseudo") {
       gmresPL->set(GMRES_Variant_name,GMRES_Variant);
-      iterativeSolver = rcp(new Belos::BlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
+    }
+    // 
+    // Create the solver
+    // 
+    if (oldIterSolver != Teuchos::null) {
+      iterativeSolver = oldIterSolver;
+      iterativeSolver->Reset( gmresPL, lp, comboST, outputManager );
+    }
+    else {    
+      if (GMRES_Variant == "Pseudo") {
+	iterativeSolver = rcp(new Belos::PseudoBlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
+      }
+      else {
+	iterativeSolver = rcp(new Belos::BlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
+      }
     }
   }
   else {
     iterativeSolver = rcp(new Belos::BlockCG<Scalar,MV_t,LO_t>(lp,comboST,outputManager));
   }
+  
   //
   // Initialize the LOWS object
   //
@@ -635,9 +645,9 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       ? paramList_->get(AdjustableBlockSize_name,AdjustableBlockSize_default)
       : AdjustableBlockSize_default );
   belosOp->initialize(
-    lp,adjustableBlockSize,maxNumberOfKrylovVectors,gmresPL,resNormST,iterativeSolver,outputManager
-    ,fwdOpSrc,prec,myPrec.get()==NULL,approxFwdOpSrc,supportSolveUse
-    );
+		      lp,adjustableBlockSize,maxNumberOfKrylovVectors,gmresPL,resNormST,iterativeSolver,outputManager
+		      ,fwdOpSrc,prec,myPrec.get()==NULL,approxFwdOpSrc,supportSolveUse
+		      );
   belosOp->setOStream(out);
   belosOp->setVerbLevel(verbLevel);
 #ifdef TEUCHOS_DEBUG
@@ -648,7 +658,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 #endif
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nLeaving Thyra::BelosLinearOpWithSolveFactory<"<<ST::name()<<">::initializeOpImpl(...) ...\n";
-
+  
 }
 
 } // namespace Thyra

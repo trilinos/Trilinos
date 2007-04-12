@@ -52,6 +52,9 @@ using Teuchos::ParameterList;
 
 namespace Belos {
 
+template <class ScalarType>
+class OutputManager;
+
 template <class ScalarType, class MV, class OP>
 class StatusTest;
 
@@ -137,7 +140,11 @@ class IterativeSolver : virtual public Teuchos::Describable {
      \note This method can ONLY be expected to reset the solver object's state, 
      the LinearProblem and StatusTest need to be reset separately.
   */
-  virtual int Reset( const RefCountPtr<ParameterList>& pl = Teuchos::null ) { return 0; }
+  virtual int Reset( const RefCountPtr<ParameterList>& pl = Teuchos::null,
+                     const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp = Teuchos::null,
+                     const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest = Teuchos::null,
+                     const RefCountPtr<OutputManager<ScalarType> > &om = Teuchos::null )
+  { return 0; }
     
   //@}
 
