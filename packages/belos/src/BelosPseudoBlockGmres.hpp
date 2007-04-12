@@ -144,8 +144,10 @@ namespace Belos {
     RefCountPtr<StatusTest<ScalarType,MV,OP> > GetStatusTest() const { return( _stest ); }
 
     //! Reset the solver, can pass in a new parameter list to change solver parameters.
-    int Reset( const RefCountPtr<ParameterList>& pl = null );
-    
+    int Reset( const RefCountPtr<ParameterList>& pl = null,
+               const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp = null,
+               const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest = null,
+               const RefCountPtr<OutputManager<ScalarType> > &om = null );
     //@} 
 
     /** \name Solver application method. */
@@ -571,7 +573,10 @@ namespace Belos {
   
   template<class ScalarType, class MV, class OP>
   int 
-  PseudoBlockGmres<ScalarType,MV,OP>::Reset( const RefCountPtr<ParameterList>& pl )
+  PseudoBlockGmres<ScalarType,MV,OP>::Reset( const RefCountPtr<ParameterList>& pl,
+					     const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp,
+					     const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest,
+					     const RefCountPtr<OutputManager<ScalarType> > &om )
   {
     // Set new parameter list if one is passed in.
     if (pl.get() != 0 )  
@@ -580,8 +585,10 @@ namespace Belos {
     _restartiter = 0; 
     _totaliter = 0;
     _iter = 0;
-
-    _length = _pl->get("Length", 25);
+    
+    if (_pl->isParameter("Length")) {
+      _length = Teuchos::getParameter<int>(*_pl, "Length");
+    }
     if (_pl->isParameter("Ortho Type")) {
       std::string newOrthoType = Teuchos::getParameter<std::string>(*_pl,"Ortho Type");
       if (newOrthoType != _orthoType) {
@@ -595,6 +602,22 @@ namespace Belos {
     if (_pl->isParameter("Restart Timers")) {
       _restartTimers = Teuchos::getParameter<bool>(*_pl,"Restart Timers"); 
     }
+
+    // Set the linear problem if one is passed in.
+    if (lp != Teuchos::null) {
+      _lp = lp;
+    }
+
+    // Set the status test if one is passed in.
+    if (stest != Teuchos::null) {
+      _stest = stest;
+    }
+
+    // Set the output manager if one is passed in.
+    if (om != Teuchos::null) {
+      _om = om;
+    }
+
     return 0;
   }
 
