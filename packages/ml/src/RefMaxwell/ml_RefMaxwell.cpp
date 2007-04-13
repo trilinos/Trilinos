@@ -145,8 +145,8 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
                                                               const Teuchos::ParameterList& List,
                                                               const bool ComputePrec):
   ML_Preconditioner(),SM_Matrix_(&SM_Matrix),D0_Matrix_(0), D0_Clean_Matrix_(&D0_Clean_Matrix),Ms_Matrix_(&Ms_Matrix),
-  M0inv_Matrix_(&M0inv_Matrix),M1_Matrix_(&M1_Matrix),TMT_Matrix_(0),TMT_Agg_Matrix_(0),  
-  BCrows(0),numBCrows(0),HasOnlyDirichletNodes(false),Diagonal_(0),Operator11_(0),EdgePC(0),NodePC(0),PreEdgeSmoother(0),PostEdgeSmoother(0),verbose_(false)
+  M0inv_Matrix_(&M0inv_Matrix),M1_Matrix_(&M1_Matrix),TMT_Matrix_(0),TMT_Agg_Matrix_(0),
+    BCrows(0),numBCrows(0),HasOnlyDirichletNodes(false),Operator11_(0),EdgePC(0),NodePC(0),PreEdgeSmoother(0),PostEdgeSmoother(0),verbose_(false)
 {
   /* Set the Epetra Goodies */
   Comm_ = &(SM_Matrix_->Comm());
@@ -693,8 +693,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   /* Build Teuchos List: Fine Smoother */
   ListSM.set("coarse: type","Hiptmair");
   ListSM.set("coarse: sweeps",1);
-  //ListSM.set("smoother: Hiptmair efficient symmetric",true);
-  ListSM.set("coarse: subsmoother type","symmetric Gauss-Seidel");
+  ListSM.set("smoother: Hiptmair efficient symmetric",true);
   ListSM.set("coarse: subsmoother type","Chebyshev");
   ListSM.set("coarse: edge sweeps",smooth);
   ListSM.set("coarse: node sweeps",smooth);  
