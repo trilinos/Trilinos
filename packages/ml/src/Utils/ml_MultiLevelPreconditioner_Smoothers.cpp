@@ -3,9 +3,7 @@
  *
  *  \brief ML black-box preconditioner for Epetra_RowMatrix derived classes.
  *
- *  \author Marzio Sala, SNL, 9214
- *
- *  \date Last update do Doxygen: 22-Jul-04
+ *  \authors Marzio Sala, Ray Tuminaro, Jonathan Hu, Michael Gee, Chris Siefert
  *
  */
 
@@ -30,6 +28,7 @@
 #include "ml_ifpack_wrap.h"
 #include "ml_self_wrap.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "ml_epetra.h"
 #include "ml_MultiLevelPreconditioner.h"
 #ifdef HAVE_ML_IFPACK
@@ -126,15 +125,60 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   double ParaSailsLB = List_.get("smoother: ParaSails load balancing",0.0);
   int ParaSailsFactorized = List_.get("smoother: ParaSails factorized",0);
 
+  // Ifpack-specific
   string IfpackType = List_.get("smoother: ifpack type", "Amesos");
   int IfpackOverlap = List_.get("smoother: ifpack overlap",0);
+  // note: lof has different meanings for IC and ICT.  For IC and ILU, we
+  // will cast it to an integer later.
+  double IfpackLOF=List_.get("smoother: ifpack level-of-fill",0.);
+  double IfpackRelThreshold=List_.get("smoother: ifpack relative threshold",1.);
+  double IfpackAbsThreshold=List_.get("smoother: ifpack absolute threshold",0.);
 
-  string SubSmootherType;
-  int nodal_its = 1, edge_its = 1;
+  // Hiptmair-specific declarations
+  string SubSmType,NodeSubSmType,EdgeSubSmType;
+  int NodeSubSmIts = 1, EdgeSubSmIts = 1;
+  double EdgeSubSmLOF, NodeSubSmLOF;
+  int EdgeSubSmOverlap, NodeSubSmOverlap;
+  double EdgeSubSmOmega, NodeSubSmOmega, EdgeSubSmAlpha, NodeSubSmAlpha;
+  double EdgeSubSmRelThreshold, NodeSubSmRelThreshold;
+  double EdgeSubSmAbsThreshold, NodeSubSmAbsThreshold;
+
   if (SolvingMaxwell_ == true) {
-    SubSmootherType = List_.get("subsmoother: type","MLS");
-    nodal_its = List_.get("subsmoother: node sweeps", 2);
-    edge_its = List_.get("subsmoother: edge sweeps", 2);
+    if (Comm().NumProc() == 1) EdgeSubSmOmega = 1.0;
+    else                       EdgeSubSmOmega = ML_DDEFAULT;
+    EdgeSubSmOmega = List_.get("subsmoother: damping factor",EdgeSubSmOmega);
+    EdgeSubSmOmega = List_.get("subsmoother: edge damping factor",EdgeSubSmOmega);
+    if (Comm().NumProc() == 1) NodeSubSmOmega = 1.0;
+    else                       NodeSubSmOmega = ML_DDEFAULT;
+    NodeSubSmOmega = List_.get("subsmoother: damping factor",NodeSubSmOmega);
+    NodeSubSmOmega = List_.get("subsmoother: edge damping factor",NodeSubSmOmega);
+    SubSmType = List_.get("subsmoother: type","MLS");
+
+    // Grab or set subsmoother options that are not level specific. 
+    EdgeSubSmType    = List_.get("subsmoother: edge type",SubSmType);
+    NodeSubSmType    = List_.get("subsmoother: node type",SubSmType);
+    NodeSubSmIts     = List_.get("subsmoother: node sweeps", 2);
+    EdgeSubSmIts     = List_.get("subsmoother: edge sweeps", 2);
+    EdgeSubSmLOF     = List_.get("subsmoother: edge level-of-fill",0.0);
+    NodeSubSmLOF     = List_.get("subsmoother: node level-of-fill",0.0);
+    EdgeSubSmOverlap = List_.get("subsmoother: edge overlap",0);
+    NodeSubSmOverlap = List_.get("subsmoother: node overlap",0);
+    /*
+       According to the Ifpack manual, a modified matrix B is factored, where
+                 B_ij = A_ij for i \neq j
+                 B_ii = \alpha * sgn(A_ii) + \rho * A_ii;
+       where
+            \alpha = absolute threshold
+            \rho   = relative threshold.
+
+       The defaults here are chosen so that B = A.
+    */
+    EdgeSubSmRelThreshold =List_.get("subsmoother: edge relative threshold",1.);
+    NodeSubSmRelThreshold =List_.get("subsmoother: node relative threshold",1.);
+    EdgeSubSmAbsThreshold =List_.get("subsmoother: edge absolute threshold",0.);
+    NodeSubSmAbsThreshold =List_.get("subsmoother: node absolute threshold",0.);
+    EdgeSubSmAlpha   = List_.get("subsmoother: edge alpha",20.);
+    NodeSubSmAlpha   = List_.get("subsmoother: node alpha",20.);
   }
 
   // ===================== //
@@ -195,10 +239,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ============ //
 
       if( verbose_ ) cout << msg << "Jacobi (sweeps="
-			 << Mynum_smoother_steps << ",omega=" << Myomega << ","
-			 << MyPreOrPostSmoother << ")" << endl;
+                          << Mynum_smoother_steps << ",omega=" << Myomega << ","
+                          << MyPreOrPostSmoother << ")" << endl;
       ML_Gen_Smoother_Jacobi(ml_, LevelID_[level], pre_or_post,
-			     Mynum_smoother_steps, Myomega);
+                             Mynum_smoother_steps, Myomega);
      
     } else if( MySmoother == "Gauss-Seidel" ) {
 
@@ -207,8 +251,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ================== //
 
       if( verbose_ ) cout << msg << "Gauss-Seidel (sweeps="
-			 << Mynum_smoother_steps << ",omega=" << Myomega << ","
-			 << MyPreOrPostSmoother << ")" << endl;
+                          << Mynum_smoother_steps << ",omega=" << Myomega << ","
+                          << MyPreOrPostSmoother << ")" << endl;
 #ifdef HAVE_ML_IFPACK
       if (ml_->Amat[LevelID_[level]].type == ML_TYPE_CRS_MATRIX) {
         if (verbose_)
@@ -221,7 +265,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         MyIfpackList.set("relaxation: damping factor", Myomega);
         ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                                IfpackOverlap, LevelID_[level], pre_or_post,
-                               MyIfpackList,*Comm_);
+                               //MyIfpackList,*Comm_);
+                               (void*)&MyIfpackList,(void*)Comm_);
       }
       else
 #endif
@@ -262,7 +307,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         MyIfpackList.set("relaxation: damping factor", Myomega);
         ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                                IfpackOverlap, LevelID_[level], pre_or_post,
-                               MyIfpackList,*Comm_);
+                               (void*)&MyIfpackList,(void*)Comm_);
       }
       else
 #endif
@@ -307,9 +352,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
     } else if( ( MySmoother == "MLS" ) || ( MySmoother == "Chebyshev" )) {
 
-      // === //
-      // MLS //
-      // === //
+      // ========= //
+      // Chebyshev //
+      // ========= //
 
       int logical_level = LevelID_[level];
       sprintf(parameter,"smoother: MLS polynomial order (level %d)",
@@ -443,14 +488,16 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       cerr << "AztecOO smoothers" << endl;
       exit(EXIT_FAILURE);
 #endif
-    } else if( MySmoother == "IFPACK" || MySmoother == "ILU" || MySmoother == "IC") {
+    } else if( MySmoother == "IFPACK" || MySmoother == "ILU" ||
+               MySmoother == "IC" || MySmoother == "ILUT"   ||
+               MySmoother == "ICT") {
 
       // ====== //
       // IFPACK //
       // ====== //
 
 #ifdef HAVE_ML_IFPACK
-      int lof = -1;
+      double lof = -1.0;
       string MyIfpackType;
       if (MySmoother == "IFPACK")
       {
@@ -463,19 +510,33 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         // MS // Just a shortcut because sublists are not supported by
         // MS // the web interface.
         MyIfpackType = MySmoother;
-        lof = List_.get("smoother: ifpack level-of-fill", 0);
+        lof = List_.get("smoother: ifpack level-of-fill", IfpackLOF);
       }
 
       sprintf(parameter,"smoother: ifpack overlap (level %d)", LevelID_[level]);
       int MyIfpackOverlap = List_.get(parameter, IfpackOverlap);
+      sprintf(parameter,"smoother: ifpack relative threshold (level %d)",
+              LevelID_[level]);
+      double MyIfpackRT = List_.get(parameter, IfpackRelThreshold);
+      sprintf(parameter,"smoother: ifpack absolute threshold (level %d)",
+              LevelID_[level]);
+      double MyIfpackAT = List_.get(parameter, IfpackAbsThreshold);
 
       if( verbose_ ) {
-	cout << msg << "IFPACK, type = `" << MyIfpackType << "', " << endl
-	     << msg << MyPreOrPostSmoother
-	     << ", Overlap = " << MyIfpackOverlap << endl;
+        cout << msg << "IFPACK, type=`" << MyIfpackType << "'," << endl
+             << msg << MyPreOrPostSmoother
+             << ",overlap=" << MyIfpackOverlap << endl;
+        if (MyIfpackType != "Amesos") {
+          if (MyIfpackType == "ILU" || MyIfpackType == "IC")
+            cout << msg << "level-of-fill=" << (int)lof;
+          else
+            cout << msg << "level-of-fill=" << lof;
+          cout << ",rel. threshold=" << MyIfpackRT
+               << ",abs. threshold=" << MyIfpackAT << endl;
+        }
       }
 
-      Teuchos::ParameterList& IfpackList = List_.sublist("smoother: ifpack list");
+      Teuchos::ParameterList& IfpackList=List_.sublist("smoother: ifpack list");
       int NumAggr = ML_Aggregate_Get_AggrCount(agg_,level);
       int* AggrMap = 0;
       ML_CHK_ERR(ML_Aggregate_Get_AggrMap(agg_,level,&AggrMap));
@@ -486,12 +547,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         IfpackList.set("partitioner: local parts", NumAggr);
       IfpackList.set("partitioner: map", AggrMap);
 
-      if (lof != -1)
-        IfpackList.set("fact: level-of-fill", lof);
+      if (lof != -1.0) {
+        IfpackList.set("fact: level-of-fill", (int) lof);
+        IfpackList.set("fact: ict level-of-fill", lof);
+        IfpackList.set("fact: ilut level-of-fill", lof);
+      }
+      IfpackList.set("fact: relative threshold", MyIfpackRT);
+      IfpackList.set("fact: absolute threshold", MyIfpackAT);
                        
       ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                              MyIfpackOverlap, LevelID_[level], pre_or_post,
-                             IfpackList,*Comm_);
+                             (void*)&IfpackList,(void*)Comm_);
       
 #else
       cerr << ErrorMsg_ << "IFPACK not available." << endl
@@ -547,7 +613,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       }
 
       ML_Gen_Smoother_Ifpack(ml_, "Chebyshev", 0, LevelID_[level], 
-                             pre_or_post, IFPACKList, *Comm_);
+                             pre_or_post, (void*)&IFPACKList, (void*)Comm_);
 #else
       cerr << ErrorMsg_ << "IFPACK not available." << endl
 	   << ErrorMsg_ << "ML must be configured with --enable-ifpack" << endl
@@ -627,9 +693,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 #endif
 
     } else if( MySmoother == "Hiptmair" ) {
-      // ======== //
-      // Hiptmair //
-      // ======== //
+
+      // ==================================================== //
+      // Hiptmair                                             //
+      // supported subsmoothers:                              //
+      //   Chebyshev, SGS, Ifpack incomplete factorizations   //
+      // ==================================================== //
       if (SolvingMaxwell_ == false) {
         if (Comm().MyPID() == 0) {
           cerr << ErrorMsg_ << "Hiptmair smoothing is only supported" << endl;
@@ -639,93 +708,223 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         ML_EXIT(EXIT_FAILURE);
       }
 
-      double subsmOmega;
-      if (Comm().NumProc() == 1) subsmOmega = 1.0;
-      else                       subsmOmega = ML_DDEFAULT;
-      subsmOmega = List_.get("subsmoother: damping factor",subsmOmega);
-      sprintf(parameter,"subsmoother: type (level %d)", level);
-      string MySubSmootherType = List_.get(parameter,SubSmootherType);
+      char EdgeSmootherInfo[80], NodeSmootherInfo[80];
+      char *SmInfo;
 
       int logical_level = LevelID_[level];
       void *edge_smoother = 0, *nodal_smoother = 0;
-      double node_coarsening_rate=0.0;
-      double edge_coarsening_rate=0.0;
-
-      sprintf(parameter,"subsmoother: node sweeps (level %d)", level);
-      int Mynodal_its = List_.get(parameter, nodal_its);
-      sprintf(parameter,"subsmoother: edge sweeps (level %d)", level);
-      int Myedge_its = List_.get(parameter, edge_its);
-
-      // only MLS and SGS are currently supported
-      if ( (MySubSmootherType == "MLS") || (MySubSmootherType == "Chebyshev"))
-      {
-        // This is for backward compatibiltiy 
-        int itemp = List_.get("subsmoother: MLS polynomial order",-97);
-        if (itemp == -97) itemp=List_.get("subsmoother: polynomial order",-97);
-        sprintf(parameter,"subsmoother: MLS polynomial order (level %d)",level);
-        itemp = List_.get(parameter,itemp);
-        if (itemp != -97) { Mynodal_its = itemp; Myedge_its = itemp; }
-
-        double SubAlpha = List_.get("subsmoother: MLS alpha",-2.0);
-        if (SubAlpha == -2.) SubAlpha=List_.get("subsmoother: Chebyshev alpha", -2.);
-        if (SubAlpha == -2.) SubAlpha = 20.;
+      double edge_coarsening_rate=0.0, node_coarsening_rate=0.0;
 
 
-        nodal_smoother=(void *) ML_Gen_Smoother_Cheby;
-        ML_Smoother_Arglist_Set(nodal_args_, 0, &Mynodal_its);
-        edge_smoother=(void *) ML_Gen_Smoother_Cheby;
-        ML_Smoother_Arglist_Set(edge_args_, 0, &Myedge_its);
+      // The following section allows a user to specify node & edge options
+      // independently.  These variables must exist until the Hiptmair
+      // smoother is created for this level, as they (the variables) are
+      // are passed as pointers to the smoother create function.
+      // Hence, they are declared outside the FOR loop over the levels.
 
-        // FIXME:  T could be NULL
-        int Nfine_edge = Tmat_array[logical_level]->outvec_leng;
-        int itmp, Ncoarse_edge;
-        int coarsest_level = ml_->ML_coarsest_level;
-        ML_gsum_scalar_int(&Nfine_edge, &itmp, ml_->comm);
-        if (logical_level != coarsest_level) {
-          Ncoarse_edge = Tmat_array[logical_level-1]->outvec_leng;
-          ML_gsum_scalar_int(&Ncoarse_edge, &itmp, ml_->comm);
-          if (Ncoarse_edge != 0.0)
-            edge_coarsening_rate =  2.*((double) Nfine_edge)/
-                                    ((double) Ncoarse_edge);
-        }
-        else edge_coarsening_rate =  0.0;
-        if (edge_coarsening_rate < SubAlpha)
-          edge_coarsening_rate =  SubAlpha;
+      sprintf(parameter,"subsmoother: edge type (level %d)", logical_level);
+      string MyEdgeSubSmType    = List_.get(parameter,EdgeSubSmType);
+      sprintf(parameter,"subsmoother: node type (level %d)",logical_level);
+      string MyNodeSubSmType    = List_.get(parameter,NodeSubSmType);
+      sprintf(parameter,"subsmoother: node sweeps (level %d)",logical_level);
+      int MyNodeSubSmIts     = List_.get(parameter, NodeSubSmIts);
+      sprintf(parameter,"subsmoother: edge sweeps (level %d)",level);
+      int MyEdgeSubSmIts     = List_.get(parameter, EdgeSubSmIts);
+      sprintf(parameter,"subsmoother: edge level-of-fill (level %d)",level);
+      double MyEdgeSubSmLOF     = List_.get(parameter,EdgeSubSmLOF);
+      sprintf(parameter,"subsmoother: node level-of-fill (level %d)",level);
+      double MyNodeSubSmLOF     = List_.get(parameter,NodeSubSmLOF);
+      sprintf(parameter,"subsmoother: edge overlap (level %d)",level);
+      int MyEdgeSubSmOverlap = List_.get(parameter,EdgeSubSmOverlap);
+      sprintf(parameter,"subsmoother: node overlap (level %d)",level);
+      int MyNodeSubSmOverlap = List_.get(parameter,NodeSubSmOverlap);
+      sprintf(parameter,"subsmoother: edge relative threshold (level %d)",level);
+      double MyEdgeSubSmRelThreshold=List_.get(parameter,EdgeSubSmRelThreshold);
+      sprintf(parameter,"subsmoother: node relative threshold (level %d)",level);
+      double MyNodeSubSmRelThreshold=List_.get(parameter,NodeSubSmRelThreshold);
+      sprintf(parameter,"subsmoother: edge absolute threshold (level %d)",level);
+      double MyEdgeSubSmAbsThreshold=List_.get(parameter,EdgeSubSmAbsThreshold);
+      sprintf(parameter,"subsmoother: node absolute threshold (level %d)",level);
+      double MyNodeSubSmAbsThreshold=List_.get(parameter,NodeSubSmAbsThreshold);
+      sprintf(parameter,"subsmoother: edge omega (level %d)",level);
+      double MyEdgeSubSmOmega   = List_.get(parameter,EdgeSubSmOmega);
+      sprintf(parameter,"subsmoother: node omega (level %d)",level);
+      double MyNodeSubSmOmega   = List_.get(parameter,NodeSubSmOmega);
+      sprintf(parameter,"subsmoother: edge alpha (level %d)",level);
+      double MyEdgeSubSmAlpha   = List_.get(parameter,-2.0);
+      sprintf(parameter,"subsmoother: node alpha (level %d)",level);
+      double MyNodeSubSmAlpha   = List_.get(parameter,-2.0);
 
-        int Nfine_node = Tmat_array[logical_level]->invec_leng;
-        int Ncoarse_node;
-        ML_Smoother_Arglist_Set(edge_args_, 1, &edge_coarsening_rate);
-        if (logical_level != coarsest_level) {
-          Ncoarse_node = Tmat_array[logical_level-1]->invec_leng;
-          ML_gsum_scalar_int(&Ncoarse_node, &itmp, ml_->comm);
-          if (Ncoarse_node != 0.0)
-            node_coarsening_rate =  2.*((double) Nfine_node)/
-                                       ((double) Ncoarse_node);
-        }
-        else node_coarsening_rate = 0.0;
-        if (node_coarsening_rate < SubAlpha)
-          node_coarsening_rate =  SubAlpha;
-                                                                                
-        ML_Smoother_Arglist_Set(nodal_args_, 1, &node_coarsening_rate);
-      }
-      else if (MySubSmootherType == "symmetric Gauss-Seidel") {
-        sprintf(parameter,"subsmoother: damping factor (level %d)",
-                logical_level);
-        double MysubsmOmega = List_.get(parameter,subsmOmega);
-        nodal_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
-        ML_Smoother_Arglist_Set(nodal_args_, 0, &Mynodal_its);
-        ML_Smoother_Arglist_Set(nodal_args_, 1, &MysubsmOmega);
-        edge_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
-        ML_Smoother_Arglist_Set(edge_args_, 0, &Myedge_its);
-        ML_Smoother_Arglist_Set(edge_args_, 1, &MysubsmOmega);
-      }
-      else if (Comm().MyPID() == 0)
-        cerr << ErrorMsg_ << "Only Chebyshev (or MLS) and SGS are supported as "
-             << "Hiptmair subsmoothers ... not " << MySubSmootherType << endl;
+      Teuchos::ParameterList& edgeList = List_.sublist("edge list");
+      Teuchos::ParameterList& nodeList = List_.sublist("node list");
 
+      // ++++++++++++++++++++++++++++++++++++++++++++++
+      // Set the node and edge subsmoothers separately.
+      // ----------------------------------------------
+      enum nodeOrEdge {NODE, EDGE, DONE};
+      for (enum nodeOrEdge ne=NODE; ne!= DONE; ne=nodeOrEdge(ne+1)) {
+
+        string *MySubSmType;
+        int *MySubSmIts, *MySubSmOverlap;
+        double MySubSmLOF,MySubSmRelThreshold,MySubSmAbsThreshold,
+               *MySubSmOmega, MySubSmAlpha;
+        Teuchos::ParameterList *ifpackList;
+        void **argList;
+
+        switch(ne) {
+          case NODE:
+            ifpackList = &nodeList;
+            MySubSmType = &MyNodeSubSmType;
+            MySubSmIts = &MyNodeSubSmIts;
+            MySubSmLOF = MyNodeSubSmLOF;
+            MySubSmOverlap = &MyNodeSubSmOverlap;
+            MySubSmRelThreshold = MyNodeSubSmRelThreshold;
+            MySubSmAbsThreshold = MyNodeSubSmAbsThreshold;
+            MySubSmOmega = &MyNodeSubSmOmega;
+            MySubSmAlpha = MyNodeSubSmAlpha;
+            SmInfo = NodeSmootherInfo; 
+            break;
+          case EDGE:
+            ifpackList = &edgeList;
+            MySubSmType = &MyEdgeSubSmType;
+            MySubSmIts = &MyEdgeSubSmIts;
+            MySubSmLOF = MyEdgeSubSmLOF;
+            MySubSmOverlap = &MyEdgeSubSmOverlap;
+            MySubSmRelThreshold = MyEdgeSubSmRelThreshold;
+            MySubSmAbsThreshold = MyEdgeSubSmAbsThreshold;
+            MySubSmOmega = &MyEdgeSubSmOmega;
+            MySubSmAlpha = MyEdgeSubSmAlpha;
+            SmInfo = EdgeSmootherInfo; 
+            break;
+          case DONE:
+            pr_error("Something has gone wrong in Hiptmair smoother setup\n");
+            break;
+        } //switch(ne)
+          
+        if ( (*MySubSmType == "MLS") || (*MySubSmType == "Chebyshev"))
+        {
+          // --------------------------------------
+          // Chebyshev subsmoother
+          // --------------------------------------
+          double *coarsening_rate;
+          int Nfine,Ncoarse;
+          if (ne == EDGE) {
+            edge_smoother=(void *) ML_Gen_Smoother_Cheby;
+            edge_args_ = ML_Smoother_Arglist_Create(2);
+            argList = edge_args_;
+            coarsening_rate = &edge_coarsening_rate;
+            Nfine = Tmat_array[logical_level]->outvec_leng;
+            if (logical_level != ml_->ML_coarsest_level)
+              Ncoarse = Tmat_array[logical_level-1]->outvec_leng;
+          } else if (ne == NODE) { 
+            nodal_smoother=(void *) ML_Gen_Smoother_Cheby;
+            nodal_args_ = ML_Smoother_Arglist_Create(2);
+            argList = nodal_args_;
+            coarsening_rate = &node_coarsening_rate;
+            Nfine = Tmat_array[logical_level]->invec_leng;
+            if (logical_level != ml_->ML_coarsest_level)
+              Ncoarse = Tmat_array[logical_level-1]->invec_leng;
+          }
+          // This is for backward compatibility 
+          int itemp = List_.get("subsmoother: MLS polynomial order",-97);
+          if (itemp == -97) itemp=List_.get("subsmoother: polynomial order",-97);
+          sprintf(parameter,"subsmoother: MLS polynomial order (level %d)",level);
+          itemp = List_.get(parameter,itemp);
+          if (itemp != -97) *MySubSmIts = itemp;
+
+          double SubAlpha = List_.get("subsmoother: MLS alpha",MySubSmAlpha);
+          if (SubAlpha == -2.) SubAlpha=List_.get("subsmoother: Chebyshev alpha", -2.);
+          if (SubAlpha == -2.) SubAlpha = 20.;
+
+          if (logical_level != ml_->ML_coarsest_level) {
+            int itmp;
+            ML_gsum_scalar_int(&Ncoarse, &itmp, ml_->comm);
+            if (Ncoarse != 0.0)
+              *coarsening_rate =  2.*((double) Nfine)/ ((double) Ncoarse);
+          }
+          else *coarsening_rate = 0.0;
+          if (*coarsening_rate < SubAlpha) *coarsening_rate =  SubAlpha;
+                                                                                  
+          ML_Smoother_Arglist_Set(argList, 0, MySubSmIts);
+          ML_Smoother_Arglist_Set(argList, 1, coarsening_rate);
+
+          // FIXME:  T could be NULL
+          sprintf(SmInfo,"Chebyshev,degree=%d,alpha=%5.3e",
+                  *MySubSmIts,*coarsening_rate);
+
+        } else if (*MySubSmType == "symmetric Gauss-Seidel") {
+
+          // --------------------------------------
+          // symmetric Gauss-Seidel subsmoother
+          // --------------------------------------
+          if (ne == EDGE) {
+            edge_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
+            edge_args_ = ML_Smoother_Arglist_Create(2);
+            argList = edge_args_;
+          } else if (ne == NODE) { 
+            nodal_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
+            nodal_args_ = ML_Smoother_Arglist_Create(2);
+            argList = nodal_args_;
+          }
+          ML_Smoother_Arglist_Set(argList, 0, MySubSmIts);
+          ML_Smoother_Arglist_Set(argList, 1, MySubSmOmega);
+          sprintf(SmInfo,"symmetric Gauss-Seidel,sweeps=%d,omega=%5.3f",
+                  *MySubSmIts,*MySubSmOmega);
+
+        } else if ( *MySubSmType == "ILU" ||
+                  *MySubSmType == "IC"  ||
+                  *MySubSmType == "ILUT" ||
+                  *MySubSmType == "ICT")       {
+
+          // --------------------------------------
+          // incomplete factorization subsmoothers
+          // --------------------------------------
+          if (ne == EDGE) {
+              edge_args_ = ML_Smoother_Arglist_Create(4);
+              edge_smoother=(void *) ML_Gen_Smoother_Ifpack;
+              argList = edge_args_;
+          } else if (ne == NODE) { 
+            nodal_args_ = ML_Smoother_Arglist_Create(4);
+            nodal_smoother=(void *) ML_Gen_Smoother_Ifpack;
+            argList = nodal_args_;
+          }
+          //ML uses the same parameter for all of Ifpack's levels-of-fill.
+          //Rather than figure out which Ifpack method is really being
+          //used, I just set them all.
+          ifpackList->set("fact: level-of-fill", (int)(MySubSmLOF));
+          ifpackList->set("fact: ict level-of-fill", MySubSmLOF);
+          ifpackList->set("fact: ilut level-of-fill", MySubSmLOF);
+          ifpackList->set("fact: relative threshold", MySubSmRelThreshold);
+          ifpackList->set("fact: absolute threshold", MySubSmAbsThreshold);
+          ML_Smoother_Arglist_Set(argList, 0, const_cast<char*>(MySubSmType->c_str()));
+          ML_Smoother_Arglist_Set(argList, 1, ifpackList);
+          ML_Smoother_Arglist_Set(argList, 2, MySubSmOverlap);
+          ML_Smoother_Arglist_Set(argList, 3,const_cast<Epetra_Comm*>(Comm_));
+
+          if ( *MySubSmType == "ILU" || *MySubSmType == "IC")
+            sprintf(SmInfo,"%s,overlap=%d,level-of-fill=%d",
+                    MySubSmType->c_str(),*MySubSmOverlap,(int)MySubSmLOF);
+          else
+            sprintf(SmInfo,"%s,overlap=%d,level-of-fill=%3.2e",
+                    MySubSmType->c_str(),*MySubSmOverlap,MySubSmLOF);
+
+
+        } else if (Comm().MyPID() == 0)
+          cerr << ErrorMsg_
+            <<"Only Chebyshev (or MLS), SGS, ILU, IC, ILUT, and ICT" << endl
+            << "are supported as Hiptmair subsmoothers ... not "
+            << *MySubSmType << endl;
     
+      } //for (enum nodeOrEdge ne=NODE; ne!=DONE ...
+
+
       int hiptmair_type = (int)
                   List_.get("smoother: Hiptmair efficient symmetric", true);
+
+      if( verbose_ ) cout << msg << "Hiptmair (outer sweeps="
+             << Mynum_smoother_steps << ")" << endl
+             << msg << "edge: " << EdgeSmootherInfo << endl
+             << msg << "node: " << NodeSmootherInfo << endl;
         
       ML_Gen_Smoother_Hiptmair(ml_, logical_level, ML_BOTH,
                  Mynum_smoother_steps, Tmat_array, Tmat_trans_array, NULL, 
@@ -733,11 +932,14 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
                  edge_smoother, edge_args_, nodal_smoother, nodal_args_,
                  hiptmair_type);
 
+      ML_Smoother_Arglist_Delete(&nodal_args_);
+      ML_Smoother_Arglist_Delete(&edge_args_);
+
       bool indefiniteProblem = List_.get("negative conductivity",false);
       /* This corrects for the case of negative sigma        */
       /* I think it has something to do with the eigenvalues */
       /* coming out negative.                                */
-      if (indefiniteProblem && MySubSmootherType == "MLS")
+      if (indefiniteProblem && MyNodeSubSmType == "MLS") //JJH check this
       {
         if (verbose_ && Comm().MyPID() == 0)
           cout << "ML*WRN* "
@@ -794,7 +996,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
                                    "User-defined");
 
       if( verbose_ ) cout << msg << userSmootherName << " (sweeps=" 
-			 << Mynum_smoother_steps << "," << MyPreOrPostSmoother << ")" << endl;
+                          << Mynum_smoother_steps << ","
+                          << MyPreOrPostSmoother << ")" << endl;
 
       if (userSmootherPtr == NULL) {
         if (Comm().MyPID() == 0)
@@ -828,12 +1031,14 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
               << ErrorMsg_
               << "(file " << __FILE__ << ",line " << __LINE__ << ")" << endl
               << ErrorMsg_
-              << "Now is: " << MySmoother << ". It should be: " << endl
+              << "You chose: " << MySmoother << ". It should be: " << endl
 	          << ErrorMsg_
               << "<Jacobi> / <Gauss-Seidel> / <block Gauss-Seidel>" << endl
 	          << ErrorMsg_
               << "<symmetric Gauss-Seidel> / <Aztec> / <IFPACK>" << endl
-	          << ErrorMsg_ << "<MLS> / <ParaSails>" << endl;
+	          << ErrorMsg_
+              << "<Chebyshev> / <ParaSails> / <Hiptmair>" << endl
+	          << ErrorMsg_ << "<user-defined>" << endl;
       ML_EXIT(-99); }
     
     if( verbose_ ) 

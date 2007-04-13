@@ -298,7 +298,7 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList,
        - \c "smoother: type" \c = \c "Hiptmair"
        - \c "smoother: Hiptmair efficient symmetric" \c = \c true
        - \c "subsmoother: type" \c = \c "Chebyshev"
-       - \c "subsmoother: Chebyshev alpha" \c = \c 27.0
+       - \c "subsmoother: Chebyshev alpha" \c = \c 20.0
        - \c "subsmoother: node sweeps" \c = \c 4
        - \c "subsmoother: edge sweeps" \c = \c 4
    - Coarse Solution
@@ -328,7 +328,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
   List.set("smoother: type","Hiptmair");
   List.set("smoother: Hiptmair efficient symmetric",true);
   List.set("subsmoother: type", "Chebyshev");           //Hiptmair subsmoother options
-  List.set("subsmoother: Chebyshev alpha",27.0);
+  List.set("subsmoother: Chebyshev alpha",20.0);
   List.set("subsmoother: node sweeps",4);
   List.set("subsmoother: edge sweeps",4);
 

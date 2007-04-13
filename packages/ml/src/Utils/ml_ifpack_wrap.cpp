@@ -33,24 +33,24 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
 
 // ====================================================================== 
 // MS // This does not work yet with ML_ALL_LEVELS
-// MS // I also ask for the Epetra_Comm, as IFPACK only works
-// MS // with the Epetra interface.
 int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
                            int nl, int pre_or_post,
-                           Teuchos::ParameterList& List,
-                           const Epetra_Comm& Comm)
+                           void *iList,
+                           void *iComm)
 {
 
    int (*fun)(ML_Smoother *, int, double *, int, double *);
    int status = 1;
    char str[80];
    void *Ifpack_Handle ;
+   Teuchos::ParameterList List = *((Teuchos::ParameterList *) iList);
+   Epetra_Comm *Comm = (Epetra_Comm *) iComm;
 
    fun = ML_Smoother_Ifpack;
 
    /* Creates IFPACK objects */
 
-   status = ML_Ifpack_Gen(ml, Type, Overlap, nl, List, Comm, &Ifpack_Handle) ; 
+   status = ML_Ifpack_Gen(ml, Type, Overlap, nl, List, *Comm, &Ifpack_Handle) ; 
    assert (status == 0); 
 
    /* Sets function pointers */
@@ -140,12 +140,64 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
   
 } /* ML_Ifpack_Gen */
 
+#ifdef ML_DUMP_IFPACK_FACTORS
+#include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_VectorOut.h"
+#include "Ifpack_IC.h"
+#include "Ifpack_ICT.h"
+#include "Ifpack_ILU.h"
+#include "Ifpack_ILUT.h"
+#include "Ifpack_AdditiveSchwarz.h"
+#endif //ifdef ML_DUMP_IFPACK_FACTORS
+
 // ================================================ ====== ==== ==== == =
 
 int ML_Ifpack_Solve(void * Ifpack_Handle, double * x, double * rhs )
 {
 
   Ifpack_Preconditioner* Prec = (Ifpack_Preconditioner *)Ifpack_Handle;
+
+#ifdef ML_DUMP_IFPACK_FACTORS
+  Ifpack_AdditiveSchwarz<Ifpack_IC> *asic = dynamic_cast<Ifpack_AdditiveSchwarz<Ifpack_IC>*>(Prec);
+  Ifpack_AdditiveSchwarz<Ifpack_ILU> *asilu = dynamic_cast<Ifpack_AdditiveSchwarz<Ifpack_ILU>*>(Prec);
+  Ifpack_AdditiveSchwarz<Ifpack_ICT> *asict = dynamic_cast<Ifpack_AdditiveSchwarz<Ifpack_ICT>*>(Prec);
+  Ifpack_AdditiveSchwarz<Ifpack_ILUT> *asilut = dynamic_cast<Ifpack_AdditiveSchwarz<Ifpack_ILUT>*>(Prec);
+/*
+    const Ifpack_ICT *ict = asict->Inverse();
+    ict->Print(cout);
+*/
+  if (asic != 0) {
+    const Ifpack_IC *ic = asic->Inverse();
+    const Epetra_Vector &D = ic->D();
+    const Epetra_CrsMatrix &U = ic->U();
+    EpetraExt::RowMatrixToMatlabFile("IC_Ufactor",U);
+    EpetraExt::VectorToMatlabFile("IC_Dfactor",D);
+  } else if (asilu != 0) {
+    const Ifpack_ILU *ilu = asilu->Inverse();
+    const Epetra_CrsMatrix &L = ilu->L();
+    const Epetra_Vector &D = ilu->D();
+    const Epetra_CrsMatrix &U = ilu->U();
+    EpetraExt::RowMatrixToMatlabFile("ILU_Lfactor",L);
+    EpetraExt::VectorToMatlabFile("ILU_Dfactor",D);
+    EpetraExt::RowMatrixToMatlabFile("ILU_Ufactor",U);
+  } else if (asict != 0) {
+    const Ifpack_ICT *ict = asict->Inverse();
+    const Epetra_CrsMatrix &H = ict->H();
+    EpetraExt::RowMatrixToMatlabFile("ICTfactor",H);
+  } else if (asilut != 0) {
+    const Ifpack_ILUT *ilut = asilut->Inverse();
+    const Epetra_CrsMatrix &L = ilut->L();
+    const Epetra_CrsMatrix &U = ilut->U();
+    EpetraExt::RowMatrixToMatlabFile("ILUT_Lfactor",L);
+    EpetraExt::RowMatrixToMatlabFile("ILUT_Ufactor",U);
+  } else {
+    if (Prec->Comm().MyPID() == 0) printf("dynamic cast failed!\n");
+  }
+# ifdef HAVE_MPI
+  MPI_Finalize();
+# endif
+  exit(1);
+#endif //ifdef ML_DUMP_IFPACK_FACTORS
 
   Epetra_Vector Erhs(View, Prec->OperatorRangeMap(), rhs);
   Epetra_Vector Ex(View, Prec->OperatorDomainMap(), x);

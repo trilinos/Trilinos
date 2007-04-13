@@ -1551,8 +1551,8 @@ agg_->keep_P_tentative = 1;
 
   if (SolvingMaxwell_ == true) {
       // arguments for edge & node smoothers
-      nodal_args_ = ML_Smoother_Arglist_Create(2);
-      edge_args_ = ML_Smoother_Arglist_Create(2);
+      nodal_args_ = ML_Smoother_Arglist_Create(4);
+      edge_args_ = ML_Smoother_Arglist_Create(4);
   }
 
   if ( NumLevels_ > 1 )
@@ -2282,7 +2282,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       IfpackList.set("relaxation: damping factor", Omega);
       ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
                              0, LevelID_[NumLevels_-1], pre_or_post,
-                             IfpackList,*Comm_);
+                             (void*)(&IfpackList),(void *) Comm_);
     }
     else
 #endif
@@ -2312,7 +2312,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       IfpackList.set("relaxation: damping factor", Omega);
       ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
                              0, LevelID_[NumLevels_-1], pre_or_post,
-                             IfpackList,*Comm_);
+                             //IfpackList,*Comm_);
+                             (void*)&IfpackList,(void*)Comm_);
     }
     else
 #endif
@@ -3243,6 +3244,7 @@ int ML_Epetra::MultiLevelPreconditioner::BreakForDebugger()
   // 1.) export ML_BREAK_FOR_DEBUGGER=1
   // 2.) create a file in the executable directory, called ML_debug_now
 
+  if (!List_.get("ML debug mode", false)) return(0);
   char * str = (char *) getenv("ML_BREAK_FOR_DEBUGGER");
   int i = 0, j = 0;
   char buf[80];
