@@ -74,9 +74,6 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
     void setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver);
 
     /** \brief . */
-    void reInitialize();
-
-    /** \brief . */
     void setInitialCondition(const 
         Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
         );
@@ -383,12 +380,6 @@ void ImplicitBDFStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<Thyra::Non
 }
 
 template<class Scalar>
-void ImplicitBDFStepper<Scalar>::reInitialize()
-{
-  initialize_();
-}
-
-template<class Scalar>
 void ImplicitBDFStepper<Scalar>::setInitialCondition(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
     )
@@ -405,6 +396,9 @@ void ImplicitBDFStepper<Scalar>::setInitialCondition(
     time_ = ST::zero(); 
   }
   haveInitialCondition_ = true;
+  if (isInitialized_) {
+    initialize_();
+  }
 }
 
 template<class Scalar>

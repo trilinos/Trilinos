@@ -168,9 +168,6 @@ namespace Rythmos {
     const StepStatus<Scalar> getStepStatus();
 
     /** \brief . */
-    void reInitialize();
-
-    /** \brief . */
     std::string description() const;
 
     /** \brief . */
@@ -522,10 +519,6 @@ namespace Rythmos {
     return(stepStatus);
   }
 
-  template<class Scalar>
-  void ExplicitTaylorPolynomialStepper<Scalar>::reInitialize()
-  {
-  }
 
   template<class Scalar>
   void

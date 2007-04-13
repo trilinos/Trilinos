@@ -62,9 +62,6 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     const StepStatus<Scalar> getStepStatus();
 
     /** \brief . */
-    void reInitialize();
-
-    /** \brief . */
     std::string description() const;
 
     /** \brief . */
@@ -201,11 +198,6 @@ const StepStatus<Scalar> ForwardEulerStepper<Scalar>::getStepStatus()
   stepStatus.residual = residual_vector_;
 
   return(stepStatus);
-}
-
-template<class Scalar>
-void ForwardEulerStepper<Scalar>::reInitialize()
-{
 }
 
 template<class Scalar>

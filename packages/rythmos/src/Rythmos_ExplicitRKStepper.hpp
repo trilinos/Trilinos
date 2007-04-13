@@ -62,9 +62,6 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     const StepStatus<Scalar> getStepStatus();
 
     /** \brief . */
-    void reInitialize();
-
-    /** \brief . */
     std::string description() const;
 
     /** \brief . */
@@ -337,11 +334,6 @@ const StepStatus<Scalar> ExplicitRKStepper<Scalar>::getStepStatus()
   stepStatus.solution = solution_vector_;
 
   return(stepStatus);
-}
-
-template<class Scalar>
-void ExplicitRKStepper<Scalar>::reInitialize()
-{
 }
 
 template<class Scalar>

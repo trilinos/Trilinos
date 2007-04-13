@@ -76,9 +76,6 @@ class BackwardEulerStepper : virtual public StepperBase<Scalar>
     /** \brief . */
     const StepStatus<Scalar> getStepStatus();
 
-    /** \brief . */
-    void reInitialize();
-
     /// Redefined from describable
     /** \brief . */
     std::string description() const;
@@ -331,10 +328,6 @@ const StepStatus<Scalar> BackwardEulerStepper<Scalar>::getStepStatus()
   stepStatus.solution = x_;
 
   return(stepStatus);
-}
-template<class Scalar>
-void BackwardEulerStepper<Scalar>::reInitialize()
-{
 }
 
 template<class Scalar>
