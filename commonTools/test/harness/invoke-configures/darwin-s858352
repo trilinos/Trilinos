@@ -4,7 +4,7 @@ F77=g77 \
 RANLIB="ranlib -s" \
 CPPFLAGS=-Wno-long-double \
 --with-incdirs="-I/sw/include -I/usr/include/malloc" \
---with-ldflags="-L/sw/lib/ -framework veclib -bind_at_load" \
+--with-ldflags="-L/sw/lib/ -framework veclib" \
 --with-libs="-lsuperlu -lumfpack -lamd -lg2c -lexpat -lhdf5" \
 --cache-file=config.cache \
 --with-gnumake \
