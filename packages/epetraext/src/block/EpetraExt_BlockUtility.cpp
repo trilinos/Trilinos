@@ -175,7 +175,7 @@ int BlockUtility::CalculateOffset(const Epetra_BlockMap & BaseMap)
   int MaxGID = BaseMap.MaxAllGID();
 
   int Offset = 1;
-  while( Offset < MaxGID ) Offset *= 10;
+  while( Offset <= MaxGID ) Offset *= 10;
 
   return Offset;
 }
