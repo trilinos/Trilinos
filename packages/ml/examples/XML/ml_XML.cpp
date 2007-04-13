@@ -135,12 +135,12 @@ int main(int argc, char *argv[])
 
   // =========================== begin of ML part ===========================
   
-  // Create an almost empty list. Note: if you don't want ML to read the
-  // XML file, add
-  //      MLList.set("read XML", false);
-  // to your MLList.
+  // Create an almost empty list. Note: you *must* add
+  //      MLList.set("read XML", true);
+  // to your MLList in order to read the XML file.
   Teuchos::ParameterList MLList;
   MLList.set("ML output", 10);
+  MLList.set("read XML", true);
 
   // Since a file called ml_ParameterList.xml is present in the working
   // directory, ML will parse this XML file and use it to specify the
