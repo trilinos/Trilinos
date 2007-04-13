@@ -32,6 +32,6 @@
 
 NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Operators NOX_Group 1Dfem DS6.5.1 Brusselator FiniteDifferenceColoring MultiPhysics 
 
-LOCA_SUBDIRS = LOCA_TestProblems LOCA_UnitTests LOCA_Tcubed LOCA_Pitchfork LOCA_Brusselator LOCA_Brusselator_xyzt
+LOCA_SUBDIRS = LOCA_TestProblems LOCA_UnitTests LOCA_Tcubed LOCA_Pitchfork LOCA_Brusselator LOCA_Brusselator_xyzt LOCA_MultiPoint_Tcubed
 
 SUBDIRS = $(NOX_SUBDIRS) $(LOCA_SUBDIRS)

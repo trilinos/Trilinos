@@ -97,6 +97,25 @@ namespace LOCA {
 	virtual void printSolution(const Epetra_Vector& x_, 
 				   double conParam) {}
 
+        /*!
+          \brief Provides data to application for output files.
+
+          This routine is called from Interface::xyzt::printSolution() just
+          before the call to Interface::Required::printSolution(x,param),
+          and gives the application some indices that can be used for
+          creating a unique name/index for the output files.
+        */
+        virtual void dataForPrintSolution(const int conStep, const int timeStep,
+                                          const int totalTimeSteps) {};
+
+	/*! 
+	  \brief Set multipoint parameter in the user's application. 
+
+	  Should be called prior to calling one of the compute functions.
+	*/
+        virtual void setMultiPointParameter(const int stepNum) {};
+
+
 	//! Perform any preprocessing before a continuation step starts.
 	/*!
 	 * The \c stepStatus argument indicates whether the previous step was

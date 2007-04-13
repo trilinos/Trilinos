@@ -81,11 +81,13 @@ LOCA_EPETRA = \
 if HAVE_MPI
 LOCA_EPETRA_XYZT_H =  \
 	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
+	$(srcdir)/LOCA_Epetra_Interface_MultiPoint.H \
 	$(srcdir)/LOCA_Epetra_xyztPrec.H \
 	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.H
 
 LOCA_EPETRA_XYZT = \
 	$(srcdir)/LOCA_Epetra_Interface_xyzt.C \
+	$(srcdir)/LOCA_Epetra_Interface_MultiPoint.C \
 	$(srcdir)/LOCA_Epetra_xyztPrec.C \
 	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C
 else
