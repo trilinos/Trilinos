@@ -50,10 +50,7 @@
 #include "ml_lapack.h"
 #include "ml_utils.h"
 #include "ml_op_utils.h"
-//#define JJH_prerelease /*TODO*/
-#ifdef JJH_prerelease
 #include "ml_ifpack_wrap.h"
-#endif
 
 /* A special version of dgetrs which is supposed to be optimized. */
 /* NOTE: it is assumed that ML_permute_for_dgetrs_special() has   */
@@ -7205,7 +7202,6 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
      ML_Gen_Smoother_VBlockSymGaussSeidel(*ml_subproblem, 0, ML_PRESMOOTHER,
 				  *int_arg1, omega, *int_arg2,int_arg3);
 
-#ifdef JJH_prerelease
    } else if (smoother == (void *) ML_Gen_Smoother_Ifpack) {
 
      /* Incomplete factorization subsmoother */
@@ -7226,7 +7222,6 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 #    else
      pr_error("ML must be configured with ifpack support:  --enable-ifpack\n");
 #    endif
-#    endif /*ifdef JJH_prerelease*/
 
    } else {
    printf("ML_Smoother_Gen_Hiptmair_Data: Unknown smoother for Hiptmair subproblem\n");

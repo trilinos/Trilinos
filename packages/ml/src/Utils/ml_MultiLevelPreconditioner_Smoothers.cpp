@@ -722,11 +722,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // are passed as pointers to the smoother create function.
       // Hence, they are declared outside the FOR loop over the levels.
 
-      sprintf(parameter,"subsmoother: edge type (level %d)", logical_level);
+      sprintf(parameter,"subsmoother: edge type (level %d)", level);
       string MyEdgeSubSmType    = List_.get(parameter,EdgeSubSmType);
-      sprintf(parameter,"subsmoother: node type (level %d)",logical_level);
+      sprintf(parameter,"subsmoother: node type (level %d)",level);
       string MyNodeSubSmType    = List_.get(parameter,NodeSubSmType);
-      sprintf(parameter,"subsmoother: node sweeps (level %d)",logical_level);
+      sprintf(parameter,"subsmoother: node sweeps (level %d)",level);
       int MyNodeSubSmIts     = List_.get(parameter, NodeSubSmIts);
       sprintf(parameter,"subsmoother: edge sweeps (level %d)",level);
       int MyEdgeSubSmIts     = List_.get(parameter, EdgeSubSmIts);

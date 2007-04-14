@@ -1549,12 +1549,6 @@ agg_->keep_P_tentative = 1;
   // Now cycling over all levels                                            //
   // ====================================================================== //
 
-  if (SolvingMaxwell_ == true) {
-      // arguments for edge & node smoothers
-      nodal_args_ = ML_Smoother_Arglist_Create(4);
-      edge_args_ = ML_Smoother_Arglist_Create(4);
-  }
-
   if ( NumLevels_ > 1 )
     ML_CHK_ERR(SetSmoothers());
   /* FIXME: moved in DestroyPreconditioner()
@@ -2358,6 +2352,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       if ( (SubSmootherType == "MLS") || (SubSmootherType == "Chebyshev"))
       {
         nodal_smoother=(void *) ML_Gen_Smoother_Cheby;
+        nodal_args_ = ML_Smoother_Arglist_Create(2);
+        edge_args_ = ML_Smoother_Arglist_Create(2);
         // set polynomial degree
         ML_Smoother_Arglist_Set(nodal_args_, 0, &nodal_its);
         edge_smoother=(void *) ML_Gen_Smoother_Cheby;
@@ -2373,6 +2369,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       else if (SubSmootherType == "symmetric Gauss-Seidel") {
         omega = List_.get("coarse: damping factor",1.0);
         nodal_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
+        nodal_args_ = ML_Smoother_Arglist_Create(2);
+        edge_args_ = ML_Smoother_Arglist_Create(2);
         ML_Smoother_Arglist_Set(nodal_args_, 0, &nodal_its);
         ML_Smoother_Arglist_Set(nodal_args_, 1, &omega);
         edge_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
@@ -2398,6 +2396,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
                  MassMatrix_array,
                  edge_smoother, edge_args_, nodal_smoother, nodal_args_,
                  hiptmair_type);
+
+      ML_Smoother_Arglist_Delete(&nodal_args_);
+      ML_Smoother_Arglist_Delete(&edge_args_);
 
 
   } else if( CoarseSolution == "SuperLU" ) 
