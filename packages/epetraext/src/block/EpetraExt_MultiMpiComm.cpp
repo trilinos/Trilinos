@@ -75,6 +75,16 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
        << " and owns " << numTimeStepsOnDomain << " time steps, starting with " 
        <<  firstTimeStepOnDomain << endl;
 }
+
+// This constructor is for just one subdomain, so only adds the info
+// for multiple time steps on the domain. No two-level parallelism.
+MultiMpiComm::MultiMpiComm(Epetra_MpiComm& EpetraMpiComm_, int numTimeSteps_) :
+        Epetra_MpiComm(EpetraMpiComm_), subComm(0), numSubDomains(1),
+        subDomainRank(0), numTimeSteps(numTimeSteps_),
+	numTimeStepsOnDomain(numTimeSteps_), firstTimeStepOnDomain(0)
+{
+   subComm = new Epetra_MpiComm(EpetraMpiComm_);
+}
   
 //Copy Constructor
 MultiMpiComm::MultiMpiComm(const MultiMpiComm &MMC ) :

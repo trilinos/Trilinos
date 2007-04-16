@@ -66,6 +66,17 @@ class MultiMpiComm: public Epetra_MpiComm {
   */
   MultiMpiComm(MPI_Comm globalComm, int subDomainProcs, int numTimeSteps_=-1);
   
+  //! MultiMpiComm constuctor, no parallelism over domains
+  /*! Creates a MultiMpiComm object for the simple case of no parallelism over
+      multiple steps.
+    
+	\param In
+	EpetraMpiComm - Epetra_MpiComm communciator
+	\param In 
+	numTimeSteps - Number of steps 
+  */
+  MultiMpiComm(Epetra_MpiComm& globalComm, int numTimeSteps_);
+
   //! Copy constructor.
   MultiMpiComm( const MultiMpiComm &MMC );
 
