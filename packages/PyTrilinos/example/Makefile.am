@@ -90,7 +90,11 @@ if HAVE_PYTRILINOS_EPETRA
 if HAVE_PYTRILINOS_GALERI
 AZTECOO_EX1 = exAztecOO
 endif
+if HAVE_MPI
+AZTECOO_EX2 = 
+else
 AZTECOO_EX2 = exAztecOO_Operator exAztecOO_RowMatrix exAztecOO_BasicRowMatrix
+endif
 AZTECOO_EXAMPLES = $(AZTECOO_EX1) $(AZTECOO_EX2)
 endif
 endif
@@ -130,11 +134,19 @@ endif
 # ML examples
 if HAVE_PYTRILINOS_ML
 if HAVE_PYTRILINOS_EPETRA
+if HAVE_MPI
+ML_EX1 = exMLAPI_PyMatrix exMLAPI_Smoother
+else
 ML_EX1 = exMLAPI exMLAPI_Iterate exMLAPI_PyMatrix exMLAPI_Smoother
+endif
 if HAVE_PYTRILINOS_AZTECOO
+if HAVE_MPI
+ML_EX2 = 
+else
 ML_EX2 = exMLAPI_AztecOO
+endif
 if HAVE_PYTRILINOS_GALERI
-ML_EX3 = exMLAPI_Simple exMLAPI_AztecOO
+ML_EX3 = exMLAPI_Simple
 endif
 endif
 ML_EXAMPLES = $(ML_EX1) $(ML_EX2) $(ML_EX3)
