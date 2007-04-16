@@ -341,6 +341,7 @@ REMOVE --enable-belos-thyra
 REMOVE --enable-epetra-thyra
 REMOVE --enable-epetraext-thyra
 REMOVE --enable-ifpack-thyra
+REMOVE --enable-ml-thyra
 REMOVE --enable-moocho-thyra
 REMOVE --enable-tpetra-thyra
 DONE
