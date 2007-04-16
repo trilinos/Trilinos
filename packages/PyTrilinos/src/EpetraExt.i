@@ -75,6 +75,11 @@ The most important classes of the EpetraExt module are:
 #include "Epetra_Object.h"
 #include "Epetra_SrcDistObject.h"
 #include "Epetra_DistObject.h"
+#include "Epetra_Comm.h"
+#include "Epetra_SerialComm.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_LocalMap.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_BasicRowMatrix.h"

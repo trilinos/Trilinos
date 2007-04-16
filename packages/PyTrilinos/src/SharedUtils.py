@@ -184,6 +184,7 @@ class SharedTrilinosBuilder:
         package.
         """
         cxx = self.__makeMacros["CXX"]
+        environ = os.path.join(self.__thisDir, "environ.o")
         if self.__packageLower == "noxepetra":
             libVar = "NOX_LIBS"
         else:
@@ -192,16 +193,19 @@ class SharedTrilinosBuilder:
         ldFlags = self.__makeMacros.get(self.__packageUpper + "_PYTHON_LIBS",
                                         default)
         ldFlags = ldFlags.replace(self.__libOption+" ", "")  # Remove -lpackage
-        ldFlags = "-L" + self.__thisDir + " " + ldFlags
+        ldFlags = "-L" + self.__thisDir + " " + environ + " " + ldFlags
         if self.__sysName == "Darwin":
-            linkCmd = "%s -dynamiclib -o %s *.o -single_module %s" % (cxx,
-                                                                      self.__dylibName,
-                                                                      ldFlags)
+            options = "-dynamiclib -undefined dynamic_lookup"
+            linkCmd = "%s %s -o %s *.o -single_module %s" % (cxx,
+                                                             options,
+                                                             self.__dylibName,
+                                                             ldFlags)
         elif self.__sysName == "Linux":
-            linkCmd = "%s -shared -Wl,-soname,%s -o %s *.o %s" % (cxx,
-                                                                  self.__dylibName,
-                                                                  self.__dylibName,
-                                                                  ldFlags)
+            options = "-shared -Wl,-soname,%s" % self.__dylibName
+            linkCmd = "%s %s -o %s *.o %s" % (cxx,
+                                              options,
+                                              self.__dylibName,
+                                              ldFlags)
         else:
             linkCmd = "echo %s not supported" % self.__sysName
         return linkCmd

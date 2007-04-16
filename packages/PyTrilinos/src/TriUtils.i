@@ -29,7 +29,7 @@
 // @HEADER
 
 %module(package = "PyTrilinos",
-	autodoc = "1") TriUtils
+	autodoc = "1"          ) TriUtils
 
 %{
 // System includes
@@ -37,7 +37,15 @@
 #include <sstream>
 #include <vector>
 
+// Configuration includes
+#include "PyTrilinos_config.h"
+
 // Epetra includes
+#include "Epetra_Comm.h"
+#include "Epetra_SerialComm.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_CrsMatrix.h"
@@ -75,15 +83,15 @@ using namespace std;
 __version__ = TriUtils_Version().split()[2]
 %}
 
-///////////////////////////////////
-// Trilinos_Util_Version support //
-///////////////////////////////////
+/////////////////////////////////////////
+// Trilinos_Util_ReadHb2Epetra support //
+/////////////////////////////////////////
 %rename (ReadHB) Trilinos_Util_ReadHb2Epetra;
 %include "Trilinos_Util_ReadHb2Epetra.cpp"
 
-///////////////////////////////////
-// Trilinos_Util_Version support //
-///////////////////////////////////
+////////////////////////////////////////////
+// Trilinos_Util_CrsMatrixGallery support //
+////////////////////////////////////////////
 %ignore Trilinos_Util::CrsMatrixGallery::operator<<(ostream&,
 						    const Trilinos_Util::CrsMatrixGallery&);
 %include "Trilinos_Util_CrsMatrixGallery.h"

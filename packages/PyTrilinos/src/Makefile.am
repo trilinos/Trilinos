@@ -94,7 +94,11 @@ all-local: build
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
+if HAVE_MPI
+SWIG_OPTS = -DHAVE_MPI
+else
 SWIG_OPTS =
+endif
 
 # For the package-enabling macros that follow, I would have preferred
 # all info (interface file names, python proxy file names, wrapper code

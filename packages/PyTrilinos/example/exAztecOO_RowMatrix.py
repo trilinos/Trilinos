@@ -85,7 +85,7 @@ class Laplace1D_Matrix(Epetra.RowMatrix):
         if self.__comm.MyPID() < self.__comm.NumProc()-1:
             self.__y1 = None    # Equivalent to last index
             myIndexes.append(myIndexes[-1]+1)
-        self.__colMap = Epetra.Map(n, myIndexes, 0, self.__comm)
+        self.__colMap = Epetra.Map(-1, myIndexes, 0, self.__comm)
         # Store a label for the row matrix
         self.__label = "1D Laplace Row Matrix"
         # Store the matrix properties
