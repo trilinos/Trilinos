@@ -75,7 +75,7 @@ class MultiMpiComm: public Epetra_MpiComm {
 	\param In 
 	numTimeSteps - Number of steps 
   */
-  MultiMpiComm(Epetra_MpiComm& globalComm, int numTimeSteps_);
+  MultiMpiComm(const EpetraMpiComm_& Comm, int numTimeSteps_);
 
   //! Copy constructor.
   MultiMpiComm( const MultiMpiComm &MMC );
