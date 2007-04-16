@@ -184,7 +184,6 @@ class SharedTrilinosBuilder:
         package.
         """
         cxx = self.__makeMacros["CXX"]
-        environ = os.path.join(self.__thisDir, "environ.o")
         if self.__packageLower == "noxepetra":
             libVar = "NOX_LIBS"
         else:
@@ -193,7 +192,7 @@ class SharedTrilinosBuilder:
         ldFlags = self.__makeMacros.get(self.__packageUpper + "_PYTHON_LIBS",
                                         default)
         ldFlags = ldFlags.replace(self.__libOption+" ", "")  # Remove -lpackage
-        ldFlags = "-L" + self.__thisDir + " " + environ + " " + ldFlags
+        ldFlags = "-L" + self.__thisDir + " " + ldFlags
         if self.__sysName == "Darwin":
             options = "-dynamiclib -undefined dynamic_lookup"
             linkCmd = "%s %s -o %s *.o -single_module %s" % (cxx,
