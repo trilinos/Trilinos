@@ -51,11 +51,12 @@
 
 namespace Belos {
 
-template <class TYPE, class MV, class OP>
+template <class ScalarType, class MV, class OP>
 class StatusTest {
 
  public:
-  //@{ \name Constructors/destructors.
+   //! @name Constructors/destructors
+  //@{ 
 
   //! Constructor
   StatusTest() {};
@@ -64,7 +65,8 @@ class StatusTest {
   virtual ~StatusTest() {};
   //@}
 
-  //@{ \name Status methods
+  //! @name Status methods
+  //@{ 
   //! Check convergence status: Unconverged, Converged, Failed.
   /*! This method checks to see if the convergence criteria are met.  The calling routine may pass in the
     current native residual vector (the one naturally produced as part of the iterative method) or a
@@ -74,13 +76,14 @@ class StatusTest {
 
     \return Belos::StatusType: Unconverged, Converged or Failed.
   */
-  virtual StatusType CheckStatus( IterativeSolver<TYPE,MV,OP>* iSolver ) = 0;
+  virtual StatusType CheckStatus( IterativeSolver<ScalarType,MV,OP>* iSolver ) = 0;
 
   //! Return the result of the most recent CheckStatus call.
   virtual StatusType GetStatus() const = 0;
   //@}
 
-  //@{ \name Reset methods
+  //! @name Reset methods
+  //@{ 
   //! Informs the convergence test that it should reset its internal configuration to the initialized state.
   /*! This is necessary for the case when the status test is being reused by another solver or for another
     linear problem.  The status test may have information that pertains to a particular linear system.  The
@@ -90,7 +93,8 @@ class StatusTest {
   virtual void Reset() = 0;
   //@}
 
-  //@{ \name Attribute methods
+  //! @name Attribute methods
+  //@{ 
 
   //! Indicates if residual vector is required by this convergence test.
   /*! If this method returns true, then the ResidualVector argument to the Converged() method will
@@ -101,7 +105,8 @@ class StatusTest {
   virtual bool ResidualVectorRequired() const = 0;
   //@}
 
-  //@{ \name Print methods
+  //! @name Print methods
+  //@{ 
 
   //! Output formatted description of stopping test to output stream.
   virtual ostream& Print(ostream& os, int indent = 0) const = 0;
@@ -112,6 +117,9 @@ class StatusTest {
     switch (type) {
     case  Failed:
       os << "Failed";
+      break;
+    case  NaN:  
+      os << "NaN";
       break;
     case  Converged:
       os << "Converged";

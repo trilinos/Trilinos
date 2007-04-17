@@ -34,7 +34,13 @@
     \brief Pure virtual base class which describes the basic interface to the iterative solver.
 */
 
-#include "BelosLinearProblem.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_Describable.hpp"
+
+using Teuchos::RefCountPtr;
+using Teuchos::ParameterList;
+
 
 /*! \class Belos::IterativeSolver
   \brief The Belos::IterativeSolver is a templated virtual base class that defines the
@@ -46,21 +52,36 @@
 
 namespace Belos {
 
+template <class ScalarType>
+class OutputManager;
+
 template <class ScalarType, class MV, class OP>
-class IterativeSolver {
-    
+class StatusTest;
+
+template <class ScalarType, class MV, class OP>
+class LinearProblem;
+
+template <class ScalarType, class MV, class OP>
+class IterativeSolver : virtual public Teuchos::Describable {
+ 
+  typedef Teuchos::ScalarTraits<ScalarType> SCT;
+  typedef typename SCT::magnitudeType MagnitudeType;
+  
   public:
 
-  //@{ \name Constructor/Destructor.
+  /** \name Constructor/Destructor. */
+  //@{
 
   //! Default Constructor.
   IterativeSolver(void) {};
 
   //! Destructor.
   virtual ~IterativeSolver(void) {};
+
   //@}
   
-  //@{ \name Accessor methods
+  /** \name Accessor methods */
+  //@{
 
   //! Get the current iteration count for this block of linear systems.
   virtual int GetNumIters() const = 0;
@@ -85,7 +106,7 @@ class IterativeSolver {
       by the calling routine.
     </ol>
   */
-  virtual RefCountPtr<const MV> GetNativeResiduals( std::vector<ScalarType> *normvec ) const = 0;
+  virtual RefCountPtr<const MV> GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const = 0;
 
   //! Get the actual residual vectors for the current block of linear systems.
   /*! This may force the solver to compute a current residual for its linear
@@ -101,10 +122,41 @@ class IterativeSolver {
   /*! \brief Get a constant reference to the current linear problem, 
     	which may include a current solution.
   */
-  virtual LinearProblem<ScalarType,MV,OP>& GetLinearProblem() const = 0;
+  virtual RefCountPtr<LinearProblem<ScalarType,MV,OP> > GetLinearProblem() const = 0;
+
+  virtual RefCountPtr<StatusTest<ScalarType,MV,OP> > GetStatusTest() const = 0;
 
   //@}
 
+  /** \name Reset methods */
+  //@{
+  
+  /*! \brief Reset the solver to its initialized state.
+     This is not a required method for all solvers, but a method that should be
+     implemented by any solver whos object maintains state information.  The reset
+     method is used to reset a solver object so it can then be reused, i.e. in
+     inner-outer iterations.  An optional parameter list can be passed in to change
+     any solver parameters necessary.
+     \note This method can ONLY be expected to reset the solver object's state, 
+     the LinearProblem and StatusTest need to be reset separately.
+  */
+  virtual int Reset( const RefCountPtr<ParameterList>& pl = Teuchos::null,
+                     const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp = Teuchos::null,
+                     const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest = Teuchos::null,
+                     const RefCountPtr<OutputManager<ScalarType> > &om = Teuchos::null )
+  { return 0; }
+    
+  //@}
+
+  /** \name Solve method */
+  //@{
+ 
+  /*! \brief Use the iterative method prescribed by the solver to compute the solution
+      to the linear problem.
+   */
+  virtual void Solve() = 0;
+
+  //@}
 };
 
 } // end Belos namespace

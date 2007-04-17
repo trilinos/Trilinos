@@ -46,12 +46,13 @@
 
 namespace Belos {
 
-template <class TYPE, class MV, class OP>
-class StatusTestMaxIters: public StatusTest<TYPE,MV,OP> {
+template <class ScalarType, class MV, class OP>
+class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP> {
 
  public:
 
-  //@{ \name Constructor/Destructor.
+   //! @name Constructor/Destructor.
+  //@{ 
 
   //! Constructor
   StatusTestMaxIters(int maxIters);
@@ -60,27 +61,30 @@ class StatusTestMaxIters: public StatusTest<TYPE,MV,OP> {
   virtual ~StatusTestMaxIters() {};
   //@}
 
-  //@{ \name Status methods
+  //! @name Status methods
+  //@{ 
 
   //! Check convergence status of the iterative solver: Unconverged, Converged, Failed.
   /*! This method checks to see if the convergence criteria are met using the current information from the 
     iterative solver.
   */
-  StatusType CheckStatus(IterativeSolver<TYPE,MV,OP> *iSolver );
+  StatusType CheckStatus(IterativeSolver<ScalarType,MV,OP> *iSolver );
 
   //! Return the result of the most recent CheckStatus call.
   StatusType GetStatus() const {return(status_);};
 
   //@}
 
-  //@{ \name Reset methods
+  //! @name Reset methods
+  //@{ 
 
   //! Resets the status test to the initial internal state.
   void Reset();
 
   //@}
 
-  //@{ \name Accessor methods
+  //! @name Accessor methods
+  //@{ 
 
   //! Returns the maximum number of iterations set in the constructor.
   int GetMaxIters() const { return(maxIters_); };
@@ -90,13 +94,15 @@ class StatusTestMaxIters: public StatusTest<TYPE,MV,OP> {
 
   //@}
 
-  //@{ \name Attribute methods
+  //! @name Attribute methods
+  //@{ 
 
   //! Indicates if residual vector is required by this convergence test: returns false for this class.
   bool ResidualVectorRequired() const { return(false); } ;
   //@}
 
-  //@{ \name Print methods
+  //! @name Print methods
+  //@{ 
 
   //! Output formatted description of stopping test to output stream
   ostream& Print(ostream& os, int indent = 0) const;
@@ -106,7 +112,8 @@ class StatusTestMaxIters: public StatusTest<TYPE,MV,OP> {
 
 private:
 
-  //@{ \name Private data members.
+  //! @name Private data members.
+  //@{ 
   //! Maximum number of iterations allowed
   int maxIters_;
 
@@ -119,8 +126,8 @@ private:
 
 };
 
-  template <class TYPE, class MV, class OP> 
-  StatusTestMaxIters<TYPE,MV,OP>::StatusTestMaxIters(int maxIters)
+  template <class ScalarType, class MV, class OP> 
+  StatusTestMaxIters<ScalarType,MV,OP>::StatusTestMaxIters(int maxIters)
   {
     if (maxIters < 1)
       maxIters_ = 1;
@@ -131,8 +138,8 @@ private:
     status_ = Unchecked;
   }
   
-  template <class TYPE, class MV, class OP>
-  StatusType StatusTestMaxIters<TYPE,MV,OP>::CheckStatus(IterativeSolver<TYPE,MV,OP> *iSolver )
+  template <class ScalarType, class MV, class OP>
+  StatusType StatusTestMaxIters<ScalarType,MV,OP>::CheckStatus(IterativeSolver<ScalarType,MV,OP> *iSolver )
   {
     status_ = Unconverged;
     nIters_ = iSolver->GetNumIters();
@@ -141,19 +148,19 @@ private:
     return status_;
   }
   
-  template <class TYPE, class MV, class OP>
-  void StatusTestMaxIters<TYPE,MV,OP>::Reset()
+  template <class ScalarType, class MV, class OP>
+  void StatusTestMaxIters<ScalarType,MV,OP>::Reset()
   {
     nIters_ = 0;
     status_ = Unchecked;
   }    
     
-  template <class TYPE, class MV, class OP>
-  ostream& StatusTestMaxIters<TYPE,MV,OP>::Print(ostream& os, int indent) const
+  template <class ScalarType, class MV, class OP>
+  ostream& StatusTestMaxIters<ScalarType,MV,OP>::Print(ostream& os, int indent) const
   {
     for (int j = 0; j < indent; j ++)
       os << ' ';
-    PrintStatus(os, status_);
+    this->PrintStatus(os, status_);
     os << "Number of Iterations = ";
     os << nIters_;
     os << ((nIters_ < maxIters_) ? " < " : ((nIters_ == maxIters_) ? " == " : " > "));

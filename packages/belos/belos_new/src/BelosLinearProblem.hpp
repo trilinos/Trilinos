@@ -36,6 +36,14 @@
 
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+
+using Teuchos::RefCountPtr;
+using Teuchos::rcp;
+using Teuchos::null;
+using Teuchos::rcp_const_cast;
+using Teuchos::ParameterList;
 
 /*! \class Belos::LinearProblem  
   \brief The Belos::LinearProblem class is a wrapper that encapsulates the 
@@ -48,10 +56,11 @@ namespace Belos {
   
   template <class ScalarType, class MV, class OP>
   class LinearProblem {
-    
+   
   public:
     
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+    //@{ 
     //!  Default Constructor.
     /*! Creates an empty Belos::LinearProblem instance. The operator A, left-hand-side X
       and right-hand-side B must be set using the SetOperator(), SetLHS() and SetRHS()
@@ -81,7 +90,8 @@ namespace Belos {
     virtual ~LinearProblem(void);
     //@}
     
-    //@{ \name Set methods
+    //! @name Set methods
+    //@{ 
     
     //! Set Operator A of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
@@ -108,8 +118,11 @@ namespace Belos {
      */
     void SetRightPrec(const RefCountPtr<const OP> &RP) { RP_ = RP; Right_Prec_ = true; };
     
+    //! Set the parameter list for defining the behavior of the linear problem class.
+    void SetParameterList(const RefCountPtr<ParameterList> &PL) { PL_ = PL; };
+
     //! Set the blocksize of the linear problem.  This information is used to set up the linear problem for block solvers.
-    void SetBlockSize(int blocksize) { blocksize_ = blocksize; };
+    void SetBlockSize(int blocksize) { default_blocksize_ = blocksize; blocksize_ = blocksize; };
     
     //! Inform the linear problem that the solver is finished with the current linear system.
     /*! \note This method is to be <b> only </b> used by the solver to inform the linear problem manager that it's
@@ -131,11 +144,13 @@ namespace Belos {
       linear problem from having to recompute the residual vector everytime it's asked for if
       the solution hasn't been updated.
     */
-    void SolutionUpdated( const MV* SolnUpdate = 0 );
+    void SolutionUpdated( const MV* SolnUpdate = 0,
+                          ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() );
     
     //@}
     
-    //@{ \name Reset method
+    //! @name Reset method
+    //@{ 
     
     //! Reset the linear problem manager.
     /*! This is useful for solving the linear system with another right-hand side.  
@@ -144,7 +159,8 @@ namespace Belos {
     void Reset( const RefCountPtr<MV> &newX = null, const RefCountPtr<const MV> &newB = null );
     //@}
     
-    //@{ \name Accessor methods
+    //! @name Accessor methods
+    //@{ 
     
     //! Get a pointer to the operator A.
     RefCountPtr<const OP> GetOperator() const { return(A_); };
@@ -205,10 +221,20 @@ namespace Belos {
     //! Get a pointer to the right preconditioning operator.
     RefCountPtr<const OP> GetRightPrec() const { return(RP_); };
     
-    //! Get the current blocksize of the linear problem manager.
-    int GetBlockSize() const { return( blocksize_ ); };
+    //! Get a pointer to the parameter list.
+    RefCountPtr<ParameterList> GetParameterList() const { return(PL_); };
+
+    //! Get the default blocksize being used by the linear problem.
+    int GetBlockSize() const { return( default_blocksize_ ); };
     
-    //! Get the current number of linear system being solved for.
+    //! Get the current blocksize being used by the linear problem.
+    /*! This may be different from the default blocksize set for the linear problem in the event
+      that the default blocksize doesn't divide evenly into the number of right-hand sides, but
+      it should not be more than the default blocksize.
+    */
+    int GetCurrBlockSize() const { return( blocksize_ ); };
+
+    //! Get the current number of linear systems being solved for.
     /*! Since the block size is independent of the number of right-hand sides, 
       it is important to know how many linear systems
       are being solved for when the status is checked.  This is informative for residual
@@ -217,7 +243,7 @@ namespace Belos {
     */
     int GetNumToSolve() const { return( num_to_solve_ ); };
     
-    //! Get the index of the first vector in the current right-hand side block being solved for.
+    //! Get the 0-based index of the first vector in the current right-hand side block being solved for.
     /*! Since the block size is independent of the number of right-hand sides for
       some solvers (GMRES, CG, etc.), it is important to know which right-hand sides
       are being solved for.  That may mean you need to update the information
@@ -239,7 +265,8 @@ namespace Belos {
     
     //@}
     
-    //@{ \name Apply / Compute methods
+    //! @name Apply / Compute methods
+    //@{ 
     
     //! Apply the composite operator of this linear problem to \c x, returning \c y.
     /*! This application is the composition of the left/right preconditioner and operator.
@@ -316,9 +343,18 @@ namespace Belos {
     //! Right preconditioning operator of linear system
     RefCountPtr<const OP> RP_;
     
-    //! Block size of linear system.
-    int blocksize_;
+    //! Parameter list for defining the behavior of the linear problem class
+    RefCountPtr<ParameterList> PL_;
+
+    //! Timers
+    Teuchos::RefCountPtr<Teuchos::Time> timerOp_, timerPrec_;
+
+    //! Default block size of linear system.
+    int default_blocksize_;
     
+    //! Current block size of linear system.
+    int blocksize_;
+
     //! Number of linear systems that are currently being solver for ( <= blocksize_ )
     int num_to_solve_;
     
@@ -345,6 +381,9 @@ namespace Belos {
   
   template <class ScalarType, class MV, class OP>
   LinearProblem<ScalarType,MV,OP>::LinearProblem(void) : 
+    timerOp_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Op*x")),
+    timerPrec_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Prec*x")),
+    default_blocksize_(1),
     blocksize_(1),
     num_to_solve_(0),
     rhs_index_(0),  
@@ -367,6 +406,9 @@ namespace Belos {
     A_(A),
     X_(X),
     B_(B),
+    timerOp_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Op*x")),
+    timerPrec_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Prec*x")),
+    default_blocksize_(1),
     blocksize_(1),
     num_to_solve_(1),
     rhs_index_(0),
@@ -393,6 +435,10 @@ namespace Belos {
     R0_(Problem.R0_),
     LP_(Problem.LP_),
     RP_(Problem.RP_),
+    PL_(Problem.PL_),
+    timerOp_(Problem.timerOp_),
+    timerPrec_(Problem.timerPrec_),
+    default_blocksize_(Problem.default_blocksize_),
     blocksize_(Problem.blocksize_),
     num_to_solve_(Problem.num_to_solve_),
     rhs_index_(Problem.rhs_index_),
@@ -434,6 +480,12 @@ namespace Belos {
     std::vector<int> index( num_to_solve_ );
     for ( i=0; i<num_to_solve_; i++ ) { index[i] = rhs_index_ + i; }
     //
+/*    if ( num_to_solve_ < default_blocksize_ )
+      blocksize_ = num_to_solve_;
+    else
+      blocksize_ = default_blocksize_;
+*/
+    //
     if ( num_to_solve_ < blocksize_ ) 
       {
 	std::vector<int> index2(num_to_solve_);
@@ -462,7 +514,7 @@ namespace Belos {
 	index.resize( num_to_solve_ );
 	for ( i=0; i<num_to_solve_; i++ ) { index[i] = rhs_index_ + i; }
 	CurX_ = MVT::CloneView( *X_, index );
-	CurB_ = rcp_const_cast< MV>(MVT::CloneView( *B_, index ));
+	CurB_ = rcp_const_cast<MV>(MVT::CloneView( *B_, index ));
 	R_ = MVT::Clone( *X_, num_to_solve_ );
 	//
       }
@@ -519,7 +571,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::SolutionUpdated( const MV* SolnUpdate )
+  void LinearProblem<ScalarType,MV,OP>::SolutionUpdated( const MV* SolnUpdate, ScalarType scale )
   { 
     if (SolnUpdate) {
       if (Right_Prec_) {
@@ -527,9 +579,9 @@ namespace Belos {
 	// Apply the right preconditioner before computing the current solution.
 	RefCountPtr<MV> TrueUpdate = MVT::Clone( *SolnUpdate, MVT::GetNumberVecs( *SolnUpdate ) );
 	OPT::Apply( *RP_, *SolnUpdate, *TrueUpdate ); 
-	MVT::MvAddMv( 1.0, *CurX_, 1.0, *TrueUpdate, *CurX_ ); 
+	MVT::MvAddMv( 1.0, *CurX_, scale, *TrueUpdate, *CurX_ ); 
       } else {
-	MVT::MvAddMv( 1.0, *CurX_, 1.0, *SolnUpdate, *CurX_ ); 
+	MVT::MvAddMv( 1.0, *CurX_, scale, *SolnUpdate, *CurX_ ); 
       }
     }
     solutionUpdated_ = true; 
@@ -616,31 +668,55 @@ namespace Belos {
     //
     // No preconditioning.
     // 
-    if (!Left_Prec_ && !Right_Prec_){ OPT::Apply( *A_, x, y );}
+    if (!Left_Prec_ && !Right_Prec_){ 
+      Teuchos::TimeMonitor OpTimer(*timerOp_);
+      OPT::Apply( *A_, x, y );
+    }
     //
     // Preconditioning is being done on both sides
     //
     else if( Left_Prec_ && Right_Prec_ ) 
       {
-	OPT::Apply( *RP_, x, y );   
-	OPT::Apply( *A_, y, *ytemp );
-	OPT::Apply( *LP_, *ytemp, y );
+        {
+          Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+	  OPT::Apply( *RP_, x, y );   
+        }
+        {
+          Teuchos::TimeMonitor OpTimer(*timerOp_);
+	  OPT::Apply( *A_, y, *ytemp );
+        }
+        {
+          Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+	  OPT::Apply( *LP_, *ytemp, y );
+        }
       }
     //
     // Preconditioning is only being done on the left side
     //
     else if( Left_Prec_ ) 
       {
-	OPT::Apply( *A_, x, *ytemp );
-	OPT::Apply( *LP_, *ytemp, y );
+        {
+          Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+	  OPT::Apply( *A_, x, *ytemp );
+        }
+        {
+          Teuchos::TimeMonitor OpTimer(*timerOp_);
+	  OPT::Apply( *LP_, *ytemp, y );
+        }
       }
     //
     // Preconditioning is only being done on the right side
     //
     else 
       {
-	OPT::Apply( *RP_, x, *ytemp );
-	OPT::Apply( *A_, *ytemp, y );
+        {
+          Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+	  OPT::Apply( *RP_, x, *ytemp );
+        }
+        {
+          Teuchos::TimeMonitor OpTimer(*timerOp_);
+      	  OPT::Apply( *A_, *ytemp, y );
+        }
       }  
     return Ok;
   }
@@ -648,8 +724,10 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   ReturnType LinearProblem<ScalarType,MV,OP>::ApplyOp( const MV& x, MV& y )
   {
-    if (A_.get())
+    if (A_.get()) {
+      Teuchos::TimeMonitor OpTimer(*timerOp_);
       return ( OPT::Apply( *A_,x, y) );   
+    }
     else
       return Undefined;
   }
@@ -657,8 +735,10 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   ReturnType LinearProblem<ScalarType,MV,OP>::ApplyLeftPrec( const MV& x, MV& y )
   {
-    if (Left_Prec_)
+    if (Left_Prec_) {
+      Teuchos::TimeMonitor PrecTimer(*timerPrec_);
       return ( OPT::Apply( *LP_,x, y) );
+    }
     else 
       return Undefined;
   }
@@ -666,8 +746,10 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   ReturnType LinearProblem<ScalarType,MV,OP>::ApplyRightPrec( const MV& x, MV& y )
   {
-    if (Right_Prec_)
+    if (Right_Prec_) {
+      Teuchos::TimeMonitor PrecTimer(*timerPrec_);
       return ( OPT::Apply( *RP_,x, y) );
+    }
     else
       return Undefined;
   }

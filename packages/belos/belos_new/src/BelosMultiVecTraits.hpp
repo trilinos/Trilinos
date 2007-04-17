@@ -82,7 +82,7 @@ namespace Belos {
     static void MvDot ( const MV& mv, const MV& A, std::vector<ScalarType>* b ) 
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void MvNorm( const MV& mv, std::vector<ScalarType>* normvec, NormType type = TwoNorm )
+    static void MvNorm( const MV& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec, NormType type = TwoNorm )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
     static void SetBlock( const MV& A, const std::vector<int>& index, MV& mv )

@@ -29,60 +29,119 @@
 #ifndef BELOS_TYPES_HPP
 #define BELOS_TYPES_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
-
-/*!	\file BelosTypes.hpp
-	\brief Collection of the enumerated lists used in Belos.
+/*!	
+  \file BelosTypes.hpp
+  \brief Collection of types and exceptions used within the Belos solvers.
 */
 
 
 namespace Belos {
+ 
+  //! @name Belos Exceptions
+  //@{
 
-/*!
-	\enum Belos::ETrans
-	\brief Enumerated list for describing the application of an operator.
-*/
-	enum ETrans     {	NOTRANS = 0, /*!< The operator should not be transposed during this application */
-				TRANS = 1 /*!< The operator should be transposed during this application */
-			};
-
-/*! 	\enum Belos::NormType
-	\brief Enumerated list for describing the multivector norm type.
-*/
-  	enum NormType {   OneNorm,       /*!< Compute the one-norm \f$\sum_{i=1}^{n}(|x_i w_i|)\f$ for each vector. */
-		    TwoNorm,       /*!< Compute the two-norm *\f$\sqrt(\sum_{i=1}^{n}((x_i w_i)^2)\f$ for each vector. */
-		    InfNorm       /*!< Compute the infinity-norm \f$(\max_{i=1}^{n}\{|x_i w_i|\})\f$ for each vector. */
+  /*! \class BelosError 
+      \brief An exception class parent to all Belos exceptions.
+   */
+  class BelosError: public std::logic_error {
+    public: BelosError(const std::string& what_arg) : std::logic_error(what_arg) {}
   };
 
-/*!	\enum Belos::ReturnType
-	\brief Any method in the Belos abstract interfaces may fail or not be defined. 
-	This information needs to be passed back to the algorithm or user.  This will be used 
-	by the algorithm or user to decide what should be done.
-*/
+  //@}
 
-	enum ReturnType {		Ok, 		/*!< Computation completed sucessfully */
-					Undefined, 	/*!< This operation is not defined */
-					Error		/*!< This operator returned an error */
-	};
-
-/*! \enum Belos::StatusType 
+ 
+  /*!
+    \enum Belos::ETrans
+    \brief Enumerated list for describing the application of an operator.
+  */
+  enum ETrans     {	NOTRANS = 0,  /*!< The operator should not be transposed during this application */
+			TRANS = 1,    /*!< The operator should be transposed during this application */
+			CONJTRANS = 2 /*!< The operator should be transposed and conjugated during this application */
+  };
+  
+  /*! 	
+    \enum Belos::NormType
+    \brief Enumerated list for describing the multivector norm type.
+  */
+  enum NormType {   OneNorm,       /*!< Compute the one-norm \f$\sum_{i=1}^{n}(|x_i w_i|)\f$ for each vector. */
+		    TwoNorm,       /*!< Compute the two-norm *\f$\sqrt(\sum_{i=1}^{n}((x_i w_i)^2)\f$ for each vector. */
+		    InfNorm        /*!< Compute the infinity-norm \f$(\max_{i=1}^{n}\{|x_i w_i|\})\f$ for each vector. */
+  };
+  
+  /*!	
+    \enum Belos::ReturnType
+    \brief Any method in the Belos abstract interfaces may fail or not be defined. 
+    This information needs to be passed back to the algorithm or user.  This will be used 
+    by the algorithm or user to decide what should be done.
+  */
+  
+  enum ReturnType {		Ok, 		/*!< Computation completed sucessfully */
+				Undefined, 	/*!< This operation is not defined */
+				Error		/*!< This operator returned an error */
+  };
+  
+  /*! 
+    \enum Belos::StatusType 
     When the CheckStatus and GetStatus methods of Belos::StatusTest objects are called a 
     variable of type Belos::StatusType is returned.
-*/
+  */
+  
+  enum StatusType { 	Unchecked = 2,   /*!< Initial state of status */
+			Unconverged = 1, /*!< Convergence is not reached. */
+			Converged = 0,   /*!< Convergence is reached. */
+			Failed = -1,     /*!< Some failure occured.  Should stop */
+			NaN = -2         /*!< Result from test contains a NaN value.  Should stop */
+			
+  };
 
-	enum StatusType { 	Unchecked = 2,   /*!< Initial state of status */
-			  	Unconverged = 1, /*!< Convergence is not reached. */
-				Converged = 0,   /*!< Convergence is reached. */
-				Failed = -1,      /*!< Some failure occured.  Should stop */
-			  	NaN = -2         /*!< Result from test contains a NaN value.  Should stop */
-			  
-	};
-
-
-  using Teuchos::RefCountPtr;
-  using Teuchos::rcp;
-  using Teuchos::rcp_const_cast;
-  const Teuchos::ENull null = Teuchos::null;
+  /*!
+    Return a string name for a StatusType object.
+  */
+  inline
+  const char* toString(const StatusType status)
+  {
+    switch(status) {
+      case Unchecked:
+        return "Unchecked";
+      case Unconverged:
+        return "Unconverged";
+      case Converged:
+        return "Converged";
+      case Failed:
+        return "Failed";
+      case NaN:
+        return "NaN";
+      default:
+        TEST_FOR_EXCEPT(true);
+    }
+    return NULL; // Should never be called!
+  }
+  
+  /*! 
+    \enum Belos::ConjType
+    When the MvTransMv and MvDot methods of Belos::MultiVec are called, the require the knowledge of
+    whether the conjugate of the transpose should be computed.
+  */
+  
+  enum ConjType {
+    NO_CONJ,      /*!< Not conjugated */
+    CONJ          /*!< Conjugated */
+  };
+  
+  /*! \enum MsgType
+    \brief Enumerated list of available message types recognized by the linear solvers.
+  */
+  
+  enum MsgType 
+    {
+      Errors= 0,                  /*!< Errors [ always printed ] */
+      Warnings = 0x1,             /*!< Internal warnings */
+      IterationDetails = 0x2,     /*!< Approximate/exact residuals */
+      OrthoDetails = 0x4,         /*!< Orthogonalization/orthonormalization details */
+      FinalSummary = 0x8,         /*!< Final computational summary */
+      TimingDetails = 0x10,       /*!< Timing details */
+      Debug = 0x20                /*!< Debugging information */
+    };
 
 } // end Belos namespace
 

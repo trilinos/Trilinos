@@ -34,6 +34,7 @@
 	required by the iterative linear solver.
 */
 
+#include "BelosOperatorTraits.hpp"
 #include "BelosMultiVec.hpp"
 #include "BelosTypes.hpp"
 #include "BelosConfigDefs.hpp"
@@ -60,7 +61,8 @@ namespace Belos {
   class Operator {
   public:
     
-    //@{ \name Constructor/Destructor.
+    //! @name Constructor/Destructor
+    //@{ 
     
     //! Default constructor
     Operator() {};
@@ -69,7 +71,8 @@ namespace Belos {
     virtual ~Operator() {};
     //@}
     
-    //@{ \name Operator application method.
+    //! @name Operator application method
+    //@{ 
     
     /*! \brief This routine takes the Belos::MultiVec \c x and applies the operator
       to it resulting in the Belos::MultiVec \c y, which is returned.
@@ -85,6 +88,13 @@ namespace Belos {
   //
   ////////////////////////////////////////////////////////////////////  
   
+  /*!  \brief Template specialization of Belos::OperatorTraits class using Belos::Operator and Belos::MultiVec virtual
+    base classes.
+    
+    Any class that inherits from Belos::Operator will be accepted by the Belos templated solvers due to this
+    interface to the Belos::OperatorTraits class.
+  */
+
   template <class ScalarType> 
   class OperatorTraits < ScalarType, MultiVec<ScalarType>, Operator<ScalarType> > 
   {

@@ -50,7 +50,7 @@ namespace Belos {
   public:
     // constructors
     EpetraMultiVec(const Epetra_BlockMap& Map, double * array, const int numvecs, const int stride=0);
-    EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs);
+    EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs, bool zeroOut=true);
     EpetraMultiVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, const std::vector<int>& index);
     EpetraMultiVec& operator=(const EpetraMultiVec& pv) { Epetra_MultiVector::operator=(pv); return *this; }
     EpetraMultiVec(const Epetra_MultiVector & P_vec);
@@ -61,7 +61,7 @@ namespace Belos {
     //  the following is a virtual copy constructor returning
     //  a pointer to the pure virtual class. vector values are
     //  not copied; instead a new MultiVec is created containing
-    //  a non-zero amount of columns.
+    //  a non-zero amount of columns.  
     //
     MultiVec<double> * Clone ( const int numvecs ) const;
     //
@@ -125,192 +125,10 @@ namespace Belos {
     //
     // print (*this)
     //
-    void MvPrint() const { cout<< *this << endl; };
+    void MvPrint( ostream& os ) const { os << *this << endl; };
   private:
   };
-  //-------------------------------------------------------------
   
-  //////////////////////////////////////////////////////////////////////
-  // Construction/Destruction
-  //////////////////////////////////////////////////////////////////////
-  
-  
-  EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map, double * array, 
-				 const int numvecs, const int stride)
-    : Epetra_MultiVector(Copy, Map, array, stride, numvecs) 
-  {
-  }
-  
-  
-  EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs)
-    : Epetra_MultiVector(Map, numvecs) 
-  {
-  }
-  
-  
-  EpetraMultiVec::EpetraMultiVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, 				
-				 const std::vector<int>& index )
-    : Epetra_MultiVector(CV, P_vec, &(const_cast<std::vector<int> &>(index))[0], index.size())
-  {
-  }
-  
-  
-  EpetraMultiVec::EpetraMultiVec(const Epetra_MultiVector& P_vec)
-    : Epetra_MultiVector(P_vec) 
-  {
-  }
-  
-  
-  EpetraMultiVec::~EpetraMultiVec() 
-  {
-  }
-  //
-  //  member functions inherited from Belos::MultiVec
-  //
-  //
-  //  Simulating a virtual copy constructor. If we could rely on the co-variance
-  //  of virtual functions, we could return a pointer to EpetraMultiVec
-  //  (the derived type) instead of a pointer to the pure virtual base class.
-  //
-  
-  MultiVec<double>* EpetraMultiVec::Clone ( const int numvecs ) const
-  {
-    EpetraMultiVec * ptr_apv = new EpetraMultiVec(Map(), numvecs);
-    return ptr_apv; // safe upcast.
-  }
-  //
-  //  the following is a virtual copy constructor returning
-  //  a pointer to the pure virtual class. vector values are
-  //  copied.
-  //
-  
-  MultiVec<double>* EpetraMultiVec::CloneCopy() const
-  {
-    EpetraMultiVec *ptr_apv = new EpetraMultiVec(*this);
-    return ptr_apv; // safe upcast
-  }
-  
-  
-  MultiVec<double>* EpetraMultiVec::CloneCopy ( const std::vector<int>& index ) const
-  {
-    EpetraMultiVec * ptr_apv = new EpetraMultiVec(Copy, *this, index);
-    return ptr_apv; // safe upcast.
-  }
-  
-  
-  MultiVec<double>* EpetraMultiVec::CloneView ( const std::vector<int>& index ) 
-  {
-    EpetraMultiVec * ptr_apv = new EpetraMultiVec(View, *this, index);
-    return ptr_apv; // safe upcast.
-  }
-  
-  
-  void EpetraMultiVec::SetBlock( const MultiVec<double>& A, const std::vector<int>& index ) 
-  {	
-    EpetraMultiVec temp_vec(View, *this, index);
-
-    int numvecs = index.size();
-    if ( A.GetNumberVecs() != numvecs ) {
-      std::vector<int> index2( numvecs );
-      for(int i=0; i<numvecs; i++)
-	index2[i] = i;
-      EpetraMultiVec *tmp_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(tmp_vec!=NULL);
-      EpetraMultiVec A_vec(View, *tmp_vec, index2);
-      temp_vec.MvAddMv( 1.0, A_vec, 0.0, A_vec );
-    }
-    else {
-      temp_vec.MvAddMv( 1.0, A, 0.0, A );
-    }
-  }								
-
-  //-------------------------------------------------------------
-  //
-  // *this <- alpha * A * B + beta * (*this)
-  //
-  //-------------------------------------------------------------
-  
-  void EpetraMultiVec::MvTimesMatAddMv ( const double alpha, const MultiVec<double>& A, 
-					 const Teuchos::SerialDenseMatrix<int,double>& B, const double beta ) 
-  {
-    Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
-    Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
-    
-    EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
-    
-    assert( Multiply( 'N', 'N', alpha, *A_vec, B_Pvec, beta ) == 0 );
-  }
-
-  //-------------------------------------------------------------
-  //
-  // *this <- alpha * A + beta * B
-  //
-  //-------------------------------------------------------------
-  
-  void EpetraMultiVec::MvAddMv ( const double alpha , const MultiVec<double>& A, 
-				 const double beta, const MultiVec<double>& B) 
-  {
-    EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
-    EpetraMultiVec *B_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(B)); assert(B_vec!=NULL);
-    
-    assert ( Update( alpha, *A_vec, beta, *B_vec, 0.0 ) == 0 ); 
-  }
-
-  //-------------------------------------------------------------
-  //
-  // dense B <- alpha * A^T * (*this)
-  //
-  //-------------------------------------------------------------
-  
-  void EpetraMultiVec::MvTransMv ( const double alpha, const MultiVec<double>& A,
-				   Teuchos::SerialDenseMatrix<int,double>& B) const
-  {    
-    EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A));
-    
-    if (A_vec) {
-      Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
-      Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
-      
-      assert ( B_Pvec.Multiply( 'T', 'N', alpha, *A_vec, *this, 0.0 ) == 0 ); 
-    }
-  }
-  
-  //-------------------------------------------------------------
-  //
-  // b[i] = A[i]^T * this[i]
-  // 
-  //-------------------------------------------------------------
-  
-  void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>* b ) const
-  {
-    EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
-    if (A_vec && b && ( b->size() >= A_vec->NumVectors() ) ) {
-      assert( this->Dot( *A_vec, &(*b)[0] ) == 0 );
-    }
-  }
-
-  //-------------------------------------------------------------
-  //
-  // alpha[i] = norm of i-th column of (*this)
-  //
-  //-------------------------------------------------------------
-  
-  void EpetraMultiVec::MvNorm ( std::vector<double>* normvec, NormType norm_type ) const {
-    if (normvec && (normvec->size() >= GetNumberVecs())) {
-      switch( norm_type ) {
-      case ( OneNorm ) :
-	assert( Norm1(&(*normvec)[0]) == 0 );
-	break;
-      case ( TwoNorm ) :
-	assert( Norm2(&(*normvec)[0]) == 0 );
-	break;
-      case ( InfNorm ) :	
-	assert( NormInf(&(*normvec)[0]) == 0 );
-	break;
-      default:
-	break;
-      }
-    }
-  }
   
   ///////////////////////////////////////////////////////////////
   //--------template class BelosEpetraOp---------------------
@@ -323,104 +141,57 @@ namespace Belos {
   private:
     Teuchos::RefCountPtr<Epetra_Operator> Epetra_Op;
   };
-  //-------------------------------------------------------------
-  //
-  // implementation of the BelosEpetraOp class.
-  //
-  ////////////////////////////////////////////////////////////////////
-  //
-  // BelosOperator constructors
-  //
-  
-  EpetraOp::EpetraOp( const Teuchos::RefCountPtr<Epetra_Operator> &Op ) 
-    : Epetra_Op(Op)
-  {
-  }
-  
-  //
-  // BelosOperator applications
-  //
-  ReturnType EpetraOp::Apply ( const MultiVec<double>& x, 
-			       MultiVec<double>& y, ETrans trans ) const {
-    int info=0;
-    MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
-    Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
-    Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
-    //
-    assert( vec_x!=NULL && vec_y!=NULL );
-    //
-    // Set the operator to apply the transpose if that is requested.
-    // (TO DO:  insert a throw if the application returns a nonzero )
-    //
-    if ( trans ) { 
-      info = Epetra_Op->SetUseTranspose( true );
-      if (info != 0) { return Undefined; }
-    }
-    info = Epetra_Op->Apply( *vec_x, *vec_y );
-    
-    if ( trans ) { 
-      info = Epetra_Op->SetUseTranspose( false );
-      if (info != 0) { return Undefined; }
-    }
-    
-    if (info != 0) { return Error; }
-    return Ok;	
-  }
   
   ///////////////////////////////////////////////////////////////
   //--------template class BelosEpetraPrecOp---------------------
   
-  class EpetraPrecOp : public virtual Operator<double> {
+  class EpetraPrecOp : public virtual Operator<double>, public virtual Epetra_Operator {
   public:
+    //! Basic constructor for applying the operator as its inverse.
     EpetraPrecOp( const Teuchos::RefCountPtr<Epetra_Operator> &Op );
-    ~EpetraPrecOp() {};
+
+    //! Destructor
+    virtual ~EpetraPrecOp() {};
+
+    //! Apply method for a Belos::MultiVec [inherited from Belos::Operator class]
     ReturnType Apply ( const MultiVec<double>& x, MultiVec<double>& y, ETrans trans=NOTRANS ) const;
+
+    //! Apply method for an Epetra_MultiVector [inherited from Epetra_Operator class]
+    int Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
+
+    //! Apply inverse method for an Epetra_MultiVector [inherited from Epetra_Operator class]
+    int ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
+
+    //! Returns a character string describing the operator.
+    const char* Label() const { return "Epetra_Operator applying A^{-1} as A"; };
+
+    //! Returns the current UseTranspose setting [always false for this operator].
+    bool UseTranspose() const { return (false); };
+
+    //! If set true, the transpose of this operator will be applied [not functional for this operator].
+    int SetUseTranspose(bool UseTranspose) { return 0; };
+
+    //! Returns true if this object can provide an approximate inf-norm [always false for this operator].
+    bool HasNormInf() const { return (false); };
+
+    //! Returns the infinity norm of the global matrix [not functional for this operator].
+    double NormInf() const  { return (-1.0); };
+
+    //! Returns the Epetra_Comm communicator associated with this operator.
+    const Epetra_Comm& Comm() const { return Epetra_Op->Comm(); };
+
+    //! Returns the Epetra_Map object associated with the domain of this operator.
+    const Epetra_Map& OperatorDomainMap() const { return Epetra_Op->OperatorDomainMap(); };
+
+    //! Returns the Epetra_Map object associated with the range of this operator.
+    const Epetra_Map& OperatorRangeMap() const { return Epetra_Op->OperatorRangeMap(); };
+    
   private:
+
     Teuchos::RefCountPtr<Epetra_Operator> Epetra_Op;
+
   };
-  //-------------------------------------------------------------
-  //
-  // implementation of the BelosEpetraPrecOp class.
-  //
-  ////////////////////////////////////////////////////////////////////
-  //
-  // BelosOperator constructors
-  //
-  
-  EpetraPrecOp::EpetraPrecOp( const Teuchos::RefCountPtr<Epetra_Operator> &Op ) 
-    : Epetra_Op(Op)
-  {
-  }
-  
-  //
-  // BelosOperator applications
-  //
-  ReturnType EpetraPrecOp::Apply ( const MultiVec<double>& x, 
-			           MultiVec<double>& y, ETrans trans ) const {
-    int info=0;
-    MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
-    Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
-    Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
-    //
-    assert( vec_x!=NULL && vec_y!=NULL );
-    //
-    // Set the operator to apply the transpose if that is requested.
-    // (TO DO:  insert a throw if the application returns a nonzero )
-    //
-    if ( trans ) { 
-      info = Epetra_Op->SetUseTranspose( true );
-      if (info != 0) { return Undefined; }
-    }
-    info = Epetra_Op->ApplyInverse( *vec_x, *vec_y );
-    
-    if ( trans ) { 
-      info = Epetra_Op->SetUseTranspose( false );
-      if (info != 0) { return Undefined; }
-    }
-    
-    if (info != 0) { return Error; }
-    return Ok;	
-  }
+
   
   ////////////////////////////////////////////////////////////////////
   //
@@ -434,7 +205,7 @@ namespace Belos {
   public:
     ///
     static Teuchos::RefCountPtr<Epetra_MultiVector> Clone( const Epetra_MultiVector& mv, const int numvecs )
-    { return Teuchos::rcp( new Epetra_MultiVector(mv.Map(), numvecs) ); }
+    { return Teuchos::rcp( new Epetra_MultiVector(mv.Map(), numvecs, false) ); }
     ///
     static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv )
     { return Teuchos::rcp( new Epetra_MultiVector( mv ) ); }
@@ -493,7 +264,7 @@ namespace Belos {
     ///
     static void MvNorm( const Epetra_MultiVector& mv, std::vector<double>* normvec, NormType type = TwoNorm )
     { 
-      if (normvec && (normvec->size() >= mv.NumVectors())) {
+      if (normvec && ((int)normvec->size() >= mv.NumVectors())) {
 	switch( type ) {
 	case ( OneNorm ) :
 	  assert( mv.Norm1(&(*normvec)[0]) == 0 );
