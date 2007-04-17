@@ -54,44 +54,71 @@
 #include "Ifpack_CrsRiluk.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
-#include "Teuchos_Time.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 int main(int argc, char *argv[]) {
+  //
 #ifdef EPETRA_MPI	
   MPI_Init(&argc,&argv);
   Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
 #endif	
   //
+  typedef double                            ST;
+  typedef Teuchos::ScalarTraits<ST>        SCT;
+  typedef SCT::magnitudeType                MT;
+  typedef Belos::MultiVec<ST>               MV;
+  typedef Belos::Operator<ST>               OP;
+  typedef Belos::MultiVecTraits<ST,MV>     MVT;
+  typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
+
   using Teuchos::ParameterList;
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
-  Teuchos::Time timer("Belos Preconditioned Gmres");
+
+  bool verbose = false, proc_verbose = false;
+  int blocksize = 1;
+  int numrhs = 1;
+  int numrestarts = 25; // number of restarts allowed 
+  std::string filename("orsirr1.hb");
+  MT tol = 1.0e-5;  // relative residual tolerance
+
+  Teuchos::CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+  cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
+  cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
+  cmdp.setOption("num-restarts",&numrestarts,"Number of restarts allowed for GMRES solver.");
+  cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
+  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+    return -1;
+  }
   //
   // Get the problem
   //
-  RefCountPtr<Epetra_CrsMatrix> A;
   int MyPID;
-  bool verbose;
-  int return_val =Belos::createEpetraProblem(argc,argv,NULL,&A,NULL,NULL,&MyPID,&verbose);
+  RefCountPtr<Epetra_CrsMatrix> A;
+  int return_val =Belos::createEpetraProblem(filename,NULL,&A,NULL,NULL,&MyPID);
   if(return_val != 0) return return_val;
+  const Epetra_Map &Map = A->RowMap();
+  proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
   //
   // *****Construct the Preconditioner*****
   //
-  if (verbose) cout << endl << endl;
-  if (verbose) cout << "Constructing ILU preconditioner" << endl;
+  if (proc_verbose) cout << endl << endl;
+  if (proc_verbose) cout << "Constructing ILU preconditioner" << endl;
   int Lfill = 0;
   // if (argc > 2) Lfill = atoi(argv[2]);
-  if (verbose) cout << "Using Lfill = " << Lfill << endl;
+  if (proc_verbose) cout << "Using Lfill = " << Lfill << endl;
   int Overlap = 0;
   // if (argc > 3) Overlap = atoi(argv[3]);
-  if (verbose) cout << "Using Level Overlap = " << Overlap << endl;
+  if (proc_verbose) cout << "Using Level Overlap = " << Overlap << endl;
   double Athresh = 0.0;
   // if (argc > 4) Athresh = atof(argv[4]);
-  if (verbose) cout << "Using Absolute Threshold Value of " << Athresh << endl;
+  if (proc_verbose) cout << "Using Absolute Threshold Value of " << Athresh << endl;
   double Rthresh = 1.0;
   // if (argc >5) Rthresh = atof(argv[5]);
-  if (verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
+  if (proc_verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
   //
   Teuchos::RefCountPtr<Ifpack_IlukGraph> ilukGraph;
   Teuchos::RefCountPtr<Ifpack_CrsRiluk> ilukFactors;
@@ -108,17 +135,12 @@ int main(int argc, char *argv[]) {
   bool transA = false;
   double Cond_Est;
   ilukFactors->Condest(transA, Cond_Est);
-  if (verbose) {
+  if (proc_verbose) {
     cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
     cout << endl;
   }
   //
   // Solve using Belos
-  //
-  typedef Belos::Operator<double> OP;
-  typedef Belos::MultiVec<double> MV;
-  typedef Belos::MultiVecTraits<double,MV> MVT;
-  typedef Belos::OperatorTraits<double,MV,OP> OPT;
   //
   // Construct a Belos::Operator instance through the Epetra interface.
   //
@@ -131,14 +153,9 @@ int main(int argc, char *argv[]) {
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
   //
-  const Epetra_Map &Map = A->RowMap();
   const int NumGlobalElements = Map.NumGlobalElements();
-  int numrhs = 15;  // total number of right-hand sides to solve for
-  int block = 10;  // blocksize used by solver
-  int numrestarts = 20; // number of restarts allowed 
-  int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
-  int length = 15;
-  double tol = 1.0e-6;  // relative residual tolerance
+  int maxits = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
+  int length = 25;
   //
   ParameterList My_PL;
   My_PL.set( "Length", length );
@@ -153,7 +170,7 @@ int main(int argc, char *argv[]) {
     My_LP( rcp(&Amat,false), rcp(&soln,false), rcp(&rhs,false) );
   My_LP.SetRightPrec( rcp(&Prec,false) );
   //My_LP.SetLeftPrec( rcp(&Prec,false) );
-  My_LP.SetBlockSize( block );
+  My_LP.SetBlockSize( blocksize );
   
   typedef Belos::StatusTestCombo<double,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestResNorm<double,MV,OP>  StatusTestResNorm_t;
@@ -169,7 +186,8 @@ int main(int argc, char *argv[]) {
   
   Belos::OutputManager<double> My_OM( MyPID );
   if (verbose)
-    My_OM.SetVerbosity( 2 );
+    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings		
+			+ Belos::TimingDetails + Belos::FinalSummary );
   //
   // *******************************************************************
   // *************Start the block Gmres iteration*************************
@@ -180,30 +198,33 @@ int main(int argc, char *argv[]) {
   //
   // **********Print out information about problem*******************
   //
-  if (verbose) {
+  if (proc_verbose) {
     cout << endl << endl;
     cout << "Dimension of matrix: " << NumGlobalElements << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
-    cout << "Block size used by solver: " << block << endl;
+    cout << "Block size used by solver: " << blocksize << endl;
     cout << "Number of restarts allowed: " << numrestarts << endl;
-    cout << "Length of block Arnoldi factorization: " << length*block << " ( "<< length << " blocks ) " <<endl;
+    cout << "Length of block Arnoldi factorization: " << length*blocksize << " ( "<< length << " blocks ) " <<endl;
     cout << "Max number of Gmres iterations: " << maxits << endl; 
     cout << "Relative residual tolerance: " << tol << endl;
     cout << endl;
   }
   //
   //
-  if (verbose) {
+  if (proc_verbose) {
     cout << endl << endl;
     cout << "Running Block Gmres -- please wait" << endl;
-    cout << (numrhs+block-1)/block 
+    cout << (numrhs+blocksize-1)/blocksize 
 	 << " pass(es) through the solver required to solve for " << endl; 
-    cout << numrhs << " right-hand side(s) -- using a block size of " << block
+    cout << numrhs << " right-hand side(s) -- using a block size of " << blocksize
 	 << endl << endl;
   }
-  timer.start(true);
+
+  //
+  // Perform solve.
+  //
   MyBlockGmres.Solve();
-  timer.stop();
+
   //
   // Compute actual residuals.
   //
@@ -214,22 +235,23 @@ int main(int argc, char *argv[]) {
   MVT::MvAddMv( -1.0, resid, 1.0, rhs, resid ); 
   MVT::MvNorm( resid, &actual_resids );
   MVT::MvNorm( rhs, &rhs_norm );
-  if (verbose) {
+  if (proc_verbose) {
     cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
     for ( int i=0; i<numrhs; i++) {
       cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
     }
   }
 
-  if (verbose) {
-    cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
+  if (My_Test.GetStatus()!=Belos::Converged) {
+        if (proc_verbose)
+                cout << "End Result: TEST FAILED" << endl;
+        return -1;
   }
-  
-  if (My_Test.GetStatus() == Belos::Converged) {
-    cout<< "***************** The test PASSED !!!********************"<<endl;
-    return 0;
-  }
-  cout<< "********************The test FAILED!!! ********************"<<endl;
-  return 1;
   //
-} // end test_bl_pgmres_hb.cpp
+  // Default return value
+  //
+  if (proc_verbose)
+    cout << "End Result: TEST PASSED" << endl;
+  return 0;
+  //
+} // end test_bl_fgmres_hb.cpp

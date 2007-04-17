@@ -1,16 +1,34 @@
 #@HEADER
 #@HEADER
 
+include $(top_builddir)/Makefile.export.belos
+
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_TEST_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
+else
+EXPORT_LIBS = $(BELOS_TEST_LIBS)
+EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
+
 EXEEXT = .exe
 
 if BUILD_TRIUTILS
 if BUILD_IFPACK
-BELOS_BCG_IFPACK_EX = bl_pcg_hb
+BELOS_BCG_IFPACK_EX = bl_pcg_hb 
 endif
-BELOS_BCG_HB_EX = bl_cg_hb
+BELOS_BCG_HB_EX = bl_cg_hb Dummy
 endif
 
-noinst_PROGRAMS = $(BELOS_BCG_HB_EX) $(BELOS_BCG_IFPACK_EX) Dummy
+if BUILD_TRIUTILS
+if BUILD_TEUCHOS_COMPLEX
+BELOS_BCG_COMPLEX_TEST = bl_cg_complex_hb ComplexDummy
+endif
+endif
+
+noinst_PROGRAMS = $(BELOS_BCG_IFPACK_EX) $(BELOS_BCG_HB_EX) $(BELOS_BCG_COMPLEX_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/bcsstk14.hb  bcsstk14.hb
@@ -18,12 +36,18 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 
 Dummy_SOURCES = Dummy
 
+ComplexDummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(top_srcdir)/test/MVOPTester/mhd1280b.cua mhd1280b.cua
+
+ComplexDummy_SOURCES = Dummy
+
 bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
 bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
+bl_cg_complex_hb_SOURCES = $(srcdir)/test_bl_cg_complex_hb.cpp
+
 bl_pcg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
-			$(top_builddir)/../ifpack/src/libifpack.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -31,37 +55,22 @@ bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-# Include paths
+bl_cg_complex_hb_DEPENDENCIES = $(top_builddir)/src/libbelos.a \
+			$(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
 
-common_include_paths = -I$(top_srcdir)/src \
-		-I$(top_srcdir)/../epetra/src \
-		-I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../ifpack/src \
-		-I$(top_builddir)/../ifpack/src \
-		-I$(top_srcdir)/../triutils/src \
-		-I$(top_builddir)/../triutils/src \
-		-I$(top_srcdir)/../teuchos/src \
-		-I$(top_builddir)/../teuchos/src
+bl_pcg_hb_CXXFLAGS = -I$(top_srcdir)/src
 
-bl_pcg_hb_CXXFLAGS = $(common_include_paths)
+bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
 
-bl_cg_hb_CXXFLAGS = $(common_include_paths)
+bl_cg_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
-# Libraries
+bl_pcg_hb_LDADD = $(EXPORT_LIBS)
 
-common_libraries = $(top_builddir)/../triutils/src/libtriutils.a
+bl_cg_hb_LDADD = $(EXPORT_LIBS)
 
-if BUILD_IFPACK
-common_libraries += $(top_builddir)/../ifpack/src/libifpack.a
-endif
+bl_cg_complex_hb_LDADD = $(EXPORT_LIBS)
 
-common_libraries += $(top_builddir)/../epetra/src/libepetra.a \
-                $(top_builddir)/../teuchos/src/libteuchos.a \
-                $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
-
-bl_pcg_hb_LDADD = $(common_libraries)
-
-bl_cg_hb_LDADD = $(common_libraries)
-
-#
-
+# Dummy for new export makefiles
+LIBS = 

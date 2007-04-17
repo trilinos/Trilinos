@@ -34,26 +34,22 @@
 #include "Epetra_Map.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
-#include <mpi.h>
 #else
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
 
 int Belos::createEpetraProblem(
-			 int                              argc
-			 ,char                            *argv[]
-			 ,RefCountPtr<Epetra_Map>         *rowMap
-			 ,RefCountPtr<Epetra_CrsMatrix>   *A
-			 ,RefCountPtr<Epetra_MultiVector> *B
-			 ,RefCountPtr<Epetra_MultiVector> *X
-			 ,int                             *MyPID_out
-			 ,bool                            *verbose_out
-			 )
+			       std::string                      &filename
+			       ,RefCountPtr<Epetra_Map>         *rowMap
+			       ,RefCountPtr<Epetra_CrsMatrix>   *A
+			       ,RefCountPtr<Epetra_MultiVector> *B
+			       ,RefCountPtr<Epetra_MultiVector> *X
+			       ,int                             *MyPID_out
+			       )
 {
   //
   int &MyPID = *MyPID_out;
-  bool &verbose = *verbose_out;
   //
   int i;
   int n_nonzeros, N_update;
@@ -69,29 +65,6 @@ int Belos::createEpetraProblem(
 #endif
 	
   MyPID = epetraComm->MyPID();
-	
-  verbose = 0;
-  //
-  if((argc < 2 || argc > 4)&& MyPID==0) {
-    cerr << "Usage: " << argv[0]
-         << " [ -v ] [ HB_filename ]" << endl
-         << "where:" << endl
-         << "-v                 - run test in verbose mode" << endl
-         << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
-         << endl;
-    return(1);
-  }
-  //
-  // Find verbosity flag
-  //
-  int file_arg = 1;
-  for(i = 1; i < argc; i++)
-    {
-      if(argv[i][0] == '-' && argv[i][1] == 'v') {
-	verbose = (MyPID == 0);
-	if(i==1) file_arg = 2;
-      }
-    }
   //
   // **********************************************************************
   // ******************Set up the problem to be solved*********************
@@ -101,7 +74,7 @@ int Belos::createEpetraProblem(
   //
   // *****Read in matrix from HB file******
   //
-  Trilinos_Util_read_hb(argv[file_arg], MyPID, &NumGlobalElements, &n_nonzeros,
+  Trilinos_Util_read_hb(const_cast<char *>(filename.c_str()), MyPID, &NumGlobalElements, &n_nonzeros,
 			&val, &bindx, &xguess, &b, &xexact);
   // 
   // *****Distribute data among processors*****

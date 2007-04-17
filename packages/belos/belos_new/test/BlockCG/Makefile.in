@@ -17,7 +17,7 @@
 #@HEADER
 #@HEADER
 
-SOURCES = $(Dummy_SOURCES) $(bl_cg_hb_SOURCES) $(bl_pcg_hb_SOURCES)
+SOURCES = $(ComplexDummy_SOURCES) $(Dummy_SOURCES) $(bl_cg_complex_hb_SOURCES) $(bl_cg_hb_SOURCES) $(bl_pcg_hb_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -40,8 +40,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) Dummy$(EXEEXT)
-@BUILD_IFPACK_TRUE@am__append_1 = $(top_builddir)/../ifpack/src/libifpack.a
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
 subdir = test/BlockCG
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -56,45 +55,53 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
+	$(top_srcdir)/config/tac_arg_inform_subpackage_used.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
-@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = bl_cg_hb$(EXEEXT)
-@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 =  \
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 =  \
 @BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@	bl_pcg_hb$(EXEEXT)
+@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 = bl_cg_hb$(EXEEXT) Dummy$(EXEEXT)
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_3 = bl_cg_complex_hb$(EXEEXT) \
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@	ComplexDummy$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
+am_ComplexDummy_OBJECTS =
+ComplexDummy_OBJECTS = $(am_ComplexDummy_OBJECTS)
+ComplexDummy_LDADD = $(LDADD)
 am_Dummy_OBJECTS =
 Dummy_OBJECTS = $(am_Dummy_OBJECTS)
 Dummy_LDADD = $(LDADD)
+am_bl_cg_complex_hb_OBJECTS =  \
+	bl_cg_complex_hb-test_bl_cg_complex_hb.$(OBJEXT)
+bl_cg_complex_hb_OBJECTS = $(am_bl_cg_complex_hb_OBJECTS)
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(BELOS_TEST_LIBS))
 am_bl_cg_hb_OBJECTS = bl_cg_hb-test_bl_cg_hb.$(OBJEXT) \
 	bl_cg_hb-createEpetraProblem.$(OBJEXT)
 bl_cg_hb_OBJECTS = $(am_bl_cg_hb_OBJECTS)
-@BUILD_IFPACK_TRUE@am__DEPENDENCIES_1 =  \
-@BUILD_IFPACK_TRUE@	$(top_builddir)/../ifpack/src/libifpack.a
-am__DEPENDENCIES_2 =
-am__DEPENDENCIES_3 = $(top_builddir)/../triutils/src/libtriutils.a \
-	$(am__DEPENDENCIES_1) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2)
 am_bl_pcg_hb_OBJECTS = bl_pcg_hb-test_bl_pcg_hb.$(OBJEXT) \
 	bl_pcg_hb-createEpetraProblem.$(OBJEXT)
 bl_pcg_hb_OBJECTS = $(am_bl_pcg_hb_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/bl_cg_hb-createEpetraProblem.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/bl_cg_complex_hb-test_bl_cg_complex_hb.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/bl_cg_hb-createEpetraProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/bl_pcg_hb-createEpetraProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/bl_pcg_hb-test_bl_pcg_hb.Po
@@ -107,8 +114,11 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(Dummy_SOURCES) $(bl_cg_hb_SOURCES) $(bl_pcg_hb_SOURCES)
-DIST_SOURCES = $(Dummy_SOURCES) $(bl_cg_hb_SOURCES) \
+SOURCES = $(ComplexDummy_SOURCES) $(Dummy_SOURCES) \
+	$(bl_cg_complex_hb_SOURCES) $(bl_cg_hb_SOURCES) \
+	$(bl_pcg_hb_SOURCES)
+DIST_SOURCES = $(ComplexDummy_SOURCES) $(Dummy_SOURCES) \
+	$(bl_cg_complex_hb_SOURCES) $(bl_cg_hb_SOURCES) \
 	$(bl_pcg_hb_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -123,10 +133,24 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
+BUILD_BELOS_EXPERIMENTAL_FALSE = @BUILD_BELOS_EXPERIMENTAL_FALSE@
+BUILD_BELOS_EXPERIMENTAL_TRUE = @BUILD_BELOS_EXPERIMENTAL_TRUE@
+BUILD_BELOS_THYRA_FALSE = @BUILD_BELOS_THYRA_FALSE@
+BUILD_BELOS_THYRA_TRUE = @BUILD_BELOS_THYRA_TRUE@
+BUILD_EPETRAEXT_FALSE = @BUILD_EPETRAEXT_FALSE@
+BUILD_EPETRAEXT_TRUE = @BUILD_EPETRAEXT_TRUE@
+BUILD_EPETRA_THYRA_FALSE = @BUILD_EPETRA_THYRA_FALSE@
+BUILD_EPETRA_THYRA_TRUE = @BUILD_EPETRA_THYRA_TRUE@
+BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
+BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
 BUILD_IFPACK_FALSE = @BUILD_IFPACK_FALSE@
 BUILD_IFPACK_TRUE = @BUILD_IFPACK_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
+BUILD_TEUCHOS_COMPLEX_FALSE = @BUILD_TEUCHOS_COMPLEX_FALSE@
+BUILD_TEUCHOS_COMPLEX_TRUE = @BUILD_TEUCHOS_COMPLEX_TRUE@
+BUILD_TPETRA_THYRA_FALSE = @BUILD_TPETRA_THYRA_FALSE@
+BUILD_TPETRA_THYRA_TRUE = @BUILD_TPETRA_THYRA_TRUE@
 BUILD_TRIUTILS_FALSE = @BUILD_TRIUTILS_FALSE@
 BUILD_TRIUTILS_TRUE = @BUILD_TRIUTILS_TRUE@
 CC = @CC@
@@ -150,6 +174,7 @@ FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERL = @HAVE_PERL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -157,7 +182,9 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@
+
+# Dummy for new export makefiles
+LIBS = 
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -176,12 +203,19 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
@@ -228,13 +262,20 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BCG_IFPACK_EX = bl_pcg_hb
-@BUILD_TRIUTILS_TRUE@BELOS_BCG_HB_EX = bl_cg_hb
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(BELOS_TEST_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_TEST_LIBS))
+@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BCG_IFPACK_EX = bl_pcg_hb 
+@BUILD_TRIUTILS_TRUE@BELOS_BCG_HB_EX = bl_cg_hb Dummy
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BCG_COMPLEX_TEST = bl_cg_complex_hb ComplexDummy
 Dummy_SOURCES = Dummy
+ComplexDummy_SOURCES = Dummy
 bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp $(srcdir)/createEpetraProblem.cpp
 bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
+bl_cg_complex_hb_SOURCES = $(srcdir)/test_bl_cg_complex_hb.cpp
 bl_pcg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
-			$(top_builddir)/../ifpack/src/libifpack.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -242,28 +283,17 @@ bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
+bl_cg_complex_hb_DEPENDENCIES = $(top_builddir)/src/libbelos.a \
+			$(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
 
-# Include paths
-common_include_paths = -I$(top_srcdir)/src \
-		-I$(top_srcdir)/../epetra/src \
-		-I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../ifpack/src \
-		-I$(top_builddir)/../ifpack/src \
-		-I$(top_srcdir)/../triutils/src \
-		-I$(top_builddir)/../triutils/src \
-		-I$(top_srcdir)/../teuchos/src \
-		-I$(top_builddir)/../teuchos/src
-
-bl_pcg_hb_CXXFLAGS = $(common_include_paths)
-bl_cg_hb_CXXFLAGS = $(common_include_paths)
-
-# Libraries
-common_libraries = $(top_builddir)/../triutils/src/libtriutils.a $(am__append_1) $(top_builddir)/../epetra/src/libepetra.a \
-                $(top_builddir)/../teuchos/src/libteuchos.a \
-                $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
-
-bl_pcg_hb_LDADD = $(common_libraries)
-bl_cg_hb_LDADD = $(common_libraries)
+bl_pcg_hb_CXXFLAGS = -I$(top_srcdir)/src
+bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
+bl_cg_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+bl_pcg_hb_LDADD = $(EXPORT_LIBS)
+bl_cg_hb_LDADD = $(EXPORT_LIBS)
+bl_cg_complex_hb_LDADD = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -300,6 +330,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+bl_cg_complex_hb$(EXEEXT): $(bl_cg_complex_hb_OBJECTS) $(bl_cg_complex_hb_DEPENDENCIES) 
+	@rm -f bl_cg_complex_hb$(EXEEXT)
+	$(CXXLINK) $(bl_cg_complex_hb_LDFLAGS) $(bl_cg_complex_hb_OBJECTS) $(bl_cg_complex_hb_LDADD) $(LIBS)
 bl_cg_hb$(EXEEXT): $(bl_cg_hb_OBJECTS) $(bl_cg_hb_DEPENDENCIES) 
 	@rm -f bl_cg_hb$(EXEEXT)
 	$(CXXLINK) $(bl_cg_hb_LDFLAGS) $(bl_cg_hb_OBJECTS) $(bl_cg_hb_LDADD) $(LIBS)
@@ -313,6 +346,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_cg_complex_hb-test_bl_cg_complex_hb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_cg_hb-createEpetraProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_pcg_hb-createEpetraProblem.Po@am__quote@
@@ -333,6 +367,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+bl_cg_complex_hb-test_bl_cg_complex_hb.o: $(srcdir)/test_bl_cg_complex_hb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_cg_complex_hb-test_bl_cg_complex_hb.o -MD -MP -MF "$(DEPDIR)/bl_cg_complex_hb-test_bl_cg_complex_hb.Tpo" -c -o bl_cg_complex_hb-test_bl_cg_complex_hb.o `test -f '$(srcdir)/test_bl_cg_complex_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_cg_complex_hb.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_cg_complex_hb-test_bl_cg_complex_hb.Tpo" "$(DEPDIR)/bl_cg_complex_hb-test_bl_cg_complex_hb.Po"; else rm -f "$(DEPDIR)/bl_cg_complex_hb-test_bl_cg_complex_hb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_cg_complex_hb.cpp' object='bl_cg_complex_hb-test_bl_cg_complex_hb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_cg_complex_hb-test_bl_cg_complex_hb.Po' tmpdepfile='$(DEPDIR)/bl_cg_complex_hb-test_bl_cg_complex_hb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_cg_complex_hb-test_bl_cg_complex_hb.o `test -f '$(srcdir)/test_bl_cg_complex_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_cg_complex_hb.cpp
+
+bl_cg_complex_hb-test_bl_cg_complex_hb.obj: $(srcdir)/test_bl_cg_complex_hb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_cg_complex_hb-test_bl_cg_complex_hb.obj -MD -MP -MF "$(DEPDIR)/bl_cg_complex_hb-test_bl_cg_complex_hb.Tpo" -c -o bl_cg_complex_hb-test_bl_cg_complex_hb.obj `if test -f '$(srcdir)/test_bl_cg_complex_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_cg_complex_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_cg_complex_hb.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_cg_complex_hb-test_bl_cg_complex_hb.Tpo" "$(DEPDIR)/bl_cg_complex_hb-test_bl_cg_complex_hb.Po"; else rm -f "$(DEPDIR)/bl_cg_complex_hb-test_bl_cg_complex_hb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_cg_complex_hb.cpp' object='bl_cg_complex_hb-test_bl_cg_complex_hb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_cg_complex_hb-test_bl_cg_complex_hb.Po' tmpdepfile='$(DEPDIR)/bl_cg_complex_hb-test_bl_cg_complex_hb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_cg_complex_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_cg_complex_hb-test_bl_cg_complex_hb.obj `if test -f '$(srcdir)/test_bl_cg_complex_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_cg_complex_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_cg_complex_hb.cpp'; fi`
 
 bl_cg_hb-test_bl_cg_hb.o: $(srcdir)/test_bl_cg_hb.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_cg_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_cg_hb-test_bl_cg_hb.o -MD -MP -MF "$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Tpo" -c -o bl_cg_hb-test_bl_cg_hb.o `test -f '$(srcdir)/test_bl_cg_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_cg_hb.cpp; \
@@ -561,11 +611,14 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
+include $(top_builddir)/Makefile.export.belos
+
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/bcsstk14.hb  bcsstk14.hb
 	cp  $(srcdir)/bcsstk15.hb  bcsstk15.hb
 
-#
+ComplexDummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(top_srcdir)/test/MVOPTester/mhd1280b.cua mhd1280b.cua
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

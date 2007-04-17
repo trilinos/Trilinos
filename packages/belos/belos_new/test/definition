@@ -60,20 +60,6 @@
 }
 
 (FRAMEWORK,INSTALL) {
-    TESTS = MVOPTester/MVOPTester_test.exe;
-    EXIT-STATUS = STRING-COMPARISON;
-    ARGS = -v;
-    COMM = SERIAL, MPI;
-}
-
-(FRAMEWORK,INSTALL) {
-    TESTS = MVOPTester/MVOPComplexTester_test.exe;
-    EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename="./MVOPTester/mhd1280b.cua";
-    COMM = SERIAL, MPI;
-}
-
-(FRAMEWORK,INSTALL) {
     TESTS = ../thyra/test/MVOPTester/MVOPTesterThyra_test.exe;
     ARGS = -v;
     EXIT-STATUS = STRING-COMPARISON;
