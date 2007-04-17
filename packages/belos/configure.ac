@@ -334,6 +334,8 @@ AC_CONFIG_FILES([
 		Makefile 
 		Makefile.export.belos
 		src/Makefile
+		example/Makefile
+		example/BlockGmres/Makefile
 		test/Makefile
 		test/BlockCG/Makefile
 		test/BlockGmres/Makefile

@@ -82,6 +82,10 @@ all-local:
 ## #######################################################################
 # SUBDIRS = src example test 
 
+if BUILD_EXAMPLES
+EXAMPLE_SUBDIR=example
+endif
+
 if BUILD_TESTS
 TEST_SUBDIR=test
 endif
@@ -90,7 +94,7 @@ if BUILD_BELOS_THYRA
 THYRA_SUBDIR=thyra
 endif
 
-SUBDIRS = src $(TEST_SUBDIR) $(THYRA_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(THYRA_SUBDIR)
 
 
 ## #######################################################################

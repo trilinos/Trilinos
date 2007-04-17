@@ -33,8 +33,8 @@ endif
 noinst_PROGRAMS = $(BELOS_BGMRES_EX) $(BELOS_BGMRES_IFPACK_EX) $(BELOS_BGMRES_NOPREC_EX) $(BELOS_BGMRES_COMPLEX_EX)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/orsirr1.hb orsirr1.hb
-	cp  $(srcdir)/fidap036.hb fidap036.hb
+	cp  $(top_srcdir)/example/BlockGmres/orsirr1.hb orsirr1.hb
+	cp  $(top_srcdir)/example/BlockGmres/fidap036.hb fidap036.hb
 
 Dummy_SOURCES = Dummy
 

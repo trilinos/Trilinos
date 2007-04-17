@@ -11,9 +11,14 @@ rm ../src/*.hpp
 rm ../src/*.cpp
 rm ../src/*.am
 rm ../src/*.in
-rm ../doc/DoxyfileWeb
-rm ../doc/index.doc
-rm ../doc/images/Belos-Interfaces-Harder.gif
+#rm ../doc/DoxyfileWeb
+#rm ../doc/index.doc
+#rm ../doc/images/Belos-Interfaces-Harder.gif
+
+rm ../example/Makefile*
+rm ../example/BlockGmres/Makefile*
+rm ../example/BlockGmres/*.cpp
+rm ../example/BlockGmres/*.hpp
 
 rm ../test/Makefile*
 rm ../test/BlockCG/Makefile*

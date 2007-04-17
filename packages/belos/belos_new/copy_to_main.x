@@ -12,9 +12,14 @@ cp ./src/*.cpp ../src/.
 cp ./src/*.am ../src/.
 cp ./src/*.in ../src/.
 
-cp ./doc/DoxyfileWeb ../doc/.
-cp ./doc/index.doc ../doc/.
-cp ./doc/images/Belos-Interfaces-Harder.gif ../doc/images/.
+#cp ./doc/DoxyfileWeb ../doc/.
+#cp ./doc/index.doc ../doc/.
+#cp ./doc/images/Belos-Interfaces-Harder.gif ../doc/images/.
+
+cp ./example/Makefile* ../example/.
+cp ./example/BlockGmres/Makefile* ../example/BlockGmres/.
+cp ./example/BlockGmres/*.cpp ../example/BlockGmres/.
+cp ./example/BlockGmres/*.hpp ../example/BlockGmres/.
 
 cp ./test/Makefile* ../test/.
 cp ./test/BlockCG/Makefile* ../test/BlockCG/.

@@ -700,8 +700,8 @@ uninstall-am: uninstall-info-am
 include $(top_builddir)/Makefile.export.belos
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/orsirr1.hb orsirr1.hb
-	cp  $(srcdir)/fidap036.hb fidap036.hb
+	cp  $(top_srcdir)/example/BlockGmres/orsirr1.hb orsirr1.hb
+	cp  $(top_srcdir)/example/BlockGmres/fidap036.hb fidap036.hb
 
 ComplexDummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(top_srcdir)/test/MVOPTester/mhd1280b.cua mhd1280b.cua

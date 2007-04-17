@@ -14,7 +14,10 @@
 
 @SET_MAKE@
 
-SOURCES = $(belos_epetra_thyra_lowsf_hb_SOURCES)
+#@HEADER
+#@HEADER
+
+SOURCES = $(BlockGmresEpetraExFile_SOURCES) $(Dummy_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -22,7 +25,7 @@ VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ../../../..
+top_builddir = ../..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
@@ -38,7 +41,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1)
-subdir = thyra/example/LOWSFactory/Epetra
+subdir = example/BlockGmres
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -69,29 +72,34 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
-@BUILD_EPETRAEXT_TRUE@am__EXEEXT_1 =  \
-@BUILD_EPETRAEXT_TRUE@	belos_epetra_thyra_lowsf_hb$(EXEEXT)
+@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = BlockGmresEpetraExFile$(EXEEXT) \
+@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@	Dummy$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_belos_epetra_thyra_lowsf_hb_OBJECTS =  \
-	belos_epetra_thyra_lowsf_hb.$(OBJEXT)
-belos_epetra_thyra_lowsf_hb_OBJECTS =  \
-	$(am_belos_epetra_thyra_lowsf_hb_OBJECTS)
+am_BlockGmresEpetraExFile_OBJECTS =  \
+	BlockGmresEpetraExFile-BlockGmresEpetraExFile.$(OBJEXT)
+BlockGmresEpetraExFile_OBJECTS = $(am_BlockGmresEpetraExFile_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(BELOS_TEST_LIBS))
-am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
+am_Dummy_OBJECTS =
+Dummy_OBJECTS = $(am_Dummy_OBJECTS)
+Dummy_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(belos_epetra_thyra_lowsf_hb_SOURCES)
-DIST_SOURCES = $(belos_epetra_thyra_lowsf_hb_SOURCES)
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(BlockGmresEpetraExFile_SOURCES) $(Dummy_SOURCES)
+DIST_SOURCES = $(BlockGmresEpetraExFile_SOURCES) $(Dummy_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -155,7 +163,9 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 
-# This is already added part of BELOS_LIBS and therefore automake does not need to add this again!
+#bl_gmres_complex_hb_LDADD = $(EXPORT_LIBS)
+
+# Dummy for new export makefiles
 LIBS = 
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
@@ -240,19 +250,53 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
-#
-# Actual programs
-#
-@BUILD_EPETRAEXT_TRUE@BELOS_THYRA_SOLVER_DRIVER = belos_epetra_thyra_lowsf_hb 
-belos_epetra_thyra_lowsf_hb_SOURCES = $(srcdir)/belos_epetra_thyra_lowsf_hb.cpp 
-belos_epetra_thyra_lowsf_hb_DEPENDENCIES = $(common_dependencies)
-belos_epetra_thyra_lowsf_hb_LDADD = $(common_ldadd)
+#if BUILD_IFPACK
+#BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb bl_fgmres_hb
+#endif
+@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_NOPREC_EX = BlockGmresEpetraExFile Dummy 
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_COMPLEX_EX = bl_gmres_complex_hb ComplexDummy
+Dummy_SOURCES = Dummy
 
-#
-# Common stuff
-#
-common_dependencies = $(top_builddir)/src/libbelos.a Example.mtx
-common_ldadd = $(EXPORT_LIBS)
+#ComplexDummy$(EXEEXT): $(srcdir)/Dummy
+#	cp  $(top_srcdir)/test/MVOPTester/mhd1280b.cua mhd1280b.cua
+#	cp  $(top_srcdir)/test/MVOPTester/mhd1280a.cua mhd1280a.cua
+
+#ComplexDummy_SOURCES = Dummy
+
+#bl_pgmres_hb_SOURCES = $(srcdir)/test_bl_pgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
+
+#bl_fgmres_hb_SOURCES = $(srcdir)/test_bl_fgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
+BlockGmresEpetraExFile_SOURCES = $(srcdir)/BlockGmresEpetraExFile.cpp 
+
+#bl_gmres_complex_hb_SOURCES = $(srcdir)/test_bl_gmres_complex_hb.cpp
+
+#bl_pgmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+#			$(top_builddir)/../epetra/src/libepetra.a \
+#			$(top_builddir)/../teuchos/src/libteuchos.a			
+
+#bl_fgmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+#			$(top_builddir)/../epetra/src/libepetra.a \
+#			$(top_builddir)/../teuchos/src/libteuchos.a			
+BlockGmresEpetraExFile_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+
+#bl_gmres_complex_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+#			$(top_builddir)/../epetra/src/libepetra.a \
+#			$(top_builddir)/../teuchos/src/libteuchos.a
+
+#bl_pgmres_hb_CXXFLAGS = -I$(top_srcdir)/src
+
+#bl_fgmres_hb_CXXFLAGS = -I$(top_srcdir)/src 
+BlockGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
+
+#bl_gmres_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+
+#bl_pgmres_hb_LDADD = $(EXPORT_LIBS)
+
+#bl_fgmres_hb_LDADD = $(EXPORT_LIBS)
+BlockGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -266,9 +310,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  thyra/example/LOWSFactory/Epetra/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/BlockGmres/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  thyra/example/LOWSFactory/Epetra/Makefile
+	  $(AUTOMAKE) --foreign  example/BlockGmres/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -289,9 +333,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-belos_epetra_thyra_lowsf_hb$(EXEEXT): $(belos_epetra_thyra_lowsf_hb_OBJECTS) $(belos_epetra_thyra_lowsf_hb_DEPENDENCIES) 
-	@rm -f belos_epetra_thyra_lowsf_hb$(EXEEXT)
-	$(CXXLINK) $(belos_epetra_thyra_lowsf_hb_LDFLAGS) $(belos_epetra_thyra_lowsf_hb_OBJECTS) $(belos_epetra_thyra_lowsf_hb_LDADD) $(LIBS)
+BlockGmresEpetraExFile$(EXEEXT): $(BlockGmresEpetraExFile_OBJECTS) $(BlockGmresEpetraExFile_DEPENDENCIES) 
+	@rm -f BlockGmresEpetraExFile$(EXEEXT)
+	$(CXXLINK) $(BlockGmresEpetraExFile_LDFLAGS) $(BlockGmresEpetraExFile_OBJECTS) $(BlockGmresEpetraExFile_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -299,7 +343,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -317,21 +361,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-belos_epetra_thyra_lowsf_hb.o: $(srcdir)/belos_epetra_thyra_lowsf_hb.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT belos_epetra_thyra_lowsf_hb.o -MD -MP -MF "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Tpo" -c -o belos_epetra_thyra_lowsf_hb.o `test -f '$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Tpo" "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Po"; else rm -f "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp' object='belos_epetra_thyra_lowsf_hb.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Po' tmpdepfile='$(DEPDIR)/belos_epetra_thyra_lowsf_hb.TPo' @AMDEPBACKSLASH@
+BlockGmresEpetraExFile-BlockGmresEpetraExFile.o: $(srcdir)/BlockGmresEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -MT BlockGmresEpetraExFile-BlockGmresEpetraExFile.o -MD -MP -MF "$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.Tpo" -c -o BlockGmresEpetraExFile-BlockGmresEpetraExFile.o `test -f '$(srcdir)/BlockGmresEpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/BlockGmresEpetraExFile.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.Tpo" "$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.Po"; else rm -f "$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockGmresEpetraExFile.cpp' object='BlockGmresEpetraExFile-BlockGmresEpetraExFile.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.Po' tmpdepfile='$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o belos_epetra_thyra_lowsf_hb.o `test -f '$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -c -o BlockGmresEpetraExFile-BlockGmresEpetraExFile.o `test -f '$(srcdir)/BlockGmresEpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/BlockGmresEpetraExFile.cpp
 
-belos_epetra_thyra_lowsf_hb.obj: $(srcdir)/belos_epetra_thyra_lowsf_hb.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT belos_epetra_thyra_lowsf_hb.obj -MD -MP -MF "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Tpo" -c -o belos_epetra_thyra_lowsf_hb.obj `if test -f '$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Tpo" "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Po"; else rm -f "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp' object='belos_epetra_thyra_lowsf_hb.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Po' tmpdepfile='$(DEPDIR)/belos_epetra_thyra_lowsf_hb.TPo' @AMDEPBACKSLASH@
+BlockGmresEpetraExFile-BlockGmresEpetraExFile.obj: $(srcdir)/BlockGmresEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -MT BlockGmresEpetraExFile-BlockGmresEpetraExFile.obj -MD -MP -MF "$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.Tpo" -c -o BlockGmresEpetraExFile-BlockGmresEpetraExFile.obj `if test -f '$(srcdir)/BlockGmresEpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockGmresEpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockGmresEpetraExFile.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.Tpo" "$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.Po"; else rm -f "$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockGmresEpetraExFile.cpp' object='BlockGmresEpetraExFile-BlockGmresEpetraExFile.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.Po' tmpdepfile='$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o belos_epetra_thyra_lowsf_hb.obj `if test -f '$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -c -o BlockGmresEpetraExFile-BlockGmresEpetraExFile.obj `if test -f '$(srcdir)/BlockGmresEpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockGmresEpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockGmresEpetraExFile.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -495,11 +539,13 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
 include $(top_builddir)/Makefile.export.belos
 
-Example.mtx:
-	cp  $(top_srcdir)/../belos/example/BlockGmres/orsirr1.hb orsirr1.hb                               
-	cp  $(top_srcdir)/../belos/test/BlockCG/bcsstk14.hb bcsstk14.hb                              
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(srcdir)/orsirr1.hb orsirr1.hb
+	cp  $(srcdir)/fidap036.hb fidap036.hb
+#
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -113,7 +113,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src test thyra
+DIST_SUBDIRS = src example test thyra
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -289,9 +289,10 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 
 
 # SUBDIRS = src example test 
+@BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
 @BUILD_BELOS_THYRA_TRUE@THYRA_SUBDIR = thyra
-SUBDIRS = src $(TEST_SUBDIR) $(THYRA_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(THYRA_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 TRILINOS_MPI_MAX_PROC = 4
