@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-%define ML_DOCSTRING
+%define %ml_docstring
 "The ML module allows access to The Trilinos package ML/MLAPI. Note
 that the 'ML_' prefix has been stripped from all ML objects,
 but that if imported with 'from PyTrilinos import ML', these
@@ -102,7 +102,7 @@ print r.Norm2()
 %module(package   = "PyTrilinos",
 	directors = "1",
 	autodoc   = "1",
-	docstring = ML_DOCSTRING) ML
+	docstring = %ml_docstring) ML
 
 // This is to avoid BaseLinearCombination and derived classes.
 // MLAPI_LC is defined in setup.py; the MLAPI code contains some 

@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-%define EPETRA_DOCSTRING
+%define %epetra_docstring
 """
 Epetra is a module under the PyTrilinos package.  PyTrilinos is a
 python interface to select components of the Trilinos set of solver
@@ -79,7 +79,7 @@ IntSerialDenseMatrix classes.
 
 %module(package   = "PyTrilinos",
 	directors = "1",
-	docstring = EPETRA_DOCSTRING) Epetra
+	docstring = %epetra_docstring) Epetra
 
 %{
 // System includes

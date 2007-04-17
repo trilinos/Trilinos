@@ -30,7 +30,7 @@
 
 // This documentation string will be the python help facility help
 // string
-%define ANASAZI_DOCSTRING
+%define %anasazi_docstring
 "The Anasazi module allows access to The Trilinos package
 Anasazi.  Use the python help() facility for local documentation
 on classes and methods, or see the on-line documentation for more
@@ -40,7 +40,7 @@ in-depth information."
 // Define the module name, its package and documentation string
 %module(package   = "PyTrilinos",
 	autodoc   = "1",
-	docstring = ANASAZI_DOCSTRING) Anasazi
+	docstring = %anasazi_docstring) Anasazi
 
 // Code within the percent-bracket delimiters is copied verbatim to
 // the C++ wrapper source file.  Anything that is %include-ed later

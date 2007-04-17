@@ -30,7 +30,7 @@
 
 // This documentation string will be the python help facility help
 // string
-%define THYRA_DOCSTRING
+%define %thyra_docstring
 "The Thyra module allows access to The Trilinos package
 Thyra.  Use the python help() facility for local documentation
 on classes and methods, or see the on-line documentation for more
@@ -39,7 +39,7 @@ in-depth information."
 
 // Define the module name, its package and documentation string
 %module(package   = "PyTrilinos",
-	docstring = THYRA_DOCSTRING) Thyra
+	docstring = %thyra_docstring) Thyra
 
 // Code within the percent-bracket delimiters is copied verbatim to
 // the C++ wrapper source file.  Anything that is %include-ed later

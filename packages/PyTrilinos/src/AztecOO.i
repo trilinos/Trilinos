@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-%define AZTECOO_DOCSTRING
+%define %aztecoo_docstring
 """
 The AztecOO module allows access to The Trilinos package AztecOO.  Note
 that the 'AztecOO_' prefix has been stripped from all AztecOO objects,
@@ -79,7 +79,7 @@ Solver.Iterate(1550, 1e-5)
 
 %module(package   = "PyTrilinos",
 	autodoc   = "1",
-	docstring = AZTECOO_DOCSTRING) AztecOO
+	docstring = %aztecoo_docstring) AztecOO
 
 %{
 // System includes

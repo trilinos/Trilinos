@@ -30,7 +30,7 @@
 
 // This documentation string will be the python help facility help
 // string
-%define GALERI_DOCSTRING
+%define %galeri_docstring
 "Galeri: Matrix Generation Package.
 The Galeri module allows an easy creation of Epetra_Map's and
 Epetra_CrsMatrix's.  Use the python help() facility for local documentation on
@@ -50,7 +50,7 @@ Galeri requires the Epetra and Teuchos modules of PyTrilinos.
 // Define the module name, its package and documentation string
 %module(package   = "PyTrilinos",
 	autodoc   = "1",
-	docstring = GALERI_DOCSTRING) Galeri
+	docstring = %galeri_docstring) Galeri
 
 %{
 // System includes

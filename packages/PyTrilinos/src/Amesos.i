@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-%define AMESOS_DOCSTRING
+%define %amesos_docstring
 "The Amesos module allows access to The Trilinos package Amesos.  Note
 that the 'Amesos_' prefix has been stripped from all Amesos objects,
 but that if imported with 'from PyTrilinos import Amesos', these
@@ -57,7 +57,7 @@ For examples of usage, please consult the python/example subdirectory.
 
 %module(package   = "PyTrilinos",
 	autodoc   = "1",
-	docstring = AMESOS_DOCSTRING) Amesos
+	docstring = %amesos_docstring) Amesos
 
 %{
 // System includes

@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-%define EPETRAEXT_DOCSTRING
+%define %epetraext_docstring
 "The EpetraExt module allows access to The Trilinos package EpetraExt.
 Use the python help() facility for local documentation on classes and
 methods, or see the on-line documentation for more in-depth
@@ -59,7 +59,7 @@ The most important classes of the EpetraExt module are:
 
 %module(package   = "PyTrilinos",
 	directors = "1",
-	docstring = EPETRAEXT_DOCSTRING) EpetraExt
+	docstring = %epetraext_docstring) EpetraExt
 
 %{
 // System includes

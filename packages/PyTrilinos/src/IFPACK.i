@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-%define IFPACK_DOCSTRING
+%define %ifpack_docstring
 "The IFPACK module allows access to The Trilinos package IFPACK.  Note
 that the 'Ifpack_' prefix has been stripped from all IFPACK objects,
 but that if imported with 'from PyTrilinos import IFPACK', these
@@ -55,7 +55,7 @@ Finally, the following functions are avaiable in the IFPACK module:
 
 %module(package   = "PyTrilinos",
 	autodoc   = "1",
-	docstring = IFPACK_DOCSTRING) IFPACK
+	docstring = %ifpack_docstring) IFPACK
 
 %{
 // System includes
