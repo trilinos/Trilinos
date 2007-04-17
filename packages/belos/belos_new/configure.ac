@@ -105,8 +105,8 @@ TAC_ARG_CONFIG_MPI
 # ------------------------------------------------------------------------
 
 AC_PROG_CC(cc gcc)
-AC_PROG_CXX(CC g++ gcc c++ cxx)
-AC_PROG_F77(f77 g77 f90 xlf90)
+AC_PROG_CXX(CC g++ c++ cxx)
+AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -133,6 +133,11 @@ TAC_ARG_WITH_AR
 TAC_ARG_CHECK_MPI
 
 # ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
+
+# ------------------------------------------------------------------------
 # Checks for header files
 # ------------------------------------------------------------------------
 
@@ -142,6 +147,7 @@ AC_CHECK_HEADERS([cassert assert.h], [break],)
 AC_CHECK_HEADERS([cmath math.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
 AC_CHECK_HEADERS([string string.h], [break],)
+AC_CHECK_HEADERS([complex complex.h], [break],)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Belos requires at least one or the other.]])
@@ -167,6 +173,11 @@ if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xye
   AC_MSG_ERROR([[Cannot find cmath or math.h.  Belos requires at least one or the other.]])
 fi
 
+if test "X$ac_cv_header_complex" != "Xyes" && test "X$ac_cv_header_complex_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find complex or complex.h.  Belos requires at least one or the other.]])
+fi
+
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
@@ -190,8 +201,12 @@ AC_CXX_STD_SPRINTF
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-# Checks if tests should be built and which ones should be built
+# Checks if examples and tests should be built and which ones should be built
 # ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( belos, examples, [Build Belos examples], BELOS_EXAMPLES)
+AM_CONDITIONAL(BUILD_EXAMPLES, [test "X$ac_cv_use_belos_examples" != "Xno" ])
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( belos, tests, [Build Belos tests], BELOS_TESTS)
@@ -199,11 +214,29 @@ AM_CONDITIONAL(BUILD_TESTS, [test "X$ac_cv_use_belos_tests" != "Xno" ])
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, [Build tests that use Ifpack], IFPACK)
-AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
+# ------------------------------------------------------------------------
+# Trilinos Package Dependencies
+# Required: Epetra, Teuchos, Triutils
+# Optional: Ifpack, TSFCore
+# ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(triutils, [Build tests that use Triutils], TRIUTILS)
-AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+TAC_ARG_ENABLE_FEATURE_SUB(teuchos, complex, [Build examples/tests which use complex scalar type], TEUCHOS_COMPLEX, yes)
+AM_CONDITIONAL(BUILD_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno"])
+
+TAC_ARG_ENABLE_FEATURE_SUB(belos, experimental, [Build examples/tests which use experimental code], BELOS_EXPERIMENTAL, no)
+AM_CONDITIONAL(BUILD_BELOS_EXPERIMENTAL, [test "X$ac_cv_use_belos_experimental" != "Xno"])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, triutils, BELOS_TRIUTILS, BUILD_TRIUTILS, yes, [Build tests that use Triutils. Can be overridden with --disable-belos-triutils.], [Build tests that use Triutils.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, ifpack, BELOS_IFPACK, BUILD_IFPACK, yes, [Build tests that use Ifpack. Can be overridden with --disable-belos-ifpack.], [Build tests that use Ifpack.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, epetraext, BELOS_EPETRAEXT, BUILD_EPETRAEXT, yes, [Build tests that use EpetraExt. Can be overridden with --disable-belos-epetraext.], [Build tests that use EpetraExt.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, thyra, BELOS_THYRA, BUILD_BELOS_THYRA, yes, [Build source code and tests that use Thyra. Can be overridden with --disable-belos-thyra.], [Build source code and tests that use Thyra.])
+
+TAC_ARG_INFORM_SUBPACKAGE_USED(epetra, thyra, EPETRA_THYRA, BUILD_EPETRA_THYRA, yes, [Build source code and tests that use Epetra-Thyra wrappers. Can be overridden with --disable-epetra-thyra.], [Build source code and tests that use Epetra-Thyra wrappers.])
+
+TAC_ARG_INFORM_SUBPACKAGE_USED(tpetra, thyra, TPETRA_THYRA, BUILD_TPETRA_THYRA, yes, [Build source code and tests that use Tpetra-Thyra wrappers. Can be overridden with --disable-tpetra-thyra.], [Build source code and tests that use Tpetra-Thyra wrappers.])
 
 
 # ------------------------------------------------------------------------
@@ -215,11 +248,14 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
+# #np# - Yet another opportunity to remove code if you aren't
+# using Fortran
+# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX
+AC_F77_WRAPPERS
+
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
-
-AC_F77_WRAPPERS
 
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
@@ -296,13 +332,27 @@ AC_SUBST(ac_aux_dir)
 
 AC_CONFIG_FILES([
 		Makefile 
+		Makefile.export.belos
 		src/Makefile
+		example/Makefile
+		example/BlockGmres/Makefile
 		test/Makefile
 		test/BlockCG/Makefile
 		test/BlockGmres/Makefile
-		test/scripts/Makefile
+		test/BlockTFQMR/Makefile
+		test/MVOPTester/Makefile
+                test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile
+		thyra/Makefile
+		thyra/src/Makefile
+		thyra/test/Makefile
+		thyra/test/MVOPTester/Makefile
+		thyra/test/LOWSFactory/Makefile
+		thyra/example/Makefile
+		thyra/example/LOWSFactory/Makefile
+		thyra/example/LOWSFactory/Epetra/Makefile
+		thyra/example/LOWSFactory/Tpetra/Makefile
 		])
 
 AC_OUTPUT()

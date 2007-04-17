@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_TEUCHOS_COMPLEX_TRUE BUILD_TEUCHOS_COMPLEX_FALSE BUILD_BELOS_EXPERIMENTAL_TRUE BUILD_BELOS_EXPERIMENTAL_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_EPETRAEXT_TRUE BUILD_EPETRAEXT_FALSE BUILD_BELOS_THYRA_TRUE BUILD_BELOS_THYRA_FALSE BUILD_EPETRA_THYRA_TRUE BUILD_EPETRA_THYRA_FALSE BUILD_TPETRA_THYRA_TRUE BUILD_TPETRA_THYRA_FALSE FLIBS BLAS_LIBS LAPACK_LIBS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -875,17 +875,61 @@ Optional Features:
   --enable-mpi            MPI support
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
-  --enable-tests          Build tests for all Trilinos packages (not all
+  --enable-export-makefiles
+                          Creates export makefiles in the install (prefix)
+                          directory. This option requires perl to be set in
+                          your path or defined with --with-perl=<perl
+                          executable>. Note that the export makefiles are
+                          always created and used in the build directory, but
+                          will not be installable without this option to
+                          change the paths. (default is yes)
+  --enable-examples       Build examples for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
 
+  --enable-belos-examples Build Belos examples (default is yes if
+                          --disable-examples is not specified)
+  --enable-tests          Build tests for all Trilinos packages (not all
+                          packages are sensitive to this option) (default is
+                          yes)
   --enable-belos-tests    Build Belos tests (default is yes if --disable-tests
                           is not specified)
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
-  --enable-ifpack         Build tests that use Ifpack
-  --enable-triutils       Build tests that use Triutils
+  --enable-teuchos-complex
+                          Build examples/tests which use complex scalar type
+                          (default is yes)
+  --enable-belos-experimental
+                          Build examples/tests which use experimental code
+                          (default is no)
+  --enable-triutils       Build tests that use Triutils.
+  --enable-belos-triutils Build tests that use Triutils. Can be overridden
+                          with --disable-belos-triutils.
+  --enable-ifpack         Build tests that use Ifpack.
+  --enable-belos-ifpack   Build tests that use Ifpack. Can be overridden with
+                          --disable-belos-ifpack.
+  --enable-epetraext      Build tests that use EpetraExt.
+  --enable-belos-epetraext
+                          Build tests that use EpetraExt. Can be overridden
+                          with --disable-belos-epetraext.
+  --enable-thyra          Build source code and tests that use Thyra.
+  --enable-belos-thyra    Build source code and tests that use Thyra. Can be
+                          overridden with --disable-belos-thyra.
+  --enable-epetra         Build source code and tests that use Epetra-Thyra
+                          wrappers.
+  --enable-thyra          Build source code and tests that use Epetra-Thyra
+                          wrappers.
+  --enable-epetra-thyra   Build source code and tests that use Epetra-Thyra
+                          wrappers. Can be overridden with
+                          --disable-epetra-thyra.
+  --enable-tpetra         Build source code and tests that use Tpetra-Thyra
+                          wrappers.
+  --enable-thyra          Build source code and tests that use Tpetra-Thyra
+                          wrappers.
+  --enable-tpetra-thyra   Build source code and tests that use Tpetra-Thyra
+                          wrappers. Can be overridden with
+                          --disable-tpetra-thyra.
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -918,6 +962,16 @@ Optional Packages:
   --with-ldflags          additional LDFLAGS flags to be added: will prepend
                           to LDFLAGS
   --with-ar               override archiver command (default is "ar cru")
+  --with-perl             supply a perl executable. For example
+                          --with-perl=/usr/bin/perl.
+  --with-gnumake          Gnu's make has special functions we can use to
+                          eliminate redundant paths in the build and link
+                          lines. Enable this if you use gnu-make to build
+                          Trilinos. This requires that perl is in your path or
+                          that you have specified the perl executable with
+                          --with-perl=<perl executable>. Configure will check
+                          for the existence of the perl executable and quit
+                          with an error if it is not found. (default is no)
   --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
                           --with-ldflags="-L<DIR> -L<DIR2>")
   --with-incdirs          additional directories containing include files:
@@ -2080,7 +2134,7 @@ fi
       if test -f ${withval}/mpicxx; then
         MPI_CXX=${withval}/mpicxx
       elif test -f ${withval}/mpic++; then
-	MPI_CXX=${withval}/mpi++
+	MPI_CXX=${withval}/mpic++
       else
         MPI_CXX=${withval}/mpiCC
       fi
@@ -3243,7 +3297,7 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 if test -n "$ac_tool_prefix"; then
-  for ac_prog in $CCC CC g++ gcc c++ cxx
+  for ac_prog in $CCC CC g++ c++ cxx
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -3285,7 +3339,7 @@ fi
 fi
 if test -z "$CXX"; then
   ac_ct_CXX=$CXX
-  for ac_prog in $CCC CC g++ gcc c++ cxx
+  for ac_prog in $CCC CC g++ c++ cxx
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -3699,7 +3753,7 @@ ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_f77_compiler_gnu
 if test -n "$ac_tool_prefix"; then
-  for ac_prog in f77 g77 f90 xlf90
+  for ac_prog in f77 g77 gfortran f90 xlf90 f95
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -3741,7 +3795,7 @@ fi
 fi
 if test -z "$F77"; then
   ac_ct_F77=$F77
-  for ac_prog in f77 g77 f90 xlf90
+  for ac_prog in f77 g77 gfortran f90 xlf90 f95
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -3786,7 +3840,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3789:" \
+echo "$as_me:3843:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4519,6 +4573,210 @@ rm -f conftest.err conftest.$ac_ext
 #   )
 
 fi
+
+
+# ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+
+# Check whether --enable-export-makefiles or --disable-export-makefiles was given.
+if test "${enable_export_makefiles+set}" = set; then
+  enableval="$enable_export_makefiles"
+  ac_cv_use_export_makefiles=$enableval
+else
+  ac_cv_use_export_makefiles=yes
+fi;
+
+echo "$as_me:$LINENO: checking whether to build export makefiles" >&5
+echo $ECHO_N "checking whether to build export makefiles... $ECHO_C" >&6
+
+if test "X$ac_cv_use_export_makefiles" != "Xno"; then
+
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_EXPORT_MAKEFILES
+_ACEOF
+
+
+else
+
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+fi
+
+
+
+if test X${ac_cv_use_export_makefiles} = Xyes; then
+  USING_EXPORT_MAKEFILES_TRUE=
+  USING_EXPORT_MAKEFILES_FALSE='#'
+else
+  USING_EXPORT_MAKEFILES_TRUE='#'
+  USING_EXPORT_MAKEFILES_FALSE=
+fi
+
+
+# Check for perl to run scripts (Required dependency)
+
+
+
+# Check whether --with-perl or --without-perl was given.
+if test "${with_perl+set}" = set; then
+  withval="$with_perl"
+
+echo "$as_me:$LINENO: checking for user supplied perl executable" >&5
+echo $ECHO_N "checking for user supplied perl executable... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${withval}" >&5
+echo "${ECHO_T}${withval}" >&6
+USER_SPECIFIED_PERL=yes
+PERL_EXE="${withval}"
+
+else
+
+USER_SPECIFIED_PERL=no
+
+fi;
+
+if test "X${USER_SPECIFIED_PERL}" = "Xyes"; then
+  as_ac_File=`echo "ac_cv_file_${PERL_EXE}" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${PERL_EXE}" >&5
+echo $ECHO_N "checking for ${PERL_EXE}... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${PERL_EXE}"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+  HAVE_PERL=yes
+else
+  HAVE_PERL=no
+fi
+
+  PERL_EXE=${PERL_EXE}
+
+else
+  # Extract the first word of "perl", so it can be a program name with args.
+set dummy perl; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_HAVE_PERL+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$HAVE_PERL"; then
+  ac_cv_prog_HAVE_PERL="$HAVE_PERL" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_HAVE_PERL="yes"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  test -z "$ac_cv_prog_HAVE_PERL" && ac_cv_prog_HAVE_PERL="no"
+fi
+fi
+HAVE_PERL=$ac_cv_prog_HAVE_PERL
+if test -n "$HAVE_PERL"; then
+  echo "$as_me:$LINENO: result: $HAVE_PERL" >&5
+echo "${ECHO_T}$HAVE_PERL" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  PERL_EXE=perl
+
+fi
+
+
+if test X${HAVE_PERL} = Xyes; then
+  USING_PERL_TRUE=
+  USING_PERL_FALSE='#'
+else
+  USING_PERL_TRUE='#'
+  USING_PERL_FALSE=
+fi
+
+
+
+if test "X$HAVE_PERL" != "Xyes" &&
+   test "X$ac_cv_use_export_makefiles" != "Xno"; then
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+  { { echo "$as_me:$LINENO: error: Failed to find the perl executable.  The flag --enable-export-makefiles requires perl to be either in your path or explicitly defined by the flag --with-perl=<executable>.  If you do not require the export makefiles to be installed via 'make install', you can disable the export makefiles with --disable-export-makefiles." >&5
+echo "$as_me: error: Failed to find the perl executable.  The flag --enable-export-makefiles requires perl to be either in your path or explicitly defined by the flag --with-perl=<executable>.  If you do not require the export makefiles to be installed via 'make install', you can disable the export makefiles with --disable-export-makefiles." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+# Check for using gnumake to clean up link lines via
+# gnumake's "shell" command. Optional dependency.
+
+
+
+
+# Check whether --with-gnumake or --without-gnumake was given.
+if test "${with_gnumake+set}" = set; then
+  withval="$with_gnumake"
+  ac_cv_use_gnumake=$withval
+else
+  ac_cv_use_gnumake=no
+fi;
+
+echo "$as_me:$LINENO: checking whether gnumake specific code should be enabled" >&5
+echo $ECHO_N "checking whether gnumake specific code should be enabled... $ECHO_C" >&6
+
+if test "X$ac_cv_use_gnumake" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GNUMAKE
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+if test "X$ac_cv_use_gnumake" = "Xyes"; then
+  USING_GNUMAKE_TRUE=
+  USING_GNUMAKE_FALSE='#'
+else
+  USING_GNUMAKE_TRUE='#'
+  USING_GNUMAKE_FALSE=
+fi
+
+
+
+if test "X$HAVE_PERL" != "Xyes" &&
+   test "X$ac_cv_use_gnumake" != "Xno"; then
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+  { { echo "$as_me:$LINENO: error: The flag --with-gnumake requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&5
+echo "$as_me: error: The flag --with-gnumake requires perl to be in your path.  The perl executable can alternatively be explicitly defined by the flag --with-perl=<executable>." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
 
 
 # ------------------------------------------------------------------------
@@ -5685,6 +5943,157 @@ fi
 done
 
 
+
+for ac_header in complex complex.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## --------------------------------- ##
+## Report this to hkthorn@sandia.gov ##
+## --------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ break
+fi
+
+done
+
+
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   { { echo "$as_me:$LINENO: error: Cannot find cstdlib or stdlib.h.  Belos requires at least one or the other." >&5
 echo "$as_me: error: Cannot find cstdlib or stdlib.h.  Belos requires at least one or the other." >&2;}
@@ -5720,6 +6129,13 @@ if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xye
 echo "$as_me: error: Cannot find cmath or math.h.  Belos requires at least one or the other." >&2;}
    { (exit 1); exit 1; }; }
 fi
+
+if test "X$ac_cv_header_complex" != "Xyes" && test "X$ac_cv_header_complex_h" != "Xyes"; then
+  { { echo "$as_me:$LINENO: error: Cannot find complex or complex.h.  Belos requires at least one or the other." >&5
+echo "$as_me: error: Cannot find complex or complex.h.  Belos requires at least one or the other." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 echo "$as_me:$LINENO: checking for an ANSI C-conforming const" >&5
@@ -6457,8 +6873,77 @@ fi
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-# Checks if tests should be built and which ones should be built
+# Checks if examples and tests should be built and which ones should be built
 # ------------------------------------------------------------------------
+
+
+# Check whether --enable-examples or --disable-examples was given.
+if test "${enable_examples+set}" = set; then
+  enableval="$enable_examples"
+  ac_cv_use_examples=$enableval
+else
+  ac_cv_use_examples=yes
+fi;
+
+echo "$as_me:$LINENO: checking whether to use examples" >&5
+echo $ECHO_N "checking whether to use examples... $ECHO_C" >&6
+
+if test "X$ac_cv_use_examples" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_EXAMPLES
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+# Check whether --enable-examples or --disable-examples was given.
+if test "${enable_examples+set}" = set; then
+  enableval="$enable_examples"
+  ac_cv_use_examples=$enableval
+else
+  ac_cv_use_examples=yes
+fi;
+
+# Check whether --enable-belos-examples or --disable-belos-examples was given.
+if test "${enable_belos_examples+set}" = set; then
+  enableval="$enable_belos_examples"
+  ac_cv_use_belos_examples=$enableval
+else
+  ac_cv_use_belos_examples=${ac_cv_use_examples}
+fi;
+
+echo "$as_me:$LINENO: checking whether to use belos-examples" >&5
+echo $ECHO_N "checking whether to use belos-examples... $ECHO_C" >&6
+
+if test "X$ac_cv_use_belos_examples" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BELOS_EXAMPLES
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_belos_examples" != "Xno" ; then
+  BUILD_EXAMPLES_TRUE=
+  BUILD_EXAMPLES_FALSE='#'
+else
+  BUILD_EXAMPLES_TRUE='#'
+  BUILD_EXAMPLES_FALSE=
+fi
+
 
 
 # Check whether --enable-tests or --disable-tests was given.
@@ -6555,24 +7040,30 @@ echo "${ECHO_T}no" >&6
 fi
 
 
+# ------------------------------------------------------------------------
+# Trilinos Package Dependencies
+# Required: Epetra, Teuchos, Triutils
+# Optional: Ifpack, TSFCore
+# ------------------------------------------------------------------------
 
-# Check whether --enable-ifpack or --disable-ifpack was given.
-if test "${enable_ifpack+set}" = set; then
-  enableval="$enable_ifpack"
-  ac_cv_use_ifpack=$enableval
+
+# Check whether --enable-teuchos-complex or --disable-teuchos-complex was given.
+if test "${enable_teuchos_complex+set}" = set; then
+  enableval="$enable_teuchos_complex"
+  ac_cv_use_teuchos_complex=$enableval
 else
-  ac_cv_use_ifpack=no
+  ac_cv_use_teuchos_complex=yes
 fi;
 
-echo "$as_me:$LINENO: checking whether to build optional ifpack dependent code" >&5
-echo $ECHO_N "checking whether to build optional ifpack dependent code... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use teuchos-complex" >&5
+echo $ECHO_N "checking whether to use teuchos-complex... $ECHO_C" >&6
 
-if test "X$ac_cv_use_ifpack" != "Xno"; then
+if test "X$ac_cv_use_teuchos_complex" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_IFPACK 1
+#define HAVE_TEUCHOS_COMPLEX
 _ACEOF
 
 else
@@ -6582,7 +7073,147 @@ fi
 
 
 
+if test "X$ac_cv_use_teuchos_complex" != "Xno"; then
+  BUILD_TEUCHOS_COMPLEX_TRUE=
+  BUILD_TEUCHOS_COMPLEX_FALSE='#'
+else
+  BUILD_TEUCHOS_COMPLEX_TRUE='#'
+  BUILD_TEUCHOS_COMPLEX_FALSE=
+fi
+
+
+
+# Check whether --enable-belos-experimental or --disable-belos-experimental was given.
+if test "${enable_belos_experimental+set}" = set; then
+  enableval="$enable_belos_experimental"
+  ac_cv_use_belos_experimental=$enableval
+else
+  ac_cv_use_belos_experimental=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use belos-experimental" >&5
+echo $ECHO_N "checking whether to use belos-experimental... $ECHO_C" >&6
+
+if test "X$ac_cv_use_belos_experimental" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BELOS_EXPERIMENTAL
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_belos_experimental" != "Xno"; then
+  BUILD_BELOS_EXPERIMENTAL_TRUE=
+  BUILD_BELOS_EXPERIMENTAL_FALSE='#'
+else
+  BUILD_BELOS_EXPERIMENTAL_TRUE='#'
+  BUILD_BELOS_EXPERIMENTAL_FALSE=
+fi
+
+
+
+
+# Check whether --enable-triutils or --disable-triutils was given.
+if test "${enable_triutils+set}" = set; then
+  enableval="$enable_triutils"
+  ac_cv_implicit_use_triutils=$enableval
+else
+  ac_cv_implicit_use_triutils=no
+fi;
+
+if test "Xyes" != "Xno"; then
+  ac_cv_belos_using_triutils_default=$ac_cv_implicit_use_triutils
+else
+  ac_cv_belos_using_triutils_default=no
+fi
+
+# Check whether --enable-belos-triutils or --disable-belos-triutils was given.
+if test "${enable_belos_triutils+set}" = set; then
+  enableval="$enable_belos_triutils"
+  ac_cv_use_triutils=$enableval
+else
+  ac_cv_use_triutils=$ac_cv_belos_using_triutils_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional triutils dependent code in belos" >&5
+echo $ECHO_N "checking whether to build optional triutils dependent code in belos... $ECHO_C" >&6
+
+if test "X$ac_cv_use_triutils" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BELOS_TRIUTILS 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_triutils" = "Xyes"; then
+  BUILD_TRIUTILS_TRUE=
+  BUILD_TRIUTILS_FALSE='#'
+else
+  BUILD_TRIUTILS_TRUE='#'
+  BUILD_TRIUTILS_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-ifpack or --disable-ifpack was given.
+if test "${enable_ifpack+set}" = set; then
+  enableval="$enable_ifpack"
+  ac_cv_implicit_use_ifpack=$enableval
+else
+  ac_cv_implicit_use_ifpack=no
+fi;
+
+if test "Xyes" != "Xno"; then
+  ac_cv_belos_using_ifpack_default=$ac_cv_implicit_use_ifpack
+else
+  ac_cv_belos_using_ifpack_default=no
+fi
+
+# Check whether --enable-belos-ifpack or --disable-belos-ifpack was given.
+if test "${enable_belos_ifpack+set}" = set; then
+  enableval="$enable_belos_ifpack"
+  ac_cv_use_ifpack=$enableval
+else
+  ac_cv_use_ifpack=$ac_cv_belos_using_ifpack_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional ifpack dependent code in belos" >&5
+echo $ECHO_N "checking whether to build optional ifpack dependent code in belos... $ECHO_C" >&6
+
 if test "X$ac_cv_use_ifpack" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BELOS_IFPACK 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_ifpack" = "Xyes"; then
   BUILD_IFPACK_TRUE=
   BUILD_IFPACK_FALSE='#'
 else
@@ -6592,23 +7223,40 @@ fi
 
 
 
-# Check whether --enable-triutils or --disable-triutils was given.
-if test "${enable_triutils+set}" = set; then
-  enableval="$enable_triutils"
-  ac_cv_use_triutils=$enableval
+
+
+
+# Check whether --enable-epetraext or --disable-epetraext was given.
+if test "${enable_epetraext+set}" = set; then
+  enableval="$enable_epetraext"
+  ac_cv_implicit_use_epetraext=$enableval
 else
-  ac_cv_use_triutils=no
+  ac_cv_implicit_use_epetraext=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to build optional triutils dependent code" >&5
-echo $ECHO_N "checking whether to build optional triutils dependent code... $ECHO_C" >&6
+if test "Xyes" != "Xno"; then
+  ac_cv_belos_using_epetraext_default=$ac_cv_implicit_use_epetraext
+else
+  ac_cv_belos_using_epetraext_default=no
+fi
 
-if test "X$ac_cv_use_triutils" != "Xno"; then
+# Check whether --enable-belos-epetraext or --disable-belos-epetraext was given.
+if test "${enable_belos_epetraext+set}" = set; then
+  enableval="$enable_belos_epetraext"
+  ac_cv_use_epetraext=$enableval
+else
+  ac_cv_use_epetraext=$ac_cv_belos_using_epetraext_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional epetraext dependent code in belos" >&5
+echo $ECHO_N "checking whether to build optional epetraext dependent code in belos... $ECHO_C" >&6
+
+if test "X$ac_cv_use_epetraext" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_TRIUTILS 1
+#define HAVE_BELOS_EPETRAEXT 1
 _ACEOF
 
 else
@@ -6618,13 +7266,198 @@ fi
 
 
 
-if test "X$ac_cv_use_triutils" != "Xno"; then
-  BUILD_TRIUTILS_TRUE=
-  BUILD_TRIUTILS_FALSE='#'
+if test "X$ac_cv_use_epetraext" = "Xyes"; then
+  BUILD_EPETRAEXT_TRUE=
+  BUILD_EPETRAEXT_FALSE='#'
 else
-  BUILD_TRIUTILS_TRUE='#'
-  BUILD_TRIUTILS_FALSE=
+  BUILD_EPETRAEXT_TRUE='#'
+  BUILD_EPETRAEXT_FALSE=
 fi
+
+
+
+
+
+
+# Check whether --enable-thyra or --disable-thyra was given.
+if test "${enable_thyra+set}" = set; then
+  enableval="$enable_thyra"
+  ac_cv_implicit_use_thyra=$enableval
+else
+  ac_cv_implicit_use_thyra=no
+fi;
+
+if test "Xyes" != "Xno"; then
+  ac_cv_belos_using_thyra_default=$ac_cv_implicit_use_thyra
+else
+  ac_cv_belos_using_thyra_default=no
+fi
+
+# Check whether --enable-belos-thyra or --disable-belos-thyra was given.
+if test "${enable_belos_thyra+set}" = set; then
+  enableval="$enable_belos_thyra"
+  ac_cv_use_thyra=$enableval
+else
+  ac_cv_use_thyra=$ac_cv_belos_using_thyra_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in belos" >&5
+echo $ECHO_N "checking whether to build optional thyra dependent code in belos... $ECHO_C" >&6
+
+if test "X$ac_cv_use_thyra" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BELOS_THYRA 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_thyra" = "Xyes"; then
+  BUILD_BELOS_THYRA_TRUE=
+  BUILD_BELOS_THYRA_FALSE='#'
+else
+  BUILD_BELOS_THYRA_TRUE='#'
+  BUILD_BELOS_THYRA_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-epetra or --disable-epetra was given.
+if test "${enable_epetra+set}" = set; then
+  enableval="$enable_epetra"
+  ac_cv_implicit_use_epetra=$enableval
+else
+  ac_cv_implicit_use_epetra=no
+fi;
+
+# Check whether --enable-thyra or --disable-thyra was given.
+if test "${enable_thyra+set}" = set; then
+  enableval="$enable_thyra"
+  ac_cv_implicit_use_thyra=$enableval
+else
+  ac_cv_implicit_use_thyra=no
+fi;
+
+if test "Xyes" != "Xno"; then
+  if test "X$ac_cv_implicit_use_epetra" != "Xno"; then
+    ac_cv_epetra_using_thyra_default=$ac_cv_implicit_use_thyra
+  else
+    ac_cv_epetra_using_thyra_default=no
+  fi
+else
+  ac_cv_epetra_using_thyra_default=no
+fi
+
+# Check whether --enable-epetra-thyra or --disable-epetra-thyra was given.
+if test "${enable_epetra_thyra+set}" = set; then
+  enableval="$enable_epetra_thyra"
+  ac_cv_use_thyra=$enableval
+else
+  ac_cv_use_thyra=$ac_cv_epetra_using_thyra_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in epetra" >&5
+echo $ECHO_N "checking whether to build optional thyra dependent code in epetra... $ECHO_C" >&6
+
+if test "X$ac_cv_use_thyra" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_EPETRA_THYRA 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_thyra" = "Xyes"; then
+  BUILD_EPETRA_THYRA_TRUE=
+  BUILD_EPETRA_THYRA_FALSE='#'
+else
+  BUILD_EPETRA_THYRA_TRUE='#'
+  BUILD_EPETRA_THYRA_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-tpetra or --disable-tpetra was given.
+if test "${enable_tpetra+set}" = set; then
+  enableval="$enable_tpetra"
+  ac_cv_implicit_use_tpetra=$enableval
+else
+  ac_cv_implicit_use_tpetra=no
+fi;
+
+# Check whether --enable-thyra or --disable-thyra was given.
+if test "${enable_thyra+set}" = set; then
+  enableval="$enable_thyra"
+  ac_cv_implicit_use_thyra=$enableval
+else
+  ac_cv_implicit_use_thyra=no
+fi;
+
+if test "Xyes" != "Xno"; then
+  if test "X$ac_cv_implicit_use_tpetra" != "Xno"; then
+    ac_cv_tpetra_using_thyra_default=$ac_cv_implicit_use_thyra
+  else
+    ac_cv_tpetra_using_thyra_default=no
+  fi
+else
+  ac_cv_tpetra_using_thyra_default=no
+fi
+
+# Check whether --enable-tpetra-thyra or --disable-tpetra-thyra was given.
+if test "${enable_tpetra_thyra+set}" = set; then
+  enableval="$enable_tpetra_thyra"
+  ac_cv_use_thyra=$enableval
+else
+  ac_cv_use_thyra=$ac_cv_tpetra_using_thyra_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in tpetra" >&5
+echo $ECHO_N "checking whether to build optional thyra dependent code in tpetra... $ECHO_C" >&6
+
+if test "X$ac_cv_use_thyra" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TPETRA_THYRA 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_thyra" = "Xyes"; then
+  BUILD_TPETRA_THYRA_TRUE=
+  BUILD_TPETRA_THYRA_FALSE='#'
+else
+  BUILD_TPETRA_THYRA_TRUE='#'
+  BUILD_TPETRA_THYRA_FALSE=
+fi
+
+
 
 
 
@@ -6671,10 +7504,9 @@ echo "${ECHO_T}no" >&6
 fi;
 
 
-# ------------------------------------------------------------------------
-# Checks for libraries
-# ------------------------------------------------------------------------
-
+# #np# - Yet another opportunity to remove code if you aren't
+# using Fortran
+# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX
 
 ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
@@ -6727,7 +7559,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6730: \"$ac_link\") >&5
+(eval echo $as_me:7562: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6805,7 +7637,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6808: \"$ac_link\") >&5
+(eval echo $as_me:7640: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7493,6 +8325,10 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
+# ------------------------------------------------------------------------
+# Checks for libraries
+# ------------------------------------------------------------------------
+
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
 if test "X$ac_cv_use_belos_tests" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
@@ -7915,7 +8751,7 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-BLAS_LIBS=""
+user_spec_blas_failed=yes
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
@@ -7924,6 +8760,12 @@ echo "${ECHO_T}$acx_blas_ok" >&6
 	LIBS="$save_LIBS"
 fi
 fi
+
+# If the user specified a blas library that could not be used we will
+# halt the search process rather than risk finding a blas library that
+# the user did not specify.
+
+if test "x$user_spec_blas_failed" != xyes; then
 
 # BLAS linked to by default?  (happens on some supercomputers)
 if test $acx_blas_ok = no; then
@@ -9222,6 +10064,9 @@ fi
 
 
 
+fi # If the user specified library wasn't found, we skipped the remaining
+   # checks.
+
 LIBS="$acx_blas_save_LIBS"
 
 # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
@@ -9238,6 +10083,7 @@ else
 echo "$as_me: error: Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)" >&2;}
    { (exit 1); exit 1; }; }
 fi
+
 
 
 
@@ -9344,7 +10190,7 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-LAPACK_LIBS=""
+user_spec_lapack_failed=yes
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
@@ -9355,6 +10201,12 @@ echo "${ECHO_T}$acx_lapack_ok" >&6
                 LAPACK_LIBS=""
         fi
 fi
+
+# If the user specified a LAPACK library that could not be used we will
+# halt the search process rather than risk finding a LAPACK library that
+# the user did not specify.
+
+if test "x$user_spec_lapack_failed" != xyes; then
 
 # LAPACK linked to by default?  (is sometimes included in BLAS lib)
 if test $acx_lapack_ok = no; then
@@ -9552,6 +10404,9 @@ done
 
 
 
+fi # If the user specified library wasn't found, we skipped the remaining
+   # checks.
+
 # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
 if test x"$acx_lapack_ok" = xyes; then
 
@@ -9632,7 +10487,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9635: \"$ac_link\") >&5
+(eval echo $as_me:10490: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9710,7 +10565,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9713: \"$ac_link\") >&5
+(eval echo $as_me:10568: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9930,7 +10785,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 ##
 
-                                                                                ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile"
+                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/BlockTFQMR/Makefile test/MVOPTester/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile thyra/Makefile thyra/src/Makefile thyra/test/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOWSFactory/Makefile thyra/example/Makefile thyra/example/LOWSFactory/Makefile thyra/example/LOWSFactory/Epetra/Makefile thyra/example/LOWSFactory/Tpetra/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10073,10 +10928,59 @@ echo "$as_me: error: conditional \"USE_ALTERNATE_AR\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${USING_EXPORT_MAKEFILES_TRUE}" && test -z "${USING_EXPORT_MAKEFILES_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"USING_EXPORT_MAKEFILES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"USING_EXPORT_MAKEFILES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${USING_PERL_TRUE}" && test -z "${USING_PERL_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"USING_PERL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"USING_PERL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${USING_GNUMAKE_TRUE}" && test -z "${USING_GNUMAKE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"USING_GNUMAKE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"USING_GNUMAKE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_EXAMPLES_TRUE}" && test -z "${BUILD_EXAMPLES_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EXAMPLES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_EXAMPLES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_TESTS_TRUE}" && test -z "${BUILD_TESTS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_TEUCHOS_COMPLEX_TRUE}" && test -z "${BUILD_TEUCHOS_COMPLEX_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TEUCHOS_COMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TEUCHOS_COMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_BELOS_EXPERIMENTAL_TRUE}" && test -z "${BUILD_BELOS_EXPERIMENTAL_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_BELOS_EXPERIMENTAL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_BELOS_EXPERIMENTAL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_TRIUTILS_TRUE}" && test -z "${BUILD_TRIUTILS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TRIUTILS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TRIUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -10087,10 +10991,31 @@ echo "$as_me: error: conditional \"BUILD_IFPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_TRIUTILS_TRUE}" && test -z "${BUILD_TRIUTILS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TRIUTILS\" was never defined.
+if test -z "${BUILD_EPETRAEXT_TRUE}" && test -z "${BUILD_EPETRAEXT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRAEXT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_TRIUTILS\" was never defined.
+echo "$as_me: error: conditional \"BUILD_EPETRAEXT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_BELOS_THYRA_TRUE}" && test -z "${BUILD_BELOS_THYRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_BELOS_THYRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_BELOS_THYRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_EPETRA_THYRA_TRUE}" && test -z "${BUILD_EPETRA_THYRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRA_THYRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_EPETRA_THYRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_TPETRA_THYRA_TRUE}" && test -z "${BUILD_TPETRA_THYRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TPETRA_THYRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TPETRA_THYRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -10539,13 +11464,27 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+  "Makefile.export.belos" ) CONFIG_FILES="$CONFIG_FILES Makefile.export.belos" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
+  "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
+  "example/BlockGmres/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/BlockGmres/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/BlockCG/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockCG/Makefile" ;;
   "test/BlockGmres/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockGmres/Makefile" ;;
+  "test/BlockTFQMR/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockTFQMR/Makefile" ;;
+  "test/MVOPTester/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MVOPTester/Makefile" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
   "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
   "test/scripts/daily/serial/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/serial/Makefile" ;;
+  "thyra/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/Makefile" ;;
+  "thyra/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/src/Makefile" ;;
+  "thyra/test/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/test/Makefile" ;;
+  "thyra/test/MVOPTester/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/test/MVOPTester/Makefile" ;;
+  "thyra/test/LOWSFactory/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/test/LOWSFactory/Makefile" ;;
+  "thyra/example/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/example/Makefile" ;;
+  "thyra/example/LOWSFactory/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/example/LOWSFactory/Makefile" ;;
+  "thyra/example/LOWSFactory/Epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/example/LOWSFactory/Epetra/Makefile" ;;
+  "thyra/example/LOWSFactory/Tpetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/example/LOWSFactory/Tpetra/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Belos_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Belos_config.h:src/Belos_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -10706,13 +11645,35 @@ s,@USE_ALTERNATE_AR_TRUE@,$USE_ALTERNATE_AR_TRUE,;t t
 s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
 s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
 s,@CXXCPP@,$CXXCPP,;t t
+s,@USING_EXPORT_MAKEFILES_TRUE@,$USING_EXPORT_MAKEFILES_TRUE,;t t
+s,@USING_EXPORT_MAKEFILES_FALSE@,$USING_EXPORT_MAKEFILES_FALSE,;t t
+s,@PERL_EXE@,$PERL_EXE,;t t
+s,@HAVE_PERL@,$HAVE_PERL,;t t
+s,@USING_PERL_TRUE@,$USING_PERL_TRUE,;t t
+s,@USING_PERL_FALSE@,$USING_PERL_FALSE,;t t
+s,@USING_GNUMAKE_TRUE@,$USING_GNUMAKE_TRUE,;t t
+s,@USING_GNUMAKE_FALSE@,$USING_GNUMAKE_FALSE,;t t
 s,@EGREP@,$EGREP,;t t
+s,@BUILD_EXAMPLES_TRUE@,$BUILD_EXAMPLES_TRUE,;t t
+s,@BUILD_EXAMPLES_FALSE@,$BUILD_EXAMPLES_FALSE,;t t
 s,@BUILD_TESTS_TRUE@,$BUILD_TESTS_TRUE,;t t
 s,@BUILD_TESTS_FALSE@,$BUILD_TESTS_FALSE,;t t
-s,@BUILD_IFPACK_TRUE@,$BUILD_IFPACK_TRUE,;t t
-s,@BUILD_IFPACK_FALSE@,$BUILD_IFPACK_FALSE,;t t
+s,@BUILD_TEUCHOS_COMPLEX_TRUE@,$BUILD_TEUCHOS_COMPLEX_TRUE,;t t
+s,@BUILD_TEUCHOS_COMPLEX_FALSE@,$BUILD_TEUCHOS_COMPLEX_FALSE,;t t
+s,@BUILD_BELOS_EXPERIMENTAL_TRUE@,$BUILD_BELOS_EXPERIMENTAL_TRUE,;t t
+s,@BUILD_BELOS_EXPERIMENTAL_FALSE@,$BUILD_BELOS_EXPERIMENTAL_FALSE,;t t
 s,@BUILD_TRIUTILS_TRUE@,$BUILD_TRIUTILS_TRUE,;t t
 s,@BUILD_TRIUTILS_FALSE@,$BUILD_TRIUTILS_FALSE,;t t
+s,@BUILD_IFPACK_TRUE@,$BUILD_IFPACK_TRUE,;t t
+s,@BUILD_IFPACK_FALSE@,$BUILD_IFPACK_FALSE,;t t
+s,@BUILD_EPETRAEXT_TRUE@,$BUILD_EPETRAEXT_TRUE,;t t
+s,@BUILD_EPETRAEXT_FALSE@,$BUILD_EPETRAEXT_FALSE,;t t
+s,@BUILD_BELOS_THYRA_TRUE@,$BUILD_BELOS_THYRA_TRUE,;t t
+s,@BUILD_BELOS_THYRA_FALSE@,$BUILD_BELOS_THYRA_FALSE,;t t
+s,@BUILD_EPETRA_THYRA_TRUE@,$BUILD_EPETRA_THYRA_TRUE,;t t
+s,@BUILD_EPETRA_THYRA_FALSE@,$BUILD_EPETRA_THYRA_FALSE,;t t
+s,@BUILD_TPETRA_THYRA_TRUE@,$BUILD_TPETRA_THYRA_TRUE,;t t
+s,@BUILD_TPETRA_THYRA_FALSE@,$BUILD_TPETRA_THYRA_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t

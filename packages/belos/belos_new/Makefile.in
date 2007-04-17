@@ -67,9 +67,10 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(top_srcdir)/configure \
-	config/config.guess config/config.sub config/depcomp \
-	config/install-sh config/missing config/mkinstalldirs
+	$(srcdir)/Makefile.export.belos.in $(srcdir)/Makefile.in \
+	$(top_srcdir)/configure config/config.guess config/config.sub \
+	config/depcomp config/install-sh config/missing \
+	config/mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -83,13 +84,17 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
+	$(top_srcdir)/config/tac_arg_inform_subpackage_used.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -97,7 +102,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = Makefile.export.belos
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -108,7 +113,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src test
+DIST_SUBDIRS = src example test thyra
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -130,10 +135,24 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
+BUILD_BELOS_EXPERIMENTAL_FALSE = @BUILD_BELOS_EXPERIMENTAL_FALSE@
+BUILD_BELOS_EXPERIMENTAL_TRUE = @BUILD_BELOS_EXPERIMENTAL_TRUE@
+BUILD_BELOS_THYRA_FALSE = @BUILD_BELOS_THYRA_FALSE@
+BUILD_BELOS_THYRA_TRUE = @BUILD_BELOS_THYRA_TRUE@
+BUILD_EPETRAEXT_FALSE = @BUILD_EPETRAEXT_FALSE@
+BUILD_EPETRAEXT_TRUE = @BUILD_EPETRAEXT_TRUE@
+BUILD_EPETRA_THYRA_FALSE = @BUILD_EPETRA_THYRA_FALSE@
+BUILD_EPETRA_THYRA_TRUE = @BUILD_EPETRA_THYRA_TRUE@
+BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
+BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
 BUILD_IFPACK_FALSE = @BUILD_IFPACK_FALSE@
 BUILD_IFPACK_TRUE = @BUILD_IFPACK_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
+BUILD_TEUCHOS_COMPLEX_FALSE = @BUILD_TEUCHOS_COMPLEX_FALSE@
+BUILD_TEUCHOS_COMPLEX_TRUE = @BUILD_TEUCHOS_COMPLEX_TRUE@
+BUILD_TPETRA_THYRA_FALSE = @BUILD_TPETRA_THYRA_FALSE@
+BUILD_TPETRA_THYRA_TRUE = @BUILD_TPETRA_THYRA_TRUE@
 BUILD_TRIUTILS_FALSE = @BUILD_TRIUTILS_FALSE@
 BUILD_TRIUTILS_TRUE = @BUILD_TRIUTILS_TRUE@
 CC = @CC@
@@ -157,6 +176,7 @@ FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERL = @HAVE_PERL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -183,12 +203,19 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
@@ -262,8 +289,14 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 
 
 # SUBDIRS = src example test 
+@BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
-SUBDIRS = src $(TEST_SUBDIR)
+@BUILD_BELOS_THYRA_TRUE@THYRA_SUBDIR = thyra
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(THYRA_SUBDIR)
+TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
+TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
+TRILINOS_MPI_MAX_PROC = 4
+TRILINOS_TEST_CATEGORY = INSTALL
 all: all-recursive
 
 .SUFFIXES:
@@ -300,6 +333,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+Makefile.export.belos: $(top_builddir)/config.status $(srcdir)/Makefile.export.belos.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 uninstall-info-am:
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -421,7 +456,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/config
+	$(mkdir_p) $(distdir)/. $(distdir)/config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -560,7 +595,7 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 check: check-recursive
-all-am: Makefile
+all-am: Makefile all-local
 installdirs: installdirs-recursive
 installdirs-am:
 install: install-recursive
@@ -610,6 +645,8 @@ info-am:
 install-data-am:
 
 install-exec-am:
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 
 install-info: install-info-recursive
 
@@ -636,23 +673,78 @@ ps: ps-recursive
 ps-am:
 
 uninstall-am: uninstall-info-am
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 
 uninstall-info: uninstall-info-recursive
 
-.PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am am--refresh check \
-	check-am clean clean-generic clean-recursive ctags \
-	ctags-recursive dist dist-all dist-bzip2 dist-gzip dist-shar \
-	dist-tarZ dist-zip distcheck distclean distclean-generic \
-	distclean-recursive distclean-tags distcleancheck distdir \
-	distuninstallcheck dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	maintainer-clean-recursive mostlyclean mostlyclean-generic \
-	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
-	uninstall uninstall-am uninstall-info-am
+.PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am all-local \
+	am--refresh check check-am clean clean-generic clean-recursive \
+	ctags ctags-recursive dist dist-all dist-bzip2 dist-gzip \
+	dist-shar dist-tarZ dist-zip distcheck distclean \
+	distclean-generic distclean-recursive distclean-tags \
+	distcleancheck distdir distuninstallcheck dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic maintainer-clean-recursive \
+	mostlyclean mostlyclean-generic mostlyclean-recursive pdf \
+	pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
+	uninstall-info-am
 
+
+#The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo "Trilinos package belos built successfully"
+
+all-libs:
+	cd src ; $(MAKE) all-libs
+
+libs:
+	cd src ; $(MAKE)
+
+runtests-serial :
+	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  --trilinos-dir=$(TRILINOS_HOME_DIR) \
+  --comm=serial \
+  --build-dir=$(TRILINOS_BUILD_DIR) \
+  --category=$(TRILINOS_TEST_CATEGORY) \
+  --output-dir=@abs_top_builddir@/test/runtests-results \
+  --verbosity=1 \
+  --packages=belos
+
+runtests-mpi :
+	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  --trilinos-dir=$(TRILINOS_HOME_DIR) \
+  --comm=mpi \
+  --mpi-go=$(TRILINOS_MPI_GO) \
+  --build-dir=$(TRILINOS_BUILD_DIR) \
+  --max-proc=$(TRILINOS_MPI_MAX_PROC) \
+  --category=$(TRILINOS_TEST_CATEGORY) \
+  --output-dir=@abs_top_builddir@/test/runtests-results \
+  --verbosity=1 \
+  --packages=belos
+
+@USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
+@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.belos $(exec_prefix)/include/.
+@USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
+@USING_EXPORT_MAKEFILES_TRUE@		--exec-prefix=$(exec_prefix) \
+@USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.belos \
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-top-srcdir=@abs_top_srcdir@ \
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
+@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../triutils:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../thyra::@abs_top_builddir@/../tpetra
+@USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile BELOS > $(exec_prefix)/include/Makefile.export.belos.macros
+
+@USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.belos
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.belos.macros
+
+@USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
+
+@USING_EXPORT_MAKEFILES_FALSE@uninstall-hook:
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
