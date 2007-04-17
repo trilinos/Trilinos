@@ -1,6 +1,12 @@
 # @HEADER
 # @HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package belos subdirectory src built successfully."
+	@echo ""
 
 # ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
@@ -14,30 +20,51 @@ CORE_H = \
 	$(srcdir)/BelosBlockGmres.hpp \
 	$(srcdir)/BelosCG.hpp \
 	$(srcdir)/BelosConfigDefs.hpp \
+	$(srcdir)/BelosDGKSOrthoManager.hpp \
 	$(srcdir)/BelosEpetraAdapter.hpp \
-	$(srcdir)/BelosEpetraOperator.hpp \
+	$(srcdir)/BelosEpetraOperator.h \
+	$(srcdir)/BelosICGSOrthoManager.hpp \
 	$(srcdir)/BelosIterativeSolver.hpp \
 	$(srcdir)/BelosLinearProblem.hpp \
+	$(srcdir)/BelosMatOrthoManager.hpp \
 	$(srcdir)/BelosMultiVec.hpp \
 	$(srcdir)/BelosMultiVecTraits.hpp \
 	$(srcdir)/BelosOperator.hpp \
 	$(srcdir)/BelosOperatorTraits.hpp \
+	$(srcdir)/BelosOrthoManager.hpp \
 	$(srcdir)/BelosOutputManager.hpp \
+	$(srcdir)/BelosPseudoBlockGmres.hpp \
 	$(srcdir)/BelosStatusTest.hpp \
+	$(srcdir)/BelosStatusTestCombo.hpp \
 	$(srcdir)/BelosStatusTestMaxIters.hpp \
 	$(srcdir)/BelosStatusTestMaxRestarts.hpp \
+	$(srcdir)/BelosStatusTestOutputter.hpp \
 	$(srcdir)/BelosStatusTestResNorm.hpp \
 	$(srcdir)/BelosTypes.hpp
 
-CORE = 
+CORE = \
+	$(srcdir)/BelosEpetraAdapter.cpp \
+	$(srcdir)/BelosEpetraOperator.cpp
+
 
 UTIL = \
 	$(srcdir)/BelosVersion.cpp
 
 ### add in paths as needed
 
-AM_CPPFLAGS =-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
-#	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.belos
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_INCLUDES))
+else
+EXPORT_INCLUDES = $(BELOS_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+# ------------------------------------------------------------------------
 
 SERIAL_H = 
 
@@ -79,7 +106,9 @@ DIST =
 
 COMP_H = \
 	$(srcdir)/BelosBlockCG.hpp \
-	$(srcdir)/BelosBlockGmres.hpp
+	$(srcdir)/BelosBlockGmres.hpp \
+        $(srcdir)/BelosCG.hpp \
+        $(srcdir)/BelosPseudoBlockGmres.hpp
 
 COMP = 
 
@@ -166,4 +195,19 @@ nodist_execinclude_HEADERS = Belos_config.h
 MAINTAINERCLEANFILES = Makefile.in 
 
 
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+if BUILD_IFPACK
+BUILD_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; $(MAKE) all-libs
+else
+BUILD_IFPACK_LIBS =
+endif
 
+all-libs:
+	$(MAKE) libbelos.a
+	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
+	cd $(top_builddir)/../triutils ; $(MAKE) all-libs
+	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
+	$(BUILD_IFPACK_LIBS)
+#	$(BUILD_TSFCORE_EPETRA_LIBS)

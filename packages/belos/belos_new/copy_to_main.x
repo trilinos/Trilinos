@@ -7,6 +7,7 @@
 
 cp ./configure* ../.
 cp ./Makefile.* ../.
+cp ./src/*.h ../src/.
 cp ./src/*.hpp ../src/.
 cp ./src/*.cpp ../src/.
 cp ./src/*.am ../src/.

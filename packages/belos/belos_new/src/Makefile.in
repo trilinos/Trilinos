@@ -17,12 +17,7 @@
 # @HEADER
 # @HEADER
 
-# ------------------------------------------------------------------------
-# For each category, create two variables - NAME and NAME_H. The
-# second is the list of headers to be installed, i.e., any header that
-# might someday be needed by some other code outside Ifpack. The first is
-# the list of all source and any other header files.
-# ------------------------------------------------------------------------
+# The following line helps the test harness recover from build errors.
 
 
 SOURCES = $(libbelos_a_SOURCES)
@@ -63,13 +58,17 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
+	$(top_srcdir)/config/tac_arg_inform_subpackage_used.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -82,16 +81,20 @@ am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execin
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 libbelos_a_DEPENDENCIES =
-am__objects_1 =
+am__objects_1 = BelosEpetraAdapter.$(OBJEXT) \
+	BelosEpetraOperator.$(OBJEXT)
 am__objects_2 = BelosVersion.$(OBJEXT)
+am__objects_3 =
 am_libbelos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
-	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
-	$(am__objects_1) $(am__objects_1) $(am__objects_1)
+	$(am__objects_3) $(am__objects_3) $(am__objects_3) \
+	$(am__objects_3) $(am__objects_3) $(am__objects_3)
 libbelos_a_OBJECTS = $(am_libbelos_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BelosVersion.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BelosEpetraAdapter.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/BelosEpetraOperator.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/BelosVersion.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -115,10 +118,24 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
+BUILD_BELOS_EXPERIMENTAL_FALSE = @BUILD_BELOS_EXPERIMENTAL_FALSE@
+BUILD_BELOS_EXPERIMENTAL_TRUE = @BUILD_BELOS_EXPERIMENTAL_TRUE@
+BUILD_BELOS_THYRA_FALSE = @BUILD_BELOS_THYRA_FALSE@
+BUILD_BELOS_THYRA_TRUE = @BUILD_BELOS_THYRA_TRUE@
+BUILD_EPETRAEXT_FALSE = @BUILD_EPETRAEXT_FALSE@
+BUILD_EPETRAEXT_TRUE = @BUILD_EPETRAEXT_TRUE@
+BUILD_EPETRA_THYRA_FALSE = @BUILD_EPETRA_THYRA_FALSE@
+BUILD_EPETRA_THYRA_TRUE = @BUILD_EPETRA_THYRA_TRUE@
+BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
+BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
 BUILD_IFPACK_FALSE = @BUILD_IFPACK_FALSE@
 BUILD_IFPACK_TRUE = @BUILD_IFPACK_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
+BUILD_TEUCHOS_COMPLEX_FALSE = @BUILD_TEUCHOS_COMPLEX_FALSE@
+BUILD_TEUCHOS_COMPLEX_TRUE = @BUILD_TEUCHOS_COMPLEX_TRUE@
+BUILD_TPETRA_THYRA_FALSE = @BUILD_TPETRA_THYRA_FALSE@
+BUILD_TPETRA_THYRA_TRUE = @BUILD_TPETRA_THYRA_TRUE@
 BUILD_TRIUTILS_FALSE = @BUILD_TRIUTILS_FALSE@
 BUILD_TRIUTILS_TRUE = @BUILD_TRIUTILS_TRUE@
 CC = @CC@
@@ -142,6 +159,7 @@ FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERL = @HAVE_PERL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -168,12 +186,19 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
@@ -220,34 +245,51 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside Ifpack. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
 CORE_H = \
 	$(srcdir)/BelosBlockCG.hpp \
 	$(srcdir)/BelosBlockGmres.hpp \
 	$(srcdir)/BelosCG.hpp \
 	$(srcdir)/BelosConfigDefs.hpp \
+	$(srcdir)/BelosDGKSOrthoManager.hpp \
 	$(srcdir)/BelosEpetraAdapter.hpp \
-	$(srcdir)/BelosEpetraOperator.hpp \
+	$(srcdir)/BelosEpetraOperator.h \
+	$(srcdir)/BelosICGSOrthoManager.hpp \
 	$(srcdir)/BelosIterativeSolver.hpp \
 	$(srcdir)/BelosLinearProblem.hpp \
+	$(srcdir)/BelosMatOrthoManager.hpp \
 	$(srcdir)/BelosMultiVec.hpp \
 	$(srcdir)/BelosMultiVecTraits.hpp \
 	$(srcdir)/BelosOperator.hpp \
 	$(srcdir)/BelosOperatorTraits.hpp \
+	$(srcdir)/BelosOrthoManager.hpp \
 	$(srcdir)/BelosOutputManager.hpp \
+	$(srcdir)/BelosPseudoBlockGmres.hpp \
 	$(srcdir)/BelosStatusTest.hpp \
+	$(srcdir)/BelosStatusTestCombo.hpp \
 	$(srcdir)/BelosStatusTestMaxIters.hpp \
 	$(srcdir)/BelosStatusTestMaxRestarts.hpp \
+	$(srcdir)/BelosStatusTestOutputter.hpp \
 	$(srcdir)/BelosStatusTestResNorm.hpp \
 	$(srcdir)/BelosTypes.hpp
 
-CORE = 
+CORE = \
+	$(srcdir)/BelosEpetraAdapter.cpp \
+	$(srcdir)/BelosEpetraOperator.cpp
+
 UTIL = \
 	$(srcdir)/BelosVersion.cpp
 
-
-### add in paths as needed
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
-#	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(BELOS_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+# ------------------------------------------------------------------------
 SERIAL_H = 
 SERIAL = 
 @HAVE_MPI_FALSE@MPI_H = 
@@ -271,7 +313,9 @@ DIST_H =
 DIST = 
 COMP_H = \
 	$(srcdir)/BelosBlockCG.hpp \
-	$(srcdir)/BelosBlockGmres.hpp
+	$(srcdir)/BelosBlockGmres.hpp \
+        $(srcdir)/BelosCG.hpp \
+        $(srcdir)/BelosPseudoBlockGmres.hpp
 
 COMP = 
 
@@ -340,6 +384,12 @@ nodist_execinclude_HEADERS = Belos_config.h
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
+@BUILD_IFPACK_FALSE@BUILD_IFPACK_LIBS = 
+
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+@BUILD_IFPACK_TRUE@BUILD_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; $(MAKE) all-libs
 all: Belos_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -431,6 +481,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BelosEpetraAdapter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BelosEpetraOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BelosVersion.Po@am__quote@
 
 .cpp.o:
@@ -448,6 +500,38 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+BelosEpetraAdapter.o: $(srcdir)/BelosEpetraAdapter.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BelosEpetraAdapter.o -MD -MP -MF "$(DEPDIR)/BelosEpetraAdapter.Tpo" -c -o BelosEpetraAdapter.o `test -f '$(srcdir)/BelosEpetraAdapter.cpp' || echo '$(srcdir)/'`$(srcdir)/BelosEpetraAdapter.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BelosEpetraAdapter.Tpo" "$(DEPDIR)/BelosEpetraAdapter.Po"; else rm -f "$(DEPDIR)/BelosEpetraAdapter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BelosEpetraAdapter.cpp' object='BelosEpetraAdapter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BelosEpetraAdapter.Po' tmpdepfile='$(DEPDIR)/BelosEpetraAdapter.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BelosEpetraAdapter.o `test -f '$(srcdir)/BelosEpetraAdapter.cpp' || echo '$(srcdir)/'`$(srcdir)/BelosEpetraAdapter.cpp
+
+BelosEpetraAdapter.obj: $(srcdir)/BelosEpetraAdapter.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BelosEpetraAdapter.obj -MD -MP -MF "$(DEPDIR)/BelosEpetraAdapter.Tpo" -c -o BelosEpetraAdapter.obj `if test -f '$(srcdir)/BelosEpetraAdapter.cpp'; then $(CYGPATH_W) '$(srcdir)/BelosEpetraAdapter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BelosEpetraAdapter.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BelosEpetraAdapter.Tpo" "$(DEPDIR)/BelosEpetraAdapter.Po"; else rm -f "$(DEPDIR)/BelosEpetraAdapter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BelosEpetraAdapter.cpp' object='BelosEpetraAdapter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BelosEpetraAdapter.Po' tmpdepfile='$(DEPDIR)/BelosEpetraAdapter.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BelosEpetraAdapter.obj `if test -f '$(srcdir)/BelosEpetraAdapter.cpp'; then $(CYGPATH_W) '$(srcdir)/BelosEpetraAdapter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BelosEpetraAdapter.cpp'; fi`
+
+BelosEpetraOperator.o: $(srcdir)/BelosEpetraOperator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BelosEpetraOperator.o -MD -MP -MF "$(DEPDIR)/BelosEpetraOperator.Tpo" -c -o BelosEpetraOperator.o `test -f '$(srcdir)/BelosEpetraOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/BelosEpetraOperator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BelosEpetraOperator.Tpo" "$(DEPDIR)/BelosEpetraOperator.Po"; else rm -f "$(DEPDIR)/BelosEpetraOperator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BelosEpetraOperator.cpp' object='BelosEpetraOperator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BelosEpetraOperator.Po' tmpdepfile='$(DEPDIR)/BelosEpetraOperator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BelosEpetraOperator.o `test -f '$(srcdir)/BelosEpetraOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/BelosEpetraOperator.cpp
+
+BelosEpetraOperator.obj: $(srcdir)/BelosEpetraOperator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BelosEpetraOperator.obj -MD -MP -MF "$(DEPDIR)/BelosEpetraOperator.Tpo" -c -o BelosEpetraOperator.obj `if test -f '$(srcdir)/BelosEpetraOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/BelosEpetraOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BelosEpetraOperator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BelosEpetraOperator.Tpo" "$(DEPDIR)/BelosEpetraOperator.Po"; else rm -f "$(DEPDIR)/BelosEpetraOperator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BelosEpetraOperator.cpp' object='BelosEpetraOperator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BelosEpetraOperator.Po' tmpdepfile='$(DEPDIR)/BelosEpetraOperator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BelosEpetraOperator.obj `if test -f '$(srcdir)/BelosEpetraOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/BelosEpetraOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BelosEpetraOperator.cpp'; fi`
 
 BelosVersion.o: $(srcdir)/BelosVersion.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BelosVersion.o -MD -MP -MF "$(DEPDIR)/BelosVersion.Tpo" -c -o BelosVersion.o `test -f '$(srcdir)/BelosVersion.cpp' || echo '$(srcdir)/'`$(srcdir)/BelosVersion.cpp; \
@@ -575,7 +659,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(HEADERS) Belos_config.h
+all-am: Makefile $(LIBRARIES) $(HEADERS) Belos_config.h all-local
 installdirs:
 	$(mkdir_p) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execincludedir)
 install: install-am
@@ -654,13 +738,13 @@ ps-am:
 uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES ctags distclean distclean-compile \
-	distclean-generic distclean-hdr distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-exec install-exec-am \
-	install-includeHEADERS install-info install-info-am \
-	install-libLIBRARIES install-man \
+.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
+	clean-generic clean-libLIBRARIES ctags distclean \
+	distclean-compile distclean-generic distclean-hdr \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-exec \
+	install-exec-am install-includeHEADERS install-info \
+	install-info-am install-libLIBRARIES install-man \
 	install-nodist_execincludeHEADERS install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
@@ -668,6 +752,26 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-am uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
+
+all-local:
+	@echo ""
+	@echo "Trilinos package belos subdirectory src built successfully."
+	@echo ""
+
+### add in paths as needed
+
+# ------------------------------------------------------------------------
+# Includes for required and optional library dependencies
+# ------------------------------------------------------------------------
+include $(top_builddir)/Makefile.export.belos
+
+all-libs:
+	$(MAKE) libbelos.a
+	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
+	cd $(top_builddir)/../triutils ; $(MAKE) all-libs
+	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
+	$(BUILD_IFPACK_LIBS)
+#	$(BUILD_TSFCORE_EPETRA_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
