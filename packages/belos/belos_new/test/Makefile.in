@@ -219,7 +219,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = scripts BlockCG BlockGmres BlockTFQMR MVOPTester
+SUBDIRS = BlockCG BlockGmres 
 all: all-recursive
 
 .SUFFIXES:
