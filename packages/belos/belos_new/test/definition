@@ -1,0 +1,128 @@
+#
+# FRAMEWORK group
+#
+# NOTE:  To pass an input file through the command-line, one may have
+# to use this convention:
+#
+# --filename=$ABS_TOP_SRCDIR/packages/belos/test/MVOPTester/mhd1280b.cua;
+#
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockCG/bl_cg_hb.exe,
+            BlockCG/bl_pcg_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockCG/bcsstk14.hb";
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockGmres/bl_gmres_hb.exe,
+            BlockGmres/bl_pgmres_hb.exe,
+	    BlockGmres/bl_fgmres_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockGmres/orsirr1.hb";
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockGmres/bl_gmres_hb.exe,
+            BlockGmres/bl_pgmres_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockGmres/orsirr1.hb" --pseudo;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockGmres/bl_gmres_diag.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockCG/bl_cg_complex_hb.exe,
+            BlockGmres/bl_gmres_complex_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockCG/mhd1280b.cua";
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockGmres/bl_gmres_complex_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockCG/mhd1280b.cua" --pseudo;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK) {
+    TESTS = BlockGmres/bl_gmres_complex_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockGmres/mhd1280a.cua" --subspace-length=200 --tol=1e-4;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = MVOPTester/MVOPTester_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = MVOPTester/MVOPComplexTester_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./MVOPTester/mhd1280b.cua";
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = ../thyra/test/MVOPTester/MVOPTesterThyra_test.exe;
+    ARGS = -v;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL,BELOSTHYRA) {
+    TESTS = ../thyra/test/LOWSFactory/test_single_belos_thyra_solver_driver.exe;
+    ARGS = --max-iters=4 --no-use-preconditioner --show-all-tests  --matrix-file=../thyra/test/LOWSFactory/FourByFour.mtx;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL,BELOSTHYRA) {
+    TESTS = ../thyra/test/LOWSFactory/test_single_belos_thyra_solver_driver.exe;
+    ARGS = --max-iters=1 --show-all-tests --matrix-file=../thyra/test/LOWSFactory/FourByFour.mtx;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL,BELOSTHYRA) {
+    TESTS = ../thyra/test/LOWSFactory/test_single_belos_thyra_solver_driver.exe;
+    ARGS = --show-all-tests --gmres-krylov-length=190 --max-solution-error=1e-2 --max-resid=1e-6 --matrix-file=../thyra/test/LOWSFactory/nos5.mtx;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL,BELOSTHYRA) {
+    TESTS = ../thyra/test/LOWSFactory/test_single_belos_thyra_solver_driver.exe;
+    ARGS =  --no-use-preconditioner --show-all-tests --num-rhs=1 --block-size=1 --gmres-krylov-length=300 \
+            --max-fwd-error=1e-13 --max-resid=1e-13 --max-iters=1000 --max-solution-error=1e-6 --matrix-file=../thyra/test/LOWSFactory/nos1.mtx;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL,BELOSTHYRA) {
+    TESTS = ../thyra/test/LOWSFactory/test_single_belos_thyra_solver_driver.exe;
+    ARGS =  --no-use-preconditioner --show-all-tests --num-rhs=8 --block-size=8 --gmres-krylov-length=300 --max-fwd-error=1e-13 \
+            --max-resid=1e-13 --max-iters=1000 --max-solution-error=1e-6 --matrix-file=../thyra/test/LOWSFactory/nos1.mtx;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL,BELOSTHYRA) {
+    TESTS = ../thyra/test/LOWSFactory/test_single_belos_thyra_solver_driver.exe;
+    ARGS =  --show-all-tests --num-rhs=1 --block-size=1 --gmres-krylov-length=300 --max-fwd-error=1e-13 --max-resid=1e-13 \
+            --max-iters=1000 --max-solution-error=1e-6 --matrix-file=../thyra/test/LOWSFactory/nos1.mtx;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL,BELOSTHYRA) {
+    TESTS = ../thyra/test/LOWSFactory/test_single_belos_thyra_solver_driver.exe;
+    ARGS =  --show-all-tests --num-rhs=8 --block-size=8 --gmres-krylov-length=300 --max-fwd-error=1e-13 --max-resid=1e-13 \
+            --max-iters=1000 --max-solution-error=1e-6 --matrix-file=../thyra/test/LOWSFactory/nos1.mtx;
+    COMM = SERIAL;
+}
+
