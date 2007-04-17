@@ -27,3 +27,21 @@ rm ../test/BlockCG/*.hpp
 rm ../test/BlockGmres/Makefile*
 rm ../test/BlockGmres/*.cpp
 rm ../test/BlockGmres/*.hpp
+
+rm ../thyra/Makefile*.
+rm ../thyra/src/Makefile* 
+rm ../thyra/src/*.hpp 
+rm ../thyra/example/Makefile*
+rm ../thyra/example/LOWSFactory/Makefile*
+rm ../thyra/example/LOWSFactory/Epetra/Makefile*
+rm ../thyra/example/LOWSFactory/Epetra/*.cpp
+rm ../thyra/example/LOWSFactory/Tpetra/Makefile*
+rm ../thyra/example/LOWSFactory/Tpetra/*.cpp
+rm ../thyra/example/LOWSFactory/Tpetra/*.hpp
+rm ../thyra/test/Makefile*
+rm ../thyra/test/LOWSFactory/Makefile*
+rm ../thyra/test/LOWSFactory/*.hpp
+rm ../thyra/test/LOWSFactory/*.cpp
+rm ../thyra/test/MVOPTester/Makefile*
+rm ../thyra/test/MVOPTester/*.cpp
+
