@@ -43,8 +43,8 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosEpetraAdapter.hpp"
-#include "BelosBlockGmres.hpp"
-#include "BelosBlockCG.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+//#include "BelosBlockCG.hpp"
 
 #include "Teuchos_ParameterList.hpp"
 using Teuchos::RefCountPtr;
@@ -128,7 +128,7 @@ public:
   //@}	   
 private:
 
-  RefCountPtr<IterativeSolver<double,Epetra_MultiVector,Epetra_Operator> > solver_;
+  RefCountPtr<SolverManager<double,Epetra_MultiVector,Epetra_Operator> > solver_;
   RefCountPtr<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> > lp_;
   RefCountPtr<StatusTest<double,Epetra_MultiVector,Epetra_Operator> > stest_;
   RefCountPtr<OutputManager<double> > om_;

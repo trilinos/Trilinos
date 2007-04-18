@@ -37,15 +37,11 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
-#include "BelosStatusTestMaxRestarts.hpp"
 #include "BelosStatusTestResNorm.hpp"
 #include "BelosStatusTestOutputter.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosEpetraAdapter.hpp"
-#include "BelosBlockGmres.hpp"
-#include "BelosBlockGmresIter.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
-#include "BelosPseudoBlockGmres.hpp"
 
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Epetra_Map.h"
@@ -157,13 +153,10 @@ int main(int argc, char *argv[]) {
   test5.set_outputManager( rcp(&My_OM,false) );    
   StatusTestCombo_t My_Test( StatusTestCombo_t::OR, test3, rcp(&test5,false) );
  
-  RefCountPtr< Belos::IterativeSolver<double,MV,OP> > Solver; 
-  if (pseudo)
-    Solver = rcp( new Belos::PseudoBlockGmres<double,MV,OP>
-                      ( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false) ) );
-  else
-    Solver = rcp( new Belos::BlockGmres<double,MV,OP>
-                      ( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false) ) );
+  // Create an iterative solver manager.
+  RefCountPtr< Belos::SolverManager<double,MV,OP> > newSolver
+    = rcp( new Belos::BlockGmresSolMgr<double,MV,OP>(rcp(&My_LP,false), My_PL) );
+
   //
   // **********Print out information about problem*******************
   //

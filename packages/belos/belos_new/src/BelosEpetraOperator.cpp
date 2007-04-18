@@ -66,11 +66,11 @@ EpetraOperator::EpetraOperator( const RefCountPtr<LinearProblem<double,Epetra_Mu
   // exist already and just be reset with a new RHS.
   //
   if (strcmp(&Solver[0],"BlockGMRES")==0) {
-    solver_ = Teuchos::rcp( new BlockGmres<double,Epetra_MultiVector,Epetra_Operator>( lp_, stest_, om_, plist_ ) );
+    solver_ = Teuchos::rcp( new BlockGmresSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, *plist_ ) );
   }
-  if (strcmp(&Solver[0],"BlockCG")==0) {
-    solver_ = Teuchos::rcp( new BlockCG<double,Epetra_MultiVector,Epetra_Operator>( lp_, stest_, om_) );
-  }
+//  if (strcmp(&Solver[0],"BlockCG")==0) {
+//    solver_ = Teuchos::rcp( new BlockCG<double,Epetra_MultiVector,Epetra_Operator>( lp_, stest_, om_) );
+//  }
 }
 
 const Epetra_Comm& EpetraOperator::Comm() const 
@@ -94,10 +94,10 @@ int EpetraOperator::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) 
   RefCountPtr<Epetra_MultiVector> vec_Y;
   vec_X = rcp( &X, false );
   vec_Y = rcp( &Y, false );
-  solver_->Reset();
+ // solver_->Reset();
   lp_->Reset( vec_Y, vec_X );
-  stest_->Reset();
-  solver_->Solve();
+  stest_->reset();
+  solver_->solve();
   
   // Assume a good return right now since Belos doesn't have return types yet.
   return(0);
@@ -109,10 +109,10 @@ int EpetraOperator::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVecto
   RefCountPtr<Epetra_MultiVector> vec_Y;
   vec_X = rcp( &X, false );
   vec_Y = rcp( &Y, false );
-  solver_->Reset();
+ // solver_->Reset();
   lp_->Reset( vec_Y, vec_X );
-  stest_->Reset();
-  solver_->Solve();
+  stest_->reset();
+  solver_->solve();
   
   // Assume a good return right now since Belos doesn't have return types yet.
   return(0);

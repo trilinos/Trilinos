@@ -35,6 +35,7 @@
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
+#include "Teuchos_oblackholestream.hpp"	
 
 /*!	\class Belos::OutputManager
 
@@ -81,7 +82,16 @@ namespace Belos {
     
     //! @name Get methods
     //@{ 
-    
+
+    //! Create a stream for outputting to.
+    ostream& stream( MsgType type ) 
+    {
+      if ( (type & vbLevel_) == type && iPrint_ ) {
+	return *myOS_;
+      }
+      return myBHS_;
+    }
+ 
     //! Get the output stream for this manager.
     Teuchos::RefCountPtr<ostream> GetOStream() { return myOS_; };
     
@@ -124,6 +134,7 @@ namespace Belos {
     int vbLevel_;
     bool iPrint_;
     Teuchos::RefCountPtr<ostream> myOS_;	
+    Teuchos::oblackholestream myBHS_;
   };
   
   template<class ScalarType>

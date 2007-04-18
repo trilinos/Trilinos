@@ -114,7 +114,7 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
 		  const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& test2);
 
   //! Add another test to this combination.
-  StatusTestCombo<ScalarType,MV,OP>& AddStatusTest(const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& add_test);
+  StatusTestCombo<ScalarType,MV,OP>& addStatusTest(const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& add_test);
 
   //! Destructor
   virtual ~StatusTestCombo() {};
@@ -127,10 +127,10 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
   /*! This method checks to see if the convergence criteria are met using the current information from the 
     iterative solver.
   */
-  StatusType CheckStatus( IterativeSolver<ScalarType,MV,OP>* iSolver );
+  StatusType checkStatus( Iteration<ScalarType,MV,OP>* iSolver );
 
   //! Return the result of the most recent CheckStatus call.
-  StatusType GetStatus() const { return(status_); };
+  StatusType getStatus() const { return(status_); };
 
   //@}
 
@@ -140,7 +140,7 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
   //! Resets all the status tests in this combination to their initial internal state.
   /*! This should be done when the status test is being reused with another solver or linear problem.
   */
-  void Reset(); 
+  void reset(); 
 
   //@}
 
@@ -148,7 +148,7 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   //! Returns the maximum number of iterations set in the constructor.
-  ComboType GetComboType() const {return(type_);};
+  ComboType getComboType() const {return(type_);};
 
   //@}
 
@@ -159,14 +159,14 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
   /*! If this method returns true, then one or more of the StatusTest objects that make up this combined
     test requires the norm of the true residual vector to perform its test.
   */
-  bool ResidualVectorRequired() const;
+  bool residualVectorRequired() const;
 
   //@}
   //! @name Print methods
   //@{ 
   
   //! Output formatted description of stopping test to output stream
-  ostream& Print(ostream& os, int indent = 0) const;
+  ostream& print(ostream& os, int indent = 0) const;
   
   //@}
 
@@ -175,17 +175,17 @@ protected:
   //! @name Internal methods.
   //@{ 
   //! Use this for checkStatus when this is an OR type combo. Updates status.
-  void OrOp( IterativeSolver<ScalarType,MV,OP>* iSolver );
+  void orOp( Iteration<ScalarType,MV,OP>* iSolver );
 
   //! Use this for checkStatus when this is an AND type combo. Updates status.
-  void AndOp( IterativeSolver<ScalarType,MV,OP>* iSolver );
+  void andOp( Iteration<ScalarType,MV,OP>* iSolver );
 
   //! Use this for checkStatus when this is a sequential AND type combo. Updates status.
-  void SeqOp( IterativeSolver<ScalarType,MV,OP>* iSolver );
+  void seqOp( Iteration<ScalarType,MV,OP>* iSolver );
 
   //! Check whether or not it is safe to add a to the list of
   //! tests. This is necessary to avoid any infinite recursions.
-  bool IsSafe( const Teuchos:: RefCountPtr<StatusTest<ScalarType,MV,OP> >& test1);
+  bool isSafe( const Teuchos:: RefCountPtr<StatusTest<ScalarType,MV,OP> >& test1);
   //@}
 
  private:
@@ -227,30 +227,30 @@ StatusTestCombo<ScalarType,MV,OP>::StatusTestCombo(ComboType t,
 {
   type_ = t;
   tests_.push_back(test1);
-  AddStatusTest(test2);
+  addStatusTest(test2);
   status_ = Undefined;
 }
 
 template <class ScalarType, class MV, class OP>
-StatusTestCombo<ScalarType,MV,OP>& StatusTestCombo<ScalarType,MV,OP>::AddStatusTest(const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& add_test)
+StatusTestCombo<ScalarType,MV,OP>& StatusTestCombo<ScalarType,MV,OP>::addStatusTest(const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& add_test)
 {
-  if (IsSafe(add_test))
+  if (isSafe(add_test))
     tests_.push_back(add_test);
   else
     {
       const int indent = 2;
       cout << "\n*** WARNING! ***\n";
       cout << "This combo test currently consists of the following:\n";
-      this->Print(cout, indent);
+      this->print(cout, indent);
       cout << "Unable to add the following test:\n";
-      add_test->Print(cout, indent);
+      add_test->print(cout, indent);
       cout << "\n";
     }
   return *this;
 }
 
 template <class ScalarType, class MV, class OP>
-bool StatusTestCombo<ScalarType,MV,OP>::IsSafe( const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& test1)
+bool StatusTestCombo<ScalarType,MV,OP>::isSafe( const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& test1)
 {
   // Are we trying to add "this" to "this"? This would result in an infinite recursion.
   if (test1.get() == this)
@@ -262,14 +262,14 @@ bool StatusTestCombo<ScalarType,MV,OP>::IsSafe( const Teuchos::RefCountPtr<Statu
     
     StatusTestCombo<ScalarType,MV,OP>* ptr = dynamic_cast<StatusTestCombo<ScalarType,MV,OP> *>(i->get());
     if (ptr != NULL)
-      if (!ptr->IsSafe(test1))
+      if (!ptr->isSafe(test1))
         return false;
   }
   return true;
 }
 
 template <class ScalarType, class MV, class OP>
-bool StatusTestCombo<ScalarType,MV,OP>::ResidualVectorRequired() const
+bool StatusTestCombo<ScalarType,MV,OP>::residualVectorRequired() const
 {
   // If any of the StatusTest object require the residual vector, then return true.
   
@@ -278,7 +278,7 @@ bool StatusTestCombo<ScalarType,MV,OP>::ResidualVectorRequired() const
     
     StatusTest<ScalarType,MV,OP>* ptr = dynamic_cast< StatusTest<ScalarType,MV,OP> *>(i->get());
     if (ptr != NULL)
-      if (ptr->ResidualVectorRequired())
+      if (ptr->residualVectorRequired())
         return true;
   }
   
@@ -287,27 +287,27 @@ bool StatusTestCombo<ScalarType,MV,OP>::ResidualVectorRequired() const
 }
 
 template <class ScalarType, class MV, class OP>
-StatusType StatusTestCombo<ScalarType,MV,OP>::CheckStatus( IterativeSolver<ScalarType,MV,OP>* iSolver )
+StatusType StatusTestCombo<ScalarType,MV,OP>::checkStatus( Iteration<ScalarType,MV,OP>* iSolver )
 {
   status_ = Unconverged;
 
   if (type_ == OR)
-    OrOp( iSolver );
+    orOp( iSolver );
   else if (type_ == AND)
-    AndOp( iSolver );
+    andOp( iSolver );
   else
-    SeqOp( iSolver );
+    seqOp( iSolver );
 
   return status_;
 }
 
 template <class ScalarType, class MV, class OP>
-void StatusTestCombo<ScalarType,MV,OP>::Reset( )
+void StatusTestCombo<ScalarType,MV,OP>::reset( )
 {
   // Resets all status tests in my list.
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) 
     {
-      (*i)->Reset();
+      (*i)->reset();
     }
   // Reset my status.
   status_ = Undefined;
@@ -316,7 +316,7 @@ void StatusTestCombo<ScalarType,MV,OP>::Reset( )
 }
 
 template <class ScalarType, class MV, class OP>
-void StatusTestCombo<ScalarType,MV,OP>::OrOp( IterativeSolver<ScalarType,MV,OP>* iSolver )
+void StatusTestCombo<ScalarType,MV,OP>::orOp( Iteration<ScalarType,MV,OP>* iSolver )
 {
   bool isFailed = false;
 
@@ -324,7 +324,7 @@ void StatusTestCombo<ScalarType,MV,OP>::OrOp( IterativeSolver<ScalarType,MV,OP>*
   // any, that is unconverged is the status that it sets itself too.
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) 
     {
-      StatusType s = (*i)->CheckStatus( iSolver );
+      StatusType s = (*i)->checkStatus( iSolver );
       
       // Check for failure and NaN.  Combo treats NaNs as Fails
       if (s==Failed || s==NaN) isFailed = true;
@@ -341,14 +341,14 @@ void StatusTestCombo<ScalarType,MV,OP>::OrOp( IterativeSolver<ScalarType,MV,OP>*
 }
 
 template <class ScalarType, class MV, class OP>
-void StatusTestCombo<ScalarType,MV,OP>::AndOp( IterativeSolver<ScalarType,MV,OP>* iSolver )
+void StatusTestCombo<ScalarType,MV,OP>::andOp( Iteration<ScalarType,MV,OP>* iSolver )
 {
   bool isUnconverged = false;
   bool isFailed = false;
   
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
     
-    StatusType s = (*i)->CheckStatus( iSolver );
+    StatusType s = (*i)->checkStatus( iSolver );
 
     // Check for failure and NaN.  Combo treats NaNs as Fails
     if (s==Failed || s==NaN) isFailed = true;
@@ -374,11 +374,11 @@ void StatusTestCombo<ScalarType,MV,OP>::AndOp( IterativeSolver<ScalarType,MV,OP>
 }
 
 template <class ScalarType, class MV, class OP>
-void StatusTestCombo<ScalarType,MV,OP>::SeqOp( IterativeSolver<ScalarType,MV,OP>* iSolver ) 
+void StatusTestCombo<ScalarType,MV,OP>::seqOp( Iteration<ScalarType,MV,OP>* iSolver ) 
 {
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
 
-    StatusType s = (*i)->CheckStatus( iSolver );
+    StatusType s = (*i)->checkStatus( iSolver );
 
     // Check for failure and NaN.  Combo treats NaNs as Fails
     if (s==Failed || s==NaN) {
@@ -397,16 +397,16 @@ void StatusTestCombo<ScalarType,MV,OP>::SeqOp( IterativeSolver<ScalarType,MV,OP>
 }
 
 template <class ScalarType, class MV, class OP>
-ostream& StatusTestCombo<ScalarType,MV,OP>::Print(ostream& os, int indent) const {
+ostream& StatusTestCombo<ScalarType,MV,OP>::print(ostream& os, int indent) const {
   for (int j = 0; j < indent; j ++)
     os << ' ';
-  this->PrintStatus(os, status_);
+  this->printStatus(os, status_);
   os << ((type_ == OR) ? "OR" : (type_ == AND) ? "AND" :"SEQ");
   os << " Combination";
   os << " -> " << endl;
 
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i)
-    (*i)->Print(os, indent+2);
+    (*i)->print(os, indent+2);
 
   return os;
 }

@@ -42,6 +42,9 @@
 
 namespace Belos {
 
+template <class ScalarType, class MV, class OP>
+class LinearProblem;
+
 template <class ScalarType>
 class OutputManager;
 
@@ -49,10 +52,10 @@ template <class ScalarType, class MV, class OP>
 class StatusTest;
 
 template <class ScalarType, class MV, class OP>
-class LinearProblem;
+class MatOrthoManager;
 
 template<class ScalarType, class MV, class OP>
-class Iteration : virtual public Teuchos::Describable  {
+class Iteration {
 
   public:
 
@@ -70,8 +73,8 @@ class Iteration : virtual public Teuchos::Describable  {
   Iteration( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
 	     const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
 	     const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-	     const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> > &ortho,
-	     const Teuchos::RefCountPtr<Teuchos::ParameterList> &params );
+	     const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+	     Teuchos::ParameterList &params );
 
   //! Destructor.
   virtual ~Iteration() {};

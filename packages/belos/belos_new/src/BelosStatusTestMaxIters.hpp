@@ -68,10 +68,10 @@ class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP> {
   /*! This method checks to see if the convergence criteria are met using the current information from the 
     iterative solver.
   */
-  StatusType CheckStatus(IterativeSolver<ScalarType,MV,OP> *iSolver );
+  StatusType checkStatus(Iteration<ScalarType,MV,OP> *iSolver );
 
   //! Return the result of the most recent CheckStatus call.
-  StatusType GetStatus() const {return(status_);};
+  StatusType getStatus() const {return(status_);};
 
   //@}
 
@@ -79,7 +79,7 @@ class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   //! Resets the status test to the initial internal state.
-  void Reset();
+  void reset();
 
   //@}
 
@@ -87,10 +87,10 @@ class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   //! Returns the maximum number of iterations set in the constructor.
-  int GetMaxIters() const { return(maxIters_); };
+  int getMaxIters() const { return(maxIters_); };
 
   //! Returns the current number of iterations from the most recent StatusTest call.
-  int GetNumIters() const { return(nIters_); };
+  int getNumIters() const { return(nIters_); };
 
   //@}
 
@@ -98,14 +98,14 @@ class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   //! Indicates if residual vector is required by this convergence test: returns false for this class.
-  bool ResidualVectorRequired() const { return(false); } ;
+  bool residualVectorRequired() const { return(false); } ;
   //@}
 
   //! @name Print methods
   //@{ 
 
   //! Output formatted description of stopping test to output stream
-  ostream& Print(ostream& os, int indent = 0) const;
+  ostream& print(ostream& os, int indent = 0) const;
 
   //@}
   
@@ -139,28 +139,28 @@ private:
   }
   
   template <class ScalarType, class MV, class OP>
-  StatusType StatusTestMaxIters<ScalarType,MV,OP>::CheckStatus(IterativeSolver<ScalarType,MV,OP> *iSolver )
+  StatusType StatusTestMaxIters<ScalarType,MV,OP>::checkStatus(Iteration<ScalarType,MV,OP> *iSolver )
   {
     status_ = Unconverged;
-    nIters_ = iSolver->GetNumIters();
+    nIters_ = iSolver->getNumIters();
     if (nIters_ >= maxIters_)
       status_ = Failed;
     return status_;
   }
   
   template <class ScalarType, class MV, class OP>
-  void StatusTestMaxIters<ScalarType,MV,OP>::Reset()
+  void StatusTestMaxIters<ScalarType,MV,OP>::reset()
   {
     nIters_ = 0;
     status_ = Undefined;
   }    
     
   template <class ScalarType, class MV, class OP>
-  ostream& StatusTestMaxIters<ScalarType,MV,OP>::Print(ostream& os, int indent) const
+  ostream& StatusTestMaxIters<ScalarType,MV,OP>::print(ostream& os, int indent) const
   {
     for (int j = 0; j < indent; j ++)
       os << ' ';
-    this->PrintStatus(os, status_);
+    this->printStatus(os, status_);
     os << "Number of Iterations = ";
     os << nIters_;
     os << ((nIters_ < maxIters_) ? " < " : ((nIters_ == maxIters_) ? " == " : " > "));

@@ -39,7 +39,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
 
-#include "BelosBlockGmres.hpp"
+#include "BelosBlockGmresIter.hpp"
 #include "BelosDGKSOrthoManager.hpp"
 #include "BelosICGSOrthoManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
@@ -65,9 +65,22 @@
 
 namespace Belos {
 
-template<class ScalarType, class MV, class OP>
-class BlockGmresSolMgr : public SolverManager<ScalarType,MV,OP> {
-
+  //! @name BlockGmresIter Exceptions
+  //@{
+  
+  /** \brief BlockGmresSolMgrOrthoFailure is thrown when the orthogonalization manager is
+   * unable to generate orthonormal columns from the initial basis vectors.
+   *
+   * This exception is thrown from the BlockGmresSolMgr::solve() method.
+   *
+   */
+  class BlockGmresSolMgrOrthoFailure : public BelosError {public:
+    BlockGmresSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
+    {}};
+  
+  template<class ScalarType, class MV, class OP>
+  class BlockGmresSolMgr : public SolverManager<ScalarType,MV,OP> {
+    
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
@@ -199,10 +212,6 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
                      "Belos::BlockGmresSolMgr: \"Num Blocks\" must be strictly positive.");
 
-  TEST_FOR_EXCEPTION(numBlocks_*blockSize_ > MVT::GetVecLength(*problem_->getRHS()),
-                     std::invalid_argument,
-                     "Belos::BlockGmresSolMgr: Potentially impossible orthogonality requests. Reduce basis size.");
-  
   // which orthogonalization to use
   orthoType_ = pl.get("Orthogonalization",orthoType_);
   if (orthoType_ != "DGKS" && orthoType_ != "ICGS") {
@@ -228,9 +237,6 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
 template<class ScalarType, class MV, class OP>
 ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
-  ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-  ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-
   Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
   
@@ -250,14 +256,14 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
     = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
   Teuchos::RefCountPtr<StatusTestResNorm_t> convtest 
     = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
-  convtest->DefineScaleForm( StatusTestResNorm_t::NormOfPrecInitRes, Belos::TwoNorm );
+  convtest->defineScaleForm( StatusTestResNorm_t::NormOfPrecInitRes, Belos::TwoNorm );
   Teuchos::RefCountPtr<StatusTestCombo_t> basictest
     = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxitrtest, convtest ) );
   
   // Explicit residual test once the native residual is below the tolerance
   Teuchos::RefCountPtr<StatusTestResNorm_t> convtest2
     = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
-  convtest2->DefineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
+  convtest2->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
   
   Teuchos::RefCountPtr<StatusTestCombo_t> stest
     = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, basictest, convtest2 ) );
@@ -265,14 +271,14 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
   //
-  Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> > ortho; 
+  Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > ortho; 
   if (orthoType_=="DGKS") {
     if (ortho_kappa_ <= 0) {
       ortho = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>() );
     }
     else {
       ortho = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>() );
-      ortho->setDepTol( ortho_kappa_ );
+      Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho)->setDepTol( ortho_kappa_ );
     }
   }
   else if (orthoType_=="ICGS") {
@@ -319,15 +325,17 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       // Get a view of the first block in the current Krylov basis.
       std::vector<int> firstind( blockSize_ );
       for (int i=0; i<blockSize_; i++) { firstind[i] = i; }
-      Teuchos::RefCountPtr<const MV> V_0 = MVT::CloneView( *(oldState.V), firstind );
+      Teuchos::RefCountPtr<MV> V_0 = Teuchos::rcp_const_cast<MV>(MVT::CloneView( *(oldState.V), firstind ));
       problem_->ComputeResVec( &*V_0, &*cur_block_sol, &*cur_block_rhs );
 
       // Get a view of the first block of the Krylov basis.
       Teuchos::SerialDenseMatrix<int,ScalarType> Znew(Teuchos::View, *(oldState.Z), blockSize_, blockSize_);
       
       // Orthonormalize the new V_0
-      int rank = ortho->normalize( *V_0, Znew );
-
+      int rank = ortho->normalize( *V_0, Teuchos::rcp(&Znew, false) );
+      TEST_FOR_EXCEPTION(rank != blockSize_,BlockGmresSolMgrOrthoFailure,
+			 "Belos::BlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
+      
       int numRestarts = 0;
 
       while(1) {
@@ -383,14 +391,16 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    // Get a view of the current Krylov basis.
 	    std::vector<int> firstind( blockSize_ );
 	    for (int i=0; i<blockSize_; i++) { firstind[i] = i; }
-	    Teuchos::RefCountPtr<const MV> basistemp = MVT::CloneView( *(oldState.V), firstind );
+	    Teuchos::RefCountPtr<MV> basistemp = Teuchos::rcp_const_cast<MV>(MVT::CloneView( *(oldState.V), firstind ));
 	    problem_->ComputeResVec( &*V_0, &*cur_block_sol, &*cur_block_rhs );
 
 	    // Get a view of the first block of the Krylov basis.
 	    Teuchos::SerialDenseMatrix<int,ScalarType> Znew(Teuchos::View, *(oldState.Z), blockSize_, blockSize_);
 	    
 	    // Orthonormalize the new V_0
-	    int rank = ortho->normalize( *V_0, Znew );
+	    int rank = ortho->normalize( *V_0, Teuchos::rcp(&Znew,false) );
+	    TEST_FOR_EXCEPTION(rank != blockSize_,BlockGmresSolMgrOrthoFailure,
+			       "Belos::BlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors after restart.");
 
 	    // Set the new state and initialize the solver.
 	    BlockGmresIterState<ScalarType,MV> newstate;

@@ -140,7 +140,7 @@ StatusType StatusTestOutputter<ScalarType,MV,OP>::CheckStatus(IterativeSolver<Sc
 {
   typedef MultiVecTraits<ScalarType,MV>  MVT;
   StatusType status = resNormStatusTest_->CheckStatus(iSolver);
-  RefCountPtr<LinearProblem<ScalarType,MV,OP> > lp = iSolver->GetLinearProblem();
+  RefCountPtr<LinearProblem<ScalarType,MV,OP> > lp = iSolver->getProblem();
   const int currIter = iSolver->GetNumIters();
   const int currRestart = iSolver->GetNumRestarts();
   if(currIter==0 && !iterZeroWasOutput_)

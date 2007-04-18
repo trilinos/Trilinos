@@ -38,7 +38,7 @@
 #include "BelosIteration.hpp"
 
 #include "BelosLinearProblem.hpp"
-#include "BelosOrthoManager.hpp"
+#include "BelosMatOrthoManager.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
@@ -158,8 +158,8 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   BlockGmresIter( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
 		  const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
 		  const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-		  const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> > &ortho,
-		  const Teuchos::RefCountPtr<Teuchos::ParameterList> &params );
+		  const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+		  Teuchos::ParameterList &params );
 
   //! Destructor.
   virtual ~BlockGmresIter() {};
@@ -281,7 +281,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   //@{ 
 
   //! Get a constant reference to the eigenvalue problem.
-  const LinearProblem<ScalarType,MV,OP>& getProblem() const { return lp_; }
+  const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
 
   //! Get the blocksize to be used by the iterative solver in solving this linear problem.
   int getBlockSize() const { return blockSize_; }
@@ -394,8 +394,8 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   BlockGmresIter<ScalarType,MV,OP>::BlockGmresIter(const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
 						   const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
 						   const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-						   const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> > &ortho,
-						   const Teuchos::RefCountPtr<Teuchos::ParameterList> &params ):
+						   const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+						   Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
     stest_(tester),
@@ -410,12 +410,12 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     iter_(0)
   {
     // Get the maximum number of blocks allowed for this Krylov subspace
-    TEST_FOR_EXCEPTION(!params->isParameter("Num Blocks"), std::invalid_argument,
+    TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument,
                        "Belos::BlockGmresIter::constructor: mandatory parameter 'Num Blocks' is not specified.");
-    int nb = Teuchos::getParameter<int>(*params, "Num Blocks");
+    int nb = Teuchos::getParameter<int>(params, "Num Blocks");
 
     // Set the block size and allocate data
-    int bs = params->get("Block Size", 1);
+    int bs = params.get("Block Size", 1);
     setSize( bs, nb );
   }
 
@@ -563,7 +563,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       if (norms) {
         Teuchos::BLAS<int,ScalarType> blas;
         for (int j=0; j<blockSize_; j++)
-          (*norms)[j] = blas.NRM2( blockSize_, &Z_(curDim_, j), 1);
+          (*norms)[j] = blas.NRM2( blockSize_, &(*Z_)(curDim_, j), 1);
       }
     }
     return Teuchos::null;

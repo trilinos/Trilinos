@@ -37,7 +37,7 @@
 */
 
 #include "BelosTypes.hpp"
-#include "BelosIterativeSolver.hpp"
+#include "BelosIteration.hpp"
 #include "BelosConfigDefs.hpp"
 
   /*! 
@@ -76,10 +76,10 @@ class StatusTest {
 
     \return Belos::StatusType: Unconverged, Converged or Failed.
   */
-  virtual StatusType CheckStatus( IterativeSolver<ScalarType,MV,OP>* iSolver ) = 0;
+  virtual StatusType checkStatus( Iteration<ScalarType,MV,OP>* iSolver ) = 0;
 
   //! Return the result of the most recent CheckStatus call.
-  virtual StatusType GetStatus() const = 0;
+  virtual StatusType getStatus() const = 0;
   //@}
 
   //! @name Reset methods
@@ -90,7 +90,7 @@ class StatusTest {
     internal information will be reset back to the initialized state.  The user specified information that
     the convergence test uses will remain.
   */
-  virtual void Reset() = 0;
+  virtual void reset() = 0;
   //@}
 
   //! @name Attribute methods
@@ -102,17 +102,17 @@ class StatusTest {
     called.  Some iterative methods do not explicitly construct the residual vector at each iteration.  Thus,
     if this vector is not required, this vector will not need to be constructed if this method returns false.
   */
-  virtual bool ResidualVectorRequired() const = 0;
+  virtual bool residualVectorRequired() const = 0;
   //@}
 
   //! @name Print methods
   //@{ 
 
   //! Output formatted description of stopping test to output stream.
-  virtual ostream& Print(ostream& os, int indent = 0) const = 0;
+  virtual ostream& print(ostream& os, int indent = 0) const = 0;
  
   //! Output the result of the most recent CheckStatus call.
-  virtual void PrintStatus(ostream& os, StatusType type) const {
+  virtual void printStatus(ostream& os, StatusType type) const {
     os << setiosflags(ios::left) << setw(13) << setfill('.');
     switch (type) {
     case  Failed:
