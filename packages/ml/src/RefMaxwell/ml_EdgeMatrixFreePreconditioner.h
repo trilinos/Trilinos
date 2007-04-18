@@ -173,6 +173,7 @@ namespace ML_Epetra
 
     //! Coarse Matrix
     Epetra_CrsMatrix * CoarseMatrix;
+    ML_Operator * CoarseMat_ML;
     
     //! Level 2+ Preconditioner
     //    ML_Preconditioner * CoarsePC;
