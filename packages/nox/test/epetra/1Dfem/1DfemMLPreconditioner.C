@@ -328,9 +328,9 @@ int main(int argc, char *argv[])
 	printing.out() << "Nonlinear solver failed to converge!" << endl;
   }
 #ifndef HAVE_MPI 
-  // 2. Linear solve iterations (60 with ML) - SERIAL TEST ONLY!
+  // 2. Linear solve iterations (278 with ML) - SERIAL TEST ONLY!
   //    The number of linear iterations changes with # of procs.
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 60) {
+  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 278) {
     status = 2;
   }
 #endif
