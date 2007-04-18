@@ -28,10 +28,34 @@
 // ***********************************************************************
 // @HEADER
 
+%define %nox_epetra_docstring
+"
+PyTrilinos.NOX.Epetra is the python interface to namespace Epetra for
+the Trilinos package NOX:
+
+    http://software.sandia.gov/trilinos/packages/nox
+
+The purpose of NOX.Epetra is to provide a concrete interface beteen
+NOX and Epetra.
+
+NOX.Epetra provides the following user-level classes:
+
+    * Group                    - Epetra implementation of Abstract.Group
+    * Vector                   - Epetra implementation of Abstract.Vector
+    * FiniteDifference         - Class for estimating Jacobian w/finite differences
+    * FiniteDifferenceColoring - FiniteDifference class, w/coloring efficiencies
+    * MatrixFree               - Base class for Jacobian-free algorithms
+    * Scaling                  - Class for controlling scalling of algebraic objects
+    * LinearSystem             - Base class for interface to linear solvers
+    * LinearSystemAztecOO      - Concrete implementation of LinearSystem
+"
+%enddef
+
 %module(package      = "PyTrilinos.NOX.Epetra",
 	directors    = "1",
 	autodoc      = "1",
-	implicitconv = "1") __init__
+	implicitconv = "1",
+	docstring    = %nox_epetra_docstring) __init__
 
 %{
 // System includes

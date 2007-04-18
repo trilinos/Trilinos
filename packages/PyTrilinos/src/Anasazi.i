@@ -31,10 +31,16 @@
 // This documentation string will be the python help facility help
 // string
 %define %anasazi_docstring
-"The Anasazi module allows access to The Trilinos package
-Anasazi.  Use the python help() facility for local documentation
-on classes and methods, or see the on-line documentation for more
-in-depth information."
+"
+PyTrilinos.Anasazi is the python interface to Trilinos package
+Anasazi:
+
+    http://software.sandia.gov/trilinos/packages/anasazi
+
+Anasazi is a collection of eigensolver technologies.  Currently, this
+python module is a stub, and none of the Anasazi classes are yet
+supported.
+"
 %enddef
 
 // Define the module name, its package and documentation string

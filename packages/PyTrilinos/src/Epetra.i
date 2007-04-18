@@ -29,39 +29,42 @@
 // @HEADER
 
 %define %epetra_docstring
-"""
-Epetra is a module under the PyTrilinos package.  PyTrilinos is a
-python interface to select components of the Trilinos set of solver
-packages developed at Sandia National Laboratories.  Documentation for
-Trilinos can be found in the source directory or online at
-http://software.sandia.gov/Trilinos.
+"
+PyTrilinos.Epetra is the python interface to Trilinos package Epetra:
 
-The Epetra module offers a suite of linear algebra services,
-supporting both serial and parallel data distribution, and dense and
-sparse storage.  The special Epetra.PyComm function returns either a
-SerialComm or MpiComm communicator, depending on the environment
-Epetra is imported under.
+    http://software.sandia.gov/trilinos/packages/epetra
 
-Note that in the python interface, the 'Epetra_' prefix has been
-stripped from all Epetra classes, but (unlike the C++ implementation)
-Epetra resides in its own namespace.  Use the python help() facility
-for local documentation on classes and methods, or see the online
-documentation for more in-depth information.
+The purpose of Epetra is to provide fundamental linear algebra
+services to the rest of Trilinos.  These services include parallel
+decomposition and communication, vectors and multivectors, graphs,
+operators, and dense and sparse matrices.  Note that the C++ version
+of Epetra uses the prefix 'Epetra_' which has been stripped from the
+python version.
 
-Epetra provides the following user-level classes:
+Epetra provides the following user-level classes (by category):
 
-    Communicators: PyComm, SerialComm, MpiComm (if built with mpi
-        support)
-    Data distribution maps: Map, BlockMap, LocalMap
-    Vectors: Vector, MultiVector, IntVector
-    Graphs: CrsGraph, FECrsGraph
-    Operators and matrices: Operator, RowMatrix, CrsMatrix,
-        FECrsMatrix, VbrMatrix
-    Serial dense objects: SerialDenseVector, SerialDenseMatrix,
-        SerialDenseOperator, SerialDenseSolver, IntSerialDenseVector,
-        IntSerialDenseMatrix
-    Aggregates: LinearProblem
-    Utilities: Import, Export, Time, MapColoring
+    * Communicators: PyComm, SerialComm, MpiComm (if built with mpi
+      support)
+    * Data distribution maps: Map, BlockMap, LocalMap
+    * Vectors: Vector, MultiVector, IntVector
+    * Graphs: CrsGraph, FECrsGraph
+    * Operators and matrices: Operator, RowMatrix, CrsMatrix,
+      FECrsMatrix, VbrMatrix
+    * Serial dense objects: SerialDenseVector, SerialDenseMatrix,
+      SerialDenseOperator, SerialDenseSolver, IntSerialDenseVector,
+      IntSerialDenseMatrix
+    * Aggregates: LinearProblem
+    * Utilities: Import, Export, Time, MapColoring, Util
+
+For examples of usage, please consult the following scripts in the
+example subdirectory of the PyTrilinos package:
+
+    * exEpetra.py
+    * exEpetra_Comm.py
+    * exEpetra_ImportExport.py
+    * exEpetra_CrsMatrix_Easy.py
+    * exEpetra_CrsMatrix_Efficient.py
+    * exEpetra_FECrsMatrix_Easy.py
 
 The Epetra module has been designed to use and interoperate with the
 numpy module, which provides multidimensional array support.  Epetra
@@ -69,12 +72,11 @@ class constructors or methods that expect C arrays in C++ can
 typically accept numpy arrays in python (or any python sequence that
 numpy can convert to an array).  Similarly, methods that return C
 arrays in C++ will return numpy arrays in python.  Also, certain
-Epetra classes represent contiguous blocks of homogeneous data.  These
-classes have been given the attributes of numpy arrays using multiple
-inheritance, and include the Vector, MultiVector, IntVector,
-SerialDenseVector, SerialDenseMatrix, IntSerialDenseVector and
-IntSerialDenseMatrix classes.
-"""
+Epetra classes that represent contiguous blocks of homogeneous data
+have been given the attributes of numpy arrays using multiple
+inheritance: Vector, MultiVector, IntVector, SerialDenseVector,
+SerialDenseMatrix, IntSerialDenseVector and IntSerialDenseMatrix.
+"
 %enddef
 
 %module(package   = "PyTrilinos",

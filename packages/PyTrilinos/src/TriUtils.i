@@ -28,8 +28,34 @@
 // ***********************************************************************
 // @HEADER
 
+%define %triutils_docstring
+"
+PyTrilinos.TriUtils is the python interface to Trilinos package TriUtils:
+
+    http://software.sandia.gov/trilinos/packages/triutils
+
+The purpose of TriUtils is to provide some utilities typically needed
+when testing Trilinos software.
+
+TriUtils provides the following user-level classes:
+
+    * CrsMatrixGallery  - Provide example CrsMatrix objects
+    * VbrMatrixGallery  - Provide example VbrMatrix objects
+
+and function:
+
+    * ReadHB            - Obtain a problem from an HB file
+
+For an examples of usage, please consult the following script in the
+example subdirectory of the PyTrilinos package:
+
+    * exIFPACK.py
+"
+%enddef
+
 %module(package = "PyTrilinos",
-	autodoc = "1"          ) TriUtils
+	autodoc = "1",
+	docstring = %triutils_docstring) TriUtils
 
 %{
 // System includes

@@ -29,31 +29,45 @@
 // @HEADER
 
 %define %epetraext_docstring
-"The EpetraExt module allows access to The Trilinos package EpetraExt.
-Use the python help() facility for local documentation on classes and
-methods, or see the on-line documentation for more in-depth
-information.
+"
+PyTrilinos.EpetraExt is the python interface to Trilinos package
+EpetraExt:
 
-The most important classes of the EpetraExt module are:
-*) Graph coloring classes:
-   - MapColoring
-   - MapColoringIndex
-*) Input functions:
-   - BlockMapToMatrixMarketFile()
-   - MatrixMarketFileToMultiVector()
-   - MatrixMarketFileToBlockMap()
-   - MatrixMarketFileToMap()
-   - MatrixMarketFileToCrsMatrix()
-*) Output functions:
-   - BlockMapToMatrixMarketFile()
-   - RowMatrixToMatrixMarketFile()
-   - MultiVectorToMatrixMarketFile()
-*) Input/Output classes:
-   - HDF5
-   - XML
-*) Matrix-Matrix functions:
-   - Add()
-   - Multiply()
+    http://software.sandia.gov/trilinos/packages/epetraext
+
+The purpose of EpetraExt is to provide various extensions to Epetra
+that were not considered appropriate for the Epetra package.  These
+extensions include I/O, matrix-matrix operations and graph coloring.
+
+Currently, only a subset of EpetraExt classes and functions have
+python interfaces, including the following user-level classes:
+
+    * XMLReader                      - Read Epetra data from an XML file
+    * XMLWriter                      - Write Epetra data as an XML file
+    * CrsGraph_MapColoring           - Compute a graph coloring
+    * CrsGraph_MapColoringIndex      - Compute indexes for a graph coloring
+
+and functions:
+
+    * MatrixMarketFileToBlockMap     - Read a BlockMap from an MM file
+    * MatrixMarketFileToBlockMaps    - Read BlockMaps from an MM file
+    * MatrixMarketFileToMap          - Read a Map from an MM file
+    * MatrixMarketFileToMultiVector  - Read a MultiVector from an MM file
+    * MatrixMarketFileToCrsMatrix    - Read a CrsMatrix from an MM file
+    * MatlabFileToCrsMatrix          - Read a CrsMatrix from an ML file
+    * BlockMapToMatrixMarketFile     - Write a BlockMap to an MM file
+    * MultiVectorToMatrixMarketFile  - Write a MultiVector to an MM file
+    * MultiVectorToMatlabFile        - Write a MultiVector to an ML file
+    * RowMatrixToMatrixMarketFile    - Write a RowMatrix to an MM file
+    * RowMatrixToMatlabFile          - Write a RowMatrix to an ML file
+    * Add                            - Add two CrsMatrix objects
+
+For examples of usage, please consult the following scripts in the
+example subdirectory of the PyTrilinos package:
+
+    * exEpetraExt_IO_MatrixMarket.py
+    * exEpetraExt_IO_XML.py
+    * exEpetraExt_MatrixMatrix.py
 "
 %enddef
 

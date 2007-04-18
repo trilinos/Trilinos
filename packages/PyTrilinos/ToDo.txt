@@ -1,4 +1,54 @@
+=====================
 PyTrilinos To Do List
+=====================
+
+****** Improve package documentation strings
+
+****** Get rid of extraneous C++ code
+    [Done] CallbackVectorLoadTest
+    [Done] PyObjectHolder
+    [Done] Epetra_VectorHelper
+    [Done] NumPyWrapper
+    [Done] NumPyArray
+    [Done] Epetra_DArray
+    [Done] Epetra_IArray
+    [Done] PyEpetra_Utils.h
+    ------ MLAPI_PyMatrix
+
+==================================================
+Summer, 2007, List of Project Tasks (Tentative)
+
+* Complete wrapping of Epetra
+  - Other classes
+  - Interfacing with python Numeric
+  - Unit tests
+  - Examples
+
+* Documentation
+  - Manual: differences in C++/python implementations
+  - Automatic: can we use doxygen with interface files?
+  - Evaluation of pydoc, happydoc, etc. for generating web pages
+  - Users Manual
+
+* Software quality
+  - Unit/regression tests on different platforms
+  - Trilinos test harness
+
+* Complete wrapping other modules
+  - EpetraExt
+  - NOX
+  - LOCA (with Eric Phipps)
+  - Unit tests
+  - Examples
+
+* Start wrapping new modules
+  - Anasazi (with Heidi Thornquist)
+  - Thyra (with Ross Bartlett)
+  - etc.
+
+==================================================
+
+Completed Tasks
 
 [Done] Convert to use distutils
     [Done] Check local installation
@@ -63,19 +113,13 @@ PyTrilinos To Do List
     [Done] NOX (Eric)
     [Done] LOCA (Eric)
 
-****** Handle conversion between C++ iostreams and python files
-    [Done] FileStream class
-    ------ Implement exceptions
-
-****** Improve package documentation strings
-
 [Done] Have PyTrilinos package install a correct __init__.py
 
 [Done] Wrap Epetra_Flops class
 
 [Done] Parallelization (wrap Epetra_MpiComm)
 
-****** Clean up interface between Numeric arrays, double *'s and Epetra
+[Done] Clean up interface between Numeric arrays, double *'s and Epetra
        objects.
     [Done] Write Epetra_NumPyVector class, that inherits from
            Epetra_Vector, but also has a PyArrayObject pointer, and
@@ -91,24 +135,13 @@ PyTrilinos To Do List
         [Done] Epetra_IntSerialDenseVector
         [Done] Epetra_IntSerialDenseMatrix
     [Done] Protect Epetra.{Vector,...} against changing array attribute
-    ------ Use typemaps to change (double *) or (int *) arguments to
+    [Done] Use typemaps to change (double *) or (int *) arguments to
            Numeric arrays
 
-****** Treat int arrays the same way as double arrays.  That is, convert
+[Done] Treat int arrays the same way as double arrays.  That is, convert
        int NumPy arrays to int * the same way double NumPy arrays are
        converted to double *.
-    ------ Clean up %typemap(in) (int * Indices)
-
-****** Get rid of extraneous C++ code
-    [Done] CallbackVectorLoadTest
-    [Done] PyObjectHolder
-    [Done] Epetra_VectorHelper
-    [Done] NumPyWrapper
-    [Done] NumPyArray
-    ------ Epetra_DArray
-    ------ Epetra_IArray
-    ------ MLAPI_PyMatrix
-    ------ PyEpetra_Utils.h
+    [Done] Clean up %typemap(in) (int * Indices)
 
 [Done] Make testVector.py unit test more extensive
 
@@ -119,34 +152,7 @@ PyTrilinos To Do List
        and their computeF(), etc., methods are called back
        automatically.
 
-==================================================
-Summer, 2007, List of Project Tasks (Tentative)
+[Done] Handle conversion between C++ iostreams and python files
+    [Done] FileStream class
+    [Done] Implement exceptions
 
-* Complete wrapping of Epetra
-  - Other classes
-  - Interfacing with python Numeric
-  - Unit tests
-  - Examples
-
-* Documentation
-  - Manual: differences in C++/python implementations
-  - Automatic: can we use doxygen with interface files?
-  - Evaluation of pydoc, happydoc, etc. for generating web pages
-  - Users Manual
-
-* Software quality
-  - Unit/regression tests on different platforms
-  - Trilinos test harness
-
-* Complete wrapping other modules
-  - EpetraExt
-  - NOX
-  - LOCA (with Eric Phipps)
-  - Unit tests
-  - Examples
-
-* Start wrapping new modules
-  - Anasazi (with Heidi Thornquist)
-  - etc.
-
-==================================================

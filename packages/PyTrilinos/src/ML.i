@@ -29,73 +29,37 @@
 // @HEADER
 
 %define %ml_docstring
-"The ML module allows access to The Trilinos package ML/MLAPI. Note
-that the 'ML_' prefix has been stripped from all ML objects,
-but that if imported with 'from PyTrilinos import ML', these
-objects exist in the 'ML' python namespace.  Use the python help()
-facility for local documentation on classes and methods, or see the
-on-line documentation for more in-depth information.
+"
+PyTrilinos.ML is the python interface to Trilinos package ML/MLAPI:
 
+    http://software.sandia.gov/trilinos/packages/ml
 
-Brief Description
-=================
+The purpose of ML is to provide multilevel preconditioners to
+Trilinos.
 
-The ML module offers most of ML and MLAPI through Python.
+ML provides the following user-level classes:
 
-The most important classes of the ML/MLAPI module are:
-- MultiLevelPreconditioner
-- PyMatrix
-- MultiVector
-- BaseOperator
-- Operator
-- InverseOperator
-- EpetraBaseOperator
-- <Operator> + <Operator>
-- <Operator> * <Operator>
-- <Operator> * <MultiVector>
-- GetIdentity, GetTranspose, Iterate, ...
+    * BaseObject                - Base class for MLAPI objects
+    * CompObject                - FLOP counting base class
+    * TimeObject                - Timing base class
+    * MultiLevelPreconditioner  - Black-box multilevel preconditioner
+    * EpetraBaseOperator        - Base class for interface to Epetra
+    * BaseOperator              - Base class for all MLAPI operators
+    * Space                     - Defines number of elements and their distribution
+    * MultiVector               - MLAPI multivector class
+    * Operator                  - MLAPI operator class
+    * InverseOperator           - MLAPI inverse operator class
+    * PyMatrix                  - Python interface to MLAPI operators
 
+For examples of usage, please consult the following scripts in the
+example subdirectory of the PyTrilinos package:
 
-Example of usage: The MultiLevelPreconditioner class
-====================================================
-
-Creates an ML preconditioner for the already created Epetra.CrsMatrix 
-Matrix. The parameters are set using a dictionary. 
-
-from PyTrilinos Epetra, ML
-<create here Matrix>
-Prec = ML.MultiLevelPreconditioner(Matrix, False)
-MLList = {
-  \"max levels\"        : 3,
-  \"smoother: type\"    : \"symmetric Gauss-Seidel\",
-  \"aggregation: type\" : \"Uncoupled\"
-}
-Prec.SetParameterList(MLList)
-Prec.ComputePreconditioner()
-
-
-Example of usage: The MLAPI Interface
-=====================================
-
-from PyTrilinos import Epetra, ML
-n = 1000
-Space = ML.Space(n)
-        
-A = ML.PyMatrix(Space, Space)
-      
-for i in Space.GetMyGlobalElements():
-  if i > 0:
-    A[i, i - 1] = -1.
-  if i < n - 1:
-    A[i, i + 1] = -1.
-  A[i, i] = 2.0
-                               
-A.FillComplete()
-
-x = ML.MultiVector(Space); x.Random()
-y = ML.MultiVector(Space)
-r = y - A * x
-print r.Norm2()
+    * exMLAPI.py
+    * exMLAPI_Simple.py
+    * exMLAPI_AztecOO.py
+    * exMLAPI_Iterate.py
+    * exMLAPI_PyMatrix.py
+    * exMLAPI_Smoother.py
 "
 %enddef
 

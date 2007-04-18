@@ -28,10 +28,30 @@
 // ***********************************************************************
 // @HEADER
 
+%define %nox_epetra_interface_docstring
+"
+PyTrilinos.NOX.Epetra.Interface is the python interface to the
+Epetra::Interface namespace of the Trilinos package NOX:
+
+    http://software.sandia.gov/trilinos/packages/nox
+
+The purpose of NOX.Epetra.Interface is to provide base classes the
+user should derive from in order to define the nonlinear function to
+be solved, and if needed, its Jacobian and the desired preconditioner.
+
+NOX.Epetra.Interface provides the following user-level classes:
+
+    * Required        - Required class for computing the nonlinear function
+    * Jacobian        - Class for computing the Jacobian (if needed)
+    * Preconditioner  - Class for computing the preconditioner (if needed)
+"
+%enddef
+
 %module(package      = "PyTrilinos.NOX.Epetra",
 	directors    = "1",
 	autodoc      = "1",
-	implicitconv = "1") Interface
+	implicitconv = "1",
+	docstring    = %nox_epetra_interface_docstring) Interface
 
 %{
 // NumPy includes

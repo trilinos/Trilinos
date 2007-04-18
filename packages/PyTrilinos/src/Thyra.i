@@ -28,16 +28,19 @@
 // ***********************************************************************
 // @HEADER
 
-// This documentation string will be the python help facility help
-// string
 %define %thyra_docstring
-"The Thyra module allows access to The Trilinos package
-Thyra.  Use the python help() facility for local documentation
-on classes and methods, or see the on-line documentation for more
-in-depth information."
+"
+PyTrilinos.Thyra is the python interface to Trilinos package Thyra:
+
+    http://software.sandia.gov/trilinos/packages/thyra
+
+The purpose of Thyra is to provide a set of interfaces and supporting
+code that defines basic interoperability mechanisms between different
+types of numerical software.  The python interface is currently
+experimental, and at this time is inoperable.
+"
 %enddef
 
-// Define the module name, its package and documentation string
 %module(package   = "PyTrilinos",
 	docstring = %thyra_docstring) Thyra
 

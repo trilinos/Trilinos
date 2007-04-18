@@ -29,29 +29,32 @@
 // @HEADER
 
 %define %amesos_docstring
-"The Amesos module allows access to The Trilinos package Amesos.  Note
-that the 'Amesos_' prefix has been stripped from all Amesos objects,
-but that if imported with 'from PyTrilinos import Amesos', these
-objects exist in the 'Amesos' python namespace.  Use the python help()
-facility for local documentation on classes and methods, or see the
-on-line documentation for more in-depth information.
+"
+PyTrilinos.Amesos is the python interface to Trilinos package Amesos:
+
+    http://software.sandia.gov/trilinos/packages/amesos
+
+The purpose of Amesos is to provide a common interface to a variety of
+third-party direct solvers, made compatible with PyTrilinos.Epetra.
+Note that the C++ version of Amesos uses the prefix 'Amesos_', which
+has been stripped from the python implementation.
 
 The most important classes of the Amesos module are:
-- The factory class, Amesos.Factory
-- The LAPACK interface, Amesos.Lapack
-- The KLU interace, Amesos.Klu
-- The UMFPACK interace, Amesos.Umfpack
-- The SCALAPACK interace, Amesos.Scalapack
-- The SuperLU interace, Amesos.Superlu
-- The SuperLU_DIST interace, Amesos.Superludist
-- The DSCPACK interace, Amesos.Dscpack
-- The MUMPS interace, Amesos.Mumps
 
-Each specific interface may require Amesos to be configured with the
-appropriate --enable-<interface>. (Note that LAPACK and KLU are enabled
-by default.)
+    * Factory      - Factory class
+    * Lapack       - LAPACK interface
+    * Klu          - KLU interace
+    * Umfpack      - UMFPACK interace
+    * Scalapack    - SCALAPACK interace
+    * Superlu      - SuperLU interace
+    * Superludist  - SuperLU_DIST interace
+    * Dscpack      - DSCPACK interace
+    * Mumps        - MUMPS interace
 
-For examples of usage, please consult the python/example subdirectory.
+Use dir(Amesos) to see what specific interfaces have been enabled on
+your platform.  For examples of usage, please consult the examples
+subdirectory of the PyTrilinos package, scripts exAmesos_Simple.py and
+exAmesos_Factory.py.
 "
 %enddef
 

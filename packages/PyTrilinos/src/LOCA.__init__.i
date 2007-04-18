@@ -28,7 +28,20 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") __init__
+%define %loca_docstring
+"
+PyTrilinos.LOCA is the python interface to Trilinos package LOCA:
+
+    http://software.sandia.gov/trilinos/packages/nox
+
+The purpose of LOCA is to provide a library of continuation
+algorithms.  This module is not currently supported, but the plan is
+to reactivate it soon.
+"
+%enddef
+
+%module(package   = "PyTrilinos.LOCA",
+	docstring = %loca_docstring) __init__
 
 %{
 // LOCA includes

@@ -28,9 +28,33 @@
 // ***********************************************************************
 // @HEADER
 
+%define %nox_statustest_docstring
+"
+PyTrilinos.NOX.StatusTest is the python interface to the namespace
+StatusTest in Trilinos package NOX:
+
+    http://software.sandia.gov/trilinos/packages/nox
+
+The purpose of NOX.StatusTest is to provide clompletely flexible
+specification of stopping tests for NOX algorithms.
+
+NOX.StatusTest provides the following user-level classes:
+
+    * Generic      - Base class for all stopping tests
+    * Combo        - Allows combining of stopping tests with AND or OR
+    * NormF        - Stopping test based on norm of F
+    * NormUpdate   - Stopping test based on norm of update
+    * NormWRMS     - Stopping test based on norm of weighted RMS of F
+    * MaxIters     - Stopping test based on maximum iterations
+    * Stagnation   - Stopping test based on algorithm stagnation
+    * FiniteValue  - Stopping test based on detecting NaNs
+"
+%enddef
+
 %module(package      = "PyTrilinos.NOX",
 	autodoc      = "1",
-	implicitconv = "1") StatusTest
+	implicitconv = "1",
+	docstring    = %nox_statustest_docstring) StatusTest
 
 %{
 // System includes

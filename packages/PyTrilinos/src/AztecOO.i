@@ -29,52 +29,30 @@
 // @HEADER
 
 %define %aztecoo_docstring
-"""
-The AztecOO module allows access to The Trilinos package AztecOO.  Note
-that the 'AztecOO_' prefix has been stripped from all AztecOO objects,
-but that if imported with 'from PyTrilinos import AztecOO', these
-objects exist in the 'AztecOO' python namespace.  Use the python help()
-facility for local documentation on classes and methods, or see the
-on-line documentation for more in-depth information.
+"
+PyTrilinos.AztecOO is the python interface to Trilinos package
+AztecOO:
 
-The AztecOO module cannot be used without the Epetra module. You might
-want to consider the IFPACK and ML modules to extend the preconditioning
-capabilities of AztecOO.
+    http://software.sandia.gov/trilinos/packages/aztecoo
 
+AztecOO is the object-oriented interface to Aztec, Sandia's venerable
+Krylov-space linear system solver package.  Note that the C++ version
+of AztecOO uses the prefix 'AztecOO_' which has been stripped from the
+python version.  AztecOO requires the Epetra module. The IFPACK and ML
+modules can extend the preconditioning capabilities of AztecOO.
 
-*) Brief Description
+AztecOO has a single class:
 
-AztecOO offers a suite of Krylov accelerators (like CG and GMRES), plus
-several domain decomposition preconditioners with inexact local solvers. The
-overlap among the subdomains can be specified by the user; each subdomain is
-assigneed to a different processor.
+    * AztecOO  - Object-oriented interface to Aztec package
 
-The most important classes of the AztecOO module is:
-- AztecOO
+For examples of usage, please consult the following scripts in the
+example subdirectory of the PyTrilinos package:
 
-
-*) Example of usage
-
-An example of usage of AztecOO is as follows. The linear system matrix is
-defined as a 5-pt Laplacian on a 2D Cartesian grid. The problem has size
-10000, and the corresponding linear system is solved using CG with incomplete
-Cholesky preconditioner. This example can be used in serial and parallel
-environments, depending on how Trilinos was configured.
-
-from PyTrilinos import Epetra, AztecOO, TriUtils
-Comm = Epetra.PyComm()
-Gallery = TriUtils.CrsMatrixGallery(\"laplace_2d\", Comm)
-Gallery.Set(\"problem_size\", 100 * 100)
-Matrix = Gallery.GetMatrix()
-LHS = Gallery.GetStartingSolution()
-RHS = Gallery.GetRHS()
-Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
-Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
-Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_dom_decomp)
-Solver.SetAztecOption(AztecOO.AZ_subdomain_solve, AztecOO.AZ_icc)
-Solver.SetAztecOption(AztecOO.AZ_output, 16)
-Solver.Iterate(1550, 1e-5)
-"""
+    * exAztecOO.py
+    * exAztecOO_Operator.py
+    * exAztecOO_RowMatrix.py
+    * exAztecOO_BasicRowMatrix.py
+"
 %enddef
 
 %module(package   = "PyTrilinos",

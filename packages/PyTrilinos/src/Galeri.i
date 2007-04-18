@@ -28,26 +28,38 @@
 // ***********************************************************************
 // @HEADER
 
-// This documentation string will be the python help facility help
-// string
 %define %galeri_docstring
-"Galeri: Matrix Generation Package.
-The Galeri module allows an easy creation of Epetra_Map's and
-Epetra_CrsMatrix's.  Use the python help() facility for local documentation on
-classes and methods, or see the on-line documentation for more in-depth
-information. Also give a look to the examples in galeri/python/example.
-
-The most important classes of the Galeri module are:
-- Galeri.CreateMap()
-- Galeri.CreateCrsMatrix()
-- Galeri.ReadHB()
-
-Galeri requires the Epetra and Teuchos modules of PyTrilinos.
 "
+PyTrilinos.Galeri is the python interface to Trilinos package Galeri:
 
+    http://software.sandia.gov/trilinos/packages/galeri
+
+The purpose of Galeri is to provide a set of example matrices
+distributed across a set of common processor decompositions for
+testing purposes.
+
+Galeri provides the following user-level functions:
+
+    * CreateCartesianCoordinates  - Create cartesian coordinates
+    * GetNeighboursCartesian2d    - Get neighbor nodes from a 2D grid
+    * GetNeighboursCartesian3d    - Get neighbor nodes from a 3D grid
+    * PrintStencil2D              - Output a 2D stencil
+    * CreateMap                   - Create a Map object
+    * CreateCrsMatrix             - Create a specified CrsMatrix
+    * CreateVbrMatrix             - Create a specified VbrMatrix
+    * ReadHB                      - Read a problem definition from an HB file
+
+For examples of usage, please consult the following scripts in the
+example subdirectory of the PyTrilinos package:
+
+    * exGaleri.py
+    * exGaleri_ReadHB.py
+    * exAztecOO.py
+    * exIFPACK.py
+    * exMLAPI_Simple.py
+"
 %enddef
 
-// Define the module name, its package and documentation string
 %module(package   = "PyTrilinos",
 	autodoc   = "1",
 	docstring = %galeri_docstring) Galeri

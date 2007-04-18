@@ -29,27 +29,37 @@
 // @HEADER
 
 %define %ifpack_docstring
-"The IFPACK module allows access to The Trilinos package IFPACK.  Note
-that the 'Ifpack_' prefix has been stripped from all IFPACK objects,
-but that if imported with 'from PyTrilinos import IFPACK', these
-objects exist in the 'IFPACK' python namespace.  Use the python help()
-facility for local documentation on classes and methods, or see the
-on-line documentation for more in-depth information.
+"
+PyTrilinos.IFPACK is the python interface to Trilinos package IFPACK:
 
-The most important classes of the IFPACK module are:
-- IC
-- ICT
-- ILU
-- ILUT
-- PointRelaxation
+    http://software.sandia.gov/trilinos/packages/ifpack
 
-Alternatively, one can use the factory class to create a larger variety of
-preconditioners; see the Doxygen documentation of Ifpack for more details.
-Finally, the following functions are avaiable in the IFPACK module:
-- AnalyzeMatrix()
-- AnalyzeMatrixElements()
-- AnalyzeVectoElements()
-- PrintSparsity()
+The purpose of IFPACK is to provide incomplete foctorization
+preconditioners to Trilinos.  Note that the C++ version of IFPACK uses
+the prefix 'Ifpack_' which has been stripped from the python version.
+
+IFPACK provides the following user-level classes:
+
+    * Factory         - A factory for creating IFPACK preconditioners
+    * Preconditioner  - Pure virtual base class for defining interface
+    * IC              - Incomplete Cholesky preconditioner
+    * ICT             - Incomplete Cholesky preconditioner w/threshold
+    * ILU             - Incomplete lower/upper preconditioner
+    * ILUT            - Incomplete lower/upper preconditioner w/threshold
+    * PointRelaxation - Point relaxation predonditioner
+    * Amesos          - Use Amesos factorizations as preconditioners
+
+and functions:
+
+    * AnalyzeMatrix          - Analyze the basic properties of a matrix
+    * AnalyzeMatrixElements  - Analyze the distribution of values of a matrix
+    * AnalyzeVectorElements  - Analyze the distribution of values of a vector
+    * PrintSparsity          - Create PS file with sparsity pattern of matrix
+
+For examples of usage, please consult the following scripts in the
+example subdirectory of the PyTrilinos package:
+
+    * exIFPACK.py
 "
 %enddef
 

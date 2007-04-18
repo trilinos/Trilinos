@@ -28,9 +28,25 @@
 // ***********************************************************************
 // @HEADER
 
+%define %nox_solver_docstring
+"
+PyTrilinos.NOX.Solver is the python interface to the Solver namespace
+of the Trilinos package NOX:
+
+    http://software.sandia.gov/trilinos/packages/nox
+
+The purpose of NOX.Solver is to provide a solver manager class for
+NOX.  NOX.Solver provides the following user-level classes:
+
+    * Generic  - Base class for solver managers
+    * Manager  - Concrete solver manager
+"
+%enddef
+
 %module(package      = "PyTrilinos.NOX",
 	autodoc      = "1",
-	implicitconv = "1") Solver
+	implicitconv = "1",
+	docstring    = %nox_solver_docstring) Solver
 
 %{
 // Teuchos includes

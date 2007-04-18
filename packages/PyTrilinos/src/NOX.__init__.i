@@ -28,8 +28,36 @@
 // ***********************************************************************
 // @HEADER
 
+%define %nox_docstring
+"
+PyTrilinos.NOX is the python interface to Trilinos package NOX:
+
+    http://software.sandia.gov/trilinos/packages/nox
+
+The purpose of NOX is to provide robust nonlinear solvers for the
+problem of finding x such that F(x)=0.  In C++, NOX supports several
+namespaces, some of which are sub-modules in python:
+
+    * Abstract          - Base classes for abstract interface to NOX
+    * Epetra            - Epetra implementation
+    * Epetra.Interface  - Concrete interface for Epetra
+    * Solver            - Solver manager class and supporting utilities
+    * StatusTest        - Support for customizable stopping criteria
+
+The top-level NOX module provides the following user-level class:
+
+    * Utils  - Various utilities
+
+For an example of usage of all of NOX, please consult the following
+script in the example subdirectory of the PyTrilinos package:
+
+    * exNOX_1Dfem.py
+"
+%enddef
+
 %module(package="PyTrilinos.NOX",
-	autodoc = "1") __init__
+	autodoc = "1",
+	docstring = %nox_docstring) __init__
 
 %{
 // System includes

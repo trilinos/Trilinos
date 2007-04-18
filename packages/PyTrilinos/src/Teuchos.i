@@ -28,16 +28,23 @@
 // ***********************************************************************
 // @HEADER
 
-// This documentation string will be the python help facility help
-// string
 %define %teuchos_docstring
-"The Teuchos module allows access to The Trilinos package
-Teuchos.  Use the python help() facility for local documentation
-on classes and methods, or see the on-line documentation for more
-in-depth information."
+"
+PyTrilinos.Teuchos is the python interface to Trilinos package
+Teuchos:
+
+    http://software.sandia.gov/trilinos/packages/teuchos
+
+The purpose of Teuchos is to provide a number of utilities often
+needed by numerical applications, but that are not numerical by
+nature.  Currently, the only utility class that has a python interface
+is ParameterList, which in C++ matches string keys to
+arbitrarily-typed values.  In python, the Teuchos.ParameterList is
+tightly integrated with python dictionaries -- methods that expect a
+ParameterList will accept a python dictionary.
+"
 %enddef
 
-// Define the module name, its package and documentation string
 %module(package      = "PyTrilinos",
 	autodoc      = "1",
 	implicitconv = "1",
