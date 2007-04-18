@@ -17,7 +17,6 @@ all-local:
 
 CORE_H = \
 	$(srcdir)/BelosBlockCG.hpp \
-	$(srcdir)/BelosBlockGmres.hpp \
 	$(srcdir)/BelosBlockGmresIter.hpp \
 	$(srcdir)/BelosBlockGmresSolMgr.hpp \
 	$(srcdir)/BelosCG.hpp \
@@ -27,7 +26,6 @@ CORE_H = \
 	$(srcdir)/BelosEpetraOperator.h \
 	$(srcdir)/BelosICGSOrthoManager.hpp \
 	$(srcdir)/BelosIteration.hpp \
-	$(srcdir)/BelosIterativeSolver.hpp \
 	$(srcdir)/BelosLinearProblem.hpp \
 	$(srcdir)/BelosMatOrthoManager.hpp \
 	$(srcdir)/BelosMultiVec.hpp \
@@ -36,11 +34,9 @@ CORE_H = \
 	$(srcdir)/BelosOperatorTraits.hpp \
 	$(srcdir)/BelosOrthoManager.hpp \
 	$(srcdir)/BelosOutputManager.hpp \
-	$(srcdir)/BelosPseudoBlockGmres.hpp \
 	$(srcdir)/BelosStatusTest.hpp \
 	$(srcdir)/BelosStatusTestCombo.hpp \
 	$(srcdir)/BelosStatusTestMaxIters.hpp \
-	$(srcdir)/BelosStatusTestMaxRestarts.hpp \
 	$(srcdir)/BelosStatusTestOutputter.hpp \
 	$(srcdir)/BelosStatusTestResNorm.hpp \
 	$(srcdir)/BelosTypes.hpp
