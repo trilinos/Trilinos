@@ -181,10 +181,20 @@ public:
   /** \brief . */
   Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> getEpetraModel() const;
 
-  /** \brief . */
-  void setInitialGuess( const ModelEvaluatorBase::InArgs<double>& initialGuess );
+  /** \brief Set the nominal values.
+   *
+   * Warning, if scaling is being used, these must be according to the scaled
+   * values, not the original unscaled values.
+   */
+  void setNominalValues( const ModelEvaluatorBase::InArgs<double>& nominalValues );
   
-  /** \brief Set the state variable scaling vector <tt>s_x</tt> (see above). */
+  /** \brief Set the state variable scaling vector <tt>s_x</tt> (see above).
+   *
+   * This function must be called after <tt>intialize()</tt> or the
+   * constructur in order to set the scaling vector correctly!
+   *
+   * ToDo: Move this into an external strategy class object!
+   */
   void setStateVariableScalingVec(
     const Teuchos::RefCountPtr<const Epetra_Vector> &stateVariableScalingVec
     );
@@ -328,19 +338,21 @@ private:
   Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > f_space_;
   g_space_t g_space_;
 
-  ModelEvaluatorBase::InArgs<double> initialGuess_;
-  ModelEvaluatorBase::InArgs<double> lowerBounds_;
-  ModelEvaluatorBase::InArgs<double> upperBounds_;
+  mutable ModelEvaluatorBase::InArgs<double> nominalValues_;
+  mutable ModelEvaluatorBase::InArgs<double> lowerBounds_;
+  mutable ModelEvaluatorBase::InArgs<double> upperBounds_;
+  mutable bool nominalValuesAndBoundsAreUpdated_;
+
   ModelEvaluatorBase::InArgs<double> finalPoint_;
 
   EStateFunctionScaling stateFunctionScaling_;
   mutable Teuchos::RefCountPtr<const Epetra_Vector> stateFunctionScalingVec_;
 
   Teuchos::RefCountPtr<const Epetra_Vector> stateVariableScalingVec_; // S_x
-  Teuchos::RefCountPtr<Epetra_Vector> invStateVariableScalingVec_; // inv(S_x)
-
-  bool doStateVariableScalingFirst_;
-
+  mutable Teuchos::RefCountPtr<const Epetra_Vector> invStateVariableScalingVec_; // inv(S_x)
+  mutable EpetraExt::ModelEvaluator::InArgs epetraInArgsScaling_;
+  mutable EpetraExt::ModelEvaluator::OutArgs epetraOutArgsScaling_;
+  
   mutable Teuchos::RefCountPtr<Epetra_Vector> x_unscaled_;
   mutable Teuchos::RefCountPtr<Epetra_Vector> x_dot_unscaled_;
 
@@ -349,6 +361,27 @@ private:
   // //////////////////////////
   // Private member functions
 
+  void convertInArgsFromEpetraToThyra(
+    const EpetraExt::ModelEvaluator::InArgs &epetraInArgs,
+    ModelEvaluatorBase::InArgs<double> *inArgs
+    ) const;
+
+  void convertInArgsFromThyraToEpetra(
+    const ModelEvaluatorBase::InArgs<double> &inArgs,
+    EpetraExt::ModelEvaluator::InArgs *epetraInArgs
+    ) const;
+
+  void convertOutArgsFromThyraToEpetra(
+    const ModelEvaluatorBase::OutArgs<double> &outArgs,
+    EpetraExt::ModelEvaluator::OutArgs *epetraOutArgs
+    ) const;
+
+  void convertOutArgsFromEpetraToThyra(
+    const EpetraExt::ModelEvaluator::OutArgs &epetraOutArgs,
+    ModelEvaluatorBase::OutArgs<double> *outArgs
+    ) const;
+
+  void updateNominalValuesAndBounds() const;
   
 };
 

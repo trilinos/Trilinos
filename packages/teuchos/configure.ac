@@ -178,7 +178,7 @@ TAC_ARG_CHECK_MPI
 
 #  #np# - Customize the checks for headers needed in package being added.
 # ------------------------------------------------------------------------
-# Checks for header files - used in Teuchos_ConfigDefs.h 
+# Checks for header files - used in Teuchos_ConfigDefs.hpp
 # ------------------------------------------------------------------------
 
 AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
@@ -198,6 +198,7 @@ AC_CHECK_HEADERS([sstream sstream.h strstream strstream.h], [break],)
 AC_CHECK_HEADERS([stdexcept stdexcept.h], [break],)
 AC_CHECK_HEADERS([cstdarg stdarg.h], [break],)
 AC_CHECK_HEADERS([typeinfo],,)
+AC_CHECK_HEADERS([fpu_control.h],,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Teuchos requires at least one or the other.]])

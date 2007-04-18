@@ -353,10 +353,12 @@ endif
 
 EXTRA_MODEL_EVALUATOR_H = \
      $(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.h \
+     $(srcdir)/model_evaluator/EpetraExt_ModelEvaluatorScalingTools.h \
      $(srcdir)/model_evaluator/EpetraExt_PolynomialVectorTraits.h
 
 EXTRA_MODEL_EVALUATOR = \
-     $(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.cpp
+     $(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.cpp \
+     $(srcdir)/model_evaluator/EpetraExt_ModelEvaluatorScalingTools.cpp
 
 if BUILD_MODEL_EVALUATOR
 

@@ -369,6 +369,12 @@ double ModelEvaluator::get_t_init() const
 // Bounds for variables/parameters
 
 
+double ModelEvaluator::getInfBound() const
+{
+  return 1e+50;
+}
+
+
 Teuchos::RefCountPtr<const Epetra_Vector>
 ModelEvaluator::get_x_lower_bounds() const
 { return Teuchos::null; }

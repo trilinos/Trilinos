@@ -198,9 +198,20 @@ ParameterList& ParameterList::sublist(
   // If it does exist and is a list, return the list value.
   // Otherwise, throw an error.
   if (i != params_.end()) {
+#ifdef TEUCHOS_DEBUG
+    const std::string actualName = this->name(i);
+    TEST_FOR_EXCEPTION(
+      name != actualName, std::logic_error,
+      "Error, the sublist named \"" << name << "\" was said to be found\n"
+      "but the actual parameter name is \"" << actualName << "\".\n"
+      "This suggests some type of memory corruption in the list (try running a\n"
+      "memory checking tool loke purify or valgrind)."
+      );
+#endif
+
     TEST_FOR_EXCEPTION_PURE_MSG(
       !entry(i).isList(), Exceptions::InvalidParameterType
-      ,"Error, the parameter " << name << " is not a list, it is of type \""
+      ,"Error, the parameter \"" << name << "\" is not a list, it is of type \""
       <<entry(i).getAny(false).typeName()<<"\"!" );
     return getValue<ParameterList>(entry(i));
   }

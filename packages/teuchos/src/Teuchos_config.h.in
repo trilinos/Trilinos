@@ -59,6 +59,9 @@
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
 
+/* Define to 1 if you have the <fpu_control.h> header file. */
+#undef HAVE_FPU_CONTROL_H
+
 /* define if the compiler supports abi::__cxa_demangle(...) */
 #undef HAVE_GCC_ABI_DEMANGLE
 

@@ -74,6 +74,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_ErrorPolling.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
 	$(srcdir)/Teuchos_FancyOStream.hpp \
+	$(srcdir)/Teuchos_FloatingPointTrap.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_GlobalMPISession.hpp \
 	$(srcdir)/Teuchos_Handle.hpp \
@@ -152,6 +153,7 @@ CORE = \
 	$(srcdir)/Teuchos_dyn_cast.cpp \
 	$(srcdir)/Teuchos_ErrorPolling.cpp \
 	$(srcdir)/Teuchos_exit.cpp \
+	$(srcdir)/Teuchos_FloatingPointTrap.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
 	$(srcdir)/Teuchos_LabeledObject.cpp \

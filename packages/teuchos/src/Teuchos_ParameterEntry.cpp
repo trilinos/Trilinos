@@ -30,19 +30,21 @@
 #include "Teuchos_ParameterEntry.hpp" // class definition
 #include "Teuchos_ParameterList.hpp"	 // for sublists
 
-using namespace Teuchos;
+
+namespace Teuchos {
+
 
 ParameterEntry::ParameterEntry() : 
-  isList_(false),
   isUsed_(false),
   isDefault_(false)
-{
-}
+{}
+
 
 ParameterEntry::ParameterEntry(const ParameterEntry& source)
 {
   operator=(source);
 }
+
 
 ParameterEntry& ParameterEntry::operator=(const ParameterEntry& source)
 {
@@ -50,7 +52,6 @@ ParameterEntry& ParameterEntry::operator=(const ParameterEntry& source)
     return *this;
 
   val_ = source.val_;
-  isList_ = source.isList_;
   isUsed_ = source.isUsed_;
   isDefault_ = source.isDefault_;
   docString_ = source.docString_;
@@ -59,6 +60,7 @@ ParameterEntry& ParameterEntry::operator=(const ParameterEntry& source)
   return *this;
 }
 
+
 void ParameterEntry::setAnyValue(
   const any &value, bool isDefault
   )
@@ -66,10 +68,10 @@ void ParameterEntry::setAnyValue(
   val_ = value;
   isDefault_ = isDefault;
   validator_ = null;
-  isList_ = false;
   isUsed_ = false;
   docString_ = "";
 }
+
 
 void ParameterEntry::setValidator(
   RefCountPtr<const ParameterEntryValidator> const& validator
@@ -78,31 +80,32 @@ void ParameterEntry::setValidator(
   validator_ = validator;
 }
 
+
 void ParameterEntry::setDocString(const std::string &docString)
 {
   docString_ = docString;
 }
+
 
 ParameterList& ParameterEntry::setList(bool isDefault, const std::string &docString)
 {
   val_ = ParameterList();
   isDefault_ = isDefault;
   isUsed_ = true;
-  isList_ = true;
   docString_ = docString;
   return any_cast<ParameterList>( val_ );
 }
 
-void ParameterEntry::reset()
+
+bool ParameterEntry::isList() const
 {
-  //delete val_;
-  isUsed_ = false;
-  isDefault_ = false;
+  return ( val_.empty() ? false : val_.type() == typeid(ParameterList) );
 }
+
 
 ostream& ParameterEntry::leftshift(ostream& os, bool printFlags) const
 {
-  if( !isList_ ) os << val_;
+  if( !this->isList() ) os << val_;
 
   if(printFlags) {
     if (isDefault_)
@@ -115,4 +118,15 @@ ostream& ParameterEntry::leftshift(ostream& os, bool printFlags) const
 }
 
 
+// private
 
+
+void ParameterEntry::reset()
+{
+  //delete val_;
+  isUsed_ = false;
+  isDefault_ = false;
+}
+
+
+} // namespace Teuchos

@@ -505,6 +505,12 @@ public:
   /** \name Bounds for variables/parameters */
   //@{
 
+  /** \brief Return the value of an infinite bound.
+   *
+   * The default implementation returns 1e+50.
+   */
+  virtual double getInfBound() const;
+
   /** \brief . */
   virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_lower_bounds() const;
 

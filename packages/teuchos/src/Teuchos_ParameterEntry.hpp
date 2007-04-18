@@ -191,9 +191,6 @@ private:
   //! Templated Datatype
   any val_;
 
-  //! List flag
-  bool isList_;
-
   //! Has this parameter been accessed by a "get" function?
   mutable bool isUsed_;
 
@@ -261,7 +258,6 @@ ParameterEntry::ParameterEntry(
   ,RefCountPtr<const ParameterEntryValidator> const& validator
   )
   : val_(value),
-    isList_(isList),
     isUsed_(false),
     isDefault_(isDefault),
     docString_(docString),
@@ -322,10 +318,6 @@ const any& ParameterEntry::getAny(bool activeQry) const
 inline
 bool ParameterEntry::isUsed() const
 { return isUsed_; }
-
-inline
-bool ParameterEntry::isList() const
-{ return isList_; }
 
 template <typename T>
 inline
