@@ -20,6 +20,7 @@
 /*       description of the matrix structure ML_matrix.                 */
 /* -------------------------------------------------------------------- */
 
+#ifdef HAVE_ML_AZTECOO
 /* ******************************************************************** */
 void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 		       ML_Operator **Cmatrix)
@@ -860,6 +861,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   (*Cmatrix)->invec_leng    = save_ints[5];   
 
 } /* ML_blkmatmat_mult() */
+#endif
 
 /* ******************************************************************** */
 void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
