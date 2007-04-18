@@ -255,12 +255,15 @@ target_vendor = @target_vendor@
 CORE_H = \
 	$(srcdir)/BelosBlockCG.hpp \
 	$(srcdir)/BelosBlockGmres.hpp \
+	$(srcdir)/BelosBlockGmresIter.hpp \
+	$(srcdir)/BelosBlockGmresSolMgr.hpp \
 	$(srcdir)/BelosCG.hpp \
 	$(srcdir)/BelosConfigDefs.hpp \
 	$(srcdir)/BelosDGKSOrthoManager.hpp \
 	$(srcdir)/BelosEpetraAdapter.hpp \
 	$(srcdir)/BelosEpetraOperator.h \
 	$(srcdir)/BelosICGSOrthoManager.hpp \
+	$(srcdir)/BelosIteration.hpp \
 	$(srcdir)/BelosIterativeSolver.hpp \
 	$(srcdir)/BelosLinearProblem.hpp \
 	$(srcdir)/BelosMatOrthoManager.hpp \

@@ -223,6 +223,23 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     BlockGmresIterState<ScalarType,MV> empty;
     initialize(empty);
   }
+  
+  /*! \brief Get the current state of the eigensolver.
+   *
+   * The data is only valid if isInitialized() == \c true.
+   *
+   * \returns A BlockKrylovSchurState object containing const pointers to the current
+   * solver state.
+   */
+  BlockGmresIterState<ScalarType,MV> getState() const {
+    BlockGmresIterState<ScalarType,MV> state;
+    state.curDim = curDim_;
+    state.V = V_;
+    state.H = H_;
+    state.R = R_;
+    state.Z = Z_;
+    return state;
+  }
 
   //@}
 
@@ -305,8 +322,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   // Internal methods
   //
   //! Method for updating QR factorization of upper Hessenberg matrix 
-  void UpdateLSQR( Teuchos::SerialDenseMatrix<int,ScalarType>&,
-		   Teuchos::SerialDenseMatrix<int,ScalarType>& );
+  void UpdateLSQR();
 
   //! Method for initalizing the state storage needed by block GMRES.
   void setStateSize();
@@ -552,6 +568,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     }
     return Teuchos::null;
   }
+
   
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -718,18 +735,23 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       //
       // V has been extended, and H has been extended. 
       //
+      // Update the QR factorization of the upper Hessenberg matrix
+      //
+      UpdateLSQR();
+      //
       // Update basis dim and release all pointers.
+      //
       Vnext = Teuchos::null;
       curDim_ += blockSize_;
-
+      //        
       /*      
       // When required, monitor some orthogonalities
       if (om_->isVerbosity( Debug ) ) {
-        // Check almost everything here
-        CheckList chk;
-        chk.checkV = true;
-        chk.checkArn = true;
-        om_->print( Debug, accuracyCheck(chk, ": after local update") );
+      // Check almost everything here
+      CheckList chk;
+      chk.checkV = true;
+      chk.checkArn = true;
+      om_->print( Debug, accuracyCheck(chk, ": after local update") );
       }
       else if (om_->isVerbosity( OrthoDetails ) ) {
         CheckList chk;
@@ -749,6 +771,96 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     } // end while (statusTest == false)
    
   }
+
+  
+  template<class ScalarType, class MV, class OP>
+  void BlockGmresIter<ScalarType,MV,OP>::UpdateLSQR()
+  {
+    int i, j, maxidx;
+    ScalarType sigma, mu, vscale, maxelem;
+    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+    
+    Teuchos::LAPACK<int, ScalarType> lapack;
+    Teuchos::BLAS<int, ScalarType> blas;
+    //
+    // Apply previous transformations and compute new transformation to reduce upper-Hessenberg
+    // system to upper-triangular form.
+    //
+    if (blockSize_ == 1) {
+      //
+      // QR factorization of Least-Squares system with Givens rotations
+      //
+      for (i=0; i<curDim_; i++) {
+	//
+	// Apply previous Givens rotations to new column of Hessenberg matrix
+	//
+	blas.ROT( 1, &(*H_)(i,curDim_), 1, &(*H_)(i+1, curDim_), 1, &cs[i], &sn[i] );
+      }
+      //
+      // Calculate new Givens rotation
+      //
+      blas.ROTG( &(*H_)(curDim_,curDim_), &(*H_)(curDim_+1,curDim_), &cs[curDim_], &sn[curDim_] );
+      (*H_)(curDim_+1,curDim_) = zero;
+      //
+      // Update RHS w/ new transformation
+      //
+      blas.ROT( 1, &(*Z_)(curDim_,0), 1, &(*Z_)(curDim_+1,0), 1, &cs[curDim_], &sn[curDim_] );
+    }
+    else {
+      //
+      // QR factorization of Least-Squares system with Householder reflectors
+      //
+      for (j=0; j<blockSize_; j++) {
+	//
+	// Apply previous Householder reflectors to new block of Hessenberg matrix
+	//
+	for (i=0; i<curDim_+j; i++) {
+	  sigma = blas.DOT( blockSize_, &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim_+j), 1);
+	  sigma += (*H_)(i,curDim_+j);
+	  sigma *= beta[i];
+	  blas.AXPY(blockSize_, -sigma, &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim_+j), 1);
+	  (*H_)(i,curDim_+j) -= sigma;
+	}
+	//
+	// Compute new Householder reflector
+	//
+	maxidx = blas.IAMAX( blockSize_+1, &(*H_)(curDim_+j,curDim_+j), 1 );
+	maxelem = (*H_)(curDim_+j+maxidx-1,curDim_+j);
+	for (i=0; i<blockSize_+1; i++)
+	  (*H_)(curDim_+j+i,curDim_+j) /= maxelem;
+	sigma = blas.DOT( blockSize_, &(*H_)(curDim_+j+1,curDim_+j), 1,
+			  &(*H_)(curDim_+j+1,curDim_+j), 1 );
+	if (sigma == zero) {
+	  beta[curDim_ + j] = zero;
+	} else {
+	  mu = sqrt((*H_)(curDim_+j,curDim_+j)*(*H_)(curDim_+j,curDim_+j)+sigma);
+	  if ( Teuchos::ScalarTraits<ScalarType>::real((*H_)(curDim_+j,curDim_+j)) 
+	       < Teuchos::ScalarTraits<MagnitudeType>::zero() ) {
+	    vscale = (*H_)(curDim_+j,curDim_+j) - mu;
+	  } else {
+	    vscale = -sigma / ((*H_)(curDim_+j,curDim_+j) + mu);
+	  }
+	  beta[curDim_+j] = 2.0*vscale*vscale/(sigma + vscale*vscale);
+	  (*H_)(curDim_+j,curDim_+j) = maxelem*mu;
+	  for (i=0; i<blockSize_; i++)
+	    (*H_)(curDim_+j+1+i,curDim_+j) /= vscale;
+	}
+	//
+	// Apply new Householder reflector to rhs
+	//
+	for (i=0; i<blockSize_; i++) {
+	  sigma = blas.DOT( blockSize_, &(*H_)(curDim_+j+1,curDim_+j),
+			    1, &(*Z_)(curDim_+j+1,i), 1);
+	  sigma += (*Z_)(curDim_+j,i);
+	  sigma *= beta[curDim_+j];
+	  blas.AXPY(blockSize_, -sigma, &(*H_)(curDim_+j+1,curDim_+j),
+		    1, &(*Z_)(curDim_+j+1,i), 1);
+	  (*Z_)(curDim_+j,i) -= sigma;
+	}
+      }
+    } // end if (blockSize_ == 1)
+  } // end UpdateLSQR()
+
 } // end Belos namespace
 
 #endif /* BELOS_BLOCK_GMRES_ITER_HPP */

@@ -76,7 +76,7 @@ namespace Belos {
   */
   
   enum ReturnType {		Ok, 		/*!< Computation completed sucessfully */
-				Undefined, 	/*!< This operation is not defined */
+				Undef,   	/*!< This operation is not defined */
 				Error		/*!< This operator returned an error */
   };
   
@@ -86,7 +86,8 @@ namespace Belos {
     variable of type Belos::StatusType is returned.
   */
   
-  enum StatusType { 	Unchecked = 2,   /*!< Initial state of status */
+  enum StatusType { 	Passed = 3,      /*!< Some event occured, the iteration needs to stop. */
+                        Undefined = 2,   /*!< Status test has not been checked yet. */
 			Unconverged = 1, /*!< Convergence is not reached. */
 			Converged = 0,   /*!< Convergence is reached. */
 			Failed = -1,     /*!< Some failure occured.  Should stop */
@@ -101,8 +102,8 @@ namespace Belos {
   const char* toString(const StatusType status)
   {
     switch(status) {
-      case Unchecked:
-        return "Unchecked";
+      case Undefined:
+        return "Undefined";
       case Unconverged:
         return "Unconverged";
       case Converged:

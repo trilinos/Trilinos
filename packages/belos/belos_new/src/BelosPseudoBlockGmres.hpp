@@ -503,7 +503,7 @@ namespace Belos {
 	  //
 	  // Update the solution held by the linear problem.
 	  //	  
-	  _lp->SolutionUpdated( solnUpdate.get() );
+	  _lp->SolutionUpdated( solnUpdate );
 	  //
 	} // if (_iter) 
 	  //

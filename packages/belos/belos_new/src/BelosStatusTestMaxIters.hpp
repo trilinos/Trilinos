@@ -135,7 +135,7 @@ private:
       maxIters_ = maxIters;
     
     nIters_ = 0;
-    status_ = Unchecked;
+    status_ = Undefined;
   }
   
   template <class ScalarType, class MV, class OP>
@@ -152,7 +152,7 @@ private:
   void StatusTestMaxIters<ScalarType,MV,OP>::Reset()
   {
     nIters_ = 0;
-    status_ = Unchecked;
+    status_ = Undefined;
   }    
     
   template <class ScalarType, class MV, class OP>

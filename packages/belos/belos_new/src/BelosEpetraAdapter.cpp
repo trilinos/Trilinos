@@ -250,13 +250,13 @@ ReturnType EpetraOp::Apply ( const MultiVec<double>& x,
   //
   if ( trans ) { 
     info = Epetra_Op->SetUseTranspose( true );
-    if (info != 0) { return Undefined; }
+    if (info != 0) { return Undef; }
   }
   info = Epetra_Op->Apply( *vec_x, *vec_y );
   
   if ( trans ) { 
     info = Epetra_Op->SetUseTranspose( false );
-    if (info != 0) { return Undefined; }
+    if (info != 0) { return Undef; }
   }
   
   if (info != 0) { return Error; }
@@ -294,13 +294,13 @@ ReturnType EpetraPrecOp::Apply ( const MultiVec<double>& x,
   //
   if ( trans ) { 
     info = Epetra_Op->SetUseTranspose( true );
-    if (info != 0) { return Undefined; }
+    if (info != 0) { return Undef; }
   }
   info = Epetra_Op->ApplyInverse( *vec_x, *vec_y );
   
   if ( trans ) { 
     info = Epetra_Op->SetUseTranspose( false );
-    if (info != 0) { return Undefined; }
+    if (info != 0) { return Undef; }
   }
   
   if (info != 0) { return Error; }

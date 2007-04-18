@@ -136,7 +136,7 @@ private:
       maxRestarts_ = maxRestarts;
     
     nRestarts_ = 0;
-    status_ = Unchecked;
+    status_ = Undefined;
   }
   
   template <class ScalarType, class MV, class OP>
@@ -152,7 +152,7 @@ private:
   template <class ScalarType, class MV, class OP>
   void StatusTestMaxRestarts<ScalarType,MV,OP>::Reset()
   {
-    status_ = Unchecked;
+    status_ = Undefined;
     nRestarts_ = 0;
   }
 

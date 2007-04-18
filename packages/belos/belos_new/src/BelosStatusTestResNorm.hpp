@@ -308,7 +308,7 @@ StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm( MagnitudeType Tolerance,
     scaletype_(NormOfInitRes),
     scalenormtype_(TwoNorm),
     scalevalue_(1.0),
-    status_(Unchecked),
+    status_(Undefined),
     cur_rhs_num_(0),
     cur_blksz_(0),
     numrhs_(0),
@@ -328,7 +328,7 @@ StatusTestResNorm<ScalarType,MV,OP>::~StatusTestResNorm()
 template <class ScalarType, class MV, class OP>
 void StatusTestResNorm<ScalarType,MV,OP>::Reset() 
 {
-  status_ = Unchecked;
+  status_ = Undefined;
   cur_rhs_num_ = 0;
   cur_blksz_ = 0;
   numrhs_ = 0;
@@ -502,8 +502,8 @@ ostream& StatusTestResNorm<ScalarType,MV,OP>::Print(ostream& os, int indent) con
       os << " RHS ";
     os << ")";
   }
-  if (status_==Unchecked)
-    os << " Unchecked ( tol = " << tolerance_ << " ) "<<endl;
+  if (status_==Undefined)
+    os << " Undefined ( tol = " << tolerance_ << " ) "<<endl;
   else {
     os << endl;
     if(showMaxResNormOnly_) {
@@ -568,7 +568,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::FirstcallCheckStatusSetup( Itera
       resvector_.resize( numrhs_ ); 
       testvector_.resize( numrhs_ );
       RefCountPtr<MV> prec_init_res = MVT::Clone( init_res, numrhs_ );
-      if (lp->ApplyLeftPrec( init_res, *prec_init_res ) != Undefined)
+      if (lp->ApplyLeftPrec( init_res, *prec_init_res ) != Undef)
         MVT::MvNorm( *prec_init_res, &scalevector_, scalenormtype_ );
       else 
         MVT::MvNorm( init_res, &scalevector_, scalenormtype_ );
@@ -582,7 +582,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::FirstcallCheckStatusSetup( Itera
       return Failed;
     }
   }
-  return Unchecked;
+  return Undefined;
 }
 
 } // end namespace Belos

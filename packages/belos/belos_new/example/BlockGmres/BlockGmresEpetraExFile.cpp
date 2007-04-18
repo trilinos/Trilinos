@@ -43,6 +43,8 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosBlockGmres.hpp"
+#include "BelosBlockGmresIter.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
 #include "BelosPseudoBlockGmres.hpp"
 
 #include "EpetraExt_readEpetraLinearSystem.h"
@@ -143,14 +145,17 @@ int main(int argc, char *argv[]) {
 			+ Belos::TimingDetails + Belos::FinalSummary );
   
   typedef Belos::StatusTestCombo<double,MV,OP> StatusTestCombo_t;
-  Belos::StatusTestMaxIters<double,MV,OP> test1( maxiters );
-  Belos::StatusTestMaxRestarts<double,MV,OP> test2( numrestarts );
-  StatusTestCombo_t test3( StatusTestCombo_t::OR, test1, test2 );
+  RefCountPtr<Belos::StatusTest<double,MV,OP> > test1 
+    = rcp( new Belos::StatusTestMaxIters<double,MV,OP>( maxiters ) );
+  RefCountPtr<Belos::StatusTest<double,MV,OP> > test2
+    = rcp( new Belos::StatusTestMaxRestarts<double,MV,OP>( numrestarts ) );
+  RefCountPtr<Belos::StatusTest<double,MV,OP> > test3 
+    = rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, test1, test2 ) );
   Belos::StatusTestResNorm<double,MV,OP> test4( tol );
-  Belos::StatusTestOutputter<ST,MV,OP> test5( frequency, false );
+  Belos::StatusTestOutputter<double,MV,OP> test5( frequency, false );
   test5.set_resNormStatusTest( rcp(&test4,false) );
   test5.set_outputManager( rcp(&My_OM,false) );    
-  StatusTestCombo_t My_Test( StatusTestCombo_t::OR, test3, test5 );
+  StatusTestCombo_t My_Test( StatusTestCombo_t::OR, test3, rcp(&test5,false) );
  
   RefCountPtr< Belos::IterativeSolver<double,MV,OP> > Solver; 
   if (pseudo)

@@ -144,7 +144,7 @@ namespace Belos {
       linear problem from having to recompute the residual vector everytime it's asked for if
       the solution hasn't been updated.
     */
-    void SolutionUpdated( const MV* SolnUpdate = 0,
+    void SolutionUpdated( const RefCountPtr<MV>& update = Teuchos::null,
                           ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() );
     
     //@}
@@ -571,17 +571,17 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::SolutionUpdated( const MV* SolnUpdate, ScalarType scale )
+  void LinearProblem<ScalarType,MV,OP>::SolutionUpdated( const RefCountPtr<MV>& update, ScalarType scale )
   { 
-    if (SolnUpdate) {
+    if (update != Teuchos::null) {
       if (Right_Prec_) {
 	//
 	// Apply the right preconditioner before computing the current solution.
-	RefCountPtr<MV> TrueUpdate = MVT::Clone( *SolnUpdate, MVT::GetNumberVecs( *SolnUpdate ) );
-	OPT::Apply( *RP_, *SolnUpdate, *TrueUpdate ); 
+	RefCountPtr<MV> TrueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
+	OPT::Apply( *RP_, *update, *TrueUpdate ); 
 	MVT::MvAddMv( 1.0, *CurX_, scale, *TrueUpdate, *CurX_ ); 
       } else {
-	MVT::MvAddMv( 1.0, *CurX_, scale, *SolnUpdate, *CurX_ ); 
+	MVT::MvAddMv( 1.0, *CurX_, scale, *update, *CurX_ ); 
       }
     }
     solutionUpdated_ = true; 
@@ -729,7 +729,7 @@ namespace Belos {
       return ( OPT::Apply( *A_,x, y) );   
     }
     else
-      return Undefined;
+      return Undef;
   }
   
   template <class ScalarType, class MV, class OP>
@@ -740,7 +740,7 @@ namespace Belos {
       return ( OPT::Apply( *LP_,x, y) );
     }
     else 
-      return Undefined;
+      return Undef;
   }
   
   template <class ScalarType, class MV, class OP>
@@ -751,7 +751,7 @@ namespace Belos {
       return ( OPT::Apply( *RP_,x, y) );
     }
     else
-      return Undefined;
+      return Undef;
   }
   
   template <class ScalarType, class MV, class OP>
