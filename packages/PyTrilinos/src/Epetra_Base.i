@@ -44,9 +44,6 @@
 #include "Epetra_Util.h"
 #include "Epetra_MapColoring.h"
 
-// Local includes
-#include "PyEpetra_Utils.h"  
-
 // Teuchos include
 #include "Teuchos_FILEstream.hpp"
 

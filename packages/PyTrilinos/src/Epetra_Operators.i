@@ -40,6 +40,7 @@
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_JadMatrix.h"
 #include "Epetra_LinearProblem.h"
+
 %}
 
 //////////////
@@ -97,6 +98,7 @@ int method(int Row, double* Values, int NumValues, int* Indices, int NumIndices)
 //////////////////////////////
 // Epetra_RowMatrix support //
 //////////////////////////////
+%include "Epetra_RowMatrix_Utils.i"
 %warnfilter(473)     Epetra_RowMatrix;
 %feature("director") Epetra_RowMatrix;
 %rename(RowMatrix)   Epetra_RowMatrix;
@@ -460,7 +462,7 @@ int method(int Row, double* Values, int NumValues, int* Indices, int NumIndices)
     else
     {
       PyErr_SetString(PyExc_IndexError, "Input argument not supported");
-      return Py_BuildValue("");
+      return NULL;
     }
   }
 

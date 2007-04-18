@@ -137,7 +137,6 @@ print r.Norm2()
 // Epetra python includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
-#include "PyEpetra_Utils.h"
 
 // ML includes
 #include "ml_MultiLevelPreconditioner.h"
@@ -178,8 +177,9 @@ using namespace std;
 %feature("autodoc", "1");
 
 // External Trilinos package imports
-%import "Teuchos.i"
-%import "Epetra.i"
+%include "Epetra_RowMatrix_Utils.i"
+%import  "Teuchos.i"
+%import  "Epetra.i"
 
 ///////////////////////
 // ml_config support //
@@ -328,15 +328,14 @@ namespace MLAPI {
       Epetra_RowMatrix* Matrix = self->GetRCPRowMatrix().get();
       int Row, Col;
       if (PyInt_Check(args)) {
-	return(Epetra_RowMatrix_GetEntries(*Matrix, PyLong_AsLong(args)));
+	return Epetra_RowMatrix_GetEntries(*Matrix, PyLong_AsLong(args));
       }
       else if (PyArg_ParseTuple(args, "ii", &Row, &Col)) {
-	return(Epetra_RowMatrix_GetEntry(*Matrix, Row, Col));
+	return Epetra_RowMatrix_GetEntry(*Matrix, Row, Col);
       }
       else {
 	PyErr_SetString(PyExc_IndexError, "Input argument not supported");
-	Py_INCREF(Py_None);
-	return Py_None;
+	return NULL;
       }
     }
     MultiVector __mul__(MultiVector& rhs) {
@@ -435,15 +434,14 @@ namespace {
     PyObject* __getitem__(PyObject* args) {
       int Row, Col;
       if (PyInt_Check(args)) {
-	return(Epetra_RowMatrix_GetEntries(*(self->GetMatrix()), PyLong_AsLong(args)));
+	return Epetra_RowMatrix_GetEntries(*(self->GetMatrix()), PyLong_AsLong(args));
       }
       else if (PyArg_ParseTuple(args, "ii", &Row, &Col)) {
-	return(Epetra_RowMatrix_GetEntry(*(self->GetMatrix()), Row, Col));
+	return Epetra_RowMatrix_GetEntry(*(self->GetMatrix()), Row, Col);
       }
       else {
 	PyErr_SetString(PyExc_IndexError, "Input argument not supported");
-	Py_INCREF(Py_None);
-	return Py_None;
+	return NULL;
       }
     }
   }
