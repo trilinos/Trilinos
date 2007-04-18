@@ -191,9 +191,12 @@ int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *Result);
  *  You need to have remapped the Epetra Matrix to include all the columns
  *  before this routine gets called or else this won't work in parallel.
  *
+ *  OptimizeStorage() *must* be called on the routines for the light wrap to be
+ *  used.  Otherwise, the routine calls  ML_Operator_WrapEpetraMatrix as a fallback.
+ *
  *  \note ML requires A->RowMatrixRowMap() == A->OperatorRangeMap()
  */
-int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix);
+int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix, bool verbose=false);
 
 
 //! Wraps a ML_Operator into a Epetra_CrsMatrix.

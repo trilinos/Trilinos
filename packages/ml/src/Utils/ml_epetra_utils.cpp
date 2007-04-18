@@ -766,7 +766,8 @@ int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
 
 
 /* This should (correctly) build the epetra maps from the ML_Operator object*/
-void ML_Build_Epetra_Maps(ML_Operator* Amat,Epetra_Map **domainmap, Epetra_Map **rangemap){
+void ML_Build_Epetra_Maps(ML_Operator* Amat,Epetra_Map **domainmap, Epetra_Map **rangemap, Epetra_Map **colmap,int base){
+  
   int    isize_offset, osize_offset;
   int Nghost;
   ML_Comm *comm;
@@ -798,11 +799,13 @@ void ML_Build_Epetra_Maps(ML_Operator* Amat,Epetra_Map **domainmap, Epetra_Map *
   int isize = Amat->invec_leng;
   int osize = Amat->outvec_leng;
 
-  EpetraComm.ScanSum(&isize,&isize_offset,1); isize_offset-=isize;
-  EpetraComm.ScanSum(&osize,&osize_offset,1); osize_offset-=osize;
+  EpetraComm.ScanSum(&isize,&isize_offset,1); isize_offset-=isize + base;
+  EpetraComm.ScanSum(&osize,&osize_offset,1); osize_offset-=osize + base;
 
   vector<double> global_isize; global_isize.resize(isize+Nghost+1);
   vector<int>    global_isize_as_int; global_isize_as_int.resize(isize+Nghost+1);
+
+  //vector<double> global_osize(osize);
   vector<int>    global_osize_as_int(osize);
   
   for (int i = 0 ; i < isize; i++) {
@@ -810,13 +813,27 @@ void ML_Build_Epetra_Maps(ML_Operator* Amat,Epetra_Map **domainmap, Epetra_Map *
           global_isize_as_int[i] = isize_offset + i;
   }
           
-  for (int i = 0 ; i < osize; i++)
+  for (int i = 0 ; i < osize; i++) {
+    //global_osize[i] = (double) (osize_offset + i);
     global_osize_as_int[i] = osize_offset + i;
-  
+  }
   for (int i = 0 ; i < Nghost; i++) global_isize[i+isize] = -1;
+
+  if(rangemap) *rangemap=new Epetra_Map( -1, osize, &global_osize_as_int[0], base, EpetraComm ) ; 
+  if(domainmap) *domainmap=new Epetra_Map( -1, isize, &global_isize_as_int[0], base, EpetraComm ) ; 
+
+
+  /* Build the column map first to make sure we get communication patterns
+     correct */
+  ML_exchange_bdry(&global_isize[0],Amat->getrow->pre_comm, 
+ 		 Amat->invec_leng,comm,ML_OVERWRITE,NULL);
+
+  for ( int j = isize; j < isize+Nghost; j++ ) { 
+    global_isize_as_int[j] = (int) global_isize[j];
+  }
   
-  *rangemap=new Epetra_Map( -1, osize, &global_osize_as_int[0], 0, EpetraComm ) ; 
-  *domainmap=new Epetra_Map( -1, isize, &global_isize_as_int[0], 0, EpetraComm ) ; 
+  if(colmap) *colmap=new Epetra_Map( -1, isize+Nghost, &global_isize_as_int[0], base, EpetraComm ) ; 
+
 }/*end ML_Build_Epetra_Maps*/
 
 
@@ -830,36 +847,44 @@ void ML_Build_Epetra_Maps(ML_Operator* Amat,Epetra_Map **domainmap, Epetra_Map *
 // -Chris Siefert 11/28/2006.
 #include "Epetra_Comm.h"
 #include "Epetra_CrsMatrix.h"
-int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix)
+int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix, bool verbose)
 {
-  int isize, osize,rv=0;
-  osize = A->OperatorRangeMap().NumMyElements();
-  isize = A->OperatorDomainMap().NumMyElements();
-  
-  int N_ghost = A->RowMatrixColMap().NumMyElements() - isize; 
-  if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
+  int rv=0;
+  if(A->StorageOptimized() && A->IndexBase()==0){
+    int isize, osize;
+    osize = A->OperatorRangeMap().NumMyElements();
+    isize = A->OperatorDomainMap().NumMyElements();
+    
+    int N_ghost = A->RowMatrixColMap().NumMyElements() - isize; 
+    if (N_ghost < 0) N_ghost = 0; 
+    
+    /* Do the "View" Wrap */
+    struct ML_CSR_MSRdata *epetra_csr= (struct ML_CSR_MSRdata*)malloc(sizeof(struct ML_CSR_MSRdata));
+    epetra_csr->Nnz=newMatrix->N_nonzeros = A->NumGlobalNonzeros();
+    epetra_csr->Nrows=osize;
+    epetra_csr->Ncols=isize;  
+    A->ExtractCrsDataPointers(epetra_csr->rowptr,epetra_csr->columns,epetra_csr->values);
 
-  //  printf("[%d] Epetra->ML Local Size %dx%d\n",A->Comm().MyPID(),A->RowMap().NumMyElements(),A->ColMap().NumMyElements());
-  
-  /* Do the "View" Wrap */
-  struct ML_CSR_MSRdata *epetra_csr= (struct ML_CSR_MSRdata*)malloc(sizeof(struct ML_CSR_MSRdata));
-  epetra_csr->Nnz=newMatrix->N_nonzeros = A->NumGlobalNonzeros();
-  epetra_csr->Nrows=osize;
-  epetra_csr->Ncols=isize;  
-  A->ExtractCrsDataPointers(epetra_csr->rowptr,epetra_csr->columns,epetra_csr->values);
-
-  /* Sanity Check */
-  if(!epetra_csr->rowptr || !epetra_csr->columns || !epetra_csr->values) rv=-1;
-  
-  /* Set the appropriate function pointers + data */
-  ML_Operator_Set_ApplyFuncData(newMatrix, isize, osize,(void*) epetra_csr, osize,NULL,0);  
-  ML_CommInfoOP_Generate(&(newMatrix->getrow->pre_comm),ML_Epetra_CrsMatrix_comm_wrapper, (void *) A, 
-                          newMatrix->comm, isize, N_ghost);
-  ML_Operator_Set_Getrow(newMatrix, newMatrix->outvec_leng,CSR_getrow);
-  ML_Operator_Set_ApplyFunc (newMatrix, CSR_matvec);  
-  newMatrix->data_destroy=free;
-  newMatrix->type = ML_TYPE_CRS_MATRIX;  
-  return rv;
+    /* Sanity Check */
+    if(!epetra_csr->rowptr || !epetra_csr->columns || !epetra_csr->values) {
+      if(verbose && !A->Comm().MyPID()) printf("WARNING: ExtractDataPointers failed [%s], reverting to heavyweight wrap.\n",A->Label());
+      return ML_Operator_WrapEpetraMatrix(A,newMatrix);
+    }/*end if*/
+    
+    /* Set the appropriate function pointers + data */
+    ML_Operator_Set_ApplyFuncData(newMatrix, isize, osize,(void*) epetra_csr, osize,NULL,0);  
+    ML_CommInfoOP_Generate(&(newMatrix->getrow->pre_comm),ML_Epetra_CrsMatrix_comm_wrapper, (void *) A, 
+                           newMatrix->comm, isize, N_ghost);
+    ML_Operator_Set_Getrow(newMatrix, newMatrix->outvec_leng,CSR_getrow);
+    ML_Operator_Set_ApplyFunc (newMatrix, CSR_matvec);  
+    newMatrix->data_destroy=free;
+    newMatrix->type = ML_TYPE_CRS_MATRIX;  
+  }/*end if*/
+  else{
+    if(verbose && !A->Comm().MyPID()) printf("WARNING: Matrix storage not optimized [%s], reverting to heavyweight wrap.\n",A->Label());
+    return ML_Operator_WrapEpetraMatrix(A,newMatrix);
+  }/*end else*/
+  return rv;      
 }/*end ML_Operator_WrapEpetraCrsMatrix*/
 
 // ================================================ ====== ==== ==== == 
@@ -873,8 +898,8 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
   double bob;
   int mnz=10000;
 
-  //#define THIS_CODE_DOESNT_WORK  
-#ifdef THIS_CODE_DOESNT_WORK
+#define LIGHTWEIGHT_WRAP
+#ifdef LIGHTWRIGHT_WRAP
   /* This is a very dangerous way to do this.  Live on the edge. */
   int *cols, *gcols;
   double* vals;
@@ -882,11 +907,11 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
 
   /* Build the Column Map */
   int *global_colmap;
-  Epetra_Map *RowMap2, *DomainMap;
-  ML_Build_Epetra_Maps(A,&DomainMap,&RowMap2);
+  Epetra_Map *DomainMap,*ColMap;
+  ML_Build_Epetra_Maps(A,&DomainMap,NULL,&ColMap,base);
   
   /* Allocate the Epetra_CrsMatrix Object */
-  *Result=new Epetra_CrsMatrix(CV,*RowMap2,0);
+  *Result=new Epetra_CrsMatrix(CV,RowMap,*ColMap,base);
   
   /* Fill the matrix. */
   for(int row=0;row<A->outvec_leng;row++){
@@ -894,13 +919,11 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
     vals=&(M_->values[M_->rowptr[row]]);
     (*Result)->InsertMyValues(row,M_->rowptr[row+1]-M_->rowptr[row],vals,cols);
   }/*end for*/
-  (*Result)->FillComplete(*DomainMap,*RowMap2);//hax
-
-  printf("[%d] ML->Epetra Wrap [global] %dx%d\n",Comm.MyPID(),(*Result)->NumGlobalRows(),(*Result)->NumGlobalCols());
-  printf("[%d] ML->Epetra Wrap [local ] %dx%d\n",Comm.MyPID(),(*Result)->NumMyRows(),(*Result)->NumMyCols());
-    
+  (*Result)->FillComplete(*DomainMap,RowMap);
+  if(CV!=View) (*Result)->OptimizeStorage();
+  
   /* Cleanup */
-  delete DomainMap; delete RowMap2;
+  delete DomainMap; delete ColMap;
 #else
   ML_Operator2EpetraCrsMatrix(A,*Result,mnz,false,bob,base);
 #endif
