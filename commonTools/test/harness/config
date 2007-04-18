@@ -382,19 +382,19 @@ RUN (s858352-nightly-mpi) {
 
 ###############################################################################
 #
-# sass2889 nightly mpi
+# sass8000 nightly mpi
 #
 ###############################################################################
                                                                                 
-RUN (sass2889-nightly-mpi) {
+RUN (sass8000-nightly-mpi) {
                              
     BUILD-LABEL         = default;                                                   
-    BUILD-DIR           = sass2889MPI;
+    BUILD-DIR           = sass8000mpiTH;
     COMM                = mpi;
-    INVOKE-CONFIGURE    = sunos-sass2889-mpi;
+    INVOKE-CONFIGURE    = sunos-sass8000-mpi;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 16;
-#    BUILD-ONLY          = YES;
+    BUILD-ONLY          = YES;
 #    MPI-START           = lamboot;
 #    MPI-PING            = mpitask;
 #    MPI-STOP            = lamhalt;
@@ -498,9 +498,11 @@ RUN (qt-mpi) {
 RUN (sais028-mpi) {              
 
     BUILD-LABEL         = default;                                                                  
-    BUILD-DIR           = sais028MPI;
+    BUILD-DIR           = sais028mpiTH;
     COMM                = mpi;
-    INVOKE-CONFIGURE    = aix-sais028-mpi;
+    BUILD-ONLY          = YES;
+    INVOKE-CONFIGURE    = ibm-sais028-mpi;
+    MAKE-COMMAND        = gmake;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 2;
     TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;
