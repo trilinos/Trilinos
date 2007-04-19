@@ -144,9 +144,10 @@ InterpolationBufferAsStepper<Scalar>::InterpolationBufferAsStepper(
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(20);
   out->setMaxLenLinePrefix(40);
-  out->pushLinePrefix("Rythmos::InterpolationBufferAsStepper");
-  out->setShowLinePrefix(true);
-  out->setTabIndentStr("    ");
+  //out->pushLinePrefix("Rythmos::InterpolationBufferAsStepper");
+  //out->setShowLinePrefix(true);
+  //out->setTabIndentStr("    ");
+  Teuchos::OSTab ostab(out,1,"IBAS::constructor");
   *out << "Initializing InterpolationBufferAsStepper" << std::endl;
   if (outputLevel >= 3) {
     *out << "Calling setStepper..." << std::endl;

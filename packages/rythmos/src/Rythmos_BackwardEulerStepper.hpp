@@ -166,9 +166,9 @@ BackwardEulerStepper<Scalar>::BackwardEulerStepper()
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
   out->setMaxLenLinePrefix(32);
-  out->pushLinePrefix("Rythmos::BackwardEulerStepper");
-  out->setShowLinePrefix(true);
-  out->setTabIndentStr("    ");
+  //out->pushLinePrefix("Rythmos::BackwardEulerStepper");
+  //out->setShowLinePrefix(true);
+  //out->setTabIndentStr("    ");
 
   setInterpolator(Teuchos::null);
   numSteps = 0;
@@ -184,9 +184,9 @@ BackwardEulerStepper<Scalar>::BackwardEulerStepper(
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
   out->setMaxLenLinePrefix(32);
-  out->pushLinePrefix("Rythmos::BackwardEulerStepper");
-  out->setShowLinePrefix(true);
-  out->setTabIndentStr("    ");
+  //out->pushLinePrefix("Rythmos::BackwardEulerStepper");
+  //out->setShowLinePrefix(true);
+  //out->setTabIndentStr("    ");
 
   setModel(model);
   setSolver(solver);

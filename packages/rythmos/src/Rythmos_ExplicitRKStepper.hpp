@@ -139,9 +139,9 @@ ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RefCountPtr<const Th
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
   out->setMaxLenLinePrefix(30);
-  out->pushLinePrefix("Rythmos::ExplicitRKStepper");
-  out->setShowLinePrefix(true);
-  out->setTabIndentStr("    ");
+  //out->pushLinePrefix("Rythmos::ExplicitRKStepper");
+  //out->setShowLinePrefix(true);
+  //out->setTabIndentStr("    ");
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;

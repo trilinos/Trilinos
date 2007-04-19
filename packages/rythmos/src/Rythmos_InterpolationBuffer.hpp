@@ -160,11 +160,11 @@ void InterpolationBuffer<Scalar>::initialize(
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
   out->setMaxLenLinePrefix(30);
-  out->pushLinePrefix("Rythmos::InterpolationBuffer");
-  out->setShowLinePrefix(true);
-  out->setTabIndentStr("    ");
-  *out << "Initializing InterpolationBuffer" << std::endl;
+  //out->pushLinePrefix("Rythmos::InterpolationBuffer");
+  //out->setShowLinePrefix(true);
+  //out->setTabIndentStr("    ");
   Teuchos::OSTab ostab(out,1,"IB::initialize");
+  *out << "Initializing InterpolationBuffer" << std::endl;
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "Calling SetInterpolator..." << std::endl;
   }

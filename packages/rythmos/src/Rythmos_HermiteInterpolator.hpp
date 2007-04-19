@@ -102,9 +102,9 @@ HermiteInterpolator<Scalar>::HermiteInterpolator()
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
   out->setMaxLenLinePrefix(28);
-  out->pushLinePrefix("Rythmos::HermiteInterpolator");
-  out->setShowLinePrefix(true);
-  out->setTabIndentStr("    ");
+  //out->pushLinePrefix("Rythmos::HermiteInterpolator");
+  //out->setShowLinePrefix(true);
+  //out->setTabIndentStr("    ");
 }
 
 template<class Scalar>
