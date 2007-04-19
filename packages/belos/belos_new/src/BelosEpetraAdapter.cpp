@@ -144,7 +144,10 @@ void EpetraMultiVec::MvTimesMatAddMv ( const double alpha, const MultiVec<double
   
   EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
   
-  assert( Multiply( 'N', 'N', alpha, *A_vec, B_Pvec, beta ) == 0 );
+  int info = Multiply( 'N', 'N', alpha, *A_vec, B_Pvec, beta );
+  TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+		     "Belos::EpetraMultiVec::MvTimesMatAddMv call to Multiply() returned a nonzero value.");
+
 }
 
 //-------------------------------------------------------------
@@ -159,7 +162,9 @@ void EpetraMultiVec::MvAddMv ( const double alpha , const MultiVec<double>& A,
   EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
   EpetraMultiVec *B_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(B)); assert(B_vec!=NULL);
   
-  assert ( Update( alpha, *A_vec, beta, *B_vec, 0.0 ) == 0 ); 
+  int info = Update( alpha, *A_vec, beta, *B_vec, 0.0 );
+  TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+		     "Belos::EpetraMultiVec::MvAddMv call to Update() returned a nonzero value.");
 }
 
 //-------------------------------------------------------------
@@ -177,7 +182,9 @@ void EpetraMultiVec::MvTransMv ( const double alpha, const MultiVec<double>& A,
     Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
     Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
     
-    assert ( B_Pvec.Multiply( 'T', 'N', alpha, *A_vec, *this, 0.0 ) == 0 ); 
+    int info = B_Pvec.Multiply( 'T', 'N', alpha, *A_vec, *this, 0.0 );
+    TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+		       "Belos::EpetraMultiVec::MvTransMv call to Multiply() returned a nonzero value.");
   }
 }
 
@@ -191,7 +198,9 @@ void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>* b )
 {
   EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
   if (A_vec && b && ( (int)b->size() >= A_vec->NumVectors() ) ) {
-    assert( this->Dot( *A_vec, &(*b)[0] ) == 0 );
+     int info = this->Dot( *A_vec, &(*b)[0] );
+     TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+			"Belos::EpetraMultiVec::MvDot call to Dot() returned a nonzero value.");   
   }
 }
 
@@ -203,19 +212,22 @@ void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>* b )
 
 void EpetraMultiVec::MvNorm ( std::vector<double>* normvec, NormType norm_type ) const {
   if (normvec && ((int)normvec->size() >= GetNumberVecs())) {
+    int info = 0;
     switch( norm_type ) {
     case ( OneNorm ) :
-      assert( Norm1(&(*normvec)[0]) == 0 );
+      info = Norm1(&(*normvec)[0]);
       break;
     case ( TwoNorm ) :
-      assert( Norm2(&(*normvec)[0]) == 0 );
+      info = Norm2(&(*normvec)[0]);
       break;
     case ( InfNorm ) :	
-      assert( NormInf(&(*normvec)[0]) == 0 );
+      info = NormInf(&(*normvec)[0]);
       break;
     default:
       break;
     }
+    TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+		       "Belos::EpetraMultiVec::MvNorm call to Norm() returned a nonzero value.");
   }
 }
 
@@ -236,31 +248,30 @@ EpetraOp::EpetraOp( const Teuchos::RefCountPtr<Epetra_Operator> &Op )
 //
 // BelosOperator applications
 //
-ReturnType EpetraOp::Apply ( const MultiVec<double>& x, 
-			     MultiVec<double>& y, ETrans trans ) const {
+void EpetraOp::Apply ( const MultiVec<double>& x, 
+                       MultiVec<double>& y, ETrans trans ) const {
   int info=0;
   MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
   Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
   Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
   //
-  assert( vec_x!=NULL && vec_y!=NULL );
+  TEST_FOR_EXCEPTION( vec_x==NULL || vec_y==NULL, EpetraOpFailure, 
+		      "Belos::EpetraOp::Apply, x and/or y cannot be dynamic cast to an Epetra_MultiVector.");
   //
   // Set the operator to apply the transpose if that is requested.
-  // (TO DO:  insert a throw if the application returns a nonzero )
   //
   if ( trans ) { 
     info = Epetra_Op->SetUseTranspose( true );
-    if (info != 0) { return Undef; }
   }
   info = Epetra_Op->Apply( *vec_x, *vec_y );
   
   if ( trans ) { 
     info = Epetra_Op->SetUseTranspose( false );
-    if (info != 0) { return Undef; }
   }
   
-  if (info != 0) { return Error; }
-  return Ok;	
+  TEST_FOR_EXCEPTION(info!=0, EpetraOpFailure, 
+		     "Belos::EpetraOp::Apply call to Apply() returned a nonzero value."); 
+
 }
 
 ///////////////////////////////////////////////////////////////
@@ -280,31 +291,29 @@ EpetraPrecOp::EpetraPrecOp( const Teuchos::RefCountPtr<Epetra_Operator> &Op )
 //
 // BelosOperator applications
 //
-ReturnType EpetraPrecOp::Apply ( const MultiVec<double>& x, 
-				 MultiVec<double>& y, ETrans trans ) const {
+void EpetraPrecOp::Apply ( const MultiVec<double>& x, 
+			   MultiVec<double>& y, ETrans trans ) const {
   int info=0;
   MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
   Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
   Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
   //
-  assert( vec_x!=NULL && vec_y!=NULL );
+  TEST_FOR_EXCEPTION( vec_x==NULL || vec_y==NULL, EpetraOpFailure, 
+		      "Belos::EpetraOp::Apply, x and/or y cannot be dynamic cast to an Epetra_MultiVector.");
   //
   // Set the operator to apply the transpose if that is requested.
-  // (TO DO:  insert a throw if the application returns a nonzero )
   //
   if ( trans ) { 
     info = Epetra_Op->SetUseTranspose( true );
-    if (info != 0) { return Undef; }
   }
   info = Epetra_Op->ApplyInverse( *vec_x, *vec_y );
   
   if ( trans ) { 
     info = Epetra_Op->SetUseTranspose( false );
-    if (info != 0) { return Undef; }
   }
   
-  if (info != 0) { return Error; }
-  return Ok;	
+  TEST_FOR_EXCEPTION(info!=0, EpetraOpFailure, 
+		     "Belos::EpetraOp::Apply call to Apply() returned a nonzero value."); 
 }
 
 int EpetraPrecOp::Apply ( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const 
@@ -312,8 +321,7 @@ int EpetraPrecOp::Apply ( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) c
   //
   // This operator applies Y = A^{-1}*X
   //
-  int info = 0;
-  info = Epetra_Op->ApplyInverse( X, Y );
+  int info = Epetra_Op->ApplyInverse( X, Y );
   return info;
 }
 
@@ -322,8 +330,7 @@ int EpetraPrecOp::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector 
   //
   // This operator applies Y = A*X
   //
-  int info = 0;
-  info = Epetra_Op->Apply( X, Y );
+  int info = Epetra_Op->Apply( X, Y );
   return info;
 }
 

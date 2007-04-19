@@ -288,7 +288,7 @@ namespace Belos {
       <li><tt>GetOperator().get()!=NULL</tt>
       </ul>
     */
-    ReturnType Apply( const MV& x, MV& y ) const;
+    void Apply( const MV& x, MV& y ) const;
     
     //! Apply ONLY the operator to \c x, returning \c y.
     /*! This application is only of the linear problem operator, no preconditioners are applied.
@@ -298,28 +298,28 @@ namespace Belos {
       <li><tt>GetOperator().get()!=NULL</tt>
       </ul>
     */
-    ReturnType ApplyOp( const MV& x, MV& y ) const;
+    void ApplyOp( const MV& x, MV& y ) const;
     
     //! Apply ONLY the left preconditioner to \c x, returning \c y.  
     /*! This application is only of the left preconditioner, which may be required for flexible variants
       of Krylov methods.
       \note This will return Undefined if the left preconditioner is not defined for this operator.
     */  
-    ReturnType ApplyLeftPrec( const MV& x, MV& y ) const;
+    void ApplyLeftPrec( const MV& x, MV& y ) const;
     
     //! Apply ONLY the right preconditioner to \c x, returning \c y.
     /*! This application is only of the right preconditioner, which may be required for flexible variants
       of Krylov methods.
       \note This will return Undefined if the right preconditioner is not defined for this operator.
     */
-    ReturnType ApplyRightPrec( const MV& x, MV& y ) const;
+    void ApplyRightPrec( const MV& x, MV& y ) const;
     
     //! Compute a residual \c R for this operator given a solution \c X, and right-hand side \c B.
     /*! This method will compute the residual for the current linear system if \c X and \c B are null pointers.
       The result will be returned into R.  Otherwise <tt>R = OP(A)X - B</tt> will be computed and returned.
       \note This residual will be a preconditioned residual if the system has a left preconditioner.
     */
-    ReturnType ComputeResVec( MV* R, const MV* X = 0, const MV* B = 0 ) const;
+    void ComputeResVec( MV* R, const MV* X = 0, const MV* B = 0 ) const;
     
     //@}
     
@@ -697,7 +697,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  ReturnType LinearProblem<ScalarType,MV,OP>::Apply( const MV& x, MV& y ) const
+  void LinearProblem<ScalarType,MV,OP>::Apply( const MV& x, MV& y ) const
   {
     RefCountPtr<MV> ytemp = MVT::Clone( y, MVT::GetNumberVecs( y ) );
     //
@@ -753,45 +753,46 @@ namespace Belos {
       	  OPT::Apply( *A_, *ytemp, y );
         }
       }  
-    return Ok;
   }
   
   template <class ScalarType, class MV, class OP>
-  ReturnType LinearProblem<ScalarType,MV,OP>::ApplyOp( const MV& x, MV& y ) const
-  {
+  void LinearProblem<ScalarType,MV,OP>::ApplyOp( const MV& x, MV& y ) const {
     if (A_.get()) {
       Teuchos::TimeMonitor OpTimer(*timerOp_);
-      return ( OPT::Apply( *A_,x, y) );   
+      OPT::Apply( *A_,x, y);   
     }
-    else
-      return Undef;
+    else {
+      MVT::MvAddMv( Teuchos::ScalarTraits<ScalarType>::one(), x, 
+		    Teuchos::ScalarTraits<ScalarType>::zero(), x, y );
+    }
   }
   
   template <class ScalarType, class MV, class OP>
-  ReturnType LinearProblem<ScalarType,MV,OP>::ApplyLeftPrec( const MV& x, MV& y ) const
-  {
+  void LinearProblem<ScalarType,MV,OP>::ApplyLeftPrec( const MV& x, MV& y ) const {
     if (Left_Prec_) {
       Teuchos::TimeMonitor PrecTimer(*timerPrec_);
       return ( OPT::Apply( *LP_,x, y) );
     }
-    else 
-      return Undef;
+    else {
+      MVT::MvAddMv( Teuchos::ScalarTraits<ScalarType>::one(), x, 
+		    Teuchos::ScalarTraits<ScalarType>::zero(), x, y );
+    }
   }
   
   template <class ScalarType, class MV, class OP>
-  ReturnType LinearProblem<ScalarType,MV,OP>::ApplyRightPrec( const MV& x, MV& y ) const
-  {
+  void LinearProblem<ScalarType,MV,OP>::ApplyRightPrec( const MV& x, MV& y ) const {
     if (Right_Prec_) {
       Teuchos::TimeMonitor PrecTimer(*timerPrec_);
       return ( OPT::Apply( *RP_,x, y) );
     }
-    else
-      return Undef;
+    else {
+      MVT::MvAddMv( Teuchos::ScalarTraits<ScalarType>::one(), x, 
+		    Teuchos::ScalarTraits<ScalarType>::zero(), x, y );
+    }
   }
   
   template <class ScalarType, class MV, class OP>
-  ReturnType LinearProblem<ScalarType,MV,OP>::ComputeResVec( MV* R, const MV* X, const MV* B ) const
-  {
+  void LinearProblem<ScalarType,MV,OP>::ComputeResVec( MV* R, const MV* X, const MV* B ) const {
     if (X && B) // The entries are specified, so compute the residual of Op(A)X = B
       {
 	if (Left_Prec_)
@@ -823,7 +824,6 @@ namespace Belos {
 	  MVT::MvAddMv( -1.0, *R, 1.0, *B_, *R );
 	}
     }    
-    return Ok;
   }
   
 } // end Belos namespace

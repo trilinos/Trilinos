@@ -70,14 +70,13 @@ namespace Belos {
   
   /*!	
     \enum Belos::ReturnType
-    \brief Any method in the Belos abstract interfaces may fail or not be defined. 
-    This information needs to be passed back to the algorithm or user.  This will be used 
-    by the algorithm or user to decide what should be done.
+    When the solve() method of any Belos::SolverManager is called a variable of type
+    Belos::ReturnType is returned indicating whether the solver manager sucessfully computed
+    solutions to the linear system.
   */
   
-  enum ReturnType {		Ok, 		/*!< Computation completed sucessfully */
-				Undef,   	/*!< This operation is not defined */
-				Error		/*!< This operator returned an error */
+  enum ReturnType  {    Converged,     /*!< Convergence was reached for all linear systems. */
+                        Unconverged    /*!< Convergence was not reached for some or all linear systems. */
   };
   
   /*! 
@@ -86,13 +85,9 @@ namespace Belos {
     variable of type Belos::StatusType is returned.
   */
   
-  enum StatusType { 	Passed = 3,      /*!< Some event occured, the iteration needs to stop. */
-                        Undefined = 2,   /*!< Status test has not been checked yet. */
-			Unconverged = 1, /*!< Convergence is not reached. */
-			Converged = 0,   /*!< Convergence is reached. */
-			Failed = -1,     /*!< Some failure occured.  Should stop */
-			NaN = -2         /*!< Result from test contains a NaN value.  Should stop */
-			
+  enum StatusType { 	Passed,      /*!< Some event occured, the iteration needs to stop. */
+                        Failed,      /*!< No event has occurred requiring the iteration to stop. */
+			Undefined    /*!< Status test has not been checked yet. */
   };
 
   /*!
@@ -102,16 +97,12 @@ namespace Belos {
   const char* toString(const StatusType status)
   {
     switch(status) {
-      case Undefined:
-        return "Undefined";
-      case Unconverged:
-        return "Unconverged";
-      case Converged:
-        return "Converged";
+      case Passed:
+        return "Passed";
       case Failed:
         return "Failed";
-      case NaN:
-        return "NaN";
+      case Undefined:
+        return "Undefined";
       default:
         TEST_FOR_EXCEPT(true);
     }
