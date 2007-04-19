@@ -2,19 +2,6 @@
 PyTrilinos To Do List
 =====================
 
-****** Improve package documentation strings
-
-****** Get rid of extraneous C++ code
-    [Done] CallbackVectorLoadTest
-    [Done] PyObjectHolder
-    [Done] Epetra_VectorHelper
-    [Done] NumPyWrapper
-    [Done] NumPyArray
-    [Done] Epetra_DArray
-    [Done] Epetra_IArray
-    [Done] PyEpetra_Utils.h
-    ------ MLAPI_PyMatrix
-
 ==================================================
 Summer, 2007, List of Project Tasks (Tentative)
 
@@ -155,4 +142,16 @@ Completed Tasks
 [Done] Handle conversion between C++ iostreams and python files
     [Done] FileStream class
     [Done] Implement exceptions
+
+[Done] Improve package documentation strings
+
+[Done] Get rid of extraneous C++ code
+    [Done] CallbackVectorLoadTest
+    [Done] PyObjectHolder
+    [Done] Epetra_VectorHelper
+    [Done] NumPyWrapper
+    [Done] NumPyArray
+    [Done] Epetra_DArray
+    [Done] Epetra_IArray
+    [Done] PyEpetra_Utils.h
 

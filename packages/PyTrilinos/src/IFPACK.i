@@ -157,6 +157,7 @@ __version__ = Version().split()[2]
 // IFPACK_Preconditioner support //
 ///////////////////////////////////
 %ignore operator<<(ostream &, const Ifpack_Preconditioner &);
+%ignore Ifpack_Preconditioner::Condest() const;
 %rename(Preconditioner) Ifpack_Preconditioner;
 %include "Ifpack_Preconditioner.h"
 %extend Ifpack_Preconditioner {
@@ -174,35 +175,41 @@ __version__ = Version().split()[2]
 ///////////////////////
 // IFPACK_IC support //
 ///////////////////////
+%ignore Ifpack_IC::Condest() const;
 %rename(IC) Ifpack_IC;
 %include "Ifpack_IC.h"
 
 ////////////////////////
 // IFPACK_ICT support //
 ////////////////////////
+%ignore Ifpack_ICT::Condest() const;
 %rename(ICT) Ifpack_ICT;
 %include "Ifpack_ICT.h"
 
 ////////////////////////
 // IFPACK_ILU support //
 ////////////////////////
+%ignore Ifpack_ILU::Condest() const;
 %rename(ILU) Ifpack_ILU;
 %include "Ifpack_ILU.h"
 
 /////////////////////////
 // IFPACK_ILUT support //
 /////////////////////////
+%ignore Ifpack_ILUT::Condest() const;
 %rename(ILUT) Ifpack_ILUT;
 %include "Ifpack_ILUT.h"
 
 ////////////////////////////////////
 // IFPACK_PointRelaxation support //
 ////////////////////////////////////
+%ignore Ifpack_PointRelaxation::Condest() const;
 %rename(PointRelaxation) Ifpack_PointRelaxation;
 %include "Ifpack_PointRelaxation.h"
 
-////////////////////////////////////
-// IFPACK_PointRelaxation support //
-////////////////////////////////////
+///////////////////////////
+// IFPACK_Amesos support //
+///////////////////////////
+%ignore Ifpack_Amesos::Condest() const;
 %rename(Amesos) Ifpack_Amesos;
 %include "Ifpack_Amesos.h"
