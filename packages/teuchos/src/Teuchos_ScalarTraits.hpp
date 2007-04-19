@@ -297,8 +297,8 @@ namespace Teuchos {
     static inline void seedrandom(unsigned int s) { srand(s); };
     static inline float random() { float rnd = (float) rand() / RAND_MAX; return (float)(-1.0 + 2.0 * rnd); };
     static inline std::string name() { return "float"; };
-    static inline float squareroot(float x) { return ::sqrtf(x); };
-    static inline float pow(float x, float y) { return ::powf(x,y); };
+    static inline float squareroot(float x) { return ::sqrt(x); };
+    static inline float pow(float x, float y) { return ::pow(x,y); };
   };
 
 #ifndef __sun
@@ -436,7 +436,7 @@ namespace Teuchos {
     };
     static inline std::string name() { return "mpf_class"; };
     static inline mpf_class squareroot(mpf_class x) { return sqrt(x); };
-    static inline mpf_class pow(mpf_class x, mpf_class y) { return powf(x,y); };
+    static inline mpf_class pow(mpf_class x, mpf_class y) { return pow(x,y); };
     // Todo: RAB: 2004/05/28: Add nan() and isnaninf() functions when needed!
   };
 
@@ -466,7 +466,7 @@ namespace Teuchos {
     static inline mp_real random() { return mp_rand(); };
     static inline std::string name() { return "mp_real"; };
     static inline mp_real squareroot(mp_real x) { return sqrt(x); };
-    static inline mp_real pow(mp_real x, mp_real y) { return powf(x,y); };
+    static inline mp_real pow(mp_real x, mp_real y) { return pow(x,y); };
     // Todo: RAB: 2004/05/28: Add nan() and isnaninf() functions when needed!
   };
   
