@@ -103,7 +103,7 @@ public:
   /** \brief. */
   bool residualVectorRequired() const;
   /** \brief. */
-  ostream& print(ostream& os, int indent) const;
+  void print(ostream& os, int indent) const;
 
   //@}
 
@@ -218,9 +218,9 @@ bool StatusTestOutputter<ScalarType,MV,OP>::residualVectorRequired() const
 }
 
 template <class ScalarType, class MV, class OP>
-ostream& StatusTestOutputter<ScalarType,MV,OP>::print(ostream& os, int indent) const
+void StatusTestOutputter<ScalarType,MV,OP>::print(ostream& os, int indent) const
 {
-  return resNormStatusTest_->print(os,indent);
+  resNormStatusTest_->print(os,indent);
 }
 
 } // end namespace Belos

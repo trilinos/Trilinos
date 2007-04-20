@@ -109,7 +109,7 @@ class StatusTest {
   //@{ 
 
   //! Output formatted description of stopping test to output stream.
-  virtual ostream& print(ostream& os, int indent = 0) const = 0;
+  virtual void print(ostream& os, int indent = 0) const = 0;
  
   //! Output the result of the most recent CheckStatus call.
   virtual void printStatus(ostream& os, StatusType type) const {
@@ -117,6 +117,7 @@ class StatusTest {
     switch (type) {
     case  Passed:
       os << "Passed";
+      break;
     case  Failed:
       os << "Failed";
       break;

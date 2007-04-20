@@ -461,7 +461,10 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
     }// while (cur_block_sol != Teuchos::null && cur_block_rhs != Teuchos::null)
     
   }
-  
+ 
+  // print final summary information
+  basictest->print( printer->stream(FinalSummary) );
+ 
   // print timing information
   Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
   

@@ -104,8 +104,11 @@ class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP> {
   //! @name Print methods
   //@{ 
 
-  //! Output formatted description of stopping test to output stream
-  ostream& print(ostream& os, int indent = 0) const;
+  //! Output formatted description of stopping test to output stream.
+  void print(ostream& os, int indent = 0) const;
+
+  //! Print message for each status specific to this stopping test.
+  void printStatus(ostream& os, StatusType type) const;
 
   //@}
   
@@ -156,19 +159,37 @@ private:
   }    
     
   template <class ScalarType, class MV, class OP>
-  ostream& StatusTestMaxIters<ScalarType,MV,OP>::print(ostream& os, int indent) const
+  void StatusTestMaxIters<ScalarType,MV,OP>::print(ostream& os, int indent) const
   {
     for (int j = 0; j < indent; j ++)
       os << ' ';
-    this->printStatus(os, status_);
+    printStatus(os, status_);
     os << "Number of Iterations = ";
     os << nIters_;
     os << ((nIters_ < maxIters_) ? " < " : ((nIters_ == maxIters_) ? " == " : " > "));
     os << maxIters_;
     os << endl;
-    return os;
   }
-  
+ 
+  template <class ScalarType, class MV, class OP>
+  void StatusTestMaxIters<ScalarType,MV,OP>::printStatus(ostream& os, StatusType type) const 
+  {
+    os << setiosflags(ios::left) << setw(13) << setfill('.');
+    switch (type) {
+    case  Passed:
+      os << "Failed";
+    case  Failed:
+      os << "OK";
+      break;
+    case  Undefined:
+    default:
+      os << "**";
+      break;
+    }
+    os << setiosflags(ios::left) << setfill(' ');
+    return;
+  } 
+
 } // end Belos namespace
 
 #endif /* BELOS_STATUS_TEST_MAXITERS_HPP */

@@ -200,7 +200,10 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   //! Output formatted description of stopping test to output stream.
-  ostream& print(ostream& os, int indent = 0) const;
+  void print(ostream& os, int indent = 0) const;
+
+  //! Print message for each status specific to this stopping test.
+  void printStatus(ostream& os, StatusType type) const; 
   //@}
 
   //! @name Methods to access data members.
@@ -478,11 +481,11 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
 }
 
 template <class ScalarType, class MV, class OP>
-ostream& StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) const
+void StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     os << ' ';
-  this->printStatus(os, status_);
+  printStatus(os, status_);
   os << "(";
   os << ((resnormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
   os << ((restype_==Explicit) ? " Exp" : " Imp");
@@ -525,7 +528,26 @@ ostream& StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) con
     }
   }
   os << endl;
-  return os;
+}
+
+template <class ScalarType, class MV, class OP>
+void StatusTestResNorm<ScalarType,MV,OP>::printStatus(ostream& os, StatusType type) const 
+{
+  os << setiosflags(ios::left) << setw(13) << setfill('.');
+  switch (type) {
+  case  Passed:
+    os << "Converged";
+    break;
+  case  Failed:
+    os << "Unconverged";
+    break;
+  case  Undefined:
+  default:
+    os << "**";
+    break;
+  }
+  os << setiosflags(ios::left) << setfill(' ');
+    return;
 }
 
 template <class ScalarType, class MV, class OP>

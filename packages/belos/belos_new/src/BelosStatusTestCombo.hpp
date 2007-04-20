@@ -166,7 +166,7 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
   //@{ 
   
   //! Output formatted description of stopping test to output stream
-  ostream& print(ostream& os, int indent = 0) const;
+  void print(ostream& os, int indent = 0) const;
   
   //@}
 
@@ -386,7 +386,7 @@ void StatusTestCombo<ScalarType,MV,OP>::seqOp( Iteration<ScalarType,MV,OP>* iSol
 }
 
 template <class ScalarType, class MV, class OP>
-ostream& StatusTestCombo<ScalarType,MV,OP>::print(ostream& os, int indent) const {
+void StatusTestCombo<ScalarType,MV,OP>::print(ostream& os, int indent) const {
   for (int j = 0; j < indent; j ++)
     os << ' ';
   this->printStatus(os, status_);
@@ -396,8 +396,6 @@ ostream& StatusTestCombo<ScalarType,MV,OP>::print(ostream& os, int indent) const
 
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i)
     (*i)->print(os, indent+2);
-
-  return os;
 }
 
 } // end namespace Belos
