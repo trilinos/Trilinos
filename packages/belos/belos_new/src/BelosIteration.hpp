@@ -143,14 +143,6 @@ class Iteration {
 
   //@}
 
-    //! @name Output methods
-  //@{ 
-
-  //! This method requests that the solver print out its current status to screen.
-  virtual void currentStatus(ostream &os) = 0;
-
-  //@}
-  
 };
 
 } // end Belos namespace

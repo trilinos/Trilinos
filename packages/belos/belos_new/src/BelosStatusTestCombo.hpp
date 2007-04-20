@@ -56,8 +56,8 @@
   <li> AND combination:
   If an AND combination is selected, the status returns Converged only when all subtests return as Converged.
   <li> SEQ combination:
-  SEQ is a form of AND that will perform subtests in sequence.  If the first test returns Unconverged, Failed or NaN,
-  no other subtests are done, and the status is returned as Unconverged if the first test was Unconverged, or as
+  SEQ is a form of AND that will perform subtests in sequence.  If the first test returns Passed, Failed or Undefined,
+  no other subtests are done, and the status is returned as Failed if the first test was Failed, or as
   Failed if the first test was Failed or NaN.  If the first test returns Converged, the second test is checked in 
   the same fashion as the first.  If the second test is Converged, the third one is tested, and so on.
   
@@ -123,7 +123,7 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
   //! @name Status methods
   //@{ 
   
-  //! Check convergence status of the iterative solver: Unconverged, Converged, Failed.
+  //! Check convergence status of the iterative solver: Passed, Failed or Undefined.
   /*! This method checks to see if the convergence criteria are met using the current information from the 
     iterative solver.
   */
@@ -289,7 +289,7 @@ bool StatusTestCombo<ScalarType,MV,OP>::residualVectorRequired() const
 template <class ScalarType, class MV, class OP>
 StatusType StatusTestCombo<ScalarType,MV,OP>::checkStatus( Iteration<ScalarType,MV,OP>* iSolver )
 {
-  status_ = Unconverged;
+  status_ = Failed;
 
   if (type_ == OR)
     orOp( iSolver );
@@ -318,51 +318,39 @@ void StatusTestCombo<ScalarType,MV,OP>::reset( )
 template <class ScalarType, class MV, class OP>
 void StatusTestCombo<ScalarType,MV,OP>::orOp( Iteration<ScalarType,MV,OP>* iSolver )
 {
-  bool isFailed = false;
+  status_ = Failed;
 
   // Checks the status of each test. The first test it encounters, if
   // any, that is unconverged is the status that it sets itself too.
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) 
     {
       StatusType s = (*i)->checkStatus( iSolver );
-      
-      // Check for failure and NaN.  Combo treats NaNs as Fails
-      if (s==Failed || s==NaN) isFailed = true;
-      
-      if ((status_ == Unconverged) && (s != Unconverged)) {
-	status_ = s;
-      }      
+
+      // Check for failure.
+      if (s==Passed) status_ = Passed;
     }
-  
-  // Any failure is a complete failure
-  if (isFailed) status_ = Failed;
-  
-  return;
 }
 
 template <class ScalarType, class MV, class OP>
 void StatusTestCombo<ScalarType,MV,OP>::andOp( Iteration<ScalarType,MV,OP>* iSolver )
 {
-  bool isUnconverged = false;
   bool isFailed = false;
   
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
     
     StatusType s = (*i)->checkStatus( iSolver );
 
-    // Check for failure and NaN.  Combo treats NaNs as Fails
-    if (s==Failed || s==NaN) isFailed = true;
+    // Check for failure.
+    if (s==Failed) isFailed = true;
 
-    // If any of the tests are unconverged, then the AND test is
-    // unconverged.
-    if (s == Unconverged) {
-      isUnconverged = true;
-      status_ = Unconverged;
+    // If any of the tests are failed, then the AND test is failed.
+    if (s == Failed) {
+      status_ = Failed;
     }
 
-    // If this is the first test and it's converged/failed, copy its
+    // If this is the first test and it's failed, copy its
     // status to the combo status.
-    if ((!isUnconverged) && (status_ == Unconverged)) {
+    if ((!isFailed) && (status_ == Failed)) {
       status_ = s;
     }
   }
@@ -380,18 +368,19 @@ void StatusTestCombo<ScalarType,MV,OP>::seqOp( Iteration<ScalarType,MV,OP>* iSol
 
     StatusType s = (*i)->checkStatus( iSolver );
 
-    // Check for failure and NaN.  Combo treats NaNs as Fails
-    if (s==Failed || s==NaN) {
+    cout << "Sequential combo: " << toString( s ) << endl;
+    // Check for failure.
+    if (s==Failed) {
       status_ = Failed;
       return;
     }
-    else if (s==Unconverged) {
+    else if (s==Undefined) {
       status_ = s;
       return;
     }
   }
   // If we make it here, we have converged
-  status_ = Converged;
+  status_ = Passed;
 
   return;
 }

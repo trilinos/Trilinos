@@ -40,6 +40,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_Describable.hpp"
 
 /*! \class Belos::SolverManager
   \brief The Belos::SolverManager is a templated virtual base class that defines the
@@ -49,7 +50,7 @@
 namespace Belos {
 
 template<class ScalarType, class MV, class OP>
-class SolverManager {
+class SolverManager : virtual public Teuchos::Describable {
     
   public:
 

@@ -37,14 +37,18 @@
 #include "BelosTypes.hpp"
 #include "Teuchos_oblackholestream.hpp"	
 
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
+
 /*!	\class Belos::OutputManager
 
 	\brief Belos's basic output manager for sending information of select verbosity levels
 	to the appropriate output stream.
 
 	This output manager will remove the need for the solver or linear problem to know any information
-	about the required output.  Calling <tt>doPrint( int vbLevel )</tt> will inform the solver if
-	it is supposed to output the information corresponding to the verbosity level (\c vbLevel ).
+	about the required output.  Calling <tt>isVerbosity( MsgType vb )</tt> will inform the solver if
+	it is supposed to output the information corresponding to the verbosity type (\c vb ).
 
 	\author Michael Heroux and Heidi Thornquist
 */
@@ -59,11 +63,8 @@ namespace Belos {
     //! @name Constructors/Destructor
     //@{ 
     
-    //! Default constructor
-    OutputManager();
-    
     //! Basic constructor.
-    OutputManager( int myID, int vbLevel = Belos::Errors, int printID = 0, const Teuchos::RefCountPtr<ostream> &os = Teuchos::rcp(&std::cout,false) );
+    OutputManager( int vb = Belos::Errors, const Teuchos::RefCountPtr<ostream> &os = Teuchos::rcp(&std::cout,false) );
     
     //! Destructor.
     virtual ~OutputManager() {};
@@ -73,27 +74,27 @@ namespace Belos {
     //@{ 
     
     //! Set the output stream for this manager.
-    void SetOStream( const Teuchos::RefCountPtr<ostream> &os ) { myOS_ = os; };
+    void setOStream( const Teuchos::RefCountPtr<ostream> &os ) { myOS_ = os; };
     
     //! Set the verbosity level for this manager.
-    void SetVerbosity( int vbLevel ) { vbLevel_ = vbLevel; }; 
+    void setVerbosity( int vb ) { vb_ = vb; }; 
     
     //@}
     
     //! @name Get methods
     //@{ 
 
-    //! Create a stream for outputting to.
+    //! Get an output stream for outputting the input message type.
     ostream& stream( MsgType type ) 
     {
-      if ( (type & vbLevel_) == type && iPrint_ ) {
+      if ( (type & vb_) && iPrint_ ) {
 	return *myOS_;
       }
       return myBHS_;
     }
  
     //! Get the output stream for this manager.
-    Teuchos::RefCountPtr<ostream> GetOStream() { return myOS_; };
+    Teuchos::RefCountPtr<ostream> getOStream() { return myOS_; };
     
     //@}
     
@@ -104,19 +105,18 @@ namespace Belos {
     /*! This method is used by the solver to determine whether computations are
       necessary for this message type.
     */
-    bool isVerbosity( MsgType type ) const { return (( type == Belos::Errors ) || ( vbLevel_ & type )); }; 
-    
-    //! Find out whether this processor needs to print out information for this message type.
-    /*! This method is used by the solver to determine whether this output stream has been
-      selected to output the information for this message type.
-    */
-    bool isVerbosityAndPrint( MsgType type ) const { return ( iPrint_ && isVerbosity( type )); }; 
-    
-    //! Find out whether information can be outputted through this output stream.
-    bool doPrint( void ) const { return (iPrint_); };
+    bool isVerbosity( MsgType type ) const { return (( type == Belos::Errors ) || ( vb_ & type )); }; 
     
     //@}
+
+    //! @ name Print methods
+    //@{
     
+    //! Send some output of a specified message type to the output stream.
+    void print( MsgType type, const string output );
+
+    //@}
+
   private:
     
     //! @name Undefined methods
@@ -130,31 +130,28 @@ namespace Belos {
     
     //@}
     
-    int myID_, printID_;
-    int vbLevel_;
-    bool iPrint_;
+    int vb_;
     Teuchos::RefCountPtr<ostream> myOS_;	
-    Teuchos::oblackholestream myBHS_;
+    Teuchos::oblackholestream myBHS_;  
+    bool iPrint_;
   };
   
   template<class ScalarType>
-  OutputManager<ScalarType>::OutputManager() :
-    myID_(0),
-    printID_(0),
-    vbLevel_(0),
-    iPrint_(true),
-    myOS_(std::cout)
-  {
-  }
-  
-  template<class ScalarType>
-  OutputManager<ScalarType>::OutputManager( int myID, int vbLevel, int printID, const Teuchos::RefCountPtr<ostream> &os ) :
-    myID_(myID),
-    printID_(printID),
-    vbLevel_(vbLevel),
-    iPrint_(myID == printID),
+  OutputManager<ScalarType>::OutputManager( int vb, const Teuchos::RefCountPtr<ostream> &os ) :
+    vb_(vb),
     myOS_(os)
   {
+    int MyPID;
+#ifdef HAVE_MPI
+    // Initialize MPI
+    int mpiStarted = 0;
+    MPI_Initialized(&mpiStarted);
+    if (mpiStarted) MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
+    else MyPID=0;
+#else 
+    MyPID = 0;
+#endif
+    iPrint_ = (MyPID == 0);
   }
   
 } // end Belos namespace

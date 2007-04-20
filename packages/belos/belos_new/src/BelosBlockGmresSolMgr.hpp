@@ -154,6 +154,15 @@ namespace Belos {
    *     - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
    */
   ReturnType solve();
+
+  //@}
+  
+  /** \name Overridden from Teuchos::Describable */
+  //@{
+
+  /** \brief Method to return description of the block GMRES solver manager */
+  std::string description() const;
+
   //@}
 
   private:
@@ -242,12 +251,12 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   
   //////////////////////////////////////////////////////////////////////////////////////
   // Output manager
-  Teuchos::RefCountPtr<OutputManager<ScalarType> > printer = Teuchos::rcp( new OutputManager<ScalarType>(0,verbosity_) );
+  Teuchos::RefCountPtr<OutputManager<ScalarType> > printer = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_) );
   
   //////////////////////////////////////////////////////////////////////////////////////
   // Status tests
   //
-  // convergence
+  // COnvergence
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
   
@@ -264,8 +273,8 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::RefCountPtr<StatusTestResNorm_t> convtest2
     = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
   convtest2->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
-  
-  Teuchos::RefCountPtr<StatusTestCombo_t> stest
+
+  Teuchos::RefCountPtr<StatusTestCombo_t> stest 
     = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, basictest, convtest2 ) );
   
   //////////////////////////////////////////////////////////////////////////////////////
@@ -299,7 +308,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockGmres solver
   Teuchos::RefCountPtr<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter
-    = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer,stest,ortho,plist) );
+    = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer,basictest,ortho,plist) );
   
   // assume convergence is achieved, then let any failed convergence set this to false.
   bool isConverged = true;
@@ -314,7 +323,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
     while (cur_block_sol!=Teuchos::null && cur_block_rhs!=Teuchos::null) {
 
       // Set the current number of blocks and blocksize with the Gmres iteration.
-      block_gmres_iter->setSize( numBlocks_, blockSize_ );
+      block_gmres_iter->setSize( blockSize_, numBlocks_ );
 
       // Reset the number of iterations.
       block_gmres_iter->resetNumIters();
@@ -336,6 +345,12 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       TEST_FOR_EXCEPTION(rank != blockSize_,BlockGmresSolMgrOrthoFailure,
 			 "Belos::BlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
       
+      // Set the new state and initialize the solver.
+      BlockGmresIterState<ScalarType,MV> newstate;
+      newstate.V = oldState.V;
+      newstate.Z = oldState.Z;
+      newstate.curDim = 0;
+      block_gmres_iter->initialize(newstate);
       int numRestarts = 0;
 
       while(1) {
@@ -349,7 +364,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	  // check convergence first
 	  //
 	  ////////////////////////////////////////////////////////////////////////////////////
-	  if ( convtest2->getStatus() == Passed ) {
+	  if ( convtest->getStatus() == Passed ) {
 	    // we have convergence
 	    break;  // break from while(1){block_gmres_iter->iterate()}
 	  }
@@ -406,7 +421,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    BlockGmresIterState<ScalarType,MV> newstate;
 	    newstate.V = oldState.V;
 	    newstate.Z = oldState.Z;
-	    newstate.curDim = blockSize_;
+	    newstate.curDim = 0;
 	    block_gmres_iter->initialize(newstate);
 
 	  } // end of restarting
@@ -420,11 +435,11 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
 	  else {
 	    TEST_FOR_EXCEPTION(true,std::logic_error,
-			       "Belos::BlockGmresSolMgr::solve(): Invalid return from block_gmres_iter::iterate().");
+			       "Belos::BlockGmresSolMgr::solve(): Invalid return from BlockGmresIter::iterate().");
 	  }
 	}
 	catch (std::exception e) {
-	  printer->stream(Errors) << "Error! Caught exception in BlockGmres::iterate() at iteration " 
+	  printer->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration " 
 				  << block_gmres_iter->getNumIters() << endl 
 				  << e.what() << endl;
 	  throw;
@@ -447,9 +462,6 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
     
   }
   
-  // print final summary
-  block_gmres_iter->currentStatus(printer->stream(FinalSummary));
-
   // print timing information
   Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
   
@@ -459,6 +471,17 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   return Converged; // return from BlockGmresSolMgr::solve() 
 }
 
+//  This method requires the solver manager to return a string that describes itself.
+template<class ScalarType, class MV, class OP>
+std::string BlockGmresSolMgr<ScalarType,MV,OP>::description() const
+{
+  std::ostringstream oss;
+  oss << "Belos::BlockGmresSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
+  oss << "{";
+  oss << "Ortho Type='"<<orthoType_<<"\'";
+  oss << "}";
+  return oss.str();
+}
 
 } // end Belos namespace
 

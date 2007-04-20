@@ -159,12 +159,12 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
 
   //! @name Status methods
   //@{ 
-  //! Check convergence status: Unconverged, Converged, Failed.
+  //! Check convergence status: Passed, Failed, or Undefined.
   /*! This method checks to see if the convergence criteria are met.  
     Depending on how the residual test is constructed this method will return 
     the appropriate status type.
 
-    \return StatusType: Unconverged, Converged or Failed.
+    \return StatusType: Passed, Failed, or Undefined.
   */
   StatusType checkStatus(Iteration<ScalarType,MV,OP>* iSolver);
 
@@ -395,7 +395,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
     //
     // We are in the same rhs block, return if we are converged
     //
-    if (status_==Converged) { return status_; }
+    if (status_==Passed) { return status_; }
   }
   if (restype_==Implicit) {
     //
@@ -405,7 +405,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
     //
     std::vector<MagnitudeType> tmp_resvector( cur_blksz_ );
     RefCountPtr<const MV> residMV = iSolver->getNativeResiduals( &tmp_resvector );     
-    if ( residMV.get() != NULL ) { 
+    if ( residMV != Teuchos::null ) { 
       tmp_resvector.resize( MVT::GetNumberVecs( *residMV ) );
       MVT::MvNorm( *residMV, &tmp_resvector, resnormtype_ );    
       for (i=0; i<MVT::GetNumberVecs( *residMV ) && i<cur_num_rhs_; i++)
@@ -459,16 +459,16 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
   }	
 
   // Check status of new linear system residuals
-  status_ = Converged; // This may be set to unconverged or NaN.
+  status_ = Passed; // This may be set to Failed.
   for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_num_rhs_); i++) {
     // Check if any of the residuals are larger than the tolerance.
     if (testvector_[ i ] > tolerance_) {
-      status_ = Unconverged;
+      status_ = Failed;
       return(status_);
     } else if (testvector_[ i ] <= tolerance_) { 
       // do nothing.
     } else {
-      status_ = NaN;            
+      status_ = Failed;            
       return(status_); // Return immediately if we detect a NaN.
     }
   } 
@@ -568,10 +568,13 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( Itera
       resvector_.resize( numrhs_ ); 
       testvector_.resize( numrhs_ );
       RefCountPtr<MV> prec_init_res = MVT::Clone( init_res, numrhs_ );
-      if (lp.ApplyLeftPrec( init_res, *prec_init_res ) != Undef)
+      if (lp.isLeftPrec()) {
+        lp.ApplyLeftPrec( init_res, *prec_init_res );
         MVT::MvNorm( *prec_init_res, &scalevector_, scalenormtype_ );
-      else 
+      }
+      else { 
         MVT::MvNorm( init_res, &scalevector_, scalenormtype_ );
+      }
     }
 
     // Initialize the testvector.

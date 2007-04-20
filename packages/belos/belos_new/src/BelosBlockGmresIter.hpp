@@ -308,14 +308,6 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
 
   //@}
 
-    //! @name Output methods
-  //@{ 
-
-  //! This method requests that the solver print out its current status to screen.
-  void currentStatus(ostream &os);
-
-  //@}
-
   private:
 
   //
@@ -521,23 +513,23 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     } else {
       const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
       const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-      int m = curDim_*blockSize_;
       Teuchos::BLAS<int,ScalarType> blas;
+      currentUpdate = MVT::Clone( *V_, blockSize_ );
       //
       //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
       //
-      Teuchos::SerialDenseMatrix<int,ScalarType> y( Teuchos::Copy, *Z_, m, blockSize_ );
+      Teuchos::SerialDenseMatrix<int,ScalarType> y( Teuchos::Copy, *Z_, curDim_, blockSize_ );
       //
       //  Solve the least squares problem.
       //
       blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-		 Teuchos::NON_UNIT_DIAG, m, blockSize_, one,  
+		 Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,  
 		 H_->values(), H_->stride(), y.values(), y.stride() );
       //
       //  Compute the current update.
       //
-      std::vector<int> index(m);
-      for ( int i=0; i<m; i++ ) {   
+      std::vector<int> index(curDim_);
+      for ( int i=0; i<curDim_; i++ ) {   
         index[i] = i;
       }
       RefCountPtr<const MV> Vjp1 = MVT::CloneView( *V_, index );
@@ -559,12 +551,10 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     if ( norms && (int)norms->size() < blockSize_ )                         
       norms->resize( blockSize_ );                                          
     
-    if (curDim_ != 0) {
-      if (norms) {
-        Teuchos::BLAS<int,ScalarType> blas;
-        for (int j=0; j<blockSize_; j++)
-          (*norms)[j] = blas.NRM2( blockSize_, &(*Z_)(curDim_, j), 1);
-      }
+    if (norms) {
+      Teuchos::BLAS<int,ScalarType> blas;
+      for (int j=0; j<blockSize_; j++)
+        (*norms)[j] = blas.NRM2( blockSize_, &(*Z_)(curDim_, j), 1);
     }
     return Teuchos::null;
   }
@@ -587,7 +577,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     // inconsitent multivectors widths and lengths will not be tolerated, and
     // will be treated with exceptions.
     //
-    std::string errstr("Anasazi::BlockKrylovSchur::initialize(): specified multivectors must have a consistent length and width.");
+    std::string errstr("Belos::BlockGmresIter::initialize(): Specified multivectors must have a consistent length and width.");
 
     if (newstate.V != Teuchos::null && newstate.Z != Teuchos::null) {
 
@@ -606,18 +596,19 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       // check size of H
       TEST_FOR_EXCEPTION(newstate.Z->numRows() < curDim_ || newstate.Z->numCols() < blockSize_, std::invalid_argument, errstr);
       
-      if (curDim_ == 0 && lclDim > blockSize_) {
-        om_->stream(Warnings) << "Belos::BlockGmresIter::initialize(): the solver was initialized with a kernel of " << lclDim << endl
-			      << "The block size however is only " << blockSize_ << endl
-			      << "The last " << lclDim - blockSize_ << " vectors of the kernel will be overwritten on the first call to iterate()." << endl;
-      }
-
 
       // copy basis vectors from newstate into V
       if (newstate.V != V_) {
-        std::vector<int> nevind(lclDim);
-        for (int i=0; i<lclDim; i++) nevind[i] = i;
-        MVT::SetBlock(*newstate.V,nevind,*V_);
+        // only copy over the first block and print a warning.
+        if (curDim_ == 0 && lclDim > blockSize_) {
+	  om_->stream(Warnings) << "Belos::BlockGmresIter::initialize(): the solver was initialized with a kernel of " << lclDim << endl
+				<< "The block size however is only " << blockSize_ << endl
+				<< "The last " << lclDim - blockSize_ << " vectors will be discarded." << endl;
+	}
+        std::vector<int> nevind(curDim_+blockSize_);
+        for (int i=0; i<curDim_+blockSize_; i++) nevind[i] = i;
+	Teuchos::RefCountPtr<const MV> newV = MVT::CloneView( *newstate.V, nevind );
+        MVT::SetBlock(*newV,nevind,*V_);
       }
 
       // put data into H_, make sure old information is not still hanging around.
@@ -653,15 +644,8 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       chk.checkAux = true;
       om_->print( Debug, accuracyCheck(chk, ": after initialize()") );
     }
-
-    // Print information on current status
-    if (om_->isVerbosity(Debug)) {
-      currentStatus( om_->stream(Debug) );
-    }
-    else if (om_->isVerbosity(IterationDetails)) {
-      currentStatus( om_->stream(IterationDetails) );
-    }
     */
+
   }
 
 
@@ -758,15 +742,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
         chk.checkV = true;
         om_->print( OrthoDetails, accuracyCheck(chk, ": after local update") );
       }
-      
-      // Print information on current iteration
-      if (om_->isVerbosity(Debug)) {
-        currentStatus( om_->stream(Debug) );
-      }
-      else if (om_->isVerbosity(IterationDetails)) {
-        currentStatus( om_->stream(IterationDetails) );
-      }
-      */
+      */ 
       
     } // end while (statusTest == false)
    

@@ -263,18 +263,29 @@ namespace Belos {
       information can keep you from querying the solver for information that rarely
       changes.
     */
-    int GetRHSIndex() const { return( rhs_index_ ); };
+    int GetRHSIndex() const { return( rhs_index_ ); }
+    
+    //@}
+    
+    //! @name State methods
+    //@{ 
     
     //! Get the current status of the solution.
     /*! This only means that the current linear system being solved for ( obtained by GetCurr<LHS/RHS>Vec() )
       has been updated by the solver.  This will be true every iteration for solvers like CG, but not
       true until restarts for GMRES.
     */
-    bool IsSolutionUpdated() const { return(solutionUpdated_); };
+    bool IsSolutionUpdated() const { return(solutionUpdated_); }
     
-    //! Get operator symmetry bool.
-    bool IsOperatorSymmetric() const { return(operatorSymmetric_); };
+    //! Get the current symmetry of the operator.
+    bool IsOperatorSymmetric() const { return(operatorSymmetric_); }
     
+    //! Get information on whether the linear system is being preconditioned on the left.
+    bool isLeftPrec() const { return(LP_!=Teuchos::null); }
+
+    //! Get information on whether the linear system is being preconditioned on the right.
+    bool isRightPrec() const { return(RP_!=Teuchos::null); }
+ 
     //@}
     
     //! @name Apply / Compute methods

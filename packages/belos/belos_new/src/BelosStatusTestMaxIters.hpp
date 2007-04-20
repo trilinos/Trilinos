@@ -141,10 +141,10 @@ private:
   template <class ScalarType, class MV, class OP>
   StatusType StatusTestMaxIters<ScalarType,MV,OP>::checkStatus(Iteration<ScalarType,MV,OP> *iSolver )
   {
-    status_ = Unconverged;
+    status_ = Failed;
     nIters_ = iSolver->getNumIters();
     if (nIters_ >= maxIters_)
-      status_ = Failed;
+      status_ = Passed;
     return status_;
   }
   

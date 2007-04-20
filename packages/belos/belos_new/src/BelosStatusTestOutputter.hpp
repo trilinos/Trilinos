@@ -95,15 +95,15 @@ public:
   //@{
 
   /** \brief. */
-  StatusType CheckStatus(IterativeSolver<ScalarType,MV,OP>* iSolver);
+  StatusType checkStatus(Iteration<ScalarType,MV,OP>* iSolver);
   /** \brief. */
-  StatusType GetStatus() const;
+  StatusType getStatus() const;
   /** \brief. */
-  void Reset();
+  void reset();
   /** \brief. */
-  bool ResidualVectorRequired() const;
+  bool residualVectorRequired() const;
   /** \brief. */
-  ostream& Print(ostream& os, int indent) const;
+  ostream& print(ostream& os, int indent) const;
 
   //@}
 
@@ -136,10 +136,10 @@ StatusTestOutputter<ScalarType,MV,OP>::StatusTestOutputter(
 // Overridden from StatusTests
 
 template <class ScalarType, class MV, class OP>
-StatusType StatusTestOutputter<ScalarType,MV,OP>::CheckStatus(IterativeSolver<ScalarType,MV,OP>* iSolver)
+StatusType StatusTestOutputter<ScalarType,MV,OP>::checkStatus(Iteration<ScalarType,MV,OP>* iSolver)
 {
   typedef MultiVecTraits<ScalarType,MV>  MVT;
-  StatusType status = resNormStatusTest_->CheckStatus(iSolver);
+  StatusType status = resNormStatusTest_->checkStatus(iSolver);
   RefCountPtr<LinearProblem<ScalarType,MV,OP> > lp = iSolver->getProblem();
   const int currIter = iSolver->GetNumIters();
   const int currRestart = iSolver->GetNumRestarts();
@@ -150,7 +150,7 @@ StatusType StatusTestOutputter<ScalarType,MV,OP>::CheckStatus(IterativeSolver<Sc
     ( outputFrequency() > 0 )
     &&
     (
-      status==Converged
+      status==Passed
       ||
       callsSinceLastOutput_>=outputFrequency()
       ||
@@ -165,7 +165,7 @@ StatusType StatusTestOutputter<ScalarType,MV,OP>::CheckStatus(IterativeSolver<Sc
     TEST_FOR_EXCEPT(resNormStatusTest_->GetTestValue()==NULL);
     const std::vector<MagnitudeType> &resTestValuesVector = *resNormStatusTest_->GetTestValue();
     std::ostream &out = *outputManager_->GetOStream();
-    if(status==Converged)
+    if(status==Passed)
       out << "[Converged]";
     out << "iter="<<currIter<<", restart="<<currRestart;
     const MagnitudeType maxRelRes = *std::max_element(
@@ -198,29 +198,29 @@ StatusType StatusTestOutputter<ScalarType,MV,OP>::CheckStatus(IterativeSolver<Sc
 }
 
 template <class ScalarType, class MV, class OP>
-StatusType StatusTestOutputter<ScalarType,MV,OP>::GetStatus() const
+StatusType StatusTestOutputter<ScalarType,MV,OP>::getStatus() const
 {
-  return resNormStatusTest_->GetStatus();
+  return resNormStatusTest_->getStatus();
 }
 
 template <class ScalarType, class MV, class OP>
-void StatusTestOutputter<ScalarType,MV,OP>::Reset()
+void StatusTestOutputter<ScalarType,MV,OP>::reset()
 {
-  return resNormStatusTest_->Reset();
+  return resNormStatusTest_->reset();
   callsSinceLastOutput_ = 10000;
   iterZeroWasOutput_ = false;
 }
 
 template <class ScalarType, class MV, class OP>
-bool StatusTestOutputter<ScalarType,MV,OP>::ResidualVectorRequired() const
+bool StatusTestOutputter<ScalarType,MV,OP>::residualVectorRequired() const
 {
-  return resNormStatusTest_->ResidualVectorRequired();
+  return resNormStatusTest_->residualVectorRequired();
 }
 
 template <class ScalarType, class MV, class OP>
-ostream& StatusTestOutputter<ScalarType,MV,OP>::Print(ostream& os, int indent) const
+ostream& StatusTestOutputter<ScalarType,MV,OP>::print(ostream& os, int indent) const
 {
-  return resNormStatusTest_->Print(os,indent);
+  return resNormStatusTest_->print(os,indent);
 }
 
 } // end namespace Belos

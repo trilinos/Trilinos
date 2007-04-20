@@ -80,23 +80,23 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
-  bool pseudo = false;       // use pseudo block GMRES to solve this linear system.
   int frequency = -1;        // frequency of status test output.
   int blocksize = 1;         // blocksize
   int numrestarts = 15;      // number of restarts allowed 
   int maxiters = -1;         // maximum number of iterations allowed per linear system
+  int maxsubspace = 25;      // maximum number of blocks the solver can use for the subspace
   std::string filename("orsirr1.hb");
   MT tol = 1.0e-5;           // relative residual tolerance
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block GMRES to solve the linear systems.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("num-restarts",&numrestarts,"Number of restarts allowed for GMRES solver.");
   cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
-  cmdp.setOption("maxiters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
+  cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
+  cmdp.setOption("max-subspace",&maxsubspace,"Maximum number of blocks the solver can use for the subspace.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -119,7 +119,14 @@ int main(int argc, char *argv[]) {
     maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
   //
   ParameterList My_PL;
-  My_PL.set( "Length", maxiters );  // Maximum number of blocks in Krylov factorization
+  My_PL.set( "Num Blocks", maxiters );               // Maximum number of blocks in Krylov factorization
+  My_PL.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
+  My_PL.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
+  My_PL.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  if (verbose)
+    My_PL.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::FinalSummary );
+  else
+    My_PL.set( "Verbosity", Belos::Errors + Belos::Warnings );
   //
   // Construct an unpreconditioned linear problem instance.
   //
@@ -135,23 +142,7 @@ int main(int argc, char *argv[]) {
   // *************Start the block Gmres iteration*************************
   // *******************************************************************
   //
-  Belos::OutputManager<double> My_OM( MyPID );
-  if (verbose)
-    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings
-			+ Belos::TimingDetails + Belos::FinalSummary );
-  
-  typedef Belos::StatusTestCombo<double,MV,OP> StatusTestCombo_t;
-  RefCountPtr<Belos::StatusTest<double,MV,OP> > test1 
-    = rcp( new Belos::StatusTestMaxIters<double,MV,OP>( maxiters ) );
-  RefCountPtr<Belos::StatusTest<double,MV,OP> > test2
-    = rcp( new Belos::StatusTestMaxRestarts<double,MV,OP>( numrestarts ) );
-  RefCountPtr<Belos::StatusTest<double,MV,OP> > test3 
-    = rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, test1, test2 ) );
-  Belos::StatusTestResNorm<double,MV,OP> test4( tol );
-  Belos::StatusTestOutputter<double,MV,OP> test5( frequency, false );
-  test5.set_resNormStatusTest( rcp(&test4,false) );
-  test5.set_outputManager( rcp(&My_OM,false) );    
-  StatusTestCombo_t My_Test( StatusTestCombo_t::OR, test3, rcp(&test5,false) );
+  Belos::OutputManager<double> My_OM();
  
   // Create an iterative solver manager.
   RefCountPtr< Belos::SolverManager<double,MV,OP> > newSolver
@@ -171,21 +162,9 @@ int main(int argc, char *argv[]) {
     cout << endl;
   }
   //
-  //
-  if (proc_verbose) {
-    cout << endl << endl;
-    cout << "Running Block Gmres -- please wait" << endl;
-    cout << (numrhs+blocksize-1)/blocksize 
-	 << " pass(es) through the solver required to solve for " << endl; 
-    cout << numrhs << " right-hand side(s) -- using a block size of " << blocksize
-	 << endl << endl;
-  }  
-
-  //
   // Perform solve
   //
-  Solver->Solve();
-
+  Belos::ReturnType ret = newSolver->solve();
   //
   // Compute actual residuals.
   //
@@ -203,10 +182,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (My_Test.GetStatus()!=Belos::Converged) {
-	if (proc_verbose)
-      		cout << "End Result: TEST FAILED" << endl;	
-	return -1;
+  if (ret!=Belos::Converged) {
+    if (proc_verbose)
+      cout << "End Result: TEST FAILED" << endl;	
+    return -1;
   }
   //
   // Default return value

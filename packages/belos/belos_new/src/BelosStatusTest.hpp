@@ -115,16 +115,12 @@ class StatusTest {
   virtual void printStatus(ostream& os, StatusType type) const {
     os << setiosflags(ios::left) << setw(13) << setfill('.');
     switch (type) {
+    case  Passed:
+      os << "Passed";
     case  Failed:
       os << "Failed";
       break;
-    case  NaN:  
-      os << "NaN";
-      break;
-    case  Converged:
-      os << "Converged";
-      break;
-    case  Unconverged:
+    case  Undefined:  
     default:
       os << "**";
       break;
