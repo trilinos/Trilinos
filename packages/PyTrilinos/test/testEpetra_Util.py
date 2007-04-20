@@ -131,7 +131,7 @@ class EpetraUtilTestCase(unittest.TestCase):
 
     def testCreate_OneToOne_Map0(self):
         "Test Epetra.Util Create_OneToOne_Map method, low proc gets copies"
-        map  = Epetra.Map(self.size, range(self.size), 0, self.comm) # All elements on all procs
+        map  = Epetra.Map(-1, range(self.size), 0, self.comm) # All elements on all procs
         otom = self.util.Create_OneToOne_Map(map)
         gids = otom.MyGlobalElements()
         if self.comm.MyPID() == 0:
@@ -142,7 +142,7 @@ class EpetraUtilTestCase(unittest.TestCase):
     def testCreate_OneToOne_Map1(self):
         "Test Epetra.Util Create_OneToOne_Map method, high proc gets copies"
         root = self.comm.NumProc()-1
-        map  = Epetra.Map(self.size, range(self.size), 0, self.comm) # All elements on all procs
+        map  = Epetra.Map(-1, range(self.size), 0, self.comm) # All elements on all procs
         otom = self.util.Create_OneToOne_Map(map, True)
         gids = otom.MyGlobalElements()
         if self.comm.MyPID() == root:
@@ -153,7 +153,7 @@ class EpetraUtilTestCase(unittest.TestCase):
     def testCreate_OneToOne_BlockMap0(self):
         "Test Epetra.Util Create_OneToOne_BlockMap method, low proc gets copies"
         # All elemements on all processors
-        map  = Epetra.BlockMap(self.size, range(self.size), 5, 0, self.comm)
+        map  = Epetra.BlockMap(-1, range(self.size), 5, 0, self.comm)
         otom = self.util.Create_OneToOne_BlockMap(map)
         gids = otom.MyGlobalElements()
         if self.comm.MyPID() == 0:
@@ -165,7 +165,7 @@ class EpetraUtilTestCase(unittest.TestCase):
         "Test Epetra.Util Create_OneToOne_BlockMap method, high proc gets copies"
         root = self.comm.NumProc()-1
         # All elemements on all processors
-        map  = Epetra.BlockMap(self.size, range(self.size), 5, 0, self.comm)
+        map  = Epetra.BlockMap(-1, range(self.size), 5, 0, self.comm)
         otom = self.util.Create_OneToOne_BlockMap(map, True)
         gids = otom.MyGlobalElements()
         if self.comm.MyPID() == root:
@@ -199,7 +199,7 @@ class EpetraUtilTestCase(unittest.TestCase):
 
     def testStaticCreate_OneToOne_Map0(self):
         "Test Epetra.Util Create_OneToOne_Map method, low proc gets copies, static version"
-        map  = Epetra.Map(self.size, range(self.size), 0, self.comm) # All elements on all procs
+        map  = Epetra.Map(-1, range(self.size), 0, self.comm) # All elements on all procs
         otom = Epetra.Util.Create_OneToOne_Map(map)
         gids = otom.MyGlobalElements()
         if self.comm.MyPID() == 0:
@@ -210,7 +210,7 @@ class EpetraUtilTestCase(unittest.TestCase):
     def testStaticCreate_OneToOne_Map1(self):
         "Test Epetra.Util Create_OneToOne_Map method, high proc gets copies, static version"
         root = self.comm.NumProc()-1
-        map  = Epetra.Map(self.size, range(self.size), 0, self.comm) # All elements on all procs
+        map  = Epetra.Map(-1, range(self.size), 0, self.comm) # All elements on all procs
         otom = Epetra.Util.Create_OneToOne_Map(map, True)
         gids = otom.MyGlobalElements()
         if self.comm.MyPID() == root:
@@ -221,7 +221,7 @@ class EpetraUtilTestCase(unittest.TestCase):
     def testStaticCreate_OneToOne_BlockMap0(self):
         "Test Epetra.Util Create_OneToOne_BlockMap method, low proc gets copies, static version"
         # All elemements on all processors
-        map  = Epetra.BlockMap(self.size, range(self.size), 5, 0, self.comm)
+        map  = Epetra.BlockMap(-1, range(self.size), 5, 0, self.comm)
         otom = Epetra.Util.Create_OneToOne_BlockMap(map)
         gids = otom.MyGlobalElements()
         if self.comm.MyPID() == 0:
@@ -233,7 +233,7 @@ class EpetraUtilTestCase(unittest.TestCase):
         "Test Epetra.Util Create_OneToOne_BlockMap method, high proc gets copies, static version"
         root = self.comm.NumProc()-1
         # All elemements on all processors
-        map  = Epetra.BlockMap(self.size, range(self.size), 5, 0, self.comm)
+        map  = Epetra.BlockMap(-1, range(self.size), 5, 0, self.comm)
         otom = Epetra.Util.Create_OneToOne_BlockMap(map, True)
         gids = otom.MyGlobalElements()
         if self.comm.MyPID() == root:
