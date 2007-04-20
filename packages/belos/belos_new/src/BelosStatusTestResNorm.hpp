@@ -433,7 +433,9 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
         resvector_[i+cur_rhs_num_] = tmp_resvector[i];
     } else {
       RefCountPtr<MV> cur_update = iSolver->getCurrentUpdate();
-      RefCountPtr<MV> cur_res = lp.updateSolution( cur_update );
+      RefCountPtr<MV> cur_soln = lp.updateSolution( cur_update );
+      RefCountPtr<MV> cur_res = MVT::Clone( *cur_soln, MVT::GetNumberVecs( *cur_soln ) );
+      lp.computeCurrResVec( &*cur_res, &*cur_soln );
       std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( *cur_res ) );
       MVT::MvNorm( *cur_res, &tmp_resvector, resnormtype_ );
       for (i=0; i<MVT::GetNumberVecs( *cur_res ) && i<cur_num_rhs_; i++)

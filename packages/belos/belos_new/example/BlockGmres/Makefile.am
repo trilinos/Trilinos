@@ -16,10 +16,10 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 EXEEXT = .exe
 
 if BUILD_TRIUTILS
-#if BUILD_IFPACK
-#BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb bl_fgmres_hb
-#endif
 if BUILD_EPETRAEXT
+if BUILD_IFPACK
+BELOS_BGMRES_IFPACK_EX = BlockPrecGmresEpetraExFile
+endif
 BELOS_BGMRES_NOPREC_EX = BlockGmresEpetraExFile Dummy 
 endif
 endif
@@ -32,7 +32,7 @@ endif
 
 
 #noinst_PROGRAMS = $(BELOS_BGMRES_EX) $(BELOS_BGMRES_IFPACK_EX) $(BELOS_BGMRES_NOPREC_EX) $(BELOS_BGMRES_COMPLEX_EX)
-noinst_PROGRAMS = $(BELOS_BGMRES_NOPREC_EX)
+noinst_PROGRAMS = $(BELOS_BGMRES_NOPREC_EX) $(BELOS_BGMRES_IFPACK_EX)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/orsirr1.hb orsirr1.hb
@@ -50,6 +50,8 @@ Dummy_SOURCES = Dummy
 
 #bl_fgmres_hb_SOURCES = $(srcdir)/test_bl_fgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
+BlockPrecGmresEpetraExFile_SOURCES = $(srcdir)/BlockPrecGmresEpetraExFile.cpp 
+
 BlockGmresEpetraExFile_SOURCES = $(srcdir)/BlockGmresEpetraExFile.cpp 
 
 #bl_gmres_complex_hb_SOURCES = $(srcdir)/test_bl_gmres_complex_hb.cpp
@@ -62,7 +64,14 @@ BlockGmresEpetraExFile_SOURCES = $(srcdir)/BlockGmresEpetraExFile.cpp
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a			
 
-BlockGmresEpetraExFile_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+BlockGmresEpetraExFile_DEPENDENCIES = \
+			$(top_builddir)/../epetraext/src/libepetraext.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+BlockPrecGmresEpetraExFile_DEPENDENCIES = \
+			$(top_builddir)/../ifpack/src/libifpack.a \
+			$(top_builddir)/../epetraext/src/libepetraext.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -76,6 +85,8 @@ BlockGmresEpetraExFile_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutil
 
 BlockGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 
+BlockPrecGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
+
 #bl_gmres_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #bl_pgmres_hb_LDADD = $(EXPORT_LIBS)
@@ -83,6 +94,8 @@ BlockGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src
 #bl_fgmres_hb_LDADD = $(EXPORT_LIBS)
 
 BlockGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
+
+BlockPrecGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
 
 #bl_gmres_complex_hb_LDADD = $(EXPORT_LIBS)
 

@@ -125,10 +125,9 @@ namespace Belos {
    *
    * The timers are ordered as follows:
    *   - time spent in solve() routine
-   *   - time spent restarting
    */
    Teuchos::Array<Teuchos::RefCountPtr<Teuchos::Time> > getTimers() const {
-     return tuple(timerSolve_, timerRestarting_);
+     return tuple(timerSolve_);
    }
 
   //@}
@@ -177,7 +176,7 @@ namespace Belos {
   int blockSize_, numBlocks_;
   int verbosity_;
 
-  Teuchos::RefCountPtr<Teuchos::Time> timerSolve_, timerRestarting_;
+  Teuchos::RefCountPtr<Teuchos::Time> timerSolve_;
 
 };
 
@@ -196,8 +195,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   blockSize_(0),
   numBlocks_(0),
   verbosity_(Belos::Errors),
-  timerSolve_(Teuchos::TimeMonitor::getNewTimer("BlockGmresSolMgr::solve()")),
-  timerRestarting_(Teuchos::TimeMonitor::getNewTimer("BlockGmresSolMgr restarting"))
+  timerSolve_(Teuchos::TimeMonitor::getNewTimer("BlockGmresSolMgr::solve()"))
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
 
@@ -308,7 +306,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockGmres solver
   Teuchos::RefCountPtr<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter
-    = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer,basictest,ortho,plist) );
+    = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer,stest,ortho,plist) );
   
   // assume convergence is achieved, then let any failed convergence set this to false.
   bool isConverged = true;
@@ -335,7 +333,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       std::vector<int> firstind( blockSize_ );
       for (int i=0; i<blockSize_; i++) { firstind[i] = i; }
       Teuchos::RefCountPtr<MV> V_0 = Teuchos::rcp_const_cast<MV>(MVT::CloneView( *(oldState.V), firstind ));
-      problem_->ComputeResVec( &*V_0, &*cur_block_sol, &*cur_block_rhs );
+      problem_->computeCurrResVec( &*V_0 );
 
       // Get a view of the first block of the Krylov basis.
       Teuchos::SerialDenseMatrix<int,ScalarType> Znew(Teuchos::View, *(oldState.Z), blockSize_, blockSize_);
@@ -364,7 +362,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	  // check convergence first
 	  //
 	  ////////////////////////////////////////////////////////////////////////////////////
-	  if ( convtest->getStatus() == Passed ) {
+	  if ( stest->getStatus() == Passed ) {
 	    // we have convergence
 	    break;  // break from while(1){block_gmres_iter->iterate()}
 	  }
@@ -384,8 +382,6 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	  //
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  else if ( block_gmres_iter->getCurSubspaceDim() == block_gmres_iter->getMaxSubspaceDim() ) {
-	    
-	    Teuchos::TimeMonitor restimer(*timerRestarting_);
 	    
 	    if ( numRestarts >= maxRestarts_ ) {
 	      isConverged = false;
@@ -407,7 +403,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    std::vector<int> firstind( blockSize_ );
 	    for (int i=0; i<blockSize_; i++) { firstind[i] = i; }
 	    Teuchos::RefCountPtr<MV> basistemp = Teuchos::rcp_const_cast<MV>(MVT::CloneView( *(oldState.V), firstind ));
-	    problem_->ComputeResVec( &*V_0, &*cur_block_sol, &*cur_block_rhs );
+	    problem_->computeCurrResVec( &*V_0 );
 
 	    // Get a view of the first block of the Krylov basis.
 	    Teuchos::SerialDenseMatrix<int,ScalarType> Znew(Teuchos::View, *(oldState.Z), blockSize_, blockSize_);
@@ -452,7 +448,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       problem_->SolutionUpdated( update );
       
       // Inform the linear problem that we are finished with this block linear system.
-      problem_->SetCurrLSVec();
+      problem_->setCurrLSVec();
       
       // Obtain the next block linear system from the linear problem manager.
       cur_block_sol = problem_->GetCurrLHSVec();
@@ -463,10 +459,10 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   }
  
   // print final summary information
-  basictest->print( printer->stream(FinalSummary) );
+  stest->print( printer->stream(FinalSummary) );
  
   // print timing information
-  Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
+  Teuchos::TimeMonitor::summarize( printer->stream(TimingDetails) );
   
   if (!isConverged) {
     return Unconverged; // return from BlockGmresSolMgr::solve() 

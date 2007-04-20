@@ -368,7 +368,6 @@ void StatusTestCombo<ScalarType,MV,OP>::seqOp( Iteration<ScalarType,MV,OP>* iSol
 
     StatusType s = (*i)->checkStatus( iSolver );
 
-    cout << "Sequential combo: " << toString( s ) << endl;
     // Check for failure.
     if (s==Failed) {
       status_ = Failed;

@@ -63,7 +63,7 @@ namespace Belos {
     //@{ 
     //!  Default Constructor.
     /*! Creates an empty Belos::LinearProblem instance. The operator A, left-hand-side X
-      and right-hand-side B must be set using the SetOperator(), SetLHS() and SetRHS()
+      and right-hand-side B must be set using the setOperator(), setLHS() and setRHS()
       methods respectively.
     */
     LinearProblem(void);
@@ -71,8 +71,8 @@ namespace Belos {
     //! Unpreconditioned linear system constructor.
     /*! Creates an unpreconditioned LinearProblem instance with the 
       Belos::Operator (\c A), initial guess (\c X), and right hand side (\c B). 
-      Preconditioners can be set using the SetLeftPrec() and SetRightPrec() methods, and
-      scaling can also be set using the SetLeftScale() and SetRightScale() methods.
+      Preconditioners can be set using the setLeftPrec() and setRightPrec() methods, and
+      scaling can also be set using the setLeftScale() and setRightScale() methods.
     */
     LinearProblem(const RefCountPtr<const OP> &A, 
 		  const RefCountPtr<MV> &X, 
@@ -96,33 +96,33 @@ namespace Belos {
     //! Set Operator A of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
      */
-    void SetOperator(const RefCountPtr<const OP> &A) { A_ = A; };
+    void setOperator(const RefCountPtr<const OP> &A) { A_ = A; };
     
     //! Set left-hand-side X of linear problem AX = B.
     /*! Sets a pointer to a MultiVec.  No copy of the object is made.
      */
-    void SetLHS(const RefCountPtr<MV> &X);
+    void setLHS(const RefCountPtr<MV> &X);
     
     //! Set right-hand-side B of linear problem AX = B.
     /*! Sets a pointer to a MultiVec.  No copy of the object is made.
      */
-    void SetRHS(const RefCountPtr<const MV> &B) { B_ = B; };
+    void setRHS(const RefCountPtr<const MV> &B) { B_ = B; };
     
     //! Set left preconditioning operator (\c LP) of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
      */
-    void SetLeftPrec(const RefCountPtr<const OP> &LP) {  LP_ = LP; Left_Prec_ = true; };
+    void setLeftPrec(const RefCountPtr<const OP> &LP) {  LP_ = LP; Left_Prec_ = true; };
     
     //! Set right preconditioning operator (\c RP) of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
      */
-    void SetRightPrec(const RefCountPtr<const OP> &RP) { RP_ = RP; Right_Prec_ = true; };
+    void setRightPrec(const RefCountPtr<const OP> &RP) { RP_ = RP; Right_Prec_ = true; };
     
     //! Set the parameter list for defining the behavior of the linear problem class.
-    void SetParameterList(const RefCountPtr<ParameterList> &PL) { PL_ = PL; };
+    void setParameterList(const RefCountPtr<ParameterList> &PL) { PL_ = PL; };
 
     //! Set the blocksize of the linear problem.  This information is used to set up the linear problem for block solvers.
-    void SetBlockSize(int blocksize) { default_blocksize_ = blocksize; blocksize_ = blocksize; };
+    void setBlockSize(int blocksize) { default_blocksize_ = blocksize; blocksize_ = blocksize; };
     
     //! Inform the linear problem that the solver is finished with the current linear system.
     /*! \note This method is to be <b> only </b> used by the solver to inform the linear problem manager that it's
@@ -130,7 +130,7 @@ namespace Belos {
       linear system will be returned.  Computing the next linear system isn't done in this method in case the 
       blocksize is changed.
     */
-    void SetCurrLSVec();
+    void setCurrLSVec();
     
     //! Inform the linear problem that the operator is symmetric.
     /*! This knowledge may allow the operator to take advantage of the linear problem symmetry.
@@ -330,14 +330,14 @@ namespace Belos {
       The result will be returned into R.  Otherwise <tt>R = OP(A)X - B</tt> will be computed and returned.
       \note This residual will be a preconditioned residual if the system has a left preconditioner.
     */
-    void ComputeResVec( MV* R, const MV* X = 0, const MV* B = 0 ) const;
+    void computeCurrResVec( MV* R, const MV* X = 0, const MV* B = 0 ) const;
     
     //@}
     
   private:
     
     //! Private method for populating the next block linear system.
-    void SetUpBlocks();
+    void setUpBlocks();
     
     //! Operator of linear system. 
     RefCountPtr<const OP> A_;
@@ -481,7 +481,7 @@ namespace Belos {
   {}
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::SetUpBlocks()
+  void LinearProblem<ScalarType,MV,OP>::setUpBlocks()
   {
     // Compute the new block linear system.
     // ( first clean up old linear system )
@@ -552,14 +552,14 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::SetLHS(const RefCountPtr<MV> &X)
+  void LinearProblem<ScalarType,MV,OP>::setLHS(const RefCountPtr<MV> &X)
   {
     X_ = X; 
     R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) ); 
   }
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::SetCurrLSVec() 
+  void LinearProblem<ScalarType,MV,OP>::setCurrLSVec() 
   { 
     int i;
     //
@@ -692,7 +692,7 @@ namespace Belos {
   {
     if (solutionFinal_) {
       solutionFinal_ = false;	// make sure we don't populate the current linear system again.
-      SetUpBlocks();
+      setUpBlocks();
     }
     return CurX_; 
   }
@@ -702,7 +702,7 @@ namespace Belos {
   {
     if (solutionFinal_) {
       solutionFinal_ = false;	// make sure we don't populate the current linear system again.
-      SetUpBlocks();
+      setUpBlocks();
     }
     return CurB_;
   }
@@ -803,7 +803,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::ComputeResVec( MV* R, const MV* X, const MV* B ) const {
+  void LinearProblem<ScalarType,MV,OP>::computeCurrResVec( MV* R, const MV* X, const MV* B ) const {
     if (X && B) // The entries are specified, so compute the residual of Op(A)X = B
       {
 	if (Left_Prec_)
@@ -820,19 +820,29 @@ namespace Belos {
 	  }
       }
     else { 
-      // One of the entries is not specified, so just use the linear system information we have.
-      // Later we may want to check to see which multivec is not specified, and use what is specified.
+      // The solution and right-hand side may not be specified, check and use which ones exist.
+      RefCountPtr<const MV> localB, localX;
+      if (B)
+        localB = rcp( B, false );
+      else
+        localB = CurB_;
+
+      if (X)
+        localX = rcp( X, false );
+      else
+        localX = CurX_;
+
       if (Left_Prec_)
 	{
-	  RefCountPtr<MV> R_temp = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
-	  OPT::Apply( *A_, *X_, *R_temp );
-	  MVT::MvAddMv( -1.0, *R_temp, 1.0, *B_, *R_temp );
+	  RefCountPtr<MV> R_temp = MVT::Clone( *localX, MVT::GetNumberVecs( *localX ) );
+	  OPT::Apply( *A_, *localX, *R_temp );
+	  MVT::MvAddMv( -1.0, *R_temp, 1.0, *localB, *R_temp );
 	  OPT::Apply( *LP_, *R_temp, *R );
 	}
       else 
 	{
-	  OPT::Apply( *A_, *X_, *R );
-	  MVT::MvAddMv( -1.0, *R, 1.0, *B_, *R );
+	  OPT::Apply( *A_, *localX, *R );
+	  MVT::MvAddMv( -1.0, *R, 1.0, *localB, *R );
 	}
     }    
   }
