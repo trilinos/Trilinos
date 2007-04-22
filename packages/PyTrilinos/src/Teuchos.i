@@ -71,6 +71,10 @@ ParameterList will accept a python dictionary.
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
+//#include "Teuchos_XMLObjectImplem.hpp"
+//#include "Teuchos_XMLObject.hpp"
+//#include "Teuchos_XMLParameterListReader.hpp"
+//#include "Teuchos_XMLParameterListWriter.hpp"
 
 // Teuchos python interface includes
 #include "Teuchos_PythonParameter.h"
@@ -123,6 +127,8 @@ namespace std {
 %ignore *::print;
 
 //Teuchos imports
+%ignore Teuchos::bad_any_cast;
+%ignore Teuchos::any::bad_any_cast;
 %import "Teuchos_TypeNameTraits.hpp"
 %import "Teuchos_RefCountPtrDecl.hpp"
 %import "Teuchos_any.hpp"
@@ -197,6 +203,26 @@ __version__ = Teuchos_Version().split()[2]
 
 }
 %include "Teuchos_ParameterListAcceptor.hpp"
+
+//////////////////////////////////////
+// Teuchos::XMLObjectImplem support //
+//////////////////////////////////////
+//%include "Teuchos_XMLObjectImplem.hpp"
+
+////////////////////////////////
+// Teuchos::XMLObject support //
+////////////////////////////////
+//%include "Teuchos_XMLObject.hpp"
+
+/////////////////////////////////////////////
+// Teuchos::XMLParameterListReader support //
+/////////////////////////////////////////////
+//%include "Teuchos_XMLParameterListReader.hpp"
+
+/////////////////////////////////////////////
+// Teuchos::XMLParameterListWriter support //
+/////////////////////////////////////////////
+//%include "Teuchos_XMLParameterListWriter.hpp"
 
 ////////////////////////////////////////////////////////////////////////
 

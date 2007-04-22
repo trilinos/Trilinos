@@ -47,6 +47,7 @@
 // Typemaps //
 //////////////
 %epetra_argout_typemaps(Epetra_CrsMatrix)
+%epetra_argout_typemaps(Epetra_VbrMatrix)
 
 ////////////////
 // Macro code //
@@ -170,6 +171,9 @@ int method(int Row, double* Values, int NumValues, int* Indices, int NumIndices)
 %apply (int*    IN_ARRAY1, int DIM1) {(int*       Indices,          int NumIndices)};
 %extend Epetra_CrsMatrix {
 
+  // Add NumRows to the constructor argument list, so that I can use
+  // an appropriate numpy.i typemap, and also check the length of
+  // NumEntriesPerRow
   Epetra_CrsMatrix(Epetra_DataAccess   CV,
 		   const Epetra_Map  & RowMap,
 		   const int         * NumEntriesPerRow,
@@ -184,6 +188,9 @@ int method(int Row, double* Values, int NumValues, int* Indices, int NumIndices)
     return new Epetra_CrsMatrix(CV, RowMap, NumEntriesPerRow, StaticProfile);
   }
 
+  // Add NumRows to the constructor argument list, so that I can use
+  // an appropriate numpy.i typemap, and also check the length of
+  // NumEntriesPerRow
   Epetra_CrsMatrix(Epetra_DataAccess   CV,
 		   const Epetra_Map  & RowMap,
 		   const Epetra_Map  & ColMap,
@@ -434,7 +441,6 @@ int method(int Row, double* Values, int NumValues, int* Indices, int NumIndices)
 // Epetra_FECrsMatrix support //
 ////////////////////////////////
 %rename(FECrsMatrix) Epetra_FECrsMatrix;
-%include "Epetra_FECrsMatrix.h"
 %extend Epetra_FECrsMatrix {
   void __setitem__(PyObject* args, double val) 
   {
@@ -481,6 +487,7 @@ int method(int Row, double* Values, int NumValues, int* Indices, int NumIndices)
     return self->InsertGlobalValues(1, &i, 1, &j2, &val2);
   }
 }
+%include "Epetra_FECrsMatrix.h"
 
 ///////////////////////////////////////
 // Epetra_CrsSingletonFilter support //
@@ -491,10 +498,64 @@ int method(int Row, double* Values, int NumValues, int* Indices, int NumIndices)
 //////////////////////////////
 // Epetra_VbrMatrix support //
 //////////////////////////////
+%rename(VbrMatrix) Epetra_VbrMatrix;
+%epetra_exception(Epetra_VbrMatrix, Epetra_VbrMatrix);
+%epetra_exception(Epetra_VbrMatrix, BeginInsertGlobalValues );
+%epetra_exception(Epetra_VbrMatrix, BeginInsertMyValues     );
+%epetra_exception(Epetra_VbrMatrix, BeginReplaceGlobalValues);
+%epetra_exception(Epetra_VbrMatrix, BeginReplaceMyValues    );
+%epetra_exception(Epetra_VbrMatrix, BeginSumIntoGlobalValues);
+%epetra_exception(Epetra_VbrMatrix, BeginSumIntoMyValues    );
+%apply (int * IN_ARRAY1, int DIM1) {(int * NumBlockEntriesPerRow, int NumRows)};
+%apply (int DIM1, int * IN_ARRAY1) {(int NumBlockEntries, int * BlockIndices)};
+%extend Epetra_VbrMatrix {
+
+  // Add NumRows to the constructor argument list, so that I can use
+  // an appropriate numpy.i typemap, and also check the length of
+  // NumBlockEntriesPerRow
+  Epetra_VbrMatrix(Epetra_DataAccess 	   CV,
+		   const Epetra_BlockMap & RowMap,
+		   int                   * NumBlockEntriesPerRow,
+		   int                     NumRows) {
+    if (NumRows != RowMap.NumMyElements()) {
+      PyErr_Format(PyExc_ValueError,
+		   "RowMap has %d rows and NumBlockEntriesPerRow has %d elements",
+		   RowMap.NumMyElements(), NumRows);
+      return NULL;
+    }
+    return new Epetra_VbrMatrix(CV, RowMap, NumBlockEntriesPerRow);
+  }
+
+  // Add NumRows to the constructor argument list, so that I can use
+  // an appropriate numpy.i typemap, and also check the length of
+  // NumBlockEntriesPerRow
+  Epetra_VbrMatrix(Epetra_DataAccess 	   CV,
+		   const Epetra_BlockMap & RowMap,
+		   const Epetra_BlockMap & ColMap,
+		   int                   * NumBlockEntriesPerRow,
+		   int                     NumRows) {
+    if (NumRows != RowMap.NumMyElements()) {
+      PyErr_Format(PyExc_ValueError,
+		   "RowMap has %d rows and NumBlockEntriesPerRow has %d elements",
+		   RowMap.NumMyElements(), NumRows);
+      return NULL;
+    }
+    return new Epetra_VbrMatrix(CV, RowMap, ColMap, NumBlockEntriesPerRow);
+  }
+
+}
+%ignore Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess 	   CV,
+					   const Epetra_BlockMap & RowMap,
+					   int                   * NumBlockEntriesPerRow);
+%ignore Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess 	   CV,
+					   const Epetra_BlockMap & RowMap,
+					   const Epetra_BlockMap & ColMap,
+					   int                   * NumBlockEntriesPerRow);
 %ignore Epetra_VbrMatrix::Solve(bool, bool, bool,
 				Epetra_Vector const&, Epetra_Vector&) const;
-%rename(VbrMatrix) Epetra_VbrMatrix;
 %include "Epetra_VbrMatrix.h"
+%clear (int * NumBlockEntriesPerRow, int NumRows);
+%clear (int NumBlockEntries, int * BlockIndices);
 
 ////////////////////////////////
 // Epetra_FEVbrMatrix support //

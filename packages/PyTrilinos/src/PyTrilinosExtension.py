@@ -74,7 +74,8 @@ def makePyTrilinosExtensions(moduleName):
     # Define lists of various helper code
     epetraNumPyVectorSrc = [os.path.join(srcdir,"Epetra_NumPyIntVector.cpp"  ),
                             os.path.join(srcdir,"Epetra_NumPyMultiVector.cpp"),
-                            os.path.join(srcdir,"Epetra_NumPyVector.cpp"     )]
+                            os.path.join(srcdir,"Epetra_NumPyVector.cpp"     ),
+                            os.path.join(srcdir,"Epetra_NumPyFEVector.cpp"   )]
     epetraNumPySerialDenseSrc = [os.path.join(srcdir,"Epetra_NumPyIntSerialDenseMatrix.cpp"),
                                  os.path.join(srcdir,"Epetra_NumPyIntSerialDenseVector.cpp"),
                                  os.path.join(srcdir,"Epetra_NumPySerialDenseMatrix.cpp"   ),

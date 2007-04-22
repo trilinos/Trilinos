@@ -48,9 +48,6 @@ supported.
 	autodoc   = "1",
 	docstring = %anasazi_docstring) Anasazi
 
-// Code within the percent-bracket delimiters is copied verbatim to
-// the C++ wrapper source file.  Anything that is %include-ed later
-// needs to be #include-ed here.
 %{
 // System includes
 #include <sstream>
@@ -58,10 +55,28 @@ supported.
 // Configuration includes
 #include "PyTrilinos_config.h"
 
+// Epetra includes
+#include "Epetra_BlockMap.h"
+#include "Epetra_Map.h"
+#include "Epetra_LocalMap.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsMatrix.h"
+
+// Epetra python includes
+#include "Epetra_NumPyMultiVector.h"
+#include "Epetra_NumPyVector.h"
+
 // Anasazi includes
 #include "AnasaziVersion.cpp"
-#include "AnasaziBasicSort.hpp"
+#include "AnasaziTypes.hpp"
 #include "AnasaziOutputManager.hpp"
+#include "AnasaziBasicOutputManager.hpp"
+#include "AnasaziBasicSort.hpp"
+#include "AnasaziMultiVecTraits.hpp"
+#include "AnasaziEpetraAdapter.hpp"
 %}
 
 // General ignore directives
@@ -71,15 +86,13 @@ supported.
 // Auto-documentation feature
 %feature("autodoc", "1");
 
-// Rename directives
-%rename (OutputManager_) Anasazi::OutputManager;
-
 // C++ STL support
 using namespace std;
 %include "stl.i"
 
 // Support for other Trilinos packages
-//%import "Epetra.i"
+%import "Teuchos.i"
+%import "Epetra.i"
 
 /////////////////////////////
 // Anasazi Version support //
@@ -89,12 +102,34 @@ using namespace std;
 __version__ = Anasazi_Version().split()[2]
 %}
 
-///////////////////////////////
-// Anasazi BasicSort support //
-///////////////////////////////
-%include "AnasaziBasicSort.hpp"
+///////////////////////////
+// Anasazi Types support //
+///////////////////////////
+%include "AnasaziTypes.hpp"
 
 ///////////////////////////////////
 // Anasazi OutputManager support //
 ///////////////////////////////////
 %include "AnasaziOutputManager.hpp"
+%template (OutputManagerDouble)
+          Anasazi::OutputManager<double>;
+
+////////////////////////////////////////
+// Anasazi BasicOutputManager support //
+////////////////////////////////////////
+%include "AnasaziBasicOutputManager.hpp"
+%template (BasicOutputManagerDouble)
+          Anasazi::BasicOutputManager<double>;
+
+///////////////////////////////
+// Anasazi BasicSort support //
+///////////////////////////////
+%include "AnasaziBasicSort.hpp"
+
+////////////////////////////////////
+// Anasazi MultiVecTraits support //
+////////////////////////////////////
+//%include "AnasaziMultiVecTraits.hpp"
+//%include "AnasaziEpetraAdapter.hpp"
+//%template (MultiVecTraitsDoubleMultiVector)
+//          Anasazi::MultiVecTraits<double, Epetra_MultiVector>;

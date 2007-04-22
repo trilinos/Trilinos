@@ -39,13 +39,13 @@ ACLOCAL	= aclocal -I config
 EXTRA_DIST = definition setpath.py \
 	     testAmesos.py testAnasazi.py testAztecOO.py testEpetraExt_Coloring.py \
 	     testEpetra_BlockMap.py testEpetra_Comm.py testEpetra_CompObject.py \
-	     testEpetra_CrsGraph.py testEpetra_CrsMatrix.py testEpetra_ImportExport.py \
-	     testEpetra_IntSerialDense.py testEpetra_IntVector.py \
-	     testEpetra_LinearProblem.py testEpetra_LocalMap.py testEpetra_Map.py \
-	     testEpetra_MapColoring.py testEpetra_MultiVector.py testEpetra_Object.py \
-	     testEpetra_SerialDense.py testEpetra_Util.py testEpetra_Vector.py \
-	     testGaleri_CrsMatrices.py testGaleri_Maps.py testIFPACK.py \
-	     testML_Preconditioner.py testNOX_StatusTest.py testTeuchos.py \
+	     testEpetra_CrsGraph.py testEpetra_CrsMatrix.py testEpetra_FEVector.py \
+	     testEpetra_ImportExport.py testEpetra_IntSerialDense.py \
+	     testEpetra_IntVector.py testEpetra_LinearProblem.py testEpetra_LocalMap.py \
+	     testEpetra_Map.py testEpetra_MapColoring.py testEpetra_MultiVector.py \
+	     testEpetra_Object.py testEpetra_SerialDense.py testEpetra_Util.py \
+	     testEpetra_Vector.py testGaleri_CrsMatrices.py testGaleri_Maps.py \
+	     testIFPACK.py testML_Preconditioner.py testNOX_StatusTest.py testTeuchos.py \
 	     testTeuchos_ParameterList.py testThyra.py testTriUtils.py
 
 MAINTAINERCLEANFILES = Makefile.in
@@ -63,8 +63,8 @@ endif
 
 if HAVE_PYTRILINOS_EPETRA
 EPETRA_TESTS = testEpetra_BlockMap testEpetra_Comm testEpetra_CompObject \
-	       testEpetra_CrsGraph testEpetra_CrsMatrix testEpetra_ImportExport \
-	       testEpetra_IntSerialDense testEpetra_IntVector \
+	       testEpetra_CrsGraph testEpetra_CrsMatrix testEpetra_FEVector \
+	       testEpetra_ImportExport testEpetra_IntSerialDense testEpetra_IntVector \
 	       testEpetra_LinearProblem testEpetra_LocalMap testEpetra_Map \
 	       testEpetra_MapColoring testEpetra_MultiVector testEpetra_Object \
 	       testEpetra_SerialDense testEpetra_Util testEpetra_Vector

@@ -38,6 +38,7 @@
 // Local includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyFEVector.h"
 #include "Epetra_NumPyIntVector.h"
 %}
 
@@ -47,9 +48,11 @@
 %epetra_array_output_typemaps(Epetra_IntVector,   Epetra_NumPyIntVector  )
 %epetra_array_output_typemaps(Epetra_MultiVector, Epetra_NumPyMultiVector)
 %epetra_array_output_typemaps(Epetra_Vector,      Epetra_NumPyVector     )
+%epetra_array_output_typemaps(Epetra_FEVector,    Epetra_NumPyFEVector   )
 %epetra_array_argout_typemaps(IntVector)
 %epetra_array_argout_typemaps(MultiVector)
 %epetra_array_argout_typemaps(Vector)
+%epetra_array_argout_typemaps(FEVector)
 %epetra_array_director_typemaps(MultiVector)
 %epetra_array_director_typemaps(Vector)
 
@@ -100,7 +103,9 @@
 /////////////////////////////
 // Epetra_FEVector support //
 /////////////////////////////
-%rename(FEVector) Epetra_FEVector;
+%ignore Epetra_FEVector::ReplaceGlobalValues(int,int*,double*);
+%ignore Epetra_FEVector::SumIntoGlobalValues(int,int*,double*);
+%inline {struct FEVector{ };}
 %include "Epetra_FEVector.h"
 
 ///////////////////////////////////
@@ -272,4 +277,60 @@ class Vector(UserArray,NumPyVector):
                     raise AttributeError, "Cannot change Epetra.Vector array attribute"
             UserArray.__setattr__(self, key, value)
 _Epetra.NumPyVector_swigregister(Vector)
+%}
+
+////////////////////////////////
+// Epetra_NumPyFEVector support //
+////////////////////////////////
+%rename(NumPyFEVector) Epetra_NumPyFEVector;
+%epetra_numpy_ctor_exception(Epetra_NumPyFEVector)
+%include "Epetra_NumPyFEVector.h"
+%pythoncode %{
+class FEVector(UserArray,NumPyFEVector):
+    def __init__(self, *args):
+        """
+        __init__(self, BlockMap map, bool zeroOut=True) -> FEVector
+        __init__(self, FEVector source) -> FEVector
+        __init__(self, BlockMap map, PyObject array) -> FEVector
+        __init__(self, DataAccess CV, Vector source) -> FEVector
+        __init__(self, DataAccess CV, MultiVector source, PyObject index) -> FEVector
+        __init__(self, PyObject array) -> FEVector
+        """
+        NumPyFEVector.__init__(self, *args)
+        self.__initArray__()
+    def __initArray__(self):
+        UserArray.__init__(self, self.ExtractView(), dtype="d", copy=False)
+    def __str__(self):
+        return str(self.array)
+    def __lt__(self,other):
+        return numpy.less(self.array,other)
+    def __le__(self,other):
+        return numpy.less_equal(self.array,other)
+    def __eq__(self,other):
+        return numpy.equal(self.array,other)
+    def __ne__(self,other):
+        return numpy.not_equal(self.array,other)
+    def __gt__(self,other):
+        return numpy.greater(self.array,other)
+    def __ge__(self,other):
+        return numpy.greater_equal(self.array,other)
+    def __getattr__(self, key):
+        # This should get called when the FEVector is accessed after not properly
+        # being initialized
+        if not "array" in self.__dict__:
+            self.__initArray__()
+        try:
+            return self.array.__getattribute__(key)
+        except AttributeError:
+            return FEVector.__getattribute__(self, key)
+    def __setattr__(self, key, value):
+        "Handle 'this' properly and protect the 'array' attribute"
+        if key == "this":
+            NumPyFEVector.__setattr__(self, key, value)
+        else:
+            if key == "array":
+                if key in self.__dict__:
+                    raise AttributeError, "Cannot change Epetra.FEVector array attribute"
+            UserArray.__setattr__(self, key, value)
+_Epetra.NumPyFEVector_swigregister(FEVector)
 %}
