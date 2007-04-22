@@ -37,10 +37,18 @@ Teuchos:
 
 The purpose of Teuchos is to provide a number of utilities often
 needed by numerical applications, but that are not numerical by
-nature.  Currently, the only utility class that has a python interface
-is ParameterList, which in C++ matches string keys to
-arbitrarily-typed values.  In python, the Teuchos.ParameterList is
-tightly integrated with python dictionaries -- methods that expect a
+nature.  The python version of the Teuchos package supports the
+following classes:
+
+    * ParameterList           - List of arbitrarily-typed values,
+                                keyed by strings
+    * XMLObject               - OO interface to XML objects
+    * XMLParameterListReader  - ParameterList input from XML
+    * XMLParameterListWriter  - ParameterList output to XML
+
+The ParameterList class matches string keys to arbitrarily-typed
+values.  In python, the Teuchos.ParameterList is tightly integrated
+with python dictionaries -- PyTrilinos methods that expect a
 ParameterList will accept a python dictionary.
 "
 %enddef
@@ -50,10 +58,10 @@ ParameterList will accept a python dictionary.
 	implicitconv = "1",
 	docstring    = %teuchos_docstring) Teuchos
 
-// SWIG does not support wrapping nested classes.  We will %import the
-// Teuchos::any class (ie, tell swig about it, but not wrap it), which
-// has nested classes.  To suppress the swig warning that would
-// otherwise result, we use the following:
+// SWIG does not support wrapping nested classes.  We will %include
+// the Teuchos::ParameterList class, which has nested classes.  To
+// suppress the swig warning that would otherwise result, we use the
+// following:
 #pragma SWIG nowarn=312
 
 // Code within the percent-bracket delimiters is copied verbatim to
@@ -71,10 +79,10 @@ ParameterList will accept a python dictionary.
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
-//#include "Teuchos_XMLObjectImplem.hpp"
-//#include "Teuchos_XMLObject.hpp"
-//#include "Teuchos_XMLParameterListReader.hpp"
-//#include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_XMLObjectImplem.hpp"
+#include "Teuchos_XMLObject.hpp"
+#include "Teuchos_XMLParameterListReader.hpp"
+#include "Teuchos_XMLParameterListWriter.hpp"
 
 // Teuchos python interface includes
 #include "Teuchos_PythonParameter.h"
@@ -127,12 +135,11 @@ namespace std {
 %ignore *::print;
 
 //Teuchos imports
-%ignore Teuchos::bad_any_cast;
-%ignore Teuchos::any::bad_any_cast;
+namespace Teuchos { class any; }
 %import "Teuchos_TypeNameTraits.hpp"
 %import "Teuchos_RefCountPtrDecl.hpp"
-%import "Teuchos_any.hpp"
 %import "Teuchos_ParameterEntry.hpp"
+%import "Teuchos_XMLObjectImplem.hpp"
 %import "Teuchos_PythonParameter.h"
 
 //////////////////////////////////////
@@ -146,14 +153,14 @@ __version__ = Teuchos_Version().split()[2]
 ////////////////////////////////////
 // Teuchos::ParameterList support //
 ////////////////////////////////////
-%teuchos_exception(ParameterList,ParameterList)
-%teuchos_exception(ParameterList,set)
-%teuchos_exception(ParameterList,setParameters)
-%teuchos_exception(ParameterList,get)
-%teuchos_exception(ParameterList,sublist)
-%teuchos_exception(ParameterList,type)
-%teuchos_exception(ParameterList,__setitem__)
-%teuchos_exception(ParameterList,update)
+%teuchos_exception(ParameterList, ParameterList)
+%teuchos_exception(ParameterList, set)
+%teuchos_exception(ParameterList, setParameters)
+%teuchos_exception(ParameterList, get)
+%teuchos_exception(ParameterList, sublist)
+%teuchos_exception(ParameterList, type)
+%teuchos_exception(ParameterList, __setitem__)
+%teuchos_exception(ParameterList, update)
 // There are a lot of extensions to the Teuchos::ParameterList class,
 // so I put them all in their own file
 %include "Teuchos_ParameterList_ext.i"
@@ -171,6 +178,37 @@ __version__ = Teuchos_Version().split()[2]
 %ignore Teuchos::ParameterList::entry(ConstIterator) const;
 %ignore Teuchos::ParameterList::name(ConstIterator) const;
 %include "Teuchos_ParameterList.hpp"
+%typemap(in)
+Teuchos::ParameterList &
+(void *argp=0, int res=0, bool cleanup=false)
+{
+  if (PyDict_Check($input)) {
+    $1 = Teuchos::pyDictToNewParameterList($input);
+    if ($1 == NULL) SWIG_fail;
+    cleanup = true;
+  }
+  else {
+    res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
+    if (!SWIG_IsOK(res)) {
+      %argument_fail(res, "$type", $symname, $argnum);
+    }
+    $1 = %reinterpret_cast(argp, $ltype);
+  }
+}
+%typecheck(200)
+Teuchos::ParameterList &
+{
+  // Accept PyDicts or ParameterLists
+  void * argp = NULL;
+  $1 = PyDict_Check($input) ? 1 : 0;
+  if (!$1) if (SWIG_CheckState(SWIG_Python_ConvertPtr($input, &argp,
+						      $1_descriptor, 0))) $1 = 1;
+}
+%typemap(freearg)
+Teuchos::ParameterList &
+{
+  if (cleanup$argnum && $1) delete $1;
+}
 
 ////////////////////////////////////////////
 // Teuchos::ParameterListAcceptor support //
@@ -200,66 +238,54 @@ __version__ = Teuchos_Version().split()[2]
     Teuchos::RefCountPtr<const Teuchos::ParameterList> p_plist = self->getValidParameters();
     return p_plist.get();
   }
-
 }
 %include "Teuchos_ParameterListAcceptor.hpp"
-
-//////////////////////////////////////
-// Teuchos::XMLObjectImplem support //
-//////////////////////////////////////
-//%include "Teuchos_XMLObjectImplem.hpp"
 
 ////////////////////////////////
 // Teuchos::XMLObject support //
 ////////////////////////////////
-//%include "Teuchos_XMLObject.hpp"
+%teuchos_exception(XMLObject, deepCopy         )
+%teuchos_exception(XMLObject, checkTag         )
+%teuchos_exception(XMLObject, getTag           )
+%teuchos_exception(XMLObject, getAttribute     )
+%teuchos_exception(XMLObject, getContentLine   )
+%teuchos_exception(XMLObject, getRequired      )
+%teuchos_exception(XMLObject, getRequiredDouble)
+%teuchos_exception(XMLObject, getRequiredInt   )
+%teuchos_exception(XMLObject, getRequiredBool  )
+%teuchos_exception(XMLObject, getChild         )
+%teuchos_exception(XMLObject, addAttribute     )
+%teuchos_exception(XMLObject, addContentLine   )
+%teuchos_exception(XMLObject, addRequired      )
+%teuchos_exception(XMLObject, addRequiredDouble)
+%teuchos_exception(XMLObject, addRequiredInt   )
+%teuchos_exception(XMLObject, addRequiredBool  )
+%teuchos_exception(XMLObject, addChild         )
+%teuchos_exception(XMLObject, toString         )
+%ignore Teuchos::XMLObject(XMLObjectImplem*);
+%extend Teuchos::XMLObject {
+  string __str__() const {
+    try {
+      return self->toString();
+    }
+    catch(std::logic_error e) {
+      return string("");
+    }
+  }
+}
+%include "Teuchos_XMLObject.hpp"
 
 /////////////////////////////////////////////
 // Teuchos::XMLParameterListReader support //
 /////////////////////////////////////////////
-//%include "Teuchos_XMLParameterListReader.hpp"
+%include "Teuchos_XMLParameterListReader.hpp"
 
 /////////////////////////////////////////////
 // Teuchos::XMLParameterListWriter support //
 /////////////////////////////////////////////
-//%include "Teuchos_XMLParameterListWriter.hpp"
+%include "Teuchos_XMLParameterListWriter.hpp"
 
 ////////////////////////////////////////////////////////////////////////
-
-// These typemaps allow C++ methods that expect ParameterList&
-// arguments to have python wrappers that accept ParameterList or
-// python dictionary arguments.
-
-%typemap(in) Teuchos::ParameterList & (void * argp = 0, int res = 0, bool cleanup=false)
-{
-  if (PyDict_Check($input)) {
-    $1 = Teuchos::pyDictToNewParameterList($input);
-    if ($1 == NULL) SWIG_fail;
-    cleanup = true;
-  }
-
-  else {
-    res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
-    if (!SWIG_IsOK(res)) {
-      %argument_fail(res, "$type", $symname, $argnum);
-    }
-    $1 = %reinterpret_cast(argp, $ltype);
-  }
-}
-
-%typecheck(200) Teuchos::ParameterList &
-{
-  // Accept PyDicts or ParameterLists
-  void * argp = NULL;
-  $1 = PyDict_Check($input) ? 1 : 0;
-  if (!$1) if (SWIG_CheckState(SWIG_Python_ConvertPtr($input, &argp,
-						      $1_descriptor, 0))) $1 = 1;
-}
-
-%typemap(freearg) Teuchos::ParameterList &
-{
-  if (cleanup$argnum && $1) delete $1;
-}
 
 // Extend the %extend_smart_pointer macro to handle derived classes.
 // This has been specialized for RefCountPtr, because the constructor
