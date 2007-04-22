@@ -83,6 +83,7 @@ example subdirectory of the PyTrilinos package:
 #include "NumPyImporter.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyFEVector.h"
 
 // Trilinos utility includes
 #include "Trilinos_Util_CrsMatrixGallery.h"

@@ -36,10 +36,10 @@
 #include "Epetra_IntVector.h"
 
 // Local includes
+#include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
-#include "Epetra_NumPyIntVector.h"
 %}
 
 //////////////

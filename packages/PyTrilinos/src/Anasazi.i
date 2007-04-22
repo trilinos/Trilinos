@@ -68,6 +68,7 @@ supported.
 // Epetra python includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyFEVector.h"
 
 // Anasazi includes
 #include "AnasaziVersion.cpp"

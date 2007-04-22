@@ -99,9 +99,10 @@ NOX.Epetra provides the following user-level classes:
 
 // Local includes
 #include "NumPyImporter.h"
+#include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
-#include "Epetra_NumPyIntVector.h"
+#include "Epetra_NumPyFEVector.h"
 
 // Namespace flattening
 using namespace NOX;

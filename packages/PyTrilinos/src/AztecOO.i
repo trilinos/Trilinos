@@ -79,13 +79,14 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_JadMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVbrMatrix.h"
+#include "Epetra_BasicRowMatrix.h"
+#include "Epetra_JadMatrix.h"
 
 // Epetra python includes
 #include "NumPyImporter.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_JadMatrix.h"
+#include "Epetra_NumPyFEVector.h"
 
 // AztecOO includes
 #include "AztecOO.h"

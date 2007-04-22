@@ -101,6 +101,7 @@ example subdirectory of the PyTrilinos package:
 // Epetra python includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyFEVector.h"
 
 // ML includes
 #include "ml_MultiLevelPreconditioner.h"
