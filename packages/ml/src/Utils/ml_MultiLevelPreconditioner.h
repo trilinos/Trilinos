@@ -261,13 +261,16 @@ public:
       \param ComputePrec - (In) Optional argument that specifies whether to
                                 create preconditioner immediately. 
                                 Default is true.
+      \param UseNodeMatrixForSmoother - (In) Use the nodal matrix for the nodal
+                            portion of the Hipmair smoother (if used).                          
   */
 
   MultiLevelPreconditioner(const Epetra_RowMatrix& EdgeMatrix,
 			   const Epetra_RowMatrix& GradMatrix,
 			   const Epetra_RowMatrix& NodeMatrix,
 			   const Teuchos::ParameterList& List,
-			   const bool ComputePrec = true);
+			   const bool ComputePrec = true,
+                           const bool UseNodeMatrixForSmoother = false);
   
   //! \brief MultiLevelPreconditioner constructor for Maxwell's equations.
   /*! Takes the stiffness and mass terms of the matrix separately. 
@@ -290,7 +293,7 @@ public:
              const Epetra_RowMatrix & NodeMatrix,
              const Teuchos::ParameterList & List,
              const bool ComputePrec = true);
-
+  
 #ifdef HAVE_ML_AZTECOO
   //! MultiLevelPreconditioner constructor for Maxwell's equations.
   /*! Takes the stiffness and mass terms of the matrix combined.  The edge
@@ -769,6 +772,9 @@ private:
   const Epetra_RowMatrix* MassMatrix_;
   //! aux matrix for Maxwell
   const Epetra_RowMatrix* NodeMatrix_;
+  //! T^T A T Matrix for use with Maxwell
+  ML_Operator* TtATMatrixML_;
+  bool UseNodeMatrixForSmoother_;
   bool CreatedNodeMatrix_;
   //! Auxiliary matrix used in intermediate step
   ML_Operator* ML_Kn_;
@@ -786,6 +792,8 @@ private:
   EpetraExt::CrsMatrix_SolverMap CurlCurlMatrixColMapTrans_;
   //! Structure for compatibility between Epetra and ML column maps.
   EpetraExt::CrsMatrix_SolverMap MassMatrixColMapTrans_;
+  //! Structure for compatibility between Epetra and ML column maps.
+  EpetraExt::CrsMatrix_SolverMap TtATMatrixColMapTrans_;
 #endif
   bool CreatedTMatrix_;
   ML_Operator* TMatrixML_;

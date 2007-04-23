@@ -926,11 +926,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
              << msg << "edge: " << EdgeSmootherInfo << endl
              << msg << "node: " << NodeSmootherInfo << endl;
         
-      ML_Gen_Smoother_Hiptmair(ml_, logical_level, ML_BOTH,
-                 Mynum_smoother_steps, Tmat_array, Tmat_trans_array, NULL, 
-                 MassMatrix_array,
-                 edge_smoother, edge_args_, nodal_smoother, nodal_args_,
-                 hiptmair_type);
+      ML_Gen_Smoother_Hiptmair2(ml_, logical_level, ML_BOTH,
+                                Mynum_smoother_steps, Tmat_array, Tmat_trans_array, NULL, 
+                                MassMatrix_array,TtATMatrixML_,
+                                edge_smoother, edge_args_, nodal_smoother, nodal_args_,
+                                hiptmair_type);      
 
       ML_Smoother_Arglist_Delete(&nodal_args_);
       ML_Smoother_Arglist_Delete(&edge_args_);

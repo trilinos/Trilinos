@@ -198,7 +198,6 @@ int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *Result);
  */
 int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix, bool verbose=false);
 
-
 //! Wraps a ML_Operator into a Epetra_CrsMatrix.
 /*! This is a somewhat cheap wrap in that the pointers get dumped into the Epetra_CrsMatrix.  
  */
@@ -240,6 +239,9 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,
 
 namespace ML_Epetra{
 
+  //! Does an P^TAP for Epetra_CrsMatrices using ML's kernels.
+  int ML_Epetra_PtAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix & P, Epetra_CrsMatrix *&Result,bool verbose=false);
+  
   //! Finds the Dirichlet rows in a square matrix that got the one-and-zeros
   //treatment
   /*! Returns the local Dirichlet rows for a square matrix that go the

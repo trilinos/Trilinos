@@ -140,12 +140,17 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     ML_Operator_Destroy(&TMatrixML_);
     TMatrixML_ = 0;
   }
-
+  
   if (ML_Kn_ != 0) {
     ML_Operator_Destroy(&ML_Kn_);
     ML_Kn_ = 0;
   }
 
+  if (TtATMatrixML_ != 0) {
+    ML_Operator_Destroy(&TtATMatrixML_);
+    TtATMatrixML_ = 0;
+  }
+  
   if (TMatrixTransposeML_ != 0) {
     ML_Operator_Destroy(&TMatrixTransposeML_);
     TMatrixTransposeML_ = 0;
@@ -181,6 +186,8 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     delete [] CurlCurlMatrix_array;
     CurlCurlMatrix_array = 0;
   }
+
+
 
   // These should be destroyed after all the individual operators, as the
   // communicator may be used in profiling some of the individual ML_Operators
@@ -393,7 +400,8 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & EdgeMatrix,
              const Epetra_RowMatrix & TMatrix,
              const Epetra_RowMatrix & NodeMatrix,
              const ParameterList & List,
-             const bool ComputePrec) :
+             const bool ComputePrec,
+             const bool UseNodeMatrixForSmoother):
   RowMatrix_(&EdgeMatrix),
   RowMatrixAllocated_(0)
 {
@@ -419,6 +427,7 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & EdgeMatrix,
   NodeMatrix_ = & NodeMatrix;
   TMatrix_ = & TMatrix;
   EdgeMatrix_ = & EdgeMatrix;
+  UseNodeMatrixForSmoother_=UseNodeMatrixForSmoother;
 
   // construct hierarchy
   if (ComputePrec == true) 
@@ -622,7 +631,9 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   CurlCurlMatrix_ = 0;
   CreatedEdgeMatrix_ = false;
   MassMatrix_ = 0;
-  TMatrix_ = 0;
+  TMatrix_ = 0;  
+  TtATMatrixML_=0;
+  UseNodeMatrixForSmoother_=false;
   ml_nodes_ = 0;
   TMatrixML_ = 0;
   CreatedTMatrix_ = false;
@@ -1102,6 +1113,16 @@ agg_->keep_P_tentative = 1;
     EdgeMatrix_ = ModifyEpetraMatrixColMap(*RowMatrix_,
                                            RowMatrixColMapTrans_,
                                            "edge element matrix");
+    /* Handle the Nodal matrix for Hiptmair, if we're using UseNodMatrixForSmoother */
+    if(UseNodeMatrixForSmoother_){
+      NodeMatrix_= ModifyEpetraMatrixColMap(*NodeMatrix_,TtATMatrixColMapTrans_,"node matrix");
+      Epetra_CrsMatrix * TtATCrsMatrix_ = dynamic_cast<Epetra_CrsMatrix*>((Epetra_RowMatrix*)NodeMatrix_);
+      TtATMatrixML_ = ML_Operator_Create(ml_comm_);
+      if(TtATCrsMatrix_) ML_Operator_WrapEpetraCrsMatrix(TtATCrsMatrix_,TtATMatrixML_,verbose_);
+      else ML_Operator_WrapEpetraMatrix((Epetra_RowMatrix*)NodeMatrix_,TtATMatrixML_);
+    }
+
+    
 #endif
     RowMatrix_ = EdgeMatrix_;
     NumMyRows = EdgeMatrix_->NumMyRows();
@@ -2390,12 +2411,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
                           << NumSmootherSteps << ","
                           << PreOrPostSmoother << "," << SubSmootherType
                           << "," << subsmDetails << ")" << endl;
-
-      ML_Gen_Smoother_Hiptmair(ml_, logical_level, pre_or_post,
-                 NumSmootherSteps, Tmat_array, Tmat_trans_array, NULL,
-                 MassMatrix_array,
-                 edge_smoother, edge_args_, nodal_smoother, nodal_args_,
-                 hiptmair_type);
+     ML_Gen_Smoother_Hiptmair2(ml_, logical_level,pre_or_post,
+                                NumSmootherSteps, Tmat_array, Tmat_trans_array, NULL,
+                                MassMatrix_array,TtATMatrixML_,
+                                edge_smoother, edge_args_, nodal_smoother, nodal_args_,
+                                hiptmair_type);
 
       ML_Smoother_Arglist_Delete(&nodal_args_);
       ML_Smoother_Arglist_Delete(&edge_args_);

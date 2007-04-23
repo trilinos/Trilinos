@@ -785,7 +785,7 @@ void ML_Build_Epetra_Maps(ML_Operator* Amat,Epetra_Map **domainmap, Epetra_Map *
 
   if (Amat->getrow->post_comm != NULL)  {
     if (Amat->comm->ML_mypid == 0)
-      pr_error("Error: Please transpose matrix with ML_Operator_Transpose_byrow()\n       before calling ML_Operator2EpetraCrsMatrix().\n");
+      pr_error("Error: Please transpose matrix with ML_Operator_Transpose_byrow()\n       before calling ML_Build_Epetra_Maps().\n");
   }
 
   if (Amat->getrow->pre_comm == NULL)
@@ -925,9 +925,45 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
   /* Cleanup */
   delete DomainMap; delete ColMap;
 #else
-  ML_Operator2EpetraCrsMatrix(A,*Result,mnz,false,bob,base);
+  ML_Operator2EpetraCrsMatrix(A,*Result,mnz,true,bob,base);
 #endif
 }/*end Epetra_CrsMatrix_Wrap_ML_Operator*/
+
+
+// ====================================================================== 
+//! Does an P^TAP for Epetra_CrsMatrices using ML's kernels.
+int ML_Epetra::ML_Epetra_PtAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix & P, Epetra_CrsMatrix *&Result,bool verbose){
+  ML_Comm* comm;
+  ML_Comm_Create(&comm);
+  ML_Operator *R_       = ML_Operator_Create(comm);
+  ML_Operator *A_       = ML_Operator_Create(comm);
+  ML_Operator *P_       = ML_Operator_Create(comm);
+  ML_Operator *Result_  = ML_Operator_Create(comm);    
+
+  /* Do the wrapping */  
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&P,P_,verbose);
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&A,A_,verbose);
+  
+  /* Build the transpose */ 
+  ML_Operator_Transpose_byrow(P_,R_);
+
+  /* Triple mat-product */
+  ML_rap(R_,A_,P_ ,Result_, ML_CSR_MATRIX);
+
+  /* Wrap back */
+  int nnz;
+  double time;
+  ML_Operator2EpetraCrsMatrix(Result_,Result,nnz,false,time,0);
+  Result->OptimizeStorage();
+  
+  /* Cleanup */
+  ML_Operator_Destroy(&R_);
+  ML_Operator_Destroy(&A_);
+  ML_Operator_Destroy(&P_);
+  ML_Operator_Destroy(&Result_);
+  ML_Comm_Destroy(&comm);
+}/*end ML_Epetra_PtAP */
+
 
 
 // ============================================================================
