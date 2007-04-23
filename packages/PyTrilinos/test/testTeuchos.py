@@ -233,6 +233,45 @@ class TeuchosXMLTestCase(unittest.TestCase):
 
 ####################################################################
 
+class TeuchosInputSourceTestCase(unittest.TestCase):
+    "TestCase class for Teuchos module XML InputSource classes"
+
+    def setUp(self):
+        self.params = {"precon" : "ILU",
+                       "maxits" : 100,
+                       "tol"    : 1.0e-6,
+                       "poly"   : {"a" : 1.0, "b" : -0.75}
+                       }
+        self.file   = "params.xml"
+
+    def testFileInputSource(self):
+        "Test Teuchos FileInputSource class"
+        open(self.file,"w").write(str(Teuchos.XMLParameterListWriter().toXML(self.params)))
+        source = Teuchos.FileInputSource(self.file)
+        xmlObj = source.getObject()
+        pList  = Teuchos.XMLParameterListReader().toParameterList(xmlObj)
+        # No exceptions? Test passes!
+
+    def testFileInputSourceBad(self):
+        "Test Teuchos FileInputSource class for bad input file"
+        source = Teuchos.FileInputSource("testTeuchos.py") # Self-ref!
+        self.assertRaises(RuntimeError, source.getObject)
+
+    def testStringInputSource(self):
+        "Test Teuchos StringInputSource class"
+        open(self.file,"w").write(str(Teuchos.XMLParameterListWriter().toXML(self.params)))
+        source = Teuchos.StringInputSource(open(self.file).read())
+        xmlObj = source.getObject()
+        pList  = Teuchos.XMLParameterListReader().toParameterList(xmlObj)
+        # No exceptions? Test passes!
+
+    def testStringInputSourceBad(self):
+        "Test Teuchos StringInputSource class for bad input file"
+        source = Teuchos.StringInputSource(open("testTeuchos.py").read()) # Self-ref!
+        self.assertRaises(RuntimeError, source.getObject)
+
+####################################################################
+
 if __name__ == "__main__":
 
     # Create the test suite object
@@ -241,6 +280,7 @@ if __name__ == "__main__":
     # Add the test cases to the test suite
     suite.addTest(unittest.makeSuite(TeuchosTestCase))
     suite.addTest(unittest.makeSuite(TeuchosXMLTestCase))
+    suite.addTest(unittest.makeSuite(TeuchosInputSourceTestCase))
 
     iAmRoot = True
 

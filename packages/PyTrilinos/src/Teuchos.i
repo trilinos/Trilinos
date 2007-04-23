@@ -42,9 +42,12 @@ following classes:
 
     * ParameterList           - List of arbitrarily-typed values,
                                 keyed by strings
-    * XMLObject               - OO interface to XML objects
+    * XMLObject               - Object-oriented interface to XML objects
     * XMLParameterListReader  - ParameterList input from XML
     * XMLParameterListWriter  - ParameterList output to XML
+    * XMLInputSource          - Base class for converting a stream to XML
+    * FileInputSource         - Class for converting file contents to XML
+    * StringInputSource       - Class for converting string contents to XML
 
 The ParameterList class matches string keys to arbitrarily-typed
 values.  In python, the Teuchos.ParameterList is tightly integrated
@@ -83,6 +86,9 @@ ParameterList will accept a python dictionary.
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_XMLInputSource.hpp"
+#include "Teuchos_FileInputSource.hpp"
+#include "Teuchos_StringInputSource.hpp"
 
 // Teuchos python interface includes
 #include "Teuchos_PythonParameter.h"
@@ -284,6 +290,25 @@ Teuchos::ParameterList &
 // Teuchos::XMLParameterListWriter support //
 /////////////////////////////////////////////
 %include "Teuchos_XMLParameterListWriter.hpp"
+
+/////////////////////////////////////
+// Teuchos::XMLInputSource support //
+/////////////////////////////////////
+%teuchos_exception(XMLInputSource, getObject)
+%ignore Teuchos::XMLInputSource::stream() const;
+%include "Teuchos_XMLInputSource.hpp"
+
+//////////////////////////////////////
+// Teuchos::FileInputSource support //
+//////////////////////////////////////
+%ignore Teuchos::FileInputSource::stream() const;
+%include "Teuchos_FileInputSource.hpp"
+
+////////////////////////////////////////
+// Teuchos::StringInputSource support //
+////////////////////////////////////////
+%ignore Teuchos::StringInputSource::stream() const;
+%include "Teuchos_StringInputSource.hpp"
 
 ////////////////////////////////////////////////////////////////////////
 

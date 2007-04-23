@@ -56,16 +56,31 @@ supported.
 #include "PyTrilinos_config.h"
 
 // Epetra includes
+#include "Epetra_SerialDenseSolver.h"
+#include "Epetra_SerialSymDenseMatrix.h"
+#include "Epetra_SerialDenseSVD.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
+#include "Epetra_SerialDistributor.h"
+#include "Epetra_MapColoring.h"
+#include "Epetra_IntVector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_FEVector.h"
+#include "Epetra_Operator.h"
+#include "Epetra_InvOperator.h"
+#include "Epetra_BasicRowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_FECrsMatrix.h"
+#include "Epetra_JadMatrix.h"
 
-// Epetra python includes
+// Epetra NumPy includes
+#include "Epetra_NumPyIntSerialDenseMatrix.h"
+#include "Epetra_NumPyIntSerialDenseVector.h"
+#include "Epetra_NumPySerialDenseMatrix.h"
+#include "Epetra_NumPySerialDenseVector.h"
+#include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
@@ -77,6 +92,9 @@ supported.
 #include "AnasaziBasicOutputManager.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziMultiVecTraits.hpp"
+#include "AnasaziMultiVec.hpp"
+#include "AnasaziOperatorTraits.hpp"
+#include "AnasaziOperator.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 %}
 
@@ -122,6 +140,11 @@ __version__ = Anasazi_Version().split()[2]
 %template (BasicOutputManagerDouble)
           Anasazi::BasicOutputManager<double>;
 
+/////////////////////////////////
+// Anasazi SortManager support //
+/////////////////////////////////
+%include "AnasaziSortManager.hpp"
+
 ///////////////////////////////
 // Anasazi BasicSort support //
 ///////////////////////////////
@@ -130,7 +153,43 @@ __version__ = Anasazi_Version().split()[2]
 ////////////////////////////////////
 // Anasazi MultiVecTraits support //
 ////////////////////////////////////
-//%include "AnasaziMultiVecTraits.hpp"
-//%include "AnasaziEpetraAdapter.hpp"
-//%template (MultiVecTraitsDoubleMultiVector)
-//          Anasazi::MultiVecTraits<double, Epetra_MultiVector>;
+%include "AnasaziMultiVecTraits.hpp"
+
+//////////////////////////////
+// Anasazi MultiVec support //
+//////////////////////////////
+%include "AnasaziMultiVec.hpp"
+%template (MultiVecDouble)
+          Anasazi::MultiVec<double>;
+
+////////////////////////////////////
+// Anasazi OperatorTraits support //
+////////////////////////////////////
+%include "AnasaziOperatorTraits.hpp"
+
+//////////////////////////////
+// Anasazi Operator support //
+//////////////////////////////
+%include "AnasaziOperator.hpp"
+%template (OperatorDouble)
+          Anasazi::Operator<double>;
+
+///////////////////////////////////
+// Anasazi EpetraAdapter support //
+///////////////////////////////////
+%include "AnasaziEpetraAdapter.hpp"
+%template (SortManagerEpetra)
+          Anasazi::SortManager<double, Epetra_MultiVector, Epetra_Operator>;
+%template (BasicSortEpetra)
+          Anasazi::BasicSort<double, Epetra_MultiVector, Epetra_Operator>;
+%template (MultiVecTraitsEpetra)
+          Anasazi::MultiVecTraits<double, Epetra_MultiVector>;
+%template (OperatorTraitsEpetra)
+          Anasazi::OperatorTraits<double, Epetra_MultiVector, Epetra_Operator>;
+
+//////////////////////////////
+// Generic python interface //
+//////////////////////////////
+%pythoncode %{
+
+%}
