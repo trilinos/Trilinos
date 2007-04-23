@@ -25,7 +25,6 @@ extern void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx);
 extern void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname);
 #endif
 
-
 extern void print_stats(const Epetra_CrsMatrix& A, char *label);//haq
 // ================================================ ====== ==== ==== == = 
 // Constructor
@@ -139,18 +138,15 @@ int  ML_Epetra::ML_RefMaxwell_11_Operator::MatrixMatrix_Multiply(const Epetra_Cr
   ML_Comm* temp = global_comm;
   A_ML  = ML_Operator_Create(comm);
   *C = ML_Operator_Create(comm);
-  //  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&A,A_ML);  
-  ML_Operator_WrapEpetraMatrix((Epetra_CrsMatrix*)&A,A_ML);  
-
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&A,A_ML);  
   
   /* Do the SM part */
   SM_ML = ML_Operator_Create(comm);
   temp1 = ML_Operator_Create(comm);
-  //  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)SM_Matrix_,SM_ML);
-  ML_Operator_WrapEpetraMatrix((Epetra_CrsMatrix*)SM_Matrix_,SM_ML);
+  ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)SM_Matrix_,SM_ML);
   ML_2matmult(SM_ML,A_ML,temp1,ML_CSR_MATRIX);
   ML_Matrix_Print(temp1,*Comm_,*RangeMap_,"smp.dat");
-    
+
   //#define SANITY_CHECK
 #ifdef SANITY_CHECK
   /* DEBUG */

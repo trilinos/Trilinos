@@ -27,11 +27,6 @@ extern void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx);
 extern void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname);
 #endif
 
-/* Turn on to do aggregation for (1,1) hierarchy here.  Turning this off will
-reuse the hierarchy for the (2,2) block.  WARNING: Turning this off might not
-actually work right and is a bad idea */
-#define INTERNAL_AGGREGATION
-
 /* Turn this on the use the heavyweight wraps rather than the lightweight ones.
 The lighter wraps are a bit more fragile and require that the Epetra_CrsMatrix
 stick around through the life of the wrapped matrix */
@@ -83,8 +78,8 @@ int CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[
 
 
 // ================================================ ====== ==== ==== == = 
-ML_Epetra::EdgeMatrixFreePreconditioner::EdgeMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal, const Epetra_CrsMatrix & D0_Matrix,const Epetra_CrsMatrix & D0_Clean_Matrix,const Epetra_CrsMatrix &TMT_Matrix,const ML_Aggregate * Nodal_Aggregates,const int* BCedges, const int numBCedges, const Teuchos::ParameterList &List,const bool ComputePrec):
-  ML_Preconditioner(),Operator_(&Operator),D0_Matrix_(&D0_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix),TMT_Matrix_(&TMT_Matrix),MLAggr(Nodal_Aggregates),BCedges_(BCedges),numBCedges_(numBCedges),Prolongator_(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),Smoother_(0),verbose_(false)
+ML_Epetra::EdgeMatrixFreePreconditioner::EdgeMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal, const Epetra_CrsMatrix & D0_Matrix,const Epetra_CrsMatrix & D0_Clean_Matrix,const Epetra_CrsMatrix &TMT_Matrix,const int* BCedges, const int numBCedges, const Teuchos::ParameterList &List,const bool ComputePrec):
+  ML_Preconditioner(),Operator_(&Operator),D0_Matrix_(&D0_Matrix),D0_Clean_Matrix_(&D0_Clean_Matrix),TMT_Matrix_(&TMT_Matrix),BCedges_(BCedges),numBCedges_(numBCedges),Prolongator_(0),InvDiagonal_(0),CoarseMatrix(0),CoarsePC(0),Smoother_(0),verbose_(false)
 {
   /* Set the Epetra Goodies */
   Comm_ = &(Operator_->Comm());
@@ -281,7 +276,7 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
   Epetra_MultiVector * nullspace=new Epetra_MultiVector(*EdgeDomainMap_,dim,false);  
   D0_Clean_Matrix_->Multiply(false,e_coords,*nullspace);  
 
-  /* TEST: Nuke the BC edges */
+  /* Nuke the BC edges */
   for(int j=0;j<dim;j++)
     for(int i=0;i<numBCedges_;i++)
       (*nullspace)[j][BCedges_[i]]=0;
@@ -298,11 +293,7 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
 //! Build the edge-to-vector-node prolongator described in Bochev, Hu, Siefert and Tuminaro (2006).
 int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_MultiVector & nullspace)
 {
-  // NTS: For speed's sake we can turn this off and use the aggregates from the
-  //(2,2) block.  However, this means that the two hierarchies will be tied
-  //together in a way we'd rather not have.  This is why INTERNAL_AGGREGATION is
-  //defined by default.
-#ifdef INTERNAL_AGGREGATION
+
   /* Wrap TMT_Matrix in a ML_Operator */
   ML_Operator* TMT_ML = ML_Operator_Create(ml_comm_);
   ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)TMT_Matrix_,TMT_ML);
@@ -340,11 +331,8 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
     ML_CHK_ERR(-2);
   }/*end if*/
   else if(verbose_) printf("[%d] EMFP: %d aggregates created invec_leng=%d\n",Comm_->MyPID(),NumAggregates,P->invec_leng);
-#else
-  /* Grab the Tentative Prolongator */
-  ML_Operator *P=MLAggr->P_tentative[0];
-  int NumAggregates=MLAggr->aggr_count[0];
-#endif
+
+  
   if(verbose_) printf("[%d] Num Aggregates = %d\n",Comm_->MyPID(),NumAggregates);
   if(P==0) {fprintf(stderr,"ERROR: No tentative prolongator found\n");ML_CHK_ERR(-5);}
   
@@ -379,12 +367,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   if(verbose_ && !Comm_->MyPID()) printf("EMFP: Wrapping to PSparse\n");
   Epetra_CrsMatrix *Psparse;
   Epetra_CrsMatrix_Wrap_ML_Operator(AbsD0P,*Comm_,*EdgeRangeMap_,&Psparse,Copy,0);
-
   
-  /* TEST: Nuke the rows in Psparse */
+  /* Nuke the rows in Psparse */
   Apply_BCsToMatrixRows(BCedges_,numBCedges_,*Psparse);
-  //  Apply_BCsToMatrixColumns(BCedges_,numBCedges_,*Psparse);
-  // NTS: Try commenting out the above line.
   
   /* DEBUG: output*/
 #ifndef NO_OUTPUT
@@ -435,13 +420,10 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
 #endif
   
   /* Cleanup */
-  if(verbose_ && !Comm_->MyPID()) printf("EMFP: BuildProlongator Cleanup\n");
-  
-#ifdef INTERNAL_AGGREGATION
+  if(verbose_ && !Comm_->MyPID()) printf("EMFP: BuildProlongator Cleanup\n");  
   ML_Aggregate_Destroy(&MLAggr);
   ML_Operator_Destroy(&TMT_ML);
   ML_Operator_Destroy(&P);
-#endif
   ML_Operator_Destroy(&AbsD0_ML);
   ML_Operator_Destroy(&AbsD0P);
 
