@@ -62,8 +62,10 @@ extern void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc);
 
 extern void ML_matmat_mult(ML_Operator *Amat, ML_Operator *Bmat, 
                            ML_Operator **Cmat);
+#ifdef HAVE_ML_AZTECOO
 extern void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
                        ML_Operator **Cmatrix);
+#endif
 
 extern void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
 			ML_Operator *Result, int matrix_type);
