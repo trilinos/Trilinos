@@ -89,7 +89,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   double time1=0.0, delta1=0.0;
 
   ML_Aggregate_Viz_Stats * grid_info;
-
+   
   t0 = GetClock();
 
   ml_nodes = *iml_nodes;
@@ -1565,7 +1565,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   VT_begin(ml_vt_reitzinger_cleanup_state);
 #endif
 
-  if (ML_Get_PrintLevel() > 0)
+  if (ML_Get_PrintLevel() > 3)
   {
     ML_gsum_scalar_int(&Nnz_allgrids,&j,ml_edges->comm);
     ML_gsum_scalar_int(&Nnz_finegrid,&j,ml_edges->comm);
@@ -1588,7 +1588,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   t0 = GetClock() - t0;
   t0 = ML_gsum_double(t0, ml_edges->comm);
   t0 = t0/((double) ml_edges->comm->ML_nprocs);
-  if (ML_Get_PrintLevel() > 0)
+  if (ML_Get_PrintLevel() > 3)
     if (Tfine->comm->ML_mypid==0)
       printf("AMG setup time \t= %e seconds\n",t0);
 
