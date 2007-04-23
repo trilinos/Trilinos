@@ -3234,6 +3234,7 @@ int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data)
    ml_data->ml_nodal = NULL;
    ml_data->ml_edge = NULL;
    ml_data->reduced_smoother = 0;
+   ml_data->external_TtATmat = 0;
    return(0);
 }
  
@@ -3350,8 +3351,9 @@ void ML_Smoother_Destroy_Hiptmair_Data(void *data)
    if ( ml_data->TtAT_diag != NULL )
       ML_free(ml_data->TtAT_diag);
  
-   if ( ml_data->TtATmat != NULL )
-      ML_Operator_Destroy(&(ml_data->TtATmat));
+   if ( !ml_data->external_TtATmat && ml_data->TtATmat != NULL )
+     ML_Operator_Destroy(&(ml_data->TtATmat));
+   if(ml_data->external_TtATmat) ml_data->TtATmat=NULL;
 
    if ( (ml_data->sm_nodal != NULL) && (ml_data->sm_nodal->my_level != NULL) )
    {
@@ -3866,7 +3868,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
                                  ML_Operator *Mmat,
                                  ML_Operator *Tmat, ML_Operator *Tmat_trans,
-                                 ML_Operator *Tmat_bc, int BClength,
+                                 ML_Operator *Tmat_bc, ML_Operator * TtATmat, int BClength,
 				  int *BCindices, 
 void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 {
@@ -3946,90 +3948,97 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
       exit(1);
    }
    ML_Smoother_HiptmairSubsmoother_Create(&(dataptr->ml_edge),Amat,
-					  edge_smoother, edge_args, 
-					  dataptr->omega);
+					  edge_smoother, edge_args,
+                                          dataptr->omega);
 
-
-   /*
-      Triple matrix product T^{*}AT. Note that A may either be just
-      the mass matrix or the sum of the curl,curl and mass matrices.
-   */
-
-   tmpmat = ML_Operator_Create(Amat->comm);
-   if (Tmat_bc != NULL)
-   {
-      tmpmat2 = ML_Operator_Create(Amat->comm);
-      /* Calculate matrix product Ke * T.  Postprocess to get (almost)
-         the same result matrix as bc(Ke) * T, where bc(Ke) is Ke with
-         Dirichlet b.c. applied to both rows and columns of Ke.  The
-         only differences will be the b.c.  rows themselves, which
-         will be zero. */
-      if (Mmat) {
-        if (ML_Get_PrintLevel() > 10 && tmpmat->comm->ML_mypid == 0)
-          printf("ML_Smoother_Gen_Hiptmair_Data: Using mass for T'*M*T.\n");
-        ML_2matmult(Mmat,Tmat_bc,tmpmat2, ML_CSR_MATRIX);
-      }
-      else {
-        if (ML_Get_PrintLevel() > 10 && tmpmat->comm->ML_mypid == 0)
-          printf("ML_Smoother_Gen_Hiptmair_Data: Using curlcurl + mass for T'*M*T.\n");
-        ML_2matmult(Amat,Tmat_bc,tmpmat2, ML_CSR_MATRIX);
-      }
-      matdata = (struct ML_CSR_MSRdata *) (tmpmat2->data);
-      row_ptr = matdata->rowptr;
-      val_ptr = matdata->values;
-
-      for (i=0; i < BClength; i++)
-      {
-         j = BCindices[i];
-         /* Zero out corresponding row in product Ke * T. */
-         for (k = row_ptr[j]; k < row_ptr[j+1]; k++)
-            val_ptr[k] = 0.0;
-      }
-      ML_2matmult(Tmat_trans,tmpmat2,tmpmat, ML_CSR_MATRIX);
-      ML_Operator_Destroy(&tmpmat2);
+   /* Set TtATmat flag if needeed */
+   if(TtATmat) {
+     dataptr->external_TtATmat=1;
+     dataptr->TtATmat=TtATmat;
    }
-   else
-   {
-     if (Mmat) {
-       if (ML_Get_PrintLevel() > 10 && tmpmat->comm->ML_mypid == 0)
-         printf("ML_Smoother_Gen_Hiptmair_Data: Using mass for T'*M*T.\n");
-       ML_rap(Tmat_trans, Mmat, Tmat, tmpmat, ML_MSR_MATRIX);
-     }
-     else
-     {
-       if (ML_Get_PrintLevel() > 10 && tmpmat->comm->ML_mypid == 0)
-         printf("ML_Smoother_Gen_Hiptmair_Data: Using curlcurl + mass for T'*M*T.\n");
-       ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_MSR_MATRIX);
+   else dataptr->external_TtATmat=0;
 
-       /* Some garbage code to fix up the case when sigma is */
-       /* very small and so tmpmat is very small. Probably   */
-       /* something better should be put in here!!!!         */
-
-       droptol = 1.0e-10;
-       if (ML_Get_PrintLevel() > 9 && tmpmat->comm->ML_mypid == 0)
-         printf("ML_Smoother_Gen_Hiptmair_Data: TMT droptol = %5.3e\n",droptol);
-       matdata = (struct ML_CSR_MSRdata *) (tmpmat->data);
-       if (tmpmat->diagonal != NULL) {
-         ML_DVector_GetDataPtr( tmpmat->diagonal, &diagonal);
-         for (i = 0; i < tmpmat->outvec_leng; i++) {
-           if ( fabs(diagonal[i]) < droptol)  {
-             matdata->values[i] = 1.;
-             diagonal[i] = 1.;
-           }
+   if(!dataptr->external_TtATmat) {
+     /*
+       Triple matrix product T^{*}AT. Note that A may either be just
+       the mass matrix or the sum of the curl,curl and mass matrices.
+     */
+     
+     tmpmat = ML_Operator_Create(Amat->comm);
+     if (Tmat_bc != NULL)
+       {
+         tmpmat2 = ML_Operator_Create(Amat->comm);
+         /* Calculate matrix product Ke * T.  Postprocess to get (almost)
+            the same result matrix as bc(Ke) * T, where bc(Ke) is Ke with
+            Dirichlet b.c. applied to both rows and columns of Ke.  The
+            only differences will be the b.c.  rows themselves, which
+            will be zero. */
+         if (Mmat) {
+           if (ML_Get_PrintLevel() > 10 && tmpmat->comm->ML_mypid == 0)
+             printf("ML_Smoother_Gen_Hiptmair_Data: Using mass for T'*M*T.\n");
+           ML_2matmult(Mmat,Tmat_bc,tmpmat2, ML_CSR_MATRIX);
          }
+         else {
+           if (ML_Get_PrintLevel() > 10 && tmpmat->comm->ML_mypid == 0)
+             printf("ML_Smoother_Gen_Hiptmair_Data: Using curlcurl + mass for T'*M*T.\n");
+           ML_2matmult(Amat,Tmat_bc,tmpmat2, ML_CSR_MATRIX);
+         }
+         matdata = (struct ML_CSR_MSRdata *) (tmpmat2->data);
+         row_ptr = matdata->rowptr;
+         val_ptr = matdata->values;
+         
+         for (i=0; i < BClength; i++)
+           {
+             j = BCindices[i];
+             /* Zero out corresponding row in product Ke * T. */
+             for (k = row_ptr[j]; k < row_ptr[j+1]; k++)
+               val_ptr[k] = 0.0;
+           }
+         ML_2matmult(Tmat_trans,tmpmat2,tmpmat, ML_CSR_MATRIX);
+         ML_Operator_Destroy(&tmpmat2);
        }
-     }
+     else
+       {
+         if (Mmat) {
+           if (ML_Get_PrintLevel() > 10 && tmpmat->comm->ML_mypid == 0)
+             printf("ML_Smoother_Gen_Hiptmair_Data: Using mass for T'*M*T.\n");
+           ML_rap(Tmat_trans, Mmat, Tmat, tmpmat, ML_MSR_MATRIX);
+         }
+         else
+           {
+             if (ML_Get_PrintLevel() > 10 && tmpmat->comm->ML_mypid == 0)
+               printf("ML_Smoother_Gen_Hiptmair_Data: Using curlcurl + mass for T'*M*T.\n");
+             ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_MSR_MATRIX);
+             
+             /* Some garbage code to fix up the case when sigma is */
+             /* very small and so tmpmat is very small. Probably   */
+             /* something better should be put in here!!!!         */
+             droptol = 1.0e-10;
+             if (ML_Get_PrintLevel() > 9 && tmpmat->comm->ML_mypid == 0)
+               printf("ML_Smoother_Gen_Hiptmair_Data: TMT droptol = %5.3e\n",droptol);
+             matdata = (struct ML_CSR_MSRdata *) (tmpmat->data);
+             if (tmpmat->diagonal != NULL) {
+               ML_DVector_GetDataPtr( tmpmat->diagonal, &diagonal);
+               for (i = 0; i < tmpmat->outvec_leng; i++) {
+                 if ( fabs(diagonal[i]) < droptol)  {
+                   matdata->values[i] = 1.;
+                   diagonal[i] = 1.;
+                 }
+               }
+             }
+           }
+       }
+     ML_Operator_ChangeToSinglePrecision(tmpmat);
    }
-   ML_Operator_ChangeToSinglePrecision(tmpmat);
    ML_Operator_ImplicitTranspose(Tmat_trans, Tmat, ML_FALSE);
    if (Amat->to != NULL) {
      sprintf(str,"TAT_%d",Amat->to->levelnum);
-     ML_Operator_Set_Label( tmpmat,str);
+     if(!dataptr->external_TtATmat) ML_Operator_Set_Label( tmpmat,str);
      if (ML_Get_PrintLevel() > 10)
        ML_Operator_Profile(tmpmat, NULL);
-
+     
    }
-
+   
 /*
    kdata = ML_Krylov_Create( tmpmat->comm );
    ML_Krylov_Set_ComputeEigenvalues( kdata );
@@ -4054,13 +4063,19 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    dataptr->sm_nodal->omega = 1.0 / ML_Krylov_Get_MaxEigenvalue(kdata);
    ML_Krylov_Destroy(&kdata);
 */
-
-   dataptr->sm_nodal->my_level->Amat = tmpmat;
-   dataptr->sm_nodal->my_level->comm = tmpmat->comm;
-   dataptr->TtATmat = tmpmat;
-
-   ML_Smoother_HiptmairSubsmoother_Create(&(dataptr->ml_nodal),tmpmat,
-					  nodal_smoother, nodal_args, 
+   
+   if(!dataptr->external_TtATmat) {   
+     dataptr->sm_nodal->my_level->Amat = tmpmat;
+     dataptr->sm_nodal->my_level->comm = tmpmat->comm;
+     dataptr->TtATmat = tmpmat;
+   }
+   else {
+     dataptr->sm_nodal->my_level->Amat = dataptr->TtATmat;
+     dataptr->sm_nodal->my_level->comm = dataptr->TtATmat->comm;
+   }
+     
+   ML_Smoother_HiptmairSubsmoother_Create(&(dataptr->ml_nodal),dataptr->TtATmat,
+                                          nodal_smoother, nodal_args, 
 					  dataptr->omega);
 
    /*

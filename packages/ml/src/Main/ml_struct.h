@@ -241,7 +241,11 @@ extern int ML_Gen_Smoother_Jacobi( ML *, int nl, int pre_or_post,
                      int ntimes, double omega );
 extern int ML_Gen_Smoother_GaussSeidel(ML*,int nl,int pre_post,int ntimes,double);
 extern int ML_Gen_Smoother_Hiptmair(ML*,int nl,int pre_post,int ntimes,
-                     ML_Operator**, ML_Operator**, ML_Operator*, ML_Operator**,
+                                    ML_Operator**, ML_Operator**, ML_Operator*, ML_Operator**,
+				    void *, void **,
+				    void *, void **, int);
+extern int ML_Gen_Smoother_Hiptmair2(ML*,int nl,int pre_post,int ntimes,
+                                    ML_Operator**, ML_Operator**, ML_Operator*, ML_Operator**,ML_Operator*,
 				    void *, void **,
 				    void *, void **, int);
 extern int ML_Gen_Smoother_BlockHiptmair(ML*,int nl,int pre_post,int ntimes,

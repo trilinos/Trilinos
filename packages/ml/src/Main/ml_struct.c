@@ -6007,14 +6007,14 @@ int ML_Gen_Smoother_BlockHiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          /* Get list of Dirichlet bc, if any. */
          ml_bc = ml->SingleLevel[i].BCs;
          if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
-            ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
+           ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
          ML_Smoother_Create_BlockHiptmair_Data(&data);
-	     ML_Smoother_Gen_BlockHiptmair_Data(&data, &(ml->Amat[i]),
+         ML_Smoother_Gen_BlockHiptmair_Data(&data, &(ml->Amat[i]),
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
                                   BClength, BClist,
-             edge_smoother, edge_args, nodal_smoother, nodal_args );
-             data->reduced_smoother = type;
-	     ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_BlockHiptmair_Data;
+                                  edge_smoother, edge_args, nodal_smoother, nodal_args );
+         data->reduced_smoother = type;
+         ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_BlockHiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), 
 				      (void *) data, fun, ntimes, 1.0, str);
@@ -6079,12 +6079,28 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 
 
 /******************************************************************************/
-
 int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 			      ML_Operator **Tmat_array,
 			      ML_Operator **Tmat_trans_array,
 			      ML_Operator *Tmat_bc,
+			      ML_Operator **MassMatrix_array, 
+			      void *edge_smoother, void **edge_args,
+			      void *nodal_smoother, void **nodal_args, int type)
+     /*
+			      int (*edge_smoother )(void), void *edge_args[],
+			      int (*nodal_smoother)(void), void *nodal_args[])
+     */
+{
+  return ML_Gen_Smoother_Hiptmair2(ml,nl,pre_or_post,ntimes,Tmat_array,Tmat_trans_array,Tmat_bc,MassMatrix_array,0,edge_smoother,edge_args, nodal_smoother,nodal_args,type);
+}
+
+/******************************************************************************/
+int ML_Gen_Smoother_Hiptmair2( ML *ml , int nl, int pre_or_post, int ntimes,
+			      ML_Operator **Tmat_array,
+			      ML_Operator **Tmat_trans_array,
+			      ML_Operator *Tmat_bc,
 			      ML_Operator **MassMatrix_array,
+                              ML_Operator * TtATMatrix,                              
 			      void *edge_smoother, void **edge_args,
 			      void *nodal_smoother, void **nodal_args, int type)
      /*
@@ -6100,6 +6116,7 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
    ML_BdryPts *ml_bc;
    char str[80];
    ML_Operator *MassMatrix=NULL;
+   ML_Operator *current_TtATMatrix=NULL;
 #ifdef ML_TIMING
    double         t0;
    t0 = GetClock();
@@ -6119,7 +6136,8 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
    }
 
    fun = ML_Smoother_Hiptmair;
-
+   current_TtATMatrix=TtATMatrix;
+   
    if (pre_or_post == ML_PRESMOOTHER)
    {
       for (i = start_level; i <= end_level; i++)
@@ -6128,11 +6146,12 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          ml_bc = ml->SingleLevel[i].BCs;
          if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
             ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
+         if(i!=start_level) current_TtATMatrix=0;
          ML_Smoother_Create_Hiptmair_Data(&data);
          if (MassMatrix_array != NULL) MassMatrix = MassMatrix_array[i];
 	     ML_Smoother_Gen_Hiptmair_Data(&data, ml->Amat+i, MassMatrix,
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
-                      BClength, BClist,
+                      current_TtATMatrix, BClength, BClist,
                       edge_smoother, edge_args, nodal_smoother, nodal_args );
 	     data->reduced_smoother = type;
 	     ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
@@ -6154,11 +6173,12 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          ml_bc = ml->SingleLevel[i].BCs;
          if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
             ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
+         if(i!=start_level) current_TtATMatrix=0;         
          ML_Smoother_Create_Hiptmair_Data(&data);
          if (MassMatrix_array != NULL) MassMatrix = MassMatrix_array[i];
 	     ML_Smoother_Gen_Hiptmair_Data(&data, ml->Amat+i, MassMatrix,
 				       Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
-				       BClength, BClist,
+				       current_TtATMatrix, BClength, BClist,
 				       edge_smoother, edge_args, nodal_smoother, nodal_args );
 	     data->reduced_smoother = type;
 	     ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
@@ -6181,15 +6201,15 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          ml_bc = ml->SingleLevel[i].BCs;
          if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
             ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
+         if(i!=start_level) current_TtATMatrix=0;                  
          ML_Smoother_Create_Hiptmair_Data(&data);
          if (MassMatrix_array != NULL) MassMatrix = MassMatrix_array[i];
-	     ML_Smoother_Gen_Hiptmair_Data(&data, ml->Amat+i, MassMatrix,
+         ML_Smoother_Gen_Hiptmair_Data(&data, ml->Amat+i, MassMatrix,
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
-					   BClength, BClist,
-edge_smoother, edge_args, nodal_smoother, nodal_args );
-	     data->reduced_smoother = type;
-	     ml->post_smoother[i].data_destroy =
-			                            ML_Smoother_Destroy_Hiptmair_Data;
+                                  current_TtATMatrix, BClength, BClist,
+                                  edge_smoother, edge_args, nodal_smoother, nodal_args );
+         data->reduced_smoother = type;
+         ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), 
 				      (void *) data, fun, ntimes, 1.0, str);
