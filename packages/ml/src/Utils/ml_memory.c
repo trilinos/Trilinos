@@ -760,17 +760,6 @@ int heap_info(size_t *a, unsigned long *b,
 #include "ml_utils.h"
 #include <stdarg.h>
 
-/* two typedefs that are used in the MPI reduction calls. */
-typedef struct ml_IntLoc_struct {
-  int value;
-  int rank;
-} ml_IntLoc;
-
-typedef struct ml_DblLoc_struct {
-  double value;
-  int rank;
-} ml_DblLoc;
-
 char * ML_memory_check(char *fmt, ... )
 {
 #ifdef ML_MEMORY_CHK

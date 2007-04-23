@@ -119,17 +119,28 @@ void StopTimer(double* t0, double *delta)
 void ReportTimer(double t0, char *msgString, ML_Comm *comm)
 {
 #ifdef ML_TIMING
-  double t1, sd;
+  double t1;
+#ifdef ML_MPI
+  ml_DblLoc srct,mint,maxt;
+#endif
   if (ML_Get_PrintLevel() == 0)
     return;
   t1 = ML_gsum_double(t0, comm);
   t1 = t1/((double) comm->ML_nprocs);
-  sd = ML_Global_Standard_Deviation(t0,comm->ML_nprocs, ML_TRUE, comm);
-  if (comm->ML_mypid==0)
-    printf("%s \t= %e seconds\n(std deviation = %e)\n", msgString,t1,sd);
+# ifdef ML_MPI
+  srct.value = t0; 
+  srct.rank = comm->ML_mypid;
+  MPI_Reduce(&srct,&maxt,1,MPI_DOUBLE_INT,MPI_MAXLOC,0,comm->USR_comm);
+  MPI_Reduce(&srct,&mint,1,MPI_DOUBLE_INT,MPI_MINLOC,0,comm->USR_comm);
+  if (comm->ML_mypid==0 && comm->ML_nprocs > 1)
+    printf("%s \t avg = %1.3e seconds, min = %1.3e (%d), max = %1.3e (%d)\n",
+           msgString, t1, mint.value, mint.rank, maxt.value, maxt.rank);
+# endif /*ifdef ML_MPI*/
+  if (comm->ML_nprocs == 1)
+    printf("%s  = %1.3e seconds\n",msgString,t1);
 #else
   return;
-#endif
+#endif /*ifdef ML_TIMING*/
 }
 
 /* ******************************************************************** */

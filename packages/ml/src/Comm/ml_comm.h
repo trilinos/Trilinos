@@ -29,6 +29,17 @@
 
 #define USR_ERRHANDLER MPI_Errhandler
 
+/* two typedefs that are useful in MPI reduction calls */
+typedef struct ml_IntLoc_struct {
+  int value;
+  int rank;
+} ml_IntLoc;
+
+typedef struct ml_DblLoc_struct {
+  double value;
+  int rank;
+} ml_DblLoc;
+
 #ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER
 
 /* the following might be necessary to avoid compiler warnings, since
