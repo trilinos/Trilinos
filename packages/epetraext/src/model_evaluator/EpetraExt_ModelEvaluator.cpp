@@ -51,7 +51,7 @@ bool ModelEvaluator::InArgs::supports(EInArgsMembers arg) const
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
+    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
   return supports_[arg];
 }
@@ -61,7 +61,7 @@ void ModelEvaluator::InArgs::_setSupports( EInArgsMembers arg, bool supports )
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"model = \'"<<modelEvalDescription_<<"\':Error, arg="<<arg<<" is invalid!"
+    ,"model = \'"<<modelEvalDescription_<<"\':Error, arg="<<toString(arg)<<" is invalid!"
     );
   supports_[arg] = supports;
 }
@@ -72,7 +72,7 @@ void ModelEvaluator::InArgs::assert_supports(EInArgsMembers arg) const
   TEST_FOR_EXCEPTION(
     !supports_[arg], std::logic_error
     ,"EpetraExt::ModelEvaluator::InArgs::assert_supports(arg): model = \'"<<modelEvalDescription_<<"\': Error, "
-    "The argument arg = " << arg << " is not supported!"
+    "The argument arg = " << toString(arg) << " is not supported!"
     );
 }
 
@@ -102,7 +102,7 @@ bool ModelEvaluator::OutArgs::supports(EOutArgsMembers arg) const
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
+    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
   return supports_[arg];
 }
@@ -186,7 +186,7 @@ void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supports )
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
+    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
   supports_[arg] = supports;
 }
@@ -247,7 +247,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsMembers arg) const
     !supports_[arg], std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(arg): "
     "model = \'"<<modelEvalDescription_<<"\': Error, "
-    "The argument arg = " << arg << " is not supported!"
+    "The argument arg = " << toString(arg) << " is not supported!"
     );
 }
 
@@ -450,6 +450,30 @@ std::string EpetraExt::toString(
 }
 
 
+std::string EpetraExt::toString( ModelEvaluator::EInArgsMembers inArg )
+{
+  switch(inArg) {
+    case ModelEvaluator::IN_ARG_x_dot:
+      return "IN_ARG_x_dot";
+    case ModelEvaluator::IN_ARG_x:
+      return "IN_ARG_x";
+    case ModelEvaluator::IN_ARG_x_dot_poly:
+      return "IN_ARG_x_dot_poly";
+    case ModelEvaluator::IN_ARG_x_poly:
+      return "IN_ARG_x_poly";
+    case ModelEvaluator::IN_ARG_t:
+      return "IN_ARG_t";
+    case ModelEvaluator::IN_ARG_alpha:
+      return "IN_ARG_alpha";
+    case ModelEvaluator::IN_ARG_beta:
+      return "IN_ARG_beta";
+    default:
+      TEST_FOR_EXCEPT("Invalid outArg!");
+  }
+  return ""; // Will never be executed!
+}
+
+
 std::string EpetraExt::toString( ModelEvaluator::EOutArgsMembers outArg )
 {
   switch(outArg) {
@@ -474,7 +498,7 @@ EpetraExt::getLinearOp(
   )
 {
   TEST_FOR_EXCEPTION(
-    deriv.getDerivativeMultiVector().getMultiVector().get() != NULL, std::logic_error
+    deriv.getMultiVector().get() != NULL, std::logic_error
     ,"For model \'" << modelEvalDescription << "\' the derivative \'"
     << derivName << "\' is of type Epetra_MultiVector and not of type Epetra_Operator!"
     );
@@ -496,10 +520,10 @@ EpetraExt::getMultiVector(
     << derivName << "\' is of type Epetra_Operator and not of type Epetra_MultiVector!"
     );
   Teuchos::RefCountPtr<Epetra_MultiVector>
-    mv = deriv.getDerivativeMultiVector().getMultiVector();
+    mv = deriv.getMultiVector();
   if(mv.get()) {
     TEST_FOR_EXCEPTION(
-      deriv.getDerivativeMultiVector().getOrientation()!=mvOrientation, std::logic_error
+      deriv.getMultiVectorOrientation()!=mvOrientation, std::logic_error
       ,"For model \'" << modelEvalDescription << "\' the derivative \'"
       << derivName << "\' if not the orientation \'" << toString(mvOrientation)
       << "\'"

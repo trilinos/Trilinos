@@ -308,12 +308,23 @@ public:
     /** \brief . */
     Derivative( const Teuchos::RefCountPtr<Epetra_Operator> &lo )
       : lo_(lo) {}
-    /** \brief . */
+     /** \brief . */
+    Derivative(
+      const Teuchos::RefCountPtr<Epetra_MultiVector> &mv
+      ,const EDerivativeMultiVectorOrientation orientation = DERIV_MV_BY_COL
+      ) : dmv_(mv,orientation) {}
+   /** \brief . */
     Derivative( const DerivativeMultiVector &dmv )
       : dmv_(dmv) {}
     /** \brief . */
     Teuchos::RefCountPtr<Epetra_Operator> getLinearOp() const
       { return lo_; }
+    /** \brief . */
+    Teuchos::RefCountPtr<Epetra_MultiVector> getMultiVector() const
+      { return dmv_.getMultiVector(); }
+    /** \brief . */
+    EDerivativeMultiVectorOrientation getMultiVectorOrientation() const
+      { return dmv_.getOrientation(); }
     /** \brief . */
     DerivativeMultiVector getDerivativeMultiVector() const
       { return dmv_; }
@@ -619,6 +630,9 @@ protected:
 
 /** \brief . */
 std::string toString( ModelEvaluator::EDerivativeMultiVectorOrientation orientation );
+
+/** \brief . */
+std::string toString( ModelEvaluator::EInArgsMembers inArg );
 
 /** \brief . */
 std::string toString( ModelEvaluator::EOutArgsMembers outArg );

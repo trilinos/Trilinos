@@ -755,9 +755,9 @@ void EpetraExt::scaleModelFuncFirstDeriv(
   TEST_FOR_EXCEPT(0==didScaling);
   *didScaling = false;
   const RefCountPtr<Epetra_MultiVector>
-    funcDerivMv = origFuncDeriv.getDerivativeMultiVector().getMultiVector();
+    funcDerivMv = origFuncDeriv.getMultiVector();
   const EME::EDerivativeMultiVectorOrientation
-    funcDerivMv_orientation = origFuncDeriv.getDerivativeMultiVector().getOrientation();
+    funcDerivMv_orientation = origFuncDeriv.getMultiVectorOrientation();
   if(!is_null(funcDerivMv)) {
     if ( funcDerivMv_orientation == EME::DERIV_MV_BY_COL )
     {
@@ -782,9 +782,7 @@ void EpetraExt::scaleModelFuncFirstDeriv(
     else {
       TEST_FOR_EXCEPT("Should not get here!");
     }
-    *scaledFuncDeriv = EME::Derivative(
-      EME::DerivativeMultiVector(funcDerivMv,funcDerivMv_orientation)
-      );
+    *scaledFuncDeriv = EME::Derivative(funcDerivMv,funcDerivMv_orientation);
     *didScaling = true;
   }
   else {
