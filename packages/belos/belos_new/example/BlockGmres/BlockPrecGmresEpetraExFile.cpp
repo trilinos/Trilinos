@@ -84,6 +84,7 @@ int main(int argc, char *argv[]) {
   bool leftprec = true;      // left preconditioning or right.
   int frequency = -1;        // frequency of status test output.
   int blocksize = 1;         // blocksize
+  int numrhs = 1;            // number of right-hand sides to solve for
   int numrestarts = 15;      // number of restarts allowed 
   int maxiters = -1;         // maximum number of iterations allowed per linear system
   int maxsubspace = 25;      // maximum number of blocks the solver can use for the subspace
@@ -96,6 +97,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
+  cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
   cmdp.setOption("num-restarts",&numrestarts,"Number of restarts allowed for GMRES solver.");
   cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
@@ -111,9 +113,23 @@ int main(int argc, char *argv[]) {
   //
   RefCountPtr<Epetra_Map> Map;
   RefCountPtr<Epetra_CrsMatrix> A;
-  RefCountPtr<Epetra_Vector> B, X;
-  EpetraExt::readEpetraLinearSystem(filename, Comm, &A, &Map, &X, &B);
+  RefCountPtr<Epetra_MultiVector> B, X;
+  RefCountPtr<Epetra_Vector> vecB, vecX;
+  EpetraExt::readEpetraLinearSystem(filename, Comm, &A, &Map, &vecX, &vecB);
   proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
+
+  // Check to see if the number of right-hand sides is the same as requested.
+  if (numrhs>1) {
+    X = rcp( new Epetra_MultiVector( *Map, numrhs ) );
+    X->PutScalar( 0.0 );
+    B = rcp( new Epetra_MultiVector( *Map, numrhs ) );
+    B->Seed();
+    B->Random();
+  }
+  else {
+    X = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecX);
+    B = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecB);
+  }
   //
   // ************Construct preconditioner*************
   //
@@ -168,24 +184,22 @@ int main(int argc, char *argv[]) {
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
   if (verbose)
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::FinalSummary );
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
+    if (frequency > 0)
+      belosList.set( "Output Frequency", frequency );
   else
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
   //
   // *******Construct a preconditioned linear problem********
   //
   RefCountPtr<Belos::LinearProblem<double,MV,OP> > problem
-    = rcp( new Belos::LinearProblem<double,MV,OP>( A, 
-	     Teuchos::rcp_implicit_cast<Epetra_MultiVector>(X), 
-	     Teuchos::rcp_implicit_cast<Epetra_MultiVector>(B) 
-	     ) );
+    = rcp( new Belos::LinearProblem<double,MV,OP>( A, X, B ) );
   if (leftprec) {
     problem->setLeftPrec( belosPrec );
   }
   else {
     problem->setRightPrec( belosPrec );
   }    
-  int numrhs = B->NumVectors();     // number of right-hand sides
   problem->setBlockSize( blocksize );
   
   // Create an iterative solver manager.

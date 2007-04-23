@@ -45,6 +45,7 @@
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
+#include "BelosStatusTestOutput.hpp"
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -153,9 +154,9 @@ namespace Belos {
    *     - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
    */
   ReturnType solve();
-
+    
   //@}
-  
+    
   /** \name Overridden from Teuchos::Describable */
   //@{
 
@@ -174,7 +175,7 @@ namespace Belos {
   int maxRestarts_, maxIters_;
   bool relconvtol_, adaptiveBlockSize_;
   int blockSize_, numBlocks_;
-  int verbosity_;
+  int verbosity_, output_freq_;
 
   Teuchos::RefCountPtr<Teuchos::Time> timerSolve_;
 
@@ -195,17 +196,18 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   blockSize_(0),
   numBlocks_(0),
   verbosity_(Belos::Errors),
+  output_freq_(-1),
   timerSolve_(Teuchos::TimeMonitor::getNewTimer("BlockGmresSolMgr::solve()"))
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
-
+  
   // convergence tolerance
   convtol_ = pl.get("Convergence Tolerance",MT::prec());
   relconvtol_ = pl.get("Relative Convergence Tolerance",relconvtol_);
   
   // maximum number of restarts
   maxRestarts_ = pl.get("Maximum Restarts",maxRestarts_);
-
+  
   // maximum number of iterations
   maxIters_ = pl.get("Maximum Iterations",maxIters_);
 
@@ -227,7 +229,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
 
   // which orthogonalization constant to use
   ortho_kappa_ = pl.get("Orthogonalization Constant",ortho_kappa_);
-
+  
   // verbosity level
   if (pl.isParameter("Verbosity")) {
     if (Teuchos::isParameterType<int>(pl,"Verbosity")) {
@@ -236,10 +238,16 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
       verbosity_ = (int)Teuchos::getParameter<Belos::MsgType>(pl,"Verbosity");
     }
   }
-
+  
+  // frequency level
+  if (verbosity_ & Belos::StatusTestDetails) {
+    if (pl.isParameter("Output Frequency")) {
+      output_freq_ = pl.get("Output Frequency", output_freq_);
+    }
+  }
 }
-
-
+  
+  
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
@@ -254,7 +262,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // Status tests
   //
-  // COnvergence
+  // Convergence
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
   
@@ -271,10 +279,22 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::RefCountPtr<StatusTestResNorm_t> convtest2
     = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
   convtest2->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
-
+  
   Teuchos::RefCountPtr<StatusTestCombo_t> stest 
     = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, basictest, convtest2 ) );
   
+  Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputtest;
+  if (output_freq_ > 0) {
+    outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer, 
+                                                                       stest, 
+                                                                       output_freq_, 
+                                                                       Passed+Failed+Undefined ) ); 
+  }
+  else {
+    outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer, 
+                                                                       stest, 1 ) );
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
   //
@@ -306,7 +326,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockGmres solver
   Teuchos::RefCountPtr<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter
-    = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer,stest,ortho,plist) );
+    = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer,outputtest,ortho,plist) );
   
   // assume convergence is achieved, then let any failed convergence set this to false.
   bool isConverged = true;
@@ -326,27 +346,26 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       // Reset the number of iterations.
       block_gmres_iter->resetNumIters();
 
-      // Set up new linear problem.
-      BlockGmresIterState<ScalarType,MV> oldState = block_gmres_iter->getState();
-      
-      // Get a view of the first block in the current Krylov basis.
-      std::vector<int> firstind( blockSize_ );
-      for (int i=0; i<blockSize_; i++) { firstind[i] = i; }
-      Teuchos::RefCountPtr<MV> V_0 = Teuchos::rcp_const_cast<MV>(MVT::CloneView( *(oldState.V), firstind ));
+      // Reset the number of calls that the status test output knows about.
+      outputtest->resetNumCalls();
+
+      // Create the first block in the current Krylov basis.
+      Teuchos::RefCountPtr<MV> V_0 = MVT::Clone( *cur_block_rhs, blockSize_ );
       problem_->computeCurrResVec( &*V_0 );
 
-      // Get a view of the first block of the Krylov basis.
-      Teuchos::SerialDenseMatrix<int,ScalarType> Znew(Teuchos::View, *(oldState.Z), blockSize_, blockSize_);
+      // Get a matrix to hold the orthonormalization coefficients.
+      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > Z_0 = 
+        rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(blockSize_, blockSize_) );
       
       // Orthonormalize the new V_0
-      int rank = ortho->normalize( *V_0, Teuchos::rcp(&Znew, false) );
+      int rank = ortho->normalize( *V_0, Z_0 );
       TEST_FOR_EXCEPTION(rank != blockSize_,BlockGmresSolMgrOrthoFailure,
 			 "Belos::BlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
-      
+     
       // Set the new state and initialize the solver.
       BlockGmresIterState<ScalarType,MV> newstate;
-      newstate.V = oldState.V;
-      newstate.Z = oldState.Z;
+      newstate.V = V_0;
+      newstate.Z = Z_0;
       newstate.curDim = 0;
       block_gmres_iter->initialize(newstate);
       int numRestarts = 0;
@@ -400,23 +419,22 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    
 	    // Compute the restart vector.
 	    // Get a view of the current Krylov basis.
-	    std::vector<int> firstind( blockSize_ );
-	    for (int i=0; i<blockSize_; i++) { firstind[i] = i; }
-	    Teuchos::RefCountPtr<MV> basistemp = Teuchos::rcp_const_cast<MV>(MVT::CloneView( *(oldState.V), firstind ));
+	    Teuchos::RefCountPtr<MV> V_0  = MVT::Clone( *(oldState.V), blockSize_ );
 	    problem_->computeCurrResVec( &*V_0 );
 
 	    // Get a view of the first block of the Krylov basis.
-	    Teuchos::SerialDenseMatrix<int,ScalarType> Znew(Teuchos::View, *(oldState.Z), blockSize_, blockSize_);
+            Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > Z_0 = 
+              rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(blockSize_, blockSize_) );
 	    
 	    // Orthonormalize the new V_0
-	    int rank = ortho->normalize( *V_0, Teuchos::rcp(&Znew,false) );
+	    int rank = ortho->normalize( *V_0, Z_0 );
 	    TEST_FOR_EXCEPTION(rank != blockSize_,BlockGmresSolMgrOrthoFailure,
 			       "Belos::BlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors after restart.");
 
 	    // Set the new state and initialize the solver.
 	    BlockGmresIterState<ScalarType,MV> newstate;
-	    newstate.V = oldState.V;
-	    newstate.Z = oldState.Z;
+	    newstate.V = V_0;
+	    newstate.Z = Z_0;
 	    newstate.curDim = 0;
 	    block_gmres_iter->initialize(newstate);
 
@@ -458,9 +476,6 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
     
   }
  
-  // print final summary information
-  stest->print( printer->stream(FinalSummary) );
- 
   // print timing information
   Teuchos::TimeMonitor::summarize( printer->stream(TimingDetails) );
   
@@ -481,7 +496,7 @@ std::string BlockGmresSolMgr<ScalarType,MV,OP>::description() const
   oss << "}";
   return oss.str();
 }
-
+  
 } // end Belos namespace
 
 #endif /* BELOS_BLOCK_GMRES_SOLMGR_HPP */

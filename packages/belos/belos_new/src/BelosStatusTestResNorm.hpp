@@ -180,22 +180,6 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //! @name Attribute methods
-  //@{ 
-
-  //! Indicates if residual vector is required by this convergence test.
-  /*! The value returned by this method will depend on several factors.  
-    Once an StatusTestResNorm object is constructed and the DefineResForm 
-    and DefineScaleForm methods are optionally called, this method can tested.  
-    For most Krylov solvers, there is no extra cost to providing the residual vector.  
-    However, GMRES and Transpose-free QMR will need to explicitly compute this vector 
-    if ResidualVectorRequired() returns true, so this is an extra cost for
-    these two iterative methods.
-  */
-  bool residualVectorRequired() const { return(resvecrequired_); };
-
-  //@}
-
   //! @name Print methods
   //@{ 
 
@@ -286,9 +270,6 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //! The total number of right-hand sides being solved for.
   int numrhs_;
 
-  //! Is residual vector required?
-  bool resvecrequired_;
-
   //! Is this the first time CheckStatus is called?
   bool firstcallCheckStatus_;
 
@@ -315,7 +296,6 @@ StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm( MagnitudeType Tolerance,
     cur_rhs_num_(0),
     cur_blksz_(0),
     numrhs_(0),
-    resvecrequired_(false),
     firstcallCheckStatus_(true),
     firstcallDefineResForm_(true),
     firstcallDefineScaleForm_(true)
@@ -346,10 +326,6 @@ int StatusTestResNorm<ScalarType,MV,OP>::defineResForm( ResType TypeOfResidual, 
     
   restype_ = TypeOfResidual;
   resnormtype_ = TypeOfNorm;
-    
-  // These conditions force the residual vector to be computed
-  if (restype_==Explicit)
-    resvecrequired_ = true;
     
   return(0);
 }
@@ -508,7 +484,7 @@ void StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) const
     os << ")";
   }
   if (status_==Undefined)
-    os << " Undefined ( tol = " << tolerance_ << " ) "<<endl;
+    os << ", tol = " << tolerance_ << endl;
   else {
     os << endl;
     if(showMaxResNormOnly_) {

@@ -94,13 +94,6 @@ class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //! @name Attribute methods
-  //@{ 
-
-  //! Indicates if residual vector is required by this convergence test: returns false for this class.
-  bool residualVectorRequired() const { return(false); } ;
-  //@}
-
   //! @name Print methods
   //@{ 
 
@@ -178,6 +171,7 @@ private:
     switch (type) {
     case  Passed:
       os << "Failed";
+      break;
     case  Failed:
       os << "OK";
       break;

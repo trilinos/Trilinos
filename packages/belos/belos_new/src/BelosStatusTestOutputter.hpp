@@ -101,8 +101,6 @@ public:
   /** \brief. */
   void reset();
   /** \brief. */
-  bool residualVectorRequired() const;
-  /** \brief. */
   void print(ostream& os, int indent) const;
 
   //@}
@@ -209,12 +207,6 @@ void StatusTestOutputter<ScalarType,MV,OP>::reset()
   return resNormStatusTest_->reset();
   callsSinceLastOutput_ = 10000;
   iterZeroWasOutput_ = false;
-}
-
-template <class ScalarType, class MV, class OP>
-bool StatusTestOutputter<ScalarType,MV,OP>::residualVectorRequired() const
-{
-  return resNormStatusTest_->residualVectorRequired();
 }
 
 template <class ScalarType, class MV, class OP>

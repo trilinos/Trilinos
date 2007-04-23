@@ -85,9 +85,9 @@ namespace Belos {
     variable of type Belos::StatusType is returned.
   */
   
-  enum StatusType { 	Passed,      /*!< Some event occured, the iteration needs to stop. */
-                        Failed,      /*!< No event has occurred requiring the iteration to stop. */
-			Undefined    /*!< Status test has not been checked yet. */
+  enum StatusType { 	Passed = 0x1,      /*!< Some event occured, the iteration needs to stop. */
+                        Failed = 0x2,      /*!< No event has occurred requiring the iteration to stop. */
+			Undefined = 0x4    /*!< Status test has not been checked yet. */
   };
 
   /*!
@@ -132,7 +132,8 @@ namespace Belos {
       OrthoDetails = 0x4,         /*!< Orthogonalization/orthonormalization details */
       FinalSummary = 0x8,         /*!< Final computational summary */
       TimingDetails = 0x10,       /*!< Timing details */
-      Debug = 0x20                /*!< Debugging information */
+      StatusTestDetails = 0x20,   /*!< Status test details */
+      Debug = 0x40                /*!< Debugging information */
     };
 
 } // end Belos namespace

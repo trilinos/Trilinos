@@ -51,6 +51,16 @@
 
 namespace Belos {
 
+  //! @name StatusTest Exceptions
+  //@{
+
+  /** \brief Exception thrown to signal error in a status test during Belos::StatusTest::checkStatus().
+   */
+  class StatusTestError : public BelosError 
+  {public: StatusTestError(const std::string& what_arg) : BelosError(what_arg) {}};
+
+  //@}
+
 template <class ScalarType, class MV, class OP>
 class StatusTest {
 
@@ -91,18 +101,6 @@ class StatusTest {
     the convergence test uses will remain.
   */
   virtual void reset() = 0;
-  //@}
-
-  //! @name Attribute methods
-  //@{ 
-
-  //! Indicates if residual vector is required by this convergence test.
-  /*! If this method returns true, then the ResidualVector argument to the Converged() method will
-    defined.  If this method returns false, then the ResidualVector may not be defined when Converged() is
-    called.  Some iterative methods do not explicitly construct the residual vector at each iteration.  Thus,
-    if this vector is not required, this vector will not need to be constructed if this method returns false.
-  */
-  virtual bool residualVectorRequired() const = 0;
   //@}
 
   //! @name Print methods

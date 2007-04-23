@@ -425,6 +425,9 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       return;
     }
 
+    if (blockSize!=blockSize_ || numBlocks!=numBlocks_)
+      stateStorageInitialized_ = false;
+
     blockSize_ = blockSize;
     numBlocks_ = numBlocks;
 
@@ -441,60 +444,64 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   template <class ScalarType, class MV, class OP>
   void BlockGmresIter<ScalarType,MV,OP>::setStateSize ()
   {
-    // Check if there is any multivector to clone from.
-    Teuchos::RefCountPtr<const MV> lhsMV = lp_->GetLHS();
-    Teuchos::RefCountPtr<const MV> rhsMV = lp_->GetRHS();
-    if (lhsMV == Teuchos::null && rhsMV == Teuchos::null) {
-      stateStorageInitialized_ = false;
-      return;
-    }
-    else {
-      
-      //////////////////////////////////
-      // blockSize*numBlocks dependent
-      //
-      int newsd = blockSize_*(numBlocks_+1);
-      
-      if (blockSize_==1) {
-	cs.resize( newsd );
-	sn.resize( newsd );
+    if (!stateStorageInitialized_) {
+
+      // Check if there is any multivector to clone from.
+      Teuchos::RefCountPtr<const MV> lhsMV = lp_->GetLHS();
+      Teuchos::RefCountPtr<const MV> rhsMV = lp_->GetRHS();
+      if (lhsMV == Teuchos::null && rhsMV == Teuchos::null) {
+	stateStorageInitialized_ = false;
+	return;
       }
       else {
-	beta.resize( newsd );
-      }
-      
-      // Initialize the state storage
-      // If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
-      if (V_ == Teuchos::null) {
-	// Get the multivector that is not null.
-	Teuchos::RefCountPtr<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
-	TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
-			   "Belos::BlockGmresIter::setStateSize(): linear problem does not specify multivectors to clone from.");
-	V_ = MVT::Clone( *tmp, newsd );
-      }
-      else {
-	// Generate V_ by cloning itself ONLY if more space is needed.
-	if (V_->NumVectors() < newsd) {
-	  Teuchos::RefCountPtr<const MV> tmp = V_;
+	
+	//////////////////////////////////
+	// blockSize*numBlocks dependent
+	//
+	int newsd = blockSize_*(numBlocks_+1);
+	
+	if (blockSize_==1) {
+	  cs.resize( newsd );
+	  sn.resize( newsd );
+	}
+	else {
+	  beta.resize( newsd );
+	}
+	
+	// Initialize the state storage
+	// If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
+	if (V_ == Teuchos::null) {
+	  // Get the multivector that is not null.
+	  Teuchos::RefCountPtr<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
+	  TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
+			     "Belos::BlockGmresIter::setStateSize(): linear problem does not specify multivectors to clone from.");
 	  V_ = MVT::Clone( *tmp, newsd );
 	}
+	else {
+	  // Generate V_ by cloning itself ONLY if more space is needed.
+	  if (V_->NumVectors() < newsd) {
+	    Teuchos::RefCountPtr<const MV> tmp = V_;
+	    V_ = MVT::Clone( *tmp, newsd );
+	  }
+	}
+	
+	// Generate H_ only if it doesn't exist, otherwise resize it.
+	if (H_ == Teuchos::null)
+	  H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-blockSize_ ) );	
+	else
+	  H_->shapeUninitialized( newsd, newsd-blockSize_ );
+	
+	// TODO:  Insert logic so that Hessenberg matrix can be saved and reduced matrix is stored in R_
+	//R_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-blockSize_ ) );
+	// Generate Z_ only if it doesn't exist, otherwise resize it.
+	if (Z_ == Teuchos::null)
+	  Z_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,blockSize_) );
+	else
+	  Z_->shapeUninitialized( newsd, blockSize_ );
+	
+	// State storage has now been initialized.
+	stateStorageInitialized_ = true;
       }
-
-      // Generate H_ only if it doesn't exist, otherwise resize it.
-      if (H_ == Teuchos::null)
-	H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-blockSize_ ) );	else
-	H_->shapeUninitialized( newsd, newsd-blockSize_ );
-      
-      // TODO:  Insert logic so that Hessenberg matrix can be saved and reduced matrix is stored in R_
-      //R_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-blockSize_ ) );
-      // Generate Z_ only if it doesn't exist, otherwise resize it.
-      if (Z_ == Teuchos::null)
-	Z_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,blockSize_) );
-      else
-	Z_->shapeUninitialized( newsd, blockSize_ );
-      
-      // State storage has now been initialized.
-      stateStorageInitialized_ = true;
     }
   }
 
@@ -553,8 +560,10 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     
     if (norms) {
       Teuchos::BLAS<int,ScalarType> blas;
-      for (int j=0; j<blockSize_; j++)
+      for (int j=0; j<blockSize_; j++) {
         (*norms)[j] = blas.NRM2( blockSize_, &(*Z_)(curDim_, j), 1);
+      //  cout << "Iteration : " << iter_ << ", Norm = " << (*norms)[j] << endl;
+      }
     }
     return Teuchos::null;
   }
@@ -593,7 +602,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       curDim_ = newstate.curDim;
       int lclDim = MVT::GetNumberVecs(*newstate.V);
 
-      // check size of H
+      // check size of Z
       TEST_FOR_EXCEPTION(newstate.Z->numRows() < curDim_ || newstate.Z->numCols() < blockSize_, std::invalid_argument, errstr);
       
 
@@ -608,11 +617,16 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
         std::vector<int> nevind(curDim_+blockSize_);
         for (int i=0; i<curDim_+blockSize_; i++) nevind[i] = i;
 	Teuchos::RefCountPtr<const MV> newV = MVT::CloneView( *newstate.V, nevind );
-        MVT::SetBlock(*newV,nevind,*V_);
+	Teuchos::RefCountPtr<MV> lclV = MVT::CloneView( *V_, nevind );
+        MVT::MvAddMv( 1.0, *newV, 0.0, *newV, *lclV );
+
+        // done with local pointers
+        lclV = Teuchos::null;
       }
 
-      // put data into H_, make sure old information is not still hanging around.
+      // put data into Z_, make sure old information is not still hanging around.
       if (newstate.Z != Z_) {
+        Z_->putScalar();
         Teuchos::SerialDenseMatrix<int,ScalarType> newZ(Teuchos::View,*newstate.Z,curDim_+blockSize_,blockSize_);
         Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclZ;
         lclZ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*Z_,curDim_+blockSize_,blockSize_) );

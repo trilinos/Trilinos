@@ -152,16 +152,6 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //! @name Attribute methods
-  //@{ 
-
-  //! Indicates if residual vector is required by this convergence test.
-  /*! If this method returns true, then one or more of the StatusTest objects that make up this combined
-    test requires the norm of the true residual vector to perform its test.
-  */
-  bool residualVectorRequired() const;
-
-  //@}
   //! @name Print methods
   //@{ 
   
@@ -266,24 +256,6 @@ bool StatusTestCombo<ScalarType,MV,OP>::isSafe( const Teuchos::RefCountPtr<Statu
         return false;
   }
   return true;
-}
-
-template <class ScalarType, class MV, class OP>
-bool StatusTestCombo<ScalarType,MV,OP>::residualVectorRequired() const
-{
-  // If any of the StatusTest object require the residual vector, then return true.
-  
-  // Recursively test this property.
-  for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
-    
-    StatusTest<ScalarType,MV,OP>* ptr = dynamic_cast< StatusTest<ScalarType,MV,OP> *>(i->get());
-    if (ptr != NULL)
-      if (ptr->residualVectorRequired())
-        return true;
-  }
-  
-  // Otherwise we don't need residual vector.
-  return false;
 }
 
 template <class ScalarType, class MV, class OP>
