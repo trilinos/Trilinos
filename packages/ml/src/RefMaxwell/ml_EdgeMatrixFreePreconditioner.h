@@ -24,12 +24,12 @@
 #include "Ifpack_Chebyshev.h"
 
 #include "ml_include.h"
-#include "ml_MultiLevelPreconditioner.h"//HAQ
+#include "ml_MultiLevelPreconditioner.h"
 #ifdef HAVE_ML_EPETRAEXT
 #include "EpetraExt_SolverMap_CrsMatrix.h"
 #endif
 
-class Ifpack_Chebyshev;// wha??
+class Ifpack_Chebyshev;
 
 namespace ML_Epetra
 {
@@ -41,7 +41,7 @@ namespace ML_Epetra
     //! Constructor
     EdgeMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal,
                                  const Epetra_CrsMatrix & D0_Matrix,const Epetra_CrsMatrix & D0_Clean_Matrix,
-                                 const Epetra_CrsMatrix &TMT_Matrix,const ML_Aggregate* Nodal_Aggregates,
+                                 const Epetra_CrsMatrix &TMT_Matrix,
                                  const int* BCedges, const int numBCedges,
                                  const Teuchos::ParameterList &List,const bool ComputePrec = true);
     //@}
@@ -176,8 +176,7 @@ namespace ML_Epetra
     ML_Operator * CoarseMat_ML;
     
     //! Level 2+ Preconditioner
-    //    ML_Preconditioner * CoarsePC;
-    MultiLevelPreconditioner * CoarsePC;        //HAQ
+    MultiLevelPreconditioner * CoarsePC; 
 
     //! Ifpack Chebyshev Smoother
     Ifpack_Chebyshev* Smoother_;
