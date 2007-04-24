@@ -244,12 +244,14 @@ EXTRA_DIST = setpath.py gre__115.rua \
 	     exEpetraExt_IO_MatrixMarket.py exEpetraExt_IO_XML.py \
 	     exEpetraExt_MatrixMatrix.py exGaleri.py exGaleri_ReadHB.py exIFPACK.py \
 	     exMLAPI.py exMLAPI_Simple.py exMLAPI_AztecOO.py exMLAPI_Iterate.py \
-	     exMLAPI_PyMatrix.py exMLAPI_Smoother.py exNOX_1Dfem.py exThyra.py
+	     exMLAPI_PyMatrix.py exMLAPI_Smoother.py exNOX_1Dfem.py exTeuchos.py \
+	     exThyra.py
 
 MAINTAINERCLEANFILES = Makefile.in
+@HAVE_MPI_FALSE@@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_EXAMPLES = exTeuchos
 
 # Teuchos examples
-@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_EXAMPLES = 
+@HAVE_MPI_TRUE@@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_EXAMPLES = 
 
 # # Thyra examples
 # if HAVE_PYTRILINOS_THYRA
