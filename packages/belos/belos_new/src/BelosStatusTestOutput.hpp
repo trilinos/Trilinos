@@ -181,7 +181,7 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
   //! Output formatted description of stopping test to output stream.
   void print(ostream& os, int indent = 0) const {
     string ind(indent,' ');
-    os << ind << "Belos::StatusTestOutput: ";
+    os << endl << ind << "Belos::StatusTestOutput: ";
     switch (state_) {
     case Passed:
       os << "Passed" << endl;

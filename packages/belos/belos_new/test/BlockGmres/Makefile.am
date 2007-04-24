@@ -15,19 +15,19 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
-if BUILD_TRIUTILS
-if BUILD_IFPACK
-BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb bl_fgmres_hb
-endif
-BELOS_BGMRES_NOPREC_EX = bl_gmres_hb Dummy 
-endif
+#if BUILD_TRIUTILS
+#if BUILD_IFPACK
+#BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb bl_fgmres_hb
+#endif
+#BELOS_BGMRES_NOPREC_EX = bl_gmres_hb Dummy 
+#endif
 BELOS_BGMRES_EX = bl_gmres_diag
 
-if BUILD_TRIUTILS
-if BUILD_TEUCHOS_COMPLEX
-BELOS_BGMRES_COMPLEX_EX = bl_gmres_complex_hb ComplexDummy
-endif
-endif
+#if BUILD_TRIUTILS
+#if BUILD_TEUCHOS_COMPLEX
+#BELOS_BGMRES_COMPLEX_EX = bl_gmres_complex_hb ComplexDummy
+#endif
+#endif
 
 
 noinst_PROGRAMS = $(BELOS_BGMRES_EX) $(BELOS_BGMRES_IFPACK_EX) $(BELOS_BGMRES_NOPREC_EX) $(BELOS_BGMRES_COMPLEX_EX)

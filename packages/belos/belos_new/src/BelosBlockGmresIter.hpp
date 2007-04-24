@@ -447,8 +447,8 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     if (!stateStorageInitialized_) {
 
       // Check if there is any multivector to clone from.
-      Teuchos::RefCountPtr<const MV> lhsMV = lp_->GetLHS();
-      Teuchos::RefCountPtr<const MV> rhsMV = lp_->GetRHS();
+      Teuchos::RefCountPtr<const MV> lhsMV = lp_->getLHS();
+      Teuchos::RefCountPtr<const MV> rhsMV = lp_->getRHS();
       if (lhsMV == Teuchos::null && rhsMV == Teuchos::null) {
 	stateStorageInitialized_ = false;
 	return;
@@ -702,7 +702,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       Teuchos::RefCountPtr<MV> Vprev = MVT::CloneView(*V_,curind);
 
       // Compute the next vector in the Krylov basis:  Vnext = Op*Vprev
-      lp_->Apply(*Vprev,*Vnext);
+      lp_->apply(*Vprev,*Vnext);
       Vprev = Teuchos::null;
       
       // Remove all previous Krylov basis vectors from Vnext

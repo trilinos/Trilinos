@@ -33,14 +33,9 @@
 
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
-#include <BelosOutputManager.hpp>
-#include <BelosStatusTestMaxIters.hpp>
-#include <BelosStatusTestMaxRestarts.hpp>
-#include <BelosStatusTestResNorm.hpp>
-#include <BelosStatusTestCombo.hpp>
 #include <BelosEpetraAdapter.hpp>
 #include <BelosEpetraOperator.h>
-#include <BelosBlockGmres.hpp>
+#include <BelosBlockGmresSolMgr.hpp>
 
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
@@ -246,15 +241,9 @@ private:
   Teuchos::RefCountPtr<Epetra_Map>  pMap;
   
   Teuchos::RefCountPtr<OP> pPE;   
-  Teuchos::RefCountPtr<StatusTestMaxIters<double,MV,OP> >    test1;
-  Teuchos::RefCountPtr<StatusTestMaxRestarts<double,MV,OP> > test2;
-  Teuchos::RefCountPtr<StatusTestCombo<double,MV,OP> >       test3;
-  Teuchos::RefCountPtr<StatusTestResNorm<double,MV,OP> >     test4;
   Teuchos::RefCountPtr<Teuchos::ParameterList>         pList;
-  Teuchos::RefCountPtr<StatusTestCombo<double,MV,OP> > pTest;
   Teuchos::RefCountPtr<LinearProblem<double,MV,OP> >   pProb;
-  Teuchos::RefCountPtr<OutputManager<double> >         pOM;
-  Teuchos::RefCountPtr<BlockGmres<double,MV,OP> >      pBelos;
+  Teuchos::RefCountPtr<BlockGmresSolMgr<double,MV,OP> >      pBelos;
 };
 
 Iterative_Inverse_Operator::Iterative_Inverse_Operator(int n, int blocksize,
@@ -280,31 +269,25 @@ Iterative_Inverse_Operator::Iterative_Inverse_Operator(int n, int blocksize,
   pPE = Teuchos::rcp( new Trilinos_Interface(pA, pComm, pMap ) );
   
   pProb = Teuchos::rcp( new LinearProblem<double,MV,OP>() );
-  pProb->SetOperator( pPE );
-  pProb->SetBlockSize( blocksize );
+  pProb->setOperator( pPE );
+  pProb->setBlockSize( blocksize );
   
   int restart  = 10; 
   int max_iter = 100;
   double tol = 1.0e-10;
-  
-  test1 = Teuchos::rcp( new StatusTestMaxIters<double,MV,OP>( max_iter ) );
-  test2 = Teuchos::rcp( new StatusTestMaxRestarts<double,MV,OP>( static_cast<int>(ceil((double)max_iter/restart)) ) );
-  test3 = Teuchos::rcp( new StatusTestCombo<double,MV,OP>(Belos::StatusTestCombo<double,MV,OP>::OR, *test1, *test2) );
-  test4 = Teuchos::rcp( new StatusTestResNorm<double,MV,OP>( tol ) );
-  test4->DefineResForm( Belos::StatusTestResNorm<double,MV,OP>::Explicit, Belos::TwoNorm );
-  pTest = Teuchos::rcp( new StatusTestCombo<double,MV,OP>(Belos::StatusTestCombo<double,MV,OP>::OR, *test3, *test4) );
-  
-  int pid = pComm->MyPID();
- 
+  int verbosity = Belos::Errors + Belos::Warnings;
   if (print)
-    pOM = Teuchos::rcp( new OutputManager<double>(pid, 2, 0) );
-  else
-    pOM = Teuchos::rcp( new OutputManager<double>(pid) );
+    verbosity += Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails;
   
   pList = Teuchos::rcp( new Teuchos::ParameterList );
-  pList->set( "Length", restart );  
+  pList->set( "Num Blocks", n/blocksize-1 );
+  pList->set( "Block Size", blocksize );  
+  pList->set( "Maximum Iterations", max_iter ); 
+  pList->set( "Maximum Restarts", restart );
+  pList->set( "Convergence Tolerance", tol ); 
+  pList->set( "Verbosity", verbosity );
 
-  pBelos = Teuchos::rcp( new BlockGmres<double,MV,OP>(pProb, pTest, pOM, pList) );
+  pBelos = Teuchos::rcp( new BlockGmresSolMgr<double,MV,OP>(pProb, *pList) );
 }
 
 void Iterative_Inverse_Operator::operator () (const Epetra_MultiVector &b, Epetra_MultiVector &x)
@@ -313,21 +296,19 @@ void Iterative_Inverse_Operator::operator () (const Epetra_MultiVector &b, Epetr
   x.PutScalar( 0.0 );
 
   // Reset the solver, problem, and status test for next solve (HKT)
-  pBelos->Reset();
-  pProb->Reset( Teuchos::rcp(&x, false), Teuchos::rcp(&b, false) );
-  pTest->Reset();
+//  pBelos->reset();
+  pProb->reset( Teuchos::rcp(&x, false), Teuchos::rcp(&b, false) );
   
   timer.start();
-  pBelos->Solve();
+  Belos::ReturnType ret = pBelos->solve();
   timer.stop();
   
   int pid = pComm->MyPID();
   
   if (pid == 0 && print)
-    if (pTest->GetStatus() == Belos::Converged)
+    if (ret == Belos::Converged)
       {
-	cout << endl << "pid[" << pid << "] Block GMRES converged in " 
-	     << pBelos->GetNumIters() << " iteration(s)" << endl;
+	cout << endl << "pid[" << pid << "] Block GMRES converged" << endl;
 	cout << "Solution time: " << timer.totalElapsedTime() << endl;
 	
       }

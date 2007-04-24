@@ -137,19 +137,23 @@ namespace Belos {
       However, this should not be set to true if the preconditioner is not symmetric, or symmetrically
       applied.
     */
-    void AssertSymmetric(){ operatorSymmetric_ = true; };
+    void assertSymmetric(){ operatorSymmetric_ = true; };
     
-    //! Inform the linear problem that the solution has been updated.
-    /*! Next time GetCurrResVecs is called, a new residual will be computed.  This keeps the
-      linear problem from having to recompute the residual vector everytime it's asked for if
-      the solution hasn't been updated.
+    //! Compute the new solution to the linear system given the /c update.
+    /*! \note If \c updateLP is true, then the next time GetCurrResVecs is called, a new residual will be computed.  
+      This keeps the linear problem from having to recompute the residual vector everytime it's asked for if
+      the solution hasn't been updated.  If \c updateLP is false, the new solution is computed without actually 
+      updating the linear problem.
     */
-    void SolutionUpdated( const RefCountPtr<MV>& update = Teuchos::null,
-                          ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() );
-
-    //! Compute the new solution to the linear system given the /c update without actually updating the linear problem.
     RefCountPtr<MV> updateSolution( const RefCountPtr<MV>& update = Teuchos::null,
-                                    ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() ) const;    
+				    bool updateLP = false,
+                                    ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() );    
+
+    //! Compute the new solution to the linear system given the /c update without updating the linear problem.
+    RefCountPtr<MV> updateSolution( const RefCountPtr<MV>& update = Teuchos::null,
+                                    ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() ) const
+    { return const_cast<LinearProblem<ScalarType,MV,OP> *>(this)->updateSolution( update, false, scale ); }
+
     //@}
     
     //! @name Reset method
@@ -159,44 +163,44 @@ namespace Belos {
     /*! This is useful for solving the linear system with another right-hand side.  
       The internal flags will be set as if the linear system manager was just initialized.
     */
-    void Reset( const RefCountPtr<MV> &newX = null, const RefCountPtr<const MV> &newB = null );
+    void reset( const RefCountPtr<MV> &newX = null, const RefCountPtr<const MV> &newB = null );
     //@}
     
     //! @name Accessor methods
     //@{ 
     
     //! Get a pointer to the operator A.
-    RefCountPtr<const OP> GetOperator() const { return(A_); };
+    RefCountPtr<const OP> getOperator() const { return(A_); };
     
     //! Get a pointer to the left-hand side X.
-    RefCountPtr<MV> GetLHS() const { return(X_); };
+    RefCountPtr<MV> getLHS() const { return(X_); };
     
     //! Get a pointer to the right-hand side B.
-    RefCountPtr<const MV> GetRHS() const { return(B_); };
+    RefCountPtr<const MV> getRHS() const { return(B_); };
     
     //! Get a pointer to the initial residual vector.
     /*! \note This may be the preconditioned residual, if the linear problem is left-preconditioned.
      */
-    const MV& GetInitResVec();
+    const MV& getInitResVec();
     
     //! Get a pointer to the current residual vector.
     /*!
       
     \param  CurrSoln  [in] If non-null, then this is the LHS that is used to compute
-    the current residual.  If null, then GetCurrLHSVec() is used.
+    the current residual.  If null, then getCurrLHSVec() is used.
     
-    Note, the current residual is always computed with respect to GetCurrRHSVec().		    
+    Note, the current residual is always computed with respect to getCurrRHSVec().		    
     
     \note <ul>
     <li> This method computes the true residual of the current linear system
-    with respect to GetCurrRHSVec() and GetCurrLHSVec() if CurrSoln==NULL
+    with respect to getCurrRHSVec() and getCurrLHSVec() if CurrSoln==NULL
     or with respect to *CurrSoln if CurrSoln!=NULL.  
     <li> If the solution hasn't been updated in the LinearProblem and
     a current solution has been computed by the solver (like GMRES), it can
     be passed into this method to compute the residual.
     </ul>
     */
-    const MV& GetCurrResVec( const MV* CurrSoln = 0 );
+    const MV& getCurrResVec( const MV* CurrSoln = 0 );
 
     //! Get a pointer to the current residual vector.
     /*! This method is called by the solver of any method that is interested in the current linear system
@@ -205,7 +209,7 @@ namespace Belos {
       <li> If the solution has been updated by the solver, then this vector is current ( see SolutionUpdated() ).
       </ol>
     */
-    RefCountPtr<const MV> GetCurrResVec() const { return R_; }
+    RefCountPtr<const MV> getCurrResVec() const { return R_; }
     
     //! Get a pointer to the current left-hand side (solution) of the linear system.
     /*! This method is called by the solver or any method that is interested in the current linear system
@@ -215,7 +219,7 @@ namespace Belos {
       <li> If there is no linear system to solve, this method will return a NULL pointer
       </ol>
     */
-    RefCountPtr<MV> GetCurrLHSVec();
+    RefCountPtr<MV> getCurrLHSVec();
     
     //! Get a pointer to the current right-hand side of the linear system.
     /*! This method is called by the solver of any method that is interested in the current linear system
@@ -225,26 +229,26 @@ namespace Belos {
       <li> If there is no linear system to solve, this method will return a NULL pointer
       </ol>
     */	
-    RefCountPtr<MV> GetCurrRHSVec();
+    RefCountPtr<MV> getCurrRHSVec();
     
     //! Get a pointer to the left preconditioning operator.
-    RefCountPtr<const OP> GetLeftPrec() const { return(LP_); };
+    RefCountPtr<const OP> getLeftPrec() const { return(LP_); };
     
     //! Get a pointer to the right preconditioning operator.
-    RefCountPtr<const OP> GetRightPrec() const { return(RP_); };
+    RefCountPtr<const OP> getRightPrec() const { return(RP_); };
     
     //! Get a pointer to the parameter list.
-    RefCountPtr<ParameterList> GetParameterList() const { return(PL_); };
+    RefCountPtr<ParameterList> getParameterList() const { return(PL_); };
 
     //! Get the default blocksize being used by the linear problem.
-    int GetBlockSize() const { return( default_blocksize_ ); };
+    int getBlockSize() const { return( default_blocksize_ ); };
     
     //! Get the current blocksize being used by the linear problem.
     /*! This may be different from the default blocksize set for the linear problem in the event
       that the default blocksize doesn't divide evenly into the number of right-hand sides, but
       it should not be more than the default blocksize.
     */
-    int GetCurrBlockSize() const { return( blocksize_ ); };
+    int getCurrBlockSize() const { return( blocksize_ ); };
 
     //! Get the current number of linear systems being solved for.
     /*! Since the block size is independent of the number of right-hand sides, 
@@ -253,7 +257,7 @@ namespace Belos {
       checks because the entire block of residuals may not be of interest.  Thus, this 
       number can be anywhere between 1 and the blocksize of the linear system.
     */
-    int GetNumToSolve() const { return( num_to_solve_ ); };
+    int getNumToSolve() const { return( num_to_solve_ ); };
     
     //! Get the 0-based index of the first vector in the current right-hand side block being solved for.
     /*! Since the block size is independent of the number of right-hand sides for
@@ -263,7 +267,7 @@ namespace Belos {
       information can keep you from querying the solver for information that rarely
       changes.
     */
-    int GetRHSIndex() const { return( rhs_index_ ); }
+    int getRHSIndex() const { return( rhs_index_ ); }
     
     //@}
     
@@ -271,14 +275,14 @@ namespace Belos {
     //@{ 
     
     //! Get the current status of the solution.
-    /*! This only means that the current linear system being solved for ( obtained by GetCurr<LHS/RHS>Vec() )
+    /*! This only means that the current linear system being solved for ( obtained by getCurr<LHS/RHS>Vec() )
       has been updated by the solver.  This will be true every iteration for solvers like CG, but not
       true until restarts for GMRES.
     */
-    bool IsSolutionUpdated() const { return(solutionUpdated_); }
+    bool isSolutionUpdated() const { return(solutionUpdated_); }
     
     //! Get the current symmetry of the operator.
-    bool IsOperatorSymmetric() const { return(operatorSymmetric_); }
+    bool isOperatorSymmetric() const { return(operatorSymmetric_); }
     
     //! Get information on whether the linear system is being preconditioned on the left.
     bool isLeftPrec() const { return(LP_!=Teuchos::null); }
@@ -296,34 +300,34 @@ namespace Belos {
       Most Krylov methods will use this application method within their code.
       
       Precondition:<ul>
-      <li><tt>GetOperator().get()!=NULL</tt>
+      <li><tt>getOperator().get()!=NULL</tt>
       </ul>
     */
-    void Apply( const MV& x, MV& y ) const;
+    void apply( const MV& x, MV& y ) const;
     
     //! Apply ONLY the operator to \c x, returning \c y.
     /*! This application is only of the linear problem operator, no preconditioners are applied.
       Flexible variants of Krylov methods will use this application method within their code.
       
       Precondition:<ul>
-      <li><tt>GetOperator().get()!=NULL</tt>
+      <li><tt>getOperator().get()!=NULL</tt>
       </ul>
     */
-    void ApplyOp( const MV& x, MV& y ) const;
+    void applyOp( const MV& x, MV& y ) const;
     
     //! Apply ONLY the left preconditioner to \c x, returning \c y.  
     /*! This application is only of the left preconditioner, which may be required for flexible variants
       of Krylov methods.
       \note This will return Undefined if the left preconditioner is not defined for this operator.
     */  
-    void ApplyLeftPrec( const MV& x, MV& y ) const;
+    void applyLeftPrec( const MV& x, MV& y ) const;
     
     //! Apply ONLY the right preconditioner to \c x, returning \c y.
     /*! This application is only of the right preconditioner, which may be required for flexible variants
       of Krylov methods.
       \note This will return Undefined if the right preconditioner is not defined for this operator.
     */
-    void ApplyRightPrec( const MV& x, MV& y ) const;
+    void applyRightPrec( const MV& x, MV& y ) const;
     
     //! Compute a residual \c R for this operator given a solution \c X, and right-hand side \c B.
     /*! This method will compute the residual for the current linear system if \c X and \c B are null pointers.
@@ -593,48 +597,51 @@ namespace Belos {
     rhs_index_ += num_to_solve_; 
   }
   
+
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::SolutionUpdated( const RefCountPtr<MV>& update, ScalarType scale )
-  { 
-    if (update != Teuchos::null) {
-      if (Right_Prec_) {
-	//
-	// Apply the right preconditioner before computing the current solution.
-	RefCountPtr<MV> TrueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
-	OPT::Apply( *RP_, *update, *TrueUpdate ); 
-	MVT::MvAddMv( 1.0, *CurX_, scale, *TrueUpdate, *CurX_ ); 
-      } else {
-	MVT::MvAddMv( 1.0, *CurX_, scale, *update, *CurX_ ); 
-      }
-    }
-    solutionUpdated_ = true; 
-  }
-  
-  template <class ScalarType, class MV, class OP>
-  RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::updateSolution( const RefCountPtr<MV>& update, ScalarType scale ) const 
+  RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::updateSolution( const RefCountPtr<MV>& update, 
+								   bool updateLP,
+								   ScalarType scale )
   { 
     RefCountPtr<MV> newSoln;
     if (update != Teuchos::null) {
-      newSoln = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
-      if (Right_Prec_) {
-	//
-	// Apply the right preconditioner before computing the current solution.
-        RefCountPtr<MV> trueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
-	OPT::Apply( *RP_, *update, *trueUpdate ); 
-	MVT::MvAddMv( 1.0, *CurX_, scale, *trueUpdate, *newSoln ); 
-      } else {
-	MVT::MvAddMv( 1.0, *CurX_, scale, *update, *newSoln ); 
+      if (updateLP == true) {
+	if (Right_Prec_) {
+	  //
+	  // Apply the right preconditioner before computing the current solution.
+	  RefCountPtr<MV> TrueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
+	  OPT::Apply( *RP_, *update, *TrueUpdate ); 
+	  MVT::MvAddMv( 1.0, *CurX_, scale, *TrueUpdate, *CurX_ ); 
+	} 
+	else {
+	  MVT::MvAddMv( 1.0, *CurX_, scale, *update, *CurX_ ); 
+	}
+	solutionUpdated_ = true; 
+	newSoln = CurX_;
+      }
+      else {
+	newSoln = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
+	if (Right_Prec_) {
+	  //
+	  // Apply the right preconditioner before computing the current solution.
+	  RefCountPtr<MV> trueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
+	  OPT::Apply( *RP_, *update, *trueUpdate ); 
+	  MVT::MvAddMv( 1.0, *CurX_, scale, *trueUpdate, *newSoln ); 
+	} 
+	else {
+	  MVT::MvAddMv( 1.0, *CurX_, scale, *update, *newSoln ); 
+	}
       }
     }
     else {
-        newSoln = CurX_;
+      newSoln = CurX_;
     }
     return newSoln;
   }
   
 
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::Reset( const RefCountPtr<MV> &newX, const RefCountPtr<const MV> &newB )
+  void LinearProblem<ScalarType,MV,OP>::reset( const RefCountPtr<MV> &newX, const RefCountPtr<const MV> &newB )
   {
     solutionUpdated_ = false;
     solutionFinal_ = true;
@@ -643,11 +650,11 @@ namespace Belos {
     
     X_ = newX;
     B_ = newB;
-    GetInitResVec();
+    getInitResVec();
   }
   
   template <class ScalarType, class MV, class OP>
-  const MV& LinearProblem<ScalarType,MV,OP>::GetInitResVec() 
+  const MV& LinearProblem<ScalarType,MV,OP>::getInitResVec() 
   {
     // Compute the initial residual if it hasn't been computed
     // and all the components of the linear system are there.
@@ -665,7 +672,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  const MV& LinearProblem<ScalarType,MV,OP>::GetCurrResVec( const MV* CurrSoln ) 
+  const MV& LinearProblem<ScalarType,MV,OP>::getCurrResVec( const MV* CurrSoln ) 
   {
     // Compute the residual of the current linear system.
     // This should be used if the solution has been updated.
@@ -675,20 +682,20 @@ namespace Belos {
     //
     if (solutionUpdated_) 
       {
-	OPT::Apply( *A_, *GetCurrLHSVec(), *R_ );
-	MVT::MvAddMv( 1.0, *GetCurrRHSVec(), -1.0, *R_, *R_ ); 
+	OPT::Apply( *A_, *getCurrLHSVec(), *R_ );
+	MVT::MvAddMv( 1.0, *getCurrRHSVec(), -1.0, *R_, *R_ ); 
 	solutionUpdated_ = false;
       }
     else if (CurrSoln) 
       {
 	OPT::Apply( *A_, *CurrSoln, *R_ );
-	MVT::MvAddMv( 1.0, *GetCurrRHSVec(), -1.0, *R_, *R_ ); 
+	MVT::MvAddMv( 1.0, *getCurrRHSVec(), -1.0, *R_, *R_ ); 
       }
     return (*R_);
   }
   
   template <class ScalarType, class MV, class OP>
-  RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::GetCurrLHSVec()
+  RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::getCurrLHSVec()
   {
     if (solutionFinal_) {
       solutionFinal_ = false;	// make sure we don't populate the current linear system again.
@@ -698,7 +705,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::GetCurrRHSVec()
+  RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::getCurrRHSVec()
   {
     if (solutionFinal_) {
       solutionFinal_ = false;	// make sure we don't populate the current linear system again.
@@ -708,7 +715,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::Apply( const MV& x, MV& y ) const
+  void LinearProblem<ScalarType,MV,OP>::apply( const MV& x, MV& y ) const
   {
     RefCountPtr<MV> ytemp = MVT::Clone( y, MVT::GetNumberVecs( y ) );
     //
@@ -767,7 +774,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::ApplyOp( const MV& x, MV& y ) const {
+  void LinearProblem<ScalarType,MV,OP>::applyOp( const MV& x, MV& y ) const {
     if (A_.get()) {
       Teuchos::TimeMonitor OpTimer(*timerOp_);
       OPT::Apply( *A_,x, y);   
@@ -779,7 +786,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::ApplyLeftPrec( const MV& x, MV& y ) const {
+  void LinearProblem<ScalarType,MV,OP>::applyLeftPrec( const MV& x, MV& y ) const {
     if (Left_Prec_) {
       Teuchos::TimeMonitor PrecTimer(*timerPrec_);
       return ( OPT::Apply( *LP_,x, y) );
@@ -791,7 +798,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::ApplyRightPrec( const MV& x, MV& y ) const {
+  void LinearProblem<ScalarType,MV,OP>::applyRightPrec( const MV& x, MV& y ) const {
     if (Right_Prec_) {
       Teuchos::TimeMonitor PrecTimer(*timerPrec_);
       return ( OPT::Apply( *RP_,x, y) );

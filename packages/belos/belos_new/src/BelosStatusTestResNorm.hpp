@@ -362,13 +362,13 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
   //
   // This section computes the norm of the residual vector
   //
-  if ( cur_rhs_num_ != lp.GetRHSIndex() || cur_blksz_ != lp.GetCurrBlockSize() || cur_num_rhs_ != lp.GetNumToSolve() ) {
+  if ( cur_rhs_num_ != lp.getRHSIndex() || cur_blksz_ != lp.getCurrBlockSize() || cur_num_rhs_ != lp.getNumToSolve() ) {
     //
     // We have moved on to the next rhs block
     //
-    cur_rhs_num_ = lp.GetRHSIndex();
-    cur_blksz_ = lp.GetCurrBlockSize();
-    cur_num_rhs_ = lp.GetNumToSolve();
+    cur_rhs_num_ = lp.getRHSIndex();
+    cur_blksz_ = lp.getCurrBlockSize();
+    cur_num_rhs_ = lp.getNumToSolve();
     //
   } else {
     //
@@ -378,7 +378,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
   }
   if (restype_==Implicit) {
     //
-    // Get the native residual norms from the solver for this block of right-hand sides.
+    // get the native residual norms from the solver for this block of right-hand sides.
     // If the residual is returned in multivector form, use the resnormtype to compute the residual norms.
     // Otherwise the native residual is assumed to be stored in the resvector_.
     //
@@ -397,26 +397,15 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
   else if (restype_==Explicit) {
     //
     // Request the true residual for this block of right-hand sides.
-    // See if the linear problem manager has been updated before
-    // asking for the true residual from the solver.
     //
-    //
-    if ( lp.IsSolutionUpdated() ) {
-      RefCountPtr<const MV> cur_res = lp.GetCurrResVec();
-      std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( *cur_res ) );
-      MVT::MvNorm( *cur_res, &tmp_resvector, resnormtype_ );
-      for (i=0; i<MVT::GetNumberVecs( *cur_res ) && i<cur_num_rhs_; i++)
-        resvector_[i+cur_rhs_num_] = tmp_resvector[i];
-    } else {
-      RefCountPtr<MV> cur_update = iSolver->getCurrentUpdate();
-      RefCountPtr<MV> cur_soln = lp.updateSolution( cur_update );
-      RefCountPtr<MV> cur_res = MVT::Clone( *cur_soln, MVT::GetNumberVecs( *cur_soln ) );
-      lp.computeCurrResVec( &*cur_res, &*cur_soln );
-      std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( *cur_res ) );
-      MVT::MvNorm( *cur_res, &tmp_resvector, resnormtype_ );
-      for (i=0; i<MVT::GetNumberVecs( *cur_res ) && i<cur_num_rhs_; i++)
-        resvector_[i+cur_rhs_num_] = tmp_resvector[i];      
-    }
+    RefCountPtr<MV> cur_update = iSolver->getCurrentUpdate();
+    RefCountPtr<MV> cur_soln = lp.updateSolution( cur_update );
+    RefCountPtr<MV> cur_res = MVT::Clone( *cur_soln, MVT::GetNumberVecs( *cur_soln ) );
+    lp.computeCurrResVec( &*cur_res, &*cur_soln );
+    std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( *cur_res ) );
+    MVT::MvNorm( *cur_res, &tmp_resvector, resnormtype_ );
+    for (i=0; i<MVT::GetNumberVecs( *cur_res ) && i<cur_num_rhs_; i++)
+      resvector_[i+cur_rhs_num_] = tmp_resvector[i];      
   }
   //
   // Compute the new linear system residuals for testing.
@@ -449,8 +438,9 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
     } else if (testvector_[ i ] <= tolerance_) { 
       // do nothing.
     } else {
-      status_ = Failed;            
-      return(status_); // Return immediately if we detect a NaN.
+      // Throw an exception if a NaN is found.
+      status_ = Failed;
+      TEST_FOR_EXCEPTION(true,StatusTestError,"StatusTestResNorm::checkStatus(): NaN has been detected.");
     }
   } 
   
@@ -541,12 +531,12 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( Itera
     // Get some current solver information.
     //
     firstcallCheckStatus_ = false;
-    cur_rhs_num_ = lp.GetRHSIndex();
-    cur_blksz_ = lp.GetCurrBlockSize();
-    cur_num_rhs_ = lp.GetNumToSolve();
+    cur_rhs_num_ = lp.getRHSIndex();
+    cur_blksz_ = lp.getCurrBlockSize();
+    cur_num_rhs_ = lp.getNumToSolve();
     //
     if (scaletype_== NormOfRHS) {
-      const MV& rhs = *(lp.GetRHS());
+      const MV& rhs = *(lp.getRHS());
       numrhs_ = MVT::GetNumberVecs( rhs );
       scalevector_.resize( numrhs_ );
       resvector_.resize( numrhs_ ); 
@@ -554,7 +544,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( Itera
       MVT::MvNorm( rhs, &scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfInitRes) {
-      const MV &init_res = const_cast<LinearProblem<ScalarType,MV,OP> &>(lp).GetInitResVec();
+      const MV &init_res = const_cast<LinearProblem<ScalarType,MV,OP> &>(lp).getInitResVec();
       numrhs_ = MVT::GetNumberVecs( init_res );
       scalevector_.resize( numrhs_ );
       resvector_.resize( numrhs_ ); 
@@ -562,14 +552,14 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( Itera
       MVT::MvNorm( init_res, &scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfPrecInitRes) {
-      const MV& init_res = const_cast<LinearProblem<ScalarType,MV,OP> &>(lp).GetInitResVec();
+      const MV& init_res = const_cast<LinearProblem<ScalarType,MV,OP> &>(lp).getInitResVec();
       numrhs_ = MVT::GetNumberVecs( init_res );
       scalevector_.resize( numrhs_ );
       resvector_.resize( numrhs_ ); 
       testvector_.resize( numrhs_ );
       RefCountPtr<MV> prec_init_res = MVT::Clone( init_res, numrhs_ );
       if (lp.isLeftPrec()) {
-        lp.ApplyLeftPrec( init_res, *prec_init_res );
+        lp.applyLeftPrec( init_res, *prec_init_res );
         MVT::MvNorm( *prec_init_res, &scalevector_, scalenormtype_ );
       }
       else { 

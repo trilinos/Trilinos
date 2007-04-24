@@ -75,17 +75,17 @@ EpetraOperator::EpetraOperator( const RefCountPtr<LinearProblem<double,Epetra_Mu
 
 const Epetra_Comm& EpetraOperator::Comm() const 
 { 
-  return (lp_->GetOperator()->Comm());
+  return (lp_->getOperator()->Comm());
 }
   
 const Epetra_Map& EpetraOperator::OperatorDomainMap() const 
 { 
-  return (lp_->GetOperator()->OperatorDomainMap());
+  return (lp_->getOperator()->OperatorDomainMap());
 }
 
 const Epetra_Map& EpetraOperator::OperatorRangeMap() const 
 { 
-  return (lp_->GetOperator()->OperatorRangeMap());
+  return (lp_->getOperator()->OperatorRangeMap());
 }
 
 int EpetraOperator::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
@@ -95,7 +95,7 @@ int EpetraOperator::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) 
   vec_X = rcp( &X, false );
   vec_Y = rcp( &Y, false );
  // solver_->Reset();
-  lp_->Reset( vec_Y, vec_X );
+  lp_->reset( vec_Y, vec_X );
   stest_->reset();
   solver_->solve();
   
@@ -110,7 +110,7 @@ int EpetraOperator::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVecto
   vec_X = rcp( &X, false );
   vec_Y = rcp( &Y, false );
  // solver_->Reset();
-  lp_->Reset( vec_Y, vec_X );
+  lp_->reset( vec_Y, vec_X );
   stest_->reset();
   solver_->solve();
   

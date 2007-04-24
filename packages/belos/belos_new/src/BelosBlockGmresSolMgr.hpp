@@ -335,8 +335,8 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   {
     Teuchos::TimeMonitor slvtimer(*timerSolve_);
     
-    Teuchos::RefCountPtr<MV> cur_block_sol = problem_->GetCurrLHSVec();
-    Teuchos::RefCountPtr<MV> cur_block_rhs = problem_->GetCurrRHSVec();
+    Teuchos::RefCountPtr<MV> cur_block_sol = problem_->getCurrLHSVec();
+    Teuchos::RefCountPtr<MV> cur_block_rhs = problem_->getCurrRHSVec();
 
     while (cur_block_sol!=Teuchos::null && cur_block_rhs!=Teuchos::null) {
 
@@ -412,7 +412,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    
 	    // Update the linear problem.
 	    Teuchos::RefCountPtr<MV> update = block_gmres_iter->getCurrentUpdate();
-	    problem_->SolutionUpdated( update );
+	    problem_->updateSolution( update, true );
 	    
 	    // Get the state.
 	    BlockGmresIterState<ScalarType,MV> oldState = block_gmres_iter->getState();
@@ -463,14 +463,14 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       // Compute the current solution.
       // Update the linear problem.
       Teuchos::RefCountPtr<MV> update = block_gmres_iter->getCurrentUpdate();
-      problem_->SolutionUpdated( update );
+      problem_->updateSolution( update, true );
       
       // Inform the linear problem that we are finished with this block linear system.
       problem_->setCurrLSVec();
       
       // Obtain the next block linear system from the linear problem manager.
-      cur_block_sol = problem_->GetCurrLHSVec();
-      cur_block_rhs = problem_->GetCurrRHSVec();
+      cur_block_sol = problem_->getCurrLHSVec();
+      cur_block_rhs = problem_->getCurrRHSVec();
       
     }// while (cur_block_sol != Teuchos::null && cur_block_rhs != Teuchos::null)
     

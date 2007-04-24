@@ -17,7 +17,7 @@
 #@HEADER
 #@HEADER
 
-SOURCES = $(ComplexDummy_SOURCES) $(Dummy_SOURCES) $(bl_fgmres_hb_SOURCES) $(bl_gmres_complex_hb_SOURCES) $(bl_gmres_diag_SOURCES) $(bl_gmres_hb_SOURCES) $(bl_pgmres_hb_SOURCES)
+SOURCES = $(bl_gmres_diag_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -40,8 +40,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	$(am__EXEEXT_4)
+noinst_PROGRAMS = $(am__EXEEXT_1)
 subdir = test/BlockGmres
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -74,67 +73,25 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = bl_gmres_diag$(EXEEXT)
-@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 =  \
-@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@	bl_pgmres_hb$(EXEEXT) \
-@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@	bl_fgmres_hb$(EXEEXT)
-@BUILD_TRIUTILS_TRUE@am__EXEEXT_3 = bl_gmres_hb$(EXEEXT) \
-@BUILD_TRIUTILS_TRUE@	Dummy$(EXEEXT)
-@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_4 = bl_gmres_complex_hb$(EXEEXT) \
-@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@	ComplexDummy$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_ComplexDummy_OBJECTS =
-ComplexDummy_OBJECTS = $(am_ComplexDummy_OBJECTS)
-ComplexDummy_LDADD = $(LDADD)
-am_Dummy_OBJECTS =
-Dummy_OBJECTS = $(am_Dummy_OBJECTS)
-Dummy_LDADD = $(LDADD)
-am_bl_fgmres_hb_OBJECTS = bl_fgmres_hb-test_bl_fgmres_hb.$(OBJEXT) \
-	bl_fgmres_hb-createEpetraProblem.$(OBJEXT)
-bl_fgmres_hb_OBJECTS = $(am_bl_fgmres_hb_OBJECTS)
+am_bl_gmres_diag_OBJECTS = bl_gmres_diag-test_bl_gmres_diag.$(OBJEXT)
+bl_gmres_diag_OBJECTS = $(am_bl_gmres_diag_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(BELOS_TEST_LIBS))
-am_bl_gmres_complex_hb_OBJECTS =  \
-	bl_gmres_complex_hb-test_bl_gmres_complex_hb.$(OBJEXT)
-bl_gmres_complex_hb_OBJECTS = $(am_bl_gmres_complex_hb_OBJECTS)
-am_bl_gmres_diag_OBJECTS = bl_gmres_diag-test_bl_gmres_diag.$(OBJEXT)
-bl_gmres_diag_OBJECTS = $(am_bl_gmres_diag_OBJECTS)
-am_bl_gmres_hb_OBJECTS = bl_gmres_hb-test_bl_gmres_hb.$(OBJEXT) \
-	bl_gmres_hb-createEpetraProblem.$(OBJEXT)
-bl_gmres_hb_OBJECTS = $(am_bl_gmres_hb_OBJECTS)
-am_bl_pgmres_hb_OBJECTS = bl_pgmres_hb-test_bl_pgmres_hb.$(OBJEXT) \
-	bl_pgmres_hb-createEpetraProblem.$(OBJEXT)
-bl_pgmres_hb_OBJECTS = $(am_bl_pgmres_hb_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES =  \
-@AMDEP_TRUE@	./$(DEPDIR)/bl_fgmres_hb-createEpetraProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/bl_fgmres_hb-test_bl_fgmres_hb.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/bl_gmres_complex_hb-test_bl_gmres_complex_hb.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/bl_gmres_diag-test_bl_gmres_diag.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/bl_gmres_hb-createEpetraProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po
+@AMDEP_TRUE@	./$(DEPDIR)/bl_gmres_diag-test_bl_gmres_diag.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(ComplexDummy_SOURCES) $(Dummy_SOURCES) \
-	$(bl_fgmres_hb_SOURCES) $(bl_gmres_complex_hb_SOURCES) \
-	$(bl_gmres_diag_SOURCES) $(bl_gmres_hb_SOURCES) \
-	$(bl_pgmres_hb_SOURCES)
-DIST_SOURCES = $(ComplexDummy_SOURCES) $(Dummy_SOURCES) \
-	$(bl_fgmres_hb_SOURCES) $(bl_gmres_complex_hb_SOURCES) \
-	$(bl_gmres_diag_SOURCES) $(bl_gmres_hb_SOURCES) \
-	$(bl_pgmres_hb_SOURCES)
+SOURCES = $(bl_gmres_diag_SOURCES)
+DIST_SOURCES = $(bl_gmres_diag_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -282,10 +239,14 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
-@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb bl_fgmres_hb
-@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_NOPREC_EX = bl_gmres_hb Dummy 
+
+#if BUILD_TRIUTILS
+#if BUILD_IFPACK
+#BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb bl_fgmres_hb
+#endif
+#BELOS_BGMRES_NOPREC_EX = bl_gmres_hb Dummy 
+#endif
 BELOS_BGMRES_EX = bl_gmres_diag
-@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_COMPLEX_EX = bl_gmres_complex_hb ComplexDummy
 Dummy_SOURCES = Dummy
 ComplexDummy_SOURCES = Dummy
 bl_pgmres_hb_SOURCES = $(srcdir)/test_bl_pgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
@@ -359,21 +320,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-bl_fgmres_hb$(EXEEXT): $(bl_fgmres_hb_OBJECTS) $(bl_fgmres_hb_DEPENDENCIES) 
-	@rm -f bl_fgmres_hb$(EXEEXT)
-	$(CXXLINK) $(bl_fgmres_hb_LDFLAGS) $(bl_fgmres_hb_OBJECTS) $(bl_fgmres_hb_LDADD) $(LIBS)
-bl_gmres_complex_hb$(EXEEXT): $(bl_gmres_complex_hb_OBJECTS) $(bl_gmres_complex_hb_DEPENDENCIES) 
-	@rm -f bl_gmres_complex_hb$(EXEEXT)
-	$(CXXLINK) $(bl_gmres_complex_hb_LDFLAGS) $(bl_gmres_complex_hb_OBJECTS) $(bl_gmres_complex_hb_LDADD) $(LIBS)
 bl_gmres_diag$(EXEEXT): $(bl_gmres_diag_OBJECTS) $(bl_gmres_diag_DEPENDENCIES) 
 	@rm -f bl_gmres_diag$(EXEEXT)
 	$(CXXLINK) $(bl_gmres_diag_LDFLAGS) $(bl_gmres_diag_OBJECTS) $(bl_gmres_diag_LDADD) $(LIBS)
-bl_gmres_hb$(EXEEXT): $(bl_gmres_hb_OBJECTS) $(bl_gmres_hb_DEPENDENCIES) 
-	@rm -f bl_gmres_hb$(EXEEXT)
-	$(CXXLINK) $(bl_gmres_hb_LDFLAGS) $(bl_gmres_hb_OBJECTS) $(bl_gmres_hb_LDADD) $(LIBS)
-bl_pgmres_hb$(EXEEXT): $(bl_pgmres_hb_OBJECTS) $(bl_pgmres_hb_DEPENDENCIES) 
-	@rm -f bl_pgmres_hb$(EXEEXT)
-	$(CXXLINK) $(bl_pgmres_hb_LDFLAGS) $(bl_pgmres_hb_OBJECTS) $(bl_pgmres_hb_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -381,14 +330,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_fgmres_hb-createEpetraProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_fgmres_hb-test_bl_fgmres_hb.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_gmres_complex_hb-test_bl_gmres_complex_hb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_gmres_diag-test_bl_gmres_diag.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_gmres_hb-createEpetraProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -406,54 +348,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-bl_fgmres_hb-test_bl_fgmres_hb.o: $(srcdir)/test_bl_fgmres_hb.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_fgmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_fgmres_hb-test_bl_fgmres_hb.o -MD -MP -MF "$(DEPDIR)/bl_fgmres_hb-test_bl_fgmres_hb.Tpo" -c -o bl_fgmres_hb-test_bl_fgmres_hb.o `test -f '$(srcdir)/test_bl_fgmres_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_fgmres_hb.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_fgmres_hb-test_bl_fgmres_hb.Tpo" "$(DEPDIR)/bl_fgmres_hb-test_bl_fgmres_hb.Po"; else rm -f "$(DEPDIR)/bl_fgmres_hb-test_bl_fgmres_hb.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_fgmres_hb.cpp' object='bl_fgmres_hb-test_bl_fgmres_hb.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_fgmres_hb-test_bl_fgmres_hb.Po' tmpdepfile='$(DEPDIR)/bl_fgmres_hb-test_bl_fgmres_hb.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_fgmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_fgmres_hb-test_bl_fgmres_hb.o `test -f '$(srcdir)/test_bl_fgmres_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_fgmres_hb.cpp
-
-bl_fgmres_hb-test_bl_fgmres_hb.obj: $(srcdir)/test_bl_fgmres_hb.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_fgmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_fgmres_hb-test_bl_fgmres_hb.obj -MD -MP -MF "$(DEPDIR)/bl_fgmres_hb-test_bl_fgmres_hb.Tpo" -c -o bl_fgmres_hb-test_bl_fgmres_hb.obj `if test -f '$(srcdir)/test_bl_fgmres_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_fgmres_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_fgmres_hb.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_fgmres_hb-test_bl_fgmres_hb.Tpo" "$(DEPDIR)/bl_fgmres_hb-test_bl_fgmres_hb.Po"; else rm -f "$(DEPDIR)/bl_fgmres_hb-test_bl_fgmres_hb.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_fgmres_hb.cpp' object='bl_fgmres_hb-test_bl_fgmres_hb.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_fgmres_hb-test_bl_fgmres_hb.Po' tmpdepfile='$(DEPDIR)/bl_fgmres_hb-test_bl_fgmres_hb.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_fgmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_fgmres_hb-test_bl_fgmres_hb.obj `if test -f '$(srcdir)/test_bl_fgmres_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_fgmres_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_fgmres_hb.cpp'; fi`
-
-bl_fgmres_hb-createEpetraProblem.o: $(srcdir)/createEpetraProblem.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_fgmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_fgmres_hb-createEpetraProblem.o -MD -MP -MF "$(DEPDIR)/bl_fgmres_hb-createEpetraProblem.Tpo" -c -o bl_fgmres_hb-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_fgmres_hb-createEpetraProblem.Tpo" "$(DEPDIR)/bl_fgmres_hb-createEpetraProblem.Po"; else rm -f "$(DEPDIR)/bl_fgmres_hb-createEpetraProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='bl_fgmres_hb-createEpetraProblem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_fgmres_hb-createEpetraProblem.Po' tmpdepfile='$(DEPDIR)/bl_fgmres_hb-createEpetraProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_fgmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_fgmres_hb-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp
-
-bl_fgmres_hb-createEpetraProblem.obj: $(srcdir)/createEpetraProblem.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_fgmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_fgmres_hb-createEpetraProblem.obj -MD -MP -MF "$(DEPDIR)/bl_fgmres_hb-createEpetraProblem.Tpo" -c -o bl_fgmres_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_fgmres_hb-createEpetraProblem.Tpo" "$(DEPDIR)/bl_fgmres_hb-createEpetraProblem.Po"; else rm -f "$(DEPDIR)/bl_fgmres_hb-createEpetraProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='bl_fgmres_hb-createEpetraProblem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_fgmres_hb-createEpetraProblem.Po' tmpdepfile='$(DEPDIR)/bl_fgmres_hb-createEpetraProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_fgmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_fgmres_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`
-
-bl_gmres_complex_hb-test_bl_gmres_complex_hb.o: $(srcdir)/test_bl_gmres_complex_hb.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_complex_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_gmres_complex_hb-test_bl_gmres_complex_hb.o -MD -MP -MF "$(DEPDIR)/bl_gmres_complex_hb-test_bl_gmres_complex_hb.Tpo" -c -o bl_gmres_complex_hb-test_bl_gmres_complex_hb.o `test -f '$(srcdir)/test_bl_gmres_complex_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_gmres_complex_hb.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_gmres_complex_hb-test_bl_gmres_complex_hb.Tpo" "$(DEPDIR)/bl_gmres_complex_hb-test_bl_gmres_complex_hb.Po"; else rm -f "$(DEPDIR)/bl_gmres_complex_hb-test_bl_gmres_complex_hb.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_gmres_complex_hb.cpp' object='bl_gmres_complex_hb-test_bl_gmres_complex_hb.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_gmres_complex_hb-test_bl_gmres_complex_hb.Po' tmpdepfile='$(DEPDIR)/bl_gmres_complex_hb-test_bl_gmres_complex_hb.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_complex_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_gmres_complex_hb-test_bl_gmres_complex_hb.o `test -f '$(srcdir)/test_bl_gmres_complex_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_gmres_complex_hb.cpp
-
-bl_gmres_complex_hb-test_bl_gmres_complex_hb.obj: $(srcdir)/test_bl_gmres_complex_hb.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_complex_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_gmres_complex_hb-test_bl_gmres_complex_hb.obj -MD -MP -MF "$(DEPDIR)/bl_gmres_complex_hb-test_bl_gmres_complex_hb.Tpo" -c -o bl_gmres_complex_hb-test_bl_gmres_complex_hb.obj `if test -f '$(srcdir)/test_bl_gmres_complex_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_gmres_complex_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_gmres_complex_hb.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_gmres_complex_hb-test_bl_gmres_complex_hb.Tpo" "$(DEPDIR)/bl_gmres_complex_hb-test_bl_gmres_complex_hb.Po"; else rm -f "$(DEPDIR)/bl_gmres_complex_hb-test_bl_gmres_complex_hb.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_gmres_complex_hb.cpp' object='bl_gmres_complex_hb-test_bl_gmres_complex_hb.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_gmres_complex_hb-test_bl_gmres_complex_hb.Po' tmpdepfile='$(DEPDIR)/bl_gmres_complex_hb-test_bl_gmres_complex_hb.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_complex_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_gmres_complex_hb-test_bl_gmres_complex_hb.obj `if test -f '$(srcdir)/test_bl_gmres_complex_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_gmres_complex_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_gmres_complex_hb.cpp'; fi`
-
 bl_gmres_diag-test_bl_gmres_diag.o: $(srcdir)/test_bl_gmres_diag.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_diag_CXXFLAGS) $(CXXFLAGS) -MT bl_gmres_diag-test_bl_gmres_diag.o -MD -MP -MF "$(DEPDIR)/bl_gmres_diag-test_bl_gmres_diag.Tpo" -c -o bl_gmres_diag-test_bl_gmres_diag.o `test -f '$(srcdir)/test_bl_gmres_diag.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_gmres_diag.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_gmres_diag-test_bl_gmres_diag.Tpo" "$(DEPDIR)/bl_gmres_diag-test_bl_gmres_diag.Po"; else rm -f "$(DEPDIR)/bl_gmres_diag-test_bl_gmres_diag.Tpo"; exit 1; fi
@@ -469,70 +363,6 @@ bl_gmres_diag-test_bl_gmres_diag.obj: $(srcdir)/test_bl_gmres_diag.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_gmres_diag-test_bl_gmres_diag.Po' tmpdepfile='$(DEPDIR)/bl_gmres_diag-test_bl_gmres_diag.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_diag_CXXFLAGS) $(CXXFLAGS) -c -o bl_gmres_diag-test_bl_gmres_diag.obj `if test -f '$(srcdir)/test_bl_gmres_diag.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_gmres_diag.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_gmres_diag.cpp'; fi`
-
-bl_gmres_hb-test_bl_gmres_hb.o: $(srcdir)/test_bl_gmres_hb.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_gmres_hb-test_bl_gmres_hb.o -MD -MP -MF "$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Tpo" -c -o bl_gmres_hb-test_bl_gmres_hb.o `test -f '$(srcdir)/test_bl_gmres_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_gmres_hb.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Tpo" "$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Po"; else rm -f "$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_gmres_hb.cpp' object='bl_gmres_hb-test_bl_gmres_hb.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Po' tmpdepfile='$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_gmres_hb-test_bl_gmres_hb.o `test -f '$(srcdir)/test_bl_gmres_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_gmres_hb.cpp
-
-bl_gmres_hb-test_bl_gmres_hb.obj: $(srcdir)/test_bl_gmres_hb.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_gmres_hb-test_bl_gmres_hb.obj -MD -MP -MF "$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Tpo" -c -o bl_gmres_hb-test_bl_gmres_hb.obj `if test -f '$(srcdir)/test_bl_gmres_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_gmres_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_gmres_hb.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Tpo" "$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Po"; else rm -f "$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_gmres_hb.cpp' object='bl_gmres_hb-test_bl_gmres_hb.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Po' tmpdepfile='$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_gmres_hb-test_bl_gmres_hb.obj `if test -f '$(srcdir)/test_bl_gmres_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_gmres_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_gmres_hb.cpp'; fi`
-
-bl_gmres_hb-createEpetraProblem.o: $(srcdir)/createEpetraProblem.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_gmres_hb-createEpetraProblem.o -MD -MP -MF "$(DEPDIR)/bl_gmres_hb-createEpetraProblem.Tpo" -c -o bl_gmres_hb-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_gmres_hb-createEpetraProblem.Tpo" "$(DEPDIR)/bl_gmres_hb-createEpetraProblem.Po"; else rm -f "$(DEPDIR)/bl_gmres_hb-createEpetraProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='bl_gmres_hb-createEpetraProblem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_gmres_hb-createEpetraProblem.Po' tmpdepfile='$(DEPDIR)/bl_gmres_hb-createEpetraProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_gmres_hb-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp
-
-bl_gmres_hb-createEpetraProblem.obj: $(srcdir)/createEpetraProblem.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_gmres_hb-createEpetraProblem.obj -MD -MP -MF "$(DEPDIR)/bl_gmres_hb-createEpetraProblem.Tpo" -c -o bl_gmres_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_gmres_hb-createEpetraProblem.Tpo" "$(DEPDIR)/bl_gmres_hb-createEpetraProblem.Po"; else rm -f "$(DEPDIR)/bl_gmres_hb-createEpetraProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='bl_gmres_hb-createEpetraProblem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_gmres_hb-createEpetraProblem.Po' tmpdepfile='$(DEPDIR)/bl_gmres_hb-createEpetraProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_gmres_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`
-
-bl_pgmres_hb-test_bl_pgmres_hb.o: $(srcdir)/test_bl_pgmres_hb.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_pgmres_hb-test_bl_pgmres_hb.o -MD -MP -MF "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Tpo" -c -o bl_pgmres_hb-test_bl_pgmres_hb.o `test -f '$(srcdir)/test_bl_pgmres_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_pgmres_hb.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Tpo" "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po"; else rm -f "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_pgmres_hb.cpp' object='bl_pgmres_hb-test_bl_pgmres_hb.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po' tmpdepfile='$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_pgmres_hb-test_bl_pgmres_hb.o `test -f '$(srcdir)/test_bl_pgmres_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_pgmres_hb.cpp
-
-bl_pgmres_hb-test_bl_pgmres_hb.obj: $(srcdir)/test_bl_pgmres_hb.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_pgmres_hb-test_bl_pgmres_hb.obj -MD -MP -MF "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Tpo" -c -o bl_pgmres_hb-test_bl_pgmres_hb.obj `if test -f '$(srcdir)/test_bl_pgmres_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_pgmres_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_pgmres_hb.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Tpo" "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po"; else rm -f "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_pgmres_hb.cpp' object='bl_pgmres_hb-test_bl_pgmres_hb.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po' tmpdepfile='$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_pgmres_hb-test_bl_pgmres_hb.obj `if test -f '$(srcdir)/test_bl_pgmres_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_pgmres_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_pgmres_hb.cpp'; fi`
-
-bl_pgmres_hb-createEpetraProblem.o: $(srcdir)/createEpetraProblem.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_pgmres_hb-createEpetraProblem.o -MD -MP -MF "$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Tpo" -c -o bl_pgmres_hb-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Tpo" "$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Po"; else rm -f "$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='bl_pgmres_hb-createEpetraProblem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Po' tmpdepfile='$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_pgmres_hb-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp
-
-bl_pgmres_hb-createEpetraProblem.obj: $(srcdir)/createEpetraProblem.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_pgmres_hb-createEpetraProblem.obj -MD -MP -MF "$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Tpo" -c -o bl_pgmres_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Tpo" "$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Po"; else rm -f "$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='bl_pgmres_hb-createEpetraProblem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.Po' tmpdepfile='$(DEPDIR)/bl_pgmres_hb-createEpetraProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_pgmres_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

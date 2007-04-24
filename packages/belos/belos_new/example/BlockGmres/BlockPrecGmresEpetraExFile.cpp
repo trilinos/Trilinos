@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
   int frequency = -1;        // frequency of status test output.
   int blocksize = 1;         // blocksize
   int numrhs = 1;            // number of right-hand sides to solve for
-  int numrestarts = 15;      // number of restarts allowed 
+  int maxrestarts = 15;      // maximum number of restarts allowed 
   int maxiters = -1;         // maximum number of iterations allowed per linear system
   int maxsubspace = 25;      // maximum number of blocks the solver can use for the subspace
   std::string filename("orsirr1.hb");
@@ -98,10 +98,10 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("num-restarts",&numrestarts,"Number of restarts allowed for GMRES solver.");
   cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
   cmdp.setOption("max-subspace",&maxsubspace,"Maximum number of blocks the solver can use for the subspace.");
+  cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -182,11 +182,14 @@ int main(int argc, char *argv[]) {
   belosList.set( "Num Blocks", maxiters );               // Maximum number of blocks in Krylov factorization
   belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
+  belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-  if (verbose)
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
+  if (verbose) {
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
+		   Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
     if (frequency > 0)
       belosList.set( "Output Frequency", frequency );
+  }
   else
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
   //
@@ -216,7 +219,7 @@ int main(int argc, char *argv[]) {
     cout << "Dimension of matrix: " << NumGlobalElements << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
     cout << "Block size used by solver: " << blocksize << endl;
-    cout << "Number of restarts allowed: " << numrestarts << endl;
+    cout << "Number of restarts allowed: " << maxrestarts << endl;
     cout << "Max number of Gmres iterations per restart cycle: " << maxiters << endl; 
     cout << "Relative residual tolerance: " << tol << endl;
     cout << endl;
