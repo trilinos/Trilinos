@@ -34,15 +34,8 @@
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
-#include "BelosOutputManager.hpp"
-#include "BelosStatusTestMaxIters.hpp"
-#include "BelosStatusTestMaxRestarts.hpp"
-#include "BelosStatusTestResNorm.hpp"
-#include "BelosStatusTestOutputter.hpp"
-#include "BelosStatusTestCombo.hpp"
 #include "BelosEpetraAdapter.hpp"
-#include "BelosBlockGmres.hpp"
-#include "BelosPseudoBlockGmres.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
 #include "createEpetraProblem.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -73,7 +66,7 @@ int main(int argc, char *argv[]) {
   int frequency = -1;
   int blocksize = 1;
   int numrhs = 1;
-  int numrestarts = 15; // number of restarts allowed 
+  int maxrestarts = 15; // number of restarts allowed 
   int maxiters = -1;    // maximum number of iterations allowed per linear system
   std::string filename("orsirr1.hb");
   MT tol = 1.0e-5;  // relative residual tolerance
@@ -84,7 +77,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
-  cmdp.setOption("num-restarts",&numrestarts,"Number of restarts allowed for GMRES solver.");
+  cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
   cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
   cmdp.setOption("maxiters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -110,41 +103,32 @@ int main(int argc, char *argv[]) {
   if (maxiters = -1)
     maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
   //
-  ParameterList My_PL;
-  My_PL.set( "Length", maxiters );  // Maximum number of blocks in Krylov factorization
+  ParameterList belosList;
+  belosList.set( "Num Blocks", maxiters );               // Maximum number of blocks in Krylov factorization
+  belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
+  belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
+  belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
+  belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  if (verbose) {
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
+		   Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
+    if (frequency > 0)
+      belosList.set( "Output Frequency", frequency );
+  }
+  else
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
+  //
   //
   // Construct an unpreconditioned linear problem instance.
   //
-  Belos::LinearProblem<double,MV,OP>
-	My_LP( A, X, B );
-  My_LP.SetBlockSize( blocksize );
+  Belos::LinearProblem<double,MV,OP> problem( A, X, B );
+  problem.setBlockSize( blocksize );
   //
   // *******************************************************************
   // *************Start the block Gmres iteration*************************
   // *******************************************************************
   //
-  Belos::OutputManager<double> My_OM( MyPID );
-  if (verbose)
-    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings
-			+ Belos::TimingDetails + Belos::FinalSummary );
-  
-  typedef Belos::StatusTestCombo<double,MV,OP> StatusTestCombo_t;
-  Belos::StatusTestMaxIters<double,MV,OP> test1( maxiters );
-  Belos::StatusTestMaxRestarts<double,MV,OP> test2( numrestarts );
-  StatusTestCombo_t test3( StatusTestCombo_t::OR, test1, test2 );
-  Belos::StatusTestResNorm<double,MV,OP> test4( tol );
-  Belos::StatusTestOutputter<ST,MV,OP> test5( frequency, false );
-  test5.set_resNormStatusTest( rcp(&test4,false) );
-  test5.set_outputManager( rcp(&My_OM,false) );    
-  StatusTestCombo_t My_Test( StatusTestCombo_t::OR, test3, test5 );
- 
-  RefCountPtr< Belos::IterativeSolver<double,MV,OP> > Solver; 
-  if (pseudo)
-    Solver = rcp( new Belos::PseudoBlockGmres<double,MV,OP>
-                      ( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false) ) );
-  else
-    Solver = rcp( new Belos::BlockGmres<double,MV,OP>
-                      ( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false) ) );
+  Belos::BlockGmresSolMgr<double,MV,OP> solver( rcp(&problem,false), belosList );
   //
   // **********Print out information about problem*******************
   //
@@ -153,7 +137,7 @@ int main(int argc, char *argv[]) {
     cout << "Dimension of matrix: " << NumGlobalElements << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
     cout << "Block size used by solver: " << blocksize << endl;
-    cout << "Number of restarts allowed: " << numrestarts << endl;
+    cout << "Number of restarts allowed: " << maxrestarts << endl;
     cout << "Max number of Gmres iterations per restart cycle: " << maxiters << endl; 
     cout << "Relative residual tolerance: " << tol << endl;
     cout << endl;
@@ -172,7 +156,7 @@ int main(int argc, char *argv[]) {
   //
   // Perform solve
   //
-  Solver->Solve();
+  Belos::ReturnType ret = solver.solve();
 
   //
   // Compute actual residuals.
@@ -191,10 +175,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (My_Test.GetStatus()!=Belos::Converged) {
-	if (proc_verbose)
-      		cout << "End Result: TEST FAILED" << endl;	
-	return -1;
+  if (ret!=Belos::Converged) {
+    if (proc_verbose)
+      cout << "End Result: TEST FAILED" << endl;	
+    return -1;
   }
   //
   // Default return value

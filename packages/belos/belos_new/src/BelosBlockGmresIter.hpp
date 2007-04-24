@@ -479,7 +479,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
 	}
 	else {
 	  // Generate V_ by cloning itself ONLY if more space is needed.
-	  if (V_->NumVectors() < newsd) {
+	  if (MVT::GetNumberVecs(*V_) < newsd) {
 	    Teuchos::RefCountPtr<const MV> tmp = V_;
 	    V_ = MVT::Clone( *tmp, newsd );
 	  }

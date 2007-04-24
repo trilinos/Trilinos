@@ -34,14 +34,7 @@
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
-#include "BelosOutputManager.hpp"
-#include "BelosStatusTestMaxIters.hpp"
-#include "BelosStatusTestMaxRestarts.hpp"
-#include "BelosStatusTestResNorm.hpp"
-#include "BelosStatusTestOutputter.hpp"
-#include "BelosStatusTestCombo.hpp"
-#include "BelosBlockGmres.hpp"
-#include "BelosPseudoBlockGmres.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
 // I/O for Harwell-Boeing files
@@ -65,8 +58,8 @@ int main(int argc, char *argv[]) {
   cout << "Not compiled with complex support." << endl;
   cout << "End Result: TEST FAILED" << endl;
   return -1;
-  }
 #endif
+
   typedef ScalarTraits<ST>                 SCT;
   typedef SCT::magnitudeType                MT;
   typedef Belos::MultiVec<ST>               MV;
@@ -90,23 +83,21 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
-  bool pseudo = false; // use pseudo block GMRES to solve the linear system
   int frequency = -1;  // how often residuals are printed by solver
   int blocksize = 1;
   int numrhs = 1;
-  int numrestarts = 15;
+  int maxrestarts = 15;
   int length = 50;
   std::string filename("mhd1280b.cua");
   MT tol = 1.0e-5;  // relative residual tolerance
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block GMRES to solve the linear system.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("num-restarts",&numrestarts,"Number of restarts allowed for the GMRES solver.");
+  cmdp.setOption("num-restarts",&maxrestarts,"Maximum number of restarts allowed for the GMRES solver.");
   cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
   cmdp.setOption("subspace-length",&length,"Maximum dimension of block-subspace used by GMRES solver.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -115,17 +106,17 @@ int main(int argc, char *argv[]) {
 #endif
     return -1;
   }
-
+  
   proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
   if (proc_verbose) {
     cout << Belos::Belos_Version() << endl << endl;
   }
   if (!verbose)
     frequency = -1;  // reset frequency if test is not verbose
-	    
-
+  
+  
 #ifndef HAVE_BELOS_TRIUTILS
-   cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
+  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
@@ -134,7 +125,7 @@ int main(int argc, char *argv[]) {
   }
   return -1;
 #endif
-
+  
   // Get the data from the HB file
   int dim,dim2,nnz;
   MT *dvals;
@@ -167,8 +158,20 @@ int main(int argc, char *argv[]) {
   //
   int maxits = dim/blocksize; // maximum number of iterations to run
   //
-  RefCountPtr<ParameterList> My_PL = rcp( new ParameterList() );
-  My_PL->set( "Length", length );  // Maximum number of blocks in Krylov factorization
+  ParameterList belosList;
+  belosList.set( "Num Blocks", length );                 // Maximum number of blocks in Krylov factorization
+  belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
+  belosList.set( "Maximum Iterations", maxits );         // Maximum number of iterations allowed
+  belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
+  belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  if (verbose) {
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
+		   Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
+    if (frequency > 0)
+      belosList.set( "Output Frequency", frequency );
+  }
+  else
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
   //
   // Construct the right-hand side and solution multivectors.
   // NOTE:  The right-hand side will be constructed such that the solution is
@@ -182,38 +185,16 @@ int main(int argc, char *argv[]) {
   //
   //  Construct an unpreconditioned linear problem instance.
   //
-  RefCountPtr<Belos::LinearProblem<ST,MV,OP> > My_LP = 
+  RefCountPtr<Belos::LinearProblem<ST,MV,OP> > problem = 
     rcp( new Belos::LinearProblem<ST,MV,OP>( A, soln, rhs ) );
-  My_LP->SetBlockSize( blocksize );
+  problem->setBlockSize( blocksize );
   //
   // *******************************************************************
   // *************Start the block Gmres iteration***********************
   // *******************************************************************
   //
-  RefCountPtr<Belos::OutputManager<ST> > My_OM = 
-    rcp( new Belos::OutputManager<ST>( MyPID ) );
-  if (verbose)
-    My_OM->SetVerbosity( Belos::Errors + Belos::Warnings 
-			 + Belos::TimingDetails + Belos::IterationDetails 
-			 + Belos::FinalSummary );	
-  //
-  typedef Belos::StatusTestCombo<ST,MV,OP> StatusTestCombo_t;
-  Belos::StatusTestMaxIters<ST,MV,OP> test1( maxits );
-  Belos::StatusTestMaxRestarts<ST,MV,OP> test2( numrestarts );
-  Belos::StatusTestResNorm<ST,MV,OP> test3( tol );
-  Belos::StatusTestOutputter<ST,MV,OP> test4( frequency, false );
-  test4.set_resNormStatusTest( rcp(&test3, false) );
-  test4.set_outputManager( My_OM );
-  
-  RefCountPtr<StatusTestCombo_t > My_Test =
-    rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, test1, test2 ) );
-  My_Test->AddStatusTest( test4 );
-  //
-  RefCountPtr<Belos::IterativeSolver<ST,MV,OP> > Solver;
-  if (pseudo)
-    Solver = rcp( new Belos::PseudoBlockGmres<ST,MV,OP>( My_LP, My_Test, My_OM, My_PL ) );
-  else
-    Solver = rcp( new Belos::BlockGmres<ST,MV,OP>( My_LP, My_Test, My_OM, My_PL ) );
+  Belos::BlockGmresSolMgr<ST,MV,OP> solver( problem, belosList );
+
   //
   // **********Print out information about problem*******************
   //
@@ -230,20 +211,19 @@ int main(int argc, char *argv[]) {
   //
   if (proc_verbose) {
     cout << endl << endl << "Running ";
-    if (pseudo)
-      cout << "Pseudo ";
     cout << "Block Gmres -- please wait" << endl;
     cout << (numrhs+blocksize-1)/blocksize 
 	 << " pass(es) through the solver required to solve for " << endl; 
     cout << numrhs << " right-hand side(s) -- using a block size of " << blocksize
 	 << endl << endl;
   }
-
   // 
-  // Perform solve.
+  // Perform solve
   //
-  Solver->Solve();
-
+  Belos::ReturnType ret = solver.solve();
+  //
+  // Compute actual residuals.
+  //
   RefCountPtr<MyMultiVec<ST> > temp = rcp( new MyMultiVec<ST>(dim,numrhs) );
   OPT::Apply( *A, *soln, *temp );
   MVT::MvAddMv( one, *rhs, -one, *temp, *temp );
@@ -268,7 +248,7 @@ int main(int argc, char *argv[]) {
     MPI_Finalize();
 #endif
 
-  if ( My_Test->GetStatus()!=Belos::Converged || norm_failure ) {
+  if ( ret!=Belos::Converged || norm_failure ) {
     if (proc_verbose)
       cout << "End Result: TEST FAILED" << endl;	
     return -1;
