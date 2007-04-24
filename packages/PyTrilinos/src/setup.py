@@ -226,6 +226,11 @@ if __name__ == "__main__":
         if extModName.endswith(".___init__"):
             packages.append(extModName[:-10])
 
+    # Build the list of scripts
+    scripts = [ ]
+    if makeMacros["ENABLE_TEUCHOS"] == "true":
+        scripts.append(os.path.join(srcdir, "scripts", "ParamConvert.py"))
+
     # Call the distutils setup function.  This defines the PyTrilinos package to
     # distutils and distutils takes over from here.
     setup(name         = PyTrilinos,
@@ -236,5 +241,6 @@ if __name__ == "__main__":
           url          = "http://software.sandia.gov/trilinos/packages/pytrilinos",
           download_url = "http://software.sandia.gov/trilinos/downloads/trilinos-7.0.html",
           packages     = packages,
-          ext_modules  = ext_modules
+          ext_modules  = ext_modules,
+          scripts      = scripts
           )
