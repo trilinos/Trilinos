@@ -296,8 +296,7 @@ void Iterative_Inverse_Operator::operator () (const Epetra_MultiVector &b, Epetr
   x.PutScalar( 0.0 );
 
   // Reset the solver, problem, and status test for next solve (HKT)
-//  pBelos->reset();
-  pProb->reset( Teuchos::rcp(&x, false), Teuchos::rcp(&b, false) );
+  pProb->setProblem( Teuchos::rcp(&x, false), Teuchos::rcp(&b, false) );
   
   timer.start();
   Belos::ReturnType ret = pBelos->solve();

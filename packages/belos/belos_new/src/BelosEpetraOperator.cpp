@@ -94,8 +94,8 @@ int EpetraOperator::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) 
   RefCountPtr<Epetra_MultiVector> vec_Y;
   vec_X = rcp( &X, false );
   vec_Y = rcp( &Y, false );
- // solver_->Reset();
-  lp_->reset( vec_Y, vec_X );
+  // solver_->Reset();
+  lp_->setProblem( vec_Y, vec_X );
   stest_->reset();
   solver_->solve();
   
@@ -110,7 +110,7 @@ int EpetraOperator::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVecto
   vec_X = rcp( &X, false );
   vec_Y = rcp( &Y, false );
  // solver_->Reset();
-  lp_->reset( vec_Y, vec_X );
+  lp_->setProblem( vec_Y, vec_X );
   stest_->reset();
   solver_->solve();
   

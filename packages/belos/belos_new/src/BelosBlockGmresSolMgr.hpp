@@ -66,8 +66,18 @@
 
 namespace Belos {
   
-  //! @name BlockGmresIter Exceptions
+  //! @name BlockGmresSolMgr Exceptions
   //@{
+  
+  /** \brief BlockGmresSolMgrLinearProblemFailure is thrown when the linear problem is
+   * not setup (i.e. setProblem() was not called) when solve() is called.
+   *
+   * This exception is thrown from the BlockGmresSolMgr::solve() method.
+   *
+   */
+  class BlockGmresSolMgrLinearProblemFailure : public BelosError {public:
+    BlockGmresSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
+    {}};
   
   /** \brief BlockGmresSolMgrOrthoFailure is thrown when the orthogonalization manager is
    * unable to generate orthonormal columns from the initial basis vectors.
@@ -329,6 +339,9 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
   
+  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),BlockGmresSolMgrLinearProblemFailure,
+                     "Belos::BlockGmresSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
+
   //////////////////////////////////////////////////////////////////////////////////////
   // Parameter list
   Teuchos::ParameterList plist;

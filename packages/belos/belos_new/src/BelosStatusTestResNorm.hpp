@@ -559,34 +559,34 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( Itera
     cur_num_rhs_ = lp.getNumToSolve();
     //
     if (scaletype_== NormOfRHS) {
-      const MV& rhs = *(lp.getRHS());
-      numrhs_ = MVT::GetNumberVecs( rhs );
+      RefCountPtr<const MV> rhs = lp.getRHS();
+      numrhs_ = MVT::GetNumberVecs( *rhs );
       scalevector_.resize( numrhs_ );
       resvector_.resize( numrhs_ ); 
       testvector_.resize( numrhs_ );
-      MVT::MvNorm( rhs, &scalevector_, scalenormtype_ );
+      MVT::MvNorm( *rhs, &scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfInitRes) {
-      const MV &init_res = const_cast<LinearProblem<ScalarType,MV,OP> &>(lp).getInitResVec();
-      numrhs_ = MVT::GetNumberVecs( init_res );
+      RefCountPtr<const MV> init_res = lp.getInitResVec();
+      numrhs_ = MVT::GetNumberVecs( *init_res );
       scalevector_.resize( numrhs_ );
       resvector_.resize( numrhs_ ); 
       testvector_.resize( numrhs_ );
-      MVT::MvNorm( init_res, &scalevector_, scalenormtype_ );
+      MVT::MvNorm( *init_res, &scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfPrecInitRes) {
-      const MV& init_res = const_cast<LinearProblem<ScalarType,MV,OP> &>(lp).getInitResVec();
-      numrhs_ = MVT::GetNumberVecs( init_res );
+      RefCountPtr<const MV> init_res = lp.getInitResVec();
+      numrhs_ = MVT::GetNumberVecs( *init_res );
       scalevector_.resize( numrhs_ );
       resvector_.resize( numrhs_ ); 
       testvector_.resize( numrhs_ );
-      RefCountPtr<MV> prec_init_res = MVT::Clone( init_res, numrhs_ );
       if (lp.isLeftPrec()) {
-        lp.applyLeftPrec( init_res, *prec_init_res );
+        RefCountPtr<MV> prec_init_res = MVT::Clone( *init_res, numrhs_ );
+        lp.applyLeftPrec( *init_res, *prec_init_res );
         MVT::MvNorm( *prec_init_res, &scalevector_, scalenormtype_ );
       }
       else { 
-        MVT::MvNorm( init_res, &scalevector_, scalenormtype_ );
+        MVT::MvNorm( *init_res, &scalevector_, scalenormtype_ );
       }
     }
 

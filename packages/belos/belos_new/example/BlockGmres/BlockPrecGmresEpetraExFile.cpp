@@ -204,6 +204,12 @@ int main(int argc, char *argv[]) {
     problem->setRightPrec( belosPrec );
   }    
   problem->setBlockSize( blocksize );
+  bool set = problem->setProblem();
+  if (set == false) {
+    if (proc_verbose)
+      cout << endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << endl;
+    return -1;
+  }
   
   // Create an iterative solver manager.
   RefCountPtr< Belos::SolverManager<double,MV,OP> > solver

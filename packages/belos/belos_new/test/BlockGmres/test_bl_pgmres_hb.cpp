@@ -187,7 +187,12 @@ int main(int argc, char *argv[]) {
     problem.setRightPrec( Prec );
   
   problem.setBlockSize( blocksize );
-  
+  bool set = problem.setProblem();
+  if (set == false) {
+    if (proc_verbose)
+      cout << endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << endl;
+    return -1;
+  }
   //
   // *******************************************************************
   // *************Start the block Gmres iteration*************************
