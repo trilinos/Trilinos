@@ -106,8 +106,11 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     exact in infinite precision arithmetic.  This vector may be different from the true residual 
     either because left scaling or preconditioning was used, or because round-off error has 
     introduced significant error, or both.
+
+    You can also state the number of vectors that must pass the convergence criteria before the 
+    status test passes by using the \c quorum argument.
   */
-  StatusTestResNorm( MagnitudeType Tolerance, bool showMaxResNormOnly = false );
+  StatusTestResNorm( MagnitudeType Tolerance, int quorum = -1, bool showMaxResNormOnly = false );
 
   //! Destructor
   virtual ~StatusTestResNorm();
@@ -193,6 +196,13 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //! @name Methods to access data members.
   //@{ 
 
+  //! Returns the number of residuals that must pass the convergence test before Passed is returned.
+  //! \note If \c quorum=-1 then all residuals must pass the convergence test before Passed is returned.
+  int getQuorum() { return quorum_; }
+
+  //! Returns the vector containing the indices of the residuals that passed the test.
+  std::vector<int> convIndices() { return ind_; }
+
   //! Returns the value of the tolerance, \f$ \tau \f$, set in the constructor.
   MagnitudeType getTolerance() const {return(tolerance_);};
   
@@ -228,6 +238,9 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //! Tolerance used to determine convergence
   MagnitudeType tolerance_;
 
+  //! Number of residuals that must pass the convergence test before Passed is returned.
+  int quorum_;
+
   //! Determines if the entries for all of the residuals are shown or just the max.
   bool showMaxResNormOnly_;
  
@@ -254,6 +267,9 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
 
   //! Test vector = resvector_ / scalevector_
   std::vector<MagnitudeType> testvector_;
+
+  //! Vector containing the indices for the vectors that passed the test.
+  std::vector<int> ind_;
   
   //! Status
   StatusType status_;
@@ -284,8 +300,9 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
 };
 
 template <class ScalarType, class MV, class OP>
-StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm( MagnitudeType Tolerance, bool showMaxResNormOnly )
+StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm( MagnitudeType Tolerance, int quorum, bool showMaxResNormOnly )
   : tolerance_(Tolerance),
+    quorum_(quorum),
     showMaxResNormOnly_(showMaxResNormOnly),
     restype_(Implicit),
     resnormtype_(TwoNorm),	
@@ -315,13 +332,15 @@ void StatusTestResNorm<ScalarType,MV,OP>::reset()
   cur_rhs_num_ = 0;
   cur_blksz_ = 0;
   numrhs_ = 0;
+  ind_.resize(0);
   firstcallCheckStatus_ = true;
 }
 
 template <class ScalarType, class MV, class OP>
 int StatusTestResNorm<ScalarType,MV,OP>::defineResForm( ResType TypeOfResidual, NormType TypeOfNorm )
 {    
-  assert( firstcallDefineResForm_ );
+  TEST_FOR_EXCEPTION(firstcallDefineResForm_==false,StatusTestError,
+	"StatusTestResNorm::defineResForm(): The residual form has already been defined.");
   firstcallDefineResForm_ = false;
     
   restype_ = TypeOfResidual;
@@ -334,8 +353,8 @@ template <class ScalarType, class MV, class OP>
 int StatusTestResNorm<ScalarType,MV,OP>::defineScaleForm(ScaleType TypeOfScaling, NormType TypeOfNorm,
                                                          MagnitudeType ScaleValue )
 {
-    
-  assert( firstcallDefineScaleForm_ );
+  TEST_FOR_EXCEPTION(firstcallDefineScaleForm_==false,StatusTestError,
+	"StatusTestResNorm::defineScaleForm(): The scaling type has already been defined.");
   firstcallDefineScaleForm_ = false;
     
   scaletype_ = TypeOfScaling;
@@ -401,7 +420,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
     RefCountPtr<MV> cur_update = iSolver->getCurrentUpdate();
     RefCountPtr<MV> cur_soln = lp.updateSolution( cur_update );
     RefCountPtr<MV> cur_res = MVT::Clone( *cur_soln, MVT::GetNumberVecs( *cur_soln ) );
-    lp.computeCurrResVec( &*cur_res, &*cur_soln );
+    lp.computeActualResVec( &*cur_res, &*cur_soln );
     std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( *cur_res ) );
     MVT::MvNorm( *cur_res, &tmp_resvector, resnormtype_ );
     for (i=0; i<MVT::GetNumberVecs( *cur_res ) && i<cur_num_rhs_; i++)
@@ -428,20 +447,24 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
       testvector_[ i ] = resvector_[ i ] / scalevalue_;
   }	
 
-  // Check status of new linear system residuals
-  status_ = Passed; // This may be set to Failed.
+  // Check status of new linear system residuals and see if we have the quorum.
+  int have = 0;
+  ind_.resize( cur_num_rhs_ );
   for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_num_rhs_); i++) {
     // Check if any of the residuals are larger than the tolerance.
     if (testvector_[ i ] > tolerance_) {
-      status_ = Failed;
-      return(status_);
-    } else if (testvector_[ i ] <= tolerance_) { 
       // do nothing.
+    } else if (testvector_[ i ] <= tolerance_) { 
+      ind_[have] = i;
+      have++;
     } else {
       // Throw an exception if a NaN is found.
       status_ = Failed;
       TEST_FOR_EXCEPTION(true,StatusTestError,"StatusTestResNorm::checkStatus(): NaN has been detected.");
     }
+    ind_.resize(have);
+    int need = (quorum_ == -1) ? cur_num_rhs_ : quorum_;
+    status_ = (have >= need) ? Passed : Failed;
   } 
   
   // Return the current status

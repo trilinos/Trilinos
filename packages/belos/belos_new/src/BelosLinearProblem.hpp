@@ -132,12 +132,12 @@ namespace Belos {
     */
     void setCurrLSVec();
     
-    //! Inform the linear problem that the operator is symmetric.
+    //! Inform the linear problem that the operator is Hermitian.
     /*! This knowledge may allow the operator to take advantage of the linear problem symmetry.
-      However, this should not be set to true if the preconditioner is not symmetric, or symmetrically
+      However, this should not be set to true if the preconditioner is not Hermitian, or symmetrically
       applied.
     */
-    void assertSymmetric(){ operatorSymmetric_ = true; };
+    void setHermitian(){ isHermitian_ = true; };
     
     //! Compute the new solution to the linear system given the /c update.
     /*! \note If \c updateLP is true, then the next time GetCurrResVecs is called, a new residual will be computed.  
@@ -282,7 +282,7 @@ namespace Belos {
     bool isSolutionUpdated() const { return(solutionUpdated_); }
     
     //! Get the current symmetry of the operator.
-    bool isOperatorSymmetric() const { return(operatorSymmetric_); }
+    bool isHermitian() const { return(isHermitian_); }
     
     //! Get information on whether the linear system is being preconditioned on the left.
     bool isLeftPrec() const { return(LP_!=Teuchos::null); }
@@ -335,6 +335,13 @@ namespace Belos {
       \note This residual will be a preconditioned residual if the system has a left preconditioner.
     */
     void computeCurrResVec( MV* R, const MV* X = 0, const MV* B = 0 ) const;
+
+    //! Compute a residual \c R for this operator given a solution \c X, and right-hand side \c B.
+    /*! This method will compute the residual for the current linear system if \c X and \c B are null pointers.
+      The result will be returned into R.  Otherwise <tt>R = OP(A)X - B</tt> will be computed and returned.
+      \note This residual will not be preconditioned if the system has a left preconditioner.
+    */
+    void computeActualResVec( MV* R, const MV* X = 0, const MV* B = 0 ) const;
     
     //@}
     
@@ -393,7 +400,7 @@ namespace Belos {
     bool Right_Prec_;
     bool Left_Scale_;
     bool Right_Scale_;
-    bool operatorSymmetric_;
+    bool isHermitian_;
     bool solutionUpdated_;    
     bool solutionFinal_;
     bool initresidsComputed_;
@@ -418,7 +425,7 @@ namespace Belos {
     Right_Prec_(false),
     Left_Scale_(false),
     Right_Scale_(false),
-    operatorSymmetric_(false),
+    isHermitian_(false),
     solutionUpdated_(false),
     solutionFinal_(true),
     initresidsComputed_(false)
@@ -443,7 +450,7 @@ namespace Belos {
     Right_Prec_(false),
     Left_Scale_(false),
     Right_Scale_(false),
-    operatorSymmetric_(false),
+    isHermitian_(false),
     solutionUpdated_(false),
     solutionFinal_(true),
     initresidsComputed_(false)
@@ -473,7 +480,7 @@ namespace Belos {
     Right_Prec_(Problem.Right_Prec_),
     Left_Scale_(Problem.Left_Scale_),
     Right_Scale_(Problem.Right_Scale_),
-    operatorSymmetric_(Problem.operatorSymmetric_),
+    isHermitian_(Problem.isHermitian_),
     solutionUpdated_(Problem.solutionUpdated_),
     solutionFinal_(Problem.solutionFinal_),
     initresidsComputed_(Problem.initresidsComputed_)
@@ -662,8 +669,9 @@ namespace Belos {
     // in a preconditioned residual.
     if (!initresidsComputed_ && A_.get() && X_.get() && B_.get()) 
       {
-	if (R0_.get()) R0_ = null;
-	R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
+	if (R0_==Teuchos::null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *X_ )) {
+	  R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
+	}
 	OPT::Apply( *A_, *X_, *R0_ );
 	MVT::MvAddMv( 1.0, *B_, -1.0, *R0_, *R0_ );
 	initresidsComputed_ = true;
@@ -811,47 +819,79 @@ namespace Belos {
   
   template <class ScalarType, class MV, class OP>
   void LinearProblem<ScalarType,MV,OP>::computeCurrResVec( MV* R, const MV* X, const MV* B ) const {
-    if (X && B) // The entries are specified, so compute the residual of Op(A)X = B
-      {
+
+    if (R) {
+      if (X && B) // The entries are specified, so compute the residual of Op(A)X = B
+	{
+	  if (Left_Prec_)
+	    {
+	      RefCountPtr<MV> R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
+	      OPT::Apply( *A_, *X, *R_temp );
+	      MVT::MvAddMv( -1.0, *R_temp, 1.0, *B, *R_temp );
+	      OPT::Apply( *LP_, *R_temp, *R );
+	    }
+	  else 
+	    {
+	      OPT::Apply( *A_, *X, *R );
+	      MVT::MvAddMv( -1.0, *R, 1.0, *B, *R );
+	    }
+	}
+      else { 
+	// The solution and right-hand side may not be specified, check and use which ones exist.
+	RefCountPtr<const MV> localB, localX;
+	if (B)
+	  localB = rcp( B, false );
+	else
+	  localB = CurB_;
+	
+	if (X)
+	  localX = rcp( X, false );
+	else
+	  localX = CurX_;
+	
 	if (Left_Prec_)
 	  {
-	    RefCountPtr<MV> R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
-	    OPT::Apply( *A_, *X, *R_temp );
-	    MVT::MvAddMv( -1.0, *R_temp, 1.0, *B, *R_temp );
+	    RefCountPtr<MV> R_temp = MVT::Clone( *localX, MVT::GetNumberVecs( *localX ) );
+	    OPT::Apply( *A_, *localX, *R_temp );
+	    MVT::MvAddMv( -1.0, *R_temp, 1.0, *localB, *R_temp );
 	    OPT::Apply( *LP_, *R_temp, *R );
 	  }
 	else 
 	  {
-	    OPT::Apply( *A_, *X, *R );
-	    MVT::MvAddMv( -1.0, *R, 1.0, *B, *R );
+	    OPT::Apply( *A_, *localX, *R );
+	    MVT::MvAddMv( -1.0, *R, 1.0, *localB, *R );
 	  }
-      }
-    else { 
-      // The solution and right-hand side may not be specified, check and use which ones exist.
-      RefCountPtr<const MV> localB, localX;
-      if (B)
-        localB = rcp( B, false );
-      else
-        localB = CurB_;
+      }    
+    }
+  }
+  
+  
+  template <class ScalarType, class MV, class OP>
+  void LinearProblem<ScalarType,MV,OP>::computeActualResVec( MV* R, const MV* X, const MV* B ) const {
 
-      if (X)
-        localX = rcp( X, false );
-      else
-        localX = CurX_;
-
-      if (Left_Prec_)
+    if (R) {
+      if (X && B) // The entries are specified, so compute the residual of Op(A)X = B
 	{
-	  RefCountPtr<MV> R_temp = MVT::Clone( *localX, MVT::GetNumberVecs( *localX ) );
-	  OPT::Apply( *A_, *localX, *R_temp );
-	  MVT::MvAddMv( -1.0, *R_temp, 1.0, *localB, *R_temp );
-	  OPT::Apply( *LP_, *R_temp, *R );
+	  OPT::Apply( *A_, *X, *R );
+	  MVT::MvAddMv( -1.0, *R, 1.0, *B, *R );
 	}
-      else 
-	{
-	  OPT::Apply( *A_, *localX, *R );
-	  MVT::MvAddMv( -1.0, *R, 1.0, *localB, *R );
-	}
-    }    
+      else { 
+	// The solution and right-hand side may not be specified, check and use which ones exist.
+	RefCountPtr<const MV> localB, localX;
+	if (B)
+	  localB = rcp( B, false );
+	else
+	  localB = CurB_;
+	
+	if (X)
+	  localX = rcp( X, false );
+	else
+	  localX = CurX_;
+	
+	OPT::Apply( *A_, *localX, *R );
+	MVT::MvAddMv( -1.0, *R, 1.0, *localB, *R );
+      }    
+    }
   }
   
 } // end Belos namespace
