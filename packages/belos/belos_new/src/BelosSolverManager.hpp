@@ -71,6 +71,15 @@ class SolverManager : virtual public Teuchos::Describable {
 
   //@}
 
+  //! @name Set methods
+  //@{
+
+  virtual void setProblem( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem ) = 0;
+
+  virtual void setParameters( Teuchos::ParameterList &list ) = 0;
+
+  //@}
+
   //! @name Solver application methods
   //@{ 
     

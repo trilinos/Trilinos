@@ -73,6 +73,7 @@ namespace Belos {
 	max_ortho_steps_( max_ortho_steps ),
 	blk_tol_( blk_tol ),
 	sing_tol_( sing_tol ),
+        timerOrtho_( Teuchos::TimeMonitor::getNewTimer("Belos: Orthogonalization")),
         timerUpdate_( Teuchos::TimeMonitor::getNewTimer("Belos: Ortho (Update)")),
         timerNorm_( Teuchos::TimeMonitor::getNewTimer("Belos: Ortho (Norm)")),
         timerInnerProd_( Teuchos::TimeMonitor::getNewTimer("Belos: Ortho (Inner Product)")) {};
@@ -270,7 +271,8 @@ namespace Belos {
     MagnitudeType blk_tol_;
     MagnitudeType sing_tol_;
 
-    Teuchos::RefCountPtr<Teuchos::Time> timerUpdate_, timerNorm_, timerScale_, timerInnerProd_;
+    Teuchos::RefCountPtr<Teuchos::Time> timerOrtho_, timerUpdate_, 
+                                        timerNorm_, timerScale_, timerInnerProd_;
   
     //! Routine to find an orthonormal basis for X
     int findBasis(MV &X, Teuchos::RefCountPtr<MV> MX, 
@@ -329,6 +331,8 @@ namespace Belos {
                                     Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                                     Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
                                     Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const {
+
+    Teuchos::TimeMonitor orthotimer(*timerOrtho_);
 
     ScalarType    ONE  = SCT::one();
     ScalarType    ZERO  = SCT::zero();
@@ -465,6 +469,9 @@ namespace Belos {
   int ICGSOrthoManager<ScalarType, MV, OP>::normalize(
                                 MV &X, Teuchos::RefCountPtr<MV> MX, 
                                 Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const {
+
+    Teuchos::TimeMonitor orthotimer(*timerOrtho_);
+
     // call findBasis, with the instruction to try to generate a basis of rank numvecs(X)
     return findBasis(X, MX, B, true);
   }
@@ -491,7 +498,9 @@ namespace Belos {
     //
     // Q  : Bases to orthogonalize against. These are assumed orthonormal, mutually and independently.
     //
-
+    
+    Teuchos::TimeMonitor orthotimer(*timerOrtho_);
+    
     int xc = MVT::GetNumberVecs( X );
     int xr = MVT::GetVecLength( X );
     int nq = Q.length();

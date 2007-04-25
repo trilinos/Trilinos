@@ -231,32 +231,35 @@ int main(int argc, char *argv[]) {
   //
   // Compute actual residuals.
   //
+  bool badRes = false;
   std::vector<double> actual_resids( numrhs );
   std::vector<double> rhs_norm( numrhs );
   Epetra_MultiVector resid(*Map, numrhs);
   OPT::Apply( *A, *X, resid );
-  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid ); 
+  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
   MVT::MvNorm( resid, &actual_resids );
   MVT::MvNorm( *B, &rhs_norm );
   if (proc_verbose) {
     cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
     for ( int i=0; i<numrhs; i++) {
-      cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
+      double actRes = actual_resids[i]/rhs_norm[i];
+      cout<<"Problem "<<i<<" : \t"<< actRes <<endl;
+      if (actRes > tol) badRes = true;
     }
   }
-  
-  if (ret!=Belos::Converged) {
+
+  if (ret!=Belos::Converged || badRes) {
     if (proc_verbose)
-      cout << "End Result: TEST FAILED" << endl;	
+      cout << endl << "ERROR:  Belos did not converge!" << endl;
     return -1;
   }
   //
   // Default return value
   //
   if (proc_verbose)
-    cout << "End Result: TEST PASSED" << endl;
+    cout << endl << "SUCCESS:  Belos converged!" << endl;
   return 0;
-  
+
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif

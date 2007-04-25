@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
   if (leftprec)
     problem.setLeftPrec( Prec );
   else
-    problem.setLeftPrec( Prec );
+    problem.setRightPrec( Prec );
   
   problem.setBlockSize( blocksize );
   
@@ -227,6 +227,7 @@ int main(int argc, char *argv[]) {
   //
   // Compute actual residuals.
   //
+  bool badRes = false;
   std::vector<double> actual_resids( numrhs );
   std::vector<double> rhs_norm( numrhs );
   Epetra_MultiVector R(Map, numrhs);
@@ -237,11 +238,13 @@ int main(int argc, char *argv[]) {
   if (proc_verbose) {
     cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
     for ( int i=0; i<numrhs; i++) {
-      cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
+      double actRes = actual_resids[i]/rhs_norm[i];
+      cout<<"Problem "<<i<<" : \t"<< actRes <<endl;
+      if (actRes > tol ) badRes = true;
     }
   }
 
-  if (ret!=Belos::Converged) {
+  if (ret!=Belos::Converged || badRes==true) {
     if (proc_verbose)
       cout << "End Result: TEST FAILED" << endl;	
     return -1;

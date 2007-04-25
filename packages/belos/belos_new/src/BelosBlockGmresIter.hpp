@@ -331,13 +331,6 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> >        ortho_;
 
   //
-  // Internal timers
-  //
-  // Restart the timers each time iterate() is called.
-  bool restartTimers_;
-  Teuchos::RefCountPtr<Teuchos::Time> timerOrtho_;
-
-  //
   // Algorithmic parameters
   //  
   // blockSize_ is the solver block size.
@@ -395,8 +388,6 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     om_(printer),
     stest_(tester),
     ortho_(ortho),
-    restartTimers_(false),
-    timerOrtho_(Teuchos::TimeMonitor::getNewTimer("Belos: Orthogonalization")),
     blockSize_(0),
     numBlocks_(0),
     initialized_(false),
@@ -698,8 +689,8 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       for (int i=0; i<blockSize_; i++) { curind[i] = lclDim + i; }
       Teuchos::RefCountPtr<MV> Vnext = MVT::CloneView(*V_,curind);
 
-      // Get a view of the previous vectors
-      // this is used for orthogonalization and for computing V^H K H
+      // Get a view of the previous vectors.
+      // This is used for orthogonalization and for computing V^H K H
       for (int i=0; i<blockSize_; i++) { curind[i] = curDim_ + i; }
       Teuchos::RefCountPtr<MV> Vprev = MVT::CloneView(*V_,curind);
 
@@ -707,31 +698,27 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       lp_->apply(*Vprev,*Vnext);
       Vprev = Teuchos::null;
       
-      // Remove all previous Krylov basis vectors from Vnext
-      {
-        Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
-        
-        // Get a view of all the previous vectors
-        std::vector<int> prevind(lclDim);
-        for (int i=0; i<lclDim; i++) { prevind[i] = i; }
-        Vprev = MVT::CloneView(*V_,prevind);
-        Teuchos::Array<Teuchos::RefCountPtr<const MV> > AVprev(1, Vprev);
-        
-        // Get a view of the part of the Hessenberg matrix needed to hold the ortho coeffs.
-        Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> >
-          subH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
-                               ( Teuchos::View,*H_,lclDim,blockSize_,0,curDim_ ) );
-        Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > AsubH;
-        AsubH.append( subH );
-        
-        // Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
-        Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> >
-          subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
-                               ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
-        int rank = ortho_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
-        TEST_FOR_EXCEPTION(rank != blockSize_,BlockGmresIterOrthoFailure,
-                           "Belos::BlockGmresIter::iterate(): couldn't generate basis of full rank.");
-      }
+      // Remove all previous Krylov basis vectors from Vnext      
+      // Get a view of all the previous vectors
+      std::vector<int> prevind(lclDim);
+      for (int i=0; i<lclDim; i++) { prevind[i] = i; }
+      Vprev = MVT::CloneView(*V_,prevind);
+      Teuchos::Array<Teuchos::RefCountPtr<const MV> > AVprev(1, Vprev);
+      
+      // Get a view of the part of the Hessenberg matrix needed to hold the ortho coeffs.
+      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> >
+	subH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
+			     ( Teuchos::View,*H_,lclDim,blockSize_,0,curDim_ ) );
+      Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > AsubH;
+      AsubH.append( subH );
+      
+      // Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
+      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> >
+	subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
+			     ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
+      int rank = ortho_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
+      TEST_FOR_EXCEPTION(rank != blockSize_,BlockGmresIterOrthoFailure,
+			 "Belos::BlockGmresIter::iterate(): couldn't generate basis of full rank.");
       //
       // V has been extended, and H has been extended. 
       //
