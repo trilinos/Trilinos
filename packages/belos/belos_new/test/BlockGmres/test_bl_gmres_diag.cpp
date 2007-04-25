@@ -280,7 +280,7 @@ Iterative_Inverse_Operator::Iterative_Inverse_Operator(int n, int blocksize,
     verbosity += Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails;
   
   pList = Teuchos::rcp( new Teuchos::ParameterList );
-  pList->set( "Num Blocks", n/blocksize-1 );
+  pList->set( "Num Blocks", n/blocksize );
   pList->set( "Block Size", blocksize );  
   pList->set( "Maximum Iterations", max_iter ); 
   pList->set( "Maximum Restarts", restart );

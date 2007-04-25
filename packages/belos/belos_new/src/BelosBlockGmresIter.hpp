@@ -265,6 +265,12 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   */
   Teuchos::RefCountPtr<MV> getCurrentUpdate() const;
 
+  //! Method for updating QR factorization of upper Hessenberg matrix
+  /*! \note If \c dim >= \c getCurSubspaceDim() and \c dim < \c getMaxSubspaceDim(), then 
+            the \c dim-th equations of the least squares problem will be updated.
+  */
+  void updateLSQR( int dim = -1 );
+
   //! Get the dimension of the search subspace used to generate the current eigenvectors and eigenvalues.
   int getCurSubspaceDim() const { 
     if (!initialized_) return 0;
@@ -313,9 +319,6 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   //
   // Internal methods
   //
-  //! Method for updating QR factorization of upper Hessenberg matrix 
-  void UpdateLSQR();
-
   //! Method for initalizing the state storage needed by block GMRES.
   void setStateSize();
   
@@ -562,7 +565,6 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       Teuchos::BLAS<int,ScalarType> blas;
       for (int j=0; j<blockSize_; j++) {
         (*norms)[j] = blas.NRM2( blockSize_, &(*Z_)(curDim_, j), 1);
-      //  cout << "Iteration : " << iter_ << ", Norm = " << (*norms)[j] << endl;
       }
     }
     return Teuchos::null;
@@ -735,7 +737,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       //
       // Update the QR factorization of the upper Hessenberg matrix
       //
-      UpdateLSQR();
+      updateLSQR();
       //
       // Update basis dim and release all pointers.
       //
@@ -764,11 +766,19 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
 
   
   template<class ScalarType, class MV, class OP>
-  void BlockGmresIter<ScalarType,MV,OP>::UpdateLSQR()
+  void BlockGmresIter<ScalarType,MV,OP>::updateLSQR( int dim )
   {
     int i, j, maxidx;
     ScalarType sigma, mu, vscale, maxelem;
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+    
+    // Get correct dimension based on input "dim"
+    // Remember that ortho failures result in an exit before updateLSQR() is called.
+    // Therefore, it is possible that dim == curDim_.
+    int curDim = curDim_;
+    if (dim >= curDim_ && dim < getMaxSubspaceDim()) {
+      curDim = dim;
+    }
     
     Teuchos::LAPACK<int, ScalarType> lapack;
     Teuchos::BLAS<int, ScalarType> blas;
@@ -780,21 +790,21 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       //
       // QR factorization of Least-Squares system with Givens rotations
       //
-      for (i=0; i<curDim_; i++) {
+      for (i=0; i<curDim; i++) {
 	//
 	// Apply previous Givens rotations to new column of Hessenberg matrix
 	//
-	blas.ROT( 1, &(*H_)(i,curDim_), 1, &(*H_)(i+1, curDim_), 1, &cs[i], &sn[i] );
+	blas.ROT( 1, &(*H_)(i,curDim), 1, &(*H_)(i+1, curDim), 1, &cs[i], &sn[i] );
       }
       //
       // Calculate new Givens rotation
       //
-      blas.ROTG( &(*H_)(curDim_,curDim_), &(*H_)(curDim_+1,curDim_), &cs[curDim_], &sn[curDim_] );
-      (*H_)(curDim_+1,curDim_) = zero;
+      blas.ROTG( &(*H_)(curDim,curDim), &(*H_)(curDim+1,curDim), &cs[curDim], &sn[curDim] );
+      (*H_)(curDim+1,curDim) = zero;
       //
       // Update RHS w/ new transformation
       //
-      blas.ROT( 1, &(*Z_)(curDim_,0), 1, &(*Z_)(curDim_+1,0), 1, &cs[curDim_], &sn[curDim_] );
+      blas.ROT( 1, &(*Z_)(curDim,0), 1, &(*Z_)(curDim+1,0), 1, &cs[curDim], &sn[curDim] );
     }
     else {
       //
@@ -804,52 +814,58 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
 	//
 	// Apply previous Householder reflectors to new block of Hessenberg matrix
 	//
-	for (i=0; i<curDim_+j; i++) {
-	  sigma = blas.DOT( blockSize_, &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim_+j), 1);
-	  sigma += (*H_)(i,curDim_+j);
+	for (i=0; i<curDim+j; i++) {
+	  sigma = blas.DOT( blockSize_, &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim+j), 1);
+	  sigma += (*H_)(i,curDim+j);
 	  sigma *= beta[i];
-	  blas.AXPY(blockSize_, -sigma, &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim_+j), 1);
-	  (*H_)(i,curDim_+j) -= sigma;
+	  blas.AXPY(blockSize_, -sigma, &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim+j), 1);
+	  (*H_)(i,curDim+j) -= sigma;
 	}
 	//
 	// Compute new Householder reflector
 	//
-	maxidx = blas.IAMAX( blockSize_+1, &(*H_)(curDim_+j,curDim_+j), 1 );
-	maxelem = (*H_)(curDim_+j+maxidx-1,curDim_+j);
+	maxidx = blas.IAMAX( blockSize_+1, &(*H_)(curDim+j,curDim+j), 1 );
+	maxelem = (*H_)(curDim+j+maxidx-1,curDim+j);
 	for (i=0; i<blockSize_+1; i++)
-	  (*H_)(curDim_+j+i,curDim_+j) /= maxelem;
-	sigma = blas.DOT( blockSize_, &(*H_)(curDim_+j+1,curDim_+j), 1,
-			  &(*H_)(curDim_+j+1,curDim_+j), 1 );
+	  (*H_)(curDim+j+i,curDim+j) /= maxelem;
+	sigma = blas.DOT( blockSize_, &(*H_)(curDim+j+1,curDim+j), 1,
+			  &(*H_)(curDim+j+1,curDim+j), 1 );
 	if (sigma == zero) {
-	  beta[curDim_ + j] = zero;
+	  beta[curDim + j] = zero;
 	} else {
-	  mu = sqrt((*H_)(curDim_+j,curDim_+j)*(*H_)(curDim_+j,curDim_+j)+sigma);
-	  if ( Teuchos::ScalarTraits<ScalarType>::real((*H_)(curDim_+j,curDim_+j)) 
+	  mu = sqrt((*H_)(curDim+j,curDim+j)*(*H_)(curDim+j,curDim+j)+sigma);
+	  if ( Teuchos::ScalarTraits<ScalarType>::real((*H_)(curDim+j,curDim+j)) 
 	       < Teuchos::ScalarTraits<MagnitudeType>::zero() ) {
-	    vscale = (*H_)(curDim_+j,curDim_+j) - mu;
+	    vscale = (*H_)(curDim+j,curDim+j) - mu;
 	  } else {
-	    vscale = -sigma / ((*H_)(curDim_+j,curDim_+j) + mu);
+	    vscale = -sigma / ((*H_)(curDim+j,curDim+j) + mu);
 	  }
-	  beta[curDim_+j] = 2.0*vscale*vscale/(sigma + vscale*vscale);
-	  (*H_)(curDim_+j,curDim_+j) = maxelem*mu;
+	  beta[curDim+j] = 2.0*vscale*vscale/(sigma + vscale*vscale);
+	  (*H_)(curDim+j,curDim+j) = maxelem*mu;
 	  for (i=0; i<blockSize_; i++)
-	    (*H_)(curDim_+j+1+i,curDim_+j) /= vscale;
+	    (*H_)(curDim+j+1+i,curDim+j) /= vscale;
 	}
 	//
 	// Apply new Householder reflector to rhs
 	//
 	for (i=0; i<blockSize_; i++) {
-	  sigma = blas.DOT( blockSize_, &(*H_)(curDim_+j+1,curDim_+j),
-			    1, &(*Z_)(curDim_+j+1,i), 1);
-	  sigma += (*Z_)(curDim_+j,i);
-	  sigma *= beta[curDim_+j];
-	  blas.AXPY(blockSize_, -sigma, &(*H_)(curDim_+j+1,curDim_+j),
-		    1, &(*Z_)(curDim_+j+1,i), 1);
-	  (*Z_)(curDim_+j,i) -= sigma;
+	  sigma = blas.DOT( blockSize_, &(*H_)(curDim+j+1,curDim+j),
+			    1, &(*Z_)(curDim+j+1,i), 1);
+	  sigma += (*Z_)(curDim+j,i);
+	  sigma *= beta[curDim+j];
+	  blas.AXPY(blockSize_, -sigma, &(*H_)(curDim+j+1,curDim+j),
+		    1, &(*Z_)(curDim+j+1,i), 1);
+	  (*Z_)(curDim+j,i) -= sigma;
 	}
       }
     } // end if (blockSize_ == 1)
-  } // end UpdateLSQR()
+
+    // If the least-squares problem is updated wrt "dim" then update the curDim_.
+    if (dim >= curDim_ && dim < getMaxSubspaceDim()) {
+      curDim_ = dim + blockSize_;
+    }
+
+  } // end updateLSQR()
 
 } // end Belos namespace
 

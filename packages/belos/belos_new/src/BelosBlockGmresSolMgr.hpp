@@ -267,31 +267,31 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
   
   // Basic test checks maximum iterations and native residual.
-  Teuchos::RefCountPtr<StatusTestMaxIters<ScalarType,MV,OP> > maxitrtest 
+  Teuchos::RefCountPtr<StatusTestMaxIters<ScalarType,MV,OP> > maxItrTest 
     = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
-  Teuchos::RefCountPtr<StatusTestResNorm_t> convtest 
+  Teuchos::RefCountPtr<StatusTestResNorm_t> impConvTest 
     = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
-  convtest->defineScaleForm( StatusTestResNorm_t::NormOfPrecInitRes, Belos::TwoNorm );
-  Teuchos::RefCountPtr<StatusTestCombo_t> basictest
-    = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxitrtest, convtest ) );
+  impConvTest->defineScaleForm( StatusTestResNorm_t::NormOfPrecInitRes, Belos::TwoNorm );
+  Teuchos::RefCountPtr<StatusTestCombo_t> basicTest
+    = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxItrTest, impConvTest ) );
   
   // Explicit residual test once the native residual is below the tolerance
-  Teuchos::RefCountPtr<StatusTestResNorm_t> convtest2
+  Teuchos::RefCountPtr<StatusTestResNorm_t> expConvTest
     = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
-  convtest2->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
+  expConvTest->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
   
   Teuchos::RefCountPtr<StatusTestCombo_t> stest 
-    = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, basictest, convtest2 ) );
+    = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, basicTest, expConvTest ) );
   
-  Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputtest;
+  Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputTest;
   if (output_freq_ > 0) {
-    outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer, 
+    outputTest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer, 
                                                                        stest, 
                                                                        output_freq_, 
                                                                        Passed+Failed+Undefined ) ); 
   }
   else {
-    outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer, 
+    outputTest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer, 
                                                                        stest, 1 ) );
   }
 
@@ -326,7 +326,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockGmres solver
   Teuchos::RefCountPtr<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter
-    = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer,outputtest,ortho,plist) );
+    = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer,outputTest,ortho,plist) );
   
   // assume convergence is achieved, then let any failed convergence set this to false.
   bool isConverged = true;
@@ -347,7 +347,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       block_gmres_iter->resetNumIters();
 
       // Reset the number of calls that the status test output knows about.
-      outputtest->resetNumCalls();
+      outputTest->resetNumCalls();
 
       // Create the first block in the current Krylov basis.
       Teuchos::RefCountPtr<MV> V_0 = MVT::Clone( *cur_block_rhs, blockSize_ );
@@ -381,7 +381,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	  // check convergence first
 	  //
 	  ////////////////////////////////////////////////////////////////////////////////////
-	  if ( stest->getStatus() == Passed ) {
+	  if ( expConvTest->getStatus() == Passed ) {
 	    // we have convergence
 	    break;  // break from while(1){block_gmres_iter->iterate()}
 	  }
@@ -390,7 +390,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	  // check for maximum iterations
 	  //
 	  ////////////////////////////////////////////////////////////////////////////////////
-	  else if ( maxitrtest->getStatus() == Passed ) {
+	  else if ( maxItrTest->getStatus() == Passed ) {
 	    // we don't have convergence
 	    isConverged = false;
 	    break;  // break from while(1){block_gmres_iter->iterate()}
@@ -452,6 +452,23 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 			       "Belos::BlockGmresSolMgr::solve(): Invalid return from BlockGmresIter::iterate().");
 	  }
 	}
+        catch (BlockGmresIterOrthoFailure e) {
+	  // If the block size is not one, it's not considered a lucky breakdown.
+	  if (blockSize_ != 1) {
+	    printer->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration " 
+				    << block_gmres_iter->getNumIters() << endl 
+				    << e.what() << endl;
+	    throw;
+          }
+          // If the block size is one, try to recover the most recent least-squares solution
+	  block_gmres_iter->updateLSQR( block_gmres_iter->getCurSubspaceDim() );
+
+	  // Check to see if the most recent least-squares solution yielded convergence.
+	  stest->checkStatus( &*block_gmres_iter );
+	  if (expConvTest->getStatus() != Passed)
+	    isConverged = false;
+	  break;
+        }
 	catch (std::exception e) {
 	  printer->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration " 
 				  << block_gmres_iter->getNumIters() << endl 
