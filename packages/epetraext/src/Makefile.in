@@ -174,6 +174,7 @@ am__libepetraext_a_SOURCES_DIST =  \
 	$(srcdir)/block/EpetraExt_BlockMultiVector.cpp \
 	$(srcdir)/block/EpetraExt_BlockVector.cpp \
 	$(srcdir)/block/EpetraExt_BlockUtility.cpp \
+	$(srcdir)/block/EpetraExt_MultiPointModelEvaluator.cpp \
 	$(srcdir)/block/EpetraExt_MultiMpiComm.cpp \
 	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.cpp \
 	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluatorScalingTools.cpp
@@ -248,12 +249,12 @@ am__objects_15 = EpetraExt_MatlabEngine.$(OBJEXT) \
 @BUILD_MODEL_EVALUATOR_FALSE@	EpetraExt_BlockMultiVector.$(OBJEXT) \
 @BUILD_MODEL_EVALUATOR_FALSE@	EpetraExt_BlockVector.$(OBJEXT) \
 @BUILD_MODEL_EVALUATOR_FALSE@	EpetraExt_BlockUtility.$(OBJEXT)
-@BUILD_MODEL_EVALUATOR_TRUE@am__objects_17 = EpetraExt_MultiPointModelEvaluator.$(OBJEXT) \
-@BUILD_MODEL_EVALUATOR_TRUE@	EpetraExt_BlockCrsMatrix.$(OBJEXT) \
+@BUILD_MODEL_EVALUATOR_TRUE@am__objects_17 = EpetraExt_BlockCrsMatrix.$(OBJEXT) \
 @BUILD_MODEL_EVALUATOR_TRUE@	EpetraExt_BlockMultiVector.$(OBJEXT) \
 @BUILD_MODEL_EVALUATOR_TRUE@	EpetraExt_BlockVector.$(OBJEXT) \
 @BUILD_MODEL_EVALUATOR_TRUE@	EpetraExt_BlockUtility.$(OBJEXT)
-am__objects_18 = EpetraExt_MultiMpiComm.$(OBJEXT)
+am__objects_18 = EpetraExt_MultiPointModelEvaluator.$(OBJEXT) \
+	EpetraExt_MultiMpiComm.$(OBJEXT)
 @HAVE_MPI_TRUE@am__objects_19 = $(am__objects_18)
 @BUILD_BLOCK_TRUE@am__objects_20 = $(am__objects_17) $(am__objects_19)
 am__objects_21 = EpetraExt_ModelEvaluator.$(OBJEXT) \
@@ -406,6 +407,7 @@ am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/block/EpetraExt_BlockMultiVector.h \
 	$(srcdir)/block/EpetraExt_BlockVector.h \
 	$(srcdir)/block/EpetraExt_BlockUtility.h \
+	$(srcdir)/block/EpetraExt_MultiPointModelEvaluator.h \
 	$(srcdir)/block/EpetraExt_MultiMpiComm.h \
 	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.h \
 	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluatorScalingTools.h \
@@ -843,7 +845,6 @@ EXTRA_MODEL_EVALUATOR = \
 @BUILD_MODEL_EVALUATOR_FALSE@    $(srcdir)/block/EpetraExt_BlockUtility.h
 
 @BUILD_MODEL_EVALUATOR_TRUE@EXTRA_BLOCK_H = \
-@BUILD_MODEL_EVALUATOR_TRUE@    $(srcdir)/block/EpetraExt_MultiPointModelEvaluator.h \
 @BUILD_MODEL_EVALUATOR_TRUE@    $(srcdir)/block/EpetraExt_BlockCrsMatrix.h \
 @BUILD_MODEL_EVALUATOR_TRUE@    $(srcdir)/block/EpetraExt_BlockMultiVector.h \
 @BUILD_MODEL_EVALUATOR_TRUE@    $(srcdir)/block/EpetraExt_BlockVector.h \
@@ -856,16 +857,17 @@ EXTRA_MODEL_EVALUATOR = \
 @BUILD_MODEL_EVALUATOR_FALSE@    $(srcdir)/block/EpetraExt_BlockUtility.cpp
 
 @BUILD_MODEL_EVALUATOR_TRUE@EXTRA_BLOCK = \
-@BUILD_MODEL_EVALUATOR_TRUE@    $(srcdir)/block/EpetraExt_MultiPointModelEvaluator.cpp \
 @BUILD_MODEL_EVALUATOR_TRUE@    $(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp \
 @BUILD_MODEL_EVALUATOR_TRUE@    $(srcdir)/block/EpetraExt_BlockMultiVector.cpp \
 @BUILD_MODEL_EVALUATOR_TRUE@    $(srcdir)/block/EpetraExt_BlockVector.cpp \
 @BUILD_MODEL_EVALUATOR_TRUE@    $(srcdir)/block/EpetraExt_BlockUtility.cpp
 
 EXTRA_BLOCK_MPI_H = \
+    $(srcdir)/block/EpetraExt_MultiPointModelEvaluator.h \
     $(srcdir)/block/EpetraExt_MultiMpiComm.h
 
 EXTRA_BLOCK_MPI = \
+    $(srcdir)/block/EpetraExt_MultiPointModelEvaluator.cpp \
     $(srcdir)/block/EpetraExt_MultiMpiComm.cpp
 
 @HAVE_MPI_FALSE@BLOCK_MPI_H = 

@@ -378,14 +378,12 @@ endif
 
 if BUILD_MODEL_EVALUATOR
 EXTRA_BLOCK_H = \
-    $(srcdir)/block/EpetraExt_MultiPointModelEvaluator.h \
     $(srcdir)/block/EpetraExt_BlockCrsMatrix.h \
     $(srcdir)/block/EpetraExt_BlockMultiVector.h \
     $(srcdir)/block/EpetraExt_BlockVector.h \
     $(srcdir)/block/EpetraExt_BlockUtility.h
 
 EXTRA_BLOCK = \
-    $(srcdir)/block/EpetraExt_MultiPointModelEvaluator.cpp \
     $(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp \
     $(srcdir)/block/EpetraExt_BlockMultiVector.cpp \
     $(srcdir)/block/EpetraExt_BlockVector.cpp \
@@ -407,9 +405,11 @@ EXTRA_BLOCK = \
 endif
 
 EXTRA_BLOCK_MPI_H = \
+    $(srcdir)/block/EpetraExt_MultiPointModelEvaluator.h \
     $(srcdir)/block/EpetraExt_MultiMpiComm.h
 
 EXTRA_BLOCK_MPI = \
+    $(srcdir)/block/EpetraExt_MultiPointModelEvaluator.cpp \
     $(srcdir)/block/EpetraExt_MultiMpiComm.cpp
 
 if HAVE_MPI

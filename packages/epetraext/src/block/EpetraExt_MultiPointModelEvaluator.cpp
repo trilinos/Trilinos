@@ -280,8 +280,8 @@ void EpetraExt::MultiPointModelEvaluator::evalModel( const InArgs& inArgs,
     }
     if (!DgDp_out.isEmpty()) {
       int  num_p0 =  underlyingME->get_p_map(0)->NumMyElements();
-      double g_dist[num_p0];
-      double g_sum[num_p0];
+      double* g_dist = new double[num_p0];
+      double* g_sum = new double[num_p0];
       for (int i=0; i<num_p0; i++) {
         if (globalComm->SubDomainComm().MyPID()==0)
           g_dist[i] = DgDp_out.getMultiVector()->operator()(0)->operator[](i);
@@ -291,6 +291,8 @@ void EpetraExt::MultiPointModelEvaluator::evalModel( const InArgs& inArgs,
       for (int i=0; i<num_p0; i++) {
         DgDp_out.getMultiVector()->operator()(0)->operator[](i) = g_sum[i];
       }
+      delete g_dist;
+      delete g_sum;
     }
   }
 }
