@@ -328,6 +328,24 @@ namespace Sacado {
       //! Destructor
       ~SFad() {}
 
+      //! Assignment operator with constant right-hand-side
+      SFad& operator=(const ValueT& val) {
+	Expr< SFadExprTag< ValueT,Num > >::operator=(val);
+	return *this;
+      }
+
+      //! Assignment operator with constant right-hand-side
+      SFad& operator=(const ScalarT& val) {
+	Expr< SFadExprTag< ValueT,Num > >::operator=(ValueT(val));
+	return *this;
+      }
+
+      //! Assignment operator with DFad right-hand-side
+      SFad& operator=(const SFad& x) {
+	Expr< SFadExprTag< ValueT,Num > >::operator=(static_cast<const Expr< SFadExprTag< ValueT,Num > >&>(x));
+	return *this;
+      }
+
       //! Assignment operator with any expression right-hand-side
       template <typename S> SFad& operator=(const Expr<S>& x) 
       {
@@ -395,6 +413,18 @@ namespace Sacado {
 
       //! Destructor
       ~SFad() {}
+
+      //! Assignment operator with constant right-hand-side
+      SFad& operator=(const ValueT& val) {
+	Expr< SFadExprTag< ValueT,Num > >::operator=(val);
+	return *this;
+      }
+
+      //! Assignment operator with DFad right-hand-side
+      SFad& operator=(const SFad& x) {
+	Expr< SFadExprTag< ValueT,Num > >::operator=(static_cast<const Expr< SFadExprTag< ValueT,Num > >&>(x));
+	return *this;
+      }
 
       //! Assignment operator with any expression right-hand-side
       template <typename S> SFad& operator=(const Expr<S>& x) 

@@ -129,6 +129,24 @@ namespace Sacado {
       //! Destructor
       ~SLFad() {}
 
+      //! Assignment operator with constant right-hand-side
+      SLFad& operator=(const ValueT& val) {
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >::operator=(val);
+	return *this;
+      }
+
+      //! Assignment operator with constant right-hand-side
+      SLFad& operator=(const ScalarT& val) {
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >::operator=(ValueT(val));
+	return *this;
+      }
+
+      //! Assignment operator with DFad right-hand-side
+      SLFad& operator=(const SLFad& x) {
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >::operator=(static_cast<const GeneralFad< ValueT,StaticStorage<ValueT,Num> >&>(x));
+	return *this;
+      }
+
       //! Assignment operator with any expression right-hand-side
       template <typename S> SLFad& operator=(const Expr<S>& x) 
       {
@@ -196,6 +214,18 @@ namespace Sacado {
 
       //! Destructor
       ~SLFad() {}
+
+      //! Assignment operator with constant right-hand-side
+      SLFad& operator=(const ValueT& val) {
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >::operator=(val);
+	return *this;
+      }
+
+      //! Assignment operator with DFad right-hand-side
+      SLFad& operator=(const SLFad& x) {
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >::operator=(static_cast<const GeneralFad< ValueT,StaticStorage<ValueT,Num> >&>(x));
+	return *this;
+      }
 
       //! Assignment operator with any expression right-hand-side
       template <typename S> SLFad& operator=(const Expr<S>& x) 

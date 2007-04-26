@@ -121,6 +121,24 @@ namespace Sacado {
       //! Destructor
       ~DMFad() {}
 
+      //! Assignment operator with constant right-hand-side
+      DMFad& operator=(const ValueT& val) {
+	GeneralFad< ValueT,MemPoolStorage<ValueT> >::operator=(val);
+	return *this;
+      }
+
+      //! Assignment operator with constant right-hand-side
+      DMFad& operator=(const ScalarT& val) {
+	GeneralFad< ValueT,MemPoolStorage<ValueT> >::operator=(ValueT(val));
+	return *this;
+      }
+
+      //! Assignment operator with DMFad right-hand-side
+      DMFad& operator=(const DMFad& x) {
+	GeneralFad< ValueT,MemPoolStorage<ValueT> >::operator=(static_cast<const GeneralFad< ValueT,MemPoolStorage<ValueT> >&>(x));
+	return *this;
+      }
+
       //! Assignment operator with any expression right-hand-side
       template <typename S> DMFad& operator=(const Expr<S>& x) 
       {
@@ -197,6 +215,18 @@ namespace Sacado {
 
       //! Destructor
       ~DMFad() {}
+
+      //! Assignment operator with constant right-hand-side
+      DMFad& operator=(const ValueT& val) {
+	GeneralFad< ValueT,MemPoolStorage<ValueT> >::operator=(val);
+	return *this;
+      }
+
+      //! Assignment operator with DMFad right-hand-side
+      DMFad& operator=(const DMFad& x) {
+	GeneralFad< ValueT,MemPoolStorage<ValueT> >::operator=(static_cast<const GeneralFad< ValueT,MemPoolStorage<ValueT> >&>(x));
+	return *this;
+      }
 
       //! Assignment operator with any expression right-hand-side
       template <typename S> DMFad& operator=(const Expr<S>& x) 

@@ -94,8 +94,10 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator=(const T& val)
 {
   s_.val_ = val;
 
-  if (s_.size()) 
+  if (s_.size()) {
+    s_.zero();    // We need to zero out the array for future resizes
     s_.resize(0);
+  }
 
   return *this;
 }
