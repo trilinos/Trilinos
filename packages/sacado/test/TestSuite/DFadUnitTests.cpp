@@ -81,15 +81,15 @@ void DFadOpsUnitTest::compareFads(const DFadType& x_dfad,
   CPPUNIT_ASSERT(x_dfad.hasFastAccess() == x_fad.hasFastAccess());
   
   // Compare values
-  compareDoubles(c_dfad.val(), c_fad.val());
+  compareDoubles(x_dfad.val(), x_fad.val());
   
   for (int i=0; i<x_fad.size(); i++) {
     
     // Compare dx
-    compareDoubles(c_dfad.dx(i), c_fad.dx(i));
+    compareDoubles(x_dfad.dx(i), x_fad.dx(i));
     
     // Compare fastAccessDx
-    compareDoubles(c_dfad.fastAccessDx(i), c_fad.fastAccessDx(i));
+    compareDoubles(x_dfad.fastAccessDx(i), x_fad.fastAccessDx(i));
   }
 }
 

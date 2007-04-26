@@ -142,6 +142,11 @@ class CacheDFadOpsUnitTest : public CppUnit::TestFixture {
 
   CPPUNIT_TEST(testComposite1);
 
+  CPPUNIT_TEST(testPlusLR);
+  CPPUNIT_TEST(testMinusLR);
+  CPPUNIT_TEST(testTimesLR);
+  CPPUNIT_TEST(testDivideLR);
+
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -214,6 +219,46 @@ public:
     c_dfad = composite1(a_dfad, b_dfad);
     c_fad = composite1(a_fad, b_fad);
     compareFads(c_dfad, c_fad);
+  }
+
+  void testPlusLR() {
+    DFadType aa_dfad = a_dfad;
+    FAD::Fad<double> aa_fad = a_fad;
+    aa_dfad = 1.0;
+    aa_fad = 1.0;
+    aa_dfad = aa_dfad + b_dfad;
+    aa_fad = aa_fad + b_fad;
+    compareFads(aa_dfad, aa_fad);
+  }
+
+  void testMinusLR() {
+    DFadType aa_dfad = a_dfad;
+    FAD::Fad<double> aa_fad = a_fad;
+    aa_dfad = 1.0;
+    aa_fad = 1.0;
+    aa_dfad = aa_dfad - b_dfad;
+    aa_fad = aa_fad - b_fad;
+    compareFads(aa_dfad, aa_fad);
+  }
+
+  void testTimesLR() {
+    DFadType aa_dfad = a_dfad;
+    FAD::Fad<double> aa_fad = a_fad;
+    aa_dfad = 2.0;
+    aa_fad = 2.0;
+    aa_dfad = aa_dfad * b_dfad;
+    aa_fad = aa_fad * b_fad;
+    compareFads(aa_dfad, aa_fad);
+  }
+
+  void testDivideLR() {
+    DFadType aa_dfad = a_dfad;
+    FAD::Fad<double> aa_fad = a_fad;
+    aa_dfad = 2.0;
+    aa_fad = 2.0;
+    aa_dfad = aa_dfad / b_dfad;
+    aa_fad = aa_fad / b_fad;
+    compareFads(aa_dfad, aa_fad);
   }
 
 protected:

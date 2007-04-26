@@ -77,15 +77,15 @@ void SFadOpsUnitTest::compareFads(const SFadType& x_sfad,
   CPPUNIT_ASSERT(x_sfad.hasFastAccess() == x_fad.hasFastAccess());
   
   // Compare values
-  compareDoubles(c_sfad.val(), c_fad.val());
+  compareDoubles(x_sfad.val(), x_fad.val());
   
   for (int i=0; i<x_fad.size(); i++) {
     
     // Compare dx
-    compareDoubles(c_sfad.dx(i), c_fad.dx(i));
+    compareDoubles(x_sfad.dx(i), x_fad.dx(i));
     
     // Compare fastAccessDx
-    compareDoubles(c_sfad.fastAccessDx(i), c_fad.fastAccessDx(i));
+    compareDoubles(x_sfad.fastAccessDx(i), x_fad.fastAccessDx(i));
   }
 }
 
