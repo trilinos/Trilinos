@@ -120,16 +120,13 @@ namespace Belos {
     //! Set left preconditioning operator (\c LP) of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
      */
-    void setLeftPrec(const RefCountPtr<const OP> &LP) {  LP_ = LP; Left_Prec_ = true; }
+    void setLeftPrec(const RefCountPtr<const OP> &LP) {  LP_ = LP; }
     
     //! Set right preconditioning operator (\c RP) of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
      */
-    void setRightPrec(const RefCountPtr<const OP> &RP) { RP_ = RP; Right_Prec_ = true; }
+    void setRightPrec(const RefCountPtr<const OP> &RP) { RP_ = RP; }
     
-    //! Set the parameter list for defining the behavior of the linear problem class.
-    void setParameterList(const RefCountPtr<ParameterList> &PL) { PL_ = PL; }
-
     //! Set the blocksize of the linear problem.  This information is used to set up the linear problem for block solvers.
     void setBlockSize(int blocksize) { default_blocksize_ = blocksize; blocksize_ = blocksize; }
     
@@ -140,6 +137,15 @@ namespace Belos {
       blocksize is changed.
     */
     void setCurrLS();
+    
+    //! Inform the linear problem of the linear systems that need to be solved next.
+    /*! Any calls to get the current RHS/LHS vectors after this method is called will return the new
+      linear systems indicated by \c index.  The length of \c index is assumed to be the blocksize and entries
+      of \c index must be between 0 and the number of vectors in the RHS/LHS multivector.  An entry of the
+      \c index vector can also be -1, which means this column of the linear system is augmented using a random
+      vector.
+    */
+    void setLSIndex(std::vector<int>& index) { rhsIndex_ = index; }
     
     //! Inform the linear problem that the operator is Hermitian.
     /*! This knowledge may allow the operator to take advantage of the linear problem symmetry.
@@ -154,12 +160,12 @@ namespace Belos {
       the solution hasn't been updated.  If \c updateLP is false, the new solution is computed without actually 
       updating the linear problem.
     */
-    RefCountPtr<MV> updateSolution( const RefCountPtr<MV>& update = Teuchos::null,
+    RefCountPtr<MV> updateSolution( const RefCountPtr<MV>& update = null,
 				    bool updateLP = false,
                                     ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() );    
 
     //! Compute the new solution to the linear system given the /c update without updating the linear problem.
-    RefCountPtr<MV> updateSolution( const RefCountPtr<MV>& update = Teuchos::null,
+    RefCountPtr<MV> updateSolution( const RefCountPtr<MV>& update = null,
                                     ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() ) const
     { return const_cast<LinearProblem<ScalarType,MV,OP> *>(this)->updateSolution( update, false, scale ); }
 
@@ -254,38 +260,25 @@ namespace Belos {
     //! Get a pointer to the right preconditioning operator.
     RefCountPtr<const OP> getRightPrec() const { return(RP_); };
     
-    //! Get a pointer to the parameter list.
-    RefCountPtr<ParameterList> getParameterList() const { return(PL_); };
-
-    //! Get the default blocksize being used by the linear problem.
-    int getBlockSize() const { return( default_blocksize_ ); };
-    
-    //! Get the current blocksize being used by the linear problem.
-    /*! This may be different from the default blocksize set for the linear problem in the event
-      that the default blocksize doesn't divide evenly into the number of right-hand sides, but
-      it should not be more than the default blocksize.
-    */
-    int getCurrBlockSize() const { return( blocksize_ ); };
-
-    //! Get the current number of linear systems being solved for.
-    /*! Since the block size is independent of the number of right-hand sides, 
-      it is important to know how many linear systems
-      are being solved for when the status is checked.  This is informative for residual
-      checks because the entire block of residuals may not be of interest.  Thus, this 
-      number can be anywhere between 1 and the blocksize of the linear system.
-    */
-    int getNumToSolve() const { return( num_to_solve_ ); };
-    
-    //! Get the 0-based index of the first vector in the current right-hand side block being solved for.
+    //! Get the 0-based index vector indicating the current linear systems being solved for.
     /*! Since the block size is independent of the number of right-hand sides for
-      some solvers (GMRES, CG, etc.), it is important to know which right-hand sides
+      some solvers (GMRES, CG, etc.), it is important to know which linear systems
       are being solved for.  That may mean you need to update the information
       about the norms of your initial residual vector for weighting purposes.  This
       information can keep you from querying the solver for information that rarely
       changes.
+      \note The length of the index vector is the number of right-hand sides being solved for.
+            If an entry of this vector is -1 then that linear system is an augmented linear
+	    system and doesn't need to be considered for convergence.
     */
-    int getRHSIndex() const { return( rhs_index_ ); }
-    
+    std::vector<int> getLSIndex() const { return(rhsIndex_); }
+
+    //! Get the number of linear systems that have been set with this LinearProblem object.
+    /* This can be used by status test classes to determine if the solver manager has advanced 
+       and is solving another linear system.
+    */
+    int getLSNumber() const { return(lsNum_); }
+
     //@}
     
     //! @name State methods
@@ -305,10 +298,10 @@ namespace Belos {
     bool isHermitian() const { return(isHermitian_); }
     
     //! Get information on whether the linear system is being preconditioned on the left.
-    bool isLeftPrec() const { return(LP_!=Teuchos::null); }
+    bool isLeftPrec() const { return(LP_!=null); }
 
     //! Get information on whether the linear system is being preconditioned on the right.
-    bool isRightPrec() const { return(RP_!=Teuchos::null); }
+    bool isRightPrec() const { return(RP_!=null); }
  
     //@}
     
@@ -397,9 +390,6 @@ namespace Belos {
     //! Right preconditioning operator of linear system
     RefCountPtr<const OP> RP_;
     
-    //! Parameter list for defining the behavior of the linear problem class
-    RefCountPtr<ParameterList> PL_;
-
     //! Timers
     mutable Teuchos::RefCountPtr<Teuchos::Time> timerOp_, timerPrec_;
 
@@ -412,12 +402,16 @@ namespace Belos {
     //! Number of linear systems that are currently being solver for ( <= blocksize_ )
     int num_to_solve_;
     
-    //! Index of current block of right-hand sides being solver for ( RHS[:, rhs_index_:(rhs_index_+_blocksize)] ).
+    //! Index of current block of right-hand sides being solver for ( RHS[:, rhsIndex_:(rhsIndex_+_blocksize)] ).
     int rhs_index_;
-    
+
+    //! Indices of current linear systems being solver for.
+    std::vector<int> rhsIndex_;    
+
+    //! Number of linear systems that have been loaded in this linear problem object.
+    int lsNum_;
+
     //! Booleans to keep track of linear problem attributes/status.
-    bool Left_Prec_;
-    bool Right_Prec_;
     bool Left_Scale_;
     bool Right_Scale_;
     bool isSet_;
@@ -441,8 +435,7 @@ namespace Belos {
     blocksize_(1),
     num_to_solve_(0),
     rhs_index_(0),  
-    Left_Prec_(false),
-    Right_Prec_(false),
+    lsNum_(0),
     Left_Scale_(false),
     Right_Scale_(false),
     isSet_(false),
@@ -466,8 +459,7 @@ namespace Belos {
     blocksize_(1),
     num_to_solve_(1),
     rhs_index_(0),
-    Left_Prec_(false),
-    Right_Prec_(false),
+    lsNum_(0),
     Left_Scale_(false),
     Right_Scale_(false),
     isSet_(false),
@@ -488,15 +480,14 @@ namespace Belos {
     R0_(Problem.R0_),
     LP_(Problem.LP_),
     RP_(Problem.RP_),
-    PL_(Problem.PL_),
     timerOp_(Problem.timerOp_),
     timerPrec_(Problem.timerPrec_),
     default_blocksize_(Problem.default_blocksize_),
     blocksize_(Problem.blocksize_),
     num_to_solve_(Problem.num_to_solve_),
     rhs_index_(Problem.rhs_index_),
-    Left_Prec_(Problem.Left_Prec_),
-    Right_Prec_(Problem.Right_Prec_),
+    rhsIndex_(Problem.rhsIndex_),
+    lsNum_(Problem.lsNum_),
     Left_Scale_(Problem.Left_Scale_),
     Right_Scale_(Problem.Right_Scale_),
     isSet_(Problem.isSet_),
@@ -516,9 +507,9 @@ namespace Belos {
   {
     // Compute the new block linear system.
     // ( first clean up old linear system )
-    if (CurB_.get()) CurB_ = null;
-    if (CurX_.get()) CurX_ = null;
-    if (R_.get()) R_ = null;
+    CurB_ = null;
+    CurX_ = null;
+    R_ = null;
     //
     // Determine how many linear systems are left to solve for and populate LHS and RHS vector.
     // If the number of linear systems left are less than the current blocksize, then
@@ -533,12 +524,6 @@ namespace Belos {
     int i;
     std::vector<int> index( num_to_solve_ );
     for ( i=0; i<num_to_solve_; i++ ) { index[i] = rhs_index_ + i; }
-    //
-/*    if ( num_to_solve_ < default_blocksize_ )
-      blocksize_ = num_to_solve_;
-    else
-      blocksize_ = default_blocksize_;
-*/
     //
     if ( num_to_solve_ < blocksize_ ) 
       {
@@ -580,6 +565,10 @@ namespace Belos {
       MVT::MvAddMv( 1.0, *CurB_, -1.0, *R_, *R_ );
       solutionUpdated_ = false;
     }
+    //
+    // Increment the number of linear systems that have been loaded into this object.
+    //
+    lsNum_++;
   }
   
 
@@ -625,9 +614,9 @@ namespace Belos {
 								   ScalarType scale )
   { 
     RefCountPtr<MV> newSoln;
-    if (update != Teuchos::null) {
+    if (update != null) {
       if (updateLP == true) {
-	if (Right_Prec_) {
+	if (RP_!=null) {
 	  //
 	  // Apply the right preconditioner before computing the current solution.
 	  RefCountPtr<MV> TrueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
@@ -642,7 +631,7 @@ namespace Belos {
       }
       else {
 	newSoln = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
-	if (Right_Prec_) {
+	if (RP_!=null) {
 	  //
 	  // Apply the right preconditioner before computing the current solution.
 	  RefCountPtr<MV> trueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
@@ -665,14 +654,20 @@ namespace Belos {
   bool LinearProblem<ScalarType,MV,OP>::setProblem( const RefCountPtr<MV> &newX, const RefCountPtr<const MV> &newB )
   {
     // Set the linear system using the arguments newX and newB
-    if (newX != Teuchos::null)
+    if (newX != null)
       X_ = newX;
-    if (newB != Teuchos::null)
+    if (newB != null)
       B_ = newB;
+
+    // Invalidate the current linear system indices and multivectors.
+    rhsIndex_.resize(0);
+    CurX_ = null;
+    CurB_ = null;
+    R_ = null;
 
     // Check the validity of the linear problem object.
     // If no operator A exists, then throw an exception.
-    if (A_ == Teuchos::null || X_ == Teuchos::null || B_ == Teuchos::null) {
+    if (A_ == null || X_ == null || B_ == null) {
       isSet_ = false;
       return isSet_;
     }
@@ -683,7 +678,7 @@ namespace Belos {
     rhs_index_ = 0;
     
     // Compute the initial residual vector.
-    if (R0_==Teuchos::null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *X_ )) {
+    if (R0_==null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *X_ )) {
       R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
     }
     OPT::Apply( *A_, *X_, *R0_ );
@@ -744,17 +739,19 @@ namespace Belos {
   void LinearProblem<ScalarType,MV,OP>::apply( const MV& x, MV& y ) const
   {
     RefCountPtr<MV> ytemp = MVT::Clone( y, MVT::GetNumberVecs( y ) );
+    bool leftPrec = LP_!=null;
+    bool rightPrec = RP_!=null;
     //
     // No preconditioning.
     // 
-    if (!Left_Prec_ && !Right_Prec_){ 
+    if (!leftPrec && !rightPrec){ 
       Teuchos::TimeMonitor OpTimer(*timerOp_);
       OPT::Apply( *A_, x, y );
     }
     //
     // Preconditioning is being done on both sides
     //
-    else if( Left_Prec_ && Right_Prec_ ) 
+    else if( leftPrec && rightPrec ) 
       {
         {
           Teuchos::TimeMonitor PrecTimer(*timerPrec_);
@@ -772,7 +769,7 @@ namespace Belos {
     //
     // Preconditioning is only being done on the left side
     //
-    else if( Left_Prec_ ) 
+    else if( leftPrec ) 
       {
         {
           Teuchos::TimeMonitor PrecTimer(*timerPrec_);
@@ -813,7 +810,7 @@ namespace Belos {
   
   template <class ScalarType, class MV, class OP>
   void LinearProblem<ScalarType,MV,OP>::applyLeftPrec( const MV& x, MV& y ) const {
-    if (Left_Prec_) {
+    if (LP_!=null) {
       Teuchos::TimeMonitor PrecTimer(*timerPrec_);
       return ( OPT::Apply( *LP_,x, y) );
     }
@@ -825,7 +822,7 @@ namespace Belos {
   
   template <class ScalarType, class MV, class OP>
   void LinearProblem<ScalarType,MV,OP>::applyRightPrec( const MV& x, MV& y ) const {
-    if (Right_Prec_) {
+    if (RP_!=null) {
       Teuchos::TimeMonitor PrecTimer(*timerPrec_);
       return ( OPT::Apply( *RP_,x, y) );
     }
@@ -841,7 +838,7 @@ namespace Belos {
     if (R) {
       if (X && B) // The entries are specified, so compute the residual of Op(A)X = B
 	{
-	  if (Left_Prec_)
+	  if (LP_!=null)
 	    {
 	      RefCountPtr<MV> R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
 	      OPT::Apply( *A_, *X, *R_temp );
@@ -867,7 +864,7 @@ namespace Belos {
 	else
 	  localX = CurX_;
 	
-	if (Left_Prec_)
+	if (LP_!=null)
 	  {
 	    RefCountPtr<MV> R_temp = MVT::Clone( *localX, MVT::GetNumberVecs( *localX ) );
 	    OPT::Apply( *A_, *localX, *R_temp );

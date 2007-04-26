@@ -368,6 +368,8 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       { currIdx[i] = -1; cout << "currIdx["<<i<<"] = "<<currIdx[i]<<endl; }
   }
 
+  problem_->setLSIndex( currIdx );
+
   //////////////////////////////////////////////////////////////////////////////////////
   // Parameter list
   Teuchos::ParameterList plist;
@@ -539,9 +541,6 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       Teuchos::RefCountPtr<MV> update = block_gmres_iter->getCurrentUpdate();
       problem_->updateSolution( update, true );
       
-      // Inform the linear problem that we are finished with this block linear system.
-      problem_->setCurrLS();
-      
       // Update indices for the linear systems to be solved.
       startPtr += numCurrRHS;
       numRHS2Solve -= numCurrRHS;
@@ -565,7 +564,14 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    { currIdx[i] = -1; cout << "currIdx["<<i<<"] = "<<currIdx[i]<<endl; }
 	}
       }
+      else {
+        currIdx.resize( numRHS2Solve );
+      }
       
+      // Inform the linear problem that we are finished with this block linear system.
+      problem_->setCurrLS();
+      problem_->setLSIndex( currIdx );
+ 
       // Obtain the next block linear system from the linear problem manager.
       cur_block_sol = problem_->getCurrLHSVec();
       cur_block_rhs = problem_->getCurrRHSVec();

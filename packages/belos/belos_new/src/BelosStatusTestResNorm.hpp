@@ -283,6 +283,12 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //! The current number of right-hand sides being solved for.
   int cur_num_rhs_;
 
+  //! The indices of the current number of right-hand sides being solved for.
+  std::vector<int> curLSIdx_;
+
+  //! The current number of linear systems that have been loaded into the linear problem.
+  int curLSNum_;
+
   //! The total number of right-hand sides being solved for.
   int numrhs_;
 
@@ -312,6 +318,7 @@ StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm( MagnitudeType Tolerance,
     status_(Undefined),
     cur_rhs_num_(0),
     cur_blksz_(0),
+    curLSNum_(0),
     numrhs_(0),
     firstcallCheckStatus_(true),
     firstcallDefineResForm_(true),
@@ -331,6 +338,8 @@ void StatusTestResNorm<ScalarType,MV,OP>::reset()
   status_ = Undefined;
   cur_rhs_num_ = 0;
   cur_blksz_ = 0;
+  curLSNum_ = 0;
+  curLSIdx_.resize(0);
   numrhs_ = 0;
   ind_.resize(0);
   firstcallCheckStatus_ = true;
@@ -381,13 +390,20 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
   //
   // This section computes the norm of the residual vector
   //
-  if ( cur_rhs_num_ != lp.getRHSIndex() || cur_blksz_ != lp.getCurrBlockSize() || cur_num_rhs_ != lp.getNumToSolve() ) {
+  if ( curLSNum_ != lp.getLSNumber() ) {
     //
     // We have moved on to the next rhs block
     //
-    cur_rhs_num_ = lp.getRHSIndex();
-    cur_blksz_ = lp.getCurrBlockSize();
-    cur_num_rhs_ = lp.getNumToSolve();
+    curLSNum_ = lp.getLSNumber();
+    curLSIdx_ = lp.getLSIndex();
+    cur_blksz_ = (int)curLSIdx_.size();
+    cur_rhs_num_ = curLSIdx_[0];
+    int validLS = 0;
+    for (int i=0; i<cur_blksz_; ++i) {
+      if (curLSIdx_[i] > -1 && curLSIdx_[i] < numrhs_) 
+	validLS++;
+    }
+    cur_num_rhs_ = validLS; 
     //
   } else {
     //
@@ -554,10 +570,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( Itera
     // Get some current solver information.
     //
     firstcallCheckStatus_ = false;
-    cur_rhs_num_ = lp.getRHSIndex();
-    cur_blksz_ = lp.getCurrBlockSize();
-    cur_num_rhs_ = lp.getNumToSolve();
-    //
+
     if (scaletype_== NormOfRHS) {
       RefCountPtr<const MV> rhs = lp.getRHS();
       numrhs_ = MVT::GetNumberVecs( *rhs );
@@ -590,6 +603,17 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( Itera
       }
     }
 
+    curLSNum_ = lp.getLSNumber();
+    curLSIdx_ = lp.getLSIndex();
+    cur_blksz_ = (int)curLSIdx_.size();
+    cur_rhs_num_ = curLSIdx_[0];
+    int validLS = 0;
+    for (i=0; i<cur_blksz_; ++i) {
+      if (curLSIdx_[i] > -1 && curLSIdx_[i] < numrhs_)
+        validLS++;
+    }
+    cur_num_rhs_ = validLS;
+    //
     // Initialize the testvector.
     for (i=0; i<numrhs_; i++) { testvector_[i] = one; }
 
