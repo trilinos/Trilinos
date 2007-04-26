@@ -134,12 +134,12 @@ namespace Belos {
     void setBlockSize(int blocksize) { default_blocksize_ = blocksize; blocksize_ = blocksize; }
     
     //! Inform the linear problem that the solver is finished with the current linear system.
-    /*! \note This method is to be <b> only </b> used by the solver to inform the linear problem manager that it's
+    /*! \note This method is to be <b> only </b> used by the solver to inform the linear problem that it's
       finished with this block of linear systems.  The next time the Curr(RHS/LHS)Vec() is called, the next
       linear system will be returned.  Computing the next linear system isn't done in this method in case the 
       blocksize is changed.
     */
-    void setCurrLSVec();
+    void setCurrLS();
     
     //! Inform the linear problem that the operator is Hermitian.
     /*! This knowledge may allow the operator to take advantage of the linear problem symmetry.
@@ -191,9 +191,14 @@ namespace Belos {
     RefCountPtr<const MV> getRHS() const { return(B_); }
     
     //! Get a pointer to the initial residual vector.
-    /*! \note This may be the preconditioned residual, if the linear problem is left-preconditioned.
+    /*! \note This is the preconditioned residual if the linear system is preconditioned on the left.
      */
     RefCountPtr<const MV> getInitResVec() const { return(R0_); }
+    
+    //! Get a pointer to the preconditioned initial residual vector.
+    /*! \note This is the unpreconditioned residual.
+     */
+    RefCountPtr<const MV> getActualInitResVec() const { return(R0_); }
     
     //! Get a pointer to the current residual vector.
     /*!
@@ -579,7 +584,7 @@ namespace Belos {
   
 
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::setCurrLSVec() 
+  void LinearProblem<ScalarType,MV,OP>::setCurrLS() 
   { 
     int i;
     //

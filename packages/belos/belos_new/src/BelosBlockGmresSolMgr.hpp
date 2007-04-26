@@ -206,7 +206,7 @@ namespace Belos {
     
     MagnitudeType convtol_;
     int maxRestarts_, maxIters_;
-    bool relconvtol_, adaptiveBlockSize_;
+    bool adaptiveBlockSize_;
     int blockSize_, numBlocks_;
     int verbosity_, output_freq_;
     
@@ -225,7 +225,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   ortho_kappa_(-1.0),
   convtol_(0),
   maxRestarts_(20),
-  relconvtol_(true),
+  adaptiveBlockSize_(true),
   blockSize_(0),
   numBlocks_(0),
   verbosity_(Belos::Errors),
@@ -342,6 +342,32 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   TEST_FOR_EXCEPTION(!problem_->isProblemSet(),BlockGmresSolMgrLinearProblemFailure,
                      "Belos::BlockGmresSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
 
+  // Create indices for the linear systems to be solved.
+  int startPtr = 0;
+  int numRHS2Solve = MVT::GetNumberVecs( *(problem_->getRHS()) );
+  int numCurrRHS = ( numRHS2Solve < blockSize_) ? numRHS2Solve : blockSize_;
+
+  cout << endl << "The start pointer is " << startPtr << endl;
+  cout << "The number of RHS left to solve is " << numRHS2Solve << endl;
+  cout << "The number of RHS currently being solved is " << numCurrRHS << endl;
+
+  std::vector<int> currIdx;
+  if ( adaptiveBlockSize_ ) {
+    blockSize_ = numCurrRHS;
+    problem_->setBlockSize( blockSize_ );
+    currIdx.resize( numCurrRHS  );
+    for (int i=0; i<numCurrRHS; ++i) 
+      { currIdx[i] = startPtr+i; cout << "currIdx["<<i<<"] = "<<currIdx[i]<<endl; }
+    
+  }
+  else {
+    currIdx.resize( blockSize_ );
+    for (int i=0; i<numCurrRHS; ++i) 
+      { currIdx[i] = startPtr+i; cout << "currIdx["<<i<<"] = "<<currIdx[i]<<endl; }
+    for (int i=numCurrRHS; i<blockSize_; ++i) 
+      { currIdx[i] = -1; cout << "currIdx["<<i<<"] = "<<currIdx[i]<<endl; }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////
   // Parameter list
   Teuchos::ParameterList plist;
@@ -351,23 +377,25 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   // Reset the status test.  
   outputTest_->reset();
 
+  // Assume convergence is achieved, then let any failed convergence set this to false.
+  bool isConverged = true;	
+
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockGmres solver
 
   Teuchos::RefCountPtr<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter
     = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
   
-  // assume convergence is achieved, then let any failed convergence set this to false.
-  bool isConverged = true;
-  
-  // enter solve() iterations
+
+  // Enter solve() iterations
   {
     Teuchos::TimeMonitor slvtimer(*timerSolve_);
+
     
     Teuchos::RefCountPtr<MV> cur_block_sol = problem_->getCurrLHSVec();
     Teuchos::RefCountPtr<MV> cur_block_rhs = problem_->getCurrRHSVec();
 
-    while (cur_block_sol!=Teuchos::null && cur_block_rhs!=Teuchos::null) {
+    while ( numRHS2Solve > 0 ) {
 
       // Set the current number of blocks and blocksize with the Gmres iteration.
       block_gmres_iter->setSize( blockSize_, numBlocks_ );
@@ -512,13 +540,37 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       problem_->updateSolution( update, true );
       
       // Inform the linear problem that we are finished with this block linear system.
-      problem_->setCurrLSVec();
+      problem_->setCurrLS();
+      
+      // Update indices for the linear systems to be solved.
+      startPtr += numCurrRHS;
+      numRHS2Solve -= numCurrRHS;
+      cout << endl <<"The start pointer is " << startPtr << endl;
+      cout << "The number of RHS left to solve is " << numRHS2Solve << endl;
+      if ( numRHS2Solve > 0 ) {
+	numCurrRHS = ( numRHS2Solve < blockSize_) ? numRHS2Solve : blockSize_;
+
+	cout << "The number of RHS currently being solve is " << numCurrRHS << endl;
+      
+	if ( adaptiveBlockSize_ ) {
+	  currIdx.resize( numCurrRHS  );
+	  for (int i=0; i<numCurrRHS; ++i) 
+	    { currIdx[i] = startPtr+i; cout << "currIdx["<<i<<"] = "<<currIdx[i]<<endl; }	  
+	}
+	else {
+	  currIdx.resize( blockSize_ );
+	  for (int i=0; i<numCurrRHS; ++i) 
+	    { currIdx[i] = startPtr+i; cout << "currIdx["<<i<<"] = "<<currIdx[i]<<endl; }
+	  for (int i=numCurrRHS; i<blockSize_; ++i) 
+	    { currIdx[i] = -1; cout << "currIdx["<<i<<"] = "<<currIdx[i]<<endl; }
+	}
+      }
       
       // Obtain the next block linear system from the linear problem manager.
       cur_block_sol = problem_->getCurrLHSVec();
       cur_block_rhs = problem_->getCurrRHSVec();
       
-    }// while (cur_block_sol != Teuchos::null && cur_block_rhs != Teuchos::null)
+    }// while ( numRHS2Solve > 0 )
     
   }
  
