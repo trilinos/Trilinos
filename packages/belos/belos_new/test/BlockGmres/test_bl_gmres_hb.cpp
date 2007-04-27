@@ -122,7 +122,6 @@ int main(int argc, char *argv[]) {
   // Construct an unpreconditioned linear problem instance.
   //
   Belos::LinearProblem<double,MV,OP> problem( A, X, B );
-  problem.setBlockSize( blocksize );
   bool set = problem.setProblem();
   if (set == false) {
     if (proc_verbose)

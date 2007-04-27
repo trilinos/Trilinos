@@ -186,7 +186,6 @@ int main(int argc, char *argv[]) {
   else
     problem.setRightPrec( Prec );
   
-  problem.setBlockSize( blocksize );
   bool set = problem.setProblem();
   if (set == false) {
     if (proc_verbose)

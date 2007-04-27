@@ -270,7 +270,6 @@ Iterative_Inverse_Operator::Iterative_Inverse_Operator(int n, int blocksize,
   
   pProb = Teuchos::rcp( new LinearProblem<double,MV,OP>() );
   pProb->setOperator( pPE );
-  pProb->setBlockSize( blocksize );
   
   int restart  = 10; 
   int max_iter = 100;

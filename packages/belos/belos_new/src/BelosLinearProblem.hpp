@@ -127,9 +127,6 @@ namespace Belos {
      */
     void setRightPrec(const RefCountPtr<const OP> &RP) { RP_ = RP; }
     
-    //! Set the blocksize of the linear problem.  This information is used to set up the linear problem for block solvers.
-    void setBlockSize(int blocksize) { default_blocksize_ = blocksize; blocksize_ = blocksize; }
-    
     //! Inform the linear problem that the solver is finished with the current linear system.
     /*! \note This method is to be <b> only </b> used by the solver to inform the linear problem that it's
       finished with this block of linear systems.  The next time the Curr(RHS/LHS)Vec() is called, the next
@@ -145,7 +142,7 @@ namespace Belos {
       \c index vector can also be -1, which means this column of the linear system is augmented using a random
       vector.
     */
-    void setLSIndex(std::vector<int>& index) { rhsIndex_ = index; }
+    void setLSIndex(std::vector<int>& index); 
     
     //! Inform the linear problem that the operator is Hermitian.
     /*! This knowledge may allow the operator to take advantage of the linear problem symmetry.
@@ -232,7 +229,7 @@ namespace Belos {
       <li> If the solution has been updated by the solver, then this vector is current ( see SolutionUpdated() ).
       </ol>
     */
-    RefCountPtr<const MV> getCurrResVec() const { return R_; }
+    RefCountPtr<const MV> getCurrResVec() const { return curR_; }
     
     //! Get a pointer to the current left-hand side (solution) of the linear system.
     /*! This method is called by the solver or any method that is interested in the current linear system
@@ -271,7 +268,7 @@ namespace Belos {
             If an entry of this vector is -1 then that linear system is an augmented linear
 	    system and doesn't need to be considered for convergence.
     */
-    std::vector<int> getLSIndex() const { return(rhsIndex_); }
+    std::vector<int> getLSIndex() const { if (isSet_) return(rhsIndex_); }
 
     //! Get the number of linear systems that have been set with this LinearProblem object.
     /* This can be used by status test classes to determine if the solver manager has advanced 
@@ -360,9 +357,6 @@ namespace Belos {
     
   private:
     
-    //! Private method for populating the next block linear system.
-    void setUpBlocks();
-    
     //! Operator of linear system. 
     RefCountPtr<const OP> A_;
     
@@ -370,16 +364,16 @@ namespace Belos {
     RefCountPtr<MV> X_;
     
     //! Current solution vector of the linear system.
-    RefCountPtr<MV> CurX_;
+    RefCountPtr<MV> curX_;
     
     //! Right-hand side of linear system.
     RefCountPtr<const MV> B_;
     
     //! Current right-hand side of the linear system.
-    RefCountPtr<MV> CurB_;
+    RefCountPtr<MV> curB_;
     
     //! Current residual of the linear system.
-    RefCountPtr<MV> R_;
+    RefCountPtr<MV> curR_;
     
     //! Initial residual of the linear system.
     RefCountPtr<MV> R0_;
@@ -393,18 +387,12 @@ namespace Belos {
     //! Timers
     mutable Teuchos::RefCountPtr<Teuchos::Time> timerOp_, timerPrec_;
 
-    //! Default block size of linear system.
-    int default_blocksize_;
-    
     //! Current block size of linear system.
     int blocksize_;
 
     //! Number of linear systems that are currently being solver for ( <= blocksize_ )
-    int num_to_solve_;
+    int num2Solve_;
     
-    //! Index of current block of right-hand sides being solver for ( RHS[:, rhsIndex_:(rhsIndex_+_blocksize)] ).
-    int rhs_index_;
-
     //! Indices of current linear systems being solver for.
     std::vector<int> rhsIndex_;    
 
@@ -431,10 +419,8 @@ namespace Belos {
   LinearProblem<ScalarType,MV,OP>::LinearProblem(void) : 
     timerOp_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Op*x")),
     timerPrec_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Prec*x")),
-    default_blocksize_(1),
-    blocksize_(1),
-    num_to_solve_(0),
-    rhs_index_(0),  
+    blocksize_(0),
+    num2Solve_(0),
     lsNum_(0),
     Left_Scale_(false),
     Right_Scale_(false),
@@ -455,10 +441,8 @@ namespace Belos {
     B_(B),
     timerOp_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Op*x")),
     timerPrec_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Prec*x")),
-    default_blocksize_(1),
-    blocksize_(1),
-    num_to_solve_(1),
-    rhs_index_(0),
+    blocksize_(0),
+    num2Solve_(0),
     lsNum_(0),
     Left_Scale_(false),
     Right_Scale_(false),
@@ -473,19 +457,17 @@ namespace Belos {
   LinearProblem<ScalarType,MV,OP>::LinearProblem(const LinearProblem<ScalarType,MV,OP>& Problem) :
     A_(Problem.A_),
     X_(Problem.X_),
-    CurX_(Problem.CurX_),
+    curX_(Problem.curX_),
     B_(Problem.B_),
-    CurB_(Problem.CurB_),
-    R_(Problem.R_),
+    curB_(Problem.curB_),
+    curR_(Problem.curR_),
     R0_(Problem.R0_),
     LP_(Problem.LP_),
     RP_(Problem.RP_),
     timerOp_(Problem.timerOp_),
     timerPrec_(Problem.timerPrec_),
-    default_blocksize_(Problem.default_blocksize_),
     blocksize_(Problem.blocksize_),
-    num_to_solve_(Problem.num_to_solve_),
-    rhs_index_(Problem.rhs_index_),
+    num2Solve_(Problem.num2Solve_),
     rhsIndex_(Problem.rhsIndex_),
     lsNum_(Problem.lsNum_),
     Left_Scale_(Problem.Left_Scale_),
@@ -503,108 +485,100 @@ namespace Belos {
   
 
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::setUpBlocks()
+  void LinearProblem<ScalarType,MV,OP>::setLSIndex(std::vector<int>& index)
   {
+    // Set new linear systems using the indices in index.
+    rhsIndex_ = index;
+    
     // Compute the new block linear system.
     // ( first clean up old linear system )
-    CurB_ = null;
-    CurX_ = null;
-    R_ = null;
-    //
-    // Determine how many linear systems are left to solve for and populate LHS and RHS vector.
-    // If the number of linear systems left are less than the current blocksize, then
-    // we create a multivector and copy the left over LHS and RHS vectors into them.
-    // The rest of the multivector is populated with random vectors (RHS) or zero vectors (LHS).
-    //
-    num_to_solve_ = MVT::GetNumberVecs(*X_) - rhs_index_;
-    //
-    // Return the NULL pointer if we don't have any more systems to solve for.
-    if ( num_to_solve_ <= 0 ) { return; }  
-    //
-    int i;
-    std::vector<int> index( num_to_solve_ );
-    for ( i=0; i<num_to_solve_; i++ ) { index[i] = rhs_index_ + i; }
-    //
-    if ( num_to_solve_ < blocksize_ ) 
-      {
-	std::vector<int> index2(num_to_solve_);
-	for (i=0; i<num_to_solve_; i++) {
-	  index2[i] = i;
-	}
-	//
-	// First create multivectors of blocksize and fill the RHS with random vectors LHS with zero vectors.
-	CurX_ = MVT::Clone( *X_, blocksize_ );
-	MVT::MvInit(*CurX_);
-	CurB_ = MVT::Clone( *B_, blocksize_ );
-	MVT::MvRandom(*CurB_);
-	R_ = MVT::Clone( *X_, blocksize_);
-	//
-	RefCountPtr<const MV> tptr = MVT::CloneView( *B_, index );
-	MVT::SetBlock( *tptr, index2, *CurB_ );
-	//
-	RefCountPtr<MV> tptr2 = MVT::CloneView( *X_, index );
-	MVT::SetBlock( *tptr2, index2, *CurX_ );
-      } else { 
-	//
-	// If the number of linear systems left are more than or equal to the current blocksize, then
-	// we create a view into the LHS and RHS.
-	//
-	num_to_solve_ = blocksize_;
-	index.resize( num_to_solve_ );
-	for ( i=0; i<num_to_solve_; i++ ) { index[i] = rhs_index_ + i; }
-	CurX_ = MVT::CloneView( *X_, index );
-	CurB_ = rcp_const_cast<MV>(MVT::CloneView( *B_, index ));
-	R_ = MVT::Clone( *X_, num_to_solve_ );
-	//
+    curB_ = null;
+    curX_ = null;
+    curR_ = null;
+   
+    // Create indices for the new linear system.
+    int validIdx = 0;
+    blocksize_ = rhsIndex_.size();
+    std::vector<int> vldIndex( blocksize_ );
+    std::vector<int> newIndex( blocksize_ );
+    for (int i=0; i<blocksize_; ++i) {
+      if (rhsIndex_[i] > -1) {
+        vldIndex[validIdx] = rhsIndex_[i];
+        newIndex[validIdx] = i;
+        validIdx++;
       }
+    }
+    num2Solve_ = validIdx;
+
+    // Create the new linear system using index
+    if (num2Solve_ != blocksize_) {
+      newIndex.resize(num2Solve_);
+      vldIndex.resize(num2Solve_);
+      //
+      // First create multivectors of blocksize.
+      // Fill the RHS with random vectors LHS with zero vectors.
+      curX_ = MVT::Clone( *X_, blocksize_ );
+      MVT::MvInit(*curX_);
+      curB_ = MVT::Clone( *B_, blocksize_ );
+      MVT::MvRandom(*curB_);
+      curR_ = MVT::Clone( *X_, blocksize_);
+      //
+      RefCountPtr<const MV> tptr = MVT::CloneView( *B_, vldIndex );
+      MVT::SetBlock( *tptr, newIndex, *curB_ );
+      //
+      RefCountPtr<MV> tptr2 = MVT::CloneView( *X_, vldIndex );
+      MVT::SetBlock( *tptr2, newIndex, *curX_ );
+    }
+    else {
+      curX_ = MVT::CloneView( *X_, rhsIndex_ );
+      curB_ = rcp_const_cast<MV>(MVT::CloneView( *B_, rhsIndex_ ));
+      curR_ = MVT::Clone( *X_, blocksize_ );
+    }
     //
     // Compute the current residual.
     // 
-    if (R_.get()) {
-      OPT::Apply( *A_, *CurX_, *R_ );
-      MVT::MvAddMv( 1.0, *CurB_, -1.0, *R_, *R_ );
-      solutionUpdated_ = false;
-    }
+    OPT::Apply( *A_, *curX_, *curR_ );
+    MVT::MvAddMv( 1.0, *curB_, -1.0, *curR_, *curR_ );
+    solutionUpdated_ = false;
     //
     // Increment the number of linear systems that have been loaded into this object.
     //
     lsNum_++;
   }
-  
+
 
   template <class ScalarType, class MV, class OP>
   void LinearProblem<ScalarType,MV,OP>::setCurrLS() 
   { 
-    int i;
     //
     // We only need to copy the solutions back if the linear systems of
     // interest are less than the block size.
     //
-    if (num_to_solve_ < blocksize_) {
-      //
-      std::vector<int> index( num_to_solve_ );
-      //
-      RefCountPtr<MV> tptr;
+    if (num2Solve_ < blocksize_) {
       //
       // Get a view of the current solutions and correction vector.
       //
-      for (i=0; i<num_to_solve_; i++) { 
-	index[i] = i;	
+      int validIdx = 0;
+      std::vector<int> newIndex( num2Solve_ );
+      std::vector<int> vldIndex( num2Solve_ );
+      for (int i=0; i<blocksize_; ++i) {
+        if ( rhsIndex_[i] > -1 ) { 
+          vldIndex[validIdx] = rhsIndex_[i];
+	  newIndex[validIdx] = i;
+          validIdx++;
+        }	
       }
-      tptr = MVT::CloneView( *CurX_, index );
-      //
-      // Copy the correction vector to the solution vector.
-      //
-      for (i=0; i<num_to_solve_; i++) { 
-	index[i] = rhs_index_ + i; 
-      }
-      MVT::SetBlock( *tptr, index, *X_ );
+      RefCountPtr<MV> tptr = MVT::CloneView( *curX_, newIndex );
+      MVT::SetBlock( *tptr, vldIndex, *X_ );
     }
     //
-    // Get the linear problem ready to determine the next linear system.
+    // Clear the current vectors of this linear system so that any future calls
+    // to get the vectors for this system return null pointers.
     //
-    solutionFinal_ = true; 
-    rhs_index_ += num_to_solve_; 
+    curX_ = null;
+    curB_ = null;
+    curR_ = null;
+    rhsIndex_.resize(0);
   }
   
 
@@ -621,13 +595,13 @@ namespace Belos {
 	  // Apply the right preconditioner before computing the current solution.
 	  RefCountPtr<MV> TrueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
 	  OPT::Apply( *RP_, *update, *TrueUpdate ); 
-	  MVT::MvAddMv( 1.0, *CurX_, scale, *TrueUpdate, *CurX_ ); 
+	  MVT::MvAddMv( 1.0, *curX_, scale, *TrueUpdate, *curX_ ); 
 	} 
 	else {
-	  MVT::MvAddMv( 1.0, *CurX_, scale, *update, *CurX_ ); 
+	  MVT::MvAddMv( 1.0, *curX_, scale, *update, *curX_ ); 
 	}
 	solutionUpdated_ = true; 
-	newSoln = CurX_;
+	newSoln = curX_;
       }
       else {
 	newSoln = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
@@ -636,15 +610,15 @@ namespace Belos {
 	  // Apply the right preconditioner before computing the current solution.
 	  RefCountPtr<MV> trueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
 	  OPT::Apply( *RP_, *update, *trueUpdate ); 
-	  MVT::MvAddMv( 1.0, *CurX_, scale, *trueUpdate, *newSoln ); 
+	  MVT::MvAddMv( 1.0, *curX_, scale, *trueUpdate, *newSoln ); 
 	} 
 	else {
-	  MVT::MvAddMv( 1.0, *CurX_, scale, *update, *newSoln ); 
+	  MVT::MvAddMv( 1.0, *curX_, scale, *update, *newSoln ); 
 	}
       }
     }
     else {
-      newSoln = CurX_;
+      newSoln = curX_;
     }
     return newSoln;
   }
@@ -661,9 +635,9 @@ namespace Belos {
 
     // Invalidate the current linear system indices and multivectors.
     rhsIndex_.resize(0);
-    CurX_ = null;
-    CurB_ = null;
-    R_ = null;
+    curX_ = null;
+    curB_ = null;
+    curR_ = null;
 
     // Check the validity of the linear problem object.
     // If no operator A exists, then throw an exception.
@@ -675,7 +649,6 @@ namespace Belos {
     // Initialize the state booleans
     solutionUpdated_ = false;
     solutionFinal_ = true;
-    rhs_index_ = 0;
     
     // Compute the initial residual vector.
     if (R0_==null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *X_ )) {
@@ -703,36 +676,38 @@ namespace Belos {
     //
     if (solutionUpdated_) 
       {
-	OPT::Apply( *A_, *getCurrLHSVec(), *R_ );
-	MVT::MvAddMv( 1.0, *getCurrRHSVec(), -1.0, *R_, *R_ ); 
+	OPT::Apply( *A_, *getCurrLHSVec(), *curR_ );
+	MVT::MvAddMv( 1.0, *getCurrRHSVec(), -1.0, *curR_, *curR_ ); 
 	solutionUpdated_ = false;
       }
     else if (CurrSoln) 
       {
-	OPT::Apply( *A_, *CurrSoln, *R_ );
-	MVT::MvAddMv( 1.0, *getCurrRHSVec(), -1.0, *R_, *R_ ); 
+	OPT::Apply( *A_, *CurrSoln, *curR_ );
+	MVT::MvAddMv( 1.0, *getCurrRHSVec(), -1.0, *curR_, *curR_ ); 
       }
-    return (*R_);
+    return (*curR_);
   }
   
   template <class ScalarType, class MV, class OP>
   RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::getCurrLHSVec()
   {
-    if (solutionFinal_) {
-      solutionFinal_ = false;	// make sure we don't populate the current linear system again.
-      setUpBlocks();
+    if (isSet_) {
+      return curX_;
     }
-    return CurX_; 
+    else {
+      return Teuchos::null;
+    }
   }
   
   template <class ScalarType, class MV, class OP>
   RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::getCurrRHSVec()
   {
-    if (solutionFinal_) {
-      solutionFinal_ = false;	// make sure we don't populate the current linear system again.
-      setUpBlocks();
+    if (isSet_) {
+      return curB_;
     }
-    return CurB_;
+    else {
+      return Teuchos::null;
+    }
   }
   
   template <class ScalarType, class MV, class OP>
@@ -857,12 +832,12 @@ namespace Belos {
 	if (B)
 	  localB = rcp( B, false );
 	else
-	  localB = CurB_;
+	  localB = curB_;
 	
 	if (X)
 	  localX = rcp( X, false );
 	else
-	  localX = CurX_;
+	  localX = curX_;
 	
 	if (LP_!=null)
 	  {
@@ -896,12 +871,12 @@ namespace Belos {
 	if (B)
 	  localB = rcp( B, false );
 	else
-	  localB = CurB_;
+	  localB = curB_;
 	
 	if (X)
 	  localX = rcp( X, false );
 	else
-	  localX = CurX_;
+	  localX = curX_;
 	
 	OPT::Apply( *A_, *localX, *R );
 	MVT::MvAddMv( -1.0, *R, 1.0, *localB, *R );

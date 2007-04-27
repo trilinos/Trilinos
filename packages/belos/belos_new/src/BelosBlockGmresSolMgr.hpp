@@ -192,9 +192,8 @@ namespace Belos {
     Teuchos::RefCountPtr<OutputManager<ScalarType> > printer_;
 
     // Status test.
-    Teuchos::RefCountPtr<StatusTestResNorm<ScalarType,MV,OP> > impConvTest_;
-    Teuchos::RefCountPtr<StatusTestResNorm<ScalarType,MV,OP> > expConvTest_;
-    Teuchos::RefCountPtr<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
+    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > maxIterTest_;
+    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > convTest_;
     Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > sTest_;
     Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
 
@@ -225,7 +224,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   ortho_kappa_(-1.0),
   convtol_(0),
   maxRestarts_(20),
-  adaptiveBlockSize_(true),
+  adaptiveBlockSize_(false),
   blockSize_(0),
   numBlocks_(0),
   verbosity_(Belos::Errors),
@@ -289,16 +288,18 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   
   // Basic test checks maximum iterations and native residual.
   maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
-  impConvTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
-  impConvTest_->defineScaleForm( StatusTestResNorm_t::NormOfPrecInitRes, Belos::TwoNorm );
-  Teuchos::RefCountPtr<StatusTestCombo_t> basicTest
-    = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, impConvTest_ ) );
+
+  // Implicit residual test, using the native residual to determine if convergence was achieved.
+  Teuchos::RefCountPtr<StatusTestResNorm_t> impConvTest = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
+  impConvTest->defineScaleForm( StatusTestResNorm_t::NormOfPrecInitRes, Belos::TwoNorm );
   
   // Explicit residual test once the native residual is below the tolerance
-  expConvTest_  = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
-  expConvTest_->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
+  Teuchos::RefCountPtr<StatusTestResNorm_t> expConvTest  = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
+  expConvTest->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
   
-  sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, basicTest, expConvTest_ ) );
+  convTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, impConvTest, expConvTest ) );
+
+  sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
   
   if (output_freq_ > 0) {
     outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
@@ -347,27 +348,25 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   int numRHS2Solve = MVT::GetNumberVecs( *(problem_->getRHS()) );
   int numCurrRHS = ( numRHS2Solve < blockSize_) ? numRHS2Solve : blockSize_;
 
-  cout << endl << "The start pointer is " << startPtr << endl;
-  cout << "The number of RHS left to solve is " << numRHS2Solve << endl;
-  cout << "The number of RHS currently being solved is " << numCurrRHS << endl;
-
   std::vector<int> currIdx;
+  //  If an adaptive block size is allowed then only the linear systems that need to be solved are solved.
+  //  Otherwise, the index set is generated that informs the linear problem that some linear systems are augmented.
   if ( adaptiveBlockSize_ ) {
     blockSize_ = numCurrRHS;
-    problem_->setBlockSize( blockSize_ );
     currIdx.resize( numCurrRHS  );
     for (int i=0; i<numCurrRHS; ++i) 
-      { currIdx[i] = startPtr+i; cout << "currIdx["<<i<<"] = "<<currIdx[i]<<endl; }
+      { currIdx[i] = startPtr+i; }
     
   }
   else {
     currIdx.resize( blockSize_ );
     for (int i=0; i<numCurrRHS; ++i) 
-      { currIdx[i] = startPtr+i; cout << "currIdx["<<i<<"] = "<<currIdx[i]<<endl; }
+      { currIdx[i] = startPtr+i; }
     for (int i=numCurrRHS; i<blockSize_; ++i) 
-      { currIdx[i] = -1; cout << "currIdx["<<i<<"] = "<<currIdx[i]<<endl; }
+      { currIdx[i] = -1; }
   }
 
+  // Inform the linear problem of the current linear system to solve.
   problem_->setLSIndex( currIdx );
 
   //////////////////////////////////////////////////////////////////////////////////////
@@ -393,10 +392,6 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   {
     Teuchos::TimeMonitor slvtimer(*timerSolve_);
 
-    
-    Teuchos::RefCountPtr<MV> cur_block_sol = problem_->getCurrLHSVec();
-    Teuchos::RefCountPtr<MV> cur_block_rhs = problem_->getCurrRHSVec();
-
     while ( numRHS2Solve > 0 ) {
 
       // Set the current number of blocks and blocksize with the Gmres iteration.
@@ -409,7 +404,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       outputTest_->resetNumCalls();
 
       // Create the first block in the current Krylov basis.
-      Teuchos::RefCountPtr<MV> V_0 = MVT::Clone( *cur_block_rhs, blockSize_ );
+      Teuchos::RefCountPtr<MV> V_0 = MVT::Clone( *(problem_->getRHS()), blockSize_ );
       problem_->computeCurrResVec( &*V_0 );
 
       // Get a matrix to hold the orthonormalization coefficients.
@@ -440,7 +435,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	  // check convergence first
 	  //
 	  ////////////////////////////////////////////////////////////////////////////////////
-	  if ( expConvTest_->getStatus() == Passed ) {
+	  if ( convTest_->getStatus() == Passed ) {
 	    // we have convergence
 	    break;  // break from while(1){block_gmres_iter->iterate()}
 	  }
@@ -524,7 +519,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
 	  // Check to see if the most recent least-squares solution yielded convergence.
 	  sTest_->checkStatus( &*block_gmres_iter );
-	  if (expConvTest_->getStatus() != Passed)
+	  if (convTest_->getStatus() != Passed)
 	    isConverged = false;
 	  break;
         }
@@ -540,41 +535,35 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       // Update the linear problem.
       Teuchos::RefCountPtr<MV> update = block_gmres_iter->getCurrentUpdate();
       problem_->updateSolution( update, true );
+
+      // Inform the linear problem that we are finished with this block linear system.
+      problem_->setCurrLS();
       
       // Update indices for the linear systems to be solved.
       startPtr += numCurrRHS;
       numRHS2Solve -= numCurrRHS;
-      cout << endl <<"The start pointer is " << startPtr << endl;
-      cout << "The number of RHS left to solve is " << numRHS2Solve << endl;
       if ( numRHS2Solve > 0 ) {
 	numCurrRHS = ( numRHS2Solve < blockSize_) ? numRHS2Solve : blockSize_;
 
-	cout << "The number of RHS currently being solve is " << numCurrRHS << endl;
-      
 	if ( adaptiveBlockSize_ ) {
+          blockSize_ = numCurrRHS;
 	  currIdx.resize( numCurrRHS  );
 	  for (int i=0; i<numCurrRHS; ++i) 
-	    { currIdx[i] = startPtr+i; cout << "currIdx["<<i<<"] = "<<currIdx[i]<<endl; }	  
+	    { currIdx[i] = startPtr+i; }	  
 	}
 	else {
 	  currIdx.resize( blockSize_ );
 	  for (int i=0; i<numCurrRHS; ++i) 
-	    { currIdx[i] = startPtr+i; cout << "currIdx["<<i<<"] = "<<currIdx[i]<<endl; }
+	    { currIdx[i] = startPtr+i; }
 	  for (int i=numCurrRHS; i<blockSize_; ++i) 
-	    { currIdx[i] = -1; cout << "currIdx["<<i<<"] = "<<currIdx[i]<<endl; }
+	    { currIdx[i] = -1; }
 	}
+	// Set the next indices.
+	problem_->setLSIndex( currIdx );
       }
       else {
         currIdx.resize( numRHS2Solve );
       }
-      
-      // Inform the linear problem that we are finished with this block linear system.
-      problem_->setCurrLS();
-      problem_->setLSIndex( currIdx );
- 
-      // Obtain the next block linear system from the linear problem manager.
-      cur_block_sol = problem_->getCurrLHSVec();
-      cur_block_rhs = problem_->getCurrRHSVec();
       
     }// while ( numRHS2Solve > 0 )
     

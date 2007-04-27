@@ -187,7 +187,6 @@ int main(int argc, char *argv[]) {
   //
   RefCountPtr<Belos::LinearProblem<ST,MV,OP> > problem = 
     rcp( new Belos::LinearProblem<ST,MV,OP>( A, soln, rhs ) );
-  problem->setBlockSize( blocksize );
   bool set = problem->setProblem();
   if (set == false) {
     if (proc_verbose)
