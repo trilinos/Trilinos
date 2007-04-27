@@ -28,8 +28,6 @@
  *
  * \brief ML black-box preconditioner for Epetra_RowMatrix derived classes.
  *
- * \date Last update do Doxygen: 22-Jul-04
- *
  */
 /*#############################################################################
 # CVS File Information
