@@ -20,6 +20,7 @@ CORE_H = \
 	$(srcdir)/BelosBlockGmresIter.hpp \
 	$(srcdir)/BelosBlockGmresSolMgr.hpp \
 	$(srcdir)/BelosCG.hpp \
+	$(srcdir)/BelosCGIter.hpp \
 	$(srcdir)/BelosConfigDefs.hpp \
 	$(srcdir)/BelosDGKSOrthoManager.hpp \
 	$(srcdir)/BelosEpetraAdapter.hpp \

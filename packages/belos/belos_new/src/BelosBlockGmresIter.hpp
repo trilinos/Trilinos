@@ -30,7 +30,7 @@
 #define BELOS_BLOCK_GMRES_ITER_HPP
 
 /*! \file BelosBlockGmresIter.hpp
-    \brief Belos concrete class for performing the block GMRES iteration..
+    \brief Belos concrete class for performing the block GMRES iteration.
 */
 
 #include "BelosConfigDefs.hpp"
@@ -146,10 +146,10 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   //! @name Constructors/Destructor
   //@{ 
 
-  /*! \brief %BlockGmresIter constructor with eigenproblem, solver utilities, and parameter list of solver options.
+  /*! \brief %BlockGmresIter constructor with linear problem, solver utilities, and parameter list of solver options.
    *
-   * This constructor takes pointers required by the eigensolver, in addition
-   * to a parameter list of options for the eigensolver. These options include the following:
+   * This constructor takes pointers required by the linear solver, in addition
+   * to a parameter list of options for the linear solver. These options include the following:
    *   - "Block Size" - an \c int specifying the block size used by the algorithm. This can also be specified using the setBlockSize() method. Default: 1
    *   - "Num Blocks" - an \c int specifying the maximum number of blocks allocated for the solver basis. Default: 25
    *   - "Restart Timers" = a \c bool specifying whether the timers should be restarted each time iterate() is called. Default: false
@@ -224,11 +224,11 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     initialize(empty);
   }
   
-  /*! \brief Get the current state of the eigensolver.
+  /*! \brief Get the current state of the linear solver.
    *
    * The data is only valid if isInitialized() == \c true.
    *
-   * \returns A BlockKrylovSchurState object containing const pointers to the current
+   * \returns A BlockGmresIterState object containing const pointers to the current
    * solver state.
    */
   BlockGmresIterState<ScalarType,MV> getState() const {
@@ -271,7 +271,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   */
   void updateLSQR( int dim = -1 );
 
-  //! Get the dimension of the search subspace used to generate the current eigenvectors and eigenvalues.
+  //! Get the dimension of the search subspace used to generate the current solution to the linear problem.
   int getCurSubspaceDim() const { 
     if (!initialized_) return 0;
     return curDim_;
@@ -286,7 +286,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     //! @name Accessor methods
   //@{ 
 
-  //! Get a constant reference to the eigenvalue problem.
+  //! Get a constant reference to the linear problem.
   const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
 
   //! Get the blocksize to be used by the iterative solver in solving this linear problem.
@@ -323,7 +323,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   void setStateSize();
   
   //
-  // Classes inputed through constructor that define the eigenproblem to be solved.
+  // Classes inputed through constructor that define the linear problem to be solved.
   //
   const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> >    lp_;
   const Teuchos::RefCountPtr<OutputManager<ScalarType> >          om_;

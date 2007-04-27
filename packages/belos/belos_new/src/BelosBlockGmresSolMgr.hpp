@@ -224,7 +224,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   ortho_kappa_(-1.0),
   convtol_(0),
   maxRestarts_(20),
-  adaptiveBlockSize_(false),
+  adaptiveBlockSize_(true),
   blockSize_(0),
   numBlocks_(0),
   verbosity_(Belos::Errors),

@@ -405,7 +405,6 @@ namespace Belos {
     bool isSet_;
     bool isHermitian_;
     bool solutionUpdated_;    
-    bool solutionFinal_;
     
     typedef MultiVecTraits<ScalarType,MV>  MVT;
     typedef OperatorTraits<ScalarType,MV,OP>  OPT;
@@ -426,8 +425,7 @@ namespace Belos {
     Right_Scale_(false),
     isSet_(false),
     isHermitian_(false),
-    solutionUpdated_(false),
-    solutionFinal_(true)
+    solutionUpdated_(false)
   {
   }
   
@@ -448,8 +446,7 @@ namespace Belos {
     Right_Scale_(false),
     isSet_(false),
     isHermitian_(false),
-    solutionUpdated_(false),
-    solutionFinal_(true)
+    solutionUpdated_(false)
   {
   }
   
@@ -474,8 +471,7 @@ namespace Belos {
     Right_Scale_(Problem.Right_Scale_),
     isSet_(Problem.isSet_),
     isHermitian_(Problem.isHermitian_),
-    solutionUpdated_(Problem.solutionUpdated_),
-    solutionFinal_(Problem.solutionFinal_)
+    solutionUpdated_(Problem.solutionUpdated_)
   {
   }
   
@@ -648,7 +644,6 @@ namespace Belos {
 
     // Initialize the state booleans
     solutionUpdated_ = false;
-    solutionFinal_ = true;
     
     // Compute the initial residual vector.
     if (R0_==null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *X_ )) {
