@@ -754,7 +754,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ML_print_line("-",78);
   
   // check for an XML input file
-  string XMLFileName = List_.get("xml input file","ml_ParameterList.xml");
+  string XMLFileName = List_.get("XML input file","ml_ParameterList.xml");
   ReadXML(XMLFileName);
 
   FirstApplication_ = true;
