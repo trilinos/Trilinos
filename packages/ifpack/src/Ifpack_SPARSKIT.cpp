@@ -331,3 +331,5 @@ Ifpack_SPARSKIT::Print(std::ostream& os) const
 
   return(os);
 } 
+
+#endif // HAVE_IFPACK_SPARSKIT
