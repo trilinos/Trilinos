@@ -295,14 +295,14 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 #ifdef ML_MPI
 MPI_Barrier(MPI_COMM_WORLD);
 #endif
-      if (ML_Get_PrintLevel() > 4) {
+      if (ML_Get_PrintLevel() > 10) {
         sprintf(str,"Node_before_repartitioning");
         ML_Operator_Profile(ml->Amat+next,str);
       }
 
       ML_repartition_Acoarse(ml, level, next, ag, ML_TRUE, ML_FALSE);
 
-      if (ML_Get_PrintLevel() > 4) {
+      if (ML_Get_PrintLevel() > 10) {
         sprintf(str,"Node_after_repartitioning");
         ML_Operator_Profile(ml->Amat+next,str);
       }
