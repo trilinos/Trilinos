@@ -83,7 +83,7 @@ typedef struct ML_Comm_Struct
    int      (*USR_irecvbytes)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*);
    int      (*USR_waitbytes)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*);
    void     (*USR_cheapwaitbytes)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*);
-   USR_ERRHANDLER *USR_errhandler;
+   USR_ERRHANDLER USR_errhandler;
 
 } ML_Comm;
 
@@ -128,7 +128,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
 
 #ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER
-extern int    ML_Comm_ErrorHandlerSet(USR_COMM, USR_ERRHANDLER*);
+extern int    ML_Comm_ErrorHandlerSet(USR_COMM, USR_ERRHANDLER);
 /*
 extern int    ML_Comm_ErrorHandlerCreate(
                  void *(*HandlerFcn)(USR_COMM*,int*),
@@ -137,7 +137,7 @@ extern int    ML_Comm_ErrorHandlerCreate(
 extern int    ML_Comm_ErrorHandlerCreate(
                  USR_ERRHANDLER_FUNCTION (*HandlerFcn),
                  USR_ERRHANDLER*);
-extern int    ML_Comm_ErrorHandlerDestroy(USR_ERRHANDLER**);
+extern int    ML_Comm_ErrorHandlerDestroy(USR_ERRHANDLER*);
 extern void   ML_Comm_ErrorHandler(USR_COMM*, int*,...);
 #endif
 
