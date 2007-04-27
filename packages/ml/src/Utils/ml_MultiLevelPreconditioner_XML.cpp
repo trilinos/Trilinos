@@ -109,7 +109,7 @@ int ML_Epetra::MultiLevelPreconditioner::ReadXML(const string& FileName)
   if (j == 0)
     return(0);
   
-  if (Comm().MyPID() == 0)
+  if (verbose_)
   {
     cout << "***" << endl;
     cout << "***" << " Reading XML file `" << FileName << "'..." << endl;
