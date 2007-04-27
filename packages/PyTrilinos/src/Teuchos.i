@@ -316,7 +316,7 @@ Teuchos::ParameterList &
 // This has been specialized for RefCountPtr, because the constructor
 // for creating a RefCountPtr has an additional argument: a boolean
 // false
-%define %extend_RefCountPtr(Type, SmartPtrType...)
+%define %extend_RefCountPtr(Type...)
 %typemap(in, noblock=1) const SWIGTYPE & SMARTPOINTER (void* argp = 0, int res = 0) {
   res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
   if (!SWIG_IsOK(res)) {
@@ -345,20 +345,18 @@ Teuchos::ParameterList &
   delete $1;
 }
 
-%extend_smart_pointer(SmartPtrType)
+%extend_smart_pointer(Teuchos::RefCountPtr< Type >)
+%template()           Teuchos::RefCountPtr< Type >;
 
 %enddef
 
 // These typemap macros allow developers to generate typemaps for any
-// classes that are wrapped in RefCountPtr as function or method
-// arguments.
-%define %teuchos_rcp_typemaps(Type)
+// classes that are wrapped in Teuchos::RefCountPtr<> and used as
+// function or method arguments.
+%define %teuchos_rcp_typemaps(Type...)
 
-%extend_RefCountPtr(Type, Teuchos::RefCountPtr< Type >)
-%template()               Teuchos::RefCountPtr< Type >;
-
-%extend_RefCountPtr(Type, Teuchos::RefCountPtr< const Type >)
-%template()               Teuchos::RefCountPtr< const Type >;
+%extend_RefCountPtr(      Type)
+%extend_RefCountPtr(const Type)
 
 %enddef
 

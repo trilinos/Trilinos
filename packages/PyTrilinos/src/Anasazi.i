@@ -55,6 +55,9 @@ supported.
 // Configuration includes
 #include "PyTrilinos_config.h"
 
+// Teuchos/python include
+#include "Teuchos_PythonParameter.h"
+
 // Epetra includes
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_SerialSymDenseMatrix.h"
@@ -95,7 +98,14 @@ supported.
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziOperatorTraits.hpp"
 #include "AnasaziOperator.hpp"
+#include "AnasaziEigenproblem.hpp"
+#include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziSolverManager.hpp"
+#include "AnasaziBlockDavidsonSolMgr.hpp"
 #include "AnasaziEpetraAdapter.hpp"
+
+typedef Anasazi::Eigenproblem< double, Epetra_MultiVector, Epetra_Operator >
+  EigenproblemEpetra;
 %}
 
 // General ignore directives
@@ -112,6 +122,15 @@ using namespace std;
 // Support for other Trilinos packages
 %import "Teuchos.i"
 %import "Epetra.i"
+
+//////////////////////////////////////////////
+// Support these classes, encapsulated in a //
+// Teuchos::RCP<...>, as function arguments //
+//////////////////////////////////////////////
+%teuchos_rcp_typemaps(Epetra_Operator)
+%teuchos_rcp_typemaps(Epetra_MultiVector)
+//%teuchos_rcp_typemaps(EigenproblemEpetra)
+%teuchos_rcp_typemaps(Anasazi::Eigenproblem< double, Epetra_MultiVector, Epetra_Operator >)
 
 /////////////////////////////
 // Anasazi Version support //
@@ -174,18 +193,46 @@ __version__ = Anasazi_Version().split()[2]
 %template (OperatorDouble)
           Anasazi::Operator<double>;
 
+//////////////////////////////////
+// Anasazi Eigenproblem support //
+//////////////////////////////////
+%include "AnasaziEigenproblem.hpp"
+
+///////////////////////////////////////
+// Anasazi BasicEigenproblem support //
+///////////////////////////////////////
+%include "AnasaziBasicEigenproblem.hpp"
+
+///////////////////////////////////
+// Anasazi SolverManager support //
+///////////////////////////////////
+%include "AnasaziSolverManager.hpp"
+
+/////////////////////////////////////////
+// Anasazi BlockDavidsonSolMgr support //
+/////////////////////////////////////////
+%include "AnasaziBlockDavidsonSolMgr.hpp"
+
 ///////////////////////////////////
 // Anasazi EpetraAdapter support //
 ///////////////////////////////////
 %include "AnasaziEpetraAdapter.hpp"
 %template (SortManagerEpetra)
-          Anasazi::SortManager<double, Epetra_MultiVector, Epetra_Operator>;
+          Anasazi::SortManager< double, Epetra_MultiVector, Epetra_Operator >;
 %template (BasicSortEpetra)
-          Anasazi::BasicSort<double, Epetra_MultiVector, Epetra_Operator>;
+          Anasazi::BasicSort< double, Epetra_MultiVector, Epetra_Operator >;
 %template (MultiVecTraitsEpetra)
-          Anasazi::MultiVecTraits<double, Epetra_MultiVector>;
+          Anasazi::MultiVecTraits< double, Epetra_MultiVector >;
 %template (OperatorTraitsEpetra)
-          Anasazi::OperatorTraits<double, Epetra_MultiVector, Epetra_Operator>;
+          Anasazi::OperatorTraits< double, Epetra_MultiVector, Epetra_Operator >;
+%template (EigenproblemEpetra)
+          Anasazi::Eigenproblem< double, Epetra_MultiVector, Epetra_Operator >;
+%template (BasicEigenproblemEpetra)
+          Anasazi::BasicEigenproblem< double, Epetra_MultiVector, Epetra_Operator >;
+%template (SolverManagerEpetra)
+          Anasazi::SolverManager<  double, Epetra_MultiVector, Epetra_Operator >;
+%template (BlockDavidsonSolMgrEpetra)
+          Anasazi::BlockDavidsonSolMgr< double, Epetra_MultiVector, Epetra_Operator >;
 
 //////////////////////////////
 // Generic python interface //
