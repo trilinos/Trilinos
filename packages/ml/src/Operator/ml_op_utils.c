@@ -417,6 +417,7 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2,
    ML_Operator_Set_ApplyFunc(Rmat, CSR_matvec);
    ML_Operator_Set_Getrow(&(ml_handle->Rmat[level]), 
                                  Nghost+osize, CSR_getrow);
+   Rmat->N_nonzeros = N_nzs;
   return(1);
 }
 /*  SYMB_GRID::partitionBlocksNodes ****************************************
@@ -994,6 +995,7 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
    temp->columns = cols;
    temp->values  = vals;
    temp->rowptr  = row_ptr;
+   Amat_trans->N_nonzeros = N_nzs;
    Amat_trans->data_destroy = ML_CSR_MSRdata_Destroy;
    
    ML_Operator_Set_ApplyFuncData(Amat_trans, isize, osize, 
@@ -2287,6 +2289,38 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel)
   MPI_Barrier(A->comm->USR_comm);
 #endif
   }
+  /* If communication time is zero, the matrix was probably created by Epetra */
+  /* (i.e. outside ML). Thus, ML cannot time only communication. However, ML  */
+  /* always creates its own communication widget via ML_CommInfoOP_Generate() */
+  /* which can be used to estimate communication time.                        */
+
+  if ( (A->comm->ML_nprocs > 1) && (A->getrow->pre_comm != NULL) &&
+       (A->getrow->pre_comm->time == 0.0) &&
+       ((A->getrow->post_comm == NULL) || (A->getrow->post_comm->time == 0.0))){
+
+    if ( (ML_Get_PrintLevel() != 0) && (A->comm->ML_mypid == 0))
+       printf("==> %s communication time that follows is only an estimate!!\n",
+              A->label);
+
+    ML_free(bvec);
+    bvec = (double *) ML_allocate((A->getrow->pre_comm->minimum_vec_size+
+                                   A->invec_leng+1)*sizeof(double));
+    if (bvec == NULL)
+       pr_error("ML_Operator_Profile(%d): out of space\n",A->comm->ML_mypid);
+
+    for (j = 0; j < A->invec_leng; j++) bvec[j] = xvec[j];
+
+    for (j=0; j<numits; j++) {
+       ML_exchange_bdry(bvec,A->getrow->pre_comm, A->invec_leng, 
+                        A->comm, ML_OVERWRITE,NULL);
+#ifdef ML_MPI
+       MPI_Barrier(A->comm->USR_comm);
+#endif
+    }
+
+    A->apply_without_comm_time = A->apply_time - A->getrow->pre_comm->time;
+  }
+
   ML_Operator_ReportStatistics(A,appendlabel,ML_TRUE);
 
   A->apply_time = apply_time;
