@@ -204,32 +204,13 @@ namespace Belos {
     RefCountPtr<const MV> getActualInitResVec() const { return(R0_); }
     
     //! Get a pointer to the current residual vector.
-    /*!
-      
-    \param  CurrSoln  [in] If non-null, then this is the LHS that is used to compute
-    the current residual.  If null, then getCurrLHSVec() is used.
-    
-    Note, the current residual is always computed with respect to getCurrRHSVec().		    
-    
-    \note <ul>
-    <li> This method computes the true residual of the current linear system
-    with respect to getCurrRHSVec() and getCurrLHSVec() if CurrSoln==NULL
-    or with respect to *CurrSoln if CurrSoln!=NULL.  
-    <li> If the solution hasn't been updated in the LinearProblem and
-    a current solution has been computed by the solver (like GMRES), it can
-    be passed into this method to compute the residual.
-    </ul>
-    */
-    const MV& getCurrResVec( const MV* CurrSoln = 0 );
-
-    //! Get a pointer to the current residual vector.
     /*! This method is called by the solver of any method that is interested in the current linear system
       being solved for.
       <ol>
       <li> If the solution has been updated by the solver, then this vector is current ( see SolutionUpdated() ).
       </ol>
     */
-    RefCountPtr<const MV> getCurrResVec() const { return curR_; }
+    RefCountPtr<MV> getCurrResVec() { return curR_; }
     
     //! Get a pointer to the current left-hand side (solution) of the linear system.
     /*! This method is called by the solver or any method that is interested in the current linear system
@@ -657,30 +638,6 @@ namespace Belos {
 
     // Return isSet.
     return isSet_;
-  }
-  
-
-  template <class ScalarType, class MV, class OP>
-  const MV& LinearProblem<ScalarType,MV,OP>::getCurrResVec( const MV* CurrSoln ) 
-  {
-    // Compute the residual of the current linear system.
-    // This should be used if the solution has been updated.
-    // Alternatively, if the current solution has been computed by GMRES
-    // this can be passed in and the current residual will be updated using
-    // it.
-    //
-    if (solutionUpdated_) 
-      {
-	OPT::Apply( *A_, *getCurrLHSVec(), *curR_ );
-	MVT::MvAddMv( 1.0, *getCurrRHSVec(), -1.0, *curR_, *curR_ ); 
-	solutionUpdated_ = false;
-      }
-    else if (CurrSoln) 
-      {
-	OPT::Apply( *A_, *CurrSoln, *curR_ );
-	MVT::MvAddMv( 1.0, *getCurrRHSVec(), -1.0, *curR_, *curR_ ); 
-      }
-    return (*curR_);
   }
   
   template <class ScalarType, class MV, class OP>

@@ -237,6 +237,15 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
   //! Get a constant reference to the linear problem.
   const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
 
+  //! Get the blocksize to be used by the iterative solver in solving this linear problem.
+  int getBlockSize() const { return 1; }
+
+  //! \brief Set the blocksize to be used by the iterative solver in solving this linear problem.
+  void setBlockSize(int blockSize) {
+    TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
+		       "Belos::CGIter::setBlockSize(): Cannot use a block size that is not one.");
+  }
+
   //! States whether the solver has been initialized or not.
   bool isInitialized() { return initialized_; }
 
@@ -385,7 +394,7 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
       // Copy basis vectors from newstate into V
       if (newstate.r != r_) {
         // copy over the initial residual (unpreconditioned).
-	MVT::MvAddMv( one, *newstate.r, zero, *newstate.r *r_ );
+	MVT::MvAddMv( one, *newstate.r, zero, *newstate.r, *r_ );
       }
 
       // Compute initial direction vectors
@@ -434,6 +443,10 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
     // Get the current solution vector.
     Teuchos::RefCountPtr<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
+    // Check that the current solution vector only has one column. 
+    TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, CGIterateFailure,
+                        "Belos::CGIter::iterate(): current linear system has more than one vector!" );
+
     // Compute first <r,z> a.k.a. rHz
     MVT::MvTransMv( one, *r_, *z_, rHz );
     
@@ -446,7 +459,7 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
       iter_++;
 
       // Multiply the current direction vector by A and store in Ap_
-      lp_->applyOp( *_p, *Ap_ );
+      lp_->applyOp( *p_, *Ap_ );
       
       // Compute alpha := <r_,z_> / <p_,Ap_>
       MVT::MvTransMv( one, *p_, *Ap_, pAp );

@@ -19,7 +19,9 @@ cp ./src/*.in ../src/.
 
 cp ./example/Makefile* ../example/.
 cp ./example/BlockGmres/Makefile* ../example/BlockGmres/.
-cp ./example/BlockGmres/*.cpp ../example/BlockGmres/.
+cp ./example/BlockGmres/Makefile* ../example/BlockGmres/.
+cp ./example/BlockCG/*.cpp ../example/BlockCG/.
+cp ./example/BlockCG/*.cpp ../example/BlockCG/.
 
 cp ./test/Makefile* ../test/.
 cp ./test/BlockCG/Makefile* ../test/BlockCG/.

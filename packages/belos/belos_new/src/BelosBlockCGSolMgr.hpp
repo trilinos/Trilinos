@@ -26,11 +26,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef BELOS_BLOCK_GMRES_SOLMGR_HPP
-#define BELOS_BLOCK_GMRES_SOLMGR_HPP
+#ifndef BELOS_BLOCK_CG_SOLMGR_HPP
+#define BELOS_BLOCK_CG_SOLMGR_HPP
 
-/*! \file BelosBlockGmresSolMgr.hpp
- *  \brief The Belos::BlockGmresSolMgr provides a solver manager for the BlockGmres linear solver.
+/*! \file BelosBlockCGSolMgr.hpp
+ *  \brief The Belos::BlockCGSolMgr provides a solver manager for the BlockCG linear solver.
 */
 
 #include "BelosConfigDefs.hpp"
@@ -39,7 +39,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
 
-#include "BelosBlockGmresIter.hpp"
+#include "BelosCGIter.hpp"
 #include "BelosDGKSOrthoManager.hpp"
 #include "BelosICGSOrthoManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
@@ -51,13 +51,13 @@
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-/** \example BlockGmres/BlockGmresEpetraEx.cpp
-    This is an example of how to use the Belos::BlockGmresSolMgr solver manager.
+/** \example BlockCG/BlockCGEpetraEx.cpp
+    This is an example of how to use the Belos::BlockCGSolMgr solver manager.
 */
 
-/*! \class Belos::BlockGmresSolMgr
+/*! \class Belos::BlockCGSolMgr
  *
- *  \brief The Belos::BlockGmresSolMgr provides a powerful and fully-featured solver manager over the BlockGmres linear solver.
+ *  \brief The Belos::BlockCGSolMgr provides a powerful and fully-featured solver manager over the BlockCG linear solver.
 
  \ingroup belos_solver_framework
 
@@ -66,31 +66,31 @@
 
 namespace Belos {
   
-  //! @name BlockGmresSolMgr Exceptions
+  //! @name BlockCGSolMgr Exceptions
   //@{
   
-  /** \brief BlockGmresSolMgrLinearProblemFailure is thrown when the linear problem is
+  /** \brief BlockCGSolMgrLinearProblemFailure is thrown when the linear problem is
    * not setup (i.e. setProblem() was not called) when solve() is called.
    *
-   * This exception is thrown from the BlockGmresSolMgr::solve() method.
+   * This exception is thrown from the BlockCGSolMgr::solve() method.
    *
    */
-  class BlockGmresSolMgrLinearProblemFailure : public BelosError {public:
-    BlockGmresSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
+  class BlockCGSolMgrLinearProblemFailure : public BelosError {public:
+    BlockCGSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
   
-  /** \brief BlockGmresSolMgrOrthoFailure is thrown when the orthogonalization manager is
+  /** \brief BlockCGSolMgrOrthoFailure is thrown when the orthogonalization manager is
    * unable to generate orthonormal columns from the initial basis vectors.
    *
-   * This exception is thrown from the BlockGmresSolMgr::solve() method.
+   * This exception is thrown from the BlockCGSolMgr::solve() method.
    *
    */
-  class BlockGmresSolMgrOrthoFailure : public BelosError {public:
-    BlockGmresSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
+  class BlockCGSolMgrOrthoFailure : public BelosError {public:
+    BlockCGSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
   
   template<class ScalarType, class MV, class OP>
-  class BlockGmresSolMgr : public SolverManager<ScalarType,MV,OP> {
+  class BlockCGSolMgr : public SolverManager<ScalarType,MV,OP> {
     
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
@@ -104,7 +104,7 @@ namespace Belos {
     //! @name Constructors/Destructor
     //@{ 
     
-    /*! \brief Basic constructor for BlockGmresSolMgr.
+    /*! \brief Basic constructor for BlockCGSolMgr.
      *
      * This constructor accepts the LinearProblem to be solved in addition
      * to a parameter list of options for the solver manager. These options include the following:
@@ -118,11 +118,11 @@ namespace Belos {
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
      *   - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled for the purposing of deciding convergence. Default: true
      */
-    BlockGmresSolMgr( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem,
+    BlockCGSolMgr( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem,
 		      Teuchos::ParameterList &pl );
     
     //! Destructor.
-    virtual ~BlockGmresSolMgr() {};
+    virtual ~BlockCGSolMgr() {};
     //@}
     
     //! @name Accessor methods
@@ -159,10 +159,10 @@ namespace Belos {
      * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 
      * quit.
      *
-     * This method calls BlockGmresIter::iterate(), which will return either because a specially constructed status test evaluates to 
+     * This method calls BlockCGIter::iterate(), which will return either because a specially constructed status test evaluates to 
      * ::Passed or an exception is thrown.
      *
-     * A return from BlockGmresIter::iterate() signifies one of the following scenarios:
+     * A return from BlockCGIter::iterate() signifies one of the following scenarios:
      *    - the maximum number of restarts has been exceeded. In this scenario, the current solutions to the linear system
      *      will be placed in the linear problem and return ::Unconverged.
      *    - global convergence has been met. In this case, the current solutions to the linear system will be placed in the linear
@@ -179,7 +179,7 @@ namespace Belos {
     /** \name Overridden from Teuchos::Describable */
     //@{
     
-    /** \brief Method to return description of the block GMRES solver manager */
+    /** \brief Method to return description of the block CG solver manager */
     std::string description() const;
     
     //@}
@@ -216,7 +216,7 @@ namespace Belos {
 
 // Constructor
 template<class ScalarType, class MV, class OP>
-BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr( 
+BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( 
 						     const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem,
 						     Teuchos::ParameterList &pl ) : 
   problem_(problem),
@@ -229,7 +229,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   numBlocks_(0),
   verbosity_(Belos::Errors),
   output_freq_(-1),
-  timerSolve_(Teuchos::TimeMonitor::getNewTimer("BlockGmresSolMgr::solve()"))
+  timerSolve_(Teuchos::TimeMonitor::getNewTimer("BlockCGSolMgr::solve()"))
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
   
@@ -245,12 +245,12 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   // block size: default is 1
   blockSize_ = pl.get("Block Size",1);
   TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
-                     "Belos::BlockGmresSolMgr: \"Block Size\" must be strictly positive.");
+                     "Belos::BlockCGSolMgr: \"Block Size\" must be strictly positive.");
   adaptiveBlockSize_ = pl.get("Adaptive Block Size",adaptiveBlockSize_);
 
   numBlocks_ = pl.get("Num Blocks",25);
   TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
-                     "Belos::BlockGmresSolMgr: \"Num Blocks\" must be strictly positive.");
+                     "Belos::BlockCGSolMgr: \"Num Blocks\" must be strictly positive.");
 
   // which orthogonalization to use
   orthoType_ = pl.get("Orthogonalization",orthoType_);
@@ -327,7 +327,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   } 
   else {
     TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS",std::logic_error,
-		       "Belos::BlockGmresSolMgr(): Invalid orthogonalization type.");
+		       "Belos::BlockCGSolMgr(): Invalid orthogonalization type.");
   }  
 
 }
@@ -335,13 +335,13 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   
 // solve()
 template<class ScalarType, class MV, class OP>
-ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
+ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 
   Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
   
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),BlockGmresSolMgrLinearProblemFailure,
-                     "Belos::BlockGmresSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
+  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),BlockCGSolMgrLinearProblemFailure,
+                     "Belos::BlockCGSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
 
   // Create indices for the linear systems to be solved.
   int startPtr = 0;
@@ -382,10 +382,10 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   bool isConverged = true;	
 
   //////////////////////////////////////////////////////////////////////////////////////
-  // BlockGmres solver
+  // BlockCG solver
 
-  Teuchos::RefCountPtr<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter
-    = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
+  Teuchos::RefCountPtr<CGIter<ScalarType,MV,OP> > block_cg_iter
+    = Teuchos::rcp( new CGIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,plist) );
   
 
   // Enter solve() iterations
@@ -394,41 +394,25 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
     while ( numRHS2Solve > 0 ) {
 
-      // Set the current number of blocks and blocksize with the Gmres iteration.
-      block_gmres_iter->setSize( blockSize_, numBlocks_ );
-
       // Reset the number of iterations.
-      block_gmres_iter->resetNumIters();
+      block_cg_iter->resetNumIters();
 
       // Reset the number of calls that the status test output knows about.
       outputTest_->resetNumCalls();
 
       // Create the first block in the current Krylov basis.
-      Teuchos::RefCountPtr<MV> V_0 = MVT::Clone( *(problem_->getRHS()), blockSize_ );
-      problem_->computeCurrResVec( &*V_0 );
+      Teuchos::RefCountPtr<MV> r_0 = problem_->getCurrResVec();
 
-      // Get a matrix to hold the orthonormalization coefficients.
-      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > Z_0 = 
-        rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(blockSize_, blockSize_) );
-      
-      // Orthonormalize the new V_0
-      int rank = ortho_->normalize( *V_0, Z_0 );
-      TEST_FOR_EXCEPTION(rank != blockSize_,BlockGmresSolMgrOrthoFailure,
-			 "Belos::BlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
-     
       // Set the new state and initialize the solver.
-      BlockGmresIterState<ScalarType,MV> newstate;
-      newstate.V = V_0;
-      newstate.Z = Z_0;
-      newstate.curDim = 0;
-      block_gmres_iter->initialize(newstate);
-      int numRestarts = 0;
+      CGIterState<ScalarType,MV> newstate;
+      newstate.r = r_0;
+      block_cg_iter->initialize(newstate);
 
       while(1) {
 	
-	// tell block_gmres_iter to iterate
+	// tell block_cg_iter to iterate
 	try {
-	  block_gmres_iter->iterate();
+	  block_cg_iter->iterate();
 	  
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  //
@@ -437,7 +421,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  if ( convTest_->getStatus() == Passed ) {
 	    // we have convergence
-	    break;  // break from while(1){block_gmres_iter->iterate()}
+	    break;  // break from while(1){block_cg_iter->iterate()}
 	  }
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  //
@@ -447,52 +431,8 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	  else if ( maxIterTest_->getStatus() == Passed ) {
 	    // we don't have convergence
 	    isConverged = false;
-	    break;  // break from while(1){block_gmres_iter->iterate()}
+	    break;  // break from while(1){block_cg_iter->iterate()}
 	  }
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // check for restarting, i.e. the subspace is full
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  else if ( block_gmres_iter->getCurSubspaceDim() == block_gmres_iter->getMaxSubspaceDim() ) {
-	    
-	    if ( numRestarts >= maxRestarts_ ) {
-	      isConverged = false;
-	      break; // break from while(1){block_gmres_iter->iterate()}
-	    }
-	    numRestarts++;
-	    
-	    printer_->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << endl << endl;
-	    
-	    // Update the linear problem.
-	    Teuchos::RefCountPtr<MV> update = block_gmres_iter->getCurrentUpdate();
-	    problem_->updateSolution( update, true );
-	    
-	    // Get the state.
-	    BlockGmresIterState<ScalarType,MV> oldState = block_gmres_iter->getState();
-	    
-	    // Compute the restart vector.
-	    // Get a view of the current Krylov basis.
-	    Teuchos::RefCountPtr<MV> V_0  = MVT::Clone( *(oldState.V), blockSize_ );
-	    problem_->computeCurrResVec( &*V_0 );
-
-	    // Get a view of the first block of the Krylov basis.
-            Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > Z_0 = 
-              rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(blockSize_, blockSize_) );
-	    
-	    // Orthonormalize the new V_0
-	    int rank = ortho_->normalize( *V_0, Z_0 );
-	    TEST_FOR_EXCEPTION(rank != blockSize_,BlockGmresSolMgrOrthoFailure,
-			       "Belos::BlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors after restart.");
-
-	    // Set the new state and initialize the solver.
-	    BlockGmresIterState<ScalarType,MV> newstate;
-	    newstate.V = V_0;
-	    newstate.Z = Z_0;
-	    newstate.curDim = 0;
-	    block_gmres_iter->initialize(newstate);
-
-	  } // end of restarting
 
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  //
@@ -503,29 +443,12 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
 	  else {
 	    TEST_FOR_EXCEPTION(true,std::logic_error,
-			       "Belos::BlockGmresSolMgr::solve(): Invalid return from BlockGmresIter::iterate().");
+			       "Belos::BlockCGSolMgr::solve(): Invalid return from BlockCGIter::iterate().");
 	  }
 	}
-        catch (BlockGmresIterOrthoFailure e) {
-	  // If the block size is not one, it's not considered a lucky breakdown.
-	  if (blockSize_ != 1) {
-	    printer_->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration " 
-				    << block_gmres_iter->getNumIters() << endl 
-				    << e.what() << endl;
-	    throw;
-          }
-          // If the block size is one, try to recover the most recent least-squares solution
-	  block_gmres_iter->updateLSQR( block_gmres_iter->getCurSubspaceDim() );
-
-	  // Check to see if the most recent least-squares solution yielded convergence.
-	  sTest_->checkStatus( &*block_gmres_iter );
-	  if (convTest_->getStatus() != Passed)
-	    isConverged = false;
-	  break;
-        }
 	catch (std::exception e) {
-	  printer_->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration " 
-				  << block_gmres_iter->getNumIters() << endl 
+	  printer_->stream(Errors) << "Error! Caught exception in BlockCGIter::iterate() at iteration " 
+				  << block_cg_iter->getNumIters() << endl 
 				  << e.what() << endl;
 	  throw;
 	}
@@ -533,7 +456,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       
       // Compute the current solution.
       // Update the linear problem.
-      Teuchos::RefCountPtr<MV> update = block_gmres_iter->getCurrentUpdate();
+      Teuchos::RefCountPtr<MV> update = block_cg_iter->getCurrentUpdate();
       problem_->updateSolution( update, true );
 
       // Inform the linear problem that we are finished with this block linear system.
@@ -573,17 +496,17 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
   
   if (!isConverged) {
-    return Unconverged; // return from BlockGmresSolMgr::solve() 
+    return Unconverged; // return from BlockCGSolMgr::solve() 
   }
-  return Converged; // return from BlockGmresSolMgr::solve() 
+  return Converged; // return from BlockCGSolMgr::solve() 
 }
 
 //  This method requires the solver manager to return a string that describes itself.
 template<class ScalarType, class MV, class OP>
-std::string BlockGmresSolMgr<ScalarType,MV,OP>::description() const
+std::string BlockCGSolMgr<ScalarType,MV,OP>::description() const
 {
   std::ostringstream oss;
-  oss << "Belos::BlockGmresSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
+  oss << "Belos::BlockCGSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
   oss << "{";
   oss << "Ortho Type='"<<orthoType_<<"\'";
   oss << "}";
@@ -592,4 +515,4 @@ std::string BlockGmresSolMgr<ScalarType,MV,OP>::description() const
   
 } // end Belos namespace
 
-#endif /* BELOS_BLOCK_GMRES_SOLMGR_HPP */
+#endif /* BELOS_BLOCK_CG_SOLMGR_HPP */

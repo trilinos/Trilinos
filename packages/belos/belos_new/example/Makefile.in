@@ -219,7 +219,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = BlockGmres 
+SUBDIRS = BlockGmres BlockCG
 all: all-recursive
 
 .SUFFIXES:

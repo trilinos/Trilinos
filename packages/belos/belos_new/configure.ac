@@ -336,6 +336,7 @@ AC_CONFIG_FILES([
 		src/Makefile
 		example/Makefile
 		example/BlockGmres/Makefile
+		example/BlockCG/Makefile
 		test/Makefile
 		test/BlockCG/Makefile
 		test/BlockGmres/Makefile

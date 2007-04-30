@@ -10785,7 +10785,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 ##
 
-                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/BlockTFQMR/Makefile test/MVOPTester/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile thyra/Makefile thyra/src/Makefile thyra/test/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOWSFactory/Makefile thyra/example/Makefile thyra/example/LOWSFactory/Makefile thyra/example/LOWSFactory/Epetra/Makefile thyra/example/LOWSFactory/Tpetra/Makefile"
+                                                                                                                                                                                                                                      ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile example/BlockCG/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/BlockTFQMR/Makefile test/MVOPTester/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile thyra/Makefile thyra/src/Makefile thyra/test/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOWSFactory/Makefile thyra/example/Makefile thyra/example/LOWSFactory/Makefile thyra/example/LOWSFactory/Epetra/Makefile thyra/example/LOWSFactory/Tpetra/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11468,6 +11468,7 @@ do
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "example/BlockGmres/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/BlockGmres/Makefile" ;;
+  "example/BlockCG/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/BlockCG/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/BlockCG/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockCG/Makefile" ;;
   "test/BlockGmres/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockGmres/Makefile" ;;

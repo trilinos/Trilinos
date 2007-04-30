@@ -116,12 +116,6 @@ class Iteration {
   */
   virtual Teuchos::RefCountPtr<MV> getCurrentUpdate() const = 0;
 
-  //! Get the dimension of the search subspace used to generate the current eigenvectors and eigenvalues.
-  virtual int getCurSubspaceDim() const = 0;
-
-  //! Get the maximum dimension allocated for the search subspace.
-  virtual int getMaxSubspaceDim() const = 0;
-
   //@}
 
 
@@ -129,7 +123,7 @@ class Iteration {
     //! @name Accessor methods
   //@{ 
 
-  //! Get a constant reference to the eigenvalue problem.
+  //! Get a constant reference to the linear problem.
   virtual const LinearProblem<ScalarType,MV,OP>& getProblem() const = 0;
 
   //! Get the blocksize to be used by the iterative solver in solving this linear problem.
