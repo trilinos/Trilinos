@@ -114,6 +114,7 @@ namespace ML_Epetra
   
     //! Returns the Epetra_Map object associated with the range of this operator.
     const Epetra_Map& OperatorRangeMap() const {return(*EdgeRangeMap_);};
+    
     //@}
     
   private:

@@ -421,6 +421,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   
   /* Cleanup */
   if(verbose_ && !Comm_->MyPID()) printf("EMFP: BuildProlongator Cleanup\n");  
+  ML_qr_fix_Destroy();
   ML_Aggregate_Destroy(&MLAggr);
   ML_Operator_Destroy(&TMT_ML);
   ML_Operator_Destroy(&P);
@@ -469,8 +470,13 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   R->num_rigid=R->num_PDEs=3;
   //  ML_2matmult(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
   ML_2matmult_block(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
-     
-  Epetra_CrsMatrix_Wrap_ML_Operator(CoarseMat_ML,*Comm_,*CoarseMap_,&CoarseMatrix); 
+
+  /* Wrap to Epetra-land */
+  //  Epetra_CrsMatrix_Wrap_ML_Operator(CoarseMat_ML,*Comm_,*CoarseMap_,&CoarseMatrix); 
+  int nnz=100;
+  double time;
+  ML_Operator2EpetraCrsMatrix(CoarseMat_ML,CoarseMatrix,nnz,true,time,0,verbose_);
+  // NTS: This is a hack to get around the sticking ones on the diagonal issue;
   
 #ifndef NO_OUTPUT
   ML_Matrix_Print(CoarseMat_ML,*Comm_,*EdgeRangeMap_,"coarsemat.dat");  
@@ -487,6 +493,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   ML_Operator_Destroy(&P);
   ML_Operator_Destroy(&R);
   ML_Operator_Destroy(&Temp_ML);
+  ML_Operator_Destroy(&CoarseMat_ML);CoarseMat_ML=0;//HAX  
   return 0;
 }/*end FormCoarseMatrix*/
 
@@ -494,7 +501,9 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
 // Print the individual operators in the multigrid hierarchy.
 void ML_Epetra::EdgeMatrixFreePreconditioner::Print(const char *whichHierarchy)
 {
-  if(CoarseMatrix) CoarseMatrix->Print(cout);
+  ofstream ofs("Pmat.edge.m");
+  if(Prolongator_) Prolongator_->Print(ofs);
+  if(CoarsePC) CoarsePC->Print();
 }/*end Print*/
  
 
@@ -511,8 +520,6 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::DestroyPreconditioner(){
   if (Smoother_) {delete Smoother_; Smoother_=0;}
   return 0;
 }/*end DestroyPreconditioner*/
-
-
 
 // ================================================ ====== ==== ==== == = 
 //! Apply the preconditioner to an Epetra_MultiVector X, puts the result in Y

@@ -16,6 +16,7 @@
 //hax
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)  
+#include "ml_common.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -31,6 +32,8 @@
 #ifdef HAVE_ML_EPETRAEXT
 #include "EpetraExt_SolverMap_CrsMatrix.h"
 #endif
+
+#define ML_TIMING //DEBUG
 
 namespace ML_Epetra
 {
@@ -242,15 +245,26 @@ namespace ML_Epetra
     //! Epetra communicator object
     const Epetra_Comm* Comm_;
 
-    
-    //! Stuff for smoothing
-    //    void** nodal_args_,** edge_args_;
-    //    ML * ml_;
-
     //! Verbosity flag
-    bool verbose_;
-    
+    bool verbose_;    
     //@}
+
+
+#ifdef ML_TIMING
+    //@{ \name Variables for Timing
+    //! Number of applications
+    int NumApplications_;
+    //! CPU time for all applications of the preconditioner
+    double ApplicationTime_;
+    bool FirstApplication_;
+    //@ CPU time for first application
+    double FirstApplicationTime_;
+    //! Number of construction phases
+    int NumConstructions_;
+    //! CPU time for construction of the preconditioner.
+    double ConstructionTime_;
+    //@}        
+#endif
     
   };// end RefMaxwellPreconditioner
 }//end namespace ML_Epetra

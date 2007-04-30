@@ -221,7 +221,7 @@ int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);
  */
 int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
 				CrsMatrix, int & MaxNumNonzeros,
-				bool CheckNonzeroRow, double &, int base=0);
+				bool CheckNonzeroRow, double &, int base=0,bool verbose=false);
 
 inline int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
 				CrsMatrix)
@@ -286,7 +286,7 @@ namespace ML_Epetra{
   Epetra_IntVector * FindLocalDirichletColumnsFromRows(const int *dirichletRows, int numBCRows,const Epetra_CrsMatrix & Matrix);
 
   //! Drops a 1 on the diagonal of zero'd our rows
-  void Remove_Zeroed_Rows(const Epetra_CrsMatrix & Matrix);
+  void Remove_Zeroed_Rows(const Epetra_CrsMatrix & Matrix, double tol=0.0);
 
 
   //! Transforms Epetra matrix column map (if necessary) to be compatible with

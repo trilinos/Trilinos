@@ -899,7 +899,7 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
   int mnz=10000;
 
 #define LIGHTWEIGHT_WRAP
-#ifdef LIGHTWRIGHT_WRAP
+#ifdef LIGHTWEIGHT_WRAP
   /* This is a very dangerous way to do this.  Live on the edge. */
   int *cols, *gcols;
   double* vals;
@@ -913,7 +913,7 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
   /* Allocate the Epetra_CrsMatrix Object */
   *Result=new Epetra_CrsMatrix(CV,RowMap,*ColMap,base);
   
-  /* Fill the matrix. */
+  /* Fill the matrix */
   for(int row=0;row<A->outvec_leng;row++){
     cols=&(M_->columns[M_->rowptr[row]]);
     vals=&(M_->values[M_->rowptr[row]]);
@@ -949,11 +949,12 @@ int ML_Epetra::ML_Epetra_PtAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix
 
   /* Triple mat-product */
   ML_rap(R_,A_,P_ ,Result_, ML_CSR_MATRIX);
-
+  
   /* Wrap back */
   int nnz;
   double time;
-  ML_Operator2EpetraCrsMatrix(Result_,Result,nnz,false,time,0);
+  //  ML_Operator2EpetraCrsMatrix(Result_,Result,nnz,false,time,0);
+  ML_Operator2EpetraCrsMatrix(Result_,Result,nnz,true,time,0,false);
   Result->OptimizeStorage();
   
   /* Cleanup */
@@ -1135,7 +1136,8 @@ void ML_Epetra::Apply_BCsToMatrixColumns(const Epetra_RowMatrix & iBoundaryMatri
 
 
 // ====================================================================== 
-void ML_Epetra::Remove_Zeroed_Rows(const Epetra_CrsMatrix & Matrix)
+void ML_Epetra::Remove_Zeroed_Rows(const Epetra_CrsMatrix & Matrix,double tol)
+#define ABS(x) ((x)>0?(x):(-(x)))
 {
   /* Finds zeroed out rows and plops a 1 on the diagonal
      rows/columns to nuke.
@@ -1155,11 +1157,16 @@ void ML_Epetra::Remove_Zeroed_Rows(const Epetra_CrsMatrix & Matrix)
   for (i=0; i < N; i++) {
     Matrix.ExtractMyRowView(i,numEntries,vals,cols);
     gridx=Matrix.GRID(i);
+    if(numEntries==0) printf("WARNING: row %d has no entries\n",gridx);
     for (j=0, cidx=-1; j < numEntries; j++){
-      if(vals[j]!=0) {cidx=-1;break;}
+      if(ABS(vals[j])>tol) {cidx=-1;break;}
       if(gridx == Matrix.GCID(cols[j])) cidx=j;
     }/*end for*/
-    if(cidx!=-1) vals[cidx]=1.0;
+    if(cidx!=-1) {
+      for (j=0; j < numEntries; j++)
+        vals[j]=0.0;      
+      vals[cidx]=1.0;     
+    }
   }/*end for*/
   
 }/*end Apply_OAZToMatrix*/
@@ -1964,12 +1971,12 @@ void ML_DestroyQt( void )
 // ======================================================================
 int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
                                 CrsMatrix, int & MaxNumNonzeros,
-                                bool CheckNonzeroRow, double & CPUTime, int base)
+                                bool CheckNonzeroRow, double & CPUTime, int base,bool verbose)
 {
   int    isize_offset, osize_offset;
   int Nghost;
   ML_Comm *comm;
-
+  
   comm = Amat->comm;
 #ifdef ML_MPI
   MPI_Comm mpi_comm ;
@@ -2067,28 +2074,48 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
       } while( ierr == 0 );
     }
 
+
+    // Reallocation sanity checks for CheckNonZeroRow - CMS
+    if(ncnt==allocated){
+      allocated *= 2;
+      colInd.resize(allocated);
+      colVal.resize(allocated);      
+    }
+    
     // MS // check out how many nonzeros we have
     // MS // NOTE: this may result in a non-symmetric pattern for CrsMatrix
     
     NumNonzeros = 0;
+    bool has_diagonal=false;
     for (int j = 0; j < ncnt; j++) {
+      has_diagonal = has_diagonal || global_osize_as_int[i]==global_isize_as_int[colInd[j]];
       if (colVal[j] != 0.0) {
         colInd[NumNonzeros] = global_isize_as_int[colInd[j]];
         colVal[NumNonzeros] = colVal[j];
         NumNonzeros++;
       }
     }
+    
     if( NumNonzeros == 0 && CheckNonzeroRow ) {
-      cout << "*ML*WRN* in ML_Operator2EpetraCrsMatrix : \n*ML*WRN* Global row "
-	   << global_osize_as_int[i]
-	   << " has no nonzero elements (and " << ncnt
-	   << " zero entries)" << endl
-	   << "*ML*WRN* Now put 1 on the diagonal...\n";
+      if(verbose)
+        cout << "*ML*WRN* in ML_Operator2EpetraCrsMatrix : \n*ML*WRN* Global row "
+             << global_osize_as_int[i]
+             << " has no nonzero elements (and " << ncnt
+             << " zero entries)" << endl
+             << "*ML*WRN* Now put 1 on the diagonal...\n";
       // insert a 1 on the diagonal
       colInd[NumNonzeros] = global_isize_as_int[i];
       colVal[NumNonzeros] = 1.0;
       NumNonzeros++;
     }
+    else if(NumNonzeros>0 && !has_diagonal && CheckNonzeroRow){
+      if(verbose) printf("Row %d/%d has no diagonal entry\n",i,global_osize_as_int[i]);
+      // insert a 1 on the diagonal
+      colInd[NumNonzeros] = global_isize_as_int[i];
+      colVal[NumNonzeros] = 1.0;
+      NumNonzeros++;
+    }
+      
     MaxNumNonzeros = EPETRA_MAX(NumNonzeros,MaxNumNonzeros);
     
     CrsMatrix->InsertGlobalValues(global_osize_as_int[i], NumNonzeros, 
