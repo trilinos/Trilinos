@@ -36,18 +36,24 @@ Teuchos:
     http://software.sandia.gov/trilinos/packages/teuchos
 
 The purpose of Teuchos is to provide a number of utilities often
-needed by numerical applications, but that are not numerical by
-nature.  The python version of the Teuchos package supports the
-following classes:
+needed by numerical applications, but that are not necessarily
+numerical by nature.  The python version of the Teuchos package
+supports the following classes:
 
     * ParameterList           - List of arbitrarily-typed values,
                                 keyed by strings
-    * XMLObject               - Object-oriented interface to XML objects
+    * XMLObject               - Object-oriented interface to XML
+                                objects
     * XMLParameterListReader  - ParameterList input from XML
     * XMLParameterListWriter  - ParameterList output to XML
-    * XMLInputSource          - Base class for converting a stream to XML
-    * FileInputSource         - Class for converting file contents to XML
-    * StringInputSource       - Class for converting string contents to XML
+    * XMLInputSource          - Base class for converting a stream
+                                to XML
+    * FileInputSource         - Class for converting file contents
+                                to XML
+    * StringInputSource       - Class for converting string contents
+                                to XML
+    * ScalarTraits            - Function factory for ScalarTraits<...>
+                                classes
 
 The ParameterList class matches string keys to arbitrarily-typed
 values.  In python, the Teuchos.ParameterList is tightly integrated
@@ -89,6 +95,7 @@ ParameterList will accept a python dictionary.
 #include "Teuchos_XMLInputSource.hpp"
 #include "Teuchos_FileInputSource.hpp"
 #include "Teuchos_StringInputSource.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 // Teuchos python interface includes
 #include "Teuchos_PythonParameter.h"
@@ -309,6 +316,26 @@ Teuchos::ParameterList &
 ////////////////////////////////////////
 %ignore Teuchos::StringInputSource::stream() const;
 %include "Teuchos_StringInputSource.hpp"
+
+///////////////////////////////////
+// Teuchos::ScalarTraits support //
+///////////////////////////////////
+%include "Teuchos_ScalarTraits.hpp"
+%template(ScalarTraitsFloat ) Teuchos::ScalarTraits< float  >;
+%template(ScalarTraitsDouble) Teuchos::ScalarTraits< double >;
+%pythoncode %{
+def ScalarTraits(scalarType):
+    """
+    ScalarTraits(str scalarType) -> ScalarTraits<...>
+
+    The scalarType argument is for specifying the type of scalar for
+    which traits are requested.  Limited NumPy-style type
+    specification is supported: 'f' for float and 'd' for double.
+    """
+    if scalarType == 'f': return ScalarTraitsFloat()
+    if scalarType == 'd': return ScalarTraitsDouble()
+    raise NotImplementedError, "ScalarTraits for " + repr(scalarType) + " not supported"
+%}
 
 ////////////////////////////////////////////////////////////////////////
 
