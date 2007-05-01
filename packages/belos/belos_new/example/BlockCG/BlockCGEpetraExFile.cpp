@@ -108,6 +108,7 @@ int main(int argc, char *argv[]) {
   RefCountPtr<Epetra_MultiVector> B, X;
   RefCountPtr<Epetra_Vector> vecB, vecX;
   EpetraExt::readEpetraLinearSystem(filename, Comm, &A, &Map, &vecX, &vecB);
+  A->OptimizeStorage();
   proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
 
   // Check to see if the number of right-hand sides is the same as requested.
