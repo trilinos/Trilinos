@@ -146,6 +146,14 @@ void Epetra_LAPACK::GETRF( const int M, const int N, double * A, const int LDA, 
   DGETRF_F77(&M, &N, A, &LDA, IPIV, INFO);
 }
 //=============================================================================
+void Epetra_LAPACK::GEQRF( const int M, const int N,  float * A, const int LDA,  float * TAU,  float * WORK, const int LWORK, int * INFO) const {
+  SGEQRF_F77(&M, &N, A, &LDA, TAU, WORK, &LWORK, INFO);
+}
+//=============================================================================
+void Epetra_LAPACK::GEQRF( const int M, const int N, double * A, const int LDA, double * TAU, double * WORK, const int LWORK, int * INFO) const {
+  DGEQRF_F77(&M, &N, A, &LDA, TAU, WORK, &LWORK, INFO);
+}
+//=============================================================================
 void Epetra_LAPACK::GESVD(const char JOBU, const char JOBVT, const int M, const int N, float * A, 
 			  const int LDA, float * S, float * U,
 			  const int LDU, float * VT, const int LDVT, float * WORK, 

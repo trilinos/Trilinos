@@ -137,6 +137,11 @@ class Epetra_LAPACK {
   //! Epetra_LAPACK factorization for general matrix (DGETRF)
   void GETRF( const int M, const int N, double * A, const int LDA, int * IPIV, int * INFO) const;
 
+  //! Epetra_LAPACK QR factorization for general matrix (SGEQRF)
+  void GEQRF( const int M, const int N,  float * A, const int LDA,  float * TAU,  float * WORK, const int lwork, int * INFO) const;
+  //! Epetra_LAPACK factorization for general matrix (DGEQRF)
+  void GEQRF( const int M, const int N, double * A, const int LDA, double * TAU, double * WORK, const int lwork, int * INFO) const;
+
   //! Epetra_LAPACK solve (after factorization) for general matrix (SGETRS)
   void GETRS( const char TRANS, const int N, const int NRHS, const float * A, const int LDA, const int * IPIV, float * X, const int LDX, int * INFO) const;
   //! Epetra_LAPACK solve (after factorization) for general matrix (DGETRS)

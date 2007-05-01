@@ -56,6 +56,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DGESV_F77   SGESV
 #define DGESVX_F77  SGESVX
 #define DGETRF_F77  SGETRF
+#define DGEQRF_F77  SGEQRF
 #define DGETRI_F77  SGETRI
 #define DGETRS_F77  SGETRS
 #define DGGEV_F77   SGGEV
@@ -152,6 +153,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DGESV_F77   F77_FUNC(dgesv,DGESV)
 #define DGESVX_F77  F77_FUNC(dgesvx,DGESVX)
 #define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
+#define DGEQRF_F77  F77_FUNC(dgeqrf,Dgeqrf)
 #define DGETRI_F77  F77_FUNC(dgetri,DGETRI)
 #define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)
 #define DGGEV_F77   F77_FUNC(dggev,DGGEV)
@@ -204,6 +206,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define SGESV_F77   F77_FUNC(sgesv,SGESV)
 #define SGESVX_F77  F77_FUNC(sgesvx,SGESVX)
 #define SGETRF_F77  F77_FUNC(sgetrf,SGETRF)
+#define SGEQRF_F77  F77_FUNC(sgeqrf,SGEQRF)
 #define SGETRI_F77  F77_FUNC(sgetri,SGETRI)
 #define SGETRS_F77  F77_FUNC(sgetrs,SGETRS)
 #define SGGEV_F77   F77_FUNC(sggev,SGGEV)
@@ -272,6 +275,7 @@ extern "C" {
 			 double * x, const int * ldx, double * rcond, double * ferr, double * berr, double * 
 			 work, int * iwork, int * info);
   void PREFIX DGETRF_F77(const int* m, const int* n, double* a, const int* lda, int* ipiv, int* info); 
+  void PREFIX DGEQRF_F77(const int* m, const int* n, double* a, const int* lda, double* tau, double* work, const int* lwork, int* info); 
   void PREFIX DGETRI_F77(const int* n, double* a, const int* lda, int*ipiv, double * work , const int* lwork, int* info);
   void PREFIX DGETRS_F77(Epetra_fcd, const int* n, const int* nrhs, const double* a, const int* lda, const int* ipiv, double* x , 
 			 const int* ldx, int* info);
@@ -372,6 +376,7 @@ extern "C" {
 			 float * x, const int * ldx, float * rcond, float * ferr, float * berr, float * 
 			 work, int * iwork, int * info);
   void PREFIX SGETRF_F77(const int* m, const int* n, float* a, const int* lda, int* ipiv, int* info); 
+  void PREFIX SGEQRF_F77(const int* m, const int* n, float* a, const int* lda, float* tau, float* work, const int* lwork, int* info); 
   void PREFIX SGETRI_F77(const int* n, float* a, const int* lda, int*ipiv, float * work , const int* lwork, int* info);
   void PREFIX SGETRS_F77(Epetra_fcd, const int* n, const int* nrhs, const float* a, const int* lda, const int* ipiv, float* x , 
 			 const int* ldx, int* info);
