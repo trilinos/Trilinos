@@ -214,6 +214,10 @@ class Epetra_LAPACK {
   void ORMHR( const char SIDE, const char TRANS, const int M, const int N, const int ILO, const int IHI, const double * A, const int LDA, 
 	      const double * TAU, double * C,
 	      const int LDC, double * WORK, const int LWORK, int * INFO) const;
+  //! Epetra_LAPACK for forming the triangular factor of a product of elementary Householder reflectors (SLARFT).
+  void LARFT( const char DIRECT, const char STOREV, const int N, const int K, double * V, const int LDV, double * TAU, double * T, const int LDT) const;
+  //! Epetra_LAPACK for forming the triangular factor of a product of elementary Householder reflectors (DLARFT).
+  void LARFT( const char DIRECT, const char STOREV, const int N, const int K, float * V, const int LDV, float * TAU, float * T, const int LDT) const;
   //@}
 
   //! @name Triangular matrix routines

@@ -288,6 +288,14 @@ void Epetra_LAPACK::ORMHR( const char SIDE, const char TRANS, const int M, const
   DORMHR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &M, &N, &ILO, &IHI, A, &LDA, TAU, C, &LDC, WORK, &LWORK, INFO);
 }
 //=============================================================================
+void Epetra_LAPACK::LARFT( const char DIRECT, const char STOREV, const int N, const int K, float * V, const int LDV, float * TAU, float * T, const int LDT) const {
+  SLARFT_F77(CHAR_MACRO(DIRECT), CHAR_MACRO(STOREV), &N, &K, V, &LDV, TAU, T, &LDT);
+}
+//=============================================================================
+void Epetra_LAPACK::LARFT( const char DIRECT, const char STOREV, const int N, const int K, double * V, const int LDV, double * TAU, double * T, const int LDT) const {
+  DLARFT_F77(CHAR_MACRO(DIRECT), CHAR_MACRO(STOREV), &N, &K, V, &LDV, TAU, T, &LDT);
+}
+//=============================================================================
 void Epetra_LAPACK::TREVC( const char SIDE, const char HOWMNY, int * SELECT, const int N, const float * T, const int LDT, float *VL, const int LDVL,
 			  float * VR, const int LDVR, const int MM, int * M, float * WORK, int * INFO) const {
 

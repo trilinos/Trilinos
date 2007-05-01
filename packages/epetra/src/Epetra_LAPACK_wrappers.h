@@ -64,6 +64,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DHSEQR_F77  SHSEQR
 #define DLAIC1_F77  SLAIC1
 #define DLAMCH_F77  SLAMCH
+#define DLARFT_F77  SLARFT
 #define DLASWP_F77  SLASWP
 #define DORGHR_F77  SORGHR
 #define DORMHR_F77  SORMHR
@@ -159,6 +160,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DHSEQR_F77  F77_FUNC(dhseqr,DHSEQR)
 #define DLAIC1_F77  F77_FUNC(dlaic1,DLAIC1)
 #define DLAMCH_F77  F77_FUNC(dlamch,DLAMCH)
+#define DLARFT_F77  F77_FUNC(dlarft,DLARFT)
 #define DLASWP_F77  F77_FUNC(dlaswp,DLASWP)
 #define DORGHR_F77  F77_FUNC(dorghr,DORGHR)
 #define DORMHR_F77  F77_FUNC(dormhr,DORMHR)
@@ -209,6 +211,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define SGGSVD_F77  F77_FUNC(sggsvd,SGGSVD)
 #define SHSEQR_F77  F77_FUNC(shseqr,SHSEQR)
 #define SLAMCH_F77  F77_FUNC(slamch,SLAMCH)
+#define SLARFT_F77  F77_FUNC(slarft,SLARFT)
 #define SORGHR_F77  F77_FUNC(sorghr,SORGHR)
 #define SORMHR_F77  F77_FUNC(sormhr,SORMHR)
 #define SPOCON_F77  F77_FUNC(spocon,SPOCON)
@@ -284,6 +287,7 @@ extern "C" {
   void PREFIX DHSEQR_F77(Epetra_fcd job, Epetra_fcd, const int * n, const int * ilo, const int * ihi, double * h, const int * ldh, 
 			 double * wr, double * wi, double * z, const int * ldz, double * work, const int * lwork, int * info); 
   double PREFIX DLAMCH_F77(Epetra_fcd);
+  void PREFIX DLARFT_F77(Epetra_fcd direct, Epetra_fcd storev, const int * n, const int * k, double * v, const int * ldv, double * tau, double * t, const int * ldt );
   void PREFIX DORGHR_F77(const int * n, const int * ilo, const int * ihi, double * a, const int * lda, const double * tau, double * work, 
 			 const int * lwork, int * info); 
   void PREFIX DORMHR_F77(Epetra_fcd, Epetra_fcd, const int * m, const int * n, const int * ilo, const int * ihi, const double * a, 
@@ -383,6 +387,7 @@ extern "C" {
   void PREFIX SHSEQR_F77(Epetra_fcd job, Epetra_fcd, const int * n, const int * ilo, const int * ihi, float * h, const int * ldh, 
 			 float * wr, float * wi, float * z, const int * ldz, float * work, const int * lwork, int * info); 
   float PREFIX SLAMCH_F77(Epetra_fcd);
+  void PREFIX SLARFT_F77(Epetra_fcd direct, Epetra_fcd storev, const int * n, const int * k, float * v, const int * ldv, float * tau, float * t, const int * ldt );
   void PREFIX SORGHR_F77(const int * n, const int * ilo, const int * ihi, float * a, const int * lda, const float * tau, float * work, 
 			 const int * lwork, int * info); 
   void PREFIX SORMHR_F77(Epetra_fcd, Epetra_fcd, const int * m, const int * n, const int * ilo, const int * ihi, const float * a, 
