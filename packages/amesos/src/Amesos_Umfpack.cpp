@@ -339,7 +339,7 @@ double Amesos_Umfpack::GetRcond() const
     RcondValidOnAllProcs_ = true; 
   }
   return(Rcond_);
-}; 
+}
 
 //=============================================================================
 bool Amesos_Umfpack::MatrixShapeOK() const 
