@@ -43,79 +43,79 @@ echo "the list below does not indicate so."
 
 TAC_ARG_ENABLE_FEATURE_SUB( default, packages, [Build all default packages unless explicitly disabled.  When this option is disabled, only packages explicitly enabled and packages needed to satisfy the dependencies of enabled packages will be built], DEFAULT_PACKAGES, yes)
  
-TAC_ARG_ENABLE_FEATURE(amesos, [Build amesos], AMESOS, no)
+TAC_ARG_ENABLE_FEATURE(amesos, [Build amesos, a direct sparse solver package], AMESOS, no)
 
-TAC_ARG_ENABLE_FEATURE(anasazi, [Build anasazi], ANASAZI, no)
+TAC_ARG_ENABLE_FEATURE(anasazi, [Build anasazi, an eigenvalue solver package], ANASAZI, no)
 
-TAC_ARG_ENABLE_FEATURE(aristos, [Build aristos], ARISTOS, no)
+TAC_ARG_ENABLE_FEATURE(aristos, [Build aristos, an optimization package], ARISTOS, no)
 
-TAC_ARG_ENABLE_DEFAULT_FEATURE(aztecoo, [Build aztecoo], AZTECOO)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(aztecoo, [Build aztecoo, a linear solver and preconditioner package], AZTECOO)
 
-TAC_ARG_ENABLE_FEATURE(belos, [Build belos], BELOS, no)
+TAC_ARG_ENABLE_FEATURE(belos, [Build belos, a linear solver package], BELOS, no)
 
-TAC_ARG_ENABLE_FEATURE(capo, [Build capo], CAPO, no)
+TAC_ARG_ENABLE_FEATURE(capo, [Build capo, a continuation algorithm package], CAPO, no)
 
-TAC_ARG_ENABLE_FEATURE(claps, [Build claps], CLAPS, no)
+TAC_ARG_ENABLE_FEATURE(claps, [Build claps, a domain decomposition preconditioner package], CLAPS, no)
 
-TAC_ARG_ENABLE_FEATURE(didasko, [Build didasko (a Trilinos tutorial)], DIDASKO, no)
+TAC_ARG_ENABLE_FEATURE(didasko, [Build didasko, a Trilinos tutorial package], DIDASKO, no)
 
-TAC_ARG_ENABLE_DEFAULT_FEATURE(epetra, [Build epetra], EPETRA)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(epetra, [Build epetra, a basic linear algebra package], EPETRA)
 
-TAC_ARG_ENABLE_DEFAULT_FEATURE(epetraext, [Build epetraext], EPETRAEXT)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(epetraext, [Build epetraext, an epetra extensions package], EPETRAEXT)
 
 #The external package is a mechanism for adding external packages to the Trilinos
 #build process.
 TAC_ARG_ENABLE_FEATURE(external, [Build external package in packages/external], EXTERNAL, no)
 
-TAC_ARG_ENABLE_DEFAULT_FEATURE(ifpack, [Build ifpack], IFPACK)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(ifpack, [Build ifpack, an algebraic preconditioner package], IFPACK)
 
-TAC_ARG_ENABLE_FEATURE(isorropia, [Build isorropia], ISORROPIA, no)
+TAC_ARG_ENABLE_FEATURE(isorropia, [Build isorropia, a repartitioning/rebalancing package], ISORROPIA, no)
 
-TAC_ARG_ENABLE_FEATURE(kokkos, [Build kokkos], KOKKOS, no)
+TAC_ARG_ENABLE_FEATURE(kokkos, [Build kokkos, a sparse kernels package], KOKKOS, no)
 
-TAC_ARG_ENABLE_FEATURE(komplex, [Build komplex], KOMPLEX, no)
+TAC_ARG_ENABLE_FEATURE(komplex, [Build komplex, a complex linear solver package], KOMPLEX, no)
 
-TAC_ARG_ENABLE_DEFAULT_FEATURE(loca, [Build loca], LOCA)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(loca, [Build loca, a bifurcation analysis package], LOCA)
 
-TAC_ARG_ENABLE_FEATURE(meros, [Build meros], MEROS, no)
+TAC_ARG_ENABLE_FEATURE(meros, [Build meros, a segregated preconditioner package], MEROS, no)
 
-TAC_ARG_ENABLE_FEATURE(moertel, [Build moertel], MOERTEL, no)
+TAC_ARG_ENABLE_FEATURE(moertel, [Build moertel, a mortar methods package], MOERTEL, no)
 
-TAC_ARG_ENABLE_DEFAULT_FEATURE(ml, [Build ml], ML)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(ml, [Build ml, a multi-level preconditioner package], ML)
 
 ## #np# - Copy the next line, and change the name.  Place the line in 
 ## #np# - alphabetical order based on package name.
-TAC_ARG_ENABLE_DEFAULT_FEATURE(new_package, [Build new_package], NEW_PACKAGE)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(new_package, [Build new_package, a working package prototype], NEW_PACKAGE)
 
-TAC_ARG_ENABLE_DEFAULT_FEATURE(nox, [Build nox], NOX)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(nox, [Build nox, a nonlinear solver package], NOX)
 
-TAC_ARG_ENABLE_FEATURE(pliris, [Build pliris], PLIRIS, no)
+TAC_ARG_ENABLE_FEATURE(pliris, [Build pliris, a dense direct solver package], PLIRIS, no)
 
-TAC_ARG_ENABLE_FEATURE(pytrilinos, [Build PyTrilinos], PYTRILINOS, no)
+TAC_ARG_ENABLE_FEATURE(pytrilinos, [Build PyTrilinos, a Python wrapper package], PYTRILINOS, no)
 
 TAC_ARG_ENABLE_FEATURE(rbgen, [Build rbgen], RBGEN, no)
 
-TAC_ARG_ENABLE_FEATURE(rythmos, [Build rythmos], RYTHMOS, no)
+TAC_ARG_ENABLE_FEATURE(rythmos, [Build rythmos, a transient integration package], RYTHMOS, no)
 
-TAC_ARG_ENABLE_FEATURE(sacado, [Build sacado], SACADO, no)
+TAC_ARG_ENABLE_FEATURE(sacado, [Build sacado, an automatic differentation package], SACADO, no)
 
-TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos], TEUCHOS, no)
+TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos, a tools package], TEUCHOS, no)
 
-TAC_ARG_ENABLE_FEATURE(rtop, [Build RTOP], RTOP, no)
+TAC_ARG_ENABLE_FEATURE(rtop, [Build RTOp, a vector reduction/transformation operator package], RTOP, no)
 
-TAC_ARG_ENABLE_FEATURE(thyra, [Build thyra], THYRA, no)
+TAC_ARG_ENABLE_FEATURE(thyra, [Build thyra, an abstract linear solver package], THYRA, no)
 
-TAC_ARG_ENABLE_FEATURE(stratimikos, [Build stratimikos], STRATIMIKOS, no)
+TAC_ARG_ENABLE_FEATURE(stratimikos, [Build stratimikos, a linear solver strategy package], STRATIMIKOS, no)
 
-TAC_ARG_ENABLE_FEATURE(moocho, [Build moocho], MOOCHO, no)
+TAC_ARG_ENABLE_FEATURE(moocho, [Build moocho, an optimization package], MOOCHO, no)
 
-TAC_ARG_ENABLE_FEATURE(tpetra, [Build tpetra], TPETRA, no)
+TAC_ARG_ENABLE_FEATURE(tpetra, [Build tpetra, a templated linear algebra package], TPETRA, no)
 
-TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, no)
+TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils, a utility package], TRIUTILS, no)
 
-TAC_ARG_ENABLE_FEATURE(galeri, [Build galeri], GALERI, no)
+TAC_ARG_ENABLE_FEATURE(galeri, [Build galeri, a gallery package], GALERI, no)
 
-TAC_ARG_ENABLE_FEATURE(webtrilinos, [Build WebTrilinos], WEBTRILINOS, no)
+TAC_ARG_ENABLE_FEATURE(webtrilinos, [Build WebTrilinos, a web interface package], WEBTRILINOS, no)
 
 AC_ARG_ENABLE(aztecoo-teuchos,
  [AC_HELP_STRING([--enable-aztecoo-teuchos],[Enable AztecOO Teuchos::ParameterList interface. Default is no. Requires Teuchos package.])],

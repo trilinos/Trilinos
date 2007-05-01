@@ -834,51 +834,80 @@ Optional Features:
                           packages explicitly enabled and packages needed to
                           satisfy the dependencies of enabled packages will be
                           built (default is yes)
-  --enable-amesos         Build amesos (default is no)
-  --enable-anasazi        Build anasazi (default is no)
-  --enable-aristos        Build aristos (default is no)
-  --enable-aztecoo        Build aztecoo (default is yes unless the
-                          --disable-default-packages option is used
-  --enable-belos          Build belos (default is no)
-  --enable-capo           Build capo (default is no)
-  --enable-claps          Build claps (default is no)
-  --enable-didasko        Build didasko (a Trilinos tutorial) (default is
+  --enable-amesos         Build amesos, a direct sparse solver package
+                          (default is no)
+  --enable-anasazi        Build anasazi, an eigenvalue solver package (default
+                          is no)
+  --enable-aristos        Build aristos, an optimization package (default is
                           no)
-  --enable-epetra         Build epetra (default is yes unless the
-                          --disable-default-packages option is used
-  --enable-epetraext      Build epetraext (default is yes unless the
-                          --disable-default-packages option is used
+  --enable-aztecoo        Build aztecoo, a linear solver and preconditioner
+                          package (default is yes unless the
+                          --disable-default-packages option is used)
+  --enable-belos          Build belos, a linear solver package (default is
+                          no)
+  --enable-capo           Build capo, a continuation algorithm package
+                          (default is no)
+  --enable-claps          Build claps, a domain decomposition preconditioner
+                          package (default is no)
+  --enable-didasko        Build didasko, a Trilinos tutorial package (default
+                          is no)
+  --enable-epetra         Build epetra, a basic linear algebra package
+                          (default is yes unless the
+                          --disable-default-packages option is used)
+  --enable-epetraext      Build epetraext, an epetra extensions package
+                          (default is yes unless the
+                          --disable-default-packages option is used)
   --enable-external       Build external package in packages/external (default
                           is no)
-  --enable-ifpack         Build ifpack (default is yes unless the
-                          --disable-default-packages option is used
-  --enable-isorropia      Build isorropia (default is no)
-  --enable-kokkos         Build kokkos (default is no)
-  --enable-komplex        Build komplex (default is no)
-  --enable-loca           Build loca (default is yes unless the
-                          --disable-default-packages option is used
-  --enable-meros          Build meros (default is no)
-  --enable-moertel        Build moertel (default is no)
-  --enable-ml             Build ml (default is yes unless the
-                          --disable-default-packages option is used
-  --enable-new_package    Build new_package (default is yes unless the
-                          --disable-default-packages option is used
-  --enable-nox            Build nox (default is yes unless the
-                          --disable-default-packages option is used
-  --enable-pliris         Build pliris (default is no)
-  --enable-pytrilinos     Build PyTrilinos (default is no)
+  --enable-ifpack         Build ifpack, an algebraic preconditioner package
+                          (default is yes unless the
+                          --disable-default-packages option is used)
+  --enable-isorropia      Build isorropia, a repartitioning/rebalancing
+                          package (default is no)
+  --enable-kokkos         Build kokkos, a sparse kernels package (default is
+                          no)
+  --enable-komplex        Build komplex, a complex linear solver package
+                          (default is no)
+  --enable-loca           Build loca, a bifurcation analysis package (default
+                          is yes unless the --disable-default-packages option
+                          is used)
+  --enable-meros          Build meros, a segregated preconditioner package
+                          (default is no)
+  --enable-moertel        Build moertel, a mortar methods package (default is
+                          no)
+  --enable-ml             Build ml, a multi-level preconditioner package
+                          (default is yes unless the
+                          --disable-default-packages option is used)
+  --enable-new_package    Build new_package, a working package prototype
+                          (default is yes unless the
+                          --disable-default-packages option is used)
+  --enable-nox            Build nox, a nonlinear solver package (default is
+                          yes unless the --disable-default-packages option is
+                          used)
+  --enable-pliris         Build pliris, a dense direct solver package (default
+                          is no)
+  --enable-pytrilinos     Build PyTrilinos, a Python wrapper package (default
+                          is no)
   --enable-rbgen          Build rbgen (default is no)
-  --enable-rythmos        Build rythmos (default is no)
-  --enable-sacado         Build sacado (default is no)
-  --enable-teuchos        Build teuchos (default is no)
-  --enable-rtop           Build RTOP (default is no)
-  --enable-thyra          Build thyra (default is no)
-  --enable-stratimikos    Build stratimikos (default is no)
-  --enable-moocho         Build moocho (default is no)
-  --enable-tpetra         Build tpetra (default is no)
-  --enable-triutils       Build triutils (default is no)
-  --enable-galeri         Build galeri (default is no)
-  --enable-webtrilinos    Build WebTrilinos (default is no)
+  --enable-rythmos        Build rythmos, a transient integration package
+                          (default is no)
+  --enable-sacado         Build sacado, an automatic differentation package
+                          (default is no)
+  --enable-teuchos        Build teuchos, a tools package (default is no)
+  --enable-rtop           Build RTOp, a vector reduction/transformation
+                          operator package (default is no)
+  --enable-thyra          Build thyra, an abstract linear solver package
+                          (default is no)
+  --enable-stratimikos    Build stratimikos, a linear solver strategy package
+                          (default is no)
+  --enable-moocho         Build moocho, an optimization package (default is
+                          no)
+  --enable-tpetra         Build tpetra, a templated linear algebra package
+                          (default is no)
+  --enable-triutils       Build triutils, a utility package (default is no)
+  --enable-galeri         Build galeri, a gallery package (default is no)
+  --enable-webtrilinos    Build WebTrilinos, a web interface package (default
+                          is no)
   --enable-aztecoo-teuchos
                           Enable AztecOO Teuchos::ParameterList interface.
                           Default is no. Requires Teuchos package.
