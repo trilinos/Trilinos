@@ -84,7 +84,7 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   //! Constructor
-  StatusTestResNorm(MagnitudeType tol, int quorum = -1, ResType whichNorm = RES_ORTH, bool scaled = true);
+  StatusTestResNorm(typename Teuchos::ScalarTraits<ScalarType>::magnitudeType tol, int quorum = -1, ResType whichNorm = RES_ORTH, bool scaled = true);
 
   //! Destructor
   virtual ~StatusTestResNorm() {};
@@ -123,13 +123,13 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
   /*! \brief Set tolerance.
    *  This also resets the test status to ::Undefined.
    */
-  void setTolerance(MagnitudeType tol) {
+  void setTolerance(typename Teuchos::ScalarTraits<ScalarType>::magnitudeType tol) {
     state_ = Undefined;
     tol_ = tol;
   }
 
   //! Get tolerance.
-  MagnitudeType getTolerance() {return tol_;}
+  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType getTolerance() {return tol_;}
 
   /*! \brief Set the residual norm to be used by the status test.
    *
@@ -208,7 +208,7 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
 
 
 template <class ScalarType, class MV, class OP>
-StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm(MagnitudeType tol, int quorum, ResType whichNorm, bool scaled)
+StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm(typename Teuchos::ScalarTraits<ScalarType>::magnitudeType tol, int quorum, ResType whichNorm, bool scaled)
   : state_(Undefined), tol_(tol), quorum_(quorum), scaled_(scaled), whichNorm_(whichNorm) {}
 
 template <class ScalarType, class MV, class OP>

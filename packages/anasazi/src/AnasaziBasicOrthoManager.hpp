@@ -65,7 +65,7 @@ namespace Anasazi {
     //! @name Constructor/Destructor
     //@{ 
     //! Constructor specifying re-orthogonalization tolerance.
-    BasicOrthoManager( Teuchos::RefCountPtr<const OP> Op = Teuchos::null, const MagnitudeType kappa = SCT::magnitude(1.5625) );
+    BasicOrthoManager( Teuchos::RefCountPtr<const OP> Op = Teuchos::null, const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType kappa = 1.5625 );
 
 
     //! Destructor
@@ -77,10 +77,10 @@ namespace Anasazi {
     //@{ 
 
     //! Set parameter for re-orthogonalization threshhold.
-    void setKappa( const MagnitudeType kappa ) { kappa_ = kappa; }
+    void setKappa( const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType kappa ) { kappa_ = kappa; }
 
     //! Return parameter for re-orthogonalization threshhold.
-    MagnitudeType getKappa() const { return kappa_; } 
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType getKappa() const { return kappa_; } 
 
     //@} 
 
@@ -270,7 +270,7 @@ namespace Anasazi {
   // Constructor
   template<class ScalarType, class MV, class OP>
   BasicOrthoManager<ScalarType,MV,OP>::BasicOrthoManager( Teuchos::RefCountPtr<const OP> Op,
-                                                          const MagnitudeType kappa         ) : 
+                                                          const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType kappa         ) : 
     MatOrthoManager<ScalarType,MV,OP>(Op), 
     kappa_(kappa), 
     timerReortho_(Teuchos::TimeMonitor::getNewTimer("BasicOrthoManager::Re-orthogonalization"))

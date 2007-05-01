@@ -87,7 +87,7 @@ namespace Anasazi {
                              const Teuchos::SerialDenseMatrix<int,ScalarType> &KK, 
                              const Teuchos::SerialDenseMatrix<int,ScalarType> *MM,
                              Teuchos::SerialDenseMatrix<int,ScalarType> &EV,
-                             std::vector<MagnitudeType> &theta) const = 0;
+                             std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &theta) const = 0;
     //@}
     
   };

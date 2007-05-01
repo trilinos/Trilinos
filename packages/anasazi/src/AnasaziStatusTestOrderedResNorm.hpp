@@ -94,7 +94,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   //! Constructor
-  StatusTestOrderedResNorm(Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > sorter, MagnitudeType tol, int quorum = -1, ResType whichNorm = RES_ORTH, bool scaled = true);
+  StatusTestOrderedResNorm(Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > sorter, typename Teuchos::ScalarTraits<ScalarType>::magnitudeType tol, int quorum = -1, ResType whichNorm = RES_ORTH, bool scaled = true);
 
   //! Destructor
   virtual ~StatusTestOrderedResNorm() {};
@@ -117,13 +117,13 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
   /*! \brief Set tolerance.
    *  This also resets the test status to ::Undefined.
    */
-  void setTolerance(MagnitudeType tol) {
+  void setTolerance(typename Teuchos::ScalarTraits<ScalarType>::magnitudeType tol) {
     state_ = Undefined;
     tol_ = tol;
   }
 
   //! Get tolerance.
-  MagnitudeType getTolerance() {return tol_;}
+  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType getTolerance() {return tol_;}
 
   /*! \brief Set the residual norm to be used by the status test.
    *
@@ -186,7 +186,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
    *
    *  This routine sets only the real part of the auxiliary eigenvalues; the imaginary part is set to zero. This routine also resets the state to ::Undefined.
    */
-  void setAuxVals(const std::vector<MagnitudeType> &vals) {
+  void setAuxVals(const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &vals) {
     rvals_ = vals;
     ivals_.resize(rvals_.size(),MT::zero());
     state_ = Undefined;
@@ -196,7 +196,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
    *
    *  This routine sets both the real and imaginary parts of the auxiliary eigenvalues. This routine also resets the state to ::Undefined.
    */
-  void setAuxVals(const std::vector<MagnitudeType> &rvals, const std::vector<MagnitudeType> &ivals) {
+  void setAuxVals(const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &rvals, const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &ivals) {
     rvals_ = rvals;
     ivals_ = ivals;
     state_ = Undefined;
@@ -224,7 +224,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
 
 
 template <class ScalarType, class MV, class OP>
-StatusTestOrderedResNorm<ScalarType,MV,OP>::StatusTestOrderedResNorm(Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > sorter, MagnitudeType tol, int quorum, ResType whichNorm, bool scaled)
+StatusTestOrderedResNorm<ScalarType,MV,OP>::StatusTestOrderedResNorm(Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > sorter, typename Teuchos::ScalarTraits<ScalarType>::magnitudeType tol, int quorum, ResType whichNorm, bool scaled)
   : state_(Undefined), quorum_(quorum), scaled_(scaled), whichNorm_(whichNorm), sorter_(sorter) 
 {
   TEST_FOR_EXCEPTION(sorter_ == Teuchos::null, StatusTestError, "StatusTestOrderedResNorm::constructor() was passed null pointer for SortManager.");
