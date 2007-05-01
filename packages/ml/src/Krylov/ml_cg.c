@@ -246,8 +246,8 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
              for (i = 0; i < length; i++) scale[i] = -scale[i];
          }
          else { /* matrix has no rows and columns that are not ignored */
-           //           data->ML_eigen_max = 0.;//cms
-           //           data->ML_eigen_min = 0.;//cms
+           /*           data->ML_eigen_max = 0.;//cms */
+           /*           data->ML_eigen_min = 0.;//cms */
            data->ML_eigen_max = 1.;
            data->ML_eigen_min = 1.;
            if (scale != NULL) ML_free(scale);
