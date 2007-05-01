@@ -13,6 +13,7 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
     timeDomain(globalComm_->SubDomainRank()),
     rowStencil(0),
     rowIndex(0),
+    underlyingNg(0),
     q_vec(q_vec_)
 {
   if (globalComm->MyPID()==0) {
@@ -41,32 +42,44 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
    block_W = Teuchos::rcp(new EpetraExt::BlockCrsMatrix(*split_W,
                                *rowStencil, *rowIndex, *globalComm));
 
+   // Test for g vector
+   EpetraExt::ModelEvaluator::OutArgs underlyingOutArgs = underlyingME->createOutArgs();
+
+   underlyingNg = underlyingOutArgs.Ng();
+
    // temporary quantities
    const Epetra_Map& split_map = split_W->RowMatrixRowMap();
    int  num_p0 =  underlyingME_->get_p_map(0)->NumMyElements();
-   int  num_g0 =  underlyingME_->get_g_map(0)->NumMyElements();
+   int  num_g0 = 0;
+   if (underlyingNg)  num_g0 = underlyingME_->get_g_map(0)->NumMyElements();
 
    // Construct global solution vector, residual vector -- local storage
    block_x = new EpetraExt::BlockVector(split_map, block_W->RowMap());
    block_f = new EpetraExt::BlockVector(*block_x); 
    block_DfDp = new EpetraExt::BlockMultiVector(split_map, block_W->RowMap(), num_p0);
+    if (underlyingNg)  
    block_DgDx = new EpetraExt::BlockMultiVector(split_map, block_W->RowMap(), num_g0);
 
    // Allocate local storage of epetra vectors
    split_x = Teuchos::rcp(new Epetra_Vector(split_map));
    split_f = Teuchos::rcp(new Epetra_Vector(split_map));
    split_DfDp = Teuchos::rcp(new Epetra_MultiVector(split_map, num_p0));
-   split_DgDx = Teuchos::rcp(new Epetra_MultiVector(split_map, num_g0));
-   split_DgDp = Teuchos::rcp(new Epetra_MultiVector(*(underlyingME_->get_p_map(0)), num_g0));
-   split_g = Teuchos::rcp(new Epetra_Vector(*(underlyingME_->get_g_map(0))));
+   if (underlyingNg)  
+     split_DgDx = Teuchos::rcp(new Epetra_MultiVector(split_map, num_g0));
+   if (underlyingNg)  
+     split_DgDp = Teuchos::rcp(new Epetra_MultiVector(*(underlyingME_->get_p_map(0)), num_g0));
+   if (underlyingNg)  
+     split_g = Teuchos::rcp(new Epetra_Vector(*(underlyingME_->get_g_map(0))));
 
    // Packaging required for getting multivectors back as Derivatives
    derivMV_DfDp = new EpetraExt::ModelEvaluator::DerivativeMultiVector(split_DfDp);
    deriv_DfDp = new EpetraExt::ModelEvaluator::Derivative(*derivMV_DfDp);
-   derivMV_DgDx = new EpetraExt::ModelEvaluator::DerivativeMultiVector(split_DgDx, DERIV_TRANS_MV_BY_ROW);
-   deriv_DgDx = new EpetraExt::ModelEvaluator::Derivative(*derivMV_DgDx);
-   derivMV_DgDp = new EpetraExt::ModelEvaluator::DerivativeMultiVector(split_DgDp, DERIV_TRANS_MV_BY_ROW);
-   deriv_DgDp = new EpetraExt::ModelEvaluator::Derivative(*derivMV_DgDp);
+   if (underlyingNg)  {
+     derivMV_DgDx = new EpetraExt::ModelEvaluator::DerivativeMultiVector(split_DgDx, DERIV_TRANS_MV_BY_ROW);
+     deriv_DgDx = new EpetraExt::ModelEvaluator::Derivative(*derivMV_DgDx);
+     derivMV_DgDp = new EpetraExt::ModelEvaluator::DerivativeMultiVector(split_DgDp, DERIV_TRANS_MV_BY_ROW);
+     deriv_DgDp = new EpetraExt::ModelEvaluator::Derivative(*derivMV_DgDp);
+   }
 
    // For 4D, we will need the overlap vector and importer between them
    // Overlap not needed for MultiPoint -- no overlap between blocks
@@ -86,13 +99,19 @@ EpetraExt::MultiPointModelEvaluator::~MultiPointModelEvaluator()
 {
   delete block_x;
   delete block_f;
+  delete block_DfDp;
+  if (underlyingNg)  delete block_DgDx;
   delete rowStencil;
   delete rowIndex;
 
   delete derivMV_DfDp;
   delete deriv_DfDp;
-  delete derivMV_DgDx;
-  delete deriv_DgDx;
+  if (underlyingNg) {
+    delete derivMV_DgDx;
+    delete deriv_DgDx;
+    delete derivMV_DgDp;
+    delete deriv_DgDp;
+  }
 }
 
 Teuchos::RefCountPtr<const Epetra_Map> EpetraExt::MultiPointModelEvaluator::get_x_map() const
@@ -145,7 +164,7 @@ EpetraExt::ModelEvaluator::OutArgs EpetraExt::MultiPointModelEvaluator::createOu
   //return underlyingME->createOutArgs();
   OutArgsSetup outArgs;
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(1,1);
+  outArgs.set_Np_Ng(1, underlyingNg);
   outArgs.setSupports(OUT_ARG_f,true);
   outArgs.setSupports(OUT_ARG_W,true);
   outArgs.set_W_properties(
@@ -163,22 +182,25 @@ EpetraExt::ModelEvaluator::OutArgs EpetraExt::MultiPointModelEvaluator::createOu
       ,true // supportsAdjoint
       )
     );
-  outArgs.setSupports(OUT_ARG_DgDx,0,DERIV_TRANS_MV_BY_ROW);
-  outArgs.set_DgDx_properties(
-    0,DerivativeProperties(
-      DERIV_LINEARITY_NONCONST
-      ,DERIV_RANK_DEFICIENT
-      ,true // supportsAdjoint
-      )
-    );
-  outArgs.setSupports(OUT_ARG_DgDp,0,0,DERIV_TRANS_MV_BY_ROW);
-  outArgs.set_DgDp_properties(
-    0,0,DerivativeProperties(
-      DERIV_LINEARITY_NONCONST
-      ,DERIV_RANK_DEFICIENT
-      ,true // supportsAdjoint
-      )
-    );
+
+  if (underlyingNg) {
+    outArgs.setSupports(OUT_ARG_DgDx,0,DERIV_TRANS_MV_BY_ROW);
+    outArgs.set_DgDx_properties(
+      0,DerivativeProperties(
+        DERIV_LINEARITY_NONCONST
+        ,DERIV_RANK_DEFICIENT
+        ,true // supportsAdjoint
+        )
+      );
+    outArgs.setSupports(OUT_ARG_DgDp,0,0,DERIV_TRANS_MV_BY_ROW);
+    outArgs.set_DgDp_properties(
+      0,0,DerivativeProperties(
+        DERIV_LINEARITY_NONCONST
+        ,DERIV_RANK_DEFICIENT
+        ,true // supportsAdjoint
+        )
+      );
+  }
   return outArgs;
 }
 
@@ -209,13 +231,19 @@ void EpetraExt::MultiPointModelEvaluator::evalModel( const InArgs& inArgs,
   Teuchos::RefCountPtr<EpetraExt::BlockCrsMatrix> W_block =
      Teuchos::rcp_dynamic_cast<EpetraExt::BlockCrsMatrix>(W_out);
 
-  Teuchos::RefCountPtr<Epetra_Vector> g_out = outArgs.get_g(0);
+  Teuchos::RefCountPtr<Epetra_Vector> g_out;
+  if (underlyingNg) g_out = outArgs.get_g(0); 
   if (g_out.get()) g_out->PutScalar(0.0);
 
   EpetraExt::ModelEvaluator::Derivative DfDp_out = outArgs.get_DfDp(0);
-  EpetraExt::ModelEvaluator::Derivative DgDx_out = outArgs.get_DgDx(0);
-  EpetraExt::ModelEvaluator::Derivative DgDp_out = outArgs.get_DgDp(0,0);
-  if (!DgDp_out.isEmpty()) DgDp_out.getMultiVector()->PutScalar(0.0);
+
+  EpetraExt::ModelEvaluator::Derivative DgDx_out;
+  EpetraExt::ModelEvaluator::Derivative DgDp_out;
+  if (underlyingNg) {
+    DgDx_out = outArgs.get_DgDx(0);
+    DgDp_out = outArgs.get_DgDp(0,0);
+    if (!DgDp_out.isEmpty()) DgDp_out.getMultiVector()->PutScalar(0.0);
+  }
 
   // Begin loop over steps owned on this proc
   for (int i=0; i < timeStepsOnTimeDomain; i++) {
@@ -252,11 +280,12 @@ void EpetraExt::MultiPointModelEvaluator::evalModel( const InArgs& inArgs,
     if (!DgDx_out.isEmpty()) block_DgDx->LoadBlockValues(*split_DgDx, (*rowIndex)[i]);
 
     // Assemble multiple steps on this domain into g and dgdp(0) vectors
+
     if (g_out.get()) g_out->Update(1.0, *split_g, 1.0);
 
     // HARDWIRED for g is a scalar
     if (!DgDp_out.isEmpty())
-       DgDp_out.getMultiVector()->Update(1.0, *((*split_DgDp)(0)), 1.0);
+      DgDp_out.getMultiVector()->Update(1.0, *((*split_DgDp)(0)), 1.0);
 
   } // End loop over multiPoint steps on this domain/cluster
 

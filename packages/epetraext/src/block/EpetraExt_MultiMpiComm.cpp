@@ -34,7 +34,7 @@ namespace EpetraExt {
 
 MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTimeSteps_) :
         Epetra_MpiComm(globalMpiComm), subComm(0), numSubDomains(-1),
-        subDomainRank(-1), numTimeSteps(numTimeSteps_),
+        subDomainRank(-1), numTimeSteps(-1),
 	numTimeStepsOnDomain(-1), firstTimeStepOnDomain(-1)
 {
   //Need to construct subComm for each sub domain, compute subDomainRank,
@@ -58,22 +58,14 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
   subComm = new Epetra_MpiComm(split_MPI_Comm);
 
   // Compute number of time steps on this sub domain
-  if (numTimeSteps > 0) {
-    // Compute part for number of domains dividing evenly into number of steps
-    numTimeStepsOnDomain = numTimeSteps / numSubDomains; 
-    firstTimeStepOnDomain = numTimeStepsOnDomain * subDomainRank;
+  ResetNumTimeSteps(numTimeSteps_);
 
-    // Dole out remainder
-    int remainder = numTimeSteps % numSubDomains;
-    if (subDomainRank < remainder) {
-      numTimeStepsOnDomain++; 
-      firstTimeStepOnDomain += subDomainRank; 
-    }
-    else firstTimeStepOnDomain += remainder; 
-  }
-  cout << "Processor " << rank << " is on subdomain " << subDomainRank 
-       << " and owns " << numTimeStepsOnDomain << " time steps, starting with " 
-       <<  firstTimeStepOnDomain << endl;
+  if (numTimeSteps_ > 0)
+    cout << "Processor " << rank << " is on subdomain " << subDomainRank 
+         << " and owns " << numTimeStepsOnDomain << " time steps, starting with " 
+         <<  firstTimeStepOnDomain << endl;
+  else
+    cout << "Processor " << rank << " is on subdomain " << subDomainRank << endl;
 }
 
 // This constructor is for just one subdomain, so only adds the info
@@ -99,6 +91,30 @@ MultiMpiComm::MultiMpiComm(const MultiMpiComm &MMC ) :
 MultiMpiComm::~MultiMpiComm()
 {
   delete subComm;
+}
+
+void MultiMpiComm::ResetNumTimeSteps(int numTimeSteps_)
+{
+  numTimeSteps = numTimeSteps_;
+
+  // Compute number of time steps on this sub domain
+  if (numTimeSteps > 0) {
+    // Compute part for number of domains dividing evenly into number of steps
+    numTimeStepsOnDomain = numTimeSteps / numSubDomains; 
+    firstTimeStepOnDomain = numTimeStepsOnDomain * subDomainRank;
+
+    // Dole out remainder
+    int remainder = numTimeSteps % numSubDomains;
+    if (subDomainRank < remainder) {
+      numTimeStepsOnDomain++; 
+      firstTimeStepOnDomain += subDomainRank; 
+    }
+    else firstTimeStepOnDomain += remainder; 
+  }
+  else {
+    numTimeStepsOnDomain = -1;
+    firstTimeStepOnDomain = -1;
+  }
 }
 
 } //namespace EpetraExt

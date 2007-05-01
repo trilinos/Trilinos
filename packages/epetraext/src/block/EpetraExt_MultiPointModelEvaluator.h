@@ -118,6 +118,9 @@ namespace EpetraExt {
    //! Pointer to initial multipoint solution vector.
    Teuchos::RefCountPtr<EpetraExt::BlockVector> solution_init;
 
+   //! Number of g vectors supported by underlyingME, often used as a bool
+   int underlyingNg;
+
    //! Number of time steps computed on each time domain.
    int timeStepsOnTimeDomain;
 

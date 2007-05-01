@@ -99,13 +99,17 @@ class MultiMpiComm: public Epetra_MpiComm {
 
   //! Return total number of time steps.
   int NumTimeSteps() const {return numTimeSteps;}
+
+  //! Reset total number of time steps, allowing time steps per domain to
+  //  be set later than the MultiLevel parallelism is set up.
+  void ResetNumTimeSteps(int numTimeSteps);
 	
  protected:
 
   Epetra_MpiComm* subComm; 
   int numSubDomains;
   int subDomainRank;
-  const int numTimeSteps;
+  int numTimeSteps;
   int numTimeStepsOnDomain;
   int firstTimeStepOnDomain;
 
