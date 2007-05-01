@@ -31,8 +31,8 @@ endif
 noinst_PROGRAMS = $(BELOS_BCG_IFPACK_EX) $(BELOS_BCG_HB_EX) $(BELOS_BCG_COMPLEX_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/bcsstk14.hb  bcsstk14.hb
-	cp  $(srcdir)/bcsstk15.hb  bcsstk15.hb
+	cp  $(top_srcdir)/example/BlockCG/bcsstk14.hb  bcsstk14.hb
+	cp  $(top_srcdir)/example/BlockCG/bcsstk15.hb  bcsstk15.hb
 
 Dummy_SOURCES = Dummy
 
