@@ -1,0 +1,80 @@
+../configure \
+CXXFLAGS="-g -O0 -pedantic -ansi -Wall" \
+CFLAGS="-g -O0  -ansi -pedantic -Wall -fexceptions" \
+FFLAGS="-g -O0" \
+--with-libs="-L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/dscpack-1.0 -ldscdbl_linux_lam \
+-L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4 -lumfpack_linux_lam \
+-lamd_linux_lam \
+-L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0.july05 -lsuperlu_linux_lam \
+-L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/metis-4.0 -lmetis_linux \
+-L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/scalapack-1.7 -lscalapack_linux_beowulf \
+-L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/blacs -lblacs_F77_linux_beowulf \
+-L/common/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0.1 -lsuperludist_linux_beowulf \
+-lexpat -llapack -lcblas -lf77blas -latlas -lgfortran" \
+--with-incdirs="-I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/dscpack-1.0 \
+-I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0.1 \
+-I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/ \
+-I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0.july05 \
+-I/common/TrilinosTestHarness/Trilinos3PL/prebuilt/metis-4.0" \
+--enable-mpi \
+--with-mpi-compilers \
+--cache-file=config.cache \
+--disable-default-packages \
+--enable-amesos \
+--enable-amesos-umfpack \
+--enable-amesos-dscpack \
+--enable-amesos-paraklete \
+--disable-amesos-pardiso \
+--enable-amesos-superlu \
+--enable-amesos-superludist \
+--disable-amesos-taucs \
+--enable-amesos-tests \
+--disable-amesos-mumps \
+--enable-amesos-scalapack \
+--enable-anasazi \
+--enable-aztecoo \
+--enable-belos \
+--enable-capo \
+--enable-claps \
+--enable-didasko \
+--enable-epetra \
+--enable-epetra-abc \
+--enable-epetraext \
+--enable-epetraext-inout \
+--enable-epetraext-coloring \
+--enable-epetraext-transform \
+--enable-galeri \
+--enable-ifpack \
+--enable-isorropia \
+--enable-kokkos \
+--enable-komplex \
+--enable-loca \
+--with-loca-anasazi \
+--enable-meros \
+--enable-ml \
+--enable-ml_multiple_rhs=4 \
+--enable-moertel \
+--enable-moocho \
+--enable-new_package \
+--enable-new_swahili \
+--enable-nox \
+--enable-nox-epetra \
+--enable-nox-epetra-examples \
+--enable-nox-lapack \
+--enable-nox-lapack-examples \
+--enable-nox-tests \
+--enable-pliris \
+--enable-rtop \
+--enable-rythmos \
+--enable-sacado \
+--disable-sacado-alltests \
+--enable-teuchos \
+--enable-teuchos-abc \
+--enable-teuchos-complex \
+--enable-teuchos-extended \
+--enable-teuchos-expat \
+--enable-thyra \
+--enable-tpetra \
+--enable-triutils \
+--enable-stratimikos \
+--with-gnumake
