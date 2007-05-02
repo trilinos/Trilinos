@@ -397,6 +397,7 @@ def ScalarTraits(scalarType):
 // The following directives are for the special case of a
 // Teuchos::RefCountPtr that points to a Teuchos::ParameterList
 
-// Apply the RefCountPtr typemap macros to ParameterLists
+// Apply the RefCountPtr typemap macros to selected Teuchos classes
 %ignore Teuchos::RefCountPtr< Teuchos::ParameterList >::get() const;
 %teuchos_rcp_typemaps(Teuchos::ParameterList)
+%teuchos_rcp_typemaps(Teuchos::Time         )
