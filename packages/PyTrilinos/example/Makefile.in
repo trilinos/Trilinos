@@ -237,9 +237,10 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 AUTOMAKE_OPTIONS = foreign
 EXTRA_DIST = setpath.py gre__115.rua \
-	     exAmesos_Factory.py exAmesos_Solvers.py exAztecOO.py exAztecOO_Operator.py \
-	     exAztecOO_RowMatrix.py exAztecOO_BasicRowMatrix.py exEpetra.py \
-	     exEpetra_Comm.py exEpetra_CrsMatrix_Easy.py exEpetra_CrsMatrix_Efficient.py \
+	     exAmesos_Factory.py exAmesos_Solvers.py exAnasazi_BlockDavidson.py \
+	     exAztecOO.py exAztecOO_Operator.py exAztecOO_RowMatrix.py \
+	     exAztecOO_BasicRowMatrix.py exEpetra.py exEpetra_Comm.py \
+	     exEpetra_CrsMatrix_Easy.py exEpetra_CrsMatrix_Efficient.py \
 	     exEpetra_FECrsMatrix_Easy.py exEpetra_ImportExport.py \
 	     exEpetraExt_IO_MatrixMarket.py exEpetraExt_IO_XML.py \
 	     exEpetraExt_MatrixMatrix.py exGaleri.py exGaleri_ReadHB.py exIFPACK.py \
@@ -290,7 +291,7 @@ MAINTAINERCLEANFILES = Makefile.in
 @HAVE_PYTRILINOS_AZTECOO_TRUE@@HAVE_PYTRILINOS_EPETRA_TRUE@@HAVE_PYTRILINOS_GALERI_TRUE@@HAVE_PYTRILINOS_IFPACK_TRUE@@HAVE_PYTRILINOS_TRIUTILS_TRUE@IFPACK_EXAMPLES = exIFPACK
 
 # Anasazi examples
-@HAVE_PYTRILINOS_ANASAZI_TRUE@ANASAZI_EXAMPLES = 
+@HAVE_PYTRILINOS_ANASAZI_TRUE@@HAVE_PYTRILINOS_GALERI_TRUE@ANASAZI_EXAMPLES = exAnasazi_BlockDavidson
 @HAVE_MPI_FALSE@@HAVE_PYTRILINOS_EPETRA_TRUE@@HAVE_PYTRILINOS_ML_TRUE@ML_EX1 = exMLAPI exMLAPI_Iterate exMLAPI_PyMatrix exMLAPI_Smoother
 
 # ML examples

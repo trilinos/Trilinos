@@ -55,6 +55,9 @@ supported.
 // Configuration includes
 #include "PyTrilinos_config.h"
 
+// Teuchos includes
+#include "Teuchos_ScalarTraits.hpp"
+
 // Teuchos/python include
 #include "Teuchos_PythonParameter.h"
 
@@ -100,12 +103,24 @@ supported.
 #include "AnasaziOperator.hpp"
 #include "AnasaziEigenproblem.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziStatusTest.hpp"
+#include "AnasaziStatusTestCombo.hpp"
+#include "AnasaziStatusTestMaxIters.hpp"
+#include "AnasaziStatusTestOrderedResNorm.hpp"
+#include "AnasaziStatusTestOutput.hpp"
+#include "AnasaziStatusTestResNorm.hpp"
+#include "AnasaziOrthoManager.hpp"
+#include "AnasaziMatOrthoManager.hpp"
+// I comment out this class because I cannot get SCT to wrap
+//#include "AnasaziBasicOrthoManager.hpp"
+#include "AnasaziSVQBOrthoManager.hpp"
+#include "AnasaziEigensolverDecl.hpp"
 #include "AnasaziSolverManager.hpp"
 #include "AnasaziBlockDavidsonSolMgr.hpp"
+#include "AnasaziBlockKrylovSchurSolMgr.hpp"
+#include "AnasaziLOBPCGSolMgr.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 
-typedef Anasazi::Eigenproblem< double, Epetra_MultiVector, Epetra_Operator >
-  EigenproblemEpetra;
 %}
 
 // General ignore directives
@@ -120,17 +135,25 @@ using namespace std;
 %include "stl.i"
 
 // Support for other Trilinos packages
-%import "Teuchos.i"
-%import "Epetra.i"
+%import  "Teuchos.i"
+%import  "Epetra.i"
+//%include "Teuchos_ScalarTraits.hpp"
+//%template (SCT)
+//  Teuchos::ScalarTraits<double>;
 
 //////////////////////////////////////////////
 // Support these classes, encapsulated in a //
 // Teuchos::RCP<...>, as function arguments //
 //////////////////////////////////////////////
-%teuchos_rcp_typemaps(Epetra_Operator)
 %teuchos_rcp_typemaps(Epetra_MultiVector)
-//%teuchos_rcp_typemaps(EigenproblemEpetra)
+%teuchos_rcp_typemaps(Epetra_Operator)
+%teuchos_rcp_typemaps(Anasazi::MultiVec< double >)
+%teuchos_rcp_typemaps(Anasazi::StatusTest< double, Epetra_MultiVector, Epetra_Operator >)
+%teuchos_rcp_typemaps(Anasazi::SortManager< double, Epetra_MultiVector, Epetra_Operator >)
+%teuchos_rcp_typemaps(Anasazi::OutputManager< double >)
 %teuchos_rcp_typemaps(Anasazi::Eigenproblem< double, Epetra_MultiVector, Epetra_Operator >)
+%teuchos_rcp_typemaps(Anasazi::OrthoManager< double, Epetra_MultiVector >)
+%teuchos_rcp_typemaps(Anasazi::MatOrthoManager< double, Epetra_MultiVector >)
 
 /////////////////////////////
 // Anasazi Version support //
@@ -144,20 +167,22 @@ __version__ = Anasazi_Version().split()[2]
 // Anasazi Types support //
 ///////////////////////////
 %include "AnasaziTypes.hpp"
+%template (ValueDouble)
+  Anasazi::Value<double>;
 
 ///////////////////////////////////
 // Anasazi OutputManager support //
 ///////////////////////////////////
 %include "AnasaziOutputManager.hpp"
 %template (OutputManagerDouble)
-          Anasazi::OutputManager<double>;
+  Anasazi::OutputManager<double>;
 
 ////////////////////////////////////////
 // Anasazi BasicOutputManager support //
 ////////////////////////////////////////
 %include "AnasaziBasicOutputManager.hpp"
 %template (BasicOutputManagerDouble)
-          Anasazi::BasicOutputManager<double>;
+  Anasazi::BasicOutputManager<double>;
 
 /////////////////////////////////
 // Anasazi SortManager support //
@@ -179,7 +204,7 @@ __version__ = Anasazi_Version().split()[2]
 //////////////////////////////
 %include "AnasaziMultiVec.hpp"
 %template (MultiVecDouble)
-          Anasazi::MultiVec<double>;
+  Anasazi::MultiVec<double>;
 
 ////////////////////////////////////
 // Anasazi OperatorTraits support //
@@ -191,7 +216,7 @@ __version__ = Anasazi_Version().split()[2]
 //////////////////////////////
 %include "AnasaziOperator.hpp"
 %template (OperatorDouble)
-          Anasazi::Operator<double>;
+  Anasazi::Operator<double>;
 
 //////////////////////////////////
 // Anasazi Eigenproblem support //
@@ -203,40 +228,204 @@ __version__ = Anasazi_Version().split()[2]
 ///////////////////////////////////////
 %include "AnasaziBasicEigenproblem.hpp"
 
+////////////////////////////////
+// Anasazi StatusTest support //
+////////////////////////////////
+%include "AnasaziStatusTest.hpp"
+
+/////////////////////////////////////
+// Anasazi StatusTestCombo support //
+/////////////////////////////////////
+%include "AnasaziStatusTestCombo.hpp"
+
+////////////////////////////////////////
+// Anasazi StatusTestMaxIters support //
+////////////////////////////////////////
+%include "AnasaziStatusTestMaxIters.hpp"
+
+//////////////////////////////////////////////
+// Anasazi StatusTestOrderedResNorm support //
+//////////////////////////////////////////////
+%include "AnasaziStatusTestOrderedResNorm.hpp"
+
+//////////////////////////////////////
+// Anasazi StatusTestOutput support //
+//////////////////////////////////////
+%include "AnasaziStatusTestOutput.hpp"
+
+///////////////////////////////////////
+// Anasazi StatusTestResNorm support //
+///////////////////////////////////////
+%include "AnasaziStatusTestResNorm.hpp"
+
+//////////////////////////////////
+// Anasazi OrthoManager support //
+//////////////////////////////////
+%include "AnasaziOrthoManager.hpp"
+
+/////////////////////////////////////
+// Anasazi MatOrthoManager support //
+/////////////////////////////////////
+%include "AnasaziMatOrthoManager.hpp"
+
+///////////////////////////////////////
+// Anasazi BasicOrthoManager support //
+///////////////////////////////////////
+//%include "AnasaziBasicOrthoManager.hpp"
+
+//////////////////////////////////////
+// Anasazi SVQBOrthoManager support //
+//////////////////////////////////////
+%include "AnasaziSVQBOrthoManager.hpp"
+
+/////////////////////////////////
+// Anasazi Eigensolver support //
+/////////////////////////////////
+%include "AnasaziEigensolver.hpp"
+
 ///////////////////////////////////
 // Anasazi SolverManager support //
 ///////////////////////////////////
 %include "AnasaziSolverManager.hpp"
+
+///////////////////////////////////
+// Anasazi BlockDavidson support //
+///////////////////////////////////
+%include "AnasaziBlockDavidson.hpp"
 
 /////////////////////////////////////////
 // Anasazi BlockDavidsonSolMgr support //
 /////////////////////////////////////////
 %include "AnasaziBlockDavidsonSolMgr.hpp"
 
+//////////////////////////////////////
+// Anasazi BlockKrylovSchur support //
+//////////////////////////////////////
+%include "AnasaziBlockKrylovSchur.hpp"
+
+////////////////////////////////////////////
+// Anasazi BlockKrylovSchurSolMgr support //
+////////////////////////////////////////////
+%include "AnasaziBlockKrylovSchurSolMgr.hpp"
+
+////////////////////////////
+// Anasazi LOBPCG support //
+////////////////////////////
+%include "AnasaziLOBPCG.hpp"
+
+//////////////////////////////////
+// Anasazi LOBPCGSolMgr support //
+//////////////////////////////////
+%include "AnasaziLOBPCGSolMgr.hpp"
+
 ///////////////////////////////////
 // Anasazi EpetraAdapter support //
 ///////////////////////////////////
 %include "AnasaziEpetraAdapter.hpp"
+%ignore
+Anasazi::MultiVecTraits< double,
+			 Epetra_MultiVector >::CloneView(const Epetra_MultiVector &,
+							 const std::vector< int > &);
 %template (SortManagerEpetra)
-          Anasazi::SortManager< double, Epetra_MultiVector, Epetra_Operator >;
+  Anasazi::SortManager< double, Epetra_MultiVector, Epetra_Operator >;
 %template (BasicSortEpetra)
-          Anasazi::BasicSort< double, Epetra_MultiVector, Epetra_Operator >;
+  Anasazi::BasicSort< double, Epetra_MultiVector, Epetra_Operator >;
 %template (MultiVecTraitsEpetra)
-          Anasazi::MultiVecTraits< double, Epetra_MultiVector >;
+  Anasazi::MultiVecTraits< double, Epetra_MultiVector >;
 %template (OperatorTraitsEpetra)
-          Anasazi::OperatorTraits< double, Epetra_MultiVector, Epetra_Operator >;
+  Anasazi::OperatorTraits< double, Epetra_MultiVector, Epetra_Operator >;
 %template (EigenproblemEpetra)
-          Anasazi::Eigenproblem< double, Epetra_MultiVector, Epetra_Operator >;
+  Anasazi::Eigenproblem< double, Epetra_MultiVector, Epetra_Operator >;
 %template (BasicEigenproblemEpetra)
-          Anasazi::BasicEigenproblem< double, Epetra_MultiVector, Epetra_Operator >;
+  Anasazi::BasicEigenproblem< double, Epetra_MultiVector, Epetra_Operator >;
+%template (StatusTestEpetra)
+  Anasazi::StatusTest< double, Epetra_MultiVector, Epetra_Operator >;
+%template (StatusTestComboEpetra)
+  Anasazi::StatusTestCombo< double, Epetra_MultiVector, Epetra_Operator >;
+%template (StatusTestMaxItersEpetra)
+  Anasazi::StatusTestMaxIters< double, Epetra_MultiVector, Epetra_Operator >;
+%template (StatusTestOrderedResNormEpetra)
+  Anasazi::StatusTestOrderedResNorm< double, Epetra_MultiVector, Epetra_Operator >;
+%template (StatusTestOutputEpetra)
+  Anasazi::StatusTestOutput< double, Epetra_MultiVector, Epetra_Operator >;
+%template (StatusTestResNormEpetra)
+  Anasazi::StatusTestResNorm< double, Epetra_MultiVector, Epetra_Operator >;
+%template (OrthoManagerEpetra)
+  Anasazi::OrthoManager< double, Epetra_MultiVector >;
+%template (MatOrthoManagerEpetra)
+  Anasazi::MatOrthoManager< double, Epetra_MultiVector, Epetra_Operator >;
+//%template (BasicOrthoManagerEpetra)
+//  Anasazi::BasicOrthoManager< double, Epetra_MultiVector, Epetra_Operator >;
+%template (SVQBOrthoManagerEpetra)
+  Anasazi::SVQBOrthoManager< double, Epetra_MultiVector, Epetra_Operator >;
+%template (EigensolverEpetra)
+  Anasazi::Eigensolver<  double, Epetra_MultiVector, Epetra_Operator >;
 %template (SolverManagerEpetra)
-          Anasazi::SolverManager<  double, Epetra_MultiVector, Epetra_Operator >;
+  Anasazi::SolverManager<  double, Epetra_MultiVector, Epetra_Operator >;
+%template (BlockDavidsonEpetra)
+  Anasazi::BlockDavidson< double, Epetra_MultiVector, Epetra_Operator >;
 %template (BlockDavidsonSolMgrEpetra)
-          Anasazi::BlockDavidsonSolMgr< double, Epetra_MultiVector, Epetra_Operator >;
+  Anasazi::BlockDavidsonSolMgr< double, Epetra_MultiVector, Epetra_Operator >;
+%template (BlockKrylovSchurEpetra)
+  Anasazi::BlockKrylovSchur< double, Epetra_MultiVector, Epetra_Operator >;
+%template (BlockKrylovSchurSolMgrEpetra)
+  Anasazi::BlockKrylovSchurSolMgr< double, Epetra_MultiVector, Epetra_Operator >;
+%template (LOBPCGEpetra)
+  Anasazi::LOBPCG< double, Epetra_MultiVector, Epetra_Operator >;
+%template (LOBPCGSolMgrEpetra)
+  Anasazi::LOBPCGSolMgr< double, Epetra_MultiVector, Epetra_Operator >;
+%template(EigensolutionEpetra)
+  Anasazi::Eigensolution< double, Epetra_MultiVector >;
 
 //////////////////////////////
 // Generic python interface //
 //////////////////////////////
+%define %anasazi_scalartype_factory(ClassName)
 %pythoncode %{
-
+def ClassName(*args):
+    return ClassName##Double(*args)
 %}
+%enddef
+
+%define %anasazi_factory(ClassName)
+%pythoncode %{
+def ClassName(*args):
+    #for arg in args:
+    #    if isinstance(arg, Epetra.MultiVector) or \
+    #       isinstance(arg, Epetra.Operator):
+    return ClassName##Epetra(*args)
+%}
+%enddef
+
+// Implement the python factories for classes templated purely on ScalarType
+%anasazi_scalartype_factory(Value             )
+%anasazi_scalartype_factory(OutputManager     )
+%anasazi_scalartype_factory(BasicOutputManager)
+%anasazi_scalartype_factory(MultiVec          )
+%anasazi_scalartype_factory(Operator          )
+
+// Implement the python factories for classes templated on MV and/or OP 
+%anasazi_factory(SortManager             )
+%anasazi_factory(BasicSort               )
+%anasazi_factory(MultiVecTraits          )
+%anasazi_factory(OperatorTraits          )
+%anasazi_factory(Eigenproblem            )
+%anasazi_factory(BasicEigenproblem       )
+%anasazi_factory(StatusTest              )
+%anasazi_factory(StatusTestCombo         )
+%anasazi_factory(StatusTestMaxIters      )
+%anasazi_factory(StatusTestOrderedResNorm)
+%anasazi_factory(StatusTestOutput        )
+%anasazi_factory(StatusTestResNorm       )
+%anasazi_factory(OrthoManager            )
+%anasazi_factory(MatOrthoManager         )
+%anasazi_factory(SVQBOrthoManager        )
+%anasazi_factory(Eigensolver             )
+%anasazi_factory(SolverManager           )
+%anasazi_factory(BlockDavidson           )
+%anasazi_factory(BlockDavidsonSolMgr     )
+%anasazi_factory(BlockKrylovSchur        )
+%anasazi_factory(BlockKrylovSchurSolMgr  )
+%anasazi_factory(LOBPCG                  )
+%anasazi_factory(LOBPCGSolMgr            )
+%anasazi_factory(Eigensolution           )

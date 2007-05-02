@@ -37,9 +37,10 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL	= aclocal -I config
 
 EXTRA_DIST = setpath.py gre__115.rua \
-	     exAmesos_Factory.py exAmesos_Solvers.py exAztecOO.py exAztecOO_Operator.py \
-	     exAztecOO_RowMatrix.py exAztecOO_BasicRowMatrix.py exEpetra.py \
-	     exEpetra_Comm.py exEpetra_CrsMatrix_Easy.py exEpetra_CrsMatrix_Efficient.py \
+	     exAmesos_Factory.py exAmesos_Solvers.py exAnasazi_BlockDavidson.py \
+	     exAztecOO.py exAztecOO_Operator.py exAztecOO_RowMatrix.py \
+	     exAztecOO_BasicRowMatrix.py exEpetra.py exEpetra_Comm.py \
+	     exEpetra_CrsMatrix_Easy.py exEpetra_CrsMatrix_Efficient.py \
 	     exEpetra_FECrsMatrix_Easy.py exEpetra_ImportExport.py \
 	     exEpetraExt_IO_MatrixMarket.py exEpetraExt_IO_XML.py \
 	     exEpetraExt_MatrixMatrix.py exGaleri.py exGaleri_ReadHB.py exIFPACK.py \
@@ -133,7 +134,9 @@ endif
 
 # Anasazi examples
 if HAVE_PYTRILINOS_ANASAZI
-ANASAZI_EXAMPLES = 
+if HAVE_PYTRILINOS_GALERI
+ANASAZI_EXAMPLES = exAnasazi_BlockDavidson
+endif
 endif
 
 # ML examples
