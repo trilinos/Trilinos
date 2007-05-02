@@ -125,7 +125,7 @@ public:
     /** \brief . */
     void _setSupports( EInArgsMembers arg, bool supports );
     /** \brief . */
-    void _setSupports( const InArgs<Scalar>& inArgs );
+    void _setSupports( const InArgs<Scalar>& inArgs, const int Np );
     /** \brief . */
     void _setUnsupportsAndRelated( EInArgsMembers arg );
   private:
@@ -268,8 +268,8 @@ public:
     EDerivativeMultiVectorOrientation getOrientation() const
       { return orientation_; }
   private:
-    Teuchos::RefCountPtr<MultiVectorBase<Scalar> >   mv_;
-    EDerivativeMultiVectorOrientation                orientation_;
+    Teuchos::RefCountPtr<MultiVectorBase<Scalar> > mv_;
+    EDerivativeMultiVectorOrientation orientation_;
   };
 
   /** \brief Simple aggregate class that stores a derivative object
@@ -284,6 +284,11 @@ public:
     Derivative( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &lo )
       : lo_(lo.assert_not_null()) {}
     /** \brief . */
+    Derivative(
+      const Teuchos::RefCountPtr<MultiVectorBase<Scalar> > &mv,
+      const EDerivativeMultiVectorOrientation orientation = DERIV_MV_BY_COL
+      ) : dmv_(mv,orientation) {}
+    /** \brief . */
     Derivative( const DerivativeMultiVector<Scalar> &dmv )
       : dmv_(dmv) {}
     /** \brief . */
@@ -296,11 +301,17 @@ public:
     Teuchos::RefCountPtr<LinearOpBase<Scalar> > getLinearOp() const
       { return lo_; }
     /** \brief . */
+    Teuchos::RefCountPtr<MultiVectorBase<Scalar> > getMultiVector() const
+      { return dmv_.getMultiVector(); }
+    /** \brief . */
+    EDerivativeMultiVectorOrientation getMultiVectorOrientation() const
+      { return dmv_.getOrientation(); }
+    /** \brief . */
     DerivativeMultiVector<Scalar> getDerivativeMultiVector() const
       { return dmv_; }
   private:
-    Teuchos::RefCountPtr<LinearOpBase<Scalar> >   lo_;
-    DerivativeMultiVector<Scalar>                 dmv_;
+    Teuchos::RefCountPtr<LinearOpBase<Scalar> > lo_;
+    DerivativeMultiVector<Scalar> dmv_;
   };
 
   /** \brief .  */
@@ -484,7 +495,7 @@ protected:
     /** \brief . */
     void setSupports( EInArgsMembers arg, bool supports = true );
     /** \brief . */
-    void setSupports( const InArgs<Scalar>& inArgs );
+    void setSupports( const InArgs<Scalar>& inArgs, const int Np = -1 );
     /** \brief . */
     void setUnsupportsAndRelated( EInArgsMembers arg );
   };
@@ -834,9 +845,12 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setSupports( EInArgsMembers arg, bool 
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::_setSupports( const InArgs<Scalar>& inArgs )
+void ModelEvaluatorBase::InArgs<Scalar>::_setSupports(
+  const InArgs<Scalar>& inArgs, const int Np
+  )
 {
   std::copy( &inArgs.supports_[0], &inArgs.supports_[0] + NUM_E_IN_ARGS_MEMBERS, &supports_[0] );
+  this->_set_Np( Np >= 0 ? Np : inArgs.Np() );
 }
 
 template<class Scalar>
@@ -1481,8 +1495,10 @@ void ModelEvaluatorBase::InArgsSetup<Scalar>::setSupports( EInArgsMembers arg, b
 { this->_setSupports(arg,supports); }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgsSetup<Scalar>::setSupports( const InArgs<Scalar>& inArgs )
-{ this->_setSupports(inArgs); }
+void ModelEvaluatorBase::InArgsSetup<Scalar>::setSupports(
+  const InArgs<Scalar>& inArgs, const int Np
+  )
+{ this->_setSupports(inArgs,Np); }
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgsSetup<Scalar>::setUnsupportsAndRelated( EInArgsMembers arg )

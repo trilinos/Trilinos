@@ -313,15 +313,18 @@ void DefaultProductVector<Scalar>::applyOp(
     return;
   }
   //
-  // If we get here, then we will implement the applyOp(...)  one vector block
+  // If we get here, then we will implement the applyOp(...) one vector block
   // at a time.
   //
   const Index this_dim = n;
-  const Index sub_dim  = ( sub_dim_in < 0
-                           ? this_dim - first_ele_offset_in
-                           : sub_dim_in );
+  const Index sub_dim
+    = (
+      sub_dim_in < 0
+      ? this_dim - first_ele_offset_in
+      : sub_dim_in
+      );
   Index num_elements_remaining = sub_dim;
-  const int  numBlocks = productSpace_->numBlocks();
+  const int numBlocks = productSpace_->numBlocks();
   Workspace<const VectorBase<Scalar>*>
     sub_vecs(wss,num_vecs,false);
   Workspace<VectorBase<Scalar>*>

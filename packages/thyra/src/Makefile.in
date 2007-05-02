@@ -303,6 +303,8 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultIdentityLinearOpDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultMultipliedLinearOp.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultMultipliedLinearOpDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_DefaultProductMultiVector.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_DefaultProductMultiVectorDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultProductVector.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultProductVectorDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultProductVectorSpace.hpp\
@@ -451,6 +453,8 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultLinearOpSourceDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditionerDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_InverseLinearOperator.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_LinearOpWithSolveFactoryHelpers.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_LinearOpWithSolveTester.hpp\

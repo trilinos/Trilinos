@@ -31,6 +31,7 @@
 
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Thyra_VectorSpaceDefaultBase.hpp"
+#include "Teuchos_implicit_cast.hpp"
 
 namespace Thyra {
 
@@ -80,7 +81,7 @@ namespace Thyra {
    ,Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > *Z
    )
  {
-   std::vector<Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > > vecSpaces(p);
+   Teuchos::Array<Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > > vecSpaces(p);
    for( int k = 0; k < p; ++k ) vecSpaces[k] = V;
    *Z = Teuchos::rcp(new DefaultProductVectorSpace<Scalar>(&vecSpaces[0],p);
  }
@@ -278,13 +279,45 @@ public:
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > clone() const;
   //@}
 
+
+  /** @name Overridden from Teuchos::Describable */
+  //@{
+                                                
+  /** \brief Prints just the name <tt>DefaultProductVectorSpace</tt> along
+   * with the overall dimension and the number of blocks.
+   */
+  std::string description() const;
+
+  /** \brief Prints the details about the constituent vector spaces.
+   *
+   * This function outputs different levels of detail based on the value passed in
+   * for <tt>verbLevel</tt>:
+   *
+   * ToDo: Finish documentation!
+   */
+  void describe(
+    Teuchos::FancyOStream &out,
+    const Teuchos::EVerbosityLevel verbLevel
+    ) const;
+
+  //@}
+  
+protected:
+
+  // ///////////////////////////////////
+  // Protected member functions
+
+  /** \brief Added to allow TSFExtended DefaultProductVectorSpace to derive
+   * from this. */
+  DefaultProductVectorSpace() : numBlocks_(0), dim_(0) {}
+
 private:
  
   // ///////////////////////////////////
   // Private types
 
-  typedef std::vector<Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > >  vecSpaces_t;
-  typedef std::vector<Index>                                                  vecSpacesOffsets_t;
+  typedef Teuchos::Array<Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > > vecSpaces_t;
+  typedef Teuchos::Array<Index> vecSpacesOffsets_t;
  
   // ///////////////////////////////////
   // Private data members
@@ -295,16 +328,53 @@ private:
   // cached info
   Index                                      dim_;
   bool                                       isInCore_;
-  
-protected:
 
   // ///////////////////////////////////
-  // Protected member functions
+  // Private member functions
 
-  /// Added to allow TSFExtended DefaultProductVectorSpace to derive from this 
-  DefaultProductVectorSpace(){ numBlocks_=0; dim_=0; }
+  void assertInitialized() const;
 
 };
+
+
+/** \brief Nonmember constructor that takes an array of vector spaces.
+ *
+ * \relates DefaultProductVectorSpace
+ */
+template<class Scalar>
+inline
+Teuchos::RefCountPtr<DefaultProductVectorSpace<Scalar> >
+productVectorSpace(
+  const Teuchos::Array<Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > > &vecSpaces
+  )
+{
+  return Teuchos::rcp(
+    new DefaultProductVectorSpace<Scalar>(vecSpaces.size(),&vecSpaces[0])
+    );
+}
+
+
+/** \brief Nonmember constructor that duplicates a block vector space many
+ * times..
+ *
+ * \relates DefaultProductVectorSpace
+ */
+template<class Scalar>
+inline
+Teuchos::RefCountPtr<DefaultProductVectorSpace<Scalar> >
+productVectorSpace(
+  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vecSpace,
+  const int numBlocks
+  )
+{
+  using Teuchos::Array;
+  using Teuchos::RefCountPtr;
+  Array<RefCountPtr<const VectorSpaceBase<Scalar> > > vecSpaceBlocks;
+  for ( int i = 0; i < numBlocks; ++i )
+    vecSpaceBlocks.push_back(vecSpace);
+  return productVectorSpace(vecSpaceBlocks);
+}
+
 
 // /////////////////////////////////
 // Inline members
@@ -326,6 +396,16 @@ template<class Scalar>
 inline bool DefaultProductVectorSpace<Scalar>::hasBeenCloned() const
 {
   return vecSpaces_.count() > 1;
+}
+
+template<class Scalar>
+inline
+void DefaultProductVectorSpace<Scalar>::assertInitialized() const
+{
+  using Teuchos::implicit_cast;
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT( is_null(vecSpaces_) );
+#endif
 }
 
 } // namespace Thyra

@@ -36,6 +36,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_SpmdVectorSpaceUtilities.hpp"
+#include "Teuchos_implicit_cast.hpp"
 
 namespace Thyra {
 
@@ -214,7 +215,8 @@ template<class Scalar>
 Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
 DefaultClusteredSpmdProductVectorSpace<Scalar>::getBlock(const int k) const
 {
-  TEST_FOR_EXCEPT( !( 0 <= k && k < vecSpaces_.size() ) );
+  using Teuchos::implicit_cast;
+  TEST_FOR_EXCEPT( !( 0 <= k && k < implicit_cast<int>(vecSpaces_.size()) ) );
   return vecSpaces_[k];
 } 
 

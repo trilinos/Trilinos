@@ -33,9 +33,11 @@
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_ParameterDrivenMultiVectorInput.hpp"
+#include "Thyra_AssertOp.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_Time.hpp"
 
 namespace Thyra {
@@ -49,94 +51,157 @@ namespace Thyra {
  \verbatim
 
   g_(getUnderlyingModel()->Ng())(x,p,...)
-    = observationMultiplier*(0.5/no)*sum((os(ko)*(o(ko)(x,p)-ot(lo)))^2,lo=0...no-1)
-    + parameterMultiplier*(0.5/np)*sum((ps(kp)*(p(kp)-pt(kp)))^2,i=kp...np-1)
-
- \endverbatim 
-
- * where <tt>ot</tt> is the target vector for some observation (see below),
- * <tt>o</tt> is a scaling vector (where some components may be zero),
- * <tt>observationMultiplier</tt> is a scalar for the observation matching
- * term, <tt>p</tt> is one of the parameter subvectors supported by the
- * underlying model, <tt>pt</tt> is a nomial parameter vector for which
- * violations are penalized, <tt>ps</tt> is the scaling vector for the
- * parameter change violations, and <tt>parameterMultiplier</tt> is a scalar for
- * the parameter change violations.
- *
- * The observation function <tt>o(x,p)</tt> can be the state vector itself
- * <tt>o(x,p) = x</tt> for <tt>obs_idx < 0</tt>, or can be any of the built-in
- * response functions <tt>o(x,p) = g(obs_idx)(x,p)</tt> where <tt>0 <= obs_idx
- * < getUnderlyingModel()->Ng()</tt>.
- *
- * The first set of terms multiplying <tt>observationMultiplier</tt> is called
- * the <em>observation matching term</tt>.  The second set of terms
- * multiplying <tt>parameterMultiplier</tt> is called the <em>parameter
- * regularization term</tt>.
- *
- * Note that <tt>this->Ng() == getUnderlyingModel()->Ng() + 1</tt>.
- *
- * Let's consider the derivatives of this inverse function, which will just
- * refer to here as the scalar function <tt>g(x,p)</tt> (leaving out scaling
- * vectors <tt>os</tt> and <tt>ps</tt> for now) which takes the form:
-
- \verbatim
-
-  g(x,p)
-    = observationMultiplier*(0.5/no)*sum(diff_o(ko)(x,p))^2,i=ko...no-1)
-      + parameterMultiplier*(0.5/np)*sum(diff_p(kp)(p))^2,kp=0...np-1)
-
- \endverbatim 
-
- * where <tt>diff_o(ko)(x,p) = (o(ko)(x,p) - ot(ko))</tt> and
- * <tt>diff_p(kp)(p) = (p(kp) - pt(kp))</tt>.
- *
- * The derivatives of <tt>g(x,p)</tt> with respect to <tt>x(kx)</tt> and
- * <tt>p(kp)</tt> are the scalar values:
-
- \verbatim
-
-   DgDx(ix) = observationMultiplier*(1/no)*sum( (diff_o(ko)*D(o(ko))/D(x(ix))), ko=0...no-1 )
-
-            = (observationMultiplier*(1/no)) * diff_o^T * D(o)/D(x(ix))
-
-   DgDp(ip) = observationMultiplier*(1/no)*sum( (diff_o(ko)*D(o(ko))/D(p(ip))), ko=0...no-1 )
-              + parameterMultiplier*(1.0/np) * diff_p(ip)
-
-            = (observationMultiplier*(1/no)) * diff_o^T * D(o)/D(p(ip))
-              + (parameterMultiplier*(1.0/np)) * diff_p(ip)
-
- \endverbatim 
-
- * The full derivatives are then:
-
- \verbatim
-
-   DgDx = (observationMultiplier*(1/no)) * diff_o^T * DoDx
-
-   DgDp = (observationMultiplier*(1/no)) * diff_o^T * DoDp
-          + (parameterMultiplier*(1.0/np)) * diff_p^T
-
- \endverbatim 
-
- * In the gradient form:
-
- \verbatim
-
-   DgDx^T = (observationMultiplier*(1/no)) * (DoDx^T) * diff_o
-
-   DgDp^T = (observationMultiplier*(1/no)) * (DoDp^T) * diff_o
-            + (parameterMultiplier*(1.0/np)) * diff_p
+    = observationMultiplier * observationMatch(x,p)
+    + parameterMultiplier * parameterRegularization(p)
 
  \endverbatim
 
- * Note that when <tt>obs_idx < -1</tt> than <tt>o(x,p) = x</tt> and therefore
- * <tt>DoDx = I</tt> and <tt>DoDp = 0</tt>. and there derivatives simplify to:
+ * where <tt>observationMatch(x,p)</tt> is some scalar-valued function that
+ * gives the match of some state observation,
+ * <tt>parameterRegularization(p)</tt> is some scaled valued function that
+ * regularizes the parameters, and <tt>observationMultiplier</tt> and
+ * <tt>parameterMultiplier</tt> are scalar constant multipliers for the state
+ * observation and the parameter regularization respectively.
+ *
+ * The state observation matching function and the parameter regularization
+ * function can be defined in one of two ways.
+ *
+ * If a symmetric positive definite linear operator <tt>Q_o</tt> is defined,
+ * then the state observation matching function is given as:
 
  \verbatim
 
-   DgDx^T = (observationMultiplier*(1/no)) * diff_o
+   observationMatch(x,p) = 0.5 * diff_o(x,p)^T * Q_o * diff_o(x,p)
 
-   DgDp^T = (parameterMultiplier*(1.0/np)) * diff_p
+ \endverbatim
+
+ * and if <tt>Q_o</tt> is not defined, then the state observation matching
+ * function is given as:
+
+ \verbatim
+
+   observationMatch(x,p) = (0.5/no) * diff_o(x,p)^T * diff_o(x,p)
+
+ \endverbatim
+
+ * where
+
+ \verbagtim
+
+   diff_o(x,p) = o(x,p) - ot
+
+ \endverbatim
+
+ * where <tt>ot</tt> is the target vector for some observation (see below) and
+ * <tt>p</tt> is one of the parameter subvectors supported by the underlying
+ * model.
+ *
+ * The observation function <tt>o(x,p)</tt> can be the state vector itself
+ * <tt>o(x,p) = x</tt> for <tt>obs_idx < 0</tt>, or can be any of the built-in
+ * response functions <tt>o(x,p) = g(obs_idx)(x,p)</tt> when <tt>0 <= obs_idx
+ * < getUnderlyingModel()->Ng()</tt>.
+ *
+ * The parameter regularization function also has one of two definitions.
+ *
+ * If a symmetric positive definite linear operator <tt>Q_p</tt> is defined,
+ * then the parameter regularization function is given as:
+
+ \verbatim
+
+   parameterRegularization(p) = 0.5 * diff_p(p)^T * Q_p * diff_p(p)
+
+ \endverbatim
+
+ * and if <tt>Q_p</tt> is not defined, then the parameter regularization
+ * function is given as:
+
+ \verbatim
+
+   parameterRegularization(p) = (0.5/np) * diff_p(p)^T * diff_p(p)
+
+ \endverbatim
+
+ * where
+
+ \verbagtim
+
+   diff_p(p) = p - pt
+
+ \endverbatim
+
+ * where <tt>pt</tt> is a nomial parameter vector for which violations are
+ * penalized against.
+ *
+ * Since this decorator class adds a response function, then <tt>this->Ng() ==
+ * getUnderlyingModel()->Ng() + 1</tt>.
+ *
+ * Let's consider the derivatives of this inverse function.
+ *
+ * The first derivatives are given by:
+
+ \verbatim
+
+  d(g)/d(x) = observationMultiplier * d(observationMatch)/d(x)
+
+  d(g)/d(p) = observationMultiplier * d(observationMatch)/d(p)
+            + parameterMultiplier * d(parameterRegularization)/d(p)
+
+ \endverbatim
+ 
+ * where the derivatives of <tt>observationMatch(x,p)</tt> and
+ * <tt>parameterRegularization(p)</tt> are given by:
+
+ \verbatim
+
+
+                              /  diff_o(x,p)^T * Q_o * d(o)/d(x) : Q_o defined
+   d(observationMatch)/d(x) = |
+                              \  (1/no) * diff_o(x,p)^T * d(o)/d(x) : Q_o not defined
+
+
+                              /  diff_o(x,p)^T * Q_o * d(o)/d(p) : Q_o defined
+   d(observationMatch)/d(p) = |
+                              \  (1/no) * diff_o(x,p)^T * d(o)/d(p) : Q_o not defined
+
+
+                                     /  diff_p(p)^T * Q_p : Q_p defined
+   d(parameterRegularization)/d(p) = |
+                                     \  (1/np) * diff_p(p)^T : Q_p not defined
+
+
+ \endverbatim
+
+ * Of course when <tt>obs_idx < -1</tt> where <tt>o(x,p) = x</tt> then
+ * <tt>d(o)/d(x) = I</tt> and <tt>d(o)/d(p) = 0</tt> which also gives
+ * <tt>d(observationMatch)/d(p) = 0</tt>.
+ *
+ * Also, we typically want these derivatives in gradient form which gives:
+
+
+ \verbatim
+
+
+  d(g)/d(x)^T = observationMultiplier * d(observationMatch)/d(x)^T
+
+
+  d(g)/d(p)^T = observationMultiplier * d(observationMatch)/d(p)^T
+              + parameterMultiplier * d(parameterRegularization)/d(p)^T
+
+
+                                /  d(o)/d(x)^T * Q_o * diff_o(x,p) : Q_o defined
+   d(observationMatch)/d(x)^T = |
+                                \  (1/no) * d(o)/d(x)^T * diff_o(x,p) : Q_o not defined
+
+
+                                /  d(o)/d(p)^T * Q_o * diff_o(x,p) : Q_o defined
+   d(observationMatch)/d(p)^T = |
+                                \  (1/no) * d(o)/d(p)^T * diff_o(x,p) : Q_o not defined
+
+
+                                       /  Q_p * diff_p(p) : Q_p defined
+   d(parameterRegularization)/d(p)^T = |
+                                       \  (1/np) * diff_p(p) : Q_p not defined
+
 
  \endverbatim
 
@@ -156,10 +221,16 @@ class DefaultInverseModelEvaluator
 public:
 
   /** \brief Observation target vector <tt>ot</tt>. */
-  STANDARD_COMPOSITION_MEMBERS( VectorBase<Scalar>, observationTarget );
+  STANDARD_CONST_COMPOSITION_MEMBERS( VectorBase<Scalar>, observationTarget );
 
   /** \brief Parameter base vector <tt>pt</tt>. */
-  STANDARD_COMPOSITION_MEMBERS( VectorBase<Scalar>, parameterBase );
+  STANDARD_CONST_COMPOSITION_MEMBERS( VectorBase<Scalar>, parameterBase );
+
+  /** \brief Observation match weighting operator <tt>Q_o</tt>. */
+  STANDARD_CONST_COMPOSITION_MEMBERS( LinearOpBase<Scalar>, observationMatchWeightingOp );
+
+  /** \brief Parameter regulization weighting operator <tt>Q_p</tt>. */
+  STANDARD_CONST_COMPOSITION_MEMBERS( LinearOpBase<Scalar>, parameterRegularizationWeightingOp );
 
   /** \brief MultiVectorFileIOBase object used to read the observation target
    * vector <tt>ot</tt> as directed by the parameter list. */
@@ -177,7 +248,7 @@ public:
 
   /** \brief . */
   DefaultInverseModelEvaluator(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >       &thyraModel
+    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> > &thyraModel
     );
 
   /** \brief . */
@@ -229,6 +300,8 @@ public:
   /** \brief . */
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
+  ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+  /** \brief . */
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
   /** \brief . */
   void evalModel(
@@ -263,6 +336,8 @@ private:
   double observationMultiplier_;
   double parameterMultiplier_; 
 
+  bool observationTargetAsParameter_;
+
   mutable ParameterDrivenMultiVectorInput<Scalar> observationTargetReader_;
   mutable ParameterDrivenMultiVectorInput<Scalar> parameterBaseReader_;
 
@@ -277,6 +352,9 @@ private:
 
   static const std::string ObservationTargetVector_name_;
 
+  static const std::string ObservationTargetAsParameter_name_;
+  static const bool ObservationTargetAsParameter_default_;
+
   static const std::string ParameterMultiplier_name_;
   static const double ParameterMultiplier_default_;
 
@@ -288,6 +366,23 @@ private:
   void initializeDefaults();
 
 };
+
+
+/** \brief Non-member constructor.
+ *
+ * \relates DefaultInverseModelEvaluator
+ */
+template<class Scalar>
+Teuchos::RefCountPtr<DefaultInverseModelEvaluator<Scalar> >
+inverseModelEvaluator(
+  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> > &thyraModel
+  )
+{
+  return Teuchos::rcp(
+    new DefaultInverseModelEvaluator<Scalar>(thyraModel)
+    );
+}
+
 
 // /////////////////////////////////
 // Implementations
@@ -331,6 +426,16 @@ DefaultInverseModelEvaluator<Scalar>::ObservationTargetVector_name_
 
 template<class Scalar>
 const std::string
+DefaultInverseModelEvaluator<Scalar>::ObservationTargetAsParameter_name_
+= "Observation Target as Parameter";
+
+template<class Scalar>
+const bool
+DefaultInverseModelEvaluator<Scalar>::ObservationTargetAsParameter_default_
+= false;
+
+template<class Scalar>
+const std::string
 DefaultInverseModelEvaluator<Scalar>::ParameterMultiplier_name_
 = "Parameter Multiplier";
 
@@ -348,14 +453,14 @@ DefaultInverseModelEvaluator<Scalar>::ParameterBaseVector_name_
 
 template<class Scalar>
 DefaultInverseModelEvaluator<Scalar>::DefaultInverseModelEvaluator()
-  :obs_idx_(-1),p_idx_(0)
+  :obs_idx_(-1),p_idx_(0), observationTargetAsParameter_(false)
 {}
 
 template<class Scalar>
 DefaultInverseModelEvaluator<Scalar>::DefaultInverseModelEvaluator(
   const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >   &thyraModel
   )
-  :obs_idx_(-1),p_idx_(0)
+  :obs_idx_(-1),p_idx_(0), observationTargetAsParameter_(false)
 {
   initialize(thyraModel);
 }
@@ -411,9 +516,14 @@ void DefaultInverseModelEvaluator<Scalar>::setParameterList(
     observationTargetReader_.setParameterList(
       sublist(paramList_,ObservationTargetVector_name_)
       );
+    Teuchos::RefCountPtr<VectorBase<Scalar> >
+      observationTarget;
     observationTargetReader_.readVector(
-      "observation target vector",&observationTarget_);
+      "observation target vector",&observationTarget);
+    observationTarget_ = observationTarget;
   }
+  observationTargetAsParameter_ = paramList_->get(
+    ObservationTargetAsParameter_name_, ObservationTargetAsParameter_default_ );
   parameterMultiplier_ = paramList_->get(
     ParameterMultiplier_name_,ParameterMultiplier_default_);
   if(get_parameterBaseIO().get()) {
@@ -426,9 +536,13 @@ void DefaultInverseModelEvaluator<Scalar>::setParameterList(
     parameterBaseReader_.setParameterList(
       sublist(paramList_,ParameterBaseVector_name_)
       );
+    Teuchos::RefCountPtr<VectorBase<Scalar> >
+      parameterBase;
     parameterBaseReader_.readVector(
-      "parameter base vector",&parameterBase_);
+      "parameter base vector",&parameterBase);
+    parameterBase_ = parameterBase;
   }
+  Teuchos::readVerboseObjectSublist(&*paramList_,this);
 #ifdef TEUCHOS_DEBUG
   paramList_->validateParameters(*getValidParameters(),0);
 #endif // TEUCHOS_DEBUG
@@ -464,35 +578,35 @@ DefaultInverseModelEvaluator<Scalar>::getValidParameters() const
   if(validParamList_.get()==NULL) {
     Teuchos::RefCountPtr<Teuchos::ParameterList>
       pl = Teuchos::rcp(new Teuchos::ParameterList());
-    pl->set(
-      ObservationIndex_name_,ObservationIndex_default_
-      ,"The index of the observation function, obs_idx.\n"
+    pl->set( ObservationIndex_name_,ObservationIndex_default_,
+      "The index of the observation function, obs_idx.\n"
       "If obs_idx < 0, then the observation will be the state vector x.\n"
       "If obs_idx >= 0, then the observation will be the response function g(obs_idx)."
       );
-    pl->set(
-      ParameterSubvectorIndex_name_,ParameterSubvectorIndex_default_
-      ,"The index of the parameter subvector that will be used in the\n"
+    pl->set( ParameterSubvectorIndex_name_,ParameterSubvectorIndex_default_,
+      "The index of the parameter subvector that will be used in the\n"
       "regularization term."
       );
-    pl->set(
-      ObservationMultiplier_name_,ObservationMultiplier_default_
-      ,"observationMultiplier"
+    pl->set( ObservationMultiplier_name_,ObservationMultiplier_default_,
+      "observationMultiplier"
       );
     if(this->get_observationTargetIO().get())
       observationTargetReader_.set_fileIO(this->get_observationTargetIO());
     pl->sublist(ObservationTargetVector_name_).setParameters(
       *observationTargetReader_.getValidParameters()
       );
-    pl->set(
-      ParameterMultiplier_name_,ParameterMultiplier_default_
-      ,"parameterMultiplier"
+    pl->set( ObservationTargetAsParameter_name_, ObservationTargetAsParameter_default_,
+      "If true, then a parameter will be accepted for the state observation vector\n"
+      "to allow it to be set by an external client through the InArgs object."
       );
+    pl->set( ParameterMultiplier_name_,ParameterMultiplier_default_,
+      "parameterMultiplier" );
     if(this->get_parameterBaseIO().get())
       parameterBaseReader_.set_fileIO(this->get_parameterBaseIO());
     pl->sublist(ParameterBaseVector_name_).setParameters(
       *parameterBaseReader_.getValidParameters()
       );
+    Teuchos::setupVerboseObjectSublist(&*pl);
     validParamList_ = pl;
   }
   return validParamList_;
@@ -515,6 +629,27 @@ DefaultInverseModelEvaluator<Scalar>::get_g_space(int j) const
   return this->getUnderlyingModel()->get_g_space(j);
 }
 
+
+template<class Scalar>
+ModelEvaluatorBase::InArgs<Scalar>
+DefaultInverseModelEvaluator<Scalar>::createInArgs() const
+{
+  typedef ModelEvaluatorBase MEB;
+  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+    thyraModel = this->getUnderlyingModel();
+  const MEB::InArgs<Scalar> wrappedInArgs = thyraModel->createInArgs();
+  const int wrapped_Np = wrappedInArgs.Np();
+  MEB::InArgsSetup<Scalar> inArgs;
+  inArgs.setModelEvalDescription(this->description());
+  const bool supports_x = wrappedInArgs.supports(MEB::IN_ARG_x);
+  inArgs.setSupports(
+    wrappedInArgs,
+    wrapped_Np + ( supports_x && observationTargetAsParameter_ ? 1 : 0 )
+    );
+  return inArgs;
+}
+
+
 template<class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>
 DefaultInverseModelEvaluator<Scalar>::createOutArgs() const
@@ -535,10 +670,11 @@ DefaultInverseModelEvaluator<Scalar>::createOutArgs() const
 
 template<class Scalar>
 void DefaultInverseModelEvaluator<Scalar>::evalModel(
-  const ModelEvaluatorBase::InArgs<Scalar>     &inArgs
-  ,const ModelEvaluatorBase::OutArgs<Scalar>   &outArgs
+  const ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  const ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
+
   typedef ModelEvaluatorBase MEB;
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
@@ -574,11 +710,12 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nComputing the base point ...\n";
 
-  MEB::InArgs<Scalar>  wrappedInArgs = inArgs;
+  MEB::InArgs<Scalar>  wrappedInArgs = thyraModel->createInArgs();
+  wrappedInArgs.setArgs(inArgs,true);
   MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
   wrappedOutArgs.setArgs(outArgs,true);
-  RefCountPtr<VectorBase<Scalar> >    wrapped_o;
-  MEB::DerivativeMultiVector<Scalar>  wrapped_DoDx_trans, wrapped_DoDp_trans;
+  RefCountPtr<VectorBase<Scalar> > wrapped_o;
+  MEB::DerivativeMultiVector<Scalar> wrapped_DoDx_trans, wrapped_DoDp_trans;
   if( obs_idx_ >= 0 && ( g_inv_out || DgDx_inv_trans_out || DgDp_inv_trans_out ) )
   {
     wrapped_o = createMember(thyraModel->get_g_space(obs_idx_));
@@ -602,112 +739,235 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
   bool failed = wrappedOutArgs.isFailed();
   
   if(!failed) {
+
     //
     // Compute the inverse response function and its derivatives if asked to
     // do so.
     //
-    const VectorBase<Scalar>
-      &x = *inArgs.get_x(),
-      &p = *inArgs.get_p(p_idx_);
-    //
-    //
+
+    RefCountPtr<const VectorBase<Scalar> >
+      x_in = inArgs.get_x(),
+      p_in = inArgs.get_p(p_idx_);
+
+    const MEB::InArgs<Scalar> nominalValues = this->getNominalValues();
+    RefCountPtr<const VectorBase<Scalar> >
+      x = ( !is_null(x_in) ? x_in : nominalValues.get_x().assert_not_null() ),
+      p = ( !is_null(p_in) ? p_in : nominalValues.get_p(p_idx_).assert_not_null() );
+
     const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
       o_space = ( obs_idx_ >= 0 ? this->get_g_space(obs_idx_) : this->get_x_space() ),
       p_space = this->get_p_space(p_idx_);
+
     const Index
       no = o_space->dim(),
       np = p_space->dim();
-    Teuchos::RefCountPtr<VectorBase<Scalar> > diff_o, diff_p;
-    if( g_inv_out || DgDx_inv_trans_out ) {
+
+    Teuchos::RefCountPtr<VectorBase<Scalar> > diff_o;
+    if( g_inv_out || DgDx_inv_trans_out  ) {
       const VectorBase<Scalar>
-        &o = ( obs_idx_ < 0 ? x : *wrapped_o );
+        &o = ( obs_idx_ < 0 ? *x : *wrapped_o );
       diff_o = createMember(o_space);
-      V_VmV( &*diff_o, o, *observationTarget_ );
+      Teuchos::RefCountPtr<const VectorBase<Scalar> >
+        observationTarget
+        = ( observationTargetAsParameter_
+          ? inArgs.get_p(inArgs.Np()-1)
+          : Teuchos::null
+          );
+      if (is_null(observationTarget) )
+        observationTarget = observationTarget_;
+      if (!is_null(observationTarget)) {
+        V_VmV( &*diff_o, o, *observationTarget );
+      }
+      else {
+        assign( &*diff_o, o );
+      }
     }
+    
+    Teuchos::RefCountPtr<VectorBase<Scalar> > diff_p;
     if( g_inv_out || DgDp_inv_trans_out ) {
       diff_p = createMember(p_space);
-      V_VmV( &*diff_p, p, *parameterBase_ );
+      if (!is_null(parameterBase_) ) {
+        V_VmV( &*diff_p, *p, *parameterBase_ );
+      }
+      else {
+        assign( &*diff_p, *p );
+      }
     }
+    
+    Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+      Q_o = this->get_observationMatchWeightingOp(),
+      Q_p = this->get_parameterRegularizationWeightingOp();
+
+#ifdef TEUCHOS_DEBUG
+    if (!is_null(Q_o)) {
+      THYRA_ASSERT_VEC_SPACES(
+        "Thyra::DefaultInverseModelEvaluator::evalModel(...)",
+        *Q_o->range(), *o_space
+        );
+      THYRA_ASSERT_VEC_SPACES(
+        "Thyra::DefaultInverseModelEvaluator::evalModel(...)",
+        *Q_o->domain(), *o_space
+        );
+    }
+    if (!is_null(Q_p)) {
+      THYRA_ASSERT_VEC_SPACES(
+        "Thyra::DefaultInverseModelEvaluator::evalModel(...)",
+        *Q_p->range(), *p_space
+        );
+      THYRA_ASSERT_VEC_SPACES(
+        "Thyra::DefaultInverseModelEvaluator::evalModel(...)",
+        *Q_p->domain(), *p_space
+        );
+    }
+    // Note, we have not proved that Q_o and Q_p are s.p.d. but at least we
+    // have established that that have the right range and domain spaces!
+#endif
+
+    Teuchos::RefCountPtr<VectorBase<Scalar> > Q_o_diff_o;
+    if ( !is_null(Q_o) && !is_null(diff_o) ) {
+      Q_o_diff_o = createMember(Q_o->range()); // Should be same as domain!
+      apply( *Q_o, NOTRANS, *diff_o, &*Q_o_diff_o );
+    }
+
+    Teuchos::RefCountPtr<VectorBase<Scalar> > Q_p_diff_p;
+    if ( !is_null(Q_p)  && !is_null(diff_p)  ) {
+      Q_p_diff_p = createMember(Q_p->range()); // Should be same as domain!
+      apply( *Q_p, NOTRANS, *diff_p, &*Q_p_diff_p );
+    }
+
     if(g_inv_out) {
       if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
         *out << "\nComputing inverse response function g(Np-1) ...\n";
-      const Scalar
-        observationTerm
+      const Scalar observationTerm
         = ( observationMultiplier_ != ST::zero()
-            ? observationMultiplier_*(0.5/no)*dot(*diff_o,*diff_o)
-            : ST::zero()
-          ),
-        parameterTerm
+          ? ( !is_null(Q_o)
+            ?  observationMultiplier_*0.5*dot(*diff_o,*Q_o_diff_o)
+            : observationMultiplier_*(0.5/no)*dot(*diff_o,*diff_o)
+            )
+          : ST::zero()
+          );
+      const Scalar parameterTerm
         = ( parameterMultiplier_ != ST::zero()
-            ? parameterMultiplier_*(0.5/np)*dot(*diff_p,*diff_p)
-            : ST::zero()
+          ? ( !is_null(Q_p)
+            ?  parameterMultiplier_*0.5*dot(*diff_p,*Q_p_diff_p)
+            : parameterMultiplier_*(0.5/np)*dot(*diff_p,*diff_p)
+            )
+          : ST::zero()
           );
       if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
         *out
           << "\nObservation matching term of g(Np-1):"
-          << "\n  observationMultiplier*(0.5/no)*dot(diff_o,diff_o) = "
+          << "\n  observationMultiplier*observationMatch(x,p) = "
           << observationTerm
           << "\nParameter regularization term of g(Np-1):"
-          << "\n  parameterMultiplier*(0.5/np)*dot(diff_p,diff_p) = "
+          << "\n  parameterMultiplier*parameterRegularization(p) = "
           << parameterTerm
           << "\n";
       set_ele(0,observationTerm+parameterTerm,g_inv_out);
     }
+
     if(DgDx_inv_trans_out) {
       if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
         *out << "\nComputing inverse response function derivative DgDx_trans ...\n";
       if( obs_idx_ < 0 ) {
-        // DgDx^T = observationMultiplier*(1/no)*diff_x
-        V_StV( &*DgDx_inv_trans_out->col(0), Scalar(observationMultiplier_*(1.0/no)), *diff_o );
+        if (!is_null(Q_o)) {
+          // DgDx^T = observationMultiplier * Q_o * diff_x
+          V_StV(
+            &*DgDx_inv_trans_out->col(0),
+            observationMultiplier_,
+            *Q_o_diff_o
+            );
+        }
+        else {
+          // DgDx^T = observationMultiplier * (1/no) * diff_x
+          V_StV(
+            &*DgDx_inv_trans_out->col(0),
+            Scalar(observationMultiplier_*(1.0/no)),
+            *diff_o
+            );
+        }
       }
       else {
-        // DgDx^T = (observationMultiplier*(1/no)) * (DoDx^T) * diff_o
-        apply(
-          *wrapped_DoDx_trans.getMultiVector(), NOTRANS
-          ,*diff_o
-          ,&*DgDx_inv_trans_out->col(0)
-          ,Scalar(observationMultiplier_*(1.0/no))
-          );
+        if (!is_null(Q_o)) {
+          // DgDx^T = observationMultiplier * (DoDx^T) * Q_o * diff_o
+          apply(
+            *wrapped_DoDx_trans.getMultiVector(), NOTRANS,
+            *Q_o_diff_o,
+            &*DgDx_inv_trans_out->col(0),
+            observationMultiplier_
+            );
+        }
+        else {
+          // DgDx^T = (observationMultiplier*(1/no)) * (DoDx^T) * diff_o
+          apply(
+            *wrapped_DoDx_trans.getMultiVector(), NOTRANS,
+            *diff_o,
+            &*DgDx_inv_trans_out->col(0),
+            Scalar(observationMultiplier_*(1.0/no))
+            );
+        }
       }
       if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
         *out << "\n||DgDx_trans||inf = " << norm_inf(*DgDx_inv_trans_out->col(0)) << "\n";
     }
+
     if(DgDp_inv_trans_out) {
       if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
         *out << "\nComputing inverse response function derivative DgDp_trans ...\n";
-      if( parameterMultiplier_ != ST::zero() ) {
-        if( obs_idx_ < 0 ) {
-          // DgDp^T = parameterMultiplier*(1/np)*diff_p
-          V_StV(
-            &*DgDp_inv_trans_out->col(0)
-            ,Scalar(parameterMultiplier_*(1.0/np))
-            ,*diff_p
+      // DgDp^T = 0
+      assign( &*DgDp_inv_trans_out->col(0), ST::zero() );
+      // DgDp^T += observationMultiplier * d(observationMatch)/d(p)^T
+      if ( obs_idx_ >= 0 ) {
+        if ( !is_null(Q_o) ) {
+          // DgDp^T += observationMultiplier* * (DoDp^T) * Q_o * diff_o
+          apply(
+            *wrapped_DoDp_trans.getMultiVector(), NOTRANS,
+            *Q_o_diff_o,
+            &*DgDp_inv_trans_out->col(0),
+            Scalar(observationMultiplier_*(1.0/no)),
+            ST::one()
             );
         }
         else {
-          // DgDp^T = (observationMultiplier*(1/no)) * (DoDp^T) * diff_o
-          //          + (parameterMultiplier*(1.0/np)) * diff_p
+          // DgDp^T += (observationMultiplier*(1/no)) * (DoDp^T) * diff_o
           apply(
-            *wrapped_DoDp_trans.getMultiVector(), NOTRANS
-            ,*diff_o
-            ,&*DgDp_inv_trans_out->col(0)
-            ,Scalar(observationMultiplier_*(1.0/no))
+            *wrapped_DoDp_trans.getMultiVector(), NOTRANS,
+            *diff_o,
+            &*DgDp_inv_trans_out->col(0),
+            Scalar(observationMultiplier_*(1.0/no)),
+            ST::one()
             );
-          if( parameterMultiplier_ != ST::one() ) {
-            Vp_StV(
-              &*DgDp_inv_trans_out->col(0)
-              ,Scalar(parameterMultiplier_*(1.0/np))
-              ,*diff_p
-              );
-          }
         }
       }
       else {
-        assign(&*DgDp_inv_trans_out,ST::zero());
+        // d(observationMatch)/d(p)^T = 0, nothing to do!
+      }
+      // DgDp^T += parameterMultiplier * d(parameterRegularization)/d(p)^T
+      if( parameterMultiplier_ != ST::zero() ) {
+        if ( !is_null(Q_p) ) {
+          // DgDp^T += parameterMultiplier * Q_p * diff_p
+          Vp_StV(
+            &*DgDp_inv_trans_out->col(0),
+            parameterMultiplier_,
+            *Q_p_diff_p
+            );
+        }
+        else {
+          // DgDp^T += (parameterMultiplier*(1.0/np)) * diff_p
+          Vp_StV(
+            &*DgDp_inv_trans_out->col(0),
+            Scalar(parameterMultiplier_*(1.0/np)),
+            *diff_p
+            );
+        }
+      }
+      else {
+        // This term is zero so there is nothing to do!
       }
       if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
         *out << "\n||DgDp_trans||inf = " << norm_inf(*DgDp_inv_trans_out->col(0)) << "\n";
     }
+
   }
   
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();

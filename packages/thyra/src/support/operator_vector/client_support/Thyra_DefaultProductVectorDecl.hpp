@@ -33,10 +33,13 @@
 #include "Thyra_VectorDefaultBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief . */
 template <class Scalar> class DefaultProductVectorSpace;
+
 
 /** \brief Concrete implementation of a product vector.
  *
@@ -53,8 +56,8 @@ template <class Scalar> class DefaultProductVectorSpace;
  */
 template<class Scalar>
 class DefaultProductVector
-  : virtual public ProductVectorBase<Scalar>
-  , virtual protected VectorDefaultBase<Scalar>
+  : virtual public ProductVectorBase<Scalar>,
+    virtual protected VectorDefaultBase<Scalar>
 {
 public:
 
@@ -196,7 +199,7 @@ private:
   // Private data members
 
   Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  productSpace_;
-  Teuchos::Array<CNVC>                                            vecs_;
+  Teuchos::Array<CNVC> vecs_;
   // cache
   int numBlocks_;
 
@@ -210,6 +213,59 @@ protected:
 
 };
 
+
+/** \brief Nonmember constructor.
+ *
+ * \relates DefaultProductVector
+ */
+template<class Scalar>
+inline
+Teuchos::RefCountPtr<DefaultProductVector<Scalar> >
+defaultProductVector(
+  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> > &productSpace
+  )
+{
+  return Teuchos::rcp(
+    new DefaultProductVector<Scalar>(productSpace)
+    );
+}
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates DefaultProductVector
+ */
+template<class Scalar>
+Teuchos::RefCountPtr<DefaultProductVector<Scalar> >
+defaultProductVector(
+  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const Teuchos::RefCountPtr<VectorBase<Scalar> > vecs[]
+  )
+{
+  return Teuchos::rcp(
+    new DefaultProductVector<Scalar>(productSpace,vecs)
+    );
+}
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates DefaultProductVector
+ */
+template<class Scalar>
+Teuchos::RefCountPtr<DefaultProductVector<Scalar> >
+defaultProductVector(
+  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const Teuchos::RefCountPtr<const VectorBase<Scalar> > vecs[]
+  )
+{
+  return Teuchos::rcp(
+    new DefaultProductVector<Scalar>(productSpace,vecs)
+    );
+}
+
+
 } // namespace Thyra
+
 
 #endif // THYRA_PRODUCT_VECTOR_DECL_HPP

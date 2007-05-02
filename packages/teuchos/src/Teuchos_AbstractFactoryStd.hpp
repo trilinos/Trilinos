@@ -130,13 +130,6 @@ class AbstractFactoryStd : public AbstractFactory<T_itfc> {
 public:
 
 	typedef typename Teuchos::AbstractFactory<T_itfc>::obj_ptr_t   obj_ptr_t;  // RAB: 20030916: G++ 3.2 complains without this
-/*
-#ifdef _MIPS_CXX
-	typedef typename MemMngPack::AbstractFactory<T_itfc>::obj_ptr_t   obj_ptr_t;
-    typedef T_PostMod                                                 post_mod_t;
-    typedef T_Allocator                                               allocator_t;
-#endif
-*/
 
   /** \brief . */
   AbstractFactoryStd( const T_PostMod& post_mod = T_PostMod(), const T_Allocator& alloc = T_Allocator() );
@@ -151,20 +144,38 @@ private:
   T_PostMod    post_mod_;
   T_Allocator  alloc_;
 
-}; // end class AbstractFactorStd
+};
 
-/** \brief . */
-template<class T_itfc, class T_impl, class T_Allocator >
-const Teuchos::RefCountPtr<const AbstractFactory<T_itfc> >
-abstract_factory_std_alloc(
-	const T_Allocator&  alloc = T_Allocator()
-	)
+
+/** \brief Nonmember constructor for an standar abstract factory object.
+ *
+ * \relates AbstractFactoryStd
+ */
+template<class T_itfc, class T_impl>
+RefCountPtr<const AbstractFactory<T_itfc> >
+abstractFactoryStd()
+{
+	return rcp(
+		new AbstractFactoryStd<T_itfc,T_impl,PostModNothing<T_impl>,AllocatorNew<T_impl> >()
+		);
+}
+
+
+/** \brief Nonmember constructor for an standar abstract factory object.
+ *
+ * \relates AbstractFactoryStd
+ */
+template<class T_itfc, class T_impl, class T_Allocator>
+RefCountPtr<const AbstractFactory<T_itfc> >
+abstractFactoryStd( const T_Allocator& alloc = T_Allocator() )
 {
 	return rcp(
 		new AbstractFactoryStd<T_itfc,T_impl,PostModNothing<T_impl>,T_Allocator>(
-			PostModNothing<T_impl>(), alloc )
+      PostModNothing<T_impl>(), alloc
+      )
 		);
 }
+
 
 // ///////////////////////////////////////////////////////
 // Template member definitions

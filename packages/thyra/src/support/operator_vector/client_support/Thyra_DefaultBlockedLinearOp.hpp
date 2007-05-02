@@ -270,7 +270,6 @@ DefaultBlockedLinearOp<Scalar>::clone() const
 template<class Scalar>
 std::string DefaultBlockedLinearOp<Scalar>::description() const
 {
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
   assertBlockFillIsActive(false);
   std::ostringstream oss;
   oss
@@ -396,18 +395,18 @@ void DefaultBlockedLinearOp<Scalar>::apply(
     MultiVectorPtr Y_i = Y.getNonconstMultiVectorBlock(i);
     for( int j = 0; j < opNumColBlocks; ++j ) {
       ConstLinearOpPtr
-	Op_i_j = ( !struct_transp ? getBlock(i,j) : getBlock(j,i) );
+        Op_i_j = ( !struct_transp ? getBlock(i,j) : getBlock(j,i) );
       ConstMultiVectorPtr
-	X_j    = X.getMultiVectorBlock(j);
+        X_j    = X.getMultiVectorBlock(j);
       if(j==0) {
         if(Op_i_j.get())
-	  Thyra::apply(*Op_i_j,M_trans,*X_j,&*Y_i,alpha,beta);
+          Thyra::apply(*Op_i_j,M_trans,*X_j,&*Y_i,alpha,beta);
         else
-	  scale(beta,&*Y_i);
+          scale(beta,&*Y_i);
       }
       else {
         if(Op_i_j.get())
-	  Thyra::apply(*Op_i_j,M_trans,*X_j,&*Y_i,alpha,ST::one());
+          Thyra::apply(*Op_i_j,M_trans,*X_j,&*Y_i,alpha,ST::one());
       }
     }
   }

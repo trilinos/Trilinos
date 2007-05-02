@@ -161,11 +161,11 @@ create_Vector(
  * @param  epetra_mv  [in] Smart pointer to the <tt>Epetra_MultiVector</tt> object to wrap.
  * @param  range      [in] The vector space that is compatible with <tt>epetra_mv->Map()</tt>.
  * @param  domain     [in] The vector space that is compatible with <tt>epetra_mv.NumVectors</tt>.
+ *                    If <tt>domain.get()==NULL</tt>, then a space will be created internally.
  *
  * <b>Precondiitions:</b><ul>
  * <li><tt>epetra_mv.get()!=NULL</tt>
  * <li><tt>range.get()!=NULL</tt>
- * <li><tt>domain.get()!=NULL</tt>
  * </ul>
  *
  * \return The returned <tt>RefCountPtr</tt> object contains a copy of the
@@ -182,7 +182,7 @@ Teuchos::RefCountPtr<SpmdMultiVectorBase<double> >
 create_MultiVector(
   const Teuchos::RefCountPtr<Epetra_MultiVector>                           &epetra_mv
   ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >          &range
-  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain
+  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain = Teuchos::null
   );
 
 /** \brief Create an <tt>const</tt> <tt>SpmdMultiVectorBase</tt> wrapper object
@@ -191,11 +191,11 @@ create_MultiVector(
  * @param  epetra_mv  [in] Smart pointer to the <tt>Epetra_MultiVector</tt> object to wrap.
  * @param  range      [in] The vector space that is compatible with <tt>epetra_mv->Map()</tt>.
  * @param  domain     [in] The vector space that is compatible with <tt>epetra_mv.NumVectors</tt>.
+ *                    If <tt>domain.get()==NULL</tt>, then a space will be created internally.
  *
  * <b>Preconditions:</b><ul>
  * <li><tt>epetra_mv.get()!=NULL</tt>
  * <li><tt>range.get()!=NULL</tt>
- * <li><tt>domain.get()!=NULL</tt>
  * </ul>
  *
  * \return The returned <tt>RefCountPtr</tt> object contains a copy of the
@@ -209,7 +209,7 @@ Teuchos::RefCountPtr<const SpmdMultiVectorBase<double> >
 create_MultiVector(
   const Teuchos::RefCountPtr<const Epetra_MultiVector>                     &epetra_mv
   ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >          &range
-  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain
+  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain = Teuchos::null
   );
 
 /** \brief Get a non-<tt>const</tt> <tt>Epetra_Vector</tt> view from a

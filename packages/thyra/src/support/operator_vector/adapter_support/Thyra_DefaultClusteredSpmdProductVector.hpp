@@ -37,6 +37,7 @@
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_arrayArg.hpp"
+#include "Teuchos_implicit_cast.hpp"
 
 namespace Thyra {
 
@@ -95,7 +96,8 @@ template <class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >
 DefaultClusteredSpmdProductVector<Scalar>::getNonconstVectorBlock(const int k)
 {
-  TEST_FOR_EXCEPT( ! ( 0 <= k && k < vecs_.size() ) );
+  using Teuchos::implicit_cast;
+  TEST_FOR_EXCEPT( ! ( 0 <= k && k < implicit_cast<int>(vecs_.size()) ) );
   return vecs_[k];
 }
 
@@ -103,7 +105,8 @@ template <class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
 DefaultClusteredSpmdProductVector<Scalar>::getVectorBlock(const int k) const
 {
-  TEST_FOR_EXCEPT( ! ( 0 <= k && k < vecs_.size() ) );
+  using Teuchos::implicit_cast;
+  TEST_FOR_EXCEPT( ! ( 0 <= k && k < implicit_cast<int>(vecs_.size()) ) );
   return vecs_[k];
 }
 
@@ -119,7 +122,8 @@ DefaultClusteredSpmdProductVector<Scalar>::productSpace() const
 template <class Scalar>
 bool DefaultClusteredSpmdProductVector<Scalar>::blockIsConst(const int k) const
 {
-  TEST_FOR_EXCEPT( ! ( 0 <= k && k < vecs_.size() ) );
+  using Teuchos::implicit_cast;
+  TEST_FOR_EXCEPT( ! ( 0 <= k && k < implicit_cast<int>(vecs_.size()) ) );
   return false;
 }
 

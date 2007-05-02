@@ -31,6 +31,7 @@
 
 #include "Thyra_DefaultProductVectorSpaceDecl.hpp"
 #include "Thyra_DefaultProductVector.hpp"
+#include "Thyra_DefaultProductMultiVector.hpp"
 #include "Thyra_ProductMultiVectorBase.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
@@ -281,10 +282,13 @@ template<class Scalar>
 Teuchos::RefCountPtr< MultiVectorBase<Scalar> >
 DefaultProductVectorSpace<Scalar>::createMembers(int numMembers) const
 {
+  return defaultProductMultiVector<Scalar>(Teuchos::rcp(this,false),numMembers);
+/*
   if(numMembers==1)
     return createMember();
   return VectorSpaceDefaultBase<Scalar>::createMembers(numMembers);
   // ToDo: Specialize to return DefaultProductMultiVector when needed!
+  */
 }
 
 template<class Scalar>
@@ -304,6 +308,64 @@ DefaultProductVectorSpace<Scalar>::clone() const
   return pvs;
 }
 
+
+// Overridden from Teuchos::Describable
+
+                                                
+template<class Scalar>
+std::string DefaultProductVectorSpace<Scalar>::description() const
+{
+  assertInitialized();
+  std::ostringstream oss;
+  oss
+    << Teuchos::Describable::description() << "{"
+    << "dim="<<dim_
+    << ",numBlocks="<<numBlocks_
+    << "}";
+  return oss.str();
+}
+
+
+template<class Scalar>
+void DefaultProductVectorSpace<Scalar>::describe(
+  Teuchos::FancyOStream                &out_arg
+  ,const Teuchos::EVerbosityLevel      verbLevel
+  ) const
+{
+  typedef Teuchos::ScalarTraits<Scalar>  ST;
+  using Teuchos::RefCountPtr;
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
+  assertInitialized();
+  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  OSTab tab(out);
+  switch(verbLevel) {
+    case Teuchos::VERB_DEFAULT:
+    case Teuchos::VERB_LOW:
+      *out << this->description() << std::endl;
+      break;
+    case Teuchos::VERB_MEDIUM:
+    case Teuchos::VERB_HIGH:
+    case Teuchos::VERB_EXTREME:
+    {
+      *out
+        << this->description() << std::endl;
+      OSTab tab(out);
+      *out
+        <<  "Constituent vector spaces V[0],V[1],,,V[numBlocks-1]:\n";
+      tab.incrTab();
+      for( int k = 0; k < numBlocks_; ++k ) {
+        *out << "V["<<k<<"] = " << Teuchos::describe(*(*vecSpaces_)[k],verbLevel);
+      }
+      break;
+    }
+    default:
+      TEST_FOR_EXCEPT(true); // Should never get here!
+  }
+}
+
+
 } // namespace Thyra
+
 
 #endif // THYRA_PRODUCT_VECTOR_SPACE_STD_HPP

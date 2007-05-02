@@ -204,6 +204,18 @@ void AdvDiffReactOptModel::set_q( Teuchos::RefCountPtr<const Epetra_Vector> cons
 #endif
 }
 
+Teuchos::RefCountPtr<GLpApp::GLpYUEpetraDataPool>
+AdvDiffReactOptModel::getDataPool()
+{
+  return dat_;
+}
+
+Teuchos::RefCountPtr<const Epetra_MultiVector>
+AdvDiffReactOptModel::get_B_bar() const
+{
+  return B_bar_;
+}
+
 // Overridden from EpetraExt::ModelEvaluator
 
 Teuchos::RefCountPtr<const Epetra_Map>

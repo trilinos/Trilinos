@@ -514,21 +514,10 @@ public:
 
 };
 
-/** \defgroup Thyra_LinearOpWithSolveBase_helper_grp Non-member LinearOpWithSolveBase helper functions.
- *
- * These functions allow for simpler calling sequences for solving linear
- * systems given a <tt>LinearOpWithSolveBase</tt> object.  In fact, these
- * functions help to document the various use cases associated with a
- * <tt>LinearOpWithSolveBase</tt> object.
- *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
- */
-//@{
-
 /** \brief Determine if a <tt>LinearOpWithSolveBase<Scalar></tt> object
  * supports a particular type of solve or not..
  *
- * \ingroup Thyra_LinearOpWithSolveBase_helper_grp
+ * \relates_LinearOpWithSolveBase
  */
 template<class Scalar>
 bool solveSupports(
@@ -546,6 +535,30 @@ bool solveSupports(
     );
 }
 
+/** \brief Determine if a <tt>LinearOpWithSolveBase<Scalar></tt> object
+ * supports a particular type of solve measure or not.
+ *
+ * \relates_LinearOpWithSolveBase
+ */
+template<class Scalar>
+bool solveSupportsSolveMeasureType(
+  const LinearOpWithSolveBase<Scalar> &A,
+  const ETransp A_trans,
+  const SolveMeasureType &solveMeasureType
+  )
+{
+  if( real_trans(A_trans) == NOTRANS ) {
+    return A.solveSupportsSolveMeasureType(
+      A_trans == NOTRANS ? NONCONJ_ELE : CONJ_ELE,
+      solveMeasureType
+      );
+  }
+  return A.solveTransposeSupportsSolveMeasureType(
+    A_trans == TRANS ? NONCONJ_ELE : CONJ_ELE,
+      solveMeasureType
+    );
+}
+
 /** \brief Solve a set of forward linear systems with a single set of
  * tolerances and a single scalar type.
  *
@@ -556,7 +569,7 @@ bool solveSupports(
  *
  * See the implementation of this function for details.
  *
- * \ingroup Thyra_LinearOpWithSolveBase_helper_grp
+ * \relates_LinearOpWithSolveBase
  */
 template<class Scalar>
 SolveStatus<Scalar>
@@ -597,7 +610,7 @@ solve(
  *
  * See the implementation of this function for details.
  *
- * \ingroup Thyra_LinearOpWithSolveBase_helper_grp
+ * \relates_LinearOpWithSolveBase
  */
 template<class RangeScalar, class DomainScalar>
 SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
@@ -649,7 +662,7 @@ solve(
  *
  * See the implementation of this function for details.
  *
- * \ingroup Thyra_LinearOpWithSolveBase_helper_grp
+ * \relates_LinearOpWithSolveBase
  */
 template <class RangeScalar, class DomainScalar>
 SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
@@ -701,7 +714,7 @@ solveTranspose(
  *
  * See the implementation of this function for details.
  *
- * \ingroup Thyra_LinearOpWithSolveBase_helper_grp
+ * \relates_LinearOpWithSolveBase
  */
 template<class RangeScalar, class DomainScalar>
 void solve(
@@ -760,7 +773,7 @@ void solve(
  *
  * See the implementation of this function for details.
  *
- * \ingroup Thyra_LinearOpWithSolveBase_helper_grp
+ * \relates_LinearOpWithSolveBase
  */
 template <class RangeScalar, class DomainScalar>
 void solveTranspose(

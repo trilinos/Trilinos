@@ -32,61 +32,37 @@
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"
 
+
 namespace Thyra {
 
-/** \brief Base interface for <tt>LinearOpWithSolveBase</tt> objects that can
- * be accessed in blocks.
+
+/** \brief Base interface for linear operators with a solve that can be
+ * accessed as sub-blocks.
  *
  * ToDo: Finish Documentation.
  *
- * \ingroup Thyra_Op_Solve_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
 template<class RangeScalar, class DomainScalar=RangeScalar>
 class BlockedLinearOpWithSolveBase
-  : virtual public LinearOpWithSolveBase<RangeScalar,DomainScalar>
-  , virtual public BlockedLinearOpBase<RangeScalar,DomainScalar>
+  : virtual public LinearOpWithSolveBase<RangeScalar,DomainScalar>,
+    virtual public BlockedLinearOpBase<RangeScalar,DomainScalar>
+  
 {
 public:
 
-  /** \brief Return a non-const view of the block <tt>(i,j)</tt> if it exists.
-   *
-   * \param  i  [in] Zero-based index for the block row.
-   * \param  j  [in] Zero-based index for the block column.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>this->blockIsConst(i,j)==false</tt>
-   * <li><tt>0 <= i && i < this->productRange()->numBlocks()</tt>
-   * <li><tt>0 <= j && j < this->productDomain()->numBlocks()</tt>
-   * </ul>
-   *
-   * <b>Postconditions:</b><ul>
-   * <li>[<tt>this->blockExists(i,j)==true</tt>] <tt>return.get()!=NULL</tt>
-   * <li>[<tt>this->blockExists(i,j)==false</tt>] <tt>return.get()==NULL</tt>
-   * </ul>
-   */
+  /** \brief . */
   virtual Teuchos::RefCountPtr<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
-  getNonconstBlockLOWS(const int i, const int j) = 0; 
+  getNonconstLOWSBlock(const int i, const int j) = 0; 
 
-  /** \brief Return a const view of the block <tt>(i,j)</tt> if it exists.
-   *
-   * \param  i  [in] Zero-based index for the block row.
-   * \param  j  [in] Zero-based index for the block column.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>0 <= i && i < this->productRange()->numBlocks()</tt>
-   * <li><tt>0 <= j && j < this->productDomain()->numBlocks()</tt>
-   * </ul>
-   *
-   * <b>Postconditions:</b><ul>
-   * <li>[<tt>this->blockExists(i,j)==true</tt>] <tt>return.get()!=NULL</tt>
-   * <li>[<tt>this->blockExists(i,j)==false</tt>] <tt>return.get()==NULL</tt>
-   * </ul>
-   */
+  /** \brief . */
   virtual Teuchos::RefCountPtr<const LinearOpWithSolveBase<RangeScalar,DomainScalar> >
-  getBlockLOWS(const int i, const int j) const = 0; 
+  getLOWSBlock(const int i, const int j) const = 0; 
 
 };
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_BLOCKED_LINEAR_OP_WITH_SOLVE_BASE_HPP

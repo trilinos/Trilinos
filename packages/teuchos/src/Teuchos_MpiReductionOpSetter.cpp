@@ -51,10 +51,20 @@ void Teuchos_MPI_reduction_op(
 
 void Teuchos_MPI_Op_free( MPI_Op *op )
 {
-  if(Teuchos::GlobalMPISession::mpiIsInitialized())
-    MPI_Op_free(op);
-  else
-    *op = MPI_OP_NULL;
+  //if(Teuchos::GlobalMPISession::mpiIsInitialized())
+  //  MPI_Op_free(op);
+  //else
+  //  *op = MPI_OP_NULL;
+  //
+  // RAB: I have commented this out because this is getting called after
+  // MPI_Finalize() is called when the Teuchos::GlobalMPISession class is not
+  // being used..  On some systems, like MPICH, this was not problem.
+  // However, there are some systems that complain when you do this.
+  // Therefore, since I don't really know how to fix this problem, I am just
+  // going to punt and just not delete this MPI_Op object.  I suspect that
+  // many people do not clean up their MPI objects correctly so I would guess
+  // that almost every MPI implementation allows you to not free objects and
+  // end just fine.
 }
 
 } // extern "C"

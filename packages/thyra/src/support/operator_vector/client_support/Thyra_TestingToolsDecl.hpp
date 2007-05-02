@@ -47,7 +47,7 @@ Here is some assorted C++ code to aid in testing and debugging
  * \ingroup Thyra_Op_Vec_test_tools_code_grp
  */
 inline
-const char* passfail(bool pass) { return pass ? "passed" : "failed"; }
+const std::string passfail(bool pass) { return ( pass ? "passed" : "failed" ); }
 
 /** \brief Return relative error of two scalars.
  *
@@ -58,6 +58,16 @@ const char* passfail(bool pass) { return pass ? "passed" : "failed"; }
 template <class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 relErr( const Scalar &s1, const Scalar &s2 );
+
+/** \brief Return relative error of two vectors.
+ *
+ * ToDo: Finish documentation!
+ *
+ * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ */
+template <class Scalar>
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+relErr( const VectorBase<Scalar> &v1, const VectorBase<Scalar> &v2 );
 
 /** \brief Compute, check and optionally print the relative error in two scalars.
  *

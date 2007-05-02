@@ -33,6 +33,7 @@
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_LinearOpBase.hpp"
+#include "Thyra_AssertOp.hpp"
 
 // Utilities
 
@@ -54,6 +55,7 @@ public:
     }
 };
 
+
 template <class Scalar>
 class relErrSmallNumber<true,Scalar> {
 public:
@@ -63,21 +65,50 @@ public:
     }
 };
 
-//
 
 template <class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 Thyra::relErr( const Scalar &s1, const Scalar &s2 )
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   return
-    Teuchos::ScalarTraits<Scalar>::magnitude( s1 - s2 )
+    ST::magnitude( s1 - s2 )
     / (
-      Teuchos::ScalarTraits<Scalar>::magnitude(
-        relErrSmallNumber<Teuchos::ScalarTraits<Scalar>::hasMachineParameters,Scalar>::smallNumber()
+      ST::magnitude(
+        relErrSmallNumber<ST::hasMachineParameters,Scalar>::smallNumber()
         )
-      + std::max( Teuchos::ScalarTraits<Scalar>::magnitude(s1), Teuchos::ScalarTraits<Scalar>::magnitude(s1) )
+      + std::max( ST::magnitude(s1), ST::magnitude(s1) )
       );
 }
+
+
+template <class Scalar>
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+Thyra::relErr( const VectorBase<Scalar> &v1, const VectorBase<Scalar> &v2 )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+#ifdef TEUCHOS_DEBUG
+  THYRA_ASSERT_VEC_SPACES( "relErr(v1,v2)", *v1.space(), *v2.space() );
+#endif
+  Teuchos::RefCountPtr<VectorBase<Scalar> >
+    diff = createMember(v1.space());
+  V_VmV( &*diff, v1, v2 );
+  const ScalarMag
+    nrm_v1 = norm(v1),
+    nrm_v2 = norm(v2),
+    nrm_diff = norm(*diff);
+  return
+    ( nrm_diff
+      / (
+        ST::magnitude(
+          relErrSmallNumber<ST::hasMachineParameters,Scalar>::smallNumber()
+          )
+        + std::max( nrm_v1, nrm_v2 )
+        )
+      );
+}
+
 
 template<class Scalar>
 bool Thyra::testRelErr(

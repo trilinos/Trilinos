@@ -32,25 +32,26 @@
 #include "Thyra_BlockedLinearOpWithSolveBase.hpp"
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
 
+
 namespace Thyra {
 
-/** \brief Base interface for filling an implicit
- * <tt>LinearOpWithSolveBase</tt> object as a set of
- * <tt>LinearOpWithSolveBase<tt> and <tt>>LinearOpBase</tt> blocks.
+
+/** \brief Base interface for linear operators with a solve that are composed
+ * out of individual LOB and LOWSB objects..
  *
- * ToDo: Finish documentation.
+ * ToDo: Finish Documentation.
  *
- * \ingroup Thyra_Op_Solve_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
 template<class RangeScalar, class DomainScalar=RangeScalar>
 class PhysicallyBlockedLinearOpWithSolveBase
-  : virtual public BlockedLinearOpWithSolveBase<RangeScalar,DomainScalar>
-  , virtual public PhysicallyBlockedLinearOpBase<RangeScalar,DomainScalar>
+  : virtual public BlockedLinearOpWithSolveBase<RangeScalar,DomainScalar>,
+    virtual public PhysicallyBlockedLinearOpBase<RangeScalar,DomainScalar>
 {
 public:
 
-  /** \brief Determines if the block <tt>(i,j)</tt> can be filled with a
-   * <tt>LinearOpWithSolveBase</tt> object or not.
+  /** \brief Determines if the block <tt>(i,j)</tt> can be filled with a LOWDB
+   * object or not.
    *
    * \param  i  [in] Zero-based index for the block row.
    * \param  j  [in] Zero-based index for the block column.
@@ -64,42 +65,24 @@ public:
    *       <tt>j < this->productDomain()->numBlocks()</tt>
    * </ul>
    */
-  virtual bool acceptsBlockLOWSB(const int i, const int j) const = 0;
-  
-  /** \brief Set a non-const block <tt>LinearOpWithSolveBase</tt> object.
-   *
-   * \param  i  [in] Zero-based index for the block row.
-   * \param  j  [in] Zero-based index for the block column.
-   * \param  block
-   *            [in] The block operator being set.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>this->acceptsBlockLOWS(i,j)==true</tt>
-   * </ul>
-   */
-  virtual void setNonconstBlockLOWS(
-    const int i, const int j
-    ,const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &block
+  virtual bool acceptsLOWSBlock(const int i, const int j) const = 0;
+
+  /** \brief . */
+  virtual void setNonconstLOWSBlock(
+    const int i, const int j,
+    const Teuchos::RefCountPtr<LinearOpWithSolveBase<RangeScalar,DomainScalar> > &block
     ) = 0;
   
-  /** \brief Set a const block <tt>LinearOpWithSolveBase</tt> object.
-   *
-   * \param  i  [in] Zero-based index for the block row.
-   * \param  j  [in] Zero-based index for the block column.
-   * \param  block
-   *            [in] The block operator being set.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>this->acceptsBlockLOWS(i,j)==true</tt>
-   * </ul>
-   */
-  virtual void setBlockLOWS(
-    const int i, const int j
-    ,const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &block
+  /** \brief . */
+  virtual void setLOWSBlock(
+    const int i, const int j,
+    const Teuchos::RefCountPtr<const LinearOpWithSolveBase<RangeScalar,DomainScalar> > &block
     ) = 0;
 
 };
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_PHYSICALLY_BLOCKED_LINEAR_OP_WITH_SOLVE_BASE_HPP

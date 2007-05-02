@@ -286,7 +286,8 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::evalModel(
     );
 
   // First set the inArgs to what was overridden
-  MEB::InArgs<Scalar> wrappedInArgs = *nominalValues_;
+  MEB::InArgs<Scalar>
+    wrappedInArgs = ( !is_null(nominalValues_) ? *nominalValues_ : this->createInArgs() );
 
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME))
     *out

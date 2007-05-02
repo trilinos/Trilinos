@@ -222,9 +222,8 @@ int main(int argc, char* argv[])
       "implicit linear operators.  The idea is to use the linear operator\n"
       "for first-order Lagrange finite elements as the preconditioner for the\n"
       "operator using second-order Lagrange finite elements.  The details of the\n"
-      "PDE being represented, the mesh being, or the boundary conditions are not\n"
-      "beyond the scope of this example as any such problem can be used with this\n"
-      "example.\n"
+      "PDE being represented, the mesh being used, or the boundary conditions are\n"
+      "beyond the scope of this example.\n"
       "\n"
       "The matrices used in this example are:\n"
       "\n"
@@ -249,12 +248,12 @@ int main(int argc, char* argv[])
       "\n"
       "We use Stratimikos to specify the linear solvers and/or algebraic\n"
       "preconditioners and we use the Thyra implicit operators to build the\n"
-      "implicit linear operators associated with the precondtioner.\n"
+      "implicitly multiplied linear operators associated with the preconditioner.\n"
       "\n"
-      "Warning!  This physics-based preconditioner is currently singular and can not\n"
+      "Warning!  This physics-based preconditioner is singular and can not\n"
       "be used to solve the linear system given a random right-hand side.  However,\n"
-      "singular or not, this example shows how one can use Thyra/Straitmikos to quickly\n"
-      "implement these types of preconditioners.\n"
+      "singular or not, this example shows how one can use Thyra/Stratimikos to quickly\n"
+      "try out these types of preconditioning ideas (even if they do not work).\n"
       );
 
     // Note: Use --help on the command line to see the above documentation

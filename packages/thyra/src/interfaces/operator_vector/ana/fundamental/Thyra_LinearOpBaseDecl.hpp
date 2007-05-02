@@ -221,7 +221,8 @@ public:
    * object embedded in <tt>return</tt> must be valid past the lifetime of
    * <tt>*this</tt> linear operator object.
    */
-  virtual Teuchos::RefCountPtr< const VectorSpaceBase<RangeScalar> > range() const = 0;
+  virtual Teuchos::RefCountPtr< const VectorSpaceBase<RangeScalar> >
+  range() const = 0;
 
   /** \brief Return a smart pointer for the domain space for <tt>this</tt> operator.
    *
@@ -239,7 +240,8 @@ public:
    * object embedded in <tt>return</tt> must be valid past the lifetime of
    * <tt>*this</tt> linear operator object.
    */
-  virtual Teuchos::RefCountPtr< const VectorSpaceBase<DomainScalar> > domain() const = 0;
+  virtual Teuchos::RefCountPtr< const VectorSpaceBase<DomainScalar> >
+  domain() const = 0;
 
   /** \brief Apply the forward non-conjugate or conjugate linear operator to a
    * multi-vector : <tt>Y = alpha*M*X + beta*Y</tt>.
@@ -277,11 +279,11 @@ public:
    * </ul>
    */
   virtual void apply(
-    const EConj                             conj
-    ,const MultiVectorBase<DomainScalar>    &X
-    ,MultiVectorBase<RangeScalar>           *Y
-    ,const RangeScalar                      alpha = Teuchos::ScalarTraits<RangeScalar>::one()
-    ,const RangeScalar                      beta  = Teuchos::ScalarTraits<RangeScalar>::zero()
+    const EConj conj,
+    const MultiVectorBase<DomainScalar> &X,
+    MultiVectorBase<RangeScalar> *Y,
+    const RangeScalar alpha = Teuchos::ScalarTraits<RangeScalar>::one(),
+    const RangeScalar beta = Teuchos::ScalarTraits<RangeScalar>::zero()
     ) const = 0;
 
   //@}
@@ -345,11 +347,11 @@ public:
    * implementation is provided.
    */
   virtual void applyTranspose(
-    const EConj                            conj
-    ,const MultiVectorBase<RangeScalar>    &X
-    ,MultiVectorBase<DomainScalar>         *Y
-    ,const DomainScalar                     alpha = Teuchos::ScalarTraits<DomainScalar>::one()
-    ,const DomainScalar                     beta  = Teuchos::ScalarTraits<DomainScalar>::zero()
+    const EConj conj,
+    const MultiVectorBase<RangeScalar> &X,
+    MultiVectorBase<DomainScalar> *Y,
+    const DomainScalar alpha = Teuchos::ScalarTraits<DomainScalar>::one(),
+    const DomainScalar beta = Teuchos::ScalarTraits<DomainScalar>::zero()
     ) const;
 
   /** \brief Clone the linear operator object (if supported).
@@ -364,7 +366,8 @@ public:
    * allowable.  A linear operator object is not required to return a non-NULL
    * value but many good matrix-based linear operator implementations will.
    */
-  virtual Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> > clone() const;
+  virtual Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >
+  clone() const;
 
   //@}
 
@@ -390,17 +393,17 @@ inline bool opSupported( const LinearOpBase<Scalar> &M, ETransp M_trans )
  */
 template<class RangeScalar, class DomainScalar>
 inline void apply(
-  const LinearOpBase<RangeScalar,DomainScalar>     &M
-  ,const EConj                                     conj
-  ,const MultiVectorBase<DomainScalar>             &X
-  ,MultiVectorBase<RangeScalar>                    *Y
-  ,const RangeScalar                               alpha
+  const LinearOpBase<RangeScalar,DomainScalar> &M,
+  const EConj conj,
+  const MultiVectorBase<DomainScalar> &X,
+  MultiVectorBase<RangeScalar> *Y,
+  const RangeScalar alpha
 #ifndef __sun
-                                                         = Teuchos::ScalarTraits<RangeScalar>::one()
+  = Teuchos::ScalarTraits<RangeScalar>::one()
 #endif
-  ,const RangeScalar                               beta
+  ,const RangeScalar beta
 #ifndef __sun
-                                                         = Teuchos::ScalarTraits<RangeScalar>::zero()
+  = Teuchos::ScalarTraits<RangeScalar>::zero()
 #endif
   )
 {
@@ -411,11 +414,11 @@ inline void apply(
 
 template<class RangeScalar, class DomainScalar>
 inline void apply(
-  const LinearOpBase<RangeScalar,DomainScalar>     &M
-  ,const EConj                                     conj
-  ,const MultiVectorBase<DomainScalar>             &X
-  ,MultiVectorBase<RangeScalar>                    *Y
-  ,const RangeScalar                               alpha
+  const LinearOpBase<RangeScalar,DomainScalar> &M,
+  const EConj conj,
+  const MultiVectorBase<DomainScalar> &X,
+  MultiVectorBase<RangeScalar> *Y,
+  const RangeScalar alpha
   )
 {
   typedef Teuchos::ScalarTraits<RangeScalar> ST;
@@ -424,10 +427,10 @@ inline void apply(
 
 template<class RangeScalar, class DomainScalar>
 inline void apply(
-  const LinearOpBase<RangeScalar,DomainScalar>     &M
-  ,const EConj                                     conj
-  ,const MultiVectorBase<DomainScalar>             &X
-  ,MultiVectorBase<RangeScalar>                    *Y
+  const LinearOpBase<RangeScalar,DomainScalar> &M,
+  const EConj conj,
+  const MultiVectorBase<DomainScalar> &X,
+  MultiVectorBase<RangeScalar> *Y
   )
 {
   typedef Teuchos::ScalarTraits<RangeScalar> ST;
@@ -444,17 +447,17 @@ inline void apply(
  */
 template<class RangeScalar, class DomainScalar>
 inline void applyTranspose(
-  const LinearOpBase<RangeScalar,DomainScalar>      &M
-  ,const EConj                                      conj
-  ,const MultiVectorBase<RangeScalar>               &X
-  ,MultiVectorBase<DomainScalar>                    *Y
-  ,const DomainScalar                               alpha
+  const LinearOpBase<RangeScalar,DomainScalar> &M,
+  const EConj conj,
+  const MultiVectorBase<RangeScalar> &X,
+  MultiVectorBase<DomainScalar> *Y,
+  const DomainScalar alpha
 #ifndef __sun
-                                                          = Teuchos::ScalarTraits<DomainScalar>::one()
+  = Teuchos::ScalarTraits<DomainScalar>::one()
 #endif
-  ,const DomainScalar                               beta
+  ,const DomainScalar beta
 #ifndef __sun
-                                                          = Teuchos::ScalarTraits<DomainScalar>::zero()
+  = Teuchos::ScalarTraits<DomainScalar>::zero()
 #endif
   )
 {
@@ -465,11 +468,11 @@ inline void applyTranspose(
 
 template<class RangeScalar, class DomainScalar>
 inline void applyTranspose(
-  const LinearOpBase<RangeScalar,DomainScalar>      &M
-  ,const EConj                                      conj
-  ,const MultiVectorBase<RangeScalar>               &X
-  ,MultiVectorBase<DomainScalar>                    *Y
-  ,const DomainScalar                               alpha
+  const LinearOpBase<RangeScalar,DomainScalar> &M,
+  const EConj conj,
+  const MultiVectorBase<RangeScalar> &X,
+  MultiVectorBase<DomainScalar> *Y,
+  const DomainScalar alpha
   )
 {
   typedef Teuchos::ScalarTraits<DomainScalar> ST;
@@ -478,10 +481,10 @@ inline void applyTranspose(
 
 template<class RangeScalar, class DomainScalar>
 inline void applyTranspose(
-  const LinearOpBase<RangeScalar,DomainScalar>      &M
-  ,const EConj                                      conj
-  ,const MultiVectorBase<RangeScalar>               &X
-  ,MultiVectorBase<DomainScalar>                    *Y
+  const LinearOpBase<RangeScalar,DomainScalar> &M,
+  const EConj conj,
+  const MultiVectorBase<RangeScalar> &X,
+  MultiVectorBase<DomainScalar> *Y
   )
 {
   typedef Teuchos::ScalarTraits<DomainScalar> ST;
@@ -501,17 +504,17 @@ inline void applyTranspose(
  */
 template<class Scalar>
 inline void apply(
-  const LinearOpBase<Scalar>        &M
-  ,const ETransp                    M_trans
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                     alpha
+  const LinearOpBase<Scalar> &M,
+  const ETransp M_trans,
+  const MultiVectorBase<Scalar> &X,
+  MultiVectorBase<Scalar> *Y,
+  const Scalar alpha
 #ifndef __sun
-                                          = Teuchos::ScalarTraits<Scalar>::one()
+  = Teuchos::ScalarTraits<Scalar>::one()
 #endif
-  ,const Scalar                     beta
+  ,const Scalar beta
 #ifndef __sun
-                                          = Teuchos::ScalarTraits<Scalar>::zero()
+  = Teuchos::ScalarTraits<Scalar>::zero()
 #endif
   )
 {
@@ -527,11 +530,11 @@ inline void apply(
 
 template<class Scalar>
 inline void apply(
-  const LinearOpBase<Scalar>        &M
-  ,const ETransp                    M_trans
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                     alpha
+  const LinearOpBase<Scalar> &M,
+  const ETransp M_trans,
+  const MultiVectorBase<Scalar> &X,
+  MultiVectorBase<Scalar> *Y,
+  const Scalar alpha
   )
 {
   apply(M,M_trans,X,Y,alpha,Teuchos::ScalarTraits<Scalar>::zero());
@@ -539,10 +542,10 @@ inline void apply(
 
 template<class Scalar>
 inline void apply(
-  const LinearOpBase<Scalar>        &M
-  ,const ETransp                    M_trans
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
+  const LinearOpBase<Scalar> &M,
+  const ETransp M_trans,
+  const MultiVectorBase<Scalar> &X,
+  MultiVectorBase<Scalar> *Y
   )
 {
   apply(M,M_trans,X,Y,Teuchos::ScalarTraits<Scalar>::one());

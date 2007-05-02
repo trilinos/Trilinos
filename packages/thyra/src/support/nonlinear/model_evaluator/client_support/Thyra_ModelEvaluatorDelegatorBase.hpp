@@ -157,7 +157,8 @@ private:
   
 };
 
-#define THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(CLASS_NAME,INARGS,OUTARGS) \
+
+#define THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(CLASS_NAME,INARGS,OUTARGS,UNDERLYINGMODEL) \
   \
   const std::string _classNameStr \
     = std::string(CLASS_NAME)+"<"+Teuchos::ScalarTraits<Scalar>::name()+">"; \
@@ -170,8 +171,8 @@ private:
   Teuchos::Time totalTimer(""); \
   totalTimer.start(true); \
   \
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream(); \
-  const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel(); \
+  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream(); \
+  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel(); \
   Teuchos::OSTab tab(out); \
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)) \
     *out << "\nEntering " << _classFuncNameStr << " ...\n"; \
@@ -182,10 +183,15 @@ private:
       << "\noutArgs on input =\n" << Teuchos::describe((OUTARGS),Teuchos::VERB_LOW); \
   \
   const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > \
-    thyraModel = this->getUnderlyingModel(); \
+    thyraModel = (UNDERLYINGMODEL); \
   \
   typedef Teuchos::VerboseObjectTempState<ModelEvaluatorBase> VOTSME; \
   VOTSME thyraModel_outputTempState(thyraModel,out,verbLevel)
+
+
+#define THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(CLASS_NAME,INARGS,OUTARGS) \
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(CLASS_NAME,INARGS,OUTARGS,this->getUnderlyingModel())
+
 
 #define THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END() \
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME)) \
@@ -197,6 +203,7 @@ private:
     *out \
       << "\nTotal evaluation time = "<<totalTimer.totalElapsedTime()<<" sec\n" \
       << "\nLeaving " << _classFuncNameStr << " ...\n"
+
 
 // /////////////////////////////////
 // Implementations

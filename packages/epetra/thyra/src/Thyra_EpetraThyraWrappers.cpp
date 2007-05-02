@@ -48,6 +48,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 
+
 Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >
 Thyra::create_Comm( const Teuchos::RefCountPtr<const Epetra_Comm> &epetraComm )
 {
@@ -85,6 +86,7 @@ Thyra::create_Comm( const Teuchos::RefCountPtr<const Epetra_Comm> &epetraComm )
 
 }
 
+
 Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceDefaultBase<double> >
 Thyra::create_VectorSpace(
   const Teuchos::RefCountPtr<const Epetra_Map> &epetra_map
@@ -116,6 +118,7 @@ Thyra::create_VectorSpace(
   return vs;
 }
 
+
 Teuchos::RefCountPtr<Thyra::SpmdVectorBase<double> >
 Thyra::create_Vector(
   const Teuchos::RefCountPtr<Epetra_Vector>                                &epetra_v
@@ -135,6 +138,7 @@ Thyra::create_Vector(
   Teuchos::set_extra_data( epetra_v, "Epetra_Vector", &v );
   return v;
 }
+
 
 Teuchos::RefCountPtr<const Thyra::SpmdVectorBase<double> >
 Thyra::create_Vector(
@@ -156,18 +160,27 @@ Thyra::create_Vector(
   return v;
 }
 
+
 Teuchos::RefCountPtr<Thyra::SpmdMultiVectorBase<double> >
 Thyra::create_MultiVector(
   const Teuchos::RefCountPtr<Epetra_MultiVector>                           &epetra_mv
   ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >           &range
-  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain
+  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain_in
   )
 {
+  using Teuchos::rcp_dynamic_cast;
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(range.get()==NULL);
-  TEST_FOR_EXCEPT(domain.get()==NULL);
 #endif
-  if(!epetra_mv.get()) return Teuchos::null;
+  if (!epetra_mv.get() )
+    return Teuchos::null;
+  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >
+    domain = domain_in;
+  if ( is_null(domain) ) {
+    domain = rcp_dynamic_cast<const ScalarProdVectorSpaceBase<double> >(
+      range->smallVecSpcFcty()->createVecSpc(epetra_mv->NumVectors())
+      );
+  }
   // New local view of raw data
   double *localValues; int leadingDim;
   if( epetra_mv->ConstantStride() ) {
@@ -183,18 +196,27 @@ Thyra::create_MultiVector(
   return mv;
 }
 
+
 Teuchos::RefCountPtr<const Thyra::SpmdMultiVectorBase<double> >
 Thyra::create_MultiVector(
   const Teuchos::RefCountPtr<const Epetra_MultiVector>                     &epetra_mv
   ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >           &range
-  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain
+  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain_in
   )
 {
+  using Teuchos::rcp_dynamic_cast;
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(range.get()==NULL);
-  TEST_FOR_EXCEPT(domain.get()==NULL);
 #endif
-  if(!epetra_mv.get()) return Teuchos::null;
+  if (!epetra_mv.get())
+    return Teuchos::null;
+  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >
+    domain = domain_in;
+  if ( is_null(domain) ) {
+    domain = rcp_dynamic_cast<const ScalarProdVectorSpaceBase<double> >(
+      range->smallVecSpcFcty()->createVecSpc(epetra_mv->NumVectors())
+      );
+  }
   // New local view of raw data
   double *localValues; int leadingDim;
   if( epetra_mv->ConstantStride() ) {
@@ -250,6 +272,9 @@ Thyra::get_Epetra_Vector(
   // the RefCountPtr that is returned.  As a result, this view will be relased
   // when the returned Epetra_Vector is released.
   //
+  // Note that the input vector 'v' will be remembered through this detached
+  // view!
+  //
   Teuchos::RefCountPtr<DetachedVectorView<double> >
     emvv = Teuchos::rcp(
       new DetachedVectorView<double>(
@@ -268,12 +293,11 @@ Thyra::get_Epetra_Vector(
         ,const_cast<double*>(emvv->values())   // V
         )
       );
-  // Give the explict view object to the above Epetra_Vector
-  // smart pointer object.  In this way, when the client is finished
-  // with the Epetra_Vector view the destructor from the object
-  // in emvv will automatically commit the changes to the elements in
-  // the input v MultiVectorBase object (reguardless of its
-  // implementation).  This is truly an elegant result!
+  // Give the explict view object to the above Epetra_Vector smart pointer
+  // object.  In this way, when the client is finished with the Epetra_Vector
+  // view the destructor from the object in emvv will automatically commit the
+  // changes to the elements in the input v VectorBase object (reguardless of
+  // its implementation).  This is truly an elegant result!
   Teuchos::set_extra_data( emvv, "emvv", &epetra_v, Teuchos::PRE_DESTROY );
   // We are done!
   return epetra_v;
@@ -309,12 +333,12 @@ Thyra::get_Epetra_Vector(
   const SpmdVectorSpaceBase<double> *mpi_vs = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
   const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
-  // Get an explicit *non-mutable* view of all of the elements in
-  // the multi vector.
+  // Get an explicit *non-mutable* view of all of the elements in the multi
+  // vector.  Note that 'v' will be remembered by this view!
   Teuchos::RefCountPtr<ConstDetachedVectorView<double> >
     evv = Teuchos::rcp(
       new ConstDetachedVectorView<double>(
-        *v
+        v
         ,Range1D(localOffset,localOffset+localSubDim-1)
         ,true // forceContiguous
         )
@@ -335,8 +359,6 @@ Thyra::get_Epetra_Vector(
   // This is the whole reason there is a seperate implementation for
   // the const and non-const cases.
   Teuchos::set_extra_data( evv, "evv", &epetra_v, Teuchos::PRE_DESTROY );
-  // Also set the v itself as extra data just to be safe
-  Teuchos::set_extra_data( v, "v", &epetra_v );
   // We are done!
   return epetra_v;
 }

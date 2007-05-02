@@ -142,6 +142,12 @@ public:
   /** \brief . */
   void set_q( Teuchos::RefCountPtr<const Epetra_Vector> const& q );
 
+  /** \brief . */
+  Teuchos::RefCountPtr<GLpApp::GLpYUEpetraDataPool> getDataPool();
+
+  /** \brief . */
+  Teuchos::RefCountPtr<const Epetra_MultiVector> get_B_bar() const;
+
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{
 
