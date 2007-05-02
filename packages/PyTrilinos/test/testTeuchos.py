@@ -36,6 +36,7 @@
 # build module.
 from   optparse import *
 import sys
+from   time     import sleep
 import unittest
 
 parser = OptionParser()
@@ -84,88 +85,88 @@ class TeuchosXMLTestCase(unittest.TestCase):
         self.failIf(xmlObj.isEmpty())
 
     def testXMLObjectDeepCopy(self):
-        "Test Teuchos XMLObject deepCopy method"
+        "Test Teuchos XMLObject deepCopy() method"
         tag    = "Parameters"
         xmlObj = Teuchos.XMLObject(tag)
         xmlCpy = xmlObj.deepCopy()
         self.assertEquals(xmlCpy.getTag(), xmlObj.getTag())
 
     def testXMLObjectDeepCopyEmpty(self):
-        "Test Teuchos XMLObject deepCopy method, empty"
+        "Test Teuchos XMLObject deepCopy() method, empty"
         xmlObj = Teuchos.XMLObject()
         self.assertRaises(RuntimeError, xmlObj.deepCopy)
 
     def testXMLObjectGetTag(self):
-        "Test Teuchos XMLObject getTag method"
+        "Test Teuchos XMLObject getTag() method"
         tag    = "Parameters"
         xmlObj = Teuchos.XMLObject(tag)
         self.assertEquals(xmlObj.getTag(), tag)
 
     def testXMLObjectGetTagEmpty(self):
-        "Test Teuchos XMLObject getTag method, empty"
+        "Test Teuchos XMLObject getTag() method, empty"
         xmlObj = Teuchos.XMLObject()
         self.assertRaises(RuntimeError, xmlObj.getTag)
 
     def testXMLObjectAddAttributeBad(self):
-        "Test Teuchos XMLObject addAttribute method, no tag"
+        "Test Teuchos XMLObject addAttribute() method, no tag"
         xmlObj = Teuchos.XMLObject()
         self.assertRaises(RuntimeError, xmlObj.addAttribute, "date", "today")
 
     def testXMLObjectAttribute(self):
-        "Test Teuchos XMLObject add/get attribute methods"
+        "Test Teuchos XMLObject add/get attribute() methods"
         xmlObj = Teuchos.XMLObject("tag")
         xmlObj.addAttribute("date","today")
         self.assertEquals(xmlObj.getAttribute("date"), "today")
 
     def testXMLObjectBadAttribute(self):
-        "Test Teuchos XMLObject getAttribute method, nonexistent"
+        "Test Teuchos XMLObject getAttribute() method, nonexistent"
         xmlObj = Teuchos.XMLObject()
         self.assertRaises(RuntimeError, xmlObj.getAttribute, "date")
 
     def testXMLObjectHasAttribute(self):
-        "Test Teuchos XMLObject hasAttribute methods"
+        "Test Teuchos XMLObject hasAttribute() methods"
         xmlObj = Teuchos.XMLObject("tag")
         self.failIf(xmlObj.hasAttribute("date"))
         xmlObj.addAttribute("date","today")
         self.failUnless(xmlObj.hasAttribute("date"))
 
     def testXMLObjectGetRequired(self):
-        "Test Teuchos XMLObject getRequired method"
+        "Test Teuchos XMLObject getRequired() method"
         xmlObj = Teuchos.XMLObject("tag")
         self.assertRaises(RuntimeError, xmlObj.getRequired, "date")
         xmlObj.addAttribute("date","today")
         self.assertEquals(xmlObj.getRequired("date"), "today")
 
     def testXMLObjectGetRequiredDouble(self):
-        "Test Teuchos XMLObject getRequiredDouble method"
+        "Test Teuchos XMLObject getRequiredDouble() method"
         xmlObj = Teuchos.XMLObject("tag")
         self.assertRaises(RuntimeError, xmlObj.getRequiredDouble, "pi")
         xmlObj.addDouble("pi",3.14)
         self.assertEquals(xmlObj.getRequiredDouble("pi"), 3.14)
 
     def testXMLObjectGetRequiredInt(self):
-        "Test Teuchos XMLObject getRequiredInt method"
+        "Test Teuchos XMLObject getRequiredInt() method"
         xmlObj = Teuchos.XMLObject("tag")
         self.assertRaises(RuntimeError, xmlObj.getRequiredInt, "year")
         xmlObj.addInt("year",2007)
         self.assertEquals(xmlObj.getRequiredInt("year"), 2007)
 
     def testXMLObjectGetRequiredBool(self):
-        "Test Teuchos XMLObject getRequiredBool method"
+        "Test Teuchos XMLObject getRequiredBool() method"
         xmlObj = Teuchos.XMLObject("tag")
         self.assertEquals(xmlObj.getRequiredBool("flag"), False)
         xmlObj.addBool("flag",True)
         self.assertEquals(xmlObj.getRequiredBool("flag"), True)
 
     def testXMLObjectGetWithDefault(self):
-        "Test Teuchos XMLObject getWithDefault method"
+        "Test Teuchos XMLObject getWithDefault() method"
         xmlObj = Teuchos.XMLObject("tag")
         self.assertEquals(xmlObj.getWithDefault("country","USA"), "USA")
         xmlObj.addAttribute("country", "Canada")
         self.assertEquals(xmlObj.getWithDefault("country","USA"), "Canada")
 
     def testXMLObjectChild(self):
-        "Test Teuchos XMLObject add/get child methods"
+        "Test Teuchos XMLObject add/get child() methods"
         p = Teuchos.XMLObject("parent")
         self.assertEquals(p.numChildren(), 0)
         #self.assertRaises(RuntimeError, p.getChild, 0)
@@ -176,7 +177,7 @@ class TeuchosXMLTestCase(unittest.TestCase):
         self.assertEquals(r.getTag(), c.getTag())
 
     def testXMLObjectContent(self):
-        "Test Teuchos XMLObject add/get content methods"
+        "Test Teuchos XMLObject add/get content() methods"
         poem = ["Twas brillig, and the slithy toves",
                 "Did gyre and gimble in the wabe:"  ,
                 "All mimsy were the borogoves,"     ,
@@ -191,27 +192,27 @@ class TeuchosXMLTestCase(unittest.TestCase):
             self.assertEquals(p.getContentLine(i), poem[i])
 
     def testXMLObjectToStringEmpty(self):
-        "Test Teuchos XMLObject toString method, empty"
+        "Test Teuchos XMLObject toString() method, empty"
         xmlObj = Teuchos.XMLObject()
         self.assertRaises(RuntimeError, xmlObj.toString)
 
     def testXMLObjectHeader(self):
-        "Test Teuchos XMLObject header method"
+        "Test Teuchos XMLObject header() method"
         xmlObj = Teuchos.XMLObject("header")
         self.assertEquals(xmlObj.header(), "<header>")
 
     def testXMLObjectTerminatedHeader(self):
-        "Test Teuchos XMLObject terminatedHeader method"
+        "Test Teuchos XMLObject terminatedHeader() method"
         xmlObj = Teuchos.XMLObject("header")
         self.assertEquals(xmlObj.terminatedHeader(), "<header/>")
 
     def testXMLObjectFooter(self):
-        "Test Teuchos XMLObject footer method"
+        "Test Teuchos XMLObject footer() method"
         xmlObj = Teuchos.XMLObject("footer")
         self.assertEquals(xmlObj.footer(), "</footer>")
 
     def testXMLObjectCheckTag(self):
-        "Test Teuchos XMLObject checkTag method"
+        "Test Teuchos XMLObject checkTag() method"
         xmlObj = Teuchos.XMLObject("tag")
         xmlObj.checkTag("tag")
         self.assertRaises(RuntimeError, xmlObj.checkTag, "junk")
@@ -272,6 +273,64 @@ class TeuchosInputSourceTestCase(unittest.TestCase):
 
 ####################################################################
 
+class TeuchosTimeTestCase(unittest.TestCase):
+    "TestCase class for Teuchos Time class"
+
+    def setUp(self):
+        self.name  = "Solver Time"
+        self.timer = Teuchos.Time(self.name)
+        self.duration = 0.5
+
+    def testConstructor1(self):
+        "Test Teuchos Time string constructor"
+        self.assertEquals(self.timer.name(), self.name)
+        self.failIf(self.timer.isRunning())
+
+    def testConstructor2(self):
+        "Test Teuchos Time string,bool constructor"
+        timer = Teuchos.Time(self.name, True)
+        self.assertEquals(timer.name(), self.name)
+        self.failUnless(timer.isRunning())
+
+    def testStartStop(self):
+        "Test Teuchos Time start() and stop() methods"
+        self.failIf(self.timer.isRunning())
+        self.timer.start()
+        self.failUnless(self.timer.isRunning())
+        self.timer.stop()
+        self.failIf(self.timer.isRunning())
+
+    def testTotalElapsedTime(self):
+        "Test Teuchos Time totalElapsedTime() method"
+        self.timer.start()
+        sleep(self.duration)
+        self.timer.stop()
+        self.failUnless(self.timer.totalElapsedTime() >= self.duration)
+
+    def testReset(self):
+        "Test Teuchos Time reset() method"
+        self.timer.start()
+        sleep(self.duration)
+        self.timer.stop()
+        self.timer.reset()
+        self.assertEquals(self.timer.totalElapsedTime(), 0)
+
+    def testNumCalls(self):
+        "Test Teuchos Time numCalls() method"
+        self.assertEquals(self.timer.numCalls(), 0)
+        self.timer.incrementNumCalls()
+        self.assertEquals(self.timer.numCalls(), 1)
+        self.timer.incrementNumCalls()
+        self.assertEquals(self.timer.numCalls(), 2)
+        self.timer.reset()
+        self.assertEquals(self.timer.numCalls(), 0)
+
+    def testWallTime(self):
+        "Test Teuchos Time wallTime() method"
+        self.failUnless(self.timer.wallTime() > 2*self.duration)
+
+####################################################################
+
 if __name__ == "__main__":
 
     # Create the test suite object
@@ -281,6 +340,7 @@ if __name__ == "__main__":
     suite.addTest(unittest.makeSuite(TeuchosTestCase))
     suite.addTest(unittest.makeSuite(TeuchosXMLTestCase))
     suite.addTest(unittest.makeSuite(TeuchosInputSourceTestCase))
+    suite.addTest(unittest.makeSuite(TeuchosTimeTestCase))
 
     iAmRoot = True
 

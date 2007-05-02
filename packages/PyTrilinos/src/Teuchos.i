@@ -54,6 +54,7 @@ supports the following classes:
                                 to XML
     * ScalarTraits            - Function factory for ScalarTraits<...>
                                 classes
+    * Time                    - Wall-clock timer class
 
 The ParameterList class matches string keys to arbitrarily-typed
 values.  In python, the Teuchos.ParameterList is tightly integrated
@@ -96,6 +97,7 @@ ParameterList will accept a python dictionary.
 #include "Teuchos_FileInputSource.hpp"
 #include "Teuchos_StringInputSource.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_Time.hpp"
 
 // Teuchos python interface includes
 #include "Teuchos_PythonParameter.h"
@@ -337,6 +339,11 @@ def ScalarTraits(scalarType):
     raise NotImplementedError, "ScalarTraits for " + repr(scalarType) + " not supported"
 %}
 
+///////////////////////////
+// Teuchos::Time support //
+///////////////////////////
+%include "Teuchos_Time.hpp"
+
 ////////////////////////////////////////////////////////////////////////
 
 // Extend the %extend_smart_pointer macro to handle derived classes.
@@ -378,7 +385,7 @@ def ScalarTraits(scalarType):
 %enddef
 
 // These typemap macros allow developers to generate typemaps for any
-// classes that are wrapped in Teuchos::RefCountPtr<> and used as
+// classes that are wrapped in Teuchos::RefCountPtr<...> and used as
 // function or method arguments.
 %define %teuchos_rcp_typemaps(Type...)
 
