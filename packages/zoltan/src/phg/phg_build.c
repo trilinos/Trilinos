@@ -191,7 +191,7 @@ End:
  */
  
 typedef struct _myObj{  /* Vertices returned in Get_Obj_List queries */
-  int    size;          /* # objects (vertices) on proc. */
+  int    size;          /* # objects (vertices) on proc incl lone verts */
   int GnVtx;            /* number of objects across all processes */
   ZOLTAN_ID_PTR vtxGID; /* Global ID of each vertex */
   int    *vtx_gno;      /* Global numbers in range [0,GnVtx-1] */
@@ -199,6 +199,7 @@ typedef struct _myObj{  /* Vertices returned in Get_Obj_List queries */
   int    *fixed;        /* vertex assignments for fixed vertices RTHRTH */ 
   int    *vtxHash;      /* Process to which GID hashes, temporary owner */
   int    *numHedges;    /* Number of hyperedges containing vertex       */
+  int    *numAllHedges; /* Including removed hyperedges */
 }zoltan_objects;
 
 typedef struct _myPin{      /* Pins returned by hypergraph query functions */
@@ -338,7 +339,7 @@ float *fromwgt, *towgt, *wgts, *calcVwgt = NULL;
 
 float edgeSizeThreshold;
 int randomizeInitDist, zoltan_lb_eval;
-int final_output, add_obj_weight;
+int final_output, add_obj_weight, removedEdges=0;
 PHGPartParams *temphgp = NULL;
 
 ZOLTAN_ID_PTR elids = NULL;
@@ -427,6 +428,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
   myObjs.vtx_gno = (int *)ZOLTAN_MALLOC(sizeof(int) * myObjs.size);
   myObjs.numHedges = (int *)ZOLTAN_MALLOC(sizeof(int) * myObjs.size);
+  myObjs.numAllHedges = (int *)ZOLTAN_MALLOC(sizeof(int) * myObjs.size);
 
   /*
    * Create a search structure to lookup my vertex information
@@ -484,7 +486,6 @@ int nRepartEdge = 0, nRepartVtx = 0;
       ZOLTAN_FREE(&fixedPart);
     }
   }     
- 
 
   if (hypergraph_callbacks){
     /*
@@ -1066,10 +1067,12 @@ int nRepartEdge = 0, nRepartVtx = 0;
      * the edge comm plan, and rewrite the list of edges assigned to me.
      */
     nEdge -= myPins.nHedges;
+    removedEdges = 0;
   
     rc = MPI_Allreduce(&nEdge, &cnt, 1, MPI_INT, MPI_SUM, zz->Communicator);
   
     if (cnt > 0){
+      removedEdges = 1;
       Zoltan_Comm_Destroy(&myPins.ePlan);
   
       msg_tag--;
@@ -1191,6 +1194,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
   if (myPins.numPins && !myPins.pinGNO) MEMORY_ERROR;
 
   memset(myObjs.numHedges, 0, sizeof(int) * myObjs.size);
+  memset(myObjs.numAllHedges, 0, sizeof(int) * myObjs.size);
 
   pin_requests = NULL;
   pin_info = NULL;
@@ -1224,6 +1228,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
     pin_info[i] = myObjs.vtx_gno[j];
     myObjs.numHedges[j]++;
+    myObjs.numAllHedges[j]++;
   }
 
   msg_tag--;
@@ -1235,6 +1240,45 @@ int nRepartEdge = 0, nRepartVtx = 0;
   }
 
   Zoltan_Comm_Destroy(&plan);
+
+  /***********************************************************************/
+  /* We also need the total edges a vertex is in, including removed      */
+  /* edges, when (add_obj_weight == PHG_ADD_PINS_WEIGHT).                */
+  /***********************************************************************/
+  if (removedEdges && (add_obj_weight == PHG_ADD_PINS_WEIGHT)) {
+    pin_requests = NULL;
+    msg_tag--;
+    ierr = Zoltan_Comm_Create(&plan, zhg->nRemovePins,
+           zhg->Remove_Pin_Procs,
+           zz->Communicator, msg_tag, &nRequests);
+  
+    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+      goto End;
+    }
+  
+    if (nRequests > 0){
+      pin_requests = ZOLTAN_MALLOC_GID_ARRAY(zz, nRequests);
+      if (!pin_requests) MEMORY_ERROR;
+    }
+  
+    msg_tag--;
+    ierr = Zoltan_Comm_Do(plan, msg_tag, (char *)zhg->Remove_Pin_GIDs,
+             sizeof(ZOLTAN_ID_TYPE) * num_gid_entries, (char *)pin_requests);
+  
+    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+      goto End;
+    }
+  
+    for (i=0; i<nRequests; i++){
+      j = lookup_GID(lookup_myObjs, pin_requests + ( i * num_gid_entries));
+  
+      if (j < 0) FATAL_ERROR("Unexpected vertex GID received");
+  
+      myObjs.numAllHedges[j]++;
+    }
+  
+    Zoltan_Comm_Destroy(&plan);
+  }
 
   ZOLTAN_FREE(&pin_requests);
   ZOLTAN_FREE(&pin_info);
@@ -1366,7 +1410,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     }
     else if (add_obj_weight == PHG_ADD_PINS_WEIGHT){
       for (i=0; i<myObjs.size; i++){
-        calcVwgt[i] = myObjs.numHedges[i];
+        calcVwgt[i] = myObjs.numAllHedges[i];
       }
     }
   }
@@ -1961,6 +2005,7 @@ static void free_zoltan_objects(zoltan_objects *zo)
   ZOLTAN_FREE(&(zo->vwgt));
   ZOLTAN_FREE(&(zo->vtxHash));
   ZOLTAN_FREE(&(zo->numHedges));
+  ZOLTAN_FREE(&(zo->numAllHedges));
   ZOLTAN_FREE(&zo->fixed);
 }
 /*****************************************************************************/

@@ -904,6 +904,7 @@ int *keep_pin_procs, *remove_pin_procs, *in_pin_procs;
       else{
         zhg->Remove_Pin_Procs = NULL;
       }
+      zhg->nRemovePins = nremove_size;
 
       if (!remove_egids || (num_lid_entries && !remove_elids) 
           || !remove_esizes || !remove_global_esizes
