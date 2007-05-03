@@ -617,22 +617,20 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 #ifdef HAVE_NOX_EPETRAEXT
 
   ++linearSolveCount;
+  std::ostringstream iterationNumber;
+  iterationNumber << linearSolveCount;
+    
+  std::string prefixName = p.get("Write Linear System File Prefix", 
+				 "NOX_LinSys");
+  std::string postfixName = iterationNumber.str();
+  postfixName += ".mm";
 
   if (p.get("Write Linear System", false)) {
-    
-    std::ostringstream iterationNumber;
-    iterationNumber << linearSolveCount;
-    
-    std::string prefixName = p.get("Write Linear System File Prefix", 
-					    "NOX_LinSys");
-    std::string postfixName = iterationNumber.str();
-    postfixName += ".mm";
 
     std::string mapFileName = prefixName + "_Map_" + postfixName;
     std::string jacFileName = prefixName + "_Jacobian_" + postfixName;    
     std::string rhsFileName = prefixName + "_RHS_" + postfixName;
-    std::string lhsFileName = prefixName + "_LHS_" + postfixName;
-
+    
     Epetra_RowMatrix* printMatrix = NULL;
     printMatrix = dynamic_cast<Epetra_RowMatrix*>(jacPtr.get()); 
 
@@ -648,8 +646,6 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 					  printMatrix->RowMatrixRowMap()); 
     EpetraExt::RowMatrixToMatrixMarketFile(jacFileName.c_str(), *printMatrix, 
 					   "test matrix", "Jacobian XXX");
-    EpetraExt::MultiVectorToMatrixMarketFile(lhsFileName.c_str(), 
-					     result.getEpetraVector());
     EpetraExt::MultiVectorToMatrixMarketFile(rhsFileName.c_str(), 
 					     nonConstInput.getEpetraVector());
 
@@ -703,6 +699,17 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 			    (prevLinIters + curLinIters));
     outputList.set("Achieved Tolerance", achievedTol);
   }
+
+  // Dump solution of linear system
+#ifdef HAVE_NOX_DEBUG
+#ifdef HAVE_NOX_EPETRAEXT
+  if (p.get("Write Linear System", false)) {
+    std::string lhsFileName = prefixName + "_LHS_" + postfixName;
+    EpetraExt::MultiVectorToMatrixMarketFile(lhsFileName.c_str(), 
+					   result.getEpetraVector());
+  }
+#endif
+#endif
 
   double endTime = timer.WallTime();
   timeApplyJacbianInverse += (endTime - startTime);
