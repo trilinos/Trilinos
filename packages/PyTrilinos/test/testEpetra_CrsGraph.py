@@ -191,7 +191,8 @@ class EpetraCrsGraphTestCase(unittest.TestCase):
         "Test Epetra.CrsGraph InsertGlobalIndices method for bad indices"
         crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
         grid = crsg.GRID(0)
-        self.assertRaises(ValueError, crsg.InsertGlobalIndices, grid, [0,"e","pi"])
+        self.assertRaises((TypeError, ValueError),
+                          crsg.InsertGlobalIndices, grid, [0,"e","pi"])
 
     def testRemoveGlobalIndices1(self):
         "Test Epetra.CrsGraph RemoveGlobalIndices method w/specified indices"

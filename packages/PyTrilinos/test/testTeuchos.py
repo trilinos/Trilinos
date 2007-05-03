@@ -305,7 +305,7 @@ class TeuchosTimeTestCase(unittest.TestCase):
         self.timer.start()
         sleep(self.duration)
         self.timer.stop()
-        self.failUnless(self.timer.totalElapsedTime() >= self.duration)
+        self.failUnless(self.timer.totalElapsedTime() >= self.duration*0.9)
 
     def testReset(self):
         "Test Teuchos Time reset() method"
@@ -327,7 +327,7 @@ class TeuchosTimeTestCase(unittest.TestCase):
 
     def testWallTime(self):
         "Test Teuchos Time wallTime() method"
-        self.failUnless(self.timer.wallTime() > 2*self.duration)
+        self.failUnless(self.timer.wallTime() > 2*self.duration*0.9)
 
 ####################################################################
 
