@@ -350,6 +350,7 @@ NOX_INTERFACE(lapack, LIBNOXLAPACK, nox)
 NOX_INTERFACE(epetra, LIBNOXEPETRA, nox)
 NOX_INTERFACE(petsc, LIBNOXPETSC, nox)
 NOX_INTERFACE(belos, LIBNOXBELOS, nox)
+NOX_INTERFACE(thyra, LIBNOXTHYRA, nox)
 
 # ------------------------------------------------------------------------
 # LOCA interface libraries
@@ -681,6 +682,12 @@ if test X${ADDON_belos} = Xyes; then
   AC_DEFINE(HAVE_NOX_BELOS,1,[define that Belos is activated in nox])
 fi
 
+if test X${ADDON_thyra} = Xyes; then
+  TRILINOS_HEADER(thyra,Thyra_Config.h,src)
+  TRILINOS_HEADER(thyra,Thyra_Version.hpp,src)
+  AC_DEFINE(HAVE_NOX_THYRA,1,[define that Thyra is activated in nox])
+fi
+
 if test X${ac_cv_use_anasazi} = Xyes; then
   TRILINOS_HEADER(anasazi,Anasazi_config.h,src)
   TRILINOS_HEADER(anasazi,AnasaziTypes.hpp,src)
@@ -865,6 +872,7 @@ AC_CONFIG_FILES([
 		src-epetra/Makefile
                 src-petsc/Makefile
 		src-belos/Makefile
+		src-thyra/Makefile
 		src-loca/Makefile
 		src-loca/doc/Makefile
 		src-loca/src/Makefile

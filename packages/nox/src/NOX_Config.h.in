@@ -122,6 +122,9 @@
 /* Define if want to build with ml enabled */
 #undef HAVE_NOX_ML_EPETRA
 
+/* define that Thyra is activated in nox */
+#undef HAVE_NOX_THYRA
+
 /* Define to 1 if you have the `pow' function. */
 #undef HAVE_POW
 

@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE AR ac_ct_AR ALTERNATE_AR USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE HAVE_DOXYGEN_DOT EGREP INSIDE_TRILINOS_TRUE INSIDE_TRILINOS_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_NOX_TESTS_TRUE BUILD_NOX_TESTS_FALSE BUILD_LOCA_TESTS_TRUE BUILD_LOCA_TESTS_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE ADDON_lapack_TESTS ADDON_loca_lapack_TESTS BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE ADDON_epetra_TESTS ADDON_loca_epetra_TESTS BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE ADDON_petsc_TESTS ADDON_loca_petsc_TESTS BUILD_BELOS_TESTS_TRUE BUILD_BELOS_TESTS_FALSE ADDON_belos_TESTS BUILD_TESTUTILS_TRUE BUILD_TESTUTILS_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE ADDON_lapack_EXAMPLES ADDON_loca_lapack_EXAMPLES BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE ADDON_epetra_EXAMPLES ADDON_loca_epetra_EXAMPLES BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE ADDON_petsc_EXAMPLES BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE ADDON_belos_EXAMPLES BUILD_LOCAANASAZI_TRUE BUILD_LOCAANASAZI_FALSE BUILD_LIBLOCAMF_TRUE BUILD_LIBLOCAMF_FALSE MF_INCDIR MF_LIBDIR MF_LIBS BUILD_NOX_EPETRAEXT_SUPPORT_TRUE BUILD_NOX_EPETRAEXT_SUPPORT_FALSE BUILD_EPETRA_MULTIPHYSICS_TRUE BUILD_EPETRA_MULTIPHYSICS_FALSE BUILD_NOX_EPETRA_ML_SUPPORT_TRUE BUILD_NOX_EPETRA_ML_SUPPORT_FALSE FLIBS BLAS_LIBS LAPACK_LIBS PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir abs_builddir abs_top_builddir MPI_LIBS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE AR ac_ct_AR ALTERNATE_AR USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE HAVE_DOXYGEN_DOT EGREP INSIDE_TRILINOS_TRUE INSIDE_TRILINOS_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_LIBNOXTHYRA_TRUE BUILD_LIBNOXTHYRA_FALSE BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_NOX_TESTS_TRUE BUILD_NOX_TESTS_FALSE BUILD_LOCA_TESTS_TRUE BUILD_LOCA_TESTS_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE ADDON_lapack_TESTS ADDON_loca_lapack_TESTS BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE ADDON_epetra_TESTS ADDON_loca_epetra_TESTS BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE ADDON_petsc_TESTS ADDON_loca_petsc_TESTS BUILD_BELOS_TESTS_TRUE BUILD_BELOS_TESTS_FALSE ADDON_belos_TESTS BUILD_TESTUTILS_TRUE BUILD_TESTUTILS_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE ADDON_lapack_EXAMPLES ADDON_loca_lapack_EXAMPLES BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE ADDON_epetra_EXAMPLES ADDON_loca_epetra_EXAMPLES BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE ADDON_petsc_EXAMPLES BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE ADDON_belos_EXAMPLES BUILD_LOCAANASAZI_TRUE BUILD_LOCAANASAZI_FALSE BUILD_LIBLOCAMF_TRUE BUILD_LIBLOCAMF_FALSE MF_INCDIR MF_LIBDIR MF_LIBS BUILD_NOX_EPETRAEXT_SUPPORT_TRUE BUILD_NOX_EPETRAEXT_SUPPORT_FALSE BUILD_EPETRA_MULTIPHYSICS_TRUE BUILD_EPETRA_MULTIPHYSICS_FALSE BUILD_NOX_EPETRA_ML_SUPPORT_TRUE BUILD_NOX_EPETRA_ML_SUPPORT_FALSE FLIBS BLAS_LIBS LAPACK_LIBS PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir abs_builddir abs_top_builddir MPI_LIBS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -897,6 +897,7 @@ Optional Features:
   --enable-nox-epetra     compile nox-epetra interface libraries
   --enable-nox-petsc      compile nox-petsc interface libraries
   --enable-nox-belos      compile nox-belos interface libraries
+  --enable-nox-thyra      compile nox-thyra interface libraries
   --enable-nox-tests      compile regression tests, over-rides the trilinos
                           flag "--enable-tests" so that nox tests can be built
                           separately from other trilinos package tests
@@ -4081,7 +4082,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4084:" \
+echo "$as_me:4085:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8083,6 +8084,33 @@ fi
 
 
 
+  # Check whether --enable-nox-thyra or --disable-nox-thyra was given.
+if test "${enable_nox_thyra+set}" = set; then
+  enableval="$enable_nox_thyra"
+  ADDON_thyra=$enableval
+else
+  ADDON_thyra=no
+
+fi;
+
+  echo "$as_me:$LINENO: checking whether we should build the nox-thyra interface libraries" >&5
+echo $ECHO_N "checking whether we should build the nox-thyra interface libraries... $ECHO_C" >&6
+  echo "$as_me:$LINENO: result: ${ADDON_thyra}" >&5
+echo "${ECHO_T}${ADDON_thyra}" >&6
+
+
+
+if test X${ADDON_thyra} = Xyes; then
+  BUILD_LIBNOXTHYRA_TRUE=
+  BUILD_LIBNOXTHYRA_FALSE='#'
+else
+  BUILD_LIBNOXTHYRA_TRUE='#'
+  BUILD_LIBNOXTHYRA_FALSE=
+fi
+
+
+
+
 # ------------------------------------------------------------------------
 # LOCA interface libraries
 # ------------------------------------------------------------------------
@@ -9046,7 +9074,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9049: \"$ac_link\") >&5
+(eval echo $as_me:9077: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9124,7 +9152,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9127: \"$ac_link\") >&5
+(eval echo $as_me:9155: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10126,7 +10154,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10129: \"$ac_link\") >&5
+(eval echo $as_me:10157: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10204,7 +10232,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10207: \"$ac_link\") >&5
+(eval echo $as_me:10235: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -14715,6 +14743,344 @@ _ACEOF
 
 fi
 
+if test X${ADDON_thyra} = Xyes; then
+
+  save_CPPFLAGS=$CPPFLAGS
+  done=no
+
+  # First try the directories we already have
+  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Thyra_Config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Next try the Trilinos build dir
+  if test $done = no; then
+    CPPFLAGS="-I../thyra/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Thyra_Config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../thyra/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../thyra/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos source dir
+  if test $done = no && test -n "$srcdir"; then
+    CPPFLAGS="-I$srcdir/../thyra/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Thyra_Config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../thyra/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../thyra/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  if test $done = no; then
+    echo "------"
+    echo "Cannot preprocess the include file Thyra_Config.h, part of the thyra package."
+    echo "Try --with-incdir=\"-I<dir1> -I<dir2>\""
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find thyra include directory containing Thyra_Config.h" >&5
+echo "$as_me: error: Cannot find thyra include directory containing Thyra_Config.h" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+  save_CPPFLAGS=$CPPFLAGS
+  done=no
+
+  # First try the directories we already have
+  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Thyra_Version.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Next try the Trilinos build dir
+  if test $done = no; then
+    CPPFLAGS="-I../thyra/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Thyra_Version.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../thyra/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../thyra/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos source dir
+  if test $done = no && test -n "$srcdir"; then
+    CPPFLAGS="-I$srcdir/../thyra/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Thyra_Version.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../thyra/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../thyra/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  if test $done = no; then
+    echo "------"
+    echo "Cannot preprocess the include file Thyra_Version.hpp, part of the thyra package."
+    echo "Try --with-incdir=\"-I<dir1> -I<dir2>\""
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find thyra include directory containing Thyra_Version.hpp" >&5
+echo "$as_me: error: Cannot find thyra include directory containing Thyra_Version.hpp" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_NOX_THYRA 1
+_ACEOF
+
+fi
+
 if test X${ac_cv_use_anasazi} = Xyes; then
 
   save_CPPFLAGS=$CPPFLAGS
@@ -15350,7 +15716,7 @@ echo "${ECHO_T}$WITH_PRERELEASE" >&6
 # Output files
 # ------------------------------------------------------------------------
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ac_config_files="$ac_config_files Makefile Makefile.export.nox doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile src-epetra/Makefile src-petsc/Makefile src-belos/Makefile src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-mf/Makefile examples/Makefile examples/lapack/Makefile examples/lapack/NOX_SimpleExamples/Makefile examples/lapack/LOCA_Chan/Makefile examples/lapack/LOCA_Brusselator/Makefile examples/lapack/LOCA_1DFDPitchfork/Makefile examples/epetra/Makefile examples/epetra/NOX_1DFEMNonlinear/Makefile examples/epetra/LOCA_Tcubed/Makefile examples/epetra/LOCA_Brusselator_xyzt/Makefile examples/petsc/Makefile examples/petsc/DS6.5.1/Makefile examples/petsc/1DFiniteDifference/Makefile test/Makefile test/basic/Makefile test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_TestProblems/Makefile test/lapack/LOCA_UnitTests/Makefile test/lapack/LOCA_ChanProblem/Makefile test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Operators/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_TestProblems/Makefile test/epetra/LOCA_UnitTests/Makefile test/epetra/LOCA_Tcubed/Makefile test/epetra/LOCA_Pitchfork/Makefile test/epetra/LOCA_Brusselator/Makefile test/epetra/LOCA_Brusselator_xyzt/Makefile test/epetra/LOCA_MultiPoint_Tcubed/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/epetra/DS6.5.1/Makefile test/epetra/Brusselator/Makefile test/epetra/FiniteDifferenceColoring/Makefile test/petsc/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files Makefile Makefile.export.nox doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile src-epetra/Makefile src-petsc/Makefile src-belos/Makefile src-thyra/Makefile src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-mf/Makefile examples/Makefile examples/lapack/Makefile examples/lapack/NOX_SimpleExamples/Makefile examples/lapack/LOCA_Chan/Makefile examples/lapack/LOCA_Brusselator/Makefile examples/lapack/LOCA_1DFDPitchfork/Makefile examples/epetra/Makefile examples/epetra/NOX_1DFEMNonlinear/Makefile examples/epetra/LOCA_Tcubed/Makefile examples/epetra/LOCA_Brusselator_xyzt/Makefile examples/petsc/Makefile examples/petsc/DS6.5.1/Makefile examples/petsc/1DFiniteDifference/Makefile test/Makefile test/basic/Makefile test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_TestProblems/Makefile test/lapack/LOCA_UnitTests/Makefile test/lapack/LOCA_ChanProblem/Makefile test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Operators/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_TestProblems/Makefile test/epetra/LOCA_UnitTests/Makefile test/epetra/LOCA_Tcubed/Makefile test/epetra/LOCA_Pitchfork/Makefile test/epetra/LOCA_Brusselator/Makefile test/epetra/LOCA_Brusselator_xyzt/Makefile test/epetra/LOCA_MultiPoint_Tcubed/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/epetra/DS6.5.1/Makefile test/epetra/Brusselator/Makefile test/epetra/FiniteDifferenceColoring/Makefile test/petsc/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -15553,6 +15919,13 @@ if test -z "${BUILD_LIBNOXBELOS_TRUE}" && test -z "${BUILD_LIBNOXBELOS_FALSE}"; 
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_LIBNOXBELOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_LIBNOXBELOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_LIBNOXTHYRA_TRUE}" && test -z "${BUILD_LIBNOXTHYRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_LIBNOXTHYRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_LIBNOXTHYRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -16177,6 +16550,7 @@ do
   "src-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-epetra/Makefile" ;;
   "src-petsc/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-petsc/Makefile" ;;
   "src-belos/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-belos/Makefile" ;;
+  "src-thyra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-thyra/Makefile" ;;
   "src-loca/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/Makefile" ;;
   "src-loca/doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/doc/Makefile" ;;
   "src-loca/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/src/Makefile" ;;
@@ -16408,6 +16782,8 @@ s,@BUILD_LIBNOXPETSC_TRUE@,$BUILD_LIBNOXPETSC_TRUE,;t t
 s,@BUILD_LIBNOXPETSC_FALSE@,$BUILD_LIBNOXPETSC_FALSE,;t t
 s,@BUILD_LIBNOXBELOS_TRUE@,$BUILD_LIBNOXBELOS_TRUE,;t t
 s,@BUILD_LIBNOXBELOS_FALSE@,$BUILD_LIBNOXBELOS_FALSE,;t t
+s,@BUILD_LIBNOXTHYRA_TRUE@,$BUILD_LIBNOXTHYRA_TRUE,;t t
+s,@BUILD_LIBNOXTHYRA_FALSE@,$BUILD_LIBNOXTHYRA_FALSE,;t t
 s,@BUILD_LIBLOCALAPACK_TRUE@,$BUILD_LIBLOCALAPACK_TRUE,;t t
 s,@BUILD_LIBLOCALAPACK_FALSE@,$BUILD_LIBLOCALAPACK_FALSE,;t t
 s,@BUILD_LIBLOCAEPETRA_TRUE@,$BUILD_LIBLOCAEPETRA_TRUE,;t t
