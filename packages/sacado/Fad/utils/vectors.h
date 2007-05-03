@@ -349,6 +349,8 @@ template< class T > inline void Vector< T >::resize(int ssize)
       
       if ( ptr_to_data == 0 ) error("Vector<>::reserve(), not enough memory");
 
+      for (int i=0; i<num_elts; i++) ptr_to_data[i] = T(0.0);
+
     }
     else
       if ( num_elts != 0) destroy();
