@@ -111,8 +111,7 @@ supported.
 #include "AnasaziStatusTestResNorm.hpp"
 #include "AnasaziOrthoManager.hpp"
 #include "AnasaziMatOrthoManager.hpp"
-// I comment out this class because I cannot get SCT to wrap
-//#include "AnasaziBasicOrthoManager.hpp"
+#include "AnasaziBasicOrthoManager.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "AnasaziEigensolverDecl.hpp"
 #include "AnasaziSolverManager.hpp"
@@ -169,6 +168,11 @@ __version__ = Anasazi_Version().split()[2]
 %include "AnasaziTypes.hpp"
 %template (ValueDouble)
   Anasazi::Value<double>;
+%extend ValueDouble {
+  string __str__() {
+    return string("Psych!");
+  }
+}
 
 ///////////////////////////////////
 // Anasazi OutputManager support //
@@ -271,7 +275,7 @@ __version__ = Anasazi_Version().split()[2]
 ///////////////////////////////////////
 // Anasazi BasicOrthoManager support //
 ///////////////////////////////////////
-//%include "AnasaziBasicOrthoManager.hpp"
+%include "AnasaziBasicOrthoManager.hpp"
 
 //////////////////////////////////////
 // Anasazi SVQBOrthoManager support //
@@ -354,8 +358,8 @@ Anasazi::MultiVecTraits< double,
   Anasazi::OrthoManager< double, Epetra_MultiVector >;
 %template (MatOrthoManagerEpetra)
   Anasazi::MatOrthoManager< double, Epetra_MultiVector, Epetra_Operator >;
-//%template (BasicOrthoManagerEpetra)
-//  Anasazi::BasicOrthoManager< double, Epetra_MultiVector, Epetra_Operator >;
+%template (BasicOrthoManagerEpetra)
+  Anasazi::BasicOrthoManager< double, Epetra_MultiVector, Epetra_Operator >;
 %template (SVQBOrthoManagerEpetra)
   Anasazi::SVQBOrthoManager< double, Epetra_MultiVector, Epetra_Operator >;
 %template (EigensolverEpetra)
@@ -377,6 +381,11 @@ Anasazi::MultiVecTraits< double,
 %template(EigensolutionEpetra)
   Anasazi::Eigensolution< double, Epetra_MultiVector >;
 
+/////////////////////////
+// std::vector support //
+/////////////////////////
+%template (VectorValueDouble) std::vector< Anasazi::Value< double > >;
+
 //////////////////////////////
 // Generic python interface //
 //////////////////////////////
@@ -390,9 +399,6 @@ def ClassName(*args):
 %define %anasazi_factory(ClassName)
 %pythoncode %{
 def ClassName(*args):
-    #for arg in args:
-    #    if isinstance(arg, Epetra.MultiVector) or \
-    #       isinstance(arg, Epetra.Operator):
     return ClassName##Epetra(*args)
 %}
 %enddef

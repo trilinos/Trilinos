@@ -106,6 +106,9 @@ example subdirectory of the PyTrilinos package:
 // Auto-documentation feature
 %feature("autodoc", "1");
 
+// Include the NumPy typemaps
+%include "numpy.i"
+
 // External Trilinos interface imports
 using namespace std;
 %import "Epetra.i"
