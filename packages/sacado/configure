@@ -8238,7 +8238,7 @@ fi
 # ------------------------------------------------------------------------
 # Output files
 # ------------------------------------------------------------------------
-                                                                                                                        ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile example/1DFEM/Makefile example/1DFEM/Source/Makefile example/1DFEM/Drivers/Makefile test/Makefile test/utils/Makefile test/TestSuite/Makefile test/tradoptest/Makefile test/tradoptest/testgen.as test/performance/Makefile"
+                                                                                                                                  ac_config_files="$ac_config_files Makefile Makefile.export.sacado src/Makefile example/Makefile example/1DFEM/Makefile example/1DFEM/Source/Makefile example/1DFEM/Drivers/Makefile test/Makefile test/utils/Makefile test/TestSuite/Makefile test/tradoptest/Makefile test/tradoptest/testgen.as test/performance/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8889,6 +8889,7 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+  "Makefile.export.sacado" ) CONFIG_FILES="$CONFIG_FILES Makefile.export.sacado" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "example/1DFEM/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/1DFEM/Makefile" ;;

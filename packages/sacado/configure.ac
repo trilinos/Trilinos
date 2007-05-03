@@ -446,6 +446,7 @@ AC_SUBST(ac_aux_dir)
 # ------------------------------------------------------------------------
 AC_CONFIG_FILES([
 		Makefile 
+		Makefile.export.sacado
 		src/Makefile
 		example/Makefile
 	        example/1DFEM/Makefile
