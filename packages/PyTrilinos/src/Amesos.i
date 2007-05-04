@@ -170,8 +170,8 @@ exAmesos_Factory.py.
 %include "Amesos_BaseSolver.h"
 %extend Amesos_BaseSolver 
 {
-  string __str__() {
-    stringstream os;
+  std::string __str__() {
+    std::stringstream os;
     os << "*** Amesos_BaseSolver ***";
     return os.str();
   }

@@ -119,7 +119,6 @@ example subdirectory of the PyTrilinos package:
 %feature("autodoc", "1");
 
 // External Trilinos modules
-using namespace std;
 %import "Teuchos.i"
 %ignore Epetra_Version();
 %import "Epetra.i"
@@ -162,8 +161,8 @@ __version__ = Version().split()[2]
 %rename(Preconditioner) Ifpack_Preconditioner;
 %include "Ifpack_Preconditioner.h"
 %extend Ifpack_Preconditioner {
-  string __str__() {
-    stringstream os;
+  std::string __str__() {
+    std::stringstream os;
     os << *self;
     return os.str();
   }

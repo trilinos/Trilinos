@@ -57,7 +57,6 @@ to reactivate it soon.
 
 // SWIG library includes
 %include "stl.i"
-using namespace std;
 
 // LOCA interface includes
 %include "LOCA_Abstract_Iterator.H"

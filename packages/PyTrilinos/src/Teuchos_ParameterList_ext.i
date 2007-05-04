@@ -163,7 +163,7 @@ namespace Teuchos {
     /******************************************************************/
     // Type method: return python type of requested parameter.  Replaces
     // templated C++ isType() methods.
-    PyObject * type(const string & name) {
+    PyObject * type(const std::string & name) {
       PyObject * value = getPythonParameter(*self,name);
       // Type not supported
       if (value == NULL) {
@@ -218,7 +218,7 @@ namespace Teuchos {
     
     /******************************************************************/
     // Contains operator
-    int __contains__(const string & name) const {
+    int __contains__(const std::string & name) const {
       PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
       PyObject * keys   = 0;
       PyObject * keyStr = 0;
@@ -269,7 +269,7 @@ namespace Teuchos {
 
     /******************************************************************/
     // GetItem operator
-    PyObject * __getitem__(const string & name) const {
+    PyObject * __getitem__(const std::string & name) const {
       // I'm using SWIG's mangling scheme here
       // return Teuchos_ParameterList_get__SWIG_0(self,name);
       return Teuchos_ParameterList_get(self,name);
@@ -332,7 +332,7 @@ namespace Teuchos {
 
     /******************************************************************/
     // SetItem operator
-    void __setitem__(const string & name, PyObject * value) {
+    void __setitem__(const std::string & name, PyObject * value) {
       // I'm using SWIG's mangling scheme here
       Teuchos_ParameterList_set(self,name,value);
     }
@@ -340,15 +340,15 @@ namespace Teuchos {
     /******************************************************************/
     // String representation method
     PyObject * __repr__() const {
-      string reprStr;
+      std::string reprStr;
       PyObject * dict    = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
       PyObject * dictStr = 0;
       PyObject * result = 0;
       if (dict == NULL) goto fail;
       dictStr = PyObject_Str(dict);
-      reprStr = string("ParameterList(") + 
-	        string(PyString_AsString(dictStr)) +
-	        string(")");
+      reprStr = std::string("ParameterList(") + 
+	        std::string(PyString_AsString(dictStr)) +
+	        std::string(")");
       result = PyString_FromString(reprStr.c_str());
       Py_DECREF(dict   );
       Py_DECREF(dictStr);
@@ -373,7 +373,7 @@ namespace Teuchos {
 
     /******************************************************************/
     // Has_key method
-    int has_key(const string & name) const {
+    int has_key(const std::string & name) const {
       PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
       PyObject * keys   = 0;
       PyObject * keyStr = 0;

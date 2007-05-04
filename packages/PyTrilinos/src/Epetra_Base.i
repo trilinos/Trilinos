@@ -276,10 +276,10 @@ __version__ = Version().split()[2]
 %extend Epetra_Object {
   // The __str__() method is used by the python str() operator on any
   // object given to the python print command.
-  string __str__() {
+  std::string __str__() {
     std::stringstream os;
     self->Print(os);             // Put the output in os
-    string s = os.str();         // Extract the string from os
+    std::string s = os.str();         // Extract the string from os
     int last = s.length();       // Get the last index
     if (s.substr(last) == "\n")
       last-=1;                   // Ignore any trailing newline

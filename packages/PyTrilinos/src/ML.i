@@ -135,9 +135,6 @@ bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
 %ignore *::operator=;
 %ignore *::operator[];
 
-// STL support
-using namespace std;
-
 // Auto-documentation feature
 %feature("autodoc", "1");
 
@@ -190,10 +187,10 @@ namespace MLAPI {
   %extend BaseObject {
     // Define the __str__() method, used by the python str() operator
     // on any object given to the python print command.
-    string __str__() {
-      stringstream os;
+    std::string __str__() {
+      std::stringstream os;
       self->Print(os);                  // Put the output in os
-      string s = os.str();              // Extract the string from os
+      std::string s = os.str();              // Extract the string from os
       return s.substr(0,s.length()-1);  // Return the string minus trailing \n
     }
   }
@@ -336,7 +333,7 @@ namespace MLAPI {
     MultiVector __mul__(MultiVector& rhs) {
       return(*self * rhs);
     }
-    bool Reshape(const Operator& Op, const string Type, PyObject* obj) {
+    bool Reshape(const Operator& Op, const std::string Type, PyObject* obj) {
       Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
       if (List == NULL) return(false);
       else

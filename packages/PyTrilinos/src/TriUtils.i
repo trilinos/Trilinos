@@ -98,7 +98,6 @@ example subdirectory of the PyTrilinos package:
 %ignore *::operator<< ;
 
 // Epetra interface includes
-using namespace std;
 %import "Epetra.i"
 
 ///////////////////////////////////

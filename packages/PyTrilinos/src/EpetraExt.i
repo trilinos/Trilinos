@@ -149,7 +149,7 @@ example subdirectory of the PyTrilinos package:
 // These translations are made possible by the following macro:
 //
 %define %epetraext_read_method(ClassName)
-Epetra_ ## ClassName * Read ## ClassName(string name)
+Epetra_ ## ClassName * Read ## ClassName(std::string name)
 {
   Epetra_ ## ClassName * obj = NULL;
   try {
@@ -163,7 +163,6 @@ Epetra_ ## ClassName * Read ## ClassName(string name)
 %enddef
 
 // C++ STL support
-using namespace std;
 %include "stl.i"
 
 // Trilinos interface support

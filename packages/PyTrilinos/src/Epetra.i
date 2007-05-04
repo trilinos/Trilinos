@@ -85,12 +85,11 @@ SerialDenseMatrix, IntSerialDenseVector and IntSerialDenseMatrix.
 
 %{
 // System includes
-#include <iostream>
 #include <sstream>
-#include <vector>
 
 // Configuration includes
 #include "PyTrilinos_config.h"
+#include "Epetra_ConfigDefs.h"
 
 // Import the numpy interface
 #include "NumPyImporter.h"
@@ -101,7 +100,7 @@ SerialDenseMatrix, IntSerialDenseVector and IntSerialDenseMatrix.
 %feature("compactdefaultargs");
 
 // SWIG library includes
-using namespace std;
+using std::string;
 %include "stl.i"
 %include "exception.i"
 

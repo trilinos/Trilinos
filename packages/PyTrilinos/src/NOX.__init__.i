@@ -93,7 +93,6 @@ script in the example subdirectory of the PyTrilinos package:
 %feature("autodoc", "1");
 
 // SWIG library includes
-using namespace std;
 %include "stl.i"
 
 // Trilinos interface file imports.

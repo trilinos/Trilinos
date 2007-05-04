@@ -130,15 +130,11 @@ supported.
 %feature("autodoc", "1");
 
 // C++ STL support
-using namespace std;
 %include "stl.i"
 
 // Support for other Trilinos packages
 %import  "Teuchos.i"
 %import  "Epetra.i"
-//%include "Teuchos_ScalarTraits.hpp"
-//%template (SCT)
-//  Teuchos::ScalarTraits<double>;
 
 //////////////////////////////////////////////
 // Support these classes, encapsulated in a //
@@ -166,13 +162,15 @@ __version__ = Anasazi_Version().split()[2]
 // Anasazi Types support //
 ///////////////////////////
 %include "AnasaziTypes.hpp"
-%template (ValueDouble)
-  Anasazi::Value<double>;
-%extend ValueDouble {
-  string __str__() {
-    return string("Psych!");
+%extend Anasazi::Value {
+  std::string __str__() {
+    std::stringstream output;
+    output << self->realpart << "+" << self->imagpart << "j";
+    return output.str();
   }
 }
+%template (ValueDouble)
+  Anasazi::Value<double>;
 
 ///////////////////////////////////
 // Anasazi OutputManager support //

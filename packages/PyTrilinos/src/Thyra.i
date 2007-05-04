@@ -79,7 +79,6 @@ namespace std {
 }
 
 // Thyra interface imports and includes
-using namespace std;
 #define TEMPLATE_FRIENDS_NOT_SUPPORTED
 %import  "Teuchos_ConfigDefs.hpp"
 %import  "Teuchos_Range1D.hpp"

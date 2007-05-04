@@ -81,7 +81,6 @@ NOX.Epetra.Interface provides the following user-level classes:
 %ignore *::operator=;
 
 // STL support
-using namespace std;
 %include "stl.i"
 
 // Trilinos module imports

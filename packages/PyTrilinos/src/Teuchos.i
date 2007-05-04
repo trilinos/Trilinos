@@ -79,7 +79,7 @@ ParameterList will accept a python dictionary.
 // needs to be #include-ed here.
 %{
 // System includes
-#include <sstream>
+//#include <sstream>
 
 // Teuchos includes
 #include "Teuchos_FILEstream.hpp"
@@ -112,7 +112,7 @@ ParameterList will accept a python dictionary.
 // and makes certain conversions seamless, such as between std::string
 // and python strings.
 %include "stl.i"
-using namespace std;
+using std::string;
 namespace std {
   class logic_error;
   class runtime_error;
@@ -279,12 +279,12 @@ Teuchos::ParameterList &
 %teuchos_exception(XMLObject, toString         )
 %ignore Teuchos::XMLObject(XMLObjectImplem*);
 %extend Teuchos::XMLObject {
-  string __str__() const {
+  std::string __str__() const {
     try {
       return self->toString();
     }
     catch(std::logic_error e) {
-      return string("");
+      return std::string("");
     }
   }
 }

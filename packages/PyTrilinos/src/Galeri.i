@@ -117,7 +117,6 @@ example subdirectory of the PyTrilinos package:
 %feature("autodoc", "1");
 
 // Typemap support for STL
-using namespace std;
 %include "stl.i"
 
 ////////////////////////////

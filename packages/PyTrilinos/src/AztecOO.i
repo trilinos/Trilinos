@@ -110,7 +110,6 @@ example subdirectory of the PyTrilinos package:
 %include "numpy.i"
 
 // External Trilinos interface imports
-using namespace std;
 %import "Epetra.i"
 #ifdef HAVE_AZTECOO_TEUCHOS
 %import "Teuchos.i"

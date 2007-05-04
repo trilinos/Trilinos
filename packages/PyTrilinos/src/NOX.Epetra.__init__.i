@@ -138,13 +138,13 @@ using namespace NOX::Epetra;
 %enddef
 
 // General ignore directives
+%ignore *::print(ostream &);
 %ignore *::print(std::ostream &) const;
 %ignore *::print(std::ostream &, int) const;
 %ignore *::operator=;
 %ignore *::operator<<;
 
 // SWIG library includes
-using namespace std;
 %include "stl.i"
 
 // Trilinos interface support
