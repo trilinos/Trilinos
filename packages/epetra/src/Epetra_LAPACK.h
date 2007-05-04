@@ -206,6 +206,11 @@ class Epetra_LAPACK {
 
   //! @name Orthogonal matrix routines
   //@{ 
+  //! Epetra_LAPACK wrapper for generating a m x n real matrix Q with orthonormal columns, defined as the product of k elementary reflectors. (SORGQR)
+  void ORGQR( const int M, const int N, const int K, float * A, const int LDA, float * TAU, float * WORK, const int LWORK, int * INFO) const;
+  //! Epetra_LAPACK wrapper for generating a m x n real matrix Q with orthonormal columns, defined as the product of k elementary reflectors. (DORGQR)
+  void ORGQR( const int M, const int N, const int K, double * A, const int LDA, double * TAU, double * WORK, const int LWORK, int * INFO) const;
+
   //! Epetra_LAPACK wrapper for generating a real orthogonal matrix Q defined by elementary reflectors. (SORGHR)
   void ORGHR( const int N, const int ILO, const int IHI, float * A, const int LDA, float * TAU, float * WORK, const int LWORK, int * INFO) const;
   //! Epetra_LAPACK wrapper for generating a real orthogonal matrix Q defined by elementary reflectors. (DORGHR)

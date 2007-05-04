@@ -276,6 +276,16 @@ void Epetra_LAPACK::HSEQR( const char JOB, const char COMPZ, const int N, const 
   DHSEQR_F77(CHAR_MACRO(JOB), CHAR_MACRO(COMPZ), &N, &ILO, &IHI, H, &LDH, WR, WI, Z, &LDZ, WORK, &LWORK, INFO);
 }
 //=============================================================================
+void Epetra_LAPACK::ORGQR( const int M, const int N, const int K, float * A, const int LDA, float * TAU, 
+			  float * WORK, const int LWORK, int * INFO) const {
+  SORGQR_F77( &M, &N, &K, A, &LDA, TAU, WORK, &LWORK, INFO);
+}
+//=============================================================================
+void Epetra_LAPACK::ORGQR( const int M, const int N, const int K, double * A, const int LDA, double * TAU, 
+			  double * WORK, const int LWORK, int * INFO) const {
+  DORGQR_F77( &M, &N, &K, A, &LDA, TAU, WORK, &LWORK, INFO);
+}
+//=============================================================================
 void Epetra_LAPACK::ORGHR( const int N, const int ILO, const int IHI, float * A, const int LDA, float * TAU, 
 			  float * WORK, const int LWORK, int * INFO) const {
   SORGHR_F77( &N, &ILO, &IHI, A, &LDA, TAU, WORK, &LWORK, INFO);
