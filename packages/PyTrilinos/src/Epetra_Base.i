@@ -196,20 +196,35 @@ except ImportError:
 }
 %enddef
 
-// Define macro for a typemap that converts return arguments from
+// Define macro for typemaps that convert arguments from
 // Epetra_*Matrix or Epetra_*Vector to the corresponding
 // Epetra_NumPy*Matrix or Epetra_NumPy*Vector.  There is additional
 // magic in the python code to convert the Epetra_NumPy*Matrix or
 // Epetra_NumPy*Vector to to an Epetra.*Matrix or Epetra.*Vector.
-%define %epetra_array_output_typemaps(array,numPyArray)
-%typemap(out) array * {
+%define %epetra_array_typemaps(ClassName)
+%typemap(out) Epetra_##ClassName * {
   if ($1 == NULL) $result = Py_BuildValue("");
   else {
-    numPyArray * npa = new numPyArray(*$1);
-    $result = SWIG_NewPointerObj(npa, $descriptor(numPyArray*), 1);
+    Epetra_NumPy##ClassName * npa = new Epetra_NumPy##ClassName(*$1);
+    $result = SWIG_NewPointerObj(npa, $descriptor(Epetra_NumPy##ClassName*), 1);
   }
 }
-%apply (array *) {array &}
+%apply (Epetra_##ClassName *) {Epetra_##ClassName &}
+
+%typemap(in,numinputs=0) Epetra_##ClassName *& (Epetra_##ClassName * _object) {
+  $1 = &_object;
+}
+%typemap(argout) Epetra_##ClassName *& {
+  PyObject * obj;
+  Epetra_NumPy##ClassName * npa = new Epetra_NumPy##ClassName(**$1);
+  obj = SWIG_NewPointerObj((void*)npa, $descriptor(Epetra_NumPy##ClassName*), 1);
+  $result = SWIG_Python_AppendOutput($result,obj);
+}
+
+%typemap(directorin) Epetra_##ClassName & %{
+  Epetra_NumPy##ClassName npa$argnum = Epetra_NumPy##ClassName(View,$1_name);
+  $input = SWIG_NewPointerObj(&npa$argnum, $descriptor(Epetra_NumPy##ClassName*), 0);
+%}
 %enddef
 
 // Define macro for a typemap that converts a reference to a pointer
@@ -223,30 +238,6 @@ except ImportError:
   PyObject * obj = SWIG_NewPointerObj((void*)(*$1), $descriptor(ClassName*), 1);
   $result = SWIG_Python_AppendOutput($result,obj);
 }
-%enddef
-
-// Define macro for a typemap that converts a reference to a pointer
-// to an Epetra array object, into a return argument (which might be
-// placed into a tuple, if there are more than one).
-%define %epetra_array_argout_typemaps(ClassName)
-%typemap(in,numinputs=0) Epetra_ ## ClassName *& (Epetra_ ## ClassName * _object) {
-  $1 = &_object;
-}
-%typemap(argout) Epetra_ ## ClassName *& {
-  PyObject * obj;
-  Epetra_NumPy ## ClassName * npa = new Epetra_NumPy ## ClassName(**$1);
-  obj = SWIG_NewPointerObj((void*)npa, $descriptor(Epetra_NumPy ## ClassName*), 1);
-  $result = SWIG_Python_AppendOutput($result,obj);
-}
-%enddef
-
-// Define a macro for a directorin typemap that converts a C++
-// Epetra_[Multi]Vector to a python Epetra.[Multi]Vector.
-%define %epetra_array_director_typemaps(ClassName)
-%typemap(directorin) Epetra_ ## ClassName & %{
-  Epetra_NumPy ## ClassName npa$argnum = Epetra_NumPy ## ClassName(View,$1_name);
-  $input = SWIG_NewPointerObj(&npa$argnum, $descriptor(Epetra_NumPy ## ClassName*), 0);
-%}
 %enddef
 
 ////////////////////////////

@@ -54,14 +54,10 @@
 //////////////
 // Typemaps //
 //////////////
-%epetra_array_output_typemaps(Epetra_IntSerialDenseMatrix, Epetra_NumPyIntSerialDenseMatrix)
-%epetra_array_output_typemaps(Epetra_IntSerialDenseVector, Epetra_NumPyIntSerialDenseVector)
-%epetra_array_output_typemaps(Epetra_SerialDenseMatrix,    Epetra_NumPySerialDenseMatrix   )
-%epetra_array_output_typemaps(Epetra_SerialDenseVector,    Epetra_NumPySerialDenseVector   )
-%epetra_array_argout_typemaps(IntSerialDenseMatrix)
-%epetra_array_argout_typemaps(IntSerialDenseVector)
-%epetra_array_argout_typemaps(SerialDenseMatrix)
-%epetra_array_argout_typemaps(SerialDenseVector)
+%epetra_array_typemaps(IntSerialDenseMatrix)
+%epetra_array_typemaps(IntSerialDenseVector)
+%epetra_array_typemaps(SerialDenseMatrix   )
+%epetra_array_typemaps(SerialDenseVector   )
 
 /////////////////////////////////////////
 // Epetra_IntSerialDenseMatrix support //

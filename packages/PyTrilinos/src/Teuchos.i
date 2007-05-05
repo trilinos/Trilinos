@@ -74,12 +74,11 @@ ParameterList will accept a python dictionary.
 // following:
 #pragma SWIG nowarn=312
 
-// Code within the percent-bracket delimiters is copied verbatim to
-// the C++ wrapper source file.  Anything that is %include-ed later
-// needs to be #include-ed here.
+// Includes
 %{
-// System includes
-//#include <sstream>
+// Configuration includes
+#include "PyTrilinos_config.h"
+#include "Teuchos_ConfigDefs.hpp"
 
 // Teuchos includes
 #include "Teuchos_FILEstream.hpp"

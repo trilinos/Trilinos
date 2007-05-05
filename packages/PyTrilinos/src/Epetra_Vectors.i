@@ -45,16 +45,10 @@
 //////////////
 // Typemaps //
 //////////////
-%epetra_array_output_typemaps(Epetra_IntVector,   Epetra_NumPyIntVector  )
-%epetra_array_output_typemaps(Epetra_MultiVector, Epetra_NumPyMultiVector)
-%epetra_array_output_typemaps(Epetra_Vector,      Epetra_NumPyVector     )
-%epetra_array_output_typemaps(Epetra_FEVector,    Epetra_NumPyFEVector   )
-%epetra_array_argout_typemaps(IntVector)
-%epetra_array_argout_typemaps(MultiVector)
-%epetra_array_argout_typemaps(Vector)
-%epetra_array_argout_typemaps(FEVector)
-%epetra_array_director_typemaps(MultiVector)
-%epetra_array_director_typemaps(Vector)
+%epetra_array_typemaps(IntVector  )
+%epetra_array_typemaps(MultiVector)
+%epetra_array_typemaps(Vector     )
+%epetra_array_typemaps(FEVector   )
 
 //////////////////////////////
 // Epetra_IntVector support //

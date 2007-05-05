@@ -133,8 +133,9 @@ supported.
 %include "stl.i"
 
 // Support for other Trilinos packages
-%import  "Teuchos.i"
-%import  "Epetra.i"
+ //%import  "Teuchos.i"
+ //%import  "Epetra.i"
+%include "Teuchos_Epetra.i"
 
 //////////////////////////////////////////////
 // Support these classes, encapsulated in a //
