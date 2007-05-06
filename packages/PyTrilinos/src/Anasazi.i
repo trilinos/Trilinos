@@ -162,6 +162,20 @@ __version__ = Anasazi_Version().split()[2]
 ///////////////////////////
 // Anasazi Types support //
 ///////////////////////////
+%extend Anasazi::Eigensolution {
+  std::vector< Anasazi::Value< ScalarType > > & Evals() {
+    return self->Evals;
+  }
+  MV & Evecs() {
+    return *(self->Evecs);
+  }
+  MV & Espace() {
+    return *(self->Espace);
+  }
+}
+%ignore Anasazi::Eigensolution::Evals;
+%ignore Anasazi::Eigensolution::Evecs;
+%ignore Anasazi::Eigensolution::Espace;
 %include "AnasaziTypes.hpp"
 %extend Anasazi::Value {
   std::string __str__() {

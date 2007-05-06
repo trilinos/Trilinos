@@ -270,7 +270,7 @@ __version__ = Version().split()[2]
   std::string __str__() {
     std::stringstream os;
     self->Print(os);             // Put the output in os
-    std::string s = os.str();         // Extract the string from os
+    std::string s = os.str();    // Extract the string from os
     int last = s.length();       // Get the last index
     if (s.substr(last) == "\n")
       last-=1;                   // Ignore any trailing newline

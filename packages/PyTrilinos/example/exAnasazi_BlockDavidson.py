@@ -60,9 +60,9 @@ def main():
    comm = Epetra.PyComm()
    nx = 10
    ny = nx
-   galeriList = {"n": nx * ny,  # for Linear map
-                 "nx": nx,      # for Laplace2D, which requires nx
-                 "ny": ny       # and ny
+   galeriList = {"n"  : nx * ny,  # for Linear map
+                 "nx" : nx,       # for Laplace2D, which requires nx
+                 "ny" : ny        # and ny
                  }
    map = Galeri.CreateMap("Linear", comm, galeriList)
    matrix = Galeri.CreateCrsMatrix("Laplace2D", map, galeriList)
@@ -103,11 +103,14 @@ def main():
 
    # Solve the problem
    returnCode = mySolverMgr.solve()
-   print returnCode
 
    # Get the eigenvalues and eigenvectors
    sol = myProblem.getSolution()
-   evecs = sol.Evecs
+   evals = sol.Evals()
+   for (i,eval) in enumerate(evals):
+      print "Eigenvalue", i, ":", eval
+   evecs = sol.Evecs()
+   print "type(evecs) =", type(evecs)
 
 ################################################################################
 

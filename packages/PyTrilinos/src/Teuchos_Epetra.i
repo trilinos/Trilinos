@@ -40,11 +40,18 @@
 // Epetra_Vector or other array-like class.  In this case, what the
 // python user will expect is an enhanced Epetra array-like object. To
 // use this interface file, use the directive
-
+//
 // %include "Teuchos_Epetra.i"
-
+//
 // It is not necessary (nor harmful) to also use '%import "Teuchos.i"'
 // and/or '%import "Epetra.i"'.
+
+// Forward declarations
+%{
+// PyObject * PyExc_EpetraError;
+// std::string Epetra_Object___str__(Epetra_Object*);
+// void        Epetra_Object_Print(  Epetra_Object*,PyObject*pf=NULL);
+%}
 
 // Imports
 %import "Teuchos.i"
@@ -66,6 +73,10 @@
     $result = SWIG_NewPointerObj(npa, $descriptor(Epetra_NumPy##ClassName*), 1);
   }
 }
+
+// %ignore Teuchos::RefCountPtr< Epetra_##ClassName >::access_node() const;
+// %template (RCP_Epetra_##ClassName)
+//   Teuchos::RefCountPtr< Epetra_##ClassName >;
 %enddef
 
 // Implement the macro for concrete classes
