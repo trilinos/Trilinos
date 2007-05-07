@@ -7217,6 +7217,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
      ML_Gen_Smoother_VBlockSymGaussSeidel(*ml_subproblem, 0, ML_PRESMOOTHER,
 				  *int_arg1, omega, *int_arg2,int_arg3);
 
+#  ifdef HAVE_ML_IFPACK
    } else if (smoother == (void *) ML_Gen_Smoother_Ifpack) {
 
      /* Incomplete factorization subsmoother */
@@ -7224,7 +7225,6 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
      if (ML_Smoother_Arglist_Nargs(args) != 4)
        pr_error("ML_Smoother_Gen_Hiptmair_Data: Need 4 arguments for ML_Gen_Smoother_Ifpack() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
 
-#    ifdef HAVE_ML_IFPACK
                        
      char   *IfpackType = (char *) ML_Smoother_Arglist_Get(args, 0);
      void * IfpackList  = ML_Smoother_Arglist_Get(args, 1);
@@ -7234,9 +7234,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
      ML_Gen_Smoother_Ifpack(*ml_subproblem, IfpackType,
                             *IfpackOverlap, 0, ML_PRESMOOTHER,
                             IfpackList, Comm);
-#    else
-     pr_error("ML must be configured with ifpack support:  --enable-ifpack\n");
-#    endif
+#  endif
 
    } else {
    printf("ML_Smoother_Gen_Hiptmair_Data: Unknown smoother for Hiptmair subproblem\n");
