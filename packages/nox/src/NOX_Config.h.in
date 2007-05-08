@@ -122,6 +122,9 @@
 /* Define if want to build with ml enabled */
 #undef HAVE_NOX_ML_EPETRA
 
+/* Define if want to build with sacado enabled */
+#undef HAVE_NOX_SACADO
+
 /* define that Thyra is activated in nox */
 #undef HAVE_NOX_THYRA
 

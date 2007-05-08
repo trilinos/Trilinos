@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE AR ac_ct_AR ALTERNATE_AR USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE HAVE_DOXYGEN_DOT EGREP INSIDE_TRILINOS_TRUE INSIDE_TRILINOS_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_LIBNOXTHYRA_TRUE BUILD_LIBNOXTHYRA_FALSE BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_NOX_TESTS_TRUE BUILD_NOX_TESTS_FALSE BUILD_LOCA_TESTS_TRUE BUILD_LOCA_TESTS_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE ADDON_lapack_TESTS ADDON_loca_lapack_TESTS BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE ADDON_epetra_TESTS ADDON_loca_epetra_TESTS BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE ADDON_petsc_TESTS ADDON_loca_petsc_TESTS BUILD_BELOS_TESTS_TRUE BUILD_BELOS_TESTS_FALSE ADDON_belos_TESTS BUILD_TESTUTILS_TRUE BUILD_TESTUTILS_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE ADDON_lapack_EXAMPLES ADDON_loca_lapack_EXAMPLES BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE ADDON_epetra_EXAMPLES ADDON_loca_epetra_EXAMPLES BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE ADDON_petsc_EXAMPLES BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE ADDON_belos_EXAMPLES BUILD_LOCAANASAZI_TRUE BUILD_LOCAANASAZI_FALSE BUILD_LIBLOCAMF_TRUE BUILD_LIBLOCAMF_FALSE MF_INCDIR MF_LIBDIR MF_LIBS BUILD_NOX_EPETRAEXT_SUPPORT_TRUE BUILD_NOX_EPETRAEXT_SUPPORT_FALSE BUILD_EPETRA_MULTIPHYSICS_TRUE BUILD_EPETRA_MULTIPHYSICS_FALSE BUILD_NOX_EPETRA_ML_SUPPORT_TRUE BUILD_NOX_EPETRA_ML_SUPPORT_FALSE FLIBS BLAS_LIBS LAPACK_LIBS PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir abs_builddir abs_top_builddir MPI_LIBS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE AR ac_ct_AR ALTERNATE_AR USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE HAVE_DOXYGEN_DOT EGREP INSIDE_TRILINOS_TRUE INSIDE_TRILINOS_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_LIBNOXTHYRA_TRUE BUILD_LIBNOXTHYRA_FALSE BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_NOX_TESTS_TRUE BUILD_NOX_TESTS_FALSE BUILD_LOCA_TESTS_TRUE BUILD_LOCA_TESTS_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE ADDON_lapack_TESTS ADDON_loca_lapack_TESTS BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE ADDON_epetra_TESTS ADDON_loca_epetra_TESTS BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE ADDON_petsc_TESTS ADDON_loca_petsc_TESTS BUILD_BELOS_TESTS_TRUE BUILD_BELOS_TESTS_FALSE ADDON_belos_TESTS BUILD_TESTUTILS_TRUE BUILD_TESTUTILS_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE ADDON_lapack_EXAMPLES ADDON_loca_lapack_EXAMPLES BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE ADDON_epetra_EXAMPLES ADDON_loca_epetra_EXAMPLES BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE ADDON_petsc_EXAMPLES BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE ADDON_belos_EXAMPLES BUILD_LOCAANASAZI_TRUE BUILD_LOCAANASAZI_FALSE BUILD_LIBLOCAMF_TRUE BUILD_LIBLOCAMF_FALSE MF_INCDIR MF_LIBDIR MF_LIBS BUILD_NOX_EPETRAEXT_SUPPORT_TRUE BUILD_NOX_EPETRAEXT_SUPPORT_FALSE BUILD_EPETRA_MULTIPHYSICS_TRUE BUILD_EPETRA_MULTIPHYSICS_FALSE BUILD_NOX_EPETRA_ML_SUPPORT_TRUE BUILD_NOX_EPETRA_ML_SUPPORT_FALSE ENABLE_NOX_SACADO_TRUE ENABLE_NOX_SACADO_FALSE FLIBS BLAS_LIBS LAPACK_LIBS PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir abs_builddir abs_top_builddir MPI_LIBS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -921,6 +921,9 @@ Optional Features:
                           library. Can be overridden with
                           --<en|dis>able-nox-ml.
   --enable-nox-ml         Build ml support into the noxepetra library.
+  --enable-sacado         Build the Sacado adapater support in NOX. Can be
+                          overridden with --disable-epetraext-sacado.
+  --enable-nox-sacado     Build the Sacado adapater support in NOX.
   --enable-prerelease     Enable compilation and documentation of prerelease
                           code. Prerelease code is code under development that
                           we restrict from release to the public. It is
@@ -4082,7 +4085,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4085:" \
+echo "$as_me:4088:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8954,6 +8957,64 @@ fi
 
 
 # ------------------------------------------------------------------------
+# Sacado FEApp example support
+# ------------------------------------------------------------------------
+
+
+
+# Check whether --enable-sacado or --disable-sacado was given.
+if test "${enable_sacado+set}" = set; then
+  enableval="$enable_sacado"
+  ac_cv_implicit_use_sacado=$enableval
+else
+  ac_cv_implicit_use_sacado=no
+fi;
+
+if test "Xyes
+  " != "Xno"; then
+  ac_cv_nox_using_sacado_default=$ac_cv_implicit_use_sacado
+else
+  ac_cv_nox_using_sacado_default=no
+fi
+
+# Check whether --enable-nox-sacado or --disable-nox-sacado was given.
+if test "${enable_nox_sacado+set}" = set; then
+  enableval="$enable_nox_sacado"
+  ac_cv_use_sacado=$enableval
+else
+  ac_cv_use_sacado=$ac_cv_nox_using_sacado_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional sacado dependent code in nox" >&5
+echo $ECHO_N "checking whether to build optional sacado dependent code in nox... $ECHO_C" >&6
+
+if test "X$ac_cv_use_sacado" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_NOX_SACADO 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_sacado" = "Xyes"; then
+  ENABLE_NOX_SACADO_TRUE=
+  ENABLE_NOX_SACADO_FALSE='#'
+else
+  ENABLE_NOX_SACADO_TRUE='#'
+  ENABLE_NOX_SACADO_FALSE=
+fi
+
+
+
+
+# ------------------------------------------------------------------------
 # User defined directories
 # ------------------------------------------------------------------------
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
@@ -9074,7 +9135,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9077: \"$ac_link\") >&5
+(eval echo $as_me:9138: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9152,7 +9213,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9155: \"$ac_link\") >&5
+(eval echo $as_me:9216: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10154,7 +10215,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10157: \"$ac_link\") >&5
+(eval echo $as_me:10218: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10232,7 +10293,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10235: \"$ac_link\") >&5
+(eval echo $as_me:10296: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -15716,7 +15777,7 @@ echo "${ECHO_T}$WITH_PRERELEASE" >&6
 # Output files
 # ------------------------------------------------------------------------
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files Makefile Makefile.export.nox doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile src-epetra/Makefile src-petsc/Makefile src-belos/Makefile src-thyra/Makefile src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-mf/Makefile examples/Makefile examples/lapack/Makefile examples/lapack/NOX_SimpleExamples/Makefile examples/lapack/LOCA_Chan/Makefile examples/lapack/LOCA_Brusselator/Makefile examples/lapack/LOCA_1DFDPitchfork/Makefile examples/epetra/Makefile examples/epetra/NOX_1DFEMNonlinear/Makefile examples/epetra/LOCA_Tcubed/Makefile examples/epetra/LOCA_Brusselator_xyzt/Makefile examples/petsc/Makefile examples/petsc/DS6.5.1/Makefile examples/petsc/1DFiniteDifference/Makefile test/Makefile test/basic/Makefile test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_TestProblems/Makefile test/lapack/LOCA_UnitTests/Makefile test/lapack/LOCA_ChanProblem/Makefile test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Operators/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_TestProblems/Makefile test/epetra/LOCA_UnitTests/Makefile test/epetra/LOCA_Tcubed/Makefile test/epetra/LOCA_Pitchfork/Makefile test/epetra/LOCA_Brusselator/Makefile test/epetra/LOCA_Brusselator_xyzt/Makefile test/epetra/LOCA_MultiPoint_Tcubed/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/epetra/DS6.5.1/Makefile test/epetra/Brusselator/Makefile test/epetra/FiniteDifferenceColoring/Makefile test/petsc/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile Makefile.export.nox doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile src-epetra/Makefile src-petsc/Makefile src-belos/Makefile src-thyra/Makefile src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-mf/Makefile examples/Makefile examples/lapack/Makefile examples/lapack/NOX_SimpleExamples/Makefile examples/lapack/LOCA_Chan/Makefile examples/lapack/LOCA_Brusselator/Makefile examples/lapack/LOCA_1DFDPitchfork/Makefile examples/epetra/Makefile examples/epetra/NOX_1DFEMNonlinear/Makefile examples/epetra/NOX_Sacado_FEApp/Makefile examples/epetra/LOCA_Tcubed/Makefile examples/epetra/LOCA_Brusselator_xyzt/Makefile examples/petsc/Makefile examples/petsc/DS6.5.1/Makefile examples/petsc/1DFiniteDifference/Makefile test/Makefile test/basic/Makefile test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_TestProblems/Makefile test/lapack/LOCA_UnitTests/Makefile test/lapack/LOCA_ChanProblem/Makefile test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Operators/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_TestProblems/Makefile test/epetra/LOCA_UnitTests/Makefile test/epetra/LOCA_Tcubed/Makefile test/epetra/LOCA_Pitchfork/Makefile test/epetra/LOCA_Brusselator/Makefile test/epetra/LOCA_Brusselator_xyzt/Makefile test/epetra/LOCA_MultiPoint_Tcubed/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/epetra/DS6.5.1/Makefile test/epetra/Brusselator/Makefile test/epetra/FiniteDifferenceColoring/Makefile test/petsc/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -16087,6 +16148,13 @@ if test -z "${BUILD_NOX_EPETRA_ML_SUPPORT_TRUE}" && test -z "${BUILD_NOX_EPETRA_
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_NOX_EPETRA_ML_SUPPORT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_NOX_EPETRA_ML_SUPPORT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_NOX_SACADO_TRUE}" && test -z "${ENABLE_NOX_SACADO_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_NOX_SACADO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_NOX_SACADO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -16565,6 +16633,7 @@ do
   "examples/lapack/LOCA_1DFDPitchfork/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/lapack/LOCA_1DFDPitchfork/Makefile" ;;
   "examples/epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/epetra/Makefile" ;;
   "examples/epetra/NOX_1DFEMNonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/epetra/NOX_1DFEMNonlinear/Makefile" ;;
+  "examples/epetra/NOX_Sacado_FEApp/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/epetra/NOX_Sacado_FEApp/Makefile" ;;
   "examples/epetra/LOCA_Tcubed/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/epetra/LOCA_Tcubed/Makefile" ;;
   "examples/epetra/LOCA_Brusselator_xyzt/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/epetra/LOCA_Brusselator_xyzt/Makefile" ;;
   "examples/petsc/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/petsc/Makefile" ;;
@@ -16846,6 +16915,8 @@ s,@BUILD_EPETRA_MULTIPHYSICS_TRUE@,$BUILD_EPETRA_MULTIPHYSICS_TRUE,;t t
 s,@BUILD_EPETRA_MULTIPHYSICS_FALSE@,$BUILD_EPETRA_MULTIPHYSICS_FALSE,;t t
 s,@BUILD_NOX_EPETRA_ML_SUPPORT_TRUE@,$BUILD_NOX_EPETRA_ML_SUPPORT_TRUE,;t t
 s,@BUILD_NOX_EPETRA_ML_SUPPORT_FALSE@,$BUILD_NOX_EPETRA_ML_SUPPORT_FALSE,;t t
+s,@ENABLE_NOX_SACADO_TRUE@,$ENABLE_NOX_SACADO_TRUE,;t t
+s,@ENABLE_NOX_SACADO_FALSE@,$ENABLE_NOX_SACADO_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t

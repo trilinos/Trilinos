@@ -604,6 +604,15 @@ AM_CONDITIONAL(BUILD_EPETRA_MULTIPHYSICS, true)
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, ml, NOX_ML_EPETRA, BUILD_NOX_EPETRA_ML_SUPPORT, yes, [Build ml support into the noxepetra library.], [Implicitly build ml support into the noxepetra library.  Can be overridden with --<en|dis>able-nox-ml.])
 
 # ------------------------------------------------------------------------
+# Sacado FEApp example support
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  nox, sacado, NOX_SACADO, ENABLE_NOX_SACADO, yes
+  ,[Build the Sacado adapater support in NOX.]
+  ,[Build the Sacado adapater support in NOX.  Can be overridden with --disable-epetraext-sacado.])
+
+# ------------------------------------------------------------------------
 # User defined directories 
 # ------------------------------------------------------------------------
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
@@ -887,6 +896,7 @@ AC_CONFIG_FILES([
 		examples/lapack/LOCA_1DFDPitchfork/Makefile
 		examples/epetra/Makefile
 		examples/epetra/NOX_1DFEMNonlinear/Makefile
+		examples/epetra/NOX_Sacado_FEApp/Makefile
 		examples/epetra/LOCA_Tcubed/Makefile
 		examples/epetra/LOCA_Brusselator_xyzt/Makefile
                 examples/petsc/Makefile

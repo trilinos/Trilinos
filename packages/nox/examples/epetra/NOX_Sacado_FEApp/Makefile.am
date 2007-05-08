@@ -1,3 +1,5 @@
+## $Id$ 
+## $Source$ 
 #@HEADER
 # ************************************************************************
 # 
@@ -30,4 +32,33 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = NOX_1DFEMNonlinear NOX_Sacado_FEApp LOCA_Brusselator_xyzt LOCA_Tcubed
+# ------------------------------------------------------------------------
+# FEApp Sources
+# ------------------------------------------------------------------------
+include $(top_srcdir)/../sacado/example/FEApp/MakefileFEAppStub.am
+
+# Include export Makefiles for correct paths
+include $(top_builddir)/Makefile.export.nox
+include $(top_builddir)/../sacado/Makefile.export.sacado
+
+EXEEXT = .exe
+
+if BUILD_EPETRA_EXAMPLES
+if ENABLE_NOX_SACADO
+noinst_PROGRAMS = brusselator
+endif
+endif
+
+brusselator_SOURCES = \
+	$(srcdir)/brusselator.cpp \
+	$(FEAPP_H) \
+	$(FEAPP)
+
+brusselator_CXXFLAGS = \
+	-I$(FEAPP_PATH) \
+	$(NOX_INCLUDES) \
+	$(SACADO_INCLUDES)
+
+brusselator_LDADD = \
+	$(NOX_LIBS) \
+	$(SACADO_LIBS)

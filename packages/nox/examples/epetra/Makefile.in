@@ -209,6 +209,8 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+ENABLE_NOX_SACADO_FALSE = @ENABLE_NOX_SACADO_FALSE@
+ENABLE_NOX_SACADO_TRUE = @ENABLE_NOX_SACADO_TRUE@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
@@ -313,7 +315,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = NOX_1DFEMNonlinear LOCA_Brusselator_xyzt LOCA_Tcubed
+SUBDIRS = NOX_1DFEMNonlinear NOX_Sacado_FEApp LOCA_Brusselator_xyzt LOCA_Tcubed
 all: all-recursive
 
 .SUFFIXES:
