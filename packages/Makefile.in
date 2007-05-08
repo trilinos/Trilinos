@@ -91,7 +91,7 @@ CTAGS = ctags
 DIST_SUBDIRS = teuchos rtop thyra kokkos epetra triutils tpetra \
 	epetraext isorropia aztecoo galeri amesos ifpack komplex claps \
 	belos anasazi rbgen pliris ml aristos moertel stratimikos \
-	meros nox capo rythmos new_package moocho sacado PyTrilinos \
+	meros sacado nox capo rythmos new_package moocho PyTrilinos \
 	didasko WebTrilinos external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = aclocal -I config
@@ -358,12 +358,12 @@ SUBDIRS = \
 	$(MOERTEL_SUBDIR)      \
 	$(STRATIMIKOS_SUBDIR)  \
 	$(MEROS_SUBDIR)        \
+	$(SACADO_SUBDIR)       \
 	$(NOX_SUBDIR)          \
 	$(CAPO_SUBDIR)         \
 	$(RYTHMOS_SUBDIR)      \
 	$(NEW_PACKAGE_SUBDIR)  \
 	$(MOOCHO_SUBDIR)       \
-	$(SACADO_SUBDIR)       \
 	$(PYTRILINOS_SUBDIR)   \
 	$(DIDASKO_SUBDIR) \
 	$(WEBTRILINOS_SUBDIR) \
@@ -674,12 +674,12 @@ libs:
 	$(MOERTEL_LIBS_BUILD_CMND)
 	$(STRATIMIKOS_LIBS_BUILD_CMND)
 	$(MEROS_LIBS_BUILD_CMND)
+	$(SACADO_LIBS_BUILD_CMND)
 	$(NOX_LIBS_BUILD_CMND)
 	$(CAPO_LIBS_BUILD_CMND)
 	$(RYTHMOS_LIBS_BUILD_CMND)
 	$(NEW_PACKAGE_LIBS_BUILD_CMND)
 	$(MOOCHO_LIBS_BUILD_CMND)
-	$(SACADO_LIBS_BUILD_CMND)
 	$(PYTRILINOS_LIBS_BUILD_CMND)
 	$(DIDASKO_LIBS_BUILD_CMND)
 	$(WEBTRILINOS_LIBS_BUILD_CMND)
@@ -710,12 +710,12 @@ all-libs:
 	$(STRATIMIKOS_ALL_LIBS_BUILD_CMND)
 	$(MOERTEL_ALL_LIBS_BUILD_CMND)
 	$(MEROS_ALL_LIBS_BUILD_CMND)
+	$(SACADO_ALL_LIBS_BUILD_CMND)
 	$(NOX_ALL_LIBS_BUILD_CMND)
 	$(CAPO_ALL_LIBS_BUILD_CMND)
 	$(RYTHMOS_ALL_LIBS_BUILD_CMND)
 	$(NEW_PACKAGE_ALL_LIBS_BUILD_CMND)
 	$(MOOCHO_ALL_LIBS_BUILD_CMND)
-	$(SACADO_ALL_LIBS_BUILD_CMND)
 	$(PYTRILINOS_ALL_LIBS_BUILD_CMND)
 	$(DIDASKO_ALL_LIBS_BUILD_CMND)
 	$(WEBTRILINOS_ALL_LIBS_BUILD_CMND)

@@ -420,6 +420,17 @@ else
 fi
 AM_CONDITIONAL(BUILD_ML, test "X$BUILD_ML" != "Xno")
 
+if test "X$ac_cv_use_sacado" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/sacado])
+  BUILD_SACADO=yes
+  if test "X$ac_cv_use_sacado_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-sacado"
+  fi
+else
+  BUILD_SACADO=no
+fi
+AM_CONDITIONAL(BUILD_SACADO, test "X$BUILD_SACADO" != "Xno")
+
 if test "X$ac_cv_use_nox" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/nox])
@@ -510,17 +521,6 @@ else
   BUILD_TPETRA=no
 fi
 AM_CONDITIONAL(BUILD_TPETRA, test "X$BUILD_TPETRA" != "Xno")
-
-if test "X$ac_cv_use_sacado" != "Xno"; then
-  AC_CONFIG_SUBDIRS([packages/sacado])
-  BUILD_SACADO=yes
-  if test "X$ac_cv_use_sacado_explicit" != "Xyes"; then
-    ac_configure_args="$ac_configure_args --enable-sacado"
-  fi
-else
-  BUILD_SACADO=no
-fi
-AM_CONDITIONAL(BUILD_SACADO, test "X$BUILD_SACADO" != "Xno")
 
 if test "X$ac_cv_use_didasko" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/didasko])
