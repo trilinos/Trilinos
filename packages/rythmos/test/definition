@@ -177,3 +177,11 @@
     COMM = SERIAL,MPI;
 }
 
+# Explicit Taylor polynomial integration on Van der Pol oscillator
+(FRAMEWORK,INSTALL) {
+    TESTS = ExplicitTaylorPolynomialStepper/VanDerPolOscillator/vdp.exe;
+    ARGS = --verbose;
+    COMM = SERIAL;
+    EXIT-STATUS = STRING-COMPARISON(Test passed!);
+}
+
