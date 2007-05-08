@@ -26,13 +26,6 @@
 # ***********************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
-
-all-local:
-	@echo ""
-	@echo "Trilinos package rythmos subdirectory test built successfully."
-	@echo ""
-
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
 #np# conditionally.
@@ -40,9 +33,4 @@ all-local:
 #np# in a subdirectory of this directory, use the Makefile.am located in
 #np# test1/ rather than this file.
 
-#SUBDIRS = unitTests
-
-SUBDIRS = ExplicitTaylorPolynomialStepper
-
-EXTRA_DIST = definition
-
+SUBDIRS = VanDerPolOscillator

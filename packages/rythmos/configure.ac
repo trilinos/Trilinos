@@ -261,6 +261,11 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   ,[Build the EpetraExt adapater support in Rythmos.]
   ,[Build the EpetraExt adapater support in Rythmos.  Can be overridden with --disable-rythmos-epetraext.])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  rythmos, sacado, RYTHMOS_SACADO, ENABLE_RYTHMOS_SACADO, yes
+  ,[Build the Sacado adapater support in Rythmos.]
+  ,[Build the Sacado adapater support in Rythmos.  Can be overridden with --disable-rythmos-sacado.])
+
 #TAC_ARG_ENABLE_CAN_USE_PACKAGE(
 #  rythmos, belos, RYTHMOS_BELOS, ENABLE_RYTHMOS_BELOS, yes
 #  ,[Build the Belos adapater support in Rythmos.]
@@ -522,6 +527,8 @@ AC_CONFIG_FILES([
 		example/epetra/Makefile
 		example/epetra/1Dfem/Makefile
 		test/Makefile
+		test/ExplicitTaylorPolynomialStepper/Makefile
+		test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile
 		])
 #    test/unitTests/Makefile
 #    test/unitTests/InArgs/Makefile

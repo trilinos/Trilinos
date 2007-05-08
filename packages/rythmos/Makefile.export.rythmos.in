@@ -6,7 +6,8 @@ include @abs_top_builddir@/../thyra/Makefile.export.thyra
 _RYTHMOS_INCLUDES = \
   -I@abs_top_srcdir@/src \
   -I@abs_top_builddir@/src \
-  $(THYRA_INCLUDES)
+  $(THYRA_INCLUDES) \
+  $(SACADO_INCLUDES)
 
 # Note, the order of the library dependencies is critical (higher level libraries from left to right)
 _RYTHMOS_LIBS = \
@@ -28,3 +29,4 @@ _RYTHMOS_LIBS = \
 @BUILD_EXAMPLES_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
 @BUILD_EXAMPLES_TRUE@@ENABLE_RYTHMOS_NOX_TRUE@@ENABLE_NOX_EPETRA_TRUE@include @abs_top_builddir@/../nox/Makefile.export.nox
 @BUILD_EXAMPLES_TRUE@include @abs_top_builddir@/../stratimikos/Makefile.export.stratimikos
+@BUILD_EXAMPLES_TRUE@@ENABLE_RYTHMOS_SACADO_TRUE@include @abs_top_builddir@/../sacado/Makefile.export.sacado

@@ -26,23 +26,52 @@
 # ***********************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+EXEEXT = .exe
 
-all-local:
-	@echo ""
-	@echo "Trilinos package rythmos subdirectory test built successfully."
-	@echo ""
+#
+# Actual programs
+#
 
-#np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
-#np# List all subdirectories even if one or more are configured/built only
-#np# conditionally.
-#np# For packages whose tests are located in this directory, rather than
-#np# in a subdirectory of this directory, use the Makefile.am located in
-#np# test1/ rather than this file.
+if ENABLE_RYTHMOS_SACADO
+noinst_PROGRAMS = vdp
+endif
 
-#SUBDIRS = unitTests
+vdp_SOURCES = \
+	 $(srcdir)/cxx_main.cpp \
+	 $(srcdir)/VanDerPolOscillator.hpp \
+	 $(srcdir)/VanDerPolOscillator.cpp 
 
-SUBDIRS = ExplicitTaylorPolynomialStepper
+vdp_DEPENDENCIES = $(common_dependencies)
 
-EXTRA_DIST = definition
+vdp_LDADD = $(common_ldadd)
 
+EXTRA_DIST = \
+	plot_vdp.m \
+	vdp.eps
+
+#
+# Common stuff
+#
+
+common_dependencies = \
+  $(top_builddir)/src/librythmos.a
+
+include $(top_builddir)/Makefile.export.rythmos
+
+_EXPORT_INCLUDES = $(RYTHMOS_INCLUDES) $(EPETRA_INCLUDES) $(EPETRAEXT_INCLUDES)
+_EXPORT_LIBS = $(RYTHMOS_LIBS) $(EPETRA_LIBS) $(EPETRAEXT_LIBS)
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
+else
+EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
+EXPORT_LIBS = $(_EXPORT_LIBS)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+common_ldadd = $(EXPORT_LIBS)
+
+# This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
+LIBS =

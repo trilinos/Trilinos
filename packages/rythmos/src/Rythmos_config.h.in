@@ -99,6 +99,9 @@
 #undef HAVE_RYTHMOS_NOX
 
 /* Define if want to build with rythmos enabled */
+#undef HAVE_RYTHMOS_SACADO
+
+/* Define if want to build with rythmos enabled */
 #undef HAVE_RYTHMOS_STRATIMIKOS
 
 /* Define if want to build rythmos-tests */
