@@ -93,10 +93,6 @@ RunValgrind$(EXEEXT): $(srcdir)/RunValgrind
 	cp  $(srcdir)/RunValgrind  RunValgrind$(EXEEXT)
 	chmod +x RunValgrind$(EXEEXT)
 	cp  $(srcdir)/In_Suppressions Suppressions
-if BUILD_FEMEX
-FEMDIR = 1DFEM
-else
-FEMDIR =
-endif
 
-SUBDIRS = $(FEMDIR)
+include FEApp/MakefileFEAppStub.am
+EXTRA_DIST = $(FEAPP_H) $(FEAPP)

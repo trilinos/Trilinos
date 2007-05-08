@@ -43,6 +43,39 @@
 # ************************************************************************
 # @HEADER
 
+# @HEADER
+# ************************************************************************
+# 
+#                           Sacado Package
+#                 Copyright (2006) Sandia Corporation
+# 
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
+# (etphipp@sandia.gov).
+# 
+# ************************************************************************
+# @HEADER
+
+# ------------------------------------------------------------------------
+# FEApp Sources
+# ------------------------------------------------------------------------
+
 SOURCES = $(RunValgrind_SOURCES) $(ad_example_SOURCES) $(dfad_dfad_example_SOURCES) $(dfad_example_SOURCES) $(dmfad_example_SOURCES) $(dtaylor_example_SOURCES) $(sfad_example_SOURCES) $(trad_dfad_example_SOURCES) $(trad_example_SOURCES)
 
 srcdir = @srcdir@
@@ -71,8 +104,9 @@ noinst_PROGRAMS = ad_example$(EXEEXT) dfad_example$(EXEEXT) \
 	dmfad_example$(EXEEXT) trad_example$(EXEEXT) \
 	trad_dfad_example$(EXEEXT) dtaylor_example$(EXEEXT) \
 	RunValgrind$(EXEEXT)
+DIST_COMMON = $(srcdir)/FEApp/MakefileFEAppStub.am \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 subdir = example
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/ac_arg_with_execlincludedir.m4 \
@@ -150,15 +184,8 @@ DIST_SOURCES = $(RunValgrind_SOURCES) $(ad_example_SOURCES) \
 	$(dmfad_example_SOURCES) $(dtaylor_example_SOURCES) \
 	$(sfad_example_SOURCES) $(trad_dfad_example_SOURCES) \
 	$(trad_example_SOURCES)
-RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
-	html-recursive info-recursive install-data-recursive \
-	install-exec-recursive install-info-recursive \
-	install-recursive installcheck-recursive installdirs-recursive \
-	pdf-recursive ps-recursive uninstall-info-recursive \
-	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = 1DFEM
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ADOLC_INCDIR = @ADOLC_INCDIR@
@@ -176,8 +203,6 @@ BUILD_ALLTESTS_FALSE = @BUILD_ALLTESTS_FALSE@
 BUILD_ALLTESTS_TRUE = @BUILD_ALLTESTS_TRUE@
 BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
 BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
-BUILD_FEMEX_FALSE = @BUILD_FEMEX_FALSE@
-BUILD_FEMEX_TRUE = @BUILD_FEMEX_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
 CC = @CC@
@@ -334,14 +359,128 @@ RunValgrind_SOURCES = \
 	$(srcdir)/RunValgrind \
 	$(srcdir)/In_Suppressions
 
-@BUILD_FEMEX_FALSE@FEMDIR = 
-@BUILD_FEMEX_TRUE@FEMDIR = 1DFEM
-SUBDIRS = $(FEMDIR)
-all: all-recursive
+FEAPP_PATH = $(top_srcdir)/../sacado/example/FEApp
+ELEMENT_H = \
+	$(FEAPP_PATH)/FEApp_AbstractElement.hpp \
+	$(FEAPP_PATH)/FEApp_LinearElement.hpp \
+	$(FEAPP_PATH)/FEApp_ElementFactory.hpp
+
+ELEMENT = \
+	$(FEAPP_PATH)/FEApp_LinearElement.cpp \
+	$(FEAPP_PATH)/FEApp_ElementFactory.cpp
+
+QUADRATURE_H = \
+	$(FEAPP_PATH)/FEApp_AbstractQuadrature.hpp \
+	$(FEAPP_PATH)/FEApp_GaussianQuadrature2.hpp \
+	$(FEAPP_PATH)/FEApp_QuadratureFactory.hpp
+
+QUADRATURE = \
+	$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp \
+	$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp
+
+SOURCE_H = \
+	$(FEAPP_PATH)/FEApp_AbstractSourceFunction.hpp \
+	$(FEAPP_PATH)/FEApp_QuadraticSourceFunction.hpp \
+	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.hpp \
+	$(FEAPP_PATH)/FEApp_SourceFunctionFactoryImpl.hpp
+
+SOURCE = \
+	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
+
+PDE_H = \
+	$(FEAPP_PATH)/FEApp_AbstractPDE_NTBase.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractPDE.hpp \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.hpp \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDEImpl.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorPDE.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorPDEImpl.hpp
+
+PDE = \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp
+
+BC_H = \
+	$(FEAPP_PATH)/FEApp_AbstractBC.hpp \
+	$(FEAPP_PATH)/FEApp_ConstantDirichletBC.hpp
+
+BC = \
+	$(FEAPP_PATH)/FEApp_ConstantDirichletBC.cpp
+
+PROBLEM_H = \
+	$(FEAPP_PATH)/FEApp_TemplateTypes.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractProblem.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorProblem.hpp \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.hpp \
+	$(FEAPP_PATH)/FEApp_ProblemFactory.hpp
+
+PROBLEM = \
+	$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp \
+	$(FEAPP_PATH)/FEApp_ProblemFactory.cpp
+
+MESH_H = \
+	$(FEAPP_PATH)/FEApp_Mesh.hpp
+
+MESH = \
+	$(FEAPP_PATH)/FEApp_Mesh.cpp
+
+FILL_H = \
+	$(FEAPP_PATH)/FEApp_AbstractInitPostOp.hpp \
+	$(FEAPP_PATH)/FEApp_InitPostOps.hpp \
+	$(FEAPP_PATH)/FEApp_GlobalFill.hpp \
+	$(FEAPP_PATH)/FEApp_GlobalFillImpl.hpp
+
+FILL = \
+	$(FEAPP_PATH)/FEApp_InitPostOps.cpp \
+	$(FEAPP_PATH)/FEApp_GlobalFill.cpp
+
+DISC_H = \
+	$(FEAPP_PATH)/FEApp_AbstractDiscretization.hpp \
+	$(FEAPP_PATH)/FEApp_CZeroDiscretization.hpp \
+	$(FEAPP_PATH)/FEApp_DiscretizationFactory.hpp
+
+DISC = \
+	$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp \
+	$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
+
+APP_H = \
+	$(FEAPP_PATH)/FEApp_Application.hpp \
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp
+
+APP = \
+	$(FEAPP_PATH)/FEApp_Application.cpp \
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
+
+FEAPP_H = \
+	$(ELEMENT_H) \
+	$(QUADRATURE_H) \
+	$(SOURCE_H) \
+	$(PDE_H) \
+	$(BC_H) \
+	$(PROBLEM_H) \
+	$(MESH_H) \
+	$(FILL_H) \
+	$(DISC_H) \
+	$(APP_H)
+
+FEAPP = \
+	$(ELEMENT) \
+	$(QUADRATURE) \
+	$(SOURCE) \
+	$(PDE) \
+	$(BC) \
+	$(PROBLEM) \
+	$(MESH) \
+	$(FILL) \
+	$(DISC) \
+	$(APP)
+
+EXTRA_DIST = $(FEAPP_H) $(FEAPP)
+all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .cpp .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/FEApp/MakefileFEAppStub.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -558,65 +697,6 @@ trad_example-trad_example.obj: $(srcdir)/trad_example.cpp
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(trad_example_CXXFLAGS) $(CXXFLAGS) -c -o trad_example-trad_example.obj `if test -f '$(srcdir)/trad_example.cpp'; then $(CYGPATH_W) '$(srcdir)/trad_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/trad_example.cpp'; fi`
 uninstall-info-am:
 
-# This directory's subdirectories are mostly independent; you can cd
-# into them and run `make' without going through this Makefile.
-# To change the values of `make' variables: instead of editing Makefiles,
-# (1) if the variable is set in `config.status', edit `config.status'
-#     (which will cause the Makefiles to be regenerated when you run `make');
-# (2) otherwise, pass the desired values on the `make' command line.
-$(RECURSIVE_TARGETS):
-	@set fnord $$MAKEFLAGS; amf=$$2; \
-	dot_seen=no; \
-	target=`echo $@ | sed s/-recursive//`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    dot_seen=yes; \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
-	done; \
-	if test "$$dot_seen" = "no"; then \
-	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
-	fi; test -z "$$fail"
-
-mostlyclean-recursive clean-recursive distclean-recursive \
-maintainer-clean-recursive:
-	@set fnord $$MAKEFLAGS; amf=$$2; \
-	dot_seen=no; \
-	case "$@" in \
-	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
-	  *) list='$(SUBDIRS)' ;; \
-	esac; \
-	rev=''; for subdir in $$list; do \
-	  if test "$$subdir" = "."; then :; else \
-	    rev="$$subdir $$rev"; \
-	  fi; \
-	done; \
-	rev="$$rev ."; \
-	target=`echo $@ | sed s/-recursive//`; \
-	for subdir in $$rev; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
-	done && test -z "$$fail"
-tags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
-	done
-ctags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
-	done
-
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
@@ -627,21 +707,10 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	if (etags --etags-include --version) >/dev/null 2>&1; then \
-	  include_option=--etags-include; \
-	else \
-	  include_option=--include; \
-	fi; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test -f $$subdir/TAGS && \
-	      tags="$$tags $$include_option=$$here/$$subdir/TAGS"; \
-	  fi; \
-	done; \
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
@@ -652,7 +721,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	  || $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
 	     $$tags $$unique
 ctags: CTAGS
-CTAGS: ctags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
@@ -675,6 +744,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/$(FEAPP_PATH) $(distdir)/FEApp
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -701,33 +771,19 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test -d "$(distdir)/$$subdir" \
-	    || mkdir "$(distdir)/$$subdir" \
-	    || exit 1; \
-	    (cd $$subdir && \
-	      $(MAKE) $(AM_MAKEFLAGS) \
-	        top_distdir="../$(top_distdir)" \
-	        distdir="../$(distdir)/$$subdir" \
-	        distdir) \
-	      || exit 1; \
-	  fi; \
-	done
 check-am: all-am
-check: check-recursive
+check: check-am
 all-am: Makefile $(PROGRAMS)
-installdirs: installdirs-recursive
-installdirs-am:
-install: install-recursive
-install-exec: install-exec-recursive
-install-data: install-data-recursive
-uninstall: uninstall-recursive
+installdirs:
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-recursive
+installcheck: installcheck-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
@@ -743,23 +799,23 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-recursive
+clean: clean-am
 
 clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
-distclean: distclean-recursive
+distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
 
-dvi: dvi-recursive
+dvi: dvi-am
 
 dvi-am:
 
-html: html-recursive
+html: html-am
 
-info: info-recursive
+info: info-am
 
 info-am:
 
@@ -767,45 +823,41 @@ install-data-am:
 
 install-exec-am:
 
-install-info: install-info-recursive
+install-info: install-info-am
 
 install-man:
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-recursive
+maintainer-clean: maintainer-clean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-recursive
+mostlyclean: mostlyclean-am
 
 mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-pdf: pdf-recursive
+pdf: pdf-am
 
 pdf-am:
 
-ps: ps-recursive
+ps: ps-am
 
 ps-am:
 
 uninstall-am: uninstall-info-am
 
-uninstall-info: uninstall-info-recursive
-
-.PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am check check-am \
-	clean clean-generic clean-noinstPROGRAMS clean-recursive ctags \
-	ctags-recursive distclean distclean-compile distclean-generic \
-	distclean-recursive distclean-tags distdir dvi dvi-am html \
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
 	install-data-am install-exec install-exec-am install-info \
 	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic maintainer-clean-recursive \
-	mostlyclean mostlyclean-compile mostlyclean-generic \
-	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
-	uninstall uninstall-am uninstall-info-am
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-info-am
 
 
 RunValgrind$(EXEEXT): $(srcdir)/RunValgrind
