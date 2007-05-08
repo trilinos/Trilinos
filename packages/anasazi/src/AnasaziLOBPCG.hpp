@@ -221,7 +221,7 @@ namespace Anasazi {
 
     //! @name Solver methods
     //@{
-    
+
     /*! \brief This method performs %LOBPCG iterations until the status test
      * indicates the need to stop or an error occurs (in which case, an
      * exception is thrown).
@@ -499,6 +499,11 @@ namespace Anasazi {
 
   private:
     //
+    //
+    //
+    void setupViews();
+    void clearViews();
+    //
     // Convenience typedefs
     //
     typedef SolverUtils<ScalarType,MV,OP> Utils;
@@ -581,9 +586,13 @@ namespace Anasazi {
     bool hasP_;
     //
     // State Multivecs
-    Teuchos::RefCountPtr<MV> X_, KX_, MX_, R_,
+    // V_, KV_ MV_  and  R_ are primary pointers to allocated multivectors
+    // the rest are multivector views into V_, KV_ and MV_
+    Teuchos::RefCountPtr<MV> V_, KV_, MV_,
+                             X_, KX_, MX_,
                              H_, KH_, MH_,
-                             P_, KP_, MP_;
+                             P_, KP_, MP_,
+                             R_;
     //
     // if fullOrtho_ == true, then we must produce the following on every iteration:
     // [newX newP] = [X H P] [CX;CP]
@@ -595,6 +604,10 @@ namespace Anasazi {
     //                       [CX2 CP2]  allows us to work using only R as work space
     //                       [CX3 CP3] 
     Teuchos::RefCountPtr<MV> tmpMV_;        
+    //
+    // indices for accessing blocks 1, 2 and 3 of the V_, MV_, and KV_
+    // we use these very frequently
+    std::vector<int> ind1_, ind2_, ind3_;
     // 
     // auxiliary vectors
     Teuchos::Array<Teuchos::RefCountPtr<const MV> > auxVecs_;
@@ -692,167 +705,225 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the block size and make necessary adjustments.
   template <class ScalarType, class MV, class OP>
-  void LOBPCG<ScalarType,MV,OP>::setBlockSize (int blockSize) 
+  void LOBPCG<ScalarType,MV,OP>::setBlockSize (int newBS) 
   {
     // time spent here counts towards timerInit_
     Teuchos::TimeMonitor lcltimer( *timerInit_ );
 
     // This routine only allocates space; it doesn't not perform any computation
-    // if size is decreased, take the first blockSize vectors of all and leave state as is
+    // if size is decreased, take the first newBS vectors of all and leave state as is
     // otherwise, grow/allocate space and set solver to unitialized
 
     Teuchos::RefCountPtr<const MV> tmp;
     // grab some Multivector to Clone
     // in practice, getInitVec() should always provide this, but it is possible to use a 
     // Eigenproblem with nothing in getInitVec() by manually initializing with initialize(); 
-    // in case of that strange scenario, we will try to Clone from X_
+    // in case of that strange scenario, we will try to Clone from R_ because it is smaller 
+    // than V_, and we don't want to keep V_ around longer than necessary
     if (blockSize_ > 0) {
-      tmp = X_;
+      tmp = R_;
     }
     else {
       tmp = problem_->getInitVec();
       TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::logic_error,
                          "Anasazi::LOBPCG::setBlockSize(): eigenproblem did not specify initial vectors to clone from.");
     }
-
-    TEST_FOR_EXCEPTION(blockSize <= 0 || blockSize > MVT::GetVecLength(*tmp), std::invalid_argument, "Anasazi::LOBPCG::setBlockSize(): block size must be strictly postive.");
-    if (blockSize == blockSize_) {
+    
+    TEST_FOR_EXCEPTION(newBS <= 0 || newBS > MVT::GetVecLength(*tmp), std::invalid_argument, "Anasazi::LOBPCG::setBlockSize(): block size must be strictly positive.");
+    if (newBS == blockSize_) {
       // do nothing
       return;
     }
-    else if (blockSize < blockSize_) {
+    else if (newBS < blockSize_ && initialized_) {
+      //
       // shrink vectors
-      blockSize_ = blockSize;
 
-      // release H,MH_,KH_
-      H_ = Teuchos::null;
-      KH_ = Teuchos::null;
-      MH_ = Teuchos::null;
+      // release views
+      clearViews();
 
-      theta_.resize(3*blockSize_);
-      ritz2norms_.resize(3*blockSize_);
-      Rnorms_.resize(blockSize_);
-      R2norms_.resize(blockSize_);
-
-      if (initialized_) {
-        // shrink multivectors with copy
-        // create ind = {0, 1, ..., blockSize-1}
-        std::vector<int> ind(blockSize_);
-        for (int i=0; i<blockSize_; i++) ind[i] = i;
-        
-        X_  = MVT::CloneCopy(*X_,ind);
-        KX_ = MVT::CloneCopy(*KX_,ind);
-        if (hasM_) {
-          MX_ = MVT::CloneCopy(*MX_,ind);
-        }
-        else {
-          MX_ = X_;
-        }
-        R_  = MVT::CloneCopy(*R_,ind);
-        P_  = MVT::CloneCopy(*P_,ind);
-        KP_ = MVT::CloneCopy(*KP_,ind);
-        if (hasM_) {
-          MP_ = MVT::CloneCopy(*MP_,ind);
-        }
-        else {
-          MP_ = P_;
-        }
-      }
-      else {
-        // release previous multivectors
-        X_ = Teuchos::null;
-        KX_ = Teuchos::null;
-        MX_ = Teuchos::null;
-        P_ = Teuchos::null;
-        KP_ = Teuchos::null;
-        MP_ = Teuchos::null;
-        R_ = Teuchos::null;
-
-        // shrink multivectors without copying
-        X_ = MVT::Clone(*tmp,blockSize_);
-        KX_ = MVT::Clone(*tmp,blockSize_);
-        if (hasM_) {
-          MX_ = MVT::Clone(*tmp,blockSize_);
-        }
-        else {
-          MX_ = X_;
-        }
-        R_ = MVT::Clone(*tmp,blockSize_);
-        P_ = MVT::Clone(*tmp,blockSize_);
-        KP_ = MVT::Clone(*tmp,blockSize_);
-        if (hasM_) {
-          MP_ = MVT::Clone(*tmp,blockSize_);
-        }
-        else {
-          MP_ = P_;
-        }
+      // make new indices vectors
+      std::vector<int> newind(newBS), oldind(newBS);
+      for (int i=0; i<newBS; i++) {
+        newind[i] = i;
+        oldind[i] = i;
       }
 
-      // shrink H
-      H_ = MVT::Clone(*tmp,blockSize_);
-      KH_ = MVT::Clone(*tmp,blockSize_);
+      Teuchos::RefCountPtr<MV> newV, newMV, newKV, newR;
+      // allocate R and newV
+      newR = MVT::Clone(*tmp,newBS);
+      newV = MVT::Clone(*tmp,newBS*3);
+      newKV = MVT::Clone(*tmp,newBS*3);
       if (hasM_) {
-        MH_ = MVT::Clone(*tmp,blockSize_);
+        newMV = MVT::Clone(*tmp,newBS*3);
+      }
+
+      //
+      // if we are initialized, we want to pull the data from V_ into newV:
+      //           bs  |  bs  | bs 
+      // newV  = [newX | **** |newP ]
+      // newKV = [newKX| **** |newKP]
+      // newMV = [newMX| **** |newMP]
+      // where 
+      //          oldbs   |  oldbs  |   oldbs   
+      //  V_ = [newX  *** | ******* | newP  ***]
+      // KV_ = [newKX *** | ******* | newKP ***]
+      // MV_ = [newMX *** | ******* | newMP ***]
+      //
+      // we don't care to copy the data corresponding to H
+      // we will not copy the M data if !hasM_, because it doesn't exist
+      //
+
+      theta_.resize(3*newBS);
+      ritz2norms_.resize(3*newBS);
+      Rnorms_.resize(newBS);
+      R2norms_.resize(newBS);
+
+      // copy residual vectors: newind currently contains [0,...,newBS-1]
+      MVT::SetBlock(*R_,newind,*newR);
+      // free old memory and point to new memory
+      R_ = newR;
+
+      // copy in order: newX newP newKX newKP newMX newMP
+      Teuchos::RefCountPtr<MV> dest;
+      // for  X: [0   ,   bs-1] <-- [0      ,         bs-1] 
+      dest = MVT::CloneView(*newV,newind);
+      MVT::SetBlock(*V_,oldind,*dest);
+      dest = MVT::CloneView(*newKV,newind);
+      MVT::SetBlock(*KV_,oldind,*dest);
+      if (hasM_) {
+        dest = MVT::CloneView(*newMV,newind);
+        MVT::SetBlock(*V_,oldind,*dest);
+      }
+      // for  P: [2*bs, 3*bs-1] <-- [2*oldbs, 2*oldbs+bs-1] 
+      for (int i=0; i<newBS; i++) {
+        newind[i] += 2*newBS;
+        oldind[i] += 2*blockSize_;
+      }
+      dest = MVT::CloneView(*newV,newind);
+      MVT::SetBlock(*V_,oldind,*dest);
+      dest = MVT::CloneView(*newKV,newind);
+      MVT::SetBlock(*KV_,oldind,*dest);
+      if (hasM_) {
+        dest = MVT::CloneView(*newMV,newind);
+        MVT::SetBlock(*V_,oldind,*dest);
+      }
+
+      // release this view
+      dest = Teuchos::null;
+
+      // release old allocations and point at new memory
+      V_ = newV;
+      KV_ = newKV;
+      if (hasM_) {
+        MV_ = newMV;
       }
       else {
-        MH_ = H_;
+        MV_ = V_;
       }
     }
-    else {  // blockSize > blockSize_
+    else {  
+      // newBS > blockSize_  or  not initialized
       // this is also the scenario for our initial call to setBlockSize(), in the constructor
       initialized_ = false;
+      hasP_ = false;
 
-      // free allocated memory
-      X_ = Teuchos::null;
-      KX_ = Teuchos::null;
-      MX_ = Teuchos::null;
-      P_ = Teuchos::null;
-      KP_ = Teuchos::null;
-      MP_ = Teuchos::null;
-      H_ = Teuchos::null;
-      KH_ = Teuchos::null;
-      MH_ = Teuchos::null;
+      // release views
+      clearViews();
+
+      // free allocated storage
       R_ = Teuchos::null;
+      V_ = Teuchos::null;
 
-      // grow/allocate vectors
-      theta_.resize(3*blockSize,NANVAL);
-      ritz2norms_.resize(3*blockSize,NANVAL);
-      Rnorms_.resize(blockSize,NANVAL);
-      R2norms_.resize(blockSize,NANVAL);
+      // allocate scalar vectors
+      theta_.resize(3*newBS,NANVAL);
+      ritz2norms_.resize(3*newBS,NANVAL);
+      Rnorms_.resize(newBS,NANVAL);
+      R2norms_.resize(newBS,NANVAL);
       
       // clone multivectors off of tmp
-      X_ = MVT::Clone(*tmp,blockSize);
-      KX_ = MVT::Clone(*tmp,blockSize);
+      R_ = MVT::Clone(*tmp,newBS);
+      V_ = MVT::Clone(*tmp,newBS*3);
+      KV_ = MVT::Clone(*tmp,newBS*3);
       if (hasM_) {
-        MX_ = MVT::Clone(*tmp,blockSize);
+        MV_ = MVT::Clone(*tmp,newBS*3);
       }
       else {
-        MX_ = X_;
+        MV_ = V_;
       }
-      R_ = MVT::Clone(*tmp,blockSize);
-      H_ = MVT::Clone(*tmp,blockSize);
-      KH_ = MVT::Clone(*tmp,blockSize);
-      if (hasM_) {
-        MH_ = MVT::Clone(*tmp,blockSize);
-      }
-      else {
-        MH_ = H_;
-      }
-      hasP_ = false;
-      P_ = MVT::Clone(*tmp,blockSize);
-      KP_ = MVT::Clone(*tmp,blockSize);
-      if (hasM_) {
-        MP_ = MVT::Clone(*tmp,blockSize);
-      }
-      else {
-        MP_ = P_;
-      }
-      blockSize_ = blockSize;
     }
 
+    // allocate tmp space
     tmpMV_ = Teuchos::null;
     if (fullOrtho_) {
       tmpMV_ = MVT::Clone(*X_,blockSize_);
+    }
+
+    // set new block size
+    blockSize_ = newBS;
+
+    // setup new views
+    setupViews();
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Clear views
+  template <class ScalarType, class MV, class OP>
+  void LOBPCG<ScalarType,MV,OP>::clearViews() 
+  {
+    X_ = Teuchos::null;
+    KX_ = Teuchos::null;
+    MX_ = Teuchos::null;
+    H_ = Teuchos::null;
+    KH_ = Teuchos::null;
+    MH_ = Teuchos::null;
+    P_ = Teuchos::null;
+    KP_ = Teuchos::null;
+    MP_ = Teuchos::null;
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Setup old views
+  template <class ScalarType, class MV, class OP>
+  void LOBPCG<ScalarType,MV,OP>::setupViews() 
+  {
+    std::vector<int> ind(blockSize_);
+
+    for (int i=0; i<blockSize_; i++) {
+      ind[i] = i;
+    }
+    X_  = MVT::CloneView(*V_,ind);
+    KX_ = MVT::CloneView(*KV_,ind);
+    if (hasM_) {
+      MX_ = MVT::CloneView(*MV_,ind);
+    }
+    else {
+      MX_ = X_;
+    }
+
+    for (int i=0; i<blockSize_; i++) {
+      ind[i] += blockSize_;
+    }
+    H_  = MVT::CloneView(*V_,ind);
+    KH_ = MVT::CloneView(*KV_,ind);
+    if (hasM_) {
+      MH_ = MVT::CloneView(*MV_,ind);
+    }
+    else {
+      MH_ = H_;
+    }
+
+    for (int i=0; i<blockSize_; i++) {
+      ind[i] += blockSize_;
+    }
+    P_  = MVT::CloneView(*V_,ind);
+    KP_ = MVT::CloneView(*KV_,ind);
+    if (hasM_) {
+      MP_ = MVT::CloneView(*MV_,ind);
+    }
+    else {
+      MP_ = P_;
     }
   }
 
@@ -1337,6 +1408,8 @@ namespace Anasazi {
         Teuchos::tuple<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null);
       Q = auxVecs_;
       if (fullOrtho_) {
+        // X and P are not contiguous, so there is not much point in putting them under 
+        // a single multivector view
         Q.push_back(X_);
         if (hasP_) {
           Q.push_back(P_);
@@ -1369,68 +1442,45 @@ namespace Anasazi {
         count_ApplyOp_ += blockSize_;
       }
 
-      int localSize;
       if (hasP_) {
-        localSize = threeBlocks;
+        nevLocal_ = threeBlocks;
       }
       else {
-        localSize = twoBlocks;
+        nevLocal_ = twoBlocks;
       }
 
+      // clear the views: we don't need X H and P individually
+      // we only need a basis: lclV = [X H] or lclV = [X H P]
+      Teuchos::RefCountPtr<MV> lclV, lclKV, lclMV;
+      Teuchos::SerialDenseMatrix<int,ScalarType> lclKK(Teuchos::View,KK,nevLocal_,nevLocal_), 
+                                                 lclMM(Teuchos::View,MM,nevLocal_,nevLocal_);
+      clearViews();
+      {
+        std::vector<int> lclind(nevLocal_);
+        for (int i=0; i<nevLocal_; i++) {
+          lclind[i] = i;
+        }
+        lclV = MVT::CloneView(*V_,lclind);
+        lclKV = MVT::CloneView(*KV_,lclind);
+        if (hasM_) {
+          lclMV = MVT::CloneView(*MV_,lclind);
+        }
+        else {
+          lclMV = lclV;
+        }
+      }
       // Form "local" mass and stiffness matrices
       {
         Teuchos::TimeMonitor lcltimer( *timerLocalProj_ );
-        /* We will construct (block) upper triangular parts only.
-                 (X^H)             (KK11 KK12 KK13)
-            KK = (H^H) K [X H P] = ( --  KK22 KK23)
-                 (P^H)             ( --   --  KK33)
-                 (X^H)             (MM11 MM12 MM13)
-            MM = (H^H) M [X H P] = ( --  MM22 MM23) 
-                 (P^H)             ( --   --  MM33)
-        */
-        Teuchos::SerialDenseMatrix<int,ScalarType> KK11( Teuchos::View, KK, blockSize_, blockSize_ );
-        MVT::MvTransMv( ONE, *X_, *KX_, KK11 );
-        Teuchos::SerialDenseMatrix<int,ScalarType> KK12( Teuchos::View, KK, blockSize_, blockSize_, 0, blockSize_ );
-        MVT::MvTransMv( ONE, *X_, *KH_, KK12 );
-        Teuchos::SerialDenseMatrix<int,ScalarType> KK22( Teuchos::View, KK, blockSize_, blockSize_, blockSize_, blockSize_ );
-        MVT::MvTransMv( ONE, *H_, *KH_, KK22 );
-        
-        Teuchos::SerialDenseMatrix<int,ScalarType> MM11( Teuchos::View, MM, blockSize_, blockSize_ );
-        MVT::MvTransMv( ONE, *X_, *MX_, MM11 );
-        Teuchos::SerialDenseMatrix<int,ScalarType> MM12( Teuchos::View, MM, blockSize_, blockSize_, 0, blockSize_ );
-        MVT::MvTransMv( ONE, *X_, *MH_, MM12 );
-        Teuchos::SerialDenseMatrix<int,ScalarType> MM22( Teuchos::View, MM, blockSize_, blockSize_, blockSize_, blockSize_ );
-        MVT::MvTransMv( ONE, *H_, *MH_, MM22 );
-
-        if (hasP_) {
-          Teuchos::SerialDenseMatrix<int,ScalarType> KK13( Teuchos::View, KK, blockSize_, blockSize_, 0, twoBlocks );
-          MVT::MvTransMv( ONE, *X_, *KP_, KK13 );
-          Teuchos::SerialDenseMatrix<int,ScalarType> KK23( Teuchos::View, KK, blockSize_, blockSize_, blockSize_, twoBlocks );
-          MVT::MvTransMv( ONE, *H_, *KP_, KK23 );
-          Teuchos::SerialDenseMatrix<int,ScalarType> KK33( Teuchos::View, KK, blockSize_, blockSize_, twoBlocks, twoBlocks );
-          MVT::MvTransMv( ONE, *P_, *KP_, KK33 );
-          
-          Teuchos::SerialDenseMatrix<int,ScalarType> MM13( Teuchos::View, MM, blockSize_, blockSize_, 0, twoBlocks );
-          MVT::MvTransMv( ONE, *X_, *MP_, MM13 );
-          Teuchos::SerialDenseMatrix<int,ScalarType> MM23( Teuchos::View, MM, blockSize_, blockSize_, blockSize_, twoBlocks );
-          MVT::MvTransMv( ONE, *H_, *MP_, MM23 );
-          Teuchos::SerialDenseMatrix<int,ScalarType> MM33( Teuchos::View, MM, blockSize_, blockSize_, twoBlocks, twoBlocks );
-          MVT::MvTransMv( ONE, *P_, *MP_, MM33 );
-        }
-
-        // make MM and KK symmetric in memory: we need this so we can form ritz residual vectors and use MM for inner product below (with ease)
-        for (int j=0; j<localSize; j++) {
-          for (int i=j+1; i<localSize; i++) {
-            KK(i,j) = KK(j,i);
-            MM(i,j) = MM(j,i);
-          }
-        }
-      } // end timing block
+        MVT::MvTransMv( ONE, *lclV, *lclKV, lclKK );
+        MVT::MvTransMv( ONE, *lclV, *lclMV, lclMM );
+      }
+      setupViews();
 
       // Perform a spectral decomposition
       {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
-        nevLocal_ = localSize;
+        int localSize = nevLocal_;
         Utils::directSolver(localSize, KK, &MM, &S, &theta_, &nevLocal_, 0);    // don't catch the exception
         // localSize tells directSolver() how big KK,MM are
         // however, directSolver() may choose to use only the principle submatrices of KK,MM because of loss of 
@@ -1438,12 +1488,9 @@ namespace Anasazi {
         // nevLocal_ tells us how much it used, in effect dictating back to us how big localSize is, 
         // and therefore telling us which of [X H P] to use in computing the new iterates below.
         // we will not tolerate this ill-conditioning, and will throw an exception.
+        TEST_FOR_EXCEPTION(nevLocal_ != localSize, LOBPCGRitzFailure, 
+            "Anasazi::LOBPCG::iterate(): indefiniteness detected in projected mass matrix." );
       }
-      if (om_->isVerbosity(Debug)) {
-        om_->stream(Debug) << " After directSolve: localSize == " << localSize << " \tnevLocal == " << nevLocal_ << endl;
-      }
-      TEST_FOR_EXCEPTION(nevLocal_ != localSize, LOBPCGRitzFailure, 
-                           "Anasazi::LOBPCG::iterate(): indefiniteness detected in projected mass matrix." );
 
       Teuchos::LAPACK<int,ScalarType> lapack;
       Teuchos::BLAS<int,ScalarType> blas;
@@ -1491,7 +1538,7 @@ namespace Anasazi {
       // Here, we will also orthonormalize CX.
       // This is accomplished using the Cholesky factorization of [CX CP]^H MM [CX CP]
       Teuchos::SerialDenseMatrix<int,ScalarType> CX(threeBlocks,oneBlock), CP(threeBlocks,oneBlock);
-      if (fullOrtho_ && localSize >= twoBlocks) {
+      if (fullOrtho_ && nevLocal_ >= twoBlocks) {
         // build orthonormal basis for (  0  ) that is orthogonal to ( S11 )
         //                             ( S21 )                       ( S21 )
         //                             ( S31 )                       ( S31 )
@@ -1526,7 +1573,7 @@ namespace Anasazi {
           }
         }
         // third block of rows
-        if (localSize == threeBlocks) {
+        if (nevLocal_ == threeBlocks) {
           for (int j=0; j<oneBlock; j++) {
             for (int i=twoBlocks; i<threeBlocks; i++) {
               // CX
@@ -1657,8 +1704,10 @@ namespace Anasazi {
       {
         Teuchos::TimeMonitor lcltimer( *timerLocalUpdate_ );
 
-        TEST_FOR_EXCEPTION(localSize==oneBlock,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error in local update.");
-        if (localSize == twoBlocks) {
+        TEST_FOR_EXCEPTION(nevLocal_==oneBlock,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error in local update.");
+        //
+        // ONLY TWO BLOCKS: V = [X H]
+        if (nevLocal_ == twoBlocks) {
           Teuchos::SerialDenseMatrix<int,ScalarType> CX1( Teuchos::View, CX, blockSize_, blockSize_ ),
                                                      CX2( Teuchos::View, CX, blockSize_, blockSize_, oneBlock, 0 ),
                                                      CP1( Teuchos::View, CP, blockSize_, blockSize_ ),
@@ -1720,8 +1769,10 @@ namespace Anasazi {
             }
           }
 
-        } // if (localSize == twoBlocks)
-        else if (localSize == threeBlocks) {
+        } 
+        //
+        // THREE BLOCKS: V = [X H P]
+        else if (nevLocal_ == threeBlocks) {
           Teuchos::SerialDenseMatrix<int,ScalarType> CX1( Teuchos::View, CX, blockSize_, blockSize_ ),
                                                      CX2( Teuchos::View, CX, blockSize_, blockSize_, oneBlock, 0 ),
                                                      CX3( Teuchos::View, CX, blockSize_, blockSize_, twoBlocks, 0 ),
@@ -1822,7 +1873,7 @@ namespace Anasazi {
             MVT::MvTimesMatAddMv( ONE, *MH_, CP2,  ONE, *MP_ );
           }
 
-        } // if (localSize == threeBlocks)
+        } // if (nevLocal_ == threeBlocks)
       } // end timing block
 
       // Compute the new residuals, explicitly
