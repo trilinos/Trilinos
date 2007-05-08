@@ -234,6 +234,9 @@ namespace ML_Epetra
     
     //! Solver mode
     string mode;
+
+    //! Aggregation info
+    bool aggregate_with_sigma;
     
     //! Domain Map
     const Epetra_Map* DomainMap_;

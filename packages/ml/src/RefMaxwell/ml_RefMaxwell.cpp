@@ -137,7 +137,7 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
                                                               const bool ComputePrec):
   ML_Preconditioner(),SM_Matrix_(&SM_Matrix),D0_Matrix_(0), D0_Clean_Matrix_(&D0_Clean_Matrix),Ms_Matrix_(&Ms_Matrix),
   M0inv_Matrix_(&M0inv_Matrix),M1_Matrix_(&M1_Matrix),TMT_Matrix_(0),TMT_Agg_Matrix_(0),
-    BCrows(0),numBCrows(0),HasOnlyDirichletNodes(false),Operator11_(0),EdgePC(0),NodePC(0),PreEdgeSmoother(0),PostEdgeSmoother(0),verbose_(false)
+  BCrows(0),numBCrows(0),HasOnlyDirichletNodes(false),Operator11_(0),EdgePC(0),NodePC(0),PreEdgeSmoother(0),PostEdgeSmoother(0),verbose_(false),aggregate_with_sigma(false)
 {
   /* Set the Epetra Goodies */
   Comm_ = &(SM_Matrix_->Comm());
@@ -147,8 +147,9 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
 
   Label_=strdup("ML reformulated Maxwell preconditioner");
   List_=List;
-
-
+  SetDefaultsRefMaxwell(List_,false);
+  
+#ifdef ML_TIMING
   /* Internal Timings */
   NumApplications_ = 0;
   ApplicationTime_ = 0.0;
@@ -156,7 +157,7 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
   FirstApplicationTime_ = 0.0;
   NumConstructions_ = 0;
   ConstructionTime_ = 0.0;
-
+#endif
   
   if(ComputePrec) ML_CHK_ERRV(ComputePreconditioner());
 }/*end constructor*/
@@ -191,8 +192,13 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 
   Teuchos::ParameterList dummy;
 
+#ifndef NO_OUTPUT
+  List_.print(cout);
+#endif
+  
   /* Pull Solver Mode, verbosity */
   mode=List_.get("refmaxwell: mode","212");
+  aggregate_with_sigma=(bool) List_.get("refmaxwell: aggregate with sigma",0);
   int vb_level=List_.get("output",0);
   if(vb_level >= 5) verbose_=true;
   else verbose_=false;
@@ -233,7 +239,6 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   StopTimer(&t_time_curr,&(t_diff[0]));
 #endif
   
-  //#define BUILD_WITH_EPETRAEXT
 #ifdef BUILD_WITH_EPETRAEXT
   /* Build the TMT Matrix */  
   /* NTS: When ALEGRA builds this matrix itself, we get rid of these lines */
@@ -260,12 +265,14 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   /* NTS: When ALEGRA builds this matrix itself, we get rid of these lines */
   Epetra_CrsMatrix temp2(Copy,*RangeMap_,0);
   TMT_Agg_Matrix_=new Epetra_CrsMatrix(Copy,*NodeMap_,0);  
-  EpetraExt::MatrixMatrix::Multiply(*M1_Matrix_,false,*D0_Clean_Matrix_,false,temp2);
+  if(aggregate_with_sigma) EpetraExt::MatrixMatrix::Multiply(*Ms_Matrix_,false,*D0_Clean_Matrix_,false,temp2);
+  e;se EpetraExt::MatrixMatrix::Multiply(*M1_Matrix_,false,*D0_Clean_Matrix_,false,temp2);
   EpetraExt::MatrixMatrix::Multiply(*D0_Clean_Matrix_,true,temp2,false,*TMT_Agg_Matrix_);
   Remove_Zeroed_Rows(*TMT_Agg_Matrix_);
 #else
   /* Build the TMT-Agg Matrix */
-  ML_Epetra_PtAP(*M1_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
+  if(aggregate_with_sigma) ML_Epetra_PtAP(*Ms_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
+  else ML_Epetra_PtAP(*M1_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
   Remove_Zeroed_Rows(*TMT_Agg_Matrix_);
 #endif
 
@@ -287,11 +294,11 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 #ifndef NO_OUTPUT
   Epetra_CrsMatrix_Print(*SM_Matrix_,"sm_matrix.dat");
   Epetra_CrsMatrix_Print(*Ms_Matrix_,"ms_matrix.dat");  
-  Epetra_CrsMatrix_Print(*M1_Matrix_,"m1_nuked.dat");  
+  Epetra_CrsMatrix_Print(*M1_Matrix_,"m1_nuked.dat");
+  Epetra_CrsMatrix_Print(*M0inv_Matrix_,"m0inv_nuked.dat");  
   Epetra_CrsMatrix_Print(*D0_Matrix_,"d0_nuked.dat");  
   Epetra_CrsMatrix_Print(*D0_Clean_Matrix_,"d0_clean.dat");  
 #endif
-
 
   /* Cleanup from the Boundary Conditions */
   delete BCnodes; 
@@ -512,31 +519,49 @@ int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse(const Epetra_MultiVector& 
 
 
 // ================================================ ====== ==== ==== == = 
-int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList &List1){  
+int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList &List){  
   Teuchos::ParameterList dummy;
-  Teuchos::ParameterList List = List1.get("refmaxwell: additive smoother",dummy);
 
   /* Setup Teuchos Lists*/
-  Teuchos::ParameterList PreList(List);
+  Teuchos::ParameterList PreList;//(List);
+  PreList.set("coarse: type",List.get("smoother: type","Hiptmair"));
+  PreList.set("coarse: sweeps",List.get("smoother: sweeps",2));
+  PreList.set("coarse: edge sweeps",List.get("subsmoother: edge sweeps",2));
+  PreList.set("coarse: node sweeps",List.get("subsmoother: node sweeps",2));  
+  PreList.set("coarse: subsmoother type",List.get("subsmoother: type","symmetric Gauss-Seidel"));  
+  PreList.set("coarse: Chebyshev alpha",List.get("subsmoother: Chebyshev alpha",30.0));
+  PreList.set("coarse: MLS alpha",List.get("subsmoother: MLS alpha",30.0));
+  PreList.set("coarse: damping factor",List.get("subsmoother: SGS damping factor",1.0));  
+  PreList.set("smoother: Hiptmair efficient symmetric",true);
   PreList.set("PDE equations",1);
   PreList.set("max levels",1);
   PreList.set("coarse: pre or post","pre");
   PreList.set("smoother: pre or post","pre");
   PreList.set("zero starting solution", true);
-  Teuchos::ParameterList PostList(List);
+
+  Teuchos::ParameterList PostList;//(List);
+  PostList.set("coarse: type",List.get("smoother: type","Hiptmair"));
+  PostList.set("coarse: sweeps",List.get("smoother: sweeps",2));
+  PostList.set("coarse: edge sweeps",List.get("subsmoother: edge sweeps",2));
+  PostList.set("coarse: node sweeps",List.get("subsmoother: node sweeps",2));
+  PostList.set("coarse: subsmoother type",List.get("subsmoother: type","symmetric Gauss-Seidel"));    
+  PostList.set("coarse: Chebyshev alpha",List.get("subsmoother: Chebyshev alpha",30.0));
+  PostList.set("coarse: MLS alpha",List.get("subsmoother: MLS alpha",30.0));
+  PostList.set("coarse: damping factor",List.get("subsmoother: SGS damping factor",1.0));  
+  PostList.set("smoother: Hiptmair efficient symmetric",true);
   PostList.set("PDE equations",1);
   PostList.set("max levels",1); 
   PostList.set("coarse: pre or post","post");
   PostList.set("smoother: pre or post","post");
   PostList.set("zero starting solution", false);// this should be FALSE!!!
-  
+
   if(HasOnlyDirichletNodes){
-    if(List.get("coarse: type","dummy") == "Hiptmair"){
-      string smoother;
-      smoother=List.get("coarse: subsmoother type","symmetric Gauss-Seidel");
+    if(PreList.get("coarse: type","dummy") == "Hiptmair"){
+      string smoother=PreList.get("coarse: subsmoother type","symmetric Gauss-Seidel");
       PreList.set("coarse: type",smoother);
       PostList.set("coarse: type",smoother);
-    }/*end if*/      
+    }/*end if*/
+    
     PreEdgeSmoother  = new MultiLevelPreconditioner(*SM_Matrix_,PreList);
     PostEdgeSmoother = new MultiLevelPreconditioner(*SM_Matrix_,PostList);    
   }/*end if*/
@@ -544,6 +569,7 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     PreEdgeSmoother  = new MultiLevelPreconditioner(*SM_Matrix_,*D0_Matrix_,*TMT_Matrix_,PreList,true,true);
     PostEdgeSmoother = new MultiLevelPreconditioner(*SM_Matrix_,*D0_Matrix_,*TMT_Matrix_,PostList,true,true);
   }/*end if*/
+
   
   return 0;
 }/*end SetEdgeSmoother*/
@@ -761,27 +787,18 @@ int ML_Epetra::UpdateList(Teuchos::ParameterList &source, Teuchos::ParameterList
 // ================================================ ====== ==== ==== == = 
 int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWrite)
 {  
-  const int smooth=3;
-  const int default_output=1;
-  //const int default_output=10;
-  
   /* Sublists */
-  Teuchos::ParameterList ListRF,List11, List11c, List22, ListSM, dummy;
+  Teuchos::ParameterList ListRF,List11, List11c, List22, dummy;
   Teuchos::ParameterList & List11_=inList.sublist("refmaxwell: 11list");
   Teuchos::ParameterList & List22_=inList.sublist("refmaxwell: 22list");
-  Teuchos::ParameterList & ListSM_=inList.sublist("refmaxwell: additive smoother"); 
   Teuchos::ParameterList & List11c_=List11_.sublist("edge matrix free: coarse");
 
   /* Build Teuchos List: (1,1) coarse */    
   ML_Epetra::SetDefaultsSA(List11c);
   List11c.set("cycle applications",1);
   List11c.set("smoother: type","Chebyshev");
-  //List11c.set("smoother: type","symmetric Gauss-Seidel");
-  List11c.set("smoother: sweeps",smooth);
   List11c.set("aggregation: threshold",.01);//CMS
   List11c.set("coarse: type","Chebyshev");  
-  //List11c.set("coarse: type","symmetric Gauss-Seidel");  
-  List11c.set("output",default_output);
   ML_Epetra::UpdateList(List11c,List11c_,OverWrite);
   
   /* Build Teuchos List: (1,1) */
@@ -789,7 +806,6 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   List11.set("cycle applications",1);
   List11.set("aggregation: type","Uncoupled");
   List11.set("smoother: sweeps",0);
-  List11.set("output",default_output);
   List11.set("edge matrix free: coarse",List11c);
   List11.set("aggregation: threshold",.01);//CMS  
   ML_Epetra::UpdateList(List11,List11_,OverWrite);
@@ -798,39 +814,22 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   ML_Epetra::SetDefaultsSA(List22);  
   List22.set("cycle applications",1);
   List22.set("smoother: type","Chebyshev");
-  //List22.set("smoother: type","symmetric Gauss-Seidel");  
-  //  List22.set("aggregation: type","MIS");
   List22.set("aggregation: type","Uncoupled");
   List22.set("aggregation: threshold",.01);//CMS
   List22.set("smoother: sweeps (level 0)",0);
-  List22.set("smoother: sweeps",smooth);
   List22.set("coarse: type","Chebyshev");
-  //List22.set("coarse: type","symmetric Gauss-Seidel");    
-  List22.set("output",default_output);
-  ML_Epetra::UpdateList(List22,List22_,OverWrite);  
-  
-  /* Build Teuchos List: Fine Smoother */
-  ListSM.set("coarse: type","Hiptmair");
-  ListSM.set("coarse: sweeps",1);
-  ListSM.set("smoother: Hiptmair efficient symmetric",true);
-  ListSM.set("coarse: subsmoother type","Chebyshev");
-  //ListSM.set("coarse: subsmoother type","symmetric Gauss-Seidel");
-  ListSM.set("coarse: edge sweeps",smooth);
-  ListSM.set("coarse: node sweeps",smooth);  
-  ListSM.set("zero starting solution",false);
-  ListSM.set("max levels",1);  
-  ListSM.set("output",default_output);
-  ML_Epetra::UpdateList(ListSM,ListSM_,OverWrite);
+  ML_Epetra::UpdateList(List22,List22_,OverWrite);    
   
   /* Build Teuchos List: Overall */  
+  SetDefaultsMaxwell(ListRF,false);
   ListRF.set("refmaxwell: 11solver","edge matrix free");
   ListRF.set("refmaxwell: 11list",List11);
   ListRF.set("refmaxwell: 22solver","multilevel");
   ListRF.set("refmaxwell: 22list",List22);
   ListRF.set("refmaxwell: mode","additive");
-  ListRF.set("refmaxwell: additive smoother",ListSM);
   ListRF.set("default values","RefMaxwell");
-  ListRF.set("output",default_output);
+  ListRF.set("zero starting solution",false);
+
   ML_Epetra::UpdateList(ListRF,inList,OverWrite);
   
   return 0;  

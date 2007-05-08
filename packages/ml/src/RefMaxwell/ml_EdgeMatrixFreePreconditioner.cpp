@@ -27,12 +27,6 @@ extern void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx);
 extern void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname);
 #endif
 
-/* Turn this on the use the heavyweight wraps rather than the lightweight ones.
-The lighter wraps are a bit more fragile and require that the Epetra_CrsMatrix
-stick around through the life of the wrapped matrix */
-//#define USE_HEAVYWEIGHT_WRAPS
-
-
 // ================================================ ====== ==== ==== == =
 /* This function does a "view" getrow in an ML_Operator.  This is intended to be
 used in a ML_CSR_Matrix to Epetra_CrsMatrix (view) translator.  Inlined for
@@ -350,13 +344,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   // NTS: Assume D0 has already been reindexed by now.
   if(verbose_ && !Comm_->MyPID()) printf("EMFP: abs(T) prewrap\n");
   ML_Operator* AbsD0_ML = ML_Operator_Create(ml_comm_);
-  ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)D0_Matrix_,AbsD0_ML,verbose_));  
-  
-#ifdef USE_HEAVYWEIGHT_WRAPS
-  ML_Operator_Set_Getrow(AbsD0_ML,AbsD0_ML->outvec_leng,ML_Epetra_CrsMatrix_get_one_row);
-#else
+  ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)D0_Matrix_,AbsD0_ML,verbose_));    
   ML_Operator_Set_Getrow(AbsD0_ML,AbsD0_ML->outvec_leng,CSR_getrow_ones);
-#endif
+
   
   /* Form abs(T) * P_n */
   if(verbose_ && !Comm_->MyPID()) printf("EMFP: Building abs(T) * P_n\n");
