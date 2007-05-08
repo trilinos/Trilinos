@@ -39,6 +39,7 @@ _BELOS_TEST_INCLUDES = \
         -I@abs_top_builddir@/src \
         $(IFPACK_INCLUDES) \
         $(EPETRA_INCLUDES) \
+        $(EPETRAEXT_INCLUDES) \
         $(TPETRA_INCLUDES) \
         $(BELOS_THYRA_INCLUDES) \
         $(TRIUTILS_INCLUDES) \
