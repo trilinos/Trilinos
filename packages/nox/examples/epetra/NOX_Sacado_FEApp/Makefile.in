@@ -1095,7 +1095,8 @@ uninstall-am: uninstall-info-am
 
 # Include export Makefiles for correct paths
 include $(top_builddir)/Makefile.export.nox
-include $(top_builddir)/../sacado/Makefile.export.sacado
+
+@BUILD_EPETRA_EXAMPLES_TRUE@@ENABLE_NOX_SACADO_TRUE@include $(top_builddir)/../sacado/Makefile.export.sacado
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

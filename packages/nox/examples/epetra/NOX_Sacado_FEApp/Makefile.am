@@ -39,12 +39,12 @@ include $(top_srcdir)/../sacado/example/FEApp/MakefileFEAppStub.am
 
 # Include export Makefiles for correct paths
 include $(top_builddir)/Makefile.export.nox
-include $(top_builddir)/../sacado/Makefile.export.sacado
 
 EXEEXT = .exe
 
 if BUILD_EPETRA_EXAMPLES
 if ENABLE_NOX_SACADO
+include $(top_builddir)/../sacado/Makefile.export.sacado
 noinst_PROGRAMS = brusselator
 endif
 endif
