@@ -54,6 +54,7 @@ supported.
 
 // Configuration includes
 #include "PyTrilinos_config.h"
+#include "NumPyImporter.h"
 
 // Teuchos includes
 #include "Teuchos_ScalarTraits.hpp"
@@ -133,8 +134,7 @@ supported.
 %include "stl.i"
 
 // Support for other Trilinos packages
- //%import  "Teuchos.i"
- //%import  "Epetra.i"
+%include "numpy.i"
 %include "Teuchos_Epetra.i"
 
 //////////////////////////////////////////////
@@ -151,6 +151,29 @@ supported.
 %teuchos_rcp_typemaps(Anasazi::OrthoManager< double, Epetra_MultiVector >)
 %teuchos_rcp_typemaps(Anasazi::MatOrthoManager< double, Epetra_MultiVector >)
 
+/////////////////////////////////////////////////////////////////////////
+// Anasazi returns eigenvalues in a std::vector< Anasazi::Value<       //
+// ScalarType > > container.  This is support for converting them to a //
+// more convenient numpy array.                                        //
+/////////////////////////////////////////////////////////////////////////
+%define %anasazi_eigenvalues_typemap(ScalarType, NumPyType)
+%typemap(out)
+  (std::vector< Anasazi::Value< ScalarType > >)
+{
+  npy_intp dims[1] = { $1.size() };
+  PyObject * array = PyArray_SimpleNew(1, dims, NumPyType);
+  ScalarType * data = (ScalarType*) array_data(array);
+  for (npy_intp i=0; i<dims[0]; ++i) {
+    data[2*i  ] = $1[i].realpart;
+    data[2*i+1] = $1[i].imagpart;
+  }
+  return array;
+  //return PyArray_SimpleNewFromData(1, dims, NumPyType, (void*)(&$1[0]));
+}
+%enddef
+%anasazi_eigenvalues_typemap(float , NPY_CFLOAT )
+%anasazi_eigenvalues_typemap(double, NPY_CDOUBLE)
+
 /////////////////////////////
 // Anasazi Version support //
 /////////////////////////////
@@ -163,7 +186,7 @@ __version__ = Anasazi_Version().split()[2]
 // Anasazi Types support //
 ///////////////////////////
 %extend Anasazi::Eigensolution {
-  std::vector< Anasazi::Value< ScalarType > > & Evals() {
+  std::vector< Anasazi::Value< ScalarType > > Evals() {
     return self->Evals;
   }
   MV & Evecs() {
@@ -398,6 +421,7 @@ Anasazi::MultiVecTraits< double,
 // std::vector support //
 /////////////////////////
 %template (VectorValueDouble) std::vector< Anasazi::Value< double > >;
+%template (VectorInt        ) std::vector< int >;
 
 //////////////////////////////
 // Generic python interface //

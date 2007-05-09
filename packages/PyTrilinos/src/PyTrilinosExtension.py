@@ -155,7 +155,7 @@ def makePyTrilinosExtensions(moduleName):
         sources = [interface.replace(".i","_wrap.cpp")]
         if moduleName in ("Epetra",):
             sources.extend(epetraNumPySrc)
-        if moduleName in ("EpetraExt","TriUtils","AztecOO","Galeri","IFPACK"):
+        if moduleName in ("EpetraExt","TriUtils","AztecOO","Galeri","IFPACK","Anasazi"):
             sources.extend(epetraNumPyVectorSrc)
         if extName in ("PyTrilinos.NOX.Epetra.___init__",
                        "PyTrilinos.NOX.Epetra._Interface"):

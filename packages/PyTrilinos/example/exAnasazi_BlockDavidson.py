@@ -54,6 +54,8 @@ else:
       from PyTrilinos import Anasazi
       print "Using system-installed Epetra, Galeri, Anasazi"
 
+import numpy
+
 ################################################################################
 
 def main():
@@ -64,8 +66,10 @@ def main():
                  "nx" : nx,       # for Laplace2D, which requires nx
                  "ny" : ny        # and ny
                  }
-   map = Galeri.CreateMap("Linear", comm, galeriList)
+   map    = Galeri.CreateMap("Linear", comm, galeriList)
+   name   = "Laplace2D"
    matrix = Galeri.CreateCrsMatrix("Laplace2D", map, galeriList)
+   print "Problem name: %s\n" % name
 
    printer = Anasazi.BasicOutputManager()
 
@@ -107,15 +111,38 @@ def main():
    # Get the eigenvalues and eigenvectors
    sol = myProblem.getSolution()
    evals = sol.Evals()
-   for (i,eval) in enumerate(evals):
-      print "Eigenvalue", i, ":", eval
+   assert(isinstance(evals, numpy.ndarray))
    evecs = sol.Evecs()
-   print "type(evecs) =", type(evecs)
+   assert(isinstance(evecs, Epetra.MultiVector))
+   index = sol.index
+   assert(isinstance(index, Anasazi.VectorInt))
+
+   # Check the eigensolutions
+   lhs = Epetra.MultiVector(map, sol.numVecs)
+   matrix.Apply(evecs, lhs)
+   print "Eig#  Value     Error"
+   print "----  --------  ----------"
+   failures = 0
+   for i in range(nev):
+      # Verify that the eigensolution is non-complex
+      assert(index[i] == 0)
+      rhs   = evecs[i] * evals[i].real
+      diff  = lhs[i] - rhs
+      error = diff.Norm2()[0]
+      print "%4d%10.4f  %10.4e" % (i, evals[i].real, error)
+      if (error > 1.0e-7):
+         failures += 1
+
+   return failures
 
 ################################################################################
 
 if __name__ == "__main__":
 
-   main()
-
-   print "End result: TEST PASSED"
+   failures = main()
+   print
+   if failures == 0:
+      print "End result: TEST PASSED"
+   else:
+      print "Eigensolution errors are too large"
+      print "End result: TEST FAILED"
