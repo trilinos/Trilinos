@@ -31,6 +31,11 @@
 
 EXEEXT = .exe
 
+all-local:
+	@echo ""
+	@echo "Trilinos package sacado subdirectory example built successfully."
+	@echo ""
+
 noinst_PROGRAMS = \
 	ad_example \
 	dfad_example \
