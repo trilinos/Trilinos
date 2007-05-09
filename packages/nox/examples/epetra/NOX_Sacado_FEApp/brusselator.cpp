@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
 
     // Create application
     Teuchos::RefCountPtr<FEApp::Application> app = 
-      Teuchos::rcp(new FEApp::Application(x, Comm, appParams));
+      Teuchos::rcp(new FEApp::Application(x, Comm, appParams, false));
 
     // Create initial guess
     Teuchos::RefCountPtr<const Epetra_Vector> u = app->getInitialSolution();
