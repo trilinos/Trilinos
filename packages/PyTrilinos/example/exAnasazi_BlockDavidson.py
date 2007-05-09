@@ -130,7 +130,7 @@ def main():
       diff  = lhs[i] - rhs
       error = diff.Norm2()[0]
       print "%4d%10.4f  %10.4e" % (i, evals[i].real, error)
-      if (error > 1.0e-7):
+      if (error > tol):
          failures += 1
 
    return failures
