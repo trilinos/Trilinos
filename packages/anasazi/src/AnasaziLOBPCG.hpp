@@ -604,10 +604,6 @@ namespace Anasazi {
     //                       [CX2 CP2]  allows us to work using only R as work space
     //                       [CX3 CP3] 
     Teuchos::RefCountPtr<MV> tmpMV_;        
-    //
-    // indices for accessing blocks 1, 2 and 3 of the V_, MV_, and KV_
-    // we use these very frequently
-    std::vector<int> ind1_, ind2_, ind3_;
     // 
     // auxiliary vectors
     Teuchos::Array<Teuchos::RefCountPtr<const MV> > auxVecs_;
@@ -748,7 +744,7 @@ namespace Anasazi {
         oldind[i] = i;
       }
 
-      Teuchos::RefCountPtr<MV> newV, newMV, newKV, newR;
+      Teuchos::RefCountPtr<MV> newV, newMV, newKV, newR, src;
       // allocate R and newV
       newR = MVT::Clone(*tmp,newBS);
       newV = MVT::Clone(*tmp,newBS*3);
@@ -778,38 +774,38 @@ namespace Anasazi {
       Rnorms_.resize(newBS);
       R2norms_.resize(newBS);
 
-      // copy residual vectors: newind currently contains [0,...,newBS-1]
-      MVT::SetBlock(*R_,newind,*newR);
+      // copy residual vectors: oldind,newind currently contains [0,...,newBS-1]
+      src = MVT::CloneView(*R_,newind);
+      MVT::SetBlock(*src,newind,*newR);
       // free old memory and point to new memory
       R_ = newR;
 
       // copy in order: newX newP newKX newKP newMX newMP
-      Teuchos::RefCountPtr<MV> dest;
       // for  X: [0   ,   bs-1] <-- [0      ,         bs-1] 
-      dest = MVT::CloneView(*newV,newind);
-      MVT::SetBlock(*V_,oldind,*dest);
-      dest = MVT::CloneView(*newKV,newind);
-      MVT::SetBlock(*KV_,oldind,*dest);
+      src = MVT::CloneView(*V_,oldind);
+      MVT::SetBlock(*src,newind,*newV);
+      src = MVT::CloneView(*KV_,oldind);
+      MVT::SetBlock(*src,newind,*newKV);
       if (hasM_) {
-        dest = MVT::CloneView(*newMV,newind);
-        MVT::SetBlock(*V_,oldind,*dest);
+        src = MVT::CloneView(*MV_,oldind);
+        MVT::SetBlock(*src,newind,*newMV);
       }
       // for  P: [2*bs, 3*bs-1] <-- [2*oldbs, 2*oldbs+bs-1] 
       for (int i=0; i<newBS; i++) {
         newind[i] += 2*newBS;
         oldind[i] += 2*blockSize_;
       }
-      dest = MVT::CloneView(*newV,newind);
-      MVT::SetBlock(*V_,oldind,*dest);
-      dest = MVT::CloneView(*newKV,newind);
-      MVT::SetBlock(*KV_,oldind,*dest);
+      src = MVT::CloneView(*V_,oldind);
+      MVT::SetBlock(*src,newind,*newV);
+      src = MVT::CloneView(*KV_,oldind);
+      MVT::SetBlock(*src,newind,*newKV);
       if (hasM_) {
-        dest = MVT::CloneView(*newMV,newind);
-        MVT::SetBlock(*V_,oldind,*dest);
+        src = MVT::CloneView(*MV_,oldind);
+        MVT::SetBlock(*src,newind,*newMV);
       }
 
-      // release this view
-      dest = Teuchos::null;
+      // release temp view
+      src = Teuchos::null;
 
       // release old allocations and point at new memory
       V_ = newV;
@@ -855,7 +851,7 @@ namespace Anasazi {
     // allocate tmp space
     tmpMV_ = Teuchos::null;
     if (fullOrtho_) {
-      tmpMV_ = MVT::Clone(*X_,blockSize_);
+      tmpMV_ = MVT::Clone(*tmp,newBS);
     }
 
     // set new block size
@@ -1284,8 +1280,6 @@ namespace Anasazi {
     }
 
 
-
-
     // finally, we are initialized
     initialized_ = true;
 
@@ -1483,11 +1477,12 @@ namespace Anasazi {
         int localSize = nevLocal_;
         Utils::directSolver(localSize, lclKK, &lclMM, &lclS, &theta_, &nevLocal_, 0);
         // localSize tells directSolver() how big KK,MM are
-        // however, directSolver() may choose to use only the principle submatrices of KK,MM because of loss of 
-        // MM-orthogonality in the projected eigenvectors
-        // nevLocal_ tells us how much it used, in effect dictating back to us how big localSize is, 
-        // and therefore telling us which of [X H P] to use in computing the new iterates below.
-        // we will not tolerate this ill-conditioning, and will throw an exception.
+        // however, directSolver() may choose to use only the principle submatrices of KK,MM 
+        // because of loss of MM-orthogonality in the projected eigenvectors
+        // nevLocal_ tells us how much it used, telling us the effective localSize 
+        // (i.e., how much of KK,MM used by directSolver)
+        // we will not tolerate any indefiniteness, and will throw an exception if it was 
+        // detected by directSolver
         TEST_FOR_EXCEPTION(nevLocal_ != localSize, LOBPCGRitzFailure, 
             "Anasazi::LOBPCG::iterate(): indefiniteness detected in projected mass matrix." );
       }
@@ -1547,18 +1542,16 @@ namespace Anasazi {
                                                 tmp1(nevLocal_,twoBlocks),
                                                 tmp2(twoBlocks  ,twoBlocks);
 
-        // first block of rows
-        for (int i=0; i<oneBlock; i++) {
-          // CX
-          for (int j=0; j<oneBlock; j++) {
+        // first block of rows: ( S11 0 )
+        for (int j=0; j<oneBlock; j++) {
+          for (int i=0; i<oneBlock; i++) {
+            // CX
             C(i,j) = lclS(i,j);
-          }
-          // CP
-          for (int j=oneBlock; j<twoBlocks; j++) {
-            C(i,j) = ZERO;
+            // CP
+            C(i,j+oneBlock) = ZERO;
           }
         }
-        // second block of rows
+        // second block of rows: (S21 S21)
         for (int j=0; j<oneBlock; j++) {
           for (int i=oneBlock; i<twoBlocks; i++) {
             // CX
@@ -1698,6 +1691,12 @@ namespace Anasazi {
         TEST_FOR_EXCEPTION(nevLocal_==oneBlock,std::logic_error,
             "Anasazi::LOBPCG::iterate(): Logic error in local update.");
 
+        std::vector<int> block1(blockSize_), block3(blockSize_);
+        for (int i=0; i<blockSize_; i++) {
+          block1[i] = i;
+          block3[i] = 2*blockSize_ + i;
+        }
+
         // if full ortho, then CX and CP are dense
         // we multiply lclV*CX into tmpMV
         //             lclV*CP into R
@@ -1716,88 +1715,52 @@ namespace Anasazi {
         // use SetBlock to do the assignments into V_
         //
         if (fullOrtho_) {
-          std::vector<int> block1(blockSize_), block3(blockSize_);
-          for (int i=0; i<blockSize_; i++) {
-            block1[i] = i;
-            block3[i] = 2*blockSize_ + i;
-          }
           // V
           MVT::MvTimesMatAddMv(ONE,*lclV,CX,ZERO,*tmpMV_);
           MVT::MvTimesMatAddMv(ONE,*lclV,CP,ZERO,*R_);
           lclV = Teuchos::null;
-          lclV = MVT::CloneView(*V_,block1);
-          MVT::SetBlock(*tmpMV_,block1,*lclV);
-          lclV = Teuchos::null;
-          lclV = MVT::CloneView(*V_,block3);
-          MVT::SetBlock(*R_,block1,*lclV);
-          lclV = Teuchos::null;
+          MVT::SetBlock(*tmpMV_,block1,*V_);
+          MVT::SetBlock(*R_    ,block3,*V_);
           // KV
           MVT::MvTimesMatAddMv(ONE,*lclKV,CX,ZERO,*tmpMV_);
           MVT::MvTimesMatAddMv(ONE,*lclKV,CP,ZERO,*R_);
           lclKV = Teuchos::null;
-          lclKV = MVT::CloneView(*V_,block1);
-          MVT::SetBlock(*tmpMV_,block1,*lclKV);
-          lclKV = Teuchos::null;
-          lclKV = MVT::CloneView(*V_,block3);
-          MVT::SetBlock(*R_,block1,*lclKV);
-          lclKV = Teuchos::null;
+          MVT::SetBlock(*tmpMV_,block1,*KV_);
+          MVT::SetBlock(*R_    ,block3,*KV_);
           // KV
           if (hasM_) {
             MVT::MvTimesMatAddMv(ONE,*lclMV,CX,ZERO,*tmpMV_);
             MVT::MvTimesMatAddMv(ONE,*lclMV,CP,ZERO,*R_);
             lclMV = Teuchos::null;
-            lclMV = MVT::CloneView(*V_,block1);
-            MVT::SetBlock(*tmpMV_,block1,*lclMV);
-            lclMV = Teuchos::null;
-            lclMV = MVT::CloneView(*V_,block3);
-            MVT::SetBlock(*R_,block1,*lclMV);
+            MVT::SetBlock(*tmpMV_,block1,*MV_);
+            MVT::SetBlock(*R_    ,block3,*MV_);
           }
-          lclMV = Teuchos::null;
         }
         else {
-          std::vector<int> block1(blockSize_), block3(blockSize_);
-          for (int i=0; i<blockSize_; i++) {
-            block1[i] = i;
-            block3[i] = 2*blockSize_ + i;
-          }
+          //
+          // we're not allowed to modify V_ until lclV has been released
+          // same with KV and MV
+          //
           // V
           MVT::MvTimesMatAddMv(ONE,*lclV,CX,ZERO,*R_);
-          {
-            Teuchos::RefCountPtr<MV> XinlclV = MVT::CloneView(*lclV,block1);
-            MVT::SetBlock(*R_,block1,*XinlclV);
-          }
+          MVT::SetBlock(*R_,block1,*lclV);
           MVT::MvTimesMatAddMv(ONE,*lclV,CP,ZERO,*R_);
-          {
-            Teuchos::RefCountPtr<MV> PinlclV = MVT::CloneView(*lclV,block3);
-            MVT::SetBlock(*R_,block1,*PinlclV);
-          }
           lclV = Teuchos::null;
+          MVT::SetBlock(*R_,block3,*V_);
           // KV
           MVT::MvTimesMatAddMv(ONE,*lclKV,CX,ZERO,*R_);
-          {
-            Teuchos::RefCountPtr<MV> XinlclKV = MVT::CloneView(*lclKV,block1);
-            MVT::SetBlock(*R_,block1,*XinlclKV);
-          }
+          MVT::SetBlock(*R_,block1,*lclKV);
           MVT::MvTimesMatAddMv(ONE,*lclKV,CP,ZERO,*R_);
-          {
-            Teuchos::RefCountPtr<MV> PinlclKV = MVT::CloneView(*lclKV,block3);
-            MVT::SetBlock(*R_,block1,*PinlclKV);
-          }
           lclKV = Teuchos::null;
+          MVT::SetBlock(*R_,block3,*KV_);
           // MV
           if (hasM_) {
             MVT::MvTimesMatAddMv(ONE,*lclMV,CX,ZERO,*R_);
-            {
-              Teuchos::RefCountPtr<MV> XinlclMV = MVT::CloneView(*lclMV,block1);
-              MVT::SetBlock(*R_,block1,*XinlclMV);
-            }
+            MVT::SetBlock(*R_,block1,*lclMV);
             MVT::MvTimesMatAddMv(ONE,*lclMV,CP,ZERO,*R_);
-            {
-              Teuchos::RefCountPtr<MV> PinlclMV = MVT::CloneView(*lclMV,block3);
-              MVT::SetBlock(*R_,block1,*PinlclMV);
-            }
+            lclMV = Teuchos::null;
+            MVT::SetBlock(*R_,block3,*MV_);
           }
-          lclMV = Teuchos::null;
         }
       } // end timing block
 
