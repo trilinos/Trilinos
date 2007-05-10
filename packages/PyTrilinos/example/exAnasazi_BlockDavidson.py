@@ -128,6 +128,7 @@ def main():
       assert(index[i] == 0)
       rhs   = evecs[i] * evals[i].real
       diff  = lhs[i] - rhs
+      diff.Scale(1.0/abs(evals[i]))
       error = diff.Norm2()[0]
       print "%4d%10.4f  %10.4e" % (i, evals[i].real, error)
       if (error > tol):
