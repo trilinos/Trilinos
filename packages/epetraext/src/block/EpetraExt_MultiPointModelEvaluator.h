@@ -30,7 +30,8 @@ namespace EpetraExt {
     Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> underlyingME_,
     const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> &globalComm_,
     const std::vector<Epetra_Vector*> initGuessVec,
-    Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  q_vec
+    Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  q_vec,
+    Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  matching_vec = Teuchos::null
     );
 
   //@}
@@ -141,6 +142,15 @@ namespace EpetraExt {
    //! Set of indices into global XYZT Jacobian matrix.
    std::vector<int>* rowIndex;
 
+   //! Some local data
+   EDerivativeMultiVectorOrientation orientation_DgDp;
+   int num_dg0dp0;
+   int num_g0;
+   int num_p0;
+
+   //! Array of vectors that have data for g-matching optimization problem
+   Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > > matching_vec;
+   bool matchingProblem;
 
   };
 }

@@ -4,7 +4,8 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
     Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> underlyingME_,
     const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> &globalComm_,
     const std::vector<Epetra_Vector*> initGuessVec_,
-    Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  q_vec_
+    Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  q_vec_,
+    Teuchos::RefCountPtr<std::vector< Teuchos::RefCountPtr<Epetra_Vector> > >  matching_vec_
     ) : 
     underlyingME(underlyingME_),
     globalComm(globalComm_),
@@ -14,10 +15,10 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
     rowStencil(0),
     rowIndex(0),
     underlyingNg(0),
-    q_vec(q_vec_)
+    q_vec(q_vec_),
+    matching_vec(matching_vec_)
 {
   if (globalComm->MyPID()==0) {
-     // TODO: pass in some output stream
      cout  << "----------MultiPoint Partition Info------------"
            << "\n\tNumProcs              = " << globalComm->NumProc()
            << "\n\tSpatial Decomposition = " << globalComm->SubDomainComm().NumProc()
@@ -46,12 +47,22 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
    EpetraExt::ModelEvaluator::OutArgs underlyingOutArgs = underlyingME->createOutArgs();
 
    underlyingNg = underlyingOutArgs.Ng();
+   if (underlyingNg) {
+     if (underlyingOutArgs.supports(OUT_ARG_DgDp,0,0).supports(DERIV_TRANS_MV_BY_ROW))
+       orientation_DgDp = DERIV_TRANS_MV_BY_ROW;
+     else
+       orientation_DgDp = DERIV_MV_BY_COL;
+   }
+
+   // This code assumes 2 parameter vectors, 1 for opt, second for MultiPoint states
+   TEST_FOR_EXCEPT(underlyingOutArgs.Np()!=2);
 
    // temporary quantities
    const Epetra_Map& split_map = split_W->RowMatrixRowMap();
-   int  num_p0 =  underlyingME_->get_p_map(0)->NumMyElements();
-   int  num_g0 = 0;
+   num_p0 =  underlyingME_->get_p_map(0)->NumMyElements();
    if (underlyingNg)  num_g0 = underlyingME_->get_g_map(0)->NumMyElements();
+   else num_g0 = 0;
+   num_dg0dp0 = num_g0 * num_p0;
 
    // Construct global solution vector, residual vector -- local storage
    block_x = new EpetraExt::BlockVector(split_map, block_W->RowMap());
@@ -66,8 +77,12 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
    split_DfDp = Teuchos::rcp(new Epetra_MultiVector(split_map, num_p0));
    if (underlyingNg)  
      split_DgDx = Teuchos::rcp(new Epetra_MultiVector(split_map, num_g0));
-   if (underlyingNg)  
-     split_DgDp = Teuchos::rcp(new Epetra_MultiVector(*(underlyingME_->get_p_map(0)), num_g0));
+   if (underlyingNg) { 
+     if(orientation_DgDp == DERIV_TRANS_MV_BY_ROW)
+       split_DgDp = Teuchos::rcp(new Epetra_MultiVector(*(underlyingME_->get_p_map(0)), num_g0));
+     else
+       split_DgDp = Teuchos::rcp(new Epetra_MultiVector(*(underlyingME_->get_g_map(0)), num_p0));
+   } 
    if (underlyingNg)  
      split_g = Teuchos::rcp(new Epetra_Vector(*(underlyingME_->get_g_map(0))));
 
@@ -77,7 +92,7 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
    if (underlyingNg)  {
      derivMV_DgDx = new EpetraExt::ModelEvaluator::DerivativeMultiVector(split_DgDx, DERIV_TRANS_MV_BY_ROW);
      deriv_DgDx = new EpetraExt::ModelEvaluator::Derivative(*derivMV_DgDx);
-     derivMV_DgDp = new EpetraExt::ModelEvaluator::DerivativeMultiVector(split_DgDp, DERIV_TRANS_MV_BY_ROW);
+     derivMV_DgDp = new EpetraExt::ModelEvaluator::DerivativeMultiVector(split_DgDp, orientation_DgDp);
      deriv_DgDp = new EpetraExt::ModelEvaluator::Derivative(*derivMV_DgDp);
    }
 
@@ -93,6 +108,16 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
    for (int i=0; i < timeStepsOnTimeDomain; i++)
            solution_init->LoadBlockValues(*(initGuessVec_[i]), (*rowIndex)[i]);
 
+ 
+   //Prepare logic for matching problem
+   if (Teuchos::is_null(matching_vec))  matchingProblem = false;
+   else matchingProblem = true;
+
+   if (matchingProblem) {
+     TEST_FOR_EXCEPT(matching_vec->size()!=timeStepsOnTimeDomain);
+     TEST_FOR_EXCEPT(!(*matching_vec)[0]->Map().SameAs(*(underlyingME_->get_g_map(0))));
+     TEST_FOR_EXCEPT(num_g0 != 1); //This restriction may be lifted later
+   }
 }
 
 EpetraExt::MultiPointModelEvaluator::~MultiPointModelEvaluator()
@@ -192,7 +217,7 @@ EpetraExt::ModelEvaluator::OutArgs EpetraExt::MultiPointModelEvaluator::createOu
         ,true // supportsAdjoint
         )
       );
-    outArgs.setSupports(OUT_ARG_DgDp,0,0,DERIV_TRANS_MV_BY_ROW);
+    outArgs.setSupports(OUT_ARG_DgDp,0,0, orientation_DgDp);
     outArgs.set_DgDp_properties(
       0,0,DerivativeProperties(
         DERIV_LINEARITY_NONCONST
@@ -242,10 +267,18 @@ void EpetraExt::MultiPointModelEvaluator::evalModel( const InArgs& inArgs,
   if (underlyingNg) {
     DgDx_out = outArgs.get_DgDx(0);
     DgDp_out = outArgs.get_DgDp(0,0);
+    if (!DgDx_out.isEmpty()) DgDx_out.getMultiVector()->PutScalar(0.0);
     if (!DgDp_out.isEmpty()) DgDp_out.getMultiVector()->PutScalar(0.0);
   }
 
-  // Begin loop over steps owned on this proc
+  // For mathcingProblems, g is needed to calc DgDx DgDp, so ask for
+  //  g even if it isn't requested.
+  bool need_g = g_out.get();
+  if (matchingProblem)
+    if ( !DgDx_out.isEmpty() || !DgDp_out.isEmpty() ) need_g = true;
+
+
+  // Begin loop over Points (steps) owned on this proc
   for (int i=0; i < timeStepsOnTimeDomain; i++) {
 
     // Set MultiPoint parameter vector
@@ -258,7 +291,7 @@ void EpetraExt::MultiPointModelEvaluator::evalModel( const InArgs& inArgs,
     // Set OutArgs
     if (f_out.get()) underlyingOutArgs.set_f(split_f);
 
-    if (g_out.get()) underlyingOutArgs.set_g(0, split_g);
+    if (need_g) underlyingOutArgs.set_g(0, split_g);
 
     if (W_out.get()) underlyingOutArgs.set_W(split_W);
 
@@ -272,6 +305,16 @@ void EpetraExt::MultiPointModelEvaluator::evalModel( const InArgs& inArgs,
     underlyingME->evalModel(underlyingInArgs, underlyingOutArgs);
     //********Eval Model ********/
 
+    // If matchingProblem, modify all g-related quantitites G = 0.5*(g-g*)^2
+    if (matchingProblem) {
+      if (need_g) {
+        double diff = (*split_g)[0] -  (*(*matching_vec)[i])[0];
+        (*split_g)[0] = 0.5 * diff * diff;
+        if (!DgDx_out.isEmpty()) split_DgDx->Scale(diff);
+        if (!DgDp_out.isEmpty()) split_DgDp->Scale(diff);
+      }
+    }
+
     // Repackage block components into global block matrx/vector/multivector
     if (f_out.get()) block_f->LoadBlockValues(*split_f, (*rowIndex)[i]);
     if (W_out.get()) W_block->LoadBlock(*split_W, i, 0);
@@ -280,12 +323,10 @@ void EpetraExt::MultiPointModelEvaluator::evalModel( const InArgs& inArgs,
     if (!DgDx_out.isEmpty()) block_DgDx->LoadBlockValues(*split_DgDx, (*rowIndex)[i]);
 
     // Assemble multiple steps on this domain into g and dgdp(0) vectors
-
     if (g_out.get()) g_out->Update(1.0, *split_g, 1.0);
 
-    // HARDWIRED for g is a scalar
     if (!DgDp_out.isEmpty())
-      DgDp_out.getMultiVector()->Update(1.0, *((*split_DgDp)(0)), 1.0);
+      DgDp_out.getMultiVector()->Update(1.0, *split_DgDp, 1.0);
 
   } // End loop over multiPoint steps on this domain/cluster
 
@@ -296,32 +337,21 @@ void EpetraExt::MultiPointModelEvaluator::evalModel( const InArgs& inArgs,
   if (!DgDx_out.isEmpty()) 
     DgDx_out.getMultiVector()->operator=(*block_DgDx);
 
-  //Sum together obj fn contributions.
-    // HARDWIRED for g is a scalar
+  //Sum together obj fn contributions from differnt Domains (clusters).
   if (numTimeDomains > 1) {
+    double factorToZeroOutCopies = 0.0;
+    if (globalComm->SubDomainComm().MyPID()==0) factorToZeroOutCopies = 1.0;
     if (g_out.get()) {
-      double g_dist[1];
-      double g_sum[1];
-      if (globalComm->SubDomainComm().MyPID()==0) g_dist[0] = g_out->operator[](0);
-      else g_dist[0]=0;
-      globalComm->SumAll(g_dist, g_sum, 1);
-      g_out->operator[](0) = g_sum[0];
+      (*g_out).Scale(factorToZeroOutCopies);
+      double* vPtr = &((*g_out)[0]);
+      Epetra_Vector tmp = *(g_out.get());
+      globalComm->SumAll( &(tmp[0]), vPtr, num_g0);
     }
     if (!DgDp_out.isEmpty()) {
-      int  num_p0 =  underlyingME->get_p_map(0)->NumMyElements();
-      double* g_dist = new double[num_p0];
-      double* g_sum = new double[num_p0];
-      for (int i=0; i<num_p0; i++) {
-        if (globalComm->SubDomainComm().MyPID()==0)
-          g_dist[i] = DgDp_out.getMultiVector()->operator()(0)->operator[](i);
-        else g_dist[i]=0;
-      }
-      globalComm->SumAll(g_dist, g_sum, num_p0);
-      for (int i=0; i<num_p0; i++) {
-        DgDp_out.getMultiVector()->operator()(0)->operator[](i) = g_sum[i];
-      }
-      delete g_dist;
-      delete g_sum;
+      DgDp_out.getMultiVector()->Scale(factorToZeroOutCopies);
+      double* mvPtr = (*DgDp_out.getMultiVector())[0];
+      Epetra_MultiVector tmp = *(DgDp_out.getMultiVector());
+      globalComm->SumAll(tmp[0], mvPtr, num_dg0dp0);
     }
   }
 }
