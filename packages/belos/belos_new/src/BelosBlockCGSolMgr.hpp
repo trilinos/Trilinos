@@ -290,15 +290,8 @@ BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr(
   maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
-  Teuchos::RefCountPtr<StatusTestResNorm_t> impConvTest = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
-  impConvTest->defineScaleForm( StatusTestResNorm_t::NormOfPrecInitRes, Belos::TwoNorm );
+  convTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
   
-  // Explicit residual test once the native residual is below the tolerance
-  Teuchos::RefCountPtr<StatusTestResNorm_t> expConvTest  = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
-  expConvTest->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
-  
-  convTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, impConvTest, expConvTest ) );
-
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
   
   if (output_freq_ > 0) {
