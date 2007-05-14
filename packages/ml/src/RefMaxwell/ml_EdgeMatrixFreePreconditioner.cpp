@@ -77,7 +77,6 @@ ML_Epetra::EdgeMatrixFreePreconditioner::EdgeMatrixFreePreconditioner(const Epet
 {
   /* Set the Epetra Goodies */
   Comm_ = &(Operator_->Comm());
-  if(verbose_ && !Comm_->MyPID()) printf("EMFP: Constructor Commencing\n");
 
   EdgeDomainMap_ = &(Operator_->OperatorDomainMap());
   EdgeRangeMap_ = &(Operator_->OperatorRangeMap());
@@ -102,18 +101,17 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
 {
   Teuchos::ParameterList dummy, ListCoarse;
   ListCoarse=List_.get("edge matrix free: coarse",dummy);
-  
+
   /* ML Communicator */
   ML_Comm_Create(&ml_comm_);
-
+  
   /* Parameter List Options */
   int OutputLevel = List_.get("ML output", -47);
-  int SmootherSweeps = List_.get("smoother: sweeps (level 0)", 0);
-  MaxLevels = List_.get("max levels",10); 
-  
   if (OutputLevel == -47) OutputLevel = List_.get("output", 1);
   if(OutputLevel > 5) verbose_=true;
-  else verbose_=false;
+  else verbose_=false;  
+  int SmootherSweeps = List_.get("smoother: sweeps (level 0)", 0);
+  MaxLevels = List_.get("max levels",10); 
 
   num_cycles  = List_.get("cycle applications",1);
   ML_Set_PrintLevel(OutputLevel);
@@ -141,7 +139,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
   }/*end if*/
 
 
-  if(MaxLevels > 1) {  
+  if(MaxLevels > 0) {  
     /* Build the Nullspace */
     if(verbose_ && !Comm_->MyPID()) printf("EMFP: Building Nullspace\n");
     Epetra_MultiVector *nullspace=BuildNullspace();

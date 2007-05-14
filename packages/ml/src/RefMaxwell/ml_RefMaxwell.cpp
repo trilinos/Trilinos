@@ -376,32 +376,27 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
     Diagonal_=new Epetra_Vector(*DomainMap_,false);
     Diagonal_->PutScalar(1.0);
   }
-
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[4]));
 #endif
 
   
   /* Build the (1,1) Block Preconditioner */ 
-  ML_reseed_random_vec(8675309);//DEBUG 
   string solver11=List_.get("refmaxwell: 11solver","edge matrix free");
   Teuchos::ParameterList List11=List_.get("refmaxwell: 11list",dummy);
   if(solver11=="edge matrix free")
     EdgePC=new EdgeMatrixFreePreconditioner(*Operator11_,*Diagonal_,*D0_Matrix_,*D0_Clean_Matrix_,*TMT_Agg_Matrix_,BCrows,numBCrows,List11,true);
   else {printf("RefMaxwellPreconditioner: ERROR - Illegal (1,1) block preconditioner\n");return -1;}
-  
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[5]));
 #endif
-
 #ifndef NO_OUTPUT
-    EdgePC->Print();
+  EdgePC->Print();
 #endif
 
   
   /* Build the (2,2) Block Preconditioner */
   if(!HasOnlyDirichletNodes){
-    ML_reseed_random_vec(8675309);//DEBUG
     string solver22=List_.get("refmaxwell: 22solver","multilevel");
     Teuchos::ParameterList List22=List_.get("refmaxwell: 22list",dummy);
     SetDefaultsSA(List22,0,0,false);
@@ -412,7 +407,6 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
     NodePC->Print();
 #endif
   }/*end if*/
-
 
   
   /* Setup the Hiptmair smoother in additive mode */
@@ -797,7 +791,7 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   ML_Epetra::SetDefaultsSA(List11c);
   List11c.set("cycle applications",1);
   List11c.set("smoother: type","Chebyshev");
-  List11c.set("aggregation: threshold",.01);//CMS
+  List11c.set("aggregation: threshold",.01);//CMS 
   List11c.set("coarse: type","Chebyshev");  
   ML_Epetra::UpdateList(List11c,List11c_,OverWrite);
   
