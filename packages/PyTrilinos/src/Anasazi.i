@@ -80,6 +80,8 @@ supported.
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_FECrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
+#include "Epetra_FEVbrMatrix.h"
 #include "Epetra_JadMatrix.h"
 
 // Epetra NumPy includes
