@@ -26,11 +26,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef BELOS_CG_ITER_HPP
-#define BELOS_CG_ITER_HPP
+#ifndef BELOS_BLOCK_CG_ITER_HPP
+#define BELOS_BLOCK_CG_ITER_HPP
 
-/*! \file BelosCGIter.hpp
-    \brief Belos concrete class for performing the conjugate-gradient (CG) iteration.
+/*! \file BelosBlockCGIter.hpp
+    \brief Belos concrete class for performing the block conjugate-gradient (CG) iteration.
 */
 
 #include "BelosConfigDefs.hpp"
@@ -38,6 +38,7 @@
 #include "BelosIteration.hpp"
 
 #include "BelosLinearProblem.hpp"
+#include "BelosMatOrthoManager.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
@@ -52,75 +53,85 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 /*!	
-  \class Belos::CGIter
+  \class Belos::BlockCGIter
   
-  \brief This class implements the preconditioned Conjugate Gradient (CG) iteration.
+  \brief This class implements the block, preconditioned Conjugate Gradient (CG) iteration.
  
   \author Teri Barth and Heidi Thornquist
 */
 
 namespace Belos {
   
-  //! @name CGIter Structures 
+  //! @name BlockCGIter Structures 
   //@{ 
   
-  /** \brief Structure to contain pointers to CGIter state variables.
+  /** \brief Structure to contain pointers to BlockCGIter state variables.
    *
-   * This struct is utilized by CGIter::initialize() and CGIter::getState().
+   * This struct is utilized by BlockCGIter::initialize() and BlockCGIter::getState().
    */
   template <class ScalarType, class MV>
-  struct CGIterState {
+  struct BlockCGIterState {
 
     /*! \brief The current residual. */
-    Teuchos::RefCountPtr<MV> r;
+    Teuchos::RefCountPtr<MV> R;
 
     /*! \brief The current preconditioned residual. */
-    Teuchos::RefCountPtr<MV> z;
+    Teuchos::RefCountPtr<MV> Z;
 
     /*! \brief The current decent direction vector */
-    Teuchos::RefCountPtr<MV> p;
+    Teuchos::RefCountPtr<MV> P;
 
     /*! \brief The matrix A applied to current decent direction vector */
-    Teuchos::RefCountPtr<MV> Ap;
+    Teuchos::RefCountPtr<MV> AP;
     
-    CGIterState() : r(Teuchos::null), z(Teuchos::null), 
-		    p(Teuchos::null), Ap(Teuchos::null)
+    BlockCGIterState() : R(Teuchos::null), Z(Teuchos::null), 
+		    P(Teuchos::null), AP(Teuchos::null)
     {}
   };
   
-  //! @name CGIter Exceptions
+  //! @name BlockCGIter Exceptions
   //@{ 
   
-  /** \brief CGIterInitFailure is thrown when the CGIter object is unable to
-   * generate an initial iterate in the CGIter::initialize() routine. 
+  /** \brief BlockCGIterInitFailure is thrown when the BlockCGIter object is unable to
+   * generate an initial iterate in the BlockCGIter::initialize() routine. 
    *
-   * This exception is thrown from the CGIter::initialize() method, which is
-   * called by the user or from the CGIter::iterate() method if isInitialized()
+   * This exception is thrown from the BlockCGIter::initialize() method, which is
+   * called by the user or from the BlockCGIter::iterate() method if isInitialized()
    * == \c false.
    *
    * In the case that this exception is thrown, 
-   * CGIter::isInitialized() will be \c false and the user will need to provide
+   * BlockCGIter::isInitialized() will be \c false and the user will need to provide
    * a new initial iterate to the iteration.
    */
-  class CGIterInitFailure : public BelosError {public:
-    CGIterInitFailure(const std::string& what_arg) : BelosError(what_arg)
+  class BlockCGIterInitFailure : public BelosError {public:
+    BlockCGIterInitFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
-  /** \brief CGIterateFailure is thrown when the CGIter object is unable to
-   * compute the next iterate in the CGIter::iterate() routine. 
+  /** \brief BlockCGIterOrthoFailure is thrown when the BlockCGIter object is unable to
+   * compute independent direction vectors in the BlockCGIter::iterate() routine. 
    *
-   * This exception is thrown from the CGIter::iterate() method.
+   * This exception is thrown from the BlockCGIter::iterate() method.
    *
    */
-  class CGIterateFailure : public BelosError {public:
-    CGIterateFailure(const std::string& what_arg) : BelosError(what_arg)
+  class BlockCGIterOrthoFailure : public BelosError {public:
+    BlockCGIterOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
+    {}};
+
+  /** \brief BlockCGIterLAPACKFailure is thrown when a nonzero return value is passed back
+   * from an LAPACK routine.
+   *
+   * This exception is thrown from the BlockCGIter::iterate() method.
+   *
+   */
+  class BlockCGIterLAPACKFailure : public BelosError {public:
+    BlockCGIterLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
   
   //@}
 
 
 template<class ScalarType, class MV, class OP>
-class CGIter : virtual public Iteration<ScalarType,MV,OP> {
+class BlockCGIter : virtual public Iteration<ScalarType,MV,OP> {
 
   public:
     
@@ -135,31 +146,32 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
   //! @name Constructors/Destructor
   //@{ 
 
-  /*! \brief %CGIter constructor with linear problem, solver utilities, and parameter list of solver options.
+  /*! \brief %BlockCGIter constructor with linear problem, solver utilities, and parameter list of solver options.
    *
    * This constructor takes pointers required by the linear solver iteration, in addition
    * to a parameter list of options for the linear solver.
    */
-  CGIter( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
-		  const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-		  const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-		  Teuchos::ParameterList &params );
+  BlockCGIter( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
+	       const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
+	       const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
+	       const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+	       Teuchos::ParameterList &params );
 
   //! Destructor.
-  virtual ~CGIter() {};
+  virtual ~BlockCGIter() {};
   //@}
 
 
   //! @name Solver methods
   //@{ 
   
-  /*! \brief This method performs CG iterations until the status
+  /*! \brief This method performs BlockCG iterations until the status
    * test indicates the need to stop or an error occurs (in which case, an
    * exception is thrown).
    *
    * iterate() will first determine whether the solver is initialized; if
    * not, it will call initialize() using default arguments. After
-   * initialization, the solver performs CG iterations until the
+   * initialization, the solver performs BlockCG iterations until the
    * status test evaluates as ::Passed, at which point the method returns to
    * the caller. 
    *
@@ -169,7 +181,7 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
 
   /*! \brief Initialize the solver to an iterate, providing a complete state.
    *
-   * The %CGIter contains a certain amount of state, consisting of the current 
+   * The %BlockCGIter contains a certain amount of state, consisting of the current 
    * residual, preconditioned residual, and decent direction.
    *
    * initialize() gives the user the opportunity to manually set these,
@@ -181,14 +193,14 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
    * \note For any pointer in \c newstate which directly points to the multivectors in 
    * the solver, the data is not copied.
    */
-  void initialize(CGIterState<ScalarType,MV> newstate);
+  void initialize(BlockCGIterState<ScalarType,MV> newstate);
 
   /*! \brief Initialize the solver with the initial vectors from the linear problem
    *  or random data.
    */
   void initialize()
   {
-    CGIterState<ScalarType,MV> empty;
+    BlockCGIterState<ScalarType,MV> empty;
     initialize(empty);
   }
   
@@ -196,14 +208,14 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
    *
    * The data is only valid if isInitialized() == \c true.
    *
-   * \returns A CGIterState object containing const pointers to the current solver state.
+   * \returns A BlockCGIterState object containing const pointers to the current solver state.
    */
-  CGIterState<ScalarType,MV> getState() const {
-    CGIterState<ScalarType,MV> state;
-    state.r = r_;
-    state.p = p_;
-    state.Ap = Ap_;
-    state.z = z_;
+  BlockCGIterState<ScalarType,MV> getState() const {
+    BlockCGIterState<ScalarType,MV> state;
+    state.R = R_;
+    state.P = P_;
+    state.AP = AP_;
+    state.Z = Z_;
     return state;
   }
 
@@ -221,7 +233,7 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
 
   //! Get the norms of the residuals native to the solver.
   //! \return A vector of length blockSize containing the native residuals.
-  Teuchos::RefCountPtr<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return r_; }
+  Teuchos::RefCountPtr<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return R_; }
 
   //! Get the current update to the linear system.
   /*! \note This method returns a null pointer because the linear problem is current.
@@ -237,13 +249,10 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
   const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
 
   //! Get the blocksize to be used by the iterative solver in solving this linear problem.
-  int getBlockSize() const { return 1; }
+  int getBlockSize() const { return blockSize_; }
 
   //! \brief Set the blocksize to be used by the iterative solver in solving this linear problem.
-  void setBlockSize(int blockSize) {
-    TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
-		       "Belos::CGIter::setBlockSize(): Cannot use a block size that is not one.");
-  }
+  void setBlockSize(int blockSize);
 
   //! States whether the solver has been initialized or not.
   bool isInitialized() { return initialized_; }
@@ -255,7 +264,7 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
   //
   // Internal methods
   //
-  //! Method for initalizing the state storage needed by CG.
+  //! Method for initalizing the state storage needed by block CG.
   void setStateSize();
   
   //
@@ -264,6 +273,13 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
   const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> >    lp_;
   const Teuchos::RefCountPtr<OutputManager<ScalarType> >          om_;
   const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >       stest_;
+  const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> >        ortho_;
+
+  //
+  // Algorithmic parameters
+  //
+  // blockSize_ is the solver block size.
+  int blockSize_;
 
   //  
   // Current solver state
@@ -285,39 +301,45 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
   // State Storage
   // 
   // Residual
-  Teuchos::RefCountPtr<MV> r_;
+  Teuchos::RefCountPtr<MV> R_;
   //
   // Preconditioned residual
-  Teuchos::RefCountPtr<MV> z_;
+  Teuchos::RefCountPtr<MV> Z_;
   //
   // Direction vector
-  Teuchos::RefCountPtr<MV> p_;
+  Teuchos::RefCountPtr<MV> P_;
   //
   // Operator applied to direction vector
-  Teuchos::RefCountPtr<MV> Ap_;
+  Teuchos::RefCountPtr<MV> AP_;
 
 };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
   template<class ScalarType, class MV, class OP>
-  CGIter<ScalarType,MV,OP>::CGIter(const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
-						   const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-						   const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-						   Teuchos::ParameterList &params ):
+  BlockCGIter<ScalarType,MV,OP>::BlockCGIter(const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
+					     const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
+					     const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
+					     const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+					     Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
     stest_(tester),
+    ortho_(ortho),
+    blockSize_(0),
     initialized_(false),
     stateStorageInitialized_(false),
     iter_(0)
   {
+    // Set the block size and allocate data
+    int bs = params.get("Block Size", 1);
+    setBlockSize( bs );
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Setup the state storage.
   template <class ScalarType, class MV, class OP>
-  void CGIter<ScalarType,MV,OP>::setStateSize ()
+  void BlockCGIter<ScalarType,MV,OP>::setStateSize ()
   {
     if (!stateStorageInitialized_) {
 
@@ -332,15 +354,15 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
 	
 	// Initialize the state storage
 	// If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
-	if (r_ == Teuchos::null) {
+	if (R_ == Teuchos::null) {
 	  // Get the multivector that is not null.
 	  Teuchos::RefCountPtr<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
 	  TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
-			     "Belos::CGIter::setStateSize(): linear problem does not specify multivectors to clone from.");
-	  r_ = MVT::Clone( *tmp, 1 );
-	  z_ = MVT::Clone( *tmp, 1 );
-	  p_ = MVT::Clone( *tmp, 1 );
-	  Ap_ = MVT::Clone( *tmp, 1 );
+			     "Belos::BlockCGIter::setStateSize(): linear problem does not specify multivectors to clone from.");
+	  R_ = MVT::Clone( *tmp, blockSize_ );
+	  Z_ = MVT::Clone( *tmp, blockSize_ );
+	  P_ = MVT::Clone( *tmp, blockSize_ );
+	  AP_ = MVT::Clone( *tmp, blockSize_ );
 	}
 	
 	// State storage has now been initialized.
@@ -349,55 +371,80 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
     }
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Set the block size and make necessary adjustments.
+  template <class ScalarType, class MV, class OP>
+  void BlockCGIter<ScalarType,MV,OP>::setBlockSize (int blockSize)
+  {
+    // This routine only allocates space; it doesn't not perform any computation
+    // any change in size will invalidate the state of the solver.
+
+    TEST_FOR_EXCEPTION(blockSize <= 0, std::invalid_argument, "Belos::BlockGmresIter::setBlockSize was passed a non-positive argument.");
+    if (blockSize == blockSize_) {
+      // do nothing
+      return;
+    }
+
+    if (blockSize!=blockSize_)
+      stateStorageInitialized_ = false;
+
+    blockSize_ = blockSize;
+
+    initialized_ = false;
+
+    // Use the current blockSize_ to initialize the state storage.
+    setStateSize();
+
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void CGIter<ScalarType,MV,OP>::initialize(CGIterState<ScalarType,MV> newstate)
+  void BlockCGIter<ScalarType,MV,OP>::initialize(BlockCGIterState<ScalarType,MV> newstate)
   {
     // Initialize the state storage if it isn't already.
     if (!stateStorageInitialized_) 
       setStateSize();
 
     TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
-		       "Belos::CGIter::initialize(): Cannot initialize state storage!");
+		       "Belos::BlockCGIter::initialize(): Cannot initialize state storage!");
     
-    // NOTE:  In CGIter r_, the initial residual, is required!!!  
+    // NOTE:  In BlockCGIter R_, the initial residual, is required!!!  
     //
-    std::string errstr("Belos::CGIter::initialize(): Specified multivectors must have a consistent length and width.");
+    std::string errstr("Belos::BlockCGIter::initialize(): Specified multivectors must have a consistent length and width.");
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
 
-    if (newstate.r != Teuchos::null) {
+    if (newstate.R != Teuchos::null) {
 
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.r) != MVT::GetVecLength(*r_),
+      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.r) != 1,
+      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != blockSize_,
                           std::invalid_argument, errstr );
 
       // Copy basis vectors from newstate into V
-      if (newstate.r != r_) {
+      if (newstate.R != R_) {
         // copy over the initial residual (unpreconditioned).
-	MVT::MvAddMv( one, *newstate.r, zero, *newstate.r, *r_ );
+	MVT::MvAddMv( one, *newstate.R, zero, *newstate.R, *R_ );
       }
 
       // Compute initial direction vectors
       // Initially, they are set to the preconditioned residuals
       //
       if ( lp_->getLeftPrec() != Teuchos::null ) {
-	lp_->applyLeftPrec( *r_, *z_ ); 
-	MVT::MvAddMv( one, *z_, zero, *z_, *p_ );
+	lp_->applyLeftPrec( *R_, *Z_ ); 
+	MVT::MvAddMv( one, *Z_, zero, *Z_, *P_ );
       } else {
-	z_ = r_;
-	MVT::MvAddMv( one, *r_, zero, *r_, *p_ );
+	Z_ = R_;
+	MVT::MvAddMv( one, *R_, zero, *R_, *P_ );
       }
     }
     else {
 
-      TEST_FOR_EXCEPTION(newstate.r == Teuchos::null,std::invalid_argument,
-                         "Belos::CGIter::initialize(): CGStateIterState does not have initial residual.");
+      TEST_FOR_EXCEPTION(newstate.R == Teuchos::null,std::invalid_argument,
+                         "Belos::BlockCGIter::initialize(): BlockCGStateIterState does not have initial residual.");
     }
 
     // The solver is initialized
@@ -408,7 +455,7 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
   template <class ScalarType, class MV, class OP>
-  void CGIter<ScalarType,MV,OP>::iterate()
+  void BlockCGIter<ScalarType,MV,OP>::iterate()
   {
     //
     // Allocate/initialize data structures
@@ -416,11 +463,16 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
     if (initialized_ == false) {
       initialize();
     }
+    // Allocate data needed for LAPACK work.
+    int info = 0;
+    char UPLO = 'U';
+    Teuchos::LAPACK<int,ScalarType> lapack;
 
     // Allocate memory for scalars.
-    Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
-    Teuchos::SerialDenseMatrix<int,ScalarType> beta( 1, 1 );
-    Teuchos::SerialDenseMatrix<int,ScalarType> rHz( 1, 1 ), rHz_old( 1, 1 ), pAp( 1, 1 );
+    Teuchos::SerialDenseMatrix<int,ScalarType> alpha( blockSize_, blockSize_ );
+    Teuchos::SerialDenseMatrix<int,ScalarType> beta( blockSize_, blockSize_ );
+    Teuchos::SerialDenseMatrix<int,ScalarType> rHz( blockSize_, blockSize_ ), 
+      rHz_old( blockSize_, blockSize_ ), pAp( blockSize_, blockSize_ );
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -429,13 +481,14 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
     // Get the current solution vector.
     Teuchos::RefCountPtr<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
-    // Check that the current solution vector only has one column. 
-    TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != 1, CGIterateFailure,
-                        "Belos::CGIter::iterate(): current linear system has more than one vector!" );
+    // Check that the current solution vector has blockSize_ columns. 
+    TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != blockSize_, BlockCGIterateFailure,
+                        "Belos::BlockCGIter::iterate(): current linear system does not have the right number of vectors!" );
+    int rank = ortho_->normalize( *P_ );
+    TEST_FOR_EXCEPTION(rank != blockSize_,BlockCGIterOrthoFailure,
+                         "Belos::BlockCGIter::iterate(): Failed to compute initial block of orthonormal direction vectors.");
 
-    // Compute first <r,z> a.k.a. rHz
-    MVT::MvTransMv( one, *r_, *z_, rHz );
-    
+
     ////////////////////////////////////////////////////////////////
     // Iterate until the status test tells us to stop.
     //
@@ -445,47 +498,71 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
       iter_++;
 
       // Multiply the current direction vector by A and store in Ap_
-      lp_->applyOp( *p_, *Ap_ );
+      lp_->applyOp( *P_, *AP_ );
       
-      // Compute alpha := <r_,z_> / <p_,Ap_>
-      MVT::MvTransMv( one, *p_, *Ap_, pAp );
-      alpha(0,0) = rHz(0,0) / pAp(0,0);
+      // Compute alpha := <R_,Z_> / <P_,AP_>
+      // 1) Compute P^T * A * P = pAp and R^T * Z 
+      // 2) Compute the Cholesky Factorization of pAp
+      // 3) Back and forward solves to compute alpha
+      //
+      MVT::MvTransMv( one, *R_, *Z_, alpha );
+      MVT::MvTransMv( one, *P_, *AP_, pAp );      
+
+      // Compute Cholesky factorization of pAp
+      lapack.POTRF(UPLO, blockSize_, pAp.values(), blockSize_, &info);
+      TEST_FOR_EXCEPTION(info != 0,BlockCGIterLAPACKFailure,
+                         "Belos::BlockCGIter::iterate(): Failed to compute Cholesky factorization using LAPACK routine POTRF.");
+
+      // Compute alpha by performing a back and forward solve with the Cholesky factorization in pAp.
+      lapack.POTRS(UPLO, blockSize_, blockSize_, pAp.values(), blockSize_, 
+		   alpha.values(), blockSize_, &info);
+      TEST_FOR_EXCEPTION(info != 0,BlockCGIterLAPACKFailure,
+                         "Belos::BlockCGIter::iterate(): Failed to compute alpha using Cholesky factorization (POTRS).");
       
-      // Check that alpha is a positive number!
-      TEST_FOR_EXCEPTION( SCT::real(alpha(0,0)) <= zero, CGIterateFailure,
-			  "Belos::CGIter::iterate(): non-positive value for p^H*A*p encountered!" );
       //
-      // Update the solution vector x := x + alpha * p_
+      // Update the solution vector X := X + alpha * P_
       //
-      MVT::MvAddMv( one, *cur_soln_vec, alpha(0,0), *p_, *cur_soln_vec );
+      MVT::MvTimesMatAddMv( one, *P_, alpha, one, *cur_soln_vec );
       lp_->updateSolution();
       //
-      // Save the denominator of beta before residual is updated [ old <r_, z_> ]
+      // Compute the new residual R_ := R_ - alpha * AP_
       //
-      rHz_old(0,0) = rHz(0,0);
+      MVT::MvTimesMatAddMv( -one, *AP_, alpha, one, *R_ );
       //
-      // Compute the new residual r_ := r_ - alpha * Ap_
-      //
-      MVT::MvAddMv( one, *r_, -alpha(0,0), *Ap_, *r_ );
-      //
-      // Compute beta := [ new <r_, z_> ] / [ old <r_, z_> ], 
-      // and the new direction vector p.
-      //
+      // Compute the new preconditioned residual, Z_.
       if ( lp_->getLeftPrec() != Teuchos::null ) {
-	lp_->applyLeftPrec( *r_, *z_ );
+	lp_->applyLeftPrec( *R_, *Z_ );
       } else {
-	z_ = r_;
+	Z_ = R_;
       }
       //
-      MVT::MvTransMv( one, *r_, *z_, rHz );
+      // Compute beta := <AP_,Z_> / <P_,AP_> 
+      // 1) Compute AP_^T * Z_ 
+      // 2) Compute the Cholesky Factorization of pAp (already have)
+      // 3) Back and forward solves to compute beta
+
+      // Compute <AP_,Z>
+      MVT::MvTransMv( one, *AP_, *Z_, beta );
       //
-      beta(0,0) = rHz(0,0) / rHz_old(0,0);
+      lapack.POTRS(UPLO, blockSize_, blockSize_, pAp.values(), blockSize_, 
+		   beta.values(), blockSize_, &info);
+      TEST_FOR_EXCEPTION(info != 0,BlockCGIterLAPACKFailure,
+                         "Belos::BlockCGIter::iterate(): Failed to compute beta using Cholesky factorization (POTRS).");
       //
-      MVT::MvAddMv( one, *z_, beta(0,0), *p_, *p_ );
+      // Compute the new direction vectors P_ = Z_ + P_ * beta 
+      //
+      Teuchos::RefCountPtr<MV> Pnew = MVT::CloneCopy( *Z_ );
+      MVT::MvTimesMatAddMv(one, *P_, beta, one, *Pnew);
+      P_ = Pnew;
+
+      // Compute orthonormal block of new direction vectors.
+      int rank = ortho_->normalize( *P_ );
+      TEST_FOR_EXCEPTION(rank != blockSize_,BlockCGIterOrthoFailure,
+                         "Belos::BlockCGIter::iterate(): Failed to compute block of orthonormal direction vectors.");
       
     } // end while (sTest_->checkStatus(this) != Passed)
   }
 
 } // end Belos namespace
 
-#endif /* BELOS_CG_ITER_HPP */
+#endif /* BELOS_BLOCK_CG_ITER_HPP */

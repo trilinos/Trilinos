@@ -40,6 +40,7 @@
 #include "BelosSolverManager.hpp"
 
 #include "BelosCGIter.hpp"
+#include "BelosBlockCGIter.hpp"
 #include "BelosDGKSOrthoManager.hpp"
 #include "BelosICGSOrthoManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"

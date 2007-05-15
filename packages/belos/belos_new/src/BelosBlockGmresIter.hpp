@@ -428,7 +428,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     initialized_ = false;
     curDim_ = 0;
 
-    // Use the current blockSize_ and numBlocks_ to initialized the state storage.    
+    // Use the current blockSize_ and numBlocks_ to initialize the state storage.    
     setStateSize();
     
   }
