@@ -99,6 +99,7 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_JadOperator.h"
 
 // Epetra python includes
+#include "NumPyImporter.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
