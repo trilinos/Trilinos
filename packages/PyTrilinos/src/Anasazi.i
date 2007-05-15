@@ -63,6 +63,11 @@ supported.
 #include "Teuchos_PythonParameter.h"
 
 // Epetra includes
+#include "Epetra_Comm.h"
+#include "Epetra_SerialComm.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
