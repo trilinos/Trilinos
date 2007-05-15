@@ -963,6 +963,7 @@ int ML_Epetra::ML_Epetra_PtAP(const Epetra_CrsMatrix & A, const Epetra_CrsMatrix
   ML_Operator_Destroy(&P_);
   ML_Operator_Destroy(&Result_);
   ML_Comm_Destroy(&comm);
+  return 0;
 }/*end ML_Epetra_PtAP */
 
 
