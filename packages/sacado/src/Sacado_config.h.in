@@ -153,6 +153,10 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* define if the compiler is consused by std::sin, etc., within namespace
+   Sacado::Rad */
+#undef RAD_NO_USING_STDCC
+
 /* Define to enable extra debugging checks */
 #undef SACADO_DEBUG
 

@@ -381,6 +381,9 @@ AC_SUBST(ADOLC_LIBS)
 # Checks for compiler characteristics
 # ------------------------------------------------------------------------
 
+# Check for bug (e.g., with Sun's CC 5.7) in handling std:: within a namespace
+AC_CXX_STDCCBUG
+
 # ------------------------------------------------------------------------
 # Checks for linker characteristics
 # ------------------------------------------------------------------------

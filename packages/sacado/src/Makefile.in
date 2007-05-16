@@ -73,6 +73,7 @@ DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/ac_arg_with_execlincludedir.m4 \
+	$(top_srcdir)/config/ac_cxx_stdccbug.m4 \
 	$(top_srcdir)/config/cppunit.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
@@ -98,7 +99,8 @@ am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execin
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 libsacado_a_DEPENDENCIES =
-am__objects_1 = Sacado_radops.$(OBJEXT) uninit.$(OBJEXT)
+am__objects_1 = Sacado_radops.$(OBJEXT) uninit.$(OBJEXT) \
+	RAD_Const_Warn.$(OBJEXT)
 am__objects_2 = $(am__objects_1)
 am__objects_3 =
 am__objects_4 = $(am__objects_3) $(am__objects_3) $(am__objects_3) \
@@ -109,8 +111,8 @@ libsacado_a_OBJECTS = $(am_libsacado_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Sacado_radops.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/uninit.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/RAD_Const_Warn.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Sacado_radops.Po ./$(DEPDIR)/uninit.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -169,6 +171,7 @@ ENABLE_ADOLC_TRUE = @ENABLE_ADOLC_TRUE@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
+GREP = @GREP@
 HAVE_CPPUNIT_FALSE = @HAVE_CPPUNIT_FALSE@
 HAVE_CPPUNIT_TRUE = @HAVE_CPPUNIT_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
@@ -218,8 +221,6 @@ ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
-ac_ct_RANLIB = @ac_ct_RANLIB@
-ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
@@ -234,6 +235,9 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 datadir = @datadir@
+datarootdir = @datarootdir@
+docdir = @docdir@
+dvidir = @dvidir@
 exec_prefix = @exec_prefix@
 execincludedir = @execincludedir@
 host = @host@
@@ -241,17 +245,21 @@ host_alias = @host_alias@
 host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
+htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
+localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
+pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
+psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
@@ -314,7 +322,8 @@ SACADO_RAD_H = \
 
 SACADO_RAD = \
 	$(srcdir)/Sacado_radops.cpp \
-	$(srcdir)/uninit.c
+	$(srcdir)/uninit.c \
+	$(srcdir)/RAD_Const_Warn.c
 
 SACADO_TEMPLATE_H = \
 	$(srcdir)/Sacado_TemplateManager.hpp \
@@ -499,6 +508,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAD_Const_Warn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Sacado_radops.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uninit.Po@am__quote@
 
@@ -533,6 +543,22 @@ uninit.obj: $(srcdir)/uninit.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/uninit.Po' tmpdepfile='$(DEPDIR)/uninit.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o uninit.obj `if test -f '$(srcdir)/uninit.c'; then $(CYGPATH_W) '$(srcdir)/uninit.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/uninit.c'; fi`
+
+RAD_Const_Warn.o: $(srcdir)/RAD_Const_Warn.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT RAD_Const_Warn.o -MD -MP -MF "$(DEPDIR)/RAD_Const_Warn.Tpo" -c -o RAD_Const_Warn.o `test -f '$(srcdir)/RAD_Const_Warn.c' || echo '$(srcdir)/'`$(srcdir)/RAD_Const_Warn.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/RAD_Const_Warn.Tpo" "$(DEPDIR)/RAD_Const_Warn.Po"; else rm -f "$(DEPDIR)/RAD_Const_Warn.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/RAD_Const_Warn.c' object='RAD_Const_Warn.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/RAD_Const_Warn.Po' tmpdepfile='$(DEPDIR)/RAD_Const_Warn.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o RAD_Const_Warn.o `test -f '$(srcdir)/RAD_Const_Warn.c' || echo '$(srcdir)/'`$(srcdir)/RAD_Const_Warn.c
+
+RAD_Const_Warn.obj: $(srcdir)/RAD_Const_Warn.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT RAD_Const_Warn.obj -MD -MP -MF "$(DEPDIR)/RAD_Const_Warn.Tpo" -c -o RAD_Const_Warn.obj `if test -f '$(srcdir)/RAD_Const_Warn.c'; then $(CYGPATH_W) '$(srcdir)/RAD_Const_Warn.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RAD_Const_Warn.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/RAD_Const_Warn.Tpo" "$(DEPDIR)/RAD_Const_Warn.Po"; else rm -f "$(DEPDIR)/RAD_Const_Warn.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/RAD_Const_Warn.c' object='RAD_Const_Warn.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/RAD_Const_Warn.Po' tmpdepfile='$(DEPDIR)/RAD_Const_Warn.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o RAD_Const_Warn.obj `if test -f '$(srcdir)/RAD_Const_Warn.c'; then $(CYGPATH_W) '$(srcdir)/RAD_Const_Warn.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RAD_Const_Warn.c'; fi`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

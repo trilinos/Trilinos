@@ -956,6 +956,7 @@ INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 AC_SUBST([INSTALL_STRIP_PROGRAM])])
 
 m4_include([config/ac_arg_with_execlincludedir.m4])
+m4_include([config/ac_cxx_stdccbug.m4])
 m4_include([config/cppunit.m4])
 m4_include([config/tac_arg_check_mpi.m4])
 m4_include([config/tac_arg_config_mpi.m4])
