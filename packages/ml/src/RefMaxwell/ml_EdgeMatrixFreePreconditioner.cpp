@@ -504,9 +504,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::DestroyPreconditioner(){
   if (ml_comm_) { ML_Comm_Destroy(&ml_comm_); ml_comm_ = 0; }// will need this
   if (Prolongator_) {delete Prolongator_; Prolongator_=0;}
   if (InvDiagonal_) {delete InvDiagonal_; InvDiagonal_=0;}    
+  if (CoarsePC) {delete CoarsePC; CoarsePC=0;}
   if (CoarseMatrix) {delete CoarseMatrix; CoarseMatrix=0;}
   if (CoarseMat_ML) {ML_Operator_Destroy(&CoarseMat_ML);CoarseMat_ML=0;}
-  if (CoarsePC) {delete CoarsePC; CoarsePC=0;}
   if (CoarseMap_) {delete CoarseMap_; CoarseMap_=0;}
   if (Smoother_) {delete Smoother_; Smoother_=0;}
   return 0;
@@ -540,7 +540,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
     
     MVOUT2(X,"sm11-1",iteration);
 
-    if(MaxLevels > 1){
+    if(MaxLevels > 0){
 
       /* Calculate Residual (r_e = b - (S+M+Addon) * x) */
       ML_CHK_ERR(Operator_->Apply(X,r_edge));
