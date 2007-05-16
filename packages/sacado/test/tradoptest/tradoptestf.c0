@@ -1,3 +1,4 @@
+BINTEST != 4. 4.  0.    0.   0.		1
 UNOPTEST operator+	28.    28.		 Plus_dx
 UNOPTEST operator+	28.    28. 		 1.		0	1
 UNOPTEST operator-	42.   -42.		-1.
