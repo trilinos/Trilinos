@@ -895,9 +895,6 @@ int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix
 // -Chris Siefert 11/20/2006.
 void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm, const Epetra_Map &RowMap,Epetra_CrsMatrix **Result,Epetra_DataAccess CV,int base){ 
 
-  double bob;
-  int mnz=10000;
-
 #define LIGHTWEIGHT_WRAP
 #ifdef LIGHTWEIGHT_WRAP
   /* This is a very dangerous way to do this.  Live on the edge. */
@@ -925,6 +922,8 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
   /* Cleanup */
   delete DomainMap; delete ColMap;
 #else
+  double bob;
+  int mnz=10000;
   ML_Operator2EpetraCrsMatrix(A,*Result,mnz,true,bob,base);
 #endif
 }/*end Epetra_CrsMatrix_Wrap_ML_Operator*/

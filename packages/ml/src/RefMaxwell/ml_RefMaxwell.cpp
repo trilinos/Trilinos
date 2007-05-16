@@ -198,10 +198,11 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   
   /* Pull Solver Mode, verbosity */
   mode=List_.get("refmaxwell: mode","212");
-  aggregate_with_sigma=(bool) List_.get("refmaxwell: aggregate with sigma",0);
   int vb_level=List_.get("output",0);
   if(vb_level >= 5) verbose_=true;
   else verbose_=false;
+  aggregate_with_sigma=(bool) List_.get("refmaxwell: aggregate with sigma",0);
+
   
   /* Nuke everything if we've done this already */
   if(IsComputePreconditionerOK_) DestroyPreconditioner();
