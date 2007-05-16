@@ -88,7 +88,8 @@ SACADO_RAD_H = \
 
 SACADO_RAD = \
 	$(srcdir)/Sacado_radops.cpp \
-	$(srcdir)/uninit.c
+	$(srcdir)/uninit.c \
+	$(srcdir)/RAD_Const_Warn.c
 
 SACADO_TEMPLATE_H = \
 	$(srcdir)/Sacado_TemplateManager.hpp \

@@ -6,11 +6,23 @@
 #ifndef SACADO_TRAD_H
 #define SACADO_TRAD_H
 
+#include "Sacado_ConfigDefs.h"
 #include "Sacado_trad_Traits.hpp"
 
 #include <stddef.h>
 #include <cmath>
 #include <math.h>
+
+#ifdef RAD_Const_WARN	// ==> RAD_AUTO_AD_Const and RAD_DEBUG
+#ifndef RAD_AUTO_AD_Const
+#define RAD_AUTO_AD_Const
+#endif
+#ifndef RAD_DEBUG
+#define RAD_DEBUG
+#endif
+extern "C" int RAD_Const_Warn(const void*);// outside any namespace for
+					// ease in setting breakpoints
+#endif // RAD_Const_WARN
 
 #ifdef RAD_DEBUG
 #include <stdio.h>
@@ -28,6 +40,8 @@ namespace Sacado {
 namespace Rad {
 #endif
 
+// -DNO_USING_STDCC is needed, e.g., with Sun CC 5.7
+#ifndef RAD_NO_USING_STDCC
   // Bring math functions into scope
   using std::exp;
   using std::log;
@@ -46,6 +60,7 @@ namespace Rad {
   using std::fabs;
   using std::atan2;
   using std::pow;
+#endif //NO_USING_STDCC
 
 #ifdef RAD_AUTO_AD_Const
 #undef RAD_DEBUG_BLOCKKEEP
@@ -295,11 +310,21 @@ T F copy(Ai);
  template<typename Double> class
 ADvari {	// implementation of an ADvar
  public:
-#ifdef RAD_AUTO_AD_Const
-	friend class IndepADvar<Double>;
-#endif
 	typedef Double value_type;
 	typedef IndepADvar<Double> IndepADVar;
+#ifdef RAD_AUTO_AD_Const
+	friend class IndepADvar<Double>;
+#ifdef RAD_Const_WARN
+	mutable const IndepADVar *padv;
+#else
+ protected:
+	mutable const IndepADVar *padv;
+#endif //RAD_Const_WARN
+ private:
+	ADvari *Next;
+	static ADvari *First_ADvari, **Last_ADvari;
+ public:
+#endif //RAD_AUTO_AD_Const
 #ifdef RAD_DEBUG
 	int gcgen;
 	int opno;
@@ -331,13 +356,9 @@ ADvari {	// implementation of an ADvar
 	friend class ADvar2<Double>;
 	friend class ADvar2q<Double>;
 	friend class ConstADvar<Double>;
- private:
-	ADvari *Next;
-	static ADvari *First_ADvari, **Last_ADvari;
- protected:
-	mutable const IndepADVar *padv;
- public:
 	ADvari(const IndepADVar *, Double);
+	ADvari(const IndepADVar *, Double, Double);
+	ADvari(const IndepADVar *, Double, Double, int);
 #endif
 #define F friend
 #define R ADvari&
@@ -499,8 +520,23 @@ IndepADvar {		// an independent ADvar
 	friend IndepADvar& ADvar_operatoreq<>(IndepADvar*, const ADVari&);
 #endif
 
+#ifdef RAD_Const_WARN
+	inline operator ADVari&() const {
+		ADVari *tcv = this->cv;
+		if (tcv->opno < 0)
+			RAD_Const_Warn(tcv);
+		return *tcv;
+		}
+	inline operator ADVari*() const {
+		ADVari *tcv = this->cv;
+		if (tcv->opno < 0)
+			RAD_Const_Warn(tcv);
+		return tcv;
+		}
+#else //RAD_Const_WARN
 	inline operator ADVari&() const { return *this->cv; }
 	inline operator ADVari*() const { return this->cv; }
+#endif //RAD_Const_WARN
 
 	Double val() const { return cv->Val; }
 	Double adj() const { return cv->aval; }
@@ -975,14 +1011,9 @@ template<typename Double> void*
 ADcontext<Double>::new_ADmemblock(size_t len)
 {
 	ADMemblock *mb, *mb0, *mb1, *mbf, *x;
-#ifdef RAD_AUTO_AD_Const
-	ADVari *a, *anext;
-	IndepADvar<Double> *v;
-#endif /*RAD_AUTO_AD_Const*/
 
-
-	if (rad_need_reinit && this == &ADVari::adc) {
-		rad_need_reinit = 0;
+	if ((rad_need_reinit & 1) && this == &ADVari::adc) {
+		rad_need_reinit &= ~1;
 		DErp::LastDerp = 0;
 #ifdef RAD_DEBUG_BLOCKKEEP
 		Mleft = rad_mleft_save;
@@ -1035,20 +1066,10 @@ ADcontext<Double>::new_ADmemblock(size_t len)
 		Busy = mb;
 		Mbase = (char*)First->memblk;
 		Mleft = sizeof(First->memblk);
-#ifdef RAD_AUTO_AD_Const
-		*ADVari::Last_ADvari = 0;
-		ADVari::Last_ADvari = &ADVari::First_ADvari;
-		if (anext = ADVari::First_ADvari) {
-			while(a = anext) {
-				anext = a->Next;
-				if (v = (IndepADvar<Double> *)a->padv)
-					v->cv = new ADVari(v, a->Val);
-				}
-			}
-#else
+#ifndef RAD_AUTO_AD_Const
 		IVfirst = 0;
 		IVnextp = &IVfirst;
-#endif /*RAD_AUTO_AD_Const*/
+#endif
 #endif /*RAD_DEBUG_BLOCKKEEP*/
 		if (Mleft >= len)
 			return Mbase + (Mleft -= len);
@@ -1071,25 +1092,34 @@ template<typename Double> void
 ADcontext<Double>::Gradcomp()
 {
 	DErp *d;
+#ifdef RAD_AUTO_AD_Const
+	ADVari *a, *anext;
+	IndepADvar<Double> *v;
+#ifdef RAD_Const_WARN
+	ADVari *cv;
+	int i, j;
+#endif
+#endif /*RAD_AUTO_AD_Const*/
 
 	if (ADVari::adc.rad_need_reinit) {
 		for(d = DErp::LastDerp; d; d = d->next)
 			d->c->aval = 0;
 		}
-	else {
+	if (!(ADVari::adc.rad_need_reinit & 1)) {
 		ADVari::adc.rad_need_reinit = 1;
 		ADVari::adc.rad_mleft_save = ADVari::adc.Mleft;
 		ADVari::adc.Mleft = 0;
 		}
 #ifdef RAD_DEBUG
 	if (ADVari::gcgen_cur == ADVari::zap_gcgen1) {
-		char *fname;
+		const char *fname;
 		if (!(fname = getenv("RAD_DEBUG_FILE")))
 			fname = "rad_debug.out";
 		else if (!*fname)
 			fname = 0;
 		if (fname)
 			ADVari::debug_file = fopen(fname, "w");
+		ADVari::zap_gcgen1 = -1;
 		}
 #endif
 	if (d = DErp::LastDerp) {
@@ -1109,37 +1139,126 @@ ADcontext<Double>::Gradcomp()
 		while(d = d->next);
 		}
 #ifdef RAD_DEBUG
-	ADVari::gcgen_cur++;
-	ADVari::last_opno = 0;
 	if (ADVari::debug_file) {
 		fclose(ADVari::debug_file);
 		ADVari::debug_file = 0;
 		}
+#endif //RAD_DEBUG
+#ifdef RAD_AUTO_AD_Const
+	*ADVari::Last_ADvari = 0;
+	ADVari::Last_ADvari = &ADVari::First_ADvari;
+	if ((anext = ADVari::First_ADvari) && !(ADVari::adc.rad_need_reinit & 2)) {
+		ADVari::adc.rad_need_reinit = 3;
+		while(a = anext) {
+			anext = a->Next;
+			if (v = (IndepADvar<Double> *)a->padv) {
+#ifdef RAD_Const_WARN
+				if ((i = a->opno) > 0)
+					i = -i;
+				j = a->gcgen;
+				v->cv = cv = new ADVari(v, a->Val, a->aval);
+				cv->opno = i;
+				cv->gcgen = j;
+#else
+				v->cv = new ADVari(v, a->Val, a->aval);
+#endif
+				}
+			}
+		DErp::LastDerp = 0;
+		}
+#endif /*RAD_AUTO_AD_Const*/
+#ifdef RAD_DEBUG
+	ADVari::gcgen_cur++;
+	ADVari::last_opno = 0;
 #endif
 	}
 
 template<typename Double> void
-ADcontext<Double>::Weighted_Gradcomp(int n, ADVar **v, Double *w)
+ADcontext<Double>::Weighted_Gradcomp(int n, ADVar **V, Double *w)
 {
 	DErp *d;
 	int i;
+#ifdef RAD_Const_WARN
+	ADVari *cv;
+	int j;
+#endif
+#ifdef RAD_AUTO_AD_Const
+	ADVari *a, *anext;
+	IndepADvar<Double> *v;
+#endif /*RAD_AUTO_AD_Const*/
 
 	if (ADVari::adc.rad_need_reinit) {
 		for(d = DErp::LastDerp; d; d = d->next)
 			d->c->aval = 0;
 		}
-	else {
+	if (!(ADVari::adc.rad_need_reinit & 1)) {
 		ADVari::adc.rad_need_reinit = 1;
 		ADVari::adc.rad_mleft_save = ADVari::adc.Mleft;
 		ADVari::adc.Mleft = 0;
 		}
+#ifdef RAD_DEBUG
+	if (ADVari::gcgen_cur == ADVari::zap_gcgen1) {
+		const char *fname;
+		if (!(fname = getenv("RAD_DEBUG_FILE")))
+			fname = "rad_debug.out";
+		else if (!*fname)
+			fname = 0;
+		if (fname)
+			ADVari::debug_file = fopen(fname, "w");
+		ADVari::zap_gcgen1 = -1;
+		}
+#endif
 	if (d = DErp::LastDerp) {
 		for(i = 0; i < n; i++)
-			v[i]->cv->aval = w[i];
+			V[i]->cv->aval = w[i];
+#ifdef RAD_DEBUG
+		if (ADVari::debug_file)
+			do {
+				fprintf(ADVari::debug_file, "%d\t%d\t%g + %g * %g",
+					d->c->opno, d->b->opno, d->c->aval, *d->a, d->b->aval);
+				d->c->aval += *d->a * d->b->aval;
+				fprintf(ADVari::debug_file, " = %g\n", d->c->aval);
+				fflush(ADVari::debug_file);
+				} while(d = d->next);
+		else
+#endif
 		do d->c->aval += *d->a * d->b->aval;
 		while(d = d->next);
 		}
-	}
+#ifdef RAD_DEBUG
+	if (ADVari::debug_file) {
+		fclose(ADVari::debug_file);
+		ADVari::debug_file = 0;
+		}
+#endif //RAD_DEBUG
+#ifdef RAD_AUTO_AD_Const
+	*ADVari::Last_ADvari = 0;
+	ADVari::Last_ADvari = &ADVari::First_ADvari;
+	if ((anext = ADVari::First_ADvari) && !(ADVari::adc.rad_need_reinit & 2)) {
+		ADVari::adc.rad_need_reinit = 3;
+		while(a = anext) {
+			anext = a->Next;
+			if (v = (IndepADvar<Double> *)a->padv) {
+#ifdef RAD_Const_WARN
+				if ((i = a->opno) > 0)
+					i = -i;
+				j = a->gcgen;
+				v->cv = cv = new ADVari(v, a->Val, a->aval);
+				cv->opno = i;
+				cv->gcgen = j;
+#else
+				v->cv = new ADVari(v, a->Val, a->aval);
+#endif
+				}
+			}
+		DErp::LastDerp = 0;
+		}
+#endif /*RAD_AUTO_AD_Const*/
+#ifdef RAD_DEBUG
+	ADVari::gcgen_cur++;
+	ADVari::last_opno = 0;
+#endif
+		}
 
  template<typename Double>
 #ifdef RAD_AUTO_AD_Const
@@ -1257,6 +1376,14 @@ ConstADvari<Double>::aval_reset()
 
  template<typename Double>
 ADvari<Double>::ADvari(const IndepADVar *x, Double d): Val(d), aval(0.)
+{
+	*Last_ADvari = this;
+	Last_ADvari = &Next;
+	this->padv = (IndepADVar*)x;
+	}
+
+ template<typename Double>
+ADvari<Double>::ADvari(const IndepADVar *x, Double d, Double g): Val(d), aval(g)
 {
 	*Last_ADvari = this;
 	Last_ADvari = &Next;
@@ -1479,7 +1606,7 @@ ADvar<Double>::operator/=(Double R) {
 	return *this;
 	}
 
-#if 1 /*def NO_STDCC*/
+#ifdef NO_STDCC
 #define STDCC /*nothing*/
 #else
 #define STDCC std::
@@ -1629,7 +1756,7 @@ log(const ADvari<Double> &v) {
  template<typename Double>
  ADvari<Double>&
 log10(const ADvari<Double> &v) {
-	static double num = 1. / log(10.);
+	static double num = 1. / STDCC log(10.);
 	Double x = v.Val;
 	return *(new ADvar1s<Double>(STDCC log10(x), num / x, &v));
 	}
@@ -1770,29 +1897,34 @@ val(const ADvari<Double> &x) {
 
 #undef RAD_ACA
 #define A (ADvari<Double>*)
+#ifdef RAD_Const_WARN
+#define C(x) (((x)->opno < 0) ? RAD_Const_Warn(x) : 0, *A x)
+#else
+#define C(x) *A x
+#endif
 #define T template<typename Double> inline
 #define F ADvari<Double>&
 #define Ai const ADvari<Double>&
 #define AI const IndepADvar<Double>&
 #define D Double
 #define T2(r,f) \
- T r f(Ai L, AI R) { return f(L, *A R.cv); }\
- T r f(AI L, Ai R) { return f(*A L.cv, R); }\
- T r f(AI L, AI R) { return f(*A L.cv, *A R.cv); }\
- T r f(AI L, D R) { return f(*A L.cv, R); }\
+ T r f(Ai L, AI R) { return f(L, C(R.cv)); }\
+ T r f(AI L, Ai R) { return f(C(L.cv), R); }\
+ T r f(AI L, AI R) { return f(C(L.cv), C(R.cv)); }\
+ T r f(AI L, D R) { return f(C(L.cv), R); }\
  T r f(Ai L, Dtype R) { return f(L, (D)R); }\
- T r f(AI L, Dtype R) { return f(*A L.cv, (D)R); }\
+ T r f(AI L, Dtype R) { return f(C(L.cv), (D)R); }\
  T r f(Ai L, long R) { return f(L, (D)R); }\
- T r f(AI L, long R) { return f(*A L.cv, (D)R); }\
+ T r f(AI L, long R) { return f(C(L.cv), (D)R); }\
  T r f(Ai L, int R) { return f(L, (D)R); }\
- T r f(AI L, int R) { return f(*A L.cv, (D)R); }\
- T r f(D L, AI R) { return f(L, *A R.cv); }\
+ T r f(AI L, int R) { return f(C(L.cv), (D)R); }\
+ T r f(D L, AI R) { return f(L, C(R.cv)); }\
  T r f(Dtype L, Ai R) { return f((D)L, R); }\
- T r f(Dtype L, AI R) { return f((D)L, *A R.cv); }\
+ T r f(Dtype L, AI R) { return f((D)L, C(R.cv)); }\
  T r f(long L, Ai R) { return f((D)L, R); }\
- T r f(long L, AI R) { return f((D)L, *A R.cv); }\
+ T r f(long L, AI R) { return f((D)L, C(R.cv)); }\
  T r f(int L, Ai R) { return f((D)L, R); }\
- T r f(int L, AI R) { return f((D)L, *A R.cv); }
+ T r f(int L, AI R) { return f((D)L, C(R.cv)); }
 
 T2(F, operator+)
 T2(F, operator-)
@@ -1813,7 +1945,7 @@ T2(int, operator>)
 #undef D
 
 #define T1(f)\
- T F f(AI x) { return f(*A x.cv); }
+ T F f(AI x) { return f(C(x.cv)); }
 
 T1(operator+)
 T1(operator-)
@@ -1848,6 +1980,7 @@ T F copy(Ai x)
 #undef F
 #undef T
 #undef A
+#undef C
 #undef STDCC
 #undef Ttype
 #undef Dtype
