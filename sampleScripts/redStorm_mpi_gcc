@@ -1,0 +1,19 @@
+#Red storm and Reddish GCC build script
+module switch PrgEnv-pgi/1.5.39 PrgEnv-gnu/1.5.39
+../configure \
+--host=i686-pc-linux \
+--config-cache \
+--with-gnumake \
+--disable-default-packages \
+--enable-aztecoo \
+--enable-teuchos \
+--with-blas="-lacml" \
+--enable-mpi \
+CXX=CC \
+CC=cc \
+F77=ftn \
+CPPFLAGS="-DMPICH_SKIP_MPICXX" \
+CXXFLAGS="-O3 -DAZ_DONT_UNROLL_LOOPS -DDISTRIBUTED" \
+CCFLAGS="-O3 -DAZ_DONT_UNROLL_LOOPS" \
+FFLAGS="-O3"
+ 
