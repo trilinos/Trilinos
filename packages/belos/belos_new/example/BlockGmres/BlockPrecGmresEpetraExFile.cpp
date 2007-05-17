@@ -122,10 +122,11 @@ int main(int argc, char *argv[]) {
   // Check to see if the number of right-hand sides is the same as requested.
   if (numrhs>1) {
     X = rcp( new Epetra_MultiVector( *Map, numrhs ) );
-    X->PutScalar( 0.0 );
     B = rcp( new Epetra_MultiVector( *Map, numrhs ) );
-    B->Seed();
-    B->Random();
+    X->Seed();
+    X->Random();
+    OPT::Apply( *A, *X, *B );
+    X->PutScalar( 0.0 );
   }
   else {
     X = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecX);
