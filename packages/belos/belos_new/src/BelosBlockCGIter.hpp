@@ -35,7 +35,7 @@
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
-#include "BelosIteration.hpp"
+#include "BelosCGIteration.hpp"
 
 #include "BelosLinearProblem.hpp"
 #include "BelosMatOrthoManager.hpp"
@@ -62,76 +62,8 @@
 
 namespace Belos {
   
-  //! @name BlockCGIter Structures 
-  //@{ 
-  
-  /** \brief Structure to contain pointers to BlockCGIter state variables.
-   *
-   * This struct is utilized by BlockCGIter::initialize() and BlockCGIter::getState().
-   */
-  template <class ScalarType, class MV>
-  struct BlockCGIterState {
-
-    /*! \brief The current residual. */
-    Teuchos::RefCountPtr<MV> R;
-
-    /*! \brief The current preconditioned residual. */
-    Teuchos::RefCountPtr<MV> Z;
-
-    /*! \brief The current decent direction vector */
-    Teuchos::RefCountPtr<MV> P;
-
-    /*! \brief The matrix A applied to current decent direction vector */
-    Teuchos::RefCountPtr<MV> AP;
-    
-    BlockCGIterState() : R(Teuchos::null), Z(Teuchos::null), 
-		    P(Teuchos::null), AP(Teuchos::null)
-    {}
-  };
-  
-  //! @name BlockCGIter Exceptions
-  //@{ 
-  
-  /** \brief BlockCGIterInitFailure is thrown when the BlockCGIter object is unable to
-   * generate an initial iterate in the BlockCGIter::initialize() routine. 
-   *
-   * This exception is thrown from the BlockCGIter::initialize() method, which is
-   * called by the user or from the BlockCGIter::iterate() method if isInitialized()
-   * == \c false.
-   *
-   * In the case that this exception is thrown, 
-   * BlockCGIter::isInitialized() will be \c false and the user will need to provide
-   * a new initial iterate to the iteration.
-   */
-  class BlockCGIterInitFailure : public BelosError {public:
-    BlockCGIterInitFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief BlockCGIterOrthoFailure is thrown when the BlockCGIter object is unable to
-   * compute independent direction vectors in the BlockCGIter::iterate() routine. 
-   *
-   * This exception is thrown from the BlockCGIter::iterate() method.
-   *
-   */
-  class BlockCGIterOrthoFailure : public BelosError {public:
-    BlockCGIterOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief BlockCGIterLAPACKFailure is thrown when a nonzero return value is passed back
-   * from an LAPACK routine.
-   *
-   * This exception is thrown from the BlockCGIter::iterate() method.
-   *
-   */
-  class BlockCGIterLAPACKFailure : public BelosError {public:
-    BlockCGIterLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-  
-  //@}
-
-
 template<class ScalarType, class MV, class OP>
-class BlockCGIter : virtual public Iteration<ScalarType,MV,OP> {
+class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   public:
     
@@ -193,14 +125,14 @@ class BlockCGIter : virtual public Iteration<ScalarType,MV,OP> {
    * \note For any pointer in \c newstate which directly points to the multivectors in 
    * the solver, the data is not copied.
    */
-  void initialize(BlockCGIterState<ScalarType,MV> newstate);
+  void initialize(CGIterationState<ScalarType,MV> newstate);
 
   /*! \brief Initialize the solver with the initial vectors from the linear problem
    *  or random data.
    */
   void initialize()
   {
-    BlockCGIterState<ScalarType,MV> empty;
+    CGIterationState<ScalarType,MV> empty;
     initialize(empty);
   }
   
@@ -208,10 +140,10 @@ class BlockCGIter : virtual public Iteration<ScalarType,MV,OP> {
    *
    * The data is only valid if isInitialized() == \c true.
    *
-   * \returns A BlockCGIterState object containing const pointers to the current solver state.
+   * \returns A CGIterationState object containing const pointers to the current solver state.
    */
-  BlockCGIterState<ScalarType,MV> getState() const {
-    BlockCGIterState<ScalarType,MV> state;
+  CGIterationState<ScalarType,MV> getState() const {
+    CGIterationState<ScalarType,MV> state;
     state.R = R_;
     state.P = P_;
     state.AP = AP_;
@@ -400,7 +332,7 @@ class BlockCGIter : virtual public Iteration<ScalarType,MV,OP> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void BlockCGIter<ScalarType,MV,OP>::initialize(BlockCGIterState<ScalarType,MV> newstate)
+  void BlockCGIter<ScalarType,MV,OP>::initialize(CGIterationState<ScalarType,MV> newstate)
   {
     // Initialize the state storage if it isn't already.
     if (!stateStorageInitialized_) 
@@ -476,16 +408,15 @@ class BlockCGIter : virtual public Iteration<ScalarType,MV,OP> {
 
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
     
     // Get the current solution vector.
     Teuchos::RefCountPtr<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
     // Check that the current solution vector has blockSize_ columns. 
-    TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != blockSize_, BlockCGIterateFailure,
+    TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != blockSize_, CGIterateFailure,
                         "Belos::BlockCGIter::iterate(): current linear system does not have the right number of vectors!" );
-    int rank = ortho_->normalize( *P_ );
-    TEST_FOR_EXCEPTION(rank != blockSize_,BlockCGIterOrthoFailure,
+    int rank = ortho_->normalize( *P_, Teuchos::null );
+    TEST_FOR_EXCEPTION(rank != blockSize_,CGIterationOrthoFailure,
                          "Belos::BlockCGIter::iterate(): Failed to compute initial block of orthonormal direction vectors.");
 
 
@@ -493,30 +424,30 @@ class BlockCGIter : virtual public Iteration<ScalarType,MV,OP> {
     // Iterate until the status test tells us to stop.
     //
     while (stest_->checkStatus(this) != Passed) {
-      
+        
       // Increment the iteration
       iter_++;
-
+    
       // Multiply the current direction vector by A and store in Ap_
       lp_->applyOp( *P_, *AP_ );
       
-      // Compute alpha := <R_,Z_> / <P_,AP_>
-      // 1) Compute P^T * A * P = pAp and R^T * Z 
+      // Compute alpha := <P_,R_> / <P_,AP_>
+      // 1) Compute P^T * A * P = pAp and P^T * R 
       // 2) Compute the Cholesky Factorization of pAp
       // 3) Back and forward solves to compute alpha
       //
-      MVT::MvTransMv( one, *R_, *Z_, alpha );
+      MVT::MvTransMv( one, *P_, *R_, alpha );
       MVT::MvTransMv( one, *P_, *AP_, pAp );      
-
+     
       // Compute Cholesky factorization of pAp
       lapack.POTRF(UPLO, blockSize_, pAp.values(), blockSize_, &info);
-      TEST_FOR_EXCEPTION(info != 0,BlockCGIterLAPACKFailure,
+      TEST_FOR_EXCEPTION(info != 0,CGIterationLAPACKFailure,
                          "Belos::BlockCGIter::iterate(): Failed to compute Cholesky factorization using LAPACK routine POTRF.");
 
       // Compute alpha by performing a back and forward solve with the Cholesky factorization in pAp.
       lapack.POTRS(UPLO, blockSize_, blockSize_, pAp.values(), blockSize_, 
 		   alpha.values(), blockSize_, &info);
-      TEST_FOR_EXCEPTION(info != 0,BlockCGIterLAPACKFailure,
+      TEST_FOR_EXCEPTION(info != 0,CGIterationLAPACKFailure,
                          "Belos::BlockCGIter::iterate(): Failed to compute alpha using Cholesky factorization (POTRS).");
       
       //
@@ -542,11 +473,11 @@ class BlockCGIter : virtual public Iteration<ScalarType,MV,OP> {
       // 3) Back and forward solves to compute beta
 
       // Compute <AP_,Z>
-      MVT::MvTransMv( one, *AP_, *Z_, beta );
+      MVT::MvTransMv( -one, *AP_, *Z_, beta );
       //
       lapack.POTRS(UPLO, blockSize_, blockSize_, pAp.values(), blockSize_, 
 		   beta.values(), blockSize_, &info);
-      TEST_FOR_EXCEPTION(info != 0,BlockCGIterLAPACKFailure,
+      TEST_FOR_EXCEPTION(info != 0,CGIterationLAPACKFailure,
                          "Belos::BlockCGIter::iterate(): Failed to compute beta using Cholesky factorization (POTRS).");
       //
       // Compute the new direction vectors P_ = Z_ + P_ * beta 
@@ -556,8 +487,8 @@ class BlockCGIter : virtual public Iteration<ScalarType,MV,OP> {
       P_ = Pnew;
 
       // Compute orthonormal block of new direction vectors.
-      int rank = ortho_->normalize( *P_ );
-      TEST_FOR_EXCEPTION(rank != blockSize_,BlockCGIterOrthoFailure,
+      int rank = ortho_->normalize( *P_, Teuchos::null );
+      TEST_FOR_EXCEPTION(rank != blockSize_,CGIterationOrthoFailure,
                          "Belos::BlockCGIter::iterate(): Failed to compute block of orthonormal direction vectors.");
       
     } // end while (sTest_->checkStatus(this) != Passed)

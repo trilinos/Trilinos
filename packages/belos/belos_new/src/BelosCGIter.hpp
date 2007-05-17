@@ -35,7 +35,7 @@
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
-#include "BelosIteration.hpp"
+#include "BelosCGIteration.hpp"
 
 #include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
@@ -43,8 +43,6 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 
-#include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -61,66 +59,8 @@
 
 namespace Belos {
   
-  //! @name CGIter Structures 
-  //@{ 
-  
-  /** \brief Structure to contain pointers to CGIter state variables.
-   *
-   * This struct is utilized by CGIter::initialize() and CGIter::getState().
-   */
-  template <class ScalarType, class MV>
-  struct CGIterState {
-
-    /*! \brief The current residual. */
-    Teuchos::RefCountPtr<MV> r;
-
-    /*! \brief The current preconditioned residual. */
-    Teuchos::RefCountPtr<MV> z;
-
-    /*! \brief The current decent direction vector */
-    Teuchos::RefCountPtr<MV> p;
-
-    /*! \brief The matrix A applied to current decent direction vector */
-    Teuchos::RefCountPtr<MV> Ap;
-    
-    CGIterState() : r(Teuchos::null), z(Teuchos::null), 
-		    p(Teuchos::null), Ap(Teuchos::null)
-    {}
-  };
-  
-  //! @name CGIter Exceptions
-  //@{ 
-  
-  /** \brief CGIterInitFailure is thrown when the CGIter object is unable to
-   * generate an initial iterate in the CGIter::initialize() routine. 
-   *
-   * This exception is thrown from the CGIter::initialize() method, which is
-   * called by the user or from the CGIter::iterate() method if isInitialized()
-   * == \c false.
-   *
-   * In the case that this exception is thrown, 
-   * CGIter::isInitialized() will be \c false and the user will need to provide
-   * a new initial iterate to the iteration.
-   */
-  class CGIterInitFailure : public BelosError {public:
-    CGIterInitFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief CGIterateFailure is thrown when the CGIter object is unable to
-   * compute the next iterate in the CGIter::iterate() routine. 
-   *
-   * This exception is thrown from the CGIter::iterate() method.
-   *
-   */
-  class CGIterateFailure : public BelosError {public:
-    CGIterateFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-  
-  //@}
-
-
 template<class ScalarType, class MV, class OP>
-class CGIter : virtual public Iteration<ScalarType,MV,OP> {
+class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   public:
     
@@ -181,14 +121,14 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
    * \note For any pointer in \c newstate which directly points to the multivectors in 
    * the solver, the data is not copied.
    */
-  void initialize(CGIterState<ScalarType,MV> newstate);
+  void initialize(CGIterationState<ScalarType,MV> newstate);
 
   /*! \brief Initialize the solver with the initial vectors from the linear problem
    *  or random data.
    */
   void initialize()
   {
-    CGIterState<ScalarType,MV> empty;
+    CGIterationState<ScalarType,MV> empty;
     initialize(empty);
   }
   
@@ -196,14 +136,14 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
    *
    * The data is only valid if isInitialized() == \c true.
    *
-   * \returns A CGIterState object containing const pointers to the current solver state.
+   * \returns A CGIterationState object containing const pointers to the current solver state.
    */
-  CGIterState<ScalarType,MV> getState() const {
-    CGIterState<ScalarType,MV> state;
-    state.r = r_;
-    state.p = p_;
-    state.Ap = Ap_;
-    state.z = z_;
+  CGIterationState<ScalarType,MV> getState() const {
+    CGIterationState<ScalarType,MV> state;
+    state.R = R_;
+    state.P = P_;
+    state.AP = AP_;
+    state.Z = Z_;
     return state;
   }
 
@@ -221,7 +161,7 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
 
   //! Get the norms of the residuals native to the solver.
   //! \return A vector of length blockSize containing the native residuals.
-  Teuchos::RefCountPtr<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return r_; }
+  Teuchos::RefCountPtr<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return R_; }
 
   //! Get the current update to the linear system.
   /*! \note This method returns a null pointer because the linear problem is current.
@@ -285,16 +225,16 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
   // State Storage
   // 
   // Residual
-  Teuchos::RefCountPtr<MV> r_;
+  Teuchos::RefCountPtr<MV> R_;
   //
   // Preconditioned residual
-  Teuchos::RefCountPtr<MV> z_;
+  Teuchos::RefCountPtr<MV> Z_;
   //
   // Direction vector
-  Teuchos::RefCountPtr<MV> p_;
+  Teuchos::RefCountPtr<MV> P_;
   //
   // Operator applied to direction vector
-  Teuchos::RefCountPtr<MV> Ap_;
+  Teuchos::RefCountPtr<MV> AP_;
 
 };
 
@@ -332,15 +272,15 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
 	
 	// Initialize the state storage
 	// If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
-	if (r_ == Teuchos::null) {
+	if (R_ == Teuchos::null) {
 	  // Get the multivector that is not null.
 	  Teuchos::RefCountPtr<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
 	  TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
 			     "Belos::CGIter::setStateSize(): linear problem does not specify multivectors to clone from.");
-	  r_ = MVT::Clone( *tmp, 1 );
-	  z_ = MVT::Clone( *tmp, 1 );
-	  p_ = MVT::Clone( *tmp, 1 );
-	  Ap_ = MVT::Clone( *tmp, 1 );
+	  R_ = MVT::Clone( *tmp, 1 );
+	  Z_ = MVT::Clone( *tmp, 1 );
+	  P_ = MVT::Clone( *tmp, 1 );
+	  AP_ = MVT::Clone( *tmp, 1 );
 	}
 	
 	// State storage has now been initialized.
@@ -353,7 +293,7 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void CGIter<ScalarType,MV,OP>::initialize(CGIterState<ScalarType,MV> newstate)
+  void CGIter<ScalarType,MV,OP>::initialize(CGIterationState<ScalarType,MV> newstate)
   {
     // Initialize the state storage if it isn't already.
     if (!stateStorageInitialized_) 
@@ -362,7 +302,7 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
     TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
 		       "Belos::CGIter::initialize(): Cannot initialize state storage!");
     
-    // NOTE:  In CGIter r_, the initial residual, is required!!!  
+    // NOTE:  In CGIter R_, the initial residual, is required!!!  
     //
     std::string errstr("Belos::CGIter::initialize(): Specified multivectors must have a consistent length and width.");
 
@@ -370,33 +310,33 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
 
-    if (newstate.r != Teuchos::null) {
+    if (newstate.R != Teuchos::null) {
 
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.r) != MVT::GetVecLength(*r_),
+      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.r) != 1,
+      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) != 1,
                           std::invalid_argument, errstr );
 
       // Copy basis vectors from newstate into V
-      if (newstate.r != r_) {
+      if (newstate.R != R_) {
         // copy over the initial residual (unpreconditioned).
-	MVT::MvAddMv( one, *newstate.r, zero, *newstate.r, *r_ );
+	MVT::MvAddMv( one, *newstate.R, zero, *newstate.R, *R_ );
       }
 
       // Compute initial direction vectors
       // Initially, they are set to the preconditioned residuals
       //
       if ( lp_->getLeftPrec() != Teuchos::null ) {
-	lp_->applyLeftPrec( *r_, *z_ ); 
-	MVT::MvAddMv( one, *z_, zero, *z_, *p_ );
+	lp_->applyLeftPrec( *R_, *Z_ ); 
+	MVT::MvAddMv( one, *Z_, zero, *Z_, *P_ );
       } else {
-	z_ = r_;
-	MVT::MvAddMv( one, *r_, zero, *r_, *p_ );
+	Z_ = R_;
+	MVT::MvAddMv( one, *R_, zero, *R_, *P_ );
       }
     }
     else {
 
-      TEST_FOR_EXCEPTION(newstate.r == Teuchos::null,std::invalid_argument,
+      TEST_FOR_EXCEPTION(newstate.R == Teuchos::null,std::invalid_argument,
                          "Belos::CGIter::initialize(): CGStateIterState does not have initial residual.");
     }
 
@@ -434,7 +374,7 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
                         "Belos::CGIter::iterate(): current linear system has more than one vector!" );
 
     // Compute first <r,z> a.k.a. rHz
-    MVT::MvTransMv( one, *r_, *z_, rHz );
+    MVT::MvTransMv( one, *R_, *Z_, rHz );
     
     ////////////////////////////////////////////////////////////////
     // Iterate until the status test tells us to stop.
@@ -444,44 +384,44 @@ class CGIter : virtual public Iteration<ScalarType,MV,OP> {
       // Increment the iteration
       iter_++;
 
-      // Multiply the current direction vector by A and store in Ap_
-      lp_->applyOp( *p_, *Ap_ );
+      // Multiply the current direction vector by A and store in AP_
+      lp_->applyOp( *P_, *AP_ );
       
-      // Compute alpha := <r_,z_> / <p_,Ap_>
-      MVT::MvTransMv( one, *p_, *Ap_, pAp );
+      // Compute alpha := <R_,Z_> / <P_,AP_>
+      MVT::MvTransMv( one, *P_, *AP_, pAp );
       alpha(0,0) = rHz(0,0) / pAp(0,0);
       
       // Check that alpha is a positive number!
       TEST_FOR_EXCEPTION( SCT::real(alpha(0,0)) <= zero, CGIterateFailure,
 			  "Belos::CGIter::iterate(): non-positive value for p^H*A*p encountered!" );
       //
-      // Update the solution vector x := x + alpha * p_
+      // Update the solution vector x := x + alpha * P_
       //
-      MVT::MvAddMv( one, *cur_soln_vec, alpha(0,0), *p_, *cur_soln_vec );
+      MVT::MvAddMv( one, *cur_soln_vec, alpha(0,0), *P_, *cur_soln_vec );
       lp_->updateSolution();
       //
-      // Save the denominator of beta before residual is updated [ old <r_, z_> ]
+      // Save the denominator of beta before residual is updated [ old <R_, Z_> ]
       //
       rHz_old(0,0) = rHz(0,0);
       //
-      // Compute the new residual r_ := r_ - alpha * Ap_
+      // Compute the new residual R_ := R_ - alpha * AP_
       //
-      MVT::MvAddMv( one, *r_, -alpha(0,0), *Ap_, *r_ );
+      MVT::MvAddMv( one, *R_, -alpha(0,0), *AP_, *R_ );
       //
-      // Compute beta := [ new <r_, z_> ] / [ old <r_, z_> ], 
+      // Compute beta := [ new <R_, Z_> ] / [ old <R_, Z_> ], 
       // and the new direction vector p.
       //
       if ( lp_->getLeftPrec() != Teuchos::null ) {
-	lp_->applyLeftPrec( *r_, *z_ );
+	lp_->applyLeftPrec( *R_, *Z_ );
       } else {
-	z_ = r_;
+	Z_ = R_;
       }
       //
-      MVT::MvTransMv( one, *r_, *z_, rHz );
+      MVT::MvTransMv( one, *R_, *Z_, rHz );
       //
       beta(0,0) = rHz(0,0) / rHz_old(0,0);
       //
-      MVT::MvAddMv( one, *z_, beta(0,0), *p_, *p_ );
+      MVT::MvAddMv( one, *Z_, beta(0,0), *P_, *P_ );
       
     } // end while (sTest_->checkStatus(this) != Passed)
   }

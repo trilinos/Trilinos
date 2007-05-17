@@ -217,9 +217,8 @@ namespace Belos {
 
 // Constructor
 template<class ScalarType, class MV, class OP>
-BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( 
-						     const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem,
-						     Teuchos::ParameterList &pl ) : 
+BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem,
+						Teuchos::ParameterList &pl ) : 
   problem_(problem),
   orthoType_("DGKS"),
   ortho_kappa_(-1.0),
@@ -289,9 +288,9 @@ BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr(
   
   // Basic test checks maximum iterations and native residual.
   maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
-
+  
   // Implicit residual test, using the native residual to determine if convergence was achieved.
-  convTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
+  convTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, 1 ) );
   
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
   
@@ -367,7 +366,6 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
   // Parameter list
   Teuchos::ParameterList plist;
   plist.set("Block Size",blockSize_);
-  plist.set("Num Blocks",numBlocks_);
   
   // Reset the status test.  
   outputTest_->reset();
@@ -378,8 +376,11 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockCG solver
 
-  Teuchos::RefCountPtr<CGIter<ScalarType,MV,OP> > block_cg_iter
-    = Teuchos::rcp( new CGIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,plist) );
+  Teuchos::RefCountPtr<CGIteration<ScalarType,MV,OP> > block_cg_iter;
+  if (blockSize_ == 1)
+    block_cg_iter = Teuchos::rcp( new CGIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,plist) );
+  else
+    block_cg_iter = Teuchos::rcp( new BlockCGIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
   
 
   // Enter solve() iterations
@@ -395,11 +396,11 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
       outputTest_->resetNumCalls();
 
       // Create the first block in the current Krylov basis.
-      Teuchos::RefCountPtr<MV> r_0 = problem_->getCurrResVec();
+      Teuchos::RefCountPtr<MV> R_0 = problem_->getCurrResVec();
 
       // Set the new state and initialize the solver.
-      CGIterState<ScalarType,MV> newstate;
-      newstate.r = r_0;
+      CGIterationState<ScalarType,MV> newstate;
+      newstate.R = R_0;
       block_cg_iter->initialize(newstate);
 
       while(1) {
@@ -437,22 +438,17 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 
 	  else {
 	    TEST_FOR_EXCEPTION(true,std::logic_error,
-			       "Belos::BlockCGSolMgr::solve(): Invalid return from BlockCGIter::iterate().");
+			       "Belos::BlockCGSolMgr::solve(): Invalid return from CGIteration::iterate().");
 	  }
 	}
 	catch (std::exception e) {
-	  printer_->stream(Errors) << "Error! Caught exception in BlockCGIter::iterate() at iteration " 
-				  << block_cg_iter->getNumIters() << endl 
-				  << e.what() << endl;
+	  printer_->stream(Errors) << "Error! Caught exception in CGIteration::iterate() at iteration " 
+				   << block_cg_iter->getNumIters() << endl 
+				   << e.what() << endl;
 	  throw;
 	}
       }
       
-      // Compute the current solution.
-      // Update the linear problem.
-      Teuchos::RefCountPtr<MV> update = block_cg_iter->getCurrentUpdate();
-      problem_->updateSolution( update, true );
-
       // Inform the linear problem that we are finished with this block linear system.
       problem_->setCurrLS();
       
