@@ -16,11 +16,12 @@ all-local:
 # ------------------------------------------------------------------------
 
 CORE_H = \
-	$(srcdir)/BelosBlockCG.hpp \
+	$(srcdir)/BelosBlockCGSolMgr.hpp \
+	$(srcdir)/BelosBlockCGIter.hpp \
 	$(srcdir)/BelosBlockGmresIter.hpp \
 	$(srcdir)/BelosBlockGmresSolMgr.hpp \
-	$(srcdir)/BelosCG.hpp \
 	$(srcdir)/BelosCGIter.hpp \
+	$(srcdir)/BelosCGIteration.hpp \
 	$(srcdir)/BelosConfigDefs.hpp \
 	$(srcdir)/BelosDGKSOrthoManager.hpp \
 	$(srcdir)/BelosEpetraAdapter.hpp \
@@ -35,6 +36,8 @@ CORE_H = \
 	$(srcdir)/BelosOperatorTraits.hpp \
 	$(srcdir)/BelosOrthoManager.hpp \
 	$(srcdir)/BelosOutputManager.hpp \
+	$(srcdir)/BelosPseudoBlockGmresIter.hpp \
+	$(srcdir)/BelosPseudoBlockGmresSolMgr.hpp \
 	$(srcdir)/BelosStatusTest.hpp \
 	$(srcdir)/BelosStatusTestCombo.hpp \
 	$(srcdir)/BelosStatusTestMaxIters.hpp \

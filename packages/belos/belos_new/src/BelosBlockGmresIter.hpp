@@ -669,7 +669,6 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     }
     
     // Compute the current search dimension. 
-    // If the problem is non-Hermitian and the blocksize is one, let the solver use the extra vector.
     int searchDim = blockSize_*numBlocks_;
 
     ////////////////////////////////////////////////////////////////
