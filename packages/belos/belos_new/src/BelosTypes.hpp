@@ -34,6 +34,8 @@
   \brief Collection of types and exceptions used within the Belos solvers.
 */
 
+#include "BelosConfigDefs.hpp"
+#include "Teuchos_TestForException.hpp"
 
 namespace Belos {
  

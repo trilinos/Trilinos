@@ -92,9 +92,9 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
-  cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
+  cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
+  cmdp.setOption("block-size",&blocksize,"Block size used by CG.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
   RefCountPtr<Belos::EpetraPrecOp> belosPrec = rcp( new Belos::EpetraPrecOp( Prec ) );
 
   //
-  // *****Create parameter list for the block GMRES solver manager*****
+  // *****Create parameter list for the block CG solver manager*****
   //
   const int NumGlobalElements = B->GlobalLength();
   if (maxiters = -1)

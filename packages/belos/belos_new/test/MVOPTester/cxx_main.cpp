@@ -46,19 +46,13 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosMVOPTester.hpp"
 #include "BelosEpetraAdapter.hpp"
-
-#ifdef HAVE_EPETRA_THYRA
-#include "BelosThyraAdapter.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
-#endif
-
-using namespace std;
+#include "BelosOutputManager.hpp"
 
 int main(int argc, char *argv[])
 {
-  int i, ierr, gerr;
-  gerr = 0;
+  int i;
+  bool ierr, gerr;
+  gerr = true;
 
 #ifdef HAVE_MPI
   // Initialize MPI and setup an Epetra communicator
@@ -69,29 +63,16 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
 #endif
 
-
    // number of global elements
   int dim = 100;
-  int blockSize = 3;
+  int blockSize = 5;
 
-  // PID info
-  int MyPID = Comm->MyPID();
-  bool verbose = 0;
-
+  bool verbose = false;
   if (argc>1) {
     if (argv[1][0]=='-' && argv[1][1]=='v') {
       verbose = true;
     }
   }
-
-#ifndef HAVE_EPETRA_THYRA
-  if (verbose && MyPid == 0) {
-      cout << "Please configure Belos with:" << endl;
-      cout << "--enable-epetra-thyra" << endl;
-      cout << "--enable-belos-thyra" << endl;
-  }
-  return 0;
-#endif
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
@@ -154,9 +135,6 @@ int main(int argc, char *argv[])
   ierr = A->FillComplete();
   assert(ierr==0);
 
-  // Create an Belos::EpetraOp from this Epetra_CrsMatrix
-  Teuchos::RefCountPtr<Belos::EpetraOp> op = Teuchos::rcp(new Belos::EpetraOp(A));
-
   // Issue several useful typedefs;
   typedef Belos::MultiVec<double> EMV;
   typedef Belos::Operator<double> EOP;
@@ -167,84 +145,33 @@ int main(int argc, char *argv[])
   ivec->Random();
 
   // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Belos::OutputManager<double> > MyOM = Teuchos::rcp( new Belos::OutputManager<double>( MyPID ) );
+  Teuchos::RefCountPtr<Belos::OutputManager<double> > MyOM = Teuchos::rcp( new Belos::OutputManager<double>() );
   if (verbose) {
-    MyOM->SetVerbosity( Belos::Errors + Belos::Warnings );
+    MyOM->setVerbosity( Belos::Warnings );
   }
 
-#ifdef HAVE_EPETRA_THYRA
-  typedef Thyra::MultiVectorBase<double> TMVB;
-  typedef Thyra::LinearOpBase<double>    TLOB;
-  // create thyra objects from the epetra objects
-
-  // first, a Thyra::VectorSpaceBase
-  Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceBase<double> > epetra_vs = 
-    Thyra::create_VectorSpace(Map);
-
-  // then, a ScalarProdVectorSpaceBase
-  Teuchos::RefCountPtr<const Thyra::ScalarProdVectorSpaceBase<double> > sp_domain = 
-    Teuchos::rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<double> >(
-      epetra_vs->smallVecSpcFcty()->createVecSpc(ivec->NumVectors())
-    );
-
-  // then, a MultiVectorBase (from the Epetra_MultiVector)
-  Teuchos::RefCountPtr<Thyra::MultiVectorBase<double> > thyra_ivec = 
-    Thyra::create_MultiVector(Teuchos::rcp_implicit_cast<Epetra_MultiVector>(ivec),epetra_vs,sp_domain);
-
-  // then, a LinearOpBase (from the Epetra_CrsMatrix)
-  Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > thyra_op = 
-    Teuchos::rcp( new Thyra::EpetraLinearOp(A) );
-
-
-  // test the Thyra adapter multivector
-  ierr = Belos::TestMultiVecTraits<double,TMVB>(MyOM,thyra_ivec);
-  gerr |= ierr;
-  switch (ierr) {
-  case Belos::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** ThyraAdapter PASSED TestMultiVecTraits()" << endl;
-    }
-    break;
-  case Belos::Error:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** ThyraAdapter FAILED TestMultiVecTraits() ***" 
-           << endl << endl;
-    }
-    break;
+  // test the Epetra adapter multivector
+  ierr = Belos::TestMultiVecTraits<double,EMV>(MyOM,ivec);
+  gerr &= ierr;
+  if (ierr) {
+    MyOM->print(Belos::Warnings,"*** EpetraAdapter PASSED TestMultiVecTraits()\n");
   }
-
-  // test the Thyra adapter operator 
-  ierr = Belos::TestOperatorTraits<double,TMVB,TLOB>(MyOM,thyra_ivec,thyra_op);
-  gerr |= ierr;
-  switch (ierr) {
-  case Belos::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** ThyraAdapter PASSED TestOperatorTraits()" << endl;
-    }
-    break;
-  case Belos::Error:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** ThyraAdapter FAILED TestOperatorTraits() ***" 
-           << endl << endl;
-    }
-    break;
+  else {
+    MyOM->print(Belos::Warnings,"*** EpetraAdapter FAILED TestMultiVecTraits() ***\n\n");
   }
-#endif
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  if (gerr) {
-    if (verbose && MyPID==0)
-      cout << "End Result: TEST FAILED" << endl;	
+  if (gerr == false) {
+    MyOM->print(Belos::Warnings,"End Result: TEST FAILED\n");
     return -1;
   }
   //
   // Default return value
   //
-  if (verbose && MyPID==0)
-    cout << "End Result: TEST PASSED" << endl;
+  MyOM->print(Belos::Warnings,"End Result: TEST PASSED\n");
   return 0;
 
 }

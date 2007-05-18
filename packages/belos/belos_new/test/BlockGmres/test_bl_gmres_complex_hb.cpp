@@ -36,6 +36,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 // I/O for Harwell-Boeing files
 #ifdef HAVE_BELOS_TRIUTILS
@@ -249,10 +250,6 @@ int main(int argc, char *argv[]) {
   delete [] rowind;
   delete [] cvals;
 
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-
   if ( ret!=Belos::Converged || norm_failure ) {
     if (proc_verbose)
       cout << "End Result: TEST FAILED" << endl;	
@@ -264,5 +261,9 @@ int main(int argc, char *argv[]) {
   if (proc_verbose)
     cout << "End Result: TEST PASSED" << endl;
   return 0;
+
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
   //
 } // end test_bl_gmres_complex_hb.cpp

@@ -153,7 +153,14 @@ namespace Belos {
 #endif
     iPrint_ = (MyPID == 0);
   }
-  
+ 
+  template<class ScalarType>
+  void OutputManager<ScalarType>::print( MsgType type, const string output ) {
+  if ( (type & vb_) && iPrint_ ) {
+    *myOS_ << output;
+  }
+}
+ 
 } // end Belos namespace
 
 #endif

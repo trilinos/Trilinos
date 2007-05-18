@@ -30,6 +30,9 @@ cp ./test/BlockCG/*.hpp ../test/BlockCG/.
 cp ./test/BlockGmres/Makefile* ../test/BlockGmres/.
 cp ./test/BlockGmres/*.cpp ../test/BlockGmres/.
 cp ./test/BlockGmres/*.hpp ../test/BlockGmres/.
+cp ./test/MVOPTester/Makefile* ../test/MVOPTester/.
+cp ./test/MVOPTester/*.cpp ../test/MVOPTester/.
+cp ./test/MVOPTester/*.hpp ../test/MVOPTester/.
 
 cp ./thyra/Makefile* ../thyra/.
 cp ./thyra/src/Makefile* ../thyra/src/.
