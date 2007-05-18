@@ -286,7 +286,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
 	
 	// Initialize the state storage
 	// If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
-	if (R_ == Teuchos::null) {
+	if (R_ == Teuchos::null || MVT::GetNumberVecs(*R_)!=blockSize_) {
 	  // Get the multivector that is not null.
 	  Teuchos::RefCountPtr<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
 	  TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
@@ -361,7 +361,6 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
         // copy over the initial residual (unpreconditioned).
 	MVT::MvAddMv( one, *newstate.R, zero, *newstate.R, *R_ );
       }
-
       // Compute initial direction vectors
       // Initially, they are set to the preconditioned residuals
       //

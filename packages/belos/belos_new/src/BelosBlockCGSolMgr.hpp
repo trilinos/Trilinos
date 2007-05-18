@@ -58,7 +58,7 @@
 
 /*! \class Belos::BlockCGSolMgr
  *
- *  \brief The Belos::BlockCGSolMgr provides a powerful and fully-featured solver manager over the BlockCG linear solver.
+ *  \brief The Belos::BlockCGSolMgr provides a powerful and fully-featured solver manager over the CG and BlockCG linear solver.
 
  \ingroup belos_solver_framework
 
@@ -388,6 +388,11 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
     Teuchos::TimeMonitor slvtimer(*timerSolve_);
 
     while ( numRHS2Solve > 0 ) {
+      //
+      // Reset the active / converged vectors from this block
+      std::vector<int> convRHSIdx;
+      std::vector<int> currRHSIdx( currIdx );
+      currRHSIdx.resize(numCurrRHS);
 
       // Reset the number of iterations.
       block_cg_iter->resetNumIters();
@@ -395,7 +400,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
       // Reset the number of calls that the status test output knows about.
       outputTest_->resetNumCalls();
 
-      // Create the first block in the current Krylov basis.
+      // Get the current residual for this block of linear systems.
       Teuchos::RefCountPtr<MV> R_0 = problem_->getCurrResVec();
 
       // Set the new state and initialize the solver.
@@ -415,8 +420,49 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 	  //
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  if ( convTest_->getStatus() == Passed ) {
-	    // we have convergence
-	    break;  // break from while(1){block_cg_iter->iterate()}
+	    // We have convergence of at least one linear system.
+
+	    // Figure out which linear systems converged.
+	    std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
+
+	    // If the number of converged linear systems is equal to the
+            // number of current linear systems, then we are done with this block.
+	    if (convIdx.size() == currRHSIdx.size())
+	      break;  // break from while(1){block_cg_iter->iterate()}
+
+	    // Inform the linear problem that we are finished with this current linear system.
+	    problem_->setCurrLS();
+
+	    // Reset currRHSIdx to have the right-hand sides that are left to converge for this block.
+	    int have = 0;
+	    for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
+	      bool found = false;
+	      for (unsigned int j=0; j<convIdx.size(); ++j) {
+		if (currRHSIdx[i] == convIdx[j]) {
+		  found = true;
+		  break;
+		}
+	      }
+	      if (!found) {
+		currRHSIdx[have] = currRHSIdx[i];
+		have++;
+	      }
+	    }
+	    currRHSIdx.resize(have);
+
+	    // Set the remaining indices after deflation.
+	    problem_->setLSIndex( currRHSIdx );
+
+	    // Get the current residual vector.
+	    Teuchos::RefCountPtr<MV> R_0 = problem_->getCurrResVec();
+	    
+	    // Set the new blocksize for the solver.
+	    block_cg_iter->setBlockSize( have );
+
+	    // Set the new state and initialize the solver.
+	    CGIterationState<ScalarType,MV> newstate;
+	    newstate.R = R_0;
+	    block_cg_iter->initialize(newstate);
 	  }
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  //
@@ -473,6 +519,9 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 	}
 	// Set the next indices.
 	problem_->setLSIndex( currIdx );
+
+	// Set the new blocksize for the solver.
+	block_cg_iter->setBlockSize( blockSize_ );	
       }
       else {
         currIdx.resize( numRHS2Solve );

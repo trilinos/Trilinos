@@ -274,14 +274,11 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //! Status
   StatusType status_;
   
-  //! The index of the right-hand side vector at the beginning of the block being solved for.
-  int cur_rhs_num_;
-
   //! The current blocksize of the linear system being solved.
-  int cur_blksz_;
+  int curBlksz_;
 
   //! The current number of right-hand sides being solved for.
-  int cur_num_rhs_;
+  int curNumRHS_;
 
   //! The indices of the current number of right-hand sides being solved for.
   std::vector<int> curLSIdx_;
@@ -316,8 +313,7 @@ StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm( MagnitudeType Tolerance,
     scalenormtype_(TwoNorm),
     scalevalue_(1.0),
     status_(Undefined),
-    cur_rhs_num_(0),
-    cur_blksz_(0),
+    curBlksz_(0),
     curLSNum_(0),
     numrhs_(0),
     firstcallCheckStatus_(true),
@@ -336,8 +332,7 @@ template <class ScalarType, class MV, class OP>
 void StatusTestResNorm<ScalarType,MV,OP>::reset() 
 {
   status_ = Undefined;
-  cur_rhs_num_ = 0;
-  cur_blksz_ = 0;
+  curBlksz_ = 0;
   curLSNum_ = 0;
   curLSIdx_.resize(0);
   numrhs_ = 0;
@@ -376,7 +371,6 @@ int StatusTestResNorm<ScalarType,MV,OP>::defineScaleForm(ScaleType TypeOfScaling
 template <class ScalarType, class MV, class OP>
 StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarType,MV,OP>* iSolver )
 {
-  int i;
   MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
   const LinearProblem<ScalarType,MV,OP>& lp = iSolver->getProblem();
   // Compute scaling term (done once for each block that's being solved)
@@ -396,14 +390,13 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
     //
     curLSNum_ = lp.getLSNumber();
     curLSIdx_ = lp.getLSIndex();
-    cur_blksz_ = (int)curLSIdx_.size();
-    cur_rhs_num_ = curLSIdx_[0];
+    curBlksz_ = (int)curLSIdx_.size();
     int validLS = 0;
-    for (int i=0; i<cur_blksz_; ++i) {
+    for (int i=0; i<curBlksz_; ++i) {
       if (curLSIdx_[i] > -1 && curLSIdx_[i] < numrhs_) 
 	validLS++;
     }
-    cur_num_rhs_ = validLS; 
+    curNumRHS_ = validLS; 
     //
   } else {
     //
@@ -417,16 +410,24 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
     // If the residual is returned in multivector form, use the resnormtype to compute the residual norms.
     // Otherwise the native residual is assumed to be stored in the resvector_.
     //
-    std::vector<MagnitudeType> tmp_resvector( cur_blksz_ );
+    std::vector<MagnitudeType> tmp_resvector( curBlksz_ );
     RefCountPtr<const MV> residMV = iSolver->getNativeResiduals( &tmp_resvector );     
     if ( residMV != Teuchos::null ) { 
       tmp_resvector.resize( MVT::GetNumberVecs( *residMV ) );
       MVT::MvNorm( *residMV, &tmp_resvector, resnormtype_ );    
-      for (i=0; i<MVT::GetNumberVecs( *residMV ) && i<cur_num_rhs_; i++)
-        resvector_[i+cur_rhs_num_] = tmp_resvector[i]; 
+      typename std::vector<int>::iterator p = curLSIdx_.begin();
+      for (int i=0; p<curLSIdx_.end(); ++p, ++i) {
+        // Check if this index is valid
+        if (*p != -1)  
+          resvector_[*p] = tmp_resvector[i]; 
+      }
     } else {
-      for (i=0; i<cur_num_rhs_; i++)
-        resvector_[i+cur_rhs_num_] = tmp_resvector[i];
+      typename std::vector<int>::iterator p = curLSIdx_.begin();
+      for (int i=0; p<curLSIdx_.end(); ++p, ++i) {
+        // Check if this index is valid
+        if (*p != -1)
+          resvector_[*p] = tmp_resvector[i];
+      }
     }
   }
   else if (restype_==Explicit) {
@@ -439,49 +440,64 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
     lp.computeActualResVec( &*cur_res, &*cur_soln );
     std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( *cur_res ) );
     MVT::MvNorm( *cur_res, &tmp_resvector, resnormtype_ );
-    for (i=0; i<MVT::GetNumberVecs( *cur_res ) && i<cur_num_rhs_; i++)
-      resvector_[i+cur_rhs_num_] = tmp_resvector[i];      
+    typename std::vector<int>::iterator p = curLSIdx_.begin();
+    for (int i=0; p<curLSIdx_.end(); ++p, ++i) {
+      // Check if this index is valid
+      if (*p != -1)
+        resvector_[*p] = tmp_resvector[i];
+    }
   }
   //
   // Compute the new linear system residuals for testing.
   // (if any of them don't meet the tolerance or are NaN, then we exit with that status)
   //
   if ( scalevector_.size() > 0 ) {
-    for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_num_rhs_); i++) {
-     
-      // Scale the vector accordingly
-      if ( scalevector_[i] != zero ) {
-        // Don't intentionally divide by zero.
-        testvector_[ i ] = resvector_[ i ] / scalevector_[ i ] / scalevalue_;
-      } else {
-        testvector_[ i ] = resvector_[ i ] / scalevalue_;
+    typename std::vector<int>::iterator p = curLSIdx_.begin();
+    for (; p<curLSIdx_.end(); ++p) {
+      // Check if this index is valid
+      if (*p != -1) {     
+        // Scale the vector accordingly
+        if ( scalevector_[ *p ] != zero ) {
+          // Don't intentionally divide by zero.
+          testvector_[ *p ] = resvector_[ *p ] / scalevector_[ *p ] / scalevalue_;
+        } else {
+          testvector_[ *p ] = resvector_[ *p ] / scalevalue_;
+        }
       }
     }
   }
   else {
-    for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_num_rhs_); i++)
-      testvector_[ i ] = resvector_[ i ] / scalevalue_;
+    typename std::vector<int>::iterator p = curLSIdx_.begin();
+    for (; p<curLSIdx_.end(); ++p) {
+      // Check if this index is valid
+      if (*p != -1)     
+        testvector_[ *p ] = resvector_[ *p ] / scalevalue_;
+    }
   }	
 
   // Check status of new linear system residuals and see if we have the quorum.
   int have = 0;
-  ind_.resize( cur_num_rhs_ );
-  for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_num_rhs_); i++) {
-    // Check if any of the residuals are larger than the tolerance.
-    if (testvector_[ i ] > tolerance_) {
-      // do nothing.
-    } else if (testvector_[ i ] <= tolerance_) { 
-      ind_[have] = i;
-      have++;
-    } else {
-      // Throw an exception if a NaN is found.
-      status_ = Failed;
-      TEST_FOR_EXCEPTION(true,StatusTestError,"StatusTestResNorm::checkStatus(): NaN has been detected.");
+  ind_.resize( curLSIdx_.size() );
+  typename std::vector<int>::iterator p = curLSIdx_.begin();
+  for (; p<curLSIdx_.end(); ++p) {
+    // Check if this index is valid
+    if (*p != -1) {     
+      // Check if any of the residuals are larger than the tolerance.
+      if (testvector_[ *p ] > tolerance_) {
+        // do nothing.
+      } else if (testvector_[ *p ] <= tolerance_) { 
+        ind_[have] = *p;
+        have++;
+      } else {
+        // Throw an exception if a NaN is found.
+        status_ = Failed;
+        TEST_FOR_EXCEPTION(true,StatusTestError,"StatusTestResNorm::checkStatus(): NaN has been detected.");
+      }
     }
-    ind_.resize(have);
-    int need = (quorum_ == -1) ? cur_num_rhs_ : quorum_;
-    status_ = (have >= need) ? Passed : Failed;
   } 
+  ind_.resize(have);
+  int need = (quorum_ == -1) ? curNumRHS_: quorum_;
+  status_ = (have >= need) ? Passed : Failed;
   
   // Return the current status
   return status_;
@@ -518,11 +534,11 @@ void StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) const
     os << endl;
     if(showMaxResNormOnly_) {
       const MagnitudeType maxRelRes = *std::max_element(
-        testvector_.begin()+cur_rhs_num_,testvector_.begin()+cur_rhs_num_+cur_num_rhs_
+        testvector_.begin()+curLSIdx_[0],testvector_.begin()+curLSIdx_[curBlksz_-1]
         );
       for (int j = 0; j < indent + 13; j ++)
         os << ' ';
-      os << "max{residual["<<cur_rhs_num_<<"..."<<cur_rhs_num_+cur_num_rhs_-1<<"]} = " << maxRelRes
+      os << "max{residual["<<curLSIdx_[0]<<"..."<<curLSIdx_[curBlksz_-1]<<"]} = " << maxRelRes
          << ( maxRelRes <= tolerance_ ? " <= " : " > " ) << tolerance_ << endl;
     }
     else {
@@ -605,14 +621,13 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( Itera
 
     curLSNum_ = lp.getLSNumber();
     curLSIdx_ = lp.getLSIndex();
-    cur_blksz_ = (int)curLSIdx_.size();
-    cur_rhs_num_ = curLSIdx_[0];
+    curBlksz_ = (int)curLSIdx_.size();
     int validLS = 0;
-    for (i=0; i<cur_blksz_; ++i) {
+    for (i=0; i<curBlksz_; ++i) {
       if (curLSIdx_[i] > -1 && curLSIdx_[i] < numrhs_)
         validLS++;
     }
-    cur_num_rhs_ = validLS;
+    curNumRHS_ = validLS;
     //
     // Initialize the testvector.
     for (i=0; i<numrhs_; i++) { testvector_[i] = one; }
