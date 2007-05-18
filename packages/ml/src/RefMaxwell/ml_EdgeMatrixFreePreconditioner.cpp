@@ -257,8 +257,9 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
   if(verbose_ && !Comm_->MyPID()) printf("BuildNullspace: Pulling %d vectors\n",dim);
   
   /* Build the MultiVector */
-  double ** d_coords=new double* [3];
-  d_coords[0]=xcoord; d_coords[1]=ycoord; d_coords[2]=zcoord;
+  double ** d_coords=new double* [dim];
+  d_coords[0]=xcoord; d_coords[1]=ycoord;
+  if(dim==3) d_coords[2]=zcoord;
   Epetra_MultiVector e_coords(View,*NodeDomainMap_,d_coords,dim);
 
   MVOUT(e_coords,"coords.dat");
@@ -441,7 +442,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   /* Build ML_Operator version of Prolongator_, Restriction Operator */
   if(verbose_ && !Comm_->MyPID()) printf("EMFP: Prolongator Prewrap\n");
   ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix(Prolongator_,P,verbose_));
-  P->num_rigid=P->num_PDEs=3;
+  P->num_rigid=P->num_PDEs=dim;
   
   if(verbose_ && !Comm_->MyPID()) printf("EMFP: Prolongator Transpose\n");
   //NTS: ML_CHK_ERR won't work on this: it returns 1
@@ -458,7 +459,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
 
   /* Do R * AP */
   if(verbose_ && !Comm_->MyPID()) printf("EMFP: RAP\n");
-  R->num_rigid=R->num_PDEs=3;
+  R->num_rigid=R->num_PDEs=dim;
   //  ML_2matmult(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
   ML_2matmult_block(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
 
