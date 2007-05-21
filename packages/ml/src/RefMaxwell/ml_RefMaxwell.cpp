@@ -420,6 +420,8 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   /* Output */
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);
+  int printl=ML_Get_PrintLevel();
+  ML_Set_PrintLevel(1);  
   ReportTimer(t_diff[0],"ML_RMP::ComputePreconditioner (BCs / nukes 1 )",comm_);
   ReportTimer(t_diff[1],"ML_RMP::ComputePreconditioner (TMT builds    )",comm_);
   ReportTimer(t_diff[2],"ML_RMP::ComputePreconditioner (remaps/nukes 2)",comm_);
@@ -428,6 +430,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   ReportTimer(t_diff[5],"ML_RMP::ComputePreconditioner (build 1,1 prec)",comm_);
   ReportTimer(t_diff[6],"ML_RMP::ComputePreconditioner (build 2,2 prec)",comm_);
   ReportTimer(t_time_curr-t_time_start,"ML_RMP::ComputePreconditioner (total         )",comm_);
+  ML_Set_PrintLevel(printl);
   ML_Comm_Destroy(&comm_);
 
   NumConstructions_++;
@@ -458,9 +461,12 @@ int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
 #ifdef ML_TIMING
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);
+  int printl=ML_Get_PrintLevel();
+  ML_Set_PrintLevel(1);  
   ReportTimer(ConstructionTime_ ,   "ML_RMP::ComputePreconditioner (construction  )",comm_);  
   ReportTimer(FirstApplicationTime_,"ML_RMP::ComputePreconditioner (1st iter time )",comm_);  
   ReportTimer(ApplicationTime_ ,    "ML_RMP::ComputePreconditioner (total itr cost)",comm_);
+  ML_Set_PrintLevel(printl);  
   ML_Comm_Destroy(&comm_);
 #endif
   return 0;
@@ -518,7 +524,7 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
   Teuchos::ParameterList dummy;
 
   /* Setup Teuchos Lists*/
-  Teuchos::ParameterList PreList;//(List);
+  Teuchos::ParameterList PreList;
   PreList.set("coarse: type",List.get("smoother: type","Hiptmair"));
   PreList.set("coarse: sweeps",List.get("smoother: sweeps",2));
   PreList.set("coarse: edge sweeps",List.get("subsmoother: edge sweeps",2));
@@ -533,8 +539,8 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
   PreList.set("coarse: pre or post","pre");
   PreList.set("smoother: pre or post","pre");
   PreList.set("zero starting solution", true);
-
-  Teuchos::ParameterList PostList;//(List);
+  
+  Teuchos::ParameterList PostList;
   PostList.set("coarse: type",List.get("smoother: type","Hiptmair"));
   PostList.set("coarse: sweeps",List.get("smoother: sweeps",2));
   PostList.set("coarse: edge sweeps",List.get("subsmoother: edge sweeps",2));
@@ -549,7 +555,7 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
   PostList.set("coarse: pre or post","post");
   PostList.set("smoother: pre or post","post");
   PostList.set("zero starting solution", false);// this should be FALSE!!!
-
+  
   if(HasOnlyDirichletNodes){
     if(PreList.get("coarse: type","dummy") == "Hiptmair"){
       string smoother=PreList.get("coarse: subsmoother type","symmetric Gauss-Seidel");

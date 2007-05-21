@@ -33,8 +33,6 @@
 #include "EpetraExt_SolverMap_CrsMatrix.h"
 #endif
 
-#define ML_TIMING //DEBUG
-
 namespace ML_Epetra
 {
 
