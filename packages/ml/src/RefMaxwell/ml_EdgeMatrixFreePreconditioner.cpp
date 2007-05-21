@@ -310,14 +310,18 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   ML_Operator *P = ML_Operator_Create(ml_comm_);
   
   /* Process Teuchos Options */
-  if (CoarsenType == "Uncoupled")  MLAggr->coarsen_scheme = ML_AGGR_UNCOUPLED;
+  if (CoarsenType == "Uncoupled")
+    ML_Aggregate_Set_CoarsenScheme_Uncoupled(MLAggr);
+  else if (CoarsenType == "Uncoupled-MIS"){
+    ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
+  }
   else if (CoarsenType == "METIS"){
-    MLAggr->coarsen_scheme = ML_AGGR_METIS;
+    ML_Aggregate_Set_CoarsenScheme_METIS(MLAggr);
     ML_Aggregate_Set_NodesPerAggr(0, MLAggr, 0, NodesPerAggr);
   }/*end if*/
   else if(verbose_ && !Comm_->MyPID()) {
     printf("RefMaxwell: Unsupported (1,1) block aggregation type(%s), resetting to uncoupled\n",CoarsenType.c_str());
-    MLAggr->coarsen_scheme = ML_AGGR_UNCOUPLED;
+    ML_Aggregate_Set_CoarsenScheme_Uncoupled(MLAggr);
   }
 
   /* Aggregate Nodes */
