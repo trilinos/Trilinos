@@ -325,7 +325,7 @@ namespace Belos {
       The result will be returned into R.  Otherwise <tt>R = OP(A)X - B</tt> will be computed and returned.
       \note This residual will be a preconditioned residual if the system has a left preconditioner.
     */
-    void computeCurrResVec( MV* R, const MV* X = 0, const MV* B = 0 ) const;
+    void computeCurrResVec( MV* R = 0, const MV* X = 0, const MV* B = 0 ) const;
 
     //! Compute a residual \c R for this operator given a solution \c X, and right-hand side \c B.
     /*! This method will compute the residual for the current linear system if \c X and \c B are null pointers.
@@ -804,6 +804,23 @@ namespace Belos {
 	    MVT::MvAddMv( -1.0, *R, 1.0, *localB, *R );
 	  }
       }    
+    }
+    else {
+      // If X and B are not specified, then the current residual in curR_ will be updated.
+      if (!X && !B) {
+        if (LP_!=null)
+          {
+            RefCountPtr<MV> R_temp = MVT::Clone( *curX_, MVT::GetNumberVecs( *curX_ ) );
+            OPT::Apply( *A_, *curX_, *R_temp );
+            MVT::MvAddMv( -1.0, *R_temp, 1.0, *curB_, *R_temp );
+            OPT::Apply( *LP_, *R_temp, *curR_ );
+          }
+        else
+          {
+            OPT::Apply( *A_, *curX_, *curR_ );
+            MVT::MvAddMv( -1.0, *curR_, 1.0, *curB_, *curR_ );
+          }
+      }
     }
   }
   

@@ -416,8 +416,10 @@ namespace Belos {
     TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument, "Belos::PseudoBlockGmresIter::setNumBlocks was passed a non-positive argument.");
 
     numBlocks_ = numBlocks;
-    initialized_ = false;
     curDim_ = 0;
+
+    initialized_ = false;
+    stateStorageInitialized_ = false;
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -472,6 +474,12 @@ namespace Belos {
 	if ((int)H_.size() != numRHS_) {
 	  H_.resize(numRHS_);
 	  Z_.resize(numRHS_);
+	  for (int i=0; i<numRHS_; ++i) {
+	    if (H_[i] == Teuchos::null)
+	      H_[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>() );
+	    if (Z_[i] == Teuchos::null)
+	      Z_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>() );
+	  }
 	}
 	if ( (int)Z_[0]->length() != numBlocks_+1 ) {
 	  for (int i=0; i<numRHS_; ++i) {
@@ -557,13 +565,19 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void PseudoBlockGmresIter<ScalarType,MV,OP>::initialize(PseudoBlockGmresIterState<ScalarType,MV> newstate)
   {
+    // Get the number of right-hand sides we're solving for now.
+    int numRHS = MVT::GetNumberVecs(*(lp_->getCurrLHSVec()));
+    if (numRHS != numRHS_)
+      stateStorageInitialized_ = false;
+    numRHS_ = numRHS;
+
     // Initialize the state storage if it isn't already.
     if (!stateStorageInitialized_) 
       setStateSize();
 
-    TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
-		       "Belos::PseudoBlockGmresIter::initialize(): Cannot initialize state storage!");
-    
+      TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
+			 "Belos::PseudoBlockGmresIter::initialize(): Cannot initialize state storage!");      
+          
     // NOTE:  In PseudoBlockGmresIter, V and Z are required!!!  
     // inconsitent multivectors widths and lengths will not be tolerated, and
     // will be treated with exceptions.
@@ -572,8 +586,6 @@ namespace Belos {
 
     if ((int)newstate.V.size() != 0 && (int)newstate.Z.size() != 0) {
 
-      numRHS_ = MVT::GetNumberVecs(*(lp_->getCurrLHSVec()));
-      
       // initialize V_,Z_, and curDim_
       
       TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V[0]) != MVT::GetVecLength(*V_[0]),
