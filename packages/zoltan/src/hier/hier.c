@@ -28,8 +28,6 @@ extern "C" {
 /* Zoltan_Hier_Set_Param and Zoltan_Hier          */
 static PARAM_VARS Hier_params[] = {
   {  "HIER_DEBUG_LEVEL", NULL, "INT", 0},
-  {  "HIER_USE_GEOM", NULL, "INT", 0},
-  {  "HIER_USE_GRAPH", NULL, "INT", 0},
   {  "HIER_CHECKS", NULL, "INT" , 0},
   {  NULL,              NULL,  NULL, 0 }};
 
@@ -188,8 +186,8 @@ static int set_hier_part_sizes(HierPartParams *hpp, float *part_sizes) {
 					       part_weight_dim * 
 					       sizeof(float));
   if (!my_level_part_sizes) {
-    sprintf(msg, "Out of memory, tried to alloc %d bytes", 
-	    hpp->num_parts * part_weight_dim * sizeof(float));
+    sprintf(msg, "Out of memory, tried to alloc %u bytes", 
+	(unsigned int)(hpp->num_parts * part_weight_dim * sizeof(float)));
     ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, "set_hier_part_sizes", msg);
     ierr = ZOLTAN_MEMERR;
     goto End;
@@ -290,7 +288,7 @@ int Zoltan_Hier(
 			     mainly things that will be needed in the 
 			     callbacks (a pointer to this is passed as 
 			     the user data) */
-  int i99, i, j, exp_index;
+  int i99, i, exp_index;
   char msg[256];
   idxtype *adjncy_idxtype = NULL;
   int num_adj;
@@ -312,6 +310,27 @@ int Zoltan_Hier(
   *imp_lids  = *exp_lids  = NULL;
   *imp_procs = *exp_procs = NULL;
   *imp_to_part = *exp_to_part = NULL;
+
+  /* Initialize hpp structure */
+  hpp.local_ids = NULL;
+  hpp.global_ids = NULL;
+  hpp.gids_of_interest = NULL;
+  hpp.gids_of_interest_procs = NULL;
+  hpp.migrated = NULL;
+  hpp.vwgt = NULL;
+  hpp.input_parts = NULL;
+  hpp.vtxdist = NULL;
+  hpp.xadj = NULL;
+  hpp.adjncy = NULL;
+  hpp.ewgts = NULL;
+  hpp.adjproc = NULL;
+  hpp.geom_vec = NULL;
+  hpp.hier_ranks_of_orig = NULL;
+  hpp.migrated_in_gids = NULL;
+  hpp.migrated_in_data = NULL;
+  hpp.dd = NULL;
+  hpp.hierzz = NULL;
+  hpp.hier_comm = MPI_COMM_NULL;
 
   /* Cannot currently do hierarchical balancing for num_parts != num_procs */
   if ((zz->Num_Proc != zz->LB.Num_Global_Parts) ||
@@ -335,6 +354,12 @@ int Zoltan_Hier(
   if (zz->Get_Hier_Method == NULL) {
     ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "Must register ZOLTAN_HIER_METHOD_FN");
   }
+
+  /* do we have callbacks to get geometric and/or graph information? */
+  hpp.use_geom = ((zz->Get_Num_Geom != NULL) ||
+		  (zz->Get_Geom_Multi != NULL));
+  hpp.use_graph = ((zz->Get_Num_Edges != NULL) || 
+		   (zz->Get_Num_Edges_Multi != NULL));
 
   /* Check weight dimensions */
   if (zz->Obj_Weight_Dim<0){
@@ -808,7 +833,7 @@ End:
   if (hpp.dd) Zoltan_DD_Destroy(&hpp.dd);
   if (hpp.hierzz) Zoltan_Destroy(&hpp.hierzz);
 
-  MPI_Comm_free(&hpp.hier_comm);
+  if (hpp.hier_comm != MPI_COMM_NULL) MPI_Comm_free(&hpp.hier_comm);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
@@ -820,17 +845,11 @@ static int Zoltan_Hier_Initialize_Params(ZZ *zz, HierPartParams *hpp) {
 
   Zoltan_Bind_Param(Hier_params, "HIER_DEBUG_LEVEL",
 		    (void *) &hpp->output_level);
-  Zoltan_Bind_Param(Hier_params, "HIER_USE_GEOM",
-		    (void *) &hpp->use_geom);
-  Zoltan_Bind_Param(Hier_params, "HIER_USE_GRAPH",
-		    (void *) &hpp->use_graph);
   Zoltan_Bind_Param(Hier_params, "HIER_CHECKS",
 		    (void *) &hpp->checks);
 
   /* set default values */
   hpp->output_level = HIER_DEBUG_LIST;
-  hpp->use_geom = 0;
-  hpp->use_graph = 0;
   hpp->checks = 0;
 
   /* Get application values of parameters. */
@@ -1204,7 +1223,6 @@ static int gid_of_interest_proc(HierPartParams *hpp, ZOLTAN_ID_TYPE gid) {
 /* return index into local arrays if gid is in the local range and has
    not been migrated, return -1 otherwise */
 static int get_local_index(HierPartParams *hpp, ZOLTAN_ID_TYPE gid) {
-  int owner;
 
   HIER_CHECK_GID_RANGE(gid);
   if ((gid >= hpp->vtxdist[hpp->origzz->Proc]) &&
@@ -1222,7 +1240,6 @@ static int get_local_index(HierPartParams *hpp, ZOLTAN_ID_TYPE gid) {
 /* return index into local arrays if gid is in the local range even if
    it has been migrated, return -1 otherwise */
 static int get_starting_local_index(HierPartParams *hpp, ZOLTAN_ID_TYPE gid) {
-  int owner;
 
   HIER_CHECK_GID_RANGE(gid);
   if ((gid >= hpp->vtxdist[hpp->origzz->Proc]) &&
@@ -1369,7 +1386,7 @@ static void Zoltan_Hier_Geom_Fn(void *data, int num_gid_entries,
   /* make sure we have geometric info */
   if (!hpp->use_geom) {
     ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, 
-		       "HIER_USE_GEOM not specified, geom info not available");
+		       "GEOM callbacks not specified, geom info not available");
     *ierr = ZOLTAN_FATAL;
     return;
   }
@@ -1416,7 +1433,7 @@ static int Zoltan_Hier_Num_Edges_Fn(void *data, int num_gid_entries,
   /* make sure we have graph info */
   if (!hpp->use_graph) {
     ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, 
-		       "HIER_USE_GRAPH not specified, edges not available");
+		       "Graph callbacks not specified, edges not available");
     *ierr = ZOLTAN_FATAL;
     return 0;
   }
@@ -1471,7 +1488,6 @@ static void Zoltan_Hier_Edge_List_Fn(void *data, int num_gid_entries,
   int i, j, edge, edge_proc_orig_rank, edge_proc_hier_rank, num_adj;
   ZOLTAN_ID_TYPE next_adj;
   char *yo = "Zoltan_Hier_Edge_List_Fn";
-  char msg[256];
 
   HIER_CHECK_GID_RANGE(gid);
 
@@ -1481,7 +1497,7 @@ static void Zoltan_Hier_Edge_List_Fn(void *data, int num_gid_entries,
   /* make sure we have graph info */
   if (!hpp->use_graph) {
     ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, 
-		       "HIER_USE_GRAPH not specified, edges not available");
+		       "Graph callbacks not specified, edges not available");
     *ierr = ZOLTAN_FATAL;
     return;
   }
@@ -1792,7 +1808,6 @@ static void Zoltan_Hier_Pack_Obj_Fn(void *data,
   double *buf_double_ptr;
   int *buf_int_ptr;
   int buf_index, i;
-  char msg[256];
 
   HIER_CHECK_GID_RANGE(gid);
 
@@ -1921,7 +1936,7 @@ static void Zoltan_Hier_Unpack_Obj_Fn(void *data,
   double *buf_double_ptr;
   int *buf_int_ptr;
   int buf_index, i;
-  struct HierGIDInfo *info;
+  struct HierGIDInfo *info = NULL;
   char *yo = "Zoltan_Hier_Unpack_Obj_Fn";
 
   HIER_CHECK_GID_RANGE(gid);
@@ -2140,7 +2155,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
   int add_to_migrated_in;
   /*int export_partition_change_only;*/
   int import_partition_change_only;
-  int insert_index, trail_index;
+  int insert_index = 0, trail_index;
   ZOLTAN_ID_PTR dd_updates=NULL;
   int remove_count = 0, update_count = 0;
   int last_level;
@@ -2379,7 +2394,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
 	if (hpp->migrated_in_data[trail_index]) {
 	  insert_index = next_insert_index(hpp, insert_index);
 	  if (hpp->output_level >= HIER_DEBUG_ALL ) {
-	    printf("[%d] backfill from trail=%d to insert=%d, GID %d, data=%X\n",
+	    printf("[%d] backfill from trail=%d to insert=%d, GID %d, data=%p\n",
 		   hpp->origzz->Proc, trail_index, insert_index, 
 		   hpp->migrated_in_gids[trail_index], 
 		   hpp->migrated_in_data[trail_index]);

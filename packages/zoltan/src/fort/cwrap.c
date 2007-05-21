@@ -76,10 +76,13 @@ extern "C" {
 #define Zfw_Migrate                    zfw_migrate  
 #define Zfw_Help_Migrate               zfw_help_migrate  
 #define Zfw_Order                      zfw_order  
+#define Zfw_Color                      zfw_color  
+#define Zfw_Color_Test                 zfw_color_test  
 #define Zfw_Generate_Files             zfw_generate_files  
 #define Zfw_RCB_Box                    zfw_rcb_box  
 #define Zfw_Register_Fort_Malloc       zfw_register_fort_malloc
 #define Zfw_Get_Address_int            zfw_get_address_int
+#define Zfw_Get_Address_struct         zfw_get_address_struct
 #define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim
 #define Zfw_Get_Comm_Dim               zfw_get_comm_dim
 #define Zfw_Reftree_Get_Child_Order    zfw_reftree_get_child_order
@@ -131,10 +134,13 @@ extern "C" {
 #define Zfw_Migrate                    ZFW_MIGRATE  
 #define Zfw_Help_Migrate               ZFW_HELP_MIGRATE  
 #define Zfw_Order                      ZFW_ORDER  
+#define Zfw_Color                      ZFW_COLOR  
+#define Zfw_Color_Test                 ZFW_COLOR_TEST  
 #define Zfw_Generate_Files             ZFW_GENERATE_FILES  
 #define Zfw_RCB_Box                    ZFW_RCB_BOX  
 #define Zfw_Register_Fort_Malloc       ZFW_REGISTER_FORT_MALLOC
 #define Zfw_Get_Address_int            ZFW_GET_ADDRESS_INT
+#define Zfw_Get_Address_struct         ZFW_GET_ADDRESS_STRUCT
 #define Zfw_Get_Comm_Dim               ZFW_GET_COMM_DIM
 #define Zfw_Reftree_Get_Child_Order    ZFW_REFTREE_GET_CHILD_ORDER
 
@@ -185,10 +191,13 @@ extern "C" {
 #define Zfw_Migrate                    zfw_migrate_
 #define Zfw_Help_Migrate               zfw_help_migrate_  
 #define Zfw_Order                      zfw_order_  
+#define Zfw_Color                      zfw_color_  
+#define Zfw_Color_Test                 zfw_color_test_  
 #define Zfw_Generate_Files             zfw_generate_files_ 
 #define Zfw_RCB_Box                    zfw_rcb_box_
 #define Zfw_Register_Fort_Malloc       zfw_register_fort_malloc_
 #define Zfw_Get_Address_int            zfw_get_address_int_
+#define Zfw_Get_Address_struct         zfw_get_address_struct_
 #define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim_
 #define Zfw_Get_Comm_Dim               zfw_get_comm_dim_
 #define Zfw_Reftree_Get_Child_Order    zfw_reftree_get_child_order_
@@ -240,10 +249,13 @@ extern "C" {
 #define Zfw_Migrate                    zfw_migrate__
 #define Zfw_Help_Migrate               zfw_help_migrate__
 #define Zfw_Order                      zfw_order__
+#define Zfw_Color                      zfw_color__
+#define Zfw_Color_Test                 zfw_color_test__
 #define Zfw_Generate_Files             zfw_generate_files__
 #define Zfw_RCB_Box                    zfw_rcb_box__
 #define Zfw_Register_Fort_Malloc       zfw_register_fort_malloc__
 #define Zfw_Get_Address_int            zfw_get_address_int__
+#define Zfw_Get_Address_struct         zfw_get_address_struct__
 #define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim__
 #define Zfw_Get_Comm_Dim               zfw_get_comm_dim__
 #define Zfw_Reftree_Get_Child_Order    zfw_reftree_get_child_order__
@@ -255,7 +267,6 @@ extern "C" {
 
 static struct Zoltan_Struct *Zoltan_Current;
 void Zoltan_Reftree_Get_Child_Order(struct Zoltan_Struct *, int *, int *);
-
 
 /*--------------------------------------------------------------------*/
 /* Utilities                                                          */
@@ -295,6 +306,28 @@ void Zfw_Get_Address_int(int *addr,
 {
    if (sizeof(int) != sizeof(int *)) {
      ZOLTAN_PRINT_ERROR(-1, "Zfw_Get_Address_int", 
+       "sizeof(int) != sizeof(int *); F90 allocation will not work properly.");
+   }
+   *ret_addr = (int)addr;
+}
+#endif  /* PTR_64BIT */
+
+#ifdef PTR_64BIT
+void Zfw_Get_Address_struct(int *addr,
+			    long *ret_addr)
+{
+   if (sizeof(long) != sizeof(int *)) {
+     ZOLTAN_PRINT_ERROR(-1, "Zfw_Get_Address_struct", 
+       "sizeof(long) != sizeof(int *); F90 allocation will not work properly.");
+   }
+   *ret_addr = (long)addr;
+}
+#else
+void Zfw_Get_Address_struct(int *addr,
+			    int *ret_addr)
+{
+   if (sizeof(int) != sizeof(int *)) {
+     ZOLTAN_PRINT_ERROR(-1, "Zfw_Get_Address_struct", 
        "sizeof(int) != sizeof(int *); F90 allocation will not work properly.");
    }
    *ret_addr = (int)addr;
@@ -830,13 +863,12 @@ int Zoltan_Num_Fixed_Obj_Fort_Wrapper(void *data, int *ierr)
 }
 /*****************************************************************************/
 void Zoltan_Fixed_Obj_List_Fort_Wrapper(void *data,
-  int num_fixed_obj, int num_gid_entries, int num_lid_entries,
-  ZOLTAN_ID_PTR fixed_gids, ZOLTAN_ID_PTR fixed_lids, int *fixed_part,
-  int *ierr)
+  int num_fixed_obj, int num_gid_entries, 
+  ZOLTAN_ID_PTR fixed_gids, int *fixed_part, int *ierr)
 {
    Zoltan_Current->Get_Fixed_Obj_List_Fort(data,
-              &num_fixed_obj, &num_gid_entries, &num_lid_entries,
-              fixed_gids, fixed_lids, fixed_part, ierr);
+              &num_fixed_obj, &num_gid_entries, 
+              fixed_gids, fixed_part, ierr);
 }
 /*****************************************************************************/
 int Zoltan_First_Coarse_Obj_Fort_Wrapper(void *data, 
@@ -912,6 +944,46 @@ void Zoltan_Child_Weight_Fort_Wrapper(void *data,
                                         &num_gid_entries, &num_lid_entries,
                                         global_id, local_id, &wgt_dim,
                                         obj_wgt, ierr);
+}
+
+/*****************************************************************************/
+int Zoltan_Hier_Num_Levels_Fort_Wrapper(void *data, int *ierr)
+{
+  return Zoltan_Current->Get_Hier_Num_Levels_Fort(data, ierr);
+}
+
+/*****************************************************************************/
+int Zoltan_Hier_Partition_Fort_Wrapper(void *data, int level, int *ierr)
+{
+  return Zoltan_Current->Get_Hier_Partition_Fort(data, &level, ierr);
+}
+
+/*****************************************************************************/
+void Zoltan_Hier_Method_Fort_Wrapper(void *data, int level, 
+				     struct Zoltan_Struct *zz, int *ierr)
+{
+  int *fort_zz; /* maybe this should be void *? */
+  unsigned char *p;
+  int i, nbytes;
+  extern ZOLTAN_FORT_MALLOC_SET_STRUCT_FN fort_malloc_set_struct;
+#ifdef PTR_64BIT
+  int zz_addr_bytes[8];
+  nbytes = 8;
+#else
+  int zz_addr_bytes[4];
+  nbytes = 4;
+#endif
+  /* create an integer array containing the address of zz one byte at
+     a time */
+  p = (unsigned char *) &zz;
+  for (i=0; i<nbytes; i++) {zz_addr_bytes[i] = (int)*p; p++;}
+
+  /* create a Fortran Zoltan_Struct for zz */
+  Zoltan_Special_Fort_Malloc_Set_Struct(zz_addr_bytes,&fort_zz);
+
+  /* call the callback */
+  Zoltan_Current->Get_Hier_Method_Fort(data, &level, fort_zz, ierr);
+
 }
 
 /*****************************************************************************/
@@ -1024,7 +1096,6 @@ int Zfw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   Zoltan_Current = lb;
    switch(*type) {
    case ZOLTAN_PARTITION_MULTI_FN_TYPE:
       lb->Get_Partition_Multi_Fort = (ZOLTAN_PARTITION_MULTI_FORT_FN *) fn;
@@ -1236,7 +1307,21 @@ int Zfw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
       return Zoltan_Set_Fn(lb, *type,
                (void (*)())Zoltan_Fixed_Obj_List_Fort_Wrapper, data);
       break;
-
+   case ZOLTAN_HIER_NUM_LEVELS_FN_TYPE:
+      lb->Get_Hier_Num_Levels_Fort = (ZOLTAN_HIER_NUM_LEVELS_FORT_FN *) fn;
+      return Zoltan_Set_Fn(lb, *type, 
+               (void (*)())Zoltan_Hier_Num_Levels_Fort_Wrapper, data);
+      break;
+   case ZOLTAN_HIER_PARTITION_FN_TYPE:
+      lb->Get_Hier_Partition_Fort = (ZOLTAN_HIER_PARTITION_FORT_FN *) fn;
+      return Zoltan_Set_Fn(lb, *type, 
+               (void (*)())Zoltan_Hier_Partition_Fort_Wrapper, data);
+      break;
+   case ZOLTAN_HIER_METHOD_FN_TYPE:
+      lb->Get_Hier_Method_Fort = (ZOLTAN_HIER_METHOD_FORT_FN *) fn;
+      return Zoltan_Set_Fn(lb, *type, 
+               (void (*)())Zoltan_Hier_Method_Fort_Wrapper, data);
+      break;
    default:
       return Zoltan_Set_Fn(lb, *type, (void (*)())NULL, data);
       break;
@@ -1437,7 +1522,6 @@ int Zfw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,
    new_value = (char *)ZOLTAN_MALLOC(*new_value_len+1);
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   Zoltan_Current = lb;
    for (i=0; i<(*param_name_len); i++) param_name[i] = (char)int_param_name[i];
    param_name[*param_name_len] = '\0';
    for (i=0; i<(*new_value_len); i++) new_value[i] = (char)int_new_value[i];
@@ -1461,7 +1545,6 @@ int Zfw_Set_Param_Vec(int *addr_lb, int *nbytes, int *int_param_name,
    new_value = (char *)ZOLTAN_MALLOC(*new_value_len+1);
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   Zoltan_Current = lb;
    for (i=0; i<(*param_name_len); i++) param_name[i] = (char)int_param_name[i];
    param_name[*param_name_len] = '\0';
    for (i=0; i<(*new_value_len); i++) new_value[i] = (char)int_new_value[i];
@@ -1589,7 +1672,6 @@ int Zfw_LB_Set_Part_Sizes(int *addr_lb, int *nbytes, int *global_part, int *len,
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   Zoltan_Current = lb;
 
    return Zoltan_LB_Set_Part_Sizes(lb, *global_part, *len, partids, wgtidx,
                                    partsizes);
@@ -1603,7 +1685,6 @@ int Zfw_LB_Point_Assign(int *addr_lb, int *nbytes, double *coords, int *proc)
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   Zoltan_Current = lb;
 
    return Zoltan_LB_Point_Assign(lb, coords, proc);
 }
@@ -1617,7 +1698,6 @@ int Zfw_LB_Point_PP_Assign(int *addr_lb, int *nbytes, double *coords, int *proc,
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   Zoltan_Current = lb;
 
    return Zoltan_LB_Point_PP_Assign(lb, coords, proc, part);
 }
@@ -1632,7 +1712,6 @@ int Zfw_LB_Box_Assign(int *addr_lb, int *nbytes, double *xmin, double *ymin,
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   Zoltan_Current = lb;
 
    return Zoltan_LB_Box_Assign(lb, *xmin, *ymin, *zmin, *xmax, *ymax, *zmax, 
                                procs, numprocs);
@@ -1648,7 +1727,6 @@ int Zfw_LB_Box_PP_Assign(int *addr_lb, int *nbytes, double *xmin, double *ymin,
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   Zoltan_Current = lb;
 
    return Zoltan_LB_Box_PP_Assign(lb, *xmin, *ymin, *zmin, *xmax, *ymax, *zmax,
                                   procs, numprocs, parts, numparts);
@@ -1695,7 +1773,6 @@ int Zfw_Invert_Lists(int *addr_lb, int *nbytes,
 
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   Zoltan_Current = lb;
 
 /* put the address of the Fortran pointer into temp_*[1] to be passed to
    Fortran for allocation.  The address of the allocated space will be
@@ -1761,7 +1838,6 @@ int Zfw_Compute_Destinations(int *addr_lb, int *nbytes,
 
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   Zoltan_Current = lb;
 
 /* put the address of the Fortran pointer into temp_*[1] to be passed to
    Fortran for allocation.  The address of the allocated space will be
@@ -1851,6 +1927,46 @@ int Zfw_Order(
 }
 
 /*****************************************************************************/
+int Zfw_Color(
+ int *addr_lb, int *nbytes,
+ int *num_gid_entries, int *num_lid_entries,
+ int *num_obj,
+ ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+ int *color_exp)
+{
+   struct Zoltan_Struct *lb;
+   unsigned char *p;
+   int i;
+   int ierr;
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   Zoltan_Current = lb;
+   ierr = Zoltan_Color(lb,num_gid_entries,num_lid_entries,*num_obj,
+                       gids, lids, color_exp);
+   return ierr;
+}
+
+/*****************************************************************************/
+int Zfw_Color_Test(
+ int *addr_lb, int *nbytes,
+ int *num_gid_entries, int *num_lid_entries,
+ int *num_obj,
+ ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+ int *color_exp)
+{
+   struct Zoltan_Struct *lb;
+   unsigned char *p;
+   int i;
+   int ierr;
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   Zoltan_Current = lb;
+   ierr = Zoltan_Color_Test(lb,num_gid_entries,num_lid_entries,*num_obj,
+                       gids, lids, color_exp);
+   return ierr;
+}
+
+/*****************************************************************************/
 int Zfw_Generate_Files(int *addr_lb, int *nbytes, int *int_filename,
                    int *filename_len, int *base_index, int *gen_geom,
                    int *gen_graph, int *gen_hg)
@@ -1881,15 +1997,16 @@ int Zfw_RCB_Box(int *addr_lb, int *nbytes, int *part, int *ndim,
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   Zoltan_Current = lb;
 
    return Zoltan_RCB_Box(lb, *part, ndim, xmin, ymin, zmin, xmax, ymax, zmax);
 }
 /*****************************************************************************/
 void Zfw_Register_Fort_Malloc(ZOLTAN_FORT_MALLOC_INT_FN *fort_malloc_int,
-                                    ZOLTAN_FORT_FREE_INT_FN *fort_free_int)
+			      ZOLTAN_FORT_FREE_INT_FN *fort_free_int,
+			      ZOLTAN_FORT_MALLOC_SET_STRUCT_FN *fort_malloc_set_struct)
 {
-   Zoltan_Register_Fort_Malloc(fort_malloc_int,fort_free_int);
+   Zoltan_Register_Fort_Malloc(fort_malloc_int,fort_free_int,
+			       fort_malloc_set_struct);
 }
 
 /*****************************************************************************/

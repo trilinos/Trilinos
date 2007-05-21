@@ -17,6 +17,7 @@ use mpi_h
 use dr_const
 use dr_input
 use dr_migrate
+use dr_param_file
 implicit none
 !private
 
@@ -84,6 +85,8 @@ type(PARIO_INFO) :: pio_info
   integer(Zoltan_INT), allocatable :: idx(:)
   integer(Zoltan_INT), allocatable :: order(:), iperm(:)
   integer(Zoltan_INT), allocatable :: order_gids(:), order_lids(:)
+  integer(Zoltan_INT), allocatable :: color(:)
+  integer(Zoltan_INT), allocatable :: gids(:), lids(:)
   integer(Zoltan_INT) :: nprocs
   integer(Zoltan_INT) :: ndim, lid
   character(len=FILENAME_MAX+1) :: fname
@@ -126,6 +129,13 @@ type(PARIO_INFO) :: pio_info
     print *, "fatal:  error returned from Zoltan_Set_Param(LB_METHOD)"
     run_zoltan = .false.
     goto 9999
+  endif
+
+!  /* if there is a paramfile specified, read it
+!     note: contents of this file may override the parameters set above */
+  if (prob%ztnPrm_file /= "") then  
+    call ztnPrm_read_file(zz_obj, prob%ztnPrm_file, &
+         MPI_COMM_WORLD)
   endif
 
 !  /*
@@ -240,6 +250,25 @@ type(PARIO_INFO) :: pio_info
     goto 9999
   endif
 
+! ZOLTAN_OBJ_SIZE_FN needed for repartitioning.
+  if ((Test_Hypergraph_Callbacks .eq. 1) .or. (Test_Graph_Callbacks .eq. 1))  then
+    if (Test_Multi_Callbacks.eq.1) then
+      if (Zoltan_Set_Obj_Size_Multi_Fn(zz_obj, migrate_elem_size_multi, &
+                   mesh_wrapper) == ZOLTAN_FATAL) then
+        print *, "fatal:  error returned from Zoltan_Set_Fn()"
+        run_zoltan = .false. 
+        goto 9999
+      endif
+    else
+      if (Zoltan_Set_Obj_Size_Fn(zz_obj, migrate_elem_size, &
+                   mesh_wrapper) == ZOLTAN_FATAL) then
+        print *, "fatal:  error returned from Zoltan_Set_Fn()"
+        run_zoltan = .false.
+        goto 9999
+      endif
+    endif
+  endif
+
   if (Test_Multi_Callbacks.eq.1) then
 
     if (Zoltan_Set_Geom_Multi_Fn(zz_obj, get_geom_multi, mesh_wrapper) &
@@ -260,70 +289,73 @@ type(PARIO_INFO) :: pio_info
   endif
 
 !  /* Functions for graph based algorithms */
-  if (Test_Multi_Callbacks .eq. 1)  then
-    if (Zoltan_Set_Num_Edges_Multi_Fn(zz_obj, get_num_edges_multi, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
-      print *, "fatal:  error returned from Zoltan_Set_Fn()"
-      run_zoltan = .false.
-      goto 9999
-    endif
-
-    if (Zoltan_Set_Edge_List_Multi_Fn(zz_obj, get_edge_list_multi, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
-      print *, "fatal:  error returned from Zoltan_Set_Fn()"
-      run_zoltan = .false.
-      goto 9999
-    endif
-
-  else
-    if (Zoltan_Set_Num_Edges_Fn(zz_obj, get_num_edges, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
-      print *, "fatal:  error returned from Zoltan_Set_Fn()"
-      run_zoltan = .false.
-      goto 9999
-    endif
-
-    if (Zoltan_Set_Edge_List_Fn(zz_obj, get_edge_list, &
-                  mesh_wrapper) == ZOLTAN_FATAL) then
-      print *, "fatal:  error returned from Zoltan_Set_Fn()"
-      run_zoltan = .false.
-      goto 9999
+  if (Test_Graph_Callbacks .eq. 1)  then
+    if (Test_Multi_Callbacks .eq. 1)  then
+      if (Zoltan_Set_Num_Edges_Multi_Fn(zz_obj, get_num_edges_multi, &
+                    mesh_wrapper) == ZOLTAN_FATAL) then
+        print *, "fatal:  error returned from Zoltan_Set_Fn()"
+        run_zoltan = .false.
+        goto 9999
+      endif
+  
+      if (Zoltan_Set_Edge_List_Multi_Fn(zz_obj, get_edge_list_multi, &
+                    mesh_wrapper) == ZOLTAN_FATAL) then
+        print *, "fatal:  error returned from Zoltan_Set_Fn()"
+        run_zoltan = .false.
+        goto 9999
+      endif
+  
+    else
+      if (Zoltan_Set_Num_Edges_Fn(zz_obj, get_num_edges, &
+                    mesh_wrapper) == ZOLTAN_FATAL) then
+        print *, "fatal:  error returned from Zoltan_Set_Fn()"
+        run_zoltan = .false.
+        goto 9999
+      endif
+  
+      if (Zoltan_Set_Edge_List_Fn(zz_obj, get_edge_list, &
+                    mesh_wrapper) == ZOLTAN_FATAL) then
+        print *, "fatal:  error returned from Zoltan_Set_Fn()"
+        run_zoltan = .false.
+        goto 9999
+      endif
     endif
   endif
 
 !  /* Functions for hypergraph based algorithms */
-  if (Zoltan_Set_Hg_Size_Cs_Fn(zz_obj, get_hg_size_compressed_pins, &
-                mesh_wrapper) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_Set_Fn()"
-    run_zoltan = .false.
-    goto 9999
-  endif
-
-  if (Zoltan_Set_Hg_Cs_Fn(zz_obj, get_hg_compressed_pins, &
-                mesh_wrapper) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_Set_Fn()"
-    run_zoltan = .false.
-    goto 9999
-  endif
-
-
-  if (.true.) then 
-!   Register hypergraph edge weight query functions
-
-    if (Zoltan_Set_Hg_Size_Edge_Wts_Fn(zz_obj, get_hg_size_edge_weights, &
-                mesh_wrapper) == ZOLTAN_FATAL) then
+  if (Test_Hypergraph_Callbacks .eq. 1)  then
+    if (Zoltan_Set_Hg_Size_Cs_Fn(zz_obj, get_hg_size_compressed_pins, &
+                  mesh_wrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
-
-    if (Zoltan_Set_Hg_Edge_Wts_Fn(zz_obj, get_hg_edge_weights, &
-                mesh_wrapper) == ZOLTAN_FATAL) then
+  
+    if (Zoltan_Set_Hg_Cs_Fn(zz_obj, get_hg_compressed_pins, &
+                  mesh_wrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
-
+  
+  
+    if (.true.) then 
+  !   Register hypergraph edge weight query functions
+  
+      if (Zoltan_Set_Hg_Size_Edge_Wts_Fn(zz_obj, get_hg_size_edge_weights, &
+                  mesh_wrapper) == ZOLTAN_FATAL) then
+        print *, "fatal:  error returned from Zoltan_Set_Fn()"
+        run_zoltan = .false.
+        goto 9999
+      endif
+  
+      if (Zoltan_Set_Hg_Edge_Wts_Fn(zz_obj, get_hg_edge_weights, &
+                  mesh_wrapper) == ZOLTAN_FATAL) then
+        print *, "fatal:  error returned from Zoltan_Set_Fn()"
+        run_zoltan = .false.
+        goto 9999
+      endif
+    endif
   endif
 
 
@@ -473,6 +505,48 @@ type(PARIO_INFO) :: pio_info
 
 
   endif  ! End Driver_Action ==> Do ordering
+
+  if (IAND(Driver_Action,4).gt.0) then
+!   /* Do only coloring if this was specified in the driver input file */
+
+    allocate(color(mesh%num_elems));
+    allocate(gids(mesh%num_elems));
+    allocate(lids(mesh%num_elems));
+
+    ierr = Zoltan_Color(zz_obj, num_gid_entries, num_lid_entries, &
+        mesh%num_elems, gids, lids, &
+        color)
+    if (ierr .ne. ZOLTAN_OK) then
+      print *, "fatal:  error returned from Zoltan_Color()"
+      run_zoltan = .false.
+      goto 9994
+    endif
+
+!   /* Verify coloring */
+    if (Proc == 0) print *, "Verifying coloring result"
+    ierr = Zoltan_Color_Test(zz_obj, num_gid_entries, num_lid_entries, &
+         mesh%num_elems, gids, lids, &
+         color)
+    if (ierr .ne. ZOLTAN_OK) then
+       print *, "fatal:  error returned from Zoltan_Color_Test()"
+       run_zoltan = .false.
+       goto 9994
+    endif
+
+!   /* Copy coloring permutation into mesh structure */
+    do i = 0, mesh%num_elems-1
+      lid = lids(num_lid_entries * i + 1)
+      mesh%elements(lid)%perm_value = color(i+1);
+    enddo
+
+9994 continue
+!   /* Free color data */
+    deallocate(color);
+    deallocate(gids);
+    deallocate(lids);
+
+
+  endif  ! End Driver_Action ==> Do coloring
 
 9999 continue
   call Zoltan_Destroy(zz_obj)

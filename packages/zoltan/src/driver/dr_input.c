@@ -418,6 +418,18 @@ int read_cmd_file (
                     &Test.Multi_Callbacks, &n) == 1)
       continue;             /* List-based (MULTI) callback function testing */
       
+    else if (sscanf(line, " test graph callbacks" SKIPEQ "%d%n",
+                    &Test.Graph_Callbacks, &n) == 1)
+      continue;             /* Graph-based callback function testing */
+    else if (sscanf(line, " test graph callback" SKIPEQ "%d%n",
+                    &Test.Graph_Callbacks, &n) == 1)
+      continue;             /* Graph-based callback function testing */
+    else if (sscanf(line, " test hypergraph callbacks" SKIPEQ "%d%n",
+                    &Test.Hypergraph_Callbacks, &n) == 1)
+      continue;             /* HyperGraph-based callback function testing */
+    else if (sscanf(line, " test hypergraph callback" SKIPEQ "%d%n",
+                    &Test.Hypergraph_Callbacks, &n) == 1)
+      continue;             /* HyperGraph-based callback function testing */
     else if (sscanf(line, " test null export lists" SKIPEQ "%d%n", &i,&n)==1) {
       if (i == 1)              /* Null export lists to Help_Migrate testing */
         Test.Null_Lists = EXPORT_LISTS;
@@ -437,7 +449,7 @@ int read_cmd_file (
     }
 
     else if (sscanf(line," zdrive action" SKIPEQ "%d%n",&Driver_Action,&n) == 1)
-      continue;            /* zdrive action: Do load-balancing or ordering? */
+      continue;            /* zdrive action: Do coloring, load-balancing or ordering? */
 
     else if (sscanf(line," zdrive debug level" SKIPEQ "%d%n",
                     &Debug_Driver,&n)==1)
@@ -589,7 +601,7 @@ void brdcst_cmd_info (
 {
   int ctrl_id, j, k;
   int size;
-  int int_params[16];  /* Make sure this array is large enough */
+  int int_params[18];  /* Make sure this array is large enough */
   float float_params[2];  /* Make sure this array is large enough */
 
   k = 0;
@@ -608,6 +620,8 @@ void brdcst_cmd_info (
   int_params[j++] = Test.Local_Partitions;
   int_params[j++] = Test.Fixed_Objects;
   int_params[j++] = Test.Multi_Callbacks;
+  int_params[j++] = Test.Graph_Callbacks;
+  int_params[j++] = Test.Hypergraph_Callbacks;
   int_params[j++] = Test.Null_Lists;
   int_params[j++] = Output.Text;
   int_params[j++] = Output.Gnuplot;
@@ -628,6 +642,8 @@ void brdcst_cmd_info (
   Test.Local_Partitions  = int_params[j++];
   Test.Fixed_Objects     = int_params[j++];
   Test.Multi_Callbacks   = int_params[j++];
+  Test.Graph_Callbacks   = int_params[j++];
+  Test.Hypergraph_Callbacks   = int_params[j++];
   Test.Null_Lists        = int_params[j++];
   Output.Text            = int_params[j++];
   Output.Gnuplot         = int_params[j++];

@@ -38,41 +38,77 @@ extern "C" {
 static PARAM_VARS PHG_params[] = {
   /* Add parameters here. */
   {"HYPERGRAPH_PACKAGE",              NULL,  "STRING", 0},
-  {"HYPERGRAPH_METHOD",               NULL,  "STRING", 0},
+    /* Software package: PHG (Zoltan) or Patoh */
+  {"PHG_METHOD",                      NULL,  "STRING", 0},
+    /* LB_APPROACH can often be used instead (partition/repartition/refine) */
+    /* PHG_METHOD should be used for PHG-specific options */ 
   {"PHG_FROM_GRAPH_METHOD",           NULL,  "STRING", 0},  
+    /* Hypergraph model: neighbors or pairs */
   {"PHG_CUT_OBJECTIVE",               NULL,  "STRING", 0},
+    /* connectivity or hyperedges */
   {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
+    /* Higher value -> more output */
   {"FINAL_OUTPUT",                    NULL,  "INT",    0},
+    /* Output related to final partitioning only */ 
   {"CHECK_GRAPH",                     NULL,  "INT",    0},
+    /* Same as CHECK_HYPERGRAPH */
   {"CHECK_HYPERGRAPH",                NULL,  "INT",    0},
+    /* Same as CHECK_GRAPH */
   {"PHG_NPROC_VERTEX",                NULL,  "INT",    0},
+    /* No. of processors along vertex direction initially in 2D layout */
   {"PHG_NPROC_EDGE",                  NULL,  "INT",    0},
+    /* No. of processors along hyperedge direction initially in 2D layout */
   {"PHG_COARSENING_LIMIT",            NULL,  "INT",    0},
+    /* When to stop coarsening (global no. of vertices) */
   {"PHG_COARSENING_NCANDIDATE",       NULL,  "INT",    0},  
+    /* Max no. of candidate vertices in a round of matching */
   {"PHG_COARSENING_METHOD",           NULL,  "STRING", 0},
+    /* Coarsening method (ipm, agg, etc. ) */
   {"PHG_COARSENING_METHOD_FAST",      NULL,  "STRING", 0},
+    /* Used by a-ipm to alternate between full ipm and a faster method */
   {"PHG_VERTEX_VISIT_ORDER",          NULL,  "INT",    0},
+    /* Vertex ordering for greedy matching (linear, random,  ) */
   {"PHG_EDGE_SCALING",                NULL,  "INT",    0},
+    /* Edge scaling schemes to tweak inner product similarity in matching */
   {"PHG_VERTEX_SCALING",              NULL,  "INT",    0},
+    /* Vertex scaling schemes to tweak inner product similarity in matching */
   {"PHG_COARSEPARTITION_METHOD",      NULL,  "STRING", 0},
+    /* Coarse partitioning method: linear, random, greedy, auto */
   {"PHG_REFINEMENT_METHOD",           NULL,  "STRING", 0},
+    /* Only 2-way FM (fm2) for now */
   {"PHG_DIRECT_KWAY",                 NULL,  "INT",    0},
+    /* Direct k-way partitioning not yet implemented! */
   {"PHG_REFINEMENT_LOOP_LIMIT",       NULL,  "INT",    0},
+    /* Max no. of loops in KL/FM. */
   {"PHG_REFINEMENT_MAX_NEG_MOVE",     NULL,  "INT",    0},    
+    /* Max. no. of negative moves allowed before exiting refinement. */
   {"PHG_REFINEMENT_QUALITY",          NULL,  "FLOAT",  0},
+    /* 1.0 is default; higher (lower) value gives more (less) refinement. */
   {"PHG_USE_TIMERS",                  NULL,  "INT",    0},    
+    /* Same as USE_TIMERS. */
   {"USE_TIMERS",                      NULL,  "INT",    0},    
+    /* Same as PHG_USE_TIMERS. */
   {"PHG_EDGE_SIZE_THRESHOLD",         NULL,  "FLOAT",  0},
+    /* Ignore hyperedges larger than this threshold times nvertex */
   {"PHG_BAL_TOL_ADJUSTMENT",          NULL,  "FLOAT",  0},  
+    /* Adjustment factor for balance in recursive bisection. */
   {"PHG_EDGE_WEIGHT_OPERATION",       NULL,  "STRING",  0},
+    /* How to handle inconsistent edge weights across processors */
   {"PARKWAY_SERPART",                 NULL,  "STRING", 0},
+    /* Serial partitioner for ParKway (PaToH or hMetis) */
   {"ADD_OBJ_WEIGHT",                  NULL,  "STRING", 0},
-  {"PHG_EDGE_WEIGHT_OPERATION",       NULL,  "STRING", 0},
+    /* Add implicit vertex weight, like no. of pins (nonzeros)? */
   {"PHG_RANDOMIZE_INPUT",             NULL,  "INT",    0},    
+    /* Randomizing input often improves load balance within PHG but destroys 
+       locality, so may produce lower quality partitions  */
   {"PHG_PROCESSOR_REDUCTION_LIMIT",   NULL,  "FLOAT",  0},
+    /* When to move data to fewer processors. */
   {"PHG_REPART_MULTIPLIER",           NULL,  "FLOAT",  0},
+    /* Multiplier for communication to migration trade-off in repartitioning. */
   {"PATOH_ALLOC_POOL0",               NULL,  "INT",    0},
+    /* Memory allocation parameter for Patoh. */
   {"PATOH_ALLOC_POOL1",               NULL,  "INT",    0},   
+    /* Memory allocation parameter for Patoh. */
   {NULL,                              NULL,  NULL,     0}     
 };
 
@@ -370,7 +406,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
     if (hgp.use_timers > 1)
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_patoh, zz->Communicator);
   }      
-  else { /* it must be PHG or PHG_*  */
+  else { /* it must be PHG  */
     /* UVC: if it is bisection anyways; no need to create vmap etc; 
        rdivide is going to call Zoltan_PHG_Partition anyways... */
     if (hgp.globalcomm.Communicator != MPI_COMM_NULL) {
@@ -430,13 +466,13 @@ int **exp_to_part )         /* list of partitions to which exported objs
     }
   }
 
-  if (!strcasecmp(hgp.hgraph_pkg, "PHG_REPART")){
+  if (!strcasecmp(hgp.hgraph_method, "REPART")){
     Zoltan_PHG_Remove_Repart_Data(zz, zoltan_hg, hg, &hgp);
   }
 
 
 /* UVC DEBUG PRINT
-  if (!strcasecmp(hgp->hgraph_pkg, "PHG_REFINE")){
+  if (!strcasecmp(hgp->hgraph_method, "REFINE")){
       uprintf(hg->comm, 
               "UVC ATTHEEND |V|=%6d |E|=%6d #pins=%6d p=%d bal=%.2f cutl=%.2f\n",
               hg->nVtx, hg->nEdge, hg->nPins, p,
@@ -477,8 +513,7 @@ End:
     
   /* KDDKDD The following code prints a final quality result even when
    * KDDKDD phg_output_level is zero.  It is useful for our tests and
-   * KDDKDD data collection, but it should NOT be included in the released
-   * KDDKDD code.  */
+   * KDDKDD data collection. */
   if ((err == ZOLTAN_OK) && hgp.final_output) {
     static int nRuns=0;
     static double balsum = 0.0, cutlsum = 0.0, cutnsum = 0.0, movesum = 0.0, repartsum = 0.0;
@@ -493,11 +528,6 @@ End:
     int gnremove, i;
     double move=0.0, gmove;  /* local and global migration costs */
     double repart=0.0;   /* total repartitioning cost: comcost x multiplier + migration_cost */
-
-/* #define UVC_DORUK_COMP_OBJSIZE */
-#ifdef UVC_DORUK_COMP_OBJSIZE
-    double minD, maxD, gminD, gmaxD;
-#endif
 
     
     if (do_timing) {
@@ -514,37 +544,14 @@ End:
                                       zz->LB.Num_Global_Parts, &err);
       cutn = Zoltan_PHG_Compute_NetCut(hg->comm, hg, parts,
                                        zz->LB.Num_Global_Parts);
-      
-#ifdef UVC_DORUK_COMP_OBJSIZE      
-      if (zoltan_hg->showMoveVol) {
-          minD = zoltan_hg->AppObjSizes[0];
-          maxD = zoltan_hg->AppObjSizes[0];
-          }
-#endif
       for (i = 0; i < zoltan_hg->nObj; ++i) {
         /* uprintf(hg->comm, " obj[%d] = %d  in=%d out=%d\n", i, zoltan_hg->AppObjSizes[i], zoltan_hg->Input_Parts[i], zoltan_hg->Output_Parts[i]); */
 	if (zoltan_hg->Input_Parts[i] != zoltan_hg->Output_Parts[i])
             move += (double) ((zoltan_hg->AppObjSizes) ? zoltan_hg->AppObjSizes[i] : 1.0);
 
-#ifdef UVC_DORUK_COMP_OBJSIZE        
-        if (zoltan_hg->showMoveVol) {        
-            minD = minD < zoltan_hg->AppObjSizes[i] ? minD : zoltan_hg->AppObjSizes[i];
-            maxD = maxD > zoltan_hg->AppObjSizes[i] ? maxD : zoltan_hg->AppObjSizes[i];
-        }
-#endif
       }
     }
 
-#ifdef UVC_DORUK_COMP_OBJSIZE    
-    if (zoltan_hg->showMoveVol) {
-        MPI_Allreduce(&minD, &gminD, 1, MPI_DOUBLE, MPI_MIN, zz->Communicator);
-        MPI_Allreduce(&maxD, &gmaxD, 1, MPI_DOUBLE, MPI_MAX, zz->Communicator);
-    
-        if (zz->Proc == 0)
-            printf("minD: %f, maxD: %f, gminD: %f, gmaxD: %f\n", minD, maxD, gminD, gmaxD);
-    }
-#endif
-    
     if (!err) {
      
       /* Add in cut contributions from removed edges */
@@ -676,12 +683,15 @@ int Zoltan_PHG_Initialize_Params(
   char add_obj_weight[MAX_PARAM_STRING_LEN];
   char edge_weight_op[MAX_PARAM_STRING_LEN];
   char cut_objective[MAX_PARAM_STRING_LEN];
+  char *package = hgp->hgraph_pkg; 
+  char *method = hgp->hgraph_method;
+  char *phg = "PHG";
 
   memset(hgp, 0, sizeof(*hgp)); /* in the future if we forget to initialize
                                    another param at least it will be 0 */
   
   Zoltan_Bind_Param(PHG_params, "HYPERGRAPH_PACKAGE", &hgp->hgraph_pkg);
-  Zoltan_Bind_Param(PHG_params, "HYPERGRAPH_METHOD", &hgp->hgraph_pkg);
+  Zoltan_Bind_Param(PHG_params, "PHG_METHOD", &hgp->hgraph_method);
   Zoltan_Bind_Param(PHG_params, "PHG_FROM_GRAPH_METHOD", hgp->convert_str);  
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL", &hgp->output_level);
   Zoltan_Bind_Param(PHG_params, "FINAL_OUTPUT", &hgp->final_output); 
@@ -737,7 +747,7 @@ int Zoltan_PHG_Initialize_Params(
   /* Set default values */
   strncpy(hgp->hgraph_pkg,           "phg", MAX_PARAM_STRING_LEN);
   strncpy(hgp->convert_str,    "neighbors", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->redm_str,             "ipm", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->redm_str,             "agg", MAX_PARAM_STRING_LEN);
   hgp->match_array_type = 0;
   strncpy(hgp->redm_fast,          "l-ipm", MAX_PARAM_STRING_LEN);
   strncpy(hgp->coarsepartition_str, "auto", MAX_PARAM_STRING_LEN);
@@ -746,6 +756,12 @@ int Zoltan_PHG_Initialize_Params(
   strncpy(cut_objective,    "connectivity", MAX_PARAM_STRING_LEN);
   strncpy(add_obj_weight,           "none", MAX_PARAM_STRING_LEN);
   strncpy(edge_weight_op,            "max", MAX_PARAM_STRING_LEN);
+
+  /* Derive hgraph_method from zz->LB.Approach if set */
+  if (zz->LB.Approach[0])
+    strncpy(hgp->hgraph_method,  zz->LB.Approach, MAX_PARAM_STRING_LEN);
+  else
+    strncpy(hgp->hgraph_method,  "partition", MAX_PARAM_STRING_LEN);
 
   hgp->use_timers = 0;
   hgp->LocalCoarsePartition = 0;
@@ -834,6 +850,34 @@ int Zoltan_PHG_Initialize_Params(
     err = ZOLTAN_WARN;
   }
 
+  /* Documentation says "repartition" is a valid PHG_METHOD,
+   * but the code always tests for REPART.  Rather than change
+   * all the code or require testing first six characters,
+   * we'll edit the string here.
+   */
+
+  if (!strcasecmp(hgp->hgraph_method, "REPARTITION")) 
+    hgp->hgraph_method[6]='\0';
+
+  /* Allow backward compatible specifications.  Now these are
+   * specified this way:
+   *     LB_METHOD=hypergraph
+   *     HYPERGRAPH_PACKAGE=phg
+   *     PHG_METHOD=repart or refine or multilevel_refine
+   */
+
+    if ((!strcasecmp(hgp->hgraph_pkg, "PHG_REPART")) ||
+        (!strcasecmp(hgp->hgraph_pkg, "PHG_REFINE")) ||
+        (!strcasecmp(hgp->hgraph_pkg, "PHG_MULTILEVEL_REFINE"))) {
+
+      method = 
+        hgp->hgraph_pkg + 4;  /* "repart", "refine" or "multilevel_refine" */
+
+      package = phg;          /* "phg" */
+    }
+
+  
+
   /* Adjust refinement parameters using hgp->refinement_quality */
   if (hgp->refinement_quality < 0.5/hgp->fm_loop_limit) 
     /* No refinement */
@@ -844,7 +888,7 @@ int Zoltan_PHG_Initialize_Params(
     hgp->fm_max_neg_move *= hgp->refinement_quality;
   }
 
-  if (!strncasecmp(hgp->hgraph_pkg, "PHG", 3)){
+  if (!strcasecmp(package, "PHG")){
     /* Test to determine whether we should change the number of processors
        used for partitioning to make more efficient 2D decomposition */
 
@@ -855,29 +899,38 @@ int Zoltan_PHG_Initialize_Params(
         usePrimeComm = 1;
 
 
-    if ((!strcasecmp(hgp->hgraph_pkg, "PHG_REPART")) ||
-        (!strcasecmp(hgp->hgraph_pkg, "PHG_REFINE")) ||
-        (!strcasecmp(hgp->hgraph_pkg, "PHG_MULTILEVEL_REFINE")) ){
-      hgp->fm_loop_limit = 4; /* UVC: should be enough; I hope :) */
+    if ((!strcasecmp(method, "REPART")) ||
+        (!strcasecmp(method, "REFINE")) ||
+        (!strcasecmp(method, "MULTILEVEL_REFINE")) ){
+        hgp->fm_loop_limit = 4; /* experimental evaluation showed that for
+                                   repartitioning/refinement small number of passes
+                                   is "good enough". These are all heuristics hece
+                                   it is possible to create a pathological cases; but
+                                   in general this seems to be sufficient */
     }
     
-    if (!strcasecmp(hgp->hgraph_pkg, "PHG_REFINE")){
-        strncpy(hgp->redm_str, "no", MAX_PARAM_STRING_LEN);        
-        /*   UVCUVC: just use default coarse partitioner; does better job :)
-             Zoltan_Bind_Param(PHG_params, "PHG_COARSEPARTITION_METHOD", "no");
-        */
+    if (!strcasecmp(method, "REFINE")){
+        /* since this is just refinement; we don't do coarsening */
+        strncpy(hgp->redm_str, "no", MAX_PARAM_STRING_LEN);
+
+        /* we have modified all coarse partitioners to handle preferred part
+           if user wants to choose one she can choose; otherwise default partitioner
+           (greedy growing) does work better than previous default partitioning
+           for phg_refine ("no"). */        
         zz->LB.Remap_Flag = 0;
         hgp->UsePrefPart = 1;
     }
-    if (!strcasecmp(hgp->hgraph_pkg, "PHG_MULTILEVEL_REFINE")){
+    if (!strcasecmp(method, "MULTILEVEL_REFINE")){
         /* UVCUVC: as a heuristic we prefer local matching;
-           TODO this needs to be evaluated! */
+           in our experiments for IPDPS'07 and WileyChapter multilevel_refine
+           didn't prove itself useful; it is too costly even with local matching
+           hence it will not be be released yet (i.e. not in v3). */
         strncpy(hgp->redm_str, "l-ipm", MAX_PARAM_STRING_LEN);                
         zz->LB.Remap_Flag = 0;
         hgp->UsePrefPart = 1;
     }    
   }
-  else if (!strcasecmp(hgp->hgraph_pkg, "PARKWAY")){
+  else if (!strcasecmp(package, "PARKWAY")){
     if (hgp->nProc_x_req>1) {
       err = ZOLTAN_FATAL;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "ParKway requires nProc_x=1 or -1.");
@@ -885,7 +938,7 @@ int Zoltan_PHG_Initialize_Params(
     }
     hgp->nProc_x_req = 1;
   } 
-  else if (!strcasecmp(hgp->hgraph_pkg, "PATOH")){
+  else if (!strcasecmp(package, "PATOH")){
     if (zz->Num_Proc>1) {
       err = ZOLTAN_FATAL;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "PaToH only works with Num_Proc=1.");
@@ -928,8 +981,41 @@ int Zoltan_PHG_Set_Param(
   /* associates value to named variable for PHG partitioning parameters */
   PARAM_UTYPE result;         /* value returned from Check_Param */
   int index;                  /* index returned from Check_Param */
+  int status;
+  int i;
 
-  return Zoltan_Check_Param (name, val, PHG_params, &result, &index);
+  char *valid_method[] = {
+        "PARTITION", "REPARTITION", "REFINE",
+         NULL };
+  char *valid_pkg[] = {
+        "ZOLTAN", "PHG", "PHG_REFINE", "PHG_REPART", "PATOH",
+         NULL };
+
+  status = Zoltan_Check_Param(name, val, PHG_params, &result, &index);
+
+  if (status == 0){
+    /* OK so far, do sanity check of parameter values */
+
+    if (strcasecmp(name, "HYPERGRAPH_PACKAGE") == 0){
+      status = 2;
+      for (i=0; valid_pkg[i] != NULL; i++){
+        if (strcasecmp(val, valid_pkg[i]) == 0){
+          status = 0;
+          break;
+        }
+      }
+    }
+    else if (strcasecmp(name, "PHG_METHOD") == 0){
+      status = 2;
+      for (i=0; valid_method[i] != NULL; i++){
+        if (strcasecmp(val, valid_method[i]) == 0){
+          status = 0;
+          break;
+        }
+      }
+    }
+  }
+  return(status);
 }
 
 /****************************************************************************/

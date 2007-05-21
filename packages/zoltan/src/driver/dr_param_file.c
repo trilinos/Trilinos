@@ -111,11 +111,11 @@ void zoltanParams_hier_set_num_levels(int levels) {
   num_levels = levels;
 
   SAFE_MALLOC(zph, struct zoltanParams_hier_struct **, 
-	      sizeof(struct zoltanParams_hier_struct *) * levels);
+	      (long)sizeof(struct zoltanParams_hier_struct *) * levels);
 
   for (i=0; i<levels; i++) {
     SAFE_MALLOC(zph[i],  struct zoltanParams_hier_struct *, 
-		sizeof (struct zoltanParams_hier_struct));
+		(long)sizeof (struct zoltanParams_hier_struct));
     zph[i]->partition = 0;
     zph[i]->first = NULL;
   }
@@ -149,7 +149,7 @@ void zoltanParams_hier_set_param(int level, char *param, char *value) {
   check_level(level);
 
   SAFE_MALLOC(newparam, struct zoltanParams_list_entry *,
-	      sizeof(struct zoltanParams_list_entry));
+	      (long)sizeof(struct zoltanParams_list_entry));
 
   newparam->param = strdup(param);
   newparam->value = strdup(value);

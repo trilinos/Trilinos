@@ -23,7 +23,7 @@
 </head>
 <body bgcolor="#FFFFFF">
 
-<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_refs.html">Next</a>&nbsp; |&nbsp; <a href="ug_cpp.html">Previous</a></i></b></div>
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_refs.html">Next</a>&nbsp; |&nbsp; <a href="ug_release.html">Previous</a></i></b></div>
 <!---------------------------------------------------------------------------->
 <h2>
 Backward Compatibility with Previous Versions of Zoltan
@@ -38,9 +38,45 @@ applications use new Zoltan functionality.
 <p>
 Enhancements to the Zoltan interface are described below.
 <blockquote>
-<a href="#Backward v1.5">Versions 1.5 and higher</a>
+<a href="#Backward v3.0">Versions 3.0 and higher</a>
+<br><a href="#Backward v1.5">Versions 1.5 and higher</a>
 <br><a href="#Backward v1.3">Versions 1.3 and higher</a>
 </blockquote>
+
+<!---------------------------------------------------------------------------->
+
+<h2><a name="Backward v3.0"></a>
+<hr>Backward Compatibility: Versions 3.0 and higher
+</h2>
+
+A new naming convention was implemented to better categorize partitioning
+methods.  For more details, see parameters 
+<blockquote>
+<a href="ug_alg.html#LB_METHOD">LB_METHOD</a>, <br>
+<a href="ug_alg.html#LB_APPROACH">LB_APPROACH</a>, <br>
+<a href="ug_alg_graph.html">GRAPH_PACKAGE</a>, and <br>
+<a href="ug_alg_hypergraph.html">HYPERGRAPH_PACKAGE</a>.
+</blockquote>
+Former valid values of LB_METHOD should continue to work.  In particular,
+values of LB_METHOD for geometric partitioners 
+<a href="ug_alg_rcb.html">RCB</a>,
+<a href="ug_alg_rib.html">RIB</a>,
+<a href="ug_alg_hsfc.html">HSFC</a>, and
+<a href="ug_alg_reftree.html">REFTREE</a> are unchanged.
+
+<p>
+The default graph partitioner has been changed from 
+<a href="ug_alg_parmetis.html">ParMETIS</a> to 
+<a href="ug_alg_phg.html">Zoltan PHG</a>.  This change was made to 
+provide graph partitioning capability without reliance on the third-party
+library ParMETIS.
+
+<p>
+Because Zoltan is designed primarily for dynamic load balancing,
+The default partitioning approach
+<a href="ug_alg.html#LB_APPROACH">LB_APPROACH</a>
+is now "repartition."  This change affects only Zoltan's hypergraph
+partitioner <a href="ug_alg_phg.html">PHG</a>.
 
 <!---------------------------------------------------------------------------->
 
@@ -537,6 +573,6 @@ LB_UNPACK_OBJ_FN
 </tr>
 </table>
 
-<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_refs.html">Next:&nbsp; References</a>&nbsp; |&nbsp; <a href="ug_cpp.html">Previous:&nbsp; C++ Interface</a>]
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_refs.html">Next:&nbsp; References</a>&nbsp; |&nbsp; <a href="ug_release.html">Previous:&nbsp; Release Notes</a>]
 </body>
 </html>

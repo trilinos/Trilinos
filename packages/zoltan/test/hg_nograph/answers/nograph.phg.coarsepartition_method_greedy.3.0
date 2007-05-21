@@ -4,6 +4,7 @@ Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 Zoltan Parameters	= ADD_OBJ_WEIGHT=none
 Zoltan Parameter        = PHG_COARSEPARTITION_METHOD = greedy
 File Type		= matrixmarket
+Zoltan Parameters       = lb_approach=partition
 File Name		= nograph
 Parallel Disk Info	= number=0
 Global element ids assigned to processor 0

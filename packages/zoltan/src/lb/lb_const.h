@@ -16,6 +16,7 @@
 #define __LB_CONST_H
 
 #include "zoltan.h"
+#include "params_const.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -54,7 +55,7 @@ typedef int ZOLTAN_LB_BOX_ASSIGN_FN(struct Zoltan_Struct *,
 
 typedef enum Zoltan_LB_Method {
   NONE = -1,
-  SIMPLE, 
+  BLOCK, 
   RANDOM, 
   RCB,
   OCTPART,
@@ -63,6 +64,7 @@ typedef enum Zoltan_LB_Method {
   REFTREE,
   RIB,
   HSFC,
+  GRAPH,
   HYPERGRAPH,
   HIER,
   ZOLTAN_LB_MAX_METHODS          /*  This entry should always be last.      */
@@ -90,6 +92,7 @@ typedef enum Zoltan_LB_Method {
 #define ZOLTAN_AUTO_MIGRATE_DEF   FALSE
 #define ZOLTAN_MIGRATE_ONLY_PROC_CHANGES_DEF  1
 #define ZOLTAN_LB_RETURN_LISTS_DEF   ZOLTAN_LB_ALL_LISTS
+#define ZOLTAN_LB_APPROACH_DEF   "repartition"
 
 /* Struct for partition size info. */
 struct Zoltan_part_info {
@@ -154,6 +157,8 @@ struct Zoltan_LB_Struct {
   ZOLTAN_LB_FN *LB_Fn;            /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
                                       based on the method used.              */
+  char Approach[MAX_PARAM_STRING_LEN+1];              
+                                  /*  String describing load balance approach. */
   float *Imbalance_Tol;           /*  Tolerance to which to load balance;
                                       Imbalance_Tol = 1.1 implies 10% imbalance
                                       is acceptable, i.e. max/avg = 1.1.     
@@ -260,12 +265,16 @@ extern int Zoltan_LB_Remap(struct Zoltan_Struct *, int *, int, int *, int *,
 
 extern int Zoltan_LB_Copy_Struct(struct Zoltan_Struct *to, 
                                struct Zoltan_Struct const *from);
+extern int Zoltan_LB_Special_Free_Part(struct Zoltan_Struct *,
+  ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **);
+
 
 /* PARTITIONING FUNCTIONS */
-extern ZOLTAN_LB_FN Zoltan_Simple;
+extern ZOLTAN_LB_FN Zoltan_Block;
 extern ZOLTAN_LB_FN Zoltan_Random;
 extern ZOLTAN_LB_FN Zoltan_RCB;
 extern ZOLTAN_LB_FN Zoltan_Octpart;
+extern ZOLTAN_LB_FN Zoltan_Graph;
 extern ZOLTAN_LB_FN Zoltan_ParMetis;
 extern ZOLTAN_LB_FN Zoltan_Jostle;
 extern ZOLTAN_LB_FN Zoltan_Reftree_Part;

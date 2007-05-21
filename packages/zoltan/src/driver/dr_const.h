@@ -224,6 +224,8 @@ struct Test_Flags {
   int Drops;                /* Exercises point- and box-assign. */
   int RCB_Box;              /* Exercises Zoltan_RCB_Box. */
   int Multi_Callbacks;      /* Exercises list-based callback functions. */
+  int Graph_Callbacks;      /* Register and test graph callbacks */
+  int Hypergraph_Callbacks; /* Register and test hypergraph callbacks */
   int Gen_Files;            /* Exercise output file generation. */
   int Null_Lists;           /* Exercises null import or export lists to
                                Zoltan_Migrate. */

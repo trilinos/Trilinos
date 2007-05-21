@@ -1,28 +1,82 @@
 #!/bin/csh -f
+# schake@sandia.gov
+#
+# This checks each directory and creates files for exact
+# It creates the zoltan.tests file from all the zdrive.inp.*
+# It creates the checksums file from answers/*
+#
+# It depends on an existing test.study.xml in the top directory
+# to create the study files in each subdirectory.  It only does
+# this if there's a compiled zdrive in the parent directory, by
+# searching for any existing ../Obj_$ZOLTAN_ARCH
+# If a particular test doesn't use 4 processors, it checks for
+# a file called "NUMPROC" and uses that for the study file.
+#
+# It also creates a file for smoke tests, which is just the first
+# zdrive.inp.* file it finds (alphabetically) so that it can run
+# a single problem in each directory instead of the whole battery.
 
 setenv PATH /bin:/usr/bin:/usr/sbin:/sbin:/usr/ucb/bin:/usr/ucb
 
+set arch=`(cd .. ; ls -1 | grep '^Obj_' | sed -e 's/Obj_//g')`
+set tname="zoltan.tests"
+
 foreach d (*)
   if (! -d $d) continue
-  if (-e $d/zoltan.tests) then
-    echo "skipping $d/zoltan.tests"
-    continue;
-  endif
 
+  echo -n "${d}: "
   set last=""
-  foreach f (`find $d -name 'zdrive.inp.*'`)
-    if ("$last" != "$d") echo -n "building $d zoltan.tests"
-    set last="$d"
-    set suf=`echo $f | sed 's/.*zdrive\.inp\.//g'`
-    echo "zinp=../$f _level_name=$suf" >> $d/zoltan.tests
-  end
+
+  if (! -e $d/$tname) then
+    foreach f (`ls -1 $d | grep 'zdrive\.inp\.'`)
+      set suf=`echo $f | sed 's/.*zdrive\.inp\.//g'`
+      if ("$last" != "$d") then
+	echo -n "$tname"
+	echo "zinp=../$d/$f _level_name=$suf" > $d/$tname.smoke
+	set last="$d"
+      endif
+      echo "zinp=../$d/$f _level_name=$suf" >> $d/$tname
+    end
+  endif
 
   if (-d $d/answers) then
     echo -n " checksums"
     set last="$d"
-    (cd $d/answers ; cksum *[0-9] > ../checksums)
+    cp /dev/null $d/checksums
+    pushd $d/answers >& /dev/null
+    foreach f (`ls -1 | grep '[0-9]$'`)
+	set sum=`cat $f | sed -e 's/^[\t ]*//g' -e 's/[\t ]*$//g' -e 's/[\t ]\+/ /g' | cksum`
+	echo "$sum $f" >> ../checksums
+    end
+    popd >& /dev/null
+#    (cd $d/answers ; cksum *[0-9] > ../checksums)
   endif
 
-  if ("$last" != "") echo ""
+  if (-e $d/NUMPROC) then
+    set np=`cat $d/NUMPROC`
+  else
+    set np=4
+  endif
 
+  foreach a ($arch)
+    if (! -e $d/$d-$a-nightly.study.xml && -e $d/$tname) then
+      set last="$d"
+      echo -n " $d-$a-nightly.study.xml"
+      sed -e "s/EXPNAME/$d-$a-nightly/g" \
+	  -e "s/TAG/nightly/g" \
+	  -e "s/NPROC/$np/g" \
+	  -e "s/ARCH/$a/g" < test.study.xml > $d/$d-$a-nightly.study.xml
+    endif
+    if (! -e $d/$d-$a-smoke.study.xml && -e $d/$tname.smoke) then
+      set last="$d"
+      echo -n " $d-$a-smoke.study.xml"
+      sed -e "s/EXPNAME/$d-$a-smoke/g" \
+	  -e "s/TAG/smoke/g" \
+	  -e "s/NPROC/$np/g" \
+	  -e "s/$tname/$tname.smoke/g" \
+	  -e "s/ARCH/$a/g" < test.study.xml > $d/$d-$a-smoke.study.xml
+    endif
+  end
+
+  echo ""
 end

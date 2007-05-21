@@ -199,14 +199,13 @@ fini:
    ZOLTAN_FREE (&procs) ;
    Zoltan_Comm_Destroy (&plan) ;
 
-   if (err != ZOLTAN_DD_NORMAL_RETURN)
-      ZOLTAN_PRINT_WARN (dd->my_proc, yo, "Return is not normal.") ;
-
    if (dd->debug_level > 0)
       {
       char str[100] ;      /* diagnostic message string */
       sprintf (str, "Processed %d GIDs, GIDs not found: %d", count, errcount) ;
       ZOLTAN_PRINT_INFO (dd->my_proc, yo, str) ;
+      if (err != ZOLTAN_DD_NORMAL_RETURN)
+         ZOLTAN_PRINT_WARN (dd->my_proc, yo, "Return is not normal.") ;
       }
 
    if (dd->debug_level > 1)

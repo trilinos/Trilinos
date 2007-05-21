@@ -1,8 +1,8 @@
 Decomposition Method 	= hypergraph
-Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
-Zoltan Parameters	= ADD_OBJ_WEIGHT=none
-Zoltan Parameter        = PHG_COARSEPARTITION_METHOD = greedy
-Zoltan Parameters       = PHG_COARSENING_LIMIT = 1
+Zoltan Parameters       = lb_approach=partition
+Zoltan Parameters       = hypergraph_package=phg
+Zoltan Parameter        = phg_coarsepartition_method = greedy
+Zoltan Parameters       = phg_coarsening_limit = 1
 File Type		= matrixmarket+
 File Name		= simple
 Parallel Disk Info	= number=0

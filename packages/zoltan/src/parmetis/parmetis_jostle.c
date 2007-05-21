@@ -48,6 +48,11 @@ static PARAM_VARS Jostle_params[] = {
         { "JOSTLE_SCATTER", NULL, "STRING", 0 },
         { NULL, NULL, NULL, 0 } };
 
+/**********  parameters structure used by PHG, ParMetis and Jostle **********/
+static PARAM_VARS Graph_Package_params[] = {
+        { "GRAPH_PACKAGE", NULL, "STRING", 0 },
+        { NULL, NULL, NULL, 0 } };
+
 /**********  parameters structure used by both ParMetis and Jostle **********/
 static PARAM_VARS Graph_params[] = {
         { "CHECK_GRAPH", NULL, "INT", 0 },
@@ -56,16 +61,6 @@ static PARAM_VARS Graph_params[] = {
         { "USE_TIMERS", NULL, "INT", 0 },
         { "ADD_OBJ_WEIGHT",  NULL,  "STRING", 0},
         { NULL, NULL, NULL, 0 } };
-
-/***************  prototypes for internal functions ********************/
-
-#if (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS))
-static int Compute_Bal(ZZ *, int, float *, int *, double *);
-static int Compute_EdgeCut(ZZ *, int, int *, float *, int *, int *, double *);
-static int Compute_NetCut(ZZ *, int, int *, int *, int *);
-static int Compute_ConCut(ZZ *, int, int *, int *, int *);
-static int Compute_Adjpart(ZZ *, int, int *, int *, int *, int *, int *, int *);
-#endif
 
 /* Zoltan_ParMetis_Shared should be compiled even when ZOLTAN_PARMETIS 
    is not defined so it can return an error.
@@ -89,9 +84,9 @@ static int Zoltan_ParMetis_Shared(
   ZOS *order_info
 );
 
+/***************  prototypes for internal functions ********************/
 #if (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS))
 
-  /***************  prototypes for internal functions ********************/
 
 static int Compute_Bal(ZZ *, int, float *, int *, double *);
 static int Compute_EdgeCut(ZZ *, int, int *, float *, int *, int *, double *);
@@ -113,6 +108,69 @@ static int pmv3method(char *alg);
 #endif
 
 #endif  /* (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS)) */
+
+/**********************************************************/
+/* Interface routine for Graph methods.                   */
+/**********************************************************/
+
+int Zoltan_Graph(
+  ZZ *zz,               /* Zoltan structure */
+  float *part_sizes,    /* Input:  Array of size zz->Num_Global_Parts
+                           containing the percentage of work to be
+                           assigned to each partition.               */
+  int *num_imp,         /* number of objects to be imported */
+  ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
+  ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
+  int **imp_procs,      /* list of processors to import from */
+  int **imp_to_part,    /* list of partitions to which imported objects are 
+                           assigned.  */
+  int *num_exp,         /* number of objects to be exported */
+  ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
+  ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
+  int **exp_procs,      /* list of processors to export to */
+  int **exp_to_part     /* list of partitions to which exported objects are
+                           assigned. */
+)
+{
+char *defaultMethod= "PHG";
+char package[MAX_PARAM_STRING_LEN];
+int rc;
+
+  strcpy(package, defaultMethod);
+  Zoltan_Bind_Param(Graph_Package_params, "GRAPH_PACKAGE", package);
+  Zoltan_Assign_Param_Vals(zz->Params, Graph_Package_params, zz->Debug_Level,
+          zz->Proc, zz->Debug_Proc);
+
+
+  if (!strcasecmp(package, "PARMETIS")){
+
+    rc = Zoltan_ParMetis(zz, part_sizes, num_imp, imp_gids, imp_lids, 
+                         imp_procs, imp_to_part,
+                         num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
+  }
+  else if (!strcasecmp(package, "JOSTLE")){
+
+    rc = Zoltan_Jostle(zz, part_sizes, num_imp, imp_gids, imp_lids, 
+                         imp_procs, imp_to_part,
+                         num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
+  }
+  else if (!strcasecmp(package, "ZOLTAN") || 
+           !strcasecmp(package, "PHG")) {
+
+    /* Use hypergraph partitioner on graph model. */
+    Zoltan_Set_Param(zz, "PHG_FROM_GRAPH_METHOD", "pairs");
+
+    rc = Zoltan_PHG(zz, part_sizes, num_imp, imp_gids, imp_lids, 
+                         imp_procs, imp_to_part,
+                         num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
+  }
+  else{
+    fprintf(stderr, "Invalid value for GRAPH_PACKAGE parameter\n");
+    rc = ZOLTAN_FATAL;
+  }
+
+  return rc;
+}
 
 /**********************************************************/
 /* Interface routine for ParMetis. This is just a simple  */
@@ -168,8 +226,8 @@ static int Zoltan_ParMetis_Shared(
   ZOS *order_info	/* ordering info */
 )
 {
-#ifndef ZOLTAN_PARMETIS
   char *yo="Zoltan_ParMetis";
+#ifndef ZOLTAN_PARMETIS
   ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
      "ParMetis requested but not compiled into library.");
   return ZOLTAN_FATAL;
@@ -182,15 +240,6 @@ static int Zoltan_ParMetis_Shared(
   float itr = 0.0;
   double pmv3_itr = 0.0;
 
-  /* Set parameters */
-#if PARMETIS_MAJOR_VERSION >= 3
-  strcpy(alg, "ADAPTIVEREPART");
-  pmv3_itr = 100.; /* Ratio of inter-proc comm. time to data redist. time;
-                      100 gives similar partition quality to GDiffusion */
-#else
-  strcpy(alg, "REPARTGDIFFUSION");
-#endif
- 
   /* Always use ParMetis option array because Zoltan by default 
      produces no output (silent mode). ParMetis requires options[0]=1
      when options array is to be used. */
@@ -205,6 +254,32 @@ static int Zoltan_ParMetis_Shared(
   fold = 0;
   seed = GLOBAL_SEED;
 
+  /* Map LB_APPROACH to suitable PARMETIS_METHOD */
+  if (!strcasecmp(zz->LB.Approach, "partition")){
+    strcpy(alg, "PARTKWAY");
+  }
+  else if (!strcasecmp(zz->LB.Approach, "repartition")){
+#if PARMETIS_MAJOR_VERSION >= 3
+    strcpy(alg, "ADAPTIVEREPART");
+    pmv3_itr = 100.; /* Ratio of inter-proc comm. time to data redist. time;
+                        100 gives similar partition quality to GDiffusion */
+#else
+    strcpy(alg, "REPARTGDIFFUSION");
+#endif
+  }
+  else if (!strcasecmp(zz->LB.Approach, "refine")){
+    strcpy(alg, "REFINEKWAY");
+  }
+  else { /* If no LB_APPROACH is set, use repartition */
+#if PARMETIS_MAJOR_VERSION >= 3
+    strcpy(alg, "ADAPTIVEREPART");
+    pmv3_itr = 100.; /* Ratio of inter-proc comm. time to data redist. time;
+                        100 gives similar partition quality to GDiffusion */
+#else
+    strcpy(alg, "REPARTGDIFFUSION");
+#endif
+  }
+ 
   Zoltan_Bind_Param(Parmetis_params, "PARMETIS_METHOD",     
                     (void *) alg);
   Zoltan_Bind_Param(Parmetis_params, "PARMETIS_OUTPUT_LEVEL", 
@@ -251,6 +326,24 @@ static int Zoltan_ParMetis_Shared(
   if (order_opt && order_opt->method){
     strcpy(alg, order_opt->method);
   }
+
+#if PARMETIS_MAJOR_VERSION >= 3
+  if ((zz->Num_Proc == 1) && 
+      (!strcmp(alg, "ADAPTIVEREPART") ||
+       !strcmp(alg, "REPARTLDIFFUSION") ||
+       !strcmp(alg, "REPARTGDIFFUSION") ||
+       !strcmp(alg, "REPARTREMAP") ||
+       !strcmp(alg, "REPARTMLREMAP"))) {
+    /* These ParMETIS methods fail on one processor; an MPI command assumes
+       at least two processors. */
+    char str[256];
+    sprintf(str, "ParMETIS method %s fails on one processor due to a bug"
+                 " in ParMETIS v3.x; please select another method.", alg);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, str);
+    return (ZOLTAN_FATAL);
+  }
+#endif
+    
 
   /* Call the real ParMetis interface */
   return Zoltan_ParMetis_Jostle(zz, part_sizes,
@@ -892,6 +985,23 @@ static int Zoltan_ParMetis_Jostle(
       (zz->Get_Obj_Size || zz->Get_Obj_Size_Multi) &&
       (!strcmp(alg, "ADAPTIVEREPART") || final_output)) {
     showMoveVol = 1;
+
+
+#define PARMETIS31_ALWAYS_FREES_VSIZE   /* Bug in ParMetis 3.1 */  
+
+#ifdef PARMETIS31_ALWAYS_FREES_VSIZE
+    if (!strcmp(alg, "ADAPTIVEREPART") && (zz->Num_Proc > 1))
+      /* ParMETIS will free this memory; use malloc to allocate so
+         ZOLTAN_MALLOC counters don't show an error. */
+      vsize = (idxtype *) malloc(num_obj*sizeof(idxtype));
+    else 
+      /* We will free this memory with ZOLTAN_FREE, so use ZOLTAN_MALLOC 
+         to allocate it. */
+#else
+      vsize = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype));
+#endif
+
+
     vsize = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype));
     vsizeBACKUP = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype));    
     if (num_obj && !vsize){
@@ -1537,14 +1647,13 @@ End:
   if (ewgts)     ZOLTAN_FREE(&ewgts); 
   if (imb_tols)  ZOLTAN_FREE(&imb_tols);
 
-#define PARMETIS31_ALWAYS_FREES_VSIZE   /* Bug in ParMetis 3.1 */  
-
   if (vsize)   {
-      if (strcmp(alg, "ADAPTIVEREPART")) /* it is not adaptive repart; so free it */
-          ZOLTAN_FREE(&vsize);
+    if (strcmp(alg, "ADAPTIVEREPART") || (zz->Num_Proc == 1))
+      /* it is not adaptive repart; so free it */
+      ZOLTAN_FREE(&vsize);
 #ifndef PARMETIS31_ALWAYS_FREES_VSIZE
-      else 
-          ZOLTAN_FREE(&vsize);      
+    else 
+      ZOLTAN_FREE(&vsize);      
 #endif      
   }
   if (vsizeBACKUP) ZOLTAN_FREE(&vsizeBACKUP);    
@@ -1711,6 +1820,41 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
 #endif /* defined (ZOLTAN_JOSTLE) || defined (ZOLTAN_PARMETIS) */
 
 
+
+/*********************************************************************/
+/* Graph_Package parameter routine                                        */
+/*********************************************************************/
+
+int Zoltan_Graph_Package_Set_Param(
+char *name,                     /* name of variable */
+char *val)                      /* value of variable */
+{
+    int status, i;
+    PARAM_UTYPE result;         /* value returned from Check_Param */
+    int index;                  /* index returned from Check_Param */
+    char *valid_methods[] = {
+        "PARMETIS", "JOSTLE", "PHG", "ZOLTAN",
+         NULL };
+
+    status = Zoltan_Check_Param(name, val, Graph_Package_params, 
+                                &result, &index);
+
+    if (status == 0){
+      /* OK so far, do sanity check of parameter values */
+
+      if (strcmp(name, "GRAPH_PACKAGE") == 0){
+        status = 2;
+        for (i=0; valid_methods[i] != NULL; i++){
+          if (strcmp(val, valid_methods[i]) == 0){
+            status = 0; 
+            break;
+          }
+        }
+      }
+    }
+
+    return(status);
+}
 /*********************************************************************/
 /* ParMetis parameter routine                                        */
 /*********************************************************************/
@@ -1854,7 +1998,9 @@ double *cut = NULL;
           cut[k] += (ewgts ? ewgts[j*dim+k] : 1.);
 
   MPI_Allreduce(cut, cute, dim, MPI_DOUBLE, MPI_SUM, zz->Communicator);
-
+  for (k = 0; k < dim; k++) cute[k] *= 0.5;  /* ParMETIS lists edges twice;
+                                                we'll count each edge 
+                                                only once. */
   ZOLTAN_FREE(&cut);
   return ZOLTAN_OK;
 }

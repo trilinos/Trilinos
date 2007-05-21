@@ -39,11 +39,17 @@ struct Zoltan_Drum_Struct {
   int build_tree;                    /* should Zoltan build the tree? */
   int start_monitors;                /* should Zoltan start/stop monitors? */
   int monitoring_frequency;          /* DRUM monitoring frequency */
-  int debug_level;                   /* debug level to pass to DRUM */
-  char power_filename[256];          /* file name to use to print power file */
+  int use_snmp;                      /* should DRUM use SNMP for monitoring? */
+  int use_kstat;                     /* should DRUM use kstat for monitoring? */
+  int use_nws;                       /* should DRUM use NWS for monitoring? */
+  int nws_method;                    /* what NWS method should DRUM use? */
+  int monitor_memory;                /* should DRUM monitor memory usage? */
+  int use_flat_model;                /* should DRUM build a flat network model? */
   int use_network_powers;            /* include network powers? */
   float fixed_network_weight;        /* what weight for network if using it? */
-  int use_nws;                       /* use NWS for monitoring? */
+  int ignore_rpp;                    /* should DRUM ignore RPP values from XML? */
+  int debug_level;                   /* debug level to pass to DRUM */
+  char power_filename[256];          /* file name to use to print power file */
 };
 typedef struct Zoltan_Drum_Struct Zoltan_Drum;
 

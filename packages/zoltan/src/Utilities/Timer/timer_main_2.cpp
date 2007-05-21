@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <stdio.h>
+#include <math.h>
 #include "zoltan_timer_cpp.h"
 using namespace std;
 
@@ -75,7 +76,7 @@ static int t1=-1, t2=-1, t3=-1;
     firsttime=0;
   }
 
-  zt->PrintAll(me, stdout);
+  zt->PrintAll(me, MPI_COMM_WORLD, stdout);
 
 }
 
@@ -131,7 +132,7 @@ static int cnt = 0;
     zt->Stop(t3, MPI_COMM_WORLD);
   }
 
-  zt->PrintAll(me, stdout);
+  zt->PrintAll(me, MPI_COMM_WORLD, stdout);
 }
 
 /****************************************************************************/
@@ -153,9 +154,27 @@ const int MAINLOOP=20;
   }
 
   cout << "\n\nFINAL RESULTS -- FIRST TEST:\n";
-  zt1.PrintAll(me, stdout);
+  zt1.PrintAll(me, MPI_COMM_WORLD, stdout);
   cout << "\n\nFINAL RESULTS -- SECOND TEST:\n";
-  zt2.PrintAll(me, stdout);
+  zt2.PrintAll(me, MPI_COMM_WORLD, stdout);
+
+  //  Copy tests
+  Zoltan_Timer_Object zt3 = Zoltan_Timer_Object(zt1);
+  Zoltan_Timer_Object zt4 = zt2;
+  for (i = 0; i < MAINLOOP; i++) {
+    cout << "\n\n\t****Beginning first copy test****\n";
+    first_test(&zt3);
+
+    cout << "\n\n\t****Beginning second copy test****\n";
+    second_test(&zt4);
+  }
+
+  cout << "\n\nFINAL RESULTS -- FIRST TEST:\n";
+  zt3.PrintAll(me, MPI_COMM_WORLD, stdout);
+  cout << "\n\nFINAL RESULTS -- SECOND TEST:\n";
+  zt4.PrintAll(me, MPI_COMM_WORLD, stdout);
+
+
   cout << "\n\nTHE END\n";
 
   MPI_Finalize();

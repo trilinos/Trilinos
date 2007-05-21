@@ -47,7 +47,7 @@ use dr_const
 implicit none
 private
 
-public :: migrate_elements, search_by_global_id
+public :: migrate_elements, search_by_global_id, migrate_elem_size, migrate_elem_size_multi
 
 !/*****************************************************************************/
 !/*
@@ -228,7 +228,7 @@ integer(Zoltan_INT) :: lid
     flag = .false.
   endif
 ! Make sure all procs have the same value.
-  call MPI_Allreduce(flag, Use_Edge_Wgts, 1, MPI_INTEGER, MPI_LOR, &
+  call MPI_Allreduce(flag, Use_Edge_Wgts, 1, MPI_LOGICAL, MPI_LOR, &
                      MPI_COMM_WORLD, mpierr)
 
 

@@ -31,14 +31,17 @@
 The following query functions must be registered to use any of the migration
 tools described in <a href="ug_interface_mig.html">Migration Functions</a>:
 <blockquote>
-<b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b> or
 <b><a href="#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b>
+or
+<b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b> 
 <br>
-<b><a href="#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN</a></b> or
 <b><a href="#ZOLTAN_PACK_OBJ_MULTI_FN">ZOLTAN_PACK_OBJ_MULTI_FN</a></b>
+or
+<b><a href="#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN</a></b> 
 <br>
-<b><a href="#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN</a></b> or
 <b><a href="#ZOLTAN_UNPACK_OBJ_MULTI_FN">ZOLTAN_UNPACK_OBJ_MULTI_FN</a></b>
+or
+<b><a href="#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN</a></b> 
 </blockquote>
 The "MULTI_" versions of the packing/unpacking functions take lists of IDs
 as input and pack/unpack data for all objects in the lists.  Only one function

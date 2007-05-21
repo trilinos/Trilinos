@@ -89,6 +89,9 @@ $(ZOD)/fwrap.f90: 	fwrap.fpp lbif.fpp lbfn.fpp \
 		set_coarseobjlist.if.lbif 	set_coarseobjlist.fn.lbfn \
 		set_firstcoarseobj.if.lbif	set_firstcoarseobj.fn.lbfn \
 		set_nextcoarseobj.if.lbif	set_nextcoarseobj.fn.lbfn \
+		set_hiernumlevels.if		set_hiernumlevels.fn \
+		set_hierpartition.if		set_hierpartition.fn \
+		set_hiermethod.if		set_hiermethod.fn \
 		$(ZOD)/sppr $(ZOD)/sppr_header
 	/bin/cp $(ZOD)/sppr_header sppr_header
 	$(ZOD)/sppr < fwrap.fpp > $(ZOD)/fwrap.f90

@@ -3,8 +3,6 @@
 # inherit from cron_script
 # setenv PATH /Net/local/gnu/bin:/bin:/usr/ucb:/usr/ccs/bin:/Net/local/bin:/usr/local/bin:$PATH
 
-# todo: determine the following somehow
-set arch=gcc
 # todo: set appropriate revision
 
 #
@@ -25,18 +23,24 @@ if ("$1" == "--codecheck") then
   $driver --o=$dir/test --I=$fastdir --name="$2" check --config=test/th/codechecks.cfg
 else
 
+# $1 contains either the architecture, or "--codecheck"
+  set arch="$1"
+
   echo "config: ZOLTAN_ARCH=$arch" >& $dir/test/config.out
-  $driver --o=$dir/test --I=$fastdir --name="$1" configure --logfile=$dir/test/config.out
+  $driver --o=$dir/test --I=$fastdir --name="$2" configure --logfile=$dir/test/config.out
 
   gmake "ZOLTAN_ARCH=$arch" zoltan zdrive >& $dir/test/build.out
 
-  $driver --o=$dir/test --I=$fastdir --name="$1" build --logfile=$dir/test/build.out
+  $driver --o=$dir/test --I=$fastdir --name="$2" build --logfile=$dir/test/build.out
 
   # create the test data, xml files, factor files
   ( cd test ; csh -f mktests >& $dir/mktest.out )
 
+  set tag=nightly
+  echo "$2" | grep 'smoke' > /dev/null && set tag=smoke
+
   #
   # Test
-  $driver --o=$dir/test --I=$fastdir --name="$1" test --testdirs='test/{ch_simple,hg_*}' --tag=nightly
+  $driver --o=$dir/test --I=$fastdir --name="$2" test --testdirs='test/{ch_*,hg_*}' --tag=$tag
 
 endif

@@ -30,7 +30,7 @@ int HG_readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
 
 /* MatrixMarket read from file */
 int MM_readfile (int, int, FILE*, PARIO_INFO_PTR, int*, int*, int*, int**, int**, int*,
- float**, int*, float**, int**, int**, int*);
+ float**, int*, float**, int**, int**, int*, int*);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

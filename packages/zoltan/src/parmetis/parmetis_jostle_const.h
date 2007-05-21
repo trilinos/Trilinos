@@ -22,6 +22,7 @@ extern "C" {
 
 
 /* Zoltan function prototypes */
+extern int Zoltan_Graph_Package_Set_Param(char *, char *);
 extern int Zoltan_ParMetis_Set_Param(char *, char *);
 extern int Zoltan_Jostle_Set_Param(char *, char *);
 

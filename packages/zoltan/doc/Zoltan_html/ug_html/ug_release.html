@@ -23,8 +23,8 @@
 </head>
 <body bgcolor="#ffffff">
 <div align="right"><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
-|&nbsp; <a href="ug_usage.html">Next</a>&nbsp; |&nbsp; <a
- href="ug_intro.html">Previous</a></i></b></div>
+|&nbsp; <a href="ug_backward.html">Next</a>&nbsp; |&nbsp; <a
+ href="ug_examples_query.html">Previous</a></i></b></div>
 <!---------------------------------------------------------------------------->
 <h2><a name="Release Notes">Release Notes
 </a></h2>
@@ -32,6 +32,7 @@
 releases of Zoltan:
 </a>
 <blockquote>
+  <a href="#Release3.0">Zoltan Release v3.0</a><br>
   <a href="#Release2.1">Zoltan Release v2.1</a><br>
   <a href="#Release2.02">Zoltan Release v2.02</a><br>
   <a href="#Release2.01">Zoltan Release v2.01</a><br>
@@ -46,6 +47,47 @@ releases of Zoltan:
   <br>
   <a href="#Release1.3">Zoltan Release v1.3</a>
 </blockquote>
+<hr>
+<h2><a name="Release3.0"></a>Zoltan Release Notes v3.0:  May 1, 2007</h2>
+Zoltan v3.0 includes major new features.
+<ul>
+<li> <a href="ug_alg_phg.html">Parallel Hypergraph Repartitioning</a> combining
+the improved communication metric of <a href="ug_alg_hypergraph.html">hypergraph
+partitioning</a> with a 
+<a href="http://www.cs.sandia.gov/~kddevin/papers/Catalyurek_IPDPS07.pdf">new model</a> 
+for representing an existing partition while
+computing a new one.  This work received the "Best Algorithms Paper Award" at
+the <a href="http://www.ipdps.org"> 2007 IEEE International Parallel and
+Distributed Processing Symposium</a>.
+<li> <a href="http://www.cs.sandia.gov/~kddevin/papers/wiley_chapter.pdf">Hypergraph refinement</a> to quickly
+improve the quality of an existing partition. 
+<li> Improved partition quality within the Zoltan 
+<a href="ug_alg_phg.html">parallel hypergraph partitioner</a>.
+<li> <a href="ug_alg_phg.html">Parallel graph partitioning</a> using
+Zoltan's parallel hypergraph partitioner.
+<li> Hypergraph partitioning with <a href="ug_alg_hypergraph.html">fixed 
+vertices</a>
+that allows application to assign or "fix" objects to a desired partition
+before partitioning.
+<li> Improved <a href="ug_alg.html#REMAP">partition remapping</a> to reduce data migration costs in all
+partitioners.
+<li> Hybrid <a href="ug_alg_hier.html">hierarchical partitioning</a> that allows
+different partitioning algorithms to be applied within a hierarchy of 
+computers (e.g., partitioning across a cluster of shared-memory processors,
+followed by partitioning within each shared-memory processor).
+<li> A new scheme for more easily specifying partitioning 
+<a href="ug_alg.html#LB_METHOD">methods</a> and 
+<a href="ug_alg.html#LB_APPROACH">approaches</a>
+within the hypergraph and graph partitioners.
+<li> Very <a href="ug_alg_simple.html">simple partitioners</a> that serve as
+testing tools and examples for usage.
+</ul>
+
+<p>
+Please see the <a href="ug_backward.html">backward compatibility</a> section
+for a detailed description of changes that may affect current users.
+
+
 <hr>
 <h2><a name="Release2.1"></a>Zoltan Release Notes v2.1:  October 5, 2006</h2>
 Zoltan v2.1 includes a significant bug fix for the hypergraph partitioner.
@@ -407,8 +449,8 @@ of previous versions of Zoltan are encouraged to upgrade.
 <!---------------------------------------------------------------------------->
 <p></p>
 <hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
- href="ug_usage.html">Next:&nbsp;
-Using the Zoltan Library</a>&nbsp; |&nbsp; <a href="ug_intro.html">Previous:&nbsp;
-Introduction</a>]
+ href="ug_backward.html">Next:&nbsp;
+Backward Compatibility</a>&nbsp; |&nbsp; <a href="ug_examples_query.html">Previous:&nbsp;
+Query Function Examples</a>]
 </body>
 </html>

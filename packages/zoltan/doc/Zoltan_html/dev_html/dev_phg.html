@@ -101,11 +101,11 @@ which may be zero on some processors.
 <h4>Parameters:</h4>
 In the User's Guide, only the most essential parameters have been
 documented. There are several other parameters, intended for developers
-and perhaps expert "power" users. We give a complete list of all
+and perhaps expert "power" users. We give a more complete list of all
 parameters below. Note that these parameters <span
  style="font-style: italic;">may change in future versions!<br>
-<br>
 </span>
+For a precise list of parameters in a particular version of Zoltan, look at the source code (phg.c). 
 <table nosave="" width="100%">
   <tbody>
     <tr>
@@ -165,6 +165,8 @@ the hyperedge direction (for 2D internal layout) </td>
       <td valign="top"><i>&nbsp;&nbsp;&nbsp; PHG_COARSENING_METHOD</i></td>
       <td>The method to use in matching/coarsening; currently these are
 available.&nbsp; <br>
+      <span style="font-style: italic;">agg</span> - agglomerative inner product
+matching (a.k.a. heavy connectivity matching) <br>
       <span style="font-style: italic;">ipm</span> - inner product
 matching (a.k.a. heavy connectivity matching) <br>
       <span style="font-style: italic;">c-ipm</span> -&nbsp; column

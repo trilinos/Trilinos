@@ -49,6 +49,7 @@ static PARAM_VARS Key_params[] = {
   { "MIGRATE_ONLY_PROC_CHANGES", NULL, "INT", 0 },
   { "REMAP", NULL, "INT", 0 },
   { "SEED", NULL, "INT", 0 },
+  { "LB_APPROACH", NULL, "STRING", 0 },
   { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 /*****************************************************************************/
@@ -317,6 +318,14 @@ int  idx 			/* index of vector param, -1 if scalar */
         Zoltan_Srand(result.ival, NULL);
         status = 3;
         break;
+
+      case 19:          /* LB_APPROACH */
+        if (result.def)
+          strcpy(result.sval, ZOLTAN_LB_APPROACH_DEF);
+        strcpy(zz->LB.Approach, result.sval);
+        status = 3;
+        break;
+
       }  /* end switch (index) */
     }
 
@@ -386,6 +395,8 @@ void Zoltan_Print_Key_Params(ZZ const *zz)
          zz->LB.Remap_Flag);
   printf("ZOLTAN Parameter %s = %d (%u)\n", Key_params[18].name, 
          Zoltan_Seed(), Zoltan_Seed());
+  printf("ZOLTAN Parameter %s = %s\n", Key_params[19].name, 
+         zz->LB.Approach);
 }
 
 #ifdef __cplusplus

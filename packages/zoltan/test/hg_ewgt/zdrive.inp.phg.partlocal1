@@ -1,5 +1,6 @@
 Decomposition Method 	= hypergraph
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters       = lb_approach=partition
 File Type		= matrixmarket+
 File Name		= ewgt
 test local partitions   = 1

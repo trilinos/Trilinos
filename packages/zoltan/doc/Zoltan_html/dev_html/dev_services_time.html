@@ -23,15 +23,21 @@
 <body bgcolor="#FFFFFF">
 
 <div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
-|&nbsp; <a href="dev_services_debug.html">Next</a>&nbsp; |&nbsp; <a href="dev_services_hash.html">Previous</a></i></b></div>
+|&nbsp; <a href="dev_services_zoltantimer.html">Next</a>&nbsp; |&nbsp; <a href="dev_services_hash.html">Previous</a></i></b></div>
 <!------------------------------------------------------------------------->
 <h2>
 <a NAME="Timing"></a>Timing Routines</h2>
 To assist in performance measurements and profiling, several timing routines
-are included in the Zoltan library. The main timer function, <b><a href="#Zoltan_Time">Zoltan_Time</a></b>,
+are included in the Zoltan library. The main timer function, 
+<b><a href="#Zoltan_Time">Zoltan_Time</a></b>,
 provides access to at least two portable timers: one CPU clock and one
 wall clock. On most systems, user time can also be measured.
-<p>The routines included in the utility are listed below.
+A higher-level timing capability built using 
+<b><a href="#Zoltan_Time">Zoltan_Time</a></b> is also available; see
+<b><a href="dev_services_zoltantimer.html">ZOLTAN_TIMER</a></b> for more 
+details.
+<p>
+The routines included in the utility are listed below.
 <blockquote><b><a href="#Zoltan_Time">Zoltan_Time</a></b>: Returns the
 time (in seconds) after some fixed reference point in time.
 <br><b><a href="#Zoltan_Time_Resolution">Zoltan_Time_Resolution</a></b>:&nbsp;

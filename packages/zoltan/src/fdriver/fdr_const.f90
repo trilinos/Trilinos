@@ -28,6 +28,8 @@ public :: DRIVER_NAME, VER_STR, PROB_INFO, MESH_INFO, Mesh, &
           FILENAME_MAX, MAX_PARAMETER_LEN, Parameter_Pair
 
 public :: Test_Multi_Callbacks
+public :: Test_Graph_Callbacks
+public :: Test_Hypergraph_Callbacks
 public :: Test_Local_Partitions
 public :: Test_Drops
 public :: Test_Gen_Files
@@ -43,6 +45,8 @@ character(len=3), parameter :: VER_STR = "1.0"
 ! A global variable indicating whether list-based (multi) query functions
 ! should be registered.  Default is 0.
 integer(Zoltan_INT) :: Test_Multi_Callbacks = 0
+integer(Zoltan_INT) :: Test_Graph_Callbacks = 1
+integer(Zoltan_INT) :: Test_Hypergraph_Callbacks = 0
 integer(Zoltan_INT) :: Test_Local_Partitions = 0
 integer(Zoltan_INT) :: Test_Drops = 0
 integer(Zoltan_INT) :: Test_Gen_Files = 0
@@ -166,6 +170,7 @@ type PROB_INFO
                                              ! Zoltan.  Parameters are specified
                                              ! as pairs of strings:
                                              ! param_str = value_str
+  character(len=FILENAME_MAX) :: ztnPrm_file  ! param file to be read
 end type
 
 end module dr_const

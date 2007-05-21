@@ -23,7 +23,7 @@
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_interface_init.html">Next</a>&nbsp; |&nbsp; <a href="ug_usage.html">Previous</a></i></b></div>
+<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_interface_init.html">Next</a>&nbsp; |&nbsp; <a href="ug_fortran.html">Previous</a></i></b></div>
 
 
 <h2>
@@ -34,7 +34,10 @@ This section describes the syntax of each type of interface function:
 <blockquote><a href="ug_interface_init.html">General Zoltan Interface Functions</a>
 <br><a href="ug_interface_lb.html">Load-Balancing Interface Functions</a>
 <br><a href="ug_interface_augment.html">Functions for Augmenting a Decomposition</a>
-<br><a href="ug_interface_mig.html">Migration Interface Functions</a></blockquote>
+<br><a href="ug_interface_mig.html">Migration Interface Functions</a>
+<br><a href="ug_interface_color.html">Graph Coloring Functions</a>
+<br><a href="ug_interface_order.html">Graph Ordering Functions</a>
+</blockquote>
 Examples of the calling sequences for initialization, load-balancing, and
 data migration are included in the <a href="ug_examples_init.html#Initialization Example">Initialization</a>,
 <a href="ug_examples_lb.html#Load-Balancing Example">Load-Balancing</a>,
@@ -108,7 +111,7 @@ illustrated in the following table.
 <td align=left>Partitioning and migration functions<br>
                  example: perform partitioning<br>
                  example: assign a point to a partition</td>
-<td align=left><B>Zoltan_</b><i>function</i>()<br>
+<td align=left><B>Zoltan_LB_</b><i>function</i>()<br>
     <b>Zoltan_LB_Partition()</b><br>
     <b>Zoltan_LB_Point_Assign()</b><br> </td>
 <td align=left><B>Zoltan::</b><i>function()</i><br>
@@ -156,7 +159,7 @@ method names are derived similarly.
 <p>
 
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a> |&nbsp; <a href="ug_interface_init.html">Next:&nbsp;
-Initialization Functions</a>&nbsp; |&nbsp; <a href="ug_usage.html">Previous:&nbsp;
-Using the Library</a>]
+Initialization Functions</a>&nbsp; |&nbsp; <a href="ug_fortran.html">Previous:&nbsp;
+FORTRAN Interface</a>]
 </body>
 </html>

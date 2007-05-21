@@ -147,6 +147,16 @@ extern int Zoltan_Compare_Ints(const void *key, const void *arg);
 extern int Zoltan_Get_Num_Edges_Per_Obj(ZZ *, int, ZOLTAN_ID_PTR,
        ZOLTAN_ID_PTR, int **, int *, int *);
 
+int Zoltan_ParMetis(
+  ZZ *, float *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
+  int **, int **, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
+  int **, int **);
+
+int Zoltan_Jostle(
+  ZZ *, float *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
+  int **, int **, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
+  int **, int **);
+
 
 
 #ifdef __cplusplus

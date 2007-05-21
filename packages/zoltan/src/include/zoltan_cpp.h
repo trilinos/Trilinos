@@ -204,7 +204,7 @@ public:
                     int **procs,
                     int **to_part )
   {
-    return Zoltan_LB_Free_Part( ZZ_Ptr, global_ids, local_ids, procs, to_part );
+    return Zoltan_LB_Free_Part( global_ids, local_ids, procs, to_part );
   }
 
   int Set_Fn  ( const ZOLTAN_FN_TYPE &fn_type,
@@ -379,6 +379,24 @@ public:
                                void * data = 0 )
   {
     return Zoltan_Set_HG_Edge_Wts_Fn( ZZ_Ptr, fn_ptr, data );
+  }
+  ///--------------------------
+  int Set_Hier_Num_Levels_Fn( ZOLTAN_HIER_NUM_LEVELS_FN * fn_ptr,
+                               void * data = 0 )
+  {
+    return Zoltan_Set_Hier_Num_Levels_Fn( ZZ_Ptr, fn_ptr, data );
+  }
+  ///--------------------------
+  int Set_Hier_Partition_Fn( ZOLTAN_HIER_PARTITION_FN * fn_ptr,
+                               void * data = 0 )
+  {
+    return Zoltan_Set_Hier_Partition_Fn( ZZ_Ptr, fn_ptr, data );
+  }
+  ///--------------------------
+  int Set_Hier_Method_Fn( ZOLTAN_HIER_METHOD_FN * fn_ptr,
+                               void * data = 0 )
+  {
+    return Zoltan_Set_Hier_Method_Fn( ZZ_Ptr, fn_ptr, data );
   }
   ///--------------------------
   int Set_Num_Fixed_Obj_Fn    ( ZOLTAN_NUM_FIXED_OBJ_FN * fn_ptr,

@@ -47,7 +47,7 @@ extern "C" {
 
 int Debug_Driver = 1;
 int Number_Iterations = 1;
-int Driver_Action = 1;	/* Flag indicating load-balancing or ordering. */
+int Driver_Action = 1;	/* Flag indicating coloring, load-balancing or ordering. */
 int Debug_Chaco_Input = 0;
 int Chaco_In_Assign_Inv = 0;
 struct Test_Flags Test;
@@ -113,6 +113,8 @@ int main(int argc, char *argv[])
   Test.Drops = 0;
   Test.RCB_Box = 0;
   Test.Multi_Callbacks = 0;
+  Test.Graph_Callbacks = 1;
+  Test.Hypergraph_Callbacks = 1;
   Test.Gen_Files = 0;
   Test.Null_Lists = NONE;
   Test.Dynamic_Weights = .0;

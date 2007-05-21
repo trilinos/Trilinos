@@ -1,7 +1,8 @@
 Decomposition Method 	= hypergraph
-Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters       = lb_approach=partition
+Zoltan Parameters       = hypergraph_package=phg
 File Type		= matrixmarket+
 File Name		= simple
 Parallel Disk Info	= number=0
-Zoltan Parameters       = PHG_COARSENING_LIMIT = 1
+Zoltan Parameters       = phg_coarsening_limit = 1
 

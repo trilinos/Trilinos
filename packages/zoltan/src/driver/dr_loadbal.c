@@ -341,43 +341,45 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   }
 
   /* Functions for graph based algorithms */
-  if (Test.Multi_Callbacks) {
-    if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_EDGES_MULTI_FN_TYPE,
-                      (void (*)()) get_num_edges_multi,
-                      (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-      return 0;
+  if (Test.Graph_Callbacks) {
+    if (Test.Multi_Callbacks) {
+      if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_EDGES_MULTI_FN_TYPE,
+                        (void (*)()) get_num_edges_multi,
+                        (void *) mesh) == ZOLTAN_FATAL) {
+        Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+        return 0;
+      }
+      if (Zoltan_Set_Fn(zz, ZOLTAN_EDGE_LIST_MULTI_FN_TYPE,
+                        (void (*)()) get_edge_list_multi,
+                        (void *) mesh) == ZOLTAN_FATAL) {
+        Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+        return 0;
+      }
+      /* Sizes used in repartitioning to reduce migration cost */
+      if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE,
+                        (void (*)()) migrate_elem_size_multi,
+                        (void *) mesh) == ZOLTAN_FATAL) {
+        Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+        return 0;
+      }
     }
-    if (Zoltan_Set_Fn(zz, ZOLTAN_EDGE_LIST_MULTI_FN_TYPE,
-                      (void (*)()) get_edge_list_multi,
-                      (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-      return 0;
-    }
-    /* Sizes used in repartitioning to reduce migration cost */
-    if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE,
-                      (void (*)()) migrate_elem_size_multi,
-                      (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-      return 0;
-    }
-  }
-  else {
-    if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_EDGES_FN_TYPE, (void (*)()) get_num_edges,
-                      (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-      return 0;
-    }
-    if (Zoltan_Set_Fn(zz, ZOLTAN_EDGE_LIST_FN_TYPE, (void (*)()) get_edge_list,
-                      (void *) mesh)== ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-      return 0;
-    }
-    if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,
-                      (void (*)()) migrate_elem_size,
-                      (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-      return 0;
+    else {
+      if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_EDGES_FN_TYPE, (void (*)()) get_num_edges,
+                        (void *) mesh) == ZOLTAN_FATAL) {
+        Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+        return 0;
+      }
+      if (Zoltan_Set_Fn(zz, ZOLTAN_EDGE_LIST_FN_TYPE, (void (*)()) get_edge_list,
+                        (void *) mesh)== ZOLTAN_FATAL) {
+        Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+        return 0;
+      }
+      if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,
+                        (void (*)()) migrate_elem_size,
+                        (void *) mesh) == ZOLTAN_FATAL) {
+        Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+        return 0;
+      }
     }
   }
 
@@ -418,7 +420,8 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     return 0;
   }
 
-  if (mesh->data_type == HYPERGRAPH) {
+  /* Hypergraph-based callbacks */
+  if ((mesh->data_type == HYPERGRAPH) && Test.Hypergraph_Callbacks) {
 
     if (Zoltan_Set_Fn(zz, ZOLTAN_HG_SIZE_CS_FN_TYPE,
                       (void (*)()) get_hg_size_compressed_pin_storage,
@@ -706,9 +709,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
     
     /* Clean up */
-    Zoltan_LB_Free_Part_F90(zz, &import_gids, &import_lids,
+    Zoltan_LB_Free_Part(&import_gids, &import_lids,
                         &import_procs, &import_to_part);
-    Zoltan_LB_Free_Part_F90(zz, &export_gids, &export_lids,
+    Zoltan_LB_Free_Part(&export_gids, &export_lids,
                         &export_procs, &export_to_part);
   }
 
@@ -1848,14 +1851,11 @@ int i, cnt;
 /*****************************************************************************/
 /*****************************************************************************/
 void get_fixed_obj_list(void *data, int num_fixed_obj, 
-  int num_gid_entries, int num_lid_entries,
-  ZOLTAN_ID_PTR fixed_gids, ZOLTAN_ID_PTR fixed_lids,
-  int *fixed_part, int *ierr)
+  int num_gid_entries, ZOLTAN_ID_PTR fixed_gids, int *fixed_part, int *ierr)
 {
 MESH_INFO_PTR mesh;
 int i, cnt;
 int ngid = num_gid_entries-1;
-int nlid = num_lid_entries-1;
 
   START_CALLBACK_TIMER;
 
@@ -1872,8 +1872,6 @@ int nlid = num_lid_entries-1;
     if (mesh->elements[i].fixed_part != -1) {
       fixed_gids[cnt*num_gid_entries+ngid] =
                  (ZOLTAN_ID_TYPE) mesh->elements[i].globalID;
-      if (num_lid_entries)
-        fixed_lids[cnt*num_lid_entries+nlid] = i;
       fixed_part[cnt] = mesh->elements[i].fixed_part;
       cnt++;
     }

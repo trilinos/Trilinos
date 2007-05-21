@@ -35,8 +35,8 @@ functions are required by individual algorithms.
 <blockquote><a href="#General Functions">Object ID Functions</a>
 <blockquote><b><a href="#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b>
 <br><b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
-<br><b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>
-<br><b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
+<br><b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b> (deprecated)
+<br><b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b> (deprecated)
 <br><b><a href="#ZOLTAN_PARTITION_MULTI_FN">ZOLTAN_PARTITION_MULTI_FN</a></b> or
 <b><a href="#ZOLTAN_PARTITION_FN">ZOLTAN_PARTITION_FN</a></b>
 </blockquote>
@@ -58,6 +58,8 @@ functions are required by individual algorithms.
 <b><br><a href="#ZOLTAN_HG_CS_FN">ZOLTAN_HG_CS_FN</a></b>
 <b><br><a href="#ZOLTAN_HG_SIZE_EDGE_WTS_FN">ZOLTAN_HG_SIZE_EDGE_WTS_FN</a></b>
 <b><br><a href="#ZOLTAN_HG_EDGE_WTS_FN">ZOLTAN_HG_EDGE_WTS_FN</a></b>
+<b><br><a href="#ZOLTAN_NUM_FIXED_OBJ_FN">ZOLTAN_NUM_FIXED_OBJ_FN</a></b>
+<b><br><a href="#ZOLTAN_FIXED_OBJ_LIST_FN">ZOLTAN_FIXED_OBJ_LIST_FN</a></b>
 </blockquote>
 <a href="#Tree-based Functions">Tree-Based Functions</a>
 <blockquote><b><a href="#ZOLTAN_NUM_COARSE_OBJ_FN">ZOLTAN_NUM_COARSE_OBJ_FN</a></b>
@@ -66,19 +68,19 @@ functions are required by individual algorithms.
 <br><b><a href="#ZOLTAN_NEXT_COARSE_OBJ_FN">ZOLTAN_NEXT_COARSE_OBJ_FN</a></b>
 <br><b><a href="#ZOLTAN_NUM_CHILD_FN">ZOLTAN_NUM_CHILD_FN</a></b>
 <br><b><a href="#ZOLTAN_CHILD_LIST_FN">ZOLTAN_CHILD_LIST_FN</a></b>
-<br><b><a href="#ZOLTAN_CHILD_WEIGHT_FN">ZOLTAN_CHILD_WEIGHT_FN</a></b></blockquote>
-<a href="#Border Functions">Border Object Functions (currently unused)</a>
-<blockquote>
-<b><a href="#ZOLTAN_NUM_BORDER_OBJ_FN">ZOLTAN_NUM_BORDER_OBJ_FN</a></b>
-<br><b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b>
-<br><b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>
-<br><b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b></blockquote>
+<br><b><a href="#ZOLTAN_CHILD_WEIGHT_FN">ZOLTAN_CHILD_WEIGHT_FN</a></b>
 </blockquote>
-<hr><hr>
+<a href="#Hierarchical Partitioning Functions">Hierarchical Partitioning Functions</a>
+<blockquote><b><a href="#ZOLTAN_HIER_NUM_LEVELS_FN">ZOLTAN_HIER_NUM_LEVELS_FN</a></b>
+<br><b><a href="#ZOLTAN_HIER_PARTITION_FN">ZOLTAN_HIER_PARTITION_FN</a></b>
+<br><b><a href="#ZOLTAN_HIER_METHOD_FN">ZOLTAN_HIER_METHOD_FN</a></b>
+</blockquote>
+</blockquote>
+<hr>
 
 <!------------------------------------------------------------------------->
 <h2>
-<a NAME="General Functions"></a>Object ID Functions</h2>
+<a NAME="General Functions"></a><hr>Object ID Functions</h2>
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
@@ -200,7 +202,7 @@ query function to get the array size. For many algorithms, either a <b>ZOLTAN_OB
 query function or a <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
 query-function pair must be registered;
 however, both query options need not
-be provided.
+be provided.  The <b>ZOLTAN_OBJ_LIST_FN</b> is preferred for efficiency.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
@@ -316,19 +318,19 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">A <b>ZOLTAN_FIRST_OBJ_FN</b> query function initializes an
+<hr WIDTH="100%">
+(Deprecated) A <b>ZOLTAN_FIRST_OBJ_FN</b> query function initializes an
 iteration over objects assigned to the processor. It returns the global
 and local IDs of the first object on the processor. Subsequent calls to
 a <b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b> query function iterate
-over and return other objects assigned to the processor. This query-function
-pair frees the application from having to build an array of objects (as
-in <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>) and allows 
-Zoltan's routines to obtain only as much information about objects
-as they need. For many algorithms, either a <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+over and return other objects assigned to the processor. 
+For many algorithms, either a <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
 query function or a <b>ZOLTAN_FIRST_OBJ_FN</b><i>/</i><b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
 query-function pair must be registered;
 however, both query options need not
 be provided.
+The <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>) is preferred 
+for efficiency.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -466,18 +468,19 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">A <b>ZOLTAN_NEXT_OBJ_FN</b> query function is an iterator
+<hr WIDTH="100%">
+(Deprecated) A <b>ZOLTAN_NEXT_OBJ_FN</b> query function is an iterator
 function which, when given an object assigned to the processor, returns
 the next object assigned to the processor. The first object of the iteration
 is provided by a <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>
-query function. This query-function pair frees the application from having
-to build an array of objects (as in <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>)
-and allows Zoltan's routines to obtain only as much information
-about objects as they need. For many algorithms, either a <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+query function. 
+For many algorithms, either a <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
 query function or a <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b>ZOLTAN_NEXT_OBJ_FN</b>
 query-function pair must be registered;
 however, both query options need not
 be provided.
+The <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>) is preferred 
+for efficiency.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -823,11 +826,11 @@ returned.</td>
 </table>
 
 <p>
-<hr><hr>
+<hr>
 
 <!------------------------------------------------------------------------->
 <h2>
-<a NAME="Geometry-based Functions"></a>Geometry-based Functions</h2>
+<a NAME="Geometry-based Functions"></a><hr>Geometry-based Functions</h2>
 
 
 <!------------------------------------------------------------------------->
@@ -1137,11 +1140,11 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </table>
 
 <br>&nbsp;
-<hr><hr>
+<hr>
 
 <!------------------------------------------------------------------------->
 <h2>
-<a NAME="Graph-based Functions"></a>Graph-based Functions</h2>
+<a NAME="Graph-based Functions"></a><hr>Graph-based Functions</h2>
 
 
 <!------------------------------------------------------------------------->
@@ -1685,12 +1688,11 @@ return value of <i>ewgts </i>is undefined and may be NULL.</td>
 </table>
 
 <br>&nbsp;
-<hr><hr>
-<h2>
+<hr>
 
 <!------------------------------------------------------------------------->
 <h2>
-<a NAME="Hypergraph-based Functions"></a>Hypergraph-based Functions</h2>
+<a NAME="Hypergraph-based Functions"></a><hr>Hypergraph-based Functions</h2>
 
 
 <!------------------------------------------------------------------------->
@@ -1825,7 +1827,7 @@ hypergraph to Zoltan.  The options are
 typedef void <b>ZOLTAN_HG_CS_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
-int&nbsp;<i>num_row_or_col</i>,
+int&nbsp;<i>num_vtx_edge</i>,
 int&nbsp;<i>num_pins</i>,
 int&nbsp;<i>format</i>,
 <a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>vtxedge_GID</i>,
@@ -1838,10 +1840,10 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
 <td>SUBROUTINE <b><i>Get_HG_CS</i></b>(<i>data, 
-   num_gid_entries, num_row_or_col, num_pins, format,
+   num_gid_entries, num_vtx_edge, num_pins, format,
    vtxedge_GID, vtxedge_ptr, pin_GID, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_row_or_col, num_pins, format
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_vtx_edge, num_pins, format
 <br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: vtxedge_GID
 <br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: vtxedge_ptr
 <br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: pin_GID
@@ -1904,7 +1906,8 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_vtx_edge</i></td>
 <td>The number of global IDs
-that is expected to appear on return in <i>vtxedge_GID</i>.</td>
+that is expected to appear on return in <i>vtxedge_GID</i>. This may
+correspond to either vertices or (hyper-)edges. </td>
 </tr>
 
 <tr NOSAVE>
@@ -1925,12 +1928,12 @@ global IDs are expected to be returned in <i>pin_GIDs</i>.
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>vtxedge_GID</i></td>
-<td>Upon return, a list of <i>num_row_or_col</i> global IDs.  
+<td>Upon return, a list of <i>num_vtx_edge</i> global IDs.  
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>vtxedge_ptr</i></td>
-<td>Upon return, this array contains <i>num_row_or_col</i> integers.
+<td>Upon return, this array contains <i>num_vtx_edge</i> integers.
 The integer in the <i>i'th</i> array element is the index in
 array <i>pin_GID</i> where the pins for the <i>i'th</i> row
 (if format is <b>ZOLTAN_COMPRESSED_EDGE</b>) or <i>i'th</i> column
@@ -2203,12 +2206,198 @@ the weights for the next hyperedge are listed.
 </table>
 
 <br>&nbsp;
-<hr><hr>
-<h2>
 
 <p>
 <!------------------------------------------------------------------------->
-<a NAME="Tree-based Functions"></a>Tree-based Functions</h2>
+<hr>
+<a NAME="ZOLTAN_NUM_FIXED_OBJ_FN"></a>
+<hr>
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NUM_FIXED_OBJ_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_Num_Fixed_Obj</i></b>(<i>data, ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Num_Fixed_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+</td>
+</tr>
+
+</table>
+
+<hr WIDTH="100%">
+A <b>ZOLTAN_NUM_FIXED_OBJ_FN </b> returns
+the number of objects on a given processor fixed to particular partitions.
+These objects will not be assigned to a partition other than the user specified
+partition by the parallel hypergraph algorithm.
+<br><br>
+This query function is not required.  If it is not defined, all
+objects are candidates for migration to new partitions.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_NUM_FIXED_OBJ_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The number of objects on this processor that are to be fixed to a specific partition.</td>
+</tr>
+
+
+</table>
+
+<br>&nbsp;
+<hr>
+
+<!------------------------------------------------------------------------->
+<a NAME="ZOLTAN_FIXED_OBJ_LIST_FN"></a>
+<hr>
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
+
+<td WIDTH="85%">
+typedef void<b> ZOLTAN_FIXED_OBJ_LIST_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_fixed_obj</i>,
+int&nbsp;<i>num_gid_entries</i>,
+<b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>fixed_gids</i>,
+int&nbsp;*<i>fixed_parts</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Fixed_Obj_List</i></b>(<i>data, num_fixed_obj, num_gid_entries, fixed_gids, fixed_parts, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_fixed_obj&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: fixed_gids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: fixed_parts&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_FIXED_OBJ_LIST_FN</b> query function fills two
+arrays with information about the objects that should not be moved from
+their user assigned partitions.
+These arrays are allocated (and subsequently
+freed) by Zoltan; their size is determined by a call to a <b><a href="#ZOLTAN_NUM_FIXED_OBJ_FN">ZOLTAN_NUM_FIXED_OBJ_FN</a></b>
+query function to get the array size. 
+<p>
+A process should only fix the partition of objects that it <i>owns</i>, that is,
+objects that it had previously supplied in a
+<a href=#ZOLTAN_OBJ_LIST_FN>ZOLTAN_OBJ_LIST_FN</a> query function.  It is
+an error to list the global ID of an object owned by another process.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_FIXED_OBJ_LIST_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_fixed_obj</i></td>
+
+<td>The number of objects you will list in the two output arrays.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; fixed_gids</i></td>
+
+<td>Upon return, an array of unique global IDs for all objects assigned to the processor which are to be fixed to a partition.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>fixed_parts</i></td>
+
+<td>Upon return, an array of partition numbers, one for each object listed
+in the global ID array.  These objects will not be migrated from this assigned
+partition.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<p>
+
+<hr>
+
+<p>
+<!------------------------------------------------------------------------->
+<h2>
+<a NAME="Tree-based Functions"></a><hr>Tree-based Functions</h2>
 
 
 <!------------------------------------------------------------------------->
@@ -3244,555 +3433,10 @@ value of <i>obj_wgts</i> is undefined and may be NULL.</td>
 
 <!------------------------------------------------------------------------->
 <h2>
-<a NAME="Border Functions"></a>Border Object Functions (currently not used)</h2>
-
-
-<!------------------------------------------------------------------------->
-<hr WIDTH="100%">
-<a NAME="ZOLTAN_NUM_BORDER_OBJ_FN"></a>
-<hr WIDTH="100%">
-<table WIDTH="100%" NOSAVE >
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
-
-<td WIDTH="85%">
-typedef int <b>ZOLTAN_NUM_BORDER_OBJ_FN</b>
-(void&nbsp;*<i>data</i>,
-int&nbsp;<i>nbor_proc</i>, 
-int&nbsp;*<i>ierr</i>);&nbsp;</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
-
-<td>FUNCTION <b><i>Get_Num_Border_Obj</i></b>(<i>data, nbor_proc, ierr</i>)&nbsp;
-<br>INTEGER(Zoltan_INT) :: Get_Num_Border_Obj
-<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN) :: nbor_proc&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
-REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
-where <i>x</i> is 1, 2, 3 or 4. See the section on
-<a href="ug_fortran_api.html#fortran ug api query">Fortran
-query functions</a> for an explanation.&nbsp;</td>
-</tr>
-</table>
-
-<hr WIDTH="100%">A <b>ZOLTAN_NUM_BORDER_OBJ_FN</b> query function returns
-the number of objects sharing a processor subdomain border (in the communication
-graph of the application) with a given processor.
-<br>&nbsp;
-<table WIDTH="100%" >
-<tr>
-<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
-
-<td WIDTH="80%"><b>ZOLTAN_NUM_BORDER_OBJ_FN_TYPE</b></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><b>Arguments:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
-
-<td>Pointer to user-defined data.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; nbor_proc</i></td>
-
-<td>The processor ID of the processor for which the number of border objects
-should be returned.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
-
-<td>Error code to be set by function.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><b>Returned Value:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
-
-<td>The number of objects sharing a processor subdomain border with processor
-<i>nbor_proc</i>.</td>
-</tr>
-</table>
-
-<p>
-
-<!------------------------------------------------------------------------->
-<hr WIDTH="100%">
-<a NAME="ZOLTAN_BORDER_OBJ_LIST_FN"></a>
-<hr WIDTH="100%">
-<table WIDTH="100%" NOSAVE >
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
-
-<td WIDTH="85%">
-typedef void <b>ZOLTAN_BORDER_OBJ_LIST_FN</b>
-(void&nbsp;*<i>data</i>,
-int&nbsp;<i>num_gid_entries</i>,
-int&nbsp;<i>num_lid_entries</i>,
-int&nbsp;<i>nbor_proc</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
-int&nbsp;<i>wgt_dim</i>,
-float&nbsp;*<i>obj_wgts</i>,
-int&nbsp;*<i>ierr</i>);&nbsp;</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
-
-<td>SUBROUTINE <b><i>Get_Border_Obj_List</i></b>(<i>data, num_gid_entries, num_lid_entries, nbor_proc, global_ids,
-local_ids, wgt_dim, obj_wgts, ierr</i>)&nbsp;
-<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN) :: nbor_proc&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
-<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
-REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
-where <i>x</i> is 1, 2, 3 or 4. See the section on
-<a href="ug_fortran_api.html#fortran ug api query">Fortran
-query functions</a> for an explanation.&nbsp;</td>
-</tr>
-</table>
-
-<hr WIDTH="100%">A <b>ZOLTAN_BORDER_OBJ_LIST_FN</b> query function fills two
-arrays with information about the objects currently assigned to the processor
-that share a processor subdomain border (in the communication graph of
-the application) with a given processor. Both arrays are allocated (and
-subsequently freed) by Zoltan; their size is determined by a call to a <b><a href="#ZOLTAN_NUM_BORDER_OBJ_FN">ZOLTAN_NUM_BORDER_OBJ_FN</a></b>
-query function to get the array size. For certain Zoltan algorithms,
-either a <b>ZOLTAN_BORDER_OBJ_LIST_FN</b> query function or a <b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>/<b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b>
-query-function pair must be registered; however, both query options need not
-be provided.
-<br>&nbsp;
-<table WIDTH="100%" NOSAVE >
-<tr>
-<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
-
-<td WIDTH="80%"><b>ZOLTAN_BORDER_OBJ_LIST_FN_TYPE</b></td>
-</tr>
-
-<tr>
-<td><b>Arguments:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
-
-<td>Pointer to user-defined data.</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
-
-<td>The number of array entries used to describe a single
-global ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
-
-<td>The number of array entries used to describe a single
-local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
-</tr>
-
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_proc</i></td>
-
-<td>The processor ID of the processor for which border objects should be
-returned.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
-
-<td>Upon return, an array of unique global IDs for all objects assigned to the processor
-that share a subdomain border with <i>nbor_proc</i>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
-
-<td>Upon return, an array of local IDs, the meaning of which can be determined by the
-application, for all objects assigned to the processor that share a subdomain
-border with <i>nbor_proc</i>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
-
-<td>The number of weights associated with an object (typically 1), or 0
-if weights are not requested.  This value is set through the parameter
-<a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>obj_wgts</i></td>
-
-<td>Upon return, an array of object weights. Weights for object <i>i</i> are stored in <i>obj_wgts[(i-1)*wgt_dim:i*wgt_dim-1]</i>.&nbsp;
-If <i>wgt_dim=0,</i> <i>obj_wgts</i> is undefined and may be NULL.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
-
-<td>Error code to be set by function.</td>
-</tr>
-</table>
-
-<p>
-
-<!------------------------------------------------------------------------->
-<hr WIDTH="100%">
-<a NAME="ZOLTAN_FIRST_BORDER_OBJ_FN"></a>
-<hr WIDTH="100%">
-<table WIDTH="100%" NOSAVE >
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
-
-<td WIDTH="85%">
-typedef int <b>ZOLTAN_FIRST_BORDER_OBJ_FN</b>
-(void&nbsp;*<i>data</i>, 
-int&nbsp;<i>num_gid_entries</i>,
-int&nbsp;<i>num_lid_entries</i>,
-int&nbsp;<i>nbor_proc</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>first_global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>first_local_id</i>,
-int&nbsp;<i>wgt_dim</i>,
-float&nbsp;*<i>first_obj_wgt</i>,
-int&nbsp;*<i>ierr</i>);&nbsp;</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
-
-<td>FUNCTION <b><i>Get_First_Border_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, nbor_proc, first_global_id,
-first_local_id, wgt_dim, first_obj_wgt, ierr</i>)&nbsp;
-<br>INTEGER(Zoltan_INT) :: Get_First_Border_Obj
-<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN) :: nbor_proc&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: first_global_id&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: first_local_id&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
-<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
-REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
-where <i>x</i> is 1, 2, 3 or 4. See the section on
-<a href="ug_fortran_api.html#fortran ug api query">Fortran
-query functions</a> for an explanation.&nbsp;</td>
-</tr>
-</table>
-
-<hr WIDTH="100%">A <b>ZOLTAN_FIRST_BORDER_OBJ_FN</b> query function initializes
-an iteration over objects assigned to the processor that share a processor
-subdomain border with a given processor. It returns the global and local
-IDs of the first object on the processor along the specified subdomain
-border. Subsequent calls to a <b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b>
-query function iterate over and return other objects along the requested
-subdomain border. This query-function pair frees the application from having
-to build an array of objects (as in <b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b>)
-and allows Zoltan to obtain only as much information
-about objects as it needs. For some algorithms, either
-a <b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b> query
-function or a <b>ZOLTAN_FIRST_BORDER_OBJ_FN</b>/<b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b>
-query-function pair must be registered; however, both query options need not
-be provided.
-<br>&nbsp;
-<table WIDTH="100%" >
-<tr>
-<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
-
-<td WIDTH="80%"><b>ZOLTAN_FIRST_BORDER_OBJ_FN_TYPE</b></td>
-</tr>
-
-<tr>
-<td><b>Arguments:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
-
-<td>Pointer to user-defined data.</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
-
-<td>The number of array entries used to describe a single
-global ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
-
-<td>The number of array entries used to describe a single
-local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_proc</i></td>
-
-<td>The processor ID of the processor for which border objects should be
-returned.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; first_global_id</i></td>
-
-<td>The returned value of the global ID for the first object; the value
-is ignored if there are no objects along the border.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; first_local_id</i></td>
-
-<td>The returned value of the local ID for the first object; the value
-is ignored if there are no objects along the border.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
-
-<td>The number of weights associated with an object (typically 1), or 0
-if weights are not requested.  This value is set through the parameter
-<a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>first_obj_wgt</i></td>
-
-<td>Upon return, the first object's weights; an array of size <i>wgt_dim</i>. Undefined if&nbsp; <i>wgt_dim=</i>0.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
-
-<td>Error code to be set by function.</td>
-</tr>
-
-<tr>
-<td><b>Returned Value:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</td>
-
-<td>If <i>first_global_id</i> and <i>first_local_id</i> contain valid IDs
-of the first object along the processor border.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</td>
-
-<td>If no objects are available along this processor border.</td>
-</tr>
-</table>
-
-<p>
-
-<!------------------------------------------------------------------------->
-<hr WIDTH="100%">
-<a NAME="ZOLTAN_NEXT_BORDER_OBJ_FN"></a>
-<hr WIDTH="100%">
-<table WIDTH="100%" NOSAVE >
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
-
-<td WIDTH="85%">
-typedef int <b>ZOLTAN_NEXT_BORDER_OBJ_FN</b>
-(void&nbsp;*<i>data</i>, 
-int&nbsp;<i>num_gid_entries</i>,
-int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
-int&nbsp;<i>nbor_proc</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>next_global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>next_local_id</i>,
-int&nbsp;<i>wgt_dim</i>,
-float&nbsp;*<i>next_obj_wgt</i>,
-int&nbsp;*<i>ierr</i>);&nbsp;</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
-
-<td>FUNCTION <b><i>Get_Next_Border_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
-nbor_proc, next_global_id, next_local_id, wgt_dim, next_obj_wgt, ierr</i>)&nbsp;
-<br>INTEGER(Zoltan_INT) :: Get_Next_Border_Obj&nbsp;
-<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN) :: nbor_proc&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: next_global_id&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: next_local_id&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
-<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
-REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
-where <i>x</i> is 1, 2, 3 or 4. See the section on
-<a href="ug_fortran_api.html#fortran ug api query">Fortran
-query functions</a> for an explanation.&nbsp;</td>
-</tr>
-</table>
-
-<hr WIDTH="100%">A <b>ZOLTAN_NEXT_BORDER_OBJ_FN</b> query function is an iterator
-function which, when given an object assigned to the processor and a neighboring
-processor ID, returns the next object assigned to the processor that shares
-a subdomain border with the neighboring processor. The first object of
-the iteration is provided by a <b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>
-query function. This query-function pair frees the application from having
-to build an array of objects (as in <b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b>)
-and allows Zoltan to obtain only as much information
-about objects as it needs. For some algorithms, either
-a <b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b> query
-function or a <b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>/<b>ZOLTAN_NEXT_BORDER_OBJ_FN</b>
-query-function pair must be registered;
-however, both query options need not
-be provided.
-<br>&nbsp;
-<table WIDTH="100%" >
-<tr>
-<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
-
-<td WIDTH="80%"><b>ZOLTAN_NEXT_BORDER_OBJ_FN_TYPE</b></td>
-</tr>
-
-<tr>
-<td><b>Arguments:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
-
-<td>Pointer to user-defined data.</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
-
-<td>The number of array entries used to describe a single
-global ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
-
-<td>The number of array entries used to describe a single
-local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
-
-<td>The global ID of the previous object.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
-
-<td>The local ID of the previous object.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_proc</i></td>
-
-<td>The processor ID of the processor for which border objects should be
-returned.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; next_global_id</i></td>
-
-<td>The returned value of the global ID for the next object; the value
-is ignored if there are no more objects along the border.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; next_local_id</i></td>
-
-<td>The returned value of the local ID for the next object; the value is
-ignored if there are no more objects along the border.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
-
-<td>The number of weights associated with an object (typically 1), or 0
-if weights are not requested.  This value is set through the parameter
-<a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>next_obj_wgt</i></td>
-
-<td>Upon return, the weights for the next object; an array of size <i>wgt_dim</i>.  Undefined if <i>wgt_dim</i>=0.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
-
-<td>Error code to be set by function.</td>
-</tr>
-
-<tr>
-<td><b>Returned Value:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</td>
-
-<td>If <i>next_global_id</i> and <i>next_local_id</i> contain valid IDs
-of the next object along the processor border.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</td>
-
-<td>If no more objects are available along this processor border.</td>
-</tr>
-</table>
-<!------------------------------------------------------------------------->
-<h2>
-<a NAME="Hierarchical Partitioning Functions"></a>Hierarchical Partitioning Functions (used only by method <B>HIER</B>)</h2>
-
+<hr>
+<a NAME="Hierarchical Partitioning Functions"></a>
+<hr>
+Hierarchical Partitioning Functions (used only by method <B>HIER</B>)</h2>
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
@@ -3800,7 +3444,7 @@ of the next object along the processor border.</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_HIER_NUM_LEVELS_FN</b>
@@ -3873,7 +3517,7 @@ for hierarchical load balancing.
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef int <b>ZOLTAN_HIER_PARTITION_FN</b>
@@ -3898,7 +3542,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">A <b>ZOLTAN_HIER_PARTITION_FN</b> query function is gets the partition number to be used for the given level of a hierarchical balancing procedure.
+<hr WIDTH="100%">A <b>ZOLTAN_HIER_PARTITION_FN</b> query function gets the partition number to be used for the given level of a hierarchical balancing procedure.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
@@ -3953,7 +3597,7 @@ query functions</a> for an explanation.&nbsp;</td>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
+<td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
 typedef void <b>ZOLTAN_HIER_METHOD_FN</b>
@@ -3969,7 +3613,7 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td>SUBROUTINE <b><i>Get_Hier_Method</i></b>(<i>data, level, zz, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: level&nbsp;
-<br>???????????????????, INTENT(IN) :: zz&nbsp;
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
 <p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
 REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)

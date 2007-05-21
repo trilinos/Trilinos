@@ -26,7 +26,7 @@ extern "C" {
 /*****************************************************************************/
 
 int Zoltan_RCB_Build_Structure(ZZ *zz, int *num_obj, int *max_obj, int wgtflag,
-                           int use_ids)
+                               double overalloc, int use_ids)
 {
 /*
  *  Function to build the geometry-based data structures for 
@@ -85,7 +85,7 @@ int i, ierr = 0;
   ierr = Zoltan_RB_Build_Structure(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
                                &(rcb->Dots), num_obj, max_obj,
                                &(rcb->Num_Dim),
-                               wgtflag, use_ids);
+                               wgtflag, overalloc, use_ids);
   if (ierr) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                        "Error returned from Zoltan_RB_Build_Structure.");

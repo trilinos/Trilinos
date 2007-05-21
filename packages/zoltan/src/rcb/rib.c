@@ -43,7 +43,7 @@ extern "C" {
 /*  RIB_OUTPUT_LEVEL = 1  Log times and counts, print summary */
 /*  RIB_OUTPUT_LEVEL = 2  Log times and counts, print for each proc */
 #define RIB_DEFAULT_OUTPUT_LEVEL 0
-#define RIB_DEFAULT_OVERALLOC 1.0
+#define RIB_DEFAULT_OVERALLOC 1.2
 
 
 /*---------------------------------------------------------------------------*/
@@ -300,7 +300,8 @@ static int rib_fn(
    */
 
   start_time = Zoltan_Time(zz->Timer);
-  ierr = Zoltan_RIB_Build_Structure(zz, &pdotnum, &dotmax, wgtflag, use_ids);
+  ierr = Zoltan_RIB_Build_Structure(zz, &pdotnum, &dotmax, wgtflag, overalloc,
+                                    use_ids);
   if (ierr < 0) {
     ZOLTAN_PRINT_ERROR(proc, yo, 
       "Error returned from Zoltan_RIB_Build_Structure.");

@@ -226,7 +226,7 @@ extern void Zoltan_HG_HGraph_Print(ZZ *zz, ZHG *, HGraph *, Partition, FILE *fp)
     
 struct PHGPartParamsStruct;  /* Forward declaration */
 
-extern int Zoltan_HG_Graph_Callbacks(ZZ *, ZHG *, struct PHGPartParamsStruct *,
+extern int Zoltan_HG_Graph_Callbacks(ZZ *, ZHG *, int,
   int, float, int, int *,
   ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **, int *, ZOLTAN_ID_PTR *,
   int **);

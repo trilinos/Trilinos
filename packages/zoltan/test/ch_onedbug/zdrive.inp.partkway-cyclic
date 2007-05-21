@@ -1,9 +1,0 @@
-Decomposition Method	= parmetis
-Zoltan Parameters	= debug_memory=3,debug_level=10,remap=0
-Zoltan Parameters	= parmetis_method=partkway
-Zoltan Parameters	= obj_weight_dim=1
-Zoltan Parameters	= comm_weight_dim=1
-Zoltan Parameters	= check_graph=2
-File Type		= Chaco, initial distribution = cyclic
-File Name		= onedbug
-Parallel Disk Info	= number=0

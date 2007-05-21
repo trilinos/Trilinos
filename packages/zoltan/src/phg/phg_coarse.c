@@ -350,7 +350,7 @@ int Zoltan_PHG_Coarsening
     me = hgc->myProc_x;             /* short name, convenience variable */
     size  = 0;                      /* size (in ints) to communicate */
     count = 0;                      /* number of vertices to communicate */
-    for (i = 0; i < hg->nVtx; ++i)
+    for (i = 0; i < hg->nVtx; ++i){
         if (match[i] == VTX_LNO_TO_GNO(hg, i)) {
             LevelMap[i] = c_hg->nVtx;
             if (c_hg->fixed_part)
@@ -360,6 +360,7 @@ int Zoltan_PHG_Coarsening
 /*            uprintf(hgc, "match[%d (gno=%d)] = %d   new vtxno=%d\n", i, VTX_LNO_TO_GNO(hg, i), match[i], c_hg->nVtx);*/
             ++c_hg->nVtx;
         }
+    }
     
     for (i = 0; i < hg->nVtx; i++)  {    /* loop over every local vertices */
       if (match[i] != VTX_LNO_TO_GNO(hg, i))  {
@@ -660,13 +661,15 @@ int Zoltan_PHG_Coarsening
 
   
   iden = listproc; /* just better variable name */
-  for (j=0; j<size; ++j)
+  for (j=0; j<size; ++j){
       iden[j] = (hlsize[j]) ? 0 : -1; /* if no local pins iden is -1 */
+  }
 #ifdef _DEBUG1  
   count = idx = me = 0;
-  for (j=0; j<size; ++j)
+  for (j=0; j<size; ++j){
       if (iden[j]==-1)
           ++me;
+  }
 #endif
   for (j=0; j<size; ++j) {
       int n1=ids[j];
@@ -703,9 +706,10 @@ int Zoltan_PHG_Coarsening
       }
   }
 
-  for (i=0; i<size; ++i)
+  for (i=0; i<size; ++i){
       if (iden[i]==1+i) /* original net; clear iden */
           iden[i] = 0;
+  }
   ZOLTAN_FREE(&ids); 
 
 #ifdef _DEBUG1
@@ -845,13 +849,15 @@ int Zoltan_PHG_Coarsening
   ierr = Zoltan_HG_Create_Mirror(zz, c_hg);
 #ifdef _DEBUG1
   if (c_hg->fixed_part)
-      for (i = 0; i < c_hg->nVtx; i++)
+      for (i = 0; i < c_hg->nVtx; i++){
           if (c_hg->fixed_part[i] == -2)
               printf ("RTHRTH BAD COARSENING for FIXED VERTICES\n"); 
+      }
   if (c_hg->pref_part)
-      for (i = 0; i < c_hg->nVtx; i++)
+      for (i = 0; i < c_hg->nVtx; i++){
           if (c_hg->pref_part[i] == -2)
               uprintf(hgc, "*******BAD COARSENING for PREF[%d] is unassigned\n", i);
+      }
   
   MPI_Barrier(hgc->Communicator);  
   t_mirror += MPI_Wtime();

@@ -158,6 +158,7 @@ end interface
 
   prob%method             = ''
   prob%num_params         = 0
+  prob%ztnPrm_file        = ''
   nullify(prob%params)
 
 !  /* Read in the ascii input file */

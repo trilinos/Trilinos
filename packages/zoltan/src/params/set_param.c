@@ -73,6 +73,7 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        /* Zoltan_Set_Machine_Param, */
        Zoltan_Color_Set_Param,
        /*** Add your new parameter setting function here! ***/
+       Zoltan_Graph_Package_Set_Param,
        NULL /* Last entry _must_ be NULL! */
 };
 
@@ -143,6 +144,14 @@ int index			/* index of vector parameter; -1 if scalar */
         ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	ZOLTAN_FREE(&name);
     	ZOLTAN_FREE(&val);
+    }
+    else if (status == 2) {
+	sprintf(msg, "Invalid value `%s' for parameter `%s'; default "
+                     "value will be used.\n", val, name);
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+	ZOLTAN_FREE(&name);
+    	ZOLTAN_FREE(&val);
+       
     }
     else {
         if (!strcmp(val, "DEFAULT")){

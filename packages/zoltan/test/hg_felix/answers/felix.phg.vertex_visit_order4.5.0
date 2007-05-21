@@ -3,6 +3,7 @@ Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 Zoltan Parameters	= ADD_OBJ_WEIGHT=none
 Zoltan Parameters       = PHG_VERTEX_VISIT_ORDER = 4
 Zoltan Parameters       = PHG_COARSENING_LIMIT = 1
+Zoltan Parameters       = lb_approach=partition
 File Type		= matrixmarket+
 File Name		= felix
 Parallel Disk Info	= number=0
@@ -21,4 +22,3 @@ GID	Part	Perm	IPerm
 62	0	-1	-1
 67	0	-1	-1
 69	0	-1	-1
-70	0	-1	-1

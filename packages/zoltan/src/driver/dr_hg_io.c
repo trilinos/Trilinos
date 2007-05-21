@@ -129,7 +129,7 @@ int read_hypergraph_file(
   const char  *yo = "read_hypergraph_file";
   char   cmesg[256];
 
-  int    i, gnvtxs, distributed_pins, edge, vertex, nextEdge; 
+  int    i, gnvtxs, distributed_pins = 0, edge, vertex, nextEdge; 
   int    nvtxs = 0, gnhedges = 0, nhedges = 0, npins = 0;
   int    vwgt_dim=0, hewgt_dim=0, vtx, edgeSize, global_npins;
   int   *hindex = NULL, *hvertex = NULL, *hvertex_proc = NULL;
@@ -220,15 +220,13 @@ int read_hypergraph_file(
      *   in MM_readfile.  (distributed_pins==1)
      */
 
-    global_npins = MM_readfile(Proc, Num_Proc, fp, pio_info,
+    if (MM_readfile(Proc, Num_Proc, fp, pio_info,
                     &nvtxs,     /* global number of vertices */
                     &nhedges,   /* global number of hyperedges */
                     &npins,     /* local number of pins */
                     &hindex, &hvertex, &vwgt_dim, &vwgts, 
                     &hewgt_dim, &hewgts, &ch_start, &ch_adj,
-                    &base);
-
-    if (global_npins == 0){
+                    &base, &global_npins)) {
       Gen_Error(0, "fatal: Error returned from MM_readfile");
       return 0;
     }

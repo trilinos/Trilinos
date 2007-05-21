@@ -30,8 +30,8 @@ extern "C" {
 #endif
 
 static int DEBUG_MEMORY = 0;	/* Flag for detecting memory leaks */
-static int bytes_used = 0;	/* Sum of active allocations */
-static int bytes_max = 0;	/* Largest total of active allocations */
+static size_t bytes_used = 0;	/* Sum of active allocations */
+static size_t bytes_max = 0;	/* Largest total of active allocations */
 
 static int nmalloc = 0;         /* number of calls to malloc */
 static int nfree = 0;           /* number of calls to free */
@@ -49,7 +49,7 @@ static int nfree = 0;           /* number of calls to free */
 #define MAX_STRING_LEN 50
 static struct malloc_debug_data {
   int       order;			/* which malloc call is it? */
-  int       size;			/* size of malloc invocation */
+  size_t    size;			/* size of malloc invocation */
   double   *ptr;			/* memory location returned */
   char  file[MAX_STRING_LEN+1];   	/* file name */
   int       line;                       /* line number */
@@ -238,7 +238,7 @@ va_dcl
 
   total = dim[numdim-1].off + dim[numdim-1].total * dim[numdim-1].size;
 
-  dfield = (double *) Zoltan_Malloc((int) total, file, lineno);
+  dfield = (double *) Zoltan_Malloc(total, file, lineno);
 
   if (dfield != NULL) {
     field  = (char *) dfield;
@@ -261,7 +261,7 @@ va_dcl
 
 /* Safe version of calloc.  */
 
-double *Zoltan_Calloc (int num, int size, char *filename, int lineno)
+double *Zoltan_Calloc (size_t num, size_t size, char *filename, int lineno)
 {
 double *p ;
   p = Zoltan_Malloc (num*size, filename, lineno) ;
@@ -275,7 +275,7 @@ double *p ;
 
 /* Safe version of malloc.  Does not initialize memory .*/
 
-double *Zoltan_Malloc(int n, char *filename, int lineno)
+double *Zoltan_Malloc(size_t n, char *filename, int lineno)
 {
   char *yo = "Zoltan_Malloc";
   struct malloc_debug_data *new_ptr;     /* data structure for malloc data */
@@ -283,11 +283,12 @@ double *Zoltan_Malloc(int n, char *filename, int lineno)
   double *pntr;           /* return value */
 
   if (n > 0) {
-    pntr = (double *) malloc((unsigned) n);
+    pntr = (double *) malloc(n);
     if (pntr == NULL) {
       GET_RANK(&proc);
       fprintf(stderr, "%s (from %s,%d) No space on proc %d - number of bytes "
-              "requested = %d\n", yo, filename, lineno, proc, n);
+              "requested = %lu\n", yo, filename, lineno, proc,
+              (unsigned long) n);
       return ((double *) NULL);
     }
     nmalloc++;
@@ -297,7 +298,8 @@ double *Zoltan_Malloc(int n, char *filename, int lineno)
   else {		/* n < 0 */
     GET_RANK(&proc);
     fprintf(stderr, "%s (from %s,%d) ERROR on proc %d: "
-	    "Negative malloc argument. (%d)\n", yo, filename, lineno, proc, n);
+	    "Negative malloc argument. (%lu)\n", yo, filename, lineno, proc, 
+            (unsigned long) n);
     return ((double *) NULL);
   }
 
@@ -308,8 +310,8 @@ double *Zoltan_Malloc(int n, char *filename, int lineno)
 
     if (new_ptr == NULL) {
       GET_RANK(&proc);
-      fprintf(stderr, "WARNING: No space on proc %d for malloc_debug %d.\n",
-	proc, n);
+      fprintf(stderr, "WARNING: No space on proc %d for malloc_debug %lu.\n",
+	proc, (unsigned long) n);
       return (pntr);
     }
 
@@ -329,9 +331,9 @@ double *Zoltan_Malloc(int n, char *filename, int lineno)
   if (DEBUG_MEMORY > 2) {
     /* Print out details of allocation. */
     GET_RANK(&proc);
-    fprintf(stderr, "Proc %d: order=%d, size=%d, location=0x%lx, "
+    fprintf(stderr, "Proc %d: order=%d, size=%lu, location=0x%lx, "
       "file=%s, line=%d\n",
-      proc, nmalloc, n, (long) pntr, filename, lineno);
+      proc, nmalloc, (unsigned long) n, (long) pntr, filename, lineno);
   }
 
   return pntr;
@@ -340,7 +342,7 @@ double *Zoltan_Malloc(int n, char *filename, int lineno)
 
 /* Safe version of realloc. Does not initialize memory. */
 
-double *Zoltan_Realloc(void *ptr, int n, char *filename, int lineno)
+double *Zoltan_Realloc(void *ptr, size_t n, char *filename, int lineno)
 {
   char *yo = "Zoltan_Realloc";
   struct malloc_debug_data *dbptr;   /* loops through debug list */
@@ -386,8 +388,8 @@ double *Zoltan_Realloc(void *ptr, int n, char *filename, int lineno)
       if (p == NULL) {
         GET_RANK(&proc);
         fprintf(stderr, "%s (from %s,%d) No space on proc %d - "
-		"number of bytes requested = %d\n",
-		yo, filename, lineno, proc, n);
+		"number of bytes requested = %lu\n",
+		yo, filename, lineno, proc, (unsigned long) n);
       }
     }
   }
@@ -503,8 +505,9 @@ void Zoltan_Memory_Stats()
     else if (DEBUG_MEMORY > 1) {
         GET_RANK(&proc);
 	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d, "
-                        "Max bytes = %d, total bytes = %d\n", 
-                         proc, nmalloc, nfree, bytes_max, bytes_used);
+                        "Max bytes = %lu, total bytes = %lu\n", 
+                         proc, nmalloc, nfree,
+                         (unsigned long) bytes_max, (unsigned long) bytes_used);
         if (nmalloc > nfree) 
           fprintf(stderr, "Proc %d: Possible memory error: "
                           "# malloc > # free.\n", proc);
@@ -514,9 +517,10 @@ void Zoltan_Memory_Stats()
 	if (top != NULL) {
 	    fprintf(stderr, "Proc %d: Remaining allocations:\n", proc);
 	    for (dbptr = top; dbptr != NULL; dbptr = dbptr->next) {
-		fprintf(stderr, " order=%d, size=%d, location=0x%lx, "
+		fprintf(stderr, " order=%d, size=%lu, location=0x%lx, "
                   "file=%s, line=%d\n", 
-                  dbptr->order, dbptr->size, (long) dbptr->ptr,
+                  dbptr->order, (unsigned long) (dbptr->size),
+                  (long) dbptr->ptr,
                   dbptr->file, dbptr->line);
 	    }
 	}
@@ -531,7 +535,7 @@ int       Zoltan_Malloc_Num(void)
 } /* Zoltan_Malloc_Num */
 
 
-int Zoltan_Memory_Usage (int type)
+size_t Zoltan_Memory_Usage (int type)
 {
 /* Return memory usage information:  total bytes used currently or  *
  * maximum bytes used at any point.  Default is maximum bytes used. */

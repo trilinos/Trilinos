@@ -222,6 +222,14 @@ type(PARIO_INFO) :: pio_info
         Test_Multi_Callbacks = iachar(trim(inp_line(index(inp_line,"= ")+2:))) - iachar('0')
     endif
 
+    if (lowercase(trim(command)) == "test graph callbacks") then
+        Test_Graph_Callbacks = iachar(trim(inp_line(index(inp_line,"= ")+2:))) - iachar('0')
+    endif
+
+    if (lowercase(trim(command)) == "test hypergraph callbacks") then
+        Test_Hypergraph_Callbacks = iachar(trim(inp_line(index(inp_line,"= ")+2:))) - iachar('0')
+    endif
+
     if (lowercase(trim(command)) == "test local partitions") then
 !       assumes there is one blank between "=" and the input value
         Test_Local_Partitions = iachar(trim(inp_line(index(inp_line,"=")+2:))) - iachar('0')
@@ -245,6 +253,15 @@ type(PARIO_INFO) :: pio_info
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! end of hacks to allow more of input file to be read (KDD, 10/2000) !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! Added JDT 3/2007 to save the zoltanparams file name
+! Note: we assume a good format here:
+! zoltanparams file = thefile.name
+    if (lowercase(trim(command)) == "zoltanparams file") then
+       prob%ztnPrm_file = lowercase(trim(inp_line(index(inp_line,"=")+2:)))
+    endif
+       
+!
 
 ! The other commands are not processed.  In the initial tests they either
 ! always have the same value (in which case they are set after this loop)
@@ -386,6 +403,10 @@ type(PARIO_INFO) :: pio_info
     call MPI_Bcast(pio_info%dsk_list, pio_info%dsk_list_cnt, MPI_INTEGER, &
                    0, MPI_COMM_WORLD, ierr)
   endif
+
+!  /* broadcast the param file name */
+  call MPI_Bcast(prob%ztnPrm_file, len(prob%ztnPrm_file), MPI_CHARACTER, &
+       0, MPI_COMM_WORLD, ierr)
 
 !  /* and broadcast the problem specifications */
   call MPI_Bcast(prob%method, len(prob%method), MPI_CHARACTER, 0,MPI_COMM_WORLD,ierr)

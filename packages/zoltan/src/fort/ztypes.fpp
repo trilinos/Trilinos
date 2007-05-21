@@ -46,6 +46,18 @@ type(Zoltan_PTR), parameter :: &
 #endif
                  char(0)//char(0)//char(0)//char(0))
 
+!--------------------------------------------------------------------------
+! user defined types corresponding to the C structs
+
+type Zoltan_Struct
+   sequence
+   type(Zoltan_PTR) :: addr
+#ifdef ABSOFT
+! workaround for a bug in the Absoft compiler
+   integer :: dummy
+#endif
+end type Zoltan_Struct
+
 interface operator(==)
    module procedure ptrcompare
 end interface

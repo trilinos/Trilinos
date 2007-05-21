@@ -16,11 +16,6 @@
 // 
 // C++ wrappers for Zoltan Timer library.  
 //
-// Initialization:
-//
-//   C++ style:  Zoltan_Timer_Object ztimer(timer_flag);
-//                                   ztimer();
-//
 // ************************************************************************
 
 #ifndef ZOLTAN_TIMER_CPP_H_
@@ -39,11 +34,26 @@ class Zoltan_Timer_Object {
 
 public:
 
+  // Constructor
   Zoltan_Timer_Object(int flag = ZOLTAN_TIME_WALL) {
     // Assumption: MPI has been initialized prior to this call.
     ZTStruct = Zoltan_Timer_Create(flag);
   }
 
+  // Copy constructor
+  Zoltan_Timer_Object(const Zoltan_Timer_Object &zt)
+  {
+  this->ZTStruct = Zoltan_Timer_Copy(zt.ZTStruct);
+  }
+
+  // Copy operator
+  Zoltan_Timer_Object & operator= (const Zoltan_Timer_Object &zt)
+  {
+    Zoltan_Timer_Copy_To(&(this->ZTStruct), zt.ZTStruct);
+    return *this;
+  }
+
+  // Destructor
   ~Zoltan_Timer_Object() {
     Zoltan_Timer_Destroy(&ZTStruct);
   }
@@ -69,12 +79,10 @@ public:
 
   int Print(const int &ts_idx, const int &proc, 
             const MPI_Comm &comm, FILE *os) const {
-    // KDD  Can we use ostream instead of FILE*?  How convert it for C call??
     return Zoltan_Timer_Print(this->ZTStruct, ts_idx, proc, comm, os);
   }
 
   int PrintAll(const int &proc, const MPI_Comm &comm, FILE *os) const {
-    // KDD  Can we use ostream instead of FILE*?  How convert it for C call??
     return Zoltan_Timer_PrintAll(this->ZTStruct, proc, comm, os);
   }
 

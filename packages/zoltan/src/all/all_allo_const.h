@@ -41,6 +41,10 @@ typedef void ZOLTAN_FORT_FREE_INT_FN(int *arg);
 #endif
 #endif
 
+/* these are not as complicated - just a simple typedef for all
+   compilers, since we are not passing any Fortran structures */
+typedef void ZOLTAN_FORT_MALLOC_SET_STRUCT_FN(int *arg, int **ret);
+
 /* type selector for Zoltan_Special_Malloc */
 
 enum Zoltan_Special_Malloc_Type {
@@ -58,7 +62,12 @@ extern int Zoltan_Special_Malloc(ZZ *zz, void **array, int size,
 extern int Zoltan_Special_Free(ZZ *zz, void **array,
                       ZOLTAN_SPECIAL_MALLOC_TYPE type);
 extern void Zoltan_Register_Fort_Malloc(ZOLTAN_FORT_MALLOC_INT_FN *,
-                                        ZOLTAN_FORT_FREE_INT_FN *);
+                                        ZOLTAN_FORT_FREE_INT_FN *,
+					ZOLTAN_FORT_MALLOC_SET_STRUCT_FN *);
+extern int Zoltan_Special_Fort_Malloc_Set_Struct(int *zz_addr_bytes, 
+						 int **fort_zz);
+extern int Zoltan_Special_Fort_Free_Struct(int *fort_zz);
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -478,9 +478,9 @@ ZOLTAN_ID_PTR gid;
         /* This condition should never happen!! */
         /* Methods should not return arrays if no lists are requested. */
         *num_import_objs = *num_export_objs = -1;
-        Zoltan_LB_Free_Part_F90(zz, import_global_ids, import_local_ids, 
+        Zoltan_LB_Special_Free_Part(zz, import_global_ids, import_local_ids, 
                             import_procs, import_to_part);
-        Zoltan_LB_Free_Part_F90(zz, export_global_ids, export_local_ids, 
+        Zoltan_LB_Special_Free_Part(zz, export_global_ids, export_local_ids, 
                             export_procs, export_to_part);
         ZOLTAN_PRINT_WARN(zz->Proc, yo, 
                       "Method returned lists, but no lists requested.");
@@ -507,7 +507,7 @@ ZOLTAN_ID_PTR gid;
         /* Method returned import lists, but only export lists were desired. */
         /* Import lists not needed; free them. */
         *num_import_objs = -1;
-        Zoltan_LB_Free_Part_F90(zz, import_global_ids, import_local_ids, 
+        Zoltan_LB_Special_Free_Part(zz, import_global_ids, import_local_ids, 
                             import_procs, import_to_part);
       }
     }
@@ -535,7 +535,7 @@ ZOLTAN_ID_PTR gid;
           /* Method returned export lists, but only import lists are desired. */
           /* Export lists not needed; free them. */
           *num_export_objs = -1;
-          Zoltan_LB_Free_Part_F90(zz, export_global_ids, export_local_ids, 
+          Zoltan_LB_Special_Free_Part(zz, export_global_ids, export_local_ids, 
                               export_procs, export_to_part);
         }
       }
@@ -639,7 +639,7 @@ ZOLTAN_ID_PTR gid;
   
         free_hash_table(ht, ts);
 
-        Zoltan_LB_Free_Part_F90(zz, export_global_ids, export_local_ids, 
+        Zoltan_LB_Special_Free_Part(zz, export_global_ids, export_local_ids, 
                             export_procs, export_to_part);
         Zoltan_Special_Free(zz, (void **)&parts, 
                             ZOLTAN_SPECIAL_MALLOC_INT);

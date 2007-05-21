@@ -70,9 +70,9 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     goto End;
   }
 
-  if (strcmp(method_upper, "SIMPLE") == 0) {
-    zz->LB.Method = SIMPLE;
-    zz->LB.LB_Fn = Zoltan_Simple;
+  if (strcmp(method_upper, "BLOCK") == 0) {
+    zz->LB.Method = BLOCK;
+    zz->LB.LB_Fn = Zoltan_Block;
     zz->LB.Free_Structure = NULL;
     zz->LB.Copy_Structure = NULL;
   }
@@ -106,17 +106,28 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     goto End;
 #endif
   }
-  else if ((strcmp(method_upper, "GRAPH") == 0)
-           || (strcmp(method_upper, "PARMETIS") == 0)) {
-    zz->LB.Method = PARMETIS;
+  else if (strcmp(method_upper, "GRAPH") == 0){
+    zz->LB.Method = GRAPH;
+    zz->LB.LB_Fn = Zoltan_Graph;
+    zz->LB.Free_Structure = NULL;
+    zz->LB.Copy_Structure = NULL;
+    zz->LB.Point_Assign = NULL;
+    zz->LB.Box_Assign = NULL;
+  }
+  /* PARMETIS and JOSTLE are here for backward compatibility.
+   * New way: LB_METHOD = GRAPH
+   *          GRAPH_PACKAGE = PARMETIS or JOSTLE or PHG
+   */
+  else if (strcmp(method_upper, "PARMETIS") == 0){
+    zz->LB.Method = GRAPH;
     zz->LB.LB_Fn = Zoltan_ParMetis;
     zz->LB.Free_Structure = NULL;
     zz->LB.Copy_Structure = NULL;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
   }
-  else if (strcmp(method_upper, "JOSTLE") == 0) {
-    zz->LB.Method = JOSTLE;
+  else if (strcmp(method_upper, "JOSTLE") == 0){
+    zz->LB.Method = GRAPH;
     zz->LB.LB_Fn = Zoltan_Jostle;
     zz->LB.Free_Structure = NULL;
     zz->LB.Copy_Structure = NULL;

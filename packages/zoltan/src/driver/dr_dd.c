@@ -29,8 +29,11 @@ int build_elem_dd(MESH_INFO_PTR mesh)
 /* Create a distributed directory of the elements so we can track their
  * processor assignment after migrations.
  */
+int maxelems;
 
-  if (Zoltan_DD_Create(&(mesh->dd), MPI_COMM_WORLD, 1, 0, 0, 0, 0) != 0) {
+  MPI_Allreduce(&(mesh->num_elems), &maxelems, 1, MPI_INT, MPI_MAX,
+                MPI_COMM_WORLD);
+  if (Zoltan_DD_Create(&(mesh->dd), MPI_COMM_WORLD, 1, 0, 0, maxelems, 0) != 0){
     Gen_Error(0, "fatal:  NULL returned from Zoltan_DD_Create()\n");
     return 0;
   }

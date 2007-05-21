@@ -216,7 +216,7 @@ LB_INC		= lb_const.h lb_init_const.h
 ORDER_CSRC	= order.c order_struct.c perm.c
 ORDER_INC	= order_const.h 
 
-SIMPLE_CSRC	= simple.c random.c
+SIMPLE_CSRC	= block.c random.c
 SIMPLE_INC	= 
 
 RCB_CSRC	= rcb.c rcb_util.c rcb_box.c box_assign.c point_assign.c \
@@ -565,7 +565,7 @@ zfdrive:
 	"CC=$(CCOMP)"				\
 	"ZOLTAN_INC_PATH=$(ZOLTAN_INC_PATH)"	\
 	"F90=$(F90COMP)" 			\
-	"F90_MODULE_PREFIX=$(F90_MODULE_PREFIX)"\
+	"F90_MODULE_PREFIX=$(F90_MODULE_PREFIX)" \
 	"FARG=$(FARG)" 				\
         "LNK_LIBS=$(ZDRIVE_LIBS)"		\
 	"DEP_LIBS=$(ZDRIVE_DEPS)"		\

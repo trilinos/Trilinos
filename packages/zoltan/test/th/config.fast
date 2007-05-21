@@ -15,13 +15,17 @@ FAST_SERVER_CVSROOT /space/sandiacvs/CVS-FAST
 FAST_PROJECT        zoltan
 
 
-Test zoltan-sun-smoke
-seamus,pill.sandia.gov
-csh -f ../../zoltan.build $tname
+Test zoltan-sun-nightly
+seamus
+csh -f ../../zoltan.build gcctest $tname
 
 Test zoltan-linux-smoke
-pill.sandia.gov,bobo.sandia.gov
-csh -f ../../zoltan.build $tname
+bobo.sandia.gov
+csh -f ../../zoltan.build linux $tname
+
+Test zoltan-linux64-nightly
+pill.sandia.gov
+csh -f ../../zoltan.build lin64test $tname
 
 Test zoltan-codecheck
 software.sandia.gov

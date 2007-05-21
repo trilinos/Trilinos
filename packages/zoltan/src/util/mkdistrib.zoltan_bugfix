@@ -13,7 +13,7 @@ CURDIR="`pwd`"
 ACT_TAG="`echo "$TAGVAL"|sed s/' '//g`"
 rm -rf Zoltan ParMETIS3_1 siMPI
 rm -f zoltan_distrib.tar.gz
-cvs checkout -r Zoltan_v2_0_bugfix -P Zoltan
+cvs checkout -r Zoltan_v3_Release -P Zoltan
 cvs checkout -P ParMETIS3_1
 cvs checkout -P siMPI
 find . -name 'CVS' -exec rm -rf {} \;
@@ -72,7 +72,7 @@ tar cvf zoltan_distrib.tar Zoltan ParMETIS3_1 siMPI
 gzip zoltan_distrib.tar
 #
 # Tag repository.
-cvs rtag -r Zoltan_v2_0_bugfix ${ACT_TAG} Zoltan 
+cvs rtag -r Zoltan_v3_Release ${ACT_TAG} Zoltan 
 cvs rtag ${ACT_TAG} ParMETIS3_1
 cvs rtag ${ACT_TAG} siMPI
 exit 0

@@ -45,7 +45,7 @@ extern "C" {
 /* Length of character strings naming each timer. */
 /* If you change this constant, change the string format  */
 /* in Zoltan_Timer_Print, too. */
-#define MAXNAMELEN 23   
+#define MAXNAMELEN 31   
 
 /* Flag indicating whether a timer is in use. */
 #define INUSE 1
@@ -114,6 +114,8 @@ ZTIMER *Zoltan_Timer_Copy(ZTIMER *from)
 
   return to;
 }
+
+/****************************************************************************/
 int Zoltan_Timer_Copy_To(ZTIMER **to, ZTIMER *from)
 {
   ZTIMER *toptr = NULL;
@@ -143,6 +145,7 @@ int Zoltan_Timer_Copy_To(ZTIMER **to, ZTIMER *from)
   
   return ZOLTAN_OK;
 }
+
 /****************************************************************************/
 ZTIMER *Zoltan_Timer_Create(
   int timer_flag
@@ -266,7 +269,7 @@ static char *yo = "Zoltan_Timer_Start";
   TESTINDEX(zt, ts_idx, yo);
 
   ts = &(zt->Times[ts_idx]);
-  if (ts->Status > 2)  {
+  if (ts->Status > RUNNING)  {
     char msg[256];
     sprintf(msg, 
             "Cannot start timer %d at %s:%d; timer already running from %s:%d.",
@@ -310,7 +313,7 @@ double my_time;
   TESTINDEX(zt, ts_idx, yo);
 
   ts = &(zt->Times[ts_idx]);
-  if (ts->Status < 2) {
+  if (ts->Status < RUNNING) {
     if (ts->Stop_Line == -1)
       FATALERROR(yo, "Cannot stop timer; timer never started.")
     else {
@@ -358,26 +361,41 @@ int Zoltan_Timer_Print(
 static char *yo = "Zoltan_Timer_Print";
 ZTIMER_TS *ts;
 int my_proc, nproc;
+int restart = 0;
 double max_time;
 double min_time;
 double sum_time;
 
   TESTTIMER(zt, yo);
   TESTINDEX(zt, ts_idx, yo);
+  MPI_Comm_rank(comm, &my_proc);
+  MPI_Comm_size(comm, &nproc);
+
   ts = &(zt->Times[ts_idx]);
+  if (ts->Status > RUNNING)  {
+    /* Timer is running; stop it before printing the times.
+     * Don't want to include print times in timer.
+     */
+    restart = 1;
+    ZOLTAN_TIMER_STOP(zt, ts_idx, comm);
+  }
 
   MPI_Allreduce(&(ts->My_Tot_Time), &max_time, 1, MPI_DOUBLE, MPI_MAX, comm);
   MPI_Allreduce(&(ts->My_Tot_Time), &min_time, 1, MPI_DOUBLE, MPI_MIN, comm);
   MPI_Allreduce(&(ts->My_Tot_Time), &sum_time, 1, MPI_DOUBLE, MPI_SUM, comm);
 
-  MPI_Comm_rank(comm, &my_proc);
-  MPI_Comm_size(comm, &nproc);
   if (proc == my_proc) 
     fprintf(fp,
             "%3d ZOLTAN_TIMER %3d %23s:  MyTime %7.4lf  "
             "MaxTime %7.4lf  MinTime %7.4lf  AvgTime %7.4lf\n",
             proc, ts_idx, ts->Name, ts->My_Tot_Time, 
             max_time, min_time, sum_time/nproc);
+
+  if (restart) {
+    /* We stopped the timer for printing; restart it now. */
+    ZOLTAN_TIMER_START(zt, ts_idx, comm);
+  }
+
   return ZOLTAN_OK;
 }
 

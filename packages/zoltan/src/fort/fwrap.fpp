@@ -79,7 +79,9 @@ public :: &
    ZOLTAN_POST_MIGRATE_FN_TYPE, &
    ZOLTAN_OBJ_SIZE_FN_TYPE, &
    ZOLTAN_PACK_OBJ_FN_TYPE, &
-   ZOLTAN_UNPACK_OBJ_FN_TYPE
+   ZOLTAN_UNPACK_OBJ_FN_TYPE, &
+   ZOLTAN_HIER_NUM_LEVELS_FN_TYPE, &
+   ZOLTAN_HIER_PARTITION_FN_TYPE
 
 public:: &
    ZOLTAN_NUM_COARSE_OBJ_FN_TYPE, &
@@ -97,7 +99,8 @@ public:: &
    ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE, &
    ZOLTAN_HG_EDGE_WTS_FN_TYPE, &
    ZOLTAN_NUM_FIXED_OBJ_FN_TYPE, &
-   ZOLTAN_FIXED_OBJ_LIST_FN_TYPE
+   ZOLTAN_FIXED_OBJ_LIST_FN_TYPE, &
+   ZOLTAN_HIER_METHOD_FN_TYPE
 
 public :: &
    ZOLTAN_OTHER_REF, &
@@ -138,6 +141,8 @@ public :: &
    Zoltan_Migrate, &
    Zoltan_Help_Migrate, &
    Zoltan_Order, &
+   Zoltan_Color, &
+   Zoltan_Color_Test, &
    Zoltan_Generate_Files, &
    Zoltan_RCB_Box
 
@@ -164,23 +169,12 @@ public :: &
    Zoltan_Set_Pack_Obj_Multi_Fn, Zoltan_Set_Unpack_Obj_Multi_Fn, &
    Zoltan_Set_HG_Size_CS_Fn, Zoltan_Set_HG_CS_Fn, &
    Zoltan_Set_HG_Size_Edge_Wts_Fn, Zoltan_Set_HG_Edge_Wts_Fn,  &
-   Zoltan_Set_Num_Fixed_Obj_Fn, Zoltan_Set_Fixed_Obj_List_Fn
+   Zoltan_Set_Num_Fixed_Obj_Fn, Zoltan_Set_Fixed_Obj_List_Fn, &
+   Zoltan_Set_Hier_Num_Levels_Fn, Zoltan_Set_Hier_Partition_Fn, &
+   Zoltan_Set_Hier_Method_Fn
 
 public :: &
    Zoltan_Get_Child_Order
-
-!--------------------------------------------------------------------------
-! user defined types corresponding to the C structs
-
-type Zoltan_Struct
-   private
-   sequence
-   type(Zoltan_PTR) :: addr
-#ifdef ABSOFT
-! workaround for a bug in the Absoft compiler
-   integer :: dummy
-#endif
-end type Zoltan_Struct
 
 !--------------------------------------------------------------------------
 ! defined constants corresponding to Zoltan enumerated types
@@ -212,7 +206,9 @@ type(ZOLTAN_FN_TYPEF), parameter :: &
    ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE = ZOLTAN_FN_TYPEF(26_Zoltan_INT), &
    ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE  = ZOLTAN_FN_TYPEF(27_Zoltan_INT), &
    ZOLTAN_NUM_CHILD_FN_TYPE        = ZOLTAN_FN_TYPEF(28_Zoltan_INT), &
-   ZOLTAN_PARTITION_FN_TYPE        = ZOLTAN_FN_TYPEF(34_Zoltan_INT)
+   ZOLTAN_PARTITION_FN_TYPE        = ZOLTAN_FN_TYPEF(34_Zoltan_INT), &
+   ZOLTAN_HIER_NUM_LEVELS_FN_TYPE  = ZOLTAN_FN_TYPEF(43_Zoltan_INT), &
+   ZOLTAN_HIER_PARTITION_FN_TYPE   = ZOLTAN_FN_TYPEF(44_Zoltan_INT)
 
 type(ZOLTAN_FN_TYPES), parameter :: &
    ZOLTAN_NUM_EDGES_MULTI_FN_TYPE  = ZOLTAN_FN_TYPES(1_Zoltan_INT), &
@@ -243,7 +239,8 @@ type(ZOLTAN_FN_TYPES), parameter :: &
    ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE = ZOLTAN_FN_TYPES(39_Zoltan_INT), &
    ZOLTAN_HG_EDGE_WTS_FN_TYPE      = ZOLTAN_FN_TYPES(40_Zoltan_INT), &
    ZOLTAN_NUM_FIXED_OBJ_FN_TYPE    = ZOLTAN_FN_TYPES(41_Zoltan_INT), &
-   ZOLTAN_FIXED_OBJ_LIST_FN_TYPE   = ZOLTAN_FN_TYPES(42_Zoltan_INT)
+   ZOLTAN_FIXED_OBJ_LIST_FN_TYPE   = ZOLTAN_FN_TYPES(42_Zoltan_INT), &
+   ZOLTAN_HIER_METHOD_FN_TYPE      = ZOLTAN_FN_TYPES(45_Zoltan_INT)
 
 ! Type of refinement used when building a refinement tree
 ! These values must agree with the values in zoltan.h
@@ -281,6 +278,17 @@ use zoltan_user_data
 integer(Zoltan_INT) :: arg
 integer(Zoltan_INT_PTR), intent(out) :: ret_addr
 end subroutine Zfw_Get_Address_int
+end interface
+
+interface
+!NAS$ ALIEN "F77 zfw_get_address_struct"
+subroutine Zfw_Get_Address_struct(arg,ret_addr)
+use zoltan_types
+use lb_user_const
+use zoltan_user_data
+type(Zoltan_Struct) :: arg
+integer(Zoltan_INT_PTR), intent(out) :: ret_addr
+end subroutine Zfw_Get_Address_struct
 end interface
 
 interface
@@ -980,6 +988,40 @@ end function Zfw_Order
 end interface
 
 interface
+!NAS$ ALIEN "F77 zfw_color"
+function Zfw_Color(zz,nbytes,num_gid_entries,num_lid_entries,num_obj, &
+                   gids,lids,color_exp)
+use zoltan_types
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT) :: Zfw_Color
+INTEGER(Zoltan_INT), dimension(*), INTENT(IN) :: zz 
+INTEGER(Zoltan_INT), INTENT(IN) :: nbytes
+INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
+INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
+INTEGER(Zoltan_INT) :: gids(*), lids(*)
+INTEGER(Zoltan_INT) :: color_exp(*)
+end function Zfw_Color
+end interface
+
+interface
+!NAS$ ALIEN "F77 zfw_color_test"
+function Zfw_Color_Test(zz,nbytes,num_gid_entries,num_lid_entries,num_obj, &
+                   gids,lids,color_exp)
+use zoltan_types
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT) :: Zfw_Color_Test
+INTEGER(Zoltan_INT), dimension(*), INTENT(IN) :: zz 
+INTEGER(Zoltan_INT), INTENT(IN) :: nbytes
+INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
+INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
+INTEGER(Zoltan_INT) :: gids(*), lids(*)
+INTEGER(Zoltan_INT) :: color_exp(*)
+end function Zfw_Color_Test
+end interface
+
+interface
 !NAS$ ALIEN "F77 zfw_generate_files"
 function Zfw_Generate_Files(zz,nbytes,filename,filename_len, &
                           base_index, gen_geom, gen_graph, gen_hg)
@@ -1012,15 +1054,17 @@ end interface
 
 interface
 !NAS$ ALIEN "F77 zfw_register_fort_malloc"
-subroutine Zfw_Register_Fort_Malloc(malloc_int,free_int)
+subroutine Zfw_Register_Fort_Malloc(malloc_int,free_int,&
+      fort_malloc_set_struct)
 use zoltan_types
 use lb_user_const
 use zoltan_user_data
 implicit none
 #ifdef NASOFTWARE
-type(address), intent(in) :: malloc_int, free_int
+type(address), intent(in) :: malloc_int, free_int, &
+      fort_malloc_set_struct
 #else
-external malloc_int,free_int
+external malloc_int,free_int,fort_malloc_set_struct
 #endif
 end subroutine Zfw_Register_Fort_Malloc
 end interface
@@ -1188,6 +1232,14 @@ interface Zoltan_Order
    module procedure Zf90_Order
 end interface
 
+interface Zoltan_Color
+   module procedure Zf90_Color
+end interface
+
+interface Zoltan_Color_Test
+   module procedure Zf90_Color_Test
+end interface
+
 interface Zoltan_Generate_Files
    module procedure Zf90_Generate_Files
 end interface
@@ -1238,6 +1290,9 @@ end interface
 #include "set_hgedgeweights.if"
 #include "set_numfixedobj.if"
 #include "set_fixedobjlist.if"
+#include "set_hiernumlevels.if"
+#include "set_hierpartition.if"
+#include "set_hiermethod.if"
 
 !-------------------------------------------------------------------------
 ! Include LB_* interface for backward compatibility.
@@ -1303,6 +1358,28 @@ if (stat /= 0) then
 endif
 end subroutine fort_free_int
 
+subroutine fort_malloc_set_struct(struct_addr,ret_addr)
+! This routine is called from C to allocate a type(Zoltan_Struct) variable
+! and set it to correspond to a C Zoltan_Struct.  The address of the C
+! Zoltan_Struct is passed in through struct_addr as an array of integers,
+! each containing one byte of the address.  The address of the Fortran
+! type(Zoltan_Struct) is returned in ret_addr.
+integer(Zoltan_INT), intent(in) :: struct_addr(*)
+integer(Zoltan_INT_PTR), intent(out) :: ret_addr
+type(Zoltan_Struct), save :: new_struct
+integer :: i
+
+! copy the address of the C structure into the Fortran structure
+   do i=1,Zoltan_PTR_LENGTH
+      new_struct%addr%addr(i:i) = char(struct_addr(i))
+   end do
+! send the address of the allocated space to C.  I don't think we need a
+! different routine than the one used for integers, because it is only
+! using the address of the argument
+   call Zfw_Get_Address_struct(new_struct,ret_addr)
+
+end subroutine fort_malloc_set_struct
+
 !--------------------------------------------------------------------------
 ! Fortran wrapper procedures
 !--------------------------------------------------------------------------
@@ -1311,9 +1388,11 @@ function Zf90_Initialize(ver)
 integer(Zoltan_INT) :: Zf90_Initialize
 real(Zoltan_FLOAT), intent(out) :: ver
 #ifdef NASOFTWARE
-call Zfw_Register_Fort_Malloc(loc(fort_malloc_int),loc(fort_free_int))
+call Zfw_Register_Fort_Malloc(loc(fort_malloc_int),loc(fort_free_int), &
+loc(fort_malloc_set_struct))
 #else
-call Zfw_Register_Fort_Malloc(fort_malloc_int,fort_free_int)
+call Zfw_Register_Fort_Malloc(fort_malloc_int,fort_free_int, &
+fort_malloc_set_struct)
 #endif
 Zf90_Initialize = Zfw_Initialize(ver)
 end function Zf90_Initialize
@@ -1327,11 +1406,13 @@ real(Zoltan_FLOAT), intent(out) :: ver
 integer(Zoltan_INT), allocatable, dimension(:) :: int_argv,starts
 integer(Zoltan_INT) :: i, j, leng
 #ifdef NASOFTWARE
-call Zfw_Register_Fort_Malloc(loc(fort_malloc_int),loc(fort_free_int))
+call Zfw_Register_Fort_Malloc(loc(fort_malloc_int),loc(fort_free_int), &
+loc(fort_malloc_set_struct))
 #else
-call Zfw_Register_Fort_Malloc(fort_malloc_int,fort_free_int)
+call Zfw_Register_Fort_Malloc(fort_malloc_int,fort_free_int, &
+fort_malloc_set_struct)
 #endif
-allocate(starts(argc+1), int_argv(len(argv)*argc))
+allocate(starts(argc+1), int_argv(len(argv(1))*argc))
 starts(1) = 1
 do i=1,argc
    leng = len_trim(argv(i))
@@ -2355,6 +2436,42 @@ Zf90_Order = Zfw_Order(zz_addr,nbytes,num_gid_entries,num_lid_entries,num_obj,&
 end function Zf90_Order
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_Color(zz,num_gid_entries,num_lid_entries,num_obj,gids,lids,color_exp)
+integer(Zoltan_INT) :: Zf90_Color
+TYPE(Zoltan_Struct), INTENT(IN) :: zz 
+INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
+INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
+INTEGER(Zoltan_INT) :: gids(*), lids(*)
+INTEGER(Zoltan_INT) :: color_exp(*)
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   zz_addr(i) = ichar(zz%addr%addr(i:i))
+end do
+Zf90_Color = Zfw_Color(zz_addr,nbytes,num_gid_entries,num_lid_entries,num_obj,&
+                       gids,lids,color_exp)
+end function Zf90_Color
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_Color_Test(zz,num_gid_entries,num_lid_entries,num_obj,gids,lids,color_exp)
+integer(Zoltan_INT) :: Zf90_Color_Test
+TYPE(Zoltan_Struct), INTENT(IN) :: zz 
+INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
+INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
+INTEGER(Zoltan_INT) :: gids(*), lids(*)
+INTEGER(Zoltan_INT) :: color_exp(*)
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   zz_addr(i) = ichar(zz%addr%addr(i:i))
+end do
+Zf90_Color_Test = Zfw_Color_Test(zz_addr,nbytes,num_gid_entries,num_lid_entries,num_obj,&
+                       gids,lids,color_exp)
+end function Zf90_Color_Test
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Generate_Files(zz,filename,base_index,gen_geom,gen_graph,gen_hg)
 integer(Zoltan_INT) :: Zf90_Generate_Files
 type(Zoltan_Struct) INTENT_IN zz
@@ -2449,7 +2566,9 @@ end subroutine Zf90_Reftree_Get_Child_Order
 #include "set_hgedgeweights.fn"
 #include "set_numfixedobj.fn"
 #include "set_fixedobjlist.fn"
-
+#include "set_hiernumlevels.fn"
+#include "set_hierpartition.fn"
+#include "set_hiermethod.fn"
 
 !-------------------------------------------------------------------------
 ! Include LB_* interface for backward compatibility.

@@ -41,33 +41,38 @@ Part 1: Running interactively
 
     make and compile zoltan normally.  Assuming ZOLTAN_ARCH=gcc
 	$ cd Zoltan
-	$ gmake ZOLTAN_ARCH=gcc zoltan zdrive
+	$ gmake ZOLTAN_ARCH=gcc zdrive
 	...
 
     create the basic teststudy files with the following command:
 	$ cd test
 	$ csh -f mktests
 
-    This checks each subdirectory in Zoltan/test for zdrive.inp files,
+    mktests looks to see what zdrives have been compiled (Obj_ZARCH),
+    then searches each subdirectory in Zoltan/test for zdrive.inp files,
     and makes a "study" file for each zdrive found.  In this case, it
-    will create gcc.nightly.study.xml and gcc.smoke.study.xml in each
-    subdirectory, if they don't already exist.  It also creates a
-    checksum for the answers found.  This command only needs to be run
-    once.
+    will create test.gcc.nightly.study.xml and test.gcc.smoke.study.xml
+    in each subdirectory, if they don't already exist.  It also creates
+    a checksum for the answers found.  This command needs to be run
+    only once unless the answer files change or new ones are added.
 
     You can modify zoltan.tests or zoltan.tests.smoke to make your own
-    zdrive.inp sets.
+    zdrive.inp sets.  zoltan.tests.smoke contains only one test (usually
+    the first input file found) to run a single test instead of the
+    entire suite.
 
-    You can also modify or copy gcc.smoke.study.xml to point to a
+    You can also modify or copy test.gcc.smoke.study.xml to point to a
     different zoltan.tests file.
 
     Run a simple test (smoke test) to see if things are working:
 	$ cd hg_simple
-	$ exact gcc.smoke.study.xml
+	$ exact hg_simple.gcc.smoke.study.xml
 
     or run the full test, similar to test_zoltan
 	$ cd hg_simple
-	$ exact gcc.nightly.study.xml
+	$ exact -f hg_simple.gcc.nightly.study.xml
+
+    (Use -f to overwrite previous test runs.)
 
     Output for the nightly run should look similar to this:
 Experiment: gcc.nightly.exp1 ..........................................................
@@ -82,15 +87,38 @@ ID=25 Comb= numproc np=4 zdrive gcc zinput phg.initial_distribution.serial
     the checksum of the answers did not match.
 
     The experimental output is in a subdirectory of the experiment name,
-    in this case "hg_simple/exp1".  Note ID=25 in the failure message,
+    in this case "hg_simple.gcc.nightly/exp1".  
+    Note ID=25 in the failure message,
     and you can examine the output with appropriate substitutions in
-    hg_simple/exp1/gcc.nightly.exp1_25.0.out to see why it failed
+    hg_simple.gcc.nightly/exp1/gcc.nightly.exp1_25.0.out to see why it failed
     or the full program output in gcc.nightly.exp1_25.0.log.xml.
+
+KDD:  Actually, the name of the output directory differed significantly
+KDD:  on two platforms.  On seamus, it was hg_simple.gcc.nightly.  On my
+KDD:  mac, it was hg_simple.  Why is there a difference?
+
+SYC: I don't know... I need to see what OSX is doing.
+
+KDD:  The stdout and stderr are in the xml file -- Good!  
+KDD:  The numbering scheme is a little clumsy, but we can probably get used
+KDD:  to it.
+KDD:  I don't understand the contents of the out file.
 
     The checksum could fail because the answer file doesn't exist, or
     that the answers are different.  Specifically, it looks at the
     parser output of "AllPass" to see whether all output files passed
-    the checksum test.  If this is 0, it will fail.
+    the checksum test.  If AllPass is 0, it will fail, but "exit_comment"
+    will have extra information on failures.  The parser can also crash,
+    in which case the output files will have the reasons why.
+
+KDD:  Can I run all the test subdirectories with one command, without
+KDD:  having to into each subdirectory separately?  Should I just do
+KDD:  Part 2 below without the cron job?  Or will that archive data to the
+KDD:  CVS repository?
+
+SYC: It's possible to run multiple tests at once, but they need to be run
+SYC: from the same subdirectory.  (long story cut, I'll have to explain with
+SYC: example)
 
 
 ----------------------------------------------------
@@ -102,19 +130,24 @@ Part 2: running regression tests
     short, you simply edit the zoltan-th/config and have a cron job
     run zoltan-th/run_fast in that directory.
 
+    Mostly it involves checking out (via svn) zoltan-th, updating
+    config.fast, then creating a cron line to invoke run_fast
+    (via crontab -e).
+
     The file zoltan.build will checkout the current repository, build,
     and run the system.  The system will summarize the tests in the
-    next email at 8am.  run_fast can be started manually, and the results
-    will be added to the next email.  The config file must have the
-    current hostname and the tests to run.
+    next email at 8am through a cron script installed on software.
+    run_fast can also be started manually, and the results will be
+    added to the next email.  The config file (test/th/config.fast) must
+    have the current hostname and the tests to run checked into the
+    repository.  The list of hosts in config.fast are comma-separated,
+    so if you use the same config, you should add the host to the line
+    instead of creating a whole new entry.  Different ZOLTAN_ARCH should
+    have different entries.
 
-    Mostly it involves checking out (via svn) zoltan-th, then creating
-    a cron line to invoke run_fast (via crontab -e).
-
-    The line used on seamus is (all one line):
+    The cron line used on seamus is (all one line):
     5 0 * * * (cd $HOME/zoltan-th; EXACT_DRIVER="/usr/local/bin/mpirun -np";
 	export EXACT_DRIVER; ./run_fast) > $HOME/zoltan-th/cron.out 2>&1
-
 
 
 ----------------------------------------------------
@@ -142,8 +175,8 @@ zoltan.tests.smoke
   files by modifying this file.  mktests should not overwrite an existing
   zoltan.test file.
 
-gcc.nightly.study.xml
-gcc.smoke.study.xml
+[subdirectory_name].gcc.nightly.study.xml
+[subdirectory_name].gcc.smoke.study.xml
   These are also created by mktests, by making substitutions in
   Zoltan/test/test.study.xml file.  These define the test study, and
   can be changed as needed.  Be careful running mktests, as it can
@@ -163,12 +196,22 @@ checksums
   merely compared to the checksum, but this behavior might change so
   that you can see the output when something failed.
 
+KDD:  Does the checksum test respect the fact that, for some test problems,
+KDD:  we have different answer files for different architectures?
+KDD:  (These differences normally arise due to different random number
+KDD:  generators on different architectures.)
+KDD:  See, for example, Zoltan/test/ch_ewgt/answers/*linux.
+
+SYC: Not at this time, unfortunately.  I should add a "suffix" variable
+SYC: like I did with test_zoltan a while back.
+
 Environment variables:
 ----------------------------------------------------
 
 EXACT_DRIVER
   This is the mpirun command.  It defaults to "mpirun -np" and should
-  be set to the appropriate command.
+  be set to the appropriate command in the cron script, or your own
+  environment.
 
 ZOLTAN_ARCH
   gcc,sun,solaris,linux,linux64,etc
@@ -183,9 +226,9 @@ ZOLTAN_ZDRIVE
 Other files:
 ----------------------------------------------------
 
-test/th/config.fast	- for nightly regression tests
-test/th/zoltan.build	- for nightly regression tests
-test/th/codechecks.cfg	- for nightly regression tests
+test/th/config.fast	- for nightly regression tests (machine/study pairs)
+test/th/zoltan.build	- for nightly regression tests (list of test dirs)
+test/th/codechecks.cfg	- for nightly regression tests (bugzilla password)
 
 test/EXPNAME/*.study.xml	- describes the tests to run, executable, etc
 test/bin/exp.zoltan.pl		- launcher and parser for zoltan output
@@ -193,5 +236,5 @@ test/bin/exp.zoltan.pl		- launcher and parser for zoltan output
 test/EXPNAME/EXPNAME/*	- output from testing
 
 test/test.study.xml	- skeleton study file used by mktests
-test/mktests		- creates test/*/zoltan.tests[.smoke] and *.study.xml
+test/mktests		- creates test/*/zoltan.tests *.study.xml checksums
 ----------------------------------------------------

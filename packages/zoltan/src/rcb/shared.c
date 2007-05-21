@@ -50,6 +50,9 @@ int Zoltan_RB_Build_Structure(
   int *num_geom,                /* # values per object used to describe
                                    the geometry.                       */
   int wgtflag,                  /* number of weights per dot. */
+  double overalloc,             /* amount to overallocate by when realloc
+                                   of dot array must be done.
+                                   1.0 = no extra; 1.5 = 50% extra; etc. */
   int use_ids                   /* true if global and local IDs are to be
                                    kept for RCB or RIB.  In all cases, the 
                                    IDs are allocated and used in Zoltan 
@@ -83,7 +86,7 @@ int ierr = ZOLTAN_OK;
 
 
   /* Allow extra space for objects that are imported to the processor. */
-  *max_obj = (int)(1.5 * *num_obj) + 1;
+  *max_obj = (int)(overalloc * *num_obj) + 1;
   *global_ids = ZOLTAN_REALLOC_GID_ARRAY(zz, *global_ids, (*max_obj));
   *local_ids  = ZOLTAN_REALLOC_LID_ARRAY(zz, *local_ids, (*max_obj));
   *dots = (struct Dot_Struct *)ZOLTAN_MALLOC((*max_obj)*sizeof(struct Dot_Struct));

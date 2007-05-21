@@ -100,7 +100,9 @@ int chaco_dist_graph(
   /* Store pointers to original data */
   if (myproc == host_proc) {
     old_xadj   = *xadj;
+    *xadj      = NULL;
     old_adjncy = *adjncy;
+    *adjncy    = NULL;
     old_x      = *x;
     old_y      = *y;
     old_z      = *z;

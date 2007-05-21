@@ -24,7 +24,7 @@
 <body bgcolor="#FFFFFF">
 
 <div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
-|&nbsp; <a href="ug_release.html">Next</a>&nbsp; |&nbsp; <a href="ug.html">Previous</a></i></b></div>
+|&nbsp; <a href="ug_usage.html">Next</a>&nbsp; |&nbsp; <a href="ug.html">Previous</a></i></b></div>
 <!---------------------------------------------------------------------------->
 
 <h2>
@@ -73,7 +73,8 @@ We developed the Zoltan library to simplilfy many of the difficulties
 arising in dynamic applications.  Zoltan is a collection of data management
 services for unstructured, adaptive and dynamic applications.
 It includes a
-suite of parallel partitioning algorithms, data migration tools, distributed
+suite of parallel partitioning algorithms, data migration tools, parallel
+graph coloring tools, distributed
 data directories, unstructured communication services, and dynamic memory
 management tools.  Zoltan's data-structure neutral design allows it to be used
 by a variety of applications without imposing restrictions on application data
@@ -90,13 +91,19 @@ developers can use as little or as much of the library as desired.  The major
 packages in Zoltan are listed below.
 <ul>
 <li>
-A suite of <a href="ug_alg.html">dynamic load balancing and parallel repartitioning</a> algorithms;
+A suite of <a href="ug_alg.html">dynamic load balancing and parallel
+repartitioning</a> algorithms, including geometric, hypergraph and graph
+methods;
 switching between algorithms is easy, allowing straightforward comparisons of
 algorithms in applications.
 </li>
 <li>
 <a href="ug_interface_mig.html">Data migration tools</a> for moving data from
 old partitions to new one.
+</li>
+<li>
+<a href="ug_color.html">Parallel graph coloring tools</a> with both distance-1
+and distance-2 coloring.
 </li>
 <li>
 <a href="../ug_html/ug_util_dd.html">Distributed data directories</a>:
@@ -110,7 +117,7 @@ receives.
 </li>
 <li>
 <a href="../ug_html/ug_util_mem.html">Dynamic memory management tools</a>
-that greatly simplify dynamic memory debugging on state-of-the-art parallel
+that simplify dynamic memory debugging on state-of-the-art parallel
 computers.
 </li>
 
@@ -131,7 +138,8 @@ Our design of Zoltan does not restrict it to any particular type of
 application.  Rather, Zoltan operates on uniquely identifiable data items that
 we call <i>objects</i>.  For example, in finite element applications, objects
 might be elements or nodes of the mesh.  In particle applications, objects
-might be particles.  In linear solvers, objects might be matrix rows.
+might be particles.  In linear solvers, objects might be matrix rows or 
+non-zeros.
 <p>
 Each object must have a unique <i>global identifier (ID)</i> 
 represented as an array
@@ -144,12 +152,12 @@ indices of objects can improve the performance (and convenience) of Zoltan's
 interface to applications.
 <p>
 We use a simple example to illustrate the above terminology.
-In the figure 
+On the left side of the figure 
 <a href="#Terms Figure">below</a>, a simple finite element mesh is presented.
 <p>
-<center><a NAME="Terms Figure"></a><img SRC="figures/Z.gif"></center>
+<center><a NAME="Terms Figure"></a><img SRC="figures/HGFigure.gif"></center>
 <p>
-The blue and yellow shading indicates the mesh is partitioned for two
+The blue and red shading indicates the mesh is partitioned for two
 processors.  An application must
 provide information about the current mesh and partition to Zoltan.  
 If, for example,
@@ -158,29 +166,44 @@ mesh,
 it must provide information about the elements when Zoltan asks for object 
 information.
 <p>
-In this example, the elements have unique numbers
-assigned to them, as shown by the numbers in the elements.  These unique
-numbers can be used as global IDs in Zoltan.  In addition, on each
+In this example, the elements have unique IDs
+assigned to them, as shown by the letters in the elements.  These unique
+letters can be used as global IDs in Zoltan.  In addition, on each
 processor, local numbering information may be available.
 For instance, the elements owned by a processor may be stored in arrays
-in the processor's memory.  An element's local array index may be provided to Zoltan
-as a local ID.
+in the processor's memory.  An element's local array index may be provided to 
+Zoltan as a local ID.
 <p>
 For geometric algorithms, the application must provide coordinate
 information to Zoltan.  In this example, the coordinates of the mid-point of 
 an element are used.
 <p>
-For graph-based algorithms, information about the connectivity of
+For hypergraph- and graph-based algorithms, 
+information about the connectivity of
 the objects must be provided to Zoltan.  In this example, the application may
-consider elements connected if they share a face.  The connections between
-elements, or <i>edges</i> of the connectivity graph, are shown in red.
+consider elements connected if they share a face.  A hypergraph representing
+this problem is then shown to the right of the mesh.  A <i>hyperedge</i> exists
+for each object (squares labeled with lower-case letters corresponding
+to the related object).  Each hyperedge connects
+the object and all of its face neighbors.  The hyperedges are passed to
+Zoltan with a label (in this example, a lower-case letter) and a list of
+the object IDs in that hyperedge.
+<p>
+Graph connections, or <i>edges</i>, across element faces may also specified.
 Connectivity information is passed to Zoltan by specifying a neighbor list for
 an object.  The neighbor list consists of the global IDs of neighboring objects
-and the processor(s) currently owning those objects.
+and the processor(s) currently owning those objects.  Because relationships
+across faces are bidirectional, the graph edge lists and hypergraph hyperedge
+lists are nearly identical.  If, however, information flowed to, say, only
+the north and east edge neighbors of an element, the hypergraph model would
+be needed, as the graph model can represent only bidirectional relationships.
+In this case, the hyperedge contents would include only the north and east
+neighbors; they would exclude south and west neighbors.
 <p>
 The table below summarizes the information provided to Zoltan by an
 application for this finite element mesh.  Information about the objects
-includes their global and local IDs, geometry data, and graph data.
+includes their global and local IDs, geometry data, hypergraph data,
+and graph data.
 <p>
 <table Border="2" Width="100%">
 <tr>
@@ -198,70 +221,88 @@ includes their global and local IDs, geometry data, and graph data.
 <td><center>Neighbor Processor List</center></td>
 </tr>
 <tr>
-<td><center>Blue</center></td> 
-<td><center>1</center></td>
+<td><center>Red</center></td> 
+<td><center>A</center></td>
 <td><center>0</center></td>
-<td><center>(0.8,2.9)</center></td>
-<td><center>2</center></td>
+<td><center>(2,10)</center></td>
+<td><center>B,D</center></td>
 <td><center>Blue</center></td>
 </tr>
 <tr>
+<td><center>Blue</center></td> 
+<td><center>B</center></td>
+<td><center>0</center></td>
+<td><center>(1,7)</center></td>
+<td><center>A,C,D</center></td>
+<td><center>Red,Blue,Blue</center></td>
+</tr>
+<tr>
 <td><center></center></td> 
-<td><center>2</center></td>
+<td><center>C</center></td>
 <td><center>1</center></td>
-<td><center>(1.7,2.9)</center></td>
-<td><center>1,3</center></td>
+<td><center>(1,5)</center></td>
+<td><center>B,E,F</center></td>
+<td><center>Blue,Blue,Blue</center></td>
+</tr>
+<tr>
+<td><center></center></td> 
+<td><center>D</center></td>
+<td><center>2</center></td>
+<td><center>(3,7)</center></td>
+<td><center>A,B,E</center></td>
+<td><center>Red,Blue,Blue</center></td>
+</tr>
+<tr>
+<td><center></center></td> 
+<td><center>E</center></td>
+<td><center>3</center></td>
+<td><center>(3,5)</center></td>
+<td><center>C,D,F</center></td>
+<td><center>Blue,Blue,Blue</center></td>
+</tr>
+<tr>
+<td><center></center></td> 
+<td><center>F</center></td>
+<td><center>4</center></td>
+<td><center>(2,2)</center></td>
+<td><center>C,E</center></td>
 <td><center>Blue,Blue</center></td>
 </tr>
+</table>
+<table border="2" width="50%">
 <tr>
-<td><center></center></td> 
-<td><center>3</center></td>
-<td><center>2</center></td>
-<td><center>(2.5,2.9)</center></td>
-<td><center>2,4</center></td>
-<td><center>Blue,Yellow</center></td>
+<td COLSPAN="2"><center>Hyperedge Data</center></td>
 </tr>
 <tr>
-<td><center>Yellow</center></td> 
-<td><center>4</center></td>
-<td><center>0</center></td>
-<td><center>(2.0,2.1)</center></td>
-<td><center>3,5</center></td>
-<td><center>Blue,Yellow</center></td>
+<td><center>Hyperedge ID</center></td>
+<td><center>Hyperedge contents</center></td>
 </tr>
 <tr>
-<td><center></center></td> 
-<td><center>5</center></td>
-<td><center>1</center></td>
-<td><center>(1.1,1.0)</center></td>
-<td><center>4,6</center></td>
-<td><center>Yellow,Yellow</center></td>
+<td><center>a</center></td>
+<td><center>A,B,D</center></td>
 </tr>
 <tr>
-<td><center></center></td> 
-<td><center>6</center></td>
-<td><center>2</center></td>
-<td><center>(0.5,0.2)</center></td>
-<td><center>5,7</center></td>
-<td><center>Yellow,Yellow</center></td>
+<td><center>b</center></td>
+<td><center>A,B,C,D</center></td>
 </tr>
 <tr>
-<td><center></center></td> 
-<td><center>7</center></td>
-<td><center>3</center></td>
-<td><center>(1.3,0.2)</center></td>
-<td><center>6,8</center></td>
-<td><center>Yellow,Yellow</center></td>
+<td><center>c</center></td>
+<td><center>B,C,E,F</center></td>
 </tr>
 <tr>
-<td><center></center></td> 
-<td><center>8</center></td>
-<td><center>4</center></td>
-<td><center>(2.1,0.2)</center></td>
-<td><center>7</center></td>
-<td><center>Yellow</center></td>
+<td><center>d</center></td>
+<td><center>A,B,D,E</center></td>
+</tr>
+<tr>
+<td><center>e</center></td>
+<td><center>C,D,E,F</center></td>
+</tr>
+<tr>
+<td><center>f</center></td>
+<td><center>C,E,F</center></td>
 </tr>
 </table>
+
 
 <!---------------------------------------------------------------------------->
 <a NAME="Design"></a><hr><h2>Zoltan Design</h2>
@@ -286,8 +327,8 @@ for objects.
 
 <!---------------------------------------------------------------------------->
 <p>
-<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_release.html">Next:&nbsp;
-Zoltan Release Notes</a>&nbsp; | <a href="ug.html">Previous:&nbsp; Table of
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_usage.html">Next:&nbsp;
+Zoltan Usage</a>&nbsp; | <a href="ug.html">Previous:&nbsp; Table of
 Contents</a>]
 </body>
 </html>

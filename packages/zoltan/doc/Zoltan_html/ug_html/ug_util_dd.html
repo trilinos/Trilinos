@@ -5,7 +5,7 @@
    <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1376">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
-   <title> Zoltan User's Guide:  Memory Management Utilities</title>
+   <title> Zoltan User's Guide:  Distributed Data Directory Utilities</title>
 <!-----------------------------------------------------------------------------
  ! Zoltan Library for Parallel Applications                                   !
  ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
@@ -35,6 +35,7 @@
 <h2>
 <a NAME="Distributed Directory Utility"></a>Distributed Directory Utility
 </h2>
+A distributed directory may be viewed as a distributed hash table.
 The owner (i.e. the processor number) of any computational object is
 subject to change during load balancing.  An application may use this
 directory utility to manage its objects' locations.  A distributed
@@ -44,7 +45,10 @@ and avoids the bottle neck of a centralized directory design.
 This distributed directory module may be used alone or in conjunction
 with Zoltan's load balancing capability and memory and communication
 services.  The user should note that external names (subroutines, etc.)
-which prefaced by Zoltan_DD_ are reserved when using this module.
+prefaced by Zoltan_DD_ are reserved when using this module.
+Since the distributed directory uses collective communication,
+it is important that all processes (processors) call the same
+routine (function).
 <p>
 The user initially creates an empty distributed directory using
 <a href="#DD_Create">Zoltan_DD_Create</a>. Then global ID (GID) information is added
@@ -171,7 +175,12 @@ address of this structure to the other routines in this package.
 <hr>
 <a NAME="DD_Create"></a>
 <hr>
-<b>C:</b><br>
+<table width="100%">
+<tr valign=top width="100%">
+<td width="10%">
+<b>C:</b>
+</td>
+<td width="90%">
 int <b>Zoltan_DD_Create </b>
 (struct Zoltan_DD_Struct **<i>dd</i>,
 MPI_Comm <i>comm</i>,
@@ -180,7 +189,13 @@ int <i>num_lid_entries</i>,
 int <i>user_length</i>,
 int <i>table_length</i>,
 int <i>debug_level</i>);
-<br><b>C++:</b><br>
+</td>
+</tr>
+<tr valign=TOP>
+<td width="10%">
+<b>C++:</b>
+</td>
+<td width="90%">
 <b>Zoltan_DD</b>(
 const MPI_Comm & <i>comm</i>,
 const int & <i>num_gid_entries</i>,
@@ -200,6 +215,9 @@ const int & <i>num_lid_entries</i>,
 const int & <i>user_length</i>,
 const int & <i>table_length</i>,
 const int & <i>debug_level</i>);
+</td>
+</tr>
+</table>
 <hr>
 <b>Zoltan_DD_Create</b> allocates and initializes memory for the Zoltan_DD_Struct
 structure.  It must be called before any other distributed directory
@@ -236,7 +254,12 @@ if the updates represent the same owner for a GID.
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;user_length</i></td>
 <td>Length of user defined data field (optional, may be zero).</td></tr>
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;table_length</i></td>
-<td>Length of hash table (zero forces default value).</td></tr>
+<td>Length of hash table (zero forces default value of <b>50,000</b> slots).
+For large problems, this value should be increased to approximately 
+the number of
+global GIDs / number of processors (if you have enough memory) in order to 
+improve performance.
+</td></tr>
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;debug_level</i></td>
 <td>Legal values range in [0,3]. Sets response to various error
 conditions where 3 is the most verbose.</td></tr>
@@ -244,8 +267,16 @@ conditions where 3 is the most verbose.</td></tr>
 <td><b>Returned Value:</b></td><td></td></tr>
 <tr><td>&nbsp;&nbsp;&nbsp;int</td>
 <td><a href="ug_interface.html#Error Codes">Error code</a>.</td></tr>
-
 </table>
+<p>
+ZOLTAN_FATAL is returned for MPI problems or if <i>num_gid_entries,
+num_lid_entries,</i> or <i>user_length
+</i> do
+not match globally.
+<br>
+ZOLTAN_WARN is returned for illegal input arguements such as <i>dd</i> being NULL.
+<br>
+ZOLTAN_MEMERR is returned if sufficient memory can not be allocated.
 <p>
 In the C++ interface, the distributed directory
 is represented by a <B>Zoltan_DD</B> object.  It is created when the
@@ -260,8 +291,24 @@ with a call to <B>Zoltan_DD::Create()</B>.
 <hr>
 <a NAME="DD_Copy"></a>
 <hr>
-<b>C:</b> &nbsp; struct Zoltan_DD_Struct &nbsp *<b>Zoltan_DD_Copy</b> (struct Zoltan_DD_Struct *<i>from</i>);
-<br><b>C++:</b> &nbsp; <b>Zoltan_DD</b>(const Zoltan_DD &dd);
+<table width="100%">
+<tr valign=top width="100%">
+<td width="10%" >
+<b>C:</b>
+</td>
+<td width="90%" >
+struct Zoltan_DD_Struct &nbsp *<b>Zoltan_DD_Copy</b> (struct Zoltan_DD_Struct *<i>from</i>);
+</td>
+</tr>
+<tr valign=top>
+<td width="10%" >
+<b>C++:</b> 
+</td>
+<td width="90%" >
+<b>Zoltan_DD</b>(const Zoltan_DD &dd);
+</td>
+</tr>
+</table>
 <hr>
 This routine creates a new distributed directory structure and copies
 an existing one to it.  The corresponding routine in the C++ library
@@ -274,18 +321,34 @@ is the Zoltan_DD copy constructor.
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;from</i></td>
 <td>The existing directory structure which will be copied to the new one.</td></tr>
 
-<tr>
+<tr valign=top>
 <td><b>Returned Value:</b></td><td></td></tr>
 <tr><td>&nbsp;&nbsp;&nbsp;struct Zoltan_DD_Struct *</td>
-<td>The newly created directory structure.</td></tr>
+<td valign=top>The newly created directory structure.</td></tr>
 </table>
 
 <!------------------------------------------------------------------------->
 <hr>
 <a NAME="DD_Copy_To"></a>
 <hr>
-<b>C:</b> &nbsp; int <b>Zoltan_DD_Copy_To</b> (struct Zoltan_DD_Struct **<i>to</i>, struct Zoltan_DD_Struct *<i>from</i>);
-<br><b>C++:</b> &nbsp; Zoltan_DD & <b>operator=</b>(const Zoltan_DD &dd);
+<table width="100%">
+<tr valign=top width="100%">
+<td width="10%" >
+<b>C:</b> 
+</td>
+<td width="90%" >
+int <b>Zoltan_DD_Copy_To</b> (struct Zoltan_DD_Struct **<i>to</i>, struct Zoltan_DD_Struct *<i>from</i>);
+</td>
+</tr>
+<tr valign=top width="100%">
+<td width="10%">
+<b>C++:</b> 
+</td>
+<td width="90%">
+Zoltan_DD & <b>operator=</b>(const Zoltan_DD &dd);
+</td>
+</tr>
+</table>
 <hr>
 This routine copies one distributed directory structure to another.
 The corresponding method in the C++ library
@@ -311,8 +374,24 @@ is the Zoltan_DD class copy operator.
 <hr>
 <a NAME="DD_Destroy"></a>
 <hr>
-<b>C:</b> &nbsp; void <b>Zoltan_DD_Destroy</b> (struct Zoltan_DD_Struct **<i>dd</i>);
-<br><b>C++:</b> &nbsp; <b>~Zoltan_DD();</b>
+<table width="100%">
+<tr valign=top>
+<td width="10%">
+<b>C:</b> 
+</td>
+<td width="90%">
+void <b>Zoltan_DD_Destroy</b> (struct Zoltan_DD_Struct **<i>dd</i>);
+</td>
+</tr>
+<tr valign=top width="100%">
+<td width="10%">
+<b>C++:</b> 
+</td>
+<td width="90%">
+<b>~Zoltan_DD();</b>
+</td>
+</tr>
+</table>
 <hr>
 This routine frees all memory allocated for the distributed directory.
 No calls to any distributed directory functions using this 
@@ -334,14 +413,19 @@ to free the previously saved MPI comm.
 </table>
 <p>
 There is no explicit <b>Destroy</b> method in the C++ <b>Zoltan_DD</b>
-class.  The object is deallocated when it's destructor is called.
+class.  The object is deallocated when its destructor is called.
 <p>
 
 <!------------------------------------------------------------------------->
 <hr>
 <a NAME="DD_Update"></a>
 <hr>
+<table width="100%">
+<tr valign=top>
+<td width="10%">
 <b>C:</b><br>
+</td>
+<td width="90%">
 int <b>Zoltan_DD_Update</b>
 (struct Zoltan_DD_Struct *<i>dd</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
@@ -349,13 +433,22 @@ int <b>Zoltan_DD_Update</b>
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>user</i>,
 int *<i>partition</i>,
 int <i>count</i>);
-<br><b>C++:</b><br>
+</td>
+</tr>
+<tr valign=top width="100%">
+<td width="10%">
+<b>C++:</b>
+</td>
+<td width="90%">
 int <b>Zoltan_DD::Update</b>(
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>lid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>user</i>,
 int *<i>partition</i>,
 const int & <i>count</i>);
+</td>
+</tr>
+</table>
 <hr>
 <b>Zoltan_DD_Update</b> takes a list of GIDs and corresponding lists of
 optional local IDs, optional user data, and optional partitions. This
@@ -397,16 +490,27 @@ within one update cycle.
 <hr>
 <a NAME="DD_Find"></a>
 <hr>
+<table width="100%">
+<tr valign=top>
+<td width="10%">
 <b>C:</b><br>
+</td>
+<td width="90%">
 int <b>Zoltan_DD_Find</b>
-(Zoltan_DD_DDirectory *<i>dd</i>,
+(struct Zoltan_DD_Struct *<i>dd</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>lid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>data</i>,
 int *<i>partition</i>,
 int <i>count</i>,
 int *<i>owner</i>);
-<br><b>C++:</b><br>
+</td>
+</tr>
+<tr valign=top width="100%">
+<td width="10%">
+<b>C++:</b>
+</td>
+<td width="90%">
 int <b>Zoltan_DD::Find</b>(
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>lid</i>,
@@ -414,6 +518,9 @@ int <b>Zoltan_DD::Find</b>(
 int *<i>partition</i>,
 const int & <i>count</i>,
 int *<i>owner</i>) const;
+</td>
+</tr>
+</table>
 <hr>
 Given a list of GIDs, <b>Zoltan_DD_Find</b> returns corresponding
 lists of the GIDs' owners, local IDs, partitions, and optional
@@ -445,20 +552,44 @@ being used.
 </table>
 
 <p>
+The normal return "error code" is ZOLTAN_OK.
+<br>
+ZOLTAN_WARN is returned when at
+least one GID in the <i>gid</i> list is not found. The corresponding element in
+optional <i>owner</i> list is set to -1 if the <i>owner</i> array is not NULL. Setting the debug_level
+higher (> 0) will show an error message to confirm this problem.
+<br>
+ZOLTAN_WARN is returned whenever there is a problem with the input arguments (such as
+<i>dd</i> being NULL). In this case an error message is always printed.
+<p>
 
 <!------------------------------------------------------------------------->
 <hr>
 <a NAME="DD_Remove"></a>
 <hr>
+<table width="100%">
+<tr valign=top>
+<td width="10%">
 <b>C:</b><br>
+</td>
+<td width="90%">
 int <b>Zoltan_DD_Remove</b>
 (struct Zoltan_DD_Struct *<i>dd</i>,
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
 int <i>count</i>);
-<br><b>C++:</b><br>
+</td>
+</tr>
+<tr valign=top width="100%">
+<td width="10%">
+<b>C++:</b>
+</td>
+<td width="90%">
 int <b>Zoltan_DD::Remove</b>(
 <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
 const int & <i>count</i>);
+</td>
+</tr>
+</table>
 <hr>
 <b>Zoltan_DD_Remove</b> takes a list of GIDs and removes all of
 their information from the distributed directory.
@@ -485,13 +616,27 @@ their information from the distributed directory.
 <hr>
 <a NAME="DD_Set_Hash_Fn"></a>
 <hr>
+<table width="100%">
+<tr valign=top>
+<td width="10%">
 <b>C:</b><br>
+</td>
+<td width="90%">
 void <b>Zoltan_DD_Set_Hash_Fn</b>
 (struct Zoltan_DD_Struct *<i>dd</i>,
 unsigned int (*<i>hash</i>) (<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a>, int, unsigned int));
-<br><b>C++:</b><br>
+</td>
+</tr>
+<tr valign=top width="100%">
+<td width="10%">
+<b>C++:</b>
+</td>
+<td width="90%">
 void <b>Zoltan_DD::Set_Hash_Fn</b>(
 unsigned int (*<i>hash</i>) (<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a>, int, unsigned int));
+</td>
+</tr>
+</table>
 <hr>
 Enables the user to register a new hash function for the distributed
 directory. (If this routine is not called, the default hash function
@@ -541,11 +686,25 @@ NOTE:  This hash function might group the gid's directory information
 <hr>
 <a NAME="DD_Stats"></a>
 <hr>
+<table width="100%">
+<tr valign=top>
+<td width="10%">
 <b>C:</b><br>
+</td>
+<td width="90%">
 void <b>Zoltan_DD_Stats</b>
 (struct Zoltan_DD_Struct *<i>dd</i>);
-<br><b>C++:</b><br>
+</td>
+</tr>
+<tr valign=top width="100%">
+<td width="10%">
+<b>C++:</b>
+</td>
+<td width="90%">
 void <b>Zoltan_DD::Stats</b>() const;
+</td>
+</tr>
+</table>
 <hr>
 This routine prints out summary information about the local distributed
 directory. It includes the hash table length, number of GIDs stored in
@@ -647,8 +806,24 @@ high and low lists are evenly distributed among the processors via modulo
 <hr>
 <a NAME="DD_Print"></a>
 <hr>
-<b>C:</b> &nbsp; int <b>Zoltan_DD_Print</b> (struct Zoltan_DD_Struct *<i>dd</i>);
-<br><b>C++:</b> &nbsp; int <b>Zoltan_DD::Print</b> () const;
+<table width="100%">
+<tr valign=top>
+<td width="10%">
+<b>C:</b> 
+</td>
+<td width="90%">
+int <b>Zoltan_DD_Print</b> (struct Zoltan_DD_Struct *<i>dd</i>);
+</td>
+</tr>
+<tr valign=top width="100%">
+<td width="10%">
+<b>C++:</b> 
+</td>
+<td width="90%">
+int <b>Zoltan_DD::Print</b> () const;
+</td>
+</tr>
+</table>
 <hr>
 This utility displays (to stdout) the entire contents of the distributed
 directory at one line per GID.
@@ -686,20 +861,6 @@ This software module is built on top of the Zoltan Communications
 functions for efficiency. Improvements to the communications library
 will automatically benefit the distributed directory.
 <p>
-<p>
-FUTURE:
-
-<blockquote> The C99 capability for variable length arrays would
-             significantly simplify many of these following
-             routines.  (It eliminates the malloc/free calls for
-             temporary storage.  This helps prevent memory leaks.)
-             Other C99 features may also improve code readability.
-             The "inline" capability can potentially improve
-             performance. </blockquote>
-
-<blockquote> The distributed directory should be implemented via
-             threads.  However, MPI is not fully thread aware, yet.</blockquote>
-
 
 <hr WIDTH="100%">
 <br>[<a href="ug.html">Table of Contents</a>&nbsp; |&nbsp; <a href="ug_examples.html">Next:&nbsp;

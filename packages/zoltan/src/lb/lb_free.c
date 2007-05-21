@@ -54,7 +54,7 @@ int Zoltan_LB_Free_Part(
 
 }
 
-int Zoltan_LB_Free_Part_F90(
+int Zoltan_LB_Special_Free_Part(
   ZZ *zz,
   ZOLTAN_ID_PTR *global_ids, /* Array of global IDs */
   ZOLTAN_ID_PTR *local_ids,  /* Array of local IDs */
@@ -64,6 +64,15 @@ int Zoltan_LB_Free_Part_F90(
 {
 /*
  *  Routine to free the arrays returning the results of the load balancing.
+ *  This routine should be used within Zoltan to ensure that F90-allocated
+ *  arrays are freed correctly.  
+ *  For example, Zoltan SPECIAL_MALLOCs return arrays, but then needs to
+ *  free them while changing the return list format.  Zoltan should call
+ *  Zoltan_LB_Special_Free Part (not Zoltan_LB_Free_Part) to SPECIAL_FREE
+ *  the memory that was SPECIAL_MALLOCed.
+ * 
+ *  External applications do not need to use this routine, 
+ *  as the correct malloc/free protocal for their language will be observed.
  */
 
   Zoltan_Special_Free(zz, (void **)global_ids, ZOLTAN_SPECIAL_MALLOC_GID);
@@ -105,42 +114,6 @@ int Zoltan_LB_Free_Data(
 
   Zoltan_LB_Free_Part(import_global_ids, import_local_ids, import_procs, NULL);
   Zoltan_LB_Free_Part(export_global_ids, export_local_ids, export_procs, NULL);
-
-  return (ZOLTAN_OK);
-
-}
-
-
-int Zoltan_LB_Free_Data_F90(
-  ZZ *zz,
-  ZOLTAN_ID_PTR *import_global_ids, /* Array of global IDs for non-local objects 
-                                    assigned to this processor in the new
-                                    decomposition.                           */
-  ZOLTAN_ID_PTR *import_local_ids,  /* Array of local IDs for non-local objects
-                                    assigned to the processor in the new
-                                    decomposition.                           */
-  int **import_procs,           /* Array of processor IDs of processors owning
-                                   the non-local objects that are assigned to
-                                   this processor in the new decomposition.  */
-  ZOLTAN_ID_PTR *export_global_ids, /* Array of global IDs of
-                                   objects to be exported to other processors
-                                   to establish the new decomposition.       */
-  ZOLTAN_ID_PTR *export_local_ids,  /* Array of local IDs of
-                                   objects to be exported to other processors
-                                   to establish the new decomposition.       */
-  int **export_procs            /* Array of processor IDs
-                                   to which objects will be exported 
-                                   to establish the new decomposition.       */
-)
-{
-/*
- *  Routine to free the arrays returning the results of the load balancing.
- */
-
-  Zoltan_LB_Free_Part_F90(zz, import_global_ids, import_local_ids, 
-                          import_procs, NULL);
-  Zoltan_LB_Free_Part_F90(zz, export_global_ids, export_local_ids, 
-                          export_procs, NULL);
 
   return (ZOLTAN_OK);
 

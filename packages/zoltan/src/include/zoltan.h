@@ -32,7 +32,7 @@ typedef void ZOLTAN_VOID_FN(void);
 extern "C" {
 #endif
 
-#define ZOLTAN_VERSION_NUMBER   2.2
+#define ZOLTAN_VERSION_NUMBER   3.0
 /* 2.101 is update for Plimpton/Crozier; fixed memory leak in HG partitioning */
 /* 2.102 is update for Steensland; improve partition remapping to consider
    previous remapping vector. */
@@ -1893,11 +1893,8 @@ typedef int ZOLTAN_NUM_FIXED_OBJ_FORT_FN(
  *    num_fixed_obj       --  number of fixed objects to be stored
  *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
  *                            in a global ID
- *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
- *                            in a local ID
  *  Output:
  *    fixed_gids          --  global IDs of fixed objects
- *    fixed_lids          --  local IDs of fixed objects
  *    fixed_part          --  partition assignment of fixed objects
  *    ierr                --  error code
  */
@@ -1906,9 +1903,7 @@ typedef void ZOLTAN_FIXED_OBJ_LIST_FN(
   void *data,
   int num_fixed_obj,
   int num_gid_entries,
-  int num_lid_entries,
   ZOLTAN_ID_PTR fixed_gids,
-  ZOLTAN_ID_PTR fixed_lids,
   int *fixed_part,
   int *ierr
 );
@@ -1917,9 +1912,7 @@ typedef void ZOLTAN_FIXED_OBJ_LIST_FORT_FN(
   void *data,
   int *num_fixed_obj,
   int *num_gid_entries,
-  int *num_lid_entries,
   ZOLTAN_ID_PTR fixed_gids,
-  ZOLTAN_ID_PTR fixed_lids,
   int *fixed_part,
   int *ierr
 );
@@ -2124,6 +2117,11 @@ typedef int ZOLTAN_HIER_NUM_LEVELS_FN(
   int *ierr
 );
 
+typedef int ZOLTAN_HIER_NUM_LEVELS_FORT_FN(
+  void *data, 
+  int *ierr
+);
+
 /*****************************************************************************/
 /*
  *  Function to return, for the calling processor, the partition
@@ -2140,6 +2138,12 @@ typedef int ZOLTAN_HIER_NUM_LEVELS_FN(
 typedef int ZOLTAN_HIER_PARTITION_FN(
   void *data,
   int level,
+  int *ierr
+);
+
+typedef int ZOLTAN_HIER_PARTITION_FORT_FN(
+  void *data,
+  int *level,
   int *ierr
 );
 
@@ -2163,6 +2167,13 @@ typedef void ZOLTAN_HIER_METHOD_FN(
   void *data,
   int level,
   struct Zoltan_Struct *zz,
+  int *ierr
+);
+
+typedef void ZOLTAN_HIER_METHOD_FORT_FN(
+  void *data,
+  int *level,
+  int *zz, /* this is a Zoltan_Struct, but is converted for F90 */
   int *ierr
 );
 
@@ -2744,15 +2755,27 @@ int Zoltan_RCB_Box(
  *  Input:
  *    zz                  --  The Zoltan structure containing 
  *                            info for this load-balancing invocation.
+ *  Input/output:
+ *    gids                --  List of global ids. This array may be empty
+ *                            empty on input and filled by the ordering
+ *                            method, but memory must be allocated by the
+ *                            caller.
+ *
+ *    lids                --  List of local ids. This array may be empty
+ *                            empty on input and filled by the ordering
+ *                            method, but memory must be allocated by the
+ *                            caller.
+ *
  *  Output:
  *    num_gid_entries     --  number of entries of type ZOLTAN_ID_TYPE
  *                            in a global ID
  *    num_lid_entries     --  number of entries of type ZOLTAN_ID_TYPE
  *                            in a local ID
  *
- *    gids                --  list of global ids in permuted order
+ *    rank                --  rank[i] is the rank of gids[i] produced by 
+ *                            the ordering. This defines a permutation.
  *
- *    lids                --  list of local ids in permuted order
+ *    iperm               --  the inverse permutation of rank. 
  *
  *    order_info          --  pointer to an "order struct" that contains
  *                            additional information about an ordering
@@ -2991,14 +3014,6 @@ extern int Zoltan_LB_Free_Part(
   int **to_part
 );
 
-extern int Zoltan_LB_Free_Part_F90(
-  struct Zoltan_Struct *zz, 
-  ZOLTAN_ID_PTR *global_ids, 
-  ZOLTAN_ID_PTR *local_ids,
-  int **procs,
-  int **to_part
-);
-
 /*****************************************************************************/
 /*
  *  Routine to free the data arrays returned by Zoltan_Balance.  The arrays
@@ -3020,16 +3035,6 @@ extern int Zoltan_LB_Free_Part_F90(
  *  Returned value:       --  Error code
  */
 extern int Zoltan_LB_Free_Data(
-  ZOLTAN_ID_PTR *import_global_ids, 
-  ZOLTAN_ID_PTR *import_local_ids,
-  int **import_procs,
-  ZOLTAN_ID_PTR *export_global_ids, 
-  ZOLTAN_ID_PTR *export_local_ids,
-  int **export_procs
-);
-
-extern int Zoltan_LB_Free_Data_F90(
-  struct Zoltan_Struct *zz, 
   ZOLTAN_ID_PTR *import_global_ids, 
   ZOLTAN_ID_PTR *import_local_ids,
   int **import_procs,

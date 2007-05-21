@@ -5,7 +5,7 @@
    <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1377">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
-   <title>Zoltan User's Guide:  Algorithms</title>
+   <title>Zoltan User's Guide:  Load-Balancing Algorithms and Parameters</title>
 <!-----------------------------------------------------------------------------
  ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
@@ -23,27 +23,45 @@
 <body bgcolor="#FFFFFF">
 
 <div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
-|&nbsp; <a href="ug_alg_rcb.html">Next</a>&nbsp; |&nbsp; <a href="ug_param.html">Previous</a></i></b></div>
+|&nbsp; <a href="ug_alg_simple.html">Next</a>&nbsp; |&nbsp; <a href="ug_param.html">Previous</a></i></b></div>
 <!---------------------------------------------------------------------------->
 <h2>
-<a NAME="Algorithms"></a>Load-Balancing Algorithms</h2>
+<a NAME="Algorithms"></a>Load-Balancing Algorithms and Parameters</h2>
 The following dynamic load-balancing algorithms are currently included
 in the Zoltan library:
 <blockquote>
-<a href="ug_alg_simple.html">Simple</a> (SIMPLE)
-<br><a href="ug_alg_random.html">Random</a> (RANDOM)
-<br><a href="ug_alg_rcb.html">Recursive Coordinate Bisection (RCB)</a>
+<br><a href="ug_alg_simple.html">Simple Partitioners for Testing</a>
+<blockquote>
+<a href="ug_alg_block.html">Block Partitioning (BLOCK)</a>
+<br><a href="ug_alg_random.html">Random Partitioning (RANDOM)</a>
+</blockquote>
+<a href="ug_alg_geomtric.html">Geometric (Coordinate-based) Partitioners</a>
+<blockquote>
+<a href="ug_alg_rcb.html">Recursive Coordinate Bisection (RCB)</a>
 <br><a href="ug_alg_rib.html">Recursive Inertial Bisection (RIB)</a>
-<br><a href="ug_alg_hsfc.html">Hilbert Space-Filling Curve (HSFC)</a>
+<br><a href="ug_alg_hsfc.html">Hilbert Space-Filling Curve Partitioning (HSFC)</a>
 <br><a href="ug_alg_reftree.html">Refinement Tree Based Partitioning (REFTREE)</a>
-<br><a href="ug_alg_parmetis.html">Graph partitioning: ParMETIS (GRAPH or PARMETIS)</a>
-<br><a href="ug_alg_jostle.html">Graph partitioning: Jostle (JOSTLE)</a>
-<br><a href="ug_alg_phg.html">Hypergraph partitioning: PHG (HYPERGRAPH or PHG)</a>
-<br><a href="ug_alg_oct.html">Octree Partitioning (OCTPART)</a>
-<br><a href="ug_alg_hier.html">Hierarchical Partitioning (HIER)</a></blockquote>
+<!----------
+<br><a href="ug_alg_oct.html">Octree/Space-Filling Curve (SFC) Partitioning (OCT)</a>
+----------->
+</blockquote>
+<a href="ug_alg_hypergraph.html">Hypergraph Partitioning, Repartitioning and Refinement (HYPERGRAPH)</a> 
+<blockquote>
+<a href="ug_alg_phg.html">PHG</a> 
+<br><a href="ug_alg_patoh.html">PaToH</a>
+</blockquote>
+<a href="ug_alg_graph.html">Graph Partitioning and Repartitioning (GRAPH)</a>
+<blockquote>
+<a href="ug_alg_phg.html">PHG</a> 
+<br><a href="ug_alg_parmetis.html">ParMETIS</a>
+<br><a href="ug_alg_jostle.html">Jostle</a>
+</blockquote>
+<a href="ug_alg_hier.html">Hybrid Hierarchical Partitioning (HIER)</a>
+
+</blockquote>
 The parenthetical string is the parameter value for <i><a href="#LB_METHOD">LB_METHOD</a></i>
 parameter; the parameter is set through a call to <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
-<p>For further analysis and discussion of the algorithms, see [<a href="ug_refs.html#hendrickson-devine">Hendrickson
+<p>For further analysis and discussion of some of the algorithms, see [<a href="ug_refs.html#hendrickson-devine">Hendrickson
 and Devine</a>].
 <p><!---------------------------------------------------------------------------->
 <h3>
@@ -73,21 +91,44 @@ and
 <td>The load-balancing algorithm used by Zoltan is specified by this parameter.
 Valid values are&nbsp;
 <blockquote>
-"SIMPLE" (for <a href="ug_alg_simple.html">simple method</a>),
-<br>"RANDOM" (for <a href="ug_alg_random.html">random method</a>),
-<br>"RCB" (for <a href="ug_alg_rcb.html">recursive coordinate bisection</a>),
-<br>"RIB" (for <a href="ug_alg_rib.html">recursive inertial bisection</a>),
-<br>"HSFC" (for <a href="ug_alg_hsfc.html">Hilbert space-filling curve
+BLOCK (for <a href="ug_alg_block.html">block partitioning</a>),
+<br>RANDOM (for <a href="ug_alg_random.html">random partitioning</a>),
+<br>RCB (for <a href="ug_alg_rcb.html">recursive coordinate bisection</a>),
+<br>RIB (for <a href="ug_alg_rib.html">recursive inertial bisection</a>),
+<br>HSFC (for <a href="ug_alg_hsfc.html">Hilbert space-filling curve
 partitioning</a>),
-<br>"GRAPH" or "PARMETIS" (for any of the methods in the <a href="ug_alg_parmetis.html">ParMETIS</a> library),
-<br>"JOSTLE" (for any of the methods in the <a href="ug_alg_jostle.html">Jostle</a> library),
-<br>"HYPERGRAPH" or "PHG" (for <a href="ug_alg_phg.html">hypergraph partitioning</a>),
-<br>"OCTPART" (for <a href="ug_alg_oct.html">octree partitioning</a>),
-<br>"REFTREE" (for <a href="ug_alg_reftree.html">refinement tree based
-partitioning</a>), and
-<br>"NONE" (for no load-balancing).</blockquote>
+<br>REFTREE (for <a href="ug_alg_reftree.html">refinement tree based
+partitioning</a>)
+<br>GRAPH (to choose from collection of methods for <a href=ug_alg_graph.html>graphs</a>),
+<br>HYPERGRAPH (to choose from a collection of methods for <a href=ug_alg_hypergraph.html>hypergraphs</a>),
+<!--------------
+<br>OCTPART (for <a href="ug_alg_oct.html">octree partitioning</a>),
+---------------->
+<br>HIER (for hybrid <a href="ug_alg_hier.html">hierarchical partitioning</a>)
+<br>NONE (for no load balancing).</blockquote>
 </td>
 </tr>
+    <tr>
+      <td style="vertical-align: top;"><span style="font-style: italic;">&nbsp;&nbsp;&nbsp; <a name="LB_APPROACH"></a>LB_APPROACH</span><br>
+      </td>
+      <td style="vertical-align: top;">The desired load balancing
+approach.
+Only <i>LB_METHOD</i> = <a href="ug_alg_hypergraph.html">HYPERGRAPH</a> or
+<a href="ug_alg_graph.html">GRAPH</a> 
+uses the <i>LB_APPROACH</i> parameter.  Valid values are
+<blockquote>
+PARTITION (Partition "from scratch," not taking
+into account the current data distribution; this option is recommended
+for static load balancing.)<br>
+REPARTITION (Partition but take into account current data
+distribution to keep data migration low; this option is recommended for
+dynamic load balancing.)<br>
+REFINE (Quickly improve the current data
+distribution.)<br>
+</blockquote>
+      </td>
+    </tr>
+
 
 <tr VALIGN=TOP NOSAVE>
 <td NOSAVE><a NAME="NUM_GLOBAL_PARTITIONS"></a>&nbsp;&nbsp;&nbsp; <i>NUM_GLOBAL_PARTITIONS</i></td>
@@ -102,8 +143,10 @@ Integer values greater than zero are accepted. Not valid for
 
 <td>The number of partitions to be generated on this processor by a call
 to <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>.
-Integer values greater than or equal to zero are accepted. Not valid for <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.&nbsp;</td>  If any processor sets this parameter, NUM_LOCAL_PARTITIONS is assumed to be
+Integer values greater than or equal to zero are accepted. Not valid for <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.&nbsp;
+If any processor sets this parameter, NUM_LOCAL_PARTITIONS is assumed to be
 zero on processors not setting this parameter.  
+</td>  
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -190,6 +233,12 @@ of the <a href="ug_interface_mig.html">migration interface functions</a>.&nbsp;<
 <tr VALIGN=TOP>
 <td></td>
 
+<td><i>LB_APPROACH</i> = REPARTITION</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
 <td><i>NUM_GLOBAL_PARTITIONS</i> = Number of processors specified in
 <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.</td>
 </tr>
@@ -232,8 +281,8 @@ of the <a href="ug_interface_mig.html">migration interface functions</a>.&nbsp;<
 </table>
 
 <p><!---------------------------------------------------------------------------->
-<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_alg_rcb.html">Next:&nbsp;
-Recursive Coordinate Bisection (RCB)</a>&nbsp; |&nbsp; <a href="ug_param.html">Previous:&nbsp;
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_alg_simple.html">Next:&nbsp;
+Simple Partitioners for Testing</a>&nbsp; |&nbsp; <a href="ug_param.html">Previous:&nbsp;
 Zoltan Parameters and Output Levels</a>]
 </body>
 </html>

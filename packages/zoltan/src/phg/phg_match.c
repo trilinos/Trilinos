@@ -82,7 +82,7 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
         hgp->matching = NULL;
     else if (!strcasecmp(hgp->redm_str, "ipm"))
         hgp->matching = pmatching_ipm;
-    else if (!strcasecmp(hgp->redm_str, "agg-ipm")) {
+    else if (!strncasecmp(hgp->redm_str, "agg", 3)) { /* == "agg-ipm" */
         hgp->matching = pmatching_agg_ipm;
         hgp->match_array_type = 1;
     } else if (!strcasecmp(hgp->redm_str, "l-ipm"))
@@ -1303,7 +1303,6 @@ static int pmatching_agg_ipm (ZZ *zz,
     goto End;
   }
   
-  /* set a flag if user wants a column matching or a full matching */
   
   MPI_Type_contiguous (sizeof(Triplet), MPI_CHAR, &phasethreetype);
   MPI_Type_commit (&phasethreetype);

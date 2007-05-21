@@ -24,6 +24,7 @@ zfdrive:	$(ZOD)/fdr_migrate.o \
 		$(ZOD)/fdr_main.o \
 		$(ZOD)/fdr_loadbal.o \
 		$(ZOD)/fdr_input.o \
+		$(ZOD)/fdr_param_file.o \
 		$(ZOD)/fdr_chaco_io.o \
 		$(ZOD)/fdr_mm_io.o \
 		$(ZOD)/fdr_const.o \
@@ -31,7 +32,7 @@ zfdrive:	$(ZOD)/fdr_migrate.o \
 		$(ZOD)/libzoltan.a
 		$(COMPILE) -o      zfdrive $(ZOD)/fdr_main.o \
 			        $(ZOD)/fdr_loadbal.o $(ZOD)/fdr_input.o \
-				$(ZOD)/fdr_sort.o \
+				$(ZOD)/fdr_sort.o $(ZOD)/fdr_param_file.o \
 				$(ZOD)/fdr_mm_io.o $(ZOD)/mmio.o \
 			        $(ZOD)/fdr_chaco_io.o $(ZOD)/fdr_const.o \
 			        $(ZOD)/fdr_migrate.o $(ZOD)/farg.o \
@@ -56,7 +57,8 @@ $(ZOD)/fdr_migrate.o: 	fdr_migrate.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \
 	/bin/mv *.o *.mod $(ZOD)
 
 $(ZOD)/fdr_loadbal.o: 	fdr_loadbal.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \
-			$(ZOD)/fdr_migrate.o $(ZOD)/fdr_input.o
+			$(ZOD)/fdr_migrate.o $(ZOD)/fdr_input.o \
+			$(ZOD)/fdr_param_file.o
 	$(F90) $(ZOM) -c fdr_loadbal.f90
 	/bin/mv *.o *.mod $(ZOD)
 
@@ -66,6 +68,10 @@ $(ZOD)/fdr_sort.o: 	fdr_sort.f90
 
 $(ZOD)/fdr_input.o: 	fdr_input.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o 
 	$(F90) $(ZOM) -c fdr_input.f90
+	/bin/mv *.o *.mod $(ZOD)
+
+$(ZOD)/fdr_param_file.o: 	fdr_param_file.f90 $(ZOD)/mpi_h.o
+	$(F90) $(ZOM) -c fdr_param_file.f90
 	/bin/mv *.o *.mod $(ZOD)
 
 $(ZOD)/fdr_chaco_io.o: 	fdr_chaco_io.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \

@@ -38,11 +38,17 @@ static PARAM_VARS Drum_params[] = {
         { "ZOLTAN_BUILD_DRUM_TREE", NULL, "INT", 0 },
         { "ZOLTAN_START_DRUM_MONITORS", NULL, "INT", 0 },
 	{ "DRUM_MONITORING_FREQUENCY", NULL, "INT", 1 },
-	{ "DRUM_DEBUG_LEVEL", NULL, "INT", 0 },
-        { "DRUM_POWER_FILE_LOG", NULL, "STRING", 0 },
+        { "DRUM_USE_SNMP", NULL, "INT", 0},
+        { "DRUM_USE_KSTAT", NULL, "INT", 1},
+        { "DRUM_USE_NWS", NULL, "INT", 0 },
+        { "DRUM_NWS_METHOD", NULL, "INT", 0 },
+        { "DRUM_MONITOR_MEMORY", NULL, "INT", 0 },
+        { "DRUM_USE_FLAT_MODEL", NULL, "INT", 0 },
         { "DRUM_USE_NETWORK_POWERS", NULL, "INT", 0 },
 	{ "DRUM_FIXED_NETWORK_WEIGHT", NULL, "FLOAT", 0 },
-        { "DRUM_USE_NWS", NULL, "INT", 0 },
+        { "DRUM_IGNORE_RPP", NULL, "INT", 0 },
+	{ "DRUM_DEBUG_LEVEL", NULL, "INT", 0 },
+        { "DRUM_POWER_FILE_LOG", NULL, "STRING", 0 },
         { NULL, NULL, NULL, 0 } };
 
 int Zoltan_Drum_Set_Param(
@@ -75,16 +81,28 @@ int Zoltan_Drum_Init(ZZ *zz) {
                     (void *) &zz->Drum.start_monitors);
   Zoltan_Bind_Param(Drum_params, "DRUM_MONITORING_FREQUENCY",
 		    (void *) &zz->Drum.monitoring_frequency);
-  Zoltan_Bind_Param(Drum_params, "DRUM_DEBUG_LEVEL",
-		    (void *) &zz->Drum.debug_level);
-  Zoltan_Bind_Param(Drum_params, "DRUM_POWER_FILE_LOG",
-		    (void *) zz->Drum.power_filename);
+  Zoltan_Bind_Param(Drum_params, "DRUM_USE_SNMP",
+		    (void *) &zz->Drum.use_snmp);
+  Zoltan_Bind_Param(Drum_params, "DRUM_USE_KSTAT",
+		    (void *) &zz->Drum.use_kstat);
+  Zoltan_Bind_Param(Drum_params, "DRUM_USE_NWS",
+		    (void *) &zz->Drum.use_nws);
+  Zoltan_Bind_Param(Drum_params, "DRUM_NWS_METHOD",
+		    (void *) &zz->Drum.nws_method);
+  Zoltan_Bind_Param(Drum_params, "DRUM_MONITOR_MEMORY",
+		    (void *) &zz->Drum.monitor_memory);
+  Zoltan_Bind_Param(Drum_params, "DRUM_USE_FLAT_MODEL",
+		    (void *) &zz->Drum.use_flat_model);
   Zoltan_Bind_Param(Drum_params, "DRUM_USE_NETWORK_POWERS",
 		    (void *) &zz->Drum.use_network_powers);
   Zoltan_Bind_Param(Drum_params, "DRUM_FIXED_NETWORK_WEIGHT",
 		    (void *) &zz->Drum.fixed_network_weight);
-  Zoltan_Bind_Param(Drum_params, "DRUM_USE_NWS",
-		    (void *) &zz->Drum.use_nws);
+  Zoltan_Bind_Param(Drum_params, "DRUM_IGNORE_RPP",
+		    (void *) &zz->Drum.ignore_rpp);
+  Zoltan_Bind_Param(Drum_params, "DRUM_DEBUG_LEVEL",
+		    (void *) &zz->Drum.debug_level);
+  Zoltan_Bind_Param(Drum_params, "DRUM_POWER_FILE_LOG",
+		    (void *) zz->Drum.power_filename);
 
   /* set default values */
   /* can't do this - this is called on each LB_Balance invocation */
@@ -94,11 +112,17 @@ int Zoltan_Drum_Init(ZZ *zz) {
   zz->Drum.build_tree = 1;
   zz->Drum.start_monitors = 1;
   zz->Drum.monitoring_frequency = 1;
-  zz->Drum.debug_level = 0;
-  zz->Drum.power_filename[0] = '\0';
+  zz->Drum.use_snmp = 0;
+  zz->Drum.use_kstat = 1;
+  zz->Drum.use_nws = 0;
+  zz->Drum.nws_method = 0;
+  zz->Drum.monitor_memory = 0;
+  zz->Drum.use_flat_model = 0;
   zz->Drum.use_network_powers = 0;
   zz->Drum.fixed_network_weight = 0.0;
-  zz->Drum.use_nws = 0;
+  zz->Drum.ignore_rpp = 0;
+  zz->Drum.debug_level = 0;
+  zz->Drum.power_filename[0] = '\0';
 
   Zoltan_Assign_Param_Vals(zz->Params, Drum_params, zz->Debug_Level, zz->Proc,
 			   zz->Debug_Proc);
@@ -124,6 +148,13 @@ int Zoltan_Drum_Create_Model(ZZ *zz) {
 			   "Unable to create DRUM machine model");
 	return ZOLTAN_FATAL;
       }
+
+      /* some parameters should be set between machine model creation and
+	 machine model initialization */
+      sprintf(buf, "%d", zz->Drum.use_flat_model);
+      DRUM_setParam(zz->Drum.dmm, "USE_FLAT_MODEL", buf);
+      sprintf(buf, "%d", zz->Drum.ignore_rpp);
+      DRUM_setParam(zz->Drum.dmm, "IGNORE_RPP", buf);
 
       ierr = DRUM_initMachineModel(zz->Drum.dmm);
       if (ierr == DRUM_FATAL || ierr == DRUM_MEMERR) {
@@ -156,14 +187,20 @@ int Zoltan_Drum_Create_Model(ZZ *zz) {
       }
       
       DRUM_setMonitoringFrequency(zz->Drum.dmm, zz->Drum.monitoring_frequency);
+      sprintf(buf, "%d", zz->Drum.use_snmp);
+      DRUM_setParam(zz->Drum.dmm, "USE_SNMP", buf);
+      sprintf(buf, "%d", zz->Drum.use_kstat);
+      DRUM_setParam(zz->Drum.dmm, "USE_KSTAT", buf);
+      sprintf(buf, "%d", zz->Drum.use_nws);
+      DRUM_setParam(zz->Drum.dmm, "USE_NWS", buf);
+      sprintf(buf, "%d", zz->Drum.nws_method);
+      DRUM_setParam(zz->Drum.dmm, "NWS_METHOD", buf);
+      sprintf(buf, "%d", zz->Drum.monitor_memory);
+      DRUM_setParam(zz->Drum.dmm, "MONITOR_MEMORY", buf);
       sprintf(buf, "%d", zz->Drum.use_network_powers);
       DRUM_setParam(zz->Drum.dmm, "USE_NETWORK_POWERS", buf);
       sprintf(buf, "%f", zz->Drum.fixed_network_weight);
       DRUM_setParam(zz->Drum.dmm, "FIXED_NETWORK_WEIGHT", buf);
-      sprintf(buf, "%d", zz->Drum.use_nws);
-      DRUM_setParam(zz->Drum.dmm, "USE_NWS", buf);
-
-
     }
     
     if (zz->Drum.start_monitors) {
@@ -193,15 +230,25 @@ void Zoltan_Drum_Copy_Struct(struct Zoltan_Drum_Struct *to,
 			     struct Zoltan_Drum_Struct const *from) {
 
   to->dmm = from->dmm;
+  /* since we do not do a deep copy of the DRUM machine model, we
+     register the new reference, allowing it to be "deleted" twice
+     safely */
+  DRUM_registerReference(from->dmm);
   to->use_drum = from->use_drum;
   to->build_tree = from->build_tree;
   to->start_monitors = from->start_monitors;
   to->monitoring_frequency = from->monitoring_frequency;
-  to->debug_level = from->debug_level;
-  strncpy(to->power_filename, from->power_filename, 256);
+  to->use_snmp = from->use_snmp;
+  to->use_kstat = from->use_kstat;
+  to->use_nws = from->use_nws;
+  to->nws_method = from->nws_method;
+  to->monitor_memory = from->monitor_memory;
+  to->use_flat_model = from->use_flat_model;
   to->use_network_powers = from->use_network_powers;
   to->fixed_network_weight = from->fixed_network_weight;
-  to->use_nws = from->use_nws;
+  to->ignore_rpp = from->ignore_rpp;
+  to->debug_level = from->debug_level;
+  strncpy(to->power_filename, from->power_filename, 256);
 }
 
 /****************************************************************************/

@@ -292,6 +292,7 @@ static void compare_maps_with_ddirectory_results(
  */
 static const int want_size = 4;
 int num_elems = mesh->num_elems;
+int max_nelems;
 Zoltan_DD_Directory *dd = NULL;
 Zoltan_DD_Directory *ddCopy = NULL;
 ZOLTAN_ID_PTR gids = NULL;
@@ -344,7 +345,8 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
    * Create DDirectory and register all owned elements. 
    */
 
-  ierr = Zoltan_DD_Create(&dd, MPI_COMM_WORLD, 1, 1, 0, 0, 0);
+  MPI_Allreduce(&num_elems, &max_nelems, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  ierr = Zoltan_DD_Create(&dd, MPI_COMM_WORLD, 1, 1, 0, max_nelems, 0);
   if (ierr) {
     Gen_Error(0, "Fatal:  Error returned by Zoltan_DD_Create");
     error = 1;

@@ -31,9 +31,7 @@
 Zoltan's migration functions transfer object data to the processors in a
 new decomposition.  Data to be transferred is specified through the
 import/export lists returned by 
-<b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
-(or 
-<b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>).
+<b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>.
 Alternatively, users may specify their own import/export lists.
 <p>
 The
@@ -46,14 +44,12 @@ If requested, Zoltan can automatically transfer an application's data between
 processors to realize a new decomposition. This functionality will be
 performed as part of the call to 
 <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
-(or 
-<b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>)
 if the <b><a href="ug_alg.html#LB Parameters">AUTO_MIGRATE</a></b>
 parameter is set to TRUE (nonzero) via a call to <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 This approach is effective for when the data to be moved is relatively
 simple. For more complicated data movement, the application can leave <b><a href="ug_alg.html#LB Parameters">AUTO_MIGRATE</a></b>
 FALSE and call <b><a href="#Zoltan_Migrate">Zoltan_Migrate</a></b>
-(or <b><a href="#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>) itself.
+itself.
 In either case, <a href="ug_query_mig.html#Migration Query Functions">routines
 to pack and unpack object data</a> must be provided by the application.
 See the <a href="ug_examples_mig.html#Migration Example">Migration Examples</a>

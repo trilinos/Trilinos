@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-#define ZOLTAN_DD_HASH_TABLE_COUNT  503   /* default # of linked list heads */
+#define ZOLTAN_DD_HASH_TABLE_COUNT  50003   /* default # of linked list heads */
 #define ZOLTAN_DD_NO_PROC           -1    /* not a possible processor #     */
 
 

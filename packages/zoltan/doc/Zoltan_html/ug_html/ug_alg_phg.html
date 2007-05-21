@@ -23,66 +23,26 @@
 </head>
 <body bgcolor="#ffffff">
 <div align="right"><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
-|&nbsp; <a href="ug_alg_oct.html">Next</a>&nbsp; |&nbsp; <a
- href="ug_alg_jostle.html">Previous</a></i></b></div>
-<h2>
-<a name="Hypergraph Partitioning"></a>Hypergraph Partitioning</h2>
-Hypergraph partitioning is a useful partitioning and
-load balancing method when connectivity data is available. It can be
-viewed as a more sophisticated alternative to
-the traditional graph partitioning.
-<p>A hypergraph consists of vertices and hyperedges. A hyperedge
-connects
-one or more vertices. 
-A graph can be cast as a hypergraph in one of two ways: either every
-pair of neighboring vertices form a hyperedge, or a vertex and all
-its neighbors form a hyperedge.
-The hypergraph model is well
-suited to parallel computing, where vertices correspond to data objects
-and hyperedges represent the communication requirements. The basic
-partitioning problem is to partition the vertices into <i>k</i>
-approximately equal sets such that the number of cut hyperedges is
-minimized. Most partitioners (including Zoltan-PHG) allows a more
-general
-model where both vertices and hyperedges can be assigned weights.
-It has been
-shown that the hypergraph model gives a more accurate representation
-of communication cost (volume) than the graph model. In particular,
-for sparse matrix-vector multiplication, the hypergraph model
-<strong>exactly</strong> represents communication volume. Sparse
-matrices can be partitioned either along rows or columns;
-in the row-net model the columns are vertices and each row corresponds
-to an hyperedge, while in the column-net model the roles of vertices
-and hyperedges are reversed. </p>
-<p>Zoltan contains a native parallel hypergraph partitioner, called PHG
-(Parallel HyperGraph partitioner). In addition, Zoltan provides
-access to <a href="http://bmi.osu.edu/%7Eumit/software.htm">PaToH</a>,
-a serial hypergraph partitioner.
-Note that PaToH is not part of Zoltan and should be obtained
-separately from the <a href="http://bmi.osu.edu/%7Eumit/software.htm">
-PaToH web site</a>.
-Zoltan-PHG is a fully parallel multilevel hypergraph partitioner. For
-further technical description, see <a
- href="ug_refs.html#hypergraph-ipdps06">[Devine et al, 2006]</a>.<br>
-</p>
-<p>Planned future features (currently not supported):<br>
-</p>
-<ul>
-  <li>Fixed vertices</li>
-  <li>Repartitioning (to reduce migration cost)</li>
-  <li>Multiconstraint partitioning </li>
-  <li>2-dimensional (sparse matrix) partitioning </li>
-</ul>
-<p>
-For applications that already use Zoltan to do graph partitioning, it
-is
-fairly easy to upgrade to hypergraph partitioning. See the section
-<a href="ug_graph_vs_hg.html">graph vs. hypergraph</a> partitioning. </p>
+|&nbsp; <a href="ug_alg_patoh.html">Next</a>&nbsp; |&nbsp; <a
+ href="ug_alg_hypergraph.html">Previous</a></i></b></div>
+<h2 =""><a name="PHG"></a>PHG - Parallel Hypergraph and Graph Partitioning with
+Zoltan</h2>
+<span style="font-weight: bold;">New in version 3.0</span>: PHG now
+supports hypergraph repartititioning for dynamic load balancing!
+Repartititioning is the new default setting. Use the LB_APPROACH
+parameter to select partitioning "from scratch". <br>
+<br>
 <table nosave="" width="100%">
   <tbody>
     <tr>
-      <td valign="top"><b>Method String:</b></td>
-      <td><b>HYPERGRAPH</b></td>
+      <td valign="top"><b>Value of LB_METHOD:</b></td>
+      <td><b>HYPERGRAPH</b> (for <a href="ug_alg_hypergraph.html">hypergraph</a> partitioning) or <br>
+          <b>GRAPH</b> (for <a href="ug_alg_graph.html">graph</a> partitioning)
+      </td>
+    </tr>
+    <tr>
+      <td valign="top"><b>Value of HYPERGRAPH_PACKAGE:</b></td>
+      <td><b>PHG</b></td>
     </tr>
     <tr>
       <td><b>Parameters:</b></td>
@@ -90,83 +50,146 @@ fairly easy to upgrade to hypergraph partitioning. See the section
       </td>
     </tr>
     <tr>
-      <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
- style="font-style: italic;">HYPERGRAPH_PACKAGE</span><br>
-      </td>
-      <td style="vertical-align: top;">PHG (parallel) or PaToH (serial)<br>
+      <td valign="top"><i>&nbsp;&nbsp; LB_APPROACH<br>
+      </i></td>
+      <td>The load balancing approach:. <br>
+      <i>PARTITION</i>&nbsp; - partition from scratch, not taking&nbsp;
+the current data distribution into account<br>
+      <i>REPARTITION</i>&nbsp; - partition but try to stay close to the
+current partition/distribution
+      <br>
+      <i>REFINE</i>&nbsp; - refine the current partition/distribution;
+assumes only small changes
       </td>
     </tr>
     <tr>
-      <td style="vertical-align: top;"><span style="font-style: italic;">&nbsp;&nbsp;&nbsp;
+      <td style="vertical-align: top;">&nbsp;&nbsp; <span
+ style="font-style: italic;">PHG_REPART_MULTIPLIER</span><br>
+      </td>
+      <td style="vertical-align: top;"> For repartitioning, this
+parameter determines the trade-off between application communication
+(as represented by cut edges) and data migration related to
+rebalancing. PHG attempts to minimize the function
+(PHG_REPART_MULTIPLIER* edge_cut + migration volume). The migration
+volume is measured using the <a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a> or <a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a> query functions. Make sure the
+units for edges and object sizes are the same.<br>
+Simply put, to emphasize communication within the application, use a
+large value for PHG_REPART_MULTIPLIER. Typically this should be
+proportional to the number of iterations between load-balancing calls. </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">&nbsp;&nbsp; <a
+ name="PHG_EDGE_WEIGHT_OPERATION"></a><span style="font-style: italic;">PHG_EDGE_WEIGHT_OPERATION</span>
+      </td>
+      <td style="vertical-align: top;">Operation to be applied to edge
+weights supplied by different processes for the same hyperedge:<br>
+      <i>ADD</i> - the hyperedge weight will be the sum of the supplied
+weights<br>
+      <i>MAX</i> - the hyperedge weight will be the maximum of the
+supplied weights<br>
+      <i>ERROR</i> - if the hyperedge weights are not equal, Zoltan
+will flag an error, otherwise the hyperedge weight will be the value
+returned by the processes<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">&nbsp;&nbsp; <span
+ style="font-style: italic;">ADD_OBJ_WEIGHT</span><br>
+      </td>
+      <td style="vertical-align: top;"> Add another object (vertex)
+weight. Currently multi-weight partitioning is not supported, but this
+parameter may also be used for implicit vertex weights. Valid values
+are: <br>
+      <i>NONE</i> <br>
+      <i>UNIT</i> or <i>VERTICES</i> (each vertex has weight 1.0) <br>
+      <i>PINS</i> or <i>NONZEROS</i> or <i>vertex degree</i> (vertex
+weight equals number of hyperedges containing it, i.e., the degree)<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">&nbsp;&nbsp; <span
+ style="font-style: italic;">PHG_FROM_GRAPH_METHOD</span><br>
+      </td>
+      <td style="vertical-align: top;">Method for building a hypergraph from
+graph-based callback functions:<br>
+      <span style="font-style: italic;">NEIGHBORS</span> - a vertex and
+all its graph neighbors form a hyperedge (the default)<br>
+      <span style="font-style: italic;">PAIRS</span> - every pair of
+neighboring vertices form a hyperedge<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">&nbsp;&nbsp; <span
+ style="font-style: italic;">PHG_CUT_OBJECTIVE</span><br>
+      </td>
+      <td style="vertical-align: top;"> Selects the partitioning
+objective, <i>CONNECTIVITY</i> or <i>HYPEREDGES</i>. While hyperedges
+simply counts the number of hyperedges cut, the connectivity metric
+weights each cut edge by the number of participating processors - 1
+(aka the k-1 cut metric). The connectivity metric better represents
+communication volume for most applications. The hyperedge metric is
+useful for certain applications, e.g., minimizing matrix border size in
+block matrix decompositions. <br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><span style="font-style: italic;">&nbsp;&nbsp;
 PHG_OUTPUT_LEVEL</span><br>
       </td>
       <td style="vertical-align: top;">Level of verbosity; 0 is silent.<br>
       </td>
     </tr>
     <tr>
-      <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
+      <td style="vertical-align: top;">&nbsp;&nbsp; <span
  style="font-style: italic;">CHECK_HYPERGRAPH</span><br>
       </td>
       <td style="vertical-align: top;">Check that the query functions
-return valid input data; 0 or 1. (This slows performance; intended for<br>
+return valid input data; 0 or 1. (This slows performance; intended for
+debugging.)<br>
       </td>
     </tr>
     <tr>
-      <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
- style="font-style: italic;">(CHECK_GRAPH)</span><br>
-      </td>
-      <td style="vertical-align: top;">debugging.)<br>
-      </td>
-    </tr>
-    <tr>
-      <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
- style="font-style: italic;">PHG_FROM_GRAPH_METHOD</span><br>
-      </td>
-      <td style="vertical-align: top;">Method for converting a graph to a hypergraph:<br>
-      <span style="font-style: italic;">neighbors</span> - a vertex and all it's graph neighbors form a hyperedge<br>
-      <span style="font-style: italic;">pairs</span> - every pair of neighboring vertices form a hyperedge<br>
-      </td>
-    </tr>
-    <tr>
-      <td valign="top"><i>&nbsp;&nbsp;&nbsp; PHG_COARSENING_METHOD</i></td>
-      <td>The method to use in the matching/coarsening phase:<br>
-      <span style="font-style: italic;">ipm</span> - inner product
-matching (a.k.a. heavy connectivity matching); gives best quality.<br>
-      <span style="font-style: italic;">l-ipm </span>-&nbsp; local ipm
+      <td valign="top"><i>&nbsp;&nbsp; PHG_COARSENING_METHOD</i></td>
+      <td>Low-level parameter: The method to use in the matching/coarsening phase:<br>
+      <span style="font-style: italic;">AGG</span> - agglomerative inner product
+matching (a.k.a. agglomerative heavy connectivity matching); gives high quality.<br>
+      <span style="font-style: italic;">IPM</span> - inner product
+matching (a.k.a. heavy connectivity matching); gives high quality.<br>
+      <span style="font-style: italic;">L-IPM </span>-&nbsp; local IPM
 on each processor. Faster but usually gives poorer quality. <br>
-      <span style="font-style: italic;">a-ipm</span> - alternate
-between ipm and l-ipm. (A compromise between speed and quality.)<br>
+      <span style="font-style: italic;">A-IPM</span> - alternate
+between IPM and L-IPM. (A compromise between speed and quality.)<br>
       <span style="font-style: italic;">none -&nbsp; </span>no
 coarsening<i><br>
       </i></td>
     </tr>
     <tr>
-      <td valign="top">&nbsp;&nbsp;&nbsp; <i>PHG_COARSEPARTITION_METHOD</i></td>
-      <td>Method to partition the coarsest (smallest) hypergraph;
+      <td valign="top">&nbsp;&nbsp; <i>PHG_COARSEPARTITION_METHOD</i></td>
+      <td>Low-level parameter: Method to partition the coarsest (smallest) hypergraph;
 typically done in serial:<br>
-      <span style="font-style: italic;">random</span> - random<br>
-      <span style="font-style: italic;">linear</span> - linear
+      <span style="font-style: italic;">RANDOM</span> - random<br>
+      <span style="font-style: italic;">LINEAR</span> - linear
 assignment of the vertices (ordered by the user query function)<br>
-      <span style="font-style: italic;">greedy</span> - greedy method
+      <span style="font-style: italic;">GREEDY</span> - greedy method
 based on minimizing cuts<br>
-      <span style="font-style: italic;">auto</span> -&nbsp;
+      <span style="font-style: italic;">AUTO</span> -&nbsp;
 automatically select from the above methods (in parallel, the processes
 will do different methods)<br>
       </td>
     </tr>
     <tr>
-      <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
+      <td style="vertical-align: top;">&nbsp;&nbsp; <span
  style="font-style: italic;">PHG_REFINEMENT_METHOD</span><br>
       </td>
-      <td style="vertical-align: top;">Refinement algorithm:<br>
-      <span style="font-style: italic;">fm</span> - approximate
+      <td style="vertical-align: top;">Low-level parameter: Refinement algorithm:<br>
+      <span style="font-style: italic;">FM</span> - approximate
 Fiduccia-Mattheyses (FM)<br>
-      <span style="font-style: italic;">no</span> - no refinement<br>
+      <span style="font-style: italic;">NO</span> - no refinement<br>
       </td>
     </tr>
     <tr>
-      <td>&nbsp;&nbsp;&nbsp; <i>PHG_REFINEMENT_QUALITY</i></td>
-      <td>Knob to control the trade-off between run time and quality. 1
+      <td valign=top>&nbsp;&nbsp; <i>PHG_REFINEMENT_QUALITY</i></td>
+      <td>Low-level parameter: Knob to control the trade-off between run time and quality. 1
 is the recommended (default) setting, &gt;1 gives more refinement
 (higher quality partitions but longer run time), while &lt;1 gives less
 refinement (and
@@ -177,55 +200,32 @@ poorer quality).<br>
       <td style="vertical-align: top;">&nbsp;&nbsp; <span
  style="font-style: italic;">PHG_RANDOMIZE_INPUT</span><br>
       </td>
-      <td style="vertical-align: top;">Randomize layout of vertices and
+      <td style="vertical-align: top;">Low-level parameter: Randomize layout of vertices and
 hyperedges in internal parallel 2D layout? <br>
 Setting this parameter to 1 often reduces Zoltan-PHG execution time.<br>
-      </td>
-    </tr>
-    <tr>
-      <td style="vertical-align: top;">&nbsp; <a
- name="PHG_EDGE_WEIGHT_OPERATION"></a><span style="font-style: italic;">PHG_EDGE_WEIGHT_OPERATION</span>
-      </td>
-      <td style="vertical-align: top;">Operation to be applied to edge
-weights supplied by different processes for the same hyperedge:<br>
-      <i>add</i> - the hyperedge weight will be the sum of the supplied
-weights<br>
-      <i>max</i> - the hyperedge weight will be the maximum of the
-supplied weights<br>
-      <i>error</i> - if the hyperedge weights are not equal, Zoltan
-will flag an error, otherwise the hyperedge weight will be the value
-returned by the processes<br>
       </td>
     </tr>
     <tr nosave="" valign="top">
       <td>&nbsp;&nbsp; <span style="font-style: italic;">PHG_EDGE_SIZE_THRESHOLD</span><br>
       </td>
-      <td nosave="">Value 0.0 through 1.0, if number of vertices in hyperedge divided by total vertices in hypergraph exceeds this fraction, the hyperedge will be omitted.<br>
+      <td nosave="">Low-level parameter: Value 0.0 through 1.0, if number of vertices in
+hyperedge divided by total vertices in hypergraph exceeds this
+fraction, the hyperedge will be omitted.<br>
       </td>
     </tr>
     <tr nosave="" valign="top">
       <td>&nbsp;&nbsp; <span style="font-style: italic;">PHG_PROCESSOR_REDUCTION_LIMIT</span><br>
       </td>
-      <td nosave="">In V-cycle, redistribute coarsened hypergraph to this
-fraction of processors when number of pins in coarsened hypergraph is less than
-this fraction of original number of pins.  Original number of pins is redefined
+      <td nosave="">Low-level parameter: In V-cycle, redistribute coarsened hypergraph to
+this
+fraction of processors when number of pins in coarsened hypergraph is
+less than
+this fraction of original number of pins. Original number of pins is
+redefined
 after each processor redistribution.<br>
       </td>
     </tr>
     <tr>
-      <td style="vertical-align: top;">&nbsp;&nbsp; <span
- style="font-style: italic;">ADD_OBJ_WEIGHT</span><br>
-      </td>
-      <td style="vertical-align: top;">Add implicit vertex (object)
-weight. This will be in addition to the user-defined weights. (Note:
-Multi-weight partitioning is not yet supported, so currently only use
-this option with <a href="ug_param.html#General_Parameters">
-obj_weight_dim</a>=0.)
-Valid values:<br>
-"none"<br>
-"unit" or "vertices"<br>
-"pins" or "nonzeros" or "vertex degree"<br>
-      </td>
     </tr>
     <tr>
       <td valign="top"><b>Default values:</b></td>
@@ -235,8 +235,38 @@ Valid values:<br>
     <tr>
       <td><br>
       </td>
-      <td><i>HYPERGRAPH_PACKAGE = PHG<br>
+      <td><i>LB_APPROACH = REPARTITION<br>
       </i></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_REPART_MULTIPLIER=100</span></td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><span style="font-style: italic;">PHG_EDGE_WEIGHT_OPERATION=max</span></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">ADD_OBJ_WEIGHT=none</span></td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>PHG_FROM_GRAPH_METHOD = NEIGHBORS</i> (when LB_METHOD=HYPERGRAPH)<br>
+          <i>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+             &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+             &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+             = PAIRS</i> (when LB_METHOD=GRAPH)<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_CUT_OBJECTIVE=connectivity</span></td>
     </tr>
     <tr>
       <td style="vertical-align: top;"><br>
@@ -248,11 +278,6 @@ Valid values:<br>
       <td><br>
       </td>
       <td><span style="font-style: italic;">PHG_OUTPUT_LEVEL=0</span></td>
-    </tr>
-    <tr>
-      <td><br>
-      </td>
-      <td><i>PHG_FROM_GRAPH_METHOD=neighbors</i></td>
     </tr>
     <tr>
       <td><br>
@@ -280,11 +305,6 @@ Valid values:<br>
       <td style="vertical-align: top;"><span style="font-style: italic;">PHG_RANDOMIZE_INPUT=0</span></td>
     </tr>
     <tr>
-      <td><br>
-      </td>
-      <td><span style="font-style: italic;">PHG_EDGE_WEIGHT_OPERATION=max</span></td>
-    </tr>
-    <tr>
       <td style="vertical-align: top;"><br>
       </td>
       <td style="vertical-align: top;"><span style="font-style: italic;">PHG_EDGE_SIZE_THRESHOLD=0.25</span></td>
@@ -295,12 +315,7 @@ Valid values:<br>
       <td style="vertical-align: top;"><span style="font-style: italic;">PHG_PROCESSOR_REDUCTION_LIMIT=0.5</span></td>
     </tr>
     <tr>
-      <td style="vertical-align: top;"><br>
-      </td>
-      <td style="vertical-align: top;"><span style="font-style: italic;">ADD_OBJ_WEIGHT=none</span></td>
-    </tr>
-    <tr>
-      <td valign="top"><b>Required Query Functions:</b></td>
+      <td valign="top"><b>Required Query Functions for <i>LB_METHOD = HYPERGRAPH</i>:</b></td>
       <td><br>
       </td>
     </tr>
@@ -313,9 +328,7 @@ Valid values:<br>
       <td><br>
       </td>
       <td><b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
-or <b><a href="ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b><a
- href="ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
-pair</td>
+</td>
     </tr>
     <tr nosave="" valign="top">
       <td><br>
@@ -326,9 +339,18 @@ pair</td>
       </td>
     </tr>
     <tr>
-      <td valign="top"><b>Optional Query Functions:</b></td>
+      <td valign="top"><b>Optional Query Functions for <i>LB_METHOD = HYPERGRAPH</i>:</b></td>
       <td><br>
       </td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td>
+<b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b>
+or
+<b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
+</td>
     </tr>
     <tr>
       <td><br>
@@ -340,18 +362,72 @@ pair</td>
       </td>
       <td><b><a href="ug_query_lb.html#ZOLTAN_HG_EDGE_WTS_FN">ZOLTAN_HG_EDGE_WTS_FN</a></b></td>
     </tr>
-  </tbody>
-</table>
-<p>
+    <tr>
+    <td valign=top><b>Note for<br><i>LB_METHOD = HYPERGRAPH:</i></b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+    <td>
 It is possible to provide the graph query functions instead of the
 hypergraph queries, though this is not recommended. If only graph query
 functions are registered, Zoltan will automatically create a hypergraph
 from the graph, but this is not equivalent to graph partitioning.
 In particular, the edge weights will not be accurate.
+    </td>
+    </tr>
+    <tr>
+      <td valign="top"><b>Required Query Functions for <i>LB_METHOD = GRAPH</i>:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+</td>
+    </tr>
+    <tr nosave="" valign="top">
+      <td><br>
+      </td>
+      <td nosave=""> 
+      <b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_FN</a></b>
+or
+      <b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b>
+      <br>
+      <b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_MULTI_FN">ZOLTAN_EDGE_LIST_MULTI_FN</a></b>
+or
+      <b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></b>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top"><b>Optional Query Functions for <i>LB_METHOD = GRAPH</i>:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td>
+<b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b>
+or
+<b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
+</td>
+    </tr>
+  </tbody>
+</table>
+<p>
 </p>
 <hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
- href="ug_alg_oct.html">Next:&nbsp;
-Octree</a>&nbsp; |&nbsp; <a href="ug_alg_jostle.html">Previous:&nbsp;
-Jostle</a>]
+ href="ug_alg_patoh.html">Next:&nbsp;
+PaToH</a>&nbsp; |&nbsp; <a href="ug_alg_hypergraph.html">Previous:&nbsp;
+Hypergraph Partitioning</a>]
 </body>
 </html>

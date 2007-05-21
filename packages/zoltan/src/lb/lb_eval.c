@@ -853,10 +853,12 @@ static int get_nbor_parts(
 char *yo = "get_nbor_parts";
 struct Zoltan_DD_Struct *dd = NULL;
 int *owner = NULL;
+int maxnobj;
 int ierr;
 
+  MPI_Allreduce(&nobj, &maxnobj, 1, MPI_INT, MPI_MAX, zz->Communicator);
   ierr = Zoltan_DD_Create(&dd, zz->Communicator, zz->Num_GID, zz->Num_LID,
-                          0, 0, 0);
+                          0, maxnobj, 0);
   TEST_DD_ERROR(ierr, yo, zz->Proc, "Zoltan_DD_Create");
 
   ierr = Zoltan_DD_Update(dd, global_ids, local_ids, NULL, part, nobj);

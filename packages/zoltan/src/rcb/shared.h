@@ -42,7 +42,7 @@ struct Dot_Struct {	        /* dot = point in 3-space */
 };
 
 extern int Zoltan_RB_Build_Structure(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
-  struct Dot_Struct **, int *, int *, int *, int, int);
+  struct Dot_Struct **, int *, int *, int *, int, double, int);
 
 extern void Zoltan_RB_Print_All(ZZ *, ZOLTAN_ID_PTR , struct Dot_Struct *,
   int , int , ZOLTAN_ID_PTR , int *);

@@ -436,6 +436,18 @@ int Zoltan_PHG_Redistribute(
     /* UVC: TODO very simple straight forward partitioning right now;
        later we can implement a more "load balanced", or smarter
        mechanisms */
+    /* KDDKDD 5/11/07:  Round-off error in the computation of v2Col
+     * and n2Row can lead to different answers on different platforms.
+     * Vertices or edges get sent to different processors during the 
+     * split, resulting in different matchings and, thus, different
+     * answers.
+     * Problem was observed on hg_cage10, zdrive.inp.phg.ipm.nproc_vertex1
+     * and zdrive.inp.phg.ipm.nproc_edge1;
+     * solaris machine seamus and linux machine patches give different
+     * results due to differences in n2Row and v2Col, respectively.  
+     * Neither answer is wrong,
+     * but the linux results result in FAILED test in test_zoltan.
+     */
     frac = (float) ohg->nVtx / (float) ncomm->nProc_x;
     for (i=0; i<ohg->nVtx; ++i) 
         v2Col[i] = (int) ((float) i / frac);

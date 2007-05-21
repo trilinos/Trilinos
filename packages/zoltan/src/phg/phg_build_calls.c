@@ -450,7 +450,10 @@ int Zoltan_HG_Graph_Callbacks(
                                        GIDs, LIDs.
                               Output:  Removed edge fields of zhg are changed
                                        if dense edges are removed. */
-  PHGPartParams *hgp,      /* Input:   Parameters */
+  int use_all_neighbors,   /* Input:   How to build hyperedges from
+                                       graph edges.
+                                       use_all_neighbors = 1 --> NEIGHBORS
+                                       use_all_neighbors = 0 --> PAIRS */
   int gnVtx,               /* Input:   Global number of vertices in hgraph */
   float esize_threshold,   /* Input:   %age of gnVtx considered a dense edge */
   int return_removed,      /* Input:   flag indicating whether to return
@@ -496,7 +499,7 @@ ZOLTAN_ID_PTR vgids = zhg->GIDs;     /* Vertex info */
 ZOLTAN_ID_PTR vlids = zhg->LIDs;     /* Vertex info */
 ZOLTAN_ID_PTR vtx_gid, lid_ptr;
 int *num_nbors=NULL;
-int max_nbors, tot_nbors, use_all_neighbors;
+int max_nbors, tot_nbors;
 ZOLTAN_ID_PTR nbor_gids, gid_ptr, he_pins;
 int *nbor_procs, *proc_ptr, *he_procs;
 float *gewgts, *wgt_ptr, *he_wgts;
@@ -509,14 +512,6 @@ int num_pins, num_hedges, prefix_sum_hedges;
   *esizes = *pin_procs = NULL;
   *ewgts = NULL;
 
-  if ((hgp->convert_str[0] == 'n') ||   /* "neighbors" */
-      (hgp->convert_str[0] == 'N')){
-    use_all_neighbors = 1;
-  }
-  else{                                 /* "pairs"     */
-    use_all_neighbors = 0;
-  }
-
   ierr = Zoltan_Get_Num_Edges_Per_Obj(zz, nvtx, vgids, vlids, 
                  &num_nbors,   /* array of #neighbors for each vertex */
                  &max_nbors,   /* maximum in num_nbors array          */
@@ -528,14 +523,6 @@ int num_pins, num_hedges, prefix_sum_hedges;
     goto End;
   }
   
-  if ((tot_nbors == 0) && (!use_all_neighbors)){
-    /* 
-     * Since there are no connected vertices, there are no hyperedges. 
-     */
-    ZOLTAN_FREE(&num_nbors); 
-    goto End;
-  }
-
   if (use_all_neighbors){
     num_gids = tot_nbors + nvtx;
   }

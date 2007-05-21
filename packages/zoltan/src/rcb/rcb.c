@@ -57,7 +57,7 @@ extern "C" {
 /*  RCB_DEFAULT_OUTPUT_LEVEL = 1  Log times and counts, print summary */
 /*  RCB_DEFAULT_OUTPUT_LEVEL = 2  Log times and counts, print for each proc */
 #define RCB_DEFAULT_OUTPUT_LEVEL 0
-#define RCB_DEFAULT_OVERALLOC 1.0
+#define RCB_DEFAULT_OVERALLOC 1.2
 #define RCB_DEFAULT_REUSE FALSE
 
 /*****************************************************************************/
@@ -429,7 +429,8 @@ static int rcb_fn(
    */
 
   start_time = Zoltan_Time(zz->Timer);
-  ierr = Zoltan_RCB_Build_Structure(zz, &pdotnum, &dotmax, wgtflag, use_ids);
+  ierr = Zoltan_RCB_Build_Structure(zz, &pdotnum, &dotmax, wgtflag, overalloc,
+                                    use_ids);
   if (ierr < 0) {
     ZOLTAN_PRINT_ERROR(proc, yo, 
                    "Error returned from Zoltan_RCB_Build_Structure.");

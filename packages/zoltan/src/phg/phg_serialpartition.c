@@ -29,7 +29,6 @@ extern "C" {
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_greedy;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_random;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_linear;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_cluster;
 
 static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] = 
                                       {&coarse_part_greedy,
@@ -71,7 +70,6 @@ char *str, *str2;
   else if (!strcasecmp(str, "greedy")) return coarse_part_greedy;
   else if (!strcasecmp(str, "random")) return coarse_part_random;
   else if (!strcasecmp(str, "linear")) return coarse_part_linear;
-  else if (!strcasecmp(str, "cluster")) return coarse_part_cluster;
   else {                              
     *ierr = ZOLTAN_FATAL; 
     return NULL;
@@ -303,12 +301,10 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
         ZOLTAN_TIMER_START(zz->ZTime, timer_refine, phg->comm->Communicator);
       }
 
-      if (CoarsePartition != coarse_part_cluster) {
       /* UVCUVC: Refine new candidate: only one pass is enough. */
-        hgp->fm_loop_limit = 1;
-        Zoltan_PHG_Refinement(zz, shg, numPart, part_sizes, new_part, hgp);
-        hgp->fm_loop_limit = savefmlooplimit;
-      }
+      hgp->fm_loop_limit = 1;
+      Zoltan_PHG_Refinement(zz, shg, numPart, part_sizes, new_part, hgp);
+      hgp->fm_loop_limit = savefmlooplimit;
       
       /* stop refinement timer */
       if (fine_timing) {
@@ -560,27 +556,6 @@ static int seq_part (
   if (fixed_wgts) ZOLTAN_FREE(&fixed_wgts);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
-  return ZOLTAN_OK;
-}
-
-/****************************************************************************/
-/* Clustering. Assume coarsening identified clusters.  Simply assign a 
- * cluster number to each coarse vertex.
- */
-
-static int coarse_part_cluster(
-  ZZ *zz, 
-  HGraph *hg, 
-  int p, 
-  float *part_sizes,
-  Partition part, 
-  PHGPartParams *hgp
-)
-{
-int i;
-
-  for (i = 0; i < hg->nVtx; i++)
-    part[i] = i;
   return ZOLTAN_OK;
 }
 

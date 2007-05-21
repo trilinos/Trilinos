@@ -56,7 +56,8 @@ int MM_readfile (
  int *vwgt_dim, float **vwgt,
  int *ewgt_dim, float **ewgt,
  int **ch_start, int **ch_adj,
- int *base)
+ int *base,
+ int *global_nPins)
 {
 int prev_edge;
 const char *yo = "MM_readfile";
@@ -71,10 +72,12 @@ int *myVals= NULL, *inVals= NULL, *inptr = NULL;
 int remaining, chunksize, amt, myInCount, myMaxCount, myCount; 
 int rc, edge, vtx, idx,owner, num_lone_vertices;
 short *assignments=NULL;
+int error = 0;  /* flag to indicate status */
 
     /* Initialize */
     *nVtx  = *nEdge  = *nPins = *vwgt_dim = *ewgt_dim = 0;
-
+    *index = *vertex = *ch_start = *ch_adj = NULL;
+    *vwgt = *ewgt = NULL;
     *base = 1;   /* MatrixMarket is 1-based. */
 
 /*
@@ -121,9 +124,6 @@ short *assignments=NULL;
       }
     }
     MPI_Bcast(&gnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    if (gnz == 0){
-      return gnz;      /* failure */
-    }
     MPI_Bcast(&M, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
   
@@ -135,6 +135,7 @@ short *assignments=NULL;
       *nVtx = M;
       *nEdge = N;
     }
+    *global_nPins = gnz;
   
     if ((Num_Proc > 1) && pio_info->chunk_reader && (gnz > Num_Proc)){
       /* Process 0 will read the input file in chunks and send
@@ -145,7 +146,7 @@ short *assignments=NULL;
     }
   
     if (!read_in_chunks && (Proc > 0)){
-      return gnz;   /* global number of non-zeroes */
+      return error;   /* global number of non-zeroes */
     }
   
     if (read_in_chunks){
@@ -160,7 +161,8 @@ short *assignments=NULL;
         /* It was just too complicated to get this working */
         fprintf(stderr,
      "fatal: Chaco assignments not supported for very large hypergraph files");
-        return 0;
+        error = 1;
+        return error;
       }
 
       chunksize = 500*1024;   /* have a better idea? */
@@ -176,7 +178,8 @@ short *assignments=NULL;
         outVals = (int *)malloc(chunksize * 2 * sizeof(int));
         if (!sendcount || !start || !outVals){
           fprintf(stderr,"%s Memory allocation\n",yo);
-          return 0;
+          error = 1;
+          return error;
         }
       }
       remaining = gnz;
@@ -186,7 +189,8 @@ short *assignments=NULL;
       inVals = (int *)malloc(chunksize * 2 * sizeof(int));
       if (!myVals|| !inVals){
         fprintf(stderr,"%s Memory allocation\n",yo);
-        return 0;
+        error = 1;
+        return error;
       }
     
       while (remaining > 0){
@@ -216,7 +220,7 @@ short *assignments=NULL;
               owner = edge % Num_Proc;
             }
             if ((owner < 0) || (owner >= Num_Proc)){
-              printf("Confusion\n"); return 0;
+              printf("Confusion\n"); error = 1; return error;
             }
             sendcount[owner]++;
           }
@@ -250,7 +254,8 @@ short *assignments=NULL;
           rc = add_new_vals(outVals, myInCount, &myVals, &myCount, &myMaxCount);
           if (rc) {
             fprintf(stderr,"Process %d out of memory\n",Proc);
-            return 0;  
+            error = 1;
+            return error;  
           }
         }
         else{
@@ -261,7 +266,8 @@ short *assignments=NULL;
           rc = add_new_vals(inVals, myInCount, &myVals, &myCount, &myMaxCount);
           if (rc) {
             fprintf(stderr,"Process %d out of memory\n",Proc);
-            return 0;  
+            error = 1;
+            return error;  
           }
         }
         remaining -= amt;
@@ -283,7 +289,8 @@ short *assignments=NULL;
       myVals = (int *) malloc(gnz * sizeof(int) * 2);
       if (gnz && !myVals){
         fprintf(stderr,"%s Memory allocation\n",yo);
-        return 0;
+        error = 1;
+        return error;
       }
       inptr = myVals;
       for (k=0; k<gnz; k++){
@@ -332,9 +339,9 @@ short *assignments=NULL;
 
     /* allocate storage for hypergraph data */    
     if (!(*index  = (int*) malloc ((*nEdge+1) * sizeof(int)))
-     || !(*vertex = (int*) malloc  (*nPins   * sizeof(int)))) {
+     || (*nPins && !(*vertex = (int*) malloc  (*nPins   * sizeof(int))))) {
          fprintf(stderr, "%s Insufficient memory.", yo);
-         gnz = 0;
+         error = 1;
          goto End;
     }
 
@@ -382,9 +389,9 @@ short *assignments=NULL;
      
       cnt = (int *) calloc(N, sizeof(int));
       start = (int *) malloc((N+1) * sizeof(int));
-      if (N && (!cnt || !start)) {
+      if ((N && !cnt) || !start) {
         fprintf(stderr, "%s Insufficient memory.", yo);
-        gnz = 0;
+        error = 1;
         goto End;
       }
       
@@ -413,7 +420,7 @@ short *assignments=NULL;
       adj = (int *) malloc(sum * sizeof(int));
       if (sum && !adj) {
         fprintf(stderr, "%s Insufficient memory.", yo);
-        gnz = 0;
+        error = 1;
         goto End;
       }
       for (k = 0,inptr=myVals; k < nz; k++,inptr+=2) {
@@ -428,14 +435,15 @@ short *assignments=NULL;
     }  /* N == M */
 
 End:
-    if (gnz == 0){
+    if (error){
       /* Set hypergraph to be empty. */
       *nVtx  = *nEdge  = *nPins = *vwgt_dim = *ewgt_dim = 0;
+      *global_nPins = 0;
       safe_free((void **) &index);
       safe_free((void **) &vertex);
     }
     safe_free((void **) &myVals);
-    return gnz;
+    return error;
 }
 
 

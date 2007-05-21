@@ -451,7 +451,7 @@ struct Zoltan_Struct {
                                        /* Function that returns the number
                                           of levels for hierarchical 
                                           partitioning */
-  ZOLTAN_HIER_NUM_LEVELS_FN *Get_Hier_Num_Levels_Fort;
+  ZOLTAN_HIER_NUM_LEVELS_FORT_FN *Get_Hier_Num_Levels_Fort;
                                        /* Fortran version             */
   void *Get_Hier_Num_Levels_Data;      /* Ptr to user defined data to be passed
                                           to Get_Hier_Num_Levels() */
@@ -459,7 +459,7 @@ struct Zoltan_Struct {
                                        /* Function that returns the partition
                                           for process at a given level in
                                           hierarchical partitioning */
-  ZOLTAN_HIER_PARTITION_FN *Get_Hier_Partition_Fort;
+  ZOLTAN_HIER_PARTITION_FORT_FN *Get_Hier_Partition_Fort;
                                        /* Fortran version             */
   void *Get_Hier_Partition_Data;       /* Ptr to user defined data to be passed
                                           to Get_Hier_Partition() */
@@ -468,7 +468,7 @@ struct Zoltan_Struct {
                                           LB method and params for process 
                                           at a given level in
                                           hierarchical partitioning */
-  ZOLTAN_HIER_METHOD_FN *Get_Hier_Method_Fort;
+  ZOLTAN_HIER_METHOD_FORT_FN *Get_Hier_Method_Fort;
                                        /* Fortran version             */
   void *Get_Hier_Method_Data;          /* Ptr to user defined data to be passed
                                           to Get_Hier_Method() */

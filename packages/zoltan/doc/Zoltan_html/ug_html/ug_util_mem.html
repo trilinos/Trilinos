@@ -229,7 +229,7 @@ or NULL if the allocation fails.</td>
 <hr>
 <a NAME="Zoltan_Malloc"></a>
 <hr>
-double *<b>Zoltan_Malloc</b>(int <i>n</i>, char
+double *<b>Zoltan_Malloc</b>(size_t <i>n</i>, char
 *<i> file</i> , int <i>line</i>);&nbsp;
 <hr>
 The <b>Zoltan_Malloc</b> function is a wrapper around the standard C malloc
@@ -316,7 +316,7 @@ returned if <i>n</i> = 0 or the routine is unsuccessful.</td>
 <hr>
 <a NAME="Zoltan_Calloc"></a>
 <hr>
-double *<b>Zoltan_Calloc</b>(int <i>num</i>, int <i>size</i>, char
+double *<b>Zoltan_Calloc</b>(size_t <i>num</i>, size_t <i>size</i>, char
 *<i> file</i>, int <i>line</i>);&nbsp;
 <hr>
 The <b>Zoltan_Calloc</b> function is a wrapper around the standard C calloc
@@ -410,7 +410,7 @@ returned if <i>n</i> = 0 or the routine is unsuccessful.</td>
 <a NAME="Zoltan_Realloc"></a>
 <hr>
 double *<b>Zoltan_Realloc</b>(void *<i>ptr</i>,
-int <i>n</i>, char *<i>file</i>, int <i>line</i>);&nbsp;
+size_t <i>n</i>, char *<i>file</i>, int <i>line</i>);&nbsp;
 <hr>
 The <b>Zoltan_Realloc</b> function is a "safe" version of realloc. It changes
 the size of the object pointed to by <i>ptr</i> to <i>n</i> bytes. The
@@ -664,7 +664,7 @@ debug level set through a call to <a href="#Zoltan_Memory_Debug"><b>Zoltan_Memor
 <hr>
 <a NAME="Zoltan_Memory_Usage"></a>
 <hr>
-int <b>Zoltan_Memory_Usage</b>(int <i>type</i>);
+size_t <b>Zoltan_Memory_Usage</b>(int <i>type</i>);
 <hr>
 The <b>Zoltan_Memory_Usage</b> function returns information about memory
 utilization. 

@@ -8,8 +8,8 @@
 # ZOLTAN_ARCH - architechture of the machine.  Choices are generally:
 #   generic, solaris, sun, linux, qed.  Defaults to "sun"
 # ZOLTAN_ZDRIVE - location of zdrive, defaults to
-#   "../../Obj_$ZOLTAN_ARCH/zdrive".  Usually not set, if ZOLTAN_ARCH
-#   has been set, except for special purposes.
+#   "../../Obj_$ZOLTAN_ARCH/zdrive".  Usually not set if ZOLTAN_ARCH
+#   has already been set, except for special purposes.
 
 use Sys::Hostname;
 my $host = hostname();
@@ -20,13 +20,14 @@ use Data::Dumper;
 my ($mpi,$zarch,$zdrive);	# filled in below based on env
 my $zinp_def = "zdrive.inp";	# static, used below for checks
 my $zinp = $zinp_def;		# zdrive.inp used
-my $mpi= "/Net/local/mpi/build/solaris/ch_p4/bin/mpirun -np";
 my $np=0;
 
 # values to track and print by parse() routine
 my (%bal, %cutl, %cutn);
 my $iters;
 my $ckok = '';	# output string for pass/fail of checksums
+my $erreason = "";  # if set, report in exit_comment
+
 
 # use specified driver if environment var is set.  Set up defaults here
 if ($ENV{EXACT_DRIVER}) {
@@ -88,6 +89,28 @@ sub parseinfile {
     }
     $args{$key} = $a;
   }
+# loop through factor levels for vars
+  for (my $i=1;; $i++) {
+    my $x= "_factor_${i}_name";
+    if (defined $args{$x}) {
+      my $y= "_factor_${i}_value";
+      if ($args{$x} eq "numproc") {		# possible factors
+	$np = $args{$y};
+      } elsif ($args{$x} eq "zdrive") {
+	$zdrive = $args{$y};
+      } elsif ($args{$x} eq "zinput") {
+	$zinp = $args{$y};
+      }
+    } else {
+      last;
+    }
+  }
+# set to what was found in tests filename for unset variables and overrides
+# (you can have a factor numproc->np=4, and override in file with np=6)
+  $zdrive = $args{zdrive} if (defined $args{zdrive});
+  $zinp = $args{zinp} if (defined $args{zinp});
+  $np = $args{np} if (defined $args{np});
+
 }
 
 sub parseoutfile {
@@ -146,8 +169,10 @@ sub printvars {
   print FD "CutnMin	numeric/double	$cutn{MIN}\n";
   print FD "CutnAvg	numeric/double	$cutn{AVG}\n";
   print FD "SolverTime	numeric/double	$timeavg\n";
-  print FD "Iterations	numeric/int	$iters\n";
+  print FD "Iterations	numeric/integer	$iters\n";
   print FD $ckok;
+  print FD "exit_comment text/string \"$erreason\"\n" if ($erreason);
+  print FD "exit_status	numeric/integer	0\n";
   close FD;
 }
 
@@ -163,10 +188,11 @@ if (! @ARGV) {
 }
 
 open LOGFILE, ">$logfile" or die "can't open $logfile";
+open SAVEERR, ">&STDERR";
 open STDERR, ">&LOGFILE" or die "can't dup stderr to logfile";
 
 select STDERR;	# all output is now going to logfile, as STDERR
-# $| = 1;		# unbuffered writes
+$| = 1;		# unbuffered writes
 
 open INFILE, "<$ARGV[0]" or die "can't open $infile";
 parseinfile(INFILE);		# populate %args
@@ -185,17 +211,11 @@ if ($args{_exact_debug}) {
 # Setup command line
 #
 
-if (! defined $args{np}) {
-  die "number of processors undefined";
-}
-if (defined $args{zdrive}) {
-  $zdrive = $args{zdrive};
-}
-if (defined $args{zinp}) {
-  $zinp = $args{zinp};
+if (! $np) {
+  die "number of processors undefined ($np)";
 }
 
-$cmdline = "$mpi $args{np} $zdrive $zinp";
+$cmdline = "$mpi $np $zdrive $zinp";
 print "CMDLINE: $cmdline\n" if ($args{_exact_debug});
 
 open ZIN, $zinp or die "couldn't open $zinp";
@@ -208,27 +228,29 @@ $/ = $temprs;
 unless ($ztext =~ /text output *= *0+\b/) {
   if ($zinp eq $zinp_def) {
     print "Running with default $zinp ... skipping diff check\n";
+    $erreason .= "Using default $zinp, skipping diffs - ";
     break;
   }
 
   # construct list of output files
-  my $l = length (sprintf "%d", $args{np});	# length of nproc
+  my $l = length (sprintf "%d", $np);	# length of nproc
   my $ll = sprintf "%0${l}d", 0;	# 5 becomes "05" when 9 < np < 100
   if ($ztext =~ /File Name\s*=\s*(\w+)/) {
     $name = $1;
   } else {
     print "Couldn't determine file name ... skipping diff check\n";
+    $erreason .= "File Name in zinp missing - ";
     break;
   }
-  my $fullname = "$name.out.$args{np}"; # needs the node number at end
-  for (my $i = 0; $i < $args{np}; $i++) {
+  my $fullname = "$name.out.$np"; # needs the node number at end
+  for (my $i = 0; $i < $np; $i++) {
     push @checkfiles,"$fullname.$ll";
     $ll++;				# string increment
   }
 
   # also need to read in checksum file
   if (!defined (open ZIN, "checksums") ) {
-    print "Couldn't open checksums ... skipping diff check\n";
+    $erreason .= "checksums missing (run mktests), skipping diff check - ";
     @checkfiles = ();
   } else {
     while (<ZIN>) {
@@ -248,21 +270,31 @@ close ZOLTAN;
 # check output file checksums, if @checkfiles non-empty
 my $pass = 0;
 my $fail = 0;
+mkdir "output", 0755;	# place to store the output
+
 foreach $f (@checkfiles) {
-  my $sum = `cksum $f`;
+  my $sum = `cat $f | sed -e 's/^[\t ]*//g' -e 's/[\t ]*\$//g' -e 's/[\t ]\+/ /g' | cksum`;
   $sum =~ /(\d+)\s+(\d+)\s+(\S+)/;
   my $sum0 = $1;
   my $sum1 = $2;
   my $partname = $zinp;
   my $fullname = $f;
-  $partname =~ s/^${zinp_def}.//;
+  $partname =~ s/^.*${zinp_def}\.//;
   $fullname =~ s/^($name)\.out\./$1.$partname./;
   print "CRC: $fullname ?= $f\n" if ($args{_exact_debug});
+  if (! defined($cksum{$fullname})) {
+    $erreason .= "answer file $fullname not in checksums - ";
+  }
+  if ($sum eq "") {
+    $erreason .= "output file $f not found! - ";
+  }
   if ($cksum{$fullname}[0] == $sum0 && $cksum{$fullname}[1] == $sum1 ) {
     $pass++;
   } else {
     $fail++;
+    $erreason .= "bad checksum for $f - ";
   }
+  rename $f, "output/$fullname";		
 }
 $ckok = "OutputPass\tnumeric/integer\t$pass\n";
 $ckok .= "OutputFail\tnumeric/integer\t$fail\n";
@@ -270,4 +302,7 @@ $ckok .= "AllPass\tnumeric/boolean\t" . (($pass > 0 && $pass == $np) ? "1\n" : "
 
 printvars($outfile);
 
+# fix things back
+open STDERR, ">&SAVEERR";
+select STDOUT;
 

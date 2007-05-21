@@ -219,8 +219,8 @@ Zoltan</a></font></b></td>
 </td>
 
 <td VALIGN=TOP><!--MAIN CONTENT AREA STARTS HERE--><!----------------THIS IS A CHANGE AREA----------------><!------HEADER TEXT SHOULD BE REPLACE THIS TEXT------><b><font face="Verdana, Arial, Helvetica"><font size=+2>Zoltan:&nbsp;</font></font></b>
-<br><b><font face="Verdana, Arial, Helvetica"><font size=+2>Data-Management Services 
-for Parallel Applications</font></font></b>
+<br><b><font face="Verdana, Arial, Helvetica"><font size=+2>Parallel Partitioning, Load Balancing and Data-Management Services 
+</font></font></b>
 <p><!---------------END OF THIS CHANGE AREA---------------><!----------------THIS IS A CHANGE AREA----------------><!--MAIN CONTENT SHOULD BE PLACED IN THE AREA BELOW-->
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
@@ -228,22 +228,52 @@ for Parallel Applications</font></font></b>
 
 <hr WIDTH="100%">
 <p>
-<b> The Zoltan Team </b><br>
-<b> Sandia National Laboratories: </b><br>
+<h3><b> The Zoltan Team </b></h3>
+<table width="100%">
+<tr>
+<td width="50%" valign=top>
+<b> Sandia National Laboratories</b><br>
 <a href="http://www.sandia.gov/~egboman">Erik Boman</a> <br>
 <a href="http://www.cs.sandia.gov/~kddevin">Karen Devine</a><br>
-Lee Ann Riesen<br>
 Robert Heaphy<br>
-<a href="http://www.cs.sandia.gov/~bahendr">Bruce Hendrickson</a></b><br>
 Vitus Leung<br>
-Courtenay Vaughan<br>
-<br>
+Lee Ann Riesen<br>
+</td>
+<td width="50%" valign=top>
 <b> Ohio State University</b><br>
 <a href="http://bmi.osu.edu/~umit/">Umit Catalyurek</a><br>
 <a href="http://www.ece.osu.edu/~bozdagd">Doruk Bozdag</a><br>
+</td>
+</tr>
+</table>
 <br>
-<b>National Institute of Standards and Technology</b><br>
+<h3><b> Past Zoltan Contributors</b></h3>
+<table width="100%"
+<tr>
+<td width="50%" valign=top>
+<b> Sandia National Laboratories: </b><br>
+<a href="http://www.cs.sandia.gov/~bahendr">Bruce Hendrickson</a></b><br>
+Matthew St. John<br>
+Courtenay Vaughan<br>
+<br>
+</td>
+<td width="50%" valign=top>
+<b> Williams College</b><br>
+<a href="http://www.teresco.org/~terescoj/">James Teresco</a><br>
+</td>
+</tr>
+<tr>
+<td width="50%" valign=top>
+<b> National Institute of Standards and Technology</b><br>
 <a href="http://math.nist.gov/~mitchell">William F. Mitchell</a><br>
+</td>
+<td width="50%" valign=top>
+<b> Rensselaer Polytechnic Institute</b><br>
+Jamal Faik<br>
+Luis Gervasio<br>
+</td>
+</tr>
+</table>
 <p>
 <p>
 <!------------------------------------------------------------------------->
@@ -251,6 +281,8 @@ Courtenay Vaughan<br>
 <hr width="100%">
 <b> Zoltan News:</b><br>
 <ul>
+<li>
+<a href="#ZOLTAN3">Zoltan v3.0</a> was released in May 2007.<br><br>
 <li>
 The Zoltan team received the "Best Algorithms Paper Award" at the
 <a href="http://www.ipdps.org">2007 International Parallel and Distributed
@@ -285,28 +317,61 @@ Contact:  Karen Devine
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
 <hr width="100%">
+<a NAME="ZOLTAN3"></a>
 
-<b>Now available:  Zoltan 2.1</b>  <br>
-Note:  Zoltan 2.1 contains a significant bugfix in Zoltan's hypergraph
-partitioner.  We strongly recommend you upgrade to Zoltan 2.1.  We apologize 
-for the inconvenience.
+<b>Now available:  Zoltan 3.0</b>  <br>
+<p>
+New Features in Zoltan 3:
+<ul>
+<li>
+<a href="http://www.cs.sandia.gov/~kddevin/papers/Catalyurek_IPDPS07.pdf">Parallel 
+Hypergraph Repartitioning and Dynamic Load Balancing</a> to partition data while
+accounting for current processor assignments, thus reducing the amount of data 
+migration needed; see the Zoltan User's Guide for 
+<a href="ug_html/ug_alg_hypergraph.html">details</a>.
+<li>
+<a href="http://www.cs.sandia.gov/~kddevin/papers/wiley_chapter.pdf">Hypergraph refinement</a> to quickly 
+improve the quality of an existing partition.
+<li>
+<a href="ug_html/ug_alg_hypergraph.html">Hypergraph Partitioning and Repartitioning with Fixed Vertices</a> allows users to 
+specify the partition assignment of objects.
+<li>
+<a href="ug_html/ug_alg_graph.html">Native graph partitioning</a> using Zoltan's hypergraph partitioner.
+<li>
+<a href="ug_html/ug_alg_hier.html">Hierarchical partitioning</a> for hybrid partitions on heterogeneous computers.
+<li>
+<a href="ug_html/ug_alg.html#REMAP">Improved partition remapping</a> 
+to reduce data migration costs.
+<li>
+Simple <a href="ug_html/ug_alg_block.html">block</a> and 
+<a href="ug_html/ug_alg_random.html">random</a> partitioners for 
+demonstration and testing.
+
+</ul>
 <p>
 New Features in Zoltan 2:
-<blockquote>
+<ul>
+<li>
 <a href="http://software.sandia.gov/~kddevin/IPDPS06_Final.pdf">Parallel Hypergraph Partitioning</a>
-<br><a href="ug_html/ug_color.html">Distance-1 and Distance-2 graph coloring</a>
-<br><a href="ug_html/ug_alg_rcb.html">Multicriteria Geometric Partitioning</a>
-<br><a href="ug_html/ug_cpp.html">C++ Interface</a>
-</blockquote>
+<li>
+<a href="ug_html/ug_color.html">Distance-1 and Distance-2 graph coloring</a>
+<li>
+<a href="ug_html/ug_alg_rcb.html">Multicriteria Geometric Partitioning</a>
+<li>
+<a href="ug_html/ug_cpp.html">C++ Interface</a>
+</ul>
 
 See the
 <a href="ug_html/ug_release.html">release notes</a> for descriptions
 of new functionality and more.
-<blockquote>
+<ul>
+<li>
 <a href="ug_html/ug_release.html">Release Notes</a>
-<br><a href="ug_html/ug_backward.html">Backward Compatibility</a>
-<br><a href="http://www.cs.sandia.gov/~web1400/1400_download.html">Download Now!</a>
-</blockquote>
+<li>
+<a href="ug_html/ug_backward.html">Backward Compatibility</a>
+<li>
+<a href="http://www.cs.sandia.gov/~web1400/1400_download.html">Download Now!</a>
+</ul>
 
 
 <!------------------------------------------------------------------------->
@@ -326,6 +391,10 @@ distribute data over sets of processors,
 <a href="ug_html/ug_interface_mig.html"><b>data migration tools</b></a> that simplify movement of data to new partitions,
 </li>
 <li>
+<a href="ug_html/ug_color.html"><b>parallel graph coloring</b></a> including
+distance-1 and distance-2 coloring,
+</li>
+<li>
 <a href="ug_html/ug_util_dd.html"><b>distributed data directories</b></a> 
 that efficiently locate off-processor data,
 </li>
@@ -335,7 +404,7 @@ package</b></a> that greatly simplifies interprocessor
 communication, and
 </li>
 <li>
-a <a href="ug_html/ug_util_mem.html"><b>dynamic memory management 
+a <a href="ug_html/ug_util_mem.html"><b>dynamic memory debugging 
 package</b></a> for memory-debugging 
 on state-of-the-art parallel computers.
 </li>
@@ -480,9 +549,33 @@ Publications</li>
 <li>
 <a href="Zoltan_pubs.html">Papers and Presentations</a></li>
 
+</ul>
+
 <li>
-<a href="http://www.cs.sandia.gov/~kddevin/cplant/main.html">Zoltan on
-Cplant</a></li>
+Serial hypergraph partitioners</li>
+
+<ul>
+<li>
+<a href="http://bmi.osu.edu/~umit/software.htm">PaToH</a> 
+(Ohio State University)
+
+<li>
+<a href="http://www.math.uu.nl/people/bisseling/Mondriaan/mondriaan.html">Mondriaan</a>
+(Utrecht University)
+
+<li>
+<a href="http://www-users.cs.umn.edu/~karypis/metis/hmetis/">hMetis</a> 
+(University of Minnesota)
+
+</ul>
+
+<li>
+Parallel hypergraph partitioners</li>
+
+<ul>
+<li>
+<a href="http://www.doc.ic.ac.uk/~at701/parkway/">Parkway</a> (Imperial College, London)
+
 </ul>
 
 <li>
@@ -522,32 +615,6 @@ of Minnesota)</li>
 Bordeaux I)</li>
 </ul>
 
-<li>
-Serial hypergraph partitioners</li>
-
-<ul>
-<li>
-<a href="http://bmi.osu.edu/~umit/software.htm">PaToH</a> 
-(Ohio State University)
-
-<li>
-<a href="http://www.math.uu.nl/people/bisseling/Mondriaan/mondriaan.html">Mondriaan</a>
-(Utrecht University)
-
-<li>
-<a href="http://www-users.cs.umn.edu/~karypis/metis/hmetis/">hMetis</a> 
-(University of Minnesota)
-
-</ul>
-
-<li>
-Parallel hypergraph partitioners</li>
-
-<ul>
-<li>
-<a href="http://www.doc.ic.ac.uk/~at701/parkway/">Parkway</a> (Imperial College, London)
-
-</ul>
 
 <li>
 Sandia National Laboratories</li>
