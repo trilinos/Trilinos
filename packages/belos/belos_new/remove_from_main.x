@@ -27,6 +27,9 @@ rm ../test/BlockCG/*.hpp
 rm ../test/BlockGmres/Makefile*
 rm ../test/BlockGmres/*.cpp
 rm ../test/BlockGmres/*.hpp
+rm ../test/MVOPTester/Makefile*
+rm ../test/MVOPTester/*.cpp
+rm ../test/MVOPTester/*.hpp
 
 rm ../thyra/Makefile*
 rm ../thyra/src/Makefile* 
