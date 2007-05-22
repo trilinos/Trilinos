@@ -33,6 +33,8 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
+   05/22/2007 - Added fix for when mwIndex and int are not the same size data
+                structure (this occurs on 64 bit architectures).    
    10/12/2006 - Bug fixed for error tolerance for ISINT checks.
    10/09/2006 - Bug fixed where specifying coordinates for aggregation would not
                 work in 2D.
@@ -874,6 +876,24 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
 }/*end build_teuchos_list*/
 
 
+/**************************************************************/
+/**************************************************************/
+/**************************************************************/
+/* mwIndex_to_int - does a data copy and wraps mwIndex's to ints, in the case
+   where they're not the same size.  This routine allocates memory
+   WARNING: This does not address overflow.
+   Parameters:
+   N         - Number of unknowns in array [I]
+   mwi_array - Array of mwIndex objects [I]
+   Return value: mwIndex objects cast down to ints
+*/
+int* mwIndex_to_int(int N, mwIndex* mwi_array){
+  int i,*rv = new int[N];
+  for(i=0;i<N;i++)
+    rv[i] = (int)mwi_array[i];  
+  return rv;
+}
+
 
 /**************************************************************/
 /**************************************************************/
@@ -892,17 +912,18 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
   double tol,agg_thresh;
   string intf;
   Teuchos::ParameterList* List;
-  mxClassID outclass;
   MODE_TYPE mode;
   static ml_data_pack_list* PROBS=NULL;
   ml_data_pack *D=NULL;
+  bool rewrap_ints=false;
   
   /* Sanity Check Input */
   mode=sanity_check(nrhs,prhs);
 
-  /* Sanity check the int mwIndex mismatch for R2006b+ */
-  if(sizeof(int) < sizeof(mwIndex))
-    mexErrMsgTxt("Error: int and mwIndex are of different sizes on this architecture.  MLMEX can't handle that.\n");
+  /* Set flag if mwIndex and int are not the same size */
+  /* NTS: This can be an issue on 64 bit architectures */
+  if(sizeof(int)!=sizeof(mwIndex)) rewrap_ints=true;
+    
   
   switch(mode){
   case MODE_SETUP:
@@ -924,9 +945,15 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     
     /* Pull Matrix - CSC Format */
     vals=mxGetPr(prhs[1]);
-    rowind=(int*)mxGetIr(prhs[1]);
-    colptr=(int*)mxGetJc(prhs[1]);
-
+    if(rewrap_ints){
+      colptr=mwIndex_to_int(nc+1,mxGetJc(prhs[1]));
+      rowind=mwIndex_to_int(colptr[nc],mxGetIr(prhs[1]));
+    }
+    else{
+      rowind=(int*)mxGetIr(prhs[1]);
+      colptr=(int*)mxGetJc(prhs[1]);
+    }
+      
     /* Construct the Heirarchy */
     D->setup(nr,rowind,colptr,vals);
 
@@ -937,6 +964,12 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     plhs[0]=mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
     id=(int*)mxGetData(plhs[0]);id[0]=rv;
     if(nlhs>1) plhs[1]=mxCreateDoubleScalar(D->operator_complexity);
+
+    /* Cleanup */
+    if(rewrap_ints){
+      delete [] rowind;
+      delete [] colptr;
+    }
     
     /* Lock so we can keep the memory for the heirarchy */
     mexLock();
@@ -1028,9 +1061,15 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
 
     /* Pull Matrix - CSC Format */
     vals=mxGetPr(prhs[1]);
-    rowind=(int*)mxGetIr(prhs[1]);
-    colptr=(int*)mxGetJc(prhs[1]);
-
+    if(rewrap_ints){
+      colptr=mwIndex_to_int(nc+1,mxGetJc(prhs[1]));
+      rowind=mwIndex_to_int(colptr[nc],mxGetIr(prhs[1]));
+    }
+    else{
+      rowind=(int*)mxGetIr(prhs[1]);
+      colptr=(int*)mxGetJc(prhs[1]);
+    }
+    
     /* Allocate space for aggregate / return value */
     plhs[0]=mxCreateNumericMatrix(nr,1,mxINT32_CLASS,mxREAL);
     agg=(int*)mxGetData(plhs[0]);
@@ -1040,6 +1079,10 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
 
     /* Cleanup */
     delete List;
+    if(rewrap_ints){
+      delete [] rowind;
+      delete [] colptr;
+    }
     
     break;    
   default:
