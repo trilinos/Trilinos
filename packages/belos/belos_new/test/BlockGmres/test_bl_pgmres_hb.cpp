@@ -44,6 +44,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "createEpetraProblem.hpp"
 #include "Ifpack_IlukGraph.h"
 #include "Ifpack_CrsRiluk.h"
@@ -72,6 +73,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
+  bool pseudo = false;   // use pseudo block GMRES to solve this linear system.
   bool leftprec = true; // use left preconditioning to solve these linear systems
   int frequency = -1;  // how often residuals are printed by solver
   int blocksize = 4;
@@ -84,6 +86,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block GMRES to solve the linear systems.");
   cmdp.setOption("left-prec","right-prec",&leftprec,"Left preconditioning or right.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
@@ -197,7 +200,11 @@ int main(int argc, char *argv[]) {
   // *************Start the block Gmres iteration*************************
   // *******************************************************************
   //
-  Belos::BlockGmresSolMgr<double,MV,OP> solver( rcp(&problem,false), belosList );
+  Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > solver;
+  if (pseudo)
+    solver = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&problem,false), belosList ) );
+  else
+    solver = Teuchos::rcp( new Belos::BlockGmresSolMgr<double,MV,OP>( rcp(&problem,false), belosList ) );
   //
   // **********Print out information about problem*******************
   //
@@ -213,20 +220,9 @@ int main(int argc, char *argv[]) {
     cout << endl;
   }
   //
-  //
-  if (proc_verbose) {
-    cout << endl << endl;
-    cout << "Running Block Gmres -- please wait" << endl;
-    cout << (numrhs+blocksize-1)/blocksize 
-	 << " pass(es) through the solver required to solve for " << endl; 
-    cout << numrhs << " right-hand side(s) -- using a block size of " << blocksize
-	 << endl << endl;
-  }
-  
-  //
   // Perform solve
   //
-  Belos::ReturnType ret = solver.solve();
+  Belos::ReturnType ret = solver->solve();
   
   //
   // Compute actual residuals.

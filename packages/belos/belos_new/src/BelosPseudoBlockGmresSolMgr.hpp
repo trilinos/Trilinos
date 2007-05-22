@@ -412,7 +412,8 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
       // Create the first block in the current Krylov basis for each right-hand side.
       std::vector<int> index(1);
-      Teuchos::RefCountPtr<MV> tmpV, R_0 = problem_->getCurrResVec();
+      Teuchos::RefCountPtr<MV> tmpV, R_0 = MVT::Clone( *(problem_->getCurrResVec()), blockSize_ );
+      problem_->computeCurrResVec( &*R_0 );
       newstate.V.resize( blockSize_ );
       newstate.Z.resize( blockSize_ );
       for (int i=0; i<blockSize_; ++i) {
@@ -425,7 +426,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       
 	// Orthonormalize the new V_0
 	int rank = ortho_->normalize( *tmpV, tmpZ );
-	TEST_FOR_EXCEPTION(rank != blockSize_,PseudoBlockGmresSolMgrOrthoFailure,
+	TEST_FOR_EXCEPTION(rank != 1, PseudoBlockGmresSolMgrOrthoFailure,
 			   "Belos::PseudoBlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
 
 	newstate.V[i] = tmpV;
@@ -522,7 +523,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	      break; // break from while(1){block_gmres_iter->iterate()}
 	    }
 	    numRestarts++;
-	    
+
 	    printer_->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << endl << endl;
 	    
 	    // Update the linear problem.
@@ -539,12 +540,13 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
 	    // Compute the restart vectors
 	    // NOTE: Force the linear problem to update the current residual since the solution was updated.
-	    problem_->computeCurrResVec();
+	    Teuchos::RefCountPtr<MV> R_0 = MVT::Clone( *(problem_->getCurrResVec()), currRHSIdx.size() );
+	    problem_->computeCurrResVec( &*R_0 );
 	    std::vector<int> index(1);
 	    for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
 	      index[0] = i;
 	
-	      tmpV = MVT::CloneCopy( *(problem_->getCurrResVec()), index );
+	      tmpV = MVT::CloneCopy( *R_0, index );
 	
 	      // Get a matrix to hold the orthonormalization coefficients.
 	      Teuchos::RefCountPtr<Teuchos::SerialDenseVector<int,ScalarType> > tmpZ
@@ -552,7 +554,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	      
 	      // Orthonormalize the new V_0
 	      int rank = ortho_->normalize( *tmpV, tmpZ );
-	      TEST_FOR_EXCEPTION(rank != blockSize_,PseudoBlockGmresSolMgrOrthoFailure,
+	      TEST_FOR_EXCEPTION(rank != 1 ,PseudoBlockGmresSolMgrOrthoFailure,
 				 "Belos::PseudoBlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors after the restart.");
 	      
 	      newstate.V[i] = tmpV;

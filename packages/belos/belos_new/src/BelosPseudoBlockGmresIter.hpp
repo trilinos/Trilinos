@@ -507,12 +507,13 @@ namespace Belos {
     if (curDim_==0) { 
       return currentUpdate; 
     } else {
-      currentUpdate = MVT::CloneCopy(*(lp_->getCurrLHSVec()));
+      currentUpdate = MVT::Clone(*(V_[0]), numRHS_);
       std::vector<int> index(1), index2(curDim_);
       for (int i=0; i<curDim_; ++i) {
         index2[i] = i;
       }
       const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+      const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
       Teuchos::BLAS<int,ScalarType> blas;
       
       for (int i=0; i<numRHS_; ++i) {
@@ -530,7 +531,7 @@ namespace Belos {
 		   H_[i]->values(), H_[i]->stride(), y.values(), y.stride() );
 	
 	RefCountPtr<const MV> Vjp1 = MVT::CloneView( *V_[i], index2 );
-	MVT::MvTimesMatAddMv( one, *Vjp1, y, one, *cur_block_copy_vec );
+	MVT::MvTimesMatAddMv( one, *Vjp1, y, zero, *cur_block_copy_vec );
       }
     }
     return currentUpdate;
@@ -587,11 +588,13 @@ namespace Belos {
     if ((int)newstate.V.size() != 0 && (int)newstate.Z.size() != 0) {
 
       // initialize V_,Z_, and curDim_
-      
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V[0]) != MVT::GetVecLength(*V_[0]),
-                          std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V[0]) < numRHS_,
-                          std::invalid_argument, errstr );
+      for (int i=0; i<numRHS_; ++i) {     
+        TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V[i]) != MVT::GetVecLength(*V_[i]),
+                            std::invalid_argument, errstr );
+        TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V[i]) < newstate.curDim,
+                            std::invalid_argument, errstr );
+      }
+
       TEST_FOR_EXCEPTION( newstate.curDim > numBlocks_+1,
                           std::invalid_argument, errstr );
 

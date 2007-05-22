@@ -36,6 +36,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "createEpetraProblem.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -133,7 +134,11 @@ int main(int argc, char *argv[]) {
   // *************Start the block Gmres iteration*************************
   // *******************************************************************
   //
-  Belos::BlockGmresSolMgr<double,MV,OP> solver( rcp(&problem,false), belosList );
+  Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > solver;
+  if (pseudo)
+    solver = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&problem,false), belosList ) );
+  else 
+    solver = Teuchos::rcp( new Belos::BlockGmresSolMgr<double,MV,OP>( rcp(&problem,false), belosList ) );
   //
   // **********Print out information about problem*******************
   //
@@ -148,20 +153,9 @@ int main(int argc, char *argv[]) {
     cout << endl;
   }
   //
-  //
-  if (proc_verbose) {
-    cout << endl << endl;
-    cout << "Running Block Gmres -- please wait" << endl;
-    cout << (numrhs+blocksize-1)/blocksize 
-	 << " pass(es) through the solver required to solve for " << endl; 
-    cout << numrhs << " right-hand side(s) -- using a block size of " << blocksize
-	 << endl << endl;
-  }  
-
-  //
   // Perform solve
   //
-  Belos::ReturnType ret = solver.solve();
+  Belos::ReturnType ret = solver->solve();
 
   //
   // Compute actual residuals.

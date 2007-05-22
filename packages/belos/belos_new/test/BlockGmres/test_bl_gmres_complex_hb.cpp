@@ -35,6 +35,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -84,6 +85,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
+  bool pseudo = false;   // use pseudo block GMRES to solve this linear system.
   int frequency = -1;  // how often residuals are printed by solver
   int blocksize = 1;
   int numrhs = 1;
@@ -94,6 +96,7 @@ int main(int argc, char *argv[]) {
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block GMRES to solve the linear systems.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
@@ -199,8 +202,11 @@ int main(int argc, char *argv[]) {
   // *************Start the block Gmres iteration***********************
   // *******************************************************************
   //
-  Belos::BlockGmresSolMgr<ST,MV,OP> solver( problem, belosList );
-
+  Teuchos::RefCountPtr< Belos::SolverManager<ST,MV,OP> > solver;
+  if (pseudo)
+    solver = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP>( problem, belosList ) );
+  else
+    solver = Teuchos::rcp( new Belos::BlockGmresSolMgr<ST,MV,OP>( problem, belosList ) );
   //
   // **********Print out information about problem*******************
   //
@@ -214,19 +220,9 @@ int main(int argc, char *argv[]) {
     cout << endl;
   }
   //
-  //
-  if (proc_verbose) {
-    cout << endl << endl << "Running ";
-    cout << "Block Gmres -- please wait" << endl;
-    cout << (numrhs+blocksize-1)/blocksize 
-	 << " pass(es) through the solver required to solve for " << endl; 
-    cout << numrhs << " right-hand side(s) -- using a block size of " << blocksize
-	 << endl << endl;
-  }
-  // 
   // Perform solve
   //
-  Belos::ReturnType ret = solver.solve();
+  Belos::ReturnType ret = solver->solve();
   //
   // Compute actual residuals.
   //
