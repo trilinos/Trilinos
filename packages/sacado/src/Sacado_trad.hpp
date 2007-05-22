@@ -1104,7 +1104,7 @@ ADcontext<Double>::new_ADmemblock(size_t len)
 			return Mbase + (Mleft -= len);
 		}
 
-	if (x = Free)
+	if ((x = Free))
 		Free = x->next;
 	else
 		x = new ADMemblock;
@@ -1151,7 +1151,7 @@ ADcontext<Double>::Gradcomp()
 		ADVari::zap_gcgen1 = -1;
 		}
 #endif
-	if (d = DErp::LastDerp) {
+	if ((d = DErp::LastDerp)) {
 		d->b->aval = 1;
 #ifdef RAD_DEBUG
 		if (ADVari::debug_file)
@@ -1165,7 +1165,7 @@ ADcontext<Double>::Gradcomp()
 		else
 #endif
 		do d->c->aval += *d->a * d->b->aval;
-		while(d = d->next);
+		while((d = d->next));
 		}
 #ifdef RAD_DEBUG
 	if (ADVari::debug_file) {
@@ -1178,9 +1178,9 @@ ADcontext<Double>::Gradcomp()
 	ADVari::Last_ADvari = &ADVari::First_ADvari;
 	if ((anext = ADVari::First_ADvari) && !(ADVari::adc.rad_need_reinit & 2)) {
 		ADVari::adc.rad_need_reinit = 3;
-		while(a = anext) {
+		while((a = anext)) {
 			anext = a->Next;
-			if (v = (IndepADvar<Double> *)a->padv) {
+			if ((v = (IndepADvar<Double> *)a->padv)) {
 #ifdef RAD_Const_WARN
 				if ((i = a->opno) > 0)
 					i = -i;

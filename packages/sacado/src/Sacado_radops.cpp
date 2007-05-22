@@ -155,7 +155,7 @@ ADcontext::new_ADmemblock(size_t len)
 			return Mbase + (Mleft -= len);
 		}
 
-	if (x = Free)
+	if ((x = Free))
 		Free = x->next;
 	else
 		x = new ADmemblock;
@@ -185,10 +185,10 @@ ADcontext::Gradcomp()
 		ADvari::adc.Mleft = 0;
 		}
 
-	if (d = Derp::LastDerp) {
+	if ((d = Derp::LastDerp)) {
 		d->b->aval = 1;
 		do d->c->aval += *d->a * d->b->aval;
-		while(d = d->next);
+		while((d = d->next));
 		}
 	}
 
@@ -209,11 +209,11 @@ ADcontext::Weighted_Gradcomp(int n, ADvar **v, double *w)
 #endif
 		ADvari::adc.Mleft = 0;
 		}
-	if (d = Derp::LastDerp) {
+	if ((d = Derp::LastDerp)) {
 		for(i = 0; i < n; i++)
 			v[i]->cv->aval = w[i];
 		do d->c->aval += *d->a * d->b->aval;
-		while(d = d->next);
+		while((d = d->next));
 		}
 	}
 
@@ -732,7 +732,7 @@ ADf2(double f, double gx, double gy, const ADvari &x, const ADvari &y) {
 	return *(new ADvar2q(f, gx, gy, &x, &y));
 	}
 
- ADvarn::ADvarn(double val1, int n1, const ADvar *x, const double *g): n(n1), ADvari(val1)
+ADvarn::ADvarn(double val1, int n1, const ADvar *x, const double *g): ADvari(val1), n(n1)
 {
 	Derp *d1, *dlast;
 	double *a1;
