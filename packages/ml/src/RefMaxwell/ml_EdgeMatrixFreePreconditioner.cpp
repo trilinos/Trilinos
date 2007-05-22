@@ -319,9 +319,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
     ML_Aggregate_Set_CoarsenScheme_METIS(MLAggr);
     ML_Aggregate_Set_NodesPerAggr(0, MLAggr, 0, NodesPerAggr);
   }/*end if*/
-  else if(verbose_ && !Comm_->MyPID()) {
-    printf("RefMaxwell: Unsupported (1,1) block aggregation type(%s), resetting to uncoupled\n",CoarsenType.c_str());
-    ML_Aggregate_Set_CoarsenScheme_Uncoupled(MLAggr);
+  else {
+    if(!Comm_->MyPID()) printf("RefMaxwell: Unsupported (1,1) block aggregation type(%s), resetting to uncoupled-mis\n",CoarsenType.c_str());
+    ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(MLAggr);
   }
 
   /* Aggregate Nodes */
