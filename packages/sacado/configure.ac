@@ -39,7 +39,7 @@
 
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
-AC_INIT([sacado], [1.0d], [sacado-devlopers@software.sandia.gov])
+AC_INIT([sacado], [1.0d], [sacado-developers@software.sandia.gov])
 
 # Hello World!
 echo "----------------------------------------"
@@ -257,6 +257,11 @@ else
   AC_MSG_RESULT(no)
 fi
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  sacado, teuchos, SACADO_TEUCHOS, ENABLE_SACADO_TEUCHOS, yes
+  ,[Build in Teuchos support in Sacado.]
+  ,[Build in Teuchos support in Sacado.  Can be overridden with --disable-sacado-teuchos.])
+
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
@@ -264,9 +269,6 @@ fi
 TAC_ARG_ENABLE_FEATURE(tests, [Build Sacado tests], TESTS, no)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK(sacado, tests, [Build Sacado tests], SACADO_TESTS)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_sacado_tests" != "Xno")
-
-TAC_ARG_ENABLE_FEATURE_SUB(sacado, alltests, [Build all Sacado tests (including very slow ones)], SACADO_ALLTESTS, no)
-AM_CONDITIONAL(BUILD_ALLTESTS, test "X$ac_cv_use_sacado_alltests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build Sacado examples], EXAMPLES, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK(sacado, examples, [Build Sacado examples], SACADO_EXAMPLES)

@@ -29,14 +29,18 @@
 # ************************************************************************
 # @HEADER
 
+EXEEXT = .exe
+
+if ENABLE_SACADO_TEUCHOS
+
 # Include NOX export Makefile for correct paths
 include $(top_builddir)/../teuchos/Makefile.export.teuchos
-
-EXEEXT = .exe
 
 noinst_PROGRAMS = \
 	dfad_nonlinear \
 	mult
+
+endif
 
 dfad_nonlinear_SOURCES = dfad_nonlinear.cpp 
 dfad_nonlinear_CXXFLAGS = -O2  \

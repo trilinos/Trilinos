@@ -29,12 +29,16 @@
 # ************************************************************************
 # @HEADER
 
+@ENABLE_SACADO_TEUCHOS_TRUE@include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+
 _SACADO_INCLUDES = \
 	-I@abs_top_srcdir@/src \
 	-I@abs_top_srcdir@/src/mpl \
-	-I@abs_top_builddir@/src
+	-I@abs_top_srcdir@/src/parameter \
+	-I@abs_top_builddir@/src \
+	$(TEUCHOS_INCLUDES)
 
-_SACADO_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lsacado 
+_SACADO_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lsacado $(TEUCHOS_LIBS)
 
 @USING_GNUMAKE_TRUE@SACADO_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_SACADO_INCLUDES))
 @USING_GNUMAKE_TRUE@SACADO_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_SACADO_LIBS))

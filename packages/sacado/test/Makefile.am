@@ -40,13 +40,7 @@ else
 CPPUNIT_TESTDIRS =
 endif
 
-if BUILD_ALLTESTS
-SLOWTESTDIRS = tradoptest
-else
-SLOWTESTDIRS = 
-endif
-
-SUBDIRS = utils $(CPPUNIT_TESTDIRS) $(SLOWTESTDIRS) performance
+SUBDIRS = utils $(CPPUNIT_TESTDIRS) tradoptest performance
 
 #
 # The below targets allow you to use the new

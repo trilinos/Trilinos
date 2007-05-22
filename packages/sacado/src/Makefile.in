@@ -68,7 +68,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 subdir = src
-DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
+DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/Sacado_config.h.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
@@ -77,9 +77,9 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/cppunit.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
-	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -99,20 +99,92 @@ am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execin
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 libsacado_a_DEPENDENCIES =
-am__objects_1 = Sacado_radops.$(OBJEXT) uninit.$(OBJEXT) \
+am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
+	$(srcdir)/uninit.c $(srcdir)/RAD_Const_Warn.c \
+	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp \
+	$(srcdir)/Sacado_ConfigDefs.h $(srcdir)/Sacado_Version.hpp \
+	$(srcdir)/Sacado_Traits.hpp $(srcdir)/Sacado.hpp \
+	$(srcdir)/Sacado_Fad_GeneralFad.hpp \
+	$(srcdir)/Sacado_Fad_GeneralFadImp.hpp \
+	$(srcdir)/Sacado_Fad_GeneralFadExpr.hpp \
+	$(srcdir)/Sacado_Fad_ExpressionTraits.hpp \
+	$(srcdir)/Sacado_Fad_Expression.hpp \
+	$(srcdir)/Sacado_Fad_Ops.hpp \
+	$(srcdir)/Sacado_Fad_DynamicStorage.hpp \
+	$(srcdir)/Sacado_Fad_DFad.hpp \
+	$(srcdir)/Sacado_Fad_DFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_StaticStorage.hpp \
+	$(srcdir)/Sacado_Fad_SLFad.hpp \
+	$(srcdir)/Sacado_Fad_SLFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_SFad.hpp $(srcdir)/Sacado_Fad_SFadImp.hpp \
+	$(srcdir)/Sacado_Fad_SFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_MemPool.hpp \
+	$(srcdir)/Sacado_Fad_MemPoolImp.hpp \
+	$(srcdir)/Sacado_Fad_MemPoolManager.hpp \
+	$(srcdir)/Sacado_Fad_MemPoolManagerImp.hpp \
+	$(srcdir)/Sacado_Fad_MemPoolStorage.hpp \
+	$(srcdir)/Sacado_Fad_DMFad.hpp \
+	$(srcdir)/Sacado_Fad_DMFadTraits.hpp \
+	$(srcdir)/Sacado_CacheFad_GeneralFad.hpp \
+	$(srcdir)/Sacado_CacheFad_GeneralFadImp.hpp \
+	$(srcdir)/Sacado_CacheFad_GeneralFadExpr.hpp \
+	$(srcdir)/Sacado_CacheFad_Expression.hpp \
+	$(srcdir)/Sacado_CacheFad_Ops.hpp \
+	$(srcdir)/Sacado_CacheFad_DFadTraits.hpp \
+	$(srcdir)/Sacado_CacheFad_DFad.hpp \
+	$(srcdir)/Sacado_Taylor_DTaylorTraits.hpp \
+	$(srcdir)/Sacado_Taylor_DTaylor.hpp \
+	$(srcdir)/Sacado_Taylor_DTaylorImp.hpp \
+	$(srcdir)/Sacado_Taylor_Expression.hpp \
+	$(srcdir)/Sacado_Taylor_Ops.hpp \
+	$(srcdir)/Sacado_trad_Traits.hpp $(srcdir)/Sacado_trad.hpp \
+	$(srcdir)/Sacado_rad.hpp $(srcdir)/mpl/Sacado_mpl_is_same.hpp \
+	$(srcdir)/mpl/Sacado_mpl_disable_if.hpp \
+	$(srcdir)/mpl/Sacado_mpl_if.hpp \
+	$(srcdir)/mpl/Sacado_mpl_none.hpp \
+	$(srcdir)/mpl/Sacado_mpl_begin.hpp \
+	$(srcdir)/mpl/Sacado_mpl_end.hpp \
+	$(srcdir)/mpl/Sacado_mpl_next.hpp \
+	$(srcdir)/mpl/Sacado_mpl_size.hpp \
+	$(srcdir)/mpl/Sacado_mpl_at.hpp \
+	$(srcdir)/mpl/Sacado_mpl_deref.hpp \
+	$(srcdir)/mpl/Sacado_mpl_push_back.hpp \
+	$(srcdir)/mpl/Sacado_mpl_find.hpp \
+	$(srcdir)/mpl/Sacado_mpl_for_each.hpp \
+	$(srcdir)/mpl/Sacado_mpl_vector.hpp \
+	$(srcdir)/mpl/Sacado_mpl_vector_size_spec.hpp \
+	$(srcdir)/mpl/Sacado_mpl_vector_at_spec.hpp \
+	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp \
+	$(srcdir)/Sacado_TemplateManager.hpp \
+	$(srcdir)/Sacado_TemplateManagerImp.hpp \
+	$(srcdir)/Sacado_TemplateIterator.hpp \
+	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
+	$(srcdir)/parameter/Sacado_ParameterFamilyBaseImp.hpp \
+	$(srcdir)/parameter/Sacado_ParameterLibraryBase.hpp \
+	$(srcdir)/parameter/Sacado_ParameterLibraryBaseImp.hpp \
+	$(srcdir)/parameter/Sacado_ParameterVectorBase.hpp \
+	$(srcdir)/parameter/Sacado_ScalarParameterEntry.hpp \
+	$(srcdir)/parameter/Sacado_ScalarParameterFamily.hpp \
+	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.hpp \
+	$(srcdir)/parameter/Sacado_ScalarParameterVector.hpp \
+	$(srcdir)/Sacado_ScalarFlopCounter.hpp
+am__objects_1 = libsacado_a-Sacado_radops.$(OBJEXT) uninit.$(OBJEXT) \
 	RAD_Const_Warn.$(OBJEXT)
-am__objects_2 = $(am__objects_1)
-am__objects_3 =
-am__objects_4 = $(am__objects_3) $(am__objects_3) $(am__objects_3) \
-	$(am__objects_3) $(am__objects_3) $(am__objects_3) \
-	$(am__objects_3)
-am_libsacado_a_OBJECTS = $(am__objects_2) $(am__objects_4)
+@ENABLE_SACADO_TEUCHOS_TRUE@am__objects_2 = libsacado_a-Sacado_ScalarParameterLibrary.$(OBJEXT)
+am__objects_3 = $(am__objects_1) $(am__objects_2)
+am__objects_4 =
+am__objects_5 = $(am__objects_4) $(am__objects_4) $(am__objects_4) \
+	$(am__objects_4) $(am__objects_4) $(am__objects_4) \
+	$(am__objects_4) $(am__objects_4)
+am_libsacado_a_OBJECTS = $(am__objects_3) $(am__objects_5)
 libsacado_a_OBJECTS = $(am_libsacado_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/RAD_Const_Warn.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Sacado_radops.Po ./$(DEPDIR)/uninit.Po
+@AMDEP_TRUE@	./$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libsacado_a-Sacado_radops.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/uninit.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -123,7 +195,74 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(libsacado_a_SOURCES) $(EXTRA_libsacado_a_SOURCES)
-DIST_SOURCES = $(libsacado_a_SOURCES) $(EXTRA_libsacado_a_SOURCES)
+DIST_SOURCES = $(am__libsacado_a_SOURCES_DIST) \
+	$(EXTRA_libsacado_a_SOURCES)
+am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
+	$(srcdir)/Sacado_Version.hpp $(srcdir)/Sacado_Traits.hpp \
+	$(srcdir)/Sacado.hpp $(srcdir)/Sacado_Fad_GeneralFad.hpp \
+	$(srcdir)/Sacado_Fad_GeneralFadImp.hpp \
+	$(srcdir)/Sacado_Fad_GeneralFadExpr.hpp \
+	$(srcdir)/Sacado_Fad_ExpressionTraits.hpp \
+	$(srcdir)/Sacado_Fad_Expression.hpp \
+	$(srcdir)/Sacado_Fad_Ops.hpp \
+	$(srcdir)/Sacado_Fad_DynamicStorage.hpp \
+	$(srcdir)/Sacado_Fad_DFad.hpp \
+	$(srcdir)/Sacado_Fad_DFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_StaticStorage.hpp \
+	$(srcdir)/Sacado_Fad_SLFad.hpp \
+	$(srcdir)/Sacado_Fad_SLFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_SFad.hpp $(srcdir)/Sacado_Fad_SFadImp.hpp \
+	$(srcdir)/Sacado_Fad_SFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_MemPool.hpp \
+	$(srcdir)/Sacado_Fad_MemPoolImp.hpp \
+	$(srcdir)/Sacado_Fad_MemPoolManager.hpp \
+	$(srcdir)/Sacado_Fad_MemPoolManagerImp.hpp \
+	$(srcdir)/Sacado_Fad_MemPoolStorage.hpp \
+	$(srcdir)/Sacado_Fad_DMFad.hpp \
+	$(srcdir)/Sacado_Fad_DMFadTraits.hpp \
+	$(srcdir)/Sacado_CacheFad_GeneralFad.hpp \
+	$(srcdir)/Sacado_CacheFad_GeneralFadImp.hpp \
+	$(srcdir)/Sacado_CacheFad_GeneralFadExpr.hpp \
+	$(srcdir)/Sacado_CacheFad_Expression.hpp \
+	$(srcdir)/Sacado_CacheFad_Ops.hpp \
+	$(srcdir)/Sacado_CacheFad_DFadTraits.hpp \
+	$(srcdir)/Sacado_CacheFad_DFad.hpp \
+	$(srcdir)/Sacado_Taylor_DTaylorTraits.hpp \
+	$(srcdir)/Sacado_Taylor_DTaylor.hpp \
+	$(srcdir)/Sacado_Taylor_DTaylorImp.hpp \
+	$(srcdir)/Sacado_Taylor_Expression.hpp \
+	$(srcdir)/Sacado_Taylor_Ops.hpp \
+	$(srcdir)/Sacado_trad_Traits.hpp $(srcdir)/Sacado_trad.hpp \
+	$(srcdir)/Sacado_rad.hpp $(srcdir)/mpl/Sacado_mpl_is_same.hpp \
+	$(srcdir)/mpl/Sacado_mpl_disable_if.hpp \
+	$(srcdir)/mpl/Sacado_mpl_if.hpp \
+	$(srcdir)/mpl/Sacado_mpl_none.hpp \
+	$(srcdir)/mpl/Sacado_mpl_begin.hpp \
+	$(srcdir)/mpl/Sacado_mpl_end.hpp \
+	$(srcdir)/mpl/Sacado_mpl_next.hpp \
+	$(srcdir)/mpl/Sacado_mpl_size.hpp \
+	$(srcdir)/mpl/Sacado_mpl_at.hpp \
+	$(srcdir)/mpl/Sacado_mpl_deref.hpp \
+	$(srcdir)/mpl/Sacado_mpl_push_back.hpp \
+	$(srcdir)/mpl/Sacado_mpl_find.hpp \
+	$(srcdir)/mpl/Sacado_mpl_for_each.hpp \
+	$(srcdir)/mpl/Sacado_mpl_vector.hpp \
+	$(srcdir)/mpl/Sacado_mpl_vector_size_spec.hpp \
+	$(srcdir)/mpl/Sacado_mpl_vector_at_spec.hpp \
+	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp \
+	$(srcdir)/Sacado_TemplateManager.hpp \
+	$(srcdir)/Sacado_TemplateManagerImp.hpp \
+	$(srcdir)/Sacado_TemplateIterator.hpp \
+	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
+	$(srcdir)/parameter/Sacado_ParameterFamilyBaseImp.hpp \
+	$(srcdir)/parameter/Sacado_ParameterLibraryBase.hpp \
+	$(srcdir)/parameter/Sacado_ParameterLibraryBaseImp.hpp \
+	$(srcdir)/parameter/Sacado_ParameterVectorBase.hpp \
+	$(srcdir)/parameter/Sacado_ScalarParameterEntry.hpp \
+	$(srcdir)/parameter/Sacado_ScalarParameterFamily.hpp \
+	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.hpp \
+	$(srcdir)/parameter/Sacado_ScalarParameterVector.hpp \
+	$(srcdir)/Sacado_ScalarFlopCounter.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -142,8 +281,6 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-BUILD_ALLTESTS_FALSE = @BUILD_ALLTESTS_FALSE@
-BUILD_ALLTESTS_TRUE = @BUILD_ALLTESTS_TRUE@
 BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
 BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
@@ -168,10 +305,11 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 ENABLE_ADOLC_FALSE = @ENABLE_ADOLC_FALSE@
 ENABLE_ADOLC_TRUE = @ENABLE_ADOLC_TRUE@
+ENABLE_SACADO_TEUCHOS_FALSE = @ENABLE_SACADO_TEUCHOS_FALSE@
+ENABLE_SACADO_TEUCHOS_TRUE = @ENABLE_SACADO_TEUCHOS_TRUE@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
-GREP = @GREP@
 HAVE_CPPUNIT_FALSE = @HAVE_CPPUNIT_FALSE@
 HAVE_CPPUNIT_TRUE = @HAVE_CPPUNIT_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
@@ -221,6 +359,8 @@ ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
+ac_ct_RANLIB = @ac_ct_RANLIB@
+ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
@@ -235,9 +375,6 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 datadir = @datadir@
-datarootdir = @datarootdir@
-docdir = @docdir@
-dvidir = @dvidir@
 exec_prefix = @exec_prefix@
 execincludedir = @execincludedir@
 host = @host@
@@ -245,21 +382,17 @@ host_alias = @host_alias@
 host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
-htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
-localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
-pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
-psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
@@ -325,10 +458,24 @@ SACADO_RAD = \
 	$(srcdir)/uninit.c \
 	$(srcdir)/RAD_Const_Warn.c
 
-SACADO_TEMPLATE_H = \
-	$(srcdir)/Sacado_TemplateManager.hpp \
-	$(srcdir)/Sacado_TemplateManagerImp.hpp \
-	$(srcdir)/Sacado_TemplateIterator.hpp 
+@ENABLE_SACADO_TEUCHOS_TRUE@SACADO_TEMPLATE_H = \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_TemplateManager.hpp \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_TemplateManagerImp.hpp \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_TemplateIterator.hpp 
+
+@ENABLE_SACADO_TEUCHOS_TRUE@SACADO_PARAMETER_H = \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterFamilyBaseImp.hpp \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterLibraryBase.hpp \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterLibraryBaseImp.hpp \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterVectorBase.hpp \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterEntry.hpp \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterFamily.hpp \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.hpp \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterVector.hpp
+
+@ENABLE_SACADO_TEUCHOS_TRUE@SACADO_PARAMETER = \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp
 
 SACADO_MPL_H = \
 	$(srcdir)/mpl/Sacado_mpl_is_same.hpp \
@@ -363,10 +510,12 @@ SACADO_H = \
 	$(SACADO_RAD_H) \
 	$(SACADO_MPL_H) \
 	$(SACADO_TEMPLATE_H) \
+	$(SACADO_PARAMETER_H) \
 	$(SACADO_SFC_H)
 
 SACADO = \
-	$(SACADO_RAD)
+	$(SACADO_RAD) \
+	$(SACADO_PARAMETER)
 
 
 # ------------------------------------------------------------------------
@@ -374,6 +523,7 @@ SACADO = \
 # ------------------------------------------------------------------------
 SACADO_LIB = libsacado.a
 libsacado_a_SOURCES = $(SACADO) $(SACADO_H)
+libsacado_a_CXXFLAGS = $(SACADO_INCLUDES)
 EXTRA_libsacado_a_SOURCES = 
 @USE_ALTERNATE_AR_FALSE@libsacado_a_AR = $(AR) cru
 
@@ -509,7 +659,8 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAD_Const_Warn.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Sacado_radops.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsacado_a-Sacado_radops.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uninit.Po@am__quote@
 
 .c.o:
@@ -576,21 +727,37 @@ RAD_Const_Warn.obj: $(srcdir)/RAD_Const_Warn.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-Sacado_radops.o: $(srcdir)/Sacado_radops.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Sacado_radops.o -MD -MP -MF "$(DEPDIR)/Sacado_radops.Tpo" -c -o Sacado_radops.o `test -f '$(srcdir)/Sacado_radops.cpp' || echo '$(srcdir)/'`$(srcdir)/Sacado_radops.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Sacado_radops.Tpo" "$(DEPDIR)/Sacado_radops.Po"; else rm -f "$(DEPDIR)/Sacado_radops.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Sacado_radops.cpp' object='Sacado_radops.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Sacado_radops.Po' tmpdepfile='$(DEPDIR)/Sacado_radops.TPo' @AMDEPBACKSLASH@
+libsacado_a-Sacado_radops.o: $(srcdir)/Sacado_radops.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacado_a_CXXFLAGS) $(CXXFLAGS) -MT libsacado_a-Sacado_radops.o -MD -MP -MF "$(DEPDIR)/libsacado_a-Sacado_radops.Tpo" -c -o libsacado_a-Sacado_radops.o `test -f '$(srcdir)/Sacado_radops.cpp' || echo '$(srcdir)/'`$(srcdir)/Sacado_radops.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libsacado_a-Sacado_radops.Tpo" "$(DEPDIR)/libsacado_a-Sacado_radops.Po"; else rm -f "$(DEPDIR)/libsacado_a-Sacado_radops.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Sacado_radops.cpp' object='libsacado_a-Sacado_radops.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libsacado_a-Sacado_radops.Po' tmpdepfile='$(DEPDIR)/libsacado_a-Sacado_radops.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Sacado_radops.o `test -f '$(srcdir)/Sacado_radops.cpp' || echo '$(srcdir)/'`$(srcdir)/Sacado_radops.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacado_a_CXXFLAGS) $(CXXFLAGS) -c -o libsacado_a-Sacado_radops.o `test -f '$(srcdir)/Sacado_radops.cpp' || echo '$(srcdir)/'`$(srcdir)/Sacado_radops.cpp
 
-Sacado_radops.obj: $(srcdir)/Sacado_radops.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Sacado_radops.obj -MD -MP -MF "$(DEPDIR)/Sacado_radops.Tpo" -c -o Sacado_radops.obj `if test -f '$(srcdir)/Sacado_radops.cpp'; then $(CYGPATH_W) '$(srcdir)/Sacado_radops.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Sacado_radops.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Sacado_radops.Tpo" "$(DEPDIR)/Sacado_radops.Po"; else rm -f "$(DEPDIR)/Sacado_radops.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Sacado_radops.cpp' object='Sacado_radops.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Sacado_radops.Po' tmpdepfile='$(DEPDIR)/Sacado_radops.TPo' @AMDEPBACKSLASH@
+libsacado_a-Sacado_radops.obj: $(srcdir)/Sacado_radops.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacado_a_CXXFLAGS) $(CXXFLAGS) -MT libsacado_a-Sacado_radops.obj -MD -MP -MF "$(DEPDIR)/libsacado_a-Sacado_radops.Tpo" -c -o libsacado_a-Sacado_radops.obj `if test -f '$(srcdir)/Sacado_radops.cpp'; then $(CYGPATH_W) '$(srcdir)/Sacado_radops.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Sacado_radops.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libsacado_a-Sacado_radops.Tpo" "$(DEPDIR)/libsacado_a-Sacado_radops.Po"; else rm -f "$(DEPDIR)/libsacado_a-Sacado_radops.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Sacado_radops.cpp' object='libsacado_a-Sacado_radops.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libsacado_a-Sacado_radops.Po' tmpdepfile='$(DEPDIR)/libsacado_a-Sacado_radops.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Sacado_radops.obj `if test -f '$(srcdir)/Sacado_radops.cpp'; then $(CYGPATH_W) '$(srcdir)/Sacado_radops.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Sacado_radops.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacado_a_CXXFLAGS) $(CXXFLAGS) -c -o libsacado_a-Sacado_radops.obj `if test -f '$(srcdir)/Sacado_radops.cpp'; then $(CYGPATH_W) '$(srcdir)/Sacado_radops.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Sacado_radops.cpp'; fi`
+
+libsacado_a-Sacado_ScalarParameterLibrary.o: $(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacado_a_CXXFLAGS) $(CXXFLAGS) -MT libsacado_a-Sacado_ScalarParameterLibrary.o -MD -MP -MF "$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.Tpo" -c -o libsacado_a-Sacado_ScalarParameterLibrary.o `test -f '$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp' || echo '$(srcdir)/'`$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.Tpo" "$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.Po"; else rm -f "$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp' object='libsacado_a-Sacado_ScalarParameterLibrary.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.Po' tmpdepfile='$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacado_a_CXXFLAGS) $(CXXFLAGS) -c -o libsacado_a-Sacado_ScalarParameterLibrary.o `test -f '$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp' || echo '$(srcdir)/'`$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp
+
+libsacado_a-Sacado_ScalarParameterLibrary.obj: $(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacado_a_CXXFLAGS) $(CXXFLAGS) -MT libsacado_a-Sacado_ScalarParameterLibrary.obj -MD -MP -MF "$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.Tpo" -c -o libsacado_a-Sacado_ScalarParameterLibrary.obj `if test -f '$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp'; then $(CYGPATH_W) '$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.Tpo" "$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.Po"; else rm -f "$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp' object='libsacado_a-Sacado_ScalarParameterLibrary.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.Po' tmpdepfile='$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacado_a_CXXFLAGS) $(CXXFLAGS) -c -o libsacado_a-Sacado_ScalarParameterLibrary.obj `if test -f '$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp'; then $(CYGPATH_W) '$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
@@ -674,7 +841,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/mpl
+	$(mkdir_p) $(distdir)/mpl $(distdir)/parameter
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -801,6 +968,8 @@ all-local:
 	@echo ""
 	@echo "Trilinos package sacado subdirectory src built successfully."
 	@echo ""
+
+include $(top_builddir)/Makefile.export.sacado
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

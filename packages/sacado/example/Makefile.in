@@ -76,7 +76,7 @@
 # FEApp Sources
 # ------------------------------------------------------------------------
 
-SOURCES = $(RunValgrind_SOURCES) $(ad_example_SOURCES) $(dfad_dfad_example_SOURCES) $(dfad_example_SOURCES) $(dmfad_example_SOURCES) $(dtaylor_example_SOURCES) $(sfad_example_SOURCES) $(trad_dfad_example_SOURCES) $(trad_example_SOURCES)
+SOURCES = $(ad_example_SOURCES) $(dfad_dfad_example_SOURCES) $(dfad_example_SOURCES) $(dmfad_example_SOURCES) $(dtaylor_example_SOURCES) $(sfad_example_SOURCES) $(trad_dfad_example_SOURCES) $(trad_example_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -102,8 +102,7 @@ host_triplet = @host@
 noinst_PROGRAMS = ad_example$(EXEEXT) dfad_example$(EXEEXT) \
 	dfad_dfad_example$(EXEEXT) sfad_example$(EXEEXT) \
 	dmfad_example$(EXEEXT) trad_example$(EXEEXT) \
-	trad_dfad_example$(EXEEXT) dtaylor_example$(EXEEXT) \
-	RunValgrind$(EXEEXT)
+	trad_dfad_example$(EXEEXT) dtaylor_example$(EXEEXT)
 DIST_COMMON = $(srcdir)/FEApp/MakefileFEAppStub.am \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 subdir = example
@@ -114,9 +113,9 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/cppunit.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
-	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -131,9 +130,6 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Sacado_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_RunValgrind_OBJECTS =
-RunValgrind_OBJECTS = $(am_RunValgrind_OBJECTS)
-RunValgrind_LDADD = $(LDADD)
 am_ad_example_OBJECTS = ad_example-ad_example.$(OBJEXT)
 ad_example_OBJECTS = $(am_ad_example_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -171,20 +167,14 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(RunValgrind_SOURCES) $(ad_example_SOURCES) \
-	$(dfad_dfad_example_SOURCES) $(dfad_example_SOURCES) \
-	$(dmfad_example_SOURCES) $(dtaylor_example_SOURCES) \
-	$(sfad_example_SOURCES) $(trad_dfad_example_SOURCES) \
-	$(trad_example_SOURCES)
-DIST_SOURCES = $(RunValgrind_SOURCES) $(ad_example_SOURCES) \
-	$(dfad_dfad_example_SOURCES) $(dfad_example_SOURCES) \
-	$(dmfad_example_SOURCES) $(dtaylor_example_SOURCES) \
-	$(sfad_example_SOURCES) $(trad_dfad_example_SOURCES) \
-	$(trad_example_SOURCES)
+SOURCES = $(ad_example_SOURCES) $(dfad_dfad_example_SOURCES) \
+	$(dfad_example_SOURCES) $(dmfad_example_SOURCES) \
+	$(dtaylor_example_SOURCES) $(sfad_example_SOURCES) \
+	$(trad_dfad_example_SOURCES) $(trad_example_SOURCES)
+DIST_SOURCES = $(ad_example_SOURCES) $(dfad_dfad_example_SOURCES) \
+	$(dfad_example_SOURCES) $(dmfad_example_SOURCES) \
+	$(dtaylor_example_SOURCES) $(sfad_example_SOURCES) \
+	$(trad_dfad_example_SOURCES) $(trad_example_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -200,8 +190,6 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-BUILD_ALLTESTS_FALSE = @BUILD_ALLTESTS_FALSE@
-BUILD_ALLTESTS_TRUE = @BUILD_ALLTESTS_TRUE@
 BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
 BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
@@ -226,10 +214,11 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 ENABLE_ADOLC_FALSE = @ENABLE_ADOLC_FALSE@
 ENABLE_ADOLC_TRUE = @ENABLE_ADOLC_TRUE@
+ENABLE_SACADO_TEUCHOS_FALSE = @ENABLE_SACADO_TEUCHOS_FALSE@
+ENABLE_SACADO_TEUCHOS_TRUE = @ENABLE_SACADO_TEUCHOS_TRUE@
 EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
-GREP = @GREP@
 HAVE_CPPUNIT_FALSE = @HAVE_CPPUNIT_FALSE@
 HAVE_CPPUNIT_TRUE = @HAVE_CPPUNIT_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
@@ -279,6 +268,8 @@ ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
+ac_ct_RANLIB = @ac_ct_RANLIB@
+ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
@@ -293,9 +284,6 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 datadir = @datadir@
-datarootdir = @datarootdir@
-docdir = @docdir@
-dvidir = @dvidir@
 exec_prefix = @exec_prefix@
 execincludedir = @execincludedir@
 host = @host@
@@ -303,21 +291,17 @@ host_alias = @host_alias@
 host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
-htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
-localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
-pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
-psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
@@ -362,10 +346,6 @@ dtaylor_example_SOURCES = $(srcdir)/dtaylor_example.cpp
 dtaylor_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
 dtaylor_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
 dtaylor_example_LDADD = $(dfad_example_LDADD)
-RunValgrind_SOURCES = \
-	$(srcdir)/RunValgrind \
-	$(srcdir)/In_Suppressions
-
 FEAPP_PATH = $(top_srcdir)/../sacado/example/FEApp
 ELEMENT_H = \
 	$(FEAPP_PATH)/FEApp_AbstractElement.hpp \
@@ -871,11 +851,6 @@ all-local:
 	@echo ""
 	@echo "Trilinos package sacado subdirectory example built successfully."
 	@echo ""
-
-RunValgrind$(EXEEXT): $(srcdir)/RunValgrind
-	cp  $(srcdir)/RunValgrind  RunValgrind$(EXEEXT)
-	chmod +x RunValgrind$(EXEEXT)
-	cp  $(srcdir)/In_Suppressions Suppressions
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

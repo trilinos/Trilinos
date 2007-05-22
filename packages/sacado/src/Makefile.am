@@ -91,10 +91,27 @@ SACADO_RAD = \
 	$(srcdir)/uninit.c \
 	$(srcdir)/RAD_Const_Warn.c
 
+if ENABLE_SACADO_TEUCHOS
+
 SACADO_TEMPLATE_H = \
 	$(srcdir)/Sacado_TemplateManager.hpp \
 	$(srcdir)/Sacado_TemplateManagerImp.hpp \
 	$(srcdir)/Sacado_TemplateIterator.hpp 
+
+SACADO_PARAMETER_H = \
+	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
+	$(srcdir)/parameter/Sacado_ParameterFamilyBaseImp.hpp \
+	$(srcdir)/parameter/Sacado_ParameterLibraryBase.hpp \
+	$(srcdir)/parameter/Sacado_ParameterLibraryBaseImp.hpp \
+	$(srcdir)/parameter/Sacado_ParameterVectorBase.hpp \
+	$(srcdir)/parameter/Sacado_ScalarParameterEntry.hpp \
+	$(srcdir)/parameter/Sacado_ScalarParameterFamily.hpp \
+	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.hpp \
+	$(srcdir)/parameter/Sacado_ScalarParameterVector.hpp
+
+SACADO_PARAMETER = \
+	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp
+endif
 
 SACADO_MPL_H = \
 	$(srcdir)/mpl/Sacado_mpl_is_same.hpp \
@@ -129,10 +146,14 @@ SACADO_H = \
 	$(SACADO_RAD_H) \
 	$(SACADO_MPL_H) \
 	$(SACADO_TEMPLATE_H) \
+	$(SACADO_PARAMETER_H) \
 	$(SACADO_SFC_H)
 
 SACADO = \
-	$(SACADO_RAD)
+	$(SACADO_RAD) \
+	$(SACADO_PARAMETER)
+
+include $(top_builddir)/Makefile.export.sacado
 
 # ------------------------------------------------------------------------
 # Sacado library specifications
@@ -140,6 +161,8 @@ SACADO = \
 SACADO_LIB = libsacado.a
 
 libsacado_a_SOURCES = $(SACADO) $(SACADO_H)
+
+libsacado_a_CXXFLAGS = $(SACADO_INCLUDES)
 
 EXTRA_libsacado_a_SOURCES = 
 

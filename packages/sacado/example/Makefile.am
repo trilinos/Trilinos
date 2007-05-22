@@ -44,8 +44,7 @@ noinst_PROGRAMS = \
 	dmfad_example \
 	trad_example \
 	trad_dfad_example \
-	dtaylor_example \
-	RunValgrind
+	dtaylor_example
 
 dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
 dfad_example_CXXFLAGS = \
@@ -89,15 +88,6 @@ dtaylor_example_SOURCES = $(srcdir)/dtaylor_example.cpp
 dtaylor_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
 dtaylor_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
 dtaylor_example_LDADD = $(dfad_example_LDADD)
-
-RunValgrind_SOURCES = \
-	$(srcdir)/RunValgrind \
-	$(srcdir)/In_Suppressions
-
-RunValgrind$(EXEEXT): $(srcdir)/RunValgrind
-	cp  $(srcdir)/RunValgrind  RunValgrind$(EXEEXT)
-	chmod +x RunValgrind$(EXEEXT)
-	cp  $(srcdir)/In_Suppressions Suppressions
 
 include FEApp/MakefileFEAppStub.am
 EXTRA_DIST = $(FEAPP_H) $(FEAPP)
