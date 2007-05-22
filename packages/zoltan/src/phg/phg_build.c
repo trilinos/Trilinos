@@ -1258,6 +1258,8 @@ int nRepartEdge = 0, nRepartVtx = 0;
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
     goto End;
   }
+  ZOLTAN_FREE(&pin_requests);
+  ZOLTAN_FREE(&pin_info);
 
   Zoltan_Comm_Destroy(&plan);
 
@@ -1265,8 +1267,8 @@ int nRepartEdge = 0, nRepartVtx = 0;
   /* We also need the total edges a vertex is in, including removed      */
   /* edges, when (add_obj_weight == PHG_ADD_PINS_WEIGHT).                */
   /***********************************************************************/
+  pin_requests = NULL;
   if (removedEdges && (add_obj_weight == PHG_ADD_PINS_WEIGHT)) {
-    pin_requests = NULL;
     msg_tag--;
     ierr = Zoltan_Comm_Create(&plan, zhg->nRemovePins,
            zhg->Remove_Pin_Procs,
