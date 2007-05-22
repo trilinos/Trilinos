@@ -105,7 +105,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = basicExample epetra
+DIST_SUBDIRS = basicExample diagonalTransient epetra
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -260,7 +260,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@ENABLE_EPETRAEXT_THYRA_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@RYTHMOS_STRATIMIKOS_EXAMPLES = basicExample 
+@ENABLE_EPETRAEXT_THYRA_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@RYTHMOS_STRATIMIKOS_EXAMPLES = basicExample diagonalTransient
 @ENABLE_EPETRAEXT_THYRA_TRUE@@ENABLE_NOX_EPETRA_TRUE@@ENABLE_RYTHMOS_NOX_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@RYTHMOS_NOX_EXAMPLES = epetra
 SUBDIRS = $(RYTHMOS_STRATIMIKOS_EXAMPLES) $(RYTHMOS_NOX_EXAMPLES)
 all: all-recursive

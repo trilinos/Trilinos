@@ -33,6 +33,7 @@
 #include "Thyra_LinearOpWithSolveTester.hpp"
 #include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Epetra_SerialComm.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_CrsMatrix.h"
@@ -702,8 +703,6 @@ int main( int argc, char* argv[] )
 
       Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceBase<Scalar> >
         mpi_vs = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar> >(epetra_vs,true);
-      Teuchos::RefCountPtr<const Thyra::ScalarProdVectorSpaceBase<Scalar> >
-        sp_domain = Teuchos::rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<Scalar> >(eV1->domain(),true);
 
       if(verbose) *out << "\nCreating temporary Epetra_Vector et1 and Epetra_MultiVector eT1 objects ...\n";
       Teuchos::RefCountPtr<Epetra_Vector>
@@ -715,7 +714,7 @@ int main( int argc, char* argv[] )
       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
         t1 = create_Vector(et1,mpi_vs);
       Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
-        T1 = create_MultiVector(eT1,mpi_vs,sp_domain);
+        T1 = create_MultiVector(eT1,mpi_vs);
 
       if(verbose) *out << "\nPerforming t1 = ev1 ...\n";
       assign( &*t1, *ev1 );
@@ -749,7 +748,7 @@ int main( int argc, char* argv[] )
       Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
         ct1 = create_Vector(Teuchos::rcp_implicit_cast<const Epetra_Vector>(et1),mpi_vs);
       Teuchos::RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
-        cT1 = create_MultiVector(Teuchos::rcp_implicit_cast<const Epetra_MultiVector>(eT1),mpi_vs,sp_domain);
+        cT1 = create_MultiVector(Teuchos::rcp_implicit_cast<const Epetra_MultiVector>(eT1),mpi_vs);
 
       if(!testRelErr(
            "sum(ct1)",Thyra::sum(*ct1),"sum(ev1)",sum(*ev1)

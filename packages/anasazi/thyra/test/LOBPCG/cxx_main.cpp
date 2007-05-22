@@ -60,6 +60,9 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[]) 
 {
+
+  using Teuchos::rcp_implicit_cast;
+
   bool boolret;
   int MyPID;
 
@@ -137,18 +140,12 @@ int main(int argc, char *argv[])
   ivec->Random();
 
   // create a Thyra::VectorSpaceBase
-  RefCountPtr<const Thyra::SpmdVectorSpaceBase<double> > epetra_vs = 
+  RefCountPtr<const Thyra::VectorSpaceBase<double> > epetra_vs = 
     Thyra::create_VectorSpace(Map);
-
-  // then, a ScalarProdVectorSpaceBase
-  RefCountPtr<const Thyra::ScalarProdVectorSpaceBase<double> > sp_domain = 
-    rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<double> >(
-      epetra_vs->smallVecSpcFcty()->createVecSpc(ivec->NumVectors())
-    );
 
   // create a MultiVectorBase (from the Epetra_MultiVector)
   RefCountPtr<Thyra::MultiVectorBase<double> > thyra_ivec = 
-    Thyra::create_MultiVector(rcp_implicit_cast<Epetra_MultiVector>(ivec), epetra_vs,sp_domain);
+    Thyra::create_MultiVector(ivec, epetra_vs);
 
   // Create Thyra LinearOpBase objects from the Epetra_Operator objects
   RefCountPtr<Thyra::LinearOpBase<double> > thyra_K = 

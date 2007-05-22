@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {
+
     
     //
     // A) Program setup code
@@ -132,6 +133,7 @@ int main(int argc, char* argv[])
           );
       return 0;
     }
+
     
     //
     // B) Epetra-specific code that sets up the linear system to be solved
@@ -175,6 +177,7 @@ int main(int argc, char* argv[])
       << "\n  ||epetra_x||2 = " << epetraNorm2(*epetra_x)
       << "\n";
 
+
     //
     // C) The "Glue" code that takes Epetra objects and wraps them as Thyra
     // objects
@@ -184,30 +187,18 @@ int main(int argc, char* argv[])
     // linear solver.
     //
 
-    // Create RCPs that will be used to hold the Thyra wrappers
-    RefCountPtr<const Thyra::LinearOpBase<double> >    A;
-    RefCountPtr<Thyra::VectorBase<double> >            x;
-    RefCountPtr<const Thyra::VectorBase<double> >      b;
-
-    // Create the Thyra wrappers
-    {
-      // Create an RCP directly to the EpetraLinearOp so that we can access the
-      // right range and domains spaces to use to create the wrappers for the
-      // vector objects.
-      RefCountPtr<const Thyra::EpetraLinearOp>
-        _A = rcp(new Thyra::EpetraLinearOp(epetra_A));
-      // Create Thyra wrappers for the vector objects that will automatically
-      // update the Epetra objects.
-      b = Thyra::create_Vector(epetra_b,_A->spmdRange());
-      x = Thyra::create_Vector(epetra_x,_A->spmdDomain());
-      // Set the RCP to the base linear operator interface
-      A = _A;
-    }
+    RefCountPtr<const Thyra::LinearOpBase<double> >
+      A = Thyra::epetraLinearOp( epetra_A );
+    RefCountPtr<Thyra::VectorBase<double> >
+      x = Thyra::create_Vector( epetra_x, A->domain() );
+    RefCountPtr<const Thyra::VectorBase<double> >
+      b = Thyra::create_Vector( epetra_b, A->range() );
 
     // Note that above Thyra is only interacted with in the most trival of
     // ways.  For most users, Thyra will only be seen as a thin wrapper that
     // they need know little about in order to wrap their objects in order to
     // pass them to Thyra-enabled solvers.
+
       
     //
     // D) Thyra-specific code for solving the linear system
@@ -237,6 +228,7 @@ int main(int argc, char* argv[])
     // Write the linear solver parameters after they were read
     linearSolverBuilder.writeParamsFile(*lowsFactory);
 
+
     //
     // E) Post process the solution and check the error
     //
@@ -247,7 +239,9 @@ int main(int argc, char* argv[])
     //
 
     // Wipe out the Thyra wrapper for x to guarantee that the solution will be
-    // written back to epetra_x!
+    // written back to epetra_x!  At the time of this writting this is not
+    // really needed but the behavior may change at some point so this is a
+    // good idea.
     x = Teuchos::null;
 
     *out

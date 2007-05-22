@@ -90,9 +90,9 @@ void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
   Teuchos::RefCountPtr<Epetra_Vector>
     e_diag = Teuchos::rcp(new Epetra_Vector(map));
   eRMOp.ExtractDiagonalCopy(*e_diag);
-  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<double> >
+  Teuchos::RefCountPtr< const VectorSpaceBase<double> >
     space = create_VectorSpace(Teuchos::rcp(new Epetra_Map(map)));
-  Teuchos::RefCountPtr< const SpmdVectorBase<double> >
+  Teuchos::RefCountPtr< const VectorBase<double> >
     diag = create_Vector(e_diag,space);
   Teuchos::set_extra_data<Teuchos::RefCountPtr<const LinearOpSourceBase<double> > >(
     fwdOpSrc, "Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOpSrc", &diag

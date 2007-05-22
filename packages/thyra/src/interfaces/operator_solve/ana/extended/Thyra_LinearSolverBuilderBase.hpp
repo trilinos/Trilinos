@@ -51,7 +51,7 @@ public:
    *
    * \param  linearSolveStrategyName
    *           [in] The optional name of the linear solve strategy to create.
-   *           The most typical use case will leave this argument blank but
+   *           The most typical use case will pass in an empty string but
    *           there will be cases where I client will want to try to select
    *           a specific linear solver strategy, even for just testing purposes.
    *
@@ -60,15 +60,14 @@ public:
    */
   virtual Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >
   createLinearSolveStrategy(
-    const std::string &linearSolveStrategyName = ""
-    ) const = 0;
+    const std::string &linearSolveStrategyName ) const = 0;
   
   /** \brief Create a new <tt>PreconditionerFactoryBase</tt> object purely
    * specified by the parameter list.
    *
    * \param  preconditioningStrategyName
    *           [in] The optional name of the preconditioning strategy to create.
-   *           The most typical use case will leave this argument blank but
+   *           The most typical use case will pass in an empty string but
    *           there will be cases where I client will want to try to select
    *           a specific linear solver strategy, even for just testing purposes.
    *
@@ -77,10 +76,9 @@ public:
    */
   virtual Teuchos::RefCountPtr<PreconditionerFactoryBase<Scalar> >
   createPreconditioningStrategy(
-    const std::string &preconditioningStrategyName = ""
-    ) const = 0;
+    const std::string &preconditioningStrategyName ) const = 0;
 
-  /** \brief Create a new LinearOpWithSolveFactory object given a typical
+  /* \brief Create a new LinearOpWithSolveFactory object given a typical
    * forward linear operator and a typical solve criteria.
    *
    * \param  typicalFwdOp
@@ -121,6 +119,39 @@ public:
   */
 
 };
+
+
+/** \brief .
+ *
+ * \relates LinearSolverBuilderBase
+ */
+template<class Scalar>
+Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >
+createLinearSolveStrategy(
+  const LinearSolverBuilderBase<Scalar> &linearSolverBuilder,
+  const std::string &linearSolveStrategyName = ""
+  )
+{
+  return linearSolverBuilder.createLinearSolveStrategy(
+    linearSolveStrategyName );
+}
+
+
+/** \brief .
+ *
+ * \relates LinearSolverBuilderBase
+ */
+template<class Scalar>
+Teuchos::RefCountPtr<PreconditionerFactoryBase<Scalar> >
+createPreconditioningStrategy(
+  const LinearSolverBuilderBase<Scalar> &linearSolverBuilder,
+  const std::string &preconditioningStrategyName = ""
+  )
+{
+  return linearSolverBuilder.createPreconditioningStrategy(
+    preconditioningStrategyName );
+}
+
 
 } // namespace Thyra
 

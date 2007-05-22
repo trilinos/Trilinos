@@ -19,10 +19,7 @@ Thyra Nonlinear Model Evaluator Interfaces</a>.
 
 <ul>
 
-<li><tt>Thyra::SingleResidSSDAEModelEvaluator</tt> is a <em>decorator</em>
-subclass that defines time-step equations for an implicit ODE or a DAE for a
-number of different single-residual integration methods with backward Euler
-being the simplest case.
+<li> ???
 
 </ul>
  

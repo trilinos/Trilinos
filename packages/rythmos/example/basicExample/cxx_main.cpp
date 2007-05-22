@@ -57,7 +57,7 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_LinearNonlinearSolver.hpp"
-#include "Thyra_TimeStepNewtonNonlinearSolver.hpp"
+#include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Thyra_TestingTools.hpp"
 
 // Includes for Stratimikos:
@@ -68,12 +68,15 @@
 #include <string>
 
 // Includes for Teuchos:
+#include "Teuchos_as.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_VerbosityLevelCommandLineProcessorHelpers.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
 enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF };
@@ -81,6 +84,9 @@ enum EStepMethod { FIXED_STEP, VARIABLE_STEP };
 
 int main(int argc, char *argv[])
 {
+
+  using Teuchos::as;
+
   bool verbose = false; // verbosity level.
   bool result, success = true; // determine if the run was successfull
 
@@ -118,7 +124,7 @@ int main(int argc, char *argv[])
     int maxOrder = 5;
     bool useIntegrator = false;
     int buffersize = 100;
-    int outputLevel = -1; // outputLevel determines the level of output / verbosity
+    Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_LOW;
 
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
@@ -145,13 +151,14 @@ int main(int argc, char *argv[])
     clp.setOption( "maxorder", &maxOrder, "Maximum Implicit BDF order" );
     clp.setOption( "useintegrator", "normal", &useIntegrator, "Use InterpolationBufferAsStepper as integrator" );
     clp.setOption( "buffersize", &buffersize, "Number of solutions to store in InterpolationBuffer" );
-    clp.setOption( "outputlevel", &outputLevel, "Verbosity level for Rythmos" );
+    setVerbosityLevelOption( "verb-level", &verbLevel, "Overall verbosity level.", &clp );
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
-    // 10/23/06 tscoffe:  bounds on Teuchos::EVerbosityLevel:
-    outputLevel = min(max(outputLevel,-1),4);
+    // RAB: 2007/05/14: ToDo: In all of the below code that is called change
+    // from the "outputLevel" interger parameter to the "Verbose Object"
+    // sublist with its "Verbosity Level" string parameter.
 
 #ifdef HAVE_RYTHMOS_STRATIMIKOS
     lowsfCreator.readParameters(out.get());
@@ -184,7 +191,7 @@ int main(int argc, char *argv[])
     Teuchos::ParameterList params;
     bool implicitFlag = ((method_val==METHOD_BE) | (method_val==METHOD_BDF));
     //*out << "implicitFlag = " << implicitFlag << std::endl;
-    params.set( "implicit", implicitFlag );
+    params.set( "Implicit", implicitFlag );
     params.set( "Lambda_min", lambda_min );
     params.set( "Lambda_max", lambda_max );
     params.set( "Lambda_fit", lambda_fit );
@@ -221,53 +228,60 @@ int main(int argc, char *argv[])
     if ( method_val == METHOD_ERK ) {
       stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRKStepper<double>(model));
       Teuchos::RefCountPtr<Teuchos::ParameterList> ERKparams = Teuchos::rcp(new Teuchos::ParameterList);
-      ERKparams->set( "outputLevel", outputLevel);
+      ERKparams->set( "outputLevel", as<int>(verbLevel) );
       stepper_ptr->setParameterList(ERKparams);
       method = "Explicit Runge-Kutta of order 4";
       step_method_val = FIXED_STEP;
-    } else if (method_val == METHOD_FE) {
+    }
+    else if (method_val == METHOD_FE) {
       stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEulerStepper<double>(model));
       Teuchos::RefCountPtr<Teuchos::ParameterList> FEparams = Teuchos::rcp(new Teuchos::ParameterList);
-      FEparams->set( "outputLevel", outputLevel);
+      FEparams->set( "outputLevel", as<int>(verbLevel));
       stepper_ptr->setParameterList(FEparams);
       method = "Forward Euler";
       step_method_val = FIXED_STEP;
-    } else if ((method_val == METHOD_BE) | (method_val == METHOD_BDF)) {
+    }
+    else if ((method_val == METHOD_BE) | (method_val == METHOD_BDF)) {
       Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<double> >
         nonlinearSolver;
-      Teuchos::RefCountPtr<Thyra::TimeStepNewtonNonlinearSolver<double> >
-        _nonlinearSolver = Teuchos::rcp(new Thyra::TimeStepNewtonNonlinearSolver<double>());
+      Teuchos::RefCountPtr<Rythmos::TimeStepNonlinearSolver<double> >
+        _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
       _nonlinearSolver->defaultTol(1e-3*maxError);
       nonlinearSolver = _nonlinearSolver;
-      if (method_val == METHOD_BE)
-      {
-        stepper_ptr = Teuchos::rcp(new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
-        Teuchos::RefCountPtr<Teuchos::ParameterList> BEparams = Teuchos::rcp(new Teuchos::ParameterList);
-        BEparams->set( "outputLevel", outputLevel);
+      if (method_val == METHOD_BE) {
+        stepper_ptr = Teuchos::rcp(
+          new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
+        Teuchos::RefCountPtr<Teuchos::ParameterList>
+          BEparams = Teuchos::rcp(new Teuchos::ParameterList);
+        BEparams->sublist("VerboseObject").set(
+          "Verbosity Level",
+          Teuchos::getVerbosityLevelParameterValueName(verbLevel)
+          );
         stepper_ptr->setParameterList(BEparams);
         method = "Backward Euler";
         step_method_val = FIXED_STEP;
       } 
-      else 
-      {
-        Teuchos::RefCountPtr<Teuchos::ParameterList> BDFparams = Teuchos::rcp(new Teuchos::ParameterList);
+      else {
+        Teuchos::RefCountPtr<Teuchos::ParameterList>
+          BDFparams = Teuchos::rcp(new Teuchos::ParameterList);
         BDFparams->set( "stopTime", finalTime );
         BDFparams->set( "maxOrder", maxOrder );
         BDFparams->set( "relErrTol", reltol );
         BDFparams->set( "absErrTol", abstol );
-        BDFparams->set( "outputLevel", outputLevel );
+        BDFparams->set( "outputLevel", as<int>(verbLevel) );
 
-        stepper_ptr = Teuchos::rcp(new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver,BDFparams));
+        stepper_ptr = Teuchos::rcp(
+          new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver,BDFparams));
         method = "Implicit BDF";
         // step_method_val setting is left alone in this case
       }
-    } else {
+    }
+    else {
       TEST_FOR_EXCEPT(true);
     }
     Rythmos::StepperBase<double> &stepper = *stepper_ptr;
-    Teuchos::RefCountPtr<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-    if (outputLevel >= 3)
-      stepper.describe(*out,static_cast<Teuchos::EVerbosityLevel>(outputLevel));
+    if ( verbLevel >= Teuchos::VERB_HIGH )
+      stepper.describe(*out,verbLevel);
 
     int numSteps = 0;
     double t0 = 0.0;
@@ -283,7 +297,7 @@ int main(int argc, char *argv[])
         Teuchos::RefCountPtr<Teuchos::ParameterList> 
           integratorParams = Teuchos::rcp(new Teuchos::ParameterList);
         integratorParams->set( "fixed_dt", dt );
-        integratorParams->set( "outputLevel", outputLevel );
+        integratorParams->set( "outputLevel", as<int>(verbLevel) );
         // Create integrator using stepper and linear interpolation buffer:
         Teuchos::RefCountPtr<Rythmos::InterpolatorBase<double> > 
           linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
@@ -298,10 +312,10 @@ int main(int argc, char *argv[])
         std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<double> > > x_vec;
         std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<double> > > xdot_vec;
         std::vector<double> accuracy_vec;
-        bool status = integrator.GetPoints(time_vals,&x_vec,&xdot_vec,&accuracy_vec);
+        bool status = integrator.getPoints(time_vals,&x_vec,&xdot_vec,&accuracy_vec);
         if (!status) 
         {
-          std::cout << "ERROR:  Integrator.GetPoints returned failure" << std::endl;
+          std::cout << "ERROR:  Integrator.getPoints returned failure" << std::endl;
           return(-1);
         }
         // Get solution out of stepper:
@@ -312,11 +326,11 @@ int main(int argc, char *argv[])
         // Integrate forward with fixed step sizes:
         for (int i=1 ; i<=N ; ++i)
         {
-          double dt_taken = stepper.TakeStep(dt,Rythmos::FIXED_STEP);
+          double dt_taken = stepper.takeStep(dt,Rythmos::FIXED_STEP);
           time += dt_taken;
           numSteps++;
-          if (outputLevel >= 3)
-            stepper.describe(*out,static_cast<Teuchos::EVerbosityLevel>(outputLevel));
+          if (verbLevel >= Teuchos::VERB_HIGH)
+            stepper.describe(*out,verbLevel);
           if (dt_taken != dt)
           {
             cerr << "Error, stepper took step of dt = " << dt_taken 
@@ -337,7 +351,7 @@ int main(int argc, char *argv[])
         Teuchos::RefCountPtr<Teuchos::ParameterList> 
           integratorParams = Teuchos::rcp(new Teuchos::ParameterList);
         //integratorParams->set( "fixed_dt", dt );
-        integratorParams->set( "outputLevel", outputLevel );
+        integratorParams->set( "outputLevel", as<int>(verbLevel) );
         // Create integrator using stepper and interpolation buffer:
         //Teuchos::RefCountPtr<Rythmos::InterpolatorBase<double> > 
         //  linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
@@ -356,10 +370,10 @@ int main(int argc, char *argv[])
         std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<double> > > x_vec;
         std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<double> > > xdot_vec;
         std::vector<double> accuracy_vec;
-        bool status = integrator.GetPoints(time_vals,&x_vec,&xdot_vec,&accuracy_vec);
+        bool status = integrator.getPoints(time_vals,&x_vec,&xdot_vec,&accuracy_vec);
         if (!status) 
         {
-          std::cout << "ERROR:  Integrator.GetPoints returned failure" << std::endl;
+          std::cout << "ERROR:  Integrator.getPoints returned failure" << std::endl;
           return(-1);
         }
         // Get solution out of stepper:
@@ -385,16 +399,16 @@ int main(int argc, char *argv[])
 
         while (time < finalTime)
         {
-          double dt_taken = stepper.TakeStep(0.0,Rythmos::VARIABLE_STEP);
+          double dt_taken = stepper.takeStep(0.0,Rythmos::VARIABLE_STEP);
           numSteps++;
-          if (outputLevel >= 3)
-            stepper.describe(*out,static_cast<Teuchos::EVerbosityLevel>(outputLevel));
+          if (verbLevel >= Teuchos::VERB_HIGH)
+            stepper.describe(*out,verbLevel);
           if (dt_taken < 0)
           {
             *out << "Error, stepper failed for some reason with step taken = " << dt_taken << endl;
             break;
           }
-          if (outputLevel >= 3)
+          if (verbLevel >= Teuchos::VERB_HIGH)
           {
             // Get solution out of stepper:
             stepStatus = stepper.getStepStatus();
@@ -430,7 +444,8 @@ int main(int argc, char *argv[])
             else
             {
               // compute exact answer
-              Teuchos::RefCountPtr<const Epetra_Vector> x_star_ptr = epetraModel->get_exact_solution(time);
+              Teuchos::RefCountPtr<const Epetra_Vector>
+                x_star_ptr = epetraModel->getExactSolution(time);
               const Epetra_Vector& x_star = *x_star_ptr;
               int myN = x_computed_ptr->MyLength();
               for (int i=0 ; i<myN ; ++i)
@@ -464,7 +479,8 @@ int main(int argc, char *argv[])
     const Epetra_Vector &x_computed = *x_computed_ptr;
 
     // compute exact answer
-    Teuchos::RefCountPtr<const Epetra_Vector> x_star_ptr = epetraModel->get_exact_solution(finalTime);
+    Teuchos::RefCountPtr<const Epetra_Vector>
+      x_star_ptr = epetraModel->getExactSolution(finalTime);
     const Epetra_Vector& x_star = *x_star_ptr;
     
     // get lambda from the problem:

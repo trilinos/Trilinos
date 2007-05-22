@@ -63,39 +63,41 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
     ~InterpolationBuffer() {};
 
     /// Add point to buffer
-    bool SetPoints(
+    bool setPoints(
       const std::vector<Scalar>& time_vec
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
       ,const std::vector<ScalarMag> & accuracy_vec 
       );
 
-    bool SetPoints(
+    bool setPoints(
       const std::vector<Scalar>& time_vec
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec);
 
     /// Get value from buffer
-    bool GetPoints(
+    bool getPoints(
       const std::vector<Scalar>& time_vec
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
       ,std::vector<ScalarMag>* accuracy_vec) const;
 
     /// Fill data in from another interpolation buffer
-    bool SetRange(
-      const Scalar& time_lower
-      ,const Scalar& time_upper
-      ,const InterpolationBufferBase<Scalar>& IB);
+    bool setRange(
+      const TimeRange<Scalar>& range,
+      const InterpolationBufferBase<Scalar>& IB);
+
+    /** \brief . */
+    TimeRange<Scalar> getTimeRange() const;
 
     /// Get interpolation nodes
-    bool GetNodes(std::vector<Scalar>* time_vec) const;
+    bool getNodes(std::vector<Scalar>* time_vec) const;
 
     /// Remove interpolation nodes
-    bool RemoveNodes(std::vector<Scalar>& time_vec);
+    bool removeNodes(std::vector<Scalar>& time_vec);
 
     /// Get order of interpolation
-    int GetOrder() const;
+    int getOrder() const;
 
     /// Redefined from Teuchos::Describable
     /** \brief . */
@@ -187,7 +189,7 @@ void InterpolationBuffer<Scalar>::SetStorage( int storage_ )
   }
   // 10/25/06 tscoffe:
   // We should check the IBPolicy against lowering the storage_limit below its current storage.
-  // In the case of BUFFER_STATIC, you would have to RemoveNodes before lowering storage_limit
+  // In the case of BUFFER_STATIC, you would have to removeNodes before lowering storage_limit
   // This routine should return bool instead.
   // Is there any way to ask what the storage_limit is?
 }
@@ -210,7 +212,7 @@ void InterpolationBuffer<Scalar>::SetInterpolator(
 }
 
 template<class Scalar>
-bool InterpolationBuffer<Scalar>::SetPoints( 
+bool InterpolationBuffer<Scalar>::setPoints( 
     const std::vector<Scalar>& time_vec
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec 
@@ -218,7 +220,7 @@ bool InterpolationBuffer<Scalar>::SetPoints(
     )
 {
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"IB::SetPoints");
+  Teuchos::OSTab ostab(out,1,"IB::setPoints");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "time_vec = " << std::endl;
     for (unsigned int i=0 ; i<time_vec.size() ; ++i) {
@@ -252,7 +254,7 @@ bool InterpolationBuffer<Scalar>::SetPoints(
     }
   }
   typename DataStore<Scalar>::DataStoreList_t input_data_list;
-  VectorToDataStoreList<Scalar>(time_vec,x_vec,xdot_vec,accuracy_vec,&input_data_list);
+  vectorToDataStoreList<Scalar>(time_vec,x_vec,xdot_vec,accuracy_vec,&input_data_list);
   input_data_list.sort();
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "input_data_list after sorting = " << std::endl;
@@ -334,7 +336,7 @@ bool InterpolationBuffer<Scalar>::SetPoints(
   // And sort data_vec:
   std::sort(data_vec.begin(),data_vec.end());
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
-    *out << "data_vec at end of SetPoints:" << std::endl;
+    *out << "data_vec at end of setPoints:" << std::endl;
     for (unsigned int i=0 ; i<data_vec.size() ; ++i) {
       *out << "data_vec[" << i << "] = " << std::endl;
       data_vec[i].describe(*out,Teuchos::VERB_EXTREME);
@@ -344,7 +346,7 @@ bool InterpolationBuffer<Scalar>::SetPoints(
 }
 
 template<class Scalar>
-bool InterpolationBuffer<Scalar>::SetPoints( 
+bool InterpolationBuffer<Scalar>::setPoints( 
     const std::vector<Scalar>& time_vec
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec )
@@ -355,18 +357,18 @@ bool InterpolationBuffer<Scalar>::SetPoints(
   for (unsigned int i=0;i<x_vec.size();++i) {
     accuracy_vec[i] = ST::zero();
   }
-  return(this->SetPoints(time_vec,x_vec,xdot_vec,accuracy_vec));
+  return(this->setPoints(time_vec,x_vec,xdot_vec,accuracy_vec));
 }
 
 template<class Scalar>
-bool InterpolationBuffer<Scalar>::GetPoints(
+bool InterpolationBuffer<Scalar>::getPoints(
     const std::vector<Scalar>& time_vec
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"IB::GetPoints");
+  Teuchos::OSTab ostab(out,1,"IB::getPoints");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "Calling interpolate..." << std::endl;
   }
@@ -379,7 +381,7 @@ bool InterpolationBuffer<Scalar>::GetPoints(
     *out << "Interpolation successful" << std::endl;
   }
   std::vector<Scalar> time_out_vec;
-  DataStoreVectorToVector<Scalar>(data_out, &time_out_vec, x_vec, xdot_vec, accuracy_vec);
+  dataStoreVectorToVector<Scalar>(data_out, &time_out_vec, x_vec, xdot_vec, accuracy_vec);
   // Double check that time_out_vec == time_vec
   if (time_vec.size() != time_out_vec.size()) {
     return(false);
@@ -392,20 +394,21 @@ bool InterpolationBuffer<Scalar>::GetPoints(
 
 
 template<class Scalar>
-bool InterpolationBuffer<Scalar>::SetRange(
-    const Scalar& time_lower
-    ,const Scalar& time_upper
-    ,const InterpolationBufferBase<Scalar>& IB )
+bool InterpolationBuffer<Scalar>::setRange(
+  const TimeRange<Scalar>& range,
+  const InterpolationBufferBase<Scalar>& IB )
 {
+  const Scalar time_lower = range.lower();
+  const Scalar time_upper = range.upper();
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"IB::SetRange");
+  Teuchos::OSTab ostab(out,1,"IB::setRange");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "time_lower = " << time_lower << std::endl;
     *out << "time_upper = " << time_upper << std::endl;
     *out << "IB = " << IB.description() << std::endl;
   }
   std::vector<Scalar> input_nodes;
-  bool status = IB.GetNodes(&input_nodes);
+  bool status = IB.getNodes(&input_nodes);
   if (!status) { 
     return(status);
   }
@@ -468,7 +471,7 @@ bool InterpolationBuffer<Scalar>::SetRange(
   // Ask IB to interpolate more points if IB's order is higher than ours
   typedef Teuchos::ScalarTraits<Scalar> ST;
   Scalar h_safety = Scalar(2*ST::one());
-  int IBOrder = IB.GetOrder();
+  int IBOrder = IB.getOrder();
   if (IBOrder >= interpolator->order()) {
     std::list<Scalar> add_nodes;
     for (unsigned int i=0 ; i<input_nodes.size()-1 ; ++i) {
@@ -477,7 +480,7 @@ bool InterpolationBuffer<Scalar>::SetRange(
       if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
         *out << "i = " << i << std::endl;
         *out << "interpolator->order() = " << interpolator->order() << std::endl;
-        *out << "IB.GetOrder() = " << IB.GetOrder() << std::endl;
+        *out << "IB.getOrder() = " << IB.getOrder() << std::endl;
         *out << "h = " << h << std::endl;
       }
       Scalar N = ceil(h_0/h);
@@ -512,22 +515,29 @@ bool InterpolationBuffer<Scalar>::SetRange(
   // there too.  E.g. h = h_0^{p/r}/fudge.
 
   // Don't forget to check the interval [time_lower,time_upper].
-  // Use SetPoints and check return value to make sure we observe storage_limit.
+  // Use setPoints and check return value to make sure we observe storage_limit.
 
   std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > input_x;
   std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > input_xdot;
   std::vector<ScalarMag> input_accuracy;
-  status = IB.GetPoints( input_nodes, &input_x, &input_xdot, &input_accuracy );
+  status = IB.getPoints( input_nodes, &input_x, &input_xdot, &input_accuracy );
   if (!status) { 
     return(status);
   }
   // We could check that the accuracy meets our criteria here.
-  status = SetPoints( input_nodes, input_x, input_xdot, input_accuracy );
+  status = setPoints( input_nodes, input_x, input_xdot, input_accuracy );
   return(status);
 }
 
 template<class Scalar>
-bool InterpolationBuffer<Scalar>::GetNodes( std::vector<Scalar>* time_vec ) const
+TimeRange<Scalar> InterpolationBuffer<Scalar>::getTimeRange() const
+{
+  TEST_FOR_EXCEPT("ToDo: Implement this!");
+  return invalidTimeRange<Scalar>(); // ToDo: Fill in this range, I know you have one!
+}
+
+template<class Scalar>
+bool InterpolationBuffer<Scalar>::getNodes( std::vector<Scalar>* time_vec ) const
 {
   int N = data_vec.size();
   time_vec->clear();
@@ -536,7 +546,7 @@ bool InterpolationBuffer<Scalar>::GetNodes( std::vector<Scalar>* time_vec ) cons
     time_vec->push_back(data_vec[i].time);
   }
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"IB::GetNodes");
+  Teuchos::OSTab ostab(out,1,"IB::getNodes");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << this->description() << std::endl;
     for (unsigned int i=0 ; i<time_vec->size() ; ++i) {
@@ -547,7 +557,7 @@ bool InterpolationBuffer<Scalar>::GetNodes( std::vector<Scalar>* time_vec ) cons
 }
 
 template<class Scalar>
-bool InterpolationBuffer<Scalar>::RemoveNodes( std::vector<Scalar>& time_vec ) 
+bool InterpolationBuffer<Scalar>::removeNodes( std::vector<Scalar>& time_vec ) 
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   ScalarMag z = ST::zero();
@@ -565,7 +575,7 @@ bool InterpolationBuffer<Scalar>::RemoveNodes( std::vector<Scalar>& time_vec )
 }
 
 template<class Scalar>
-int InterpolationBuffer<Scalar>::GetOrder() const
+int InterpolationBuffer<Scalar>::getOrder() const
 {
   return(interpolator->order());
 }

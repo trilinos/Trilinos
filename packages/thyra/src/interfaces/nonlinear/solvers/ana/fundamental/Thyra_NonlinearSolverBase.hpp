@@ -105,6 +105,35 @@ public:
   
   /** @name Virtual functions with default implementation */
   //@{
+
+  /** \brief Return if this solver object supports cloning or not.
+   *
+   * The default implementation returns false.
+   */
+  virtual bool supportsCloning() const;
+
+  /** \brief Clone the solver algorithm if supported.
+   *
+   * <b>Postconditions:</b><ul>
+   * <li>[<tt>supportsCloning()==true</tt>] <tt>returnVal != Teuchos::null</tt>
+   * <li>[<tt>supportsCloning()==false</tt>] <tt>returnVal == Teuchos::null</tt>
+   * </ul>
+   *
+   * Note that cloning a nonlinear solver in this case does not imply that the
+   * Jacobian state will be copied as well, shallow or deep.  Instead, here
+   * cloning means to just clone the solver algorithm and it will do a
+   * showllow of the model as well if a model is set.  Since the model is
+   * stateless, this is okay.  Therefore, do not assume that the state of
+   * <tt>*returnValue</tt> is exactly the same as the state of <tt>*this</tt>.
+   * You have been warned!
+   * 
+   * The default implementation returns <tt>Teuchos::null</tt> which is
+   * consistent with the default implementation of <tt>supportsCloning()</tt>.
+   * If this function is overridden in a base class to support cloning, then
+   * <tt>supportsCloning()</tt> must be overridden to return <tt>true</tt>.
+   */
+  virtual Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> >
+  cloneNonlinearSolver() const;  
   
   /** \brief Return the current value of the solution <tt>x</tt> as computed
    * in the last <tt>solve()</tt> operation if supported.
@@ -120,13 +149,20 @@ public:
    */
   virtual bool is_W_current() const;
 
-  /** \brief Get the Jacobian if available.
+  /** \brief Get a nonconst RCP to the Jacobian if available.
+   *
+   * Through this the RCP returned from this function, a client can change the
+   * <tt>W</tt> object held internally.  If the object gets changed the client
+   * should call <tt>set_W_is_current(false)</tt>.
    *
    * The default implementation returns <tt>return.get()==NULL</tt>.
    */
   virtual Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > get_nonconst_W();
 
-  /** \brief Get the Jacobian if available.
+  /** \brief Get a const RCP to the Jacobian if available.
+   *
+   * Through this interface the client should not change the object
+   * <tt>W</tt>.
    *
    * The default implementation returns <tt>return.get()==NULL</tt>.
    */
@@ -149,6 +185,19 @@ public:
 
 // ///////////////////////////////
 // Implementations
+
+template <class Scalar>
+bool NonlinearSolverBase<Scalar>::supportsCloning() const
+{
+  return false;
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> >
+NonlinearSolverBase<Scalar>::cloneNonlinearSolver() const
+{
+  return Teuchos::null;
+}
 
 template <class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >

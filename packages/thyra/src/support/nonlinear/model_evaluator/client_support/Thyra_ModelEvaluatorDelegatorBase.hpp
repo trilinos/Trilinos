@@ -166,7 +166,7 @@ private:
     = _classNameStr+"::evalModel(...)"; \
   TEUCHOS_FUNC_TIME_MONITOR(_classFuncNameStr); \
   \
-  const ModelEvaluatorBase::OutArgs<Scalar> &blahblah_outArgs = (OUTARGS); \
+  const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &blahblah_outArgs = (OUTARGS); \
   \
   Teuchos::Time totalTimer(""); \
   totalTimer.start(true); \
@@ -182,10 +182,10 @@ private:
       << "\ninArgs =\n" << Teuchos::describe((INARGS),verbLevel) \
       << "\noutArgs on input =\n" << Teuchos::describe((OUTARGS),Teuchos::VERB_LOW); \
   \
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > \
+  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > \
     thyraModel = (UNDERLYINGMODEL); \
   \
-  typedef Teuchos::VerboseObjectTempState<ModelEvaluatorBase> VOTSME; \
+  typedef Teuchos::VerboseObjectTempState<Thyra::ModelEvaluatorBase> VOTSME; \
   VOTSME thyraModel_outputTempState(thyraModel,out,verbLevel)
 
 

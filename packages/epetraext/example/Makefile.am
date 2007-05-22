@@ -74,5 +74,6 @@ EXTRA_DIST = model_evaluator/GLpApp/data/square/square.1.000 \
 	model_evaluator/GLpApp/GLpApp_AdvDiffReactOptModel.hpp \
 	model_evaluator/GLpApp/GLpApp_AdvDiffReactOptModelCreator.hpp \
 	model_evaluator/GLpApp/GLpApp_GLpYUEpetraDataPool.hpp \
-	model_evaluator/GLpApp/rect2DMeshGenerator.hpp
-
+	model_evaluator/GLpApp/rect2DMeshGenerator.hpp \
+	model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.hpp \
+	model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp

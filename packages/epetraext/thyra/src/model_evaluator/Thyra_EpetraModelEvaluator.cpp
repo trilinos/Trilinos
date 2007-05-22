@@ -120,6 +120,13 @@ void EpetraModelEvaluator::initialize(
   for( int l = 0; l < implicit_cast<int>(p_space_.size()); ++l ) {
     RefCountPtr<const Epetra_Map>
       p_map_l = ( p_map_[l] = epetraModel_->get_p_map(l) );
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPTION(
+      is_null(p_map_l), std::logic_error,
+      "Error, the the map p["<<l<<"] for the model \""
+      <<epetraModel->description()<<"\" can not be null!");
+#endif
+
     p_map_is_local_[l] = !p_map_l->DistributedGlobal();
     p_space_[l] = create_VectorSpace(p_map_l);
   }
@@ -1189,6 +1196,16 @@ void EpetraModelEvaluator::updateNominalValuesAndBounds() const
 //
 // Non-member utility functions
 //
+
+
+Teuchos::RefCountPtr<Thyra::EpetraModelEvaluator>
+Thyra::epetraModelEvaluator(
+  const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> &epetraModel,
+  const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > &W_factory
+  )
+{
+  return Teuchos::rcp(new EpetraModelEvaluator(epetraModel,W_factory));
+}
 
 
 Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation

@@ -44,7 +44,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 // Includes for Thyra:
 #include "Thyra_EpetraModelEvaluator.hpp"
-#include "Thyra_TimeStepNewtonNonlinearSolver.hpp"
+#include "Rythmos_TimeStepNonlinearSolver.hpp"
 // Includes for Stratimikos:
 #ifdef HAVE_RYTHMOS_STRATIMIKOS
 #  include "Thyra_DefaultRealLinearSolverBuilder.hpp"
@@ -113,8 +113,8 @@ int main(int argc, char *argv[])
     implicit_model_vec.push_back(femTransientmodel);
     // Create a nonlinear solver for the implicit methods:
     Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<double> > nonlinearSolver;
-    Teuchos::RefCountPtr<Thyra::TimeStepNewtonNonlinearSolver<double> >
-      _nonlinearSolver = Teuchos::rcp(new Thyra::TimeStepNewtonNonlinearSolver<double>());
+    Teuchos::RefCountPtr<Rythmos::TimeStepNonlinearSolver<double> >
+      _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
     double maxError = 0.01;
     _nonlinearSolver->defaultTol(1e-3*maxError);
     nonlinearSolver = _nonlinearSolver;

@@ -45,7 +45,7 @@
 
 ExampleApplication::ExampleApplication(Teuchos::RefCountPtr<Epetra_Comm> &epetra_comm_ptr_, Teuchos::ParameterList &params)
 {
-  implicit_ = params.get<bool>( "implicit" );
+  implicit_ = params.get<bool>( "Implicit" );
   lambda_min_ = params.get<double>( "Lambda_min" );
   lambda_max_ = params.get<double>( "Lambda_max" );
   lambda_fit_ = params.get<std::string>( "Lambda_fit" );
@@ -113,7 +113,7 @@ Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplication::get_coeff() const
   return(lambda_ptr_);
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplication::get_exact_solution(double t) const
+Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplication::getExactSolution(double t) const
 {
   Teuchos::RefCountPtr<Epetra_Vector> x_star_ptr = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
   Epetra_Vector& x_star = *x_star_ptr;

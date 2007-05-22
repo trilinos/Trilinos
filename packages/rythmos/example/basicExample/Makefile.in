@@ -118,10 +118,6 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(basicExample_SOURCES)
 DIST_SOURCES = $(basicExample_SOURCES)
 ETAGS = etags
@@ -289,11 +285,11 @@ target_vendor = @target_vendor@
 EXAMPLE = basicExample
 basicExample_SOURCES = \
 	 $(srcdir)/cxx_main.cpp \
-	 $(srcdir)/ExampleApplication.cpp \
-	 $(srcdir)/ExampleApplication.hpp
+	 $(srcdir)/ExampleApplication.cpp
 
 basicExample_DEPENDENCIES = $(common_dependencies)
 basicExample_LDADD = $(common_ldadd)
+EXTRA_DIST = $(srcdir)/ExampleApplication.hpp
 
 #
 # Common stuff
@@ -454,6 +450,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/$(srcdir)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

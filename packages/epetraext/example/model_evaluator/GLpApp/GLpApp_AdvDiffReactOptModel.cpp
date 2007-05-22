@@ -57,8 +57,7 @@ AdvDiffReactOptModel::AdvDiffReactOptModel(
   ,const bool                                    normalizeBasis
   ,const bool                                    supportDerivatives
   )
-  :np_(np)
-  ,supportDerivatives_(supportDerivatives)
+  : supportDerivatives_(supportDerivatives), np_(np)
 {
   Teuchos::TimeMonitor initalizationTimerMonitor(*initalizationTimer);
 #ifdef GLPAPP_ADVDIFFREACT_OPTMODEL_DUMP_STUFF
@@ -578,7 +577,7 @@ void AdvDiffReactOptModel::evalModel( const InArgs& inArgs, const OutArgs& outAr
         // to do this cleanly with Epetra alone!
         Teuchos::RefCountPtr<Epetra_Vector>
           etaVec = Teuchos::rcp(new Epetra_Vector(*map_p_bar_));
-        Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceBase<double> >
+        Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> >
           space_p_bar = Thyra::create_VectorSpace(Teuchos::rcp(new Epetra_Map(*map_p_bar_)));
         Teuchos::RefCountPtr<Thyra::VectorBase<double> >
           thyra_etaVec = Thyra::create_Vector(etaVec,space_p_bar);

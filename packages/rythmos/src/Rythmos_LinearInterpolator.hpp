@@ -36,47 +36,51 @@ namespace Rythmos {
 template<class Scalar>
 class LinearInterpolator : virtual public InterpolatorBase<Scalar>
 {
-  public:
+public:
 
-    /// Destructor
-    ~LinearInterpolator() {};
+  /// Destructor
+  ~LinearInterpolator() {};
 
-    /// Constructor
-    LinearInterpolator();
+  /// Constructor
+  LinearInterpolator();
 
-    /// Interpolation:
-    bool interpolate(
-        const typename DataStore<Scalar>::DataStoreVector_t &data_in
-        ,const std::vector<Scalar> &t_values
-        ,typename DataStore<Scalar>::DataStoreVector_t *data_out
-        ) const;
+  /** \brief . */
+  bool supportsCloning() const;
 
-    /// Order of interpolation:
-    int order() const; 
+  /** \brief . */
+  Teuchos::RefCountPtr<InterpolatorBase<Scalar> > cloneInterpolator() const;
 
-    /// Inherited from Teuchos::Describable
-    /** \brief . */
-    std::string description() const;
+  /** \brief . */
+  bool interpolate(
+    const typename DataStore<Scalar>::DataStoreVector_t &data_in
+    ,const std::vector<Scalar> &t_values
+    ,typename DataStore<Scalar>::DataStoreVector_t *data_out
+    ) const;
 
-    /** \brief . */
-    void describe(
-      Teuchos::FancyOStream       &out
-      ,const Teuchos::EVerbosityLevel      verbLevel
-      ) const;
+  /** \brief . */
+  int order() const; 
 
-    /// Redefined from Teuchos::ParameterListAcceptor
-    /** \brief . */
-    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  /** \brief . */
+  std::string description() const;
 
-    /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  /** \brief . */
+  void describe(
+    Teuchos::FancyOStream &out,
+    const Teuchos::EVerbosityLevel verbLevel
+    ) const;
 
-    /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  /** \brief . */
+  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
 
-  private:
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
 
-    Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList;
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+
+private:
+
+  Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
 
 };
 
@@ -89,6 +93,23 @@ LinearInterpolator<Scalar>::LinearInterpolator()
   //out->pushLinePrefix("Rythmos::LinearInterpolator");
   //out->setShowLinePrefix(true);
   //out->setTabIndentStr("    ");
+}
+
+template<class Scalar>
+bool LinearInterpolator<Scalar>::supportsCloning() const
+{
+  return true;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<InterpolatorBase<Scalar> >
+LinearInterpolator<Scalar>::cloneInterpolator() const
+{
+  Teuchos::RefCountPtr<LinearInterpolator<Scalar> >
+    interpolator = Teuchos::rcp(new LinearInterpolator<Scalar>);
+  if (!is_null(parameterList_))
+    interpolator->parameterList_ = parameterList(*parameterList_);
+  return interpolator;
 }
 
 template<class Scalar>
@@ -242,25 +263,30 @@ void LinearInterpolator<Scalar>::describe(
 }
 
 template <class Scalar>
-void LinearInterpolator<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+void LinearInterpolator<Scalar>::setParameterList(
+  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  )
 {
-  parameterList = paramList;
-  int outputLevel = parameterList->get( "outputLevel", int(-1) );
+  parameterList_ = paramList;
+  int outputLevel = parameterList_->get( "outputLevel", int(-1) );
   outputLevel = min(max(outputLevel,-1),4);
   this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
+  // 2007/05/18: rabartl: ToDo: Replace with standard "Verbose Object"
+  // sublist! and validate the sublist!
+
 }
 
 template <class Scalar>
 Teuchos::RefCountPtr<Teuchos::ParameterList> LinearInterpolator<Scalar>::getParameterList()
 {
-  return(parameterList);
+  return(parameterList_);
 }
 
 template <class Scalar>
 Teuchos::RefCountPtr<Teuchos::ParameterList> LinearInterpolator<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList;
-  parameterList = Teuchos::null;
+  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList_;
+  parameterList_ = Teuchos::null;
   return(temp_param_list);
 }
 

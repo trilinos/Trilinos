@@ -2,7 +2,7 @@
 # FRAMEWORK group
 #
 
-# Sacado unit tests
+# Sacado unit tests (Note: Must have CppUnit enabled for these to be built!)
 (FRAMEWORK,INSTALL) {
     DIRS = TestSuite, tradoptest ;
     EXIT-STATUS = STRING-COMPARISON(OK);

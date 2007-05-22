@@ -272,7 +272,6 @@ SUPPORT_NONLINEAR_MODEL_EVALUATOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_DirectionalFiniteDiffCalculator.hpp\
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_ModelEvaluatorDelegatorBase.hpp\
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_ModelEvaluatorHelpers.hpp\
-  $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_SingleResidSSDAEModelEvaluator.hpp\
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_StateFuncModelEvaluatorBase.hpp
 
 INTERFACES_NONLINEAR_SOLVERS_ANA_FUNDAMENTAL_H = \
@@ -281,8 +280,7 @@ INTERFACES_NONLINEAR_SOLVERS_ANA_FUNDAMENTAL_H = \
 SUPPORT_NONLINEAR_SOLVERS_CLIENT_SUPPORT_H = \
   $(srcdir)/support/nonlinear/solvers/client_support/Thyra_DampenedNewtonNonlinearSolver.hpp\
   $(srcdir)/support/nonlinear/solvers/client_support/Thyra_DefaultStateEliminationModelEvaluator.hpp\
-  $(srcdir)/support/nonlinear/solvers/client_support/Thyra_LinearNonlinearSolver.hpp\
-  $(srcdir)/support/nonlinear/solvers/client_support/Thyra_TimeStepNewtonNonlinearSolver.hpp
+  $(srcdir)/support/nonlinear/solvers/client_support/Thyra_LinearNonlinearSolver.hpp
 
 #Specify locations of include files within Trilinos
 

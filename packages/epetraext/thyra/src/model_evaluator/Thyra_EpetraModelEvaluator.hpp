@@ -34,6 +34,7 @@
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 #include "EpetraExt_ModelEvaluator.h"
 #include "Epetra_Map.h"
+#include "Teuchos_Array.hpp"
 
 
 namespace Thyra {
@@ -307,14 +308,14 @@ private:
   // ////////////////////
   // Private types
 
-  typedef std::vector<Teuchos::RefCountPtr<const Epetra_Map> > p_map_t;
-  typedef std::vector<Teuchos::RefCountPtr<const Epetra_Map> > g_map_t;
+  typedef Teuchos::Array<Teuchos::RefCountPtr<const Epetra_Map> > p_map_t;
+  typedef Teuchos::Array<Teuchos::RefCountPtr<const Epetra_Map> > g_map_t;
   typedef std::vector<bool> p_map_is_local_t;
   typedef std::vector<bool> g_map_is_local_t;
 
-  typedef std::vector<Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > >
+  typedef Teuchos::Array<Teuchos::RefCountPtr<const VectorSpaceBase<double> > >
   p_space_t;
-  typedef std::vector<Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > >
+  typedef Teuchos::Array<Teuchos::RefCountPtr<const VectorSpaceBase<double> > >
   g_space_t;
 
   // /////////////////////
@@ -333,9 +334,9 @@ private:
   p_map_is_local_t g_map_is_local_;
   Teuchos::RefCountPtr<const Epetra_Map> f_map_;
 
-  Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > x_space_;
+  Teuchos::RefCountPtr<const VectorSpaceBase<double> > x_space_;
   p_space_t p_space_;
-  Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > f_space_;
+  Teuchos::RefCountPtr<const VectorSpaceBase<double> > f_space_;
   g_space_t g_space_;
 
   mutable ModelEvaluatorBase::InArgs<double> nominalValues_;
@@ -389,6 +390,16 @@ private:
 //
 // Utility functions
 //
+
+
+/** \brief .
+ * \relates EpetraModelEvaluator
+ */
+Teuchos::RefCountPtr<EpetraModelEvaluator>
+epetraModelEvaluator(
+  const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> &epetraModel,
+  const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > &W_factory
+  );
 
 
 /** \brief .

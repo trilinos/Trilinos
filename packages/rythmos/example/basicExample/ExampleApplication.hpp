@@ -50,7 +50,7 @@ public:
   // return ODE decay coefficient
   Teuchos::RefCountPtr<const Epetra_Vector> get_coeff() const;
   //
-  Teuchos::RefCountPtr<const Epetra_Vector> get_exact_solution(double t) const;
+  Teuchos::RefCountPtr<const Epetra_Vector> getExactSolution(double t) const;
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{

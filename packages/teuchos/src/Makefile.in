@@ -140,6 +140,7 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_Utils.cpp \
 	$(srcdir)/Teuchos_VerboseObject.cpp \
 	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.cpp \
+	$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp \
 	$(srcdir)/Teuchos_Workspace.cpp \
 	$(srcdir)/Teuchos_MpiReductionOpSetter.cpp \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp \
@@ -182,6 +183,7 @@ am__objects_1 = Teuchos_BLAS.$(OBJEXT) \
 	Teuchos_TimeMonitor.$(OBJEXT) Teuchos_Utils.$(OBJEXT) \
 	Teuchos_VerboseObject.$(OBJEXT) \
 	Teuchos_VerboseObjectParameterListHelpers.$(OBJEXT) \
+	Teuchos_VerbosityLevelCommandLineProcessorHelpers.$(OBJEXT) \
 	Teuchos_Workspace.$(OBJEXT)
 am__objects_2 =
 am__objects_3 = Teuchos_MpiReductionOpSetter.$(OBJEXT)
@@ -251,6 +253,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Utils.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_VerboseObject.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_VerboseObjectParameterListHelpers.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Workspace.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_XMLInputSource.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_XMLInputStream.Po \
@@ -274,12 +277,14 @@ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libteuchos_a_SOURCES) $(EXTRA_libteuchos_a_SOURCES)
 DIST_SOURCES = $(am__libteuchos_a_SOURCES_DIST) \
 	$(EXTRA_libteuchos_a_SOURCES)
-am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
+am__include_HEADERS_DIST = $(srcdir)/Teuchos_as.hpp \
+	$(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
 	$(srcdir)/Teuchos_Array.hpp \
 	$(srcdir)/Teuchos_ArrayRefCountPtr.hpp \
 	$(srcdir)/Teuchos_ArrayRefCountPtrDecl.hpp \
-	$(srcdir)/Teuchos_BLAS.hpp $(srcdir)/Teuchos_BLAS_types.hpp \
+	$(srcdir)/Teuchos_Assert.hpp $(srcdir)/Teuchos_BLAS.hpp \
+	$(srcdir)/Teuchos_BLAS_types.hpp \
 	$(srcdir)/Teuchos_BLAS_wrappers.hpp $(srcdir)/Teuchos_Comm.hpp \
 	$(srcdir)/Teuchos_CommHelpers.hpp \
 	$(srcdir)/Teuchos_CommUtilities.hpp \
@@ -350,8 +355,9 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_Utils.hpp \
 	$(srcdir)/Teuchos_VerboseObject.hpp \
 	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.hpp \
-	$(srcdir)/Teuchos_VerbosityLevel.hpp $(srcdir)/Teuchos_any.hpp \
-	$(srcdir)/Teuchos_arrayArg.hpp \
+	$(srcdir)/Teuchos_VerbosityLevel.hpp \
+	$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.hpp \
+	$(srcdir)/Teuchos_any.hpp $(srcdir)/Teuchos_arrayArg.hpp \
 	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
 	$(srcdir)/Teuchos_dyn_cast.hpp $(srcdir)/Teuchos_exit.h \
 	$(srcdir)/Teuchos_getConst.hpp \
@@ -538,11 +544,13 @@ target_vendor = @target_vendor@
 #
 # Make sure to list all source files in one of the following categories.
 CORE_H = \
+	$(srcdir)/Teuchos_as.hpp \
 	$(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
 	$(srcdir)/Teuchos_Array.hpp \
 	$(srcdir)/Teuchos_ArrayRefCountPtr.hpp \
 	$(srcdir)/Teuchos_ArrayRefCountPtrDecl.hpp \
+	$(srcdir)/Teuchos_Assert.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp \
 	$(srcdir)/Teuchos_BLAS_types.hpp \
 	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
@@ -621,6 +629,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_VerboseObject.hpp \
 	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.hpp \
 	$(srcdir)/Teuchos_VerbosityLevel.hpp \
+	$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.hpp \
 	$(srcdir)/Teuchos_any.hpp \
 	$(srcdir)/Teuchos_arrayArg.hpp \
 	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
@@ -666,6 +675,7 @@ CORE = \
 	$(srcdir)/Teuchos_Utils.cpp \
 	$(srcdir)/Teuchos_VerboseObject.cpp \
 	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.cpp \
+	$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp \
 	$(srcdir)/Teuchos_Workspace.cpp
 
 EXTRA_EXTENDED_H = \
@@ -976,6 +986,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_VerboseObject.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_VerboseObjectParameterListHelpers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Workspace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_XMLInputSource.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_XMLInputStream.Po@am__quote@
@@ -1531,6 +1542,22 @@ Teuchos_VerboseObjectParameterListHelpers.obj: $(srcdir)/Teuchos_VerboseObjectPa
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_VerboseObjectParameterListHelpers.Po' tmpdepfile='$(DEPDIR)/Teuchos_VerboseObjectParameterListHelpers.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_VerboseObjectParameterListHelpers.obj `if test -f '$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.cpp'; fi`
+
+Teuchos_VerbosityLevelCommandLineProcessorHelpers.o: $(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_VerbosityLevelCommandLineProcessorHelpers.o -MD -MP -MF "$(DEPDIR)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.Tpo" -c -o Teuchos_VerbosityLevelCommandLineProcessorHelpers.o `test -f '$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.Tpo" "$(DEPDIR)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.Po"; else rm -f "$(DEPDIR)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp' object='Teuchos_VerbosityLevelCommandLineProcessorHelpers.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.Po' tmpdepfile='$(DEPDIR)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_VerbosityLevelCommandLineProcessorHelpers.o `test -f '$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp
+
+Teuchos_VerbosityLevelCommandLineProcessorHelpers.obj: $(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_VerbosityLevelCommandLineProcessorHelpers.obj -MD -MP -MF "$(DEPDIR)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.Tpo" -c -o Teuchos_VerbosityLevelCommandLineProcessorHelpers.obj `if test -f '$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.Tpo" "$(DEPDIR)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.Po"; else rm -f "$(DEPDIR)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp' object='Teuchos_VerbosityLevelCommandLineProcessorHelpers.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.Po' tmpdepfile='$(DEPDIR)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_VerbosityLevelCommandLineProcessorHelpers.obj `if test -f '$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp'; fi`
 
 Teuchos_Workspace.o: $(srcdir)/Teuchos_Workspace.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_Workspace.o -MD -MP -MF "$(DEPDIR)/Teuchos_Workspace.Tpo" -c -o Teuchos_Workspace.o `test -f '$(srcdir)/Teuchos_Workspace.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Workspace.cpp; \

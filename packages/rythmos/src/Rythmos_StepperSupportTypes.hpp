@@ -34,12 +34,36 @@
 
 namespace Rythmos {
 
+    
+/** \brief Step type. */
+enum StepSizeType { FIXED_STEP, VARIABLE_STEP };
+
+
+/** \brief Convert StepSizeType to string. */
+inline
+const char* toString( const StepSizeType stepSizeType )
+{
+  switch(stepSizeType) {
+    case FIXED_STEP:
+      return "FIXED_STEP";
+    case VARIABLE_STEP:
+      return "VARIABLE_STEP";
+    default:
+      TEST_FOR_EXCEPT("Invalid enum value!");
+  }
+  return 0; // Should never get here!
+}
+
+
+/** \brief . */
 enum EStepStatus {
   STEP_STATUS_UNINITIALIZED ///< Stepper is uninitialized
-  ,STEP_STATUS_CONVERGED      ///< Nonlinear solver converged and local error test passed
-  ,STEP_STATUS_UNKNOWN       ///< Status is unknown
+  ,STEP_STATUS_CONVERGED ///< Nonlinear solver converged and local error test passed
+  ,STEP_STATUS_UNKNOWN ///< Status is unknown
 };
 
+
+/** \brief . */
 inline
 const char* toString(const EStepStatus stepStatus)
 {
@@ -52,13 +76,16 @@ const char* toString(const EStepStatus stepStatus)
   return ""; // Never be called!
 }
 
+
+/** \brief . */
 enum EStepLETStatus {
   STEP_LET_STATUS_PASSED     ///< The local truncation error test passed
   ,STEP_LET_STATUS_FAILED    ///< The local truncation error test failed
-  ,STEP_LET_STATUS_UNKNOWN   ///< Any local truncation error test was not evaluated
+  ,STEP_LET_STATUS_UNKNOWN   ///< No local truncation error test was evaluated
 };
 
 
+/** \brief . */
 inline
 const char* toString(const EStepLETStatus stepLETStatus)
 {
@@ -71,19 +98,36 @@ const char* toString(const EStepLETStatus stepLETStatus)
   return ""; // Never be called!
 }
 
+
+/** \brief . */
 template<class Scalar>
 struct StepStatus {
+  /** \brief . */
   std::string message;
+  /** \brief . */
   EStepStatus stepStatus;
+  /** \brief . */
   EStepLETStatus stepLETStatus;
+  /** \brief . */
   Scalar stepSize;
+  /** \brief . */
   int order;
+  /** \brief . */
   Scalar time;
+  /** \brief . */
   Scalar stepLETValue; 
+  // 2007/05/21: rabartl: ToDo: Change above stepLetValue to ScalarMag
+  // 2007/05/21: rabartl: ToDo: We must define what the Local Error Test (LET)
+  // is (i.e. what values go into it's computation, what norms are used etc.).
+  /** \brief . */
   Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > solution;
+  /** \brief . */
   Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > solutionDot;
+  /** \brief . */
   Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > residual;
+  /** \brief . */
   Teuchos::RefCountPtr<const Teuchos::ParameterList> extraParameters;
+  /** \brief . */
   StepStatus()
     :stepStatus(STEP_STATUS_UNKNOWN)
      ,stepLETStatus(STEP_LET_STATUS_UNKNOWN)
@@ -91,6 +135,8 @@ struct StepStatus {
     {}
 };
 
+
+/** \brief . */
 template<class Scalar>
 std::ostream& operator<<( std::ostream& out_arg, const StepStatus<Scalar> &stepStatus )
 {

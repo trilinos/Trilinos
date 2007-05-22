@@ -50,11 +50,13 @@ all-local:
 #
 # Make sure to list all source files in one of the following categories.
 CORE_H = \
+	$(srcdir)/Teuchos_as.hpp \
 	$(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
 	$(srcdir)/Teuchos_Array.hpp \
 	$(srcdir)/Teuchos_ArrayRefCountPtr.hpp \
 	$(srcdir)/Teuchos_ArrayRefCountPtrDecl.hpp \
+	$(srcdir)/Teuchos_Assert.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp \
 	$(srcdir)/Teuchos_BLAS_types.hpp \
 	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
@@ -133,6 +135,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_VerboseObject.hpp \
 	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.hpp \
 	$(srcdir)/Teuchos_VerbosityLevel.hpp \
+	$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.hpp \
 	$(srcdir)/Teuchos_any.hpp \
 	$(srcdir)/Teuchos_arrayArg.hpp \
 	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
@@ -178,6 +181,7 @@ CORE = \
 	$(srcdir)/Teuchos_Utils.cpp \
 	$(srcdir)/Teuchos_VerboseObject.cpp \
 	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.cpp \
+	$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp \
 	$(srcdir)/Teuchos_Workspace.cpp
 
 EXTRA_EXTENDED_H = \

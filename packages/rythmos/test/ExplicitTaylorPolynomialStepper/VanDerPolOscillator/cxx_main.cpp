@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
 	if (verbose)
 	  cout << "t = " << t << endl;
 
-	dt = stepper.TakeStep(0.0, Rythmos::VARIABLE_STEP);
+	dt = stepper.takeStep(0.0, Rythmos::VARIABLE_STEP);
 	t += dt;
 	step++;
 
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
       for (int i=1 ; i<=N ; ++i, step++) {
 	if (verbose)
 	  cout << "t = " << t << endl;
-	double dt_taken = stepper.TakeStep(dt, Rythmos::FIXED_STEP);
+	double dt_taken = stepper.takeStep(dt, Rythmos::FIXED_STEP);
 	if (dt_taken != dt) {
 	  cerr << "Error, stepper took step of dt = " << dt_taken 
 	       << " when asked to take step of dt = " << dt << std::endl;

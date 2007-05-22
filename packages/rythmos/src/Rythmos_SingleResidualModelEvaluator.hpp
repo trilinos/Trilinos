@@ -1,34 +1,37 @@
-// @HEADER
+//@HEADER
 // ***********************************************************************
-// 
-//    Thyra: Interfaces and Support for Abstract Numerical Algorithms
-//                 Copyright (2004) Sandia Corporation
-// 
+//
+//                           Rythmos Package
+//                 Copyright (2006) Sandia Corporation
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Todd S. Coffey (tscoffe@sandia.gov)
+//
 // ***********************************************************************
-// @HEADER
+//@HEADER
 
-#ifndef THYRA_SINGLE_RESID_SS_DAE_MODEL_EVALUATOR_HPP
-#define THYRA_SINGLE_RESID_SS_DAE_MODEL_EVALUATOR_HPP
 
+#ifndef RYTHMOS_SINGLE_RESIDUAL_MODEL_EVALUATOR_HPP
+#define RYTHMOS_SINGLE_RESIDUAL_MODEL_EVALUATOR_HPP
+
+
+#include "Rythmos_SingleResidualModelEvaluatorBase.hpp"
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -37,7 +40,9 @@
 #include "Thyra_TestingTools.hpp"
 #endif // THYRA_RYTHMOS_DEBUG
 
-namespace Thyra {
+
+namespace Rythmos {
+
 
 /** \brief Decorator subclass for a steady-state version of a DAE for single-residual
  * time stepper methods.
@@ -61,8 +66,9 @@ namespace Thyra {
  * ToDo: Finish Documentation!
  */
 template<class Scalar>
-class SingleResidSSDAEModelEvaluator
-  : virtual public ModelEvaluatorDelegatorBase<Scalar>
+class SingleResidualModelEvaluator
+  : virtual public SingleResidualModelEvaluatorBase<Scalar>, // Public interface
+    virtual protected Thyra::ModelEvaluatorDelegatorBase<Scalar> // Implementation detail
 {
 public:
 
@@ -70,29 +76,40 @@ public:
   //@{
 
   /** \brief . */
-  SingleResidSSDAEModelEvaluator();
+  SingleResidualModelEvaluator();
+
+  //@}
+
+  /** \brief Overridden from SingleResidualModelEvaluatorBase */
+  //@{
 
   /** \brief . */
-  SingleResidSSDAEModelEvaluator(
-    const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >     &daeModel
-    ,const Scalar                                                 &coeff_x_dot
-    ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >        &x_dot_base
-    ,const Scalar                                                 &coeff_x
-    ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >        &x_base
-    ,const Scalar                                                 &t_base
-    ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >        &x_bar_init
+  void initializeSingleResidualModel(
+    const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &daeModel,
+    const Scalar &coeff_x_dot,
+    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_dot_base,
+    const Scalar &coeff_x,
+    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_base,
+    const Scalar &t_base,
+    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_bar_init
     );
 
   /** \brief . */
-  void initialize(
-    const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >     &daeModel
-    ,const Scalar                                                 &coeff_x_dot
-    ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >        &x_dot_base
-    ,const Scalar                                                 &coeff_x
-    ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >        &x_base
-    ,const Scalar                                                 &t_base
-    ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >        &x_bar_init
-    );
+  Scalar get_coeff_x_dot() const;
+
+  /** \brief . */
+  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+  get_x_dot_base() const;
+
+  /** \brief . */
+  Scalar get_coeff_x() const;
+
+  /** \brief . */
+  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+  get_x_base() const;
+
+  /** \brief . */
+  Scalar get_t_base() const;
 
   //@}
 
@@ -100,73 +117,69 @@ public:
   //@{
 
   /** \breif . */
-  ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
-  ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
-  ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
   /** \brief . */
-  void evalModel( const ModelEvaluatorBase::InArgs<Scalar>& inArgs, const ModelEvaluatorBase::OutArgs<Scalar>& outArgs ) const;
+  void evalModel(
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
+    const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs
+    ) const;
 
   //@}
 
 private:
 
-  Scalar                                                 coeff_x_dot_;
-  Teuchos::RefCountPtr<const VectorBase<Scalar> >        x_dot_base_;
-  Scalar                                                 coeff_x_;
-  Teuchos::RefCountPtr<const VectorBase<Scalar> >        x_base_;
-  Scalar                                                 t_base_;
+  Scalar coeff_x_dot_;
+  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > x_dot_base_;
+  Scalar coeff_x_;
+  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > x_base_;
+  Scalar t_base_;
 
-  ModelEvaluatorBase::InArgs<Scalar>                     nominalValues_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
 
   // cache
-  Teuchos::RefCountPtr<VectorBase<Scalar> >        x_;
-  Teuchos::RefCountPtr<VectorBase<Scalar> >        x_dot_;
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_;
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_;
 
 
 };
 
+
 // ///////////////////////
 // Definition
 
+
 // Constructors/initializers/accessors
 
+
 template<class Scalar>
-SingleResidSSDAEModelEvaluator<Scalar>::SingleResidSSDAEModelEvaluator()
+SingleResidualModelEvaluator<Scalar>::SingleResidualModelEvaluator()
 {}
 
-template<class Scalar>
-SingleResidSSDAEModelEvaluator<Scalar>::SingleResidSSDAEModelEvaluator(
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >     &daeModel
-  ,const Scalar                                                 &coeff_x_dot
-  ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >        &x_dot_base
-  ,const Scalar                                                 &coeff_x
-  ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >        &x_base
-  ,const Scalar                                                 &t_base
-  ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >        &x_bar_init
-  )
-{
-  initialize(daeModel,coeff_x_dot,x_dot_base,coeff_x,x_base,t_base,x_bar_init);
-}
+
+// Overridden from SingleResidualModelEvaluatorBase
+
 
 template<class Scalar>
-void SingleResidSSDAEModelEvaluator<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >     &daeModel
-  ,const Scalar                                                 &coeff_x_dot
-  ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >        &x_dot_base
-  ,const Scalar                                                 &coeff_x
-  ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >        &x_base
-  ,const Scalar                                                 &t_base
-  ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >        &x_bar_init
+void SingleResidualModelEvaluator<Scalar>::initializeSingleResidualModel(
+  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &daeModel,
+  const Scalar &coeff_x_dot,
+  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_dot_base,
+  const Scalar &coeff_x,
+  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_base,
+  const Scalar &t_base,
+  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_bar_init
   )
 {
-  this->ModelEvaluatorDelegatorBase<Scalar>::initialize(daeModel);
-  coeff_x_dot_   = coeff_x_dot;
-  x_dot_base_    = x_dot_base;
-  coeff_x_       = coeff_x;
-  x_base_        = x_base;
-  t_base_        = t_base;
+  this->Thyra::ModelEvaluatorDelegatorBase<Scalar>::initialize(daeModel);
+  coeff_x_dot_ = coeff_x_dot;
+  x_dot_base_ = x_dot_base;
+  coeff_x_ = coeff_x;
+  x_base_ = x_base;
+  t_base_ = t_base;
 
   nominalValues_ = daeModel->getNominalValues();
   nominalValues_.set_x(x_bar_init);
@@ -178,7 +191,7 @@ void SingleResidSSDAEModelEvaluator<Scalar>::initialize(
 
 #ifdef THYRA_RYTHMOS_DEBUG
   std::cout << "----------------------------------------------------------------------" << std::endl;
-  std::cout << "Thyra::SingleResidSSDAEModelEvaluator::initialize" << std::endl;
+  std::cout << "Rythmos::SingleResidualModelEvaluator::initialize" << std::endl;
   std::cout << "coeff_x_dot_ = " << coeff_x_dot_ << std::endl;
   std::cout << "x_dot_base_ = ";                  
   if ( x_dot_base_.get() ) 
@@ -211,50 +224,92 @@ void SingleResidSSDAEModelEvaluator<Scalar>::initialize(
 #endif // THYRA_RYTHMOS_DEBUG
 }
 
-// Overridden from ModelEvaluator
 
 template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
-SingleResidSSDAEModelEvaluator<Scalar>::getNominalValues() const
+Scalar SingleResidualModelEvaluator<Scalar>::get_coeff_x_dot() const
+{
+  return coeff_x_dot_;
+}
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+SingleResidualModelEvaluator<Scalar>::get_x_dot_base() const
+{
+  return x_dot_base_;
+}
+
+
+template<class Scalar>
+Scalar SingleResidualModelEvaluator<Scalar>::get_coeff_x() const
+{
+  return coeff_x_;
+}
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+SingleResidualModelEvaluator<Scalar>::get_x_base() const
+{
+  return x_base_;
+}
+
+
+template<class Scalar>
+Scalar SingleResidualModelEvaluator<Scalar>::get_t_base() const
+{
+  return t_base_;
+}
+
+
+// Overridden from ModelEvaluator
+
+
+template<class Scalar>
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+SingleResidualModelEvaluator<Scalar>::getNominalValues() const
 {
   return nominalValues_;
 }
 
+
 template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
-SingleResidSSDAEModelEvaluator<Scalar>::createInArgs() const
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+SingleResidualModelEvaluator<Scalar>::createInArgs() const
 {
-  typedef ModelEvaluatorBase MEB;
+  typedef Thyra::ModelEvaluatorBase MEB;
   MEB::InArgsSetup<Scalar> inArgs;
   inArgs.setSupports(MEB::IN_ARG_x);
   inArgs.setSupports(MEB::IN_ARG_beta);
   return inArgs;
 }
 
+
 template<class Scalar>
-ModelEvaluatorBase::OutArgs<Scalar>
-SingleResidSSDAEModelEvaluator<Scalar>::createOutArgs() const
+Thyra::ModelEvaluatorBase::OutArgs<Scalar>
+SingleResidualModelEvaluator<Scalar>::createOutArgs() const
 {
-  typedef ModelEvaluatorBase MEB;
+  typedef Thyra::ModelEvaluatorBase MEB;
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W);
   return outArgs;
 }
 
+
 template<class Scalar>
-void SingleResidSSDAEModelEvaluator<Scalar>::evalModel(
-  const ModelEvaluatorBase::InArgs<Scalar>&   inArgs_bar
-  ,const ModelEvaluatorBase::OutArgs<Scalar>& outArgs_bar
+void SingleResidualModelEvaluator<Scalar>::evalModel(
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar>&   inArgs_bar
+  ,const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs_bar
   ) const
 {
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
     daeModel = this->getUnderlyingModel();
 #ifdef THYRA_RYTHMOS_DEBUG
   std::cout << "----------------------------------------------------------------------" << std::endl;
-  std::cout << "Thyra::SingleResidSSDAEModelEvaluator::evalModel" << std::endl;
+  std::cout << "Rythmos::SingleResidualModelEvaluator::evalModel" << std::endl;
 #endif // THYRA_RYTHMOS_DEBUG
-  const VectorBase<Scalar> &x_bar = *inArgs_bar.get_x(); 
+  const Thyra::VectorBase<Scalar> &x_bar = *inArgs_bar.get_x(); 
   // x_dot = coeff_x_dot * x_bar + x_dot_base
   if (x_dot_base_.get())
     Thyra::V_StVpV( &*x_dot_, coeff_x_dot_, x_bar, *x_dot_base_ );
@@ -300,7 +355,7 @@ void SingleResidSSDAEModelEvaluator<Scalar>::evalModel(
 #endif // THYRA_RYTHMOS_DEBUG
 
   // Compute W and f
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > W;
+  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> > W;
   if( (W = outArgs_bar.get_W()).get() ) {
     // Compute Jacobian and the residual
     const Scalar beta = inArgs_bar.get_beta();
@@ -329,6 +384,8 @@ void SingleResidSSDAEModelEvaluator<Scalar>::evalModel(
 #endif // THYRA_RYTHMOS_DEBUG
 }
 
-} // namespace Thyra
 
-#endif // THYRA_SINGLE_RESID_SS_DAE_MODEL_EVALUATOR_HPP
+} // namespace Rythmos
+
+
+#endif // RYTHMOS_SINGLE_RESIDUAL_MODEL_EVALUATOR_HPP

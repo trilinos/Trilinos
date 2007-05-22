@@ -31,36 +31,87 @@
 
 #include "Rythmos_DataStore.hpp"
 
+
 namespace Rythmos {
 
-/** \brief Base strategy class for interpolation functionality. */
+
+/** \brief Base strategy class for interpolation functionality.
+ *
+ * ToDo: Finish documentation!
+ */
 template<class Scalar> 
 class InterpolatorBase
   : virtual public Teuchos::Describable
   , virtual public Teuchos::ParameterListAcceptor
   , virtual public Teuchos::VerboseObject<InterpolatorBase<Scalar> >
 {
-  public:
+public:
 
-    /// Destructor
-    virtual ~InterpolatorBase() {};
+  /** \brief Return if this interpolator supports cloning or not.
+   *
+   * If <tt>returnVal==true</tt>, then <tt>cloneInterpolator()</tt> will clone
+   * <tt>*this</tt> object and return an non-null RCP.
+   *
+   * The default implementation of this function simply returns false.
+   */
+  virtual bool supportsCloning() const;
 
-    /// Interpolation:
-    /// This function must support passing node values back out directly,
-    /// handling when only one node value is passed in,
-    /// and dealing with xdot == Teuchos::null. 
-    /// There is no guarantee at this time that data_out will be in the same order as t_values
-    virtual bool interpolate(
-        const typename DataStore<Scalar>::DataStoreVector_t &data_in
-        ,const std::vector<Scalar> &t_values
-        ,typename DataStore<Scalar>::DataStoreVector_t *data_out
-        ) const =0;
+  /** \brief Clone the interpoloator object if supported.
+   *
+   * <b>Postconditions:</b><ul>
+   * <tt>[<tt>supportsCloning()==true</tt>] <tt>returnVal != Teuchos::null</tt>
+   * <tt>[<tt>supportsCloning()==false</tt>] <tt>returnVal == Teuchos::null</tt>
+   * </ul>
+   *
+   * The default implementation returns <tt>Teuchos::null</tt> which is
+   * consistent with the default implementation of <tt>supportsCloning()</tt>.
+   * If this function is overridden in a base class to support cloning, then
+   * <tt>supportsCloning()</tt> must be overridden to return <tt>true</tt>.
+   */
+  virtual Teuchos::RefCountPtr<InterpolatorBase<Scalar> > cloneInterpolator() const;
 
-    /// Order of interpolation:
-    virtual int order() const =0;
+  /** \brief Perform an interpolation.
+   *
+   * This function must support passing node values back out directly,
+   * handling when only one node value is passed in, and dealing with
+   * <tt>xdot==Teuchos::null</tt>.  There is no guarantee at this time that
+   * <tt>data_out</tt> will be in the same order as t_values
+  */
+  virtual bool interpolate(
+    const typename DataStore<Scalar>::DataStoreVector_t &data_in
+    ,const std::vector<Scalar> &t_values
+    ,typename DataStore<Scalar>::DataStoreVector_t *data_out
+    ) const =0;
+
+  /** \brief Return the order of the interpolation.
+   *
+   * 2007/05/18: rabartl: ToDo: Define what "order" means.
+   */
+  virtual int order() const =0;
 
 };
 
+
+// ///////////////////////////////
+// Implementations
+
+
+template<class Scalar>
+bool InterpolatorBase<Scalar>::supportsCloning() const
+{
+  return false;
+}
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<InterpolatorBase<Scalar> >
+InterpolatorBase<Scalar>::cloneInterpolator() const
+{
+  return Teuchos::null;
+}
+
+
 } // namespace Rythmos
+
 
 #endif //Rythmos_INTERPOLATOR_BASE_H

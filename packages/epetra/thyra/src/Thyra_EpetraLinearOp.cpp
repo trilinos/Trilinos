@@ -372,7 +372,9 @@ EpetraLinearOp::allocateDomain(
   ,ETransp                                     op_trans 
   )  const
 {
-  return create_VectorSpace(Teuchos::rcp(&op->OperatorDomainMap(),false));
+  return Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(
+    create_VectorSpace(Teuchos::rcp(&op->OperatorDomainMap(),false))
+    );
   // ToDo: What about the transpose argument???, test this!!!
 }
 
@@ -382,7 +384,9 @@ EpetraLinearOp::allocateRange(
   ,ETransp                                     op_trans 
   )  const
 {
-  return create_VectorSpace(Teuchos::rcp(&op->OperatorRangeMap(),false));
+  return Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(
+    create_VectorSpace(Teuchos::rcp(&op->OperatorRangeMap(),false))
+    );
   // ToDo: What about the transpose argument???, test this!!!
 }
 

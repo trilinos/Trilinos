@@ -30,6 +30,7 @@
 #define THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_DECL_HPP
 
 #include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_VectorDefaultBase.hpp"
 
 namespace Thyra {
 

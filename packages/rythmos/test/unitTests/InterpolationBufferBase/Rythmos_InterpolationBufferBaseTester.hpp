@@ -134,8 +134,8 @@ bool InterpolationBufferBaseTester<Scalar>::checkSetPoints(
   typename Teuchos::ScalarTraits<Scalar> ST;
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
-  // insert valid points then GetNodes, check that t values are the same
-  // insert valid points then GetNodes then GetPoints at node values, verify data comes back out
+  // insert valid points then getNodes, check that t values are the same
+  // insert valid points then getNodes then getPoints at node values, verify data comes back out
   Thyra::UniversalMultiVectorRandomizer<Scalar> randomizer;
   Thyra::seed_randomize<Scalar>(12345);
   Teuchos::ScalarTraits<Scalar>::seedrandom(12345);
@@ -157,15 +157,15 @@ bool InterpolationBufferBaseTester<Scalar>::checkSetPoints(
     t_vec.push_back(Scalar(i/N)); // what about negative times?
     accuracy_vec.push_back(Teuchos::ScalarTraits<Scalar>::random()+ST::one());
   }
-  IB.SetPoints(t_vec,x_vec,xdot_vec,accuracy_vec);
+  IB.setPoints(t_vec,x_vec,xdot_vec,accuracy_vec);
   std::vector<Scalar> t_vec_out;
-  IB.GetNodes(&t_out_vec);
+  IB.getNodes(&t_out_vec);
   for (int i=0 ; i<N ; ++i)
   {
     if (t_out_vec[i] != t_vec[i])
     {
       *out << "InterpolationBufferBaseTester IB = " << IB.description() << std::endl;
-      *out << "Error:  IB.SetPoints() did not set a time value correctly" << std::endl;
+      *out << "Error:  IB.setPoints() did not set a time value correctly" << std::endl;
     }
   }
   std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > x_vec_out;
@@ -181,7 +181,7 @@ bool InterpolationBufferBaseTester<Scalar>::checkSetPoints(
       // call with x valid but random xdot = Teuchos::null
       // call with non-empty time_vec input and empty vectors 
       // call with non-empty time_vec input and vectors of different sizes
-      // call with replacement data at a node and check that it was replaced correctly with GetNodes and GetPoints
+      // call with replacement data at a node and check that it was replaced correctly with getNodes and getPoints
       // call with both replacement data and new data and verify it works correctly
   return(status);
 }
@@ -205,7 +205,7 @@ bool InterpolationBufferBaseTester<Scalar>::checkSetRange(
     ,const Thyra::VectorSpaceBase<Scalar>& vs
     ) const
 {
-      // call with another IB and then check with GetNodes and GetPoints
+      // call with another IB and then check with getNodes and getPoints
       // test time_lower and time_upper values for correctness of bound checking
       //   use valid and invalid ranges
       // test empty IB passed in
@@ -227,7 +227,7 @@ bool InterpolationBufferBaseTester<Scalar>::checkRemoveNodes(
     ,const Thyra::VectorSpaceBase<Scalar>& vs
     ) const
 {
-      // call and then then verify nodes are gone with GetNodes
+      // call and then then verify nodes are gone with getNodes
       // call with empty vector
   return(false);
 }
@@ -240,13 +240,13 @@ bool InterpolationBufferBaseTester<Scalar>::checkGetOrder(
   bool status = false;
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   // call and verify that a reasonable number comes out, i.e. larger than zero
-  int order = IB.GetOrder();
+  int order = IB.getOrder();
   if (order >= 0) 
     status = true;
   else
   {
     *out << "InterpolationBufferBaseTester IB = " << IB.description() << std::endl;
-    *out << "Error:  IB.GetOrder() returns a negative number" << std::endl;
+    *out << "Error:  IB.getOrder() returns a negative number" << std::endl;
   }
   return(status);
 }

@@ -348,6 +348,16 @@ IntegralType getIntegralValue(
   );
 
 
+/** \brief Return the string name of the verbosity level as it is accepted by the
+ * verbosity level parameter.
+ *
+ * \relates EVerbosityLevel
+ */
+std::string getVerbosityLevelParameterValueName(
+  const EVerbosityLevel verbLevel
+  );
+
+
 /** \brief Return a validator for <tt>EVerbosityLevel</tt>.
  *
  * \relates EVerbosityLevel

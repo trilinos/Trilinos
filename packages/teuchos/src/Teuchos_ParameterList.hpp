@@ -794,6 +794,18 @@ T& getParameter( ParameterList& l, const string& name )
 }
   
 /*! \relates ParameterList
+  \brief A shorter name for <tt>getParameter()</tt>.
+    
+  \note The syntax for calling this function is:  <tt> get<int>( list, "Iters" ) </tt>
+*/
+template<typename T>
+inline
+T& get( ParameterList& l, const string& name )
+{
+  return getParameter<T>(l,name);
+}
+  
+/*! \relates ParameterList
   \brief A templated helper function for getting a parameter from a const list.
   This helper function prevents the need for giving a nominal value of the specific template type.
     
@@ -813,6 +825,7 @@ const T& getParameter( const ParameterList& l, const string& name )
   <tt>getParameterPtr<int>(list,"Iters")</tt>
 */
 template<typename T>
+inline
 T* getParameterPtr( ParameterList& l, const string& name )
 {
   return l.template getPtr<T>(name);
@@ -826,6 +839,7 @@ T* getParameterPtr( ParameterList& l, const string& name )
   <tt>getParameterPtr<int>(list,"Iters")</tt>
 */
 template<typename T>
+inline
 const T* getParameterPtr( const ParameterList& l, const string& name )
 {
   return l.template getPtr<T>(name);
@@ -838,6 +852,7 @@ const T* getParameterPtr( const ParameterList& l, const string& name )
   \note The syntax for calling this function is:  <tt> isParameterType<int>( list, "Iters" ) </tt>
 */
 template<typename T>
+inline
 bool isParameterType( ParameterList& l, const string& name )
 {
   return l.isType( name, (T*)NULL );
@@ -850,6 +865,7 @@ bool isParameterType( ParameterList& l, const string& name )
   \note The syntax for calling this function is:  <tt> isParameterType<int>( list, "Iters" ) </tt>
 */
 template<typename T>
+inline
 bool isParameterType( const ParameterList& l, const string& name )
 {
   return l.isType( name, (T*)NULL );

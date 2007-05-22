@@ -152,12 +152,16 @@ namespace Rythmos {
 
     //! Set model
     void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
-    
-    //! Take a time step of magnitude \c dt
-    Scalar TakeStep(Scalar dt, StepSizeType flag);
 
     /** \brief . */
-    const StepStatus<Scalar> getStepStatus();
+    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+    getModel() const;
+    
+    //! Take a time step of magnitude \c dt
+    Scalar takeStep(Scalar dt, StepSizeType flag);
+
+    /** \brief . */
+    const StepStatus<Scalar> getStepStatus() const;
 
     /// Redefined from Teuchos::ParameterListAcceptor
     /** \brief . */
@@ -182,7 +186,7 @@ namespace Rythmos {
 
     /// Redefined from InterpolationBufferBase 
     /// Add points to buffer
-    bool SetPoints(
+    bool setPoints(
       const std::vector<Scalar>& time_vec
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
@@ -190,26 +194,29 @@ namespace Rythmos {
       );
     
     /// Get values from buffer
-    bool GetPoints(
+    bool getPoints(
       const std::vector<Scalar>& time_vec
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
       ,std::vector<ScalarMag>* accuracy_vec) const;
 
     /// Fill data in from another interpolation buffer
-    bool SetRange(
-      const Scalar& time_lower
-      ,const Scalar& time_upper
-      ,const InterpolationBufferBase<Scalar> & IB);
+    bool setRange(
+      const TimeRange<Scalar>& range,
+      const InterpolationBufferBase<Scalar> & IB
+      );
+
+    /** \brief . */
+    TimeRange<Scalar> getTimeRange() const;
 
     /// Get interpolation nodes
-    bool GetNodes(std::vector<Scalar>* time_vec) const;
+    bool getNodes(std::vector<Scalar>* time_vec) const;
 
     /// Remove interpolation nodes
-    bool RemoveNodes(std::vector<Scalar>& time_vec);
+    bool removeNodes(std::vector<Scalar>& time_vec);
 
     /// Get order of interpolation
-    int GetOrder() const;
+    int getOrder() const;
 
     private:
 
@@ -371,7 +378,9 @@ namespace Rythmos {
   }
 
   template<class Scalar>
-  void ExplicitTaylorPolynomialStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
+  void ExplicitTaylorPolynomialStepper<Scalar>::setModel(
+    const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
+    )
   {
     TEST_FOR_EXCEPT(model == Teuchos::null)
     
@@ -381,9 +390,17 @@ namespace Rythmos {
     f_vector_ = Thyra::createMember(model_->get_f_space());
   }
 
+
+  template<class Scalar>
+  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+  ExplicitTaylorPolynomialStepper<Scalar>::getModel() const
+  {
+    return model_;
+  }
+
   template<class Scalar>
   Scalar 
-  ExplicitTaylorPolynomialStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
+  ExplicitTaylorPolynomialStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
   {
     if (x_poly_ == Teuchos::null)
       x_poly_ = 
@@ -490,13 +507,14 @@ namespace Rythmos {
 
 
   template<class Scalar>
-  const StepStatus<Scalar> ExplicitTaylorPolynomialStepper<Scalar>::getStepStatus()
+  const StepStatus<Scalar>
+  ExplicitTaylorPolynomialStepper<Scalar>::getStepStatus() const
   {
     typedef Teuchos::ScalarTraits<Scalar> ST;
     StepStatus<Scalar> stepStatus;
 
     stepStatus.stepSize = dt_;
-    stepStatus.order = this->GetOrder();
+    stepStatus.order = this->getOrder();
     stepStatus.time = t_;
     stepStatus.solution = x_vector_;
     stepStatus.solutionDot = x_dot_vector_;
@@ -594,7 +612,7 @@ namespace Rythmos {
 
 
   template<class Scalar>
-  bool ExplicitTaylorPolynomialStepper<Scalar>::SetPoints(
+  bool ExplicitTaylorPolynomialStepper<Scalar>::setPoints(
     const std::vector<Scalar>& time_vec
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
@@ -605,7 +623,7 @@ namespace Rythmos {
   }
 
   template<class Scalar>
-  bool ExplicitTaylorPolynomialStepper<Scalar>::GetPoints(
+  bool ExplicitTaylorPolynomialStepper<Scalar>::getPoints(
     const std::vector<Scalar>& time_vec
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
@@ -615,29 +633,35 @@ namespace Rythmos {
   }
 
   template<class Scalar>
-  bool ExplicitTaylorPolynomialStepper<Scalar>::SetRange(
-    const Scalar& time_lower
-    ,const Scalar& time_upper
-    ,const InterpolationBufferBase<Scalar>& IB)
+  bool ExplicitTaylorPolynomialStepper<Scalar>::setRange(
+    const TimeRange<Scalar>& range,
+    const InterpolationBufferBase<Scalar>& IB
+    )
   {
     return(false);
   }
 
   template<class Scalar>
-  bool ExplicitTaylorPolynomialStepper<Scalar>::GetNodes(std::vector<Scalar>* time_list) const
+  TimeRange<Scalar> ExplicitTaylorPolynomialStepper<Scalar>::getTimeRange() const
+  {
+    return invalidTimeRange<Scalar>();
+  }
+
+  template<class Scalar>
+  bool ExplicitTaylorPolynomialStepper<Scalar>::getNodes(std::vector<Scalar>* time_list) const
   {
     return(false);
   }
 
   template<class Scalar>
-  bool ExplicitTaylorPolynomialStepper<Scalar>::RemoveNodes(std::vector<Scalar>& time_vec)
+  bool ExplicitTaylorPolynomialStepper<Scalar>::removeNodes(std::vector<Scalar>& time_vec)
   {
     return(false);
   }
 
 
   template<class Scalar>
-  int ExplicitTaylorPolynomialStepper<Scalar>::GetOrder() const
+  int ExplicitTaylorPolynomialStepper<Scalar>::getOrder() const
   {
     return degree_;
   }

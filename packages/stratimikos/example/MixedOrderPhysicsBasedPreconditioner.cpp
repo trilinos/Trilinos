@@ -42,6 +42,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #ifdef HAVE_MPI
 #  include "Epetra_MpiComm.h"
 #else
@@ -88,50 +89,6 @@ readEpetraCrsMatrixFromMatrixMarketAsLinearOp(
     readEpetraCrsMatrixFromMatrixMarket(fileName,comm),label
     );
 }
-
-
-/*
-
-// Read a Epetra_CrsMatrix from a Matrix market file given its row/range map
-// and column/domain map
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
-readEpetraCrsMatrixFromMatrixMarket(
-  const std::string fileName,
-  const Epetra_Map & rowRangeMap, const Epetra_Map & colDomainMap
-  )
-{
-  Epetra_CrsMatrix *A = 0;
-  TEST_FOR_EXCEPTION(
-    0!=EpetraExt::MatrixMarketFileToCrsMatrix(
-      fileName.c_str(), rowRangeMap, colDomainMap,
-      rowRangeMap, colDomainMap,
-      A
-      ),
-    std::runtime_error,
-    "Error, could not read matrix file \""<<fileName<<"\"!"
-    );
-  return Teuchos::rcp(A);
-}
-
-
-// Read an Epetra_CrsMatrix in as a wrapped Thyra::EpetraLinearOp object
-Teuchos::RefCountPtr<const Thyra::LinearOpBase<double> >
-readEpetraCrsMatrixFromMatrixMarketAsLinearOp(
-  const std::string fileName,
-  const Epetra_Map & rowRangeMap, const Epetra_Map & colDomainMap,
-  const std::string &label
-  )
-{
-  return Thyra::epetraLinearOp(
-    readEpetraCrsMatrixFromMatrixMarket(
-      fileName,rowRangeMap,colDomainMap
-      ),
-    label
-    );
-}
-
-
-*/
 
 
 } // namespace
@@ -353,27 +310,31 @@ int main(int argc, char* argv[])
 
     RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
       M11_linsolve_strategy
-      = M11_linsolve_strategy_builder.createLinearSolveStrategy("");
+      = createLinearSolveStrategy(M11_linsolve_strategy_builder);
       
     RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
       M22_linsolve_strategy
-      = M22_linsolve_strategy_builder.createLinearSolveStrategy("");
+      = createLinearSolveStrategy(M22_linsolve_strategy_builder);
       
     // For P1, we only want its preconditioner factory.
 
-    RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> > P1_linsolve_strategy;
-    RefCountPtr<Thyra::PreconditionerFactoryBase<double> > P1_prec_strategy;
+    RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+      P1_linsolve_strategy;
+    RefCountPtr<Thyra::PreconditionerFactoryBase<double> >
+      P1_prec_strategy;
     if(invertP1)
-      P1_linsolve_strategy = P1_linsolve_strategy_builder.createLinearSolveStrategy("");
+      P1_linsolve_strategy
+        = createLinearSolveStrategy(P1_linsolve_strategy_builder);
     else
-      P1_prec_strategy = P1_linsolve_strategy_builder.createPreconditioningStrategy("");
+      P1_prec_strategy
+        = createPreconditioningStrategy(P1_linsolve_strategy_builder);
 
     // For P2, we only want a linear solver factory.  We will supply the
     // preconditioner ourselves (that is the whole point of this example).
 
     RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
       P2_linsolve_strategy
-      = P2_linsolve_strategy_builder.createLinearSolveStrategy("");
+      = createLinearSolveStrategy(P2_linsolve_strategy_builder);
 
     //
     *out << "\nC) Create the physics-based preconditioner! ...\n";

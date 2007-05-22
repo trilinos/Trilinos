@@ -50,21 +50,24 @@ all-local:
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
-	$(srcdir)/Rythmos_ConfigDefs.h \
-	$(srcdir)/Rythmos_StepperBase.hpp \
-	$(srcdir)/Rythmos_StepperSupportTypes.hpp \
 	$(srcdir)/Rythmos_BackwardEulerStepper.hpp \
-	$(srcdir)/Rythmos_ForwardEulerStepper.hpp \
+	$(srcdir)/Rythmos_ConfigDefs.h \
+	$(srcdir)/Rythmos_DataStore.hpp \
 	$(srcdir)/Rythmos_ExplicitRKStepper.hpp \
 	$(srcdir)/Rythmos_ExplicitTaylorPolynomialStepper.hpp \
+	$(srcdir)/Rythmos_ForwardEulerStepper.hpp \
+	$(srcdir)/Rythmos_HermiteInterpolator.hpp \
 	$(srcdir)/Rythmos_ImplicitBDFStepper.hpp \
-	$(srcdir)/Rythmos_InterpolationBufferBase.hpp \
 	$(srcdir)/Rythmos_InterpolationBuffer.hpp \
 	$(srcdir)/Rythmos_InterpolationBufferAsStepper.hpp \
-	$(srcdir)/Rythmos_DataStore.hpp \
+	$(srcdir)/Rythmos_InterpolationBufferBase.hpp \
 	$(srcdir)/Rythmos_InterpolatorBase.hpp \
 	$(srcdir)/Rythmos_LinearInterpolator.hpp \
-	$(srcdir)/Rythmos_HermiteInterpolator.hpp 
+	$(srcdir)/Rythmos_SingleResidualModelEvaluator.hpp \
+	$(srcdir)/Rythmos_SingleResidualModelEvaluatorBase.hpp \
+	$(srcdir)/Rythmos_StepperBase.hpp \
+	$(srcdir)/Rythmos_StepperSupportTypes.hpp \
+	$(srcdir)/Rythmos_TimeStepNonlinearSolver.hpp
 
 
 CORE = \

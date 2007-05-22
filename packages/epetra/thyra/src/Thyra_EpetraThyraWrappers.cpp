@@ -87,13 +87,15 @@ Thyra::create_Comm( const Teuchos::RefCountPtr<const Epetra_Comm> &epetraComm )
 }
 
 
-Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceDefaultBase<double> >
+Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> >
 Thyra::create_VectorSpace(
   const Teuchos::RefCountPtr<const Epetra_Map> &epetra_map
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION( !epetra_map.get(), std::invalid_argument, "create_VectorSpace::initialize(...): Error!" );
+  TEST_FOR_EXCEPTION(
+    !epetra_map.get(), std::invalid_argument,
+    "create_VectorSpace::initialize(...): Error!" );
 #endif // TEUCHOS_DEBUG
   Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
     comm = create_Comm(Teuchos::rcp(&epetra_map->Comm(),false)).assert_not_null();
@@ -108,77 +110,107 @@ Thyra::create_VectorSpace(
         )
       );
 #ifndef TEUCHOS_DEBUG
-      TEST_FOR_EXCEPTION(
-        vs->dim() != epetra_map->NumGlobalElements(), std::logic_error
-        ,"create_VectorSpace(...): Error, vs->dim() = "<<vs->dim()<<" != "
-        "epetra_map->NumGlobalElements() = "<<epetra_map->NumGlobalElements()<<"!"
-        );
+  TEST_FOR_EXCEPTION(
+    vs->dim() != epetra_map->NumGlobalElements(), std::logic_error
+    ,"create_VectorSpace(...): Error, vs->dim() = "<<vs->dim()<<" != "
+    "epetra_map->NumGlobalElements() = "<<epetra_map->NumGlobalElements()<<"!"
+    );
 #endif		
   Teuchos::set_extra_data( epetra_map, "epetra_map", &vs );
   return vs;
 }
 
 
-Teuchos::RefCountPtr<Thyra::SpmdVectorBase<double> >
+Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> >
+Thyra::create_LocallyReplicatedVectorSpace(
+  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &parentSpace,
+  const int dim
+  )
+{
+  using Teuchos::rcp_dynamic_cast;
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(parentSpace.get()==NULL);
+  Teuchos::dyn_cast<const SpmdVectorSpaceBase<double> >(*parentSpace);
+  TEST_FOR_EXCEPT(dim <= 0);
+#endif
+  return parentSpace->smallVecSpcFcty()->createVecSpc(dim);
+}
+
+
+Teuchos::RefCountPtr<Thyra::VectorBase<double> >
 Thyra::create_Vector(
-  const Teuchos::RefCountPtr<Epetra_Vector>                                &epetra_v
-  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >          &space
+  const Teuchos::RefCountPtr<Epetra_Vector> &epetra_v,
+  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &space_in
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(space.get()==NULL);
+  TEST_FOR_EXCEPT(space_in.get()==NULL);
 #endif
-  if(!epetra_v.get()) return Teuchos::null;
+  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >
+    space = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
+      space_in,true);
+  if(!epetra_v.get())
+    return Teuchos::null;
   // New local view of raw data
   double *localValues;
   epetra_v->ExtractView( &localValues );
   // Build the Vector
   Teuchos::RefCountPtr<SpmdVectorBase<double> >
-    v = Teuchos::rcp(new DefaultSpmdVector<double>(space,Teuchos::rcp(localValues,false),1));
+    v = Teuchos::rcp(
+      new DefaultSpmdVector<double>(space,Teuchos::rcp(localValues,false),1));
   Teuchos::set_extra_data( epetra_v, "Epetra_Vector", &v );
   return v;
 }
 
 
-Teuchos::RefCountPtr<const Thyra::SpmdVectorBase<double> >
+Teuchos::RefCountPtr<const Thyra::VectorBase<double> >
 Thyra::create_Vector(
-  const Teuchos::RefCountPtr<const Epetra_Vector>                          &epetra_v
-  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >           &space
+  const Teuchos::RefCountPtr<const Epetra_Vector> &epetra_v,
+  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &space_in
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(space.get()==NULL);
+  TEST_FOR_EXCEPT(space_in.get()==NULL);
 #endif
-  if(!epetra_v.get()) return Teuchos::null;
+  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >
+    space = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
+      space_in,true);
+  if(!epetra_v.get())
+    return Teuchos::null;
   // New local view of raw data
   double *localValues;
   epetra_v->ExtractView( &localValues );
   // Build the Vector
   Teuchos::RefCountPtr<const SpmdVectorBase<double> >
-    v = Teuchos::rcp(new DefaultSpmdVector<double>(space,Teuchos::rcp(localValues,false),1));
+    v = Teuchos::rcp(
+      new DefaultSpmdVector<double>(space,Teuchos::rcp(localValues,false),1));
   Teuchos::set_extra_data( epetra_v, "Epetra_Vector", &v );
   return v;
 }
 
 
-Teuchos::RefCountPtr<Thyra::SpmdMultiVectorBase<double> >
+Teuchos::RefCountPtr<Thyra::MultiVectorBase<double> >
 Thyra::create_MultiVector(
-  const Teuchos::RefCountPtr<Epetra_MultiVector>                           &epetra_mv
-  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >           &range
-  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain_in
+  const Teuchos::RefCountPtr<Epetra_MultiVector> &epetra_mv,
+  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &range_in,
+  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &domain_in
   )
 {
   using Teuchos::rcp_dynamic_cast;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(range.get()==NULL);
+  TEST_FOR_EXCEPT(range_in.get()==NULL);
 #endif
+  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >
+    range = rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
+      range_in,true);
+  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >
+    domain = rcp_dynamic_cast<const ScalarProdVectorSpaceBase<double> >(
+      domain_in,true);
   if (!epetra_mv.get() )
     return Teuchos::null;
-  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >
-    domain = domain_in;
   if ( is_null(domain) ) {
     domain = rcp_dynamic_cast<const ScalarProdVectorSpaceBase<double> >(
-      range->smallVecSpcFcty()->createVecSpc(epetra_mv->NumVectors())
+      create_LocallyReplicatedVectorSpace(range,epetra_mv->NumVectors())
       );
   }
   // New local view of raw data
@@ -191,30 +223,38 @@ Thyra::create_MultiVector(
   }
   // Build the MultiVector
   Teuchos::RefCountPtr<SpmdMultiVectorBase<double> >
-    mv = Teuchos::rcp(new DefaultSpmdMultiVector<double>(range,domain,Teuchos::rcp(localValues,false),leadingDim));
+    mv = Teuchos::rcp(
+      new DefaultSpmdMultiVector<double>(
+        range,domain,Teuchos::rcp(localValues,false),leadingDim
+        )
+      );
   Teuchos::set_extra_data( epetra_mv, "Epetra_MultiVector", &mv );
   return mv;
 }
 
 
-Teuchos::RefCountPtr<const Thyra::SpmdMultiVectorBase<double> >
+Teuchos::RefCountPtr<const Thyra::MultiVectorBase<double> >
 Thyra::create_MultiVector(
-  const Teuchos::RefCountPtr<const Epetra_MultiVector>                     &epetra_mv
-  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >           &range
-  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain_in
+  const Teuchos::RefCountPtr<const Epetra_MultiVector> &epetra_mv,
+  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &range_in,
+  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &domain_in
   )
 {
   using Teuchos::rcp_dynamic_cast;
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(range.get()==NULL);
+  TEST_FOR_EXCEPT(range_in.get()==NULL);
 #endif
+  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >
+    range = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
+      range_in,true);
+  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >
+    domain = Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<double> >(
+      domain_in,true);
   if (!epetra_mv.get())
     return Teuchos::null;
-  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >
-    domain = domain_in;
   if ( is_null(domain) ) {
     domain = rcp_dynamic_cast<const ScalarProdVectorSpaceBase<double> >(
-      range->smallVecSpcFcty()->createVecSpc(epetra_mv->NumVectors())
+      create_LocallyReplicatedVectorSpace(range,epetra_mv->NumVectors())
       );
   }
   // New local view of raw data
@@ -227,28 +267,36 @@ Thyra::create_MultiVector(
   }
   // Build the MultiVector
   Teuchos::RefCountPtr<const SpmdMultiVectorBase<double> >
-    mv = Teuchos::rcp(new DefaultSpmdMultiVector<double>(range,domain,Teuchos::rcp(localValues,false),leadingDim));
+    mv = Teuchos::rcp(
+      new DefaultSpmdMultiVector<double>(
+        range,domain,Teuchos::rcp(localValues,false),leadingDim
+        )
+      );
   Teuchos::set_extra_data( epetra_mv, "Epetra_MultiVector", &mv );
   return mv;
 }
 
 Teuchos::RefCountPtr<Epetra_Vector>
 Thyra::get_Epetra_Vector(
-  const Epetra_Map                                    &map
-  ,const Teuchos::RefCountPtr<VectorBase<double> >    &v
+  const Epetra_Map &map,
+  const Teuchos::RefCountPtr<VectorBase<double> > &v
   )
 {
+  using Teuchos::get_optional_extra_data;
+  using Teuchos::RefCountPtr;
 #ifdef TEUCHOS_DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<double> >
     epetra_vs = create_VectorSpace(Teuchos::rcp(&map,false));
-  THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_Vector(map,v)", *epetra_vs, *v->space() );
+  THYRA_ASSERT_VEC_SPACES( 
+    "Thyra::get_Epetra_Vector(map,v)", *epetra_vs, *v->space() );
 #endif
   //
   // First, try to grab the Epetra_Vector straight out of the
   // RCP since this is the fastest way.
   //
   const Teuchos::RefCountPtr<Epetra_Vector>
-    *epetra_v_ptr = Teuchos::get_optional_extra_data<Teuchos::RefCountPtr<Epetra_Vector> >(v,"Epetra_Vector");
+    *epetra_v_ptr = get_optional_extra_data<RefCountPtr<Epetra_Vector> >(
+      v,"Epetra_Vector");
   if(epetra_v_ptr) {
     return *epetra_v_ptr;
   }
@@ -259,7 +307,8 @@ Thyra::get_Epetra_Vector(
   // compatible maps.
   // 
   const VectorSpaceBase<double>  &vs = *v->range();
-  const SpmdVectorSpaceBase<double> *mpi_vs = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
+  const SpmdVectorSpaceBase<double> *mpi_vs
+    = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
   const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   //
@@ -305,32 +354,38 @@ Thyra::get_Epetra_Vector(
 
 Teuchos::RefCountPtr<const Epetra_Vector>
 Thyra::get_Epetra_Vector(
-  const Epetra_Map                                         &map 
-  ,const Teuchos::RefCountPtr<const VectorBase<double> >   &v
+  const Epetra_Map &map, 
+  const Teuchos::RefCountPtr<const VectorBase<double> > &v
   )
 {
+  using Teuchos::get_optional_extra_data;
+  using Teuchos::RefCountPtr;
 #ifdef TEUCHOS_DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<double> >
     epetra_vs = create_VectorSpace(Teuchos::rcp(&map,false));
-  THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_Vector(map,v)", *epetra_vs, *v->space() );
+  THYRA_ASSERT_VEC_SPACES(
+    "Thyra::get_Epetra_Vector(map,v)", *epetra_vs, *v->space() );
 #endif
   //
   // First, try to grab the Epetra_Vector straight out of the
   // RCP since this is the fastest way.
   //
   const Teuchos::RefCountPtr<const Epetra_Vector>
-    *epetra_v_ptr = Teuchos::get_optional_extra_data<Teuchos::RefCountPtr<const Epetra_Vector> >(v,"Epetra_Vector");
+    *epetra_v_ptr = get_optional_extra_data<RefCountPtr<const Epetra_Vector> >(
+      v,"Epetra_Vector");
   if(epetra_v_ptr)
     return *epetra_v_ptr;
   const Teuchos::RefCountPtr<Epetra_Vector>
-    *epetra_nonconst_v_ptr = Teuchos::get_optional_extra_data<Teuchos::RefCountPtr<Epetra_Vector> >(v,"Epetra_Vector");
+    *epetra_nonconst_v_ptr = get_optional_extra_data<RefCountPtr<Epetra_Vector> >(
+      v,"Epetra_Vector");
   if(epetra_nonconst_v_ptr)
     return *epetra_nonconst_v_ptr;
   //
   // Same as above function except as stated below
   //
   const VectorSpaceBase<double> &vs = *v->range();
-  const SpmdVectorSpaceBase<double> *mpi_vs = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
+  const SpmdVectorSpaceBase<double> *mpi_vs
+    = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
   const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   // Get an explicit *non-mutable* view of all of the elements in the multi
@@ -365,21 +420,25 @@ Thyra::get_Epetra_Vector(
 
 Teuchos::RefCountPtr<Epetra_MultiVector>
 Thyra::get_Epetra_MultiVector(
-  const Epetra_Map                                         &map
-  ,const Teuchos::RefCountPtr<MultiVectorBase<double> >    &mv
+  const Epetra_Map &map,
+  const Teuchos::RefCountPtr<MultiVectorBase<double> > &mv
   )
 {
+  using Teuchos::get_optional_extra_data;
+  using Teuchos::RefCountPtr;
 #ifdef TEUCHOS_DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<double> >
     epetra_vs = create_VectorSpace(Teuchos::rcp(&map,false));
-  THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_MultiVector(map,mv)", *epetra_vs, *mv->range() );
+  THYRA_ASSERT_VEC_SPACES(
+    "Thyra::get_Epetra_MultiVector(map,mv)", *epetra_vs, *mv->range() );
 #endif
   //
   // First, try to grab the Epetra_MultiVector straight out of the
   // RCP since this is the fastest way.
   //
   const Teuchos::RefCountPtr<Epetra_MultiVector>
-    *epetra_mv_ptr = Teuchos::get_optional_extra_data<Teuchos::RefCountPtr<Epetra_MultiVector> >(mv,"Epetra_MultiVector");
+    *epetra_mv_ptr = get_optional_extra_data<RefCountPtr<Epetra_MultiVector> >(
+      mv,"Epetra_MultiVector");
   if(epetra_mv_ptr) {
     return *epetra_mv_ptr;
   }
@@ -390,7 +449,8 @@ Thyra::get_Epetra_MultiVector(
   // compatible maps.
   // 
   const VectorSpaceBase<double> &vs = *mv->range();
-  const SpmdVectorSpaceBase<double> *mpi_vs = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
+  const SpmdVectorSpaceBase<double> *mpi_vs
+    = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
   const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   //
@@ -437,21 +497,27 @@ Thyra::get_Epetra_MultiVector(
 
 Teuchos::RefCountPtr<const Epetra_MultiVector>
 Thyra::get_Epetra_MultiVector(
-  const Epetra_Map                                              &map
-  ,const Teuchos::RefCountPtr<const MultiVectorBase<double> >   &mv
+  const Epetra_Map &map,
+  const Teuchos::RefCountPtr<const MultiVectorBase<double> > &mv
   )
 {
+  using Teuchos::get_optional_extra_data;
+  using Teuchos::RefCountPtr;
 #ifdef TEUCHOS_DEBUG
-  Teuchos::RefCountPtr<const VectorSpaceBase<double> >
+  RefCountPtr<const VectorSpaceBase<double> >
     epetra_vs = create_VectorSpace(Teuchos::rcp(&map,false));
-  THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_MultiVector(map,mv)", *epetra_vs, *mv->range() );
+  THYRA_ASSERT_VEC_SPACES(
+    "Thyra::get_Epetra_MultiVector(map,mv)",
+    *epetra_vs, *mv->range() );
 #endif
   //
   // First, try to grab the Epetra_MultiVector straight out of the
   // RCP since this is the fastest way.
   //
-  const Teuchos::RefCountPtr<const Epetra_MultiVector>
-    *epetra_mv_ptr = Teuchos::get_optional_extra_data<Teuchos::RefCountPtr<const Epetra_MultiVector> >(mv,"Epetra_MultiVector");
+  const RefCountPtr<const Epetra_MultiVector>
+    *epetra_mv_ptr
+    = get_optional_extra_data<RefCountPtr<const Epetra_MultiVector> >(
+      mv,"Epetra_MultiVector" );
   if(epetra_mv_ptr) {
     return *epetra_mv_ptr;
   }
@@ -459,7 +525,8 @@ Thyra::get_Epetra_MultiVector(
   // Same as above function except as stated below
   //
   const VectorSpaceBase<double> &vs = *mv->range();
-  const SpmdVectorSpaceBase<double> *mpi_vs = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
+  const SpmdVectorSpaceBase<double> *mpi_vs
+    = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
   const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   // Get an explicit *non-mutable* view of all of the elements in

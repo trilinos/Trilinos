@@ -32,133 +32,198 @@
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_DataStore.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
-#include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
+#include "Thyra_AssertOp.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
-#include "Thyra_SingleResidSSDAEModelEvaluator.hpp"
+#include "Thyra_TestingTools.hpp"
+#include "Rythmos_SingleResidualModelEvaluator.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_as.hpp"
 
 namespace Rythmos {
 
-/** \brief . */
+
+/** \brief Simple concrete stepper subclass implementing an implicit backward
+ * Euler method.
+ *
+ * This class exists primarily as a simple example of an implicit time stepper
+ * and as a vehicle for experimentation.  The <tt>ImplicitBDFStepper</tt> also
+ * implements backward Euler and is a more powerful stepper class.  This class
+ * does not implement a local truncation error test and therefore also does
+ * not handle the automatic step size selection.  Therefore, if you need these
+ * features, you should really use the <tt>ImplicitBDFStepper</tt> class.
+ */
 template<class Scalar>
 class BackwardEulerStepper : virtual public StepperBase<Scalar>
 {
-  public:
+public:
+  
+  /** \brief . */
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  
+  /** \brief Constructors, intializers, Misc. */
+  //@{
 
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  /** \brief . */
+  BackwardEulerStepper();
+  
+  /** \brief . */
+  BackwardEulerStepper(
+    const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >  &model
+    ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >  &solver
+    );
 
-    /** \brief . */
-    BackwardEulerStepper();
+  /** \brief . */
+  void setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver);
+  
+  /** \brief . */
+  void setInterpolator(Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator);
+  
+  /** \brief . */
+  Teuchos::RefCountPtr<InterpolatorBase<Scalar> > unsetInterpolator();
 
-    /** \brief . */
-    BackwardEulerStepper(
-      const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >  &model
-      ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >  &solver
-      );
+  //@}
 
-    /** \brief . */
-    void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
+  /** \brief Overridden from StepperBase */
+  //@{
+ 
+  /** \brief . */
+  bool supportsCloning() const;
 
-    /** \brief . */
-    void setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver);
+  /** \brief Creates copies of all internal data except the model which is
+   * assumed to stateless.
+   *
+   * If a shallow copy of the model is not appropirate, then the client can
+   * simply reset the model using <tt>setModel()</tt>.
+   */
+  Teuchos::RefCountPtr<StepperBase<Scalar> > cloneStepper() const;
 
-    /** \brief . */
-    void setInterpolator(Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator);
+  /** \brief . */
+  void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
+  
+  /** \brief . */
+  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+  getModel() const;
 
-    /** \brief . */
-    Teuchos::RefCountPtr<InterpolatorBase<Scalar> > unsetInterpolator();
+  /** \brief . */
+  void setInitialCondition(
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
+    );
 
-    /** \brief . */
-    Scalar TakeStep(Scalar dt, StepSizeType flag);
+  /** \brief . */
+  Scalar takeStep(Scalar dt, StepSizeType flag);
+  
+  /** \brief . */
+  const StepStatus<Scalar> getStepStatus() const;
 
-    /** \brief . */
-    const StepStatus<Scalar> getStepStatus();
+  //@}
 
-    /// Redefined from describable
-    /** \brief . */
-    std::string description() const;
+  /** \name Overridden from InterpolationBufferBase */
+  //@{
 
-    /** \brief . */
-    void describe(
-      Teuchos::FancyOStream                &out
-      ,const Teuchos::EVerbosityLevel      verbLevel
-      ) const;
+  /** \brief . */
+  bool setPoints(
+    const std::vector<Scalar>& time_vec
+    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const std::vector<ScalarMag> & accuracy_vec 
+    );
+  
+  /** \brief . */
+  bool setRange(
+    const TimeRange<Scalar>& range,
+    const InterpolationBufferBase<Scalar>& IB
+    );
+  
+  /** \brief . */
+  TimeRange<Scalar> getTimeRange() const;
+  
+  /** \brief . */
+  bool getPoints(
+    const std::vector<Scalar>& time_vec
+    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
+    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,std::vector<ScalarMag>* accuracy_vec) const;
+  
+  /** \brief . */
+  bool getNodes(std::vector<Scalar>* time_vec) const;
+  
+  /** \brief . */
+  bool removeNodes(std::vector<Scalar>& time_vec);
 
-    /// Redefined from InterpolationBufferBase 
-    /// Add points to buffer
-    /// This will take the last one or two points in the list and set up to integrate from here.
-    bool SetPoints(
-      const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
-      ,const std::vector<ScalarMag> & accuracy_vec 
-      );
-    
-    /// Get values from buffer
-    /// This will interpolate points if t_old_ != t_
-    bool GetPoints(
-      const std::vector<Scalar>& time_vec
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
-      ,std::vector<ScalarMag>* accuracy_vec) const;
+  /** \brief . */
+  int getOrder() const;
 
-    /// Fill data in from another interpolation buffer
-    /// This will do the same as SetPoints
-    bool SetRange(
-      const Scalar& time_lower
-      ,const Scalar& time_upper
-      ,const InterpolationBufferBase<Scalar> & IB);
+  //@}
+  
+  /** \name Overridden from Teuchos::ParameterListAcceptor */
+  //@{
 
-    /// Get interpolation nodes
-    /// This will return t_old_ and t_ provided t_old_ != t_
-    bool GetNodes(std::vector<Scalar>* time_vec) const;
+  /** \brief . */
+  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  
+  /** \brief. */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+ 
+  //@}
 
-    /// Remove interpolation nodes
-    /// This would allow removal of t_old_ and/or t_ which might be used to reject steps.
-    bool RemoveNodes(std::vector<Scalar>& time_vec);
+  /** \name Overridden from Teuchos::Describable */
+  //@{
+  
+  /** \brief . */
+  void describe(
+    Teuchos::FancyOStream  &out,
+    const Teuchos::EVerbosityLevel verbLevel
+    ) const;
 
-    /// Get order of interpolation
-    /// This will return 1.
-    int GetOrder() const;
+  //@}
 
-    /// Redefined from Teuchos::ParameterListAcceptor
-    /** \brief . */
-    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+private:
 
-    /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  // ///////////////////////
+  // Private date members
 
-    /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  bool isInitialized_;
+  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > solver_;
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_;
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_;
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > scaled_x_old_;
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_old_;
+  Scalar t_;
+  Scalar t_old_;
+  Scalar dt_;
+  int numSteps_;
 
-    /** \brief. */
-    Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RefCountPtr<Rythmos::SingleResidualModelEvaluator<Scalar> >  neModel_;
 
-  private:
+  Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
 
-    void initialize_();
-    bool isInitialized_;
-    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
-    Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > solver_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > scaled_x_old_;
-    Scalar t_;
-    Scalar t_old_;
-    Scalar dt_;
-    int numSteps;
+  Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator_;
 
-    Teuchos::RefCountPtr<Thyra::SingleResidSSDAEModelEvaluator<Scalar> >  neModel_;
 
-    Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
+  // //////////////////////////
+  // Private member functions
 
-    Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator_;
+  void initialize_();
 
 };
 
+
 // ////////////////////////////
 // Defintions
+
+
+// Constructors, intializers, Misc.
+
 
 template<class Scalar>
 BackwardEulerStepper<Scalar>::BackwardEulerStepper()
@@ -169,11 +234,10 @@ BackwardEulerStepper<Scalar>::BackwardEulerStepper()
   //out->pushLinePrefix("Rythmos::BackwardEulerStepper");
   //out->setShowLinePrefix(true);
   //out->setTabIndentStr("    ");
-
-  setInterpolator(Teuchos::null);
-  numSteps = 0;
+  numSteps_ = 0;
   isInitialized_=false;
 }
+
 
 template<class Scalar>
 BackwardEulerStepper<Scalar>::BackwardEulerStepper(
@@ -187,155 +251,631 @@ BackwardEulerStepper<Scalar>::BackwardEulerStepper(
   //out->pushLinePrefix("Rythmos::BackwardEulerStepper");
   //out->setShowLinePrefix(true);
   //out->setTabIndentStr("    ");
-
   setModel(model);
   setSolver(solver);
-  setInterpolator(Teuchos::null);
-  numSteps = 0;
-  initialize_();
+  numSteps_ = 0;
+  isInitialized_ = false;
 }
 
-template<class Scalar>
-void BackwardEulerStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
-{
-  TEST_FOR_EXCEPT(model == Teuchos::null)
-
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"BES::setModel");
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
-    *out << "model = " << model->description() << std::endl;
-  }
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  model_ = model;
-  t_ = ST::zero();
-  t_old_  = t_;
-  x_ = model_->getNominalValues().get_x()->clone_v();
-
-  scaled_x_old_ = x_->clone_v();
-  
-}
 
 template<class Scalar>
-void BackwardEulerStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver)
+void BackwardEulerStepper<Scalar>::setSolver(
+  const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
+  )
 {
+  using Teuchos::as;
+
   TEST_FOR_EXCEPT(solver == Teuchos::null)
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::setSolver");
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "solver = " << solver->description() << std::endl;
   }
+
   solver_ = solver;
+
+  isInitialized_ = false;
+
 }
 
+
 template<class Scalar>
-void BackwardEulerStepper<Scalar>::setInterpolator(Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator)
+void BackwardEulerStepper<Scalar>::setInterpolator(
+  Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator
+  )
 {
-  if (interpolator == Teuchos::null) {
-    interpolator_ = Teuchos::rcp(new LinearInterpolator<Scalar> );
-  } else {
-    interpolator_ = interpolator;
-  }
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(is_null(interpolator));
+#endif
+  interpolator_ = interpolator;
+  isInitialized_ = false;
 }
 
+
 template<class Scalar>
-Teuchos::RefCountPtr<InterpolatorBase<Scalar> > BackwardEulerStepper<Scalar>::unsetInterpolator()
+Teuchos::RefCountPtr<InterpolatorBase<Scalar> >
+BackwardEulerStepper<Scalar>::unsetInterpolator()
 {
   Teuchos::RefCountPtr<InterpolatorBase<Scalar> > temp_interpolator = interpolator_;
-  interpolator_ = Teuchos::rcp(new LinearInterpolator<Scalar> );
+  interpolator_ = Teuchos::null;
   return(temp_interpolator);
+  isInitialized_ = false;
 }
 
+
+// Overridden from StepperBase
+ 
+
 template<class Scalar>
-Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
+bool BackwardEulerStepper<Scalar>::supportsCloning() const
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  if (!isInitialized_) {
-    initialize_(); 
+  return true;
+}
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<StepperBase<Scalar> >
+BackwardEulerStepper<Scalar>::cloneStepper() const
+{
+  Teuchos::RefCountPtr<BackwardEulerStepper<Scalar> >
+    stepper = Teuchos::rcp(new BackwardEulerStepper<Scalar>);
+  stepper->isInitialized_ = isInitialized_;
+  stepper->model_ = model_; // Model is stateless so shallow copy is okay!
+  if (!is_null(solver_))
+    stepper->solver_ = solver_->cloneNonlinearSolver().assert_not_null();
+  if (!is_null(x_))
+    stepper->x_ = x_->clone_v().assert_not_null();
+  if (!is_null(scaled_x_old_))
+    stepper->scaled_x_old_ = scaled_x_old_->clone_v().assert_not_null();
+  stepper->t_ = t_;
+  stepper->t_old_ = t_old_;
+  stepper->dt_ = dt_;
+  stepper->numSteps_ = numSteps_;
+  if (!is_null(neModel_))
+    stepper->neModel_
+    = Teuchos::rcp(new Rythmos::SingleResidualModelEvaluator<Scalar>);
+  if (!is_null(parameterList_))
+    stepper->parameterList_ = parameterList(*parameterList_);
+  if (!is_null(interpolator_))
+    stepper->interpolator_
+      = interpolator_->cloneInterpolator().assert_not_null(); // ToDo: Implement cloneInterpolator()
+  return stepper;
+}
+
+
+template<class Scalar>
+void BackwardEulerStepper<Scalar>::setModel(
+  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
+  )
+{
+
+  using Teuchos::as;
+
+  TEST_FOR_EXCEPT( is_null(model) );
+
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::OSTab ostab(out,1,"BES::setModel");
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+    *out << "model = " << model->description() << std::endl;
   }
+  model_ = model;
+
+  // Wipe out x.  This will either be set thorugh setInitialCondition(...) or
+  // it will be taken from the model's nominal vlaues!
+  x_ = Teuchos::null;
+  scaled_x_old_ = Teuchos::null;
+  x_dot_ = Teuchos::null;
+  x_dot_old_ = Teuchos::null;
+
+  isInitialized_ = false;
+  
+}
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+BackwardEulerStepper<Scalar>::getModel() const
+{
+  return model_;
+}
+
+
+template<class Scalar>
+void BackwardEulerStepper<Scalar>::setInitialCondition(
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
+  )
+{
+
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  TEST_FOR_EXCEPT( is_null(model_) );
+
+  // x
+
+  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+    x_init = initialCondition.get_x();
+
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPTION(
+    is_null(x_init), std::logic_error,
+    "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
+    "then x can not be null!" );
+  THYRA_ASSERT_VEC_SPACES(
+    "Rythmos::BackwardEulerStepper::setInitialCondition(...)",
+    *x_init->space(), *model_->get_x_space() );
+#endif
+
+  x_ = x_init->clone_v();
+
+  // x_dot
+
+  x_dot_ = createMember(model_->get_x_space());
+
+  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+    x_dot_init = initialCondition.get_x_dot();
+
+  if (!is_null(x_dot_init))
+    assign(&*x_dot_,*x_dot_init);
+  else
+    assign(&*x_dot_,ST::zero());
+  
+  // t
+  
+  t_ = (
+    initialCondition.supports(MEB::IN_ARG_t)
+    ? initialCondition.get_t()
+    : ST::zero()
+    );
+  t_old_ = t_;
+
+}
+
+
+template<class Scalar>
+Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
+{
+
+  using Teuchos::as;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::OSTab ostab(out,1,"BES::takeStep");
+
+  if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
+    *out
+      << "\nEntering " << Teuchos::TypeNameTraits<BackwardEulerStepper<Scalar> >::name()
+      << "::takeStep("<<dt<<","<<toString(flag)<<") ...\n"; 
+  }
+
+  if (!isInitialized_) {
+    initialize_(); // This will set x_ if not already set!
+  }
+
   dt_ = dt;
+
   if ((flag == VARIABLE_STEP) || (dt == ST::zero())) {
-    Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"BES::TakeStep");
-    if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_LOW) )
-      *out << "The arguments to TakeStep are not valid for BackwardEulerStepper at this time." << std::endl;
+    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) )
+      *out << "The arguments to takeStep are not valid for BackwardEulerStepper at this time." << std::endl;
     // print something out about this method not supporting automatic variable step-size
     return(Scalar(-ST::one()));
   }
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"BES::TakeStep");
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "dt = " << dt << std::endl;
   }
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+
+
   //
   // Setup the nonlinear equations:
   //
   //   f( (1/dt)* x + (-1/dt)*x_old), x, t ) = 0
   //
+
   V_StV( &*scaled_x_old_, Scalar(-ST::one()/dt), *x_ );
   t_old_ = t_;
   if(!neModel_.get()) {
-    neModel_ = Teuchos::rcp(new Thyra::SingleResidSSDAEModelEvaluator<Scalar>());
+    neModel_ = Teuchos::rcp(new Rythmos::SingleResidualModelEvaluator<Scalar>());
   }
-  neModel_->initialize(model_,Scalar(ST::one()/dt),scaled_x_old_,ST::one(),Teuchos::null,t_old_+dt,Teuchos::null);
-  if(solver_->getModel().get()!=neModel_.get()) {
+  neModel_->initializeSingleResidualModel(
+    model_,
+    Scalar(ST::one()/dt), scaled_x_old_,
+    ST::one(), Teuchos::null,
+    t_old_+dt,
+    Teuchos::null
+    );
+  if( solver_->getModel().get() != neModel_.get() ) {
     solver_->setModel(neModel_);
   }
+  // 2007/05/18: rabartl: ToDo: Above, set the stream and the verbosity level
+  // on solver_ so that we an see what it is doing!
+
   //
   // Solve the implicit nonlinear system to a tolerance of ???
   //
-  // 10/9/06 tscoffe:  I could use FE as a predictor here.
-  Thyra::assign(&*x_,ST::zero());
-  solver_->solve(&*x_); // Note that x in input is x_old and on output is the solved x!
+
+  solver_->solve(&*x_);
+  // In the above solve, on input *x_ is the old value of x for the previous
+  // time step which is used as the initial guess for the solver.  On output,
+  // *x_ is the converged timestep solution.
+
+  // 2007/05/18: rabartl: ToDo: Above, get the solve status from the above
+  // solve and at least print warning message if the solve fails!  Actually,
+  // you should most likely thrown an exception if the solve fails or return
+  // false if appropriate
+
   //
   // Update the step
   //
+
+  assign( &*x_dot_old_, *x_dot_ );
+
+  // x_dot = (1/dt)*x - (1/dt)*x_old 
+  V_StV( &*x_dot_, Scalar(ST::one()/dt), *x_ );
+  Vp_StV( &*x_dot_, Scalar(-ST::one()), *scaled_x_old_ );
+
   t_ += dt;
-  numSteps++;
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
+
+  numSteps_++;
+
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "t_old_ = " << t_old_ << std::endl;
     *out << "t_ = " << t_ << std::endl;
   }
 
+  if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
+    *out
+      << "Leaving " << Teuchos::TypeNameTraits<BackwardEulerStepper<Scalar> >::name()
+      << "::takeStep(...) ...\n"; 
+  }
+
   return(dt);
+
 }
 
 
 template<class Scalar>
-const StepStatus<Scalar> BackwardEulerStepper<Scalar>::getStepStatus()
+const StepStatus<Scalar> BackwardEulerStepper<Scalar>::getStepStatus() const
 {
+
   typedef Teuchos::ScalarTraits<Scalar> ST;
+
   StepStatus<Scalar> stepStatus;
+
   if (!isInitialized_) {
     stepStatus.message = "This stepper is uninitialized.";
     stepStatus.stepStatus = STEP_STATUS_UNINITIALIZED;
     stepStatus.stepSize = Scalar(-ST::one());
     stepStatus.order = -1;
     stepStatus.time = Scalar(-ST::one());
-    if (model_ != Teuchos::null) {
-      stepStatus.solution = Thyra::createMember(model_->get_x_space());
-    }
+    // 2007/05/21: rabartl: ToDo: Need to return something other than -1.0
+    // since negative time might be just fine.
+    stepStatus.solution = Teuchos::null;
+    // 2007/05/18: rabartl: I changed the above to null since just returning a
+    // vector fully of junk makes no sense.
+    stepStatus.solutionDot = Teuchos::null;
     return(stepStatus);
   }
 
-  if (numSteps > 0) {
+  if (numSteps_ > 0) {
     stepStatus.stepStatus = STEP_STATUS_CONVERGED; 
   }
+
   stepStatus.stepSize = dt_;
   stepStatus.order = 1;
   stepStatus.time = t_;
   stepStatus.solution = x_;
+  stepStatus.solutionDot = x_dot_;
 
   return(stepStatus);
 }
 
+
+// Overridden from InterpolationBufferBase
+
+
 template<class Scalar>
-std::string BackwardEulerStepper<Scalar>::description() const
+bool BackwardEulerStepper<Scalar>::setPoints(
+    const std::vector<Scalar>& time_vec
+    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const std::vector<ScalarMag> & accuracy_vec 
+    )
 {
-  std::string name = "Rythmos::BackwardEulerStepper";
-  return(name);
+  using Teuchos::as;
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::OSTab ostab(out,1,"BES::setPoints");
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+    *out << "time_vec = " << std::endl;
+    for (unsigned int i=0 ; i<time_vec.size() ; ++i) {
+      *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
+    }
+  }
+  if (!isInitialized_) {
+    return(false);
+  }
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  if (time_vec.size() == 0) {
+    return(false);
+  }
+  else if (time_vec.size() == 1) {
+    int n = 0;
+    t_ = time_vec[n];
+    t_old_ = t_;
+    Thyra::V_V(&*x_,*x_vec[n]);
+    Thyra::V_V(&*scaled_x_old_,*x_);
+  }
+  else {
+    int n = time_vec.size()-1;
+    int nm1 = time_vec.size()-2;
+    t_ = time_vec[n];
+    t_old_ = time_vec[nm1];
+    Thyra::V_V(&*x_,*x_vec[n]);
+    Scalar dt = t_ - t_old_;
+    Thyra::V_StV(&*scaled_x_old_,Scalar(-ST::one()/dt),*x_vec[nm1]);
+  }
+  return(true);
 }
+
+
+template<class Scalar>
+bool BackwardEulerStepper<Scalar>::setRange(
+  const TimeRange<Scalar>& range,
+  const InterpolationBufferBase<Scalar>& IB
+  )
+{
+  using Teuchos::as;
+  const Scalar time_lower = range.lower();
+  const Scalar time_upper = range.upper();
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::OSTab ostab(out,1,"BES::setRange");
+  if (!isInitialized_) {
+    return(false);
+  }
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+    *out << "time_lower = " << time_lower << std::endl;
+    *out << "time_upper = " << time_upper << std::endl;
+    *out << "IB = " << IB.description() << std::endl;
+  }
+  // TODO:
+  // get node_list from IB, crop it to [time_lower,time_upper], crop x_vec to same,
+  // pass to setPoints.
+  return(false);
+}
+
+
+template<class Scalar>
+TimeRange<Scalar> BackwardEulerStepper<Scalar>::getTimeRange() const
+{
+  return timeRange(t_old_,t_);
+}
+
+
+template<class Scalar>
+bool BackwardEulerStepper<Scalar>::getPoints(
+    const std::vector<Scalar>& time_vec
+    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
+    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,std::vector<ScalarMag>* accuracy_vec) const
+{
+
+  using Teuchos::as;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+  typename DataStore<Scalar>::DataStoreVector_t ds_nodes;
+  typename DataStore<Scalar>::DataStoreVector_t ds_out;
+
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT( 0 == x_vec );
+#endif
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::OSTab ostab(out,1,"BES::getPoints");
+  if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
+    *out
+      << "\nEntering " << Teuchos::TypeNameTraits<BackwardEulerStepper<Scalar> >::name()
+      << "::getPoints(...) ...\n"; 
+  }
+  if (!isInitialized_) {
+    return(false);
+    // RAB: ToDo: Thow exception if this fails?
+  }
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+    for (unsigned int i=0 ; i<time_vec.size() ; ++i) {
+      *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
+    }
+    *out << "I can interpolate in the interval [" << t_old_ << "," << t_ << "]." << std::endl;
+  }
+  if (t_old_ != t_) {
+    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+      *out << "Passing two points to interpolator:  " << t_old_ << " and " << t_ << std::endl;
+    }
+    DataStore<Scalar> ds_temp;
+    Scalar dt = t_ - t_old_;
+#ifdef TEUCHOS_DEBUG
+    TEST_FOR_EXCEPT(
+      !Thyra::testRelErr(
+        "dt", dt, "dt_", dt_,
+        "2*epsilon", ScalarMag(100.0*SMT::eps()),
+        "2*epsilon", ScalarMag(100.0*SMT::eps()),
+        as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM) ? out.get() : 0
+        )
+      );
+#endif
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
+      x_temp = scaled_x_old_->clone_v();
+    Thyra::Vt_S(&*x_temp,Scalar(-ST::one()*dt));  // undo the scaling
+    ds_temp.time = t_old_;
+    ds_temp.x = x_temp;
+    ds_temp.xdot = x_dot_old_;
+    ds_temp.accuracy = ScalarMag(dt);
+    ds_nodes.push_back(ds_temp);
+    ds_temp.time = t_;
+    ds_temp.x = x_;
+    ds_temp.xdot = x_dot_;
+    ds_temp.accuracy = ScalarMag(dt);
+    ds_nodes.push_back(ds_temp);
+  }
+  else {
+    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+      *out << "Passing one point to interpolator:  " << t_ << std::endl;
+    }
+    DataStore<Scalar> ds_temp;
+    ds_temp.time = t_;
+    ds_temp.x = x_;
+    ds_temp.xdot = x_dot_;
+    ds_temp.accuracy = ScalarMag(ST::zero());
+    ds_nodes.push_back(ds_temp);
+  }
+  bool status = interpolator_->interpolate(ds_nodes,time_vec,&ds_out);
+  if (!status) { 
+    return(status);
+  }
+  std::vector<Scalar> time_out;
+  dataStoreVectorToVector(ds_out,&time_out,x_vec,xdot_vec,accuracy_vec);
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+    *out << "Passing out the interpolated values:" << std::endl;
+    for (unsigned int i=0; i<time_out.size() ; ++i) {
+      *out << "time[" << i << "] = " << time_out[i] << std::endl;
+      *out << "x_vec[" << i << "] = " << std::endl;
+      (*x_vec)[i]->describe(*out,Teuchos::VERB_EXTREME);
+      if (xdot_vec) {
+        if ( (*xdot_vec)[i] == Teuchos::null) {
+          *out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+        }
+        else {
+          *out << "xdot_vec[" << i << "] = " << std::endl;
+          (*xdot_vec)[i]->describe(*out,Teuchos::VERB_EXTREME);
+        }
+      }
+      if(accuracy_vec) {
+        *out << "accuracy[" << i << "] = " << (*accuracy_vec)[i] << std::endl;
+      }
+    }
+  }
+  if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
+    *out
+      << "Leaving " << Teuchos::TypeNameTraits<BackwardEulerStepper<Scalar> >::name()
+      << "::getPoints(...) ...\n"; 
+  }
+  return(status);
+}
+
+
+template<class Scalar>
+bool BackwardEulerStepper<Scalar>::getNodes(std::vector<Scalar>* time_vec) const
+{
+  using Teuchos::as;
+  if (!isInitialized_) {
+    return(false);
+  }
+  time_vec->clear();
+  time_vec->push_back(t_old_);
+  if (numSteps_ > 0) {
+    time_vec->push_back(t_);
+  }
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::OSTab ostab(out,1,"BES::getNodes");
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+    *out << this->description() << std::endl;
+    for (unsigned int i=0 ; i<time_vec->size() ; ++i) {
+      *out << "time_vec[" << i << "] = " << (*time_vec)[i] << std::endl;
+    }
+  }
+  return(true);
+}
+
+
+template<class Scalar>
+bool BackwardEulerStepper<Scalar>::removeNodes(std::vector<Scalar>& time_vec) 
+{
+  using Teuchos::as;
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::OSTab ostab(out,1,"BES::removeNodes");
+  if (!isInitialized_) {
+    return(false);
+  }
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+    *out << "time_vec = " << std::endl;
+    for (unsigned int i=0 ; i<time_vec.size() ; ++i) {
+      *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
+    }
+  }
+  // TODO:
+  // if any time in time_vec matches t_ or t_old_, then do the following:
+  // remove t_old_:  set t_old_ = t_ and set scaled_x_old_ = x_
+  // remove t_:  set t_ = t_old_ and set x_ = -dt*scaled_x_old_
+  return(false);
+}
+
+
+template<class Scalar>
+int BackwardEulerStepper<Scalar>::getOrder() const
+{
+  return(1);
+}
+
+
+// Overridden from Teuchos::ParameterListAcceptor
+
+
+template <class Scalar>
+void BackwardEulerStepper<Scalar>::setParameterList(
+  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  )
+{
+  TEST_FOR_EXCEPT(is_null(paramList));
+  paramList->validateParametersAndSetDefaults(*this->getValidParameters());
+  parameterList_ = paramList;
+  Teuchos::readVerboseObjectSublist(&*parameterList_,this);
+}
+
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList>
+BackwardEulerStepper<Scalar>::getParameterList()
+{
+  return(parameterList_);
+}
+
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList>
+BackwardEulerStepper<Scalar>::unsetParameterList()
+{
+  Teuchos::RefCountPtr<Teuchos::ParameterList>
+    temp_param_list = parameterList_;
+  parameterList_ = Teuchos::null;
+  return(temp_param_list);
+}
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+BackwardEulerStepper<Scalar>::getValidParameters() const
+{
+  using Teuchos::RefCountPtr;
+  using Teuchos::ParameterList;
+  static RefCountPtr<const ParameterList> validPL;
+  if (is_null(validPL)) {
+    RefCountPtr<ParameterList> pl = Teuchos::parameterList();
+    Teuchos::setupVerboseObjectSublist(&*pl);
+    validPL = pl;
+  }
+  return validPL;
+}
+
+
+// Overridden from Teuchos::Describable
+
 
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::describe(
@@ -343,14 +883,19 @@ void BackwardEulerStepper<Scalar>::describe(
       ,const Teuchos::EVerbosityLevel      verbLevel
       ) const
 {
+  using Teuchos::as;
+  Teuchos::OSTab tab(out);
   if (!isInitialized_) {
     out << "This stepper is not initialized yet" << std::endl;
     return;
   }
-  if ( (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_DEFAULT) ) ||
-       (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)     )
-     ) {
-    out << description() << "::describe:" << std::endl;
+  if (
+    as<int>(verbLevel) == as<int>(Teuchos::VERB_DEFAULT)
+    ||
+    as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW)
+    )
+  {
+    out << this->description() << "::describe:" << std::endl;
     out << "model = " << model_->description() << std::endl;
     out << "solver = " << solver_->description() << std::endl;
     if (neModel_ == Teuchos::null) {
@@ -358,11 +903,14 @@ void BackwardEulerStepper<Scalar>::describe(
     } else {
       out << "neModel = " << neModel_->description() << std::endl;
     }
-  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)) {
+  }
+  else if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW)) {
     out << "t_ = " << t_ << std::endl;
     out << "t_old_ = " << t_old_ << std::endl;
-  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM)) {
-  } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH)) {
+  }
+  else if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM)) {
+  }
+  else if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH)) {
     out << "model_ = " << std::endl;
     model_->describe(out,verbLevel);
     out << "solver_ = " << std::endl;
@@ -380,233 +928,44 @@ void BackwardEulerStepper<Scalar>::describe(
   }
 }
 
-template<class Scalar>
-bool BackwardEulerStepper<Scalar>::SetPoints(
-    const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
-    ,const std::vector<ScalarMag> & accuracy_vec 
-    )
-{
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"BES::SetPoints");
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
-    *out << "time_vec = " << std::endl;
-    for (unsigned int i=0 ; i<time_vec.size() ; ++i) {
-      *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
-    }
-  }
-  if (!isInitialized_) {
-    return(false);
-  }
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  if (time_vec.size() == 0) {
-    return(false);
-  } else if (time_vec.size() == 1) {
-    int n = 0;
-    t_ = time_vec[n];
-    t_old_ = t_;
-    Thyra::V_V(&*x_,*x_vec[n]);
-    Thyra::V_V(&*scaled_x_old_,*x_);
-  } else {
-    int n = time_vec.size()-1;
-    int nm1 = time_vec.size()-2;
-    t_ = time_vec[n];
-    t_old_ = time_vec[nm1];
-    Thyra::V_V(&*x_,*x_vec[n]);
-    Scalar dt = t_ - t_old_;
-    Thyra::V_StV(&*scaled_x_old_,Scalar(-ST::one()/dt),*x_vec[nm1]);
-  }
-  return(true);
-}
 
-template<class Scalar>
-bool BackwardEulerStepper<Scalar>::GetPoints(
-    const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
-    ,std::vector<ScalarMag>* accuracy_vec) const
-{
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"BES::GetPoints");
-  if (!isInitialized_) {
-    return(false);
-  }
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
-    for (unsigned int i=0 ; i<time_vec.size() ; ++i) {
-      *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
-    }
-    *out << "I can interpolate in the interval [" << t_old_ << "," << t_ << "]." << std::endl;
-  }
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  typename DataStore<Scalar>::DataStoreVector_t ds_nodes;
-  typename DataStore<Scalar>::DataStoreVector_t ds_out;
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp; // Teuchos::null
-  if (t_old_ != t_) {
-    if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
-      *out << "Passing two points to interpolator:  " << t_old_ << " and " << t_ << std::endl;
-    }
-    DataStore<Scalar> ds_temp;
-    Scalar dt = t_ - t_old_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_temp = scaled_x_old_->clone_v();
-    Thyra::Vt_S(&*x_temp,Scalar(-ST::one()*dt));  // undo the scaling
-    ds_temp.time = t_old_;
-    ds_temp.x = x_temp;
-    ds_temp.xdot = xdot_temp;
-    ds_temp.accuracy = ScalarMag(dt);
-    ds_nodes.push_back(ds_temp);
-    ds_temp.time = t_;
-    ds_temp.x = x_;
-    ds_temp.xdot = xdot_temp;
-    ds_temp.accuracy = ScalarMag(dt);
-    ds_nodes.push_back(ds_temp);
-  } else {
-    if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
-      *out << "Passing one point to interpolator:  " << t_ << std::endl;
-    }
-    DataStore<Scalar> ds_temp;
-    ds_temp.time = t_;
-    ds_temp.x = x_;
-    ds_temp.xdot = xdot_temp;
-    ds_temp.accuracy = ScalarMag(ST::zero());
-    ds_nodes.push_back(ds_temp);
-  }
-  bool status = interpolator_->interpolate(ds_nodes,time_vec,&ds_out);
-  if (!status) { 
-    return(status);
-  }
-  std::vector<Scalar> time_out;
-  DataStoreVectorToVector(ds_out,&time_out,x_vec,xdot_vec,accuracy_vec);
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
-    *out << "Passing out the interpolated values:" << std::endl;
-    for (unsigned int i=0; i<time_out.size() ; ++i) {
-      *out << "time[" << i << "] = " << time_out[i] << std::endl;
-      *out << "x_vec[" << i << "] = " << std::endl;
-      (*x_vec)[i]->describe(*out,Teuchos::VERB_EXTREME);
-      if ( (*xdot_vec)[i] == Teuchos::null) {
-        *out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
-      } else {
-        *out << "xdot_vec[" << i << "] = " << std::endl;
-        (*xdot_vec)[i]->describe(*out,Teuchos::VERB_EXTREME);
-      }
-      *out << "accuracy[" << i << "] = " << (*accuracy_vec)[i] << std::endl;
-    }
-  }
-  return(status);
-}
+// private
 
-template<class Scalar>
-bool BackwardEulerStepper<Scalar>::SetRange(
-    const Scalar& time_lower
-    ,const Scalar& time_upper
-    ,const InterpolationBufferBase<Scalar>& IB)
-{
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"BES::SetRange");
-  if (!isInitialized_) {
-    return(false);
-  }
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
-    *out << "time_lower = " << time_lower << std::endl;
-    *out << "time_upper = " << time_upper << std::endl;
-    *out << "IB = " << IB.description() << std::endl;
-  }
-  // TODO:
-  // get node_list from IB, crop it to [time_lower,time_upper], crop x_vec to same,
-  // pass to SetPoints.
-  return(false);
-}
-
-template<class Scalar>
-bool BackwardEulerStepper<Scalar>::GetNodes(std::vector<Scalar>* time_vec) const
-{
-  if (!isInitialized_) {
-    return(false);
-  }
-  time_vec->clear();
-  time_vec->push_back(t_old_);
-  if (numSteps > 0) {
-    time_vec->push_back(t_);
-  }
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"BES::GetNodes");
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
-    *out << this->description() << std::endl;
-    for (unsigned int i=0 ; i<time_vec->size() ; ++i) {
-      *out << "time_vec[" << i << "] = " << (*time_vec)[i] << std::endl;
-    }
-  }
-  return(true);
-}
-
-template<class Scalar>
-bool BackwardEulerStepper<Scalar>::RemoveNodes(std::vector<Scalar>& time_vec) 
-{
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"BES::RemoveNodes");
-  if (!isInitialized_) {
-    return(false);
-  }
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
-    *out << "time_vec = " << std::endl;
-    for (unsigned int i=0 ; i<time_vec.size() ; ++i) {
-      *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
-    }
-  }
-  // TODO:
-  // if any time in time_vec matches t_ or t_old_, then do the following:
-  // remove t_old_:  set t_old_ = t_ and set scaled_x_old_ = x_
-  // remove t_:  set t_ = t_old_ and set x_ = -dt*scaled_x_old_
-  return(false);
-}
-
-template<class Scalar>
-int BackwardEulerStepper<Scalar>::GetOrder() const
-{
-  return(1);
-}
-
-template <class Scalar>
-void BackwardEulerStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
-{
-  parameterList_ = paramList;
-  if (parameterList_ == Teuchos::null) {
-    parameterList_ = Teuchos::rcp(new Teuchos::ParameterList);
-  }
-  int outputLevel = parameterList_->get( "outputLevel", int(-1) );
-  outputLevel = min(max(outputLevel,-1),4);
-  this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
-}
-
-template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> BackwardEulerStepper<Scalar>::getParameterList()
-{
-  return(parameterList_);
-}
-
-template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> BackwardEulerStepper<Scalar>::unsetParameterList()
-{
-  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList_;
-  parameterList_ = Teuchos::null;
-  return(temp_param_list);
-}
 
 template <class Scalar>
 void BackwardEulerStepper<Scalar>::initialize_()
 {
   TEST_FOR_EXCEPT(model_ == Teuchos::null);
   TEST_FOR_EXCEPT(solver_ == Teuchos::null);
+
+  if (is_null(x_)) {
+    // If x has not been set then setInitialCondition(...) was not
+    // called by the client so the model had better have the 
+    // initial condition!
+    this->setInitialCondition(model_->getNominalValues());
+  }
+
+  if ( is_null(interpolator_) ) {
+    // If an interpolator has not been explicitly set, then just create
+    // a default linear interpolator.
+    interpolator_ = Teuchos::rcp(new LinearInterpolator<Scalar> );
+    // 2007/05/18: rabartl: ToDo: Replace this with a Hermete interplator
+    // when it is implementated!
+  }
+
+  if (is_null(scaled_x_old_))
+    scaled_x_old_ = createMember(model_->get_x_space());
+
+  if (is_null(x_dot_))
+    x_dot_ = createMember(model_->get_x_space());
+
+  if (is_null(x_dot_old_))
+    x_dot_old_ = createMember(model_->get_x_space());
+
   isInitialized_ = true;
+
 }
 
-template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList> BackwardEulerStepper<Scalar>::getValidParameters() const
-{
-  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = Teuchos::rcp(new Teuchos::ParameterList);
-  temp_param_list->set<int>   ( "outputLevel",       int(-1)        );
-  return(temp_param_list);
-}
 
 } // namespace Rythmos
 

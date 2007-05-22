@@ -109,7 +109,7 @@ bool Thyra::test_single_stratimikos_solver(
 
     if(out) *out << "\nCreating the LinearOpWithSolveFactoryBase object lowsFactory ...\n";
     RefCountPtr<LinearOpWithSolveFactoryBase<double> >
-      lowsFactory = linearSolverBuilder->createLinearSolveStrategy();
+      lowsFactory = createLinearSolveStrategy(*linearSolverBuilder);
     if(out) *out << "\nlowsFactory described as:\n" << describe(*lowsFactory,Teuchos::VERB_MEDIUM) << std::endl;
 
     if(out) *out << "\nRunning example use cases ...\n";

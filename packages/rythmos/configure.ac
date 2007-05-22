@@ -39,11 +39,9 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-#  #rythmos# - package name, version number, and e-mail address below
 AC_INIT(rythmos, 1.0, tscoffe@sandia.gov)
 
 # Hello World!
-#  #rythmos# - package name below
 echo "----------------------------------------"
 echo "Running Rythmos Configure Script"
 echo "----------------------------------------"
@@ -52,20 +50,13 @@ echo "----------------------------------------"
 # directory with --srcdir.  Any file in that directory will do,
 # preferably one that is unlikely to be removed or renamed.
 
-# #np# - file name below
 AC_CONFIG_SRCDIR(/src/Rythmos_Version.cpp)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
 
-#
-# #np# This a a subdirectory of Trilinos/packages/new_package that contains
-# #np# a number of useful m4 files.  Any package that uses these m4 files
-# #np# will have to add them to the repository.  The m4 files perform various
-# #np# common checks and set common variable values to minimize redundant work.
-#
 AC_CONFIG_AUX_DIR(config)
-#  #np# - Change file names in next line 
+
 # Configure should create src/New_Package_config.h from src/New_Package_config.h.in
 
 AM_CONFIG_HEADER(src/Rythmos_config.h:src/Rythmos_config.h.in)
@@ -113,12 +104,6 @@ AC_PREREQ(2.59)
 
 TAC_ARG_CONFIG_MPI
 
-#  #np# - can eliminate compiler checks below if your package does not use the
-#         language corresponding to the check.  Please note that if you use
-#	  F77_FUNC to determine Fortran name mangling, you should not remove
-#	  the Fortran compiler check or the check for Fortran flags.  Doing
-#	  so will prevent the detection of the proper name mangling in some
-#	  cases.
 # ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
@@ -130,11 +115,6 @@ AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
 # Checks for extra flags
-# #np# - You can pull flag checks for languages not used in package.  Please 
-#	  note that if you use F77_FUNC to determine Fortran name mangling, 
-#	  you should not remove the Fortran compiler check or the check for 
-#	  Fortran flags.  Doing so will prevent the detection of the proper 
-#	  name mangling in some cases.
 # ------------------------------------------------------------------------
 # Check if --with-flags present, prepend any specs to FLAGS
 
@@ -161,11 +141,8 @@ TAC_ARG_CHECK_MPI
 # ------------------------------------------------------------------------
 TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 
-#  #np# - Customize the checks for headers needed in package being added.
-#NOTE: This section still needs to be updated for new_package, it is still 
-# code from Epetra
 # ------------------------------------------------------------------------
-# Checks for header files - used in Epetra_ConfigDefs.h 
+# Checks for header files - used in Rythmos_ConfigDefs.h 
 # ------------------------------------------------------------------------
 
 AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
@@ -324,33 +301,11 @@ TAC_ARG_INFORM_SUBPACKAGE_USED(
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
-#
-#  #np# - These options are specific to Epetra and are left only as examples.
-#         If uncommented, the following lines would define HAVE_FATAL_MESSAGES
-#         in the (package)_config.h file.  Developers should use a 
-#         more specific name such as 'new_package-fatal_messages', rather
-#         than 'fatal_messages'.
-#TAC_ARG_ENABLE_OPTION(fatal_messages, [enable printing of fatal error messages], 
-#                   FATAL_MESSAGES, yes)
-#TAC_ARG_ENABLE_OPTION(warning_messages, [enable printing of warning error messages], 
-#                   WARNING_MESSAGES, no)
-#TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output], 
-#                   FORMAT_IO, yes)
-
-#  #np# - These are specific to Epetra and are left only as examples.
-#         If uncommented, the following line would define HAVE_ZOLTAN in
-#         the (package)_config.h file.  Developers should use a more
-#         specific name such as 'new_package-zoltan', rather than 'zoltan'.
-# TAC_ARG_WITH_PACKAGE(zoltan, [Enable Zoltan interface support], ZOLTAN, no)
-# TAC_ARG_WITH_PACKAGE(rtop, [Enable RTOp interface support], RTOP, no)
+# ???
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
-
-#  #np# - These options can disable the tests and examples of a package.
-#  #np# - Packages that do not have tests or examples should #-out the 
-#  #np# - option(s) that does (do) not apply.
 
 # 09/19/06 tscoffe:  --enable-tests is checked by TAC_ARG_ENABLE_FEATURE_SUB_CHECK
 #TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
@@ -404,21 +359,16 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 # ------------------------------------------------------------------------
 # Enable optional python wrappers
 # ------------------------------------------------------------------------
+
 TAC_ENABLE_PYTHON
 
 # ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
-# 02/21/06 tscoffe:  LIBDIRS is OBSOLETE, use LDFLAGS instead.
-# enable use of --with-libdirs="-Llibdir1 -Llibdir2 ..." to prepend to LDFLAGS
-#TAC_ARG_WITH_LIBDIRS
-
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-# #np# - Yet another opportunity to remove code if you aren't
-# using Fortran
 # Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX 
 AC_F77_WRAPPERS
 
@@ -429,13 +379,11 @@ AC_F77_WRAPPERS
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
 
-# #np# -
 # If a package does not have tests or examples, the corresponding check(s)
 # should be pulled out of the "if" statement below.
 #if test "X$ac_cv_use_new_package_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 if test "X$ac_cv_use_rythmos_tests" != "Xno" || test "X$ac_cv_use_rythmos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
-# #np# - 
 # To add any libraries that you want to check for, replace pow below 
 # with the name of an entry point in that library.
 # checks for libraries now
@@ -443,9 +391,6 @@ dnl Replace `main' with a function in -lm:
 #  #np# These lines can be removed if the math lib is not needed.
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
-
-# #np# If Lapack is also needed, see the  
-# configure.ac file for epetra (Trilinos/packages/epetra)
 
 dnl Check for user-specified names for BLAS lib
 TAC_ARG_WITH_BLASLIB
@@ -513,31 +458,24 @@ AC_SUBST(ac_aux_dir)
 # ------------------------------------------------------------------------
 # Output files
 # ------------------------------------------------------------------------
-##
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  New package comes only with src and example.
-#  You will need to change AC_CONFIG_FILES below and Makefile.am
-#  to add a new directory.
+
 AC_CONFIG_FILES([
 		Makefile 
-    Makefile.export.rythmos
+		Makefile.export.rythmos
 		src/Makefile
 		example/Makefile
 		example/basicExample/Makefile
+		example/diagonalTransient/Makefile
 		example/epetra/Makefile
 		example/epetra/1Dfem/Makefile
 		test/Makefile
 		test/ExplicitTaylorPolynomialStepper/Makefile
 		test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile
 		])
-#    test/unitTests/Makefile
-#    test/unitTests/InArgs/Makefile
-#    test/unitTests/OutArgs/Makefile
 
 AC_OUTPUT()
 
 # Bye World!
-#  #np# change package name
 echo "----------------------------------------"
 echo "Finished Running Rythmos Configure Script"
 echo "----------------------------------------"

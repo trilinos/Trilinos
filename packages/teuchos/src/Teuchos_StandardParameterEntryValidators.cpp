@@ -28,6 +28,31 @@
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
+
+std::string Teuchos::getVerbosityLevelParameterValueName(
+  const EVerbosityLevel verbLevel
+  )
+{
+  switch(verbLevel) {
+    case VERB_DEFAULT:
+      return "default";
+    case VERB_NONE:
+      return "none";
+    case VERB_LOW:
+      return "low";
+    case VERB_MEDIUM:
+      return "medium";
+    case VERB_HIGH:
+      return "high";
+    case VERB_EXTREME:
+      return "extreme";
+    default:
+      TEST_FOR_EXCEPT("Should never get here!");
+  }
+  return ""; // Never get here!
+}
+
+
 Teuchos::RefCountPtr<
   Teuchos::StringToIntegralParameterEntryValidator<Teuchos::EVerbosityLevel>
   >
@@ -36,14 +61,14 @@ Teuchos::verbosityLevelParameterEntryValidator(
   )
 {
   return rcp(
-    new StringToIntegralParameterEntryValidator<Teuchos::EVerbosityLevel>(
+    new StringToIntegralParameterEntryValidator<EVerbosityLevel>(
       tuple<std::string>(
-        "default",
-        "none",
-        "low",
-        "medium",
-        "high",
-        "extreme"
+        getVerbosityLevelParameterValueName(VERB_DEFAULT),
+        getVerbosityLevelParameterValueName(VERB_NONE),
+        getVerbosityLevelParameterValueName(VERB_LOW),
+        getVerbosityLevelParameterValueName(VERB_MEDIUM),
+        getVerbosityLevelParameterValueName(VERB_HIGH),
+        getVerbosityLevelParameterValueName(VERB_EXTREME)
         ),
       tuple<std::string>(
         "Use level set in code",
@@ -54,12 +79,12 @@ Teuchos::verbosityLevelParameterEntryValidator(
         "Produce the highest level of output"
         ),
       tuple<EVerbosityLevel>(
-        Teuchos::VERB_DEFAULT,
-        Teuchos::VERB_NONE,
-        Teuchos::VERB_LOW,
-        Teuchos::VERB_MEDIUM,
-        Teuchos::VERB_HIGH,
-        Teuchos::VERB_EXTREME
+        VERB_DEFAULT,
+        VERB_NONE,
+        VERB_LOW,
+        VERB_MEDIUM,
+        VERB_HIGH,
+        VERB_EXTREME
         ),
       defaultParameterName
       )
@@ -204,7 +229,7 @@ void AnyNumberParameterEntryValidator::printDoc(
 }
 
 
-Teuchos::RefCountPtr<const Array<std::string> >
+RefCountPtr<const Array<std::string> >
 AnyNumberParameterEntryValidator::validStringValues() const
 {
   return null;

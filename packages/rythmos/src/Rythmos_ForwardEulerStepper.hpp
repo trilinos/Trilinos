@@ -51,15 +51,19 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
 
     /** \brief . */
     void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
+
+    /** \brief . */
+    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+    getModel() const;
     
     /** \brief . */
     ~ForwardEulerStepper();
 
     /** \brief . */
-    Scalar TakeStep(Scalar dt, StepSizeType flag);
+    Scalar takeStep(Scalar dt, StepSizeType flag);
 
     /** \brief . */
-    const StepStatus<Scalar> getStepStatus();
+    const StepStatus<Scalar> getStepStatus() const;
 
     /** \brief . */
     std::string description() const;
@@ -74,7 +78,7 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     
     /// Redefined from InterpolationBufferBase 
     /// Add points to buffer
-    bool SetPoints(
+    bool setPoints(
       const std::vector<Scalar>& time_vec
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
@@ -82,7 +86,7 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
       );
     
     /// Get values from buffer
-    bool GetPoints(
+    bool getPoints(
       const std::vector<Scalar>& time_vec
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
@@ -90,20 +94,22 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
       ) const;
 
     /// Fill data in from another interpolation buffer
-    bool SetRange(
-      const Scalar& time_lower
-      ,const Scalar& time_upper
-      ,const InterpolationBufferBase<Scalar> & IB
+    bool setRange(
+      const TimeRange<Scalar>& range,
+      const InterpolationBufferBase<Scalar> & IB
       );
 
+    /** \brief . */
+    TimeRange<Scalar> getTimeRange() const;
+
     /// Get interpolation nodes
-    bool GetNodes(std::vector<Scalar>* time_vec) const;
+    bool getNodes(std::vector<Scalar>* time_vec) const;
 
     /// Remove interpolation nodes
-    bool RemoveNodes(std::vector<Scalar>& time_vec);
+    bool removeNodes(std::vector<Scalar>& time_vec);
 
     /// Get order of interpolation
-    int GetOrder() const;
+    int getOrder() const;
 
     /// Redefined from Teuchos::ParameterListAcceptor
     /** \brief . */
@@ -155,7 +161,7 @@ ForwardEulerStepper<Scalar>::~ForwardEulerStepper()
 }
 
 template<class Scalar>
-Scalar ForwardEulerStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
+Scalar ForwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
   if (flag == VARIABLE_STEP) { 
     // print something out about this method not supporting automatic variable step-size
@@ -185,7 +191,7 @@ Scalar ForwardEulerStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
 }
 
 template<class Scalar>
-const StepStatus<Scalar> ForwardEulerStepper<Scalar>::getStepStatus()
+const StepStatus<Scalar> ForwardEulerStepper<Scalar>::getStepStatus() const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   StepStatus<Scalar> stepStatus;
@@ -234,7 +240,7 @@ std::ostream& ForwardEulerStepper<Scalar>::describe(
 }
 
 template<class Scalar>
-bool ForwardEulerStepper<Scalar>::SetPoints(
+bool ForwardEulerStepper<Scalar>::setPoints(
     const std::vector<Scalar>& time_vec
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
@@ -245,7 +251,7 @@ bool ForwardEulerStepper<Scalar>::SetPoints(
 }
 
 template<class Scalar>
-bool ForwardEulerStepper<Scalar>::GetPoints(
+bool ForwardEulerStepper<Scalar>::getPoints(
     const std::vector<Scalar>& time_vec
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
@@ -255,28 +261,33 @@ bool ForwardEulerStepper<Scalar>::GetPoints(
 }
 
 template<class Scalar>
-bool ForwardEulerStepper<Scalar>::SetRange(
-    const Scalar& time_lower
-    ,const Scalar& time_upper
-    ,const InterpolationBufferBase<Scalar>& IB)
+bool ForwardEulerStepper<Scalar>::setRange(
+  const TimeRange<Scalar>& range,
+  const InterpolationBufferBase<Scalar>& IB)
 {
   return(false);
 }
 
 template<class Scalar>
-bool ForwardEulerStepper<Scalar>::GetNodes(std::vector<Scalar>* time_vec) const
+TimeRange<Scalar> ForwardEulerStepper<Scalar>::getTimeRange() const
+{
+  return invalidTimeRange<Scalar>();
+}
+
+template<class Scalar>
+bool ForwardEulerStepper<Scalar>::getNodes(std::vector<Scalar>* time_vec) const
 {
   return(false);
 }
 
 template<class Scalar>
-bool ForwardEulerStepper<Scalar>::RemoveNodes(std::vector<Scalar>& time_vec) 
+bool ForwardEulerStepper<Scalar>::removeNodes(std::vector<Scalar>& time_vec) 
 {
   return(false);
 }
 
 template<class Scalar>
-int ForwardEulerStepper<Scalar>::GetOrder() const
+int ForwardEulerStepper<Scalar>::getOrder() const
 {
   return(1);
 }
@@ -311,6 +322,12 @@ void ForwardEulerStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyr
   model_ = model;
 }
 
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+ForwardEulerStepper<Scalar>::getModel() const
+{
+  return model_;
+}
 
 } // namespace Rythmos
 

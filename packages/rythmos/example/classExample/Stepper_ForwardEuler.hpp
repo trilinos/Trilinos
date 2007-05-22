@@ -43,7 +43,7 @@ class ForwardEulerStepper : public Stepper<Scalar>
     ForwardEulerStepper();
     ForwardEulerStepper(ModelEvaluator<Scalar> *model);
     ~ForwardEulerStepper();
-    Scalar TakeStep(Scalar dt);
+    Scalar takeStep(Scalar dt);
     Scalar get_solution();
   protected:
     Scalar t_;
@@ -69,7 +69,7 @@ ForwardEulerStepper<Scalar>::~ForwardEulerStepper()
 {
 }
 template<class Scalar>
-Scalar ForwardEulerStepper<Scalar>::TakeStep(Scalar dt)
+Scalar ForwardEulerStepper<Scalar>::takeStep(Scalar dt)
 {
   f_ = model_->evalModel(x_,t_);
   x_ = x_ + dt*f_;

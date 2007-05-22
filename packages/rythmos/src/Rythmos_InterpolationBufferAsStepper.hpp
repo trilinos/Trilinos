@@ -61,7 +61,7 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
     
     /// Redefined from InterpolationBufferBase
     /// This is a pass-through to the underlying InterpolationBufferBase:
-    bool SetPoints(
+    bool setPoints(
       const std::vector<Scalar>& time_vec
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
@@ -69,7 +69,7 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
       );
 
     // This is not a pass-through.
-    bool GetPoints(
+    bool getPoints(
       const std::vector<Scalar>& time_vec_
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec_
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec_
@@ -77,20 +77,22 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
       ) const;
 
     /// This is a pass-through to the underlying InterpolationBufferBase:
-    bool SetRange(
-      const Scalar& time_lower
-      ,const Scalar& time_upper
-      ,const InterpolationBufferBase<Scalar>& IB_
+    bool setRange(
+      const TimeRange<Scalar>& range,
+      const InterpolationBufferBase<Scalar>& IB
       );
 
-    /// This is a pass-through to the underlying InterpolationBufferBase:
-    bool GetNodes(std::vector<Scalar>* time_vec) const;
+    /** \brief . */
+    TimeRange<Scalar> getTimeRange() const;
 
     /// This is a pass-through to the underlying InterpolationBufferBase:
-    virtual bool RemoveNodes(std::vector<Scalar>& time_vec);
+    bool getNodes(std::vector<Scalar>* time_vec) const;
 
     /// This is a pass-through to the underlying InterpolationBufferBase:
-    int GetOrder() const;
+    virtual bool removeNodes(std::vector<Scalar>& time_vec);
+
+    /// This is a pass-through to the underlying InterpolationBufferBase:
+    int getOrder() const;
 
     /// Redefined from Teuchos::Describable
     /** \brief . */
@@ -167,7 +169,7 @@ void InterpolationBufferAsStepper<Scalar>::setStepper(
   // 10/9/06 tscoffe:  What should we do if this is called after initialization?
   //                   Basically, you're swapping out the stepper for a new one.
   //                   Since we're copying the data into IB after each
-  //                   stepper->TakeStep() call, this should be fine, and it
+  //                   stepper->takeStep() call, this should be fine, and it
   //                   will essentially result in changing the stepper
   //                   mid-stream.  If the new stepper has a time value before
   //                   the end of the data in IB, then you will not get new
@@ -199,7 +201,7 @@ void InterpolationBufferAsStepper<Scalar>::setInterpolationBuffer(
   //                   one.  This could be the result of upgrading or
   //                   downgrading the accuracy of the buffer, or something I
   //                   haven't thought of yet.  Since IB's node_vec is checked
-  //                   each time GetPoints is called, this should be fine.  And
+  //                   each time getPoints is called, this should be fine.  And
   //                   the time values in IB need not be synchronized with
   //                   stepper.
   //                   Note also:  this functionality is important for checkpointing.
@@ -213,18 +215,18 @@ void InterpolationBufferAsStepper<Scalar>::setInterpolationBuffer(
 
 
 template<class Scalar>
-bool InterpolationBufferAsStepper<Scalar>::SetPoints(
+bool InterpolationBufferAsStepper<Scalar>::setPoints(
       const std::vector<Scalar>& time_vec
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
       ,const std::vector<ScalarMag> & accuracy_vec 
       ) 
 {
-  return(IB->SetPoints(time_vec,x_vec,xdot_vec,accuracy_vec));
+  return(IB->setPoints(time_vec,x_vec,xdot_vec,accuracy_vec));
 }
 
 template<class Scalar>
-bool InterpolationBufferAsStepper<Scalar>::GetPoints(
+bool InterpolationBufferAsStepper<Scalar>::getPoints(
       const std::vector<Scalar>& time_vec_
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec_ptr_
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec_ptr_
@@ -233,7 +235,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"IBAS::GetPoints");
+  Teuchos::OSTab ostab(out,1,"IBAS::getPoints");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "time_vec_ = " << std::endl;
     for (unsigned int i=0 ; i<time_vec_.size() ; ++i) {
@@ -276,13 +278,13 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       }
     }
   }
-  bool status = IB->GetPoints(time_vec_,x_vec_ptr_,xdot_vec_ptr_,accuracy_vec_ptr_);
+  bool status = IB->getPoints(time_vec_,x_vec_ptr_,xdot_vec_ptr_,accuracy_vec_ptr_);
   if (status) {
     return(status); 
   }
   x_vec_ptr_->clear();
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
-    *out << "IB->GetPoints unsuccessful" << std::endl;
+    *out << "IB->getPoints unsuccessful" << std::endl;
   }
   status = true;
   std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > &x_vec = *x_vec_ptr_;
@@ -299,15 +301,15 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
   }
   // Get nodes out of IB:
   std::vector<Scalar> node_vec; 
-  status = IB->GetNodes(&node_vec); 
+  status = IB->getNodes(&node_vec); 
   if (!status) {
     return(status);
   }
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     if (node_vec.size() == 0) {
-      *out << "IB->GetNodes: node_vec = empty vector" << std::endl;
+      *out << "IB->getNodes: node_vec = empty vector" << std::endl;
     } else {
-      *out << "IB->GetNodes:" << std::endl;
+      *out << "IB->getNodes:" << std::endl;
       for (unsigned int i=0 ; i<node_vec.size() ; ++i) {
         *out << "node_vec[" << i << "] = " << node_vec[i] << std::endl;
       }
@@ -316,7 +318,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
   if (node_vec.size() == 0) {
     // Initialization case for an empty InterpolationBuffer
     std::vector<Scalar> stepper_vec;
-    status = stepper->GetNodes(&stepper_vec);
+    status = stepper->getNodes(&stepper_vec);
     if (!status) {
       return(status);
     }
@@ -327,12 +329,12 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       }
       Scalar step_taken;
       if (parameterList->isParameter("fixed_dt")) {
-        step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"),FIXED_STEP);
+        step_taken = stepper->takeStep(parameterList->get<Scalar>("fixed_dt"),FIXED_STEP);
       } else {
-        step_taken = stepper->TakeStep(ST::zero(),VARIABLE_STEP);
+        step_taken = stepper->takeStep(ST::zero(),VARIABLE_STEP);
       }
       // Pass information from stepper to IB:
-      status = stepper->GetNodes(&stepper_vec);
+      status = stepper->getNodes(&stepper_vec);
       if (!status) {
         return(status);
       }
@@ -342,11 +344,11 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
         *out << "stepper_begin = " << stepper_begin << std::endl;
         *out << "stepper_end = " << stepper_end << std::endl;
       }
-      status = IB->SetRange(stepper_begin,stepper_end,*stepper);
+      status = IB->setRange(timeRange(stepper_begin,stepper_end),*stepper);
       if (!status) {
         return(status);
       }
-      status = IB->GetNodes(&node_vec);
+      status = IB->getNodes(&node_vec);
       if (!status) {
         return(status);
       }
@@ -356,7 +358,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
         *out << "Initializing empty InterpolationBuffer" << std::endl;
       }
       std::vector<Scalar> stepper_vec;
-      status = stepper->GetNodes(&stepper_vec);
+      status = stepper->getNodes(&stepper_vec);
       if (!status) {
         return(status);
       }
@@ -366,11 +368,11 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
         *out << "stepper_begin = " << stepper_begin << std::endl;
         *out << "stepper_end = " << stepper_end << std::endl;
       }
-      status = IB->SetRange(stepper_begin,stepper_end,*stepper);
+      status = IB->setRange(timeRange(stepper_begin,stepper_end),*stepper);
       if (!status) {
         return(status);
       }
-      status = IB->GetNodes(&node_vec);
+      status = IB->getNodes(&node_vec);
       if (!status) {
         return(status);
       }
@@ -391,7 +393,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
   }
   // Get time out of stepper:
   std::vector<Scalar> stepper_vec;
-  status = stepper->GetNodes(&stepper_vec);
+  status = stepper->getNodes(&stepper_vec);
   if (!status) {
     return(status);
   }
@@ -403,20 +405,20 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
     Scalar stepper_begin = *(stepper_vec.begin()); // There must be an IC in the stepper.
     Scalar step_taken;
     if (parameterList->isParameter("fixed_dt")) {
-      step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"),FIXED_STEP);
+      step_taken = stepper->takeStep(parameterList->get<Scalar>("fixed_dt"),FIXED_STEP);
     } else {
-      step_taken = stepper->TakeStep(ST::zero(),VARIABLE_STEP);
+      step_taken = stepper->takeStep(ST::zero(),VARIABLE_STEP);
     }
-    status = stepper->GetNodes(&stepper_vec);
+    status = stepper->getNodes(&stepper_vec);
     if (!status) {
       return(status);
     }
     // Pass information from stepper to IB:
-    status = IB->SetRange(stepper_begin,stepper_begin+step_taken,*stepper);
+    status = IB->setRange(timeRange(stepper_begin,stepper_begin+step_taken),*stepper);
     if (!status) { 
       return(status);
     }
-    status = IB->GetNodes(&node_vec); 
+    status = IB->getNodes(&node_vec); 
     if (!status) { 
       return(status);
     }
@@ -446,12 +448,12 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       tmp_time_vec.push_back(local_time_vec[i]);
       std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
       std::vector<ScalarMag> tmp_accuracy_vec;
-      status = IB->GetPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
+      status = IB->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
       x_vec.push_back(tmp_x_vec[0]);
       xdot_vec.push_back(tmp_xdot_vec[0]);
       accuracy_vec.push_back(tmp_accuracy_vec[0]);
       if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
-        *out << "IB->GetPoints returned:" << std::endl;
+        *out << "IB->getPoints returned:" << std::endl;
         *out << "tmp_x_vec = " << std::endl;
         tmp_x_vec[0]->describe(*out,Teuchos::VERB_EXTREME);
         if (tmp_xdot_vec[0] == Teuchos::null) {
@@ -475,12 +477,12 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       tmp_time_vec.push_back(local_time_vec[i]);
       std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
       std::vector<ScalarMag> tmp_accuracy_vec;
-      status = stepper->GetPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
+      status = stepper->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
       x_vec.push_back(tmp_x_vec[0]);
       xdot_vec.push_back(tmp_xdot_vec[0]);
       accuracy_vec.push_back(tmp_accuracy_vec[0]);
       if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
-        *out << "stepper->GetPoints returned:" << std::endl;
+        *out << "stepper->getPoints returned:" << std::endl;
         *out << "tmp_x_vec = " << std::endl;
         tmp_x_vec[0]->describe(*out,Teuchos::VERB_EXTREME);
         if (tmp_xdot_vec[0] == Teuchos::null) {
@@ -505,16 +507,16 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
         // integrate forward with stepper 
         Scalar step_taken;
         if (parameterList->isParameter("fixed_dt")) {
-          step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"),FIXED_STEP);
+          step_taken = stepper->takeStep(parameterList->get<Scalar>("fixed_dt"),FIXED_STEP);
         } else {
-          step_taken = stepper->TakeStep(ST::zero(),VARIABLE_STEP);
+          step_taken = stepper->takeStep(ST::zero(),VARIABLE_STEP);
         }
         num_local_steps_taken++;
         if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_MEDIUM) ) {
           *out << "Took step of size " << step_taken << " with stepper" << std::endl;
         }
         // Pass information from stepper to IB:
-        status = IB->SetRange(stepper_end+step_taken,stepper_end+step_taken,*stepper);
+        status = IB->setRange(timeRange(stepper_end+step_taken,stepper_end+step_taken),*stepper);
         if (!status) { 
           return(status);
         }
@@ -533,7 +535,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
           tmp_time_vec.push_back(local_time_vec[i]);
           std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
           std::vector<ScalarMag> tmp_accuracy_vec;
-          status = stepper->GetPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
+          status = stepper->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
           x_vec.push_back(tmp_x_vec[0]);
           xdot_vec.push_back(tmp_xdot_vec[0]);
           accuracy_vec.push_back(tmp_accuracy_vec[0]);
@@ -555,47 +557,55 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
 }
 
 template<class Scalar>
-bool InterpolationBufferAsStepper<Scalar>::SetRange(
-      const Scalar& time_lower
-      ,const Scalar& time_upper
-      ,const InterpolationBufferBase<Scalar> & IB_
-      )
+bool InterpolationBufferAsStepper<Scalar>::setRange(
+  const TimeRange<Scalar>& range,
+  const InterpolationBufferBase<Scalar> & IB_
+  )
 {
+  const Scalar time_lower = range.lower();
+  const Scalar time_upper = range.upper();
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"IBAS::SetRange");
+  Teuchos::OSTab ostab(out,1,"IBAS::setRange");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "time_lower = " << time_lower << std::endl;
     *out << "time_upper = " << time_upper << std::endl;
     *out << "IB = " << IB_.description() << std::endl;
   }
-  return(IB->SetRange(time_lower,time_upper,IB_));
+  return(IB->setRange(timeRange(time_lower,time_upper),IB_));
 }
 
 template<class Scalar>
-bool InterpolationBufferAsStepper<Scalar>::GetNodes(
+TimeRange<Scalar> InterpolationBufferAsStepper<Scalar>::getTimeRange() const
+{
+  TEST_FOR_EXCEPT("ToDo: Implement this!");
+  return invalidTimeRange<Scalar>(); // ToDo: Fill in this range, I know you have one!
+}
+
+template<class Scalar>
+bool InterpolationBufferAsStepper<Scalar>::getNodes(
     std::vector<Scalar>* time_vec
     ) const
 {
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"IBAS::GetNodes");
+  Teuchos::OSTab ostab(out,1,"IBAS::getNodes");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << this->description() << std::endl;
   }
-  return(IB->GetNodes(time_vec));
+  return(IB->getNodes(time_vec));
 }
 
 template<class Scalar>
-bool InterpolationBufferAsStepper<Scalar>::RemoveNodes(
+bool InterpolationBufferAsStepper<Scalar>::removeNodes(
     std::vector<Scalar>& time_vec
     ) 
 {
-  return(IB->RemoveNodes(time_vec));
+  return(IB->removeNodes(time_vec));
 }
 
 template<class Scalar>
-int InterpolationBufferAsStepper<Scalar>::GetOrder() const
+int InterpolationBufferAsStepper<Scalar>::getOrder() const
 {
-  return(IB->GetOrder());
+  return(IB->getOrder());
 }
 
 template<class Scalar>

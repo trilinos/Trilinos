@@ -51,7 +51,7 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
-#include "Thyra_TimeStepNewtonNonlinearSolver.hpp"
+#include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
 #include "Thyra_TestingTools.hpp"
 
@@ -199,8 +199,8 @@ int main(int argc, char *argv[])
     } else if (method_val == METHOD_BE) {
       Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<double> >
         nonlinearSolver;
-      Teuchos::RefCountPtr<Thyra::TimeStepNewtonNonlinearSolver<double> >
-        _nonlinearSolver = Teuchos::rcp(new Thyra::TimeStepNewtonNonlinearSolver<double>());
+      Teuchos::RefCountPtr<Rythmos::TimeStepNonlinearSolver<double> >
+        _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
       _nonlinearSolver->defaultTol(1e-3*maxError);
       nonlinearSolver = _nonlinearSolver;
       stepper_ptr = Teuchos::rcp(new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
@@ -208,8 +208,8 @@ int main(int argc, char *argv[])
     } else if (method_val == METHOD_BDF) {
       Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<double> >
         nonlinearSolver;
-      Teuchos::RefCountPtr<Thyra::TimeStepNewtonNonlinearSolver<double> >
-        _nonlinearSolver = Teuchos::rcp(new Thyra::TimeStepNewtonNonlinearSolver<double>());
+      Teuchos::RefCountPtr<Rythmos::TimeStepNonlinearSolver<double> >
+        _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
       _nonlinearSolver->defaultTol(1e-3*maxError);
       nonlinearSolver = _nonlinearSolver;
       Teuchos::RefCountPtr<Teuchos::ParameterList> BDFparams = Teuchos::rcp(new Teuchos::ParameterList);
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
       // Integrate forward with fixed step sizes:
       for (int i=1 ; i<=N ; ++i)
       {
-        double dt_taken = stepper.TakeStep(dt,Rythmos::FIXED_STEP);
+        double dt_taken = stepper.takeStep(dt,Rythmos::FIXED_STEP);
         numSteps++;
         if (dt_taken != dt)
         {
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
     {
       while (time < finalTime)
       {
-        double dt_taken = stepper.TakeStep(0.0,Rythmos::VARIABLE_STEP);
+        double dt_taken = stepper.takeStep(0.0,Rythmos::VARIABLE_STEP);
         numSteps++;
         if (outputLevel >= 3)
         {

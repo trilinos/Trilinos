@@ -30,8 +30,6 @@
 #define THYRA_EPETRA_THYRA_WRAPPERS_HPP
 
 #include "Thyra_EpetraTypes.hpp"
-#include "Thyra_SpmdVectorSpaceBase.hpp"
-#include "Thyra_SpmdMultiVectorBase.hpp"
 
 namespace Teuchos { template<class Ordinal> class Comm; }
 
@@ -42,7 +40,7 @@ namespace Thyra {
 \ingroup Epetra_Thyra_Op_Vec_adapters_grp
 
 This set of functions provides some general utility code for wrapping Epetra
-objects in standard %Thyra Spmd subclass implementations and for getting Epetra
+objects in standard %Thyra subclass implementations and for getting Epetra
 views of %Thyra objects.
 
 */
@@ -58,8 +56,8 @@ views of %Thyra objects.
 Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
 create_Comm( const Teuchos::RefCountPtr<const Epetra_Comm> &epetraComm );
 
-/** \brief Concrete an <tt>SpmdVectorSpaceBase</tt> object given an <tt>Epetra_Map</tt>
- * object.
+/** \brief Concrete an <tt>VectorSpaceBase</tt> object given an
+ * <tt>Epetra_Map</tt> object.
  *
  * \param  epetra_map  [in] The Epetra map defining the partitioning of elements
  *                     to processors.
@@ -76,7 +74,7 @@ create_Comm( const Teuchos::RefCountPtr<const Epetra_Comm> &epetraComm );
  * </ul>
  *
  * This uses an <tt>Epetra_Map</tt> object to initialize a compatible
- * <tt>DefaultSpmdVectorSpace</tt> object.
+ * <tt>VectorSpaceBase</tt> object.
  *
  * The fact that this function only accepts an <tt>Epetra_Map</tt> object
  * means that only maps that have elements of size one can be used to define a
@@ -85,19 +83,39 @@ create_Comm( const Teuchos::RefCountPtr<const Epetra_Comm> &epetraComm );
  * maps are of type <tt>Epetra_Map</tt>.
  *
  * This function works properly even if Epetra is not compiled with support
- * for Spmd (i.e. <tt>HAVE_Spmd</tt> is not defined when compiling and linking).
- * If Spmd support is not compiled into Epetra, then the dummy implementation
- * defined in <tt>RTOp_mpi.h</tt> is used instead.
+ * for SPMD (i.e. <tt>HAVE_MPI</tt> is not defined when compiling and
+ * linking).  If SPMD support is not compiled into Epetra, then a serial
+ * implementation of the communication is used instead.
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> >
+Teuchos::RefCountPtr<const VectorSpaceBase<double> >
 create_VectorSpace(
   const Teuchos::RefCountPtr<const Epetra_Map> &epetra_map
   );
 
-/** \brief Create a non-<tt>const</tt> <tt>SpmdVectorBase</tt> object from
- * a <tt>const> <tt>Epetra_Vector</tt> object.
+/** \brief Concrete a <tt>VectorSpaceBase</tt> object that creates locally replicated
+ * vector objects.
+ *
+ * \param  parentSpace
+ *           [in] The vector space that will be used to create the smaller
+ *           locally-replicated vector space.
+ * \param  dim
+ *           [in] The dimension of the locally replicated vector space.
+ *
+ * Note: This vector space will be compatible with the domain space of a
+ * multivector. which has the range space <tt>parentSpace</tt>.
+ *
+ * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ */
+Teuchos::RefCountPtr<const VectorSpaceBase<double> >
+create_LocallyReplicatedVectorSpace(
+  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &parentSpace,
+  const int dim
+  );
+
+/** \brief Create a non-<tt>const</tt> <tt>VectorBase</tt> object from a
+ * <tt>const> <tt>Epetra_Vector</tt> object.
  *
  * @param  epetra_v  [in] Smart pointer to the <tt>Epetra_Vector</tt> object to wrap.
  * @param  space     [in] The vector space that is compatible with <tt>epetra_v->Map()</tt>.
@@ -112,23 +130,22 @@ create_VectorSpace(
  * </ul>
  *
  * \return The returned <tt>RefCountPtr</tt> object contains a copy of the
- * input <tt>RefCountPtr<Epetra_Vector></tt> wrapped
- * <tt>Epetra_Vector</tt> object.  It is also stated that
- * <tt>*epetra_v</tt> will only be guaranteed to be modifed after the last
- * <tt>RefCountPtr</tt> to the returned <tt>SpmdVectorBase</tt> is
- * destroyed.  In addition, <tt>*return</tt> is only valid as long as
- * one <tt>RefCoutPtr</tt> wrapper object still exits.
+ * input <tt>RefCountPtr<Epetra_Vector></tt> wrapped <tt>Epetra_Vector</tt>
+ * object.  It is also stated that <tt>*epetra_v</tt> will only be guaranteed
+ * to be modifed after the last <tt>RefCountPtr</tt> to the returned
+ * <tt>VectorBase</tt> is destroyed.  In addition, <tt>*return</tt> is only
+ * valid as long as one <tt>RefCoutPtr</tt> wrapper object still exits.
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<SpmdVectorBase<double> >
+Teuchos::RefCountPtr<VectorBase<double> >
 create_Vector(
-  const Teuchos::RefCountPtr<Epetra_Vector>                                &epetra_v
-  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >          &space
+  const Teuchos::RefCountPtr<Epetra_Vector> &epetra_v,
+  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &space
   );
 
-/** \brief Create an <tt>const</tt> <tt>SpmdVectorBase</tt> wrapper object
- * for a <tt>const</tt> <tt>Epetra_Vector</tt> object.
+/** \brief Create an <tt>const</tt> <tt>VectorBase</tt> wrapper object for
+ * a <tt>const</tt> <tt>Epetra_Vector</tt> object.
  *
  * @param  epetra_v  [in] Smart pointer to the <tt>Epetra_Vector</tt> object to wrap.
  * @param  space     [in] The vector space that is compatible with <tt>epetra_v->Map()</tt>.
@@ -149,14 +166,14 @@ create_Vector(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<const SpmdVectorBase<double> >
+Teuchos::RefCountPtr<const VectorBase<double> >
 create_Vector(
-  const Teuchos::RefCountPtr<const Epetra_Vector>                          &epetra_v
-  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >          &space
+  const Teuchos::RefCountPtr<const Epetra_Vector> &epetra_v,
+  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &space
   );
 
-/** \brief Create a non-<tt>const</tt> <tt>SpmdMultiVectorBase</tt> object from
- * a <tt>const> <tt>Epetra_MultiVector</tt> object.
+/** \brief Create a non-<tt>const</tt> <tt>MultiVectorBase</tt> object from a
+ * <tt>const> <tt>Epetra_MultiVector</tt> object.
  *
  * @param  epetra_mv  [in] Smart pointer to the <tt>Epetra_MultiVector</tt> object to wrap.
  * @param  range      [in] The vector space that is compatible with <tt>epetra_mv->Map()</tt>.
@@ -172,20 +189,20 @@ create_Vector(
  * input <tt>RefCountPtr<Epetra_MultiVector></tt> wrapped
  * <tt>Epetra_MultiVector</tt> object.  It is also stated that
  * <tt>*epetra_mv</tt> will only be guaranteed to be modifed after the last
- * <tt>RefCountPtr</tt> to the returned <tt>SpmdMultiVectorBase</tt> is
- * destroyed.  In addition, <tt>*return</tt> is only valid as long as
- * one <tt>RefCoutPtr</tt> wrapper object still exits.
+ * <tt>RefCountPtr</tt> to the returned <tt>MultiVectorBase</tt> is destroyed.
+ * In addition, <tt>*return</tt> is only valid as long as one
+ * <tt>RefCoutPtr</tt> wrapper object still exits.
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<SpmdMultiVectorBase<double> >
+Teuchos::RefCountPtr<MultiVectorBase<double> >
 create_MultiVector(
-  const Teuchos::RefCountPtr<Epetra_MultiVector>                           &epetra_mv
-  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >          &range
-  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain = Teuchos::null
+  const Teuchos::RefCountPtr<Epetra_MultiVector> &epetra_mv,
+  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &range,
+  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &domain = Teuchos::null
   );
 
-/** \brief Create an <tt>const</tt> <tt>SpmdMultiVectorBase</tt> wrapper object
+/** \brief Create an <tt>const</tt> <tt>MultiVectorBase</tt> wrapper object
  * for a <tt>const</tt> <tt>Epetra_MultiVector</tt> object.
  *
  * @param  epetra_mv  [in] Smart pointer to the <tt>Epetra_MultiVector</tt> object to wrap.
@@ -205,11 +222,11 @@ create_MultiVector(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<const SpmdMultiVectorBase<double> >
+Teuchos::RefCountPtr<const MultiVectorBase<double> >
 create_MultiVector(
-  const Teuchos::RefCountPtr<const Epetra_MultiVector>                     &epetra_mv
-  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >          &range
-  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain = Teuchos::null
+  const Teuchos::RefCountPtr<const Epetra_MultiVector> &epetra_mv,
+  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &range,
+  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &domain = Teuchos::null
   );
 
 /** \brief Get a non-<tt>const</tt> <tt>Epetra_Vector</tt> view from a
@@ -236,8 +253,8 @@ create_MultiVector(
  */
 Teuchos::RefCountPtr<Epetra_Vector>
 get_Epetra_Vector(
-  const Epetra_Map                                    &map
-  ,const Teuchos::RefCountPtr<VectorBase<double> >    &v
+  const Epetra_Map &map,
+  const Teuchos::RefCountPtr<VectorBase<double> > &v
   );
 
 /** \brief Get a <tt>const</tt> <tt>Epetra_Vector</tt> view from a
@@ -261,8 +278,8 @@ get_Epetra_Vector(
  */
 Teuchos::RefCountPtr<const Epetra_Vector>
 get_Epetra_Vector(
-  const Epetra_Map                                         &map 
-  ,const Teuchos::RefCountPtr<const VectorBase<double> >   &v
+  const Epetra_Map &map,
+  const Teuchos::RefCountPtr<const VectorBase<double> > &v
   );
 
 /** \brief Get a non-<tt>const</tt> <tt>Epetra_MultiVector</tt> view from a
@@ -290,8 +307,8 @@ get_Epetra_Vector(
  */
 Teuchos::RefCountPtr<Epetra_MultiVector>
 get_Epetra_MultiVector(
-  const Epetra_Map                                         &map
-  ,const Teuchos::RefCountPtr<MultiVectorBase<double> >    &mv
+  const Epetra_Map &map,
+  const Teuchos::RefCountPtr<MultiVectorBase<double> > &mv
   );
 
 /** \brief Get a <tt>const</tt> <tt>Epetra_MultiVector</tt> view from a
@@ -315,8 +332,8 @@ get_Epetra_MultiVector(
  */
 Teuchos::RefCountPtr<const Epetra_MultiVector>
 get_Epetra_MultiVector(
-  const Epetra_Map                                              &map 
-  ,const Teuchos::RefCountPtr<const MultiVectorBase<double> >   &mv
+  const Epetra_Map &map, 
+  const Teuchos::RefCountPtr<const MultiVectorBase<double> > &mv
   );
 
 } // namespace Thyra

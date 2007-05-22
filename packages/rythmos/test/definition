@@ -177,6 +177,47 @@
     COMM = SERIAL,MPI;
 }
 
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL0) {
+    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    ARGS =
+      --linear-solver-extra-params="
+        <ParameterList>
+          <ParameterList name=\"Stratimikos\">
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"2\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"none\"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_MEDIUM;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL1) {
+    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    ARGS =
+      --linear-solver-extra-params="
+        <ParameterList>
+          <ParameterList name=\"Stratimikos\">
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"2\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{ 31.4159 \}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"none\"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_MEDIUM;
+    COMM = SERIAL;
+}
+
 # Explicit Taylor polynomial integration on Van der Pol oscillator
 (FRAMEWORK,INSTALL) {
     TESTS = ExplicitTaylorPolynomialStepper/VanDerPolOscillator/vdp.exe;
@@ -184,4 +225,3 @@
     COMM = SERIAL;
     EXIT-STATUS = STRING-COMPARISON(Test passed!);
 }
-

@@ -77,7 +77,6 @@ std::string toString(const EVerbosityLevel verbLevel)
       TEST_FOR_EXCEPT("Should never get here!");
   }
   return ""; // Never get here!
-
 }
 
 

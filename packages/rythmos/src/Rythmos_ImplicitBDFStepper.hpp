@@ -35,7 +35,7 @@
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
-#include "Thyra_SingleResidSSDAEModelEvaluator.hpp"
+#include "Rythmos_SingleResidualModelEvaluator.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
 
 namespace Rythmos {
@@ -71,6 +71,10 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
     void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
 
     /** \brief . */
+    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+    getModel() const;
+
+    /** \brief . */
     void setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver);
 
     /** \brief . */
@@ -79,10 +83,10 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
         );
 
     /** \brief . */
-    Scalar TakeStep(Scalar dt, StepSizeType flag);
+    Scalar takeStep(Scalar dt, StepSizeType flag);
 
     /** \brief . */
-    const StepStatus<Scalar> getStepStatus();
+    const StepStatus<Scalar> getStepStatus() const;
 
     /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
@@ -111,7 +115,7 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
     
     /// Redefined from InterpolationBufferBase 
     /// Add points to buffer
-    bool SetPoints(
+    bool setPoints(
       const std::vector<Scalar>& time_vec
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
@@ -119,7 +123,7 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
       );
     
     /// Get values from buffer
-    bool GetPoints(
+    bool getPoints(
       const std::vector<Scalar>& time_vec
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
@@ -127,20 +131,22 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
       ) const;
 
     /// Fill data in from another interpolation buffer
-    bool SetRange(
-      const Scalar& time_lower
-      ,const Scalar& time_upper
-      ,const InterpolationBufferBase<Scalar> & IB
+    bool setRange(
+      const TimeRange<Scalar>& range,
+      const InterpolationBufferBase<Scalar> & IB
       );
 
+    /** \brief . */
+    TimeRange<Scalar> getTimeRange() const;
+
     /// Get interpolation nodes
-    bool GetNodes(std::vector<Scalar>* time_vec) const;
+    bool getNodes(std::vector<Scalar>* time_vec) const;
 
     /// Remove interpolation nodes
-    bool RemoveNodes(std::vector<Scalar>& time_vec);
+    bool removeNodes(std::vector<Scalar>& time_vec);
 
     /// Get order of interpolation
-    int GetOrder() const;
+    int getOrder() const;
 
     /// Redefined from Teuchos::ParameterListAcceptor
     /** \brief . */
@@ -180,7 +186,7 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
     // 05/05/06 tscoffe:  I hate the underscores for private variables!
     Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
     Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > solver_;
-    Thyra::SingleResidSSDAEModelEvaluator<Scalar>   neModel_;
+    Rythmos::SingleResidualModelEvaluator<Scalar>   neModel_;
 
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xn0_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xpn0_;
@@ -359,6 +365,13 @@ void ImplicitBDFStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra
 }
 
 template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+ImplicitBDFStepper<Scalar>::getModel() const
+{
+  return model_;
+}
+
+template<class Scalar>
 void ImplicitBDFStepper<Scalar>::getInitialCondition_()
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -402,7 +415,7 @@ void ImplicitBDFStepper<Scalar>::setInitialCondition(
 }
 
 template<class Scalar>
-Scalar ImplicitBDFStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
+Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   if (!isInitialized_) {
@@ -424,7 +437,7 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
   }
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"TakeStep");
+  Teuchos::OSTab ostab(out,1,"takeStep");
   BDFstatusFlag status;
   while (1) {
     // Set up problem coefficients (and handle first step)
@@ -447,24 +460,31 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
     //
     Scalar coeff_x_dot = Scalar(-ST::one())*alpha_s_/hh_;
     V_StVpStV( &*x_dot_base_, ST::one(), *xpn0_, alpha_s_/hh_, *xn0_ );
-    neModel_.initialize(model_,coeff_x_dot,x_dot_base_,ST::one(),Teuchos::null,time_+hh_,xn0_);
+    neModel_.initializeSingleResidualModel(
+      model_,
+      coeff_x_dot, x_dot_base_,
+      ST::one(), Teuchos::null,
+      time_+hh_,
+      xn0_
+      );
     //
     // Solve the implicit nonlinear system to a tolerance of ???
     // 
-    // 05/08/06 tscoffe:  I really need to get the update, not the solution from
-    // the nonlinear solver.
     if(solver_->getModel().get()!=&neModel_) {
       solver_->setModel( Teuchos::rcp(&neModel_,false) );
     }
-    /* // Thyra::TimeStepNewtonNonlinearSolver uses a built in solveCriteria, so you can't pass one in.
+    /* // Rythmos::TimeStepNonlinearSolver uses a built in solveCriteria, so you can't pass one in.
        // I believe this is the correct solveCriteria for IDA though.
     Thyra::SolveMeasureType nonlinear_solve_measure_type(Thyra::SOLVE_MEASURE_NORM_RESIDUAL,Thyra::SOLVE_MEASURE_ONE); 
     ScalarMag tolerance = relErrTol_/ScalarMag(10.0); // This should be changed to match the condition in IDA
     Thyra::SolveCriteria<Scalar> nonlinearSolveCriteria(nonlinear_solve_measure_type, tolerance);
     Thyra::SolveStatus<Scalar> nonlinearSolveStatus = solver_->solve( &*xn0_, &nonlinearSolveCriteria, &*delta_ ); 
     */
-    //Thyra::assign(&*xn0_,ST::zero()); // 08/10/06 tscoffe:  what is this doing here?  It hoses the solve.
     Thyra::SolveStatus<Scalar> nonlinearSolveStatus = solver_->solve( &*xn0_, NULL, &*ee_ ); 
+    // In the above solve, on input *xn0_ is the initial guess that comes from
+    // the predictor.  On output, *xn0_ is the solved for solution and *ee_ is
+    // the difference computed from the intial guess in *xn0_ to the final
+    // solved value of *xn0_.  This is needed for basic numerical stability.
     if (nonlinearSolveStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)  {
       newtonConvergenceStatus_ = 0;
     } else {
@@ -511,7 +531,7 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep(Scalar dt, StepSizeType flag)
 }
 
 template<class Scalar>
-const StepStatus<Scalar> ImplicitBDFStepper<Scalar>::getStepStatus()
+const StepStatus<Scalar> ImplicitBDFStepper<Scalar>::getStepStatus() const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   StepStatus<Scalar> stepStatus;
@@ -1216,7 +1236,7 @@ Scalar ImplicitBDFStepper<Scalar>::WRMSNorm(const Thyra::VectorBase<Scalar> &w, 
 }
 
 template<class Scalar>
-bool ImplicitBDFStepper<Scalar>::SetPoints(
+bool ImplicitBDFStepper<Scalar>::setPoints(
     const std::vector<Scalar>& time_vec
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
@@ -1227,7 +1247,7 @@ bool ImplicitBDFStepper<Scalar>::SetPoints(
 }
 
 template<class Scalar>
-bool ImplicitBDFStepper<Scalar>::GetPoints(
+bool ImplicitBDFStepper<Scalar>::getPoints(
     const std::vector<Scalar>& time_vec
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
@@ -1248,7 +1268,7 @@ bool ImplicitBDFStepper<Scalar>::GetPoints(
   }
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"BDFS::GetPoints");
+    Teuchos::OSTab ostab(out,1,"BDFS::getPoints");
     *out << "Passing out the interpolated values:" << std::endl;
     for (unsigned int i=0; i<time_vec.size() ; ++i) {
       *out << "time_[" << i << "] = " << time_vec[i] << std::endl;
@@ -1267,16 +1287,21 @@ bool ImplicitBDFStepper<Scalar>::GetPoints(
 }
 
 template<class Scalar>
-bool ImplicitBDFStepper<Scalar>::SetRange(
-    const Scalar& time_lower 
-    ,const Scalar& time_upper
-    ,const InterpolationBufferBase<Scalar>& IB)
+bool ImplicitBDFStepper<Scalar>::setRange(
+  const TimeRange<Scalar>& range,
+  const InterpolationBufferBase<Scalar>& IB)
 {
   return(false);
 }
 
 template<class Scalar>
-bool ImplicitBDFStepper<Scalar>::GetNodes(std::vector<Scalar>* time_vec) const
+TimeRange<Scalar> ImplicitBDFStepper<Scalar>::getTimeRange() const
+{
+  return invalidTimeRange<Scalar>();
+}
+
+template<class Scalar>
+bool ImplicitBDFStepper<Scalar>::getNodes(std::vector<Scalar>* time_vec) const
 {
   if (!isInitialized_) {
     return(false);
@@ -1289,13 +1314,13 @@ bool ImplicitBDFStepper<Scalar>::GetNodes(std::vector<Scalar>* time_vec) const
 }
 
 template<class Scalar>
-bool ImplicitBDFStepper<Scalar>::RemoveNodes(std::vector<Scalar>& time_vec) 
+bool ImplicitBDFStepper<Scalar>::removeNodes(std::vector<Scalar>& time_vec) 
 {
   return(false);
 }
 
 template<class Scalar>
-int ImplicitBDFStepper<Scalar>::GetOrder() const
+int ImplicitBDFStepper<Scalar>::getOrder() const
 {
   if (!isInitialized_) {
     return(-1);

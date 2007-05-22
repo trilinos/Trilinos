@@ -302,7 +302,7 @@ private:
     const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &prodVecSpc
     );
 
-  // Return the index of a "free" parameter in the perild model given its
+  // Return the index of a "free" parameter in the period model given its
   // index in this mulit-period model.
   int period_l(const int l) const
     {

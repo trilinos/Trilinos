@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
   double dt = (t1-t0)/N;
   for (int i=1 ; i<=N ; ++i)
   {
-    stepper->TakeStep(dt);
+    stepper->takeStep(dt);
   }
   std::cout << "Computed x = " << stepper->get_solution() << std::endl;
   std::cout << "Exact    x = " << 1.0*std::exp(-0.5*1.0) << std::endl;
