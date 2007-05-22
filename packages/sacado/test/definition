@@ -4,7 +4,13 @@
 
 # Sacado unit tests
 (FRAMEWORK,INSTALL) {
-    DIRS = TestSuite, tradoptest;
+    DIRS = TestSuite, tradoptest ;
     EXIT-STATUS = STRING-COMPARISON(OK);
     COMM = SERIAL, MPI;
+}
+
+# Sacado examples
+(FRAMEWORK,INSTALL) {
+    DIRS = ../example ;
+    COMM = SERIAL;
 }
