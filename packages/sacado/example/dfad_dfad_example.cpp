@@ -134,5 +134,14 @@ int main(int argc, char **argv)
 	    << std::setw(w) << d2rdbda_ad << " (AD) Error = " << std::setw(w) 
 	    << d2rdadb - d2rdbda_ad << std::endl;
 
-  return 0;
+  double tol = 1.0e-14;
+  if (std::fabs(r - r_ad)             < tol &&
+      std::fabs(drda - drda_ad)       < tol &&
+      std::fabs(drdb - drdb_ad)       < tol &&
+      std::fabs(d2rda2 - d2rda2_ad)   < tol &&
+      std::fabs(d2rdb2 - d2rdb2_ad)   < tol &&
+      std::fabs(d2rdadb - d2rdadb_ad) < tol)
+    return 0;
+  else
+    return 1;
 }
