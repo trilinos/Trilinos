@@ -470,7 +470,7 @@ int newsize;
 
   if (*myCount + newCount > *myMaxCount){
     newsize = *myMaxCount + newCount*2;
-    *myVals = realloc(*myVals, newsize * 2 * sizeof(int));
+    *myVals = (int *)realloc(*myVals, newsize * 2 * sizeof(int));
 
     if (! *myVals){
       return 1;
