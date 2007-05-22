@@ -273,7 +273,7 @@ my $fail = 0;
 mkdir "output", 0755;	# place to store the output
 
 foreach $f (@checkfiles) {
-  my $sum = `cat $f | sed -e 's/^[\t ]*//g' -e 's/[\t ]*\$//g' -e 's/[\t ]\+/ /g' | cksum`;
+  my $sum = `cat $f | sed -e 's/^[\t ]*//g' -e 's/[\t ]*\$//g' -e 's/[\t ]\\+/ /g' | cksum`;
   $sum =~ /(\d+)\s+(\d+)\s+(\S+)/;
   my $sum0 = $1;
   my $sum1 = $2;
