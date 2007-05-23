@@ -32,13 +32,14 @@
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_DataStore.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
+#include "Rythmos_SingleResidualModelEvaluator.hpp"
+#include "Rythmos_SolverAcceptingStepperBase.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
 #include "Thyra_TestingTools.hpp"
-#include "Rythmos_SingleResidualModelEvaluator.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_as.hpp"
 
@@ -56,7 +57,7 @@ namespace Rythmos {
  * features, you should really use the <tt>ImplicitBDFStepper</tt> class.
  */
 template<class Scalar>
-class BackwardEulerStepper : virtual public StepperBase<Scalar>
+class BackwardEulerStepper : virtual public SolverAcceptingStepperBase<Scalar>
 {
 public:
   
@@ -74,15 +75,30 @@ public:
     const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >  &model
     ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >  &solver
     );
-
-  /** \brief . */
-  void setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver);
   
   /** \brief . */
   void setInterpolator(Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator);
   
   /** \brief . */
   Teuchos::RefCountPtr<InterpolatorBase<Scalar> > unsetInterpolator();
+
+  //@}
+
+  /** \name Overridden from SolverAcceptingStepperBase */
+  //@{
+
+  /** \brief . */
+  void setSolver(
+    const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
+    );
+
+  /** \brief . */
+  Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >
+  getSolver();
+
+  /** \brief . */
+  Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> >
+  getSolver() const;
 
   //@}
 
@@ -259,6 +275,33 @@ BackwardEulerStepper<Scalar>::BackwardEulerStepper(
 
 
 template<class Scalar>
+void BackwardEulerStepper<Scalar>::setInterpolator(
+  Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator
+  )
+{
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(is_null(interpolator));
+#endif
+  interpolator_ = interpolator;
+  isInitialized_ = false;
+}
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<InterpolatorBase<Scalar> >
+BackwardEulerStepper<Scalar>::unsetInterpolator()
+{
+  Teuchos::RefCountPtr<InterpolatorBase<Scalar> > temp_interpolator = interpolator_;
+  interpolator_ = Teuchos::null;
+  return(temp_interpolator);
+  isInitialized_ = false;
+}
+
+
+// Overridden from SolverAcceptingStepperBase
+
+
+template<class Scalar>
 void BackwardEulerStepper<Scalar>::setSolver(
   const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
@@ -282,26 +325,18 @@ void BackwardEulerStepper<Scalar>::setSolver(
 
 
 template<class Scalar>
-void BackwardEulerStepper<Scalar>::setInterpolator(
-  Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator
-  )
+Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >
+BackwardEulerStepper<Scalar>::getSolver()
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(interpolator));
-#endif
-  interpolator_ = interpolator;
-  isInitialized_ = false;
+  return solver_;
 }
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<InterpolatorBase<Scalar> >
-BackwardEulerStepper<Scalar>::unsetInterpolator()
+Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> >
+BackwardEulerStepper<Scalar>::getSolver() const
 {
-  Teuchos::RefCountPtr<InterpolatorBase<Scalar> > temp_interpolator = interpolator_;
-  interpolator_ = Teuchos::null;
-  return(temp_interpolator);
-  isInitialized_ = false;
+  return solver_;
 }
 
 

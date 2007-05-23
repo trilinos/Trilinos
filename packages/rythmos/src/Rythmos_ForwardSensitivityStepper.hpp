@@ -32,7 +32,7 @@
 
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_ForwardSensitivityModelEvaluator.hpp"
-#include "Rythmos_BackwardEulerStepper.hpp" // ToDo: Remove this once we have Rythmos::SolverAcceptingStepperBase interface!
+#include "Rythmos_SolverAcceptingStepperBase.hpp"
 #include "Rythmos_SingleResidualModelEvaluatorBase.hpp"
 #include "Teuchos_Assert.hpp"
 
@@ -511,20 +511,19 @@ void ForwardSensitivityStepper<Scalar>::initialize(
                                    // stateTimeStepSolver to check this!
 
   stateStepper_->setModel(stateModel_);
-  rcp_dynamic_cast<BackwardEulerStepper<Scalar> >(stateStepper_)->setSolver(stateTimeStepSolver_);
+  rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(
+    stateStepper_)->setSolver(stateTimeStepSolver_);
   sensStepper_->setModel(sensModel_);
-  rcp_dynamic_cast<BackwardEulerStepper<Scalar> >(sensStepper_)->setSolver(sensTimeStepSolver_);
+  rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(
+    sensStepper_)->setSolver(sensTimeStepSolver_);
 
   stateBasePoint_t_ = stateModel_->createInArgs();
-
-  // 2007/05/18: rabartl: ToDo: Replace the above dynamic casts with dynamic
-  // casts with BackwardEulerStepper<Scalar> to SolverAcceptingStepperBase!
 
   //
   // Setup the initial condition
   //
 
-  t_ = 0.0;
+  t_ = stateBasePoint_t_.get_t();
 
   // 2007/05/18: rabartl: ToDo: Move the above initialization code to give
   // setInitializeCondition(...) a chance to set the initial condition.

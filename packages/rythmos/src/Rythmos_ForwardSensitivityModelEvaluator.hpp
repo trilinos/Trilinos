@@ -278,6 +278,13 @@ namespace Rythmos {
  * <tt>d(f)/d(x_dot) * B_x_dot</tt> need only be computed once and can then be
  * reused each time.
  *
+ * 2007/05/22: rabartl: ToDo: Add an InterpolationBufferBase stateInterpBuffer
+ * object to the initailizeState(...) function that can be used to get x and
+ * x_dot at different points in time t.  Then, modify the logic to recompute
+ * all of the needed matrices if t != t_base (as passed in through
+ * stateBasePoint).  The values of x(t) and xdot(t) can then be gotten from
+ * the stateInterpBuffer object!
+ *
  * ToDo: Finish documention!
  */
 template<class Scalar>
@@ -547,6 +554,10 @@ void ForwardSensitivityModelEvaluator<Scalar>::initializeState(
     TEST_FOR_EXCEPT("ToDo: compute W_tilde from scratch!");
   }
 
+  // 2007/05/22: ToDo: Move the computation of missing quantities to another
+  // function that gets called from within evalModel(...).  In that way, we
+  // don't compute functions at points where we don't need them!
+
   bool computeOthers = false;
   MEB::InArgs<Scalar> inArgs = stateBasePoint_;
   MEB::OutArgs<Scalar> outArgs = stateModel_->createOutArgs();
@@ -764,8 +775,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::evalModel(
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(
     "ForwardSensitivityModelEvaluator",inArgs,outArgs,stateModel_ );
-  // ToDo: You will have to set the verbosity level for each of the
-  // periodModels_[i] individually below!
+  // We don't actually call the stateModel here generally!
   
   TEST_FOR_EXCEPT(true);
 
