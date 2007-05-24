@@ -40,8 +40,7 @@ static PARAM_VARS PHG_params[] = {
   {"HYPERGRAPH_PACKAGE",              NULL,  "STRING", 0},
     /* Software package: PHG (Zoltan) or Patoh */
   {"PHG_METHOD",                      NULL,  "STRING", 0},
-    /* LB_APPROACH can often be used instead (partition/repartition/refine) */
-    /* PHG_METHOD should be used for PHG-specific options */ 
+    /* deprecated: Use HYPERGRAPH_PACKAGE and key param LB_APPROACH instead */
   {"PHG_FROM_GRAPH_METHOD",           NULL,  "STRING", 0},  
     /* Hypergraph model: neighbors or pairs */
   {"PHG_CUT_OBJECTIVE",               NULL,  "STRING", 0},
@@ -466,7 +465,8 @@ int **exp_to_part )         /* list of partitions to which exported objs
     }
   }
 
-  if (!strcasecmp(hgp.hgraph_method, "REPART")){
+  if (!strcasecmp(hgp.hgraph_method, "REPART") ||
+      !strcasecmp(hgp.hgraph_method, "FAST_REPART")){
     Zoltan_PHG_Remove_Repart_Data(zz, zoltan_hg, hg, &hgp);
   }
 
@@ -756,12 +756,10 @@ int Zoltan_PHG_Initialize_Params(
   strncpy(cut_objective,    "connectivity", MAX_PARAM_STRING_LEN);
   strncpy(add_obj_weight,           "none", MAX_PARAM_STRING_LEN);
   strncpy(edge_weight_op,            "max", MAX_PARAM_STRING_LEN);
+  /* LB.Approach is initialized to "repartition", and set in Set_Key_Params  */
+  strncpy(hgp->hgraph_method,  zz->LB.Approach, MAX_PARAM_STRING_LEN);
 
-  /* Derive hgraph_method from zz->LB.Approach if set */
-  if (zz->LB.Approach[0])
-    strncpy(hgp->hgraph_method,  zz->LB.Approach, MAX_PARAM_STRING_LEN);
-  else
-    strncpy(hgp->hgraph_method,  "partition", MAX_PARAM_STRING_LEN);
+  /* Parameters default to hgraph_method "partition" */
 
   hgp->use_timers = 0;
   hgp->LocalCoarsePartition = 0;
@@ -850,7 +848,7 @@ int Zoltan_PHG_Initialize_Params(
     err = ZOLTAN_WARN;
   }
 
-  /* Documentation says "repartition" is a valid PHG_METHOD,
+  /* Documentation says "repartition" is a valid LB_APPROACH,
    * but the code always tests for REPART.  Rather than change
    * all the code or require testing first six characters,
    * we'll edit the string here.
@@ -858,12 +856,16 @@ int Zoltan_PHG_Initialize_Params(
 
   if (!strcasecmp(hgp->hgraph_method, "REPARTITION")) 
     hgp->hgraph_method[6]='\0';
+  else if (!strcasecmp(hgp->hgraph_method, "FAST_REPARTITION")) 
+    hgp->hgraph_method[11]='\0';
 
   /* Allow backward compatible specifications.  Now these are
    * specified this way:
    *     LB_METHOD=hypergraph
    *     HYPERGRAPH_PACKAGE=phg
-   *     PHG_METHOD=repart or refine or multilevel_refine
+   *     PHG_METHOD=partition, repartition, refine or fast_repartition
+   *
+   *     MULTILEVEL_REFINE is an undocumented feature.
    */
 
     if ((!strcasecmp(hgp->hgraph_pkg, "PHG_REPART")) ||
@@ -875,8 +877,6 @@ int Zoltan_PHG_Initialize_Params(
 
       package = phg;          /* "phg" */
     }
-
-  
 
   /* Adjust refinement parameters using hgp->refinement_quality */
   if (hgp->refinement_quality < 0.5/hgp->fm_loop_limit) 
@@ -901,15 +901,16 @@ int Zoltan_PHG_Initialize_Params(
 
     if ((!strcasecmp(method, "REPART")) ||
         (!strcasecmp(method, "REFINE")) ||
+        (!strcasecmp(method, "FAST_REPART")) ||
         (!strcasecmp(method, "MULTILEVEL_REFINE")) ){
         hgp->fm_loop_limit = 4; /* experimental evaluation showed that for
                                    repartitioning/refinement small number of passes
-                                   is "good enough". These are all heuristics hece
+                                   is "good enough". These are all heuristics hence
                                    it is possible to create a pathological cases; but
                                    in general this seems to be sufficient */
     }
     
-    if (!strcasecmp(method, "REFINE")){
+    if (!strcasecmp(method, "REFINE") || !strcasecmp(method, "FAST_REPART")){
         /* since this is just refinement; we don't do coarsening */
         strncpy(hgp->redm_str, "no", MAX_PARAM_STRING_LEN);
 
@@ -985,7 +986,7 @@ int Zoltan_PHG_Set_Param(
   int i;
 
   char *valid_method[] = {
-        "PARTITION", "REPARTITION", "REFINE",
+        "PARTITION", "REPARTITION", "REFINE", "FAST_REPARTITION",
          NULL };
   char *valid_pkg[] = {
         "ZOLTAN", "PHG", "PHG_REFINE", "PHG_REPART", "PATOH",

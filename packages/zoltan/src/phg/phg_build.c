@@ -306,7 +306,7 @@ float *src, *dest;
 char *have_wgt = NULL;
 int edge_gno, edge_Proc_y;
 int vtx_gno, vtx_Proc_x;
-int nnz, idx;
+int nnz, idx, method_repart;
 int *proclist = NULL;
 int *sendbuf = NULL;
 int *egno = NULL;
@@ -389,6 +389,9 @@ int nRepartEdge = 0, nRepartVtx = 0;
       use_all_neighbors = 0;
     }
     zoltan_lb_eval = 0;
+
+    method_repart = (!strcasecmp(hgp->hgraph_method, "REPART") ||
+                   !strcasecmp(hgp->hgraph_method, "FAST_REPART"));
   }
   else{
     /*   
@@ -414,6 +417,8 @@ int nRepartEdge = 0, nRepartVtx = 0;
     else{                                 /* "pairs"     */
       use_all_neighbors = 0;
     }
+    method_repart = (!strcasecmp(temphgp->hgraph_method, "REPART") ||
+                   !strcasecmp(temphgp->hgraph_method, "FAST_REPART"));
 
     ZOLTAN_FREE(&temphgp);
 
@@ -1552,7 +1557,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
   nEdge = (myProc_y >= 0 ? dist_y[myProc_y+1] - dist_y[myProc_y] : 0);
   nVtx  = (myProc_x >= 0 ? dist_x[myProc_x+1] - dist_x[myProc_x] : 0);
 
-  if (!strcasecmp(hgp->hgraph_method, "REPART")){
+  if (method_repart){
     /* For REPART, we add one vertex per partition and one edge 
      * per object (connecting the object with its input partition vertex).
      * Compute the number of these per processor within the 2D distribution
@@ -1825,7 +1830,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
   /*  Send edge weights, if any */
 
   dim = zz->Edge_Weight_Dim;
-  if (!strcasecmp(hgp->hgraph_method, "REPART") && (!dim))
+  if (method_repart && (!dim))
     dim = 1;  /* Need edge weights for REPART; force malloc of ewgt array */
   phg->EdgeWeightDim = dim;
   nwgt = (phg->nEdge + nRepartEdge) * dim;
@@ -1933,7 +1938,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
   }
 
   
-  if (!strcasecmp(hgp->hgraph_method, "REPART")){
+  if (method_repart){
     ierr = Zoltan_PHG_Add_Repart_Data(zz, zhg, phg,
                                       myObjs.vtx_gno, hgp, *input_parts);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
