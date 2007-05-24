@@ -483,9 +483,11 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 		}
 	      }
 	      if (!found) {
-		newstate.V.push_back( MVT::CloneCopy( *(oldState.V[i]), index ) );
-		newstate.Z.push_back( Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>( *(oldState.Z[i]) )) );
-		newstate.H.push_back( Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( *(oldState.H[i]) ) ) );
+		newstate.V.push_back( Teuchos::rcp_const_cast<MV>( oldState.V[i] ) );
+		newstate.Z.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.Z[i] ) );
+		newstate.H.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseMatrix<int,ScalarType> >( oldState.H[i] ) );
+		newstate.sn.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.sn[i] ) );
+		newstate.cs.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,MagnitudeType> >(oldState.cs[i] ) );
 		currRHSIdx[have] = currRHSIdx[i];
 		have++;
 	      }
@@ -517,7 +519,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	  //
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  else if ( block_gmres_iter->getCurSubspaceDim() == block_gmres_iter->getMaxSubspaceDim() ) {
-	    
+	
 	    if ( numRestarts >= maxRestarts_ ) {
 	      isConverged = false;
 	      break; // break from while(1){block_gmres_iter->iterate()}

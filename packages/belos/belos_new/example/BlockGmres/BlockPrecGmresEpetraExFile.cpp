@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
   //
   ParameterList belosList;
-  belosList.set( "Num Blocks", maxiters );               // Maximum number of blocks in Krylov factorization
+  belosList.set( "Num Blocks", maxsubspace );               // Maximum number of blocks in Krylov factorization
   belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed

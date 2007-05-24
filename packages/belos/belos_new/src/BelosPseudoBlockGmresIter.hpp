@@ -74,6 +74,10 @@ namespace Belos {
    */
   template <class ScalarType, class MV>
   struct PseudoBlockGmresIterState {
+
+    typedef Teuchos::ScalarTraits<ScalarType> SCT;
+    typedef typename SCT::magnitudeType MagnitudeType;
+
     /*! \brief The current dimension of the reduction.
      *
      * This should always be equal to PseudoBlockGmresIter::getCurSubspaceDim()
@@ -91,9 +95,13 @@ namespace Belos {
     std::vector<Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > > R;
     /*! \brief The current right-hand side of the least squares system RY = Z. */
     std::vector<Teuchos::RefCountPtr<const Teuchos::SerialDenseVector<int,ScalarType> > > Z;
-    
+    /*! \brief The current Given's rotation coefficients. */    
+    std::vector<Teuchos::RefCountPtr<const Teuchos::SerialDenseVector<int,ScalarType> > > sn;
+    std::vector<Teuchos::RefCountPtr<const Teuchos::SerialDenseVector<int,MagnitudeType> > > cs;
+
     PseudoBlockGmresIterState() : curDim(0), V(0),
-				  H(0), R(0), Z(0)
+				  H(0), R(0), Z(0),
+                                  sn(0), cs(0)
     {}
   };
   
@@ -235,10 +243,14 @@ namespace Belos {
       state.V.resize(numRHS_);
       state.H.resize(numRHS_);
       state.Z.resize(numRHS_);
+      state.sn.resize(numRHS_);
+      state.cs.resize(numRHS_);  
       for (int i=0; i<numRHS_; ++i) {
 	state.V[i] = V_[i];
 	state.H[i] = H_[i];
 	state.Z[i] = Z_[i];
+        state.sn[i] = sn_[i];
+        state.cs[i] = cs_[i];
       }
       return state;
     }
@@ -336,8 +348,8 @@ namespace Belos {
     int numBlocks_; 
     
     // Storage for QR factorization of the least squares system.
-    Teuchos::Array<Teuchos::SerialDenseVector<int,ScalarType> > sn;
-    Teuchos::Array<Teuchos::SerialDenseVector<int,MagnitudeType> > cs;
+    std::vector<Teuchos::RefCountPtr<Teuchos::SerialDenseVector<int,ScalarType> > > sn_;
+    std::vector<Teuchos::RefCountPtr<Teuchos::SerialDenseVector<int,MagnitudeType> > > cs_;
     
     // Pointers to a work vector used to improve aggregate performance.
     RefCountPtr<MV> U_vec_, AU_vec_;    
@@ -441,11 +453,17 @@ namespace Belos {
 	//////////////////////////////////
 	// Reinitialize storage for least squares solve
 	//
-	cs.resize(numRHS_);
-	sn.resize(numRHS_);
+	cs_.resize(numRHS_);
+	sn_.resize(numRHS_);
 	for (int i=0; i<numRHS_; ++i) {
-	  cs[i].resize(numBlocks_+1);
-	  sn[i].resize(numBlocks_+1);
+          if (cs_[i] != Teuchos::null) 
+            cs_[i]->resize(numBlocks_+1);
+          else
+            cs_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,MagnitudeType>(numBlocks_+1) );
+          if (sn_[i] != Teuchos::null)
+            sn_[i]->resize(numBlocks_+1);
+          else
+	    sn_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(numBlocks_+1) );
 	}
 	
 	// Get the multivector that is not null.
@@ -597,14 +615,23 @@ namespace Belos {
 
       TEST_FOR_EXCEPTION( newstate.curDim > numBlocks_+1,
                           std::invalid_argument, errstr );
-
+      
       curDim_ = newstate.curDim;
-
+      
       // check size of Z
       for (int i=0; i<numRHS_; ++i)
 	TEST_FOR_EXCEPTION(newstate.Z[i]->numRows() < curDim_, std::invalid_argument, errstr);
       
-
+      // check size of H
+      if (newstate.H.size() != 0) {
+        TEST_FOR_EXCEPTION( (int)newstate.H.size() != numRHS_, std::invalid_argument, 
+                            "Belos::PseudoBlockGmresIter::initialize(): Specified Hessenberg matrices must be same as number of right-hand sides.");
+	
+        for (int i=0; i<numRHS_; ++i)
+	  TEST_FOR_EXCEPTION((newstate.H[i]->numRows() < curDim_ || newstate.H[i]->numCols() < curDim_), std::invalid_argument, 
+                             "Belos::PseudoBlockGmresIter::initialize(): Specified Hessenberg matrices must have a consistent size to the current subspace dimension");
+      }
+      
       // copy basis vectors from newstate into V
       for (int i=0; i<numRHS_; ++i) {
 	int lclDim = MVT::GetNumberVecs(*newstate.V[i]);
@@ -636,6 +663,42 @@ namespace Belos {
 	  
 	  // done with local pointers
 	  lclZ = Teuchos::null;
+	}
+	
+        // put data into H_, make sure old information is not still hanging around.
+	if (newstate.H.size() != 0) {
+          if (newstate.H[i] != H_[i]) {
+	    Teuchos::SerialDenseMatrix<int,ScalarType> newH(Teuchos::View,*newstate.H[i],curDim_,curDim_);
+	    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclH;
+	    lclH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*H_[i],curDim_,curDim_) );
+	    lclH->assign(newH);
+	    
+	    // done with local pointers
+	    lclH = Teuchos::null;
+          }
+        }
+	
+        // put data into sn_ and cn_, make sure old information is not still hanging around.
+	if (newstate.sn.size() != 0 && newstate.cs.size() != 0) {
+          if (newstate.sn[i] != sn_[i]) {
+	    Teuchos::SerialDenseVector<int,ScalarType> newsn(Teuchos::View,newstate.sn[i]->values(),curDim_);
+	    Teuchos::RefCountPtr<Teuchos::SerialDenseVector<int,ScalarType> > lclsn;
+	    lclsn = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(Teuchos::View,sn_[i]->values(),curDim_) );
+	    lclsn->assign(newsn);
+	    
+	    // done with local pointers
+	    lclsn = Teuchos::null;
+          }
+	  
+          if (newstate.cs[i] != cs_[i]) {
+	    Teuchos::SerialDenseVector<int,MagnitudeType> newcs(Teuchos::View,newstate.cs[i]->values(),curDim_);
+	    Teuchos::RefCountPtr<Teuchos::SerialDenseVector<int,MagnitudeType> > lclcs;
+	    lclcs = Teuchos::rcp( new Teuchos::SerialDenseVector<int,MagnitudeType>(Teuchos::View,cs_[i]->values(),curDim_) );
+	    lclcs->assign(newcs);
+	    
+	    // done with local pointers
+	    lclcs = Teuchos::null;
+	  }
 	}
       }
     }
@@ -709,7 +772,6 @@ namespace Belos {
     while (stest_->checkStatus(this) != Passed && curDim_+1 <= searchDim) {
 
       iter_++;
-
       //
       // Apply the operator to _work_vector
       //
@@ -828,17 +890,17 @@ namespace Belos {
 	//
 	// Apply previous Givens rotations to new column of Hessenberg matrix
 	//
-	blas.ROT( 1, &(*H_[i])(j,curDim_), 1, &(*H_[i])(j+1, curDim_), 1, &(cs[i])[j], &(sn[i])[j] );
+	blas.ROT( 1, &(*H_[i])(j,curDim_), 1, &(*H_[i])(j+1, curDim_), 1, &(*cs_[i])[j], &(*sn_[i])[j] );
       }
       //
       // Calculate new Givens rotation
       //
-      blas.ROTG( &(*H_[i])(curDim_,curDim_), &(*H_[i])(curDim_+1,curDim_), &(cs[i])[curDim_], &(sn[i])[curDim_] );
+      blas.ROTG( &(*H_[i])(curDim_,curDim_), &(*H_[i])(curDim_+1,curDim_), &(*cs_[i])[curDim_], &(*sn_[i])[curDim_] );
       (*H_[i])(curDim_+1,curDim_) = zero;
       //
       // Update RHS w/ new transformation
       //
-      blas.ROT( 1, &(*Z_[i])(curDim_), 1, &(*Z_[i])(curDim_+1), 1, &cs[i][curDim_], &sn[i][curDim_] );
+      blas.ROT( 1, &(*Z_[i])(curDim_), 1, &(*Z_[i])(curDim_+1), 1, &(*cs_[i])[curDim_], &(*sn_[i])[curDim_] );
     }
 
   } // end updateLSQR()
