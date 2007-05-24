@@ -97,6 +97,7 @@ static PARAM_VARS RCB_params[] = {
                   { "RCB_RECOMPUTE_BOX", NULL, "INT", 0 },
                   { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
                   { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
+                  {"FINAL_OUTPUT",      NULL,  "INT",    0},
                   { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 
@@ -175,14 +176,16 @@ int Zoltan_RCB(
     int average_cuts;         /* Flag forcing median line to be drawn halfway
                                  between two closest objects. */
     int idummy;
+    int final_output;
+    int ierr=ZOLTAN_OK;
     double ddummy;
-    int ierr;
 
 
     Zoltan_Bind_Param(RCB_params, "RCB_OVERALLOC", (void *) &overalloc);
     Zoltan_Bind_Param(RCB_params, "RCB_REUSE", (void *) &reuse);
     Zoltan_Bind_Param(RCB_params, "CHECK_GEOM", (void *) &check_geom);
     Zoltan_Bind_Param(RCB_params, "RCB_OUTPUT_LEVEL", (void *) &stats);
+    Zoltan_Bind_Param(RCB_params, "FINAL_OUTPUT", (void *) &final_output);
     Zoltan_Bind_Param(RCB_params, "KEEP_CUTS", (void *) &gen_tree);
     Zoltan_Bind_Param(RCB_params, "RCB_LOCK_DIRECTIONS", (void *) &reuse_dir);
     Zoltan_Bind_Param(RCB_params, "RCB_SET_DIRECTIONS", (void *) &preset_dir);
@@ -218,6 +221,7 @@ int Zoltan_RCB(
     max_aspect_ratio = 10.;
     recompute_box = 0;
     idummy = 0;
+    final_output = 0;
     ddummy = 0.0;
     average_cuts = 0;
 
@@ -227,6 +231,12 @@ int Zoltan_RCB(
     /* Initializations in case of early exit. */
     *num_import = -1;
     *num_export = -1;  /* We don't compute the export map. */
+
+
+    if (final_output && (stats < 1)){
+      /* FINAL_OUTPUT is a graph/phg param, corresponds to our OUTPUT_LEVEL 1 */
+      stats = 1;
+    }
 
     ierr = rcb_fn(zz, num_import, import_global_ids, import_local_ids,
 		 import_procs, import_to_part, overalloc, reuse, wgtflag,

@@ -68,6 +68,8 @@ static PARAM_VARS RIB_params[] = {
                { "KEEP_CUTS", NULL, "INT", 0 },
                { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
                { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
+               {"FINAL_OUTPUT", NULL,  "INT",    0},
+
                { NULL, NULL, NULL, 0 } };
 
 /*---------------------------------------------------------------------------*/
@@ -127,6 +129,7 @@ int Zoltan_RIB(
   int average_cuts;           /* (0) don't (1) compute the cut to be the
                               average of the closest dots. */
   int idummy;
+  int final_output;
   double ddummy;
   int ierr;
 
@@ -137,11 +140,13 @@ int Zoltan_RIB(
   Zoltan_Bind_Param(RIB_params, "KEEP_CUTS", (void *) &gen_tree);
   Zoltan_Bind_Param(RIB_params, "REDUCE_DIMENSIONS", (void *) &idummy);
   Zoltan_Bind_Param(RIB_params, "DEGENERATE_RATIO", (void *) &ddummy);
+  Zoltan_Bind_Param(RIB_params, "FINAL_OUTPUT", (void *) &final_output);
 
   overalloc = RIB_DEFAULT_OVERALLOC;
   check_geom = DEFAULT_CHECK_GEOM;
   stats = RIB_DEFAULT_OUTPUT_LEVEL;
   gen_tree = 0;
+  final_output = 0;
   average_cuts = 0;
   wgtflag = zz->Obj_Weight_Dim;
   idummy = 0;
@@ -153,6 +158,11 @@ int Zoltan_RIB(
   /* Initializations in case of early exit. */
   *num_import = -1;
   *num_export = -1;  /* We don't compute the export map. */
+
+  if (final_output && (stats < 1)){
+    /* FINAL_OUTPUT is a graph/phg param, corresponds to our OUTPUT_LEVEL 1 */
+    stats = 1; 
+  }
 
   ierr = rib_fn(zz, num_import, import_global_ids, import_local_ids,
                 import_procs, import_to_part,
@@ -190,7 +200,7 @@ static int rib_fn(
   int gen_tree,                 /* (0) do not (1) do generate full treept */
   int average_cuts,             /* (0) don't (1) compute the cut to be the
                                 average of the closest dots. */
-  float *part_sizes             /* Input:  Array of size zz->Num_Global_Parts
+  float *part_sizes            /* Input:  Array of size zz->Num_Global_Parts
                                 containing the percentage of work to be
                                 assigned to each partition.               */
 )
