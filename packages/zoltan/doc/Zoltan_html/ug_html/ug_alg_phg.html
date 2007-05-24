@@ -53,13 +53,18 @@ parameter to select partitioning "from scratch". <br>
       <td valign="top"><i>&nbsp;&nbsp; LB_APPROACH<br>
       </i></td>
       <td>The load balancing approach:. <br>
-      <i>PARTITION</i>&nbsp; - partition from scratch, not taking&nbsp;
-the current data distribution into account<br>
       <i>REPARTITION</i>&nbsp; - partition but try to stay close to the
 current partition/distribution
       <br>
       <i>REFINE</i>&nbsp; - refine the current partition/distribution;
 assumes only small changes
+      <br>
+      <i>FAST_REPARTITION</i>&nbsp; - a hybrid of REPARTITION and REFINE, small
+refinement to existing partition that tries to stay close to the current partitioning
+      <br>
+      <i>PARTITION</i>&nbsp; - partition from scratch, not taking&nbsp;
+the current data distribution into account<br>
+             
       </td>
     </tr>
     <tr>
