@@ -1305,11 +1305,16 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
       balmax = balmin = balsum = bal;
     }
 
+    char *countType = "moveCnt";
+    if (zz->Get_Obj_Size_Multi || zz->Get_Obj_Size) {
+      countType = "moveVol";
+    }
+
     nRuns++;
     printf(" STATS Runs %d  bal  CURRENT %f  MAX %f  MIN %f  AVG %f\n",
             nRuns, bal, balmax, balmin, balsum/nRuns);
-    printf(" STATS Runs %d  moveCnt CURRENT %f  MAX %f  MIN %f  AVG %f\n",
-            nRuns, gmove, movemax, movemin, movesum/nRuns);
+    printf(" STATS Runs %d  %s CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+            nRuns, countType, gmove, movemax, movemin, movesum/nRuns);
   }
 
   ZOLTAN_FREE(&gpartWgt);
