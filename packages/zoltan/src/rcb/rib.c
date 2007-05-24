@@ -641,7 +641,8 @@ static int rib_fn(
   }
 
   if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME))
-    Zoltan_RB_stats(zz, timestop-timestart, rib->Dots, dotnum, timers, counters,
+    Zoltan_RB_stats(zz, timestop-timestart, rib->Dots, dotnum, 
+                part_sizes, timers, counters,
                 stats, NULL, NULL, FALSE);
 
   /* update calling routine parameters */

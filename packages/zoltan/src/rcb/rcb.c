@@ -1003,7 +1003,7 @@ static int rcb_fn(
   }
 
   if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
-    Zoltan_RB_stats(zz, timestop-timestart,rcb->Dots,dotnum,
+    Zoltan_RB_stats(zz, timestop-timestart,rcb->Dots,dotnum, part_sizes,
                 timers,counters,stats,reuse_count,rcbbox,reuse);
 
   /* update calling routine parameters */

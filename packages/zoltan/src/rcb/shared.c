@@ -30,7 +30,7 @@ extern "C" {
 /* PROTOTYPES */
 
 static int initialize_dot(ZZ *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int *,
-                          struct Dot_Struct *, int, int *, int, float *);
+                          struct Dot_Struct *, int, int *, int, float *, int *);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -69,7 +69,9 @@ char *yo = "Zoltan_RB_Build_Structure";
 float *objs_wgt = NULL;               /* Array of object weights returned by 
                                          the application.                    */
 int *parts = NULL;
+int *objSizes = NULL;
 int ierr = ZOLTAN_OK;
+int i;
 
   /*
    * Allocate space for objects.  Get object info.
@@ -97,9 +99,44 @@ int ierr = ZOLTAN_OK;
     goto End;
   }
 
+  if (*num_obj && ((zz->Get_Obj_Size_Multi) || (zz->Get_Obj_Size))) {
+
+    objSizes = (int *) ZOLTAN_MALLOC(*num_obj * sizeof(int));
+    if (!objSizes){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+
+    if (zz->Get_Obj_Size_Multi) {
+      zz->Get_Obj_Size_Multi(zz->Get_Obj_Size_Multi_Data,
+                             zz->Num_GID, zz->Num_LID, *num_obj,
+                             *global_ids, *local_ids, objSizes, &ierr);
+      if (ierr < 0) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from "
+                        "ZOLTAN_OBJ_SIZE_MULTI function.");
+        goto End;
+      }
+    }
+    else if (zz->Get_Obj_Size) {
+      for (i = 0; i < *num_obj; i++) {
+        ZOLTAN_ID_PTR lid = (zz->Num_LID ? &((*local_ids)[i*zz->Num_LID]):NULL);
+        objSizes[i] = zz->Get_Obj_Size(zz->Get_Obj_Size_Data,
+                                       zz->Num_GID, zz->Num_LID,
+                                         &((*global_ids)[i*zz->Num_GID]),
+                                         lid, &ierr);
+        if (ierr < 0) {
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from "
+                          "ZOLTAN_OBJ_SIZE function.");
+          goto End;
+        }
+      }
+    }
+    ZOLTAN_FREE(&objSizes);
+  }
 
   ierr = initialize_dot(zz, *global_ids, *local_ids, parts, *dots,
-                        *num_obj, num_geom, wgtflag, objs_wgt);
+                        *num_obj, num_geom, wgtflag, objs_wgt, objSizes);
   if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                    "Error returned from user function initialize_dot.");
@@ -142,7 +179,8 @@ static int initialize_dot(
   int num_obj,
   int *num_geom,
   int wgtflag, 
-  float *wgt)
+  float *wgt,
+  int *objSizes)
 {
 /*
  *  Function that initializes the dot data structure for RCB and RIB. 
@@ -177,6 +215,12 @@ char *yo = "initialize_dot";
       dot->X[j] = 0.;
     for (j=0; j<wgtflag; j++)
       dot->Weight[j] = wgt[i*wgtflag+j];
+    if (objSizes){
+      dot->Size = objSizes[i];
+    }
+    else{
+      dot->Size = 1;
+    }
   }
 End:
   ZOLTAN_FREE(&geom_vec);
@@ -981,14 +1025,20 @@ int Zoltan_RB_check_geom_output(
 /*****************************************************************************/
 
 void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
-                 int dotnum, double *timers, int *counters, int stats,
+                 int dotnum, float *part_sizes,
+                 double *timers, int *counters, int stats,
                  int *reuse_count, void *rcbbox_arg, int reuse)
 
 {
+  char *yo = "Zoltan_RB_stats";
   int i,proc,nprocs,sum,min,max,print_proc;
   double ave,rsum,rmin,rmax;
   double weight,wttot,wtmin,wtmax;
   struct rcb_box *rcbbox = (struct rcb_box *) rcbbox_arg;
+  int numParts;
+  double move, gmove, bal, max_imbal, ib;
+  double *lpartWgt = NULL;
+  double *gpartWgt = NULL;
 
   MPI_Comm_rank(zz->Communicator,&proc);
   MPI_Comm_size(zz->Communicator,&nprocs);
@@ -1194,7 +1244,75 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
 	     proc,rcbbox->lo[i],rcbbox->hi[i]);
     }
   }
+  /* For comparison, display the values that are displayed by
+   * graph and hypergraph partitioners when FINAL_OUTPUT=1
+   */
 
+  for (i = 0, max=0; i < dotnum; i++) 
+    if (dotpt[i].Part > max) max = dotpt[i].Part;
+
+  MPI_Allreduce(&max,&numParts,1,MPI_INT, MPI_MAX, zz->Communicator);
+  numParts++;
+
+  lpartWgt = (double *)ZOLTAN_CALLOC(numParts, sizeof(double));
+  gpartWgt = (double *)ZOLTAN_MALLOC(numParts * sizeof(double));
+
+  if (numParts && (!lpartWgt || !gpartWgt)){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return;
+  }
+
+  for (i = 0, move=0.0; i < dotnum; i++){
+    lpartWgt[dotpt[i].Part] += dotpt[i].Weight[0];
+    if (dotpt[i].Input_Part != dotpt[i].Part) move += (double)dotpt[i].Size;
+  }
+
+  MPI_Reduce(lpartWgt, gpartWgt, numParts, MPI_DOUBLE, MPI_SUM, 
+             print_proc, zz->Communicator);
+  MPI_Reduce(&move, &gmove, 1, MPI_DOUBLE, MPI_SUM, print_proc, zz->Communicator);
+
+  ZOLTAN_FREE(&lpartWgt);
+
+  if (proc == print_proc) {
+    static int nRuns=0;
+    static double balsum, balmax, balmin;
+    static double movesum, movemax, movemin;
+
+    max_imbal = 0.0;
+ 
+    if (wttot) {
+      for (i = 0; i < numParts; i++){
+        if (part_sizes[i]) {
+          ib= (gpartWgt[i]-part_sizes[i]*wttot)/(part_sizes[i]*wttot);
+          if (ib>max_imbal)
+            max_imbal = ib;
+        }
+      }
+    }
+
+    bal = 1.0 + max_imbal;
+
+    if (nRuns){
+      if (gmove > movemax) movemax = gmove;
+      if (gmove < movemin) movemin = gmove;
+      if (bal > balmax) balmax = bal;
+      if (bal < balmin) balmin = bal;
+      movesum += gmove;
+      balsum += bal;
+    }
+    else{
+      movemax = movemin = movesum = gmove;
+      balmax = balmin = balsum = bal;
+    }
+
+    nRuns++;
+    printf(" STATS Runs %d  bal  CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+            nRuns, bal, balmax, balmin, balsum/nRuns);
+    printf(" STATS Runs %d  moveCnt CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+            nRuns, gmove, movemax, movemin, movesum/nRuns);
+  }
+
+  ZOLTAN_FREE(&gpartWgt);
   MPI_Barrier(zz->Communicator);
 }
 

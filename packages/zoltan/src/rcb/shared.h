@@ -39,6 +39,7 @@ struct Dot_Struct {	        /* dot = point in 3-space */
                                    initially (input).  */
   int Part;                     /* New partition to which the dot is 
                                    assigned.  */
+  int Size;                     /* Migration size */
 };
 
 extern int Zoltan_RB_Build_Structure(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
@@ -71,8 +72,8 @@ extern int Zoltan_RB_check_geom_input(ZZ *, struct Dot_Struct *, int);
 extern int Zoltan_RB_check_geom_output(ZZ *, struct Dot_Struct *, float *,
   int, int, int, int, void *);
 
-extern void Zoltan_RB_stats(ZZ *, double, struct Dot_Struct *, int , double *, 
-  int *, int, int *, void *, int);
+extern void Zoltan_RB_stats(ZZ *, double, struct Dot_Struct *, int , 
+                            float *, double *, int *, int, int *, void *, int);
 
 extern int Zoltan_RB_Use_IDs(ZZ *);
 
