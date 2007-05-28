@@ -26,18 +26,7 @@
 # ************************************************************************
 # @HEADER
 
-EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i \
-	     Epetra.i Epetra_Base.i Epetra_Comm.i Epetra_Graphs.i \
-	     Epetra_Maps.i Epetra_Operators.i Epetra_SerialDense.i \
-	     Epetra_Vectors.i EpetraExt.i Galeri.i IFPACK.i \
-	     LOCA.__init__.i LOCA.Abstract.i LOCA.Bifurcation.i \
-	     LOCA.Continuation.i LOCA.Epetra.i LOCA.Homotopy.i LOCA.LAPACK.i \
-	     LOCA.MultiContinuation.i LOCA.TimeDependent.i \
-	     ML.i NOX.__init__.i NOX.Abstract.i NOX.Epetra.__init__.i \
-	     NOX.Epetra.Interface.i NOX.Solver.i NOX.StatusTest.i \
-	     Teuchos.i Teuchos_ParameterList_ext.i \
-	     Thyra.i TriUtils.i numpy.i \
-	     MakefileVariables.py PyTrilinosExtension.py setup.py \
+EXTRA_DIST = MakefileVariables.py pkg_info.py PyTrilinosExtension.py setup.py \
 	     SharedUtils.py
 
 # Configuration macros
@@ -90,154 +79,97 @@ ENABLE_THYRA=
 ENABLE_LOCA=
 
 # Default make target
-all-local: build
+all-local: package
 
-# Include swig rules
-include $(top_srcdir)/config/swig.am
-if HAVE_MPI
-SWIG_OPTS = -DHAVE_MPI
-else
-SWIG_OPTS =
-endif
+# Currently, this temporary directory is required to be present for the
+# setup.py script to work correctly
+tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_platform; print os.path.join('build','temp.%s-%s'%(get_platform(),sys.version[0:3]))")
+libdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_platform; print os.path.join('build','lib.%s-%s'%(get_platform(),sys.version[0:3]),'PyTrilinos')")
+
+$(tempdir):
+	@echo "creating directory $@"
+	@mkdir -p $@
 
 # For the package-enabling macros that follow, I would have preferred
-# all info (interface file names, python proxy file names, wrapper code
-# file names and wrapper header file names) to derive from a single
-# source (interface file name, for example).  This would be possible
-# with GNU make substitution rules, but this is not portable.  So I
-# require a list of interface files and a list of proxy files for each
-# package.
+# all info (wrapper file names, proxy file names and modules names) to
+# derive from a single source (interface file name, for example).  This
+# would be possible with GNU make substitution rules, but this is not
+# portable.  So I require a list of wrapper files, a list of proxy file
+# names and a list of module names for each package.
 
 # Teuchos
 if HAVE_PYTRILINOS_TEUCHOS
 include $(top_builddir)/../teuchos/Makefile.export.teuchos
-TEUCHOS_INTERFACES = Teuchos.i
-TEUCHOS_PROXIES = PyTrilinos/Teuchos.py
+TEUCHOS_WRAPPERS = Teuchos_wrap.cpp
+TEUCHOS_PROXIES  = PyTrilinos/Teuchos.py
+TEUCHOS_MODULES  = $(libdir)/_Teuchos.so
 endif
 
 # # Thyra
 # if HAVE_PYTRILINOS_THYRA
 # include $(top_builddir)/../thyra/Makefile.export.thyra
-# THYRA_INTERFACES = Thyra.i
-# THYRA_PROXIES = PyTrilinos/Thyra.py
 # endif
 
 # Epetra
 if HAVE_PYTRILINOS_EPETRA
 include $(top_builddir)/../epetra/Makefile.export.epetra
-EPETRA_INTERFACES = Epetra.i
-EPETRA_PROXIES = PyTrilinos/Epetra.py
 endif
 
 # TriUtils
 if HAVE_PYTRILINOS_TRIUTILS
 include $(top_builddir)/../triutils/Makefile.export.triutils
-TRIUTILS_INTERFACES = TriUtils.i
-TRIUTILS_PROXIES = PyTrilinos/TriUtils.py
 endif
 
 # EpetraExt
 if HAVE_PYTRILINOS_EPETRAEXT
 include $(top_builddir)/../epetraext/Makefile.export.epetraext
-EPETRAEXT_INTERFACES = EpetraExt.i
-EPETRAEXT_PROXIES = PyTrilinos/EpetraExt.py
 endif
 
 # AztecOO
 if HAVE_PYTRILINOS_AZTECOO
 include $(top_builddir)/../aztecoo/Makefile.export.aztecoo
-AZTECOO_INTERFACES = AztecOO.i
-AZTECOO_PROXIES = PyTrilinos/AztecOO.py
-if HAVE_PYTRILINOS_AZTECOO_TEUCHOS
-SWIG_OPTS += -DHAVE_AZTECOO_TEUCHOS 
-endif
 endif
 
 # Galeri
 if HAVE_PYTRILINOS_GALERI
 include $(top_builddir)/../galeri/Makefile.export.galeri
-GALERI_INTERFACES = Galeri.i
-GALERI_PROXIES = PyTrilinos/Galeri.py
 endif
 
 # Amesos
 if HAVE_PYTRILINOS_AMESOS
 include $(top_builddir)/../amesos/Makefile.export.amesos
-AMESOS_INTERFACES = Amesos.i
-AMESOS_PROXIES = PyTrilinos/Amesos.py
 endif
 
 # IFPACK
 if HAVE_PYTRILINOS_IFPACK
 include $(top_builddir)/../ifpack/Makefile.export.ifpack
-IFPACK_INTERFACES = IFPACK.i
-IFPACK_PROXIES = PyTrilinos/IFPACK.py
 endif
 
 # Anasazi
 if HAVE_PYTRILINOS_ANASAZI
 include $(top_builddir)/../anasazi/Makefile.export.anasazi
-ANASAZI_INTERFACES = Anasazi.i
-ANASAZI_PROXIES = PyTrilinos/Anasazi.py
 endif
 
 # ML
 if HAVE_PYTRILINOS_ML
 include $(top_builddir)/../ml/Makefile.export.ml
-ML_INTERFACES = ML.i
-ML_PROXIES = PyTrilinos/ML.py
 endif
 
 # NOX
 if HAVE_PYTRILINOS_NOX
 include $(top_builddir)/../nox/Makefile.export.nox
-NOX_BASE_INTERFACES = NOX.__init__.i NOX.Abstract.i NOX.Solver.i NOX.StatusTest.i
-NOX_BASE_PROXIES = PyTrilinos/NOX/__init__.py PyTrilinos/NOX/Abstract.py \
-                   PyTrilinos/NOX/Solver.py   PyTrilinos/NOX/StatusTest.py
-if HAVE_PYTRILINOS_NOX_EPETRA
-NOX_EPETRA_INTERFACES = NOX.Epetra.__init__.i NOX.Epetra.Interface.i
-NOX_EPETRA_PROXIES = PyTrilinos/NOX/Epetra/__init__.py PyTrilinos/NOX/Epetra/Interface.py
-endif
-NOX_INTERFACES = $(NOX_BASE_INTERFACES) $(NOX_EPETRA_INTERFACES) $(NOX_LAPACK_INTERFACES)
-NOX_PROXIES = $(NOX_BASE_PROXIES) $(NOX_EPETRA_PROXIES) $(NOX_LAPACK_PROXIES)
 endif
 
 # # LOCA
 # if HAVE_PYTRILINOS_NOX
 # if HAVE_PYTRILINOS_LOCA
-# LOCA_BASE_INTERFACES =  LOCA.__init__.i LOCA.Abstract.i LOCA.Bifurcation.i \
-# 	                LOCA.Continuation.i LOCA.Homotopy.i LOCA.MultiContinuation.i \
-# 	                LOCA.TimeDependent.i
-# LOCA_BASE_PROXIES =  PyTrilinos/LOCA/__init__.py PyTrilinos/LOCA/Abstract.py \
-# 	             PyTrilinos/LOCA/Bifurcation.py PyTrilinos/LOCA/Continuation.py \
-# 	             PyTrilinos/LOCA/Homotopy.py PyTrilinos/LOCA/MultiContinuation.py \
-# 	             PyTrilinos/LOCA/TimeDependent.py
-# if HAVE_PYTRILINOS_NOX_EPETRA
-# LOCA_EPETRA_INTERFACES = LOCA.Epetra.i
-# LOCA_EPETRA_PROXIES = PyTrilinos/LOCA/Epetra.py
-# endif
-# #if HAVE_PYTRILINOS_NOX_LAPACK
-# #LOCA_LAPACK_INTERFACES = LOCA.LAPACK.i
-# #LOCA_LAPACK_PROXIES = PyTrilinos/LOCA/LAPACK.py
-# #endif
-# LOCA_INTERFACES = $(LOCA_BASE_INTERFACES) $(LOCA_EPETRA_INTERFACES) $(LOCA_LAPACK_INTERFACES)
-# LOCA_PROXIES = $(LOCA_BASE_PROXIES) $(LOCA_EPETRA_PROXIES) $(LOCA_LAPACK_PROXIES)
 # endif
 # endif
 
-# PyTrilinos
-INTERFACES = $(TEUCHOS_INTERFACES)  $(THYRA_INTERFACES)     $(EPETRA_INTERFACES)  \
-	     $(TRIUTILS_INTERFACES) $(EPETRAEXT_INTERFACES) $(AZTECOO_INTERFACES) \
-	     $(GALERI_INTERFACES)   $(AMESOS_INTERFACES)    $(IFPACK_INTERFACES)  \
-	     $(ANASAZI_INTERFACES)  $(ML_INTERFACES)        $(NOX_INTERFACES)     \
-	     $(LOCA_INTERFACES)
-PROXIES  =   $(TEUCHOS_PROXIES)  $(THYRA_PROXIES)     $(EPETRA_PROXIES)  \
-	     $(TRIUTILS_PROXIES) $(EPETRAEXT_PROXIES) $(AZTECOO_PROXIES) \
-	     $(GALERI_PROXIES)   $(AMESOS_PROXIES)    $(IFPACK_PROXIES)  \
-	     $(ANASAZI_PROXIES)  $(ML_PROXIES)        $(NOX_PROXIES)     \
-	     $(LOCA_INTERFACES)
-WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
-DIR_HDRS   = $(INTERFACES:.i=_wrap.h)
+# PyTrilinos wrappers and modules
+WRAPPERS = $(TEUCHOS_WRAPPERS)
+PROXIES  = $(TEUCHOS_PROXIES)
+MODULES  = $(TEUCHOS_MODULES)
 
 # The following line helps the test harness recover from build errors.
 all-am:
@@ -245,19 +177,27 @@ all-am:
 	@echo "Trilinos package PyTrilinos subdirectory src built successfully."
 	@echo ""
 
-build: $(WRAPPERS)
+package: $(tempdir) $(PROXIES) $(MODULES)
+
+PyTrilinos/%.py: $(srcdir)/%.py
+	@echo "copying $< to $@"
+	cp $< $@
+
+$(libdir)/_%.so: %_wrap.cpp
 	$(PYTHON) $(srcdir)/setup.py build
 
-install: $(WRAPPERS)
+install:
 	$(PYTHON) $(srcdir)/setup.py install
 
 uninstall:
 	$(PYTHON) $(srcdir)/setup.py uninstall
 
 clean-local:
+	$(RM) -r $(libdir)
+	$(RM) -r $(tempdir)/$(srcdir)
 	$(PYTHON) $(srcdir)/setup.py clean
 
-CLEANFILES += $(PROXIES) $(WRAPPERS) $(DIR_HDRS)
+CLEANFILES = $(PROXIES)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

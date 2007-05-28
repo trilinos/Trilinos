@@ -6588,7 +6588,7 @@ GNU_HAVE_SWIG=${WITH_SWIG}
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/.deps/dummy src/PyTrilinos/.dummy src/PyTrilinos/NOX/.dummy src/PyTrilinos/NOX/Epetra/.dummy src/PyTrilinos/NOX/LAPACK/.dummy src/PyTrilinos/LOCA/.dummy test/Makefile example/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/.deps/dummy src/PyTrilinos/.dummy src/PyTrilinos/NOX/.dummy src/PyTrilinos/NOX/Epetra/.dummy src/PyTrilinos/NOX/LAPACK/.dummy src/PyTrilinos/LOCA/.dummy src-boost/Makefile src-boost/PyTrilinos/.dummy test/Makefile example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -7367,6 +7367,8 @@ do
     "src/PyTrilinos/NOX/Epetra/.dummy") CONFIG_FILES="$CONFIG_FILES src/PyTrilinos/NOX/Epetra/.dummy" ;;
     "src/PyTrilinos/NOX/LAPACK/.dummy") CONFIG_FILES="$CONFIG_FILES src/PyTrilinos/NOX/LAPACK/.dummy" ;;
     "src/PyTrilinos/LOCA/.dummy") CONFIG_FILES="$CONFIG_FILES src/PyTrilinos/LOCA/.dummy" ;;
+    "src-boost/Makefile") CONFIG_FILES="$CONFIG_FILES src-boost/Makefile" ;;
+    "src-boost/PyTrilinos/.dummy") CONFIG_FILES="$CONFIG_FILES src-boost/PyTrilinos/.dummy" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
 

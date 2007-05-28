@@ -294,6 +294,8 @@ AC_CONFIG_FILES([
 		src/PyTrilinos/NOX/Epetra/.dummy
 		src/PyTrilinos/NOX/LAPACK/.dummy
 		src/PyTrilinos/LOCA/.dummy
+		src-boost/Makefile
+		src-boost/PyTrilinos/.dummy
 		test/Makefile
 		example/Makefile
 		])
