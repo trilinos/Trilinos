@@ -27,7 +27,8 @@
 # @HEADER
 
 EXTRA_DIST = MakefileVariables.py pkg_info.py PyTrilinosExtension.py setup.py \
-	     SharedUtils.py
+	     SharedUtils.py \
+	     Teuchos_wrap.cpp Teuchos.py
 
 # Configuration macros
 @HAVE_MPI_TRUE@HAVE_MPI = 1
