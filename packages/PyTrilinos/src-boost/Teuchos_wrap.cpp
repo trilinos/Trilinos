@@ -34,6 +34,7 @@ using namespace boost::python;
 #include "Teuchos_Version.hpp"
 #include "Teuchos_Time.hpp"
 
+double mywt(Teuchos::Time const& self) { return self.wallTime(); }
 // Define the Teuchos python module
 BOOST_PYTHON_MODULE(_Teuchos)
 {
@@ -58,13 +59,15 @@ BOOST_PYTHON_MODULE(_Teuchos)
 	 "Resets the cumulative time and number of times this timer has been called.")
     .def("isRunning", &Teuchos::Time::isRunning,
 	 "Indicates if this timer is currently running.")
-    .def("name", &Teuchos::Time::name, return_internal_reference<>(),
+    .def("name", &Teuchos::Time::name, return_value_policy<copy_const_reference>(),
 	 "Returns the name of this timer.")
     .def("incrementNumCalls", &Teuchos::Time::incrementNumCalls,
 	 "Increment the number of times this timer has been called.")
     .def("numCalls", &Teuchos::Time::numCalls,
 	 "Returns the number of times this timer has been called.")
-    .def("wallTime", &Teuchos::Time::wallTime,
+    .def("oldwallTime", &Teuchos::Time::wallTime,
 	 "Returns the current wall-clock time in seconds.")
+    .def("wallTime", &mywt,
+ 	 "Returns the current wall-clock time in seconds.")
     ;
 }
