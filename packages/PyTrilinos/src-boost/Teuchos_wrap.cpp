@@ -26,6 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
+
 // Boost initialization
 #include <boost/python.hpp>
 using namespace boost::python;
@@ -33,10 +34,71 @@ using namespace boost::python;
 // Teuchos initialization
 #include "Teuchos_Version.hpp"
 #include "Teuchos_Time.hpp"
+#include "Teuchos_FileInputSource.hpp"
+#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_XMLInputSource.hpp"
+// ################################################################################
+// ## General functions and classes
+// ################################################################################
 
-double mywt(Teuchos::Time const& self) { return self.wallTime(); }
-// Define the Teuchos python module
-BOOST_PYTHON_MODULE(_Teuchos)
+template<class BasePolicy_ = default_call_policies>
+struct del_dangleing_rcp : BasePolicy_
+{
+    void * my_rcp;
+    template <class ArgumentPackage>
+    static PyObject* postcall(ArgumentPackage const& args_, PyObject* result)
+    {
+        result = BasePolicy_::postcall(args_, result);
+        return result;
+    }
+};
+
+template< class obj >
+class py_rcp
+{
+    typedef Teuchos::RefCountPtr<obj> rcpobj;
+public:
+    static void* extract_rcp(PyObject* o)
+    {   
+        object boostobj = object(handle<>(borrowed( o )) );
+        obj *counted = extract<obj*>( boostobj );
+        rcpobj *myObj = new rcpobj( counted , true );
+        return myObj;
+    }
+    static void from_python()
+    {
+        converter::registry::insert( &extract_rcp , type_id< rcpobj >() );
+    }
+    
+    struct rcp_to_object
+    {
+        static PyObject* convert(rcpobj const& x)
+        {
+        	object myObj = object( x.get() );
+        	Py_XINCREF( myObj.ptr() );
+            return myObj.ptr();
+        }
+    };
+
+    static void to_python()
+    {
+        to_python_converter< rcpobj, rcp_to_object>();
+    }
+};
+
+// ################################################################################
+// ## Extracts and Inserts
+// ################################################################################
+void extract_teuchos_misc()
+{
+    py_rcp< Teuchos::XMLInputStream >::from_python();
+    py_rcp< Teuchos::XMLInputStream >::to_python();
+}
+// ################################################################################
+// ##
+// ################################################################################
+
+void expose_time()
 {
   // Teuchos version support
   def("Teuchos_Version", Teuchos::Teuchos_Version);
@@ -65,9 +127,40 @@ BOOST_PYTHON_MODULE(_Teuchos)
 	 "Increment the number of times this timer has been called.")
     .def("numCalls", &Teuchos::Time::numCalls,
 	 "Returns the number of times this timer has been called.")
-    .def("oldwallTime", &Teuchos::Time::wallTime,
+	 
+    .def("wallTime", &Teuchos::Time::wallTime,
 	 "Returns the current wall-clock time in seconds.")
-    .def("wallTime", &mywt,
- 	 "Returns the current wall-clock time in seconds.")
+	.staticmethod("wallTime")
+    
     ;
+}
+
+
+
+void expose_fileinputsource()
+{
+      // FileInputSource(const string& filename);
+    class_<Teuchos::FileInputSource>("foo","Definition of XMLInputSource derived class for reading XML from a file",
+                        init<string>() )
+        // virtual RefCountPtr<XMLInputStream> stream() const;
+        .def( "stream", &Teuchos::FileInputSource::stream ,
+                        del_dangleing_rcp<>(),
+                        "Create a FileInputStream")
+    ;
+}
+
+
+// Define the Teuchos python module
+BOOST_PYTHON_MODULE(_Teuchos)
+{
+    // Teuchos Time support
+    expose_time();
+    
+    
+    // dependant on: plist
+    //               XMLInputSource
+    // tests won't work yet !
+    expose_fileinputsource();
+    
+    extract_teuchos_misc();
 }
