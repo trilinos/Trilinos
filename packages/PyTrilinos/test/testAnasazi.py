@@ -38,6 +38,8 @@ import sys
 
 try:
     import setpath
+    if options.boost: setpath.setpath("src-boost")
+    else:             setpath.setpath()
     import Epetra, Anasazi
 except ImportError:
     from PyTrilinos import Epetra, Anasazi
