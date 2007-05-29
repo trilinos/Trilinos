@@ -104,6 +104,7 @@ include $(top_builddir)/../teuchos/Makefile.export.teuchos
 TEUCHOS_WRAPPERS = Teuchos_wrap.cpp
 TEUCHOS_PROXIES  = PyTrilinos/Teuchos.py
 TEUCHOS_MODULES  = $(libdir)/_Teuchos.so
+TEUCHOS_EXPORTS  =
 endif
 
 # # Thyra

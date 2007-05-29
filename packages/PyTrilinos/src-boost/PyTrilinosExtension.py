@@ -54,13 +54,14 @@ def makePyTrilinosExtensions(moduleName):
     moduleNameUpper = moduleName.upper()
     includeVar      = moduleNameUpper + "_INCLUDES"
     libVar          = moduleNameUpper + "_LIBS"
-    #interfaceVar    = moduleNameUpper + "_INTERFACES"
     wrapperVar      = moduleNameUpper + "_WRAPPERS"
+    exportVar       = moduleNameUpper + "_EXPORTS"
 
     # Parse and evaluate all of the Makefile variables in the current directory
-    vars   = processMakefile("Makefile")
-    srcdir = vars["srcdir"]
-    CXX    = vars["CXX"]
+    vars    = processMakefile("Makefile")
+    srcdir  = vars["srcdir"]
+    CXX     = vars["CXX"]
+    exports = vars[exportVar]
 
     # Obtain the NumPy version
     from numpy import __version__ as numpyVersion
@@ -147,13 +148,10 @@ def makePyTrilinosExtensions(moduleName):
     for wrapper in wrappers:
 
         # Generate the Extension name
-        #packages = extractPackageNames(os.path.join(srcdir,wrapper))
-        #packages[-1] = "_" + packages[-1]
-        #extName = ".".join(packages)
         extName = ".".join(["PyTrilinos","_"+wrapper.replace("_wrap.cpp","")])
 
         # Build the list of sources
-        sources = [os.path.join(srcdir,wrapper)]
+        sources = [os.path.join(srcdir,wrapper)] + exports
         if moduleName in ("Epetra",):
             sources.extend(epetraNumPySrc)
         if moduleName in ("EpetraExt","TriUtils","AztecOO","Galeri","IFPACK","Anasazi"):
