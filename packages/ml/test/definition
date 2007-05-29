@@ -28,12 +28,14 @@
            MultiLevelPreconditioner_Sym,
            MatrixFree,
            Miscellaneous,
+	   RefMaxwell,
          # Scalability,
          # VerySimple,
          # Zoltan,
            SelfSmoother;
     COMM = SERIAL, MPI(1-4);
 }
+
 
 # These tests should only be run on 1, 4, 9, 16, or 25 processors.
 (FRAMEWORK, MLTests) {
