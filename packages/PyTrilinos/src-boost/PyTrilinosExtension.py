@@ -61,7 +61,7 @@ def makePyTrilinosExtensions(moduleName):
     vars    = processMakefile("Makefile")
     srcdir  = vars["srcdir"]
     CXX     = vars["CXX"]
-    exports = vars[exportVar]
+    exports = vars[exportVar].split()
 
     # Obtain the NumPy version
     from numpy import __version__ as numpyVersion
