@@ -467,6 +467,7 @@ void DiagonalTransientModel::initialize()
 
   Np_ = 1;
   np_ = coeff_s_.size();
+  map_p_.clear();
   map_p_.push_back(
     rcp( new Epetra_LocalMap(np_,0,*epetra_comm_) )
     );

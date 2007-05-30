@@ -118,6 +118,62 @@ void DefaultProductVector<Scalar>::uninitialize()
   numBlocks_ = 0;
 }
 
+// Overridden from Teuchos::Describable
+                                                
+template<class Scalar>
+std::string DefaultProductVector<Scalar>::description() const
+{
+  std::ostringstream oss;
+  oss
+    << Teuchos::Describable::description()
+    << "{"
+    << "dim="<<this->space()->dim()
+    << ",numBlocks = "<<numBlocks_
+    << "}";
+  return oss.str();
+}
+
+template<class Scalar>
+void DefaultProductVector<Scalar>::describe(
+  Teuchos::FancyOStream &out_arg,
+  const Teuchos::EVerbosityLevel verbLevel
+  ) const
+{
+  typedef Teuchos::ScalarTraits<Scalar>  ST;
+  using Teuchos::RefCountPtr;
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
+  using Teuchos::describe;
+  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  OSTab tab(out);
+  switch(verbLevel) {
+    case Teuchos::VERB_DEFAULT:
+    case Teuchos::VERB_LOW:
+      *out << this->description() << std::endl;
+      break;
+    case Teuchos::VERB_MEDIUM:
+    case Teuchos::VERB_HIGH:
+    case Teuchos::VERB_EXTREME:
+    {
+      *out
+        << Teuchos::Describable::description() << "{"
+        << "dim=" << this->space()->dim()
+        << "}\n";
+      OSTab tab(out);
+      *out
+        <<  "numBlocks="<< numBlocks_ << std::endl
+        <<  "Constituent vector objects v[0]; v[1]; ...; v[numBlocks-1]:\n";
+      tab.incrTab();
+      for( int k = 0; k < numBlocks_; ++k ) {
+        *out << "v["<<k<<"] = " << describe(*vecs_[k].getConstObj(),verbLevel);
+      }
+      break;
+    }
+    default:
+      TEST_FOR_EXCEPT(true); // Should never get here!
+  }
+}
+
 // Overridden from ProductVectorBase
 
 template <class Scalar>
@@ -209,6 +265,7 @@ void DefaultProductVector<Scalar>::applyOp(
   ) const
 {
   using Teuchos::Workspace;
+  using Teuchos::RefCountPtr;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   //
   const Index	n = productSpace_->dim();
@@ -260,10 +317,10 @@ void DefaultProductVector<Scalar>::applyOp(
     );
   int incore_vec_k = -1, incore_targ_vec_k = -1;
   // Dynamic cast the pointers for the vector arguments
-  Workspace<const DefaultProductVector<Scalar>*>
+  Workspace<const ProductVectorBase<Scalar>*>
     vecs_args(wss,num_vecs,false);
   for(int k = 0; k < num_vecs; ++k) {
-    vecs_args[k] = dynamic_cast<const DefaultProductVector<Scalar>*>(vecs[k]);
+    vecs_args[k] = dynamic_cast<const ProductVectorBase<Scalar>*>(vecs[k]);
     if( vecs_args[k] == NULL ) {
       const bool isInCore_k = vecs[k]->space()->hasInCoreView();
       if( this_isInCore && isInCore_k ) {
@@ -278,10 +335,10 @@ void DefaultProductVector<Scalar>::applyOp(
         );
     }
   }
-  Workspace<DefaultProductVector<Scalar>*>
+  Workspace<ProductVectorBase<Scalar>*>
     targ_vecs_args(wss,num_targ_vecs,false);
   for(int k = 0; k < num_targ_vecs; ++k) {
-    targ_vecs_args[k] = dynamic_cast<DefaultProductVector<Scalar>*>(targ_vecs[k]);
+    targ_vecs_args[k] = dynamic_cast<ProductVectorBase<Scalar>*>(targ_vecs[k]);
     if( targ_vecs_args[k] == NULL ) {
       const bool isInCore_k = targ_vecs[k]->space()->hasInCoreView();
       if( this_isInCore && isInCore_k ) {
@@ -325,8 +382,12 @@ void DefaultProductVector<Scalar>::applyOp(
       );
   Index num_elements_remaining = sub_dim;
   const int numBlocks = productSpace_->numBlocks();
+  Workspace<RefCountPtr<const VectorBase<Scalar> > >
+    sub_vecs_rcps(wss,num_vecs);
   Workspace<const VectorBase<Scalar>*>
     sub_vecs(wss,num_vecs,false);
+  Workspace<RefCountPtr<VectorBase<Scalar> > >
+    sub_targ_vecs_rcps(wss,num_targ_vecs);
   Workspace<VectorBase<Scalar>*>
     sub_targ_vecs(wss,num_targ_vecs,false);
   Index g_off = -first_ele_offset_in;
@@ -343,10 +404,16 @@ void DefaultProductVector<Scalar>::applyOp(
           : std::min( local_dim + g_off, num_elements_remaining ) );
     if( local_sub_dim <= 0 )
       break;
-    for( int i = 0; i < num_vecs; ++i )       // Fill constituent vectors for block k
-      sub_vecs[i] = &*vecs_args[i]->vecs_[k].getConstObj();
-    for( int j = 0; j < num_targ_vecs; ++j )  // Fill constituent target vectors for block k
-      sub_targ_vecs[j] = &*targ_vecs_args[j]->vecs_[k].getNonconstObj();
+    // Fill constituent vectors for block k
+    for( int i = 0; i < num_vecs; ++i ) {
+      sub_vecs_rcps[i] = vecs_args[i]->getVectorBlock(k);
+      sub_vecs[i] = &*sub_vecs_rcps[i];
+    }
+    // Fill constituent target vectors for block k
+    for( int j = 0; j < num_targ_vecs; ++j ) {
+      sub_targ_vecs_rcps[j] = targ_vecs_args[j]->getNonconstVectorBlock(k);
+      sub_targ_vecs[j] = &*sub_targ_vecs_rcps[j];
+    }
     Thyra::applyOp( 
       op
       ,num_vecs,num_vecs?&sub_vecs[0]:NULL

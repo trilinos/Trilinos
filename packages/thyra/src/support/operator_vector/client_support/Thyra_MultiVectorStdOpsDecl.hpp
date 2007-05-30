@@ -235,15 +235,30 @@ void randomize( Scalar l, Scalar u, MultiVectorBase<Scalar>* V );
  */
 //@{
 
+/** \brief <tt>Z(i,j) += X(i,j), i = 0...Z->range()->dim()-1, j = 0...Z->domain()->dim()-1</tt>.
+ */
+template<class Scalar>
+void Vp_V( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X );
+
 /** \brief <tt>Z(i,j) = X(i,j) + Y(i,j), i = 0...Z->range()->dim()-1, j = 0...Z->domain()->dim()-1</tt>.
  */
 template<class Scalar>
 void V_VpV( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y );
 
-/** \brief <tt>Z(i,j) = X(i,j) - Y(i,j), i = 0...Z->range()->dim()-1, j = 0...Z->domain()->dim()-1</tt>.
+/** \brief <tt>Z(i,j) = X(i,j) - Y(i,j), i = 0...Z->range()->dim()-1, j =
+ * 0...Z->domain()->dim()-1</tt>.
  */
 template<class Scalar>
 void V_VmV( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y );
+
+/** \brief <tt>Z(i,j) = alpha*X(i,j) + Y(i), i = 0...z->space()->dim()-1</tt>,
+ * , j = 0...Z->domain()->dim()-1</tt>.
+ */
+template<class Scalar>
+void V_StVpV(
+  MultiVectorBase<Scalar>* Z, const Scalar &alpha,
+  const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y 
+  );
 
 //@}
 

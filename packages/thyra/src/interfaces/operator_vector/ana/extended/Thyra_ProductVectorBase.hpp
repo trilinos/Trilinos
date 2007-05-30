@@ -114,6 +114,35 @@ public:
 
 };
 
+
+/** \brief Dynamic cast from a <tt>VectorBase</tt> to a
+ * <tt>ProductVectorBase</tt> object and thow exception if this fails.
+ */
+template<class Scalar>
+inline
+Teuchos::RefCountPtr<Thyra::ProductVectorBase<Scalar> >
+nonconstProductVectorBase(
+  const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &v
+  )
+{
+  return Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(v,true);
+}
+
+
+/** \brief Dynamic cast from a <tt>const VectorBase</tt> to a <tt>const
+ * ProductVectorBase</tt> object and thow exception if this fails.
+ */
+template<class Scalar>
+inline
+Teuchos::RefCountPtr<const Thyra::ProductVectorBase<Scalar> >
+productVectorBase(
+  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &v
+  )
+{
+  return Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar> >(v,true);
+}
+
+
 } // namespace Thyra
 
 #endif // THYRA_PRODUCT_VECTOR_BASE_HPP

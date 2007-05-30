@@ -63,16 +63,16 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
     /// This is a pass-through to the underlying InterpolationBufferBase:
     bool setPoints(
       const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec
       ,const std::vector<ScalarMag> & accuracy_vec 
       );
 
     // This is not a pass-through.
     bool getPoints(
       const std::vector<Scalar>& time_vec_
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec_
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec_
+      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec_
+      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec_
       ,std::vector<ScalarMag>* accuracy_vec_
       ) const;
 
@@ -217,8 +217,8 @@ void InterpolationBufferAsStepper<Scalar>::setInterpolationBuffer(
 template<class Scalar>
 bool InterpolationBufferAsStepper<Scalar>::setPoints(
       const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec
       ,const std::vector<ScalarMag> & accuracy_vec 
       ) 
 {
@@ -228,8 +228,8 @@ bool InterpolationBufferAsStepper<Scalar>::setPoints(
 template<class Scalar>
 bool InterpolationBufferAsStepper<Scalar>::getPoints(
       const std::vector<Scalar>& time_vec_
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec_ptr_
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec_ptr_
+      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec_ptr_
+      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec_ptr_
       ,std::vector<ScalarMag>* accuracy_vec_ptr_
       ) const
 {
@@ -287,8 +287,8 @@ bool InterpolationBufferAsStepper<Scalar>::getPoints(
     *out << "IB->getPoints unsuccessful" << std::endl;
   }
   status = true;
-  std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > &x_vec = *x_vec_ptr_;
-  std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > &xdot_vec = *xdot_vec_ptr_;
+  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &x_vec = *x_vec_ptr_;
+  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &xdot_vec = *xdot_vec_ptr_;
   std::vector<ScalarMag> &accuracy_vec = *accuracy_vec_ptr_;
   // Sort time_vec_
   std::vector<Scalar> local_time_vec = time_vec_;
@@ -446,7 +446,7 @@ bool InterpolationBufferAsStepper<Scalar>::getPoints(
       std::vector<Scalar> tmp_time_vec; 
       tmp_time_vec.clear();
       tmp_time_vec.push_back(local_time_vec[i]);
-      std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
+      std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
       std::vector<ScalarMag> tmp_accuracy_vec;
       status = IB->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
       x_vec.push_back(tmp_x_vec[0]);
@@ -475,7 +475,7 @@ bool InterpolationBufferAsStepper<Scalar>::getPoints(
       }
       std::vector<Scalar> tmp_time_vec; 
       tmp_time_vec.push_back(local_time_vec[i]);
-      std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
+      std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
       std::vector<ScalarMag> tmp_accuracy_vec;
       status = stepper->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
       x_vec.push_back(tmp_x_vec[0]);
@@ -533,7 +533,7 @@ bool InterpolationBufferAsStepper<Scalar>::getPoints(
           }
           std::vector<Scalar> tmp_time_vec;
           tmp_time_vec.push_back(local_time_vec[i]);
-          std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
+          std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
           std::vector<ScalarMag> tmp_accuracy_vec;
           status = stepper->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
           x_vec.push_back(tmp_x_vec[0]);

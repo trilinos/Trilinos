@@ -35,6 +35,9 @@
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_as.hpp"
 
 namespace Thyra {
 
@@ -88,7 +91,24 @@ public:
     );
 
   /** \brief . */
-  static Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidSolveCriteriaExtraParameters();
+  static Teuchos::RefCountPtr<const Teuchos::ParameterList>
+  getValidSolveCriteriaExtraParameters();
+
+  /** @name Overridden from ParameterListAcceptor */
+  //@{
+
+  /** \brief . */
+  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+
+  //@}
 
   /** @name Overridden from NonlinearSolverBase */
   //@{
@@ -120,6 +140,7 @@ public:
 
 private:
 
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_;
   Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >    model_;
   Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >   J_;
   Teuchos::RefCountPtr<VectorBase<Scalar> >              current_x_;
@@ -158,6 +179,63 @@ DampenedNewtonNonlinearSolver<Scalar>::getValidSolveCriteriaExtraParameters()
   return validSolveCriteriaExtraParameters;
 }
 
+// Overridden from Teuchos::ParameterListAcceptor
+
+template<class Scalar>
+void DampenedNewtonNonlinearSolver<Scalar>::setParameterList(
+  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  )
+{
+  using Teuchos::get;
+  TEST_FOR_EXCEPT(is_null(paramList));
+  paramList->validateParametersAndSetDefaults(*getValidParameters(),0);
+  paramList_ = paramList;
+  TEST_FOR_EXCEPT("ToDo: Implement!");
+  Teuchos::readVerboseObjectSublist(&*paramList_,this);
+#ifdef TEUCHOS_DEBUG
+  paramList_->validateParameters(*getValidParameters(),0);
+#endif // TEUCHOS_DEBUG
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList>
+DampenedNewtonNonlinearSolver<Scalar>::getParameterList()
+{
+  return paramList_;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList>
+DampenedNewtonNonlinearSolver<Scalar>::unsetParameterList()
+{
+  Teuchos::RefCountPtr<Teuchos::ParameterList> _paramList = paramList_;
+  paramList_ = Teuchos::null;
+  return _paramList;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+DampenedNewtonNonlinearSolver<Scalar>::getParameterList() const
+{
+  return paramList_;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+DampenedNewtonNonlinearSolver<Scalar>::getValidParameters() const
+{
+  using Teuchos::setDoubleParameter; using Teuchos::setIntParameter;
+  static Teuchos::RefCountPtr<const Teuchos::ParameterList> validPL;
+  if (is_null(validPL)) {
+    Teuchos::RefCountPtr<Teuchos::ParameterList>
+      pl = Teuchos::parameterList();
+  TEST_FOR_EXCEPT("ToDo: Implement!");
+    Teuchos::setupVerboseObjectSublist(&*pl);
+    validPL = pl;
+  }
+  return validPL;
+}
+
 // Overridden from NonlinearSolverBase
 
 template <class Scalar>
@@ -188,16 +266,21 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
   ) 
 {
   using std::endl;
+  using Teuchos::as;
   // Validate input
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(0==x_inout);
   THYRA_ASSERT_VEC_SPACES(
-    "DampenedNewtonNonlinearSolver<Scalar>::solve(...)",*x_inout->space(),*model_->get_x_space());
+    "DampenedNewtonNonlinearSolver<Scalar>::solve(...)",
+    *x_inout->space(), *model_->get_x_space() );
+#endif
   // Get the output stream and verbosity level
   const Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   const bool showNewtonIters = (verbLevel==Teuchos::VERB_LOW);
-  const bool showLineSearchIters = (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM));
-  const bool showNewtonDetails = (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH));
-  const bool dumpAll = (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_EXTREME)); 
+  const bool showLineSearchIters = (as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM));
+  const bool showNewtonDetails = (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH));
+  const bool dumpAll = (as<int>(verbLevel) == as<int>(Teuchos::VERB_EXTREME)); 
   TEUCHOS_OSTAB;
   if(out.get() && showNewtonIters) *out
     << "\nBeginning dampended Newton solve of model = " << model_->description() << "\n\n";

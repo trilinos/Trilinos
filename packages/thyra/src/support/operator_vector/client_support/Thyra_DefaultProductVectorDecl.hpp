@@ -32,6 +32,7 @@
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_VectorDefaultBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
+#include "Teuchos_as.hpp"
 
 
 namespace Thyra {
@@ -121,6 +122,20 @@ public:
    * ToDo: Finish documentation.
    */
   void uninitialize();
+
+  //@}
+
+  /** @name Overridden from Teuchos::Describable */
+  //@{
+                                                
+  /** \brief . */
+  std::string description() const;
+
+  /** \brief . */
+  void describe(
+    Teuchos::FancyOStream &out,
+    const Teuchos::EVerbosityLevel verbLevel
+    ) const;
 
   //@}
 
@@ -262,6 +277,24 @@ defaultProductVector(
   return Teuchos::rcp(
     new DefaultProductVector<Scalar>(productSpace,vecs)
     );
+}
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates DefaultProductVector
+ */
+template<class Scalar>
+Teuchos::RefCountPtr<DefaultProductVector<Scalar> >
+defaultProductVector(
+  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const Teuchos::Array<Teuchos::RefCountPtr<const VectorBase<Scalar> > > &vecs
+  )
+{
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT( Teuchos::as<int>(vecs.size()) != productSpace->numBlocks() );
+#endif
+  return defaultProductVector(productSpace,&vecs[0]);
 }
 
 

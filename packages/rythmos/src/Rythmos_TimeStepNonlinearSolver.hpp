@@ -32,8 +32,12 @@
 
 
 #include "Thyra_NonlinearSolverBase.hpp"
+#include "Thyra_TestingTools.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_as.hpp"
 
 
 namespace Rythmos {
@@ -60,21 +64,30 @@ public:
   /** \brief. */
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
 
-  /** \brief The default maximum number of iterations. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, defaultMaxIterations );
+  /** @name Constructors/Intializers/Misc */
+  //@{
+  
 
-  /** \brief The default solution tolerance. */
-   STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, defaultTol );
+  /** \brief Sets parameter defaults . */
+  TimeStepNonlinearSolver();
 
-  /** \brief Stream that warnings are printed to. */
-   STANDARD_NONCONST_COMPOSITION_MEMBERS( std::ostream, warningOut );
+  //@}
+
+  /** @name Overridden from ParameterListAcceptor */
+  //@{
 
   /** \brief . */
-  TimeStepNonlinearSolver(
-    const int defaultMaxIterations = 3,
-    const ScalarMag defaultTol = 1e-2,
-    const warningOut_ptr_t &warningOut = Teuchos::rcp(&std::cerr,false)
-    );
+  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+
+  //@}
 
   /** @name Overridden from NonlinearSolverBase */
   //@{
@@ -111,10 +124,40 @@ public:
 
 private:
 
+  // private object data members
+
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_;
   Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> > J_;
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > current_x_;
   bool J_is_current_;
+
+  double defaultTol_;
+  int defaultMaxIters_;
+  double nonlinearSafetyFactor_;
+  double linearSafetyFactor_;
+  double RMinFraction_;
+  bool throwOnLinearSolveFailure_;
+
+  // static class data members
+
+  static const std::string DefaultTol_name_;
+  static const double DefaultTol_default_;
+
+  static const std::string DefaultMaxIters_name_;
+  static const int DefaultMaxIters_default_;
+
+  static const std::string NonlinearSafetyFactor_name_;
+  static const double NonlinearSafetyFactor_default_;
+
+  static const std::string LinearSafetyFactor_name_;
+  static const double LinearSafetyFactor_default_;
+
+  static const std::string RMinFraction_name_;
+  static const double RMinFraction_default_;
+
+  static const std::string ThrownOnLinearSolveFailure_name_;
+  static const bool ThrownOnLinearSolveFailure_default_;
 
 };
 
@@ -123,17 +166,181 @@ private:
 // Defintions
 
 
+// Static members
+
+
+template<class Scalar>
+const std::string
+TimeStepNonlinearSolver<Scalar>::DefaultTol_name_ = "Default Tol";
+
+template<class Scalar>
+const double
+TimeStepNonlinearSolver<Scalar>::DefaultTol_default_ = 1e-2;
+
+
+template<class Scalar>
+const std::string
+TimeStepNonlinearSolver<Scalar>::DefaultMaxIters_name_ = "Default Max Iters";
+
+template<class Scalar>
+const int
+TimeStepNonlinearSolver<Scalar>::DefaultMaxIters_default_ = 3;
+
+
+template<class Scalar>
+const std::string
+TimeStepNonlinearSolver<Scalar>::NonlinearSafetyFactor_name_
+= "Nonlinear Safety Factor";
+
+template<class Scalar>
+const double
+TimeStepNonlinearSolver<Scalar>::NonlinearSafetyFactor_default_ = 0.1;
+
+
+template<class Scalar>
+const std::string
+TimeStepNonlinearSolver<Scalar>::LinearSafetyFactor_name_ = "Linear Safety Factor";
+
+template<class Scalar>
+const double
+TimeStepNonlinearSolver<Scalar>::LinearSafetyFactor_default_ = 0.05;
+
+
+template<class Scalar>
+const std::string
+TimeStepNonlinearSolver<Scalar>::RMinFraction_name_ = "R Min Fraction";
+
+template<class Scalar>
+const double
+TimeStepNonlinearSolver<Scalar>::RMinFraction_default_ = 0.3;
+
+
+template<class Scalar>
+const std::string
+TimeStepNonlinearSolver<Scalar>::ThrownOnLinearSolveFailure_name_
+= "Thrown on Linear Solve Failure";
+
+template<class Scalar>
+const bool
+TimeStepNonlinearSolver<Scalar>::ThrownOnLinearSolveFailure_default_ = false;
+
+
+// Constructors/Intializers/Misc
+
+
 template <class Scalar>
-TimeStepNonlinearSolver<Scalar>::TimeStepNonlinearSolver(
-  const int defaultMaxIterations,
-  const ScalarMag defaultTol,
-  const warningOut_ptr_t &warningOut
-  )
-  :defaultMaxIterations_(defaultMaxIterations),
-   defaultTol_(defaultTol),
-   warningOut_(warningOut),
-   J_is_current_(false)
+TimeStepNonlinearSolver<Scalar>::TimeStepNonlinearSolver()
+  :J_is_current_(false),
+   defaultTol_(DefaultTol_default_),
+   defaultMaxIters_(DefaultMaxIters_default_),
+   nonlinearSafetyFactor_(NonlinearSafetyFactor_default_),
+   linearSafetyFactor_(LinearSafetyFactor_default_),
+   RMinFraction_(RMinFraction_default_),
+   throwOnLinearSolveFailure_(ThrownOnLinearSolveFailure_default_)
 {}
+
+
+// Overridden from Teuchos::ParameterListAcceptor
+
+
+template<class Scalar>
+void TimeStepNonlinearSolver<Scalar>::setParameterList(
+  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  )
+{
+  using Teuchos::get;
+  TEST_FOR_EXCEPT(is_null(paramList));
+  paramList->validateParametersAndSetDefaults(*getValidParameters(),0);
+  paramList_ = paramList;
+  defaultTol_ = get<double>(*paramList_,DefaultTol_name_);
+  defaultMaxIters_ = get<int>(*paramList_,DefaultMaxIters_name_);
+  nonlinearSafetyFactor_ = get<double>(*paramList_,NonlinearSafetyFactor_name_);
+  linearSafetyFactor_ = get<double>(*paramList_,LinearSafetyFactor_name_);
+  RMinFraction_ = get<double>(*paramList_,RMinFraction_name_);
+  throwOnLinearSolveFailure_ = get<bool>(
+    *paramList_,ThrownOnLinearSolveFailure_name_);
+  Teuchos::readVerboseObjectSublist(&*paramList_,this);
+#ifdef TEUCHOS_DEBUG
+  paramList_->validateParameters(*getValidParameters(),0);
+#endif // TEUCHOS_DEBUG
+}
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList>
+TimeStepNonlinearSolver<Scalar>::getParameterList()
+{
+  return paramList_;
+}
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList>
+TimeStepNonlinearSolver<Scalar>::unsetParameterList()
+{
+  Teuchos::RefCountPtr<Teuchos::ParameterList> _paramList = paramList_;
+  paramList_ = Teuchos::null;
+  return _paramList;
+}
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+TimeStepNonlinearSolver<Scalar>::getParameterList() const
+{
+  return paramList_;
+}
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+TimeStepNonlinearSolver<Scalar>::getValidParameters() const
+{
+  using Teuchos::setDoubleParameter; using Teuchos::setIntParameter;
+  static Teuchos::RefCountPtr<const Teuchos::ParameterList> validPL;
+  if (is_null(validPL)) {
+    Teuchos::RefCountPtr<Teuchos::ParameterList>
+      pl = Teuchos::parameterList();
+    setDoubleParameter(
+      DefaultTol_name_, DefaultTol_default_,
+      "The default base tolerance for the nonlinear timestep solve.\n"
+      "This tolerance can be overridden ???",
+      &*pl );
+    setIntParameter(
+      DefaultMaxIters_name_, DefaultMaxIters_default_,
+      "The default maximum number of Newton iterations to perform.\n"
+      "This default can be overridden ???",
+      &*pl );
+    setDoubleParameter(
+      NonlinearSafetyFactor_name_, NonlinearSafetyFactor_default_,
+      "The factor (< 1.0) to multiply tol to bound R*||dx|||.\n"
+      "The exact nonlinear convergence test is:\n"
+      "  R*||dx|| <= \"" + NonlinearSafetyFactor_name_ + "\" * tol.",
+      &*pl );
+    setDoubleParameter(
+      LinearSafetyFactor_name_, LinearSafetyFactor_default_,
+      "This factor multiplies the nonlinear safety factor which multiplies\n"
+      "tol when determining the linear solve tolerence.\n"
+      "The exact linear convergence tolerance is:\n"
+      "  ||J*dx+f||/||f|| <= \"" + LinearSafetyFactor_name_ + "\" * "
+      "\"" + NonlinearSafetyFactor_name_ + "\" * tol.",
+      &*pl );
+    setDoubleParameter(
+      RMinFraction_name_, RMinFraction_default_,
+      "The faction below which the R factor is not allowed to drop\n"
+      "below each Newton iteration.  The R factor is related to the\n"
+      "ratio of ||dx||/||dx_last|| between nonlinear iterations.",
+      &*pl );
+    pl->set(
+      ThrownOnLinearSolveFailure_name_, ThrownOnLinearSolveFailure_default_,
+      "If set to true (\"1\"), then an Thyra::CatastrophicSolveFailure\n"
+      "exception will be thrown when a linear solve fails to meet it's tolerance."
+      );
+    Teuchos::setupVerboseObjectSublist(&*pl);
+    validPL = pl;
+  }
+  return validPL;
+}
 
 
 // Overridden from NonlinearSolverBase
@@ -169,12 +376,39 @@ TimeStepNonlinearSolver<Scalar>::solve(
 {
 
   using std::endl;
+  using Teuchos::describe;
+  using Teuchos::as;
   using Teuchos::rcp;
   using Teuchos::RefCountPtr;
   using Teuchos::OSTab;
   using Teuchos::getFancyOStream;
+  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef Teuchos::VerboseObjectTempState<MEB> VOTSME;
+  typedef Thyra::LinearOpWithSolveBase<Scalar> LOWSB;
+  typedef Teuchos::VerboseObjectTempState<LOWSB> VOTSLOWSB;
 
-  TEST_FOR_EXCEPT(solveCriteria!=NULL); // ToDo: Pass to linear solver?
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(0==x);
+  THYRA_ASSERT_VEC_SPACES(
+    "TimeStepNonlinearSolver<Scalar>::solve(...)",
+    *x->space(),*model_->get_x_space() );
+  TEST_FOR_EXCEPT(
+    0!=solveCriteria && "ToDo: Support passed in solve criteria!" );
+#endif
+
+  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  const bool showNewtonDetails = (as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM));
+  const bool dumpAll = (as<int>(verbLevel) == as<int>(Teuchos::VERB_EXTREME)); 
+  TEUCHOS_OSTAB;
+  VOTSME stateModel_outputTempState(model_,out,verbLevel);
+  if(out.get() && showNewtonDetails) *out
+    << "\nBeginning undampended Newton time step solve of model = " << model_->description() << "\n\n";
+
+  if(out.get() && dumpAll) {
+    *out << "\nInitial guess:\n";
+    *out << "\nx =\n" << *x;
+  }
 
   // Initialize storage for algorithm
   if(!J_.get()) J_ = model_->create_W();
@@ -188,55 +422,92 @@ TimeStepNonlinearSolver<Scalar>::solve(
 
   // Initialize convergence criteria
   ScalarMag R = SMT::one();
-  ScalarMag RMin = 0.3; // ToDo: Make this adjustable
-  ScalarMag tolSafety = 0.1; // ToDo: Make this adjustable
-  ScalarMag linearTolSafety = 0.05 * tolSafety; // ToDo: Make this adjustable
-  int maxIters = this->defaultMaxIterations();
-  ScalarMag tol = this->defaultTol();
+  ScalarMag linearTolSafety = linearSafetyFactor_ * nonlinearSafetyFactor_;
+  int maxIters = defaultMaxIters_;
+  ScalarMag tol = defaultTol_;
   // ToDo: Get above from solveCriteria!
 
   // Do the undampened Newton iterations
   bool converged = false;
+  bool sawFailedLinearSolve = false;
+  Thyra::SolveStatus<Scalar> failedLinearSolveStatus;
+  ScalarMag nrm_dx;
   ScalarMag nrm_dx_last;
   int iter = 1;
   for( ; iter <= maxIters; ++iter ) {
-    // Evaluate f and W
+    if(out.get() && showNewtonDetails)
+      *out << "\n*** newtonIter = " << iter << endl;
+    if(out.get() && showNewtonDetails)
+      *out << "\nEvaluating the model f and W ...\n";
     eval_f_W( *model_, *x_curr, ST::one(), &*f, &*J_ );
-    // Zero out dx to deal with iterative linear solvers
-    Thyra::V_S(&*dx,ST::zero());
-    // Solve the system: J*dx = -f
+    if(out.get() && showNewtonDetails)
+      *out << "\nSolving the system J*dx = -f ...\n";
+    Thyra::V_S(&*dx,ST::zero()); // Initial guess is needed!
     Thyra::SolveCriteria<Scalar>
       linearSolveCriteria(
         Thyra::SolveMeasureType(
-          Thyra::SOLVE_MEASURE_NORM_RESIDUAL,Thyra::SOLVE_MEASURE_NORM_RHS
-          )
-        ,linearTolSafety*tol
+          Thyra::SOLVE_MEASURE_NORM_RESIDUAL, Thyra::SOLVE_MEASURE_NORM_RHS
+          ),
+        linearTolSafety*tol
         );
+    VOTSLOWSB J_outputTempState(J_,out,verbLevel);
     Thyra::SolveStatus<Scalar> linearSolveStatus
       = Thyra::solve( *J_, Thyra::NOTRANS, *f, &*dx, &linearSolveCriteria );
+    if(out.get() && showNewtonDetails)
+      *out << "\nLinear solve status:\n" << linearSolveStatus;
     Thyra::Vt_S(&*dx,Scalar(-ST::one()));
-    if (delta != NULL)
-      Thyra::Vp_V(delta,*dx); 
+    if(out.get() && dumpAll)
+      *out << "\ndx = " << describe(*dx,verbLevel);
+    if (delta != NULL) {
+      Thyra::Vp_V(delta,*dx);
+      if(out.get() && dumpAll)
+        *out << "\ndelta = " << describe(*delta,verbLevel);
+    }
     // Check the linear solve
     if(linearSolveStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) {
-      warningOut()
-        << "Rythmos::TimeStepNonlinearSolver<Scalar>::solve(...), Warning, linear solve did not converge with solve status:\n\n";
-      OSTab(getFancyOStream(rcp(&warningOut(),false))).o() << linearSolveStatus;
-      warningOut()
-        <<endl<< "Continuing anyway :-)\n";
-      // ToDo: Add option to throw exception failure
+      sawFailedLinearSolve = true;
+      failedLinearSolveStatus = linearSolveStatus;
+      if (throwOnLinearSolveFailure_) {
+        TEST_FOR_EXCEPTION(
+          throwOnLinearSolveFailure_, Thyra::CatastrophicSolveFailure,
+          "Error, the linear solver did not converge!"
+          );
+      }
+      if(out.get() && showNewtonDetails)
+        *out << "\nWarning, linear solve did not converge!  Continuing anyway :-)\n";
     }
     // Update the solution: x_curr = x_curr + dx
     Vp_V( &*x_curr, *dx );
+    if(out.get() && dumpAll)
+      *out << "\nUpdated solution x = " << describe(*x_curr,verbLevel);
     // Convergence test
-    const ScalarMag nrm_dx = Thyra::norm(*dx);
-    if(R*nrm_dx < tolSafety*tol) {
+    nrm_dx = Thyra::norm(*dx);
+    if ( R*nrm_dx <= nonlinearSafetyFactor_*tol )
       converged = true;
+    if(out.get() && showNewtonDetails)
+      *out
+        << "\nConvergence test:\n"
+        << "  R*||dx|| = " << R << "*" << nrm_dx
+        << " = " << (R*nrm_dx) << "\n"
+        << "    <= nonlinearSafetyFactor*tol = " << nonlinearSafetyFactor_ << "*" << tol
+        << " = " << (nonlinearSafetyFactor_*tol)
+        << " : " << ( converged ? "converged!" : " unconverged" )
+        << endl;
+    if(converged)
       break;
-    }
     // Update convergence criteria
     if(iter > 1) {
-      R = std::max(RMin*R,nrm_dx/nrm_dx_last);
+      const Scalar
+        MinR = RMinFraction_*R,
+        nrm_dx_ratio = nrm_dx/nrm_dx_last;
+      R = std::max(MinR,nrm_dx_ratio);
+      if(out.get() && showNewtonDetails)
+      *out
+        << "\nUpdated R\n"
+        << "  = max(RMinFraction*R,||dx||/||dx_last||)\n"
+        << "  = max("<<RMinFraction_<<"*"<<R<<","<<nrm_dx<<"/"<<nrm_dx_last<<")\n"
+        << "  = max("<<MinR<<","<<nrm_dx_ratio<<")\n"
+        << "  = " << R << endl;
     }
     // Save to old
     std::swap(dx_last,dx);
@@ -245,18 +516,44 @@ TimeStepNonlinearSolver<Scalar>::solve(
 
   // Set the solution
   Thyra::assign(x,*x_curr);
+  
+  if(out.get() && dumpAll)
+    *out << "\nFinal solution x = " << describe(*x,verbLevel);
 
   // Check the status
+
   Thyra::SolveStatus<Scalar> solveStatus;
+
   std::ostringstream oss;
+  Teuchos::FancyOStream omsg(rcp(&oss,false));
+
+  omsg << "Solver: " << this->description() << endl;
+
   if(converged) {
     solveStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
-    oss << "CVODE status test converged!  Iterations = " << iter << ".";
+    omsg << "CVODE status test converged!\n";
   }
   else {
     solveStatus.solveStatus = Thyra::SOLVE_STATUS_UNCONVERGED;
-    oss << "CVODE status test failed!  Iterations = " << iter << ".";
+    omsg << "CVODE status test failed!\n";
   }
+
+  if (sawFailedLinearSolve) {
+    omsg << "Warning!  A failed linear solve was encountered with status:\n";
+    OSTab tab(omsg);
+    omsg << failedLinearSolveStatus;
+  }
+
+  omsg
+    << "R*||dx|| = " << R << "*" << nrm_dx
+    << " <= nonlinearSafetyFactor*tol = " << nonlinearSafetyFactor_ << "*" << tol << " : "
+    << ( converged ? "converged!" : " unconverged" ) << endl;
+
+  omsg
+    << "Iterations = " << iter;
+  // Above, we leave off the last newline since this is the convention for the
+  // SolveStatus::message string!
+
   solveStatus.message = oss.str();
 
   // Update the solution state for external clients
@@ -281,10 +578,13 @@ TimeStepNonlinearSolver<Scalar>::cloneNonlinearSolver() const
 {
   Teuchos::RefCountPtr<TimeStepNonlinearSolver<Scalar> >
     nonlinearSolver = Teuchos::rcp(new TimeStepNonlinearSolver<Scalar>);
-  nonlinearSolver->defaultMaxIterations_ = defaultMaxIterations_;
-  nonlinearSolver->defaultTol_ = defaultTol_;
-  nonlinearSolver->warningOut_ = warningOut_;
   nonlinearSolver->model_ = model_; // Shallow copy is okay, model is stateless
+  nonlinearSolver->defaultTol_ = defaultTol_;
+  nonlinearSolver->defaultMaxIters_ = defaultMaxIters_;
+  nonlinearSolver->nonlinearSafetyFactor_ = nonlinearSafetyFactor_;
+  nonlinearSolver->linearSafetyFactor_ = linearSafetyFactor_;
+  nonlinearSolver->RMinFraction_ = RMinFraction_;
+  nonlinearSolver->throwOnLinearSolveFailure_ = throwOnLinearSolveFailure_;
   // Note: The specification of this virtual function in the interface class
   // allows us to just copy the algorithm, not the entire state so we are
   // done!

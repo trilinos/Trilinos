@@ -133,18 +133,22 @@ public:
   
   /** \brief . */
   const StepStatus<Scalar> getStepStatus() const;
-
+  
   //@}
 
   /** \name Overridden from InterpolationBufferBase */
   //@{
 
   /** \brief . */
+  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+  get_x_space() const;
+
+  /** \brief . */
   bool setPoints(
-    const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
-    ,const std::vector<ScalarMag> & accuracy_vec 
+    const std::vector<Scalar>& time_vec,
+    const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec,
+    const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+    const std::vector<ScalarMag> & accuracy_vec 
     );
   
   /** \brief . */
@@ -158,10 +162,11 @@ public:
   
   /** \brief . */
   bool getPoints(
-    const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
-    ,std::vector<ScalarMag>* accuracy_vec) const;
+    const std::vector<Scalar>& time_vec,
+    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec,
+    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    std::vector<ScalarMag>* accuracy_vec
+    ) const;
   
   /** \brief . */
   bool getNodes(std::vector<Scalar>* time_vec) const;
@@ -476,10 +481,13 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef Thyra::NonlinearSolverBase<Scalar> NSB;
+  typedef Teuchos::VerboseObjectTempState<NSB> VOTSNSB;
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::takeStep");
+  VOTSNSB solver_outputTempState(solver_,out,verbLevel);
 
   if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
     *out
@@ -495,12 +503,12 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 
   if ((flag == VARIABLE_STEP) || (dt == ST::zero())) {
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) )
-      *out << "The arguments to takeStep are not valid for BackwardEulerStepper at this time." << std::endl;
+      *out << "\nThe arguments to takeStep are not valid for BackwardEulerStepper at this time." << std::endl;
     // print something out about this method not supporting automatic variable step-size
     return(Scalar(-ST::one()));
   }
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "dt = " << dt << std::endl;
+    *out << "\ndt = " << dt << std::endl;
   }
 
 
@@ -531,11 +539,21 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
   //
   // Solve the implicit nonlinear system to a tolerance of ???
   //
+  
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
+    *out << "\nSolving the implicit backward-Euler timestep equation ...\n";
+  }
 
-  solver_->solve(&*x_);
+  Thyra::SolveStatus<Scalar>
+    neSolveStatus = solver_->solve(&*x_);
+
   // In the above solve, on input *x_ is the old value of x for the previous
   // time step which is used as the initial guess for the solver.  On output,
   // *x_ is the converged timestep solution.
+ 
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
+    *out << "\nOutput status of nonlinear solve:\n" << neSolveStatus;
+  }
 
   // 2007/05/18: rabartl: ToDo: Above, get the solve status from the above
   // solve and at least print warning message if the solve fails!  Actually,
@@ -557,13 +575,13 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
   numSteps_++;
 
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "t_old_ = " << t_old_ << std::endl;
-    *out << "t_ = " << t_ << std::endl;
+    *out << "\nt_old_ = " << t_old_ << std::endl;
+    *out << "\nt_ = " << t_ << std::endl;
   }
 
   if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
     *out
-      << "Leaving " << Teuchos::TypeNameTraits<BackwardEulerStepper<Scalar> >::name()
+      << "\nLeaving " << Teuchos::TypeNameTraits<BackwardEulerStepper<Scalar> >::name()
       << "::takeStep(...) ...\n"; 
   }
 
@@ -613,10 +631,18 @@ const StepStatus<Scalar> BackwardEulerStepper<Scalar>::getStepStatus() const
 
 
 template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+BackwardEulerStepper<Scalar>::get_x_space() const
+{
+  return ( !is_null(model_) ? model_->get_x_space() : Teuchos::null );
+}
+
+
+template<class Scalar>
 bool BackwardEulerStepper<Scalar>::setPoints(
     const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec
     ,const std::vector<ScalarMag> & accuracy_vec 
     )
 {
@@ -694,8 +720,8 @@ TimeRange<Scalar> BackwardEulerStepper<Scalar>::getTimeRange() const
 template<class Scalar>
 bool BackwardEulerStepper<Scalar>::getPoints(
     const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
 

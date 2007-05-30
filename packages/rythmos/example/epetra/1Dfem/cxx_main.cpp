@@ -201,7 +201,10 @@ int main(int argc, char *argv[])
         nonlinearSolver;
       Teuchos::RefCountPtr<Rythmos::TimeStepNonlinearSolver<double> >
         _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
-      _nonlinearSolver->defaultTol(1e-3*maxError);
+      Teuchos::RefCountPtr<Teuchos::ParameterList>
+        nonlinearSolverPL = Teuchos::parameterList();
+      nonlinearSolverPL->set("Default Tol",double(1e-3*maxError));
+      _nonlinearSolver->setParameterList(nonlinearSolverPL);
       nonlinearSolver = _nonlinearSolver;
       stepper_ptr = Teuchos::rcp(new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
       method = "Backward Euler";
@@ -210,7 +213,10 @@ int main(int argc, char *argv[])
         nonlinearSolver;
       Teuchos::RefCountPtr<Rythmos::TimeStepNonlinearSolver<double> >
         _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
-      _nonlinearSolver->defaultTol(1e-3*maxError);
+      Teuchos::RefCountPtr<Teuchos::ParameterList>
+        nonlinearSolverPL = Teuchos::parameterList();
+      nonlinearSolverPL->set("Default Tol",double(1e-3*maxError));
+      _nonlinearSolver->setParameterList(nonlinearSolverPL);
       nonlinearSolver = _nonlinearSolver;
       Teuchos::RefCountPtr<Teuchos::ParameterList> BDFparams = Teuchos::rcp(new Teuchos::ParameterList);
       BDFparams->set( "stopTime", finalTime );

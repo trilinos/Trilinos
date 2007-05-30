@@ -388,8 +388,8 @@ namespace Thyra {
 template <class RangeScalar, class DomainScalar = RangeScalar>
 class LinearOpWithSolveFactoryBase
   : virtual public Teuchos::Describable
-  , virtual public Teuchos::ParameterListAcceptor
   , virtual public Teuchos::VerboseObject<LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar> >
+  , virtual public Teuchos::ParameterListAcceptor
 {
 public:
 

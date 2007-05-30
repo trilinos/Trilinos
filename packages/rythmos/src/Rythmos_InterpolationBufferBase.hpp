@@ -202,10 +202,10 @@ public:
    * debug mode)?
    */
   virtual bool setPoints(
-    const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
-    ,const std::vector<ScalarMag> & accuracy_vec
+    const std::vector<Scalar>& time_vec,
+    const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec,
+    const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+    const std::vector<ScalarMag> & accuracy_vec
     ) = 0;
 
   /** Fill data in from another interpolation buffer.
@@ -292,10 +292,10 @@ public:
    * tighten up the specification of this function?
    */
   virtual bool getPoints(
-    const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
-    ,std::vector<ScalarMag>* accuracy_vec
+    const std::vector<Scalar>& time_vec,
+    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec,
+    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    std::vector<ScalarMag>* accuracy_vec
     ) const = 0;
 
   /** \brief Get interpolation nodes.
@@ -334,13 +334,13 @@ public:
  * \relates InterpolationBufferBase
  */
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
 get_x( const InterpolationBufferBase<Scalar> &interpBuffer, const Scalar &t )
 {
   using Teuchos::implicit_cast;
   std::vector<Scalar> time_vec;
   time_vec.push_back(t);
-  std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > x_vec;
+  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > x_vec;
   interpBuffer.getPoints(time_vec,&x_vec,0,0);
   TEUCHOS_ASSERT( 1 == implicit_cast<int>(x_vec.size()) );
   return x_vec[0];

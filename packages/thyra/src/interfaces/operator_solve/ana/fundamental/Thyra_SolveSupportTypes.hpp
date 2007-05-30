@@ -250,9 +250,13 @@ std::ostream& operator<<( std::ostream& out_arg, const SolveStatus<Scalar> &solv
   Teuchos::OSTab tab(out);
   *out
     << "solveStatus = " << toString(solveStatus.solveStatus) << std::endl
-    << "achievedTol = " << SolveStatus<Scalar>::achievedTolToString(solveStatus.achievedTol) << std::endl
-    << "message: \"" << solveStatus.message << "\"" << std::endl
-    << "extraParameters:";
+    << "achievedTol = " << SolveStatus<Scalar>::achievedTolToString(solveStatus.achievedTol) << std::endl;
+  *out << "message:";
+  if (solveStatus.message.length()) {
+    Teuchos::OSTab tab(out);
+    *out << "\n" << solveStatus.message << "\n";
+  }
+  *out << "extraParameters:";
   if(solveStatus.extraParameters.get()) {
     *out << "\n";
     solveStatus.extraParameters->print(Teuchos::OSTab(out).o(),1000,true);
@@ -263,8 +267,8 @@ std::ostream& operator<<( std::ostream& out_arg, const SolveStatus<Scalar> &solv
   return out_arg;
 }
 
-/** \brief Enum how a <tt>LinearOpWithSolveBase</tt> object will be used for
- * solves after it is constructed.
+/** \brief Enum that specifies how a <tt>LinearOpWithSolveBase</tt> object
+ * will be used for solves after it is constructed.
  *
  * \ingroup Equation_solve_foundation_code_grp
  */

@@ -295,6 +295,17 @@ void Thyra::randomize( Scalar l, Scalar u, MultiVectorBase<Scalar>* V )
 }
 
 template<class Scalar>
+void Thyra::Vp_V( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  linear_combination(
+    1, Teuchos::arrayArg<Scalar>(ST::one())(),
+    Teuchos::arrayArg<const MultiVectorBase<Scalar>*>(&X)(),
+    ST::one(), Z
+    );
+}
+
+template<class Scalar>
 void Thyra::V_VpV( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -313,6 +324,20 @@ void Thyra::V_VmV( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X,
     2,Teuchos::arrayArg<Scalar>(ST::one(),Scalar(-ST::one()))()
     ,Teuchos::arrayArg<const MultiVectorBase<Scalar>*>(&X,&Y)()
     ,ST::zero(),Z
+    );
+}
+
+template<class Scalar>
+void Thyra::V_StVpV(
+  MultiVectorBase<Scalar>* Z, const Scalar &alpha,
+  const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y 
+  )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  linear_combination(
+    2, Teuchos::arrayArg<Scalar>(alpha,ST::one())(),
+    Teuchos::arrayArg<const MultiVectorBase<Scalar>*>(&X,&Y)(),
+    ST::zero(), Z
     );
 }
 

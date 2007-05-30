@@ -140,31 +140,35 @@ struct StepStatus {
 template<class Scalar>
 std::ostream& operator<<( std::ostream& out_arg, const StepStatus<Scalar> &stepStatus )
 {
+  using std::endl;
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = Teuchos::getFancyOStream(Teuchos::rcp(&out_arg,false));
   Teuchos::OSTab tab(out);
   *out
-    << "message: \"" << stepStatus.message << "\"" << std::endl
-    << "stepStatus = " << toString(stepStatus.stepStatus) << std::endl
-    << "stepLETStatus = " << toString(stepStatus.stepLETStatus) << std::endl
-    << "stepSize = " << stepStatus.stepSize << std::endl
-    << "order = " << stepStatus.order << std::endl
-    << "time = " << stepStatus.time << std::endl
-    << "stepLETValue = " << stepStatus.stepLETValue << std::endl;
+    << "message: \"" << stepStatus.message << "\"" << endl
+    << "stepStatus = " << toString(stepStatus.stepStatus) << endl
+    << "stepLETStatus = " << toString(stepStatus.stepLETStatus) << endl
+    << "stepSize = " << stepStatus.stepSize << endl
+    << "order = " << stepStatus.order << endl
+    << "time = " << stepStatus.time << endl
+    << "stepLETValue = " << stepStatus.stepLETValue << endl;
   if (stepStatus.solution == Teuchos::null) {
-    *out << "solution = NULL" << std::endl;
-  } else {
-    *out << "solution = " << stepStatus.solution->description();
+    *out << "solution = NULL" << endl;
+  }
+  else {
+    *out << "solution = " << stepStatus.solution->description() << endl;
   }
   if (stepStatus.solutionDot == Teuchos::null) {
-    *out << "solutionDot = NULL" << std::endl;
-  } else {
-    *out << "solutionDot = " << stepStatus.solutionDot->description();
+    *out << "solutionDot = NULL" << endl;
+  }
+  else {
+    *out << "solutionDot = " << stepStatus.solutionDot->description() << endl;
   }
   if (stepStatus.residual == Teuchos::null) {
-    *out << "residual = NULL" << std::endl;
-  } else {
-    *out << "residual = " << stepStatus.residual->description();
+    *out << "residual = NULL" << endl;
+  }
+  else {
+    *out << "residual = " << stepStatus.residual->description() << endl;
   }
   *out << "extraParameters: ";
   if(stepStatus.extraParameters.get()) {
@@ -172,7 +176,7 @@ std::ostream& operator<<( std::ostream& out_arg, const StepStatus<Scalar> &stepS
     stepStatus.extraParameters->print(Teuchos::OSTab(out).o(),1000,true);
   }
   else {
-    *out << "NONE" << std::endl;
+    *out << "NONE" << endl;
   }
   return out_arg;
 }

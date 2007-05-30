@@ -52,6 +52,8 @@
 
 namespace {
 
+const std::string TimeStepNonlinearSolver_name = "TimeStepNonlinearSolver";
+
 const std::string Stratimikos_name = "Stratimikos";
 
 const std::string DiagonalTransientModel_name = "DiagonalTransientModel";
@@ -65,6 +67,7 @@ getValidParameters()
   static RefCountPtr<const ParameterList> validPL;
   if (is_null(validPL)) {
     RefCountPtr<ParameterList> pl = Teuchos::parameterList();
+    pl->sublist(TimeStepNonlinearSolver_name);
     pl->sublist(Stratimikos_name);
     pl->sublist(DiagonalTransientModel_name);
     pl->sublist(RythmosStepper_name);
@@ -81,12 +84,14 @@ int main(int argc, char *argv[])
 
   typedef double Scalar;
   typedef double ScalarMag;
+  using Teuchos::describe;
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
   using Teuchos::as;
   using Teuchos::ParameterList;
   using Teuchos::CommandLineProcessor;
   typedef Teuchos::ParameterList::PrintOptions PLPrintOptions;
+  typedef Thyra::ModelEvaluatorBase MEB;
   
   bool result, success = true;
 
@@ -200,7 +205,10 @@ int main(int argc, char *argv[])
 
     RefCountPtr<Rythmos::TimeStepNonlinearSolver<double> >
       nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
-    nonlinearSolver->defaultTol(1e-3*maxError);
+    RefCountPtr<ParameterList>
+      nonlinearSolverPL = sublist(paramList,TimeStepNonlinearSolver_name);
+    nonlinearSolverPL->get("Default Tol",1e-3*maxError); // Set default if not set
+    nonlinearSolver->setParameterList(nonlinearSolverPL);
 
     RefCountPtr<Rythmos::StepperBase<Scalar> > stateStepper;
     
@@ -219,7 +227,7 @@ int main(int argc, char *argv[])
     // ToDo: Above, add a factory interface to create the time stateStepper
     // strategy given a parameter sublist (kind of like with Stratimikos).
 
-    *out <<"\nstateStepper:\n" << Teuchos::describe(*stateStepper,verbLevel);
+    *out <<"\nstateStepper:\n" << describe(*stateStepper,verbLevel);
     *out <<"\nstateStepper valid options:\n";
     stateStepper->getValidParameters()->print(
       *out, PLPrintOptions().indent(2).showTypes(true).showDoc(true)
@@ -234,18 +242,33 @@ int main(int argc, char *argv[])
     // Create the forward sensitivity stepper if needed
     //
 
+    RefCountPtr<Rythmos::ForwardSensitivityStepper<Scalar> > stateAndSensStepper;
+
     if (doFwdSensSolve) {
 
-      // stateAndSensStepper
-      stepper = Rythmos::forwardSensitivityStepper<Scalar>(
+      stateAndSensStepper = Rythmos::forwardSensitivityStepper<Scalar>(
         stateModel, 0, stateModel->getNominalValues(),
         stateStepper, nonlinearSolver
         );
       // The above call will result in stateStepper and nonlinearSolver being
       // cloned.  This helps to ensure consistency between the state and
       // sensitivity computations!
-      
+      stepper = stateAndSensStepper;
+
+      // Set the initial condition for the forward sensitivities
+      RefCountPtr<Thyra::VectorBase<Scalar> > s_bar_init
+        = createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
+
+      assign( &*s_bar_init, 0.0 );
+      // WARNING!!!!!!! You have to actually set the right initial condition
+      // but you can do that later.
+
+      stateAndSensStepper->setFwdSensInitialCondition(s_bar_init);
+
     }
+
+    *out <<"\nstepper:\n" << describe(*stepper,verbLevel);
+    *out <<"\nstepper->get_s_space():\n" << describe(*stepper->get_x_space(),verbLevel);
     
     //
     // Time step through the problem taking constant time steps, testing the
@@ -256,12 +279,17 @@ int main(int argc, char *argv[])
     double dt = (finalTime-t0)/numTimeSteps;
     double time = t0;
 
+    stepper->setVerbLevel(verbLevel);
+
     for ( int i = 1 ; i <= numTimeSteps ; ++i ) {
 
      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM) )
        *out << "\ntime step = " << i << ", time = " << time << ":\n";
 
      Teuchos::OSTab tab(out);
+
+     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM) )
+       *out << "\nTaking step ...\n";
 
      double dt_taken = stepper->takeStep(dt,Rythmos::FIXED_STEP);
 
@@ -273,59 +301,82 @@ int main(int argc, char *argv[])
 
      time += dt_taken;
 
+     Rythmos::StepStatus<Scalar>
+       stepStatus = stepper->getStepStatus();
+
+     RefCountPtr<const Thyra::VectorBase<Scalar> >
+       solution = stepStatus.solution,
+       solutionDot = stepStatus.solutionDot;
+
+     *out << "\nsolution = \n" << describe(*solution,verbLevel);
+     *out << "\nsolutionDot = \n" << describe(*solutionDot,verbLevel);
+
      RefCountPtr<const Thyra::VectorBase<Scalar> > exact_x, solved_x;
      ScalarMag rel_err;
+
+     exact_x = create_Vector(
+       epetraStateModel->getExactSolution(time),
+       stateModel->get_x_space()
+       );
      
      if (doFwdSensSolve ) {
-       TEST_FOR_EXCEPT(true);
+       solved_x = productVectorBase(solution)->getVectorBlock(0).assert_not_null();
      }
      else {
-       exact_x = create_Vector(
-         epetraStateModel->getExactSolution(time),
-         stateModel->get_x_space()
-         );
        solved_x = get_x(*stepper,time);
-       rel_err = relErr(*exact_x,*solved_x);
      }
+
+     rel_err = relErr(*exact_x,*solved_x);
      
      result = rel_err <= maxError;
      
      if (!result) success = false;
      
-     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM) )
-     {
+     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM) ) {
         *out << "\n||exact_x||inf = " << norm_inf(*exact_x);
         *out << ", ||solved_x||inf = " << norm_inf(*solved_x);
         *out
           << ", relErr(exact_x,solved_x) = " << rel_err
           << " <= " << maxError << " : " << Thyra::passfail(result) << "\n";
-        if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) )
-        {
+        if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
           *out << "\nexact_x =\n" << describe(*exact_x,verbLevel);
           *out << "\nsolved_x =\n" << describe(*solved_x,verbLevel);
         }
      }
+
     }
     
-    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
-
+    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) )
       *out << "\nFinal time = " << time << "\n";
+    
+    Teuchos::OSTab tab(out);
 
-      Teuchos::OSTab tab(out);
+    RefCountPtr<const Thyra::VectorBase<Scalar> >
+      solution = get_x(*stepper,time);
 
-      RefCountPtr<const Thyra::VectorBase<Scalar> >
-        exact_x = create_Vector(
-          epetraStateModel->getExactSolution(time),
-          stateModel->get_x_space()
-          ),
-        solved_x = get_x(*stepper,time);
-      const ScalarMag
-        rel_err = relErr(*exact_x,*solved_x);
+    RefCountPtr<const Thyra::VectorBase<Scalar> > exact_x, solved_x;
+    ScalarMag rel_err;
+
+    exact_x = create_Vector(
+      epetraStateModel->getExactSolution(time),
+      stateModel->get_x_space()
+      );
+    
+    if (doFwdSensSolve ) {
+      solved_x = productVectorBase(solution)->getVectorBlock(0);
+    }
+    else {
+      solved_x = solution;
+    }
+    
+    rel_err = relErr(*exact_x,*solved_x);
       
-      result = rel_err <= maxError;
-      
-      if (!result) success = false;
-      
+    result = rel_err <= maxError;
+    
+    if (!result) success = false;
+
+    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
+    
       *out << "\n||exact_x||inf = " << norm_inf(*exact_x);
       *out << ", ||solved_x||inf = " << norm_inf(*solved_x);
       *out
@@ -337,7 +388,7 @@ int main(int argc, char *argv[])
       }
 
     }
-
+    
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
 

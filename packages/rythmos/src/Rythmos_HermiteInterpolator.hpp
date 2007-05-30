@@ -190,10 +190,10 @@ bool HermiteInterpolator<Scalar>::interpolate(
       Scalar& t = *time_it;
       Scalar& ti = local_data_in[i].time;
       Scalar& tip1 = local_data_in[i+1].time;
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xi = local_data_in[i].x;
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xip1 = local_data_in[i+1].x;
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdoti = local_data_in[i].xdot;
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdotip1 = local_data_in[i+1].xdot;
+      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xi = local_data_in[i].x;
+      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xip1 = local_data_in[i+1].x;
+      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xdoti = local_data_in[i].xdot;
+      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xdotip1 = local_data_in[i+1].xdot;
       // Check for invalid vectors:
       if ( (xi == Teuchos::null) || (xip1 == Teuchos::null) 
            || (xdoti == Teuchos::null) || (xdotip1 == Teuchos::null) ) {

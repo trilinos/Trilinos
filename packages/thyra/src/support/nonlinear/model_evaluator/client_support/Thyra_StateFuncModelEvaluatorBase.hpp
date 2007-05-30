@@ -74,8 +74,8 @@ public:
   Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
   /** \brief Does nothing and ignores input. */
   void reportFinalPoint(
-    const ModelEvaluatorBase::InArgs<Scalar>      &finalPoint
-    ,const bool                                   wasSolved
+    const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
+    const bool wasSolved
     );
 
   //@}

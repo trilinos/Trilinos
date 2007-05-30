@@ -354,8 +354,8 @@ productVectorSpace(
 }
 
 
-/** \brief Nonmember constructor that duplicates a block vector space many
- * times..
+/** \brief Nonmember constructor that duplicates a block vector space
+ * <tt>numBlock</tt> times to form a product space.
  *
  * \relates DefaultProductVectorSpace
  */

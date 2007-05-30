@@ -65,21 +65,21 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
     /// Add point to buffer
     bool setPoints(
       const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec
       ,const std::vector<ScalarMag> & accuracy_vec 
       );
 
     bool setPoints(
       const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec);
+      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec);
 
     /// Get value from buffer
     bool getPoints(
       const std::vector<Scalar>& time_vec
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec
+      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec
       ,std::vector<ScalarMag>* accuracy_vec) const;
 
     /// Fill data in from another interpolation buffer
@@ -214,8 +214,8 @@ void InterpolationBuffer<Scalar>::SetInterpolator(
 template<class Scalar>
 bool InterpolationBuffer<Scalar>::setPoints( 
     const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec 
+    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec 
     ,const std::vector<ScalarMag> & accuracy_vec 
     )
 {
@@ -348,8 +348,8 @@ bool InterpolationBuffer<Scalar>::setPoints(
 template<class Scalar>
 bool InterpolationBuffer<Scalar>::setPoints( 
     const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec )
+    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   std::vector<ScalarMag> accuracy_vec;
@@ -363,8 +363,8 @@ bool InterpolationBuffer<Scalar>::setPoints(
 template<class Scalar>
 bool InterpolationBuffer<Scalar>::getPoints(
     const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
@@ -396,7 +396,8 @@ bool InterpolationBuffer<Scalar>::getPoints(
 template<class Scalar>
 bool InterpolationBuffer<Scalar>::setRange(
   const TimeRange<Scalar>& range,
-  const InterpolationBufferBase<Scalar>& IB )
+  const InterpolationBufferBase<Scalar>& IB
+  )
 {
   const Scalar time_lower = range.lower();
   const Scalar time_upper = range.upper();
@@ -517,8 +518,8 @@ bool InterpolationBuffer<Scalar>::setRange(
   // Don't forget to check the interval [time_lower,time_upper].
   // Use setPoints and check return value to make sure we observe storage_limit.
 
-  std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > input_x;
-  std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > input_xdot;
+  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > input_x;
+  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > input_xdot;
   std::vector<ScalarMag> input_accuracy;
   status = IB.getPoints( input_nodes, &input_x, &input_xdot, &input_accuracy );
   if (!status) { 

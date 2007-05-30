@@ -195,10 +195,10 @@ bool LinearInterpolator<Scalar>::interpolate(
       Scalar& t = *time_it;
       Scalar& ti = local_data_in[i].time;
       Scalar& tip1 = local_data_in[i+1].time;
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xi = local_data_in[i].x;
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xip1 = local_data_in[i+1].x;
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdoti = local_data_in[i].xdot;
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdotip1 = local_data_in[i+1].xdot;
+      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xi = local_data_in[i].x;
+      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xip1 = local_data_in[i+1].x;
+      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xdoti = local_data_in[i].xdot;
+      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xdotip1 = local_data_in[i+1].xdot;
 
       // 10/10/06 tscoffe:  this could be expensive:
       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > tmp_vec = xi->clone_v(); 
