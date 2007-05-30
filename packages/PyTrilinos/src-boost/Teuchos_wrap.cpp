@@ -36,10 +36,16 @@ using namespace boost::python;
 #include "Teuchos_ConfigDefs.hpp"
 
 void extract_teuchos_misc();
+void convert_exceptions();
+
 void expose_time();
 void expose_fileinputsource();
-void expose_fileinputsource();
 void expose_plist();
+void expose_xmlobject();
+void expose_xml_r_w();
+void expose_str_inputsource();
+
+
 
 // Define the Teuchos python module
 BOOST_PYTHON_MODULE(_Teuchos)
@@ -54,6 +60,11 @@ BOOST_PYTHON_MODULE(_Teuchos)
     //               XMLInputSource
     // tests won't work yet !
     expose_fileinputsource();
+    expose_plist();
+    expose_xmlobject();
+    expose_xml_r_w();
+    expose_str_inputsource();
     
     extract_teuchos_misc();
+    convert_exceptions();
 }

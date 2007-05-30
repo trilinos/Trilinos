@@ -1,6 +1,6 @@
 
 #include "Teuchos_XMLInputSource.hpp"
-
+#include "Teuchos_ParameterList.hpp"
 // Boost initialization
 #include <boost/python.hpp>
 using namespace boost::python;
@@ -42,6 +42,53 @@ public:
     }
 };
 
+
+void add_something_to_plist(Teuchos::ParameterList& plist,object o,string name)
+{
+    extract<string>            x1(o);
+    extract<int>               x2(o);
+    extract<double>            x3(o);
+    extract<complex< double> > x4(o);
+    
+    if ( x1.check() )
+        plist.set(name, x1() );
+    else if ( x2.check() )
+        plist.set(name, x2());
+    else if ( x3.check() )
+        plist.set(name, x3());
+    else if ( x4.check() )
+        plist.set(name, x4());
+        
+    return;
+    
+}
+
+void* extract_plist(PyObject* o)
+{   
+    object keys,key,something;
+    string name;
+    dict pydict = dict(handle<>(borrowed( o )) );
+    
+    Teuchos::ParameterList * plist = new Teuchos::ParameterList();
+    
+    int len = extract<int>( pydict.attr("__len__")() );
+    
+    keys = pydict.keys();
+    
+    for(int i=0; i < len; i++ )
+    {
+        key = keys[i];
+        something = pydict[ key ];
+        name = extract<string>(key);
+        add_something_to_plist(*plist,something,name);
+    }
+    
+    return plist;
+}
+
+
+
+
 // ################################################################################
 // ## Extracts and Inserts
 // ################################################################################
@@ -49,6 +96,8 @@ void extract_teuchos_misc()
 {
     py_rcp< Teuchos::XMLInputStream >::from_python();
     py_rcp< Teuchos::XMLInputStream >::to_python();
+    
+    converter::registry::insert( &extract_plist , type_id< Teuchos::ParameterList >() );
 }
 // ################################################################################
 // ##

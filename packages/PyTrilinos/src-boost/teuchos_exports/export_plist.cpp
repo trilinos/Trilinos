@@ -7,6 +7,20 @@ using namespace boost::python;
 
 
 typedef Teuchos::ParameterList plist;
+
+object python_get(plist& self, string const& name)
+{
+    return object( self.get<int>(name ) );
+}
+
+// static void set(plist& self, std::string const &name, T const &value, std::string const &docString)
+// {
+// 
+//     self.set(name,value,docString);
+// }
+    
+
+
 void expose_plist()
 {
     
@@ -24,7 +38,8 @@ void expose_plist()
         "parameters can also be pointers to vectors or functions.                       \n" , 
         init<>()
         )
-
+        
+        .def( init<plist>() )
 
     //  void setName( const std::string &name );
         .def("setName", &plist::setName, args("name"),
@@ -53,7 +68,8 @@ void expose_plist()
              "being removed from this or in parameters already set in \n"
              "this being overrided.  Parameters in this with the\n"
              "same names as those in source will not be overwritten. \n" ,
-             return_internal_reference<>() )
+             return_internal_reference<>() 
+        )
     
     //   /*!  Sets different types of parameters. The type depends on the second entry.  
     //     
@@ -97,70 +113,16 @@ void expose_plist()
     //  from XML. KL 7 August 2004 
     // /
     //   void setEntry(const string& name, const ParameterEntry& entry);
-    // 
-    //   
-    //   
-    //   @name Get Functions 
-    //   
-    //   
-    //   /*!  Retrieves parameter \c name of type \c T from list, if it exists, else the \c def_value is
-    //     used to enter a new parameter into the list.
-    //     
-    //     \note <ul> 
-    //     <li> Use the static_cast<T>() when the type is ambiguous.
-    //     <li> Both char* and string map to are stored as strings internally. 
-    //     <li> Sets the parameter as "used".
-    //     <li> Exception is thrown if \c name exists, but is not of type \c T.
-    //     </ul>
-    //   */
-    //   template<typename T>
-    //   T& get(const string& name, T def_value);
-    // 
-    //   /*!  Template specialization of get, where the nominal value is a character string in parenthesis.
-    //     Both char* and string are stored as strings and return string values.
-    //   */
-    //   std::string& get(const string& name, char def_value[]);
-    //   
-    //   /*!  Template specialization of get, where the nominal value is a character string in parenthesis.
-    //     Both char* and string are stored as strings and return string values.
-    //   */
-    //   std::string& get(const string& name, const char def_value[]);
-    //   
-    //   /*!  Retrieves parameter \c name of type \c T from a list, an
-    //     Exceptions::InvalidParameter exception is thrown if this
-    //     parameter doesn't exist (Exceptions::InvalidParameterName) or is
-    //     the wrong type (Exceptions::InvalidParameterName).  \note The
-    //     syntax for calling this method is:  list.template get<int>( "Iters" )
-    //     
-    //   */
-    //   template<typename T>
-    //   T& get(const string& name);
-    //   
-    //   /*!  Retrieves parameter \c name of type \c T from a constant list, an
-    //     Exceptions::InvalidParameter exception is thrown if this
-    //     parameter doesn't exist (Exceptions::InvalidParameterName) or is
-    //     the wrong type (Exceptions::InvalidParameterName).  \note The
-    //     syntax for calling this method is:  list.template get<int>( "Iters" )
-    //     
-    //   */
-    //   template<typename T>
-    //   const T& get(const string& name) const;  
-    //   
-    //   /*!  Retrieves the pointer for parameter \c name of type \c T from a
-    //     list.  A null pointer is returned if this parameter doesn't exist or is
-    //     the wrong type.  \note The syntax for calling this method is: 
-    //     list.template getPtr<int>( "Iters" ) 
-    //   */
-    //   template<typename T>
-    //   T* getPtr(const string& name);
-    //   
-    //   /*!  Retrieves the pointer for parameter \c name of type \c T from a
-    //     constant list.  A null pointer is returned if this parameter doesn't exist
-    //     or is the wrong type.  \note The syntax for calling this method is: 
-    //     list.template getPtr<int>( "Iters" ) 
-    //   */
-    //   template<typename T>
-    //   const T* getPtr(const string& name) const;  
+        // .def("set",&concrete_setter<int>::set,( args("name") ,args("value"), args("docString")="" ) )
+        // .def("set",&concrete_setter<char*>::set,( args("name") ,args("value"), args("docString")="" ))
+
+
+        .def("get", &python_get )
+        
+        // .def("get", &concrete_getter<double>::get_def )
+        // // .def("get", &concrete_getter < char* >::get_def )
+        // .def("get", &concrete_getter<complex <double> >::get_def )
+
     //   
     //   /*!  Retrieves an entry with the name name.
     // 
@@ -175,15 +137,6 @@ void expose_plist()
     //  not exist.
     // /
     //   const ParameterEntry& getEntry(const string& name) const;  
-    //   
-    //   /*!  Retrieves the pointer for an entry with the name name if
-    //   it exists. */
-    //   ParameterEntry* getEntryPtr(const string& name);  
-    //   
-    //   /*!  Retrieves the pointer for a constant entry with the name name if
-    //   it exists. */
-    //   const ParameterEntry* getEntryPtr(const string& name) const;  
-    // 
     //   
     // 
     //   @name Parameter removal functions
@@ -204,12 +157,13 @@ void expose_plist()
     //   bool remove(
     //     std::string const& name, bool throwIfNotExists = true
     //     );
-    // 
-    //   
-    //   
-    //   @name Sublist Functions 
-    //   
-    // 
+        .def("remove",&plist::remove, ( args("name"),args("throwIfNotExists")=true ),
+                "plist.remove( name, throwIfNotExists=True ) -> bool \n\n"
+                "Returns true of the parameter was removed, and false if \n"
+                "the parameter was not removed (return value possible only if \n"
+                "throwIfExists is False). \n"
+        )
+        
     //   /*!  Creates an empty sublist and returns a reference to the sublist
     //   \c name. If the list already exists, returns reference to that
     //   sublist. If the name exists but is not a sublist, an exception is
@@ -226,25 +180,27 @@ void expose_plist()
     // /
     //   const ParameterList& sublist(const string& name) const;
     // 
-    //   
-    //   
-    //   @name Attribute Functions 
-    //   
-    // 
-    //   /*!  Query the name of this parameter list. */
     //   const std::string& name() const;
-    // 
+    
+
     //   /*!  Query the existence of a parameter.  \return "true" if a
     //     parameter with this \c name exists, else "false".
     //   */
     //   bool isParameter(const string& name) const;
-    //   
-    //   /*!  Query the existence of a parameter and whether it is a parameter
-    //     list.  \return "true" if a parameter with this \c name exists and is
-    //     itself a parameter list, else "false".
-    //   */
+        .def("isParameter",&plist::isParameter,
+                "plist.isParameter() -> bool \n\n"
+                "Query the existence of a parameter return \"true\" if a\n"
+                "parameter with this name exists, else \"false\"."
+        )
+
+
     //   bool isSublist(const string& name) const;
-    //   
+        .def("isSublist",&plist::isSublist,
+                "plist.isSublist() -> bool \n\n"
+                "Query the existence of a parameter return \"true\" if a\n"
+                "parameter with this name exists, else \"false\"."
+        )    
+        
     //   /*!  Query the existence and type of a parameter.  \return "true" is a
     //     parameter with this \c name exists and is of type \c T, else "false".
     //     \note The syntax for calling this method is:  list.template
@@ -281,7 +237,8 @@ void expose_plist()
     // 
     //   Create a single formated string of all of the zero-level parameters in this list
     //   std::string currentParametersString() const;
-    // 
+        .def("currentParametersString",&plist::currentParametersString,
+                "Create a single formated string of all of the zero-level parameters in this list")
     //   
     // 
     //   @name Read-only access to the iterator 
