@@ -283,7 +283,6 @@ ENABLE_LOCA =
 tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_platform; print os.path.join('build','temp.%s-%s'%(get_platform(),sys.version[0:3]))")
 @HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_WRAPPERS = Teuchos_wrap.cpp
 @HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_PROXIES = PyTrilinos/Teuchos.py
-@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_MODULES = $(libdir)/_Teuchos.so
 
 # # LOCA
 # if HAVE_PYTRILINOS_NOX
@@ -291,10 +290,9 @@ tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_pl
 # endif
 # endif
 
-# PyTrilinos wrappers and modules
+# PyTrilinos wrappers and proxies
 WRAPPERS = $(TEUCHOS_WRAPPERS)
 PROXIES = $(TEUCHOS_PROXIES)
-MODULES = $(TEUCHOS_MODULES)
 CLEANFILES = $(PROXIES)
 
 # ------------------------------------------------------------------------
@@ -460,11 +458,11 @@ $(tempdir):
 	@mkdir -p $@
 
 # For the package-enabling macros that follow, I would have preferred
-# all info (wrapper file names, proxy file names and modules names) to
-# derive from a single source (interface file name, for example).  This
-# would be possible with GNU make substitution rules, but this is not
-# portable.  So I require a list of wrapper files, a list of proxy file
-# names and a list of module names for each package.
+# all info (wrapper file names and proxy file names) to derive from a
+# single source (interface file name, for example).  This would be
+# possible with GNU make substitution rules, but this is not portable.
+# So I require a list of wrapper files, a list of proxy file names and
+# a list of module names for each package.
 
 # Teuchos
 @HAVE_PYTRILINOS_TEUCHOS_TRUE@include $(top_builddir)/../teuchos/Makefile.export.teuchos
@@ -510,13 +508,11 @@ all-am:
 	@echo "Trilinos package PyTrilinos subdirectory src built successfully."
 	@echo ""
 
-package: $(tempdir) $(PROXIES) $(MODULES)
-
 PyTrilinos/%.py: $(srcdir)/%.py
 	@echo "copying $< to $@"
 	cp $< $@
 
-$(libdir)/_%.so: %_wrap.cpp
+package: $(tempdir) $(PROXIES)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install:

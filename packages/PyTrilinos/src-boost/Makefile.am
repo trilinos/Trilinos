@@ -92,18 +92,17 @@ $(tempdir):
 	@mkdir -p $@
 
 # For the package-enabling macros that follow, I would have preferred
-# all info (wrapper file names, proxy file names and modules names) to
-# derive from a single source (interface file name, for example).  This
-# would be possible with GNU make substitution rules, but this is not
-# portable.  So I require a list of wrapper files, a list of proxy file
-# names and a list of module names for each package.
+# all info (wrapper file names and proxy file names) to derive from a
+# single source (interface file name, for example).  This would be
+# possible with GNU make substitution rules, but this is not portable.
+# So I require a list of wrapper files, a list of proxy file names and
+# a list of module names for each package.
 
 # Teuchos
 if HAVE_PYTRILINOS_TEUCHOS
 include $(top_builddir)/../teuchos/Makefile.export.teuchos
 TEUCHOS_WRAPPERS = Teuchos_wrap.cpp
 TEUCHOS_PROXIES  = PyTrilinos/Teuchos.py
-TEUCHOS_MODULES  = $(libdir)/_Teuchos.so
 endif
 
 # # Thyra
@@ -167,10 +166,9 @@ endif
 # endif
 # endif
 
-# PyTrilinos wrappers and modules
+# PyTrilinos wrappers and proxies
 WRAPPERS = $(TEUCHOS_WRAPPERS)
 PROXIES  = $(TEUCHOS_PROXIES)
-MODULES  = $(TEUCHOS_MODULES)
 
 # The following line helps the test harness recover from build errors.
 all-am:
@@ -178,13 +176,11 @@ all-am:
 	@echo "Trilinos package PyTrilinos subdirectory src built successfully."
 	@echo ""
 
-package: $(tempdir) $(PROXIES) $(MODULES)
-
 PyTrilinos/%.py: $(srcdir)/%.py
 	@echo "copying $< to $@"
 	cp $< $@
 
-$(libdir)/_%.so: %_wrap.cpp
+package: $(tempdir) $(PROXIES)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install:
