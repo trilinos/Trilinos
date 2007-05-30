@@ -6,7 +6,7 @@ using namespace boost::python;
 
 void EmptyXMLError_translator(Teuchos::EmptyXMLError const& x) 
 {
-    PyErr_SetString( PyExc_Exception, x.what() );
+    PyErr_SetString( PyExc_RuntimeError, x.what() );
 }
 
 
