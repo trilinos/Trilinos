@@ -22,7 +22,7 @@ here are the necessary steps.
 
       AC_CONFIG_FILES
 
-   macro to include the argument
+   macro to include the argument ::
 
       src/PyTrilinos/PACKAGE/.dummy
 
@@ -46,6 +46,7 @@ here are the necessary steps.
 #. Gain access to the exported variables of the package's Makefile.
    Within this same source directory ``Makefile.am``, include the
    package export Makefile.  For example, for Teuchos, you will see
+   ::
 
       # Teuchos
       if HAVE_PYTRILINOS_TEUCHOS
