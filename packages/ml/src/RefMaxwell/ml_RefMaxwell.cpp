@@ -183,7 +183,6 @@ void ML_Epetra::RefMaxwellPreconditioner::Print(const char *whichHierarchy){
 // Computes the preconditioner
 int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckFiltering)
 {
-
 #ifdef ML_TIMING
   double t_time_start, t_time_curr, t_diff[7];
   StartTimer(&t_time_start);
@@ -753,7 +752,7 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const E
   c_iteration++;
   
   if(verbose_ && Comm_->MyPID()==0)
-    printf("Residual Norms: %22.16e / %22.16e / %22.16e / %22.16e / %22.16e\n",r1/r0,r2,r3,r4/r0,r5/r0);
+    printf("Residual Norms: %22.16e / %22.16e / %22.16e / %22.16e / %22.16e\n",r1/r0,r2/r0,r3,r4/r0,r5/r0);
   
 #ifdef ML_TIMING
   StopTimer(&t_time,&t_diff);
@@ -817,8 +816,11 @@ int ML_Epetra::SetDefaultsRefMaxwell(Teuchos::ParameterList & inList,bool OverWr
   List22.set("smoother: type","Chebyshev");
   List22.set("aggregation: type","Uncoupled");
   List22.set("aggregation: threshold",.01);//CMS
-  List22.set("smoother: sweeps (level 0)",0);
   List22.set("coarse: type","Chebyshev");
+
+  // This line is commented out due to IFPACK issues
+  //  List22.set("smoother: sweeps (level 0)",0);
+  
   ML_Epetra::UpdateList(List22,List22_,OverWrite);    
   
   /* Build Teuchos List: Overall */  
