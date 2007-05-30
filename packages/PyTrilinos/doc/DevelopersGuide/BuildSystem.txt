@@ -178,3 +178,30 @@ modules, this script is also responsible for building, cleaning,
 installing and uninstalling the shared Trilinos libraries; and
 building, cleaning, and uninstalling the ``PyTrilinos/__init__.py``
 file.
+
+The ``test/Makefile.am`` file
+-----------------------------
+
+PyTrilinos tests are simply scripts, so rather than being built, they
+are simply copied from the source tree to the build tree.  To account
+for the case where someone builds within the source tree, and to avoid
+copying test scripts that are concurrent between the source and build
+trees, the most efficient method was to create a python script in the
+``test`` directory called ``should_copy.py``.  In the source tree, it
+always returns ``false``.  In the build directory, it returns ``true``
+if the test script does not exist or if it does exist and the source
+tree version is newer; else it returns ``false``.  By this method,
+test scripts are copied from the source tree to the build tree.
+
+All of the test scripts import a python module contained in
+``setpath.py``.  This python script is also copied from the source
+tree to the build tree, using the same checks as the test scripts.
+
+The test scripts themselves are only copied over if all of the
+PyTrilinos modules they use are enabled.
+
+The ``example/Makefile.am`` file
+--------------------------------
+
+This Makefile works in the same manner as the one in the ``test``
+directory.
