@@ -31,6 +31,7 @@
 # System imports
 from   distutils.core import *
 from   distutils      import sysconfig
+from   glob           import glob
 import os
 import sys
 
@@ -55,13 +56,14 @@ def makePyTrilinosExtensions(moduleName):
     includeVar      = moduleNameUpper + "_INCLUDES"
     libVar          = moduleNameUpper + "_LIBS"
     wrapperVar      = moduleNameUpper + "_WRAPPERS"
-    exportVar       = moduleNameUpper + "_EXPORTS"
+    exportDir       = moduleNameLower + "_exports"
 
     # Parse and evaluate all of the Makefile variables in the current directory
     vars    = processMakefile("Makefile")
     srcdir  = vars["srcdir"]
     CXX     = vars["CXX"]
-    exports = vars[exportVar].split()
+    exports = glob(os.path.join(srcdir, exportDir, "*.cpp"))
+    print "exports =", exports
 
     # Obtain the NumPy version
     from numpy import __version__ as numpyVersion

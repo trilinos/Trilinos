@@ -284,7 +284,6 @@ tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_pl
 @HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_WRAPPERS = Teuchos_wrap.cpp
 @HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_PROXIES = PyTrilinos/Teuchos.py
 @HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_MODULES = $(libdir)/_Teuchos.so
-@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_EXPORTS = 
 
 # # LOCA
 # if HAVE_PYTRILINOS_NOX
