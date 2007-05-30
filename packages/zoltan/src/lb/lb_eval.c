@@ -46,7 +46,7 @@ extern "C" {
 
 static int eval_edge_list(ZZ *, int, int, ZOLTAN_ID_PTR, int *, ZOLTAN_ID_PTR,
   int *, int *, float *, int, int, int, int *, int *, int *, int *, float *,
-  int *, float *, int *, int *);
+  int *, float *, int *, int *, int *, float *, float *);
 
 static int get_nbor_parts(ZZ *, int, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
   int *, int, ZOLTAN_ID_PTR, int *);
@@ -93,10 +93,10 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int nparts, nonempty_nparts, max_nparts, req_nparts, obj_wgt_dim;
   int stats[4*NUM_STATS];
   int imin, imax, isum, iimbal;
-  int *proc_count=NULL, *nbors_proc=NULL, *nbors_part = NULL;
+  int *proc_count=NULL, *nbors_proc=NULL, *nbors_part = NULL, *part_arr=NULL;
   float imbal[NUM_STATS];
   float *tmp_vwgt=NULL, *vwgts=NULL, *ewgts=NULL, *tmp_cutwgt=NULL; 
-  float *part_sizes, temp;
+  float *part_sizes, temp, cutn, gcutn, cutl, gcutl;
   int *edges_per_obj=NULL;
   ZOLTAN_ID_PTR local_ids=NULL; 
   ZOLTAN_ID_PTR global_ids=NULL, nbors_global=NULL;
@@ -375,11 +375,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       goto End;
     }
 
-    for (i=0; i<zz->Num_Proc; i++)
-      proc_count[i] = -1;
-    for (i=0; i<zz->Edge_Weight_Dim; i++)
-      tmp_cutwgt[i] = 0;
-
     if (zz->Get_Edge_List_Multi) {
       zz->Get_Edge_List_Multi(zz->Get_Edge_List_Multi_Data, 
                               num_gid_entries, num_lid_entries, num_obj,
@@ -419,7 +414,14 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
                      num_edges, nbors_global, nbors_part);
     }
 
+    for (i=0; i<zz->Num_Proc; i++)
+      proc_count[i] = -1;
+    for (i=0; i<zz->Edge_Weight_Dim; i++)
+      tmp_cutwgt[i] = 0;
     sum = 0;
+    cutn = 0.0;
+    cutl = 0.0;
+    part_arr = (int *)  ZOLTAN_CALLOC(nparts, sizeof(int));
     for (k = 0; k < num_obj; k++) {
       ierr = eval_edge_list(zz, k, num_gid_entries, global_ids, part, 
                             &(nbors_global[sum]), &(nbors_proc[sum]), 
@@ -429,13 +431,20 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
                             num_obj, compute_part, proc_count,
                             &cuts, &num_boundary, &comm_vol,
                             tmp_cutwgt, cut_arr, cutwgt_arr, 
-                            bndry_arr, commvol_arr);
+                            bndry_arr, commvol_arr, part_arr,
+                            &cutl, &cutn);
       if (ierr) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in eval_edge_list");
         goto End;
       }
       sum += edges_per_obj[k];
     }
+    ZOLTAN_FREE(&part_arr);
+    MPI_Reduce(&cutn, &gcutn, 1, MPI_FLOAT, MPI_SUM, zz->Debug_Proc, 
+                 zz->Communicator);
+    MPI_Reduce(&cutl, &gcutl, 1, MPI_FLOAT, MPI_SUM, zz->Debug_Proc, 
+                 zz->Communicator);
+
     /* Compute the number of adjacent procs */
     for (j=0; j<zz->Num_Proc; j++)
       if (proc_count[j]>=0) num_adj++;
@@ -720,11 +729,13 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         printf("%s  No. cut hyperedges:                   %8.0f\n\n", yo,
                 hgraph_global_sum[1]);
       }
+      else{
+        printf("%s  Hyperedge (k-1)-connectivity cut:     %8.0f\n", yo, gcutl);
+        printf("%s  No. cut hyperedges:                   %8.0f\n\n", yo, gcutn);
+      }
       
       printf("\n");
     }
-    
-
   }
 
 End:
@@ -782,18 +793,23 @@ static int eval_edge_list(
   int *cut_arr,               /* # of partition cut edges. */
   float *cutwgt_arr,          /* weights of partition cut edges */
   int *bndry_arr,             /* # of partition boundary objs */
-  int *commvol_arr           /* communication volume (for partitions) */
+  int *commvol_arr,          /* communication volume (for partitions) */
+  int *part_arr,             /* tool for counting distinct partitions */
+  float *cutl,               
+  float *cutn               
   /* int *part_count            TODO:  # edges to each partition  */
 )
 {
 /* Function to evaluate edge cuts, etc., for an object's edge list. */
-int i, j;
+int i, j, nparts;
 int ierr = ZOLTAN_OK;
 int proc_flag, part_flag;
+float he_wgt;
 
   /* Set flags to 0; we have not counted object k as a boundary vertex. */
   proc_flag = 0;
   part_flag = 0;
+  nparts = 0;
 
   /* Check for cut edges */
   for (j=0; j<nedges; j++){
@@ -810,6 +826,10 @@ int proc_flag, part_flag;
     }
     if (compute_part){
       if (nbors_part[j] != part[k]){
+        if (part_arr[nbors_part[j]] < k+1){
+          nparts++;
+          part_arr[nbors_part[j]] = k+1;
+        }
         cut_arr[part[k]]++;
         for (i=0; i<zz->Edge_Weight_Dim; i++)
           cutwgt_arr[part[k]*zz->Edge_Weight_Dim+i] 
@@ -821,6 +841,22 @@ int proc_flag, part_flag;
       }
     }
   }
+
+  if (nparts > 0){
+    /* Implied hyperedge is vertex plus it's neighbors */
+    if (ewgts && zz->Edge_Weight_Dim){
+      he_wgt = 0.0;
+      for (j=0; j<nedges; j++){
+        he_wgt += ewgts[j*(zz->Edge_Weight_Dim)];
+      }
+    }
+    else{
+      he_wgt = 1.0;
+    }
+    *cutl += (nparts * he_wgt);
+    *cutn += he_wgt;
+  }
+
   /* compute comm. vol. as number of procs there are edges to */
   for (i=0; i<zz->Num_Proc; i++){
     if (proc_count[i]==k) (*comm_vol)++;
