@@ -67,33 +67,30 @@ here are the necessary steps.
 
       PACKAGE_WRAPPERS = ...
       PACKAGE_PROXIES  = ...
-      PACKAGE_MODULES  = ...
 
    where ``PACKAGE`` is the (all-caps version of the) name of your
    package.  ``PACKAGE_INTERFACES`` should be a space-delimited list
    of swig interface files.  ``PACKAGE_PROXIES`` should be a list of
    python proxy files, each with ``PyTrilinos/`` directory prefix.
-   ``PACKAGE_WRAPPERS`` should be a list of boost C++ wrapper files.
-   And finally, ``PACKAGE_MODULES`` should be a list of the compiled
-   shared objects, each with the ``$(libdir)/`` directory prefix, an
-   underscore name prefix, and a ``.so`` extension.
+   ``PACKAGE_WRAPPERS`` should be a list of boost C++ wrapper files
+   that implement the BOOST_PYTHON_MODULE macro.
 
    Typically, you will have a single swig interface file named after
    your package with a ``.i`` extension; a single python proxy file
-   named after you package with a ``.py`` extension; a single boost
-   C++ wrapper named after your package with a ``_wrap.cpp`` suffix;
-   and a single shared object file.  In ``src`` you will need to
-   create the ``.i`` file; in ``src-boost``, you will have to create
-   the ``_wrap.cpp`` and ``.py`` files.
+   named after you package with a ``.py`` extension; and a single
+   boost C++ wrapper named after your package with a ``_wrap.cpp``
+   suffix.  In ``src`` you will need to create the ``.i`` file; in
+   ``src-boost``, you will have to create both the ``_wrap.cpp`` and
+   ``.py`` files.
 
 #. Again, within this same ``Makefile.am``, after these
    package-specific definitions, you will find, for example ::
 
       PROXIES = ...
 
-   where the left-hand side is a list of all of the individual package
-   ``_PROXIES`` variables.  Add you package to this and other related
-   lists.
+   where the right-hand side is a list of all of the individual
+   package ``_PROXIES`` variables.  Add you package to this and other
+   related lists.
 
 #. This should be sufficient for getting started.  From the
    ``PyTrilinos`` main directory, run the ``bootstrap`` command to
