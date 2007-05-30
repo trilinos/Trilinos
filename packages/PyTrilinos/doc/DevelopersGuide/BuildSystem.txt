@@ -116,18 +116,19 @@ The ``src/PyTrilinosExtension.py`` file
 The ``src/setup.py`` script ends by calling the ``setup()`` function,
 and arguably the most important argument to this function is the
 ``ext_modules`` keyword argument.  This argument is a list of
-Extension instances, one or more for each enabled Trilinos package.
-The purpose of the ``src/PyTrilinosExtension.py`` python module is to
-provide a function, ``makePyTrilinosExtensions()``, that takes a
-Trilinos package name as its argument and returns a list of associated
-Extension objects (typically a list of length one, but not always).
-Each Extension object is an encapsulation of its name, list of source
-files, ``-D`` command line macros, include directories, library
-directories and libraries, plus any additional compile or link
-arguments that are needed.  The ``makePyTrilinosExtensions()``
-function automates as much of this as is possible, but the intent is
-that for special cases, specific checks and assignments can be
-implemented within the function.
+``distutils.core.Extension`` instances, one or more for each enabled
+Trilinos package.  The purpose of the ``src/PyTrilinosExtension.py``
+python module is to provide a function,
+``makePyTrilinosExtensions()``, that takes a Trilinos package name as
+its argument and returns a list of associated ``Extension`` objects
+(typically a list of length one, but not always).  Each ``Extension``
+object is an encapsulation of its name, list of source files, ``-D``
+command line macros, include directories, library directories and
+libraries, plus any additional compile or link arguments that are
+needed.  The ``makePyTrilinosExtensions()`` function automates as much
+of this as is possible, but the intent is that for special cases,
+specific checks and assignments can be implemented within the
+function.
 
 The ``src/SharedUtils.py`` file
 -------------------------------
@@ -182,16 +183,17 @@ file.
 The ``test/Makefile.am`` file
 -----------------------------
 
-PyTrilinos tests are simply scripts, so rather than being built, they
-are simply copied from the source tree to the build tree.  To account
-for the case where someone builds within the source tree, and to avoid
+PyTrilinos tests are scripts, so rather than being built, they are
+simply copied from the source tree to the build tree.  To account for
+the case where someone builds within the source tree, and to avoid
 copying test scripts that are concurrent between the source and build
-trees, the most efficient method was to create a python script in the
-``test`` directory called ``should_copy.py``.  In the source tree, it
-always returns ``false``.  In the build directory, it returns ``true``
-if the test script does not exist or if it does exist and the source
-tree version is newer; else it returns ``false``.  By this method,
-test scripts are copied from the source tree to the build tree.
+trees, the most efficient method was for the Makefile to create a
+short python script in the ``test`` directory called
+``should_copy.py``.  In the source tree, it always returns ``false``.
+In the build directory, it returns ``true`` if the test script does
+not exist or if it does exist and the source tree version is newer;
+else it returns ``false``.  By this method, test scripts are copied
+from the source tree to the build tree.
 
 All of the test scripts import a python module contained in
 ``setpath.py``.  This python script is also copied from the source
