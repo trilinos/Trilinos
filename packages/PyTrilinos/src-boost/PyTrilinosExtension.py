@@ -63,7 +63,6 @@ def makePyTrilinosExtensions(moduleName):
     srcdir  = vars["srcdir"]
     CXX     = vars["CXX"]
     exports = glob(os.path.join(srcdir, exportDir, "*.cpp"))
-    print "exports =", exports
 
     # Obtain the NumPy version
     from numpy import __version__ as numpyVersion
