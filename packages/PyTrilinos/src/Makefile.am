@@ -90,7 +90,7 @@ ENABLE_THYRA=
 ENABLE_LOCA=
 
 # Default make target
-all-local: build
+all-local: package
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
@@ -245,7 +245,7 @@ all-am:
 	@echo "Trilinos package PyTrilinos subdirectory src built successfully."
 	@echo ""
 
-build: $(WRAPPERS)
+package: $(WRAPPERS)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: $(WRAPPERS)

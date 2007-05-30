@@ -585,7 +585,7 @@ uninstall-am: uninstall-info-am
 
 
 # Default make target
-all-local: build
+all-local: package
 include $(DEPFILES)
 
 # Wrapper and proxy targets
@@ -651,7 +651,7 @@ all-am:
 	@echo "Trilinos package PyTrilinos subdirectory src built successfully."
 	@echo ""
 
-build: $(WRAPPERS)
+package: $(WRAPPERS)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: $(WRAPPERS)
