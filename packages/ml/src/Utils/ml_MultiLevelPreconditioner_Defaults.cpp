@@ -49,7 +49,7 @@ using namespace ML_Epetra;
 // ============================================================================
 
 int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List, 
-			   int * options, double * params, bool OverWrite)
+			   int * options, double * params, const bool OverWrite)
 {
   
   // allocate some memory if the user is not passing the vectors.
