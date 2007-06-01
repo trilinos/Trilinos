@@ -89,7 +89,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   printf("       ML_2matmult() for this MSR_CSR_recursive? I'm not sure\n");
   printf("       why this is hardwired and not simply kicked off by the\n");
   printf("       operators destroy function. Anyway, we would need an\n");
-  printf("       appropriate destroy for VBR with recursion.\n");
+  printf("       appropriate destroy for VBR with recursion. \n");
 
 
   save_ints[0] = Amatrix->getrow->Nrows;
