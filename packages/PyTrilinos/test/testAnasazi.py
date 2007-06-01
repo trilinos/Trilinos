@@ -34,18 +34,37 @@
 # use "import ..." for Trilinos modules.  This prevents us from accidentally
 # picking up a system-installed version and ensures that we are testing the
 # build module.
+from   optparse import *
 import sys
+import unittest
 
-try:
+parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+if options.testharness:
     import setpath
     if options.boost: setpath.setpath("src-boost")
     else:             setpath.setpath()
-    import Epetra, Anasazi
-except ImportError:
-    from PyTrilinos import Epetra, Anasazi
-    print >>sys.stderr, "Using system-installed Epetra, Anasazi"
-
-import unittest
+    import Epetra
+    import Anasazi
+else:
+    try:
+        import setpath
+        if options.boost: setpath.setpath("src-boost")
+        else:             setpath.setpath()
+        import Epetra
+        import Anasazi
+    except ImportError:
+        from PyTrilinos import Epetra
+        from PyTrilinos import Anasazi
+        print >>sys.stderr, "Using system-installed Epetra, Anasazi"
 
 ####################################################################
 
