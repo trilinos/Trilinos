@@ -1,6 +1,8 @@
 
 #include "Teuchos_XMLInputSource.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_FILEstream.hpp"
+#include "python_ParameterEntry.hpp"
 // Boost initialization
 #include <boost/python.hpp>
 using namespace boost::python;
@@ -16,10 +18,11 @@ class py_rcp
 public:
     static void* extract_rcp(PyObject* o)
     {   
-        object boostobj = object(handle<>(borrowed( o )) );
-        obj *counted = extract<obj*>( boostobj );
-        rcpobj *myObj = new rcpobj( counted , true );
-        return myObj;
+        object* boostobj = new object(handle<>( o ) );
+        obj *counted = extract<obj*>( *boostobj );
+        rcpobj *counter = new rcpobj( counted , false );
+        Teuchos::set_extra_data( *boostobj, "boostpyobj", counter);
+        return counter;
     }
     static void from_python()
     {
@@ -30,9 +33,18 @@ public:
     {
         static PyObject* convert(rcpobj const& x)
         {
-        	object myObj = object( x.get() );
-        	Py_XINCREF( myObj.ptr() );
-            return myObj.ptr();
+            object *myObj = NULL;
+            myObj = Teuchos::get_optional_extra_data< object >( const_cast< rcpobj& >(x),"boostpyobj" );
+            if ( myObj == NULL)
+            {
+        	    myObj = new object( x.get() );
+        	    Teuchos::set_extra_data( *myObj, "boostpyobj", &const_cast< rcpobj& >(x) );
+        	}
+        	else
+        	{
+        	    Py_XINCREF( myObj->ptr() );
+        	}
+            return myObj->ptr();
         }
     };
 
@@ -42,50 +54,57 @@ public:
     }
 };
 
+// ################################################################################
+// ## Property List
+// ################################################################################
 
-void add_something_to_plist(Teuchos::ParameterList& plist,object o,string name)
+void* extract_plist(PyObject * o)
 {
-    extract<string>            x1(o);
-    extract<int>               x2(o);
-    extract<double>            x3(o);
-    extract<complex< double> > x4(o);
-    
-    if ( x1.check() )
-        plist.set(name, x1() );
-    else if ( x2.check() )
-        plist.set(name, x2());
-    else if ( x3.check() )
-        plist.set(name, x3());
-    else if ( x4.check() )
-        plist.set(name, x4());
-        
-    return;
-    
+    // if ( !PyDict_Check( o ) )
+    //     return NULL;
+    // else
+        return (void *) python_plist_tools::pyDictToNewParameterList(o,raiseError);
 }
 
-void* extract_plist(PyObject* o)
-{   
-    object keys,key,something;
-    string name;
-    dict pydict = dict(handle<>(borrowed( o )) );
-    
-    Teuchos::ParameterList * plist = new Teuchos::ParameterList();
-    
-    int len = extract<int>( pydict.attr("__len__")() );
-    
-    keys = pydict.keys();
-    
-    for(int i=0; i < len; i++ )
+
+struct plist_to_object
+{
+    static PyObject* convert(const Teuchos::ParameterList & plist)
     {
-        key = keys[i];
-        something = pydict[ key ];
-        name = extract<string>(key);
-        add_something_to_plist(*plist,something,name);
+        return python_plist_tools::parameterListToNewPyDict( plist,raiseError);
+    }
+};
+
+// ################################################################################
+// ## IO
+// ################################################################################
+
+void* extract_ostream(PyObject * pf)
+{
+    if ( !PyFile_Check( pf ) )
+    {
+        PyErr_SetString( PyExc_TypeError, "must be a file object" );
+        throw_error_already_set();
+        return NULL;
+    }
+    else
+    {
+        std::FILE *f = PyFile_AsFile(pf);
+    	Teuchos::FILEstream buffer(f);
+    	ostream *os = new ostream(&buffer);
+    	return os;
     }
     
-    return plist;
 }
 
+struct ostream_to_python
+{
+    static PyObject* convert(const ostream & plist)
+    {
+        return NULL;
+
+    }
+};
 
 
 
@@ -98,6 +117,9 @@ void extract_teuchos_misc()
     py_rcp< Teuchos::XMLInputStream >::to_python();
     
     converter::registry::insert( &extract_plist , type_id< Teuchos::ParameterList >() );
+    
+    converter::registry::insert( &extract_ostream , type_id< std::ostream >() );
+    to_python_converter< std::ostream , ostream_to_python >();
 }
 // ################################################################################
 // ##

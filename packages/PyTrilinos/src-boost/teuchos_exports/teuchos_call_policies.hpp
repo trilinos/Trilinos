@@ -9,6 +9,11 @@ template<class BasePolicy_ = default_call_policies>
 struct del_dangleing_rcp : BasePolicy_
 {
     void * my_rcp;
+    static bool precall(PyObject*)
+    {
+        return true;
+    }
+    
     template <class ArgumentPackage>
     static PyObject* postcall(ArgumentPackage const& args_, PyObject* result)
     {

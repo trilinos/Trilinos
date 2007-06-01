@@ -16,6 +16,13 @@ Teuchos::XMLObject my_toXML(writer const& self, const Teuchos::ParameterList& p)
     return self.toXML(p);
 }
 
+Teuchos::ParameterList my_toplist(reader const& self, const Teuchos::XMLObject& xml)
+{
+    return self.toParameterList(xml);
+}
+
+
+
 void expose_xml_r_w()
 {
     
@@ -24,10 +31,10 @@ void expose_xml_r_w()
              init<>("Construct a reader") )
 
         // ParameterList toParameterList(const XMLObject& xml) const ;
-        // .def( "toParameterList", &reader::toParameterList,
-        //             "reader.toParameterList( xml ) -> plist  \n"
-        //             "Write the given XML object to a parameter list"
-        // )
+        .def( "toParameterList", &my_toplist,
+                    "reader.toParameterList( xml ) -> plist  \n"
+                    "Write the given XML object to a parameter list"
+        )
     ;
     
     //########    //########
