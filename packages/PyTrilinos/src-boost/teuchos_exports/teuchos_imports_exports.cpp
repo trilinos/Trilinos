@@ -116,6 +116,8 @@ void extract_teuchos_misc()
     py_rcp< Teuchos::XMLInputStream >::from_python();
     py_rcp< Teuchos::XMLInputStream >::to_python();
     
+    // register_ptr_to_python< shared_ptr< Teuchos::XMLInputStream > >();
+    
     converter::registry::insert( &extract_plist , type_id< Teuchos::ParameterList >() );
     
     converter::registry::insert( &extract_ostream , type_id< std::ostream >() );

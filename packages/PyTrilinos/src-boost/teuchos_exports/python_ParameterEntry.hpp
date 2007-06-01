@@ -110,9 +110,9 @@ public:
     			  const std::string & name,
     			  PyObject*           value) {
 
-        handle<> o(borrowed(value) );
-        object ob( o );
-        Teuchos::ParameterList *pp = dynamic_cast< Teuchos::ParameterList >( ob.ptr() );
+        // handle<> o(borrowed(value) );
+        // object ob( o );
+        // Teuchos::ParameterList *pp = dynamic_cast< Teuchos::ParameterList >( ob.ptr() );
         
         // Boolean values
         if (PyBool_Check(value)) {
@@ -156,9 +156,9 @@ public:
         }
 
         // ParameterList values
-        else if ( pp != NULL ) {
-          plist.set(name, *pp);
-        }
+        // else if ( pp != NULL ) {
+        //   plist.set(name, *pp);
+        // }
 
         // All other value types are unsupported
         else {
