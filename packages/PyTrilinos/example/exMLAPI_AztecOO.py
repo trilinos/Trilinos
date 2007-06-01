@@ -47,6 +47,9 @@ from   optparse import *
 import sys
 
 parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
 parser.add_option("-t", "--testharness", action="store_true",
                   dest="testharness", default=False,
                   help="test local build modules; prevent loading system-installed modules")
@@ -54,21 +57,25 @@ parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
                   help="set the verbosity level [default 2]")
 options,args = parser.parse_args()
 if options.testharness:
-  import setpath
-  import Epetra
-  import ML
-  import AztecOO
-else:
-  try:
     import setpath
+    if options.boost: setpath.setpath("src-boost")
+    else:             setpath.setpath()
     import Epetra
     import ML
     import AztecOO
-  except:
-    from PyTrilinos import Epetra
-    from PyTrilinos import ML
-    from PyTrilinos import AztecOO
-    print >>sys.stderr, "Using installed versions of Epetra, ML, AztecOO"
+else:
+    try:
+        import setpath
+        if options.boost: setpath.setpath("src-boost")
+        else:             setpath.setpath()
+        import Epetra
+        import ML
+        import AztecOO
+    except:
+        from PyTrilinos import Epetra
+        from PyTrilinos import ML
+        from PyTrilinos import AztecOO
+        print >>sys.stderr, "Using installed versions of Epetra, ML, AztecOO"
 
 ################################################################################
 

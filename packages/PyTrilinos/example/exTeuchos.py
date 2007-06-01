@@ -42,6 +42,9 @@ from   types    import *
 ################################################################################
 
 parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
 parser.add_option("-t", "--testharness", action="store_true",
                   dest="testharness", default=False,
                   help="test local build modules; prevent loading system-installed modules")
@@ -49,15 +52,19 @@ parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
                   help="set the verbosity level [default 2]")
 options,args = parser.parse_args()
 if options.testharness:
-  import setpath
-  import Teuchos
-else:
-  try:
     import setpath
+    if options.boost: setpath.setpath("src-boost")
+    else:             setpath.setpath()
     import Teuchos
-  except ImportError:
-    from PyTrilinos import Teuchos
-    print >>sys.stderr, "Using system-installed Teuchos"
+else:
+    try:
+        import setpath
+        if options.boost: setpath.setpath("src-boost")
+        else:             setpath.setpath()
+        import Teuchos
+    except ImportError:
+        from PyTrilinos import Teuchos
+        print >>sys.stderr, "Using system-installed Teuchos"
 
 ################################################################################
 

@@ -48,6 +48,9 @@ from   optparse import *
 import sys
 
 parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
 parser.add_option("-t", "--testharness", action="store_true",
                   dest="testharness", default=False,
                   help="test local build modules; prevent loading system-installed modules")
@@ -71,6 +74,8 @@ options,args = parser.parse_args()
 # try to import from a system-installed PyTrilinos.
 if options.testharness:
     import setpath
+    if options.boost: setpath.setpath("src-boost")
+    else:             setpath.setpath()
     import Teuchos
     import Epetra
     import EpetraExt
@@ -78,6 +83,8 @@ if options.testharness:
 else:
     try:
         import setpath
+        if options.boost: setpath.setpath("src-boost")
+        else:             setpath.setpath()
         import Teuchos
         import Epetra
         import EpetraExt

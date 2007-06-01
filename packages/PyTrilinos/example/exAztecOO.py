@@ -31,6 +31,9 @@
 from optparse import *
 
 parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
 parser.add_option("-t", "--testharness", action="store_true",
                   dest="testharness", default=False,
                   help="test local build modules; prevent loading system-installed modules")
@@ -38,21 +41,25 @@ parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
                   help="set the verbosity level [default 2]")
 options,args = parser.parse_args()
 if options.testharness:
-   import setpath
-   import Epetra
-   import Galeri
-   import AztecOO
+    import setpath
+    if options.boost: setpath.setpath("src-boost")
+    else:             setpath.setpath()
+    import Epetra
+    import Galeri
+    import AztecOO
 else:
-   try:
-      import setpath
-      import Epetra
-      import Galeri
-      import AztecOO
-   except ImportError:
-      from PyTrilinos import Epetra
-      from PyTrilinos import Galeri
-      from PyTrilinos import AztecOO
-      print "Using system-installed Epetra, Galeri, AztecOO"
+    try:
+        import setpath
+        if options.boost: setpath.setpath("src-boost")
+        else:             setpath.setpath()
+        import Epetra
+        import Galeri
+        import AztecOO
+    except ImportError:
+        from PyTrilinos import Epetra
+        from PyTrilinos import Galeri
+        from PyTrilinos import AztecOO
+        print "Using system-installed Epetra, Galeri, AztecOO"
 
 comm = Epetra.PyComm()
 
