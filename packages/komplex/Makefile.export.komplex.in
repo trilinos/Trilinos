@@ -1,0 +1,13 @@
+include @abs_top_builddir@/../epetra/Makefile.export.epetra
+
+_KOMPLEX_INCLUDES = -I@abs_top_srcdir@/src -I@abs_top_builddir@/src \
+		    -I@abs_top_srcdir@/src/new -I@abs_top_builddir@/src/new \
+		    $(EPETRA_INCLUDES)
+_KOMPLEX_LIBS     = @LDFLAGS@ -L@abs_top_builddir@/src -lkomplex \
+		    $(EPETRA_LIBS)
+
+@USING_GNUMAKE_TRUE@KOMPLEX_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_KOMPLEX_INCLUDES))
+@USING_GNUMAKE_TRUE@KOMPLEX_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_KOMPLEX_LIBS))
+
+@USING_GNUMAKE_FALSE@KOMPLEX_INCLUDES = $(_KOMPLEX_INCLUDES)
+@USING_GNUMAKE_FALSE@KOMPLEX_LIBS     = $(_KOMPLEX_LIBS)

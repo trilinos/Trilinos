@@ -217,6 +217,11 @@ AC_CXX_NEW_FOR_SCOPING
 AC_CXX_STD_SPRINTF
 
 # ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
+
+# ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
@@ -269,6 +274,7 @@ AC_SUBST(ac_aux_dir)
 
 AC_CONFIG_FILES([
 		Makefile
+		Makefile.export.komplex
                 src/Makefile
 		example/Makefile])
 #                example/komplex_hb/Makefile
