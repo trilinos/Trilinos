@@ -24,7 +24,7 @@ public:
 		return traits::hasMachineParameters;
 	}
 	
-	static void wrap(char* name)
+	static class_< traits > wrap(char* name)
 	{
 
 		
@@ -73,16 +73,6 @@ public:
 					"Returns the conjugate of the scalar type")
 			.staticmethod("conjugate")
 
-		//    static inline T nan()
-			.def("nan",traits::nan,
-					"Returns a number that represents NaN.")
-			.staticmethod("nan")
-
-		//    static inline bool isnaninf(const T& x)
-			.def("isnaninf",traits::isnaninf,
-					" Returns True if x is NaN or Inf.")
-			.staticmethod("isnaninf")
-
 		//    static inline void seedrandom(unsigned int s)
 			.def("seedrandom",traits::seedrandom,
 					"Seed the random number generator returned by random().")
@@ -109,68 +99,106 @@ public:
 			.def("pow",traits::pow,
 					"Returns the result of raising one scalar x to the power y.")
 			.staticmethod("pow")
-			;
+		;
 			
-		if (traits::hasMachineParameters)
-			{
-				PyTraits
-					//    static inline magnitudeType eps()   
-					.def("eps",traits::eps,
-							"Returns relative machine precision.")
-					.staticmethod("eps")
-
-					//    static inline magnitudeType sfmin() 
-					.def("sfmin",traits::sfmin,
-							"Returns safe minimum (sfmin), such that 1/sfmin does not overflow.")
-					.staticmethod("sfmin")
-							
-					//    static inline magnitudeType base()  
-					.def("base",traits::base,
-							"Returns the base of the machine.")
-					.staticmethod("base")
-
-					//    static inline magnitudeType prec()  
-					.def("prec",traits::prec,
-							"Returns eps*base.")
-					.staticmethod("prec")
-
-					//    static inline magnitudeType t()     
-					.def("t",traits::t,
-							"Returns the number of (base) digits in the mantissa.")
-					.staticmethod("t")
-
-					//    static inline magnitudeType rnd()   
-					.def("rnd",traits::rnd,
-							"Returns 1.0 when rounding occurs in addition, 0.0 otherwise")
-					.staticmethod("rnd")
-					
-					//    static inline magnitudeType emin()  
-					.def("emin",traits::emin,
-							"Returns the minimum exponent before (gradual) underflow.")
-					.staticmethod("emin")
-					
-					//    static inline magnitudeType rmin()  
-					.def("rmin",traits::rmin,
-							"Returns the underflow threshold - base^(emin-1).")
-					.staticmethod("rmin")
-					
-					//    static inline magnitudeType emax()  
-					.def("emax",traits::emax,
-							"Returns the largest exponent before overflow.")
-					.staticmethod("emax")
-					
-					//    static inline magnitudeType rmax()  
-					.def("rmax",traits::rmax,
-							"Overflow theshold -  (base^emax)*(1-eps)")
-					.staticmethod("rmax")
-				;
-			}
-		
+		return PyTraits;
+			
 	}
 };
+template<class T>
+class_< Teuchos::ScalarTraits<T> > addNaninf( class_< Teuchos::ScalarTraits<T> > PyTraits )
+{
+	typedef Teuchos::ScalarTraits<T> traits;
+	
+	PyTraits
+		//    static inline T nan()
+		.def("nan",traits::nan,
+				"Returns a number that represents NaN.")
+		.staticmethod("nan")
+		
+		//    static inline bool isnaninf(const T& x)
+		.def("isnaninf",traits::isnaninf,
+				" Returns True if x is NaN or Inf.")
+		.staticmethod("isnaninf")
+	;
+	return PyTraits;
+}
+
+template<class T>
+class_< Teuchos::ScalarTraits<T> > addMachineParams( class_< Teuchos::ScalarTraits<T> > PyTraits )
+{
+	typedef Teuchos::ScalarTraits<T> traits;
+	
+	PyTraits
+		//    static inline magnitudeType eps()   
+		.def("eps",traits::eps,
+				"Returns relative machine precision.")
+		.staticmethod("eps")
+
+		//    static inline magnitudeType sfmin() 
+		.def("sfmin",traits::sfmin,
+				"Returns safe minimum (sfmin), such that 1/sfmin does not overflow.")
+		.staticmethod("sfmin")
+				
+		//    static inline magnitudeType base()  
+		.def("base",traits::base,
+				"Returns the base of the machine.")
+		.staticmethod("base")
+
+		//    static inline magnitudeType prec()  
+		.def("prec",traits::prec,
+				"Returns eps*base.")
+		.staticmethod("prec")
+
+		//    static inline magnitudeType t()     
+		.def("t",traits::t,
+				"Returns the number of (base) digits in the mantissa.")
+		.staticmethod("t")
+
+		//    static inline magnitudeType rnd()   
+		.def("rnd",traits::rnd,
+				"Returns 1.0 when rounding occurs in addition, 0.0 otherwise")
+		.staticmethod("rnd")
+		
+		//    static inline magnitudeType emin()  
+		.def("emin",traits::emin,
+				"Returns the minimum exponent before (gradual) underflow.")
+		.staticmethod("emin")
+		
+		//    static inline magnitudeType rmin()  
+		.def("rmin",traits::rmin,
+				"Returns the underflow threshold - base^(emin-1).")
+		.staticmethod("rmin")
+		
+		//    static inline magnitudeType emax()  
+		.def("emax",traits::emax,
+				"Returns the largest exponent before overflow.")
+		.staticmethod("emax")
+		
+		//    static inline magnitudeType rmax()  
+		.def("rmax",traits::rmax,
+				"Overflow theshold -  (base^emax)*(1-eps)")
+		.staticmethod("rmax")
+	;
+	return PyTraits;
+
+}
 
 void expose_scalartraits()
 {
-	STraits<float>::wrap("ScalarTraitsFloat");
-	STraits<double>::wrap("ScalarTraitsDouble");
+	
+	addMachineParams ( 
+		addNaninf(
+			STraits<float>::wrap("ScalarTraitsFloat") 
+		));
+	
+	addMachineParams (
+		addNaninf( 
+			STraits<double>::wrap("ScalarTraitsDouble") 
+		));
+		
+	STraits<char>::wrap("ScalarTraitsChar");
+	STraits<int>::wrap("ScalarTraitsInt");
 }
+
+

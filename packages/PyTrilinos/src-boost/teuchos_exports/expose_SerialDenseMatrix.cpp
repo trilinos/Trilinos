@@ -1,5 +1,8 @@
 
-#include "all_teuchos_includes.hpp"
+#include <boost/python.hpp>
+using namespace boost::python;
+
+#include <Teuchos_SerialDenseMatrix.hpp>
 #include <numpy/arrayobject.h>
 
 
@@ -91,9 +94,9 @@ public:
 
         ai->shape = new npy_intp[2];
 
-        ai->shape[0] = self.numRows();
+        ai->shape[1] = self.numRows();
 
-        ai->shape[1] = self.numCols();
+        ai->shape[0] = self.numCols();
 
 
 
