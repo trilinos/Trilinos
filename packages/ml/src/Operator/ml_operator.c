@@ -92,6 +92,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->num_rigid           = 1;
    mat->N_total_cols_est    = -1;
    mat->subspace            = NULL;
+   mat->vbr                 = NULL;
    mat->spectral_radius_scheme = ML_USE_CG;
    mat->spectral_radius_max_iters = 10;
    ML_Aux_Data_Create(&(mat->aux_data));
@@ -215,6 +216,11 @@ int ML_Operator_Clean( ML_Operator *mat)
      ML_free(mat->subspace->vec1); ML_free(mat->subspace->vec2);
      ML_free(mat->subspace->res1); ML_free(mat->subspace->res2);
      ML_free(mat->subspace);
+   }
+   if (mat->vbr != NULL){
+     ML_free(mat->vbr->cpntr);
+     ML_free(mat->vbr->rpntr);
+     ML_free(mat->vbr);
    }
    if ((mat->data_destroy != NULL) && (mat->data != NULL)) {
       mat->data_destroy(mat->data);
@@ -2126,6 +2132,12 @@ int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs, int vecleng)
    return 0;
 }
 
+void ML_Operator_SetVBR_Info(ML_Operator *mat, int *cpntr, int *rpntr)
+{
+  mat->vbr = malloc(sizeof(ML_VBR_Info));
+  mat->vbr->cpntr = cpntr;
+  mat->vbr->rpntr = rpntr;
+}
 
 int ML_Operator_MoveFromHierarchyAndClean(ML_Operator *newmat, 
 						 ML_Operator *hier)
