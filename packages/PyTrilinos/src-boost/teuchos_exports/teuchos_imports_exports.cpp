@@ -60,9 +60,9 @@ public:
 
 void* extract_plist(PyObject * o)
 {
-    // if ( !PyDict_Check( o ) )
-    //     return NULL;
-    // else
+     if ( !PyDict_Check( o ) )
+         return NULL;
+     else
         return (void *) python_plist_tools::pyDictToNewParameterList(o,raiseError);
 }
 
@@ -119,6 +119,7 @@ void extract_teuchos_misc()
     // register_ptr_to_python< shared_ptr< Teuchos::XMLInputStream > >();
     
     converter::registry::insert( &extract_plist , type_id< Teuchos::ParameterList >() );
+    to_python_converter< Teuchos::ParameterList, plist_to_object >();
     
     converter::registry::insert( &extract_ostream , type_id< std::ostream >() );
     to_python_converter< std::ostream , ostream_to_python >();

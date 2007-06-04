@@ -111,14 +111,18 @@ void expose_xmlobject()
                 return_value_policy<copy_const_reference>()
         )
 
-    // Represent this node and its children as a string
     // string toString() const 
         .def( "toString" ,&xml::toString,
                 "obj.toString( ) -> str \n"
                 "Represent this node and its children as a string"
         )
 
-    // Print this node and its children to stream with the given indentation
+    // string toString() const 
+        .def( "__str__" ,&xml::toString,
+                "obj.toString( ) -> str \n"
+                "Represent this node and its children as a string"
+        )
+
     // void print(ostream& os, int indent) const
 
     // string header() const 

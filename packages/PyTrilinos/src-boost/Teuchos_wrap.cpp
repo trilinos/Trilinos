@@ -44,7 +44,7 @@ void expose_plist();
 void expose_xmlobject();
 void expose_xml_r_w();
 void expose_str_inputsource();
-
+void expose_scalartraits();
 
 
 // Define the Teuchos python module
@@ -60,10 +60,11 @@ BOOST_PYTHON_MODULE(_Teuchos)
     //               XMLInputSource
     // tests won't work yet !
     expose_fileinputsource();
-    expose_plist();
+    //expose_plist();
     expose_xmlobject();
     expose_xml_r_w();
     expose_str_inputsource();
+    expose_scalartraits();
     
     extract_teuchos_misc();
     convert_exceptions();
