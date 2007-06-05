@@ -2134,7 +2134,7 @@ int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs, int vecleng)
 
 void ML_Operator_SetVBR_Info(ML_Operator *mat, int *cpntr, int *rpntr)
 {
-  mat->vbr = malloc(sizeof(ML_VBR_Info));
+  mat->vbr = malloc(sizeof(struct ML_VBR_Info_Struct));
   mat->vbr->cpntr = cpntr;
   mat->vbr->rpntr = rpntr;
 }
