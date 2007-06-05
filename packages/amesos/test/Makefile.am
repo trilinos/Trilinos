@@ -50,7 +50,6 @@ SUBDIRS = scripts \
 	  Test_SuperLU \
 	  Test_SuperLU_DIST \
 	  Test_MUMPS \
-	  Test_PARAKLETE \
 	  Test_DSCPACK TestOptions ${PERF_SUBDIR}
 
 EXTRA_DIST = definition
