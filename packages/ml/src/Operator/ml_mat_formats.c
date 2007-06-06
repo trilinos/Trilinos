@@ -286,6 +286,7 @@ int CSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    return(1);
 }
 
+/*gets one row of a CSR matrix ~IK*/
 int CSR_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {

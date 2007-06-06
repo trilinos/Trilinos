@@ -95,6 +95,9 @@ struct ML_Operator_Subspace_Struct {
 struct ML_VBR_Info_Struct {
    int *cpntr; /*Pointer to an array to define blockcolumn widths*/
    int *rpntr; /*Pointer to an array to define blockrow heights*/
+   int *bindx; /*Array to store block block columns for non-zero blocks*/
+   int *indx;  /*Array to store number of entries in each block*/
+   int *bpntr; /*Array to store number of non-zero blocks in a blockrow*/
 };
 
 typedef struct {

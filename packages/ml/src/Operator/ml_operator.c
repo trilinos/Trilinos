@@ -218,8 +218,6 @@ int ML_Operator_Clean( ML_Operator *mat)
      ML_free(mat->subspace);
    }
    if (mat->vbr != NULL){
-     ML_free(mat->vbr->cpntr);
-     ML_free(mat->vbr->rpntr);
      ML_free(mat->vbr);
    }
    if ((mat->data_destroy != NULL) && (mat->data != NULL)) {
@@ -2134,9 +2132,12 @@ int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs, int vecleng)
 
 void ML_Operator_SetVBR_Info(ML_Operator *mat, int *cpntr, int *rpntr)
 {
-  mat->vbr = malloc(sizeof(struct ML_VBR_Info_Struct));
+  mat->vbr = (ML_VBR_Info *)ML_allocate(sizeof(struct ML_VBR_Info_Struct));
   mat->vbr->cpntr = cpntr;
   mat->vbr->rpntr = rpntr;
+  mat->vbr->bindx = NULL;
+  mat->vbr->indx = NULL;
+  mat->vbr->bpntr = NULL;
 }
 
 int ML_Operator_MoveFromHierarchyAndClean(ML_Operator *newmat, 
