@@ -73,6 +73,14 @@ int output_gnu(const char *cmd_file,
   int    i, j, nelems;
   int    prev_part = -1;
   int    max_part = -1;
+  float    locMaxX = INT_MIN;
+  float    locMinX = INT_MAX;
+  float    locMaxY = INT_MIN;
+  float    locMinY = INT_MAX;
+  float    globMaxX = INT_MIN;
+  float    globMinX = INT_MAX;
+  float    globMaxY = INT_MIN;
+  float    globMinY = INT_MAX;
   int    gmax_part = Num_Proc-1;
   int    gnum_part = Num_Proc;
   int   *parts = NULL;
@@ -160,6 +168,25 @@ int output_gnu(const char *cmd_file,
        * the point will appear.  */
       fprintf(fp, "\n%e %e\n", 
               current_elem->coord[0][0], current_elem->coord[0][1]);
+
+      /* save max and min x/y coords */
+      if(current_elem->coord[0][0] < locMinX)
+      {
+        locMinX = current_elem->coord[0][0];
+      }
+      if(current_elem->coord[0][0] > locMaxX)
+      {
+        locMaxX = current_elem->coord[0][0];
+      }
+      if(current_elem->coord[0][1] < locMinY)
+      {
+        locMinY = current_elem->coord[0][1];
+      }
+      if(current_elem->coord[0][1] > locMaxY)
+      {
+        locMaxY = current_elem->coord[0][1];
+      }
+
       for (j = 0; j < current_elem->nadj; j++) {
         if (current_elem->adj_proc[j] == Proc) {  /* Nbor is on same proc */
           if (mesh->blank_count && (mesh->blank[current_elem->adj[j]] == 1))
@@ -180,6 +207,12 @@ int output_gnu(const char *cmd_file,
         }
       }
     }
+
+    MPI_Reduce(&locMinX,&globMinX,1,MPI_FLOAT,MPI_MIN,0,MPI_COMM_WORLD);
+    MPI_Reduce(&locMinY,&globMinY,1,MPI_FLOAT,MPI_MIN,0,MPI_COMM_WORLD);
+    MPI_Reduce(&locMaxX,&globMaxX,1,MPI_FLOAT,MPI_MAX,0,MPI_COMM_WORLD);
+    MPI_Reduce(&locMaxY,&globMaxY,1,MPI_FLOAT,MPI_MAX,0,MPI_COMM_WORLD);
+
   }
   else if (pio_info->file_type == NEMESIS_FILE) { /* Nemesis input file */
     /* 
@@ -241,6 +274,13 @@ int output_gnu(const char *cmd_file,
     fprintf(fp, "set noxtics\n");
     fprintf(fp, "set noytics\n");
     fprintf(fp, "set data style %s\n", datastyle);
+
+    /* resize range so that there is a 5% border around data */
+    fprintf(fp, "set xrange [%f:%f] \n ",globMinX-(globMaxX-globMinX)/20
+	                            ,globMaxX+(globMaxX-globMinX)/20);
+    fprintf(fp, "set yrange [%f:%f] \n ",globMinY-(globMaxY-globMinY)/20
+	                            ,globMaxY+(globMaxY-globMinY)/20);
+
 
     fprintf(fp, "plot ");
     strcpy(ctemp, pio_info->pexo_fname);
