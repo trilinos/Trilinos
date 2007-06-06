@@ -56,7 +56,7 @@ echo "----------------------------------------"
 # directory with --srcdir.  Any file in that directory will do,
 # preferably one that is unlikely to be removed or renamed.
 
-AC_CONFIG_SRCDIR(/src/Main/ml_struct.c)
+AC_CONFIG_SRCDIR([src/Main/ml_struct.c])
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -102,12 +102,11 @@ AC_CANONICAL_TARGET
 
 # Use automake
 
-# Package name and version below
-AM_INIT_AUTOMAKE(ml, 4.0)
+AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.52)
+AC_PREREQ(2.61)
 
 #  can eliminate compiler checks below if your package does not use the
 #  language corresponding to the check
@@ -279,7 +278,6 @@ if test "X$ac_cv_header_malloc_h" != "Xyes"; then
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
 AC_C_INLINE
 
 # ------------------------------------------------------------------------

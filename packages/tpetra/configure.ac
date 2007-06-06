@@ -50,7 +50,7 @@ echo "----------------------------------------"
 # directory with --srcdir.  Any file in that directory will do,
 # preferably one that is unlikely to be removed or renamed.
 
-AC_CONFIG_SRCDIR(/src/Tpetra_Object.hpp)
+AC_CONFIG_SRCDIR([src/Tpetra_Object.hpp])
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -92,10 +92,10 @@ AC_CANONICAL_TARGET
 # Use automake
 
 # Specify required version of automake.
-AM_INIT_AUTOMAKE(1.8.2)
+AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
 
 # Specify required version of autoconf.
-AC_PREREQ(2.59)
+AC_PREREQ(2.61)
 
 # ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
@@ -196,7 +196,6 @@ if test "X$ac_cv_header_numeric" != "Xyes" && test "X$ac_cv_header_algo_h" != "X
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
 AC_C_INLINE
 
 # ------------------------------------------------------------------------

@@ -47,7 +47,7 @@ echo "----------------------------------------"
 # This is to protect against accidentally specifying the wrong
 # directory with --srcdir.
 
-AC_CONFIG_SRCDIR(/src/azk_komplex.h)
+AC_CONFIG_SRCDIR([src/azk_komplex.h])
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -88,11 +88,11 @@ AC_CANONICAL_TARGET
 
 # Use automake
 
-AM_INIT_AUTOMAKE(1.8.2)
+AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.61)
 
 # Specify revision number of configure.ac that was used to generate
 # configure.
@@ -202,7 +202,6 @@ if test "X$ac_cv_header_malloc_h" != "Xyes"; then
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
 AC_C_INLINE
 
 # ------------------------------------------------------------------------

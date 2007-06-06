@@ -34,7 +34,7 @@ AUTOMAKE_OPTIONS = foreign
 ## #######################################################################
 ## Aclocal command (rarely used - don't worry about it)
 ## #######################################################################
-ACLOCAL	= aclocal -I config
+ACLOCAL_AMFLAGS = -I config
 
 EXTRA_DIST = definition setpath.py \
 	     testAmesos.py testAnasazi.py testAztecOO.py testEpetraExt_Coloring.py \

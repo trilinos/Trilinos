@@ -41,7 +41,7 @@ echo "-----------------------------------"
 # directory with --srcdir.  Any file in that directory will do,
 # preferably one that is unlikely to be removed or renamed.
 
-AC_CONFIG_SRCDIR(/src/setup.py)
+AC_CONFIG_SRCDIR([src/setup.py])
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -160,11 +160,11 @@ AC_CANONICAL_TARGET
 
 # Use automake
 
-AM_INIT_AUTOMAKE(1.8.2)
+AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.61)
 
 # ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done

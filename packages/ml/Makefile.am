@@ -43,7 +43,7 @@ AUTOMAKE_OPTIONS = foreign
 ## #######################################################################
 ## Aclocal command (rarely used - don't worry about it)
 ## #######################################################################
-ACLOCAL	= aclocal -I config
+ACLOCAL_AMFLAGS = -I config
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 

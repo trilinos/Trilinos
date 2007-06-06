@@ -54,7 +54,7 @@ echo "----------------------------------------"
 # preferably one that is unlikely to be removed or renamed.
 
 # #np# - file name below
-AC_CONFIG_SRCDIR(/src/interfaces/RTOpPack_RTOpT.hpp)
+AC_CONFIG_SRCDIR([src/interfaces/RTOpPack_RTOpT.hpp])
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -106,11 +106,11 @@ AC_CANONICAL_TARGET
 # Use automake
 
 #  #np# - Package name and version below
-AM_INIT_AUTOMAKE(1.8.2)
+AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.61)
 
 # ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
@@ -157,7 +157,6 @@ TAC_ARG_CHECK_MPI
 # ------------------------------------------------------------------------
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
 AC_C_INLINE
 
 # ------------------------------------------------------------------------

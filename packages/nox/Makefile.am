@@ -40,7 +40,7 @@ AUTOMAKE_OPTIONS = foreign
 ## #######################################################################
 ## Aclocal command (rarely used - don't worry about it)
 ## #######################################################################
-ACLOCAL	= aclocal -I config
+ACLOCAL_AMFLAGS = -I config
 
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'

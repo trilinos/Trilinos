@@ -34,7 +34,7 @@ AUTOMAKE_OPTIONS = foreign
 ## #######################################################################
 ## Aclocal command (rarely used - don't worry about it)
 ## #######################################################################
-ACLOCAL	= aclocal -I config
+ACLOCAL_AMFLAGS = -I config
 
 EXTRA_DIST = setpath.py gre__115.rua \
 	     exAmesos_Factory.py exAmesos_Solvers.py exAnasazi_BlockDavidson.py \

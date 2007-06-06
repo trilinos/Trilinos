@@ -24,11 +24,11 @@ AM_MAINTAINER_MODE
 
 # Specify required version of automake.
 
-AM_INIT_AUTOMAKE(1.8.2)
+AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.61)
 
 # Must indicate for packages that can be configured from the package level that the 
 # configure/build process is happening within Trilinos.
