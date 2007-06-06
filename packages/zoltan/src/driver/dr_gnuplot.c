@@ -90,6 +90,12 @@ int output_gnu(const char *cmd_file,
   FILE  *fp = NULL;
 /***************************** BEGIN EXECUTION ******************************/
 
+  if(Output.Gnuplot < 0)
+  {
+    Gen_Error(0,"warning: 'gnuplot output' parameter set to invalid negative value.");
+    return 0;
+  }
+
   DEBUG_TRACE_START(Proc, yo);
 
   if (mesh->num_dims > 2) {
@@ -188,25 +194,32 @@ int output_gnu(const char *cmd_file,
         locMaxY = current_elem->coord[0][1];
       }
 
-      for (j = 0; j < current_elem->nadj; j++) {
-        if (current_elem->adj_proc[j] == Proc) {  /* Nbor is on same proc */
-          if (mesh->blank_count && (mesh->blank[current_elem->adj[j]] == 1))
-            continue;
-          if (!Output.Plot_Partitions || 
-              mesh->elements[current_elem->adj[j]].my_part == 
+      if (Output.Gnuplot>1)
+      {
+
+        for (j = 0; j < current_elem->nadj; j++) {
+          if (current_elem->adj_proc[j] == Proc) {  /* Nbor is on same proc */
+            if (mesh->blank_count && (mesh->blank[current_elem->adj[j]] == 1))
+              continue;
+            if (!Output.Plot_Partitions || 
+                mesh->elements[current_elem->adj[j]].my_part == 
                              current_elem->my_part) {  
-            /* Not plotting partitions, or nbor is in same partition */
-            /* Plot the edge.  Need to include current point and nbor point
-             * for each edge. */
-            fprintf(fp, "\n%e %e\n", 
-                current_elem->coord[0][0], current_elem->coord[0][1]);
-            nbor = current_elem->adj[j];
-            nbor_elem = &(mesh->elements[nbor]);
-            fprintf(fp, "%e %e\n",
-                    nbor_elem->coord[0][0], nbor_elem->coord[0][1]);
+              /* Not plotting partitions, or nbor is in same partition */
+              /* Plot the edge.  Need to include current point and nbor point
+               * for each edge. */
+              fprintf(fp, "\n%e %e\n", 
+                  current_elem->coord[0][0], current_elem->coord[0][1]);
+              nbor = current_elem->adj[j];
+              nbor_elem = &(mesh->elements[nbor]);
+              fprintf(fp, "%e %e\n",
+                      nbor_elem->coord[0][0], nbor_elem->coord[0][1]);
+            }
           }
         }
+
       }
+
+
     }
 
     MPI_Reduce(&locMinX,&globMinX,1,MPI_FLOAT,MPI_MIN,0,MPI_COMM_WORLD);
