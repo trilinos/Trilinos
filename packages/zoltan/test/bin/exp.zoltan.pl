@@ -273,8 +273,8 @@ my $fail = 0;
 mkdir "output", 0755;	# place to store the output
 
 foreach $f (@checkfiles) {
-  my $sum = `cat $f | sed -e 's/^[\t ]*//g' -e 's/[\t ]*\$//g' -e 's/[\t ]\\+/ /g' | cksum`;
-  $sum =~ /(\d+)\s+(\d+)\s+(\S+)/;
+  my $sum = `csh -f ../bin/cksum-w $f`;
+  $sum =~ /(\d+)\s+(\d+)/;
   my $sum0 = $1;
   my $sum1 = $2;
   my $partname = $zinp;
@@ -288,6 +288,8 @@ foreach $f (@checkfiles) {
   if ($sum eq "") {
     $erreason .= "output file $f not found! - ";
   }
+  print "  cmp $sum0/$sum1 to $cksum{$fullname}[0]/$cksum{$fullname}[1]\n"
+  	if ($args{_exact_debug});
   if ($cksum{$fullname}[0] == $sum0 && $cksum{$fullname}[1] == $sum1 ) {
     $pass++;
   } else {
