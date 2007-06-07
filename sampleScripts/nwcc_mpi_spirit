@@ -3,8 +3,8 @@
 --enable-new-package --enable-teuchos-abc --enable-teuchos-experimental \
 --enable-teuchos-complex --enable-aztecoo --enable-ifpack \
 --with-blas="-L/apps/intel/mkl/lib/em64t -lmkl -lguide" \
---with-lapack="-L/apps/intel/mkl/lib/em64t \
--lmkl_lapack -L/apps/intel/mkl/lib/em64t -lmkl" --with-mpi-compilers \
+--with-lapack="-L/apps/intel/mkl/lib/em64t -lmkl_lapack -L/apps/intel/mkl/lib/em64t -lmkl" \
+--with-mpi-compilers \
 --with-mpi-libs=-lmpich --enable-loca \
 --enable-epetraext --enable-amesos \
 --enable-anasazi --enable-belos \

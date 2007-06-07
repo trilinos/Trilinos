@@ -22,4 +22,4 @@ ${HOME}/Trilinos/$1/configure \
   --enable-galeri \
   --enable-ml \
   --enable-webtrilinos \
-  --enable-didasko \
+  --enable-didasko

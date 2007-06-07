@@ -1,7 +1,6 @@
 ../configure --enable-mpi --with-mpi-libs=-lmpi \
 CFLAGS="-O2 -64" FFLAGS="-O2 -64" \
-CXXFLAGS="-O2 -64 -LANG:std  -LANG:ansi-for-init-scope=ON \
--ptused -DMPI_NO_CPPBIND" \
+CXXFLAGS="-O2 -64 -LANG:std  -LANG:ansi-for-init-scope=ON -ptused -DMPI_NO_CPPBIND" \
 LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:std" \
 --with-amesos-sluddir=/scratch1/jmwille/Trilinos3PL/SuperLU_DIST_2.0 \
 --with-amesos-sludlib=/scratch1/jmwille/Trilinos3PL/SuperLU_DIST_2.0/libsuperlu.a \
