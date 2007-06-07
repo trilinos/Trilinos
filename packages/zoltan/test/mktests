@@ -16,9 +16,11 @@
 # zdrive.inp.* file it finds (alphabetically) so that it can run
 # a single problem in each directory instead of the whole battery.
 
-setenv PATH /bin:/usr/bin:/usr/sbin:/sbin:/usr/ucb/bin:/usr/ucb
 
-set arch=`(cd .. ; ls -1 | grep '^Obj_' | sed -e 's/Obj_//g')`
+setenv PATH /bin:/usr/bin:/usr/sbin:/sbin:/usr/ucb/bin:/usr/ucb:
+
+set rundir=`/bin/pwd`
+set arch=`(cd .. ; /bin/ls -1 | grep '^Obj_' | sed -e 's/Obj_//g')`
 set tname="zoltan.tests"
 
 foreach d (*)
@@ -45,8 +47,8 @@ foreach d (*)
     cp /dev/null $d/checksums
     pushd $d/answers >& /dev/null
     foreach f (`ls -1 | grep '[0-9]$'`)
-	set sum=`cat $f | sed -e 's/^[\t ]*//g' -e 's/[\t ]*$//g' -e 's/[\t ]\+/ /g' | cksum`
-	echo "$sum $f" >> ../checksums
+	#set sum=`cat $f | sed -e 's/^[	 ]*//g' -e 's/[	 ]*$//g' -e 's/[	 ][	 ]*/ /g' | cksum`
+	csh $rundir/bin/cksum-w $f >> ../checksums
     end
     popd >& /dev/null
 #    (cd $d/answers ; cksum *[0-9] > ../checksums)
