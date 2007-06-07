@@ -426,7 +426,7 @@ else
     set ch_name = ($ch_name vwgt2 hammond2)
     set ch_nproc = ($ch_nproc 1 1) # no. of procs
   else
-    set ch_name = ($ch_name drake slac vwgt2 hammond2 brack2_3)
+    set ch_name = ($ch_name drake vwgt2 hammond2 brack2_3)
     set ch_nproc = ($ch_nproc 3 9 2 6 5) # no. of procs
   endif
 
