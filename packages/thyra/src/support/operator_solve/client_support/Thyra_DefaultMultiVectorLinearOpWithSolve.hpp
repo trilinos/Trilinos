@@ -157,7 +157,22 @@ void DefaultMultiVectorLinearOpWithSolve<Scalar>::apply(
   const Scalar beta
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+
+  using Teuchos::dyn_cast;
+  using Teuchos::RefCountPtr;
+  typedef DefaultMultiVectorProductVector<Scalar> MVPV;
+
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(0==y);
+#endif
+ 
+  RefCountPtr<const MultiVectorBase<Scalar> >
+    X = dyn_cast<const MVPV>(x).getMultiVector().assert_not_null();
+  RefCountPtr<MultiVectorBase<Scalar> >
+    Y = dyn_cast<MVPV>(*y).getNonconstMultiVector().assert_not_null();
+
+  Thyra::apply( *lows_.getConstObj(), M_trans, *X, &*Y, alpha, beta );
+
 }
 
 

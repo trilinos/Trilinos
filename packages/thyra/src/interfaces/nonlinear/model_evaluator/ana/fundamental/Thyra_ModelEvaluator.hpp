@@ -331,12 +331,6 @@ namespace Thyra {
  * adjoint operator application[D(f)/D(p)]^T is needed.  And in this case, the
  * multivector form of the adjoint <tt>[D(g)/D(p)]^T</tt> is required.
  *
-
-
-
-
-
-
  * As demonstrated above, general derivative objects (e.g. <tt>D(f)/D(p)</tt>,
  * <tt>D(g)/D(x)</tt>, and <tt>D(g)/D(p)</tt>) may be needed as either only a
  * linear operator (where it's forward or adjoint application is required) or

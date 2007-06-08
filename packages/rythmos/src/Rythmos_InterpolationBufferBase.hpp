@@ -280,16 +280,19 @@ public:
    *     <tt>i=0...n-1</tt>, where <tt>range = this->getTimeRange()</tt>.
    * </ul>
    *
-   * ToDo: Should we change the output vectors to Array<RCP<const VB> > > to
-   * keep clients from modifying them?  If the implementation wants to simply
-   * return vectors that are stored internally, then we don't want client's
-   * modifying them or this will invalidate the buffer's implementation!
+   * 2007/06/08: rabartl: ToDo: Should we require that the user sort the time
+   * point?  this will make the implementation by the subclasses much easier.
+   * I think this is a reasonable thing to request.  If we want to allow the
+   * user to pass in an unsorted time array, then we can provide an
+   * unsortedGetPoints(...) helper functions that will take an unsorted
+   * time_vec array, sort it, call getPoints(...) and then put the returned
+   * values back in the right place.
    *
-   * ToDo: What is the role of the return value?  Is it allowed for the
-   * implementation to refuse to return values for only certain times or for
-   * all times?  If the time values fall in the allowed range, should not an
-   * implementation be forced to return the interpolated values?  How can we
-   * tighten up the specification of this function?
+   * rabartl: ToDo: What is the role of the return value?  Is it allowed for
+   * the implementation to refuse to return values for only certain times or
+   * for all times?  If the time values fall in the allowed range, should not
+   * an implementation be forced to return the interpolated values?  How can
+   * we tighten up the specification of this function?
    */
   virtual bool getPoints(
     const std::vector<Scalar>& time_vec,

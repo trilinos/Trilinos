@@ -54,10 +54,10 @@ public:
     { supports_DgDp_.push_back(std::pair<int,int>(j,l)); return *this; }
   // These should be private but I am too lazy to deal with the porting
   // issues of friends ...
-  typedef std::list<int>                  supports_DfDp_t;
-  typedef std::list<std::pair<int,int> >  supports_DgDp_t;
-  supports_DfDp_t    supports_DfDp_;
-  supports_DgDp_t    supports_DgDp_;
+  typedef std::list<int> supports_DfDp_t;
+  typedef std::list<std::pair<int,int> > supports_DgDp_t;
+  supports_DfDp_t supports_DfDp_;
+  supports_DgDp_t supports_DgDp_;
 };
 
 } // namespace DirectionalFiniteDiffCalculatorTypes
@@ -65,7 +65,7 @@ public:
 /** \brief Utility calss for computing directional finite differences of a
  * model.
  *
- * This class compute finite difference approximations to the variations:
+ * This class computes finite difference approximations to the variations:
  * <ul>
  * <li> <tt>df = DfDx*delta_x + sum(DfDp(l)*delta_p(l),l=0...Np)</tt>
  * <li> <tt>dg(j) = sum(DgDx(j)*delta_x,j=0...Ng) + sum(DfDp(j,l)*delta_p(l),j=0...Ng,l=0...Np)</tt>
@@ -122,9 +122,8 @@ public:
    */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, fd_step_size );
 
-  /** \brief Pick the minimum step size under which the finite difference product.
-   *
-   * will not be computed.
+  /** \brief Pick the minimum step size under which the finite difference
+   * product will not be computed.
    *
    * If <tt>fd_step_size_min == 0</tt> then the finite difference computation
    * will always be performed.  If <tt>fd_step_size_min < 0</tt> then the
@@ -238,7 +237,7 @@ namespace Thyra {
 namespace DirectionalFiniteDiffCalculatorTypes {
 
 // Undocumented utility class for setting new derivative objects on an OutArgs
-// object!  Warning, a users should not attempt to play these tricks on their
+// object!  Warning, users should not attempt to play these tricks on their
 // own!
 //
 // Note that because of the design of the OutArgs and OutArgsSetup classes,
@@ -264,32 +263,73 @@ public:
     { TEST_FOR_EXCEPT(true); }
   // Static function that does the magic!
   static ModelEvaluatorBase::OutArgs<Scalar> createOutArgs(
-    const ModelEvaluator<Scalar> &model
-    ,const SelectedDerivatives   &fdDerivatives
+    const ModelEvaluator<Scalar> &model,
+    const SelectedDerivatives   &fdDerivatives
     )
     {
       typedef ModelEvaluatorBase MEB;
+
       const MEB::OutArgs<Scalar> wrappedOutArgs = model.createOutArgs();
       const int Np = wrappedOutArgs.Np(), Ng = wrappedOutArgs.Ng();
       MEB::OutArgsSetup<Scalar> outArgs;
+
       outArgs.setModelEvalDescription(
         "DirectionalFiniteDiffCalculator: " + model.description()
         );
+
+      // Start off by supporting everything that the underlying model supports
+      // computing!
+
       outArgs.set_Np_Ng(Np,Ng);
       outArgs.setSupports(wrappedOutArgs);
-      // Just support derivatives for DfDp for now!
+
+      // Add support for finite difference DfDp(l) if asked
+
       const SelectedDerivatives::supports_DfDp_t
         &supports_DfDp = fdDerivatives.supports_DfDp_;
       for(
-        SelectedDerivatives::supports_DfDp_t::const_iterator itr = supports_DfDp.begin();
+        SelectedDerivatives::supports_DfDp_t::const_iterator
+          itr = supports_DfDp.begin();
         itr != supports_DfDp.end();
         ++itr
         )
       {
-        outArgs.setSupports(MEB::OUT_ARG_DfDp,*itr,MEB::DERIV_MV_BY_COL);
+        const int l = *itr;
+        outArgs.setSupports(MEB::OUT_ARG_DfDp,l,MEB::DERIV_MV_BY_COL);
       }
-      // ToDo: Add support for more derivatives as needed!
+
+      const SelectedDerivatives::supports_DgDp_t
+        &supports_DgDp = fdDerivatives.supports_DgDp_;
+      for(
+        SelectedDerivatives::supports_DgDp_t::const_iterator
+          itr = supports_DgDp.begin();
+        itr != supports_DgDp.end();
+        ++itr
+        )
+      {
+        const int j = itr->first;
+        const int l = itr->second;
+        const bool g_space_j_is_in_core = model.get_g_space(j)->hasInCoreView();
+        const bool p_space_l_is_in_core = model.get_p_space(l)->hasInCoreView();
+        MEB::DerivativeSupport derivSupport;
+        if (g_space_j_is_in_core)
+          derivSupport.plus(MEB::DERIV_TRANS_MV_BY_ROW);
+        if (p_space_l_is_in_core)
+          derivSupport.plus(MEB::DERIV_MV_BY_COL);
+#ifdef TEUCHOS_DEBUG
+        TEST_FOR_EXCEPTION(
+          derivSupport.none(), std::logic_error,
+          "Error, for the model " << model.description()
+          << ", at lease one of the spaces g_space("<<j<<")"
+          " or p_space("<<l<<") must be in-core so that they can"
+          " act as the domain space for the multi-vector derivative!"
+          );
+#endif
+        outArgs.setSupports(MEB::OUT_ARG_DgDp,j,l,derivSupport);
+      }
+
       return outArgs;
+
     }
 };
 
@@ -509,6 +549,13 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
       << "\ndirections=\n" << describe(dir,verbLevel)
       << "\nbaseFunctionValues=\n" << describe(bfunc,verbLevel)
       << "\nvariations=\n" << describe(var,Teuchos::VERB_LOW);
+
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPTION(
+    var.isEmpty(), std::logic_error,
+    "Error, all of the variations can not be null!"
+    );
+#endif
   
   //
   // To illustrate the theory behind this implementation consider
@@ -656,6 +703,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   VectorPtr per_x, per_x_dot;
   std::vector<VectorPtr> per_p(Np);
   MEB::InArgs<Scalar> pp = model.createInArgs();
+  pp.setArgs(bp); // Set all args to start with
   if( bp.supports(MEB::IN_ARG_x) ) {
     if( dir.get_x().get() )
       pp.set_x(per_x=createMember(model.get_x_space()));
@@ -675,7 +723,9 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
       pp.set_p(l,bp.get_p(l));
   }
   if(out.get() && trace)
-    *out << "\nperturbedPoint after initial setup =\n" << describe(pp,verbLevel);
+    *out
+      << "\nperturbedPoint after initial setup (with some unintialized vectors) =\n"
+      << describe(pp,verbLevel);
   
   // Setup storage for perturbed functions
   bool all_funcs_at_base_computed = true;
@@ -697,7 +747,9 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
     }
   }
   if(out.get() && trace)
-    *out << "\nperturbedFunctions after initial setup =\n" << describe(pfunc,verbLevel);
+    *out
+      << "\nperturbedFunctions after initial setup (with some unintialized vectors) =\n"
+      << describe(pfunc,verbLevel);
   
   const int dbl_p = 15;
   if(out.get())
@@ -891,10 +943,10 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
         *out << "\nperturbedPoint=\n" << describe(pp,verbLevel);
       // Compute perturbed function values h(zo+uh_i*uh)
       if(out.get() && trace)
-        *out << "\nCompute perturnedFunctions at perturbedPoint...\n";
+        *out << "\nCompute perturbedFunctions at perturbedPoint...\n";
       model.evalModel(pp,pfunc);
       if(out.get() && trace)
-        *out << "\nperturnedFunctions=\n" << describe(pfunc,verbLevel);
+        *out << "\nperturbedFunctions=\n" << describe(pfunc,verbLevel);
       // Sum perturbed function values into total variation
       {
         // var_h += wgt_i*perturbed_h
@@ -989,15 +1041,17 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
   std::vector<VectorPtr> var_g(Ng);
   for( int l = 0; l < Np; ++l ) {
     if(out.get() && trace)
-      *out << "\nComputing deriatives for parameter subvector p("<<l<<") ...\n";
+      *out << "\nComputing derivatives for parameter subvector p("<<l<<") ...\n";
     Teuchos::OSTab tab(out);
     //
     // Load up OutArgs var object of derivative variations to compute
     //
     bool hasDerivObject = false;
     // DfDp(l)
-    if( deriv.supports(MEB::OUT_ARG_DfDp,l).none()==false
-        && deriv.get_DfDp(l).isEmpty()==false )
+    if (
+      !deriv.supports(MEB::OUT_ARG_DfDp,l).none()
+      && !deriv.get_DfDp(l).isEmpty()
+      )
     {
       hasDerivObject = true;
       std::ostringstream name; name << "DfDp("<<l<<")";
@@ -1007,18 +1061,17 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
       DfDp_l = Teuchos::null;
     }
     // DgDp(j=1...Ng,l)
-    for( int j = 0; j < Ng; ++j ) {
-      if(
-        deriv.supports(MEB::OUT_ARG_DgDp,j,l).none()==false
-        && deriv.get_DgDp(j,l).isEmpty()==false
+    for ( int j = 0; j < Ng; ++j ) {
+      if (
+        !deriv.supports(MEB::OUT_ARG_DgDp,j,l).none()
+        &&
+        !deriv.get_DgDp(j,l).isEmpty()
         )
       {
         hasDerivObject = true;
         std::ostringstream name; name << "DgDp("<<j<<","<<l<<")";
         DgDp_l[j] = get_dmv(deriv.get_DgDp(j,l),name.str());
-        if( DgDp_l[j].getMultiVector().get()
-            && DgDp_l[j].getOrientation()==MEB::DERIV_TRANS_MV_BY_ROW
-            && !var_g[j].get() )
+        if( DgDp_l[j].getMultiVector().get() && !var_g[j].get() )
         {
           // Need a temporary vector for the variation for g(j)
           var_g[j] = createMember(model.get_g_space(j));
@@ -1032,7 +1085,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
     //
     // Compute derivative variations by finite differences
     //
-    if(hasDerivObject) {
+    if (hasDerivObject) {
       VectorPtr e_i = createMember(model.get_p_space(l));
       dir.set_p(l,e_i);
       assign(&*e_i,ST::zero());
@@ -1045,15 +1098,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
         for(int j = 0; j < Ng; ++j) {
           MultiVectorPtr DgDp_j_l;
           if( (DgDp_j_l=DgDp_l[j].getMultiVector()).get() ) {
-            if(DgDp_l[j].getOrientation()==MEB::DERIV_TRANS_MV_BY_ROW) {
-              var.set_g(j,var_g[j]); // Computes d(g(j))/d(p(l)(i))
-            }
-            else {
-              TEST_FOR_EXCEPTION(
-                true, std::logic_error
-                ,"Error, do not support the nontransposed version of DgDp yet!"
-                );
-            }
+            var.set_g(j,var_g[j]); // Computes d(g(j))/d(p(l)(i))
           }
         }
         set_ele(i,ST::one(),&*e_i);
@@ -1061,22 +1106,22 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
           model,bp,dir,bfunc,var
           );
         set_ele(i,ST::zero(),&*e_i);
-        if(DfDp_l.get()) var.set_f(Teuchos::null);
-        for(int j = 0; j < Ng; ++j) {
+        if (DfDp_l.get()) var.set_f(Teuchos::null);
+        for (int j = 0; j < Ng; ++j) {
           MultiVectorPtr DgDp_j_l;
-          if( (DgDp_j_l=DgDp_l[j].getMultiVector()).get() ) {
-            if(DgDp_l[j].getOrientation()==MEB::DERIV_TRANS_MV_BY_ROW) {
-              ConstDetachedVectorView<Scalar> _var_g_j(var_g[j]); //d(g(j))/d(p(l)(i))
-              DetachedMultiVectorView<Scalar> _DgDp_j_l_i(*DgDp_j_l,Range1D(i,i),Range1D());
+          if ( (DgDp_j_l=DgDp_l[j].getMultiVector()).get() ) {
+            ConstDetachedVectorView<Scalar> _var_g_j(var_g[j]); //d(g(j))/d(p(l)(i))
+            if (DgDp_l[j].getOrientation()==MEB::DERIV_TRANS_MV_BY_ROW) {
+              DetachedMultiVectorView<Scalar> dv_DgDp_trans_j_l_i(*DgDp_j_l,Range1D(i,i),Range1D());
               const int ng = _var_g_j.subDim();
               for( int k = 0; k < ng; ++k )
-                _DgDp_j_l_i(0,k) = _var_g_j(k);
+                dv_DgDp_trans_j_l_i(0,k) = _var_g_j(k);
             }
             else {
-              TEST_FOR_EXCEPTION(
-                true, std::logic_error
-                ,"Error, do not support the nontransposed version of DgDp yet!"
-                );
+              DetachedMultiVectorView<Scalar> dv_DgDp_j_l_i(*DgDp_j_l,Range1D(),Range1D(i,i));
+              const int ng = _var_g_j.subDim();
+              for( int k = 0; k < ng; ++k )
+                dv_DgDp_j_l_i(k,0) = _var_g_j(k);
             }
           }
         }

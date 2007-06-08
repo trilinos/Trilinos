@@ -32,8 +32,10 @@
 
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_ForwardSensitivityModelEvaluator.hpp"
+#include "Rythmos_StateAndForwardSensitivityModelEvaluator.hpp"
 #include "Rythmos_SolverAcceptingStepperBase.hpp"
 #include "Rythmos_SingleResidualModelEvaluatorBase.hpp"
+#include "Thyra_LinearNonlinearSolver.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_as.hpp"
@@ -243,17 +245,17 @@ public:
    *           sensitivity stepper does and therefore this hook is allowed.
    * \param  sensTimeStepSolver
    *           [in,persisting] The nonlinear solver object that is used to
-   *           solve for the sensitivity timestep equation.  If the stepper is
-   *           not an implicit stepper and does not use an implicit time step
-   *           solver, then this argument can be left null.  If the stepper is
-   *           implicit, and this argument is left null, then this solver
-   *           object will be created by cloning the
-   *           <tt>stateTimeStepSolver</tt> object.  The most common use cases
-   *           should just pass in <tt>Teuchos::null</tt> and just use the
-   *           identical nonlinear solver as the state stepper.  However, this
-   *           argument allows a client to specialize exactly what the
+   *           solve for the (linear) sensitivity timestep equation.  If the
+   *           stepper is not an implicit stepper and does not use an implicit
+   *           timestep solver, then this argument can be left null.  If the
+   *           stepper is implicit, and this argument is left null, then a
+   *           <tt>Thyra::LinearNonlinearSolver</tt> object will be created
+   *           and used.  The most common use cases should just pass in
+   *           <tt>Teuchos::null</tt> and just use the simple linear nonlinear
+   *           solver to will perform just a single linear solve.  However,
+   *           this argument allows a client to specialize exactly what the
    *           nonlinear solver in the sensitivity stepper does and therefore
-   *           this hook is allowed.
+   *           this hook is exposed to clients.
    */
   void initialize(
     const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &stateModel,
@@ -265,29 +267,23 @@ public:
     const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver = Teuchos::null
     );
 
+  /** \brief Return the state model that was passed into
+   * <tt>initialize()</tt>.
+   */
+  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+  getStateModel() const;
+
   /** \brief Return the forward sensitivity model evaluator object that got
    * created internally when <tt>initialize()</tt> was called.
    */
   Teuchos::RefCountPtr<const ForwardSensitivityModelEvaluator<Scalar> >
   getFwdSensModel() const;
 
-  /** \brief Set the initial condition for the forward sensitivities.
-   *
-   * 2007/05/23: rabartl: ToDo: This should really be handled through the
-   * setInitialCondition(...) function.  However, in order for a client to
-   * call this function, first an InArgs object must be set up and where would
-   * that InArgs object get created from?  Typically it would be created from
-   * this->getModel()->createInArgs() but this class currently does not
-   * implement such a model.  We could provide a function to just return the
-   * sensModel object and we could us it's InArgs object structure to create
-   * the InArgs object.  I think the cleanest thing to do is to implement a
-   * dummy StateAndForwardSensitivitiesModelEvaluator class that can be used
-   * to implement this->getModel() and then this can be used to get the needed
-   * InArgs object safely.
+  /** \brief Return the state and forward sensitivity model evaluator object
+   * that got created internally when <tt>initialize()</tt> was called.
    */
-  void setFwdSensInitialCondition(
-    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &s_bar_init
-    );
+  Teuchos::RefCountPtr<const StateAndForwardSensitivityModelEvaluator<Scalar> >
+  getStateAndFwdSensModel() const;
 
   //@}
 
@@ -318,7 +314,12 @@ public:
     const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
     );
 
-  /** \brief Returns the state model ???. */
+  /** \brief Returns the state + forward sensitivity model.
+   *
+   * Warning, currently the returned model does not implement evalModel(...) 
+   * or define a W object.  It is just used for getting the spaces and for
+   * creating an InArgs object for setting the initial condition.
+   */
   Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
   getModel() const;
 
@@ -330,14 +331,21 @@ public:
   // would be that this model has the same space for x as the interpolation
   // buffer but that is not true in this case.
 
-  /** \brief Sets the full initial condition for <tt>x_bar</tt> and
-   * <tt>x_bar_dot</tt>.
+  /** \brief Sets the full initial condition for <tt>x_bar = [ x; s_bar] </tt>
+   * and <tt>x_bar_dot = [ x_dot; s_bar_dot ]</tt> as well as the initial time
+   * and the parameter values.
    *
-   * The vectors <tt>x_bar</tt> and <tt>x_bar_dot</tt> can be created using
-   * the function <tt>this->get_x_space()</tt>.
+   * The InArgs object must be created using
+   * <tt>this->getModel()->createInArgs()</tt> and them populated with the
+   * inital values.  The product vectors for <tt>x_bar</tt> and
+   * <tt>x_bar_dot</tt> can be created using
+   * <tt>this->getStateAndFwdSensModel()->create_x_bar_vec(...)</tt>.  All of
+   * the input objects in <tt>state_and_sens_ic</tt> will be cloned and
+   * therefore no memory of the objects in <tt>state_and_sens_ic</tt> will be
+   * retained as calling this function.
    */
   void setInitialCondition(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &state_and_sens_ic
     );
 
   /** \brief . */
@@ -410,28 +418,12 @@ private:
 
   bool isSingleResidualStepper_;
   Teuchos::RefCountPtr<ForwardSensitivityModelEvaluator<Scalar> > sensModel_;
+  Teuchos::RefCountPtr<StateAndForwardSensitivityModelEvaluator<Scalar> > stateAndSensModel_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> stateBasePoint_t_;
-
-  Teuchos::RefCountPtr<const Thyra::DefaultProductVectorSpace<Scalar> > x_bar_space_;
-
-  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > s_bar_init_;
 
   Scalar t_;
   Scalar t_old_;
   Scalar dt_;
-
-  // /////////////////////////
-  // Private member functions
-  
-  // Create a wrapped product vector of the form x_bar = [ x; s_bar ]
-  //
-  // Note: This does not copy any vector data, it only creates the wrapped
-  // product vector.
-  Teuchos::RefCountPtr<const Thyra::DefaultProductVector<Scalar> >
-  create_x_bar_vec(
-    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_vec,
-    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &s_bar_vec
-    ) const;
 
 };
 
@@ -525,6 +517,9 @@ void ForwardSensitivityStepper<Scalar>::initialize(
 
   sensModel_ = sensModel;
 
+  stateAndSensModel_ = Teuchos::rcp(new StateAndForwardSensitivityModelEvaluator<Scalar>);
+  stateAndSensModel_->initializeStructure(sensModel_);
+
   if (!is_null(sensStepper)) {
     sensStepper_ = sensStepper;
   }
@@ -542,13 +537,10 @@ void ForwardSensitivityStepper<Scalar>::initialize(
     sensTimeStepSolver_ = sensTimeStepSolver;
   }
   else {
-    sensTimeStepSolver_ = stateTimeStepSolver_->cloneNonlinearSolver();
-    TEST_FOR_EXCEPTION(
-      is_null(sensTimeStepSolver_), std::logic_error,
-      "Error, if the client does not pass in a time step solver for the senitivity\n"
-      "equations then the stateTimeStepSolver object must support cloning to create\n"
-      "the needed solver!"
-      );
+    RefCountPtr<Thyra::LinearNonlinearSolver<Scalar> >
+      linearNonlinearSolver(new Thyra::LinearNonlinearSolver<Scalar>);
+    // ToDo: Set tolerance on the nonlinear solver???
+    sensTimeStepSolver_ = linearNonlinearSolver;
   }
 
   //
@@ -568,16 +560,6 @@ void ForwardSensitivityStepper<Scalar>::initialize(
   stateBasePoint_t_ = stateModel_->createInArgs();
 
   //
-  // Setup the structure of the full vector x_bar = [ x; s_bar ]
-  //
-
-  x_bar_space_ = Thyra::productVectorSpace(
-    tuple<RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >(
-      stateModel_->get_x_space(), sensModel_->get_x_space()
-      )
-    );
-
-  //
   // Setup the initial condition
   //
 
@@ -590,35 +572,26 @@ void ForwardSensitivityStepper<Scalar>::initialize(
 
   
 template<class Scalar> 
+Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+ForwardSensitivityStepper<Scalar>::getStateModel() const
+{
+  return stateModel_;
+}
+
+  
+template<class Scalar> 
 Teuchos::RefCountPtr<const ForwardSensitivityModelEvaluator<Scalar> >
 ForwardSensitivityStepper<Scalar>::getFwdSensModel() const
 {
   return sensModel_;
 }
 
-
+  
 template<class Scalar> 
-void ForwardSensitivityStepper<Scalar>::setFwdSensInitialCondition(
-  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &s_bar_init
-  )
+Teuchos::RefCountPtr<const StateAndForwardSensitivityModelEvaluator<Scalar> >
+ForwardSensitivityStepper<Scalar>::getStateAndFwdSensModel() const
 {
-
-  typedef Thyra::ModelEvaluatorBase MEB;
-
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(s_bar_init));
-  THYRA_ASSERT_VEC_SPACES(
-    "ForwardSensitivityStepper<Scalar>::setFwdSensInitialCondition(s_bar_init)",
-    *sensModel_->get_x_space(), *s_bar_init->space() );
-#endif
-  
-  s_bar_init_ = s_bar_init;
-  
-  MEB::InArgs<Scalar> sensIC = sensModel_->createInArgs();
-  sensIC.set_t(stateBasePoint_.get_t());
-  sensIC.set_x(s_bar_init_);
-  sensStepper_->setInitialCondition(sensIC);
-  
+  return stateAndSensModel_;
 }
 
 
@@ -688,18 +661,66 @@ template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
 ForwardSensitivityStepper<Scalar>::getModel() const
 {
-  TEST_FOR_EXCEPT("Error, this stepper subclass does not accept a model"
-    " as defined by the StepperBase interface!");
-  return Teuchos::null;
+  return stateAndSensModel_;
 }
 
 
 template<class Scalar> 
 void ForwardSensitivityStepper<Scalar>::setInitialCondition(
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &state_and_sens_ic
   )
 {
-  TEST_FOR_EXCEPT(true);
+  
+  using Teuchos::RefCountPtr;
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  // Get the product vectors for x_bar = [ x; s_bar ] and x_bar_dot
+
+  TEST_FOR_EXCEPTION(
+    is_null(state_and_sens_ic.get_x()), std::logic_error,
+    "Error, the initial condition for x_bar = [ x; s_bar ] can not be null!" );
+
+  const RefCountPtr<const Thyra::ProductVectorBase<Scalar> >
+    x_bar_init = Thyra::productVectorBase<Scalar>(
+      state_and_sens_ic.get_x()
+      );
+
+  const RefCountPtr<const Thyra::ProductVectorBase<Scalar> >
+    x_bar_dot_init = Thyra::productVectorBase<Scalar>(
+      state_and_sens_ic.get_x_dot()
+      );
+
+  // Remove x and x_dot from state_and_sens_ic_in to avoid cloning x and x dot!
+  
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>
+    state_and_sens_ic_no_x = state_and_sens_ic;
+  state_and_sens_ic_no_x.set_x(Teuchos::null);
+  state_and_sens_ic_no_x.set_x_dot(Teuchos::null);
+
+  // Set initial condition for the state
+
+  MEB::InArgs<Scalar> state_ic = stateModel_->createInArgs();
+  state_ic.setArgs(state_and_sens_ic_no_x,true,true); // Set time, parameters etc.
+  state_ic.set_x(x_bar_init->getVectorBlock(0)->clone_v());
+  state_ic.set_x_dot(
+    !is_null(x_bar_dot_init)
+    ? x_bar_dot_init->getVectorBlock(0)->clone_v()
+    : Teuchos::null
+    );
+  stateStepper_->setInitialCondition(state_ic);
+
+  // Set initial condition for the sensitivities
+  
+  MEB::InArgs<Scalar> sens_ic = sensModel_->createInArgs();
+  sens_ic.setArgs(state_and_sens_ic_no_x,true,true); // Set time etc.
+  sens_ic.set_x(x_bar_init->getVectorBlock(1)->clone_v());
+  sens_ic.set_x_dot(
+    !is_null(x_bar_dot_init)
+    ? x_bar_dot_init->getVectorBlock(1)->clone_v()
+    : Teuchos::null
+    );
+  sensStepper_->setInitialCondition(sens_ic);
+
 }
  
 
@@ -786,7 +807,7 @@ ForwardSensitivityStepper<Scalar>::takeStep(
   TEST_FOR_EXCEPTION(
     !stateTimeStepSolver_->is_W_current() || is_null(W_tilde),
     std::logic_error,
-    "Error, the W from the state time step must be current and must be nonnull!"
+    "Error, the W from the state time step must be current and must be non-null!"
     );
   
   Teuchos::RefCountPtr<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >
@@ -880,10 +901,10 @@ ForwardSensitivityStepper<Scalar>::getStepStatus() const
   stepStatus.order = sensStepStatus.order;
   stepStatus.time = sensStepStatus.time;
   stepStatus.stepLETValue = sensStepStatus.stepLETValue;
-  stepStatus.solution = create_x_bar_vec(
+  stepStatus.solution = stateAndSensModel_->create_x_bar_vec(
     stateStepStatus.solution, sensStepStatus.solution
     );
-  stepStatus.solutionDot = create_x_bar_vec(
+  stepStatus.solutionDot = stateAndSensModel_->create_x_bar_vec(
     stateStepStatus.solutionDot, sensStepStatus.solutionDot
     );
   stepStatus.residual = Teuchos::null;
@@ -901,7 +922,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
 ForwardSensitivityStepper<Scalar>::get_x_space() const
 {
-  return x_bar_space_;
+  return stateAndSensModel_->get_x_space();
 }
 
 
@@ -984,13 +1005,17 @@ bool ForwardSensitivityStepper<Scalar>::getPoints(
 
   if ( x_bar_vec ) {
     for ( int i = 0; i < numTimePoints; ++i ) {
-      x_bar_vec->push_back(create_x_bar_vec(x_vec[i],s_bar_vec[i]));
+      x_bar_vec->push_back(
+        stateAndSensModel_->create_x_bar_vec(x_vec[i],s_bar_vec[i])
+        );
     }
   }
   
   if ( x_bar_dot_vec ) {
     for ( int i = 0; i < numTimePoints; ++i ) {
-      x_bar_dot_vec->push_back(create_x_bar_vec(x_dot_vec[i],s_bar_dot_vec[i]));
+      x_bar_dot_vec->push_back(
+        stateAndSensModel_->create_x_bar_vec(x_dot_vec[i],s_bar_dot_vec[i])
+        );
     }
   }
 
@@ -1024,28 +1049,6 @@ int ForwardSensitivityStepper<Scalar>::getOrder() const
 {
   return sensStepper_->getOrder();
   // Note: This assumes that stateStepper will have the same order!
-}
-
-
-// private
-
-
-template<class Scalar> 
-Teuchos::RefCountPtr<const Thyra::DefaultProductVector<Scalar> >
-ForwardSensitivityStepper<Scalar>::create_x_bar_vec(
-  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_vec,
-  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &s_bar_vec
-  ) const
-{
-
-  using Teuchos::tuple;
-  using Teuchos::RefCountPtr;
-  typedef RefCountPtr<const Thyra::VectorBase<Scalar> > RCPCV;
-
-  return Thyra::defaultProductVector<Scalar>(
-    x_bar_space_, tuple<RCPCV>(x_vec,s_bar_vec)
-    );
-  
 }
 
 

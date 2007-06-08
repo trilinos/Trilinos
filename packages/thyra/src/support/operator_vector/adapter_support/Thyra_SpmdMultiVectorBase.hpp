@@ -53,6 +53,8 @@ SpmdMultiVectorBase<Scalar>::SpmdMultiVectorBase()
   ,localOffset_(-1)
   ,localSubDim_(0)
   ,numCols_(0)
+  ,nonconstLocalValuesViewPtr_(0)
+  ,localValuesViewPtr_(0)
 {}
 
 // Overridden from EuclideanLinearOpBase
@@ -193,10 +195,22 @@ void SpmdMultiVectorBase<Scalar>::acquireDetachedView(
     MultiVectorDefaultBase<Scalar>::acquireDetachedView(rowRng_in,colRng_in,sub_mv);
     return;
   }
-  // rng consists of all local data so get it!
+  /*
+  if (localValuesViewPtr_) {
+    freeLocalData( localValuesViewPtr_ );
+    localValuesViewPtr_ = 0;
+  }
+  */
+  // 2007/06/08: rabartl: ABove, this logic for this is all wrong when partial
+  // views are requested.  Therefore, I must assume here that these are always
+  // direct views.  The problem is that client code can ask for one column
+  // view at a time which is perfectly okay.  However, the current way this is
+  // setup does not handle this well.  This all needs to be reworked to clean
+  // this up.
   const Scalar *localValues = NULL;
   int leadingDim = 0;
   this->getLocalData(&localValues,&leadingDim);
+  localValuesViewPtr_ = localValues;
   sub_mv->initialize(
     rowRng.lbound()                               // globalOffset
     ,rowRng.size()                                // subDim
@@ -219,7 +233,14 @@ void SpmdMultiVectorBase<Scalar>::releaseDetachedView(
     MultiVectorDefaultBase<Scalar>::releaseDetachedView(sub_mv);
     return;
   }
-  freeLocalData( sub_mv->values() );
+  /*
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT( localValuesViewPtr_ == 0 );
+#endif
+  freeLocalData( localValuesViewPtr_ );
+  localValuesViewPtr_ = 0;
+  */
+  // 2007/06/08: rabartl: See comment in acquireDetachedView(...) above!
   sub_mv->set_uninitialized();
 }
 
@@ -238,9 +259,17 @@ void SpmdMultiVectorBase<Scalar>::acquireDetachedView(
     return;
   }
   // rng consists of all local data so get it!
+  /*
+  if (nonconstLocalValuesViewPtr_) {
+    commitLocalData( nonconstLocalValuesViewPtr_ );
+    nonconstLocalValuesViewPtr_ = 0;
+  }
+  */
+  // 2007/06/08: rabartl: See comment in acquireDetachedView(...) above!
   Scalar *localValues = NULL;
   int leadingDim = 0;
   this->getLocalData(&localValues,&leadingDim);
+  nonconstLocalValuesViewPtr_ = localValues;
   sub_mv->initialize(
     rowRng.lbound()                               // globalOffset
     ,rowRng.size()                                // subDim
@@ -263,7 +292,14 @@ void SpmdMultiVectorBase<Scalar>::commitDetachedView(
     MultiVectorDefaultBase<Scalar>::commitDetachedView(sub_mv);
     return;
   }
-  commitLocalData( sub_mv->values() );
+  /*
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT( nonconstLocalValuesViewPtr_ == 0 );
+#endif
+  commitLocalData( nonconstLocalValuesViewPtr_ );
+  nonconstLocalValuesViewPtr_ = 0;
+  */
+  // 2007/06/08: rabartl: See comment in acquireDetachedView(...) above!
   sub_mv->set_uninitialized();
 }
 

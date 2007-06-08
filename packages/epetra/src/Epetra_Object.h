@@ -148,6 +148,7 @@ class Epetra_Object {
   char * Label_;
 
 };
+
 inline ostream& operator<<(ostream& os, const Epetra_Object& obj)
 {
   if (Epetra_FormatStdout) {
@@ -171,5 +172,22 @@ inline ostream& operator<<(ostream& os, const Epetra_Object& obj)
   return os;
 }
 
+/** \brief Macro for testing for and throwing and int exception for objects
+ * derived from Epetra_Object.
+ *
+ * This macro adds the file name and line number to teh 
+ */
+#define EPETRA_TEST_FOR_EXCEPTION(throw_exception_test,errCode,msg) \
+{ \
+    const bool throw_exception = (throw_exception_test); \
+    if(throw_exception) { \
+        std::ostringstream omsg; \
+	    omsg \
+        << __FILE__ << ":" << __LINE__ << ":" \
+        << " Throw test that evaluated to true: "#throw_exception_test << ":" \
+        << "Error message : " << msg; \
+	    throw ReportError(omsg.str(),errCode); \
+    } \
+}
 
 #endif /* EPETRA_OBJECT_H */

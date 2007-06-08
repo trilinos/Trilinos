@@ -44,7 +44,7 @@
 namespace Teuchos {
 
 namespace PrivateUtilityPack {
-	class RefCountPtr_node;
+  class RefCountPtr_node;
 }
 
 /** \brief Used to initialize a <tt>RefCountPtr</tt> object to NULL using an
@@ -398,201 +398,214 @@ if(b1) (*b1)->f();
 template<class T>
 class RefCountPtr {
 public:
-	/** \brief . */
-	typedef T	element_type;
-	/** \brief Initialize <tt>RefCountPtr<T></tt> to NULL.
-	 *
-	 * This allows clients to write code like:
-	 \code
-	 RefCountPtr<int> p = null;
-	 \endcode
-	 or
-	 \code
-	 RefCountPtr<int> p;
-	 \endcode
-	 * and construct to <tt>NULL</tt>
-	 */
-	RefCountPtr( ENull null_arg = null );
-	/** \brief Initialize from another <tt>RefCountPtr<T></tt> object.
-	 *
-	 * After construction, <tt>this</tt> and <tt>r_ptr</tt> will
-	 * reference the same object.
-	 *
-	 * This form of the copy constructor is required even though the
-	 * below more general templated version is sufficient since some
-	 * compilers will generate this function automatically which will
-	 * give an incorrect implementation.
-	 *
-	 * <b>Postconditons:</b><ul>
-	 * <li> <tt>this->get() == r_ptr.get()</tt>
-	 * <li> <tt>this->count() == r_ptr.count()</tt>
-	 * <li> <tt>this->has_ownership() == r_ptr.has_ownership()</tt>
-	 * <li> If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.count()</tt> is incremented by 1
-	 * </ul>
-	 */
-	RefCountPtr(const RefCountPtr<T>& r_ptr);
-	/** \brief Initialize from another <tt>RefCountPtr<T2></tt> object (implicit conversion only).
-	 *
-	 * This function allows the implicit conversion of smart pointer objects just
-	 * like with raw C++ pointers.  Note that this function will only compile
-	 * if the statement <tt>T1 *ptr = r_ptr.get()</tt> will compile.
-	 *
-	 * <b>Postconditons:</b> <ul>
-	 * <li> <tt>this->get() == r_ptr.get()</tt>
-	 * <li> <tt>this->count() == r_ptr.count()</tt>
-	 * <li> <tt>this->has_ownership() == r_ptr.has_ownership()</tt>
-	 * <li> If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.count()</tt> is incremented by 1
-	 * </ul>
-	 */
-	template<class T2>
-	RefCountPtr(const RefCountPtr<T2>& r_ptr);
-	/** \brief Removes a reference to a dynamically allocated object and possibly deletes
-	 * the object if owned.
-	 *
-	 * Deletes the object if <tt>this->has_ownership() == true</tt> and
-	 * <tt>this->count() == 1</tt>.  If <tt>this->count() == 1</tt> but
-	 * <tt>this->has_ownership() == false</tt> then the object is not deleted.
-	 * If <tt>this->count() > 1</tt> then the internal reference count shared by
-	 * all the other related <tt>RefCountPtr<...></tt> objects for this shared
-	 * object is deincremented by one.  If <tt>this->get() == NULL</tt> then
-	 * nothing happens.
-	 */
-	~RefCountPtr();
-	/** \brief Copy the pointer to the referenced object and increment the
-	 * reference count.
-	 *
-	 * If <tt>this->has_ownership() == true</tt> and <tt>this->count() == 1</tt>
-	 * before this operation is called, then the object pointed to by
-	 * <tt>this->get()</tt> will be deleted (usually using <tt>delete</tt>)
-	 * prior to binding to the pointer (possibly <tt>NULL</tt>) pointed to in
-	 * <tt>r_ptr</tt>.  Assignment to self (i.e. <tt>this->get() ==
-	 * r_ptr.get()</tt>) is harmless and this function does nothing.
-	 *
-	 * <b>Postconditons:</b><ul>
-	 * <li> <tt>this->get() == r_ptr.get()</tt>
-	 * <li> <tt>this->count() == r_ptr.count()</tt>
-	 * <li> <tt>this->has_ownership() == r_ptr.has_ownership()</tt>
-	 * <li> If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.count()</tt> is incremented by 1
-	 * </ul>
-	 */
-	RefCountPtr<T>& operator=(const RefCountPtr<T>& r_ptr);
-	/** \brief Pointer (<tt>-></tt>) access to members of underlying object.
-	 *
-	 * <b>Preconditions:</b><ul>
-	 * <li> <tt>this->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
-	 * </ul>
-	 */
-	T* operator->() const;
-	/** \brief Dereference the underlying object.
-	 *
-	 * <b>Preconditions:</b><ul>
-	 * <li> <tt>this->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
-	 * </ul>
-	 */
-	T& operator*() const;
+  /** \brief . */
+  typedef T  element_type;
+  /** \brief Initialize <tt>RefCountPtr<T></tt> to NULL.
+   *
+   * This allows clients to write code like:
+   \code
+   RefCountPtr<int> p = null;
+   \endcode
+   or
+   \code
+   RefCountPtr<int> p;
+   \endcode
+   * and construct to <tt>NULL</tt>
+   */
+  RefCountPtr( ENull null_arg = null );
+  /** \brief Construct from a raw pointer.
+   *
+   * Note that this constructor is declared explicit so there is no implicit
+   * conversion from a raw pointer to an RCP allowed.  If
+   * <tt>has_ownership==false</tt>, then no attempt to delete the object will
+   * occur.
+   *
+   * <b>Postconditons:</b><ul>
+   * <li> <tt>this->get() == p</tt>
+   * <li> <tt>this->count() == 1</tt>
+   * <li> <tt>this->has_ownership() == has_ownership</tt>
+   * </ul>
+   */
+  explicit RefCountPtr( T* p, bool has_ownership = false );
+  /** \brief Initialize from another <tt>RefCountPtr<T></tt> object.
+   *
+   * After construction, <tt>this</tt> and <tt>r_ptr</tt> will
+   * reference the same object.
+   *
+   * This form of the copy constructor is required even though the
+   * below more general templated version is sufficient since some
+   * compilers will generate this function automatically which will
+   * give an incorrect implementation.
+   *
+   * <b>Postconditons:</b><ul>
+   * <li> <tt>this->get() == r_ptr.get()</tt>
+   * <li> <tt>this->count() == r_ptr.count()</tt>
+   * <li> <tt>this->has_ownership() == r_ptr.has_ownership()</tt>
+   * <li> If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.count()</tt> is incremented by 1
+   * </ul>
+   */
+  RefCountPtr(const RefCountPtr<T>& r_ptr);
+  /** \brief Initialize from another <tt>RefCountPtr<T2></tt> object (implicit conversion only).
+   *
+   * This function allows the implicit conversion of smart pointer objects just
+   * like with raw C++ pointers.  Note that this function will only compile
+   * if the statement <tt>T1 *ptr = r_ptr.get()</tt> will compile.
+   *
+   * <b>Postconditons:</b> <ul>
+   * <li> <tt>this->get() == r_ptr.get()</tt>
+   * <li> <tt>this->count() == r_ptr.count()</tt>
+   * <li> <tt>this->has_ownership() == r_ptr.has_ownership()</tt>
+   * <li> If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.count()</tt> is incremented by 1
+   * </ul>
+   */
+  template<class T2>
+  RefCountPtr(const RefCountPtr<T2>& r_ptr);
+  /** \brief Removes a reference to a dynamically allocated object and possibly deletes
+   * the object if owned.
+   *
+   * Deletes the object if <tt>this->has_ownership() == true</tt> and
+   * <tt>this->count() == 1</tt>.  If <tt>this->count() == 1</tt> but
+   * <tt>this->has_ownership() == false</tt> then the object is not deleted.
+   * If <tt>this->count() > 1</tt> then the internal reference count shared by
+   * all the other related <tt>RefCountPtr<...></tt> objects for this shared
+   * object is deincremented by one.  If <tt>this->get() == NULL</tt> then
+   * nothing happens.
+   */
+  ~RefCountPtr();
+  /** \brief Copy the pointer to the referenced object and increment the
+   * reference count.
+   *
+   * If <tt>this->has_ownership() == true</tt> and <tt>this->count() == 1</tt>
+   * before this operation is called, then the object pointed to by
+   * <tt>this->get()</tt> will be deleted (usually using <tt>delete</tt>)
+   * prior to binding to the pointer (possibly <tt>NULL</tt>) pointed to in
+   * <tt>r_ptr</tt>.  Assignment to self (i.e. <tt>this->get() ==
+   * r_ptr.get()</tt>) is harmless and this function does nothing.
+   *
+   * <b>Postconditons:</b><ul>
+   * <li> <tt>this->get() == r_ptr.get()</tt>
+   * <li> <tt>this->count() == r_ptr.count()</tt>
+   * <li> <tt>this->has_ownership() == r_ptr.has_ownership()</tt>
+   * <li> If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.count()</tt> is incremented by 1
+   * </ul>
+   */
+  RefCountPtr<T>& operator=(const RefCountPtr<T>& r_ptr);
+  /** \brief Pointer (<tt>-></tt>) access to members of underlying object.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>this->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+   * </ul>
+   */
+  T* operator->() const;
+  /** \brief Dereference the underlying object.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>this->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
+   * </ul>
+   */
+  T& operator*() const;
     /** \brief Get the raw C++ pointer to the underlying object.
-	 */
-	T* get() const;
-	/** \brief Release the ownership of the underlying dynamically allocated object.
-	 *
-	 * After this function is called then the client is responsible for
-	 * deallocating the shared object no matter how many
-	 * <tt>ref_count_prt<T></tt> objects have a reference to it.  If
-	 * <tt>this-></tt>get()<tt>== NULL</tt>, then this call is meaningless.
-	 *
-	 * Note that this function does not have the exact same semantics as does
-	 * <tt>auto_ptr<T>::release()</tt>.  In <tt>auto_ptr<T>::release()</tt>,
-	 * <tt>this</tt> is set to <tt>NULL</tt> while here in RefCountPtr<T>::
-	 * release() only an ownership flag is set and <tt>*this</tt> still points
-	 * to the same object.  It would be difficult to duplicate the behavior of
-	 * <tt>auto_ptr<T>::release()</tt> for this class.
-	 *
-	 * <b>Postconditions:</b>
-	 * <ul>
-	 * <li> <tt>this->has_ownership() == false</tt>
-	 * </ul>
-	 *
-	 * @return Returns the value of <tt>this->get()</tt>
-	 */
-	T* release();
-	/** \brief Return the number of <tt>RefCountPtr<></tt> objects that have a reference
-	 * to the underlying pointer that is being shared.
-	 *
-	 * @return  If <tt>this->get() == NULL</tt> then this function returns 0.
-	 * Otherwise, this function returns <tt>0</tt>.
-	 */
-	int count() const;
-	/** \brief Give <tt>this</tt> and other <tt>RefCountPtr<></tt> objects ownership 
-	 * of the referenced object <tt>this->get()</tt>.
-	 *
-	 * See ~RefCountPtr() above.  This function
-	 * does nothing if <tt>this->get() == NULL</tt>.
-	 *
-	 * <b>Postconditions:</b>
-	 * <ul>
-	 * <li> If <tt>this->get() == NULL</tt> then
-	 *   <ul>
-	 *   <li> <tt>this->has_ownership() == false</tt> (always!).
-	 *   </ul>
-	 * <li> else
-	 *   <ul>
-	 *   <li> <tt>this->has_ownership() == true</tt>
-	 *   </ul>
-	 * </ul>
-	 */
-	void set_has_ownership();
-	/** \brief Returns true if <tt>this</tt> has ownership of object pointed to by <tt>this->get()</tt> in order to delete it.
-	 *
-	 * See ~RefCountPtr() above.
-	 *
-	 * @return If this->get() <tt>== NULL</tt> then this function always returns <tt>false</tt>.
-	 * Otherwise the value returned from this function depends on which function was
-	 * called most recently, if any; set_has_ownership() (<tt>true</tt>)
-	 * or release() (<tt>false</tt>).
-	 */
-	bool has_ownership() const;
-	/** \brief Returns true if the smart pointers share the same underlying reference-counted object.
-	 *
-	 * This method does more than just check if <tt>this->get() == r_ptr.get()</tt>.
-	 * It also checks to see if the underlying reference counting machinary is the
-	 * same.
-	 */
-	template<class T2>
-	bool shares_resource(const RefCountPtr<T2>& r_ptr) const;
-	/** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>, otherwise returns reference to <tt>*this</tt>. */
-	const RefCountPtr<T>& assert_not_null() const;
+   */
+  T* get() const;
+  /** \brief Release the ownership of the underlying dynamically allocated object.
+   *
+   * After this function is called then the client is responsible for
+   * deallocating the shared object no matter how many
+   * <tt>ref_count_prt<T></tt> objects have a reference to it.  If
+   * <tt>this-></tt>get()<tt>== NULL</tt>, then this call is meaningless.
+   *
+   * Note that this function does not have the exact same semantics as does
+   * <tt>auto_ptr<T>::release()</tt>.  In <tt>auto_ptr<T>::release()</tt>,
+   * <tt>this</tt> is set to <tt>NULL</tt> while here in RefCountPtr<T>::
+   * release() only an ownership flag is set and <tt>*this</tt> still points
+   * to the same object.  It would be difficult to duplicate the behavior of
+   * <tt>auto_ptr<T>::release()</tt> for this class.
+   *
+   * <b>Postconditions:</b>
+   * <ul>
+   * <li> <tt>this->has_ownership() == false</tt>
+   * </ul>
+   *
+   * @return Returns the value of <tt>this->get()</tt>
+   */
+  T* release();
+  /** \brief Return the number of <tt>RefCountPtr<></tt> objects that have a reference
+   * to the underlying pointer that is being shared.
+   *
+   * @return  If <tt>this->get() == NULL</tt> then this function returns 0.
+   * Otherwise, this function returns <tt>0</tt>.
+   */
+  int count() const;
+  /** \brief Give <tt>this</tt> and other <tt>RefCountPtr<></tt> objects ownership 
+   * of the referenced object <tt>this->get()</tt>.
+   *
+   * See ~RefCountPtr() above.  This function
+   * does nothing if <tt>this->get() == NULL</tt>.
+   *
+   * <b>Postconditions:</b>
+   * <ul>
+   * <li> If <tt>this->get() == NULL</tt> then
+   *   <ul>
+   *   <li> <tt>this->has_ownership() == false</tt> (always!).
+   *   </ul>
+   * <li> else
+   *   <ul>
+   *   <li> <tt>this->has_ownership() == true</tt>
+   *   </ul>
+   * </ul>
+   */
+  void set_has_ownership();
+  /** \brief Returns true if <tt>this</tt> has ownership of object pointed to by <tt>this->get()</tt> in order to delete it.
+   *
+   * See ~RefCountPtr() above.
+   *
+   * @return If this->get() <tt>== NULL</tt> then this function always returns <tt>false</tt>.
+   * Otherwise the value returned from this function depends on which function was
+   * called most recently, if any; set_has_ownership() (<tt>true</tt>)
+   * or release() (<tt>false</tt>).
+   */
+  bool has_ownership() const;
+  /** \brief Returns true if the smart pointers share the same underlying reference-counted object.
+   *
+   * This method does more than just check if <tt>this->get() == r_ptr.get()</tt>.
+   * It also checks to see if the underlying reference counting machinary is the
+   * same.
+   */
+  template<class T2>
+  bool shares_resource(const RefCountPtr<T2>& r_ptr) const;
+  /** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>, otherwise returns reference to <tt>*this</tt>. */
+  const RefCountPtr<T>& assert_not_null() const;
 
 public: // Bad bad bad
 
-	// //////////////////////////////////////
-	// Private types
+  // //////////////////////////////////////
+  // Private types
 
-	typedef PrivateUtilityPack::RefCountPtr_node			node_t;
+  typedef PrivateUtilityPack::RefCountPtr_node      node_t;
 
 private:
 
-	// //////////////////////////////////////////////////////////////
-	// Private data members
+  // //////////////////////////////////////////////////////////////
+  // Private data members
 
-	T       *ptr_;  // NULL if this pointer is null
-	node_t	*node_;	// NULL if this pointer is null
+  T       *ptr_;  // NULL if this pointer is null
+  node_t  *node_;  // NULL if this pointer is null
 
-public:
+public: // Bad bad bad
 #ifndef DOXYGEN_COMPILE
-	// These constructors should be private but I have not had good luck making
-	// this portable (i.e. using friendship etc.) in the past
-	RefCountPtr( T* p, bool has_ownership );
-	template<class Dealloc_T>
-	RefCountPtr( T* p, Dealloc_T dealloc, bool has_ownership );
-	// This is a very bad breach of encapsulation that is needed since MS VC++ 5.0 will
-	// not allow me to declare template functions as friends.
-	RefCountPtr( T* p, node_t* node);
-	T*&           access_ptr();
-	node_t*&      access_node();
-	node_t*       access_node() const;
+  // These constructors should be private but I have not had good luck making
+  // this portable (i.e. using friendship etc.) in the past
+  template<class Dealloc_T>
+  RefCountPtr( T* p, Dealloc_T dealloc, bool has_ownership );
+  // This is a very bad breach of encapsulation that is needed since MS VC++ 5.0 will
+  // not allow me to declare template functions as friends.
+  RefCountPtr( T* p, node_t* node);
+  T*& access_ptr();
+  node_t*& access_node();
+  node_t* access_node() const;
 #endif
 
-};	// end class RefCountPtr<...>
+};  // end class RefCountPtr<...>
 
 /** \brief Traits specialization.
  *
@@ -614,10 +627,10 @@ template<class T>
 class DeallocDelete
 {
 public:
-	/// Gives the type (required)
-	typedef T ptr_t;
-	/// Deallocates a pointer <tt>ptr</tt> using <tt>delete ptr</tt> (required).
-	void free( T* ptr ) { if(ptr) delete ptr; }
+  /// Gives the type (required)
+  typedef T ptr_t;
+  /// Deallocates a pointer <tt>ptr</tt> using <tt>delete ptr</tt> (required).
+  void free( T* ptr ) { if(ptr) delete ptr; }
 };
 
 /** \brief Deallocator class that uses <tt>delete []</tt> to delete memory
@@ -629,10 +642,10 @@ template<class T>
 class DeallocArrayDelete
 {
 public:
-	/// Gives the type (required)
-	typedef T ptr_t;
-	/// Deallocates a pointer <tt>ptr</tt> using <tt>delete [] ptr</tt> (required).
-	void free( T* ptr ) { if(ptr) delete [] ptr; }
+  /// Gives the type (required)
+  typedef T ptr_t;
+  /// Deallocates a pointer <tt>ptr</tt> using <tt>delete [] ptr</tt> (required).
+  void free( T* ptr ) { if(ptr) delete [] ptr; }
 };
 
 /** \brief Deallocator subclass that Allows any functor object (including a
@@ -733,9 +746,9 @@ deallocFunctorHandleDelete( DeleteHandleFunctor deleteHandleFunctor )
 template<class T>
 RefCountPtr<T> rcp( T* p, bool owns_mem
 #ifndef __sun
-	= true
+  = true
 #endif
-	);
+  );
 #ifdef __sun // RAB: 20040303: Sun needs to fix their compiler
 template<class T> inline RefCountPtr<T> rcp( T* p ) { return rcp(p,true); }
 #endif
@@ -880,12 +893,12 @@ RefCountPtr<T2> rcp_const_cast(const RefCountPtr<T1>& p1);
  */
 template<class T2, class T1>
 RefCountPtr<T2> rcp_dynamic_cast(
-	const RefCountPtr<T1>& p1
-	,bool throw_on_fail
+  const RefCountPtr<T1>& p1
+  ,bool throw_on_fail
 #ifndef __sun
-	= false
+  = false
 #endif
-	);
+  );
 #ifdef __sun // RAB: 20041019: Sun needs to fix their compiler
 template<class T2, class T1> inline RefCountPtr<T2> rcp_dynamic_cast( const RefCountPtr<T1>& p1 )
 { return rcp_dynamic_cast<T2>(p1,false); }
@@ -957,7 +970,7 @@ void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<
 #ifndef __sun
                      = true
 #endif
-	);
+  );
 #ifdef __sun
 template<class T1, class T2>
 inline void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<T2> *p )
@@ -1158,4 +1171,4 @@ std::ostream& operator<<( std::ostream& out, const RefCountPtr<T>& p );
 
 } // end namespace Teuchos
 
-#endif	// TEUCHOS_REFCOUNTPTR_DECL_H
+#endif  // TEUCHOS_REFCOUNTPTR_DECL_H

@@ -73,6 +73,31 @@ void DefaultMultiVectorProductVector<Scalar>::initialize(
 
 
 template <class Scalar>
+void DefaultMultiVectorProductVector<Scalar>::initialize(
+  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace,
+  const Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > &multiVec
+  )
+{
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(is_null(productSpace));
+  TEST_FOR_EXCEPT(is_null(multiVec));
+  THYRA_ASSERT_VEC_SPACES(
+    "DefaultMultiVectorProductVector<Scalar>::initialize(productSpace,multiVec)",
+    *multiVec->range(), *productSpace->getBlock(0)
+    );
+  TEST_FOR_EXCEPT( multiVec->domain()->dim() != productSpace->numBlocks() );
+#endif
+
+  numBlocks_ = productSpace->numBlocks();
+
+  productSpace_ = productSpace;
+
+  multiVec_ = multiVec;
+
+}
+
+
+template <class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getNonconstMultiVector()
 {

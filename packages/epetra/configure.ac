@@ -164,6 +164,7 @@ AC_CHECK_HEADERS([math.h], [break],)
 AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
 AC_CHECK_HEADERS([string string.h], [break],)
+AC_CHECK_HEADERS([sstream ], [break],)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Epetra requires at least one or the other.]])

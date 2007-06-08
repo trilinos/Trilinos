@@ -162,7 +162,7 @@ void DefaultProductVector<Scalar>::describe(
       OSTab tab(out);
       *out
         <<  "numBlocks="<< numBlocks_ << std::endl
-        <<  "Constituent vector objects v[0]; v[1]; ...; v[numBlocks-1]:\n";
+        <<  "Constituent vector objects v[0], v[1], ... v[numBlocks-1]:\n";
       tab.incrTab();
       for( int k = 0; k < numBlocks_; ++k ) {
         *out << "v["<<k<<"] = " << describe(*vecs_[k].getConstObj(),verbLevel);

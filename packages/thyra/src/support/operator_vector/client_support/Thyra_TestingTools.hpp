@@ -34,6 +34,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_AssertOp.hpp"
+#include "Teuchos_as.hpp"
 
 // Utilities
 
@@ -192,6 +193,66 @@ bool Thyra::testRelErrors(
   }
   return success;
 }
+
+
+template<class Scalar>
+bool Thyra::testRelNormDiffErr(
+  const std::string &v1_name,
+  const VectorBase<Scalar> &v1,
+  const std::string &v2_name,
+  const VectorBase<Scalar> &v2,
+  const std::string &maxRelErr_error_name,
+  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_error,
+  const std::string &maxRelErr_warning_name,
+  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_warning,
+  std::ostream *out,
+  const Teuchos::EVerbosityLevel verbLevel,
+  const std::string &li
+  )
+{
+  using std::endl;
+  using Teuchos::as;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+  const ScalarMag
+    nrm_v1 = norm(v1),
+    nrm_v2 = norm(v2);
+  const ScalarMag rel_err = relErr(v1,v2);
+  const bool success =
+    (
+      !SMT::isnaninf(rel_err)
+      && !SMT::isnaninf(maxRelErr_error)
+      && rel_err <= maxRelErr_error
+      );
+  if(out) {
+    *out
+      << endl
+      << li << "Testing relative error between vectors " << v1_name << " and " << v2_name << ":\n"
+      << li << "  ||"<<v1_name<<"|| = " << nrm_v1 << endl
+      << li << "  ||"<<v2_name<<"|| = " << nrm_v2 << endl;
+    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+      *out
+        << li << "  " << v1_name << " = " << describe(v1,verbLevel)
+        << li << "  " << v2_name << " = " << describe(v2,verbLevel);
+      Teuchos::RefCountPtr<VectorBase<Scalar> >
+        diff = createMember(v1.space());
+      V_VmV( &*diff, v1, v2 );
+      *out
+        << li << "  " << v1_name << " - " << v2_name << " = " << describe(*diff,verbLevel);
+    }
+    *out
+      << li << "  Check: rel_err(" << v1_name << "," << v2_name << ") = "
+      << rel_err << " <= " << maxRelErr_error_name << " = " << maxRelErr_error << " : " << passfail(success) << endl;
+    if( success && rel_err >= maxRelErr_warning ) {
+      *out
+        << li << "  Warning! rel_err(" << v1_name << "," << v2_name << " >= "
+        << maxRelErr_warning_name << " = " << maxRelErr_warning << "!\n";
+    }
+  }
+  return success;
+}
+
 
 template<class Scalar>
 bool Thyra::testMaxErr(

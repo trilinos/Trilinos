@@ -214,6 +214,7 @@ private:
 
   bool isInitialized_;
   Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > solver_;
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_;
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_;
@@ -434,6 +435,8 @@ void BackwardEulerStepper<Scalar>::setInitialCondition(
 
   TEST_FOR_EXCEPT( is_null(model_) );
 
+  basePoint_ = initialCondition;
+
   // x
 
   Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
@@ -524,7 +527,7 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
     neModel_ = Teuchos::rcp(new Rythmos::SingleResidualModelEvaluator<Scalar>());
   }
   neModel_->initializeSingleResidualModel(
-    model_,
+    model_, basePoint_,
     Scalar(ST::one()/dt), scaled_x_old_,
     ST::one(), Teuchos::null,
     t_old_+dt,

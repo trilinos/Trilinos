@@ -29,7 +29,9 @@
 #ifndef TEUCHOS_ASSERT_HPP
 #define TEUCHOS_ASSERT_HPP
 
+
 #include "Teuchos_TestForException.hpp"
+
 
 /** \brief This macro is designed to be a short version of
  * <tt>TEST_FOR_EXCEPTION()</tt> that is easier to call.
@@ -45,5 +47,31 @@
  * \ingroup TestForException_grp
  */
 #define TEUCHOS_ASSERT(assertion_test) TEST_FOR_EXCEPT(!(assertion_test))
+
+
+/** \brief This macro is designed to be a short version of
+ * <tt>TEST_FOR_EXCEPTION()</tt> that is easier to call.
+ *
+ * @param  throw_exception_test
+ *               [in] Test for when to throw the exception.  This can and
+ *               should be an expression that may mean something to the user.
+ *               The text verbatim of this expression is included in the
+ *               formed error string.
+ *
+ * \note The exception thrown is <tt>std::logic_error</tt>.
+ *
+ * \ingroup TestForException_grp
+ */
+#define TEUCHOS_ASSERT_INTEGRAL_IN_RANGE( IndexType, index, lower_inclusive, upper_exclusive ) \
+  { \
+    const IndexType index_val = (index); \
+    const IndexType lower_inclusive_val = (lower_inclusive); \
+    const IndexType upper_exclusive_val = (upper_exclusive); \
+    TEST_FOR_EXCEPTION( \
+      !( (lower_inclusive) <= (index) && (index) < (upper_exclusive) ), \
+      std::out_of_range, \
+      "Error, the index " #index " = " << index_val << " does not fall in the range" \
+      "["<<lower_inclusive_val<<","<<upper_exclusive_val<<")!" ); \
+  }
 
 #endif // TEUCHOS_ASSERT_HPP

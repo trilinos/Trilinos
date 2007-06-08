@@ -169,7 +169,7 @@ void eval_f(
   model.evalModel(inArgs,outArgs);
 }
 
-/** \brief Evaluate <tt>f(x)</tt> and <tt>W(x) = beta*DfDx(x)</tt>. */
+/** \brief Evaluate <tt>f(x)</tt> and <tt>W(x) = DfDx(x)</tt>. */
 template<class Scalar>
 void eval_f_W(
   const ModelEvaluator<Scalar>                                    &model
@@ -193,31 +193,6 @@ void eval_f_W(
 
 }
 
-/** \brief Evaluate <tt>f(x)</tt> and <tt>W(x) = beta*DfDx(x)</tt>. */
-template<class Scalar>
-void eval_f_W(
-  const ModelEvaluator<Scalar>                                    &model
-  ,const VectorBase<Scalar>                                       &x
-  ,const Scalar                                                   &beta
-  ,VectorBase<Scalar>                                             *f
-  ,LinearOpWithSolveBase<Scalar>                                  *W
-  )
-{
-
-  typedef ModelEvaluatorBase MEB;
-
-  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
-  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
-
-  inArgs.set_x(Teuchos::rcp(&x,false));
-  inArgs.set_beta(beta);
-
-  outArgs.set_f(Teuchos::rcp(f,false));
-  if(W) outArgs.set_W(Teuchos::rcp(W,false));
-
-  model.evalModel(inArgs,outArgs);
-
-}
 
 /** \brief Evaluate <tt>f(x,t)</tt>. */
 template<class Scalar>
@@ -234,6 +209,27 @@ void eval_f(
   inArgs.set_x(Teuchos::rcp(&x,false));
   if(inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(t);
   outArgs.set_f(Teuchos::rcp(f,false));
+  model.evalModel(inArgs,outArgs);
+}
+
+
+/** \brief Evaluate <tt>g(j)(p,t))</tt>. */
+template<class Scalar>
+void eval_g(
+  const ModelEvaluator<Scalar> &model,
+  const int l,
+  const VectorBase<Scalar> &p_l,
+  const Scalar &t,
+  const int j,
+  VectorBase<Scalar> *g_j
+  )
+{
+  typedef ModelEvaluatorBase MEB;
+  MEB::InArgs<Scalar> inArgs = model.createInArgs();
+  MEB::OutArgs<Scalar> outArgs= model.createOutArgs();
+  inArgs.set_p(l,Teuchos::rcp(&p_l,false));
+  inArgs.set_t(t);
+  outArgs.set_g(j,Teuchos::rcp(g_j,false));
   model.evalModel(inArgs,outArgs);
 }
 

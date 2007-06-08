@@ -72,6 +72,12 @@ public:
     const Teuchos::RefCountPtr<MultiVectorBase<Scalar> > &multiVec
     );
 
+  /** \brief Initialize with a const multi-vector. */
+  void initialize(
+    const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace,
+    const Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > &multiVec
+    );
+
   // ToDo: Add const version of above function also when needed!
 
   /** \brief . */
@@ -193,7 +199,52 @@ private:
 };
 
 
-/** \brief Nonmember constructor.
+/** \brief Nonmember constructor that just wraps an existing non-const
+ * MultiVector as a non-const product vector.
+ *
+ * \relates DefaultMultiVectorProductVector
+ */
+template<class Scalar>
+inline
+Teuchos::RefCountPtr<DefaultMultiVectorProductVector<Scalar> >
+multiVectorProductVector(
+  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace,
+  const Teuchos::RefCountPtr<MultiVectorBase<Scalar> > &multiVec
+  )
+{
+  Teuchos::RefCountPtr<DefaultMultiVectorProductVector<Scalar> > multiVecProdVec
+    = Teuchos::rcp(new DefaultMultiVectorProductVector<Scalar>());
+  multiVecProdVec->initialize(productSpace,multiVec);
+  return multiVecProdVec;
+}
+
+
+/** \brief Nonmember constructor that just wraps an existing const MultiVector
+ * as a const product vector.
+ *
+ * \relates DefaultMultiVectorProductVector
+ */
+template<class Scalar>
+inline
+Teuchos::RefCountPtr<const DefaultMultiVectorProductVector<Scalar> >
+multiVectorProductVector(
+  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace,
+  const Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > &multiVec
+  )
+{
+  Teuchos::RefCountPtr<DefaultMultiVectorProductVector<Scalar> > multiVecProdVec
+    = Teuchos::rcp(new DefaultMultiVectorProductVector<Scalar>());
+  multiVecProdVec->initialize(productSpace,multiVec);
+  return multiVecProdVec;
+}
+
+
+// ToDo: Add non-const and const versions of the nonmember constructor
+// functions to wrap already created multi-vectors once needed!
+
+
+/** \brief Nonmember constructor that creates a new product vector represented
+ * underneath as a multi-vector.
  *
  * \relates DefaultMultiVectorProductVector
  */
@@ -207,18 +258,11 @@ multiVectorProductVector(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(is_null(productSpace));
 #endif
-  Teuchos::RefCountPtr<DefaultMultiVectorProductVector<Scalar> > multiVecProdVec
-    = Teuchos::rcp(new DefaultMultiVectorProductVector<Scalar>());
-  multiVecProdVec->initialize(
+  return multiVectorProductVector(
     productSpace,
     createMembers(productSpace->getBlock(0),productSpace->numBlocks())
     );
-  return multiVecProdVec;
 }
-
-
-// ToDo: Add non-const and const versions of the nonmember constructor
-// functions to wrap already created multi-vectors once needed!
 
 
 } // namespace Thyra

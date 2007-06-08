@@ -33,8 +33,6 @@
 
 #include "Thyra_NonlinearSolverBase.hpp"
 #include "Thyra_TestingTools.hpp"
-#include "Teuchos_StandardMemberCompositionMacros.hpp"
-#include "Teuchos_StandardCompositionMacros.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_as.hpp"
@@ -66,7 +64,6 @@ public:
 
   /** @name Constructors/Intializers/Misc */
   //@{
-  
 
   /** \brief Sets parameter defaults . */
   TimeStepNonlinearSolver();
@@ -402,12 +399,14 @@ TimeStepNonlinearSolver<Scalar>::solve(
   const bool dumpAll = (as<int>(verbLevel) == as<int>(Teuchos::VERB_EXTREME)); 
   TEUCHOS_OSTAB;
   VOTSME stateModel_outputTempState(model_,out,verbLevel);
-  if(out.get() && showNewtonDetails) *out
-    << "\nBeginning undampended Newton time step solve of model = " << model_->description() << "\n\n";
+  if(out.get() && showNewtonDetails)
+    *out
+      << "\nEntering TimeStepNonlinearSolver::solve(...) ...\n"
+      << "\nmodel = " << describe(*model_,verbLevel);
 
   if(out.get() && dumpAll) {
     *out << "\nInitial guess:\n";
-    *out << "\nx =\n" << *x;
+    *out << "\nx = " << *x;
   }
 
   // Initialize storage for algorithm
@@ -439,7 +438,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
       *out << "\n*** newtonIter = " << iter << endl;
     if(out.get() && showNewtonDetails)
       *out << "\nEvaluating the model f and W ...\n";
-    eval_f_W( *model_, *x_curr, ST::one(), &*f, &*J_ );
+    eval_f_W( *model_, *x_curr, &*f, &*J_ );
     if(out.get() && showNewtonDetails)
       *out << "\nSolving the system J*dx = -f ...\n";
     Thyra::V_S(&*dx,ST::zero()); // Initial guess is needed!
@@ -559,6 +558,9 @@ TimeStepNonlinearSolver<Scalar>::solve(
   // Update the solution state for external clients
   current_x_ = x->clone_v();
   J_is_current_ = true;
+
+  if(out.get() && showNewtonDetails)
+    *out << "\nLeaving TimeStepNonlinearSolver::solve(...) ...\n";
 
   return solveStatus;
 

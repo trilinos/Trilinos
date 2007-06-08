@@ -382,12 +382,34 @@ class Epetra_Vector : public Epetra_MultiVector {
   /*!
     \return V[Index].
   */
-    double& operator [] (int index) { return Values_[index]; }
+    double& operator [] (int index)
+    {
+#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
+      EPETRA_TEST_FOR_EXCEPTION(
+        !( 0 <= index && index < this->MyLength() ), -99,
+        "Epetra_Vector::operator[](int): "
+        "The index = " << index << " does not fall in the range"
+        "[0,"<<this->MyLength()<<")"
+        );
+#endif
+      return Values_[index];
+    }
   //! Element access function.
   /*!
     \return V[Index].
   */
-    const double& operator [] (int index) const { return Values_[index]; }
+    const double& operator [] (int index) const
+    {
+#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
+      EPETRA_TEST_FOR_EXCEPTION(
+        !( 0 <= index && index < this->MyLength() ), -99,
+        "Epetra_Vector::operator[](int) const: "
+        "The index = " << index << " does not fall in the range"
+        "[0,"<<this->MyLength()<<")"
+        );
+#endif
+      return Values_[index];
+    }
     //@}
     
     //! @name Expert-only unsupported methods

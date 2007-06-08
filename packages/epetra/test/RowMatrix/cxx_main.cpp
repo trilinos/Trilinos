@@ -456,7 +456,7 @@ int check(Epetra_RowMatrix& A, Epetra_RowMatrix & B, bool verbose)  {
   Epetra_Vector rowA(A.RowMatrixRowMap());
   EPETRA_TEST_ERR(A.InvRowSums(rowA),ierr);
   Epetra_Vector rowB(B.RowMatrixRowMap());
-  EPETRA_TEST_ERR(B.InvRowSums(rowB);,ierr)
+  EPETRA_TEST_ERR(B.InvRowSums(rowB),ierr)
   EPETRA_TEST_ERR(checkMultiVectors(rowA,rowB, "InvRowSums", verbose),ierr);
 
   Epetra_Vector colA(A.RowMatrixColMap());

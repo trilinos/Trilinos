@@ -118,6 +118,10 @@ ExampleApplication1Dfem::createInArgs() const
   inArgs.setSupports(IN_ARG_x_dot,true);
   inArgs.setSupports(IN_ARG_alpha,true);
   inArgs.setSupports(IN_ARG_beta,true);
+  inArgs.setSupports(IN_ARG_t,true);
+ // 2007/06/08: rabartl: We have to accept t even if we don't use it!  We have
+ // to require that all transient problems define t even if the model does not
+ // use it since this is the only way to completely pass an initial condition.
   return inArgs;
 }
 

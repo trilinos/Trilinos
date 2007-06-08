@@ -125,10 +125,12 @@ int main(int argc, char *argv[])
 
     Teuchos::RefCountPtr<Teuchos::ParameterList> fixedStepIntegratorParams = Teuchos::rcp(new Teuchos::ParameterList);
     double dt = 0.1;
+    fixedStepIntegratorParams->set( "Take Variable Steps", false );
     fixedStepIntegratorParams->set( "fixed_dt", dt );
     fixedStepIntegratorParams->set( "outputLevel", outputLevel );
 
     Teuchos::RefCountPtr<Teuchos::ParameterList> variableStepIntegratorParams = Teuchos::rcp(new Teuchos::ParameterList);
+    variableStepIntegratorParams->set( "Take Variable Steps", true );
     variableStepIntegratorParams->set( "outputLevel", outputLevel );
 
     Teuchos::RefCountPtr<Rythmos::InterpolatorBase<double> > interpolator;

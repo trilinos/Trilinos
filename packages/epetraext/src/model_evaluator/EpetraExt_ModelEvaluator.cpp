@@ -280,7 +280,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp arg, int j, int l) co
 {
   assert_j(j);
   TEST_FOR_EXCEPTION(
-    supports_DgDx_[ j*Np() + l ].none(), std::logic_error
+    supports_DgDp_[ j*Np() + l ].none(), std::logic_error
     ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp,j,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDp(j,l) with indexes j = " << j << " and l = " << l << " is not supported!"

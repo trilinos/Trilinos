@@ -31,10 +31,12 @@
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_getConst.hpp"
+#include "Teuchos_as.hpp"
 
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
+#include "Epetra_CrsMatrix.h" // Printing only!
 
 namespace Thyra {
 
@@ -327,7 +329,9 @@ void EpetraLinearOp::describe(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
+  using Teuchos::as;
   using Teuchos::RefCountPtr;
+  using Teuchos::rcp_dynamic_cast;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   using Teuchos::describe;
@@ -346,11 +350,19 @@ void EpetraLinearOp::describe(
         << Teuchos::Describable::description() << "{"
         << "rangeDim=" << this->range()->dim() << ",domainDim=" << this->domain()->dim() << "}\n";
       OSTab tab(out);
-      if(op_.get()) {
-        *out << "op="<<typeName(*op_)<<"\n";
+      if (op_.get()) {
         *out << "opTrans="<<toString(opTrans_)<<"\n";
         *out << "applyAs="<<toString(applyAs_)<<"\n";
         *out << "adjointSupport="<<toString(adjointSupport_)<<"\n";
+        *out << "op="<<typeName(*op_)<<"\n";
+        if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
+          OSTab tab(out);
+          RefCountPtr<const Epetra_CrsMatrix>
+            csr_op = rcp_dynamic_cast<const Epetra_CrsMatrix>(op_);
+          if (!is_null(csr_op)) {
+            csr_op->Print(*out);
+          }
+        }
       }
       else {
         *out << "op=NULL"<<"\n";

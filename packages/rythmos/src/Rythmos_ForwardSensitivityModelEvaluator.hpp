@@ -50,7 +50,7 @@ namespace Rythmos {
  * This class provides a very general implemenation of a forward sensitivity
  * model evaluator for a DAE.
  *
- * \section Rythmos_FowardSensitivityModelEvaluator_intro_sec Introduction
+ * \section Rythmos_ForwardSensitivityModelEvaluator_intro_sec Introduction
  *
  * The form of the parameterized state equation is:
 
@@ -69,7 +69,7 @@ namespace Rythmos {
 
  \verbatim
 
-   d(f)/d(x_dot)*S_dot + d(f)/d(x)*S + d(f)/d(p) = 0, over t = [t0,tf]
+   F_sens(S_dot,S,t) = d(f)/d(x_dot)*S_dot + d(f)/d(x)*S + d(f)/d(p) = 0, over t = [t0,tf]
 
    S(t0) = d(x_init)/d(p)
 
@@ -80,7 +80,11 @@ namespace Rythmos {
  * with respect to the <tt>p_j</tt> parameter.  The sensitivity parameter
  * subvector <tt>p</tt> here is really just one of the parameter subvectors in
  * the state equation.  This index of the parameter subvector for which the
- * sensitivity equations are written for is given by <tt>p_index</tt>.
+ * sensitivity equations are written for is given by <tt>p_index</tt>.  Note
+ * that above <tt>d(f)/d(x_dot)</tt>, <tt>d(f)/d(x)</tt> and <tt>d(f)/d(p</tt>
+ * are all evaluated at the solution to the state equation
+ * <tt>(x_dot(t),x(t),t)</tt> and are not functions of <tt>S_dot</tt> or
+ * <tt>S</tt>.
  *
  * Since the model evaluator interface must be expressed in vector form, the
  * multi-vector form of the forward sensitivity equations is flattened out
@@ -114,7 +118,7 @@ namespace Rythmos {
  * in terms of a single <tt>Thyra::MultiVectorBase</tt> object (which has
  * <tt>np</tt> columns).
  *
- * \section Rythmos_FowardSensitivityModelEvaluator_details_sec Implementation Details
+ * \section Rythmos_ForwardSensitivityModelEvaluator_details_sec Implementation Details
  *
  * In order to achieve high performance, the representation of the forward
  * sensitivity equations and the computation of the timestep for the
@@ -137,24 +141,26 @@ namespace Rythmos {
 
  * computed at some point <tt>(x_dot_tilde,x_tilde,t_tilde,...)</tt>.
  *
- * Here is how to evaluate the forward sensitivity equations using W_tilde:
+ * Here is how to evaluate the forward sensitivity equations <tt>F_sens</tt>
+ * using <tt>W_tilde</tt>:
 
  \verbatim
 
-    d(f)/d(x_dot)*S_dot
-    + ( (1/coeff_x) * ( W_tilde - coeff_x_dot * d(f)/d(x_dot) ) ) * S
-    + d(f)/d(p)
+    F_sens = d(f)/d(x_dot)*S_dot
+             + ( (1/coeff_x) * ( W_tilde - coeff_x_dot * d(f)/d(x_dot) ) ) * S
+             + d(f)/d(p)
 
     ==>
 
-    (1/coeff_x) * W_tilde * S
-    + d(f)/d(x_dot) * ( S_dot - (coeff_x_dot/coeff_x)*S )
-    + d(f)/d(p)
+    F_sens = (1/coeff_x) * W_tilde * S
+             + d(f)/d(x_dot) * ( S_dot - (coeff_x_dot/coeff_x)*S )
+             + d(f)/d(p)
 
  \endverbatim
 
- * Above, we see that in order to compute the residual for the forward
- * sensitivity equations, we must be able to compute something like:
+ * Above, we see that in order to compute the multi-vector form of the
+ * residual for the forward sensitivity equations <tt>F_sens</tt>, we must be
+ * able to compute something like:
 
  \verbatim
 
@@ -175,9 +181,9 @@ namespace Rythmos {
 
  \endverbatim
 
- * We could then compute what we need uing <tt>x_dot_scalar=1.0</tt>,
+ * We could then compute what we need using <tt>x_dot_scalar=1.0</tt>,
  * <tt>x_scalar=0.0</tt>, <tt>p_scalar=1.0</tt>, <tt>V_x_dot=V</tt>, and
- * <tt>V_p=I</tt>.  For explicit timestepping methods, this is all that would
+ * <tt>V_p=I</tt>.  For explicit time-stepping methods, this is all that would
  * be needed.  Such an addition to the <tt>Thyra::ModelEvaluator</tt>
  * interface would be handled through additions to the InArgs and OutArgs
  * classes and the details of which are yet to be worked out.
@@ -243,7 +249,7 @@ namespace Rythmos {
     
  \endverbatim
 
- * In this type of method we see that 
+ * In this type of method we see that :
 
  \verbatim
 
@@ -263,7 +269,8 @@ namespace Rythmos {
     
  \endverbatim
 
- * In these type of method, the term involving <tt>d(f)/d(x_dot)</tt> becomes:
+ * Therefore, in this types of method, the term involving
+ * <tt>d(f)/d(x_dot)</tt> becomes:
 
  \verbatim
 
@@ -315,6 +322,13 @@ public:
     const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index
     );
+  
+  /** \brief . */
+  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+  getStateModel() const;
+  
+  /** \brief . */
+  int get_p_index() const;
 
   /** \brief Initialize full state.
    *
@@ -484,6 +498,21 @@ void ForwardSensitivityModelEvaluator<Scalar>::initializeStructure(
 
   nominalValues_ = this->createInArgs();
 
+}
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+ForwardSensitivityModelEvaluator<Scalar>::getStateModel() const
+{
+  return stateModel_;
+}
+
+
+template<class Scalar>
+int ForwardSensitivityModelEvaluator<Scalar>::get_p_index() const
+{
+  return p_index_;
 }
 
 
@@ -687,7 +716,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::evalModel(
   //
 
   if(!is_null(F_sens)) {
-    // S_diff = S_dot - (coeff_x_dot/coeff_x)*S
+    // S_diff =  -(coeff_x_dot/coeff_x)*S + S_dot
     Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
       S_diff = createMembers( stateModel_->get_x_space(), np_ );
     V_StVpV( &*S_diff, Scalar(-coeff_x_dot_/coeff_x_), *S, *S_dot );
@@ -718,7 +747,6 @@ void ForwardSensitivityModelEvaluator<Scalar>::evalModel(
       <<" with difference = "<<(beta-coeff_x_)<<"!" );
     W_sens->initialize( W_tilde_, s_bar_space_, f_sens_space_ );
   }
-
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
 

@@ -26,43 +26,42 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_STATE_FUNC_MODEL_EVALUATOR_BASE_HPP
-#define THYRA_STATE_FUNC_MODEL_EVALUATOR_BASE_HPP
+#ifndef THYRA_RESPONSE_ONLY_MODEL_EVALUATOR_BASE_HPP
+#define THYRA_RESPONSE_ONLY_MODEL_EVALUATOR_BASE_HPP
+
 
 #include "Thyra_ModelEvaluator.hpp"
+
 
 namespace Thyra {
 
 /** \brief This base class defines default function implementations
- * appropritate for a set of nonlinear state functions of the form
- * <tt>x -> f(x)</tt>.
+ * appropritate for a response-only model evaluator <tt>(p) -> g(j)</tt>,
+ * for <tt>j=0...Ng-1</tt>.
  *
  * The minimum that a subclass must to is to define implementations for
- * <tt>get_x_space()</tt>, <tt>get_f_space()</tt>, <tt>createInArgs()</tt>,
- * <tt>createOutArgs</tt>, and <tt>evalModel()</tt>.
+ * <tt>Np()</tt>, <tt>Ng()</tt>, <tt>get_p_space()</tt>,
+ * <tt>get_g_space()</tt>, <tt>createInArgs()</tt>, <tt>createOutArgs</tt>,
+ * and <tt>evalModel()</tt>.
  */
 template<class Scalar>
-class StateFuncModelEvaluatorBase : virtual public ModelEvaluator<Scalar> {
+class ResponseOnlyModelEvaluatorBase : virtual public ModelEvaluator<Scalar> {
 public:
 
   /** \name Public functions overridden from ModelEvaulator. */
   //@{
 
-  /** \brief Returns 0 . */
-  int Np() const;
-  /** \brief Returns 0 . */
-  int Ng() const;
   /** \brief Throws exception. */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
+  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief Throws exception. */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief Returns this->createInArgs(). */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief Returns this->createInArgs(). */
   ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const;
   /** \brief Returns this->createInArgs(). */
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
-  /** \brief Returns Teuchos::null. */
+  /** \brief Thorws exception. */
   Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief Returns Teuchos::null. */
   Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_W_op() const;
@@ -82,62 +81,62 @@ public:
   
 };
 
+
 // /////////////////////////////////
 // Implementations
 
+
 // Public functions overridden from ModelEvaulator
 
-template<class Scalar>
-int StateFuncModelEvaluatorBase<Scalar>::Np() const
-{ return 0; }
-
-template<class Scalar>
-int StateFuncModelEvaluatorBase<Scalar>::Ng() const
-{ return 0; }
 
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-StateFuncModelEvaluatorBase<Scalar>::get_p_space(int l) const
+ResponseOnlyModelEvaluatorBase<Scalar>::get_x_space() const
 {
   TEST_FOR_EXCEPTION(
-    true,std::logic_error
-    ,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_p_space(l): "
+    true, std::logic_error,
+    "ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_x_space(): "
     "Error, this function was not overridden in *this = \'"<<this->description()<<"\'!"
     );
   return Teuchos::null;
 }
 
+
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-StateFuncModelEvaluatorBase<Scalar>::get_g_space(int j) const
+ResponseOnlyModelEvaluatorBase<Scalar>::get_f_space() const
 {
   TEST_FOR_EXCEPTION(
-    true,std::logic_error
-    ,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_g_space(j): "
+    true, std::logic_error,
+    "ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_f_space(): "
     " Error, this function was not overridden in \'"
     <<this->description()<<"\'!"
     );
   return Teuchos::null;
 }
 
-template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
-StateFuncModelEvaluatorBase<Scalar>::getNominalValues() const
-{ return this->createInArgs(); }
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
-StateFuncModelEvaluatorBase<Scalar>::getLowerBounds() const
+ResponseOnlyModelEvaluatorBase<Scalar>::getNominalValues() const
 { return this->createInArgs(); }
+
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
-StateFuncModelEvaluatorBase<Scalar>::getUpperBounds() const
+ResponseOnlyModelEvaluatorBase<Scalar>::getLowerBounds() const
 { return this->createInArgs(); }
+
+
+template<class Scalar>
+ModelEvaluatorBase::InArgs<Scalar>
+ResponseOnlyModelEvaluatorBase<Scalar>::getUpperBounds() const
+{ return this->createInArgs(); }
+
 
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
-StateFuncModelEvaluatorBase<Scalar>::create_W() const
+ResponseOnlyModelEvaluatorBase<Scalar>::create_W() const
 {
   TEST_FOR_EXCEPTION(
     true, std::logic_error
@@ -148,9 +147,10 @@ StateFuncModelEvaluatorBase<Scalar>::create_W() const
   return Teuchos::null; // Should never be called!
 }
 
+
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-StateFuncModelEvaluatorBase<Scalar>::create_W_op() const
+ResponseOnlyModelEvaluatorBase<Scalar>::create_W_op() const
 {
   TEST_FOR_EXCEPTION(
     true, std::logic_error
@@ -161,9 +161,10 @@ StateFuncModelEvaluatorBase<Scalar>::create_W_op() const
   return Teuchos::null; // Should never be called!
 }
 
+
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-StateFuncModelEvaluatorBase<Scalar>::create_DfDp_op(int l) const
+ResponseOnlyModelEvaluatorBase<Scalar>::create_DfDp_op(int l) const
 {
   typedef ModelEvaluatorBase MEB;
   MEB::OutArgs<Scalar> outArgs = this->createOutArgs();
@@ -176,9 +177,10 @@ StateFuncModelEvaluatorBase<Scalar>::create_DfDp_op(int l) const
   return Teuchos::null;
 }
 
+
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-StateFuncModelEvaluatorBase<Scalar>::create_DgDx_op(int j) const
+ResponseOnlyModelEvaluatorBase<Scalar>::create_DgDx_op(int j) const
 {
   typedef ModelEvaluatorBase MEB;
   MEB::OutArgs<Scalar> outArgs = this->createOutArgs();
@@ -191,9 +193,10 @@ StateFuncModelEvaluatorBase<Scalar>::create_DgDx_op(int j) const
   return Teuchos::null;
 }
 
+
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-StateFuncModelEvaluatorBase<Scalar>::create_DgDp_op( int j, int l ) const
+ResponseOnlyModelEvaluatorBase<Scalar>::create_DgDp_op( int j, int l ) const
 {
   typedef ModelEvaluatorBase MEB;
   MEB::OutArgs<Scalar> outArgs = this->createOutArgs();
@@ -206,8 +209,9 @@ StateFuncModelEvaluatorBase<Scalar>::create_DgDp_op( int j, int l ) const
   return Teuchos::null;
 }
 
+
 template<class Scalar>
-void StateFuncModelEvaluatorBase<Scalar>::reportFinalPoint(
+void ResponseOnlyModelEvaluatorBase<Scalar>::reportFinalPoint(
   const ModelEvaluatorBase::InArgs<Scalar>      &finalPoint
   ,const bool                                   wasSolved
   )
@@ -215,6 +219,8 @@ void StateFuncModelEvaluatorBase<Scalar>::reportFinalPoint(
   // This final point is just ignored by default!
 }
 
+
 } // namespace Thyra
 
-#endif // THYRA_STATE_FUNC_MODEL_EVALUATOR_BASE_HPP
+
+#endif // THYRA_RESPONSE_ONLY_MODEL_EVALUATOR_BASE_HPP

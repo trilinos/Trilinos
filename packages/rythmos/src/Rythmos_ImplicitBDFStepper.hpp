@@ -78,9 +78,9 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
     void setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver);
 
     /** \brief . */
-    void setInitialCondition(const 
-        Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
-        );
+    void setInitialCondition(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
+      );
 
     /** \brief . */
     Scalar takeStep(Scalar dt, StepSizeType flag);
@@ -163,7 +163,6 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
 
   private:
 
-
     void getInitialCondition_();
     void obtainPredictor_();
     void updateHistory_();
@@ -199,6 +198,7 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
 
     Scalar time_;
 
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
 
     //typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
     ScalarMag relErrTol_; // relative error tolerance
@@ -378,9 +378,10 @@ void ImplicitBDFStepper<Scalar>::getInitialCondition_()
   if (!haveInitialCondition_) {
     TEST_FOR_EXCEPT(model_->getNominalValues().get_x()==Teuchos::null);
     TEST_FOR_EXCEPT(model_->getNominalValues().get_x_dot()==Teuchos::null);
-    xn0_ = model_->getNominalValues().get_x()->clone_v();
-    xpn0_ = model_->getNominalValues().get_x_dot()->clone_v(); 
-    time_ = ST::zero();
+    basePoint_ = model_->getNominalValues();
+    xn0_ = basePoint_.get_x()->clone_v();
+    xpn0_ = basePoint_.get_x_dot()->clone_v(); 
+    time_ = basePoint_.get_t();
     haveInitialCondition_ = true;
   }
 }
@@ -400,14 +401,11 @@ void ImplicitBDFStepper<Scalar>::setInitialCondition(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   TEST_FOR_EXCEPT(initialCondition.get_x()==Teuchos::null);
   TEST_FOR_EXCEPT(initialCondition.get_x_dot()==Teuchos::null);
+  basePoint_ = initialCondition;
   xn0_ = initialCondition.get_x()->clone_v();
   xpn0_ = initialCondition.get_x_dot()->clone_v(); 
   typedef Thyra::ModelEvaluatorBase MEB;
-  if (initialCondition.supports(MEB::IN_ARG_t)) { 
-    time_ = initialCondition.get_t();
-  } else {
-    time_ = ST::zero(); 
-  }
+  time_ = initialCondition.get_t();
   haveInitialCondition_ = true;
   if (isInitialized_) {
     initialize_();
@@ -461,7 +459,7 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
     Scalar coeff_x_dot = Scalar(-ST::one())*alpha_s_/hh_;
     V_StVpStV( &*x_dot_base_, ST::one(), *xpn0_, alpha_s_/hh_, *xn0_ );
     neModel_.initializeSingleResidualModel(
-      model_,
+      model_, basePoint_,
       coeff_x_dot, x_dot_base_,
       ST::one(), Teuchos::null,
       time_+hh_,

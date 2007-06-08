@@ -352,7 +352,7 @@ void DefaultProductVectorSpace<Scalar>::describe(
         << this->description() << std::endl;
       OSTab tab(out);
       *out
-        <<  "Constituent vector spaces V[0],V[1],,,V[numBlocks-1]:\n";
+        <<  "Constituent vector spaces V[0], V[1], ... V[numBlocks-1]:\n";
       tab.incrTab();
       for( int k = 0; k < numBlocks_; ++k ) {
         *out << "V["<<k<<"] = " << Teuchos::describe(*(*vecSpaces_)[k],verbLevel);

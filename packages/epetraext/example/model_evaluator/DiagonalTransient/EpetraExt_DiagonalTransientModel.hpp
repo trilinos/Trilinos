@@ -62,8 +62,17 @@ public:
     Teuchos::RefCountPtr<Epetra_Comm> const& epetra_comm
     );
 
-  /** \brief Return the exact solution. */
-  Teuchos::RefCountPtr<const Epetra_Vector> getExactSolution(const double t) const;
+  /** \brief Return the exact solution as a function of time. */
+  Teuchos::RefCountPtr<const Epetra_Vector>
+  getExactSolution(
+    const double t, const Epetra_Vector *coeff_s_p = 0
+    ) const;
+
+  /** \brief Return the exact sensitivity of x as a function of time. */
+  Teuchos::RefCountPtr<const Epetra_MultiVector>
+  getExactSensSolution(
+    const double t, const Epetra_Vector *coeff_s_p = 0
+    ) const;
 
   //@}
 
@@ -92,6 +101,8 @@ public:
   Teuchos::RefCountPtr<const Epetra_Map> get_f_map() const;
   /** \breif . */
   Teuchos::RefCountPtr<const Epetra_Map> get_p_map(int l) const;
+  /** \breif . */
+  Teuchos::RefCountPtr<const Epetra_Map> get_g_map(int j) const;
   /** \brief . */
   Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
   /** \brief . */
@@ -137,14 +148,19 @@ private:
   coeff_s_idx_t coeff_s_idx_;
   ELambdaFit lambda_fit_;
   double x0_;
+  bool exactSolutionAsResponse_;
   Teuchos::RefCountPtr<Epetra_Vector> lambda_;
   Teuchos::RefCountPtr<Epetra_CrsGraph> W_graph_;
   int Np_;
   int np_;
+  int Ng_;
   RCP_Eptra_Map_Array_t map_p_;
+  RCP_Eptra_Map_Array_t map_g_;
   RCP_Eptra_Vector_Array_t p_init_;
   Teuchos::RefCountPtr<Epetra_Vector> x_init_;
   Teuchos::RefCountPtr<Epetra_Vector> x_dot_init_;
+
+  mutable Teuchos::RefCountPtr<const Epetra_Vector> coeff_s_p_;
 
   bool isIntialized_;
 
@@ -153,6 +169,12 @@ private:
 
   void initialize();
 
+  void set_coeff_s_p( 
+    const Teuchos::RefCountPtr<const Epetra_Vector> &coeff_s_p
+    ) const;
+
+  void unset_coeff_s_p() const;
+
   int coeff_s_idx(int i) const
     {
       return coeff_s_idx_[i];
@@ -160,7 +182,7 @@ private:
 
   double coeff_s(int i) const
     {
-      return coeff_s_[coeff_s_idx(i)];
+      return (*coeff_s_p_)[coeff_s_idx(i)];
     }
 
 };

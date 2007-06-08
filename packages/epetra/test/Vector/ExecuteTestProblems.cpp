@@ -241,6 +241,27 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
 			     normw_A, Weights, minval_A, maxval_A, meanval_A);
 
   int err = 0;
+
+  // Test range checking for operator[](int)
+#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
+  try {
+    A[A.MyLength()]; // Should throw!
+    // If we get here the test failed!
+    EPETRA_TEST_ERR( 1, ierr );
+  }
+  catch ( const int& err_code ) {
+    EPETRA_TEST_ERR( ( err_code == -99 ? 0 : 1 ), ierr );
+  }
+  try {
+    A[-1]; // Should throw!
+    // If we get here the test failed!
+    EPETRA_TEST_ERR( 1, ierr );
+  }
+  catch ( const int& err_code ) {
+    EPETRA_TEST_ERR( ( err_code == -99 ? 0 : 1 ), ierr );
+  }
+#endif
+
   if (verbose) cout << "XXXXX Testing alpha * A     ";
   // Test alpha*A
   Epetra_Vector alphaA(A); // Copy of A

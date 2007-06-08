@@ -66,6 +66,17 @@
     (SUCCESS_FLAG) = false; \
     } \
   } \
+  catch( const int &excpt_code ) { \
+    if((VERBOSE)) { \
+      std::ostringstream oss; \
+      oss \
+        << "\np="<<::Teuchos::GlobalMPISession::getRank() \
+        << ": *** Caught an integer exception with value = " \
+        << excpt_code << std::endl; \
+      (ERR_STREAM) << oss.str(); \
+    (SUCCESS_FLAG) = false; \
+    } \
+  } \
   catch( ... ) { \
     if((VERBOSE)) { \
       std::ostringstream oss; \

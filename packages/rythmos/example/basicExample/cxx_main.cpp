@@ -299,8 +299,12 @@ int main(int argc, char *argv[])
         // Set up fixed-step-size integration:
         Teuchos::RefCountPtr<Teuchos::ParameterList> 
           integratorParams = Teuchos::rcp(new Teuchos::ParameterList);
+        integratorParams->set( "Take Variable Steps", false );
         integratorParams->set( "fixed_dt", dt );
-        integratorParams->set( "outputLevel", as<int>(verbLevel) );
+        integratorParams->sublist("VerboseObject").set(
+          "Verbosity Level",
+          Teuchos::getVerbosityLevelParameterValueName(verbLevel)
+          );
         // Create integrator using stepper and linear interpolation buffer:
         Teuchos::RefCountPtr<Rythmos::InterpolatorBase<double> > 
           linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
@@ -353,8 +357,11 @@ int main(int argc, char *argv[])
         // Set up fixed-step-size integration:
         Teuchos::RefCountPtr<Teuchos::ParameterList> 
           integratorParams = Teuchos::rcp(new Teuchos::ParameterList);
-        //integratorParams->set( "fixed_dt", dt );
-        integratorParams->set( "outputLevel", as<int>(verbLevel) );
+        integratorParams->set( "Take Variable Steps", true );
+        integratorParams->sublist("VerboseObject").set(
+          "Verbosity Level",
+          Teuchos::getVerbosityLevelParameterValueName(verbLevel)
+          );
         // Create integrator using stepper and interpolation buffer:
         //Teuchos::RefCountPtr<Rythmos::InterpolatorBase<double> > 
         //  linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());

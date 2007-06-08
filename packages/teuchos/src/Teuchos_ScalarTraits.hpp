@@ -82,6 +82,7 @@
 	error when the specialization does not exist for type <tt>T</tt>.
 */
 namespace Teuchos {
+
   template<class T>
   struct UndefinedScalarTraits
   {
@@ -149,6 +150,18 @@ namespace Teuchos {
   };
   
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
+
+
+  void throwScalarTraitsNanInfError( const std::string &errMsg );
+
+
+#define TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR( VALUE, MSG ) \
+  if (isnaninf(VALUE)) { \
+    std::ostringstream omsg; \
+    omsg << MSG; \
+    throwScalarTraitsNanInfError(omsg.str()); \
+  }
+
 
   template<>
   struct ScalarTraits<char>
@@ -275,7 +288,14 @@ namespace Teuchos {
       LAPACK<int, float> lp; return lp.LAMCH('O');
 #endif
     };
-    static inline magnitudeType magnitude(float a) { return fabs(a); };    
+    static inline magnitudeType magnitude(float a)
+      {
+#ifdef TEUCHOS_DEBUG
+        TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+          a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
+#endif      
+        return fabs(a);
+      };    
     static inline float zero()  { return(0.0); };
     static inline float one()   { return(1.0); };    
     static inline float conjugate(float x)   { return(x); };    
@@ -297,7 +317,14 @@ namespace Teuchos {
     static inline void seedrandom(unsigned int s) { srand(s); };
     static inline float random() { float rnd = (float) rand() / RAND_MAX; return (float)(-1.0 + 2.0 * rnd); };
     static inline std::string name() { return "float"; };
-    static inline float squareroot(float x) { return ::sqrt(x); };
+    static inline float squareroot(float x)
+      {
+#ifdef TEUCHOS_DEBUG
+        TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+          x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
+#endif      
+        return ::sqrt(x);
+      };
     static inline float pow(float x, float y) { return ::pow(x,y); };
   };
 
@@ -382,7 +409,14 @@ namespace Teuchos {
       LAPACK<int, double> lp; return lp.LAMCH('O');
 #endif
     };
-    static inline magnitudeType magnitude(double a) { return fabs(a); };
+    static inline magnitudeType magnitude(double a)
+      {
+#ifdef TEUCHOS_DEBUG
+        TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+          a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
+#endif      
+        return fabs(a);
+      };
     static inline double zero()  { return 0.0; };
     static inline double one()   { return 1.0; };
     static inline double conjugate(double x)   { return(x); };    
@@ -404,7 +438,14 @@ namespace Teuchos {
     static inline void seedrandom(unsigned int s) { srand(s); };
     static inline double random() { double rnd = (double) rand() / RAND_MAX; return (double)(-1.0 + 2.0 * rnd); };
     static inline std::string name() { return "double"; };
-    static inline double squareroot(double x) { return ::sqrt(x); };
+    static inline double squareroot(double x)
+      {
+#ifdef TEUCHOS_DEBUG
+        TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+          x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
+#endif      
+        return ::sqrt(x);
+      };
     static inline double pow(double x, double y) { return ::pow(x,y); };
   };
 
@@ -503,7 +544,14 @@ namespace Teuchos {
     static inline magnitudeType rmin()         { return ScalarTraits<magnitudeType>::rmin(); };
     static inline magnitudeType emax()         { return ScalarTraits<magnitudeType>::emax(); };
     static inline magnitudeType rmax()         { return ScalarTraits<magnitudeType>::rmax(); };
-    static magnitudeType magnitude(ComplexT a) { return std::abs(a); };
+    static magnitudeType magnitude(ComplexT a)
+    {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+        a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
+#endif      
+      return std::abs(a);
+    };
     static inline ComplexT zero()              { return ComplexT(ScalarTraits<magnitudeType>::zero(),ScalarTraits<magnitudeType>::zero()); };
     static inline ComplexT one()               { return ComplexT(ScalarTraits<magnitudeType>::one(),ScalarTraits<magnitudeType>::zero()); };
     static inline ComplexT conjugate(ComplexT a){ return ComplexT(a.real(),-a.imag()); };
@@ -522,6 +570,10 @@ namespace Teuchos {
     // This will only return one of the square roots of x, the other can be obtained by taking its conjugate
     static inline ComplexT squareroot(ComplexT x)
     {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+        x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
+#endif
       typedef ScalarTraits<magnitudeType>  STMT;
       const T r  = x.real(), i = x.imag();
       const T a  = STMT::squareroot((r*r)+(i*i));

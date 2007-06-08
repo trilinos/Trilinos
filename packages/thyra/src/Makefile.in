@@ -477,6 +477,7 @@ SUPPORT_NONLINEAR_MODEL_EVALUATOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_DirectionalFiniteDiffCalculator.hpp\
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_ModelEvaluatorDelegatorBase.hpp\
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_ModelEvaluatorHelpers.hpp\
+  $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_ResponseOnlyModelEvaluatorBase.hpp\
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_StateFuncModelEvaluatorBase.hpp
 
 INTERFACES_NONLINEAR_SOLVERS_ANA_FUNDAMENTAL_H = \

@@ -42,6 +42,9 @@
 namespace {
 
 
+using Teuchos::RefCountPtr;
+
+
 const std::string Implicit_name = "Implicit";
 const bool Implicit_default = true;
 
@@ -63,6 +66,9 @@ const int NumElements_default = 1;
 const std::string x0_name = "x0";
 const double x0_default = 10.0;
 
+const std::string ExactSolutionAsResponse_name = "Exact Solution as Response";
+const bool ExactSolutionAsResponse_default = false;
+
 
 inline
 double evalR( const double& t, const double& lambda, const double& s )
@@ -74,15 +80,65 @@ double evalR( const double& t, const double& lambda, const double& s )
 inline
 double d_evalR_d_s( const double& t, const double& lambda, const double& s )
 {
-  return (exp(lambda*t)*cos(s*t));
+  return (exp(lambda*t)*cos(s*t)*t);
 }
 
 
 inline
-double f_func( const double& x, const double& t, const double& lambda, const double& s )
+double f_func(
+  const double& x, const double& t, const double& lambda, const double& s
+  )
 {
   return ( lambda*x + evalR(t,lambda,s) );
 }
+
+
+inline
+double x_exact(
+  const double& x0, const double& t, const double& lambda, const double& s
+  )
+{
+  if ( s == 0.0 )
+    return ( x0 * exp(lambda*t) );
+  return ( exp(lambda*t) * (x0 + (1.0/s) * ( 1.0 - cos(s*t) ) ) );
+  // Note that the limit of (1.0/s) * ( 1.0 - cos(s*t) ) as s goes to zero is
+  // zero.  This limit is neeed to avoid the 0/0 that would occur if floating
+  // point was used to evaluate this term.  This means that cos(t*s) goes to
+  // one at the same rate as s goes to zero giving 1-1=0..
+}
+
+
+inline
+double dxds_exact(
+  const double& t, const double& lambda, const double& s
+  )
+{
+  if ( s == 0.0 )
+    return 0.0;
+  return ( -exp(lambda*t)/(s*s) * ( 1.0 - sin(s*t)*(s*t) - cos(s*t) ) );
+}
+
+
+class UnsetParameterVector {
+public:
+  ~UnsetParameterVector()
+    {
+      if (!is_null(vec_))
+        *vec_ = Teuchos::null;
+    }
+  UnsetParameterVector(
+    const RefCountPtr<RefCountPtr<const Epetra_Vector> > &vec
+    )
+    {
+      setVector(vec);
+    }
+  void setVector( const RefCountPtr<RefCountPtr<const Epetra_Vector> > &vec )
+    {
+      vec_ = vec;
+    }
+private:
+  RefCountPtr<RefCountPtr<const Epetra_Vector> > vec_;
+};
 
 
 } // namespace
@@ -105,6 +161,7 @@ DiagonalTransientModel::DiagonalTransientModel(
     coeff_s_(Teuchos::fromStringToArray<double>(Coeff_s_default)),
     lambda_fit_(LAMBDA_FIT_LINEAR), // Must be the same as Lambda_fit_default!
     x0_(x0_default),
+    exactSolutionAsResponse_(ExactSolutionAsResponse_default),
     isIntialized_(false)
 {
   initialize();
@@ -112,24 +169,45 @@ DiagonalTransientModel::DiagonalTransientModel(
 
 
 Teuchos::RefCountPtr<const Epetra_Vector>
-DiagonalTransientModel::getExactSolution(const double t) const
+DiagonalTransientModel::getExactSolution(
+  const double t, const Epetra_Vector *coeff_s_p
+  ) const
 {
+  set_coeff_s_p(Teuchos::rcp(coeff_s_p,false));
+  UnsetParameterVector unsetParameterVector(Teuchos::rcp(&coeff_s_p_,false));
   Teuchos::RefCountPtr<Epetra_Vector>
     x_star_ptr = Teuchos::rcp(new Epetra_Vector(*epetra_map_,false));
   Epetra_Vector& x_star = *x_star_ptr;
   Epetra_Vector& lambda = *lambda_;
   int myN = x_star.MyLength();
   for ( int i=0 ; i<myN ; ++i ) {
-    const double coeff_s_i = coeff_s(i);
-    const double t_lambda_i = t*lambda[i];
-    if (coeff_s_i == 0.0)
-      x_star[i] = x0_*exp(t_lambda_i);
-    else
-      x_star[i] = 
-        (x0_+(1.0/coeff_s_i))*exp(t_lambda_i)
-        - exp(t_lambda_i)*cos(t*coeff_s_i)/coeff_s_i;
+    x_star[i] = x_exact( x0_, t, lambda[i], coeff_s(i) );
   }
   return(x_star_ptr);
+}
+
+
+Teuchos::RefCountPtr<const Epetra_MultiVector>
+DiagonalTransientModel::getExactSensSolution(
+  const double t, const Epetra_Vector *coeff_s_p
+  ) const
+{
+  set_coeff_s_p(Teuchos::rcp(coeff_s_p,false));
+  UnsetParameterVector unsetParameterVector(Teuchos::rcp(&coeff_s_p_,false));
+  Teuchos::RefCountPtr<Epetra_MultiVector>
+    dxds_star_ptr = Teuchos::rcp(new Epetra_MultiVector(*epetra_map_,np_,false));
+  Epetra_MultiVector& dxds_star = *dxds_star_ptr;
+  dxds_star.PutScalar(0.0);
+  Epetra_Vector& lambda = *lambda_;
+  int myN = dxds_star.MyLength();
+  for ( int i=0 ; i<myN ; ++i ) {
+    const int coeff_s_idx = this->coeff_s_idx(i);
+    (*dxds_star(coeff_s_idx))[i] = dxds_exact( t, lambda[i], coeff_s(i) );
+    // Note: Above, at least the column access will be validated in debug mode
+    // but the row index i will not ever be.  Perhaps we can augment Epetra to
+    // fix this?
+  }
+  return (dxds_star_ptr);
 }
 
 
@@ -153,6 +231,7 @@ void DiagonalTransientModel::setParameterList(
   coeff_s_ = getArrayFromStringParameter<double>(*paramList_,Coeff_s_name);
   lambda_fit_ = getIntegralValue<ELambdaFit>(*paramList_,Lambda_fit_name);
   x0_ = get<double>(*paramList_,x0_name);
+  exactSolutionAsResponse_ = get<bool>(*paramList_,ExactSolutionAsResponse_name);
   initialize();
 }
 
@@ -214,6 +293,7 @@ DiagonalTransientModel::getValidParameters() const
       &*pl
       );
     pl->set( Coeff_s_name, Coeff_s_default );
+    pl->set( ExactSolutionAsResponse_name, ExactSolutionAsResponse_default );
     validPL = pl;
   }
   return validPL;
@@ -241,9 +321,19 @@ Teuchos::RefCountPtr<const Epetra_Map>
 DiagonalTransientModel::get_p_map(int l) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT( l == 0 );
+  TEUCHOS_ASSERT_INTEGRAL_IN_RANGE( int, l, 0, Np_ );
 #endif
   return map_p_[l];
+}
+
+
+Teuchos::RefCountPtr<const Epetra_Map>
+DiagonalTransientModel::get_g_map(int j) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_INTEGRAL_IN_RANGE( int, j, 0, Ng_ );
+#endif
+  return map_g_[j];
 }
 
 
@@ -300,7 +390,7 @@ EpetraExt::ModelEvaluator::OutArgs
 DiagonalTransientModel::createOutArgs() const
 {
   OutArgsSetup outArgs;
-  outArgs.set_Np_Ng(Np_,0);
+  outArgs.set_Np_Ng(Np_,Ng_);
   outArgs.setSupports(OUT_ARG_f,true);
   if(implicit_) {
     outArgs.setSupports(OUT_ARG_W,true);
@@ -315,11 +405,21 @@ DiagonalTransientModel::createOutArgs() const
   outArgs.setSupports(OUT_ARG_DfDp,0,DERIV_MV_BY_COL);
   outArgs.set_DfDp_properties(
     0,DerivativeProperties(
-      DERIV_LINEARITY_NONCONST
-      ,DERIV_RANK_DEFICIENT
-      ,true // supportsAdjoint
+      DERIV_LINEARITY_NONCONST,
+      DERIV_RANK_DEFICIENT,
+      true // supportsAdjoint
       )
     );
+  if (exactSolutionAsResponse_) {
+    outArgs.setSupports(OUT_ARG_DgDp,0,0,DERIV_MV_BY_COL);
+    outArgs.set_DgDp_properties(
+      0,0,DerivativeProperties(
+        DERIV_LINEARITY_NONCONST,
+        DERIV_RANK_DEFICIENT,
+        true // supportsAdjoint
+        )
+      );
+  }
   return outArgs;
 }
 
@@ -329,19 +429,29 @@ void DiagonalTransientModel::evalModel(
   ) const
 {
 
+  using Teuchos::rcp;
   using Teuchos::RefCountPtr;
   using Teuchos::null;
   using Teuchos::dyn_cast;
 
   const Epetra_Vector &x = *(inArgs.get_x());
   const double t = inArgs.get_t();
-  const Epetra_Vector *p = 0;
-  if (Np_) p = inArgs.get_p(0).get();
+  if (Np_) set_coeff_s_p(inArgs.get_p(0)); // Sets for coeff_s(...) function!
+  UnsetParameterVector unsetParameterVector(rcp(&coeff_s_p_,false));
+  // Note: Above, the destructor for unsetParameterVector will ensure that the
+  // RCP to the parameter vector will be unset no matter if an exception is
+  // thrown or not.
 
   Epetra_Operator *W_out = ( implicit_ ? outArgs.get_W().get() : 0 );
   Epetra_Vector *f_out = outArgs.get_f().get();
   Epetra_MultiVector *DfDp_out = 0;
   if (Np_) DfDp_out = get_DfDp_mv(0,outArgs).get();
+  Epetra_Vector *g_out = 0;
+  Epetra_MultiVector *DgDp_out = 0;
+  if (exactSolutionAsResponse_) {
+    g_out = outArgs.get_g(0).get();
+    DgDp_out = get_DgDp_mv(0,0,outArgs,DERIV_MV_BY_COL).get();
+  }
 
   const Epetra_Vector &lambda = *lambda_;
 
@@ -404,6 +514,18 @@ void DiagonalTransientModel::evalModel(
       }
     }
   }
+
+  if (g_out) {
+    *g_out = *getExactSolution(t,&*coeff_s_p_);
+    // Note: Above will wipe out coeff_s_p_ as a side effect!
+  }
+
+  if (DgDp_out) {
+    *DgDp_out = *getExactSensSolution(t,&*coeff_s_p_);
+    // Note: Above will wipe out coeff_s_p_ as a side effect!
+  }
+
+  // Warning: From here on out coeff_s_p_ is unset!
   
 }
 
@@ -436,9 +558,14 @@ void DiagonalTransientModel::initialize()
       const int N = lambda.GlobalLength();
       const double slope = (lambda_max_ - lambda_min_)/(N-1);
       const int MyLength = lambda.MyLength();
-      for ( int i=0 ; i<MyLength ; ++i )
-      {
-        lambda[i] = slope*(procRank*MyLength+i)+lambda_min_;
+      if (1==MyLength) {
+        lambda[0] = lambda_min_;
+      }
+      else {
+        for ( int i=0 ; i<MyLength ; ++i )
+        {
+          lambda[i] = slope*(procRank*MyLength+i)+lambda_min_;
+        }
       }
       break;
     }
@@ -472,7 +599,7 @@ void DiagonalTransientModel::initialize()
     rcp( new Epetra_LocalMap(np_,0,*epetra_comm_) )
     );
 
-  coeff_s_idx_.resize(0);
+  coeff_s_idx_.clear();
   const int num_func_per_coeff_s = numElements_ / np_;
   const int num_func_per_coeff_s_rem = numElements_ % np_;
   for ( int coeff_s_idx_i = 0; coeff_s_idx_i < np_; ++coeff_s_idx_i ) {
@@ -492,6 +619,21 @@ void DiagonalTransientModel::initialize()
   TEST_FOR_EXCEPT(
     ( as<int>(coeff_s_idx_.size()) != numElements_ ) && "Internal programming error!" );
 #endif
+
+  //
+  // Setup exact solution as response function
+  //
+
+  if (exactSolutionAsResponse_) {
+    Ng_ = 1;
+    map_g_.clear();
+    map_g_.push_back(
+      rcp( new Epetra_LocalMap(1,0,*epetra_comm_) )
+      );
+  }
+  else {
+    Ng_ = 0;
+  }
 
   //
   // Setup graph for W
@@ -544,11 +686,43 @@ void DiagonalTransientModel::initialize()
   }
 
   // Set p_init
+  p_init_.clear();
   p_init_.push_back(
     rcp( new Epetra_Vector( ::Copy, *map_p_[0], &coeff_s_[0] ) )
     );
 
 }
+
+
+void DiagonalTransientModel::set_coeff_s_p( 
+  const Teuchos::RefCountPtr<const Epetra_Vector> &coeff_s_p
+  ) const
+{
+  if (!is_null(coeff_s_p))
+    coeff_s_p_ = coeff_s_p;
+  else
+    unset_coeff_s_p();
+}
+
+
+void DiagonalTransientModel::unset_coeff_s_p() const
+{
+  using Teuchos::as;
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT(
+    as<int>(get_p_map(0)->NumGlobalElements()) == as<int>(coeff_s_.size()) );
+#endif
+  coeff_s_p_ = Teuchos::rcp(
+    new Epetra_Vector(
+      ::View,
+      *get_p_map(0),
+      const_cast<double*>(&coeff_s_[0])
+      )
+    );
+  // Note: The above const cast is okay since the coeff_s_p_ RCP is to a const
+  // Epetr_Vector!
+}
+
 
 
 } // namespace EpetraExt

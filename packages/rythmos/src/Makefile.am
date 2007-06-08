@@ -60,14 +60,16 @@ CORE_H = \
 	$(srcdir)/Rythmos_ForwardSensitivityStepper.hpp\
 	$(srcdir)/Rythmos_HermiteInterpolator.hpp\
 	$(srcdir)/Rythmos_ImplicitBDFStepper.hpp\
+	$(srcdir)/Rythmos_InterpolationBuffer.hpp\
 	$(srcdir)/Rythmos_InterpolationBufferAsStepper.hpp\
 	$(srcdir)/Rythmos_InterpolationBufferBase.hpp\
-	$(srcdir)/Rythmos_InterpolationBuffer.hpp\
 	$(srcdir)/Rythmos_InterpolatorBase.hpp\
 	$(srcdir)/Rythmos_LinearInterpolator.hpp\
-	$(srcdir)/Rythmos_SingleResidualModelEvaluatorBase.hpp\
 	$(srcdir)/Rythmos_SingleResidualModelEvaluator.hpp\
+	$(srcdir)/Rythmos_SingleResidualModelEvaluatorBase.hpp\
 	$(srcdir)/Rythmos_SolverAcceptingStepperBase.hpp\
+	$(srcdir)/Rythmos_StateAndForwardSensitivityModelEvaluator.hpp\
+	$(srcdir)/Rythmos_StepperAsModelEvaluator.hpp\
 	$(srcdir)/Rythmos_StepperBase.hpp\
 	$(srcdir)/Rythmos_StepperSupportTypes.hpp\
 	$(srcdir)/Rythmos_TimeStepNonlinearSolver.hpp\

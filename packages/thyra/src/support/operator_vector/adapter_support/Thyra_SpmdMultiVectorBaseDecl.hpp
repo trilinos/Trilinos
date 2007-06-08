@@ -324,6 +324,9 @@ private:
   Index  localOffset_;
   Index  localSubDim_;
   Index  numCols_;
+
+  mutable Scalar *nonconstLocalValuesViewPtr_;
+  mutable const Scalar *localValuesViewPtr_;
   
 }; // end class SpmdMultiVectorBase
 

@@ -38,12 +38,12 @@ error the way that an assert command does. */
 #include "Epetra_ConfigDefs.h"
 using namespace std;
 // This function is to be used when first identifying an error.
-#define EPETRA_TEST_ERR(a,b) { { int epetra_testing_err = a; \
+#define EPETRA_TEST_ERR(a,b) { { int epetra_testing_err = (a); \
   if (epetra_testing_err != 0) {\
     cerr << "Non zero error code " << epetra_testing_err << \
        ", file: " << __FILE__ << ", line: " << __LINE__ << endl;\
     if (epetra_testing_err < 0) {\
-      b+=1;\
+      (b)+=1;\
     }\
   }\
   }\

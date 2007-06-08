@@ -122,6 +122,9 @@ using std::sprintf;
 #include <iostream.h>
 #endif
 
+#if HAVE_SSTREAM
+#include <sstream>
+#endif
 
 #ifdef HAVE_CMATH
 #include <cmath>

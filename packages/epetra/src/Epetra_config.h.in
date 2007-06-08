@@ -89,6 +89,9 @@
 /* define if we want to use MPI */
 #undef HAVE_MPI
 
+/* Define to 1 if you have the <sstream> header file. */
+#undef HAVE_SSTREAM
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 

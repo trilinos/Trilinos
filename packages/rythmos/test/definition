@@ -177,6 +177,7 @@
     COMM = SERIAL,MPI;
 }
 
+
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL0) {
     TESTS = ../example/diagonalTransient/diagonalTransient.exe;
     ARGS =
@@ -196,6 +197,7 @@
       --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_MEDIUM;
     COMM = SERIAL;
 }
+
 
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL1) {
     TESTS = ../example/diagonalTransient/diagonalTransient.exe;
@@ -217,6 +219,7 @@
       --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_MEDIUM;
     COMM = SERIAL;
 }
+
 
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL2) {
     TESTS = ../example/diagonalTransient/diagonalTransient.exe;
@@ -262,6 +265,130 @@
       --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_EXTREME;
     COMM = SERIAL;
 }
+
+
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL3) {
+    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    ARGS =
+      --linear-solver-extra-params="
+        <ParameterList>
+          <ParameterList name=\"TimeStepNonlinearSolver\">
+            <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
+            <Parameter name=\"Nonlinear Safety Factor\" type=\"double\" value=\"0.1\"/>
+            <Parameter name=\"Linear Safety Factor\" type=\"double\" value=\"0.05\"/>
+            <Parameter name=\"R Min Fraction\" type=\"double\" value=\"0.3\"/>
+            <Parameter name=\"Thrown on Linear Solve Failure\" type=\"bool\" value=\"0\"/>
+          </ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
+            <Parameter name=\"Preconditioner Type\" type=\"string\" value=\"None\"/>
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"16\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{ 31.4159\,  30.0\, 15.0\, 5.0 \}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"none\"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name=\"FD Calc\">
+            <Parameter name=\"FD Method\" type=\"string\" value=\"order-four-central\"/>
+            <Parameter name=\"FD Step Length\" type=\"double\" value=\"1e+1\"/>
+            <Parameter name=\"FD Step Select Type\" type=\"string\" value=\"Relative\"/>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-4 --num-time-steps=10 --verb-level=VERB_LOW \
+      --echo-command-line \
+      --fwd-sens-solve \
+      --max-state-error=1e-6 \
+      --max-sens-error=1e-6 \
+      --dump-final-solutions;
+    COMM = SERIAL;
+}
+
+
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL4) {
+    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    ARGS =
+      --linear-solver-extra-params="
+        <ParameterList>
+          <ParameterList name=\"TimeStepNonlinearSolver\">
+            <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
+            <Parameter name=\"Nonlinear Safety Factor\" type=\"double\" value=\"0.1\"/>
+            <Parameter name=\"Linear Safety Factor\" type=\"double\" value=\"0.05\"/>
+            <Parameter name=\"R Min Fraction\" type=\"double\" value=\"0.3\"/>
+            <Parameter name=\"Thrown on Linear Solve Failure\" type=\"bool\" value=\"0\"/>
+          </ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
+            <Parameter name=\"Preconditioner Type\" type=\"string\" value=\"None\"/>
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"1\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{ 31.4159 \}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"none\"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name=\"FD Calc\">
+            <Parameter name=\"FD Method\" type=\"string\" value=\"order-four-central\"/>
+            <Parameter name=\"FD Step Length\" type=\"double\" value=\"1e+1\"/>
+            <Parameter name=\"FD Step Select Type\" type=\"string\" value=\"Relative\"/>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-4 --num-time-steps=10 --verb-level=VERB_LOW \
+      --echo-command-line \
+      --fwd-sens-solve \
+      --max-state-error=1e-6 \
+      --max-sens-error=1e-6 \
+      --dump-final-solutions;
+    COMM = SERIAL;
+}
+
+
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL5) {
+    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    ARGS =
+      --linear-solver-extra-params="
+        <ParameterList>
+          <ParameterList name=\"TimeStepNonlinearSolver\">
+            <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
+            <Parameter name=\"Nonlinear Safety Factor\" type=\"double\" value=\"0.1\"/>
+            <Parameter name=\"Linear Safety Factor\" type=\"double\" value=\"0.05\"/>
+            <Parameter name=\"R Min Fraction\" type=\"double\" value=\"0.3\"/>
+            <Parameter name=\"Thrown on Linear Solve Failure\" type=\"bool\" value=\"0\"/>
+          </ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
+            <Parameter name=\"Preconditioner Type\" type=\"string\" value=\"None\"/>
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"5\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{ 31.4159 \}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"none\"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name=\"FD Calc\">
+            <Parameter name=\"FD Method\" type=\"string\" value=\"order-four-central\"/>
+            <Parameter name=\"FD Step Length\" type=\"double\" value=\"1e+1\"/>
+            <Parameter name=\"FD Step Select Type\" type=\"string\" value=\"Relative\"/>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-4 --num-time-steps=10 --verb-level=VERB_LOW \
+      --echo-command-line \
+      --fwd-sens-solve \
+      --max-state-error=1e-6 \
+      --max-sens-error=1e-6 \
+      --dump-final-solutions;
+    COMM = SERIAL;
+}
+
 
 # Explicit Taylor polynomial integration on Van der Pol oscillator
 (FRAMEWORK,INSTALL) {

@@ -53,6 +53,7 @@ public:
   /** \brief . */
   virtual void initializeSingleResidualModel(
     const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &daeModel,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
     const Scalar &coeff_x_dot,
     const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_dot_base,
     const Scalar &coeff_x,

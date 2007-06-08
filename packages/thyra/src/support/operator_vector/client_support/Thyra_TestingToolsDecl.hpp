@@ -30,6 +30,7 @@
 #define THYRA_TESTING_TOOLS_DECL_HPP
 
 #include "Thyra_OperatorVectorTypes.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
 
 namespace Thyra {
 
@@ -112,6 +113,31 @@ bool testRelErrors(
   ,const ScalarMag                                              &maxRelErr_warning
   ,std::ostream                                                 *out
   ,const std::string                                            &leadingIndent = std::string("")
+  );
+
+/** \brief Compute, check and optionally print the relative errors in two vectors.
+ *
+ * This function only looks at the difference in the relative errors in the
+ * natural norm of the difference between two vectors.  This does not perform
+ * a component-by-component check.
+ *
+ * ToDo: Finish documentation!
+ *
+ * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ */
+template<class Scalar>
+bool testRelNormDiffErr(
+  const std::string &v1_name,
+  const VectorBase<Scalar> &v1,
+  const std::string &v2_name,
+  const VectorBase<Scalar> &v2,
+  const std::string &maxRelErr_error_name,
+  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_error,
+  const std::string &maxRelErr_warning_name,
+  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &maxRelErr_warning,
+  std::ostream *out,
+  const Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_LOW,
+  const std::string &leadingIndent = std::string("")
   );
 
 /** \brief Check that an error is less than some error tolerence.

@@ -112,7 +112,10 @@ public:
     /** \brief .  */
     bool supports(EInArgsMembers arg) const;
     /** \brief Set non-null arguments (does not overwrite non-NULLs with NULLs) .  */
-    void setArgs( const InArgs<Scalar>& inArgs, bool ignoreUnsupported = false );
+    void setArgs(
+      const InArgs<Scalar>& inArgs, bool ignoreUnsupported = false,
+      bool cloneObjects = false
+      );
     /** \brief . */
     std::string description() const;
     /** \brief . */
@@ -267,6 +270,22 @@ public:
     /** \brief . */
     EDerivativeMultiVectorOrientation getOrientation() const
       { return orientation_; }
+    /** \brief . */
+    void describe( 
+      Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel
+      )
+      {
+        using std::endl;
+        using Teuchos::describe;
+        Teuchos::OSTab tab1(out);
+        out << "DerivativeMultiVector\n";
+        Teuchos::OSTab tab2(out);
+        out
+          << "orientation = "
+          << toString(getOrientation()) << endl
+          << "multiVec = "
+          << describe(*getMultiVector(),verbLevel);
+      }
   private:
     Teuchos::RefCountPtr<MultiVectorBase<Scalar> > mv_;
     EDerivativeMultiVectorOrientation orientation_;
@@ -309,6 +328,30 @@ public:
     /** \brief . */
     DerivativeMultiVector<Scalar> getDerivativeMultiVector() const
       { return dmv_; }
+    /** \brief . */
+    void describe( 
+      Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel
+      )
+      {
+        using std::endl;
+        using Teuchos::describe;
+        Teuchos::OSTab tab1(out);
+        out << "Derivative:";
+        if (isEmpty()) {
+          out << " NULL\n";
+        }
+        else if (!is_null(getLinearOp())) {
+          out
+            << endl
+            << "linearOp = " << describe(*getLinearOp(),verbLevel);
+        }
+        else {
+          out
+            << endl
+            << "derivMultiVec = ";
+          getDerivativeMultiVector().describe(out,verbLevel);
+        }
+      }
   private:
     Teuchos::RefCountPtr<LinearOpBase<Scalar> > lo_;
     DerivativeMultiVector<Scalar> dmv_;
@@ -406,6 +449,8 @@ public:
     void setFailed() const;
     /** \brief . */
     bool isFailed() const;
+    /** \brief . */
+    bool isEmpty() const;
     /** \brief . */
     std::string description() const;
     /** \brief . */
@@ -618,6 +663,29 @@ std::string Thyra::toString(ModelEvaluatorBase::EDerivativeMultiVectorOrientatio
 
 namespace Thyra {
 
+
+namespace ModelEvaluatorHelperPack {
+
+
+template<class Scalar>
+inline
+Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+condCloneVec(
+  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &vec,
+  bool cloneObject
+  )
+{
+  if(cloneObject)
+    return vec->clone_v();
+  return vec;
+}
+
+
+
+
+} // namespace ModelEvaluatorHelperPack
+
+
 //
 // ModelEvaluatorBase::InArgs
 //
@@ -718,28 +786,36 @@ bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::setArgs( const InArgs<Scalar>& inArgs, bool ignoreUnsupported )
+void ModelEvaluatorBase::InArgs<Scalar>::setArgs(const InArgs<Scalar>& inArgs, bool ignoreUnsupported, bool cloneObjects
+  )
 {
+  using ModelEvaluatorHelperPack::condCloneVec;
   if( inArgs.supports(IN_ARG_x_dot) && inArgs.get_x_dot().get() ) {
     if(supports(IN_ARG_x_dot) || !ignoreUnsupported)
-      set_x_dot(inArgs.get_x_dot());
+      set_x_dot(condCloneVec(inArgs.get_x_dot(),cloneObjects));
   }
   if( inArgs.supports(IN_ARG_x) && inArgs.get_x().get() ) {
     if(supports(IN_ARG_x) || !ignoreUnsupported)
-      set_x(inArgs.get_x());
+      set_x(condCloneVec(inArgs.get_x(),cloneObjects));
   }
   if( inArgs.supports(IN_ARG_x_dot_poly) && inArgs.get_x_dot_poly().get() ) {
-    if(supports(IN_ARG_x_dot_poly) || !ignoreUnsupported)
+    if(supports(IN_ARG_x_dot_poly) || !ignoreUnsupported) {
+      TEST_FOR_EXCEPT(
+        cloneObjects && "Have not implemented cloning for x_dot_poly yet!" );
       set_x_dot_poly(inArgs.get_x_dot_poly());
+    }
   }
   if( inArgs.supports(IN_ARG_x_poly) && inArgs.get_x_poly().get() ) {
-    if(supports(IN_ARG_x_poly) || !ignoreUnsupported)
+    if(supports(IN_ARG_x_poly) || !ignoreUnsupported) {
+      TEST_FOR_EXCEPT(
+        cloneObjects && "Have not implemented cloning for x_poly yet!" );
       set_x_poly(inArgs.get_x_poly());
+    }
   }
   const int min_Np = TEUCHOS_MIN(this->Np(),inArgs.Np());
   for( int l = 0; l < min_Np; ++l ) {
     if(inArgs.get_p(l).get())
-      set_p(l,inArgs.get_p(l));
+      set_p(l,condCloneVec(inArgs.get_p(l),cloneObjects));
   }
   if( inArgs.supports(IN_ARG_t) ) {
     if(supports(IN_ARG_t) || !ignoreUnsupported)
@@ -774,6 +850,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
   Teuchos::FancyOStream &out_arg, const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
+  using std::endl;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Teuchos::OSTab;
   using Teuchos::describe;
@@ -794,28 +871,37 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
     case Teuchos::VERB_EXTREME:
     {
       if(this->supports(IN_ARG_x_dot) ) {
-        *out << "x_dot =";
+        *out << "x_dot = ";
         CV_ptr x_dot = this->get_x_dot();
         if(x_dot.get())
-          *out << "\n" << describe(*x_dot,verbLevel);
+          *out << describe(*x_dot,verbLevel);
         else
           *out << " NULL\n";
       }
       if(this->supports(IN_ARG_x) ) {
-        *out << "x =";
+        *out << "x = ";
         CV_ptr x = this->get_x();
         if(x.get())
-          *out << "\n" << describe(*x,verbLevel);
+          *out << describe(*x,verbLevel);
         else
           *out << " NULL\n";
       }
       for( int l = 0; l < Np(); ++l ) {
-        *out << "p("<<l<<") =";
+        *out << "p("<<l<<") = ";
         CV_ptr p_l = this->get_p(l);
         if(p_l.get())
-          *out << "\n" << describe(*p_l,verbLevel);
+          *out << describe(*p_l,verbLevel);
         else
           *out << " NULL\n";
+      }
+      if (this->supports(IN_ARG_t)) {
+        *out << "t = " << t_ << endl;
+      }
+      if (this->supports(IN_ARG_alpha)) {
+        *out << "alpha = " << alpha_ << endl;
+      }
+      if (this->supports(IN_ARG_beta)) {
+        *out << "beta = " << beta_ << endl;
       }
       // ToDo: Add output for more objects!
       break;
@@ -1154,6 +1240,34 @@ bool ModelEvaluatorBase::OutArgs<Scalar>::isFailed() const
 }
 
 template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::isEmpty() const
+{
+  if (!is_null(f_))
+    return false;
+  if (!is_null(W_))
+    return false;
+  if (!is_null(W_op_))
+    return false;
+  for ( int l = 0; l < Np(); ++l ) {
+    if (!DfDp_[l].isEmpty())
+      return false;
+  }
+  if (!is_null(f_poly_))
+    return false;
+  for ( int j = 0; j < Ng(); ++j ) {
+    if (!is_null(g_[j]))
+      return false;
+    if (!DgDx_[j].isEmpty())
+      return false;
+    for ( int l = 0; l < Np(); ++l ) {
+      if (!DgDp_[j*Np()+l].isEmpty())
+        return false;
+    }
+  }
+  return true;
+}
+
+template<class Scalar>
 std::string ModelEvaluatorBase::OutArgs<Scalar>::description() const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -1199,44 +1313,41 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
         *out << "f =";
         CV_ptr f = this->get_f();
         if(f.get())
-          *out << "\n" << describe(*f,verbLevel);
+          *out << describe(*f,verbLevel);
         else
           *out << " NULL\n";
       }
       for( int j = 0; j < Ng(); ++j ) {
-        *out << "g("<<j<<") =";
+        *out << "g("<<j<<") = ";
         CV_ptr g_j = this->get_g(j);
         if(g_j.get())
-          *out << "\n" << describe(*g_j,verbLevel);
+          *out << describe(*g_j,verbLevel);
         else
           *out << " NULL\n";
       }
       if(this->supports(OUT_ARG_W) ) {
-        *out << "W =";
+        *out << "W = ";
         CLOWS_ptr W = this->get_W();
         if(W.get())
-          *out << "\n" << describe(*W,verbLevel);
+          *out << describe(*W,verbLevel);
         else
           *out << " NULL\n";
       }
       for( int l = 0; l < Np(); ++l ) {
         if(!this->supports(OUT_ARG_DfDp,l).none()) {
-          *out << "DfDp("<<l<<") =";
-          const MEB::Derivative<Scalar> DfDp_l = this->get_DfDp(l);
-          if(!DfDp_l.isEmpty()) {
-            *out << "\n";
-            if(DfDp_l.getLinearOp().get()) {
-              *out << describe(*DfDp_l.getLinearOp(),verbLevel);
-            }
-            else {
-              OSTab(out).o()
-                << "orientation="
-                << toString(DfDp_l.getDerivativeMultiVector().getOrientation()) << "\n";
-              *out << describe(*DfDp_l.getDerivativeMultiVector().getMultiVector(),verbLevel);
-            }
-          }
-          else {
-            *out << " NULL\n";
+          *out << "DfDp("<<l<<") = ";
+          this->get_DfDp(l).describe(*out,verbLevel);
+        }
+      }
+      for( int j = 0; j < Ng(); ++j ) {
+        if(!this->supports(OUT_ARG_DgDx,j).none()) {
+          *out << "DgDx("<<j<<") = ";
+          this->get_DgDx(j).describe(*out,verbLevel);
+        }
+        for( int l = 0; l < Np(); ++l ) {
+          if(!this->supports(OUT_ARG_DgDp,j,l).none()) {
+            *out << "DgDp("<<j<<","<<l<<") = ";
+            this->get_DgDp(j,l).describe(*out,verbLevel);
           }
         }
       }
@@ -1244,14 +1355,16 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true);
+      TEST_FOR_EXCEPT("Should never get here!");
   }
 }
 
 // protected
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::_setModelEvalDescription( const std::string &modelEvalDescription )
+void ModelEvaluatorBase::OutArgs<Scalar>::_setModelEvalDescription(
+  const std::string &modelEvalDescription
+  )
 { modelEvalDescription_ = modelEvalDescription; }
 
 template<class Scalar>

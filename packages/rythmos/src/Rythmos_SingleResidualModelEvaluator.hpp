@@ -35,11 +35,8 @@
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
-
-#ifdef THYRA_RYTHMOS_DEBUG
 #include "Thyra_TestingTools.hpp"
-#endif // THYRA_RYTHMOS_DEBUG
-
+#include "Teuchos_as.hpp"
 
 namespace Rythmos {
 
@@ -86,6 +83,7 @@ public:
   /** \brief . */
   void initializeSingleResidualModel(
     const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &daeModel,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
     const Scalar &coeff_x_dot,
     const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_dot_base,
     const Scalar &coeff_x,
@@ -132,6 +130,7 @@ public:
 
 private:
 
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   Scalar coeff_x_dot_;
   Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > x_dot_base_;
   Scalar coeff_x_;
@@ -166,6 +165,7 @@ SingleResidualModelEvaluator<Scalar>::SingleResidualModelEvaluator()
 template<class Scalar>
 void SingleResidualModelEvaluator<Scalar>::initializeSingleResidualModel(
   const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &daeModel,
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
   const Scalar &coeff_x_dot,
   const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_dot_base,
   const Scalar &coeff_x,
@@ -175,6 +175,7 @@ void SingleResidualModelEvaluator<Scalar>::initializeSingleResidualModel(
   )
 {
   this->Thyra::ModelEvaluatorDelegatorBase<Scalar>::initialize(daeModel);
+  basePoint_ = basePoint;
   coeff_x_dot_ = coeff_x_dot;
   x_dot_base_ = x_dot_base;
   coeff_x_ = coeff_x;
@@ -280,7 +281,6 @@ SingleResidualModelEvaluator<Scalar>::createInArgs() const
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::InArgsSetup<Scalar> inArgs;
   inArgs.setSupports(MEB::IN_ARG_x);
-  inArgs.setSupports(MEB::IN_ARG_beta);
   return inArgs;
 }
 
@@ -299,89 +299,93 @@ SingleResidualModelEvaluator<Scalar>::createOutArgs() const
 
 template<class Scalar>
 void SingleResidualModelEvaluator<Scalar>::evalModel(
-  const Thyra::ModelEvaluatorBase::InArgs<Scalar>&   inArgs_bar
-  ,const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs_bar
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs_bar,
+  const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs_bar
   ) const
 {
+
+  using std::endl;
+  using Teuchos::as;
+  typedef Thyra::ModelEvaluatorBase MEB;
+
   const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
     daeModel = this->getUnderlyingModel();
-#ifdef THYRA_RYTHMOS_DEBUG
-  std::cout << "----------------------------------------------------------------------" << std::endl;
-  std::cout << "Rythmos::SingleResidualModelEvaluator::evalModel" << std::endl;
-#endif // THYRA_RYTHMOS_DEBUG
+
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
+    "Rythmos::SingleResidualModelEvaluator",inArgs_bar,outArgs_bar
+    );
+
+  const bool dumpAll = ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) );
+
   const Thyra::VectorBase<Scalar> &x_bar = *inArgs_bar.get_x(); 
+
   // x_dot = coeff_x_dot * x_bar + x_dot_base
+
   if (x_dot_base_.get())
     Thyra::V_StVpV( &*x_dot_, coeff_x_dot_, x_bar, *x_dot_base_ );
   else
     Thyra::V_StV( &*x_dot_, coeff_x_dot_, x_bar);
-#ifdef THYRA_RYTHMOS_DEBUG
-  std::cout << "x_dot_ = coeff_x_dot_ * x_bar + x_dot_base_" << std::endl;
-  std::cout << "coeff_x_dot_ = " << coeff_x_dot_             << std::endl;
-  std::cout << "x_bar = "                                    << std::endl;
-  std::cout <<  x_bar                                        << std::endl;
-  std::cout << "x_dot_base_ = ";
-  if ( x_dot_base_.get() )
-    std::cout << "\n" << *x_dot_base_                        << std::endl;
-  else
-    std::cout << "null"                                      << std::endl;
-  std::cout << "x_dot_ = ";
-  if ( x_dot_.get() )
-    std::cout << "\n" << *x_dot_                             << std::endl;
-  else
-    std::cout << "null"                                      << std::endl;
-#endif // THYRA_RYTHMOS_DEBUG
+
+  if (dumpAll) {
+    *out << "\nx_dot_ = coeff_x_dot_ * x_bar + x_dot_base_\n";
+    *out << "\ncoeff_x_dot_ = " << coeff_x_dot_ << endl;
+    *out << "\nx_bar = " << x_bar;
+    *out << "\nx_dot_base_ = ";
+    if ( x_dot_base_.get() )
+      *out << *x_dot_base_;
+    else
+      *out << "null" << endl;
+    *out << "\nx_dot_ = ";
+    if ( x_dot_.get() )
+      *out << *x_dot_;
+    else
+      *out << "null" << endl;
+  }
 
   // x = coeff_x * x_bar + x_base
+
   if (x_base_.get())
     Thyra::V_StVpV( &*x_, coeff_x_, x_bar, *x_base_ );
   else
     Thyra::V_StV( &*x_, coeff_x_, x_bar);
-#ifdef THYRA_RYTHMOS_DEBUG
-  std::cout << "x_ = coeff_x_ * x_bar + x_base_" << std::endl;
-  std::cout << "coeff_x_ = " << coeff_x_         << std::endl;
-  std::cout << "x_bar = "                        << std::endl;
-  std::cout <<  x_bar                            << std::endl;
-  std::cout << "x_base_ = ";
-  if ( x_base_.get() )
-    std::cout << "\n" << *x_base_                << std::endl;
-  else
-    std::cout << "null"                          << std::endl;
-  std::cout << "x_ = ";
-  if ( x_.get() )
-    std::cout << "\n" << *x_                     << std::endl;
-  else
-    std::cout << "null"                          << std::endl;
-#endif // THYRA_RYTHMOS_DEBUG
+
+  if (dumpAll) {
+    *out << "\nx_ = coeff_x_ * x_bar + x_base_\n";
+    *out << "\ncoeff_x_ = " << coeff_x_ << endl;
+    *out << "\nx_bar = " << x_bar;
+    *out << "\nx_base_ = ";
+    if ( x_base_.get() )
+      *out << *x_base_;
+    else
+      *out << "null" << endl;
+    *out << "\nx_ = ";
+    if ( x_.get() )
+      *out << *x_;
+    else
+      *out << "null" << endl;
+  }
 
   // Compute W and f
+
+  if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW))
+    *out << "\nEvaluating the underlying DAE model at (x_bar_dot,x_bar,t) ...\n";
+
   Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> > W;
-  if( (W = outArgs_bar.get_W()).get() ) {
-    // Compute Jacobian and the residual
-    const Scalar beta = inArgs_bar.get_beta();
-    eval_f_W(
-      *daeModel
-      ,*x_dot_, *x_, t_base_, Scalar(beta*coeff_x_dot_), Scalar(beta*coeff_x_)
-      ,outArgs_bar.get_f().get(), &*W
-      );
-#ifdef THYRA_RYTHMOS_DEBUG
-    std::cout << "f = "                 << std::endl;
-    std::cout << *(outArgs_bar.get_f()) << std::endl;
-    std::cout << "W = "                 << std::endl;
-    std::cout << *W                     << std::endl;
-#endif // THYRA_RYTHMOS_DEBUG
-  }
-  else {
-    // Compute only the residual
-    eval_f( *daeModel, *x_dot_, *x_, t_base_, &*outArgs_bar.get_f() );
-#ifdef THYRA_RYTHMOS_DEBUG
-    std::cout << "f = "                 << std::endl;
-    std::cout << *(outArgs_bar.get_f()) << std::endl;
-#endif // THYRA_RYTHMOS_DEBUG
-  }
-#ifdef THYRA_RYTHMOS_DEBUG
-  std::cout << "----------------------------------------------------------------------" << std::endl;
-#endif // THYRA_RYTHMOS_DEBUG
+
+  MEB::InArgs<Scalar> daeInArgs = daeModel->createInArgs();
+  daeInArgs.setArgs(basePoint_);
+  daeInArgs.set_x_dot(x_dot_);
+  daeInArgs.set_x(x_);
+  daeInArgs.set_t(t_base_);
+  daeInArgs.set_alpha(coeff_x_dot_);
+  daeInArgs.set_beta(coeff_x_);
+  MEB::OutArgs<Scalar> daeOutArgs = daeModel->createOutArgs();
+  daeOutArgs.set_f(outArgs_bar.get_f()); // can be null
+  daeOutArgs.set_W(outArgs_bar.get_W()); // can be null
+  daeModel->evalModel(daeInArgs,daeOutArgs);
+
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
+
 }
 
 

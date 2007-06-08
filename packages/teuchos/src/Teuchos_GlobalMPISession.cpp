@@ -93,7 +93,7 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
     }
   }
   if( out && printStartupBanner )
-    *out << oss.str();
+    *out << oss.str() << std::flush;
 #endif
 }
 
