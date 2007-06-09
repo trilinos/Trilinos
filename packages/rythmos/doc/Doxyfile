@@ -66,10 +66,13 @@ WARN_FORMAT            = "$file:$line: $text"
 INPUT                  = index.doc \
                          ../src \
                          ../example/basicExample/ExampleApplication.hpp \
-                        ../example/basicExample/ExampleApplication.cpp \
+                         ../example/basicExample/ExampleApplication.cpp \
                          ../example/basicExample/cxx_main.cpp \
-                         ../example/epetra/1Dfem/ExampleApplication.hpp \
-                         ../example/epetra/1Dfem/ExampleApplication.cpp \
+                         ../example/diagonalTransient/diagonalTransientMain.cpp \
+                         ../../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.hpp \
+                         ../../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp \
+                         ../example/epetra/1Dfem/ExampleApplication1Dfem.hpp \
+                         ../example/epetra/1Dfem/ExampleApplication1Dfem.cpp \
                          ../example/epetra/1Dfem/1DfemInterface.H \
                          ../example/epetra/1Dfem/1DfemInterface.C \
                          ../example/epetra/1Dfem/1DfemTransient.H \
@@ -83,7 +86,7 @@ EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = 
 INPUT_FILTER           = 
 ALPHABETICAL_INDEX     = YES
-COLS_IN_ALPHA_INDEX    = 5
+COLS_IN_ALPHA_INDEX    = 4
 IGNORE_PREFIX          = 
 #
 # What diagrams are created

@@ -73,8 +73,8 @@ public:
   /** \brief Clone the stepper object if supported.
    *
    * <b>Postconditions:</b><ul>
-   * <tt>[<tt>supportsCloning()==true</tt>] <tt>returnVal != Teuchos::null</tt>
-   * <tt>[<tt>supportsCloning()==false</tt>] <tt>returnVal == Teuchos::null</tt>
+   * <li>[<tt>supportsCloning()==true</tt>] <tt>returnVal != Teuchos::null</tt>
+   * <li>[<tt>supportsCloning()==false</tt>] <tt>returnVal == Teuchos::null</tt>
    * </ul>
    *
    * Note that cloning a stepper in this case does not imply that the full
@@ -113,6 +113,8 @@ public:
    * <b>Preconditions:</b><ul>
    * <li><tt>acceptsModel()==true</tt>
    * <li><tt>!is_null(model)</tt>
+   * <li>ToDo: Put in preconditions for what InArgs and OutArgs objects must be
+   *     supported!
    * </ul>
    *
    * <b>Postconditions:</b><ul>

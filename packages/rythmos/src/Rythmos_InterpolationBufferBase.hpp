@@ -136,7 +136,7 @@ public:
   /** \brief . */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
-  /** Return the space for <tt>x</tt> and <tt>x_dot</tt>.
+  /** \brief Return the space for <tt>x</tt> and <tt>x_dot</tt>.
    *
    * This space can be used to create vectors for calling <tt>setPoints()</tt>
    * for instance and is also useful for writing unit testing software.
@@ -155,7 +155,7 @@ public:
   // buffer object should be able to implement this function.  I just don't
   // have time to propogate this yet but I will soon.
 
-  /** Add points to the buffer.
+  /** \brief Add points to the buffer.
    *
    * \param time_vec
    *          [in] Array (length n) of time points.
@@ -178,7 +178,7 @@ public:
    *          copy.
    * \param accuracy_vec
    *          [in] Array (length n) that gives the approximate accuracy of
-   *          each of the input values for <tt>x and <tt>x_dot</tt>.  See the
+   *          each of the input values for <tt>x</tt> and <tt>x_dot</tt>.  See the
    *          definition of accruacy given above.
    *
    * <b>Preconditions:</b><ul>
@@ -208,7 +208,7 @@ public:
     const std::vector<ScalarMag> & accuracy_vec
     ) = 0;
 
-  /** Fill data in from another interpolation buffer.
+  /** \brief Fill data in from another interpolation buffer.
    *
    * \param  range
    *           [in] The time range in <tt>interpBuffer</tt> that will be
@@ -225,7 +225,7 @@ public:
    * <li><tt>range.upper() <= interpBuffer.getTimeRange().upper()</tt> 
    * </ul>
    *
-   * <b>Postconditions:</b>
+   * <b>Postconditions:</b><ul>
    * <li>What are the post conditions?
    * </ul>
    *
@@ -287,6 +287,18 @@ public:
    * unsortedGetPoints(...) helper functions that will take an unsorted
    * time_vec array, sort it, call getPoints(...) and then put the returned
    * values back in the right place.
+   *
+   * 2007/06/08: rabartl: ToDo: Perhaps we need to make getPoints(...) a
+   * non-const member function since it might actually chagne the state of
+   * <tt>*this</tt>!  In the case of the integrator class, calling
+   * getPoints(...)  can actually make it so that the next call to
+   * getPoints(...) might fail if old buffer memory is lost.  Do we need both
+   * a const version (i.e. only return what I already can give you) and a
+   * nonconst version (i.e. I can get the points you need)?  We need to
+   * rethink the concept of a time range to differentiate between what *this
+   * can give you without changing its state vs. a time range of what the
+   * buffer could give you if you asked for it.  Right now this is all very
+   * squishy.
    *
    * rabartl: ToDo: What is the role of the return value?  Is it allowed for
    * the implementation to refuse to return values for only certain times or

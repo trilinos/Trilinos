@@ -124,27 +124,27 @@ namespace Rythmos {
  *
  * \section Rythmos_ForwardSensitivityStepper_details_sec Implementation Details
  *
- * There are a variety of ways that one can go about implementing at state
+ * There are a variety of ways that one can go about implementing a state
  * plus forward sensitivity stepper.  Three ways for doing this are described
  * in the report "Design of New DASPK for Sensitivity Analysis" by Shengtai Li
  * and Linda Petzold.  The three ways are the <em>simultaneous corrector</em>,
- * the <tt>staggered direct</em> and the <em>staggered corrector</em> methods.
+ * the <em>staggered direct</em> and the <em>staggered corrector</em> methods.
  *
  * The <em>simultaneous corrector</em> method would be equivalent to forming
  * one big ModelEvaluator for the state and sensitivities where the "state"
- * variables would be <tt>x_bar</tt> describe above and then solving them with
- * a single stepper object and as single nonlinear solver.  The advantage of
- * this approach is that it makes great reuse of all of the timestepping
- * software.  Also, by being able to specialize the nonlinear solver (which
- * you can't do in the Sundials software or in DASPK) you could set up the
- * nonlinear solver to first solve the nonlinear state timestep equation, and
- * then solve the linear sensitivity equations.  The problem with this
- * approach would be that it would be very wasteful if the timestep had to be
- * cut back in order to reduce the local truncation error of the state
- * solution.  This would result in the sensitivity solution being thrown away
- * for each cut-back iteration.  Because of this fundamental problem, we have
- * not implemented the simultaneous corrector method.  Actually, we are not
- * really sure why anyone implements ths method.
+ * variables would be the <tt>x_bar</tt> variables described above and then
+ * this big system would be solved with a single stepper object and as single
+ * nonlinear solver.  The advantage of this approach is that it makes great
+ * reuse of all of the timestepping software.  Also, by being able to
+ * specialize the nonlinear solver (which you can't do in most software) you
+ * could set up the nonlinear solver to first solve the nonlinear state
+ * timestep equation, and then solve the linear sensitivity equations.  The
+ * problem with this approach would be that it would be very wasteful if the
+ * timestep had to be cut back in order to reduce the local truncation error
+ * of the state solution.  This would result in the sensitivity solution being
+ * thrown away for each cut-back iteration.  Because of this fundamental
+ * problem, we have not implemented the simultaneous corrector method.
+ * Actually, we are not really sure why anyone implements ths method.
  *
  * The <em>staggered direct</em> and <em>staggered corrector</em> methods are
  * similar in several ways.  In each method, the state timestep is first fully
@@ -169,11 +169,12 @@ namespace Rythmos {
  * assume anything about how timesteps are computed and does not care if a
  * predictor/corrector method is used or not.
  *
- * This subclass never forms a full ModelEvaluator for the full state plus
- * forward sensitivity DAE <tt>f_bar(x_bar_hat,x_bar)</tt>.  Instead, the step
- * is solved first for the state equation and then a ModelEvaluator for just
- * the forward sensitivity equations is formed and is solved over the same
- * time step as the forward solve.
+ * While this class does provide a full ModelEvaluator for the full state plus
+ * forward sensitivity DAE <tt>f_bar(x_bar_hat,x_bar)</tt> it is not solved
+ * all at one time as described above.  Instead, the step is solved first for
+ * the state equation and then a ModelEvaluator for just the linear forward
+ * sensitivity equations is formed and is solved over the same time step as
+ * the forward solve.
  *
  * Currently, timestep control is not performed for the forward sensitivity
  * variables.  In the future, however, it would not be too difficult to allow
@@ -185,9 +186,9 @@ namespace Rythmos {
  *
  * 2007/15/21: rabart: ToDo: This class only works for implicit models and
  * steppers right now but it would be easy to get this to work for explicit
- * steppers and models later with a little work.  With an examplicit
- * method/model, we don't need to reuse W_tilde!
-
+ * steppers and models later with a little work.  With an explicit method and
+ * model, we don't need to reuse W_tilde so this is easier in a way!
+ *
  * ToDo: Finish documentation!
  */
 template<class Scalar> 
