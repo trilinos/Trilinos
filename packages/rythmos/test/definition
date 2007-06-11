@@ -390,6 +390,7 @@
 }
 
 
+# Solve state problem with fixed time steps using BDF stepper
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL6) {
     TESTS = ../example/diagonalTransient/diagonalTransient.exe;
     ARGS =
@@ -411,13 +412,8 @@
           </ParameterList>
           <ParameterList name=\"Rythmos Stepper\">
             <ParameterList name=\"VerboseObject\">
-              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"extreme\"/>
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"low\"/>
             </ParameterList>
-          </ParameterList>
-          <ParameterList name=\"FD Calc\">
-            <Parameter name=\"FD Method\" type=\"string\" value=\"order-four-central\"/>
-            <Parameter name=\"FD Step Length\" type=\"double\" value=\"1e+1\"/>
-            <Parameter name=\"FD Step Select Type\" type=\"string\" value=\"Relative\"/>
           </ParameterList>
         </ParameterList>" \
       --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_EXTREME \
@@ -429,9 +425,7 @@
 }
 
 
-# 2007/06/08: rabartl: This is currently a failing test that shows
-# ImplicitBDFStepper::takeStep(max_dt,VARIABLE_STEP) taking a step
-# larger than max_dt (which should never happen).
+# Solve state problem with variable time steps using BDF stepper
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL7,FAILING,FAILING1) {
     TESTS = ../example/diagonalTransient/diagonalTransient.exe;
     ARGS =
@@ -453,13 +447,8 @@
           </ParameterList>
           <ParameterList name=\"Rythmos Stepper\">
             <ParameterList name=\"VerboseObject\">
-              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"extreme\"/>
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"low\"/>
             </ParameterList>
-          </ParameterList>
-          <ParameterList name=\"FD Calc\">
-            <Parameter name=\"FD Method\" type=\"string\" value=\"order-four-central\"/>
-            <Parameter name=\"FD Step Length\" type=\"double\" value=\"1e+1\"/>
-            <Parameter name=\"FD Step Select Type\" type=\"string\" value=\"Relative\"/>
           </ParameterList>
         </ParameterList>" \
       --final-time=1e-4 --num-time-steps=-1 --verb-level=VERB_EXTREME \
