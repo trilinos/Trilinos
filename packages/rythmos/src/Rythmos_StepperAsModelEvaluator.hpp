@@ -253,6 +253,7 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
   using Teuchos::as;
   using Teuchos::RefCountPtr;
   using Teuchos::describe;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(
     "Rythmos::StepperAsModelEvaluator", inArgs, outArgs, Teuchos::null
@@ -283,40 +284,87 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
 #endif
   
   // Do the integration
-  
-  Scalar t0 = currentInitialCondition_.get_t();
-  Scalar dt = (finalTime-t0)/numTimeSteps();
-  Scalar time = t0;
 
   stepper_->setInitialCondition(currentInitialCondition_);
 
-  for ( int i = 1 ; i <= numTimeSteps() ; ++i ) {
+  Scalar t0 = currentInitialCondition_.get_t();
+  Scalar time = t0;
 
-    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) )
-      *out << "\ntime step = " << i << ", time = " << time << ":\n";
-    
-    double dt_taken = stepper_->takeStep(dt,Rythmos::FIXED_STEP);
+  if (numTimeSteps() > 0) {
 
-    TEST_FOR_EXCEPTION(
-      dt_taken != dt, std::logic_error,
-      "Error, stepper took step of dt = " << dt_taken 
-      << " when asked to take step of dt = " << dt << "\n"
-      );
-    
-    time += dt_taken;
+    // Take fixed time steps
 
-    StepStatus<Scalar>
-      stepStatus = stepper_->getStepStatus();
+    Scalar dt = (finalTime-t0)/numTimeSteps();
     
-    RefCountPtr<const Thyra::VectorBase<Scalar> >
-      solution = stepStatus.solution,
-      solutionDot = stepStatus.solutionDot;
-    
-    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
-      *out << "\nsolution = \n" << describe(*solution,verbLevel);
-      *out << "\nsolutionDot = \n" << describe(*solutionDot,verbLevel);
+    for ( int i = 1 ; i <= numTimeSteps() ; ++i ) {
+      
+      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) )
+        *out << "\ntime step = " << i << ", time = " << time << ":\n";
+      
+      Scalar dt_taken = stepper_->takeStep(dt,Rythmos::FIXED_STEP);
+      
+      TEST_FOR_EXCEPTION(
+        dt_taken != dt, std::logic_error,
+        "Error, stepper took step of dt = " << dt_taken 
+        << " when asked to take step of dt = " << dt << "\n"
+        );
+      
+      time += dt_taken;
+      
+      StepStatus<Scalar>
+        stepStatus = stepper_->getStepStatus();
+      
+      RefCountPtr<const Thyra::VectorBase<Scalar> >
+        solution = stepStatus.solution,
+        solutionDot = stepStatus.solutionDot;
+      
+      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
+        *out << "\nsolution = \n" << describe(*solution,verbLevel);
+        *out << "\nsolutionDot = \n" << describe(*solutionDot,verbLevel);
+      }
+      
     }
-    
+
+  }
+  else {
+
+    // Take variable time steps
+
+    for ( int i = 1 ; time < finalTime ; ++i ) {
+      
+      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) )
+        *out << "\ntime step = " << i << ", time = " << time << ":\n";
+
+      Scalar max_dt = finalTime - time;
+      
+      Scalar dt_taken = stepper_->takeStep(max_dt,Rythmos::VARIABLE_STEP);
+      
+      TEST_FOR_EXCEPTION(
+        dt_taken < ST::zero(), std::logic_error,
+        "Error, stepper took negative step of dt = " << dt_taken << "!\n"
+        );
+      TEST_FOR_EXCEPTION(
+        dt_taken > max_dt, std::logic_error,
+        "Error, stepper took step of dt = " << dt_taken
+        << " > max_dt = " << max_dt << "!\n"
+        );
+      
+      time += dt_taken;
+      
+      StepStatus<Scalar>
+        stepStatus = stepper_->getStepStatus();
+      
+      RefCountPtr<const Thyra::VectorBase<Scalar> >
+        solution = stepStatus.solution,
+        solutionDot = stepStatus.solutionDot;
+      
+      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
+        *out << "\nsolution = \n" << describe(*solution,verbLevel);
+        *out << "\nsolutionDot = \n" << describe(*solutionDot,verbLevel);
+      }
+      
+    }
+
   }
 
   // Retrieve the final solution

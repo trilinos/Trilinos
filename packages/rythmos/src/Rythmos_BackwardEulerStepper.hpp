@@ -43,6 +43,7 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_as.hpp"
 
+
 namespace Rythmos {
 
 
@@ -94,7 +95,7 @@ public:
 
   /** \brief . */
   Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >
-  getSolver();
+  getNonconstSolver();
 
   /** \brief . */
   Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> >
@@ -105,14 +106,15 @@ public:
   /** \brief Overridden from StepperBase */
   //@{
  
-  /** \brief . */
+  /** \brief Returns true. */
   bool supportsCloning() const;
 
-  /** \brief Creates copies of all internal data except the model which is
-   * assumed to stateless.
+  /** \brief Creates copies of all internal data (including the parameter
+   * list) except the model which is assumed to stateless.
    *
-   * If a shallow copy of the model is not appropirate, then the client can
-   * simply reset the model using <tt>setModel()</tt>.
+   * If a shallow copy of the model is not appropirate for some reasone, then
+   * the client can simply reset the model using
+   * <tt>returnVal->setModel()</tt>.
    */
   Teuchos::RefCountPtr<StepperBase<Scalar> > cloneStepper() const;
 
@@ -332,7 +334,7 @@ void BackwardEulerStepper<Scalar>::setSolver(
 
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >
-BackwardEulerStepper<Scalar>::getSolver()
+BackwardEulerStepper<Scalar>::getNonconstSolver()
 {
   return solver_;
 }

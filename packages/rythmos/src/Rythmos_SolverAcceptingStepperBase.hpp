@@ -55,7 +55,7 @@ public:
 
   /** \brief . */
   virtual Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >
-  getSolver() = 0;
+  getNonconstSolver() = 0;
 
   /** \brief . */
   virtual Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> >

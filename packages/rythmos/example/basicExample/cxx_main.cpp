@@ -271,8 +271,10 @@ int main(int argc, char *argv[])
         BDFparams->set( "maxOrder", maxOrder );
         BDFparams->set( "relErrTol", reltol );
         BDFparams->set( "absErrTol", abstol );
-        BDFparams->set( "outputLevel", as<int>(verbLevel) );
-
+        BDFparams->sublist("VerboseObject").set(
+          "Verbosity Level",
+          Teuchos::getVerbosityLevelParameterValueName(verbLevel)
+          );
         stepper_ptr = Teuchos::rcp(
           new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver,BDFparams));
         method = "Implicit BDF";
@@ -283,7 +285,7 @@ int main(int argc, char *argv[])
       TEST_FOR_EXCEPT(true);
     }
     Rythmos::StepperBase<double> &stepper = *stepper_ptr;
-    if ( verbLevel >= Teuchos::VERB_HIGH )
+    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) )
       stepper.describe(*out,verbLevel);
 
     int numSteps = 0;
@@ -336,7 +338,7 @@ int main(int argc, char *argv[])
           double dt_taken = stepper.takeStep(dt,Rythmos::FIXED_STEP);
           time += dt_taken;
           numSteps++;
-          if (verbLevel >= Teuchos::VERB_HIGH)
+          if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) )
             stepper.describe(*out,verbLevel);
           if (dt_taken != dt)
           {
@@ -411,14 +413,14 @@ int main(int argc, char *argv[])
         {
           double dt_taken = stepper.takeStep(0.0,Rythmos::VARIABLE_STEP);
           numSteps++;
-          if (verbLevel >= Teuchos::VERB_HIGH)
+          if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) )
             stepper.describe(*out,verbLevel);
           if (dt_taken < 0)
           {
             *out << "Error, stepper failed for some reason with step taken = " << dt_taken << endl;
             break;
           }
-          if (verbLevel >= Teuchos::VERB_HIGH)
+          if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) )
           {
             // Get solution out of stepper:
             stepStatus = stepper.getStepStatus();

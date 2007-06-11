@@ -29,6 +29,7 @@
 
 #include "EpetraExt_DiagonalTransientModel.hpp"
 #include "Rythmos_BackwardEulerStepper.hpp"
+#include "Rythmos_ImplicitBDFStepper.hpp"
 #include "Rythmos_ForwardSensitivityStepper.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Rythmos_StepperAsModelEvaluator.hpp"
@@ -147,7 +148,11 @@ int main(int argc, char *argv[])
 
     int numTimeSteps = 10;
     clp.setOption( "num-time-steps", &numTimeSteps,
-      "Number of (fixed) time steps." );
+      "Number of (fixed) time steps.  If <= 0.0, then variable time steps are taken" );
+
+    bool useBDF = false;
+    clp.setOption( "use-BDF", "use-BE", &useBDF,
+      "Use BDF or Backward Euler (BE)" );
 
     bool doFwdSensSolve = false;
     clp.setOption( "fwd-sens-solve", "state-solve", &doFwdSensSolve,
@@ -170,7 +175,6 @@ int main(int argc, char *argv[])
     clp.setOption(
       "dump-final-solutions", "no-dump-final-solutions", &dumpFinalSolutions,
       "Determine if the final solutions are dumpped or not." );
-
     
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
@@ -226,7 +230,6 @@ int main(int argc, char *argv[])
       *out, PLPrintOptions().indent(2).showTypes(true).showDoc(true)
       );
 
-
     //
     // Create the Thyra-wrapped ModelEvaluator
     //
@@ -246,15 +249,21 @@ int main(int argc, char *argv[])
     nonlinearSolver->setParameterList(nonlinearSolverPL);
 
     RefCountPtr<Rythmos::StepperBase<Scalar> > stateStepper;
-    
-    stateStepper = rcp(
-      new Rythmos::BackwardEulerStepper<double>(
-        stateModel, nonlinearSolver
-        )
-      );
-   
-    // ToDo: Above, add a factory interface to create the time stateStepper
-    // strategy given a parameter sublist (kind of like with Stratimikos).
+
+    if (useBDF) {
+      stateStepper = rcp(
+        new Rythmos::ImplicitBDFStepper<double>(
+          stateModel, nonlinearSolver
+          )
+        );
+    }
+    else {
+      stateStepper = rcp(
+        new Rythmos::BackwardEulerStepper<double>(
+          stateModel, nonlinearSolver
+          )
+        );
+    }
 
     *out <<"\nstateStepper:\n" << describe(*stateStepper,verbLevel);
     *out <<"\nstateStepper valid options:\n";
@@ -279,7 +288,6 @@ int main(int argc, char *argv[])
 
     const MEB::InArgs<Scalar>
       state_ic = stateModel->getNominalValues();
-
     *out << "\nstate_ic:\n" << describe(state_ic,verbLevel);
     
     RefCountPtr<Rythmos::StepperAsModelEvaluator<Scalar> >

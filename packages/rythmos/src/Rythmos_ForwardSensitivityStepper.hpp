@@ -553,10 +553,10 @@ void ForwardSensitivityStepper<Scalar>::initialize(
 
   stateStepper_->setModel(stateModel_);
   rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(
-    stateStepper_)->setSolver(stateTimeStepSolver_);
+    stateStepper_,true)->setSolver(stateTimeStepSolver_);
   sensStepper_->setModel(sensModel_);
   rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(
-    sensStepper_)->setSolver(sensTimeStepSolver_);
+    sensStepper_,true)->setSolver(sensTimeStepSolver_);
 
   stateBasePoint_t_ = stateModel_->createInArgs();
 
@@ -814,7 +814,7 @@ ForwardSensitivityStepper<Scalar>::takeStep(
   Teuchos::RefCountPtr<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >
     singleResidualModel
     = Teuchos::rcp_dynamic_cast<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >(
-      stateTimeStepSolver_->getModel()
+      stateTimeStepSolver_->getModel(), true
       );
   
   const Scalar
