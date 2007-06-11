@@ -124,8 +124,8 @@ namespace Thyra {
  * evaluations of all function at a single set of variable values is performed in a single
  * call to <tt>evalModel()</tt>.
  *
- * A particular <tt>%ModelEvaluator</tt> subclass can support any subset of
- * these inputs and outputs and it is up to the client to map these
+ * A particular <tt>%ModelEvaluator</tt> subclass object can support any
+ * subset of these inputs and outputs and it is up to the client to map these
  * variables/parameters and functions into abstract mathematical problems.
  * Some of the different types of abstract mathematical problems that can be
  * represented through this interface are given in the next section.
@@ -495,6 +495,31 @@ namespace Thyra {
  * can be simply ignored and there is not harm done (except the client
  * algorithm might run into lots of trouble computing functions with undefined
  * values)..
+ *
+ * \section Thyra_ME_param_subvectors_sec Significance of Parameter Subvectors
+ *
+ * The parameters for any particular model are partitioned into different
+ * subvectors <tt>p(l)</tt> for several different reasons:
+ *
+ * <ul>
+ *
+ * <li>Parameters are grouped together into a subvectors <tt>p(l)</tt> to
+ * allow an ANA to manipulate an entire set at a time for different purposes.
+ * It is up to someone to select which parameters from a model will be exposed
+ * in a parameter subvector and how they are partitioned into subvectors.  For
+ * example, one parameter subvector may be used a design parameters, while
+ * another subvector may be used for uncertain parameters, while still another
+ * may be used as continuation parameters.
+ *
+ * <li>Parameters are grouped together into subvectors <tt>p(l)</tt> implies
+ * that certain derivatives will be supplied for all the parameters in the
+ * subvector or none.  If an ANA wants to flexibility to get the derivative
+ * for any individual scalar parameter by itself, then the paramters must
+ * be segregated into different parameter subvectors <tt>p(l)</tt> with
+ * one component each (e.g. <tt>get_p_space(l)->dim()==1</tt>).
+ *
+ * </ul>
+ * 
  *
  * \section Thyra_ME_checking_sec Compile-Time and Run-Time Safety and Checking
  *

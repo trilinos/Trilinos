@@ -77,7 +77,7 @@ public:
 
   //@}
 
-  /** \brief Overridden from SingleResidualModelEvaluatorBase */
+  /** \name Overridden from SingleResidualModelEvaluatorBase */
   //@{
 
   /** \brief . */

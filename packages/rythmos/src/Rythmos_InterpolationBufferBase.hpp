@@ -113,8 +113,7 @@ TimeRange<Time> invalidTimeRange()
  * <li><b>Accuracy</b>: The approximate maximum error (in what Norm???) 
  * between any two node points for the function being approximated.  The
  * accuracy of an interpolation buffer will often come from the local
- * trucation error estimate from an accuracy-controlling time stepper
- * algorithm.
+ * trucation error estimate from an accuracy-controlling time step algorithm.
  *
  * <li><b>Order</b>: The degree of polynomical that can be represented exactly
  * by the buffer interface.  For example, a second-order

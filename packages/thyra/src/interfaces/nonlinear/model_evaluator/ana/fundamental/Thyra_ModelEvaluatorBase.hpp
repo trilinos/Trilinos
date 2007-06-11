@@ -40,7 +40,19 @@ namespace Thyra {
 /** \brief Base subclass for <tt>ModelEvaluator</tt> that defines some basic
  * types.
  *
- * ToDo: Finish documentation!
+ * This non-templated base class is used for two very important reasons.
+ *
+ * First, a non-templated base class holding templated nested classes makes it
+ * easier for client to form the names of the nested classes.  This also makes
+ * it easier to access non-tempated enum types and values as well.  While most
+ * of these nested types could have been defined outside of a base class, by
+ * putting them in a base class, we get better namespace scoping and can
+ * therefore use shorter names.
+ *
+ * Second, there are some protected nested classes (i.e. <tt>InArgsSetup</tt>
+ * and <tt>OutArgsSetup</tt>0 that only subclasses should be able to access.
+ * This makes the design very secure to help avoid bad usage of the nested
+ * classes.
  */
 class ModelEvaluatorBase
   : virtual public Teuchos::Describable
@@ -64,9 +76,15 @@ public:
   /** \brief .  */
   static const int NUM_E_IN_ARGS_MEMBERS=7;
 
-  /** \brief Input arguments to a model.
+  /** \brief Concrete aggregate class for all output arguments computable by a
+   * <tt>ModelEvaluator</tt> subclass object.
    *
-   * Note: The default copy constructor is allowed and does the right thing.
+   * The set of supported objects is returned from the <tt>supports()</tt>
+   * function.
+   *
+   * A client can not directly set what input arguments are supported or not
+   * supported.  Only a subclass of <tt>ModelEvaluator</tt> can do that
+   * (through the <tt>InArgsSetup</tt> subclass).
    */
   template<class Scalar>
   class InArgs : public Teuchos::Describable {
@@ -75,42 +93,43 @@ public:
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
     /** \brief .  */
     InArgs();
-    /** \brief .  */
+    /** \brief Return the number of parameter subvectors <tt>p(l)</tt>
+     * supported (<tt>Np >= 0</tt>).  */
     int Np() const;
-    /** \brief .  */
+    /** \brief Determines if an input argument is supported or not.  */
+    bool supports(EInArgsMembers arg) const;
+    /** \brief Precondition: <tt>supports(IN_ARG_x_dot)==true</tt>.  */
     void set_x_dot( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x_dot );
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(IN_ARG_x_dot)==true</tt>.  */
     Teuchos::RefCountPtr<const VectorBase<Scalar> > get_x_dot() const;
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
     void set_x( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x );
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
     Teuchos::RefCountPtr<const VectorBase<Scalar> > get_x() const;
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(IN_ARG_x_poly)==true</tt>.  */
     void set_x_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_poly );
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
     Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_poly() const;
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(IN_ARG_x_dot_poly)==true</tt>.  */
     void set_x_dot_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly );
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(IN_ARG_x_dot_poly)==true</tt>.  */
     Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_dot_poly() const;
     /** \brief Set <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
     void set_p( int l, const Teuchos::RefCountPtr<const VectorBase<Scalar> > &p_l );
     /** \brief Get <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
     Teuchos::RefCountPtr<const VectorBase<Scalar> > get_p(int l) const;
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(IN_ARG_t)==true</tt>.  */
     void set_t( ScalarMag t );
-    /** \brief .  */
+    /** \brief .Precondition: <tt>supports(IN_ARG_t)==true</tt>  */
     ScalarMag get_t() const;
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(IN_ARG_alpha)==true</tt>.  */
     void set_alpha( Scalar alpha );
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(IN_ARG_alph)==true</tt>.  */
     Scalar get_alpha() const;
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(IN_ARG_beta)==true</tt>.  */
     void set_beta( Scalar beta );
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(IN_ARG_beta)==true</tt>.  */
     Scalar get_beta() const;
-    /** \brief .  */
-    bool supports(EInArgsMembers arg) const;
     /** \brief Set non-null arguments (does not overwrite non-NULLs with NULLs) .  */
     void setArgs(
       const InArgs<Scalar>& inArgs, bool ignoreUnsupported = false,
@@ -118,7 +137,8 @@ public:
       );
     /** \brief . */
     std::string description() const;
-    /** \brief . */
+    /** \brief Create a more detailed description along about this object and
+     * the ModelEvaluator that created it. */
     void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel ) const;
   protected:
     /** \brief . */
@@ -228,7 +248,8 @@ public:
     ,DERIV_RANK_DEFICIENT    ///< .
   };
 
-  /** \brief . */
+  /** \brief Simple public strict containing properties of a derivative
+   * object. */
   struct DerivativeProperties {
     /** \brief . */
     EDerivativeLinearity     linearity;
@@ -382,78 +403,122 @@ public:
     OUT_ARG_DgDp   ///< .
   };
   
-  /** \brief Output arguments to a model.
+  /** \brief Concrete aggregate class for all output arguments computable by a
+   * <tt>ModelEvaluator</tt> subclass object.
    *
-   * Note: The default copy constructor is allowed and does the right thing.
+   * Note that <tt>const OutArgs</tt> object means that a client can not
+   * change what output objects are being pointed to but they can still change
+   * the states of the contained objects.  This is slight variation on the
+   * concept of logical const-ness in C++ but it is totally consistent with
+   * the vary nature of this class.
+   *
+   * In addition to storing the output objects themselves, this class also
+   * allows the storage if the properties of some of the objects as well.
+   * Therefore, objects of this type are used to communicate a lot of
+   * different information about the output functions and derivatives
+   * supported by a model.  It tells clients what functions and derivatives
+   * are supported and what the know properties are.
+   *
+   * A client can not directly set what input arguments are supported or not
+   * supported.  Only a subclass of <tt>ModelEvaluator</tt> can do that
+   * (through the <tt>OutArgsSetup</tt> subclass).
    */
   template<class Scalar>
   class OutArgs : public Teuchos::Describable {
   public:
     /** \brief .  */
     OutArgs();
-    /** \brief .  */
+    /** \brief Return the number of parameter subvectors <tt>p(l)</tt>
+     * supported (<tt>Np >= 0</tt>).  */
     int Np() const;
-    /** \brief .  */
+    /** \brief Return the number of axillary response functions
+     * <tt>g(j)(...)</tt> supported (<tt>Ng >= 0</tt>).  */
     int Ng() const;
-    /** \brief .  */
+    /** \brief Determine if an input argument is supported or not.  */
     bool supports(EOutArgsMembers arg) const;
-    /** \brief <tt>0 <= l && l < Np()</tt>.  */
+    /** \brief Determine if <tt>DfDp(l)</tt> is supported or not, where <tt>0
+     * <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDfDp arg, int l) const;
-    /** \brief <tt>0 <= j && j < Ng()</tt>.  */
+    /** \brief Determine if <tt>DgDx(j)</tt> is supported or not, <tt>0 <= j
+     * && j < Ng()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDx arg, int j) const;
-    /** \brief <tt>0 <= j && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
+    /** \brief Determine if <tt>DgDp(j,l)</tt> is supported or not, <tt>0 <= j
+     * && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp arg, int j, int l) const;
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_f)==true</tt>.  */
     void set_f( const Teuchos::RefCountPtr<VectorBase<Scalar> > &f );
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_f)==true</tt>.  */
     Teuchos::RefCountPtr<VectorBase<Scalar> > get_f() const;
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_g)==true</tt>.  */
     void set_g( int j, const Teuchos::RefCountPtr<VectorBase<Scalar> > &g_j );
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_g)==true</tt>..  */
     Teuchos::RefCountPtr<VectorBase<Scalar> > get_g(int j) const;
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_W)==true</tt>.  */
     void set_W( const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &W );
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_W)==true</tt>.  */
     Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > get_W() const;
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_W_op)==true</tt>.  */
     void set_W_op( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &W_op );
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_W_op)==true</tt>.  */
     Teuchos::RefCountPtr<LinearOpBase<Scalar> > get_W_op() const;
-    /** \brief . */
+    /** \brief Return the known properties of <tt>W</tt> (precondition:
+     * <tt>supports(OUT_ARG_f)==true</tt>). */
     DerivativeProperties get_W_properties() const;
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_DfDp,l)==true</tt>.  */
     void set_DfDp(int l,  const Derivative<Scalar> &DfDp_l);
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_DfDp,l)==true</tt>.  */
     Derivative<Scalar> get_DfDp(int l) const;
-    /** \brief . */
+    /** \brief Return the know properties of <tt>DfDp(l)</tt> (precondition:
+     * <tt>supports(OUT_ARG_DfDp,l)==true</tt>). */
     DerivativeProperties get_DfDp_properties(int l) const;
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_DgDx,j)==true</tt>.  */
     void set_DgDx(int j, const Derivative<Scalar> &DgDx_j);
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_DgDx,j)==true</tt>.  */
     Derivative<Scalar> get_DgDx(int j) const;
-    /** \brief . */
+    /** \brief Return the know properties of <tt>DgDx(j)</tt> (precondition:
+     * <tt>supports(OUT_ARG_DgDx,j)==true</tt>). */
     DerivativeProperties get_DgDx_properties(int j) const;
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_DgDp,j,l)==true</tt>.  */
     void set_DgDp( int j, int l, const Derivative<Scalar> &DgDp_j_l );
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_DgDp,j,l)==true</tt>.  */
     Derivative<Scalar> get_DgDp(int j, int l) const;
-    /** \brief . */
+    /** \brief Return the know properties of <tt>DgDp(j,l)</tt> (precondition:
+     * <tt>supports(OUT_ARG_DgDp,j,l)==true</tt>). */
     DerivativeProperties get_DgDp_properties(int j, int l) const;
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_f_poly)==true</tt>.  */
     void set_f_poly( const Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > > &f_poly );
-    /** \brief .  */
+    /** \brief Precondition: <tt>supports(OUT_ARG_f_poly)==true</tt>.  */
     Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > > get_f_poly() const;
-    /** \brief .  */
+    /** \brief Set all arguments fron <tt>outArgs</tt> into <tt>*this</tt>.
+     *
+     * If <tt>ignoreUnsupported==true</tt>, then arguments in <tt>outArgs</tt>
+     * that are not supported in <tt>*this</tt> will be ignored.  Othereise,
+     * if an unsupported argument is set, then an exception will be thrown.*/
     void setArgs( const OutArgs<Scalar>& outArgs, bool ignoreUnsupported = false );
-    /** \brief . */
+    /** \brief Set that the evaluation as a whole failed.
+     *
+     * Note that this function is declared as <tt>const</tt> even through it
+     * technically changes the state of <tt>*this</tt> object.  This was done
+     * so that this property could be set by a <tt>ModelEvaluator</tt>
+     * subclass in <tt>evalModel()</tt> which takes a <tt>const OutArgs</tt>
+     * object.  This is consistent with the behavior of the rest of a
+     * <tt>const OutArgs</tt> object in that a client is allowed to change the
+     * state of objects through a <tt>const OutArgs</tt> object, they just
+     * can't change what objects are pointed to.
+     */
     void setFailed() const;
-    /** \brief . */
+    /** \brief Return if the evaluation failed or not.
+     *
+     * If the evaluation failed, no assumptions should be made at all about
+     * the state of the output objects.
+     */
     bool isFailed() const;
     /** \brief . */
     bool isEmpty() const;
     /** \brief . */
     std::string description() const;
-    /** \brief . */
+    /** \brief Create a more detailed description along about this object and
+     * the ModelEvaluator that created it. */
     void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel ) const;
   protected:
     /** \brief . */
@@ -525,7 +590,13 @@ protected:
   /** \name Protected types */
   //@{
 
-  /** \brief . */
+  /** \brief Protected subclass of <tt>InArgs</tt> that only
+   * <tt>ModelEvaluator</tt> subclasses can access to set up the selection of
+   * supported input arguments.
+   *
+   * Objects of this type must be created in overrides of
+   * <tt>ModelEvaluator::createInArgs()</tt>.
+   */
   template<class Scalar>
   class InArgsSetup : public InArgs<Scalar> {
   public:
@@ -545,7 +616,13 @@ protected:
     void setUnsupportsAndRelated( EInArgsMembers arg );
   };
 
-  /** \brief . */
+  /** \brief Protected subclass of <tt>OutArgs</tt> that only
+   * <tt>ModelEvaluator</tt> subclasses can access to set up the selection of
+   * supported input arguments.
+   *
+   * Objects of this type must be created in overrides of
+   * <tt>ModelEvaluator::createOutArgs()</tt>.
+   */
   template<class Scalar>
   class OutArgsSetup : public OutArgs<Scalar> {
   public:
@@ -706,6 +783,16 @@ int ModelEvaluatorBase::InArgs<Scalar>::Np() const
 { return p_.size(); }
 
 template<class Scalar>
+bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
+{
+  TEST_FOR_EXCEPTION(
+    int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
+    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
+    );
+  return supports_[arg];
+}
+
+template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x_dot )
 { assert_supports(IN_ARG_x_dot); x_dot_ = x_dot; }
 
@@ -775,7 +862,6 @@ template<class Scalar>
 Scalar ModelEvaluatorBase::InArgs<Scalar>::get_beta() const
 { assert_supports(IN_ARG_beta); return beta_; }
 
-template<class Scalar>
 bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
 {
   TEST_FOR_EXCEPTION(
@@ -786,7 +872,8 @@ bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::setArgs(const InArgs<Scalar>& inArgs, bool ignoreUnsupported, bool cloneObjects
+void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
+  const InArgs<Scalar>& inArgs, bool ignoreUnsupported, bool cloneObjects
   )
 {
   using ModelEvaluatorHelperPack::condCloneVec;

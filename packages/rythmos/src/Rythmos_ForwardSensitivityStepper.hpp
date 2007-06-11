@@ -102,7 +102,9 @@ namespace Rythmos {
  \endverbatim
 
  * and <tt>f_bar(...)</tt> is the obvious concatenated state and sensitivity
- * system.
+ * system.  See the class <tt>StateAndForwardSensitivityModelEvaluator</tt>
+ * for a description of how to get at the components of <tt>x</tt>,
+ * <tt>s_bar</tt>, and <tt>S</tt>.
  *
  * The <tt>InterpolationBufferBase</tt> interface implemented by this class is
  * defined with respect to the full composite solution vector <tt>x_bar</tt>

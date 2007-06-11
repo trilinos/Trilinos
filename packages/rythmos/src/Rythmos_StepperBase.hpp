@@ -77,19 +77,27 @@ public:
    * <li>[<tt>supportsCloning()==false</tt>] <tt>returnVal == Teuchos::null</tt>
    * </ul>
    *
-   * Note that cloning a stepper in this case does not imply that the full
-   * state will be copied, shallow or deep.  Instead, here cloning means to
-   * just clone the stepper algorithm and it will do a showllow of the model
-   * as well if a model is set.  Since the model is stateless, this is okay.
-   * Therefore, do not assume that the state of <tt>*returnValue</tt> is
-   * exactly the same as the state of <tt>*this</tt>.  You have been warned!
+   * Cloning a stepper in this case does not imply that the full state will be
+   * copied, shallow or deep.  Instead, here cloning means to just clone the
+   * stepper algorithm and it will do a showllow copy of the model if a model
+   * is set.  Since the model is stateless, this should be okay.  Therefore,
+   * do not assume that the state of <tt>*returnVal</tt> is exactly the same
+   * as the state of <tt>*this</tt>.  You have been warned!
    *
    * The default implementation returns <tt>Teuchos::null</tt> which is
-   * consistent with the default implementation of <tt>supportsCloning()</tt>.
-   * If this function is overridden in a base class to support cloning, then
-   * <tt>supportsCloning()</tt> must be overridden to return <tt>true</tt>.
+   * consistent with the default implementation of
+   * <tt>supportsCloning()==false</tt>.  If this function is overridden in a
+   * derived class to support cloning, then <tt>supportsCloning()</tt> must be
+   * overridden to return <tt>true</tt>.
    */
   virtual Teuchos::RefCountPtr<StepperBase<Scalar> > cloneStepper() const;
+
+  /** \brief Return if this stepper is an implicit stepper.
+   *
+   * The default implemntation returns <tt>false</tt> and therefore, by
+   * default, a stepper is considered to be an excplicit stepper.
+   */
+  virtual bool isImplicit() const;
 
   /** \brief Return if this stepper accepts a model.
    *
@@ -106,16 +114,26 @@ public:
   /** \brief Specify the model problem to integrate.
    *
    * By default, the intial condition will be taken from
-   * <tt>model.getNomainValues()</tt>.  If this intial condition is not
+   * <tt>model->getNomainValues()</tt>.  If this intial condition is not
    * complete or is not the desired initial condition, it can be set using
    * <tt>setInitialCondition()</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>acceptsModel()==true</tt>
    * <li><tt>!is_null(model)</tt>
-   * <li>ToDo: Put in preconditions for what InArgs and OutArgs objects must be
-   *     supported!
+   * <li><tt>model->createInArgs().supports(MEB::IN_ARG_t)==true</tt>
+   * <li><tt>model->createInArgs().supports(MEB::IN_ARG_x)==true</tt>
+   * <li><tt>model->createOutArgs().supports(MEB::OUT_ARG_f)==true</tt>
+   * <li>[<tt>isImplicit()</tt>] <tt>model->createInArgs().supports(MEB::IN_ARG_x_dot)==true</tt>
+   * <li>[<tt>isImplicit()</tt>] <tt>model->createInArgs().supports(MEB::IN_ARG_alpha)==true</tt>
+   * <li>[<tt>isImplicit()</tt>] <tt>model->createInArgs().supports(MEB::IN_ARG_beta)==true</tt>
+   * <li>[<tt>isImplicit()</tt>] <tt>model->createOutArgs().supports(MEB::OUT_ARG_W)==true</tt>
    * </ul>
+   *
+   * 2007/06/10: rabartl : ToDo: Create helper macros that will assert these
+   * preconditions and call these macros in every stepper subclass that
+   * implements these function.  We will have one for explicit steppers and
+   * one for implicit steppers.
    *
    * <b>Postconditions:</b><ul>
    * <li><tt>this->getModel() == model</tt>
@@ -127,9 +145,10 @@ public:
     
   /** \brief Get the model.
    *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>acceptsModel()==true</tt>
-   * </ul>
+   * Every stepper is expected to return the model that represents problem
+   * that it is integrating, even if <tt>acceptsModel()==false</tt>.  Exposing
+   * this model is necessary in order to get at the spaces and create the
+   * <tt>InArgs</tt> object needed to set the initial condition.
    */
   virtual Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
   getModel() const = 0;
@@ -182,6 +201,13 @@ public:
 
 // ///////////////////////////////
 // Implementations
+
+
+template<class Scalar>
+bool StepperBase<Scalar>::isImplicit() const
+{
+  return false;
+}
 
 
 template<class Scalar>

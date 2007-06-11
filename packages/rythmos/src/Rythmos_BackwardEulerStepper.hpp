@@ -65,7 +65,7 @@ public:
   /** \brief . */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
   
-  /** \brief Constructors, intializers, Misc. */
+  /** \name Constructors, intializers, Misc. */
   //@{
 
   /** \brief . */
@@ -103,7 +103,7 @@ public:
 
   //@}
 
-  /** \brief Overridden from StepperBase */
+  /** \name Overridden from StepperBase */
   //@{
  
   /** \brief Returns true. */

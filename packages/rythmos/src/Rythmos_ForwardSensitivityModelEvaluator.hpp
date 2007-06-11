@@ -175,18 +175,19 @@ namespace Rythmos {
 
  \verbatim
 
-    x_dot_scalar * d(f)/d(x_dot) * V_x_dot
-    + x_scalar * d(f)/d(x) * V_x
-    + p_scalar * d(f)/d(p) * V_p
+    F_sens_var = x_dot_scalar * d(f)/d(x_dot) * V_x_dot
+                   + x_scalar * d(f)/d(x) * V_x
+                   + p_scalar * d(f)/d(p) * V_p
 
  \endverbatim
 
  * We could then compute what we need using <tt>x_dot_scalar=1.0</tt>,
  * <tt>x_scalar=0.0</tt>, <tt>p_scalar=1.0</tt>, <tt>V_x_dot=V</tt>, and
- * <tt>V_p=I</tt>.  For explicit time-stepping methods, this is all that would
- * be needed.  Such an addition to the <tt>Thyra::ModelEvaluator</tt>
- * interface would be handled through additions to the InArgs and OutArgs
- * classes and the details of which are yet to be worked out.
+ * <tt>V_p=I</tt>.  For explicit time-stepping methods, this operation could
+ * compute the needed sensitivity in one shot.  Such an addition to the
+ * <tt>Thyra::ModelEvaluator</tt> interface would be handled through additions
+ * to the InArgs and OutArgs classes and the details of which are yet to be
+ * worked out.
  *
  * Up to this point, the only assumption that we have made about the time
  * stepping algorithm is that the sensitivities are only needed and only

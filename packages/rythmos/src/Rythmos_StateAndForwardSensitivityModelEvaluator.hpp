@@ -47,15 +47,137 @@ namespace Rythmos {
 /** \brief Combined State and Forward sensitivity transient
  * <tt>ModelEvaluator</tt> subclass.
  *
- * This class provides a very general implemenation of a a combined state and
- * forward sensitivity model evaluator for a DAE.
+ * This class provides an implemenation of a combined state and forward
+ * sensitivity model evaluator for a DAE.
+ *
+ *
+ * The form of the parameterized state equation is:
+
+ \verbatim
+
+   f(x_dot(t),x(t),p) = 0, over t = [t0,tf]
+
+   x(t0) = x_init(p)
+
+ \endverbatim
+
+ * The forward sensitivity equations, as written in multi-vector form, are:
+
+ \verbatim
+
+   d(f)/d(x_dot)*S_dot + d(f)/d(x)*S + d(f)/d(p) = 0, over t = [t0,tf]
+
+   S(t0) = d(x_init)/d(p)
+
+ \endverbatim
+
+ * where <tt>S</tt> is a multi-vector with <tt>np</tt> columns where each
+ * column <tt>S(:,j) = d(x)/d(p_j)</tt> is the sensitivity of <tt>x(t)</tt>
+ * with respect to the <tt>p_j</tt> parameter.
+ *
+ * This model evaluator class represents the full state plus forward
+ * sensitivity system given as:
+
+ \verbatim
+
+   f_bar(x_bar_dot(t),x_bar(t)) = 0, over t = [t0,tf]
+
+   x_bar(t0) = x_bar_init
+
+ \endverbatim
+
+ * where
+
+ \verbatim
+
+   x_bar = [ x; s_bar ] 
+
+   s_bar = [ S(:,0); S(:,0); ...; S(:,np-1) ]
+
+ \endverbatim
+
+ * and <tt>f_bar(...)</tt> is the obvious concatenated state and sensitivity
+ * systems expresses in product vector form.
+ *
+ * The vector <tt>x_bar</tt> is represented as a
+ * <tt>Thyra::ProductVectorBase</tt> object with two vector blocks <tt>x</tt>
+ * and <tt>s_bar</tt>.  The flattened out sensitivity vector <tt>s_bar</tt> is
+ * then represented as a specialized product vector of type
+ * <tt>Thyra::DefaultMultiVectorProductVector</tt>.
+ *
+ * If <tt>x_bar</tt> is an <tt>RCP<Thyra::VectorBase<Scalar> ></tt> object, then
+ * <tt>x</tt> can be access as
+
+ \code
+
+   RCP<Thyra::VectorBase<Scalar> >
+     x = Thyra::nonconstProductVectorBase<Scalar>(x_bar)->getVectorBlock(0);
+
+ \endcode
+
+ * If <tt>x_bar</tt> is an <tt>RCP<const Thyra::VectorBase<Scalar> ></tt>
+ * object, then <tt>x</tt> can be access as
+
+ \code
+
+   RCP<const Thyra::VectorBase<Scalar> >
+     x = Thyra::productVectorBase<Scalar>(x_bar)->getVectorBlock(0);
+
+ \endcode
+
+ * Likewise, <tt>s_bar</tt> can be access as
+
+
+ \code
+
+   RCP<Thyra::VectorBase<Scalar> >
+     s_bar = Thyra::nonconstProductVectorBase<Scalar>(x_bar)->getVectorBlock(1);
+
+ \endcode
+
+ * when non-const and when const as:
+
+ \code
+
+   RCP<const Thyra::VectorBase<Scalar> >
+     s_bar = Thyra::productVectorBase<Scalar>(x_bar)->getVectorBlock(1);
+
+ \endcode
+
+ * Given the flattened out vector form <tt>s_bar</tt>, one can get the
+ * underlying mulit-vector <tt>S</tt> as:
+
+ \code
+ 
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+
+   RCP<Thyra::MultiVectorBase<Scalar> >
+     S = rcp_dynamic_cast<DMVPV>(s_bar)->getNonconstMultiVector();
+
+ \endcode
+
+ * for a nonconst vector/multi-vector and for a const vector/multi-vector as:
+
+ \code
+ 
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
+
+   RCP<const Thyra::MultiVectorBase<Scalar> >
+     S = rcp_dynamic_cast<const DMVPV>(s_bar)->getMultiVector();
+
+ \endcode
+ 
+ * ToDo: Replace the above documentation with the helper functions that will
+ * do all of this!
  *
  * Currently, this class does not implement the full ModelEvaluator interface
  * and it really just provides the spaces for x_bar and f_bar and the InArgs
  * and OutArgs creation functions to allow for the full specification of the
- * <tt>ForwardSensitivityStepper</tt> class.  Later this class can be
- * completely finished in which case it would necessarly implement the
- * evaluations and the linear solves for the simultaneous corrector method.
+ * <tt>ForwardSensitivityStepper</tt> class.  This is especially important in
+ * order to correctly set the full initial condition for the state and the
+ * forward sensitivities.  Later this class can be completely finished in
+ * which case it would necessarly implement the evaluations and the linear
+ * solves which would automatically support the simultaneous corrector method.
  *
  * ToDo: Finish documentation!
  */
