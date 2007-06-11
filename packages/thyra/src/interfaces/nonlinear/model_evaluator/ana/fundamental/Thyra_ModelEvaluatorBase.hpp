@@ -862,15 +862,6 @@ template<class Scalar>
 Scalar ModelEvaluatorBase::InArgs<Scalar>::get_beta() const
 { assert_supports(IN_ARG_beta); return beta_; }
 
-bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
-{
-  TEST_FOR_EXCEPTION(
-    int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
-    );
-  return supports_[arg];
-}
-
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
   const InArgs<Scalar>& inArgs, bool ignoreUnsupported, bool cloneObjects
