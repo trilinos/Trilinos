@@ -567,7 +567,8 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
   }
 
   if ((stepType == VARIABLE_STEP) && (dt != ST::zero())) {
-    h_max_inv_ = Scalar(ST::one()/dt);
+    maxTimeStep_ = dt;
+    h_max_inv_ = Scalar(ST::one()/maxTimeStep_);
   }
 
   BDFstatusFlag status;
