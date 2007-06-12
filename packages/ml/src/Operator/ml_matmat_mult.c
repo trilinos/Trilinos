@@ -1558,6 +1558,7 @@ void ML_convert2vbr(ML_Operator *in_matrix)
    int blockcolumns = 0;
    int row_length; /*the length of the current point row*/
    int blockend; /*the end point of a block in terms of size*/
+   int blockstart; /*the start point of a block in terms of size*/
    int blockfound;
    int A_i_allocated;
    int *A_i_cols; /*columns for the single point row of values*/
@@ -1565,6 +1566,7 @@ void ML_convert2vbr(ML_Operator *in_matrix)
    double *vals;  /*block row storage of matrix*/
    int *rpntr, *cpntr, *bindx, *indx, *bpntr; /*quick links to needed structures
                                                 also makes the code look prettier*/
+   int iplus1;
 
    /*settings to change since we now have a vbr matrix*/
    in_matrix->type = ML_TYPE_VBR_MATRIX;
@@ -1582,7 +1584,6 @@ void ML_convert2vbr(ML_Operator *in_matrix)
      blockrows++;
      i = rpntr[++j];
    }
-
 
    i = cpntr[0];
    j = 0;
@@ -1603,24 +1604,31 @@ void ML_convert2vbr(ML_Operator *in_matrix)
 
    indx[0] = bpntr[0] = 0;
 
-                                                                                                              
-       A_i_allocated = in_matrix->max_nz_per_row + 1; /* this doesn't seem to work max nonzero does not seem set the next line overrides thsi for testing purposes*/
-       A_i_allocated = 100;
-       A_i_cols  = (int    *) ML_allocate(A_i_allocated * sizeof(int) );
-       accum_val = (double *) ML_allocate(A_i_allocated * sizeof(double));
-       vals = (double *) ML_allocate(1000*sizeof(double));
-       /*need some check on allocating to make sure there is enough space*/ 
+   A_i_allocated = in_matrix->max_nz_per_row + 1; /* this doesn't seem to work max nonzero does not seem set the next line overrides thsi for testing purposes*/
+   A_i_allocated = 100;
+   /*better bounds are needed here talk with ray about this.  At most the first two arrays can be is rowsize and the last one is completely dense*/
+   A_i_cols  = (int    *) ML_allocate(A_i_allocated * sizeof(int) );
+   accum_val = (double *) ML_allocate(A_i_allocated * sizeof(double));
+   vals = (double *) ML_allocate(1000*sizeof(double));
+
+   if(vals == NULL)
+   {
+     printf("Not enough space in ML_convert2vbr\n");
+     printf("trying to allocate %d ints and doubles and %d doubles \n",A_i_allocated,1000);
+     printf("Matrix has %d rows \n", in_matrix->getrow->Nrows);
+     printf("Matrix has %d nz per row\n", in_matrix->max_nz_per_row);
+     exit(1);
+   }
+
 
    for(i = 0; i < blockrows; i++)
    {
-
-     bpntr[i + 1] = bpntr[i];
-     for(j = rpntr[i]; j < rpntr[i+1]; j++)
+     iplus1 = i+1;
+     bpntr[iplus1] = bpntr[i];
+     for(j = rpntr[i]; j < rpntr[iplus1]; j++)
      {
        in_matrix->getrow->func_ptr(in_matrix, 1, &(j), A_i_allocated, A_i_cols, accum_val, &row_length);
      
-       /* assume row information is gotten at this point*/
-      
        /*loop over row data*/ 
        blockend = 1; 
        for(k = 0; k < row_length; k++)
@@ -1629,8 +1637,9 @@ void ML_convert2vbr(ML_Operator *in_matrix)
          while(A_i_cols[k] >= cpntr[blockend]){
            blockend++;
          }
+         blockstart = blockend-1;
          blockfound = 0;
-         for (kk = bpntr[i]; kk < bpntr[i+1]; kk++)
+         for (kk = bpntr[i]; kk < bpntr[iplus1]; kk++)
          {
            if(bindx[kk] == blockend-1)
            {
@@ -1640,18 +1649,18 @@ void ML_convert2vbr(ML_Operator *in_matrix)
          }
          if(blockfound == 1) /*insert value*/
          {
-           /*need proper data point from storage matrix*/ vals[indx[kk] + (A_i_cols[k]-cpntr[blockend-1])*(rpntr[i+1] - rpntr[i]) + j - rpntr[i]] = accum_val[k];
+           vals[indx[kk] + (A_i_cols[k]-cpntr[blockstart])*(rpntr[iplus1] - rpntr[i]) + j - rpntr[i]] = accum_val[k];
          }
-         else /*create new block need matrix structure references in here look at this on 5/6 to verify correctness using aztec functions might be easier*/
+         else /*create new block*/
          {
-           bindx[bpntr[i+1]] = blockend -1;
-           bpntr[i+1]++;
-           indx[bpntr[i+1]] = (cpntr[blockend]-cpntr[blockend-1])*(rpntr[i+1] - rpntr[i]) + indx[bpntr[i+1]-1];
-           for(jj = indx[bpntr[i+1]-1]; jj < indx[bpntr[i+1]]; jj++)
+           bindx[bpntr[iplus1]] = blockend-1;
+           bpntr[iplus1]++;
+           indx[bpntr[iplus1]] = (cpntr[blockend]-cpntr[blockstart])*(rpntr[iplus1] - rpntr[i]) + indx[bpntr[iplus1]-1];
+           for(jj = indx[bpntr[iplus1]-1]; jj < indx[bpntr[iplus1]]; jj++)
            {
              vals[jj] = 0.0;
            }
-           vals[indx[kk] + (A_i_cols[k]-cpntr[blockend-1])*(rpntr[i+1] - rpntr[i]) + j - rpntr[i]] = accum_val[k];
+           vals[indx[kk] + (A_i_cols[k]-cpntr[blockstart])*(rpntr[iplus1] - rpntr[i]) + j - rpntr[i]] = accum_val[k];
          }
        }
      }
@@ -1660,20 +1669,25 @@ void ML_convert2vbr(ML_Operator *in_matrix)
    
     printf("%lfvals\n", vals[i]); fflush(stdout);
 
-   /*This has to be changed at the end since we need to use the old one
-     until the change is complete*/
    /*in_matrix->getrow->func_ptr = VBR_getrow; this needs to go back in at some point but is commented out since it is not functionally nessary*/
    /*in_matrix->max_nz_per_row = ??*/
+
    
    /*free old data array and set the new one to the data struct here*/
    /*free call here*/
-   
+  
+ 
    /*set real values to aliases*/
    in_matrix->vbr->bindx = bindx;
    in_matrix->vbr->indx = indx;
    in_matrix->vbr->bpntr = bpntr;
 
    in_matrix->data = vals;
+
+   /*memory cleanup*/
+   ML_free(A_i_cols);
+   ML_free(accum_val);
+   ML_free(vals);
 }
 
 /************************************************************************/
