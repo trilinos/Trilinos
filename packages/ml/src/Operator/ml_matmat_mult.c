@@ -1556,56 +1556,52 @@ void ML_convert2vbr(ML_Operator *in_matrix)
    int i, j, k, kk, jj;
    int blockrows = 0;
    int blockcolumns = 0;
-   int row_length;
-   int blockend;
+   int row_length; /*the length of the current point row*/
+   int blockend; /*the end point of a block in terms of size*/
    int blockfound;
-   void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,int **,int *,int);
    int A_i_allocated;
-   int t;
-   int *A_i_cols;
+   int *A_i_cols; /*columns for the single point row of values*/
    double *accum_val; /*storage of a single point row of values*/
    double *vals;  /*block row storage of matrix*/
-   double *t1;
-   int *t2, *t3;
-
-
-   printf("reading\n"); fflush(stdout);
+   int *rpntr, *cpntr, *bindx, *indx, *bpntr; /*quick links to needed structures
+                                                also makes the code look prettier*/
 
    /*settings to change since we now have a vbr matrix*/
    in_matrix->type = ML_TYPE_VBR_MATRIX;
-   /*in_matrix->matvec->func_ptr = VBR_matvec;  this needs to be put back in at some point but is out for now since it is not functionally nessary*/
+   /*in_matrix->matvec->func_ptr = VBR_matvec;  this needs to be put back in at some point but is out for now since it is not functionally nessary and not sure the exact setting to use*/
+
+   /*setup quick link aliases*/
+   rpntr = in_matrix->vbr->rpntr;
+   cpntr = in_matrix->vbr->cpntr;
 
    /*find number of block rows and block columns*/
-   i = in_matrix->vbr->rpntr[0];
+   i = rpntr[0];
    j = 0;
    while(i < in_matrix->invec_leng)
    {
      blockrows++;
-     i = in_matrix->vbr->rpntr[++j];
+     i = rpntr[++j];
    }
 
 
-   i = in_matrix->vbr->cpntr[0];
+   i = cpntr[0];
    j = 0;
    while(i < in_matrix->outvec_leng)
    {
      blockcolumns++;
-     i = in_matrix->vbr->cpntr[++j];
+     i = cpntr[++j];
    }
 
-    printf("reading%dblockrows\n",blockrows); fflush(stdout);
-    printf("reading%dblockcolumns\n",blockcolumns); fflush(stdout);
-   /*May want to work with temp arrays for easier access*/
    /*at most we have blockrows times blockcolumns blocks this might be able to be more
      strict but it would be hard to figure out how to do so this could be bounded by
      the lesser of this and nnz in the matrix which might be better*/
-   in_matrix->vbr->bindx = (int*)ML_allocate(blockcolumns*blockrows*sizeof(int));
-   in_matrix->vbr->indx = (int*)ML_allocate((blockcolumns*blockrows+1)*sizeof(int));
+   bindx = (int*)ML_allocate(blockcolumns*blockrows*sizeof(int));
+   indx = (int*)ML_allocate((blockcolumns*blockrows+1)*sizeof(int));
 
    /*the number of blockrows is either exact or close enough however*/
-   in_matrix->vbr->bpntr = (int*)ML_allocate((blockrows+1)*sizeof(int));
+   bpntr = (int*)ML_allocate((blockrows+1)*sizeof(int));
 
-   in_matrix->vbr->indx[0] = in_matrix->vbr->bpntr[0] = 0;
+   indx[0] = bpntr[0] = 0;
 
                                                                                                               
        A_i_allocated = in_matrix->max_nz_per_row + 1; /* this doesn't seem to work max nonzero does not seem set the next line overrides thsi for testing purposes*/
@@ -1615,98 +1611,47 @@ void ML_convert2vbr(ML_Operator *in_matrix)
        vals = (double *) ML_allocate(1000*sizeof(double));
        /*need some check on allocating to make sure there is enough space*/ 
 
-   t = Epetra_ML_GetCrsDataptrs(in_matrix, &t1, &t2, &t3);
-  
-printf("%u %u %u\n", t1, t2, t3);
-printf("%d %d %d %d\n", t3[0], t3[3], t3[6], t3[9]);
-
-
    for(i = 0; i < blockrows; i++)
    {
 
-    printf("reading%di\n", i); fflush(stdout);
-     in_matrix->vbr->bpntr[i + 1] = in_matrix->vbr->bpntr[i];
-     for(j = in_matrix->vbr->rpntr[i]; j < in_matrix->vbr->rpntr[i+1]; j++)
+     bpntr[i + 1] = bpntr[i];
+     for(j = rpntr[i]; j < rpntr[i+1]; j++)
      {
-    printf("reading%dj\n", j); fflush(stdout);
-       /*IK I need to somehow alocate properly then loop through  
-         Ray's code is first then a start of my code*/
-
-       /**************************************************************************/
-       /* allocate space to hold a single row of Amatrix and the accumulator     */
-       /* which contains the current row in the resulting matrix.                */
-       /*------------------------------------------------------------------------*/
- 
-
-/*need to make sure all of these are allocated*/
-printf("%d %d %d %d\n", t3[0], t3[3], t3[6], t3[9]);
        in_matrix->getrow->func_ptr(in_matrix, 1, &(j), A_i_allocated, A_i_cols, accum_val, &row_length);
      
-printf("%d %d %d %d\n", t3[0], t3[3], t3[6], t3[9]);
-
-    
-    printf("accum_val%d\n", accum_val[0]); fflush(stdout);
-    printf("A_i_cols%d\n", A_i_cols[0]); fflush(stdout);
-    printf("reading%d\n", &j); fflush(stdout);
-    printf("reading%d\n", A_i_allocated); fflush(stdout);
-
-
-
        /* assume row information is gotten at this point*/
       
        /*loop over row data*/ 
        blockend = 1; 
-    printf("%drowlen\n", row_length); fflush(stdout);
        for(k = 0; k < row_length; k++)
        {
-    printf("%dk\n", k); fflush(stdout);
-    
-    printf("%lfval\n", accum_val[k]); fflush(stdout);
          /*loop over block data*/
-         while(A_i_cols[k] >= in_matrix->vbr->cpntr[blockend]){
-    printf("%dblockend\n", blockend); fflush(stdout);
+         while(A_i_cols[k] >= cpntr[blockend]){
            blockend++;
          }
          blockfound = 0;
-         for (kk = in_matrix->vbr->bpntr[i]; kk < in_matrix->vbr->bpntr[i+1]; kk++)
+         for (kk = bpntr[i]; kk < bpntr[i+1]; kk++)
          {
-             
-    printf("%dkk\n", kk); fflush(stdout);
-    printf("%dbpntr[i]\n", in_matrix->vbr->bpntr[i]); fflush(stdout);
-    printf("%dbpntr[i]\n", in_matrix->vbr->bpntr[i+1]); fflush(stdout);
-    printf("%dbindx[kk]\n", in_matrix->vbr->bindx[kk]); fflush(stdout);
-    printf("%dblockend\n", blockend); fflush(stdout);
-           if(in_matrix->vbr->bindx[kk] == blockend-1)
+           if(bindx[kk] == blockend-1)
            {
-    printf("%dkk\n", kk); fflush(stdout);
              blockfound = 1;
              break;
            }
          }
-    printf("%dkk\n", kk); fflush(stdout);
-   
-    printf("%dfound?\n", blockfound); fflush(stdout);
          if(blockfound == 1) /*insert value*/
          {
-           /*need proper data point from storage matrix*/ vals[in_matrix->vbr->indx[kk] + (A_i_cols[k]-in_matrix->vbr->cpntr[blockend-1])*(in_matrix->vbr->rpntr[i+1] - in_matrix->vbr->rpntr[i]) + j - in_matrix->vbr->rpntr[i]] = accum_val[k];
+           /*need proper data point from storage matrix*/ vals[indx[kk] + (A_i_cols[k]-cpntr[blockend-1])*(rpntr[i+1] - rpntr[i]) + j - rpntr[i]] = accum_val[k];
          }
          else /*create new block need matrix structure references in here look at this on 5/6 to verify correctness using aztec functions might be easier*/
          {
-           
-    printf("%dbpntr[i+1]\n", in_matrix->vbr->bpntr[i+1]); fflush(stdout);
-           in_matrix->vbr->bindx[in_matrix->vbr->bpntr[i+1]] = blockend -1;
-    printf("%dbpntr[i+1]\n", in_matrix->vbr->bindx[in_matrix->vbr->bpntr[i+1]]); fflush(stdout);
-    printf("%dbpntr[i+1]\n", in_matrix->vbr->indx[in_matrix->vbr->bpntr[i]]); fflush(stdout);
-           in_matrix->vbr->bpntr[i+1]++;
-           in_matrix->vbr->indx[in_matrix->vbr->bpntr[i+1]] = (in_matrix->vbr->cpntr[blockend]-in_matrix->vbr->cpntr[blockend-1])*(in_matrix->vbr->rpntr[i+1] - in_matrix->vbr->rpntr[i]) + in_matrix->vbr->indx[in_matrix->vbr->bpntr[i+1]-1];
-    printf("%dbpntr[i+1]\n", in_matrix->vbr->indx[in_matrix->vbr->bpntr[i]]); fflush(stdout);
-    printf("%dbpntr[i+1]\n", in_matrix->vbr->indx[in_matrix->vbr->bpntr[i+1]]); fflush(stdout);
-           for(jj = in_matrix->vbr->indx[in_matrix->vbr->bpntr[i+1]-1]; jj < in_matrix->vbr->indx[in_matrix->vbr->bpntr[i+1]]; jj++)
+           bindx[bpntr[i+1]] = blockend -1;
+           bpntr[i+1]++;
+           indx[bpntr[i+1]] = (cpntr[blockend]-cpntr[blockend-1])*(rpntr[i+1] - rpntr[i]) + indx[bpntr[i+1]-1];
+           for(jj = indx[bpntr[i+1]-1]; jj < indx[bpntr[i+1]]; jj++)
            {
-             printf("%djj\n", jj); fflush(stdout);
              vals[jj] = 0.0;
            }
-           vals[in_matrix->vbr->indx[kk] + (A_i_cols[k]-in_matrix->vbr->cpntr[blockend-1])*(in_matrix->vbr->rpntr[i+1] - in_matrix->vbr->rpntr[i]) + j - in_matrix->vbr->rpntr[i]] = accum_val[k];
+           vals[indx[kk] + (A_i_cols[k]-cpntr[blockend-1])*(rpntr[i+1] - rpntr[i]) + j - rpntr[i]] = accum_val[k];
          }
        }
      }
@@ -1715,7 +1660,6 @@ printf("%d %d %d %d\n", t3[0], t3[3], t3[6], t3[9]);
    
     printf("%lfvals\n", vals[i]); fflush(stdout);
 
-
    /*This has to be changed at the end since we need to use the old one
      until the change is complete*/
    /*in_matrix->getrow->func_ptr = VBR_getrow; this needs to go back in at some point but is commented out since it is not functionally nessary*/
@@ -1723,6 +1667,12 @@ printf("%d %d %d %d\n", t3[0], t3[3], t3[6], t3[9]);
    
    /*free old data array and set the new one to the data struct here*/
    /*free call here*/
+   
+   /*set real values to aliases*/
+   in_matrix->vbr->bindx = bindx;
+   in_matrix->vbr->indx = indx;
+   in_matrix->vbr->bpntr = bpntr;
+
    in_matrix->data = vals;
 }
 
