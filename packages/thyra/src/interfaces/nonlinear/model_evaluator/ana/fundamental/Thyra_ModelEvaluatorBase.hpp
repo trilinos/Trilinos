@@ -294,19 +294,7 @@ public:
     /** \brief . */
     void describe( 
       Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel
-      )
-      {
-        using std::endl;
-        using Teuchos::describe;
-        Teuchos::OSTab tab1(out);
-        out << "DerivativeMultiVector\n";
-        Teuchos::OSTab tab2(out);
-        out
-          << "orientation = "
-          << toString(getOrientation()) << endl
-          << "multiVec = "
-          << describe(*getMultiVector(),verbLevel);
-      }
+      );
   private:
     Teuchos::RefCountPtr<MultiVectorBase<Scalar> > mv_;
     EDerivativeMultiVectorOrientation orientation_;
@@ -1058,6 +1046,35 @@ void ModelEvaluatorBase::InArgs<Scalar>::assert_l(int l) const
     "The parameter l = " << l << " is not in the range [0,"<<Np()-1<<"]!"
     );
 }
+
+
+//
+// ModelEvaluatorBase::DerivativeMultiVector
+//
+
+
+template<class Scalar>
+void ModelEvaluatorBase::DerivativeMultiVector<Scalar>::describe(
+  Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel
+  )
+{
+  using std::endl;
+  using Teuchos::describe;
+  Teuchos::OSTab tab1(out);
+  out << "DerivativeMultiVector\n";
+  Teuchos::OSTab tab2(out);
+  out
+    << "orientation = "
+    << toString(getOrientation()) << endl
+    << "multiVec = "
+    << describe(*getMultiVector(),verbLevel);
+}
+// 2007/06/12: rabartl: The above function has to be defined here and not in
+// the class DerivativeMultiVector since it relies on the non-member function
+// toString(ModelEvaluatorBase::EDerivativeMultiVectorOrientation) which is
+// defined after the class definition for ModelEvaluatorBase.  This was caught
+// by the intel compiler.  I am not sure why this worked with gcc.
+
 
 //
 // ModelEvaluatorBase::OutArgs
