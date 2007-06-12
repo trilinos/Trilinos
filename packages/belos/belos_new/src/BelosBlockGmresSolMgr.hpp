@@ -208,7 +208,8 @@ namespace Belos {
     bool adaptiveBlockSize_;
     int blockSize_, numBlocks_;
     int verbosity_, output_freq_;
-    
+    typename StatusTestResNorm<ScalarType,MV,OP>::ScaleType impResScale_, expResScale_;
+
     // Timers.
     Teuchos::RefCountPtr<Teuchos::Time> timerSolve_;
   };
@@ -229,6 +230,8 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   numBlocks_(0),
   verbosity_(Belos::Errors),
   output_freq_(-1),
+  impResScale_(Belos::StatusTestResNorm<ScalarType,MV,OP>::NormOfPrecInitRes),
+  expResScale_(Belos::StatusTestResNorm<ScalarType,MV,OP>::NormOfInitRes),
   timerSolve_(Teuchos::TimeMonitor::getNewTimer("BlockGmresSolMgr::solve()"))
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
@@ -286,16 +289,47 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
   
+  if (pl.isParameter("Implicit Residual Scaling")) {
+    string impResScalingType = Teuchos::getParameter<string>( pl, "Implicit Residual Scaling" );
+    if (impResScalingType == "Norm of Initial Residual") {
+      impResScale_ = StatusTestResNorm_t::NormOfInitRes;
+    } else if (impResScalingType == "Norm of Preconditioned Initial Residual") {
+      impResScale_ = StatusTestResNorm_t::NormOfPrecInitRes;
+    } else if (impResScalingType == "Norm of RHS") {
+      impResScale_ = StatusTestResNorm_t::NormOfRHS;
+    } else if (impResScalingType == "None") {
+      impResScale_ = StatusTestResNorm_t::None;
+    } else 
+      TEST_FOR_EXCEPTION( true ,std::logic_error,
+			  "Belos::BlockGmresSolMgr(): Invalid implicit residual scaling type.");
+  }
+  
+  if (pl.isParameter("Explicit Residual Scaling")) {
+    string expResScalingType = Teuchos::getParameter<string>( pl, "Explicit Residual Scaling" );
+    if (expResScalingType == "Norm of Initial Residual") {
+      expResScale_ = StatusTestResNorm_t::NormOfInitRes;
+    } else if (expResScalingType == "Norm of Preconditioned Initial Residual") {
+      expResScale_ = StatusTestResNorm_t::NormOfPrecInitRes;
+    } else if (expResScalingType == "Norm of RHS") {
+      expResScale_ = StatusTestResNorm_t::NormOfRHS;
+    } else if (expResScalingType == "None") {
+      expResScale_ = StatusTestResNorm_t::None;
+    } else 
+      TEST_FOR_EXCEPTION( true ,std::logic_error,
+			  "Belos::BlockGmresSolMgr(): Invalid explicit residual scaling type.");
+  }
+
   // Basic test checks maximum iterations and native residual.
   maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
   Teuchos::RefCountPtr<StatusTestResNorm_t> impConvTest = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
-  impConvTest->defineScaleForm( StatusTestResNorm_t::NormOfPrecInitRes, Belos::TwoNorm );
+  impConvTest->defineScaleForm( impResScale_, Belos::TwoNorm );
   
   // Explicit residual test once the native residual is below the tolerance
   Teuchos::RefCountPtr<StatusTestResNorm_t> expConvTest  = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
   expConvTest->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
+  expConvTest->defineScaleForm( expResScale_, Belos::TwoNorm );
   
   convTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, impConvTest, expConvTest ) );
 
