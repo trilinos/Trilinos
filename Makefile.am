@@ -70,9 +70,7 @@ EXTRA_DIST = \
 	sampleScripts/cygwin_serial_icl sampleScripts/cygwingcc_amesos \
 	sampleScripts/irix_mpi_sierra sampleScripts/janus_mpi \
 	sampleScripts/janus_mpi_stlport \
-	sampleScripts/linux_mpi_codecov \
 	sampleScripts/linux_mpi_herouxsmp sampleScripts/linux_mpi_instCluster \
-	sampleScripts/linux_serial_codecov \
 	sampleScripts/macosx_mpi_paul sampleScripts/macosx_serial_paul \
 	sampleScripts/macosx_serial_samt5980 \
 	sampleScripts/macosx_mpi_marzio \
