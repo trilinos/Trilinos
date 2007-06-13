@@ -46,11 +46,11 @@
 #include "Rythmos_BackwardEulerStepper.hpp"
 #include "Rythmos_ExplicitRKStepper.hpp"
 #include "Rythmos_ImplicitBDFStepper.hpp"
-// 10/9/06 tscoffe:  InterpolationBufferAsStepper includes: 
+// 10/9/06 tscoffe:  IntegratorDefault includes: 
 #include "Rythmos_InterpolationBuffer.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
 #include "Rythmos_HermiteInterpolator.hpp"
-#include "Rythmos_InterpolationBufferAsStepper.hpp"
+#include "Rythmos_IntegratorDefault.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
     clp.setOption( "reltol", &reltol, "Relative Error Tolerance" );
     clp.setOption( "abstol", &abstol, "Absolute Error Tolerance" );
     clp.setOption( "maxorder", &maxOrder, "Maximum Implicit BDF order" );
-    clp.setOption( "useintegrator", "normal", &useIntegrator, "Use InterpolationBufferAsStepper as integrator" );
+    clp.setOption( "useintegrator", "normal", &useIntegrator, "Use IntegratorDefault as integrator" );
     clp.setOption( "buffersize", &buffersize, "Number of solutions to store in InterpolationBuffer" );
     setVerbosityLevelOption( "verb-level", &verbLevel, "Overall verbosity level.", &clp );
 
@@ -313,7 +313,7 @@ int main(int argc, char *argv[])
         Teuchos::RefCountPtr<Rythmos::InterpolationBuffer<double> > 
           IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,buffersize));
         IB->setParameterList(integratorParams);
-        Rythmos::InterpolationBufferAsStepper<double> integrator(stepper_ptr,IB,integratorParams);
+        Rythmos::IntegratorDefault<double> integrator(stepper_ptr,IB,integratorParams);
         // Ask for desired time value:
         std::vector<double> time_vals;
         for (int i=0 ; i<=N ; ++i)
@@ -374,7 +374,7 @@ int main(int argc, char *argv[])
         Teuchos::RefCountPtr<Rythmos::InterpolationBuffer<double> > 
           IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(hermiteInterpolator,buffersize));
         IB->setParameterList(integratorParams);
-        Rythmos::InterpolationBufferAsStepper<double> integrator(stepper_ptr,IB,integratorParams);
+        Rythmos::IntegratorDefault<double> integrator(stepper_ptr,IB,integratorParams);
         // Ask for desired time value:
         std::vector<double> time_vals;
         for (int i=0 ; i<=N ; ++i)
