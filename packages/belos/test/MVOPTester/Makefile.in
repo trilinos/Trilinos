@@ -559,8 +559,7 @@ uninstall-am:
 include $(top_builddir)/Makefile.export.belos
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/mhd1280a.cua mhd1280a.cua
-	cp  $(srcdir)/mhd1280b.cua mhd1280b.cua
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/mhd1280a.cua mhd1280a.cua; cp  $(srcdir)/mhd1280b.cua mhd1280b.cua; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

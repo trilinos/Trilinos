@@ -50,8 +50,7 @@ endif
 noinst_PROGRAMS = MVOPTester_test $(BELOS_COMPLEX_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/mhd1280a.cua mhd1280a.cua
-	cp  $(srcdir)/mhd1280b.cua mhd1280b.cua
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/mhd1280a.cua mhd1280a.cua; cp  $(srcdir)/mhd1280b.cua mhd1280b.cua; fi
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 

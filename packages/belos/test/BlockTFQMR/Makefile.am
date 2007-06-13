@@ -22,8 +22,7 @@ endif
 noinst_PROGRAMS = $(BELOS_BTFQMR_NOPREC_EX) 
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/orsirr1.hb orsirr1.hb
-	cp  $(srcdir)/fidap036.hb fidap036.hb
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/orsirr1.hb orsirr1.hb; cp  $(srcdir)/fidap036.hb fidap036.hb; fi
 
 Dummy_SOURCES = Dummy
 

@@ -31,13 +31,12 @@ endif
 noinst_PROGRAMS = $(BELOS_BCG_IFPACK_EX) $(BELOS_BCG_HB_EX) $(BELOS_BCG_COMPLEX_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/bcsstk14.hb  bcsstk14.hb
-	cp  $(srcdir)/bcsstk15.hb  bcsstk15.hb
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/bcsstk14.hb  bcsstk14.hb; cp  $(srcdir)/bcsstk15.hb  bcsstk15.hb; fi
 
 Dummy_SOURCES = Dummy
 
 ComplexDummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(top_srcdir)/test/MVOPTester/mhd1280b.cua mhd1280b.cua
+	if [ $(srcdir) != '.' ]; then cp  $(top_srcdir)/test/MVOPTester/mhd1280b.cua mhd1280b.cua; fi
 
 ComplexDummy_SOURCES = Dummy
 

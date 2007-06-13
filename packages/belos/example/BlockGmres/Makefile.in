@@ -529,8 +529,7 @@ uninstall-am:
 include $(top_builddir)/Makefile.export.belos
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/orsirr1.hb orsirr1.hb
-	cp  $(srcdir)/fidap036.hb fidap036.hb
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/orsirr1.hb orsirr1.hb; cp  $(srcdir)/fidap036.hb fidap036.hb; fi
 #
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
