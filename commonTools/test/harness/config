@@ -41,6 +41,47 @@ RUN (beowulf-nightly-mpi) {
 
 ###############################################################################
 #
+# beowulf nightly tarball-creation
+#
+###############################################################################
+
+RUN (beowulf-nightly-tarball-create) {
+    
+    BUILD-LABEL         = tarball-create;
+    BUILD-DIR           = TARBALL_CREATE;
+    MAKE-COMMAND        = make dist;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-beowulf-tarball-create;
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = mnpheno;
+
+}
+
+###############################################################################
+#
+# beowulf nightly tarball-test
+#
+###############################################################################
+
+RUN (beowulf-nightly-tarball-test) {
+    
+    BUILD-LABEL         = tarball-test;
+    BUILD-DIR           = TARBALL_TEST;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = linux-beowulf-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 12;
+    MPI-START           = lamboot /home/mnphenow/.lamhosts;
+    MPI-GO              = mpirun -x LD_LIBRARY_PATH -np ;
+    MPI-PING            = mpitask;
+    MPI-STOP            = lamhalt;    
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = mnpheno;
+
+}
+
+###############################################################################
+#
 # beowulf coverage
 #
 ###############################################################################

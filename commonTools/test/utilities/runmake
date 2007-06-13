@@ -24,6 +24,7 @@ use strict;
 my $trilinosDir;        # Trilinos directory        (required argument) 
 my $buildDir;           # build directory           (required argument) 
 my $makeCmd;            # make command              (default: make)
+my $noBlame;            # no blame?
 
 my $outputDir;          # output directory          (default: .)
 my $verbosity;          # verbosity level           (default: 1)
@@ -77,6 +78,7 @@ exit $exitStatus;
         GetOptions( "trilinos-dir=s" => \$trilinosDir,
                     "build-dir=s" => \$buildDir,
                     "make-cmd=s" => \$makeCmd,
+                    "no-blame" => \$noBlame,
                     "output-dir=s" => \$outputDir,
                     "verbosity=i" => \$verbosity,
                     "log-verbosity=i" => \$logVerbosity,
@@ -124,6 +126,11 @@ exit $exitStatus;
             }
         } else {
             $makeCmd = "make"; 
+        }
+        
+        # Prevent problems with uninitialized value
+        if (!$noBlame) {
+            $noBlame= "";
         }
         
         # Check for existance of output directory, use it to create the
@@ -215,6 +222,7 @@ exit $exitStatus;
         $message .= "  \$trilinosDir = $trilinosDir\n";
         $message .= "  \$buildDir = $buildDir\n";
         $message .= "  \$makeCmd = $makeCmd\n";
+        $message .= "  \$noBlame = $noBlame\n";
         $message .= "  \$outputDir = $outputDir\n";
         $message .= "  \$verbosity = $verbosity\n";
         $message .= "  \$logVerbosity = $logVerbosity\n";
@@ -264,20 +272,31 @@ exit $exitStatus;
         my $runSeconds = $stopSeconds - $startSeconds;
         
         # Detect broken package.
+        my $madePackages= "NONE";
         my $brokenPackage = "NONE";
         my $brokenSubdir = "NONE";
-        my $madePackages = detectMadePackages($makeOutput);
-        if ($makeExitStatus) {
-            ($brokenPackage, $brokenSubdir) = detectBrokenPackage($makeOutput);
-            $message = sprintf("%-30s", " broken: $brokenPackage/$brokenSubdir ");
+        if ($noBlame) {
+            $madePackages = "see output";
+            $brokenPackage = "see output";
+            $brokenSubdir = "see output";
+            $message = sprintf("%-30s", " broken: see output ");
             printMessage($message, $v1+$v2+$v3);
             $message = "! FAILED ";
             printMessage($message, $v1+$v2+$v3);
         } else {
-            $message = sprintf("%-30s", "");
-            printMessage($message, $v1+$v2+$v3);
-            $message = "  passed ";
-            printMessage($message, $v1+$v2+$v3);
+            $madePackages = detectMadePackages($makeOutput);
+            if ($makeExitStatus) {
+                ($brokenPackage, $brokenSubdir) = detectBrokenPackage($makeOutput);
+                $message = sprintf("%-30s", " broken: $brokenPackage/$brokenSubdir ");
+                printMessage($message, $v1+$v2+$v3);
+                $message = "! FAILED ";
+                printMessage($message, $v1+$v2+$v3);
+            } else {
+                $message = sprintf("%-30s", "");
+                printMessage($message, $v1+$v2+$v3);
+                $message = "  passed ";
+                printMessage($message, $v1+$v2+$v3);
+            }
         }
         
         # Trim $makeOutput.

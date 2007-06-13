@@ -27,6 +27,7 @@ my $buildDir;           # build directory           (required argument)
 my $invokeConfigure;    # complete invoke-configure (required argument)
 my $makeCmd;            # make command              (default: make)
 my $recover;            # recover mode?
+my $noBlameMake;        # assign blame during make?
 
 my $outputDir;          # output directory          (default: .)
 my $startTime;          # start time                (supplied by runharness)
@@ -83,6 +84,7 @@ exit $exitStatus;
                     "invoke-configure=s" => \$invokeConfigure,
                     "make-cmd=s" => \$makeCmd,
                     "recover" => \$recover,              
+                    "no-blame-make" => \$noBlameMake,              
                     "output-dir=s" => \$outputDir,
                     "start-time=s" => \$startTime,        
                     "verbosity=i" => \$verbosity,
@@ -132,6 +134,11 @@ exit $exitStatus;
         # Prevent problems with uninitialized value
         if (!$recover) {
             $recover = "";
+        }
+        
+        # Prevent problems with uninitialized value
+        if (!$noBlameMake) {
+            $noBlameMake = "";
         }
         
         # Check for existance of output directory, use it to create the
@@ -242,6 +249,7 @@ exit $exitStatus;
         $message .= "  \$buildDir = $buildDir\n";     
         $message .= "  \$invokeConfigure = $invokeConfigure\n";      
         $message .= "  \$recover = $recover\n";
+        $message .= "  \$noBlameMake = $noBlameMake\n";
         $message .= "  \$outputDir = $outputDir\n";
         $message .= "  \$verbosity = $verbosity\n";
         $message .= "  \$logVerbosity = $logVerbosity\n";
@@ -328,6 +336,7 @@ exit $exitStatus;
             $cmd .= "--trilinos-dir=$trilinosDir ";
             $cmd .= "--build-dir=$buildDir ";
             $cmd .= ($makeCmd?"--make-cmd=\"$makeCmd\" ":"");
+            $cmd .= ($noBlameMake?"--no-blame ":"");
             $cmd .= "--output-dir=$resultsDir ";
             $cmd .= "--verbosity=$argVerbosity ";
             $cmd .= "--log-verbosity=$argLogVerbosity ";
