@@ -33,8 +33,6 @@ CXXFLAGS="-g -O0 -Wreturn-type" \
 --enable-ifpack \
 --enable-ifpack-thyra \
 --enable-nox \
---enable-amesos \
---enable-amesos-thyra \
 --enable-stratimikos \
 --enable-meros \
 --enable-meros-examples \
