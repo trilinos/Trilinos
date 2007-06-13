@@ -10,6 +10,7 @@
 #include "ml_rap.h"
 #include "ml_memory.h"
 #include "ml_aztec_utils.h"
+#include "ml_mat_formats.h"
 #include <limits.h>
 
 /* ******************************************************************** */
@@ -1561,16 +1562,22 @@ void ML_convert2vbr(ML_Operator *in_matrix)
    int blockstart; /*the start point of a block in terms of size*/
    int blockfound;
    int A_i_allocated;
+   int spaceneeded;
+   int val_size; 
+   int spacetight = 0;
    int *A_i_cols; /*columns for the single point row of values*/
    double *accum_val; /*storage of a single point row of values*/
    double *vals;  /*block row storage of matrix*/
    int *rpntr, *cpntr, *bindx, *indx, *bpntr; /*quick links to needed structures
                                                 also makes the code look prettier*/
    int iplus1;
+   double x;
+   struct ML_vbrdata *out_data;
 
    /*settings to change since we now have a vbr matrix*/
    in_matrix->type = ML_TYPE_VBR_MATRIX;
-   /*in_matrix->matvec->func_ptr = VBR_matvec;  this needs to be put back in at some point but is out for now since it is not functionally nessary and not sure the exact setting to use*/
+   in_matrix->matvec->func_ptr = NULL;
+   /*in_matrix->matvec->func_ptr = VBR_matvec;  this needs to be put back in at some point once the function exists*/
 
    /*setup quick link aliases*/
    rpntr = in_matrix->vbr->rpntr;
@@ -1593,31 +1600,82 @@ void ML_convert2vbr(ML_Operator *in_matrix)
      i = cpntr[++j];
    }
 
-   /*at most we have blockrows times blockcolumns blocks this might be able to be more
-     strict but it would be hard to figure out how to do so this could be bounded by
-     the lesser of this and nnz in the matrix which might be better*/
-   bindx = (int*)ML_allocate(blockcolumns*blockrows*sizeof(int));
-   indx = (int*)ML_allocate((blockcolumns*blockrows+1)*sizeof(int));
+   /*at most we have the lesser of blockrows times blockcolumns blocks and the nnz in the matrix which might be better but we are not gareenteed to know the nnz this is a gross overestimate so finding a better prediction might be in order*/
+   in_matrix->vbr->bpntr = bpntr;
+   spaceneeded = blockcolumns*blockrows;
+   if(in_matrix->N_nonzeros > 0)
+   {
+     if(in_matrix->N_nonzeros < spaceneeded)
+       spaceneeded = in_matrix->N_nonzeros;
+   }
+   bindx = (int*)ML_allocate(spaceneeded*sizeof(int));
+   indx = (int*)ML_allocate((spaceneeded+1)*sizeof(int));
 
    /*the number of blockrows is either exact or close enough however*/
    bpntr = (int*)ML_allocate((blockrows+1)*sizeof(int));
 
    indx[0] = bpntr[0] = 0;
 
-   A_i_allocated = in_matrix->max_nz_per_row + 1; /* this doesn't seem to work max nonzero does not seem set the next line overrides thsi for testing purposes*/
-   A_i_allocated = 100;
-   /*better bounds are needed here talk with ray about this.  At most the first two arrays can be is rowsize and the last one is completely dense*/
+   if(in_matrix->max_nz_per_row > 0)
+     A_i_allocated = in_matrix->max_nz_per_row + 1; /*this is exact*/
+   else
+     A_i_allocated = in_matrix->outvec_leng; /*This is a very bad but safe estimate.*/
    A_i_cols  = (int    *) ML_allocate(A_i_allocated * sizeof(int) );
    accum_val = (double *) ML_allocate(A_i_allocated * sizeof(double));
-   vals = (double *) ML_allocate(1000*sizeof(double));
+
+
+   if(in_matrix->N_nonzeros > 0)
+   {
+     /*8 is a complete guess.  One would hope the matrix resulting block matrix was more dense than this but there is no gareentee*/
+     vals = (double *) ML_allocate(in_matrix->N_nonzeros*10*sizeof(double));
+     if(vals == NULL)
+     {
+       for(i = 10; i > 1; i--)
+       {
+         vals = (double *) ML_allocate(in_matrix->N_nonzeros*i*sizeof(double));
+         if(vals != NULL)
+           break;
+       }
+     }
+
+     if(i == 1)
+     {
+       spacetight = 1;
+       /*other arrays need to be made smaller since we're tight on space also its only going to work if the matrix blocks are fairly dense anyway*/
+/*       if(in_matrix->N_nonzeros > 0)
+       {
+         if(in_matrix->N_nonzeros == spaceneeded)
+           spaceneeded /= 
+         else
+           spaceneeded = sqrt(spaceneeded)*10;
+           
+       }*/
+       x = 1.9;
+       for(i = 9; i >= 0; i--)
+       {
+         vals = (double *) ML_allocate(in_matrix->N_nonzeros*x*sizeof(double));
+         if(vals != NULL)
+           break;
+         x-=.1;
+       }
+       if(vals == NULL)
+       {
+         printf("Not enough space in ML_convert2vbr\n");
+         printf("trying to allocate %d ints and %d doubles \n",A_i_allocated+spaceneeded*2+blockrows,in_matrix->N_nonzeros+A_i_allocated);
+         printf("Matrix has %d rows \n", in_matrix->getrow->Nrows);
+         printf("Matrix has %d nz\n", in_matrix->N_nonzeros);
+         exit(1);
+       } 
+     } 
+   }
+   else /*we have no good guess*/
+   {
+     /*get either exact number of non-zeros or some other guess needs to go here*/
+   }
+
 
    if(vals == NULL)
    {
-     printf("Not enough space in ML_convert2vbr\n");
-     printf("trying to allocate %d ints and doubles and %d doubles \n",A_i_allocated,1000);
-     printf("Matrix has %d rows \n", in_matrix->getrow->Nrows);
-     printf("Matrix has %d nz per row\n", in_matrix->max_nz_per_row);
-     exit(1);
    }
 
 
@@ -1669,25 +1727,35 @@ void ML_convert2vbr(ML_Operator *in_matrix)
    
     printf("%lfvals\n", vals[i]); fflush(stdout);
 
-   /*in_matrix->getrow->func_ptr = VBR_getrow; this needs to go back in at some point but is commented out since it is not functionally nessary*/
-   /*in_matrix->max_nz_per_row = ??*/
-
+ /*ML_Operator_Set_Getrow((*Cmatrix), RowOffset+NrowsPerBlock,
+             az_vbrgetrow_wrapper);
+VBR_cnst_blk_getrows(ML_Operator *data, int N_requested_rows,
+                                int requested_rows[], int allocated_space,
+                                int columns[], double values[],
+                                int row_lengths[]);
+*/
+   in_matrix->getrow = NULL; /* at some point a real function is needed and this needs to be set equal to it*/
    
    /*free old data array and set the new one to the data struct here*/
    /*free call here*/
   
- 
-   /*set real values to aliases*/
-   in_matrix->vbr->bindx = bindx;
-   in_matrix->vbr->indx = indx;
-   in_matrix->vbr->bpntr = bpntr;
+  
+   /*We should reallocate to set the arrays to the actual sizes we know they now are*/
 
-   in_matrix->data = vals;
+   /*set real values to aliases*/
+   out_data = (struct ML_vbrdata *)ML_allocate(sizeof(struct ML_vbrdata));
+   out_data->bindx = bindx;
+   out_data->indx = indx;
+   out_data->bpntr = bpntr;
+   out_data->cpntr = cpntr;
+   out_data->rpntr = rpntr;
+   out_data->val = vals;
+
+   in_matrix->data = (void *)out_data;
 
    /*memory cleanup*/
    ML_free(A_i_cols);
    ML_free(accum_val);
-   ML_free(vals);
 }
 
 /************************************************************************/
