@@ -62,16 +62,13 @@
  *
  * \ingroup TestForException_grp
  */
-#define TEUCHOS_ASSERT_INTEGRAL_IN_RANGE( IndexType, index, lower_inclusive, upper_exclusive ) \
+#define TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( index, lower_inclusive, upper_exclusive ) \
   { \
-    const IndexType index_val = (index); \
-    const IndexType lower_inclusive_val = (lower_inclusive); \
-    const IndexType upper_exclusive_val = (upper_exclusive); \
     TEST_FOR_EXCEPTION( \
       !( (lower_inclusive) <= (index) && (index) < (upper_exclusive) ), \
       std::out_of_range, \
-      "Error, the index " #index " = " << index_val << " does not fall in the range" \
-      "["<<lower_inclusive_val<<","<<upper_exclusive_val<<")!" ); \
+      "Error, the index " #index " = " << (index) << " does not fall in the range" \
+      "["<<(lower_inclusive)<<","<<(upper_exclusive)<<")!" ); \
   }
 
 #endif // TEUCHOS_ASSERT_HPP

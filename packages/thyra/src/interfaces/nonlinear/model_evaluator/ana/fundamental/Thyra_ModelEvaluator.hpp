@@ -609,6 +609,21 @@ public:
    */
   virtual Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const = 0;
 
+  /** \brief Get the names of the parameters associated with parameter
+   * subvector l if available.
+   *
+   * \return Returns an RCP to a Teuchos::Array<std::string> object that
+   * contains the names of the parameters.   If returnVal == Teuchos::null,
+   * then there are no names available for the parameter subvector p(l).
+   * If returnVal->size() == 1, then a single name is given to the entire
+   * parameter subvector.  If returnVal->size() == get_p_space(l)->dim(),
+   * then a name is given to every parameter scalar entry.
+   *
+   * The default implementation return returnVal==Teuchos::null which means
+   * by default, parameters have no names associated with them.
+   */
+  virtual Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const = 0;
+
   /** \brief Return the vector space for the auxiliary response functions
    * <tt>g(j)</tt>.
    *

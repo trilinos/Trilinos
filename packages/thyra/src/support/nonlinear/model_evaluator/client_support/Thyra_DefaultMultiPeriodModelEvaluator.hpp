@@ -228,6 +228,8 @@ public:
   /** \brief. */
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  /** \brief . */
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
@@ -506,6 +508,14 @@ Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::get_p_space(int l) const
 {
   return  periodModel_->get_p_space(period_l(l));
+}
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+DefaultMultiPeriodModelEvaluator<Scalar>::get_p_names(int l) const
+{
+  return  periodModel_->get_p_names(period_l(l));
 }
 
 

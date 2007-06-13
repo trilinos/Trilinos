@@ -339,6 +339,11 @@ ModelEvaluator::get_p_map(int l) const
 { return Teuchos::null; }
  
 
+Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+ModelEvaluator::get_p_names(int l) const
+{ return Teuchos::null; }
+
+
 Teuchos::RefCountPtr<const Epetra_Map>
 ModelEvaluator::get_g_map(int j) const
 { return Teuchos::null; }

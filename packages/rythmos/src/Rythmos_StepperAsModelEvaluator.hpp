@@ -203,7 +203,7 @@ Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
 StepperAsModelEvaluator<Scalar>::get_p_space(int l) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT_INTEGRAL_IN_RANGE( int, l, 0, Np_ );
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
   return p_space_[l];
 }
@@ -214,7 +214,7 @@ Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
 StepperAsModelEvaluator<Scalar>::get_g_space(int j) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT_INTEGRAL_IN_RANGE( int, j, 0, Ng_ );
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, Ng_ );
 #endif
   return g_space_[j];
 }

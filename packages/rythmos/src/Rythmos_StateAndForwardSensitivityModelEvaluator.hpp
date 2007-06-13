@@ -228,6 +228,8 @@ public:
   /** \brief . */
   Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  /** \brief . */
   Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief . */
   Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
@@ -341,6 +343,14 @@ Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
 StateAndForwardSensitivityModelEvaluator<Scalar>::get_p_space(int l) const
 {
   return sensModel_->getStateModel()->get_p_space(l);
+}
+
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+StateAndForwardSensitivityModelEvaluator<Scalar>::get_p_names(int l) const
+{
+  return sensModel_->getStateModel()->get_p_names(l);
 }
 
 

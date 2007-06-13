@@ -321,9 +321,19 @@ Teuchos::RefCountPtr<const Epetra_Map>
 DiagonalTransientModel::get_p_map(int l) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT_INTEGRAL_IN_RANGE( int, l, 0, Np_ );
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
   return map_p_[l];
+}
+
+
+Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+DiagonalTransientModel::get_p_names(int l) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
+#endif
+  return names_p_[l];
 }
 
 
@@ -331,7 +341,7 @@ Teuchos::RefCountPtr<const Epetra_Map>
 DiagonalTransientModel::get_g_map(int j) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT_INTEGRAL_IN_RANGE( int, j, 0, Ng_ );
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, Ng_ );
 #endif
   return map_g_[j];
 }
@@ -598,6 +608,14 @@ void DiagonalTransientModel::initialize()
   map_p_.push_back(
     rcp( new Epetra_LocalMap(np_,0,*epetra_comm_) )
     );
+  names_p_.clear();
+  {
+    Teuchos::RefCountPtr<Teuchos::Array<std::string> >
+      names_p_0 = Teuchos::rcp(new Teuchos::Array<std::string>());
+    for ( int i = 0; i < np_; ++i )
+      names_p_0->push_back("coeff_s("+Teuchos::toString(i)+")");
+    names_p_.push_back(names_p_0);
+  }
 
   coeff_s_idx_.clear();
   const int num_func_per_coeff_s = numElements_ / np_;

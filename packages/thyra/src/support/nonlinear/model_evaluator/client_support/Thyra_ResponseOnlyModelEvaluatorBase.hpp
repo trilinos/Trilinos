@@ -31,6 +31,7 @@
 
 
 #include "Thyra_ModelEvaluator.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 namespace Thyra {
@@ -53,6 +54,8 @@ public:
 
   /** \brief Throws exception. */
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_x_space() const;
+  /** \brief Returns null. */
+  Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
   /** \brief Throws exception. */
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief Returns this->createInArgs(). */
@@ -101,6 +104,16 @@ ResponseOnlyModelEvaluatorBase<Scalar>::get_x_space() const
   return Teuchos::null;
 }
 
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+ResponseOnlyModelEvaluatorBase<Scalar>::get_p_names(int l) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, this->Np() );
+#endif
+  return Teuchos::null;
+}
 
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >

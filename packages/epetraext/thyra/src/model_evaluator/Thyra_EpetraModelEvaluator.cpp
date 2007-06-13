@@ -33,6 +33,7 @@
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_implicit_cast.hpp"
+#include "Teuchos_Assert.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "EpetraExt_ModelEvaluatorScalingTools.h"
 #include "Epetra_RowMatrix.h"
@@ -350,8 +351,20 @@ EpetraModelEvaluator::get_f_space() const
 Teuchos::RefCountPtr<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_p_space(int l) const
 {
-  TEST_FOR_EXCEPT( ! ( 0 <= l && l < this->Np() ) );
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, this->Np() );
+#endif
   return p_space_[l];
+}
+
+
+Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+EpetraModelEvaluator::get_p_names(int l) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, this->Np() );
+#endif
+  return epetraModel_->get_p_names(l);
 }
 
 

@@ -55,6 +55,8 @@ public:
   /** \brief Throws exception. */
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief Throws exception. */
+  Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  /** \brief Throws exception. */
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief Returns this->createInArgs(). */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
@@ -102,6 +104,18 @@ StateFuncModelEvaluatorBase<Scalar>::get_p_space(int l) const
   TEST_FOR_EXCEPTION(
     true,std::logic_error
     ,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_p_space(l): "
+    "Error, this function was not overridden in *this = \'"<<this->description()<<"\'!"
+    );
+  return Teuchos::null;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+StateFuncModelEvaluatorBase<Scalar>::get_p_names(int l) const
+{
+  TEST_FOR_EXCEPTION(
+    true,std::logic_error
+    ,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_p_names(l): "
     "Error, this function was not overridden in *this = \'"<<this->description()<<"\'!"
     );
   return Teuchos::null;

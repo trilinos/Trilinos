@@ -257,6 +257,8 @@ public:
   /** \brief . */
   Teuchos::RefCountPtr<const VectorSpaceBase<double> > get_p_space(int l) const;
   /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  /** \brief . */
   Teuchos::RefCountPtr<const VectorSpaceBase<double> > get_g_space(int j) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<double> getNominalValues() const;

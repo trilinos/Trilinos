@@ -236,6 +236,8 @@ int main(int argc, char *argv[])
     
     RefCountPtr<Thyra::ModelEvaluator<double> >
       stateModel = epetraModelEvaluator(epetraStateModel,W_factory);
+
+    *out << "\nParameter names = " << *stateModel->get_p_names(0) << "\n";
     
     //
     // Create the Rythmos stateStepper

@@ -102,6 +102,8 @@ public:
   /** \breif . */
   Teuchos::RefCountPtr<const Epetra_Map> get_p_map(int l) const;
   /** \breif . */
+  Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  /** \breif . */
   Teuchos::RefCountPtr<const Epetra_Map> get_g_map(int j) const;
   /** \brief . */
   Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
@@ -133,6 +135,8 @@ private:
   typedef Teuchos::Array<int> coeff_s_idx_t;
   typedef Teuchos::Array<Teuchos::RefCountPtr<const Epetra_Map> >  RCP_Eptra_Map_Array_t;
   typedef Teuchos::Array<Teuchos::RefCountPtr<Epetra_Vector> > RCP_Eptra_Vector_Array_t;
+  typedef Teuchos::Array<Teuchos::RefCountPtr<Teuchos::Array<std::string> > > RCP_Array_String_Array_t;
+  
 
   // /////////////////////////////////////
   // Private member data
@@ -155,6 +159,7 @@ private:
   int np_;
   int Ng_;
   RCP_Eptra_Map_Array_t map_p_;
+  RCP_Array_String_Array_t names_p_;
   RCP_Eptra_Map_Array_t map_g_;
   RCP_Eptra_Vector_Array_t p_init_;
   Teuchos::RefCountPtr<Epetra_Vector> x_init_;

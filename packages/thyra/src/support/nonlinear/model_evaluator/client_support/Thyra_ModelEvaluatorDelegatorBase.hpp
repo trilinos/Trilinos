@@ -122,6 +122,8 @@ public:
   /** \brief . */
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  /** \brief . */
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
@@ -307,6 +309,13 @@ Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::get_p_space(int l) const
 {
   return getUnderlyingModel()->get_p_space(l);
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+ModelEvaluatorDelegatorBase<Scalar>::get_p_names(int l) const
+{
+  return getUnderlyingModel()->get_p_names(l);
 }
 
 template<class Scalar>
