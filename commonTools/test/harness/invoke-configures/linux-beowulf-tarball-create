@@ -16,6 +16,7 @@ FFLAGS=-O3 \
 --enable-amesos-umfpack \
 --enable-amesos-superlu \
 --enable-anasazi \
+--enable-aristos \
 --enable-aztecoo \
 --enable-belos \
 --enable-capo \
@@ -48,6 +49,7 @@ FFLAGS=-O3 \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
 --enable-pytrilinos \
+--enable-pliris \
 --enable-rythmos \
 --enable-teuchos \
 --enable-teuchos-abc \
