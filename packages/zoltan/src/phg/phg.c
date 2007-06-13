@@ -483,15 +483,17 @@ int **exp_to_part )         /* list of partitions to which exported objs
 */
 
   
-  if (do_timing) {
-    /* Initialize these timers here so their output is near end of printout */
+  /* Initialize these timers here so their output is near end of printout */
+  if (do_timing)
     if (timer_retlist < 0) 
       timer_retlist = Zoltan_Timer_Init(zz->ZTime, 1, "Return_Lists");
+
+  if (hgp.use_timers)
     if (timer_finaloutput < 0) 
       timer_finaloutput = Zoltan_Timer_Init(zz->ZTime, 1, "Final_Output");
 
+  if (do_timing) 
     ZOLTAN_TIMER_START(zz->ZTime, timer_retlist, zz->Communicator);
-  }
 
   /* Build Zoltan's Output_Parts, mapped from 2D distribution 
      to input distribution. */
@@ -530,7 +532,7 @@ End:
     double repart=0.0;   /* total repartitioning cost: comcost x multiplier + migration_cost */
 
     
-    if (do_timing) {
+    if (hgp.use_timers) {
       /* Do not include final output time in partitioning time */
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_all, zz->Communicator);
       ZOLTAN_TIMER_START(zz->ZTime, timer_finaloutput, zz->Communicator);
@@ -605,7 +607,7 @@ End:
       }
     }
 
-    if (do_timing) {
+    if (hgp.use_timers) {
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_finaloutput, zz->Communicator);
       ZOLTAN_TIMER_START(zz->ZTime, timer_all, zz->Communicator);
     }

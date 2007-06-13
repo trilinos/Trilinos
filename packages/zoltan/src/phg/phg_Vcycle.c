@@ -217,6 +217,7 @@ int Zoltan_PHG_Partition (
   int do_timing = (hgp->use_timers > 1);
   int fine_timing = (hgp->use_timers > 2);
   int vcycle_timing = (hgp->use_timers > 4 && hgp->ProRedL == 0);
+  short refine = 0;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
     
@@ -471,7 +472,7 @@ int Zoltan_PHG_Partition (
 
 Refine:
   del = vcycle;
-  short refine = 1;
+  refine = 1;
   /****** Uncoarsening/Refinement ******/
   while (vcycle) {
     VCycle *finer = vcycle->finer;
