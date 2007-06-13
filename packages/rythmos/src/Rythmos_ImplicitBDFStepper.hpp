@@ -154,6 +154,9 @@ public:
   /** \brief . */
   const StepStatus<Scalar> getStepStatus() const;
 
+  /** \brief . */
+  void setStepControlData(const StepperBase<Scalar> & stepper);
+
   //@}
 
   /** \name Overridden from InterpolationBufferBase */
@@ -1772,6 +1775,13 @@ void ImplicitBDFStepper<Scalar>::completeStep_()
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "hh_ = " << hh_ << endl;
   }
+}
+
+template<class Scalar>
+void ImplicitBDFStepper<Scalar>::setStepControlData(const StepperBase<Scalar> & stepper)
+{
+  const ImplicitBDFStepper<Scalar>& bdfstepper = Teuchos::dyn_cast<const ImplicitBDFStepper<Scalar> >(stepper);
+  currentOrder_ = bdfstepper.getOrder();
 }
 
 

@@ -196,6 +196,12 @@ public:
    */
   virtual const StepStatus<Scalar> getStepStatus() const = 0;
 
+  /** \brief Set step control data from another stepper
+   *
+   * This is used to guarantee that you can re-use Jacobians from one stepper with another 
+   */
+  virtual void setStepControlData(const StepperBase & stepper);
+
 };
 
 
@@ -245,6 +251,10 @@ void StepperBase<Scalar>::setInitialCondition(
   // subclass implement this!
 }
 
+template<class Scalar>
+void StepperBase<Scalar>::setStepControlData(const StepperBase & stepper)
+{
+}
 
 } // namespace Rythmos
 
