@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   int init_numrhs = 5;   // how many right-hand sides get solved first
   int aug_numrhs = 10;   // how many right-hand sides are augmented to the first group
   int maxrestarts = 15;  // number of restarts allowed 
-  int length = 100 ;
+  int length = 1000;
   int init_blocksize = 5;// blocksize used for the initial pseudo-block GMRES solve
   int aug_blocksize = 3; // blocksize used for the augmented pseudo-block GMRES solve  
   int maxiters = -1;     // maximum iterations allowed
@@ -115,10 +115,11 @@ int main(int argc, char *argv[]) {
   //
   ParameterList belosList;
   belosList.set( "Num Blocks", length );                 // Maximum number of blocks in Krylov factorization
-  belosList.set( "Block Size", init_blocksize );              // Blocksize to be used by iterative solver
+  belosList.set( "Block Size", init_blocksize );         // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  belosList.set( "Deflation Quorum", 1 );                // Number of converged linear systems before deflation
   if (verbose) {
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
 		   Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
@@ -155,12 +156,31 @@ int main(int argc, char *argv[]) {
   //
   Belos::ReturnType ret = initSolver->solve();
 
-  if (ret != Belos::Converged) {
-    if (proc_verbose)
-      cout << endl << "ERROR:  Initial solver did not converge to solution!" << endl;
-    return -1;
+  //
+  // Compute actual residuals.
+  //
+  bool badRes = false;
+  std::vector<double> actual_resids( init_numrhs );
+  std::vector<double> rhs_norm( init_numrhs );
+  Epetra_MultiVector initR( Map, init_numrhs );
+  OPT::Apply( *A, *initX, initR );
+  MVT::MvAddMv( -1.0, initR, 1.0, *initB, initR ); 
+  MVT::MvNorm( initR, &actual_resids );
+  MVT::MvNorm( *initB, &rhs_norm );
+  if (proc_verbose) {
+    cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+    for (int i=0; i<init_numrhs; i++) {
+      double actRes = actual_resids[i]/rhs_norm[i];
+      cout<<"Problem "<<i<<" : \t"<< actRes <<endl;
+      if (actRes > tol) badRes = true;
+    }
   }
 
+  if (ret != Belos::Converged || badRes==true) {
+    if (proc_verbose)
+      cout << endl << "ERROR:  Initial solve did not converge to solution!" << endl;
+    return -1;
+  }
 
   //
   // ***************Construct augmented linear system****************
@@ -193,6 +213,7 @@ int main(int argc, char *argv[]) {
   //
   belosList.set( "Block Size", aug_blocksize );                // Blocksize to be used by iterative solver
   belosList.set( "Convergence Tolerance", aug_tol );           // Relative convergence tolerance requested
+  belosList.set( "Deflation Quorum", 1 );                      // Number of converged linear systems before deflation
   belosList.set( "Implicit Residual Scaling", "Norm of RHS" ); // Implicit residual scaling for convergence
   belosList.set( "Explicit Residual Scaling", "Norm of RHS" ); // Explicit residual scaling for convergence
   Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > augSolver
@@ -226,14 +247,14 @@ int main(int argc, char *argv[]) {
   //
   // Compute actual residuals.
   //
-  bool badRes = false;
+  badRes = false;
   int total_numrhs = init_numrhs + aug_numrhs;
-  std::vector<double> actual_resids( total_numrhs );
-  std::vector<double> rhs_norm( total_numrhs );
-  Epetra_MultiVector R( Map, total_numrhs );
-  OPT::Apply( *A, *augX, R );
-  MVT::MvAddMv( -1.0, R, 1.0, *augB, R ); 
-  MVT::MvNorm( R, &actual_resids );
+  actual_resids.resize( total_numrhs );
+  rhs_norm.resize( total_numrhs );
+  Epetra_MultiVector augR( Map, total_numrhs );
+  OPT::Apply( *A, *augX, augR );
+  MVT::MvAddMv( -1.0, augR, 1.0, *augB, augR ); 
+  MVT::MvNorm( augR, &actual_resids );
   MVT::MvNorm( *augB, &rhs_norm );
   if (proc_verbose) {
     cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;

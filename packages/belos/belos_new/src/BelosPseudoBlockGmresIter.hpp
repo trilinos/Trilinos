@@ -326,12 +326,6 @@ namespace Belos {
   private:
     
     //
-    // Internal methods
-    //
-    //! Method for initalizing the state storage needed by block GMRES.
-    void setStateSize();
-    
-    //
     // Classes inputed through constructor that define the linear problem to be solved.
     //
     const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> >    lp_;
@@ -364,11 +358,6 @@ namespace Belos {
     // is capable of running; _initialize is controlled  by the initialize() member method
     // For the implications of the state of initialized_, please see documentation for initialize()
     bool initialized_;
-    
-    // stateStorageInitialized_ specified that the state storage has be initialized to the current
-    // blockSize_ and numBlocks_.  This initialization may be postponed if the linear problem was
-    // generated without the right-hand side or solution vectors.
-    bool stateStorageInitialized_;
     
     // Current subspace dimension, and number of iterations performed.
     int curDim_, iter_;
@@ -405,7 +394,6 @@ namespace Belos {
     numRHS_(0),
     numBlocks_(0),
     initialized_(false),
-    stateStorageInitialized_(false),
     curDim_(0),
     iter_(0)
   {
@@ -431,85 +419,6 @@ namespace Belos {
     curDim_ = 0;
 
     initialized_ = false;
-    stateStorageInitialized_ = false;
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Setup the state storage.
-  template <class ScalarType, class MV, class OP>
-  void PseudoBlockGmresIter<ScalarType,MV,OP>::setStateSize ()
-  {
-    if (!stateStorageInitialized_) {
-
-      // Check if there is any multivector to clone from.
-      Teuchos::RefCountPtr<const MV> lhsMV = lp_->getLHS();
-      Teuchos::RefCountPtr<const MV> rhsMV = lp_->getRHS();
-      if (lhsMV == Teuchos::null && rhsMV == Teuchos::null) {
-	stateStorageInitialized_ = false;
-	return;
-      }
-      else {
-	
-	//////////////////////////////////
-	// Reinitialize storage for least squares solve
-	//
-	cs_.resize(numRHS_);
-	sn_.resize(numRHS_);
-	for (int i=0; i<numRHS_; ++i) {
-          if (cs_[i] != Teuchos::null) 
-            cs_[i]->resize(numBlocks_+1);
-          else
-            cs_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,MagnitudeType>(numBlocks_+1) );
-          if (sn_[i] != Teuchos::null)
-            sn_[i]->resize(numBlocks_+1);
-          else
-	    sn_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(numBlocks_+1) );
-	}
-	
-	// Get the multivector that is not null.
-	Teuchos::RefCountPtr<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
-	TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
-			   "Belos::PseudoBlockGmresIter::setStateSize(): linear problem does not specify multivectors to clone from.");
-
-	// Initialize the state storage
-	// If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
-	if (V_.size() == 0) {
-          V_.resize(numRHS_);
-	  for (int i=0; i<numRHS_; ++i) {
-	    V_[i] = MVT::Clone(*tmp,numBlocks_+1);
-	  }
-	}
-	else {
-	  if ( ((int)V_.size() < numRHS_) || (MVT::GetNumberVecs(*V_[0]) < numBlocks_+1) ) {
-	    for (int i=0; i<numRHS_; ++i) {
-	      V_[i] = MVT::Clone(*tmp,numBlocks_+1);
-	    }
-	  }
-	}
-	//
-	// Create the rectangular Hessenberg matrix and right-hand side of least squares problem.
-	//
-	if ((int)H_.size() != numRHS_) {
-	  H_.resize(numRHS_);
-	  Z_.resize(numRHS_);
-	  for (int i=0; i<numRHS_; ++i) {
-	    if (H_[i] == Teuchos::null)
-	      H_[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>() );
-	    if (Z_[i] == Teuchos::null)
-	      Z_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>() );
-	  }
-	}
-	if ( (int)Z_[0]->length() != numBlocks_+1 ) {
-	  for (int i=0; i<numRHS_; ++i) {
-	    H_[i]->shapeUninitialized(numBlocks_+1, numBlocks_);
-	    Z_[i]->shapeUninitialized(numBlocks_+1, 1); 
-	  }
-	}
-
-	// State storage has now been initialized.
-	stateStorageInitialized_ = true;
-      }
-    }
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -567,7 +476,7 @@ namespace Belos {
     //
     if ( norms && (int)norms->size() < numRHS_ )                         
       norms->resize( numRHS_ );                                          
-    
+
     if (norms) {
       Teuchos::BLAS<int,ScalarType> blas;
       for (int j=0; j<numRHS_; j++) {
@@ -586,136 +495,159 @@ namespace Belos {
   {
     // Get the number of right-hand sides we're solving for now.
     int numRHS = MVT::GetNumberVecs(*(lp_->getCurrLHSVec()));
-    if (numRHS != numRHS_)
-      stateStorageInitialized_ = false;
     numRHS_ = numRHS;
 
-    // Initialize the state storage if it isn't already.
-    if (!stateStorageInitialized_) 
-      setStateSize();
-
-      TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
-			 "Belos::PseudoBlockGmresIter::initialize(): Cannot initialize state storage!");      
-          
     // NOTE:  In PseudoBlockGmresIter, V and Z are required!!!  
     // inconsitent multivectors widths and lengths will not be tolerated, and
     // will be treated with exceptions.
     //
     std::string errstr("Belos::PseudoBlockGmresIter::initialize(): Specified multivectors must have a consistent length and width.");
 
-    if ((int)newstate.V.size() != 0 && (int)newstate.Z.size() != 0) {
+    // Check that we have V and Z.
+    TEST_FOR_EXCEPTION((int)newstate.V.size()==0 || (int)newstate.Z.size()==0, std::invalid_argument,
+                       "Belos::PseudoBlockGmresIter::initialize(): V and/or Z is not specified.");
 
-      // initialize V_,Z_, and curDim_
-      for (int i=0; i<numRHS_; ++i) {     
-        TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V[i]) != MVT::GetVecLength(*V_[i]),
-                            std::invalid_argument, errstr );
-        TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V[i]) < newstate.curDim,
-                            std::invalid_argument, errstr );
+    // Get the multivector that is not null.
+    Teuchos::RefCountPtr<const MV> lhsMV = lp_->getLHS();
+    Teuchos::RefCountPtr<const MV> rhsMV = lp_->getRHS();
+    Teuchos::RefCountPtr<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
+    TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
+                       "Belos::PseudoBlockGmresIter::initialize(): linear problem does not specify multivectors to clone from.");
+
+    // Check the new dimension is not more that the maximum number of allowable blocks.  
+    TEST_FOR_EXCEPTION( newstate.curDim > numBlocks_+1,
+                        std::invalid_argument, errstr );
+    curDim_ = newstate.curDim;
+
+    // Initialize the state storage
+    // If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
+    V_.resize(numRHS_);
+    for (int i=0; i<numRHS_; ++i) {
+      // Create a new vector if we need to.
+      if (V_[i] == Teuchos::null || MVT::GetNumberVecs(*V_[i]) < numBlocks_+1 ) {
+        V_[i] = MVT::Clone(*tmp,numBlocks_+1);
       }
-
-      TEST_FOR_EXCEPTION( newstate.curDim > numBlocks_+1,
+      // Check that the newstate vector is consistent.
+      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V[i]) != MVT::GetVecLength(*V_[i]),
+                          std::invalid_argument, errstr );
+      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V[i]) < newstate.curDim,
                           std::invalid_argument, errstr );
       
-      curDim_ = newstate.curDim;
-      
-      // check size of Z
-      for (int i=0; i<numRHS_; ++i)
-	TEST_FOR_EXCEPTION(newstate.Z[i]->numRows() < curDim_, std::invalid_argument, errstr);
-      
-      // check size of H
-      if (newstate.H.size() != 0) {
-        TEST_FOR_EXCEPTION( (int)newstate.H.size() != numRHS_, std::invalid_argument, 
-                            "Belos::PseudoBlockGmresIter::initialize(): Specified Hessenberg matrices must be same as number of right-hand sides.");
-	
-        for (int i=0; i<numRHS_; ++i)
-	  TEST_FOR_EXCEPTION((newstate.H[i]->numRows() < curDim_ || newstate.H[i]->numCols() < curDim_), std::invalid_argument, 
-                             "Belos::PseudoBlockGmresIter::initialize(): Specified Hessenberg matrices must have a consistent size to the current subspace dimension");
-      }
-      
-      // copy basis vectors from newstate into V
-      for (int i=0; i<numRHS_; ++i) {
-	int lclDim = MVT::GetNumberVecs(*newstate.V[i]);
-	
-	if (newstate.V[i] != V_[i]) {
-	  // only copy over the first block and print a warning.
-	  if (curDim_ == 0 && lclDim > 1) {
-	    om_->stream(Warnings) << "Belos::PseudoBlockGmresIter::initialize(): the solver was initialized with a kernel of " 
-				  << lclDim << endl << "The block size however is only " << 1 << endl
-				  << "The last " << lclDim - 1 << " vectors will be discarded." << endl;
-	  }
-	  std::vector<int> nevind(curDim_+1);
-	  for (int j=0; j<curDim_+1; j++) nevind[j] = j;
-	  Teuchos::RefCountPtr<const MV> newV = MVT::CloneView( *newstate.V[i], nevind );
-	  Teuchos::RefCountPtr<MV> lclV = MVT::CloneView( *V_[i], nevind );
-	  MVT::MvAddMv( 1.0, *newV, 0.0, *newV, *lclV );
-	  
-	  // done with local pointers
-	  lclV = Teuchos::null;
-	}
-	
-	// put data into Z_, make sure old information is not still hanging around.
-	if (newstate.Z[i] != Z_[i]) {
-	  Z_[i]->putScalar();
-	  Teuchos::SerialDenseVector<int,ScalarType> newZ(Teuchos::View,newstate.Z[i]->values(),curDim_+1);
-	  Teuchos::RefCountPtr<Teuchos::SerialDenseVector<int,ScalarType> > lclZ;
-	  lclZ = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(Teuchos::View,Z_[i]->values(),curDim_+1) );
-	  lclZ->assign(newZ);
-	  
-	  // done with local pointers
-	  lclZ = Teuchos::null;
-	}
-	
-        // put data into H_, make sure old information is not still hanging around.
-	if (newstate.H.size() != 0) {
-          if (newstate.H[i] != H_[i]) {
-	    Teuchos::SerialDenseMatrix<int,ScalarType> newH(Teuchos::View,*newstate.H[i],curDim_,curDim_);
-	    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclH;
-	    lclH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*H_[i],curDim_,curDim_) );
-	    lclH->assign(newH);
-	    
-	    // done with local pointers
-	    lclH = Teuchos::null;
-          }
+      int lclDim = MVT::GetNumberVecs(*newstate.V[i]);
+      if (newstate.V[i] != V_[i]) {
+        // Cnly copy over the first block and print a warning.
+        if (curDim_ == 0 && lclDim > 1) {
+          om_->stream(Warnings) << "Belos::PseudoBlockGmresIter::initialize(): the solver was initialized with a kernel of " 
+                                << lclDim << endl << "The block size however is only " << 1 << endl
+                                << "The last " << lclDim - 1 << " vectors will be discarded." << endl;
         }
+	std::vector<int> nevind(curDim_+1);
+	for (int j=0; j<curDim_+1; j++) nevind[j] = j;
+	Teuchos::RefCountPtr<const MV> newV = MVT::CloneView( *newstate.V[i], nevind );
+	Teuchos::RefCountPtr<MV> lclV = MVT::CloneView( *V_[i], nevind );
+	MVT::MvAddMv( 1.0, *newV, 0.0, *newV, *lclV );
 	
-        // put data into sn_ and cn_, make sure old information is not still hanging around.
-	if (newstate.sn.size() != 0 && newstate.cs.size() != 0) {
-          if (newstate.sn[i] != sn_[i]) {
-	    Teuchos::SerialDenseVector<int,ScalarType> newsn(Teuchos::View,newstate.sn[i]->values(),curDim_);
-	    Teuchos::RefCountPtr<Teuchos::SerialDenseVector<int,ScalarType> > lclsn;
-	    lclsn = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(Teuchos::View,sn_[i]->values(),curDim_) );
-	    lclsn->assign(newsn);
-	    
-	    // done with local pointers
-	    lclsn = Teuchos::null;
-          }
-	  
-          if (newstate.cs[i] != cs_[i]) {
-	    Teuchos::SerialDenseVector<int,MagnitudeType> newcs(Teuchos::View,newstate.cs[i]->values(),curDim_);
-	    Teuchos::RefCountPtr<Teuchos::SerialDenseVector<int,MagnitudeType> > lclcs;
-	    lclcs = Teuchos::rcp( new Teuchos::SerialDenseVector<int,MagnitudeType>(Teuchos::View,cs_[i]->values(),curDim_) );
-	    lclcs->assign(newcs);
-	    
-	    // done with local pointers
-	    lclcs = Teuchos::null;
-	  }
-	}
+	// Done with local pointers
+	lclV = Teuchos::null;
       }
     }
-    else {
-      
-      TEST_FOR_EXCEPTION(newstate.V.size() == 0, std::invalid_argument,
-                         "Belos::PseudoBlockGmresIter::initialize(): BlockGmresStateIterState does not have initial kernel V_0.");
 
-      TEST_FOR_EXCEPTION(newstate.Z.size() == 0, std::invalid_argument,
-                         "Belos::PseudoBlockGmresIter::initialize(): BlockGmresStateIterState does not have initial norms Z_0.");
+
+    // Check size of Z
+    Z_.resize(numRHS_);
+    for (int i=0; i<numRHS_; ++i) {
+      // Create a vector if we need to.
+      if (Z_[i] == Teuchos::null) {
+	Z_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>() );
+      }
+      if (Z_[i]->length() < numBlocks_+1) {
+	Z_[i]->shapeUninitialized(numBlocks_+1, 1); 
+      }
+      
+      // Check that the newstate vector is consistent.
+      TEST_FOR_EXCEPTION(newstate.Z[i]->numRows() < curDim_, std::invalid_argument, errstr);
+      
+      // Put data into Z_, make sure old information is not still hanging around.
+      if (newstate.Z[i] != Z_[i]) {
+	if (curDim_==0)
+	  Z_[i]->putScalar();
+	
+        Teuchos::SerialDenseVector<int,ScalarType> newZ(Teuchos::View,newstate.Z[i]->values(),curDim_+1);
+        Teuchos::RefCountPtr<Teuchos::SerialDenseVector<int,ScalarType> > lclZ;
+        lclZ = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(Teuchos::View,Z_[i]->values(),curDim_+1) );
+        lclZ->assign(newZ);
+	
+        // Done with local pointers
+	lclZ = Teuchos::null;
+      }
     }
+
+
+    // Check size of H
+    H_.resize(numRHS_);
+    for (int i=0; i<numRHS_; ++i) {
+      // Create a matrix if we need to.
+      if (H_[i] == Teuchos::null) {
+	H_[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>() );
+      }
+      if (H_[i]->numRows() < numBlocks_+1 || H_[i]->numCols() < numBlocks_) {
+	H_[i]->shapeUninitialized(numBlocks_+1, numBlocks_);
+      }
+      
+      // Put data into H_ if it exists, make sure old information is not still hanging around.
+      if ((int)newstate.H.size() == numRHS_) {
+	
+	// Check that the newstate matrix is consistent.
+	TEST_FOR_EXCEPTION((newstate.H[i]->numRows() < curDim_ || newstate.H[i]->numCols() < curDim_), std::invalid_argument, 
+			   "Belos::PseudoBlockGmresIter::initialize(): Specified Hessenberg matrices must have a consistent size to the current subspace dimension");
+	
+	if (newstate.H[i] != H_[i]) {
+	  // H_[i]->putScalar();
+	  
+	  Teuchos::SerialDenseMatrix<int,ScalarType> newH(Teuchos::View,*newstate.H[i],curDim_+1, curDim_);
+	  Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclH;
+	  lclH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*H_[i],curDim_+1, curDim_) );
+	  lclH->assign(newH);
+	  
+	  // Done with local pointers
+	  lclH = Teuchos::null;
+	}
+      }
+    }      
     
+    /////////////////////////////////
+    // Reinitialize storage for least squares solve
+    //
+    cs_.resize(numRHS_);
+    sn_.resize(numRHS_);
+      
+    // Copy over rotation angles if they exist
+    if ((int)newstate.cs.size() == numRHS_ && (int)newstate.sn.size() == numRHS_) {
+      for (int i=0; i<numRHS_; ++i) {
+        if (cs_[i] != newstate.cs[i])
+          cs_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,MagnitudeType>(*newstate.cs[i]) );
+        if (sn_[i] != newstate.sn[i])
+          sn_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(*newstate.sn[i]) );
+      }
+    } 
+      
+    // Resize or create the vectors as necessary
+    for (int i=0; i<numRHS_; ++i) {
+      if (cs_[i] == Teuchos::null) 
+        cs_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,MagnitudeType>(numBlocks_+1) );
+      else
+        cs_[i]->resize(numBlocks_+1);
+      if (sn_[i] == Teuchos::null)
+        sn_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(numBlocks_+1) );
+      else
+        sn_[i]->resize(numBlocks_+1);
+    }
+
     // the solver is initialized
     initialized_ = true;
-
-    /*
-    if (om_->isVerbosity( Debug ) ) {
+      
+      /*
+	if (om_->isVerbosity( Debug ) ) {
       // Check almost everything here
       CheckList chk;
       chk.checkV = true;
@@ -751,7 +683,7 @@ namespace Belos {
     //
     std::vector<int> index(1);
     std::vector<int> index2(1);
-    index[0] = 0;
+    index[0] = curDim_;
     Teuchos::RefCountPtr<MV> tmp_vec;
     Teuchos::RefCountPtr<MV> U_vec = MVT::Clone( *V_[0], numRHS_ );
 
@@ -770,6 +702,7 @@ namespace Belos {
     // also break if our basis is full
     //
     while (stest_->checkStatus(this) != Passed && curDim_+1 <= searchDim) {
+      //stest_->print(cout);
 
       iter_++;
       //

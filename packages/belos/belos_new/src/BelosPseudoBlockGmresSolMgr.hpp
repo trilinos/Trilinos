@@ -209,6 +209,7 @@ namespace Belos {
     bool adaptiveBlockSize_;
     int blockSize_, numBlocks_;
     int verbosity_, output_freq_;
+    int defQuorum_;
     typename StatusTestResNorm<ScalarType,MV,OP>::ScaleType impResScale_, expResScale_;       
  
     // Timers.
@@ -231,6 +232,7 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr(
   numBlocks_(0),
   verbosity_(Belos::Errors),
   output_freq_(-1),
+  defQuorum_(1),
   impResScale_(Belos::StatusTestResNorm<ScalarType,MV,OP>::NormOfPrecInitRes),
   expResScale_(Belos::StatusTestResNorm<ScalarType,MV,OP>::NormOfInitRes),
   timerSolve_(Teuchos::TimeMonitor::getNewTimer("PseudoBlockGmresSolMgr::solve()"))
@@ -286,6 +288,13 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr(
   
   // Create status tests
 
+  // Get the deflation quorum, or number of converged systems before deflation is allowed
+  if (pl.isParameter("Deflation Quorum")) {
+    defQuorum_ = pl.get("Deflation Quorum", defQuorum_);
+  }
+  TEST_FOR_EXCEPTION(defQuorum_ > blockSize_, std::invalid_argument,
+                     "Belos::PseudoBlockGmresSolMgr: \"Deflation Quorum\" cannot be larger than \"Block Size\".");
+
   // Convergence
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
@@ -324,11 +333,11 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr(
   maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
-  impConvTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, 1 ) );
+  impConvTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, defQuorum_ ) );
   impConvTest_->defineScaleForm( impResScale_, Belos::TwoNorm );
   
   // Explicit residual test once the native residual is below the tolerance
-  expConvTest_  = Teuchos::rcp( new StatusTestResNorm_t( convtol_, 1 ) );
+  expConvTest_  = Teuchos::rcp( new StatusTestResNorm_t( convtol_, defQuorum_ ) );
   expConvTest_->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
   expConvTest_->defineScaleForm( expResScale_, Belos::TwoNorm );
   
@@ -442,14 +451,14 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       outputTest_->resetNumCalls();
 
       // Get a new state struct and initialize the solver.
-      PseudoBlockGmresIterState<ScalarType,MV> newstate;
+      PseudoBlockGmresIterState<ScalarType,MV> newState;
 
       // Create the first block in the current Krylov basis for each right-hand side.
       std::vector<int> index(1);
       Teuchos::RefCountPtr<MV> tmpV, R_0 = MVT::Clone( *(problem_->getCurrResVec()), blockSize_ );
       problem_->computeCurrResVec( &*R_0 );
-      newstate.V.resize( blockSize_ );
-      newstate.Z.resize( blockSize_ );
+      newState.V.resize( blockSize_ );
+      newState.Z.resize( blockSize_ );
       for (int i=0; i<blockSize_; ++i) {
 	index[0]=i;
 	tmpV = MVT::CloneCopy( *R_0, index );
@@ -463,12 +472,12 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	TEST_FOR_EXCEPTION(rank != 1, PseudoBlockGmresSolMgrOrthoFailure,
 			   "Belos::PseudoBlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
 
-	newstate.V[i] = tmpV;
-	newstate.Z[i] = tmpZ;
+	newState.V[i] = tmpV;
+	newState.Z[i] = tmpZ;
       }
 
-      newstate.curDim = 0;
-      block_gmres_iter->initialize(newstate);
+      newState.curDim = 0;
+      block_gmres_iter->initialize(newState);
       int numRestarts = 0;
 
       while(1) {
@@ -493,7 +502,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	      break;  // break from while(1){block_gmres_iter->iterate()}
 
 	    // Get a new state struct and initialize the solver.
-	    PseudoBlockGmresIterState<ScalarType,MV> newstate;
+	    PseudoBlockGmresIterState<ScalarType,MV> newState;
 
 	    // Inform the linear problem that we are finished with this current linear system.
 	    problem_->setCurrLS();
@@ -508,6 +517,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    // are left to converge for this block.
 	    int have = 0;
 	    std::vector<int> oldRHSIdx( currRHSIdx );
+	    std::vector<int> defRHSIdx;
 	    for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
 	      bool found = false;
 	      for (unsigned int j=0; j<convIdx.size(); ++j) {
@@ -516,26 +526,57 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 		  break;
 		}
 	      }
-	      if (!found) {
-		newstate.V.push_back( Teuchos::rcp_const_cast<MV>( oldState.V[i] ) );
-		newstate.Z.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.Z[i] ) );
-		newstate.H.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseMatrix<int,ScalarType> >( oldState.H[i] ) );
-		newstate.sn.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.sn[i] ) );
-		newstate.cs.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,MagnitudeType> >(oldState.cs[i] ) );
+	      if (found) {
+		defRHSIdx.push_back( i );
+	      }
+	      else {
+		newState.V.push_back( Teuchos::rcp_const_cast<MV>( oldState.V[i] ) );
+		newState.Z.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.Z[i] ) );
+		newState.H.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseMatrix<int,ScalarType> >( oldState.H[i] ) );
+		newState.sn.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.sn[i] ) );
+		newState.cs.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,MagnitudeType> >(oldState.cs[i] ) );
 		currRHSIdx[have] = currRHSIdx[i];
 		have++;
 	      }
 	    }
+	    defRHSIdx.resize(currRHSIdx.size()-have);
 	    currRHSIdx.resize(have);
+
+	    /*
+            cout << "Givens rotation coefficients (cs) after deflation" << endl;
+            for (int i=0; i<curDim; ++i) {
+              for (int j=0; j<have; ++j) {
+                cout << (*newState.cs[j])[i];
+              }
+              cout << endl;
+            }
+            cout << "Givens rotation coefficients (sn) after deflation" << endl;
+            for (int i=0; i<curDim; ++i) {
+              for (int j=0; j<have; ++j) {
+                cout << (*newState.sn[j])[i];
+              }
+              cout << endl;
+            }
+	    */
+
+	    // Compute the current solution that need to be deflated.
+	    Teuchos::RefCountPtr<MV> update = block_gmres_iter->getCurrentUpdate();
+	    Teuchos::RefCountPtr<MV> defUpdate = MVT::CloneView( *update, defRHSIdx );
+
+	    // Set the deflated indices so we can update the solution.
+	    problem_->setLSIndex( convIdx );
+
+	    // Update the linear problem.
+	    problem_->updateSolution( defUpdate, true );
 
 	    // Set the remaining indices after deflation.
 	    problem_->setLSIndex( currRHSIdx );
 
 	    // Set the dimension of the subspace, which is the same as the old subspace size.
-	    newstate.curDim = curDim;
+	    newState.curDim = curDim;
 
 	    // Initialize the solver with the deflated system.
-	    block_gmres_iter->initialize(newstate);
+	    block_gmres_iter->initialize(newState);
 	  }
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  //

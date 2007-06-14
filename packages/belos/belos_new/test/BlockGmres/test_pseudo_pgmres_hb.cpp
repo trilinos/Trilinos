@@ -73,24 +73,26 @@ int main(int argc, char *argv[]) {
   int init_numrhs = 5;   // how many right-hand sides get solved first
   int aug_numrhs = 10;   // how many right-hand sides are augmented to the first group
   int maxrestarts = 15;  // number of restarts allowed 
-  int length = 25;
-  int blocksize = 5;     // blocksize used by pseudo-block GMRES
+  int length = 1000;
+  int init_blocksize = 5;// blocksize used for the initial pseudo-block GMRES solve
+  int aug_blocksize = 3; // blocksize used for the augmented pseudo-block GMRES solve  
   int maxiters = -1;     // maximum iterations allowed
   std::string filename("orsirr1.hb");
   MT tol = 1.0e-5;       // relative residual tolerance
-  MT aug_tol = 1.0e-5;   // relative residual tolerance for augmented systems
+  MT aug_tol = 1.0e-5;   // relative residual tolerance for augmented system
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("left-prec","right-prec",&leftprec,"Left preconditioning or right.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
+  cmdp.setOption("left-prec","right-prec",&leftprec,"Left preconditioning or right.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("aug-tol",&aug_tol,"Relative residual tolerance used by GMRES solver for augmented systems.");
   cmdp.setOption("init-num-rhs",&init_numrhs,"Number of right-hand sides to be initially solved for.");
   cmdp.setOption("aug-num-rhs",&aug_numrhs,"Number of right-hand sides augmenting the initial solve.");
   cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
-  cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");  
+  cmdp.setOption("block-size",&init_blocksize,"Block size used by GMRES for the initial solve.");
+  cmdp.setOption("aug-block-size",&aug_blocksize,"Block size used by GMRES for the augmented solve.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
   cmdp.setOption("subspace-size",&length,"Dimension of Krylov subspace used by GMRES.");  
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -161,10 +163,11 @@ int main(int argc, char *argv[]) {
   //
   ParameterList belosList;
   belosList.set( "Num Blocks", length );                 // Maximum number of blocks in Krylov factorization
-  belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
+  belosList.set( "Block Size", init_blocksize );         // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  belosList.set( "Deflation Quorum", 1 );                // Number of converged linear systems before deflation
   if (verbose) {
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
 		   Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
@@ -176,34 +179,113 @@ int main(int argc, char *argv[]) {
   //
   // *****Construct solution vector and random right-hand-sides *****
   //
-  RefCountPtr<Epetra_MultiVector> X = rcp( new Epetra_MultiVector(Map, init_numrhs) );
-  X->PutScalar( 0.0 );
-  RefCountPtr<Epetra_MultiVector> B = rcp( new Epetra_MultiVector(Map, init_numrhs) );
-  B->Random();
-  Belos::LinearProblem<double,MV,OP> problem( A, X, B );
+  RefCountPtr<Epetra_MultiVector> initX = rcp( new Epetra_MultiVector(Map, init_numrhs) );
+  RefCountPtr<Epetra_MultiVector> initB = rcp( new Epetra_MultiVector(Map, init_numrhs) );
+  initX->Random();
+  OPT::Apply( *A, *initX, *initB );
+  initX->PutScalar( 0.0 );
+  Belos::LinearProblem<double,MV,OP> initProblem( A, initX, initB );
   if (leftprec)
-    problem.setLeftPrec( Prec );
+    initProblem.setLeftPrec( Prec );
   else
-    problem.setRightPrec( Prec );
-  
-  bool set = problem.setProblem();
+    initProblem.setRightPrec( Prec );
+
+ 
+  bool set = initProblem.setProblem();
   if (set == false) {
     if (proc_verbose)
-      cout << endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << endl;
+      cout << endl << "ERROR:  Initial Belos::LinearProblem failed to set up correctly!" << endl;
     return -1;
   }
   //
   // *******************************************************************
-  // *************Start the block Gmres iteration*************************
+  // *********************Perform initial solve*************************
   // *******************************************************************
   //
-  Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > solver
-    = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&problem,false), belosList ) );
+  Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > initSolver
+    = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&initProblem,false), belosList ) );
   //
   // Perform solve
   //
-  Belos::ReturnType ret = solver->solve();
+  Belos::ReturnType ret = initSolver->solve();
+
+  //
+  // Compute actual residuals.
+  //
+  bool badRes = false;
+  std::vector<double> actual_resids( init_numrhs );
+  std::vector<double> rhs_norm( init_numrhs );
+  Epetra_MultiVector initR( Map, init_numrhs );
+  OPT::Apply( *A, *initX, initR );
+  MVT::MvAddMv( -1.0, initR, 1.0, *initB, initR ); 
+  MVT::MvNorm( initR, &actual_resids );
+  MVT::MvNorm( *initB, &rhs_norm );
+  if (proc_verbose) {
+    cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+    for (int i=0; i<init_numrhs; i++) {
+      double actRes = actual_resids[i]/rhs_norm[i];
+      cout<<"Problem "<<i<<" : \t"<< actRes <<endl;
+      if (actRes > tol) badRes = true;
+    }
+  }
+
+  if (ret != Belos::Converged || badRes==true) {
+    if (proc_verbose)
+      cout << endl << "ERROR:  Initial solve did not converge to solution!" << endl;
+    return -1;
+  }
+
+  //
+  // ***************Construct augmented linear system****************
+  //
+  RefCountPtr<Epetra_MultiVector> augX = rcp( new Epetra_MultiVector(Map, init_numrhs+aug_numrhs) );
+  RefCountPtr<Epetra_MultiVector> augB = rcp( new Epetra_MultiVector(Map, init_numrhs+aug_numrhs) );
+  if (aug_numrhs) {
+    augX->Random();
+    OPT::Apply( *A, *augX, *augB );
+    augX->PutScalar( 0.0 );
+  }
   
+  // Copy previous linear system into 
+  RefCountPtr<Epetra_MultiVector> tmpX = rcp( new Epetra_MultiVector( View, *augX, 0, init_numrhs ) );
+  RefCountPtr<Epetra_MultiVector> tmpB = rcp( new Epetra_MultiVector( View, *augB, 0, init_numrhs ) );
+  tmpX->Scale( 1.0, *initX );
+  tmpB->Scale( 1.0, *initB );
+    
+  Belos::LinearProblem<double,MV,OP> augProblem( A, augX, augB );
+  if (leftprec)
+    augProblem.setLeftPrec( Prec );
+  else
+    augProblem.setRightPrec( Prec );
+
+  set = augProblem.setProblem();
+  if (set == false) {
+    if (proc_verbose)
+      cout << endl << "ERROR:  Augmented Belos::LinearProblem failed to set up correctly!" << endl;
+    return -1;
+  }
+  //
+  // *******************************************************************
+  // *******************Perform augmented solve*************************
+  // *******************************************************************
+  //
+  belosList.set( "Block Size", aug_blocksize );                // Blocksize to be used by iterative solver
+  belosList.set( "Convergence Tolerance", aug_tol );           // Relative convergence tolerance requested
+  belosList.set( "Deflation Quorum", 1 );                      // Number of converged linear systems before deflation
+  belosList.set( "Implicit Residual Scaling", "Norm of RHS" ); // Implicit residual scaling for convergence
+  belosList.set( "Explicit Residual Scaling", "Norm of RHS" ); // Explicit residual scaling for convergence
+  Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > augSolver
+    = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&augProblem,false), belosList ) );
+  //
+  // Perform solve
+  //
+  ret = augSolver->solve();
+
+  if (ret != Belos::Converged) {
+    if (proc_verbose)
+      cout << endl << "ERROR: Augmented solver did not converge to solution!" << endl;
+    return -1;
+  }
   //
   // **********Print out information about problem*******************
   //
@@ -223,17 +305,18 @@ int main(int argc, char *argv[]) {
   //
   // Compute actual residuals.
   //
-  bool badRes = false;
-  std::vector<double> actual_resids( init_numrhs );
-  std::vector<double> rhs_norm( init_numrhs );
-  Epetra_MultiVector R(Map, init_numrhs);
-  OPT::Apply( *A, *X, R );
-  MVT::MvAddMv( -1.0, R, 1.0, *B, R ); 
-  MVT::MvNorm( R, &actual_resids );
-  MVT::MvNorm( *B, &rhs_norm );
+  badRes = false;
+  int total_numrhs = init_numrhs + aug_numrhs;
+  actual_resids.resize( total_numrhs );
+  rhs_norm.resize( total_numrhs );
+  Epetra_MultiVector augR( Map, total_numrhs );
+  OPT::Apply( *A, *augX, augR );
+  MVT::MvAddMv( -1.0, augR, 1.0, *augB, augR ); 
+  MVT::MvNorm( augR, &actual_resids );
+  MVT::MvNorm( *augB, &rhs_norm );
   if (proc_verbose) {
     cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
-    for ( int i=0; i<init_numrhs; i++) {
+    for ( int i=0; i<total_numrhs; i++) {
       double actRes = actual_resids[i]/rhs_norm[i];
       cout<<"Problem "<<i<<" : \t"<< actRes <<endl;
       if (actRes > tol ) badRes = true;
@@ -252,4 +335,4 @@ int main(int argc, char *argv[]) {
     cout << "End Result: TEST PASSED" << endl;
   return 0;
   //
-} // end test_bl_pgmres_hb.cpp
+} // end test_pseudo_gmres_hb.cpp
