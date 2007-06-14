@@ -221,10 +221,15 @@ int main(int argc, char *argv[])
       epetraModel = Teuchos::rcp(new ExampleApplication(epetra_comm_ptr_, params));
     Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> >
       model = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModel,W_factory));
+    Teuchos::RefCountPtr<ExampleApplication>
+      epetraModelSlave = Teuchos::rcp(new ExampleApplication(epetra_comm_ptr_, params));
+    Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> >
+      modelSlave = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModelSlave,W_factory));
 
     // Create Stepper object depending on command-line input
     std::string method;
     Teuchos::RefCountPtr<Rythmos::StepperBase<double> > stepper_ptr;
+    Teuchos::RefCountPtr<Rythmos::StepperBase<double> > stepperSlave_ptr;
     if ( method_val == METHOD_ERK ) {
       stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRKStepper<double>(model));
       Teuchos::RefCountPtr<Teuchos::ParameterList> ERKparams = Teuchos::rcp(new Teuchos::ParameterList);
@@ -244,13 +249,19 @@ int main(int argc, char *argv[])
     else if ((method_val == METHOD_BE) | (method_val == METHOD_BDF)) {
       Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<double> >
         nonlinearSolver;
+      Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<double> >
+        nonlinearSolverSlave;
       Teuchos::RefCountPtr<Rythmos::TimeStepNonlinearSolver<double> >
         _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
+      Teuchos::RefCountPtr<Rythmos::TimeStepNonlinearSolver<double> >
+        _nonlinearSolverSlave = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
       Teuchos::RefCountPtr<Teuchos::ParameterList>
         nonlinearSolverPL = Teuchos::parameterList();
       nonlinearSolverPL->set("Default Tol",double(1e-3*maxError));
       _nonlinearSolver->setParameterList(nonlinearSolverPL);
+      _nonlinearSolverSlave->setParameterList(nonlinearSolverPL);
       nonlinearSolver = _nonlinearSolver;
+      nonlinearSolverSlave = _nonlinearSolverSlave;
       if (method_val == METHOD_BE) {
         stepper_ptr = Teuchos::rcp(
           new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
@@ -277,6 +288,8 @@ int main(int argc, char *argv[])
           );
         stepper_ptr = Teuchos::rcp(
           new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver,BDFparams));
+        stepperSlave_ptr = Teuchos::rcp(
+          new Rythmos::ImplicitBDFStepper<double>(modelSlave,nonlinearSolverSlave,BDFparams));
         method = "Implicit BDF";
         // step_method_val setting is left alone in this case
       }
@@ -412,6 +425,46 @@ int main(int argc, char *argv[])
         while (time < finalTime)
         {
           double dt_taken = stepper.takeStep(0.0,Rythmos::VARIABLE_STEP);
+          if (method_val == METHOD_BDF) {
+            stepperSlave_ptr->setStepControlData(stepper);
+            double slave_dt_taken = stepperSlave_ptr->takeStep(dt_taken,Rythmos::FIXED_STEP);
+            // Check that returned dt matches exactly
+            TEST_FOR_EXCEPT(dt_taken != slave_dt_taken);
+            Rythmos::StepStatus<double> stepStatusMaster = stepper.getStepStatus();
+            Rythmos::StepStatus<double> stepStatusSlave = stepperSlave_ptr->getStepStatus();
+            // Check that the stepStatus matches exactly:
+            TEST_FOR_EXCEPT(stepStatusMaster.stepLETStatus != stepStatusSlave.stepLETStatus);
+            TEST_FOR_EXCEPT(stepStatusMaster.stepSize != stepStatusSlave.stepSize);
+            TEST_FOR_EXCEPT(stepStatusMaster.time != stepStatusSlave.time);
+            if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+              *out << "Master order = " << stepStatusMaster.order << endl;
+              *out << " Slave order = " << stepStatusSlave.order << endl;
+              *out << "Master LET Value = " << stepStatusMaster.stepLETValue << endl;
+              *out << " Slave LET Value = " << stepStatusSlave.stepLETValue << endl;
+            }
+            TEST_FOR_EXCEPT(stepStatusMaster.order != stepStatusSlave.order);
+            // We will allow a difference of some multiplier of machine epsilon:
+            double eps = 1.0e4*Teuchos::ScalarTraits<double>::prec();
+            double normLETDiff = abs(stepStatusMaster.stepLETValue - stepStatusSlave.stepLETValue);
+            TEST_FOR_EXCEPT(normLETDiff > eps);
+            // Create a non-const Thyra VectorBase to use as a temp vector
+            Teuchos::RefCountPtr<Thyra::VectorBase<double> > vec_temp = stepStatusSlave.solution->clone_v();
+            // Check that the solution matches exactly
+            Thyra::V_StVpStV<double>(&*vec_temp,1.0,*stepStatusMaster.solution,-1.0,*stepStatusSlave.solution);
+            double normSolutionDiff = Thyra::norm_inf<double>(*vec_temp);
+            if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+              *out << "normSolutionDiff = " << normSolutionDiff << endl;
+            }
+            TEST_FOR_EXCEPT(normSolutionDiff > eps);
+            // Check that solution dot matches exactly
+            Thyra::V_StVpStV<double>(&*vec_temp,1.0,*stepStatusMaster.solutionDot,-1.0,*stepStatusSlave.solutionDot);
+            double normSolutionDotDiff = Thyra::norm_inf<double>(*vec_temp);
+            if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+              *out << "normSolutionDotDiff = " << normSolutionDotDiff << endl;
+            }
+            TEST_FOR_EXCEPT(normSolutionDotDiff > eps);
+            // Do not check that the residual matches because the residual isn't stored in ImplicitBDFStepper.
+          }
           numSteps++;
           if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) )
             stepper.describe(*out,verbLevel);
