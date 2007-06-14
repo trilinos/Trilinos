@@ -560,6 +560,10 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
     constantStepSize_ = true;
     if (dt != ST::zero()) {
       hh_ = dt;
+      if (numberOfSteps_ == 0) {
+        psi_[0] = hh_;
+        cj_ = 1/psi_[0];
+      }
     }
     if (hh_ == ST::zero()) {
       return(Scalar(-ST::one()));
@@ -702,7 +706,7 @@ const StepStatus<Scalar> ImplicitBDFStepper<Scalar>::getStepStatus() const
   }
   stepStatus.stepLETStatus = stepLETStatus_;
   stepStatus.stepSize = usedStep_; 
-  stepStatus.order = currentOrder_;
+  stepStatus.order = usedOrder_;
   stepStatus.time = time_;
   stepStatus.stepLETValue = ck_enorm_; 
   stepStatus.solution = xHistory_[0];
@@ -822,7 +826,7 @@ int ImplicitBDFStepper<Scalar>::getOrder() const
   if (!isInitialized_) {
     return(-1);
   }
-  return(currentOrder_);
+  return(usedOrder_);
 }
 
 
