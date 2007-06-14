@@ -577,13 +577,14 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
     maxTimeStep_ = dt;
     h_max_inv_ = Scalar(ST::one()/maxTimeStep_);
   }
+  
+  // Set Error weight vector once for each step.
+  ErrWtVecSet(&*errWtVec_,*xHistory_[0]);
 
   BDFstatusFlag status;
   while (1) {
     // Set up problem coefficients (and handle first step)
     updateCoeffs_();
-    // Set Error weight vector
-    ErrWtVecSet(&*errWtVec_,*xn0_);
     // compute predictor
     obtainPredictor_();
     // solve nonlinear problem (as follows)
@@ -1386,6 +1387,7 @@ void ImplicitBDFStepper<Scalar>::initialize_()
   x_dot_base_ = createMember(x_space);
   ee_ = createMember(x_space);
   delta_ = createMember(x_space);
+  V_S(&*delta_,ST::zero()); // tscoffe 06/14/07:  Initialize delta_ 
   residual_ = createMember(f_space);
   errWtVec_ = createMember(x_space); 
   ErrWtVecSet(&*errWtVec_,*xn0_);
@@ -1468,14 +1470,22 @@ Scalar ImplicitBDFStepper<Scalar>::checkReduceOrder_()
   // be good to partition it into two or more classes.  Statements like the
   // above will be hard to maintain and suggest a need for some partitioning.
 
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::OSTab ostab(out,1,"checkReduceOrder_");
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+    *out << "sigma_[" << currentOrder_ << "] = " << sigma_[currentOrder_] << std::endl;
+    *out << "ee_ = " << endl;
+    ee_->describe(*out,this->getVerbLevel());
+    *out << "errWtVec_ = " << endl;
+    errWtVec_->describe(*out,this->getVerbLevel());
+  }
+
   Scalar enorm = WRMSNorm(*errWtVec_,*ee_);
   Ek_ = sigma_[currentOrder_]*enorm;
   Tk_ = Scalar(currentOrder_+1)*Ek_;
   Est_ = Ek_;
   newOrder_ = currentOrder_;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab ostab(out,1,"checkReduceOrder_");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "currentOrder_ = " << currentOrder_ << std::endl;
     *out << "Ek_ = " << Ek_ << std::endl;
