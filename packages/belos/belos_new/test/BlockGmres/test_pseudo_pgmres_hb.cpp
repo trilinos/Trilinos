@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
   int init_numrhs = 5;   // how many right-hand sides get solved first
   int aug_numrhs = 10;   // how many right-hand sides are augmented to the first group
   int maxrestarts = 15;  // number of restarts allowed 
-  int length = 1000;
+  int length = 50;
   int init_blocksize = 5;// blocksize used for the initial pseudo-block GMRES solve
   int aug_blocksize = 3; // blocksize used for the augmented pseudo-block GMRES solve  
   int maxiters = -1;     // maximum iterations allowed

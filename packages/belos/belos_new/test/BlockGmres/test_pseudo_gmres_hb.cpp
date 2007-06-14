@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   int init_numrhs = 5;   // how many right-hand sides get solved first
   int aug_numrhs = 10;   // how many right-hand sides are augmented to the first group
   int maxrestarts = 15;  // number of restarts allowed 
-  int length = 1000;
+  int length = 100;
   int init_blocksize = 5;// blocksize used for the initial pseudo-block GMRES solve
   int aug_blocksize = 3; // blocksize used for the augmented pseudo-block GMRES solve  
   int maxiters = -1;     // maximum iterations allowed
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-  belosList.set( "Deflation Quorum", 1 );                // Number of converged linear systems before deflation
+  belosList.set( "Deflation Quorum", init_blocksize  );  // Number of converged linear systems before deflation
   if (verbose) {
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
 		   Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
   //
   belosList.set( "Block Size", aug_blocksize );                // Blocksize to be used by iterative solver
   belosList.set( "Convergence Tolerance", aug_tol );           // Relative convergence tolerance requested
-  belosList.set( "Deflation Quorum", 1 );                      // Number of converged linear systems before deflation
+  belosList.set( "Deflation Quorum", aug_blocksize );          // Number of converged linear systems before deflation
   belosList.set( "Implicit Residual Scaling", "Norm of RHS" ); // Implicit residual scaling for convergence
   belosList.set( "Explicit Residual Scaling", "Norm of RHS" ); // Explicit residual scaling for convergence
   Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > augSolver

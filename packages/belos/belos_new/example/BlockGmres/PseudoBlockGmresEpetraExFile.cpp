@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   int blocksize = 1;         // blocksize
   int numrhs = 1;            // number of right-hand sides to solve for
   int maxiters = -1;         // maximum number of iterations allowed per linear system
-  int maxsubspace = 25;      // maximum number of blocks the solver can use for the subspace
+  int maxsubspace = 50;      // maximum number of blocks the solver can use for the subspace
   int maxrestarts = 15;      // number of restarts allowed 
   std::string filename("orsirr1.hb");
   MT tol = 1.0e-5;           // relative residual tolerance

@@ -23,6 +23,7 @@ cp ./example/BlockGmres/*.cpp ../example/BlockGmres/.
 cp ./example/BlockCG/Makefile* ../example/BlockCG/.
 cp ./example/BlockCG/*.cpp ../example/BlockCG/.
 
+cp ./test/definition ../test/.
 cp ./test/Makefile* ../test/.
 cp ./test/BlockCG/Makefile* ../test/BlockCG/.
 cp ./test/BlockCG/*.cpp ../test/BlockCG/.

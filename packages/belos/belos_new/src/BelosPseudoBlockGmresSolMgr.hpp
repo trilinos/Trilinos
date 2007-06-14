@@ -542,39 +542,24 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    defRHSIdx.resize(currRHSIdx.size()-have);
 	    currRHSIdx.resize(have);
 
-	    /*
-            cout << "Givens rotation coefficients (cs) after deflation" << endl;
-            for (int i=0; i<curDim; ++i) {
-              for (int j=0; j<have; ++j) {
-                cout << (*newState.cs[j])[i];
-              }
-              cout << endl;
-            }
-            cout << "Givens rotation coefficients (sn) after deflation" << endl;
-            for (int i=0; i<curDim; ++i) {
-              for (int j=0; j<have; ++j) {
-                cout << (*newState.sn[j])[i];
-              }
-              cout << endl;
-            }
-	    */
-
-	    // Compute the current solution that need to be deflated.
-	    Teuchos::RefCountPtr<MV> update = block_gmres_iter->getCurrentUpdate();
-	    Teuchos::RefCountPtr<MV> defUpdate = MVT::CloneView( *update, defRHSIdx );
-
-	    // Set the deflated indices so we can update the solution.
-	    problem_->setLSIndex( convIdx );
-
-	    // Update the linear problem.
-	    problem_->updateSolution( defUpdate, true );
-
+	    // Compute the current solution that needs to be deflated if this solver has taken any steps.
+	    if (curDim) {
+	      Teuchos::RefCountPtr<MV> update = block_gmres_iter->getCurrentUpdate();
+	      Teuchos::RefCountPtr<MV> defUpdate = MVT::CloneView( *update, defRHSIdx );
+	      
+	      // Set the deflated indices so we can update the solution.
+	      problem_->setLSIndex( convIdx );
+	      
+	      // Update the linear problem.
+	      problem_->updateSolution( defUpdate, true );
+	    }
+	    
 	    // Set the remaining indices after deflation.
 	    problem_->setLSIndex( currRHSIdx );
-
+	    
 	    // Set the dimension of the subspace, which is the same as the old subspace size.
 	    newState.curDim = curDim;
-
+	    
 	    // Initialize the solver with the deflated system.
 	    block_gmres_iter->initialize(newState);
 	  }
