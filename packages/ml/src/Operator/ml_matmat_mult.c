@@ -1572,7 +1572,10 @@ void ML_convert2vbr(ML_Operator *in_matrix)
                                                 also makes the code look prettier*/
    int iplus1;
    double x;
+   double *temp_double;
    struct ML_vbrdata *out_data;
+   struct ML_CSR_MSRdata *temp_matrix;
+   int nnz = 0;
 
    /*settings to change since we now have a vbr matrix*/
    in_matrix->type = ML_TYPE_VBR_MATRIX;
@@ -1616,6 +1619,7 @@ void ML_convert2vbr(ML_Operator *in_matrix)
 
    indx[0] = bpntr[0] = 0;
 
+   /*Space for each point row being read in*/ 
    if(in_matrix->max_nz_per_row > 0)
      A_i_allocated = in_matrix->max_nz_per_row + 1; /*this is exact*/
    else
@@ -1624,82 +1628,91 @@ void ML_convert2vbr(ML_Operator *in_matrix)
    accum_val = (double *) ML_allocate(A_i_allocated * sizeof(double));
 
 
-   if(in_matrix->N_nonzeros > 0)
+   if(in_matrix->N_nonzeros <= 0) /*We don't have a good estimate so lets get one*/
    {
-     /*8 is a complete guess.  One would hope the matrix resulting block matrix was more dense than this but there is no gareentee*/
-     vals = (double *) ML_allocate(in_matrix->N_nonzeros*10*sizeof(double));
-     if(vals == NULL)
-     {
-       for(i = 10; i > 1; i--)
-       {
-         vals = (double *) ML_allocate(in_matrix->N_nonzeros*i*sizeof(double));
-         if(vals != NULL)
-           break;
-       }
+     for(i=0; i<in_matrix->invec_leng;i++)
+     {  
+       in_matrix->getrow->func_ptr(in_matrix, 1, &(j), A_i_allocated, A_i_cols, accum_val, &row_length);
+       nnz += row_length;
      }
+   }
+   else /*lets use our good estimate we already have*/
+     nnz = in_matrix->N_nonzeros;
 
-     if(i == 1)
+
+   /*10 is a complete guess.  One would hope the matrix resulting block matrix was more dense than this but there is no gareentee*/
+   vals = (double *) ML_allocate(nnz*10*sizeof(double));
+   i = 10;
+   if(vals == NULL) /*if we don't have 10 times the space lets start trying smaller*/
+   {
+     for(i = 10; i > 1; i--)
      {
-       spacetight = 1;
-       /*other arrays need to be made smaller since we're tight on space also its only going to work if the matrix blocks are fairly dense anyway*/
+       vals = (double *) ML_allocate(nnz*i*sizeof(double));
+       if(vals != NULL)
+         break;
+     }
+   }
+   /*entries avalible in the values array*/
+   val_size = nnz*i;
+   /*we don't have at least twice the nnz*/
+   if(i == 1)
+   {
+     spacetight = 1;
+     /*other arrays need to be made smaller since we're tight on space also its only going to work if the matrix blocks are fairly dense anyway*/
 /*       if(in_matrix->N_nonzeros > 0)
        {
-         if(in_matrix->N_nonzeros == spaceneeded)
+         if(nnz == spaceneeded)
            spaceneeded /= 
          else
            spaceneeded = sqrt(spaceneeded)*10;
            
        }*/
-       x = 1.9;
-       for(i = 9; i >= 0; i--)
-       {
-         vals = (double *) ML_allocate(in_matrix->N_nonzeros*x*sizeof(double));
-         if(vals != NULL)
-           break;
-         x-=.1;
-       }
-       if(vals == NULL)
-       {
-         printf("Not enough space in ML_convert2vbr\n");
-         printf("trying to allocate %d ints and %d doubles \n",A_i_allocated+spaceneeded*2+blockrows,in_matrix->N_nonzeros+A_i_allocated);
-         printf("Matrix has %d rows \n", in_matrix->getrow->Nrows);
-         printf("Matrix has %d nz\n", in_matrix->N_nonzeros);
-         exit(1);
-       } 
+     /*keep making vals smaller till it fits*/
+     x = 1.9;
+     for(i = 9; i >= 0; i--)
+     {
+       vals = (double *) ML_allocate(in_matrix->N_nonzeros*x*sizeof(double));
+       if(vals != NULL)
+         break;
+       x-=.1;
+     }
+     val_size = nnz*(10+i)/10;
+     /*there just isn't enough space*/
+     if(vals == NULL)
+     {
+       printf("Not enough space in ML_convert2vbr\n");
+       printf("trying to allocate %d ints and %d doubles \n",A_i_allocated+spaceneeded*2+blockrows,in_matrix->N_nonzeros+A_i_allocated);
+       printf("Matrix has %d rows \n", in_matrix->getrow->Nrows);
+       printf("Matrix has %d nz\n", in_matrix->N_nonzeros);
+       exit(1);
      } 
-   }
-   else /*we have no good guess*/
-   {
-     /*get either exact number of non-zeros or some other guess needs to go here*/
-   }
+   } 
 
-
-   if(vals == NULL)
-   {
-   }
-
-
+   /*Converting functions start by looping over all block rows*/
    for(i = 0; i < blockrows; i++)
    {
      iplus1 = i+1;
      bpntr[iplus1] = bpntr[i];
+     /*loop over point rows within blockrow*/
      for(j = rpntr[i]; j < rpntr[iplus1]; j++)
      {
+       /*get row data*/
        in_matrix->getrow->func_ptr(in_matrix, 1, &(j), A_i_allocated, A_i_cols, accum_val, &row_length);
      
        /*loop over row data*/ 
        blockend = 1; 
        for(k = 0; k < row_length; k++)
        {
-         /*loop over block data*/
+         /*loop over block data to find block we're in*/
          while(A_i_cols[k] >= cpntr[blockend]){
            blockend++;
          }
          blockstart = blockend-1;
          blockfound = 0;
+         /*see if block already exists*/
          for (kk = bpntr[i]; kk < bpntr[iplus1]; kk++)
          {
-           if(bindx[kk] == blockend-1)
+           if(bindx[kk] == blockstart)
            {
              blockfound = 1;
              break;
@@ -1714,19 +1727,35 @@ void ML_convert2vbr(ML_Operator *in_matrix)
            bindx[bpntr[iplus1]] = blockend-1;
            bpntr[iplus1]++;
            indx[bpntr[iplus1]] = (cpntr[blockend]-cpntr[blockstart])*(rpntr[iplus1] - rpntr[i]) + indx[bpntr[iplus1]-1];
+           if(indx[bpntr[iplus1]] >= val_size)/*if array is out of space try and make more if not fail*/
+           {
+             val_size *= 3;
+             val_size /= 2;
+             temp_double = (double *)realloc(vals, val_size*sizeof(double));
+             if(temp_double == NULL)
+             {
+               printf("Not enough space in ML_convert2vbr to create a bigger values array\n");
+               printf("trying to allocate %d ints and %d doubles \n",A_i_allocated+spaceneeded*2+blockrows,in_matrix->N_nonzeros+A_i_allocated);
+               printf("Matrix has %d rows \n", in_matrix->getrow->Nrows);
+               printf("Matrix has %d nz\n", in_matrix->N_nonzeros);
+               exit(1);
+             }
+             else
+               vals = temp_double;
+           }
+           /*initialize the new block to all zeros*/
            for(jj = indx[bpntr[iplus1]-1]; jj < indx[bpntr[iplus1]]; jj++)
            {
              vals[jj] = 0.0;
            }
+           /*store value*/
            vals[indx[kk] + (A_i_cols[k]-cpntr[blockstart])*(rpntr[iplus1] - rpntr[i]) + j - rpntr[i]] = accum_val[k];
          }
        }
      }
    }
-   for(i = 0; i< 36; i++)
-   
-    printf("%lfvals\n", vals[i]); fflush(stdout);
 
+/*examples for getrow function*/
  /*ML_Operator_Set_Getrow((*Cmatrix), RowOffset+NrowsPerBlock,
              az_vbrgetrow_wrapper);
 VBR_cnst_blk_getrows(ML_Operator *data, int N_requested_rows,
@@ -1741,7 +1770,12 @@ VBR_cnst_blk_getrows(ML_Operator *data, int N_requested_rows,
   
   
    /*We should reallocate to set the arrays to the actual sizes we know they now are*/
-
+   bindx = (int*)realloc((void*)bindx, bpntr[iplus1]*sizeof(int)); 
+   indx = (int*)realloc((void*)indx, (bpntr[iplus1]+1)*sizeof(int));
+   cpntr = (int*)realloc((void*)cpntr, (blockcolumns+1)*sizeof(int));
+   rpntr = (int*)realloc((void*)rpntr, (blockrows+1)*sizeof(int));
+   vals = (double*)realloc((void*)vals, jj*sizeof(double));
+ 
    /*set real values to aliases*/
    out_data = (struct ML_vbrdata *)ML_allocate(sizeof(struct ML_vbrdata));
    out_data->bindx = bindx;
@@ -1751,7 +1785,15 @@ VBR_cnst_blk_getrows(ML_Operator *data, int N_requested_rows,
    out_data->rpntr = rpntr;
    out_data->val = vals;
 
+   /*delete old csr matrix*/
+
+   if ((in_matrix->data_destroy != NULL) && (in_matrix->data != NULL)) {
+      in_matrix->data_destroy(in_matrix->data);
+      in_matrix->data = NULL;
+   }
+
    in_matrix->data = (void *)out_data;
+   in_matrix->data_destroy = NULL; /*at some point this needs to be set to the new vbr destroy*/
 
    /*memory cleanup*/
    ML_free(A_i_cols);
