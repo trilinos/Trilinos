@@ -837,8 +837,10 @@ ForwardSensitivityStepper<Scalar>::takeStep(
       << sensStepper_->description() << "\n";
   }
 
-  // 2007/05/18: rabartl: ToDo: Copy the stepper control logic from
-  // stateStepper_ to sensStepper_!
+  // Copy the step control data to make sure that the sensStepper takes the
+  // same type of step that the statStepper took.  This is needed to ensure
+  // that the W matrix is the same for one.
+  sensStepper_->setStepControlData(*stateStepper_);
 
   VOTSIBB sensStepper_outputTempState(sensStepper_,out,verbLevel);
 

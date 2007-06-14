@@ -196,9 +196,12 @@ public:
    */
   virtual const StepStatus<Scalar> getStepStatus() const = 0;
 
-  /** \brief Set step control data from another stepper
+  /** \brief Set step control data from another stepper.
    *
-   * This is used to guarantee that you can re-use Jacobians from one stepper with another 
+   * This is used to guarantee that you can re-use Jacobians from one stepper
+   * with another.
+   *
+   * The default implementation simply does nothing so be warned!
    */
   virtual void setStepControlData(const StepperBase & stepper);
 
