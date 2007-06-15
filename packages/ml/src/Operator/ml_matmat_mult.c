@@ -1755,25 +1755,13 @@ void ML_convert2vbr(ML_Operator *in_matrix)
      }
    }
 
-/*examples for getrow function*/
- /*ML_Operator_Set_Getrow((*Cmatrix), RowOffset+NrowsPerBlock,
-             az_vbrgetrow_wrapper);
-VBR_cnst_blk_getrows(ML_Operator *data, int N_requested_rows,
-                                int requested_rows[], int allocated_space,
-                                int columns[], double values[],
-                                int row_lengths[]);
-*/
-   in_matrix->getrow = NULL; /* at some point a real function is needed and this needs to be set equal to it*/
+   /*we also need to set the block get row structure here*/
+   in_matrix->getrow->func_ptr = VBR_getrows;
    
-   /*free old data array and set the new one to the data struct here*/
-   /*free call here*/
-  
-  
+
    /*We should reallocate to set the arrays to the actual sizes we know they now are*/
    bindx = (int*)realloc((void*)bindx, bpntr[iplus1]*sizeof(int)); 
    indx = (int*)realloc((void*)indx, (bpntr[iplus1]+1)*sizeof(int));
-   cpntr = (int*)realloc((void*)cpntr, (blockcolumns+1)*sizeof(int));
-   rpntr = (int*)realloc((void*)rpntr, (blockrows+1)*sizeof(int));
    vals = (double*)realloc((void*)vals, jj*sizeof(double));
  
    /*set real values to aliases*/
@@ -1793,6 +1781,7 @@ VBR_cnst_blk_getrows(ML_Operator *data, int N_requested_rows,
    }
 
    in_matrix->data = (void *)out_data;
+   in_matrix->getrow->data = (void *)out_data;
    in_matrix->data_destroy = NULL; /*at some point this needs to be set to the new vbr destroy*/
 
    /*memory cleanup*/
