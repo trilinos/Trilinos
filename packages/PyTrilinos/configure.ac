@@ -102,6 +102,11 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, ifpack, PYTRILINOS_IFPACK,
        [Build python interface to ifpack.],
        [Build python interface to ifpack.  Can be overridden with --disable-pytrilinos-ifpack.])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, komplex, PYTRILINOS_KOMPLEX,
+       HAVE_PYTRILINOS_KOMPLEX, yes,
+       [Build python interface to komplex.],
+       [Build python interface to komplex.  Can be overridden with --disable-pytrilinos-komplex.])
+
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, anasazi, PYTRILINOS_ANASAZI,
        HAVE_PYTRILINOS_ANASAZI, yes,
        [Build python interface to anasazi.],

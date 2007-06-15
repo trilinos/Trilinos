@@ -29,7 +29,7 @@
 EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i \
 	     Epetra.i Epetra_Base.i Epetra_Comm.i Epetra_Graphs.i \
 	     Epetra_Maps.i Epetra_Operators.i Epetra_SerialDense.i \
-	     Epetra_Vectors.i EpetraExt.i Galeri.i IFPACK.i \
+	     Epetra_Vectors.i EpetraExt.i Galeri.i IFPACK.i Komplex.i \
 	     LOCA.__init__.i LOCA.Abstract.i LOCA.Bifurcation.i \
 	     LOCA.Continuation.i LOCA.Epetra.i LOCA.Homotopy.i LOCA.LAPACK.i \
 	     LOCA.MultiContinuation.i LOCA.TimeDependent.i \
@@ -73,6 +73,9 @@ ENABLE_THYRA=
 
 @HAVE_PYTRILINOS_IFPACK_TRUE@ENABLE_IFPACK=true
 @HAVE_PYTRILINOS_IFPACK_FALSE@ENABLE_IFPACK=
+
+@HAVE_PYTRILINOS_KOMPLEX_TRUE@ENABLE_KOMPLEX=true
+@HAVE_PYTRILINOS_KOMPLEX_FALSE@ENABLE_KOMPLEX=
 
 @HAVE_PYTRILINOS_ANASAZI_TRUE@ENABLE_ANASAZI=true
 @HAVE_PYTRILINOS_ANASAZI_FALSE@ENABLE_ANASAZI=
@@ -174,6 +177,13 @@ IFPACK_INTERFACES = IFPACK.i
 IFPACK_PROXIES = PyTrilinos/IFPACK.py
 endif
 
+# Komplex
+if HAVE_PYTRILINOS_KOMPLEX
+include $(top_builddir)/../komplex/Makefile.export.komplex
+KOMPLEX_INTERFACES = Komplex.i
+KOMPLEX_PROXIES = PyTrilinos/Komplex.py
+endif
+
 # Anasazi
 if HAVE_PYTRILINOS_ANASAZI
 include $(top_builddir)/../anasazi/Makefile.export.anasazi
@@ -229,13 +239,13 @@ endif
 INTERFACES = $(TEUCHOS_INTERFACES)  $(THYRA_INTERFACES)     $(EPETRA_INTERFACES)  \
 	     $(TRIUTILS_INTERFACES) $(EPETRAEXT_INTERFACES) $(AZTECOO_INTERFACES) \
 	     $(GALERI_INTERFACES)   $(AMESOS_INTERFACES)    $(IFPACK_INTERFACES)  \
-	     $(ANASAZI_INTERFACES)  $(ML_INTERFACES)        $(NOX_INTERFACES)     \
-	     $(LOCA_INTERFACES)
+	     $(KOMPLEX_INTERFACES)  $(ANASAZI_INTERFACES)   $(ML_INTERFACES)      \
+	     $(NOX_INTERFACES)      $(LOCA_INTERFACES)
 PROXIES  =   $(TEUCHOS_PROXIES)  $(THYRA_PROXIES)     $(EPETRA_PROXIES)  \
 	     $(TRIUTILS_PROXIES) $(EPETRAEXT_PROXIES) $(AZTECOO_PROXIES) \
 	     $(GALERI_PROXIES)   $(AMESOS_PROXIES)    $(IFPACK_PROXIES)  \
-	     $(ANASAZI_PROXIES)  $(ML_PROXIES)        $(NOX_PROXIES)     \
-	     $(LOCA_INTERFACES)
+	     $(KOMPLEX_PROXIES)  $(ANASAZI_PROXIES)   $(ML_PROXIES)      \
+	     $(NOX_PROXIES)      $(LOCA_INTERFACES)
 WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
 DIR_HDRS   = $(INTERFACES:.i=_wrap.h)
 

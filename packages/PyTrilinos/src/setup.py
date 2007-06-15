@@ -47,6 +47,7 @@ modules = [
            "Galeri",
            "Amesos",
            "IFPACK",
+           "Komplex",
            "Anasazi",
            "ML",
            "NOX",

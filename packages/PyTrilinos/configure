@@ -672,6 +672,8 @@ HAVE_PYTRILINOS_AMESOS_TRUE
 HAVE_PYTRILINOS_AMESOS_FALSE
 HAVE_PYTRILINOS_IFPACK_TRUE
 HAVE_PYTRILINOS_IFPACK_FALSE
+HAVE_PYTRILINOS_KOMPLEX_TRUE
+HAVE_PYTRILINOS_KOMPLEX_FALSE
 HAVE_PYTRILINOS_ANASAZI_TRUE
 HAVE_PYTRILINOS_ANASAZI_FALSE
 HAVE_PYTRILINOS_ML_TRUE
@@ -1403,6 +1405,10 @@ Optional Features:
                           with --disable-pytrilinos-ifpack.
   --enable-pytrilinos-ifpack
                           Build python interface to ifpack.
+  --enable-komplex        Build python interface to komplex. Can be overridden
+                          with --disable-pytrilinos-komplex.
+  --enable-pytrilinos-komplex
+                          Build python interface to komplex.
   --enable-anasazi        Build python interface to anasazi. Can be overridden
                           with --disable-pytrilinos-anasazi.
   --enable-pytrilinos-anasazi
@@ -2466,6 +2472,57 @@ fi
 else
   HAVE_PYTRILINOS_IFPACK_TRUE='#'
   HAVE_PYTRILINOS_IFPACK_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-komplex was given.
+if test "${enable_komplex+set}" = set; then
+  enableval=$enable_komplex; ac_cv_implicit_use_komplex=$enableval
+else
+  ac_cv_implicit_use_komplex=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_pytrilinos_using_komplex_default=$ac_cv_implicit_use_komplex
+else
+  ac_cv_pytrilinos_using_komplex_default=no
+fi
+
+# Check whether --enable-pytrilinos-komplex was given.
+if test "${enable_pytrilinos_komplex+set}" = set; then
+  enableval=$enable_pytrilinos_komplex; ac_cv_use_komplex=$enableval
+else
+  ac_cv_use_komplex=$ac_cv_pytrilinos_using_komplex_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional komplex dependent code in pytrilinos" >&5
+echo $ECHO_N "checking whether to build optional komplex dependent code in pytrilinos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_komplex" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PYTRILINOS_KOMPLEX 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_komplex" = "Xyes"; then
+  HAVE_PYTRILINOS_KOMPLEX_TRUE=
+  HAVE_PYTRILINOS_KOMPLEX_FALSE='#'
+else
+  HAVE_PYTRILINOS_KOMPLEX_TRUE='#'
+  HAVE_PYTRILINOS_KOMPLEX_FALSE=
 fi
 
 
@@ -6648,6 +6705,13 @@ echo "$as_me: error: conditional \"HAVE_PYTRILINOS_IFPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${HAVE_PYTRILINOS_KOMPLEX_TRUE}" && test -z "${HAVE_PYTRILINOS_KOMPLEX_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_PYTRILINOS_KOMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_PYTRILINOS_KOMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_PYTRILINOS_ANASAZI_TRUE}" && test -z "${HAVE_PYTRILINOS_ANASAZI_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_PYTRILINOS_ANASAZI\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -7395,6 +7459,8 @@ HAVE_PYTRILINOS_AMESOS_TRUE!$HAVE_PYTRILINOS_AMESOS_TRUE$ac_delim
 HAVE_PYTRILINOS_AMESOS_FALSE!$HAVE_PYTRILINOS_AMESOS_FALSE$ac_delim
 HAVE_PYTRILINOS_IFPACK_TRUE!$HAVE_PYTRILINOS_IFPACK_TRUE$ac_delim
 HAVE_PYTRILINOS_IFPACK_FALSE!$HAVE_PYTRILINOS_IFPACK_FALSE$ac_delim
+HAVE_PYTRILINOS_KOMPLEX_TRUE!$HAVE_PYTRILINOS_KOMPLEX_TRUE$ac_delim
+HAVE_PYTRILINOS_KOMPLEX_FALSE!$HAVE_PYTRILINOS_KOMPLEX_FALSE$ac_delim
 HAVE_PYTRILINOS_ANASAZI_TRUE!$HAVE_PYTRILINOS_ANASAZI_TRUE$ac_delim
 HAVE_PYTRILINOS_ANASAZI_FALSE!$HAVE_PYTRILINOS_ANASAZI_FALSE$ac_delim
 HAVE_PYTRILINOS_ML_TRUE!$HAVE_PYTRILINOS_ML_TRUE$ac_delim
@@ -7433,8 +7499,6 @@ AUTOMAKE!$AUTOMAKE$ac_delim
 AUTOHEADER!$AUTOHEADER$ac_delim
 MAKEINFO!$MAKEINFO$ac_delim
 install_sh!$install_sh$ac_delim
-STRIP!$STRIP$ac_delim
-INSTALL_STRIP_PROGRAM!$INSTALL_STRIP_PROGRAM$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -7476,6 +7540,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+STRIP!$STRIP$ac_delim
+INSTALL_STRIP_PROGRAM!$INSTALL_STRIP_PROGRAM$ac_delim
 mkdir_p!$mkdir_p$ac_delim
 AWK!$AWK$ac_delim
 SET_MAKE!$SET_MAKE$ac_delim
@@ -7532,7 +7598,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 54; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 56; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -43,6 +43,9 @@
 #undef HAVE_PYTRILINOS_IFPACK
 
 /* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_KOMPLEX
+
+/* Define if want to build with pytrilinos enabled */
 #undef HAVE_PYTRILINOS_LOCA
 
 /* Define if want to build with pytrilinos enabled */

@@ -275,5 +275,12 @@ namespace EpetraExt {
       EpetraExt::MatrixMatrix M;
       return(M.Add(A, flag, ValA, B, ValB));
     }
+    int Multiply(const Epetra_CrsMatrix& A, bool transposeA, 
+                 const Epetra_CrsMatrix& B, bool transposeB, 
+                 Epetra_CrsMatrix& C)
+    {
+      EpetraExt::MatrixMatrix M;
+      return(M.Multiply(A, transposeA, B, transposeB, C));
+    }
   }
 %}
