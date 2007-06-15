@@ -111,14 +111,15 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int sum;
   char msg[256];
   /* Arrays for partition data. */
-  int *max_arr, *nobj_arr, *cut_arr, *bndry_arr; 
-  int *commvol_arr, *all_arr, *all_arr_glob;
-  float *vwgt_arr, *vwgt_arr_glob, *cutwgt_arr, *cutwgt_arr_glob;
+  int *max_arr=NULL, *nobj_arr=NULL, *cut_arr=NULL, *bndry_arr=NULL; 
+  int *commvol_arr=NULL, *all_arr=NULL, *all_arr_glob=NULL;
+  float *vwgt_arr=NULL, *vwgt_arr_glob=NULL; 
+  float *cutwgt_arr=NULL, *cutwgt_arr_glob=NULL;
 
   int vwgt_dim;
   double hgraph_global_sum[2];
   double hgraph_local_stats[2];
-  ZHG* zhg;
+  ZHG* zhg=NULL;
   
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -546,7 +547,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         }
       }
       printf("\n");
-      
     }
   }
 
