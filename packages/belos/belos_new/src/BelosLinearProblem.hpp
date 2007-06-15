@@ -149,8 +149,14 @@ namespace Belos {
       However, this should not be set to true if the preconditioner is not Hermitian, or symmetrically
       applied.
     */
-    void setHermitian(){ isHermitian_ = true; };
-    
+    void setHermitian(){ isHermitian_ = true; }
+   
+    //! Set the label prefix used by the timers in this object.  The default is "Belos".
+    /*! \note The timers are created during the first call to setProblem().  Any calls to this method to change 
+        the label after that will not change the label used in the timer.
+    */ 
+    void setLabel(const string& label) { label_ = label; }
+
     //! Compute the new solution to the linear system given the /c update.
     /*! \note If \c updateLP is true, then the next time GetCurrResVecs is called, a new residual will be computed.  
       This keeps the linear problem from having to recompute the residual vector everytime it's asked for if
@@ -386,7 +392,10 @@ namespace Belos {
     bool isSet_;
     bool isHermitian_;
     bool solutionUpdated_;    
-    
+   
+    //! Linear problem label that prefixes the timer labels.
+    string label_;
+ 
     typedef MultiVecTraits<ScalarType,MV>  MVT;
     typedef OperatorTraits<ScalarType,MV,OP>  OPT;
   };
@@ -397,8 +406,6 @@ namespace Belos {
   
   template <class ScalarType, class MV, class OP>
   LinearProblem<ScalarType,MV,OP>::LinearProblem(void) : 
-    timerOp_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Op*x")),
-    timerPrec_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Prec*x")),
     blocksize_(0),
     num2Solve_(0),
     lsNum_(0),
@@ -406,7 +413,8 @@ namespace Belos {
     Right_Scale_(false),
     isSet_(false),
     isHermitian_(false),
-    solutionUpdated_(false)
+    solutionUpdated_(false),
+    label_("Belos")
   {
   }
   
@@ -418,8 +426,6 @@ namespace Belos {
     A_(A),
     X_(X),
     B_(B),
-    timerOp_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Op*x")),
-    timerPrec_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Prec*x")),
     blocksize_(0),
     num2Solve_(0),
     lsNum_(0),
@@ -427,7 +433,8 @@ namespace Belos {
     Right_Scale_(false),
     isSet_(false),
     isHermitian_(false),
-    solutionUpdated_(false)
+    solutionUpdated_(false),
+    label_("Belos")
   {
   }
   
@@ -452,7 +459,8 @@ namespace Belos {
     Right_Scale_(Problem.Right_Scale_),
     isSet_(Problem.isSet_),
     isHermitian_(Problem.isHermitian_),
-    solutionUpdated_(Problem.solutionUpdated_)
+    solutionUpdated_(Problem.solutionUpdated_),
+    label_(Problem.label_)
   {
   }
   
@@ -460,7 +468,6 @@ namespace Belos {
   LinearProblem<ScalarType,MV,OP>::~LinearProblem(void)
   {}
   
-
   template <class ScalarType, class MV, class OP>
   void LinearProblem<ScalarType,MV,OP>::setLSIndex(std::vector<int>& index)
   {
@@ -632,6 +639,16 @@ namespace Belos {
     }
     OPT::Apply( *A_, *X_, *R0_ );
     MVT::MvAddMv( 1.0, *B_, -1.0, *R0_, *R0_ );
+
+    // Create timers if the haven't been created yet.
+    if (timerOp_ == Teuchos::null) {
+      string opLabel = label_ + ": Operation Op*x";
+      timerOp_ = Teuchos::TimeMonitor::getNewTimer( opLabel );
+    }
+    if (timerPrec_ == Teuchos::null) {
+      string precLabel = label_ + ": Operation Prec*x";
+      timerPrec_ = Teuchos::TimeMonitor::getNewTimer( precLabel );
+    }
 
     // The problem has been set and is ready for use.
     isSet_ = true;

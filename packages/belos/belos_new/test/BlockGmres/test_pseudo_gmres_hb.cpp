@@ -120,6 +120,7 @@ int main(int argc, char *argv[]) {
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
   belosList.set( "Deflation Quorum", init_blocksize  );  // Number of converged linear systems before deflation
+  belosList.set( "Timer Label", "Belos Init" );          // Label used by the timers in this solver
   if (verbose) {
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
 		   Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
@@ -137,7 +138,8 @@ int main(int argc, char *argv[]) {
   OPT::Apply( *A, *initX, *initB );
   initX->PutScalar( 0.0 );
   Belos::LinearProblem<double,MV,OP> initProblem( A, initX, initB );
-  
+  initProblem.setLabel("Belos Init"); 
+ 
   bool set = initProblem.setProblem();
   if (set == false) {
     if (proc_verbose)
@@ -200,6 +202,8 @@ int main(int argc, char *argv[]) {
   tmpB->Scale( 1.0, *initB );
     
   Belos::LinearProblem<double,MV,OP> augProblem( A, augX, augB );
+  augProblem.setLabel("Belos Aug"); 
+
   set = augProblem.setProblem();
   if (set == false) {
     if (proc_verbose)
@@ -214,6 +218,7 @@ int main(int argc, char *argv[]) {
   belosList.set( "Block Size", aug_blocksize );                // Blocksize to be used by iterative solver
   belosList.set( "Convergence Tolerance", aug_tol );           // Relative convergence tolerance requested
   belosList.set( "Deflation Quorum", aug_blocksize );          // Number of converged linear systems before deflation
+  belosList.set( "Timer Label", "Belos Aug" );          // Label used by the timers in this solver
   belosList.set( "Implicit Residual Scaling", "Norm of RHS" ); // Implicit residual scaling for convergence
   belosList.set( "Explicit Residual Scaling", "Norm of RHS" ); // Explicit residual scaling for convergence
   Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > augSolver

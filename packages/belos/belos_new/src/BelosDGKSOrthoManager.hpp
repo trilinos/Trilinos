@@ -65,7 +65,8 @@ namespace Belos {
     //! @name Constructor/Destructor
     //@{ 
     //! Constructor specifying re-orthogonalization tolerance.
-    DGKSOrthoManager( Teuchos::RefCountPtr<const OP> Op = Teuchos::null,
+    DGKSOrthoManager( const string& label = "Belos",
+                      Teuchos::RefCountPtr<const OP> Op = Teuchos::null,
 		      const int max_blk_ortho = 2,
 		      const MagnitudeType blk_tol = 10*MGT::squareroot( MGT::eps() ),
 		      const MagnitudeType dep_tol = MGT::one()/MGT::squareroot( 2*MGT::one() ),
@@ -75,11 +76,14 @@ namespace Belos {
 	blk_tol_( blk_tol ),
 	dep_tol_( dep_tol ),
 	sing_tol_( sing_tol ),
-        timerOrtho_(Teuchos::TimeMonitor::getNewTimer("Belos: Orthogonalization"))
-    {};
-    
+	label_( label )
+    {
+        string orthoLabel = label_ + ": Orthogonalization";
+        timerOrtho_ = Teuchos::TimeMonitor::getNewTimer( orthoLabel );
+    }    
+
     //! Destructor
-    ~DGKSOrthoManager() {};
+    ~DGKSOrthoManager() {}
     //@}
 
 
@@ -278,7 +282,8 @@ namespace Belos {
     MagnitudeType dep_tol_;
     MagnitudeType sing_tol_;
 
-    //! Timer.
+    //! Timer and timer label.
+    string label_;
     Teuchos::RefCountPtr<Teuchos::Time> timerOrtho_;
 
     //! Routine to find an orthonormal basis for X

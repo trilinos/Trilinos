@@ -211,6 +211,7 @@ namespace Belos {
     int verbosity_, output_freq_;
     
     // Timers.
+    string label_;
     Teuchos::RefCountPtr<Teuchos::Time> timerSolve_;
   };
 
@@ -229,7 +230,7 @@ BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( const Teuchos::RefCountPtr<Linea
   numBlocks_(0),
   verbosity_(Belos::Errors),
   output_freq_(-1),
-  timerSolve_(Teuchos::TimeMonitor::getNewTimer("BlockCGSolMgr::solve()"))
+  label_("Belos")
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
   
@@ -251,6 +252,11 @@ BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( const Teuchos::RefCountPtr<Linea
   numBlocks_ = pl.get("Num Blocks",25);
   TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
                      "Belos::BlockCGSolMgr: \"Num Blocks\" must be strictly positive.");
+
+  // timer label and create timer
+  label_ = pl.get("Timer Label", "Belos");
+  string solveLabel = label_ + ": BlockCGSolMgr total solve time";
+  timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
 
   // which orthogonalization to use
   orthoType_ = pl.get("Orthogonalization",orthoType_);
@@ -308,15 +314,15 @@ BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( const Teuchos::RefCountPtr<Linea
   // Create orthogonalization manager
   if (orthoType_=="DGKS") {
     if (ortho_kappa_ <= 0) {
-      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>() );
+      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
     }
     else {
-      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>() );
+      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
       Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( ortho_kappa_ );
     }
   }
   else if (orthoType_=="ICGS") {
-    ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>() );
+    ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
   } 
   else {
     TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS",std::logic_error,

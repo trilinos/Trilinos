@@ -65,7 +65,8 @@ namespace Belos {
     //! @name Constructor/Destructor
     //@{ 
     //! Constructor specifying re-orthogonalization tolerance.
-    ICGSOrthoManager( Teuchos::RefCountPtr<const OP> Op = Teuchos::null,
+    ICGSOrthoManager( const string& label = "Belos",
+                      Teuchos::RefCountPtr<const OP> Op = Teuchos::null,
 		      const int max_ortho_steps = 2,
 		      const MagnitudeType blk_tol = 10*MGT::squareroot( MGT::eps() ),
 		      const MagnitudeType sing_tol = 10*MGT::eps() )
@@ -73,13 +74,23 @@ namespace Belos {
 	max_ortho_steps_( max_ortho_steps ),
 	blk_tol_( blk_tol ),
 	sing_tol_( sing_tol ),
-        timerOrtho_( Teuchos::TimeMonitor::getNewTimer("Belos: Orthogonalization")),
-        timerUpdate_( Teuchos::TimeMonitor::getNewTimer("Belos: Ortho (Update)")),
-        timerNorm_( Teuchos::TimeMonitor::getNewTimer("Belos: Ortho (Norm)")),
-        timerInnerProd_( Teuchos::TimeMonitor::getNewTimer("Belos: Ortho (Inner Product)")) {};
+        label_( label )
+    {
+        string orthoLabel = label_ + ": Orthogonalization";
+        timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+
+        string updateLabel = label_ + ": Ortho (Update)";
+        timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
+
+        string normLabel = label_ + ": Ortho (Norm)";
+        timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
+
+        string ipLabel = label_ + ": Ortho (Inner Product)";
+        timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel); 
+    };
 
     //! Destructor
-    ~ICGSOrthoManager() {};
+    ~ICGSOrthoManager() {}
     //@}
 
 
@@ -271,6 +282,8 @@ namespace Belos {
     MagnitudeType blk_tol_;
     MagnitudeType sing_tol_;
 
+    //! Timers and timer label
+    string label_;
     Teuchos::RefCountPtr<Teuchos::Time> timerOrtho_, timerUpdate_, 
                                         timerNorm_, timerScale_, timerInnerProd_;
   

@@ -213,6 +213,7 @@ namespace Belos {
     typename StatusTestResNorm<ScalarType,MV,OP>::ScaleType impResScale_, expResScale_;       
  
     // Timers.
+    string label_;
     Teuchos::RefCountPtr<Teuchos::Time> timerSolve_;
   };
 
@@ -235,7 +236,7 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr(
   defQuorum_(1),
   impResScale_(Belos::StatusTestResNorm<ScalarType,MV,OP>::NormOfPrecInitRes),
   expResScale_(Belos::StatusTestResNorm<ScalarType,MV,OP>::NormOfInitRes),
-  timerSolve_(Teuchos::TimeMonitor::getNewTimer("PseudoBlockGmresSolMgr::solve()"))
+  label_("Belos")
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
   
@@ -258,6 +259,10 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr(
   TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
                      "Belos::PseudoBlockGmresSolMgr: \"Num Blocks\" must be strictly positive.");
 
+  label_ = pl.get("Timer Label", label_);
+  string solveLabel = label_ + ": PseudoBlockGmresSolMgr total solve time";
+  timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+  
   // which orthogonalization to use
   orthoType_ = pl.get("Orthogonalization",orthoType_);
   if (orthoType_ != "DGKS" && orthoType_ != "ICGS") {
@@ -359,15 +364,15 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr(
   // Create orthogonalization manager
   if (orthoType_=="DGKS") {
     if (ortho_kappa_ <= 0) {
-      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>() );
+      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
     }
     else {
-      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>() );
+      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
       Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( ortho_kappa_ );
     }
   }
   else if (orthoType_=="ICGS") {
-    ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>() );
+    ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
   } 
   else {
     TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS",std::logic_error,

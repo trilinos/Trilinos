@@ -211,6 +211,7 @@ namespace Belos {
     typename StatusTestResNorm<ScalarType,MV,OP>::ScaleType impResScale_, expResScale_;
 
     // Timers.
+    string label_;
     Teuchos::RefCountPtr<Teuchos::Time> timerSolve_;
   };
 
@@ -232,7 +233,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   output_freq_(-1),
   impResScale_(Belos::StatusTestResNorm<ScalarType,MV,OP>::NormOfPrecInitRes),
   expResScale_(Belos::StatusTestResNorm<ScalarType,MV,OP>::NormOfInitRes),
-  timerSolve_(Teuchos::TimeMonitor::getNewTimer("BlockGmresSolMgr::solve()"))
+  label_( "Belos" )
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
   
@@ -254,6 +255,11 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   numBlocks_ = pl.get("Num Blocks",25);
   TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
                      "Belos::BlockGmresSolMgr: \"Num Blocks\" must be strictly positive.");
+
+  // Create timer 
+  label_ = pl.get("Timer Label",label_);
+  string solveLabel = label_ + ": BlockGmresSolMgr total solve time";
+  timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
 
   // which orthogonalization to use
   orthoType_ = pl.get("Orthogonalization",orthoType_);
@@ -349,15 +355,15 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   // Create orthogonalization manager
   if (orthoType_=="DGKS") {
     if (ortho_kappa_ <= 0) {
-      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>() );
+      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
     }
     else {
-      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>() );
+      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
       Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( ortho_kappa_ );
     }
   }
   else if (orthoType_=="ICGS") {
-    ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>() );
+    ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
   } 
   else {
     TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS",std::logic_error,
@@ -421,7 +427,6 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::RefCountPtr<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter
     = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
   
-
   // Enter solve() iterations
   {
     Teuchos::TimeMonitor slvtimer(*timerSolve_);
