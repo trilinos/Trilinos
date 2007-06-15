@@ -891,18 +891,34 @@ struct Zoltan_DD_Struct *dd = NULL;
 int *owner = NULL;
 int maxnobj;
 int ierr;
+int start, size, i_am_done, alldone;
+const int MAXSIZE = 200000;
 
   MPI_Allreduce(&nobj, &maxnobj, 1, MPI_INT, MPI_MAX, zz->Communicator);
   ierr = Zoltan_DD_Create(&dd, zz->Communicator, zz->Num_GID, zz->Num_LID,
-                          0, maxnobj, 0);
+                          0, MIN(maxnobj,MAXSIZE), 0);
   TEST_DD_ERROR(ierr, yo, zz->Proc, "Zoltan_DD_Create");
 
   ierr = Zoltan_DD_Update(dd, global_ids, local_ids, NULL, part, nobj);
   TEST_DD_ERROR(ierr, yo, zz->Proc, "Zoltan_DD_Update");
   
-  owner = (int *) ZOLTAN_MALLOC(nnbors * sizeof(int));
-  ierr = Zoltan_DD_Find(dd, nbors_global, NULL, NULL, nbors_part,
-                        nnbors, owner);
+  /* Do the find in chunks to avoid swamping memory. */
+  owner = (int *) ZOLTAN_MALLOC(MIN(MAXSIZE,nnbors) * sizeof(int));
+  start = 0;
+  alldone = 0;
+  while (!alldone) {
+    size = MIN(MAXSIZE, (nnbors-start > 0 ? nnbors-start : 0));
+    if (start < nnbors)
+      ierr = Zoltan_DD_Find(dd, &nbors_global[start*zz->Num_GID],
+                            NULL, NULL, &nbors_part[start],
+                            size, owner);
+    else  /* I'm done, but other processors might not be */
+      ierr = Zoltan_DD_Find(dd, NULL, NULL, NULL, NULL, 0, NULL);
+    start += size;
+    i_am_done = (nnbors - start > 0 ? 0 : 1);
+    MPI_Allreduce(&i_am_done, &alldone, 1, MPI_INT, MPI_MIN, zz->Communicator);
+  }
+
   ZOLTAN_FREE(&owner);
   TEST_DD_ERROR(ierr, yo, zz->Proc, "Zoltan_DD_Find");
 
