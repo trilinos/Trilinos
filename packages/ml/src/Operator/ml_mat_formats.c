@@ -255,6 +255,68 @@ int MSR_get_ones_rows(ML_Operator *data, int N_requested_rows, int requested_row
    return(1);
 }
 
+/*gets a point row from a VBR matrix same as above header this makes sure the matrix can go straight to a csr when converted.*/
+int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
+   int allocated_space, int columns[], double values[], int row_lengths[])
+{
+   struct ML_vbrdata *input_matrix;
+   int  i, j, array_place, row_length, row_offset, point_rows, block_offset;
+   int *cpntr, *bindx, *rpntr, *indx, *bpntr, startblock, endblock, blocks;
+   double *val;
+  
+ 
+   /*set alliases*/                                                       
+   input_matrix = (struct ML_vbrdata *) ML_Get_MyGetrowData(data);
+   bindx  = input_matrix->bindx;
+   val    = input_matrix->val;
+   rpntr  = input_matrix->rpntr;
+   cpntr  = input_matrix->cpntr;
+   bpntr  = input_matrix->bpntr;
+   indx   = input_matrix->indx;
+
+   /*find out where the requested row within the block structure.*/
+   for(i = 0; rpntr[i] <= *requested_rows; i++);
+   row_offset = *requested_rows - rpntr[i-1];
+   point_rows = rpntr[i] - rpntr[i-1];
+                          
+   /*this is a bit of an overestimate but better safe than sorry.
+     If there were a way to figure out how many zeros there were
+     we could subtract this out.*/
+   if (indx[i] - indx[i-1] > allocated_space) {
+     ML_avoid_unused_param( (void *) &N_requested_rows);
+     return(0);
+   }
+
+   /*Which blocks have data in them and how many of them there are*/
+   startblock = bpntr[i-1];
+   endblock = bpntr[i];
+   blocks = endblock - startblock;
+   block_offset = indx[bpntr[i-1]];
+
+   *row_lengths = 0; /*data points stored*/
+   array_place = 0; /*where we are in array we're itterating through*/
+   
+   /*iterate over the blocks*/
+   for(i = startblock; i < endblock; i++)
+   {
+     /*iterate over columns in each block*/
+     for(j = cpntr[bindx[i]]; j < cpntr[bindx[i]+1]; j++)
+     {
+       /*strip out zeros*/
+       if(val[point_rows*array_place+row_offset+block_offset] != 0.0)
+       {
+          
+         values[*row_lengths] = val[point_rows*array_place+row_offset+block_offset];
+         columns[*row_lengths] = j;
+         row_lengths[0]++;
+       }
+       array_place++;
+     }
+   }
+   return(1);
+}
+
+
 int CSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
