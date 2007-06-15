@@ -34,6 +34,7 @@
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorBase.hpp"
+#include "RTOpPack_ROpSum.hpp"
 #include "RTOpPack_ROpDotProd.hpp"
 #include "RTOpPack_ROpNorm1.hpp"
 #include "RTOpPack_ROpNormInf.hpp"
@@ -43,6 +44,7 @@
 #include "RTOpPack_TOpLinearCombination.hpp"
 #include "RTOpPack_TOpScaleVector.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_arrayArg.hpp"
 
 template<class Scalar>
 void Thyra::norms( const MultiVectorBase<Scalar>& V, typename Teuchos::ScalarTraits<Scalar>::magnitudeType norms[] )
