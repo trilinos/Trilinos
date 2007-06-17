@@ -197,51 +197,56 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I config
-EXTRA_DIST = definition setpath.py \
-	     testAmesos.py testAnasazi.py testAztecOO.py testEpetraExt_Coloring.py \
-	     testEpetra_BlockMap.py testEpetra_Comm.py testEpetra_CompObject.py \
-	     testEpetra_CrsGraph.py testEpetra_CrsMatrix.py testEpetra_FEVector.py \
-	     testEpetra_ImportExport.py testEpetra_IntSerialDense.py \
-	     testEpetra_IntVector.py testEpetra_LinearProblem.py testEpetra_LocalMap.py \
-	     testEpetra_Map.py testEpetra_MapColoring.py testEpetra_MultiVector.py \
-	     testEpetra_Object.py testEpetra_SerialDense.py testEpetra_Util.py \
-	     testEpetra_Vector.py testGaleri_CrsMatrices.py testGaleri_Maps.py \
-	     testIFPACK.py testML_Preconditioner.py testNOX_StatusTest.py testTeuchos.py \
-	     testTeuchos_ParameterList.py testTeuchos_ScalarTraits.py testThyra.py \
-             testTriUtils.py
+EXTRA_DIST = definition setpath.src \
+	     testAmesos.src testAnasazi.src testAztecOO.src \
+	     testEpetraExt_Coloring.src testEpetra_BlockMap.src \
+	     testEpetra_Comm.src testEpetra_CompObject.src \
+	     testEpetra_CrsGraph.src testEpetra_CrsMatrix.src \
+	     testEpetra_FEVector.src testEpetra_ImportExport.src \
+	     testEpetra_IntSerialDense.src testEpetra_IntVector.src \
+	     testEpetra_LinearProblem.src testEpetra_LocalMap.src \
+	     testEpetra_Map.src testEpetra_MapColoring.src \
+	     testEpetra_MultiVector.src testEpetra_Object.src \
+	     testEpetra_SerialDense.src testEpetra_Util.src \
+	     testEpetra_Vector.src testGaleri_CrsMatrices.src \
+	     testGaleri_Maps.src testIFPACK.src testML_Preconditioner.src \
+	     testNOX_StatusTest.src testTeuchos.src \
+	     testTeuchos_ParameterList.src testTeuchos_ScalarTraits.src \
+	     testThyra.src testTriUtils.src
 
 MAINTAINERCLEANFILES = Makefile.in
-@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_TESTS = testTeuchos testTeuchos_ParameterList testTeuchos_ScalarTraits
+@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_TESTS = testTeuchos.py testTeuchos_ParameterList.py \
+@HAVE_PYTRILINOS_TEUCHOS_TRUE@	        testTeuchos_ScalarTraits.py
+
 
 # if HAVE_PYTRILINOS_THYRA
 # THYRA_TESTS = testThyra
 # endif
-@HAVE_PYTRILINOS_EPETRA_TRUE@EPETRA_TESTS = testEpetra_BlockMap testEpetra_Comm testEpetra_CompObject \
-@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_CrsGraph testEpetra_CrsMatrix testEpetra_FEVector \
-@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_ImportExport testEpetra_IntSerialDense testEpetra_IntVector \
-@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_LinearProblem testEpetra_LocalMap testEpetra_Map \
-@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_MapColoring testEpetra_MultiVector testEpetra_Object \
-@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_SerialDense testEpetra_Util testEpetra_Vector
+@HAVE_PYTRILINOS_EPETRA_TRUE@EPETRA_TESTS = testEpetra_BlockMap.py testEpetra_Comm.py \
+@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_CompObject.py testEpetra_CrsGraph.py \
+@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_CrsMatrix.py testEpetra_FEVector.py \
+@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_ImportExport.py testEpetra_IntSerialDense.py \
+@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_IntVector.py testEpetra_LinearProblem.py \
+@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_LocalMap.py testEpetra_Map.py \
+@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_MapColoring.py testEpetra_MultiVector.py \
+@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_Object.py testEpetra_SerialDense.py \
+@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_Util.py testEpetra_Vector.py
 
-@HAVE_PYTRILINOS_TRIUTILS_TRUE@TRIUTILS_TESTS = testTriUtils
-@HAVE_PYTRILINOS_EPETRAEXT_TRUE@EPETRAEXT_TESTS = testEpetraExt_Coloring
-@HAVE_PYTRILINOS_AZTECOO_TRUE@AZTECOO_TESTS = testAztecOO
-@HAVE_PYTRILINOS_GALERI_TRUE@GALERI_TESTS = testGaleri_CrsMatrices testGaleri_Maps
-@HAVE_PYTRILINOS_AMESOS_TRUE@AMESOS_TESTS = testAmesos
-@HAVE_PYTRILINOS_IFPACK_TRUE@IFPACK_TESTS = testIFPACK
-@HAVE_PYTRILINOS_ANASAZI_TRUE@ANASAZI_TESTS = testAnasazi
-@HAVE_PYTRILINOS_ML_TRUE@ML_TESTS = testML_Preconditioner
-@HAVE_PYTRILINOS_NOX_TRUE@NOX_TESTS = testNOX_StatusTest
+@HAVE_PYTRILINOS_TRIUTILS_TRUE@TRIUTILS_TESTS = testTriUtils.py
+@HAVE_PYTRILINOS_EPETRAEXT_TRUE@EPETRAEXT_TESTS = testEpetraExt_Coloring.py
+@HAVE_PYTRILINOS_AZTECOO_TRUE@AZTECOO_TESTS = testAztecOO.py
+@HAVE_PYTRILINOS_GALERI_TRUE@GALERI_TESTS = testGaleri_CrsMatrices.py testGaleri_Maps.py
+@HAVE_PYTRILINOS_AMESOS_TRUE@AMESOS_TESTS = testAmesos.py
+@HAVE_PYTRILINOS_IFPACK_TRUE@IFPACK_TESTS = testIFPACK.py
+@HAVE_PYTRILINOS_ANASAZI_TRUE@ANASAZI_TESTS = testAnasazi.py
+@HAVE_PYTRILINOS_ML_TRUE@ML_TESTS = testML_Preconditioner.py
+@HAVE_PYTRILINOS_NOX_TRUE@NOX_TESTS = testNOX_StatusTest.py
 TEST_SUITE = $(TEUCHOS_TESTS)   $(THYRA_TESTS)   $(EPETRA_TESTS) $(TRIUTILS_TESTS) \
 	     $(EPETRAEXT_TESTS) $(AZTECOO_TESTS) $(GALERI_TESTS) $(AMESOS_TESTS)   \
 	     $(IFPACK_TESTS)    $(ANASAZI_TESTS) $(ML_TESTS)     $(NOX_TESTS)
 
-TEST_PYSCRIPTS = $(TEST_SUITE:=.py) 
-SHOULD_COPY = should_copy.py
 SETPATH = setpath.py
-CLEANFILES = $(TEST_PYSCRIPTS) $(SHOULD_COPY) $(SETPATH) \
-	     *.pyc *.dat
-
+CLEANFILES = $(TEST_SUITE) $(SETPATH) *.pyc *.dat *.xml
 all: all-am
 
 .SUFFIXES:
@@ -411,30 +416,14 @@ all:
 	@echo "Trilinos package PyTrilinos subdirectory test built successfully."
 	@echo ""
 
-$(SHOULD_COPY):
-	@echo "Constructing $(SHOULD_COPY) script"
-	@echo "import sys, os"                                              > $@
-	@echo "filename = sys.argv[1]"                                     >> $@
-	@echo "if os.path.abspath('$(srcdir)') == os.getcwd():"            >> $@
-	@echo "    print 'false'; sys.exit()"                              >> $@
-	@echo "if not os.path.exists(filename):"                           >> $@
-	@echo "    print 'true'; sys.exit()"                               >> $@
-	@echo "if (os.path.getmtime(filename) <"                           >> $@
-	@echo "    os.path.getmtime(os.path.join('$(srcdir)',filename))):" >> $@
-	@echo "    print 'true'; sys.exit()"                               >> $@
-	@echo "print 'false'"                                              >> $@
+all-local: $(SETPATH) $(TEST_SUITE)
 
-all-local: $(SHOULD_COPY) $(TEST_SUITE)
-	@if [ `$(PYTHON) $(SHOULD_COPY) $(SETPATH)` == 'true' ]; then \
-	  echo "copying $(SETPATH)"; /bin/cp $(srcdir)/$(SETPATH) . ; fi
-
-test%: $(SHOULD_COPY)
-	@if [ `$(PYTHON) $(SHOULD_COPY) $@.py` == 'true' ]; then \
-	  echo "copying $@.py"; /bin/cp $(srcdir)/$@.py . ; fi
+%.py: %.src
+	@echo "copying $@"; /bin/cp $< $@
 
 run-tests: all-local
-	@for test_script in $(TEST_PYSCRIPTS); do if [ $$test_script != '.py' ]; then \
-	  echo; echo "Running $$test_script"; echo; $$test_script -t; fi; done
+	@for test_script in $(TEST_SUITE); do echo; echo "Running $$test_script"; \
+	  echo; $$test_script -t; done
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

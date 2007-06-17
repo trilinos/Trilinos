@@ -107,7 +107,6 @@ struct ostream_to_python
 };
 
 
-
 // ################################################################################
 // ## Extracts and Inserts
 // ################################################################################
@@ -122,7 +121,7 @@ void extract_teuchos_misc()
     to_python_converter< Teuchos::ParameterList, plist_to_object >();
     
     converter::registry::insert( &extract_ostream , type_id< std::ostream >() );
-    to_python_converter< std::ostream , ostream_to_python >();
+    //to_python_converter< std::ostream , ostream_to_python >();
 }
 // ################################################################################
 // ##

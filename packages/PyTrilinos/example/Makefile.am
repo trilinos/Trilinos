@@ -36,17 +36,17 @@ AUTOMAKE_OPTIONS = foreign
 ## #######################################################################
 ACLOCAL_AMFLAGS = -I config
 
-EXTRA_DIST = setpath.py gre__115.rua \
-	     exAmesos_Factory.py exAmesos_Solvers.py exAnasazi_BlockDavidson.py \
-	     exAztecOO.py exAztecOO_Operator.py exAztecOO_RowMatrix.py \
-	     exAztecOO_BasicRowMatrix.py exEpetra.py exEpetra_Comm.py \
-	     exEpetra_CrsMatrix_Easy.py exEpetra_CrsMatrix_Efficient.py \
-	     exEpetra_FECrsMatrix_Easy.py exEpetra_ImportExport.py \
-	     exEpetraExt_IO_MatrixMarket.py exEpetraExt_IO_XML.py \
-	     exEpetraExt_MatrixMatrix.py exGaleri.py exGaleri_ReadHB.py exIFPACK.py \
-	     exMLAPI.py exMLAPI_Simple.py exMLAPI_AztecOO.py exMLAPI_Iterate.py \
-	     exMLAPI_PyMatrix.py exMLAPI_Smoother.py exNOX_1Dfem.py exTeuchos.py \
-	     exThyra.py
+EXTRA_DIST = setpath.src gre__115.mx \
+	     exAmesos_Factory.src exAmesos_Solvers.src \
+	     exAnasazi_BlockDavidson.src exAztecOO.src exAztecOO_Operator.src \
+	     exAztecOO_RowMatrix.src exAztecOO_BasicRowMatrix.src exEpetra.src \
+	     exEpetra_Comm.src exEpetra_CrsMatrix_Easy.src \
+	     exEpetra_CrsMatrix_Efficient.src exEpetra_FECrsMatrix_Easy.src \
+	     exEpetra_ImportExport.src exEpetraExt_IO_MatrixMarket.src \
+	     exEpetraExt_IO_XML.src exEpetraExt_MatrixMatrix.src exGaleri.src \
+	     exGaleri_ReadHB.src exIFPACK.src exMLAPI.src exMLAPI_Simple.src \
+	     exMLAPI_AztecOO.src exMLAPI_Iterate.src exMLAPI.srcMatrix.src \
+	     exMLAPI_Smoother.src exNOX_1Dfem.src exTeuchos.src exThyra.src
 
 MAINTAINERCLEANFILES = Makefile.in
 
@@ -59,22 +59,22 @@ if HAVE_PYTRILINOS_TEUCHOS
 if HAVE_MPI
 TEUCHOS_EXAMPLES = 
 else
-TEUCHOS_EXAMPLES = exTeuchos
+TEUCHOS_EXAMPLES = exTeuchos.py
 endif
 endif
 
 # # Thyra examples
 # if HAVE_PYTRILINOS_THYRA
 # if HAVE_PYTRILINOS_EPETRA
-# THYRA_EXAMPLES = exThyra
+# THYRA_EXAMPLES = exThyra.py
 # endif
 # endif
 
 # Epetra examples
 if HAVE_PYTRILINOS_EPETRA
-EPETRA_EXAMPLES = exEpetra exEpetra_Comm exEpetra_CrsMatrix_Easy \
-	          exEpetra_CrsMatrix_Efficient exEpetra_FECrsMatrix_Easy \
-	          exEpetra_ImportExport
+EPETRA_EXAMPLES = exEpetra.py exEpetra_Comm.py exEpetra_CrsMatrix_Easy.py \
+	          exEpetra_CrsMatrix_Efficient.py exEpetra_FECrsMatrix_Easy.py \
+	          exEpetra_ImportExport.py
 endif
 
 # TriUtils examples
@@ -85,8 +85,8 @@ endif
 # EpetraExt examples
 if HAVE_PYTRILINOS_EPETRAEXT
 if HAVE_PYTRILINOS_EPETRA
-EPETRAEXT_EXAMPLES = exEpetraExt_IO_MatrixMarket exEpetraExt_IO_XML \
-	             exEpetraExt_MatrixMatrix
+EPETRAEXT_EXAMPLES = exEpetraExt_IO_MatrixMarket.py exEpetraExt_IO_XML.py \
+	             exEpetraExt_MatrixMatrix.py
 endif
 endif
 
@@ -94,12 +94,13 @@ endif
 if HAVE_PYTRILINOS_AZTECOO
 if HAVE_PYTRILINOS_EPETRA
 if HAVE_PYTRILINOS_GALERI
-AZTECOO_EX1 = exAztecOO
+AZTECOO_EX1 = exAztecOO.py
 endif
 if HAVE_MPI
 AZTECOO_EX2 = 
 else
-AZTECOO_EX2 = exAztecOO_Operator exAztecOO_RowMatrix exAztecOO_BasicRowMatrix
+AZTECOO_EX2 = exAztecOO_Operator.py exAztecOO_RowMatrix.py \
+	      exAztecOO_BasicRowMatrix.py
 endif
 AZTECOO_EXAMPLES = $(AZTECOO_EX1) $(AZTECOO_EX2)
 endif
@@ -108,14 +109,14 @@ endif
 # Galeri examples
 if HAVE_PYTRILINOS_GALERI
 if HAVE_PYTRILINOS_EPETRA
-GALERI_EXAMPLES = exGaleri exGaleri_ReadHB
+GALERI_EXAMPLES = exGaleri.py exGaleri_ReadHB.py
 endif
 endif
 
 # Amesos examples
 if HAVE_PYTRILINOS_AMESOS
 if HAVE_PYTRILINOS_EPETRA
-AMESOS_EXAMPLES = exAmesos_Factory exAmesos_Solvers
+AMESOS_EXAMPLES = exAmesos_Factory.py exAmesos_Solvers.py
 endif
 endif
 
@@ -125,7 +126,7 @@ if HAVE_PYTRILINOS_AZTECOO
 if HAVE_PYTRILINOS_GALERI
 if HAVE_PYTRILINOS_TRIUTILS
 if HAVE_PYTRILINOS_EPETRA
-IFPACK_EXAMPLES = exIFPACK
+IFPACK_EXAMPLES = exIFPACK.py
 endif
 endif
 endif
@@ -135,7 +136,7 @@ endif
 # Anasazi examples
 if HAVE_PYTRILINOS_ANASAZI
 if HAVE_PYTRILINOS_GALERI
-ANASAZI_EXAMPLES = exAnasazi_BlockDavidson
+ANASAZI_EXAMPLES = exAnasazi_BlockDavidson.py
 endif
 endif
 
@@ -143,18 +144,18 @@ endif
 if HAVE_PYTRILINOS_ML
 if HAVE_PYTRILINOS_EPETRA
 if HAVE_MPI
-ML_EX1 = exMLAPI_PyMatrix exMLAPI_Smoother
+ML_EX1 = exMLAPI_PyMatrix.py exMLAPI_Smoother.py
 else
-ML_EX1 = exMLAPI exMLAPI_Iterate exMLAPI_PyMatrix exMLAPI_Smoother
+ML_EX1 = exMLAPI.py exMLAPI_Iterate.py exMLAPI_PyMatrix.py exMLAPI_Smoother.py
 endif
 if HAVE_PYTRILINOS_AZTECOO
 if HAVE_MPI
 ML_EX2 = 
 else
-ML_EX2 = exMLAPI_AztecOO
+ML_EX2 = exMLAPI_AztecOO.py
 endif
 if HAVE_PYTRILINOS_GALERI
-ML_EX3 = exMLAPI_Simple
+ML_EX3 = exMLAPI_Simple.py
 endif
 endif
 ML_EXAMPLES = $(ML_EX1) $(ML_EX2) $(ML_EX3)
@@ -164,7 +165,7 @@ endif
 # NOX examples
 if HAVE_PYTRILINOS_NOX
 if HAVE_PYTRILINOS_NOX_EPETRA
-NOX_EXAMPLES = exNOX_1Dfem
+NOX_EXAMPLES = exNOX_1Dfem.py
 endif
 endif
 
@@ -174,11 +175,8 @@ EXAMPLE_SUITE = $(TEUCHOS_EXAMPLES)  $(THYRA_EXAMPLES)     $(EPETRA_EXAMPLES) \
 	        $(GALERI_EXAMPLES)   $(AMESOS_EXAMPLES)    $(IFPACK_EXAMPLES) \
 	        $(ANASAZI_EXAMPLES)  $(ML_EXAMPLES)        $(NOX_EXAMPLES)
 
-EXAMPLE_PYSCRIPTS = $(EXAMPLE_SUITE:=.py) 
-
-SHOULD_COPY = should_copy.py
-SETPATH     = setpath.py
-GRE__115    = gre__115.rua
+SETPATH  = setpath.py
+GRE__115 = gre__115.rua
 
 # The following line helps the test harness recover from build errors.
 all:
@@ -186,32 +184,16 @@ all:
 	@echo "Trilinos package PyTrilinos subdirectory example built successfully."
 	@echo ""
 
-$(SHOULD_COPY):
-	@echo "Constructing $(SHOULD_COPY) script"
-	@echo "import sys, os"                                              > $@
-	@echo "filename = sys.argv[1]"                                     >> $@
-	@echo "if os.path.abspath('$(srcdir)') == os.getcwd():"            >> $@
-	@echo "    print 'false'; sys.exit()"                              >> $@
-	@echo "if not os.path.exists(filename):"                           >> $@
-	@echo "    print 'true'; sys.exit()"                               >> $@
-	@echo "if (os.path.getmtime(filename) <"                           >> $@
-	@echo "    os.path.getmtime(os.path.join('$(srcdir)',filename))):" >> $@
-	@echo "    print 'true'; sys.exit()"                               >> $@
-	@echo "print 'false'"                                              >> $@
+all-local: $(SETPATH) $(EXAMPLE_SUITE) $(GRE__115)
 
-all-local: $(SHOULD_COPY) $(EXAMPLE_SUITE)
-	@if [ `$(PYTHON) $(SHOULD_COPY) $(SETPATH)` == 'true' ]; then \
-	  echo "copying $(SETPATH)"; /bin/cp $(srcdir)/$(SETPATH) . ; fi
-	@if [ `$(PYTHON) $(SHOULD_COPY) $(GRE__115)` == 'true' ]; then \
-	  echo "copying $(GRE__115)"; /bin/cp $(srcdir)/$(GRE__115) . ; fi
+%.py: %.src
+	@echo "copying $@"; /bin/cp $< $@
 
-ex%: $(SHOULD_COPY)
-	@if [ `$(PYTHON) $(SHOULD_COPY) $@.py` == 'true' ]; then \
-	  echo "copying $@.py"; /bin/cp $(srcdir)/$@.py . ; fi
+%.rua: %.mx
+	@echo "copying $@"; /bin/cp $< $@
 
 run-examples: all-local
-	@for ex_script in $(EXAMPLE_PYSCRIPTS); do if [ $$ex_script != '.py' ]; then \
-	  echo; echo "Running $$ex_script"; echo; $$ex_script -t; fi; done
+	@for ex_script in $(EXAMPLE_SUITE); do echo; echo "Running $$ex_script"; \
+	 echo; $$ex_script -t; done
 
-CLEANFILES = $(EXAMPLE_PYSCRIPTS) $(SHOULD_COPY) $(SETPATH) $(GRE__115) \
-	     *.pyc *.dat *.mm *.xml
+CLEANFILES = $(EXAMPLE_SUITE) $(SETPATH) $(GRE__115) *.pyc *.dat *.mm *.xml
