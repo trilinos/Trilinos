@@ -45,7 +45,7 @@ EXTRA_DIST = setpath.src gre__115.mx \
 	     exEpetra_ImportExport.src exEpetraExt_IO_MatrixMarket.src \
 	     exEpetraExt_IO_XML.src exEpetraExt_MatrixMatrix.src exGaleri.src \
 	     exGaleri_ReadHB.src exIFPACK.src exMLAPI.src exMLAPI_Simple.src \
-	     exMLAPI_AztecOO.src exMLAPI_Iterate.src exMLAPI.srcMatrix.src \
+	     exMLAPI_AztecOO.src exMLAPI_Iterate.src exMLAPI_PyMatrix.src \
 	     exMLAPI_Smoother.src exNOX_1Dfem.src exTeuchos.src exThyra.src
 
 MAINTAINERCLEANFILES = Makefile.in
