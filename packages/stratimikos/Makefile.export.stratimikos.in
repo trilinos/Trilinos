@@ -37,8 +37,8 @@ include @abs_top_builddir@/../thyra/Makefile.export.thyra
 @ENABLE_STRATIMIKOS_ML_TRUE@  -L@abs_top_builddir@/adapters/ml/src -lstratimikosml $(ML_LIBS)
 
 _STRATIMIKOS_INCLUDES = \
-  -I@abs_top_srcdir@/src \
   -I@abs_top_builddir@/src \
+  -I@abs_top_srcdir@/src \
   $(STRATIMIKOS_AMESOS_INCLUDES) \
   $(STRATIMIKOS_AZTECOO_INCLUDES) \
   $(STRATIMIKOS_IFPACK_INCLUDES) \

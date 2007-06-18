@@ -41,7 +41,7 @@ my @dep_export_package_builddirs = split(":",$dep_package_builddirs);
 #
 my $my_abs_export_makefile = "${exec_prefix}/include/${my_export_makefile}";
 
-my $cmnd_base = "${my_top_srcdir}/config/string-replace.pl ";
+my $cmnd_base = "${my_top_srcdir}/config/token-replace.pl ";
 #
 foreach(@dep_export_package_builddirs) {
   if($_ ne "") {

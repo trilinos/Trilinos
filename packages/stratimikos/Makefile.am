@@ -147,8 +147,8 @@ install-exec-hook:
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.stratimikos \
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
-		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
-		--my-abs-lib-dirs=@abs_top_builddir@/src \
+		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/adapters/amesos/src:@abs_top_srcdir@/adapters/aztecoo/src:@abs_top_srcdir@/adapters/ifpack/src:@abs_top_srcdir@/adapters/ml/src \
+		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/adapters/amesos/src:@abs_top_builddir@/adapters/aztecoo/src:@abs_top_builddir@/adapters/ifpack/src:@abs_top_builddir@/adapters/ml/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra:@abs_top_builddir@/../amesos:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../belos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../ml
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile STRATIMIKOS > $(exec_prefix)/include/Makefile.export.stratimikos.macros
 

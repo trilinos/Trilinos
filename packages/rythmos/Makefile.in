@@ -759,7 +759,7 @@ libs:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-top-srcdir=@abs_top_srcdir@ \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
-@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra:@abs_top_builddir@/../epetraext:@abs_top_builddir@/../stratimikos:@abs_top_builddir@/../nox
+@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra:@abs_top_builddir@/../epetraext:@abs_top_builddir@/../stratimikos:@abs_top_builddir@/../nox:@abs_top_builddir@/../sacado
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile RYTHMOS > $(exec_prefix)/include/Makefile.export.rythmos.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:

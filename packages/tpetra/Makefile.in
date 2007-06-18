@@ -618,6 +618,8 @@ install-data-am:
 install-dvi: install-dvi-recursive
 
 install-exec-am:
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
 
 install-html: install-html-recursive
 
@@ -650,9 +652,11 @@ ps: ps-recursive
 ps-am:
 
 uninstall-am:
+	@$(NORMAL_INSTALL)
+	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 
 .MAKE: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) install-am \
-	install-strip
+	install-exec-am install-strip uninstall-am
 
 .PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
 	all all-am all-local am--refresh check check-am clean \
@@ -661,13 +665,14 @@ uninstall-am:
 	distclean-generic distclean-tags distcleancheck distdir \
 	distuninstallcheck dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags \
-	tags-recursive uninstall uninstall-am
+	install-dvi-am install-exec install-exec-am install-exec-hook \
+	install-html install-html-am install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
+	pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
+	uninstall-hook
 
 
 #The following line helps the test harness recover from build errors.
@@ -680,6 +685,25 @@ all-libs:
 
 libs:
 	cd $(top_builddir)/src ; $(MAKE)
+
+@USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
+@USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.tpetra $(exec_prefix)/include/.
+@USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
+@USING_EXPORT_MAKEFILES_TRUE@		--exec-prefix=$(exec_prefix) \
+@USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.tpetra \
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-top-srcdir=@abs_top_srcdir@ \
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_builddir@/../kokkos/src:@abs_top_srcdir@/../kokkos/src \
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
+@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../teuchos
+@USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile TPETRA > $(exec_prefix)/include/Makefile.export.tpetra.macros
+
+@USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.tpetra
+@USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.tpetra.macros
+
+@USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
+
+@USING_EXPORT_MAKEFILES_FALSE@uninstall-hook:
 
 runtests-serial :
 	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \

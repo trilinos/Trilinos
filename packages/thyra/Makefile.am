@@ -161,9 +161,9 @@ install-exec-hook:
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.thyra \
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
-		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
-		--my-abs-lib-dirs=@abs_top_builddir@/src \
-		--dep-package-abs-builddirs=@abs_top_builddir@/../rtop:@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra
+		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/adapters/epetra/src:@abs_top_srcdir@/adapters/tpetra/src:@abs_top_srcdir@/adapters/epetraext/src/model_evaluator \
+		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/adapters/epetra/src:@abs_top_builddir@/adapters/tpetra/src:@abs_top_builddir@/adapters/epetraext/src \
+		--dep-package-abs-builddirs=@abs_top_builddir@/../rtop:@abs_top_builddir@/../epetra:@abs_top_builddir@/../tpetra:@abs_top_builddir@/../epetraext
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile THYRA > $(exec_prefix)/include/Makefile.export.thyra.macros
 
 uninstall-hook:
