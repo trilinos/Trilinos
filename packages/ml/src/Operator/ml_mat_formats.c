@@ -260,9 +260,9 @@ int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    struct ML_vbrdata *input_matrix;
-   int  i, j, array_place, row_length, row_offset, point_rows, block_offset;
-   int *cpntr, *bindx, *rpntr, *indx, *bpntr, startblock, endblock, blocks;
-   double *val;
+   int  i, j, array_place, row_length, offset, point_rows, iminus1;
+   int *cpntr, *bindx, *rpntr, *indx, *bpntr, startblock, endblock;
+   double *val, cur_val;
   
  
    /*set alliases*/                                                       
@@ -276,22 +276,21 @@ int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
 
    /*find out where the requested row within the block structure.*/
    for(i = 0; rpntr[i] <= *requested_rows; i++);
-   row_offset = *requested_rows - rpntr[i-1];
-   point_rows = rpntr[i] - rpntr[i-1];
+   iminus1 = i-1;
+   offset = indx[bpntr[iminus1]] + *requested_rows - rpntr[iminus1];
+   point_rows = rpntr[i] - rpntr[iminus1];
                           
    /*this is a bit of an overestimate but better safe than sorry.
      If there were a way to figure out how many zeros there were
      we could subtract this out.*/
-   if (indx[i] - indx[i-1] > allocated_space) {
+   if (indx[i] - indx[iminus1] > allocated_space) {
      ML_avoid_unused_param( (void *) &N_requested_rows);
      return(0);
    }
 
    /*Which blocks have data in them and how many of them there are*/
-   startblock = bpntr[i-1];
+   startblock = bpntr[iminus1];
    endblock = bpntr[i];
-   blocks = endblock - startblock;
-   block_offset = indx[bpntr[i-1]];
 
    *row_lengths = 0; /*data points stored*/
    array_place = 0; /*where we are in array we're itterating through*/
@@ -302,11 +301,12 @@ int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
      /*iterate over columns in each block*/
      for(j = cpntr[bindx[i]]; j < cpntr[bindx[i]+1]; j++)
      {
+       cur_val = val[point_rows*array_place+offset];
        /*strip out zeros*/
-       if(val[point_rows*array_place+row_offset+block_offset] != 0.0)
+       if(cur_val != 0.0)
        {
           
-         values[*row_lengths] = val[point_rows*array_place+row_offset+block_offset];
+         values[*row_lengths] = cur_val;
          columns[*row_lengths] = j;
          row_lengths[0]++;
        }
