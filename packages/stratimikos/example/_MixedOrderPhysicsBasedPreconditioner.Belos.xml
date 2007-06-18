@@ -1,7 +1,7 @@
 <ParameterList>
 
   <ParameterList name="M11 Solver">
-    <Parameter name="Linear Solver Type" type="string" value="Amesos"/>
+    <Parameter name="Linear Solver Type" type="string" value="Belos"/>
     <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
     <ParameterList name="Linear Solver Types">
       <ParameterList name="Belos">
@@ -33,7 +33,7 @@
   </ParameterList>
 
   <ParameterList name="M22 Solver">
-    <Parameter name="Linear Solver Type" type="string" value="Amesos"/>
+    <Parameter name="Linear Solver Type" type="string" value="Belos"/>
     <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
     <ParameterList name="Linear Solver Types">
       <ParameterList name="Belos">

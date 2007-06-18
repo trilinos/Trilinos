@@ -241,6 +241,26 @@ MixedOrderPhysicsBasedPreconditioner_DEPENDENCIES = $(common_dependencies)
 MixedOrderPhysicsBasedPreconditioner_LDADD = $(common_ldadd)
 
 #
+# Links
+#
+
+# Links for amesos executables
+@ENABLE_STRATIMIKOS_AMESOS_TRUE@LINK_SIMPLE_AMESOS = simple_stratimikos_example_amesos.exe
+@ENABLE_STRATIMIKOS_AMESOS_TRUE@LINK_MIXEDORDER_AMESOS = MixedOrderPhysicsBasedPreconditioner_amesos.exe
+
+# Links for aztecoo executables
+@ENABLE_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_STRATIMIKOS_IFPACK_TRUE@LINK_SIMPLE_AZTECOO_IFPACK = simple_stratimikos_example_aztecoo_ifpack.exe
+@ENABLE_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_STRATIMIKOS_IFPACK_TRUE@LINK_MIXEDORDER_AZTECOO_IFPACK = MixedOrderPhysicsBasedPreconditioner_aztecoo_ifpack.exe
+@ENABLE_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_STRATIMIKOS_ML_TRUE@LINK_SIMPLE_AZTECOO_ML = simple_stratimikos_example_aztecoo_ml.exe
+@ENABLE_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_STRATIMIKOS_ML_TRUE@LINK_MIXEDORDER_AZTECOO_ML = MixedOrderPhysicsBasedPreconditioner_aztecoo_ml.exe
+
+# Links for belos executables
+@ENABLE_STRATIMIKOS_BELOS_TRUE@@ENABLE_STRATIMIKOS_IFPACK_TRUE@LINK_SIMPLE_BELOS_IFPACK = simple_stratimikos_example_belos_ifpack.exe
+@ENABLE_STRATIMIKOS_BELOS_TRUE@@ENABLE_STRATIMIKOS_IFPACK_TRUE@LINK_MIXEDORDER_BELOS_IFPACK = MixedOrderPhysicsBasedPreconditioner_belos_ifpack.exe
+@ENABLE_STRATIMIKOS_BELOS_TRUE@@ENABLE_STRATIMIKOS_ML_TRUE@LINK_SIMPLE_BELOS_ML = simple_stratimikos_example_belos_ml.exe
+@ENABLE_STRATIMIKOS_BELOS_TRUE@@ENABLE_STRATIMIKOS_ML_TRUE@LINK_MIXEDORDER_BELOS_ML = MixedOrderPhysicsBasedPreconditioner_belos_ml.exe
+
+#
 # Common stuff
 #
 common_dependencies = $(top_builddir)/src/libstratimikos.a
@@ -534,9 +554,7 @@ uninstall-am:
 	uninstall-am
 
 
-# The following line helps the test harness recover from build errors.
-
-all-local: generate-sample-output.pl amesos.klu.xml MixedOrderPhysicsBasedPreconditioner.Base.xml
+all-local: generate-sample-output.pl amesos.klu.xml MixedOrderPhysicsBasedPreconditioner.Base.xml make-links
 	@echo ""
 	@echo "Trilinos package stratimikos subdirectory example built successfully."
 	@echo ""
@@ -565,6 +583,45 @@ MixedOrderPhysicsBasedPreconditioner.Base.xml:
 	cp $(srcdir)/_M12.mtx M12.mtx
 	cp $(srcdir)/_M21.mtx M21.mtx
 	cp $(srcdir)/_M22.mtx M22.mtx
+
+simple_stratimikos_example_amesos.exe:
+	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_amesos.exe
+
+MixedOrderPhysicsBasedPreconditioner_amesos.exe:
+	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_amesos.exe
+
+simple_stratimikos_example_aztecoo_ifpack.exe:
+	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_aztecoo_ifpack.exe
+
+MixedOrderPhysicsBasedPreconditioner_aztecoo_ifpack.exe:
+	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_aztecoo_ifpack.exe
+
+simple_stratimikos_example_aztecoo_ml.exe:
+	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_aztecoo_ml.exe
+
+MixedOrderPhysicsBasedPreconditioner_aztecoo_ml.exe:
+	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_aztecoo_ml.exe
+
+simple_stratimikos_example_belos_ifpack.exe:
+	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_belos_ifpack.exe
+
+MixedOrderPhysicsBasedPreconditioner_belos_ifpack.exe:
+	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_belos_ifpack.exe
+
+simple_stratimikos_example_belos_ml.exe:
+	ln -s ./simple_stratimikos_example.exe simple_stratimikos_example_belos_ml.exe
+
+MixedOrderPhysicsBasedPreconditioner_belos_ml.exe:
+	ln -s ./MixedOrderPhysicsBasedPreconditioner.exe MixedOrderPhysicsBasedPreconditioner_belos_ml.exe
+
+# Main links
+
+make-links: \
+  $(LINK_SIMPLE_AMESOS) $(LINK_MIXEDORDER_AMESOS) \
+  $(LINK_SIMPLE_AZTECOO_IFPACK) $(LINK_MIXEDORDER_AZTECOO_IFPACK) \
+  $(LINK_SIMPLE_AZTECOO_ML) $(LINK_MIXEDORDER_AZTECOO_ML) \
+  $(LINK_SIMPLE_BELOS_IFPACK) $(LINK_MIXEDORDER_BELOS_IFPACK) \
+  $(LINK_SIMPLE_BELOS_ML) $(LINK_MIXEDORDER_BELOS_ML)
 
 include $(top_builddir)/Makefile.export.stratimikos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

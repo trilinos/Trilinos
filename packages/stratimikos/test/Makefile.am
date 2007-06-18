@@ -28,6 +28,11 @@
 
 EXEEXT = .exe
 
+all-local: FourByFour.xml make-links
+	@echo ""
+	@echo "Trilinos package stratimikos subdirectory test built successfully."
+	@echo ""
+
 #
 # Actual programs
 #
@@ -39,7 +44,7 @@ TEST_SINGLE_STRATIMIKOS_SOLVER_DRIVER = test_single_stratimikos_solver_driver
 noinst_PROGRAMS = $(TEST_SINGLE_STRATIMIKOS_SOLVER_DRIVER)
 
 test_single_stratimikos_solver_driver_SOURCES = $(srcdir)/test_single_stratimikos_solver_driver.cpp $(common_sources)
-test_single_stratimikos_solver_driver_DEPENDENCIES = $(common_dependencies)  FourByFour.xml
+test_single_stratimikos_solver_driver_DEPENDENCIES = $(common_dependencies)
 test_single_stratimikos_solver_driver_LDADD = $(common_ldadd)
 
 #test_stratimikos_driver_SOURCES = $(srcdir)/test_stratimikos_driver.cpp $(common_sources)
@@ -56,6 +61,62 @@ FourByFour.xml:
 	cp  $(srcdir)/_FourByFour.belos.np.xml FourByFour.belos.np.xml
 	cp  $(srcdir)/_FourByFour.belos.ifpack.xml FourByFour.belos.ifpack.xml
 	cp  $(srcdir)/_FourByFour.belos.ml.xml FourByFour.belos.ml.xml
+
+#
+# Links
+#
+
+# Links for amesos executables
+
+if ENABLE_STRATIMIKOS_AMESOS
+LINK_TESTDRIVER_AMESOS=test_single_stratimikos_solver_driver_amesos.exe
+endif
+
+test_single_stratimikos_solver_driver_amesos.exe:
+	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_amesos.exe
+
+# Links for aztecoo executables
+
+if ENABLE_STRATIMIKOS_AZTECOO
+if ENABLE_STRATIMIKOS_IFPACK
+LINK_TESTDRIVER_AZTECOO_IFPACK=test_single_stratimikos_solver_driver_aztecoo_ifpack.exe
+endif
+if ENABLE_STRATIMIKOS_ML
+LINK_TESTDRIVER_AZTECOO_ML=test_single_stratimikos_solver_driver_aztecoo_ml.exe
+endif
+endif
+
+test_single_stratimikos_solver_driver_aztecoo_ifpack.exe:
+	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_aztecoo_ifpack.exe
+
+test_single_stratimikos_solver_driver_aztecoo_ml.exe:
+	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_aztecoo_ml.exe
+
+# Links for belos executables
+
+if ENABLE_STRATIMIKOS_BELOS
+if ENABLE_STRATIMIKOS_IFPACK
+LINK_TESTDRIVER_BELOS_IFPACK=test_single_stratimikos_solver_driver_belos_ifpack.exe
+endif
+if ENABLE_STRATIMIKOS_ML
+LINK_TESTDRIVER_BELOS_ML=test_single_stratimikos_solver_driver_belos_ml.exe
+endif
+endif
+
+test_single_stratimikos_solver_driver_belos_ifpack.exe:
+	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_belos_ifpack.exe
+
+test_single_stratimikos_solver_driver_belos_ml.exe:
+	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_belos_ml.exe
+
+# Main links
+
+make-links: \
+  $(LINK_TESTDRIVER_AMESOS) \
+  $(LINK_TESTDRIVER_AZTECOO_IFPACK) \
+  $(LINK_TESTDRIVER_AZTECOO_ML) \
+  $(LINK_TESTDRIVER_BELOS_IFPACK) \
+  $(LINK_TESTDRIVER_BELOS_ML)
 
 #
 # Common stuff

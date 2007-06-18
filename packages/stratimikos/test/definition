@@ -4,35 +4,85 @@
 # Main Stratimikos tests
 #
 
-(FRAMEWORK, INSTALL) {
-    TESTS = ../example/simple_stratimikos_example.exe;
-    ARGS =
-      --linear-solver-params-file=../example/amesos.klu.xml      --matrix-file=../example/FourByFour.mtx --tol=1e-13,
-      --linear-solver-params-file=../example/aztecoo.ifpack.xml  --matrix-file=../example/FourByFour.mtx --tol=1e-13,
-      --linear-solver-params-file=../example/aztecoo.ml.xml      --matrix-file=../example/FourByFour.mtx --tol=1e-13,
-      --linear-solver-params-file=../example/belos.ifpack.xml    --matrix-file=../example/FourByFour.mtx --tol=1e-13,
-      --linear-solver-params-file=../example/belos.ml.xml        --matrix-file=../example/FourByFour.mtx --tol=1e-13,
-      --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/></ParameterList>"  --matrix-file=../example/FourByFour.mtx --tol=1e-10 --linear-solver-params-used-file=lowsf.aztecoo.used.xml,
-      --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>"  --matrix-file=../example/FourByFour.mtx --tol=1e-10 --linear-solver-params-used-file=lowsf.amesos.used.xml;
+(FRAMEWORK, INSTALL, StratimikosAmesos) {
+    TESTS = ../example/simple_stratimikos_example_amesos.exe;
+    ARGS = --linear-solver-params-file=../example/amesos.klu.xml --matrix-file=../example/FourByFour.mtx --tol=1e-13;
     COMM = MPI(1),SERIAL;
 }
 
-(FRAMEWORK, INSTALL) {
-    TESTS = ./test_single_stratimikos_solver_driver.exe;
-    ARGS = --input-file=FourByFour.xml,
-           --input-file=FourByFour.amesos.xml,
-           --input-file=FourByFour.aztecoo.np.xml,
-           --input-file=FourByFour.aztecoo.ifpack.xml;
+(FRAMEWORK, INSTALL, StratimikosAmesos) {
+    TESTS = ../example/simple_stratimikos_example_amesos.exe;
+    ARGS = --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>"  --matrix-file=../example/FourByFour.mtx --tol=1e-10 --linear-solver-params-used-file=lowsf.amesos.used.xml;
     COMM = MPI(1),SERIAL;
 }
 
-(FRAMEWORK, INSTALL) {
-    TESTS = ../example/MixedOrderPhysicsBasedPreconditioner.exe;
+(FRAMEWORK, INSTALL, StratimikosAztecOOIfpack) {
+    TESTS = ../example/simple_stratimikos_example_aztecoo_ifpack.exe;
+    ARGS = --linear-solver-params-file=../example/aztecoo.ifpack.xml --matrix-file=../example/FourByFour.mtx --tol=1e-13;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK, INSTALL, StratimikosAztecOOIfpack) {
+    TESTS = ../example/simple_stratimikos_example_aztecoo_ifpack.exe;
+    ARGS = --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/></ParameterList>"  --matrix-file=../example/FourByFour.mtx --tol=1e-10 --linear-solver-params-used-file=lowsf.aztecoo.used.xml;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK, INSTALL, StratimikosAztecOOML) {
+    TESTS = ../example/simple_stratimikos_example_aztecoo_ml.exe;
+    ARGS = --linear-solver-params-file=../example/aztecoo.ml.xml --matrix-file=../example/FourByFour.mtx --tol=1e-13;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK, INSTALL, StratimikosBelosIfpack) {
+    TESTS = ../example/simple_stratimikos_example_belos_ifpack.exe;
+    ARGS = --linear-solver-params-file=../example/belos.ifpack.xml --matrix-file=../example/FourByFour.mtx --tol=1e-13;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK, INSTALL, StratimikosBelosML) {
+    TESTS = ../example/simple_stratimikos_example_belos_ml.exe;
+    ARGS = --linear-solver-params-file=../example/belos.ml.xml --matrix-file=../example/FourByFour.mtx --tol=1e-13;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK, INSTALL, StratimikosAmesos) {
+    TESTS = ./test_single_stratimikos_solver_driver_amesos.exe;
+    ARGS = --input-file=FourByFour.xml;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK, INSTALL, StratimikosAmesos) {
+    TESTS = ./test_single_stratimikos_solver_driver_amesos.exe;
+    ARGS = --input-file=FourByFour.amesos.xml;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK, INSTALL, StratimikosAztecOOIfpack) {
+    TESTS = ./test_single_stratimikos_solver_driver_aztecoo_ifpack.exe;
+    ARGS = --input-file=FourByFour.aztecoo.np.xml;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK, INSTALL, StratimikosAztecOOIfpack) {
+    TESTS = ./test_single_stratimikos_solver_driver_aztecoo_ifpack.exe;
+    ARGS = --input-file=FourByFour.aztecoo.ifpack.xml;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK, INSTALL, StratimikosAztecOOIfpack) {
+    TESTS = ../example/MixedOrderPhysicsBasedPreconditioner_aztecoo_ifpack.exe;
     ARGS = --params-file=MixedOrderPhysicsBasedPreconditioner.Base.xml --base-dir=../example --solve-tol=1.0,
       --params-file=MixedOrderPhysicsBasedPreconditioner.Base.xml --extra-params-file=MixedOrderPhysicsBasedPreconditioner.P2SolveOutput.xml --base-dir=../example --solve-tol=1.0,
       --params-file=MixedOrderPhysicsBasedPreconditioner.Base.xml --extra-params-file=MixedOrderPhysicsBasedPreconditioner.AllSolveOutput.xml --base-dir=../example --solve-tol=1.0,
       --params-file=MixedOrderPhysicsBasedPreconditioner.Base.xml --extra-params-file=MixedOrderPhysicsBasedPreconditioner.P2SolveOutputMSolveOutputToFile.xml --base-dir=../example --solve-tol=1.0,
-      --params-file=MixedOrderPhysicsBasedPreconditioner.Base.xml --extra-params-file=MixedOrderPhysicsBasedPreconditioner.P2SolveOutput.xml --base-dir=../example --use-algebraic-prec --solve-tol=1.0,
+      --params-file=MixedOrderPhysicsBasedPreconditioner.Base.xml --extra-params-file=MixedOrderPhysicsBasedPreconditioner.P2SolveOutput.xml --base-dir=../example --use-algebraic-prec --solve-tol=1.0;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK, INSTALL, StratimikosBelosIfpack) {
+    TESTS = ../example/MixedOrderPhysicsBasedPreconditioner_belos_ifpack.exe;
+    ARGS = \
       --params-file=MixedOrderPhysicsBasedPreconditioner.Belos.xml --base-dir=../example --use-algebraic-prec --solve-tol=1e+5,
       --params-file=MixedOrderPhysicsBasedPreconditioner.Belos.xml --base-dir=../example --invert-P1 --solve-tol=1e+5;
     COMM = MPI(1),SERIAL;

@@ -227,8 +227,23 @@ top_srcdir = @top_srcdir@
 #
 TEST_SINGLE_STRATIMIKOS_SOLVER_DRIVER = test_single_stratimikos_solver_driver
 test_single_stratimikos_solver_driver_SOURCES = $(srcdir)/test_single_stratimikos_solver_driver.cpp $(common_sources)
-test_single_stratimikos_solver_driver_DEPENDENCIES = $(common_dependencies)  FourByFour.xml
+test_single_stratimikos_solver_driver_DEPENDENCIES = $(common_dependencies)
 test_single_stratimikos_solver_driver_LDADD = $(common_ldadd)
+
+#
+# Links
+#
+
+# Links for amesos executables
+@ENABLE_STRATIMIKOS_AMESOS_TRUE@LINK_TESTDRIVER_AMESOS = test_single_stratimikos_solver_driver_amesos.exe
+
+# Links for aztecoo executables
+@ENABLE_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_STRATIMIKOS_IFPACK_TRUE@LINK_TESTDRIVER_AZTECOO_IFPACK = test_single_stratimikos_solver_driver_aztecoo_ifpack.exe
+@ENABLE_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_STRATIMIKOS_ML_TRUE@LINK_TESTDRIVER_AZTECOO_ML = test_single_stratimikos_solver_driver_aztecoo_ml.exe
+
+# Links for belos executables
+@ENABLE_STRATIMIKOS_BELOS_TRUE@@ENABLE_STRATIMIKOS_IFPACK_TRUE@LINK_TESTDRIVER_BELOS_IFPACK = test_single_stratimikos_solver_driver_belos_ifpack.exe
+@ENABLE_STRATIMIKOS_BELOS_TRUE@@ENABLE_STRATIMIKOS_ML_TRUE@LINK_TESTDRIVER_BELOS_ML = test_single_stratimikos_solver_driver_belos_ml.exe
 
 #
 # Common stuff
@@ -415,7 +430,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(PROGRAMS) all-local
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -500,19 +515,24 @@ uninstall-am:
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
+	clean-generic clean-noinstPROGRAMS ctags distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am
 
+
+all-local: FourByFour.xml make-links
+	@echo ""
+	@echo "Trilinos package stratimikos subdirectory test built successfully."
+	@echo ""
 
 #test_stratimikos_driver_SOURCES = $(srcdir)/test_stratimikos_driver.cpp $(common_sources)
 #test_stratimikos_driver_DEPENDENCIES = $(common_dependencies) FourByFour.mtx
@@ -528,6 +548,30 @@ FourByFour.xml:
 	cp  $(srcdir)/_FourByFour.belos.np.xml FourByFour.belos.np.xml
 	cp  $(srcdir)/_FourByFour.belos.ifpack.xml FourByFour.belos.ifpack.xml
 	cp  $(srcdir)/_FourByFour.belos.ml.xml FourByFour.belos.ml.xml
+
+test_single_stratimikos_solver_driver_amesos.exe:
+	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_amesos.exe
+
+test_single_stratimikos_solver_driver_aztecoo_ifpack.exe:
+	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_aztecoo_ifpack.exe
+
+test_single_stratimikos_solver_driver_aztecoo_ml.exe:
+	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_aztecoo_ml.exe
+
+test_single_stratimikos_solver_driver_belos_ifpack.exe:
+	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_belos_ifpack.exe
+
+test_single_stratimikos_solver_driver_belos_ml.exe:
+	ln -s ./test_single_stratimikos_solver_driver.exe test_single_stratimikos_solver_driver_belos_ml.exe
+
+# Main links
+
+make-links: \
+  $(LINK_TESTDRIVER_AMESOS) \
+  $(LINK_TESTDRIVER_AZTECOO_IFPACK) \
+  $(LINK_TESTDRIVER_AZTECOO_ML) \
+  $(LINK_TESTDRIVER_BELOS_IFPACK) \
+  $(LINK_TESTDRIVER_BELOS_ML)
 
 include $(top_builddir)/Makefile.export.stratimikos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
