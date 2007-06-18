@@ -262,10 +262,6 @@ exit $exitStatus;
     #
     #   - returns:  NONE
     #
-    # runbuild (make dist)
-    #   (tarball called trilinos-7.0.8.tar.gz trilinos-8.0d.tar.gz configure.ac AC_INIT)
-    # untar
-    # runharness
 
     sub run {
         
@@ -453,7 +449,8 @@ exit $exitStatus;
                                                # ourselves to avoid making 
                                                # assumptions about formatting)
             
-            my $versionNumber = $configureAc =~ m/^AC_INIT\(Trilinos, (.+), /;
+            $configureAc =~ m/^AC_INIT\(Trilinos, (.+?), /;
+            my $versionNumber = $1;
             
             my $buildDir = $buildOptions{'BUILD-DIR'};
             if ($buildDir !~ m/^\//) { $buildDir = "$trilinosDir/$buildDir"; }
@@ -461,17 +458,46 @@ exit $exitStatus;
             $status = system("tar -xzf trilinos-$versionNumber.tar.gz");
             my $skipTarballTesting= 0;
             if ($status != 0) {
-               $skipTarballTesting = 1;
-               print "error unpacking tarball--skipping tarball testing.\n";
+                $skipTarballTesting = 1;
+                print "error unpacking tarball--skipping tarball testing.\n";
+            }
+            if (!$skipTarballTesting) {
+                $status = system("rm -rf $trilinosDir/../trilinos-$versionNumber");
+                if ($status != 0) {
+                    $skipTarballTesting = 1;
+                    print "error blowing away old tarball directory--skipping tarball testing.\n";
+                }
+            }
+            if (!$skipTarballTesting) {
+                $status = system("mv trilinos-$versionNumber $trilinosDir/../");
+                if ($status != 0) {
+                    $skipTarballTesting = 1;
+                    print "error moving tarball--skipping tarball testing.\n";
+                }
+            }
+            if (!$skipTarballTesting) {
+                $status = system("cp $trilinosDir/commonTools/test/harness/config $trilinosDir/../trilinos-$versionNumber/commonTools/test/harness/");
+                if ($status != 0) {
+                    $skipTarballTesting = 1;
+                    print "error copying config--skipping tarball testing.\n";
+                }
+            }
+            if (!$skipTarballTesting) {
+                $status = system("cp -r $trilinosDir/commonTools/test/harness/invoke-configures/ $trilinosDir/../trilinos-$versionNumber/commonTools/test/harness/");
+                if ($status != 0) {
+                    $skipTarballTesting = 1;
+                    print "error copying invoke-configures/--skipping tarball testing.\n";
+                }
             }
             
             # Run runharness
             if (!$skipTarballTesting) {
-                chdir "$buildDir/trilinos-$versionNumber/commonTools/test/harness"
-                  or die "cannot chdir to $buildDir/trilinos-$versionNumber/commonTools/test/harness." ;
+                chdir "$trilinosDir/../trilinos-$versionNumber/commonTools/test/harness"
+                  or die "cannot chdir to $trilinosDir/../trilinos-$versionNumber/commonTools/test/harness." ;
                 $cmd  = "perl runharness ";
-                $cmd .= "--trilinos-dir=$buildDir/trilinos-$versionNumber ";
-                $cmd .= "--build-name= ";
+                $cmd .= "--trilinos-dir=$trilinosDir/../trilinos-$versionNumber ";
+                $cmd .= "--build-name=$buildNameTest ";
+                $cmd .= "--no-update ";
                 $status = system($cmd);
             } else { # skipped tarball testing
                 return 86;

@@ -48,7 +48,7 @@ RUN (beowulf-nightly-mpi) {
 RUN (beowulf-nightly-tarball-create) {
     
     BUILD-LABEL         = tarball-create;
-    BUILD-DIR           = TARBALL_CREATE;
+    BUILD-DIR           = TARBALL;
     MAKE-COMMAND        = make dist;
     COMM                = serial;
     INVOKE-CONFIGURE    = linux-beowulf-tarball-create;
