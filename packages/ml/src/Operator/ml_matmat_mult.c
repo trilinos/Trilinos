@@ -1603,14 +1603,14 @@ void ML_convert2vbr(ML_Operator *in_matrix)
      i = cpntr[++j];
    }
 
-   /*at most we have the lesser of blockrows times blockcolumns blocks and the nnz in the matrix which might be better but we are not gareenteed to know the nnz this is a gross overestimate so finding a better prediction might be in order*/
+   /*at most we have the lesser of blockrows times blockcolumns blocks and the nnz in the matrix which might be better but we are not gareenteed to know the nnz this is a gross overestimate so finding a better prediction might be in order but nnz may not be right so we can't use that*/
    in_matrix->vbr->bpntr = bpntr;
    spaceneeded = blockcolumns*blockrows;
    if(in_matrix->N_nonzeros > 0)
-   {
+   /*{
      if(in_matrix->N_nonzeros < spaceneeded)
        spaceneeded = in_matrix->N_nonzeros;
-   }
+   }*/
    bindx = (int*)ML_allocate(spaceneeded*sizeof(int));
    indx = (int*)ML_allocate((spaceneeded+1)*sizeof(int));
 
@@ -1687,7 +1687,6 @@ void ML_convert2vbr(ML_Operator *in_matrix)
        exit(1);
      } 
    } 
-
    /*Converting functions start by looping over all block rows*/
    for(i = 0; i < blockrows; i++)
    {
@@ -1729,19 +1728,22 @@ void ML_convert2vbr(ML_Operator *in_matrix)
            indx[bpntr[iplus1]] = (cpntr[blockend]-cpntr[blockstart])*(rpntr[iplus1] - rpntr[i]) + indx[bpntr[iplus1]-1];
            if(indx[bpntr[iplus1]] >= val_size)/*if array is out of space try and make more if not fail*/
            {
-             val_size *= 3;
-             val_size /= 2;
-             temp_double = (double *)realloc(vals, val_size*sizeof(double));
-             if(temp_double == NULL)
+             while(indx[bpntr[iplus1]] >= val_size)
              {
-               printf("Not enough space in ML_convert2vbr to create a bigger values array\n");
-               printf("trying to allocate %d ints and %d doubles \n",A_i_allocated+spaceneeded*2+blockrows,in_matrix->N_nonzeros+A_i_allocated);
-               printf("Matrix has %d rows \n", in_matrix->getrow->Nrows);
-               printf("Matrix has %d nz\n", in_matrix->N_nonzeros);
-               exit(1);
+               val_size *= 3;
+               val_size /= 2;
+               temp_double = (double *)realloc(vals, val_size*sizeof(double));
+               if(temp_double == NULL)
+               {
+                 printf("Not enough space in ML_convert2vbr to create a bigger values array\n");
+                 printf("trying to allocate %d ints and %d doubles \n",A_i_allocated+spaceneeded*2+blockrows,in_matrix->N_nonzeros+A_i_allocated);
+                 printf("Matrix has %d rows \n", in_matrix->getrow->Nrows);
+                 printf("Matrix has %d nz\n", in_matrix->N_nonzeros);
+                 exit(1);
+               }
+               else
+                 vals = temp_double;
              }
-             else
-               vals = temp_double;
            }
            /*initialize the new block to all zeros*/
            for(jj = indx[bpntr[iplus1]-1]; jj < indx[bpntr[iplus1]]; jj++)
