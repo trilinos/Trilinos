@@ -26,7 +26,7 @@ DEFS 			=
 RANLIB			= ranlib
 AR			= ar r
 
-CC			= cc 
+CC			= cc -fastsse
 CPPC			= CC
 
 DBG_FLAGS		= -g 
@@ -36,8 +36,8 @@ CFLAGS 			= $(OPT_FLAGS)
 F90 			= ftn
 LOCAL_F90		= pgf90
 
-#PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib/ParMETIS3
-#PARMETIS_INCPATH  	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
+PARMETIS_LIBPATH 	= -L/home/kddevin/code/ParMETIS3_1
+PARMETIS_INCPATH  	= -I/home/kddevin/code/ParMETIS3_1
 
 #JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
