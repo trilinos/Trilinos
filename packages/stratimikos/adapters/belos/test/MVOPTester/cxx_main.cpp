@@ -87,15 +87,6 @@ int main(int argc, char *argv[])
     }
   }
 
-#ifndef HAVE_EPETRA_THYRA
-  if (verbose && MyPid == 0) {
-      cout << "Please configure Belos with:" << endl;
-      cout << "--enable-epetra-thyra" << endl;
-      cout << "--enable-anasazi-thyra" << endl;
-  }
-  return 0;
-#endif
-
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
   Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( new Epetra_Map(dim, 0, *Comm) );

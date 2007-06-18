@@ -18,8 +18,8 @@
 /* Define if want to build with stratimikos enabled */
 #undef HAVE_STRATIMIKOS_AZTECOO
 
-/* Define if want to build with belos enabled */
-#undef HAVE_STRATIMIKOS_BELOS_THYRA
+/* Define if want to build with stratimikos enabled */
+#undef HAVE_STRATIMIKOS_BELOS
 
 /* Define if want to build stratimikos-examples */
 #undef HAVE_STRATIMIKOS_EXAMPLES
@@ -37,7 +37,16 @@
 #undef HAVE_STRATIMIKOS_TESTS
 
 /* Define if want to build with thyra enabled */
+#undef HAVE_STRATIMIKOS_THYRA_EPETRA
+
+/* Define if want to build with thyra enabled */
 #undef HAVE_STRATIMIKOS_THYRA_EPETRAEXT
+
+/* Define if want to build with thyra enabled */
+#undef HAVE_STRATIMIKOS_THYRA_TPETRA
+
+/* Define if want to build with stratimikos enabled */
+#undef HAVE_STRATIMIKOS_TRIUTILS
 
 /* Define if want to build tests */
 #undef HAVE_TESTS

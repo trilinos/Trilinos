@@ -172,6 +172,11 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   [Enable Thyra adapters for AztecOO in Stratimikos.  Can be overridden with --disable-stratimikos-aztecoo.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  stratimikos, belos, STRATIMIKOS_BELOS, ENABLE_STRATIMIKOS_BELOS, yes,
+  [Enable Thyra adapters for Belos in Stratimikos.],
+  [Enable Thyra adapters for Belos in Stratimikos.  Can be overridden with --disable-stratimikos-belos.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   stratimikos, ifpack, STRATIMIKOS_IFPACK, ENABLE_STRATIMIKOS_IFPACK, yes,
   [Enable Thyra adapters for Ifpack in Stratimikos.],
   [Enable Thyra adapters for Ifpack in Stratimikos.  Can be overridden with --disable-stratimikos-ifpack.])
@@ -181,15 +186,25 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   [Enable Thyra adapters for ML in Stratimikos.],
   [Enable Thyra adapters for ML in Stratimikos.  Can be overridden with --disable-stratimikos-ml.])
 
-TAC_ARG_INFORM_SUBPACKAGE_USED(
-  thyra, epetraext, STRATIMIKOS_THYRA_EPETRAEXT, ENABLE_STRATIMIKOS_THYRA_EPETRAEXT, yes,
-  [See epetraext/configure --help],
-  [See epetraext/configure --help])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  stratimikos, triutils, STRATIMIKOS_TRIUTILS, ENABLE_STRATIMIKOS_TRIUTILS, yes,
+  [Build tests that use Triutils. Can be overridden with --disable-stratimikos-triutils.],
+  [Build tests that use Triutils.])
 
 TAC_ARG_INFORM_SUBPACKAGE_USED(
-  belos, thyra, STRATIMIKOS_BELOS_THYRA, ENABLE_STRATIMIKOS_BELOS_THYRA, yes,
-  [See belos/configure --help],
-  [See belos/configure --help])
+  thyra, epetra, STRATIMIKOS_THYRA_EPETRA, ENABLE_STRATIMIKOS_THYRA_EPETRA, yes,
+  [see thyra/configure --help],
+  [see thyra/configure --help])
+
+TAC_ARG_INFORM_SUBPACKAGE_USED(
+  thyra, tpetra, STRATIMIKOS_THYRA_TPETRA, ENABLE_STRATIMIKOS_THYRA_TPETRA, yes,
+  [see thyra/configure --help],
+  [see thyra/configure --help])
+
+TAC_ARG_INFORM_SUBPACKAGE_USED(
+  thyra, epetraext, STRATIMIKOS_THYRA_EPETRAEXT, ENABLE_STRATIMIKOS_THYRA_EPETRAEXT, yes,
+  [See thyra/configure --help],
+  [See thyra/configure --help])
 
 TAC_ARG_INFORM_SUBPACKAGE_USED(
   ml, nox, STRATIMIKOS_ML_NOX, ENABLE_STRATIMIKOS_ML_NOX, yes,
@@ -317,6 +332,15 @@ AC_CONFIG_FILES([
     adapters/aztecoo/Makefile
     adapters/aztecoo/src/Makefile
     adapters/aztecoo/test/Makefile
+    adapters/belos/Makefile
+    adapters/belos/src/Makefile
+    adapters/belos/test/Makefile
+    adapters/belos/test/MVOPTester/Makefile
+    adapters/belos/test/LOWSFactory/Makefile
+    adapters/belos/example/Makefile
+    adapters/belos/example/LOWSFactory/Makefile
+    adapters/belos/example/LOWSFactory/Epetra/Makefile
+    adapters/belos/example/LOWSFactory/Tpetra/Makefile
     adapters/ifpack/Makefile
     adapters/ifpack/src/Makefile
     adapters/ml/Makefile

@@ -231,13 +231,6 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, ifpack, BELOS_IFPACK, BUILD_IFPACK, yes, [
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, epetraext, BELOS_EPETRAEXT, BUILD_EPETRAEXT, yes, [Build tests that use EpetraExt. Can be overridden with --disable-belos-epetraext.], [Build tests that use EpetraExt.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, thyra, BELOS_THYRA, BUILD_BELOS_THYRA, yes, [Build source code and tests that use Thyra. Can be overridden with --disable-belos-thyra.], [Build source code and tests that use Thyra.])
-
-TAC_ARG_INFORM_SUBPACKAGE_USED(epetra, thyra, EPETRA_THYRA, BUILD_EPETRA_THYRA, yes, [Build source code and tests that use Epetra-Thyra wrappers. Can be overridden with --disable-epetra-thyra.], [Build source code and tests that use Epetra-Thyra wrappers.])
-
-TAC_ARG_INFORM_SUBPACKAGE_USED(tpetra, thyra, TPETRA_THYRA, BUILD_TPETRA_THYRA, yes, [Build source code and tests that use Tpetra-Thyra wrappers. Can be overridden with --disable-tpetra-thyra.], [Build source code and tests that use Tpetra-Thyra wrappers.])
-
-
 # ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
@@ -343,15 +336,6 @@ AC_CONFIG_FILES([
                 test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile
-		thyra/Makefile
-		thyra/src/Makefile
-		thyra/test/Makefile
-		thyra/test/MVOPTester/Makefile
-		thyra/test/LOWSFactory/Makefile
-		thyra/example/Makefile
-		thyra/example/LOWSFactory/Makefile
-		thyra/example/LOWSFactory/Epetra/Makefile
-		thyra/example/LOWSFactory/Tpetra/Makefile
 		])
 
 AC_OUTPUT()

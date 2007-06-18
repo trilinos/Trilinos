@@ -49,7 +49,6 @@ CORE_H = \
 	$(srcdir)/Thyra_BelosLinearOpWithSolveFactory.hpp \
 	$(srcdir)/Thyra_BelosLinearOpWithSolve.hpp 
 
-
 CORE = 
 
 #
@@ -82,12 +81,12 @@ endif
 # ------------------------------------------------------------------------
 #np# List locations of include files within Trilinos but outside of this 
 #np# package
-include $(top_builddir)/Makefile.export.belos
+include $(top_builddir)/Makefile.export.stratimikos
 
 if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_INCLUDES))
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(STRATIMIKOS_INCLUDES))
 else
-EXPORT_INCLUDES = $(BELOS_INCLUDES)
+EXPORT_INCLUDES = $(STRATIMIKOS_INCLUDES)
 endif
 
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
@@ -100,11 +99,11 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # New_Package library specifications
 # ------------------------------------------------------------------------
 #np# replace new_package with the name of the package being autotool'ed here
-#BELOS_THYRA_LIB = libbelosthyra.a
+#STRATIMIKOS_BELOS_LIB = libbelosthyra.a
 
 #np# replace new_package with the name of the package being autotool'ed here
-BELOS_THYRA_H = \
-	$(top_srcdir)/src/BelosConfigDefs.hpp \
+STRATIMIKOS_BELOS_H = \
+	$(top_srcdir)/src/Stratimikos_ConfigDefs.hpp \
 	$(CORE_H) \
 	$(MPI_H) 
 
@@ -159,7 +158,7 @@ BELOS_THYRA_H = \
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-include_HEADERS = $(BELOS_THYRA_H) 
+include_HEADERS = $(STRATIMIKOS_BELOS_H) 
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
@@ -178,17 +177,3 @@ execincludedir = $(exec_prefix)/include
 
 MAINTAINERCLEANFILES = Makefile.in 
 
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-
-#all-libs:
-#	$(MAKE) libbelos.a
-#	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
-#	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
-#	$(BUILD_TRIUTILS_LIBS)
-#	$(BUILD_BELOS_LIBS)
-#	$(BUILD_AZTECOO_LIBS)
-#	$(BUILD_IFPACK_LIBS)
-#	$(BUILD_THYRA_LIBS)

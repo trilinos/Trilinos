@@ -26,12 +26,12 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_EPETRA_THYRA
-#EPETRA_LOWSF_DIR = Epetra
+if ENABLE_STRATIMIKOS_THYRA_EPETRA
+EPETRA_LOWSF_DIR = Epetra
 endif
 
-if BUILD_TPETRA_THYRA
-#TPETRA_LOWSF_DIR = Tpetra
+if ENABLE_STRATIMIKOS_THYRA_TPETRA
+TPETRA_LOWSF_DIR = Tpetra
 endif
 
 SUBDIRS = $(EPETRA_LOWSF_DIR) $(TPETRA_LOWSF_DIR)

@@ -1,11 +1,14 @@
-include $(top_builddir)/Makefile.export.belos
+include $(top_builddir)/Makefile.export.stratimikos
+
+_EXPORT_INC_PATH = $(STRATIMIKOS_TEST_INCLUDES)
+_EXPORT_LIBS = $(STRATIMIKOS_TEST_LIBS)
 
 if USING_GNUMAKE
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_TEST_LIBS))
-EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INC_PATH))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
 else
-EXPORT_LIBS = $(BELOS_TEST_LIBS)
-EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
+EXPORT_INC_PATH = $(_EXPORT_INC_PATH)
+EXPORT_LIBS = $(_EXPORT_LIBS)
 endif
 
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
@@ -16,7 +19,7 @@ EXEEXT = .exe
 # Actual programs
 #
 
-if BUILD_EPETRAEXT
+if ENABLE_STRATIMIKOS_THYRA_EPETRAEXT
 TEST_SINGLE_BELOS_THYRA_SOLVER_DRIVER = test_single_belos_thyra_solver_driver
 #TEST_BELOS_THYRA_DRIVER = test_belos_thyra_driver
 endif
@@ -50,11 +53,12 @@ FourByFour.mtx:
 
 common_sources = $(srcdir)/test_single_belos_thyra_solver.cpp
 
-common_dependencies = $(top_builddir)/src/libbelos.a FourByFour.mtx
+common_dependencies = $(top_builddir)/../belos/src/libbelos.a FourByFour.mtx
 
 common_ldadd = $(EXPORT_LIBS)
 
 EXTRA_DIST = $(srcdir)/test_single_belos_thyra_solver.hpp 
 
-# This is already added part of BELOS_LIBS and therefore automake does not need to add this again!
+# This is already added part of BELOS_LIBS and therefore automake does not
+# need to add this again!
 LIBS =

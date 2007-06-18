@@ -750,12 +750,6 @@ BUILD_IFPACK_TRUE
 BUILD_IFPACK_FALSE
 BUILD_EPETRAEXT_TRUE
 BUILD_EPETRAEXT_FALSE
-BUILD_BELOS_THYRA_TRUE
-BUILD_BELOS_THYRA_FALSE
-BUILD_EPETRA_THYRA_TRUE
-BUILD_EPETRA_THYRA_FALSE
-BUILD_TPETRA_THYRA_TRUE
-BUILD_TPETRA_THYRA_FALSE
 FLIBS
 BLAS_LIBS
 LAPACK_LIBS
@@ -1400,23 +1394,6 @@ Optional Features:
   --enable-belos-epetraext
                           Build tests that use EpetraExt. Can be overridden
                           with --disable-belos-epetraext.
-  --enable-thyra          Build source code and tests that use Thyra.
-  --enable-belos-thyra    Build source code and tests that use Thyra. Can be
-                          overridden with --disable-belos-thyra.
-  --enable-epetra         Build source code and tests that use Epetra-Thyra
-                          wrappers.
-  --enable-thyra          Build source code and tests that use Epetra-Thyra
-                          wrappers.
-  --enable-epetra-thyra   Build source code and tests that use Epetra-Thyra
-                          wrappers. Can be overridden with
-                          --disable-epetra-thyra.
-  --enable-tpetra         Build source code and tests that use Tpetra-Thyra
-                          wrappers.
-  --enable-thyra          Build source code and tests that use Tpetra-Thyra
-                          wrappers.
-  --enable-tpetra-thyra   Build source code and tests that use Tpetra-Thyra
-                          wrappers. Can be overridden with
-                          --disable-tpetra-thyra.
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -7942,184 +7919,6 @@ fi
 
 
 
-
-
-# Check whether --enable-thyra was given.
-if test "${enable_thyra+set}" = set; then
-  enableval=$enable_thyra; ac_cv_implicit_use_thyra=$enableval
-else
-  ac_cv_implicit_use_thyra=no
-fi
-
-
-if test "Xyes" != "Xno"; then
-  ac_cv_belos_using_thyra_default=$ac_cv_implicit_use_thyra
-else
-  ac_cv_belos_using_thyra_default=no
-fi
-
-# Check whether --enable-belos-thyra was given.
-if test "${enable_belos_thyra+set}" = set; then
-  enableval=$enable_belos_thyra; ac_cv_use_thyra=$enableval
-else
-  ac_cv_use_thyra=$ac_cv_belos_using_thyra_default
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in belos" >&5
-echo $ECHO_N "checking whether to build optional thyra dependent code in belos... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_thyra" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_BELOS_THYRA 1
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
- if test "X$ac_cv_use_thyra" = "Xyes"; then
-  BUILD_BELOS_THYRA_TRUE=
-  BUILD_BELOS_THYRA_FALSE='#'
-else
-  BUILD_BELOS_THYRA_TRUE='#'
-  BUILD_BELOS_THYRA_FALSE=
-fi
-
-
-
-
-
-
-# Check whether --enable-epetra was given.
-if test "${enable_epetra+set}" = set; then
-  enableval=$enable_epetra; ac_cv_implicit_use_epetra=$enableval
-else
-  ac_cv_implicit_use_epetra=no
-fi
-
-
-# Check whether --enable-thyra was given.
-if test "${enable_thyra+set}" = set; then
-  enableval=$enable_thyra; ac_cv_implicit_use_thyra=$enableval
-else
-  ac_cv_implicit_use_thyra=no
-fi
-
-
-if test "Xyes" != "Xno"; then
-  if test "X$ac_cv_implicit_use_epetra" != "Xno"; then
-    ac_cv_epetra_using_thyra_default=$ac_cv_implicit_use_thyra
-  else
-    ac_cv_epetra_using_thyra_default=no
-  fi
-else
-  ac_cv_epetra_using_thyra_default=no
-fi
-
-# Check whether --enable-epetra-thyra was given.
-if test "${enable_epetra_thyra+set}" = set; then
-  enableval=$enable_epetra_thyra; ac_cv_use_thyra=$enableval
-else
-  ac_cv_use_thyra=$ac_cv_epetra_using_thyra_default
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in epetra" >&5
-echo $ECHO_N "checking whether to build optional thyra dependent code in epetra... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_thyra" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_EPETRA_THYRA 1
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
- if test "X$ac_cv_use_thyra" = "Xyes"; then
-  BUILD_EPETRA_THYRA_TRUE=
-  BUILD_EPETRA_THYRA_FALSE='#'
-else
-  BUILD_EPETRA_THYRA_TRUE='#'
-  BUILD_EPETRA_THYRA_FALSE=
-fi
-
-
-
-
-
-
-# Check whether --enable-tpetra was given.
-if test "${enable_tpetra+set}" = set; then
-  enableval=$enable_tpetra; ac_cv_implicit_use_tpetra=$enableval
-else
-  ac_cv_implicit_use_tpetra=no
-fi
-
-
-# Check whether --enable-thyra was given.
-if test "${enable_thyra+set}" = set; then
-  enableval=$enable_thyra; ac_cv_implicit_use_thyra=$enableval
-else
-  ac_cv_implicit_use_thyra=no
-fi
-
-
-if test "Xyes" != "Xno"; then
-  if test "X$ac_cv_implicit_use_tpetra" != "Xno"; then
-    ac_cv_tpetra_using_thyra_default=$ac_cv_implicit_use_thyra
-  else
-    ac_cv_tpetra_using_thyra_default=no
-  fi
-else
-  ac_cv_tpetra_using_thyra_default=no
-fi
-
-# Check whether --enable-tpetra-thyra was given.
-if test "${enable_tpetra_thyra+set}" = set; then
-  enableval=$enable_tpetra_thyra; ac_cv_use_thyra=$enableval
-else
-  ac_cv_use_thyra=$ac_cv_tpetra_using_thyra_default
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in tpetra" >&5
-echo $ECHO_N "checking whether to build optional thyra dependent code in tpetra... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_thyra" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_TPETRA_THYRA 1
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
- if test "X$ac_cv_use_thyra" = "Xyes"; then
-  BUILD_TPETRA_THYRA_TRUE=
-  BUILD_TPETRA_THYRA_FALSE='#'
-else
-  BUILD_TPETRA_THYRA_TRUE='#'
-  BUILD_TPETRA_THYRA_FALSE=
-fi
-
-
-
-
-
 # ------------------------------------------------------------------------
 # Specify other directories
 # ------------------------------------------------------------------------
@@ -11318,7 +11117,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 ##
 
-ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/BlockTFQMR/Makefile test/MVOPTester/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile thyra/Makefile thyra/src/Makefile thyra/test/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOWSFactory/Makefile thyra/example/Makefile thyra/example/LOWSFactory/Makefile thyra/example/LOWSFactory/Epetra/Makefile thyra/example/LOWSFactory/Tpetra/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/BlockTFQMR/Makefile test/MVOPTester/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11533,27 +11332,6 @@ if test -z "${BUILD_EPETRAEXT_TRUE}" && test -z "${BUILD_EPETRAEXT_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRAEXT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_EPETRAEXT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_BELOS_THYRA_TRUE}" && test -z "${BUILD_BELOS_THYRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_BELOS_THYRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_BELOS_THYRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_EPETRA_THYRA_TRUE}" && test -z "${BUILD_EPETRA_THYRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRA_THYRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_EPETRA_THYRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_TPETRA_THYRA_TRUE}" && test -z "${BUILD_TPETRA_THYRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TPETRA_THYRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_TPETRA_THYRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -12039,15 +11817,6 @@ do
     "test/scripts/Makefile") CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
     "test/scripts/daily/Makefile") CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
     "test/scripts/daily/serial/Makefile") CONFIG_FILES="$CONFIG_FILES test/scripts/daily/serial/Makefile" ;;
-    "thyra/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/Makefile" ;;
-    "thyra/src/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/src/Makefile" ;;
-    "thyra/test/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/test/Makefile" ;;
-    "thyra/test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/test/MVOPTester/Makefile" ;;
-    "thyra/test/LOWSFactory/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/test/LOWSFactory/Makefile" ;;
-    "thyra/example/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/example/Makefile" ;;
-    "thyra/example/LOWSFactory/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/example/LOWSFactory/Makefile" ;;
-    "thyra/example/LOWSFactory/Epetra/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/example/LOWSFactory/Epetra/Makefile" ;;
-    "thyra/example/LOWSFactory/Tpetra/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/example/LOWSFactory/Tpetra/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -12286,12 +12055,6 @@ BUILD_IFPACK_TRUE!$BUILD_IFPACK_TRUE$ac_delim
 BUILD_IFPACK_FALSE!$BUILD_IFPACK_FALSE$ac_delim
 BUILD_EPETRAEXT_TRUE!$BUILD_EPETRAEXT_TRUE$ac_delim
 BUILD_EPETRAEXT_FALSE!$BUILD_EPETRAEXT_FALSE$ac_delim
-BUILD_BELOS_THYRA_TRUE!$BUILD_BELOS_THYRA_TRUE$ac_delim
-BUILD_BELOS_THYRA_FALSE!$BUILD_BELOS_THYRA_FALSE$ac_delim
-BUILD_EPETRA_THYRA_TRUE!$BUILD_EPETRA_THYRA_TRUE$ac_delim
-BUILD_EPETRA_THYRA_FALSE!$BUILD_EPETRA_THYRA_FALSE$ac_delim
-BUILD_TPETRA_THYRA_TRUE!$BUILD_TPETRA_THYRA_TRUE$ac_delim
-BUILD_TPETRA_THYRA_FALSE!$BUILD_TPETRA_THYRA_FALSE$ac_delim
 FLIBS!$FLIBS$ac_delim
 BLAS_LIBS!$BLAS_LIBS$ac_delim
 LAPACK_LIBS!$LAPACK_LIBS$ac_delim
@@ -12300,7 +12063,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 50; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 44; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

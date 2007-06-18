@@ -41,7 +41,7 @@
 #ifdef HAVE_STRATIMIKOS_AZTECOO
 #  include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
 #endif
-#ifdef HAVE_STRATIMIKOS_BELOS_THYRA
+#ifdef HAVE_STRATIMIKOS_BELOS
 #  include "Thyra_BelosLinearOpWithSolveFactory.hpp"
 #endif
 #ifdef HAVE_STRATIMIKOS_IFPACK
@@ -362,7 +362,7 @@ void DefaultRealLinearSolverBuilder::initializeDefaults()
   validPfNames_.resize(0);
   validPfNames_.push_back(None_name); // This will offset everything!
   // Solvers
-#ifdef HAVE_STRATIMIKOS_BELOS_THYRA
+#ifdef HAVE_STRATIMIKOS_BELOS
   setLinearSolveStrategyFactory(
     rcp(new AbstractFactoryStd<LinearOpWithSolveFactoryBase<double>,BelosLinearOpWithSolveFactory<double> >())
     ,"Belos"

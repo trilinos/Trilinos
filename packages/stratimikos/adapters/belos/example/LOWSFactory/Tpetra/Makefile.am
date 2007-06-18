@@ -1,11 +1,14 @@
-include $(top_builddir)/Makefile.export.belos
+include $(top_builddir)/Makefile.export.stratimikos
+
+_EXPORT_INC_PATH = $(STRATIMIKOS_TEST_INCLUDES)
+_EXPORT_LIBS = $(STRATIMIKOS_TEST_LIBS)
 
 if USING_GNUMAKE
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_TEST_LIBS))
-EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INC_PATH))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
 else
-EXPORT_LIBS = $(BELOS_TEST_LIBS)
-EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
+EXPORT_INC_PATH = $(_EXPORT_INC_PATH)
+EXPORT_LIBS = $(_EXPORT_LIBS)
 endif
 
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
@@ -16,7 +19,7 @@ EXEEXT = .exe
 # Actual programs
 #
 
-if BUILD_TRIUTILS
+if ENABLE_STRATIMIKOS_TRIUTILS
 BELOS_THYRA_SOLVER_DRIVER_HB = belos_tpetra_thyra_lowsf_hb 
 endif
 
@@ -36,16 +39,17 @@ belos_tpetra_thyra_lowsf_hb_SOURCES = $(srcdir)/belos_tpetra_thyra_lowsf_hb.cpp
 belos_tpetra_thyra_lowsf_hb_DEPENDENCIES= $(common_dependencies)
 belos_tpetra_thyra_lowsf_hb_LDADD = $(common_ldadd)
 
-Example.mtx:
+mhd1280b.cua:
 	cp  $(top_srcdir)/../belos/test/BlockCG/mhd1280b.cua mhd1280b.cua
 
 #
 # Common stuff
 #
 
-common_dependencies = $(top_builddir)/src/libbelos.a Example.mtx
+common_dependencies = $(top_builddir)/../belos/src/libbelos.a mhd1280b.cua
 
 common_ldadd = $(EXPORT_LIBS)
 
-# This is already added part of BELOS_LIBS and therefore automake does not need to add this again!
+# This is already added part of BELOS_LIBS and therefore automake does not
+# need to add this again!
 LIBS =

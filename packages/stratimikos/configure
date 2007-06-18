@@ -694,14 +694,20 @@ ENABLE_STRATIMIKOS_AMESOS_TRUE
 ENABLE_STRATIMIKOS_AMESOS_FALSE
 ENABLE_STRATIMIKOS_AZTECOO_TRUE
 ENABLE_STRATIMIKOS_AZTECOO_FALSE
+ENABLE_STRATIMIKOS_BELOS_TRUE
+ENABLE_STRATIMIKOS_BELOS_FALSE
 ENABLE_STRATIMIKOS_IFPACK_TRUE
 ENABLE_STRATIMIKOS_IFPACK_FALSE
 ENABLE_STRATIMIKOS_ML_TRUE
 ENABLE_STRATIMIKOS_ML_FALSE
+ENABLE_STRATIMIKOS_TRIUTILS_TRUE
+ENABLE_STRATIMIKOS_TRIUTILS_FALSE
+ENABLE_STRATIMIKOS_THYRA_EPETRA_TRUE
+ENABLE_STRATIMIKOS_THYRA_EPETRA_FALSE
+ENABLE_STRATIMIKOS_THYRA_TPETRA_TRUE
+ENABLE_STRATIMIKOS_THYRA_TPETRA_FALSE
 ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_TRUE
 ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_FALSE
-ENABLE_STRATIMIKOS_BELOS_THYRA_TRUE
-ENABLE_STRATIMIKOS_BELOS_THYRA_FALSE
 ENABLE_STRATIMIKOS_ML_NOX_TRUE
 ENABLE_STRATIMIKOS_ML_NOX_FALSE
 BUILD_TESTS_TRUE
@@ -1330,6 +1336,10 @@ Optional Features:
                           --disable-stratimikos-aztecoo.
   --enable-stratimikos-aztecoo
                           Enable Thyra adapters for AztecOO in Stratimikos.
+  --enable-belos          Enable Thyra adapters for Belos in Stratimikos. Can
+                          be overridden with --disable-stratimikos-belos.
+  --enable-stratimikos-belos
+                          Enable Thyra adapters for Belos in Stratimikos.
   --enable-ifpack         Enable Thyra adapters for Ifpack in Stratimikos. Can
                           be overridden with --disable-stratimikos-ifpack.
   --enable-stratimikos-ifpack
@@ -1337,13 +1347,19 @@ Optional Features:
   --enable-ml             Enable Thyra adapters for ML in Stratimikos. Can be
                           overridden with --disable-stratimikos-ml.
   --enable-stratimikos-ml Enable Thyra adapters for ML in Stratimikos.
-  --enable-thyra          See epetraext/configure --help
-  --enable-epetraext      See epetraext/configure --help
+  --enable-triutils       Build tests that use Triutils.
+  --enable-stratimikos-triutils
+                          Build tests that use Triutils. Can be overridden
+                          with --disable-stratimikos-triutils.
+  --enable-thyra          see thyra/configure --help
+  --enable-epetra         see thyra/configure --help
+  --enable-thyra-epetra   see thyra/configure --help
+  --enable-tpetra         see thyra/configure --help
+  --enable-thyra-tpetra   see thyra/configure --help
+  --enable-thyra          See thyra/configure --help
+  --enable-epetraext      See thyra/configure --help
   --enable-thyra-epetraext
-                          See epetraext/configure --help
-  --enable-belos          See belos/configure --help
-  --enable-thyra          See belos/configure --help
-  --enable-belos-thyra    See belos/configure --help
+                          See thyra/configure --help
   --enable-ml             See ml/configure --help
   --enable-nox            See ml/configure --help
   --enable-ml-nox         See ml/configure --help
@@ -5413,6 +5429,57 @@ fi
 
 
 
+# Check whether --enable-belos was given.
+if test "${enable_belos+set}" = set; then
+  enableval=$enable_belos; ac_cv_implicit_use_belos=$enableval
+else
+  ac_cv_implicit_use_belos=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_stratimikos_using_belos_default=$ac_cv_implicit_use_belos
+else
+  ac_cv_stratimikos_using_belos_default=no
+fi
+
+# Check whether --enable-stratimikos-belos was given.
+if test "${enable_stratimikos_belos+set}" = set; then
+  enableval=$enable_stratimikos_belos; ac_cv_use_belos=$enableval
+else
+  ac_cv_use_belos=$ac_cv_stratimikos_using_belos_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional belos dependent code in stratimikos" >&5
+echo $ECHO_N "checking whether to build optional belos dependent code in stratimikos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_belos" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_STRATIMIKOS_BELOS 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_belos" = "Xyes"; then
+  ENABLE_STRATIMIKOS_BELOS_TRUE=
+  ENABLE_STRATIMIKOS_BELOS_FALSE='#'
+else
+  ENABLE_STRATIMIKOS_BELOS_TRUE='#'
+  ENABLE_STRATIMIKOS_BELOS_FALSE=
+fi
+
+
+
+
+
+
 # Check whether --enable-ifpack was given.
 if test "${enable_ifpack+set}" = set; then
   enableval=$enable_ifpack; ac_cv_implicit_use_ifpack=$enableval
@@ -5515,6 +5582,183 @@ fi
 
 
 
+# Check whether --enable-triutils was given.
+if test "${enable_triutils+set}" = set; then
+  enableval=$enable_triutils; ac_cv_implicit_use_triutils=$enableval
+else
+  ac_cv_implicit_use_triutils=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_stratimikos_using_triutils_default=$ac_cv_implicit_use_triutils
+else
+  ac_cv_stratimikos_using_triutils_default=no
+fi
+
+# Check whether --enable-stratimikos-triutils was given.
+if test "${enable_stratimikos_triutils+set}" = set; then
+  enableval=$enable_stratimikos_triutils; ac_cv_use_triutils=$enableval
+else
+  ac_cv_use_triutils=$ac_cv_stratimikos_using_triutils_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional triutils dependent code in stratimikos" >&5
+echo $ECHO_N "checking whether to build optional triutils dependent code in stratimikos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_triutils" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_STRATIMIKOS_TRIUTILS 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_triutils" = "Xyes"; then
+  ENABLE_STRATIMIKOS_TRIUTILS_TRUE=
+  ENABLE_STRATIMIKOS_TRIUTILS_FALSE='#'
+else
+  ENABLE_STRATIMIKOS_TRIUTILS_TRUE='#'
+  ENABLE_STRATIMIKOS_TRIUTILS_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-thyra was given.
+if test "${enable_thyra+set}" = set; then
+  enableval=$enable_thyra; ac_cv_implicit_use_thyra=$enableval
+else
+  ac_cv_implicit_use_thyra=no
+fi
+
+
+# Check whether --enable-epetra was given.
+if test "${enable_epetra+set}" = set; then
+  enableval=$enable_epetra; ac_cv_implicit_use_epetra=$enableval
+else
+  ac_cv_implicit_use_epetra=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  if test "X$ac_cv_implicit_use_thyra" != "Xno"; then
+    ac_cv_thyra_using_epetra_default=$ac_cv_implicit_use_epetra
+  else
+    ac_cv_thyra_using_epetra_default=no
+  fi
+else
+  ac_cv_thyra_using_epetra_default=no
+fi
+
+# Check whether --enable-thyra-epetra was given.
+if test "${enable_thyra_epetra+set}" = set; then
+  enableval=$enable_thyra_epetra; ac_cv_use_epetra=$enableval
+else
+  ac_cv_use_epetra=$ac_cv_thyra_using_epetra_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional epetra dependent code in thyra" >&5
+echo $ECHO_N "checking whether to build optional epetra dependent code in thyra... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_epetra" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_STRATIMIKOS_THYRA_EPETRA 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_epetra" = "Xyes"; then
+  ENABLE_STRATIMIKOS_THYRA_EPETRA_TRUE=
+  ENABLE_STRATIMIKOS_THYRA_EPETRA_FALSE='#'
+else
+  ENABLE_STRATIMIKOS_THYRA_EPETRA_TRUE='#'
+  ENABLE_STRATIMIKOS_THYRA_EPETRA_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-thyra was given.
+if test "${enable_thyra+set}" = set; then
+  enableval=$enable_thyra; ac_cv_implicit_use_thyra=$enableval
+else
+  ac_cv_implicit_use_thyra=no
+fi
+
+
+# Check whether --enable-tpetra was given.
+if test "${enable_tpetra+set}" = set; then
+  enableval=$enable_tpetra; ac_cv_implicit_use_tpetra=$enableval
+else
+  ac_cv_implicit_use_tpetra=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  if test "X$ac_cv_implicit_use_thyra" != "Xno"; then
+    ac_cv_thyra_using_tpetra_default=$ac_cv_implicit_use_tpetra
+  else
+    ac_cv_thyra_using_tpetra_default=no
+  fi
+else
+  ac_cv_thyra_using_tpetra_default=no
+fi
+
+# Check whether --enable-thyra-tpetra was given.
+if test "${enable_thyra_tpetra+set}" = set; then
+  enableval=$enable_thyra_tpetra; ac_cv_use_tpetra=$enableval
+else
+  ac_cv_use_tpetra=$ac_cv_thyra_using_tpetra_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional tpetra dependent code in thyra" >&5
+echo $ECHO_N "checking whether to build optional tpetra dependent code in thyra... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_tpetra" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_STRATIMIKOS_THYRA_TPETRA 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_tpetra" = "Xyes"; then
+  ENABLE_STRATIMIKOS_THYRA_TPETRA_TRUE=
+  ENABLE_STRATIMIKOS_THYRA_TPETRA_FALSE='#'
+else
+  ENABLE_STRATIMIKOS_THYRA_TPETRA_TRUE='#'
+  ENABLE_STRATIMIKOS_THYRA_TPETRA_FALSE=
+fi
+
+
+
+
+
+
 # Check whether --enable-thyra was given.
 if test "${enable_thyra+set}" = set; then
   enableval=$enable_thyra; ac_cv_implicit_use_thyra=$enableval
@@ -5571,69 +5815,6 @@ fi
 else
   ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_TRUE='#'
   ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_FALSE=
-fi
-
-
-
-
-
-
-# Check whether --enable-belos was given.
-if test "${enable_belos+set}" = set; then
-  enableval=$enable_belos; ac_cv_implicit_use_belos=$enableval
-else
-  ac_cv_implicit_use_belos=no
-fi
-
-
-# Check whether --enable-thyra was given.
-if test "${enable_thyra+set}" = set; then
-  enableval=$enable_thyra; ac_cv_implicit_use_thyra=$enableval
-else
-  ac_cv_implicit_use_thyra=no
-fi
-
-
-if test "Xyes" != "Xno"; then
-  if test "X$ac_cv_implicit_use_belos" != "Xno"; then
-    ac_cv_belos_using_thyra_default=$ac_cv_implicit_use_thyra
-  else
-    ac_cv_belos_using_thyra_default=no
-  fi
-else
-  ac_cv_belos_using_thyra_default=no
-fi
-
-# Check whether --enable-belos-thyra was given.
-if test "${enable_belos_thyra+set}" = set; then
-  enableval=$enable_belos_thyra; ac_cv_use_thyra=$enableval
-else
-  ac_cv_use_thyra=$ac_cv_belos_using_thyra_default
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in belos" >&5
-echo $ECHO_N "checking whether to build optional thyra dependent code in belos... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_thyra" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_STRATIMIKOS_BELOS_THYRA 1
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
- if test "X$ac_cv_use_thyra" = "Xyes"; then
-  ENABLE_STRATIMIKOS_BELOS_THYRA_TRUE=
-  ENABLE_STRATIMIKOS_BELOS_THYRA_FALSE='#'
-else
-  ENABLE_STRATIMIKOS_BELOS_THYRA_TRUE='#'
-  ENABLE_STRATIMIKOS_BELOS_THYRA_FALSE=
 fi
 
 
@@ -6663,7 +6844,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile Makefile.export.stratimikos src/Makefile example/Makefile example/generate-sample-output.pl.stub test/Makefile adapters/Makefile adapters/amesos/Makefile adapters/amesos/src/Makefile adapters/amesos/test/Makefile adapters/aztecoo/Makefile adapters/aztecoo/src/Makefile adapters/aztecoo/test/Makefile adapters/ifpack/Makefile adapters/ifpack/src/Makefile adapters/ml/Makefile adapters/ml/src/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.stratimikos src/Makefile example/Makefile example/generate-sample-output.pl.stub test/Makefile adapters/Makefile adapters/amesos/Makefile adapters/amesos/src/Makefile adapters/amesos/test/Makefile adapters/aztecoo/Makefile adapters/aztecoo/src/Makefile adapters/aztecoo/test/Makefile adapters/belos/Makefile adapters/belos/src/Makefile adapters/belos/test/Makefile adapters/belos/test/MVOPTester/Makefile adapters/belos/test/LOWSFactory/Makefile adapters/belos/example/Makefile adapters/belos/example/LOWSFactory/Makefile adapters/belos/example/LOWSFactory/Epetra/Makefile adapters/belos/example/LOWSFactory/Tpetra/Makefile adapters/ifpack/Makefile adapters/ifpack/src/Makefile adapters/ml/Makefile adapters/ml/src/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -6825,6 +7006,13 @@ echo "$as_me: error: conditional \"ENABLE_STRATIMIKOS_AZTECOO\" was never define
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${ENABLE_STRATIMIKOS_BELOS_TRUE}" && test -z "${ENABLE_STRATIMIKOS_BELOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_STRATIMIKOS_BELOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_STRATIMIKOS_BELOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${ENABLE_STRATIMIKOS_IFPACK_TRUE}" && test -z "${ENABLE_STRATIMIKOS_IFPACK_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"ENABLE_STRATIMIKOS_IFPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -6839,17 +7027,31 @@ echo "$as_me: error: conditional \"ENABLE_STRATIMIKOS_ML\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${ENABLE_STRATIMIKOS_TRIUTILS_TRUE}" && test -z "${ENABLE_STRATIMIKOS_TRIUTILS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_STRATIMIKOS_TRIUTILS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_STRATIMIKOS_TRIUTILS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_STRATIMIKOS_THYRA_EPETRA_TRUE}" && test -z "${ENABLE_STRATIMIKOS_THYRA_EPETRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_STRATIMIKOS_THYRA_EPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_STRATIMIKOS_THYRA_EPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_STRATIMIKOS_THYRA_TPETRA_TRUE}" && test -z "${ENABLE_STRATIMIKOS_THYRA_TPETRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_STRATIMIKOS_THYRA_TPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_STRATIMIKOS_THYRA_TPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_TRUE}" && test -z "${ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"ENABLE_STRATIMIKOS_THYRA_EPETRAEXT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"ENABLE_STRATIMIKOS_THYRA_EPETRAEXT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${ENABLE_STRATIMIKOS_BELOS_THYRA_TRUE}" && test -z "${ENABLE_STRATIMIKOS_BELOS_THYRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_STRATIMIKOS_BELOS_THYRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ENABLE_STRATIMIKOS_BELOS_THYRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -7377,6 +7579,15 @@ do
     "adapters/aztecoo/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/aztecoo/Makefile" ;;
     "adapters/aztecoo/src/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/aztecoo/src/Makefile" ;;
     "adapters/aztecoo/test/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/aztecoo/test/Makefile" ;;
+    "adapters/belos/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/belos/Makefile" ;;
+    "adapters/belos/src/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/belos/src/Makefile" ;;
+    "adapters/belos/test/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/belos/test/Makefile" ;;
+    "adapters/belos/test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/belos/test/MVOPTester/Makefile" ;;
+    "adapters/belos/test/LOWSFactory/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/belos/test/LOWSFactory/Makefile" ;;
+    "adapters/belos/example/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/belos/example/Makefile" ;;
+    "adapters/belos/example/LOWSFactory/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/belos/example/LOWSFactory/Makefile" ;;
+    "adapters/belos/example/LOWSFactory/Epetra/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/belos/example/LOWSFactory/Epetra/Makefile" ;;
+    "adapters/belos/example/LOWSFactory/Tpetra/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/belos/example/LOWSFactory/Tpetra/Makefile" ;;
     "adapters/ifpack/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/ifpack/Makefile" ;;
     "adapters/ifpack/src/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/ifpack/src/Makefile" ;;
     "adapters/ml/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/ml/Makefile" ;;
@@ -7599,14 +7810,20 @@ ENABLE_STRATIMIKOS_AMESOS_TRUE!$ENABLE_STRATIMIKOS_AMESOS_TRUE$ac_delim
 ENABLE_STRATIMIKOS_AMESOS_FALSE!$ENABLE_STRATIMIKOS_AMESOS_FALSE$ac_delim
 ENABLE_STRATIMIKOS_AZTECOO_TRUE!$ENABLE_STRATIMIKOS_AZTECOO_TRUE$ac_delim
 ENABLE_STRATIMIKOS_AZTECOO_FALSE!$ENABLE_STRATIMIKOS_AZTECOO_FALSE$ac_delim
+ENABLE_STRATIMIKOS_BELOS_TRUE!$ENABLE_STRATIMIKOS_BELOS_TRUE$ac_delim
+ENABLE_STRATIMIKOS_BELOS_FALSE!$ENABLE_STRATIMIKOS_BELOS_FALSE$ac_delim
 ENABLE_STRATIMIKOS_IFPACK_TRUE!$ENABLE_STRATIMIKOS_IFPACK_TRUE$ac_delim
 ENABLE_STRATIMIKOS_IFPACK_FALSE!$ENABLE_STRATIMIKOS_IFPACK_FALSE$ac_delim
 ENABLE_STRATIMIKOS_ML_TRUE!$ENABLE_STRATIMIKOS_ML_TRUE$ac_delim
 ENABLE_STRATIMIKOS_ML_FALSE!$ENABLE_STRATIMIKOS_ML_FALSE$ac_delim
+ENABLE_STRATIMIKOS_TRIUTILS_TRUE!$ENABLE_STRATIMIKOS_TRIUTILS_TRUE$ac_delim
+ENABLE_STRATIMIKOS_TRIUTILS_FALSE!$ENABLE_STRATIMIKOS_TRIUTILS_FALSE$ac_delim
+ENABLE_STRATIMIKOS_THYRA_EPETRA_TRUE!$ENABLE_STRATIMIKOS_THYRA_EPETRA_TRUE$ac_delim
+ENABLE_STRATIMIKOS_THYRA_EPETRA_FALSE!$ENABLE_STRATIMIKOS_THYRA_EPETRA_FALSE$ac_delim
+ENABLE_STRATIMIKOS_THYRA_TPETRA_TRUE!$ENABLE_STRATIMIKOS_THYRA_TPETRA_TRUE$ac_delim
+ENABLE_STRATIMIKOS_THYRA_TPETRA_FALSE!$ENABLE_STRATIMIKOS_THYRA_TPETRA_FALSE$ac_delim
 ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_TRUE!$ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_TRUE$ac_delim
 ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_FALSE!$ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_FALSE$ac_delim
-ENABLE_STRATIMIKOS_BELOS_THYRA_TRUE!$ENABLE_STRATIMIKOS_BELOS_THYRA_TRUE$ac_delim
-ENABLE_STRATIMIKOS_BELOS_THYRA_FALSE!$ENABLE_STRATIMIKOS_BELOS_THYRA_FALSE$ac_delim
 ENABLE_STRATIMIKOS_ML_NOX_TRUE!$ENABLE_STRATIMIKOS_ML_NOX_TRUE$ac_delim
 ENABLE_STRATIMIKOS_ML_NOX_FALSE!$ENABLE_STRATIMIKOS_ML_NOX_FALSE$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
@@ -7628,7 +7845,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 45; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 51; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
