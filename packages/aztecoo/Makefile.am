@@ -86,31 +86,17 @@ endif
 
 endif
 
-if ENABLE_AZTECOO_THYRA
-THYRA_SUBDIR=thyra
-else
-THYRA_SUBDIR=
-endif
-
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
 ## #######################################################################
 ## Target for circular dependencies
 ## #######################################################################
 
-if ENABLE_AZTECOO_THYRA
-BUILD_THYRA_SUBLIB=cd $(top_builddir)/thyra/src ; $(MAKE)
-else
-BUILD_THYRA_SUBLIB=
-endif
-
 all-libs:
 	cd $(top_builddir)/src ; $(MAKE) all-libs
-	$(BUILD_THYRA_SUBLIB)
 
 libs:
 	cd $(top_builddir)/src ; $(MAKE)
-	$(BUILD_THYRA_SUBLIB)
 
 ## #######################################################################
 ## Export Makefile Installation
@@ -124,8 +110,8 @@ install-exec-hook:
 		--my-export-makefile=Makefile.export.aztecoo \
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
-		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/thyra/src \
-		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../thyra:@abs_top_builddir@/../teuchos
+		--my-abs-lib-dirs=@abs_top_builddir@/src \
+		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../teuchos
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile AZTECOO > $(exec_prefix)/include/Makefile.export.aztecoo.macros
 
 uninstall-hook:

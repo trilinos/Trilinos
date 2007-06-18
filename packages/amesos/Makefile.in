@@ -113,7 +113,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src thyra example test
+DIST_SUBDIRS = src example test
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -264,11 +264,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
 @BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
-@ENABLE_AMESOS_THYRA_FALSE@THYRA_SUBDIR = 
-@ENABLE_AMESOS_THYRA_TRUE@THYRA_SUBDIR = thyra
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
-@ENABLE_AMESOS_THYRA_FALSE@BUILD_THYRA_SUBLIB = 
-@ENABLE_AMESOS_THYRA_TRUE@BUILD_THYRA_SUBLIB = cd $(top_builddir)/thyra/src ; $(MAKE)
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 @HAVE_MPI_FALSE@AMESOS_CHECK_COMM = serial
@@ -729,11 +725,9 @@ all-local:
 
 all-libs:
 	cd $(top_builddir)/src ; $(MAKE) all-libs
-	$(BUILD_THYRA_SUBLIB)
 
 libs:
 	cd $(top_builddir)/src ; $(MAKE)
-	$(BUILD_THYRA_SUBLIB)
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.amesos $(exec_prefix)/include/.
@@ -742,8 +736,8 @@ libs:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.amesos \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-top-srcdir=@abs_top_srcdir@ \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/src/klu_btf:@abs_top_srcdir@/src/klu_kernel:@abs_top_srcdir@/src/btf:@abs_top_srcdir@/src/AMD:@abs_top_srcdir@/src/AMD/Include:@abs_top_srcdir@/src/AMD/Source:@abs_top_srcdir@/src/colamd:@abs_top_srcdir@/src/ksparse \
-@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/thyra/src \
-@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra:@abs_top_builddir@/../thyra:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../triutils:@abs_top_builddir@/../galeri
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
+@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../triutils:@abs_top_builddir@/../galeri
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile AMESOS > $(exec_prefix)/include/Makefile.export.amesos.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:

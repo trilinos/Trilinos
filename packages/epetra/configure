@@ -738,8 +738,6 @@ USING_GNUMAKE_TRUE
 USING_GNUMAKE_FALSE
 HAVE_THREADS_TRUE
 HAVE_THREADS_FALSE
-ENABLE_EPETRA_THYRA_TRUE
-ENABLE_EPETRA_THYRA_FALSE
 BUILD_TESTS_TRUE
 BUILD_TESTS_FALSE
 BUILD_EXAMPLES_TRUE
@@ -1369,11 +1367,6 @@ Optional Features:
                           is no)
   --enable-format_io      Use package-defined IO formatting for output
                           (default is yes)
-  --enable-thyra          Build the Thyra operator/vector adapater support in
-                          Epetra. Can be overridden with
-                          --disable-epetra-thyra.
-  --enable-epetra-thyra   Build the Thyra operator/vector adapater support in
-                          Epetra.
   --enable-tests          Build tests for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
@@ -7400,57 +7393,6 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
-
-
-# Check whether --enable-thyra was given.
-if test "${enable_thyra+set}" = set; then
-  enableval=$enable_thyra; ac_cv_implicit_use_thyra=$enableval
-else
-  ac_cv_implicit_use_thyra=no
-fi
-
-
-if test "Xyes" != "Xno"; then
-  ac_cv_epetra_using_thyra_default=$ac_cv_implicit_use_thyra
-else
-  ac_cv_epetra_using_thyra_default=no
-fi
-
-# Check whether --enable-epetra-thyra was given.
-if test "${enable_epetra_thyra+set}" = set; then
-  enableval=$enable_epetra_thyra; ac_cv_use_thyra=$enableval
-else
-  ac_cv_use_thyra=$ac_cv_epetra_using_thyra_default
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in epetra" >&5
-echo $ECHO_N "checking whether to build optional thyra dependent code in epetra... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_thyra" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_EPETRA_THYRA 1
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
- if test "X$ac_cv_use_thyra" = "Xyes"; then
-  ENABLE_EPETRA_THYRA_TRUE=
-  ENABLE_EPETRA_THYRA_FALSE='#'
-else
-  ENABLE_EPETRA_THYRA_TRUE='#'
-  ENABLE_EPETRA_THYRA_FALSE=
-fi
-
-
-
-
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
@@ -10796,7 +10738,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 ##
-ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.epetra src/Makefile test/Makefile test/BasicPerfTest/Makefile test/BasicPerfTest/Makefile.include test/BlockMap/Makefile test/BlockMap/Makefile.include test/Comm/Makefile test/Comm/Makefile.include test/CrsGraph/Makefile test/CrsGraph/Makefile.include test/CrsMatrix/Makefile test/CrsMatrix/Makefile.include test/RowMatrix/Makefile test/RowMatrix/Makefile.include test/CrsRectMatrix/Makefile test/CrsRectMatrix/Makefile.include test/Directory/Makefile test/Directory/Makefile.include test/FECrsGraph/Makefile test/FECrsGraph/Makefile.include test/FECrsMatrix/Makefile test/FECrsMatrix/Makefile.include test/FEVbrMatrix/Makefile test/FEVbrMatrix/Makefile.include test/FEVector/Makefile test/FEVector/Makefile.include test/ImportExport/Makefile test/ImportExport/Makefile.include test/IntSerialDense/Makefile test/IntSerialDense/Makefile.include test/Map/Makefile test/Map/Makefile.include test/MapColoring/Makefile test/MapColoring/Makefile.include test/MultiVector/Makefile test/MultiVector/Makefile.include test/Object/Makefile test/Object/Makefile.include test/RowMatrixTransposer/Makefile test/RowMatrixTransposer/Makefile.include test/SerialDense/Makefile test/SerialDense/Makefile.include test/SerialSpdDense/Makefile test/SerialSpdDense/Makefile.include test/VbrMatrix/Makefile test/VbrMatrix/Makefile.include test/Vector/Makefile test/Vector/Makefile.include test/src/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile example/UG_Ex1/Makefile example/UG_ExMaps/Makefile example/my_example/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/example/generate-sample-output.pl.stub thyra/test/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.epetra src/Makefile test/Makefile test/BasicPerfTest/Makefile test/BasicPerfTest/Makefile.include test/BlockMap/Makefile test/BlockMap/Makefile.include test/Comm/Makefile test/Comm/Makefile.include test/CrsGraph/Makefile test/CrsGraph/Makefile.include test/CrsMatrix/Makefile test/CrsMatrix/Makefile.include test/RowMatrix/Makefile test/RowMatrix/Makefile.include test/CrsRectMatrix/Makefile test/CrsRectMatrix/Makefile.include test/Directory/Makefile test/Directory/Makefile.include test/FECrsGraph/Makefile test/FECrsGraph/Makefile.include test/FECrsMatrix/Makefile test/FECrsMatrix/Makefile.include test/FEVbrMatrix/Makefile test/FEVbrMatrix/Makefile.include test/FEVector/Makefile test/FEVector/Makefile.include test/ImportExport/Makefile test/ImportExport/Makefile.include test/IntSerialDense/Makefile test/IntSerialDense/Makefile.include test/Map/Makefile test/Map/Makefile.include test/MapColoring/Makefile test/MapColoring/Makefile.include test/MultiVector/Makefile test/MultiVector/Makefile.include test/Object/Makefile test/Object/Makefile.include test/RowMatrixTransposer/Makefile test/RowMatrixTransposer/Makefile.include test/SerialDense/Makefile test/SerialDense/Makefile.include test/SerialSpdDense/Makefile test/SerialSpdDense/Makefile.include test/VbrMatrix/Makefile test/VbrMatrix/Makefile.include test/Vector/Makefile test/Vector/Makefile.include test/src/Makefile example/Makefile example/petra_power_method/Makefile example/verySimple/Makefile example/UG_Ex1/Makefile example/UG_ExMaps/Makefile example/my_example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10969,13 +10911,6 @@ if test -z "${HAVE_THREADS_TRUE}" && test -z "${HAVE_THREADS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_THREADS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_THREADS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${ENABLE_EPETRA_THYRA_TRUE}" && test -z "${ENABLE_EPETRA_THYRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_EPETRA_THYRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ENABLE_EPETRA_THYRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -11520,11 +11455,6 @@ do
     "example/UG_Ex1/Makefile") CONFIG_FILES="$CONFIG_FILES example/UG_Ex1/Makefile" ;;
     "example/UG_ExMaps/Makefile") CONFIG_FILES="$CONFIG_FILES example/UG_ExMaps/Makefile" ;;
     "example/my_example/Makefile") CONFIG_FILES="$CONFIG_FILES example/my_example/Makefile" ;;
-    "thyra/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/Makefile" ;;
-    "thyra/src/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/src/Makefile" ;;
-    "thyra/example/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/example/Makefile" ;;
-    "thyra/example/generate-sample-output.pl.stub") CONFIG_FILES="$CONFIG_FILES thyra/example/generate-sample-output.pl.stub" ;;
-    "thyra/test/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/test/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -11751,8 +11681,6 @@ USING_GNUMAKE_TRUE!$USING_GNUMAKE_TRUE$ac_delim
 USING_GNUMAKE_FALSE!$USING_GNUMAKE_FALSE$ac_delim
 HAVE_THREADS_TRUE!$HAVE_THREADS_TRUE$ac_delim
 HAVE_THREADS_FALSE!$HAVE_THREADS_FALSE$ac_delim
-ENABLE_EPETRA_THYRA_TRUE!$ENABLE_EPETRA_THYRA_TRUE$ac_delim
-ENABLE_EPETRA_THYRA_FALSE!$ENABLE_EPETRA_THYRA_FALSE$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
 BUILD_TESTS_FALSE!$BUILD_TESTS_FALSE$ac_delim
 BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim
@@ -11767,7 +11695,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 40; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 38; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

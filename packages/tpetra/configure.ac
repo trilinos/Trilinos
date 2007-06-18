@@ -222,11 +222,6 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(
-  tpetra, thyra, TPETRA_THYRA, ENABLE_TPETRA_THYRA, yes,
-  [Build the Thyra operator/vector adapater support in Tpetra.],
-  [Build the Thyra operator/vector adapater support in Tpetra.  Can be overridden with --disable-tpetra-thyra.])
-
 # ------------------------------------------------------------------------
 # Checks if tests should be built
 # ------------------------------------------------------------------------
@@ -345,8 +340,6 @@ AC_CONFIG_FILES([
 		test/CisMatrix/Makefile
 		test/DistObject/Makefile
 		test/BasicPerfTest/Makefile
-		thyra/Makefile
-		thyra/example/Makefile
 		])
 
 AC_OUTPUT()

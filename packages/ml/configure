@@ -758,8 +758,6 @@ ML_USING_EPETRAEXT_TRUE
 ML_USING_EPETRAEXT_FALSE
 ML_USING_GALERI_TRUE
 ML_USING_GALERI_FALSE
-ENABLE_ML_THYRA_TRUE
-ENABLE_ML_THYRA_FALSE
 ML_STANDALONE_MODE_TRUE
 ML_STANDALONE_MODE_FALSE
 ML_BUILD_EXAMPLES_TRUE
@@ -1475,10 +1473,6 @@ Optional Features:
   --enable-ml-galeri      Enable Galeri support. Galeri, a Trilinos package,
                           is used in some ML examples to construct the linear
                           system and can optionally be used by the MLAPI.
-  --enable-thyra          Build the Thyra operator/vector adapater support in
-                          ML. Can be overridden with --disable-ml-thyra.
-  --enable-ml-thyra       Build the Thyra operator/vector adapter support in
-                          ML.
   --enable-examples       Build examples for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
@@ -9272,58 +9266,6 @@ fi
 
 
 
-# Interface to Thyra
-
-
-
-# Check whether --enable-thyra was given.
-if test "${enable_thyra+set}" = set; then
-  enableval=$enable_thyra; ac_cv_implicit_use_thyra=$enableval
-else
-  ac_cv_implicit_use_thyra=no
-fi
-
-
-if test "Xyes" != "Xno"; then
-  ac_cv_ml_using_thyra_default=$ac_cv_implicit_use_thyra
-else
-  ac_cv_ml_using_thyra_default=no
-fi
-
-# Check whether --enable-ml-thyra was given.
-if test "${enable_ml_thyra+set}" = set; then
-  enableval=$enable_ml_thyra; ac_cv_use_thyra=$enableval
-else
-  ac_cv_use_thyra=$ac_cv_ml_using_thyra_default
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in ml" >&5
-echo $ECHO_N "checking whether to build optional thyra dependent code in ml... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_thyra" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_THYRA 1
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
- if test "X$ac_cv_use_thyra" = "Xyes"; then
-  ENABLE_ML_THYRA_TRUE=
-  ENABLE_ML_THYRA_FALSE='#'
-else
-  ENABLE_ML_THYRA_TRUE='#'
-  ENABLE_ML_THYRA_FALSE=
-fi
-
-
-
 
 #if we're not using epetra, then build certain ML examples
 #without dependencies on libepetra.a (and use C linker for C files,
@@ -13682,7 +13624,7 @@ fi
 #                test/scripts/daily/mpi/Makefile
 #                test/scripts/daily/serial/Makefile
 #		])
-ac_config_files="$ac_config_files Makefile Makefile.export.ml src/Makefile examples/Makefile examples/Advanced/Makefile examples/BasicExamples/Makefile examples/Elasticity/Makefile examples/MatrixFormats/Makefile examples/MatrixReading/Makefile examples/MatrixFree/Makefile examples/StandAlone/Makefile examples/TwoLevelDD/Makefile examples/Maxwell/Makefile examples/Visualization/Makefile examples/MultipleRHS/Makefile examples/MLAPI/Makefile examples/NonlinML/Makefile examples/XML/Makefile examples/Other/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/MultiLevelPreconditioner_Aux/Makefile test/MultiLevelPreconditioner_GetRow/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/3d_Poisson/Makefile test/IFPACKSmoothers/Makefile test/MLAPICompare/Makefile test/MLAPILinearCombination/Makefile test/MLAPISerialMatrix/Makefile test/MLAPIDistributedMatrix/Makefile test/Communicator/Makefile test/SelfSmoother/Makefile test/METISCoarsening/Makefile test/MatrixFree/Makefile test/Miscellaneous/Makefile test/RefMaxwell/Makefile test/Scalability/Makefile thyra/Makefile thyra/src/Makefile matlab/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.ml src/Makefile examples/Makefile examples/Advanced/Makefile examples/BasicExamples/Makefile examples/Elasticity/Makefile examples/MatrixFormats/Makefile examples/MatrixReading/Makefile examples/MatrixFree/Makefile examples/StandAlone/Makefile examples/TwoLevelDD/Makefile examples/Maxwell/Makefile examples/Visualization/Makefile examples/MultipleRHS/Makefile examples/MLAPI/Makefile examples/NonlinML/Makefile examples/XML/Makefile examples/Other/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/MultiLevelPreconditioner_Aux/Makefile test/MultiLevelPreconditioner_GetRow/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/3d_Poisson/Makefile test/IFPACKSmoothers/Makefile test/MLAPICompare/Makefile test/MLAPILinearCombination/Makefile test/MLAPISerialMatrix/Makefile test/MLAPIDistributedMatrix/Makefile test/Communicator/Makefile test/SelfSmoother/Makefile test/METISCoarsening/Makefile test/MatrixFree/Makefile test/Miscellaneous/Makefile test/RefMaxwell/Makefile test/Scalability/Makefile matlab/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -13918,13 +13860,6 @@ if test -z "${ML_USING_GALERI_TRUE}" && test -z "${ML_USING_GALERI_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"ML_USING_GALERI\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"ML_USING_GALERI\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${ENABLE_ML_THYRA_TRUE}" && test -z "${ENABLE_ML_THYRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_ML_THYRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ENABLE_ML_THYRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -14550,8 +14485,6 @@ do
     "test/Miscellaneous/Makefile") CONFIG_FILES="$CONFIG_FILES test/Miscellaneous/Makefile" ;;
     "test/RefMaxwell/Makefile") CONFIG_FILES="$CONFIG_FILES test/RefMaxwell/Makefile" ;;
     "test/Scalability/Makefile") CONFIG_FILES="$CONFIG_FILES test/Scalability/Makefile" ;;
-    "thyra/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/Makefile" ;;
-    "thyra/src/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/src/Makefile" ;;
     "matlab/Makefile") CONFIG_FILES="$CONFIG_FILES matlab/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -14799,8 +14732,6 @@ ML_USING_EPETRAEXT_TRUE!$ML_USING_EPETRAEXT_TRUE$ac_delim
 ML_USING_EPETRAEXT_FALSE!$ML_USING_EPETRAEXT_FALSE$ac_delim
 ML_USING_GALERI_TRUE!$ML_USING_GALERI_TRUE$ac_delim
 ML_USING_GALERI_FALSE!$ML_USING_GALERI_FALSE$ac_delim
-ENABLE_ML_THYRA_TRUE!$ENABLE_ML_THYRA_TRUE$ac_delim
-ENABLE_ML_THYRA_FALSE!$ENABLE_ML_THYRA_FALSE$ac_delim
 ML_STANDALONE_MODE_TRUE!$ML_STANDALONE_MODE_TRUE$ac_delim
 ML_STANDALONE_MODE_FALSE!$ML_STANDALONE_MODE_FALSE$ac_delim
 ML_BUILD_EXAMPLES_TRUE!$ML_BUILD_EXAMPLES_TRUE$ac_delim
@@ -14830,7 +14761,7 @@ ac_aux_dir!$ac_aux_dir$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 75; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 73; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

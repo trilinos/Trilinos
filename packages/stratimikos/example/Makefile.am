@@ -81,18 +81,7 @@ MixedOrderPhysicsBasedPreconditioner.Base.xml:
 # Common stuff
 #
 
-if ENABLE_STRATIMIKOS_ML_THYRA
-if ENABLE_STRATIMIKOS_ML_NOX
-
-NOX_LIBS = $(top_builddir)/../nox/src/libnox.a
-
-$(top_builddir)/../nox/src/libnox.a:
-	cd $(top_builddir)/../nox; make all-libs
-
-endif
-endif
-
-common_dependencies = $(top_builddir)/src/libstratimikos.a $(NOX_LIBS)
+common_dependencies = $(top_builddir)/src/libstratimikos.a
 
 include $(top_builddir)/Makefile.export.stratimikos
 

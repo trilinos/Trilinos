@@ -95,7 +95,7 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+SUBDIRS = src adapters $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new
@@ -141,13 +141,17 @@ endif
 
 all-libs:
 	cd $(top_builddir)/src ; $(MAKE) all-libs
+	cd $(top_builddir)/adapters ; $(MAKE) all-libs
 
 libs:
 	cd $(top_builddir)/src ; $(MAKE)
+	cd $(top_builddir)/adapters ; $(MAKE) libs
 
 sample-output:
 	cd test ; ../example/generate-sample-output.pl
-	cd example/external ; make sample-makefile
+	cd example/external ; $(MAKE) sample-makefile
+	cd $(top_builddir)/adapters ; $(MAKE) sample-output
+
 
 if USING_EXPORT_MAKEFILES
 
@@ -159,7 +163,7 @@ install-exec-hook:
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
-		--dep-package-abs-builddirs=@abs_top_builddir@/../rtop
+		--dep-package-abs-builddirs=@abs_top_builddir@/../rtop:@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile THYRA > $(exec_prefix)/include/Makefile.export.thyra.macros
 
 uninstall-hook:

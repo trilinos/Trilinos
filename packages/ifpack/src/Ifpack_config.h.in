@@ -74,9 +74,6 @@
 /* Define if want to build ifpack-tests */
 #undef HAVE_IFPACK_TESTS
 
-/* Define if want to build with ifpack enabled */
-#undef HAVE_IFPACK_THYRA
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 

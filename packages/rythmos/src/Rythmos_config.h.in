@@ -35,9 +35,6 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
-/* Define if want to build with epetraext enabled */
-#undef HAVE_EPETRAEXT_THYRA
-
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
 
@@ -136,6 +133,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
+
+/* Define if want to build with thyra enabled */
+#undef HAVE_THYRA_EPETRAEXT
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

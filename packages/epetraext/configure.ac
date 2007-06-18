@@ -341,21 +341,6 @@ fi
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetraext, triutils, EPETRAEXT_TRIUTILS, BUILD_EPETRAEXT_TRIUTILS, yes, [Build triutils support in epetraext.], [Build triutils support in epetraext. Can be overridden with --disable-epetraext-triutils.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(
-  epetraext, thyra, EPETRAEXT_THYRA, ENABLE_EPETRAEXT_THYRA, yes
-  ,[Build the Thyra adapater support in EpetraExt.]
-  ,[Build the Thyra adapater support in EpetraExt.  Can be overridden with --disable-epetraext-thyra.])
-
-TAC_ARG_INFORM_SUBPACKAGE_USED(
-  epetra, thyra, EPETRA_THYRA, ENABLE_EPETRA_THYRA, yes
-  ,[See epetra/configure]
-  ,[See epetra/configure])
-
-TAC_ARG_INFORM_SUBPACKAGE_USED(
-  amesos, thyra, AMESOS_THYRA, ENABLE_AMESOS_THYRA, yes
-  ,[See amesos/configure]
-  ,[See amesos/configure])
-
 # ------------------------------------------------------------------------
 # Checks if tests should be built
 # ------------------------------------------------------------------------
@@ -517,10 +502,6 @@ AC_CONFIG_FILES([
 		example/zoltan/Makefile
 		example/matlab/Makefile
 		example/MapColoring/Makefile
-		thyra/Makefile
-		thyra/src/Makefile
-		thyra/example/Makefile
-		thyra/example/model_evaluator/Makefile
 		])
 
 AC_OUTPUT()

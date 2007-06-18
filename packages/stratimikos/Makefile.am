@@ -56,7 +56,6 @@ EXTRA_DIST = bootstrap \
   config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
   config/replace-install-prefix.pl config/string-replace.pl
 
-
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.
@@ -96,7 +95,7 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+SUBDIRS = src adapters $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new
@@ -150,7 +149,7 @@ install-exec-hook:
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
-		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra:@abs_top_builddir@/../amesos:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../belos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../ml:@abs_top_builddir@/../nox
+		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra:@abs_top_builddir@/../amesos:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../belos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../ml
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile STRATIMIKOS > $(exec_prefix)/include/Makefile.export.stratimikos.macros
 
 uninstall-hook:

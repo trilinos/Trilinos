@@ -26,4 +26,6 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = MVOPTester LOWSFactory
+#SUBDIRS = MVOPTester LOWSFactory
+
+SUBDIRS = 

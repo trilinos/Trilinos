@@ -72,7 +72,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
-	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
@@ -643,12 +642,6 @@ nodist_execinclude_HEADERS = Epetra_config.h
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
-@ENABLE_EPETRA_THYRA_FALSE@ENABLE_EPETRA_THYRA_LIBS = 
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-@ENABLE_EPETRA_THYRA_TRUE@ENABLE_EPETRA_THYRA_LIBS = cd $(top_builddir)/../thyra ; $(MAKE) all-libs
 all: Epetra_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -1729,10 +1722,6 @@ all-local:
 	@echo ""
 
 include $(top_builddir)/Makefile.export.epetra
-
-all-libs:
-	$(MAKE) libepetra.a
-	$(ENABLE_EPETRA_THYRA_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

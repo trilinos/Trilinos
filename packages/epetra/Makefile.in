@@ -72,7 +72,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
-	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
@@ -106,7 +105,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src thyra example test
+DIST_SUBDIRS = src example test
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -251,15 +250,11 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
 @BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
-@ENABLE_EPETRA_THYRA_FALSE@THYRA_SUBDIR = 
-@ENABLE_EPETRA_THYRA_TRUE@THYRA_SUBDIR = thyra
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 TRILINOS_MPI_MAX_PROC = 4
 TRILINOS_TEST_CATEGORY = INSTALL
-@ENABLE_EPETRA_THYRA_FALSE@BUILD_THYRA_SUBLIB = 
-@ENABLE_EPETRA_THYRA_TRUE@BUILD_THYRA_SUBLIB = cd $(top_builddir)/thyra/src ; $(MAKE)
 @HAVE_MPI_FALSE@EPETRA_CHECK_COMM = serial
 @HAVE_MPI_TRUE@EPETRA_CHECK_COMM = mpi
 all: all-recursive
@@ -720,12 +715,10 @@ runtests-mpi :
   --packages=epetra
 
 all-libs:
-	cd $(top_builddir)/src ; $(MAKE) all-libs
-	$(BUILD_THYRA_SUBLIB)
+	cd $(top_builddir)/src ; $(MAKE)
 
 libs:
 	cd $(top_builddir)/src ; $(MAKE)
-	$(BUILD_THYRA_SUBLIB)
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.epetra $(exec_prefix)/include/.
@@ -733,9 +726,8 @@ libs:
 @USING_EXPORT_MAKEFILES_TRUE@		--exec-prefix=$(exec_prefix) \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.epetra \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-top-srcdir=@abs_top_srcdir@ \
-@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_srcdir@/thyra/src:@abs_top_builddir@/src:@abs_top_srcdir@/src \
-@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/thyra/src:@abs_top_builddir@/src \
-@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRA > $(exec_prefix)/include/Makefile.export.epetra.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:

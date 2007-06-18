@@ -104,7 +104,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = Epetra Tpetra
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -223,8 +223,10 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@BUILD_EPETRA_THYRA_TRUE@EPETRA_LOWSF_DIR = Epetra
-@BUILD_TPETRA_THYRA_TRUE@TPETRA_LOWSF_DIR = Tpetra
+
+#EPETRA_LOWSF_DIR = Epetra
+
+#TPETRA_LOWSF_DIR = Tpetra
 SUBDIRS = $(EPETRA_LOWSF_DIR) $(TPETRA_LOWSF_DIR)
 all: all-recursive
 

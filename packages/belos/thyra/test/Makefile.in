@@ -41,6 +41,8 @@
 # 
 # ************************************************************************
 #@HEADER
+
+#SUBDIRS = MVOPTester LOWSFactory
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -223,7 +225,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = MVOPTester LOWSFactory
+SUBDIRS = 
 all: all-recursive
 
 .SUFFIXES:

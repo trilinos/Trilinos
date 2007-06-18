@@ -79,32 +79,18 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-if ENABLE_EPETRAEXT_THYRA
-THYRA_SUBDIR=thyra
-else
-THYRA_SUBDIR=
-endif
-
-SUBDIRS = src $(THYRA_SUBDIR) $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
+SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 
 
 ## #######################################################################
 ## Target for circular dependencies
 ## #######################################################################
 
-if ENABLE_EPETRAEXT_THYRA
-BUILD_THYRA_SUBLIB=cd $(top_builddir)/thyra/src ; $(MAKE)
-else
-BUILD_THYRA_SUBLIB=
-endif
-
 all-libs:
 	cd $(top_builddir)/src ; $(MAKE) all-libs
-	$(BUILD_THYRA_SUBLIB)
 
 libs:
 	cd $(top_builddir)/src ; $(MAKE)
-	$(BUILD_THYRA_SUBLIB)
 
 ## #######################################################################
 ## Export Makefile Installation
@@ -118,8 +104,8 @@ install-exec-hook:
 		--my-export-makefile=Makefile.export.epetraext \
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/src/block:@abs_top_srcdir@/src/btf:@abs_top_srcdir@/src/coloring:@abs_top_srcdir@/src/distdir:@abs_top_srcdir@/src/inout:@abs_top_srcdir@/src/matlab:@abs_top_srcdir@/src/transform:@abs_top_srcdir@/src/zoltan \
-		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/thyra/src \
-		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../thyra:@abs_top_builddir@/../teuchos
+		--my-abs-lib-dirs=@abs_top_builddir@/src \
+		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../teuchos
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRAEXT > $(exec_prefix)/include/Makefile.export.epetraext.macros
 
 uninstall-hook:

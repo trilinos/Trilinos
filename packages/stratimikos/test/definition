@@ -1,5 +1,5 @@
 #
-# FRAMEWORK group
+# Main Stratimikos tests
 #
 
 (FRAMEWORK, INSTALL) {
@@ -39,4 +39,40 @@
 (DOCUMENTATION) {
     TESTS = ../example/generate-sample-output.pl;
     COMM = MPI(1),SERIAL;
+}
+
+
+#
+# Amesos/Stratimikos tests
+#
+
+(FRAMEWORK, INSTALL, StratimikosAmesos) {
+    TESTS = ../adapters/amesos/test/test_amesos_thyra_driver.exe;
+    ARGS = --matrix-dir=../adapters/amesos/test --show-all-tests;
+    COMM = SERIAL;
+}
+
+
+#
+# AztecOO/Stratimikos tests
+#
+
+(FRAMEWORK, INSTALL, AztecOOThyraTests) {
+    TESTS = ../adapters/aztecoo/test/test_single_aztecoo_thyra_solver_driver.exe;
+    ARGS = --matrix-file=../adapters/aztecoo/test/FourByFour.mtx --show-all-tests;
+    X-HOST = paunchy;
+    COMM = MPI(1), SERIAL;
+}
+
+(FRAMEWORK, INSTALL, AztecOOThyraTests) {
+    TESTS = ../adapters/aztecoo/test/test_aztecoo_thyra_driver.exe;
+    ARGS = --matrix-dir=../adapters/aztecoo/test --show-all-tests;
+    X-HOST = paunchy;
+    COMM = MPI(1), SERIAL;
+}
+
+(FRAMEWORK, INSTALL, AztecOOThyraTests) {
+    TESTS = ../adapters/aztecoo/test/testEpetraOperatorWrapper.exe;
+    X-HOST = paunchy;
+    COMM = MPI(1), SERIAL;
 }

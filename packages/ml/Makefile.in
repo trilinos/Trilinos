@@ -124,7 +124,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src thyra examples test matlab
+DIST_SUBDIRS = src examples test matlab
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -293,11 +293,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
 @ML_BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = examples
 @BUILD_ML_MATLAB_TRUE@MATLAB_SUBDIR = matlab
-@ENABLE_ML_THYRA_FALSE@THYRA_SUBDIR = 
-@ENABLE_ML_THYRA_TRUE@THYRA_SUBDIR = thyra
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(MATLAB_SUBDIR)
-@ENABLE_ML_THYRA_FALSE@BUILD_THYRA_SUBLIB = 
-@ENABLE_ML_THYRA_TRUE@BUILD_THYRA_SUBLIB = cd $(top_builddir)/thyra/src ; $(MAKE)
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(MATLAB_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 @HAVE_MPI_FALSE@ML_CHECK_COMM = serial
@@ -754,11 +750,9 @@ all-local:
 
 all-libs:
 	cd src ; $(MAKE) all-libs
-	$(BUILD_THYRA_SUBLIB)
 
 libs:
 	cd src ; $(MAKE)
-	$(BUILD_THYRA_SUBLIB)
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.ml $(exec_prefix)/include/.
@@ -770,8 +764,8 @@ libs:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../amesos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../anasazi:@abs_top_builddir@/../aztecoo
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile ML > $(exec_prefix)/include/Makefile.export.ml.macros
-@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/thyra/src \
-@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../amesos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../anasazi:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../thyra:@abs_top_builddir@/../galeri
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
+@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../amesos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../anasazi:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../galeri
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile ML > $(exec_prefix)/include/Makefile.export.ml.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:

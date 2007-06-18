@@ -78,13 +78,7 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-if ENABLE_TPETRA_THYRA
-THYRA_SUBDIR=thyra
-else
-THYRA_SUBDIR=
-endif
-
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new

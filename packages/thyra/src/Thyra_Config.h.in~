@@ -18,6 +18,12 @@
 /* Define if want to build teuchos-complex */
 #undef HAVE_TEUCHOS_COMPLEX
 
+/* Define if want to build with thyra enabled */
+#undef HAVE_THYRA_EPETRA
+
+/* Define if want to build with thyra enabled */
+#undef HAVE_THYRA_EPETRAEXT
+
 /* Define if want to build thyra-examples */
 #undef HAVE_THYRA_EXAMPLES
 
@@ -38,9 +44,6 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
-
-/* Define to empty if `const' does not conform to ANSI C. */
-#undef const
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */

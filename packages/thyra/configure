@@ -696,6 +696,12 @@ BUILD_TESTS_TRUE
 BUILD_TESTS_FALSE
 BUILD_EXAMPLES_TRUE
 BUILD_EXAMPLES_FALSE
+ENABLE_THYRA_EPETRA_TRUE
+ENABLE_THYRA_EPETRA_FALSE
+ENABLE_THYRA_TPETRA_TRUE
+ENABLE_THYRA_TPETRA_FALSE
+ENABLE_THYRA_EPETRAEXT_TRUE
+ENABLE_THYRA_EPETRAEXT_FALSE
 USING_EXPORT_MAKEFILES_TRUE
 USING_EXPORT_MAKEFILES_FALSE
 PERL_EXE
@@ -1322,6 +1328,20 @@ Optional Features:
                           yes)
   --enable-thyra-examples Build Thyra examples (default is yes if
                           --disable-examples is not specified)
+  --enable-epetra         Build the Thyra operator/vector adapater support for
+                          Epetra. Can be overridden with
+                          --disable-thyra-epetra.
+  --enable-thyra-epetra   Build the Thyra operator/vector adapater support for
+                          Epetra.
+  --enable-tpetra         Build the Thyra operator/vector adapater support for
+                          Tpetra. Can be overridden with
+                          --disable-thyra-tpetra.
+  --enable-thyra-tpetra   Build the Thyra operator/vector adapater support for
+                          Tpetra.
+  --enable-epetraext      Build the Thyra adapater support for EpetraExt. Can
+                          be overridden with --disable-thyra-epetraext.
+  --enable-thyra-epetraext
+                          Build the Thyra adapater support for EpetraExt.
   --enable-export-makefiles
                           Creates export makefiles in the install (prefix)
                           directory. This option requires perl to be set in
@@ -5264,11 +5284,6 @@ _ACEOF
 esac
 
 
-# ------------------------------------------------------------------------
-# Checks for compiler characteristics - Epetra_ConfigDefs.h uses these,
-# so it makes sense to leave them in - see PORTABILITY in this directory
-# ------------------------------------------------------------------------
-
 # ---------------------------------------------------------------------
 # These are pretty obscure
 # ---------------------------------------------------------------------
@@ -5447,6 +5462,163 @@ else
   BUILD_EXAMPLES_TRUE='#'
   BUILD_EXAMPLES_FALSE=
 fi
+
+
+# ------------------------------------------------------------------------
+# Checks if adapters should be built
+# ------------------------------------------------------------------------
+
+
+
+# Check whether --enable-epetra was given.
+if test "${enable_epetra+set}" = set; then
+  enableval=$enable_epetra; ac_cv_implicit_use_epetra=$enableval
+else
+  ac_cv_implicit_use_epetra=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_thyra_using_epetra_default=$ac_cv_implicit_use_epetra
+else
+  ac_cv_thyra_using_epetra_default=no
+fi
+
+# Check whether --enable-thyra-epetra was given.
+if test "${enable_thyra_epetra+set}" = set; then
+  enableval=$enable_thyra_epetra; ac_cv_use_epetra=$enableval
+else
+  ac_cv_use_epetra=$ac_cv_thyra_using_epetra_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional epetra dependent code in thyra" >&5
+echo $ECHO_N "checking whether to build optional epetra dependent code in thyra... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_epetra" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_THYRA_EPETRA 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_epetra" = "Xyes"; then
+  ENABLE_THYRA_EPETRA_TRUE=
+  ENABLE_THYRA_EPETRA_FALSE='#'
+else
+  ENABLE_THYRA_EPETRA_TRUE='#'
+  ENABLE_THYRA_EPETRA_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-tpetra was given.
+if test "${enable_tpetra+set}" = set; then
+  enableval=$enable_tpetra; ac_cv_implicit_use_tpetra=$enableval
+else
+  ac_cv_implicit_use_tpetra=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_thyra_using_tpetra_default=$ac_cv_implicit_use_tpetra
+else
+  ac_cv_thyra_using_tpetra_default=no
+fi
+
+# Check whether --enable-thyra-tpetra was given.
+if test "${enable_thyra_tpetra+set}" = set; then
+  enableval=$enable_thyra_tpetra; ac_cv_use_tpetra=$enableval
+else
+  ac_cv_use_tpetra=$ac_cv_thyra_using_tpetra_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional tpetra dependent code in thyra" >&5
+echo $ECHO_N "checking whether to build optional tpetra dependent code in thyra... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_tpetra" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_THYRA_TPETRA 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_tpetra" = "Xyes"; then
+  ENABLE_THYRA_TPETRA_TRUE=
+  ENABLE_THYRA_TPETRA_FALSE='#'
+else
+  ENABLE_THYRA_TPETRA_TRUE='#'
+  ENABLE_THYRA_TPETRA_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-epetraext was given.
+if test "${enable_epetraext+set}" = set; then
+  enableval=$enable_epetraext; ac_cv_implicit_use_epetraext=$enableval
+else
+  ac_cv_implicit_use_epetraext=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_thyra_using_epetraext_default=$ac_cv_implicit_use_epetraext
+else
+  ac_cv_thyra_using_epetraext_default=no
+fi
+
+# Check whether --enable-thyra-epetraext was given.
+if test "${enable_thyra_epetraext+set}" = set; then
+  enableval=$enable_thyra_epetraext; ac_cv_use_epetraext=$enableval
+else
+  ac_cv_use_epetraext=$ac_cv_thyra_using_epetraext_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional epetraext dependent code in thyra" >&5
+echo $ECHO_N "checking whether to build optional epetraext dependent code in thyra... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_epetraext" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_THYRA_EPETRAEXT 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_epetraext" = "Xyes"; then
+  ENABLE_THYRA_EPETRAEXT_TRUE=
+  ENABLE_THYRA_EPETRAEXT_FALSE='#'
+else
+  ENABLE_THYRA_EPETRAEXT_TRUE='#'
+  ENABLE_THYRA_EPETRAEXT_FALSE=
+fi
+
+
 
 
 # ------------------------------------------------------------------------
@@ -6271,7 +6443,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile Makefile.export.thyra src/Makefile example/Makefile example/generate-sample-output.pl.stub example/operator_vector/Makefile example/operator_solve/Makefile example/external/Makefile example/external/Makefile.external.stub test/Makefile test/operator_vector/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.thyra src/Makefile example/Makefile example/generate-sample-output.pl.stub example/operator_vector/Makefile example/operator_solve/Makefile example/external/Makefile example/external/Makefile.external.stub test/Makefile test/operator_vector/Makefile adapters/Makefile adapters/epetra/Makefile adapters/epetra/src/Makefile adapters/epetra/example/Makefile adapters/epetra/example/generate-sample-output.pl.stub adapters/epetra/test/Makefile adapters/tpetra/Makefile adapters/tpetra/example/Makefile adapters/epetraext/Makefile adapters/epetraext/src/Makefile adapters/epetraext/example/Makefile adapters/epetraext/example/model_evaluator/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -6437,6 +6609,27 @@ if test -z "${BUILD_EXAMPLES_TRUE}" && test -z "${BUILD_EXAMPLES_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_EXAMPLES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_THYRA_EPETRA_TRUE}" && test -z "${ENABLE_THYRA_EPETRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_THYRA_EPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_THYRA_EPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_THYRA_TPETRA_TRUE}" && test -z "${ENABLE_THYRA_TPETRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_THYRA_TPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_THYRA_TPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_THYRA_EPETRAEXT_TRUE}" && test -z "${ENABLE_THYRA_EPETRAEXT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_THYRA_EPETRAEXT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_THYRA_EPETRAEXT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -6941,6 +7134,18 @@ do
     "example/external/Makefile.external.stub") CONFIG_FILES="$CONFIG_FILES example/external/Makefile.external.stub" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/operator_vector/Makefile") CONFIG_FILES="$CONFIG_FILES test/operator_vector/Makefile" ;;
+    "adapters/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/Makefile" ;;
+    "adapters/epetra/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetra/Makefile" ;;
+    "adapters/epetra/src/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetra/src/Makefile" ;;
+    "adapters/epetra/example/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetra/example/Makefile" ;;
+    "adapters/epetra/example/generate-sample-output.pl.stub") CONFIG_FILES="$CONFIG_FILES adapters/epetra/example/generate-sample-output.pl.stub" ;;
+    "adapters/epetra/test/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetra/test/Makefile" ;;
+    "adapters/tpetra/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/tpetra/Makefile" ;;
+    "adapters/tpetra/example/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/tpetra/example/Makefile" ;;
+    "adapters/epetraext/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetraext/Makefile" ;;
+    "adapters/epetraext/src/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetraext/src/Makefile" ;;
+    "adapters/epetraext/example/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetraext/example/Makefile" ;;
+    "adapters/epetraext/example/model_evaluator/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetraext/example/model_evaluator/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -7161,6 +7366,12 @@ BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
 BUILD_TESTS_FALSE!$BUILD_TESTS_FALSE$ac_delim
 BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim
 BUILD_EXAMPLES_FALSE!$BUILD_EXAMPLES_FALSE$ac_delim
+ENABLE_THYRA_EPETRA_TRUE!$ENABLE_THYRA_EPETRA_TRUE$ac_delim
+ENABLE_THYRA_EPETRA_FALSE!$ENABLE_THYRA_EPETRA_FALSE$ac_delim
+ENABLE_THYRA_TPETRA_TRUE!$ENABLE_THYRA_TPETRA_TRUE$ac_delim
+ENABLE_THYRA_TPETRA_FALSE!$ENABLE_THYRA_TPETRA_FALSE$ac_delim
+ENABLE_THYRA_EPETRAEXT_TRUE!$ENABLE_THYRA_EPETRAEXT_TRUE$ac_delim
+ENABLE_THYRA_EPETRAEXT_FALSE!$ENABLE_THYRA_EPETRAEXT_FALSE$ac_delim
 USING_EXPORT_MAKEFILES_TRUE!$USING_EXPORT_MAKEFILES_TRUE$ac_delim
 USING_EXPORT_MAKEFILES_FALSE!$USING_EXPORT_MAKEFILES_FALSE$ac_delim
 PERL_EXE!$PERL_EXE$ac_delim
@@ -7176,7 +7387,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 33; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 39; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

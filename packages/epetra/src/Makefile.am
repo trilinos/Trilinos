@@ -343,16 +343,3 @@ nodist_execinclude_HEADERS = Epetra_config.h
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-if ENABLE_EPETRA_THYRA
-ENABLE_EPETRA_THYRA_LIBS = cd $(top_builddir)/../thyra ; $(MAKE) all-libs
-else
-ENABLE_EPETRA_THYRA_LIBS = 
-endif
-
-all-libs:
-	$(MAKE) libepetra.a
-	$(ENABLE_EPETRA_THYRA_LIBS)

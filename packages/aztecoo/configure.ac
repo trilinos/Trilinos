@@ -310,16 +310,6 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(
-  aztecoo, thyra, AZTECOO_THYRA, ENABLE_AZTECOO_THYRA, yes,
-  [Build the Thyra operator/vector adapater support in AztecOO (also rquires epetraext).],
-  [Build the Thyra operator/vector adapater support in AztecOO (also rquires epetraext).  Can be overridden with --disable-aztecoo-thyra.])
-
-TAC_ARG_INFORM_SUBPACKAGE_USED(
-  epetraext, thyra, EPETRAEXT_THYRA, ENABLE_EPETRAEXT_THYRA, yes,
-  [],
-  [Can be overridden with --disable-epetraext-thyra .])
-
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   aztecoo, ifpack, AZTECOO_IFPACK, ENABLE_AZTECOO_IFPACK, yes,
   [Allows aztecoo/thyra adapters to use ifpack in examples and tests.],
   [Allows aztecoo/thyra adapters to use ifpack in examples and tests.  Can be overridden with --disable-aztecoo-ifpack.])
@@ -328,7 +318,6 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(aztecoo, epetraext, AZTECOO_EPETRAEXT,
   HAVE_AZTECOO_EPETRAEXT, yes, 
   [Enables EPETRAEXT examples.],
   [Enables EPETRAEXT examples.  Can be overridden with --disable-aztecoo-epetraext.])
-
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -457,10 +446,6 @@ AC_CONFIG_FILES([
     test/scripts/Makefile
     test/scripts/daily/Makefile
     test/scripts/daily/serial/Makefile
-    thyra/Makefile
-    thyra/src/Makefile
-    thyra/example/Makefile
-    thyra/test/Makefile
     ])
 
 AC_OUTPUT

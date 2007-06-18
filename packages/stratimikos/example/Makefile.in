@@ -68,6 +68,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
@@ -242,8 +243,7 @@ MixedOrderPhysicsBasedPreconditioner_LDADD = $(common_ldadd)
 #
 # Common stuff
 #
-@ENABLE_STRATIMIKOS_ML_NOX_TRUE@@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@NOX_LIBS = $(top_builddir)/../nox/src/libnox.a
-common_dependencies = $(top_builddir)/src/libstratimikos.a $(NOX_LIBS)
+common_dependencies = $(top_builddir)/src/libstratimikos.a
 AM_CPPFLAGS = $(STRATIMIKOS_INCLUDES)
 common_ldadd = $(STRATIMIKOS_LIBS)
 EXTRA_DIST = $(srcdir)/simple_stratimikos_example.cpp \
@@ -565,9 +565,6 @@ MixedOrderPhysicsBasedPreconditioner.Base.xml:
 	cp $(srcdir)/_M12.mtx M12.mtx
 	cp $(srcdir)/_M21.mtx M21.mtx
 	cp $(srcdir)/_M22.mtx M22.mtx
-
-@ENABLE_STRATIMIKOS_ML_NOX_TRUE@@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@$(top_builddir)/../nox/src/libnox.a:
-@ENABLE_STRATIMIKOS_ML_NOX_TRUE@@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@	cd $(top_builddir)/../nox; make all-libs
 
 include $(top_builddir)/Makefile.export.stratimikos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

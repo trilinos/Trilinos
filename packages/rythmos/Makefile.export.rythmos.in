@@ -1,8 +1,8 @@
 
-## Required dependency on thyra and teuchos (teuchos is included by thyra)
+## Required dependency on thyra (teuchos is included by thyra)
 include @abs_top_builddir@/../thyra/Makefile.export.thyra
 
-# Note: the order of the includes here _should_ not be important, unless something is messed up.
+# Note: the order of the includes here should _not_ be important, unless something is messed up.
 _RYTHMOS_INCLUDES = \
   -I@abs_top_srcdir@/src \
   -I@abs_top_builddir@/src \
@@ -22,7 +22,7 @@ _RYTHMOS_LIBS = \
 # Stuff for some tests and examples
 #
 
-@ENABLE_EPETRAEXT_THYRA_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+@ENABLE_THYRA_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
 #@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@include @abs_top_builddir@/../stratimikos/Makefile.export.stratimikos
 #@ENABLE_RYTHMOS_NOX_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@include @abs_top_builddir@/../nox/Makefile.export.nox
 

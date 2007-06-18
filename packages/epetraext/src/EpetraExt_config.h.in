@@ -23,9 +23,6 @@
 /* Define to 1 if you have the <algo.h> header file. */
 #undef HAVE_ALGO_H
 
-/* Define if want to build with amesos enabled */
-#undef HAVE_AMESOS_THYRA
-
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
 
@@ -60,13 +57,7 @@
 #undef HAVE_EPETRAEXT_TESTS
 
 /* Define if want to build with epetraext enabled */
-#undef HAVE_EPETRAEXT_THYRA
-
-/* Define if want to build with epetraext enabled */
 #undef HAVE_EPETRAEXT_TRIUTILS
-
-/* Define if want to build with epetra enabled */
-#undef HAVE_EPETRA_THYRA
 
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES

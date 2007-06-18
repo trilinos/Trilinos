@@ -748,8 +748,8 @@ ENABLE_RYTHMOS_EPETRAEXT_TRUE
 ENABLE_RYTHMOS_EPETRAEXT_FALSE
 ENABLE_RYTHMOS_SACADO_TRUE
 ENABLE_RYTHMOS_SACADO_FALSE
-ENABLE_EPETRAEXT_THYRA_TRUE
-ENABLE_EPETRAEXT_THYRA_FALSE
+ENABLE_THYRA_EPETRAEXT_TRUE
+ENABLE_THYRA_EPETRAEXT_FALSE
 ENABLE_NOX_EPETRA_TRUE
 ENABLE_NOX_EPETRA_FALSE
 BUILD_EXAMPLES_TRUE
@@ -1406,10 +1406,10 @@ Optional Features:
   --enable-sacado         Build the Sacado adapater support in Rythmos. Can be
                           overridden with --disable-rythmos-sacado.
   --enable-rythmos-sacado Build the Sacado adapater support in Rythmos.
-  --enable-epetraext      See epetraext/configure --help
-  --enable-thyra          See epetraext/configure --help
-  --enable-epetraext-thyra
-                          See epetraext/configure --help
+  --enable-thyra          See thyra/configure --help
+  --enable-epetraext      See thyra/configure --help
+  --enable-thyra-epetraext
+                          See thyra/configure --help
   --enable-nox            See nox/configure --help
   --enable-epetra         See nox/configure --help
   --enable-nox-epetra     See nox/configure --help
@@ -8092,14 +8092,6 @@ fi
 
 
 
-# Check whether --enable-epetraext was given.
-if test "${enable_epetraext+set}" = set; then
-  enableval=$enable_epetraext; ac_cv_implicit_use_epetraext=$enableval
-else
-  ac_cv_implicit_use_epetraext=no
-fi
-
-
 # Check whether --enable-thyra was given.
 if test "${enable_thyra+set}" = set; then
   enableval=$enable_thyra; ac_cv_implicit_use_thyra=$enableval
@@ -8108,34 +8100,41 @@ else
 fi
 
 
-if test "Xyes
-  " != "Xno"; then
-  if test "X$ac_cv_implicit_use_epetraext" != "Xno"; then
-    ac_cv_epetraext_using_thyra_default=$ac_cv_implicit_use_thyra
+# Check whether --enable-epetraext was given.
+if test "${enable_epetraext+set}" = set; then
+  enableval=$enable_epetraext; ac_cv_implicit_use_epetraext=$enableval
+else
+  ac_cv_implicit_use_epetraext=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  if test "X$ac_cv_implicit_use_thyra" != "Xno"; then
+    ac_cv_thyra_using_epetraext_default=$ac_cv_implicit_use_epetraext
   else
-    ac_cv_epetraext_using_thyra_default=no
+    ac_cv_thyra_using_epetraext_default=no
   fi
 else
-  ac_cv_epetraext_using_thyra_default=no
+  ac_cv_thyra_using_epetraext_default=no
 fi
 
-# Check whether --enable-epetraext-thyra was given.
-if test "${enable_epetraext_thyra+set}" = set; then
-  enableval=$enable_epetraext_thyra; ac_cv_use_thyra=$enableval
+# Check whether --enable-thyra-epetraext was given.
+if test "${enable_thyra_epetraext+set}" = set; then
+  enableval=$enable_thyra_epetraext; ac_cv_use_epetraext=$enableval
 else
-  ac_cv_use_thyra=$ac_cv_epetraext_using_thyra_default
+  ac_cv_use_epetraext=$ac_cv_thyra_using_epetraext_default
 fi
 
 
-{ echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in epetraext" >&5
-echo $ECHO_N "checking whether to build optional thyra dependent code in epetraext... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: checking whether to build optional epetraext dependent code in thyra" >&5
+echo $ECHO_N "checking whether to build optional epetraext dependent code in thyra... $ECHO_C" >&6; }
 
-if test "X$ac_cv_use_thyra" != "Xno"; then
+if test "X$ac_cv_use_epetraext" != "Xno"; then
   { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_EPETRAEXT_THYRA 1
+#define HAVE_THYRA_EPETRAEXT 1
 _ACEOF
 
 else
@@ -8143,12 +8142,12 @@ else
 echo "${ECHO_T}no" >&6; }
 fi
 
- if test "X$ac_cv_use_thyra" = "Xyes"; then
-  ENABLE_EPETRAEXT_THYRA_TRUE=
-  ENABLE_EPETRAEXT_THYRA_FALSE='#'
+ if test "X$ac_cv_use_epetraext" = "Xyes"; then
+  ENABLE_THYRA_EPETRAEXT_TRUE=
+  ENABLE_THYRA_EPETRAEXT_FALSE='#'
 else
-  ENABLE_EPETRAEXT_THYRA_TRUE='#'
-  ENABLE_EPETRAEXT_THYRA_FALSE=
+  ENABLE_THYRA_EPETRAEXT_TRUE='#'
+  ENABLE_THYRA_EPETRAEXT_FALSE=
 fi
 
 
@@ -12401,10 +12400,10 @@ echo "$as_me: error: conditional \"ENABLE_RYTHMOS_SACADO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${ENABLE_EPETRAEXT_THYRA_TRUE}" && test -z "${ENABLE_EPETRAEXT_THYRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_EPETRAEXT_THYRA\" was never defined.
+if test -z "${ENABLE_THYRA_EPETRAEXT_TRUE}" && test -z "${ENABLE_THYRA_EPETRAEXT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_THYRA_EPETRAEXT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ENABLE_EPETRAEXT_THYRA\" was never defined.
+echo "$as_me: error: conditional \"ENABLE_THYRA_EPETRAEXT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -13250,8 +13249,8 @@ ENABLE_RYTHMOS_EPETRAEXT_TRUE!$ENABLE_RYTHMOS_EPETRAEXT_TRUE$ac_delim
 ENABLE_RYTHMOS_EPETRAEXT_FALSE!$ENABLE_RYTHMOS_EPETRAEXT_FALSE$ac_delim
 ENABLE_RYTHMOS_SACADO_TRUE!$ENABLE_RYTHMOS_SACADO_TRUE$ac_delim
 ENABLE_RYTHMOS_SACADO_FALSE!$ENABLE_RYTHMOS_SACADO_FALSE$ac_delim
-ENABLE_EPETRAEXT_THYRA_TRUE!$ENABLE_EPETRAEXT_THYRA_TRUE$ac_delim
-ENABLE_EPETRAEXT_THYRA_FALSE!$ENABLE_EPETRAEXT_THYRA_FALSE$ac_delim
+ENABLE_THYRA_EPETRAEXT_TRUE!$ENABLE_THYRA_EPETRAEXT_TRUE$ac_delim
+ENABLE_THYRA_EPETRAEXT_FALSE!$ENABLE_THYRA_EPETRAEXT_FALSE$ac_delim
 ENABLE_NOX_EPETRA_TRUE!$ENABLE_NOX_EPETRA_TRUE$ac_delim
 ENABLE_NOX_EPETRA_FALSE!$ENABLE_NOX_EPETRA_FALSE$ac_delim
 BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim

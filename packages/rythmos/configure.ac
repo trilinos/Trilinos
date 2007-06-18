@@ -248,9 +248,9 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
 #  ,[Build the Belos adapater support in Rythmos.  Can be overridden with --disable-rythmos-belos.])
 
 TAC_ARG_INFORM_SUBPACKAGE_USED(
-  epetraext, thyra, EPETRAEXT_THYRA, ENABLE_EPETRAEXT_THYRA, yes
-  ,[See epetraext/configure --help]
-  ,[See epetraext/configure --help])
+  thyra, epetraext, THYRA_EPETRAEXT, ENABLE_THYRA_EPETRAEXT, yes,
+  [See thyra/configure --help],
+  [See thyra/configure --help])
 
 TAC_ARG_INFORM_SUBPACKAGE_USED(
   nox, epetra, NOX_EPETRA, ENABLE_NOX_EPETRA, no

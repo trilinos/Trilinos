@@ -64,8 +64,8 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = $(am__EXEEXT_1) \
-	example_AmesosFactory_Tridiag$(EXEEXT) $(am__EXEEXT_2) \
-	$(am__EXEEXT_3) $(am__EXEEXT_4)
+	example_AmesosFactory_Tridiag$(EXEEXT) $(am__EXEEXT_3) \
+	$(am__EXEEXT_4)
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -299,22 +299,11 @@ top_srcdir = @top_srcdir@
 @HAVE_AMESOS_PARAKLETE_TRUE@PARAKLETE_TEST = 
 @HAVE_AMESOS_GALERI_FALSE@EXAMPLES_GALERI = 
 @HAVE_AMESOS_GALERI_TRUE@EXAMPLES_GALERI = example_AmesosFactory example_AmesosFactory_HB compare_solvers $(PARAKLETE_TEST)
-@HAVE_AMESOS_ML_FALSE@@HAVE_AMESOS_STRATIMIKOS_TRUE@EXAMPLES_STRATIMIKOS = 
-@HAVE_AMESOS_ML_TRUE@@HAVE_AMESOS_STRATIMIKOS_TRUE@@HAVE_AMESOS_THYRA_FALSE@EXAMPLES_STRATIMIKOS = 
-
-#EXAMPLES_STRATIMIKOS = stratimikos_example
-@HAVE_AMESOS_ML_TRUE@@HAVE_AMESOS_STRATIMIKOS_TRUE@@HAVE_AMESOS_THYRA_TRUE@EXAMPLES_STRATIMIKOS = 
-@HAVE_AMESOS_STRATIMIKOS_FALSE@EXAMPLES_STRATIMIKOS = 
 @HAVE_AMESOS_MC64_FALSE@EXAMPLES_MC64 = 
 @HAVE_AMESOS_MC64_TRUE@EXAMPLES_MC64 = example_MC64
 @HAVE_MPI_FALSE@EXAMPLES_MPI = 
 @HAVE_MPI_TRUE@EXAMPLES_MPI = a_trivial_mpi_test
 EXTRA_DIST = In_662_bus.rsa _stratimikos_amesos_lapack.xml _FourByFour.mtx
-
-#stratimikos_example_SOURCES      = $(srcdir)/stratimikos_example.cpp  $(srcdir)/simpleStratimikosSolve.cpp $(srcdir)/Thyra_AmesosLinearOpWithSolveFactory.cpp
-#stratimikos_example_DEPENDENCIES = $(top_builddir)/src/libamesos.a $(top_builddir)/../stratimikos/src/libstratimikos.a 
-#stratimikos_example_CXXFLAGS     = $(EXAMPLE_INCLUDES)  -I$(top_builddir)/../stratimikos/src/  -I$(top_builddir)/../thyra/src/  -I$(top_srcdir)/../stratimikos/src/ -I$(top_srcdir)/../thyra/src/
-#stratimikos_example_LDADD        =  $(top_builddir)/../stratimikos/src/libstratimikos.a  $(top_builddir)/../aztecoo/thyra/src/libaztecoothyra.a  $(top_builddir)/../aztecoo/src/libaztecoo.a  $(top_builddir)/../ml/thyra/src/libmlthyra.a  $(top_builddir)/../ml/src/libml.a  $(STRATIMIKOS_LIBS) $(EXAMPLE_LIBS)
 example_AmesosFactory_SOURCES = $(srcdir)/example_AmesosFactory.cpp
 example_AmesosFactory_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
 example_AmesosFactory_CXXFLAGS = $(EXAMPLE_INCLUDES)

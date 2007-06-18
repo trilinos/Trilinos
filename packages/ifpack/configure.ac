@@ -238,11 +238,6 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, amesos, IFPACK_AMESOS, HAVE_IFPACK_AMESOS
 #
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, epetraext, IFPACK_EPETRAEXT, HAVE_IFPACK_EPETRAEXT, [Enable EpetraExt support. EpetraExt, a Trilinos package, can be used to read matrices, maps and multivectors from a file.], [Enable EpetraExt support. EpetraExt, a Trilinos package, can be used to read matrices, maps and multivectors from a file. Can be overridden with --disable-ifpack-epetraext.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(
-  ifpack, thyra, IFPACK_THYRA, ENABLE_IFPACK_THYRA, yes
-  ,[Build the Thyra adapater support in Ifpack.]
-  ,[Build the Thyra adapater support in Ifpack.  Can be overridden with --disable-ifpack-thyra.])
-
 # ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
@@ -403,8 +398,6 @@ AC_CONFIG_FILES([
 		test/ILU/Makefile
 		test/IC/Makefile
 		test/UseTranspose/Makefile
-		thyra/Makefile
-		thyra/src/Makefile
 		])
 
 AC_OUTPUT()

@@ -157,11 +157,6 @@ TAC_ARG_CHECK_MPI
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
 
-# ------------------------------------------------------------------------
-# Checks for compiler characteristics - Epetra_ConfigDefs.h uses these, 
-# so it makes sense to leave them in - see PORTABILITY in this directory
-# ------------------------------------------------------------------------
-
 # ---------------------------------------------------------------------
 # These are pretty obscure
 # ---------------------------------------------------------------------
@@ -184,6 +179,25 @@ AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_thyra_tests" != "Xno")
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( thyra, examples, [Build Thyra examples], THYRA_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_thyra_examples" != "Xno")
+
+# ------------------------------------------------------------------------
+# Checks if adapters should be built
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  thyra, epetra, THYRA_EPETRA, ENABLE_THYRA_EPETRA, yes,
+  [Build the Thyra operator/vector adapater support for Epetra.],
+  [Build the Thyra operator/vector adapater support for Epetra.  Can be overridden with --disable-thyra-epetra.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  thyra, tpetra, THYRA_TPETRA, ENABLE_THYRA_TPETRA, yes,
+  [Build the Thyra operator/vector adapater support for Tpetra.],
+  [Build the Thyra operator/vector adapater support for Tpetra.  Can be overridden with --disable-thyra-tpetra.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  thyra, epetraext, THYRA_EPETRAEXT, ENABLE_THYRA_EPETRAEXT, yes,
+  [Build the Thyra adapater support for EpetraExt.],
+  [Build the Thyra adapater support for EpetraExt.  Can be overridden with --disable-thyra-epetraext.])
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -291,6 +305,18 @@ AC_CONFIG_FILES([
     example/external/Makefile.external.stub
     test/Makefile
     test/operator_vector/Makefile
+    adapters/Makefile
+    adapters/epetra/Makefile
+    adapters/epetra/src/Makefile
+    adapters/epetra/example/Makefile
+    adapters/epetra/example/generate-sample-output.pl.stub
+    adapters/epetra/test/Makefile
+    adapters/tpetra/Makefile
+    adapters/tpetra/example/Makefile
+    adapters/epetraext/Makefile
+    adapters/epetraext/src/Makefile
+    adapters/epetraext/example/Makefile
+    adapters/epetraext/example/model_evaluator/Makefile
     ])
 
 AC_OUTPUT()

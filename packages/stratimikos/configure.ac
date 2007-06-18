@@ -161,38 +161,38 @@ AC_C_INLINE
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
-TAC_ARG_INFORM_SUBPACKAGE_USED(
-  epetraext, thyra, STRATIMIKOS_EPETRAEXT_THYRA, ENABLE_STRATIMIKOS_EPETRAEXT_THYRA, yes
-  ,[See epetraext/configure --help]
-  ,[See epetraext/configure --help])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  stratimikos, amesos, STRATIMIKOS_AMESOS, ENABLE_STRATIMIKOS_AMESOS, yes,
+  [Enable Thyra adapters for Amesos in Stratimikos.],
+  [Enable Thyra adapters for Amesos in Stratimikos.  Can be overridden with --disable-stratimikos-amesos.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  stratimikos, aztecoo, STRATIMIKOS_AZTECOO, ENABLE_STRATIMIKOS_AZTECOO, yes,
+  [Enable Thyra adapters for AztecOO in Stratimikos.],
+  [Enable Thyra adapters for AztecOO in Stratimikos.  Can be overridden with --disable-stratimikos-aztecoo.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  stratimikos, ifpack, STRATIMIKOS_IFPACK, ENABLE_STRATIMIKOS_IFPACK, yes,
+  [Enable Thyra adapters for Ifpack in Stratimikos.],
+  [Enable Thyra adapters for Ifpack in Stratimikos.  Can be overridden with --disable-stratimikos-ifpack.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  stratimikos, ml, STRATIMIKOS_ML, ENABLE_STRATIMIKOS_ML, yes,
+  [Enable Thyra adapters for ML in Stratimikos.],
+  [Enable Thyra adapters for ML in Stratimikos.  Can be overridden with --disable-stratimikos-ml.])
 
 TAC_ARG_INFORM_SUBPACKAGE_USED(
-   amesos, thyra, STRATIMIKOS_AMESOS_THYRA, ENABLE_STRATIMIKOS_AMESOS_THYRA, yes,
-  [See amesos/configure --help],
-  [See amesos/configure --help])
+  thyra, epetraext, STRATIMIKOS_THYRA_EPETRAEXT, ENABLE_STRATIMIKOS_THYRA_EPETRAEXT, yes,
+  [See epetraext/configure --help],
+  [See epetraext/configure --help])
 
 TAC_ARG_INFORM_SUBPACKAGE_USED(
-   aztecoo, thyra, STRATIMIKOS_AZTECOO_THYRA, ENABLE_STRATIMIKOS_AZTECOO_THYRA, yes,
-  [See aztecoo/configure --help],
-  [See aztecoo/configure --help])
-
-TAC_ARG_INFORM_SUBPACKAGE_USED(
-   belos, thyra, STRATIMIKOS_BELOS_THYRA, ENABLE_STRATIMIKOS_BELOS_THYRA, yes,
+  belos, thyra, STRATIMIKOS_BELOS_THYRA, ENABLE_STRATIMIKOS_BELOS_THYRA, yes,
   [See belos/configure --help],
   [See belos/configure --help])
 
 TAC_ARG_INFORM_SUBPACKAGE_USED(
-   ifpack, thyra, STRATIMIKOS_IFPACK_THYRA, ENABLE_STRATIMIKOS_IFPACK_THYRA, yes,
-  [See ifpack/configure --help],
-  [See ifpack/configure --help])
-
-TAC_ARG_INFORM_SUBPACKAGE_USED(
-   ml, thyra, STRATIMIKOS_ML_THYRA, ENABLE_STRATIMIKOS_ML_THYRA, yes,
-  [See ml/configure --help],
-  [See ml/configure --help])
-
-TAC_ARG_INFORM_SUBPACKAGE_USED(
-   ml, nox, STRATIMIKOS_ML_NOX, ENABLE_STRATIMIKOS_ML_NOX, yes,
+  ml, nox, STRATIMIKOS_ML_NOX, ENABLE_STRATIMIKOS_ML_NOX, yes,
   [See ml/configure --help],
   [See ml/configure --help])
 
@@ -223,6 +223,7 @@ TAC_ARG_WITH_INCDIRS
 
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
+
 if test "X$ac_cv_use_stratimikos_tests" != "Xno" || test "X$ac_cv_use_stratimikos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 # #np# - 
@@ -235,6 +236,7 @@ AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
 fi
+
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
 
@@ -253,7 +255,6 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 
 # Determine libraries needed for linking with Fortran
 AC_F77_LIBRARY_LDFLAGS
-
 
 #  ----------------------------------------------------
 #  Needs this because Dec handles templates differently
@@ -309,8 +310,18 @@ AC_CONFIG_FILES([
     example/Makefile
     example/generate-sample-output.pl.stub
     test/Makefile
+    adapters/Makefile
+    adapters/amesos/Makefile
+    adapters/amesos/src/Makefile
+    adapters/amesos/test/Makefile
+    adapters/aztecoo/Makefile
+    adapters/aztecoo/src/Makefile
+    adapters/aztecoo/test/Makefile
+    adapters/ifpack/Makefile
+    adapters/ifpack/src/Makefile
+    adapters/ml/Makefile
+    adapters/ml/src/Makefile
     ])
-
 
 AC_OUTPUT()
 

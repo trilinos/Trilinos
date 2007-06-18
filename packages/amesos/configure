@@ -754,13 +754,9 @@ HAVE_AMESOS_STRATIMIKOS_TRUE
 HAVE_AMESOS_STRATIMIKOS_FALSE
 HAVE_AMESOS_ML_TRUE
 HAVE_AMESOS_ML_FALSE
-HAVE_AMESOS_THYRA_TRUE
-HAVE_AMESOS_THYRA_FALSE
 HAVE_AMESOS_GALERI_TRUE
 HAVE_AMESOS_GALERI_FALSE
 FLIBS
-ENABLE_AMESOS_THYRA_TRUE
-ENABLE_AMESOS_THYRA_FALSE
 BLAS_LIBS
 LAPACK_LIBS
 tac_with_trilinosdatadir
@@ -1448,11 +1444,6 @@ Optional Features:
                           overridden with --disable-amesos-ml.
   --enable-amesos-ml      Enable Ml support. Ml, a Trilinos package is
                           required in example/startimikos_example.
-  --enable-thyra          Enable Thyra support. Thyra, a Trilinos package, is
-                          required in example/startimikos_example. Can be
-                          overridden with --disable-amesos-thyra.
-  --enable-amesos-thyra   Enable Thyra support. Thyra, a Trilinos package is
-                          required in example/startimikos_example.
   --enable-galeri         Enable Galeri support. Galeri, a Trilinos package,
                           is used in some Amesos examples to construct the
                           linear system. Can be overridden with
@@ -1463,11 +1454,6 @@ Optional Features:
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
-  --enable-thyra          Build the Thyra operator/vector adapater support in
-                          Amesos. Can be overridden with
-                          --disable-amesos-thyra.
-  --enable-amesos-thyra   Build the Thyra operator/vector adapater support in
-                          Amesos.
   --enable-amesos-lapack  Enable Amesos interface support for LAPACK (default
                           is yes)
   --enable-amesos-superludist
@@ -8455,57 +8441,6 @@ fi
 
 
 
-# Check whether --enable-thyra was given.
-if test "${enable_thyra+set}" = set; then
-  enableval=$enable_thyra; ac_cv_implicit_use_thyra=$enableval
-else
-  ac_cv_implicit_use_thyra=no
-fi
-
-
-if test "Xyes" != "Xno"; then
-  ac_cv_amesos_using_thyra_default=$ac_cv_implicit_use_thyra
-else
-  ac_cv_amesos_using_thyra_default=no
-fi
-
-# Check whether --enable-amesos-thyra was given.
-if test "${enable_amesos_thyra+set}" = set; then
-  enableval=$enable_amesos_thyra; ac_cv_use_thyra=$enableval
-else
-  ac_cv_use_thyra=$ac_cv_amesos_using_thyra_default
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in amesos" >&5
-echo $ECHO_N "checking whether to build optional thyra dependent code in amesos... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_thyra" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_AMESOS_THYRA 1
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
- if test "X$ac_cv_use_thyra" = "Xyes"; then
-  HAVE_AMESOS_THYRA_TRUE=
-  HAVE_AMESOS_THYRA_FALSE='#'
-else
-  HAVE_AMESOS_THYRA_TRUE='#'
-  HAVE_AMESOS_THYRA_FALSE=
-fi
-
-
-
-
-
-
 # Check whether --enable-galeri was given.
 if test "${enable_galeri+set}" = set; then
   enableval=$enable_galeri; ac_cv_implicit_use_galeri=$enableval
@@ -9456,57 +9391,6 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 # Interfaces to other Trilinos packages
 # ------------------------------------------------------------------------
-
-
-
-# Check whether --enable-thyra was given.
-if test "${enable_thyra+set}" = set; then
-  enableval=$enable_thyra; ac_cv_implicit_use_thyra=$enableval
-else
-  ac_cv_implicit_use_thyra=no
-fi
-
-
-if test "Xyes" != "Xno"; then
-  ac_cv_amesos_using_thyra_default=$ac_cv_implicit_use_thyra
-else
-  ac_cv_amesos_using_thyra_default=no
-fi
-
-# Check whether --enable-amesos-thyra was given.
-if test "${enable_amesos_thyra+set}" = set; then
-  enableval=$enable_amesos_thyra; ac_cv_use_thyra=$enableval
-else
-  ac_cv_use_thyra=$ac_cv_amesos_using_thyra_default
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in amesos" >&5
-echo $ECHO_N "checking whether to build optional thyra dependent code in amesos... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_thyra" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_AMESOS_THYRA 1
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
- if test "X$ac_cv_use_thyra" = "Xyes"; then
-  ENABLE_AMESOS_THYRA_TRUE=
-  ENABLE_AMESOS_THYRA_FALSE='#'
-else
-  ENABLE_AMESOS_THYRA_TRUE='#'
-  ENABLE_AMESOS_THYRA_FALSE=
-fi
-
-
-
 
 # ------------------------------------------------------------------------
 # Checks for libraries
@@ -14522,7 +14406,7 @@ fi
 # ------------------------------------------------------------------------
 ##
 #
-ac_config_files="$ac_config_files Makefile Makefile.export.amesos src/Makefile example/Makefile test/Makefile test/Test_Basic/Makefile test/Test_Performance/Makefile test/Test_Epetra_RowMatrix/Makefile test/Test_Epetra_CrsMatrix/Makefile test/Test_MultipleSolves/Makefile test/Test_Detailed/Makefile test/Test_LAPACK/Makefile test/Test_KLU/Makefile test/Test_UMFPACK/Makefile test/Test_MUMPS/Makefile test/Test_SuperLU/Makefile test/Test_SuperLU_DIST/Makefile test/Test_DSCPACK/Makefile test/TestOptions/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.amesos src/Makefile example/Makefile test/Makefile test/Test_Basic/Makefile test/Test_Performance/Makefile test/Test_Epetra_RowMatrix/Makefile test/Test_Epetra_CrsMatrix/Makefile test/Test_MultipleSolves/Makefile test/Test_Detailed/Makefile test/Test_LAPACK/Makefile test/Test_KLU/Makefile test/Test_UMFPACK/Makefile test/Test_MUMPS/Makefile test/Test_SuperLU/Makefile test/Test_SuperLU_DIST/Makefile test/Test_DSCPACK/Makefile test/TestOptions/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -14754,24 +14638,10 @@ echo "$as_me: error: conditional \"HAVE_AMESOS_ML\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${HAVE_AMESOS_THYRA_TRUE}" && test -z "${HAVE_AMESOS_THYRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_THYRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_THYRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${HAVE_AMESOS_GALERI_TRUE}" && test -z "${HAVE_AMESOS_GALERI_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_GALERI\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_AMESOS_GALERI\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${ENABLE_AMESOS_THYRA_TRUE}" && test -z "${ENABLE_AMESOS_THYRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_AMESOS_THYRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ENABLE_AMESOS_THYRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -15549,10 +15419,6 @@ do
     "test/scripts/daily/serial/Makefile") CONFIG_FILES="$CONFIG_FILES test/scripts/daily/serial/Makefile" ;;
     "test/scripts/weekly/Makefile") CONFIG_FILES="$CONFIG_FILES test/scripts/weekly/Makefile" ;;
     "test/scripts/weekly/mpi/Makefile") CONFIG_FILES="$CONFIG_FILES test/scripts/weekly/mpi/Makefile" ;;
-    "thyra/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/Makefile" ;;
-    "thyra/src/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/src/Makefile" ;;
-    "thyra/example/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/example/Makefile" ;;
-    "thyra/test/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/test/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -15795,13 +15661,9 @@ HAVE_AMESOS_STRATIMIKOS_TRUE!$HAVE_AMESOS_STRATIMIKOS_TRUE$ac_delim
 HAVE_AMESOS_STRATIMIKOS_FALSE!$HAVE_AMESOS_STRATIMIKOS_FALSE$ac_delim
 HAVE_AMESOS_ML_TRUE!$HAVE_AMESOS_ML_TRUE$ac_delim
 HAVE_AMESOS_ML_FALSE!$HAVE_AMESOS_ML_FALSE$ac_delim
-HAVE_AMESOS_THYRA_TRUE!$HAVE_AMESOS_THYRA_TRUE$ac_delim
-HAVE_AMESOS_THYRA_FALSE!$HAVE_AMESOS_THYRA_FALSE$ac_delim
 HAVE_AMESOS_GALERI_TRUE!$HAVE_AMESOS_GALERI_TRUE$ac_delim
 HAVE_AMESOS_GALERI_FALSE!$HAVE_AMESOS_GALERI_FALSE$ac_delim
 FLIBS!$FLIBS$ac_delim
-ENABLE_AMESOS_THYRA_TRUE!$ENABLE_AMESOS_THYRA_TRUE$ac_delim
-ENABLE_AMESOS_THYRA_FALSE!$ENABLE_AMESOS_THYRA_FALSE$ac_delim
 BLAS_LIBS!$BLAS_LIBS$ac_delim
 LAPACK_LIBS!$LAPACK_LIBS$ac_delim
 tac_with_trilinosdatadir!$tac_with_trilinosdatadir$ac_delim
@@ -15843,7 +15705,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 88; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 84; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

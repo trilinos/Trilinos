@@ -13,7 +13,7 @@ Testing the constructed linear operator A ...
   *** Entering LinearOpTester<float,float>::check(op,...) ...
   
   describe op:
-    ExampleTridiagSpmdLinearOp<float>{rangeDim=500,domainDim=500}
+    ExampleTridiagSpmdLinearOp<float>
   
   Checking the domain and range spaces ... passed!
   
@@ -34,28 +34,28 @@ Solving the linear system with sillyCgSolve(...) ...
   Starting CG solver ...
   
   describe A:
-    ExampleTridiagSpmdLinearOp<float>{rangeDim=500,domainDim=500}
+    ExampleTridiagSpmdLinearOp<float>
   
   describe b:
-    DefaultSpmdVector<float>{dim=500}
+    Thyra::DefaultSpmdVector<float>{spmdSpace=Thyra::DefaultSpmdVectorSpace<float>{globalDim=500,localSubDim=500,localOffset=0,comm=Teuchos::SerialComm<int>}}
   
   describe x:
-    DefaultSpmdVector<float>{dim=500}
+    Thyra::DefaultSpmdVector<float>{spmdSpace=Thyra::DefaultSpmdVectorSpace<float>{globalDim=500,localSubDim=500,localOffset=0,comm=Teuchos::SerialComm<int>}}
   
   Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
-  Iter = 31, ||b-A*x||/||b-A*x0|| = 3.172030e-01
-  Iter = 62, ||b-A*x||/||b-A*x0|| = 4.875919e-02
-  Iter = 93, ||b-A*x||/||b-A*x0|| = 1.090162e-02
-  Iter = 124, ||b-A*x||/||b-A*x0|| = 2.477407e-03
-  Iter = 155, ||b-A*x||/||b-A*x0|| = 8.997934e-04
-  Iter = 186, ||b-A*x||/||b-A*x0|| = 1.621064e-04
-  Iter = 202, ||b-A*x||/||b-A*x0|| = 9.563797e-05
+  Iter = 31, ||b-A*x||/||b-A*x0|| = 3.172036e-01
+  Iter = 62, ||b-A*x||/||b-A*x0|| = 4.875921e-02
+  Iter = 93, ||b-A*x||/||b-A*x0|| = 1.090156e-02
+  Iter = 124, ||b-A*x||/||b-A*x0|| = 2.477392e-03
+  Iter = 155, ||b-A*x||/||b-A*x0|| = 8.997882e-04
+  Iter = 186, ||b-A*x||/||b-A*x0|| = 1.621065e-04
+  Iter = 202, ||b-A*x||/||b-A*x0|| = 9.563828e-05
 
 Checking the residual ourselves ...
   
-  ||b-A*x||/||b|| = 1.318619e-03/1.270762e+01 = 1.037660e-04 <= 10.0*tolerance = 9.999999e-04: passed
+  ||b-A*x||/||b|| = 1.328952e-03/1.270762e+01 = 1.045792e-04 <= 10.0*tolerance = 9.999999e-04: passed
 
-Total time = 7.228700e-02 sec
+Total time = 1.236370e-01 sec
 
 ***
 *** Running silly CG solver using scalar type = 'double' ...
@@ -70,7 +70,7 @@ Testing the constructed linear operator A ...
   *** Entering LinearOpTester<double,double>::check(op,...) ...
   
   describe op:
-    ExampleTridiagSpmdLinearOp<double>{rangeDim=500,domainDim=500}
+    ExampleTridiagSpmdLinearOp<double>
   
   Checking the domain and range spaces ... passed!
   
@@ -91,13 +91,13 @@ Solving the linear system with sillyCgSolve(...) ...
   Starting CG solver ...
   
   describe A:
-    ExampleTridiagSpmdLinearOp<double>{rangeDim=500,domainDim=500}
+    ExampleTridiagSpmdLinearOp<double>
   
   describe b:
-    DefaultSpmdVector<double>{dim=500}
+    Thyra::DefaultSpmdVector<double>{spmdSpace=Thyra::DefaultSpmdVectorSpace<double>{globalDim=500,localSubDim=500,localOffset=0,comm=Teuchos::SerialComm<int>}}
   
   describe x:
-    DefaultSpmdVector<double>{dim=500}
+    Thyra::DefaultSpmdVector<double>{spmdSpace=Thyra::DefaultSpmdVectorSpace<double>{globalDim=500,localSubDim=500,localOffset=0,comm=Teuchos::SerialComm<int>}}
   
   Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
   Iter = 31, ||b-A*x||/||b-A*x0|| = 3.172143e-01
@@ -112,7 +112,7 @@ Checking the residual ourselves ...
   
   ||b-A*x||/||b|| = 1.215596e-03/1.270762e+01 = 9.565884e-05 <= 10.0*tolerance = 1.000000e-03: passed
 
-Total time = 7.735100e-02 sec
+Total time = 6.299000e-02 sec
 
 ***
 *** Running silly CG solver using scalar type = 'std::complex<float>' ...
@@ -127,7 +127,7 @@ Testing the constructed linear operator A ...
   *** Entering LinearOpTester<std::complex<float>,std::complex<float>>::check(op,...) ...
   
   describe op:
-    ExampleTridiagSpmdLinearOp<std::complex<float>>{rangeDim=500,domainDim=500}
+    ExampleTridiagSpmdLinearOp<std::complex<float>>
   
   Checking the domain and range spaces ... passed!
   
@@ -148,28 +148,28 @@ Solving the linear system with sillyCgSolve(...) ...
   Starting CG solver ...
   
   describe A:
-    ExampleTridiagSpmdLinearOp<std::complex<float>>{rangeDim=500,domainDim=500}
+    ExampleTridiagSpmdLinearOp<std::complex<float>>
   
   describe b:
-    DefaultSpmdVector<std::complex<float>>{dim=500}
+    Thyra::DefaultSpmdVector<std::complex<float> >{spmdSpace=Thyra::DefaultSpmdVectorSpace<std::complex<float> >{globalDim=500,localSubDim=500,localOffset=0,comm=Teuchos::SerialComm<int>}}
   
   describe x:
-    DefaultSpmdVector<std::complex<float>>{dim=500}
+    Thyra::DefaultSpmdVector<std::complex<float> >{spmdSpace=Thyra::DefaultSpmdVectorSpace<std::complex<float> >{globalDim=500,localSubDim=500,localOffset=0,comm=Teuchos::SerialComm<int>}}
   
   Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
-  Iter = 31, ||b-A*x||/||b-A*x0|| = 3.578967e-01
-  Iter = 62, ||b-A*x||/||b-A*x0|| = 6.437086e-02
-  Iter = 93, ||b-A*x||/||b-A*x0|| = 1.508291e-02
-  Iter = 124, ||b-A*x||/||b-A*x0|| = 3.664470e-03
-  Iter = 155, ||b-A*x||/||b-A*x0|| = 9.545368e-04
-  Iter = 186, ||b-A*x||/||b-A*x0|| = 2.053413e-04
-  Iter = 202, ||b-A*x||/||b-A*x0|| = 9.788751e-05
+  Iter = 31, ||b-A*x||/||b-A*x0|| = 3.578966e-01
+  Iter = 62, ||b-A*x||/||b-A*x0|| = 6.437085e-02
+  Iter = 93, ||b-A*x||/||b-A*x0|| = 1.508294e-02
+  Iter = 124, ||b-A*x||/||b-A*x0|| = 3.664481e-03
+  Iter = 155, ||b-A*x||/||b-A*x0|| = 9.545431e-04
+  Iter = 186, ||b-A*x||/||b-A*x0|| = 2.053422e-04
+  Iter = 202, ||b-A*x||/||b-A*x0|| = 9.788808e-05
 
 Checking the residual ourselves ...
   
-  ||b-A*x||/||b|| = 1.914953e-03/1.818107e+01 = 1.053268e-04 <= 10.0*tolerance = 9.999999e-04: passed
+  ||b-A*x||/||b|| = 1.907002e-03/1.818107e+01 = 1.048894e-04 <= 10.0*tolerance = 9.999999e-04: passed
 
-Total time = 1.590560e-01 sec
+Total time = 2.018050e-01 sec
 
 ***
 *** Running silly CG solver using scalar type = 'std::complex<double>' ...
@@ -184,7 +184,7 @@ Testing the constructed linear operator A ...
   *** Entering LinearOpTester<std::complex<double>,std::complex<double>>::check(op,...) ...
   
   describe op:
-    ExampleTridiagSpmdLinearOp<std::complex<double>>{rangeDim=500,domainDim=500}
+    ExampleTridiagSpmdLinearOp<std::complex<double>>
   
   Checking the domain and range spaces ... passed!
   
@@ -205,13 +205,13 @@ Solving the linear system with sillyCgSolve(...) ...
   Starting CG solver ...
   
   describe A:
-    ExampleTridiagSpmdLinearOp<std::complex<double>>{rangeDim=500,domainDim=500}
+    ExampleTridiagSpmdLinearOp<std::complex<double>>
   
   describe b:
-    DefaultSpmdVector<std::complex<double>>{dim=500}
+    Thyra::DefaultSpmdVector<std::complex<double> >{spmdSpace=Thyra::DefaultSpmdVectorSpace<std::complex<double> >{globalDim=500,localSubDim=500,localOffset=0,comm=Teuchos::SerialComm<int>}}
   
   describe x:
-    DefaultSpmdVector<std::complex<double>>{dim=500}
+    Thyra::DefaultSpmdVector<std::complex<double> >{spmdSpace=Thyra::DefaultSpmdVectorSpace<std::complex<double> >{globalDim=500,localSubDim=500,localOffset=0,comm=Teuchos::SerialComm<int>}}
   
   Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
   Iter = 31, ||b-A*x||/||b-A*x0|| = 3.579080e-01
@@ -226,6 +226,6 @@ Checking the residual ourselves ...
   
   ||b-A*x||/||b|| = 1.780089e-03/1.818107e+01 = 9.790892e-05 <= 10.0*tolerance = 1.000000e-03: passed
 
-Total time = 1.790050e-01 sec
+Total time = 1.874210e-01 sec
 
 All of the tests seem to have run successfully!

@@ -67,6 +67,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
@@ -232,8 +233,7 @@ test_single_stratimikos_solver_driver_LDADD = $(common_ldadd)
 #
 # Common stuff
 #
-@ENABLE_STRATIMIKOS_ML_NOX_TRUE@@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@NOX_LIBS = $(top_builddir)/../nox/src/libnox.a
-common_dependencies = $(top_builddir)/src/libstratimikos.a $(NOX_LIBS)
+common_dependencies = $(top_builddir)/src/libstratimikos.a
 common_sources = $(srcdir)/test_single_stratimikos_solver.cpp
 AM_CPPFLAGS = -I$(top_srcdir)/../thyra/example/operator_solve $(STRATIMIKOS_INCLUDES)
 common_ldadd = $(STRATIMIKOS_LIBS)
@@ -528,9 +528,6 @@ FourByFour.xml:
 	cp  $(srcdir)/_FourByFour.belos.np.xml FourByFour.belos.np.xml
 	cp  $(srcdir)/_FourByFour.belos.ifpack.xml FourByFour.belos.ifpack.xml
 	cp  $(srcdir)/_FourByFour.belos.ml.xml FourByFour.belos.ml.xml
-
-@ENABLE_STRATIMIKOS_ML_NOX_TRUE@@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@$(top_builddir)/../nox/src/libnox.a:
-@ENABLE_STRATIMIKOS_ML_NOX_TRUE@@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@	cd $(top_builddir)/../nox; make all-libs
 
 include $(top_builddir)/Makefile.export.stratimikos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

@@ -140,9 +140,6 @@
 #undef HAVE_TPETRA_TESTS
 
 /* Define if want to build with tpetra enabled */
-#undef HAVE_TPETRA_THYRA
-
-/* Define if want to build with tpetra enabled */
 #undef HAVE_TRIUTILS
 
 /* Define to 1 if you have the <unistd.h> header file. */

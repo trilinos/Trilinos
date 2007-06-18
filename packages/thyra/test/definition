@@ -1,5 +1,7 @@
+
+
 #
-# FRAMEWORK group
+# Main Thyra tests
 #
 
 (FRAMEWORK, INSTALL) {
@@ -67,4 +69,105 @@
 (DOCUMENTATION) {
     TESTS = ../example/generate-sample-output.pl;
     COMM = SERIAL;
+}
+
+
+#
+# Tests for Epetra/Thyra adapters
+#
+
+(FRAMEWORK,INSTALL,EpetraThyra) {
+    TESTS = ../adapters/epetra/example/sillyCgSolve_epetra.exe,
+            ../adapters/epetra/example/sillyPowerMethod_epetra.exe;
+    ARGS = --verbose;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL,EpetraThyra) {
+    TESTS = ../adapters/epetra/test/test_epetra_adapters.exe;
+    ARGS = --verbose;
+    COMM = SERIAL, MPI;
+}
+
+(DOCUMENTATION) {
+    TESTS = ../adapters/epetra/example/generate-sample-output.pl;
+    COMM = SERIAL;
+}
+
+
+#
+# Tests for Tpetra/Thyra adapters
+#
+
+(FRAMEWORK,INSTALL,TpetraThyra) {
+    TESTS = ../adapters/tpetra/example/sillyPowerMethod_tpetra.exe;
+    ARGS = --verbose;
+    COMM = SERIAL, MPI;
+}
+
+
+#
+# Tests for EpetraExt/Thyra adapters
+#
+
+(FRAMEWORK, INSTALL, EpetraExtThyra) {
+  TESTS = ../adapters/epetraext/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
+  ARGS = --max-iters=6;
+  COMM = SERIAL;
+}
+
+(FRAMEWORK, INSTALL, EpetraExtThyra) {
+  TESTS = ../adapters/epetraext/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
+  ARGS = --external-lowsf --max-iters=6;
+  COMM = SERIAL;
+}
+
+(FRAMEWORK, INSTALL, EpetraExtThyra) {
+  TESTS = ../adapters/epetraext/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
+  ARGS = --tol=1e-12 --max-iters=7;
+  COMM = SERIAL;
+}
+
+(FRAMEWORK, INSTALL, EpetraExtThyra) {
+  TESTS = ../adapters/epetraext/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
+  ARGS = --x00=-100 --tol=1e-12 --max-iters=12;
+  COMM = SERIAL;
+}
+
+# In this example the Jacobian is singular at the solution
+(FRAMEWORK, INSTALL, EpetraExtThyra) {
+  TESTS = ../adapters/epetraext/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
+  ARGS = --d=1.0 --p0=0.75 --p1=0.75 --tol=1e-8 --max-iters=21;
+  COMM = SERIAL;
+}
+
+(FRAMEWORK, INSTALL, EpetraExtThyra) {
+  TESTS = ../adapters/epetraext/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
+  ARGS = --use-4D-opt --max-iters=6;
+  COMM = SERIAL;
+}
+
+(FRAMEWORK, INSTALL, EpetraExtThyra) {
+  TESTS = ../adapters/epetraext/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
+  ARGS = --use-4D-opt --tol=1e-12 --max-iters=7;
+  COMM = SERIAL;
+}
+
+(FRAMEWORK, INSTALL, EpetraExtThyra) {
+  TESTS = ../adapters/epetraext/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
+  ARGS = --use-4D-opt --x00=-100 --tol=1e-12 --max-iters=12;
+  COMM = SERIAL;
+}
+
+(FRAMEWORK, INSTALL, EpetraExtThyra) {
+  TESTS = ../adapters/epetraext/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
+  ARGS = --external-lowsf --use-4D-opt --x00=-100 --tol=1e-12 --max-iters=12;
+  COMM = SERIAL;
+}
+
+# In this example the Jacobian is singular at the solution
+(FRAMEWORK, INSTALL, EpetraExtThyra) {
+  TESTS = ../adapters/epetraext/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
+  ARGS = --use-4D-opt --d=1.0 --p0=0.75 --p1=0.75 --tol=1e-8 --max-iters=21;
+  COMM = SERIAL;
 }

@@ -42,21 +42,3 @@
     ARGS = 100;
     COMM = SERIAL;
 }
-
-(FRAMEWORK,INSTALL) {
-    TESTS = ../thyra/example/sillyCgSolve_epetra.exe,
-            ../thyra/example/sillyPowerMethod_epetra.exe;
-    ARGS = --verbose;
-    COMM = SERIAL, MPI;
-}
-
-(FRAMEWORK,INSTALL,Thyra) {
-    TESTS = ../thyra/test/test_epetra_adapters.exe;
-    ARGS = --verbose;
-    COMM = SERIAL, MPI;
-}
-
-(DOCUMENTATION) {
-    TESTS = ../thyra/example/generate-sample-output.pl;
-    COMM = SERIAL;
-}

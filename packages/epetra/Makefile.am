@@ -79,13 +79,7 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-if ENABLE_EPETRA_THYRA
-THYRA_SUBDIR=thyra
-else
-THYRA_SUBDIR=
-endif
-
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new
@@ -123,19 +117,11 @@ runtests-mpi :
 ## Export makefile stuff
 ## #######################################################################
 
-if ENABLE_EPETRA_THYRA
-BUILD_THYRA_SUBLIB=cd $(top_builddir)/thyra/src ; $(MAKE)
-else
-BUILD_THYRA_SUBLIB=
-endif
-
 all-libs:
-	cd $(top_builddir)/src ; $(MAKE) all-libs
-	$(BUILD_THYRA_SUBLIB)
+	cd $(top_builddir)/src ; $(MAKE)
 
 libs:
 	cd $(top_builddir)/src ; $(MAKE)
-	$(BUILD_THYRA_SUBLIB)
 
 if USING_EXPORT_MAKEFILES
 
@@ -145,9 +131,8 @@ install-exec-hook:
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.epetra \
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
-		--my-abs-incl-dirs=@abs_top_srcdir@/thyra/src:@abs_top_builddir@/src:@abs_top_srcdir@/src \
-		--my-abs-lib-dirs=@abs_top_builddir@/thyra/src:@abs_top_builddir@/src \
-		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra
+		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
+		--my-abs-lib-dirs=@abs_top_builddir@/src \
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRA > $(exec_prefix)/include/Makefile.export.epetra.macros
 
 uninstall-hook:

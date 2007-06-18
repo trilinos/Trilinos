@@ -736,8 +736,6 @@ USING_PERL_TRUE
 USING_PERL_FALSE
 USING_GNUMAKE_TRUE
 USING_GNUMAKE_FALSE
-ENABLE_TPETRA_THYRA_TRUE
-ENABLE_TPETRA_THYRA_FALSE
 BUILD_TESTS_TRUE
 BUILD_TESTS_FALSE
 BUILD_EXAMPLES_TRUE
@@ -1362,11 +1360,6 @@ Optional Features:
                           always created and used in the build directory, but
                           will not be installable without this option to
                           change the paths. (default is yes)
-  --enable-thyra          Build the Thyra operator/vector adapater support in
-                          Tpetra. Can be overridden with
-                          --disable-tpetra-thyra.
-  --enable-tpetra-thyra   Build the Thyra operator/vector adapater support in
-                          Tpetra.
   --enable-tests          Build tests for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
@@ -8218,57 +8211,6 @@ fi
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
-
-
-# Check whether --enable-thyra was given.
-if test "${enable_thyra+set}" = set; then
-  enableval=$enable_thyra; ac_cv_implicit_use_thyra=$enableval
-else
-  ac_cv_implicit_use_thyra=no
-fi
-
-
-if test "Xyes" != "Xno"; then
-  ac_cv_tpetra_using_thyra_default=$ac_cv_implicit_use_thyra
-else
-  ac_cv_tpetra_using_thyra_default=no
-fi
-
-# Check whether --enable-tpetra-thyra was given.
-if test "${enable_tpetra_thyra+set}" = set; then
-  enableval=$enable_tpetra_thyra; ac_cv_use_thyra=$enableval
-else
-  ac_cv_use_thyra=$ac_cv_tpetra_using_thyra_default
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in tpetra" >&5
-echo $ECHO_N "checking whether to build optional thyra dependent code in tpetra... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_thyra" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_TPETRA_THYRA 1
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
- if test "X$ac_cv_use_thyra" = "Xyes"; then
-  ENABLE_TPETRA_THYRA_TRUE=
-  ENABLE_TPETRA_THYRA_FALSE='#'
-else
-  ENABLE_TPETRA_THYRA_TRUE='#'
-  ENABLE_TPETRA_THYRA_FALSE=
-fi
-
-
-
-
 # ------------------------------------------------------------------------
 # Checks if tests should be built
 # ------------------------------------------------------------------------
@@ -11618,7 +11560,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile Makefile.export.tpetra src/Makefile example/Makefile example/verySimple/Makefile example/EpetraTpetraProfile/Makefile test/Makefile test/Platform/Makefile test/Comm/Makefile test/Distributor/Makefile test/ElementSpace/Makefile test/Directory/Makefile test/ImportExport/Makefile test/BlockElementSpace/Makefile test/VectorSpace/Makefile test/Vector/Makefile test/CisMatrix/Makefile test/DistObject/Makefile test/BasicPerfTest/Makefile thyra/Makefile thyra/example/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.tpetra src/Makefile example/Makefile example/verySimple/Makefile example/EpetraTpetraProfile/Makefile test/Makefile test/Platform/Makefile test/Comm/Makefile test/Distributor/Makefile test/ElementSpace/Makefile test/Directory/Makefile test/ImportExport/Makefile test/BlockElementSpace/Makefile test/VectorSpace/Makefile test/Vector/Makefile test/CisMatrix/Makefile test/DistObject/Makefile test/BasicPerfTest/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11784,13 +11726,6 @@ if test -z "${USING_GNUMAKE_TRUE}" && test -z "${USING_GNUMAKE_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"USING_GNUMAKE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"USING_GNUMAKE\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${ENABLE_TPETRA_THYRA_TRUE}" && test -z "${ENABLE_TPETRA_THYRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_TPETRA_THYRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ENABLE_TPETRA_THYRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -12317,8 +12252,6 @@ do
     "test/CisMatrix/Makefile") CONFIG_FILES="$CONFIG_FILES test/CisMatrix/Makefile" ;;
     "test/DistObject/Makefile") CONFIG_FILES="$CONFIG_FILES test/DistObject/Makefile" ;;
     "test/BasicPerfTest/Makefile") CONFIG_FILES="$CONFIG_FILES test/BasicPerfTest/Makefile" ;;
-    "thyra/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/Makefile" ;;
-    "thyra/example/Makefile") CONFIG_FILES="$CONFIG_FILES thyra/example/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -12543,8 +12476,6 @@ USING_PERL_TRUE!$USING_PERL_TRUE$ac_delim
 USING_PERL_FALSE!$USING_PERL_FALSE$ac_delim
 USING_GNUMAKE_TRUE!$USING_GNUMAKE_TRUE$ac_delim
 USING_GNUMAKE_FALSE!$USING_GNUMAKE_FALSE$ac_delim
-ENABLE_TPETRA_THYRA_TRUE!$ENABLE_TPETRA_THYRA_TRUE$ac_delim
-ENABLE_TPETRA_THYRA_FALSE!$ENABLE_TPETRA_THYRA_FALSE$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
 BUILD_TESTS_FALSE!$BUILD_TESTS_FALSE$ac_delim
 BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim
@@ -12563,7 +12494,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 42; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 40; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

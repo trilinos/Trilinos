@@ -5,13 +5,20 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-#ifdef HAVE_EPETRAEXT_THYRA
+// 2007/06/14: rabartl: The dependence on Thyra is non-optional right now
+// since I use it to perform a mat-vec that I could not figure out how to do
+// with just epetra.  If this becomes a problem then we have to change this
+// later!  Just grep for 'Thyra' outside of the ifdef for
+// HAVE_THYRA_EPETRAEXT.
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_VectorStdOps.hpp"
+
+#ifdef HAVE_THYRA_EPETRAEXT
 // For orthogonalization of the basis B_bar
 #include "sillyModifiedGramSchmidt.hpp" // This is just an example!
-#include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_SpmdVectorSpaceBase.hpp"
-#endif // HAVE_EPETRAEXT_THYRA
+#endif // HAVE_THYRA_EPETRAEXT
 
 //#define GLPAPP_ADVDIFFREACT_OPTMODEL_DUMP_STUFF
 
@@ -123,7 +130,7 @@ AdvDiffReactOptModel::AdvDiffReactOptModel(
         }
       }
       if(normalizeBasis) {
-#ifdef HAVE_EPETRAEXT_THYRA
+#ifdef HAVE_THYRA_EPETRAEXT
         //
         // Use modified Gram-Schmidt to create an orthonormal version of B_bar!
         //
@@ -137,7 +144,7 @@ AdvDiffReactOptModel::AdvDiffReactOptModel(
         sillyModifiedGramSchmidt(&*thyra_B_bar,&thyra_fact_R);
         Thyra::scale(double(numBndyNodes)/double(np_),&*thyra_B_bar); // Each row should sum to around one!
         // We just discard the "R" factory thyra_fact_R ...
-#else // HAVE_EPETRAEXT_THYRA
+#else // HAVE_THYRA_EPETRAEXT
         TEST_FOR_EXCEPTION(
           true,std::logic_error
           ,"Error, can not normalize basis since we do not have Thyra support enabled!"

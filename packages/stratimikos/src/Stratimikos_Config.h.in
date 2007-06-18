@@ -12,32 +12,32 @@
 /* define if we want to use MPI */
 #undef HAVE_MPI
 
-/* Define if want to build with amesos enabled */
-#undef HAVE_STRATIMIKOS_AMESOS_THYRA
+/* Define if want to build with stratimikos enabled */
+#undef HAVE_STRATIMIKOS_AMESOS
 
-/* Define if want to build with aztecoo enabled */
-#undef HAVE_STRATIMIKOS_AZTECOO_THYRA
+/* Define if want to build with stratimikos enabled */
+#undef HAVE_STRATIMIKOS_AZTECOO
 
 /* Define if want to build with belos enabled */
 #undef HAVE_STRATIMIKOS_BELOS_THYRA
 
-/* Define if want to build with epetraext enabled */
-#undef HAVE_STRATIMIKOS_EPETRAEXT_THYRA
-
 /* Define if want to build stratimikos-examples */
 #undef HAVE_STRATIMIKOS_EXAMPLES
 
-/* Define if want to build with ifpack enabled */
-#undef HAVE_STRATIMIKOS_IFPACK_THYRA
+/* Define if want to build with stratimikos enabled */
+#undef HAVE_STRATIMIKOS_IFPACK
+
+/* Define if want to build with stratimikos enabled */
+#undef HAVE_STRATIMIKOS_ML
 
 /* Define if want to build with ml enabled */
 #undef HAVE_STRATIMIKOS_ML_NOX
 
-/* Define if want to build with ml enabled */
-#undef HAVE_STRATIMIKOS_ML_THYRA
-
 /* Define if want to build stratimikos-tests */
 #undef HAVE_STRATIMIKOS_TESTS
+
+/* Define if want to build with thyra enabled */
+#undef HAVE_STRATIMIKOS_THYRA_EPETRAEXT
 
 /* Define if want to build tests */
 #undef HAVE_TESTS
