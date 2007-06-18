@@ -1628,16 +1628,16 @@ void ML_convert2vbr(ML_Operator *in_matrix)
    accum_val = (double *) ML_allocate(A_i_allocated * sizeof(double));
 
 
-   if(in_matrix->N_nonzeros <= 0) /*We don't have a good estimate so lets get one*/
-   {
-     for(i=0; i<in_matrix->invec_leng;i++)
-     {  
-       in_matrix->getrow->func_ptr(in_matrix, 1, &(j), A_i_allocated, A_i_cols, accum_val, &row_length);
-       nnz += row_length;
-     }
+/*   if(in_matrix->N_nonzeros <= 0)*/ 
+   /*We don't have a good estimate so lets get one this code is used since 
+     N_nonzeros even when set is not always correct*/
+   for(i=0; i<in_matrix->invec_leng;i++)
+   {  
+     in_matrix->getrow->func_ptr(in_matrix, 1, &(j), A_i_allocated, A_i_cols, accum_val, &row_length);
+     nnz += row_length;
    }
-   else /*lets use our good estimate we already have*/
-     nnz = in_matrix->N_nonzeros;
+   /*else lets use our good estimate we already have
+     nnz = in_matrix->N_nonzeros;*/
 
 
    /*10 is a complete guess.  One would hope the matrix resulting block matrix was more dense than this but there is no gareentee*/
