@@ -66,7 +66,7 @@ RUN (beowulf-nightly-tarball-create) {
 RUN (beowulf-nightly-tarball-test) {
     
     BUILD-LABEL         = tarball-test;
-    BUILD-DIR           = TARBALL_TEST;
+    BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = linux-beowulf-mpi;
     TEST-CATEGORY       = FRAMEWORK;
