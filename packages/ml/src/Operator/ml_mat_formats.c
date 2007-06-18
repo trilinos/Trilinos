@@ -149,6 +149,87 @@ void ML_Scale_CSR(ML_Operator *input_matrix, double scale_factors[],
 }
 
 /*********************************************************************/
+/* Get some block matrix rows(requested_rows[0...N_requested_rows-1])*/
+/* from the user's matrix and return this information  in            */
+/* 'row_lengths, columns, block_size, values'.                       */
+/* If there is not enough space to complete this operation, return 0.*/
+/* Otherwise, return 1.                                              */
+/*                                                                   */
+/* Parameters                                                        */
+/* ==========                                                        */
+/* data             On input, points to user's data containing       */
+/*                  matrix values.                                   */
+/* N_requested_rows On input, number of rows for which nonzero blocks*/
+/*                  are to be returned.                              */
+/* requested_rows   On input, requested_rows[0...N_requested_rows-1] */
+/*                  give the row indices of the blocks rows for which*/
+/*                  nonzero values are returned.                     */
+/* row_lengths      On output, row_lengths[i] is the number of       */
+/*                  elements in the nonzero blocks in the row        */
+/*                  'requested_rows[i]'                              */
+/*                  ( 0 <= i < N_requested_rows). NOTE: this         */
+/*                  array is of size 'N_requested_rows'.             */
+/* columns,blocksize,values                                          */
+/*                  On output, columns[k] is the number of c  and values[k] contains the */
+/*                  column number and value of a matrix nonzero where*/
+/*                  all the nonzeros for requested_rows[0] appear    */
+/*                  first followed by the nonzeros for               */
+/*                  requested_rows[1], etc. NOTE: these arrays are   */
+/*                  of size 'allocated_space'.                       */
+/*                  Blocksize[k] contains the number of elements in  */
+/*                  each non-zero block                              */
+/* allocated_space  On input, indicates the space available in       */
+/*                  'columns' and 'values' for storing nonzeros. If  */
+/*                  more space is needed, return 0.                  */
+/*********************************************************************/
+
+
+/*need some checking on the allocated space for bindx and indx this function will only get a single blockrow*/
+int VBR_block_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
+   int allocated_space, int *blocks, int bindx[], int indx[], double values[], int row_lengths[])
+{
+   struct ML_vbrdata *input_matrix;
+   int  i, array_place, row_length, offset;
+   int *cpntr, *bindx_old, *rpntr, *indx_old, *bpntr, start, finish;
+   double *val;
+                                                                                                                
+                                                                                                                
+   /*set alliases*/
+   input_matrix = (struct ML_vbrdata *) ML_Get_MyGetrowData(data);
+   rpntr  = input_matrix->rpntr;
+   cpntr  = input_matrix->cpntr;
+   bpntr  = input_matrix->bpntr;
+   indx_old = input_matrix->indx;
+                                                                                                          
+   /*Make sure we have enough space to store the block row*/
+   start = indx_old[bpntr[*requested_rows]];
+   finish = indx_old[bpntr[*requested_rows+1]]; 
+   *row_lengths = finish - start;
+   if (*row_lengths > allocated_space) {
+     ML_avoid_unused_param( (void *) &N_requested_rows);
+     return(0);
+   }
+   
+   *blocks = bpntr[*requested_rows+1] - bpntr[*requested_rows];
+   *indx++ = 0;
+   bindx_old = &(input_matrix->bindx[bpntr[*requested_rows]]); 
+   indx_old = &(input_matrix->indx[bpntr[*requested_rows]]);
+   for(i = 0; i < bpntr[1]; i++)
+   {
+     *bindx++ = *bindx_old++;
+     *indx++ =  indx[i-1] - *indx_old++ + *indx_old;
+   }
+                                                                                                                
+   /*iterate over the data and copy it*/
+   val = &(input_matrix->val[start]);
+   for(i = start; i < finish; i++)
+   {
+     *values++ = *val++;
+   }
+   return(1);
+}
+
+/*********************************************************************/
 /* Get some matrix rows ( requested_rows[0 ... N_requested_rows-1] ) */
 /* from the user's matrix and return this information  in            */
 /* 'row_lengths, columns, values'.                                   */
@@ -260,7 +341,7 @@ int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    struct ML_vbrdata *input_matrix;
-   int  i, j, array_place, row_length, offset, point_rows, iminus1;
+   int  i, j, array_place, offset, point_rows, iminus1;
    int *cpntr, *bindx, *rpntr, *indx, *bpntr, startblock, endblock;
    double *val, cur_val;
   
@@ -283,7 +364,7 @@ int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    /*this is a bit of an overestimate but better safe than sorry.
      If there were a way to figure out how many zeros there were
      we could subtract this out.*/
-   if (indx[i] - indx[iminus1] > allocated_space) {
+   if ((indx[i] - indx[iminus1])/point_rows > allocated_space) {
      ML_avoid_unused_param( (void *) &N_requested_rows);
      return(0);
    }
@@ -336,6 +417,9 @@ int CSR_getrows(void *data, int N_requested_rows, int requested_rows[],
     ML_avoid_unused_param( (void *) &N_requested_rows);
     return(0);
   }
+
+   /*IKopthere*/
+   /*The two below loops should be able to be merged*/
 
    bindx  = &(input_matrix->columns[itemp]);
    for (j = 0 ; j < *row_lengths; j++) {
