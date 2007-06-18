@@ -232,7 +232,7 @@ FAD_UNARYOP_MACRO(asinh,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(atanh,
 		  ATanhOp, 
-		  a = sqrt(value_type(1)-v*v),
+		  a = value_type(1)-v*v,
 		  atanh(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
@@ -240,14 +240,14 @@ FAD_UNARYOP_MACRO(abs,
 		  AbsOp, 
 		  ;,
 		  abs(v),
-		  v >= 0 ? expr.dx(i) : -expr.dx(i),
-		  v >= 0 ? expr.fastAccessDx(i) : -expr.fastAccessDx(i))
+		  v >= 0 ? +expr.dx(i) : -expr.dx(i),
+		  v >= 0 ? +expr.fastAccessDx(i) : -expr.fastAccessDx(i))
 FAD_UNARYOP_MACRO(fabs,
 		  FAbsOp, 
 		  ;,
 		  fabs(v),
-		  v >= 0 ? expr.dx(i) : -expr.dx(i),
-		  v >= 0 ? expr.fastAccessDx(i) : -expr.fastAccessDx(i))
+		  v >= 0 ? +expr.dx(i) : -expr.dx(i),
+		  v >= 0 ? +expr.fastAccessDx(i) : -expr.fastAccessDx(i))
 
 #undef FAD_UNARYOP_MACRO
 
