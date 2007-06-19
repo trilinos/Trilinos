@@ -375,12 +375,23 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   //! Signal that data entry is complete.  Perform transformations to local index space.
   /* This version of FillComplete assumes that the domain and range
      distributions are identical to the matrix row distributions.
+    \param OptimizeDataStorage - (In) If true, storage will be packed for optimal performance.  Depending
+           on how the matrix was constructed, optimizing the storage may have no impact on performance
+	   or one-time memory use, or may have a large impact.  If the user was careful in allocating memory
+	   for the matrix by setting StaticProfile to true in the matrix constructor, then no extra storage
+	   will be allocated in attempting to optimize storage.  If the user did not set StaticProfile to true,
+	   then optimizing the storage will temporarily use additional memory, will have a noticeable impact
+	   on performance and ultimately reduce the storage associated with the matrix.
+
+	   By default storage will be optimized.  If you cannot tolerate the increased temporary memory use,
+	   should set this value to false.
+
      \return error code, 0 if successful. Returns a positive warning code of 3
         if the matrix is rectangular (meaning that the other overloading of
         FillComplete should have been called, with differen domain-map and
         range-map specified).
   */
-  int FillComplete();
+  int FillComplete(bool OptimizeDataStorage = true);
 
   //! Signal that data entry is complete.  Perform transformations to local index space.
   /* This version of FillComplete requires the explicit specification of the domain
@@ -393,13 +404,24 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param RangeMap - (In) Map that describes the distribution of vector and multi-vectors in the
 		matrix range.
 
+    \param OptimizeDataStorage - (In) If true, storage will be packed for optimal performance.  Depending
+           on how the matrix was constructed, optimizing the storage may have no impact on performance
+	   or one-time memory use, or may have a large impact.  If the user was careful in allocating memory
+	   for the matrix by setting StaticProfile to true in the matrix constructor, then no extra storage
+	   will be allocated in attempting to optimize storage.  If the user did not set StaticProfile to true,
+	   then optimizing the storage will temporarily use additional memory, will have a noticeable impact
+	   on performance and ultimately reduce the storage associated with the matrix.
+
+	   By default storage will be optimized.  If you cannot tolerate the increased temporary memory use,
+	   should set this value to false.
+
     \return error code, 0 if successful. positive warning code of 2 if it is detected that the
     matrix-graph got out of sync since this matrix was constructed (for instance if
     graph.FillComplete() was called by another matrix that shares the graph)
 
     \post IndicesAreLocal()==true
     */
-  int FillComplete(const Epetra_Map& DomainMap, const Epetra_Map& RangeMap);
+  int FillComplete(const Epetra_Map& DomainMap, const Epetra_Map& RangeMap, bool OptimizeDataStorage = true);
     
   //! Make consecutive row index sections contiguous, minimize internal storage used for constructing graph.
   /*! After construction and during initialization (when values are being added), the matrix coefficients 

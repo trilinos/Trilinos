@@ -601,7 +601,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   delete [] values;
   double insertTime = timer.ElapsedTime();
   timer.ResetStartTime();
-  A->FillComplete();
+  A->FillComplete(false);
   double fillCompleteTime = timer.ElapsedTime();
 
   if (verbose)

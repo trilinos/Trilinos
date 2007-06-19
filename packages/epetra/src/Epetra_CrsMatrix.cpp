@@ -773,15 +773,15 @@ int Epetra_CrsMatrix::SumIntoOffsetValues(int Row, int NumEntries, double * srcV
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::FillComplete() {
+int Epetra_CrsMatrix::FillComplete(bool OptimizeDataStorage) {
   squareFillCompleteCalled_ = true;
-  EPETRA_CHK_ERR(FillComplete(RowMap(), RowMap()));
+  EPETRA_CHK_ERR(FillComplete(RowMap(), RowMap(), OptimizeDataStorage));
   return(0);
 }
 
 //==========================================================================
 int Epetra_CrsMatrix::FillComplete(const Epetra_Map& domain_map,
-				   const Epetra_Map& range_map)
+				   const Epetra_Map& range_map, bool OptimizeDataStorage)
 {
   int returnValue = 0;
 
@@ -813,6 +813,8 @@ int Epetra_CrsMatrix::FillComplete(const Epetra_Map& domain_map,
     squareFillCompleteCalled_ = false;
     EPETRA_CHK_ERR(returnValue);
   }
+
+  if (OptimizeDataStorage) (EPETRA_CHK_ERR(OptimizeStorage()));
 
   return(returnValue);
 }
