@@ -28,6 +28,11 @@
 
 EXEEXT = .exe
 
+all-local: make-links
+	@echo ""
+	@echo "rythmos/example/basicExample built successfully."
+	@echo ""
+
 #
 # Actual programs
 #
@@ -45,6 +50,65 @@ basicExample_DEPENDENCIES = $(common_dependencies)
 basicExample_LDADD = $(common_ldadd)
 
 EXTRA_DIST = $(srcdir)/ExampleApplication.hpp
+
+#
+# Links
+#
+
+if ENABLE_RYTHMOS_STRATIMIKOS_AMESOS
+LINK_DIAGONAL_AMESOS=basicExample_amesos.exe
+endif
+
+if ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO
+LINK_DIAGONAL_AZTECOO=basicExample_aztecoo.exe
+if ENABLE_RYTHMOS_STRATIMIKOS_IFPACK
+LINK_DIAGONAL_AZTECOO_IFPACK=basicExample_aztecoo_ifpack.exe
+endif
+if ENABLE_RYTHMOS_STRATIMIKOS_ML
+LINK_DIAGONAL_AZTECOO_ML=basicExample_aztecoo_ml.exe
+endif
+endif
+
+if ENABLE_RYTHMOS_STRATIMIKOS_BELOS
+LINK_DIAGONAL_BELOS=basicExample_belos.exe
+if ENABLE_RYTHMOS_STRATIMIKOS_IFPACK
+LINK_DIAGONAL_BELOS_IFPACK=basicExample_belos_ifpack.exe
+endif
+if ENABLE_RYTHMOS_STRATIMIKOS_ML
+LINK_DIAGONAL_BELOS_ML=basicExample_belos_ml.exe
+endif
+endif
+
+basicExample_amesos.exe:
+	ln -s ./basicExample.exe basicExample_amesos.exe
+
+basicExample_aztecoo.exe:
+	ln -s ./basicExample.exe basicExample_aztecoo.exe
+
+basicExample_aztecoo_ifpack.exe:
+	ln -s ./basicExample.exe basicExample_aztecoo_ifpack.exe
+
+basicExample_aztecoo_ml.exe:
+	ln -s ./basicExample.exe basicExample_aztecoo_ml.exe
+
+basicExample_belos.exe:
+	ln -s ./basicExample.exe basicExample_belos.exe
+
+basicExample_belos_ifpack.exe:
+	ln -s ./basicExample.exe basicExample_belos_ifpack.exe
+
+basicExample_belos_ml.exe:
+	ln -s ./basicExample.exe basicExample_belos_ml.exe
+
+make-links: \
+  $(LINK_DIAGONAL_AMESOS) \
+  $(LINK_DIAGONAL_AZTECOO) \
+  $(LINK_DIAGONAL_AZTECOO_IFPACK) \
+  $(LINK_DIAGONAL_AZTECOO_ML) \
+  $(LINK_DIAGONAL_BELOS) \
+  $(LINK_DIAGONAL_BELOS_IFPACK) \
+  $(LINK_DIAGONAL_BELOS_ML)
+
 
 #
 # Common stuff

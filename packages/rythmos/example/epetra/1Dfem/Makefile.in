@@ -271,6 +271,17 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
                               $(top_builddir)/src/librythmos.a
 
 1DfemTransient_LDADD = $(EXPORT_LIBS)
+
+#
+# Links
+#
+@ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_TRUE@LINK_DIAGONAL_AMESOS = 1DfemTransient_amesos.exe
+@ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE@LINK_DIAGONAL_AZTECOO = 1DfemTransient_aztecoo.exe
+@ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE@LINK_DIAGONAL_AZTECOO_IFPACK = 1DfemTransient_aztecoo_ifpack.exe
+@ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE@LINK_DIAGONAL_AZTECOO_ML = 1DfemTransient_aztecoo_ml.exe
+@ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@LINK_DIAGONAL_BELOS = 1DfemTransient_belos.exe
+@ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE@LINK_DIAGONAL_BELOS_IFPACK = 1DfemTransient_belos_ifpack.exe
+@ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE@LINK_DIAGONAL_BELOS_ML = 1DfemTransient_belos_ml.exe
 all: all-am
 
 .SUFFIXES:
@@ -481,7 +492,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(PROGRAMS) all-local
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -566,15 +577,15 @@ uninstall-am:
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
+	clean-generic clean-noinstPROGRAMS ctags distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am
@@ -582,6 +593,41 @@ uninstall-am:
 
 include $(top_builddir)/Makefile.export.rythmos
 include $(top_builddir)/../nox/Makefile.export.nox
+
+all-local: make-links
+	@echo ""
+	@echo "rythmos/example/epetra/1Dfem/1DfemTransient built successfully."
+	@echo ""
+
+1DfemTransient_amesos.exe:
+	ln -s ./1DfemTransient.exe 1DfemTransient_amesos.exe
+
+1DfemTransient_aztecoo.exe:
+	ln -s ./1DfemTransient.exe 1DfemTransient_aztecoo.exe
+
+1DfemTransient_aztecoo_ifpack.exe:
+	ln -s ./1DfemTransient.exe 1DfemTransient_aztecoo_ifpack.exe
+
+1DfemTransient_aztecoo_ml.exe:
+	ln -s ./1DfemTransient.exe 1DfemTransient_aztecoo_ml.exe
+
+1DfemTransient_belos.exe:
+	ln -s ./1DfemTransient.exe 1DfemTransient_belos.exe
+
+1DfemTransient_belos_ifpack.exe:
+	ln -s ./1DfemTransient.exe 1DfemTransient_belos_ifpack.exe
+
+1DfemTransient_belos_ml.exe:
+	ln -s ./1DfemTransient.exe 1DfemTransient_belos_ml.exe
+
+make-links: \
+  $(LINK_DIAGONAL_AMESOS) \
+  $(LINK_DIAGONAL_AZTECOO) \
+  $(LINK_DIAGONAL_AZTECOO_IFPACK) \
+  $(LINK_DIAGONAL_AZTECOO_ML) \
+  $(LINK_DIAGONAL_BELOS) \
+  $(LINK_DIAGONAL_BELOS_IFPACK) \
+  $(LINK_DIAGONAL_BELOS_ML)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

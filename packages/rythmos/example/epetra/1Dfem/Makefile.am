@@ -26,6 +26,7 @@
 # ***********************************************************************
 #@HEADER
 
+
 #
 # Common stuff
 #
@@ -49,6 +50,10 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 EXEEXT = .exe
 
+all-local: make-links
+	@echo ""
+	@echo "rythmos/example/epetra/1Dfem/1DfemTransient built successfully."
+	@echo ""
 
 #
 # Actual programs
@@ -70,5 +75,64 @@ noinst_PROGRAMS = 1DfemTransient
                               $(top_builddir)/src/librythmos.a
 
 1DfemTransient_LDADD = $(EXPORT_LIBS)
+
+
+#
+# Links
+#
+
+if ENABLE_RYTHMOS_STRATIMIKOS_AMESOS
+LINK_DIAGONAL_AMESOS=1DfemTransient_amesos.exe
+endif
+
+if ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO
+LINK_DIAGONAL_AZTECOO=1DfemTransient_aztecoo.exe
+if ENABLE_RYTHMOS_STRATIMIKOS_IFPACK
+LINK_DIAGONAL_AZTECOO_IFPACK=1DfemTransient_aztecoo_ifpack.exe
+endif
+if ENABLE_RYTHMOS_STRATIMIKOS_ML
+LINK_DIAGONAL_AZTECOO_ML=1DfemTransient_aztecoo_ml.exe
+endif
+endif
+
+if ENABLE_RYTHMOS_STRATIMIKOS_BELOS
+LINK_DIAGONAL_BELOS=1DfemTransient_belos.exe
+if ENABLE_RYTHMOS_STRATIMIKOS_IFPACK
+LINK_DIAGONAL_BELOS_IFPACK=1DfemTransient_belos_ifpack.exe
+endif
+if ENABLE_RYTHMOS_STRATIMIKOS_ML
+LINK_DIAGONAL_BELOS_ML=1DfemTransient_belos_ml.exe
+endif
+endif
+
+1DfemTransient_amesos.exe:
+	ln -s ./1DfemTransient.exe 1DfemTransient_amesos.exe
+
+1DfemTransient_aztecoo.exe:
+	ln -s ./1DfemTransient.exe 1DfemTransient_aztecoo.exe
+
+1DfemTransient_aztecoo_ifpack.exe:
+	ln -s ./1DfemTransient.exe 1DfemTransient_aztecoo_ifpack.exe
+
+1DfemTransient_aztecoo_ml.exe:
+	ln -s ./1DfemTransient.exe 1DfemTransient_aztecoo_ml.exe
+
+1DfemTransient_belos.exe:
+	ln -s ./1DfemTransient.exe 1DfemTransient_belos.exe
+
+1DfemTransient_belos_ifpack.exe:
+	ln -s ./1DfemTransient.exe 1DfemTransient_belos_ifpack.exe
+
+1DfemTransient_belos_ml.exe:
+	ln -s ./1DfemTransient.exe 1DfemTransient_belos_ml.exe
+
+make-links: \
+  $(LINK_DIAGONAL_AMESOS) \
+  $(LINK_DIAGONAL_AZTECOO) \
+  $(LINK_DIAGONAL_AZTECOO_IFPACK) \
+  $(LINK_DIAGONAL_AZTECOO_ML) \
+  $(LINK_DIAGONAL_BELOS) \
+  $(LINK_DIAGONAL_BELOS_IFPACK) \
+  $(LINK_DIAGONAL_BELOS_ML)
 
 
