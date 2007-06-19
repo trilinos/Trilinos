@@ -149,9 +149,9 @@ void ML_Scale_CSR(ML_Operator *input_matrix, double scale_factors[],
 }
 
 /*********************************************************************/
-/* Get some block matrix rows(requested_rows[0...N_requested_rows-1])*/
+/* Get one block matrix row(requested_row)                           */
 /* from the user's matrix and return this information  in            */
-/* 'row_lengths, columns, block_size, values'.                       */
+/* 'blocks, bindx, indx, values, row_length'.                        */
 /* If there is not enough space to complete this operation, return 0.*/
 /* Otherwise, return 1.                                              */
 /*                                                                   */
@@ -159,16 +159,12 @@ void ML_Scale_CSR(ML_Operator *input_matrix, double scale_factors[],
 /* ==========                                                        */
 /* data             On input, points to user's data containing       */
 /*                  matrix values.                                   */
-/* N_requested_rows On input, number of rows for which nonzero blocks*/
-/*                  are to be returned.                              */
-/* requested_rows   On input, requested_rows[0...N_requested_rows-1] */
-/*                  give the row indices of the blocks rows for which*/
-/*                  nonzero values are returned.                     */
-/* row_lengths      On output, row_lengths[i] is the number of       */
+/* requested_row    On input, requested_row                          */
+/*                  gives the row indice of the block row for which  */
+/*                  nonzero blocks are returned.                     */
+/* row_length       On output, row_length is the number of           */
 /*                  elements in the nonzero blocks in the row        */
-/*                  'requested_rows[i]'                              */
-/*                  ( 0 <= i < N_requested_rows). NOTE: this         */
-/*                  array is of size 'N_requested_rows'.             */
+/*                  'requested_row'                                  */
 /* columns,blocksize,values                                          */
 /*                  On output, columns[k] is the number of c  and values[k] contains the */
 /*                  column number and value of a matrix nonzero where*/
@@ -178,46 +174,60 @@ void ML_Scale_CSR(ML_Operator *input_matrix, double scale_factors[],
 /*                  of size 'allocated_space'.                       */
 /*                  Blocksize[k] contains the number of elements in  */
 /*                  each non-zero block                              */
-/* allocated_space  On input, indicates the space available in       */
-/*                  'columns' and 'values' for storing nonzeros. If  */
-/*                  more space is needed, return 0.                  */
+/* bindx_space, indx_space, values_space                             */
+/*                  On input, indicates the space available in       */
+/*                  'bindx', 'indx' and 'values' for storing         */
+/*                  nonzeros.  If more space is needed, return 0.    */
 /*********************************************************************/
 
-
-/*need some checking on the allocated space for bindx and indx this function will only get a single blockrow*/
-int VBR_block_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
-   int allocated_space, int *blocks, int bindx[], int indx[], double values[], int row_lengths[])
+int VBR_block_getrow(ML_Operator *data, int requested_row,
+   int bindx_space, int indx_space, int values_space, int *blocks, int bindx[],
+   int indx[], double values[], int *row_length)
 {
    struct ML_vbrdata *input_matrix;
-   int  i, array_place, row_length, offset;
-   int *cpntr, *bindx_old, *rpntr, *indx_old, *bpntr, start, finish;
+   int  i, bpntr_rows, bpntr_rows_1;
+   int *bindx_old, *indx_old, *bpntr, start, finish;
    double *val;
                                                                                                                 
                                                                                                                 
    /*set alliases*/
    input_matrix = (struct ML_vbrdata *) ML_Get_MyGetrowData(data);
-   rpntr  = input_matrix->rpntr;
-   cpntr  = input_matrix->cpntr;
    bpntr  = input_matrix->bpntr;
    indx_old = input_matrix->indx;
-                                                                                                          
-   /*Make sure we have enough space to store the block row*/
-   start = indx_old[bpntr[*requested_rows]];
-   finish = indx_old[bpntr[*requested_rows+1]]; 
-   *row_lengths = finish - start;
-   if (*row_lengths > allocated_space) {
-     ML_avoid_unused_param( (void *) &N_requested_rows);
+
+   /*store frquently used data for faster access*/
+   bpntr_rows = bpntr[requested_row];
+   bpntr_rows_1 = bpntr[requested_row+1];
+   start = indx_old[bpntr_rows];
+   finish = indx_old[bpntr_rows_1];
+
+   /*calculate block row information*/
+   *row_length = finish - start;
+   *blocks = bpntr_rows_1 - bpntr_rows;   
+   
+   /*Make sure we have enough space to store the block row variables*/
+   if(*blocks > bindx_space){
+     ML_avoid_unused_param( (void *) &blocks);
+     return(0);
+   }
+   if(*blocks >= indx_space){
+     ML_avoid_unused_param( (void *) &blocks);
+     return(0);
+   }
+   if (*row_length > values_space) {
+     ML_avoid_unused_param( (void *) &blocks);
      return(0);
    }
    
-   *blocks = bpntr[*requested_rows+1] - bpntr[*requested_rows];
+   /*iterate over the blocking data and store it*/
    *indx++ = 0;
-   bindx_old = &(input_matrix->bindx[bpntr[*requested_rows]]); 
-   indx_old = &(input_matrix->indx[bpntr[*requested_rows]]);
-   for(i = 0; i < bpntr[1]; i++)
+   bindx_old = &(input_matrix->bindx[bpntr_rows]); 
+   indx_old = &(input_matrix->indx[bpntr_rows]);
+   for(i = 0; i < *blocks; i++)
    {
      *bindx++ = *bindx_old++;
-     *indx++ =  indx[i-1] - *indx_old++ + *indx_old;
+     *indx = indx[-1] - *indx_old++;
+     *indx++ += *indx_old;
    }
                                                                                                                 
    /*iterate over the data and copy it*/
