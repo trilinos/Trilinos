@@ -286,7 +286,7 @@ Iterative_Inverse_Operator::Iterative_Inverse_Operator(int n, int blocksize,
   pList->set( "Convergence Tolerance", tol ); 
   pList->set( "Verbosity", verbosity );
 
-  pBelos = Teuchos::rcp( new BlockGmresSolMgr<double,MV,OP>(pProb, *pList) );
+  pBelos = Teuchos::rcp( new BlockGmresSolMgr<double,MV,OP>(pProb, pList) );
 }
 
 void Iterative_Inverse_Operator::operator () (const Epetra_MultiVector &b, Epetra_MultiVector &x)

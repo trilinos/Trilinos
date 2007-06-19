@@ -44,7 +44,7 @@
 #include "BelosOutputManager.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
-//#include "BelosBlockCG.hpp"
+#include "BelosBlockCGSolMgr.hpp"
 
 #include "Teuchos_ParameterList.hpp"
 using Teuchos::RefCountPtr;

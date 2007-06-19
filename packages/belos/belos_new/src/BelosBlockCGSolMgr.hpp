@@ -149,7 +149,7 @@ namespace Belos {
     
     void setProblem( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; }
     
-    void setParameters( Teuchos::ParameterList &list ) {}
+    void setParameters( const Teuchos::RefCountPtr<Teuchos::ParameterList> &params ) {}
     
     //@}
     

@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
   
   // Create an iterative solver manager.
   RefCountPtr< Belos::SolverManager<double,MV,OP> > solver
-    = rcp( new Belos::BlockGmresSolMgr<double,MV,OP>(problem, belosList) );
+    = rcp( new Belos::BlockGmresSolMgr<double,MV,OP>(problem, rcp(&belosList,false)));
   
   //
   // *******************************************************************

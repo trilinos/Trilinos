@@ -140,23 +140,16 @@ int main(int argc, char *argv[]) {
   else 
     solver = Teuchos::rcp( new Belos::BlockGmresSolMgr<double,MV,OP>( rcp(&problem,false), rcp(&belosList,false) ) );
   //
-  // **********Print out information about problem*******************
-  //
-  if (proc_verbose) {
-    cout << endl << endl;
-    cout << "Dimension of matrix: " << NumGlobalElements << endl;
-    cout << "Number of right-hand sides: " << numrhs << endl;
-    cout << "Block size used by solver: " << blocksize << endl;
-    cout << "Number of restarts allowed: " << maxrestarts << endl;
-    cout << "Max number of Gmres iterations per restart cycle: " << maxiters << endl; 
-    cout << "Relative residual tolerance: " << tol << endl;
-    cout << endl;
-  }
-  //
   // Perform solve
   //
   Belos::ReturnType ret = solver->solve();
 
+  if (ret!=Belos::Converged) {
+    if (proc_verbose)
+      cout << "End Result: TEST FAILED" << endl;	
+    return -1;
+  }
+  //
   //
   // Compute actual residuals.
   //
@@ -173,8 +166,75 @@ int main(int argc, char *argv[]) {
       cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
     }
   }
+  //
+  //
+  // Construct a second unpreconditioned linear problem instance.
+  //
+  RefCountPtr<Epetra_MultiVector> X2 = MVT::Clone(*X, numrhs); 
+  MVT::MvInit( *X2, 0.0 );
+  Belos::LinearProblem<double,MV,OP> problem2( A, X2, B );
+  problem2.setLabel("Belos Resolve");
+  set = problem2.setProblem();
+  if (set == false) {
+    if (proc_verbose)
+      cout << endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << endl;
+    return -1;
+  }
+  //
+  // *******************************************************************
+  // *************Start the block Gmres iteration*************************
+  // *******************************************************************
+  //
+  // Create the solver without either the problem or parameter list.
+  if (pseudo)
+    solver = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>() );
+  else
+    solver = Teuchos::rcp( new Belos::BlockGmresSolMgr<double,MV,OP>() );
+  //
+  // Set the problem after the solver construction.
+  solver->setProblem( rcp( &problem2, false ) );
 
-  if (ret!=Belos::Converged) {
+  // Set the parameter list after the solver construction.
+  belosList.set( "Timer Label", "Belos Resolve" );         // Set timer label to discern between the two solvers.
+  solver->setParameters( rcp( &belosList, false ) );
+  //
+  // Perform solve
+  //
+  ret = solver->solve();
+  //
+  // Compute actual residuals.
+  //
+  bool badRes = false;
+  std::vector<double> actual_resids2( numrhs );
+  Epetra_MultiVector resid2(Map, numrhs);
+  OPT::Apply( *A, *X2, resid2 );
+  MVT::MvAddMv( -1.0, resid2, 1.0, *B, resid2 ); 
+  MVT::MvNorm( resid2, &actual_resids2 );
+  MVT::MvNorm( *B, &rhs_norm );
+  if (proc_verbose) {
+    cout<< "---------- Actual Residuals 2 (normalized) ----------"<<endl<<endl;
+    for ( int i=0; i<numrhs; i++) {
+      cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<endl;
+      if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) { 
+        badRes = true;
+      }
+    }
+  }
+  //
+  // **********Print out information about problem*******************
+  //
+  if (proc_verbose) {
+    cout << endl << endl;
+    cout << "Dimension of matrix: " << NumGlobalElements << endl;
+    cout << "Number of right-hand sides: " << numrhs << endl;
+    cout << "Block size used by solver: " << blocksize << endl;
+    cout << "Number of restarts allowed: " << maxrestarts << endl;
+    cout << "Max number of Gmres iterations per restart cycle: " << maxiters << endl; 
+    cout << "Relative residual tolerance: " << tol << endl;
+    cout << endl;
+  }
+
+  if (ret!=Belos::Converged || badRes) {
     if (proc_verbose)
       cout << "End Result: TEST FAILED" << endl;	
     return -1;
@@ -186,4 +246,4 @@ int main(int argc, char *argv[]) {
     cout << "End Result: TEST PASSED" << endl;
   return 0;
   //
-} // end test_bl_gmres_hb.cpp
+} // end test_resolve_gmres_hb.cpp

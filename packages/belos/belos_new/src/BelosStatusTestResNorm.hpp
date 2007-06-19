@@ -152,11 +152,18 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   */
   int defineScaleForm( ScaleType TypeOfScaling, NormType TypeOfNorm, MagnitudeType ScaleValue = Teuchos::ScalarTraits<MagnitudeType>::one());
 
-  //! Reset the value of the tolerance
+  //! Set the value of the tolerance
   /*! We allow the tolerance to be reset for cases where, in the process of testing the residual, 
     we find that the initial tolerance was too tight or too lax.
   */
-  int resetTolerance(MagnitudeType Tolerance) {tolerance_ = Tolerance; return(0);};
+  int setTolerance(MagnitudeType tolerance) {tolerance_ = tolerance; return(0);}
+
+  //! Sets the number of residuals that must pass the convergence test before Passed is returned.
+  //! \note If \c quorum=-1 then all residuals must pass the convergence test before Passed is returned.
+  int setQuorum(int quorum) {quorum_ = quorum; return(0);}
+
+  //! Set whether the only maximum residual norm is displayed when the print() method is called
+  int setShowMaxResNormOnly(bool showMaxResNormOnly) {showMaxResNormOnly_ = showMaxResNormOnly; return(0);}
 
   //@}
 

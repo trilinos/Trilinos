@@ -204,9 +204,9 @@ int main(int argc, char *argv[]) {
   //
   Teuchos::RefCountPtr< Belos::SolverManager<ST,MV,OP> > solver;
   if (pseudo)
-    solver = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP>( problem, belosList ) );
+    solver = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<ST,MV,OP>( problem, Teuchos::rcp(&belosList,false) ) );
   else
-    solver = Teuchos::rcp( new Belos::BlockGmresSolMgr<ST,MV,OP>( problem, belosList ) );
+    solver = Teuchos::rcp( new Belos::BlockGmresSolMgr<ST,MV,OP>( problem, Teuchos::rcp(&belosList,false) ) );
   //
   // **********Print out information about problem*******************
   //

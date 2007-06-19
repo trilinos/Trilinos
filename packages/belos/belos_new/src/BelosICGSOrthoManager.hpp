@@ -275,6 +275,19 @@ namespace Belos {
 
     //@}
 
+    //! @name Label methods
+    //@{
+
+    /*! \brief This method sets the label used by the timers in the orthogonalization manager.
+     */
+    void setLabel(const string& label);
+
+    /*! \brief This method returns the label being used by the timers in the orthogonalization manager.
+     */
+    const string& getLabel() const { return label_; }
+
+    //@}
+
   private:
     
     //! Parameters for re-orthogonalization.
@@ -308,6 +321,26 @@ namespace Belos {
 		       Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const;    
   };
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Set the label for this orthogonalization manager and create new timers if it's changed
+  template<class ScalarType, class MV, class OP>
+  void ICGSOrthoManager<ScalarType,MV,OP>::setLabel(const string& label)
+  { 	
+    if (label != label_) {
+      label_ = label;
+      string orthoLabel = label_ + ": Orthogonalization";
+      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+
+      string updateLabel = label_ + ": Ortho (Update)";
+      timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
+
+      string normLabel = label_ + ": Ortho (Norm)";
+      timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
+
+      string ipLabel = label_ + ": Ortho (Inner Product)";
+      timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel);
+    }
+  } 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Compute the distance from orthonormality

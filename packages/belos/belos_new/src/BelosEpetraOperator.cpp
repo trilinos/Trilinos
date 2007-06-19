@@ -66,11 +66,11 @@ EpetraOperator::EpetraOperator( const RefCountPtr<LinearProblem<double,Epetra_Mu
   // exist already and just be reset with a new RHS.
   //
   if (strcmp(&Solver[0],"BlockGMRES")==0) {
-    solver_ = Teuchos::rcp( new BlockGmresSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, *plist_ ) );
+    solver_ = Teuchos::rcp( new BlockGmresSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, plist_ ) );
   }
-//  if (strcmp(&Solver[0],"BlockCG")==0) {
-//    solver_ = Teuchos::rcp( new BlockCG<double,Epetra_MultiVector,Epetra_Operator>( lp_, stest_, om_) );
-//  }
+  if (strcmp(&Solver[0],"BlockCG")==0) {
+    solver_ = Teuchos::rcp( new BlockCGSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, *plist) );
+  }
 }
 
 const Epetra_Comm& EpetraOperator::Comm() const 

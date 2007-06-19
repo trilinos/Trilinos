@@ -71,7 +71,7 @@ class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP> {
   StatusType checkStatus(Iteration<ScalarType,MV,OP> *iSolver );
 
   //! Return the result of the most recent CheckStatus call.
-  StatusType getStatus() const {return(status_);};
+  StatusType getStatus() const {return(status_);}
 
   //@}
 
@@ -81,16 +81,19 @@ class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP> {
   //! Resets the status test to the initial internal state.
   void reset();
 
+  //! Sets the maximum number of iterations allowed.
+  void setMaxIters(int maxIters) { maxIters_ = maxIters; }
+
   //@}
 
   //! @name Accessor methods
   //@{ 
 
   //! Returns the maximum number of iterations set in the constructor.
-  int getMaxIters() const { return(maxIters_); };
+  int getMaxIters() const { return(maxIters_); }
 
   //! Returns the current number of iterations from the most recent StatusTest call.
-  int getNumIters() const { return(nIters_); };
+  int getNumIters() const { return(nIters_); }
 
   //@}
 

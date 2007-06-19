@@ -133,6 +133,14 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
   //! @name Accessor methods
   //@{ 
 
+  /*! \brief Set the output manager.
+   */ 
+  void setOutputManager(const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer) { printer_ = printer; }
+
+  /*! \brief Set how often the child test is printed.
+   */
+  void setOutputFrequency(int mod) { modTest_ = mod; }
+
   /*! \brief Set child test.
    *
    *  \note This also resets the test status to ::Undefined.

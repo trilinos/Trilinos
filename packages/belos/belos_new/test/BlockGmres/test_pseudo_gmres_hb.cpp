@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
   // *******************************************************************
   //
   Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > initSolver
-    = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&initProblem,false), belosList ) );
+    = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&initProblem,false), rcp(&belosList,false) ) );
   //
   // Perform solve
   //
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
   belosList.set( "Implicit Residual Scaling", "Norm of RHS" ); // Implicit residual scaling for convergence
   belosList.set( "Explicit Residual Scaling", "Norm of RHS" ); // Explicit residual scaling for convergence
   Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > augSolver
-    = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&augProblem,false), belosList ) );
+    = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&augProblem,false), rcp(&belosList,false) ) );
   //
   // Perform solve
   //
