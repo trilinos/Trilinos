@@ -459,12 +459,57 @@
     COMM = SERIAL;
 }
 
+# Test the computation of DxDp using the BDF stepper
+# 2007/06/19: rabartl: Here I have set --max-restate-error=1e-8 to
+# allow this check (which should be zero) to pass.  In this way, I am
+# only really testing DxDp integrated vs. finite differences.
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL8) {
+    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    ARGS =
+      --linear-solver-extra-params="
+        <ParameterList>
+          <ParameterList name=\"TimeStepNonlinearSolver\">
+            <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
+            <Parameter name=\"Nonlinear Safety Factor\" type=\"double\" value=\"0.1\"/>
+            <Parameter name=\"Linear Safety Factor\" type=\"double\" value=\"0.05\"/>
+            <Parameter name=\"R Min Fraction\" type=\"double\" value=\"0.3\"/>
+            <Parameter name=\"Thrown on Linear Solve Failure\" type=\"bool\" value=\"0\"/>
+          </ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
+          </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"1\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{ 31.4159 \}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"none\"/>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name=\"FD Calc\">
+            <Parameter name=\"FD Method\" type=\"string\" value=\"order-four-central\"/>
+            <Parameter name=\"FD Step Length\" type=\"double\" value=\"1e+1\"/>
+            <Parameter name=\"FD Step Select Type\" type=\"string\" value=\"Relative\"/>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-4 --num-time-steps=10 --verb-level=VERB_LOW \
+      --echo-command-line \
+      --fwd-sens-solve \
+      --max-state-error=1e-6 \
+      --max-restate-error=1e-8 \
+      --max-sens-error=1e-6 \
+      --dump-final-solutions \
+      --use-BDF;
+    COMM = SERIAL;
+}
+
 
 # 2007/06/14: rabartl: This tests the sensitivity computation for DxDp using
 # the BDF time stepper and seems to work great for DxDp but the state
 # recomputation is not the same binary number.  This must be some type of bug
 # and this needs to be fixed.
-(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL8,FAILING,FAILING1) {
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL9,FAILING,FAILING1) {
     TESTS = ../example/diagonalTransient/diagonalTransient.exe;
     ARGS =
       --linear-solver-extra-params="
@@ -503,7 +548,6 @@
       --use-BDF;
     COMM = SERIAL;
 }
-
 
 
 # Explicit Taylor polynomial integration on Van der Pol oscillator

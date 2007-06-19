@@ -158,6 +158,10 @@ int main(int argc, char *argv[])
     clp.setOption( "fwd-sens-solve", "state-solve", &doFwdSensSolve,
       "Do the forward sensitivity solve or just the state solve" );
 
+    double maxRestateError = 0.0;
+    clp.setOption( "max-restate-error", &maxRestateError,
+      "The maximum allowed error between the state integrated by itself verses integrated along with DxDp" );
+
     double maxSensError = 1e-4;
     clp.setOption( "max-sens-error", &maxSensError,
       "The maximum allowed error in the integrated sensitivity in relation to"
@@ -444,7 +448,7 @@ int main(int argc, char *argv[])
         result = Thyra::testRelNormDiffErr<Scalar>(
           "x_final", *x_final,
           "x_in_x_bar_final", *x_in_x_bar_final,
-          "maxStateError", 0.0, // Must be a binary match!!!!
+          "maxRestateError", maxRestateError,
           "warningTol", 1.0, // Don't warn
           &*out, solnVerbLevel
           );

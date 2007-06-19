@@ -446,7 +446,9 @@ int main(int argc, char *argv[])
             // We will allow a difference of some multiplier of machine epsilon:
             double eps = 1.0e4*Teuchos::ScalarTraits<double>::prec();
             double normLETDiff = abs(stepStatusMaster.stepLETValue - stepStatusSlave.stepLETValue);
-            TEST_FOR_EXCEPT(normLETDiff > eps);
+            TEST_FOR_EXCEPTION(
+              normLETDiff > eps, std::logic_error,
+              "Error, normLETDiff = " << normLETDiff << " > eps = " << eps << "!" );
             // Create a non-const Thyra VectorBase to use as a temp vector
             Teuchos::RefCountPtr<Thyra::VectorBase<double> > vec_temp = stepStatusSlave.solution->clone_v();
             // Check that the solution matches exactly
