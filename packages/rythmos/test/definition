@@ -488,6 +488,11 @@
               <Parameter name=\"Verbosity Level\" type=\"string\" value=\"none\"/>
             </ParameterList>
           </ParameterList>
+          <ParameterList name=\"FD Calc\">
+            <Parameter name=\"FD Method\" type=\"string\" value=\"order-four-central\"/>
+            <Parameter name=\"FD Step Length\" type=\"double\" value=\"1e+1\"/>
+            <Parameter name=\"FD Step Select Type\" type=\"string\" value=\"Relative\"/>
+          </ParameterList>
         </ParameterList>" \
       --final-time=1e-4 --num-time-steps=10 --verb-level=VERB_LOW \
       --echo-command-line \
