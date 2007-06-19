@@ -2,13 +2,6 @@
 # FRAMEWORK group
 #
 
-# This is how to test with SERIAL and MPI
-# 09/01/05 tscoffe:  MPI runs are not ready yet.
-#(FRAMEWORK,INSTALL) {
-#    TESTS = ../example/basicExample/basicExample.exe;
-#    COMM = SERIAL, MPI;
-#}
-
 # Default run, Explicit Runge-Kutta 4 stage
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
