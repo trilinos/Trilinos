@@ -28,6 +28,11 @@
 
 EXEEXT = .exe
 
+all-local: make-links
+	@echo ""
+	@echo "rythmos/example/diagonalTransient built successfully."
+	@echo ""
+
 #
 # Actual programs
 #
@@ -44,6 +49,65 @@ diagonalTransient_DEPENDENCIES = $(common_dependencies)
 
 diagonalTransient_LDADD = $(common_ldadd)
 
+
+#
+# Links
+#
+
+if ENABLE_RYTHMOS_STRATIMIKOS_AMESOS
+LINK_DIAGONAL_AMESOS=diagonalTransient_amesos.exe
+endif
+
+if ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO
+LINK_DIAGONAL_AZTECOO=diagonalTransient_aztecoo.exe
+if ENABLE_RYTHMOS_STRATIMIKOS_IFPACK
+LINK_DIAGONAL_AZTECOO_IFPACK=diagonalTransient_aztecoo_ifpack.exe
+endif
+if ENABLE_RYTHMOS_STRATIMIKOS_ML
+LINK_DIAGONAL_AZTECOO_ML=diagonalTransient_aztecoo_ml.exe
+endif
+endif
+
+if ENABLE_RYTHMOS_STRATIMIKOS_BELOS
+LINK_DIAGONAL_BELOS=diagonalTransient_belos.exe
+if ENABLE_RYTHMOS_STRATIMIKOS_IFPACK
+LINK_DIAGONAL_BELOS_IFPACK=diagonalTransient_belos_ifpack.exe
+endif
+if ENABLE_RYTHMOS_STRATIMIKOS_ML
+LINK_DIAGONAL_BELOS_ML=diagonalTransient_belos_ml.exe
+endif
+endif
+
+diagonalTransient_amesos.exe:
+	ln -s ./diagonalTransient.exe diagonalTransient_amesos.exe
+
+diagonalTransient_aztecoo.exe:
+	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo.exe
+
+diagonalTransient_aztecoo_ifpack.exe:
+	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo_ifpack.exe
+
+diagonalTransient_aztecoo_ml.exe:
+	ln -s ./diagonalTransient.exe diagonalTransient_aztecoo_ml.exe
+
+diagonalTransient_belos.exe:
+	ln -s ./diagonalTransient.exe diagonalTransient_belos.exe
+
+diagonalTransient_belos_ifpack.exe:
+	ln -s ./diagonalTransient.exe diagonalTransient_belos_ifpack.exe
+
+diagonalTransient_belos_ml.exe:
+	ln -s ./diagonalTransient.exe diagonalTransient_belos_ml.exe
+
+make-links: \
+  $(LINK_DIAGONAL_AMESOS) \
+  $(LINK_DIAGONAL_AZTECOO) \
+  $(LINK_DIAGONAL_AZTECOO_IFPACK) \
+  $(LINK_DIAGONAL_AZTECOO_ML) \
+  $(LINK_DIAGONAL_BELOS) \
+  $(LINK_DIAGONAL_BELOS_IFPACK) \
+  $(LINK_DIAGONAL_BELOS_ML)
+
 #
 # Common stuff
 #
@@ -53,9 +117,8 @@ common_dependencies = \
 
 include $(top_builddir)/Makefile.export.rythmos
 
-_EXPORT_INCLUDES = $(RYTHMOS_INCLUDES) $(STRATIMIKOS_INCLUDES) $(EPETRA_INCLUDES) $(EPETRAEXT_INCLUDES)
-_EXPORT_LIBS = $(RYTHMOS_LIBS) $(STRATIMIKOS_LIBS) $(EPETRA_LIBS) $(EPETRAEXT_LIBS)
-
+_EXPORT_INCLUDES = $(RYTHMOS_TEST_INCLUDES)
+_EXPORT_LIBS = $(RYTHMOS_TEST_LIBS)
 
 if USING_GNUMAKE
 EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))

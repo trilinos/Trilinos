@@ -6,8 +6,7 @@ include @abs_top_builddir@/../thyra/Makefile.export.thyra
 _RYTHMOS_INCLUDES = \
   -I@abs_top_srcdir@/src \
   -I@abs_top_builddir@/src \
-  $(THYRA_INCLUDES) \
-  $(SACADO_INCLUDES)
+  $(THYRA_INCLUDES)
 
 # Note, the order of the library dependencies is critical (higher level libraries from left to right)
 _RYTHMOS_LIBS = \
@@ -22,11 +21,28 @@ _RYTHMOS_LIBS = \
 # Stuff for some tests and examples
 #
 
-@ENABLE_THYRA_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
-#@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@include @abs_top_builddir@/../stratimikos/Makefile.export.stratimikos
-#@ENABLE_RYTHMOS_NOX_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@include @abs_top_builddir@/../nox/Makefile.export.nox
-
-@BUILD_EXAMPLES_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
-@BUILD_EXAMPLES_TRUE@@ENABLE_RYTHMOS_NOX_TRUE@@ENABLE_NOX_EPETRA_TRUE@include @abs_top_builddir@/../nox/Makefile.export.nox
-@BUILD_EXAMPLES_TRUE@include @abs_top_builddir@/../stratimikos/Makefile.export.stratimikos
+@BUILD_EXAMPLES_TRUE@@ENABLE_RYTHMOS_THYRA_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+@BUILD_EXAMPLES_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@include @abs_top_builddir@/../stratimikos/Makefile.export.stratimikos
 @BUILD_EXAMPLES_TRUE@@ENABLE_RYTHMOS_SACADO_TRUE@include @abs_top_builddir@/../sacado/Makefile.export.sacado
+@BUILD_EXAMPLES_TRUE@@ENABLE_RYTHMOS_NOX_TRUE@@ENABLE_RYTHMOS_NOX_EPETRA_TRUE@include @abs_top_builddir@/../nox/Makefile.export.nox
+
+_RYTHMOS_TEST_INCLUDES = \
+  $(RYTHMOS_INCLUDES) \
+  $(NOX_INCLUDES) \
+  $(STRATIMIKOS_INCLUDES) \
+  $(EPETRAEXT_INCLUDES) \
+  $(EPETRA_INCLUDES) \
+  $(SACADO_INCLUDES)
+
+_RYTHMOS_TEST_LIBS = \
+  $(RYTHMOS_LIBS) \
+  $(NOX_LIBS) \
+  $(STRATIMIKOS_LIBS) \
+  $(EPETRAEXT_LIBS) \
+  $(EPETRA_LIBS) \
+  $(SACADO_LIBS)
+
+@USING_GNUMAKE_TRUE@RYTHMOS_TEST_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_RYTHMOS_TEST_INCLUDES))
+@USING_GNUMAKE_TRUE@RYTHMOS_TEST_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_RYTHMOS_TEST_LIBS))
+@USING_GNUMAKE_FALSE@RYTHMOS_TEST_INCLUDES = $(_RYTHMOS_TEST_INCLUDES)
+@USING_GNUMAKE_FALSE@RYTHMOS_TEST_LIBS     = $(_RYTHMOS_TEST_LIBS)

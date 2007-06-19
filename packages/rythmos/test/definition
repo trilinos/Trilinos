@@ -179,11 +179,12 @@
 
 
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL0) {
-    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
         <ParameterList>
           <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
           </ParameterList>
           <ParameterList name=\"DiagonalTransientModel\">
             <Parameter name=\"NumElements\" type=\"int\" value=\"2\"/>
@@ -200,11 +201,12 @@
 
 
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL1) {
-    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
         <ParameterList>
           <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/>
           </ParameterList>
           <ParameterList name=\"DiagonalTransientModel\">
             <Parameter name=\"NumElements\" type=\"int\" value=\"2\"/>
@@ -222,7 +224,7 @@
 
 
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL2) {
-    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    TESTS = ../example/diagonalTransient/diagonalTransient_aztecoo.exe;
     ARGS =
       --linear-solver-extra-params="
         <ParameterList>
@@ -267,8 +269,41 @@
 }
 
 
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL2b) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_belos.exe;
+    ARGS =
+      --linear-solver-extra-params="
+        <ParameterList>
+          <ParameterList name=\"TimeStepNonlinearSolver\">
+            <Parameter name=\"Default Max Iters\" type=\"int\" value=\"3\"/>
+            <Parameter name=\"Nonlinear Safety Factor\" type=\"double\" value=\"0.1\"/>
+            <Parameter name=\"Linear Safety Factor\" type=\"double\" value=\"0.05\"/>
+            <Parameter name=\"R Min Fraction\" type=\"double\" value=\"0.3\"/>
+            <Parameter name=\"Thrown on Linear Solve Failure\" type=\"bool\" value=\"0\"/>
+          </ParameterList>
+          <ParameterList name=\"Stratimikos\">
+            <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/>
+            <Parameter name=\"Preconditioner Type\" type=\"string\" value=\"None\"/>
+            <ParameterList name=\"Linear Solver Types\">
+           </ParameterList>
+         </ParameterList>
+          <ParameterList name=\"DiagonalTransientModel\">
+            <Parameter name=\"NumElements\" type=\"int\" value=\"2\"/>
+            <Parameter name=\"Coeff_s\" type=\"string\" value=\"\{0.0\, 0.0\}\"/>
+          </ParameterList>
+          <ParameterList name=\"Rythmos Stepper\">
+            <ParameterList name=\"VerboseObject\">
+              <Parameter name=\"Verbosity Level\" type=\"string\" value=\"extreme\"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+      --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_EXTREME;
+    COMM = SERIAL;
+}
+
+
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL3) {
-    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
         <ParameterList>
@@ -309,7 +344,7 @@
 
 
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL4) {
-    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
         <ParameterList>
@@ -350,7 +385,7 @@
 
 
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL5) {
-    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
         <ParameterList>
@@ -392,7 +427,7 @@
 
 # Solve state problem with fixed time steps using BDF stepper
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL6) {
-    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
         <ParameterList>
@@ -427,7 +462,7 @@
 
 # Solve state problem with variable time steps using BDF stepper
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL7) {
-    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
         <ParameterList>
@@ -464,7 +499,7 @@
 # allow this check (which should be zero) to pass.  In this way, I am
 # only really testing DxDp integrated vs. finite differences.
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL8) {
-    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
         <ParameterList>
@@ -510,7 +545,7 @@
 # recomputation is not the same binary number.  This must be some type of bug
 # and this needs to be fixed.
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL9,FAILING,FAILING1) {
-    TESTS = ../example/diagonalTransient/diagonalTransient.exe;
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
         <ParameterList>

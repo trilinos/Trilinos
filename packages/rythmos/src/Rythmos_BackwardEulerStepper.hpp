@@ -952,7 +952,7 @@ void BackwardEulerStepper<Scalar>::describe(
   using Teuchos::as;
   Teuchos::OSTab tab(out);
   if (!isInitialized_) {
-    out << "This stepper is not initialized yet" << std::endl;
+    out << this->description() << " : This stepper is not initialized yet" << std::endl;
     return;
   }
   if (

@@ -242,18 +242,38 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   ,[Build the Sacado adapater support in Rythmos.]
   ,[Build the Sacado adapater support in Rythmos.  Can be overridden with --disable-rythmos-sacado.])
 
-#TAC_ARG_ENABLE_CAN_USE_PACKAGE(
-#  rythmos, belos, RYTHMOS_BELOS, ENABLE_RYTHMOS_BELOS, yes
-#  ,[Build the Belos adapater support in Rythmos.]
-#  ,[Build the Belos adapater support in Rythmos.  Can be overridden with --disable-rythmos-belos.])
+TAC_ARG_INFORM_SUBPACKAGE_USED(
+  stratimikos, amesos, RYTHMOS_STRATIMIKOS_AMESOS, ENABLE_RYTHMOS_STRATIMIKOS_AMESOS, yes,
+  [See stratimikos/configure --help],
+  [See stratimikos/configure --help])
 
 TAC_ARG_INFORM_SUBPACKAGE_USED(
-  thyra, epetraext, THYRA_EPETRAEXT, ENABLE_THYRA_EPETRAEXT, yes,
+  stratimikos, aztecoo, RYTHMOS_STRATIMIKOS_AZTECOO, ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO, yes,
+  [See stratimikos/configure --help],
+  [See stratimikos/configure --help])
+
+TAC_ARG_INFORM_SUBPACKAGE_USED(
+  stratimikos, belos, RYTHMOS_STRATIMIKOS_BELOS, ENABLE_RYTHMOS_STRATIMIKOS_BELOS, yes,
+  [See stratimikos/configure --help],
+  [See stratimikos/configure --help])
+
+TAC_ARG_INFORM_SUBPACKAGE_USED(
+  stratimikos, ifpack, RYTHMOS_STRATIMIKOS_IFPACK, ENABLE_RYTHMOS_STRATIMIKOS_IFPACK, yes,
+  [See stratimikos/configure --help],
+  [See stratimikos/configure --help])
+
+TAC_ARG_INFORM_SUBPACKAGE_USED(
+  stratimikos, ml, RYTHMOS_STRATIMIKOS_ML, ENABLE_RYTHMOS_STRATIMIKOS_ML, yes,
+  [See stratimikos/configure --help],
+  [See stratimikos/configure --help])
+
+TAC_ARG_INFORM_SUBPACKAGE_USED(
+  thyra, epetraext, RYTHMOS_THYRA_EPETRAEXT, ENABLE_RYTHMOS_THYRA_EPETRAEXT, yes,
   [See thyra/configure --help],
   [See thyra/configure --help])
 
 TAC_ARG_INFORM_SUBPACKAGE_USED(
-  nox, epetra, NOX_EPETRA, ENABLE_NOX_EPETRA, no
+  nox, epetra, RYTHMOS_NOX_EPETRA, ENABLE_RYTHMOS_NOX_EPETRA, no
   ,[See nox/configure --help]
   ,[See nox/configure --help])
 

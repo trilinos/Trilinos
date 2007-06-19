@@ -213,7 +213,7 @@ std::string BelosLinearOpWithSolve<Scalar>::description() const
 {
   std::ostringstream oss;
   oss << Teuchos::Describable::description();
-  if(lp_->GetOperator().get()) {
+  if( !is_null(lp_) && !is_null(lp_->GetOperator()) ) {
     oss << "{";
     oss << "iterativeSolver=\'"<<iterativeSolver_->description()<<"\'";
     oss << ",fwdOp=\'"<<lp_->GetOperator()->description()<<"\'";

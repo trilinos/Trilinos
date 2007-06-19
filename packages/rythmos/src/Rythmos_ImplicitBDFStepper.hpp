@@ -1020,7 +1020,7 @@ void ImplicitBDFStepper<Scalar>::describe(
   using Teuchos::as;
 
   if (!isInitialized_) {
-    out << "This stepper is not initialized yet" << std::endl;
+    out << this->description() << "This stepper is not initialized yet" << std::endl;
     return;
   }
 

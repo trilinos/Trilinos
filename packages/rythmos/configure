@@ -748,10 +748,20 @@ ENABLE_RYTHMOS_EPETRAEXT_TRUE
 ENABLE_RYTHMOS_EPETRAEXT_FALSE
 ENABLE_RYTHMOS_SACADO_TRUE
 ENABLE_RYTHMOS_SACADO_FALSE
-ENABLE_THYRA_EPETRAEXT_TRUE
-ENABLE_THYRA_EPETRAEXT_FALSE
-ENABLE_NOX_EPETRA_TRUE
-ENABLE_NOX_EPETRA_FALSE
+ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_TRUE
+ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_FALSE
+ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE
+ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_FALSE
+ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE
+ENABLE_RYTHMOS_STRATIMIKOS_BELOS_FALSE
+ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE
+ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_FALSE
+ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE
+ENABLE_RYTHMOS_STRATIMIKOS_ML_FALSE
+ENABLE_RYTHMOS_THYRA_EPETRAEXT_TRUE
+ENABLE_RYTHMOS_THYRA_EPETRAEXT_FALSE
+ENABLE_RYTHMOS_NOX_EPETRA_TRUE
+ENABLE_RYTHMOS_NOX_EPETRA_FALSE
 BUILD_EXAMPLES_TRUE
 BUILD_EXAMPLES_FALSE
 BUILD_TESTS_TRUE
@@ -1406,6 +1416,21 @@ Optional Features:
   --enable-sacado         Build the Sacado adapater support in Rythmos. Can be
                           overridden with --disable-rythmos-sacado.
   --enable-rythmos-sacado Build the Sacado adapater support in Rythmos.
+  --enable-stratimikos    See stratimikos/configure --help
+  --enable-amesos         See stratimikos/configure --help
+  --enable-stratimikos-amesos
+                          See stratimikos/configure --help
+  --enable-aztecoo        See stratimikos/configure --help
+  --enable-stratimikos-aztecoo
+                          See stratimikos/configure --help
+  --enable-belos          See stratimikos/configure --help
+  --enable-stratimikos-belos
+                          See stratimikos/configure --help
+  --enable-ifpack         See stratimikos/configure --help
+  --enable-stratimikos-ifpack
+                          See stratimikos/configure --help
+  --enable-ml             See stratimikos/configure --help
+  --enable-stratimikos-ml See stratimikos/configure --help
   --enable-thyra          See thyra/configure --help
   --enable-epetraext      See thyra/configure --help
   --enable-thyra-epetraext
@@ -8085,10 +8110,320 @@ fi
 
 
 
-#TAC_ARG_ENABLE_CAN_USE_PACKAGE(
-#  rythmos, belos, RYTHMOS_BELOS, ENABLE_RYTHMOS_BELOS, yes
-#  ,[Build the Belos adapater support in Rythmos.]
-#  ,[Build the Belos adapater support in Rythmos.  Can be overridden with --disable-rythmos-belos.])
+
+
+# Check whether --enable-stratimikos was given.
+if test "${enable_stratimikos+set}" = set; then
+  enableval=$enable_stratimikos; ac_cv_implicit_use_stratimikos=$enableval
+else
+  ac_cv_implicit_use_stratimikos=no
+fi
+
+
+# Check whether --enable-amesos was given.
+if test "${enable_amesos+set}" = set; then
+  enableval=$enable_amesos; ac_cv_implicit_use_amesos=$enableval
+else
+  ac_cv_implicit_use_amesos=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  if test "X$ac_cv_implicit_use_stratimikos" != "Xno"; then
+    ac_cv_stratimikos_using_amesos_default=$ac_cv_implicit_use_amesos
+  else
+    ac_cv_stratimikos_using_amesos_default=no
+  fi
+else
+  ac_cv_stratimikos_using_amesos_default=no
+fi
+
+# Check whether --enable-stratimikos-amesos was given.
+if test "${enable_stratimikos_amesos+set}" = set; then
+  enableval=$enable_stratimikos_amesos; ac_cv_use_amesos=$enableval
+else
+  ac_cv_use_amesos=$ac_cv_stratimikos_using_amesos_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional amesos dependent code in stratimikos" >&5
+echo $ECHO_N "checking whether to build optional amesos dependent code in stratimikos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_amesos" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_RYTHMOS_STRATIMIKOS_AMESOS 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_amesos" = "Xyes"; then
+  ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_TRUE=
+  ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_FALSE='#'
+else
+  ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_TRUE='#'
+  ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-stratimikos was given.
+if test "${enable_stratimikos+set}" = set; then
+  enableval=$enable_stratimikos; ac_cv_implicit_use_stratimikos=$enableval
+else
+  ac_cv_implicit_use_stratimikos=no
+fi
+
+
+# Check whether --enable-aztecoo was given.
+if test "${enable_aztecoo+set}" = set; then
+  enableval=$enable_aztecoo; ac_cv_implicit_use_aztecoo=$enableval
+else
+  ac_cv_implicit_use_aztecoo=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  if test "X$ac_cv_implicit_use_stratimikos" != "Xno"; then
+    ac_cv_stratimikos_using_aztecoo_default=$ac_cv_implicit_use_aztecoo
+  else
+    ac_cv_stratimikos_using_aztecoo_default=no
+  fi
+else
+  ac_cv_stratimikos_using_aztecoo_default=no
+fi
+
+# Check whether --enable-stratimikos-aztecoo was given.
+if test "${enable_stratimikos_aztecoo+set}" = set; then
+  enableval=$enable_stratimikos_aztecoo; ac_cv_use_aztecoo=$enableval
+else
+  ac_cv_use_aztecoo=$ac_cv_stratimikos_using_aztecoo_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional aztecoo dependent code in stratimikos" >&5
+echo $ECHO_N "checking whether to build optional aztecoo dependent code in stratimikos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_aztecoo" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_RYTHMOS_STRATIMIKOS_AZTECOO 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_aztecoo" = "Xyes"; then
+  ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE=
+  ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_FALSE='#'
+else
+  ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE='#'
+  ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-stratimikos was given.
+if test "${enable_stratimikos+set}" = set; then
+  enableval=$enable_stratimikos; ac_cv_implicit_use_stratimikos=$enableval
+else
+  ac_cv_implicit_use_stratimikos=no
+fi
+
+
+# Check whether --enable-belos was given.
+if test "${enable_belos+set}" = set; then
+  enableval=$enable_belos; ac_cv_implicit_use_belos=$enableval
+else
+  ac_cv_implicit_use_belos=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  if test "X$ac_cv_implicit_use_stratimikos" != "Xno"; then
+    ac_cv_stratimikos_using_belos_default=$ac_cv_implicit_use_belos
+  else
+    ac_cv_stratimikos_using_belos_default=no
+  fi
+else
+  ac_cv_stratimikos_using_belos_default=no
+fi
+
+# Check whether --enable-stratimikos-belos was given.
+if test "${enable_stratimikos_belos+set}" = set; then
+  enableval=$enable_stratimikos_belos; ac_cv_use_belos=$enableval
+else
+  ac_cv_use_belos=$ac_cv_stratimikos_using_belos_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional belos dependent code in stratimikos" >&5
+echo $ECHO_N "checking whether to build optional belos dependent code in stratimikos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_belos" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_RYTHMOS_STRATIMIKOS_BELOS 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_belos" = "Xyes"; then
+  ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE=
+  ENABLE_RYTHMOS_STRATIMIKOS_BELOS_FALSE='#'
+else
+  ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE='#'
+  ENABLE_RYTHMOS_STRATIMIKOS_BELOS_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-stratimikos was given.
+if test "${enable_stratimikos+set}" = set; then
+  enableval=$enable_stratimikos; ac_cv_implicit_use_stratimikos=$enableval
+else
+  ac_cv_implicit_use_stratimikos=no
+fi
+
+
+# Check whether --enable-ifpack was given.
+if test "${enable_ifpack+set}" = set; then
+  enableval=$enable_ifpack; ac_cv_implicit_use_ifpack=$enableval
+else
+  ac_cv_implicit_use_ifpack=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  if test "X$ac_cv_implicit_use_stratimikos" != "Xno"; then
+    ac_cv_stratimikos_using_ifpack_default=$ac_cv_implicit_use_ifpack
+  else
+    ac_cv_stratimikos_using_ifpack_default=no
+  fi
+else
+  ac_cv_stratimikos_using_ifpack_default=no
+fi
+
+# Check whether --enable-stratimikos-ifpack was given.
+if test "${enable_stratimikos_ifpack+set}" = set; then
+  enableval=$enable_stratimikos_ifpack; ac_cv_use_ifpack=$enableval
+else
+  ac_cv_use_ifpack=$ac_cv_stratimikos_using_ifpack_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional ifpack dependent code in stratimikos" >&5
+echo $ECHO_N "checking whether to build optional ifpack dependent code in stratimikos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_ifpack" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_RYTHMOS_STRATIMIKOS_IFPACK 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_ifpack" = "Xyes"; then
+  ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE=
+  ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_FALSE='#'
+else
+  ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE='#'
+  ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-stratimikos was given.
+if test "${enable_stratimikos+set}" = set; then
+  enableval=$enable_stratimikos; ac_cv_implicit_use_stratimikos=$enableval
+else
+  ac_cv_implicit_use_stratimikos=no
+fi
+
+
+# Check whether --enable-ml was given.
+if test "${enable_ml+set}" = set; then
+  enableval=$enable_ml; ac_cv_implicit_use_ml=$enableval
+else
+  ac_cv_implicit_use_ml=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  if test "X$ac_cv_implicit_use_stratimikos" != "Xno"; then
+    ac_cv_stratimikos_using_ml_default=$ac_cv_implicit_use_ml
+  else
+    ac_cv_stratimikos_using_ml_default=no
+  fi
+else
+  ac_cv_stratimikos_using_ml_default=no
+fi
+
+# Check whether --enable-stratimikos-ml was given.
+if test "${enable_stratimikos_ml+set}" = set; then
+  enableval=$enable_stratimikos_ml; ac_cv_use_ml=$enableval
+else
+  ac_cv_use_ml=$ac_cv_stratimikos_using_ml_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional ml dependent code in stratimikos" >&5
+echo $ECHO_N "checking whether to build optional ml dependent code in stratimikos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_ml" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_RYTHMOS_STRATIMIKOS_ML 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_ml" = "Xyes"; then
+  ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE=
+  ENABLE_RYTHMOS_STRATIMIKOS_ML_FALSE='#'
+else
+  ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE='#'
+  ENABLE_RYTHMOS_STRATIMIKOS_ML_FALSE=
+fi
+
+
+
 
 
 
@@ -8134,7 +8469,7 @@ if test "X$ac_cv_use_epetraext" != "Xno"; then
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_THYRA_EPETRAEXT 1
+#define HAVE_RYTHMOS_THYRA_EPETRAEXT 1
 _ACEOF
 
 else
@@ -8143,11 +8478,11 @@ echo "${ECHO_T}no" >&6; }
 fi
 
  if test "X$ac_cv_use_epetraext" = "Xyes"; then
-  ENABLE_THYRA_EPETRAEXT_TRUE=
-  ENABLE_THYRA_EPETRAEXT_FALSE='#'
+  ENABLE_RYTHMOS_THYRA_EPETRAEXT_TRUE=
+  ENABLE_RYTHMOS_THYRA_EPETRAEXT_FALSE='#'
 else
-  ENABLE_THYRA_EPETRAEXT_TRUE='#'
-  ENABLE_THYRA_EPETRAEXT_FALSE=
+  ENABLE_RYTHMOS_THYRA_EPETRAEXT_TRUE='#'
+  ENABLE_RYTHMOS_THYRA_EPETRAEXT_FALSE=
 fi
 
 
@@ -8198,7 +8533,7 @@ if test "X$ac_cv_use_epetra" != "Xno"; then
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_NOX_EPETRA 1
+#define HAVE_RYTHMOS_NOX_EPETRA 1
 _ACEOF
 
 else
@@ -8207,11 +8542,11 @@ echo "${ECHO_T}no" >&6; }
 fi
 
  if test "X$ac_cv_use_epetra" = "Xyes"; then
-  ENABLE_NOX_EPETRA_TRUE=
-  ENABLE_NOX_EPETRA_FALSE='#'
+  ENABLE_RYTHMOS_NOX_EPETRA_TRUE=
+  ENABLE_RYTHMOS_NOX_EPETRA_FALSE='#'
 else
-  ENABLE_NOX_EPETRA_TRUE='#'
-  ENABLE_NOX_EPETRA_FALSE=
+  ENABLE_RYTHMOS_NOX_EPETRA_TRUE='#'
+  ENABLE_RYTHMOS_NOX_EPETRA_FALSE=
 fi
 
 
@@ -12400,17 +12735,52 @@ echo "$as_me: error: conditional \"ENABLE_RYTHMOS_SACADO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${ENABLE_THYRA_EPETRAEXT_TRUE}" && test -z "${ENABLE_THYRA_EPETRAEXT_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_THYRA_EPETRAEXT\" was never defined.
+if test -z "${ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_TRUE}" && test -z "${ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_STRATIMIKOS_AMESOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ENABLE_THYRA_EPETRAEXT\" was never defined.
+echo "$as_me: error: conditional \"ENABLE_RYTHMOS_STRATIMIKOS_AMESOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${ENABLE_NOX_EPETRA_TRUE}" && test -z "${ENABLE_NOX_EPETRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_NOX_EPETRA\" was never defined.
+if test -z "${ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE}" && test -z "${ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ENABLE_NOX_EPETRA\" was never defined.
+echo "$as_me: error: conditional \"ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE}" && test -z "${ENABLE_RYTHMOS_STRATIMIKOS_BELOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_STRATIMIKOS_BELOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_RYTHMOS_STRATIMIKOS_BELOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE}" && test -z "${ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_STRATIMIKOS_IFPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_RYTHMOS_STRATIMIKOS_IFPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE}" && test -z "${ENABLE_RYTHMOS_STRATIMIKOS_ML_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_STRATIMIKOS_ML\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_RYTHMOS_STRATIMIKOS_ML\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_RYTHMOS_THYRA_EPETRAEXT_TRUE}" && test -z "${ENABLE_RYTHMOS_THYRA_EPETRAEXT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_THYRA_EPETRAEXT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_RYTHMOS_THYRA_EPETRAEXT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_RYTHMOS_NOX_EPETRA_TRUE}" && test -z "${ENABLE_RYTHMOS_NOX_EPETRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_NOX_EPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_RYTHMOS_NOX_EPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -13249,10 +13619,20 @@ ENABLE_RYTHMOS_EPETRAEXT_TRUE!$ENABLE_RYTHMOS_EPETRAEXT_TRUE$ac_delim
 ENABLE_RYTHMOS_EPETRAEXT_FALSE!$ENABLE_RYTHMOS_EPETRAEXT_FALSE$ac_delim
 ENABLE_RYTHMOS_SACADO_TRUE!$ENABLE_RYTHMOS_SACADO_TRUE$ac_delim
 ENABLE_RYTHMOS_SACADO_FALSE!$ENABLE_RYTHMOS_SACADO_FALSE$ac_delim
-ENABLE_THYRA_EPETRAEXT_TRUE!$ENABLE_THYRA_EPETRAEXT_TRUE$ac_delim
-ENABLE_THYRA_EPETRAEXT_FALSE!$ENABLE_THYRA_EPETRAEXT_FALSE$ac_delim
-ENABLE_NOX_EPETRA_TRUE!$ENABLE_NOX_EPETRA_TRUE$ac_delim
-ENABLE_NOX_EPETRA_FALSE!$ENABLE_NOX_EPETRA_FALSE$ac_delim
+ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_TRUE!$ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_TRUE$ac_delim
+ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_FALSE!$ENABLE_RYTHMOS_STRATIMIKOS_AMESOS_FALSE$ac_delim
+ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE!$ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_TRUE$ac_delim
+ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_FALSE!$ENABLE_RYTHMOS_STRATIMIKOS_AZTECOO_FALSE$ac_delim
+ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE!$ENABLE_RYTHMOS_STRATIMIKOS_BELOS_TRUE$ac_delim
+ENABLE_RYTHMOS_STRATIMIKOS_BELOS_FALSE!$ENABLE_RYTHMOS_STRATIMIKOS_BELOS_FALSE$ac_delim
+ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE!$ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_TRUE$ac_delim
+ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_FALSE!$ENABLE_RYTHMOS_STRATIMIKOS_IFPACK_FALSE$ac_delim
+ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE!$ENABLE_RYTHMOS_STRATIMIKOS_ML_TRUE$ac_delim
+ENABLE_RYTHMOS_STRATIMIKOS_ML_FALSE!$ENABLE_RYTHMOS_STRATIMIKOS_ML_FALSE$ac_delim
+ENABLE_RYTHMOS_THYRA_EPETRAEXT_TRUE!$ENABLE_RYTHMOS_THYRA_EPETRAEXT_TRUE$ac_delim
+ENABLE_RYTHMOS_THYRA_EPETRAEXT_FALSE!$ENABLE_RYTHMOS_THYRA_EPETRAEXT_FALSE$ac_delim
+ENABLE_RYTHMOS_NOX_EPETRA_TRUE!$ENABLE_RYTHMOS_NOX_EPETRA_TRUE$ac_delim
+ENABLE_RYTHMOS_NOX_EPETRA_FALSE!$ENABLE_RYTHMOS_NOX_EPETRA_FALSE$ac_delim
 BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim
 BUILD_EXAMPLES_FALSE!$BUILD_EXAMPLES_FALSE$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
@@ -13281,7 +13661,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 66; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 76; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
