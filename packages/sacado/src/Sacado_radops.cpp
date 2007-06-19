@@ -307,6 +307,9 @@ ConstADvar::ConstADvar(const ADvari &x)
 IndepADvar::AD_Const(const IndepADvar &v)
 {
 	ConstADvari *ncv = new ConstADvari(v.val());
+#ifdef RAD_AUTO_AD_Const
+	v.cv->padv = 0;
+#endif
 	((IndepADvar*)&v)->cv = ncv;
 	}
 

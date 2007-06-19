@@ -1267,7 +1267,7 @@ ADcontext<Double>::Weighted_Gradcomp(int n, ADVar **V, Double *w)
 		ADVari::adc.rad_need_reinit = 3;
 		while(a = anext) {
 			anext = a->Next;
-			if (v = (IndepADvar<Double> *)a->padv) {
+			if ((v = (IndepADvar<Double> *)a->padv)) {
 #ifdef RAD_Const_WARN
 				if ((i = a->opno) > 0)
 					i = -i;
@@ -1387,6 +1387,9 @@ IndepADvar<Double>::AD_Const(const IndepADvar &v)
 	typedef ConstADvari<Double> ConstADVari;
 
 	ConstADVari *ncv = new ConstADVari(v.val());
+#ifdef RAD_AUTO_AD_Const
+	v.cv->padv = 0;
+#endif
 	v.cv = ncv;
 	}
 
