@@ -223,15 +223,17 @@ FAD_UNARYOP_MACRO(atanh,
 FAD_UNARYOP_MACRO(abs,
 		  AbsOp, 
 		  abs(expr.val()),
-		  expr.val() >= 0 ? +expr.dx(i) : -expr.dx(i),
-		  expr.val() >= 0 ? +expr.fastAccessDx(i) : 
-		    -expr.fastAccessDx(i))
+		  expr.val() >= 0 ? value_type(+expr.dx(i)) : 
+		    value_type(-expr.dx(i)),
+		  expr.val() >= 0 ? value_type(+expr.fastAccessDx(i)) : 
+		    value_type(-expr.fastAccessDx(i)))
 FAD_UNARYOP_MACRO(fabs,
 		  FAbsOp, 
 		  fabs(expr.val()),
-		  expr.val() >= 0 ? +expr.dx(i) : -expr.dx(i),
-		  expr.val() >= 0 ? +expr.fastAccessDx(i) : 
-		    -expr.fastAccessDx(i))
+		  expr.val() >= 0 ? value_type(+expr.dx(i)) : 
+		    value_type(-expr.dx(i)),
+		  expr.val() >= 0 ? value_type(+expr.fastAccessDx(i)) : 
+		    value_type(-expr.fastAccessDx(i)))
 
 #undef FAD_UNARYOP_MACRO
 
