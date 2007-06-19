@@ -1554,7 +1554,8 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 /*********************************************************************************/
 void ML_convert2vbr(ML_Operator *in_matrix)
 {
-   int i, j, k, kk, jj;
+   int i, j, k, kk;
+   int jj = 0;
    int blockrows = 0;
    int blockcolumns = 0;
    int row_length; /*the length of the current point row*/
@@ -1563,18 +1564,18 @@ void ML_convert2vbr(ML_Operator *in_matrix)
    int blockfound;
    int A_i_allocated;
    int spaceneeded;
-   int val_size; 
+   int val_size;
+   int temp_alc; 
    int spacetight = 0;
    int *A_i_cols; /*columns for the single point row of values*/
    double *accum_val; /*storage of a single point row of values*/
    double *vals;  /*block row storage of matrix*/
    int *rpntr, *cpntr, *bindx, *indx, *bpntr; /*quick links to needed structures
                                                 also makes the code look prettier*/
-   int iplus1;
+   int iplus1 = 0;
    double x;
    double *temp_double;
    struct ML_vbrdata *out_data;
-   struct ML_CSR_MSRdata *temp_matrix;
    int nnz = 0;
 
    /*settings to change since we now have a vbr matrix*/
@@ -1604,10 +1605,9 @@ void ML_convert2vbr(ML_Operator *in_matrix)
    }
 
    /*at most we have the lesser of blockrows times blockcolumns blocks and the nnz in the matrix which might be better but we are not gareenteed to know the nnz this is a gross overestimate so finding a better prediction might be in order but nnz may not be right so we can't use that*/
-   in_matrix->vbr->bpntr = bpntr;
    spaceneeded = blockcolumns*blockrows;
-   if(in_matrix->N_nonzeros > 0)
-   /*{
+   /*if(in_matrix->N_nonzeros > 0)
+   {
      if(in_matrix->N_nonzeros < spaceneeded)
        spaceneeded = in_matrix->N_nonzeros;
    }*/
@@ -1671,7 +1671,8 @@ void ML_convert2vbr(ML_Operator *in_matrix)
      x = 1.9;
      for(i = 9; i >= 0; i--)
      {
-       vals = (double *) ML_allocate(in_matrix->N_nonzeros*x*sizeof(double));
+       temp_alc = nnz*x*sizeof(double);
+       vals = (double *) ML_allocate(temp_alc);
        if(vals != NULL)
          break;
        x-=.1;
