@@ -70,6 +70,7 @@ namespace Sacado {
     using std::acos;
     using std::asin;
     using std::atan;
+    using std::atan2;
     using std::cosh;
     using std::sinh;
     using std::tanh;
@@ -204,9 +205,9 @@ FAD_UNARYOP_MACRO(tanh,
 FAD_UNARYOP_MACRO(acosh,
 		  ACoshOp, 
 		  acosh(expr.val()),
-		  expr.dx(i)/sqrt((expr.val()-value_type(1)) / 
+		  expr.dx(i)/sqrt((expr.val()-value_type(1)) * 
 				       (expr.val()+value_type(1))),
-		  expr.fastAccessDx(i)/sqrt((expr.val()-value_type(1)) / 
+		  expr.fastAccessDx(i)/sqrt((expr.val()-value_type(1)) * 
 						 (expr.val()+value_type(1))))
 FAD_UNARYOP_MACRO(asinh,
 		  ASinhOp, 
@@ -408,6 +409,21 @@ FAD_BINARYOP_MACRO(operator/,
 		   -expr2.fastAccessDx(i)*expr1.val() / 
 		     (expr2.val()*expr2.val()),
 		   expr1.fastAccessDx(i)/expr2.val())
+FAD_BINARYOP_MACRO(atan2,
+		   Atan2Op,
+		   atan2(expr1.val(), expr2.val()),
+		   (expr2.val()*expr1.dx(i) - expr1.val()*expr2.dx(i))/
+			(expr1.val()*expr1.val() + expr2.val()*expr2.val()),
+		   (expr2.val()*expr1.fastAccessDx(i) - expr1.val()*expr2.fastAccessDx(i))/
+			(expr1.val()*expr1.val() + expr2.val()*expr2.val()),
+		   (-expr1.val()*expr2.dx(i))/
+			(expr1.val()*expr1.val() + expr2.val()*expr2.val()),
+		   (expr2.val()*expr1.dx(i))/
+			(expr1.val()*expr1.val() + expr2.val()*expr2.val()),
+		   (-expr1.val()*expr2.fastAccessDx(i))/
+			(expr1.val()*expr1.val() + expr2.val()*expr2.val()),
+		   (expr2.val()*expr1.fastAccessDx(i))/
+			(expr1.val()*expr1.val() + expr2.val()*expr2.val()))
 FAD_BINARYOP_MACRO(pow,
 		   PowerOp,
 		   pow(expr1.val(), expr2.val()),
