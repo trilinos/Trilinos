@@ -346,7 +346,7 @@ int MSR_get_ones_rows(ML_Operator *data, int N_requested_rows, int requested_row
    return(1);
 }
 
-/*gets a point row from a VBR matrix same as above header this makes sure the matrix can go straight to a csr when converted.*/
+/*gets a point row from a VBR matrix same as above header this makes sure the matrix can go straight to a csr when converted.  Zeros are left in to allow for matrices already in VBR format to be put back into VBR more easily after they are passed to other processors as submatrices.*/
 int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
@@ -384,7 +384,6 @@ int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    endblock = bpntr[i];
 
    *row_lengths = 0; /*data points stored*/
-   array_place = 0; /*where we are in array we're itterating through*/
    
    /*iterate over the blocks*/
    for(i = startblock; i < endblock; i++)
@@ -392,16 +391,10 @@ int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
      /*iterate over columns in each block*/
      for(j = cpntr[bindx[i]]; j < cpntr[bindx[i]+1]; j++)
      {
-       cur_val = val[point_rows*array_place+offset];
-       /*strip out zeros*/
-       if(cur_val != 0.0)
-       {
-          
-         values[*row_lengths] = cur_val;
-         columns[*row_lengths] = j;
-         row_lengths[0]++;
-       }
-       array_place++;
+       cur_val = val[point_rows*row_lengths[0]+offset];
+       values[*row_lengths] = cur_val;
+       columns[*row_lengths] = j;
+       row_lengths[0]++;
      }
    }
    return(1);
