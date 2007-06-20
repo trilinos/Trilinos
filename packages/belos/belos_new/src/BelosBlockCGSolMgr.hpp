@@ -104,7 +104,14 @@ namespace Belos {
     
     //! @name Constructors/Destructor
     //@{ 
-    
+
+    /*! \brief Empty constructor for BlockCGSolMgr.
+     * This constructor takes no arguments and sets the default values for the solver.
+     * The linear problem must be passed in using setProblem() before solve() is called on this object.
+     * The solver values can be changed using setParameters().
+     */
+     BlockCGSolMgr();
+
     /*! \brief Basic constructor for BlockCGSolMgr.
      *
      * This constructor accepts the LinearProblem to be solved in addition
@@ -120,7 +127,7 @@ namespace Belos {
      *   - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled for the purposing of deciding convergence. Default: true
      */
     BlockCGSolMgr( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem,
-		      Teuchos::ParameterList &pl );
+		   const Teuchos::RefCountPtr<Teuchos::ParameterList> &pl );
     
     //! Destructor.
     virtual ~BlockCGSolMgr() {};
@@ -132,6 +139,10 @@ namespace Belos {
     const LinearProblem<ScalarType,MV,OP>& getProblem() const {
       return *problem_;
     }
+
+    /*! \brief Get a parameter list containing the valid parameters for this object.
+     */
+    Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const { return defaultParams_; }
     
     /*! \brief Return the timers for this object. 
      *
@@ -149,7 +160,7 @@ namespace Belos {
     
     void setProblem( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; }
     
-    void setParameters( const Teuchos::RefCountPtr<Teuchos::ParameterList> &params ) {}
+    void setParameters( const Teuchos::RefCountPtr<Teuchos::ParameterList> &params );
     
     //@}
     
@@ -186,59 +197,397 @@ namespace Belos {
     //@}
     
   private:
+
+    // Method to set the default parameters.
+    void setDefaultParams();
+
     // Linear problem.
     Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > problem_;
     
     // Output manager.
     Teuchos::RefCountPtr<OutputManager<ScalarType> > printer_;
+    Teuchos::RefCountPtr<ostream> outputStream_;
 
     // Status test.
-    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > maxIterTest_;
-    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > convTest_;
     Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > sTest_;
+    Teuchos::RefCountPtr<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
+    Teuchos::RefCountPtr<StatusTestResNorm<ScalarType,MV,OP> > convTest_;
     Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
 
     // Orthogonalization manager.
     Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
     
-    string orthoType_; 
-    MagnitudeType ortho_kappa_;
+    // Current parameter list.
+    Teuchos::RefCountPtr<ParameterList> params_, defaultParams_;
     
-    MagnitudeType convtol_;
-    int maxRestarts_, maxIters_;
-    bool adaptiveBlockSize_;
-    int blockSize_, numBlocks_;
-    int verbosity_, output_freq_;
+    // Default solver values.
+    static const MagnitudeType convtol_default_;
+    static const MagnitudeType orthoKappa_default_;
+    static const int maxIters_default_;
+    static const bool adaptiveBlockSize_default_;
+    static const bool showMaxResNormOnly_default_;
+    static const int blockSize_default_;
+    static const int verbosity_default_;
+    static const int outputFreq_default_;
+    static const std::string label_default_;
+    static const std::string orthoType_default_;
+    static const Teuchos::RefCountPtr<ostream> outputStream_default_;
+
+    // Current solver values.
+    MagnitudeType convtol_, orthoKappa_;
+    int maxIters_;
+    int blockSize_, verbosity_, outputFreq_;
+    bool adaptiveBlockSize_, showMaxResNormOnly_;
+    std::string orthoType_; 
     
     // Timers.
-    string label_;
+    std::string label_;
     Teuchos::RefCountPtr<Teuchos::Time> timerSolve_;
+
+    // Internal state variables.
+    bool isSet_;
   };
 
 
+// Default solver values.
+template<class ScalarType, class MV, class OP>
+const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType BlockCGSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
+
+template<class ScalarType, class MV, class OP>
+const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType BlockCGSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = -1.0;
+
+template<class ScalarType, class MV, class OP>
+const int BlockCGSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
+
+template<class ScalarType, class MV, class OP>
+const bool BlockCGSolMgr<ScalarType,MV,OP>::adaptiveBlockSize_default_ = true;
+
+template<class ScalarType, class MV, class OP>
+const bool BlockCGSolMgr<ScalarType,MV,OP>::showMaxResNormOnly_default_ = false;
+
+template<class ScalarType, class MV, class OP>
+const int BlockCGSolMgr<ScalarType,MV,OP>::blockSize_default_ = 1;
+
+template<class ScalarType, class MV, class OP>
+const int BlockCGSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
+
+template<class ScalarType, class MV, class OP>
+const int BlockCGSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
+
+template<class ScalarType, class MV, class OP>
+const std::string BlockCGSolMgr<ScalarType,MV,OP>::label_default_ = "Belos";
+
+template<class ScalarType, class MV, class OP>
+const std::string BlockCGSolMgr<ScalarType,MV,OP>::orthoType_default_ = "DGKS";
+
+template<class ScalarType, class MV, class OP>
+const Teuchos::RefCountPtr<ostream> BlockCGSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
+
+
+// Empty Constructor
+template<class ScalarType, class MV, class OP>
+BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr() :
+  outputStream_(outputStream_default_),
+  convtol_(convtol_default_),
+  orthoKappa_(orthoKappa_default_),
+  maxIters_(maxIters_default_),
+  blockSize_(blockSize_default_),
+  verbosity_(verbosity_default_),
+  outputFreq_(outputFreq_default_),
+  adaptiveBlockSize_(adaptiveBlockSize_default_),
+  showMaxResNormOnly_(showMaxResNormOnly_default_),
+  orthoType_(orthoType_default_),
+  label_(label_default_),
+  isSet_(false)
+{
+  // Set the default parameter list.
+  setDefaultParams();
+
+  // Set the current parameter list to the default parameter list, don't set parameters 
+  // just in case the user decides to set them later with a call to setParameters().
+  params_ = defaultParams_;
+}
+
+
+// Basic Constructor
+template<class ScalarType, class MV, class OP>
+BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( 
+						     const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem,
+						     const Teuchos::RefCountPtr<Teuchos::ParameterList> &pl ) : 
+  problem_(problem),
+  outputStream_(outputStream_default_),
+  convtol_(convtol_default_),
+  orthoKappa_(orthoKappa_default_),
+  maxIters_(maxIters_default_),
+  blockSize_(blockSize_default_),
+  verbosity_(verbosity_default_),
+  outputFreq_(outputFreq_default_),
+  adaptiveBlockSize_(adaptiveBlockSize_default_),
+  showMaxResNormOnly_(showMaxResNormOnly_default_),
+  orthoType_(orthoType_default_),
+  label_(label_default_),
+  isSet_(false)
+{
+  TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+
+  // Set the default parameter list.
+  setDefaultParams();
+
+  // If the parameter list pointer is null, then set the current parameters to the default parameter list.
+  if (pl == Teuchos::null) {
+    params_ = defaultParams_;
+  }
+  else {
+    // Set the parameters using the list that was passed in.
+    setParameters( pl );  
+  }
+}
+
+template<class ScalarType, class MV, class OP>
+void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountPtr<Teuchos::ParameterList> &params )
+{
+  // Create the internal parameter list if ones doesn't already exist.
+  if (params_ == Teuchos::null) {
+    params_ = Teuchos::rcp( new Teuchos::ParameterList() );
+  }
+
+  // Check for maximum number of iterations
+  if (params->isParameter("Maximum Iterations")) {
+    maxIters_ = params->get("Maximum Iterations",maxIters_default_);
+
+    // Update parameter in our list and in status test.
+    params_->set("Maximum Iterations", maxIters_);
+    if (maxIterTest_!=Teuchos::null)
+      maxIterTest_->setMaxIters( maxIters_ );
+  }
+
+  // Check for blocksize
+  if (params->isParameter("Block Size")) {
+    blockSize_ = params->get("Block Size",blockSize_default_);    
+    TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
+		       "Belos::BlockCGSolMgr: \"Block Size\" must be strictly positive.");
+
+    // Update parameter in our list.
+    params_->set("Block Size", blockSize_);
+  }
+
+  // Check if the blocksize should be adaptive
+  if (params->isParameter("Adapative Block Size")) {
+    adaptiveBlockSize_ = params->get("Adaptive Block Size",adaptiveBlockSize_default_);
+    
+    // Update parameter in our list.
+    params_->set("Adaptive Block Size", adaptiveBlockSize_);
+  }
+
+  // Check to see if the timer label changed.
+  if (params->isParameter("Timer Label")) {
+    string tempLabel = params->get("Timer Label", label_default_);
+
+    // Update parameter in our list and solver timer
+    if (tempLabel != label_) {
+      label_ = tempLabel;
+      params_->set("Timer Label", label_);
+      string solveLabel = label_ + ": BlockCGSolMgr total solve time";
+      timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+    }
+  }
+
+  // Check if the orthogonalization changed.
+  if (params->isParameter("Orthogonalization")) {
+    string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
+    TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS", std::invalid_argument,
+			"Belos::BlockCGSolMgr: \"Orthogonalization\" must be either \"DGKS\" or \"ICGS\".");
+    if (tempOrthoType != orthoType_) {
+      orthoType_ = tempOrthoType;
+      // Create orthogonalization manager
+      if (orthoType_=="DGKS") {
+	if (orthoKappa_ <= 0) {
+	  ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+	}
+	else {
+	  ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+	  Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+	}
+      }
+      else if (orthoType_=="ICGS") {
+	ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
+      } 
+    }  
+  }
+
+  // Check which orthogonalization constant to use.
+  if (params->isParameter("Orthogonalization Constant")) {
+    orthoKappa_ = params->get("Orthogonalization Constant",orthoKappa_default_);
+
+    // Update parameter in our list.
+    params_->set("Orthogonalization Constant",orthoKappa_);
+    if (orthoType_=="DGKS") {
+      if (orthoKappa_ > 0 && ortho_ != Teuchos::null) {
+	Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+      }
+    } 
+  }
+
+  // Check for a change in verbosity level
+  if (params->isParameter("Verbosity")) {
+    if (Teuchos::isParameterType<int>(*params,"Verbosity")) {
+      verbosity_ = params->get("Verbosity", verbosity_default_);
+    } else {
+      verbosity_ = (int)Teuchos::getParameter<Belos::MsgType>(*params,"Verbosity");
+    }
+
+    // Update parameter in our list.
+    params_->set("Verbosity", verbosity_);
+    if (printer_ != Teuchos::null)
+      printer_->setVerbosity(verbosity_);
+  }
+
+  // output stream
+  if (params->isParameter("Output Stream")) {
+    outputStream_ = Teuchos::getParameter<Teuchos::RefCountPtr<ostream> >(*params,"Output Stream");
+
+    // Update parameter in our list.
+    params_->set("Output Stream", outputStream_);
+    if (printer_ != Teuchos::null)
+      printer_->setOStream( outputStream_ );
+  }
+
+  // frequency level
+  if (verbosity_ & Belos::StatusTestDetails) {
+    if (params->isParameter("Output Frequency")) {
+      outputFreq_ = params->get("Output Frequency", outputFreq_default_);
+    }
+
+    // Update parameter in out list and output status test.
+    params_->set("Output Frequency", outputFreq_);
+    if (outputTest_ != Teuchos::null)
+      outputTest_->setOutputFrequency( outputFreq_ );
+  }
+
+  // Create output manager if we need to.
+  if (printer_ == Teuchos::null) {
+    printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
+  }  
+  
+  // Convergence
+  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
+  typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
+
+  // Check for convergence tolerance
+  if (params->isParameter("Convergence Tolerance")) {
+    convtol_ = params->get("Convergence Tolerance",convtol_default_);
+
+    // Update parameter in our list and residual tests.
+    params_->set("Convergence Tolerance", convtol_);
+    if (convTest_ != Teuchos::null)
+      convTest_->setTolerance( convtol_ );
+  }
+  
+  if (params->isParameter("Show Maximum Residual Norm Only")) {
+    showMaxResNormOnly_ = Teuchos::getParameter<bool>(*params,"Show Maximum Residual Norm Only");
+
+    // Update parameter in our list and residual tests
+    params_->set("Show Maximum Residual Norm Only", showMaxResNormOnly_);
+    if (convTest_ != Teuchos::null)
+      convTest_->setShowMaxResNormOnly( showMaxResNormOnly_ );
+  }
+
+  // Create status tests if we need to.
+
+  // Basic test checks maximum iterations and native residual.
+  if (maxIterTest_ == Teuchos::null)
+    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
+  
+  // Implicit residual test, using the native residual to determine if convergence was achieved.
+  if (convTest_ == Teuchos::null)
+    convTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, 1 ) );
+  
+  if (sTest_ == Teuchos::null)
+    sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
+  
+  if (outputTest_ == Teuchos::null) {
+    if (outputFreq_ > 0) {
+      outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
+									  sTest_, 
+									  outputFreq_, 
+									  Passed+Failed+Undefined ) ); 
+    }
+    else {
+      outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
+									  sTest_, 1 ) );
+    }
+  }
+
+  // Create orthogonalization manager if we need to.
+  if (ortho_ == Teuchos::null) {
+    if (orthoType_=="DGKS") {
+      if (orthoKappa_ <= 0) {
+	ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+      }
+      else {
+	ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+	Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+      }
+    }
+    else if (orthoType_=="ICGS") {
+      ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
+    } 
+    else {
+      TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS",std::logic_error,
+			 "Belos::BlockCGSolMgr(): Invalid orthogonalization type.");
+    }  
+  }
+
+  // Create the timer if we need to.
+  if (timerSolve_ == Teuchos::null) {
+    string solveLabel = label_ + ": BlockCGSolMgr total solve time";
+    timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+  }
+
+  // Inform the solver manager that the current parameters were set.
+  isSet_ = true;
+}
+
+    
+template<class ScalarType, class MV, class OP>
+void BlockCGSolMgr<ScalarType,MV,OP>::setDefaultParams()
+{
+  defaultParams_ = Teuchos::rcp( new Teuchos::ParameterList() );
+  
+  // Set all the valid parameters and their default values.
+  defaultParams_->set("Convergence Tolerance", convtol_default_);
+  defaultParams_->set("Maximum Iterations", maxIters_default_);
+  defaultParams_->set("Block Size", blockSize_default_);
+  defaultParams_->set("Adaptive Block Size", adaptiveBlockSize_default_);
+  defaultParams_->set("Verbosity", verbosity_default_);
+  defaultParams_->set("Output Frequency", outputFreq_default_);  
+  defaultParams_->set("Output Stream", outputStream_default_);
+  defaultParams_->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_);
+  defaultParams_->set("Timer Label", label_default_);
+  //  defaultParams_->set("Restart Timers", restartTimers_);
+  defaultParams_->set("Orthogonalization", orthoType_default_);
+  defaultParams_->set("Orthogonalization Constant",orthoKappa_default_);
+}
+
+  /*
 // Constructor
 template<class ScalarType, class MV, class OP>
 BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem,
 						Teuchos::ParameterList &pl ) : 
   problem_(problem),
   orthoType_("DGKS"),
-  ortho_kappa_(-1.0),
+  orthoKappa_(-1.0),
   convtol_(0),
-  maxRestarts_(20),
   adaptiveBlockSize_(true),
   blockSize_(0),
-  numBlocks_(0),
   verbosity_(Belos::Errors),
-  output_freq_(-1),
+  outputFreq_(-1),
   label_("Belos")
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
   
   // convergence tolerance
   convtol_ = pl.get("Convergence Tolerance",MT::prec());
-  
-  // maximum number of restarts
-  maxRestarts_ = pl.get("Maximum Restarts",maxRestarts_);
   
   // maximum number of iterations
   maxIters_ = pl.get("Maximum Iterations",maxIters_);
@@ -248,10 +597,6 @@ BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( const Teuchos::RefCountPtr<Linea
   TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
                      "Belos::BlockCGSolMgr: \"Block Size\" must be strictly positive.");
   adaptiveBlockSize_ = pl.get("Adaptive Block Size",adaptiveBlockSize_);
-
-  numBlocks_ = pl.get("Num Blocks",25);
-  TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
-                     "Belos::BlockCGSolMgr: \"Num Blocks\" must be strictly positive.");
 
   // timer label and create timer
   label_ = pl.get("Timer Label", "Belos");
@@ -265,7 +610,7 @@ BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( const Teuchos::RefCountPtr<Linea
   }
 
   // which orthogonalization constant to use
-  ortho_kappa_ = pl.get("Orthogonalization Constant",ortho_kappa_);
+  orthoKappa_ = pl.get("Orthogonalization Constant",orthoKappa_);
   
   // verbosity level
   if (pl.isParameter("Verbosity")) {
@@ -279,7 +624,7 @@ BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( const Teuchos::RefCountPtr<Linea
   // frequency level
   if (verbosity_ & Belos::StatusTestDetails) {
     if (pl.isParameter("Output Frequency")) {
-      output_freq_ = pl.get("Output Frequency", output_freq_);
+      outputFreq_ = pl.get("Output Frequency", outputFreq_);
     }
   }
 
@@ -300,10 +645,10 @@ BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( const Teuchos::RefCountPtr<Linea
   
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
   
-  if (output_freq_ > 0) {
+  if (outputFreq_ > 0) {
     outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
                                                                         sTest_, 
-									output_freq_, 
+									outputFreq_, 
 									Passed+Failed+Undefined ) ); 
   }
   else {
@@ -313,12 +658,12 @@ BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( const Teuchos::RefCountPtr<Linea
 
   // Create orthogonalization manager
   if (orthoType_=="DGKS") {
-    if (ortho_kappa_ <= 0) {
+    if (orthoKappa_ <= 0) {
       ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
     }
     else {
       ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( ortho_kappa_ );
+      Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
     }
   }
   else if (orthoType_=="ICGS") {
@@ -330,11 +675,17 @@ BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( const Teuchos::RefCountPtr<Linea
   }  
 
 }
+  */
 
   
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
+
+  // Set the current parameters if they were not set before.
+  // NOTE:  This may occur if the user generated the solver manager with the default constructor and 
+  // then didn't set any parameters using setParameters().
+  if (!isSet_) { setParameters( params_ ); }
 
   Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;

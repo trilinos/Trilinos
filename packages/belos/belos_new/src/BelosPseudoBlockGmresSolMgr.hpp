@@ -109,8 +109,8 @@ namespace Belos {
      * The linear problem must be passed in using setProblem() before solve() is called on this object.
      * The solver values can be changed using setParameters().
      */
-     PseudoBlockGmresSolMgr() {}
- 
+    PseudoBlockGmresSolMgr();
+    
     /*! \brief Basic constructor for PseudoBlockGmresSolMgr.
      *
      * This constructor accepts the LinearProblem to be solved in addition
@@ -139,6 +139,10 @@ namespace Belos {
       return *problem_;
     }
     
+    /*! \brief Get a parameter list containing the valid parameters for this object.
+     */
+    Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const { return defaultParams_; }
+    
     /*! \brief Return the timers for this object. 
      *
      * The timers are ordered as follows:
@@ -155,7 +159,7 @@ namespace Belos {
     
     void setProblem( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; }
     
-    void setParameters( const Teuchos::RefCountPtr<Teuchos::ParameterList> &params ) {}
+    void setParameters( const Teuchos::RefCountPtr<Teuchos::ParameterList> &params );
     
     //@}
     
@@ -192,207 +196,511 @@ namespace Belos {
     //@}
     
   private:
+
+    // Method to set the default parameters.
+    void setDefaultParams();
+
+    // Method to convert string to enumerated type for residual.
+    typename StatusTestResNorm<ScalarType,MV,OP>::ScaleType convertStringToScaleType( string& scaleType ) {
+      typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
+      if (scaleType == "Norm of Initial Residual") {
+	return StatusTestResNorm_t::NormOfInitRes;
+      } else if (scaleType == "Norm of Preconditioned Initial Residual") {
+	return StatusTestResNorm_t::NormOfPrecInitRes;
+      } else if (scaleType == "Norm of RHS") {
+	return StatusTestResNorm_t::NormOfRHS;
+      } else if (scaleType == "None") {
+	return StatusTestResNorm_t::None;
+      } else 
+	TEST_FOR_EXCEPTION( true ,std::logic_error,
+			    "Belos::BlockGmresSolMgr(): Invalid residual scaling type.");
+    }
+
     // Linear problem.
     Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > problem_;
     
     // Output manager.
     Teuchos::RefCountPtr<OutputManager<ScalarType> > printer_;
+    Teuchos::RefCountPtr<ostream> outputStream_;
 
     // Status test.
-    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > maxIterTest_;
+    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > sTest_;
+    Teuchos::RefCountPtr<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
     Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > convTest_;
     Teuchos::RefCountPtr<StatusTestResNorm<ScalarType,MV,OP> > impConvTest_, expConvTest_;
-    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > sTest_;
     Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
 
     // Orthogonalization manager.
     Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
-    
-    string orthoType_; 
-    MagnitudeType ortho_kappa_;
-    
-    MagnitudeType convtol_;
+
+     // Current parameter list.
+    Teuchos::RefCountPtr<ParameterList> params_, defaultParams_;
+   
+    // Default solver values.
+    static const MagnitudeType convtol_default_;
+    static const MagnitudeType orthoKappa_default_;
+    static const int maxRestarts_default_;
+    static const int maxIters_default_;
+    static const bool adaptiveBlockSize_default_;
+    static const bool showMaxResNormOnly_default_;
+    static const int blockSize_default_;
+    static const int numBlocks_default_;
+    static const int verbosity_default_;
+    static const int outputFreq_default_;
+    static const int defQuorum_default_;
+    static const std::string impResScale_default_; 
+    static const std::string expResScale_default_; 
+    static const std::string label_default_;
+    static const std::string orthoType_default_;
+    static const Teuchos::RefCountPtr<ostream> outputStream_default_;
+
+    // Current solver values.
+    MagnitudeType convtol_, orthoKappa_;
     int maxRestarts_, maxIters_;
-    bool adaptiveBlockSize_;
-    int blockSize_, numBlocks_;
-    int verbosity_, output_freq_;
-    int defQuorum_;
-    typename StatusTestResNorm<ScalarType,MV,OP>::ScaleType impResScale_, expResScale_;       
+    int blockSize_, numBlocks_, verbosity_, outputFreq_, defQuorum_;
+    bool adaptiveBlockSize_, showMaxResNormOnly_;
+    std::string orthoType_; 
+    std::string impResScale_, expResScale_;       
  
     // Timers.
-    string label_;
+    std::string label_;
     Teuchos::RefCountPtr<Teuchos::Time> timerSolve_;
+
+    // Internal state variables.
+    bool isSet_;
   };
 
 
-// Constructor
+// Default solver values.
+template<class ScalarType, class MV, class OP>
+const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
+
+template<class ScalarType, class MV, class OP>
+const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = -1.0;
+
+template<class ScalarType, class MV, class OP>
+const int PseudoBlockGmresSolMgr<ScalarType,MV,OP>::maxRestarts_default_ = 20;
+
+template<class ScalarType, class MV, class OP>
+const int PseudoBlockGmresSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
+
+template<class ScalarType, class MV, class OP>
+const bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::adaptiveBlockSize_default_ = true;
+
+template<class ScalarType, class MV, class OP>
+const bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::showMaxResNormOnly_default_ = false;
+
+template<class ScalarType, class MV, class OP>
+const int PseudoBlockGmresSolMgr<ScalarType,MV,OP>::blockSize_default_ = 1;
+
+template<class ScalarType, class MV, class OP>
+const int PseudoBlockGmresSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 25;
+
+template<class ScalarType, class MV, class OP>
+const int PseudoBlockGmresSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
+
+template<class ScalarType, class MV, class OP>
+const int PseudoBlockGmresSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
+
+template<class ScalarType, class MV, class OP>
+const int PseudoBlockGmresSolMgr<ScalarType,MV,OP>::defQuorum_default_ = 1;
+
+template<class ScalarType, class MV, class OP>
+const std::string PseudoBlockGmresSolMgr<ScalarType,MV,OP>::impResScale_default_ = "Norm of Preconditioned Initial Residual";
+
+template<class ScalarType, class MV, class OP>
+const std::string PseudoBlockGmresSolMgr<ScalarType,MV,OP>::expResScale_default_ = "Norm of Initial Residual";
+
+template<class ScalarType, class MV, class OP>
+const std::string PseudoBlockGmresSolMgr<ScalarType,MV,OP>::label_default_ = "Belos";
+
+template<class ScalarType, class MV, class OP>
+const std::string PseudoBlockGmresSolMgr<ScalarType,MV,OP>::orthoType_default_ = "DGKS";
+
+template<class ScalarType, class MV, class OP>
+const Teuchos::RefCountPtr<ostream> PseudoBlockGmresSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
+
+
+// Empty Constructor
+template<class ScalarType, class MV, class OP>
+PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr() :
+  outputStream_(outputStream_default_),
+  convtol_(convtol_default_),
+  orthoKappa_(orthoKappa_default_),
+  maxRestarts_(maxRestarts_default_),
+  maxIters_(maxIters_default_),
+  blockSize_(blockSize_default_),
+  numBlocks_(numBlocks_default_),
+  verbosity_(verbosity_default_),
+  outputFreq_(outputFreq_default_),
+  defQuorum_(defQuorum_default_),
+  adaptiveBlockSize_(adaptiveBlockSize_default_),
+  showMaxResNormOnly_(showMaxResNormOnly_default_),
+  orthoType_(orthoType_default_),
+  impResScale_(impResScale_default_),
+  expResScale_(expResScale_default_),
+  label_(label_default_),
+  isSet_(false)
+{
+  // Set the default parameter list.
+  setDefaultParams();
+
+  // Set the current parameter list to the default parameter list, don't set parameters 
+  // just in case the user decides to set them later with a call to setParameters().
+  params_ = defaultParams_;
+}
+
+// Basic Constructor
 template<class ScalarType, class MV, class OP>
 PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr( 
-						     const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem,
-						     const Teuchos::RefCountPtr<Teuchos::ParameterList> &pl ) : 
+								 const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem,
+								 const Teuchos::RefCountPtr<Teuchos::ParameterList> &pl ) : 
   problem_(problem),
-  orthoType_("DGKS"),
-  ortho_kappa_(-1.0),
-  convtol_(0),
-  maxRestarts_(20),
-  adaptiveBlockSize_(true),
-  blockSize_(0),
-  numBlocks_(0),
-  verbosity_(Belos::Errors),
-  output_freq_(-1),
-  defQuorum_(1),
-  impResScale_(Belos::StatusTestResNorm<ScalarType,MV,OP>::NormOfPrecInitRes),
-  expResScale_(Belos::StatusTestResNorm<ScalarType,MV,OP>::NormOfInitRes),
-  label_("Belos")
+  outputStream_(outputStream_default_),
+  convtol_(convtol_default_),
+  orthoKappa_(orthoKappa_default_),
+  maxRestarts_(maxRestarts_default_),
+  maxIters_(maxIters_default_),
+  blockSize_(blockSize_default_),
+  numBlocks_(numBlocks_default_),
+  verbosity_(verbosity_default_),
+  outputFreq_(outputFreq_default_),
+  defQuorum_(defQuorum_default_),
+  adaptiveBlockSize_(adaptiveBlockSize_default_),
+  showMaxResNormOnly_(showMaxResNormOnly_default_),
+  orthoType_(orthoType_default_),
+  impResScale_(impResScale_default_),
+  expResScale_(expResScale_default_),
+  label_(label_default_),
+  isSet_(false)
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
-  
-  // convergence tolerance
-  convtol_ = pl->get("Convergence Tolerance",MT::prec());
-  
-  // maximum number of restarts
-  maxRestarts_ = pl->get("Maximum Restarts",maxRestarts_);
-  
-  // maximum number of iterations
-  maxIters_ = pl->get("Maximum Iterations",maxIters_);
 
-  // block size: default is 1
-  blockSize_ = pl->get("Block Size",1);
-  TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
-                     "Belos::PseudoBlockGmresSolMgr: \"Block Size\" must be strictly positive.");
-  adaptiveBlockSize_ = pl->get("Adaptive Block Size",adaptiveBlockSize_);
+  // Set the default parameter list.
+  setDefaultParams();
 
-  numBlocks_ = pl->get("Num Blocks",25);
-  TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
-                     "Belos::PseudoBlockGmresSolMgr: \"Num Blocks\" must be strictly positive.");
+  // If the parameter list pointer is null, then set the current parameters to the default parameter list.
+  if (pl == Teuchos::null) {
+    params_ = defaultParams_;
+  }
+  else {
+    // Set the parameters using the list that was passed in.
+    setParameters( pl );  
+  }
+}
 
-  label_ = pl->get("Timer Label", label_);
-  string solveLabel = label_ + ": PseudoBlockGmresSolMgr total solve time";
-  timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
-  
-  // which orthogonalization to use
-  orthoType_ = pl->get("Orthogonalization",orthoType_);
-  if (orthoType_ != "DGKS" && orthoType_ != "ICGS") {
-    orthoType_ = "DGKS";
+template<class ScalarType, class MV, class OP>
+void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountPtr<Teuchos::ParameterList> &params )
+{
+  // Create the internal parameter list if ones doesn't already exist.
+  if (params_ == Teuchos::null) {
+    params_ = Teuchos::rcp( new Teuchos::ParameterList() );
   }
 
-  // which orthogonalization constant to use
-  ortho_kappa_ = pl->get("Orthogonalization Constant",ortho_kappa_);
-  
-  // verbosity level
-  if (pl->isParameter("Verbosity")) {
-    if (Teuchos::isParameterType<int>(*pl,"Verbosity")) {
-      verbosity_ = pl->get("Verbosity", verbosity_);
-    } else {
-      verbosity_ = (int)Teuchos::getParameter<Belos::MsgType>(*pl,"Verbosity");
+  // Check for maximum number of restarts
+  if (params->isParameter("Maximum Restarts")) {
+    maxRestarts_ = params->get("Maximum Restarts",maxRestarts_default_);
+
+    // Update parameter in our list.
+    params_->set("Maximum Restarts", maxRestarts_);
+  }
+
+  // Check for maximum number of iterations
+  if (params->isParameter("Maximum Iterations")) {
+    maxIters_ = params->get("Maximum Iterations",maxIters_default_);
+
+    // Update parameter in our list and in status test.
+    params_->set("Maximum Iterations", maxIters_);
+    if (maxIterTest_!=Teuchos::null)
+      maxIterTest_->setMaxIters( maxIters_ );
+  }
+
+  // Check for blocksize
+  if (params->isParameter("Block Size")) {
+    blockSize_ = params->get("Block Size",blockSize_default_);    
+    TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
+		       "Belos::BlockGmresSolMgr: \"Block Size\" must be strictly positive.");
+
+    // Update parameter in our list.
+    params_->set("Block Size", blockSize_);
+  }
+
+  // Check if the blocksize should be adaptive
+  if (params->isParameter("Adapative Block Size")) {
+    adaptiveBlockSize_ = params->get("Adaptive Block Size",adaptiveBlockSize_default_);
+    
+    // Update parameter in our list.
+    params_->set("Adaptive Block Size", adaptiveBlockSize_);
+  }
+
+  // Check for the maximum number of blocks.
+  if (params->isParameter("Num Blocks")) {
+    numBlocks_ = params->get("Num Blocks",numBlocks_default_);
+    TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
+		       "Belos::BlockGmresSolMgr: \"Num Blocks\" must be strictly positive.");
+
+    // Update parameter in our list.
+    params_->set("Num Blocks", numBlocks_);
+  }
+
+  // Check to see if the timer label changed.
+  if (params->isParameter("Timer Label")) {
+    string tempLabel = params->get("Timer Label", label_default_);
+
+    // Update parameter in our list and solver timer
+    if (tempLabel != label_) {
+      label_ = tempLabel;
+      params_->set("Timer Label", label_);
+      string solveLabel = label_ + ": BlockGmresSolMgr total solve time";
+      timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
     }
   }
-  
+
+  // Check if the orthogonalization changed.
+  if (params->isParameter("Orthogonalization")) {
+    string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
+    TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS", std::invalid_argument,
+			"Belos::BlockGmresSolMgr: \"Orthogonalization\" must be either \"DGKS\" or \"ICGS\".");
+    if (tempOrthoType != orthoType_) {
+      orthoType_ = tempOrthoType;
+      // Create orthogonalization manager
+      if (orthoType_=="DGKS") {
+	if (orthoKappa_ <= 0) {
+	  ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+	}
+	else {
+	  ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+	  Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+	}
+      }
+      else if (orthoType_=="ICGS") {
+	ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
+      } 
+    }  
+  }
+
+  // Check which orthogonalization constant to use.
+  if (params->isParameter("Orthogonalization Constant")) {
+    orthoKappa_ = params->get("Orthogonalization Constant",orthoKappa_default_);
+
+    // Update parameter in our list.
+    params_->set("Orthogonalization Constant",orthoKappa_);
+    if (orthoType_=="DGKS") {
+      if (orthoKappa_ > 0 && ortho_ != Teuchos::null) {
+	Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+      }
+    } 
+  }
+
+  // Check for a change in verbosity level
+  if (params->isParameter("Verbosity")) {
+    if (Teuchos::isParameterType<int>(*params,"Verbosity")) {
+      verbosity_ = params->get("Verbosity", verbosity_default_);
+    } else {
+      verbosity_ = (int)Teuchos::getParameter<Belos::MsgType>(*params,"Verbosity");
+    }
+
+    // Update parameter in our list.
+    params_->set("Verbosity", verbosity_);
+    if (printer_ != Teuchos::null)
+      printer_->setVerbosity(verbosity_);
+  }
+
+  // output stream
+  if (params->isParameter("Output Stream")) {
+    outputStream_ = Teuchos::getParameter<Teuchos::RefCountPtr<ostream> >(*params,"Output Stream");
+
+    // Update parameter in our list.
+    params_->set("Output Stream", outputStream_);
+    if (printer_ != Teuchos::null)
+      printer_->setOStream( outputStream_ );
+  }
+
   // frequency level
   if (verbosity_ & Belos::StatusTestDetails) {
-    if (pl->isParameter("Output Frequency")) {
-      output_freq_ = pl->get("Output Frequency", output_freq_);
+    if (params->isParameter("Output Frequency")) {
+      outputFreq_ = params->get("Output Frequency", outputFreq_default_);
     }
+
+    // Update parameter in out list and output status test.
+    params_->set("Output Frequency", outputFreq_);
+    if (outputTest_ != Teuchos::null)
+      outputTest_->setOutputFrequency( outputFreq_ );
   }
 
-  // Create output manager
-  printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_) );
+  // Create output manager if we need to.
+  if (printer_ == Teuchos::null) {
+    printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
+  }
   
-  // Create status tests
-
-  // Get the deflation quorum, or number of converged systems before deflation is allowed
-  if (pl->isParameter("Deflation Quorum")) {
-    defQuorum_ = pl->get("Deflation Quorum", defQuorum_);
-  }
-  TEST_FOR_EXCEPTION(defQuorum_ > blockSize_, std::invalid_argument,
-                     "Belos::PseudoBlockGmresSolMgr: \"Deflation Quorum\" cannot be larger than \"Block Size\".");
-
   // Convergence
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
 
-  if (pl->isParameter("Implicit Residual Scaling")) {
-    string impResScalingType = Teuchos::getParameter<string>( *pl, "Implicit Residual Scaling" );
-    if (impResScalingType == "Norm of Initial Residual") {
-      impResScale_ = StatusTestResNorm_t::NormOfInitRes;
-    } else if (impResScalingType == "Norm of Preconditioned Initial Residual") {
-      impResScale_ = StatusTestResNorm_t::NormOfPrecInitRes;
-    } else if (impResScalingType == "Norm of RHS") {
-      impResScale_ = StatusTestResNorm_t::NormOfRHS;
-    } else if (impResScalingType == "None") {
-      impResScale_ = StatusTestResNorm_t::None;
-    } else 
-      TEST_FOR_EXCEPTION( true ,std::logic_error,
-			  "Belos::PseudoBlockGmresSolMgr(): Invalid implicit residual scaling type.");
+  // Check for convergence tolerance
+  if (params->isParameter("Convergence Tolerance")) {
+    convtol_ = params->get("Convergence Tolerance",convtol_default_);
+
+    // Update parameter in our list and residual tests.
+    params_->set("Convergence Tolerance", convtol_);
+    if (impConvTest_ != Teuchos::null)
+      impConvTest_->setTolerance( convtol_ );
+    if (expConvTest_ != Teuchos::null)
+      expConvTest_->setTolerance( convtol_ );
   }
   
-  if (pl->isParameter("Explicit Residual Scaling")) {
-    string expResScalingType = Teuchos::getParameter<string>( *pl, "Explicit Residual Scaling" );
-    if (expResScalingType == "Norm of Initial Residual") {
-      expResScale_ = StatusTestResNorm_t::NormOfInitRes;
-    } else if (expResScalingType == "Norm of Preconditioned Initial Residual") {
-      expResScale_ = StatusTestResNorm_t::NormOfPrecInitRes;
-    } else if (expResScalingType == "Norm of RHS") {
-      expResScale_ = StatusTestResNorm_t::NormOfRHS;
-    } else if (expResScalingType == "None") {
-      expResScale_ = StatusTestResNorm_t::None;
-    } else 
-      TEST_FOR_EXCEPTION( true ,std::logic_error,
-			  "Belos::PseudoBlockGmresSolMgr(): Invalid explicit residual scaling type.");
+  if (params->isParameter("Implicit Residual Scaling")) {
+    string tempImpResScale = Teuchos::getParameter<string>( *params, "Implicit Residual Scaling" );
+    typename StatusTestResNorm_t::ScaleType impResScaleType = convertStringToScaleType( tempImpResScale );
+    impResScale_ = tempImpResScale;
+
+    // Update parameter in our list and residual tests
+    params_->set("Implicit Residual Scaling", impResScale_);
+    if (impConvTest_ != Teuchos::null)
+      impConvTest_->defineScaleForm( impResScaleType, Belos::TwoNorm );
   }
   
+  if (params->isParameter("Explicit Residual Scaling")) {
+    string tempExpResScale = Teuchos::getParameter<string>( *params, "Explicit Residual Scaling" );
+    typename StatusTestResNorm_t::ScaleType expResScaleType = convertStringToScaleType( tempExpResScale );
+    expResScale_ = tempExpResScale;
+
+    // Update parameter in our list and residual tests
+    params_->set("Explicit Residual Scaling", expResScale_);
+    if (expConvTest_ != Teuchos::null)
+      expConvTest_->defineScaleForm( expResScaleType, Belos::TwoNorm );
+  }
+
+
+  if (params->isParameter("Show Maximum Residual Norm Only")) {
+    showMaxResNormOnly_ = Teuchos::getParameter<bool>(*params,"Show Maximum Residual Norm Only");
+
+    // Update parameter in our list and residual tests
+    params_->set("Show Maximum Residual Norm Only", showMaxResNormOnly_);
+    if (impConvTest_ != Teuchos::null)
+      impConvTest_->setShowMaxResNormOnly( showMaxResNormOnly_ );
+    if (expConvTest_ != Teuchos::null)
+      expConvTest_->setShowMaxResNormOnly( showMaxResNormOnly_ );
+  }
+
+  // Create status tests if we need to.
+
+  // Get the deflation quorum, or number of converged systems before deflation is allowed
+  if (params->isParameter("Deflation Quorum")) {
+    defQuorum_ = params->get("Deflation Quorum", defQuorum_);
+    TEST_FOR_EXCEPTION(defQuorum_ > blockSize_, std::invalid_argument,
+		       "Belos::PseudoBlockGmresSolMgr: \"Deflation Quorum\" cannot be larger than \"Block Size\".");
+    params_->set("Deflation Quorum", defQuorum_);
+    if (impConvTest_ != Teuchos::null)
+      impConvTest_->setQuorum( defQuorum_ );
+    if (expConvTest_ != Teuchos::null)
+      expConvTest_->setQuorum( defQuorum_ );
+  }
+
   // Basic test checks maximum iterations and native residual.
-  maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
+  if (maxIterTest_ == Teuchos::null)
+    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
-  impConvTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, defQuorum_ ) );
-  impConvTest_->defineScaleForm( impResScale_, Belos::TwoNorm );
-  
+  if (impConvTest_ == Teuchos::null) {
+    impConvTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, defQuorum_ ) );
+    impConvTest_->defineScaleForm( convertStringToScaleType(impResScale_), Belos::TwoNorm );
+    impConvTest_->setShowMaxResNormOnly( showMaxResNormOnly_ );
+  }
+
   // Explicit residual test once the native residual is below the tolerance
-  expConvTest_  = Teuchos::rcp( new StatusTestResNorm_t( convtol_, defQuorum_ ) );
-  expConvTest_->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
-  expConvTest_->defineScaleForm( expResScale_, Belos::TwoNorm );
-  
-  convTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, impConvTest_, expConvTest_ ) );
-
-  sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
-  
-  if (output_freq_ > 0) {
-    outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
-                                                                        sTest_, 
-									output_freq_, 
-									Passed+Failed+Undefined ) ); 
-  }
-  else {
-    outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
-									sTest_, 1 ) );
+  if (expConvTest_ == Teuchos::null) {
+    expConvTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, defQuorum_ ) );
+    expConvTest_->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
+    expConvTest_->defineScaleForm( convertStringToScaleType(expResScale_), Belos::TwoNorm );
+    expConvTest_->setShowMaxResNormOnly( showMaxResNormOnly_ );
   }
 
-  // Create orthogonalization manager
-  if (orthoType_=="DGKS") {
-    if (ortho_kappa_ <= 0) {
-      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+  if (convTest_ == Teuchos::null)
+    convTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, impConvTest_, expConvTest_ ) );
+
+  if (sTest_ == Teuchos::null)
+    sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
+  
+  if (outputTest_ == Teuchos::null) {
+    if (outputFreq_ > 0) {
+      outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
+									  sTest_, 
+									  outputFreq_, 
+									  Passed+Failed+Undefined ) ); 
     }
     else {
-      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( ortho_kappa_ );
+      outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
+									  sTest_, 1 ) );
     }
   }
-  else if (orthoType_=="ICGS") {
-    ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-  } 
-  else {
-    TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS",std::logic_error,
-		       "Belos::PseudoBlockGmresSolMgr(): Invalid orthogonalization type.");
-  }  
 
+  // Create orthogonalization manager if we need to.
+  if (ortho_ == Teuchos::null) {
+    if (orthoType_=="DGKS") {
+      if (orthoKappa_ <= 0) {
+	ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+      }
+      else {
+	ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+	Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+      }
+    }
+    else if (orthoType_=="ICGS") {
+      ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
+    } 
+    else {
+      TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS",std::logic_error,
+			 "Belos::BlockGmresSolMgr(): Invalid orthogonalization type.");
+    }  
+  }
+
+  // Create the timer if we need to.
+  if (timerSolve_ == Teuchos::null) {
+    string solveLabel = label_ + ": BlockGmresSolMgr total solve time";
+    timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+  }
+
+  // Inform the solver manager that the current parameters were set.
+  isSet_ = true;
 }
 
+    
+template<class ScalarType, class MV, class OP>
+void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setDefaultParams()
+{
+  defaultParams_ = Teuchos::rcp( new Teuchos::ParameterList() );
   
+  // Set all the valid parameters and their default values.
+  defaultParams_->set("Convergence Tolerance", convtol_default_);
+  defaultParams_->set("Maximum Restarts", maxRestarts_default_);
+  defaultParams_->set("Maximum Iterations", maxIters_default_);
+  defaultParams_->set("Num Blocks", numBlocks_default_);
+  defaultParams_->set("Block Size", blockSize_default_);
+  defaultParams_->set("Adaptive Block Size", adaptiveBlockSize_default_);
+  defaultParams_->set("Verbosity", verbosity_default_);
+  defaultParams_->set("Output Frequency", outputFreq_default_);  
+  defaultParams_->set("Deflation Quorum", defQuorum_default_);
+  defaultParams_->set("Output Stream", outputStream_default_);
+  defaultParams_->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_);
+  defaultParams_->set("Implicit Residual Scaling", impResScale_default_);
+  defaultParams_->set("Explicit Residual Scaling", expResScale_default_);
+  defaultParams_->set("Timer Label", label_default_);
+  //  defaultParams_->set("Restart Timers", restartTimers_);
+  defaultParams_->set("Orthogonalization", orthoType_default_);
+  defaultParams_->set("Orthogonalization Constant",orthoKappa_default_);
+}
+
+
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
+  // Set the current parameters if they were not set before.
+  // NOTE:  This may occur if the user generated the solver manager with the default constructor and 
+  // then didn't set any parameters using setParameters().
+  if (!isSet_) { setParameters( params_ ); }
+  
   Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
   
@@ -691,6 +999,14 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	  currIdx.resize( numCurrRHS  );
 	  for (int i=0; i<numCurrRHS; ++i) 
 	    { currIdx[i] = startPtr+i; }	  
+	  
+	  // Adapt the status test quorum if we need to.
+	  if (defQuorum_ > blockSize_) {
+	    if (impConvTest_ != Teuchos::null)
+	      impConvTest_->setQuorum( blockSize_ );
+	    if (expConvTest_ != Teuchos::null)
+	      expConvTest_->setQuorum( blockSize_ );
+	  }
 	}
 	else {
 	  currIdx.resize( blockSize_ );

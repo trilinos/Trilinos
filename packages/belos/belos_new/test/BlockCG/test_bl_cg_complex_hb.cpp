@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
   // *************Start the block CG iteration***********************
   // *******************************************************************
   //
-  Belos::BlockCGSolMgr<ST,MV,OP> solver( problem, belosList );
+  Belos::BlockCGSolMgr<ST,MV,OP> solver( problem, rcp(&belosList,false) );
 
   //
   // **********Print out information about problem*******************

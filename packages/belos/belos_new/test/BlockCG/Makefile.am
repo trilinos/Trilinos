@@ -19,7 +19,7 @@ if BUILD_TRIUTILS
 if BUILD_IFPACK
 BELOS_BCG_IFPACK_EX = bl_pcg_hb 
 endif
-BELOS_BCG_HB_EX = bl_cg_hb Dummy
+BELOS_BCG_HB_EX = bl_cg_hb resolve_cg_hb Dummy
 endif
 
 if BUILD_TRIUTILS
@@ -45,6 +45,8 @@ bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp $(srcdir)/createEpetraProblem.c
 
 bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
+resolve_cg_hb_SOURCES = $(srcdir)/test_resolve_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
+
 bl_cg_complex_hb_SOURCES = $(srcdir)/test_bl_cg_complex_hb.cpp
 
 bl_pcg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
@@ -52,6 +54,10 @@ bl_pcg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
 bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+resolve_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -64,11 +70,15 @@ bl_pcg_hb_CXXFLAGS = -I$(top_srcdir)/src
 
 bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
 
+resolve_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
+
 bl_cg_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 bl_pcg_hb_LDADD = $(EXPORT_LIBS)
 
 bl_cg_hb_LDADD = $(EXPORT_LIBS)
+
+resolve_cg_hb_LDADD = $(EXPORT_LIBS)
 
 bl_cg_complex_hb_LDADD = $(EXPORT_LIBS)
 

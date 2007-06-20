@@ -35,8 +35,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
-#include "BelosBlockGmresSolMgr.hpp"
-#include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "BelosBlockCGSolMgr.hpp"
 #include "createEpetraProblem.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -69,7 +68,7 @@ int main(int argc, char *argv[]) {
   int numrhs = 1;
   int maxrestarts = 15; // number of restarts allowed 
   int maxiters = -1;    // maximum number of iterations allowed per linear system
-  std::string filename("orsirr1.hb");
+  std::string filename("bcsstk14.hb");
   MT tol = 1.0e-5;  // relative residual tolerance
 
   Teuchos::CommandLineProcessor cmdp(false,true);
@@ -131,14 +130,11 @@ int main(int argc, char *argv[]) {
   }
   //
   // *******************************************************************
-  // *************Start the block Gmres iteration*************************
+  // *************Start the block CG iteration*************************
   // *******************************************************************
   //
   Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > solver;
-  if (pseudo)
-    solver = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&problem,false), rcp(&belosList,false) ) );
-  else 
-    solver = Teuchos::rcp( new Belos::BlockGmresSolMgr<double,MV,OP>( rcp(&problem,false), rcp(&belosList,false) ) );
+  solver = Teuchos::rcp( new Belos::BlockCGSolMgr<double,MV,OP>( rcp(&problem,false), rcp(&belosList,false) ) );
   //
   // Perform solve
   //
@@ -182,26 +178,20 @@ int main(int argc, char *argv[]) {
   }
   //
   // *******************************************************************
-  // *************Start the block Gmres iteration*************************
+  // *************Start the block CG iteration*************************
   // *******************************************************************
   //
   // Create the solver without either the problem or parameter list.
-  if (pseudo)
-    solver = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>() );
-  else
-    solver = Teuchos::rcp( new Belos::BlockGmresSolMgr<double,MV,OP>() );
-  //
-  // Set the problem after the solver construction.
-  solver->setProblem( rcp( &problem2, false ) );
+  solver = Teuchos::rcp( new Belos::BlockCGSolMgr<double,MV,OP>() );
 
   // Get the valid list of parameters from the solver and print it.
   RefCountPtr<const Teuchos::ParameterList> validList = solver->getValidParameters();
-  if (pseudo) 
-    cout << endl << "Valid parameters from the pseudo-block Gmres solver manager:" << endl;
-  else 
-    cout << endl << "Valid parameters from the block Gmres solver manager:" << endl;
-
+  cout << endl << "Valid parameters from the block CG solver manager:" << endl;
   cout << *validList << endl;
+
+  //
+  // Set the problem after the solver construction.
+  solver->setProblem( rcp( &problem2, false ) );
 
   // Set the parameter list after the solver construction.
   belosList.set( "Timer Label", "Belos Resolve" );         // Set timer label to discern between the two solvers.
@@ -237,8 +227,6 @@ int main(int argc, char *argv[]) {
     cout << "Dimension of matrix: " << NumGlobalElements << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
     cout << "Block size used by solver: " << blocksize << endl;
-    cout << "Number of restarts allowed: " << maxrestarts << endl;
-    cout << "Max number of Gmres iterations per restart cycle: " << maxiters << endl; 
     cout << "Relative residual tolerance: " << tol << endl;
     cout << endl;
   }

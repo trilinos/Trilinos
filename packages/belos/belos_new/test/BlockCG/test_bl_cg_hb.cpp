@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
   // Create an iterative solver manager.
   //
   RefCountPtr< Belos::SolverManager<double,MV,OP> > newSolver
-    = rcp( new Belos::BlockCGSolMgr<double,MV,OP>(rcp(&problem,false), belosList) );
+    = rcp( new Belos::BlockCGSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)) );
   //
   // **********Print out information about problem*******************
   //

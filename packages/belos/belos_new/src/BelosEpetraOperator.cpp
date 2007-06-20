@@ -69,7 +69,7 @@ EpetraOperator::EpetraOperator( const RefCountPtr<LinearProblem<double,Epetra_Mu
     solver_ = Teuchos::rcp( new BlockGmresSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, plist_ ) );
   }
   if (strcmp(&Solver[0],"BlockCG")==0) {
-    solver_ = Teuchos::rcp( new BlockCGSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, *plist) );
+    solver_ = Teuchos::rcp( new BlockCGSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, plist) );
   }
 }
 

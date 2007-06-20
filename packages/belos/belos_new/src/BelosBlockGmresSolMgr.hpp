@@ -227,8 +227,8 @@ namespace Belos {
 
     // Status test.
     Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > sTest_;
-    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > convTest_;
     Teuchos::RefCountPtr<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
+    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > convTest_;
     Teuchos::RefCountPtr<StatusTestResNorm<ScalarType,MV,OP> > expConvTest_, impConvTest_;
     Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
 
@@ -253,6 +253,7 @@ namespace Belos {
     static const std::string expResScale_default_; 
     static const std::string label_default_;
     static const std::string orthoType_default_;
+    static const Teuchos::RefCountPtr<ostream> outputStream_default_;
 
     // Current solver values.
     MagnitudeType convtol_, orthoKappa_;
@@ -265,6 +266,9 @@ namespace Belos {
     // Timers.
     std::string label_;
     Teuchos::RefCountPtr<Teuchos::Time> timerSolve_;
+
+    // Internal state variables.
+    bool isSet_;
   };
 
 
@@ -311,10 +315,14 @@ const std::string BlockGmresSolMgr<ScalarType,MV,OP>::label_default_ = "Belos";
 template<class ScalarType, class MV, class OP>
 const std::string BlockGmresSolMgr<ScalarType,MV,OP>::orthoType_default_ = "DGKS";
 
+template<class ScalarType, class MV, class OP>
+const Teuchos::RefCountPtr<ostream> BlockGmresSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
+
 
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
 BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
+  outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   orthoKappa_(orthoKappa_default_),
   maxRestarts_(maxRestarts_default_),
@@ -328,13 +336,15 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
   orthoType_(orthoType_default_),
   impResScale_(impResScale_default_),
   expResScale_(expResScale_default_),
-  label_(label_default_)
+  label_(label_default_),
+  isSet_(false)
 {
   // Set the default parameter list.
   setDefaultParams();
 
-  // Set the parameters.
-  setParameters( defaultParams_ );
+  // Set the current parameter list to the default parameter list, don't set parameters 
+  // just in case the user decides to set them later with a call to setParameters().
+  params_ = defaultParams_;
 }
 
 
@@ -344,6 +354,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
 						     const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem,
 						     const Teuchos::RefCountPtr<Teuchos::ParameterList> &pl ) : 
   problem_(problem),
+  outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   orthoKappa_(orthoKappa_default_),
   maxRestarts_(maxRestarts_default_),
@@ -357,15 +368,22 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   orthoType_(orthoType_default_),
   impResScale_(impResScale_default_),
   expResScale_(expResScale_default_),
-  label_(label_default_)
+  label_(label_default_),
+  isSet_(false)
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
 
   // Set the default parameter list.
   setDefaultParams();
 
-  // Set the parameters.
-  setParameters( pl );  
+  // If the parameter list pointer is null, then set the current parameters to the default parameter list.
+  if (pl == Teuchos::null) {
+    params_ = defaultParams_;
+  }
+  else {
+    // Set the parameters using the list that was passed in.
+    setParameters( pl );  
+  }
 }
 
 
@@ -510,12 +528,8 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountP
 
   // Create output manager if we need to.
   if (printer_ == Teuchos::null) {
-    if (outputStream_ != Teuchos::null)
-      printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
-    else
-      printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_) );
-  }
-  
+    printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
+  }  
   
   // Convergence
   typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
@@ -633,6 +647,8 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountP
     timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
   }
 
+  // Inform the solver manager that the current parameters were set.
+  isSet_ = true;
 }
 
     
@@ -650,7 +666,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setDefaultParams()
   defaultParams_->set("Adaptive Block Size", adaptiveBlockSize_default_);
   defaultParams_->set("Verbosity", verbosity_default_);
   defaultParams_->set("Output Frequency", outputFreq_default_);  
-  //  defaultParams_->set("Output Stream", outputStream_default_);
+  defaultParams_->set("Output Stream", outputStream_default_);
   defaultParams_->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_);
   defaultParams_->set("Implicit Residual Scaling", impResScale_default_);
   defaultParams_->set("Explicit Residual Scaling", expResScale_default_);
@@ -664,6 +680,11 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setDefaultParams()
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
+
+  // Set the current parameters if they were not set before.
+  // NOTE:  This may occur if the user generated the solver manager with the default constructor and 
+  // then didn't set any parameters using setParameters().
+  if (!isSet_) { setParameters( params_ ); }
 
   Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
