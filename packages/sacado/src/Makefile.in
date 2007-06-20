@@ -16,30 +16,30 @@
 
 # @HEADER
 # ************************************************************************
-# 
+#
 #                           Sacado Package
 #                 Copyright (2006) Sandia Corporation
-# 
+#
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
-# 
+#
 # This library is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as
 # published by the Free Software Foundation; either version 2.1 of the
 # License, or (at your option) any later version.
-#  
+#
 # This library is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
-#  
+#
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 # Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 # (etphipp@sandia.gov).
-# 
+#
 # ************************************************************************
 # @HEADER
 
@@ -103,7 +103,8 @@ AR = ar
 ARFLAGS = cru
 libsacado_a_DEPENDENCIES =
 am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
-	$(srcdir)/uninit.c $(srcdir)/RAD_Const_Warn.c \
+	$(srcdir)/Sacado_radops2.cpp $(srcdir)/uninit.c \
+	$(srcdir)/RAD_Const_Warn.c \
 	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp \
 	$(srcdir)/Sacado_ConfigDefs.h $(srcdir)/Sacado_Version.hpp \
 	$(srcdir)/Sacado_Traits.hpp $(srcdir)/Sacado.hpp \
@@ -141,7 +142,8 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/Sacado_Taylor_Expression.hpp \
 	$(srcdir)/Sacado_Taylor_Ops.hpp \
 	$(srcdir)/Sacado_trad_Traits.hpp $(srcdir)/Sacado_trad.hpp \
-	$(srcdir)/Sacado_rad.hpp $(srcdir)/mpl/Sacado_mpl_is_same.hpp \
+	$(srcdir)/Sacado_trad2.hpp $(srcdir)/Sacado_rad.hpp \
+	$(srcdir)/Sacado_rad2.hpp $(srcdir)/mpl/Sacado_mpl_is_same.hpp \
 	$(srcdir)/mpl/Sacado_mpl_disable_if.hpp \
 	$(srcdir)/mpl/Sacado_mpl_if.hpp \
 	$(srcdir)/mpl/Sacado_mpl_none.hpp \
@@ -171,7 +173,8 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterVector.hpp \
 	$(srcdir)/Sacado_ScalarFlopCounter.hpp
-am__objects_1 = libsacado_a-Sacado_radops.$(OBJEXT) uninit.$(OBJEXT) \
+am__objects_1 = libsacado_a-Sacado_radops.$(OBJEXT) \
+	libsacado_a-Sacado_radops2.$(OBJEXT) uninit.$(OBJEXT) \
 	RAD_Const_Warn.$(OBJEXT)
 @ENABLE_SACADO_TEUCHOS_TRUE@am__objects_2 = libsacado_a-Sacado_ScalarParameterLibrary.$(OBJEXT)
 am__objects_3 = $(am__objects_1) $(am__objects_2)
@@ -232,7 +235,8 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_Taylor_Expression.hpp \
 	$(srcdir)/Sacado_Taylor_Ops.hpp \
 	$(srcdir)/Sacado_trad_Traits.hpp $(srcdir)/Sacado_trad.hpp \
-	$(srcdir)/Sacado_rad.hpp $(srcdir)/mpl/Sacado_mpl_is_same.hpp \
+	$(srcdir)/Sacado_trad2.hpp $(srcdir)/Sacado_rad.hpp \
+	$(srcdir)/Sacado_rad2.hpp $(srcdir)/mpl/Sacado_mpl_is_same.hpp \
 	$(srcdir)/mpl/Sacado_mpl_disable_if.hpp \
 	$(srcdir)/mpl/Sacado_mpl_if.hpp \
 	$(srcdir)/mpl/Sacado_mpl_none.hpp \
@@ -428,29 +432,32 @@ SACADO_CACHEFAD_H = \
 	$(srcdir)/Sacado_CacheFad_Expression.hpp \
 	$(srcdir)/Sacado_CacheFad_Ops.hpp \
 	$(srcdir)/Sacado_CacheFad_DFadTraits.hpp \
-	$(srcdir)/Sacado_CacheFad_DFad.hpp 
+	$(srcdir)/Sacado_CacheFad_DFad.hpp
 
 SACADO_TAYLOR_H = \
 	$(srcdir)/Sacado_Taylor_DTaylorTraits.hpp \
 	$(srcdir)/Sacado_Taylor_DTaylor.hpp \
 	$(srcdir)/Sacado_Taylor_DTaylorImp.hpp \
 	$(srcdir)/Sacado_Taylor_Expression.hpp \
-	$(srcdir)/Sacado_Taylor_Ops.hpp 
+	$(srcdir)/Sacado_Taylor_Ops.hpp
 
 SACADO_RAD_H = \
 	$(srcdir)/Sacado_trad_Traits.hpp \
 	$(srcdir)/Sacado_trad.hpp \
-	$(srcdir)/Sacado_rad.hpp
+	$(srcdir)/Sacado_trad2.hpp \
+	$(srcdir)/Sacado_rad.hpp \
+	$(srcdir)/Sacado_rad2.hpp
 
 SACADO_RAD = \
 	$(srcdir)/Sacado_radops.cpp \
+	$(srcdir)/Sacado_radops2.cpp \
 	$(srcdir)/uninit.c \
 	$(srcdir)/RAD_Const_Warn.c
 
 @ENABLE_SACADO_TEUCHOS_TRUE@SACADO_TEMPLATE_H = \
 @ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_TemplateManager.hpp \
 @ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_TemplateManagerImp.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_TemplateIterator.hpp 
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_TemplateIterator.hpp
 
 @ENABLE_SACADO_TEUCHOS_TRUE@SACADO_PARAMETER_H = \
 @ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
@@ -541,7 +548,7 @@ lib_LIBRARIES = $(SACADO_LIB)
 # ------------------------------------------------------------------------
 # List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
-include_HEADERS = $(SACADO_H) 
+include_HEADERS = $(SACADO_H)
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
@@ -555,7 +562,7 @@ nodist_execinclude_HEADERS = Sacado_config.h
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
-MAINTAINERCLEANFILES = Makefile.in 
+MAINTAINERCLEANFILES = Makefile.in
 all: Sacado_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -650,6 +657,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAD_Const_Warn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsacado_a-Sacado_radops.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsacado_a-Sacado_radops2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uninit.Po@am__quote@
 
 .c.o:
@@ -721,6 +729,20 @@ libsacado_a-Sacado_radops.obj: $(srcdir)/Sacado_radops.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Sacado_radops.cpp' object='libsacado_a-Sacado_radops.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacado_a_CXXFLAGS) $(CXXFLAGS) -c -o libsacado_a-Sacado_radops.obj `if test -f '$(srcdir)/Sacado_radops.cpp'; then $(CYGPATH_W) '$(srcdir)/Sacado_radops.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Sacado_radops.cpp'; fi`
+
+libsacado_a-Sacado_radops2.o: $(srcdir)/Sacado_radops2.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacado_a_CXXFLAGS) $(CXXFLAGS) -MT libsacado_a-Sacado_radops2.o -MD -MP -MF $(DEPDIR)/libsacado_a-Sacado_radops2.Tpo -c -o libsacado_a-Sacado_radops2.o `test -f '$(srcdir)/Sacado_radops2.cpp' || echo '$(srcdir)/'`$(srcdir)/Sacado_radops2.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libsacado_a-Sacado_radops2.Tpo $(DEPDIR)/libsacado_a-Sacado_radops2.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Sacado_radops2.cpp' object='libsacado_a-Sacado_radops2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacado_a_CXXFLAGS) $(CXXFLAGS) -c -o libsacado_a-Sacado_radops2.o `test -f '$(srcdir)/Sacado_radops2.cpp' || echo '$(srcdir)/'`$(srcdir)/Sacado_radops2.cpp
+
+libsacado_a-Sacado_radops2.obj: $(srcdir)/Sacado_radops2.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacado_a_CXXFLAGS) $(CXXFLAGS) -MT libsacado_a-Sacado_radops2.obj -MD -MP -MF $(DEPDIR)/libsacado_a-Sacado_radops2.Tpo -c -o libsacado_a-Sacado_radops2.obj `if test -f '$(srcdir)/Sacado_radops2.cpp'; then $(CYGPATH_W) '$(srcdir)/Sacado_radops2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Sacado_radops2.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libsacado_a-Sacado_radops2.Tpo $(DEPDIR)/libsacado_a-Sacado_radops2.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Sacado_radops2.cpp' object='libsacado_a-Sacado_radops2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacado_a_CXXFLAGS) $(CXXFLAGS) -c -o libsacado_a-Sacado_radops2.obj `if test -f '$(srcdir)/Sacado_radops2.cpp'; then $(CYGPATH_W) '$(srcdir)/Sacado_radops2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Sacado_radops2.cpp'; fi`
 
 libsacado_a-Sacado_ScalarParameterLibrary.o: $(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacado_a_CXXFLAGS) $(CXXFLAGS) -MT libsacado_a-Sacado_ScalarParameterLibrary.o -MD -MP -MF $(DEPDIR)/libsacado_a-Sacado_ScalarParameterLibrary.Tpo -c -o libsacado_a-Sacado_ScalarParameterLibrary.o `test -f '$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp' || echo '$(srcdir)/'`$(srcdir)/parameter/Sacado_ScalarParameterLibrary.cpp

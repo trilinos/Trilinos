@@ -2,7 +2,7 @@
 // ***********************************************************************
 //
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
+//                 Copyright (2007) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -27,21 +27,29 @@
 // ***********************************************************************
 // @HEADER
 
-// RAD package (Reverse Automatic Differentiation) --
-// a package specialized for function and gradient evaluations.
-// Written in 2004 by David M. Gay at Sandia National Labs, Albuquerque, NM.
+// Extension of the RAD package (Reverse Automatic Differentiation) --
+// a package specialized for function and gradient evaluations -- to
+// Hessian-vector products.
+// This variant is for Hessian-vector products of "double" variables, and
+// Sacado::Rad2d::ADvar should be equivalent to Sacado::Rad2::ADvar<double>,
+// but this nontemplated code may easier to understand.  It relies on ops
+// implemented in Sacado_radops2.cpp.
+// Written in 2007 by David M. Gay at Sandia National Labs, Albuquerque, NM.
 
-#ifndef SACADO_RAD_H
-#define SACADO_RAD_H
+#ifndef SACADO_RAD2_H
+#define SACADO_RAD2_H
 
 #include <stddef.h>
 #include <cmath>
 #include <math.h>
 
-//#ifndef SACADO_NO_NAMESPACE
-//namespace Sacado {
-//#endif
+#ifndef SACADO_NO_NAMESPACE
+namespace Sacado {
+namespace Rad2d { // "2" for 2nd derivatives, "d" for "double"
+#endif
 
+// -DNO_USING_STDCC is needed, e.g., with Sun CC 5.7
+#ifndef RAD_NO_USING_STDCC
   // Bring math functions into scope
   using std::exp;
   using std::log;
@@ -60,6 +68,7 @@
   using std::fabs;
   using std::atan2;
   using std::pow;
+#endif //NO_USING_STDCC
 
  class ADvar;
  class ADvari;
@@ -82,7 +91,15 @@ ADmemblock {	// We get memory in ADmemblock chunks and never give it back,
 		// but reuse it once computations start anew after call(s) on
 		// ADcontext::Gradcomp() or ADcontext::Weighted_Gradcomp().
 	ADmemblock *next;
-	double memblk[1000];
+	double memblk[2000];
+	};
+
+ struct
+ADvari_block {
+	enum { Gulp = 1021 };
+	ADvari_block *next, *prev;
+	ADvari **limit;
+	ADvari *pADvari[Gulp];
 	};
 
  class
@@ -90,8 +107,12 @@ ADcontext {	// A singleton class: one instance in radops.c
 	ADmemblock *Busy, *Free;
 	char *Mbase;
 	size_t Mleft;
+	ADvari **Ailimit, **Ainext;
+	ADvari_block *Aibusy, *Aifree;
 	ADmemblock First;
+	ADvari_block AiFirst;
 	void *new_ADmemblock(size_t);
+	void new_ADvari_block();
  public:
 #ifndef RAD_AUTO_AD_Const
 	AD_IndepVlist *IVfirst;
@@ -101,7 +122,13 @@ ADcontext {	// A singleton class: one instance in radops.c
 	ADcontext();
 	void *Memalloc(size_t len);
 	static void Gradcomp();
+	static void Hvprod(int, ADvar**, double*, double*);
 	static void Weighted_Gradcomp(int, ADvar**, double*);
+	inline void ADvari_record(ADvari *x) {
+		if (Ainext >= Ailimit)
+			new_ADvari_block();
+		*Ainext++ = x;
+		}
 	};
 
 inline void *ADcontext::Memalloc(size_t len) {
@@ -128,7 +155,7 @@ Derp {		// one derivative-propagation operation
 	Derp *next;
 	const double *a;
 	const ADvari *b;
-	const ADvari *c;
+	mutable ADvari *c;
 	void *operator new(size_t);
 	void operator delete(void*) {} /*Should never be called.*/
 	inline Derp(){};
@@ -138,32 +165,64 @@ Derp {		// one derivative-propagation operation
 	/* c->aval += a * b->aval; */
 	};
 
-inline Derp::Derp(const ADvari *c1): c(c1) {
+inline Derp::Derp(const ADvari *c1): c((ADvari*)c1) {
 		next = LastDerp;
 		LastDerp = this;
 		}
 
-inline Derp::Derp(const double *a1, const ADvari *c1): a(a1), c(c1) {
+inline Derp::Derp(const double *a1, const ADvari *c1):
+		a(a1), c((ADvari*)c1) {
 		next = LastDerp;
 		LastDerp = this;
 		}
 
-inline Derp::Derp(const double *a1, const ADvari *b1, const ADvari *c1): a(a1), b(b1), c(c1) {
+inline Derp::Derp(const double *a1, const ADvari *b1, const ADvari *c1):
+		a(a1), b(b1), c((ADvari*)c1) {
 		next = LastDerp;
 		LastDerp = this;
 		}
+
+ enum Advari_Opclass {
+	Hv_const,
+	Hv_copy,
+	Hv_binary,
+	Hv_unary,
+	Hv_negate,
+	Hv_plusLR,
+	Hv_minusLR,
+	Hv_timesL,
+	Hv_timesLR,
+	Hv_quotLR,
+	Hv_nary
+	};
+
+ extern ADvari& ADf1(double f, double g, double h, const ADvari &x);
+ extern ADvari& ADf2(double f, double gx, double gy, double hxx,
+			double hxy, double hyy, const ADvari &x, const ADvari &y);
+ extern ADvari& ADfn(double f, int n, const ADvar *x, const double *g, const double *h);
 
  class
 ADvari {	// implementation of an ADvar
  public:
+	static ADcontext adc;
+	Advari_Opclass opclass;
 	double Val;		// result of this operation
 	mutable double aval;	// adjoint -- partial of final result w.r.t. this Val
+	mutable double dO;	// deriv of op w.r.t. t in x + t*p
+	mutable double aO;	// adjoint (in Hv computation) of op
+	mutable double adO;	// adjoint (in Hv computation) of dO
 	void *operator new(size_t len) { return ADvari::adc.Memalloc(len); }
 	void operator delete(void*) {} /*Should never be called.*/
-	inline ADvari(double t): Val(t), aval(0.) {}
-	inline ADvari(double t, double ta): Val(t), aval(ta) {}
-	inline ADvari(): Val(0.), aval(0.) {}
-	static ADcontext adc;
+	inline ADvari(Advari_Opclass oc, double t):
+		opclass(oc), Val(t), aval(0.), dO(0.)
+		{ if (oc != Hv_const) ADvari::adc.ADvari_record(this); }
+	inline ADvari(Advari_Opclass oc, double t, double ta):
+		opclass(oc), Val(t), aval(ta), dO(0.)
+		{ if (oc != Hv_const) ADvari::adc.ADvari_record(this); }
+ private:
+	inline ADvari(): Val(0.), aval(0.), dO(0.) {}	// prevent construction without value (?)
+ public:
+	friend class ConstADvari;
 #ifdef RAD_AUTO_AD_Const
 	friend class ADcontext;
 	friend class ADvar1;
@@ -227,9 +286,10 @@ F r f(Ai,double);
 #undef R
 #undef F
 
-	friend ADvari& ADf1(double f, double g, const ADvari &x);
-	friend ADvari& ADf2(double f, double gx, double gy, const ADvari &x, const ADvari &y);
-	friend ADvari& ADfn(double f, int n, const ADvar *x, const double *g);
+	friend ADvari& ADf1(double f, double g, double h, const ADvari &x);
+	friend ADvari& ADf2(double f, double gx, double gy, double hxx,
+			double hxy, double hyy, const ADvari &x, const ADvari &y);
+	friend ADvari& ADfn(double f, int n, const ADvar *x, const double *g, const double *h);
 	};
 
  inline void* Derp::operator new(size_t len) { return ADvari::adc.Memalloc(len); }
@@ -239,9 +299,8 @@ F r f(Ai,double);
 ADvar1: public ADvari {	// simplest unary ops
  public:
 	Derp d;
-	ADvar1(double val1): ADvari(val1) {}
-	ADvar1(double val1, const ADvari *c1): d(c1) { Val = val1; }
-	ADvar1(double val1, const double *a1, const ADvari *c1): d(a1,this,c1) { Val = val1; }
+	ADvar1(Advari_Opclass oc, double val1, const double *a1, const ADvari *c1):
+		ADvari(oc,val1), d(a1,this,c1) {}
 #ifdef RAD_AUTO_AD_Const
 	ADvar1(const IndepADvar *, const IndepADvar &);
 	ADvar1(const IndepADvar *, const ADvari &);
@@ -257,7 +316,7 @@ ConstADvari: public ADvari {
  public:
 	static CADcontext cadc;
 	inline void *operator new(size_t len) { return ConstADvari::cadc.Memalloc(len); }
-	inline ConstADvari(double t): ADvari(t) { prevcad = lastcad; lastcad = this; }
+	inline ConstADvari(double t): ADvari(Hv_copy, t) { prevcad = lastcad; lastcad = this; }
 	static void aval_reset(void);
 	};
 
@@ -320,6 +379,8 @@ IndepADvar
 	inline double val() const { return cv->Val; }
 	inline double adj() const { return cv->aval; }
 	static inline void Gradcomp() { ADcontext::Gradcomp(); }
+	static inline void Hvprod(int n, ADvar **vp, double *v, double *hv)
+				{ ADcontext::Hvprod(n, vp, v, hv); }
 	static inline void aval_reset() { ConstADvari::aval_reset(); }
 	static inline void Weighted_Gradcomp(int n, ADvar **v, double *w)
 				{ ADcontext::Weighted_Gradcomp(n, v, w); }
@@ -418,8 +479,9 @@ ADvar: public IndepADvar {		// an "active" variable
 	inline ADvar& operator=(const ADvari &x) { cv = (ADvari*)&x;   return *this; }
 	inline ADvar& operator=(const IndepADvar &x)  { cv = (ADvari*)x.cv; return *this; }
 #else
-	ADvar(const IndepADvar &x) { cv = x.cv ? new ADvar1(x.cv->Val, &CADcontext::One, x.cv) : 0; }
-	ADvar(const ADvari &x) { cv = new ADvar1(x.Val, &CADcontext::One, &x); }
+	ADvar(const IndepADvar &x) { cv = x.cv ?
+		new ADvar1(Hv_copy, x.cv->Val, &CADcontext::One, x.cv) : 0; }
+	ADvar(const ADvari &x) { cv = new ADvar1(Hv_copy, x.Val, &CADcontext::One, &x); }
 	inline ADvar& operator=(const ADvari &x) { return ADvar_operatoreq(this,x); }
 	inline ADvar& operator=(const IndepADvar &x)    { return ADvar_operatoreq(this,*x.cv); }
 #endif /* RAD_EQ_ALIAS */
@@ -443,6 +505,8 @@ ADvar: public IndepADvar {		// an "active" variable
 		return oldval;
 		}
 	static inline void Gradcomp() { ADcontext::Gradcomp(); }
+	static inline void Hvprod(int n, ADvar **vp, double *v, double *hv)
+				{ ADcontext::Hvprod(n, vp, v, hv); }
 	static inline void aval_reset() { ConstADvari::aval_reset(); }
 	static inline void Weighted_Gradcomp(int n, ADvar **v, double *w)
 				{ ADcontext::Weighted_Gradcomp(n, v, w); }
@@ -483,54 +547,69 @@ ConstADvar: public ADvar {
  };
 
  class
-ADvar1s: public ADvar1 { // unary ops with partial "a"
+ADvar1s: public ADvar1 { // unary ops with partials
  public:
-	double a;
-	ADvar1s(double val1, double a1, const ADvari *c1): ADvar1(val1,&a,c1), a(a1) {}
+	double pL;	// deriv of op w.r.t. left operand L
+	ADvar1s(double val1, double d1, const ADvari *c1):
+		ADvar1(Hv_timesL,val1,&pL,c1), pL(d1) {}
+	};
+
+ class
+ADvar1g: public ADvar1 { // unary ops with partials
+ public:
+	double pL;	// deriv of op w.r.t. left operand L
+	double pL2;	// partial of op w.r.t. L,L
+	ADvar1g(double val1, double d1, double d2, const ADvari *c1):
+		ADvar1(Hv_unary,val1,&pL,c1), pL(d1), pL2(d2) {}
 	};
 
  class
 ADvar2: public ADvari {	// basic binary ops
  public:
 	Derp dL, dR;
-	ADvar2(double val1): ADvari(val1) {}
-	ADvar2(double val1, const ADvari *Lcv, const double *Lc, const ADvari *Rcv,
-			const double *Rc): ADvari(val1) {
+	ADvar2(Advari_Opclass oc, double val1, const ADvari *Lcv, const double *Lc,
+			const ADvari *Rcv, const double *Rc): ADvari(oc,val1) {
 		dR.next = Derp::LastDerp;
 		dL.next = &dR;
 		Derp::LastDerp = &dL;
 		dL.a = Lc;
-		dL.c = Lcv;
+		dL.c = (ADvari*)Lcv;
 		dR.a = Rc;
-		dR.c = Rcv;
+		dR.c = (ADvari*)Rcv;
 		dL.b = dR.b = this;
 		}
 	};
 
  class
-ADvar2q: public ADvar2 { // binary ops with partials "a", "b"
+ADvar2q: public ADvar2 { // binary ops with partials
  public:
-	double a, b;
-	ADvar2q(double val1, double Lp, double Rp, const ADvari *Lcv, const ADvari *Rcv):
-			ADvar2(val1), a(Lp), b(Rp) {
-		dR.next = Derp::LastDerp;
-		dL.next = &dR;
-		Derp::LastDerp = &dL;
-		dL.a = &a;
-		dL.c = Lcv;
-		dR.a = &b;
-		dR.c = Rcv;
-		dL.b = dR.b = this;
-		}
+	double pL;	// deriv of op w.r.t. left operand L
+	double pR;	// deriv of op w.r.t. right operand R
+	double pLR;	// second partial w.r.t. L,R
+	double pR2;	// second partial w.r.t. R,R
+	ADvar2q(double val1, double Lp, double Rp, double LR, double R2,
+		const ADvari *Lcv, const ADvari *Rcv);
 	};
 
  class
-ADvarn: public ADvari { // n-ary ops with partials "a"
+ADvar2g: public ADvar2 { // general binary ops with partials
+ public:
+	double pL;	// deriv of op w.r.t. left operand L
+	double pR;	// deriv of op w.r.t. right operand R
+	double pL2;	// second partial w.r.t. L,L
+	double pLR;	// second partial w.r.t. L,R
+	double pR2;	// second partial w.r.t. R,R
+	ADvar2g(double val1, double Lp, double Rp, double L2, double LR, double R2,
+		const ADvari *Lcv, const ADvari *Rcv);
+	};
+
+ class
+ADvarn: public ADvari { // n-ary ops with partials g and 2nd partials h (lower triangle, rowwise)
  public:
 	int n;
-	double *a;
-	Derp *Da;
-	ADvarn(double val1, int n1, const ADvar *x, const double *g);
+	double *G, *H;
+	Derp *D;
+	ADvarn(double val1, int n1, const ADvar *x, const double *g, const double *h);
 	};
 
 inline ADvari &operator+(ADvari &T) { return T; }
@@ -566,10 +645,10 @@ inline double Adj(const AD_IndepVlist *x) { return x->v->aval; }
 #endif
 
 inline ADvari& copy(const IndepADvar &x)
-{ return *(new ADvar1(x.cv->Val, &CADcontext::One, x.cv)); }
+{ return *(new ADvar1(Hv_copy, x.cv->Val, &CADcontext::One, x.cv)); }
 
 inline ADvari& copy(const ADvari &x)
-{ return *(new ADvar1(x.Val, &CADcontext::One, &x)); }
+{ return *(new ADvar1(Hv_copy, x.Val, &CADcontext::One, &x)); }
 
 inline ADvari& abs(const ADvari &x)
 { return fabs(x); }
@@ -636,7 +715,8 @@ T1(fabs)
 #undef T
 #undef A
 
-//#ifndef SACADO_NO_NAMESPACE
-//} /* namespace Sacado */
-//#endif
-#endif /* SACADO_RAD_H */
+#ifndef SACADO_NO_NAMESPACE
+} // namespace Rad2d
+} // namespace Sacado
+#endif // SACADO_NAMESPACE
+#endif // SACADO_RAD2_H

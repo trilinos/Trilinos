@@ -1,31 +1,31 @@
-## $Id$ 
-## $Source$ 
+## $Id$
+## $Source$
 # @HEADER
 # ************************************************************************
-# 
+#
 #                           Sacado Package
 #                 Copyright (2006) Sandia Corporation
-# 
+#
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 # the U.S. Government retains certain rights in this software.
-# 
+#
 # This library is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as
 # published by the Free Software Foundation; either version 2.1 of the
 # License, or (at your option) any later version.
-#  
+#
 # This library is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
-#  
+#
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 # Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 # (etphipp@sandia.gov).
-# 
+#
 # ************************************************************************
 # @HEADER
 
@@ -72,22 +72,25 @@ SACADO_CACHEFAD_H = \
 	$(srcdir)/Sacado_CacheFad_Expression.hpp \
 	$(srcdir)/Sacado_CacheFad_Ops.hpp \
 	$(srcdir)/Sacado_CacheFad_DFadTraits.hpp \
-	$(srcdir)/Sacado_CacheFad_DFad.hpp 
+	$(srcdir)/Sacado_CacheFad_DFad.hpp
 
 SACADO_TAYLOR_H = \
 	$(srcdir)/Sacado_Taylor_DTaylorTraits.hpp \
 	$(srcdir)/Sacado_Taylor_DTaylor.hpp \
 	$(srcdir)/Sacado_Taylor_DTaylorImp.hpp \
 	$(srcdir)/Sacado_Taylor_Expression.hpp \
-	$(srcdir)/Sacado_Taylor_Ops.hpp 
+	$(srcdir)/Sacado_Taylor_Ops.hpp
 
 SACADO_RAD_H = \
 	$(srcdir)/Sacado_trad_Traits.hpp \
 	$(srcdir)/Sacado_trad.hpp \
-	$(srcdir)/Sacado_rad.hpp
+	$(srcdir)/Sacado_trad2.hpp \
+	$(srcdir)/Sacado_rad.hpp \
+	$(srcdir)/Sacado_rad2.hpp
 
 SACADO_RAD = \
 	$(srcdir)/Sacado_radops.cpp \
+	$(srcdir)/Sacado_radops2.cpp \
 	$(srcdir)/uninit.c \
 	$(srcdir)/RAD_Const_Warn.c
 
@@ -96,7 +99,7 @@ if ENABLE_SACADO_TEUCHOS
 SACADO_TEMPLATE_H = \
 	$(srcdir)/Sacado_TemplateManager.hpp \
 	$(srcdir)/Sacado_TemplateManagerImp.hpp \
-	$(srcdir)/Sacado_TemplateIterator.hpp 
+	$(srcdir)/Sacado_TemplateIterator.hpp
 
 SACADO_PARAMETER_H = \
 	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
@@ -164,7 +167,7 @@ libsacado_a_SOURCES = $(SACADO) $(SACADO_H)
 
 libsacado_a_CXXFLAGS = $(SACADO_INCLUDES)
 
-EXTRA_libsacado_a_SOURCES = 
+EXTRA_libsacado_a_SOURCES =
 
 #We need the following to support separate build directories
 #AM_CPPFLAGS=-I$(builddir)/src
@@ -203,7 +206,7 @@ lib_LIBRARIES = $(SACADO_LIB)
 # List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
-include_HEADERS = $(SACADO_H) 
+include_HEADERS = $(SACADO_H)
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
@@ -219,7 +222,7 @@ nodist_execinclude_HEADERS = Sacado_config.h
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 
-MAINTAINERCLEANFILES = Makefile.in 
+MAINTAINERCLEANFILES = Makefile.in
 
 
 

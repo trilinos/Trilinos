@@ -2,7 +2,7 @@
 // ***********************************************************************
 //
 //                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
+//                 Copyright (2007) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -27,13 +27,13 @@
 // ***********************************************************************
 // @HEADER
 
-// TRAD package (Templated Reverse Automatic Differentiation) --
-// a package specialized for function and gradient evaluations.
-// Written in 2004 and 2005 by David M. Gay at Sandia National Labs,
-// Albuquerque, NM.
+// Extension of the RAD package (Reverse Automatic Differentiation) --
+// a package specialized for function and gradient evaluations -- to
+// Hessian-vector products.
+// Written in 2007 by David M. Gay at Sandia National Labs, Albuquerque, NM.
 
-#ifndef SACADO_TRAD_H
-#define SACADO_TRAD_H
+#ifndef SACADO_TRAD2_H
+#define SACADO_TRAD2_H
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_trad_Traits.hpp"
@@ -64,9 +64,9 @@ extern "C" int RAD_Const_Warn(const void*);// outside any namespace for
 #endif
 #endif
 
-#ifdef SACADO_NAMESPACE
+#ifndef SACADO_NO_NAMESPACE
 namespace Sacado {
-namespace Rad {
+namespace Rad2 {
 #endif
 
 // -DRAD_NO_USING_STDCC is needed, e.g., with Sun CC 5.7
@@ -151,11 +151,14 @@ DoubleAvoid<double> {
  template<typename Double> class ConstADvar;
  template<typename Double> class ConstADvari;
  template<typename Double> class ADvar;
- template<typename Double> class ADvari;
  template<typename Double> class ADvar1;
+ template<typename Double> class ADvar1g;
  template<typename Double> class ADvar1s;
  template<typename Double> class ADvar2;
+ template<typename Double> class ADvar2g;
  template<typename Double> class ADvar2q;
+ template<typename Double> class ADvari;
+ template<typename Double> class ADvari_block;
  template<typename Double> class ADvarn;
  template<typename Double> class Derp;
  template<typename Double> void AD_Indep(ADvar<Double>&);
@@ -180,19 +183,42 @@ ADmemblock {	// We get memory in ADmemblock chunks and never give it back,
 		// but reuse it once computations start anew after call(s) on
 		// ADcontext::Gradcomp() or ADcontext::Weighted_Gradcomp().
 	ADmemblock *next;
-	Double memblk[1000];
+	Double memblk[2000];
+	};
+
+ template<typename Double> class
+ADvari_block {
+ public:
+	typedef ADvari<Double> ADVari;
+	enum { Gulp = 1021 };
+	ADvari_block *next, *prev;
+	ADVari **limit;
+	ADVari *pADvari[Gulp];
 	};
 
  template<typename Double> class
 ADcontext {	// A singleton class: one instance in radops.c
 	typedef ADmemblock<Double> ADMemblock;
+	typedef ADvari <Double> ADVari;
+	typedef ADvar1 <Double> ADVar1;
+	typedef ADvar2 <Double> ADVar2;
+	typedef ADvarn <Double> ADVarn;
+	typedef ADvar1g<Double> ADVar1g;
+	typedef ADvar1s<Double> ADVar1s;
+	typedef ADvar2g<Double> ADVar2g;
+	typedef ADvar2q<Double> ADVar2q;
+	typedef ADvari_block<Double> ADVari_block;
 	ADMemblock *Busy, *Free;
 	char *Mbase;
 	size_t Mleft;
+	ADVari **Ailimit, **Ainext;
+	ADVari_block *Aibusy, *Aifree;
 	ADMemblock *First;
+	ADVari_block *AiFirst;
 	double First0[(sizeof(ADMemblock) + sizeof(double) - 1) / sizeof(double)];
+	double First1[(sizeof(ADVari_block) + sizeof(double) - 1) / sizeof(double)];
 	void *new_ADmemblock(size_t);
-	typedef ADvari<Double> ADVari;
+	void new_ADvari_block();
 	typedef ADvar<Double> ADVar;
 	typedef Derp<Double> DErp;
 	int rad_need_reinit;
@@ -214,8 +240,14 @@ ADcontext {	// A singleton class: one instance in radops.c
 	ADcontext();
 	void *Memalloc(size_t len);
 	static void Gradcomp();
+	static void Hvprod(int, ADVar**, Double*, Double*);
 	static void aval_reset(void);
 	static void Weighted_Gradcomp(int, ADVar**, Double*);
+	inline void ADvari_record(ADVari *x) {
+		if (Ainext >= Ailimit)
+			new_ADvari_block();
+		*Ainext++ = x;
+		}
 	};
 
  template<typename Double> class
@@ -236,7 +268,7 @@ Derp {		// one derivative-propagation operation
 	Derp *next;
 	const Double *a;
 	const ADVari *b;
-	const ADVari *c;
+	mutable ADVari *c;
 	Derp(){};
 	Derp(const ADVari *);
 	Derp(const Double *, const ADVari *);
@@ -343,6 +375,30 @@ T F copy(Ai);
 	const ADvari<Double>&, const IndepADvar<Double>&);
  template<typename Double> Double val(const ADvari<Double>&);
 
+ enum Advari_Opclass {
+	Hv_const,
+	Hv_copy,
+	Hv_binary,
+	Hv_unary,
+	Hv_negate,
+	Hv_plusLR,
+	Hv_minusLR,
+	Hv_timesL,
+	Hv_timesLR,
+	Hv_quotLR,
+	Hv_nary
+	};
+
+ template<typename Double> ADvari<Double>&
+ADf1(Double f, Double g, Double h, const ADvari<Double> &x);
+
+ template<typename Double> ADvari<Double>&
+ADf2(Double f, Double gx, Double gy, Double hxx,
+			Double hxy, Double hyy, const ADvari<Double> &x, const ADvari<Double> &y);
+
+ template<typename Double> ADvari<Double>&
+ADfn(Double f, int n, const IndepADvar<Double> *x, const Double *g, const Double *h);
+
  template<typename Double> class
 ADvari {	// implementation of an ADvar
  public:
@@ -367,8 +423,13 @@ ADvari {	// implementation of an ADvar
 	static int gcgen_cur, last_opno, zap_gcgen, zap_gcgen1, zap_opno;
 	static FILE *debug_file;
 #endif
-	Double Val;	// result of this operation
+	static ADcontext<Double> adc;
+	Advari_Opclass opclass;
+	Double Val;		// result of this operation
 	mutable Double aval;	// adjoint -- partial of final result w.r.t. this Val
+	mutable Double dO;	// deriv of op w.r.t. t in x + t*p
+	mutable Double aO;	// adjoint (in Hv computation) of op
+	mutable Double adO;	// adjoint (in Hv computation) of dO
 	void *operator new(size_t len) {
 #ifdef RAD_DEBUG
 		ADvari *rv = (ADvari*)ADvari::adc.Memalloc(len);
@@ -382,8 +443,16 @@ ADvari {	// implementation of an ADvar
 #endif
 		}
 	void operator delete(void*) {} /*Should never be called.*/
-	inline ADvari(Double t): Val(t), aval(0.) {}
-	inline ADvari(): Val(0.), aval(0.) {}
+	inline ADvari(Advari_Opclass oc, Double t):
+		opclass(oc), Val(t), aval(0.), dO(0.)
+		{ if (oc != Hv_const) ADvari::adc.ADvari_record(this); }
+	inline ADvari(Advari_Opclass oc, Double t, Double ta):
+		opclass(oc), Val(t), aval(ta), dO(0.)
+		{ if (oc != Hv_const) ADvari::adc.ADvari_record(this); }
+ private:
+	inline ADvari(): Val(0.), aval(0.), dO(0.) {}	// prevent construction without value (?)
+ public:
+	friend class ConstADvari<Double>;
 #ifdef RAD_AUTO_AD_Const
 	friend class ADcontext<Double>;
 	friend class ADvar<Double>;
@@ -451,14 +520,14 @@ F r f <>(Ai,int);
 #undef R
 #undef F
 
-	friend ADvari& ADf1<>(Double f, Double g, const ADvari &x);
-	friend ADvari& ADf2<>(Double f, Double gx, Double gy, const ADvari &x, const ADvari &y);
-	friend ADvari& ADfn<>(Double f, int n, const IndepADVar *x, const Double *g);
+	friend ADvari& ADf1<>(Double f, Double g, Double h, const ADvari &x);
+	friend ADvari& ADf2<>(Double f, Double gx, Double gy, Double hxx,
+			Double hxy, Double hyy, const ADvari &x, const ADvari &y);
+	friend ADvari& ADfn<>(Double f, int n, const IndepADVar *x,
+			const Double *g, const Double *h);
 
 	inline operator Double() { return this->Val; }
 	inline operator Double() const { return this->Val; }
-
-	static ADcontext<Double> adc;
 	};
 
  template<typename Double> class
@@ -466,10 +535,8 @@ ADvar1: public ADvari<Double> {	// simplest unary ops
  public:
 	typedef ADvari<Double> ADVari;
 	Derp<Double> d;
-	ADvar1(Double val1): ADVari(val1) {}
-	ADvar1(Double val1, const ADVari *c1): ADVari(val1), d(c1) {}
-	ADvar1(Double val1, const Double *a1, const ADVari *c1):
-		ADVari(val1), d(a1,this,c1) {}
+	ADvar1(Advari_Opclass oc, Double val1, const Double *a1, const ADVari *c1):
+		ADVari(oc,val1), d(a1,this,c1) {}
 #ifdef RAD_AUTO_AD_Const
 	typedef typename ADVari::IndepADVar IndepADVar;
 	typedef ADvar<Double> ADVar;
@@ -497,7 +564,7 @@ ConstADvari: public ADvari<Double> {
 	typedef Derp<Double> DErp;
 	static CADcontext<Double> cadc;
 	inline void *operator new(size_t len) { return ConstADvari::cadc.Memalloc(len); }
-	inline ConstADvari(Double t): ADVari(t) { prevcad = lastcad; lastcad = this; }
+	inline ConstADvari(Double t): ADVari(Hv_copy, t) { prevcad = lastcad; lastcad = this; }
 	static void aval_reset(void);
 	};
 
@@ -584,6 +651,8 @@ IndepADvar {		// an independent ADvar
 	friend ADVari& ADf2<>(Double, Double, Double, const IndepADvar&, const ADVari&);
 
 	static inline void Gradcomp() { ADcontext<Double>::Gradcomp(); }
+	static inline void Hvprod(int n, ADVar **vp, Double *v, Double *hv)
+				{ ADcontext<Double>::Hvprod(n, vp, v, hv); }
 	static inline void aval_reset() { ConstADvari<Double>::aval_reset(); }
 	static inline void Weighted_Gradcomp(int n, ADVar **v, Double *w)
 				{ ADcontext<Double>::Weighted_Gradcomp(n, v, w); }
@@ -671,7 +740,7 @@ ADvar: public IndepADvar<Double> {	// an "active" variable
 #ifdef RAD_AUTO_AD_Const
 			: new ADVari((IndepADVar*)this, d);
 #else
-			: new ADVari(d);
+			: new ADVari(Hv_const, d);
 #endif
 		this->cv = x;
 		}
@@ -711,9 +780,10 @@ ADvar: public IndepADvar<Double> {	// an "active" variable
 	inline ADvar& operator=(IndepADVar &x) { this->cv = (ADVari*)x.cv; return *this; }
 	inline ADvar& operator=(const ADVari &x) { this->cv = (ADVari*)&x; return *this; }
 #else /*!RAD_EQ_ALIAS*/
-	ADvar(IndepADVar &x) { this->cv = x.cv ? new ADVar1(x.cv->Val, &this->cv->adc.One, x.cv) : 0; }
-	ADvar(const ADvar&x) { this->cv = x.cv ? new ADVar1(x.cv->Val, &this->cv->adc.One, (ADVari*)x.cv) : 0; }
-	ADvar(ADVari &x) { this->cv = new ADVar1(x.Val, &this->cv->adc.One, &x); }
+	ADvar(const IndepADVar &x) { this->cv = x.cv ? new ADVar1(x.cv->Val, &this->cv->adc.One, x.cv) : 0; }
+	ADvar(const ADvar&x) { this->cv = x.cv ?
+		new ADVar1(Hv_copy, x.cv->Val, &this->cv->adc.One, (ADVari*)x.cv) : 0; }
+	ADvar(const ADVari &x) { this->cv = new ADVar1(Hv_copy, x.Val, &this->cv->adc.One, &x); }
 	inline ADvar& operator=(IndepADVar &x) { return ADvar_operatoreq(this,*x.cv); };
 	inline ADvar& operator=(const ADVari &x) { return ADvar_operatoreq(this,x); };
 #endif /* RAD_EQ_ALIAS */
@@ -795,12 +865,13 @@ ConstADvar: public ADvar<Double> {
  };
 
  template<typename Double> class
-ADvar1s: public ADvar1<Double> { // unary ops with partial "a"
+ADvar1s: public ADvar1<Double> { // unary ops with partials
  public:
 	typedef ADvar1<Double> ADVar1;
 	typedef typename ADVar1::ADVari ADVari;
-	Double a;
-	ADvar1s(Double val1, Double a1, const ADVari *c1): ADVar1(val1,&a,c1), a(a1) {}
+	Double pL;	// deriv of op w.r.t. left operand L
+	ADvar1s(Double val1, Double a1, const ADVari *c1):
+		ADVar1(Hv_timesL,val1,&pL,c1), pL(a1) {}
 #ifdef RAD_AUTO_AD_Const
 	typedef typename ADVar1::ADVar ADVar;
 	ADvar1s(Double val1, Double a1, const ADVari *c1, const ADVar *v):
@@ -809,22 +880,32 @@ ADvar1s: public ADvar1<Double> { // unary ops with partial "a"
 	};
 
  template<typename Double> class
+ADvar1g: public ADvar1<Double> { // unary ops with partials
+ public:
+	typedef ADvar1<Double> ADVar1;
+	typedef typename ADVar1::ADVari ADVari;
+	Double pL;	// deriv of op w.r.t. left operand L
+	Double pL2;	// partial of op w.r.t. L,L
+	ADvar1g(Double val1, Double d1, Double d2, const ADVari *c1):
+		ADVar1(Hv_unary,val1,&pL,c1), pL(d1), pL2(d2) {}
+	};
+
+ template<typename Double> class
 ADvar2: public ADvari<Double> {	// basic binary ops
  public:
 	typedef ADvari<Double> ADVari;
 	typedef Derp<Double> DErp;
 	DErp dL, dR;
-	ADvar2(Double val1): ADVari(val1) {}
-	ADvar2(Double val1, const ADVari *Lcv, const Double *Lc,
+	ADvar2(Advari_Opclass oc, Double val1, const ADVari *Lcv, const Double *Lc,
 		const ADVari *Rcv, const Double *Rc):
-			ADVari(val1) {
+			ADVari(oc,val1) {
 		dR.next = DErp::LastDerp;
 		dL.next = &dR;
 		DErp::LastDerp = &dL;
 		dL.a = Lc;
-		dL.c = Lcv;
+		dL.c = (ADVari*)Lcv;
 		dR.a = Rc;
-		dR.c = Rcv;
+		dR.c = (ADVari*)Rcv;
 		dL.b = dR.b = this;
 		}
 #ifdef RAD_AUTO_AD_Const
@@ -849,61 +930,63 @@ ADvar2: public ADvari<Double> {	// basic binary ops
 	};
 
  template<typename Double> class
-ADvar2q: public ADvar2<Double> { // binary ops with partials "a", "b"
+ADvar2q: public ADvar2<Double> { // binary ops with partials
  public:
 	typedef ADvar2<Double> ADVar2;
 	typedef typename ADVar2::ADVari ADVari;
 	typedef typename ADVar2::DErp DErp;
-	Double a, b;
-	ADvar2q(Double val1, Double Lp, Double Rp, const ADVari *Lcv, const ADVari *Rcv):
-			ADVar2(val1), a(Lp), b(Rp) {
-		this->dR.next = DErp::LastDerp;
-		this->dL.next = &this->dR;
-		DErp::LastDerp = &this->dL;
-		this->dL.a = &a;
-		this->dL.c = Lcv;
-		this->dR.a = &b;
-		this->dR.c = Rcv;
-		this->dL.b = this->dR.b = this;
-		}
+	Double pL;	// deriv of op w.r.t. left operand L
+	Double pR;	// deriv of op w.r.t. right operand R
+	Double pLR;	// second partial w.r.t. L,R
+	Double pR2;	// second partial w.r.t. R,R
+	ADvar2q(Double val1, Double Lp, Double Rp, Double LR, Double R2,
+		const ADVari *Lcv, const ADVari *Rcv):
+			ADVar2(Hv_quotLR,val1,Lcv,&pL,Rcv,&pR),
+			pL(Lp), pR(Rp), pLR(LR), pR2(R2) {}
 #ifdef RAD_AUTO_AD_Const
 	typedef typename ADVar2::ADVar ADVar;
-	ADvar2q(Double val1, Double Lp, Double Rp, const ADVari *Lcv,
-		const ADVari *Rcv, const ADVar *v):
-			ADVar2(val1), a(Lp), b(Rp) {
-		this->dR.next = DErp::LastDerp;
-		this->dL.next = &this->dR;
-		DErp::LastDerp = &this->dL;
-		this->dL.a = &a;
-		this->dL.c = Lcv;
-		this->dR.a = &b;
-		this->dR.c = Rcv;
-		this->dL.b = this->dR.b = this;
-		Lcv->padv = 0;
-		*ADVari::Last_ADvari = this;
-		ADVari::Last_ADvari = &this->Next;
-		this->padv = v;
-		}
+	ADvar2q(Double val1, Double Lp, Double Rp, Double LR, Double R2,
+		const ADVari *Lcv, const ADVari *Rcv, const ADVar *v):
+			ADVar2(Hv_quotLR,val1,Lcv,&pL,Rcv,&pR,v),
+			pL(Lp), pR(Rp), pLR(LR), pR2(R2) {}
 #endif
 	};
 
  template<typename Double> class
-ADvarn: public ADvari<Double> { // n-ary ops with partials "a"
+ADvar2g: public ADvar2<Double> { // general binary ops with partials
+ public:
+	typedef ADvar2<Double> ADVar2;
+	typedef typename ADVar2::ADVari ADVari;
+	Double pL;	// deriv of op w.r.t. left operand L
+	Double pR;	// deriv of op w.r.t. right operand R
+	Double pL2;	// second partial w.r.t. L,L
+	Double pLR;	// second partial w.r.t. L,R
+	Double pR2;	// second partial w.r.t. R,R
+	ADvar2g(Double val1, Double Lp, Double Rp, Double L2, Double LR, Double R2,
+		const ADVari *Lcv, const ADVari *Rcv):
+			ADVar2(Hv_binary,val1,Lcv,&pL,Rcv,&pR),
+			pL(Lp), pR(Rp), pL2(L2), pLR(LR), pR2(R2) { }
+	};
+
+ template<typename Double> class
+ADvarn: public ADvari<Double> { // n-ary ops with partials g and
+				// 2nd partials h (lower triangle, rowwise)
  public:
 	typedef ADvari<Double> ADVari;
+	typedef ADvar<Double> ADVar;
 	typedef typename ADVari::IndepADVar IndepADVar;
 	typedef Derp<Double> DErp;
 	int n;
-	Double *a;
-	DErp *Da;
-	ADvarn(Double val1, int n1, const IndepADVar *x, const Double *g):
-			ADVari(val1), n(n1) {
+	Double *G, *H;
+	DErp *D;
+	ADvarn(Double val1, int n1, const IndepADVar *x, const Double *g, const Double *h):
+			ADVari(Hv_nary,val1), n(n1) {
 		DErp *d1, *dlast;
 		Double *a1;
-		int i;
+		int i, nh;
 
-		a1 = a = (Double*)ADVari::adc.Memalloc(n*sizeof(*a));
-		d1 = Da =  (DErp*)ADVari::adc.Memalloc(n*sizeof(DErp));
+		a1 = G = (Double*)ADVari::adc.Memalloc(n*sizeof(*g));
+		d1 = D = (DErp*)ADVari::adc.Memalloc(n*sizeof(DErp));
 		dlast = DErp::LastDerp;
 		for(i = 0; i < n1; i++, d1++) {
 			d1->next = dlast;
@@ -914,6 +997,10 @@ ADvarn: public ADvari<Double> { // n-ary ops with partials "a"
 			d1->c = x[i].cv;
 			}
 		DErp::LastDerp = dlast;
+		nh = (n*(n+1)) >> 1;
+		a1 = H = (double*)ADVari::adc.Memalloc(nh * sizeof(*h));
+		for(i = 0; i < nh; i++)
+			a1[i] = h[i];
 		}
 	};
 
@@ -970,19 +1057,20 @@ template<typename Double>
 		}
 
 template<typename Double>
- inline Derp<Double>::Derp(const ADVari *c1): c(c1) {
+ inline Derp<Double>::Derp(const ADVari *c1): c((ADVari*)c1) {
 		next = LastDerp;
 		LastDerp = this;
 		}
 
 template<typename Double>
- inline Derp<Double>::Derp(const Double *a1, const ADVari *c1): a(a1), c(c1) {
+ inline Derp<Double>::Derp(const Double *a1, const ADVari *c1): a(a1), c((ADVari*)c1) {
 		next = LastDerp;
 		LastDerp = this;
 		}
 
 template<typename Double>
- inline Derp<Double>::Derp(const Double *a1, const ADVari *b1, const ADVari *c1): a(a1), b(b1), c(c1) {
+ inline Derp<Double>::Derp(const Double *a1, const ADVari *b1, const ADVari *c1):
+	a(a1), b(b1), c((ADVari*)c1) {
 		next = LastDerp;
 		LastDerp = this;
 		}
@@ -1022,14 +1110,22 @@ template<typename Double> FILE *ADvari<Double>::debug_file;
 #endif
 
 
-template<typename Double> ADcontext<Double>::ADcontext()
+ template<typename Double>
+ADcontext<Double>::ADcontext()
 {
+	ADVari_block *fb;
+
 	First = (ADMemblock*)First0;
 	First->next = 0;
 	Busy = First;
 	Free = 0;
 	Mbase = (char*)First->memblk;
 	Mleft = sizeof(First->memblk);
+	AiFirst = Aibusy = fb = (ADVari_block*)First1;
+	Aifree = 0;
+	Ainext = fb->pADvari;
+	fb->next = fb->prev = 0;
+	fb->limit = Ailimit = fb->pADvari + ADVari_block::Gulp;
 #ifndef RAD_AUTO_AD_Const
 	IVfirst = 0;
 	IVnextp = &IVfirst;
@@ -1046,10 +1142,17 @@ template<typename Double> void*
 ADcontext<Double>::new_ADmemblock(size_t len)
 {
 	ADMemblock *mb, *mb0, *mb1, *mbf, *x;
+	ADVari_block *b, *b0, *b1;
 
 	if ((rad_need_reinit & 1) && this == &ADVari::adc) {
 		rad_need_reinit &= ~1;
 		DErp::LastDerp = 0;
+		for(b0 = 0, b = Aibusy; b1 = b->next; b0 = b, b = b1)
+			b->next = b0;
+		Aifree = b0;
+		Aibusy = b;
+		b->next = b->prev = 0;
+		Ailimit = b->limit = (Ainext = b->pADvari) + ADVari_block::Gulp;
 #ifdef RAD_DEBUG_BLOCKKEEP
 		Mleft = rad_mleft_save;
 		if (Mleft < sizeof(First->memblk))
@@ -1121,6 +1224,23 @@ ADcontext<Double>::new_ADmemblock(size_t len)
 	Busy = x;
 	return (Mbase = (char*)x->memblk) +
 		(Mleft = sizeof(First->memblk) - len);
+	}
+
+template<typename Double> void
+ADcontext<Double>::new_ADvari_block()
+{
+	ADVari_block *ob, *nb;
+	ob = Aibusy;
+	ob->limit = Ailimit;	// should be unnecessary, but harmless
+	if (nb = Aifree)
+		Aifree = nb->next;
+	else
+		nb = new ADVari_block;
+	Aibusy = Aibusy->next = nb;
+	nb->limit = Ailimit = (Ainext = nb->pADvari) + ADVari_block::Gulp;
+	ob->next = nb;
+	nb->prev = ob;
+	nb->next = 0;
 	}
 
 template<typename Double> void
@@ -1199,6 +1319,7 @@ ADcontext<Double>::Gradcomp()
 #endif
 				}
 			}
+		DErp::LastDerp = 0;
 		}
 #endif /*RAD_AUTO_AD_Const*/
 #ifdef RAD_DEBUG
@@ -1272,7 +1393,7 @@ ADcontext<Double>::Weighted_Gradcomp(int n, ADVar **V, Double *w)
 		ADVari::adc.rad_need_reinit = 3;
 		while(a = anext) {
 			anext = a->Next;
-			if ((v = (IndepADvar<Double> *)a->padv)) {
+			if (v = (IndepADvar<Double> *)a->padv) {
 #ifdef RAD_Const_WARN
 				if ((i = a->opno) > 0)
 					i = -i;
@@ -1285,6 +1406,7 @@ ADcontext<Double>::Weighted_Gradcomp(int n, ADVar **V, Double *w)
 #endif
 				}
 			}
+		DErp::LastDerp = 0;
 		}
 #endif /*RAD_AUTO_AD_Const*/
 #ifdef RAD_DEBUG
@@ -1314,7 +1436,7 @@ IndepADvar<Double>::AD_Indep(IndepADvar<Double> &v)
 IndepADvar<Double>::IndepADvar(Ttype d)
 {
 
-	ADVari *x = new ADVari(d);
+	ADVari *x = new ADVari(Hv_const, d);
 	cv = x;
 	AD_Indep(*(ADVar*)this);
 	}
@@ -1323,7 +1445,7 @@ IndepADvar<Double>::IndepADvar(Ttype d)
 IndepADvar<Double>::IndepADvar(double i)
 {
 
-	ADVari *x = new ADVari(Double(i));
+	ADVari *x = new ADVari(Hv_const, Double(i));
 	cv = x;
 	AD_Indep(*(ADVar*)this);
 	}
@@ -1332,7 +1454,7 @@ IndepADvar<Double>::IndepADvar(double i)
 IndepADvar<Double>::IndepADvar(int i)
 {
 
-	ADVari *x = new ADVari(Double(i));
+	ADVari *x = new ADVari(Hv_const, Double(i));
 	cv = x;
 	AD_Indep(*(ADVar*)this);
 	}
@@ -1341,7 +1463,7 @@ IndepADvar<Double>::IndepADvar(int i)
 IndepADvar<Double>::IndepADvar(long i)
 {
 
-	ADVari *x = new ADVari(Double(i));
+	ADVari *x = new ADVari(Hv_const, Double(i));
 	cv = x;
 	AD_Indep(*(ADVar*)this);
 	}
@@ -1413,6 +1535,7 @@ ConstADvari<Double>::aval_reset()
  template<typename Double>
 ADvari<Double>::ADvari(const IndepADVar *x, Double d): Val(d), aval(0.)
 {
+	opclass = Hv_const;
 	*Last_ADvari = this;
 	Last_ADvari = &Next;
 	this->padv = (IndepADVar*)x;
@@ -1428,7 +1551,7 @@ ADvari<Double>::ADvari(const IndepADVar *x, Double d, Double g): Val(d), aval(g)
 
  template<typename Double>
 ADvar1<Double>::ADvar1(const IndepADVar *x, const IndepADVar &y):
-	ADVari(y.cv->Val), d((const Double*)&ADcontext<Double>::One, (ADVari*)this, y.cv)
+	ADVari(Hv_copy, y.cv->Val), d((const Double*)&ADcontext<Double>::One, (ADVari*)this, y.cv)
 {
 	*ADVari::Last_ADvari = this;
 	ADVari::Last_ADvari = &this->Next;
@@ -1437,7 +1560,7 @@ ADvar1<Double>::ADvar1(const IndepADVar *x, const IndepADVar &y):
 
  template<typename Double>
 ADvar1<Double>::ADvar1(const IndepADVar *x, const ADVari &y):
-	ADVari(y.Val), d((const Double*)&ADcontext<Double>::One, this, &y)
+	ADVari(Hv_copy, y.Val), d((const Double*)&ADcontext<Double>::One, this, &y)
 {
 	*ADVari::Last_ADvari = this;
 	ADVari::Last_ADvari = &this->Next;
@@ -1449,12 +1572,13 @@ ADvar1<Double>::ADvar1(const IndepADVar *x, const ADVari &y):
  template<typename Double>
  IndepADvar<Double>&
 ADvar_operatoreq(IndepADvar<Double> *This, const ADvari<Double> &x)
-{ This->cv = new ADvar1<Double>(x.Val, &x.adc.One, &x); return *(IndepADvar<Double>*) This; }
+{ This->cv = new ADvar1<Double>(Hv_copy, x.Val, &x.adc.One, &x);
+  return *(IndepADvar<Double>*) This; }
 
  template<typename Double>
  ADvar<Double>&
 ADvar_operatoreq(ADvar<Double> *This, const ADvari<Double> &x)
-{ This->cv = new ADvar1<Double>(x.Val, &x.adc.One, &x); return *(ADvar<Double>*) This; }
+{ This->cv = new ADvar1<Double>(Hv_copy, x.Val, &x.adc.One, &x); return *(ADvar<Double>*) This; }
 
 #endif /* RAD_AUTO_AD_Const */
 
@@ -1466,9 +1590,9 @@ IndepADvar<Double>::operator=(Double d)
 #ifdef RAD_AUTO_AD_Const
 	if (this->cv)
 		this->cv->padv = 0;
-	this->cv = new ADVari(this,d);
+	this->cv = new ADVari(Hv_const, this,d);
 #else
-	this->cv = new ADVari(d);
+	this->cv = new ADVari(Hv_const, d);
 	AD_Indep(*this);
 #endif
 	return *this;
@@ -1481,11 +1605,11 @@ ADvar<Double>::operator=(Double d)
 #ifdef RAD_AUTO_AD_Const
 	if (this->cv)
 		this->cv->padv = 0;
-	this->cv = new ADVari(this,d);
+	this->cv = new ADVari(Hv_const, this,d);
 #else
 	this->cv = ConstADVari::cadc.fpval_implies_const
 		? new ConstADVari(d)
-		: new ADVari(d);
+		: new ADVari(Hv_const, d);
 #endif
 	return *this;
 	}
@@ -1493,13 +1617,13 @@ ADvar<Double>::operator=(Double d)
  template<typename Double>
  ADvari<Double>&
 operator-(const ADvari<Double> &T) {
-	return *(new ADvar1<Double>(-T.Val, &T.adc.negOne, &T));
+	return *(new ADvar1<Double>(Hv_negate, -T.Val, &T.adc.negOne, &T));
 	}
 
  template<typename Double>
  ADvari<Double>&
 operator+(const ADvari<Double> &L, const ADvari<Double> &R) {
-	return *(new ADvar2<Double>(L.Val + R.Val, &L, &L.adc.One, &R, &L.adc.One));
+	return *(new ADvar2<Double>(Hv_plusLR, L.Val + R.Val, &L, &L.adc.One, &R, &L.adc.One));
 	}
 
 #ifdef RAD_AUTO_AD_Const
@@ -1512,75 +1636,78 @@ operator+(const ADvari<Double> &L, const ADvari<Double> &R) {
  ADvar<Double>&
 ADvar<Double>::operator+=(const ADVari &R) {
 	ADVari *Lcv = this->cv;
-	this->cv = new ADvar2<Double>(Lcv->Val + R.Val, Lcv, &R.adc.One, &R, &R.adc.One RAD_ACA);
+	this->cv = new ADvar2<Double>(Hv_plusLR, Lcv->Val + R.Val, Lcv,
+					&R.adc.One, &R, &R.adc.One RAD_ACA);
 	return *this;
 	}
 
  template<typename Double>
  ADvari<Double>&
 operator+(const ADvari<Double> &L, Double R) {
-	return *(new ADvar1<Double>(L.Val + R, &L.adc.One, &L));
+	return *(new ADvar1<Double>(Hv_copy, L.Val + R, &L.adc.One, &L));
 	}
 
  template<typename Double>
  ADvar<Double>&
 ADvar<Double>::operator+=(Double R) {
 	ADVari *tcv = this->cv;
-	this->cv = new ADVar1(tcv->Val + R, &tcv->adc.One, tcv RAD_ACA);
+	this->cv = new ADVar1(Hv_copy, tcv->Val + R, &tcv->adc.One, tcv RAD_ACA);
 	return *this;
 	}
 
  template<typename Double>
  ADvari<Double>&
 operator+(Double L, const ADvari<Double> &R) {
-	return *(new ADvar1<Double>(L + R.Val, &R.adc.One, &R));
+	return *(new ADvar1<Double>(Hv_copy, L + R.Val, &R.adc.One, &R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 operator-(const ADvari<Double> &L, const ADvari<Double> &R) {
-	return *(new ADvar2<Double>(L.Val - R.Val, &L, &L.adc.One, &R, &L.adc.negOne));
+	return *(new ADvar2<Double>(Hv_minusLR, L.Val - R.Val, &L, &L.adc.One, &R, &L.adc.negOne));
 	}
 
  template<typename Double>
  ADvar<Double>&
 ADvar<Double>::operator-=(const ADVari &R) {
 	ADVari *Lcv = this->cv;
-	this->cv = new ADvar2<Double>(Lcv->Val - R.Val, Lcv, &R.adc.One, &R, &R.adc.negOne RAD_ACA);
+	this->cv = new ADvar2<Double>(Hv_minusLR,Lcv->Val - R.Val, Lcv,
+					&R.adc.One, &R, &R.adc.negOne RAD_ACA);
 	return *this;
 	}
 
  template<typename Double>
  ADvari<Double>&
 operator-(const ADvari<Double> &L, Double R) {
-	return *(new ADvar1<Double>(L.Val - R, &L.adc.One, &L));
+	return *(new ADvar1<Double>(Hv_copy, L.Val - R, &L.adc.One, &L));
 	}
 
  template<typename Double>
  ADvar<Double>&
 ADvar<Double>::operator-=(Double R) {
 	ADVari *tcv = this->cv;
-	this->cv = new ADVar1(tcv->Val - R, &tcv->adc.One, tcv RAD_ACA);
+	this->cv = new ADVar1(Hv_copy, tcv->Val - R, &tcv->adc.One, tcv RAD_ACA);
 	return *this;
 	}
 
  template<typename Double>
  ADvari<Double>&
 operator-(Double L, const ADvari<Double> &R) {
-	return *(new ADvar1<Double>(L - R.Val, &R.adc.negOne, &R));
+	return *(new ADvar1<Double>(Hv_negate, L - R.Val, &R.adc.negOne, &R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 operator*(const ADvari<Double> &L, const ADvari<Double> &R) {
-	return *(new ADvar2<Double>(L.Val * R.Val, &L, &R.Val, &R, &L.Val));
+	return *(new ADvar2<Double>(Hv_timesLR, L.Val * R.Val, &L, &R.Val, &R, &L.Val));
 	}
 
  template<typename Double>
  ADvar<Double>&
 ADvar<Double>::operator*=(const ADVari &R) {
 	ADVari *Lcv = this->cv;
-	this->cv = new ADvar2<Double>(Lcv->Val * R.Val, Lcv, &R.Val, &R, &Lcv->Val RAD_ACA);
+	this->cv = new ADvar2<Double>(Hv_timesLR, Lcv->Val * R.Val, Lcv,
+					&R.Val, &R, &Lcv->Val RAD_ACA);
 	return *this;
 	}
 
@@ -1607,16 +1734,16 @@ operator*(Double L, const ADvari<Double> &R) {
  template<typename Double>
  ADvari<Double>&
 operator/(const ADvari<Double> &L, const ADvari<Double> &R) {
-	Double Lv = L.Val, Rv = R.Val, pL = 1. / Rv, q = Lv/Rv;
-	return *(new ADvar2q<Double>(q, pL, -q*pL, &L, &R));
+	Double Lv = L.Val, Rv = R.Val, pL = 1. / Rv, q = Lv/Rv, qpL = q*pL;
+	return *(new ADvar2q<Double>(q, pL, -qpL, -pL*pL, 2.*pL*qpL, &L, &R));
 	}
 
  template<typename Double>
  ADvar<Double>&
 ADvar<Double>::operator/=(const ADVari &R) {
 	ADVari *Lcv = this->cv;
-	Double Lv = Lcv->Val, Rv = R.Val, pL = 1. / Rv, q = Lv/Rv;
-	this->cv = new ADvar2q<Double>(q, pL, -q*pL, Lcv, &R RAD_ACA);
+	Double Lv = Lcv->Val, Rv = R.Val, pL = 1. / Rv, q = Lv/Rv, qpL = q*pL;
+	this->cv = new ADvar2q<Double>(q, pL, -qpL, -pL*pL, 2.*pL*qpL, Lcv, &R RAD_ACA);
 	return *this;
 	}
 
@@ -1631,7 +1758,8 @@ operator/(const ADvari<Double> &L, Double R) {
 operator/(Double L, const ADvari<Double> &R) {
 	Double recip = 1. / R.Val;
 	Double q = L * recip;
-	return *(new ADvar1s<Double>(q, -q*recip, &R));
+	Double d1 = -q*recip;
+	return *(new ADvar1g<Double>(q, d1, -q*d1, &R));
 	}
 
  template<typename Double>
@@ -1645,216 +1773,264 @@ ADvar<Double>::operator/=(Double R) {
  template<typename Double>
  ADvari<Double>&
 acos(const ADvari<Double> &v) {
-	Double t = v.Val;
-	return *(new ADvar1s<Double>(STDCC acos(t), -1./STDCC sqrt(1. - t*t), &v));
+	Double t = v.Val, t1 = 1. - t*t, d1 = -1./STDCC sqrt(t1);
+	return *(new ADvar1g<Double>(STDCC acos(t), d1, t*d1/t1, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 acosh(const ADvari<Double> &v) {
-	Double t = v.Val, t1 = STDCC sqrt(t*t - 1.);
-	return *(new ADvar1s<Double>(STDCC log(t + t1), 1./t1, &v));
+	Double d1, t, t1, t2;
+	t = v.Val;
+	t1 = STDCC sqrt(t2 = t*t - 1.);
+	d1 = 1. / t1;
+	return *(new ADvar1g<Double>(STDCC log(t + t1), d1, -t*d1/t2, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 asin(const ADvari<Double> &v) {
-	Double t = v.Val;
-	return *(new ADvar1s<Double>(STDCC asin(t), 1./STDCC sqrt(1. - t*t), &v));
+	Double d1, t, t1;
+	t = v.Val;
+	d1 = 1. / sqrt(t1 = 1. - t*t);
+	return *(new ADvar1g<Double>(STDCC asin(t), d1, t*d1/t1, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 asinh(const ADvari<Double> &v) {
-	Double t = v.Val, td = 1., t1 = STDCC sqrt(t*t + 1.);
-	if (t < 0.) {
-		t = -t;
+	Double d1, t, t1, t2, td;
+	t = v.Val;
+	t1 = STDCC sqrt(t2 = t*t + 1.);
+	d1 = 1. / t1;
+	td = 1.;
+	if (t < 0.)
 		td = -1.;
-		}
-	return *(new ADvar1s<Double>(td*STDCC log(t + t1), 1./t1, &v));
+	return *(new ADvar1g<Double>(td*STDCC log(t*td + t1), d1, -(t/t2)*d1, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 atan(const ADvari<Double> &v) {
-	Double t = v.Val;
-	return *(new ADvar1s<Double>(STDCC atan(t), 1./(1. + t*t), &v));
+	Double t = v.Val, d1 = 1./(1. + t*t);
+	return *(new ADvar1g<Double>(STDCC atan(t), d1, -(t+t)*d1*d1, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 atanh(const ADvari<Double> &v) {
-	Double t = v.Val;
-	return *(new ADvar1s<Double>(0.5*STDCC log((1.+t)/(1.-t)), 1./(1. - t*t), &v));
+	Double t = v.Val, d1 = 1./(1. - t*t);
+	return *(new ADvar1g<Double>(0.5*STDCC log((1.+t)/(1.-t)), d1, (t+t)*d1*d1, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 atan2(const ADvari<Double> &L, const ADvari<Double> &R) {
-	Double x = L.Val, y = R.Val, t = x*x + y*y;
-	return *(new ADvar2q<Double>(STDCC atan2(x,y), y/t, -x/t, &L, &R));
+	Double R2, t, t2, x, x2, y, y2;
+	x = L.Val;
+	y = R.Val;
+	x2 = x*x;
+	y2 = y*y;
+	t = 1./(x2 + y2);
+	t2 = t*t;
+	R2 = 2.*t2*x*y;
+	return *(new ADvar2g<Double>(STDCC atan2(x,y), y*t, -x*t, -R2, t2*(x2 - y2), R2, &L, &R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 atan2(Double x, const ADvari<Double> &R) {
-	Double y = R.Val, t = x*x + y*y;
-	return *(new ADvar1s<Double>(STDCC atan2(x,y), -x/t, &R));
+	Double t, x2, y, y2;
+	y = R.Val;
+	x2 = x*x;
+	y2 = y*y;
+	t = 1./(x2 + y2);
+	return *(new ADvar1g<Double>(STDCC atan2(x,y), -x*t, 2.*t*t*x*y, &R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 atan2(const ADvari<Double> &L, Double y) {
-	Double x = L.Val, t = x*x + y*y;
-	return *(new ADvar1s<Double>(STDCC atan2(x,y), y/t, &L));
+	Double t, x, x2, y2;
+	x = L.Val;
+	x2 = x*x;
+	y2 = y*y;
+	t = 1./(x2 + y2);
+	return *(new ADvar1g<Double>(STDCC atan2(x,y), y*t, -2.*t*t*x*y, &L));
 	}
 
  template<typename Double>
  ADvari<Double>&
 max(const ADvari<Double> &L, const ADvari<Double> &R) {
 	const ADvari<Double> &x = L.Val >= R.Val ? L : R;
-	return *(new ADvar1<Double>(x.Val, &x.adc.One, &x));
+	return *(new ADvar1<Double>(Hv_copy, x.Val, &x.adc.One, &x));
 	}
 
  template<typename Double>
  ADvari<Double>&
 max(Double L, const ADvari<Double> &R) {
 	if (L >= R.Val)
-		return *(new ADvari<Double>(L));
-	return *(new ADvar1<Double>(R.Val, &R.adc.One, &R));
+		return *(new ADvari<Double>(Hv_const, L));
+	return *(new ADvar1<Double>(Hv_copy, R.Val, &R.adc.One, &R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 max(const ADvari<Double> &L, Double R) {
 	if (L.Val >= R)
-		return *(new ADvar1<Double>(L.Val, &L.adc.One, &L));
-	return *(new ADvari<Double>(R));
+		return *(new ADvar1<Double>(Hv_copy, L.Val, &L.adc.One, &L));
+	return *(new ADvari<Double>(Hv_const, R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 min(const ADvari<Double> &L, const ADvari<Double> &R) {
 	const ADvari<Double> &x = L.Val <= R.Val ? L : R;
-	return *(new ADvar1<Double>(x.Val, &x.adc.One, &x));
+	return *(new ADvar1<Double>(Hv_copy, x.Val, &x.adc.One, &x));
 	}
 
  template<typename Double>
  ADvari<Double>&
 min(Double L, const ADvari<Double> &R) {
 	if (L <= R.Val)
-		return *(new ADvari<Double>(L));
-	return *(new ADvar1<Double>(R.Val, &R.adc.One, &R));
+		return *(new ADvari<Double>(Hv_const, L));
+	return *(new ADvar1<Double>(Hv_copy, R.Val, &R.adc.One, &R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 min(const ADvari<Double> &L, Double R) {
 	if (L.Val <= R)
-		return *(new ADvar1<Double>(L.Val, &L.adc.One, &L));
-	return *(new ADvari<Double>(R));
+		return *(new ADvar1<Double>(Hv_copy, L.Val, &L.adc.One, &L));
+	return *(new ADvari<Double>(Hv_const, R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 cos(const ADvari<Double> &v) {
-	return *(new ADvar1s<Double>(STDCC cos(v.Val), -STDCC sin(v.Val), &v));
+	Double t = STDCC cos(v.Val);
+	return *(new ADvar1g<Double>(t, -STDCC sin(v.Val), -t, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 cosh(const ADvari<Double> &v) {
-	return *(new ADvar1s<Double>(STDCC cosh(v.Val), STDCC sinh(v.Val), &v));
+	Double t = STDCC cosh(v.Val);
+	return *(new ADvar1g<Double>(t, STDCC sinh(v.Val), t, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 exp(const ADvari<Double> &v) {
-	ADvar1<Double>* rcv = new ADvar1<Double>(STDCC exp(v.Val), &v);
-	rcv->d.a = &rcv->Val;
-	rcv->d.b = rcv;
-	return *rcv;
+	Double t = STDCC exp(v.Val);
+	return *(new ADvar1g<Double>(t, t, t, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 log(const ADvari<Double> &v) {
-	Double x = v.Val;
-	return *(new ADvar1s<Double>(STDCC log(x), 1. / x, &v));
+	Double x = v.Val, d1 = 1. / x;
+	return *(new ADvar1g<Double>(STDCC log(x), d1, -d1*d1, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 log10(const ADvari<Double> &v) {
 	static double num = 1. / STDCC log(10.);
-	Double x = v.Val;
-	return *(new ADvar1s<Double>(STDCC log10(x), num / x, &v));
+	Double d1, t, x;
+	x = v.Val;
+	t = 1. / x;
+	d1 = num * t;
+	return *(new ADvar1g<Double>(STDCC log10(x), d1, -d1*t, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 pow(const ADvari<Double> &L, const ADvari<Double> &R) {
-	Double x = L.Val, y = R.Val, t = STDCC pow(x,y);
-	return *(new ADvar2q<Double>(t, y*t/x, t*STDCC log(x), &L, &R));
+	Double dx, dy, t, x, xlog, xym1, y;
+	x = L.Val;
+	y = R.Val;
+	t = STDCC pow(x,y);
+	xym1 = t / x;
+	xlog = STDCC log(x);
+	dx = y*xym1;
+	dy = t * xlog;
+	return *(new ADvar2g<Double>(t, dx, dy, (y-1.)*dx/x, xym1*(1. + y*xlog), dy*xlog, &L, &R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 pow(Double x, const ADvari<Double> &R) {
-	Double t = STDCC pow(x,R.Val);
-	return *(new ADvar1s<Double>(t, t*STDCC log(x), &R));
+	Double dy, t, xlog, y;
+	y = R.Val;
+	t = STDCC pow(x,y);
+	xlog = STDCC log(x);
+	dy = t * xlog;
+	return *(new ADvar1g<Double>(t, dy, dy*xlog, &R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 pow(const ADvari<Double> &L, Double y) {
-	Double x = L.Val, t = STDCC pow(x,y);
-	return *(new ADvar1s<Double>(t, y*t/x, &L));
+	Double dx, t, x;
+	x = L.Val;
+	t = STDCC pow(x,y);
+	dx = y*t/x;
+	return *(new ADvar1g<Double>(t, dx, (y-1.)*dx/x, &L));
 	}
 
  template<typename Double>
  ADvari<Double>&
 sin(const ADvari<Double> &v) {
-	return *(new ADvar1s<Double>(STDCC sin(v.Val), STDCC cos(v.Val), &v));
+	Double t = STDCC sin(v.Val);
+	return *(new ADvar1g<Double>(t, STDCC cos(v.Val), -t, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 sinh(const ADvari<Double> &v) {
-	return *(new ADvar1s<Double>(STDCC sinh(v.Val), STDCC cosh(v.Val), &v));
+	Double t = STDCC sinh(v.Val);
+	return *(new ADvar1g<Double>(t, STDCC cosh(v.Val), t, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 sqrt(const ADvari<Double> &v) {
 	Double t = STDCC sqrt(v.Val);
-	return *(new ADvar1s<Double>(t, 0.5/t, &v));
+	Double d1 = 0.5 / t;
+	return *(new ADvar1g<Double>(t, d1, -0.5*d1/v.Val, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 tan(const ADvari<Double> &v) {
-	Double t = STDCC cos(v.Val);
-	return *(new ADvar1s<Double>(STDCC tan(v.Val), 1./(t*t), &v));
+	Double d1, rv, t;
+	rv = STDCC tan(v.Val);
+	t = 1. / STDCC cos(v.Val);
+	d1 = t*t;
+	return *(new ADvar1g<Double>(rv, d1, (rv+rv)*d1, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 tanh(const ADvari<Double> &v) {
-	Double t = 1. / STDCC cosh(v.Val);
-	return *(new ADvar1s<Double>(STDCC tanh(v.Val), t*t, &v));
+	Double d1, rv, t;
+	rv = STDCC tanh(v.Val);
+	t = 1. / STDCC cosh(v.Val);
+	d1 = t*t;
+	return *(new ADvar1g<Double>(rv, d1, -(rv+rv)*d1, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 abs(const ADvari<Double> &v) {
 	Double t, p;
-	p = 1;
+	p = 1.;
 	if ((t = v.Val) < 0) {
 		t = -t;
 		p = -p;
 		}
-	return *(new ADvar1s<Double>(t, p, &v));
+	return *(new ADvar1g<Double>(t, p, 0., &v));
 	}
 
  template<typename Double>
@@ -1863,60 +2039,236 @@ fabs(const ADvari<Double> &v) {	// Synonym for "abs"
 				// "fabs" is not the best choice of name,
 				// but this name is used at Sandia.
 	Double t, p;
-	p = 1;
+	p = 1.;
 	if ((t = v.Val) < 0) {
 		t = -t;
 		p = -p;
 		}
-	return *(new ADvar1s<Double>(t, p, &v));
+	return *(new ADvar1g<Double>(t, p, 0., &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
-ADf1(Double f, Double g, const ADvari<Double> &x) {
-	return *(new ADvar1s<Double>(f, g, &x));
+ADf1(Double f, Double g, Double h, const ADvari<Double> &x) {
+	return *(new ADvar1g<Double>(f, g, h, &x));
 	}
 
  template<typename Double>
  inline ADvari<Double>&
-ADf1(Double f, Double g, const IndepADvar<Double> &x) {
-	return *(new ADvar1s<Double>(f, g, x.cv));
+ADf1(Double f, Double g, Double h, const IndepADvar<Double> &x) {
+	return *(new ADvar1g<Double>(f, g, h, x.cv));
 	}
 
  template<typename Double>
  ADvari<Double>&
-ADf2(Double f, Double gx, Double gy, const ADvari<Double> &x, const ADvari<Double> &y) {
-	return *(new ADvar2q<Double>(f, gx, gy, &x, &y));
+ADf2(Double f, Double gx, Double gy, Double hxx, Double hxy, Double hyy,
+		const ADvari<Double> &x, const ADvari<Double> &y) {
+	return *(new ADvar2g<Double>(f, gx, gy, hxx, hxy, hyy, &x, &y));
 	}
 
  template<typename Double>
  ADvari<Double>&
-ADf2(Double f, Double gx, Double gy, const ADvari<Double> &x, const IndepADvar<Double> &y) {
-	return *(new ADvar2q<Double>(f, gx, gy, &x, y.cv));
+ADf2(Double f, Double gx, Double gy, Double hxx, Double hxy, Double hyy,
+		const ADvari<Double> &x, const IndepADvar<Double> &y) {
+	return *(new ADvar2g<Double>(f, gx, gy, hxx, hxy, hyy, &x, y.cv));
 	}
 
  template<typename Double>
  ADvari<Double>&
-ADf2(Double f, Double gx, Double gy, const IndepADvar<Double> &x, const ADvari<Double> &y) {
-	return *(new ADvar2q<Double>(f, gx, gy, x.cv, &y));
+ADf2(Double f, Double gx, Double gy, Double hxx, Double hxy, Double hyy,
+		const IndepADvar<Double> &x, const ADvari<Double> &y) {
+	return *(new ADvar2g<Double>(f, gx, gy, hxx, hxy, hyy, x.cv, &y));
 	}
 
  template<typename Double>
  ADvari<Double>&
-ADf2(Double f, Double gx, Double gy, const IndepADvar<Double> &x, const IndepADvar<Double> &y) {
-	return *(new ADvar2q<Double>(f, gx, gy, x.cv, y.cv));
+ADf2(Double f, Double gx, Double gy, Double hxx, Double hxy, Double hyy,
+		const IndepADvar<Double> &x, const IndepADvar<Double> &y) {
+	return *(new ADvar2g<Double>(f, gx, gy, hxx, hxy, hyy, x.cv, y.cv));
 	}
 
  template<typename Double>
  ADvari<Double>&
-ADfn(Double f, int n, const IndepADvar<Double> *x, const Double *g) {
-	return *(new ADvarn<Double>(f, n, x, g));
+ADfn(Double f, int n, const IndepADvar<Double> *x, const Double *g, const Double *h) {
+	return *(new ADvarn<Double>(f, n, x, g, h));
 	}
 
  template<typename Double>
  inline ADvari<Double>&
-ADfn(Double f, int n, const ADvar<Double> *x, const Double *g) {
-	return ADfn<Double>(f, n, (IndepADvar<Double>*)x, g);
+ADfn(Double f, int n, const ADvar<Double> *x, const Double *g, const Double *h) {
+	return ADfn<Double>(f, n, (IndepADvar<Double>*)x, g, h);
+	}
+
+ template<typename Double>
+ void
+ADcontext<Double>::Hvprod(int n, ADvar<Double> **x, Double *v, Double *hv)
+{
+	ADVari *a, *aL, *aR, **ap, **ape;
+	ADVari_block *b, *b0;
+	DErp *d;
+	Double aO, adO, *g, *h, *h0, t, tL, tR;
+	int i, j, k, m;
+	for(i = 0; i < n; i++) {
+		a = x[i]->cv;
+		a->dO = v[i];
+		a->aO = a->adO = 0.;
+		}
+	ADVari::adc.Aibusy->limit = ADVari::adc.Ainext;
+	a = 0;
+	for(b0 = 0, b = ADVari::adc.AiFirst; b; b0 = b, b = b->next) {
+		ap = b->pADvari;
+		ape = b->limit;
+		while(ap < ape) {
+			a = *ap++;
+			a->aO = a->adO = 0.;
+			switch(a->opclass) {
+			 case Hv_copy:
+				a->dO = ((ADVar1*)a)->d.c->dO;
+				break;
+			 case Hv_binary:
+				a->dO =   ((ADVar2g*)a)->pL * ((ADVar2g*)a)->dL.c->dO
+					+ ((ADVar2g*)a)->pR * ((ADVar2g*)a)->dR.c->dO;
+				break;
+			 case Hv_unary:
+				a->dO = ((ADVar1g*)a)->pL * ((ADVar1g*)a)->d.c->dO;
+				break;
+			 case Hv_negate:
+				a->dO = -((ADVar1*)a)->d.c->dO;
+				break;
+			 case Hv_plusLR:
+				a->dO = ((ADVar2*)a)->dL.c->dO + ((ADVar2*)a)->dR.c->dO;
+				break;
+			 case Hv_minusLR:
+				a->dO = ((ADVar2*)a)->dL.c->dO - ((ADVar2*)a)->dR.c->dO;
+				break;
+			 case Hv_timesL:
+				a->dO = ((ADVar1s*)a)->pL * ((ADVar1s*)a)->d.c->dO;
+				break;
+			 case Hv_timesLR:
+				a->dO =   ((ADVar2*)a)->dR.c->Val * ((ADVar2*)a)->dL.c->dO
+					+ ((ADVar2*)a)->dL.c->Val * ((ADVar2*)a)->dR.c->dO;
+				break;
+			 case Hv_quotLR:
+				a->dO =   ((ADVar2q*)a)->pL * ((ADVar2q*)a)->dL.c->dO
+					+ ((ADVar2q*)a)->pR * ((ADVar2q*)a)->dR.c->dO;
+				break;
+			 case Hv_nary:
+				d = ((ADVarn*)a)->D;
+				m = ((ADVarn*)a)->n;
+				g = ((ADVarn*)a)->G;
+				t = 0.;
+				for(i = 0; i < m; i++)
+					t += g[i] * d[i].c->dO;
+				a->dO = t;
+			 }
+			}
+		}
+	if (a)
+		a->adO = 1.;
+	for(b = b0; b; b = b->prev) {
+		ape = b->pADvari;
+		ap = b->limit;
+		while(ap > ape) {
+			a = *--ap;
+			aO = a->aO;
+			adO = a->adO;
+			switch(a->opclass) {
+			 case Hv_copy:
+				aL = ((ADVar1*)a)->d.c;
+				aL->aO += aO;
+				aL->adO += adO;
+				break;
+			 case Hv_binary:
+				aL = ((ADVar2g*)a)->dL.c;
+				aR = ((ADVar2g*)a)->dR.c;
+				tL = adO*aL->dO;
+				tR = adO*aR->dO;
+				aL->aO += aO*((ADVar2g*)a)->pL
+					+ tL*((ADVar2g*)a)->pL2
+					+ tR*((ADVar2g*)a)->pLR;
+				aR->aO += aO*((ADVar2g*)a)->pR
+					+ tL*((ADVar2g*)a)->pLR
+					+ tR*((ADVar2g*)a)->pR2;
+				aL->adO += adO * ((ADVar2g*)a)->pL;
+				aR->adO += adO * ((ADVar2g*)a)->pR;
+				break;
+			 case Hv_unary:
+				aL = ((ADVar1g*)a)->d.c;
+				aL->aO += aO * ((ADVar1g*)a)->pL
+					+ adO * aL->dO * ((ADVar1g*)a)->pL2;
+				aL->adO += adO * ((ADVar1g*)a)->pL;
+				break;
+			 case Hv_negate:
+				aL = ((ADVar1*)a)->d.c;
+				aL->aO -= aO;
+				aL->adO -= adO;
+				break;
+			 case Hv_plusLR:
+				aL = ((ADVar2*)a)->dL.c;
+				aR = ((ADVar2*)a)->dR.c;
+				aL->aO += aO;
+				aL->adO += adO;
+				aR->aO += aO;
+				aR->adO += adO;
+				break;
+			 case Hv_minusLR:
+				aL = ((ADVar2*)a)->dL.c;
+				aR = ((ADVar2*)a)->dR.c;
+				aL->aO += aO;
+				aL->adO += adO;
+				aR->aO -= aO;
+				aR->adO -= adO;
+				break;
+			 case Hv_timesL:
+				aL = ((ADVar1s*)a)->d.c;
+				aL->aO += aO * (tL = ((ADVar1s*)a)->pL);
+				aL->adO += adO * tL;
+				break;
+			 case Hv_timesLR:
+				aL = ((ADVar2*)a)->dL.c;
+				aR = ((ADVar2*)a)->dR.c;
+				aL->aO += aO * (tL = aR->Val) + adO*aR->dO;
+				aR->aO += aO * (tR = aL->Val) + adO*aL->dO;
+				aL->adO += adO * tL;
+				aR->adO += adO * tR;
+				break;
+			 case Hv_quotLR:
+				aL = ((ADVar2q*)a)->dL.c;
+				aR = ((ADVar2q*)a)->dR.c;
+				tL = adO*aL->dO;
+				tR = adO*aR->dO;
+				aL->aO += aO*((ADVar2q*)a)->pL
+					+ tR*((ADVar2q*)a)->pLR;
+				aR->aO += aO*((ADVar2q*)a)->pR
+					+ tL*((ADVar2q*)a)->pLR
+					+ tR*((ADVar2q*)a)->pR2;
+				aL->adO += adO * ((ADVar2q*)a)->pL;
+				aR->adO += adO * ((ADVar2q*)a)->pR;
+				break;
+			 case Hv_nary:
+				d  = ((ADVarn*)a)->D;
+				m  = ((ADVarn*)a)->n;
+				g  = ((ADVarn*)a)->G;
+				h0 = ((ADVarn*)a)->H;
+				for(i = 0; i < m; i++) {
+					aL = d[i].c;
+					aL->adO += adO * (t = g[i]);
+					aL->aO += t*aO;
+					t = adO * aL->dO;
+					for(h = h0, j = 0; j <= i; j++)
+						d[j].c->aO += t * *h++;
+					h0 = h--;
+					for(k = j; j < m; j++)
+						d[j].c->aO += t * *(h += k++);
+					}
+			 }
+			}
+		}
+	for(i = 0; i < n; i++) {
+		a = x[i]->cv;
+		a->dO = 0.;
+		hv[i] = a->aO;
+		}
 	}
 
  template<typename Double>
@@ -1999,10 +2351,10 @@ T1(tanh)
 T1(fabs)
 
 T F copy(AI x)
-{ return *(new ADvar1<Double>(x.cv->Val, &ADcontext<Double>::One, (ADvari<Double>*)x.cv)); }
+{ return *(new ADvar1<Double>(Hv_copy, x.cv->Val, &ADcontext<Double>::One, (ADvari<Double>*)x.cv)); }
 
 T F copy(Ai x)
-{ return *(new ADvar1<Double>(x.Val, &ADcontext<Double>::One, (ADvari<Double>*)&x)); }
+{ return *(new ADvar1<Double>(Hv_copy, x.Val, &ADcontext<Double>::One, (ADvari<Double>*)&x)); }
 
 #undef T1
 #undef AI
@@ -2015,10 +2367,10 @@ T F copy(Ai x)
 #undef Ttype
 #undef Dtype
 
-#ifdef SACADO_NAMESPACE
-} /* namespace Rad */
+#ifndef SACADO_NO_NAMESPACE
+} /* namespace Rad2 */
 } /* namespace Sacado */
-#define SNS Sacado::Rad
+#define SNS Sacado::Rad2
 #else
 #define SNS // nothing
 #endif
@@ -2043,4 +2395,4 @@ namespace std {
 }
 #undef SNS
 
-#endif /* SACADO_TRAD_H */
+#endif /* SACADO_TRAD2_H */

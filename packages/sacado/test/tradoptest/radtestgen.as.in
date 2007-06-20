@@ -45,7 +45,7 @@ differ(double a, double b)
 	return d > tol;
 	}
 
-#ifdef RAD_NO_EQ_ALIAS
+#ifndef RAD_EQ_ALIAS
 #define Plus_dx 1.
 #else
 #ifdef RAD_AUTO_AD_Const
@@ -148,7 +148,7 @@ function crunch1(op, i, cL)
 	if (newcontext) printf "\t}\n"
 	printf "\n"
 	}
-	
+
 /^BINTEST/ {
 	op = $2
 	infix = $8 + 0
