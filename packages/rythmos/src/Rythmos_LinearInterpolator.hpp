@@ -53,7 +53,7 @@ public:
   /** \brief . */
   bool interpolate(
     const typename DataStore<Scalar>::DataStoreVector_t &data_in
-    ,const std::vector<Scalar> &t_values
+    ,const Array<Scalar> &t_values
     ,typename DataStore<Scalar>::DataStoreVector_t *data_out
     ) const;
 
@@ -115,7 +115,7 @@ LinearInterpolator<Scalar>::cloneInterpolator() const
 template<class Scalar>
 bool LinearInterpolator<Scalar>::interpolate(
     const typename DataStore<Scalar>::DataStoreVector_t &data_in
-    ,const std::vector<Scalar> &t_values
+    ,const Array<Scalar> &t_values
     ,typename DataStore<Scalar>::DataStoreVector_t *data_out ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;

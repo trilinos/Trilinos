@@ -63,7 +63,7 @@ class HermiteInterpolator : virtual public InterpolatorBase<Scalar>
     /// Interpolation:
     bool interpolate(
         const typename DataStore<Scalar>::DataStoreVector_t &data_in
-        ,const std::vector<Scalar> &t_values
+        ,const Array<Scalar> &t_values
         ,typename DataStore<Scalar>::DataStoreVector_t *data_out
         ) const;
 
@@ -110,7 +110,7 @@ HermiteInterpolator<Scalar>::HermiteInterpolator()
 template<class Scalar>
 bool HermiteInterpolator<Scalar>::interpolate(
     const typename DataStore<Scalar>::DataStoreVector_t &data_in
-    ,const std::vector<Scalar> &t_values
+    ,const Array<Scalar> &t_values
     ,typename DataStore<Scalar>::DataStoreVector_t *data_out ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;

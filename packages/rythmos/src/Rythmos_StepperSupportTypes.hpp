@@ -29,8 +29,9 @@
 #ifndef Rythmos_STEPPER_SUPPORT_TYPES_H
 #define Rythmos_STEPPER_SUPPORT_TYPES_H
 
-#include "Teuchos_RCP.hpp"
+#include "Rythmos_Types.hpp"
 #include "Thyra_VectorBase.hpp"
+
 
 namespace Rythmos {
 
@@ -120,13 +121,13 @@ struct StepStatus {
   // 2007/05/21: rabartl: ToDo: We must define what the Local Error Test (LET)
   // is (i.e. what values go into it's computation, what norms are used etc.).
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solution;
+  RCP<const Thyra::VectorBase<Scalar> > solution;
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > solutionDot;
+  RCP<const Thyra::VectorBase<Scalar> > solutionDot;
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > residual;
+  RCP<const Thyra::VectorBase<Scalar> > residual;
   /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> extraParameters;
+  RCP<const Teuchos::ParameterList> extraParameters;
   /** \brief . */
   StepStatus()
     :stepStatus(STEP_STATUS_UNKNOWN)
@@ -141,7 +142,7 @@ template<class Scalar>
 std::ostream& operator<<( std::ostream& out_arg, const StepStatus<Scalar> &stepStatus )
 {
   using std::endl;
-  Teuchos::RCP<Teuchos::FancyOStream>
+  RCP<Teuchos::FancyOStream>
     out = Teuchos::getFancyOStream(Teuchos::rcp(&out_arg,false));
   Teuchos::OSTab tab(out);
   *out

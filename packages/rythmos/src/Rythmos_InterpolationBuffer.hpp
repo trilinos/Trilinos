@@ -64,23 +64,23 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
 
     /// Add point to buffer
     bool setPoints(
-      const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-      ,const std::vector<ScalarMag> & accuracy_vec 
+      const Array<Scalar>& time_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const Array<ScalarMag> & accuracy_vec 
       );
 
     bool setPoints(
-      const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec);
+      const Array<Scalar>& time_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec);
 
     /// Get value from buffer
     bool getPoints(
-      const std::vector<Scalar>& time_vec
-      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-      ,std::vector<ScalarMag>* accuracy_vec) const;
+      const Array<Scalar>& time_vec
+      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,Array<ScalarMag>* accuracy_vec) const;
 
     /// Fill data in from another interpolation buffer
     bool setRange(
@@ -91,10 +91,10 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
     TimeRange<Scalar> getTimeRange() const;
 
     /// Get interpolation nodes
-    bool getNodes(std::vector<Scalar>* time_vec) const;
+    bool getNodes(Array<Scalar>* time_vec) const;
 
     /// Remove interpolation nodes
-    bool removeNodes(std::vector<Scalar>& time_vec);
+    bool removeNodes(Array<Scalar>& time_vec);
 
     /// Get order of interpolation
     int getOrder() const;
@@ -213,10 +213,10 @@ void InterpolationBuffer<Scalar>::SetInterpolator(
 
 template<class Scalar>
 bool InterpolationBuffer<Scalar>::setPoints( 
-    const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec 
-    ,const std::vector<ScalarMag> & accuracy_vec 
+    const Array<Scalar>& time_vec
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec 
+    ,const Array<ScalarMag> & accuracy_vec 
     )
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -347,12 +347,12 @@ bool InterpolationBuffer<Scalar>::setPoints(
 
 template<class Scalar>
 bool InterpolationBuffer<Scalar>::setPoints( 
-    const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec )
+    const Array<Scalar>& time_vec
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  std::vector<ScalarMag> accuracy_vec;
+  Array<ScalarMag> accuracy_vec;
   accuracy_vec.reserve(x_vec.size());
   for (unsigned int i=0;i<x_vec.size();++i) {
     accuracy_vec[i] = ST::zero();
@@ -362,10 +362,10 @@ bool InterpolationBuffer<Scalar>::setPoints(
 
 template<class Scalar>
 bool InterpolationBuffer<Scalar>::getPoints(
-    const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-    ,std::vector<ScalarMag>* accuracy_vec) const
+    const Array<Scalar>& time_vec
+    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,Array<ScalarMag>* accuracy_vec) const
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IB::getPoints");
@@ -380,7 +380,7 @@ bool InterpolationBuffer<Scalar>::getPoints(
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "Interpolation successful" << std::endl;
   }
-  std::vector<Scalar> time_out_vec;
+  Array<Scalar> time_out_vec;
   dataStoreVectorToVector<Scalar>(data_out, &time_out_vec, x_vec, xdot_vec, accuracy_vec);
   // Double check that time_out_vec == time_vec
   if (time_vec.size() != time_out_vec.size()) {
@@ -408,7 +408,7 @@ bool InterpolationBuffer<Scalar>::setRange(
     *out << "time_upper = " << time_upper << std::endl;
     *out << "IB = " << IB.description() << std::endl;
   }
-  std::vector<Scalar> input_nodes;
+  Array<Scalar> input_nodes;
   bool status = IB.getNodes(&input_nodes);
   if (!status) { 
     return(status);
@@ -421,7 +421,7 @@ bool InterpolationBuffer<Scalar>::setRange(
     }
   }
   // Remove nodes outside the range [time_lower,time_upper]
-  typename std::vector<Scalar>::iterator input_it_lower = input_nodes.begin();
+  typename Array<Scalar>::iterator input_it_lower = input_nodes.begin();
   for (; input_it_lower != input_nodes.end() ; input_it_lower++) {
     if (*input_it_lower >= time_lower) {
       break;
@@ -439,7 +439,7 @@ bool InterpolationBuffer<Scalar>::setRange(
   if (input_it_lower - input_nodes.begin() >= 0) {
     input_nodes.erase(input_nodes.begin(),input_it_lower);
   }
-  typename std::vector<Scalar>::iterator input_it_upper = input_nodes.end();
+  typename Array<Scalar>::iterator input_it_upper = input_nodes.end();
   input_it_upper--;
   for (; input_it_upper != input_nodes.begin() ; input_it_upper--) {
     if (*input_it_upper <= time_upper) {
@@ -518,9 +518,9 @@ bool InterpolationBuffer<Scalar>::setRange(
   // Don't forget to check the interval [time_lower,time_upper].
   // Use setPoints and check return value to make sure we observe storage_limit.
 
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > input_x;
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > input_xdot;
-  std::vector<ScalarMag> input_accuracy;
+  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > input_x;
+  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > input_xdot;
+  Array<ScalarMag> input_accuracy;
   status = IB.getPoints( input_nodes, &input_x, &input_xdot, &input_accuracy );
   if (!status) { 
     return(status);
@@ -538,7 +538,7 @@ TimeRange<Scalar> InterpolationBuffer<Scalar>::getTimeRange() const
 }
 
 template<class Scalar>
-bool InterpolationBuffer<Scalar>::getNodes( std::vector<Scalar>* time_vec ) const
+bool InterpolationBuffer<Scalar>::getNodes( Array<Scalar>* time_vec ) const
 {
   int N = data_vec.size();
   time_vec->clear();
@@ -558,7 +558,7 @@ bool InterpolationBuffer<Scalar>::getNodes( std::vector<Scalar>* time_vec ) cons
 }
 
 template<class Scalar>
-bool InterpolationBuffer<Scalar>::removeNodes( std::vector<Scalar>& time_vec ) 
+bool InterpolationBuffer<Scalar>::removeNodes( Array<Scalar>& time_vec ) 
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   ScalarMag z = ST::zero();

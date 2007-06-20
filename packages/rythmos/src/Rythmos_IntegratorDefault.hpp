@@ -82,10 +82,10 @@ public:
   
   /** \brief . */
   bool getFwdPoints(
-    const std::vector<Scalar>& time_vec,
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
-    std::vector<ScalarMag>* accuracy_vec
+    const Array<Scalar>& time_vec,
+    Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    Array<ScalarMag>* accuracy_vec
     );
 
   /** \brief . */
@@ -97,18 +97,18 @@ public:
     
   /** \brief . */
   bool setPoints(
-    const std::vector<Scalar>& time_vec,
-    const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
-    const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
-    const std::vector<ScalarMag> & accuracy_vec 
+    const Array<Scalar>& time_vec,
+    const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
+    const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+    const Array<ScalarMag> & accuracy_vec 
     );
 
   /** \brief . */
   bool getPoints(
-    const std::vector<Scalar>& time_vec,
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
-    std::vector<ScalarMag>* accuracy_vec
+    const Array<Scalar>& time_vec,
+    Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    Array<ScalarMag>* accuracy_vec
     ) const;
 
   /** \brief . */
@@ -121,10 +121,10 @@ public:
   TimeRange<Scalar> getTimeRange() const;
 
   /** \brief . */
-  bool getNodes(std::vector<Scalar>* time_vec) const;
+  bool getNodes(Array<Scalar>* time_vec) const;
 
   /** \brief . */
-  virtual bool removeNodes(std::vector<Scalar>& time_vec);
+  virtual bool removeNodes(Array<Scalar>& time_vec);
 
   /** \brief . */
   int getOrder() const;
@@ -283,10 +283,10 @@ void IntegratorDefault<Scalar>::setStepper(
 
 template<class Scalar>
 bool IntegratorDefault<Scalar>::setPoints(
-  const std::vector<Scalar>& time_vec
-  ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-  ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-  ,const std::vector<ScalarMag> & accuracy_vec 
+  const Array<Scalar>& time_vec
+  ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+  ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+  ,const Array<ScalarMag> & accuracy_vec 
   ) 
 {
   return(trailingInterpBuffer_->setPoints(time_vec,x_vec,xdot_vec,accuracy_vec));
@@ -295,10 +295,10 @@ bool IntegratorDefault<Scalar>::setPoints(
 
 template<class Scalar>
 bool IntegratorDefault<Scalar>::getPoints(
-  const std::vector<Scalar>& time_vec,
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec_in,
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec_in,
-  std::vector<ScalarMag>* accuracy_vec_in
+  const Array<Scalar>& time_vec,
+  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec_in,
+  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec_in,
+  Array<ScalarMag>* accuracy_vec_in
   ) const
 {
 
@@ -384,12 +384,12 @@ bool IntegratorDefault<Scalar>::getPoints(
   // 2007/06/08: rabartl: ToDo: This code should be updated to allow any and
   // all of these pointers to be null in which case the will be ignored.
 
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec = *x_vec_in;
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec = *xdot_vec_in;
-  std::vector<ScalarMag> &accuracy_vec = *accuracy_vec_in;
+  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec = *x_vec_in;
+  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec = *xdot_vec_in;
+  Array<ScalarMag> &accuracy_vec = *accuracy_vec_in;
 
   // Sort time_vec
-  std::vector<Scalar> local_time_vec = time_vec;
+  Array<Scalar> local_time_vec = time_vec;
   std::sort(local_time_vec.begin(),local_time_vec.end());
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "sorted local time_vec:" << std::endl;
@@ -400,7 +400,7 @@ bool IntegratorDefault<Scalar>::getPoints(
 
   // Get nodes out of trailingInterpBuffer_:
 
-  std::vector<Scalar> node_vec; 
+  Array<Scalar> node_vec; 
   status = trailingInterpBuffer_->getNodes(&node_vec); 
   if (!status) {
     return(status);
@@ -418,7 +418,7 @@ bool IntegratorDefault<Scalar>::getPoints(
   }
   if (node_vec.size() == 0) {
     // Initialization case for an empty InterpolationBuffer
-    std::vector<Scalar> stepper_vec;
+    Array<Scalar> stepper_vec;
     status = stepper_->getNodes(&stepper_vec);
     if (!status) {
       return(status);
@@ -460,7 +460,7 @@ bool IntegratorDefault<Scalar>::getPoints(
       if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
         *out << "Initializing empty InterpolationBuffer" << std::endl;
       }
-      std::vector<Scalar> stepper_vec;
+      Array<Scalar> stepper_vec;
       status = stepper_->getNodes(&stepper_vec);
       if (!status) {
         return(status);
@@ -497,7 +497,7 @@ bool IntegratorDefault<Scalar>::getPoints(
   }
 
   // Get time out of stepper_:
-  std::vector<Scalar> stepper_vec;
+  Array<Scalar> stepper_vec;
   status = stepper_->getNodes(&stepper_vec);
   if (!status) {
     return(status);
@@ -549,11 +549,11 @@ bool IntegratorDefault<Scalar>::getPoints(
           local_time_vec[i] << " available in trailingInterpBuffer_[" << 
           node_begin << "," << node_end << "]" << std::endl;
       }
-      std::vector<Scalar> tmp_time_vec; 
+      Array<Scalar> tmp_time_vec; 
       tmp_time_vec.clear();
       tmp_time_vec.push_back(local_time_vec[i]);
-      std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
-      std::vector<ScalarMag> tmp_accuracy_vec;
+      Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
+      Array<ScalarMag> tmp_accuracy_vec;
       status = trailingInterpBuffer_->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
       x_vec.push_back(tmp_x_vec[0]);
       xdot_vec.push_back(tmp_xdot_vec[0]);
@@ -580,10 +580,10 @@ bool IntegratorDefault<Scalar>::getPoints(
           local_time_vec[i] << " available in stepper_[" << 
           stepper_begin << "," << stepper_end << "]" << std::endl;
       }
-      std::vector<Scalar> tmp_time_vec; 
+      Array<Scalar> tmp_time_vec; 
       tmp_time_vec.push_back(local_time_vec[i]);
-      std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
-      std::vector<ScalarMag> tmp_accuracy_vec;
+      Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
+      Array<ScalarMag> tmp_accuracy_vec;
       status = stepper_->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
       x_vec.push_back(tmp_x_vec[0]);
       xdot_vec.push_back(tmp_xdot_vec[0]);
@@ -640,10 +640,10 @@ bool IntegratorDefault<Scalar>::getPoints(
             *out << "We've integrated past local_time_vec[" << i << "] = " 
                  << local_time_vec[i] << "!" << std::endl;
           }
-          std::vector<Scalar> tmp_time_vec;
+          Array<Scalar> tmp_time_vec;
           tmp_time_vec.push_back(local_time_vec[i]);
-          std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
-          std::vector<ScalarMag> tmp_accuracy_vec;
+          Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
+          Array<ScalarMag> tmp_accuracy_vec;
           status = stepper_->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
           x_vec.push_back(tmp_x_vec[0]);
           xdot_vec.push_back(tmp_xdot_vec[0]);
@@ -720,7 +720,7 @@ TimeRange<Scalar> IntegratorDefault<Scalar>::getTimeRange() const
 
 template<class Scalar>
 bool IntegratorDefault<Scalar>::getNodes(
-  std::vector<Scalar>* time_vec
+  Array<Scalar>* time_vec
   ) const
 {
   using Teuchos::as;
@@ -736,7 +736,7 @@ bool IntegratorDefault<Scalar>::getNodes(
 
 template<class Scalar>
 bool IntegratorDefault<Scalar>::removeNodes(
-  std::vector<Scalar>& time_vec
+  Array<Scalar>& time_vec
   ) 
 {
   return(trailingInterpBuffer_->removeNodes(time_vec));
@@ -885,10 +885,10 @@ IntegratorDefault<Scalar>::getValidParameters() const
 
 template <class Scalar>
 bool IntegratorDefault<Scalar>::getFwdPoints(
-    const std::vector<Scalar>& time_vec,
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
-    std::vector<ScalarMag>* accuracy_vec
+    const Array<Scalar>& time_vec,
+    Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    Array<ScalarMag>* accuracy_vec
     )
 {
   return(false);

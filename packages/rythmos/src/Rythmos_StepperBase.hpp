@@ -90,7 +90,7 @@ public:
    * derived class to support cloning, then <tt>supportsCloning()</tt> must be
    * overridden to return <tt>true</tt>.
    */
-  virtual Teuchos::RCP<StepperBase<Scalar> > cloneStepper() const;
+  virtual RCP<StepperBase<Scalar> > cloneStepper() const;
 
   /** \brief Return if this stepper is an implicit stepper.
    *
@@ -140,7 +140,7 @@ public:
    * </ul>
    */
   virtual void setModel(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &model
     ) = 0;
     
   /** \brief Get the model.
@@ -150,7 +150,7 @@ public:
    * this model is necessary in order to get at the spaces and create the
    * <tt>InArgs</tt> object needed to set the initial condition.
    */
-  virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+  virtual RCP<const Thyra::ModelEvaluator<Scalar> >
   getModel() const = 0;
 
   /** \brief Specify initial condition and re-initialize.
@@ -234,7 +234,7 @@ bool StepperBase<Scalar>::supportsCloning() const
 
 
 template<class Scalar>
-Teuchos::RCP<StepperBase<Scalar> >
+RCP<StepperBase<Scalar> >
 StepperBase<Scalar>::cloneStepper() const
 {
   return Teuchos::null;

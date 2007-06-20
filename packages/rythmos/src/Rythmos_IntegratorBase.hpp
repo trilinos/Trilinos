@@ -71,10 +71,10 @@ public:
    * The time values are assumed to be sorted on input.
    * */
   virtual bool getFwdPoints(
-    const std::vector<Scalar>& time_vec,
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
-    std::vector<ScalarMag>* accuracy_vec
+    const Array<Scalar>& time_vec,
+    Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    Array<ScalarMag>* accuracy_vec
     ) =0;
 
   /** \brief 

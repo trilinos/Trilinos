@@ -79,7 +79,7 @@ public:
   */
   virtual bool interpolate(
     const typename DataStore<Scalar>::DataStoreVector_t &data_in
-    ,const std::vector<Scalar> &t_values
+    ,const Array<Scalar> &t_values
     ,typename DataStore<Scalar>::DataStoreVector_t *data_out
     ) const =0;
 

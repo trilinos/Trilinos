@@ -79,18 +79,18 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     /// Redefined from InterpolationBufferBase 
     /// Add points to buffer
     bool setPoints(
-      const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-      ,const std::vector<ScalarMag>& accuracy_vec
+      const Array<Scalar>& time_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const Array<ScalarMag>& accuracy_vec
       );
     
     /// Get values from buffer
     bool getPoints(
-      const std::vector<Scalar>& time_vec
-      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-      ,std::vector<ScalarMag>* accuracy_vec
+      const Array<Scalar>& time_vec
+      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,Array<ScalarMag>* accuracy_vec
       ) const;
 
     /// Fill data in from another interpolation buffer
@@ -103,10 +103,10 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     TimeRange<Scalar> getTimeRange() const;
 
     /// Get interpolation nodes
-    bool getNodes(std::vector<Scalar>* time_vec) const;
+    bool getNodes(Array<Scalar>* time_vec) const;
 
     /// Remove interpolation nodes
-    bool removeNodes(std::vector<Scalar>& time_vec);
+    bool removeNodes(Array<Scalar>& time_vec);
 
     /// Get order of interpolation
     int getOrder() const;
@@ -241,10 +241,10 @@ std::ostream& ForwardEulerStepper<Scalar>::describe(
 
 template<class Scalar>
 bool ForwardEulerStepper<Scalar>::setPoints(
-    const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-    ,const std::vector<ScalarMag> & accuracy_vec 
+    const Array<Scalar>& time_vec
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const Array<ScalarMag> & accuracy_vec 
     )
 {
   return(false);
@@ -252,10 +252,10 @@ bool ForwardEulerStepper<Scalar>::setPoints(
 
 template<class Scalar>
 bool ForwardEulerStepper<Scalar>::getPoints(
-    const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-    ,std::vector<ScalarMag>* accuracy_vec) const
+    const Array<Scalar>& time_vec
+    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,Array<ScalarMag>* accuracy_vec) const
 {
   return(false);
 }
@@ -275,13 +275,13 @@ TimeRange<Scalar> ForwardEulerStepper<Scalar>::getTimeRange() const
 }
 
 template<class Scalar>
-bool ForwardEulerStepper<Scalar>::getNodes(std::vector<Scalar>* time_vec) const
+bool ForwardEulerStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
   return(false);
 }
 
 template<class Scalar>
-bool ForwardEulerStepper<Scalar>::removeNodes(std::vector<Scalar>& time_vec) 
+bool ForwardEulerStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
 {
   return(false);
 }

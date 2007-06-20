@@ -140,10 +140,10 @@ bool InterpolationBufferBaseTester<Scalar>::checkSetPoints(
   Thyra::seed_randomize<Scalar>(12345);
   Teuchos::ScalarTraits<Scalar>::seedrandom(12345);
 
-  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > x_vec;
-  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > xdot_vec;
-  std::vector<Scalar> t_vec;
-  std::vector<ScalarMag> accuracy_vec;
+  Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > x_vec;
+  Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > xdot_vec;
+  Array<Scalar> t_vec;
+  Array<ScalarMag> accuracy_vec;
   int N = num_rand_vectors;
   for (int i=0 ; i<N ; ++i)
   {
@@ -158,7 +158,7 @@ bool InterpolationBufferBaseTester<Scalar>::checkSetPoints(
     accuracy_vec.push_back(Teuchos::ScalarTraits<Scalar>::random()+ST::one());
   }
   IB.setPoints(t_vec,x_vec,xdot_vec,accuracy_vec);
-  std::vector<Scalar> t_vec_out;
+  Array<Scalar> t_vec_out;
   IB.getNodes(&t_out_vec);
   for (int i=0 ; i<N ; ++i)
   {
@@ -168,8 +168,8 @@ bool InterpolationBufferBaseTester<Scalar>::checkSetPoints(
       *out << "Error:  IB.setPoints() did not set a time value correctly" << std::endl;
     }
   }
-  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > x_vec_out;
-  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > xdot_vec_out;
+  Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > x_vec_out;
+  Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > xdot_vec_out;
   */
 
 

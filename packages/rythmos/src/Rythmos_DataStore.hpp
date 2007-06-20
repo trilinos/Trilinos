@@ -98,10 +98,10 @@ class DataStore : virtual public Teuchos::Describable
     bool operator== (const Scalar& t) const;
 
     /// typedef for creating vectors of DataStore objects.
-    typedef std::vector<DataStore<Scalar> > DataStoreVector_t;
+    typedef Array<DataStore<Scalar> > DataStoreVector_t;
 
     /// typedef for creating vectors of DataStore objects.
-    typedef std::vector<const DataStore<Scalar> > constDataStoreVector_t;
+    typedef Array<const DataStore<Scalar> > constDataStoreVector_t;
 
     /// typedef for creating lists of DataStore objects.
     typedef std::list<DataStore<Scalar> > DataStoreList_t;
@@ -126,34 +126,34 @@ class DataStore : virtual public Teuchos::Describable
 template<class Scalar>
 void dataStoreVectorToVector(
       const typename DataStore<Scalar>::DataStoreVector_t &ds
-      ,std::vector<Scalar> *time_vec
-      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > *x_vec
-      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > *xdot_vec
-      ,std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> *accuracy_vec);
+      ,Array<Scalar> *time_vec
+      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > *x_vec
+      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > *xdot_vec
+      ,Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> *accuracy_vec);
 
 // This is a helper function to convert vectors of t,x,xdot,accuracy to a vector of DataStore objects
 template<class Scalar>
 void vectorToDataStoreVector(
-      const std::vector<Scalar> &time_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
-      ,const std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &accuracy_vec
+      const Array<Scalar> &time_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
+      ,const Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &accuracy_vec
       ,typename DataStore<Scalar>::DataStoreVector_t *ds);
 
 // This is a helper function to convert vectors of t,x,xdot,[accuracy] to a list of DataStore objects
 template<class Scalar>
 void vectorToDataStoreList(
-      const std::vector<Scalar> &time_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
-      ,const std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &accuracy_vec
+      const Array<Scalar> &time_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
+      ,const Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &accuracy_vec
       ,typename DataStore<Scalar>::DataStoreList_t *ds);
 
 template<class Scalar>
 void vectorToDataStoreList(
-      const std::vector<Scalar> &time_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
+      const Array<Scalar> &time_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
       ,typename DataStore<Scalar>::DataStoreList_t *ds);
 
 // DataStore definitions:
@@ -260,10 +260,10 @@ void DataStore<Scalar>::describe(
 template<class Scalar>
 void dataStoreVectorToVector(
       const typename DataStore<Scalar>::DataStoreVector_t &ds
-      ,std::vector<Scalar> *time_vec
-      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > *x_vec
-      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > *xdot_vec
-      ,std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> *accuracy_vec)
+      ,Array<Scalar> *time_vec
+      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > *x_vec
+      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > *xdot_vec
+      ,Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> *accuracy_vec)
 {
   if(time_vec)
     time_vec->clear();
@@ -288,10 +288,10 @@ void dataStoreVectorToVector(
 
 template<class Scalar>
 void vectorToDataStoreVector(
-      const std::vector<Scalar> &time_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
-      ,const std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &accuracy_vec
+      const Array<Scalar> &time_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
+      ,const Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &accuracy_vec
       ,typename DataStore<Scalar>::DataStoreVector_t *ds
       ) 
 {
@@ -316,10 +316,10 @@ void vectorToDataStoreVector(
 
 template<class Scalar>
 void vectorToDataStoreList(
-      const std::vector<Scalar> &time_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
-      ,const std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &accuracy_vec
+      const Array<Scalar> &time_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
+      ,const Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &accuracy_vec
       ,typename DataStore<Scalar>::DataStoreList_t *ds) 
 {
   int N = time_vec.size();
@@ -343,13 +343,13 @@ void vectorToDataStoreList(
 
 template<class Scalar>
 void vectorToDataStoreList(
-      const std::vector<Scalar> &time_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
+      const Array<Scalar> &time_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
       ,typename DataStore<Scalar>::DataStoreList_t *ds) 
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> accuracy_vec;
+  Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> accuracy_vec;
   int N = time_vec.size();
   accuracy_vec.reserve(N);
   for (int i=0 ; i<N ; ++i) {

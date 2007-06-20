@@ -74,6 +74,7 @@ CORE_H = \
 	$(srcdir)/Rythmos_StepperBase.hpp\
 	$(srcdir)/Rythmos_StepperSupportTypes.hpp\
 	$(srcdir)/Rythmos_TimeStepNonlinearSolver.hpp\
+	$(srcdir)/Rythmos_Types.hpp\
 	$(srcdir)/Rythmos_Version.h
 
 CORE = \

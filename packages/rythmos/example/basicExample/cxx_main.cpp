@@ -86,13 +86,16 @@ int main(int argc, char *argv[])
 {
 
   using Teuchos::as;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::Array;
 
   bool verbose = false; // verbosity level.
   bool result, success = true; // determine if the run was successfull
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
-  Teuchos::RCP<Teuchos::FancyOStream>
+  RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
 #ifdef HAVE_MPI
@@ -199,13 +202,13 @@ int main(int argc, char *argv[])
     params.set( "x0", x0 );
     params.set( "Coeff_s", coeff_s );
 #ifdef HAVE_MPI
-    Teuchos::RCP<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_MpiComm(mpiComm) );
+    RCP<Epetra_Comm> epetra_comm_ptr_ = rcp( new Epetra_MpiComm(mpiComm) );
 #else
-    Teuchos::RCP<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
+    RCP<Epetra_Comm> epetra_comm_ptr_ = rcp( new Epetra_SerialComm  );
 #endif // HAVE_MPI
 
     // Create the factory for the LinearOpWithSolveBase object
-    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       W_factory;
     if((method_val == METHOD_BE) | (method_val == METHOD_BDF)) {
 #ifdef HAVE_RYTHMOS_STRATIMIKOS
@@ -217,45 +220,45 @@ int main(int argc, char *argv[])
     }
 
     // create interface to problem
-    Teuchos::RCP<ExampleApplication>
-      epetraModel = Teuchos::rcp(new ExampleApplication(epetra_comm_ptr_, params));
-    Teuchos::RCP<Thyra::ModelEvaluator<double> >
-      model = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModel,W_factory));
-    Teuchos::RCP<ExampleApplication>
-      epetraModelSlave = Teuchos::rcp(new ExampleApplication(epetra_comm_ptr_, params));
-    Teuchos::RCP<Thyra::ModelEvaluator<double> >
-      modelSlave = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModelSlave,W_factory));
+    RCP<ExampleApplication>
+      epetraModel = rcp(new ExampleApplication(epetra_comm_ptr_, params));
+    RCP<Thyra::ModelEvaluator<double> >
+      model = rcp(new Thyra::EpetraModelEvaluator(epetraModel,W_factory));
+    RCP<ExampleApplication>
+      epetraModelSlave = rcp(new ExampleApplication(epetra_comm_ptr_, params));
+    RCP<Thyra::ModelEvaluator<double> >
+      modelSlave = rcp(new Thyra::EpetraModelEvaluator(epetraModelSlave,W_factory));
 
     // Create Stepper object depending on command-line input
     std::string method;
-    Teuchos::RCP<Rythmos::StepperBase<double> > stepper_ptr;
-    Teuchos::RCP<Rythmos::StepperBase<double> > stepperSlave_ptr;
+    RCP<Rythmos::StepperBase<double> > stepper_ptr;
+    RCP<Rythmos::StepperBase<double> > stepperSlave_ptr;
     if ( method_val == METHOD_ERK ) {
-      stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRKStepper<double>(model));
-      Teuchos::RCP<Teuchos::ParameterList> ERKparams = Teuchos::rcp(new Teuchos::ParameterList);
+      stepper_ptr = rcp(new Rythmos::ExplicitRKStepper<double>(model));
+      RCP<Teuchos::ParameterList> ERKparams = rcp(new Teuchos::ParameterList);
       ERKparams->set( "outputLevel", as<int>(verbLevel) );
       stepper_ptr->setParameterList(ERKparams);
       method = "Explicit Runge-Kutta of order 4";
       step_method_val = FIXED_STEP;
     }
     else if (method_val == METHOD_FE) {
-      stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEulerStepper<double>(model));
-      Teuchos::RCP<Teuchos::ParameterList> FEparams = Teuchos::rcp(new Teuchos::ParameterList);
+      stepper_ptr = rcp(new Rythmos::ForwardEulerStepper<double>(model));
+      RCP<Teuchos::ParameterList> FEparams = rcp(new Teuchos::ParameterList);
       FEparams->set( "outputLevel", as<int>(verbLevel));
       stepper_ptr->setParameterList(FEparams);
       method = "Forward Euler";
       step_method_val = FIXED_STEP;
     }
     else if ((method_val == METHOD_BE) | (method_val == METHOD_BDF)) {
-      Teuchos::RCP<Thyra::NonlinearSolverBase<double> >
+      RCP<Thyra::NonlinearSolverBase<double> >
         nonlinearSolver;
-      Teuchos::RCP<Thyra::NonlinearSolverBase<double> >
+      RCP<Thyra::NonlinearSolverBase<double> >
         nonlinearSolverSlave;
-      Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> >
-        _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
-      Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> >
-        _nonlinearSolverSlave = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
-      Teuchos::RCP<Teuchos::ParameterList>
+      RCP<Rythmos::TimeStepNonlinearSolver<double> >
+        _nonlinearSolver = rcp(new Rythmos::TimeStepNonlinearSolver<double>());
+      RCP<Rythmos::TimeStepNonlinearSolver<double> >
+        _nonlinearSolverSlave = rcp(new Rythmos::TimeStepNonlinearSolver<double>());
+      RCP<Teuchos::ParameterList>
         nonlinearSolverPL = Teuchos::parameterList();
       nonlinearSolverPL->set("Default Tol",double(1e-3*maxError));
       _nonlinearSolver->setParameterList(nonlinearSolverPL);
@@ -263,10 +266,10 @@ int main(int argc, char *argv[])
       nonlinearSolver = _nonlinearSolver;
       nonlinearSolverSlave = _nonlinearSolverSlave;
       if (method_val == METHOD_BE) {
-        stepper_ptr = Teuchos::rcp(
+        stepper_ptr = rcp(
           new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
-        Teuchos::RCP<Teuchos::ParameterList>
-          BEparams = Teuchos::rcp(new Teuchos::ParameterList);
+        RCP<Teuchos::ParameterList>
+          BEparams = rcp(new Teuchos::ParameterList);
         BEparams->sublist("VerboseObject").set(
           "Verbosity Level",
           Teuchos::getVerbosityLevelParameterValueName(verbLevel)
@@ -276,8 +279,8 @@ int main(int argc, char *argv[])
         step_method_val = FIXED_STEP;
       } 
       else {
-        Teuchos::RCP<Teuchos::ParameterList>
-          BDFparams = Teuchos::rcp(new Teuchos::ParameterList);
+        RCP<Teuchos::ParameterList>
+          BDFparams = rcp(new Teuchos::ParameterList);
         BDFparams->set( "stopTime", finalTime );
         BDFparams->set( "maxOrder", maxOrder );
         BDFparams->set( "relErrTol", reltol );
@@ -286,9 +289,9 @@ int main(int argc, char *argv[])
           "Verbosity Level",
           Teuchos::getVerbosityLevelParameterValueName(verbLevel)
           );
-        stepper_ptr = Teuchos::rcp(
+        stepper_ptr = rcp(
           new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver,BDFparams));
-        stepperSlave_ptr = Teuchos::rcp(
+        stepperSlave_ptr = rcp(
           new Rythmos::ImplicitBDFStepper<double>(modelSlave,nonlinearSolverSlave,BDFparams));
         method = "Implicit BDF";
         // step_method_val setting is left alone in this case
@@ -306,14 +309,14 @@ int main(int argc, char *argv[])
     double dt = (finalTime-t0)/N;
     double time = t0;
 
-    Teuchos::RCP<const Thyra::VectorBase<double> > x_computed_thyra_ptr;
+    RCP<const Thyra::VectorBase<double> > x_computed_thyra_ptr;
     if (step_method_val == FIXED_STEP)
     {
       if (useIntegrator)
       {
         // Set up fixed-step-size integration:
-        Teuchos::RCP<Teuchos::ParameterList> 
-          integratorParams = Teuchos::rcp(new Teuchos::ParameterList);
+        RCP<Teuchos::ParameterList> 
+          integratorParams = rcp(new Teuchos::ParameterList);
         integratorParams->set( "Take Variable Steps", false );
         integratorParams->set( "fixed_dt", dt );
         integratorParams->sublist("VerboseObject").set(
@@ -321,19 +324,19 @@ int main(int argc, char *argv[])
           Teuchos::getVerbosityLevelParameterValueName(verbLevel)
           );
         // Create integrator using stepper and linear interpolation buffer:
-        Teuchos::RCP<Rythmos::InterpolatorBase<double> > 
-          linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
-        Teuchos::RCP<Rythmos::InterpolationBuffer<double> > 
-          IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,buffersize));
+        RCP<Rythmos::InterpolatorBase<double> > 
+          linearInterpolator = rcp(new Rythmos::LinearInterpolator<double>());
+        RCP<Rythmos::InterpolationBuffer<double> > 
+          IB = rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,buffersize));
         IB->setParameterList(integratorParams);
         Rythmos::IntegratorDefault<double> integrator(stepper_ptr,IB,integratorParams);
         // Ask for desired time value:
-        std::vector<double> time_vals;
+        Array<double> time_vals;
         for (int i=0 ; i<=N ; ++i)
           time_vals.push_back(i*dt);
-        std::vector<Teuchos::RCP<const Thyra::VectorBase<double> > > x_vec;
-        std::vector<Teuchos::RCP<const Thyra::VectorBase<double> > > xdot_vec;
-        std::vector<double> accuracy_vec;
+        Array<RCP<const Thyra::VectorBase<double> > > x_vec;
+        Array<RCP<const Thyra::VectorBase<double> > > xdot_vec;
+        Array<double> accuracy_vec;
         bool status = integrator.getPoints(time_vals,&x_vec,&xdot_vec,&accuracy_vec);
         if (!status) 
         {
@@ -370,31 +373,31 @@ int main(int argc, char *argv[])
       if (useIntegrator)
       {
         // Set up fixed-step-size integration:
-        Teuchos::RCP<Teuchos::ParameterList> 
-          integratorParams = Teuchos::rcp(new Teuchos::ParameterList);
+        RCP<Teuchos::ParameterList> 
+          integratorParams = rcp(new Teuchos::ParameterList);
         integratorParams->set( "Take Variable Steps", true );
         integratorParams->sublist("VerboseObject").set(
           "Verbosity Level",
           Teuchos::getVerbosityLevelParameterValueName(verbLevel)
           );
         // Create integrator using stepper and interpolation buffer:
-        //Teuchos::RCP<Rythmos::InterpolatorBase<double> > 
-        //  linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
-        //Teuchos::RCP<Rythmos::InterpolationBuffer<double> > 
-        //  IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,buffersize));
-        Teuchos::RCP<Rythmos::InterpolatorBase<double> > 
-          hermiteInterpolator = Teuchos::rcp(new Rythmos::HermiteInterpolator<double>());
-        Teuchos::RCP<Rythmos::InterpolationBuffer<double> > 
-          IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(hermiteInterpolator,buffersize));
+        //RCP<Rythmos::InterpolatorBase<double> > 
+        //  linearInterpolator = rcp(new Rythmos::LinearInterpolator<double>());
+        //RCP<Rythmos::InterpolationBuffer<double> > 
+        //  IB = rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,buffersize));
+        RCP<Rythmos::InterpolatorBase<double> > 
+          hermiteInterpolator = rcp(new Rythmos::HermiteInterpolator<double>());
+        RCP<Rythmos::InterpolationBuffer<double> > 
+          IB = rcp(new Rythmos::InterpolationBuffer<double>(hermiteInterpolator,buffersize));
         IB->setParameterList(integratorParams);
         Rythmos::IntegratorDefault<double> integrator(stepper_ptr,IB,integratorParams);
         // Ask for desired time value:
-        std::vector<double> time_vals;
+        Array<double> time_vals;
         for (int i=0 ; i<=N ; ++i)
           time_vals.push_back(i*dt);
-        std::vector<Teuchos::RCP<const Thyra::VectorBase<double> > > x_vec;
-        std::vector<Teuchos::RCP<const Thyra::VectorBase<double> > > xdot_vec;
-        std::vector<double> accuracy_vec;
+        Array<RCP<const Thyra::VectorBase<double> > > x_vec;
+        Array<RCP<const Thyra::VectorBase<double> > > xdot_vec;
+        Array<double> accuracy_vec;
         bool status = integrator.getPoints(time_vals,&x_vec,&xdot_vec,&accuracy_vec);
         if (!status) 
         {
@@ -411,15 +414,15 @@ int main(int argc, char *argv[])
         Rythmos::StepStatus<double> stepStatus = stepper.getStepStatus();
         x_computed_thyra_ptr = stepStatus.solution;
         // Convert Thyra::VectorBase to Epetra_Vector
-        Teuchos::RCP<const Epetra_Vector> x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
+        RCP<const Epetra_Vector> x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
         // Create a place to store the exact numerical solution
-        Teuchos::RCP<Epetra_Vector> x_numerical_exact_ptr = Teuchos::rcp(new Epetra_Vector(x_computed_ptr->Map()));
+        RCP<Epetra_Vector> x_numerical_exact_ptr = rcp(new Epetra_Vector(x_computed_ptr->Map()));
         Epetra_Vector& x_numerical_exact = *x_numerical_exact_ptr;
         // Create a place to store the relative difference:
-        Teuchos::RCP<Epetra_Vector> x_rel_diff_ptr = Teuchos::rcp(new Epetra_Vector(x_computed_ptr->Map()));
+        RCP<Epetra_Vector> x_rel_diff_ptr = rcp(new Epetra_Vector(x_computed_ptr->Map()));
         Epetra_Vector& x_rel_diff = *x_rel_diff_ptr;
         // get lambda from the problem:
-        Teuchos::RCP<const Epetra_Vector> lambda_ptr = epetraModel->get_coeff();
+        RCP<const Epetra_Vector> lambda_ptr = epetraModel->get_coeff();
         const Epetra_Vector &lambda = *lambda_ptr;
 
         while (time < finalTime)
@@ -450,7 +453,7 @@ int main(int argc, char *argv[])
               normLETDiff > eps, std::logic_error,
               "Error, normLETDiff = " << normLETDiff << " > eps = " << eps << "!" );
             // Create a non-const Thyra VectorBase to use as a temp vector
-            Teuchos::RCP<Thyra::VectorBase<double> > vec_temp = stepStatusSlave.solution->clone_v();
+            RCP<Thyra::VectorBase<double> > vec_temp = stepStatusSlave.solution->clone_v();
             // Check that the solution matches exactly
             Thyra::V_StVpStV<double>(&*vec_temp,1.0,*stepStatusMaster.solution,-1.0,*stepStatusSlave.solution);
             double normSolutionDiff = Thyra::norm_inf<double>(*vec_temp);
@@ -511,7 +514,7 @@ int main(int argc, char *argv[])
             else
             {
               // compute exact answer
-              Teuchos::RCP<const Epetra_Vector>
+              RCP<const Epetra_Vector>
                 x_star_ptr = epetraModel->getExactSolution(time);
               const Epetra_Vector& x_star = *x_star_ptr;
               int myN = x_computed_ptr->MyLength();
@@ -541,24 +544,24 @@ int main(int argc, char *argv[])
     *out << "Integrated to time = " << time << endl;
 
     // Convert solution from Thyra::VectorBase to Epetra_Vector
-    Teuchos::RCP<const Epetra_Vector>
+    RCP<const Epetra_Vector>
       x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
     const Epetra_Vector &x_computed = *x_computed_ptr;
 
     // compute exact answer
-    Teuchos::RCP<const Epetra_Vector>
+    RCP<const Epetra_Vector>
       x_star_ptr = epetraModel->getExactSolution(finalTime);
     const Epetra_Vector& x_star = *x_star_ptr;
     
     // get lambda from the problem:
-    Teuchos::RCP<const Epetra_Vector> lambda_ptr = epetraModel->get_coeff();
+    RCP<const Epetra_Vector> lambda_ptr = epetraModel->get_coeff();
     const Epetra_Vector &lambda = *lambda_ptr;
 
     // compute numerical exact answer (for FE and BE)
-    Teuchos::RCP<const Epetra_Vector> x_numerical_exact_ptr; 
+    RCP<const Epetra_Vector> x_numerical_exact_ptr; 
     if (method_val == METHOD_FE) 
     {
-      Teuchos::RCP<Epetra_Vector> x_exact_ptr = Teuchos::rcp(new Epetra_Vector(x_star.Map()));
+      RCP<Epetra_Vector> x_exact_ptr = rcp(new Epetra_Vector(x_star.Map()));
       Epetra_Vector& x_exact = *x_exact_ptr;
       int myN = x_exact.MyLength();
       for ( int i=0 ; i<myN ; ++i)
@@ -574,7 +577,7 @@ int main(int argc, char *argv[])
     } 
     else if (method_val == METHOD_BE) 
     {
-      Teuchos::RCP<Epetra_Vector> x_exact_ptr = Teuchos::rcp(new Epetra_Vector(x_star.Map()));
+      RCP<Epetra_Vector> x_exact_ptr = rcp(new Epetra_Vector(x_star.Map()));
       Epetra_Vector& x_exact = *x_exact_ptr;
       int myN = x_exact.MyLength();
       for ( int i=0 ; i<myN ; ++i)

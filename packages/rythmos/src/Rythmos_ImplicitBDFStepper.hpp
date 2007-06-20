@@ -168,10 +168,10 @@ public:
 
   /** \brief . */
   bool setPoints(
-    const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-    ,const std::vector<ScalarMag> & accuracy_vec 
+    const Array<Scalar>& time_vec
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const Array<ScalarMag> & accuracy_vec 
     );
 
   /** \brief . */
@@ -185,17 +185,17 @@ public:
     
   /** \brief . */
   bool getPoints(
-    const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-    ,std::vector<ScalarMag>* accuracy_vec
+    const Array<Scalar>& time_vec
+    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,Array<ScalarMag>* accuracy_vec
     ) const;
 
   /** \brief . */
-  bool getNodes(std::vector<Scalar>* time_vec) const;
+  bool getNodes(Array<Scalar>* time_vec) const;
 
   /** \brief . */
-  bool removeNodes(std::vector<Scalar>& time_vec);
+  bool removeNodes(Array<Scalar>& time_vec);
 
   /** \brief . */
   int getOrder() const;
@@ -243,7 +243,7 @@ private:
   Teuchos::RCP<Thyra::VectorBase<Scalar> > xn0_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> > xpn0_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_base_;
-  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > xHistory_;
+  Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > xHistory_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> > ee_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> > delta_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> > residual_;
@@ -732,10 +732,10 @@ ImplicitBDFStepper<Scalar>::get_x_space() const
 
 template<class Scalar>
 bool ImplicitBDFStepper<Scalar>::setPoints(
-  const std::vector<Scalar>& time_vec,
-  const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
-  const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
-  const std::vector<ScalarMag> & accuracy_vec 
+  const Array<Scalar>& time_vec,
+  const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
+  const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+  const Array<ScalarMag> & accuracy_vec 
   )
 {
   return(false);
@@ -760,10 +760,10 @@ TimeRange<Scalar> ImplicitBDFStepper<Scalar>::getTimeRange() const
 
 template<class Scalar>
 bool ImplicitBDFStepper<Scalar>::getPoints(
-  const std::vector<Scalar>& time_vec
-  ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-  ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-  ,std::vector<ScalarMag>* accuracy_vec) const
+  const Array<Scalar>& time_vec
+  ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+  ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+  ,Array<ScalarMag>* accuracy_vec) const
 {
   using Teuchos::as;
   bool status;
@@ -801,7 +801,7 @@ bool ImplicitBDFStepper<Scalar>::getPoints(
 
 
 template<class Scalar>
-bool ImplicitBDFStepper<Scalar>::getNodes(std::vector<Scalar>* time_vec) const
+bool ImplicitBDFStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
   if (!isInitialized_) {
     return(false);
@@ -815,7 +815,7 @@ bool ImplicitBDFStepper<Scalar>::getNodes(std::vector<Scalar>* time_vec) const
 
 
 template<class Scalar>
-bool ImplicitBDFStepper<Scalar>::removeNodes(std::vector<Scalar>& time_vec) 
+bool ImplicitBDFStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
 {
   return(false);
 }

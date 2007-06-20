@@ -373,10 +373,10 @@ public:
 
   /** \brief . */
   bool setPoints(
-    const std::vector<Scalar>& time_vec,
-    const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
-    const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
-    const std::vector<ScalarMag> & accuracy_vec
+    const Array<Scalar>& time_vec,
+    const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
+    const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+    const Array<ScalarMag> & accuracy_vec
     );
 
   /** \brief . */
@@ -390,17 +390,17 @@ public:
 
   /** \brief . */
   bool getPoints(
-    const std::vector<Scalar>& time_vec,
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
-    std::vector<ScalarMag>* accuracy_vec
+    const Array<Scalar>& time_vec,
+    Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    Array<ScalarMag>* accuracy_vec
     ) const;
 
   /** \brief . */
-  bool getNodes(std::vector<Scalar>* time_vec) const;
+  bool getNodes(Array<Scalar>* time_vec) const;
 
   /** \brief . */
-  bool removeNodes(std::vector<Scalar>& time_vec);
+  bool removeNodes(Array<Scalar>& time_vec);
 
   /** \brief . */
   int getOrder() const;
@@ -933,10 +933,10 @@ ForwardSensitivityStepper<Scalar>::get_x_space() const
 
 template<class Scalar> 
 bool ForwardSensitivityStepper<Scalar>::setPoints(
-  const std::vector<Scalar>& time_vec,
-  const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
-  const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
-  const std::vector<ScalarMag> & accuracy_vec
+  const Array<Scalar>& time_vec,
+  const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
+  const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+  const Array<ScalarMag> & accuracy_vec
   )
 {
   TEST_FOR_EXCEPT("Not implemented setPoints(...) yet but we could if we wanted!");
@@ -964,10 +964,10 @@ ForwardSensitivityStepper<Scalar>::getTimeRange() const
 
 template<class Scalar> 
 bool ForwardSensitivityStepper<Scalar>::getPoints(
-  const std::vector<Scalar>& time_vec,
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_bar_vec,
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_bar_dot_vec,
-  std::vector<ScalarMag>* accuracy_vec
+  const Array<Scalar>& time_vec,
+  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_bar_vec,
+  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_bar_dot_vec,
+  Array<ScalarMag>* accuracy_vec
   ) const
 {
 
@@ -982,7 +982,7 @@ bool ForwardSensitivityStepper<Scalar>::getPoints(
 
   bool result = false;
   
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >
+  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >
     x_vec, x_dot_vec;
 
   result = stateStepper_->getPoints(
@@ -995,7 +995,7 @@ bool ForwardSensitivityStepper<Scalar>::getPoints(
   if (!result)
     return false;
 
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >
+  Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >
     s_bar_vec, s_bar_dot_vec;
 
   result = sensStepper_->getPoints(
@@ -1031,7 +1031,7 @@ bool ForwardSensitivityStepper<Scalar>::getPoints(
 
 template<class Scalar>
 bool ForwardSensitivityStepper<Scalar>::getNodes(
-  std::vector<Scalar>* time_vec
+  Array<Scalar>* time_vec
   ) const
 {
   TEST_FOR_EXCEPT("Not implemented yet but we can!");
@@ -1041,7 +1041,7 @@ bool ForwardSensitivityStepper<Scalar>::getNodes(
 
 template<class Scalar> 
 bool ForwardSensitivityStepper<Scalar>::removeNodes(
-  std::vector<Scalar>& time_vec
+  Array<Scalar>& time_vec
   )
 {
   TEST_FOR_EXCEPT("Not implemented yet but we can!");

@@ -147,10 +147,10 @@ public:
 
   /** \brief . */
   bool setPoints(
-    const std::vector<Scalar>& time_vec,
-    const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
-    const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
-    const std::vector<ScalarMag> & accuracy_vec 
+    const Array<Scalar>& time_vec,
+    const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
+    const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+    const Array<ScalarMag> & accuracy_vec 
     );
   
   /** \brief . */
@@ -164,17 +164,17 @@ public:
   
   /** \brief . */
   bool getPoints(
-    const std::vector<Scalar>& time_vec,
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
-    std::vector<ScalarMag>* accuracy_vec
+    const Array<Scalar>& time_vec,
+    Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    Array<ScalarMag>* accuracy_vec
     ) const;
   
   /** \brief . */
-  bool getNodes(std::vector<Scalar>* time_vec) const;
+  bool getNodes(Array<Scalar>* time_vec) const;
   
   /** \brief . */
-  bool removeNodes(std::vector<Scalar>& time_vec);
+  bool removeNodes(Array<Scalar>& time_vec);
 
   /** \brief . */
   int getOrder() const;
@@ -645,10 +645,10 @@ BackwardEulerStepper<Scalar>::get_x_space() const
 
 template<class Scalar>
 bool BackwardEulerStepper<Scalar>::setPoints(
-    const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-    ,const std::vector<ScalarMag> & accuracy_vec 
+    const Array<Scalar>& time_vec
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const Array<ScalarMag> & accuracy_vec 
     )
 {
   using Teuchos::as;
@@ -724,10 +724,10 @@ TimeRange<Scalar> BackwardEulerStepper<Scalar>::getTimeRange() const
 
 template<class Scalar>
 bool BackwardEulerStepper<Scalar>::getPoints(
-    const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-    ,std::vector<ScalarMag>* accuracy_vec) const
+    const Array<Scalar>& time_vec
+    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,Array<ScalarMag>* accuracy_vec) const
 {
 
   using Teuchos::as;
@@ -803,7 +803,7 @@ bool BackwardEulerStepper<Scalar>::getPoints(
   if (!status) { 
     return(status);
   }
-  std::vector<Scalar> time_out;
+  Array<Scalar> time_out;
   dataStoreVectorToVector(ds_out,&time_out,x_vec,xdot_vec,accuracy_vec);
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "Passing out the interpolated values:" << std::endl;
@@ -835,7 +835,7 @@ bool BackwardEulerStepper<Scalar>::getPoints(
 
 
 template<class Scalar>
-bool BackwardEulerStepper<Scalar>::getNodes(std::vector<Scalar>* time_vec) const
+bool BackwardEulerStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
   using Teuchos::as;
   if (!isInitialized_) {
@@ -860,7 +860,7 @@ bool BackwardEulerStepper<Scalar>::getNodes(std::vector<Scalar>* time_vec) const
 
 
 template<class Scalar>
-bool BackwardEulerStepper<Scalar>::removeNodes(std::vector<Scalar>& time_vec) 
+bool BackwardEulerStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
 {
   using Teuchos::as;
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();

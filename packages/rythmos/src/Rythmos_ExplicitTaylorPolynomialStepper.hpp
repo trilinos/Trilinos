@@ -187,18 +187,18 @@ namespace Rythmos {
     /// Redefined from InterpolationBufferBase 
     /// Add points to buffer
     bool setPoints(
-      const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-      ,const std::vector<ScalarMag> & accuracy_vec 
+      const Array<Scalar>& time_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const Array<ScalarMag> & accuracy_vec 
       );
     
     /// Get values from buffer
     bool getPoints(
-      const std::vector<Scalar>& time_vec
-      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-      ,std::vector<ScalarMag>* accuracy_vec) const;
+      const Array<Scalar>& time_vec
+      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,Array<ScalarMag>* accuracy_vec) const;
 
     /// Fill data in from another interpolation buffer
     bool setRange(
@@ -210,10 +210,10 @@ namespace Rythmos {
     TimeRange<Scalar> getTimeRange() const;
 
     /// Get interpolation nodes
-    bool getNodes(std::vector<Scalar>* time_vec) const;
+    bool getNodes(Array<Scalar>* time_vec) const;
 
     /// Remove interpolation nodes
-    bool removeNodes(std::vector<Scalar>& time_vec);
+    bool removeNodes(Array<Scalar>& time_vec);
 
     /// Get order of interpolation
     int getOrder() const;
@@ -613,10 +613,10 @@ namespace Rythmos {
 
   template<class Scalar>
   bool ExplicitTaylorPolynomialStepper<Scalar>::setPoints(
-    const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-    ,const std::vector<ScalarMag> & accuracy_vec 
+    const Array<Scalar>& time_vec
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const Array<ScalarMag> & accuracy_vec 
     )
   {
     return(false);
@@ -624,10 +624,10 @@ namespace Rythmos {
 
   template<class Scalar>
   bool ExplicitTaylorPolynomialStepper<Scalar>::getPoints(
-    const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-    ,std::vector<ScalarMag>* accuracy_vec) const
+    const Array<Scalar>& time_vec
+    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,Array<ScalarMag>* accuracy_vec) const
   {
     return(false);
   }
@@ -648,13 +648,13 @@ namespace Rythmos {
   }
 
   template<class Scalar>
-  bool ExplicitTaylorPolynomialStepper<Scalar>::getNodes(std::vector<Scalar>* time_list) const
+  bool ExplicitTaylorPolynomialStepper<Scalar>::getNodes(Array<Scalar>* time_list) const
   {
     return(false);
   }
 
   template<class Scalar>
-  bool ExplicitTaylorPolynomialStepper<Scalar>::removeNodes(std::vector<Scalar>& time_vec)
+  bool ExplicitTaylorPolynomialStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
   {
     return(false);
   }

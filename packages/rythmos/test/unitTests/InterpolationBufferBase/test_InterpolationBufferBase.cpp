@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > W_factory;
 
     // Create a list of explicit models:
-    std::vector<Teuchos::RCP<Thyra::ModelEvaluator<double> > > explicit_model_vec;
+    Array<Teuchos::RCP<Thyra::ModelEvaluator<double> > > explicit_model_vec;
     Teuchos::ParameterList explicitParams;
     explicitParams.set<bool>( "implicit", false );
     explicitParams.set<double>( "Lambda_min", -0.9 );
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 
     /*
     // Create a list of implicit models:
-    std::vector<Teuchos::RCP<Thyra::ModelEvaluator<double> > > implicit_model_vec;
+    Array<Teuchos::RCP<Thyra::ModelEvaluator<double> > > implicit_model_vec;
     Teuchos::ParameterList implicitParams;
     implicitParams.set<int>( "NumElements", 201 );
     Teuchos::RCP<ExampleApplication1Dfem>
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
     int buffersize = 10;
 
     // Create a list of concrete objects derived from InterpolationBufferBase:
-    std::vector<Teuchos::RCP<Rythmos::InterpolationBufferBase<double> > > IB_vec;
+    Array<Teuchos::RCP<Rythmos::InterpolationBufferBase<double> > > IB_vec;
     // Explicit models:
     for (unsigned int i=0 ; i < explicit_model_vec.size() ; ++i) 
     {

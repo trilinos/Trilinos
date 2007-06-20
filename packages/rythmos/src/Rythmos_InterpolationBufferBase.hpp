@@ -29,6 +29,7 @@
 #ifndef Rythmos_INTERPOLATION_BUFFER_BASE_H
 #define Rythmos_INTERPOLATION_BUFFER_BASE_H
 
+#include "Rythmos_Types.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
@@ -144,7 +145,7 @@ public:
    * <tt>StepperBase::getModel()->get_x_sapce()</tt> in some concrete
    * <tt>StepperBase</tt> subclasses.
    */
-  virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+  virtual RCP<const Thyra::VectorSpaceBase<Scalar> >
   get_x_space() const
     {
       return Teuchos::null;
@@ -201,10 +202,10 @@ public:
    * debug mode)?
    */
   virtual bool setPoints(
-    const std::vector<Scalar>& time_vec,
-    const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
-    const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
-    const std::vector<ScalarMag> & accuracy_vec
+    const Array<Scalar>& time_vec,
+    const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
+    const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+    const Array<ScalarMag> & accuracy_vec
     ) = 0;
 
   /** \brief Fill data in from another interpolation buffer.
@@ -306,10 +307,10 @@ public:
    * we tighten up the specification of this function?
    */
   virtual bool getPoints(
-    const std::vector<Scalar>& time_vec,
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
-    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
-    std::vector<ScalarMag>* accuracy_vec
+    const Array<Scalar>& time_vec,
+    Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    Array<ScalarMag>* accuracy_vec
     ) const = 0;
 
   /** \brief Get interpolation nodes.
@@ -323,7 +324,7 @@ public:
    * function like <tt>hasInterpolationNodes()</tt> that will tell the client
    * this.
    */
-  virtual bool getNodes(std::vector<Scalar>* time_vec) const = 0;
+  virtual bool getNodes(Array<Scalar>* time_vec) const = 0;
 
   /** \brief Remove interpolation nodes.
    *
@@ -331,7 +332,7 @@ public:
    * have any nodes?  If so, then we should simply thrown an exception if a
    * client tries to remove nodes that don't exist.
    */
-  virtual bool removeNodes(std::vector<Scalar>& time_vec) = 0;
+  virtual bool removeNodes(Array<Scalar>& time_vec) = 0;
 
   /** \brief Get order of interpolation.
    *
@@ -348,13 +349,13 @@ public:
  * \relates InterpolationBufferBase
  */
 template<class Scalar>
-Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+RCP<const Thyra::VectorBase<Scalar> >
 get_x( const InterpolationBufferBase<Scalar> &interpBuffer, const Scalar &t )
 {
   using Teuchos::implicit_cast;
-  std::vector<Scalar> time_vec;
+  Array<Scalar> time_vec;
   time_vec.push_back(t);
-  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > x_vec;
+  Array<RCP<const Thyra::VectorBase<Scalar> > > x_vec;
   interpBuffer.getPoints(time_vec,&x_vec,0,0);
   TEUCHOS_ASSERT( 1 == implicit_cast<int>(x_vec.size()) );
   return x_vec[0];

@@ -76,18 +76,18 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     /// Redefined from InterpolationBufferBase 
     /// Add points to buffer
     bool setPoints(
-      const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-      ,const std::vector<ScalarMag> & accuracy_vec 
+      const Array<Scalar>& time_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const Array<ScalarMag> & accuracy_vec 
       );
     
     /// Get values from buffer
     bool getPoints(
-      const std::vector<Scalar>& time_vec
-      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-      ,std::vector<ScalarMag>* accuracy_vec) const;
+      const Array<Scalar>& time_vec
+      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,Array<ScalarMag>* accuracy_vec) const;
 
     /// Fill data in from another interpolation buffer
     bool setRange(
@@ -98,10 +98,10 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     TimeRange<Scalar> getTimeRange() const;
 
     /// Get interpolation nodes
-    bool getNodes(std::vector<Scalar>* time_vec) const;
+    bool getNodes(Array<Scalar>* time_vec) const;
 
     /// Remove interpolation nodes
-    bool removeNodes(std::vector<Scalar>& time_vec);
+    bool removeNodes(Array<Scalar>& time_vec);
 
     /// Get order of interpolation
     int getOrder() const;
@@ -121,13 +121,13 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
 
     Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
     Teuchos::RCP<Thyra::VectorBase<Scalar> > solution_vector_;
-    std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > k_vector_;
+    Array<Teuchos::RCP<Thyra::VectorBase<Scalar> > > k_vector_;
     Teuchos::RCP<Thyra::VectorBase<Scalar> > ktemp_vector_;
 
     int stages_; // Number of stages of RK
-    std::vector<std::vector<Scalar> > b_A_; // Butcher tableau A matrix
-    std::vector<Scalar> b_b_; // Butcher b vector
-    std::vector<Scalar> b_c_; // Butcher c vector
+    Array<Array<Scalar> > b_A_; // Butcher tableau A matrix
+    Array<Scalar> b_b_; // Butcher b vector
+    Array<Scalar> b_c_; // Butcher c vector
 
     Scalar t_;
     Scalar dt_;
@@ -384,10 +384,10 @@ std::ostream& ExplicitRKStepper<Scalar>::describe(
 
 template<class Scalar>
 bool ExplicitRKStepper<Scalar>::setPoints(
-    const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
-    ,const std::vector<ScalarMag> & accuracy_vec 
+    const Array<Scalar>& time_vec
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const Array<ScalarMag> & accuracy_vec 
     )
 {
   return(false);
@@ -395,10 +395,10 @@ bool ExplicitRKStepper<Scalar>::setPoints(
 
 template<class Scalar>
 bool ExplicitRKStepper<Scalar>::getPoints(
-    const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
-    ,std::vector<ScalarMag>* accuracy_vec) const
+    const Array<Scalar>& time_vec
+    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,Array<ScalarMag>* accuracy_vec) const
 {
   return(false);
 }
@@ -419,13 +419,13 @@ TimeRange<Scalar> ExplicitRKStepper<Scalar>::getTimeRange() const
 }
 
 template<class Scalar>
-bool ExplicitRKStepper<Scalar>::getNodes(std::vector<Scalar>* time_vec) const
+bool ExplicitRKStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
   return(false);
 }
 
 template<class Scalar>
-bool ExplicitRKStepper<Scalar>::removeNodes(std::vector<Scalar>& time_vec) 
+bool ExplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
 {
   return(false);
 }
