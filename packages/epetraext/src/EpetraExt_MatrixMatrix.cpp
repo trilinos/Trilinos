@@ -1107,7 +1107,8 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
 			   bool transposeA,
 			   const Epetra_CrsMatrix& B,
 			   bool transposeB,
-			   Epetra_CrsMatrix& C)
+			   Epetra_CrsMatrix& C,
+                           bool call_FillComplete_on_result)
 {
   //
   //This method forms the matrix-matrix product C = op(A) * op(B), where
@@ -1243,24 +1244,24 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
     break;
   }
 
+  if (call_FillComplete_on_result) {
+    //We'll call FillComplete on the C matrix before we exit, and give
+    //it a domain-map and a range-map.
+    //The domain-map will be the domain-map of B, unless
+    //op(B)==transpose(B), in which case the range-map of B will be used.
+    //The range-map will be the range-map of A, unless
+    //op(A)==transpose(A), in which case the domain-map of A will be used.
 
-  //We'll call FillComplete on the C matrix before we exit, and give
-  //it a domain-map and a range-map.
-  //The domain-map will be the domain-map of B, unless
-  //op(B)==transpose(B), in which case the range-map of B will be used.
-  //The range-map will be the range-map of A, unless
-  //op(A)==transpose(A), in which case the domain-map of A will be used.
+    const Epetra_Map* domainmap =
+      transposeB ? &(B.RangeMap()) : &(B.DomainMap());
 
-  const Epetra_Map* domainmap =
-    transposeB ? &(B.RangeMap()) : &(B.DomainMap());
+    const Epetra_Map* rangemap =
+      transposeA ? &(A.DomainMap()) : &(A.RangeMap());
 
-  const Epetra_Map* rangemap =
-    transposeA ? &(A.DomainMap()) : &(A.RangeMap());
-
-  if (!C.Filled()) {
-    EPETRA_CHK_ERR( C.FillComplete(*domainmap, *rangemap) );
+    if (!C.Filled()) {
+      EPETRA_CHK_ERR( C.FillComplete(*domainmap, *rangemap) );
+    }
   }
-
 
   //Finally, delete the objects that were potentially created
   //during the course of importing remote sections of A and B.
@@ -1286,7 +1287,10 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
   //all nonzero locations that will be referenced in forming the
   //sum.
 
-  if (!A.Filled() ) EPETRA_CHK_ERR(-1);
+  if (!A.Filled() ) {
+    std::cerr << "EpetraExt::MatrixMatrix::Add ERROR, input matrix A.Filled() is false, it is required to be true. (Result matrix B is not required to be Filled())."<<std::endl;
+    EPETRA_CHK_ERR(-1);
+  }
 
   //explicit tranpose A formed as necessary
   Epetra_CrsMatrix * Aprime = 0;
@@ -1335,9 +1339,6 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
   delete [] Values;
 
   if( Atrans ) delete Atrans;
-
-  if( !B.Filled() ) 
-    EPETRA_CHK_ERR( B.FillComplete() );
 
   return(0);
 }

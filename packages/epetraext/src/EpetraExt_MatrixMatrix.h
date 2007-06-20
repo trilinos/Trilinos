@@ -57,7 +57,14 @@ class MatrixMatrix {
              FillComplete() has already been called on C or not. If it has,
 	     then C's graph must already contain all nonzero locations that
 	     will be produced when forming the product A*B. On exit,
-	     C.FillComplete() will have been called.
+	     C.FillComplete() will have been called, unless the last argument
+             to this function is specified to be false.
+    @param call_FillComplete_on_result Optional argument, defaults to true.
+           Power users may specify this argument to be false if they *DON'T*
+           want this function to call C.FillComplete. (It is often useful
+           to allow this function to call C.FillComplete, in cases where
+           one or both of the input matrices are rectangular and it is not
+           trivial to know which maps to use for the domain- and range-maps.)
 
     @return error-code, 0 if successful. non-zero returns may result if A or
              B are not already Filled, or if errors occur in putting values
@@ -67,7 +74,8 @@ class MatrixMatrix {
 			bool transposeA,
 			const Epetra_CrsMatrix& B,
 			bool transposeB,
-			Epetra_CrsMatrix& C);
+			Epetra_CrsMatrix& C,
+                        bool call_FillComplete_on_result=true);
 
     /** Given Epetra_CrsMatrix objects A and B, form the sum B = a*A + b*B
 
