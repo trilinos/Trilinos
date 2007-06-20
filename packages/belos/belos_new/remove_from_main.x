@@ -20,6 +20,7 @@ rm ../example/Makefile*
 rm ../example/BlockGmres/Makefile*
 rm ../example/BlockGmres/*.cpp
 
+rm ../test/definition
 rm ../test/Makefile*
 rm ../test/BlockCG/Makefile*
 rm ../test/BlockCG/*.cpp
