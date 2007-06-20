@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
   // Finish up
   EPETRA_TEST_ERR(!(A.IndicesAreGlobal()),ierr);
   EPETRA_TEST_ERR(!(A.ExtractCrsDataPointers(indexOffsetTmp, indicesTmp, valuesTmp)==-1),ierr);  // Should fail
-  EPETRA_TEST_ERR(!(A.FillComplete()==0),ierr);
+  EPETRA_TEST_ERR(!(A.FillComplete(false)==0),ierr);
   EPETRA_TEST_ERR(!(A.ExtractCrsDataPointers(indexOffsetTmp, indicesTmp, valuesTmp)==-1),ierr);  // Should fail
   EPETRA_TEST_ERR(!(A.IndicesAreLocal()),ierr);
   EPETRA_TEST_ERR(A.StorageOptimized(),ierr);
@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
     EPETRA_TEST_ERR(!(AA.InsertGlobalValues(0, 0, &dble_one, &One)==0),ierr);
   }
   else EPETRA_TEST_ERR(!(AA.InsertGlobalValues(0, 1, &dble_one, &One)==-1),ierr);
-  EPETRA_TEST_ERR(!(AA.FillComplete()==0),ierr);
+  EPETRA_TEST_ERR(!(AA.FillComplete(false)==0),ierr);
   EPETRA_TEST_ERR(AA.StorageOptimized(),ierr);
   EPETRA_TEST_ERR(!(AA.UpperTriangular()),ierr);
   EPETRA_TEST_ERR(!(AA.LowerTriangular()),ierr);
@@ -369,7 +369,7 @@ int main(int argc, char *argv[])
     forierr += !(AA.ExtractMyRowView(i, NumEntries, Vals, Inds)==0);
     forierr += !(BV.InsertMyValues(i, NumEntries, Vals, Inds)==0);
   }
-  BV.FillComplete();
+  BV.FillComplete(false);
   EPETRA_TEST_ERR(check(BV, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
 												MyGlobalElements, verbose),ierr);
 
@@ -462,7 +462,7 @@ int main(int argc, char *argv[])
     delete [] Values1;
     
     // Finish up
-    EPETRA_TEST_ERR(!(A1.FillComplete()==0),ierr);
+    EPETRA_TEST_ERR(!(A1.FillComplete(false)==0),ierr);
     
     // Test diagonal extraction function
 
@@ -534,7 +534,7 @@ int main(int argc, char *argv[])
   }
 
   A2.InsertMyValues(0,NumMyElements2,Values2,Indices2);
-  A2.FillComplete(DomainMap,RangeMap);
+  A2.FillComplete(DomainMap,RangeMap,false);
   Epetra_CrsMatrix A2copy(A2);
 
   double * RowLeftScaleValues = new double[NumMyRows2];
@@ -750,7 +750,7 @@ cout << A2;
   }
   Epetra_Map RangeMap3(NumProc+1, 0, Comm);
   Epetra_Map DomainMap3(NumMyElements3, 0, Comm);
-  EPETRA_TEST_ERR(A3.FillComplete(DomainMap3, RangeMap3),ierr);
+  EPETRA_TEST_ERR(A3.FillComplete(DomainMap3, RangeMap3,false),ierr);
   if (verbose1) cout << A3;
   Epetra_Vector xRange3(RangeMap3,false);
   Epetra_Vector xDomain3(DomainMap3,false);
@@ -822,7 +822,7 @@ cout << A2;
   for (int ii=0; ii<NumMyRows3; ii++) {
     A4.InsertGlobalValues(myGlobalElements[ii],NumMyElements3,Values3,Indices3);
   }
-  EPETRA_TEST_ERR(A4.FillComplete(DomainMap3, RangeMap3),ierr);
+  EPETRA_TEST_ERR(A4.FillComplete(DomainMap3, RangeMap3,false),ierr);
   if (verbose1) cout << A4 << endl;
   // The next two lines should be expanded into a verifiable test.
   EPETRA_TEST_ERR(A4.InvRowMaxs(xRow3),ierr);
@@ -851,7 +851,7 @@ cout << A2;
   for (int ii=0; ii<NumMyElements3; ii++) {
     A4cm.InsertGlobalValues(ii,NumMyColumns3,Values3cm,Indices3cm);
   }
-  EPETRA_TEST_ERR(A4cm.FillComplete(DomainMap3cm, RangeMap3cm),ierr);
+  EPETRA_TEST_ERR(A4cm.FillComplete(DomainMap3cm, RangeMap3cm,false),ierr);
   if (verbose1) cout << A4cm << endl;
   // The next two lines should be expanded into a verifiable test.
   EPETRA_TEST_ERR(A4cm.InvColMaxs(xCol3cm),ierr);
@@ -1069,7 +1069,7 @@ int check_graph_sharing(Epetra_Comm& Comm)
     }
   }
 
-  A->FillComplete();
+  A->FillComplete(false);
 
   Epetra_CrsMatrix B(Copy, A->Graph());
 
