@@ -814,7 +814,7 @@ int Epetra_CrsMatrix::FillComplete(const Epetra_Map& domain_map,
     EPETRA_CHK_ERR(returnValue);
   }
 
-  if (OptimizeDataStorage) (EPETRA_CHK_ERR(OptimizeStorage()));
+  if (OptimizeDataStorage) { EPETRA_CHK_ERR(OptimizeStorage()); }
 
   return(returnValue);
 }
