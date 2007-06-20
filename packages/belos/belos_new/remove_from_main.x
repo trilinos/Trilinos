@@ -31,20 +31,20 @@ rm ../test/MVOPTester/Makefile*
 rm ../test/MVOPTester/*.cpp
 rm ../test/MVOPTester/*.hpp
 
-rm ../thyra/Makefile*
-rm ../thyra/src/Makefile* 
-rm ../thyra/src/*.hpp 
-rm ../thyra/example/Makefile*
-rm ../thyra/example/LOWSFactory/Makefile*
-rm ../thyra/example/LOWSFactory/Epetra/Makefile*
-rm ../thyra/example/LOWSFactory/Epetra/*.cpp
-rm ../thyra/example/LOWSFactory/Tpetra/Makefile*
-rm ../thyra/example/LOWSFactory/Tpetra/*.cpp
-rm ../thyra/example/LOWSFactory/Tpetra/*.hpp
-rm ../thyra/test/Makefile*
-rm ../thyra/test/LOWSFactory/Makefile*
-rm ../thyra/test/LOWSFactory/*.hpp
-rm ../thyra/test/LOWSFactory/*.cpp
-rm ../thyra/test/MVOPTester/Makefile*
-rm ../thyra/test/MVOPTester/*.cpp
+#rm ../thyra/Makefile*
+#rm ../thyra/src/Makefile* 
+#rm ../thyra/src/*.hpp 
+#rm ../thyra/example/Makefile*
+#rm ../thyra/example/LOWSFactory/Makefile*
+#rm ../thyra/example/LOWSFactory/Epetra/Makefile*
+#rm ../thyra/example/LOWSFactory/Epetra/*.cpp
+#rm ../thyra/example/LOWSFactory/Tpetra/Makefile*
+#rm ../thyra/example/LOWSFactory/Tpetra/*.cpp
+#rm ../thyra/example/LOWSFactory/Tpetra/*.hpp
+#rm ../thyra/test/Makefile*
+#rm ../thyra/test/LOWSFactory/Makefile*
+#rm ../thyra/test/LOWSFactory/*.hpp
+#rm ../thyra/test/LOWSFactory/*.cpp
+#rm ../thyra/test/MVOPTester/Makefile*
+#rm ../thyra/test/MVOPTester/*.cpp
 

@@ -35,20 +35,20 @@ cp ./test/MVOPTester/Makefile* ../test/MVOPTester/.
 cp ./test/MVOPTester/*.cpp ../test/MVOPTester/.
 cp ./test/MVOPTester/*.hpp ../test/MVOPTester/.
 
-cp ./thyra/Makefile* ../thyra/.
-cp ./thyra/src/Makefile* ../thyra/src/.
-cp ./thyra/src/*.hpp ../thyra/src/.
-cp ./thyra/example/Makefile* ../thyra/example/.
-cp ./thyra/example/LOWSFactory/Makefile* ../thyra/example/LOWSFactory/.
-cp ./thyra/example/LOWSFactory/Epetra/Makefile* ../thyra/example/LOWSFactory/Epetra/.
-cp ./thyra/example/LOWSFactory/Epetra/*.cpp ../thyra/example/LOWSFactory/Epetra/.
-cp ./thyra/example/LOWSFactory/Tpetra/Makefile* ../thyra/example/LOWSFactory/Tpetra/.
-cp ./thyra/example/LOWSFactory/Tpetra/*.cpp ../thyra/example/LOWSFactory/Tpetra/.
-cp ./thyra/example/LOWSFactory/Tpetra/*.hpp ../thyra/example/LOWSFactory/Tpetra/.
-cp ./thyra/test/Makefile* ../thyra/test/.
-cp ./thyra/test/LOWSFactory/Makefile* ../thyra/test/LOWSFactory/.
-cp ./thyra/test/LOWSFactory/*.hpp ../thyra/test/LOWSFactory/.
-cp ./thyra/test/LOWSFactory/*.cpp ../thyra/test/LOWSFactory/.
-cp ./thyra/test/MVOPTester/Makefile* ../thyra/test/MVOPTester/.
-cp ./thyra/test/MVOPTester/*.cpp ../thyra/test/MVOPTester/.
+#cp ./thyra/Makefile* ../thyra/.
+#cp ./thyra/src/Makefile* ../thyra/src/.
+#cp ./thyra/src/*.hpp ../thyra/src/.
+#cp ./thyra/example/Makefile* ../thyra/example/.
+#cp ./thyra/example/LOWSFactory/Makefile* ../thyra/example/LOWSFactory/.
+#cp ./thyra/example/LOWSFactory/Epetra/Makefile* ../thyra/example/LOWSFactory/Epetra/.
+#cp ./thyra/example/LOWSFactory/Epetra/*.cpp ../thyra/example/LOWSFactory/Epetra/.
+#cp ./thyra/example/LOWSFactory/Tpetra/Makefile* ../thyra/example/LOWSFactory/Tpetra/.
+#cp ./thyra/example/LOWSFactory/Tpetra/*.cpp ../thyra/example/LOWSFactory/Tpetra/.
+#cp ./thyra/example/LOWSFactory/Tpetra/*.hpp ../thyra/example/LOWSFactory/Tpetra/.
+#cp ./thyra/test/Makefile* ../thyra/test/.
+#cp ./thyra/test/LOWSFactory/Makefile* ../thyra/test/LOWSFactory/.
+#cp ./thyra/test/LOWSFactory/*.hpp ../thyra/test/LOWSFactory/.
+#cp ./thyra/test/LOWSFactory/*.cpp ../thyra/test/LOWSFactory/.
+#cp ./thyra/test/MVOPTester/Makefile* ../thyra/test/MVOPTester/.
+#cp ./thyra/test/MVOPTester/*.cpp ../thyra/test/MVOPTester/.
 

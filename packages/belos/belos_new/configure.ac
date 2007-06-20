@@ -50,7 +50,7 @@ echo "----------------------------------------"
 # preferably one that is unlikely to be removed or renamed.
 
 # #np# - file name below
-AC_CONFIG_SRCDIR(/src/BelosBlockCG.hpp)
+AC_CONFIG_SRCDIR([src/BelosBlockCG.hpp])
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -88,11 +88,11 @@ AC_CANONICAL_TARGET
 
 # Specify required version of automake. 
 
-AM_INIT_AUTOMAKE(1.8.2)
+AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.61)
 
 # ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
@@ -179,7 +179,6 @@ fi
 
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
 AC_C_INLINE
 
 # ------------------------------------------------------------------------
@@ -231,13 +230,6 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, triutils, BELOS_TRIUTILS, BUILD_TRIUTILS, 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, ifpack, BELOS_IFPACK, BUILD_IFPACK, yes, [Build tests that use Ifpack. Can be overridden with --disable-belos-ifpack.], [Build tests that use Ifpack.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, epetraext, BELOS_EPETRAEXT, BUILD_EPETRAEXT, yes, [Build tests that use EpetraExt. Can be overridden with --disable-belos-epetraext.], [Build tests that use EpetraExt.])
-
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, thyra, BELOS_THYRA, BUILD_BELOS_THYRA, yes, [Build source code and tests that use Thyra. Can be overridden with --disable-belos-thyra.], [Build source code and tests that use Thyra.])
-
-TAC_ARG_INFORM_SUBPACKAGE_USED(epetra, thyra, EPETRA_THYRA, BUILD_EPETRA_THYRA, yes, [Build source code and tests that use Epetra-Thyra wrappers. Can be overridden with --disable-epetra-thyra.], [Build source code and tests that use Epetra-Thyra wrappers.])
-
-TAC_ARG_INFORM_SUBPACKAGE_USED(tpetra, thyra, TPETRA_THYRA, BUILD_TPETRA_THYRA, yes, [Build source code and tests that use Tpetra-Thyra wrappers. Can be overridden with --disable-tpetra-thyra.], [Build source code and tests that use Tpetra-Thyra wrappers.])
-
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -345,15 +337,6 @@ AC_CONFIG_FILES([
                 test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile
-		thyra/Makefile
-		thyra/src/Makefile
-		thyra/test/Makefile
-		thyra/test/MVOPTester/Makefile
-		thyra/test/LOWSFactory/Makefile
-		thyra/example/Makefile
-		thyra/example/LOWSFactory/Makefile
-		thyra/example/LOWSFactory/Epetra/Makefile
-		thyra/example/LOWSFactory/Tpetra/Makefile
 		])
 
 AC_OUTPUT()
