@@ -46,11 +46,10 @@
 #include "Epetra_Comm.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Time.h"
+#include "Teuchos_RefCountPtr.hpp"
 
 namespace Teuchos {
   class ParameterList;
-  template<class T>
-  class RefCountPtr;
 }
 
 //! Ifpack_ILU: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Epetra_RowMatrix.

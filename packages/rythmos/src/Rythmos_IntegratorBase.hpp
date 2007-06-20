@@ -57,12 +57,12 @@ public:
   
   /** \brief . */
   virtual void setInterpolationBuffer(
-    const Teuchos::RefCountPtr<Rythmos::InterpolationBufferBase<Scalar> > &trailingInterpBuffer
+    const Teuchos::RCP<Rythmos::InterpolationBufferBase<Scalar> > &trailingInterpBuffer
     ) =0;
 
   /** \brief . */
   virtual void setStepper(
-    const Teuchos::RefCountPtr<Rythmos::StepperBase<Scalar> > &stepper_
+    const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stepper_
     ) =0;
 
   /** \brief This is a non-const version of getPoints which allows the
@@ -72,8 +72,8 @@ public:
    * */
   virtual bool getFwdPoints(
     const std::vector<Scalar>& time_vec,
-    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec,
-    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
     std::vector<ScalarMag>* accuracy_vec
     ) =0;
 

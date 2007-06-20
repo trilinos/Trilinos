@@ -29,7 +29,7 @@
 #ifndef TPETRA_BLOCKELEMENTSPACE_HPP
 #define TPETRA_BLOCKELEMENTSPACE_HPP
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_ElementSpace.hpp"
 
@@ -454,7 +454,7 @@ namespace Tpetra {
 		//@}
 		
 	private:
-		Teuchos::RefCountPtr< BlockElementSpaceData<OrdinalType> > BlockElementSpaceData_; // Teuchos smart pointer
+		Teuchos::RCP< BlockElementSpaceData<OrdinalType> > BlockElementSpaceData_; // Teuchos smart pointer
 		
 	}; // BlockElementSpace class
 	

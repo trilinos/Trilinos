@@ -29,7 +29,7 @@
 #ifndef TEUCHOS_POLYNOMIAL_TRAITS_HPP
 #define TEUCHOS_POLYNOMIAL_TRAITS_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace Teuchos {
 
@@ -52,7 +52,7 @@ namespace Teuchos {
     typedef Scalar scalar_type;
 
     //! Clone a coefficient
-    static inline Teuchos::RefCountPtr<coeff_type> clone(const coeff_type& c) {
+    static inline Teuchos::RCP<coeff_type> clone(const coeff_type& c) {
       return Teuchos::rcp(new coeff_type(c));
     }
 

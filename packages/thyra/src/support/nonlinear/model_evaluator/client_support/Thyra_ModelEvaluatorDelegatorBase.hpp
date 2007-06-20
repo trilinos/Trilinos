@@ -71,22 +71,22 @@ public:
 
   /** \brief Calls <tt>initialize()</tt>. */
   ModelEvaluatorDelegatorBase(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >   &model
+    const Teuchos::RCP<ModelEvaluator<Scalar> >   &model
     );
 
   /** \brief Calls <tt>initialize()</tt>. */
   ModelEvaluatorDelegatorBase(
-    const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >   &model
+    const Teuchos::RCP<const ModelEvaluator<Scalar> >   &model
     );
 
   /** \brief Initialize given a non-const model evaluator. */
   void initialize(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >   &model
+    const Teuchos::RCP<ModelEvaluator<Scalar> >   &model
     );
 
   /** \brief Initialize given a const model evaluator. */
   void initialize(
-    const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >   &model
+    const Teuchos::RCP<const ModelEvaluator<Scalar> >   &model
     );
 
   /** \brief Uninitialize. */
@@ -101,10 +101,10 @@ public:
   virtual bool isUnderlyingModelConst() const;
 
   /** \brief . */
-  virtual Teuchos::RefCountPtr<ModelEvaluator<Scalar> > getNonconstUnderlyingModel();
+  virtual Teuchos::RCP<ModelEvaluator<Scalar> > getNonconstUnderlyingModel();
 
   /** \brief . */
-  virtual Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > getUnderlyingModel() const;
+  virtual Teuchos::RCP<const ModelEvaluator<Scalar> > getUnderlyingModel() const;
 
   //@}
 
@@ -116,15 +116,15 @@ public:
   /** \brief . */
   int Ng() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_x_space() const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
@@ -132,15 +132,15 @@ public:
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > create_W() const;
+  Teuchos::RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_W_op() const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
@@ -173,7 +173,7 @@ private:
   Teuchos::Time totalTimer(""); \
   totalTimer.start(true); \
   \
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream(); \
+  const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream(); \
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel(); \
   Teuchos::OSTab tab(out); \
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)) \
@@ -184,7 +184,7 @@ private:
       << "\ninArgs =\n" << Teuchos::describe((INARGS),verbLevel) \
       << "\noutArgs on input =\n" << Teuchos::describe((OUTARGS),Teuchos::VERB_LOW); \
   \
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > \
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > \
     thyraModel = (UNDERLYINGMODEL); \
   \
   typedef Teuchos::VerboseObjectTempState<Thyra::ModelEvaluatorBase> VOTSME; \
@@ -218,7 +218,7 @@ ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase()
 
 template<class Scalar>
 ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >   &model
+  const Teuchos::RCP<ModelEvaluator<Scalar> >   &model
   )
 {
   this->initialize(model);
@@ -226,7 +226,7 @@ ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase(
 
 template<class Scalar>
 ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase(
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >   &model
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >   &model
   )
 {
   this->initialize(model);
@@ -234,7 +234,7 @@ ModelEvaluatorDelegatorBase<Scalar>::ModelEvaluatorDelegatorBase(
 
 template<class Scalar>
 void ModelEvaluatorDelegatorBase<Scalar>::initialize(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >   &model
+  const Teuchos::RCP<ModelEvaluator<Scalar> >   &model
   )
 {
   model_.initialize(model);
@@ -242,7 +242,7 @@ void ModelEvaluatorDelegatorBase<Scalar>::initialize(
 
 template<class Scalar>
 void ModelEvaluatorDelegatorBase<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >   &model
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >   &model
   )
 {
   model_.initialize(model);
@@ -263,14 +263,14 @@ bool ModelEvaluatorDelegatorBase<Scalar>::isUnderlyingModelConst() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<ModelEvaluator<Scalar> >
+Teuchos::RCP<ModelEvaluator<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::getNonconstUnderlyingModel()
 {
   return model_.getNonconstObj();
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+Teuchos::RCP<const ModelEvaluator<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::getUnderlyingModel() const
 {
   return model_.getConstObj();
@@ -291,35 +291,35 @@ int ModelEvaluatorDelegatorBase<Scalar>::Ng() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::get_x_space() const
 {
   return getUnderlyingModel()->get_x_space();
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::get_f_space() const
 {
   return getUnderlyingModel()->get_f_space();
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::get_p_space(int l) const
 {
   return getUnderlyingModel()->get_p_space(l);
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+Teuchos::RCP<const Teuchos::Array<std::string> >
 ModelEvaluatorDelegatorBase<Scalar>::get_p_names(int l) const
 {
   return getUnderlyingModel()->get_p_names(l);
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::get_g_space(int j) const
 {
   return getUnderlyingModel()->get_g_space(j);
@@ -347,35 +347,35 @@ ModelEvaluatorDelegatorBase<Scalar>::getUpperBounds() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::create_W() const
 {
   return getUnderlyingModel()->create_W();
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::create_W_op() const
 {
   return getUnderlyingModel()->create_W_op();
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::create_DfDp_op(int l) const
 {
   return getUnderlyingModel()->create_DfDp_op(l);
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::create_DgDx_op(int j) const
 {
   return getUnderlyingModel()->create_DgDx_op(j);
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::create_DgDp_op( int j, int l ) const
 {
   return getUnderlyingModel()->create_DgDp_op(j,l);

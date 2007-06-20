@@ -82,7 +82,7 @@ void SpmdVectorBase<Scalar>::applyOp(
   ) const
 {
 #ifdef THYRA_SPMD_VECTOR_BASE_DUMP
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::OSTab tab(out);
   if(show_dump) {
@@ -116,7 +116,7 @@ void SpmdVectorBase<Scalar>::applyOp(
     ,op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,first_ele_offset_in,sub_dim_in,global_offset_in
     );
 #endif
-  Teuchos::RefCountPtr<const Teuchos::Comm<Index> > comm;
+  Teuchos::RCP<const Teuchos::Comm<Index> > comm;
   if( comm_in != NULL )
     comm = Teuchos::rcp(comm_in,false);
   else
@@ -202,7 +202,7 @@ void SpmdVectorBase<Scalar>::applyOp(
 template<class Scalar>
 std::string SpmdVectorBase<Scalar>::description() const
 {
-  using Teuchos::RefCountPtr; using Teuchos::Comm; using Teuchos::null;
+  using Teuchos::RCP; using Teuchos::Comm; using Teuchos::null;
   using Teuchos::typeName;
   std::ostringstream ostr;
   ostr<<typeName(*this)<<"{spmdSpace="<<spmdSpace()->description()<<"}";
@@ -212,7 +212,7 @@ std::string SpmdVectorBase<Scalar>::description() const
 // Overridden from VectorBase
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 SpmdVectorBase<Scalar>::space() const
 {
   return spmdSpace();

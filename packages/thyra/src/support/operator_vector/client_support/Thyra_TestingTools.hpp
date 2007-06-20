@@ -85,14 +85,14 @@ Thyra::relErr( const Scalar &s1, const Scalar &s2 )
 
 template <class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-Thyra::relErr( const VectorBase<Scalar> &v1, const VectorBase<Scalar> &v2 )
+Thyra::relVectorErr( const VectorBase<Scalar> &v1, const VectorBase<Scalar> &v2 )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
 #ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_VEC_SPACES( "relErr(v1,v2)", *v1.space(), *v2.space() );
 #endif
-  Teuchos::RefCountPtr<VectorBase<Scalar> >
+  Teuchos::RCP<VectorBase<Scalar> >
     diff = createMember(v1.space());
   V_VmV( &*diff, v1, v2 );
   const ScalarMag
@@ -218,7 +218,7 @@ bool Thyra::testRelNormDiffErr(
   const ScalarMag
     nrm_v1 = norm(v1),
     nrm_v2 = norm(v2);
-  const ScalarMag rel_err = relErr(v1,v2);
+  const ScalarMag rel_err = relVectorErr(v1,v2);
   const bool success =
     (
       !SMT::isnaninf(rel_err)
@@ -235,7 +235,7 @@ bool Thyra::testRelNormDiffErr(
       *out
         << li << "  " << v1_name << " = " << describe(v1,verbLevel)
         << li << "  " << v2_name << " = " << describe(v2,verbLevel);
-      Teuchos::RefCountPtr<VectorBase<Scalar> >
+      Teuchos::RCP<VectorBase<Scalar> >
         diff = createMember(v1.space());
       V_VmV( &*diff, v1, v2 );
       *out

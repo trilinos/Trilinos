@@ -65,7 +65,7 @@ namespace Teuchos
       virtual ~XMLInputSource(){;}
 
       /** \brief Virtual input source interface */
-      virtual RefCountPtr<XMLInputStream> stream() const = 0 ;
+      virtual RCP<XMLInputStream> stream() const = 0 ;
 
       /** \brief Get an object by invoking the TreeBuildingXMLHandler on the
        * input data */

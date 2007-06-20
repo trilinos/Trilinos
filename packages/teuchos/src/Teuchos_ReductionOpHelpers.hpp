@@ -47,7 +47,7 @@ class CharToValueTypeReductionOp : public ValueTypeReductionOp<Ordinal,char>
 public:
   /** \brief . */
   CharToValueTypeReductionOp(
-    const RefCountPtr<const ValueTypeReductionOp<Ordinal,T> >  &reductOp
+    const RCP<const ValueTypeReductionOp<Ordinal,T> >  &reductOp
     );
   /** \brief . */
   void reduce(
@@ -56,7 +56,7 @@ public:
     ,char             charInoutBuffer[]
     ) const;
 private:
-  RefCountPtr<const ValueTypeReductionOp<Ordinal,T> >  reductOp_;
+  RCP<const ValueTypeReductionOp<Ordinal,T> >  reductOp_;
   // Not defined and not to be called!
   CharToValueTypeReductionOp();
   CharToValueTypeReductionOp(const CharToValueTypeReductionOp&);
@@ -75,8 +75,8 @@ class CharToReferenceTypeReductionOp : public ValueTypeReductionOp<Ordinal,char>
 public:
   /** \brief . */
   CharToReferenceTypeReductionOp(
-    const RefCountPtr<const Serializer<Ordinal,T> >                 &serializer
-    ,const RefCountPtr<const ReferenceTypeReductionOp<Ordinal,T> >  &reductOp
+    const RCP<const Serializer<Ordinal,T> >                 &serializer
+    ,const RCP<const ReferenceTypeReductionOp<Ordinal,T> >  &reductOp
     );
   /** \brief . */
   void reduce(
@@ -85,8 +85,8 @@ public:
     ,char             charInoutBuffer[]
     ) const;
 private:
-  RefCountPtr<const Serializer<Ordinal,T> >                serializer_;
-  RefCountPtr<const ReferenceTypeReductionOp<Ordinal,T> >  reductOp_;
+  RCP<const Serializer<Ordinal,T> >                serializer_;
+  RCP<const ReferenceTypeReductionOp<Ordinal,T> >  reductOp_;
   // Not defined and not to be called!
   CharToReferenceTypeReductionOp();
   CharToReferenceTypeReductionOp(const CharToReferenceTypeReductionOp&);
@@ -102,7 +102,7 @@ private:
 
 template<typename Ordinal, typename T>
 CharToValueTypeReductionOp<Ordinal,T>::CharToValueTypeReductionOp(
-  const RefCountPtr<const ValueTypeReductionOp<Ordinal,T> >  &reductOp
+  const RCP<const ValueTypeReductionOp<Ordinal,T> >  &reductOp
   )
   :reductOp_(reductOp)
 {}
@@ -129,8 +129,8 @@ void CharToValueTypeReductionOp<Ordinal,T>::reduce(
 
 template<typename Ordinal, typename T>
 CharToReferenceTypeReductionOp<Ordinal,T>::CharToReferenceTypeReductionOp(
-  const RefCountPtr<const Serializer<Ordinal,T> >                 &serializer
-  ,const RefCountPtr<const ReferenceTypeReductionOp<Ordinal,T> >  &reductOp
+  const RCP<const Serializer<Ordinal,T> >                 &serializer
+  ,const RCP<const ReferenceTypeReductionOp<Ordinal,T> >  &reductOp
   )
   :serializer_(serializer), reductOp_(reductOp)
 {}

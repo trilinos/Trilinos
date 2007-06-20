@@ -62,10 +62,10 @@ void Thyra::unwrap(
 
 template<class Scalar>
 void Thyra::unwrap(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >     &Op
+  const Teuchos::RCP<const LinearOpBase<Scalar> >     &Op
   ,Scalar                                                     *scalar
   ,ETransp                                                    *transp
-  ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >          *origOp
+  ,Teuchos::RCP<const LinearOpBase<Scalar> >          *origOp
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -74,7 +74,7 @@ void Thyra::unwrap(
   TEST_FOR_EXCEPT( origOp==NULL );
 #endif
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-  Teuchos::RefCountPtr<const ScaledAdjointLinearOpBase<Scalar> >
+  Teuchos::RCP<const ScaledAdjointLinearOpBase<Scalar> >
     saOp = Teuchos::rcp_dynamic_cast<const ScaledAdjointLinearOpBase<Scalar> >(Op);
   if(saOp.get()) {
     *scalar = saOp->overallScalar();

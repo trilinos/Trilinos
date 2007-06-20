@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -34,7 +34,7 @@
 #include "Teuchos_Version.hpp"
 
 #ifdef HAVE_TEUCHOS_BOOST
-#  include "Teuchos_RefCountPtrBoostSharedPtrConversions.hpp"
+#  include "Teuchos_RCPBoostSharedPtrConversions.hpp"
 #endif
 
 // Return constants from class functions
@@ -87,9 +87,9 @@ public:
 	virtual int A_f() const { return A_f_; }
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
 private:
-  Teuchos::RefCountPtr<C> c_;
+  Teuchos::RCP<C> c_;
 public:
-  void set_C(const Teuchos::RefCountPtr<C> &c ) { c_ = c; }
+  void set_C(const Teuchos::RCP<C> &c ) { c_ = c; }
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
 };
 
@@ -121,9 +121,9 @@ public:
 	virtual int C_f() const { return C_f_; }
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
 private:
-  Teuchos::RefCountPtr<A> a_;
+  Teuchos::RCP<A> a_;
 public:
-  void set_A(const Teuchos::RefCountPtr<A> &a ) { a_ = a; }
+  void set_A(const Teuchos::RCP<A> &a ) { a_ = a; }
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
 };
 
@@ -207,7 +207,7 @@ public:
 
 int main( int argc, char* argv[] ) {
 
-	using Teuchos::RefCountPtr;
+	using Teuchos::RCP;
 	using Teuchos::DeallocDelete;
 	using Teuchos::deallocFunctorDelete;
 	using Teuchos::deallocFunctorHandleDelete;
@@ -250,11 +250,11 @@ int main( int argc, char* argv[] ) {
       out << std::endl << Teuchos::Teuchos_Version() << std::endl;
 
 		if(verbose)
-			out << "\nTesting basic RefCountPtr functionality ...\n";
+			out << "\nTesting basic RCP functionality ...\n";
 
 		// Create some smart pointers
 
-		RefCountPtr<A>       a_ptr1  = rcp(new C);
+		RCP<A>       a_ptr1  = rcp(new C);
 		if(verbose)
 			out << "\na_ptr1 = " << a_ptr1 << "\n";
 #ifndef __sun
@@ -263,7 +263,7 @@ int main( int argc, char* argv[] ) {
 		// following the standard when it comes to the handling of
 		// temporary objects and therefore the count() is not currect.
 		// In the above statement, at least one and perhaps two
-		// temporary RefCountPtr objects are created before the object
+		// temporary RCP objects are created before the object
 		// a_ptr1 is initialized.  However, the standard says that the
 		// lifetime of temprary objects must not extend past the
 		// statement in which it was created (see section 10.4.10 in
@@ -274,7 +274,7 @@ int main( int argc, char* argv[] ) {
 		TEST_FOR_EXCEPT( a_ptr1 == null );
 		TEST_FOR_EXCEPT( !(a_ptr1 != null) );
 		TEST_FOR_EXCEPT( is_null(a_ptr1) );
-		RefCountPtr<D>       d_ptr1  = rcp(new E);
+		RCP<D>       d_ptr1  = rcp(new E);
 #ifndef __sun
 		TEST_FOR_EXCEPT( d_ptr1.count()  != 1 );
 #endif
@@ -284,7 +284,7 @@ int main( int argc, char* argv[] ) {
 
 			// Create some more smart points (no new memory!)
 
-			const RefCountPtr<const A> ca_ptr1 = rcp_const_cast<const A>(a_ptr1); 
+			const RCP<const A> ca_ptr1 = rcp_const_cast<const A>(a_ptr1); 
       TEST_FOR_EXCEPT( !(ca_ptr1 == a_ptr1) );
       TEST_FOR_EXCEPT( ca_ptr1 != a_ptr1 );
 #ifndef __sun
@@ -294,7 +294,7 @@ int main( int argc, char* argv[] ) {
 #ifndef __sun
 			TEST_FOR_EXCEPT( ca_ptr1.count() != 2 );
 #endif
-			const RefCountPtr<const D> cd_ptr1 = rcp_const_cast<const D>(d_ptr1);
+			const RCP<const D> cd_ptr1 = rcp_const_cast<const D>(d_ptr1);
 #ifndef __sun
 			TEST_FOR_EXCEPT( d_ptr1.count()  != 2 );
 #endif
@@ -306,7 +306,7 @@ int main( int argc, char* argv[] ) {
 #ifdef SHOW_RUN_TIME_ERROR_1
 			// Conversion using get() is a no no!  When a_ptr2 is deleted so will the allocated
 			// object and then a_ptr1 will be corrupted after this block ends!
-			const RefCountPtr<A> a_ptr2 = a_ptr1.get();
+			const RCP<A> a_ptr2 = a_ptr1.get();
 #endif
 
 			// Test assignment functions
@@ -339,7 +339,7 @@ int main( int argc, char* argv[] ) {
 			// Test dynamic and static conversions
 
 			// Cast down the inheritance hiearchy (const A -> const B1)
-			const RefCountPtr<const B1> cb1_ptr1 = rcp_dynamic_cast<const B1>(ca_ptr1);
+			const RCP<const B1> cb1_ptr1 = rcp_dynamic_cast<const B1>(ca_ptr1);
 			TEST_FOR_EXCEPT( cb1_ptr1.get() == NULL );
 #ifndef __sun
 			TEST_FOR_EXCEPT( cb1_ptr1.count() != 3 );
@@ -349,10 +349,10 @@ int main( int argc, char* argv[] ) {
 
 			// Cast up the inheritance hiearchy (const B1 -> const A)
 			TEST_FOR_EXCEPT( rcp_implicit_cast<const A>(cb1_ptr1)->A_f()  != A_f_return );
-			TEST_FOR_EXCEPT( RefCountPtr<const A>(cb1_ptr1)->A_f()        != A_f_return );
+			TEST_FOR_EXCEPT( RCP<const A>(cb1_ptr1)->A_f()        != A_f_return );
 			// Implicit cast from const to non-const (A -> const A)
 			TEST_FOR_EXCEPT( rcp_implicit_cast<const A>(a_ptr1)->A_f()    != A_f_return );
-			TEST_FOR_EXCEPT( RefCountPtr<const A>(a_ptr1)->A_f()          != A_f_return );
+			TEST_FOR_EXCEPT( RCP<const A>(a_ptr1)->A_f()          != A_f_return );
 			// Cast away constantness (const B1 -> B1)
 			TEST_FOR_EXCEPT( rcp_const_cast<B1>(cb1_ptr1)->B1_g()         != B1_g_return );
 			// Cast across the inheritance hiearchy (const B1 -> const B2)
@@ -361,7 +361,7 @@ int main( int argc, char* argv[] ) {
 			TEST_FOR_EXCEPT( rcp_dynamic_cast<const C>(cb1_ptr1)->C_f()   != C_f_return );
 
 			// Cast away constantness (const C -> C)
-			const RefCountPtr<C>
+			const RCP<C>
 				c_ptr1 = rcp_const_cast<C>(rcp_dynamic_cast<const C>(ca_ptr1));
 			TEST_FOR_EXCEPT( c_ptr1.get() == NULL );
 #ifndef __sun
@@ -371,7 +371,7 @@ int main( int argc, char* argv[] ) {
 #endif
 
 			// Cast down the inheritance hiearchy using static_cast<...> (const D -> const E)
-			const RefCountPtr<const E>
+			const RCP<const E>
 				ce_ptr1 = rcp_static_cast<const E>(cd_ptr1); // This is not checked at runtime!
 			TEST_FOR_EXCEPT( ce_ptr1.get() == NULL);
 #ifndef __sun
@@ -395,8 +395,8 @@ int main( int argc, char* argv[] ) {
 #ifdef TEUCHOS_DEBUG  // operator->() only throws exception when TEUCHOS_DEBUG is defined
 			try {
 				// Try to cast form one interface to another that is not supported (B2 -> B1).
-				// The RefCountPtr<B1> returned from rcp_dynamic_cast<...> should be null!
-				// Note that RefCountPtr<...>::optertor->() should throw an exception in debug
+				// The RCP<B1> returned from rcp_dynamic_cast<...> should be null!
+				// Note that RCP<...>::optertor->() should throw an exception in debug
 				// mode (i.e. TEUCHOS_DEBUG is defined) but even so no memory leak occurs.  If you
 				// don't believe me then step through with a debugger and see for yourself.
 				TEST_FOR_EXCEPT( rcp_dynamic_cast<B1>( rcp(new B2) )->B1_g() != B1_g_return );
@@ -468,7 +468,7 @@ int main( int argc, char* argv[] ) {
 
 #ifdef SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS
 		// Allocate an using new and then store the non-base address in in
-		// a RefCountPtr and then try to delete (this is a no-no usually).
+		// a RCP and then try to delete (this is a no-no usually).
 		C *c_ptr5 = new C;      // Okay, no type info lost and address should be same as returned from malloc(...)
 #ifdef SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS_PRINT
 		const void *c_ptr5_base = dynamic_cast<void*>(c_ptr5);
@@ -491,21 +491,21 @@ int main( int argc, char* argv[] ) {
 		get_dealloc<DeallocDelete<C> >(a_ptr1);
     TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<C> >(a_ptr1)==NULL );
     TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<A> >(a_ptr1)!=NULL );
-    TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<C> >(const_cast<const RefCountPtr<A>&>(a_ptr1))==NULL );
-    TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<A> >(const_cast<const RefCountPtr<A>&>(a_ptr1))!=NULL );
+    TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<C> >(const_cast<const RCP<A>&>(a_ptr1))==NULL );
+    TEST_FOR_EXCEPT( get_optional_dealloc<DeallocDelete<A> >(const_cast<const RCP<A>&>(a_ptr1))!=NULL );
     
 		// Test storing extra data and then getting it out again
-		TEST_FOR_EXCEPT( get_optional_extra_data<RefCountPtr<B1> >(a_ptr1,"blahblah") != NULL );
-		TEST_FOR_EXCEPT( get_optional_extra_data<int>(const_cast<const RefCountPtr<A>&>(a_ptr1),"blahblah") != NULL ); // test const version
+		TEST_FOR_EXCEPT( get_optional_extra_data<RCP<B1> >(a_ptr1,"blahblah") != NULL );
+		TEST_FOR_EXCEPT( get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"blahblah") != NULL ); // test const version
 		set_extra_data( int(-5), "int", &a_ptr1 );
 		TEST_FOR_EXCEPT( get_extra_data<int>(a_ptr1,"int") != -5 );
 		set_extra_data( rcp(new B1), "B1", &a_ptr1 );
-		TEST_FOR_EXCEPT( get_extra_data<RefCountPtr<B1> >(a_ptr1,"B1")->B1_f() != B1_f_return );
-		TEST_FOR_EXCEPT( get_extra_data<int>(const_cast<const RefCountPtr<A>&>(a_ptr1),"int") != -5 ); // test const version
-		TEST_FOR_EXCEPT( (*get_optional_extra_data<RefCountPtr<B1> >(a_ptr1,"B1"))->B1_f() != B1_f_return );
-		TEST_FOR_EXCEPT( *get_optional_extra_data<int>(const_cast<const RefCountPtr<A>&>(a_ptr1),"int") != -5 ); // test const version
-		TEST_FOR_EXCEPT( get_optional_extra_data<RefCountPtr<B1> >(a_ptr1,"blahblah") != NULL );
-		TEST_FOR_EXCEPT( get_optional_extra_data<int>(const_cast<const RefCountPtr<A>&>(a_ptr1),"blahblah") != NULL ); // test const version
+		TEST_FOR_EXCEPT( get_extra_data<RCP<B1> >(a_ptr1,"B1")->B1_f() != B1_f_return );
+		TEST_FOR_EXCEPT( get_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"int") != -5 ); // test const version
+		TEST_FOR_EXCEPT( (*get_optional_extra_data<RCP<B1> >(a_ptr1,"B1"))->B1_f() != B1_f_return );
+		TEST_FOR_EXCEPT( *get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"int") != -5 ); // test const version
+		TEST_FOR_EXCEPT( get_optional_extra_data<RCP<B1> >(a_ptr1,"blahblah") != NULL );
+		TEST_FOR_EXCEPT( get_optional_extra_data<int>(const_cast<const RCP<A>&>(a_ptr1),"blahblah") != NULL ); // test const version
 
     // Test pre-destruction of extra data
     int a_f_return = -2;
@@ -535,8 +535,8 @@ int main( int argc, char* argv[] ) {
 		if(verbose)
 			out << "\nCreate a circular reference that will case a memory leak! ...\n";
     {
-      RefCountPtr<A> a = rcp(new A());
-      RefCountPtr<C> c = rcp(new C());
+      RCP<A> a = rcp(new A());
+      RCP<C> c = rcp(new C());
       a->set_C(c);
       c->set_A(a);
     }
@@ -546,14 +546,14 @@ int main( int argc, char* argv[] ) {
 #ifdef HAVE_TEUCHOS_BOOST
 
 		if(verbose)
-			out << "\nTesting basic RefCountPtr compatibility with boost::shared_ptr ...\n";
+			out << "\nTesting basic RCP compatibility with boost::shared_ptr ...\n";
 
     boost::shared_ptr<A>  a_sptr1(new C());
-    RefCountPtr<A>        a_rsptr1 = rcp(a_sptr1);
+    RCP<A>        a_rsptr1 = rcp(a_sptr1);
 		TEST_FOR_EXCEPT( a_rsptr1.get() != a_sptr1.get() );
     boost::shared_ptr<A>  a_sptr2 = shared_pointer(a_rsptr1);
 		TEST_FOR_EXCEPT( a_sptr2.get() != a_sptr1.get() );
-    RefCountPtr<A>        a_rsptr2 = rcp(a_sptr2);
+    RCP<A>        a_rsptr2 = rcp(a_sptr2);
 		TEST_FOR_EXCEPT( a_rsptr2.get() != a_rsptr1.get() );
 		//TEST_FOR_EXCEPT( a_rsptr2 != a_rsptr1 );  // This should work if boost::get_deleter() works correctly!
     boost::shared_ptr<A>  a_sptr3 = shared_pointer(a_rsptr2);
@@ -562,14 +562,14 @@ int main( int argc, char* argv[] ) {
 #endif // HAVE_TEUCHOS_BOOST
 
 		if(verbose)
-			out << "\nAll tests for RefCountPtr seem to check out!\n";
+			out << "\nAll tests for RCP seem to check out!\n";
 
 	} // end try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
   
   try {
     // This should show that the A and C RCP objects are still around!
-    Teuchos::PrivateUtilityPack::print_active_RefCountPtr_nodes(out);
+    Teuchos::PrivateUtilityPack::print_active_RCP_nodes(out);
 	} // end try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
   

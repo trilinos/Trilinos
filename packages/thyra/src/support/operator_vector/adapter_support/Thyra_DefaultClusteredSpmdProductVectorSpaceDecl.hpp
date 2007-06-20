@@ -80,11 +80,11 @@ public:
 
   /** \brief . */
   DefaultClusteredSpmdProductVectorSpace(
-    const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >          &intraClusterComm
+    const Teuchos::RCP<const Teuchos::Comm<Index> >          &intraClusterComm
     ,const int                                                       clusterRootRank
-    ,const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >         &interClusterComm
+    ,const Teuchos::RCP<const Teuchos::Comm<Index> >         &interClusterComm
     ,const int                                                       numBlocks
-    ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >      vecSpaces[]
+    ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >      vecSpaces[]
     );
 
   /** \brief Initalize.
@@ -108,21 +108,21 @@ public:
    *            for this cluster of processes.
    */
   void initialize(
-    const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >          &intraClusterComm
+    const Teuchos::RCP<const Teuchos::Comm<Index> >          &intraClusterComm
     ,const int                                                       clusterRootRank
-    ,const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >         &interClusterComm
+    ,const Teuchos::RCP<const Teuchos::Comm<Index> >         &interClusterComm
     ,const int                                                       numBlocks
-    ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >      vecSpaces[]
+    ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >      vecSpaces[]
     );
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::Comm<Index> > intraClusterComm() const;
+  Teuchos::RCP<const Teuchos::Comm<Index> > intraClusterComm() const;
 
   /** \brief . */
   int clusterRootRank() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::Comm<Index> > interClusterComm() const;
+  Teuchos::RCP<const Teuchos::Comm<Index> > interClusterComm() const;
 
   /** \bief The some of the dimensions of the block vector spaces in this
    * cluster.
@@ -149,7 +149,7 @@ public:
   /** \brief . */
   bool isCompatible(const VectorSpaceBase<Scalar>& vecSpc) const;
   /** \brief . */
-  Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
+  Teuchos::RCP< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
   /** \brief . */
   Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
   /** \brief . */
@@ -163,7 +163,7 @@ public:
     const Range1D& rng, const EViewType viewType, const EStrideType strideType
     ) const;
   /** \brief . */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > clone() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > clone() const;
   //@}
 
   /** @name Protected overridden from ProductVectorSpaceBase */
@@ -172,7 +172,7 @@ public:
   /** \brief . */
   int numBlocks() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > getBlock(const int k) const; 
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > getBlock(const int k) const; 
 
   //@}
 
@@ -182,9 +182,9 @@ protected:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<VectorBase<Scalar> > createMember() const;
+  Teuchos::RCP<VectorBase<Scalar> > createMember() const;
   /** \brief . */
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > createMembers(int numMembers) const;
+  Teuchos::RCP<MultiVectorBase<Scalar> > createMembers(int numMembers) const;
 
   //@}
 
@@ -193,14 +193,14 @@ private:
   // //////////////////////////////////////
   // Private types
 
-  typedef std::vector<Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > >  vecSpaces_t;
+  typedef std::vector<Teuchos::RCP<const VectorSpaceBase<Scalar> > >  vecSpaces_t;
 
   // //////////////////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<const Teuchos::Comm<Index> >  intraClusterComm_;
+  Teuchos::RCP<const Teuchos::Comm<Index> >  intraClusterComm_;
   int                                                      clusterRootRank_;
-  Teuchos::RefCountPtr<const Teuchos::Comm<Index> >  interClusterComm_;
+  Teuchos::RCP<const Teuchos::Comm<Index> >  interClusterComm_;
   vecSpaces_t vecSpaces_; // size == numBlocks
   bool isEuclidean_;
   Index globalDim_;     // The global dimension of all of the block vectors in
@@ -217,7 +217,7 @@ private:
 // Inline defintions
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
+Teuchos::RCP<const Teuchos::Comm<Index> >
 DefaultClusteredSpmdProductVectorSpace<Scalar>::intraClusterComm() const
 {
   return intraClusterComm_;
@@ -230,7 +230,7 @@ int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterRootRank() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
+Teuchos::RCP<const Teuchos::Comm<Index> >
 DefaultClusteredSpmdProductVectorSpace<Scalar>::interClusterComm() const
 {
   return interClusterComm_;

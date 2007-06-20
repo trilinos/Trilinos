@@ -74,11 +74,11 @@ public:
    * called again to reset the model and reinitialize.
    */
   virtual void setModel(
-    const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model
+    const Teuchos::RCP<const ModelEvaluator<Scalar> > &model
     ) = 0;
   
   /** \brief Get the model that defines the nonlinear equations. */
-  virtual Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > getModel() const = 0;
+  virtual Teuchos::RCP<const ModelEvaluator<Scalar> > getModel() const = 0;
   
   /** \brief Solve a set of nonlinear equations from a given starting
    * point.
@@ -135,7 +135,7 @@ public:
    * If this function is overridden in a base class to support cloning, then
    * <tt>supportsCloning()</tt> must be overridden to return <tt>true</tt>.
    */
-  virtual Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> >
+  virtual Teuchos::RCP<NonlinearSolverBase<Scalar> >
   cloneNonlinearSolver() const;  
   
   /** \brief Return the current value of the solution <tt>x</tt> as computed
@@ -143,7 +143,7 @@ public:
    *
    * The default implementation returns <tt>return.get()==NULL</tt>.
    */
-  virtual Teuchos::RefCountPtr<const VectorBase<Scalar> > get_current_x() const;
+  virtual Teuchos::RCP<const VectorBase<Scalar> > get_current_x() const;
 
   /** \brief Returns <tt>true</tt> if <tt>*get_W()</tt> is current with
    * respect to <tt>*get_current_x()</tt>.
@@ -160,7 +160,7 @@ public:
    *
    * The default implementation returns <tt>return.get()==NULL</tt>.
    */
-  virtual Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > get_nonconst_W();
+  virtual Teuchos::RCP<LinearOpWithSolveBase<Scalar> > get_nonconst_W();
 
   /** \brief Get a const RCP to the Jacobian if available.
    *
@@ -169,7 +169,7 @@ public:
    *
    * The default implementation returns <tt>return.get()==NULL</tt>.
    */
-  virtual Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > get_W() const;
+  virtual Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > get_W() const;
 
   /** \brief Set if <tt>*get_W()</tt> is current with respect to
    * <tt>*get_current_x()</tt>.
@@ -196,14 +196,14 @@ bool NonlinearSolverBase<Scalar>::supportsCloning() const
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> >
+Teuchos::RCP<NonlinearSolverBase<Scalar> >
 NonlinearSolverBase<Scalar>::cloneNonlinearSolver() const
 {
   return Teuchos::null;
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
+Teuchos::RCP<const VectorBase<Scalar> >
 NonlinearSolverBase<Scalar>::get_current_x() const
 {
   return Teuchos::null;
@@ -216,14 +216,14 @@ bool NonlinearSolverBase<Scalar>::is_W_current() const
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
 NonlinearSolverBase<Scalar>::get_nonconst_W()
 {
   return Teuchos::null;
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<const LinearOpWithSolveBase<Scalar> >
 NonlinearSolverBase<Scalar>::get_W() const
 {
   return Teuchos::null;

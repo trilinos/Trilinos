@@ -36,7 +36,7 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_MPIComm.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 
 namespace Teuchos

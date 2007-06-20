@@ -49,8 +49,8 @@ public:
   bool isCompatible( const LinearOpBase<double> &fwdOp ) const;
   /** \brief . */
   void getEpetraOpView(
-    const Teuchos::RefCountPtr<LinearOpBase<double> >   &fwdOp
-    ,Teuchos::RefCountPtr<Epetra_Operator>              *epetraOp
+    const Teuchos::RCP<LinearOpBase<double> >   &fwdOp
+    ,Teuchos::RCP<Epetra_Operator>              *epetraOp
     ,ETransp                                            *epetraOpTransp
     ,EApplyEpetraOpAs                                   *epetraOpApplyAs
     ,EAdjointEpetraOp                                   *epetraOpAdjointSupport
@@ -58,8 +58,8 @@ public:
     ) const;
   /** \brief . */
   void getEpetraOpView(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> >   &fwdOp
-    ,Teuchos::RefCountPtr<const Epetra_Operator>              *epetraOp
+    const Teuchos::RCP<const LinearOpBase<double> >   &fwdOp
+    ,Teuchos::RCP<const Epetra_Operator>              *epetraOp
     ,ETransp                                                  *epetraOpTransp
     ,EApplyEpetraOpAs                                         *epetraOpApplyAs
     ,EAdjointEpetraOp                                         *epetraOpAdjointSupport

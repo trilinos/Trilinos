@@ -30,7 +30,7 @@
 #define TEUCHOS_POLYNOMIAL_DECL_HPP
 
 #include "Teuchos_Describable.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_PolynomialTraits.hpp"
 
 namespace Teuchos {
@@ -92,11 +92,11 @@ namespace Teuchos {
     void setDegree(unsigned int deg);
 
     //! Return ref-count pointer to coefficient \c i
-    Teuchos::RefCountPtr<CoeffT>
+    Teuchos::RCP<CoeffT>
     getCoefficient(unsigned int i);
 
     //! Return ref-count pointer to constant coefficient \c i
-    Teuchos::RefCountPtr<const CoeffT>
+    Teuchos::RCP<const CoeffT>
     getCoefficient(unsigned int i) const;
 
     //! Set coefficient \c i to \c c
@@ -110,7 +110,7 @@ namespace Teuchos {
      * situations it is necessary to do this for efficiency.
      */
     void setCoefficientPtr(unsigned int i, 
-			   const Teuchos::RefCountPtr<CoeffT>& c_ptr);
+			   const Teuchos::RCP<CoeffT>& c_ptr);
 
     //! Evaluate polynomial and possibly its derivative at time \c t
     /*!
@@ -144,7 +144,7 @@ namespace Teuchos {
     /*!
      * \c coeff[i] corresponds to the degree \c i term, \c i=0,...,d
      */
-    std::vector< Teuchos::RefCountPtr<CoeffT> > coeff;
+    std::vector< Teuchos::RCP<CoeffT> > coeff;
 
   }; // class Polynomial
 

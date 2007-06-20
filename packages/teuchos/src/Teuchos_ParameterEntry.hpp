@@ -36,7 +36,7 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_any.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterEntryValidator.hpp"
 
 namespace Teuchos {
@@ -68,7 +68,7 @@ public:
   explicit ParameterEntry(
     T value, bool isDefault = false, bool isList = false,
     const std::string &docString = "",
-    RefCountPtr<const ParameterEntryValidator> const& validator = null
+    RCP<const ParameterEntryValidator> const& validator = null
     );
 
   //! Destructor
@@ -93,7 +93,7 @@ public:
   void setValue(
     T value, bool isDefault = false,
     const std::string &docString = "",
-    RefCountPtr<const ParameterEntryValidator> const& validator = null
+    RCP<const ParameterEntryValidator> const& validator = null
     );
 
   /*! \brief Set the value as an any object.
@@ -108,7 +108,7 @@ public:
 
   /*! \brief Set the validator. */
   void setValidator(
-    RefCountPtr<const ParameterEntryValidator> const& validator
+    RCP<const ParameterEntryValidator> const& validator
     );
 
   /*! \brief Set the documentation string. */
@@ -167,7 +167,7 @@ public:
   std::string docString() const;
 
   //! Return the (optional) validator object
-  RefCountPtr<const ParameterEntryValidator> validator() const;
+  RCP<const ParameterEntryValidator> validator() const;
 
   //@}
 
@@ -201,7 +201,7 @@ private:
   std::string  docString_;
 
   //! Optional validator object
-  RefCountPtr<const ParameterEntryValidator> validator_;
+  RCP<const ParameterEntryValidator> validator_;
 
 };
 
@@ -255,7 +255,7 @@ inline
 ParameterEntry::ParameterEntry(
   T value, bool isDefault, bool isList
   ,const std::string &docString
-  ,RefCountPtr<const ParameterEntryValidator> const& validator
+  ,RCP<const ParameterEntryValidator> const& validator
   )
   : val_(value),
     isUsed_(false),
@@ -274,7 +274,7 @@ template<typename T>
 inline
 void ParameterEntry::setValue(
   T value, bool isDefault, const std::string &docString
-  ,RefCountPtr<const ParameterEntryValidator> const& validator
+  ,RCP<const ParameterEntryValidator> const& validator
   )
 {
   val_ = value;
@@ -333,7 +333,7 @@ std::string ParameterEntry::docString() const
 { return docString_; }
 
 inline
-RefCountPtr<const ParameterEntryValidator>
+RCP<const ParameterEntryValidator>
 ParameterEntry::validator() const
 { return validator_; }
 

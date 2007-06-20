@@ -60,7 +60,7 @@ supplies the basic interfaces for vector reduction/transformation operators
 used by %Thyra.
 
 <li> <b><a href="../../../teuchos/doc/html/index.html">Teuchos</a></b>: This
-package provides basic utility classes such as <tt>Teuchos::RefCountPtr</tt>
+package provides basic utility classes such as <tt>Teuchos::RCP</tt>
 and <tt>Teuchos::ParameterList</tt>.
 
 </ul>

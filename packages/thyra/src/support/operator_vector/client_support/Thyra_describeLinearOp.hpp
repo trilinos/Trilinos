@@ -43,16 +43,16 @@ void Thyra::describeLinearOp(
   ,const Teuchos::EVerbosityLevel                verbLevel
   )
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<DomainScalar> DST;
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   *out << A.description() << "\n";
-  const Teuchos::RefCountPtr<const VectorSpaceBase<RangeScalar> >
+  const Teuchos::RCP<const VectorSpaceBase<RangeScalar> >
     range = A.range();
-  const Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> >
+  const Teuchos::RCP<const VectorSpaceBase<DomainScalar> >
     domain = A.domain();
   if(!range.get()) {
     return;
@@ -60,8 +60,8 @@ void Thyra::describeLinearOp(
   const Index dimDomain = domain->dim(), dimRange = range->dim();
   if(verbLevel >= Teuchos::VERB_EXTREME) {
     // Copy into dense matrix by column
-    Teuchos::RefCountPtr<VectorBase<DomainScalar> > e_j = createMember(domain);
-    Teuchos::RefCountPtr<VectorBase<RangeScalar> >  t   = createMember(range); // temp column
+    Teuchos::RCP<VectorBase<DomainScalar> > e_j = createMember(domain);
+    Teuchos::RCP<VectorBase<RangeScalar> >  t   = createMember(range); // temp column
     RTOpPack::ConstSubVectorView<RangeScalar> sv;
     std::vector<RangeScalar>  Md( dimRange * dimDomain ); // Column major
     const Index

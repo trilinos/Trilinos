@@ -53,10 +53,10 @@ public:
   //@{
 
   /** \brief . */
-  virtual Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<RangeScalar> > rangeScalarProdVecSpc() const = 0;
+  virtual Teuchos::RCP<const ScalarProdVectorSpaceBase<RangeScalar> > rangeScalarProdVecSpc() const = 0;
 
   /** \brief . */
-  virtual Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<DomainScalar> > domainScalarProdVecSpc() const = 0;
+  virtual Teuchos::RCP<const ScalarProdVectorSpaceBase<DomainScalar> > domainScalarProdVecSpc() const = 0;
 
   /** \brief Apply the linear operator to a multi-vector with respect
    * to a Euclidean vector space where the scalar product is the dot
@@ -103,9 +103,9 @@ public:
   /** @name Overridden functions from OpBase */
   //@{
   /// Returns <tt>this->rangeScalarProdVecSpc()</tt>
-  Teuchos::RefCountPtr<const VectorSpaceBase<RangeScalar> > range() const;
+  Teuchos::RCP<const VectorSpaceBase<RangeScalar> > range() const;
   /// Returns <tt>this->domainScalarProdVecSpc()</tt>
-  Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> > domain() const;
+  Teuchos::RCP<const VectorSpaceBase<DomainScalar> > domain() const;
   //@}
 
   /** @name Overridden functions from LinearOpBase */

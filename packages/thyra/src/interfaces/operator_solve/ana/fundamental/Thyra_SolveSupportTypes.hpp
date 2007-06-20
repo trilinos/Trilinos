@@ -140,7 +140,7 @@ struct SolveCriteria {
   /** \brief Any extra control parameters.
    * Note that the contents of this parameter list is totally undefined
    * and any client that uses this does so at their own peril! */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> extraParameters;
+  Teuchos::RCP<Teuchos::ParameterList> extraParameters;
   /** \brief Default construction to use default solve criteria. */
   SolveCriteria()
     :solveMeasureType()
@@ -149,7 +149,7 @@ struct SolveCriteria {
   /** \brief Construct with a specified solve criteria. */
   SolveCriteria(
     SolveMeasureType _solveMeasureType, ScalarMag _requestedTol
-    ,const Teuchos::RefCountPtr<Teuchos::ParameterList> &_extraParameters = Teuchos::null
+    ,const Teuchos::RCP<Teuchos::ParameterList> &_extraParameters = Teuchos::null
     )
     :solveMeasureType(_solveMeasureType),requestedTol(_requestedTol),extraParameters(_extraParameters)
     {}
@@ -227,7 +227,7 @@ struct SolveStatus {
   std::string message;
   /** \brief Any extra status parameters.
    * Note that the contents of this parameter list is totally undefined. */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> extraParameters;
+  Teuchos::RCP<Teuchos::ParameterList> extraParameters;
   /** \brief . */
   SolveStatus()
     :solveStatus(SOLVE_STATUS_UNKNOWN), achievedTol(unknownTolerance())
@@ -245,7 +245,7 @@ struct SolveStatus {
 template <class Scalar>
 std::ostream& operator<<( std::ostream& out_arg, const SolveStatus<Scalar> &solveStatus )
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::getFancyOStream(Teuchos::rcp(&out_arg,false));
   Teuchos::OSTab tab(out);
   *out

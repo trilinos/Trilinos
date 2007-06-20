@@ -60,7 +60,7 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   bool result, success = true;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::rcp(out_arg,false);
 
 #ifndef __sun
@@ -91,17 +91,17 @@ bool Thyra::test_single_amesos_thyra_solver(
   if(out.get()) *out << "\nA) Reading in an epetra matrix A from the file \'"<<matrixFile<<"\' ...\n";
   
   Epetra_SerialComm comm;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> epetra_A;
+  Teuchos::RCP<Epetra_CrsMatrix> epetra_A;
   EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A );
 
-  Teuchos::RefCountPtr<LinearOpBase<double> >
+  Teuchos::RCP<LinearOpBase<double> >
     A = Teuchos::rcp(new EpetraLinearOp(epetra_A));
 
   if(out.get() && dumpAll) *out << "\ndescribe(A) =\n" << describe(*A,Teuchos::VERB_EXTREME);
 
   if(out.get()) *out << "\nB) Creating a AmesosLinearOpWithSolveFactory object lowsFactory ...\n";
 
-  Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
+  Teuchos::RCP<LinearOpWithSolveFactoryBase<double> >
     lowsFactory = Teuchos::rcp(new AmesosLinearOpWithSolveFactory());
 
   lowsFactory->setParameterList(Teuchos::rcp(amesosLOWSFPL,false));
@@ -114,7 +114,7 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   if(out.get()) *out << "\nC) Creating a AmesosLinearOpWithSolve object nsA ...\n";
 
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
+  Teuchos::RCP<LinearOpWithSolveBase<double> >
     nsA = lowsFactory->createOp();
 
   initializeOp<double>( *lowsFactory, A, &*nsA );
@@ -187,10 +187,10 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   if(out.get()) *out << "\nI) Uninitialize the matrix object nsA, create a scaled (by 2.5) copy  epetra_A2 of epetra_A, and then refactor nsA with epetra_A2 ...\n";
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix>
+  Teuchos::RCP<Epetra_CrsMatrix>
     epetra_A2 = Teuchos::rcp(new Epetra_CrsMatrix(*epetra_A));
   epetra_A2->Scale(2.5);
-  Teuchos::RefCountPtr<LinearOpBase<double> >
+  Teuchos::RCP<LinearOpBase<double> >
     A2 = Teuchos::rcp(new EpetraLinearOp(epetra_A2));
   initializeOp<double>(*lowsFactory,A2,&*nsA);
   
@@ -208,9 +208,9 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   if(out.get()) *out << "\nL) Create an implicitly scaled (by 2.5) and transposed matrix A3 = scale(2.5,transpose(A)) and initialize nsA2 ...\n";
 
-  Teuchos::RefCountPtr<const LinearOpBase<double> >
+  Teuchos::RCP<const LinearOpBase<double> >
     A3 = scale<double>(2.5,Thyra::transpose<double>(A));
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
+  Teuchos::RCP<LinearOpWithSolveBase<double> >
     nsA2 = linearOpWithSolve(*lowsFactory,A3);
   
   if(out.get()) *out << "\nM) Testing the LinearOpBase interface of nsA2 ...\n";
@@ -241,7 +241,7 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   if(out.get()) *out << "\nQ) Creating a DefaultInverseLinearOp object from nsA and testing the LinearOpBase interface ...\n";
 
-  Teuchos::RefCountPtr<const LinearOpBase<double> >
+  Teuchos::RCP<const LinearOpBase<double> >
     invA = inverse<double>(nsA);
 
   result = linearOpTester.check(*invA,out.get());

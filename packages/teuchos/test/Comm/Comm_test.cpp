@@ -16,7 +16,7 @@
 template<typename Ordinal>
 bool checkSumResult(
   const Teuchos::Comm<Ordinal>                          &comm
-  ,const Teuchos::RefCountPtr<Teuchos::FancyOStream>    &out 
+  ,const Teuchos::RCP<Teuchos::FancyOStream>    &out 
   ,const bool                                           result
   )
 {
@@ -35,10 +35,10 @@ bool checkSumResult(
 template<typename Ordinal, typename Packet>
 bool testComm(
   const Teuchos::Comm<Ordinal>                          &comm
-  ,const Teuchos::RefCountPtr<Teuchos::FancyOStream>    &out 
+  ,const Teuchos::RCP<Teuchos::FancyOStream>    &out 
   )
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::FancyOStream;
   using Teuchos::VerboseObjectBase;
@@ -379,13 +379,13 @@ bool testComm(
 
 template<typename Ordinal>
 bool masterTestComm(
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream>    &out 
+  const Teuchos::RCP<Teuchos::FancyOStream>    &out 
   )
 {
 
   bool success = true, result;
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::FancyOStream;
   using Teuchos::VerboseObjectBase;
@@ -395,13 +395,13 @@ bool masterTestComm(
 
   OSTab tab(out);
 
-  RefCountPtr<const Teuchos::Comm<Ordinal> >
+  RCP<const Teuchos::Comm<Ordinal> >
     comm = Teuchos::DefaultComm<Ordinal>::getComm();
 	
 #ifdef HAVE_MPI
 
   // Test that the DefaultComm is really a DefaultMpiComm.
-  RefCountPtr<const Teuchos::MpiComm<Ordinal> > 
+  RCP<const Teuchos::MpiComm<Ordinal> > 
     mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<Ordinal> >( comm, false );
 
   if (mpiComm == Teuchos::null) {
@@ -415,7 +415,7 @@ bool masterTestComm(
       << "\n***\n";
     
     // Now get the raw pointer to the MPI_Comm object
-    RefCountPtr<const Teuchos::OpaqueWrapper<MPI_Comm> > 
+    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > 
       rawMpiComm = mpiComm->getRawMpiComm();
 
     if (static_cast<MPI_Comm>(*rawMpiComm) == 0) {
@@ -474,7 +474,7 @@ bool masterTestComm(
 int main(int argc, char* argv[])
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::FancyOStream;
   using Teuchos::VerboseObjectBase;
@@ -500,7 +500,7 @@ int main(int argc, char* argv[])
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
       return parse_return;
 
-    RefCountPtr<FancyOStream>
+    RCP<FancyOStream>
       out = VerboseObjectBase::getDefaultOStream();
 
     *out << std::endl << Teuchos::Teuchos_Version() << std::endl << std::endl;

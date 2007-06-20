@@ -99,15 +99,15 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
@@ -202,7 +202,7 @@ public:
    */
   bool readVector(
     const std::string                                   &vName
-    ,Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >   *v
+    ,Teuchos::RCP<Thyra::VectorBase<Scalar> >   *v
     ) const;
   
   /** \brief Read a newly allocated Vector as directed by the set parameter
@@ -214,15 +214,15 @@ public:
    * \returns <tt>returnVal.get()!=NULL</tt> if a vector was read and
    * <tt>returnVal.get()==NULL</tt> if no vector was read.
    */
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >
   readVector( const std::string &vName ) const;
   
   //@}
 
 private:
 
-  mutable Teuchos::RefCountPtr<const Teuchos::ParameterList> validParamList_;
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_;
+  mutable Teuchos::RCP<const Teuchos::ParameterList> validParamList_;
+  Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
   std::string                fileNameBase_;
   Teuchos::Array<Scalar>     explicitArray_;
@@ -323,7 +323,7 @@ ParameterDrivenMultiVectorInput<Scalar>::ParameterDrivenMultiVectorInput()
 
 template<class Scalar>
 void ParameterDrivenMultiVectorInput<Scalar>::setParameterList(
-  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
   TEST_FOR_EXCEPT(0==paramList.get());
@@ -344,35 +344,35 @@ void ParameterDrivenMultiVectorInput<Scalar>::setParameterList(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 ParameterDrivenMultiVectorInput<Scalar>::getParameterList()
 {
   return paramList_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 ParameterDrivenMultiVectorInput<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList>
+  Teuchos::RCP<Teuchos::ParameterList>
     _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 ParameterDrivenMultiVectorInput<Scalar>::getParameterList() const
 {
   return paramList_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 ParameterDrivenMultiVectorInput<Scalar>::getValidParameters() const
 {
   if(!validParamList_.get()) {
-    Teuchos::RefCountPtr<Teuchos::ParameterList>
+    Teuchos::RCP<Teuchos::ParameterList>
       pl = Teuchos::rcp(new Teuchos::ParameterList);
     pl->set(
       FileNameBase_name_,FileNameBase_default_
@@ -410,7 +410,7 @@ bool ParameterDrivenMultiVectorInput<Scalar>::readMultiVector(
   TEST_FOR_EXCEPT(0==mv);
   typedef Teuchos::ScalarTraits<Scalar> ST;
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = this->getOStream();
   const bool trace = ( verbLevel >= implicit_cast<int>(Teuchos::VERB_LOW) );
   Teuchos::OSTab tab(out);
@@ -453,7 +453,7 @@ bool ParameterDrivenMultiVectorInput<Scalar>::readMultiVector(
 template<class Scalar>
 bool ParameterDrivenMultiVectorInput<Scalar>::readVector(
   const std::string                                   &vName
-  ,Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >   *v
+  ,Teuchos::RCP<Thyra::VectorBase<Scalar> >   *v
   ) const
 {
   TEST_FOR_EXCEPT(0==v);
@@ -467,12 +467,12 @@ bool ParameterDrivenMultiVectorInput<Scalar>::readVector(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
+Teuchos::RCP<Thyra::VectorBase<Scalar> >
 ParameterDrivenMultiVectorInput<Scalar>::readVector(
   const std::string &vName
   ) const
 {
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > v;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > v;
   const bool vectorWasRead = readVector(vName,&v);
   if(!vectorWasRead)
     v = Teuchos::null;

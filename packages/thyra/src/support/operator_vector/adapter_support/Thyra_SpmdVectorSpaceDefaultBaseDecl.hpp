@@ -144,7 +144,7 @@ public:
 
   /** \brief Returns a <tt>DefaultSpmdVectorSpaceFactory</tt> object that has been given <tt>getComm()</tt>.
    */
-  Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
+  Teuchos::RCP< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
 
   /** \brief Checks the general compatibility of parallel (or serial on one
    * process) Spmd-based vector spaces.
@@ -206,7 +206,7 @@ private:
   Index     defaultGlobalDim_;
   Index     localSubDim_;
 
-  Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> >  smallVecSpcFcty_;
+  Teuchos::RCP< const VectorSpaceFactoryBase<Scalar> >  smallVecSpcFcty_;
   
 }; // end class SpmdVectorSpaceDefaultBase
 

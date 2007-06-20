@@ -81,18 +81,18 @@ class InterpolationBufferBaseTester
 
     /// Redefined from Teuchos::ParameterListAcceptor
     /** \brief . */
-    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+    void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
 
     /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> getParameterList();
 
     /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
 
 
   private:
     int num_rand_vectors;
-    Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList;
+    Teuchos::RCP<Teuchos::ParameterList> parameterList;
 };
 
 template<class Scalar>
@@ -130,7 +130,7 @@ bool InterpolationBufferBaseTester<Scalar>::checkSetPoints(
 {
   bool status=false;
   /*
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   typename Teuchos::ScalarTraits<Scalar> ST;
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
@@ -140,8 +140,8 @@ bool InterpolationBufferBaseTester<Scalar>::checkSetPoints(
   Thyra::seed_randomize<Scalar>(12345);
   Teuchos::ScalarTraits<Scalar>::seedrandom(12345);
 
-  std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > x_vec;
-  std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > xdot_vec;
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > x_vec;
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > xdot_vec;
   std::vector<Scalar> t_vec;
   std::vector<ScalarMag> accuracy_vec;
   int N = num_rand_vectors;
@@ -168,8 +168,8 @@ bool InterpolationBufferBaseTester<Scalar>::checkSetPoints(
       *out << "Error:  IB.setPoints() did not set a time value correctly" << std::endl;
     }
   }
-  std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > x_vec_out;
-  std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > xdot_vec_out;
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > x_vec_out;
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > xdot_vec_out;
   */
 
 
@@ -238,7 +238,7 @@ bool InterpolationBufferBaseTester<Scalar>::checkGetOrder(
     ) const
 {
   bool status = false;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   // call and verify that a reasonable number comes out, i.e. larger than zero
   int order = IB.getOrder();
   if (order >= 0) 
@@ -282,22 +282,22 @@ void InterpolationBufferBaseTester<Scalar>::describe(
 
 template<class Scalar>
 void InterpolationBufferBaseTester<Scalar>::setParameterList(
-    Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+    Teuchos::RCP<Teuchos::ParameterList> const& paramList
     )
 {
   parameterList = paramList;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> InterpolationBufferBaseTester<Scalar>::getParameterList()
+Teuchos::RCP<Teuchos::ParameterList> InterpolationBufferBaseTester<Scalar>::getParameterList()
 {
   return(parameterList);
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> InterpolationBufferBaseTester<Scalar>::unsetParameterList()
+Teuchos::RCP<Teuchos::ParameterList> InterpolationBufferBaseTester<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList;
+  Teuchos::RCP<Teuchos::ParameterList> temp_param_list = parameterList;
   parameterList = Teuchos::null;
   return(temp_param_list);
 }

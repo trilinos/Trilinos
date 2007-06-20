@@ -48,8 +48,8 @@ bool EpetraOperatorViewExtractorStd::isCompatible( const LinearOpBase<double> &f
 }
 
 void EpetraOperatorViewExtractorStd::getEpetraOpView(
-  const Teuchos::RefCountPtr<LinearOpBase<double> >   &fwdOp
-  ,Teuchos::RefCountPtr<Epetra_Operator>              *epetraOp
+  const Teuchos::RCP<LinearOpBase<double> >   &fwdOp
+  ,Teuchos::RCP<Epetra_Operator>              *epetraOp
   ,ETransp                                            *epetraOpTransp
   ,EApplyEpetraOpAs                                   *epetraOpApplyAs
   ,EAdjointEpetraOp                                   *epetraOpAdjointSupport
@@ -62,8 +62,8 @@ void EpetraOperatorViewExtractorStd::getEpetraOpView(
 }
 
 void EpetraOperatorViewExtractorStd::getEpetraOpView(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >   &fwdOp
-  ,Teuchos::RefCountPtr<const Epetra_Operator>              *epetraOp
+  const Teuchos::RCP<const LinearOpBase<double> >   &fwdOp
+  ,Teuchos::RCP<const Epetra_Operator>              *epetraOp
   ,ETransp                                                  *epetraOpTransp
   ,EApplyEpetraOpAs                                         *epetraOpApplyAs
   ,EAdjointEpetraOp                                         *epetraOpAdjointSupport
@@ -78,9 +78,9 @@ void EpetraOperatorViewExtractorStd::getEpetraOpView(
 #endif // TEUCHOS_DEBUG
   double                                              wrappedFwdOpScalar = 0.0;
   ETransp                                             wrappedFwdOpTransp = NOTRANS;
-  Teuchos::RefCountPtr<const LinearOpBase<double> >   wrappedFwdOp; 
+  Teuchos::RCP<const LinearOpBase<double> >   wrappedFwdOp; 
   unwrap(fwdOp,&wrappedFwdOpScalar,&wrappedFwdOpTransp,&wrappedFwdOp);
-  Teuchos::RefCountPtr<const EpetraLinearOpBase>
+  Teuchos::RCP<const EpetraLinearOpBase>
     epetraFwdOp = Teuchos::rcp_dynamic_cast<const EpetraLinearOpBase>(wrappedFwdOp,true);
   ETransp epetra_epetraOpTransp;
   epetraFwdOp->getEpetraOpView(epetraOp,&epetra_epetraOpTransp,epetraOpApplyAs,epetraOpAdjointSupport);

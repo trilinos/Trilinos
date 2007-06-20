@@ -122,7 +122,7 @@ public:
 
   /** \brief Returns the SPMD communicator.
    */
-  virtual Teuchos::RefCountPtr<const Teuchos::Comm<Index> > getComm() const = 0;
+  virtual Teuchos::RCP<const Teuchos::Comm<Index> > getComm() const = 0;
 
   /** \brief Returns the number of local elements stored on this process.
    *

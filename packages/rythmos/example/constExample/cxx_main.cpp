@@ -26,7 +26,7 @@
 // ***********************************************************************
 //@HEADER
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include<iostream>
 
 using namespace Teuchos;
@@ -74,49 +74,49 @@ class Foo
   public:
     Foo();
     ~Foo();
-    void setBar(const RefCountPtr<Bar> &Bptr);
-    void setConstBar(const RefCountPtr<const Bar> &Bptr);
-    const RefCountPtr<Bar> &getBar() const;
-    void test1(const RefCountPtr<Bar> &Bptr);
+    void setBar(const RCP<Bar> &Bptr);
+    void setConstBar(const RCP<const Bar> &Bptr);
+    const RCP<Bar> &getBar() const;
+    void test1(const RCP<Bar> &Bptr);
     void test2();
-    void test3(RefCountPtr<Bar> &Bptr);
-    void test4(const RefCountPtr<Bar> &Bptr);
-    RefCountPtr<Bar> &test5();
-    RefCountPtr<const Bar> &test6();
-    const RefCountPtr<Bar> &test7();
-    const RefCountPtr<Bar> test8();
-    RefCountPtr<Bar> test9();
-    RefCountPtr<Bar> &test10();
-    //RefCountPtr<Bar> &test11();
-    const RefCountPtr<const Bar> &test12();
-    const RefCountPtr<const Bar> &test13() const;
-    const RefCountPtr<Bar> &test14() const;
-    const RefCountPtr<Bar> test15() const;
+    void test3(RCP<Bar> &Bptr);
+    void test4(const RCP<Bar> &Bptr);
+    RCP<Bar> &test5();
+    RCP<const Bar> &test6();
+    const RCP<Bar> &test7();
+    const RCP<Bar> test8();
+    RCP<Bar> test9();
+    RCP<Bar> &test10();
+    //RCP<Bar> &test11();
+    const RCP<const Bar> &test12();
+    const RCP<const Bar> &test13() const;
+    const RCP<Bar> &test14() const;
+    const RCP<Bar> test15() const;
     double test16(const Bar &B);
 
   protected:
     double t_;
-    RefCountPtr<Bar> Bptr_;
-    RefCountPtr<const Bar> BptrConst_;
+    RCP<Bar> Bptr_;
+    RCP<const Bar> BptrConst_;
 
 };
 Foo::Foo() { }
 Foo::~Foo() { }
-void Foo::setBar(const RefCountPtr<Bar> &Bptr) 
+void Foo::setBar(const RCP<Bar> &Bptr) 
 { 
   Bptr_ = Bptr;  
 }
-void Foo::setConstBar(const RefCountPtr<const Bar> &Bptr) 
+void Foo::setConstBar(const RCP<const Bar> &Bptr) 
 { 
   BptrConst_ = Bptr; 
   //Bptr_ = Bptr;  // not allowed because Bptr_ is nonconst
-  //Bptr->setx(12.0); // not allowed because Bptr is const Bar RefCountPtr
+  //Bptr->setx(12.0); // not allowed because Bptr is const Bar RCP
 }
-const RefCountPtr<Bar> &Foo::getBar() const
+const RCP<Bar> &Foo::getBar() const
 {
   return(Bptr_);
 }
-void Foo::test1(const RefCountPtr<Bar> &Bptr)
+void Foo::test1(const RCP<Bar> &Bptr)
 {
   Bptr->setx(15.0);
 }
@@ -124,64 +124,64 @@ void Foo::test2()
 {
 //  BptrConst_->setx(20.0); // not allowed because BptrConst_ is const
 }
-void Foo::test3(RefCountPtr<Bar> &Bptr)
+void Foo::test3(RCP<Bar> &Bptr)
 {
-  RefCountPtr<Bar> Bptr_temp = rcp(new Bar);
+  RCP<Bar> Bptr_temp = rcp(new Bar);
   Bptr_temp->setx(25.0);
   Bptr = Bptr_temp;
 }
-void Foo::test4(const RefCountPtr<Bar> &Bptr)
+void Foo::test4(const RCP<Bar> &Bptr)
 {
-  RefCountPtr<Bar> Bptr_temp = rcp(new Bar);
+  RCP<Bar> Bptr_temp = rcp(new Bar);
   Bptr_temp->setx(30.0);
 //  Bptr = Bptr_temp; // not allowed because input is const
 }
-RefCountPtr<Bar> &Foo::test5()
+RCP<Bar> &Foo::test5()
 {
   return(Bptr_);
 }
-RefCountPtr<const Bar> &Foo::test6()
+RCP<const Bar> &Foo::test6()
 {
   //return(Bptr_); // not allowed because Bptr is nonconst
   return(BptrConst_);
 }
-const RefCountPtr<Bar> &Foo::test7()
+const RCP<Bar> &Foo::test7()
 {
   return(Bptr_);
 }
-const RefCountPtr<Bar> Foo::test8()
+const RCP<Bar> Foo::test8()
 {
   return(rcp(new Bar(45.0)));
 }
-RefCountPtr<Bar> Foo::test9()
+RCP<Bar> Foo::test9()
 {
 //  return(rcp(new Bar(55.0))); // allowed also
   return(Bptr_);
 }
-RefCountPtr<Bar> &Foo::test10()
+RCP<Bar> &Foo::test10()
 {
   return(Bptr_);
 }
 /*
-RefCountPtr<Bar> &Foo::test11()
+RCP<Bar> &Foo::test11()
 {
 //  return(rcp(new Bar(75.0))); // not allowed because I'm passing out a
   // reference to an internal object
 }
 */
-const RefCountPtr<const Bar> &Foo::test12()
+const RCP<const Bar> &Foo::test12()
 {
   return(BptrConst_);
 }
-const RefCountPtr<const Bar> &Foo::test13() const
+const RCP<const Bar> &Foo::test13() const
 {
   return(BptrConst_);
 }
-const RefCountPtr<Bar> &Foo::test14() const
+const RCP<Bar> &Foo::test14() const
 {
   return(Bptr_);
 }
-const RefCountPtr<Bar> Foo::test15() const
+const RCP<Bar> Foo::test15() const
 {
   return(Bptr_);
 }
@@ -192,7 +192,7 @@ double Foo::test16(const Bar &B)
 // ------------------------------------------------------------
 void somefunction(const Foo &F)
 {
-  RefCountPtr<Bar> Bptr = F.getBar(); // only allowed if getBar has const after it in definition
+  RCP<Bar> Bptr = F.getBar(); // only allowed if getBar has const after it in definition
 }
 // ------------------------------------------------------------
 
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
   cout << "main:  This routine tests const conditions." << endl;
 
   Foo F;
-  RefCountPtr<Bar> Bptr = rcp(new Bar);
+  RCP<Bar> Bptr = rcp(new Bar);
   Bptr->setx(10.0);
   F.setBar(Bptr);
   cout << "Correct output is x = 10." << endl;
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
   cout << "x = " << Bptr->getx() << endl;
 
   // This demonstrates that Bptr was overwritten in this member fcn call with a
-  // different RefCountPtr object, which is only possible because the argument
+  // different RCP object, which is only possible because the argument
   // list definition was nonconst.
   F.test3(Bptr);
   cout << "Correct output is x = 25." << endl;
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
 
   Bptr->setx(35.0);
 //  Bptr = F.test6(); // not allowed because Bptr is nonconst and output of test6 is const
-  RefCountPtr<const Bar> BptrConst = rcp(new Bar(40.0));
+  RCP<const Bar> BptrConst = rcp(new Bar(40.0));
   F.setConstBar(BptrConst);
   cout << "Correct output is x = 40." << endl;
   cout << "x = " << F.test6()->getx() << endl;  // valid because we put const after Bar::getx

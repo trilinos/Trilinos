@@ -49,7 +49,7 @@ namespace Thyra
    * it again in a Thyra operator interface. This lets an arbitrary Thyra
    * operator be given to the Thyra AztecOO adapters.
    */
-  RefCountPtr<const LinearOpBase<double> > 
+  RCP<const LinearOpBase<double> > 
   makeEpetraWrapper(const ConstLinearOperator<double>& thyraOp);
 
 
@@ -108,20 +108,20 @@ namespace Thyra
 
   private:
     /** */
-    RefCountPtr<Epetra_Map> thyraVSToEpetraMap(const VectorSpace<double>& vs,
-                                               const RefCountPtr<Epetra_Comm>& comm) const ;
+    RCP<Epetra_Map> thyraVSToEpetraMap(const VectorSpace<double>& vs,
+                                               const RCP<Epetra_Comm>& comm) const ;
 
     /** */
-    RefCountPtr<Epetra_Comm> getEpetraComm(const ConstLinearOperator<double>& thyraOp) const ;
+    RCP<Epetra_Comm> getEpetraComm(const ConstLinearOperator<double>& thyraOp) const ;
 
 
     bool useTranspose_;
     ConstLinearOperator<double> thyraOp_;
     VectorSpace<double> domain_;
     VectorSpace<double> range_;
-    RefCountPtr<Epetra_Comm> comm_;
-    RefCountPtr<Epetra_Map> domainMap_;
-    RefCountPtr<Epetra_Map> rangeMap_;
+    RCP<Epetra_Comm> comm_;
+    RCP<Epetra_Map> domainMap_;
+    RCP<Epetra_Map> rangeMap_;
 
     std::string label_;
   };

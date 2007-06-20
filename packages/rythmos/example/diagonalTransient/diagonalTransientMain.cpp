@@ -67,13 +67,13 @@ const std::string RythmosStepper_name = "Rythmos Stepper";
 const std::string FdCalc_name = "FD Calc";
 
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 getValidParameters()
 {
-  using Teuchos::RefCountPtr; using Teuchos::ParameterList;
-  static RefCountPtr<const ParameterList> validPL;
+  using Teuchos::RCP; using Teuchos::ParameterList;
+  static RCP<const ParameterList> validPL;
   if (is_null(validPL)) {
-    RefCountPtr<ParameterList> pl = Teuchos::parameterList();
+    RCP<ParameterList> pl = Teuchos::parameterList();
     pl->sublist(TimeStepNonlinearSolver_name);
     pl->sublist(Stratimikos_name);
     pl->sublist(DiagonalTransientModel_name);
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
   typedef double Scalar;
   typedef double ScalarMag;
   using Teuchos::describe;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_implicit_cast;
   using Teuchos::rcp_dynamic_cast;
@@ -110,14 +110,14 @@ int main(int argc, char *argv[])
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
-  RefCountPtr<Epetra_Comm> epetra_comm;
+  RCP<Epetra_Comm> epetra_comm;
 #ifdef HAVE_MPI
   epetra_comm = rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
 #else
   epetra_comm = rcp( new Epetra_SerialComm );
 #endif // HAVE_MPI
 
-  RefCountPtr<Teuchos::FancyOStream>
+  RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
     // from.
     //
     
-    RefCountPtr<ParameterList>
+    RCP<ParameterList>
       paramList = Teuchos::parameterList();
     if (linearSolverParamsFile.length())
       updateParametersFromXmlFile( linearSolverParamsFile, &*paramList );
@@ -216,14 +216,14 @@ int main(int argc, char *argv[])
 
     Thyra::DefaultRealLinearSolverBuilder linearSolverBuilder;
     linearSolverBuilder.setParameterList(sublist(paramList,Stratimikos_name));
-    RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
+    RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
       W_factory = createLinearSolveStrategy(linearSolverBuilder);
     
     //
     // Create the underlying EpetraExt::ModelEvaluator
     //
 
-    RefCountPtr<EpetraExt::DiagonalTransientModel>
+    RCP<EpetraExt::DiagonalTransientModel>
       epetraStateModel = EpetraExt::diagonalTransientModel(
         epetra_comm,
         sublist(paramList,DiagonalTransientModel_name)
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
     // Create the Thyra-wrapped ModelEvaluator
     //
     
-    RefCountPtr<Thyra::ModelEvaluator<double> >
+    RCP<Thyra::ModelEvaluator<double> >
       stateModel = epetraModelEvaluator(epetraStateModel,W_factory);
 
     *out << "\nParameter names = " << *stateModel->get_p_names(0) << "\n";
@@ -247,14 +247,14 @@ int main(int argc, char *argv[])
     // Create the Rythmos stateStepper
     //
 
-    RefCountPtr<Rythmos::TimeStepNonlinearSolver<double> >
+    RCP<Rythmos::TimeStepNonlinearSolver<double> >
       nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
-    RefCountPtr<ParameterList>
+    RCP<ParameterList>
       nonlinearSolverPL = sublist(paramList,TimeStepNonlinearSolver_name);
     nonlinearSolverPL->get("Default Tol",1e-3*maxStateError); // Set default if not set
     nonlinearSolver->setParameterList(nonlinearSolverPL);
 
-    RefCountPtr<Rythmos::StepperBase<Scalar> > stateStepper;
+    RCP<Rythmos::StepperBase<Scalar> > stateStepper;
 
     if (useBDF) {
       stateStepper = rcp(
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
       state_ic = stateModel->getNominalValues();
     *out << "\nstate_ic:\n" << describe(state_ic,verbLevel);
     
-    RefCountPtr<Rythmos::StepperAsModelEvaluator<Scalar> >
+    RCP<Rythmos::StepperAsModelEvaluator<Scalar> >
       stateIntegratorAsModel = Rythmos::stepperAsModelEvaluator(
         stateStepper, state_ic
         );
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
     
     *out << "\nUse the StepperAsModelEvaluator to integrate state x(p,finalTime) ... \n";
     
-    RefCountPtr<Thyra::VectorBase<Scalar> > x_final;
+    RCP<Thyra::VectorBase<Scalar> > x_final;
 
     {
       
@@ -330,7 +330,7 @@ int main(int argc, char *argv[])
     // Test the integrated state against the exact analytical state solution
     //
 
-    RefCountPtr<const Thyra::VectorBase<Scalar> >
+    RCP<const Thyra::VectorBase<Scalar> >
       exact_x_final = create_Vector(
         epetraStateModel->getExactSolution(finalTime),
         stateModel->get_x_space()
@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
       // Create the forward sensitivity stepper
       //
       
-      RefCountPtr<Rythmos::ForwardSensitivityStepper<Scalar> >
+      RCP<Rythmos::ForwardSensitivityStepper<Scalar> >
         stateAndSensStepper = Rythmos::forwardSensitivityStepper<Scalar>(
           stateModel, 0, stateModel->getNominalValues(),
           stateStepper, nonlinearSolver
@@ -366,17 +366,17 @@ int main(int argc, char *argv[])
       // Set the initial condition for the state and forward sensitivities
       //
 
-      RefCountPtr<Thyra::VectorBase<Scalar> > s_bar_init
+      RCP<Thyra::VectorBase<Scalar> > s_bar_init
         = createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
       assign( &*s_bar_init, 0.0 );
-      RefCountPtr<Thyra::VectorBase<Scalar> > s_bar_dot_init
+      RCP<Thyra::VectorBase<Scalar> > s_bar_dot_init
         = createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
       assign( &*s_bar_dot_init, 0.0 );
       // Above, I believe that these are the correct initial conditions for
       // s_bar and s_bar_dot given how the EpetraExt::DiagonalTransientModel
       // is currently implemented!
 
-      RefCountPtr<const Rythmos::StateAndForwardSensitivityModelEvaluator<Scalar> >
+      RCP<const Rythmos::StateAndForwardSensitivityModelEvaluator<Scalar> >
         stateAndSensModel = stateAndSensStepper->getStateAndFwdSensModel();
 
       MEB::InArgs<Scalar>
@@ -401,7 +401,7 @@ int main(int argc, char *argv[])
       // Use a StepperAsModelEvaluator to integrate the state+sens
       //
     
-      RefCountPtr<Rythmos::StepperAsModelEvaluator<Scalar> >
+      RCP<Rythmos::StepperAsModelEvaluator<Scalar> >
         stateAndSensIntegratorAsModel = Rythmos::stepperAsModelEvaluator(
           rcp_implicit_cast<Rythmos::StepperBase<Scalar> >(stateAndSensStepper),
           state_and_sens_ic
@@ -411,7 +411,7 @@ int main(int argc, char *argv[])
     
       *out << "\nUse the StepperAsModelEvaluator to integrate state + sens x_bar(p,finalTime) ... \n";
     
-      RefCountPtr<Thyra::VectorBase<Scalar> > x_bar_final;
+      RCP<Thyra::VectorBase<Scalar> > x_bar_final;
 
       {
       
@@ -442,7 +442,7 @@ int main(int argc, char *argv[])
 
         Teuchos::OSTab tab(out);
 
-        RefCountPtr<const Thyra::VectorBase<Scalar> >
+        RCP<const Thyra::VectorBase<Scalar> >
           x_in_x_bar_final = productVectorBase<Scalar>(x_bar_final)->getVectorBlock(0);
 
         result = Thyra::testRelNormDiffErr<Scalar>(
@@ -462,7 +462,7 @@ int main(int argc, char *argv[])
 
       *out << "\nApproximating DxDp(p,t) using directional finite differences of integrator for x(p,t) ...\n";
     
-      RefCountPtr<Thyra::MultiVectorBase<Scalar> > DxDp_fd_final;
+      RCP<Thyra::MultiVectorBase<Scalar> > DxDp_fd_final;
 
       {
       
@@ -517,10 +517,10 @@ int main(int argc, char *argv[])
 
         Teuchos::OSTab tab(out);
 
-        RefCountPtr<const Thyra::VectorBase<Scalar> >
+        RCP<const Thyra::VectorBase<Scalar> >
           DxDp_vec_final = Thyra::productVectorBase<Scalar>(x_bar_final)->getVectorBlock(1);
       
-        RefCountPtr<const Thyra::VectorBase<Scalar> >
+        RCP<const Thyra::VectorBase<Scalar> >
           DxDp_fd_vec_final = Thyra::multiVectorProductVector(
             rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> >(
               DxDp_vec_final->range()
@@ -600,7 +600,7 @@ int main(int argc, char *argv[])
       Rythmos::StepStatus<Scalar>
         stepStatus = stepper->getStepStatus();
 
-      RefCountPtr<const Thyra::VectorBase<Scalar> >
+      RCP<const Thyra::VectorBase<Scalar> >
         solution = stepStatus.solution,
         solutionDot = stepStatus.solutionDot;
 
@@ -609,7 +609,7 @@ int main(int argc, char *argv[])
 
       // Check the error in the state solution
 
-      RefCountPtr<const Thyra::VectorBase<Scalar> > exact_x, solved_x;
+      RCP<const Thyra::VectorBase<Scalar> > exact_x, solved_x;
 
       exact_x = create_Vector(
         epetraStateModel->getExactSolution(time),
@@ -632,7 +632,7 @@ int main(int argc, char *argv[])
      
       if (doFwdSensSolve ) {
 
-        RefCountPtr<const Thyra::VectorBase<Scalar> > exact_dxdp, solved_dxdp;
+        RCP<const Thyra::VectorBase<Scalar> > exact_dxdp, solved_dxdp;
 
         exact_dxdp =
           multiVectorProductVector(
@@ -665,7 +665,7 @@ int main(int argc, char *argv[])
           fdBasePoint.set_x(exact_x); // Will not get used but is gotten by evalModel(...)
           fdBasePoint.set_p(0,stateModel->getNominalValues().get_p(0));
 
-          RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+          RCP<Thyra::MultiVectorBase<Scalar> >
             exact_dxdp_fd = createMembers(stateModel->get_x_space(),exact_dxdp->domain()->dim());
 
           typedef Thyra::DirectionalFiniteDiffCalculatorTypes::SelectedDerivatives SelectedDerivatives; 
@@ -701,7 +701,7 @@ int main(int argc, char *argv[])
           fdBasePoint.set_x_dot(productVectorBase(solutionDot)->getVectorBlock(0).assert_not_null());
           fdBasePoint.set_p(0,stateModel->getNominalValues().get_p(0));
 
-          RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+          RCP<Thyra::MultiVectorBase<Scalar> >
             DfDp_fd = createMembers(stateModel->get_f_space(),stateModel->get_p_space(0)->dim());
           
           typedef Thyra::DirectionalFiniteDiffCalculatorTypes::SelectedDerivatives SelectedDerivatives; 
@@ -738,14 +738,14 @@ int main(int argc, char *argv[])
     
     Teuchos::OSTab tab(out);
     
-    RefCountPtr<const Thyra::VectorBase<Scalar> >
+    RCP<const Thyra::VectorBase<Scalar> >
       solution = get_x(*stepper,time);
     
     *out << "\nsolution = \n" << describe(*solution,verbLevel);
     
     // Check the error in the state solution at the final time
     
-    RefCountPtr<const Thyra::VectorBase<Scalar> > exact_x, solved_x;
+    RCP<const Thyra::VectorBase<Scalar> > exact_x, solved_x;
     
     exact_x = create_Vector(
       epetraStateModel->getExactSolution(time),
@@ -775,7 +775,7 @@ int main(int argc, char *argv[])
       const MEB::InArgs<Scalar>
         state_ic = stateModel->getNominalValues();
       
-      RefCountPtr<Rythmos::StepperAsModelEvaluator<Scalar> >
+      RCP<Rythmos::StepperAsModelEvaluator<Scalar> >
         stateIntegratorAsModel = Rythmos::stepperAsModelEvaluator(
           stateStepper, state_ic
           );
@@ -788,7 +788,7 @@ int main(int argc, char *argv[])
       {
         Teuchos::OSTab tab(out);
 
-        RefCountPtr<Thyra::VectorBase<Scalar> >
+        RCP<Thyra::VectorBase<Scalar> >
           x_p_t = createMember(stateIntegratorAsModel->get_g_space(0));
         eval_g(
           *stateIntegratorAsModel,
@@ -815,7 +815,7 @@ int main(int argc, char *argv[])
         fdBasePoint.set_t(finalTime);
         fdBasePoint.set_p(0,stateModel->getNominalValues().get_p(0));
         
-        RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+        RCP<Thyra::MultiVectorBase<Scalar> >
           DxDp_fd = createMembers(
             stateIntegratorAsModel->get_g_space(0),
             stateIntegratorAsModel->get_p_space(0)->dim()

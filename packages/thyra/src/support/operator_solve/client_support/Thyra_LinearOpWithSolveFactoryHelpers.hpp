@@ -58,14 +58,14 @@ bool isCompatible(
  * <tt>LinearOpWithSolveFactoryBase</tt> strategy object.
  * \ingroup thyra_operator_solve_support_LOWSF_helpers_grp */
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
 linearOpWithSolve(
   const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &fwdOp,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
   const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
   )
 {
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+  Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
     Op = lowsFactory.createOp();
   lowsFactory.initializeOp(defaultLinearOpSource(fwdOp),&*Op,supportSolveUse);
   return Op;
@@ -77,10 +77,10 @@ linearOpWithSolve(
  *
  * \ingroup thyra_operator_solve_support_LOWSF_helpers_grp */
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 inverse(
   const LinearOpWithSolveFactoryBase<Scalar> &LOWSF,
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &fwdOp,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
   const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED,
   const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
   const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
@@ -103,7 +103,7 @@ inverse(
 template<class Scalar>
 void initializeOp(
   const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &fwdOp,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
   LinearOpWithSolveBase<Scalar> *Op,
   const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
   )
@@ -120,7 +120,7 @@ void initializeOp(
 template<class Scalar>
 void initializeAndReuseOp(
   const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &fwdOp,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
   LinearOpWithSolveBase<Scalar> *Op
   )
 {
@@ -136,8 +136,8 @@ void initializeAndReuseOp(
 template<class Scalar>
 void initializePreconditionedOp(
   const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &fwdOp,
-  const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> > &prec,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
+  const Teuchos::RCP<const PreconditionerBase<Scalar> > &prec,
   LinearOpWithSolveBase<Scalar> *Op,
   const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
   )
@@ -156,8 +156,8 @@ void initializePreconditionedOp(
 template<class Scalar>
 void initializeApproxPreconditionedOp(
   const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &fwdOp,
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &approxFwdOp,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &approxFwdOp,
   LinearOpWithSolveBase<Scalar> *Op,
   const ESupportSolveUse supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
   )
@@ -177,14 +177,14 @@ template<class Scalar>
 void uninitializeOp(
   const LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
   LinearOpWithSolveBase<Scalar> *Op,
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > *fwdOp = NULL,
-  Teuchos::RefCountPtr<const PreconditionerBase<Scalar> > *prec = NULL,
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > *approxFwdOp = NULL,
+  Teuchos::RCP<const LinearOpBase<Scalar> > *fwdOp = NULL,
+  Teuchos::RCP<const PreconditionerBase<Scalar> > *prec = NULL,
+  Teuchos::RCP<const LinearOpBase<Scalar> > *approxFwdOp = NULL,
   ESupportSolveUse *supportSolveUse = NULL
   )
 {
-  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> > fwdOpSrc;
-  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> > approxFwdOpSrc;
+  Teuchos::RCP<const LinearOpSourceBase<Scalar> > fwdOpSrc;
+  Teuchos::RCP<const LinearOpSourceBase<Scalar> > approxFwdOpSrc;
   lowsFactory.uninitializeOp(Op,&fwdOpSrc,prec,&approxFwdOpSrc,supportSolveUse);
   if(fwdOp)
     *fwdOp = ( fwdOpSrc.get() ? fwdOpSrc->getOp() : Teuchos::null );

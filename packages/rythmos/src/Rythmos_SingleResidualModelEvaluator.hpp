@@ -82,28 +82,28 @@ public:
 
   /** \brief . */
   void initializeSingleResidualModel(
-    const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &daeModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
     const Scalar &coeff_x_dot,
-    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_dot_base,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_dot_base,
     const Scalar &coeff_x,
-    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_base,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_base,
     const Scalar &t_base,
-    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_bar_init
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_bar_init
     );
 
   /** \brief . */
   Scalar get_coeff_x_dot() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >
   get_x_dot_base() const;
 
   /** \brief . */
   Scalar get_coeff_x() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >
   get_x_base() const;
 
   /** \brief . */
@@ -132,16 +132,16 @@ private:
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   Scalar coeff_x_dot_;
-  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > x_dot_base_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_dot_base_;
   Scalar coeff_x_;
-  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > x_base_;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_base_;
   Scalar t_base_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
 
   // cache
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_;
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_;
 
 
 };
@@ -164,14 +164,14 @@ SingleResidualModelEvaluator<Scalar>::SingleResidualModelEvaluator()
 
 template<class Scalar>
 void SingleResidualModelEvaluator<Scalar>::initializeSingleResidualModel(
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &daeModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
   const Scalar &coeff_x_dot,
-  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_dot_base,
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_dot_base,
   const Scalar &coeff_x,
-  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_base,
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_base,
   const Scalar &t_base,
-  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_bar_init
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_bar_init
   )
 {
   this->Thyra::ModelEvaluatorDelegatorBase<Scalar>::initialize(daeModel);
@@ -234,7 +234,7 @@ Scalar SingleResidualModelEvaluator<Scalar>::get_coeff_x_dot() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 SingleResidualModelEvaluator<Scalar>::get_x_dot_base() const
 {
   return x_dot_base_;
@@ -249,7 +249,7 @@ Scalar SingleResidualModelEvaluator<Scalar>::get_coeff_x() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 SingleResidualModelEvaluator<Scalar>::get_x_base() const
 {
   return x_base_;
@@ -308,7 +308,7 @@ void SingleResidualModelEvaluator<Scalar>::evalModel(
   using Teuchos::as;
   typedef Thyra::ModelEvaluatorBase MEB;
 
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
     daeModel = this->getUnderlyingModel();
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
@@ -370,7 +370,7 @@ void SingleResidualModelEvaluator<Scalar>::evalModel(
   if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW))
     *out << "\nEvaluating the underlying DAE model at (x_bar_dot,x_bar,t) ...\n";
 
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> > W;
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > W;
 
   MEB::InArgs<Scalar> daeInArgs = daeModel->createInArgs();
   daeInArgs.setArgs(basePoint_);

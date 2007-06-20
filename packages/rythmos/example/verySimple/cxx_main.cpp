@@ -45,20 +45,20 @@ int main(int argc, char *argv[])
 
   typedef double Scalar;
 
-  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm;
+  Teuchos::RCP<const Epetra_Comm> epetra_comm;
   epetra_comm = Teuchos::rcp(new Epetra_SerialComm);
 
   // Construct a Map with NumElements and index base of 0
-  Teuchos::RefCountPtr<const Epetra_Map> epetra_map;
+  Teuchos::RCP<const Epetra_Map> epetra_map;
   epetra_map = Teuchos::rcp(new Epetra_Map(NumElements, 0, *epetra_comm));
   // Construct a VectorSpace from the map
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > epetra_vs;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > epetra_vs;
   epetra_vs = Thyra::create_VectorSpace(epetra_map);
   
 
   // Create x and b vectors
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > b = Thyra::createMember(epetra_vs);
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x = Thyra::createMember(epetra_vs);
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > b = Thyra::createMember(epetra_vs);
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x = Thyra::createMember(epetra_vs);
 
   Thyra::randomize(0.0,1.0,&*b); // b = random
   Thyra::V_StV(&*x,2.0,*b); // x = 2*b
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 //    cout << "Element " << i << " of x = " << Thyra::get_ele(*x,i) << endl;
 
 // Test out get_Epetra_Vector:
-//  Teuchos::RefCountPtr<Epetra_Vector> x_epetra = Thyra::get_Epetra_Vector(*epetra_map,x);
+//  Teuchos::RCP<Epetra_Vector> x_epetra = Thyra::get_Epetra_Vector(*epetra_map,x);
 //  for (int i=0;i<NumElements;++i)
 //    cout << "Element " << i << " of x = " << (*x_epetra)[i] << endl;
 

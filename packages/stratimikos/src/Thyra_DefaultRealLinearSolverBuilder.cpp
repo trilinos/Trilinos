@@ -59,10 +59,10 @@ const std::string PreconditionerType_name    = "Preconditioner Type";
 const std::string PreconditionerTypes_name   = "Preconditioner Types";
 const std::string None_name = "None";
 
-Teuchos::RefCountPtr<const Teuchos::StringToIntegralParameterEntryValidator<int> >
+Teuchos::RCP<const Teuchos::StringToIntegralParameterEntryValidator<int> >
 lowsfValidator;
 
-Teuchos::RefCountPtr<const Teuchos::StringToIntegralParameterEntryValidator<int> >
+Teuchos::RCP<const Teuchos::StringToIntegralParameterEntryValidator<int> >
 pfValidator;
 
 } // namespace 
@@ -99,7 +99,7 @@ DefaultRealLinearSolverBuilder::~DefaultRealLinearSolverBuilder()
 }
 
 void DefaultRealLinearSolverBuilder::setLinearSolveStrategyFactory(
-  const Teuchos::RefCountPtr<const Teuchos::AbstractFactory<LinearOpWithSolveFactoryBase<double> > >  &solveStrategyFactory
+  const Teuchos::RCP<const Teuchos::AbstractFactory<LinearOpWithSolveFactoryBase<double> > >  &solveStrategyFactory
   ,const std::string                                                                                  &solveStrategyName
   )
 {
@@ -110,7 +110,7 @@ void DefaultRealLinearSolverBuilder::setLinearSolveStrategyFactory(
 }
 
 void DefaultRealLinearSolverBuilder::setPreconditioningStrategyFactory(
-  const Teuchos::RefCountPtr<const Teuchos::AbstractFactory<PreconditionerFactoryBase<double> > >     &precStrategyFactory
+  const Teuchos::RCP<const Teuchos::AbstractFactory<PreconditionerFactoryBase<double> > >     &precStrategyFactory
   ,const std::string                                                                                  &precStrategyName
   )
 {
@@ -185,7 +185,7 @@ DefaultRealLinearSolverBuilder::getPreconditionerStrategyName() const
 // Overridden from ParameterListAcceptor
 
 void DefaultRealLinearSolverBuilder::setParameterList(
-  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
   TEST_FOR_EXCEPT(!paramList.get());
@@ -196,31 +196,31 @@ void DefaultRealLinearSolverBuilder::setParameterList(
   paramList_ = paramList;
 }
 
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 DefaultRealLinearSolverBuilder::getParameterList()
 {
   return paramList_;
 }
 
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 DefaultRealLinearSolverBuilder::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> _paramList = paramList_;
+  Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 DefaultRealLinearSolverBuilder::getParameterList() const
 {
   return paramList_;
 }
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 DefaultRealLinearSolverBuilder::getValidParameters() const
 {
   if(!validParamList_.get()) {
-    Teuchos::RefCountPtr<Teuchos::ParameterList>
+    Teuchos::RCP<Teuchos::ParameterList>
       validParamList = Teuchos::rcp(new Teuchos::ParameterList);
     // Linear Solver Types
     lowsfValidator = Teuchos::rcp(
@@ -246,7 +246,7 @@ DefaultRealLinearSolverBuilder::getValidParameters() const
     for( int i = 0; i < static_cast<int>(lowsfArray_.size()); ++i ) {
       const std::string
         &lsname = validLowsfNames_[i];
-      const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
+      const Teuchos::RCP<LinearOpWithSolveFactoryBase<double> >
         lowsf = lowsfArray_[i]->create();
       linearSolverTypesSL.sublist(lsname).setParameters(*lowsf->getValidParameters());
     }
@@ -276,7 +276,7 @@ DefaultRealLinearSolverBuilder::getValidParameters() const
     for( int i = 0; i < static_cast<int>(pfArray_.size()); ++i ) {
       const std::string
         &pfname = validPfNames_[i+1]; // "None" is the 0th entry!
-      const Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
+      const Teuchos::RCP<PreconditionerFactoryBase<double> >
         pf = pfArray_[i]->create();
       precTypesSL.sublist(pfname).setParameters(*pf->getValidParameters());
     }
@@ -287,7 +287,7 @@ DefaultRealLinearSolverBuilder::getValidParameters() const
   
 // Overridden from LinearSolverBuilderBase.
 
-Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
+Teuchos::RCP<LinearOpWithSolveFactoryBase<double> >
 DefaultRealLinearSolverBuilder::createLinearSolveStrategy(
   const std::string &linearSolveStrategyName
   ) const
@@ -311,12 +311,12 @@ DefaultRealLinearSolverBuilder::createLinearSolveStrategy(
   const int
     ls_idx = lowsfValidator->getIntegralValue(lsname,LinearSolverType_name);
   // Create the uninitialized LOWSFB object
-  Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
+  Teuchos::RCP<LinearOpWithSolveFactoryBase<double> >
     lowsf = lowsfArray_[ls_idx]->create();
   // First, set the preconditioner factory and its parameters
   if(lowsf->acceptsPreconditionerFactory()) {
     const std::string &pfName = this->getPreconditionerStrategyName();
-    Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
+    Teuchos::RCP<PreconditionerFactoryBase<double> >
       pf = this->createPreconditioningStrategy(pfName);
     if(pf.get())
       lowsf->setPreconditionerFactory(pf,pfName);
@@ -328,7 +328,7 @@ DefaultRealLinearSolverBuilder::createLinearSolveStrategy(
   return lowsf;
 }
 
-Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
+Teuchos::RCP<PreconditionerFactoryBase<double> >
 DefaultRealLinearSolverBuilder::createPreconditioningStrategy(
   const std::string &preconditioningStrategyName
   ) const
@@ -338,7 +338,7 @@ DefaultRealLinearSolverBuilder::createPreconditioningStrategy(
     pfname = ( preconditioningStrategyName.length()
              ? preconditioningStrategyName
              : this->getPreconditionerStrategyName() );
-  Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
+  Teuchos::RCP<PreconditionerFactoryBase<double> >
     pf = Teuchos::null;
   // Get the index of this preconditioning strategy (this will validate!)
   const int

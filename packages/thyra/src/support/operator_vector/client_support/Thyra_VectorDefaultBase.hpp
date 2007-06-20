@@ -47,7 +47,7 @@
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
 #  include "Teuchos_VerboseObject.hpp"
 #  define THYRA_VECTOR_VERBOSE_OUT_STATEMENT \
-     Teuchos::RefCountPtr<Teuchos::FancyOStream> dbgout = Teuchos::VerboseObjectBase::getDefaultOStream()
+     Teuchos::RCP<Teuchos::FancyOStream> dbgout = Teuchos::VerboseObjectBase::getDefaultOStream()
 #endif // THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
 
 
@@ -61,7 +61,7 @@ template<class Scalar>
 std::string VectorDefaultBase<Scalar>::description() const
 {
   std::ostringstream oss;
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >
     space = this->space();
   oss << Teuchos::Describable::description();
   if(is_null(space)) {
@@ -81,10 +81,10 @@ void VectorDefaultBase<Scalar>::describe(
     ,const Teuchos::EVerbosityLevel      verbLevel
     ) const
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   *out << this->description() << "\n";
   tab.incrTab();
@@ -101,7 +101,7 @@ void VectorDefaultBase<Scalar>::describe(
 // Overridden from LinearOpBase
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 VectorDefaultBase<Scalar>::range() const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -112,7 +112,7 @@ VectorDefaultBase<Scalar>::range() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 VectorDefaultBase<Scalar>::domain() const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -220,7 +220,7 @@ void VectorDefaultBase<Scalar>::validateColIndexes(  const int numCols, const in
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
+Teuchos::RCP<VectorBase<Scalar> >
 VectorDefaultBase<Scalar>::col(Index j)
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -234,7 +234,7 @@ VectorDefaultBase<Scalar>::col(Index j)
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 VectorDefaultBase<Scalar>::clone_mv() const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -245,7 +245,7 @@ VectorDefaultBase<Scalar>::clone_mv() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+Teuchos::RCP<const MultiVectorBase<Scalar> >
 VectorDefaultBase<Scalar>::subView( const Range1D& col_rng ) const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -257,7 +257,7 @@ VectorDefaultBase<Scalar>::subView( const Range1D& col_rng ) const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 VectorDefaultBase<Scalar>::subView( const Range1D& col_rng )
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -269,7 +269,7 @@ VectorDefaultBase<Scalar>::subView( const Range1D& col_rng )
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+Teuchos::RCP<const MultiVectorBase<Scalar> >
 VectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] ) const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -281,7 +281,7 @@ VectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] ) const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 VectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] )
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -371,14 +371,14 @@ void VectorDefaultBase<Scalar>::commitDetachedView( RTOpPack::SubMultiVectorView
 // Overridden from VectorBase
 
 template<class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
+Teuchos::RCP<VectorBase<Scalar> >
 VectorDefaultBase<Scalar>::clone_v() const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
   *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::clone_v() called!\n";
 #endif
-  Teuchos::RefCountPtr<VectorBase<Scalar> > copy = createMember(this->space());
+  Teuchos::RCP<VectorBase<Scalar> > copy = createMember(this->space());
   assign( &*copy, *this );
   return copy;
 }
@@ -401,7 +401,7 @@ void VectorDefaultBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOp
   // Initialize the operator
   RTOpPack::ROpGetSubVector<Scalar> get_sub_vector_op(rng.lbound(),rng.ubound());
   // Create the reduction object (another sub_vec)
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget>
+  Teuchos::RCP<RTOpPack::ReductTarget>
     reduct_obj = get_sub_vector_op.reduct_obj_create(); // This is really of type RTOpPack::ConstSubVectorView<Scalar>!
   // Perform the reduction (get the sub-vector requested)
   const VectorBase<Scalar>* sub_vecs[] = { this };

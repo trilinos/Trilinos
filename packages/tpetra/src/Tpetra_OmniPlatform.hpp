@@ -30,7 +30,7 @@
 #define TPETRA_OMNIPLATFORM_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_OmniPlatformData.hpp"
 #include "Tpetra_SerialComm.hpp"
@@ -154,10 +154,10 @@ namespace Tpetra {
 			If you would like a specific type of Comm object, specify a CommType
 			argument (i.e. "SERIAL", "MPI", etc.)
 
-			The new Comm instance will be pointed to by the RefCountPtr passed in.
+			The new Comm instance will be pointed to by the RCP passed in.
 		*/
 		template <typename OrdinalType, typename ScalarType>
-		void createComm(Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> >& comm, CommType ct = GENERIC) const {
+		void createComm(Teuchos::RCP< Comm<OrdinalType, ScalarType> >& comm, CommType ct = GENERIC) const {
 			if(!isEnabled(ct))
 				throw reportError("That CommType is not enabled", -1);
 
@@ -200,13 +200,13 @@ namespace Tpetra {
 		// private member functions - used by createComm
 
 		template <typename OrdinalType, typename ScalarType>
-		void createSerialComm(Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> >& comm) const {
+		void createSerialComm(Teuchos::RCP< Comm<OrdinalType, ScalarType> >& comm) const {
 			// serial is always enabled - no need for an #ifdef
 			comm = Teuchos::rcp(new SerialComm<OrdinalType, ScalarType>());
 		}
 
 		template <typename OrdinalType, typename ScalarType>
-		void createMpiComm(Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> >& comm) const {
+		void createMpiComm(Teuchos::RCP< Comm<OrdinalType, ScalarType> >& comm) const {
 #ifdef TPETRA_MPI
 			comm = Teuchos::rcp(new MpiComm<OrdinalType, ScalarType>(data().MpiComm_));
 #else
@@ -215,7 +215,7 @@ namespace Tpetra {
 		}
 
 		template <typename OrdinalType, typename ScalarType>
-		void createThreadedMpiComm(Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> >& comm) const {
+		void createThreadedMpiComm(Teuchos::RCP< Comm<OrdinalType, ScalarType> >& comm) const {
 #ifdef TPETRA_THREADED_MPI
 			// -- creation of a Tpetra::ThreadedMpiComm would go here --
 #else
@@ -229,7 +229,7 @@ namespace Tpetra {
 
 		// private data members
 
-		Teuchos::RefCountPtr<OmniPlatformData> OmniPlatformData_;
+		Teuchos::RCP<OmniPlatformData> OmniPlatformData_;
 	
 	}; // OmniPlatform class
 	

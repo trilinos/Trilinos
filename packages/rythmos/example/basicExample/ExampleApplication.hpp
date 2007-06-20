@@ -46,25 +46,25 @@ class ExampleApplication : public EpetraExt::ModelEvaluator {
 public:
 
   // Constructor
-  ExampleApplication(Teuchos::RefCountPtr<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params);
+  ExampleApplication(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params);
   // return ODE decay coefficient
-  Teuchos::RefCountPtr<const Epetra_Vector> get_coeff() const;
+  Teuchos::RCP<const Epetra_Vector> get_coeff() const;
   //
-  Teuchos::RefCountPtr<const Epetra_Vector> getExactSolution(double t) const;
+  Teuchos::RCP<const Epetra_Vector> getExactSolution(double t) const;
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_x_map() const;
+  Teuchos::RCP<const Epetra_Map> get_x_map() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_f_map() const;
+  Teuchos::RCP<const Epetra_Map> get_f_map() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
+  Teuchos::RCP<const Epetra_Vector> get_x_init() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_x_dot_init() const;
+  Teuchos::RCP<const Epetra_Vector> get_x_dot_init() const;
   /** \brief . */
-  Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
+  Teuchos::RCP<Epetra_Operator> create_W() const;
   /** \brief . */
   InArgs createInArgs() const;
   /** \brief . */
@@ -79,9 +79,9 @@ public:
 private:
 
     // Epetra Comm:
-    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_;
+    Teuchos::RCP<Epetra_Comm> epetra_comm_ptr_;
     // Epetra Map:
-    Teuchos::RefCountPtr<Epetra_Map> epetra_map_ptr_;
+    Teuchos::RCP<Epetra_Map> epetra_map_ptr_;
     
     // Mode
     bool implicit_;
@@ -92,11 +92,11 @@ private:
     double lambda_max_;
     double coeff_s_; // Coefficient for forcing term
     std::string lambda_fit_;
-    Teuchos::RefCountPtr<Epetra_Vector> lambda_ptr_;
+    Teuchos::RCP<Epetra_Vector> lambda_ptr_;
     // Constant initial condition for the problem:
     double x0_;
 
-    Teuchos::RefCountPtr<Epetra_CrsGraph> W_graph_;
+    Teuchos::RCP<Epetra_CrsGraph> W_graph_;
 
 };
 

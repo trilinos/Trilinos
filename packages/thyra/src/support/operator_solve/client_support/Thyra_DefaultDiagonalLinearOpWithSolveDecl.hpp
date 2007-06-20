@@ -95,7 +95,7 @@ public:
 
   /// Calls <tt>initialize()</tt>
   DefaultDiagonalLinearOpWithSolve(
-    const Teuchos::RefCountPtr<const VectorBase<Scalar> >   &diag
+    const Teuchos::RCP<const VectorBase<Scalar> >   &diag
     );
 
 protected:

@@ -47,28 +47,28 @@ class ExampleApplication1Dfem : public EpetraExt::ModelEvaluator {
 public:
 
   // Constructor
-  ExampleApplication1Dfem(Teuchos::RefCountPtr<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params);
+  ExampleApplication1Dfem(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params);
 
   // Initialization
-  void initialize(Teuchos::RefCountPtr<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params);
+  void initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params);
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_x_map() const;
+  Teuchos::RCP<const Epetra_Map> get_x_map() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_f_map() const;
+  Teuchos::RCP<const Epetra_Map> get_f_map() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
+  Teuchos::RCP<const Epetra_Vector> get_x_init() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_x_dot_init() const;
+  Teuchos::RCP<const Epetra_Vector> get_x_dot_init() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
+  Teuchos::RCP<Epetra_Operator> create_W() const;
 
   /** \brief . */
   InArgs createInArgs() const;
@@ -80,24 +80,24 @@ public:
   void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<Epetra_Vector> get_exact_solution( double t ) const;
+  Teuchos::RCP<Epetra_Vector> get_exact_solution( double t ) const;
 
   //@}
 
 private:
 
     // Epetra Comm:
-    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_;
+    Teuchos::RCP<Epetra_Comm> epetra_comm_ptr_;
     // Epetra Map:
-    Teuchos::RefCountPtr<const Epetra_Map> epetra_map_ptr_;
+    Teuchos::RCP<const Epetra_Map> epetra_map_ptr_;
     
     // Global number of unknowns:
     int numElements_;
 
-    Teuchos::RefCountPtr<Epetra_CrsGraph> W_graph_;
+    Teuchos::RCP<Epetra_CrsGraph> W_graph_;
 
     // This ModelEvaluator object will own a TransientInterface object
-    Teuchos::RefCountPtr<TransientInterface> problemInterfacePtr_;
+    Teuchos::RCP<TransientInterface> problemInterfacePtr_;
 };
 
 #endif // EXAMPLE_APPLICATION_HPP

@@ -48,13 +48,13 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
     
     /** \brief. */
     InterpolationBuffer();
-    InterpolationBuffer( const Teuchos::RefCountPtr<InterpolatorBase<Scalar> >& interpolator_, int storage_ );
+    InterpolationBuffer( const Teuchos::RCP<InterpolatorBase<Scalar> >& interpolator_, int storage_ );
 
     /// Initialize the buffer:
-    void initialize( const Teuchos::RefCountPtr<InterpolatorBase<Scalar> >& interpolator_, int storage_ );
+    void initialize( const Teuchos::RCP<InterpolatorBase<Scalar> >& interpolator_, int storage_ );
 
     /// Set the interpolator for this buffer
-    void SetInterpolator(const Teuchos::RefCountPtr<InterpolatorBase<Scalar> >& interpolator_);
+    void SetInterpolator(const Teuchos::RCP<InterpolatorBase<Scalar> >& interpolator_);
 
     /// Set the maximum storage of this buffer
     void SetStorage( int storage );
@@ -65,21 +65,21 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
     /// Add point to buffer
     bool setPoints(
       const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
       ,const std::vector<ScalarMag> & accuracy_vec 
       );
 
     bool setPoints(
       const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec);
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec);
 
     /// Get value from buffer
     bool getPoints(
       const std::vector<Scalar>& time_vec
-      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec
-      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
       ,std::vector<ScalarMag>* accuracy_vec) const;
 
     /// Fill data in from another interpolation buffer
@@ -111,13 +111,13 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
 
     /// Redefined from Teuchos::ParameterListAcceptor
     /** \brief . */
-    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+    void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
 
     /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> getParameterList();
 
     /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
 
     enum IBPolicy {
       BUFFER_STATIC = 0
@@ -126,11 +126,11 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
     
   private:
 
-    Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator;
+    Teuchos::RCP<InterpolatorBase<Scalar> > interpolator;
     int storage_limit;
     typename DataStore<Scalar>::DataStoreVector_t data_vec;
 
-    Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList;
+    Teuchos::RCP<Teuchos::ParameterList> parameterList;
 
     IBPolicy policy;
 
@@ -146,7 +146,7 @@ InterpolationBuffer<Scalar>::InterpolationBuffer()
 
 template<class Scalar>
 InterpolationBuffer<Scalar>::InterpolationBuffer( 
-    const Teuchos::RefCountPtr<InterpolatorBase<Scalar> >& interpolator_
+    const Teuchos::RCP<InterpolatorBase<Scalar> >& interpolator_
     ,int storage_ 
     )
 {
@@ -155,11 +155,11 @@ InterpolationBuffer<Scalar>::InterpolationBuffer(
 
 template<class Scalar>
 void InterpolationBuffer<Scalar>::initialize( 
-    const Teuchos::RefCountPtr<InterpolatorBase<Scalar> >& interpolator_
+    const Teuchos::RCP<InterpolatorBase<Scalar> >& interpolator_
     ,int storage_
     )
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
   out->setMaxLenLinePrefix(30);
   //out->pushLinePrefix("Rythmos::InterpolationBuffer");
@@ -182,7 +182,7 @@ template<class Scalar>
 void InterpolationBuffer<Scalar>::SetStorage( int storage_ )
 {
   storage_limit = max(2,storage_); // Minimum of two points so interpolation is possible
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IB::SetStorage");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "storage_limit = " << storage_limit << std::endl;
@@ -196,7 +196,7 @@ void InterpolationBuffer<Scalar>::SetStorage( int storage_ )
 
 template<class Scalar>
 void InterpolationBuffer<Scalar>::SetInterpolator(
-    const Teuchos::RefCountPtr<InterpolatorBase<Scalar> >& interpolator_
+    const Teuchos::RCP<InterpolatorBase<Scalar> >& interpolator_
     )
 {
   if (interpolator_ == Teuchos::null) {
@@ -204,7 +204,7 @@ void InterpolationBuffer<Scalar>::SetInterpolator(
   } else {
     interpolator = interpolator_;
   }
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IB::SetInterpolator");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "interpolator = " << interpolator->description() << std::endl;
@@ -214,12 +214,12 @@ void InterpolationBuffer<Scalar>::SetInterpolator(
 template<class Scalar>
 bool InterpolationBuffer<Scalar>::setPoints( 
     const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec 
+    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec 
     ,const std::vector<ScalarMag> & accuracy_vec 
     )
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IB::setPoints");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "time_vec = " << std::endl;
@@ -348,8 +348,8 @@ bool InterpolationBuffer<Scalar>::setPoints(
 template<class Scalar>
 bool InterpolationBuffer<Scalar>::setPoints( 
     const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec )
+    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   std::vector<ScalarMag> accuracy_vec;
@@ -363,11 +363,11 @@ bool InterpolationBuffer<Scalar>::setPoints(
 template<class Scalar>
 bool InterpolationBuffer<Scalar>::getPoints(
     const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IB::getPoints");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "Calling interpolate..." << std::endl;
@@ -401,7 +401,7 @@ bool InterpolationBuffer<Scalar>::setRange(
 {
   const Scalar time_lower = range.lower();
   const Scalar time_upper = range.upper();
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IB::setRange");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << "time_lower = " << time_lower << std::endl;
@@ -518,8 +518,8 @@ bool InterpolationBuffer<Scalar>::setRange(
   // Don't forget to check the interval [time_lower,time_upper].
   // Use setPoints and check return value to make sure we observe storage_limit.
 
-  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > input_x;
-  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > input_xdot;
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > input_x;
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > input_xdot;
   std::vector<ScalarMag> input_accuracy;
   status = IB.getPoints( input_nodes, &input_x, &input_xdot, &input_accuracy );
   if (!status) { 
@@ -546,7 +546,7 @@ bool InterpolationBuffer<Scalar>::getNodes( std::vector<Scalar>* time_vec ) cons
   for (int i=0 ; i<N ; ++i) {
     time_vec->push_back(data_vec[i].time);
   }
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IB::getNodes");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     *out << this->description() << std::endl;
@@ -562,7 +562,7 @@ bool InterpolationBuffer<Scalar>::removeNodes( std::vector<Scalar>& time_vec )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   ScalarMag z = ST::zero();
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > vec_temp;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > vec_temp;
   int N = time_vec.size();
   for (int i=0; i<N ; ++i) {
     DataStore<Scalar> ds_temp(time_vec[i],vec_temp,vec_temp,z);
@@ -612,7 +612,7 @@ void InterpolationBuffer<Scalar>::describe(
 }
 
 template <class Scalar>
-void InterpolationBuffer<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+void InterpolationBuffer<Scalar>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
   parameterList = paramList;
   int outputLevel = parameterList->get( "outputLevel", int(-1) );
@@ -624,15 +624,15 @@ void InterpolationBuffer<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos:
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> InterpolationBuffer<Scalar>::getParameterList()
+Teuchos::RCP<Teuchos::ParameterList> InterpolationBuffer<Scalar>::getParameterList()
 {
   return(parameterList);
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> InterpolationBuffer<Scalar>::unsetParameterList()
+Teuchos::RCP<Teuchos::ParameterList> InterpolationBuffer<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList;
+  Teuchos::RCP<Teuchos::ParameterList> temp_param_list = parameterList;
   parameterList = Teuchos::null;
   return(temp_param_list);
 }

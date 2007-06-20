@@ -66,10 +66,10 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   // Initialize MPI and setup an Epetra communicator
   MPI_Init(&argc,&argv);
-  Teuchos::RefCountPtr<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
+  Teuchos::RCP<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
 #else
   // If we aren't using MPI, then setup a serial communicator.
-  Teuchos::RefCountPtr<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
+  Teuchos::RCP<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
 #endif
 
 
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
-  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( new Epetra_Map(dim, 0, *Comm) );
+  Teuchos::RCP<Epetra_Map> Map = Teuchos::rcp( new Epetra_Map(dim, 0, *Comm) );
   
   // Get update list and number of local equations from newly created Map.
   int NumMyElements = Map->NumMyElements();
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   }
 
   // Create an Epetra_Matrix
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Map, &NumNz[0]) );
+  Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Map, &NumNz[0]) );
    
   // Add  rows one-at-a-time
   // Need some vectors to help
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
   assert(ierr==0);
 
   // Create an Belos::EpetraOp from this Epetra_CrsMatrix
-  Teuchos::RefCountPtr<Belos::EpetraOp> op = Teuchos::rcp(new Belos::EpetraOp(A));
+  Teuchos::RCP<Belos::EpetraOp> op = Teuchos::rcp(new Belos::EpetraOp(A));
 
   // Issue several useful typedefs;
   typedef Belos::MultiVec<double> EMV;
@@ -157,11 +157,11 @@ int main(int argc, char *argv[])
 
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note that this needs to have the same number of columns as the blocksize.
-  Teuchos::RefCountPtr<Belos::EpetraMultiVec> ivec = Teuchos::rcp( new Belos::EpetraMultiVec(*Map, blockSize) );
+  Teuchos::RCP<Belos::EpetraMultiVec> ivec = Teuchos::rcp( new Belos::EpetraMultiVec(*Map, blockSize) );
   ivec->Random();
 
   // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Belos::OutputManager<double> > MyOM = Teuchos::rcp( new Belos::OutputManager<double>( MyPID ) );
+  Teuchos::RCP<Belos::OutputManager<double> > MyOM = Teuchos::rcp( new Belos::OutputManager<double>( MyPID ) );
   if (verbose) {
     MyOM->SetVerbosity( Belos::Errors + Belos::Warnings );
   }
@@ -172,15 +172,15 @@ int main(int argc, char *argv[])
   // create thyra objects from the epetra objects
 
   // first, a Thyra::VectorSpaceBase
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > epetra_vs = 
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > epetra_vs = 
     Thyra::create_VectorSpace(Map);
 
   // then, a MultiVectorBase (from the Epetra_MultiVector)
-  Teuchos::RefCountPtr<Thyra::MultiVectorBase<double> > thyra_ivec = 
+  Teuchos::RCP<Thyra::MultiVectorBase<double> > thyra_ivec = 
     Thyra::create_MultiVector(rcp_implicit_cast<Epetra_MultiVector>(ivec),epetra_vs);
 
   // then, a LinearOpBase (from the Epetra_CrsMatrix)
-  Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > thyra_op = 
+  Teuchos::RCP<Thyra::LinearOpBase<double> > thyra_op = 
     Teuchos::rcp( new Thyra::EpetraLinearOp(A) );
 
 

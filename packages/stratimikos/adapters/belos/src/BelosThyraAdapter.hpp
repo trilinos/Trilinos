@@ -73,9 +73,9 @@ namespace Belos {
       
     \return Reference-counted pointer to the new MultiVectorBase.
     */
-    static Teuchos::RefCountPtr<TMVB> Clone( const TMVB& mv, const int numvecs )
+    static Teuchos::RCP<TMVB> Clone( const TMVB& mv, const int numvecs )
     { 
-      Teuchos::RefCountPtr<TMVB> c = Thyra::createMembers( mv.range(), numvecs ); 
+      Teuchos::RCP<TMVB> c = Thyra::createMembers( mv.range(), numvecs ); 
       return c;
     }
 
@@ -83,11 +83,11 @@ namespace Belos {
       
       \return Reference-counted pointer to the new MultiVectorBase.
     */
-    static Teuchos::RefCountPtr<TMVB> CloneCopy( const TMVB& mv )
+    static Teuchos::RCP<TMVB> CloneCopy( const TMVB& mv )
     { 
       int numvecs = mv.domain()->dim();
       // create the new multivector
-      Teuchos::RefCountPtr< TMVB > cc = Thyra::createMembers( mv.range(), numvecs );
+      Teuchos::RCP< TMVB > cc = Thyra::createMembers( mv.range(), numvecs );
       // copy the data from the source multivector to the new multivector
       Thyra::assign(&*cc, mv);
       return cc;
@@ -98,13 +98,13 @@ namespace Belos {
       The copied vectors from \c mv are indicated by the \c indeX.size() indices in \c index.      
       \return Reference-counted pointer to the new MultiVectorBase.
     */
-    static Teuchos::RefCountPtr<TMVB> CloneCopy( const TMVB& mv, const std::vector<int>& index )
+    static Teuchos::RCP<TMVB> CloneCopy( const TMVB& mv, const std::vector<int>& index )
     { 
       int numvecs = index.size();
       // create the new multivector
-      Teuchos::RefCountPtr< TMVB > cc = Thyra::createMembers( mv.range(), numvecs );
+      Teuchos::RCP< TMVB > cc = Thyra::createMembers( mv.range(), numvecs );
       // create a view to the relevant part of the source multivector
-      Teuchos::RefCountPtr< const TMVB > view = mv.subView( numvecs, &(index[0]) );
+      Teuchos::RCP< const TMVB > view = mv.subView( numvecs, &(index[0]) );
       // copy the data from the relevant view to the new multivector
       Thyra::assign(&*cc, *view);
       return cc;
@@ -115,7 +115,7 @@ namespace Belos {
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new MultiVectorBase.
     */      
-    static Teuchos::RefCountPtr<TMVB> CloneView( TMVB& mv, const std::vector<int>& index )
+    static Teuchos::RCP<TMVB> CloneView( TMVB& mv, const std::vector<int>& index )
     {
       int numvecs = index.size();
 
@@ -137,7 +137,7 @@ namespace Belos {
         if (lb+i != index[i]) contig = false;
       }
 
-      Teuchos::RefCountPtr< TMVB > cc;
+      Teuchos::RCP< TMVB > cc;
       if (contig) {
         const Thyra::Range1D rng(lb,lb+numvecs-1);
         // create a contiguous view to the relevant part of the source multivector
@@ -155,7 +155,7 @@ namespace Belos {
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new const MultiVectorBase.
     */      
-    static Teuchos::RefCountPtr<const TMVB> CloneView( const TMVB& mv, const std::vector<int>& index )
+    static Teuchos::RCP<const TMVB> CloneView( const TMVB& mv, const std::vector<int>& index )
     {
       int numvecs = index.size();
 
@@ -177,7 +177,7 @@ namespace Belos {
         if (lb+i != index[i]) contig = false;
       }
 
-      Teuchos::RefCountPtr< const TMVB > cc;
+      Teuchos::RCP< const TMVB > cc;
       if (contig) {
         const Thyra::Range1D rng(lb,lb+numvecs-1);
         // create a contiguous view to the relevant part of the source multivector
@@ -217,7 +217,7 @@ namespace Belos {
       int m = B.numRows();
       int n = B.numCols();
       // Create a view of the B object!
-      Teuchos::RefCountPtr< const TMVB >
+      Teuchos::RCP< const TMVB >
         B_thyra = Thyra::createMembersView(
           A.domain()
           ,RTOpPack::ConstSubMultiVectorView<ScalarType>(0,m,0,n,&B(0,0),B.stride())
@@ -251,7 +251,7 @@ namespace Belos {
       int m = A.domain()->dim();
       int n = mv.domain()->dim();
       // Create a view of the B object!
-      Teuchos::RefCountPtr< TMVB >
+      Teuchos::RCP< TMVB >
         B_thyra = Thyra::createMembersView(
           A.domain()
           ,RTOpPack::SubMultiVectorView<ScalarType>(0,m,0,n,&B(0,0),B.stride())
@@ -304,9 +304,9 @@ namespace Belos {
         indexA.resize( numAcols );
       }
       // create a view to the relevant part of the source multivector
-      Teuchos::RefCountPtr< const TMVB > relsource = A.subView( numAcols, &(indexA[0]) );
+      Teuchos::RCP< const TMVB > relsource = A.subView( numAcols, &(indexA[0]) );
       // create a view to the relevant part of the destination multivector
-      Teuchos::RefCountPtr< TMVB > reldest = mv.subView( numvecs, &(index[0]) );
+      Teuchos::RCP< TMVB > reldest = mv.subView( numvecs, &(index[0]) );
       // copy the data to the destination multivector subview
       Thyra::assign(&*reldest, *relsource);
     }

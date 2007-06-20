@@ -8,8 +8,8 @@
 using namespace Teuchos;
 
 // Global Timers
-RefCountPtr<Time> CompTime = TimeMonitor::getNewTimer("Computational Time");
-RefCountPtr<Time> FactTime = TimeMonitor::getNewTimer("Factorial Time");
+RCP<Time> CompTime = TimeMonitor::getNewTimer("Computational Time");
+RCP<Time> FactTime = TimeMonitor::getNewTimer("Factorial Time");
 
 // Quadratic function declaration.
 double quadFunc( double x );

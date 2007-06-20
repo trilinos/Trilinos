@@ -26,16 +26,16 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_ARRAY_REFCOUNTPTR_DECL_HPP
-#define TEUCHOS_ARRAY_REFCOUNTPTR_DECL_HPP
+#ifndef TEUCHOS_ARRAY_RCP_DECL_HPP
+#define TEUCHOS_ARRAY_RCP_DECL_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace Teuchos {
 
 /** \brief Array reference-counted pointer class.
  *
- * This is a reference-counted class similar to <tt>RefCountPtr</tt> except
+ * This is a reference-counted class similar to <tt>RCP</tt> except
  * that it is designed to use reference counting to manage an array of objects
  * that use value semantics.  Managing an array of objects is very different
  * from managing a pointer to an individual, possibly polymorphic, object.  For
@@ -49,7 +49,7 @@ namespace Teuchos {
  * Note that all access will be checked at runtime to avoid reading invalid
  * memory if <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is defined which it is if
  * <tt>--enable-teuchos-abc</tt> is given to the <tt>configure</tt> script.
- * In order to be able to check access, every <tt>%ArrayRefCountPtr</tt> must
+ * In order to be able to check access, every <tt>%ArrayRCP</tt> must
  * be constructed given a range.  When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt>
  * is defined, this class simply does not give up a raw pointer or raw
  * reference to any internally referenced object if that object does not fall
@@ -60,7 +60,7 @@ namespace Teuchos {
  * \ingroup teuchos_mem_mng_grp
  */
 template<class T>
-class ArrayRefCountPtr {
+class ArrayRCP {
 public:
 
   //! @name Public types 
@@ -72,13 +72,13 @@ public:
   typedef Teuchos_Index Ordinal;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 	/** \brief . */
-	typedef ArrayRefCountPtr<T> iterator;
+	typedef ArrayRCP<T> iterator;
 #else
 	typedef T* iterator;
 #endif
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 /** \brief . */
-	typedef ArrayRefCountPtr<T> const_iterator;
+	typedef ArrayRCP<T> const_iterator;
 #else
 	typedef T* const_iterator;
 #endif
@@ -88,21 +88,21 @@ public:
   //! @name Constructors/Initializers 
   //@{
 
-	/** \brief Initialize <tt>ArrayRefCountPtr<T></tt> to NULL.
+	/** \brief Initialize <tt>ArrayRCP<T></tt> to NULL.
 	 *
 	 * This allows clients to write code like:
 	 \code
-	 ArrayRefCountPtr<int> p = null;
+	 ArrayRCP<int> p = null;
 	 \endcode
 	 * or
 	 \code
-	 ArrayRefCountPtr<int> p;
+	 ArrayRCP<int> p;
 	 \endcode
 	 * and construct to <tt>NULL</tt>
 	 */
-	ArrayRefCountPtr( ENull null_arg = null );
+	ArrayRCP( ENull null_arg = null );
 
-	/** \brief Initialize from another <tt>ArrayRefCountPtr<T></tt> object.
+	/** \brief Initialize from another <tt>ArrayRCP<T></tt> object.
 	 *
 	 * After construction, <tt>this</tt> and <tt>r_ptr</tt> will
 	 * reference the same array.
@@ -119,7 +119,7 @@ public:
 	 * <li> If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.count()</tt> is incremented by 1
 	 * </ul>
 	 */
-	ArrayRefCountPtr(const ArrayRefCountPtr<T>& r_ptr);
+	ArrayRCP(const ArrayRCP<T>& r_ptr);
 
 	/** \brief Removes a reference to a dynamically allocated array and possibly deletes
 	 * the array if owned.
@@ -129,11 +129,11 @@ public:
 	 * <tt>this->has_ownership() == false</tt> then the array is not deleted
 	 * (usually using <tt>delete []</tt>).  If <tt>this->count() > 1</tt> then
 	 * the internal reference count shared by all the other related
-	 * <tt>ArrayRefCountPtr<...></tt> objects for this shared array is
+	 * <tt>ArrayRCP<...></tt> objects for this shared array is
 	 * deincremented by one.  If <tt>this->get() == NULL</tt> then nothing
 	 * happens.
 	 */
-	~ArrayRefCountPtr();
+	~ArrayRCP();
 
 	/** \brief Copy the pointer to the referenced array and increment the
 	 * reference count.
@@ -152,7 +152,7 @@ public:
 	 * <li> If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.count()</tt> is incremented by 1
 	 * </ul>
 	 */
-	ArrayRefCountPtr<T>& operator=(const ArrayRefCountPtr<T>& r_ptr);
+	ArrayRCP<T>& operator=(const ArrayRCP<T>& r_ptr);
 
   //@}
 
@@ -214,7 +214,7 @@ public:
    * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is deincremented by <tt>1</tt>
 	 * </ul>
    */
-	ArrayRefCountPtr<T>& operator++();
+	ArrayRCP<T>& operator++();
 
 	/** \brief Postfix increment of pointer (i.e. ptr++).
    *
@@ -226,7 +226,7 @@ public:
    * <li><tt>this->upperOffset()</tt> is deincremented by <tt>1</tt>
 	 * </ul>
    */
-	ArrayRefCountPtr<T> operator++(int);
+	ArrayRCP<T> operator++(int);
 
 	/** \brief Prefix deincrement of pointer (i.e. --ptr).
    *
@@ -238,7 +238,7 @@ public:
    * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is incremented by <tt>1</tt>
 	 * </ul>
    */
-	ArrayRefCountPtr<T>& operator--();
+	ArrayRCP<T>& operator--();
 
 	/** \brief Postfix deincrement of pointer (i.e. ptr--).
    *
@@ -250,7 +250,7 @@ public:
    * <li><tt>this->upperOffset()</tt> is incremented by <tt>1</tt>
 	 * </ul>
    */
-	ArrayRefCountPtr<T> operator--(int);
+	ArrayRCP<T> operator--(int);
 
 	/** \brief Pointer integer increment (i.e. ptr+=offset).
    *
@@ -262,7 +262,7 @@ public:
    * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is deincremented by <tt>offset</tt>
 	 * </ul>
    */
-	ArrayRefCountPtr<T>& operator+=(Ordinal offset);
+	ArrayRCP<T>& operator+=(Ordinal offset);
 
 	/** \brief Pointer integer increment (i.e. ptr-=offset).
    *
@@ -274,7 +274,7 @@ public:
    * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is incremented by <tt>offset</tt>
 	 * </ul>
    */
-	ArrayRefCountPtr<T>& operator-=(Ordinal offset);
+	ArrayRCP<T>& operator-=(Ordinal offset);
 
 	/** \brief Pointer integer increment (i.e. ptr+offset).
    *
@@ -286,11 +286,11 @@ public:
    * <li>[<tt>this->get()!=NULL</tt>] <tt>return->upperOffset() == this->upperOffset() - offset</tt>
 	 * </ul>
    *
-   * Note that since implicit conversion of <tt>ArrayRefCountPtr<T></tt>
+   * Note that since implicit conversion of <tt>ArrayRCP<T></tt>
    * objects is not allowed that it does not help at all to make this function
    * into a non-member function.
    */
-	ArrayRefCountPtr<T> operator+(Ordinal offset) const;
+	ArrayRCP<T> operator+(Ordinal offset) const;
 
 	/** \brief Pointer integer deincrement (i.e. ptr-offset).
    *
@@ -302,11 +302,11 @@ public:
    * <li>[<tt>this->get()!=NULL</tt>] <tt>return->upperOffset() == this->upperOffset() + offset</tt>
 	 * </ul>
    *
-   * Note that since implicit conversion of <tt>ArrayRefCountPtr<T></tt>
+   * Note that since implicit conversion of <tt>ArrayRCP<T></tt>
    * objects is not allowed that it does not help at all to make this function
    * into a non-member function.
    */
-	ArrayRefCountPtr<T> operator-(Ordinal offset) const;
+	ArrayRCP<T> operator-(Ordinal offset) const;
 
   //@}
 
@@ -318,7 +318,7 @@ public:
    * This function should compile only successfully if the type <tt>T</tt> is
    * not already declared <tt>const</tt>!
    */
-	ArrayRefCountPtr<const T> getConst() const;
+	ArrayRCP<const T> getConst() const;
 
 	/** \brief Return a view of a contiguous range of elements.
 	 *
@@ -334,14 +334,14 @@ public:
    * <li><tt>return->upperOffset() == size-1</tt>
 	 * </ul>
    */
-	ArrayRefCountPtr<T> subview( Ordinal lowerOffset, Ordinal size ) const;
+	ArrayRCP<T> subview( Ordinal lowerOffset, Ordinal size ) const;
 
   //@}
 
   //! @name General query functions 
   //@{
 
-	/** \brief Return the number of <tt>ArrayRefCountPtr<></tt> objects that have a reference
+	/** \brief Return the number of <tt>ArrayRCP<></tt> objects that have a reference
 	 * to the underlying pointer that is being shared.
 	 *
 	 * @return  If <tt>this->get() == NULL</tt> then this function returns 0.
@@ -356,7 +356,7 @@ public:
 	 * same.
 	 */
 	template<class T2>
-	bool shares_resource(const ArrayRefCountPtr<T2>& r_ptr) const;
+	bool shares_resource(const ArrayRCP<T2>& r_ptr) const;
 
   /** \brief Return the lower offset to valid data. */
   Ordinal lowerOffset() const;
@@ -377,7 +377,7 @@ public:
   /** \brief Return an iterator to beginning of the array of data.
    *
    * If <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is defined then the iterator
-   * returned is an <tt>ArrayRefCountPtr<T></tt> object and all operations are
+   * returned is an <tt>ArrayRCP<T></tt> object and all operations are
    * checked at runtime.  When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is not
    * defined, the a raw pointer <tt>T*</tt> is returned for fast execution.
    *
@@ -391,7 +391,7 @@ public:
   /** \brief Return an iterator to past the end of the array of data.
    *
    * If <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is defined then the iterator
-   * returned is an <tt>ArrayRefCountPtr<T></tt> object and all operations are
+   * returned is an <tt>ArrayRCP<T></tt> object and all operations are
    * checked at runtime.  When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is not
    * defined, the a raw pointer <tt>T*</tt> is returned for fast execution.
    *
@@ -416,7 +416,7 @@ public:
 	 *
 	 * Note that this function does not have the exact same semantics as does
 	 * <tt>auto_ptr<T>::release()</tt>.  In <tt>auto_ptr<T>::release()</tt>,
-	 * <tt>this</tt> is set to <tt>NULL</tt> while here in ArrayRefCountPtr<T>::
+	 * <tt>this</tt> is set to <tt>NULL</tt> while here in ArrayRCP<T>::
 	 * release() only an ownership flag is set and <tt>this</tt> still points to
 	 * the same array.  It would be difficult to duplicate the behavior of
 	 * <tt>auto_ptr<T>::release()</tt> for this class.
@@ -429,10 +429,10 @@ public:
 	 */
 	T* release();
 
-	/** \brief Give <tt>this</tt> and other <tt>ArrayRefCountPtr<></tt> objects
+	/** \brief Give <tt>this</tt> and other <tt>ArrayRCP<></tt> objects
 	 * ownership of the underlying referenced array to delete it.
 	 *
-	 * See <tt>~ArrayRefCountPtr()</tt> above.  This function does nothing if
+	 * See <tt>~ArrayRCP()</tt> above.  This function does nothing if
 	 * <tt>this->get() == NULL</tt>.
 	 *
 	 * <b>Postconditions:</b><ul>
@@ -451,7 +451,7 @@ public:
 	/** \brief Returns true if <tt>this</tt> has ownership of object pointed to
 	 * by <tt>this->get()</tt> in order to delete it.
 	 *
-	 * See <tt>~ArrayRefCountPtr()</tt> above.
+	 * See <tt>~ArrayRCP()</tt> above.
 	 *
 	 * \return If this->get() <tt>== NULL</tt> then this function always returns
 	 * <tt>false</tt>.  Otherwise the value returned from this function depends
@@ -469,14 +469,14 @@ public:
 	/** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>,
    * otherwise returns reference to <tt>*this</tt>.
    */
-	const ArrayRefCountPtr<T>& assert_not_null() const;
+	const ArrayRCP<T>& assert_not_null() const;
 
 	/** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>
    * or<tt>this->get()!=NULL && (lowerOffset < this->lowerOffset() ||
    * this->upperOffset() < upperOffset</tt>, otherwise returns reference to
    * <tt>*this</tt>
    */
-	const ArrayRefCountPtr<T>& assert_in_range( Ordinal lowerOffset, Ordinal size ) const;
+	const ArrayRCP<T>& assert_in_range( Ordinal lowerOffset, Ordinal size ) const;
 
   //@}
 
@@ -485,7 +485,7 @@ public: // Bad bad bad
 	// //////////////////////////////////////
 	// Private types
 
-	typedef PrivateUtilityPack::RefCountPtr_node  node_t;
+	typedef PrivateUtilityPack::RCP_node node_t;
 
 private:
 
@@ -501,51 +501,51 @@ public:
 #ifndef DOXYGEN_COMPILE
 	// These constructors should be private but I have not had good luck making
 	// this portable (i.e. using friendship etc.) in the past
-	ArrayRefCountPtr( T* p, Ordinal lowerOffset, Ordinal upperOffset, bool has_ownership );
+	ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset, bool has_ownership );
 	template<class Dealloc_T>
-	ArrayRefCountPtr( T* p, Ordinal lowerOffset, Ordinal upperOffset, Dealloc_T dealloc, bool has_ownership );
+	ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset, Dealloc_T dealloc, bool has_ownership );
 	// This is a very bad breach of encapsulation that is needed since MS VC++ 5.0 will
 	// not allow me to declare template functions as friends.
-	ArrayRefCountPtr( T* p, Ordinal lowerOffset, Ordinal upperOffset, node_t* node);
+	ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset, node_t* node);
 	T*&           access_ptr();
 	T*            access_ptr() const; // No preconditions
 	node_t*&      access_node();
 	node_t*       access_node() const;
 #endif
 
-};	// end class ArrayRefCountPtr<...>
+};	// end class ArrayRCP<...>
 
 /** \brief Traits specialization.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<typename T>
-class TypeNameTraits<ArrayRefCountPtr<T> > {
+class TypeNameTraits<ArrayRCP<T> > {
 public:
-  static std::string name() { return "ArrayRefCountPtr<"+TypeNameTraits<T>::name()+">"; }
+  static std::string name() { return "ArrayRCP<"+TypeNameTraits<T>::name()+">"; }
 };
 
 /** \brief Wraps a preallocated array of data with the assumption to call the
  * array version of delete.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T>
-ArrayRefCountPtr<T> arcp(
-  T* p, typename ArrayRefCountPtr<T>::Ordinal lowerOffset
-  ,typename ArrayRefCountPtr<T>::Ordinal size
+ArrayRCP<T> arcp(
+  T* p, typename ArrayRCP<T>::Ordinal lowerOffset
+  ,typename ArrayRCP<T>::Ordinal size
   , bool owns_mem = true
   );
 
 /** \brief Wraps a preallocated array of data and uses a templated
  * deallocation strategy object to define deletion .
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T, class Dealloc_T>
-ArrayRefCountPtr<T> arcp(
-  T* p, typename ArrayRefCountPtr<T>::Ordinal lowerOffset
-  ,typename ArrayRefCountPtr<T>::Ordinal size
+ArrayRCP<T> arcp(
+  T* p, typename ArrayRCP<T>::Ordinal lowerOffset
+  ,typename ArrayRCP<T>::Ordinal size
   , Dealloc_T dealloc, bool owns_mem
   );
  
@@ -555,109 +555,109 @@ ArrayRefCountPtr<T> arcp(
  * *not* initialized (unless there is a default constructor for a user-defined
  * type).
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T>
-ArrayRefCountPtr<T> arcp( typename ArrayRefCountPtr<T>::Ordinal size );
+ArrayRCP<T> arcp( typename ArrayRCP<T>::Ordinal size );
 
 /** \brief Wrap an <tt>std::vector<T></tt> object as an
- * <tt>ArrayRefCountPtr<T></tt> object.
+ * <tt>ArrayRCP<T></tt> object.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T>
-ArrayRefCountPtr<T> arcp( const RefCountPtr<std::vector<T> > &v );
+ArrayRCP<T> arcp( const RCP<std::vector<T> > &v );
 
 /** \brief Wrap a <tt>const std::vector<T></tt> object as an
- * <tt>ArrayRefCountPtr<const T></tt> object.
+ * <tt>ArrayRCP<const T></tt> object.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T>
-ArrayRefCountPtr<const T> arcp( const RefCountPtr<const std::vector<T> > &v );
+ArrayRCP<const T> arcp( const RCP<const std::vector<T> > &v );
 
 /** \brief Get an <tt>std::vector<T></tt> object out of an
- * <tt>ArrayRefCountPtr<T></tt> object that was created using the
+ * <tt>ArrayRCP<T></tt> object that was created using the
  * <tt>arcp()</tt> above to wrap the vector in the first place..
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T>
-RefCountPtr<std::vector<T> > get_std_vector( const ArrayRefCountPtr<T> &ptr );
+RCP<std::vector<T> > get_std_vector( const ArrayRCP<T> &ptr );
 
 /** \brief Get a <tt>const std::vector<T></tt> object out of an
- * <tt>ArrayRefCountPtr<const T></tt> object that was created using the
+ * <tt>ArrayRCP<const T></tt> object that was created using the
  * <tt>arcp()</tt> above to wrap the vector in the first place.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T>
-RefCountPtr<const std::vector<T> > get_std_vector( const ArrayRefCountPtr<const T> &ptr );
+RCP<const std::vector<T> > get_std_vector( const ArrayRCP<const T> &ptr );
 
 /** \brief Returns true if <tt>p.get()==NULL</tt>.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T>
-bool is_null( const ArrayRefCountPtr<T> &p );
+bool is_null( const ArrayRCP<T> &p );
 
 /** \brief Returns true if <tt>p.get()==NULL</tt>.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T>
-bool operator==( const ArrayRefCountPtr<T> &p, ENull );
+bool operator==( const ArrayRCP<T> &p, ENull );
 
 /** \brief Returns true if <tt>p.get()!=NULL</tt>.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T>
-bool operator!=( const ArrayRefCountPtr<T> &p, ENull );
+bool operator!=( const ArrayRCP<T> &p, ENull );
 
 /** \brief .
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T1, class T2>
-bool operator==( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 );
+bool operator==( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
 /** \brief .
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T1, class T2>
-bool operator!=( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 );
+bool operator!=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
 /** \brief .
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T1, class T2>
-bool operator<( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 );
+bool operator<( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
 /** \brief .
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T1, class T2>
-bool operator<=( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 );
+bool operator<=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
 /** \brief .
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T1, class T2>
-bool operator>( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 );
+bool operator>( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
 /** \brief .
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T1, class T2>
-bool operator>=( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 );
+bool operator>=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 );
 
-/** \brief Reinterpret cast of underlying <tt>ArrayRefCountPtr</tt> type from
+/** \brief Reinterpret cast of underlying <tt>ArrayRCP</tt> type from
  * <tt>T1*</tt> to <tt>T2*</tt>.
  *
  * The function will compile only if (<tt>reinterpret_cast<T2*>(p1.get());</tt>) compiles.
@@ -667,12 +667,12 @@ bool operator>=( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 
  * must only be done by developers who are 100% comfortable with what they are
  * doing.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T2, class T1>
-ArrayRefCountPtr<T2> arcp_reinterpret_cast(const ArrayRefCountPtr<T1>& p1);
+ArrayRCP<T2> arcp_reinterpret_cast(const ArrayRCP<T1>& p1);
 
-/** \brief Implicit case the underlying <tt>ArrayRefCountPtr</tt> type from
+/** \brief Implicit case the underlying <tt>ArrayRCP</tt> type from
  * <tt>T1*</tt> to <tt>T2*</tt>.
  *
  * The function will compile only if (<tt>T2 *p = p1.get();</tt>) compiles.
@@ -684,23 +684,23 @@ ArrayRefCountPtr<T2> arcp_reinterpret_cast(const ArrayRefCountPtr<T1>& p1);
  * casting an array of pointers to non-const objects to an array of const
  * pointers to const objects.  For example, the following implicit conversion
  * from a array pointer objects <tt>aptr1</tt> of type
- * <tt>ArrayRefCountPtr<T*></tt> to 
+ * <tt>ArrayRCP<T*></tt> to 
 
  \code
 
-  ArrayRefCountPtr<const T * const>
+  ArrayRCP<const T * const>
     aptr2 = arcp_implicit_cast<const T * const>(ptr1);
 
  \endcode
 
  * is always legal and safe to do.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T2, class T1>
-ArrayRefCountPtr<T2> arcp_implicit_cast(const ArrayRefCountPtr<T1>& p1);
+ArrayRCP<T2> arcp_implicit_cast(const ArrayRCP<T1>& p1);
 
-/** \brief Set extra data associated with a <tt>ArrayRefCountPtr</tt> object.
+/** \brief Set extra data associated with a <tt>ArrayRCP</tt> object.
  *
  * @param  extra_data
  *               [in] Data object that will be set (copied)
@@ -740,7 +740,7 @@ ArrayRefCountPtr<T2> arcp_implicit_cast(const ArrayRefCountPtr<T1>& p1);
  * that was added with <tt>destroy_when==PRE_DESTROY</tt> is then deleted.
  * The order in which the objects are destroyed is not guaranteed.  Therefore,
  * clients should be careful not to add extra data that has deletion
- * dependencies (instead consider using nested ArrayRefCountPtr objects as extra
+ * dependencies (instead consider using nested ArrayRCP objects as extra
  * data which will guarantee the order of deletion).
  *
  * <b>Preconditions:</b><ul>
@@ -754,10 +754,10 @@ ArrayRefCountPtr<T2> arcp_implicit_cast(const ArrayRefCountPtr<T1>& p1);
  * Note, this function is made a non-member function to be consistent
  * with the non-member <tt>get_extra_data()</tt> functions.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T1, class T2>
-void set_extra_data( const T1 &extra_data, const std::string& name, ArrayRefCountPtr<T2> *p
+void set_extra_data( const T1 &extra_data, const std::string& name, ArrayRCP<T2> *p
                      ,EPrePostDestruction destroy_when
 #ifndef __sun
                      = POST_DESTROY
@@ -769,14 +769,14 @@ void set_extra_data( const T1 &extra_data, const std::string& name, ArrayRefCoun
 	);
 #ifdef __sun
 template<class T1, class T2>
-inline void set_extra_data( const T1 &extra_data, const std::string& name, ArrayRefCountPtr<T2> *p )
+inline void set_extra_data( const T1 &extra_data, const std::string& name, ArrayRCP<T2> *p )
 { set_extra_data( extra_data, name, p, POST_DESTROY, true ); }
 template<class T1, class T2>
-inline void set_extra_data( const T1 &extra_data, const std::string& name, ArrayRefCountPtr<T2> *p, EPrePostDestruction destroy_when )
+inline void set_extra_data( const T1 &extra_data, const std::string& name, ArrayRCP<T2> *p, EPrePostDestruction destroy_when )
 { set_extra_data( extra_data, name, p, destroy_when, true ); }
 #endif
 
-/** \brief Get a non-const reference to extra data associated with a <tt>ArrayRefCountPtr</tt> object.
+/** \brief Get a non-const reference to extra data associated with a <tt>ArrayRCP</tt> object.
  *
  * @param  p    [in] Smart pointer object that extra data is being extracted from.
  * @param  name [in] Name of the extra data.
@@ -792,12 +792,12 @@ inline void set_extra_data( const T1 &extra_data, const std::string& name, Array
  * Note, this function must be a non-member function since the client
  * must manually select the first template argument.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T1, class T2>
-T1& get_extra_data( ArrayRefCountPtr<T2>& p, const std::string& name );
+T1& get_extra_data( ArrayRCP<T2>& p, const std::string& name );
 
-/** \brief Get a const reference to extra data associated with a <tt>ArrayRefCountPtr</tt> object.
+/** \brief Get a const reference to extra data associated with a <tt>ArrayRCP</tt> object.
  *
  * @param  p    [in] Smart pointer object that extra data is being extracted from.
  * @param  name [in] Name of the extra data.
@@ -814,18 +814,18 @@ T1& get_extra_data( ArrayRefCountPtr<T2>& p, const std::string& name );
  * must manually select the first template argument.
  *
  * Also note that this const version is a false sense of security
- * since a client can always copy a const <tt>ArrayRefCountPtr</tt> object
+ * since a client can always copy a const <tt>ArrayRCP</tt> object
  * into a non-const object and then use the non-const version to
  * change the data.  However, its presence will help to avoid some
  * types of accidental changes to this extra data.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T1, class T2>
-const T1& get_extra_data( const ArrayRefCountPtr<T2>& p, const std::string& name );
+const T1& get_extra_data( const ArrayRCP<T2>& p, const std::string& name );
 
 /** \brief Get a pointer to non-const extra data (if it exists) associated
- * with a <tt>ArrayRefCountPtr</tt> object.
+ * with a <tt>ArrayRCP</tt> object.
  *
  * @param  p    [in] Smart pointer object that extra data is being extracted from.
  * @param  name [in] Name of the extra data.
@@ -845,12 +845,12 @@ const T1& get_extra_data( const ArrayRefCountPtr<T2>& p, const std::string& name
  * Note, this function must be a non-member function since the client
  * must manually select the first template argument.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T1, class T2>
-T1* get_optional_extra_data( ArrayRefCountPtr<T2>& p, const std::string& name );
+T1* get_optional_extra_data( ArrayRCP<T2>& p, const std::string& name );
 
-/** \brief Get a pointer to const extra data (if it exists) associated with a <tt>ArrayRefCountPtr</tt> object.
+/** \brief Get a pointer to const extra data (if it exists) associated with a <tt>ArrayRCP</tt> object.
  *
  * @param  p    [in] Smart pointer object that extra data is being extracted from.
  * @param  name [in] Name of the extra data.
@@ -871,15 +871,15 @@ T1* get_optional_extra_data( ArrayRefCountPtr<T2>& p, const std::string& name );
  * must manually select the first template argument.
  *
  * Also note that this const version is a false sense of security
- * since a client can always copy a const <tt>ArrayRefCountPtr</tt> object
+ * since a client can always copy a const <tt>ArrayRCP</tt> object
  * into a non-const object and then use the non-const version to
  * change the data.  However, its presence will help to avoid some
  * types of accidental changes to this extra data.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T1, class T2>
-const T1* get_optional_extra_data( const ArrayRefCountPtr<T2>& p, const std::string& name );
+const T1* get_optional_extra_data( const ArrayRCP<T2>& p, const std::string& name );
 
 /** \brief Return a non-<tt>const</tt> reference to the underlying deallocator object.
  *
@@ -889,10 +889,10 @@ const T1* get_optional_extra_data( const ArrayRefCountPtr<T2>& p, const std::str
  *      (throws <tt>std::logic_error</tt>)
  * </ul>
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class Dealloc_T, class T>
-Dealloc_T& get_dealloc( ArrayRefCountPtr<T>& p );
+Dealloc_T& get_dealloc( ArrayRCP<T>& p );
 
 /** \brief Return a <tt>const</tt> reference to the underlying deallocator object.
  *
@@ -905,14 +905,14 @@ Dealloc_T& get_dealloc( ArrayRefCountPtr<T>& p );
  * Note that the <tt>const</tt> version of this function provides only
  * a very ineffective attempt to avoid accidental changes to the
  * deallocation object.  A client can always just create a new
- * non-<tt>const</tt> <tt>ArrayRefCountPtr<T></tt> object from any
- * <tt>const</tt> <tt>ArrayRefCountPtr<T></tt> object and then call the
+ * non-<tt>const</tt> <tt>ArrayRCP<T></tt> object from any
+ * <tt>const</tt> <tt>ArrayRCP<T></tt> object and then call the
  * non-<tt>const</tt> version of this function.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class Dealloc_T, class T>
-const Dealloc_T& get_dealloc( const ArrayRefCountPtr<T>& p );
+const Dealloc_T& get_dealloc( const ArrayRCP<T>& p );
 
 /** \brief Return a pointer to the underlying non-<tt>const</tt> deallocator
  * object if it exists.
@@ -926,10 +926,10 @@ const Dealloc_T& get_dealloc( const ArrayRefCountPtr<T>& p );
  *      then <tt>return!=NULL</tt>, otherwise <tt>return==NULL</tt>
  * </ul>
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class Dealloc_T, class T>
-Dealloc_T* get_optional_dealloc( ArrayRefCountPtr<T>& p );
+Dealloc_T* get_optional_dealloc( ArrayRCP<T>& p );
 
 /** \brief Return a pointer to the underlying <tt>const</tt> deallocator
  * object if it exists.
@@ -946,25 +946,25 @@ Dealloc_T* get_optional_dealloc( ArrayRefCountPtr<T>& p );
  * Note that the <tt>const</tt> version of this function provides only
  * a very ineffective attempt to avoid accidental changes to the
  * deallocation object.  A client can always just create a new
- * non-<tt>const</tt> <tt>ArrayRefCountPtr<T></tt> object from any
- * <tt>const</tt> <tt>ArrayRefCountPtr<T></tt> object and then call the
+ * non-<tt>const</tt> <tt>ArrayRCP<T></tt> object from any
+ * <tt>const</tt> <tt>ArrayRCP<T></tt> object and then call the
  * non-<tt>const</tt> version of this function.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class Dealloc_T, class T>
-const Dealloc_T* get_optional_dealloc( const ArrayRefCountPtr<T>& p );
+const Dealloc_T* get_optional_dealloc( const ArrayRCP<T>& p );
 
 /** \brief Output stream inserter.
  *
  * The implementation of this function just print pointer addresses and
  * therefore puts not restrictions on the data types involved.
  *
- * \relates ArrayRefCountPtr
+ * \relates ArrayRCP
  */
 template<class T>
-std::ostream& operator<<( std::ostream& out, const ArrayRefCountPtr<T>& p );
+std::ostream& operator<<( std::ostream& out, const ArrayRCP<T>& p );
 
 } // end namespace Teuchos
 
-#endif	// TEUCHOS_ARRAY_REFCOUNTPTR_DECL_HPP
+#endif	// TEUCHOS_ARRAY_RCP_DECL_HPP

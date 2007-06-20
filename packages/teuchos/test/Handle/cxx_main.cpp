@@ -52,17 +52,17 @@ public:
   VecBase(){;}
   ~VecBase(){;}
 
-  virtual RefCountPtr<const VecSpaceBase> space() const = 0 ;
+  virtual RCP<const VecSpaceBase> space() const = 0 ;
 
   virtual void add(const VecBase* other, 
-                   RefCountPtr<VecBase>& result) const = 0 ;
+                   RCP<VecBase>& result) const = 0 ;
 
 
   virtual double dot(const VecBase* other) const = 0 ;
 
   virtual void scale(const double& a) = 0 ;
 
-  virtual RefCountPtr<VecBase> copy() const = 0 ;
+  virtual RCP<VecBase> copy() const = 0 ;
 
   virtual void print(std::ostream& os) const = 0 ;
 
@@ -80,7 +80,7 @@ public:
   VecSpaceBase(){;}
   ~VecSpaceBase(){;}
 
-  virtual RefCountPtr<VecBase> create(const RefCountPtr<const VecSpaceBase>& s) const = 0;
+  virtual RCP<VecBase> create(const RCP<const VecSpaceBase>& s) const = 0;
 
 };
 
@@ -90,7 +90,7 @@ class VecSpaceA : public VecSpaceBase
 {
 public:
   VecSpaceA(int n) : n_(n) {;}
-  virtual RefCountPtr<VecBase> create(const RefCountPtr<const VecSpaceBase>& s) const ;
+  virtual RCP<VecBase> create(const RCP<const VecSpaceBase>& s) const ;
   TEUCHOS_GET_CONST_RCP(VecSpaceBase);
 private:
   int n_;
@@ -99,14 +99,14 @@ private:
 class VecA : public VecBase
 {
 public:
-  VecA(int n, const RefCountPtr<const VecSpaceBase>& sp) : x_(n),
+  VecA(int n, const RCP<const VecSpaceBase>& sp) : x_(n),
                                                            sp_(sp)
   {for (unsigned int i=0; i<x_.size(); i++) x_[i] = 0.0;}
 
-  RefCountPtr<const VecSpaceBase> space() const {return sp_;}
+  RCP<const VecSpaceBase> space() const {return sp_;}
   
   void add(const VecBase* other, 
-           RefCountPtr<VecBase>& result) const 
+           RCP<VecBase>& result) const 
   {
     const VecA* va = dynamic_cast<const VecA*>(other);
     VecA* vr = dynamic_cast<VecA*>(result.get());
@@ -138,9 +138,9 @@ public:
       }
   }
 
-  RefCountPtr<VecBase> copy() const
+  RCP<VecBase> copy() const
   {
-    RefCountPtr<VecBase> rtn = space()->create(space());
+    RCP<VecBase> rtn = space()->create(space());
     VecA* va = dynamic_cast<VecA*>(rtn.get());
     TEST_FOR_EXCEPT(va==0);
     for (unsigned int i=0; i<x_.size(); i++) 
@@ -168,11 +168,11 @@ public:
   TEUCHOS_GET_RCP(VecBase);
 private:
   Array<double> x_;
-  RefCountPtr<const VecSpaceBase> sp_;
+  RCP<const VecSpaceBase> sp_;
 };
 
 
-RefCountPtr<VecBase> VecSpaceA::create(const RefCountPtr<const VecSpaceBase>& s) const
+RCP<VecBase> VecSpaceA::create(const RCP<const VecSpaceBase>& s) const
 {
   return rcp(new VecA(n_, s));
 }
@@ -187,7 +187,7 @@ public:
   TEUCHOS_CONST_HANDLE_CTORS(ConstVector, VecBase);
   
 
-  RefCountPtr<const VecSpaceBase> space() const {return constPtr()->space();}
+  RCP<const VecSpaceBase> space() const {return constPtr()->space();}
 
   double operator*(const ConstVector& other) const ;  
 
@@ -243,7 +243,7 @@ Vector operator*(const double& a, const ConstVector& x)
 void ConstVector::add(const ConstVector& other, Vector& result) const 
 {
   result = space()->create(space());
-  RefCountPtr<VecBase> tmp = result.ptr();
+  RCP<VecBase> tmp = result.ptr();
   constPtr()->add(other.constPtr().get(), tmp);
 }
 

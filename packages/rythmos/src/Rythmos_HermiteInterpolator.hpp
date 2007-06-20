@@ -82,24 +82,24 @@ class HermiteInterpolator : virtual public InterpolatorBase<Scalar>
 
     /// Redefined from Teuchos::ParameterListAcceptor
     /** \brief . */
-    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+    void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
 
     /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> getParameterList();
 
     /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
 
   private:
 
-    Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList;
+    Teuchos::RCP<Teuchos::ParameterList> parameterList;
 
 };
 
 template<class Scalar>
 HermiteInterpolator<Scalar>::HermiteInterpolator()
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
   out->setMaxLenLinePrefix(28);
   //out->pushLinePrefix("Rythmos::HermiteInterpolator");
@@ -114,7 +114,7 @@ bool HermiteInterpolator<Scalar>::interpolate(
     ,typename DataStore<Scalar>::DataStoreVector_t *data_out ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"HI::interpolator");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     if (data_in.size() == 0) {
@@ -190,10 +190,10 @@ bool HermiteInterpolator<Scalar>::interpolate(
       Scalar& t = *time_it;
       Scalar& ti = local_data_in[i].time;
       Scalar& tip1 = local_data_in[i+1].time;
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xi = local_data_in[i].x;
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xip1 = local_data_in[i+1].x;
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xdoti = local_data_in[i].xdot;
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xdotip1 = local_data_in[i+1].xdot;
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > xi = local_data_in[i].x;
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > xip1 = local_data_in[i+1].x;
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdoti = local_data_in[i].xdot;
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotip1 = local_data_in[i+1].xdot;
       // Check for invalid vectors:
       if ( (xi == Teuchos::null) || (xip1 == Teuchos::null) 
            || (xdoti == Teuchos::null) || (xdotip1 == Teuchos::null) ) {
@@ -201,8 +201,8 @@ bool HermiteInterpolator<Scalar>::interpolate(
       }
 
       // 10/10/06 tscoffe:  this could be expensive:
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > tmp_vec = xi->clone_v(); 
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp = xip1->clone_v(); 
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > tmp_vec = xi->clone_v(); 
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot_temp = xip1->clone_v(); 
       Scalar dt = tip1-ti;
       Scalar dt2 = dt*dt;
       Scalar t_t0 = t - ti;
@@ -219,7 +219,7 @@ bool HermiteInterpolator<Scalar>::interpolate(
 
       //  H_3(x) = f(x0) + f'(x0)(x-x0) + ((f(x1)-f(x0))/(x1-x0) - f'(x0))(x-x0)^2/(x1-x0)
       //           +(f'(x1) - 2(f(x1)-f(x0))/(x1-x0) + f'(x0))(x-x0)^2(x-x1)/(x1-x0)^2
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_vec = xi->clone_v(); 
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > x_vec = xi->clone_v(); 
       Thyra::Vp_StV(&*x_vec,t_t0,*xdoti);
       tmp_t = t_t0*t_t0/dt;
       Thyra::V_StVpStV(&*tmp_vec,tmp_t,*xdot_temp,Scalar(-ST::one()*tmp_t),*xdoti);
@@ -232,7 +232,7 @@ bool HermiteInterpolator<Scalar>::interpolate(
 
       //  H_3'(x) =        f'(x0) + 2*((f(x1)-f(x0))/(x1-x0) - f'(x0))(x-x0)/(x1-x0)
       //           +(f'(x1) - 2(f(x1)-f(x0))/(x1-x0) + f'(x0))[2*(x-x0)(x-x1) + (x-x0)^2]/(x1-x0)^2
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_vec = xdoti->clone_v(); 
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot_vec = xdoti->clone_v(); 
       tmp_t = t_t0/dt;
       Thyra::Vp_StV(&*xdot_vec,Scalar(2*tmp_t),*xdot_temp);
       Thyra::Vp_StV(&*xdot_vec,Scalar(-ST::one()*tmp_t),*xdoti);
@@ -285,7 +285,7 @@ void HermiteInterpolator<Scalar>::describe(
 }
 
 template <class Scalar>
-void HermiteInterpolator<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+void HermiteInterpolator<Scalar>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
   parameterList = paramList;
   int outputLevel = parameterList->get( "outputLevel", int(-1) );
@@ -294,15 +294,15 @@ void HermiteInterpolator<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos:
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> HermiteInterpolator<Scalar>::getParameterList()
+Teuchos::RCP<Teuchos::ParameterList> HermiteInterpolator<Scalar>::getParameterList()
 {
   return(parameterList);
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> HermiteInterpolator<Scalar>::unsetParameterList()
+Teuchos::RCP<Teuchos::ParameterList> HermiteInterpolator<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList;
+  Teuchos::RCP<Teuchos::ParameterList> temp_param_list = parameterList;
   parameterList = Teuchos::null;
   return(temp_param_list);
 }

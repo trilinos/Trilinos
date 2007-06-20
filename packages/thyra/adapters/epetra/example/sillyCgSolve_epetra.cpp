@@ -42,7 +42,7 @@
 int main(int argc, char *argv[])
 {
   using Teuchos::CommandLineProcessor;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
  
   bool success = true;
   bool verbose = true;
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
   // (B) Setup the output stream (do output only on root process!)
   //
   
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   
   try {
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
     //
     // (D.1) Create the tridagonal Epetra matrix operator
     if(verbose) *out << "\n(1) Constructing tridagonal Epetra matrix A_epetra of global dimension = " << globalDim << " ...\n";
-    RefCountPtr<Epetra_Operator>
+    RCP<Epetra_Operator>
       A_epetra = createTridiagEpetraLinearOp(
         globalDim
 #ifdef HAVE_MPI
@@ -114,17 +114,17 @@ int main(int argc, char *argv[])
         ,diagScale,verbose,*out
         );
     // (D.2) Wrap the Epetra_Opertor in a Thyra::EpetraLinearOp object
-    RefCountPtr<Thyra::LinearOpBase<double> >
+    RCP<Thyra::LinearOpBase<double> >
       A = rcp(new Thyra::EpetraLinearOp(A_epetra));
     // (D.3) Create RHS vector b and set to a random value
-    RefCountPtr<const Thyra::VectorSpaceBase<double> >
+    RCP<const Thyra::VectorSpaceBase<double> >
       b_space = A->range();
     // (D.4) Create the RHS vector b and initialize it to a random vector
-    RefCountPtr<Thyra::VectorBase<double> > b = createMember(b_space);
+    RCP<Thyra::VectorBase<double> > b = createMember(b_space);
     Thyra::seed_randomize<double>(0);
     Thyra::randomize( -1.0, +1.0, &*b );
     // (D.5) Create LHS vector x and set to zero
-    RefCountPtr<Thyra::VectorBase<double> > x = createMember(A->domain());
+    RCP<Thyra::VectorBase<double> > x = createMember(A->domain());
     Thyra::assign( &*x, 0.0 );
     //
     // (E) Solve the linear system with the silly CG solver
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
     //
     // (F) Check that the linear system was solved to the specified tolerance
     //
-    RefCountPtr<Thyra::VectorBase<double> > r = createMember(A->range());                     
+    RCP<Thyra::VectorBase<double> > r = createMember(A->range());                     
     Thyra::assign(&*r,*b);                                        // r = b
     Thyra::apply(*A,Thyra::NOTRANS,*x,&*r,-1.0,+1.0);             // r = -A*x + r
     const double r_nrm = Thyra::norm(*r), b_nrm =Thyra:: norm(*b);

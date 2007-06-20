@@ -48,7 +48,7 @@ public:
   bool supportsCloning() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<InterpolatorBase<Scalar> > cloneInterpolator() const;
+  Teuchos::RCP<InterpolatorBase<Scalar> > cloneInterpolator() const;
 
   /** \brief . */
   bool interpolate(
@@ -70,24 +70,24 @@ public:
     ) const;
 
   /** \brief . */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
 
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
 
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
 
 private:
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
+  Teuchos::RCP<Teuchos::ParameterList> parameterList_;
 
 };
 
 template<class Scalar>
 LinearInterpolator<Scalar>::LinearInterpolator()
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
   out->setMaxLenLinePrefix(28);
   //out->pushLinePrefix("Rythmos::LinearInterpolator");
@@ -102,10 +102,10 @@ bool LinearInterpolator<Scalar>::supportsCloning() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<InterpolatorBase<Scalar> >
+Teuchos::RCP<InterpolatorBase<Scalar> >
 LinearInterpolator<Scalar>::cloneInterpolator() const
 {
-  Teuchos::RefCountPtr<LinearInterpolator<Scalar> >
+  Teuchos::RCP<LinearInterpolator<Scalar> >
     interpolator = Teuchos::rcp(new LinearInterpolator<Scalar>);
   if (!is_null(parameterList_))
     interpolator->parameterList_ = parameterList(*parameterList_);
@@ -119,7 +119,7 @@ bool LinearInterpolator<Scalar>::interpolate(
     ,typename DataStore<Scalar>::DataStoreVector_t *data_out ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"LI::interpolator");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
     if (data_in.size() == 0) {
@@ -195,13 +195,13 @@ bool LinearInterpolator<Scalar>::interpolate(
       Scalar& t = *time_it;
       Scalar& ti = local_data_in[i].time;
       Scalar& tip1 = local_data_in[i+1].time;
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xi = local_data_in[i].x;
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xip1 = local_data_in[i+1].x;
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xdoti = local_data_in[i].xdot;
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xdotip1 = local_data_in[i+1].xdot;
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > xi = local_data_in[i].x;
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > xip1 = local_data_in[i+1].x;
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdoti = local_data_in[i].xdot;
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotip1 = local_data_in[i+1].xdot;
 
       // 10/10/06 tscoffe:  this could be expensive:
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > tmp_vec = xi->clone_v(); 
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > tmp_vec = xi->clone_v(); 
 
       // interpolate this point
       DataStore<Scalar> DS;
@@ -209,14 +209,14 @@ bool LinearInterpolator<Scalar>::interpolate(
       Scalar h = tip1-ti;
       // First we work on x.
       Thyra::V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),*xi,Scalar(-ST::one()/h),*xip1);
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x = xi->clone_v();
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > x = xi->clone_v();
       Thyra::V_StVpStV(&*x, ST::one(), *xi, t-ti, *tmp_vec);
       DS.x = x;
       // Check that xdot != Teuchos::null
       if ( (xdoti != Teuchos::null) && (xdotip1 != Teuchos::null) ) {
         // Then we work on xdot.
         Thyra::V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),*xdoti,Scalar(-ST::one()/h),*xdotip1);
-        Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot = xdoti->clone_v();
+        Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot = xdoti->clone_v();
         Thyra::V_StVpStV(&*xdot, ST::one(), *xdoti, t-ti, *tmp_vec);
         DS.xdot = xdot;
       } else {
@@ -264,7 +264,7 @@ void LinearInterpolator<Scalar>::describe(
 
 template <class Scalar>
 void LinearInterpolator<Scalar>::setParameterList(
-  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
   parameterList_ = paramList;
@@ -277,15 +277,15 @@ void LinearInterpolator<Scalar>::setParameterList(
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> LinearInterpolator<Scalar>::getParameterList()
+Teuchos::RCP<Teuchos::ParameterList> LinearInterpolator<Scalar>::getParameterList()
 {
   return(parameterList_);
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> LinearInterpolator<Scalar>::unsetParameterList()
+Teuchos::RCP<Teuchos::ParameterList> LinearInterpolator<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList_;
+  Teuchos::RCP<Teuchos::ParameterList> temp_param_list = parameterList_;
   parameterList_ = Teuchos::null;
   return(temp_param_list);
 }

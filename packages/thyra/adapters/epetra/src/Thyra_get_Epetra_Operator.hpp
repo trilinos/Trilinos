@@ -66,7 +66,7 @@ These function allow the extraction of an <tt>Epetra_Operator</tt> from a <tt>Th
  *
  * \ingroup Epetra_Thyra_Op_Vec_get_Epetra_Operator_grp
  */
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 get_Epetra_Operator( LinearOpBase<double> &op );
 
 /** \brief Get smart pointer to <tt>const</tt>
@@ -94,7 +94,7 @@ get_Epetra_Operator( LinearOpBase<double> &op );
  *
  * \ingroup Epetra_Thyra_Op_Vec_get_Epetra_Operator_grp
  */
-Teuchos::RefCountPtr<const Epetra_Operator>
+Teuchos::RCP<const Epetra_Operator>
 get_Epetra_Operator( const LinearOpBase<double> &op );
 
 } // namespace Thyra

@@ -29,17 +29,17 @@
 #include "Teuchos_Workspace.hpp"
 
 namespace {
-Teuchos::RefCountPtr<Teuchos::WorkspaceStore>  default_workspace_store(Teuchos::null);
+Teuchos::RCP<Teuchos::WorkspaceStore>  default_workspace_store(Teuchos::null);
 }
 
 // Global functions
 
-void Teuchos::set_default_workspace_store( const Teuchos::RefCountPtr<WorkspaceStore> &default_workspace_store_in )
+void Teuchos::set_default_workspace_store( const Teuchos::RCP<WorkspaceStore> &default_workspace_store_in )
 {
   default_workspace_store = default_workspace_store_in;
 }
 
-Teuchos::RefCountPtr<Teuchos::WorkspaceStore> Teuchos::get_default_workspace_store()
+Teuchos::RCP<Teuchos::WorkspaceStore> Teuchos::get_default_workspace_store()
 {
   return default_workspace_store;
 }

@@ -30,7 +30,7 @@
 #define TEUCHOS_HANDLE_HPP
 
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_Handleable.hpp"
 
@@ -44,9 +44,9 @@ namespace Teuchos
    * code.
    * 
    * There are two modes of construction:
-   * construction from an existing RefCountPtr,
+   * construction from an existing RCP,
    * \code
-   * RefCountPtr<const Base> r = rcp(new Derived(blahblah));
+   * RCP<const Base> r = rcp(new Derived(blahblah));
    * ConstHandle<Base> h = r;
    * \endcode
    * and construction from a raw pointer,
@@ -66,13 +66,13 @@ namespace Teuchos
   class ConstHandle : public virtual Describable
   {
   public:
-    /** \brief Construct with an existing RefCountPtr. */
-    ConstHandle(const RefCountPtr<const PointerType>& ptr) : ptr_(ptr) {;}
+    /** \brief Construct with an existing RCP. */
+    ConstHandle(const RCP<const PointerType>& ptr) : ptr_(ptr) {;}
     /** \brief Construct with a raw pointer to a ConstHandleable. This will make
      * a call to rcp(), thus removing that call from the user interface. */
     explicit ConstHandle(const ConstHandleable<PointerType>* ptr) : ptr_(ptr->getConstRcp()) {;}
     /** \brief Read-only access to the underlying smart pointer. */
-    const RefCountPtr<const PointerType>& constPtr() const {return ptr_;}
+    const RCP<const PointerType>& constPtr() const {return ptr_;}
     /** \brief Access to raw pointer */
     const PointerType * const rawPtr() {return this->constPtr().get();}
   protected:
@@ -82,17 +82,17 @@ namespace Teuchos
      *
      * The Handle ctors call the empty ConstHandle ctor and then set the
      * pointer in the ConstHandle with a call to setRcp(). */
-    void setRcp(const RefCountPtr<PointerType>& ptr) 
+    void setRcp(const RCP<PointerType>& ptr) 
     {ptr_=rcp_const_cast<const PointerType>(ptr);}
     /** \brief Protected non-const access to the underlying smart pointer. 
      *
      * This will be called by the nonConstPtr() method of the non-const Handle
      * subclass */
-    RefCountPtr<PointerType> nonConstPtr() const
+    RCP<PointerType> nonConstPtr() const
     {return rcp_const_cast<PointerType>(ptr_);}
   private:
     /** \brief . */
-    RefCountPtr<const PointerType> ptr_;
+    RCP<const PointerType> ptr_;
   };
 
   /** \brief Generic templated handle class.
@@ -101,9 +101,9 @@ namespace Teuchos
    * TEUCHOS_HANDLE_CTORS macro to generate boilerplate constructor code.
    * 
    * There are two modes of construction:
-   * construction from an existing RefCountPtr,
+   * construction from an existing RCP,
    * \code
-   * RefCountPtr<Base> r = rcp(new Derived(blahblah));
+   * RCP<Base> r = rcp(new Derived(blahblah));
    * Handle<Base> h = r;
    * \endcode
    * and construction from a raw pointer,
@@ -125,8 +125,8 @@ namespace Teuchos
     /** \brief . */
     Handle()
       : ConstHandle<PointerType>() {}
-    /** \brief Construct with an existing RefCountPtr */
-    Handle(const RefCountPtr<PointerType>& smartPtr)
+    /** \brief Construct with an existing RCP */
+    Handle(const RCP<PointerType>& smartPtr)
       : ConstHandle<PointerType>() 
     {
       /* \brief We need to set the rcp in the base class */
@@ -145,7 +145,7 @@ namespace Teuchos
     }
     /** \brief Read/write access to the underlying smart pointer.
      */
-    RefCountPtr<PointerType> ptr() const {return this->nonConstPtr();}
+    RCP<PointerType> ptr() const {return this->nonConstPtr();}
     /** \brief Access to non-const raw pointer. */
     PointerType* rawPtr() const {return this->nonConstPtr().get();}
   };
@@ -166,7 +166,7 @@ namespace Teuchos
 #define TEUCHOS_HANDLE_CTORS(handle, contents) \
 handle() : Teuchos::Handle<contents >() {;} \
 handle(Teuchos::Handleable<contents >* rawPtr) : Teuchos::Handle<contents >(rawPtr) {;} \
-handle(const Teuchos::RefCountPtr<contents >& smartPtr) : Teuchos::Handle<contents >(smartPtr){;}
+handle(const Teuchos::RCP<contents >& smartPtr) : Teuchos::Handle<contents >(smartPtr){;}
 
 /** \brief. This helper macro defines boilerplate constructors for classes
  * deriving from ConstHandle.
@@ -182,6 +182,6 @@ handle(const Teuchos::RefCountPtr<contents >& smartPtr) : Teuchos::Handle<conten
 #define TEUCHOS_CONST_HANDLE_CTORS(handle, contents) \
 handle( Teuchos::ENull _null = Teuchos::null ) : Teuchos::ConstHandle<contents >() {;} \
 handle(const Teuchos::ConstHandleable<contents >* rawPtr) : Teuchos::ConstHandle<contents >(rawPtr) {;} \
-handle(const Teuchos::RefCountPtr<const contents >& smartPtr) : Teuchos::ConstHandle<contents >(smartPtr){;}
+handle(const Teuchos::RCP<const contents >& smartPtr) : Teuchos::ConstHandle<contents >(smartPtr){;}
 
 #endif // TEUCHOS_CONSTHANDLE_HPP

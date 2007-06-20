@@ -41,7 +41,7 @@
 // Includes for Teuchos:
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 // Includes for Thyra:
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
@@ -72,13 +72,13 @@ int main(int argc, char *argv[])
     if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
     outputLevel = min(max(outputLevel,-1),4);
 
-    Teuchos::RefCountPtr<Teuchos::FancyOStream> 
+    Teuchos::RCP<Teuchos::FancyOStream> 
       out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
-    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
-    Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> > W_factory;
+    Teuchos::RCP<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > W_factory;
 
     // Create a list of explicit models:
-    std::vector<Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> > > explicit_model_vec;
+    std::vector<Teuchos::RCP<Thyra::ModelEvaluator<double> > > explicit_model_vec;
     Teuchos::ParameterList explicitParams;
     explicitParams.set<bool>( "implicit", false );
     explicitParams.set<double>( "Lambda_min", -0.9 );
@@ -88,32 +88,32 @@ int main(int argc, char *argv[])
     explicitParams.set<int>( "NumElements", 100 );
     explicitParams.set<double>( "x0", 10.0 );
     explicitParams.set<double>( "Coeff_s", 0.0 );
-    Teuchos::RefCountPtr<ExampleApplication>
+    Teuchos::RCP<ExampleApplication>
       basicExample = Teuchos::rcp(new ExampleApplication(epetra_comm_ptr_, explicitParams));
-    Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> >
+    Teuchos::RCP<Thyra::ModelEvaluator<double> >
       basicExamplemodel = Teuchos::rcp(new Thyra::EpetraModelEvaluator(basicExample,W_factory));
-    Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > vs = basicExamplemodel->get_x_space();
+    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs = basicExamplemodel->get_x_space();
     explicit_model_vec.push_back(basicExamplemodel);
 
     /*
     // Create a list of implicit models:
-    std::vector<Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> > > implicit_model_vec;
+    std::vector<Teuchos::RCP<Thyra::ModelEvaluator<double> > > implicit_model_vec;
     Teuchos::ParameterList implicitParams;
     implicitParams.set<int>( "NumElements", 201 );
-    Teuchos::RefCountPtr<ExampleApplication1Dfem>
+    Teuchos::RCP<ExampleApplication1Dfem>
       femTransient = Teuchos::rcp(new ExampleApplication1Dfem(epetra_comm_ptr_,implicitParams));
 #ifdef HAVE_RYTHMOS_STRATIMIKOS
     lowsfCreator.readParameters(out.get());
     lowsfCreator.getParameterList()->print(*out,2,true,false);
     W_factory = lowsfCreator.createLinearSolveStrategy("");
 #endif // HAVE_RYTHMOS_STRATIMIKOS
-    Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> >
+    Teuchos::RCP<Thyra::ModelEvaluator<double> >
       femTransientmodel = Teuchos::rcp(new Thyra::EpetraModelEvaluator(femTransient,W_factory));
-    //Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > vs = model->get_x_space();
+    //Teuchos::RCP<const Thyra::VectorSpaceBase<double> > vs = model->get_x_space();
     implicit_model_vec.push_back(femTransientmodel);
     // Create a nonlinear solver for the implicit methods:
-    Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<double> > nonlinearSolver;
-    Teuchos::RefCountPtr<Rythmos::TimeStepNonlinearSolver<double> >
+    Teuchos::RCP<Thyra::NonlinearSolverBase<double> > nonlinearSolver;
+    Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> >
       _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
     double maxError = 0.01;
     _nonlinearSolver->defaultTol(1e-3*maxError);
@@ -121,25 +121,25 @@ int main(int argc, char *argv[])
     */
 
 
-    Teuchos::RefCountPtr<Rythmos::StepperBase<double> > stepper_ptr;
+    Teuchos::RCP<Rythmos::StepperBase<double> > stepper_ptr;
 
-    Teuchos::RefCountPtr<Teuchos::ParameterList> fixedStepIntegratorParams = Teuchos::rcp(new Teuchos::ParameterList);
+    Teuchos::RCP<Teuchos::ParameterList> fixedStepIntegratorParams = Teuchos::rcp(new Teuchos::ParameterList);
     double dt = 0.1;
     fixedStepIntegratorParams->set( "Take Variable Steps", false );
     fixedStepIntegratorParams->set( "fixed_dt", dt );
     fixedStepIntegratorParams->set( "outputLevel", outputLevel );
 
-    Teuchos::RefCountPtr<Teuchos::ParameterList> variableStepIntegratorParams = Teuchos::rcp(new Teuchos::ParameterList);
+    Teuchos::RCP<Teuchos::ParameterList> variableStepIntegratorParams = Teuchos::rcp(new Teuchos::ParameterList);
     variableStepIntegratorParams->set( "Take Variable Steps", true );
     variableStepIntegratorParams->set( "outputLevel", outputLevel );
 
-    Teuchos::RefCountPtr<Rythmos::InterpolatorBase<double> > interpolator;
-    Teuchos::RefCountPtr<Rythmos::InterpolationBuffer<double> > IB;
-    Teuchos::RefCountPtr<Rythmos::InterpolationBufferBase<double> > integrator; 
+    Teuchos::RCP<Rythmos::InterpolatorBase<double> > interpolator;
+    Teuchos::RCP<Rythmos::InterpolationBuffer<double> > IB;
+    Teuchos::RCP<Rythmos::InterpolationBufferBase<double> > integrator; 
     int buffersize = 10;
 
     // Create a list of concrete objects derived from InterpolationBufferBase:
-    std::vector<Teuchos::RefCountPtr<Rythmos::InterpolationBufferBase<double> > > IB_vec;
+    std::vector<Teuchos::RCP<Rythmos::InterpolationBufferBase<double> > > IB_vec;
     // Explicit models:
     for (unsigned int i=0 ; i < explicit_model_vec.size() ; ++i) 
     {

@@ -63,7 +63,7 @@
 #include <string>
 
 // Includes for Teuchos:
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_FancyOStream.hpp"
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
   bool verbose = true; // verbosity level.
   bool result, success = true; // determine if the run was successfull
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try { // catch exceptions
@@ -160,13 +160,13 @@ int main(int argc, char *argv[])
     Teuchos::ParameterList params;
     params.set( "NumElements", numElements );
 #ifdef HAVE_MPI
-    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_MpiComm(mpiComm) );
+    Teuchos::RCP<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_MpiComm(mpiComm) );
 #else
-    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
+    Teuchos::RCP<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
 #endif // HAVE_MPI
 
     // Create the factory for the LinearOpWithSolveBase object
-    Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       W_factory;
     if((method_val == METHOD_BE) or (method_val == METHOD_BDF))
     {
@@ -182,14 +182,14 @@ int main(int argc, char *argv[])
     }
 
     // create interface to problem
-    Teuchos::RefCountPtr<ExampleApplication1Dfem>
+    Teuchos::RCP<ExampleApplication1Dfem>
       epetraModel = Teuchos::rcp(new ExampleApplication1Dfem(epetra_comm_ptr_,params));
-    Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> >
+    Teuchos::RCP<Thyra::ModelEvaluator<double> >
       model = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModel,W_factory));
 
     // Create Stepper object depending on command-line input
     std::string method;
-    Teuchos::RefCountPtr<Rythmos::StepperBase<double> > stepper_ptr;
+    Teuchos::RCP<Rythmos::StepperBase<double> > stepper_ptr;
     if ( method_val == METHOD_ERK ) {
       stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRKStepper<double>(model));
       method = "Explicit Runge-Kutta of order 4";
@@ -197,11 +197,11 @@ int main(int argc, char *argv[])
       stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEulerStepper<double>(model));
       method = "Forward Euler";
     } else if (method_val == METHOD_BE) {
-      Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<double> >
+      Teuchos::RCP<Thyra::NonlinearSolverBase<double> >
         nonlinearSolver;
-      Teuchos::RefCountPtr<Rythmos::TimeStepNonlinearSolver<double> >
+      Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> >
         _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
-      Teuchos::RefCountPtr<Teuchos::ParameterList>
+      Teuchos::RCP<Teuchos::ParameterList>
         nonlinearSolverPL = Teuchos::parameterList();
       nonlinearSolverPL->set("Default Tol",double(1e-3*maxError));
       _nonlinearSolver->setParameterList(nonlinearSolverPL);
@@ -209,16 +209,16 @@ int main(int argc, char *argv[])
       stepper_ptr = Teuchos::rcp(new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
       method = "Backward Euler";
     } else if (method_val == METHOD_BDF) {
-      Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<double> >
+      Teuchos::RCP<Thyra::NonlinearSolverBase<double> >
         nonlinearSolver;
-      Teuchos::RefCountPtr<Rythmos::TimeStepNonlinearSolver<double> >
+      Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> >
         _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
-      Teuchos::RefCountPtr<Teuchos::ParameterList>
+      Teuchos::RCP<Teuchos::ParameterList>
         nonlinearSolverPL = Teuchos::parameterList();
       nonlinearSolverPL->set("Default Tol",double(1e-3*maxError));
       _nonlinearSolver->setParameterList(nonlinearSolverPL);
       nonlinearSolver = _nonlinearSolver;
-      Teuchos::RefCountPtr<Teuchos::ParameterList> BDFparams = Teuchos::rcp(new Teuchos::ParameterList);
+      Teuchos::RCP<Teuchos::ParameterList> BDFparams = Teuchos::rcp(new Teuchos::ParameterList);
       BDFparams->set( "stopTime", finalTime );
       BDFparams->set( "maxOrder", maxOrder );
       BDFparams->set( "relErrTol", reltol );
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
     }
     Rythmos::StepperBase<double> &stepper = *stepper_ptr;
 
-    Teuchos::RefCountPtr<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+    Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
     if (outputLevel >= 3)
     {
       stepper.describe(*out,static_cast<Teuchos::EVerbosityLevel>(outputLevel));
@@ -281,14 +281,14 @@ int main(int argc, char *argv[])
     *out << "Integrated to time = " << time << endl;
     // Get solution out of stepper:
     const Rythmos::StepStatus<double> stepStatus = stepper.getStepStatus();
-    Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_computed_thyra_ptr = stepStatus.solution;
+    Teuchos::RCP<const Thyra::VectorBase<double> > x_computed_thyra_ptr = stepStatus.solution;
     // Convert Thyra::VectorBase to Epetra_Vector
-    Teuchos::RefCountPtr<const Epetra_Vector>
+    Teuchos::RCP<const Epetra_Vector>
       x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
     const Epetra_Vector &x_computed = *x_computed_ptr;
 
     // compute exact answer
-    Teuchos::RefCountPtr<Epetra_Vector> x_star_ptr = epetraModel->get_exact_solution(t1);
+    Teuchos::RCP<Epetra_Vector> x_star_ptr = epetraModel->get_exact_solution(t1);
     Epetra_Vector& x_star = *x_star_ptr;
 
     int MyPID = x_computed.Comm().MyPID();

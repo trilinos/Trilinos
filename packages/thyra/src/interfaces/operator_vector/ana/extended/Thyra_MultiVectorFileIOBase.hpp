@@ -122,14 +122,14 @@ public:
  * \relates MultiVectorFileIOBase
  */
 template<class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
+Teuchos::RCP<VectorBase<Scalar> >
 readVectorFromFile(
   const MultiVectorFileIOBase<Scalar>     &fileIO
   ,const std::string                      &fileNameBase
   ,const VectorSpaceBase<Scalar>          &vecSpc
   )
 {
-  Teuchos::RefCountPtr<VectorBase<Scalar> >
+  Teuchos::RCP<VectorBase<Scalar> >
     v = createMember(vecSpc);
   fileIO.readMultiVectorFromFile(fileNameBase,&*v);
   return v;

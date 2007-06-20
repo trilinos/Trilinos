@@ -29,7 +29,7 @@
 #ifndef TEUCHOS_SERIALIZER_HPP
 #define TEUCHOS_SERIALIZER_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace Teuchos {
 
@@ -79,7 +79,7 @@ public:
 
   /** \brief Create an object of type <tt>T</tt> to be serialized into.
    */
-  virtual RefCountPtr<T> createObj() const = 0;
+  virtual RCP<T> createObj() const = 0;
   
   /** \brief Deserialize an object from a <tt>char[]</tt> buffer.
    *

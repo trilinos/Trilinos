@@ -60,7 +60,7 @@ public:
 
   /** \brief . */
   DefaultFinalPointCaptureModelEvaluator(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >  &thyraModel
+    const Teuchos::RCP<ModelEvaluator<Scalar> >  &thyraModel
     );
 
   /** \brief . */
@@ -114,7 +114,7 @@ DefaultFinalPointCaptureModelEvaluator<Scalar>::DefaultFinalPointCaptureModelEva
 
 template<class Scalar>
 DefaultFinalPointCaptureModelEvaluator<Scalar>::DefaultFinalPointCaptureModelEvaluator(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                     &thyraModel
+  const Teuchos::RCP<ModelEvaluator<Scalar> >                     &thyraModel
   )
 {
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
@@ -182,7 +182,7 @@ void DefaultFinalPointCaptureModelEvaluator<Scalar>::reportFinalPoint(
 template<class Scalar>
 std::string DefaultFinalPointCaptureModelEvaluator<Scalar>::description() const
 {
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   std::ostringstream oss;
   oss << "Thyra::DefaultFinalPointCaptureModelEvaluator{";

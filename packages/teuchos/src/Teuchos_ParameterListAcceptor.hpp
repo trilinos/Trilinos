@@ -34,7 +34,7 @@
 namespace Teuchos {
 
 class ParameterList;
-template<class T> class RefCountPtr;
+template<class T> class RCP;
 
 /** \brief Base class objects that can accept a parameter list.
  *
@@ -78,11 +78,11 @@ public:
    * an option is changed by the client that this will automatically be
    * recognized by <tt>*this</tt> object.
    */
-  virtual void setParameterList(RefCountPtr<ParameterList> const& paramList) = 0;
+  virtual void setParameterList(RCP<ParameterList> const& paramList) = 0;
 
   /** \brief Get the parameter list that was set using <tt>setParameterList()</tt>.
    */
-  virtual RefCountPtr<ParameterList> getParameterList() = 0;
+  virtual RCP<ParameterList> getParameterList() = 0;
 
   /** \brief Unset the parameter list that was set using <tt>setParameterList()</tt>.
    *
@@ -90,7 +90,7 @@ public:
    * <li><tt>this->getParameterList().get() == NULL</tt>
    * </ul>
    */
-  virtual RefCountPtr<ParameterList> unsetParameterList() = 0;
+  virtual RCP<ParameterList> unsetParameterList() = 0;
 
   //@}
 
@@ -104,14 +104,14 @@ public:
    return const_cast<ParameterListAcceptor*>(this)->getParameterList();
    \endcode
    */
-  virtual RefCountPtr<const ParameterList> getParameterList() const;
+  virtual RCP<const ParameterList> getParameterList() const;
 
   /** \brief Return a const parameter list of all of the valid parameters that
    * <tt>this->setParameterList(...)</tt> will accept.
    *
    * The default implementation returns <tt>Teuchos::null</tt>.
    */
-  virtual RefCountPtr<const ParameterList> getValidParameters() const;
+  virtual RCP<const ParameterList> getValidParameters() const;
 
   //@}
 

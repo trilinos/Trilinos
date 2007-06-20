@@ -51,13 +51,13 @@ public:
   /** \brief Extra a non-const view of the underlying
    * <tt>LinearOpWithSolveBase</tt> object.
    */
-  virtual Teuchos::RefCountPtr<LinearOpWithSolveBase<DomainScalar,RangeScalar> >
+  virtual Teuchos::RCP<LinearOpWithSolveBase<DomainScalar,RangeScalar> >
   getNonconstLows() = 0; 
 
   /** \brief Extra a const view of the underlying
    * <tt>LinearOpWithSolveBase</tt> object.
    */
-  virtual Teuchos::RefCountPtr<const LinearOpWithSolveBase<DomainScalar,RangeScalar> >
+  virtual Teuchos::RCP<const LinearOpWithSolveBase<DomainScalar,RangeScalar> >
   getLows() const = 0; 
 
 };

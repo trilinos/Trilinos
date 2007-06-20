@@ -60,10 +60,10 @@ namespace Tpetra {
 		OrdinalType const indexBase_;
 		OrdinalType const numMyEntries_;
 		OrdinalType const numGlobalEntries_;
-		Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> const > Platform_;
-		Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> const > Comm_; // Comm is <ST, OT> because ST represents PT
-		Teuchos::RefCountPtr< ElementSpace<OrdinalType> const > ElementSpace_;
-		Teuchos::RefCountPtr< BlockElementSpace<OrdinalType> const > BlockElementSpace_;
+		Teuchos::RCP< Platform<OrdinalType, ScalarType> const > Platform_;
+		Teuchos::RCP< Comm<OrdinalType, ScalarType> const > Comm_; // Comm is <ST, OT> because ST represents PT
+		Teuchos::RCP< ElementSpace<OrdinalType> const > ElementSpace_;
+		Teuchos::RCP< BlockElementSpace<OrdinalType> const > BlockElementSpace_;
 
 	private:
 		//! Copy constructor (declared but not defined, do not use)

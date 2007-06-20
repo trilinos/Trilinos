@@ -179,9 +179,9 @@ public:
   /** @name Overridden from EuclideanLinearOpBase */
   //@{
   /** \brief . */
-  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
+  Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
+  Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
   /** \brief Calls protected <tt>euclideanApply()</tt> function.
    *
    * \anchor apply_multi_vec
@@ -235,8 +235,8 @@ protected:
    * </ul>
    */
   virtual void setSpaces(
-    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >      &range
-    ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >     &domain
+    const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >      &range
+    ,const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >     &domain
     );
 
   /** \brief Initialize vector spaces given local dimensions (uses <tt>DefaultSpmdVectorSpace</tt>).
@@ -261,7 +261,7 @@ protected:
    * </ul>
    */
   virtual void setLocalDimensions(
-    const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >     &comm
+    const Teuchos::RCP<const Teuchos::Comm<Index> >     &comm
     ,const Index                                                localDimRange
     ,const Index                                                localDimDomain
     );
@@ -323,10 +323,10 @@ protected:
 
 private:
 
-  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >    range_;
-  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >    domain_;
-  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >    sp_range_;
-  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >    sp_domain_;
+  Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >    range_;
+  Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >    domain_;
+  Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >    sp_range_;
+  Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >    sp_domain_;
 
 };	// end class LinearOpBase
 

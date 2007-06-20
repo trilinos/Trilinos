@@ -52,11 +52,11 @@ class BlockedLinearOpWithSolveBase
 public:
 
   /** \brief . */
-  virtual Teuchos::RefCountPtr<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
+  virtual Teuchos::RCP<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
   getNonconstLOWSBlock(const int i, const int j) = 0; 
 
   /** \brief . */
-  virtual Teuchos::RefCountPtr<const LinearOpWithSolveBase<RangeScalar,DomainScalar> >
+  virtual Teuchos::RCP<const LinearOpWithSolveBase<RangeScalar,DomainScalar> >
   getLOWSBlock(const int i, const int j) const = 0; 
 
 };

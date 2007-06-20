@@ -36,7 +36,7 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_MPIComm.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_PerformanceMonitorUtils.hpp"
 #include "Teuchos_TableFormat.hpp"
@@ -91,9 +91,9 @@ namespace Teuchos
      * usually be created in this way rather than through a direct
      * ctor call so that they can be appended to the list.
      */
-    static RefCountPtr<T> getNewCounter(const string& name)
+    static RCP<T> getNewCounter(const string& name)
     {
-      RefCountPtr<T> rtn = rcp(new T(name), true);
+      RCP<T> rtn = rcp(new T(name), true);
       counters().append(rtn);
       return rtn;
     }
@@ -103,7 +103,7 @@ namespace Teuchos
      */
     static TableFormat& format()
     {
-      static RefCountPtr<TableFormat> rtn=rcp(new TableFormat()); 
+      static RCP<TableFormat> rtn=rcp(new TableFormat()); 
       return *rtn; 
     }
 
@@ -122,8 +122,8 @@ namespace Teuchos
     bool isRecursiveCall() const {return isRecursiveCall_;}
       
     /* Use the "Meyers Trick" to create static data safely */
-    static Array<RefCountPtr<T> >& counters() 
-    {static Array<RefCountPtr<T> > rtn; return rtn;}
+    static Array<RCP<T> >& counters() 
+    {static Array<RCP<T> > rtn; return rtn;}
     
   private:
     

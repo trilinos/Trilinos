@@ -50,7 +50,7 @@ template<class T_impl>
 class AllocatorNew {
 public:
   /** \brief . */
-  typedef Teuchos::RefCountPtr<T_impl>  ptr_t;                         // required!
+  typedef Teuchos::RCP<T_impl>  ptr_t;                         // required!
   /** \brief . */
   const ptr_t allocate() const { return Teuchos::rcp(new T_impl()); }  // required!
 };
@@ -100,11 +100,11 @@ public:
  *
  * The type <tt>T_Allocator</tt> allows for specialized memory allocation and
  * cleanup.  This type must allow the default constructor and copy constructor
- * and have a method <tt>Teuchos::RefCountPtr<T_impl> T_Allocator::allocate()
+ * and have a method <tt>Teuchos::RCP<T_impl> T_Allocator::allocate()
  * const</tt> which creates a smart reference-counted pointer to the allocated
- * object.  Also, in returning a <tt>RefCountPtr<></tt> object, the client can
+ * object.  Also, in returning a <tt>RCP<></tt> object, the client can
  * set a deallocatioin policy object that can specialize the deallocation of
- * the object (see <tt>RefCountPtr</tt>).  In defining a specialized
+ * the object (see <tt>RCP</tt>).  In defining a specialized
  * <tt>T_Allocator</tt> class, the client can all initialize the object using
  * more than just the default constructor.  Therefore, if the client provides
  * a specialized <tt>T_Allocator</tt> class, there are no restrictions on the
@@ -152,7 +152,7 @@ private:
  * \relates AbstractFactoryStd
  */
 template<class T_itfc, class T_impl>
-RefCountPtr<const AbstractFactory<T_itfc> >
+RCP<const AbstractFactory<T_itfc> >
 abstractFactoryStd()
 {
 	return rcp(
@@ -166,7 +166,7 @@ abstractFactoryStd()
  * \relates AbstractFactoryStd
  */
 template<class T_itfc, class T_impl, class T_Allocator>
-RefCountPtr<const AbstractFactory<T_itfc> >
+RCP<const AbstractFactory<T_itfc> >
 abstractFactoryStd( const T_Allocator& alloc = T_Allocator() )
 {
 	return rcp(

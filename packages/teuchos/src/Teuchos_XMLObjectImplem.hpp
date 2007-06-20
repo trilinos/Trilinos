@@ -35,7 +35,7 @@
 
 #include "Teuchos_map.hpp"
 #include "Teuchos_Array.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace Teuchos
 {

@@ -30,7 +30,7 @@
 #define TEUCHOS_HANDLEABLE_HPP
 
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 
 namespace Teuchos 
@@ -38,7 +38,7 @@ namespace Teuchos
   /** \brief Class ConstHandleable provides an abstract interface for
    * polymorphic conversion from raw pointers to const smart pointers.
    *
-   * Recall from the Teuchos RefCountPtr documentation that one should never
+   * Recall from the Teuchos RCP documentation that one should never
    * create directly a smart pointer from a raw pointer; rather, smart
    * pointers should be created through a call to rcp(). The type of the
    * argument to rcp() must be known at compile time. This makes the syntax
@@ -56,15 +56,15 @@ namespace Teuchos
     /** \brief . */
     virtual ~ConstHandleable(){}
 
-    /** \brief Virtual dtorReturn a safely-created RefCountPtr to the base
+    /** \brief Virtual dtorReturn a safely-created RCP to the base
      * type */
-    virtual RefCountPtr<const Base> getConstRcp() const = 0 ;
+    virtual RCP<const Base> getConstRcp() const = 0 ;
   };
 
   /** \brief Class Handleable provides an abstract interface for polymorphic
    * conversion from raw pointers to smart pointers.
    *
-   * Recall from the Teuchos RefCountPtr documentation that one should never
+   * Recall from the Teuchos RCP documentation that one should never
    * create directly a smart pointer from a raw pointer; rather, smart
    * pointers should be created through a call to rcp(). The type of the
    * argument to rcp() must be known at compile time. This makes the syntax
@@ -83,8 +83,8 @@ namespace Teuchos
     /** \brief . */
     virtual ~Handleable(){;}
 
-    /** \brief Return a safely-created RefCountPtr to the base type */
-    virtual RefCountPtr<Base> getRcp() = 0 ;
+    /** \brief Return a safely-created RCP to the base type */
+    virtual RCP<Base> getRcp() = 0 ;
 
   };
 }
@@ -104,8 +104,8 @@ namespace Teuchos
  * \endcode
  */
 #define TEUCHOS_GET_RCP(Base)                                           \
-  virtual Teuchos::RefCountPtr<const Base > getConstRcp() const {return rcp(this);} \
-  virtual Teuchos::RefCountPtr<Base > getRcp() {return rcp(this);} 
+  virtual Teuchos::RCP<const Base > getConstRcp() const {return rcp(this);} \
+  virtual Teuchos::RCP<Base > getRcp() {return rcp(this);} 
 
 /** \brief Use this macro as an easy way to implement the ConstHandleable
  * interface in a derived class. For example,
@@ -119,7 +119,7 @@ namespace Teuchos
  * \endcode
  */
 #define TEUCHOS_GET_CONST_RCP(Base) \
-virtual Teuchos::RefCountPtr<const Base > getConstRcp() const {return rcp(this);}
+virtual Teuchos::RCP<const Base > getConstRcp() const {return rcp(this);}
 
 
 

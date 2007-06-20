@@ -29,7 +29,7 @@
 #ifndef TPETRA_ELEMENTSPACE_HPP
 #define TPETRA_ELEMENTSPACE_HPP
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_ConfigDefs.hpp" // for STL map and vector
 #include "Tpetra_Object.hpp"
@@ -83,7 +83,7 @@ namespace Tpetra {
 								  + ".  Should be >= " + toString(zero) + ".", -1);
       
 			// platform & comm setup
-			Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > comm = Platform.createOrdinalComm();
+			Teuchos::RCP< Comm<OrdinalType, OrdinalType> > comm = Platform.createOrdinalComm();
 			OrdinalType numImages = comm->getNumImages();
 			OrdinalType myImageID = comm->getMyImageID();
       
@@ -135,7 +135,7 @@ namespace Tpetra {
 								  + ".  Should be >= " + toString(zero) + ".", -2);
       
 			// platform & comm setup
-			Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > comm = Platform.createOrdinalComm();
+			Teuchos::RCP< Comm<OrdinalType, OrdinalType> > comm = Platform.createOrdinalComm();
       
 			// check for invalid numGlobalElements
 			//   Sum up all local element counts to get global count, and then
@@ -193,7 +193,7 @@ namespace Tpetra {
 								  + ".  Should be >= " + toString(zero) + ".", -2);
       
 			// platform & comm setup
-			Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > comm = Platform.createOrdinalComm();
+			Teuchos::RCP< Comm<OrdinalType, OrdinalType> > comm = Platform.createOrdinalComm();
       
 			// check for invalid numGlobalElements
 			//   Sum up all local element counts to get global count, and then
@@ -501,7 +501,7 @@ namespace Tpetra {
     
 	private:
 		// private data members
-		Teuchos::RefCountPtr< ElementSpaceData<OrdinalType> > ElementSpaceData_; // Teuchos smart pointer
+		Teuchos::RCP< ElementSpaceData<OrdinalType> > ElementSpaceData_; // Teuchos smart pointer
     
 		// private functions
 		void directorySetup() {

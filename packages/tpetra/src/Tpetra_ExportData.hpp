@@ -29,7 +29,7 @@
 #ifndef TPETRA_EXPORTDATA_HPP
 #define TPETRA_EXPORTDATA_HPP
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_Array.hpp>
 #include "Tpetra_Object.hpp"
@@ -80,7 +80,7 @@ namespace Tpetra {
 		ElementSpace<OrdinalType> const target_;
     
 		// Platform, Comm, Distributor, etc.
-		Teuchos::RefCountPtr< Platform<OrdinalType, OrdinalType> const > platform_;
+		Teuchos::RCP< Platform<OrdinalType, OrdinalType> const > platform_;
 		Distributor<OrdinalType> distributor_;
     
 	private:

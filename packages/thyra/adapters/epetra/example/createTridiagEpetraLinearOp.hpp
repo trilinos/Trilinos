@@ -54,7 +54,7 @@ A=
  * where <tt>diagScale</tt> is \f$a\f$ and <tt>globalDim</tt> is the
  * glboal dimension of the matrix.
  */
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 createTridiagEpetraLinearOp(
   const int      globalDim
 #ifdef HAVE_MPI

@@ -29,7 +29,7 @@
 #ifndef TEUCHOS_MPI_REDUCTION_OP_SETTER_HPP
 #define TEUCHOS_MPI_REDUCTION_OP_SETTER_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ReductionOp.hpp"
 #include "mpi.h"
 
@@ -61,7 +61,7 @@ template<typename Ordinal>
 class MpiReductionOp : public MpiReductionOpBase {
 public:
   /** \brief . */
-  MpiReductionOp( const RefCountPtr<const ValueTypeReductionOp<Ordinal,char> > &reductOp );
+  MpiReductionOp( const RCP<const ValueTypeReductionOp<Ordinal,char> > &reductOp );
   /** \brief . */
   void reduce(
     void              *invec
@@ -70,7 +70,7 @@ public:
     ,MPI_Datatype     *datatype
     ) const;
 private:
-  RefCountPtr<const ValueTypeReductionOp<Ordinal,char> > reductOp_;
+  RCP<const ValueTypeReductionOp<Ordinal,char> > reductOp_;
   // Not defined and not to be called
   MpiReductionOp();
   MpiReductionOp(const MpiReductionOp&);
@@ -81,8 +81,8 @@ private:
  * <tt>ReductionOp</tt> object.
  */
 template<typename Ordinal>
-RefCountPtr<const MpiReductionOp<Ordinal> >
-mpiReductionOp( const RefCountPtr<const ValueTypeReductionOp<Ordinal,char> > &reductOp );
+RCP<const MpiReductionOp<Ordinal> >
+mpiReductionOp( const RCP<const ValueTypeReductionOp<Ordinal,char> > &reductOp );
 
 /** \brief Utility class for setting an MPI-compatible reduction object and
  * using it to create an <tt>MPI_Op</tt> object.
@@ -121,7 +121,7 @@ public:
    *     object that can be used with MPI.
    * </ul>
    */
-  MpiReductionOpSetter( const Teuchos::RefCountPtr<const MpiReductionOpBase>& reduct_op );
+  MpiReductionOpSetter( const Teuchos::RCP<const MpiReductionOpBase>& reduct_op );
 
   /** \brief . */
   ~MpiReductionOpSetter();
@@ -147,7 +147,7 @@ private:
 
 template<typename Ordinal>
 MpiReductionOp<Ordinal>::MpiReductionOp(
-  const RefCountPtr<const ValueTypeReductionOp<Ordinal,char> > &reductOp
+  const RCP<const ValueTypeReductionOp<Ordinal,char> > &reductOp
   )
   :reductOp_(reductOp)
 {}
@@ -175,8 +175,8 @@ void MpiReductionOp<Ordinal>::reduce(
 }
 
 template<typename Ordinal>
-RefCountPtr<const MpiReductionOp<Ordinal> >
-mpiReductionOp( const RefCountPtr<const ValueTypeReductionOp<Ordinal,char> > &reductOp )
+RCP<const MpiReductionOp<Ordinal> >
+mpiReductionOp( const RCP<const ValueTypeReductionOp<Ordinal,char> > &reductOp )
 {
   return rcp(new MpiReductionOp<Ordinal>(reductOp));
 }

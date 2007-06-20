@@ -92,7 +92,7 @@ public:
    * <li> <tt>0 <= k <= numBlocks()-1</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > getBlock(const int k) const = 0; 
+  virtual Teuchos::RCP<const VectorSpaceBase<Scalar> > getBlock(const int k) const = 0; 
 
 #ifdef DOXYGEN_COMPILE
 private:

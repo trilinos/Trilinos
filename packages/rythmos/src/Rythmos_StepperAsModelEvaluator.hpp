@@ -61,7 +61,7 @@ public:
 
   /** \brief . */
   void initialize(
-    const Teuchos::RefCountPtr<StepperBase<Scalar> > &stepper,
+    const Teuchos::RCP<StepperBase<Scalar> > &stepper,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
     );
 
@@ -78,10 +78,10 @@ public:
   /** \brief . */
   int Ng() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
   get_p_space(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
   get_g_space(int j) const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
@@ -100,13 +100,13 @@ private:
   // //////////////////////
   // Private types
 
-  typedef Teuchos::Array<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > > SpaceArray_t;
+  typedef Teuchos::Array<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > SpaceArray_t;
   
 
   // //////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<StepperBase<Scalar> > stepper_;
+  Teuchos::RCP<StepperBase<Scalar> > stepper_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> initialCondition_;
 
   int Np_;
@@ -122,14 +122,14 @@ private:
 
 /** \brief Nonmember constructor. */
 template<class Scalar>
-Teuchos::RefCountPtr<StepperAsModelEvaluator<Scalar> >
+Teuchos::RCP<StepperAsModelEvaluator<Scalar> >
 stepperAsModelEvaluator(
-  const Teuchos::RefCountPtr<StepperBase<Scalar> > &stepper,
+  const Teuchos::RCP<StepperBase<Scalar> > &stepper,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
   )
 {
-  using Teuchos::RefCountPtr; using Teuchos::rcp;
-  RefCountPtr<StepperAsModelEvaluator<Scalar> >
+  using Teuchos::RCP; using Teuchos::rcp;
+  RCP<StepperAsModelEvaluator<Scalar> >
     stepperAsModelEvaluator = rcp(new StepperAsModelEvaluator<Scalar>());
   stepperAsModelEvaluator->initialize(stepper,initialCondition);
   return stepperAsModelEvaluator;
@@ -153,7 +153,7 @@ StepperAsModelEvaluator<Scalar>::StepperAsModelEvaluator()
 
 template<class Scalar>
 void StepperAsModelEvaluator<Scalar>::initialize(
-  const Teuchos::RefCountPtr<StepperBase<Scalar> > &stepper,
+  const Teuchos::RCP<StepperBase<Scalar> > &stepper,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
   )
 {
@@ -165,7 +165,7 @@ void StepperAsModelEvaluator<Scalar>::initialize(
   initialCondition_ = initialCondition;
   currentInitialCondition_ = initialCondition;
 
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
     stepperModel = stepper_->getModel();
 
   Np_ = stepperModel->Np();
@@ -199,7 +199,7 @@ int StepperAsModelEvaluator<Scalar>::Ng() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 StepperAsModelEvaluator<Scalar>::get_p_space(int l) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -210,7 +210,7 @@ StepperAsModelEvaluator<Scalar>::get_p_space(int l) const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 StepperAsModelEvaluator<Scalar>::get_g_space(int j) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -251,7 +251,7 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
 {
 
   using Teuchos::as;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::describe;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
@@ -268,7 +268,7 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
 
   // OutArgs
 
-  RefCountPtr<Thyra::VectorBase<Scalar> >
+  RCP<Thyra::VectorBase<Scalar> >
     g_out = outArgs.get_g(0);
 
   TEST_FOR_EXCEPT(
@@ -314,7 +314,7 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
       StepStatus<Scalar>
         stepStatus = stepper_->getStepStatus();
       
-      RefCountPtr<const Thyra::VectorBase<Scalar> >
+      RCP<const Thyra::VectorBase<Scalar> >
         solution = stepStatus.solution,
         solutionDot = stepStatus.solutionDot;
       
@@ -354,7 +354,7 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
       StepStatus<Scalar>
         stepStatus = stepper_->getStepStatus();
       
-      RefCountPtr<const Thyra::VectorBase<Scalar> >
+      RCP<const Thyra::VectorBase<Scalar> >
         solution = stepStatus.solution,
         solutionDot = stepStatus.solutionDot;
       

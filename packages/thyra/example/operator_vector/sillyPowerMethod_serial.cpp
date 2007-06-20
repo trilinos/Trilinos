@@ -57,7 +57,7 @@ bool runPowerMethodExample(
   bool success = true;
   bool result;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = (verbose ? Teuchos::VerboseObjectBase::getDefaultOStream() : Teuchos::null);
 
   if(verbose)
@@ -81,7 +81,7 @@ bool runPowerMethodExample(
     lower[k-1] = -one; diag[k] = two; upper[k] = -one;   //  Middle rows
   }
   lower[k-1] = -one; diag[k] = two;                      //  Last row
-  Teuchos::RefCountPtr<ExampleTridiagSerialLinearOp<Scalar> >
+  Teuchos::RCP<ExampleTridiagSerialLinearOp<Scalar> >
     A = Teuchos::rcp( new ExampleTridiagSerialLinearOp<Scalar>(dim,&lower[0],&diag[0],&upper[0]) );
   if( verbose && dumpAll ) *out << "\nA =\n" << *A;
 
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
   bool verbose = true;
   bool result;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {

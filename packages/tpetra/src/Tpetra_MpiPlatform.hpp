@@ -30,7 +30,7 @@
 #define TPETRA_MPIPLATFORM_HPP
 
 #include <mpi.h>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_MpiComm.hpp"
@@ -65,8 +65,8 @@ namespace Tpetra {
 		~MpiPlatform() {};
 
 		//! Clone Constructor - implements Tpetra::Platform virtual clone method.
-		Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > clone() const {
-			Teuchos::RefCountPtr< MpiPlatform<OrdinalType, ScalarType> > platform;
+		Teuchos::RCP< Platform<OrdinalType, ScalarType> > clone() const {
+			Teuchos::RCP< MpiPlatform<OrdinalType, ScalarType> > platform;
 			platform = Teuchos::rcp(new MpiPlatform<OrdinalType, ScalarType>(*this));
 			return(platform);
 		};
@@ -76,13 +76,13 @@ namespace Tpetra {
 		//@{ \name Class Creation and Accessor Methods
 
 		//! Comm Instances
-		Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> > createScalarComm() const {
-			Teuchos::RefCountPtr< MpiComm<OrdinalType, ScalarType> > comm;
+		Teuchos::RCP< Comm<OrdinalType, ScalarType> > createScalarComm() const {
+			Teuchos::RCP< MpiComm<OrdinalType, ScalarType> > comm;
 			comm = Teuchos::rcp(new MpiComm<OrdinalType, ScalarType>(MpiData_));
 			return(comm);
 		};
-		Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const {
-			Teuchos::RefCountPtr< MpiComm<OrdinalType, OrdinalType> > comm;
+		Teuchos::RCP< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const {
+			Teuchos::RCP< MpiComm<OrdinalType, OrdinalType> > comm;
 			comm = Teuchos::rcp(new MpiComm<OrdinalType, OrdinalType>(MpiData_));
 			return(comm);
 		};
@@ -109,7 +109,7 @@ namespace Tpetra {
 		//@}
     
 	private:
-		Teuchos::RefCountPtr<MpiData> MpiData_;
+		Teuchos::RCP<MpiData> MpiData_;
     
 		// convenience functions for returning inner data class, both const and nonconst versions.
 		MpiData& data() {return(*MpiData_);};

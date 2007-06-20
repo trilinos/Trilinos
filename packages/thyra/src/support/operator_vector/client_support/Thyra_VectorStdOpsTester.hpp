@@ -220,7 +220,7 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   if(out) *out << "\nvecSpc.dim() = " << vecSpc.dim() << std::endl;
 
   if(out) *out << "\nCreating vectors v1, v2, v3, v4, x and z ...\n";
-  Teuchos::RefCountPtr<VectorBase<Scalar> >
+  Teuchos::RCP<VectorBase<Scalar> >
     v1 = createMember(vecSpc),
     v2 = createMember(vecSpc),
     v3 = createMember(vecSpc),

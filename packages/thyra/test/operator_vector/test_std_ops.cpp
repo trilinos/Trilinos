@@ -50,14 +50,14 @@ bool run_std_ops_tests(
   )
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   typedef Thyra::Index Index;
 
-  RefCountPtr<Teuchos::FancyOStream>
+  RCP<Teuchos::FancyOStream>
     out = rcp(new Teuchos::FancyOStream(rcp(out_arg,false)));
 
   VectorStdOpsTester<Scalar> vectorStdOpsTester;
@@ -73,7 +73,7 @@ bool run_std_ops_tests(
 
   if(out.get()) *out << "\nCreating a serial vector space svs with n="<<n<<" vector elements ...\n";
   //const DefaultSerialVectorSpace<Scalar>  svs(n);
-  const RefCountPtr<const Teuchos::Comm<Index> >
+  const RCP<const Teuchos::Comm<Index> >
     comm = Teuchos::DefaultComm<Index>::getComm();
   const DefaultSpmdVectorSpace<Scalar>  svs(comm,n,-1);
 
@@ -87,9 +87,9 @@ bool run_std_ops_tests(
 
   if(out.get()) *out << "\nCreating a product space pvs with numBlocks="<<numBlocks<<" and n="<<n<<"vector elements per block ...\n";
 
-  Teuchos::Array<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >
+  Teuchos::Array<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > >
     vecSpaces(numBlocks);
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
     spaceBlock = Teuchos::rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(comm,n,-1));
     //spaceBlock = Teuchos::rcp(new Thyra::DefaultSerialVectorSpace<Scalar>(n));
   for( int i = 0; i < numBlocks; ++i )
@@ -105,7 +105,7 @@ bool run_std_ops_tests(
 
   if(out.get()) *out << "\nCreating a nested product space ppvs with numBlocks="<<numBlocks<<" product spaces as components ...\n";
 
-  Teuchos::Array<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >
+  Teuchos::Array<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > >
     blockVecSpaces(numBlocks);
   for( int i = 0; i < numBlocks; ++i )
     blockVecSpaces[i] = Teuchos::rcp(&pvs,false);
@@ -137,7 +137,7 @@ int main( int argc, char* argv[] ) {
   // const int procRank = Teuchos::GlobalMPISession::getRank();
   // const int numProc = Teuchos::GlobalMPISession::getNProc();
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {

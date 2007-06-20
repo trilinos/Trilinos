@@ -320,12 +320,12 @@ public:
    * called later in order to fully initalize the model.
    */
   void initializeStructure(
-    const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index
     );
   
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
   getStateModel() const;
   
   /** \brief . */
@@ -373,11 +373,11 @@ public:
    */
   void initializeState(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
-    const Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> > &W_tilde,
+    const Teuchos::RCP<const Thyra::LinearOpWithSolveBase<Scalar> > &W_tilde,
     const Scalar &coeff_x_dot,
     const Scalar &coeff_x,
-    const Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> > &DfDx_dot = Teuchos::null,
-    const Teuchos::RefCountPtr<const Thyra::MultiVectorBase<Scalar> > &DfDp = Teuchos::null
+    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > &DfDx_dot = Teuchos::null,
+    const Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > &DfDp = Teuchos::null
     );
 
   // 2007/05/22: rabartl: ToDo: Add an InterpolationBufferBase
@@ -393,13 +393,13 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
@@ -417,20 +417,20 @@ private:
   // /////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > stateModel_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > stateModel_;
   int p_index_;
   int np_;
-  Teuchos::RefCountPtr<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> > s_bar_space_;
-  Teuchos::RefCountPtr<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> > f_sens_space_;
+  Teuchos::RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> > s_bar_space_;
+  Teuchos::RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> > f_sens_space_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> stateBasePoint_;
 
-  mutable Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> > W_tilde_;
+  mutable Teuchos::RCP<const Thyra::LinearOpWithSolveBase<Scalar> > W_tilde_;
   mutable Scalar coeff_x_dot_;
   mutable Scalar coeff_x_;
-  mutable Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> > DfDx_dot_;
-  mutable Teuchos::RefCountPtr<const Thyra::MultiVectorBase<Scalar> > DfDp_;
+  mutable Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > DfDx_dot_;
+  mutable Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DfDp_;
 
 
   // /////////////////////////
@@ -460,7 +460,7 @@ ForwardSensitivityModelEvaluator<Scalar>::ForwardSensitivityModelEvaluator()
 
 template<class Scalar>
 void ForwardSensitivityModelEvaluator<Scalar>::initializeStructure(
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
   const int p_index
   )
 {
@@ -503,7 +503,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::initializeStructure(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 ForwardSensitivityModelEvaluator<Scalar>::getStateModel() const
 {
   return stateModel_;
@@ -520,11 +520,11 @@ int ForwardSensitivityModelEvaluator<Scalar>::get_p_index() const
 template<class Scalar>
 void ForwardSensitivityModelEvaluator<Scalar>::initializeState(
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
-  const Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> > &W_tilde,
+  const Teuchos::RCP<const Thyra::LinearOpWithSolveBase<Scalar> > &W_tilde,
   const Scalar &coeff_x_dot,
   const Scalar &coeff_x,
-  const Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> > &DfDx_dot,
-  const Teuchos::RefCountPtr<const Thyra::MultiVectorBase<Scalar> > &DfDp
+  const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > &DfDx_dot,
+  const Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > &DfDp
   )
 {
 
@@ -575,7 +575,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::initializeState(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 ForwardSensitivityModelEvaluator<Scalar>::get_x_space() const
 {
   return s_bar_space_;
@@ -583,7 +583,7 @@ ForwardSensitivityModelEvaluator<Scalar>::get_x_space() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 ForwardSensitivityModelEvaluator<Scalar>::get_f_space() const
 {
   return f_sens_space_;
@@ -599,7 +599,7 @@ ForwardSensitivityModelEvaluator<Scalar>::getNominalValues() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
 ForwardSensitivityModelEvaluator<Scalar>::create_W() const
 {
   return Thyra::multiVectorLinearOpWithSolve<Scalar>();
@@ -658,7 +658,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::evalModel(
 {
 
   using Teuchos::Array;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -678,11 +678,11 @@ void ForwardSensitivityModelEvaluator<Scalar>::evalModel(
   // InArgs
   //
 
-  RefCountPtr<const Thyra::DefaultMultiVectorProductVector<Scalar> >
+  RCP<const Thyra::DefaultMultiVectorProductVector<Scalar> >
     s_bar = rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVector<Scalar> >(
       inArgs.get_x().assert_not_null(), true
       );
-  RefCountPtr<const Thyra::DefaultMultiVectorProductVector<Scalar> >
+  RCP<const Thyra::DefaultMultiVectorProductVector<Scalar> >
     s_bar_dot = rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVector<Scalar> >(
       inArgs.get_x_dot().assert_not_null(), true
       );
@@ -691,25 +691,25 @@ void ForwardSensitivityModelEvaluator<Scalar>::evalModel(
   const Scalar
     beta = inArgs.get_beta();
 
-  RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
+  RCP<const Thyra::MultiVectorBase<Scalar> >
     S = s_bar->getMultiVector();
-  RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
+  RCP<const Thyra::MultiVectorBase<Scalar> >
     S_dot = s_bar_dot->getMultiVector();
   
   //
   // OutArgs
   //
 
-  RefCountPtr<Thyra::DefaultMultiVectorProductVector<Scalar> >
+  RCP<Thyra::DefaultMultiVectorProductVector<Scalar> >
     f_sens = rcp_dynamic_cast<Thyra::DefaultMultiVectorProductVector<Scalar> >(
       outArgs.get_f(), true
       );
-  RefCountPtr<Thyra::DefaultMultiVectorLinearOpWithSolve<Scalar> >
+  RCP<Thyra::DefaultMultiVectorLinearOpWithSolve<Scalar> >
     W_sens = rcp_dynamic_cast<Thyra::DefaultMultiVectorLinearOpWithSolve<Scalar> >(
       outArgs.get_W(), true
       );
 
-  RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+  RCP<Thyra::MultiVectorBase<Scalar> >
     F_sens = f_sens->getNonconstMultiVector().assert_not_null();
 
   //
@@ -718,7 +718,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::evalModel(
 
   if(!is_null(F_sens)) {
     // S_diff =  -(coeff_x_dot/coeff_x)*S + S_dot
-    Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+    Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >
       S_diff = createMembers( stateModel_->get_x_space(), np_ );
     V_StVpV( &*S_diff, Scalar(-coeff_x_dot_/coeff_x_), *S, *S_dot );
     // F_sens = (1/coeff_x) * W_tilde * S
@@ -761,7 +761,7 @@ template<class Scalar>
 void ForwardSensitivityModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef Thyra::ModelEvaluatorBase MEB;
 
@@ -787,7 +787,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::computeDerivativeMatrices(
   typedef Thyra::ModelEvaluatorBase MEB;
   typedef Teuchos::VerboseObjectTempState<MEB> VOTSME;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
 
   const Scalar
@@ -808,7 +808,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::computeDerivativeMatrices(
     MEB::InArgs<Scalar> inArgs = stateBasePoint_;
     MEB::OutArgs<Scalar> outArgs = stateModel_->createOutArgs();
     
-    Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> > DfDx_dot_compute;
+    Teuchos::RCP<Thyra::LinearOpBase<Scalar> > DfDx_dot_compute;
     if (is_null(DfDx_dot_)) {
       DfDx_dot_compute = stateModel_->create_W_op();
       inArgs.set_alpha(1.0);
@@ -816,7 +816,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::computeDerivativeMatrices(
       outArgs.set_W_op(DfDx_dot_compute);
     }
 
-    Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > DfDp_compute;
+    Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > DfDp_compute;
     if (is_null(DfDp_)) {
       DfDp_compute = Thyra::create_DfDp_mv(
         *stateModel_,p_index_,

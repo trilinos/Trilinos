@@ -44,15 +44,15 @@ public:
    * </ul>
    *
    * The object accessed from <tt>*tpetraOp</tt> is only guaranteed to be
-   * valid while the returned <tt>Teuchos::RefCountPtr</tt> object exits.
+   * valid while the returned <tt>Teuchos::RCP</tt> object exits.
    * This allows for some very specialized implementations where a
    * <tt>Tpetra::Operator</tt> view of <tt>*this</tt> can be acquired and
    * released according to the lifetime of the returned
-   * <tt>Teuchos::RefCountPtr</tt> object.
+   * <tt>Teuchos::RCP</tt> object.
    *
    * The <tt>Tpetra::Operator</tt> object may be dynamic casted to more
    * specialized interfaces and therefore modified.  Then, when the last
-   * <tt>RefCountPtr</tt> object ancestor returned from this function goes
+   * <tt>RCP</tt> object ancestor returned from this function goes
    * away, then <tt>*this</tt> will be updated to relect the change.
    *
    * <b>Warning!</b> The client can not assume that the view in
@@ -61,7 +61,7 @@ public:
    * the case!
    */
   virtual void getTpetraOpView(
-    Teuchos::RefCountPtr<Tpetra::Operator<Ordinal,Scalar> >   *tpetraOp
+    Teuchos::RCP<Tpetra::Operator<Ordinal,Scalar> >   *tpetraOp
     ,EAdjointTpetraOp                                         *tpetraOpAdjointSupport
     ) = 0;
 
@@ -83,11 +83,11 @@ public:
    * </ul>
    *
    * The object accessed from <tt>*return</tt> is only guaranteed to be valid
-   * while the returned <tt>Teuchos::RefCountPtr</tt> object exits.  This
+   * while the returned <tt>Teuchos::RCP</tt> object exits.  This
    * allows for some very specialized implementations where a
    * <tt>Tpetra::Operator</tt> view of <tt>*this</tt> can be acquired and
    * released according to the lifetime of the returned
-   * <tt>Teuchos::RefCountPtr</tt> object.
+   * <tt>Teuchos::RCP</tt> object.
    *
    * Note that if the client tries to constant cast the returned object and
    * modify it that this returned view is not guaranteed to update
@@ -100,7 +100,7 @@ public:
    * the case!
    */
   virtual void getTpetraOpView(
-    Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> >   *tpetraOp
+    Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> >   *tpetraOp
     ,EAdjointTpetraOp                                               *tpetraOpAdjointSupport
     ) const = 0;
 

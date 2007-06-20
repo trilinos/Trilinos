@@ -59,7 +59,7 @@ public:
    * \item <tt>this->get_op_factory(op_factory->create()->op_name()).get() != op_factory.get()</tt>
    * </ul>
    */
-  void add_op_factory( const Teuchos::RefCountPtr<Teuchos::AbstractFactory<RTOpPack::RTOpT<Scalar> > > &op_factory );
+  void add_op_factory( const Teuchos::RCP<Teuchos::AbstractFactory<RTOpPack::RTOpT<Scalar> > > &op_factory );
 
   /** \brief Get an operator factory given the name of the operator.
    *
@@ -70,14 +70,14 @@ public:
    * \item An operator factory with this name must have been added in a call to <tt>this->add_op_factory(...)</tt>
    * </ul>
    */
-  Teuchos::RefCountPtr<Teuchos::AbstractFactory<RTOpPack::RTOpT<Scalar> > > get_op_factory( const char op_name[] ) const;
+  Teuchos::RCP<Teuchos::AbstractFactory<RTOpPack::RTOpT<Scalar> > > get_op_factory( const char op_name[] ) const;
 
   /** \brief Print out all of the operator factories that have been added.
    */
   void print_op_factories(std::ostream& o) const;
 
 private:
-  typedef std::map< std::string, Teuchos::RefCountPtr<Teuchos::AbstractFactory<RTOpT<Scalar> > > >  op_factories_t;
+  typedef std::map< std::string, Teuchos::RCP<Teuchos::AbstractFactory<RTOpT<Scalar> > > >  op_factories_t;
   op_factories_t  op_factories_;
 
 }; // class RTOpServer

@@ -53,11 +53,11 @@ public:
   //@{
 
   /** \brief Throws exception. */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_x_space() const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief Returns null. */
-  Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
   /** \brief Throws exception. */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief Returns this->createInArgs(). */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief Returns this->createInArgs(). */
@@ -65,15 +65,15 @@ public:
   /** \brief Returns this->createInArgs(). */
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
   /** \brief Thorws exception. */
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > create_W() const;
+  Teuchos::RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief Returns Teuchos::null. */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_W_op() const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \brief Throws exception. */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
   /** \brief Throws exception. */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
   /** \brief Throws exception. */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
   /** \brief Does nothing and ignores input. */
   void reportFinalPoint(
     const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
@@ -93,7 +93,7 @@ public:
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 ResponseOnlyModelEvaluatorBase<Scalar>::get_x_space() const
 {
   TEST_FOR_EXCEPTION(
@@ -106,7 +106,7 @@ ResponseOnlyModelEvaluatorBase<Scalar>::get_x_space() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+Teuchos::RCP<const Teuchos::Array<std::string> >
 ResponseOnlyModelEvaluatorBase<Scalar>::get_p_names(int l) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -116,7 +116,7 @@ ResponseOnlyModelEvaluatorBase<Scalar>::get_p_names(int l) const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 ResponseOnlyModelEvaluatorBase<Scalar>::get_f_space() const
 {
   TEST_FOR_EXCEPTION(
@@ -148,7 +148,7 @@ ResponseOnlyModelEvaluatorBase<Scalar>::getUpperBounds() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
 ResponseOnlyModelEvaluatorBase<Scalar>::create_W() const
 {
   TEST_FOR_EXCEPTION(
@@ -162,7 +162,7 @@ ResponseOnlyModelEvaluatorBase<Scalar>::create_W() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 ResponseOnlyModelEvaluatorBase<Scalar>::create_W_op() const
 {
   TEST_FOR_EXCEPTION(
@@ -176,7 +176,7 @@ ResponseOnlyModelEvaluatorBase<Scalar>::create_W_op() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 ResponseOnlyModelEvaluatorBase<Scalar>::create_DfDp_op(int l) const
 {
   typedef ModelEvaluatorBase MEB;
@@ -192,7 +192,7 @@ ResponseOnlyModelEvaluatorBase<Scalar>::create_DfDp_op(int l) const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 ResponseOnlyModelEvaluatorBase<Scalar>::create_DgDx_op(int j) const
 {
   typedef ModelEvaluatorBase MEB;
@@ -208,7 +208,7 @@ ResponseOnlyModelEvaluatorBase<Scalar>::create_DgDx_op(int j) const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 ResponseOnlyModelEvaluatorBase<Scalar>::create_DgDp_op( int j, int l ) const
 {
   typedef ModelEvaluatorBase MEB;

@@ -40,7 +40,7 @@ const std::string OutputFile_default = "none";
 
 const std::string VerbosityLevel_name = "Verbosity Level";
 const std::string  VerbosityLevel_default = "default";
-Teuchos::RefCountPtr<
+Teuchos::RCP<
   Teuchos::StringToIntegralParameterEntryValidator<Teuchos::EVerbosityLevel>
   >
 VerbosityLevel_validator;
@@ -50,12 +50,12 @@ VerbosityLevel_validator;
 
 
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 Teuchos::getValidVerboseObjectSublist()
 {
-  static RefCountPtr<const ParameterList> validParams;
+  static RCP<const ParameterList> validParams;
   if (is_null(validParams)) {
-    RefCountPtr<ParameterList>
+    RCP<ParameterList>
       pl = rcp(new ParameterList(VerboseObject_name));
     pl->set(
       VerbosityLevel_name, VerbosityLevel_default,
@@ -89,7 +89,7 @@ void Teuchos::setupVerboseObjectSublist( ParameterList* paramList )
 
 void Teuchos::readVerboseObjectSublist(
   ParameterList* paramList,
-  RefCountPtr<FancyOStream> *oStream, EVerbosityLevel *verbLevel
+  RCP<FancyOStream> *oStream, EVerbosityLevel *verbLevel
   )
 {
   // Validate input
@@ -108,7 +108,7 @@ void Teuchos::readVerboseObjectSublist(
     *oStream = null;
   }
   else {
-    RefCountPtr<std::ofstream>
+    RCP<std::ofstream>
       oFileStream = rcp(new std::ofstream(outputFileStr.c_str()));
     TEST_FOR_EXCEPTION_PURE_MSG(
       oFileStream->eof(), Exceptions::InvalidParameterValue,

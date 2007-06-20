@@ -53,8 +53,8 @@ views of %Thyra objects.
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
-create_Comm( const Teuchos::RefCountPtr<const Epetra_Comm> &epetraComm );
+Teuchos::RCP<const Teuchos::Comm<Index> >
+create_Comm( const Teuchos::RCP<const Epetra_Comm> &epetraComm );
 
 /** \brief Concrete an <tt>VectorSpaceBase</tt> object given an
  * <tt>Epetra_Map</tt> object.
@@ -68,7 +68,7 @@ create_Comm( const Teuchos::RefCountPtr<const Epetra_Comm> &epetraComm );
  *
  * <b>Postconditions:</b><ul>
  * <li> <tt>return.get() != NULL</tt>
- * <li> The <tt>RefCountPtr</tt> object <tt>epetra_map</tt> is copied into
+ * <li> The <tt>RCP</tt> object <tt>epetra_map</tt> is copied into
  *      the <tt>return</tt> object and therefore a memory of epetra_map is
  *      kept.
  * </ul>
@@ -89,9 +89,9 @@ create_Comm( const Teuchos::RefCountPtr<const Epetra_Comm> &epetraComm );
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<const VectorSpaceBase<double> >
+Teuchos::RCP<const VectorSpaceBase<double> >
 create_VectorSpace(
-  const Teuchos::RefCountPtr<const Epetra_Map> &epetra_map
+  const Teuchos::RCP<const Epetra_Map> &epetra_map
   );
 
 /** \brief Concrete a <tt>VectorSpaceBase</tt> object that creates locally replicated
@@ -108,9 +108,9 @@ create_VectorSpace(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<const VectorSpaceBase<double> >
+Teuchos::RCP<const VectorSpaceBase<double> >
 create_LocallyReplicatedVectorSpace(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &parentSpace,
+  const Teuchos::RCP<const VectorSpaceBase<double> > &parentSpace,
   const int dim
   );
 
@@ -129,19 +129,19 @@ create_LocallyReplicatedVectorSpace(
  * <li>[<tt>epetra_v.get()!=NULL</tt>] <tt>return.get()!=NULL<tt>
  * </ul>
  *
- * \return The returned <tt>RefCountPtr</tt> object contains a copy of the
- * input <tt>RefCountPtr<Epetra_Vector></tt> wrapped <tt>Epetra_Vector</tt>
+ * \return The returned <tt>RCP</tt> object contains a copy of the
+ * input <tt>RCP<Epetra_Vector></tt> wrapped <tt>Epetra_Vector</tt>
  * object.  It is also stated that <tt>*epetra_v</tt> will only be guaranteed
- * to be modifed after the last <tt>RefCountPtr</tt> to the returned
+ * to be modifed after the last <tt>RCP</tt> to the returned
  * <tt>VectorBase</tt> is destroyed.  In addition, <tt>*return</tt> is only
  * valid as long as one <tt>RefCoutPtr</tt> wrapper object still exits.
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<VectorBase<double> >
+Teuchos::RCP<VectorBase<double> >
 create_Vector(
-  const Teuchos::RefCountPtr<Epetra_Vector> &epetra_v,
-  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &space
+  const Teuchos::RCP<Epetra_Vector> &epetra_v,
+  const Teuchos::RCP<const VectorSpaceBase<double> > &space
   );
 
 /** \brief Create an <tt>const</tt> <tt>VectorBase</tt> wrapper object for
@@ -159,17 +159,17 @@ create_Vector(
  * <li>[<tt>epetra_v.get()!=NULL</tt>] <tt>return.get()!=NULL<tt>
  * </ul>
  *
- * \return The returned <tt>RefCountPtr</tt> object contains a copy of the
- * input <tt>RefCountPtr<Epetra_Vector></tt> wrapped
+ * \return The returned <tt>RCP</tt> object contains a copy of the
+ * input <tt>RCP<Epetra_Vector></tt> wrapped
  * <tt>Epetra_Vector</tt> object.  In addition, <tt>*return</tt> is only
  * valid as long as one <tt>RefCoutPtr</tt> wrapper object still exits.
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<const VectorBase<double> >
+Teuchos::RCP<const VectorBase<double> >
 create_Vector(
-  const Teuchos::RefCountPtr<const Epetra_Vector> &epetra_v,
-  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &space
+  const Teuchos::RCP<const Epetra_Vector> &epetra_v,
+  const Teuchos::RCP<const VectorSpaceBase<double> > &space
   );
 
 /** \brief Create a non-<tt>const</tt> <tt>MultiVectorBase</tt> object from a
@@ -185,21 +185,21 @@ create_Vector(
  * <li><tt>range.get()!=NULL</tt>
  * </ul>
  *
- * \return The returned <tt>RefCountPtr</tt> object contains a copy of the
- * input <tt>RefCountPtr<Epetra_MultiVector></tt> wrapped
+ * \return The returned <tt>RCP</tt> object contains a copy of the
+ * input <tt>RCP<Epetra_MultiVector></tt> wrapped
  * <tt>Epetra_MultiVector</tt> object.  It is also stated that
  * <tt>*epetra_mv</tt> will only be guaranteed to be modifed after the last
- * <tt>RefCountPtr</tt> to the returned <tt>MultiVectorBase</tt> is destroyed.
+ * <tt>RCP</tt> to the returned <tt>MultiVectorBase</tt> is destroyed.
  * In addition, <tt>*return</tt> is only valid as long as one
  * <tt>RefCoutPtr</tt> wrapper object still exits.
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<MultiVectorBase<double> >
+Teuchos::RCP<MultiVectorBase<double> >
 create_MultiVector(
-  const Teuchos::RefCountPtr<Epetra_MultiVector> &epetra_mv,
-  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &range,
-  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &domain = Teuchos::null
+  const Teuchos::RCP<Epetra_MultiVector> &epetra_mv,
+  const Teuchos::RCP<const VectorSpaceBase<double> > &range,
+  const Teuchos::RCP<const VectorSpaceBase<double> > &domain = Teuchos::null
   );
 
 /** \brief Create an <tt>const</tt> <tt>MultiVectorBase</tt> wrapper object
@@ -215,18 +215,18 @@ create_MultiVector(
  * <li><tt>range.get()!=NULL</tt>
  * </ul>
  *
- * \return The returned <tt>RefCountPtr</tt> object contains a copy of the
- * input <tt>RefCountPtr<Epetra_MultiVector></tt> wrapped
+ * \return The returned <tt>RCP</tt> object contains a copy of the
+ * input <tt>RCP<Epetra_MultiVector></tt> wrapped
  * <tt>Epetra_MultiVector</tt> object.  In addition, <tt>*return</tt> is only
  * valid as long as one <tt>RefCoutPtr</tt> wrapper object still exits.
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<const MultiVectorBase<double> >
+Teuchos::RCP<const MultiVectorBase<double> >
 create_MultiVector(
-  const Teuchos::RefCountPtr<const Epetra_MultiVector> &epetra_mv,
-  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &range,
-  const Teuchos::RefCountPtr<const VectorSpaceBase<double> > &domain = Teuchos::null
+  const Teuchos::RCP<const Epetra_MultiVector> &epetra_mv,
+  const Teuchos::RCP<const VectorSpaceBase<double> > &range,
+  const Teuchos::RCP<const VectorSpaceBase<double> > &domain = Teuchos::null
   );
 
 /** \brief Get a non-<tt>const</tt> <tt>Epetra_Vector</tt> view from a
@@ -237,7 +237,7 @@ create_MultiVector(
  * <li> <tt>map</tt> must be compatible with <tt>*v.space()</tt>
  * </ul>
  *
- * If a <tt>Teuchos::RefCountPtr<Epetra_Vector></tt> object is already
+ * If a <tt>Teuchos::RCP<Epetra_Vector></tt> object is already
  * attached to the node of the smart pointer for <tt>mv</tt> then this is
  * returned directly.  If not, then a view of the data in <tt>*v</tt> is
  * created and returned.  In the latter case the smart pointer <tt>v</tt> is
@@ -251,10 +251,10 @@ create_MultiVector(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<Epetra_Vector>
+Teuchos::RCP<Epetra_Vector>
 get_Epetra_Vector(
   const Epetra_Map &map,
-  const Teuchos::RefCountPtr<VectorBase<double> > &v
+  const Teuchos::RCP<VectorBase<double> > &v
   );
 
 /** \brief Get a <tt>const</tt> <tt>Epetra_Vector</tt> view from a
@@ -265,7 +265,7 @@ get_Epetra_Vector(
  * <li> <tt>map</tt> must be compatible with <tt>*v.space()</tt>
  * </ul>
  *
- * If a <tt>Teuchos::RefCountPtr<Epetra_Vector></tt> object is already
+ * If a <tt>Teuchos::RCP<Epetra_Vector></tt> object is already
  * attached to the node of the smart pointer for <tt>mv</tt> then this is
  * returned directly.  If not, then a view of the data in <tt>*v</tt> is
  * created and returned.  In the latter case the smart pointer <tt>v</tt> is
@@ -276,10 +276,10 @@ get_Epetra_Vector(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 get_Epetra_Vector(
   const Epetra_Map &map,
-  const Teuchos::RefCountPtr<const VectorBase<double> > &v
+  const Teuchos::RCP<const VectorBase<double> > &v
   );
 
 /** \brief Get a non-<tt>const</tt> <tt>Epetra_MultiVector</tt> view from a
@@ -290,7 +290,7 @@ get_Epetra_Vector(
  * <li> <tt>map</tt> must be compatible with <tt>*mv.range()</tt>
  * </ul>
  *
- * If a <tt>Teuchos::RefCountPtr<Epetra_MultiVector></tt> object is already
+ * If a <tt>Teuchos::RCP<Epetra_MultiVector></tt> object is already
  * attached to the node of the smart pointer for <tt>mv</tt> then this is
  * returned directly.  If not, then a view of the data in <tt>*mv</tt> is
  * created and returned.  In the latter case the smart pointer <tt>mv</tt> is
@@ -305,10 +305,10 @@ get_Epetra_Vector(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 get_Epetra_MultiVector(
   const Epetra_Map &map,
-  const Teuchos::RefCountPtr<MultiVectorBase<double> > &mv
+  const Teuchos::RCP<MultiVectorBase<double> > &mv
   );
 
 /** \brief Get a <tt>const</tt> <tt>Epetra_MultiVector</tt> view from a
@@ -319,7 +319,7 @@ get_Epetra_MultiVector(
  * <li> <tt>map</tt> must be compatible with <tt>*mv.range()</tt>
  * </ul>
  *
- * If a <tt>Teuchos::RefCountPtr<const Epetra_MultiVector></tt> object is
+ * If a <tt>Teuchos::RCP<const Epetra_MultiVector></tt> object is
  * already attached to the node of the smart pointer for <tt>mv</tt> then this
  * is returned directly.  If not, then a view of the data in <tt>*mv</tt> is
  * created and returned.  In the latter case the smart pointer <tt>mv</tt> is
@@ -330,10 +330,10 @@ get_Epetra_MultiVector(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<const Epetra_MultiVector>
+Teuchos::RCP<const Epetra_MultiVector>
 get_Epetra_MultiVector(
   const Epetra_Map &map, 
-  const Teuchos::RefCountPtr<const MultiVectorBase<double> > &mv
+  const Teuchos::RCP<const MultiVectorBase<double> > &mv
   );
 
 } // namespace Thyra

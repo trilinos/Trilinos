@@ -81,7 +81,7 @@ Tpetra depends on Kokkos \cite{Kokkos} for serial kernels. At present, we are on
 Note that the Kokkos routines are purely serial. As such, if we are running in a parallel environment, any redistributions that are needed before or after the computation must be handled by Tpetra.
 
 \subsubsection*{Teuchos}
-Tpetra depends on Teuchos \cite{Teuchos} for many different things. We use the traits mechanisms in Teuchos::OrdinalTraits and Teuchos::ScalarTraits. We use Teuchos::RefCountPtr \cite{RefCountPtr} throughout Tpetra to manage dynamic storage for us. And we utilize the Teuchos BLAS wrappers for the same reasons that we use Kokkos; it provides a templated interface to the BLAS routines, insulating us from development of more advanced and more optimized BLAS kernels. Finally, we use the Teuchos::CompObject base class to do flops-counting.
+Tpetra depends on Teuchos \cite{Teuchos} for many different things. We use the traits mechanisms in Teuchos::OrdinalTraits and Teuchos::ScalarTraits. We use Teuchos::RCP \cite{RCP} throughout Tpetra to manage dynamic storage for us. And we utilize the Teuchos BLAS wrappers for the same reasons that we use Kokkos; it provides a templated interface to the BLAS routines, insulating us from development of more advanced and more optimized BLAS kernels. Finally, we use the Teuchos::CompObject base class to do flops-counting.
 
 Many of these classes, including OrdinalTraits, ScalarTraits, CompObject, and BLAS, were originally part of Tpetra. They were moved to Teuchos because they were found to be useful for other packages. Since the move, active development of these classes has continued, now under the control of the Teuchos team.
 

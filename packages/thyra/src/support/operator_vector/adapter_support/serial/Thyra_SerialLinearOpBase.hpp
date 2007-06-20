@@ -40,14 +40,14 @@ namespace Thyra {
 // Overridden from EuclideanLinearOpBase
 
 template<class Scalar>
-Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >
+Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >
 SerialLinearOpBase<Scalar>::rangeScalarProdVecSpc() const
 {
   return range_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >
+Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >
 SerialLinearOpBase<Scalar>::domainScalarProdVecSpc() const
 {
   return domain_;
@@ -81,8 +81,8 @@ SerialLinearOpBase<Scalar>::SerialLinearOpBase()
 
 template<class Scalar>
 void SerialLinearOpBase<Scalar>::setSpaces(
-  const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >     &range
-  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >    &domain
+  const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >     &range
+  ,const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >    &domain
   )
 {
 #ifdef TEUCHOS_DEBUG

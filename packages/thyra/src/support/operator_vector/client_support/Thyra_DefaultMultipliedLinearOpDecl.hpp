@@ -85,13 +85,13 @@ namespace Thyra {
 
  template<class Scalar>
  void constructD(
-    const Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >   &A
-    ,const Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >  &B
-    ,const Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >  &C
-    ,Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >        *D
+    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >   &A
+    ,const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >  &B
+    ,const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >  &C
+    ,Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >        *D
     )
  {
-   typedef Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> > LOB;
+   typedef Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > LOB;
    *D = Teuchos::rcp(
      new Thyra::DefaultMultipliedLinearOp<Scalar>(
        3, Teuchos::arrayArg<LOB>(A,adjoin(B),C)()
@@ -137,7 +137,7 @@ public:
    */
   DefaultMultipliedLinearOp(
     const int numOps,
-    const Teuchos::RefCountPtr<LinearOpBase<Scalar> > Ops[]
+    const Teuchos::RCP<LinearOpBase<Scalar> > Ops[]
     );
 
   /** Calls <tt>initialize()</tt>.
@@ -147,7 +147,7 @@ public:
    */
   DefaultMultipliedLinearOp(
     const int numOps,
-    const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > Ops[]
+    const Teuchos::RCP<const LinearOpBase<Scalar> > Ops[]
     );
 
   /** \brief Initialize given a list of non-const linear operators.
@@ -171,7 +171,7 @@ public:
    */
   void initialize(
     const int numOps,
-    const Teuchos::RefCountPtr<LinearOpBase<Scalar> > Ops[]
+    const Teuchos::RCP<LinearOpBase<Scalar> > Ops[]
     );
 
   /** \brief Initialize given a list of const linear operators.
@@ -195,7 +195,7 @@ public:
    */
   void initialize(
     const int numOps,
-    const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > Ops[]
+    const Teuchos::RCP<const LinearOpBase<Scalar> > Ops[]
     );
 
   /** \brief Set to uninitialized.
@@ -216,9 +216,9 @@ public:
   /** \brief . */
   bool opIsConst(const int k) const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > getNonconstOp(const int k);
+  Teuchos::RCP<LinearOpBase<Scalar> > getNonconstOp(const int k);
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > getOp(const int k) const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > getOp(const int k) const;
 
   //@}
 
@@ -228,15 +228,15 @@ public:
   /** \brief Returns <tt>this->getOp(0).range() if <t>this->numOps() > 0</tt>
    * and returns <tt>Teuchos::null</tt> otherwise.
    */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
 
   /** \brief Returns <tt>this->getOp(this->numOps()-1).domain()</tt> if
    * <t>this->numOps() > 0</tt> and returns <tt>Teuchos::null</tt> otherwise.
    */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
 
   //@}
 
@@ -303,10 +303,10 @@ private:
  * \relates DefaultMultipliedLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 nonconstMultiply(
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &A,
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &B,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &B,
   const std::string &M_label = ""
   );
 
@@ -316,10 +316,10 @@ nonconstMultiply(
  * \relates DefaultMultipliedLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 multiply(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &A,
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &B,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &B,
   const std::string &M_label = ""
   );
 
@@ -329,11 +329,11 @@ multiply(
  * \relates DefaultMultipliedLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 multiply(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &A,
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &B,
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &C,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &B,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &C,
   const std::string &M_label = ""
   );
 

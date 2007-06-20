@@ -36,7 +36,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_MPISession.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 
 

@@ -54,12 +54,12 @@ namespace Thyra
     /** \brief Create a multivector in this vector space.
      *
      * Note: There is not yet a handle class for multi-vectors yet and
-     * therefore this function returns <tt>Teuchos::RefCountPtr</tt> object to
+     * therefore this function returns <tt>Teuchos::RCP</tt> object to
      * the created raw <tt>MultiVectorBase</tt> object.  In the future, this
      * will be replaced to return a true <tt>Thyra::MultiVector</tt> handle
      * object onces this class is created.
      */
-    Teuchos::RefCountPtr<MultiVectorBase<Scalar> > createMembers(int n) const ;
+    Teuchos::RCP<MultiVectorBase<Scalar> > createMembers(int n) const ;
 
     /** \brief Return the dimension of the space. */
     int dim() const {return this->constPtr()->dim();}
@@ -112,7 +112,7 @@ namespace Thyra
    * \relates VectorSpace
    */
   template <class Scalar>
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > 
   productSpace(const Teuchos::Array<VectorSpace<Scalar> >& spaces);
 
   /** \brief Create a product space given a single vector space block.
@@ -120,7 +120,7 @@ namespace Thyra
    * \relates VectorSpace
    */
   template <class Scalar>
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > 
   productSpace(VectorSpace<Scalar>& s1);
 
   /** \brief Create a product space given two vector space blocks.
@@ -128,7 +128,7 @@ namespace Thyra
    * \relates VectorSpace
    */
   template <class Scalar>
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > 
   productSpace(VectorSpace<Scalar>& s1, 
                VectorSpace<Scalar>& s2);
 
@@ -137,7 +137,7 @@ namespace Thyra
    * \relates VectorSpace
    */
   template <class Scalar>
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > 
   productSpace(VectorSpace<Scalar>& s1,VectorSpace<Scalar>& s2,
                VectorSpace<Scalar>& s3);
 

@@ -64,13 +64,13 @@ namespace Teuchos
     int numRows() const {return data_.size();}
 
     /** */
-    void addEntry(const RefCountPtr<TableEntry>& entry);
+    void addEntry(const RCP<TableEntry>& entry);
 
     /** */
-    const RefCountPtr<TableEntry>& entry(int i) const {return data_[i];}
+    const RCP<TableEntry>& entry(int i) const {return data_[i];}
 
   private:
-    Array<RefCountPtr<TableEntry> > data_;
+    Array<RCP<TableEntry> > data_;
   };
 
 

@@ -26,7 +26,7 @@
 // ***********************************************************************
 //@HEADER
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include<iostream>
 
 class objectA
@@ -46,10 +46,10 @@ class PrintA
   public:
     PrintA() {};
     ~PrintA() {};
-    void setA(Teuchos::RefCountPtr<objectA> &A) { A_ = A; };
+    void setA(Teuchos::RCP<objectA> &A) { A_ = A; };
     void print() { std::cout << "valueA = " << A_->getA() << "." << std::endl; }; 
   protected:
-    Teuchos::RefCountPtr<objectA> A_;
+    Teuchos::RCP<objectA> A_;
 };
 
 class PrintB
@@ -57,10 +57,10 @@ class PrintB
   public:
     PrintB() {};
     ~PrintB() {};
-    void setA(Teuchos::RefCountPtr<objectA> &A) { A_ = A; };
+    void setA(Teuchos::RCP<objectA> &A) { A_ = A; };
     void print() { std::cout << "valueB = " << A_->getB() << "." << std::endl; }; 
   protected:
-    Teuchos::RefCountPtr<objectA> A_;
+    Teuchos::RCP<objectA> A_;
 };
 
 
@@ -70,42 +70,42 @@ void createObjectA(PrintA &PA, PrintB &PB, int TEST)
   {
     std::cout <<
       "TEST 1: " << 
-      "This creates a RefCountPtr to objectA and gives it to the two print " <<
+      "This creates a RCP to objectA and gives it to the two print " <<
       "objects and then goes out of scope.  Everything is okay because it is a " <<
-      "RefCountPtr instead of a raw pointer." << std::endl;
-    Teuchos::RefCountPtr<objectA> OAptr = Teuchos::rcp( new objectA );
+      "RCP instead of a raw pointer." << std::endl;
+    Teuchos::RCP<objectA> OAptr = Teuchos::rcp( new objectA );
     PA.setA(OAptr);
     PB.setA(OAptr);
   } else if (TEST == 2)
   {
     std::cout <<
       "TEST 2: " <<
-      "This creates a reference to an objectA, creates an unmanaged RefCountPtr " << 
+      "This creates a reference to an objectA, creates an unmanaged RCP " << 
       "to it and passes it to the two print objects and then goes out of scope.  " << 
-      "This is not okay and will result in garbage in the RefCountPtr for the " << 
+      "This is not okay and will result in garbage in the RCP for the " << 
       "subsequent print operations." << std::endl;
     objectA OA;
-    Teuchos::RefCountPtr<objectA> OAptr = Teuchos::rcp( &OA, false );
+    Teuchos::RCP<objectA> OAptr = Teuchos::rcp( &OA, false );
     PA.setA(OAptr);
     PB.setA(OAptr);
   } else if (TEST == 3)
   {
     std::cout <<
-      "This creates a valid RefCountPtr pointing to objectA, and then extracts a " << 
-      "reference to it, then gives the RefCountPtr to the two print objects and " << 
+      "This creates a valid RCP pointing to objectA, and then extracts a " << 
+      "reference to it, then gives the RCP to the two print objects and " << 
       "then goes out of scope.  This works because a reference is just a new name " <<
       "for the underlying object." << std::endl;
-    Teuchos::RefCountPtr<objectA> OAptr = Teuchos::rcp( new objectA );
+    Teuchos::RCP<objectA> OAptr = Teuchos::rcp( new objectA );
     objectA &OA = *OAptr;
     PA.setA(OAptr);
     PB.setA(OAptr);
   } else if (TEST == 4)
   {
     std::cout <<
-      "This creates a valid RefCountPtr pointint to objectA, and then extracts " << 
+      "This creates a valid RCP pointint to objectA, and then extracts " << 
       "its raw pointer and deletes it.  This is one way to shoot yourself " << 
-      "in the foot with RefCountPtr.  " << std::endl;
-    Teuchos::RefCountPtr<objectA> OAptr = Teuchos::rcp( new objectA );
+      "in the foot with RCP.  " << std::endl;
+    Teuchos::RCP<objectA> OAptr = Teuchos::rcp( new objectA );
     objectA *OA = &*OAptr;
     delete(OA);
     PA.setA(OAptr);

@@ -47,7 +47,7 @@ bool Thyra::test_single_stratimikos_solver(
 {
 
   using Teuchos::rcp;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::OSTab;
   using Teuchos::ParameterList;
   using Teuchos::getParameter;
@@ -57,7 +57,7 @@ bool Thyra::test_single_stratimikos_solver(
 
     TEST_FOR_EXCEPT(!paramList_inout);
 
-    RefCountPtr<ParameterList>
+    RCP<ParameterList>
       paramList = rcp(paramList_inout,false);
 
     if(out) {
@@ -77,7 +77,7 @@ bool Thyra::test_single_stratimikos_solver(
 
     const std::string
       &matrixFile = getParameter<std::string>(*paramList,"Matrix File");
-    RefCountPtr<ParameterList>
+    RCP<ParameterList>
       solverBuilderSL  = sublist(paramList,"Linear Solver Builder",true),
       loTesterSL       = sublist(paramList,"LinearOpTester",true),
       lowsTesterSL     = sublist(paramList,"LinearOpWithSolveTester",true);
@@ -89,15 +89,15 @@ bool Thyra::test_single_stratimikos_solver(
 #else
     Epetra_SerialComm comm;
 #endif
-    Teuchos::RefCountPtr<Epetra_CrsMatrix> epetra_A;
+    Teuchos::RCP<Epetra_CrsMatrix> epetra_A;
     EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A );
 
-    Teuchos::RefCountPtr<LinearOpBase<double> >
+    Teuchos::RCP<LinearOpBase<double> >
       A = Teuchos::rcp(new EpetraLinearOp(epetra_A));
 
     if(out) *out << "\nCreating a Thyra::DefaultRealLinearSolverBuilder object ...\n";
     
-    RefCountPtr<Thyra::LinearSolverBuilderBase<double> >
+    RCP<Thyra::LinearSolverBuilderBase<double> >
       linearSolverBuilder = rcp(new Thyra::DefaultRealLinearSolverBuilder);
 
     if(out) {
@@ -108,7 +108,7 @@ bool Thyra::test_single_stratimikos_solver(
     linearSolverBuilder->setParameterList(solverBuilderSL);
 
     if(out) *out << "\nCreating the LinearOpWithSolveFactoryBase object lowsFactory ...\n";
-    RefCountPtr<LinearOpWithSolveFactoryBase<double> >
+    RCP<LinearOpWithSolveFactoryBase<double> >
       lowsFactory = createLinearSolveStrategy(*linearSolverBuilder);
     if(out) *out << "\nlowsFactory described as:\n" << describe(*lowsFactory,Teuchos::VERB_MEDIUM) << std::endl;
 

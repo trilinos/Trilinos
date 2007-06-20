@@ -48,7 +48,7 @@ DefaultMultipliedLinearOp<Scalar>::DefaultMultipliedLinearOp()
 template<class Scalar>
 DefaultMultipliedLinearOp<Scalar>::DefaultMultipliedLinearOp(
   const int                                                   numOps
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >          Ops[]
   )
 {
   initialize(numOps,Ops);
@@ -58,7 +58,7 @@ DefaultMultipliedLinearOp<Scalar>::DefaultMultipliedLinearOp(
 template<class Scalar>
 DefaultMultipliedLinearOp<Scalar>::DefaultMultipliedLinearOp(
   const int                                                   numOps
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    Ops[]
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >    Ops[]
   )
 {
   initialize(numOps,Ops);
@@ -68,7 +68,7 @@ DefaultMultipliedLinearOp<Scalar>::DefaultMultipliedLinearOp(
 template<class Scalar>
 void DefaultMultipliedLinearOp<Scalar>::initialize(
   const int                                                   numOps
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >          Ops[]
   )
 {
   Ops_.resize(numOps);
@@ -82,7 +82,7 @@ void DefaultMultipliedLinearOp<Scalar>::initialize(
 template<class Scalar>
 void DefaultMultipliedLinearOp<Scalar>::initialize(
   const int                                                   numOps
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    Ops[]
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >    Ops[]
   )
 {
   Ops_.resize(numOps);
@@ -122,7 +122,7 @@ bool DefaultMultipliedLinearOp<Scalar>::opIsConst(const int k) const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 DefaultMultipliedLinearOp<Scalar>::getNonconstOp(const int k)
 {
 #ifdef TEUCHOS_DEBUG
@@ -133,7 +133,7 @@ DefaultMultipliedLinearOp<Scalar>::getNonconstOp(const int k)
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultMultipliedLinearOp<Scalar>::getOp(const int k) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -147,7 +147,7 @@ DefaultMultipliedLinearOp<Scalar>::getOp(const int k) const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultMultipliedLinearOp<Scalar>::range() const
 {
   assertInitialized();
@@ -156,7 +156,7 @@ DefaultMultipliedLinearOp<Scalar>::range() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultMultipliedLinearOp<Scalar>::domain() const
 {
   assertInitialized();
@@ -165,7 +165,7 @@ DefaultMultipliedLinearOp<Scalar>::domain() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultMultipliedLinearOp<Scalar>::clone() const
 {
   return Teuchos::null; // Not supported yet but could be!
@@ -192,11 +192,11 @@ void DefaultMultipliedLinearOp<Scalar>::describe(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   assertInitialized();
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   const int numOps = Ops_.size();
   switch(verbLevel) {
@@ -254,7 +254,7 @@ void DefaultMultipliedLinearOp<Scalar>::apply(
   ,const Scalar                     beta
   ) const
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
 #ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
@@ -269,10 +269,10 @@ void DefaultMultipliedLinearOp<Scalar>::apply(
     // =>
     // Y = alpha * op(Op[0]) * op(Op[1]) * ... * op(Op[numOps-1]) * X + beta*Y
     //
-    RefCountPtr<MultiVectorBase<Scalar> > T_kp1, T_k; // Temporary propagated between loops 
+    RCP<MultiVectorBase<Scalar> > T_kp1, T_k; // Temporary propagated between loops 
     for( int k = numOps-1; k >= 0; --k ) {
-      RefCountPtr<MultiVectorBase<Scalar> >         Y_k;
-      RefCountPtr<const MultiVectorBase<Scalar> >   X_k;
+      RCP<MultiVectorBase<Scalar> >         Y_k;
+      RCP<const MultiVectorBase<Scalar> >   X_k;
       if(k==0)        Y_k = rcp(Y,false);  else Y_k = T_k = createMembers(getOp(k)->range(),m);
       if(k==numOps-1) X_k = rcp(&X,false); else X_k = T_kp1;
       if( k > 0 )
@@ -288,10 +288,10 @@ void DefaultMultipliedLinearOp<Scalar>::apply(
     // =>
     // Y = alpha * Op[numOps-1]' * Op[1]' * ... * Op[0]' * X + beta * Y
     //
-    RefCountPtr<MultiVectorBase<Scalar> > T_km1, T_k; // Temporary propagated between loops 
+    RCP<MultiVectorBase<Scalar> > T_km1, T_k; // Temporary propagated between loops 
     for( int k = 0; k <= numOps-1; ++k ) {
-      RefCountPtr<MultiVectorBase<Scalar> >         Y_k;
-      RefCountPtr<const MultiVectorBase<Scalar> >   X_k;
+      RCP<MultiVectorBase<Scalar> >         Y_k;
+      RCP<const MultiVectorBase<Scalar> >   X_k;
       if(k==numOps-1)   Y_k = rcp(Y,false);  else Y_k = T_k = createMembers(getOp(k)->domain(),m);
       if(k==0)          X_k = rcp(&X,false); else X_k = T_km1;
       if( k < numOps-1 )
@@ -356,20 +356,20 @@ void DefaultMultipliedLinearOp<Scalar>::setupDefaultObjectLabel()
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstMultiply(
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &A,
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &B,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A,
+  const Teuchos::RCP<LinearOpBase<Scalar> > &B,
   const std::string &M_label
   )
 {
   using Teuchos::arrayArg;
-  using Teuchos::RefCountPtr;
-  Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+  using Teuchos::RCP;
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
     multOp = Teuchos::rcp(
     new DefaultMultipliedLinearOp<Scalar>(
       2
-      ,arrayArg<RefCountPtr<LinearOpBase<Scalar> > >(A,B)()
+      ,arrayArg<RCP<LinearOpBase<Scalar> > >(A,B)()
       )
     );
   if(M_label.length())
@@ -379,20 +379,20 @@ Thyra::nonconstMultiply(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::multiply(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &A,
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &B,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &B,
   const std::string &M_label
   )
 {
   using Teuchos::arrayArg;
-  using Teuchos::RefCountPtr;
-  Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+  using Teuchos::RCP;
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
     multOp = Teuchos::rcp(
     new DefaultMultipliedLinearOp<Scalar>(
       2
-      ,arrayArg<RefCountPtr<const LinearOpBase<Scalar> > >(A,B)()
+      ,arrayArg<RCP<const LinearOpBase<Scalar> > >(A,B)()
       )
     );
   if(M_label.length())
@@ -402,21 +402,21 @@ Thyra::multiply(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::multiply(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &A,
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &B,
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &C,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &B,
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &C,
   const std::string &M_label
   )
 {
   using Teuchos::arrayArg;
-  using Teuchos::RefCountPtr;
-  Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+  using Teuchos::RCP;
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
     multOp = Teuchos::rcp(
     new DefaultMultipliedLinearOp<Scalar>(
       3
-      ,arrayArg<RefCountPtr<const LinearOpBase<Scalar> > >(A,B,C)()
+      ,arrayArg<RCP<const LinearOpBase<Scalar> > >(A,B,C)()
       )
     );
   if(M_label.length())

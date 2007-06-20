@@ -36,7 +36,7 @@
 # include "Epetra_SerialComm.h"
 #endif
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 createTridiagEpetraLinearOp(
   const int      globalDim
 #ifdef HAVE_MPI
@@ -47,7 +47,7 @@ createTridiagEpetraLinearOp(
   ,std::ostream  &out
   )
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
 
   //
@@ -77,8 +77,8 @@ createTridiagEpetraLinearOp(
   //
   
   // (B.1) Allocate the Epetra_CrsMatrix object.
-  RefCountPtr<Epetra_CrsMatrix> A_epetra = rcp(new Epetra_CrsMatrix(::Copy,epetra_map,3));
-  // Note that Epetra_CrsMatrix is *not* a handle object so have to use RefCountPtr above.
+  RCP<Epetra_CrsMatrix> A_epetra = rcp(new Epetra_CrsMatrix(::Copy,epetra_map,3));
+  // Note that Epetra_CrsMatrix is *not* a handle object so have to use RCP above.
   // Also note that the Epetra_Map object is copied in some sence by the Epetra_CrsMatrix
   // object so the memory managment is handled safely.
 
@@ -117,10 +117,10 @@ createTridiagEpetraLinearOp(
   // Return the Epetra_Operator object
   return A_epetra;
 
-  // Note that when this function returns the returned RefCountPtr-wrapped
+  // Note that when this function returns the returned RCP-wrapped
   // Epetra_Operator object will own all of the Epetra objects that went into
   // its construction and these objects will stay around until all of the
-  // RefCountPtr objects to the allocated Epetra_Operator object are removed
+  // RCP objects to the allocated Epetra_Operator object are removed
   // and destruction occurs!
 
 } // end createTridiagLinearOp()

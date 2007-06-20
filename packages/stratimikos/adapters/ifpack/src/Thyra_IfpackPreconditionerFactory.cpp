@@ -43,14 +43,14 @@
 
 namespace {
 
-Teuchos::RefCountPtr<Teuchos::Time> overallTimer, creationTimer, factorizationTimer;
+Teuchos::RCP<Teuchos::Time> overallTimer, creationTimer, factorizationTimer;
 
 const std::string Ifpack_name = "Ifpack";
 
 const std::string IfpackSettings_name = "Ifpack Settings";
 
 const std::string PrecType_name = "Prec Type";
-Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<Ifpack::EPrecType> >
+Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<Ifpack::EPrecType> >
 precTypeValidator; // Will be setup below!
 const Ifpack::EPrecType PrecType_default = Ifpack::ILU;
 const std::string PrecTypeName_default = Ifpack::precTypeNames[PrecType_default];
@@ -79,7 +79,7 @@ bool IfpackPreconditionerFactory::isCompatible(
   const LinearOpSourceBase<double> &fwdOpSrc
   ) const
 {
-  Teuchos::RefCountPtr<const Epetra_Operator> epetraFwdOp;
+  Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
   ETransp                                     epetraFwdOpTransp;
   EApplyEpetraOpAs                            epetraFwdOpApplyAs;
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
@@ -103,21 +103,21 @@ bool IfpackPreconditionerFactory::applyTransposeSupportsConj(EConj conj) const
   return false; // See comment below
 }
 
-Teuchos::RefCountPtr<PreconditionerBase<double> >
+Teuchos::RCP<PreconditionerBase<double> >
 IfpackPreconditionerFactory::createPrec() const
 {
   return Teuchos::rcp(new DefaultPreconditioner<double>());
 }
 
 void IfpackPreconditionerFactory::initializePrec(
-  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    &fwdOpSrc
+  const Teuchos::RCP<const LinearOpSourceBase<double> >    &fwdOpSrc
   ,PreconditionerBase<double>                                      *prec
   ,const ESupportSolveUse                                           supportSolveUse
   ) const
 {
   using Teuchos::OSTab;
   using Teuchos::dyn_cast;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::null;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -128,7 +128,7 @@ void IfpackPreconditionerFactory::initializePrec(
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
   Teuchos::TimeMonitor overallTimeMonitor(*overallTimer);
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
+  const Teuchos::RCP<Teuchos::FancyOStream> out       = this->getOStream();
   const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
@@ -137,7 +137,7 @@ void IfpackPreconditionerFactory::initializePrec(
   TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
   TEST_FOR_EXCEPT(prec==NULL);
 #endif
-  Teuchos::RefCountPtr<const LinearOpBase<double> >
+  Teuchos::RCP<const LinearOpBase<double> >
     fwdOp = fwdOpSrc->getOp();
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(fwdOp.get()==NULL);
@@ -145,7 +145,7 @@ void IfpackPreconditionerFactory::initializePrec(
   //
   // Unwrap and get the forward Epetra_Operator object
   //
-  Teuchos::RefCountPtr<const Epetra_Operator> epetraFwdOp;
+  Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
   ETransp                                     epetraFwdOpTransp;
   EApplyEpetraOpAs                            epetraFwdOpApplyAs;
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
@@ -155,7 +155,7 @@ void IfpackPreconditionerFactory::initializePrec(
     ,&epetraFwdOpAdjointSupport,&epetraFwdOpScalar
     );
   // Validate what we get is what we need
-  RefCountPtr<const Epetra_RowMatrix>
+  RCP<const Epetra_RowMatrix>
     epetraFwdRowMat = rcp_dynamic_cast<const Epetra_RowMatrix>(epetraFwdOp,true);
   TEST_FOR_EXCEPTION(
     epetraFwdOpApplyAs != EPETRA_OP_APPLY_APPLY, std::logic_error
@@ -169,12 +169,12 @@ void IfpackPreconditionerFactory::initializePrec(
   //
   // Get the EpetraLinearOp object that is used to implement the preconditoner linear op
   //
-  RefCountPtr<EpetraLinearOp>
+  RCP<EpetraLinearOp>
     epetra_precOp = rcp_dynamic_cast<EpetraLinearOp>(defaultPrec->getNonconstUnspecifiedPrecOp(),true);
   //
   // Get the embedded Ifpack_Preconditioner object if it exists
   //
-  Teuchos::RefCountPtr<Ifpack_Preconditioner>
+  Teuchos::RCP<Ifpack_Preconditioner>
     ifpack_precOp;
   if(epetra_precOp.get())
     ifpack_precOp = rcp_dynamic_cast<Ifpack_Preconditioner>(epetra_precOp->epetra_op(),true);
@@ -283,7 +283,7 @@ void IfpackPreconditionerFactory::initializePrec(
 
 void IfpackPreconditionerFactory::uninitializePrec(
   PreconditionerBase<double>                                *prec
-  ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >  *fwdOpSrc
+  ,Teuchos::RCP<const LinearOpSourceBase<double> >  *fwdOpSrc
   ,ESupportSolveUse                                         *supportSolveUse
   ) const
 {
@@ -292,7 +292,7 @@ void IfpackPreconditionerFactory::uninitializePrec(
 
 // Overridden from ParameterListAcceptor
 
-void IfpackPreconditionerFactory::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+void IfpackPreconditionerFactory::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
   TEST_FOR_EXCEPT(paramList.get()==NULL);
   paramList->validateParameters(*this->getValidParameters(),2);
@@ -314,31 +314,31 @@ void IfpackPreconditionerFactory::setParameterList(Teuchos::RefCountPtr<Teuchos:
 #endif
 }
 
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 IfpackPreconditionerFactory::getParameterList()
 {
   return paramList_;
 }
 
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 IfpackPreconditionerFactory::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> _paramList = paramList_;
+  Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 IfpackPreconditionerFactory::getParameterList() const
 {
   return paramList_;
 }
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 IfpackPreconditionerFactory::getValidParameters() const
 {
   using Teuchos::rcp;
-  static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
+  static Teuchos::RCP<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList(Ifpack_name));
     {

@@ -200,7 +200,7 @@ namespace Thyra
     class IndexObject
     {
     public:
-      IndexObject(const Teuchos::RefCountPtr<VectorBase<Scalar> >& v, Index i)
+      IndexObject(const Teuchos::RCP<VectorBase<Scalar> >& v, Index i)
         : v_(v), count_(new int), i_(i)
       {
         *count_ = 1;
@@ -233,7 +233,7 @@ namespace Thyra
         return *this;
       }
     private:
-      Teuchos::RefCountPtr<VectorBase<Scalar> > v_;
+      Teuchos::RCP<VectorBase<Scalar> > v_;
       int* count_;
       Scalar valGotten_;
       Scalar val_;

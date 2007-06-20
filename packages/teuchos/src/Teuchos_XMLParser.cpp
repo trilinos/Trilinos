@@ -112,7 +112,7 @@ using namespace Teuchos;
 XMLObject XMLParser::parse() 
 {
   
-  RefCountPtr<TreeBuildingXMLHandler> handler = rcp(new TreeBuildingXMLHandler());
+  RCP<TreeBuildingXMLHandler> handler = rcp(new TreeBuildingXMLHandler());
   
   _entities.clear();
   _entities["apos"] = "'";

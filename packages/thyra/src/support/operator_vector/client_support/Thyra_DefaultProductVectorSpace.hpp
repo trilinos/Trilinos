@@ -42,7 +42,7 @@ namespace Thyra {
 template<class Scalar>
 DefaultProductVectorSpace<Scalar>::DefaultProductVectorSpace(
   const int                                                       numBlocks
-  ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >     vecSpaces[]
+  ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >     vecSpaces[]
   )
 {
   initialize(numBlocks,vecSpaces);
@@ -51,7 +51,7 @@ DefaultProductVectorSpace<Scalar>::DefaultProductVectorSpace(
 template<class Scalar>
 void DefaultProductVectorSpace<Scalar>::initialize(
   const int                                                       numBlocks
-  ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >     vecSpaces[]
+  ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >     vecSpaces[]
   )
 {
   //
@@ -87,7 +87,7 @@ void DefaultProductVectorSpace<Scalar>::initialize(
 template<class Scalar>
 void DefaultProductVectorSpace<Scalar>::uninitialize(
   int                                                             *numBlocks
-  ,Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >           vecSpaces[]
+  ,Teuchos::RCP<const VectorSpaceBase<Scalar> >           vecSpaces[]
   )
 {
   vecSpaces_        = Teuchos::null;
@@ -131,7 +131,7 @@ int DefaultProductVectorSpace<Scalar>::numBlocks() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultProductVectorSpace<Scalar>::getBlock(const int k) const
 {
   TEST_FOR_EXCEPT( k < 0 || numBlocks_ < k );
@@ -168,7 +168,7 @@ bool DefaultProductVectorSpace<Scalar>::isCompatible( const VectorSpaceBase<Scal
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< VectorBase<Scalar> >
+Teuchos::RCP< VectorBase<Scalar> >
 DefaultProductVectorSpace<Scalar>::createMember() const
 {
   return Teuchos::rcp(
@@ -271,7 +271,7 @@ bool DefaultProductVectorSpace<Scalar>::hasInCoreView(const Range1D& rng_in, con
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> >
+Teuchos::RCP< const VectorSpaceFactoryBase<Scalar> >
 DefaultProductVectorSpace<Scalar>::smallVecSpcFcty() const
 {
   if( dim_ ) return (*vecSpaces_)[0]->smallVecSpcFcty(); // They should all be compatible!
@@ -279,7 +279,7 @@ DefaultProductVectorSpace<Scalar>::smallVecSpcFcty() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< MultiVectorBase<Scalar> >
+Teuchos::RCP< MultiVectorBase<Scalar> >
 DefaultProductVectorSpace<Scalar>::createMembers(int numMembers) const
 {
   return defaultProductMultiVector<Scalar>(Teuchos::rcp(this,false),numMembers);
@@ -292,13 +292,13 @@ DefaultProductVectorSpace<Scalar>::createMembers(int numMembers) const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultProductVectorSpace<Scalar>::clone() const
 {
   // Warning! If the client uninitialized this object then changes the
   // constituent vector spaces then we are in trouble!  The client is warned
   // in documentation!
-  Teuchos::RefCountPtr<DefaultProductVectorSpace<Scalar> >
+  Teuchos::RCP<DefaultProductVectorSpace<Scalar> >
     pvs = Teuchos::rcp(new DefaultProductVectorSpace<Scalar>());
   pvs->numBlocks_          = numBlocks_;
   pvs->vecSpaces_          = vecSpaces_;
@@ -333,11 +333,11 @@ void DefaultProductVectorSpace<Scalar>::describe(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   assertInitialized();
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:

@@ -41,10 +41,10 @@ namespace Thyra {
  * \relates ModelEvaluator
  */
 template<class Scalar>
-Teuchos::RefCountPtr<ModelEvaluatorBase::InArgs<Scalar> >
+Teuchos::RCP<ModelEvaluatorBase::InArgs<Scalar> >
 clone( const ModelEvaluatorBase::InArgs<Scalar> &inArgs )
 {
-  Teuchos::RefCountPtr<ModelEvaluatorBase::InArgs<Scalar> >
+  Teuchos::RCP<ModelEvaluatorBase::InArgs<Scalar> >
     newInArgs = Teuchos::rcp(new ModelEvaluatorBase::InArgs<Scalar>);
   *newInArgs = inArgs;
   return newInArgs;
@@ -126,7 +126,7 @@ get_dmv(
 
 /** \relates ModelEvaluator */
 template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 get_mv(
   const ModelEvaluatorBase::Derivative<Scalar>             &deriv
   ,const std::string                                       &derivName
@@ -140,7 +140,7 @@ get_mv(
     );
   MEB::DerivativeMultiVector<Scalar>
     dmv = deriv.getDerivativeMultiVector();
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  Teuchos::RCP<MultiVectorBase<Scalar> >
     mv = dmv.getMultiVector();
   if( mv.get() ) {
     TEST_FOR_EXCEPTION(

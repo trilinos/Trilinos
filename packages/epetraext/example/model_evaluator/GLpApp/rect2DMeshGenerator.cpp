@@ -4,6 +4,7 @@
 #include "Epetra_IntSerialDenseMatrix.h"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
 void GLpApp::rect2DMeshGenerator(
   const int                      numProc

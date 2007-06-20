@@ -95,7 +95,7 @@ public:
    */
   DefaultAddedLinearOp(
     const int                                                   numOps
-    ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]
+    ,const Teuchos::RCP<LinearOpBase<Scalar> >          Ops[]
     );
 
   /** Calls <tt>initialize()</tt>.
@@ -105,7 +105,7 @@ public:
    */
   DefaultAddedLinearOp(
     const int                                                   numOps
-    ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    Ops[]
+    ,const Teuchos::RCP<const LinearOpBase<Scalar> >    Ops[]
     );
 
   /** \brief Initialize given a list of non-const linear operators.
@@ -129,7 +129,7 @@ public:
    */
   void initialize(
     const int                                                   numOps
-    ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]
+    ,const Teuchos::RCP<LinearOpBase<Scalar> >          Ops[]
     );
 
   /** \brief Initialize given a list of const linear operators.
@@ -153,7 +153,7 @@ public:
    */
   void initialize(
     const int                                                   numOps
-    ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    Ops[]
+    ,const Teuchos::RCP<const LinearOpBase<Scalar> >    Ops[]
     );
 
   /** \brief Set to uninitialized.
@@ -174,9 +174,9 @@ public:
   /** \brief . */
   bool opIsConst(const int k) const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > getNonconstOp(const int k);
+  Teuchos::RCP<LinearOpBase<Scalar> > getNonconstOp(const int k);
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > getOp(const int k) const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > getOp(const int k) const;
 
   //@}
 
@@ -186,15 +186,15 @@ public:
   /** \brief Returns <tt>this->getOp(0).range() if <t>this->numOps() > 0</tt>
    * and returns <tt>Teuchos::null</tt> otherwise.
    */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
 
   /** \brief Returns <tt>this->getOp(this->numOps()-1).domain()</tt> if
    * <t>this->numOps() > 0</tt> and returns <tt>Teuchos::null</tt> otherwise.
    */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
 
   //@}
 
@@ -260,10 +260,10 @@ private:
  * \relates DefaultAddedLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 nonconstAdd(
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &B
+  const Teuchos::RCP<LinearOpBase<Scalar> >    &A
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &B
   );
 
 /** \brief Form an implicit addition of two linear operators: <tt>M = A + B</tt>.
@@ -271,10 +271,10 @@ nonconstAdd(
  * \relates DefaultAddedLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 add(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &B
+  const Teuchos::RCP<const LinearOpBase<Scalar> >    &A
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &B
   );
 
 // /////////////////////////////////

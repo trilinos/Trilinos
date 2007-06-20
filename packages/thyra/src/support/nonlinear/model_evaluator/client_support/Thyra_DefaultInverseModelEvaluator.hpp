@@ -248,17 +248,17 @@ public:
 
   /** \brief . */
   DefaultInverseModelEvaluator(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> > &thyraModel
+    const Teuchos::RCP<ModelEvaluator<Scalar> > &thyraModel
     );
 
   /** \brief . */
   void initialize(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> > &thyraModel
+    const Teuchos::RCP<ModelEvaluator<Scalar> > &thyraModel
     );
 
   /** \brief . */
   void uninitialize(
-    Teuchos::RefCountPtr<ModelEvaluator<Scalar> > *thyraModel
+    Teuchos::RCP<ModelEvaluator<Scalar> > *thyraModel
     );
 
   //@}
@@ -273,13 +273,13 @@ public:
    * sublist to read in the vectors <tt>observationTarget()</tt> and
    * <tt>parameterBase()</tt>.
    */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
   /** \brief .
    *
    * Note that <tt>observationTargetIO()</tt> and <tt>parameterBaseIO()</tt>
@@ -288,7 +288,7 @@ public:
    * <tt>parameterBase()</tt> to be read in latter when the parameter list is
    * set..
    */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
@@ -298,7 +298,7 @@ public:
   /** \brief . */
   int Ng() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
@@ -324,10 +324,10 @@ private:
   // ////////////////////////////////
   // Private data members
 
-  mutable Teuchos::RefCountPtr<const Teuchos::ParameterList> validParamList_;
-  Teuchos::RefCountPtr<Teuchos::ParameterList>  paramList_;
+  mutable Teuchos::RCP<const Teuchos::ParameterList> validParamList_;
+  Teuchos::RCP<Teuchos::ParameterList>  paramList_;
 
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > inv_g_space_;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > inv_g_space_;
 
   int obs_idx_;
   int p_idx_;
@@ -373,9 +373,9 @@ private:
  * \relates DefaultInverseModelEvaluator
  */
 template<class Scalar>
-Teuchos::RefCountPtr<DefaultInverseModelEvaluator<Scalar> >
+Teuchos::RCP<DefaultInverseModelEvaluator<Scalar> >
 inverseModelEvaluator(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> > &thyraModel
+  const Teuchos::RCP<ModelEvaluator<Scalar> > &thyraModel
   )
 {
   return Teuchos::rcp(
@@ -458,7 +458,7 @@ DefaultInverseModelEvaluator<Scalar>::DefaultInverseModelEvaluator()
 
 template<class Scalar>
 DefaultInverseModelEvaluator<Scalar>::DefaultInverseModelEvaluator(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >   &thyraModel
+  const Teuchos::RCP<ModelEvaluator<Scalar> >   &thyraModel
   )
   :obs_idx_(-1),p_idx_(0), observationTargetAsParameter_(false)
 {
@@ -467,7 +467,7 @@ DefaultInverseModelEvaluator<Scalar>::DefaultInverseModelEvaluator(
 
 template<class Scalar>
 void DefaultInverseModelEvaluator<Scalar>::initialize(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >   &thyraModel
+  const Teuchos::RCP<ModelEvaluator<Scalar> >   &thyraModel
   )
 {
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
@@ -477,7 +477,7 @@ void DefaultInverseModelEvaluator<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultInverseModelEvaluator<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<ModelEvaluator<Scalar> >  *thyraModel
+  Teuchos::RCP<ModelEvaluator<Scalar> >  *thyraModel
   )
 {
   if(thyraModel) *thyraModel = this->getUnderlyingModel();
@@ -488,7 +488,7 @@ void DefaultInverseModelEvaluator<Scalar>::uninitialize(
 
 template<class Scalar>
 void DefaultInverseModelEvaluator<Scalar>::setParameterList(
-  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
   using Teuchos::Array;
@@ -516,7 +516,7 @@ void DefaultInverseModelEvaluator<Scalar>::setParameterList(
     observationTargetReader_.setParameterList(
       sublist(paramList_,ObservationTargetVector_name_)
       );
-    Teuchos::RefCountPtr<VectorBase<Scalar> >
+    Teuchos::RCP<VectorBase<Scalar> >
       observationTarget;
     observationTargetReader_.readVector(
       "observation target vector",&observationTarget);
@@ -536,7 +536,7 @@ void DefaultInverseModelEvaluator<Scalar>::setParameterList(
     parameterBaseReader_.setParameterList(
       sublist(paramList_,ParameterBaseVector_name_)
       );
-    Teuchos::RefCountPtr<VectorBase<Scalar> >
+    Teuchos::RCP<VectorBase<Scalar> >
       parameterBase;
     parameterBaseReader_.readVector(
       "parameter base vector",&parameterBase);
@@ -549,34 +549,34 @@ void DefaultInverseModelEvaluator<Scalar>::setParameterList(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 DefaultInverseModelEvaluator<Scalar>::getParameterList()
 {
   return paramList_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 DefaultInverseModelEvaluator<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> _paramList = paramList_;
+  Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 DefaultInverseModelEvaluator<Scalar>::getParameterList() const
 {
   return paramList_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 DefaultInverseModelEvaluator<Scalar>::getValidParameters() const
 {
   if(validParamList_.get()==NULL) {
-    Teuchos::RefCountPtr<Teuchos::ParameterList>
+    Teuchos::RCP<Teuchos::ParameterList>
       pl = Teuchos::rcp(new Teuchos::ParameterList());
     pl->set( ObservationIndex_name_,ObservationIndex_default_,
       "The index of the observation function, obs_idx.\n"
@@ -621,7 +621,7 @@ int DefaultInverseModelEvaluator<Scalar>::Ng() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultInverseModelEvaluator<Scalar>::get_g_space(int j) const
 {
   if(j==Ng_-1)
@@ -635,7 +635,7 @@ ModelEvaluatorBase::InArgs<Scalar>
 DefaultInverseModelEvaluator<Scalar>::createInArgs() const
 {
   typedef ModelEvaluatorBase MEB;
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   const MEB::InArgs<Scalar> wrappedInArgs = thyraModel->createInArgs();
   const int wrapped_Np = wrappedInArgs.Np();
@@ -655,7 +655,7 @@ ModelEvaluatorBase::OutArgs<Scalar>
 DefaultInverseModelEvaluator<Scalar>::createOutArgs() const
 {
   typedef ModelEvaluatorBase MEB;
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   const MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
   const int Np = wrappedOutArgs.Np(), Ng = wrappedOutArgs.Ng();
@@ -676,7 +676,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
 {
 
   typedef ModelEvaluatorBase MEB;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
@@ -714,7 +714,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
   wrappedInArgs.setArgs(inArgs,true);
   MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
   wrappedOutArgs.setArgs(outArgs,true);
-  RefCountPtr<VectorBase<Scalar> > wrapped_o;
+  RCP<VectorBase<Scalar> > wrapped_o;
   MEB::DerivativeMultiVector<Scalar> wrapped_DoDx_trans, wrapped_DoDp_trans;
   if( obs_idx_ >= 0 && ( g_inv_out || DgDx_inv_trans_out || DgDp_inv_trans_out ) )
   {
@@ -745,16 +745,16 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
     // do so.
     //
 
-    RefCountPtr<const VectorBase<Scalar> >
+    RCP<const VectorBase<Scalar> >
       x_in = inArgs.get_x(),
       p_in = inArgs.get_p(p_idx_);
 
     const MEB::InArgs<Scalar> nominalValues = this->getNominalValues();
-    RefCountPtr<const VectorBase<Scalar> >
+    RCP<const VectorBase<Scalar> >
       x = ( !is_null(x_in) ? x_in : nominalValues.get_x().assert_not_null() ),
       p = ( !is_null(p_in) ? p_in : nominalValues.get_p(p_idx_).assert_not_null() );
 
-    const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+    const Teuchos::RCP<const VectorSpaceBase<Scalar> >
       o_space = ( obs_idx_ >= 0 ? this->get_g_space(obs_idx_) : this->get_x_space() ),
       p_space = this->get_p_space(p_idx_);
 
@@ -762,12 +762,12 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
       no = o_space->dim(),
       np = p_space->dim();
 
-    Teuchos::RefCountPtr<VectorBase<Scalar> > diff_o;
+    Teuchos::RCP<VectorBase<Scalar> > diff_o;
     if( g_inv_out || DgDx_inv_trans_out  ) {
       const VectorBase<Scalar>
         &o = ( obs_idx_ < 0 ? *x : *wrapped_o );
       diff_o = createMember(o_space);
-      Teuchos::RefCountPtr<const VectorBase<Scalar> >
+      Teuchos::RCP<const VectorBase<Scalar> >
         observationTarget
         = ( observationTargetAsParameter_
           ? inArgs.get_p(inArgs.Np()-1)
@@ -783,7 +783,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
       }
     }
     
-    Teuchos::RefCountPtr<VectorBase<Scalar> > diff_p;
+    Teuchos::RCP<VectorBase<Scalar> > diff_p;
     if( g_inv_out || DgDp_inv_trans_out ) {
       diff_p = createMember(p_space);
       if (!is_null(parameterBase_) ) {
@@ -794,7 +794,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
       }
     }
     
-    Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+    Teuchos::RCP<const LinearOpBase<Scalar> >
       Q_o = this->get_observationMatchWeightingOp(),
       Q_p = this->get_parameterRegularizationWeightingOp();
 
@@ -823,13 +823,13 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
     // have established that that have the right range and domain spaces!
 #endif
 
-    Teuchos::RefCountPtr<VectorBase<Scalar> > Q_o_diff_o;
+    Teuchos::RCP<VectorBase<Scalar> > Q_o_diff_o;
     if ( !is_null(Q_o) && !is_null(diff_o) ) {
       Q_o_diff_o = createMember(Q_o->range()); // Should be same as domain!
       apply( *Q_o, NOTRANS, *diff_o, &*Q_o_diff_o );
     }
 
-    Teuchos::RefCountPtr<VectorBase<Scalar> > Q_p_diff_p;
+    Teuchos::RCP<VectorBase<Scalar> > Q_p_diff_p;
     if ( !is_null(Q_p)  && !is_null(diff_p)  ) {
       Q_p_diff_p = createMember(Q_p->range()); // Should be same as domain!
       apply( *Q_p, NOTRANS, *diff_p, &*Q_p_diff_p );
@@ -979,7 +979,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModel(
 template<class Scalar>
 std::string DefaultInverseModelEvaluator<Scalar>::description() const
 {
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   std::ostringstream oss;
   oss << "Thyra::DefaultInverseModelEvaluator{";

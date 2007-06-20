@@ -49,11 +49,11 @@ DefaultClusteredSpmdProductVectorSpace<Scalar>::DefaultClusteredSpmdProductVecto
 
 template<class Scalar>
 DefaultClusteredSpmdProductVectorSpace<Scalar>::DefaultClusteredSpmdProductVectorSpace(
-  const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >          &intraClusterComm
+  const Teuchos::RCP<const Teuchos::Comm<Index> >          &intraClusterComm
   ,const int                                                       clusterRootRank
-  ,const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >         &interClusterComm
+  ,const Teuchos::RCP<const Teuchos::Comm<Index> >         &interClusterComm
   ,const int                                                       numBlocks
-  ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >      vecSpaces[]
+  ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >      vecSpaces[]
   )
 {
   initialize(intraClusterComm,clusterRootRank,interClusterComm,numBlocks,vecSpaces);
@@ -61,11 +61,11 @@ DefaultClusteredSpmdProductVectorSpace<Scalar>::DefaultClusteredSpmdProductVecto
 
 template<class Scalar>
 void DefaultClusteredSpmdProductVectorSpace<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >          &intraClusterComm
+  const Teuchos::RCP<const Teuchos::Comm<Index> >          &intraClusterComm
   ,const int                                                       clusterRootRank
-  ,const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >         &interClusterComm
+  ,const Teuchos::RCP<const Teuchos::Comm<Index> >         &interClusterComm
   ,const int                                                       numBlocks
-  ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >      vecSpaces[]
+  ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >      vecSpaces[]
   )
 {
   // Set state
@@ -143,7 +143,7 @@ bool DefaultClusteredSpmdProductVectorSpace<Scalar>::isCompatible(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> >
+Teuchos::RCP< const VectorSpaceFactoryBase<Scalar> >
 DefaultClusteredSpmdProductVectorSpace<Scalar>::smallVecSpcFcty() const
 {
   if(!vecSpaces_.size())
@@ -197,7 +197,7 @@ bool DefaultClusteredSpmdProductVectorSpace<Scalar>::hasInCoreView(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultClusteredSpmdProductVectorSpace<Scalar>::clone() const
 {
   return Teuchos::rcp(new DefaultClusteredSpmdProductVectorSpace<Scalar>(*this));
@@ -212,7 +212,7 @@ int DefaultClusteredSpmdProductVectorSpace<Scalar>::numBlocks() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultClusteredSpmdProductVectorSpace<Scalar>::getBlock(const int k) const
 {
   using Teuchos::implicit_cast;
@@ -223,7 +223,7 @@ DefaultClusteredSpmdProductVectorSpace<Scalar>::getBlock(const int k) const
 // Protected overridden from VectorSpaceBase
 
 template<class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
+Teuchos::RCP<VectorBase<Scalar> >
 DefaultClusteredSpmdProductVectorSpace<Scalar>::createMember() const
 {
   using Teuchos::rcp;
@@ -231,7 +231,7 @@ DefaultClusteredSpmdProductVectorSpace<Scalar>::createMember() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 DefaultClusteredSpmdProductVectorSpace<Scalar>::createMembers(int numMembers) const
 {
   return VectorSpaceDefaultBase<Scalar>::createMembers(numMembers);

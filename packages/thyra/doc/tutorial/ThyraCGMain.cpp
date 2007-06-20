@@ -76,7 +76,7 @@ int main(int argc, void *argv[])
   /* Fill the matrix.  First, we have to cast it to a Loadable
      matrix  */
 
-  RefCountPtr<LoadableMatrix<double> > LoadA = A.matrix();
+  RCP<LoadableMatrix<double> > LoadA = A.matrix();
   LoadA.zero();  //initializes all the elements to zero
 
   /* Fill the matrix row by row.  Each row will have -1.0 off the

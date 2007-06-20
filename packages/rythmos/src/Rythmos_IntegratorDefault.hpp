@@ -63,19 +63,19 @@ public:
   
   /** \brief . */
   IntegratorDefault(
-    const Teuchos::RefCountPtr<StepperBase<Scalar> > &stepper,
-    const Teuchos::RefCountPtr<InterpolationBufferBase<Scalar> > &trailingInterpBuffer,
-    const Teuchos::RefCountPtr<Teuchos::ParameterList> &paramList = Teuchos::null
+    const Teuchos::RCP<StepperBase<Scalar> > &stepper,
+    const Teuchos::RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer,
+    const Teuchos::RCP<Teuchos::ParameterList> &paramList = Teuchos::null
     );
   
   /** \brief . */
   void setInterpolationBuffer(
-    const Teuchos::RefCountPtr<InterpolationBufferBase<Scalar> > &trailingInterpBuffer
+    const Teuchos::RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer
     );
 
   /** \brief . */
   void setStepper(
-    const Teuchos::RefCountPtr<StepperBase<Scalar> > &stepper_
+    const Teuchos::RCP<StepperBase<Scalar> > &stepper_
     );
 
   //@}
@@ -83,8 +83,8 @@ public:
   /** \brief . */
   bool getFwdPoints(
     const std::vector<Scalar>& time_vec,
-    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec,
-    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
     std::vector<ScalarMag>* accuracy_vec
     );
 
@@ -98,16 +98,16 @@ public:
   /** \brief . */
   bool setPoints(
     const std::vector<Scalar>& time_vec,
-    const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec,
-    const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+    const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
+    const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
     const std::vector<ScalarMag> & accuracy_vec 
     );
 
   /** \brief . */
   bool getPoints(
     const std::vector<Scalar>& time_vec,
-    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec,
-    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
     std::vector<ScalarMag>* accuracy_vec
     ) const;
 
@@ -146,29 +146,29 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
 
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
 
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
 private:
 
   // Interpolation Buffer used to store past results
-  Teuchos::RefCountPtr<InterpolationBufferBase<Scalar> > trailingInterpBuffer_;
+  Teuchos::RCP<InterpolationBufferBase<Scalar> > trailingInterpBuffer_;
 
   // Stepper used to fill interpolation buffer.
-  Teuchos::RefCountPtr<StepperBase<Scalar> > stepper_;
+  Teuchos::RCP<StepperBase<Scalar> > stepper_;
 
   // ParameterList to control behavior
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_;
+  Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
   // Take variable steps or not
   bool takeVariableSteps_;
@@ -194,16 +194,16 @@ IntegratorDefault<Scalar>::IntegratorDefault()
 
 template<class Scalar>
 IntegratorDefault<Scalar>::IntegratorDefault(
-  const Teuchos::RefCountPtr<StepperBase<Scalar> > &stepper,
-  const Teuchos::RefCountPtr<InterpolationBufferBase<Scalar> > &trailingInterpBuffer,
-  const Teuchos::RefCountPtr<Teuchos::ParameterList> &paramList 
+  const Teuchos::RCP<StepperBase<Scalar> > &stepper,
+  const Teuchos::RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer,
+  const Teuchos::RCP<Teuchos::ParameterList> &paramList 
   )
   : takeVariableSteps_(true), fixed_dt_(-1.0)
 {
   using Teuchos::as;
   if (!is_null(paramList))
     setParameterList(paramList);
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   out->precision(20);
   out->setMaxLenLinePrefix(40);
@@ -225,11 +225,11 @@ IntegratorDefault<Scalar>::IntegratorDefault(
 
 template<class Scalar>
 void IntegratorDefault<Scalar>::setInterpolationBuffer(
-  const Teuchos::RefCountPtr<InterpolationBufferBase<Scalar> > &trailingInterpBuffer
+  const Teuchos::RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer
   )
 {
   using Teuchos::as;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   // 10/9/06 tscoffe: What should we do if this is called after
   // initialization?  Basically, you're swapping out the history for a new
@@ -249,11 +249,11 @@ void IntegratorDefault<Scalar>::setInterpolationBuffer(
 
 template<class Scalar>
 void IntegratorDefault<Scalar>::setStepper(
-  const Teuchos::RefCountPtr<StepperBase<Scalar> > &stepper
+  const Teuchos::RCP<StepperBase<Scalar> > &stepper
   )
 {
   using Teuchos::as;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   // 10/9/06 tscoffe: What should we do if this is called after
   // initialization?  Basically, you're swapping out the stepper for a new
@@ -284,8 +284,8 @@ void IntegratorDefault<Scalar>::setStepper(
 template<class Scalar>
 bool IntegratorDefault<Scalar>::setPoints(
   const std::vector<Scalar>& time_vec
-  ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
-  ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec
+  ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+  ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
   ,const std::vector<ScalarMag> & accuracy_vec 
   ) 
 {
@@ -296,8 +296,8 @@ bool IntegratorDefault<Scalar>::setPoints(
 template<class Scalar>
 bool IntegratorDefault<Scalar>::getPoints(
   const std::vector<Scalar>& time_vec,
-  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec_in,
-  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec_in,
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec_in,
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec_in,
   std::vector<ScalarMag>* accuracy_vec_in
   ) const
 {
@@ -305,7 +305,7 @@ bool IntegratorDefault<Scalar>::getPoints(
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"IBAS::getPoints");
 
@@ -384,8 +384,8 @@ bool IntegratorDefault<Scalar>::getPoints(
   // 2007/06/08: rabartl: ToDo: This code should be updated to allow any and
   // all of these pointers to be null in which case the will be ignored.
 
-  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &x_vec = *x_vec_in;
-  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &xdot_vec = *xdot_vec_in;
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec = *x_vec_in;
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec = *xdot_vec_in;
   std::vector<ScalarMag> &accuracy_vec = *accuracy_vec_in;
 
   // Sort time_vec
@@ -552,7 +552,7 @@ bool IntegratorDefault<Scalar>::getPoints(
       std::vector<Scalar> tmp_time_vec; 
       tmp_time_vec.clear();
       tmp_time_vec.push_back(local_time_vec[i]);
-      std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
+      std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
       std::vector<ScalarMag> tmp_accuracy_vec;
       status = trailingInterpBuffer_->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
       x_vec.push_back(tmp_x_vec[0]);
@@ -582,7 +582,7 @@ bool IntegratorDefault<Scalar>::getPoints(
       }
       std::vector<Scalar> tmp_time_vec; 
       tmp_time_vec.push_back(local_time_vec[i]);
-      std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
+      std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
       std::vector<ScalarMag> tmp_accuracy_vec;
       status = stepper_->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
       x_vec.push_back(tmp_x_vec[0]);
@@ -642,7 +642,7 @@ bool IntegratorDefault<Scalar>::getPoints(
           }
           std::vector<Scalar> tmp_time_vec;
           tmp_time_vec.push_back(local_time_vec[i]);
-          std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
+          std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
           std::vector<ScalarMag> tmp_accuracy_vec;
           status = stepper_->getPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
           x_vec.push_back(tmp_x_vec[0]);
@@ -698,7 +698,7 @@ bool IntegratorDefault<Scalar>::setRange(
   using Teuchos::as;
   const Scalar time_lower = range.lower();
   const Scalar time_upper = range.upper();
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"IBAS::setRange");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -724,7 +724,7 @@ bool IntegratorDefault<Scalar>::getNodes(
   ) const
 {
   using Teuchos::as;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"IBAS::getNodes");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -802,7 +802,7 @@ void IntegratorDefault<Scalar>::describe(
 
 template <class Scalar>
 void IntegratorDefault<Scalar>::setParameterList(
-  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
   using Teuchos::as;
@@ -811,7 +811,7 @@ void IntegratorDefault<Scalar>::setParameterList(
 
   TEST_FOR_EXCEPT(is_null(paramList));
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"IBAS::setParameterList");
 
@@ -841,7 +841,7 @@ void IntegratorDefault<Scalar>::setParameterList(
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 IntegratorDefault<Scalar>::getParameterList()
 {
   return(paramList_);
@@ -849,24 +849,24 @@ IntegratorDefault<Scalar>::getParameterList()
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 IntegratorDefault<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = paramList_;
+  Teuchos::RCP<Teuchos::ParameterList> temp_param_list = paramList_;
   paramList_ = Teuchos::null;
   return(temp_param_list);
 }
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 IntegratorDefault<Scalar>::getValidParameters() const
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::ParameterList;
-  static RefCountPtr<const ParameterList> validPL;
+  static RCP<const ParameterList> validPL;
   if (is_null(validPL)) {
-    RefCountPtr<ParameterList> pl = Teuchos::parameterList();
+    RCP<ParameterList> pl = Teuchos::parameterList();
     pl->set(
       "Take Variable Steps", bool(true),
       "If set to true, then the stepper will take variable steps.\n"
@@ -886,8 +886,8 @@ IntegratorDefault<Scalar>::getValidParameters() const
 template <class Scalar>
 bool IntegratorDefault<Scalar>::getFwdPoints(
     const std::vector<Scalar>& time_vec,
-    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec,
-    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
     std::vector<ScalarMag>* accuracy_vec
     )
 {

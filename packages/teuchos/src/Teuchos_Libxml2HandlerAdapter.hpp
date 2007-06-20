@@ -37,7 +37,7 @@
 
 #ifdef HAVE_TEUCHOS_LIBXML2
 #include "Teuchos_TreeBuildingXMLHandler.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include <libxml/parser.h>
 

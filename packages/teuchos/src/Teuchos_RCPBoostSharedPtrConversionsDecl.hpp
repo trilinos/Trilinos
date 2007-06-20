@@ -26,20 +26,20 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_REFCOUNTPTR_SHAREDPTR_CONVERSIONS_DECL_H
-#define TEUCHOS_REFCOUNTPTR_SHAREDPTR_CONVERSIONS_DECL_H
+#ifndef TEUCHOS_RCP_SHAREDPTR_CONVERSIONS_DECL_HPP
+#define TEUCHOS_RCP_SHAREDPTR_CONVERSIONS_DECL_HPP
 
-#include "Teuchos_RefCountPtrDecl.hpp"
+#include "Teuchos_RCPDecl.hpp"
 #include "boost/shared_ptr.hpp"
 
 namespace Teuchos {
 
-/** \defgroup Teuchos_RefCountPtrBoostSharedPtrConversions_grp Conversion utilities for going between Teuchos::RefCountPtr and boost::shared_ptr.
+/** \defgroup Teuchos_RCPBoostSharedPtrConversions_grp Conversion utilities for going between Teuchos::RCP and boost::shared_ptr.
 
-The smart pointer classes <tt>Teuchos::RefCountPtr</tt> and
+The smart pointer classes <tt>Teuchos::RCP</tt> and
 <tt>boost::shared_ptr</tt> are easily compatible.  The two templated
 conversion functions <tt>Teuchos::rcp( const boost::shared_ptr<T> & )</tt> and
-<tt>Teuchos::shared_pointer( const RefCountPtr<T> & )</tt> have been created
+<tt>Teuchos::shared_pointer( const RCP<T> & )</tt> have been created
 for converting back and forth.
 
 The following code shows how to convert back and forth between these two smart
@@ -50,7 +50,7 @@ pointer types:
 */
 //@{
 
-/** \brief <tt>Teuchos::RefCountPtr</tt> Deallocator class that wraps a
+/** \brief <tt>Teuchos::RCP</tt> Deallocator class that wraps a
  * <tt>boost::shared_ptr</tt> */
 template<class T>
 class DeallocBoostSharedPtr
@@ -70,14 +70,14 @@ private:
 };
 
 /** \brief <tt>boost::shared_ptr</tt> deleter class that wraps a
- * <tt>Teuchos::RefCountPtr</tt>.
+ * <tt>Teuchos::RCP</tt>.
  */
 template<class T>
-class RefCountPtrDeleter
+class RCPDeleter
 {
 public:
   /** \brief. */
-  RefCountPtrDeleter( const RefCountPtr<T> &rcp ) : rcp_(rcp) {}
+  RCPDeleter( const RCP<T> &rcp ) : rcp_(rcp) {}
   /** \brief. */
   typedef void result_type;
   /** \brief. */
@@ -85,37 +85,37 @@ public:
   /** \brief. */
   void operator()(T * x) const { rcp_ = null; }
   /** \brief. */
-  const RefCountPtr<T>& ptr() const { return rcp_; }
+  const RCP<T>& ptr() const { return rcp_; }
 private:
-  mutable RefCountPtr<T> rcp_;
-  RefCountPtrDeleter(); // Not defined and not to be called!
+  mutable RCP<T> rcp_;
+  RCPDeleter(); // Not defined and not to be called!
 };
 
 /** \brief Conversion function that takes in a <tt>boost::shared_ptr</tt>
- * object and spits out a <tt>Teuchos::RefCountPtr</tt> object.
+ * object and spits out a <tt>Teuchos::RCP</tt> object.
  *
- * If the input <tt>boost::shared_ptr</tt> already wraps a <tt>Teuchos::RefCountPtr</tt>
- * object, then that <tt>Teuchos::RefCountPtr</tt> object will be copied and returned.
+ * If the input <tt>boost::shared_ptr</tt> already wraps a <tt>Teuchos::RCP</tt>
+ * object, then that <tt>Teuchos::RCP</tt> object will be copied and returned.
  *
  * This function is not complicated, just look at its defintion below.
  */
 template<class T>
-RefCountPtr<T> rcp( const boost::shared_ptr<T> &sptr );
+RCP<T> rcp( const boost::shared_ptr<T> &sptr );
 
-/** \brief Conversion function that takes in a <tt>Teuchos::RefCountPtr</tt>
+/** \brief Conversion function that takes in a <tt>Teuchos::RCP</tt>
  * object and spits out a <tt>boost::shared_ptr</tt> object.
  *
- * If the input <tt>Teuchos::RefCountPtr</tt> already wraps a
+ * If the input <tt>Teuchos::RCP</tt> already wraps a
  * <tt>boost::shared_ptr</tt> object, then that <tt>boost::shared_ptr</tt>
  * object will be copied and returned.
  *
  * This function is not complicated, just look at its defintion below.
  */
 template<class T>
-boost::shared_ptr<T> shared_pointer( const RefCountPtr<T> &rcp );
+boost::shared_ptr<T> shared_pointer( const RCP<T> &rcp );
 
 //@}
 
 } // namespace Teuchos
 
-#endif	// TEUCHOS_REFCOUNTPTR_SHAREDPTR_CONVERSIONS_DECL_H
+#endif	// TEUCHOS_RCP_SHAREDPTR_CONVERSIONS_DECL_HPP

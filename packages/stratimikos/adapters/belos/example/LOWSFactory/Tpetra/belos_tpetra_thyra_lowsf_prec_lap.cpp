@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
   //
   // Get a default output stream from the Teuchos::VerboseObjectBase
   //
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
@@ -107,11 +107,11 @@ int main(int argc, char* argv[])
   const Tpetra::VectorSpace<OT,ST> vectorSpace(elementSpace,scalarPlatform);
   
   // Allocate the Tpetra::CisMatrix object.
-  RefCountPtr<Tpetra::CisMatrix<OT,ST> >
+  RCP<Tpetra::CisMatrix<OT,ST> >
     tpetra_A = rcp(new Tpetra::CisMatrix<OT,ST>(vectorSpace));
 
   // Allocate the Tpetra::CisMatrix preconditioning object.
-  RefCountPtr<Tpetra::CisMatrix<OT,ST> >
+  RCP<Tpetra::CisMatrix<OT,ST> >
     tpetra_Prec = rcp(new Tpetra::CisMatrix<OT,ST>(vectorSpace));
 
   // Get the indexes of the rows on this processor
@@ -150,17 +150,17 @@ int main(int argc, char* argv[])
   tpetra_Prec->fillComplete();
 
   // Create a Thyra linear operator (A) using the Tpetra::CisMatrix (tpetra_A).
-  RefCountPtr<Thyra::LinearOpBase<ST> >
+  RCP<Thyra::LinearOpBase<ST> >
     A = Teuchos::rcp( new Thyra::TpetraLinearOp<OT,ST>(
                       Teuchos::rcp_implicit_cast<Tpetra::Operator<OT,ST> >(tpetra_A) ) );
 
   // Create a Thyra linear operator (Prec) using the Tpetra::CisMatrix (tpetra_Prec)
-  RefCountPtr<Thyra::LinearOpBase<ST> >
+  RCP<Thyra::LinearOpBase<ST> >
     Prec = Teuchos::rcp( new Thyra::TpetraLinearOp<OT,ST>(
                     Teuchos::rcp_implicit_cast<Tpetra::Operator<OT,ST> >(tpetra_Prec) ) );
 
   // Create a Thyra default preconditioner (DefPrec) using the Thyra linear operator (Prec)
-  RefCountPtr<const Thyra::DefaultPreconditioner<ST> >
+  RCP<const Thyra::DefaultPreconditioner<ST> >
     DefPrec = Thyra::unspecifiedPrec<ST>(Prec);
 
   //
@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
   bool            outputMaxResOnly       = true;
   MT              maxResid               = 1e-3;
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList>
+  Teuchos::RCP<Teuchos::ParameterList>
     belosLOWSFPL = Teuchos::rcp( new Teuchos::ParameterList() );
   
   belosLOWSFPL->set("Solver Type","GMRES");
@@ -197,10 +197,10 @@ int main(int argc, char* argv[])
   int numRhs = 5;
 
   // Get the domain space for the Thyra linear operator 
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<ST> > domain = A->domain();
+  Teuchos::RCP<const Thyra::VectorSpaceBase<ST> > domain = A->domain();
 
   // Create the Belos LOWS factory.
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<ST> >
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<ST> >
     belosLOWSFactory = Teuchos::rcp(new Thyra::BelosLinearOpWithSolveFactory<ST>());
 
   // Set the parameter list to specify the behavior of the factory.
@@ -211,7 +211,7 @@ int main(int argc, char* argv[])
   belosLOWSFactory->setVerbLevel(Teuchos::VERB_LOW);
 
   // Create a BelosLinearOpWithSolve object from the Belos LOWS factory.
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<ST> >
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<ST> >
     nsA = belosLOWSFactory->createOp();
 
   // Initialize the BelosLinearOpWithSolve object with the Thyra linear operator (A)
@@ -219,13 +219,13 @@ int main(int argc, char* argv[])
   Thyra::initializeOp<ST>( *belosLOWSFactory, A, &*nsA );
 
   // Create a right-hand side with numRhs vectors in it and randomize it.
-  Teuchos::RefCountPtr< Thyra::MultiVectorBase<ST> > 
+  Teuchos::RCP< Thyra::MultiVectorBase<ST> > 
     b = Thyra::createMembers(domain, numRhs);
   Thyra::seed_randomize<ST>(0);
   Thyra::randomize(-one, one, &*b);
 
   // Create an initial vector with numRhs vectors in it and initialize it to zero.
-  Teuchos::RefCountPtr< Thyra::MultiVectorBase<ST> >
+  Teuchos::RCP< Thyra::MultiVectorBase<ST> >
     x = Thyra::createMembers(domain, numRhs);
   Thyra::assign(&*x, zero);
 
@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
   // Compute residual and ST check convergence.
   //
   std::vector<MT> norm_b(numRhs), norm_res(numRhs);
-  Teuchos::RefCountPtr< Thyra::MultiVectorBase<ST> >
+  Teuchos::RCP< Thyra::MultiVectorBase<ST> >
     y = Thyra::createMembers(domain, numRhs);
 
   // Compute the column norms of the right-hand side b.

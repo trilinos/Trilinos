@@ -43,7 +43,7 @@ namespace {
 
 
 const std::string StateFunctionScaling_name = "State Function Scaling";
-Teuchos::RefCountPtr<
+Teuchos::RCP<
   Teuchos::StringToIntegralParameterEntryValidator<
     Thyra::EpetraModelEvaluator::EStateFunctionScaling
     >
@@ -51,14 +51,14 @@ Teuchos::RefCountPtr<
 stateFunctionScalingValidator;
 const std::string StateFunctionScaling_default = "None";
 
-Teuchos::RefCountPtr<Epetra_RowMatrix>
+Teuchos::RCP<Epetra_RowMatrix>
 get_Epetra_RowMatrix(
   const EpetraExt::ModelEvaluator::OutArgs &epetraOutArgs
   )
 {
-  const Teuchos::RefCountPtr<Epetra_Operator>
+  const Teuchos::RCP<Epetra_Operator>
     eW = epetraOutArgs.get_W();
-  const Teuchos::RefCountPtr<Epetra_RowMatrix>
+  const Teuchos::RCP<Epetra_RowMatrix>
     ermW = Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(eW,false);
   TEST_FOR_EXCEPTION(
     is_null(ermW), std::logic_error,
@@ -90,8 +90,8 @@ EpetraModelEvaluator::EpetraModelEvaluator()
 
 
 EpetraModelEvaluator::EpetraModelEvaluator(
-  const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> &epetraModel,
-  const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > &W_factory
+  const Teuchos::RCP<const EpetraExt::ModelEvaluator> &epetraModel,
+  const Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
   )
   :nominalValuesAndBoundsAreUpdated_(false), stateFunctionScaling_(STATE_FUNC_SCALING_NONE),
    finalPointWasSolved_(false)
@@ -100,11 +100,11 @@ EpetraModelEvaluator::EpetraModelEvaluator(
 }
 
 void EpetraModelEvaluator::initialize(
-  const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> &epetraModel,
-  const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > &W_factory
+  const Teuchos::RCP<const EpetraExt::ModelEvaluator> &epetraModel,
+  const Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
   )
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::implicit_cast;
   typedef ModelEvaluatorBase MEB;
   //
@@ -119,7 +119,7 @@ void EpetraModelEvaluator::initialize(
   p_map_.resize(inArgs.Np()); p_space_.resize(inArgs.Np());
   p_map_is_local_.resize(inArgs.Np(),false);
   for( int l = 0; l < implicit_cast<int>(p_space_.size()); ++l ) {
-    RefCountPtr<const Epetra_Map>
+    RCP<const Epetra_Map>
       p_map_l = ( p_map_[l] = epetraModel_->get_p_map(l) );
 #ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
@@ -136,7 +136,7 @@ void EpetraModelEvaluator::initialize(
   g_map_.resize(outArgs.Ng()); g_space_.resize(outArgs.Ng());
   g_map_is_local_.resize(outArgs.Ng(),false);
   for( int j = 0; j < implicit_cast<int>(g_space_.size()); ++j ) {
-    RefCountPtr<const Epetra_Map>
+    RCP<const Epetra_Map>
       g_map_j = ( g_map_[j] = epetraModel_->get_g_map(j) );
     g_map_is_local_[j] = !g_map_j->DistributedGlobal();
     g_space_[j] = create_VectorSpace( g_map_j );
@@ -150,7 +150,7 @@ void EpetraModelEvaluator::initialize(
 }
 
 
-Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>
+Teuchos::RCP<const EpetraExt::ModelEvaluator>
 EpetraModelEvaluator::getEpetraModel() const
 {
   return epetraModel_;
@@ -167,7 +167,7 @@ void EpetraModelEvaluator::setNominalValues(
 
 
 void EpetraModelEvaluator::setStateVariableScalingVec(
-  const Teuchos::RefCountPtr<const Epetra_Vector> &stateVariableScalingVec
+  const Teuchos::RCP<const Epetra_Vector> &stateVariableScalingVec
   )
 {
   typedef ModelEvaluatorBase MEB;
@@ -180,7 +180,7 @@ void EpetraModelEvaluator::setStateVariableScalingVec(
 }
 
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraModelEvaluator::getStateVariableScalingVec() const
 {
   return stateVariableScalingVec_;
@@ -188,14 +188,14 @@ EpetraModelEvaluator::getStateVariableScalingVec() const
 
 
 void EpetraModelEvaluator::setStateFunctionScalingVec(
-  const Teuchos::RefCountPtr<const Epetra_Vector> &stateFunctionScalingVec
+  const Teuchos::RCP<const Epetra_Vector> &stateFunctionScalingVec
   )
 {
   stateFunctionScalingVec_ = stateFunctionScalingVec;
 }
 
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraModelEvaluator::getStateFunctionScalingVec() const
 {
   return stateFunctionScalingVec_;
@@ -203,8 +203,8 @@ EpetraModelEvaluator::getStateFunctionScalingVec() const
 
 
 void EpetraModelEvaluator::uninitialize(
-  Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> *epetraModel,
-  Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > *W_factory
+  Teuchos::RCP<const EpetraExt::ModelEvaluator> *epetraModel,
+  Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > *W_factory
   )
 {
   if(epetraModel) *epetraModel = epetraModel_;
@@ -234,7 +234,7 @@ bool EpetraModelEvaluator::finalPointWasSolved() const
 
 
 void EpetraModelEvaluator::setParameterList(
-  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
   TEST_FOR_EXCEPT(is_null(paramList));
@@ -252,38 +252,38 @@ void EpetraModelEvaluator::setParameterList(
 }
 
 
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 EpetraModelEvaluator::getParameterList()
 {
   return paramList_;
 }
 
 
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 EpetraModelEvaluator::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> _paramList = paramList_;
+  Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 EpetraModelEvaluator::getParameterList() const
 {
   return paramList_;
 }
 
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 EpetraModelEvaluator::getValidParameters() const
 {
   using Teuchos::rcp;
   using Teuchos::StringToIntegralParameterEntryValidator;
   using Teuchos::tuple;
-  static Teuchos::RefCountPtr<const Teuchos::ParameterList> validPL;
+  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if(is_null(validPL)) {
-    Teuchos::RefCountPtr<Teuchos::ParameterList>
+    Teuchos::RCP<Teuchos::ParameterList>
       pl = Teuchos::rcp(new Teuchos::ParameterList());
     stateFunctionScalingValidator = rcp(
       new StringToIntegralParameterEntryValidator<EStateFunctionScaling>(
@@ -334,21 +334,21 @@ int EpetraModelEvaluator::Ng() const
 }
 
 
-Teuchos::RefCountPtr<const VectorSpaceBase<double> >
+Teuchos::RCP<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_x_space() const
 {
   return x_space_;
 }
 
 
-Teuchos::RefCountPtr<const VectorSpaceBase<double> >
+Teuchos::RCP<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_f_space() const
 {
   return f_space_;
 }
 
 
-Teuchos::RefCountPtr<const VectorSpaceBase<double> >
+Teuchos::RCP<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_p_space(int l) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -358,7 +358,7 @@ EpetraModelEvaluator::get_p_space(int l) const
 }
 
 
-Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+Teuchos::RCP<const Teuchos::Array<std::string> >
 EpetraModelEvaluator::get_p_names(int l) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -368,7 +368,7 @@ EpetraModelEvaluator::get_p_names(int l) const
 }
 
 
-Teuchos::RefCountPtr<const VectorSpaceBase<double> >
+Teuchos::RCP<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_g_space(int j) const
 {
   TEST_FOR_EXCEPT( ! ( 0 <= j && j < this->Ng() ) );
@@ -400,7 +400,7 @@ EpetraModelEvaluator::getUpperBounds() const
 }
 
 
-Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
+Teuchos::RCP<LinearOpWithSolveBase<double> >
 EpetraModelEvaluator::create_W() const
 {
   TEST_FOR_EXCEPTION(
@@ -415,14 +415,14 @@ EpetraModelEvaluator::create_W() const
 }
 
 
-Teuchos::RefCountPtr<LinearOpBase<double> >
+Teuchos::RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_W_op() const
 {
   return Teuchos::rcp(new Thyra::EpetraLinearOp());
 }
 
 
-Teuchos::RefCountPtr<LinearOpBase<double> >
+Teuchos::RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DfDp_op(int l) const
 {
   TEST_FOR_EXCEPT(true);
@@ -430,7 +430,7 @@ EpetraModelEvaluator::create_DfDp_op(int l) const
 }
 
 
-Teuchos::RefCountPtr<LinearOpBase<double> >
+Teuchos::RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DgDx_op(int j) const
 {
   TEST_FOR_EXCEPT(true);
@@ -438,7 +438,7 @@ EpetraModelEvaluator::create_DgDx_op(int j) const
 }
 
 
-Teuchos::RefCountPtr<LinearOpBase<double> >
+Teuchos::RCP<LinearOpBase<double> >
 EpetraModelEvaluator::create_DgDp_op( int j, int l ) const
 {
   TEST_FOR_EXCEPT(true);
@@ -526,7 +526,7 @@ void EpetraModelEvaluator::evalModel(
 {
 
   using Thyra::get_Epetra_Vector;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
@@ -552,7 +552,7 @@ void EpetraModelEvaluator::evalModel(
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
 
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
@@ -595,22 +595,22 @@ void EpetraModelEvaluator::evalModel(
 
   EME::OutArgs epetraUnscaledOutArgs = epetraModel_->createOutArgs();
 
-  RefCountPtr<VectorBase<double> > f;
+  RCP<VectorBase<double> > f;
   if( outArgs.supports(OUT_ARG_f) && (f = outArgs.get_f()).get() )
     epetraUnscaledOutArgs.set_f(get_Epetra_Vector(*f_map_,f));
 
   {
-    Teuchos::RefCountPtr<VectorBase<double> > g_j;
+    Teuchos::RCP<VectorBase<double> > g_j;
     for(int j = 0;  j < outArgs.Ng(); ++j ) {
       g_j = outArgs.get_g(j);
       if(g_j.get()) epetraUnscaledOutArgs.set_g(j,get_Epetra_Vector(*g_map_[j],g_j));
     }
   }
   
-  RefCountPtr<LinearOpWithSolveBase<double> > W;
-  RefCountPtr<LinearOpBase<double> >          W_op;
-  RefCountPtr<const LinearOpBase<double> >    fwdW;
-  RefCountPtr<EpetraLinearOp>                 efwdW;
+  RCP<LinearOpWithSolveBase<double> > W;
+  RCP<LinearOpBase<double> >          W_op;
+  RCP<const LinearOpBase<double> >    fwdW;
+  RCP<EpetraLinearOp>                 efwdW;
   if( outArgs.supports(OUT_ARG_W) && (W = outArgs.get_W()).get() ) {
     Thyra::uninitializeOp<double>(*W_factory_,&*W,&fwdW);
     if(fwdW.get()) {
@@ -627,7 +627,7 @@ void EpetraModelEvaluator::evalModel(
       efwdW = rcp_const_cast<EpetraLinearOp>(
         rcp_dynamic_cast<const EpetraLinearOp>(W_op,true));
   }
-  RefCountPtr<Epetra_Operator> eW;
+  RCP<Epetra_Operator> eW;
   if(efwdW.get()) {
     eW = efwdW->epetra_op();
     if(!eW.get())
@@ -708,7 +708,7 @@ void EpetraModelEvaluator::evalModel(
             // are set.  Therefore, we will just go with the temp transpose
             // and the the explicit copy later.
             created_temp_DgDp = true;
-            RefCountPtr<Epetra_MultiVector> temp_epetra_DgDp_j_l;
+            RCP<Epetra_MultiVector> temp_epetra_DgDp_j_l;
             EME::EDerivativeMultiVectorOrientation temp_epetra_DgDp_j_l_orientation;
             if( epetra_DgDp_j_l_support.supports(EME::DERIV_MV_BY_COL) )
             {
@@ -750,13 +750,13 @@ void EpetraModelEvaluator::evalModel(
     }
   }
 
-  RefCountPtr<const Teuchos::Polynomial< VectorBase<double> > > f_poly;
+  RCP<const Teuchos::Polynomial< VectorBase<double> > > f_poly;
   if( outArgs.supports(OUT_ARG_f_poly) && (f_poly = outArgs.get_f_poly()).get() )
   {
-    RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > epetra_f_poly = 
+    RCP<Teuchos::Polynomial<Epetra_Vector> > epetra_f_poly = 
       Teuchos::rcp(new Teuchos::Polynomial<Epetra_Vector>(f_poly->degree()));
     for (unsigned int i=0; i<=f_poly->degree(); i++) {
-      RefCountPtr<Epetra_Vector> epetra_ptr
+      RCP<Epetra_Vector> epetra_ptr
         = Teuchos::rcp_const_cast<Epetra_Vector>(get_Epetra_Vector(*f_map_,
             f_poly->getCoefficient(i)));
       epetra_f_poly->setCoefficientPtr(i,epetra_ptr);
@@ -822,13 +822,13 @@ void EpetraModelEvaluator::evalModel(
     switch(stateFunctionScaling_) {
       case STATE_FUNC_SCALING_ROW_SUM: {
         // Compute the inverse row-sum scaling from W
-        const RefCountPtr<Epetra_RowMatrix>
+        const RCP<Epetra_RowMatrix>
           ermW = get_Epetra_RowMatrix(epetraUnscaledOutArgs);
         // Note: Above, we get the Epetra W object directly from the Epetra
         // OutArgs object since this might be a temporary matrix just to
         // compute scaling factors.  In this case, the stack funtion variable
         // eW might be empty!
-        RefCountPtr<Epetra_Vector>
+        RCP<Epetra_Vector>
           invRowSums = rcp(new Epetra_Vector(ermW->OperatorRangeMap()));
         // Above, From the documentation is seems that the RangeMap should be
         // okay but who knows for sure!
@@ -920,7 +920,7 @@ void EpetraModelEvaluator::evalModel(
           !(DgDp_j_l = outArgs.get_DgDp(j,l)).isEmpty()
           )
         {
-          RefCountPtr<MultiVectorBase<double> >
+          RCP<MultiVectorBase<double> >
             DgDp_mv_j_l = DgDp_j_l.getDerivativeMultiVector().getMultiVector();
           EDerivativeMultiVectorOrientation
             DgDp_mv_j_l_orientation = DgDp_j_l.getDerivativeMultiVector().getOrientation();
@@ -935,7 +935,7 @@ void EpetraModelEvaluator::evalModel(
             )
           {
             // We must do an explicit multi-vector transpose copy here!
-            RefCountPtr<Epetra_MultiVector>
+            RCP<Epetra_MultiVector>
               e_DgDp_mv_j_l = e_DgDp_j_l.getDerivativeMultiVector().getMultiVector();
             DetachedMultiVectorView<double>
               d_DgDp_mv_j_l(*DgDp_mv_j_l);
@@ -1048,36 +1048,36 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
   ) const
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
 
   TEST_FOR_EXCEPT(0==epetraInArgs);
 
-  RefCountPtr<const VectorBase<double> > x_dot;
+  RCP<const VectorBase<double> > x_dot;
   if( inArgs.supports(IN_ARG_x_dot) && (x_dot = inArgs.get_x_dot()).get() ) {
-    RefCountPtr<const Epetra_Vector> e_x_dot = get_Epetra_Vector(*x_map_,x_dot);
+    RCP<const Epetra_Vector> e_x_dot = get_Epetra_Vector(*x_map_,x_dot);
     epetraInArgs->set_x_dot(e_x_dot);
   }
 
-  RefCountPtr<const VectorBase<double> > x;
+  RCP<const VectorBase<double> > x;
   if( inArgs.supports(IN_ARG_x) && (x = inArgs.get_x()).get() ) {
-    RefCountPtr<const Epetra_Vector> e_x = get_Epetra_Vector(*x_map_,x);
+    RCP<const Epetra_Vector> e_x = get_Epetra_Vector(*x_map_,x);
     epetraInArgs->set_x(e_x);
   }
 
-  RefCountPtr<const VectorBase<double> > p_l;
+  RCP<const VectorBase<double> > p_l;
   for(int l = 0;  l < inArgs.Np(); ++l ) {
     p_l = inArgs.get_p(l);
     if(p_l.get()) epetraInArgs->set_p(l,get_Epetra_Vector(*p_map_[l],p_l));
   }
 
-  RefCountPtr<const Teuchos::Polynomial< VectorBase<double> > > x_dot_poly;
-  Teuchos::RefCountPtr<Epetra_Vector> epetra_ptr;
+  RCP<const Teuchos::Polynomial< VectorBase<double> > > x_dot_poly;
+  Teuchos::RCP<Epetra_Vector> epetra_ptr;
   if(
     inArgs.supports(IN_ARG_x_dot_poly)
     && (x_dot_poly = inArgs.get_x_dot_poly()).get()
     )
   {
-    RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > epetra_x_dot_poly = 
+    RCP<Teuchos::Polynomial<Epetra_Vector> > epetra_x_dot_poly = 
       Teuchos::rcp(new Teuchos::Polynomial<Epetra_Vector>(x_dot_poly->degree()));
     for (unsigned int i=0; i<=x_dot_poly->degree(); i++) {
       epetra_ptr = Teuchos::rcp_const_cast<Epetra_Vector>(
@@ -1087,13 +1087,13 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
     epetraInArgs->set_x_dot_poly(epetra_x_dot_poly);
   }
   
-  RefCountPtr<const Teuchos::Polynomial< VectorBase<double> > > x_poly;
+  RCP<const Teuchos::Polynomial< VectorBase<double> > > x_poly;
   if(
     inArgs.supports(IN_ARG_x_poly)
     && (x_poly = inArgs.get_x_poly()).get()
     )
   {
-    RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > epetra_x_poly = 
+    RCP<Teuchos::Polynomial<Epetra_Vector> > epetra_x_poly = 
       Teuchos::rcp(new Teuchos::Polynomial<Epetra_Vector>(x_poly->degree()));
     for (unsigned int i=0; i<=x_poly->degree(); i++) {
       epetra_ptr = Teuchos::rcp_const_cast<Epetra_Vector>(
@@ -1211,10 +1211,10 @@ void EpetraModelEvaluator::updateNominalValuesAndBounds() const
 //
 
 
-Teuchos::RefCountPtr<Thyra::EpetraModelEvaluator>
+Teuchos::RCP<Thyra::EpetraModelEvaluator>
 Thyra::epetraModelEvaluator(
-  const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> &epetraModel,
-  const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > &W_factory
+  const Teuchos::RCP<const EpetraExt::ModelEvaluator> &epetraModel,
+  const Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
   )
 {
   return Teuchos::rcp(new EpetraModelEvaluator(epetraModel,W_factory));
@@ -1303,8 +1303,8 @@ Thyra::convert( const EpetraExt::ModelEvaluator::DerivativeSupport &derivativeSu
 EpetraExt::ModelEvaluator::Derivative
 Thyra::convert(
   const ModelEvaluatorBase::Derivative<double>        &derivative
-  ,const Teuchos::RefCountPtr<const Epetra_Map>       &fnc_map
-  ,const Teuchos::RefCountPtr<const Epetra_Map>       &var_map
+  ,const Teuchos::RCP<const Epetra_Map>       &fnc_map
+  ,const Teuchos::RCP<const Epetra_Map>       &var_map
   )
 {
   typedef ModelEvaluatorBase MEB;

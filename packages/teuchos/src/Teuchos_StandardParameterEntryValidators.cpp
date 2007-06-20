@@ -53,7 +53,7 @@ std::string Teuchos::getVerbosityLevelParameterValueName(
 }
 
 
-Teuchos::RefCountPtr<
+Teuchos::RCP<
   Teuchos::StringToIntegralParameterEntryValidator<Teuchos::EVerbosityLevel>
   >
 Teuchos::verbosityLevelParameterEntryValidator(
@@ -229,7 +229,7 @@ void AnyNumberParameterEntryValidator::printDoc(
 }
 
 
-RefCountPtr<const Array<std::string> >
+RCP<const Array<std::string> >
 AnyNumberParameterEntryValidator::validStringValues() const
 {
   return null;
@@ -304,7 +304,7 @@ void AnyNumberParameterEntryValidator::throwTypeError(
 
 // Nonmmeber helper functions
 
-Teuchos::RefCountPtr<Teuchos::AnyNumberParameterEntryValidator>
+Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
 Teuchos::anyNumberParameterEntryValidator(
   AnyNumberParameterEntryValidator::EPreferredType const preferredType,
   AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
@@ -375,7 +375,7 @@ int Teuchos::getIntParameter(
   )
 {
   const ParameterEntry &entry = paramList.getEntry(paramName);
-  RefCountPtr<const AnyNumberParameterEntryValidator>
+  RCP<const AnyNumberParameterEntryValidator>
     anyNumValidator = rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(
       entry.validator()
       );
@@ -395,7 +395,7 @@ double Teuchos::getDoubleParameter(
   )
 {
   const ParameterEntry &entry = paramList.getEntry(paramName);
-  RefCountPtr<const AnyNumberParameterEntryValidator>
+  RCP<const AnyNumberParameterEntryValidator>
     anyNumValidator = rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(
       entry.validator()
       );
@@ -415,7 +415,7 @@ std::string Teuchos::getNumericStringParameter(
   )
 {
   const ParameterEntry &entry = paramList.getEntry(paramName);
-  RefCountPtr<const AnyNumberParameterEntryValidator>
+  RCP<const AnyNumberParameterEntryValidator>
     anyNumValidator = rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(
       entry.validator()
       );

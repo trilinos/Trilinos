@@ -30,7 +30,7 @@ void someLessDumbFunction( std::ostream &out_arg )
 {
   using Teuchos::OSTab;
   // Get a FancyOStream from out_arg or create a new one ...
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::getFancyOStream(Teuchos::rcp(&out_arg,false));
   // Do our tab indent and our name.
   OSTab tab(out,1,"LDUMBALGO");
@@ -63,15 +63,15 @@ public:
 
   // Overridden from ParameterListAccpetor
 
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
 
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
 
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   // Other functions
 
@@ -83,7 +83,7 @@ private:
 
   static const std::string toString( AlgorithmA::EAlgoType algoType );
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_;
+  Teuchos::RCP<Teuchos::ParameterList> paramList_;
   EAlgoType algoType_;
   double algoTol_;
   
@@ -122,7 +122,7 @@ AlgorithmA::AlgorithmA()
 
 
 void AlgorithmA::setParameterList(
-  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
   TEST_FOR_EXCEPT(is_null(paramList));
@@ -152,38 +152,38 @@ void AlgorithmA::setParameterList(
 }
 
 
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 AlgorithmA::getParameterList()
 {
   return paramList_;
 }
 
 
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 AlgorithmA::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = paramList_;
+  Teuchos::RCP<Teuchos::ParameterList> paramList = paramList_;
   paramList_ = Teuchos::null;
   return paramList;
 }
 
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 AlgorithmA::getParameterList() const
 {
   return paramList_;
 }
 
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 AlgorithmA::getValidParameters() const
 {
-  using Teuchos::RefCountPtr; using Teuchos::ParameterList;
+  using Teuchos::RCP; using Teuchos::ParameterList;
   using Teuchos::setStringToIntegralParameter;
   using Teuchos::tuple;
-  static RefCountPtr<const ParameterList> validParams;
+  static RCP<const ParameterList> validParams;
   if (is_null(validParams)) {
-    RefCountPtr<ParameterList>
+    RCP<ParameterList>
       pl = Teuchos::rcp(new ParameterList("AlgorithmA"));
     setStringToIntegralParameter(
       AlgoType_name, AlgoType_default,
@@ -211,7 +211,7 @@ void AlgorithmA::doAlgorithm()
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   // Here I grab the stream that I will use for outputting.  It is a good
   // idea to grab the RCP to this object just to be safe.
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   // Here I set my line prefix and a single indent.  The convention will
   // be that a called function will set its own indent.  This convention makes
   // the most sense.
@@ -313,7 +313,7 @@ static TestVerboseObjectBaseInitialization testVerboseObjectBaseInitialization;
 int main(int argc, char* argv[])
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::FancyOStream;
   using Teuchos::VerboseObjectBase;
@@ -336,7 +336,7 @@ int main(int argc, char* argv[])
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
     // Here I am just grabbing the default output stream
-    RefCountPtr<FancyOStream>
+    RCP<FancyOStream>
       out = VerboseObjectBase::getDefaultOStream();
     // Note that the VerboseObject manages FancyOStream objects and not just
     // std::ostream objects.  This is important to the design and very
@@ -448,7 +448,7 @@ int main(int argc, char* argv[])
     *out << " printed on";
     *out << " the same";
     *out << " line two lines below the above output!\n";
-    RefCountPtr<FancyOStream>
+    RCP<FancyOStream>
       out2 = rcp(new FancyOStream(rcp(new std::ostringstream),"  "));
     {
       OSTab tab(out);

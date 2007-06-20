@@ -175,14 +175,14 @@ public:
    * ToDo: Finish documentation!
    */
   void initialize(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> > &fwdOp,
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOpSrc,
-    const Teuchos::RefCountPtr<const PreconditionerBase<double> > &prec,
+    const Teuchos::RCP<const LinearOpBase<double> > &fwdOp,
+    const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
+    const Teuchos::RCP<const PreconditionerBase<double> > &prec,
     const bool isExternalPrec,
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &approxFwdOpSrc,
-    const Teuchos::RefCountPtr<AztecOO> &aztecFwdSolver,
+    const Teuchos::RCP<const LinearOpSourceBase<double> > &approxFwdOpSrc,
+    const Teuchos::RCP<AztecOO> &aztecFwdSolver,
     const bool allowInexactFwdSolve = false,
-    const Teuchos::RefCountPtr<AztecOO> &aztecAdjSolver = Teuchos::null,
+    const Teuchos::RCP<AztecOO> &aztecAdjSolver = Teuchos::null,
     const bool allowInexactAdjSolve = false,
     const double aztecSolverScalar = 1.0
     );
@@ -190,11 +190,11 @@ public:
   /** \brief Extract the forward <tt>LinearOpBase<double></tt> object so that
    * it can be modified.
    */
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > extract_fwdOpSrc();
+  Teuchos::RCP<const LinearOpSourceBase<double> > extract_fwdOpSrc();
 
   /** \brief Extract the preconditioner.
    */
-  Teuchos::RefCountPtr<const PreconditionerBase<double> > extract_prec();
+  Teuchos::RCP<const PreconditionerBase<double> > extract_prec();
 
   /** \brief Determine if the preconditioner was external or not.
    */
@@ -204,18 +204,18 @@ public:
   /** \brief Extract the approximate forward <tt>LinearOpBase<double></tt>
    * object used to build the preconditioner.
    */
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > extract_approxFwdOpSrc();
+  Teuchos::RCP<const LinearOpSourceBase<double> > extract_approxFwdOpSrc();
   
   /** \brief Uninitialize. */
   void uninitialize(
-    Teuchos::RefCountPtr<const LinearOpBase<double> > *fwdOp = NULL,
-    Teuchos::RefCountPtr<const LinearOpSourceBase<double> > *fwdOpSrc = NULL,
-    Teuchos::RefCountPtr<const PreconditionerBase<double> > *prec = NULL,
+    Teuchos::RCP<const LinearOpBase<double> > *fwdOp = NULL,
+    Teuchos::RCP<const LinearOpSourceBase<double> > *fwdOpSrc = NULL,
+    Teuchos::RCP<const PreconditionerBase<double> > *prec = NULL,
     bool *isExternalPrec = NULL,
-    Teuchos::RefCountPtr<const LinearOpSourceBase<double> > *approxFwdOpSrc = NULL,
-    Teuchos::RefCountPtr<AztecOO> *aztecFwdSolver = NULL,
+    Teuchos::RCP<const LinearOpSourceBase<double> > *approxFwdOpSrc = NULL,
+    Teuchos::RCP<AztecOO> *aztecFwdSolver = NULL,
     bool *allowInexactFwdSolve = NULL,
-    Teuchos::RefCountPtr<AztecOO> *aztecAdjSolver = NULL,
+    Teuchos::RCP<AztecOO> *aztecAdjSolver = NULL,
     bool *allowInexactAdjSolve = NULL,
     double *aztecSolverScalar = NULL
     );
@@ -225,11 +225,11 @@ public:
   /** @name Overridden from LinearOpBase */
   //@{
   /** \brief. */
-  Teuchos::RefCountPtr< const VectorSpaceBase<double> > range() const;
+  Teuchos::RCP< const VectorSpaceBase<double> > range() const;
   /** \brief. */
-  Teuchos::RefCountPtr< const VectorSpaceBase<double> > domain() const;
+  Teuchos::RCP< const VectorSpaceBase<double> > domain() const;
   /** \brief. */
-  Teuchos::RefCountPtr<const LinearOpBase<double> > clone() const;
+  Teuchos::RCP<const LinearOpBase<double> > clone() const;
   //@}
 
   /** @name Overridden from Teuchos::Describable */
@@ -284,14 +284,14 @@ protected:
   
 private:
   
-  Teuchos::RefCountPtr<const LinearOpBase<double> > fwdOp_;
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > fwdOpSrc_;
-  Teuchos::RefCountPtr<const PreconditionerBase<double> > prec_;
+  Teuchos::RCP<const LinearOpBase<double> > fwdOp_;
+  Teuchos::RCP<const LinearOpSourceBase<double> > fwdOpSrc_;
+  Teuchos::RCP<const PreconditionerBase<double> > prec_;
   bool isExternalPrec_;
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > approxFwdOpSrc_;
-  Teuchos::RefCountPtr<AztecOO> aztecFwdSolver_;
+  Teuchos::RCP<const LinearOpSourceBase<double> > approxFwdOpSrc_;
+  Teuchos::RCP<AztecOO> aztecFwdSolver_;
   bool allowInexactFwdSolve_;
-  Teuchos::RefCountPtr<AztecOO> aztecAdjSolver_;
+  Teuchos::RCP<AztecOO> aztecAdjSolver_;
   bool allowInexactAdjSolve_;
   double aztecSolverScalar_;
   

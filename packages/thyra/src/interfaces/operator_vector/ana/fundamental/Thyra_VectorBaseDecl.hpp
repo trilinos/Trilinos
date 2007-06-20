@@ -162,7 +162,7 @@ public:
    * object embedded in <tt>return</tt> must be valid past the lifetime of
    * <tt>*this</tt> vector object.
    */
-  virtual Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > space() const = 0;
+  virtual RCP< const VectorSpaceBase<Scalar> > space() const = 0;
 
   //@}
 
@@ -186,15 +186,15 @@ public:
    * for a description of what this function does.
    */
   virtual void applyOp(
-    const RTOpPack::RTOpT<Scalar>    &op
-    ,const int                       num_vecs
-    ,const VectorBase<Scalar>*const  vecs[]
-    ,const int                       num_targ_vecs
-    ,VectorBase<Scalar>*const        targ_vecs[]
-    ,RTOpPack::ReductTarget          *reduct_obj
-    ,const Index                     first_ele_offset
-    ,const Index                     sub_dim
-    ,const Index                     global_offset
+    const RTOpPack::RTOpT<Scalar> &op,
+    const int num_vecs,
+    const VectorBase<Scalar>*const vecs[],
+    const int num_targ_vecs,
+    VectorBase<Scalar>*const targ_vecs[],
+    RTOpPack::ReductTarget *reduct_obj,
+    const Index first_ele_offset,
+    const Index sub_dim,
+    const Index global_offset
     ) const = 0;
 
   //@}
@@ -216,7 +216,7 @@ public:
    * in case the created object might not actually be modified before it is
    * destroyed.  However, this is not advised.
    */
-  virtual Teuchos::RefCountPtr<VectorBase<Scalar> > clone_v() const = 0;
+  virtual RCP<VectorBase<Scalar> > clone_v() const = 0;
 
   //@}
 
@@ -263,7 +263,9 @@ public:
    * memory.  Of course, the same <tt>sub_vec</tt> object must be passed to
    * the same vector object for this to work correctly.
    */
-  virtual void acquireDetachedView( const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const = 0;
+  virtual void acquireDetachedView(
+    const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+    ) const = 0;
 
   /** \brief Free an explicit view of a sub-vector.
    *
@@ -284,7 +286,9 @@ public:
    *
    * The sub-vector view must have been allocated by <tt>this->acquireDetachedView()</tt> first.
    */
-  virtual void releaseDetachedView( RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const = 0;
+  virtual void releaseDetachedView(
+    RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+    ) const = 0;
 
   /** \brief Get a mutable explicit view of a sub-vector.
    *
@@ -333,7 +337,9 @@ public:
    * permanent until <tt>this->acquireDetachedView(...,sub_vec)</tt> is called again,
    * or <tt>this->commitDetachedView(sub_vec)</tt> is called.
    */
-  virtual void acquireDetachedView( const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec ) = 0;
+  virtual void acquireDetachedView(
+    const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec
+    ) = 0;
 
   /** \brief Commit changes for a mutable explicit view of a sub-vector.
    *
@@ -358,7 +364,9 @@ public:
    * The sub-vector view must have been allocated by
    * <tt>this->acquireDetachedView()</tt> first.
    */
-  virtual void commitDetachedView( RTOpPack::SubVectorView<Scalar>* sub_vec ) = 0;
+  virtual void commitDetachedView(
+    RTOpPack::SubVectorView<Scalar>* sub_vec
+    ) = 0;
 
   /** \brief Set a specific sub-vector.
    *
@@ -383,7 +391,9 @@ public:
    * vector object will be set equal to those in the input view
    * <tt>sub_vec</tt>.
    */
-  virtual void setSubVector( const RTOpPack::SparseSubVectorT<Scalar>& sub_vec ) = 0;
+  virtual void setSubVector(
+    const RTOpPack::SparseSubVectorT<Scalar>& sub_vec
+    ) = 0;
 
   //@}
 
@@ -476,47 +486,25 @@ public:
 template<class Scalar>
 inline
 void applyOp(
-  const RTOpPack::RTOpT<Scalar>   &op
-  ,const int                      num_vecs
-  ,const VectorBase<Scalar>*const vecs[]
-  ,const int                      num_targ_vecs
-  ,VectorBase<Scalar>*const       targ_vecs[]
-  ,RTOpPack::ReductTarget         *reduct_obj
-  ,const Index                    first_ele_offset
-#ifndef __sun
-                                                = 0
-#endif
-  ,const Index                    sub_dim
-#ifndef __sun
-                                                = -1
-#endif
-  ,const Index                    global_offset
-#ifndef __sun
-                                                = 0
-#endif
+  const RTOpPack::RTOpT<Scalar> &op,
+  const int num_vecs,
+  const VectorBase<Scalar>*const vecs[],
+  const int num_targ_vecs,
+  VectorBase<Scalar>*const targ_vecs[],
+  RTOpPack::ReductTarget *reduct_obj,
+  const Index first_ele_offset = 0,
+  const Index sub_dim = -1,
+  const Index global_offset = 0
   )
 {
   if(num_vecs)
-    vecs[0]->applyOp(op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,first_ele_offset,sub_dim,global_offset);
+    vecs[0]->applyOp(
+      op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,
+      first_ele_offset,sub_dim,global_offset);
   else if (num_targ_vecs)
-    targ_vecs[0]->applyOp(op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,first_ele_offset,sub_dim,global_offset);
+    targ_vecs[0]->applyOp(op,num_vecs,vecs,num_targ_vecs,targ_vecs,
+      reduct_obj,first_ele_offset,sub_dim,global_offset);
 }
-
-#ifdef __sun
-template<class Scalar>
-inline
-void applyOp(
-  const RTOpPack::RTOpT<Scalar>   &op
-  ,const int                      num_vecs
-  ,const VectorBase<Scalar>*      vecs[]
-  ,const int                      num_targ_vecs
-  ,VectorBase<Scalar>*            targ_vecs[]
-  ,RTOpPack::ReductTarget         *reduct_obj
-  )
-{
-  applyOp(op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,0,-1,0);
-}
-#endif
 
 } // end namespace Thyra
 

@@ -36,7 +36,7 @@ bool Thyra::test_single_belos_thyra_solver(
   using Teuchos::OSTab;
   bool result, success = true;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = Teuchos::rcp(out_arg,false);
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(out_arg,false);
 
   try {
 
@@ -62,19 +62,19 @@ bool Thyra::test_single_belos_thyra_solver(
     if(out.get()) *out << "\nA) Reading in an epetra matrix A from the file \'"<<matrixFile<<"\' ...\n";
   
     Epetra_SerialComm comm;
-    Teuchos::RefCountPtr<Epetra_CrsMatrix> epetra_A;
+    Teuchos::RCP<Epetra_CrsMatrix> epetra_A;
     EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A );
 
-    Teuchos::RefCountPtr<LinearOpBase<double> > A = Teuchos::rcp(new EpetraLinearOp(epetra_A));
+    Teuchos::RCP<LinearOpBase<double> > A = Teuchos::rcp(new EpetraLinearOp(epetra_A));
 
     if(out.get() && dumpAll) *out << "\ndescribe(A) =\n" << describe(*A,Teuchos::VERB_EXTREME);
 
     if(out.get()) *out << "\nB) Creating a BelosLinearOpWithSolveFactory object opFactory ...\n";
 
-    Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
+    Teuchos::RCP<LinearOpWithSolveFactoryBase<double> >
       lowsFactory;
     {
-      Teuchos::RefCountPtr<BelosLinearOpWithSolveFactory<double> >
+      Teuchos::RCP<BelosLinearOpWithSolveFactory<double> >
         belosLowsFactory = Teuchos::rcp(new BelosLinearOpWithSolveFactory<double>());
       lowsFactory = belosLowsFactory;
     }
@@ -114,7 +114,7 @@ bool Thyra::test_single_belos_thyra_solver(
 
     if(out.get()) *out << "\nC) Creating a BelosLinearOpWithSolve object nsA from A ...\n";
 
-    Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
+    Teuchos::RCP<LinearOpWithSolveBase<double> >
       nsA = lowsFactory->createOp();
 
     Thyra::initializeOp<double>( *lowsFactory,  A, &*nsA );

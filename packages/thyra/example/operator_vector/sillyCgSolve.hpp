@@ -57,8 +57,8 @@ bool sillyCgSolve(
   // Create some typedefs and some other stuff to make the code cleaner
   typedef Teuchos::ScalarTraits<Scalar> ST; typedef typename ST::magnitudeType ScalarMag;
   const Scalar one = ST::one(), zero = ST::zero(); using Thyra::NOTRANS;
-  typedef Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > VectorSpacePtr;
-  typedef Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > VectorPtr;
+  typedef Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > VectorSpacePtr;
+  typedef Teuchos::RCP<Thyra::VectorBase<Scalar> > VectorPtr;
   // Validate input
   TEST_FOR_EXCEPT(x==NULL);
   THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES("sillyCgSolve()",A,Thyra::NOTRANS,*x,&b); // Does A*x - b agree?

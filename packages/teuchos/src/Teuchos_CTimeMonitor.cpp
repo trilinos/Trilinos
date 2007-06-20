@@ -32,7 +32,7 @@
 
 namespace {
 
-typedef Teuchos::Array< Teuchos::RefCountPtr<Teuchos::Time> >  TimerArray_t;
+typedef Teuchos::Array< Teuchos::RCP<Teuchos::Time> >  TimerArray_t;
 TimerArray_t timerArray;
 
 } // namespace
@@ -54,7 +54,7 @@ int Teuchos_startTimer( char timerName[], int timerID )
     <<" is >= timerArray.size()="<<timerArray.size()
     <<" for timerName=\""<<timerName<<"\"!"
     );
-  Teuchos::RefCountPtr<Teuchos::Time> timer = timerArray[timerID];
+  Teuchos::RCP<Teuchos::Time> timer = timerArray[timerID];
   TEST_FOR_EXCEPTION(
     timer->isRunning(), std::logic_error,
     "Teuchos_startTimer(...): Error, timerID="<<timerID
@@ -73,7 +73,7 @@ void Teuchos_stopTimer( int timerID )
     std::logic_error,
     "Teuchos_stopTimer(...): Error, timerID="<<timerID<<" is invalid!"
     );
-  Teuchos::RefCountPtr<Teuchos::Time> timer = timerArray[timerID];
+  Teuchos::RCP<Teuchos::Time> timer = timerArray[timerID];
   timer->stop();
   // Increment the number of times the timer has been used (start to stop).
   timer->incrementNumCalls();

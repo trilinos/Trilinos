@@ -66,10 +66,10 @@ public:
 
   /** \brief Calls <tt>this->initialize()</tt>. */
   AmesosLinearOpWithSolve(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> > &fwdOp,
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOpSrc,
-    const Teuchos::RefCountPtr<Epetra_LinearProblem> &epetraLP,
-    const Teuchos::RefCountPtr<Amesos_BaseSolver> &amesosSolver,
+    const Teuchos::RCP<const LinearOpBase<double> > &fwdOp,
+    const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
+    const Teuchos::RCP<Epetra_LinearProblem> &epetraLP,
+    const Teuchos::RCP<Amesos_BaseSolver> &amesosSolver,
     const ETransp amesosSolverTransp,
     const double amesosSolverScalar
     );
@@ -115,10 +115,10 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> > &fwdOp,
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOpSrc,
-    const Teuchos::RefCountPtr<Epetra_LinearProblem> &epetraLP,
-    const Teuchos::RefCountPtr<Amesos_BaseSolver> &amesosSolver,
+    const Teuchos::RCP<const LinearOpBase<double> > &fwdOp,
+    const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
+    const Teuchos::RCP<Epetra_LinearProblem> &epetraLP,
+    const Teuchos::RCP<Amesos_BaseSolver> &amesosSolver,
     const ETransp amesosSolverTransp,
     const double amesosSolverScalar
     );
@@ -130,19 +130,19 @@ public:
    * <li><tt><tt>this->get_fwdOpSrc().get()==NULL</tt>
    * </ul>
    */
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > extract_fwdOpSrc();
+  Teuchos::RCP<const LinearOpSourceBase<double> > extract_fwdOpSrc();
 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<double> > get_fwdOp() const;
+  Teuchos::RCP<const LinearOpBase<double> > get_fwdOp() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > get_fwdOpSrc() const;
+  Teuchos::RCP<const LinearOpSourceBase<double> > get_fwdOpSrc() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<Epetra_LinearProblem> get_epetraLP() const;
+  Teuchos::RCP<Epetra_LinearProblem> get_epetraLP() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<Amesos_BaseSolver> get_amesosSolver() const;
+  Teuchos::RCP<Amesos_BaseSolver> get_amesosSolver() const;
 
   /** \brief . */
   ETransp get_amesosSolverTransp() const;
@@ -153,10 +153,10 @@ public:
   /** \brief Uninitialize.
    */
   void uninitialize(
-    Teuchos::RefCountPtr<const LinearOpBase<double> > *fwdOp = NULL,
-    Teuchos::RefCountPtr<const LinearOpSourceBase<double> > *fwdOpSrc = NULL,
-    Teuchos::RefCountPtr<Epetra_LinearProblem> *epetraLP = NULL,
-    Teuchos::RefCountPtr<Amesos_BaseSolver> *amesosSolver = NULL,
+    Teuchos::RCP<const LinearOpBase<double> > *fwdOp = NULL,
+    Teuchos::RCP<const LinearOpSourceBase<double> > *fwdOpSrc = NULL,
+    Teuchos::RCP<Epetra_LinearProblem> *epetraLP = NULL,
+    Teuchos::RCP<Amesos_BaseSolver> *amesosSolver = NULL,
     ETransp *amesosSolverTransp = NULL,
     double *amesosSolverScalar = NULL
     );
@@ -166,11 +166,11 @@ public:
   /** @name Overridden public functions from LinearOpBase */
   //@{
   /** \brief. */
-  Teuchos::RefCountPtr< const VectorSpaceBase<double> > range() const;
+  Teuchos::RCP< const VectorSpaceBase<double> > range() const;
   /** \brief. */
-  Teuchos::RefCountPtr< const VectorSpaceBase<double> > domain() const;
+  Teuchos::RCP< const VectorSpaceBase<double> > domain() const;
   /** \brief. */
-  Teuchos::RefCountPtr<const LinearOpBase<double> > clone() const;
+  Teuchos::RCP<const LinearOpBase<double> > clone() const;
   //@}
 
   /** @name Overridden public functions from Teuchos::Describable */
@@ -221,10 +221,10 @@ protected:
 
 private:
 
-  Teuchos::RefCountPtr<const LinearOpBase<double> > fwdOp_;
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > fwdOpSrc_;
-  Teuchos::RefCountPtr<Epetra_LinearProblem> epetraLP_;
-  Teuchos::RefCountPtr<Amesos_BaseSolver> amesosSolver_;
+  Teuchos::RCP<const LinearOpBase<double> > fwdOp_;
+  Teuchos::RCP<const LinearOpSourceBase<double> > fwdOpSrc_;
+  Teuchos::RCP<Epetra_LinearProblem> epetraLP_;
+  Teuchos::RCP<Amesos_BaseSolver> amesosSolver_;
   ETransp amesosSolverTransp_;
   double amesosSolverScalar_;
 
@@ -236,28 +236,28 @@ private:
 // Inline members
 
 inline
-Teuchos::RefCountPtr<const LinearOpBase<double> >
+Teuchos::RCP<const LinearOpBase<double> >
 AmesosLinearOpWithSolve::get_fwdOp() const
 {
   return fwdOp_;
 }
 
 inline
-Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+Teuchos::RCP<const LinearOpSourceBase<double> >
 AmesosLinearOpWithSolve::get_fwdOpSrc() const
 {
   return fwdOpSrc_;
 }
 
 inline
-Teuchos::RefCountPtr<Epetra_LinearProblem>
+Teuchos::RCP<Epetra_LinearProblem>
 AmesosLinearOpWithSolve::get_epetraLP() const
 {
   return epetraLP_;
 }
 
 inline
-Teuchos::RefCountPtr<Amesos_BaseSolver>
+Teuchos::RCP<Amesos_BaseSolver>
 AmesosLinearOpWithSolve::get_amesosSolver() const
 {
   return amesosSolver_;

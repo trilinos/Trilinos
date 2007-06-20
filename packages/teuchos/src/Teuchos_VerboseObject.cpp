@@ -36,9 +36,9 @@ namespace Teuchos {
 // Private static data members
 
 
-RefCountPtr<FancyOStream>& VerboseObjectBase::privateDefaultOStream()
+RCP<FancyOStream>& VerboseObjectBase::privateDefaultOStream()
 {
-  static RefCountPtr<FancyOStream> defaultOStream;
+  static RCP<FancyOStream> defaultOStream;
   if(defaultOStream.get()==NULL) {
     defaultOStream = rcp(new FancyOStream(rcp(&std::cout,false)));
     defaultOStream->setOutputToRootOnly(0);
@@ -53,14 +53,14 @@ RefCountPtr<FancyOStream>& VerboseObjectBase::privateDefaultOStream()
 
 
 void VerboseObjectBase::setDefaultOStream(
-  const RefCountPtr<FancyOStream> &defaultOStream
+  const RCP<FancyOStream> &defaultOStream
   )
 {
   privateDefaultOStream() = defaultOStream;
 }
 
 
-RefCountPtr<FancyOStream>
+RCP<FancyOStream>
 VerboseObjectBase::getDefaultOStream()
 {
   return privateDefaultOStream();
@@ -71,7 +71,7 @@ VerboseObjectBase::getDefaultOStream()
 
 
 VerboseObjectBase::VerboseObjectBase(
-  const RefCountPtr<FancyOStream>   &oStream
+  const RCP<FancyOStream>   &oStream
   )
   : thisOverridingOStream_(null)
 {
@@ -80,7 +80,7 @@ VerboseObjectBase::VerboseObjectBase(
 
 
 void VerboseObjectBase::initializeVerboseObjectBase(
-  const RefCountPtr<FancyOStream>   &oStream
+  const RCP<FancyOStream>   &oStream
   )
 {
   thisOStream_ = oStream;
@@ -88,7 +88,7 @@ void VerboseObjectBase::initializeVerboseObjectBase(
 
 
 const VerboseObjectBase&
-VerboseObjectBase::setOStream(const RefCountPtr<FancyOStream> &oStream) const
+VerboseObjectBase::setOStream(const RCP<FancyOStream> &oStream) const
 {
   thisOStream_ = oStream;
   return *this;
@@ -97,7 +97,7 @@ VerboseObjectBase::setOStream(const RefCountPtr<FancyOStream> &oStream) const
 
 const VerboseObjectBase&
 VerboseObjectBase::setOverridingOStream(
-  const RefCountPtr<FancyOStream> &oStream
+  const RCP<FancyOStream> &oStream
   ) const
 {
   thisOverridingOStream_ = oStream;
@@ -116,7 +116,7 @@ VerboseObjectBase::setLinePrefix(const std::string &linePrefix)
 // Query functions
 
 
-RefCountPtr<FancyOStream>
+RCP<FancyOStream>
 VerboseObjectBase::getOStream() const
 {
   if(!is_null(thisOverridingOStream_))
@@ -127,7 +127,7 @@ VerboseObjectBase::getOStream() const
 }
 
 
-RefCountPtr<FancyOStream>
+RCP<FancyOStream>
 VerboseObjectBase::getOverridingOStream() const
 {
   return thisOverridingOStream_;

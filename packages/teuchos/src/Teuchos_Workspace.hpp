@@ -29,7 +29,7 @@
 #ifndef TEUCHOS_WORKSPACE_HPP
 #define TEUCHOS_WORKSPACE_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_TestForException.hpp"
 
 namespace Teuchos {
@@ -67,11 +67,11 @@ class RawWorkspace;
  * <li><tt>get_default_workspace_store().get() == default_workspace_store.get()</tt>.
  * </ul>
  */
-void set_default_workspace_store( const Teuchos::RefCountPtr<WorkspaceStore> &default_workspace_store );
+void set_default_workspace_store( const Teuchos::RCP<WorkspaceStore> &default_workspace_store );
 
 /** \brief Get the global workspace object set by <tt>set_default_workspace_store()</tt>.
  */
-Teuchos::RefCountPtr<WorkspaceStore> get_default_workspace_store();
+Teuchos::RCP<WorkspaceStore> get_default_workspace_store();
 
 /** \brief Print statistics on memory usage.
  *

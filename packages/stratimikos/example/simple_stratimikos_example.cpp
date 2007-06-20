@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
 {
 
   using Teuchos::rcp;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::CommandLineProcessor;
   typedef Teuchos::ParameterList::PrintOptions PLPrintOptions;
 
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {
@@ -150,8 +150,8 @@ int main(int argc, char* argv[])
 #else
     Epetra_SerialComm comm;
 #endif
-    RefCountPtr<Epetra_CrsMatrix> epetra_A;
-    RefCountPtr<Epetra_Vector> epetra_x, epetra_b;
+    RCP<Epetra_CrsMatrix> epetra_A;
+    RCP<Epetra_Vector> epetra_x, epetra_b;
     EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A, NULL, &epetra_x, &epetra_b );
 
     if(!epetra_b.get()) {
@@ -187,11 +187,11 @@ int main(int argc, char* argv[])
     // linear solver.
     //
 
-    RefCountPtr<const Thyra::LinearOpBase<double> >
+    RCP<const Thyra::LinearOpBase<double> >
       A = Thyra::epetraLinearOp( epetra_A );
-    RefCountPtr<Thyra::VectorBase<double> >
+    RCP<Thyra::VectorBase<double> >
       x = Thyra::create_Vector( epetra_x, A->domain() );
-    RefCountPtr<const Thyra::VectorBase<double> >
+    RCP<const Thyra::VectorBase<double> >
       b = Thyra::create_Vector( epetra_b, A->range() );
 
     // Note that above Thyra is only interacted with in the most trival of
@@ -213,13 +213,13 @@ int main(int argc, char* argv[])
     linearSolverBuilder.readParameters(out.get());
     // Create a linear solver factory given information read from the
     // parameter list.
-    RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       lowsFactory = linearSolverBuilder.createLinearSolveStrategy("");
     // Setup output stream and the verbosity level
     lowsFactory->setOStream(out);
     lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
     // Create a linear solver based on the forward operator A
-    RefCountPtr<Thyra::LinearOpWithSolveBase<double> >
+    RCP<Thyra::LinearOpWithSolveBase<double> >
       lows = Thyra::linearOpWithSolve(*lowsFactory,A);
     // Solve the linear system (note: the initial guess in 'x' is critical)
     Thyra::SolveStatus<double>

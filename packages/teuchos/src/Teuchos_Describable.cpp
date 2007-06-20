@@ -53,7 +53,7 @@ void Describable::describe(
 	,const EVerbosityLevel      verbLevel
 	) const
 {
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   *out << this->description() << std::endl;
 }

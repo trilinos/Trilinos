@@ -43,7 +43,7 @@ namespace Thyra {
 template <class Scalar>
 void initializePrec(
   const PreconditionerFactoryBase<Scalar>                    &precFactory
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &fwdOp
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &fwdOp
   ,PreconditionerBase<Scalar>                                *prec
   ,const ESupportSolveUse                                    supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
   )
@@ -59,11 +59,11 @@ template <class Scalar>
 void uninitializePrec(
   const PreconditionerFactoryBase<Scalar>               &precFactory
   ,PreconditionerBase<Scalar>                           *prec
-  ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    *fwdOp           = NULL
+  ,Teuchos::RCP<const LinearOpBase<Scalar> >    *fwdOp           = NULL
   ,ESupportSolveUse                                     *supportSolveUse = NULL
   )
 {
-  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> > fwdOpSrc;
+  Teuchos::RCP<const LinearOpSourceBase<Scalar> > fwdOpSrc;
   precFactory.uninitializePrec(prec,&fwdOpSrc,supportSolveUse);
   if(fwdOp) *fwdOp = fwdOpSrc->getOp();
 }
@@ -72,14 +72,14 @@ void uninitializePrec(
 /** \brief Create and initialize a preconditioner from a forward linear operator.
  */
 template <class Scalar>
-Teuchos::RefCountPtr<PreconditionerBase<Scalar> >
+Teuchos::RCP<PreconditionerBase<Scalar> >
 prec(
   const PreconditionerFactoryBase<Scalar>                    &precFactory
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &fwdOp
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &fwdOp
   ,const ESupportSolveUse                                    supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
   )
 {
-  Teuchos::RefCountPtr<PreconditionerBase<Scalar> >
+  Teuchos::RCP<PreconditionerBase<Scalar> >
     prec = precFactory.createPrec();
   precFactory.initializePrec(defaultLinearOpSource(fwdOp),&*prec,supportSolveUse);
   return prec;

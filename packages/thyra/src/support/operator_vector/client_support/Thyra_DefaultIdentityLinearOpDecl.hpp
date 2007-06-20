@@ -76,7 +76,7 @@ public:
   /** Calls <tt>initialize()</tt>.
    */
   DefaultIdentityLinearOp(
-    const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &space
+    const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &space
     );
 
   /** \brief Initialize given a list of non-const linear operators.
@@ -95,7 +95,7 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &space
+    const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &space
     );
 
   /** \brief Set to uninitialized.
@@ -112,13 +112,13 @@ public:
   //@{
   
   /** \brief Returns <tt>Teuchos::null</tt> if uninitialized. */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
   
   /** \brief Returns <tt>Teuchos::null</tt> if uninitialized. */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
   
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
   
   //@}
   
@@ -153,7 +153,7 @@ protected:
 
 private:
 
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >  space_;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> >  space_;
 
   // Not defined and not to be called
   DefaultIdentityLinearOp(const DefaultIdentityLinearOp&);
@@ -166,9 +166,9 @@ private:
  * \relates DefaultIdentityLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 identity(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &space
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &space
   );
 
 }	// end namespace Thyra

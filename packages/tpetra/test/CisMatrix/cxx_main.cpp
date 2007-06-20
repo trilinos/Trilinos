@@ -217,7 +217,7 @@ int testApply(bool verbose, bool debug, int myImageID, int numImages, bool isRow
 	//  3  2  4
 	//  0  1  0
 	if(verbose) cout << "Creating A matrix..." << endl;
-	Teuchos::RefCountPtr< Tpetra::CisMatrix<OrdinalType, ScalarType> > A;
+	Teuchos::RCP< Tpetra::CisMatrix<OrdinalType, ScalarType> > A;
 	if(isRowOriented)
 		A = Teuchos::rcp(new Tpetra::CisMatrix<OrdinalType, ScalarType>(primary));
 	else
@@ -257,7 +257,7 @@ int testApply(bool verbose, bool debug, int myImageID, int numImages, bool isRow
 	// ========================================
 	// layout is: { 5 1 2 } for non-transpose, { 5 6 } for transpose
 	if(verbose) cout << "Creating and initializing x vector..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Vector<OrdinalType, ScalarType> > x;
+	Teuchos::RCP< Tpetra::Vector<OrdinalType, ScalarType> > x;
 	if(!doTranspose) { // non-transpose
 		x = Teuchos::rcp(new Tpetra::Vector<OrdinalType, ScalarType>(secondary));
 		if(secondary.isMyGlobalIndex(zero))
@@ -288,7 +288,7 @@ int testApply(bool verbose, bool debug, int myImageID, int numImages, bool isRow
 	// layout is: { 0 0 } for non-transpose, { 0 0 0 } for transpose
 	// (y should be set to all zeros by default)
 	if(verbose) cout << "Creating and initializing y vector..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Vector<OrdinalType, ScalarType> > y;
+	Teuchos::RCP< Tpetra::Vector<OrdinalType, ScalarType> > y;
 	if(!doTranspose)
 		y = Teuchos::rcp(new Tpetra::Vector<OrdinalType, ScalarType>(primary));
 	else

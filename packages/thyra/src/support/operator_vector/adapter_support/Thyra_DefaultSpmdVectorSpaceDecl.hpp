@@ -69,7 +69,7 @@ public:
 
   /** \brief Calls <tt>initialize()</tt> to construct an SPMD space. */
   DefaultSpmdVectorSpace(
-    const Teuchos::RefCountPtr<const Teuchos::Comm<Index> > &comm
+    const Teuchos::RCP<const Teuchos::Comm<Index> > &comm
     ,const Index localSubDim, const Index globalDim
     );
 
@@ -131,7 +131,7 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const Teuchos::Comm<Index> > &comm
+    const Teuchos::RCP<const Teuchos::Comm<Index> > &comm
     ,const Index localSubDim, const Index globalDim
     );
 
@@ -156,7 +156,7 @@ public:
      const Range1D& rng, const EViewType viewType, const EStrideType strideType
      ) const;
   /** \brief . */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > clone() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > clone() const;
   //@}
 
 protected:
@@ -165,22 +165,22 @@ protected:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<VectorBase<Scalar> >
+  Teuchos::RCP<VectorBase<Scalar> >
   createMember() const;
   /** \brief . */
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  Teuchos::RCP<MultiVectorBase<Scalar> >
   createMembers(int numMembers) const;
   /** \brief . */
-  Teuchos::RefCountPtr<VectorBase<Scalar> >
+  Teuchos::RCP<VectorBase<Scalar> >
   createMemberView( const RTOpPack::SubVectorView<Scalar> &raw_v ) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorBase<Scalar> >
+  Teuchos::RCP<const VectorBase<Scalar> >
   createMemberView( const RTOpPack::ConstSubVectorView<Scalar> &raw_v ) const;
   /** \brief . */
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  Teuchos::RCP<MultiVectorBase<Scalar> >
   createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+  Teuchos::RCP<const MultiVectorBase<Scalar> >
   createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const;
 
   //@}
@@ -191,7 +191,7 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::Comm<Index> > getComm() const;
+  Teuchos::RCP<const Teuchos::Comm<Index> > getComm() const;
   /** \brief . */
    Index localSubDim() const;
 
@@ -202,7 +202,7 @@ private:
   // //////////////////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<const Teuchos::Comm<Index> >   comm_;
+  Teuchos::RCP<const Teuchos::Comm<Index> >   comm_;
   Index                                               localSubDim_;
   int                                                 numProc_;
   int                                                 procRank_;

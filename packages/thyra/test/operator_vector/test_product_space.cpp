@@ -55,7 +55,7 @@ bool run_product_space_tests(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType    ScalarMag;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = rcp(new Teuchos::FancyOStream(rcp(out_arg,false)));
 
   if(out.get()) *out << "\n*** Entering run_product_space_tests<"<<ST::name()<<">(...) ...\n";
@@ -69,12 +69,12 @@ bool run_product_space_tests(
   vectorSpaceTester.show_all_tests(showAllTests);
   vectorSpaceTester.dump_all(dumpAll);
 
-  Teuchos::Array<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >
+  Teuchos::Array<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > >
     vecSpaces(numBlocks);
-  const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >
+  const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >
     comm = Teuchos::DefaultComm<Thyra::Index>::getComm();
   const int numProcs = size(*comm);
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
     spaceBlock = Teuchos::rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(comm,n,-1));
   for( int i = 0; i < numBlocks; ++i )
     vecSpaces[i] = spaceBlock;
@@ -107,7 +107,7 @@ bool run_product_space_tests(
   
   if(out.get()) *out << "\nB) Testing a nested product space of product vector spaces called pps ...\n";
 
-  Teuchos::Array<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >
+  Teuchos::Array<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > >
     blockVecSpaces(numBlocks);
   for( int i = 0; i < numBlocks; ++i )
     blockVecSpaces[i] = Teuchos::rcp(&ps,false);
@@ -138,7 +138,7 @@ bool run_product_space_tests(
     if(!result) success = false;
     
     if(out.get()) *out << "\nCreating product vectors; pv1, pv2 ...\n";
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
+    Teuchos::RCP<Thyra::VectorBase<Scalar> >
       pv1 = createMember(ps),
       pv2 = createMember(ps);
     
@@ -149,7 +149,7 @@ bool run_product_space_tests(
     Thyra::assign( &*pv2, three );
     
     if(out.get()) *out << "\nCreating serial vectors; sv1, sv2 ...\n";
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
+    Teuchos::RCP<Thyra::VectorBase<Scalar> >
       sv1 = createMember(ss),
       sv2 = createMember(ss);
     
@@ -205,7 +205,7 @@ int main( int argc, char* argv[] ) {
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {

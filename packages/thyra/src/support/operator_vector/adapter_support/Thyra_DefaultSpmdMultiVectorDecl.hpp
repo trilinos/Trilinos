@@ -45,7 +45,7 @@ namespace Thyra {
  * <tt>Thyra::DefaultSpmdVectorSpace</tt> and using the function
  * <tt>Thyra::createMembers()</tt>.
  *
- * The storage type can be anything since a <tt>Teuchos::RefCountPtr</tt> is
+ * The storage type can be anything since a <tt>Teuchos::RCP</tt> is
  * used to pass in the local values pointer into the constructor and
  * <tt>initialize()</tt>.
  *
@@ -68,15 +68,15 @@ public:
 
   /// Calls <tt>initialize()</tt>
   DefaultSpmdMultiVector(
-    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
-    const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace
+    const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
+    const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace
     );
 
   /// Calls <tt>initialize()</tt>
   DefaultSpmdMultiVector(
-    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
-    const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
-    const Teuchos::RefCountPtr<Scalar> &localValues,
+    const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
+    const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
+    const Teuchos::RCP<Scalar> &localValues,
     const Index leadingDim
     );
 
@@ -97,8 +97,8 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
-    const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace
+    const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
+    const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace
     );
 
   /** \brief Initialize using externally allocated storage.
@@ -128,9 +128,9 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
-    const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
-    const Teuchos::RefCountPtr<Scalar> &localValues,
+    const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
+    const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
+    const Teuchos::RCP<Scalar> &localValues,
     const Index leadingDim
     );
 
@@ -140,9 +140,9 @@ public:
    * <li><tt>this->spmdSpace().get() == NULL</tt>.
    */
   void uninitialize(
-    Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > *spmdRangeSpace = NULL,
-    Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > *domainSpace = NULL,
-    Teuchos::RefCountPtr<Scalar> *localValues = NULL,
+    Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> > *spmdRangeSpace = NULL,
+    Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> > *domainSpace = NULL,
+    Teuchos::RCP<Scalar> *localValues = NULL,
     Index *leadingDim = NULL
     );
 
@@ -151,22 +151,22 @@ public:
   /** @name Overridden from EuclideanLinearOpBase */
   //@{
   /** \brief . */
-  Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >
+  Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >
   domainScalarProdVecSpc() const;
   //@}
 
   /** @name Overridden from MultiVectorBase */
   //@{
   /** \brief . */
-  Teuchos::RefCountPtr<VectorBase<Scalar> > col(Index j);
+  Teuchos::RCP<VectorBase<Scalar> > col(Index j);
   /** \brief . */
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const Range1D& col_rng );
+  Teuchos::RCP<MultiVectorBase<Scalar> > subView( const Range1D& col_rng );
   /** \brief . */
-  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView(
+  Teuchos::RCP<const MultiVectorBase<Scalar> > subView(
     const int numCols, const int cols[]
     ) const;
   /** \brief . */
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView(
+  Teuchos::RCP<MultiVectorBase<Scalar> > subView(
     const int numCols, const int cols[]
     );
   //@}
@@ -175,7 +175,7 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const;
+  Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const;
   /** \brief . */
   void getLocalData( Scalar **localValues, Index *leadingDim );
   /** \brief . */
@@ -191,15 +191,15 @@ private:
   // ///////////////////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > spmdRangeSpace_;
-  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > domainSpace_;
-  Teuchos::RefCountPtr<Scalar> localValues_;
+  Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> > spmdRangeSpace_;
+  Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> > domainSpace_;
+  Teuchos::RCP<Scalar> localValues_;
   Index leadingDim_;
   
   // ///////////////////////////////////////
   // Private member functions
 
-  Teuchos::RefCountPtr<Scalar> createContiguousCopy(
+  Teuchos::RCP<Scalar> createContiguousCopy(
     const int numCols, const int cols[]
     ) const;
   

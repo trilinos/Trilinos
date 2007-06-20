@@ -59,14 +59,14 @@ bool runCgSolveExample(
   ,const bool                                                    useSillierCg
   )
 {
-  using Teuchos::RefCountPtr; using Teuchos::rcp; using Teuchos::null;
+  using Teuchos::RCP; using Teuchos::rcp; using Teuchos::null;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Thyra::multiply; using Thyra::scale;
   typedef typename ST::magnitudeType    ScalarMag;
   bool success = true;
   bool result;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = (verbose ? Teuchos::VerboseObjectBase::getDefaultOStream() : Teuchos::null);
   if(verbose)
     *out << "\n***\n*** Running silly CG solver using scalar type = \'" << ST::name() << "\' ...\n***\n";
@@ -91,7 +91,7 @@ bool runCgSolveExample(
     lower[k-1] = low; diag[k] = diagTerm; upper[k] = up;      // Middle rows
   }
   lower[k-1] = low; diag[k] = diagTerm;                       // Last row
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A = rcp(new ExampleTridiagSerialLinearOp<Scalar>(dim,&lower[0],&diag[0],&upper[0]));
   // (A.2) Testing the linear operator constructed linear operator
   if(verbose) *out << "\nTesting the constructed linear operator A ...\n";
@@ -104,17 +104,17 @@ bool runCgSolveExample(
   result = linearOpTester.check(*A,out.get());
   if(!result) success = false;
   // (A.3) Create RHS vector b and set to a random value
-  RefCountPtr<Thyra::VectorBase<Scalar> > b = createMember(A->range());
+  RCP<Thyra::VectorBase<Scalar> > b = createMember(A->range());
   Thyra::seed_randomize<Scalar>(0);
   Thyra::randomize( Scalar(-ST::one()), Scalar(+ST::one()), &*b );
   // (A.4) Create LHS vector x and set to zero
-  RefCountPtr<Thyra::VectorBase<Scalar> > x = createMember(A->domain());
+  RCP<Thyra::VectorBase<Scalar> > x = createMember(A->domain());
   Thyra::assign( &*x, ST::zero() );
   // (A.5) Create the final linear system
   if(!symOp) {
     if(verbose) *out << "\nSetting up normal equations for unsymmetric system A^H*(A*x-b) => new A*x = b ...\n";
-    RefCountPtr<const Thyra::LinearOpBase<Scalar> > AtA = multiply(adjoint(A),A);      // A^H*A
-    RefCountPtr<Thyra::VectorBase<Scalar> >         nb = createMember(AtA->range());   // A^H*b
+    RCP<const Thyra::LinearOpBase<Scalar> > AtA = multiply(adjoint(A),A);      // A^H*A
+    RCP<Thyra::VectorBase<Scalar> >         nb = createMember(AtA->range());   // A^H*b
     Thyra::apply(*A,Thyra::CONJTRANS,*b,&*nb);
     A = AtA;
     b = nb;
@@ -136,7 +136,7 @@ bool runCgSolveExample(
   //
   // (C) Check that the linear system was solved to the specified tolerance
   //
-  RefCountPtr<Thyra::VectorBase<Scalar> > r = createMember(A->range());                     
+  RCP<Thyra::VectorBase<Scalar> > r = createMember(A->range());                     
   Thyra::assign(&*r,*b);                                               // r = b
   Thyra::apply(*A,Thyra::NOTRANS,*x,&*r,Scalar(-ST::one()),ST::one()); // r = -A*x + r
   const ScalarMag r_nrm = Thyra::norm(*r), b_nrm = Thyra::norm(*b);
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
   bool verbose = true;
   bool result;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {

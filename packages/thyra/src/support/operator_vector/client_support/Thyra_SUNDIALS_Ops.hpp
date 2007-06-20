@@ -99,7 +99,7 @@ namespace Thyra
                   const VectorBase<Scalar>& w)
   {
     RTOpPack::SUNDIALS_VWL2Norm<Scalar> op;
-    Teuchos::RefCountPtr<RTOpPack::ReductTarget> red_targ 
+    Teuchos::RCP<RTOpPack::ReductTarget> red_targ 
       = op.reduct_obj_create();
 
     const VectorBase<Scalar>* vecs[]      = { &x, &w };
@@ -126,7 +126,7 @@ namespace Thyra
                        const VectorBase<Scalar>& id)
   {
     RTOpPack::SUNDIALS_VWrmsMaskNorm<Scalar> op;
-    Teuchos::RefCountPtr<RTOpPack::ReductTarget> red_targ 
+    Teuchos::RCP<RTOpPack::ReductTarget> red_targ 
       = op.reduct_obj_create();
 
     const VectorBase<Scalar>* vecs[]      = { &x, &w, &id };
@@ -141,7 +141,7 @@ namespace Thyra
                       const VectorBase<Scalar>& denom)
   {
     RTOpPack::SUNDIALS_VMinQuotient<Scalar> op;
-    Teuchos::RefCountPtr<RTOpPack::ReductTarget> red_targ 
+    Teuchos::RCP<RTOpPack::ReductTarget> red_targ 
       = op.reduct_obj_create();
 
     const VectorBase<Scalar>* vecs[]      = { &num, &denom };
@@ -158,7 +158,7 @@ namespace Thyra
                    VectorBase<Scalar>* mask)
   {
     RTOpPack::SUNDIALS_VConstrMask<Scalar> op;
-    Teuchos::RefCountPtr<RTOpPack::ReductTarget> red_targ 
+    Teuchos::RCP<RTOpPack::ReductTarget> red_targ 
       = op.reduct_obj_create();
 
     const VectorBase<Scalar>* vecs[]      = { &x, &constraint };
@@ -174,7 +174,7 @@ namespace Thyra
                 VectorBase<Scalar>* v_lhs)
   {
     RTOpPack::SUNDIALS_VInvTest<Scalar> op;
-    Teuchos::RefCountPtr<RTOpPack::ReductTarget> red_targ 
+    Teuchos::RCP<RTOpPack::ReductTarget> red_targ 
       = op.reduct_obj_create();
 
     const VectorBase<Scalar>* vecs[]      = { &v_rhs };

@@ -26,19 +26,19 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_REFCOUNTPTR_SHAREDPTR_CONVERSIONS_H
-#define TEUCHOS_REFCOUNTPTR_SHAREDPTR_CONVERSIONS_H
+#ifndef TEUCHOS_RCP_SHAREDPTR_CONVERSIONS_HPP
+#define TEUCHOS_RCP_SHAREDPTR_CONVERSIONS_HPP
 
-#include "Teuchos_RefCountPtrBoostSharedPtrConversionsDecl.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCPBoostSharedPtrConversionsDecl.hpp"
+#include "Teuchos_RCP.hpp"
 
 template<class T>
-Teuchos::RefCountPtr<T>
+Teuchos::RCP<T>
 Teuchos::rcp( const boost::shared_ptr<T> &sptr )
 {
   if(sptr.get()) {
-    const RefCountPtrDeleter<T>
-      *rcpd = boost::get_deleter<RefCountPtrDeleter<T> >(sptr);
+    const RCPDeleter<T>
+      *rcpd = boost::get_deleter<RCPDeleter<T> >(sptr);
     if(rcpd)
       return rcpd->ptr();
     return rcp(sptr.get(),DeallocBoostSharedPtr<T>(sptr),true);
@@ -48,16 +48,16 @@ Teuchos::rcp( const boost::shared_ptr<T> &sptr )
 
 template<class T>
 boost::shared_ptr<T>
-Teuchos::shared_pointer( const RefCountPtr<T> &rcp )
+Teuchos::shared_pointer( const RCP<T> &rcp )
 {
   if(rcp.get()) {
     const DeallocBoostSharedPtr<T>
       *dbsp = get_optional_dealloc<DeallocBoostSharedPtr<T> >(rcp);
     if(dbsp)
       return dbsp->ptr();
-    return boost::shared_ptr<T>(rcp.get(),RefCountPtrDeleter<T>(rcp));
+    return boost::shared_ptr<T>(rcp.get(),RCPDeleter<T>(rcp));
   }
   return boost::shared_ptr<T>();
 }
 
-#endif	// TEUCHOS_REFCOUNTPTR_SHAREDPTR_CONVERSIONS_H
+#endif	// TEUCHOS_RCP_SHAREDPTR_CONVERSIONS_HPP

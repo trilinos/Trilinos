@@ -57,9 +57,9 @@ public:
   /** @name Overridden from LinearOpBase */
   //@{
   /** \brief . */
-  Teuchos::RefCountPtr< const Thyra::VectorSpaceBase< std::complex<RealScalar> > > range() const;
+  Teuchos::RCP< const Thyra::VectorSpaceBase< std::complex<RealScalar> > > range() const;
   /** \brief . */
-  Teuchos::RefCountPtr< const Thyra::VectorSpaceBase< std::complex<RealScalar> > > domain() const;
+  Teuchos::RCP< const Thyra::VectorSpaceBase< std::complex<RealScalar> > > domain() const;
   //@}
 
 protected:
@@ -105,7 +105,7 @@ protected:
 
 private:
 
-  Teuchos::RefCountPtr< const Thyra::VectorSpaceBase< std::complex<RealScalar> > > space_;
+  Teuchos::RCP< const Thyra::VectorSpaceBase< std::complex<RealScalar> > > space_;
 
 };
 
@@ -125,14 +125,14 @@ ComplexFFTLinearOp<RealScalar>::ComplexFFTLinearOp( const int N )
 // Overridden from LinearOpBase
 
 template<class RealScalar>
-Teuchos::RefCountPtr< const Thyra::VectorSpaceBase< std::complex<RealScalar> > >
+Teuchos::RCP< const Thyra::VectorSpaceBase< std::complex<RealScalar> > >
 ComplexFFTLinearOp<RealScalar>::range() const
 {
   return space_;
 }
 
 template<class RealScalar>
-Teuchos::RefCountPtr< const Thyra::VectorSpaceBase< std::complex<RealScalar> > >
+Teuchos::RCP< const Thyra::VectorSpaceBase< std::complex<RealScalar> > >
 ComplexFFTLinearOp<RealScalar>::domain() const
 {
   return space_;

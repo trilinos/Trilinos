@@ -38,7 +38,7 @@
 #ifdef HAVE_TEUCHOS_EXPAT
 
 #include "Teuchos_TreeBuildingXMLHandler.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "expat.h"
 

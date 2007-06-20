@@ -82,7 +82,7 @@ Teuchos::Polynomial<CoeffT>::setDegree(unsigned int deg)
 }
 
 template <typename CoeffT>
-Teuchos::RefCountPtr<CoeffT>
+Teuchos::RCP<CoeffT>
 Teuchos::Polynomial<CoeffT>::getCoefficient(unsigned int i) 
 {
 #ifdef TEUCHOS_DEBUG
@@ -96,7 +96,7 @@ Teuchos::Polynomial<CoeffT>::getCoefficient(unsigned int i)
 }
 
 template <typename CoeffT>
-Teuchos::RefCountPtr<const CoeffT>
+Teuchos::RCP<const CoeffT>
 Teuchos::Polynomial<CoeffT>::getCoefficient(unsigned int i) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -131,7 +131,7 @@ template <typename CoeffT>
 void
 Teuchos::Polynomial<CoeffT>::setCoefficientPtr(
 	                          unsigned int i,
-	                          const Teuchos::RefCountPtr<CoeffT>& v)
+	                          const Teuchos::RCP<CoeffT>& v)
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(i > d, 

@@ -70,13 +70,13 @@ public:
   /** \brief . */
   virtual void setNonconstLOWSBlock(
     const int i, const int j,
-    const Teuchos::RefCountPtr<LinearOpWithSolveBase<RangeScalar,DomainScalar> > &block
+    const Teuchos::RCP<LinearOpWithSolveBase<RangeScalar,DomainScalar> > &block
     ) = 0;
   
   /** \brief . */
   virtual void setLOWSBlock(
     const int i, const int j,
-    const Teuchos::RefCountPtr<const LinearOpWithSolveBase<RangeScalar,DomainScalar> > &block
+    const Teuchos::RCP<const LinearOpWithSolveBase<RangeScalar,DomainScalar> > &block
     ) = 0;
 
 };

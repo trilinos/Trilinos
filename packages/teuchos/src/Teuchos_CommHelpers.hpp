@@ -594,7 +594,7 @@ namespace Teuchos {
 
 
 // Not for the general user to use!  I am returning a raw ReducionOp* pointer
-// to avoid the overhead of using RefCountPtr.  However, given the use case
+// to avoid the overhead of using RCP.  However, given the use case
 // this is just fine since I can just use std::auto_ptr to make sure things
 // are deleted correctly.
 template<typename Ordinal, typename Packet>

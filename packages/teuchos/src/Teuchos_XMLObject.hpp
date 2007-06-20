@@ -175,7 +175,7 @@ public:
   //@}
 	
 private:
-  RefCountPtr<XMLObjectImplem> ptr_;
+  RCP<XMLObjectImplem> ptr_;
 };
 
 /** \relates XMLObject 

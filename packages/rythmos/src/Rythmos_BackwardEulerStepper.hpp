@@ -73,15 +73,15 @@ public:
   
   /** \brief . */
   BackwardEulerStepper(
-    const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >  &model
-    ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >  &solver
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >  &model
+    ,const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver
     );
   
   /** \brief . */
-  void setInterpolator(Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator);
+  void setInterpolator(Teuchos::RCP<InterpolatorBase<Scalar> > interpolator);
   
   /** \brief . */
-  Teuchos::RefCountPtr<InterpolatorBase<Scalar> > unsetInterpolator();
+  Teuchos::RCP<InterpolatorBase<Scalar> > unsetInterpolator();
 
   //@}
 
@@ -90,15 +90,15 @@ public:
 
   /** \brief . */
   void setSolver(
-    const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
     );
 
   /** \brief . */
-  Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
   getNonconstSolver();
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> >
+  Teuchos::RCP<const Thyra::NonlinearSolverBase<Scalar> >
   getSolver() const;
 
   //@}
@@ -116,13 +116,13 @@ public:
    * the client can simply reset the model using
    * <tt>returnVal->setModel()</tt>.
    */
-  Teuchos::RefCountPtr<StepperBase<Scalar> > cloneStepper() const;
+  Teuchos::RCP<StepperBase<Scalar> > cloneStepper() const;
 
   /** \brief . */
-  void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
+  void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
   
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
   getModel() const;
 
   /** \brief . */
@@ -142,14 +142,14 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
   get_x_space() const;
 
   /** \brief . */
   bool setPoints(
     const std::vector<Scalar>& time_vec,
-    const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec,
-    const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+    const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
+    const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
     const std::vector<ScalarMag> & accuracy_vec 
     );
   
@@ -165,8 +165,8 @@ public:
   /** \brief . */
   bool getPoints(
     const std::vector<Scalar>& time_vec,
-    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec,
-    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
     std::vector<ScalarMag>* accuracy_vec
     ) const;
   
@@ -185,16 +185,16 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
   
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
   
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   
   /** \brief. */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
  
   //@}
 
@@ -215,23 +215,23 @@ private:
   // Private date members
 
   bool isInitialized_;
-  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
-  Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > solver_;
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_;
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_;
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > scaled_x_old_;
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_old_;
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > scaled_x_old_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_old_;
   Scalar t_;
   Scalar t_old_;
   Scalar dt_;
   int numSteps_;
 
-  Teuchos::RefCountPtr<Rythmos::SingleResidualModelEvaluator<Scalar> >  neModel_;
+  Teuchos::RCP<Rythmos::SingleResidualModelEvaluator<Scalar> >  neModel_;
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
+  Teuchos::RCP<Teuchos::ParameterList> parameterList_;
 
-  Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator_;
+  Teuchos::RCP<InterpolatorBase<Scalar> > interpolator_;
 
 
   // //////////////////////////
@@ -252,7 +252,7 @@ private:
 template<class Scalar>
 BackwardEulerStepper<Scalar>::BackwardEulerStepper()
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
   out->setMaxLenLinePrefix(32);
   //out->pushLinePrefix("Rythmos::BackwardEulerStepper");
@@ -265,11 +265,11 @@ BackwardEulerStepper<Scalar>::BackwardEulerStepper()
 
 template<class Scalar>
 BackwardEulerStepper<Scalar>::BackwardEulerStepper(
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
-  ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
+  ,const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
   out->setMaxLenLinePrefix(32);
   //out->pushLinePrefix("Rythmos::BackwardEulerStepper");
@@ -284,7 +284,7 @@ BackwardEulerStepper<Scalar>::BackwardEulerStepper(
 
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::setInterpolator(
-  Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator
+  Teuchos::RCP<InterpolatorBase<Scalar> > interpolator
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -296,10 +296,10 @@ void BackwardEulerStepper<Scalar>::setInterpolator(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<InterpolatorBase<Scalar> >
+Teuchos::RCP<InterpolatorBase<Scalar> >
 BackwardEulerStepper<Scalar>::unsetInterpolator()
 {
-  Teuchos::RefCountPtr<InterpolatorBase<Scalar> > temp_interpolator = interpolator_;
+  Teuchos::RCP<InterpolatorBase<Scalar> > temp_interpolator = interpolator_;
   interpolator_ = Teuchos::null;
   return(temp_interpolator);
   isInitialized_ = false;
@@ -311,14 +311,14 @@ BackwardEulerStepper<Scalar>::unsetInterpolator()
 
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::setSolver(
-  const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
 {
   using Teuchos::as;
 
   TEST_FOR_EXCEPT(solver == Teuchos::null)
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::setSolver");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -333,7 +333,7 @@ void BackwardEulerStepper<Scalar>::setSolver(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >
+Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
 BackwardEulerStepper<Scalar>::getNonconstSolver()
 {
   return solver_;
@@ -341,7 +341,7 @@ BackwardEulerStepper<Scalar>::getNonconstSolver()
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> >
+Teuchos::RCP<const Thyra::NonlinearSolverBase<Scalar> >
 BackwardEulerStepper<Scalar>::getSolver() const
 {
   return solver_;
@@ -359,10 +359,10 @@ bool BackwardEulerStepper<Scalar>::supportsCloning() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<StepperBase<Scalar> >
+Teuchos::RCP<StepperBase<Scalar> >
 BackwardEulerStepper<Scalar>::cloneStepper() const
 {
-  Teuchos::RefCountPtr<BackwardEulerStepper<Scalar> >
+  Teuchos::RCP<BackwardEulerStepper<Scalar> >
     stepper = Teuchos::rcp(new BackwardEulerStepper<Scalar>);
   stepper->isInitialized_ = isInitialized_;
   stepper->model_ = model_; // Model is stateless so shallow copy is okay!
@@ -390,7 +390,7 @@ BackwardEulerStepper<Scalar>::cloneStepper() const
 
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::setModel(
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
   )
 {
 
@@ -398,7 +398,7 @@ void BackwardEulerStepper<Scalar>::setModel(
 
   TEST_FOR_EXCEPT( is_null(model) );
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::setModel");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -419,7 +419,7 @@ void BackwardEulerStepper<Scalar>::setModel(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 BackwardEulerStepper<Scalar>::getModel() const
 {
   return model_;
@@ -441,7 +441,7 @@ void BackwardEulerStepper<Scalar>::setInitialCondition(
 
   // x
 
-  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >
     x_init = initialCondition.get_x();
 
 #ifdef TEUCHOS_DEBUG
@@ -460,7 +460,7 @@ void BackwardEulerStepper<Scalar>::setInitialCondition(
 
   x_dot_ = createMember(model_->get_x_space());
 
-  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >
     x_dot_init = initialCondition.get_x_dot();
 
   if (!is_null(x_dot_init))
@@ -489,7 +489,7 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
   typedef Thyra::NonlinearSolverBase<Scalar> NSB;
   typedef Teuchos::VerboseObjectTempState<NSB> VOTSNSB;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::takeStep");
   VOTSNSB solver_outputTempState(solver_,out,verbLevel);
@@ -636,7 +636,7 @@ const StepStatus<Scalar> BackwardEulerStepper<Scalar>::getStepStatus() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 BackwardEulerStepper<Scalar>::get_x_space() const
 {
   return ( !is_null(model_) ? model_->get_x_space() : Teuchos::null );
@@ -646,13 +646,13 @@ BackwardEulerStepper<Scalar>::get_x_space() const
 template<class Scalar>
 bool BackwardEulerStepper<Scalar>::setPoints(
     const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
     ,const std::vector<ScalarMag> & accuracy_vec 
     )
 {
   using Teuchos::as;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::setPoints");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -697,7 +697,7 @@ bool BackwardEulerStepper<Scalar>::setRange(
   using Teuchos::as;
   const Scalar time_lower = range.lower();
   const Scalar time_upper = range.upper();
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::setRange");
   if (!isInitialized_) {
@@ -725,8 +725,8 @@ TimeRange<Scalar> BackwardEulerStepper<Scalar>::getTimeRange() const
 template<class Scalar>
 bool BackwardEulerStepper<Scalar>::getPoints(
     const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
 
@@ -740,7 +740,7 @@ bool BackwardEulerStepper<Scalar>::getPoints(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( 0 == x_vec );
 #endif
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::getPoints");
   if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
@@ -774,7 +774,7 @@ bool BackwardEulerStepper<Scalar>::getPoints(
         )
       );
 #endif
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
+    Teuchos::RCP<Thyra::VectorBase<Scalar> >
       x_temp = scaled_x_old_->clone_v();
     Thyra::Vt_S(&*x_temp,Scalar(-ST::one()*dt));  // undo the scaling
     ds_temp.time = t_old_;
@@ -846,7 +846,7 @@ bool BackwardEulerStepper<Scalar>::getNodes(std::vector<Scalar>* time_vec) const
   if (numSteps_ > 0) {
     time_vec->push_back(t_);
   }
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::getNodes");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -863,7 +863,7 @@ template<class Scalar>
 bool BackwardEulerStepper<Scalar>::removeNodes(std::vector<Scalar>& time_vec) 
 {
   using Teuchos::as;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::removeNodes");
   if (!isInitialized_) {
@@ -895,7 +895,7 @@ int BackwardEulerStepper<Scalar>::getOrder() const
 
 template <class Scalar>
 void BackwardEulerStepper<Scalar>::setParameterList(
-  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
   TEST_FOR_EXCEPT(is_null(paramList));
@@ -906,7 +906,7 @@ void BackwardEulerStepper<Scalar>::setParameterList(
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 BackwardEulerStepper<Scalar>::getParameterList()
 {
   return(parameterList_);
@@ -914,10 +914,10 @@ BackwardEulerStepper<Scalar>::getParameterList()
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 BackwardEulerStepper<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList>
+  Teuchos::RCP<Teuchos::ParameterList>
     temp_param_list = parameterList_;
   parameterList_ = Teuchos::null;
   return(temp_param_list);
@@ -925,14 +925,14 @@ BackwardEulerStepper<Scalar>::unsetParameterList()
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 BackwardEulerStepper<Scalar>::getValidParameters() const
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::ParameterList;
-  static RefCountPtr<const ParameterList> validPL;
+  static RCP<const ParameterList> validPL;
   if (is_null(validPL)) {
-    RefCountPtr<ParameterList> pl = Teuchos::parameterList();
+    RCP<ParameterList> pl = Teuchos::parameterList();
     Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;
   }

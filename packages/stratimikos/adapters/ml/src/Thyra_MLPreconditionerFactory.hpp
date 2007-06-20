@@ -74,17 +74,17 @@ public:
   /** \brief . */
   bool applyTransposeSupportsConj(EConj conj) const;
   /** \brief . */
-  Teuchos::RefCountPtr<PreconditionerBase<double> > createPrec() const;
+  Teuchos::RCP<PreconditionerBase<double> > createPrec() const;
   /** \brief . */
   void initializePrec(
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOp,
+    const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOp,
     PreconditionerBase<double> *prec,
     const ESupportSolveUse supportSolveUse
     ) const;
   /** \brief . */
   void uninitializePrec(
     PreconditionerBase<double> *prec
-    ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> > *fwdOp
+    ,Teuchos::RCP<const LinearOpSourceBase<double> > *fwdOp
     ,ESupportSolveUse *supportSolveUse
     ) const;
 
@@ -95,15 +95,15 @@ public:
 
   /** \brief . */
   void setParameterList(
-    Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+    Teuchos::RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
   //@}
 
   /** \name Public functions overridden from Describable. */
@@ -118,7 +118,7 @@ public:
 
 private:
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_;
+  Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
 };
 

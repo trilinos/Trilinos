@@ -29,7 +29,7 @@
 #ifndef TEUCHOS_VERBOSE_OBJECT_HPP
 #define TEUCHOS_VERBOSE_OBJECT_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
 
@@ -61,10 +61,10 @@ public:
    * If this function is not called, then a default stream based on
    * <tt>std::cout</tt> is used.
    */
-  static void setDefaultOStream( const RefCountPtr<FancyOStream> &defaultOStream );
+  static void setDefaultOStream( const RCP<FancyOStream> &defaultOStream );
 
   /** \brief Get the default output stream object. */
-  static RefCountPtr<FancyOStream> getDefaultOStream();
+  static RCP<FancyOStream> getDefaultOStream();
 
   //@}
 
@@ -78,13 +78,13 @@ public:
    */
   explicit
   VerboseObjectBase(
-    const RefCountPtr<FancyOStream> &oStream = Teuchos::null
+    const RCP<FancyOStream> &oStream = Teuchos::null
     );
   
   /** \brief Calls <tt>initializeVerboseObject()</tt>.
    */
   virtual void initializeVerboseObjectBase(
-    const RefCountPtr<FancyOStream> &oStream = Teuchos::null
+    const RCP<FancyOStream> &oStream = Teuchos::null
     );
 
   /** \brief The output stream for <tt>*this</tt> object.
@@ -93,7 +93,7 @@ public:
    * stream according to some general logic in the code.
    */
   virtual const VerboseObjectBase& setOStream(
-    const RefCountPtr<FancyOStream> &oStream) const;
+    const RCP<FancyOStream> &oStream) const;
 
   /** \brief Set the overriding the output stream for <tt>*this</tt> object.
    *
@@ -102,7 +102,7 @@ public:
    * <tt>setOStream()</tt>.
    */
   virtual const VerboseObjectBase& setOverridingOStream(
-    const RefCountPtr<FancyOStream> &oStream) const;
+    const RCP<FancyOStream> &oStream) const;
 
   /** \brief Set line prefix name for this object */
   virtual VerboseObjectBase& setLinePrefix(const std::string &linePrefix);
@@ -115,7 +115,7 @@ public:
   /** \brief Return the output stream to be used for out for <tt>*this</tt>
    * object.
    */
-  virtual RefCountPtr<FancyOStream> getOStream() const;
+  virtual RCP<FancyOStream> getOStream() const;
 
   /** \brief Return the the overriding output stream if set.
    *
@@ -123,7 +123,7 @@ public:
    * <tt>getOStream()</tt> regardless that stream is set by
    * <tt>setOStream()</tt>.
    */
-  virtual RefCountPtr<FancyOStream> getOverridingOStream() const;
+  virtual RCP<FancyOStream> getOverridingOStream() const;
 
   /** \brief Get the line prefix for this object */
   virtual std::string getLinePrefix() const;
@@ -152,11 +152,11 @@ public:
   
 private:
 
-  mutable RefCountPtr<FancyOStream> thisOStream_;
-  mutable RefCountPtr<FancyOStream> thisOverridingOStream_;
+  mutable RCP<FancyOStream> thisOStream_;
+  mutable RCP<FancyOStream> thisOverridingOStream_;
   std::string thisLinePrefix_;
 
-  static RefCountPtr<FancyOStream>& privateDefaultOStream();
+  static RCP<FancyOStream>& privateDefaultOStream();
 
 };
 
@@ -207,14 +207,14 @@ public:
   explicit
   VerboseObject(
     const EVerbosityLevel verbLevel = VERB_DEFAULT,  // Note, this must be the same as the default value for defaultVerbLevel_
-    const RefCountPtr<FancyOStream> &oStream  = Teuchos::null
+    const RCP<FancyOStream> &oStream  = Teuchos::null
     );
   
   /** \brief Calls <tt>initializeVerboseObject()</tt>.
    */
   virtual void initializeVerboseObject(
     const EVerbosityLevel verbLevel = VERB_DEFAULT,  // Note, this must be the same as the default value for defaultVerbLevel_
-    const RefCountPtr<FancyOStream> &oStream  = Teuchos::null
+    const RCP<FancyOStream> &oStream  = Teuchos::null
     );
 
   /** \brief Set the verbosity level for <tt>*this</tt> object.
@@ -263,8 +263,8 @@ class VerboseObjectTempState {
 public:
   /** \brief . */
   VerboseObjectTempState(
-    const RefCountPtr<const VerboseObject<ObjectType> > &verboseObject,
-    const RefCountPtr<FancyOStream> &newOStream,
+    const RCP<const VerboseObject<ObjectType> > &verboseObject,
+    const RCP<FancyOStream> &newOStream,
     const EVerbosityLevel newVerbLevel
     )
     :verboseObject_(verboseObject)
@@ -285,8 +285,8 @@ public:
       }
     }
 private:
-  RefCountPtr<const VerboseObject<ObjectType> > verboseObject_;
-  RefCountPtr<FancyOStream> oldOStream_;
+  RCP<const VerboseObject<ObjectType> > verboseObject_;
+  RCP<FancyOStream> oldOStream_;
   EVerbosityLevel oldVerbLevel_;
   // Not defined and not to be called
   VerboseObjectTempState();
@@ -327,7 +327,7 @@ EVerbosityLevel VerboseObject<ObjectType>::getDefaultVerbLevel()
 template<class ObjectType>
 VerboseObject<ObjectType>::VerboseObject(
   const EVerbosityLevel verbLevel,
-  const RefCountPtr<FancyOStream> &oStream
+  const RCP<FancyOStream> &oStream
   )
   : thisOverridingVerbLevel_(VERB_DEFAULT)
 {
@@ -338,7 +338,7 @@ VerboseObject<ObjectType>::VerboseObject(
 template<class ObjectType>
 void VerboseObject<ObjectType>::initializeVerboseObject(
   const EVerbosityLevel verbLevel,
-  const RefCountPtr<FancyOStream> &oStream
+  const RCP<FancyOStream> &oStream
   )
 {
   thisVerbLevel_ = verbLevel;

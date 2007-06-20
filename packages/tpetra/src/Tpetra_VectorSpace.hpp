@@ -29,7 +29,7 @@
 #ifndef TPETRA_VECTORSPACE_HPP
 #define TPETRA_VECTORSPACE_HPP
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include "Tpetra_Object.hpp"
@@ -242,7 +242,7 @@ namespace Tpetra {
 		BlockElementSpace<OrdinalType> const& blockElementSpace() const {return(*VectorSpaceData_->BlockElementSpace_);};
 		bool isBlockSpace() const {return(VectorSpaceData_->blockspace_);};
     
-		Teuchos::RefCountPtr< VectorSpaceData<OrdinalType, ScalarType> > VectorSpaceData_;
+		Teuchos::RCP< VectorSpaceData<OrdinalType, ScalarType> > VectorSpaceData_;
 
 	}; // VectorSpace class
 

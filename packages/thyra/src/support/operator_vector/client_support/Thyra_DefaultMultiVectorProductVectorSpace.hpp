@@ -48,7 +48,7 @@ DefaultMultiVectorProductVectorSpace<Scalar>::DefaultMultiVectorProductVectorSpa
 
 template<class Scalar>
 void DefaultMultiVectorProductVectorSpace<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &space,
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> > &space,
   const int numColumns
   )
 {
@@ -64,7 +64,7 @@ void DefaultMultiVectorProductVectorSpace<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultMultiVectorProductVectorSpace<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > *space,
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > *space,
   int *numColumns
   )
 {
@@ -83,7 +83,7 @@ int DefaultMultiVectorProductVectorSpace<Scalar>::numBlocks() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultMultiVectorProductVectorSpace<Scalar>::getBlock(const int k) const
 {
   TEST_FOR_EXCEPT( k < 0 || numColumns_ < k );
@@ -120,7 +120,7 @@ bool DefaultMultiVectorProductVectorSpace<Scalar>::isCompatible(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr< VectorBase<Scalar> >
+Teuchos::RCP< VectorBase<Scalar> >
 DefaultMultiVectorProductVectorSpace<Scalar>::createMember() const
 {
   return multiVectorProductVector<Scalar>(
@@ -161,7 +161,7 @@ bool DefaultMultiVectorProductVectorSpace<Scalar>::hasInCoreView(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> >
+Teuchos::RCP< const VectorSpaceFactoryBase<Scalar> >
 DefaultMultiVectorProductVectorSpace<Scalar>::smallVecSpcFcty() const
 {
   if (!is_null(space_))
@@ -170,7 +170,7 @@ DefaultMultiVectorProductVectorSpace<Scalar>::smallVecSpcFcty() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< MultiVectorBase<Scalar> >
+Teuchos::RCP< MultiVectorBase<Scalar> >
 DefaultMultiVectorProductVectorSpace<Scalar>::createMembers(int numMembers) const
 {
   return VectorSpaceDefaultBase<Scalar>::createMembers(numMembers);
@@ -180,13 +180,13 @@ DefaultMultiVectorProductVectorSpace<Scalar>::createMembers(int numMembers) cons
 
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultMultiVectorProductVectorSpace<Scalar>::clone() const
 {
   // Warning! If the client uninitialized this object then changes the
   // constituent vector spaces then we are in trouble!  The client is warned
   // in documentation!
-  Teuchos::RefCountPtr<DefaultMultiVectorProductVectorSpace<Scalar> >
+  Teuchos::RCP<DefaultMultiVectorProductVectorSpace<Scalar> >
     mvpvs = Teuchos::rcp(new DefaultMultiVectorProductVectorSpace<Scalar>());
   mvpvs->numColumns_ = numColumns_;
   mvpvs->space_ = space_;
@@ -219,11 +219,11 @@ void DefaultMultiVectorProductVectorSpace<Scalar>::describe(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   assertInitialized();
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:

@@ -56,20 +56,20 @@ public:
 
   /** \brief . */
   DefaultStateEliminationModelEvaluator(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> > &thyraModel,
-    const Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> > &stateSolver
+    const Teuchos::RCP<ModelEvaluator<Scalar> > &thyraModel,
+    const Teuchos::RCP<NonlinearSolverBase<Scalar> > &stateSolver
     );
 
   /** \brief . */
   void initialize(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> > &thyraModel,
-    const Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> > &stateSolver
+    const Teuchos::RCP<ModelEvaluator<Scalar> > &thyraModel,
+    const Teuchos::RCP<NonlinearSolverBase<Scalar> > &stateSolver
     );
 
   /** \brief . */
   void uninitialize(
-    Teuchos::RefCountPtr<ModelEvaluator<Scalar> > *thyraModel = NULL,
-    Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> > *stateSolver = NULL
+    Teuchos::RCP<ModelEvaluator<Scalar> > *thyraModel = NULL,
+    Teuchos::RCP<NonlinearSolverBase<Scalar> > *stateSolver = NULL
     );
 
   //@}
@@ -78,9 +78,9 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_x_space() const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
@@ -88,13 +88,13 @@ public:
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > create_W() const;
+  Teuchos::RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_W_op() const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
@@ -117,12 +117,12 @@ public:
 
 private:
 
-  Teuchos::RefCountPtr<ModelEvaluator<Scalar> > thyraModel_;
-  Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> > stateSolver_;
+  Teuchos::RCP<ModelEvaluator<Scalar> > thyraModel_;
+  Teuchos::RCP<NonlinearSolverBase<Scalar> > stateSolver_;
 
-  Teuchos::RefCountPtr<DefaultNominalBoundsOverrideModelEvaluator<Scalar> > wrappedThyraModel_;
+  Teuchos::RCP<DefaultNominalBoundsOverrideModelEvaluator<Scalar> > wrappedThyraModel_;
 
-  mutable Teuchos::RefCountPtr<VectorBase<Scalar> > x_guess_solu_;
+  mutable Teuchos::RCP<VectorBase<Scalar> > x_guess_solu_;
   
 };
 
@@ -137,8 +137,8 @@ DefaultStateEliminationModelEvaluator<Scalar>::DefaultStateEliminationModelEvalu
 
 template<class Scalar>
 DefaultStateEliminationModelEvaluator<Scalar>::DefaultStateEliminationModelEvaluator(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 &thyraModel
-  ,const Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> >           &stateSolver
+  const Teuchos::RCP<ModelEvaluator<Scalar> >                 &thyraModel
+  ,const Teuchos::RCP<NonlinearSolverBase<Scalar> >           &stateSolver
   )
 {
   initialize(thyraModel,stateSolver);
@@ -146,8 +146,8 @@ DefaultStateEliminationModelEvaluator<Scalar>::DefaultStateEliminationModelEvalu
 
 template<class Scalar>
 void DefaultStateEliminationModelEvaluator<Scalar>::initialize(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 &thyraModel
-  ,const Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> >           &stateSolver
+  const Teuchos::RCP<ModelEvaluator<Scalar> >                 &thyraModel
+  ,const Teuchos::RCP<NonlinearSolverBase<Scalar> >           &stateSolver
   )
 {
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
@@ -165,8 +165,8 @@ void DefaultStateEliminationModelEvaluator<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultStateEliminationModelEvaluator<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 *thyraModel
-  ,Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> >           *stateSolver
+  Teuchos::RCP<ModelEvaluator<Scalar> >                 *thyraModel
+  ,Teuchos::RCP<NonlinearSolverBase<Scalar> >           *stateSolver
   )
 {
   if(thyraModel) *thyraModel = this->getUnderlyingModel();
@@ -180,14 +180,14 @@ void DefaultStateEliminationModelEvaluator<Scalar>::uninitialize(
 // Overridden from ModelEvaulator.
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultStateEliminationModelEvaluator<Scalar>::get_x_space() const
 {
   return Teuchos::null;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultStateEliminationModelEvaluator<Scalar>::get_f_space() const
 {
   return Teuchos::null;
@@ -198,7 +198,7 @@ ModelEvaluatorBase::InArgs<Scalar>
 DefaultStateEliminationModelEvaluator<Scalar>::getNominalValues() const
 {
   typedef ModelEvaluatorBase MEB;
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   MEB::InArgsSetup<Scalar> nominalValues(thyraModel->getNominalValues());
   nominalValues.setModelEvalDescription(this->description());
@@ -211,7 +211,7 @@ ModelEvaluatorBase::InArgs<Scalar>
 DefaultStateEliminationModelEvaluator<Scalar>::getLowerBounds() const
 {
   typedef ModelEvaluatorBase MEB;
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   MEB::InArgsSetup<Scalar> lowerBounds(thyraModel->getLowerBounds());
   lowerBounds.setModelEvalDescription(this->description());
@@ -224,7 +224,7 @@ ModelEvaluatorBase::InArgs<Scalar>
 DefaultStateEliminationModelEvaluator<Scalar>::getUpperBounds() const
 {
   typedef ModelEvaluatorBase MEB;
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   MEB::InArgsSetup<Scalar> upperBounds(thyraModel->getUpperBounds());
   upperBounds.setModelEvalDescription(this->description());
@@ -233,28 +233,28 @@ DefaultStateEliminationModelEvaluator<Scalar>::getUpperBounds() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
 DefaultStateEliminationModelEvaluator<Scalar>::create_W() const
 {
   return Teuchos::null;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 DefaultStateEliminationModelEvaluator<Scalar>::create_W_op() const
 {
   return Teuchos::null;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 DefaultStateEliminationModelEvaluator<Scalar>::create_DfDp_op(int l) const
 {
   return Teuchos::null;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 DefaultStateEliminationModelEvaluator<Scalar>::create_DgDx_op(int j) const
 {
   return Teuchos::null;
@@ -265,7 +265,7 @@ ModelEvaluatorBase::InArgs<Scalar>
 DefaultStateEliminationModelEvaluator<Scalar>::createInArgs() const
 {
   typedef ModelEvaluatorBase MEB;
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   const MEB::InArgs<Scalar> wrappedInArgs = thyraModel->createInArgs();
   MEB::InArgsSetup<Scalar> inArgs;
@@ -281,7 +281,7 @@ ModelEvaluatorBase::OutArgs<Scalar>
 DefaultStateEliminationModelEvaluator<Scalar>::createOutArgs() const
 {
   typedef ModelEvaluatorBase MEB;
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   const MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
   const int Np = wrappedOutArgs.Np(), Ng = wrappedOutArgs.Ng();
@@ -301,7 +301,7 @@ void DefaultStateEliminationModelEvaluator<Scalar>::evalModel(
   ) const
 {
   typedef ModelEvaluatorBase MEB;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
@@ -310,13 +310,13 @@ void DefaultStateEliminationModelEvaluator<Scalar>::evalModel(
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
 
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::DefaultStateEliminationModelEvaluator<Scalar>::evalModel(...) ...\n";
 
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
 
   const int Np = outArgs.Np(), Ng = outArgs.Ng();
@@ -445,7 +445,7 @@ void DefaultStateEliminationModelEvaluator<Scalar>::evalModel(
 template<class Scalar>
 std::string DefaultStateEliminationModelEvaluator<Scalar>::description() const
 {
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   std::ostringstream oss;
   oss << "Thyra::DefaultStateEliminationModelEvaluator{";

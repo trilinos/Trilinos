@@ -40,7 +40,7 @@
 
 #include "Sacado.hpp"
 
-VanDerPolOscillator::VanDerPolOscillator(Teuchos::RefCountPtr<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params)
+VanDerPolOscillator::VanDerPolOscillator(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params)
 {
   implicit_ = params.get<bool>( "implicit" );
   omega_ = params.get<double>( "omega" );
@@ -81,25 +81,25 @@ VanDerPolOscillator::saveSolution(const Epetra_Vector& x, double t)
 
 // Overridden from EpetraExt::ModelEvaluator
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 VanDerPolOscillator::get_x_map() const
 {
   return epetra_map_ptr_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 VanDerPolOscillator::get_f_map() const
 {
   return epetra_map_ptr_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 VanDerPolOscillator::get_x_init() const
 {
   return x0_;
 }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 VanDerPolOscillator::create_W() const
 {
   if (implicit_)
@@ -138,16 +138,16 @@ void VanDerPolOscillator::evalModel( const InArgs& inArgs,
 				     const OutArgs& outArgs ) const
 {
   // compute f(x)
-  Teuchos::RefCountPtr<const Epetra_Vector> x = inArgs.get_x();
-  Teuchos::RefCountPtr<Epetra_Vector> f = outArgs.get_f();
+  Teuchos::RCP<const Epetra_Vector> x = inArgs.get_x();
+  Teuchos::RCP<Epetra_Vector> f = outArgs.get_f();
   if ( (x != Teuchos::null) && (f != Teuchos::null) ) {
     evalVField((*x)[0],(*x)[1],(*f)[0],(*f)[1]);
   }
 
   // compute f([x])
-  Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > x_poly = 
+  Teuchos::RCP<const Teuchos::Polynomial<Epetra_Vector> > x_poly = 
     inArgs.get_x_poly();
-  Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > f_poly = 
+  Teuchos::RCP<Teuchos::Polynomial<Epetra_Vector> > f_poly = 
     outArgs.get_f_poly();
   if ( (x_poly != Teuchos::null) && (f_poly != Teuchos::null) ) {
     unsigned int d = x_poly->degree();
@@ -170,7 +170,7 @@ void VanDerPolOscillator::evalModel( const InArgs& inArgs,
   }
 
   // compute W
-  Teuchos::RefCountPtr<Epetra_Operator> W = outArgs.get_W();
+  Teuchos::RCP<Epetra_Operator> W = outArgs.get_W();
   if (W != Teuchos::null) {
     const double alpha = inArgs.get_alpha();
     const double beta = inArgs.get_beta();

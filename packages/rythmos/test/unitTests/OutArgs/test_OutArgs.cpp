@@ -34,7 +34,7 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 
 // Includes for Teuchos:
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Includes for Epetra:
 #include "Epetra_SerialComm.h"
@@ -46,12 +46,12 @@ bool test1()
 {
     bool test = false;
     Epetra_SerialComm epetra_comm;
-    Teuchos::RefCountPtr<Epetra_Map> epetra_map = Teuchos::rcp(new Epetra_Map(1,0,epetra_comm));
-    Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > thyra_vs = Thyra::create_VectorSpace(epetra_map);
-    Teuchos::RefCountPtr<Thyra::VectorBase<double> > in_vector = Thyra::createMember(thyra_vs);
+    Teuchos::RCP<Epetra_Map> epetra_map = Teuchos::rcp(new Epetra_Map(1,0,epetra_comm));
+    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > thyra_vs = Thyra::create_VectorSpace(epetra_map);
+    Teuchos::RCP<Thyra::VectorBase<double> > in_vector = Thyra::createMember(thyra_vs);
     EpetraExt::OutArgs<double> outargs;
     outargs.request_F(in_vector);
-    Teuchos::RefCountPtr<Thyra::VectorBase<double> > out_vector = outargs.get_F();
+    Teuchos::RCP<Thyra::VectorBase<double> > out_vector = outargs.get_F();
     if ( out_vector.get() == in_vector.get() )
       test = true; 
     return(test);

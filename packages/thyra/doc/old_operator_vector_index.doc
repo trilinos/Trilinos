@@ -187,11 +187,11 @@ to to define an iterative linear solver such as GMRES or CG.
 
 </ul>
 
-\section Thyra_Op_Vec_faq_rcp_sec Questions about the smart pointer class Teuchos::RefCountPtr
+\section Thyra_Op_Vec_faq_rcp_sec Questions about the smart pointer class Teuchos::RCP
 
-\subsection Thyra_Op_Vec_faq_rcp_important_sec Q: What are RefCountPtr objects and why are they important?
+\subsection Thyra_Op_Vec_faq_rcp_important_sec Q: What are RCP objects and why are they important?
 
-<b>A:</b>The class Teuchos::RefCountPtr implements a form of reference
+<b>A:</b>The class Teuchos::RCP implements a form of reference
 counting which, through the magic of smart pointers in C++, allows objects to
 be created and used without much concern for when and where they should be
 deleted.  It is a form of garbage collection but is not as general or fail-
@@ -200,14 +200,14 @@ see:
 
 http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
 
-and click on: <tt>Teuchos::RefCountPtr</tt>
+and click on: <tt>Teuchos::RCP</tt>
 
 \subsection Thyra_Op_Vec_faq_rcp_amp_star_sec Q: Do I really have to write &*ptr all the time?
 
 What are the benefits of &* vs. get()?
 
 <b>A:</b> There are two ways to get at the underlying raw pointer to an
-object that is wrapped in the RefCountPtr<C> object <tt>c_ptr</tt>:
+object that is wrapped in the RCP<C> object <tt>c_ptr</tt>:
 
 \code
 
@@ -218,17 +218,17 @@ C *c_rptr2 = &*c_ptr;     // Checked in debug build and will not return NULL
 You should use <tt>c_ptr.get()</tt> when it is okay for the pointer to be
 <tt>NULL</tt>.  On the other hand, you should use <tt>&*c_ptr</tt> when you
 don't want to allow the raw pointer to be <tt>NULL</tt>.  This is because the
-operator function <tt>Teuchos::RefCountPtr::operator*()</tt> will throw an
-exception if <tt>Teuchos::RefCountPtr::get()==NULL</tt> when the code is
+operator function <tt>Teuchos::RCP::operator*()</tt> will throw an
+exception if <tt>Teuchos::RCP::get()==NULL</tt> when the code is
 compiled using the macro define <tt>-D_DEBUG</tt>.
 
 For more information see Item 3 in Appendix B in 
 
 http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
 
-\subsection Thyra_Op_Vec_faq_rcp_everywhere_sec Q: Should my code use RefCountPtr's everywhere?
+\subsection Thyra_Op_Vec_faq_rcp_everywhere_sec Q: Should my code use RCP's everywhere?
 
-<b>A:</b> You should only use RefCountPtr to wrap objects where a persisting
+<b>A:</b> You should only use RCP to wrap objects where a persisting
 relationship is being formed or maintained.  For non-persisting relationships,
 use raw C++ references and pointers.
 
@@ -861,7 +861,7 @@ for a serial vector and return pointers to that storage to the
 <tt>%Thyra::DefaultSerialVector::getData()</tt> functions.  This concrete subclass
 has constructors that accept arbitrary strided data and can trivially handle
 any underlying data storage format due to the magic of
-<tt>%Teuchos::RefCountPtr</tt>.
+<tt>%Teuchos::RCP</tt>.
 
 <li><tt>Thyra::DefaultSerialMultiVector</tt> is an efficient general concrete
 implementation for serial multi-vectors.  All this subclass does is provide
@@ -870,7 +870,7 @@ leading dimension) to the <tt>%Thyra::SerialMultiVectorBase</tt> base class
 through the overridden <tt>%Thyra::DefaultSerialMultiVector::getData()</tt>
 functions.  This concrete subclass has constructors that accept column-major
 data and can trivially handle any underlying data storage format due to the
-magic of <tt>%Teuchos::RefCountPtr</tt>.
+magic of <tt>%Teuchos::RCP</tt>.
 
 </ul>
 
@@ -1036,13 +1036,13 @@ SPMD vector spaces which creates <tt>%Thyra::%DefaultMPIVector</tt> and
 efficient <tt>%Thyra::%VectorBase</tt> subclass implementation for
 MPI-based SPMD vectors.  Objects of this type can be constructed
 from a variety of data sources due to the magic of
-<tt>%Teuchos::%RefCountPtr</tt>.
+<tt>%Teuchos::%RCP</tt>.
 
 <li><tt>Thyra::DefaultMPIMultiVector</tt> is a very general, highly
 efficient <tt>%Thyra::%MultiVectorBase</tt> subclass implementation for
 MPI-based SPMD multi-vectors.  Objects of this type can be constructed
 from a variety of data sources due to the magic of
-<tt>%Teuchos::%RefCountPtr</tt>.
+<tt>%Teuchos::%RCP</tt>.
 
 </ul>
 

@@ -47,7 +47,7 @@ using namespace Thyra;
 #define TEST_COMPLEX
 
 template <class Scalar> inline 
-bool runTests(int n, Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
+bool runTests(int n, Teuchos::RCP<Teuchos::FancyOStream>& out)
 {
   typedef typename Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType Mag;
@@ -76,7 +76,7 @@ int main( int argc, char *argv[] )
   GlobalMPISession mpiSession(&argc, &argv);
     
   // Get stream that can print to just root or all streams!
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   
   try {

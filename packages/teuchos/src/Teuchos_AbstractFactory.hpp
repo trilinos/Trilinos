@@ -29,20 +29,20 @@
 #ifndef TEUCHOS_ABSTRACT_FACTORY_HPP
 #define TEUCHOS_ABSTRACT_FACTORY_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace Teuchos {
 
 /** \brief Simple, universal "Abstract Factory" interface for the
  * dynamic creation of objects.
  *
- * While <tt>RefCountPtr</tt> provides for specialized deallocation
+ * While <tt>RCP</tt> provides for specialized deallocation
  * policies it does not abstract, in any way, how an object is first
  * allocated.  The most general way to abstract how an object is
  * allocated is to use an "Abstract Factory".  This base class defines
  * the most basic "Abstract Factory" interface and defines only one
  * virtual function, <tt>create()</tt> that returns a
- * <tt>RefCountPtr</tt>-wrapped object.
+ * <tt>RCP</tt>-wrapped object.
  */
 template<class T>
 class AbstractFactory {
@@ -50,7 +50,7 @@ public:
 
 #ifndef DOXYGEN_COMPILE
 	/** \brief . */
-	typedef Teuchos::RefCountPtr<T>   obj_ptr_t;
+	typedef Teuchos::RCP<T>   obj_ptr_t;
 #endif
 
 	/** \brief . */

@@ -6,8 +6,8 @@
 # this was getting in the way of the generation
 # if the output string for the commparison
 (FRAMEWORK,INSTALL) {
-    TESTS = RefCountPtr/RefCountPtr_test.exe,
-            RefCountPtr/ArrayRefCountPtr_test.exe;
+    TESTS = RCP/RefCountPtr_test.exe,
+            RCP/ArrayRefCountPtr_test.exe;
     ARGS = --verbose --teuchos-suppress-startup-banner;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI(1),SERIAL;
@@ -48,7 +48,7 @@
 # Note that above the last two test cases fail due to empty lists!
 
 (FRAMEWORK,INSTALL) {
-    TESTS = RefCountPtr/RefCountPtr_test.exe,
+    TESTS = RCP/RefCountPtr_test.exe,
             Workspace/workspace_test.exe,
             dyn_cast/dyn_cast_test.exe;
     ARGS = --verbose;

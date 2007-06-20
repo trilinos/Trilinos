@@ -44,21 +44,21 @@ ScalarProdVectorSpaceBase<Scalar>::ScalarProdVectorSpaceBase()
 {}
   
 template<class Scalar>
-ScalarProdVectorSpaceBase<Scalar>::ScalarProdVectorSpaceBase( const Teuchos::RefCountPtr<const ScalarProdBase<Scalar> > &scalarProd )
+ScalarProdVectorSpaceBase<Scalar>::ScalarProdVectorSpaceBase( const Teuchos::RCP<const ScalarProdBase<Scalar> > &scalarProd )
   :scalarProd_(scalarProd)
 {
   TEST_FOR_EXCEPT( scalarProd.get()==NULL );
 }
 
 template<class Scalar>
-void ScalarProdVectorSpaceBase<Scalar>::setScalarProd( const Teuchos::RefCountPtr<const ScalarProdBase<Scalar> > &scalarProd )
+void ScalarProdVectorSpaceBase<Scalar>::setScalarProd( const Teuchos::RCP<const ScalarProdBase<Scalar> > &scalarProd )
 {
   TEST_FOR_EXCEPT( scalarProd.get()==NULL );
   scalarProd_ = scalarProd;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const ScalarProdBase<Scalar> >
+Teuchos::RCP<const ScalarProdBase<Scalar> >
 ScalarProdVectorSpaceBase<Scalar>::getScalarProd() const
 {
   return scalarProd_;

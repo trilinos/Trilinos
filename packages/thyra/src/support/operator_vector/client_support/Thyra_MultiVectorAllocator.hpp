@@ -43,9 +43,9 @@ public:
   /** \brief . */
   MultiVectorAllocator() : numMembers_(0) {}
   /** \brief . */
-  typedef Teuchos::RefCountPtr<MultiVectorBase<Scalar> >  ptr_t;         // required!
+  typedef Teuchos::RCP<MultiVectorBase<Scalar> >  ptr_t;         // required!
   /** \brief . */
-  MultiVectorAllocator( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, int numMembers )
+  MultiVectorAllocator( const Teuchos::RCP<const VectorSpaceBase<Scalar> > &vs, int numMembers )
     : vs_(vs), numMembers_(numMembers)
     {
 #ifdef TEUCHOS_DEBUG
@@ -55,7 +55,7 @@ public:
   /** \brief . */
   const ptr_t allocate() const { return vs_->createMembers(numMembers_); }  // required!
 private:
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >      vs_;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> >      vs_;
   int                                                       numMembers_;
 };
 

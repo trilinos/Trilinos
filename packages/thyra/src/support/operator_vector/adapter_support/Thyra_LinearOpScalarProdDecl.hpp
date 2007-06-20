@@ -53,16 +53,16 @@ public:
   LinearOpScalarProd();
 
   /** \brief . */
-  LinearOpScalarProd( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &op );
+  LinearOpScalarProd( const Teuchos::RCP<const LinearOpBase<Scalar> > &op );
 
   /** \brief . */
-  void initialize( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &op );
+  void initialize( const Teuchos::RCP<const LinearOpBase<Scalar> > &op );
 
   /** \brief . */
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >& op() const;
+  const Teuchos::RCP<const LinearOpBase<Scalar> >& op() const;
 
   /** \brief . */
-  void uninitialize( Teuchos::RefCountPtr<const LinearOpBase<Scalar> > *op = NULL );
+  void uninitialize( Teuchos::RCP<const LinearOpBase<Scalar> > *op = NULL );
 
   //@}
   
@@ -86,7 +86,7 @@ public:
 
 private:
 
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> >  op_;
+  Teuchos::RCP<const LinearOpBase<Scalar> >  op_;
 
 }; // end class LinearOpScalarProd
 
@@ -95,7 +95,7 @@ private:
 
 template<class Scalar>
 inline
-const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >& LinearOpScalarProd<Scalar>::op() const
+const Teuchos::RCP<const LinearOpBase<Scalar> >& LinearOpScalarProd<Scalar>::op() const
 {
   return op_;
 }

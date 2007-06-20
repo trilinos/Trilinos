@@ -93,7 +93,7 @@ class ReductTargetSerializer : public Teuchos::Serializer<index_type,ReductTarge
 public:
   /** \brief . */
   ReductTargetSerializer(
-    const Teuchos::RefCountPtr<const RTOpT<Scalar> > &op
+    const Teuchos::RCP<const RTOpT<Scalar> > &op
     );
   /** \name Public functions overridden from Teuchos::Serializer */
   //@{
@@ -107,7 +107,7 @@ public:
     ,char                       charBuffer[]
     ) const;
   /** \brief . */
-  Teuchos::RefCountPtr<ReductTarget> createObj() const;
+  Teuchos::RCP<ReductTarget> createObj() const;
   /** \brief . */
   void deserialize(
     const index_type       bytes
@@ -117,7 +117,7 @@ public:
     ) const;
   //@}
 private:
-  Teuchos::RefCountPtr<const RTOpT<Scalar> >   op_;
+  Teuchos::RCP<const RTOpT<Scalar> >   op_;
   int                                          num_values_;
   int                                          num_indexes_;
   int                                          num_chars_;
@@ -140,7 +140,7 @@ public:
   typedef Teuchos_Index Ordinal;
   /** \brief . */
   ReductTargetReductionOp(
-    const Teuchos::RefCountPtr<const RTOpT<Scalar> >  &op
+    const Teuchos::RCP<const RTOpT<Scalar> >  &op
     );
   /** \name Overridden from Teuchos::ReferenceTypeReductionOp */
   //@{
@@ -152,7 +152,7 @@ public:
     ) const;
   //@}
 private:
-  Teuchos::RefCountPtr<const RTOpT<Scalar> >  op_;
+  Teuchos::RCP<const RTOpT<Scalar> >  op_;
   // Not defined and not to be called!
   ReductTargetReductionOp();
   ReductTargetReductionOp<Scalar>(const ReductTargetReductionOp<Scalar>&);

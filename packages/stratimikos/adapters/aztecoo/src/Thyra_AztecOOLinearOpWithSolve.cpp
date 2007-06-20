@@ -61,8 +61,8 @@ Teuchos::ETransp convert( Thyra::ETransp trans_in )
 class SetAztecOStream {
 public:
   SetAztecOStream( 
-    const Teuchos::RefCountPtr<AztecOO> &aztecSolver,
-    const Teuchos::RefCountPtr<Teuchos::FancyOStream> &fancyOStream,
+    const Teuchos::RCP<AztecOO> &aztecSolver,
+    const Teuchos::RCP<Teuchos::FancyOStream> &fancyOStream,
     const Teuchos::EVerbosityLevel verbLevel
     )
     :aztecSolver_(aztecSolver.assert_not_null())
@@ -107,8 +107,8 @@ public:
       }
     }
 private:
-  Teuchos::RefCountPtr<AztecOO> aztecSolver_;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>  fancyOStream_;
+  Teuchos::RCP<AztecOO> aztecSolver_;
+  Teuchos::RCP<Teuchos::FancyOStream>  fancyOStream_;
   Teuchos::EVerbosityLevel verbLevel_;
   int outputFrequency_;
   SetAztecOStream(); // Not defined and not to be called!
@@ -144,14 +144,14 @@ AztecOOLinearOpWithSolve::AztecOOLinearOpWithSolve(
 
 
 void AztecOOLinearOpWithSolve::initialize(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >                 &fwdOp
-  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >          &fwdOpSrc
-  ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >          &prec
+  const Teuchos::RCP<const LinearOpBase<double> >                 &fwdOp
+  ,const Teuchos::RCP<const LinearOpSourceBase<double> >          &fwdOpSrc
+  ,const Teuchos::RCP<const PreconditionerBase<double> >          &prec
   ,const bool                                                             isExternalPrec
-  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >          &approxFwdOpSrc
-  ,const Teuchos::RefCountPtr<AztecOO>                                    &aztecFwdSolver
+  ,const Teuchos::RCP<const LinearOpSourceBase<double> >          &approxFwdOpSrc
+  ,const Teuchos::RCP<AztecOO>                                    &aztecFwdSolver
   ,const bool                                                             allowInexactFwdSolve
-  ,const Teuchos::RefCountPtr<AztecOO>                                    &aztecAdjSolver
+  ,const Teuchos::RCP<AztecOO>                                    &aztecAdjSolver
   ,const bool                                                             allowInexactAdjSolve
   ,const double                                                           aztecSolverScalar
   )
@@ -177,20 +177,20 @@ void AztecOOLinearOpWithSolve::initialize(
 }
 
 
-Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+Teuchos::RCP<const LinearOpSourceBase<double> >
 AztecOOLinearOpWithSolve::extract_fwdOpSrc()
 {
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+  Teuchos::RCP<const LinearOpSourceBase<double> >
     _fwdOpSrc = fwdOpSrc_;
   fwdOpSrc_ = Teuchos::null;
   return _fwdOpSrc;
 }
 
 
-Teuchos::RefCountPtr<const PreconditionerBase<double> >
+Teuchos::RCP<const PreconditionerBase<double> >
 AztecOOLinearOpWithSolve::extract_prec()
 {
-  Teuchos::RefCountPtr<const PreconditionerBase<double> >
+  Teuchos::RCP<const PreconditionerBase<double> >
     _prec = prec_;
   prec_ = Teuchos::null;
   return _prec;
@@ -203,10 +203,10 @@ bool AztecOOLinearOpWithSolve::isExternalPrec() const
 }
 
 
-Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+Teuchos::RCP<const LinearOpSourceBase<double> >
 AztecOOLinearOpWithSolve::extract_approxFwdOpSrc()
 {
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+  Teuchos::RCP<const LinearOpSourceBase<double> >
     _approxFwdOpSrc = approxFwdOpSrc_;
   approxFwdOpSrc_ = Teuchos::null;
   return _approxFwdOpSrc;
@@ -214,14 +214,14 @@ AztecOOLinearOpWithSolve::extract_approxFwdOpSrc()
 
 
 void AztecOOLinearOpWithSolve::uninitialize(
-  Teuchos::RefCountPtr<const LinearOpBase<double> > *fwdOp,
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > *fwdOpSrc,
-  Teuchos::RefCountPtr<const PreconditionerBase<double> > *prec,
+  Teuchos::RCP<const LinearOpBase<double> > *fwdOp,
+  Teuchos::RCP<const LinearOpSourceBase<double> > *fwdOpSrc,
+  Teuchos::RCP<const PreconditionerBase<double> > *prec,
   bool *isExternalPrec,
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > *approxFwdOpSrc,
-  Teuchos::RefCountPtr<AztecOO> *aztecFwdSolver,
+  Teuchos::RCP<const LinearOpSourceBase<double> > *approxFwdOpSrc,
+  Teuchos::RCP<AztecOO> *aztecFwdSolver,
   bool *allowInexactFwdSolve,
-  Teuchos::RefCountPtr<AztecOO> *aztecAdjSolver,
+  Teuchos::RCP<AztecOO> *aztecAdjSolver,
   bool *allowInexactAdjSolve,
   double *aztecSolverScalar
   )
@@ -253,21 +253,21 @@ void AztecOOLinearOpWithSolve::uninitialize(
 // Overridden from LinearOpBase
 
 
-Teuchos::RefCountPtr< const VectorSpaceBase<double> >
+Teuchos::RCP< const VectorSpaceBase<double> >
 AztecOOLinearOpWithSolve::range() const
 {
   return ( fwdOp_.get() ? fwdOp_->range() : Teuchos::null );
 }
 
 
-Teuchos::RefCountPtr< const VectorSpaceBase<double> >
+Teuchos::RCP< const VectorSpaceBase<double> >
 AztecOOLinearOpWithSolve::domain() const
 {
   return  ( fwdOp_.get() ? fwdOp_->domain() : Teuchos::null );
 }
 
 
-Teuchos::RefCountPtr<const LinearOpBase<double> >
+Teuchos::RCP<const LinearOpBase<double> >
 AztecOOLinearOpWithSolve::clone() const
 {
   return Teuchos::null; // Not supported yet but could be
@@ -452,7 +452,7 @@ void AztecOOLinearOpWithSolve::solve(
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>  out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream>  out = this->getOStream();
   Teuchos::EVerbosityLevel                     verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
@@ -474,7 +474,7 @@ void AztecOOLinearOpWithSolve::solve(
   //
   // Get the solver, operator, and preconditioner that we will use
   //
-  Teuchos::RefCountPtr<AztecOO>
+  Teuchos::RCP<AztecOO>
     aztecSolver = ( aztecOpTransp == NOTRANS ? aztecFwdSolver_  : aztecAdjSolver_ );
   const Epetra_Operator
     *aztecOp = aztecSolver->GetUserOperator();
@@ -499,8 +499,8 @@ void AztecOOLinearOpWithSolve::solve(
   //
   // Get Epetra_MultiVector views of B and X
   //
-  Teuchos::RefCountPtr<const Epetra_MultiVector> epetra_B;
-  Teuchos::RefCountPtr<Epetra_MultiVector> epetra_X;
+  Teuchos::RCP<const Epetra_MultiVector> epetra_B;
+  Teuchos::RCP<Epetra_MultiVector> epetra_X;
 
   const EpetraOperatorWrapper* opWrapper 
     = dynamic_cast<const EpetraOperatorWrapper*>(aztecOp);
@@ -548,8 +548,8 @@ void AztecOOLinearOpWithSolve::solve(
       }
     else
       {
-        RefCountPtr<VectorBase<double> > colX = X->col(j);
-        RefCountPtr<const VectorBase<double> > colB = B.col(j);
+        RCP<VectorBase<double> > colX = X->col(j);
+        RCP<const VectorBase<double> > colB = B.col(j);
         ConstVector<double> vB = colB;
         Vector<double> vX = colX;
         epetra_b_j = new Epetra_Vector(opRangeMap);

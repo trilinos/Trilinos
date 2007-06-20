@@ -3,7 +3,7 @@
 // This is very preliminary! Don't use unless you know what you 
 // are doing...
 //
-// This class stores a std::vector of RefCountPtr's to allocated
+// This class stores a std::vector of RCP's to allocated
 // Tpetra::Vector's. It overloads the (i, j) operator so that
 // one can easily access the j-th element of the i-th vector.
 // ==============================================================
@@ -49,7 +49,7 @@ namespace Tpetra {
 
       // Creates a shallow copy of the input set of vectors.
       MultiVector(const VectorSpace<OrdinalType, ScalarType>& vectorSpace, 
-                  std::vector<Teuchos::RefCountPtr<Tpetra::Vector<OrdinalType, ScalarType> > > list) :
+                  std::vector<Teuchos::RCP<Tpetra::Vector<OrdinalType, ScalarType> > > list) :
         vectorSpace_(vectorSpace),
         NumVectors_(list.size())
       {
@@ -59,7 +59,7 @@ namespace Tpetra {
 
         for (OrdinalType i = OrdinalZero_ ; i < NumVectors_ ; ++i)
         {
-          // copy RefCountPtr's from the list to this array.
+          // copy RCP's from the list to this array.
           array_[i] = list[i];
         }
       }
@@ -145,13 +145,13 @@ namespace Tpetra {
       }
 
       //! Returns a RCP pointer to the i-th vector.
-      Teuchos::RefCountPtr<Tpetra::Vector<OrdinalType, ScalarType> > GetRCP(const int i)
+      Teuchos::RCP<Tpetra::Vector<OrdinalType, ScalarType> > GetRCP(const int i)
       {
         return(array_[i]);
       }
 
       //! Returns a RCP pointer to the i-th vector (const version).
-      Teuchos::RefCountPtr<Tpetra::Vector<OrdinalType, ScalarType> const > GetRCP(const int i) const
+      Teuchos::RCP<Tpetra::Vector<OrdinalType, ScalarType> const > GetRCP(const int i) const
       {
         return(array_[i]);
       }
@@ -211,7 +211,7 @@ namespace Tpetra {
         ScalarOne_  = Teuchos::ScalarTraits<ScalarType>::one();
       }
 
-      std::vector<Teuchos::RefCountPtr<Vector<OrdinalType, ScalarType> > > array_;
+      std::vector<Teuchos::RCP<Vector<OrdinalType, ScalarType> > > array_;
       const VectorSpace<OrdinalType, ScalarType>& vectorSpace_;
       OrdinalType NumVectors_;
 

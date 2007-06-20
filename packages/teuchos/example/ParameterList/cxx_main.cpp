@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
   
   // For the "Solver" option, create a validator that will automatically
   // create documentation for this parameter but will also help in validation.
-  Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<int> >
+  Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
     solverValidator = Teuchos::rcp(
       new Teuchos::StringToIntegralParameterEntryValidator<int>(
         Teuchos::tuple<std::string>( "GMRES", "CG", "TFQMR" )
@@ -39,10 +39,10 @@ int main(int argc, char* argv[])
   /* Reference-counted pointers can also be passed through a Teuchos::ParameterList.
      To illustrate this we will use the Teuchos::Array class to create an array of 10 doubles
      representing an initial guess for a linear solver, whose memory is being managed by a 
-     Teuchos::RefCountPtr.
+     Teuchos::RCP.
    */
 
-  Teuchos::RefCountPtr<Teuchos::Array<double> > rcp_Array = 
+  Teuchos::RCP<Teuchos::Array<double> > rcp_Array = 
     Teuchos::rcp( new Teuchos::Array<double>( 10, 0.0 ) );
   
   My_List.set("Initial Guess", rcp_Array, "The initial guess as a RCP to an array object.");
@@ -118,8 +118,8 @@ int main(int argc, char* argv[])
      list, like the initial guess.
   */
   try {
-    Teuchos::RefCountPtr<Teuchos::Array<double> > init_guess = 
-      Teuchos::getParameter<Teuchos::RefCountPtr<Teuchos::Array<double> > >(My_List, "Initial Guess");
+    Teuchos::RCP<Teuchos::Array<double> > init_guess = 
+      Teuchos::getParameter<Teuchos::RCP<Teuchos::Array<double> > >(My_List, "Initial Guess");
   }
   catch ( std::exception& e) {
     cout << e.what() << endl;

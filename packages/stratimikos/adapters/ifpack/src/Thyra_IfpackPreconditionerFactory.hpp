@@ -72,17 +72,17 @@ public:
   /** \brief . */
   bool applyTransposeSupportsConj(EConj conj) const;
   /** \brief . */
-  Teuchos::RefCountPtr<PreconditionerBase<double> > createPrec() const;
+  Teuchos::RCP<PreconditionerBase<double> > createPrec() const;
   /** \brief . */
   void initializePrec(
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    &fwdOpSrc
+    const Teuchos::RCP<const LinearOpSourceBase<double> >    &fwdOpSrc
     ,PreconditionerBase<double>                                      *prec
     ,const ESupportSolveUse                                           supportSolveUse
     ) const;
   /** \brief . */
   void uninitializePrec(
     PreconditionerBase<double>                                *prec
-    ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >  *fwdOpSrc
+    ,Teuchos::RCP<const LinearOpSourceBase<double> >  *fwdOpSrc
     ,ESupportSolveUse                                         *supportSolveUse
     ) const;
 
@@ -92,15 +92,15 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
@@ -117,7 +117,7 @@ private:
   // ////////////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList>       paramList_;
+  Teuchos::RCP<Teuchos::ParameterList>       paramList_;
   ::Ifpack::EPrecType                                precType_;
   int                                                overlap_;
 

@@ -64,24 +64,24 @@ public:
 
   /** \brief . */
   void initialize(
-    const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &lows,
-    const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
-    const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
+    const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &lows,
+    const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
+    const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
     );
 
   /** \brief . */
   void initialize(
-    const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &lows,
-    const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
-    const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
+    const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &lows,
+    const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
+    const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
     );
   
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+  Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
   getNonconstLinearOpWithSolve();
   
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >
+  Teuchos::RCP<const LinearOpWithSolveBase<Scalar> >
   getLinearOpWithSolve() const;
 
   // 2007/05/24: rabartl: ToDo: Add a const version of the above function once
@@ -96,13 +96,13 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
 
   //@}
 
@@ -167,16 +167,16 @@ private:
   // Private data members
 
   CNLOWS lows_;
-  Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > multiVecRange_;
-  Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > multiVecDomain_;
+  Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > multiVecRange_;
+  Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > multiVecDomain_;
 
   // //////////////////////////////
   // Private member functions
 
   static void validateInitialize(
-    const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &lows,
-    const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
-    const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
+    const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &lows,
+    const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
+    const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
     );
   
 
@@ -188,7 +188,7 @@ private:
  * \relates DefaultMultiVectorLinearOpWithSolve
  */
 template<class Scalar>
-Teuchos::RefCountPtr<DefaultMultiVectorLinearOpWithSolve<Scalar> >
+Teuchos::RCP<DefaultMultiVectorLinearOpWithSolve<Scalar> >
 multiVectorLinearOpWithSolve()
 {
   return Teuchos::rcp(new DefaultMultiVectorLinearOpWithSolve<Scalar>());
@@ -200,14 +200,14 @@ multiVectorLinearOpWithSolve()
  * \relates DefaultMultiVectorLinearOpWithSolve
  */
 template<class Scalar>
-Teuchos::RefCountPtr<DefaultMultiVectorLinearOpWithSolve<Scalar> >
+Teuchos::RCP<DefaultMultiVectorLinearOpWithSolve<Scalar> >
 multiVectorLinearOpWithSolve(
-  const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &lows,
-  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
-  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
+  const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &lows,
+  const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
+  const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
   )
 {
-  Teuchos::RefCountPtr<DefaultMultiVectorLinearOpWithSolve<Scalar> >
+  Teuchos::RCP<DefaultMultiVectorLinearOpWithSolve<Scalar> >
     mvlows = Teuchos::rcp(new DefaultMultiVectorLinearOpWithSolve<Scalar>());
   mvlows->initialize(lows,multiVecRange,multiVecDomain);
   return mvlows;
@@ -219,14 +219,14 @@ multiVectorLinearOpWithSolve(
  * \relates DefaultMultiVectorLinearOpWithSolve
  */
 template<class Scalar>
-Teuchos::RefCountPtr<DefaultMultiVectorLinearOpWithSolve<Scalar> >
+Teuchos::RCP<DefaultMultiVectorLinearOpWithSolve<Scalar> >
 multiVectorLinearOpWithSolve(
-  const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &lows,
-  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
-  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
+  const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &lows,
+  const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
+  const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
   )
 {
-  Teuchos::RefCountPtr<DefaultMultiVectorLinearOpWithSolve<Scalar> >
+  Teuchos::RCP<DefaultMultiVectorLinearOpWithSolve<Scalar> >
     mvlows = Teuchos::rcp(new DefaultMultiVectorLinearOpWithSolve<Scalar>());
   mvlows->initialize(lows,multiVecRange,multiVecDomain);
   return mvlows;

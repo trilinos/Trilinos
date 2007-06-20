@@ -185,7 +185,7 @@ create a <tt>Thyra::EpetraLinearOp</tt> object that adapts it into a
 The implementation of the function
 <tt>Thyra::createTridiagEpetraLinearOp()</tt> is shown below:
 
-\skip Teuchos::RefCountPtr<Thyra::LinearOp<double> >
+\skip Teuchos::RCP<Thyra::LinearOp<double> >
 \until end createTridiagEpetraLinearOp
 
 \dontinclude sillyPowerMethod_epetra.cpp
@@ -291,7 +291,7 @@ matrix \f$A\f$ more or less well conditioned.
 The implementation of the function
 <tt>Thyra::createTridiagEpetraLinearOp()</tt> is shown below:
 
-\skip Teuchos::RefCountPtr<Thyra::LinearOp<double> >
+\skip Teuchos::RCP<Thyra::LinearOp<double> >
 \until end createTridiagEpetraLinearOp
 
 \dontinclude sillyCgSolve_epetra.cpp
@@ -372,13 +372,13 @@ This program then creates two different (parallel or serial) vector
 spaces where one is of type <tt>Thyra::EpetraVectorSpace</tt> and
 the other is some non-Epetra vector space:
 
-\skip RefCountPtr
+\skip RCP
 \until end create
 
 Given these vector spaces a couple %Epetra and non-Epetra vectors
 and multi-vectors are created:
 
-\skip RefCountPtr
+\skip RCP
 \until neV2
 
 Most of the operations performed in this testing program are fairly
@@ -484,7 +484,7 @@ This object is then tested in the line:
 Before the next set of tests we create some %Epetra and non-Epetra
 working vectors and mulit-vectors in the lines:
 
-\skip RefCountPtr
+\skip RCP
 \until neY
 
 In the next set of lines of code shows how different %Epetra and

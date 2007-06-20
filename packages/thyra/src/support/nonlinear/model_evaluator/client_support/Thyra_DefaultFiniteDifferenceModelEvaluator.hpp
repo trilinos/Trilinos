@@ -61,20 +61,20 @@ public:
 
   /** \brief . */
   DefaultFiniteDifferenceModelEvaluator(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                          &thyraModel
-    ,const Teuchos::RefCountPtr<Thyra::DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator
+    const Teuchos::RCP<ModelEvaluator<Scalar> >                          &thyraModel
+    ,const Teuchos::RCP<Thyra::DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator
     );
 
   /** \brief . */
   void initialize(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                          &thyraModel
-    ,const Teuchos::RefCountPtr<Thyra::DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator
+    const Teuchos::RCP<ModelEvaluator<Scalar> >                          &thyraModel
+    ,const Teuchos::RCP<Thyra::DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator
     );
 
   /** \brief . */
   void uninitialize(
-    Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                          *thyraModel
-    ,Teuchos::RefCountPtr<Thyra::DirectionalFiniteDiffCalculator<Scalar> > *direcFiniteDiffCalculator
+    Teuchos::RCP<ModelEvaluator<Scalar> >                          *thyraModel
+    ,Teuchos::RCP<Thyra::DirectionalFiniteDiffCalculator<Scalar> > *direcFiniteDiffCalculator
     );
 
   //@}
@@ -112,8 +112,8 @@ DefaultFiniteDifferenceModelEvaluator<Scalar>::DefaultFiniteDifferenceModelEvalu
 
 template<class Scalar>
 DefaultFiniteDifferenceModelEvaluator<Scalar>::DefaultFiniteDifferenceModelEvaluator(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                          &thyraModel
-  ,const Teuchos::RefCountPtr<Thyra::DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator
+  const Teuchos::RCP<ModelEvaluator<Scalar> >                          &thyraModel
+  ,const Teuchos::RCP<Thyra::DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator
   )
 {
   initialize(thyraModel,direcFiniteDiffCalculator);
@@ -121,8 +121,8 @@ DefaultFiniteDifferenceModelEvaluator<Scalar>::DefaultFiniteDifferenceModelEvalu
 
 template<class Scalar>
 void DefaultFiniteDifferenceModelEvaluator<Scalar>::initialize(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                          &thyraModel
-  ,const Teuchos::RefCountPtr<Thyra::DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator
+  const Teuchos::RCP<ModelEvaluator<Scalar> >                          &thyraModel
+  ,const Teuchos::RCP<Thyra::DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator
   )
 {
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
@@ -131,8 +131,8 @@ void DefaultFiniteDifferenceModelEvaluator<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultFiniteDifferenceModelEvaluator<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                          *thyraModel
-  ,Teuchos::RefCountPtr<Thyra::DirectionalFiniteDiffCalculator<Scalar> > *direcFiniteDiffCalculator
+  Teuchos::RCP<ModelEvaluator<Scalar> >                          *thyraModel
+  ,Teuchos::RCP<Thyra::DirectionalFiniteDiffCalculator<Scalar> > *direcFiniteDiffCalculator
   )
 {
   if(thyraModel) *thyraModel = this->getUnderlyingModel();
@@ -148,7 +148,7 @@ ModelEvaluatorBase::OutArgs<Scalar>
 DefaultFiniteDifferenceModelEvaluator<Scalar>::createOutArgs() const
 {
   typedef ModelEvaluatorBase MEB;
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   const MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
   const int Np = wrappedOutArgs.Np(), Ng = wrappedOutArgs.Ng();
@@ -173,7 +173,7 @@ void DefaultFiniteDifferenceModelEvaluator<Scalar>::evalModel(
   ) const
 {
   typedef ModelEvaluatorBase MEB;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
@@ -181,9 +181,9 @@ void DefaultFiniteDifferenceModelEvaluator<Scalar>::evalModel(
   typedef Teuchos::ScalarTraits<Scalar>  ST;
   typedef typename ST::magnitudeType ScalarMag;
 
-  typedef RefCountPtr<VectorBase<Scalar> >         V_ptr;
-  typedef RefCountPtr<const VectorBase<Scalar> >   CV_ptr;
-  typedef RefCountPtr<MultiVectorBase<Scalar> >    MV_ptr;
+  typedef RCP<VectorBase<Scalar> >         V_ptr;
+  typedef RCP<const VectorBase<Scalar> >   CV_ptr;
+  typedef RCP<MultiVectorBase<Scalar> >    MV_ptr;
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
     "Thyra::DefaultFiniteDifferenceModelEvaluator",inArgs,outArgs
@@ -193,7 +193,7 @@ void DefaultFiniteDifferenceModelEvaluator<Scalar>::evalModel(
   // Just do the g_0(p_0) case for now!
   //
 
-  const RefCountPtr<const VectorSpaceBase<Scalar> >
+  const RCP<const VectorSpaceBase<Scalar> >
     p_space = thyraModel->get_p_space(0),
     g_space = thyraModel->get_g_space(0);
 
@@ -262,7 +262,7 @@ void DefaultFiniteDifferenceModelEvaluator<Scalar>::evalModel(
 template<class Scalar>
 std::string DefaultFiniteDifferenceModelEvaluator<Scalar>::description() const
 {
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   std::ostringstream oss;
   oss << "Thyra::DefaultFiniteDifferenceModelEvaluator{";

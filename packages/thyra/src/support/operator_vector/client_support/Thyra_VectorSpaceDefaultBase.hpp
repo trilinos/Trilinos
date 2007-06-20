@@ -78,21 +78,21 @@ private:
 // Overridden protected functions from VectorSpaceBase
 
 template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> > 
+Teuchos::RCP<MultiVectorBase<Scalar> > 
 VectorSpaceDefaultBase<Scalar>::createMembers(int numMembers) const
 {
   return Teuchos::rcp(new DefaultColumnwiseMultiVector<Scalar> (Teuchos::rcp(this,false),this->smallVecSpcFcty()->createVecSpc(numMembers)));
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
+Teuchos::RCP<VectorBase<Scalar> >
 VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::SubVectorView<Scalar> &raw_v ) const
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( raw_v.subDim() != this->dim() );
 #endif
   // Create a vector
-  Teuchos::RefCountPtr<VectorBase<Scalar> > v = this->createMember();
+  Teuchos::RCP<VectorBase<Scalar> > v = this->createMember();
   // Copy initial values in raw_v into vector
   RTOpPack::SubVectorView<Scalar> sv;
   v->acquireDetachedView(Range1D(),&sv);
@@ -109,14 +109,14 @@ VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::SubVectorView<
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
+Teuchos::RCP<const VectorBase<Scalar> >
 VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::ConstSubVectorView<Scalar> &raw_v ) const
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( raw_v.subDim() != this->dim() );
 #endif
   // Create a vector
-  Teuchos::RefCountPtr<VectorBase<Scalar> > v = this->createMember();
+  Teuchos::RCP<VectorBase<Scalar> > v = this->createMember();
   // Copy initial values in raw_v into vector
   RTOpPack::SubVectorView<Scalar> sv;
   v->acquireDetachedView(Range1D(),&sv);
@@ -126,14 +126,14 @@ VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::ConstSubVector
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( raw_mv.subDim() != this->dim() );
 #endif
   // Create a multi-vector
-  Teuchos::RefCountPtr< MultiVectorBase<Scalar> > mv = this->createMembers(raw_mv.numSubCols());
+  Teuchos::RCP< MultiVectorBase<Scalar> > mv = this->createMembers(raw_mv.numSubCols());
   // Copy initial values in raw_mv into multi-vector
   RTOpPack::SubMultiVectorView<Scalar> smv;
   mv->acquireDetachedView(Range1D(),Range1D(),&smv);
@@ -150,14 +150,14 @@ VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::SubMultiVecto
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+Teuchos::RCP<const MultiVectorBase<Scalar> >
 VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( raw_mv.subDim() != this->dim() );
 #endif
   // Create a multi-vector
-  Teuchos::RefCountPtr< MultiVectorBase<Scalar> > mv = this->createMembers(raw_mv.numSubCols());
+  Teuchos::RCP< MultiVectorBase<Scalar> > mv = this->createMembers(raw_mv.numSubCols());
   // Copy values in raw_mv into multi-vector
   RTOpPack::SubMultiVectorView<Scalar> smv;
   mv->acquireDetachedView(Range1D(),Range1D(),&smv);

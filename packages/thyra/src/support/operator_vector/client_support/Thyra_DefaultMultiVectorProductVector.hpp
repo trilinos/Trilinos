@@ -49,8 +49,8 @@ DefaultMultiVectorProductVector<Scalar>::DefaultMultiVectorProductVector()
 
 template <class Scalar>
 void DefaultMultiVectorProductVector<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RefCountPtr<MultiVectorBase<Scalar> > &multiVec
+  const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace,
+  const Teuchos::RCP<MultiVectorBase<Scalar> > &multiVec
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -74,8 +74,8 @@ void DefaultMultiVectorProductVector<Scalar>::initialize(
 
 template <class Scalar>
 void DefaultMultiVectorProductVector<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > &multiVec
+  const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace,
+  const Teuchos::RCP<const MultiVectorBase<Scalar> > &multiVec
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -98,7 +98,7 @@ void DefaultMultiVectorProductVector<Scalar>::initialize(
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getNonconstMultiVector()
 {
   return multiVec_.getNonconstObj();
@@ -106,7 +106,7 @@ DefaultMultiVectorProductVector<Scalar>::getNonconstMultiVector()
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+Teuchos::RCP<const MultiVectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getMultiVector() const
 {
   return multiVec_.getConstObj();
@@ -145,11 +145,11 @@ void DefaultMultiVectorProductVector<Scalar>::describe(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   using Teuchos::describe;
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:
@@ -178,7 +178,7 @@ void DefaultMultiVectorProductVector<Scalar>::describe(
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
+Teuchos::RCP<VectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getNonconstVectorBlock(const int k)
 {
   TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
@@ -187,7 +187,7 @@ DefaultMultiVectorProductVector<Scalar>::getNonconstVectorBlock(const int k)
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
+Teuchos::RCP<const VectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getVectorBlock(const int k) const
 {
   TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
@@ -199,7 +199,7 @@ DefaultMultiVectorProductVector<Scalar>::getVectorBlock(const int k) const
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
+Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::productSpace() const
 {
   return productSpace_;
@@ -215,7 +215,7 @@ bool DefaultMultiVectorProductVector<Scalar>::blockIsConst(const int k) const
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getNonconstMultiVectorBlock(const int k)
 {
   return getNonconstVectorBlock(k);
@@ -223,7 +223,7 @@ DefaultMultiVectorProductVector<Scalar>::getNonconstMultiVectorBlock(const int k
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+Teuchos::RCP<const MultiVectorBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getMultiVectorBlock(const int k) const
 {
   return getVectorBlock(k);
@@ -234,7 +234,7 @@ DefaultMultiVectorProductVector<Scalar>::getMultiVectorBlock(const int k) const
 
 
 template <class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::space() const
 {
   return productSpace_;
@@ -311,7 +311,7 @@ void DefaultMultiVectorProductVector<Scalar>::setSubVector(
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<const DefaultProductVector<Scalar> >
+Teuchos::RCP<const DefaultProductVector<Scalar> >
 DefaultMultiVectorProductVector<Scalar>::getDefaultProductVector() const
 {
 
@@ -321,9 +321,9 @@ DefaultMultiVectorProductVector<Scalar>::getDefaultProductVector() const
   // Thyra::MultiVectorBase::hasDirectColumnVectorView() function and it
   // returns true.  Until then, this is the safe way to do this ...
 
-  using Teuchos::Array; using Teuchos::RefCountPtr;
+  using Teuchos::Array; using Teuchos::RCP;
 
-  Array<RefCountPtr<const VectorBase<Scalar> > > vecArray;
+  Array<RCP<const VectorBase<Scalar> > > vecArray;
   for ( int k = 0; k < numBlocks_; ++k) {
     vecArray.push_back(multiVec_.getConstObj()->col(k));
   }

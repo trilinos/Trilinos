@@ -50,16 +50,16 @@ all-local:
 #
 # Make sure to list all source files in one of the following categories.
 CORE_H = \
-	$(srcdir)/Teuchos_as.hpp \
 	$(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
 	$(srcdir)/Teuchos_Array.hpp \
-	$(srcdir)/Teuchos_ArrayRefCountPtr.hpp \
-	$(srcdir)/Teuchos_ArrayRefCountPtrDecl.hpp \
+	$(srcdir)/Teuchos_ArrayRCP.hpp \
+	$(srcdir)/Teuchos_ArrayRCPDecl.hpp \
 	$(srcdir)/Teuchos_Assert.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp \
 	$(srcdir)/Teuchos_BLAS_types.hpp \
 	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
+	$(srcdir)/Teuchos_CTimeMonitor.h \
 	$(srcdir)/Teuchos_Comm.hpp \
 	$(srcdir)/Teuchos_CommHelpers.hpp \
 	$(srcdir)/Teuchos_CommUtilities.hpp \
@@ -68,7 +68,6 @@ CORE_H = \
 	$(srcdir)/Teuchos_CompileTimeAssert.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
 	$(srcdir)/Teuchos_ConstNonconstObjectContainer.hpp \
-	$(srcdir)/Teuchos_CTimeMonitor.h \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_DefaultComm.hpp \
 	$(srcdir)/Teuchos_DefaultSerialComm.hpp \
@@ -81,9 +80,9 @@ CORE_H = \
 	$(srcdir)/Teuchos_GlobalMPISession.hpp \
 	$(srcdir)/Teuchos_Handle.hpp \
 	$(srcdir)/Teuchos_Handleable.hpp \
-	$(srcdir)/Teuchos_LabeledObject.hpp \
 	$(srcdir)/Teuchos_LAPACK.hpp \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
+	$(srcdir)/Teuchos_LabeledObject.hpp \
 	$(srcdir)/Teuchos_MPIComm.hpp \
 	$(srcdir)/Teuchos_MPIContainerComm.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
@@ -103,14 +102,16 @@ CORE_H = \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
+	$(srcdir)/Teuchos_RCP.hpp \
+	$(srcdir)/Teuchos_RCPDecl.hpp \
+	$(srcdir)/Teuchos_RCPBoostSharedPtrConversions.hpp \
+	$(srcdir)/Teuchos_RCPBoostSharedPtrConversionsDecl.hpp \
 	$(srcdir)/Teuchos_Range1D.hpp \
 	$(srcdir)/Teuchos_RawMPITraits.hpp \
 	$(srcdir)/Teuchos_ReductionOp.hpp \
 	$(srcdir)/Teuchos_ReductionOp.hpp \
 	$(srcdir)/Teuchos_ReductionOpHelpers.hpp \
 	$(srcdir)/Teuchos_RefCountPtr.hpp \
-	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversions.hpp \
-	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversionsDecl.hpp \
 	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
 	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
@@ -136,26 +137,25 @@ CORE_H = \
 	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.hpp \
 	$(srcdir)/Teuchos_VerbosityLevel.hpp \
 	$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.hpp \
+	$(srcdir)/Teuchos_Workspace.hpp \
 	$(srcdir)/Teuchos_any.hpp \
 	$(srcdir)/Teuchos_arrayArg.hpp \
+	$(srcdir)/Teuchos_as.hpp \
 	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
 	$(srcdir)/Teuchos_dyn_cast.hpp \
 	$(srcdir)/Teuchos_exit.h \
 	$(srcdir)/Teuchos_getConst.hpp \
 	$(srcdir)/Teuchos_implicit_cast.hpp \
 	$(srcdir)/Teuchos_map.hpp \
-	$(srcdir)/Teuchos_oblackholestream.hpp \
-	$(srcdir)/Teuchos_Workspace.hpp
+	$(srcdir)/Teuchos_oblackholestream.hpp
 
 CORE = \
 	$(srcdir)/Teuchos_BLAS.cpp \
+	$(srcdir)/Teuchos_CTimeMonitor.cpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.cpp \
 	$(srcdir)/Teuchos_CompObject.cpp \
-	$(srcdir)/Teuchos_CTimeMonitor.cpp \
 	$(srcdir)/Teuchos_Describable.cpp \
-	$(srcdir)/Teuchos_dyn_cast.cpp \
 	$(srcdir)/Teuchos_ErrorPolling.cpp \
-	$(srcdir)/Teuchos_exit.cpp \
 	$(srcdir)/Teuchos_FloatingPointTrap.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
@@ -167,8 +167,8 @@ CORE = \
 	$(srcdir)/Teuchos_ParameterList.cpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.cpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.cpp \
+	$(srcdir)/Teuchos_RCP.cpp \
 	$(srcdir)/Teuchos_Range1D.cpp \
-	$(srcdir)/Teuchos_RefCountPtr.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
 	$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp \
 	$(srcdir)/Teuchos_StringToIntMap.cpp \
@@ -182,7 +182,9 @@ CORE = \
 	$(srcdir)/Teuchos_VerboseObject.cpp \
 	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.cpp \
 	$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp \
-	$(srcdir)/Teuchos_Workspace.cpp
+	$(srcdir)/Teuchos_Workspace.cpp \
+	$(srcdir)/Teuchos_dyn_cast.cpp \
+	$(srcdir)/Teuchos_exit.cpp
 
 EXTRA_EXTENDED_H = \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.hpp \

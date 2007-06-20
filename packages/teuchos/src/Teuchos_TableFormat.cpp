@@ -84,8 +84,8 @@ int TableFormat
 
 
 
-void TableFormat::writeRow(RefCountPtr<std::ostream>& out,
-                           const Array<RefCountPtr<TableEntry> >& entries) const
+void TableFormat::writeRow(RCP<std::ostream>& out,
+                           const Array<RCP<TableEntry> >& entries) const
 {
   TEST_FOR_EXCEPT(entries.size() != columnWidths_.size() 
                   && columnWidths_.size() != 0);
@@ -101,11 +101,11 @@ void TableFormat::writeRow(RefCountPtr<std::ostream>& out,
 }
 
 
-void TableFormat::writeRow(RefCountPtr<std::ostream>& out,
+void TableFormat::writeRow(RCP<std::ostream>& out,
                            int rowIndex,
                            const Array<TableColumn>& columns) const
 {
-  Array<RefCountPtr<TableEntry> > entries(columns.size());
+  Array<RCP<TableEntry> > entries(columns.size());
   for (unsigned int i=0; i<columns.size(); i++)
     {
       entries[i] = columns[i].entry(rowIndex);
@@ -115,7 +115,7 @@ void TableFormat::writeRow(RefCountPtr<std::ostream>& out,
 }
 
 
-void TableFormat::writeWholeTable(RefCountPtr<std::ostream>& out,
+void TableFormat::writeWholeTable(RCP<std::ostream>& out,
                                   const string& header,
                                   const Array<string>& columnNames,
                                   const Array<TableColumn>& columns) const

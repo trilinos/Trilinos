@@ -70,13 +70,13 @@ public:
   /** \name Overridden public member functions from MultiVectorBase */
   //@{
   /** \brief . */
-  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const Range1D& colRng ) const;
+  Teuchos::RCP<const MultiVectorBase<Scalar> > subView( const Range1D& colRng ) const;
   /** \brief . */
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const Range1D& colRng );
+  Teuchos::RCP<MultiVectorBase<Scalar> > subView( const Range1D& colRng );
   /** \brief . */
-  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const;
+  Teuchos::RCP<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const;
   /** \brief . */
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] );
+  Teuchos::RCP<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] );
   /** \brief .
    *
    * This implementation calls <tt>VectorBase::applyOp()</tt> on each column
@@ -176,7 +176,7 @@ public:
    * something more sophisticated (i.e. lazy evaluation) but in general, this
    * is not needed.
    */
-  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > clone_mv() const;
+  virtual Teuchos::RCP<MultiVectorBase<Scalar> > clone_mv() const;
   //@}
 
 };

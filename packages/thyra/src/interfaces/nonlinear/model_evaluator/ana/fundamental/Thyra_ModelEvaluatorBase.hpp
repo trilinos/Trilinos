@@ -99,25 +99,25 @@ public:
     /** \brief Determines if an input argument is supported or not.  */
     bool supports(EInArgsMembers arg) const;
     /** \brief Precondition: <tt>supports(IN_ARG_x_dot)==true</tt>.  */
-    void set_x_dot( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x_dot );
+    void set_x_dot( const Teuchos::RCP<const VectorBase<Scalar> > &x_dot );
     /** \brief Precondition: <tt>supports(IN_ARG_x_dot)==true</tt>.  */
-    Teuchos::RefCountPtr<const VectorBase<Scalar> > get_x_dot() const;
+    Teuchos::RCP<const VectorBase<Scalar> > get_x_dot() const;
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    void set_x( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x );
+    void set_x( const Teuchos::RCP<const VectorBase<Scalar> > &x );
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    Teuchos::RefCountPtr<const VectorBase<Scalar> > get_x() const;
+    Teuchos::RCP<const VectorBase<Scalar> > get_x() const;
     /** \brief Precondition: <tt>supports(IN_ARG_x_poly)==true</tt>.  */
-    void set_x_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_poly );
+    void set_x_poly( const Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_poly );
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
-    Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_poly() const;
+    Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_poly() const;
     /** \brief Precondition: <tt>supports(IN_ARG_x_dot_poly)==true</tt>.  */
-    void set_x_dot_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly );
+    void set_x_dot_poly( const Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly );
     /** \brief Precondition: <tt>supports(IN_ARG_x_dot_poly)==true</tt>.  */
-    Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_dot_poly() const;
+    Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_dot_poly() const;
     /** \brief Set <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
-    void set_p( int l, const Teuchos::RefCountPtr<const VectorBase<Scalar> > &p_l );
+    void set_p( int l, const Teuchos::RCP<const VectorBase<Scalar> > &p_l );
     /** \brief Get <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
-    Teuchos::RefCountPtr<const VectorBase<Scalar> > get_p(int l) const;
+    Teuchos::RCP<const VectorBase<Scalar> > get_p(int l) const;
     /** \brief Precondition: <tt>supports(IN_ARG_t)==true</tt>.  */
     void set_t( ScalarMag t );
     /** \brief .Precondition: <tt>supports(IN_ARG_t)==true</tt>  */
@@ -153,13 +153,13 @@ public:
     void _setUnsupportsAndRelated( EInArgsMembers arg );
   private:
     // types
-    typedef Teuchos::Array<Teuchos::RefCountPtr<const VectorBase<Scalar> > > p_t;
+    typedef Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > p_t;
     // data
     std::string                                      modelEvalDescription_;
-    Teuchos::RefCountPtr<const VectorBase<Scalar> >  x_dot_;
-    Teuchos::RefCountPtr<const VectorBase<Scalar> >  x_;
-    Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > x_dot_poly_;
-    Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > x_poly_;
+    Teuchos::RCP<const VectorBase<Scalar> >  x_dot_;
+    Teuchos::RCP<const VectorBase<Scalar> >  x_;
+    Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > x_dot_poly_;
+    Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > x_poly_;
     p_t                                              p_;
     ScalarMag                                        t_;
     Scalar                                           alpha_;
@@ -276,7 +276,7 @@ public:
     DerivativeMultiVector() {}
     /** \brief . */
     DerivativeMultiVector(
-      const Teuchos::RefCountPtr<MultiVectorBase<Scalar> >  &mv
+      const Teuchos::RCP<MultiVectorBase<Scalar> >  &mv
       ,const EDerivativeMultiVectorOrientation              orientation = DERIV_MV_BY_COL
       ) : mv_(mv.assert_not_null()), orientation_(orientation) {}
     /** \brief . */
@@ -286,7 +286,7 @@ public:
     const DerivativeMultiVector<Scalar>& assert_not_null() const
       { mv_.assert_not_null(); return *this; }
     /** \brief . */
-    Teuchos::RefCountPtr<MultiVectorBase<Scalar> > getMultiVector() const
+    Teuchos::RCP<MultiVectorBase<Scalar> > getMultiVector() const
       { return mv_; }
     /** \brief . */
     EDerivativeMultiVectorOrientation getOrientation() const
@@ -296,7 +296,7 @@ public:
       Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel
       );
   private:
-    Teuchos::RefCountPtr<MultiVectorBase<Scalar> > mv_;
+    Teuchos::RCP<MultiVectorBase<Scalar> > mv_;
     EDerivativeMultiVectorOrientation orientation_;
   };
 
@@ -309,11 +309,11 @@ public:
     /** \brief . */
     Derivative() {}
     /** \brief . */
-    Derivative( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &lo )
+    Derivative( const Teuchos::RCP<LinearOpBase<Scalar> > &lo )
       : lo_(lo.assert_not_null()) {}
     /** \brief . */
     Derivative(
-      const Teuchos::RefCountPtr<MultiVectorBase<Scalar> > &mv,
+      const Teuchos::RCP<MultiVectorBase<Scalar> > &mv,
       const EDerivativeMultiVectorOrientation orientation = DERIV_MV_BY_COL
       ) : dmv_(mv,orientation) {}
     /** \brief . */
@@ -326,10 +326,10 @@ public:
     const Derivative<Scalar>& assert_not_null() const
       { dmv_.assert_not_null(); lo_.assert_not_null(); return *this; }
     /** \brief . */
-    Teuchos::RefCountPtr<LinearOpBase<Scalar> > getLinearOp() const
+    Teuchos::RCP<LinearOpBase<Scalar> > getLinearOp() const
       { return lo_; }
     /** \brief . */
-    Teuchos::RefCountPtr<MultiVectorBase<Scalar> > getMultiVector() const
+    Teuchos::RCP<MultiVectorBase<Scalar> > getMultiVector() const
       { return dmv_.getMultiVector(); }
     /** \brief . */
     EDerivativeMultiVectorOrientation getMultiVectorOrientation() const
@@ -362,7 +362,7 @@ public:
         }
       }
   private:
-    Teuchos::RefCountPtr<LinearOpBase<Scalar> > lo_;
+    Teuchos::RCP<LinearOpBase<Scalar> > lo_;
     DerivativeMultiVector<Scalar> dmv_;
   };
 
@@ -434,21 +434,21 @@ public:
      * && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp arg, int j, int l) const;
     /** \brief Precondition: <tt>supports(OUT_ARG_f)==true</tt>.  */
-    void set_f( const Teuchos::RefCountPtr<VectorBase<Scalar> > &f );
+    void set_f( const Teuchos::RCP<VectorBase<Scalar> > &f );
     /** \brief Precondition: <tt>supports(OUT_ARG_f)==true</tt>.  */
-    Teuchos::RefCountPtr<VectorBase<Scalar> > get_f() const;
+    Teuchos::RCP<VectorBase<Scalar> > get_f() const;
     /** \brief Precondition: <tt>supports(OUT_ARG_g)==true</tt>.  */
-    void set_g( int j, const Teuchos::RefCountPtr<VectorBase<Scalar> > &g_j );
+    void set_g( int j, const Teuchos::RCP<VectorBase<Scalar> > &g_j );
     /** \brief Precondition: <tt>supports(OUT_ARG_g)==true</tt>..  */
-    Teuchos::RefCountPtr<VectorBase<Scalar> > get_g(int j) const;
+    Teuchos::RCP<VectorBase<Scalar> > get_g(int j) const;
     /** \brief Precondition: <tt>supports(OUT_ARG_W)==true</tt>.  */
-    void set_W( const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &W );
+    void set_W( const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &W );
     /** \brief Precondition: <tt>supports(OUT_ARG_W)==true</tt>.  */
-    Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > get_W() const;
+    Teuchos::RCP<LinearOpWithSolveBase<Scalar> > get_W() const;
     /** \brief Precondition: <tt>supports(OUT_ARG_W_op)==true</tt>.  */
-    void set_W_op( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &W_op );
+    void set_W_op( const Teuchos::RCP<LinearOpBase<Scalar> > &W_op );
     /** \brief Precondition: <tt>supports(OUT_ARG_W_op)==true</tt>.  */
-    Teuchos::RefCountPtr<LinearOpBase<Scalar> > get_W_op() const;
+    Teuchos::RCP<LinearOpBase<Scalar> > get_W_op() const;
     /** \brief Return the known properties of <tt>W</tt> (precondition:
      * <tt>supports(OUT_ARG_f)==true</tt>). */
     DerivativeProperties get_W_properties() const;
@@ -474,9 +474,9 @@ public:
      * <tt>supports(OUT_ARG_DgDp,j,l)==true</tt>). */
     DerivativeProperties get_DgDp_properties(int j, int l) const;
     /** \brief Precondition: <tt>supports(OUT_ARG_f_poly)==true</tt>.  */
-    void set_f_poly( const Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > > &f_poly );
+    void set_f_poly( const Teuchos::RCP<Teuchos::Polynomial< VectorBase<Scalar> > > &f_poly );
     /** \brief Precondition: <tt>supports(OUT_ARG_f_poly)==true</tt>.  */
-    Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > > get_f_poly() const;
+    Teuchos::RCP<Teuchos::Polynomial< VectorBase<Scalar> > > get_f_poly() const;
     /** \brief Set all arguments fron <tt>outArgs</tt> into <tt>*this</tt>.
      *
      * If <tt>ignoreUnsupported==true</tt>, then arguments in <tt>outArgs</tt>
@@ -537,7 +537,7 @@ public:
     void _setUnsupportsAndRelated( EOutArgsMembers arg );
   private:
     // types
-    typedef Teuchos::Array<Teuchos::RefCountPtr<VectorBase<Scalar> > >     g_t;
+    typedef Teuchos::Array<Teuchos::RCP<VectorBase<Scalar> > >     g_t;
     typedef Teuchos::Array<Derivative<Scalar> >                            deriv_t;
     typedef Teuchos::Array<DerivativeProperties>                           deriv_properties_t;
     typedef Teuchos::Array<DerivativeSupport>                              supports_t;
@@ -547,10 +547,10 @@ public:
     supports_t                                            supports_DfDp_;   // Np
     supports_t                                            supports_DgDx_;   // Ng
     supports_t                                            supports_DgDp_;   // Ng x Np
-    Teuchos::RefCountPtr<VectorBase<Scalar> >             f_;
+    Teuchos::RCP<VectorBase<Scalar> >             f_;
     g_t                                                   g_;               // Ng
-    Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >  W_;
-    Teuchos::RefCountPtr<LinearOpBase<Scalar> >           W_op_;
+    Teuchos::RCP<LinearOpWithSolveBase<Scalar> >  W_;
+    Teuchos::RCP<LinearOpBase<Scalar> >           W_op_;
     DerivativeProperties                                  W_properties_;
     deriv_t                                               DfDp_;            // Np
     deriv_properties_t                                    DfDp_properties_; // Np
@@ -558,7 +558,7 @@ public:
     deriv_properties_t                                    DgDx_properties_; // Ng
     deriv_t                                               DgDp_;            // Ng x Np
     deriv_properties_t                                    DgDp_properties_; // Ng x Np
-    Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > > f_poly_;
+    Teuchos::RCP<Teuchos::Polynomial< VectorBase<Scalar> > > f_poly_;
     mutable bool                                          isFailed_;
     // functions
     void assert_supports(EOutArgsMembers arg) const;
@@ -734,9 +734,9 @@ namespace ModelEvaluatorHelperPack {
 
 template<class Scalar>
 inline
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 condCloneVec(
-  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &vec,
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &vec,
   bool cloneObject
   )
 {
@@ -781,47 +781,47 @@ bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x_dot )
+void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot( const Teuchos::RCP<const VectorBase<Scalar> > &x_dot )
 { assert_supports(IN_ARG_x_dot); x_dot_ = x_dot; }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
+Teuchos::RCP<const VectorBase<Scalar> >
 ModelEvaluatorBase::InArgs<Scalar>::get_x_dot() const
 { assert_supports(IN_ARG_x_dot); return x_dot_; }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_x( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &x )
+void ModelEvaluatorBase::InArgs<Scalar>::set_x( const Teuchos::RCP<const VectorBase<Scalar> > &x )
 { assert_supports(IN_ARG_x); x_ = x; }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
+Teuchos::RCP<const VectorBase<Scalar> >
 ModelEvaluatorBase::InArgs<Scalar>::get_x() const
 { assert_supports(IN_ARG_x); return x_; }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly )
+void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot_poly( const Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly )
 { assert_supports(IN_ARG_x_dot_poly); x_dot_poly_ = x_dot_poly; }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > >
+Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > >
 ModelEvaluatorBase::InArgs<Scalar>::get_x_dot_poly() const
 { assert_supports(IN_ARG_x_dot_poly); return x_dot_poly_; }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_x_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_poly )
+void ModelEvaluatorBase::InArgs<Scalar>::set_x_poly( const Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_poly )
 { assert_supports(IN_ARG_x_poly); x_poly_ = x_poly; }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > >
+Teuchos::RCP<const Teuchos::Polynomial< VectorBase<Scalar> > >
 ModelEvaluatorBase::InArgs<Scalar>::get_x_poly() const
 { assert_supports(IN_ARG_x_poly); return x_poly_; }
 
 template<class Scalar>
-void ModelEvaluatorBase::InArgs<Scalar>::set_p( int l, const Teuchos::RefCountPtr<const VectorBase<Scalar> > &p_l )
+void ModelEvaluatorBase::InArgs<Scalar>::set_p( int l, const Teuchos::RCP<const VectorBase<Scalar> > &p_l )
 { assert_l(l); p_[l] = p_l; }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
+Teuchos::RCP<const VectorBase<Scalar> >
 ModelEvaluatorBase::InArgs<Scalar>::get_p(int l) const
 { assert_l(l); return p_[l]; }
 
@@ -920,10 +920,10 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Teuchos::OSTab;
   using Teuchos::describe;
-  typedef Teuchos::RefCountPtr<const VectorBase<Scalar> > CV_ptr;
+  typedef Teuchos::RCP<const VectorBase<Scalar> > CV_ptr;
   if(verbLevel == Teuchos::VERB_NONE)
     return;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::rcp(&out_arg,false);
   OSTab tab(out);
   *out <<"Thyra::ModelEvaluatorBase::InArgs<"<<ST::name()<<">:\n";
@@ -1129,14 +1129,14 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsDgDp arg, int j, int l) co
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_f( const Teuchos::RefCountPtr<VectorBase<Scalar> > &f )
+void ModelEvaluatorBase::OutArgs<Scalar>::set_f( const Teuchos::RCP<VectorBase<Scalar> > &f )
 {
   assert_supports(OUT_ARG_f);
   f_ = f;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
+Teuchos::RCP<VectorBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_f() const
 {
   assert_supports(OUT_ARG_f);
@@ -1144,14 +1144,14 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_f() const
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_g( int j, const Teuchos::RefCountPtr<VectorBase<Scalar> > &g_j )
+void ModelEvaluatorBase::OutArgs<Scalar>::set_g( int j, const Teuchos::RCP<VectorBase<Scalar> > &g_j )
 {
   assert_j(j);
   g_[j] = g_j;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
+Teuchos::RCP<VectorBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_g(int j) const
 { 
   assert_j(j);
@@ -1159,14 +1159,14 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_g(int j) const
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_W( const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &W )
+void ModelEvaluatorBase::OutArgs<Scalar>::set_W( const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &W )
 {
   assert_supports(OUT_ARG_W);
   W_ = W;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_W() const
 {
   assert_supports(OUT_ARG_W);
@@ -1174,14 +1174,14 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_W() const
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_W_op( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &W_op )
+void ModelEvaluatorBase::OutArgs<Scalar>::set_W_op( const Teuchos::RCP<LinearOpBase<Scalar> > &W_op )
 {
   assert_supports(OUT_ARG_W_op);
   W_op_ = W_op;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_W_op() const
 {
   assert_supports(OUT_ARG_W_op);
@@ -1265,11 +1265,11 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_DgDp_properties(int j, int l) const
 }
 
 template<class Scalar>
-void ModelEvaluatorBase::OutArgs<Scalar>::set_f_poly( const Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > > &f_poly )
+void ModelEvaluatorBase::OutArgs<Scalar>::set_f_poly( const Teuchos::RCP<Teuchos::Polynomial< VectorBase<Scalar> > > &f_poly )
 { f_poly_ = f_poly; }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > >
+Teuchos::RCP<Teuchos::Polynomial< VectorBase<Scalar> > >
 ModelEvaluatorBase::OutArgs<Scalar>::get_f_poly() const
 { return f_poly_; }
 
@@ -1385,12 +1385,12 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
   using Teuchos::OSTab;
   using Teuchos::describe;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef Teuchos::RefCountPtr<const VectorBase<Scalar> > CV_ptr;
-  typedef Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > CLOWS_ptr;
+  typedef Teuchos::RCP<const VectorBase<Scalar> > CV_ptr;
+  typedef Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > CLOWS_ptr;
   typedef ModelEvaluatorBase MEB;
   if(verbLevel == Teuchos::VERB_NONE)
     return;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::rcp(&out_arg,false);
   OSTab tab(out);
   *out <<"Thyra::ModelEvaluatorBase::OutArgs<"<<ST::name()<<">:\n";

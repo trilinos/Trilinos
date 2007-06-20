@@ -273,12 +273,12 @@ subclasses, may need to be templated on a local index (ordinal) type.
 
 All of the code in the %Thyra and related packages almost exclusively use the
 <tt>%Teuchos</tt> smart reference counted pointer class
-<tt>Teuchos::RefCountPtr</tt> to handle dynamically allocated memory with
+<tt>Teuchos::RCP</tt> to handle dynamically allocated memory with
 object-oriented programming.  %Thyra also rigorously uses the idioms described
 in <a
 href="http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf">this
 report</a> for passing object to and from functions that involve
-<tt>Teuchos::RefCountPtr</tt> .
+<tt>Teuchos::RCP</tt> .
 
 <li><b>Error (exception) handling</b>
 
@@ -308,7 +308,7 @@ The %Thyra code described here is dependent on the following Trilinos packages:
 
 <ul>
 <li><b><a href="../../../teuchos/doc/html/index.html">teuchos</a></b>: This
-package supplies basic utility classes such as <tt>Teuchos::RefCountPtr</tt>
+package supplies basic utility classes such as <tt>Teuchos::RCP</tt>
 and <tt>Teuchos::BLAS</tt> on which %Thyra software depends.
 <li><b><a href="../../../rtop/doc/html/index.html">rtop</a></b>: This package
 supplies the basic interfaces for vector reduction/transformation operators as
@@ -433,11 +433,11 @@ compiled for thyra.
 
 <li><b><a
 href="http://software.sandia.gov/trilinos/RefCountPtrBeginnersGuideSAND.pdf">
-Teuchos::RefCountPtr Beginner's Guide : An Introduction to the
+Teuchos::RCP Beginner's Guide : An Introduction to the
 Trilinos Smart Reference-Counted Pointer Class for (Almost) Automatic
 Dynamic Memory Management in C++ </a></b>
 
-This paper describes the basics of <tt>Teuchos::RefCountPtr</tt> and
+This paper describes the basics of <tt>Teuchos::RCP</tt> and
 outlines a convention for passing objects to and from functions that
 all of the code in %Thyra adheres to.
 

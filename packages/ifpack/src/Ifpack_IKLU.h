@@ -38,6 +38,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Time.h"
+#include "Teuchos_RefCountPtr.hpp"
 
 class Epetra_RowMatrix;
 class Epetra_SerialComm;
@@ -47,8 +48,6 @@ class Epetra_MultiVector;
 
 namespace Teuchos {
   class ParameterList;
-  template<class T>
-  class RefCountPtr;  
 }
 
 //! Ifpack_IKLU: A class for constructing and using an incomplete Cholesky factorization of a given Epetra_RowMatrix.

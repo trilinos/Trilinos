@@ -261,31 +261,31 @@ public:
    *           this hook is exposed to clients.
    */
   void initialize(
-    const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
-    const Teuchos::RefCountPtr<StepperBase<Scalar> > &stateStepper,
-    const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
-    const Teuchos::RefCountPtr<StepperBase<Scalar> > &sensStepper = Teuchos::null,
-    const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver = Teuchos::null
+    const Teuchos::RCP<StepperBase<Scalar> > &stateStepper,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
+    const Teuchos::RCP<StepperBase<Scalar> > &sensStepper = Teuchos::null,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver = Teuchos::null
     );
 
   /** \brief Return the state model that was passed into
    * <tt>initialize()</tt>.
    */
-  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
   getStateModel() const;
 
   /** \brief Return the forward sensitivity model evaluator object that got
    * created internally when <tt>initialize()</tt> was called.
    */
-  Teuchos::RefCountPtr<const ForwardSensitivityModelEvaluator<Scalar> >
+  Teuchos::RCP<const ForwardSensitivityModelEvaluator<Scalar> >
   getFwdSensModel() const;
 
   /** \brief Return the state and forward sensitivity model evaluator object
    * that got created internally when <tt>initialize()</tt> was called.
    */
-  Teuchos::RefCountPtr<const StateAndForwardSensitivityModelEvaluator<Scalar> >
+  Teuchos::RCP<const StateAndForwardSensitivityModelEvaluator<Scalar> >
   getStateAndFwdSensModel() const;
 
   //@}
@@ -294,15 +294,15 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
@@ -314,7 +314,7 @@ public:
 
   /** \brief Throws exception. */
   void setModel(
-    const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
     );
 
   /** \brief Returns the state + forward sensitivity model.
@@ -323,7 +323,7 @@ public:
    * or define a W object.  It is just used for getting the spaces and for
    * creating an InArgs object for setting the initial condition.
    */
-  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
   getModel() const;
 
   // RAB: ToDo: 2007/05/15: I need to talk with Todd about potentially
@@ -368,14 +368,14 @@ public:
    * casting is required to get at the <tt>ProductVectorSapceBase</tt> and
    * <tt>ProductVectorBase</tt> intefaces.
    */
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
   get_x_space() const;
 
   /** \brief . */
   bool setPoints(
     const std::vector<Scalar>& time_vec,
-    const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec,
-    const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+    const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
+    const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
     const std::vector<ScalarMag> & accuracy_vec
     );
 
@@ -391,8 +391,8 @@ public:
   /** \brief . */
   bool getPoints(
     const std::vector<Scalar>& time_vec,
-    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec,
-    std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
     std::vector<ScalarMag>* accuracy_vec
     ) const;
 
@@ -412,16 +412,16 @@ private:
   // /////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > stateModel_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > stateModel_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> stateBasePoint_;
-  Teuchos::RefCountPtr<StepperBase<Scalar> > stateStepper_;
-  Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > stateTimeStepSolver_;
-  Teuchos::RefCountPtr<StepperBase<Scalar> > sensStepper_;
-  Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > sensTimeStepSolver_;
+  Teuchos::RCP<StepperBase<Scalar> > stateStepper_;
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > stateTimeStepSolver_;
+  Teuchos::RCP<StepperBase<Scalar> > sensStepper_;
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > sensTimeStepSolver_;
 
   bool isSingleResidualStepper_;
-  Teuchos::RefCountPtr<ForwardSensitivityModelEvaluator<Scalar> > sensModel_;
-  Teuchos::RefCountPtr<StateAndForwardSensitivityModelEvaluator<Scalar> > stateAndSensModel_;
+  Teuchos::RCP<ForwardSensitivityModelEvaluator<Scalar> > sensModel_;
+  Teuchos::RCP<StateAndForwardSensitivityModelEvaluator<Scalar> > stateAndSensModel_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> stateBasePoint_t_;
 
   Scalar t_;
@@ -437,18 +437,18 @@ private:
  */
 template<class Scalar> 
 inline
-Teuchos::RefCountPtr<ForwardSensitivityStepper<Scalar> >
+Teuchos::RCP<ForwardSensitivityStepper<Scalar> >
 forwardSensitivityStepper(
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
   const int p_index,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
-  const Teuchos::RefCountPtr<StepperBase<Scalar> > &stateStepper,
-  const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
-  const Teuchos::RefCountPtr<StepperBase<Scalar> > &sensStepper = Teuchos::null,
-  const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver = Teuchos::null
+  const Teuchos::RCP<StepperBase<Scalar> > &stateStepper,
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
+  const Teuchos::RCP<StepperBase<Scalar> > &sensStepper = Teuchos::null,
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver = Teuchos::null
   )
 {
-  Teuchos::RefCountPtr<ForwardSensitivityStepper<Scalar> >
+  Teuchos::RCP<ForwardSensitivityStepper<Scalar> >
     fwdSensStepper = Teuchos::rcp(new ForwardSensitivityStepper<Scalar>());
   fwdSensStepper->initialize(
     stateModel, p_index, stateBasePoint, stateStepper, stateTimeStepSolver );
@@ -472,19 +472,19 @@ ForwardSensitivityStepper<Scalar>::ForwardSensitivityStepper()
 
 template<class Scalar> 
 void ForwardSensitivityStepper<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &stateModel,
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
   const int p_index,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &stateBasePoint,
-  const Teuchos::RefCountPtr<StepperBase<Scalar> > &stateStepper,
-  const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
-  const Teuchos::RefCountPtr<StepperBase<Scalar> > &sensStepper,
-  const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver
+  const Teuchos::RCP<StepperBase<Scalar> > &stateStepper,
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &stateTimeStepSolver,
+  const Teuchos::RCP<StepperBase<Scalar> > &sensStepper,
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &sensTimeStepSolver
   )
   
 {
 
   using Teuchos::rcp_dynamic_cast;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::tuple;
 
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -502,7 +502,7 @@ void ForwardSensitivityStepper<Scalar>::initialize(
   // Create the sensModel which will do some more validation
   //
   
-  Teuchos::RefCountPtr<ForwardSensitivityModelEvaluator<Scalar> >
+  Teuchos::RCP<ForwardSensitivityModelEvaluator<Scalar> >
     sensModel = Teuchos::rcp(new ForwardSensitivityModelEvaluator<Scalar>);
   sensModel->initializeStructure(stateModel,p_index);
   
@@ -540,7 +540,7 @@ void ForwardSensitivityStepper<Scalar>::initialize(
     sensTimeStepSolver_ = sensTimeStepSolver;
   }
   else {
-    RefCountPtr<Thyra::LinearNonlinearSolver<Scalar> >
+    RCP<Thyra::LinearNonlinearSolver<Scalar> >
       linearNonlinearSolver(new Thyra::LinearNonlinearSolver<Scalar>);
     // ToDo: Set tolerance on the nonlinear solver???
     sensTimeStepSolver_ = linearNonlinearSolver;
@@ -575,7 +575,7 @@ void ForwardSensitivityStepper<Scalar>::initialize(
 
   
 template<class Scalar> 
-Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 ForwardSensitivityStepper<Scalar>::getStateModel() const
 {
   return stateModel_;
@@ -583,7 +583,7 @@ ForwardSensitivityStepper<Scalar>::getStateModel() const
 
   
 template<class Scalar> 
-Teuchos::RefCountPtr<const ForwardSensitivityModelEvaluator<Scalar> >
+Teuchos::RCP<const ForwardSensitivityModelEvaluator<Scalar> >
 ForwardSensitivityStepper<Scalar>::getFwdSensModel() const
 {
   return sensModel_;
@@ -591,7 +591,7 @@ ForwardSensitivityStepper<Scalar>::getFwdSensModel() const
 
   
 template<class Scalar> 
-Teuchos::RefCountPtr<const StateAndForwardSensitivityModelEvaluator<Scalar> >
+Teuchos::RCP<const StateAndForwardSensitivityModelEvaluator<Scalar> >
 ForwardSensitivityStepper<Scalar>::getStateAndFwdSensModel() const
 {
   return stateAndSensModel_;
@@ -603,7 +603,7 @@ ForwardSensitivityStepper<Scalar>::getStateAndFwdSensModel() const
 
 template<class Scalar> 
 void ForwardSensitivityStepper<Scalar>::setParameterList(
-  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
   TEST_FOR_EXCEPT("Do not accept a parameter list yet!");
@@ -611,7 +611,7 @@ void ForwardSensitivityStepper<Scalar>::setParameterList(
 
 
 template<class Scalar> 
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 ForwardSensitivityStepper<Scalar>::getParameterList()
 {
   return Teuchos::null;
@@ -619,7 +619,7 @@ ForwardSensitivityStepper<Scalar>::getParameterList()
 
 
 template<class Scalar> 
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 ForwardSensitivityStepper<Scalar>::unsetParameterList()
 {
   return Teuchos::null;
@@ -627,7 +627,7 @@ ForwardSensitivityStepper<Scalar>::unsetParameterList()
 
 
 template<class Scalar> 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 ForwardSensitivityStepper<Scalar>::getParameterList() const
 {
   return Teuchos::null;
@@ -635,7 +635,7 @@ ForwardSensitivityStepper<Scalar>::getParameterList() const
 
 
 template<class Scalar> 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 ForwardSensitivityStepper<Scalar>::getValidParameters() const
 {
   return Teuchos::null;
@@ -652,7 +652,7 @@ bool ForwardSensitivityStepper<Scalar>::acceptsModel() const
 
 template<class Scalar> 
 void ForwardSensitivityStepper<Scalar>::setModel(
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
   )
 {
   TEST_FOR_EXCEPT("Error, this stepper subclass does not accept a model"
@@ -661,7 +661,7 @@ void ForwardSensitivityStepper<Scalar>::setModel(
 
 
 template<class Scalar> 
-Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 ForwardSensitivityStepper<Scalar>::getModel() const
 {
   return stateAndSensModel_;
@@ -674,7 +674,7 @@ void ForwardSensitivityStepper<Scalar>::setInitialCondition(
   )
 {
   
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   typedef Thyra::ModelEvaluatorBase MEB;
 
   // Get the product vectors for x_bar = [ x; s_bar ] and x_bar_dot
@@ -683,12 +683,12 @@ void ForwardSensitivityStepper<Scalar>::setInitialCondition(
     is_null(state_and_sens_ic.get_x()), std::logic_error,
     "Error, the initial condition for x_bar = [ x; s_bar ] can not be null!" );
 
-  const RefCountPtr<const Thyra::ProductVectorBase<Scalar> >
+  const RCP<const Thyra::ProductVectorBase<Scalar> >
     x_bar_init = Thyra::productVectorBase<Scalar>(
       state_and_sens_ic.get_x()
       );
 
-  const RefCountPtr<const Thyra::ProductVectorBase<Scalar> >
+  const RCP<const Thyra::ProductVectorBase<Scalar> >
     x_bar_dot_init = Thyra::productVectorBase<Scalar>(
       state_and_sens_ic.get_x_dot()
       );
@@ -738,7 +738,7 @@ ForwardSensitivityStepper<Scalar>::takeStep(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Teuchos::VerboseObjectTempState<InterpolationBufferBase<Scalar> > VOTSIBB;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
 
@@ -783,7 +783,7 @@ ForwardSensitivityStepper<Scalar>::takeStep(
     "Error, the status should be converged since a positive step size was returned!"
     );
 
-  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >
     x = stateStepStatus.solution;
   
   TEST_FOR_EXCEPTION(
@@ -791,7 +791,7 @@ ForwardSensitivityStepper<Scalar>::takeStep(
     "Error, the state solution can not be null!"
     );
 
-  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> >
     x_dot = stateStepStatus.solutionDot;
   
   TEST_FOR_EXCEPTION(
@@ -804,7 +804,7 @@ ForwardSensitivityStepper<Scalar>::takeStep(
   stateBasePoint_t_.set_x( x );
   stateBasePoint_t_.set_t( t_ + state_dt );
 
-  Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> >
+  Teuchos::RCP<const Thyra::LinearOpWithSolveBase<Scalar> >
     W_tilde = stateTimeStepSolver_->get_W();
   
   TEST_FOR_EXCEPTION(
@@ -813,7 +813,7 @@ ForwardSensitivityStepper<Scalar>::takeStep(
     "Error, the W from the state time step must be current and must be non-null!"
     );
   
-  Teuchos::RefCountPtr<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >
+  Teuchos::RCP<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >
     singleResidualModel
     = Teuchos::rcp_dynamic_cast<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >(
       stateTimeStepSolver_->getModel(), true
@@ -924,7 +924,7 @@ ForwardSensitivityStepper<Scalar>::getStepStatus() const
 
 
 template<class Scalar> 
-Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 ForwardSensitivityStepper<Scalar>::get_x_space() const
 {
   return stateAndSensModel_->get_x_space();
@@ -934,8 +934,8 @@ ForwardSensitivityStepper<Scalar>::get_x_space() const
 template<class Scalar> 
 bool ForwardSensitivityStepper<Scalar>::setPoints(
   const std::vector<Scalar>& time_vec,
-  const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec,
-  const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+  const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
+  const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
   const std::vector<ScalarMag> & accuracy_vec
   )
 {
@@ -965,14 +965,14 @@ ForwardSensitivityStepper<Scalar>::getTimeRange() const
 template<class Scalar> 
 bool ForwardSensitivityStepper<Scalar>::getPoints(
   const std::vector<Scalar>& time_vec,
-  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_bar_vec,
-  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_bar_dot_vec,
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_bar_vec,
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_bar_dot_vec,
   std::vector<ScalarMag>* accuracy_vec
   ) const
 {
 
   using Teuchos::as;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
 
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( as<int>(time_vec.size()) == 0 );
@@ -982,7 +982,7 @@ bool ForwardSensitivityStepper<Scalar>::getPoints(
 
   bool result = false;
   
-  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >
     x_vec, x_dot_vec;
 
   result = stateStepper_->getPoints(
@@ -995,7 +995,7 @@ bool ForwardSensitivityStepper<Scalar>::getPoints(
   if (!result)
     return false;
 
-  std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >
+  std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >
     s_bar_vec, s_bar_dot_vec;
 
   result = sensStepper_->getPoints(

@@ -55,8 +55,8 @@ public:
 
   /** \brief . */
   DefaultEvaluationLoggerModelEvaluator(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >   &thyraModel
-    ,const Teuchos::RefCountPtr<std::ostream>             &tableOut
+    const Teuchos::RCP<ModelEvaluator<Scalar> >   &thyraModel
+    ,const Teuchos::RCP<std::ostream>             &tableOut
     );
 
   /** \brief Initalize.
@@ -72,8 +72,8 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >   &thyraModel
-    ,const Teuchos::RefCountPtr<std::ostream>             &tableOut
+    const Teuchos::RCP<ModelEvaluator<Scalar> >   &thyraModel
+    ,const Teuchos::RCP<std::ostream>             &tableOut
     );
 
   //@}
@@ -99,7 +99,7 @@ public:
 
 private:
 
-  Teuchos::RefCountPtr<std::ostream>  tableOut_;
+  Teuchos::RCP<std::ostream>  tableOut_;
   Teuchos::Time                       timer_;
 
   mutable bool                        headerPrinted_;
@@ -143,8 +143,8 @@ DefaultEvaluationLoggerModelEvaluator<Scalar>::DefaultEvaluationLoggerModelEvalu
 
 template<class Scalar>
 DefaultEvaluationLoggerModelEvaluator<Scalar>::DefaultEvaluationLoggerModelEvaluator(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >   &thyraModel
-  ,const Teuchos::RefCountPtr<std::ostream>             &tableOut
+  const Teuchos::RCP<ModelEvaluator<Scalar> >   &thyraModel
+  ,const Teuchos::RCP<std::ostream>             &tableOut
   )
   :timer_(""),headerPrinted_(false)
 {
@@ -153,8 +153,8 @@ DefaultEvaluationLoggerModelEvaluator<Scalar>::DefaultEvaluationLoggerModelEvalu
 
 template<class Scalar>
 void DefaultEvaluationLoggerModelEvaluator<Scalar>::initialize(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >   &thyraModel
-  ,const Teuchos::RefCountPtr<std::ostream>             &tableOut
+  const Teuchos::RCP<ModelEvaluator<Scalar> >   &thyraModel
+  ,const Teuchos::RCP<std::ostream>             &tableOut
   )
 {
   TEST_FOR_EXCEPT( tableOut.get()==NULL );
@@ -194,7 +194,7 @@ void DefaultEvaluationLoggerModelEvaluator<Scalar>::evalModel(
 template<class Scalar>
 std::string DefaultEvaluationLoggerModelEvaluator<Scalar>::description() const
 {
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   std::ostringstream oss;
   oss << "Thyra::DefaultEvaluationLoggerModelEvaluator{";
@@ -266,7 +266,7 @@ void DefaultEvaluationLoggerModelEvaluator<Scalar>::printLine(
 
   const int Ng = outArgs.Ng();
 
-  Teuchos::RefCountPtr<const VectorBase<Scalar> > f, g_j;
+  Teuchos::RCP<const VectorBase<Scalar> > f, g_j;
   
   *tableOut_ << "  " << setprecision(flt_prec_) << right << setw(flt_width_) << timer_.totalElapsedTime(true);
   for( int j = 0; j < Ng; ++j ) {

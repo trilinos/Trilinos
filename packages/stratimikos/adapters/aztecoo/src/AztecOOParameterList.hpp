@@ -31,7 +31,7 @@
 #define THYRA_SET_AZTECOO_PARAMETER_LIST_HPP
 
 #include "AztecOO.h"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 /** \brief Setup an AztecOO solver object with a set of parameters.
  *
@@ -47,6 +47,6 @@ void setAztecOOParameters(
  *
  * ToDo: Finish documentation!
  */
-Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidAztecOOParameters();
+Teuchos::RCP<const Teuchos::ParameterList> getValidAztecOOParameters();
 
 #endif // THYRA_SET_AZTECOO_PARAMETER_LIST_HPP

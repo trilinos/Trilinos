@@ -95,7 +95,7 @@ public:
    * performed until the view returned from this function is released as
    * described above.
    */
-  virtual Teuchos::RefCountPtr<VectorBase<Scalar> >
+  virtual Teuchos::RCP<VectorBase<Scalar> >
   getNonconstVectorBlock(const int k) = 0; 
 
   /** \brief Returns a non-persisting <tt>const</tt> view of the (zero-based)
@@ -109,7 +109,7 @@ public:
    * <li> <tt>0 <= k <= productSpace()->numBlocks()-1tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<const VectorBase<Scalar> >
+  virtual Teuchos::RCP<const VectorBase<Scalar> >
   getVectorBlock(const int k) const = 0; 
 
 };
@@ -120,9 +120,9 @@ public:
  */
 template<class Scalar>
 inline
-Teuchos::RefCountPtr<Thyra::ProductVectorBase<Scalar> >
+Teuchos::RCP<Thyra::ProductVectorBase<Scalar> >
 nonconstProductVectorBase(
-  const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &v
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> > &v
   )
 {
   return Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(v,true);
@@ -134,9 +134,9 @@ nonconstProductVectorBase(
  */
 template<class Scalar>
 inline
-Teuchos::RefCountPtr<const Thyra::ProductVectorBase<Scalar> >
+Teuchos::RCP<const Thyra::ProductVectorBase<Scalar> >
 productVectorBase(
-  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &v
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &v
   )
 {
   return Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar> >(v,true);

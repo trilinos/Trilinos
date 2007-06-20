@@ -47,10 +47,10 @@ AmesosLinearOpWithSolve::AmesosLinearOpWithSolve()
 
 
 AmesosLinearOpWithSolve::AmesosLinearOpWithSolve(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> > &fwdOp,
-  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOpSrc,
-  const Teuchos::RefCountPtr<Epetra_LinearProblem> &epetraLP,
-  const Teuchos::RefCountPtr<Amesos_BaseSolver> &amesosSolver,
+  const Teuchos::RCP<const LinearOpBase<double> > &fwdOp,
+  const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
+  const Teuchos::RCP<Epetra_LinearProblem> &epetraLP,
+  const Teuchos::RCP<Amesos_BaseSolver> &amesosSolver,
   const ETransp amesosSolverTransp,
   const double amesosSolverScalar
   )
@@ -61,10 +61,10 @@ AmesosLinearOpWithSolve::AmesosLinearOpWithSolve(
 
 
 void AmesosLinearOpWithSolve::initialize(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> > &fwdOp,
-  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> > &fwdOpSrc,
-  const Teuchos::RefCountPtr<Epetra_LinearProblem> &epetraLP,
-  const Teuchos::RefCountPtr<Amesos_BaseSolver> &amesosSolver,
+  const Teuchos::RCP<const LinearOpBase<double> > &fwdOp,
+  const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
+  const Teuchos::RCP<Epetra_LinearProblem> &epetraLP,
+  const Teuchos::RCP<Amesos_BaseSolver> &amesosSolver,
   const ETransp amesosSolverTransp,
   const double amesosSolverScalar
   )
@@ -89,10 +89,10 @@ void AmesosLinearOpWithSolve::initialize(
 }
 
 
-Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+Teuchos::RCP<const LinearOpSourceBase<double> >
 AmesosLinearOpWithSolve::extract_fwdOpSrc()
 {
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+  Teuchos::RCP<const LinearOpSourceBase<double> >
     _fwdOpSrc = fwdOpSrc_;
   fwdOpSrc_ = Teuchos::null;
   return _fwdOpSrc;
@@ -100,10 +100,10 @@ AmesosLinearOpWithSolve::extract_fwdOpSrc()
 
 
 void AmesosLinearOpWithSolve::uninitialize(
-  Teuchos::RefCountPtr<const LinearOpBase<double> > *fwdOp,
-  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > *fwdOpSrc,
-  Teuchos::RefCountPtr<Epetra_LinearProblem> *epetraLP,
-  Teuchos::RefCountPtr<Amesos_BaseSolver> *amesosSolver,
+  Teuchos::RCP<const LinearOpBase<double> > *fwdOp,
+  Teuchos::RCP<const LinearOpSourceBase<double> > *fwdOpSrc,
+  Teuchos::RCP<Epetra_LinearProblem> *epetraLP,
+  Teuchos::RCP<Amesos_BaseSolver> *amesosSolver,
   ETransp *amesosSolverTransp,
   double *amesosSolverScalar
   )
@@ -129,21 +129,21 @@ void AmesosLinearOpWithSolve::uninitialize(
 // Overridden from LinearOpBase
 
 
-Teuchos::RefCountPtr< const VectorSpaceBase<double> >
+Teuchos::RCP< const VectorSpaceBase<double> >
 AmesosLinearOpWithSolve::range() const
 {
   return ( fwdOp_.get() ? fwdOp_->range() : Teuchos::null );
 }
 
 
-Teuchos::RefCountPtr< const VectorSpaceBase<double> >
+Teuchos::RCP< const VectorSpaceBase<double> >
 AmesosLinearOpWithSolve::domain() const
 {
   return  ( fwdOp_.get() ? fwdOp_->domain() : Teuchos::null );
 }
 
 
-Teuchos::RefCountPtr<const LinearOpBase<double> >
+Teuchos::RCP<const LinearOpBase<double> >
 AmesosLinearOpWithSolve::clone() const
 {
   return Teuchos::null; // Not supported yet but could be
@@ -266,7 +266,7 @@ void AmesosLinearOpWithSolve::solve(
   totalTimer.start(true);
   TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWS");
   //
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
@@ -285,9 +285,9 @@ void AmesosLinearOpWithSolve::solve(
   //
   // Get Epetra_MultiVector views of B and X
   //
-  Teuchos::RefCountPtr<const Epetra_MultiVector>
+  Teuchos::RCP<const Epetra_MultiVector>
     epetra_B = get_Epetra_MultiVector(opRangeMap,Teuchos::rcp(&B,false));
-  Teuchos::RefCountPtr<Epetra_MultiVector>
+  Teuchos::RCP<Epetra_MultiVector>
     epetra_X = get_Epetra_MultiVector(opDomainMap,Teuchos::rcp(X,false));
   //
   // Set B and X in the linear problem

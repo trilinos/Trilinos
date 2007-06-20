@@ -38,29 +38,37 @@ namespace Thyra {
 // Virtual functions with default implementations
 
 template<class RangeScalar, class DomainScalar>
-bool LinearOpBase<RangeScalar,DomainScalar>::applySupports( const EConj conj ) const
+bool LinearOpBase<RangeScalar,DomainScalar>::applySupports(
+  const EConj conj
+  ) const
 {
-  return ( Teuchos::ScalarTraits<RangeScalar>::isComplex ? conj==NONCONJ_ELE : true );
+  return (
+    Teuchos::ScalarTraits<RangeScalar>::isComplex ? conj==NONCONJ_ELE : true
+    );
 }
 
 template<class RangeScalar, class DomainScalar>
-bool LinearOpBase<RangeScalar,DomainScalar>::applyTransposeSupports( const EConj conj ) const
+bool LinearOpBase<RangeScalar,DomainScalar>::applyTransposeSupports(
+  const EConj conj
+  ) const
 {
   return false;
 }
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpBase<RangeScalar,DomainScalar>::applyTranspose(
-  const EConj                            conj
-  ,const MultiVectorBase<RangeScalar>    &X
-  ,MultiVectorBase<DomainScalar>         *Y
-  ,const DomainScalar                    alpha
-  ,const DomainScalar                    beta
+  const EConj conj,
+  const MultiVectorBase<RangeScalar> &X,
+  MultiVectorBase<DomainScalar> *Y,
+  const DomainScalar alpha,
+  const DomainScalar beta
   ) const
 {
+  const std::string
+    &typeName = TypeNameTraits<LinearOpBase<RangeScalar,DomainScalar> >::name();
   TEST_FOR_EXCEPTION(
-    true,std::logic_error
-    ,"LinearOpBase<"<<Teuchos::ScalarTraits<RangeScalar>::name()<<","<<Teuchos::ScalarTraits<DomainScalar>::name()<<">::applyTranspose(...): "
+    true, std::logic_error,
+    typeName << "::applyTranspose(...): " <<
     "Error, the concrete subclass described as { " << this->description() << " } "
     " with this->applyTransposeSupports("<<toString(conj)<<")="<<this->applyTransposeSupports(conj)
     << " did not override this function and does not support transposes."
@@ -68,7 +76,7 @@ void LinearOpBase<RangeScalar,DomainScalar>::applyTranspose(
 }
 
 template<class RangeScalar, class DomainScalar>
-Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> > 
+RCP<const LinearOpBase<RangeScalar,DomainScalar> > 
 LinearOpBase<RangeScalar,DomainScalar>::clone() const
 {
   return Teuchos::null;

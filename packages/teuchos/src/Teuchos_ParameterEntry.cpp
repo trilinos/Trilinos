@@ -74,7 +74,7 @@ void ParameterEntry::setAnyValue(
 
 
 void ParameterEntry::setValidator(
-  RefCountPtr<const ParameterEntryValidator> const& validator
+  RCP<const ParameterEntryValidator> const& validator
   )
 {
   validator_ = validator;

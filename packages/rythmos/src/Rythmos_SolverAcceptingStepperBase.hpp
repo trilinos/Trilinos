@@ -50,15 +50,15 @@ public:
 
   /** \brief . */
   virtual void setSolver(
-    const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
     ) = 0;
 
   /** \brief . */
-  virtual Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >
+  virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
   getNonconstSolver() = 0;
 
   /** \brief . */
-  virtual Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> >
+  virtual Teuchos::RCP<const Thyra::NonlinearSolverBase<Scalar> >
   getSolver() const = 0;
 
 };

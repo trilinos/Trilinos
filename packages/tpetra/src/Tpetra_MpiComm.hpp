@@ -30,7 +30,7 @@
 #define TPETRA_MPICOMM_HPP
 
 #include <mpi.h>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Comm.hpp"
 #include "Tpetra_MpiTraits.hpp"
@@ -79,7 +79,7 @@ namespace Tpetra {
 		  \param MpiData In
 		         MpiData inner data class passed in by MpiPlatform.
 		*/
-		MpiComm(Teuchos::RefCountPtr<MpiData> const& mpidata)
+		MpiComm(Teuchos::RCP<MpiData> const& mpidata)
 			: Object("Tpetra::MpiComm")
 			, MpiData_(mpidata)
 			   //, tag_(-1)
@@ -538,7 +538,7 @@ namespace Tpetra {
 		MpiData const& data() const {return(*MpiData_);}
 
 		// private data members
-		Teuchos::RefCountPtr<MpiData> MpiData_;
+		Teuchos::RCP<MpiData> MpiData_;
 		int tag_;
 		std::vector<MPI_Request> request_;
 

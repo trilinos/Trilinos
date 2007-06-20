@@ -58,7 +58,7 @@ public:
    * This function is given no information about the nature of the linear
    * operators to be used.
    */
-  virtual Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >
+  virtual Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >
   createLinearSolveStrategy(
     const std::string &linearSolveStrategyName ) const = 0;
   
@@ -74,7 +74,7 @@ public:
    * This function is given no information about the nature of the linear
    * operators to be used.
    */
-  virtual Teuchos::RefCountPtr<PreconditionerFactoryBase<Scalar> >
+  virtual Teuchos::RCP<PreconditionerFactoryBase<Scalar> >
   createPreconditioningStrategy(
     const std::string &preconditioningStrategyName ) const = 0;
 
@@ -107,12 +107,12 @@ public:
    */
   /*
     virtual void createSmartSolveStrategy(
-    const Teuchos::RefCountPtr<LinearOpBase<Scalar>               &typicalFwdOp
+    const Teuchos::RCP<LinearOpBase<Scalar>               &typicalFwdOp
     ,const SolveCritiera<Scalar>                                  &typicalSolveCriteria
     ,const ESupportSolveUse                                       &typicalSolveUse
-    ,Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >  *solveStrategy
-    ,Teuchos::RefCountPtr<Teuchos::ParameterList>                 *solveStrategyParameters
-    ,Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >         *initialLOWS
+    ,Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >  *solveStrategy
+    ,Teuchos::RCP<Teuchos::ParameterList>                 *solveStrategyParameters
+    ,Teuchos::RCP<LinearOpWithSolveBase<Scalar> >         *initialLOWS
     ,double                                                       *setupTime
     ,double                                                       *solveTime
     ) const = 0;
@@ -126,7 +126,7 @@ public:
  * \relates LinearSolverBuilderBase
  */
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >
+Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >
 createLinearSolveStrategy(
   const LinearSolverBuilderBase<Scalar> &linearSolverBuilder,
   const std::string &linearSolveStrategyName = ""
@@ -142,7 +142,7 @@ createLinearSolveStrategy(
  * \relates LinearSolverBuilderBase
  */
 template<class Scalar>
-Teuchos::RefCountPtr<PreconditionerFactoryBase<Scalar> >
+Teuchos::RCP<PreconditionerFactoryBase<Scalar> >
 createPreconditioningStrategy(
   const LinearSolverBuilderBase<Scalar> &linearSolverBuilder,
   const std::string &preconditioningStrategyName = ""

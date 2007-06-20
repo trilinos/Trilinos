@@ -136,24 +136,24 @@ public:
    *
    * Note, instead of calling this constructor directly consider using the
    * non-member functions described belos which create dynamically allocated
-   * <tt>Teuchos::RefCountPtr</tt>-wrapped objects.
+   * <tt>Teuchos::RCP</tt>-wrapped objects.
    */
   DefaultScaledAdjointLinearOp(
     const Scalar                                               &scalar
     ,const ETransp                                             &transp
-    ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >         &Op
+    ,const Teuchos::RCP<LinearOpBase<Scalar> >         &Op
     );
 
   /** \brief Calls <tt>initialize()</tt>.
    *
    * Note, instead of calling this constructor directly consider using the
    * non-member functions described belos which create dynamically allocated
-   * <tt>Teuchos::RefCountPtr</tt>-wrapped objects.
+   * <tt>Teuchos::RCP</tt>-wrapped objects.
    */
   DefaultScaledAdjointLinearOp(
     const Scalar                                               &scalar
     ,const ETransp                                             &transp
-    ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &Op
+    ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &Op
     );
 
   /** \brief Initialize with an operator with by defining adjoint (transpose) and
@@ -174,7 +174,7 @@ public:
   void initialize(
     const Scalar                                               &scalar
     ,const ETransp                                             &transp
-    ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >         &Op
+    ,const Teuchos::RCP<LinearOpBase<Scalar> >         &Op
     );
 
   /** \brief Initialize with an operator with by defining adjoint (transpose) and
@@ -195,18 +195,18 @@ public:
   void initialize(
     const Scalar                                               &scalar
     ,const ETransp                                             &transp
-    ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &Op
+    ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &Op
     );
 
   /** \brief Return the non-const linear operator passed into
    * <tt>initialize()</tt>.
    */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > getNonconstOp();
+  Teuchos::RCP<LinearOpBase<Scalar> > getNonconstOp();
 
   /** \brief Return the const linear operator passed into
    * <tt>initialize()</tt>.
    */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > getOp() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > getOp() const;
 
   /** \brief Set to uninitialized and (optionally) extract the objects passed into <tt>initialize()</tt>.
    *
@@ -251,7 +251,7 @@ public:
    return ( this->overallTransp()==NOTRANS ? this->getOrigOp()->range() : this->getOrigOp()->domain() );
    \endcode
    */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
   /** \brief Return the domain space of the logical linear operator.
    *
    * Simply returns: \code
@@ -259,9 +259,9 @@ public:
    return ( this->overallTransp()==NOTRANS ? this->getOrigOp()->domain() : this->getOrigOp()->range() );
    \endcode
    */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
   /** Return if the operation is supported on the logical linear operator.
    *
    * Simply returns: \code
@@ -301,9 +301,9 @@ public:
   /** \brief . */
   ETransp overallTransp() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > getNonconstOrigOp();
+  Teuchos::RCP<LinearOpBase<Scalar> > getNonconstOrigOp();
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > getOrigOp() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > getOrigOp() const;
 
   //@}
 
@@ -335,7 +335,7 @@ private:
   ETransp                                            overallTransp_;
   int                                                my_index_;
 
-  Teuchos::RefCountPtr<allScalarETransp_t>           allScalarETransp_;
+  Teuchos::RCP<allScalarETransp_t>           allScalarETransp_;
   
   // ////////////////////////////////
   // Private member functions
@@ -343,7 +343,7 @@ private:
   void initializeImpl(
     const Scalar                                               &scalar
     ,const ETransp                                             &transp
-    ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &Op
+    ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &Op
     ,const bool                                                isConst
     );
   CNLOC getOpImpl() const;
@@ -370,8 +370,8 @@ private:
  * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-nonconstScale( const Scalar &scalar, const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
+Teuchos::RCP<LinearOpBase<Scalar> >
+nonconstScale( const Scalar &scalar, const Teuchos::RCP<LinearOpBase<Scalar> > &Op );
 
 /** \brief Build an implicit <tt>const</tt> scaled linear operator.
  *
@@ -388,8 +388,8 @@ nonconstScale( const Scalar &scalar, const Teuchos::RefCountPtr<LinearOpBase<Sca
  * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
-scale( const Scalar &scalar, const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op );
+Teuchos::RCP<const LinearOpBase<Scalar> >
+scale( const Scalar &scalar, const Teuchos::RCP<const LinearOpBase<Scalar> > &Op );
 
 /** \brief Build an implicit non-<tt>const</tt> adjoined linear operator.
  *
@@ -406,8 +406,8 @@ scale( const Scalar &scalar, const Teuchos::RefCountPtr<const LinearOpBase<Scala
  * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-nonconstAdjoint( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
+Teuchos::RCP<LinearOpBase<Scalar> >
+nonconstAdjoint( const Teuchos::RCP<LinearOpBase<Scalar> > &Op );
 
 /** \brief Build an implicit <tt>const</tt> adjoined linear operator.
  *
@@ -424,8 +424,8 @@ nonconstAdjoint( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
  * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
-adjoint( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op );
+Teuchos::RCP<const LinearOpBase<Scalar> >
+adjoint( const Teuchos::RCP<const LinearOpBase<Scalar> > &Op );
 
 /** \brief Build an implicit non-<tt>const</tt> transposed linear operator.
  *
@@ -442,8 +442,8 @@ adjoint( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op );
  * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-nonconstTranspose( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
+Teuchos::RCP<LinearOpBase<Scalar> >
+nonconstTranspose( const Teuchos::RCP<LinearOpBase<Scalar> > &Op );
 
 /** \brief Build an implicit <tt>const</tt> transposed linear operator.
  *
@@ -460,8 +460,8 @@ nonconstTranspose( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
  * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
-transpose( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op );
+Teuchos::RCP<const LinearOpBase<Scalar> >
+transpose( const Teuchos::RCP<const LinearOpBase<Scalar> > &Op );
 
 /** \brief Build an implicit non-<tt>const</tt> scaled and/or adjoined (transposed) linear operator.
  *
@@ -478,8 +478,8 @@ transpose( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op );
  * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-nonconstScaleAndAdjoint( const Scalar &scalar, const ETransp &transp, const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
+Teuchos::RCP<LinearOpBase<Scalar> >
+nonconstScaleAndAdjoint( const Scalar &scalar, const ETransp &transp, const Teuchos::RCP<LinearOpBase<Scalar> > &Op );
 
 /** \brief Build an implicit <tt>const</tt> scaled and/or adjoined (transposed) linear operator.
  *
@@ -496,8 +496,8 @@ nonconstScaleAndAdjoint( const Scalar &scalar, const ETransp &transp, const Teuc
  * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
-scaleAndAdjoint( const Scalar &scalar, const ETransp &transp, const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op );
+Teuchos::RCP<const LinearOpBase<Scalar> >
+scaleAndAdjoint( const Scalar &scalar, const ETransp &transp, const Teuchos::RCP<const LinearOpBase<Scalar> > &Op );
 
 // /////////////////////////////////
 // Inline members
@@ -514,7 +514,7 @@ inline
 DefaultScaledAdjointLinearOp<Scalar>::DefaultScaledAdjointLinearOp(
   const Scalar                                               &scalar
   ,const ETransp                                             &transp
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >         &Op
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >         &Op
   )
   :overallScalar_(Teuchos::ScalarTraits<Scalar>::zero())
   ,overallTransp_(NOTRANS)
@@ -527,7 +527,7 @@ inline
 DefaultScaledAdjointLinearOp<Scalar>::DefaultScaledAdjointLinearOp(
   const Scalar                                               &scalar
   ,const ETransp                                             &transp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &Op
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &Op
   )
   :overallScalar_(Teuchos::ScalarTraits<Scalar>::zero())
   ,overallTransp_(NOTRANS)
@@ -550,18 +550,18 @@ void DefaultScaledAdjointLinearOp<Scalar>::assertInitialized() const
 // Inline non-members
 
 template<class Scalar>
-inline Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+inline Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstScale(
-  const Scalar &scalar, const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op
+  const Scalar &scalar, const Teuchos::RCP<LinearOpBase<Scalar> > &Op
   )
 {
   return Teuchos::rcp(new DefaultScaledAdjointLinearOp<Scalar>(scalar,NOTRANS,Op));
 }
 
 template<class Scalar>
-inline Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+inline Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::scale(
-  const Scalar &scalar, const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op
+  const Scalar &scalar, const Teuchos::RCP<const LinearOpBase<Scalar> > &Op
   )
 {
   return Teuchos::rcp(
@@ -570,8 +570,8 @@ Thyra::scale(
 }
 
 template<class Scalar>
-inline Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
-Thyra::nonconstAdjoint( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op )
+inline Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+Thyra::nonconstAdjoint( const Teuchos::RCP<LinearOpBase<Scalar> > &Op )
 {
   return Teuchos::rcp(
     new DefaultScaledAdjointLinearOp<Scalar>(
@@ -581,8 +581,8 @@ Thyra::nonconstAdjoint( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op )
 }
 
 template<class Scalar>
-inline Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-Thyra::adjoint( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op )
+inline Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
+Thyra::adjoint( const Teuchos::RCP<const LinearOpBase<Scalar> > &Op )
 {
   return Teuchos::rcp(
     new DefaultScaledAdjointLinearOp<Scalar>(
@@ -592,8 +592,8 @@ Thyra::adjoint( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op )
 }
 
 template<class Scalar>
-inline Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
-Thyra::nonconstTranspose( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op )
+inline Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+Thyra::nonconstTranspose( const Teuchos::RCP<LinearOpBase<Scalar> > &Op )
 {
   return Teuchos::rcp(
     new DefaultScaledAdjointLinearOp<Scalar>(
@@ -603,8 +603,8 @@ Thyra::nonconstTranspose( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op 
 }
 
 template<class Scalar>
-inline Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-Thyra::transpose( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op )
+inline Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
+Thyra::transpose( const Teuchos::RCP<const LinearOpBase<Scalar> > &Op )
 {
   return Teuchos::rcp(
     new DefaultScaledAdjointLinearOp<Scalar>(
@@ -614,20 +614,20 @@ Thyra::transpose( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op )
 }
 
 template<class Scalar>
-inline Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+inline Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstScaleAndAdjoint(
   const Scalar &scalar, const ETransp &transp
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op
+  ,const Teuchos::RCP<LinearOpBase<Scalar> > &Op
   )
 {
   return Teuchos::rcp(new DefaultScaledAdjointLinearOp<Scalar>(scalar,transp,Op));
 }
 
 template<class Scalar>
-inline Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+inline Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::scaleAndAdjoint(
   const Scalar &scalar, const ETransp &transp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &Op
   )
 {
   return Teuchos::rcp(

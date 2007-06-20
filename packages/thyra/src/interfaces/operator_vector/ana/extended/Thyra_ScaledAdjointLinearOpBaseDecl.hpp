@@ -77,11 +77,11 @@ public:
    * Note that <tt>*this</tt> is only guaranteed to be fully modified once the
    * returned RCP goes away.
    */
-  virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > getNonconstOrigOp() = 0;
+  virtual Teuchos::RCP<LinearOpBase<Scalar> > getNonconstOrigOp() = 0;
 
   /** \brief Return the const original linear operator <tt>origOp</tt>.
    */
-  virtual Teuchos::RefCountPtr<const LinearOpBase<Scalar> > getOrigOp() const = 0;
+  virtual Teuchos::RCP<const LinearOpBase<Scalar> > getOrigOp() const = 0;
 
   //@}
 
@@ -127,8 +127,8 @@ void unwrap(
   );
 
 /** \brief Extract the <tt>overallScalar</tt>, <tt>overallTransp</tt> and
- * <tt>Teuchos::RefCountPtr</tt> wrapped <tt>const</tt> <tt>origOp</tt> from a
- * <tt>Teuchos::RefCountPtr</tt> wrapped <tt>const</tt> <tt>LinearOpBase</tt>
+ * <tt>Teuchos::RCP</tt> wrapped <tt>const</tt> <tt>origOp</tt> from a
+ * <tt>Teuchos::RCP</tt> wrapped <tt>const</tt> <tt>LinearOpBase</tt>
  * object.
  *
  * \param  Op      [in] The input, possibly scaled and/or adjoined, linear operator
@@ -160,10 +160,10 @@ void unwrap(
  */
 template<class Scalar>
 void unwrap(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >     &Op
+  const Teuchos::RCP<const LinearOpBase<Scalar> >     &Op
   ,Scalar                                                     *scalar
   ,ETransp                                                    *transp
-  ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >          *origOp
+  ,Teuchos::RCP<const LinearOpBase<Scalar> >          *origOp
   );
 
 } // namespace Thyra

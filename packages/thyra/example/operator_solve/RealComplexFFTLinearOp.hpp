@@ -61,9 +61,9 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr< const Thyra::VectorSpaceBase<RangeScalar> > range() const;
+  Teuchos::RCP< const Thyra::VectorSpaceBase<RangeScalar> > range() const;
   /** \brief . */
-  Teuchos::RefCountPtr< const Thyra::VectorSpaceBase<DomainScalar> > domain() const;
+  Teuchos::RCP< const Thyra::VectorSpaceBase<DomainScalar> > domain() const;
   /** \brief . */
   bool applySupports( const Thyra::EConj conj ) const;
   /** \brief . */
@@ -123,7 +123,7 @@ private:
 
   Thyra::DefaultSerialVectorSpaceConverter<DomainScalar,RangeScalar>      realToComplexConverter_;
   ComplexFFTLinearOp<RealScalar>                                          complexFFTOp_;
-  Teuchos::RefCountPtr< const Thyra::VectorSpaceBase< RealScalar > >      domain_;
+  Teuchos::RCP< const Thyra::VectorSpaceBase< RealScalar > >      domain_;
   
   /// V = beta*V + real(V_complex)
   static void updateReal(
@@ -145,14 +145,14 @@ RealComplexFFTLinearOp<RealScalar>::RealComplexFFTLinearOp( const int N )
 // Overridden from LinearOpBase
 
 template<class RealScalar>
-Teuchos::RefCountPtr< const Thyra::VectorSpaceBase<typename RealComplexFFTLinearOp<RealScalar>::RangeScalar > >
+Teuchos::RCP< const Thyra::VectorSpaceBase<typename RealComplexFFTLinearOp<RealScalar>::RangeScalar > >
 RealComplexFFTLinearOp<RealScalar>::range() const
 {
   return complexFFTOp_.range();
 }
 
 template<class RealScalar>
-Teuchos::RefCountPtr< const Thyra::VectorSpaceBase<typename RealComplexFFTLinearOp<RealScalar>::DomainScalar > >
+Teuchos::RCP< const Thyra::VectorSpaceBase<typename RealComplexFFTLinearOp<RealScalar>::DomainScalar > >
 RealComplexFFTLinearOp<RealScalar>::domain() const
 {
   return domain_;
@@ -179,7 +179,7 @@ void RealComplexFFTLinearOp<RealScalar>::apply(
   ,const RangeScalar                            beta
   ) const
 {
-  Teuchos::RefCountPtr< Thyra::MultiVectorBase<RangeScalar> >
+  Teuchos::RCP< Thyra::MultiVectorBase<RangeScalar> >
     X_complex = Thyra::createMembers(complexFFTOp_.domain(),X.domain()->dim());
   realToComplexConverter_.convert( X, &*X_complex );
   Thyra::apply(complexFFTOp_,conj,*X_complex,Y,alpha,beta);
@@ -194,7 +194,7 @@ void RealComplexFFTLinearOp<RealScalar>::applyTranspose(
   ,const DomainScalar                           beta
   ) const
 {
-  Teuchos::RefCountPtr< Thyra::MultiVectorBase<RangeScalar> >
+  Teuchos::RCP< Thyra::MultiVectorBase<RangeScalar> >
     Y_complex = Thyra::createMembers(complexFFTOp_.range(),X.domain()->dim());
   Thyra::applyTranspose(complexFFTOp_,conj,X,&*Y_complex,RangeScalar(alpha));
   updateReal( *Y_complex, beta, Y );
@@ -236,7 +236,7 @@ void RealComplexFFTLinearOp<RealScalar>::solve(
   ,Thyra::SolveStatus<Scalar>                  blockSolveStatus[]
   ) const
 {
-  Teuchos::RefCountPtr< Thyra::MultiVectorBase<RangeScalar> >
+  Teuchos::RCP< Thyra::MultiVectorBase<RangeScalar> >
     X_complex = Thyra::createMembers(complexFFTOp_.domain(),B.domain()->dim());
   Thyra::solve(complexFFTOp_,conj,B,&*X_complex,numBlocks,blockSolveCriteria,blockSolveStatus);
   updateReal( *X_complex, Teuchos::ScalarTraits<DomainScalar>::zero(), X );
@@ -252,7 +252,7 @@ void RealComplexFFTLinearOp<RealScalar>::solveTranspose(
   ,Thyra::SolveStatus<Scalar>                  blockSolveStatus[]
   ) const
 {
-  Teuchos::RefCountPtr< Thyra::MultiVectorBase<RangeScalar> >
+  Teuchos::RCP< Thyra::MultiVectorBase<RangeScalar> >
     B_complex = Thyra::createMembers(complexFFTOp_.domain(),B.domain()->dim());
   realToComplexConverter_.convert( B, &*B_complex );
   Thyra::solveTranspose(complexFFTOp_,conj,*B_complex,X,numBlocks,blockSolveCriteria,blockSolveStatus);

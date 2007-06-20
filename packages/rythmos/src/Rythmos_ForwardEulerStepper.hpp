@@ -30,7 +30,7 @@
 #define Rythmos_FORWARDEULER_STEPPER_H
 
 #include "Rythmos_StepperBase.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
@@ -47,13 +47,13 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     
     /** \brief . */
     ForwardEulerStepper();
-    ForwardEulerStepper(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
+    ForwardEulerStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
 
     /** \brief . */
-    void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
+    void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
 
     /** \brief . */
-    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
     getModel() const;
     
     /** \brief . */
@@ -80,16 +80,16 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     /// Add points to buffer
     bool setPoints(
       const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
       ,const std::vector<ScalarMag>& accuracy_vec
       );
     
     /// Get values from buffer
     bool getPoints(
       const std::vector<Scalar>& time_vec
-      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec
-      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
       ,std::vector<ScalarMag>* accuracy_vec
       ) const;
 
@@ -113,30 +113,30 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
 
     /// Redefined from Teuchos::ParameterListAcceptor
     /** \brief . */
-    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+    void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
 
     /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> getParameterList();
 
     /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
 
   private:
 
-    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
+    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > solution_vector_;
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > residual_vector_;
     Scalar t_;
     Scalar dt_;
 
-    Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
+    Teuchos::RCP<Teuchos::ParameterList> parameterList_;
 
 };
 
 template<class Scalar>
-ForwardEulerStepper<Scalar>::ForwardEulerStepper(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
+ForwardEulerStepper<Scalar>::ForwardEulerStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model)
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
   out->setMaxLenLinePrefix(30);
   //out->pushLinePrefix("Rythmos::ForwardEulerStepper");
@@ -242,8 +242,8 @@ std::ostream& ForwardEulerStepper<Scalar>::describe(
 template<class Scalar>
 bool ForwardEulerStepper<Scalar>::setPoints(
     const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
     ,const std::vector<ScalarMag> & accuracy_vec 
     )
 {
@@ -253,8 +253,8 @@ bool ForwardEulerStepper<Scalar>::setPoints(
 template<class Scalar>
 bool ForwardEulerStepper<Scalar>::getPoints(
     const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
   return(false);
@@ -293,7 +293,7 @@ int ForwardEulerStepper<Scalar>::getOrder() const
 }
 
 template <class Scalar>
-void ForwardEulerStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+void ForwardEulerStepper<Scalar>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
   parameterList_ = paramList;
   int outputLevel = parameterList_->get( "outputLevel", int(-1) );
@@ -302,28 +302,28 @@ void ForwardEulerStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos:
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> ForwardEulerStepper<Scalar>::getParameterList()
+Teuchos::RCP<Teuchos::ParameterList> ForwardEulerStepper<Scalar>::getParameterList()
 {
   return(parameterList_);
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> ForwardEulerStepper<Scalar>::unsetParameterList()
+Teuchos::RCP<Teuchos::ParameterList> ForwardEulerStepper<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList_;
+  Teuchos::RCP<Teuchos::ParameterList> temp_param_list = parameterList_;
   parameterList_ = Teuchos::null;
   return(temp_param_list);
 }
 
 template<class Scalar>
-void ForwardEulerStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
+void ForwardEulerStepper<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model)
 {
   TEST_FOR_EXCEPT(model == Teuchos::null)
   model_ = model;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 ForwardEulerStepper<Scalar>::getModel() const
 {
   return model_;

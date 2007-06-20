@@ -53,7 +53,7 @@
 #include <string>
 
 // Includes for Teuchos:
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_FancyOStream.hpp"
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
 #ifdef HAVE_MPI
@@ -150,29 +150,29 @@ int main(int argc, char *argv[])
     params.set( "omega", omega );
     params.set( "Output File Name", outfile_name );
 #ifdef HAVE_MPI
-    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_MpiComm(mpiComm) );
+    Teuchos::RCP<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_MpiComm(mpiComm) );
 #else
-    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
+    Teuchos::RCP<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
 #endif // HAVE_MPI
 
     // Create the factory for the LinearOpWithSolveBase object
-    Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       W_factory;
 
     // create interface to problem
-    Teuchos::RefCountPtr<VanDerPolOscillator>
+    Teuchos::RCP<VanDerPolOscillator>
       epetraModel = Teuchos::rcp(new VanDerPolOscillator(epetra_comm_ptr_,
 							 params));
-    Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> >
+    Teuchos::RCP<Thyra::ModelEvaluator<double> >
       model = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModel,
 							   W_factory));
 
     // Create Stepper object depending on command-line input
     std::string method;
-    Teuchos::RefCountPtr<Rythmos::StepperBase<double> > stepper_ptr;
+    Teuchos::RCP<Rythmos::StepperBase<double> > stepper_ptr;
     if ( method_val == METHOD_ERK ) {
       stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRKStepper<double>(model));
-      Teuchos::RefCountPtr<Teuchos::ParameterList> ERKparams = Teuchos::rcp(new Teuchos::ParameterList);
+      Teuchos::RCP<Teuchos::ParameterList> ERKparams = Teuchos::rcp(new Teuchos::ParameterList);
       ERKparams->set( "outputLevel", outputLevel);
       stepper_ptr->setParameterList(ERKparams);
       method = "Explicit Runge-Kutta of order 4";
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
       cout << "num steps = " << step << endl;
 
     // Get final solution
-    Teuchos::RefCountPtr<const Epetra_Vector> final_x = 
+    Teuchos::RCP<const Epetra_Vector> final_x = 
       get_Epetra_Vector(*(epetraModel->get_x_map()), stepper.getStepStatus().solution);
     double final_tol = 1.0e-2;
     if (abs((*final_x)[0]-1.93704) < final_tol &&

@@ -53,20 +53,20 @@ public:
 
   /** \brief . */
   DefaultModelEvaluatorWithSolveFactory(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 &thyraModel
-    ,const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >  &W_factory
+    const Teuchos::RCP<ModelEvaluator<Scalar> >                 &thyraModel
+    ,const Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >  &W_factory
     );
 
   /** \brief . */
   void initialize(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 &thyraModel
-    ,const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >  &W_factory
+    const Teuchos::RCP<ModelEvaluator<Scalar> >                 &thyraModel
+    ,const Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >  &W_factory
     );
 
   /** \brief . */
   void uninitialize(
-    Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 *thyraModel = NULL
-    ,Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >  *W_factory   = NULL
+    Teuchos::RCP<ModelEvaluator<Scalar> >                 *thyraModel = NULL
+    ,Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >  *W_factory   = NULL
     );
 
   //@}
@@ -75,7 +75,7 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > create_W() const;
+  Teuchos::RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief . */
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
   /** \brief . */
@@ -96,7 +96,7 @@ public:
 
 private:
 
-  Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >   W_factory_;
+  Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >   W_factory_;
   
 };
 
@@ -111,8 +111,8 @@ DefaultModelEvaluatorWithSolveFactory<Scalar>::DefaultModelEvaluatorWithSolveFac
 
 template<class Scalar>
 DefaultModelEvaluatorWithSolveFactory<Scalar>::DefaultModelEvaluatorWithSolveFactory(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 &thyraModel
-  ,const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >  &W_factory
+  const Teuchos::RCP<ModelEvaluator<Scalar> >                 &thyraModel
+  ,const Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >  &W_factory
   )
 {
   initialize(thyraModel,W_factory);
@@ -120,8 +120,8 @@ DefaultModelEvaluatorWithSolveFactory<Scalar>::DefaultModelEvaluatorWithSolveFac
 
 template<class Scalar>
 void DefaultModelEvaluatorWithSolveFactory<Scalar>::initialize(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 &thyraModel
-  ,const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >  &W_factory
+  const Teuchos::RCP<ModelEvaluator<Scalar> >                 &thyraModel
+  ,const Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >  &W_factory
   )
 {
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
@@ -130,8 +130,8 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultModelEvaluatorWithSolveFactory<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 *thyraModel
-  ,Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >  *W_factory
+  Teuchos::RCP<ModelEvaluator<Scalar> >                 *thyraModel
+  ,Teuchos::RCP<LinearOpWithSolveFactoryBase<Scalar> >  *W_factory
   )
 {
   if(thyraModel) *thyraModel = this->getUnderlyingModel();
@@ -143,7 +143,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::uninitialize(
 // Overridden from ModelEvaulator.
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
 DefaultModelEvaluatorWithSolveFactory<Scalar>::create_W() const
 {
   TEST_FOR_EXCEPTION(
@@ -161,7 +161,7 @@ ModelEvaluatorBase::OutArgs<Scalar>
 DefaultModelEvaluatorWithSolveFactory<Scalar>::createOutArgs() const
 {
   typedef ModelEvaluatorBase MEB;
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   const MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
   MEB::OutArgsSetup<Scalar> outArgs;
@@ -179,7 +179,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
   ) const
 {
   typedef ModelEvaluatorBase MEB;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
@@ -206,10 +206,10 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
 
   wrappedOutArgs.setArgs(outArgs,true);
   
-  RefCountPtr<LinearOpWithSolveBase<Scalar> > W;
-  RefCountPtr<LinearOpBase<Scalar> >          W_op;
-  RefCountPtr<const LinearOpBase<Scalar> >    fwdW;
-  RefCountPtr<LinearOpBase<Scalar> >          nonconst_fwdW;
+  RCP<LinearOpWithSolveBase<Scalar> > W;
+  RCP<LinearOpBase<Scalar> >          W_op;
+  RCP<const LinearOpBase<Scalar> >    fwdW;
+  RCP<LinearOpBase<Scalar> >          nonconst_fwdW;
   if( outArgs.supports(MEB::OUT_ARG_W) && (W = outArgs.get_W()).get() ) {
     Thyra::uninitializeOp<Scalar>(*W_factory_,&*W,&fwdW);
     if(fwdW.get()) {
@@ -269,7 +269,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
 template<class Scalar>
 std::string DefaultModelEvaluatorWithSolveFactory<Scalar>::description() const
 {
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   std::ostringstream oss;
   oss << "Thyra::DefaultModelEvaluatorWithSolveFactory{";

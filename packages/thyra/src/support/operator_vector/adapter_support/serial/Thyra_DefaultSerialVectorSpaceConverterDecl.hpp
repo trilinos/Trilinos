@@ -51,13 +51,13 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<ScalarTo> >
+  Teuchos::RCP<const VectorSpaceBase<ScalarTo> >
   createVectorSpaceTo(
     const VectorSpaceBase<ScalarFrom> &vecSpc
     ) const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<ScalarFrom> >
+  Teuchos::RCP<const VectorSpaceBase<ScalarFrom> >
   createVectorSpaceFrom(
     const VectorSpaceBase<ScalarTo> &vecSpc
     ) const;

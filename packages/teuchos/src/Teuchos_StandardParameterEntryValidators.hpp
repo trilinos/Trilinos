@@ -198,7 +198,7 @@ public:
     ) const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Array<std::string> >
+  Teuchos::RCP<const Array<std::string> >
   validStringValues() const;
 
   /** \brief . */
@@ -215,8 +215,8 @@ private:
   typedef std::map<std::string,IntegralType> map_t;
   std::string defaultParameterName_;
   std::string validValues_;
-  RefCountPtr<const Array<std::string> > validStringValues_;
-  RefCountPtr<const Array<std::string> > validStringValuesDocs_;
+  RCP<const Array<std::string> > validStringValues_;
+  RCP<const Array<std::string> > validStringValuesDocs_;
   map_t map_;
 
   void setValidValues(
@@ -235,7 +235,7 @@ private:
  * \relates StringToIntegralParameterEntryValidator
  */
 template<class IntegralType>
-RefCountPtr<StringToIntegralParameterEntryValidator<IntegralType> >
+RCP<StringToIntegralParameterEntryValidator<IntegralType> >
 stringToIntegralParameterEntryValidator(
   Array<std::string> const& strings,
   std::string const& defaultParameterName
@@ -247,7 +247,7 @@ stringToIntegralParameterEntryValidator(
  * \relates StringToIntegralParameterEntryValidator
  */
 template<class IntegralType>
-RefCountPtr<StringToIntegralParameterEntryValidator<IntegralType> >
+RCP<StringToIntegralParameterEntryValidator<IntegralType> >
 stringToIntegralParameterEntryValidator(
   Array<std::string> const& strings,
   Array<IntegralType> const& integralValues, 
@@ -260,7 +260,7 @@ stringToIntegralParameterEntryValidator(
  * \relates StringToIntegralParameterEntryValidator
  */
 template<class IntegralType>
-RefCountPtr<StringToIntegralParameterEntryValidator<IntegralType> >
+RCP<StringToIntegralParameterEntryValidator<IntegralType> >
 stringToIntegralParameterEntryValidator(
   Array<std::string> const& strings,
   Array<std::string> const& stringsDocs,
@@ -362,7 +362,7 @@ std::string getVerbosityLevelParameterValueName(
  *
  * \relates EVerbosityLevel
  */
-RefCountPtr<StringToIntegralParameterEntryValidator<EVerbosityLevel> >
+RCP<StringToIntegralParameterEntryValidator<EVerbosityLevel> >
 verbosityLevelParameterEntryValidator(std::string const& defaultParameterName);
 
 
@@ -493,7 +493,7 @@ public:
     ) const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Array<std::string> >
+  Teuchos::RCP<const Array<std::string> >
   validStringValues() const;
 
   /** \brief . */
@@ -534,7 +534,7 @@ private:
  *
  * \relates AnyNumberParameterEntryValidator
  */
-RefCountPtr<AnyNumberParameterEntryValidator>
+RCP<AnyNumberParameterEntryValidator>
 anyNumberParameterEntryValidator(
   AnyNumberParameterEntryValidator::EPreferredType const preferredType,
   AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
@@ -836,7 +836,7 @@ void StringToIntegralParameterEntryValidator<IntegralType>::printDoc(
 
 
 template<class IntegralType>
-Teuchos::RefCountPtr<const Array<std::string> >
+Teuchos::RCP<const Array<std::string> >
 StringToIntegralParameterEntryValidator<IntegralType>::validStringValues() const
 {
   return validStringValues_;
@@ -888,7 +888,7 @@ void StringToIntegralParameterEntryValidator<IntegralType>::setValidValues(
 
 template<class IntegralType>
 inline
-Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
+Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
 Teuchos::stringToIntegralParameterEntryValidator(
   Array<std::string> const& strings,
   std::string const& defaultParameterName
@@ -904,7 +904,7 @@ Teuchos::stringToIntegralParameterEntryValidator(
 
 template<class IntegralType>
 inline
-Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
+Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
 Teuchos::stringToIntegralParameterEntryValidator(
   Array<std::string> const& strings,
   Array<IntegralType> const& integralValues, 
@@ -921,7 +921,7 @@ Teuchos::stringToIntegralParameterEntryValidator(
 
 template<class IntegralType>
 inline
-Teuchos::RefCountPtr< Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
+Teuchos::RCP< Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
 Teuchos::stringToIntegralParameterEntryValidator(
   Array<std::string> const& strings,
   Array<std::string> const& stringsDocs,
@@ -1004,7 +1004,7 @@ IntegralType Teuchos::getIntegralValue(
   )
 {
   const ParameterEntry &entry = paramList.getEntry(paramName);
-  RefCountPtr<const ParameterEntryValidator>
+  RCP<const ParameterEntryValidator>
     validator = entry.validator();
   TEST_FOR_EXCEPTION_PURE_MSG(
     is_null(validator), Exceptions::InvalidParameterType,
@@ -1014,7 +1014,7 @@ IntegralType Teuchos::getIntegralValue(
     "an integral value of type \""<<TypeNameTraits<IntegralType>::name()<<"\"!"
     );
 
-  RefCountPtr<const StringToIntegralParameterEntryValidator<IntegralType> >
+  RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
     integralValidator
     =
     rcp_dynamic_cast<const StringToIntegralParameterEntryValidator<IntegralType> >(

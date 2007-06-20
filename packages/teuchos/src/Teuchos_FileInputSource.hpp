@@ -52,7 +52,7 @@ namespace Teuchos
       virtual ~FileInputSource(){;}
 
       /** \brief Create a FileInputStream */
-      virtual RefCountPtr<XMLInputStream> stream() const;
+      virtual RCP<XMLInputStream> stream() const;
 
     private:
       string filename_;

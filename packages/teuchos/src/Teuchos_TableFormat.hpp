@@ -123,8 +123,8 @@ namespace Teuchos
      * \param entries [in] the data to be written into this row. Each array
      * element is the entry for a column on this row.
      */ 
-    void writeRow(RefCountPtr<std::ostream>& out,
-                  const Array<RefCountPtr<TableEntry> >& entries) const ;
+    void writeRow(RCP<std::ostream>& out,
+                  const Array<RCP<TableEntry> >& entries) const ;
 
     /** \brief Write the row of entries 
      *
@@ -133,12 +133,12 @@ namespace Teuchos
      * \param rowIndex [in] the index into the columns used to obtain the values for
      * this row
      */ 
-    void writeRow(RefCountPtr<std::ostream>& out,
+    void writeRow(RCP<std::ostream>& out,
                   int rowIndex,
                   const Array<TableColumn>& columns) const ;
 
     /** */
-    void writeWholeTable(RefCountPtr<std::ostream>& out,
+    void writeWholeTable(RCP<std::ostream>& out,
                          const string& tableTitle,
                          const Array<string>& columnNames,
                          const Array<TableColumn>& columns) const ;

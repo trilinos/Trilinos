@@ -590,10 +590,10 @@ public:
   //@{
 
   /** \brief Return the vector space for the state variables <tt>x</tt> . */
-  virtual Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_x_space() const = 0;
+  virtual Teuchos::RCP<const VectorSpaceBase<Scalar> > get_x_space() const = 0;
 
   /** \brief Return the vector space for the state function <tt>f(...)</tt>. */
-  virtual Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const = 0;
+  virtual Teuchos::RCP<const VectorSpaceBase<Scalar> > get_f_space() const = 0;
 
   /** \brief Return the vector space for the auxiliary parameters
    * <tt>p(l)</tt>.
@@ -607,7 +607,7 @@ public:
    * <li> <tt>return.get()!=NULL</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const = 0;
+  virtual Teuchos::RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const = 0;
 
   /** \brief Get the names of the parameters associated with parameter
    * subvector l if available.
@@ -622,7 +622,7 @@ public:
    * The default implementation return returnVal==Teuchos::null which means
    * by default, parameters have no names associated with them.
    */
-  virtual Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const = 0;
+  virtual Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const = 0;
 
   /** \brief Return the vector space for the auxiliary response functions
    * <tt>g(j)</tt>.
@@ -636,7 +636,7 @@ public:
    * <li> <tt>return.get()!=NULL</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const = 0;
+  virtual Teuchos::RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const = 0;
 
   //@}
 
@@ -706,7 +706,7 @@ public:
    * <li><tt>this->createOutArgs().supports(OUT_ARG_W)==true</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > create_W() const = 0;
+  virtual Teuchos::RCP<LinearOpWithSolveBase<Scalar> > create_W() const = 0;
 
   /** \brief If supported, create a <tt>LinearOpBase</tt> object for
    * <tt>W</tt> to be evaluated.
@@ -715,7 +715,7 @@ public:
    * <li><tt>this->createOutArgs().supports(OUT_ARG_W_op)==true</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_W_op() const = 0;
+  virtual Teuchos::RCP<LinearOpBase<Scalar> > create_W_op() const = 0;
 
   /** \brief If supported, create a linear operator derivative object for
    * <tt>D(f)/D(p(l))</tt>.
@@ -727,7 +727,7 @@ public:
    *     where <tt>outArgs = this->createOutArgs()</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DfDp_op(int l) const = 0;
+  virtual Teuchos::RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const = 0;
 
   // ToDo: Add functions for creating D(g(j))/D(x_dot) if needed!
 
@@ -741,7 +741,7 @@ public:
    *     where <tt>outArgs = this->createOutArgs()</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDx_op(int j) const = 0;
+  virtual Teuchos::RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const = 0;
 
   /** \brief If supported, create a linear operator derivative object for
    * <tt>D(g(j))/D(p(l))</tt>.
@@ -755,7 +755,7 @@ public:
    *     where <tt>outArgs = this->createOutArgs()</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const = 0;
+  virtual Teuchos::RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const = 0;
   
   //@}
 

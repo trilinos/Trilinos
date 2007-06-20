@@ -46,7 +46,7 @@
 template<class Scalar>
 void sillyModifiedGramSchmidt(
   Thyra::MultiVectorBase<Scalar>                             *V_inout
-  ,Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >     *R_out
+  ,Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >     *R_out
   )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;

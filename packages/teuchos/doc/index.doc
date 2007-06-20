@@ -95,14 +95,14 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 
   <ul>
 
-  <li> Smart pointer: Teuchos::RefCountPtr - a reference-counted
+  <li> Smart pointer: Teuchos::RCP - a reference-counted
   pointer for managing dynamically allocated memory that is safe under
   multiple inheritance.
 
 	<li> Abstract factories:
     <ul>
     <li> Teuchos::AbstractFactory - defines a basic "Abstract Factory" interface
-         that allocates objects and returns them wrapped in <tt>Teuchos::RefCountPtr</tt>
+         that allocates objects and returns them wrapped in <tt>Teuchos::RCP</tt>
          objects.
     <li> Teuchos::AbstractFactoryStd - defines a general concrete implementation of 
          Teuchos::AbstractFactory that allows creating quick concrete subclass

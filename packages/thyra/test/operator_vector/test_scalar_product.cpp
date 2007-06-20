@@ -60,27 +60,27 @@ bool run_scalar_product_tests(
   typedef Teuchos::ScalarTraits<Scalar>    ST;
   typedef typename ST::magnitudeType       ScalarMag;
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_implicit_cast;
   using Teuchos::OSTab;
 
-  RefCountPtr<Teuchos::FancyOStream>
+  RCP<Teuchos::FancyOStream>
     out = rcp(new Teuchos::FancyOStream(rcp(out_arg,false)));
 
   if(out.get()) *out << "\n*** Entering run_scalar_product_tests<"<<ST::name()<<">(...) ...\n" << std::boolalpha;
 
   bool success = true, result;
 
-  RefCountPtr<Thyra::DefaultSpmdVectorSpace<Scalar> >
+  RCP<Thyra::DefaultSpmdVectorSpace<Scalar> >
     domain = rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(n/2)),
     range  = rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(n));
 
-  RefCountPtr<Thyra::DefaultSpmdMultiVector<Scalar> >
+  RCP<Thyra::DefaultSpmdMultiVector<Scalar> >
     op_coeff = rcp(new Thyra::DefaultSpmdMultiVector<Scalar>(range,domain)),
     op       = rcp(new Thyra::DefaultSpmdMultiVector<Scalar>(range,domain));
 
-  RefCountPtr<Thyra::DefaultDiagonalLinearOp<Scalar> >
+  RCP<Thyra::DefaultDiagonalLinearOp<Scalar> >
     domainScalarProdOp = rcp(
       new Thyra::DefaultDiagonalLinearOp<Scalar>(
         rcp_implicit_cast<const Thyra::VectorSpaceBase<Scalar> >(domain)
@@ -95,12 +95,12 @@ bool run_scalar_product_tests(
   Thyra::seed_randomize<Scalar>(0);
   Thyra::randomize( Scalar(Scalar(-1)*ST::one()), Scalar(Scalar(+1)*ST::one()), &*op_coeff );
   if(out.get() && dumpAll) *out << "\nop_coeff =\n" << *op_coeff;
-  RefCountPtr<const Thyra::VectorSpaceConverterBase<ScalarMag,Scalar> >
+  RCP<const Thyra::VectorSpaceConverterBase<ScalarMag,Scalar> >
     vecSpcConverterFromMag = rcp(new Thyra::DefaultSerialVectorSpaceConverter<ScalarMag,Scalar>());
-  RefCountPtr<const Thyra::VectorSpaceBase<ScalarMag> >
+  RCP<const Thyra::VectorSpaceBase<ScalarMag> >
     magDomain = vecSpcConverterFromMag->createVectorSpaceFrom(*rcp_implicit_cast<const Thyra::VectorSpaceBase<Scalar> >(domain)),
     magRange  = vecSpcConverterFromMag->createVectorSpaceFrom(*rcp_implicit_cast<const Thyra::VectorSpaceBase<Scalar> >(range));
-  RefCountPtr<Thyra::VectorBase<ScalarMag> >
+  RCP<Thyra::VectorBase<ScalarMag> >
     _domainScalarProdDiag = createMember(magDomain),
     _rangeScalarProdDiag  = createMember(*magRange);
   Thyra::randomize( ScalarMag(ScalarMag(+1)*SMT::one()), ScalarMag(ScalarMag(+2)*SMT::one()), &*_domainScalarProdDiag );
@@ -108,9 +108,9 @@ bool run_scalar_product_tests(
   vecSpcConverterFromMag->convert( *_domainScalarProdDiag, &*domainScalarProdOp->getNonconstDiag() );
   vecSpcConverterFromMag->convert( *_rangeScalarProdDiag, &*rangeScalarProdOp->getNonconstDiag() );
 
-  RefCountPtr<const Thyra::EuclideanScalarProd<Scalar> >
+  RCP<const Thyra::EuclideanScalarProd<Scalar> >
     euclideanScalarProd = rcp(new Thyra::EuclideanScalarProd<Scalar>());
-  RefCountPtr<const Thyra::LinearOpScalarProd<Scalar> >
+  RCP<const Thyra::LinearOpScalarProd<Scalar> >
     domainScalarProd = rcp(new Thyra::LinearOpScalarProd<Scalar>(domainScalarProdOp)),
     rangeScalarProd = rcp(new Thyra::LinearOpScalarProd<Scalar>(rangeScalarProdOp));
 
@@ -202,7 +202,7 @@ int main( int argc, char* argv[] ) {
 
   using Teuchos::CommandLineProcessor;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {

@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "../tpetra_test_util.hpp"
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include "Tpetra_OmniPlatform.hpp"
 #ifdef TPETRA_MPI
 #include "Tpetra_MpiPlatform.hpp"
@@ -121,15 +121,15 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 
 	// clone
 	if(verbose) cout << "clone..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Platform<OrdinalType, ScalarType> > platform3 = platform.clone();
+	Teuchos::RCP< Tpetra::Platform<OrdinalType, ScalarType> > platform3 = platform.clone();
 
 	// createScalarComm
 	if(verbose) cout << "createScalarComm..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Comm<OrdinalType, ScalarType> > comm1 = platform.createScalarComm();
+	Teuchos::RCP< Tpetra::Comm<OrdinalType, ScalarType> > comm1 = platform.createScalarComm();
   
 	// createOrdinalComm
 	if(verbose) cout << "createOrdinalComm..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Comm<OrdinalType, OrdinalType> > comm2 = platform.createOrdinalComm();
+	Teuchos::RCP< Tpetra::Comm<OrdinalType, OrdinalType> > comm2 = platform.createOrdinalComm();
 	
 	// ======================================================================
 	// actual testing section - affects return code
@@ -168,13 +168,13 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 	// create the Comms
 	if(verbose) 
 		cout << "Creating op1's Comm..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Comm<OrdinalType, ScalarType> > op1_comm;
+	Teuchos::RCP< Tpetra::Comm<OrdinalType, ScalarType> > op1_comm;
 	op1.createComm(op1_comm);
 	if(debug)
 		op1_comm->printInfo(cout);
 	if(verbose) 
 		cout << "Creating op1's SerialComm..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Comm<OrdinalType, ScalarType> > op1_serialcomm;
+	Teuchos::RCP< Tpetra::Comm<OrdinalType, ScalarType> > op1_serialcomm;
 	op1.createComm(op1_serialcomm, Tpetra::OmniPlatform::SERIAL);
 	if(debug)
 		op1_serialcomm->printInfo(cout);
@@ -207,7 +207,7 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 	// create the Comms
 	if(verbose) 
 		cout << "Creating op2's Comm..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Comm<OrdinalType, ScalarType> > op2_comm;
+	Teuchos::RCP< Tpetra::Comm<OrdinalType, ScalarType> > op2_comm;
 	op2.createComm(op2_comm);
 	if(debug) {
 		op2_comm->printInfo(cout);
@@ -216,7 +216,7 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 	}
 	if(verbose) 
 		cout << "Creating op2's SerialComm..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Comm<OrdinalType, ScalarType> > op2_serialcomm;
+	Teuchos::RCP< Tpetra::Comm<OrdinalType, ScalarType> > op2_serialcomm;
 	op2.createComm(op2_serialcomm, Tpetra::OmniPlatform::SERIAL);
 	if(debug) {
 		op2_serialcomm->printInfo(cout);
@@ -225,7 +225,7 @@ int omniTest(bool verbose, bool debug, int myImageID, int numImages) {
 	}
 	if(verbose) 
 		cout << "Creating op2's MpiComm..." << endl;
-	Teuchos::RefCountPtr< Tpetra::Comm<OrdinalType, ScalarType> > op2_mpicomm;
+	Teuchos::RCP< Tpetra::Comm<OrdinalType, ScalarType> > op2_mpicomm;
 	op2.createComm(op2_mpicomm, Tpetra::OmniPlatform::MPI);
 	if(debug) {
 		op2_mpicomm->printInfo(cout);

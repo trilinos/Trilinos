@@ -31,7 +31,7 @@ A=
  * glboal dimension of the matrix.
  */
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 createExampleTridiagTpetraLinearOp(
   const Ordinal      globalDim
 #ifdef HAVE_MPI
@@ -42,7 +42,7 @@ createExampleTridiagTpetraLinearOp(
   ,std::ostream      &out
   )
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
 
   //
@@ -76,10 +76,10 @@ createExampleTridiagTpetraLinearOp(
   //
   
   // (B.1) Allocate the Tpetra::CisMatrix object.
-  RefCountPtr<Tpetra::CisMatrix<Ordinal,Scalar> >
+  RCP<Tpetra::CisMatrix<Ordinal,Scalar> >
     A_tpetra = rcp(new Tpetra::CisMatrix<Ordinal,Scalar>(vectorSpace));
   // Note that Tpetra::CisMatrix is a handle object but we still use a
-  // RefCountPtr to wrap since there can be no confusion when using an RCP to
+  // RCP to wrap since there can be no confusion when using an RCP to
   // manage an object.
 
   // (B.2) Get the indexes of the rows on this processor
@@ -118,7 +118,7 @@ createExampleTridiagTpetraLinearOp(
   // into a Thyra::TpetraLinearOp object to turn it into a Thyra::LinearOpBase object
   //
 
-  RefCountPtr<Thyra::LinearOpBase<Scalar> >
+  RCP<Thyra::LinearOpBase<Scalar> >
     A = rcp(
       new Thyra::TpetraLinearOp<Ordinal,Scalar>(
         Teuchos::rcp_implicit_cast<Tpetra::Operator<Ordinal,Scalar> >(A_tpetra)
@@ -132,9 +132,9 @@ createExampleTridiagTpetraLinearOp(
   return A;
 
   // Note that when this function returns the returned
-  // RefCountPtr-wrapped Thyra::LinearOpBase object will own all of the
+  // RCP-wrapped Thyra::LinearOpBase object will own all of the
   // Tpetra objects that went into its construction and these objects
-  // will stay around until all of the RefCountPtr objects to the
+  // will stay around until all of the RCP objects to the
   // allocated Thyra::LinearOpBase object are removed and destruction
   // occurs!
 

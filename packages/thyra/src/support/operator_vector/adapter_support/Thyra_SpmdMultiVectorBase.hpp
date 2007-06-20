@@ -60,7 +60,7 @@ SpmdMultiVectorBase<Scalar>::SpmdMultiVectorBase()
 // Overridden from EuclideanLinearOpBase
 
 template<class Scalar>
-Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >
+Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >
 SpmdMultiVectorBase<Scalar>::rangeScalarProdVecSpc() const
 {
   return Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
@@ -351,7 +351,7 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
   const SpmdVectorSpaceBase<Scalar> &spmdSpc = *this->spmdSpace();
 
   // Get the Spmd communicator
-  const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
+  const Teuchos::RCP<const Teuchos::Comm<Index> >
     comm = spmdSpc.getComm();
 #ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar>

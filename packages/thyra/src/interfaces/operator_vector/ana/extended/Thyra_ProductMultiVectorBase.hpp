@@ -56,7 +56,7 @@ public:
    *
    * If <tt>*this</tt> is uninitialized then <tt>return.get()==NULL</tt>.
    */
-  virtual Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
+  virtual Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
   productSpace() const = 0;
 
   /** \brief Return if the <tt>kth</tt> multi-vector block is const-only.
@@ -91,7 +91,7 @@ public:
    * performed until the view returned from this function is released as
    * described above.
    */
-  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  virtual Teuchos::RCP<MultiVectorBase<Scalar> >
   getNonconstMultiVectorBlock(const int k) = 0;
 
   /** \brief Returns a non-persisting <tt>const</tt> view of the (zero-based)
@@ -105,7 +105,7 @@ public:
    * <li> <tt>0 <= k && k < productSpace()->numBlocks()</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+  virtual Teuchos::RCP<const MultiVectorBase<Scalar> >
   getMultiVectorBlock(const int k) const = 0;
   
 };

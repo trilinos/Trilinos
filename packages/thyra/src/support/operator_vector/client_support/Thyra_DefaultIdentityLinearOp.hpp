@@ -43,7 +43,7 @@ DefaultIdentityLinearOp<Scalar>::DefaultIdentityLinearOp()
 
 template<class Scalar>
 DefaultIdentityLinearOp<Scalar>::DefaultIdentityLinearOp(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &space
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &space
   )
 {
   initialize(space);
@@ -51,7 +51,7 @@ DefaultIdentityLinearOp<Scalar>::DefaultIdentityLinearOp(
 
 template<class Scalar>
 void DefaultIdentityLinearOp<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &space
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &space
   )
 {
   space_ = space.assert_not_null();
@@ -66,21 +66,21 @@ void DefaultIdentityLinearOp<Scalar>::uninitialize()
 // Overridden from LinearOpBase
   
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultIdentityLinearOp<Scalar>::range() const
 {
   return space_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultIdentityLinearOp<Scalar>::domain() const
 {
   return space_;
 }
   
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultIdentityLinearOp<Scalar>::clone() const
 {
   typedef DefaultIdentityLinearOp<Scalar> this_t;
@@ -137,9 +137,9 @@ void DefaultIdentityLinearOp<Scalar>::apply(
 }	// end namespace Thyra
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::identity(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &space
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &space
   )
 {
   return Teuchos::rcp(new DefaultIdentityLinearOp<Scalar>(space));

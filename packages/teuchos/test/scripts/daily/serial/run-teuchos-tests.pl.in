@@ -39,7 +39,7 @@ my $ierr = 0;
 my $top_build_dir = remove_rel_paths("@abs_top_builddir@");
 my $test_dir = "${top_build_dir}/test";
 
-run_test("$test_dir/RefCountPtr/RefCountPtr_test.exe","--quiet","--verbose");
+run_test("$test_dir/RCP/RefCountPtr_test.exe","--quiet","--verbose");
 run_test("$test_dir/Workspace/workspace_test.exe","--quiet","--verbose");
 run_test("$test_dir/dyn_cast/dyn_cast_test.exe","--quiet","--verbose");
 run_test("$test_dir/BLAS/BLAS_test.exe","","-v");

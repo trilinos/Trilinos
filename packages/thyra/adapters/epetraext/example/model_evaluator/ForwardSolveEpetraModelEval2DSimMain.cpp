@@ -12,7 +12,7 @@ int main( int argc, char* argv[] )
 {
 
   using Teuchos::CommandLineProcessor;
-  typedef Teuchos::RefCountPtr<Thyra::VectorBase<double> > VectorPtr;
+  typedef Teuchos::RCP<Thyra::VectorBase<double> > VectorPtr;
 
   bool success = true;
 
@@ -91,12 +91,12 @@ int main( int argc, char* argv[] )
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
       return parse_return;
 
-    Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    Teuchos::RCP<Teuchos::FancyOStream>
       out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
     *out << "\nCreating the nonlinear equations object ...\n";
     
-    Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> epetraModel;
+    Teuchos::RCP<EpetraExt::ModelEvaluator> epetraModel;
     if(use4DOpt) {
       epetraModel = rcp(new EpetraModelEval4DOpt(0.0,0.0,p0,p1,d,x00,x01,p0,p1));
     }
@@ -104,13 +104,13 @@ int main( int argc, char* argv[] )
       epetraModel = rcp(new EpetraModelEval2DSim(d,p0,p1,x00,x01,showGetInvalidArg));
     }
 
-    Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       lowsFactory = rcp(new Thyra::AmesosLinearOpWithSolveFactory());
 
-    Teuchos::RefCountPtr<Thyra::EpetraModelEvaluator>
+    Teuchos::RCP<Thyra::EpetraModelEvaluator>
       epetraThyraModel = rcp(new Thyra::EpetraModelEvaluator());
     
-    Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> > thyraModel;
+    Teuchos::RCP<Thyra::ModelEvaluator<double> > thyraModel;
     if(externalFactory) {
       epetraThyraModel->initialize(epetraModel,Teuchos::null);
       thyraModel = Teuchos::rcp(

@@ -118,7 +118,7 @@ namespace Thyra {
  *
  * Note that the forward operator <tt>A</tt> is passed into this function
  * <tt>singleLinearSolve(...)</tt> as a raw object reference and not as a
- * <tt>Teuchos::RefCountPtr</tt> wrapped object since no persisting
+ * <tt>Teuchos::RCP</tt> wrapped object since no persisting
  * relationship with this object will be last after this function exists, even
  * if an exception is thrown.
  *
@@ -149,7 +149,7 @@ namespace Thyra {
  * <tt>ScaledAdjointLinearOpBase</tt> will allow this feature.
  *
  * Above also note that the forward operator <tt>A</tt> is passed in as a
- * <tt>Teuchos::RefCountPtr</tt> wrapped object since it will be used to
+ * <tt>Teuchos::RCP</tt> wrapped object since it will be used to
  * create a persisting relationship with the returned
  * <tt>Thyra::LinearOpWithSolveBase</tt> object.  Also note that the
  * <tt>lowsFactory</tt> object is still passed in as a raw object reference
@@ -422,7 +422,7 @@ public:
    * <tt>acceptsPreconditionerFactory()</tt>.
    */
   virtual void setPreconditionerFactory(
-    const Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  &precFactory
+    const Teuchos::RCP<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  &precFactory
     ,const std::string                                                                &precFactoryName
     );
 
@@ -430,7 +430,7 @@ public:
    *
    * The default implementation returns <tt>Teuchos::null</tt>.
    */
-  virtual Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> > getPreconditionerFactory() const;
+  virtual Teuchos::RCP<PreconditionerFactoryBase<RangeScalar,DomainScalar> > getPreconditionerFactory() const;
 
   /** \brief Unset the preconditioner factory (if one is set).
    *
@@ -441,7 +441,7 @@ public:
    * The default implementation returns <tt>Teuchos::null</tt>.
    */
   virtual void unsetPreconditionerFactory(
-    Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  *precFactory      = NULL
+    Teuchos::RCP<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  *precFactory      = NULL
     ,std::string                                                                *precFactoryName  = NULL
     );
 
@@ -463,7 +463,7 @@ public:
    * output operator object is not guaranteed to be fully initialized until
    * after it is passed through <tt>this->initializeOp()</tt>.
    */
-  virtual Teuchos::RefCountPtr<LinearOpWithSolveBase<RangeScalar,DomainScalar> > createOp() const = 0;
+  virtual Teuchos::RCP<LinearOpWithSolveBase<RangeScalar,DomainScalar> > createOp() const = 0;
 
   /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
    * given a "compatible" <tt>LinearOpBase</tt> object.
@@ -513,7 +513,7 @@ public:
    * </ul>
    */
   virtual void initializeOp(
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >    &fwdOpSrc
+    const Teuchos::RCP<const LinearOpSourceBase<RangeScalar,DomainScalar> >    &fwdOpSrc
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                   *Op
     ,const ESupportSolveUse                                                            supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
     ) const = 0;
@@ -567,7 +567,7 @@ public:
    * implementation.
    */
   virtual void initializeAndReuseOp(
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >    &fwdOpSrc
+    const Teuchos::RCP<const LinearOpSourceBase<RangeScalar,DomainScalar> >    &fwdOpSrc
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                   *Op
     ) const;
 
@@ -614,9 +614,9 @@ public:
    */
   virtual void uninitializeOp(
     LinearOpWithSolveBase<RangeScalar,DomainScalar>                               *Op
-    ,Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >    *fwdOpSrc        = NULL
-    ,Teuchos::RefCountPtr<const PreconditionerBase<RangeScalar,DomainScalar> >    *prec            = NULL
-    ,Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >    *approxFwdOpSrc  = NULL
+    ,Teuchos::RCP<const LinearOpSourceBase<RangeScalar,DomainScalar> >    *fwdOpSrc        = NULL
+    ,Teuchos::RCP<const PreconditionerBase<RangeScalar,DomainScalar> >    *prec            = NULL
+    ,Teuchos::RCP<const LinearOpSourceBase<RangeScalar,DomainScalar> >    *approxFwdOpSrc  = NULL
     ,ESupportSolveUse                                                             *supportSolveUse = NULL
     ) const = 0;
   
@@ -710,8 +710,8 @@ public:
    * that preconditioners can not be supported..
    */
   virtual void initializePreconditionedOp(
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >       &fwdOpSrc
-    ,const Teuchos::RefCountPtr<const PreconditionerBase<RangeScalar,DomainScalar> >      &prec
+    const Teuchos::RCP<const LinearOpSourceBase<RangeScalar,DomainScalar> >       &fwdOpSrc
+    ,const Teuchos::RCP<const PreconditionerBase<RangeScalar,DomainScalar> >      &prec
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                      *Op
     ,const ESupportSolveUse                                                               supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
     ) const;
@@ -737,8 +737,8 @@ public:
    * ToDo: finish documentation!
    */
   virtual void initializeApproxPreconditionedOp(
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >       &fwdOpSrc
-    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >      &approxFwdOpSrc
+    const Teuchos::RCP<const LinearOpSourceBase<RangeScalar,DomainScalar> >       &fwdOpSrc
+    ,const Teuchos::RCP<const LinearOpSourceBase<RangeScalar,DomainScalar> >      &approxFwdOpSrc
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                      *Op
     ,const ESupportSolveUse                                                               supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
     ) const;
@@ -758,7 +758,7 @@ bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::acceptsPrecondition
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::setPreconditionerFactory(
-  const Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  &precFactory
+  const Teuchos::RCP<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  &precFactory
   ,const std::string                                                                &precFactoryName
   )
 {
@@ -770,7 +770,7 @@ void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::setPreconditionerFa
 }
 
 template<class RangeScalar, class DomainScalar>
-Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> >
+Teuchos::RCP<PreconditionerFactoryBase<RangeScalar,DomainScalar> >
 LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::getPreconditionerFactory() const
 {
   return Teuchos::null;
@@ -778,7 +778,7 @@ LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::getPreconditionerFactory
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::unsetPreconditionerFactory(
-  Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  *precFactory
+  Teuchos::RCP<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  *precFactory
   ,std::string                                                                *precFactoryName
   )
 {
@@ -788,7 +788,7 @@ void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::unsetPreconditioner
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializeAndReuseOp(
-  const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >    &fwdOpSrc
+  const Teuchos::RCP<const LinearOpSourceBase<RangeScalar,DomainScalar> >    &fwdOpSrc
   ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                   *Op
   ) const
 {
@@ -805,8 +805,8 @@ bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::supportsPreconditio
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializePreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >       &fwdOpSrc
-  ,const Teuchos::RefCountPtr<const PreconditionerBase<RangeScalar,DomainScalar> >      &prec
+  const Teuchos::RCP<const LinearOpSourceBase<RangeScalar,DomainScalar> >       &fwdOpSrc
+  ,const Teuchos::RCP<const PreconditionerBase<RangeScalar,DomainScalar> >      &prec
   ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                      *Op
   ,const ESupportSolveUse                                                               supportSolveUse
   ) const
@@ -820,8 +820,8 @@ void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializePrecondit
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializeApproxPreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >       &fwdOpSrc
-  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >      &approxFwdOpSrc
+  const Teuchos::RCP<const LinearOpSourceBase<RangeScalar,DomainScalar> >       &fwdOpSrc
+  ,const Teuchos::RCP<const LinearOpSourceBase<RangeScalar,DomainScalar> >      &approxFwdOpSrc
   ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                      *Op
   ,const ESupportSolveUse                                                               supportSolveUse
   ) const

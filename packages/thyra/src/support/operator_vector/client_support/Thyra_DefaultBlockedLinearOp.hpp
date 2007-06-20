@@ -64,8 +64,8 @@ void DefaultBlockedLinearOp<Scalar>::beginBlockFill(
 
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::beginBlockFill(
-  const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >  &productRange
-  ,const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &productDomain
+  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >  &productRange
+  ,const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productDomain
   )
 {
   assertBlockFillIsActive(false);
@@ -94,7 +94,7 @@ bool DefaultBlockedLinearOp<Scalar>::acceptsBlock(
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::setNonconstBlock(
   const int i, const int j
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &block
+  ,const Teuchos::RCP<LinearOpBase<Scalar> > &block
   )
 {
   setBlockImpl(i,j,block);
@@ -103,7 +103,7 @@ void DefaultBlockedLinearOp<Scalar>::setNonconstBlock(
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::setBlock(
   const int i, const int j
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &block
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &block
   )
 {
   setBlockImpl(i,j,block);
@@ -182,14 +182,14 @@ void DefaultBlockedLinearOp<Scalar>::uninitialize()
 // Overridden from BlockedLinearOpBase
 
 template<class Scalar>
-Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
+Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
 DefaultBlockedLinearOp<Scalar>::productRange() const
 {
   return productRange_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
+Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
 DefaultBlockedLinearOp<Scalar>::productDomain() const
 {
   return productDomain_;
@@ -219,7 +219,7 @@ bool DefaultBlockedLinearOp<Scalar>::blockIsConst(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 DefaultBlockedLinearOp<Scalar>::getNonconstBlock(const int i, const int j)
 {
 #ifdef TEUCHOS_DEBUG
@@ -231,7 +231,7 @@ DefaultBlockedLinearOp<Scalar>::getNonconstBlock(const int i, const int j)
 } 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultBlockedLinearOp<Scalar>::getBlock(const int i, const int j) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -245,21 +245,21 @@ DefaultBlockedLinearOp<Scalar>::getBlock(const int i, const int j) const
 // Overridden from LinearOpBase
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultBlockedLinearOp<Scalar>::range() const
 {
   return productRange_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultBlockedLinearOp<Scalar>::domain() const
 {
   return productDomain_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultBlockedLinearOp<Scalar>::clone() const
 {
   return Teuchos::null; // ToDo: Implement this when needed!
@@ -287,11 +287,11 @@ void DefaultBlockedLinearOp<Scalar>::describe(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   assertBlockFillIsActive(false);
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:
@@ -317,7 +317,7 @@ void DefaultBlockedLinearOp<Scalar>::describe(
       for( int i = 0; i < numRowBlocks_; ++i ) {
         for( int j = 0; j < numColBlocks_; ++j ) {
           *out << "Op["<<i<<","<<j<<"] = ";
-          Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+          Teuchos::RCP<const LinearOpBase<Scalar> >
             block_i_j = getBlock(i,j);
           if(block_i_j.get())
             *out << Teuchos::describe(*getBlock(i,j),verbLevel);
@@ -344,7 +344,7 @@ bool DefaultBlockedLinearOp<Scalar>::opSupported(
   bool opSupported = true;
   for( int i = 0; i < numRowBlocks_; ++i ) {
     for( int j = 0; j < numColBlocks_; ++j ) {
-      Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+      Teuchos::RCP<const LinearOpBase<Scalar> >
         block_i_j = getBlock(i,j);
       if( block_i_j.get() && !Thyra::opSupported(*block_i_j,M_trans) )
         opSupported = false;
@@ -362,12 +362,12 @@ void DefaultBlockedLinearOp<Scalar>::apply(
   ,const Scalar                     beta
   ) const
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::dyn_cast;
   typedef Teuchos::ScalarTraits<Scalar>                ST;
-  typedef RefCountPtr<MultiVectorBase<Scalar> >        MultiVectorPtr;
-  typedef RefCountPtr<const MultiVectorBase<Scalar> >  ConstMultiVectorPtr;
-  typedef RefCountPtr<const LinearOpBase<Scalar> >     ConstLinearOpPtr;
+  typedef RCP<MultiVectorBase<Scalar> >        MultiVectorPtr;
+  typedef RCP<const MultiVectorBase<Scalar> >  ConstMultiVectorPtr;
+  typedef RCP<const LinearOpBase<Scalar> >     ConstLinearOpPtr;
 #ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
     "DefaultBlockedLinearOp<Scalar>::apply(...)",*this,M_trans,X_in,Y_inout
@@ -482,7 +482,7 @@ void DefaultBlockedLinearOp<Scalar>::setBlockSpaces(
   // compatible with the block that is being set.
   if( i < numRowBlocks_ && j < numColBlocks_ ) {
 #ifdef TEUCHOS_DEBUG
-    Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+    Teuchos::RCP<const VectorSpaceBase<Scalar> >
       rangeBlock = (
         productRange_.get()
         ? productRange_->getBlock(i)
@@ -535,7 +535,7 @@ template<class Scalar>
 template<class LinearOpType>
 void DefaultBlockedLinearOp<Scalar>::setBlockImpl(
   const int i, const int j
-  ,const Teuchos::RefCountPtr<LinearOpType> &block
+  ,const Teuchos::RCP<LinearOpType> &block
   )
 {
   setBlockSpaces(i,j,*block);
@@ -564,15 +564,15 @@ void DefaultBlockedLinearOp<Scalar>::setBlockImpl(
 } // namespace Thyra
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::block2x2(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A01
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A10
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A11
+  const Teuchos::RCP<const LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A01
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A10
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A11
   )
 {
-  Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
+  Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
     M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
   M->beginBlockFill(2,2);
   if(A00.get()) M->setBlock(0,0,A00);
@@ -584,13 +584,13 @@ Thyra::block2x2(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::block2x1(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A10
+  const Teuchos::RCP<const LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A10
   )
 {
-  Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
+  Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
     M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
   M->beginBlockFill(2,1);
   if(A00.get()) M->setBlock(0,0,A00);
@@ -600,13 +600,13 @@ Thyra::block2x1(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::block1x2(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A01
+  const Teuchos::RCP<const LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A01
   )
 {
-  Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
+  Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
     M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
   M->beginBlockFill(1,2);
   if(A00.get()) M->setBlock(0,0,A00);
@@ -616,15 +616,15 @@ Thyra::block1x2(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstBlock2x2(
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A01
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A10
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A11
+  const Teuchos::RCP<LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A01
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A10
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A11
   )
 {
-  Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
+  Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
     M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
   M->beginBlockFill(2,2);
   if(A00.get()) M->setNonconstBlock(0,0,A00);
@@ -636,13 +636,13 @@ Thyra::nonconstBlock2x2(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstBlock2x1(
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A10
+  const Teuchos::RCP<LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A10
   )
 {
-  Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
+  Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
     M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
   M->beginBlockFill(2,1);
   if(A00.get()) M->setNonconstBlock(0,0,A00);
@@ -652,13 +652,13 @@ Thyra::nonconstBlock2x1(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstBlock1x2(
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A01
+  const Teuchos::RCP<LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A01
   )
 {
-  Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
+  Teuchos::RCP<PhysicallyBlockedLinearOpBase<Scalar> >
     M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
   M->beginBlockFill(1,2);
   if(A00.get()) M->setNonconstBlock(0,0,A00);

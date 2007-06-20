@@ -38,26 +38,26 @@
 using std::string;
 using Teuchos::TimeMonitor;
 using Teuchos::Time;
-using Teuchos::RefCountPtr;
+using Teuchos::RCP;
 using Teuchos::ScalarTraits;
 
 /* Test of Teuchos timing classes */
 
 
 /* create timers for several functions */
-static Time& sqrtTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("square roots"); return *t;}
+static Time& sqrtTimer() {static RCP<Time> t = TimeMonitor::getNewTimer("square roots"); return *t;}
 
-static Time& factTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("factorials"); return *t;}
+static Time& factTimer() {static RCP<Time> t = TimeMonitor::getNewTimer("factorials"); return *t;}
 
-static Time& exceptTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("func with exception"); return *t;}
+static Time& exceptTimer() {static RCP<Time> t = TimeMonitor::getNewTimer("func with exception"); return *t;}
 
-static Time& localTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("a function that is not called on all procs"); return *t;}
+static Time& localTimer() {static RCP<Time> t = TimeMonitor::getNewTimer("a function that is not called on all procs"); return *t;}
 
-static Time& anotherTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("another func"); return *t;}
+static Time& anotherTimer() {static RCP<Time> t = TimeMonitor::getNewTimer("another func"); return *t;}
 
-static Time& yetAnotherTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("yet another func"); return *t;}
+static Time& yetAnotherTimer() {static RCP<Time> t = TimeMonitor::getNewTimer("yet another func"); return *t;}
 
-static Time& yetOneMoreTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("yet one more func"); return *t;}
+static Time& yetOneMoreTimer() {static RCP<Time> t = TimeMonitor::getNewTimer("yet one more func"); return *t;}
 
 
 int main(int argc, char* argv[])

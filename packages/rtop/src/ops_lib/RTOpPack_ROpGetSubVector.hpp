@@ -71,7 +71,7 @@ public:
     ,int*  num_chars
     ) const;
   /** \brief . */
-  Teuchos::RefCountPtr<ReductTarget> reduct_obj_create() const;
+  Teuchos::RCP<ReductTarget> reduct_obj_create() const;
   /** \brief . */
   void reduce_reduct_objs(
     const ReductTarget& _in_reduct_obj, ReductTarget* _inout_reduct_obj
@@ -241,7 +241,7 @@ void ROpGetSubVector<Scalar>::get_reduct_type_num_entries(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<ReductTarget>
+Teuchos::RCP<ReductTarget>
 ROpGetSubVector<Scalar>::reduct_obj_create() const
 {
   return Teuchos::rcp(new ReductTargetSubVectorT<Scalar>(l_,u_));

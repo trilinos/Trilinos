@@ -33,7 +33,7 @@
 	<<std comp>> members as attribute members for any class.
 */
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 /** \brief Macro that adds <<std comp>> members for a composition association.
  *
@@ -56,24 +56,24 @@
  * to the class declaration:<br>
  \verbatim
  private:
-   Teuchos::RefCountPtr< TYPE > NAME_;		
+   Teuchos::RCP< TYPE > NAME_;		
  \endverbatim
  *
  * \ingroup StandardContainmentMacros_grp
  */
 #define STANDARD_COMPOSITION_MEMBERS( TYPE, NAME ) \
-	void set_ ## NAME (const Teuchos::RefCountPtr< TYPE >& NAME ) \
+	void set_ ## NAME (const Teuchos::RCP< TYPE >& NAME ) \
 	{	NAME ## _ = NAME ; } \
-	Teuchos::RefCountPtr< TYPE > get_ ## NAME() const \
+	Teuchos::RCP< TYPE > get_ ## NAME() const \
 	{	return NAME ## _; } \
 	TYPE& NAME() \
 	{	return *NAME ## _; } \
 	const TYPE& NAME() const \
 	{	return *NAME ## _; } \
 private: \
-	Teuchos::RefCountPtr< TYPE > NAME ## _; \
+	Teuchos::RCP< TYPE > NAME ## _; \
 public: \
-  typedef Teuchos::RefCountPtr< TYPE > NAME ## _ptr_t
+  typedef Teuchos::RCP< TYPE > NAME ## _ptr_t
 
 /** \breif Macro that adds <<std comp>> members for a composition association.
  *
@@ -96,22 +96,22 @@ public: \
  * to the class declaration:<br>
  \verbatim
  private:
-   Teuchos::RefCountPtr< TYPE > NAME_;		
+   Teuchos::RCP< TYPE > NAME_;		
  \endverbatim
  *
  * \ingroup StandardContainmentMacros_grp
  */
 #define STANDARD_NONCONST_COMPOSITION_MEMBERS( TYPE, NAME ) \
-	void set_ ## NAME ( const Teuchos::RefCountPtr< TYPE >& NAME ) \
+	void set_ ## NAME ( const Teuchos::RCP< TYPE >& NAME ) \
 	{	NAME ## _ = NAME ; } \
-	Teuchos::RefCountPtr< TYPE > get_ ## NAME() const \
+	Teuchos::RCP< TYPE > get_ ## NAME() const \
 	{	return NAME ## _; } \
 	TYPE& NAME() const \
 	{	return *NAME ## _; } \
 private: \
-	Teuchos::RefCountPtr< TYPE > NAME ## _; \
+	Teuchos::RCP< TYPE > NAME ## _; \
 public: \
-  typedef Teuchos::RefCountPtr< TYPE > NAME ## _ptr_t
+  typedef Teuchos::RCP< TYPE > NAME ## _ptr_t
 
 /** \brief Macro that adds <<std comp>> members for a composition association
  * where the contained object is always constant.
@@ -142,15 +142,15 @@ public: \
  */
 #define STANDARD_CONST_COMPOSITION_MEMBERS( TYPE, NAME ) \
 public: \
-	void set_ ## NAME ( const Teuchos::RefCountPtr< const TYPE >& NAME ) \
+	void set_ ## NAME ( const Teuchos::RCP< const TYPE >& NAME ) \
 	{	NAME ## _ = NAME ; } \
-	Teuchos::RefCountPtr< const TYPE > get_ ## NAME() const \
+	Teuchos::RCP< const TYPE > get_ ## NAME() const \
 	{	return NAME ## _; } \
 	const TYPE& NAME() const \
 	{	return *NAME ## _; } \
 private: \
-	Teuchos::RefCountPtr< const TYPE > NAME ## _; \
+	Teuchos::RCP< const TYPE > NAME ## _; \
 public: \
-  typedef Teuchos::RefCountPtr< const TYPE > NAME ## _ptr_t
+  typedef Teuchos::RCP< const TYPE > NAME ## _ptr_t
 
 #endif	// TEUCHOS_STANDARD_COMPOSITION_MACROS_HPP

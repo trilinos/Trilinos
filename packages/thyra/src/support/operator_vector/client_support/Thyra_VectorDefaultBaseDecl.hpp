@@ -120,25 +120,25 @@ public:
   /** @name Overridden from LinearOpBase (should never need to be overridden in subclasses) */
   //@{
   /// Returns <tt>this->space()</tt>
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
   /// Returns a <tt>DefaultSerialVectorSpace</tt> object with dimension 1.
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
   //@}
 
   /** @name Overridden from MultiVectorBase (should never need to be overridden in subclasses) */
   //@{
   /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RefCountPtr<VectorBase<Scalar> > col(Index j);
+  Teuchos::RCP<VectorBase<Scalar> > col(Index j);
   /// Returns <tt>this->clone_v()</tt>
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > clone_mv() const;
+  Teuchos::RCP<MultiVectorBase<Scalar> > clone_mv() const;
   /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const Range1D& col_rng ) const;
+  Teuchos::RCP<const MultiVectorBase<Scalar> > subView( const Range1D& col_rng ) const;
   /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const Range1D& col_rng );
+  Teuchos::RCP<MultiVectorBase<Scalar> > subView( const Range1D& col_rng );
   /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const;
+  Teuchos::RCP<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const;
   /// Returns <tt>Teuchos::rcp(this,false)</tt>
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] );
+  Teuchos::RCP<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] );
   /// Implemented in terms of <tt>this->acquireDetachedView()</tt>
   void acquireDetachedView(
     const Range1D                       &rowRng
@@ -161,7 +161,7 @@ public:
   //@{
 
   /// Simply creates a new vector and copies the contents from <tt>*this</tt>.
-  Teuchos::RefCountPtr<VectorBase<Scalar> > clone_v() const;
+  Teuchos::RCP<VectorBase<Scalar> > clone_v() const;
   /** \brief .
    *
    * This implementation is based on a vector reduction operator class (see
@@ -246,7 +246,7 @@ private:
   // /////////////////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<VectorSpaceBase<Scalar> >  domain_; // Only initialized if *this is used as a MultiVectorBase
+  Teuchos::RCP<VectorSpaceBase<Scalar> >  domain_; // Only initialized if *this is used as a MultiVectorBase
 
   // /////////////////////////////////////
   // Private member functions

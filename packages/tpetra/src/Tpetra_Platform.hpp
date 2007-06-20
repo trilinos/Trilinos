@@ -30,7 +30,7 @@
 #define TPETRA_PLATFORM_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include "Tpetra_Comm.hpp"
 
 namespace Tpetra {
@@ -49,7 +49,7 @@ namespace Tpetra {
 		the platform they're running on, or any implementation-specific details.
 
 		NOTE: Methods that return a new object (such as clone, createComm, etc.) return them 
-		encapsulated in a Teuchos RefCountPtr object. This is done whenever the new object is
+		encapsulated in a Teuchos RCP object. This is done whenever the new object is
 		allocated on the heap.
 	*/
 
@@ -64,17 +64,17 @@ namespace Tpetra {
 
 		//! Clone method
 		/*! Returns a copy of this Platform instance. It is allocated on the heap and
-		    encapsulated in a Teuchos RefCountPtr.
+		    encapsulated in a Teuchos RCP.
 		*/
-		virtual Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > clone() const = 0;
+		virtual Teuchos::RCP< Platform<OrdinalType, ScalarType> > clone() const = 0;
 
 		//@}
 	
 		//@{ \name Class Creation and Accessor Methods
 
 		//! Comm Instances
-		virtual Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> > createScalarComm() const = 0;
-		virtual Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const = 0;
+		virtual Teuchos::RCP< Comm<OrdinalType, ScalarType> > createScalarComm() const = 0;
+		virtual Teuchos::RCP< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const = 0;
 
 		//@}
 	

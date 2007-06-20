@@ -37,7 +37,7 @@
 #include "Teuchos_ParameterListExceptions.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TestForException.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_map.hpp"
 
@@ -183,7 +183,7 @@ public:
   template<typename T>
   void set(
     std::string const& name, T const& value, std::string const& docString = ""
-    ,RefCountPtr<const ParameterEntryValidator> const& validator = null
+    ,RCP<const ParameterEntryValidator> const& validator = null
     );
 
   /*! \brief Template specialization for the case when a user sets the parameter with a character
@@ -191,7 +191,7 @@ public:
   */
   void set(
     std::string const& name, char value[], std::string const& docString = ""
-    ,RefCountPtr<const ParameterEntryValidator> const& validator = null
+    ,RCP<const ParameterEntryValidator> const& validator = null
     );
 
   /*! \brief Template specialization for the case when a user sets the parameter with a character
@@ -199,7 +199,7 @@ public:
   */
   void set(
     std::string const& name, const char value[], string const& docString = ""
-    ,RefCountPtr<const ParameterEntryValidator> const& validator = null
+    ,RCP<const ParameterEntryValidator> const& validator = null
     );
 
   /*! \brief Template specialization for the case when a user sets the parameter with a ParameterList.
@@ -518,7 +518,7 @@ private: // Data members
 
 /** \brief Nonmember constructor. */
 inline
-RefCountPtr<ParameterList> parameterList()
+RCP<ParameterList> parameterList()
 {
   return rcp(new ParameterList);
 }
@@ -526,14 +526,14 @@ RefCountPtr<ParameterList> parameterList()
 
 /** \brief Nonmember constructor. */
 inline
-RefCountPtr<ParameterList> parameterList(const std::string &name)
+RCP<ParameterList> parameterList(const std::string &name)
 {
   return rcp(new ParameterList(name));
 }
   
 /** \brief Nonmember constructor. */
 inline
-RefCountPtr<ParameterList> parameterList(const ParameterList& source)
+RCP<ParameterList> parameterList(const ParameterList& source)
 {
   return rcp(new ParameterList(source));
 }
@@ -591,7 +591,7 @@ template<typename T>
 inline
 void ParameterList::set(
   std::string const& name, T const& value, std::string const& docString
-  ,RefCountPtr<const ParameterEntryValidator> const& validator
+  ,RCP<const ParameterEntryValidator> const& validator
   )
 {
   ParameterEntry &entry = params_[name]; // Will add the entry if not exists
@@ -605,14 +605,14 @@ void ParameterList::set(
 inline
 void ParameterList::set(
   std::string const& name, char value[], string const& docString
-  ,RefCountPtr<const ParameterEntryValidator> const& validator
+  ,RCP<const ParameterEntryValidator> const& validator
   ) 
 { set( name, std::string(value), docString, validator ); }
 
 inline
 void ParameterList::set(
   const string& name, const char value[], const string &docString
-  ,RefCountPtr<const ParameterEntryValidator> const& validator
+  ,RCP<const ParameterEntryValidator> const& validator
   ) 
 { set( name, std::string(value), docString, validator ); }
 
@@ -1013,11 +1013,11 @@ Array<T> getArrayFromStringParameter(
   \brief Return a RCP to a sublist in another RCP-ed parameter list.
 */
 inline
-RefCountPtr<ParameterList> sublist(
-  const RefCountPtr<ParameterList> &paramList, const string& name, bool mustAlreadyExist = false
+RCP<ParameterList> sublist(
+  const RCP<ParameterList> &paramList, const string& name, bool mustAlreadyExist = false
   )
 {
-  RefCountPtr<ParameterList>
+  RCP<ParameterList>
     sublist = Teuchos::rcp(&paramList->sublist(name,mustAlreadyExist),false);
   set_extra_data(paramList,"masterParamList",&sublist);
   return sublist;

@@ -48,7 +48,7 @@ DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector()
 
 template<class Scalar>
 DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector(
-  const Teuchos::RefCountPtr<VectorBase<Scalar> > &col_vec
+  const Teuchos::RCP<VectorBase<Scalar> > &col_vec
   )
 {
   this->initialize(col_vec);
@@ -56,9 +56,9 @@ DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector(
 
 template<class Scalar>
 DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector(
-  const  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &range
-  ,const  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >  &domain
-  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >              col_vecs[]
+  const  Teuchos::RCP<const VectorSpaceBase<Scalar> >   &range
+  ,const  Teuchos::RCP<const VectorSpaceBase<Scalar> >  &domain
+  ,const Teuchos::RCP<VectorBase<Scalar> >              col_vecs[]
   )
 {
   this->initialize(range,domain,col_vecs);
@@ -66,7 +66,7 @@ DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector(
 
 template<class Scalar>
 void DefaultColumnwiseMultiVector<Scalar>::initialize(
-  const Teuchos::RefCountPtr<VectorBase<Scalar> > &col_vec
+  const Teuchos::RCP<VectorBase<Scalar> > &col_vec
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -83,9 +83,9 @@ void DefaultColumnwiseMultiVector<Scalar>::initialize(
   
 template<class Scalar>
 void DefaultColumnwiseMultiVector<Scalar>::initialize(
-  const  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &range
-  ,const  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >  &domain
-  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >              col_vecs[]
+  const  Teuchos::RCP<const VectorSpaceBase<Scalar> >   &range
+  ,const  Teuchos::RCP<const VectorSpaceBase<Scalar> >  &domain
+  ,const Teuchos::RCP<VectorBase<Scalar> >              col_vecs[]
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -121,14 +121,14 @@ void DefaultColumnwiseMultiVector<Scalar>::set_uninitialized()
 // Overridden from OpBase
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultColumnwiseMultiVector<Scalar>::range() const
 {
   return range_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultColumnwiseMultiVector<Scalar>::domain() const
 {
   return domain_;
@@ -193,7 +193,7 @@ void DefaultColumnwiseMultiVector<Scalar>::apply(
 // Overridden from MultiVectorBase
 
 template<class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
+Teuchos::RCP<VectorBase<Scalar> >
 DefaultColumnwiseMultiVector<Scalar>::col(Index j)
 {
   TEST_FOR_EXCEPTION(
@@ -204,7 +204,7 @@ DefaultColumnwiseMultiVector<Scalar>::col(Index j)
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 DefaultColumnwiseMultiVector<Scalar>::subView( const Range1D& col_rng_in )
 {
   const Index numCols = domain_->dim();

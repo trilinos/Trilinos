@@ -55,8 +55,8 @@ bool sillyPowerMethod(
   // Create some typedefs and some other stuff to make the code cleaner
   typedef Teuchos::ScalarTraits<Scalar> ST; typedef typename ST::magnitudeType ScalarMag;
   const Scalar one = ST::one(); using Thyra::NOTRANS;
-  typedef Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > VectorSpacePtr;
-  typedef Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > VectorPtr;
+  typedef Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > VectorSpacePtr;
+  typedef Teuchos::RCP<Thyra::VectorBase<Scalar> > VectorPtr;
   // Initialize
   if(out) *out << "\nStarting power method (target tolerrance = "<<tolerance<<") ...\n\n";
   VectorPtr q = createMember(A.domain()), z = createMember(A.range()), r = createMember(A.range());

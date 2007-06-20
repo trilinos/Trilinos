@@ -74,15 +74,15 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
@@ -91,10 +91,10 @@ public:
 
   /** \brief . */
   void setModel(
-    const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
     );
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > getModel() const;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
   /** \brief . */
   Thyra::SolveStatus<Scalar> solve(
     Thyra::VectorBase<Scalar> *x,
@@ -104,16 +104,16 @@ public:
   /** \brief . */
   bool supportsCloning() const;
   /** \brief . */
-  Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
   cloneNonlinearSolver() const;  
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_current_x() const;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > get_current_x() const;
   /** \brief . */
   bool is_W_current() const;
   /** \brief . */
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> > get_nonconst_W();
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > get_nonconst_W();
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> > get_W() const;
+  Teuchos::RCP<const Thyra::LinearOpWithSolveBase<Scalar> > get_W() const;
   /** \brief . */
   void set_W_is_current(bool W_is_current);
 
@@ -123,10 +123,10 @@ private:
 
   // private object data members
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_;
-  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> > J_;
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > current_x_;
+  Teuchos::RCP<Teuchos::ParameterList> paramList_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > J_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > current_x_;
   bool J_is_current_;
 
   double defaultTol_;
@@ -242,7 +242,7 @@ TimeStepNonlinearSolver<Scalar>::TimeStepNonlinearSolver()
 
 template<class Scalar>
 void TimeStepNonlinearSolver<Scalar>::setParameterList(
-  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
   using Teuchos::get;
@@ -264,7 +264,7 @@ void TimeStepNonlinearSolver<Scalar>::setParameterList(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 TimeStepNonlinearSolver<Scalar>::getParameterList()
 {
   return paramList_;
@@ -272,17 +272,17 @@ TimeStepNonlinearSolver<Scalar>::getParameterList()
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 TimeStepNonlinearSolver<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> _paramList = paramList_;
+  Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 TimeStepNonlinearSolver<Scalar>::getParameterList() const
 {
   return paramList_;
@@ -290,13 +290,13 @@ TimeStepNonlinearSolver<Scalar>::getParameterList() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 TimeStepNonlinearSolver<Scalar>::getValidParameters() const
 {
   using Teuchos::setDoubleParameter; using Teuchos::setIntParameter;
-  static Teuchos::RefCountPtr<const Teuchos::ParameterList> validPL;
+  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
-    Teuchos::RefCountPtr<Teuchos::ParameterList>
+    Teuchos::RCP<Teuchos::ParameterList>
       pl = Teuchos::parameterList();
     setDoubleParameter(
       DefaultTol_name_, DefaultTol_default_,
@@ -345,7 +345,7 @@ TimeStepNonlinearSolver<Scalar>::getValidParameters() const
 
 template <class Scalar>
 void TimeStepNonlinearSolver<Scalar>::setModel(
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
   )
 {
   TEST_FOR_EXCEPT(model.get()==NULL);
@@ -357,7 +357,7 @@ void TimeStepNonlinearSolver<Scalar>::setModel(
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 TimeStepNonlinearSolver<Scalar>::getModel() const
 {
   return model_;
@@ -376,7 +376,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
   using Teuchos::describe;
   using Teuchos::as;
   using Teuchos::rcp;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::OSTab;
   using Teuchos::getFancyOStream;
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -393,7 +393,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
     0!=solveCriteria && "ToDo: Support passed in solve criteria!" );
 #endif
 
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   const bool showNewtonDetails = (as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM));
   const bool dumpAll = (as<int>(verbLevel) == as<int>(Teuchos::VERB_EXTREME)); 
@@ -411,10 +411,10 @@ TimeStepNonlinearSolver<Scalar>::solve(
 
   // Initialize storage for algorithm
   if(!J_.get()) J_ = model_->create_W();
-  RefCountPtr<Thyra::VectorBase<Scalar> > f = createMember(model_->get_f_space());
-  RefCountPtr<Thyra::VectorBase<Scalar> > dx = createMember(model_->get_x_space());
-  RefCountPtr<Thyra::VectorBase<Scalar> > dx_last = createMember(model_->get_x_space());
-  RefCountPtr<Thyra::VectorBase<Scalar> > x_curr = createMember(model_->get_x_space());
+  RCP<Thyra::VectorBase<Scalar> > f = createMember(model_->get_f_space());
+  RCP<Thyra::VectorBase<Scalar> > dx = createMember(model_->get_x_space());
+  RCP<Thyra::VectorBase<Scalar> > dx_last = createMember(model_->get_x_space());
+  RCP<Thyra::VectorBase<Scalar> > x_curr = createMember(model_->get_x_space());
   if (delta != NULL)
     Thyra::V_S(delta,ST::zero()); // delta stores the cumulative update to x over the whole Newton solve.
   Thyra::assign(&*x_curr,*x);
@@ -575,10 +575,10 @@ bool TimeStepNonlinearSolver<Scalar>::supportsCloning() const
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >
+Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
 TimeStepNonlinearSolver<Scalar>::cloneNonlinearSolver() const
 {
-  Teuchos::RefCountPtr<TimeStepNonlinearSolver<Scalar> >
+  Teuchos::RCP<TimeStepNonlinearSolver<Scalar> >
     nonlinearSolver = Teuchos::rcp(new TimeStepNonlinearSolver<Scalar>);
   nonlinearSolver->model_ = model_; // Shallow copy is okay, model is stateless
   nonlinearSolver->defaultTol_ = defaultTol_;
@@ -595,7 +595,7 @@ TimeStepNonlinearSolver<Scalar>::cloneNonlinearSolver() const
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 TimeStepNonlinearSolver<Scalar>::get_current_x() const
 {
   return current_x_;
@@ -610,7 +610,7 @@ bool TimeStepNonlinearSolver<Scalar>::is_W_current() const
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
 TimeStepNonlinearSolver<Scalar>::get_nonconst_W()
 {
   return J_;
@@ -618,7 +618,7 @@ TimeStepNonlinearSolver<Scalar>::get_nonconst_W()
 
 
 template <class Scalar>
-Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<const Thyra::LinearOpWithSolveBase<Scalar> >
 TimeStepNonlinearSolver<Scalar>::get_W() const
 {
   return J_;

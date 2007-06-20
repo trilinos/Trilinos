@@ -168,7 +168,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
   typedef Teuchos::ScalarTraits<DomainScalar>  RST;
   bool success = true, result;
   const int num_rhs = this->num_rhs();
-  Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
+  Teuchos::RCP<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
   Teuchos::Time timer("");
 
@@ -191,15 +191,15 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
     }
   }
   
-  Teuchos::RefCountPtr<const VectorSpaceBase<RangeScalar> >   range  = op.range();
-  Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> >  domain = op.domain();
+  Teuchos::RCP<const VectorSpaceBase<RangeScalar> >   range  = op.range();
+  Teuchos::RCP<const VectorSpaceBase<DomainScalar> >  domain = op.domain();
   
   if( check_forward_default() ) {
 
     if(out.get())	*out <<endl<< "this->check_forward_default()==true: Checking the default forward solve ... ";
 
     std::ostringstream ossStore;
-    Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
+    Teuchos::RCP<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
     if(out.get()) ossStore.copyfmt(*out);
     bool these_results = true;
 
@@ -234,12 +234,12 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         tab.incrTab();
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v1 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<DomainScalar> > v1 = createMembers(domain,num_rhs);
         Thyra::randomize( DomainScalar(-1.0), DomainScalar(+1.0), &*v1 );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op*v1 ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v2 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<RangeScalar> > v2 = createMembers(range,num_rhs);
         timer.start(true);
         op.apply(NONCONJ_ELE,*v1,&*v2);
         timer.stop();
@@ -247,7 +247,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op)*v2 ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v3 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<DomainScalar> > v3 = createMembers(domain,num_rhs);
         assign(&*v3,DST::zero());
         SolveStatus<Scalar> solveStatus;
         {
@@ -263,12 +263,12 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         OSTab(oss).o() << solveStatus;
 
         *oss <<endl<< "v4 = v3 - v1 ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v4 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<RangeScalar> > v4 = createMembers(domain,num_rhs);
         V_VmV( &*v4, *v3, *v1 );
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
       
         *oss <<endl<< "v5 = Op*v3 - v2 ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v5 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<RangeScalar> > v5 = createMembers(range,num_rhs);
         assign( &*v5, *v2 );
         timer.start(true);
         op.apply(NONCONJ_ELE,*v3,&*v5,Scalar(1.0),Scalar(-1.0));
@@ -326,7 +326,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
     if(out.get())	*out <<endl<< "this->check_forward_residual()==true: Checking the forward solve with a tolerance on the residual ... ";
 
     std::ostringstream ossStore;
-    Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
+    Teuchos::RCP<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
     if(out.get()) ossStore.copyfmt(*out);
     bool these_results = true;
 
@@ -357,12 +357,12 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         tab.incrTab();
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v1 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<DomainScalar> > v1 = createMembers(domain,num_rhs);
         Thyra::randomize( DomainScalar(-1.0), DomainScalar(+1.0), &*v1 );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op*v1 ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v2 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<RangeScalar> > v2 = createMembers(range,num_rhs);
         timer.start(true);
         op.apply(NONCONJ_ELE,*v1,&*v2);
         timer.stop();
@@ -370,7 +370,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op)*v2 ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v3 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<DomainScalar> > v3 = createMembers(domain,num_rhs);
         SolveCriteria<Scalar> solveCriteria(
           SolveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)
           ,forward_residual_solve_tol()
@@ -395,7 +395,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           << passfail(result)<<endl;
       
         *oss <<endl<< "v4 = Op*v3 - v2 ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v4 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<RangeScalar> > v4 = createMembers(range,num_rhs);
         assign( &*v4, *v2 );
         timer.start(true);
         op.apply(NONCONJ_ELE,*v3,&*v4,Scalar(1.0),Scalar(-1.0));
@@ -437,7 +437,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
     if(out.get())	*out <<endl<< "this->check_adjoint_default()==true: Checking the default adjoint solve ... ";
 
     std::ostringstream ossStore;
-    Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
+    Teuchos::RCP<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
     if(out.get()) ossStore.copyfmt(*out);
     bool these_results = true;
 
@@ -472,12 +472,12 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         tab.incrTab();
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v1 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<RangeScalar> > v1 = createMembers(range,num_rhs);
         Thyra::randomize( RangeScalar(-1.0), RangeScalar(+1.0), &*v1 );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op'*v1 ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v2 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<DomainScalar> > v2 = createMembers(domain,num_rhs);
         timer.start(true);
         op.applyTranspose(CONJ_ELE,*v1,&*v2);
         timer.stop();
@@ -485,7 +485,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op')*v2 ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v3 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<RangeScalar> > v3 = createMembers(range,num_rhs);
         assign(&*v3,DST::zero());
         SolveStatus<Scalar> solveStatus;
         {
@@ -501,12 +501,12 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         OSTab(oss).o() << solveStatus;
 
         *oss <<endl<< "v4 = v3 - v1 ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v4 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<RangeScalar> > v4 = createMembers(range,num_rhs);
         V_VmV( &*v4, *v3, *v1 );
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
       
         *oss <<endl<< "v5 = Op'*v3 - v2 ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v5 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<DomainScalar> > v5 = createMembers(domain,num_rhs);
         assign( &*v5, *v2 );
         timer.start(true);
         op.applyTranspose(CONJ_ELE,*v3,&*v5,Scalar(1.0),Scalar(-1.0));
@@ -564,7 +564,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
     if(out.get())	*out <<endl<< "this->check_adjoint_residual()==true: Checking the adjoint solve with a tolerance on the residual ... ";
     
     std::ostringstream ossStore;
-    Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
+    Teuchos::RCP<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
     if(out.get()) ossStore.copyfmt(*out);
     bool these_results = true;
 
@@ -595,12 +595,12 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         tab.incrTab();
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v1 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<RangeScalar> > v1 = createMembers(range,num_rhs);
         Thyra::randomize( RangeScalar(-1.0), RangeScalar(+1.0), &*v1 );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op'*v1 ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v2 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<DomainScalar> > v2 = createMembers(domain,num_rhs);
         timer.start(true);
         op.applyTranspose(CONJ_ELE,*v1,&*v2);
         timer.stop();
@@ -608,7 +608,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op')*v2 ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v3 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<RangeScalar> > v3 = createMembers(range,num_rhs);
         SolveCriteria<Scalar> solveCriteria(
           SolveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)
           ,adjoint_residual_solve_tol()
@@ -635,7 +635,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           *oss <<endl<<"achievedTol==unknownTolerance(): Setting achievedTol = adjoint_residual_solve_tol() = "<<adjoint_residual_solve_tol()<<endl;
       
         *oss <<endl<< "v4 = Op'*v3 - v2 ...\n" ;
-        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v4 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<DomainScalar> > v4 = createMembers(domain,num_rhs);
         assign( &*v4, *v2 );
         timer.start(true);
         op.applyTranspose(CONJ_ELE,*v3,&*v4,Scalar(1.0),Scalar(-1.0));

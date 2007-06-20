@@ -51,8 +51,8 @@ DefaultClusteredSpmdProductVector<Scalar>::DefaultClusteredSpmdProductVector()
 
 template <class Scalar>
 DefaultClusteredSpmdProductVector<Scalar>::DefaultClusteredSpmdProductVector(
-  const Teuchos::RefCountPtr<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
-  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                                   vecs[]
+  const Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
+  ,const Teuchos::RCP<VectorBase<Scalar> >                                   vecs[]
   )
 {
   initialize(productSpace,vecs);
@@ -60,8 +60,8 @@ DefaultClusteredSpmdProductVector<Scalar>::DefaultClusteredSpmdProductVector(
 
 template <class Scalar>
 void DefaultClusteredSpmdProductVector<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
-  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                                   vecs[]
+  const Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
+  ,const Teuchos::RCP<VectorBase<Scalar> >                                   vecs[]
   )
 {
   // ToDo: Validate input!
@@ -79,8 +79,8 @@ void DefaultClusteredSpmdProductVector<Scalar>::initialize(
 
 template <class Scalar>
 void DefaultClusteredSpmdProductVector<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  *productSpace
-  ,Teuchos::RefCountPtr<VectorBase<Scalar> >                                   vecs[]
+  Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  *productSpace
+  ,Teuchos::RCP<VectorBase<Scalar> >                                   vecs[]
   )
 {
   const int numBlocks = vecs_.size();
@@ -93,7 +93,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::uninitialize(
 // Overridden from ProductVectorBase
 
 template <class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
+Teuchos::RCP<VectorBase<Scalar> >
 DefaultClusteredSpmdProductVector<Scalar>::getNonconstVectorBlock(const int k)
 {
   using Teuchos::implicit_cast;
@@ -102,7 +102,7 @@ DefaultClusteredSpmdProductVector<Scalar>::getNonconstVectorBlock(const int k)
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
+Teuchos::RCP<const VectorBase<Scalar> >
 DefaultClusteredSpmdProductVector<Scalar>::getVectorBlock(const int k) const
 {
   using Teuchos::implicit_cast;
@@ -113,7 +113,7 @@ DefaultClusteredSpmdProductVector<Scalar>::getVectorBlock(const int k) const
 // Overridden from ProductVectorBase
 
 template <class Scalar>
-Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
+Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
 DefaultClusteredSpmdProductVector<Scalar>::productSpace() const
 {
   return productSpace_;
@@ -128,14 +128,14 @@ bool DefaultClusteredSpmdProductVector<Scalar>::blockIsConst(const int k) const
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 DefaultClusteredSpmdProductVector<Scalar>::getNonconstMultiVectorBlock(const int k)
 {
   return getNonconstVectorBlock(k);
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+Teuchos::RCP<const MultiVectorBase<Scalar> >
 DefaultClusteredSpmdProductVector<Scalar>::getMultiVectorBlock(const int k) const
 {
   return getVectorBlock(k);
@@ -144,7 +144,7 @@ DefaultClusteredSpmdProductVector<Scalar>::getMultiVectorBlock(const int k) cons
 // Overridden from VectorBase
 
 template <class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultClusteredSpmdProductVector<Scalar>::space() const
 {
   return productSpace_;
@@ -226,7 +226,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOp(
   // Get the overlap of the element for this cluster that will participate in
   // the RTOp operation.
   //
-  const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
+  const Teuchos::RCP<const Teuchos::Comm<Index> >
     intraClusterComm = productSpace_->intraClusterComm(),
     interClusterComm = productSpace_->interClusterComm();
   const Index
@@ -247,7 +247,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOp(
   // Perform the RTOp for each set of block vectors just within this cluster
   // of processes.
   //
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget> i_reduct_obj;
+  Teuchos::RCP<RTOpPack::ReductTarget> i_reduct_obj;
   if(reduct_obj) i_reduct_obj = op.reduct_obj_create();
   // Note: i_reduct_obj will accumulate the reduction within this cluster of
   // processes.
@@ -296,7 +296,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOp(
   // processes within the cluster.
   //
   if( reduct_obj ) {
-    Teuchos::RefCountPtr<RTOpPack::ReductTarget>
+    Teuchos::RCP<RTOpPack::ReductTarget>
       icl_reduct_obj = op.reduct_obj_create();
     // First, accumulate the global reduction across all of the elements by
     // just performing the global reduction involving the root processes of

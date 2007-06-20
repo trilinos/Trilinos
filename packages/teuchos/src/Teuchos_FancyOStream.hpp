@@ -29,7 +29,7 @@
 #ifndef TEUCHOS_FANCY_O_STREAM_HPP
 #define TEUCHOS_FANCY_O_STREAM_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
@@ -62,7 +62,7 @@ public:
 
   /** \brief . */
   basic_FancyOStream_buf(
-    const RefCountPtr<std::basic_ostream<char_type,traits_type> >  &oStream
+    const RCP<std::basic_ostream<char_type,traits_type> >  &oStream
     ,const std::basic_string<char_type,traits_type>                &tabIndentStr
     ,const int                                                     startingTab
     ,const bool                                                    showLinePrefix
@@ -73,7 +73,7 @@ public:
 
   /** \brief . */
   void initialize(
-    const RefCountPtr<std::basic_ostream<char_type,traits_type> >  &oStream
+    const RCP<std::basic_ostream<char_type,traits_type> >  &oStream
     ,const std::basic_string<char_type,traits_type>                &tabIndentStr
     ,const int                                                     startingTab
     ,const bool                                                    showLinePrefix
@@ -83,7 +83,7 @@ public:
     );
 
   /** \brief . */
-  RefCountPtr<std::basic_ostream<char_type,traits_type> > getOStream();
+  RCP<std::basic_ostream<char_type,traits_type> > getOStream();
 
   /** \brief . */
   void setTabIndentStr(const std::basic_string<char_type,traits_type> &tabIndentStr);
@@ -252,8 +252,8 @@ private:
   // ////////////////////////
   // Private data members
 
-  RefCountPtr<std::basic_ostream<char_type,traits_type> >  oStreamSet_;
-  RefCountPtr<std::basic_ostream<char_type,traits_type> >  oStream_;
+  RCP<std::basic_ostream<char_type,traits_type> >  oStreamSet_;
+  RCP<std::basic_ostream<char_type,traits_type> >  oStream_;
   std::basic_string<char_type,traits_type>                 tabIndentStr_;
   bool                                                     showLinePrefix_;
   int                                                      maxLenLinePrefix_;
@@ -264,7 +264,7 @@ private:
   int                                                      numProcs_;
   int                                                      rankPrintWidth_;
 
-  RefCountPtr<std::ostringstream>                          lineOut_;
+  RCP<std::ostringstream>                          lineOut_;
   
   int                      tabIndent_;
   tabIndentStack_t         tabIndentStack_;
@@ -343,7 +343,7 @@ public:
   /** \brief . */
   explicit
   basic_FancyOStream(
-    const RefCountPtr< std::basic_ostream<char_type,traits_type> > &oStream
+    const RCP< std::basic_ostream<char_type,traits_type> > &oStream
     ,const std::basic_string<char_type,traits_type>                &tabIndentStr     = "  "
     ,const int                                                     startingTab       = 0
     ,const bool                                                    showLinePrefix    = false
@@ -354,7 +354,7 @@ public:
 
   /** \brief . */
   void initialize(
-    const RefCountPtr< std::basic_ostream<char_type,traits_type> > &oStream
+    const RCP< std::basic_ostream<char_type,traits_type> > &oStream
     ,const std::basic_string<char_type,traits_type>                &tabIndentStr     = "  "
     ,const int                                                     startingTab       = 0
     ,const bool                                                    showLinePrefix    = false
@@ -364,7 +364,7 @@ public:
     );
 
   /** \brief. */
-  RefCountPtr<std::basic_ostream<char_type,traits_type> > getOStream();
+  RCP<std::basic_ostream<char_type,traits_type> > getOStream();
 
   /** \brief . */
   basic_FancyOStream& setTabIndentStr(const std::basic_string<char_type,traits_type> &tabIndentStr);
@@ -446,9 +446,9 @@ private:
  * \relates basic_FancyOStream
  */
 template <typename CharT, typename Traits>
-RefCountPtr<basic_FancyOStream<CharT,Traits> >
+RCP<basic_FancyOStream<CharT,Traits> >
 fancyOStream(
-  const RefCountPtr< std::basic_ostream<CharT,Traits> >& oStream,
+  const RCP< std::basic_ostream<CharT,Traits> >& oStream,
   const std::basic_string<CharT,Traits>& tabIndentStr = " ",
   const int startingTab = 0,
   const bool showLinePrefix = false,
@@ -474,12 +474,12 @@ fancyOStream(
  * \relates basic_FancyOStream
  */
 template <typename CharT, typename Traits>
-RefCountPtr<basic_FancyOStream<CharT,Traits> >
-getFancyOStream( const RefCountPtr<std::basic_ostream<CharT,Traits> > &out )
+RCP<basic_FancyOStream<CharT,Traits> >
+getFancyOStream( const RCP<std::basic_ostream<CharT,Traits> > &out )
 {
   if(out.get()==NULL)
     return Teuchos::null;
-  RefCountPtr<basic_FancyOStream<CharT,Traits> >
+  RCP<basic_FancyOStream<CharT,Traits> >
     fancyOut = rcp_dynamic_cast<basic_FancyOStream<CharT,Traits> >(out);
   if(fancyOut.get())
     return fancyOut;
@@ -506,7 +506,7 @@ public:
   static const int DISABLE_TABBING = -99999; // This magic number should be just fine!
   /** \brief. */
   basic_OSTab(
-    const RefCountPtr<basic_FancyOStream<CharT,Traits> >   &fancyOStream
+    const RCP<basic_FancyOStream<CharT,Traits> >   &fancyOStream
     ,const int                                             tabs = 1
     ,const std::basic_string<CharT,Traits>                 linePrefix = ""
     )
@@ -518,7 +518,7 @@ public:
     }
   /** \brief. */
   basic_OSTab(
-    const RefCountPtr<std::basic_ostream<CharT,Traits> >   &oStream
+    const RCP<std::basic_ostream<CharT,Traits> >   &oStream
     ,const int                                             tabs = 1
     ,const std::basic_string<CharT,Traits>                 linePrefix = ""
     )
@@ -601,7 +601,7 @@ public:
   
 private:
   
-  RefCountPtr<basic_FancyOStream<CharT,Traits> >  fancyOStream_;
+  RCP<basic_FancyOStream<CharT,Traits> >  fancyOStream_;
   int                                             tabs_;
   std::basic_string<CharT,Traits>                 linePrefix_;
 
@@ -634,16 +634,16 @@ private:
  * \relates basic_FancyOStream
  */
 template <typename CharT, typename Traits>
-RefCountPtr<basic_FancyOStream<CharT,Traits> >
+RCP<basic_FancyOStream<CharT,Traits> >
 tab(
-  const RefCountPtr<basic_FancyOStream<CharT,Traits> > &out
+  const RCP<basic_FancyOStream<CharT,Traits> > &out
   ,const int                                           tabs = 1
   ,const std::basic_string<CharT,Traits>               linePrefix = ""
   )
 {
   if(out.get()==NULL)
     return Teuchos::null;
-  RefCountPtr<basic_FancyOStream<CharT,Traits> >
+  RCP<basic_FancyOStream<CharT,Traits> >
     fancyOut = rcp(&*out,false);
   set_extra_data( out, "out", &fancyOut );
   set_extra_data(
@@ -672,9 +672,9 @@ tab(
  * \relates basic_FancyOStream
  */
 template <typename CharT, typename Traits>
-RefCountPtr<basic_FancyOStream<CharT,Traits> >
+RCP<basic_FancyOStream<CharT,Traits> >
 tab(
-  const RefCountPtr<std::basic_ostream<CharT,Traits> > &out
+  const RCP<std::basic_ostream<CharT,Traits> > &out
   ,const int                                           tabs = 1
   ,const std::basic_string<CharT,Traits>               linePrefix = ""
   )
@@ -709,7 +709,7 @@ typedef basic_OSTab<char> OSTab;
 
 template<typename CharT, typename Traits>
 basic_FancyOStream_buf<CharT,Traits>::basic_FancyOStream_buf(
-  const RefCountPtr<std::basic_ostream<char_type,traits_type> >  &oStream
+  const RCP<std::basic_ostream<char_type,traits_type> >  &oStream
   ,const std::basic_string<char_type,traits_type>                &tabIndentStr
   ,const int                                                     startingTab
   ,const bool                                                    showLinePrefix
@@ -723,7 +723,7 @@ basic_FancyOStream_buf<CharT,Traits>::basic_FancyOStream_buf(
 
 template<typename CharT, typename Traits>
 void basic_FancyOStream_buf<CharT,Traits>::initialize(
-  const RefCountPtr<std::basic_ostream<char_type,traits_type> >  &oStream
+  const RCP<std::basic_ostream<char_type,traits_type> >  &oStream
   ,const std::basic_string<char_type,traits_type>                &tabIndentStr
   ,const int                                                     startingTab
   ,const bool                                                    showLinePrefix
@@ -751,7 +751,7 @@ void basic_FancyOStream_buf<CharT,Traits>::initialize(
 }
 
 template<typename CharT, typename Traits>
-RefCountPtr<std::basic_ostream<CharT,Traits> >
+RCP<std::basic_ostream<CharT,Traits> >
 basic_FancyOStream_buf<CharT,Traits>::getOStream()
 {
   return oStreamSet_;
@@ -1048,7 +1048,7 @@ void basic_FancyOStream_buf<CharT,Traits>::writeFrontMatter()
 
 template<typename CharT, typename Traits>
 basic_FancyOStream<CharT,Traits>::basic_FancyOStream(
-  const RefCountPtr< std::basic_ostream<char_type,traits_type> > &oStream
+  const RCP< std::basic_ostream<char_type,traits_type> > &oStream
   ,const std::basic_string<char_type,traits_type>                &tabIndentStr
   ,const int                                                     startingTab
   ,const bool                                                    showLinePrefix
@@ -1063,7 +1063,7 @@ basic_FancyOStream<CharT,Traits>::basic_FancyOStream(
 
 template<typename CharT, typename Traits>
 void basic_FancyOStream<CharT,Traits>::initialize(
-  const RefCountPtr< std::basic_ostream<char_type,traits_type> > &oStream
+  const RCP< std::basic_ostream<char_type,traits_type> > &oStream
   ,const std::basic_string<char_type,traits_type>                &tabIndentStr
   ,const int                                                     startingTab
   ,const bool                                                    showLinePrefix
@@ -1077,7 +1077,7 @@ void basic_FancyOStream<CharT,Traits>::initialize(
 }
 
 template<typename CharT, typename Traits>
-RefCountPtr<std::basic_ostream<CharT,Traits> >
+RCP<std::basic_ostream<CharT,Traits> >
 basic_FancyOStream<CharT,Traits>::getOStream()
 {
   return streambuf_.getOStream();

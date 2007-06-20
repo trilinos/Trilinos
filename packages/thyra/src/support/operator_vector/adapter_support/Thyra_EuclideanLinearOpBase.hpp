@@ -60,14 +60,14 @@ void EuclideanLinearOpBase<RangeScalar,DomainScalar>::euclideanApplyTranspose(
 // Overridden functions from OpBase */
 
 template<class RangeScalar, class DomainScalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<RangeScalar> >
+Teuchos::RCP<const VectorSpaceBase<RangeScalar> >
 EuclideanLinearOpBase<RangeScalar,DomainScalar>::range() const
 {
   return this->rangeScalarProdVecSpc();
 }
 
 template<class RangeScalar, class DomainScalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> >
+Teuchos::RCP<const VectorSpaceBase<DomainScalar> >
 EuclideanLinearOpBase<RangeScalar,DomainScalar>::domain() const
 {
   return this->domainScalarProdVecSpc();

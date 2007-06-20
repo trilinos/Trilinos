@@ -127,11 +127,11 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
     Belos -> 
       Adjustable Block Size : bool = 1
       Block Size : int = 1
-      Def*** Caught standard exception : /home/rabartl/PROJECTS/Trilinos.base/Trilinos/packages/teuchos/src/Teuchos_RefCountPtr.cpp:59:
+      Def*** Caught standard exception : /home/rabartl/PROJECTS/Trilinos.base/Trilinos/packages/teuchos/src/Teuchos_RCP.cpp:59:
 
 Throw test that evaluated to true: itr != extra_data_map_->end()
 
-Error, the type:name pair 'RefCountPtr<Thyra::PreconditionerBase<double, double>>:Belos::InternalPrec' already exists and force_unique==true!
+Error, the type:name pair 'RCP<Thyra::PreconditionerBase<double, double>>:Belos::InternalPrec' already exists and force_unique==true!
 ault Rel Res Norm : double = 1e-06
       Max Iters : int = 400
       Max Restarts : int = 25

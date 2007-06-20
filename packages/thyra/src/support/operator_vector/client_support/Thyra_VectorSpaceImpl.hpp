@@ -63,7 +63,7 @@ namespace Thyra
 
   //========================================================================
   template <class Scalar> inline
-  RefCountPtr<MultiVectorBase<Scalar> > VectorSpace<Scalar>::createMembers(int n) const 
+  RCP<MultiVectorBase<Scalar> > VectorSpace<Scalar>::createMembers(int n) const 
   {
     return Thyra::createMembers(this->constPtr(), n);
   }
@@ -130,10 +130,10 @@ namespace Thyra
 
   //========================================================================
   template <class Scalar> inline
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > 
   productSpace(const Teuchos::Array<VectorSpace<Scalar> >& spaces)
   {
-    Teuchos::Array<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > > data(spaces.size());
+    Teuchos::Array<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > > data(spaces.size());
     for (unsigned int i=0; i<spaces.size(); i++)
       {
         data[i] = spaces[i].constPtr();
@@ -143,7 +143,7 @@ namespace Thyra
 
   //========================================================================
   template <class Scalar> inline
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > 
   productSpace(VectorSpace<Scalar>& s1)
   {
     return productSpace(Teuchos::tuple(s1));
@@ -151,7 +151,7 @@ namespace Thyra
 
   //========================================================================
   template <class Scalar> inline
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > 
   productSpace(VectorSpace<Scalar>& s1, 
                VectorSpace<Scalar>& s2)
   {
@@ -160,7 +160,7 @@ namespace Thyra
 
   //========================================================================
   template <class Scalar> inline
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > 
   productSpace(VectorSpace<Scalar>& s1,VectorSpace<Scalar>& s2,
                VectorSpace<Scalar>& s3)
   {
@@ -172,7 +172,7 @@ namespace Thyra
   int lowestLocallyOwnedIndex(const VectorSpace<Scalar>& s) 
   {
     TEST_FOR_EXCEPT(!isSPMD(s));
-    RefCountPtr<const SpmdVectorSpaceBase<Scalar> > spmdSpace
+    RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace
       = rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(s.constPtr());
     return spmdSpace->localOffset();
   }
@@ -182,7 +182,7 @@ namespace Thyra
   int numLocalElements(const VectorSpace<Scalar>& s) 
   {
     TEST_FOR_EXCEPT(!isSPMD(s));
-    RefCountPtr<const SpmdVectorSpaceBase<Scalar> > spmdSpace
+    RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace
       = rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(s.constPtr());
     return spmdSpace->localSubDim();
   }

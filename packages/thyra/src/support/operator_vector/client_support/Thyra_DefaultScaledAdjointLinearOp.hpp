@@ -40,7 +40,7 @@ template<class Scalar>
 void DefaultScaledAdjointLinearOp<Scalar>::initialize(
   const Scalar                                               &scalar
   ,const ETransp                                             &transp
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >         &Op
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >         &Op
   )
 {
   initializeImpl(scalar,transp,Op,false);
@@ -50,21 +50,21 @@ template<class Scalar>
 void DefaultScaledAdjointLinearOp<Scalar>::initialize(
   const Scalar                                               &scalar
   ,const ETransp                                             &transp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &Op
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &Op
   )
 {
   initializeImpl(scalar,transp,Op,false);
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 DefaultScaledAdjointLinearOp<Scalar>::getNonconstOp()
 {
   return getOpImpl().getNonconstObj();
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultScaledAdjointLinearOp<Scalar>::getOp() const
 {
   return getOpImpl().getConstObj();
@@ -102,11 +102,11 @@ void DefaultScaledAdjointLinearOp<Scalar>::describe(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   assertInitialized();
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:
@@ -150,7 +150,7 @@ void DefaultScaledAdjointLinearOp<Scalar>::describe(
 // Overridden from OpBase
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultScaledAdjointLinearOp<Scalar>::range() const
 {
   assertInitialized();
@@ -158,7 +158,7 @@ DefaultScaledAdjointLinearOp<Scalar>::range() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultScaledAdjointLinearOp<Scalar>::domain() const
 {
   assertInitialized();
@@ -166,7 +166,7 @@ DefaultScaledAdjointLinearOp<Scalar>::domain() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultScaledAdjointLinearOp<Scalar>::clone() const
 {
   return Teuchos::null; // Not supported yet but could be
@@ -212,14 +212,14 @@ ETransp DefaultScaledAdjointLinearOp<Scalar>::overallTransp() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 DefaultScaledAdjointLinearOp<Scalar>::getNonconstOrigOp()
 {
   return origOp_.getNonconstObj();
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultScaledAdjointLinearOp<Scalar>::getOrigOp() const
 {
   return origOp_.getConstObj();
@@ -231,7 +231,7 @@ template<class Scalar>
 void DefaultScaledAdjointLinearOp<Scalar>::initializeImpl(
   const Scalar                                               &scalar
   ,const ETransp                                             &transp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &Op
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &Op
   ,const bool                                                isConst
   )
 {
@@ -243,7 +243,7 @@ void DefaultScaledAdjointLinearOp<Scalar>::initializeImpl(
     "Error!, Op.get()==NULL is not allowed!"
     );
 #endif // TEUCHOS_DEBUG
-  Teuchos::RefCountPtr<const DefaultScaledAdjointLinearOp<Scalar> >
+  Teuchos::RCP<const DefaultScaledAdjointLinearOp<Scalar> >
     saOp = Teuchos::rcp_dynamic_cast<const DefaultScaledAdjointLinearOp<Scalar> >(Op);
   if(saOp.get()) {
     origOp_            = saOp->origOp_;
@@ -297,7 +297,7 @@ DefaultScaledAdjointLinearOp<Scalar>::getOpImpl() const
   assertInitialized();
   if( my_index_ > 0 ) {
     const ScalarETransp<Scalar> &scalar_transp = allScalarETransp_->at(my_index_);
-    Teuchos::RefCountPtr<DefaultScaledAdjointLinearOp<Scalar> >
+    Teuchos::RCP<DefaultScaledAdjointLinearOp<Scalar> >
       Op = Teuchos::rcp(new DefaultScaledAdjointLinearOp<Scalar>());
     Op->origOp_            = origOp_;
     Op->overallScalar_     = overallScalar_/scalar_transp.scalar;

@@ -150,7 +150,7 @@ public:
       *num_chars = 0;
     }
   /** \brief . */
-  Teuchos::RefCountPtr<ReductTarget> reduct_obj_create() const
+  Teuchos::RCP<ReductTarget> reduct_obj_create() const
     {
       return Teuchos::rcp(new ReductTargetScalar<ReductScalar>(initReductObjValue()));
     }
@@ -162,7 +162,7 @@ public:
       const ReductScalar in_val    = getRawVal(in_reduct_obj);
       const ReductScalar inout_val = getRawVal(*inout_reduct_obj);
 #ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
-      Teuchos::RefCountPtr<Teuchos::FancyOStream>
+      Teuchos::RCP<Teuchos::FancyOStream>
         out = Teuchos::VerboseObjectBase::getDefaultOStream();
       Teuchos::OSTab tab(out);
       if(rtop_helpers_dump_all) {
@@ -228,7 +228,7 @@ public:
         );
 #endif
 #ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
-      Teuchos::RefCountPtr<Teuchos::FancyOStream>
+      Teuchos::RCP<Teuchos::FancyOStream>
         out = Teuchos::VerboseObjectBase::getDefaultOStream();
       Teuchos::OSTab tab(out);
       if(rtop_helpers_dump_all) {
@@ -357,7 +357,7 @@ public:
       *num_chars = 0;
     }
   /** \brief . */
-  Teuchos::RefCountPtr<ReductTarget> reduct_obj_create() const
+  Teuchos::RCP<ReductTarget> reduct_obj_create() const
     {
       return Teuchos::rcp(
         new ReductTargetScalarIndex<Scalar>(
@@ -470,7 +470,7 @@ public:
       *num_chars = 0;
     }
   /** \brief . */
-  Teuchos::RefCountPtr<ReductTarget> reduct_obj_create() const
+  Teuchos::RCP<ReductTarget> reduct_obj_create() const
     {
       return Teuchos::rcp(new ReductTargetScalar<index_type>(initReductObjValue()));
     }

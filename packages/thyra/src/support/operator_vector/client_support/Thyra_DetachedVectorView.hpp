@@ -155,7 +155,7 @@ public:
    * </ul>
    */
   ConstDetachedVectorView(
-    const Teuchos::RefCountPtr<const VectorBase<Scalar> > &v
+    const Teuchos::RCP<const VectorBase<Scalar> > &v
     ,const Range1D &rng = Range1D(), const bool forceUnitStride = false
     )
     {
@@ -209,12 +209,12 @@ public:
   const Scalar& operator()(Teuchos_Index i) const { return sv_(i); }
 private:
   //
-  Teuchos::RefCountPtr<const VectorBase<Scalar> > v_;
+  Teuchos::RCP<const VectorBase<Scalar> > v_;
   RTOpPack::ConstSubVectorView<Scalar>  sv_s_;
   RTOpPack::ConstSubVectorView<Scalar>  sv_;
   //
   void initialize(
-    const Teuchos::RefCountPtr<const VectorBase<Scalar> > &v
+    const Teuchos::RCP<const VectorBase<Scalar> > &v
     ,const Range1D &rng, const bool forceUnitStride
     )
     {
@@ -360,7 +360,7 @@ public:
    * </ul>
    */
   DetachedVectorView(
-    const Teuchos::RefCountPtr<VectorBase<Scalar> > &v
+    const Teuchos::RCP<VectorBase<Scalar> > &v
     ,const Range1D &rng = Range1D(), const bool forceUnitStride = false
     )
     {
@@ -419,12 +419,12 @@ public:
   Scalar& operator()(Teuchos_Index i) const { return sv_(i); }
 private:
   //
-  Teuchos::RefCountPtr<VectorBase<Scalar> > v_;
+  Teuchos::RCP<VectorBase<Scalar> > v_;
   RTOpPack::SubVectorView<Scalar>  sv_s_;
   RTOpPack::SubVectorView<Scalar>  sv_;
   //
   void initialize(
-    const Teuchos::RefCountPtr<VectorBase<Scalar> > &v
+    const Teuchos::RCP<VectorBase<Scalar> > &v
     ,const Range1D &rng, const bool forceUnitStride
     )
     {

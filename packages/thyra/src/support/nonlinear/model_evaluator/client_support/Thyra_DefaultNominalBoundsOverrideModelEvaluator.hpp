@@ -44,19 +44,19 @@ namespace Thyra {
  \code
  
    template<class Scalar>
-   Teuchos::RefCountPtr<DefaultNominalBoundsOverrideModelEvaluator<Scalar> >
+   Teuchos::RCP<DefaultNominalBoundsOverrideModelEvaluator<Scalar> >
    override(
-     const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >   &thyraModel
+     const Teuchos::RCP<ModelEvaluator<Scalar> >   &thyraModel
      ...
      )
    {
 
-     using Teuchos::RefCountPtr;
+     using Teuchos::RCP;
      using Teuchos::rcp;
      typedef Thyra::ModelEvaluatorBase MEB;
 
      // Get the defaults
-     Teuchos::RefCountPtr<MEB::InArgs<Scalar> >
+     Teuchos::RCP<MEB::InArgs<Scalar> >
        nominalValues = clone(thyraModel->getNominalValues()),
        lowerBounds = clone(thyraModel->getLowerBounds()),
        upperBounds = clone(thyraModel->getUpperBounds());
@@ -65,7 +65,7 @@ namespace Thyra {
      ...
 
      // Initialize the overridden state
-     RefCountPtr<DefaultNominalBoundsOverrideModelEvaluator<Scalar> >
+     RCP<DefaultNominalBoundsOverrideModelEvaluator<Scalar> >
        defaultOverridder = rcp(
          new DefaultNominalBoundsOverrideModelEvaluator<Scalar>(thyraModel));
      defaultOverridder->setNominalValues(nominalValues);
@@ -98,10 +98,10 @@ public:
 
   /** \brief . */
   DefaultNominalBoundsOverrideModelEvaluator(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                     &thyraModel
-    ,const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
-    ,const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds = Teuchos::null
-    ,const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds = Teuchos::null
+    const Teuchos::RCP<ModelEvaluator<Scalar> >                     &thyraModel
+    ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
+    ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds = Teuchos::null
+    ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds = Teuchos::null
     );
 
   /** \brief Initalize.
@@ -123,25 +123,25 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                     &thyraModel
-    ,const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
-    ,const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds = Teuchos::null
-    ,const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds = Teuchos::null
+    const Teuchos::RCP<ModelEvaluator<Scalar> >                     &thyraModel
+    ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
+    ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds = Teuchos::null
+    ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds = Teuchos::null
     );
   
   /** \brief Set only nominal values. */
   void setNominalValues(
-    const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
+    const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
     );
   
   /** \brief Set only lower bounds. */
   void setLowerBounds(
-    const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
+    const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
     );
   
   /** \brief Set only upper bounds. */
   void setUpperBounds(
-    const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
+    const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
     );
   
   // ToDo: Add functions to reset lower and upper bounds when needed!
@@ -175,9 +175,9 @@ public:
 
 private:
 
-  Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  nominalValues_;
-  Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  lowerBounds_;
-  Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  upperBounds_;
+  Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  nominalValues_;
+  Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  lowerBounds_;
+  Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  upperBounds_;
   
 };
 
@@ -192,10 +192,10 @@ DefaultNominalBoundsOverrideModelEvaluator<Scalar>::DefaultNominalBoundsOverride
 
 template<class Scalar>
 DefaultNominalBoundsOverrideModelEvaluator<Scalar>::DefaultNominalBoundsOverrideModelEvaluator(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                     &thyraModel
-  ,const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
-  ,const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
-  ,const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
+  const Teuchos::RCP<ModelEvaluator<Scalar> >                     &thyraModel
+  ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
+  ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
+  ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
   )
 {
   initialize(thyraModel,nominalValues,lowerBounds,upperBounds);
@@ -203,10 +203,10 @@ DefaultNominalBoundsOverrideModelEvaluator<Scalar>::DefaultNominalBoundsOverride
 
 template<class Scalar>
 void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::initialize(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                     &thyraModel
-  ,const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
-  ,const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
-  ,const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
+  const Teuchos::RCP<ModelEvaluator<Scalar> >                     &thyraModel
+  ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
+  ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
+  ,const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
   )
 {
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
@@ -217,7 +217,7 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::setNominalValues(
-  const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
+  const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
   )
 {
   nominalValues_ = nominalValues;
@@ -225,7 +225,7 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::setNominalValues(
 
 template<class Scalar>
 void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::setLowerBounds(
-  const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
+  const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds
   )
 {
   lowerBounds_ = lowerBounds;
@@ -233,7 +233,7 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::setLowerBounds(
 
 template<class Scalar>
 void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::setUpperBounds(
-  const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
+  const Teuchos::RCP<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds
   )
 {
   upperBounds_ = upperBounds;
@@ -275,7 +275,7 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::evalModel(
   ) const
 {
   typedef ModelEvaluatorBase MEB;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
@@ -311,7 +311,7 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::evalModel(
 template<class Scalar>
 std::string DefaultNominalBoundsOverrideModelEvaluator<Scalar>::description() const
 {
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
   std::ostringstream oss;
   oss << "Thyra::DefaultNominalBoundsOverrideModelEvaluator{";

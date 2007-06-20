@@ -31,7 +31,7 @@
 #define RTOPPACK_RTOP_NEW_T_DECL_HPP
 
 #include "RTOpPack_Types.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_PrimitiveTypeTraits.hpp"
 #include "Teuchos_Describable.hpp"
 
@@ -196,13 +196,13 @@ public:
    * a reduction.
    *
    * To delete this object simply let the returned
-   * <tt>RefCountPtr<></tt> object go out of scope.
+   * <tt>RCP<></tt> object go out of scope.
    *
    *
    * The default implementation returns <tt>return.get()==NULL</tt>
    * (i.e. by default there is no reduction operation performed).
    */
-  virtual Teuchos::RefCountPtr<ReductTarget> reduct_obj_create() const;
+  virtual Teuchos::RCP<ReductTarget> reduct_obj_create() const;
   /** \brief Reduce intermediate reduction target objects.
    *
    * The default implementation does not do anything (i.e. by default

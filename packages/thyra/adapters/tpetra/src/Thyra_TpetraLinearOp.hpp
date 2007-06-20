@@ -50,18 +50,18 @@ public:
 
   /** \brief Calls <tt>initialize()</tt>. */
   TpetraLinearOp(
-    const Teuchos::RefCountPtr<Tpetra::Operator<Ordinal,Scalar> >       &op
+    const Teuchos::RCP<Tpetra::Operator<Ordinal,Scalar> >       &op
     ,EAdjointTpetraOp                                                   adjointSupport  = TPETRA_OP_TRANSPOSE_ADJOINT_UNSUPPORTED
-    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >     &mpiRange       = Teuchos::null
-    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >     &mpiDomain      = Teuchos::null
+    ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >     &mpiRange       = Teuchos::null
+    ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >     &mpiDomain      = Teuchos::null
     );
 
   /** \brief Calls <tt>initialize()</tt>. */
   TpetraLinearOp(
-    const Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> > &op
+    const Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> > &op
     ,EAdjointTpetraOp                                                   adjointSupport  = TPETRA_OP_TRANSPOSE_ADJOINT_UNSUPPORTED
-    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >     &mpiRange       = Teuchos::null
-    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >     &mpiDomain      = Teuchos::null
+    ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >     &mpiRange       = Teuchos::null
+    ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >     &mpiDomain      = Teuchos::null
     );
 
   /** \brief Initialize given a non-constant <tt>Tpetra::Operator</tt> object.
@@ -97,10 +97,10 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<Tpetra::Operator<Ordinal,Scalar> >      &op
+    const Teuchos::RCP<Tpetra::Operator<Ordinal,Scalar> >      &op
     ,EAdjointTpetraOp                                                  adjointSupport  = TPETRA_OP_TRANSPOSE_ADJOINT_UNSUPPORTED
-    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >    &mpiRange       = Teuchos::null
-    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >    &mpiDomain      = Teuchos::null
+    ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >    &mpiRange       = Teuchos::null
+    ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >    &mpiDomain      = Teuchos::null
     );
 
   /** \brief Initialize given a constant <tt>Tpetra::Operator</tt> object.
@@ -136,10 +136,10 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> > &op
+    const Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> > &op
     ,EAdjointTpetraOp                                                   adjointSupport  = TPETRA_OP_TRANSPOSE_ADJOINT_UNSUPPORTED
-    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >     &mpiRange       = Teuchos::null
-    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >     &mpiDomain      = Teuchos::null
+    ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >     &mpiRange       = Teuchos::null
+    ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >     &mpiDomain      = Teuchos::null
     );
   
   /** \brief Set to uninitialized and optionally return the current state.
@@ -150,10 +150,10 @@ public:
    * </ul>
    */
   void uninitialize(
-    Teuchos::RefCountPtr<Tpetra::Operator<Ordinal,Scalar> >     *op             = NULL
+    Teuchos::RCP<Tpetra::Operator<Ordinal,Scalar> >     *op             = NULL
     ,EAdjointTpetraOp                                           *adjointSupport = NULL
-    ,Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   *mpiRange       = NULL
-    ,Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   *mpiDomain      = NULL
+    ,Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >   *mpiRange       = NULL
+    ,Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >   *mpiDomain      = NULL
     );
   
   /** \brief Set to uninitialized and optionally return the current state.
@@ -164,10 +164,10 @@ public:
    * </ul>
    */
   void uninitialize(
-    Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> > *op             = NULL
+    Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> > *op             = NULL
     ,EAdjointTpetraOp                                             *adjointSupport = NULL
-    ,Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >     *mpiRange       = NULL
-    ,Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >     *mpiDomain      = NULL
+    ,Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >     *mpiRange       = NULL
+    ,Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >     *mpiDomain      = NULL
     );
 
   /** \brief Return a smart pointer to the SpmdVectorSpaceBase object for the range.
@@ -177,7 +177,7 @@ public:
    * <li> [<tt>this->range().get() == NULL</tt>] <tt>return.get() == NULL</tt>
    * </ul>
    */
-  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > mpiRange() const;
+  Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > mpiRange() const;
 
   /** \brief Return a smart pointer to the SpmdVectorSpaceBase object for the domain.
    *
@@ -186,16 +186,16 @@ public:
    * <li> [<tt>this->domain().get() == NULL</tt>] <tt>return.get() == NULL</tt>
    * </ul>
    */
-  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > mpiDomain() const;
+  Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > mpiDomain() const;
 
   /** \brief . */
   bool isTpetraOpConst() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<Tpetra::Operator<Ordinal,Scalar> > getNonconstTpetraOp();
+  Teuchos::RCP<Tpetra::Operator<Ordinal,Scalar> > getNonconstTpetraOp();
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> > getTpetraOp() const;
+  Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> > getTpetraOp() const;
 
   //@}
 
@@ -204,12 +204,12 @@ public:
 
   /** \brief . */
   void getTpetraOpView(
-    Teuchos::RefCountPtr<Tpetra::Operator<Ordinal,Scalar> >   *tpetraOp
+    Teuchos::RCP<Tpetra::Operator<Ordinal,Scalar> >   *tpetraOp
     ,EAdjointTpetraOp                                         *tpetraOpAdjointSupport
     );
   /** \brief . */
   void getTpetraOpView(
-    Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> >   *tpetraOp
+    Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> >   *tpetraOp
     ,EAdjointTpetraOp                                               *tpetraOpAdjointSupport
     ) const;
 
@@ -227,9 +227,9 @@ public:
   //@{
 
   /// Returns <tt>this->mpiRange()</tt>
-  Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
+  Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
   /// Returns <tt>this->mpiDomain()</tt>
-  Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
+  Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
 
   //@}
   
@@ -251,7 +251,7 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
 
   //@}
 
@@ -274,15 +274,15 @@ protected:
   //@{
 
   /** \brief Allocate the domain space of the operator. */
-  virtual Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > 
+  virtual Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > 
   allocateDomain(
-    const Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> >  &op 
+    const Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> >  &op 
     ) const; 
   
   /** \brief Allocate the range space of the operator. */
-  virtual Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >
+  virtual Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >
   allocateRange( 
-    const Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> >  &op 
+    const Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> >  &op 
     ) const; 
   
   //@}
@@ -294,10 +294,10 @@ private:
 
   Teuchos::ConstNonconstObjectContainer<Tpetra::Operator<Ordinal,Scalar> >  op_;
   EAdjointTpetraOp                                                          adjointSupport_;
-  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >                  range_;
-  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >                  domain_;
-  Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >           sp_range_;
-  Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >           sp_domain_;
+  Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >                  range_;
+  Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >                  domain_;
+  Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >           sp_range_;
+  Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >           sp_domain_;
 
 };	// end class TpetraLinearOp
 
@@ -322,10 +322,10 @@ TpetraLinearOp<Ordinal,Scalar>::TpetraLinearOp()
 
 template<class Ordinal, class Scalar>
 TpetraLinearOp<Ordinal,Scalar>::TpetraLinearOp(
-  const Teuchos::RefCountPtr<Tpetra::Operator<Ordinal,Scalar> >      &op
+  const Teuchos::RCP<Tpetra::Operator<Ordinal,Scalar> >      &op
   ,EAdjointTpetraOp                                                  adjointSupport
-  ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >    &mpiRange
-  ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >    &mpiDomain
+  ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >    &mpiRange
+  ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >    &mpiDomain
   )
 {
   this->initialize(op,adjointSupport,mpiRange,mpiDomain);
@@ -333,10 +333,10 @@ TpetraLinearOp<Ordinal,Scalar>::TpetraLinearOp(
 
 template<class Ordinal, class Scalar>
 TpetraLinearOp<Ordinal,Scalar>::TpetraLinearOp(
-  const Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> >  &op
+  const Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> >  &op
   ,EAdjointTpetraOp                                                    adjointSupport
-  ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >      &mpiRange
-  ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >      &mpiDomain
+  ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >      &mpiRange
+  ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >      &mpiDomain
   )
 {
   this->initialize(op,adjointSupport,mpiRange,mpiDomain);
@@ -344,10 +344,10 @@ TpetraLinearOp<Ordinal,Scalar>::TpetraLinearOp(
 
 template<class Ordinal, class Scalar>
 void TpetraLinearOp<Ordinal,Scalar>::initialize(
-  const Teuchos::RefCountPtr<Tpetra::Operator<Ordinal,Scalar> >      &op
+  const Teuchos::RCP<Tpetra::Operator<Ordinal,Scalar> >      &op
   ,EAdjointTpetraOp                                                  adjointSupport
-  ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >    &mpiRange
-  ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >    &mpiDomain
+  ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >    &mpiRange
+  ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >    &mpiDomain
   )
 {
   TEST_FOR_EXCEPT(adjointSupport==TPETRA_OP_ADJOINT_SUPPORTED||adjointSupport==TPETRA_OP_TRANSPOSE_ADJOINT_SUPPORTED);
@@ -361,10 +361,10 @@ void TpetraLinearOp<Ordinal,Scalar>::initialize(
 
 template<class Ordinal, class Scalar>
 void TpetraLinearOp<Ordinal,Scalar>::initialize(
-  const Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> >  &op
+  const Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> >  &op
   ,EAdjointTpetraOp                                                    adjointSupport
-  ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >      &mpiRange
-  ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >      &mpiDomain
+  ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >      &mpiRange
+  ,const Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >      &mpiDomain
   )
 {
   TEST_FOR_EXCEPT(adjointSupport==TPETRA_OP_ADJOINT_SUPPORTED||adjointSupport==TPETRA_OP_TRANSPOSE_ADJOINT_SUPPORTED);
@@ -378,10 +378,10 @@ void TpetraLinearOp<Ordinal,Scalar>::initialize(
 
 template<class Ordinal, class Scalar>
 void TpetraLinearOp<Ordinal,Scalar>::uninitialize(
-  Teuchos::RefCountPtr<Tpetra::Operator<Ordinal,Scalar> >     *op
+  Teuchos::RCP<Tpetra::Operator<Ordinal,Scalar> >     *op
   ,EAdjointTpetraOp                                           *adjointSupport
-  ,Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   *mpiRange
-  ,Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   *mpiDomain
+  ,Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >   *mpiRange
+  ,Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >   *mpiDomain
   )
 {
   TEST_FOR_EXCEPT(true);
@@ -389,24 +389,24 @@ void TpetraLinearOp<Ordinal,Scalar>::uninitialize(
 
 template<class Ordinal, class Scalar>
 void TpetraLinearOp<Ordinal,Scalar>::uninitialize(
-  Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> > *op
+  Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> > *op
   ,EAdjointTpetraOp                                             *adjointSupport
-  ,Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >     *mpiRange
-  ,Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >     *mpiDomain
+  ,Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >     *mpiRange
+  ,Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >     *mpiDomain
   )
 {
   TEST_FOR_EXCEPT(true);
 }
 
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >
+Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >
 TpetraLinearOp<Ordinal,Scalar>::mpiRange() const
 {
   return range_;
 }
 
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >
+Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >
 TpetraLinearOp<Ordinal,Scalar>::mpiDomain() const
 {
   return domain_;
@@ -419,14 +419,14 @@ bool TpetraLinearOp<Ordinal,Scalar>::isTpetraOpConst() const
 }
 
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr<Tpetra::Operator<Ordinal,Scalar> >
+Teuchos::RCP<Tpetra::Operator<Ordinal,Scalar> >
 TpetraLinearOp<Ordinal,Scalar>::getNonconstTpetraOp()
 {
   return op_.getNonconstObj();
 }
 
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> >
+Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> >
 TpetraLinearOp<Ordinal,Scalar>::getTpetraOp() const
 {
   return op_.getConstObj();
@@ -436,7 +436,7 @@ TpetraLinearOp<Ordinal,Scalar>::getTpetraOp() const
 
 template<class Ordinal, class Scalar>
 void TpetraLinearOp<Ordinal,Scalar>::getTpetraOpView(
-  Teuchos::RefCountPtr<Tpetra::Operator<Ordinal,Scalar> >   *tpetraOp
+  Teuchos::RCP<Tpetra::Operator<Ordinal,Scalar> >   *tpetraOp
   ,EAdjointTpetraOp                                         *tpetraOpAdjointSupport
   )
 {
@@ -450,7 +450,7 @@ void TpetraLinearOp<Ordinal,Scalar>::getTpetraOpView(
 
 template<class Ordinal, class Scalar>
 void TpetraLinearOp<Ordinal,Scalar>::getTpetraOpView(
-  Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> >   *tpetraOp
+  Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> >   *tpetraOp
   ,EAdjointTpetraOp                                               *tpetraOpAdjointSupport
   ) const
 {
@@ -492,14 +492,14 @@ bool TpetraLinearOp<Ordinal,Scalar>::opSupported(ETransp M_trans) const
 // Overridden from EuclideanLinearOpBase
 
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >
+Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >
 TpetraLinearOp<Ordinal,Scalar>::rangeScalarProdVecSpc() const
 {
   return sp_range_;
 }
 
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >
+Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >
 TpetraLinearOp<Ordinal,Scalar>::domainScalarProdVecSpc() const
 {
   return sp_domain_;
@@ -528,12 +528,12 @@ void TpetraLinearOp<Ordinal,Scalar>::euclideanApply(
   //
   // Get Tpetra::Vector objects for the arguments
   //
-  Teuchos::RefCountPtr<const Tpetra::Vector<Ordinal,Scalar> >
+  Teuchos::RCP<const Tpetra::Vector<Ordinal,Scalar> >
     x = get_Tpetra_Vector<Ordinal,Scalar>(
       real_M_trans==NOTRANS ? op_.getConstObj()->getDomainDist() : op_.getConstObj()->getRangeDist()
       ,Teuchos::rcp(&x_in,false)
       );
-  Teuchos::RefCountPtr<Tpetra::Vector<Ordinal,Scalar> >
+  Teuchos::RCP<Tpetra::Vector<Ordinal,Scalar> >
     y;
   if( beta == ST::zero() ) {
     y = get_Tpetra_Vector<Ordinal,Scalar>(
@@ -573,7 +573,7 @@ void TpetraLinearOp<Ordinal,Scalar>::euclideanApply(
 // Overridden from LinearOpBase
 
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 TpetraLinearOp<Ordinal,Scalar>::clone() const
 {
   return Teuchos::null; // We can not support this at this time!
@@ -610,11 +610,11 @@ void TpetraLinearOp<Ordinal,Scalar>::describe(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   using Teuchos::describe;
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:
@@ -652,9 +652,9 @@ void TpetraLinearOp<Ordinal,Scalar>::describe(
 // Allocators for domain and range spaces
 
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > 
+Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> > 
 TpetraLinearOp<Ordinal,Scalar>::allocateDomain(
-  const Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> >  &op 
+  const Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> >  &op 
   ) const
 {
   return create_VectorSpace<Ordinal,Scalar>(
@@ -663,9 +663,9 @@ TpetraLinearOp<Ordinal,Scalar>::allocateDomain(
 } 
 
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >
+Teuchos::RCP< const SpmdVectorSpaceBase<Scalar> >
 TpetraLinearOp<Ordinal,Scalar>::allocateRange( 
-  const Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> >  &op 
+  const Teuchos::RCP<const Tpetra::Operator<Ordinal,Scalar> >  &op 
   ) const
 {
   return create_VectorSpace<Ordinal,Scalar>(

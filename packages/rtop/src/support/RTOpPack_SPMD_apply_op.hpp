@@ -45,7 +45,7 @@ namespace RTOpPack {
 template<class Scalar>
 void print( const ConstSubVectorView<Scalar> &v, Teuchos::FancyOStream &out_arg )
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = Teuchos::rcp(&out_arg,false);
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(&out_arg,false);
   Teuchos::OSTab tab(out);
   *out << "globalOffset="<<v.globalOffset()<<"\n";
   *out << "subDim="<<v.subDim()<<"\n";
@@ -173,7 +173,7 @@ namespace RTOpPack {
 
 template<class Scalar>
 ReductTargetSerializer<Scalar>::ReductTargetSerializer(
-  const Teuchos::RefCountPtr<const RTOpT<Scalar> > &op
+  const Teuchos::RCP<const RTOpT<Scalar> > &op
   )
   :op_(op.assert_not_null())
 {
@@ -216,7 +216,7 @@ void ReductTargetSerializer<Scalar>::serialize(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<ReductTarget>
+Teuchos::RCP<ReductTarget>
 ReductTargetSerializer<Scalar>::createObj() const
 {
   return op_->reduct_obj_create();
@@ -251,7 +251,7 @@ void ReductTargetSerializer<Scalar>::deserialize(
 
 template<class Scalar>
 ReductTargetReductionOp<Scalar>::ReductTargetReductionOp(
-  const Teuchos::RefCountPtr<const RTOpT<Scalar> >  &op
+  const Teuchos::RCP<const RTOpT<Scalar> >  &op
   )
   :op_(op)
 {}
@@ -280,7 +280,7 @@ void RTOpPack::SPMD_all_reduce(
 {
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
-  Workspace<Teuchos::RefCountPtr<ReductTarget> >
+  Workspace<Teuchos::RCP<ReductTarget> >
     i_i_reduct_objs( wss, num_cols );
   Workspace<ReductTarget*>
     _i_i_reduct_objs( wss, num_cols );
@@ -374,7 +374,7 @@ void RTOpPack::SPMD_apply_op(
   )
 {
 #ifdef RTOPPACK_SPMD_APPLY_OP_DUMP
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::OSTab tab(out);
   if(show_spmd_apply_op_dump) {
@@ -456,7 +456,7 @@ void RTOpPack::SPMD_apply_op(
       // Allocate the intermediate target object and perform the
       // reduction for the vector elements on this processor.
       //
-      Workspace<Teuchos::RefCountPtr<ReductTarget> >
+      Workspace<Teuchos::RCP<ReductTarget> >
         i_reduct_objs( wss, num_cols );
       for( int kc = 0; kc < num_cols; ++kc ) {
         i_reduct_objs[kc] = op.reduct_obj_create();

@@ -44,11 +44,11 @@
 //
 void scaleFirstDiagElement( const double diagScale, Thyra::LinearOpBase<double> *A )
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   TEST_FOR_EXCEPT(A==NULL);
   // (A) Get at the underlying Epetra_Operator object that the EpetraLinearOp
   // object directly maintains.
-  const RefCountPtr<Epetra_Operator> epetra_op = Thyra::get_Epetra_Operator(*A);
+  const RCP<Epetra_Operator> epetra_op = Thyra::get_Epetra_Operator(*A);
   // (B) Perform a dynamic cast to Epetra_CrsMatrix.
   // Note, the dyn_cast<>() template function will throw std::bad_cast
   // with a nice error message if the cast fails! 
@@ -72,7 +72,7 @@ void scaleFirstDiagElement( const double diagScale, Thyra::LinearOpBase<double> 
 int main(int argc, char *argv[])
 {
   using Teuchos::CommandLineProcessor;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
  
   bool success = true;
   bool verbose = true;
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
   // (B) Setup the output stream (do output only on root process!)
   //
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   
   try {
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
     //       [             -1   2 ]
     //
     if(verbose) *out << "\n(1) Constructing tridagonal Epetra matrix A of global dimension = " << globalDim << " ...\n";
-    RefCountPtr<Epetra_Operator>
+    RCP<Epetra_Operator>
       A_epetra = createTridiagEpetraLinearOp(
         globalDim
 #ifdef HAVE_MPI
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
         ,1.0,verbose,*out
         );
     // Wrap in an Thyra::EpetraLinearOp object
-    RefCountPtr<Thyra::LinearOpBase<double> >
+    RCP<Thyra::LinearOpBase<double> >
       A = rcp(new Thyra::EpetraLinearOp(A_epetra));
     //
     if( verbose && dumpAll ) *out << "\nA =\n" << *A; // This works even in parallel!

@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
   bool verbose = true;
 
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
             }
             else {
               std::ostringstream ossStore;
-              Teuchos::RefCountPtr<Teuchos::FancyOStream>
+              Teuchos::RCP<Teuchos::FancyOStream>
                 oss = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&ossStore,false)));
               Teuchos::ParameterList amesosLOWSFPL;
               amesosLOWSFPL.set("Solver Type",toString(solverType));

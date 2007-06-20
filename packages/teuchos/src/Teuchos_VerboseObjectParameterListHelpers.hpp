@@ -44,7 +44,7 @@ namespace Teuchos {
  *
  * \relates VerboseObject
  */
-RefCountPtr<const ParameterList> getValidVerboseObjectSublist();
+RCP<const ParameterList> getValidVerboseObjectSublist();
 
 
 /** \brief Setup a sublist called "VerboseObject" in the given parameter list.
@@ -86,7 +86,7 @@ void setupVerboseObjectSublist( ParameterList* paramList );
  */
 void readVerboseObjectSublist(
   ParameterList* paramList,
-  RefCountPtr<FancyOStream> *oStream, EVerbosityLevel *verbLevel
+  RCP<FancyOStream> *oStream, EVerbosityLevel *verbLevel
   );
 
 
@@ -127,7 +127,7 @@ void Teuchos::readVerboseObjectSublist(
   TEST_FOR_EXCEPT(0==paramList);
   TEST_FOR_EXCEPT(0==verboseObject);
   const EVerbosityLevel bogusVerbLevel = static_cast<EVerbosityLevel>(-50);
-  RefCountPtr<FancyOStream> oStream = null;
+  RCP<FancyOStream> oStream = null;
   EVerbosityLevel verbLevel = bogusVerbLevel;
   readVerboseObjectSublist(paramList,&oStream,&verbLevel);
   verboseObject->setOverridingOStream(oStream);

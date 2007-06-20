@@ -62,7 +62,7 @@ void RTOpT<Scalar>::get_reduct_type_num_entries(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<ReductTarget>
+Teuchos::RCP<ReductTarget>
 RTOpT<Scalar>::reduct_obj_create() const
 {
   return Teuchos::null;

@@ -29,7 +29,7 @@
 #ifndef TPETRA_CISMATRIX_HPP
 #define TPETRA_CISMATRIX_HPP
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_CompObject.hpp>
 #include <Kokkos_HbMatrix.hpp>
 #include <Kokkos_DenseVector.hpp>
@@ -662,7 +662,7 @@ namespace Tpetra {
 	
 	private:
 
-		Teuchos::RefCountPtr< CisMatrixData<OrdinalType, ScalarType> > CisMatrixData_;
+		Teuchos::RCP< CisMatrixData<OrdinalType, ScalarType> > CisMatrixData_;
   
 		// convenience functions for returning inner data class, both const and nonconst versions.
 		CisMatrixData<OrdinalType, ScalarType>& data() {return(*CisMatrixData_);}

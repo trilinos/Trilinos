@@ -77,16 +77,16 @@ void Teuchos_MPI_Op_free( MPI_Op *op )
 
 namespace {
 
-Teuchos::RefCountPtr<const Teuchos::MpiReductionOpBase> the_reduct_op = Teuchos::null;
+Teuchos::RCP<const Teuchos::MpiReductionOpBase> the_reduct_op = Teuchos::null;
 
-Teuchos::RefCountPtr<const Teuchos::OpaqueWrapper<MPI_Op> > the_mpi_op = Teuchos::null;
+Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Op> > the_mpi_op = Teuchos::null;
 
-Teuchos::RefCountPtr<const Teuchos::MpiReductionOpBase> get_reduct_op()
+Teuchos::RCP<const Teuchos::MpiReductionOpBase> get_reduct_op()
 {
   return the_reduct_op;
 }
 
-void set_reduct_op( const Teuchos::RefCountPtr<const Teuchos::MpiReductionOpBase>& reduct_op )
+void set_reduct_op( const Teuchos::RCP<const Teuchos::MpiReductionOpBase>& reduct_op )
 {
   using Teuchos::null;
 #ifdef TEUCHOS_DEBUG
@@ -121,7 +121,7 @@ void Teuchos_MPI_reduction_op(
 namespace Teuchos {
 
 MpiReductionOpSetter::MpiReductionOpSetter(
-  const Teuchos::RefCountPtr<const MpiReductionOpBase>& reduct_op
+  const Teuchos::RCP<const MpiReductionOpBase>& reduct_op
   )
 {
 #ifdef TEUCHOS_DEBUG

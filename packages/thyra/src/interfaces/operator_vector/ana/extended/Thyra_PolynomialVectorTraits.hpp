@@ -51,7 +51,7 @@ namespace Teuchos {
     typedef Scalar scalar_type;
 
     //! Clone a coefficient
-    static inline Teuchos::RefCountPtr<coeff_type> clone(const coeff_type& c) {
+    static inline Teuchos::RCP<coeff_type> clone(const coeff_type& c) {
       return c.clone_v();
     }
 

@@ -66,7 +66,7 @@ bool MultiVectorStdOpsTester<Scalar>::checkStdOps(
   if(out) *out << "\nvecSpc.dim() = " << vecSpc.dim() << std::endl;
 
   if(out) *out << "\nCreating MultiVectorBase objects V1, V2, V3 and Z ...\n";
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  Teuchos::RCP<MultiVectorBase<Scalar> >
     V1 = createMembers(vecSpc,num_mv_cols()),
     V2 = createMembers(vecSpc,num_mv_cols()),
     V3 = createMembers(vecSpc,num_mv_cols()),

@@ -44,7 +44,7 @@ XMLObject XMLInputSource::getObject() const
 
 #ifdef HAVE_TEUCHOS_EXPAT
 
-	RefCountPtr<TreeBuildingXMLHandler> handler = rcp(new TreeBuildingXMLHandler());
+	RCP<TreeBuildingXMLHandler> handler = rcp(new TreeBuildingXMLHandler());
 
 	XML_Parser parser = XML_ParserCreate(NULL);
 
@@ -55,7 +55,7 @@ XMLObject XMLInputSource::getObject() const
 
 	XML_SetUserData(parser, (void*) &(*handler));
 
-	RefCountPtr<XMLInputStream> s = stream();
+	RCP<XMLInputStream> s = stream();
 
 	bool done = false;
 	unsigned int bufsize = EXPAT_BUFSIZE;

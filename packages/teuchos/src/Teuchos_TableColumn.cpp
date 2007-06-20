@@ -60,15 +60,15 @@ TableColumn::TableColumn(const Array<double>& first,
 {
   for (unsigned int i=0; i<first.size(); i++)
     {
-      RefCountPtr<DoubleEntry> x1 = rcp(new DoubleEntry(first[i], precision));
-      RefCountPtr<DoubleEntry> x2 = rcp(new DoubleEntry(second[i], precision));
+      RCP<DoubleEntry> x1 = rcp(new DoubleEntry(first[i], precision));
+      RCP<DoubleEntry> x2 = rcp(new DoubleEntry(second[i], precision));
       data_[i] 
         = rcp(new CompoundEntryWithParentheses(x1, x2,
                                                spaceBeforeParentheses));
     }
 }
 
-void TableColumn::addEntry(const RefCountPtr<TableEntry>& entry)
+void TableColumn::addEntry(const RCP<TableEntry>& entry)
 {
   data_.append(entry);
 }

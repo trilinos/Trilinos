@@ -51,7 +51,7 @@ bool VectorSpaceBase<Scalar>::hasInCoreView(const Range1D& rng, const EViewType 
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+RCP< const VectorSpaceBase<Scalar> >
 VectorSpaceBase<Scalar>::clone() const
 {
   return Teuchos::null;
@@ -62,11 +62,11 @@ VectorSpaceBase<Scalar>::clone() const
 // Nonmember functions
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
-Thyra::makeHaveOwnership( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs )
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+Thyra::makeHaveOwnership( const RCP<const VectorSpaceBase<Scalar> > &vs )
 {
   if( vs.has_ownership() ) return vs;
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > _vs = vs->clone();
+  RCP<const Thyra::VectorSpaceBase<Scalar> > _vs = vs->clone();
   TEST_FOR_EXCEPTION(
     _vs.get() == NULL, std::logic_error
     ,"Thyra::makeHaveOwnership(vs): Error, the concrete VectorSpaceBase object identified as \'"
@@ -76,13 +76,13 @@ Thyra::makeHaveOwnership( const Teuchos::RefCountPtr<const VectorSpaceBase<Scala
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< Thyra::VectorBase<Scalar> >
+Teuchos::RCP< Thyra::VectorBase<Scalar> >
 Thyra::createMember(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+  const RCP<const VectorSpaceBase<Scalar> > &vs,
   const std::string &label
   )
 {
-  Teuchos::RefCountPtr<VectorBase<Scalar> > v = vs->createMember();
+  RCP<VectorBase<Scalar> > v = vs->createMember();
 #ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
   assign(&*v,Teuchos::ScalarTraits<Scalar>::nan());
 #endif  
@@ -92,7 +92,7 @@ Thyra::createMember(
 }
   
 template<class Scalar>
-Teuchos::RefCountPtr< Thyra::VectorBase<Scalar> >
+Teuchos::RCP< Thyra::VectorBase<Scalar> >
 Thyra::createMember(
   const VectorSpaceBase<Scalar> &vs, const std::string &label
   )
@@ -101,13 +101,13 @@ Thyra::createMember(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< Thyra::MultiVectorBase<Scalar> >
+Teuchos::RCP< Thyra::MultiVectorBase<Scalar> >
 Thyra::createMembers(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+  const RCP<const VectorSpaceBase<Scalar> > &vs,
   int numMembers,  const std::string &label
   )
 {
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  RCP<MultiVectorBase<Scalar> >
     mv = vs->createMembers(numMembers);
 #ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
   assign(&*mv,Teuchos::ScalarTraits<Scalar>::nan());
@@ -118,7 +118,7 @@ Thyra::createMembers(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< Thyra::MultiVectorBase<Scalar> >
+Teuchos::RCP< Thyra::MultiVectorBase<Scalar> >
 Thyra::createMembers(
   const VectorSpaceBase<Scalar> &vs, int numMembers,
   const std::string &label
@@ -128,14 +128,14 @@ Thyra::createMembers(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
+Teuchos::RCP<Thyra::VectorBase<Scalar> >
 Thyra::createMemberView(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+  const RCP<const VectorSpaceBase<Scalar> > &vs,
   const RTOpPack::SubVectorView<Scalar> &raw_v,
   const std::string &label
   )
 {
-  Teuchos::RefCountPtr<VectorBase<Scalar> >
+  RCP<VectorBase<Scalar> >
     v = vs->createMemberView(raw_v);
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &v );
   if(label.length()) v->setObjectLabel(label);
@@ -143,7 +143,7 @@ Thyra::createMemberView(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
+Teuchos::RCP<Thyra::VectorBase<Scalar> >
 Thyra::createMemberView(
   const VectorSpaceBase<Scalar> &vs,
   const RTOpPack::SubVectorView<Scalar> &raw_v,
@@ -154,14 +154,14 @@ Thyra::createMemberView(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 Thyra::createMemberView(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+  const RCP<const VectorSpaceBase<Scalar> > &vs,
   const RTOpPack::ConstSubVectorView<Scalar> &raw_v,
   const std::string &label
   )
 {
-  Teuchos::RefCountPtr<const VectorBase<Scalar> >
+  RCP<const VectorBase<Scalar> >
     v = vs->createMemberView(raw_v);
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &v );
   if(label.length())
@@ -170,7 +170,7 @@ Thyra::createMemberView(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 Thyra::createMemberView(
   const VectorSpaceBase<Scalar> &vs,
   const RTOpPack::ConstSubVectorView<Scalar> &raw_v,
@@ -181,14 +181,14 @@ Thyra::createMemberView(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >
 Thyra::createMembersView(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+  const RCP<const VectorSpaceBase<Scalar> > &vs,
   const RTOpPack::SubMultiVectorView<Scalar> &raw_mv,
   const std::string &label
   )
 {
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  RCP<MultiVectorBase<Scalar> >
     mv = vs->createMembersView(raw_mv);
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &mv );
   if(label.length()) mv->setObjectLabel(label);
@@ -196,7 +196,7 @@ Thyra::createMembersView(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >
 Thyra::createMembersView(
   const VectorSpaceBase<Scalar> &vs,
   const RTOpPack::SubMultiVectorView<Scalar> &raw_mv,
@@ -207,14 +207,14 @@ Thyra::createMembersView(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
 Thyra::createMembersView(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs,
+  const RCP<const VectorSpaceBase<Scalar> > &vs,
   const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv,
   const std::string &label
   )
 {
-  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+  RCP<const MultiVectorBase<Scalar> >
     mv = vs->createMembersView(raw_mv);
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &mv );
   if(label.length())
@@ -223,7 +223,7 @@ Thyra::createMembersView(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
+Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
 Thyra::createMembersView( const VectorSpaceBase<Scalar> &vs,
   const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv,
   const std::string &label

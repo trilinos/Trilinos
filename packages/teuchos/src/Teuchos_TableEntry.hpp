@@ -39,7 +39,7 @@
     */
 
 #include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include <iostream>
 
@@ -142,16 +142,16 @@ namespace Teuchos
   {
   public:
     /** \brief */
-    CompoundEntryWithParentheses(const RefCountPtr<TableEntry>& first,
-                                 const RefCountPtr<TableEntry>& second,
+    CompoundEntryWithParentheses(const RCP<TableEntry>& first,
+                                 const RCP<TableEntry>& second,
                                  bool spaceBeforeParens=true);
     
     /** \brief Write the specified entry to a string */
     virtual string toString() const ;
     
   private:
-    RefCountPtr<TableEntry> first_;
-    RefCountPtr<TableEntry> second_;
+    RCP<TableEntry> first_;
+    RCP<TableEntry> second_;
     bool spaceBeforeParens_;
   };
 

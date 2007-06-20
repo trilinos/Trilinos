@@ -67,10 +67,10 @@ double EpetraOperatorWrapper::NormInf() const
 }
 
 
-RefCountPtr<Epetra_Map> 
+RCP<Epetra_Map> 
 EpetraOperatorWrapper
 ::thyraVSToEpetraMap(const VectorSpace<double>& vs,
-                     const RefCountPtr<Epetra_Comm>& comm) const 
+                     const RCP<Epetra_Comm>& comm) const 
 {
   int globalDim = vs.dim();
   int myLocalElements = 0;
@@ -107,7 +107,7 @@ EpetraOperatorWrapper
     }
 
   /* create the map */
-  RefCountPtr<Epetra_Map> rtn 
+  RCP<Epetra_Map> rtn 
     = rcp(new Epetra_Map(globalDim, myLocalElements, &(myGIDs[0]), 0, *comm));
 
   return rtn;
@@ -123,7 +123,7 @@ void EpetraOperatorWrapper::copyEpetraIntoThyra(const Epetra_MultiVector& x,
 
   double* const epetraData = x[0];
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   bool verbose = false;
   if (verbose)
@@ -142,14 +142,14 @@ void EpetraOperatorWrapper::copyEpetraIntoThyra(const Epetra_MultiVector& x,
       int localOffset = lowestLocallyOwnedIndex(Thyra::space(block));
       int localNumElems = numLocalElements(Thyra::space(block));
 
-      RefCountPtr<SpmdVectorBase<double> > spmd 
+      RCP<SpmdVectorBase<double> > spmd 
         = rcp_dynamic_cast<SpmdVectorBase<double> >(block.ptr());
 
       /** get a non-const pointer to the data in the thyra vector */ 
       {
         /* limit the scope so that it gets destroyed, and thus committed,
          * before using the vector */
-        Teuchos::RefCountPtr<DetachedVectorView<double> > view 
+        Teuchos::RCP<DetachedVectorView<double> > view 
           = rcp(new DetachedVectorView<double>(block.ptr(), 
                                                Thyra::Range1D(localOffset,
                                                        localOffset+localNumElems-1), 
@@ -180,7 +180,7 @@ copyThyraIntoEpetra(const ConstVector<double>& thyraVec,
   /* get a writable pointer to the contents of the Epetra vector */
   double* epetraData = v[0];
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   bool verbose = false;
   if (verbose)
@@ -197,14 +197,14 @@ copyThyraIntoEpetra(const ConstVector<double>& thyraVec,
                          "block is not SPMD");
       int localOffset = lowestLocallyOwnedIndex(Thyra::space(block));
       int localNumElems = numLocalElements(Thyra::space(block));
-      RefCountPtr<const SpmdVectorBase<double> > spmd 
+      RCP<const SpmdVectorBase<double> > spmd 
         = rcp_dynamic_cast<const SpmdVectorBase<double> >(block.constPtr());
 
       /** get a const pointer to the data in the thyra vector */ 
       {
         /* limit the scope so that it gets destroyed, and thus committed,
          * before using the vector */
-        Teuchos::RefCountPtr<const ConstDetachedVectorView<double> > view 
+        Teuchos::RCP<const ConstDetachedVectorView<double> > view 
           = rcp(new ConstDetachedVectorView<double>(block.constPtr(), 
                                                Thyra::Range1D(localOffset,
                                                               localOffset+localNumElems-1), 
@@ -229,7 +229,7 @@ copyThyraIntoEpetra(const ConstVector<double>& thyraVec,
 
 int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   bool verbose = false;
   if (verbose)
@@ -285,13 +285,13 @@ int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& X,
 }
 
 
-RefCountPtr<Epetra_Comm> 
+RCP<Epetra_Comm> 
 EpetraOperatorWrapper::getEpetraComm(const ConstLinearOperator<double>& thyraOp) const
 {
-  RefCountPtr<Epetra_Comm> rtn;
+  RCP<Epetra_Comm> rtn;
   VectorSpace<double> vs = thyraOp.domain().getBlock(0);
 
-  RefCountPtr<const SpmdVectorSpaceBase<double> > spmd 
+  RCP<const SpmdVectorSpaceBase<double> > spmd 
     = rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(vs.constPtr());
 
   TEST_FOR_EXCEPTION(!isSPMD(vs), runtime_error, 
@@ -334,10 +334,10 @@ EpetraOperatorWrapper::getEpetraComm(const ConstLinearOperator<double>& thyraOp)
 } // namespace Thyra
 
 
-Teuchos::RefCountPtr<const Thyra::LinearOpBase<double> > 
+Teuchos::RCP<const Thyra::LinearOpBase<double> > 
 Thyra::makeEpetraWrapper(const ConstLinearOperator<double>& thyraOp)
 {
-  RefCountPtr<const LinearOpBase<double> > rtn 
+  RCP<const LinearOpBase<double> > rtn 
     = rcp(new EpetraLinearOp(rcp(new EpetraOperatorWrapper(thyraOp))));
   return rtn;
 }

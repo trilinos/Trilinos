@@ -29,7 +29,7 @@
 #ifndef TEUCHOS_OPAQUE_WRAPPER_HPP
 #define TEUCHOS_OPAQUE_WRAPPER_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 //#define TEUCHOS_OPAQUE_WRAPPER_ANNOUNCE_FREE
 
@@ -43,19 +43,19 @@ namespace Teuchos {
  *
  * This base class allows opaque objects to be wrapped by a real object that
  * you can then take an address off.  This is needed in order to wrap an
- * opaque object in a RefCountPtr for example.
+ * opaque object in a RCP for example.
  *
  * For example, MPI uses the opaque object idiom for handling things like
  * MPI_Comm, and MPI_Op.  Some implementations implement these opaque object
  * handles and just integers.  This causes many problems with used with the
- * RefCountPtr (just try wrapping an MPI_Comm object directly in a RefCountPtr
+ * RCP (just try wrapping an MPI_Comm object directly in a RCP
  * and see what happens yourself and see what happens).
  *
- * For example, to wrap MPI_COMM_WORLD in a RefCountPtr, you would do
+ * For example, to wrap MPI_COMM_WORLD in a RCP, you would do
  * <tt>opaqueWrapper(MPI_COMM_WORLD)</tt> and that is it.
  *
  * Consider what would happen if you tried to directly wrap the MPI_Comm
- * MPI_COMM_WORLD in a RefCountPtr.  On some implementations like MPICH,
+ * MPI_COMM_WORLD in a RCP.  On some implementations like MPICH,
  * MPI_Comm is just a typedef to an integer and MPI_COMM_WORLD is just a define
  * to a literal interger.  In this case, the expression
  * <tt>rcp(&MPI_COMM_WORLD)</tt> would not even compile (try this on your
@@ -63,7 +63,7 @@ namespace Teuchos {
  
  \code
 
-  Teuchos::RefCountPtr<MPI_Comm> getMpiCommPtr()
+  Teuchos::RCP<MPI_Comm> getMpiCommPtr()
   {
     MPI_Comm comm = MPI_COMM_WORLD;
     return Teuchos::rcp(&comm,false);
@@ -73,7 +73,7 @@ namespace Teuchos {
 
  * Of course the above code would result in a disaster when the stack variable
  * <tt>comm</tt>, which is just an integer in MPICH, was destroyed and
- * reclaimed.  The <tt>RefCountPtr</tt> returned from getMpiCommPtr() would
+ * reclaimed.  The <tt>RCP</tt> returned from getMpiCommPtr() would
  * contain a raw pointer an <tt>int</tt> object that was now being used for
  * something else and would no longer have the integer value of a valid
  * MPI_Comm object.
@@ -82,7 +82,7 @@ namespace Teuchos {
  
  \code
 
-  Teuchos::RefCountPtr<MPI_Comm> getMpiCommPtr()
+  Teuchos::RCP<MPI_Comm> getMpiCommPtr()
   {
     MPI_Comm *comm = new MPI_Comm(MPI_COMM_WORLD);
     return Teuchos::rcp(&comm);
@@ -97,7 +97,7 @@ namespace Teuchos {
  * There are other issues that crop up also when you play these types of games.
  *
  * Therefore, just use <tt>opaqueWrapper()</tt> create wrap opaque objects in
- * RefCountPtr objects and be sure that this will go smoothly.
+ * RCP objects and be sure that this will go smoothly.
  *
  * \ingroup teuchos_mem_mng_grp
  */
@@ -148,7 +148,7 @@ public:
     {
       if(opaqueFree_) {
 #ifdef TEUCHOS_OPAQUE_WRAPPER_ANNOUNCE_FREE
-        Teuchos::RefCountPtr<Teuchos::FancyOStream>
+        Teuchos::RCP<Teuchos::FancyOStream>
           out = Teuchos::VerboseObjectBase::getDefaultOStream();
         Teuchos::OSTab tab(out);
         *out << "\nOpaqueWrapperWithFree::~OpaqueWrapperWithFree(): Freeing opaque object"
@@ -171,7 +171,7 @@ private:
  */
 template <class Opaque>
 inline
-RefCountPtr<OpaqueWrapper<Opaque> >
+RCP<OpaqueWrapper<Opaque> >
 opaqueWrapper( Opaque opaque)
 {
   return rcp(new OpaqueWrapper<Opaque>(opaque));
@@ -184,7 +184,7 @@ opaqueWrapper( Opaque opaque)
  */
 template <class Opaque, class OpaqueFree>
 inline
-RefCountPtr<OpaqueWrapper<Opaque> >
+RCP<OpaqueWrapper<Opaque> >
 opaqueWrapper( Opaque opaque, OpaqueFree opaqueFree)
 {
   return rcp(new OpaqueWrapperWithFree<Opaque,OpaqueFree>(opaque,opaqueFree));

@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
 	obj1.newPrint(cout); cout << endl;
 
-	Teuchos::RefCountPtr<Tpetra::OutputManager> om = Teuchos::rcp (new Tpetra::OutputManager());
+	Teuchos::RCP<Tpetra::OutputManager> om = Teuchos::rcp (new Tpetra::OutputManager());
 	om->setVerbosity(Tpetra::Signature+Tpetra::Summary);
 	obj1.setOutputManager(om);
 	obj1.newPrint(cout); cout << endl;

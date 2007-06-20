@@ -63,7 +63,7 @@ namespace Thyra
     /** \name Handleable interface */
     //@{
     /** Return a ref count pointer to a newly created object */
-    virtual RefCountPtr<LinearSolverBase<Scalar> > getRcp() 
+    virtual RCP<LinearSolverBase<Scalar> > getRcp() 
     {return rcp(this);}
     //@}
     

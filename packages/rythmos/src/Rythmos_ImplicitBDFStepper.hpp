@@ -37,7 +37,7 @@
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_as.hpp"
 
@@ -70,15 +70,15 @@ public:
 
   /** \brief . */
   ImplicitBDFStepper(
-    const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >  &model
-    ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >  &solver
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >  &model
+    ,const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver
     );
 
   /** \brief . */
   ImplicitBDFStepper(
-    const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >  &model
-    ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >  &solver
-    ,Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >  &model
+    ,const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver
+    ,Teuchos::RCP<Teuchos::ParameterList> &parameterList
     );
 
   /** \brief . */
@@ -96,10 +96,10 @@ public:
   // 2007/06/11: rabartl : ToDo: Change above name to wrmNorm
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > get_solution() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > get_residual() const;
 
   //@}
 
@@ -108,15 +108,15 @@ public:
 
   /** \brief . */
   void setSolver(
-    const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
     );
 
   /** \brief . */
-  Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
   getNonconstSolver();
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> >
+  Teuchos::RCP<const Thyra::NonlinearSolverBase<Scalar> >
   getSolver() const;
 
   //@}
@@ -134,13 +134,13 @@ public:
    * the client can simply reset the model using
    * <tt>returnVal->setModel()</tt>.
    */
-  Teuchos::RefCountPtr<StepperBase<Scalar> > cloneStepper() const;
+  Teuchos::RCP<StepperBase<Scalar> > cloneStepper() const;
 
   /** \brief . */
-  void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
+  void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
   getModel() const;
 
   /** \brief . */
@@ -163,14 +163,14 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
   get_x_space() const;
 
   /** \brief . */
   bool setPoints(
     const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
     ,const std::vector<ScalarMag> & accuracy_vec 
     );
 
@@ -186,8 +186,8 @@ public:
   /** \brief . */
   bool getPoints(
     const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
     ,std::vector<ScalarMag>* accuracy_vec
     ) const;
 
@@ -206,16 +206,16 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
 
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
 
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
@@ -236,18 +236,18 @@ private:
   // Private data members
   //
 
-  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > solver_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
   Rythmos::SingleResidualModelEvaluator<Scalar>   neModel_;
 
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xn0_;
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xpn0_;
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_base_;
-  std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > xHistory_;
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > ee_;
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > delta_;
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_;
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > errWtVec_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > xn0_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > xpn0_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_base_;
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > xHistory_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > ee_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > delta_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > residual_;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > errWtVec_;
 
   Scalar time_;
 
@@ -315,7 +315,7 @@ private:
 
   int newtonConvergenceStatus_;
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
+  Teuchos::RCP<Teuchos::ParameterList> parameterList_;
 
   //
   // Private member functions
@@ -351,7 +351,7 @@ private:
 template<class Scalar>
 ImplicitBDFStepper<Scalar>::ImplicitBDFStepper()
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->setMaxLenLinePrefix(30);
   haveInitialCondition_ = false;
   isInitialized_=false;
@@ -360,12 +360,12 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper()
 
 template<class Scalar>
 ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
-  ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
-  ,Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
+  ,const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
+  ,Teuchos::RCP<Teuchos::ParameterList> &parameterList
   )
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->setMaxLenLinePrefix(30);
   if( parameterList != Teuchos::null ) {
     this->setParameterList(parameterList);
@@ -380,11 +380,11 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
 
 template<class Scalar>
 ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
-  ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
+  ,const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->setMaxLenLinePrefix(30);
   // Now we instantiate the model and the solver
   setModel(model);
@@ -429,7 +429,7 @@ Scalar ImplicitBDFStepper<Scalar>::WRMSNorm(
 
 
 template<class Scalar>
-void ImplicitBDFStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver)
+void ImplicitBDFStepper<Scalar>::setSolver(const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &solver)
 {
   TEST_FOR_EXCEPT(solver == Teuchos::null)
     solver_ = solver;
@@ -437,7 +437,7 @@ void ImplicitBDFStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<Thyra::Non
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >
+Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
 ImplicitBDFStepper<Scalar>::getNonconstSolver()
 {
   return (solver_);
@@ -445,7 +445,7 @@ ImplicitBDFStepper<Scalar>::getNonconstSolver()
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> >
+Teuchos::RCP<const Thyra::NonlinearSolverBase<Scalar> >
 ImplicitBDFStepper<Scalar>::getSolver() const
 {
   return (solver_);
@@ -463,14 +463,14 @@ bool ImplicitBDFStepper<Scalar>::supportsCloning() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<StepperBase<Scalar> >
+Teuchos::RCP<StepperBase<Scalar> >
 ImplicitBDFStepper<Scalar>::cloneStepper() const
 {
 
   // Just use the interface to clone the algorithm in an basically
   // uninitialized state
 
-  Teuchos::RefCountPtr<ImplicitBDFStepper<Scalar> >
+  Teuchos::RCP<ImplicitBDFStepper<Scalar> >
     stepper = Teuchos::rcp(new ImplicitBDFStepper<Scalar>());
 
   if (!is_null(model_))
@@ -494,7 +494,7 @@ ImplicitBDFStepper<Scalar>::cloneStepper() const
 
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::setModel(
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
   )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -504,7 +504,7 @@ void ImplicitBDFStepper<Scalar>::setModel(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 ImplicitBDFStepper<Scalar>::getModel() const
 {
   return model_;
@@ -541,7 +541,7 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
   typedef Thyra::NonlinearSolverBase<Scalar> NSB;
   typedef Teuchos::VerboseObjectTempState<NSB> VOTSNSB;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"takeStep");
   VOTSNSB solver_outputTempState(solver_,out,verbLevel);
@@ -723,7 +723,7 @@ const StepStatus<Scalar> ImplicitBDFStepper<Scalar>::getStepStatus() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 ImplicitBDFStepper<Scalar>::get_x_space() const
 {
   return ( !is_null(model_) ? model_->get_x_space() : Teuchos::null );
@@ -733,8 +733,8 @@ ImplicitBDFStepper<Scalar>::get_x_space() const
 template<class Scalar>
 bool ImplicitBDFStepper<Scalar>::setPoints(
   const std::vector<Scalar>& time_vec,
-  const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec,
-  const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+  const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
+  const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
   const std::vector<ScalarMag> & accuracy_vec 
   )
 {
@@ -761,15 +761,15 @@ TimeRange<Scalar> ImplicitBDFStepper<Scalar>::getTimeRange() const
 template<class Scalar>
 bool ImplicitBDFStepper<Scalar>::getPoints(
   const std::vector<Scalar>& time_vec
-  ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec
-  ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec
+  ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+  ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
   ,std::vector<ScalarMag>* accuracy_vec) const
 {
   using Teuchos::as;
   bool status;
   for (unsigned int i=0 ; i<time_vec.size() ; ++i) {
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_temp = xn0_->clone_v();
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp = xn0_->clone_v();
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > x_temp = xn0_->clone_v();
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot_temp = xn0_->clone_v();
     ScalarMag accuracy;
     status = interpolateSolution_(time_vec[i],&*x_temp,&*xdot_temp,&accuracy);
     if (!status) {
@@ -780,7 +780,7 @@ bool ImplicitBDFStepper<Scalar>::getPoints(
     accuracy_vec->push_back(accuracy);
   }
   if ( as<int>(this->getVerbLevel()) >= as<int>(Teuchos::VERB_HIGH) ) {
-    Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"getPoints");
     *out << "Passing out the interpolated values:" << std::endl;
     for (unsigned int i=0; i<time_vec.size() ; ++i) {
@@ -836,7 +836,7 @@ int ImplicitBDFStepper<Scalar>::getOrder() const
 
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::setParameterList(
-  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
 
@@ -895,7 +895,7 @@ void ImplicitBDFStepper<Scalar>::setParameterList(
   constantStepSize_ = parameterList_->get( "constantStepSize", false );
   stopTime_ = parameterList_->get( "stopTime", Scalar(10.0) );
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"setParameterList");
   out->precision(15);
@@ -943,32 +943,32 @@ void ImplicitBDFStepper<Scalar>::setParameterList(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> ImplicitBDFStepper<Scalar>::getParameterList()
+Teuchos::RCP<Teuchos::ParameterList> ImplicitBDFStepper<Scalar>::getParameterList()
 {
   return(parameterList_);
 }
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 ImplicitBDFStepper<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList_;
+  Teuchos::RCP<Teuchos::ParameterList> temp_param_list = parameterList_;
   parameterList_ = Teuchos::null;
   return(temp_param_list);
 }
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 ImplicitBDFStepper<Scalar>::getValidParameters() const
 {
 
-  static Teuchos::RefCountPtr<Teuchos::ParameterList> validPL;
+  static Teuchos::RCP<Teuchos::ParameterList> validPL;
 
   if (is_null(validPL)) {
 
-    Teuchos::RefCountPtr<Teuchos::ParameterList>
+    Teuchos::RCP<Teuchos::ParameterList>
       pl = Teuchos::parameterList();
 
     pl->set<int>   ( "maxOrder",         5              );
@@ -1097,7 +1097,7 @@ void ImplicitBDFStepper<Scalar>::setDefaultMagicNumbers_(
   minTimeStep_    = magicNumberList.get( "minTimeStep",    Scalar(0.0)     );
   maxTimeStep_    = magicNumberList.get( "maxTimeStep",    Scalar(10.0)    ); 
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"setDefaultMagicNumbers_");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -1149,7 +1149,7 @@ void ImplicitBDFStepper<Scalar>::obtainPredictor_()
     return;
   }
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"obtainPredictor_");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -1246,7 +1246,7 @@ void ImplicitBDFStepper<Scalar>::updateHistory_()
   for (int j=usedOrder_-1;j>=0;j--) {
     Vp_V( &*xHistory_[j], *xHistory_[j+1] );
   }
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"updateHistory_");
   if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -1273,7 +1273,7 @@ void ImplicitBDFStepper<Scalar>::restoreHistory_()
   for (int i=1;i<=currentOrder_;++i) {
     psi_[i-1] = psi_[i] - hh_;
   }
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"restoreHistory_");
   if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -1331,7 +1331,7 @@ void ImplicitBDFStepper<Scalar>::updateCoeffs_()
     ck_ = abs(alpha_[currentOrder_]+alpha_s_-alpha_0_);
     ck_ = max(ck_,alpha_[currentOrder_]);
   }
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"updateCoeffs_");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -1359,7 +1359,7 @@ void ImplicitBDFStepper<Scalar>::initialize_()
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Thyra::createMember;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   const bool doTrace = (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH));
   Teuchos::OSTab ostab(out,1,"initialize_");
@@ -1374,15 +1374,15 @@ void ImplicitBDFStepper<Scalar>::initialize_()
     TEST_FOR_EXCEPT(solver_ == Teuchos::null)
 
     if (parameterList_ == Teuchos::null) {
-      Teuchos::RefCountPtr<Teuchos::ParameterList> emptyParameterList;
+      Teuchos::RCP<Teuchos::ParameterList> emptyParameterList;
       this->setParameterList(emptyParameterList);
     }
 
   this->getInitialCondition_();
   // Generate vectors for use in calculations
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > 
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > 
     x_space = model_->get_x_space();
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > 
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > 
     f_space = model_->get_f_space();
   x_dot_base_ = createMember(x_space);
   ee_ = createMember(x_space);
@@ -1470,7 +1470,7 @@ Scalar ImplicitBDFStepper<Scalar>::checkReduceOrder_()
   // be good to partition it into two or more classes.  Statements like the
   // above will be hard to maintain and suggest a need for some partitioning.
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"checkReduceOrder_");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -1550,7 +1550,7 @@ BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep_()
   Scalar newTimeStep = hh_;
   Scalar rr = 1.0; // step size ratio = new step / old step
   nef_++;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"rejectStep_");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -1659,7 +1659,7 @@ void ImplicitBDFStepper<Scalar>::completeStep_()
   numberOfSteps_ ++;
   nef_ = 0;
   time_ += hh_;
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"completeStep_");
 

@@ -34,12 +34,11 @@
     \brief Pure virtual base class which describes the basic interface to the iterative solver.
 */
 
+#include "BelosConfigDefs.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Describable.hpp"
-
-using Teuchos::RefCountPtr;
-using Teuchos::ParameterList;
+#include "Teuchos_RefCountPtr.hpp"
 
 
 /*! \class Belos::IterativeSolver
@@ -51,6 +50,9 @@ using Teuchos::ParameterList;
 */
 
 namespace Belos {
+
+using Teuchos::RefCountPtr;
+using Teuchos::ParameterList;
 
 template <class ScalarType>
 class OutputManager;

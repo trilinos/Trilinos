@@ -91,22 +91,22 @@ public:
     );
 
   /** \brief . */
-  static Teuchos::RefCountPtr<const Teuchos::ParameterList>
+  static Teuchos::RCP<const Teuchos::ParameterList>
   getValidSolveCriteriaExtraParameters();
 
   /** @name Overridden from ParameterListAcceptor */
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
@@ -115,10 +115,10 @@ public:
 
   /** \brief . */
   void setModel(
-    const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model
+    const Teuchos::RCP<const ModelEvaluator<Scalar> > &model
     );
   /** \brief . */
-  Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > getModel() const;
+  Teuchos::RCP<const ModelEvaluator<Scalar> > getModel() const;
   /** \brief . */
   SolveStatus<Scalar> solve(
     VectorBase<Scalar>              *x
@@ -126,13 +126,13 @@ public:
     ,VectorBase<Scalar>             *delta = NULL
     );
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorBase<Scalar> > get_current_x() const;
+  Teuchos::RCP<const VectorBase<Scalar> > get_current_x() const;
   /** \brief . */
   bool is_W_current() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > get_nonconst_W();
+  Teuchos::RCP<LinearOpWithSolveBase<Scalar> > get_nonconst_W();
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > get_W() const;
+  Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > get_W() const;
   /** \brief . */
   void set_W_is_current(bool W_is_current);
 
@@ -140,10 +140,10 @@ public:
 
 private:
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_;
-  Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >    model_;
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >   J_;
-  Teuchos::RefCountPtr<VectorBase<Scalar> >              current_x_;
+  Teuchos::RCP<Teuchos::ParameterList> paramList_;
+  Teuchos::RCP<const ModelEvaluator<Scalar> >    model_;
+  Teuchos::RCP<LinearOpWithSolveBase<Scalar> >   J_;
+  Teuchos::RCP<VectorBase<Scalar> >              current_x_;
   bool                                                   J_is_current_;
 
 };
@@ -166,12 +166,12 @@ DampenedNewtonNonlinearSolver<Scalar>::DampenedNewtonNonlinearSolver(
 {}
 
 template <class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 DampenedNewtonNonlinearSolver<Scalar>::getValidSolveCriteriaExtraParameters()
 {
-  static Teuchos::RefCountPtr<const Teuchos::ParameterList> validSolveCriteriaExtraParameters;
+  static Teuchos::RCP<const Teuchos::ParameterList> validSolveCriteriaExtraParameters;
   if(!validSolveCriteriaExtraParameters.get()) {
-    Teuchos::RefCountPtr<Teuchos::ParameterList>
+    Teuchos::RCP<Teuchos::ParameterList>
       paramList = Teuchos::rcp(new Teuchos::ParameterList);
     paramList->set("Max Iters",int(1000));
     validSolveCriteriaExtraParameters = paramList;
@@ -183,7 +183,7 @@ DampenedNewtonNonlinearSolver<Scalar>::getValidSolveCriteriaExtraParameters()
 
 template<class Scalar>
 void DampenedNewtonNonlinearSolver<Scalar>::setParameterList(
-  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
   using Teuchos::get;
@@ -198,36 +198,36 @@ void DampenedNewtonNonlinearSolver<Scalar>::setParameterList(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 DampenedNewtonNonlinearSolver<Scalar>::getParameterList()
 {
   return paramList_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 DampenedNewtonNonlinearSolver<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> _paramList = paramList_;
+  Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 DampenedNewtonNonlinearSolver<Scalar>::getParameterList() const
 {
   return paramList_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 DampenedNewtonNonlinearSolver<Scalar>::getValidParameters() const
 {
   using Teuchos::setDoubleParameter; using Teuchos::setIntParameter;
-  static Teuchos::RefCountPtr<const Teuchos::ParameterList> validPL;
+  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
-    Teuchos::RefCountPtr<Teuchos::ParameterList>
+    Teuchos::RCP<Teuchos::ParameterList>
       pl = Teuchos::parameterList();
   TEST_FOR_EXCEPT("ToDo: Implement!");
     Teuchos::setupVerboseObjectSublist(&*pl);
@@ -240,7 +240,7 @@ DampenedNewtonNonlinearSolver<Scalar>::getValidParameters() const
 
 template <class Scalar>
 void DampenedNewtonNonlinearSolver<Scalar>::setModel(
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model
+  const Teuchos::RCP<const ModelEvaluator<Scalar> > &model
   )
 {
   TEST_FOR_EXCEPT(model.get()==NULL);
@@ -251,7 +251,7 @@ void DampenedNewtonNonlinearSolver<Scalar>::setModel(
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+Teuchos::RCP<const ModelEvaluator<Scalar> >
 DampenedNewtonNonlinearSolver<Scalar>::getModel() const
 {
   return model_;
@@ -275,7 +275,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
     *x_inout->space(), *model_->get_x_space() );
 #endif
   // Get the output stream and verbosity level
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   const bool showNewtonIters = (verbLevel==Teuchos::VERB_LOW);
   const bool showLineSearchIters = (as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM));
@@ -286,11 +286,11 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
     << "\nBeginning dampended Newton solve of model = " << model_->description() << "\n\n";
   // Initialize storage for algorithm
   if(!J_.get())                                        J_    = model_->create_W();
-  Teuchos::RefCountPtr<VectorBase<Scalar> >            f     = createMember(model_->get_f_space());
-  Teuchos::RefCountPtr<VectorBase<Scalar> >            x     = Teuchos::rcp(x_inout,false);
-  Teuchos::RefCountPtr<VectorBase<Scalar> >            dx    = createMember(model_->get_x_space());
-  Teuchos::RefCountPtr<VectorBase<Scalar> >            x_new = createMember(model_->get_x_space());
-  Teuchos::RefCountPtr<VectorBase<Scalar> >            ee    = createMember(model_->get_x_space());
+  Teuchos::RCP<VectorBase<Scalar> >            f     = createMember(model_->get_f_space());
+  Teuchos::RCP<VectorBase<Scalar> >            x     = Teuchos::rcp(x_inout,false);
+  Teuchos::RCP<VectorBase<Scalar> >            dx    = createMember(model_->get_x_space());
+  Teuchos::RCP<VectorBase<Scalar> >            x_new = createMember(model_->get_x_space());
+  Teuchos::RCP<VectorBase<Scalar> >            ee    = createMember(model_->get_x_space());
   V_S(&*ee,ST::zero());
   // Get convergence criteria
   ScalarMag tol = this->defaultTol();
@@ -411,7 +411,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
       goto exit;
     }
     // Take the Newton step
-    std::swap<Teuchos::RefCountPtr<VectorBase<Scalar> > >( x_new, x ); // Now x is current point!
+    std::swap<Teuchos::RCP<VectorBase<Scalar> > >( x_new, x ); // Now x is current point!
   }
 exit:
   if(out.get() && showNewtonIters) *out
@@ -434,7 +434,7 @@ exit:
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
+Teuchos::RCP<const VectorBase<Scalar> >
 DampenedNewtonNonlinearSolver<Scalar>::get_current_x() const
 {
   return current_x_;
@@ -447,14 +447,14 @@ bool DampenedNewtonNonlinearSolver<Scalar>::is_W_current() const
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
 DampenedNewtonNonlinearSolver<Scalar>::get_nonconst_W()
 {
   return J_;
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<const LinearOpWithSolveBase<Scalar> >
 DampenedNewtonNonlinearSolver<Scalar>::get_W() const
 {
   return J_;

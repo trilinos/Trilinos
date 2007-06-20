@@ -70,7 +70,7 @@ const std::string IllConditioningThreshold_name = "Ill-Conditioning Threshold";
 
 const std::string OutputFrequency_name = "Output Frequency";
 
-Teuchos::RefCountPtr<Teuchos::ParameterList>  validAztecOOParams;
+Teuchos::RCP<Teuchos::ParameterList>  validAztecOOParams;
 
 } // namespace
 
@@ -164,7 +164,7 @@ void setAztecOOParameters(
 #endif // TEUCHOS_DEBUG
 }
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 getValidAztecOOParameters()
 {
   //
@@ -174,7 +174,7 @@ getValidAztecOOParameters()
   // above in setAztecOOParameters(...).  Also, the validators do not need to
   // be kept track of since they will be set in the input list also.
   //
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::tuple;
   using Teuchos::setStringToIntegralParameter;
@@ -182,7 +182,7 @@ getValidAztecOOParameters()
   using Teuchos::setDoubleParameter;
   using Teuchos::ParameterList;
   //
-  RefCountPtr<ParameterList> pl = validAztecOOParams;
+  RCP<ParameterList> pl = validAztecOOParams;
   if(pl.get()) return pl;
   pl = validAztecOOParams = rcp(new ParameterList());
   //

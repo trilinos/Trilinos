@@ -57,7 +57,7 @@ namespace Thyra
       : Teuchos::ConstHandle<LinearOpBase<RangeScalar, DomainScalar> >(rawPtr){;}
 
     /** \brief Construct from a smart pointer */
-    ConstLinearOperator(const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar, DomainScalar> >& smartPtr) 
+    ConstLinearOperator(const Teuchos::RCP<const LinearOpBase<RangeScalar, DomainScalar> >& smartPtr) 
       : Teuchos::ConstHandle<LinearOpBase<RangeScalar, DomainScalar> >(smartPtr){;}
 
     /** \brief Return the domain space */
@@ -123,7 +123,7 @@ namespace Thyra
       : Teuchos::Handle<LinearOpBase<RangeScalar, DomainScalar> >(rawPtr){;}
 
     /** \brief Construct from a smart pointer */
-    LinearOperator(const Teuchos::RefCountPtr<LinearOpBase<RangeScalar, DomainScalar> >& smartPtr) 
+    LinearOperator(const Teuchos::RCP<LinearOpBase<RangeScalar, DomainScalar> >& smartPtr) 
       : Teuchos::Handle<LinearOpBase<RangeScalar, DomainScalar> >(smartPtr){;}
 
     /** \brief Return the (blockRow, blockCol)-th subblock */

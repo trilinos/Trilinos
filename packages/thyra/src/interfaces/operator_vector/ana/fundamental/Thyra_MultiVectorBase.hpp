@@ -37,7 +37,7 @@ namespace Thyra {
 // Provide access to the columns as VectorBase objects
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
+RCP<const VectorBase<Scalar> >
 MultiVectorBase<Scalar>::col(Index j) const
 {
   return const_cast<MultiVectorBase*>(this)->col(j);
@@ -46,7 +46,7 @@ MultiVectorBase<Scalar>::col(Index j) const
 // Overridden methods from LinearOpBase
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+RCP<const LinearOpBase<Scalar> >
 MultiVectorBase<Scalar>::clone() const
 {
   return this->clone_mv();

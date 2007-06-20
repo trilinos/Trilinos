@@ -43,7 +43,7 @@
 #include <iostream>
 #endif
 
-ExampleApplication::ExampleApplication(Teuchos::RefCountPtr<Epetra_Comm> &epetra_comm_ptr_, Teuchos::ParameterList &params)
+ExampleApplication::ExampleApplication(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr_, Teuchos::ParameterList &params)
 {
   implicit_ = params.get<bool>( "Implicit" );
   lambda_min_ = params.get<double>( "Lambda_min" );
@@ -108,14 +108,14 @@ ExampleApplication::ExampleApplication(Teuchos::RefCountPtr<Epetra_Comm> &epetra
  
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplication::get_coeff() const
+Teuchos::RCP<const Epetra_Vector> ExampleApplication::get_coeff() const
 {
   return(lambda_ptr_);
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplication::getExactSolution(double t) const
+Teuchos::RCP<const Epetra_Vector> ExampleApplication::getExactSolution(double t) const
 {
-  Teuchos::RefCountPtr<Epetra_Vector> x_star_ptr = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
+  Teuchos::RCP<Epetra_Vector> x_star_ptr = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
   Epetra_Vector& x_star = *x_star_ptr;
   Epetra_Vector& lambda = *lambda_ptr_;
   x_star.PutScalar(0.0);
@@ -136,35 +136,35 @@ Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplication::getExactSolution(d
 
 // Overridden from EpetraExt::ModelEvaluator
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 ExampleApplication::get_x_map() const
 {
   return epetra_map_ptr_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 ExampleApplication::get_f_map() const
 {
   return epetra_map_ptr_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ExampleApplication::get_x_init() const
 {
-  Teuchos::RefCountPtr<Epetra_Vector> x_init = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
+  Teuchos::RCP<Epetra_Vector> x_init = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
   x_init->PutScalar(x0_);
   return x_init;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 ExampleApplication::get_x_dot_init() const
 {
-  Teuchos::RefCountPtr<Epetra_Vector> x_dot_init = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
+  Teuchos::RCP<Epetra_Vector> x_dot_init = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
   x_dot_init->PutScalar(0.0);
   return x_dot_init;
 }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 ExampleApplication::create_W() const
 {
   if(implicit_)
@@ -227,7 +227,7 @@ void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs
       f.Print(std::cout);
 #endif
     }
-    Teuchos::RefCountPtr<Epetra_Operator> W;
+    Teuchos::RCP<Epetra_Operator> W;
     if( (W = outArgs.get_W()).get() ) {
       const double alpha = inArgs.get_alpha();
       const double beta = inArgs.get_beta();

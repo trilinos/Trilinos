@@ -72,7 +72,7 @@ public:
    * allocated vector space object that can be used to create vectors and
    * multi-vectors.
    */
-  virtual Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > createVecSpc(int dim) const = 0;
+  virtual RCP< const VectorSpaceBase<Scalar> > createVecSpc(int dim) const = 0;
 
   //@}
 

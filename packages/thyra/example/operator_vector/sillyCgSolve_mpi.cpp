@@ -47,7 +47,7 @@
 //
 template<class Scalar>
 bool runCgSolveExample(
-  const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> > &comm
+  const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> > &comm
   ,const int                                                     procRank
   ,const int                                                     numProc
   ,const int                                                     localDim
@@ -59,7 +59,7 @@ bool runCgSolveExample(
   ,const int                                                     maxNumIters
   )
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -67,7 +67,7 @@ bool runCgSolveExample(
   bool success = true;
   bool result;
   // ToDo: Get VerboseObjectBase to automatically setup for parallel
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = (verbose ? Teuchos::VerboseObjectBase::getDefaultOStream() : Teuchos::null);
   if(verbose)
     *out << "\n***\n*** Running silly CG solver using scalar type = \'" << ST::name() << "\' ...\n***\n";
@@ -97,7 +97,7 @@ bool runCgSolveExample(
     lower[kl] = -one; diag[k] = diagTerm; upper[k] = -one;                            // Middle local rows
   }
   lower[kl] = -one; diag[k] = diagTerm; if(procRank < numProc-1) upper[k] = -one;     // Last local row
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A = rcp(new ExampleTridiagSpmdLinearOp<Scalar>(comm,localDim,&lower[0],&diag[0],&upper[0]));
   if(verbose) *out << "\nGlobal dimension of A = " << A->domain()->dim() << std::endl;
   // (A.2) Testing the linear operator constructed linear operator
@@ -113,11 +113,11 @@ bool runCgSolveExample(
   result = linearOpTester.check(*A,out.get());
   if(!result) success = false;
   // (A.3) Create RHS vector b and set to a random value
-  RefCountPtr<Thyra::VectorBase<Scalar> > b = createMember(A->range());
+  RCP<Thyra::VectorBase<Scalar> > b = createMember(A->range());
   Thyra::seed_randomize<Scalar>(0);
   Thyra::randomize( Scalar(-ST::one()), Scalar(+ST::one()), &*b );
   // (A.4) Create LHS vector x and set to zero
-  RefCountPtr<Thyra::VectorBase<Scalar> > x = createMember(A->domain());
+  RCP<Thyra::VectorBase<Scalar> > x = createMember(A->domain());
   Thyra::assign( &*x, ST::zero() );
   //
   // (B) Solve the linear system with the silly CG solver
@@ -128,7 +128,7 @@ bool runCgSolveExample(
   //
   // (C) Check that the linear system was solved to the specified tolerance
   //
-  RefCountPtr<Thyra::VectorBase<Scalar> > r = createMember(A->range());                     
+  RCP<Thyra::VectorBase<Scalar> > r = createMember(A->range());                     
   Thyra::assign(&*r,*b);                                               // r = b
   Thyra::apply(*A,Thyra::NOTRANS,*x,&*r,Scalar(-ST::one()),ST::one()); // r = -A*x + r
   const ScalarMag r_nrm = Thyra::norm(*r), b_nrm = Thyra::norm(*b);
@@ -166,10 +166,10 @@ int main(int argc, char *argv[])
   const int procRank = Teuchos::GlobalMPISession::getRank();
   const int numProc = Teuchos::GlobalMPISession::getNProc();
 
-  const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >
+  const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >
     comm = Teuchos::DefaultComm<Thyra::Index>::getComm();
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {

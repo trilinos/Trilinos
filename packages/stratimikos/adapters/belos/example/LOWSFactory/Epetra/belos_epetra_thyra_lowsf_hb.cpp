@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
   //
   // Get a default output stream from the Teuchos::VerboseObjectBase
   //
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   //
   // Set the parameters for the Belos LOWS Factory and create a parameter list.
@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
   bool            outputMaxResOnly       = true;
   double          maxResid               = 1e-6;
   
-  Teuchos::RefCountPtr<Teuchos::ParameterList>
+  Teuchos::RCP<Teuchos::ParameterList>
     belosLOWSFPL = Teuchos::rcp( new Teuchos::ParameterList() );
   
   belosLOWSFPL->set("Solver Type","GMRES");
@@ -107,18 +107,18 @@ int main(int argc, char* argv[])
 
   // Read in the matrix file (can be *.mtx, *.hb, etc.)
   Epetra_SerialComm comm;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> epetra_A;
+  Teuchos::RCP<Epetra_CrsMatrix> epetra_A;
   EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A );
   
   // Create a Thyra linear operator (A) using the Epetra_CrsMatrix (epetra_A).
-  Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > 
+  Teuchos::RCP<Thyra::LinearOpBase<double> > 
     A = Teuchos::rcp(new Thyra::EpetraLinearOp(epetra_A));
 
   // Get the domain space for the Thyra linear operator 
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > domain = A->domain();
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domain = A->domain();
 
   // Create the Belos LOWS factory.
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
     belosLOWSFactory = Teuchos::rcp(new Thyra::BelosLinearOpWithSolveFactory<double>());
 
 #ifdef HAVE_BELOS_IFPACK
@@ -137,20 +137,20 @@ int main(int argc, char* argv[])
   belosLOWSFactory->setVerbLevel(Teuchos::VERB_LOW);
 
   // Create a BelosLinearOpWithSolve object from the Belos LOWS factory.
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<double> >
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> >
     nsA = belosLOWSFactory->createOp();
 
   // Initialize the BelosLinearOpWithSolve object with the Thyra linear operator.
   Thyra::initializeOp<double>( *belosLOWSFactory, A, &*nsA );
 
   // Create a right-hand side with numRhs vectors in it and randomize it.
-  Teuchos::RefCountPtr< Thyra::MultiVectorBase<double> > 
+  Teuchos::RCP< Thyra::MultiVectorBase<double> > 
     b = Thyra::createMembers(domain, numRhs);
   Thyra::seed_randomize<double>(0);
   Thyra::randomize(-1.0, 1.0, &*b);
 
   // Create an initial vector with numRhs vectors in it and initialize it to zero.
-  Teuchos::RefCountPtr< Thyra::MultiVectorBase<double> >
+  Teuchos::RCP< Thyra::MultiVectorBase<double> >
     x = Thyra::createMembers(domain, numRhs);
   Thyra::assign(&*x, 0.0);
 
@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
   // Compute residual and double check convergence.
   //
   std::vector<double> norm_b(numRhs), norm_res(numRhs);
-  Teuchos::RefCountPtr< Thyra::MultiVectorBase<double> >
+  Teuchos::RCP< Thyra::MultiVectorBase<double> >
     y = Thyra::createMembers(domain, numRhs);
 
   // Compute the column norms of the right-hand side b.

@@ -29,7 +29,7 @@
 #ifndef TEUCHOS_DEFAULT_COMM_HPP
 #define TEUCHOS_DEFAULT_COMM_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #  include "Teuchos_DefaultMpiComm.hpp"
@@ -53,17 +53,17 @@ public:
    * Note that this function can not be called until after MPI has been
    * initialized if MPI is expected!
    */
-  static Teuchos::RefCountPtr<const Comm<Ordinal> > getComm();
+  static Teuchos::RCP<const Comm<Ordinal> > getComm();
 
   /** \brief Return a serial comm if the input comm in null.
    */
-  static Teuchos::RefCountPtr<const Comm<Ordinal> >
-  getDefaultSerialComm( const Teuchos::RefCountPtr<const Comm<Ordinal> > &comm );
+  static Teuchos::RCP<const Comm<Ordinal> >
+  getDefaultSerialComm( const Teuchos::RCP<const Comm<Ordinal> > &comm );
 
 private:
 
-  static Teuchos::RefCountPtr<const Comm<Ordinal> > comm_;
-  static Teuchos::RefCountPtr<const Comm<Ordinal> > defaultSerialComm_;
+  static Teuchos::RCP<const Comm<Ordinal> > comm_;
+  static Teuchos::RCP<const Comm<Ordinal> > defaultSerialComm_;
 
 };
 
@@ -71,7 +71,7 @@ private:
 // Template Implementations
 
 template<typename Ordinal>
-Teuchos::RefCountPtr<const Teuchos::Comm<Ordinal> >
+Teuchos::RCP<const Teuchos::Comm<Ordinal> >
 DefaultComm<Ordinal>::getComm()
 {
   if(!comm_.get()) {
@@ -85,9 +85,9 @@ DefaultComm<Ordinal>::getComm()
 }
 
 template<typename Ordinal>
-Teuchos::RefCountPtr<const Teuchos::Comm<Ordinal> >
+Teuchos::RCP<const Teuchos::Comm<Ordinal> >
 DefaultComm<Ordinal>::getDefaultSerialComm(
-  const Teuchos::RefCountPtr<const Comm<Ordinal> > &comm
+  const Teuchos::RCP<const Comm<Ordinal> > &comm
   )
 {
   if( comm.get() )
@@ -97,11 +97,11 @@ DefaultComm<Ordinal>::getDefaultSerialComm(
 }
 
 template<typename Ordinal>
-Teuchos::RefCountPtr<const Teuchos::Comm<Ordinal> >
+Teuchos::RCP<const Teuchos::Comm<Ordinal> >
 DefaultComm<Ordinal>::comm_ = Teuchos::null;
 
 template<typename Ordinal>
-Teuchos::RefCountPtr<const Teuchos::Comm<Ordinal> >
+Teuchos::RCP<const Teuchos::Comm<Ordinal> >
 DefaultComm<Ordinal>::defaultSerialComm_
 = Teuchos::rcp(new Teuchos::SerialComm<Ordinal>());
 

@@ -41,8 +41,8 @@ DefaultPreconditioner<RangeScalar,DomainScalar>::DefaultPreconditioner()
 
 template <class RangeScalar, class DomainScalar>
 DefaultPreconditioner<RangeScalar,DomainScalar>::DefaultPreconditioner(
-  const Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
-  ,const Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >   &rightPrecOp
+  const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
+  ,const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >   &rightPrecOp
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -54,8 +54,8 @@ DefaultPreconditioner<RangeScalar,DomainScalar>::DefaultPreconditioner(
 
 template <class RangeScalar, class DomainScalar>
 DefaultPreconditioner<RangeScalar,DomainScalar>::DefaultPreconditioner(
-  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >   &rightPrecOp
+  const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
+  ,const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >   &rightPrecOp
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -69,7 +69,7 @@ DefaultPreconditioner<RangeScalar,DomainScalar>::DefaultPreconditioner(
 
 template <class RangeScalar, class DomainScalar>
 DefaultPreconditioner<RangeScalar,DomainScalar>::DefaultPreconditioner(
-  const Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >    &unspecifiedPrecOp
+  const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &unspecifiedPrecOp
   )
 {
   unspecifiedPrecOp_.initialize(unspecifiedPrecOp);
@@ -77,7 +77,7 @@ DefaultPreconditioner<RangeScalar,DomainScalar>::DefaultPreconditioner(
 
 template <class RangeScalar, class DomainScalar>
 DefaultPreconditioner<RangeScalar,DomainScalar>::DefaultPreconditioner(
-  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &unspecifiedPrecOp
+  const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &unspecifiedPrecOp
   )
 {
   unspecifiedPrecOp_.initialize(unspecifiedPrecOp);
@@ -85,7 +85,7 @@ DefaultPreconditioner<RangeScalar,DomainScalar>::DefaultPreconditioner(
 
 template <class RangeScalar, class DomainScalar>
 void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeLeft(
-  const Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
+  const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
   )
 {
   uninitialize();
@@ -94,7 +94,7 @@ void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeLeft(
 
 template <class RangeScalar, class DomainScalar>
 void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeLeft(
-  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
+  const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
   )
 {
   uninitialize();
@@ -103,7 +103,7 @@ void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeLeft(
 
 template <class RangeScalar, class DomainScalar>
 void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeRight(
-  const Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >    &rightPrecOp
+  const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &rightPrecOp
   )
 {
   uninitialize();
@@ -112,7 +112,7 @@ void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeRight(
 
 template <class RangeScalar, class DomainScalar>
 void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeRight(
-  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &rightPrecOp
+  const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &rightPrecOp
   )
 {
   uninitialize();
@@ -121,8 +121,8 @@ void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeRight(
 
 template <class RangeScalar, class DomainScalar>
 void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeLeftRight(
-  const Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
-  ,const Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >   &rightPrecOp
+  const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
+  ,const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >   &rightPrecOp
   )
 {
   uninitialize();
@@ -132,8 +132,8 @@ void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeLeftRight(
 
 template <class RangeScalar, class DomainScalar>
 void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeLeftRight(
-  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >   &rightPrecOp
+  const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
+  ,const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >   &rightPrecOp
   )
 {
   uninitialize();
@@ -143,7 +143,7 @@ void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeLeftRight(
 
 template <class RangeScalar, class DomainScalar>
 void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeUnspecified(
-  const Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >    &unspecifiedPrecOp
+  const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &unspecifiedPrecOp
   )
 {
   uninitialize();
@@ -152,7 +152,7 @@ void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeUnspecified(
 
 template <class RangeScalar, class DomainScalar>
 void DefaultPreconditioner<RangeScalar,DomainScalar>::initializeUnspecified(
-  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &unspecifiedPrecOp
+  const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &unspecifiedPrecOp
   )
 {
   uninitialize();
@@ -176,14 +176,14 @@ bool DefaultPreconditioner<RangeScalar,DomainScalar>::isLeftPrecOpConst() const
 }
 
 template <class RangeScalar, class DomainScalar>
-Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >
+Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >
 DefaultPreconditioner<RangeScalar,DomainScalar>::getNonconstLeftPrecOp()
 {
   return leftPrecOp_.getNonconstObj();
 }
 
 template <class RangeScalar, class DomainScalar>
-Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >
+Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >
 DefaultPreconditioner<RangeScalar,DomainScalar>::getLeftPrecOp() const
 {
   return leftPrecOp_.getConstObj();
@@ -196,14 +196,14 @@ bool DefaultPreconditioner<RangeScalar,DomainScalar>::isRightPrecOpConst() const
 }
 
 template <class RangeScalar, class DomainScalar>
-Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >
+Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >
 DefaultPreconditioner<RangeScalar,DomainScalar>::getNonconstRightPrecOp()
 {
   return rightPrecOp_.getNonconstObj();
 }
 
 template <class RangeScalar, class DomainScalar>
-Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >
+Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >
 DefaultPreconditioner<RangeScalar,DomainScalar>::getRightPrecOp() const
 {
   return rightPrecOp_.getConstObj();
@@ -216,14 +216,14 @@ bool DefaultPreconditioner<RangeScalar,DomainScalar>::isUnspecifiedPrecOpConst()
 }
 
 template <class RangeScalar, class DomainScalar>
-Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >
+Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >
 DefaultPreconditioner<RangeScalar,DomainScalar>::getNonconstUnspecifiedPrecOp()
 {
   return unspecifiedPrecOp_.getNonconstObj();
 }
 
 template <class RangeScalar, class DomainScalar>
-Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >
+Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >
 DefaultPreconditioner<RangeScalar,DomainScalar>::getUnspecifiedPrecOp() const
 {
   return unspecifiedPrecOp_.getConstObj();

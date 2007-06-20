@@ -56,7 +56,7 @@ void SpmdMultiVectorSerializer<Scalar>::serialize(
   const MultiVectorBase<Scalar>& mv, std::ostream& out
   ) const
 {
-  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >
+  Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >
     mpi_vec_spc
     = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(mv.range());
   out.precision(std::numeric_limits<Scalar>::digits10+4);
@@ -97,7 +97,7 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
   std::istream& in, MultiVectorBase<Scalar>* mv
   ) const
 {
-  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >
+  Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >
     mpi_vec_spc = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(mv->range());
   if( mpi_vec_spc.get() ) {
     // This is a mpi-based vector space so let's just read the local

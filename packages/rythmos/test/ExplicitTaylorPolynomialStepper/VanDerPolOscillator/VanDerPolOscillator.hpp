@@ -47,7 +47,7 @@ class VanDerPolOscillator : public EpetraExt::ModelEvaluator {
 public:
 
   // Constructor
-  VanDerPolOscillator(Teuchos::RefCountPtr<Epetra_Comm> &epetra_comm_ptr, 
+  VanDerPolOscillator(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, 
 		      Teuchos::ParameterList &params);
 
   // Destructor
@@ -59,16 +59,16 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_x_map() const;
+  Teuchos::RCP<const Epetra_Map> get_x_map() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_f_map() const;
+  Teuchos::RCP<const Epetra_Map> get_f_map() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
+  Teuchos::RCP<const Epetra_Vector> get_x_init() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
+  Teuchos::RCP<Epetra_Operator> create_W() const;
 
   /** \brief . */
   InArgs createInArgs() const;
@@ -94,16 +94,16 @@ protected:
 protected:
 
   // Epetra Comm:
-  Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_;
+  Teuchos::RCP<Epetra_Comm> epetra_comm_ptr_;
 
   // Epetra Map:
-  Teuchos::RefCountPtr<Epetra_Map> epetra_map_ptr_;
+  Teuchos::RCP<Epetra_Map> epetra_map_ptr_;
     
   // Coefficients for ODE
   double omega_;
   
   // Initial condition for the problem:
-  Teuchos::RefCountPtr<Epetra_Vector> x0_;
+  Teuchos::RCP<Epetra_Vector> x0_;
 
   // File to output solutions to
   std::ofstream outfile_;
@@ -112,7 +112,7 @@ protected:
   bool implicit_;
 
   // Graph of Jacobian
-  Teuchos::RefCountPtr<Epetra_CrsGraph> W_graph_;
+  Teuchos::RCP<Epetra_CrsGraph> W_graph_;
 };
 
 #endif // EXAMPLE_APPLICATION_HPP

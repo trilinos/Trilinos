@@ -44,7 +44,7 @@ DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp()
 template<class Scalar>
 DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp(
   const int                                                   numOps
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >          Ops[]
   )
 {
   initialize(numOps,Ops);
@@ -53,7 +53,7 @@ DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp(
 template<class Scalar>
 DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp(
   const int                                                   numOps
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    Ops[]
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >    Ops[]
   )
 {
   initialize(numOps,Ops);
@@ -62,7 +62,7 @@ DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp(
 template<class Scalar>
 void DefaultAddedLinearOp<Scalar>::initialize(
   const int                                                   numOps
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >          Ops[]
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -78,7 +78,7 @@ void DefaultAddedLinearOp<Scalar>::initialize(
 template<class Scalar>
 void DefaultAddedLinearOp<Scalar>::initialize(
   const int                                                   numOps
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    Ops[]
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >    Ops[]
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -116,7 +116,7 @@ bool DefaultAddedLinearOp<Scalar>::opIsConst(const int k) const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 DefaultAddedLinearOp<Scalar>::getNonconstOp(const int k)
 {
 #ifdef TEUCHOS_DEBUG
@@ -126,7 +126,7 @@ DefaultAddedLinearOp<Scalar>::getNonconstOp(const int k)
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultAddedLinearOp<Scalar>::getOp(const int k) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -138,7 +138,7 @@ DefaultAddedLinearOp<Scalar>::getOp(const int k) const
 // Overridden from LinearOpBase
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultAddedLinearOp<Scalar>::range() const
 {
   assertInitialized();
@@ -146,7 +146,7 @@ DefaultAddedLinearOp<Scalar>::range() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultAddedLinearOp<Scalar>::domain() const
 {
   assertInitialized();
@@ -154,7 +154,7 @@ DefaultAddedLinearOp<Scalar>::domain() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultAddedLinearOp<Scalar>::clone() const
 {
   return Teuchos::null; // Not supported yet but could be!
@@ -178,11 +178,11 @@ void DefaultAddedLinearOp<Scalar>::describe(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   assertInitialized();
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   const int numOps = Ops_.size();
   switch(verbLevel) {
@@ -307,35 +307,35 @@ void DefaultAddedLinearOp<Scalar>::setupDefaultObjectLabel()
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstAdd(
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &B
+  const Teuchos::RCP<LinearOpBase<Scalar> >    &A
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &B
   )
 {
   using Teuchos::arrayArg;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   return Teuchos::rcp(
     new DefaultAddedLinearOp<Scalar>(
       2
-      ,arrayArg<RefCountPtr<LinearOpBase<Scalar> > >(A,B)()
+      ,arrayArg<RCP<LinearOpBase<Scalar> > >(A,B)()
       )
     );
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::add(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &B
+  const Teuchos::RCP<const LinearOpBase<Scalar> >    &A
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &B
   )
 {
   using Teuchos::arrayArg;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   return Teuchos::rcp(
     new DefaultAddedLinearOp<Scalar>(
       2
-      ,arrayArg<RefCountPtr<const LinearOpBase<Scalar> > >(A,B)()
+      ,arrayArg<RCP<const LinearOpBase<Scalar> > >(A,B)()
       )
     );
 }

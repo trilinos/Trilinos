@@ -85,20 +85,20 @@ public:
    * </ul>
    *
    * The object accessed from <tt>*epetraOp</tt> is only guaranteed to be
-   * valid while the returned <tt>Teuchos::RefCountPtr</tt> object exits.
+   * valid while the returned <tt>Teuchos::RCP</tt> object exits.
    * This allows for some very specialized implementations where a
    * <tt>Epetra_Operator</tt> view of <tt>*this</tt> can be acquired and
    * released according to the lifetime of the returned
-   * <tt>Teuchos::RefCountPtr</tt> object.
+   * <tt>Teuchos::RCP</tt> object.
    *
    * The <tt>Epetra_Operator</tt> object may be dynamic casted to more
    * specialized interfaces and therefore modified.  Then, when the last
-   * <tt>RefCountPtr</tt> object ancestor returned from this function goes
+   * <tt>RCP</tt> object ancestor returned from this function goes
    * away, then <tt>*this</tt> will be updated to relect the change.
    */
   virtual void getEpetraOpView(
-    const Teuchos::RefCountPtr<LinearOpBase<double> >   &fwdOp
-    ,Teuchos::RefCountPtr<Epetra_Operator>              *epetraOp
+    const Teuchos::RCP<LinearOpBase<double> >   &fwdOp
+    ,Teuchos::RCP<Epetra_Operator>              *epetraOp
     ,ETransp                                            *epetraOpTransp
     ,EApplyEpetraOpAs                                   *epetraOpApplyAs
     ,EAdjointEpetraOp                                   *epetraOpAdjointSupport
@@ -140,11 +140,11 @@ public:
    * </ul>
    *
    * The object accessed from <tt>*return</tt> is only guaranteed to be valid
-   * while the returned <tt>Teuchos::RefCountPtr</tt> object exits.  This
+   * while the returned <tt>Teuchos::RCP</tt> object exits.  This
    * allows for some very specialized implementations where a
    * <tt>Epetra_Operator</tt> view of <tt>*this</tt> can be acquired and
    * released according to the lifetime of the returned
-   * <tt>Teuchos::RefCountPtr</tt> object.
+   * <tt>Teuchos::RCP</tt> object.
    *
    * Note that if the client tries to constant cast the returned object and
    * modify it that this returned view is not guaranteed to update
@@ -152,8 +152,8 @@ public:
    * should call the non-<tt>const</tt> version of this function.
    */
   virtual void getEpetraOpView(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> >   &fwdOp
-    ,Teuchos::RefCountPtr<const Epetra_Operator>              *epetraOp
+    const Teuchos::RCP<const LinearOpBase<double> >   &fwdOp
+    ,Teuchos::RCP<const Epetra_Operator>              *epetraOp
     ,ETransp                                                  *epetraOpTransp
     ,EApplyEpetraOpAs                                         *epetraOpApplyAs
     ,EAdjointEpetraOp                                         *epetraOpAdjointSupport

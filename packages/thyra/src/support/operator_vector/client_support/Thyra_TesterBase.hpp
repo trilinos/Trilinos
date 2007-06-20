@@ -40,7 +40,7 @@
 
 namespace Thyra
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::ScalarTraits;
 
   /** */
@@ -52,9 +52,9 @@ namespace Thyra
     typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
     /** */
-    TesterBase(const RefCountPtr<const Comm<int> >& comm,
+    TesterBase(const RCP<const Comm<int> >& comm,
                const VectorSpace<Scalar>& space, int nCols,
-               Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
+               Teuchos::RCP<Teuchos::FancyOStream>& out)
       : comm_(comm), space_(space), nCols_(nCols), out_(out) 
     {
       *out << "==========================================================================="
@@ -93,10 +93,10 @@ namespace Thyra
     const Comm<int>& comm() const {return *comm_;}
     
   private:
-    RefCountPtr<const Comm<int> > comm_;
+    RCP<const Comm<int> > comm_;
     VectorSpace<Scalar> space_;
     int nCols_;
-    mutable Teuchos::RefCountPtr<Teuchos::FancyOStream> out_;
+    mutable Teuchos::RCP<Teuchos::FancyOStream> out_;
   };
 
   template <class Scalar> 
@@ -139,9 +139,9 @@ namespace Thyra
   ::randomDenseOp() const 
   {
     typedef ScalarTraits<Scalar> ST;
-    RefCountPtr<MultiVectorBase<Scalar> > mv = space_.createMembers(nCols_);
+    RCP<MultiVectorBase<Scalar> > mv = space_.createMembers(nCols_);
     randomize(-ST::one(), ST::one(), &*mv);
-    RefCountPtr<LinearOpBase<Scalar> > rtn = mv;
+    RCP<LinearOpBase<Scalar> > rtn = mv;
     return rtn;
   }
 

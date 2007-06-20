@@ -68,7 +68,7 @@ bool VectorTester<Scalar>::check(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType    ScalarMag;
 
-  Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
+  Teuchos::RCP<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
   OSTab tab(out,1,"THYRA");
@@ -80,9 +80,9 @@ bool VectorTester<Scalar>::check(
   if(out.get()) *out <<endl<< "Testing a VectorBase object described as:\n" << describe(v,verbLevel);
 
   if(out.get()) *out <<endl<< "A) Creating temporary vector t1, t2, t3, and t4 from v.space() ...\n";
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
     vs = v.space();
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >
     t1 = createMember(vs), t2 = createMember(vs), t3 = createMember(vs), t4 = createMember(vs);
 
   if(out.get()) *out <<endl<< "B) Testing VectorBase::applyOp(...) by calling a few standard RTOp operations ... ";

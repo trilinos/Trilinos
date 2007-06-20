@@ -44,8 +44,8 @@ DefaultSpmdVector<Scalar>::DefaultSpmdVector()
 
 template<class Scalar>
 DefaultSpmdVector<Scalar>::DefaultSpmdVector(
-  const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >  &spmdSpace
-  ,const Teuchos::RefCountPtr<Scalar>                             &localValues
+  const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >  &spmdSpace
+  ,const Teuchos::RCP<Scalar>                             &localValues
   ,const Index                                                    stride
   )
 {
@@ -54,8 +54,8 @@ DefaultSpmdVector<Scalar>::DefaultSpmdVector(
 
 template<class Scalar>
 void DefaultSpmdVector<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >  &spmdSpace
-  ,const Teuchos::RefCountPtr<Scalar>                             &localValues
+  const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >  &spmdSpace
+  ,const Teuchos::RCP<Scalar>                             &localValues
   ,const Index                                                    stride
   )
 {
@@ -72,8 +72,8 @@ void DefaultSpmdVector<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultSpmdVector<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >  *spmdSpace
-  ,Teuchos::RefCountPtr<Scalar>                             *localValues
+  Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >  *spmdSpace
+  ,Teuchos::RCP<Scalar>                             *localValues
   ,Index                                                    *stride
   )
 {
@@ -91,7 +91,7 @@ void DefaultSpmdVector<Scalar>::uninitialize(
 // Overridden from SpmdVectorBase
 
 template<class Scalar>
-Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >
+Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >
 DefaultSpmdVector<Scalar>::spmdSpace() const
 {
   return spmdSpace_;

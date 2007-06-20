@@ -43,9 +43,9 @@ template<class RangeScalar, class DomainScalar>
 std::string LinearOpDefaultBase<RangeScalar,DomainScalar>::description() const
 {
   std::ostringstream oss;
-  const Teuchos::RefCountPtr<const VectorSpaceBase<RangeScalar> >
+  const Teuchos::RCP<const VectorSpaceBase<RangeScalar> >
     range = this->range();
-  const Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> >
+  const Teuchos::RCP<const VectorSpaceBase<DomainScalar> >
     domain = this->domain();
   oss << Teuchos::Describable::description();
   if(!range.get()) {

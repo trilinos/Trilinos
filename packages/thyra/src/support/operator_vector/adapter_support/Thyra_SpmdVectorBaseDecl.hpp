@@ -118,7 +118,7 @@ public:
 
   /** \brief Returns the Spmd-based vector space object for <tt>*this</tt> vector.
    */
-  virtual Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const = 0;
+  virtual Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const = 0;
 
   /** \brief Returns a non-<tt>const</tt> pointer to the beginning of the
    * local vector data (and its stride).
@@ -260,7 +260,7 @@ public:
   //@{
 
   /** \brief Returns <tt>this->spmdSpace()</tt>. */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > space() const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > space() const;
   /** \brief Calls <tt>this->applyOp(NULL,op,...)</tt>. */
   void applyOp(
     const RTOpPack::RTOpT<Scalar>   &op

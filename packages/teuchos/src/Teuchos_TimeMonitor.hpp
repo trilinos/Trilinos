@@ -44,7 +44,7 @@
  */ 
 #define TEUCHOS_TIMER(funcName, strName) \
 static Teuchos::Time& funcName()       \
-{static Teuchos::RefCountPtr<Time> rtn =        \
+{static Teuchos::RCP<Time> rtn =        \
 Teuchos::TimeMonitor::getNewCounter(strName); return *rtn;}
 
 /** \brief Defines a timer for a specific function.
@@ -75,7 +75,7 @@ Teuchos::TimeMonitor::getNewCounter(strName); return *rtn;}
  
  */
 #define TEUCHOS_FUNC_TIME_MONITOR( FUNCNAME ) \
-static Teuchos::RefCountPtr<Teuchos::Time>  blabla_localTimer; \
+static Teuchos::RCP<Teuchos::Time>  blabla_localTimer; \
 if(!blabla_localTimer.get()) { \
   std::ostringstream oss; \
   oss << FUNCNAME; \
@@ -113,7 +113,7 @@ namespace Teuchos
         }
 
       /** Wrapping of getNewCounter() for backwards compatibiity with old code*/
-      static Teuchos::RefCountPtr<Time> getNewTimer(const string& name)
+      static Teuchos::RCP<Time> getNewTimer(const string& name)
       {return getNewCounter(name);}
 
       /** \brief Print summary statistics for a group of timers. 

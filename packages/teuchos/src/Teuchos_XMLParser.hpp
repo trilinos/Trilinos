@@ -50,7 +50,7 @@ namespace Teuchos
     public:
      
       /** \brief Constructor */
-      XMLParser(RefCountPtr<XMLInputStream> is) : _is(is) {;}
+      XMLParser(RCP<XMLInputStream> is) : _is(is) {;}
       
       /** \brief Destructor */
       ~XMLParser(){;}
@@ -58,7 +58,7 @@ namespace Teuchos
       /** \brief Consume the XMLInputStream to build an XMLObject. */
       XMLObject parse();
     private:
-      RefCountPtr<XMLInputStream> _is;
+      RCP<XMLInputStream> _is;
       Teuchos::map<string,string> _entities;
       
       /** \brief Determine whether \c c matches the <tt>Letter</tt> production according to the XML specification.*/

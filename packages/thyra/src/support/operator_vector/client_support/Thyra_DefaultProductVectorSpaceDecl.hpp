@@ -64,8 +64,8 @@ namespace Thyra {
 
  \code
  void constructProductSpace(
-   const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > V[], int p
-   ,Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > *Z
+   const Teuchos::RCP<const VectorSpaceBase<Scalar> > V[], int p
+   ,Teuchos::RCP<const VectorSpaceBase<Scalar> > *Z
    )
  {
    *Z = Teuchos::rcp(new DefaultProductVectorSpace<Scalar>(V,p));
@@ -77,11 +77,11 @@ namespace Thyra {
 
  \code
  void constructProductSpace(
-   const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > V, int p
-   ,Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > *Z
+   const Teuchos::RCP<const VectorSpaceBase<Scalar> > V, int p
+   ,Teuchos::RCP<const VectorSpaceBase<Scalar> > *Z
    )
  {
-   Teuchos::Array<Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > > vecSpaces(p);
+   Teuchos::Array<Teuchos::RCP<const VectorSpaceBase<Scalar> > > vecSpaces(p);
    for( int k = 0; k < p; ++k ) vecSpaces[k] = V;
    *Z = Teuchos::rcp(new DefaultProductVectorSpace<Scalar>(&vecSpaces[0],p);
  }
@@ -133,7 +133,7 @@ public:
   /// Construct to an initialized state (calls <tt>initialize</tt>)
   DefaultProductVectorSpace(
     const int                                                       numBlocks
-    ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >     vecSpaces[]
+    ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >     vecSpaces[]
     );
   
   /** \brief Initialize with a list of constituent vector spaces.
@@ -168,7 +168,7 @@ public:
    */
   virtual void initialize(
     const int                                                       numBlocks
-    ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >     vecSpaces[]
+    ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >     vecSpaces[]
     );
 
   /** \brief Return if <tt>this</tt> vector space was cloned.
@@ -200,7 +200,7 @@ public:
    */
   virtual void uninitialize(
     int                                                             *numBlocks  = NULL
-    ,Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >           vecSpaces[] = NULL
+    ,Teuchos::RCP<const VectorSpaceBase<Scalar> >           vecSpaces[] = NULL
     );
 
   /** \brief Returns a pointer to an array (of length <tt>this->numBlocks()</tt>)
@@ -211,7 +211,7 @@ public:
    * <li> [<tt>this->numBlocks() > 0</tt>] <tt>return != NULL</tt>
    * </ul>
    */
-  virtual const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >* vecSpaces() const;
+  virtual const Teuchos::RCP<const VectorSpaceBase<Scalar> >* vecSpaces() const;
 
   /** \brief Returns a pointer to an array (of length <tt>this->numBlocks()+1</tt>)
    * of offset into each constituent vector space.
@@ -253,7 +253,7 @@ public:
   /** \brief . */
   int numBlocks() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > getBlock(const int k) const; 
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > getBlock(const int k) const; 
 
   //@}
 
@@ -264,7 +264,7 @@ public:
   /// Returns true only if also a product vector space and all constituent vectors are compatible
   bool isCompatible( const VectorSpaceBase<Scalar>& vecSpc ) const;
   /// Returns a <tt>DefaultProductVector</tt> object
-  Teuchos::RefCountPtr< VectorBase<Scalar> > createMember() const;
+  Teuchos::RCP< VectorBase<Scalar> > createMember() const;
   /// Returns the sum of the scalar products of the constituent vectors
   Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
   /// Returns the sum of the scalar products of each of the columns of the constituent multi-vectors
@@ -272,11 +272,11 @@ public:
   /// Returns true if all of the constituent vector spaces return true
   bool hasInCoreView(const Range1D& rng, const EViewType viewType, const EStrideType strideType) const;
   /// Returns <tt>getBlock(0)->smallVecSpcFcty()</tt>
-  Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
+  Teuchos::RCP< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
   /// Returns a <tt>DefaultProductMultiVector</tt> object
-  Teuchos::RefCountPtr< MultiVectorBase<Scalar> > createMembers(int numMembers) const;
+  Teuchos::RCP< MultiVectorBase<Scalar> > createMembers(int numMembers) const;
   /// Clones the object as promised
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > clone() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > clone() const;
   //@}
 
 
@@ -316,15 +316,15 @@ private:
   // ///////////////////////////////////
   // Private types
 
-  typedef Teuchos::Array<Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > > vecSpaces_t;
+  typedef Teuchos::Array<Teuchos::RCP<const VectorSpaceBase<Scalar> > > vecSpaces_t;
   typedef Teuchos::Array<Index> vecSpacesOffsets_t;
  
   // ///////////////////////////////////
   // Private data members
 
   int                                        numBlocks_;
-  Teuchos::RefCountPtr<vecSpaces_t>          vecSpaces_;
-  Teuchos::RefCountPtr<vecSpacesOffsets_t>   vecSpacesOffsets_;
+  Teuchos::RCP<vecSpaces_t>          vecSpaces_;
+  Teuchos::RCP<vecSpacesOffsets_t>   vecSpacesOffsets_;
   // cached info
   Index                                      dim_;
   bool                                       isInCore_;
@@ -343,9 +343,9 @@ private:
  */
 template<class Scalar>
 inline
-Teuchos::RefCountPtr<DefaultProductVectorSpace<Scalar> >
+Teuchos::RCP<DefaultProductVectorSpace<Scalar> >
 productVectorSpace(
-  const Teuchos::Array<Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > > &vecSpaces
+  const Teuchos::Array<Teuchos::RCP<const VectorSpaceBase<Scalar> > > &vecSpaces
   )
 {
   return Teuchos::rcp(
@@ -361,15 +361,15 @@ productVectorSpace(
  */
 template<class Scalar>
 inline
-Teuchos::RefCountPtr<DefaultProductVectorSpace<Scalar> >
+Teuchos::RCP<DefaultProductVectorSpace<Scalar> >
 productVectorSpace(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vecSpace,
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> > &vecSpace,
   const int numBlocks
   )
 {
   using Teuchos::Array;
-  using Teuchos::RefCountPtr;
-  Array<RefCountPtr<const VectorSpaceBase<Scalar> > > vecSpaceBlocks;
+  using Teuchos::RCP;
+  Array<RCP<const VectorSpaceBase<Scalar> > > vecSpaceBlocks;
   for ( int i = 0; i < numBlocks; ++i )
     vecSpaceBlocks.push_back(vecSpace);
   return productVectorSpace(vecSpaceBlocks);
@@ -380,7 +380,7 @@ productVectorSpace(
 // Inline members
 
 template<class Scalar>
-inline const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >*
+inline const Teuchos::RCP<const VectorSpaceBase<Scalar> >*
 DefaultProductVectorSpace<Scalar>::vecSpaces() const
 {
   return ( dim_ ? &(*vecSpaces_)[0] : NULL );

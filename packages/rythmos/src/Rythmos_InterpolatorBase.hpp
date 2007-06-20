@@ -68,7 +68,7 @@ public:
    * If this function is overridden in a base class to support cloning, then
    * <tt>supportsCloning()</tt> must be overridden to return <tt>true</tt>.
    */
-  virtual Teuchos::RefCountPtr<InterpolatorBase<Scalar> > cloneInterpolator() const;
+  virtual Teuchos::RCP<InterpolatorBase<Scalar> > cloneInterpolator() const;
 
   /** \brief Perform an interpolation.
    *
@@ -104,7 +104,7 @@ bool InterpolatorBase<Scalar>::supportsCloning() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<InterpolatorBase<Scalar> >
+Teuchos::RCP<InterpolatorBase<Scalar> >
 InterpolatorBase<Scalar>::cloneInterpolator() const
 {
   return Teuchos::null;

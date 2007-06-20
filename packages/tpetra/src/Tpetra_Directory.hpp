@@ -29,7 +29,7 @@
 #ifndef TPETRA_DIRECTORY_HPP
 #define TPETRA_DIRECTORY_HPP
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_ElementSpace.hpp"
@@ -132,11 +132,11 @@ namespace Tpetra {
     
 	private:
 		ElementSpace<OrdinalType> const ElementSpace_;
-		Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > Comm_;
+		Teuchos::RCP< Comm<OrdinalType, OrdinalType> > Comm_;
 		std::vector<OrdinalType> allMinGIDs_;
 		std::vector<OrdinalType> imageIDs_;
 		std::vector<OrdinalType> LIDs_;
-		Teuchos::RefCountPtr< ElementSpace<OrdinalType> > directoryES_;
+		Teuchos::RCP< ElementSpace<OrdinalType> > directoryES_;
     
 		//! Convenience function for accessing ElementSpace
 		ElementSpace<OrdinalType> const& es() const {return(ElementSpace_);};

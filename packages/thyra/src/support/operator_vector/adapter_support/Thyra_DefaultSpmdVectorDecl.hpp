@@ -44,7 +44,7 @@ namespace Thyra {
  * <tt>Thyra::DefaultSpmdVectorSpace</tt> and using the function
  * <tt>Thyra::createMember()</tt>.
  *
- * The storage type can be anything since a <tt>Teuchos::RefCountPtr</tt> is
+ * The storage type can be anything since a <tt>Teuchos::RCP</tt> is
  * used to pass in the local values pointer into the constructor and
  * <tt>initialize()</tt>.
  *
@@ -63,8 +63,8 @@ public:
 
   /** \brief Calls <tt>initialize()</tt>. */
   DefaultSpmdVector(
-    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >   &spmdSpace
-    ,const Teuchos::RefCountPtr<Scalar>                              &localValues
+    const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >   &spmdSpace
+    ,const Teuchos::RCP<Scalar>                              &localValues
     ,const Index                                                     stride
     );
 
@@ -94,8 +94,8 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >   &spmdSpace
-    ,const Teuchos::RefCountPtr<Scalar>                              &localValues
+    const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >   &spmdSpace
+    ,const Teuchos::RCP<Scalar>                              &localValues
     ,const Index                                                     stride
     );
 
@@ -105,8 +105,8 @@ public:
    * <li><tt>this->spmdSpace().get() == NULL</tt>.
    */
   void uninitialize(
-    Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >    *spmdSpace     = NULL
-    ,Teuchos::RefCountPtr<Scalar>                               *localValues   = NULL
+    Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >    *spmdSpace     = NULL
+    ,Teuchos::RCP<Scalar>                               *localValues   = NULL
     ,Index                                                      *stride        = NULL
     );
 
@@ -116,9 +116,9 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<Scalar> getRCPtr();
+  Teuchos::RCP<Scalar> getRCPtr();
   /** \brief . */
-  Teuchos::RefCountPtr<const Scalar> getRCPtr() const;
+  Teuchos::RCP<const Scalar> getRCPtr() const;
   /** \brief . */
   Scalar* getPtr();
   /** \brief . */
@@ -132,7 +132,7 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const;
+  Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const;
   /** \brief . */
   void getLocalData( Scalar** localValues, Index* stride );
   /** \brief . */
@@ -149,8 +149,8 @@ private:
   // ///////////////////////////////////////
   // Private data members
   
-  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >  spmdSpace_;
-  Teuchos::RefCountPtr<Scalar>                              localValues_;
+  Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >  spmdSpace_;
+  Teuchos::RCP<Scalar>                              localValues_;
   Index                                                     stride_;
 
 }; // end class DefaultSpmdVector
@@ -160,7 +160,7 @@ private:
 
 template<class Scalar>
 inline
-Teuchos::RefCountPtr<Scalar>
+Teuchos::RCP<Scalar>
 DefaultSpmdVector<Scalar>::getRCPtr()
 {
   return localValues_;
@@ -168,7 +168,7 @@ DefaultSpmdVector<Scalar>::getRCPtr()
 
 template<class Scalar>
 inline
-Teuchos::RefCountPtr<const Scalar>
+Teuchos::RCP<const Scalar>
 DefaultSpmdVector<Scalar>::getRCPtr() const
 {
   return localValues_;

@@ -45,7 +45,7 @@ DefaultProductVector<Scalar>::DefaultProductVector()
 
 template <class Scalar>
 DefaultProductVector<Scalar>::DefaultProductVector(
-  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
+  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
   )
 {
   initialize(productSpace);
@@ -53,8 +53,8 @@ DefaultProductVector<Scalar>::DefaultProductVector(
 
 template <class Scalar>
 DefaultProductVector<Scalar>::DefaultProductVector(
-  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
-  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                      vecs[]
+  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
+  ,const Teuchos::RCP<VectorBase<Scalar> >                      vecs[]
   )
 {
   initialize(productSpace,vecs);
@@ -62,8 +62,8 @@ DefaultProductVector<Scalar>::DefaultProductVector(
 
 template <class Scalar>
 DefaultProductVector<Scalar>::DefaultProductVector(
-  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
-  ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >                vecs[]
+  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
+  ,const Teuchos::RCP<const VectorBase<Scalar> >                vecs[]
   )
 {
   initialize(productSpace,vecs);
@@ -71,7 +71,7 @@ DefaultProductVector<Scalar>::DefaultProductVector(
 
 template <class Scalar>
 void DefaultProductVector<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
+  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
   )
 {
   // ToDo: Validate input!
@@ -84,8 +84,8 @@ void DefaultProductVector<Scalar>::initialize(
 
 template <class Scalar>
 void DefaultProductVector<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
-  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                      vecs[]
+  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
+  ,const Teuchos::RCP<VectorBase<Scalar> >                      vecs[]
   )
 {
   // ToDo: Validate input!
@@ -98,8 +98,8 @@ void DefaultProductVector<Scalar>::initialize(
 
 template <class Scalar>
 void DefaultProductVector<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
-  ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >                vecs[]
+  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
+  ,const Teuchos::RCP<const VectorBase<Scalar> >                vecs[]
   )
 {
   // ToDo: Validate input!
@@ -140,11 +140,11 @@ void DefaultProductVector<Scalar>::describe(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   using Teuchos::describe;
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:
@@ -177,7 +177,7 @@ void DefaultProductVector<Scalar>::describe(
 // Overridden from ProductVectorBase
 
 template <class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
+Teuchos::RCP<VectorBase<Scalar> >
 DefaultProductVector<Scalar>::getNonconstVectorBlock(const int k)
 {
   TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
@@ -185,7 +185,7 @@ DefaultProductVector<Scalar>::getNonconstVectorBlock(const int k)
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
+Teuchos::RCP<const VectorBase<Scalar> >
 DefaultProductVector<Scalar>::getVectorBlock(const int k) const
 {
   TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
@@ -195,7 +195,7 @@ DefaultProductVector<Scalar>::getVectorBlock(const int k) const
 // Overridden from ProductMultiVectorBase
 
 template <class Scalar>
-Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
+Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
 DefaultProductVector<Scalar>::productSpace() const
 {
   return productSpace_;
@@ -209,7 +209,7 @@ bool DefaultProductVector<Scalar>::blockIsConst(const int k) const
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 DefaultProductVector<Scalar>::getNonconstMultiVectorBlock(const int k)
 {
   return getNonconstVectorBlock(k);
@@ -218,7 +218,7 @@ DefaultProductVector<Scalar>::getNonconstMultiVectorBlock(const int k)
 template <class Scalar>
 void DefaultProductVector<Scalar>
 ::setBlock(int i, 
-           const Teuchos::RefCountPtr<const VectorBase<Scalar> >& b)
+           const Teuchos::RCP<const VectorBase<Scalar> >& b)
 {
   TEST_FOR_EXCEPT(i < 0 || i >= numBlocks_);
   TEST_FOR_EXCEPT(!productSpace_->getBlock(i)->isCompatible(*(b->space())));
@@ -228,7 +228,7 @@ void DefaultProductVector<Scalar>
 template <class Scalar>
 void DefaultProductVector<Scalar>
 ::setNonconstBlock(int i, 
-                   const Teuchos::RefCountPtr<VectorBase<Scalar> >& b)
+                   const Teuchos::RCP<VectorBase<Scalar> >& b)
 {
   TEST_FOR_EXCEPT(i < 0 || i >= numBlocks_);
   TEST_FOR_EXCEPT(!productSpace_->getBlock(i)->isCompatible(*(b->space())));
@@ -236,7 +236,7 @@ void DefaultProductVector<Scalar>
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+Teuchos::RCP<const MultiVectorBase<Scalar> >
 DefaultProductVector<Scalar>::getMultiVectorBlock(const int k) const
 {
   return getVectorBlock(k);
@@ -245,7 +245,7 @@ DefaultProductVector<Scalar>::getMultiVectorBlock(const int k) const
 // Overridden from VectorBase
 
 template <class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultProductVector<Scalar>::space() const
 {
   return productSpace_;
@@ -265,7 +265,7 @@ void DefaultProductVector<Scalar>::applyOp(
   ) const
 {
   using Teuchos::Workspace;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   //
   const Index	n = productSpace_->dim();
@@ -382,11 +382,11 @@ void DefaultProductVector<Scalar>::applyOp(
       );
   Index num_elements_remaining = sub_dim;
   const int numBlocks = productSpace_->numBlocks();
-  Workspace<RefCountPtr<const VectorBase<Scalar> > >
+  Workspace<RCP<const VectorBase<Scalar> > >
     sub_vecs_rcps(wss,num_vecs);
   Workspace<const VectorBase<Scalar>*>
     sub_vecs(wss,num_vecs,false);
-  Workspace<RefCountPtr<VectorBase<Scalar> > >
+  Workspace<RCP<VectorBase<Scalar> > >
     sub_targ_vecs_rcps(wss,num_targ_vecs);
   Workspace<VectorBase<Scalar>*>
     sub_targ_vecs(wss,num_targ_vecs,false);

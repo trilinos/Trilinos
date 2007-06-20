@@ -30,6 +30,7 @@
 #define EPETRA_EXT_POLYNOMIAL_VECTOR_TRAITS_H
 
 #include "Teuchos_PolynomialTraits.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "Epetra_Vector.h"
 
 namespace Teuchos {

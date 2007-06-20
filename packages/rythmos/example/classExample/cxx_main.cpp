@@ -32,7 +32,7 @@
 //     virtual class NonlinearModel with concrete derived class LinearProblem
 //     in main:  create object of type LinearProblem and pass to constructer of ForwardEulerStepper
 //     Done.  My mistake was not including default constructors & destructors for virtual base classes.
-// 2.  Add in RefCountPtr
+// 2.  Add in RCP
 //     Done.  Note:  if I pass by const reference, with const object, then the object
 //     needs to have const versions of its member functions in order to call
 //     them.
@@ -42,7 +42,7 @@
 //     Done.  No errors.
 // 5.  Separate into files
 //     Problems!  
-// 6.  Get rid of RefCountPtr
+// 6.  Get rid of RCP
 //     Still have problems!
 // 7.  Get rid of templates
 //     This was the problem!  Now it works.

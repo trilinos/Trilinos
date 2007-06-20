@@ -54,7 +54,7 @@ void dumpCharBuffer(
   ,const Ordinal bytes, const char buff[]
   )
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::OSTab tab(out);
   *out
@@ -91,11 +91,11 @@ public:
    * </ul>
    */
   MpiComm(
-    const RefCountPtr<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
+    const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
     );
 
   /** \brief Return the embedded wrapped opaque <tt>MPI_Comm</tt> object. */
-  RefCountPtr<const OpaqueWrapper<MPI_Comm> > getRawMpiComm() const
+  RCP<const OpaqueWrapper<MPI_Comm> > getRawMpiComm() const
   {return rawMpiComm_;}
 
   //@}
@@ -159,7 +159,7 @@ private:
   static int const maxTag_ = 26099; // ""
   static int tagCounter_;
 
-  RefCountPtr<const OpaqueWrapper<MPI_Comm> > rawMpiComm_;
+  RCP<const OpaqueWrapper<MPI_Comm> > rawMpiComm_;
   int                                         rank_;
   int                                         size_;
   int                                         tag_;
@@ -188,9 +188,9 @@ public:
  * \relates MpiComm
  */
 template<typename Ordinal>
-RefCountPtr<MpiComm<Ordinal> >
+RCP<MpiComm<Ordinal> >
 createMpiComm(
-  const RefCountPtr<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
+  const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
   );
 
 // ////////////////////////
@@ -205,7 +205,7 @@ int MpiComm<Ordinal>::tagCounter_ = MpiComm<Ordinal>::minTag_;
 
 template<typename Ordinal>
 MpiComm<Ordinal>::MpiComm(
-  const RefCountPtr<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
+  const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
   )
 {
   TEST_FOR_EXCEPT( rawMpiComm.get()==NULL );
@@ -320,7 +320,7 @@ void MpiComm<Ordinal>::reduceAllAndScatter(
   }
   MPI_Datatype _chars_type;
   MPI_Type_contiguous(blockSize,MPI_CHAR,&_chars_type);
-  RefCountPtr<const OpaqueWrapper<MPI_Datatype> >
+  RCP<const OpaqueWrapper<MPI_Datatype> >
     chars_type = opaqueWrapper(_chars_type,MPI_Type_free);
   // Perform the operation
   MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp,false)));
@@ -436,9 +436,9 @@ bool MpiComm<Ordinal>::show_dump = false;
 } // namespace Teuchos
 
 template<typename Ordinal>
-Teuchos::RefCountPtr<Teuchos::MpiComm<Ordinal> >
+Teuchos::RCP<Teuchos::MpiComm<Ordinal> >
 Teuchos::createMpiComm(
-  const RefCountPtr<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
+  const RCP<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
   )
 {
   if( rawMpiComm.get()!=NULL && *rawMpiComm != MPI_COMM_NULL )

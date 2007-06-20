@@ -133,7 +133,7 @@ template<class Scalar>
 class ExampleTridiagSpmdLinearOp : public Thyra::SpmdLinearOpBase<Scalar> {
 private:
 
-  Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >  comm_;
+  Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >  comm_;
   int                  procRank_;
   int                  numProcs_;
   Thyra::Index         localDim_;
@@ -153,7 +153,7 @@ public:
 
   /// Calls <tt>initialize()</tt>.
   ExampleTridiagSpmdLinearOp(
-    const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> > &comm
+    const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> > &comm
     ,const Thyra::Index localDim, const Scalar lower[], const Scalar diag[], const Scalar upper[] )
     { this->initialize(comm,localDim,lower,diag,upper);	}
   
@@ -177,7 +177,7 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> > &comm
+    const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> > &comm
     ,const Thyra::Index             localDim // >= 2
     ,const Scalar                   lower[]  // size == ( procRank == 0         ? localDim - 1 : localDim )
     ,const Scalar                   diag[]   // size == localDim

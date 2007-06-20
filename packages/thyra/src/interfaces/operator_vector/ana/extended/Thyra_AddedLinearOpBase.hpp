@@ -89,7 +89,7 @@ public:
    * <li><tt>this->opIsConst(k)==false</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > getNonconstOp(const int k) = 0;
+  virtual Teuchos::RCP<LinearOpBase<Scalar> > getNonconstOp(const int k) = 0;
 
   /** \brief Return the <tt>k</tt>th constant constituent operator.
    *
@@ -99,7 +99,7 @@ public:
    * <li><tt> 0 <= k < this->numOps()</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<const LinearOpBase<Scalar> > getOp(const int k) const = 0;
+  virtual Teuchos::RCP<const LinearOpBase<Scalar> > getOp(const int k) const = 0;
 
   //@}
 

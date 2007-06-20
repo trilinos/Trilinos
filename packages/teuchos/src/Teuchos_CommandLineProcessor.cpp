@@ -255,7 +255,7 @@ CommandLineProcessor::parse(
     }
   }
   // Set the options of a default stream exists and if we are asked to
-  RefCountPtr<FancyOStream>
+  RCP<FancyOStream>
     defaultOut = VerboseObjectBase::getDefaultOStream();
   if( defaultOut.get() && addOutputSetupOptions_ ) {
     if( output_all_front_matter_ != output_all_front_matter_default_ )

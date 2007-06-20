@@ -68,7 +68,7 @@ bool MultiVectorTester<Scalar>::check(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType    ScalarMag;
 
-  Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
+  Teuchos::RCP<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
   OSTab tab(out,1,"THYRA");

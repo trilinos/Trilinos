@@ -59,14 +59,14 @@ Index SpmdVectorSpaceDefaultBase<Scalar>::mapCode() const
 template<class Scalar>
 std::string SpmdVectorSpaceDefaultBase<Scalar>::description() const
 {
-  using Teuchos::RefCountPtr; using Teuchos::Comm; using Teuchos::null;
+  using Teuchos::RCP; using Teuchos::Comm; using Teuchos::null;
   std::ostringstream ostr;
   ostr << Teuchos::typeName(*this) << "{";
   ostr << "globalDim="<<this->dim();
   ostr << ",localSubDim="<<this->localSubDim();
   ostr << ",localOffset="<<this->localOffset();
   ostr << ",comm=";
-  RefCountPtr<const Comm<Index> > comm;
+  RCP<const Comm<Index> > comm;
   if ( (comm=this->getComm())!=null ) {
     ostr << comm->description();
   }
@@ -87,7 +87,7 @@ Index SpmdVectorSpaceDefaultBase<Scalar>::dim() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> >
+Teuchos::RCP< const VectorSpaceFactoryBase<Scalar> >
 SpmdVectorSpaceDefaultBase<Scalar>::smallVecSpcFcty() const
 {
   return smallVecSpcFcty_;
@@ -113,7 +113,7 @@ template<class Scalar>
 void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Index globalDim )
 {
   localSubDim_ = this->localSubDim(); 
-  const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
+  const Teuchos::RCP<const Teuchos::Comm<Index> >
     comm = this->getComm();
   if( localSubDim_ >= 0 ) {
     int numProc = 1;

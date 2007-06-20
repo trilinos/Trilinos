@@ -43,8 +43,8 @@ DefaultZeroLinearOp<Scalar>::DefaultZeroLinearOp()
 
 template<class Scalar>
 DefaultZeroLinearOp<Scalar>::DefaultZeroLinearOp(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &range
-  ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >  &domain
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &range
+  ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >  &domain
   )
 {
   initialize(range,domain);
@@ -52,8 +52,8 @@ DefaultZeroLinearOp<Scalar>::DefaultZeroLinearOp(
 
 template<class Scalar>
 void DefaultZeroLinearOp<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &range
-  ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >  &domain
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &range
+  ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >  &domain
   )
 {
   range_ = range.assert_not_null();
@@ -70,21 +70,21 @@ void DefaultZeroLinearOp<Scalar>::uninitialize()
 // Overridden from LinearOpBase
   
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultZeroLinearOp<Scalar>::range() const
 {
   return range_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultZeroLinearOp<Scalar>::domain() const
 {
   return domain_;
 }
   
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultZeroLinearOp<Scalar>::clone() const
 {
   typedef DefaultZeroLinearOp<Scalar> this_t;
@@ -138,10 +138,10 @@ void DefaultZeroLinearOp<Scalar>::apply(
 }	// end namespace Thyra
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::zero(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &range
-  ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >  &domain
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &range
+  ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >  &domain
   )
 {
   return Teuchos::rcp(new DefaultZeroLinearOp<Scalar>(range,domain));

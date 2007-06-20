@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
   typedef Teuchos::ScalarTraits<double> ST;
   
   // Get stream that can print to just root or all streams!
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   
   try
@@ -112,24 +112,24 @@ int main(int argc, char *argv[])
       Vector<double> b = A*ans;
 
 
-      RefCountPtr<LinearOpWithSolveFactoryBase<double> > solveFactory = rcp(new AztecOOLinearOpWithSolveFactory());
-      RefCountPtr<const ParameterList> defaultParams = solveFactory->getValidParameters();
-      RefCountPtr<ParameterList> azParams = rcp(new ParameterList(*defaultParams));
+      RCP<LinearOpWithSolveFactoryBase<double> > solveFactory = rcp(new AztecOOLinearOpWithSolveFactory());
+      RCP<const ParameterList> defaultParams = solveFactory->getValidParameters();
+      RCP<ParameterList> azParams = rcp(new ParameterList(*defaultParams));
       azParams->sublist("Forward Solve")
         .sublist("AztecOO Settings").set("Aztec Preconditioner", "none");
       azParams->sublist("Forward Solve")
         .sublist("AztecOO Settings").set("Output Frequency", 1);
       solveFactory->setParameterList(azParams);
 
-      RefCountPtr<LinearOpWithSolveBase<double> > lows 
+      RCP<LinearOpWithSolveBase<double> > lows 
         = solveFactory->createOp();
     
-      RefCountPtr<const LinearOpSourceBase<double> > src 
+      RCP<const LinearOpSourceBase<double> > src 
         = rcp(new DefaultLinearOpSource<double>(A.ptr()));    
 
       solveFactory->initializeOp(src, lows.get());
 
-      RefCountPtr<LinearOpBase<double> > AInvPtr
+      RCP<LinearOpBase<double> > AInvPtr
         = rcp(new DefaultInverseLinearOp<double>(lows));
       
       LinearOperator<double> Ainv = AInvPtr;
@@ -169,9 +169,9 @@ template <class Scalar> inline
 LinearOperator<Scalar> makeRandomDenseOperator(int nc, const VectorSpace<Scalar>& rowSp)
 {
   typedef typename Teuchos::ScalarTraits<Scalar> ST;
-  RefCountPtr<Thyra::MultiVectorBase<Scalar> > mv = rowSp.createMembers(nc);
+  RCP<Thyra::MultiVectorBase<Scalar> > mv = rowSp.createMembers(nc);
   Thyra::randomize(-ST::one(), ST::one(), &*mv);
-  RefCountPtr<Thyra::LinearOpBase<Scalar> > rtn = mv;
+  RCP<Thyra::LinearOpBase<Scalar> > rtn = mv;
   return rtn;
 }
 

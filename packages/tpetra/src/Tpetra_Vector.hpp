@@ -600,7 +600,7 @@ namespace Tpetra {
 			return(VectorData_->scalarArray_);
 		}
 
-		Teuchos::RefCountPtr< VectorData<OrdinalType, ScalarType> > VectorData_;
+		Teuchos::RCP< VectorData<OrdinalType, ScalarType> > VectorData_;
 
 		// four functions needed for DistObject derivation
 		bool checkSizes(DistObject<OrdinalType, ScalarType> const& sourceObj) {

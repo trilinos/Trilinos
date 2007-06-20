@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
   bool success = true;
   bool verbose = true;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {

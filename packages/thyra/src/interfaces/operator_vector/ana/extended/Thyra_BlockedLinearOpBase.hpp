@@ -52,7 +52,7 @@ public:
    * A return value of <tt>return.get()==NULL</tt> is an indication that
    * <tt>*this</tt> is not fully initialized.
    */
-  virtual Teuchos::RefCountPtr<const ProductVectorSpaceBase<RangeScalar> >
+  virtual Teuchos::RCP<const ProductVectorSpaceBase<RangeScalar> >
   productRange() const = 0;
 
   /** \brief Return the product space for the domain.
@@ -60,7 +60,7 @@ public:
    * A return value of <tt>return.get()==NULL</tt> is an indication that
    * <tt>*this</tt> is not fully initialized.
    */
-  virtual Teuchos::RefCountPtr<const ProductVectorSpaceBase<DomainScalar> >
+  virtual Teuchos::RCP<const ProductVectorSpaceBase<DomainScalar> >
   productDomain() const = 0;
 
   /** \brief Return if the block <tt>(i,j)</tt> exists or not.
@@ -103,7 +103,7 @@ public:
    * <li>[<tt>this->blockExists(i,j)==false</tt>] <tt>return.get()==NULL</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >
+  virtual Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >
   getNonconstBlock(const int i, const int j) = 0; 
 
   /** \brief Return a const view of the block <tt>(i,j)</tt> if it exists.
@@ -121,7 +121,7 @@ public:
    * <li>[<tt>this->blockExists(i,j)==false</tt>] <tt>return.get()==NULL</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >
+  virtual Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >
   getBlock(const int i, const int j) const = 0; 
 
 };

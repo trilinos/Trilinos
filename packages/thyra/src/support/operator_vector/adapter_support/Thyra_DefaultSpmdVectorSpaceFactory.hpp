@@ -37,13 +37,13 @@ namespace Thyra {
 
 template<class Scalar>
 DefaultSpmdVectorSpaceFactory<Scalar>::DefaultSpmdVectorSpaceFactory(
-  const Teuchos::RefCountPtr<const Teuchos::Comm<Index> > &comm
+  const Teuchos::RCP<const Teuchos::Comm<Index> > &comm
   )
   :comm_(comm)
 {}
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultSpmdVectorSpaceFactory<Scalar>::createVecSpc(int dim) const
 {
   return Teuchos::rcp(new DefaultSpmdVectorSpace<Scalar>(comm_,dim,dim));

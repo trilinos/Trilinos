@@ -52,25 +52,25 @@ public:
   /** \brief Construct with a non-const linear operator.
    */
   DefaultLinearOpSource(
-    const Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >    &op
+    const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &op
     );
 
   /** \brief Construct with a const linear operator.
    */
   DefaultLinearOpSource(
-    const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &op
+    const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &op
     );
 
   /** \brief Initialize with a non-const linear operator.
    */
   void initialize(
-    const Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >    &op
+    const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &op
     );
 
   /** \brief Initialize with a const linear operator.
    */
   void initialize(
-    const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &op
+    const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &op
     );
 
   /** \brief Uninitialize.
@@ -90,9 +90,9 @@ public:
   /** \brief . */
   bool isOpConst() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> > getNonconstOp();
+  Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> > getNonconstOp();
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> > getOp() const;
+  Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> > getOp() const;
   //@}
   
 private:
@@ -110,9 +110,9 @@ private:
  * \relates DefaultLinearOpSource
  */
 template <class RangeScalar, class DomainScalar>
-Teuchos::RefCountPtr<const DefaultLinearOpSource<RangeScalar,DomainScalar> >
+Teuchos::RCP<const DefaultLinearOpSource<RangeScalar,DomainScalar> >
 defaultLinearOpSource(
-  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &op
+  const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &op
   )
 {
   return Teuchos::rcp(new DefaultLinearOpSource<RangeScalar,DomainScalar>(op));

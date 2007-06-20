@@ -145,15 +145,15 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
@@ -205,18 +205,18 @@ public:
 
 private:
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList>  paramList_;
+  Teuchos::RCP<Teuchos::ParameterList>  paramList_;
 
   // //////////////////////////////
   // Private static data members
 
   static const std::string FDMethod_name;
-  static const Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<EFDMethodType> >
+  static const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<EFDMethodType> >
   fdMethodValidator;
   static const std::string FDMethod_default;
 
   static const std::string FDStepSelectType_name;
-  static const Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<EFDStepSelectType> >
+  static const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<EFDStepSelectType> >
   fdStepSelectTypeValidator;
   static const std::string FDStepSelectType_default;
 
@@ -248,9 +248,9 @@ class OutArgsCreator : public StateFuncModelEvaluatorBase<Scalar>
 {
 public:
   // Public functions overridden from ModelEvaulator.
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_x_space() const
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_x_space() const
     { TEST_FOR_EXCEPT(true); return Teuchos::null; }
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_f_space() const
     { TEST_FOR_EXCEPT(true); return Teuchos::null; }
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const
     { TEST_FOR_EXCEPT(true); return ModelEvaluatorBase::InArgs<Scalar>(); }
@@ -340,7 +340,7 @@ public:
 template<class Scalar>
 const std::string DirectionalFiniteDiffCalculator<Scalar>::FDMethod_name = "FD Method";
 template<class Scalar>
-const Teuchos::RefCountPtr<
+const Teuchos::RCP<
   Teuchos::StringToIntegralParameterEntryValidator<
     Thyra::DirectionalFiniteDiffCalculatorTypes::EFDMethodType
   >
@@ -389,7 +389,7 @@ const double DirectionalFiniteDiffCalculator<Scalar>::FDStepLength_default = -1.
 template<class Scalar>
 const std::string DirectionalFiniteDiffCalculator<Scalar>::FDStepSelectType_name = "FD Step Select Type";
 template<class Scalar>
-const Teuchos::RefCountPtr<
+const Teuchos::RCP<
   Teuchos::StringToIntegralParameterEntryValidator<
     Thyra::DirectionalFiniteDiffCalculatorTypes::EFDStepSelectType
     >
@@ -434,7 +434,7 @@ DirectionalFiniteDiffCalculator<Scalar>::DirectionalFiniteDiffCalculator(
 
 template<class Scalar>
 void DirectionalFiniteDiffCalculator<Scalar>::setParameterList(
-  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  Teuchos::RCP<Teuchos::ParameterList> const& paramList
   )
 {
   TEST_FOR_EXCEPT(paramList.get()==0);
@@ -449,33 +449,33 @@ void DirectionalFiniteDiffCalculator<Scalar>::setParameterList(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 DirectionalFiniteDiffCalculator<Scalar>::getParameterList()
 {
   return paramList_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 DirectionalFiniteDiffCalculator<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> _paramList = paramList_;
+  Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 DirectionalFiniteDiffCalculator<Scalar>::getParameterList() const
 {
   return paramList_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 DirectionalFiniteDiffCalculator<Scalar>::getValidParameters() const
 {
-  static Teuchos::RefCountPtr<Teuchos::ParameterList> pl;
+  static Teuchos::RCP<Teuchos::ParameterList> pl;
   if(pl.get()==NULL) {
     pl = Teuchos::rcp(new Teuchos::ParameterList());
     pl->set(
@@ -533,9 +533,9 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   typedef ModelEvaluatorBase MEB;
   namespace DFDCT = DirectionalFiniteDiffCalculatorTypes;
   typedef VectorBase<Scalar> V;
-  typedef Teuchos::RefCountPtr<VectorBase<Scalar> > VectorPtr;
+  typedef Teuchos::RCP<VectorBase<Scalar> > VectorPtr;
   
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   const bool trace = (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM));
   Teuchos::OSTab tab(out);
@@ -1013,10 +1013,10 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
     );
 
   typedef ModelEvaluatorBase MEB;
-  typedef Teuchos::RefCountPtr<VectorBase<Scalar> > VectorPtr;
-  typedef Teuchos::RefCountPtr<MultiVectorBase<Scalar> > MultiVectorPtr;
+  typedef Teuchos::RCP<VectorBase<Scalar> > VectorPtr;
+  typedef Teuchos::RCP<MultiVectorBase<Scalar> > MultiVectorPtr;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   const bool trace = (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM));
   Teuchos::OSTab tab(out);

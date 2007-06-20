@@ -71,7 +71,7 @@ template<class Scalar>
 Scalar Thyra::sum( const VectorBase<Scalar>& v_rhs )
 {
   RTOpPack::ROpSum<Scalar> sum_op;
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget> sum_targ = sum_op.reduct_obj_create();
+  Teuchos::RCP<RTOpPack::ReductTarget> sum_targ = sum_op.reduct_obj_create();
   const VectorBase<Scalar>* vecs[] = { &v_rhs };
   applyOp<Scalar>(sum_op,1,vecs,0,static_cast<VectorBase<Scalar>**>(NULL),&*sum_targ);
   return sum_op(*sum_targ);
@@ -82,7 +82,7 @@ typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 Thyra::norm_1( const VectorBase<Scalar>& v_rhs )
 {
   RTOpPack::ROpNorm1<Scalar> norm_1_op;
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget> norm_1_targ = norm_1_op.reduct_obj_create();
+  Teuchos::RCP<RTOpPack::ReductTarget> norm_1_targ = norm_1_op.reduct_obj_create();
   const VectorBase<Scalar>* vecs[] = { &v_rhs };
   applyOp<Scalar>(norm_1_op,1,vecs,0,static_cast<VectorBase<Scalar>**>(NULL),&*norm_1_targ);
   return norm_1_op(*norm_1_targ);
@@ -93,7 +93,7 @@ typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 Thyra::norm_2( const VectorBase<Scalar>& v_rhs )
 {
   RTOpPack::ROpNorm2<Scalar> norm_2_op;
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget> norm_2_targ = norm_2_op.reduct_obj_create();
+  Teuchos::RCP<RTOpPack::ReductTarget> norm_2_targ = norm_2_op.reduct_obj_create();
   const VectorBase<Scalar>* vecs[] = { &v_rhs };
   applyOp<Scalar>(norm_2_op,1,vecs,0,static_cast<VectorBase<Scalar>**>(NULL),&*norm_2_targ);
   return norm_2_op(*norm_2_targ);
@@ -104,7 +104,7 @@ typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 Thyra::norm_2( const VectorBase<Scalar>& w, const VectorBase<Scalar>& v )
 {
   RTOpPack::ROpWeightedNorm2<Scalar> wght_norm_2_op;
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget> wght_norm_2_targ = wght_norm_2_op.reduct_obj_create();
+  Teuchos::RCP<RTOpPack::ReductTarget> wght_norm_2_targ = wght_norm_2_op.reduct_obj_create();
   const VectorBase<Scalar>* vecs[] = { &w, &v };
   applyOp<Scalar>(wght_norm_2_op,2,vecs,0,static_cast<VectorBase<Scalar>**>(NULL),&*wght_norm_2_targ);
   return wght_norm_2_op(*wght_norm_2_targ);
@@ -115,7 +115,7 @@ typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 Thyra::norm_inf( const VectorBase<Scalar>& v_rhs )
 {
   RTOpPack::ROpNormInf<Scalar> norm_inf_op;
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget> norm_inf_targ = norm_inf_op.reduct_obj_create();
+  Teuchos::RCP<RTOpPack::ReductTarget> norm_inf_targ = norm_inf_op.reduct_obj_create();
   const VectorBase<Scalar>* vecs[] = { &v_rhs };
   applyOp<Scalar>(norm_inf_op,1,vecs,0,static_cast<VectorBase<Scalar>**>(NULL),&*norm_inf_targ);
   return norm_inf_op(*norm_inf_targ);
@@ -125,7 +125,7 @@ template<class Scalar>
 Scalar Thyra::dot( const VectorBase<Scalar>& v_rhs1, const VectorBase<Scalar>& v_rhs2 )
 {
   RTOpPack::ROpDotProd<Scalar> dot_prod_op;
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget> dot_prod_targ = dot_prod_op.reduct_obj_create();
+  Teuchos::RCP<RTOpPack::ReductTarget> dot_prod_targ = dot_prod_op.reduct_obj_create();
   const VectorBase<Scalar>* vecs[] = { &v_rhs1, &v_rhs2 };
   applyOp<Scalar>(dot_prod_op,2,vecs,0,static_cast<VectorBase<Scalar>**>(NULL),&*dot_prod_targ);
   return dot_prod_op(*dot_prod_targ);
@@ -135,7 +135,7 @@ template<class Scalar>
 Scalar Thyra::get_ele( const VectorBase<Scalar>& v, Index i )
 {
   RTOpPack::ROpSum<Scalar> sum_op;
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget> sum_targ = sum_op.reduct_obj_create();
+  Teuchos::RCP<RTOpPack::ReductTarget> sum_targ = sum_op.reduct_obj_create();
   const VectorBase<Scalar>* vecs[] = { &v };
   applyOp<Scalar>(sum_op,1,vecs,0,static_cast<VectorBase<Scalar>**>(NULL),&*sum_targ,i,1,0);
   return sum_op(*sum_targ);
@@ -453,7 +453,7 @@ void Thyra::V_StVpStV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorB
 template<class Scalar>
 Scalar Thyra::min( const VectorBase<Scalar>& x ) {
   RTOpPack::ROpMin<Scalar> min_op;
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget> min_targ = min_op.reduct_obj_create();
+  Teuchos::RCP<RTOpPack::ReductTarget> min_targ = min_op.reduct_obj_create();
   const VectorBase<Scalar>* vecs[] = { &x };
   applyOp<Scalar>(min_op,1,vecs,0,static_cast<VectorBase<Scalar>**>(NULL),&*min_targ);
   return min_op(*min_targ);
@@ -463,7 +463,7 @@ template<class Scalar>
 void Thyra::min( const VectorBase<Scalar>& x, Scalar *minEle, Index *minIndex )
 {
   RTOpPack::ROpMinIndex<Scalar> min_op;
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget> min_targ = min_op.reduct_obj_create();
+  Teuchos::RCP<RTOpPack::ReductTarget> min_targ = min_op.reduct_obj_create();
   const VectorBase<Scalar>* vecs[] = { &x };
   applyOp<Scalar>(min_op,1,vecs,0,static_cast<VectorBase<Scalar>**>(NULL),&*min_targ);
   RTOpPack::ScalarIndex<Scalar> scalarIndex = min_op(*min_targ);
@@ -475,7 +475,7 @@ template<class Scalar>
 void Thyra::minGreaterThanBound( const VectorBase<Scalar>& x, const Scalar &bound, Scalar *minEle, Index *minIndex )
 {
   RTOpPack::ROpMinIndexGreaterThanBound<Scalar> min_op(bound);
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget> min_targ = min_op.reduct_obj_create();
+  Teuchos::RCP<RTOpPack::ReductTarget> min_targ = min_op.reduct_obj_create();
   const VectorBase<Scalar>* vecs[] = { &x };
   applyOp<Scalar>(min_op,1,vecs,0,static_cast<VectorBase<Scalar>**>(NULL),&*min_targ);
   RTOpPack::ScalarIndex<Scalar> scalarIndex = min_op(*min_targ);
@@ -487,7 +487,7 @@ template<class Scalar>
 Scalar Thyra::max( const VectorBase<Scalar>& x )
 {
   RTOpPack::ROpMax<Scalar> max_op;
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget> max_targ = max_op.reduct_obj_create();
+  Teuchos::RCP<RTOpPack::ReductTarget> max_targ = max_op.reduct_obj_create();
   const VectorBase<Scalar>* vecs[] = { &x };
   applyOp<Scalar>(max_op,1,vecs,0,static_cast<VectorBase<Scalar>**>(NULL),&*max_targ);
   return max_op(*max_targ);
@@ -497,7 +497,7 @@ template<class Scalar>
 void Thyra::max( const VectorBase<Scalar>& x, Scalar *maxEle, Index *maxIndex )
 {
   RTOpPack::ROpMaxIndex<Scalar> max_op;
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget> max_targ = max_op.reduct_obj_create();
+  Teuchos::RCP<RTOpPack::ReductTarget> max_targ = max_op.reduct_obj_create();
   const VectorBase<Scalar>* vecs[] = { &x };
   applyOp<Scalar>(max_op,1,vecs,0,static_cast<VectorBase<Scalar>**>(NULL),&*max_targ);
   RTOpPack::ScalarIndex<Scalar> scalarIndex = max_op(*max_targ);
@@ -509,7 +509,7 @@ template<class Scalar>
 void Thyra::maxLessThanBound( const VectorBase<Scalar>& x, const Scalar &bound, Scalar *maxEle, Index *maxIndex )
 {
   RTOpPack::ROpMaxIndexLessThanBound<Scalar> max_op(bound);
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget> max_targ = max_op.reduct_obj_create();
+  Teuchos::RCP<RTOpPack::ReductTarget> max_targ = max_op.reduct_obj_create();
   const VectorBase<Scalar>* vecs[] = { &x };
   applyOp<Scalar>(max_op,1,vecs,0,static_cast<VectorBase<Scalar>**>(NULL),&*max_targ);
   RTOpPack::ScalarIndex<Scalar> scalarIndex = max_op(*max_targ);

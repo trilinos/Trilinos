@@ -30,7 +30,7 @@
 #define Rythmos_ExplicitRK_STEPPER_H
 
 #include "Rythmos_StepperBase.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
@@ -47,13 +47,13 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     
     /** \brief . */
     ExplicitRKStepper();
-    ExplicitRKStepper(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model_);
+    ExplicitRKStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model_);
 
     /** \brief . */
-    void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
+    void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
 
     /** \brief . */
-    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
     getModel() const;
     
     /** \brief . */
@@ -77,16 +77,16 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     /// Add points to buffer
     bool setPoints(
       const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
       ,const std::vector<ScalarMag> & accuracy_vec 
       );
     
     /// Get values from buffer
     bool getPoints(
       const std::vector<Scalar>& time_vec
-      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec
-      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
       ,std::vector<ScalarMag>* accuracy_vec) const;
 
     /// Fill data in from another interpolation buffer
@@ -108,21 +108,21 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
 
     /// Redefined from Teuchos::ParameterListAcceptor
     /** \brief . */
-    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+    void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
 
     /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> getParameterList();
 
     /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
     
 
   private:
 
-    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > solution_vector_;
-    std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > k_vector_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > ktemp_vector_;
+    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > solution_vector_;
+    std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > > k_vector_;
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > ktemp_vector_;
 
     int stages_; // Number of stages of RK
     std::vector<std::vector<Scalar> > b_A_; // Butcher tableau A matrix
@@ -132,14 +132,14 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     Scalar t_;
     Scalar dt_;
 
-    Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
+    Teuchos::RCP<Teuchos::ParameterList> parameterList_;
 
 };
 
 template<class Scalar>
-ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
+ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model)
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
   out->setMaxLenLinePrefix(30);
   //out->pushLinePrefix("Rythmos::ExplicitRKStepper");
@@ -152,7 +152,7 @@ ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RefCountPtr<const Th
   solution_vector_ = model_->getNominalValues().get_x()->clone_v();
   stages_ = 4; // 4 stage ERK
   k_vector_.reserve(stages_);
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
     f_space = model_->get_f_space();
   for (int i=0 ; i<stages_ ; ++i) {
     k_vector_.push_back(Thyra::createMember(f_space));
@@ -385,8 +385,8 @@ std::ostream& ExplicitRKStepper<Scalar>::describe(
 template<class Scalar>
 bool ExplicitRKStepper<Scalar>::setPoints(
     const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
     ,const std::vector<ScalarMag> & accuracy_vec 
     )
 {
@@ -396,8 +396,8 @@ bool ExplicitRKStepper<Scalar>::setPoints(
 template<class Scalar>
 bool ExplicitRKStepper<Scalar>::getPoints(
     const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
   return(false);
@@ -437,7 +437,7 @@ int ExplicitRKStepper<Scalar>::getOrder() const
 }
 
 template <class Scalar>
-void ExplicitRKStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+void ExplicitRKStepper<Scalar>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
   parameterList_ = paramList;
   int outputLevel = parameterList_->get( "outputLevel", int(-1) );
@@ -446,28 +446,28 @@ void ExplicitRKStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::P
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> ExplicitRKStepper<Scalar>::getParameterList()
+Teuchos::RCP<Teuchos::ParameterList> ExplicitRKStepper<Scalar>::getParameterList()
 {
   return(parameterList_);
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList> ExplicitRKStepper<Scalar>::unsetParameterList()
+Teuchos::RCP<Teuchos::ParameterList> ExplicitRKStepper<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList_;
+  Teuchos::RCP<Teuchos::ParameterList> temp_param_list = parameterList_;
   parameterList_ = Teuchos::null;
   return(temp_param_list);
 }
 
 template<class Scalar>
-void ExplicitRKStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
+void ExplicitRKStepper<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model)
 {
   TEST_FOR_EXCEPT(model == Teuchos::null)
   model_ = model;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 ExplicitRKStepper<Scalar>::getModel() const
 {
   return model_;

@@ -48,13 +48,13 @@ public:
 
   /** \brief Calls <tt>this->initialize()</tt>. */
   ListedMultiVectorRandomizer(
-    const Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >    multiVecs[]
+    const Teuchos::RCP<const MultiVectorBase<Scalar> >    multiVecs[]
     ,const int                                                    numMultiVecs
     );
 
   /** \brief . */
   void initialize(
-    const Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >    multiVecs[]
+    const Teuchos::RCP<const MultiVectorBase<Scalar> >    multiVecs[]
     ,const int                                                    numMultiVecs
     );
 
@@ -70,7 +70,7 @@ public:
 
 private:
 
-  typedef std::vector<Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > > multiVecs_t;
+  typedef std::vector<Teuchos::RCP<const MultiVectorBase<Scalar> > > multiVecs_t;
   
   multiVecs_t  multiVecs_;
 
@@ -83,7 +83,7 @@ private:
 
 template<class Scalar>
 ListedMultiVectorRandomizer<Scalar>::ListedMultiVectorRandomizer(
-  const Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >    multiVecs[]
+  const Teuchos::RCP<const MultiVectorBase<Scalar> >    multiVecs[]
   ,const int                                                    numMultiVecs
   )
 {
@@ -92,7 +92,7 @@ ListedMultiVectorRandomizer<Scalar>::ListedMultiVectorRandomizer(
 
 template<class Scalar>
 void ListedMultiVectorRandomizer<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >    multiVecs[]
+  const Teuchos::RCP<const MultiVectorBase<Scalar> >    multiVecs[]
   ,const int                                                    numMultiVecs
   )
 {
@@ -116,7 +116,7 @@ void ListedMultiVectorRandomizer<Scalar>::randomize( MultiVectorBase<Scalar> *mv
   TEST_FOR_EXCEPT( mv==NULL );
   TEST_FOR_EXCEPT( multiVecs_.size()==0 );
 #endif
-  const Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > currMV = multiVecs_[curr_mv_i_];
+  const Teuchos::RCP<const MultiVectorBase<Scalar> > currMV = multiVecs_[curr_mv_i_];
 #ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_VEC_SPACES("ListedMultiVectorRandomizer<Scalar>::randomize(mv)", *currMV->range(), *mv->range() );
   THYRA_ASSERT_VEC_SPACES("ListedMultiVectorRandomizer<Scalar>::randomize(mv)", *currMV->domain(), *mv->domain() );

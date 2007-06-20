@@ -36,7 +36,7 @@ StringInputSource::StringInputSource(const string& text)
 	: XMLInputSource(), text_(text)
 {;}
 
-RefCountPtr<XMLInputStream> StringInputSource::stream() const 
+RCP<XMLInputStream> StringInputSource::stream() const 
 {
 	return rcp(new StringInputStream(text_), true);
 }

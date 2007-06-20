@@ -169,9 +169,9 @@ public:
   /** @name Overridden from EuclideanLinearOpBase */
   //@{
   /** \brief . */
-  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
+  Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
+  Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
   /** \brief Calls protected <tt>euclideanApply()</tt> function.
    *
    * \anchor apply_multi_vec
@@ -225,8 +225,8 @@ protected:
    * </ul>
    */
   virtual void setSpaces(
-    const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >      &range
-    ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >     &domain
+    const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >      &range
+    ,const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >     &domain
     );
 
   /** \brief Initialize vector spaces given dimensions (uses <tt>DefaultSerialVectorSpace</tt>).
@@ -308,8 +308,8 @@ protected:
 
 private:
 
-  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >    range_;
-  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >    domain_;
+  Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >    range_;
+  Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >    domain_;
 
 };	// end class LinearOpBase
 

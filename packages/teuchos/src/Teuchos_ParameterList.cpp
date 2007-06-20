@@ -276,7 +276,7 @@ ostream& ParameterList::print(ostream& os, const PrintOptions &printOptions ) co
   const bool  showFlags = printOptions.showFlags();
   const bool  showDoc   = printOptions.showDoc();
   const std::string linePrefix(indent,' ');
-  RefCountPtr<FancyOStream>
+  RCP<FancyOStream>
     out = getFancyOStream(rcp(&os,false));
   OSTab tab(out,indent);
   if (params_.begin() == params_.end()) {
@@ -288,7 +288,7 @@ ostream& ParameterList::print(ostream& os, const PrintOptions &printOptions ) co
     {
       const string &name = this->name(i);
       const ParameterEntry &entry_i = entry(i);
-      RefCountPtr<const ParameterEntryValidator>
+      RCP<const ParameterEntryValidator>
         validator = entry_i.validator();
       if(entry_i.isList())
         continue;
@@ -380,7 +380,7 @@ void ParameterList::validateParameters(
 {
   typedef std::deque<ListPlusValidList> sublist_list_t;
 #ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
-  RefCountPtr<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
+  RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
   OSTab tab(out);
   *out << "\n*** Entering ParameterList::validateParameters(...) for "
     "this->name()=\""<<this->name()<<"\"...\n";
@@ -418,7 +418,7 @@ void ParameterList::validateParameters(
       "\n\nThe valid parameters and types are:\n"
       <<validParamList.currentParametersString()
       );
-    RefCountPtr<const ParameterEntryValidator> validator;
+    RCP<const ParameterEntryValidator> validator;
     if( (validator=validEntry->validator()).get() ) {
       validator->validate( entry, entryName, this->name() ); 
     }
@@ -477,7 +477,7 @@ void ParameterList::validateParametersAndSetDefaults(
 {
   typedef std::deque<ListPlusValidList> sublist_list_t;
 #ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
-  RefCountPtr<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
+  RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
   OSTab tab(out);
   *out << "\n*** Entering ParameterList::validateParametersAndSetDefaults(...) "
     "for this->name()=\""<<this->name()<<"\"...\n";
@@ -508,7 +508,7 @@ void ParameterList::validateParametersAndSetDefaults(
         "\n\nThe valid parameters and types are:\n"
         <<validParamList.currentParametersString()
         );
-      RefCountPtr<const ParameterEntryValidator> validator;
+      RCP<const ParameterEntryValidator> validator;
       if( (validator=validEntry->validator()).get() ) {
         validator->validateAndModify( entryName, this->name(), &entry );
         entry.setValidator(validator);

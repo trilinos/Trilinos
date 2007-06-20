@@ -85,21 +85,21 @@ public:
   /** \brief Calls <tt>initialize()</tt> to construct given a vector space.
    */
   DefaultDiagonalLinearOp(
-    const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >  &space
+    const Teuchos::RCP<const VectorSpaceBase<Scalar> >  &space
     );
 
   /** \brief Calls <tt>initialize()</tt> to construct for a non-const diagonal
    * vector.
    */
   DefaultDiagonalLinearOp(
-    const Teuchos::RefCountPtr<VectorBase<Scalar> >   &diag
+    const Teuchos::RCP<VectorBase<Scalar> >   &diag
     );
 
   /** \brief Calls <tt>initialize()</tt> to construct for a const diagonal
    * vector.
    */
   DefaultDiagonalLinearOp(
-    const Teuchos::RefCountPtr<const VectorBase<Scalar> >   &diag
+    const Teuchos::RCP<const VectorBase<Scalar> >   &diag
     );
 
   /** \brief Initialize given a vector space which allocates a vector internally.
@@ -118,7 +118,7 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >  &space
+    const Teuchos::RCP<const VectorSpaceBase<Scalar> >  &space
     );
 
   /** \brief Initialize given a non-const diagonal vector.
@@ -137,7 +137,7 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<VectorBase<Scalar> >   &diag
+    const Teuchos::RCP<VectorBase<Scalar> >   &diag
     );
 
   /** \brief Initialize given a const diagonal vector.
@@ -156,7 +156,7 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const VectorBase<Scalar> >   &diag
+    const Teuchos::RCP<const VectorBase<Scalar> >   &diag
     );
 
   /** \brief Uninitialize.
@@ -183,9 +183,9 @@ public:
   /** \brief . */
   bool isDiagConst() const;
   /** \brief . */
-  Teuchos::RefCountPtr<VectorBase<Scalar> > getNonconstDiag();
+  Teuchos::RCP<VectorBase<Scalar> > getNonconstDiag();
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorBase<Scalar> > getDiag() const;
+  Teuchos::RCP<const VectorBase<Scalar> > getDiag() const;
 
   //@}
 
@@ -197,16 +197,16 @@ public:
    * <li><tt>this->getDiag().get()!=NULL</tt>
    * </ul>
    */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
   /** \brief Returns <tt>this->getDiag()->space()</tt>.
    *
    * Preconditions:<ul>
    * <li><tt>this->getDiag().get()!=NULL</tt>
    * </ul>
    */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
   //@}
 
 protected:

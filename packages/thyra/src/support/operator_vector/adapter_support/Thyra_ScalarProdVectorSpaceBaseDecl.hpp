@@ -92,7 +92,7 @@ public:
    * <li><tt>this->getScalarProd().get() == scalarProd.get()</tt>
    * </ul>
    */
-  ScalarProdVectorSpaceBase( const Teuchos::RefCountPtr<const ScalarProdBase<Scalar> > &scalarProd );
+  ScalarProdVectorSpaceBase( const Teuchos::RCP<const ScalarProdBase<Scalar> > &scalarProd );
 
   /** \brief Set a different scalar product.
    *
@@ -109,11 +109,11 @@ public:
    * <li><tt>this->getScalarProd().get() == scalarProd.get()</tt>
    * </ul>
    */
-  virtual void setScalarProd( const Teuchos::RefCountPtr<const ScalarProdBase<Scalar> > &scalarProd );
+  virtual void setScalarProd( const Teuchos::RCP<const ScalarProdBase<Scalar> > &scalarProd );
 
   /** \brief Return the current scalar product.
    */
-  Teuchos::RefCountPtr<const ScalarProdBase<Scalar> > getScalarProd() const;
+  Teuchos::RCP<const ScalarProdBase<Scalar> > getScalarProd() const;
 
   //@}
 
@@ -131,7 +131,7 @@ public:
 
 private:
 
-  Teuchos::RefCountPtr<const ScalarProdBase<Scalar> > scalarProd_;
+  Teuchos::RCP<const ScalarProdBase<Scalar> > scalarProd_;
 
 }; // end class ScalarProdVectorSpaceBase
 

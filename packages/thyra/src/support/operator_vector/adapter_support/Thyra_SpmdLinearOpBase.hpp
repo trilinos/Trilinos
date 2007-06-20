@@ -40,14 +40,14 @@ namespace Thyra {
 // Overridden from EuclideanLinearOpBase
 
 template<class Scalar>
-Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >
+Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >
 SpmdLinearOpBase<Scalar>::rangeScalarProdVecSpc() const
 {
   return sp_range_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >
+Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >
 SpmdLinearOpBase<Scalar>::domainScalarProdVecSpc() const
 {
   return sp_domain_;
@@ -67,7 +67,7 @@ void SpmdLinearOpBase<Scalar>::euclideanApply(
     "SpmdLinearOpBase<Scalar>::euclideanApply()",*this,M_trans,X,Y
     );
 #endif
-  const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >
+  const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >
     &Op_range  = ( M_trans == NOTRANS ? range_  : domain_ ),
     &Op_domain = ( M_trans == NOTRANS ? domain_ : range_  );
   const Index
@@ -93,8 +93,8 @@ SpmdLinearOpBase<Scalar>::SpmdLinearOpBase()
 
 template<class Scalar>
 void SpmdLinearOpBase<Scalar>::setSpaces(
-  const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >     &range
-  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >    &domain
+  const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >     &range
+  ,const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >    &domain
   )
 {
   // Validate input
@@ -102,7 +102,7 @@ void SpmdLinearOpBase<Scalar>::setSpaces(
   TEST_FOR_EXCEPT(range.get()==NULL);
   TEST_FOR_EXCEPT(domain.get()==NULL);
 #endif
-  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >
+  Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >
     sp_range = Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(range,true),
     sp_domain = Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(domain,true);
   // Set state
@@ -114,7 +114,7 @@ void SpmdLinearOpBase<Scalar>::setSpaces(
 
 template<class Scalar>
 void SpmdLinearOpBase<Scalar>::setLocalDimensions(
-  const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >     &comm
+  const Teuchos::RCP<const Teuchos::Comm<Index> >     &comm
   ,const Index                                                localDimRange
   ,const Index                                                localDimDomain
   )
@@ -123,7 +123,7 @@ void SpmdLinearOpBase<Scalar>::setLocalDimensions(
   TEST_FOR_EXCEPT( localDimRange <= 0 );
   TEST_FOR_EXCEPT( localDimDomain <= 0 );
 #endif
-  Teuchos::RefCountPtr<const DefaultSpmdVectorSpace<Scalar> >
+  Teuchos::RCP<const DefaultSpmdVectorSpace<Scalar> >
     range  = Teuchos::rcp(new DefaultSpmdVectorSpace<Scalar>(comm,localDimRange,-1)),
     domain = Teuchos::rcp(new DefaultSpmdVectorSpace<Scalar>(comm,localDimDomain,-1));
   range_  = range;

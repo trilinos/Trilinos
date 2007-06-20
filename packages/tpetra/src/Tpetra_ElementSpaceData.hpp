@@ -31,7 +31,7 @@
 
 #include "Tpetra_ConfigDefs.hpp" // for vector and map
 #include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_Comm.hpp"
 #include "Tpetra_Directory.hpp"
@@ -52,8 +52,8 @@ namespace Tpetra {
 						 map<OrdinalType, OrdinalType> const lgMap,
 						 map<OrdinalType, OrdinalType> const glMap,
 						 bool const contiguous,
-						 Teuchos::RefCountPtr< Platform<OrdinalType, OrdinalType> > platform,
-						 Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > comm)
+						 Teuchos::RCP< Platform<OrdinalType, OrdinalType> > platform,
+						 Teuchos::RCP< Comm<OrdinalType, OrdinalType> > comm)
 			: Object("Tpetra::ElementSpaceData")
 			, Platform_(platform)
 			, Comm_(comm)
@@ -76,8 +76,8 @@ namespace Tpetra {
 		~ElementSpaceData() {};
     
 	protected:
-		Teuchos::RefCountPtr< Platform<OrdinalType, OrdinalType> const > Platform_;
-		Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> const > Comm_;
+		Teuchos::RCP< Platform<OrdinalType, OrdinalType> const > Platform_;
+		Teuchos::RCP< Comm<OrdinalType, OrdinalType> const > Comm_;
 		OrdinalType const numGlobalElements_;
 		OrdinalType const numMyElements_;
 		OrdinalType const indexBase_;
@@ -93,7 +93,7 @@ namespace Tpetra {
 		map<OrdinalType, OrdinalType> lgMap_;
 		map<OrdinalType, OrdinalType> const glMap_;
 		std::vector<OrdinalType> mutable myGlobalElements_;
-		Teuchos::RefCountPtr< Directory<OrdinalType> > Directory_;
+		Teuchos::RCP< Directory<OrdinalType> > Directory_;
     
 	private:
 		bool checkGlobalness() {

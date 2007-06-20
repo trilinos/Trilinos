@@ -45,7 +45,7 @@ DefaultDiagonalLinearOpWithSolve<Scalar>::DefaultDiagonalLinearOpWithSolve()
 
 template<class Scalar>
 DefaultDiagonalLinearOpWithSolve<Scalar>::DefaultDiagonalLinearOpWithSolve(
-  const Teuchos::RefCountPtr<const VectorBase<Scalar> >   &diag
+  const Teuchos::RCP<const VectorBase<Scalar> >   &diag
   )
 {
   initialize(diag);

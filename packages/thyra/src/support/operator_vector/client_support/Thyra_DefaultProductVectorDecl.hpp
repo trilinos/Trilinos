@@ -76,19 +76,19 @@ public:
 
   /** \brief. Constructs to initialized (calls <tt>initialize()</tt>). */
   DefaultProductVector(
-    const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
+    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
     );
 
   /** \brief. Constructs to initialized (calls <tt>initialize()</tt>). */
   DefaultProductVector(
-    const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
-    ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                      vecs[]
+    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
+    ,const Teuchos::RCP<VectorBase<Scalar> >                      vecs[]
     );
 
   /** \brief. Constructs to initialized (calls <tt>initialize()</tt>). */
   DefaultProductVector(
-    const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
-    ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >                vecs[]
+    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
+    ,const Teuchos::RCP<const VectorBase<Scalar> >                vecs[]
     );
 
   /** \brief Initialize.
@@ -96,7 +96,7 @@ public:
    * ToDo: Finish documentation.
    */
   void initialize(
-    const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
+    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
     );
 
   /** \brief Initialize.
@@ -104,8 +104,8 @@ public:
    * ToDo: Finish documentation.
    */
   void initialize(
-    const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
-    ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                      vecs[]
+    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
+    ,const Teuchos::RCP<VectorBase<Scalar> >                      vecs[]
     );
 
   /** \brief Initialize.
@@ -113,8 +113,8 @@ public:
    * ToDo: Finish documentation.
    */
   void initialize(
-    const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
-    ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >                vecs[]
+    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
+    ,const Teuchos::RCP<const VectorBase<Scalar> >                vecs[]
     );
 
   /** \brief Uninitialize.
@@ -143,32 +143,32 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<VectorBase<Scalar> > getNonconstVectorBlock(const int k); 
+  Teuchos::RCP<VectorBase<Scalar> > getNonconstVectorBlock(const int k); 
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorBase<Scalar> > getVectorBlock(const int k) const;
+  Teuchos::RCP<const VectorBase<Scalar> > getVectorBlock(const int k) const;
 
   //@}
 
   /** @name Extensions to ProductVectorBase suitable for physically-blocked vectors */
   //@{
   /** */
-  void setBlock(int i, const Teuchos::RefCountPtr<const VectorBase<Scalar> >& b); 
+  void setBlock(int i, const Teuchos::RCP<const VectorBase<Scalar> >& b); 
   /** */
-  void setNonconstBlock(int i, const Teuchos::RefCountPtr<VectorBase<Scalar> >& b); 
+  void setNonconstBlock(int i, const Teuchos::RCP<VectorBase<Scalar> >& b); 
   //@}
 
   /** @name Overridden from ProductMultiVectorBase */
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > productSpace() const;
+  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > productSpace() const;
   /** \brief . */
   bool blockIsConst(const int k) const; 
   /** \brief . */
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  Teuchos::RCP<MultiVectorBase<Scalar> >
   getNonconstMultiVectorBlock(const int k);
   /** \brief . */
-  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+  Teuchos::RCP<const MultiVectorBase<Scalar> >
   getMultiVectorBlock(const int k) const;
 
   //@}
@@ -177,7 +177,7 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > space() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > space() const;
   /** \brief . */
   void applyOp(
     const RTOpPack::RTOpT<Scalar>    &op
@@ -213,7 +213,7 @@ private:
   // //////////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  productSpace_;
+  Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  productSpace_;
   Teuchos::Array<CNVC> vecs_;
   // cache
   int numBlocks_;
@@ -235,9 +235,9 @@ protected:
  */
 template<class Scalar>
 inline
-Teuchos::RefCountPtr<DefaultProductVector<Scalar> >
+Teuchos::RCP<DefaultProductVector<Scalar> >
 defaultProductVector(
-  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> > &productSpace
+  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace
   )
 {
   return Teuchos::rcp(
@@ -251,10 +251,10 @@ defaultProductVector(
  * \relates DefaultProductVector
  */
 template<class Scalar>
-Teuchos::RefCountPtr<DefaultProductVector<Scalar> >
+Teuchos::RCP<DefaultProductVector<Scalar> >
 defaultProductVector(
-  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RefCountPtr<VectorBase<Scalar> > vecs[]
+  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const Teuchos::RCP<VectorBase<Scalar> > vecs[]
   )
 {
   return Teuchos::rcp(
@@ -268,10 +268,10 @@ defaultProductVector(
  * \relates DefaultProductVector
  */
 template<class Scalar>
-Teuchos::RefCountPtr<DefaultProductVector<Scalar> >
+Teuchos::RCP<DefaultProductVector<Scalar> >
 defaultProductVector(
-  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RefCountPtr<const VectorBase<Scalar> > vecs[]
+  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const Teuchos::RCP<const VectorBase<Scalar> > vecs[]
   )
 {
   return Teuchos::rcp(
@@ -285,10 +285,10 @@ defaultProductVector(
  * \relates DefaultProductVector
  */
 template<class Scalar>
-Teuchos::RefCountPtr<DefaultProductVector<Scalar> >
+Teuchos::RCP<DefaultProductVector<Scalar> >
 defaultProductVector(
-  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::Array<Teuchos::RefCountPtr<const VectorBase<Scalar> > > &vecs
+  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > &vecs
   )
 {
 #ifdef TEUCHOS_DEBUG

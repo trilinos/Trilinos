@@ -36,7 +36,7 @@ FileInputSource::FileInputSource(const string& filename)
 	: XMLInputSource(), filename_(filename)
 {;}
 
-RefCountPtr<XMLInputStream> FileInputSource::stream() const 
+RCP<XMLInputStream> FileInputSource::stream() const 
 {
 	return rcp(new FileInputStream(filename_), true);
 }

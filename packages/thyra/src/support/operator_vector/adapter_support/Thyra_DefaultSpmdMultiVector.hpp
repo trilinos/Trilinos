@@ -96,8 +96,8 @@ DefaultSpmdMultiVector<Scalar>::DefaultSpmdMultiVector()
 
 template<class Scalar>
 DefaultSpmdMultiVector<Scalar>::DefaultSpmdMultiVector(
-  const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
-  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
+  const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
+  ,const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
   )
 {
   initialize(spmdRangeSpace,domainSpace);
@@ -105,9 +105,9 @@ DefaultSpmdMultiVector<Scalar>::DefaultSpmdMultiVector(
 
 template<class Scalar>
 DefaultSpmdMultiVector<Scalar>::DefaultSpmdMultiVector(
-  const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
-  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
-  ,const Teuchos::RefCountPtr<Scalar>                                    &localValues
+  const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
+  ,const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
+  ,const Teuchos::RCP<Scalar>                                    &localValues
   ,const Index                                                           leadingDim
   )
 {
@@ -116,8 +116,8 @@ DefaultSpmdMultiVector<Scalar>::DefaultSpmdMultiVector(
 
 template<class Scalar>
 void DefaultSpmdMultiVector<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
-  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
+  const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
+  ,const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
   )
 {
   const Index localSubDim = spmdRangeSpace->localSubDim();
@@ -135,9 +135,9 @@ void DefaultSpmdMultiVector<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultSpmdMultiVector<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
-  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
-  ,const Teuchos::RefCountPtr<Scalar>                                    &localValues
+  const Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
+  ,const Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
+  ,const Teuchos::RCP<Scalar>                                    &localValues
   ,const Index                                                           leadingDim
   )
 {
@@ -156,9 +156,9 @@ void DefaultSpmdMultiVector<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultSpmdMultiVector<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >         *spmdRangeSpace
-  ,Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  *domainSpace
-  ,Teuchos::RefCountPtr<Scalar>                                    *localValues
+  Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >         *spmdRangeSpace
+  ,Teuchos::RCP<const ScalarProdVectorSpaceBase<Scalar> >  *domainSpace
+  ,Teuchos::RCP<Scalar>                                    *localValues
   ,Index                                                           *leadingDim
   )
 {
@@ -178,7 +178,7 @@ void DefaultSpmdMultiVector<Scalar>::uninitialize(
 // Overridden from EuclideanLinearOpBase
 
 template<class Scalar>
-Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >
+Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >
 DefaultSpmdMultiVector<Scalar>::domainScalarProdVecSpc() const
 {
 #ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -190,7 +190,7 @@ DefaultSpmdMultiVector<Scalar>::domainScalarProdVecSpc() const
 // Overridden from MultiVectorBase
 
 template<class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
+Teuchos::RCP<VectorBase<Scalar> >
 DefaultSpmdMultiVector<Scalar>::col(Index j)
 {
 #ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -210,7 +210,7 @@ DefaultSpmdMultiVector<Scalar>::col(Index j)
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 DefaultSpmdMultiVector<Scalar>::subView( const Range1D& col_rng_in )
 {
 #ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -231,10 +231,10 @@ DefaultSpmdMultiVector<Scalar>::subView( const Range1D& col_rng_in )
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+Teuchos::RCP<const MultiVectorBase<Scalar> >
 DefaultSpmdMultiVector<Scalar>::subView( const int numCols, const int cols[] ) const
 {
-  Teuchos::RefCountPtr<Scalar> localValuesView = createContiguousCopy(numCols,cols);
+  Teuchos::RCP<Scalar> localValuesView = createContiguousCopy(numCols,cols);
   return 
     Teuchos::rcp(
       new DefaultSpmdMultiVector<Scalar>(
@@ -249,12 +249,12 @@ DefaultSpmdMultiVector<Scalar>::subView( const int numCols, const int cols[] ) c
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 DefaultSpmdMultiVector<Scalar>::subView( const int numCols, const int cols[] )
 {
-  Teuchos::RefCountPtr<Scalar> localValuesView = createContiguousCopy(numCols,cols);
+  Teuchos::RCP<Scalar> localValuesView = createContiguousCopy(numCols,cols);
   const Index localSubDim = spmdRangeSpace_->localSubDim();
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  Teuchos::RCP<MultiVectorBase<Scalar> >
     view = Teuchos::rcp(
       new DefaultSpmdMultiVector<Scalar>(
         spmdRangeSpace_
@@ -265,7 +265,7 @@ DefaultSpmdMultiVector<Scalar>::subView( const int numCols, const int cols[] )
         ,localSubDim
         )
       );
-  Teuchos::RefCountPtr<CopyBackSpmdMultiVectorEntries<Scalar> >
+  Teuchos::RCP<CopyBackSpmdMultiVectorEntries<Scalar> >
     copyBackView
     = Teuchos::rcp(
       new CopyBackSpmdMultiVectorEntries<Scalar>(
@@ -279,7 +279,7 @@ DefaultSpmdMultiVector<Scalar>::subView( const int numCols, const int cols[] )
 // Overridden from SpmdMultiVectorBase
 
 template<class Scalar>
-Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >
+Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> >
 DefaultSpmdMultiVector<Scalar>::spmdSpace() const
 {
 #ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -347,7 +347,7 @@ void DefaultSpmdMultiVector<Scalar>::freeLocalData( const Scalar *localValues ) 
 // private
 
 template<class Scalar>
-Teuchos::RefCountPtr<Scalar>
+Teuchos::RCP<Scalar>
 DefaultSpmdMultiVector<Scalar>::createContiguousCopy(
   const int numCols, const int cols[]
   ) const
@@ -359,7 +359,7 @@ DefaultSpmdMultiVector<Scalar>::createContiguousCopy(
   TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
 #endif
   const Index localSubDim = spmdRangeSpace_->localSubDim();
-  Teuchos::RefCountPtr<Scalar>
+  Teuchos::RCP<Scalar>
     localValuesView
     = Teuchos::rcp(
       new Scalar[numCols*localSubDim], Teuchos::DeallocArrayDelete<Scalar>(), true

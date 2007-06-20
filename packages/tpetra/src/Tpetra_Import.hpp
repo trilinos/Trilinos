@@ -29,7 +29,7 @@
 #ifndef TPETRA_IMPORT_HPP
 #define TPETRA_IMPORT_HPP
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_Util.hpp"
@@ -143,7 +143,7 @@ namespace Tpetra {
     
 	private:
  
-		Teuchos::RefCountPtr< ImportData<OrdinalType> > ImportData_;
+		Teuchos::RCP< ImportData<OrdinalType> > ImportData_;
     
 		// convenience functions for returning inner data class, both const and nonconst versions.
 		ImportData<OrdinalType>& data() {return(*ImportData_);}

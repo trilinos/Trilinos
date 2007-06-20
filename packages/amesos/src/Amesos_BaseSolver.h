@@ -44,6 +44,7 @@
 const int StructurallySingularMatrixError = -21;
 const int NumericallySingularMatrixError = -22;
 
+#include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Epetra_LinearProblem.h"

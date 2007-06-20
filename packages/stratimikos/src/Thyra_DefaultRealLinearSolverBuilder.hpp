@@ -124,13 +124,13 @@ public:
 
   /** \brief Set a new linear solver strategy factory object. */
   void setLinearSolveStrategyFactory(
-    const Teuchos::RefCountPtr<const Teuchos::AbstractFactory<LinearOpWithSolveFactoryBase<double> > >  &solveStrategyFactory
+    const Teuchos::RCP<const Teuchos::AbstractFactory<LinearOpWithSolveFactoryBase<double> > >  &solveStrategyFactory
     ,const std::string                                                                                  &solveStrategyName
     );
 
   /** \brief Set a new preconditioner strategy factory object. */
   void setPreconditioningStrategyFactory(
-    const Teuchos::RefCountPtr<const Teuchos::AbstractFactory<PreconditionerFactoryBase<double> > >     &precStrategyFactory
+    const Teuchos::RCP<const Teuchos::AbstractFactory<PreconditionerFactoryBase<double> > >     &precStrategyFactory
     ,const std::string                                                                                  &precStrategyName
     );
 
@@ -208,15 +208,15 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
   
@@ -224,12 +224,12 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
+  Teuchos::RCP<LinearOpWithSolveFactoryBase<double> >
   createLinearSolveStrategy(
     const std::string &linearSolveStrategyName
     ) const;
   /** \brief . */
-  Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
+  Teuchos::RCP<PreconditionerFactoryBase<double> >
   createPreconditioningStrategy(
     const std::string &preconditioningStrategyName
     ) const;
@@ -241,14 +241,14 @@ private:
   // //////////////////////////////////////
   // Private types
 
-  typedef Teuchos::RefCountPtr<const Teuchos::AbstractFactory<LinearOpWithSolveFactoryBase<double> > >  lowsf_fcty_t;
-  typedef Teuchos::RefCountPtr<const Teuchos::AbstractFactory<PreconditionerFactoryBase<double> > >     pf_fcty_t;
+  typedef Teuchos::RCP<const Teuchos::AbstractFactory<LinearOpWithSolveFactoryBase<double> > >  lowsf_fcty_t;
+  typedef Teuchos::RCP<const Teuchos::AbstractFactory<PreconditionerFactoryBase<double> > >     pf_fcty_t;
 
   // //////////////////////////////////////
   // Private data members
   
-  Teuchos::RefCountPtr<Teuchos::ParameterList>                 paramList_;
-  mutable Teuchos::RefCountPtr<const Teuchos::ParameterList>   validParamList_;
+  Teuchos::RCP<Teuchos::ParameterList>                 paramList_;
+  mutable Teuchos::RCP<const Teuchos::ParameterList>   validParamList_;
   Teuchos::Array<std::string>                                  validLowsfNames_;
   Teuchos::Array<lowsf_fcty_t>                                 lowsfArray_;
   std::string                                                  defaultLOWSF_;

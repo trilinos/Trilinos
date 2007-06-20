@@ -62,7 +62,7 @@ void Thyra::reductions( const MultiVectorBase<Scalar>& V, const NormOp &op, type
 {
   int kc;
   const int m = V.domain()->dim();
-  std::vector<Teuchos::RefCountPtr<RTOpPack::ReductTarget> >  rcp_op_targs(m);
+  std::vector<Teuchos::RCP<RTOpPack::ReductTarget> >  rcp_op_targs(m);
   std::vector<RTOpPack::ReductTarget*>                        op_targs(m);
   for( kc = 0; kc < m; ++kc ) {
     rcp_op_targs[kc] = op.reduct_obj_create();
@@ -81,7 +81,7 @@ void Thyra::dots( const MultiVectorBase<Scalar>& V1, const MultiVectorBase<Scala
   int kc;
   const int m = V1.domain()->dim();
   RTOpPack::ROpDotProd<Scalar> dot_op;
-  std::vector<Teuchos::RefCountPtr<RTOpPack::ReductTarget> >  rcp_dot_targs(m);
+  std::vector<Teuchos::RCP<RTOpPack::ReductTarget> >  rcp_dot_targs(m);
   std::vector<RTOpPack::ReductTarget*>                        dot_targs(m);
   for( kc = 0; kc < m; ++kc ) {
     rcp_dot_targs[kc] = dot_op.reduct_obj_create();
@@ -100,7 +100,7 @@ void Thyra::sums( const MultiVectorBase<Scalar>& V, Scalar sums[] )
   int kc;
   const int m = V.domain()->dim();
   RTOpPack::ROpSum<Scalar> sum_op;
-  std::vector<Teuchos::RefCountPtr<RTOpPack::ReductTarget> >  rcp_op_targs(m);
+  std::vector<Teuchos::RCP<RTOpPack::ReductTarget> >  rcp_op_targs(m);
   std::vector<RTOpPack::ReductTarget*>                        op_targs(m);
   for( kc = 0; kc < m; ++kc ) {
     rcp_op_targs[kc] = sum_op.reduct_obj_create();
@@ -122,7 +122,7 @@ Thyra::norm_1( const MultiVectorBase<Scalar>& V )
   // Secondary reduction (max over all columns = induced norm_1 matrix  norm)
   RTOpPack::ROpNormInf<Scalar> max_op;
   // Reduction object (must be same for both sum_abs and max_targ objects)
-  Teuchos::RefCountPtr<RTOpPack::ReductTarget>
+  Teuchos::RCP<RTOpPack::ReductTarget>
     max_targ = max_op.reduct_obj_create();
   // Perform the reductions
   const MultiVectorBase<Scalar>* multi_vecs[] = { &V };

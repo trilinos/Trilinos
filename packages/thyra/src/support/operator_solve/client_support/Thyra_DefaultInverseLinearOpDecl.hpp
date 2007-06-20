@@ -88,7 +88,7 @@ public:
   /** Calls <tt>initialize()</tt>.
    */
   DefaultInverseLinearOp(
-    const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &lows,
+    const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &lows,
     const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
     const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
     const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
@@ -101,7 +101,7 @@ public:
    * functions described \ref Thyra_Op_Vec_AddedLinearOp_helpers_grp "here".
    */
   DefaultInverseLinearOp(
-    const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &lows,
+    const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &lows,
     const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
     const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
     const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
@@ -148,7 +148,7 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &lows,
+    const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &lows,
     const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
     const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
     const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
@@ -194,7 +194,7 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &lows,
+    const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &lows,
     const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
     const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
     const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
@@ -219,10 +219,10 @@ public:
   /** \brief . */
   bool isLowsConst() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+  Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
   getNonconstLows(); 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >
+  Teuchos::RCP<const LinearOpWithSolveBase<Scalar> >
   getLows() const; 
 
   //@}
@@ -234,16 +234,16 @@ public:
    * <t>this->getLows().get()!=NULL</tt> and returns <tt>Teuchos::null</tt>
    * otherwise.
    */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
 
   /** \brief Returns <tt>this->getLows()->range() if
    * <t>this->getLows().get()!=NULL</tt> and returns <tt>Teuchos::null</tt>
    * otherwise.
    */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
 
   //@}
 
@@ -285,16 +285,16 @@ protected:
 private:
 
   Teuchos::ConstNonconstObjectContainer<LinearOpWithSolveBase<Scalar> > lows_;
-  Teuchos::RefCountPtr<SolveCriteria<Scalar> > fwdSolveCriteria_;
+  Teuchos::RCP<SolveCriteria<Scalar> > fwdSolveCriteria_;
   EThrowOnSolveFailure throwOnFwdSolveFailure_;
-  Teuchos::RefCountPtr<SolveCriteria<Scalar> > adjSolveCriteria_;
+  Teuchos::RCP<SolveCriteria<Scalar> > adjSolveCriteria_;
   EThrowOnSolveFailure throwOnAdjSolveFailure_;
   
   void assertInitialized() const;
 
   template<class LOWS>
   void initializeImpl(
-    const Teuchos::RefCountPtr<LOWS> &lows,
+    const Teuchos::RCP<LOWS> &lows,
     const SolveCriteria<Scalar> *fwdSolveCriteria,
     const EThrowOnSolveFailure throwOnFwdSolveFailure,
     const SolveCriteria<Scalar> *adjSolveCriteria,
@@ -313,9 +313,9 @@ private:
  * \relates DefaultInverseLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 nonconstInverse(
- const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &A,
+ const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &A,
  const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
  const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
  const SolveCriteria<Scalar> *adjSolveCriteria = NULL,
@@ -328,9 +328,9 @@ nonconstInverse(
  * \relates DefaultInverseLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 inverse(
-  const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &A,
+  const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &A,
   const SolveCriteria<Scalar> *fwdSolveCriteria = NULL,
   const EThrowOnSolveFailure throwOnFwdSolveFailure = THROW_ON_SOLVE_FAILURE,
   const SolveCriteria<Scalar> *adjSolveCriteria = NULL,

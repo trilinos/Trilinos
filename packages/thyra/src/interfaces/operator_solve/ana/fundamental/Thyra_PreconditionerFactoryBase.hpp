@@ -68,7 +68,7 @@ public:
    * output operator object is not guaranteed to be fully initialized until
    * after it is passed through <tt>this->initializePrecOp()</tt>.
    */
-  virtual Teuchos::RefCountPtr<PreconditionerBase<DomainScalar,RangeScalar> > createPrec() const = 0;
+  virtual Teuchos::RCP<PreconditionerBase<DomainScalar,RangeScalar> > createPrec() const = 0;
 
   /** \brief Initialize a pre-created <tt>LinearOpBase</tt> preconditioner
    * object given a "compatible" <tt>LinearOpBase</tt> object.
@@ -117,7 +117,7 @@ public:
    * </ul>
    */
   virtual void initializePrec(
-    const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >   &fwdOpSrc
+    const Teuchos::RCP<const LinearOpSourceBase<RangeScalar,DomainScalar> >   &fwdOpSrc
     ,PreconditionerBase<DomainScalar,RangeScalar>                                     *precOp
     ,const ESupportSolveUse                                                           supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
     ) const = 0;
@@ -160,7 +160,7 @@ public:
    */
   virtual void uninitializePrec(
     PreconditionerBase<DomainScalar,RangeScalar>                                *prec
-    ,Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >  *fwdOpSrc        = NULL
+    ,Teuchos::RCP<const LinearOpSourceBase<RangeScalar,DomainScalar> >  *fwdOpSrc        = NULL
     ,ESupportSolveUse                                                           *supportSolveUse = NULL
     ) const = 0;
   

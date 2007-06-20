@@ -29,7 +29,7 @@
 #ifndef TPETRA_EXPORT_HPP
 #define TPETRA_EXPORT_HPP
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_Util.hpp"
@@ -143,7 +143,7 @@ namespace Tpetra {
     
 	private:
  
-		Teuchos::RefCountPtr< ExportData<OrdinalType> > ExportData_;
+		Teuchos::RCP< ExportData<OrdinalType> > ExportData_;
     
 		// convenience functions for returning inner data class, both const and nonconst versions.
 		ExportData<OrdinalType>& data() {return(*ExportData_);}
@@ -235,7 +235,7 @@ namespace Tpetra {
 			// Use comm plan with ExportGIDs to find out who is sending to us and
 			// get proper ordering of GIDs for remote entries 
 			// (that we will convert to LIDs when done).
-			Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > comm = data().platform_->createOrdinalComm();
+			Teuchos::RCP< Comm<OrdinalType, OrdinalType> > comm = data().platform_->createOrdinalComm();
 			comm->doPostsAndWaits(data().distributor_, data().exportGIDs_, one, data().remoteGIDs_);
 			// -- remoteGIDs_ is now defined --
 			

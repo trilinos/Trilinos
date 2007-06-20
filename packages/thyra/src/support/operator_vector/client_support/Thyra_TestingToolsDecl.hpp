@@ -68,7 +68,7 @@ relErr( const Scalar &s1, const Scalar &s2 );
  */
 template <class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-relErr( const VectorBase<Scalar> &v1, const VectorBase<Scalar> &v2 );
+relVectorErr( const VectorBase<Scalar> &v1, const VectorBase<Scalar> &v2 );
 
 /** \brief Compute, check and optionally print the relative error in two scalars.
  *

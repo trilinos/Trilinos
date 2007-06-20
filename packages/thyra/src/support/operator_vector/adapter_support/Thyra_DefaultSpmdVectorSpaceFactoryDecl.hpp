@@ -66,11 +66,11 @@ public:
    * </ul>
    */
   DefaultSpmdVectorSpaceFactory(
-    const Teuchos::RefCountPtr<const Teuchos::Comm<Index> > &comm = Teuchos::null
+    const Teuchos::RCP<const Teuchos::Comm<Index> > &comm = Teuchos::null
     );
 
   /** \brief Return the Spmd communicator. */
-  Teuchos::RefCountPtr<const Teuchos::Comm<Index> > getComm() const;
+  Teuchos::RCP<const Teuchos::Comm<Index> > getComm() const;
 
   /** @name Overridden from VectorSpaceFactoryBase */
   //@{
@@ -91,13 +91,13 @@ public:
    * satisfies the specification of
    * <tt>VectorSpaceFactoryBase::createVecSpc()</tt>.
    */
-   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > createVecSpc(int dim) const;
+   Teuchos::RCP<const VectorSpaceBase<Scalar> > createVecSpc(int dim) const;
 
   //@}
 
 private:
 
-  Teuchos::RefCountPtr<const Teuchos::Comm<Index> >  comm_;
+  Teuchos::RCP<const Teuchos::Comm<Index> >  comm_;
     
 }; // end class DefaultSpmdVectorSpaceFactory
 
@@ -106,7 +106,7 @@ private:
 
 template<class Scalar>
 inline
-Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
+Teuchos::RCP<const Teuchos::Comm<Index> >
 DefaultSpmdVectorSpaceFactory<Scalar>::getComm() const
 {
   return comm_;

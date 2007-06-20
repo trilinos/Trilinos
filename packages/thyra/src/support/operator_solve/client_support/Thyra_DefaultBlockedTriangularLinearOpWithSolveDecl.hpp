@@ -71,12 +71,12 @@ public:
   /** \brief . */
   void setNonconstLOWSBlock(
     const int i, const int j,
-    const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &block
+    const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &block
     );
   /** \brief . */
   void setLOWSBlock(
     const int i, const int j,
-    const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &block
+    const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &block
     );
 
   //@}
@@ -92,8 +92,8 @@ public:
     );
   /** \brief . */
   void beginBlockFill(
-    const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >  &productRange,
-    const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &productDomain
+    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >  &productRange,
+    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productDomain
     );
   /** \brief . */
   bool blockFillIsActive() const;
@@ -102,12 +102,12 @@ public:
   /** \brief . */
   void setNonconstBlock(
     const int i, const int j,
-    const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &block
+    const Teuchos::RCP<LinearOpBase<Scalar> > &block
     );
   /** \brief . */
   void setBlock(
     const int i, const int j,
-    const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &block
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &block
     );
   /** \brief . */
   void endBlockFill();
@@ -120,10 +120,10 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+  Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
   getNonconstLOWSBlock(const int i, const int j); 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >
+  Teuchos::RCP<const LinearOpWithSolveBase<Scalar> >
   getLOWSBlock(const int i, const int j) const; 
 
   //@}
@@ -132,20 +132,20 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
+  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
   productRange() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
+  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
   productDomain() const;
   /** \brief . */
   bool blockExists(const int i, const int j) const; 
   /** \brief . */
   bool blockIsConst(const int i, const int j) const; 
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+  Teuchos::RCP<LinearOpBase<Scalar> >
   getNonconstBlock(const int i, const int j); 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+  Teuchos::RCP<const LinearOpBase<Scalar> >
   getBlock(const int i, const int j) const; 
 
   //@}
@@ -154,11 +154,11 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
   /** \brief . */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
 
   //@}
 
@@ -238,8 +238,8 @@ private:
   
   bool blockFillIsActive_;
 
-  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > productRange_;
-  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > productDomain_;
+  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > productRange_;
+  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > productDomain_;
   int numDiagBlocks_;
   
   Teuchos::Array<CNCLOWS> diagonalBlocks_;
@@ -256,7 +256,7 @@ private:
   template<class LinearOpWithSolveType>
   void setLOWSBlockImpl(
     const int i, const int j
-    ,const Teuchos::RefCountPtr<LinearOpWithSolveType> &block
+    ,const Teuchos::RCP<LinearOpWithSolveType> &block
     );
   
   // Not defined and not to be called

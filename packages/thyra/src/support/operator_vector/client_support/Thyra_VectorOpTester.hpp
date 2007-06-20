@@ -54,9 +54,9 @@ namespace Thyra
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
     /** */
-    VectorOpTester(const RefCountPtr<const Comm<int> >& comm,
+    VectorOpTester(const RCP<const Comm<int> >& comm,
                    const VectorSpace<Scalar>& space,
-                   Teuchos::RefCountPtr<Teuchos::FancyOStream>& out,
+                   Teuchos::RCP<Teuchos::FancyOStream>& out,
                    const TestSpecifier<Scalar>& spec);
 
     /** */
@@ -98,9 +98,9 @@ namespace Thyra
 
   template <class Scalar> 
   inline VectorOpTester<Scalar>
-  ::VectorOpTester(const RefCountPtr<const Comm<int> >& comm,
+  ::VectorOpTester(const RCP<const Comm<int> >& comm,
                    const VectorSpace<Scalar>& space,
-                   Teuchos::RefCountPtr<Teuchos::FancyOStream>& out,
+                   Teuchos::RCP<Teuchos::FancyOStream>& out,
                    const TestSpecifier<Scalar>& spec)
     : TesterBase<Scalar>(comm, space, 1, out),
       spec_(spec)

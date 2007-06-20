@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_ArrayRefCountPtr.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -36,26 +36,26 @@
 // Temporarily uncomment any or all of these macros to see compilation
 // failures for code that is rightfully not supposed to compile (which is a
 // wonderful thing)!  The fact that this code does not compile show that the
-// design of the Teuchos::ArrayRefCountPtr class supports full support of
+// design of the Teuchos::ArrayRCP class supports full support of
 // const projection in all of its forms when dealing with arrays of objects.
 //#define SHOW_COMPILE_FAILURE_1
 //#define SHOW_COMPILE_FAILURE_2
 //#define SHOW_COMPILE_FAILURE_3
 
 template<class T>
-void test_ArrayRefCountPtr_iterators(
-  const Teuchos::ArrayRefCountPtr<T>   &ptr
+void test_ArrayRCP_iterators(
+  const Teuchos::ArrayRCP<T>   &ptr
   ,const bool                          verbose
   ,Teuchos::FancyOStream               &out_arg
   )
 {
 
-  using Teuchos::ArrayRefCountPtr;
+  using Teuchos::ArrayRCP;
   using Teuchos::null;
   using Teuchos::arcp;
   using Teuchos::arcp_reinterpret_cast;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::rcp(&out_arg,false);
   
   if(verbose)
@@ -70,7 +70,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking ++itr and < ...\n";
-    ArrayRefCountPtr<T> itr = ptr;
+    ArrayRCP<T> itr = ptr;
     for( int i = 0; itr < ptr+size; ++i, ++itr )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -78,7 +78,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking itr++ and <= ...\n";
-    ArrayRefCountPtr<T> itr = ptr;
+    ArrayRCP<T> itr = ptr;
     for( int i = 0;  itr <= ptr+size-1; ++i, itr++ )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -86,7 +86,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking itr+=1 and != ...\n";
-    ArrayRefCountPtr<T> itr = ptr;
+    ArrayRCP<T> itr = ptr;
     for( int i = 0; itr != ptr+size; ++i, itr+=1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -94,7 +94,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking itr=itr+1 and == ...\n";
-    ArrayRefCountPtr<T> itr = ptr;
+    ArrayRCP<T> itr = ptr;
     for( int i = 0; !( itr == ptr+size ); ++i, itr=itr+1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -104,7 +104,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking --itr and >= ...\n";
-    ArrayRefCountPtr<T> itr = ptr+size-1;
+    ArrayRCP<T> itr = ptr+size-1;
     for( int i = size-1; itr >= ptr; --i, --itr )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -112,7 +112,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking itr-- and > ...\n";
-    ArrayRefCountPtr<T> itr = ptr+size-1;
+    ArrayRCP<T> itr = ptr+size-1;
     for( int i = size-1; itr+1 > ptr; i--, itr-- )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -120,7 +120,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking itr-=1 and != ...\n";
-    ArrayRefCountPtr<T> itr = ptr+size-1;
+    ArrayRCP<T> itr = ptr+size-1;
     for( int i = size-1; itr+1 != ptr; i--, itr-=1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -128,7 +128,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking itr=itr-1 and == ...\n";
-    ArrayRefCountPtr<T> itr = ptr+size-1;
+    ArrayRCP<T> itr = ptr+size-1;
     for( int i = size-1; !( itr+1 == ptr ); i--, itr=itr-1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -138,7 +138,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking iterator ++itr and < ...\n";
-    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin();
+    typename ArrayRCP<T>::const_iterator itr = ptr.begin();
     for( int i = 0; itr < ptr.end(); ++i, ++itr )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -146,7 +146,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking iterator itr++ and <= ...\n";
-    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin();
+    typename ArrayRCP<T>::const_iterator itr = ptr.begin();
     for( int i = 0;  itr <= ptr.end()-1; ++i, itr++ )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -154,7 +154,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking iterator itr+=1 and != ...\n";
-    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin();
+    typename ArrayRCP<T>::const_iterator itr = ptr.begin();
     for( int i = 0; itr != ptr.end(); ++i, itr+=1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -162,7 +162,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking iterator itr=itr+1 and == ...\n";
-    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin();
+    typename ArrayRCP<T>::const_iterator itr = ptr.begin();
     for( int i = 0; !( itr == ptr.end() ); ++i, itr=itr+1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -172,7 +172,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking iterator --itr and >= ...\n";
-    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+size-1;
+    typename ArrayRCP<T>::const_iterator itr = ptr.begin()+size-1;
     for( int i = size-1; itr >= ptr.begin(); --i, --itr )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -180,7 +180,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking iterator itr-- and > ...\n";
-    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+size-1;
+    typename ArrayRCP<T>::const_iterator itr = ptr.begin()+size-1;
     for( int i = size-1; itr+1 > ptr.begin(); i--, itr-- )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -188,7 +188,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking iterator itr-=1 and != ...\n";
-    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+size-1;
+    typename ArrayRCP<T>::const_iterator itr = ptr.begin()+size-1;
     for( int i = size-1; itr+1 != ptr.begin(); i--, itr-=1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -196,7 +196,7 @@ void test_ArrayRefCountPtr_iterators(
   {
     if(verbose)
       *out << "\nChecking iterator itr=itr-1 and == ...\n";
-    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+size-1;
+    typename ArrayRCP<T>::const_iterator itr = ptr.begin()+size-1;
     for( int i = size-1; !( itr+1 == ptr.begin() ); i--, itr=itr-1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
@@ -204,19 +204,19 @@ void test_ArrayRefCountPtr_iterators(
 }
 
 template<class T>
-void test_ArrayRefCountPtr(
-  const Teuchos::ArrayRefCountPtr<T>   &ptr
+void test_ArrayRCP(
+  const Teuchos::ArrayRCP<T>   &ptr
   ,const bool                          verbose
   ,Teuchos::FancyOStream               &out_arg
   )
 {
 
-  using Teuchos::ArrayRefCountPtr;
+  using Teuchos::ArrayRCP;
   using Teuchos::null;
   using Teuchos::arcp;
   using Teuchos::arcp_reinterpret_cast;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::rcp(&out_arg,false);
   
   if(verbose)
@@ -235,7 +235,7 @@ void test_ArrayRefCountPtr(
 
   TEST_FOR_EXCEPT( !(&*ptr == ptr.get()) )
 
-  test_ArrayRefCountPtr_iterators(ptr,verbose,out_arg);
+  test_ArrayRCP_iterators(ptr,verbose,out_arg);
 
 }
 
@@ -243,9 +243,9 @@ int main( int argc, char* argv[] ) {
 
   using Teuchos::CommandLineProcessor;
   using Teuchos::null;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::ArrayRefCountPtr;
+  using Teuchos::ArrayRCP;
   using Teuchos::arcp;
   using Teuchos::arcp_reinterpret_cast;
 	
@@ -254,7 +254,7 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   //const int procRank = Teuchos::GlobalMPISession::getRank();
   
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   
 	try {
@@ -281,9 +281,9 @@ int main( int argc, char* argv[] ) {
       *out << std::endl << Teuchos::Teuchos_Version() << std::endl;
     
 		if(verbose)
-			*out << "\nTesting basic ArrayRefCountPtr functionality ...\n";
+			*out << "\nTesting basic ArrayRCP functionality ...\n";
 
-    ArrayRefCountPtr<char>
+    ArrayRCP<char>
       char_ptr1 = arcp<char>(total_bytes);
 
     if(verbose)
@@ -293,9 +293,9 @@ int main( int argc, char* argv[] ) {
     TEST_FOR_EXCEPT( !(char_ptr1.lowerOffset() == 0) );
     TEST_FOR_EXCEPT( !(char_ptr1.upperOffset() == total_bytes-1) );
     TEST_FOR_EXCEPT( !(char_ptr1.count() == 1) );
-    test_ArrayRefCountPtr(char_ptr1,verbose,*out);
+    test_ArrayRCP(char_ptr1,verbose,*out);
 
-    ArrayRefCountPtr<char>
+    ArrayRCP<char>
       char_ptr2 = null;
 
     if(verbose)
@@ -305,7 +305,7 @@ int main( int argc, char* argv[] ) {
     TEST_FOR_EXCEPT( !(char_ptr2.get() == NULL) );
     TEST_FOR_EXCEPT( !(char_ptr2.count() == 0) );
 
-    ArrayRefCountPtr<char>
+    ArrayRCP<char>
       char_ptr2b(char_ptr1); // excplicitly test copy constructor
 
     if(verbose)
@@ -315,7 +315,7 @@ int main( int argc, char* argv[] ) {
     TEST_FOR_EXCEPT( !(char_ptr2b.lowerOffset() == 0) );
     TEST_FOR_EXCEPT( !(char_ptr2b.upperOffset() == total_bytes-1) );
     TEST_FOR_EXCEPT( !(char_ptr2b.count() == 2) );
-    test_ArrayRefCountPtr(char_ptr2b,verbose,*out);
+    test_ArrayRCP(char_ptr2b,verbose,*out);
 
     char_ptr2b = null;
 
@@ -324,14 +324,14 @@ int main( int argc, char* argv[] ) {
     TEST_FOR_EXCEPT( !(char_ptr2b.count() == 0) );
     TEST_FOR_EXCEPT( !(char_ptr1.count() == 1) );
 
-    ArrayRefCountPtr<char>
+    ArrayRCP<char>
       char_ptr3 = char_ptr1.subview(total_bytes/2,total_bytes/2);
 
     TEST_FOR_EXCEPT( !(char_ptr1.count() == 2) );
     TEST_FOR_EXCEPT( !(char_ptr3.count() == 2) );
     TEST_FOR_EXCEPT( !(char_ptr3.lowerOffset() == 0) );
     TEST_FOR_EXCEPT( !(char_ptr3.upperOffset() == total_bytes/2-1) );
-    test_ArrayRefCountPtr(char_ptr3,verbose,*out);
+    test_ArrayRCP(char_ptr3,verbose,*out);
 
     if(verbose)
       *out << "\nchar_ptr3 = " << char_ptr3 << "\n";
@@ -341,7 +341,7 @@ int main( int argc, char* argv[] ) {
 
     int offset = 0;
     
-    ArrayRefCountPtr<double>
+    ArrayRCP<double>
       double_ptr1 = arcp_reinterpret_cast<double>(char_ptr1.subview(offset,sizeOfDouble*num_doubles));
 
     if(verbose)
@@ -352,11 +352,11 @@ int main( int argc, char* argv[] ) {
     TEST_FOR_EXCEPT( !(double_ptr1.count() == 3) );
     TEST_FOR_EXCEPT( !(double_ptr1.size() == num_doubles) );
 
-    test_ArrayRefCountPtr(double_ptr1,verbose,*out);
+    test_ArrayRCP(double_ptr1,verbose,*out);
     
     offset += sizeOfDouble*num_doubles;
 
-    ArrayRefCountPtr<int>
+    ArrayRCP<int>
       int_ptr1 = arcp_reinterpret_cast<int>(char_ptr1.subview(offset,sizeOfInt*num_ints));
 
     if(verbose)
@@ -367,15 +367,15 @@ int main( int argc, char* argv[] ) {
     TEST_FOR_EXCEPT( !(int_ptr1.count() == 4) );
     TEST_FOR_EXCEPT( !(int_ptr1.size() == num_ints) );
 
-    test_ArrayRefCountPtr(int_ptr1,verbose,*out);
+    test_ArrayRCP(int_ptr1,verbose,*out);
 
     if(verbose)
       *out << "\nCreating a constant view of double_ptr1\n";
     
-    ArrayRefCountPtr<const double>
+    ArrayRCP<const double>
       double_ptr2 = double_ptr1.getConst();
 
-    test_ArrayRefCountPtr_iterators(double_ptr2,verbose,*out);
+    test_ArrayRCP_iterators(double_ptr2,verbose,*out);
 
 #ifdef SHOW_COMPILE_FAILURE_1
     // This will not compile since this function tries to use operator[] to
@@ -387,42 +387,42 @@ int main( int argc, char* argv[] ) {
 #endif
 
     if(verbose)
-      *out << "\nCreating an array of RefCountPtr objects!\n";
+      *out << "\nCreating an array of RCP objects!\n";
 
-    ArrayRefCountPtr<RefCountPtr<double> >
-      rcp_ptr1 = arcp<RefCountPtr<double> >(num_doubles);
+    ArrayRCP<RCP<double> >
+      rcp_ptr1 = arcp<RCP<double> >(num_doubles);
 
     for( int i = 0; i < num_doubles; ++i )
       rcp_ptr1[i] = rcp(new double(i));
 
-    test_ArrayRefCountPtr_iterators(rcp_ptr1,verbose,*out);
+    test_ArrayRCP_iterators(rcp_ptr1,verbose,*out);
 
     if(verbose)
       *out << "\nCreating a const view of rcp_ptr1\n";
 
-    ArrayRefCountPtr<const RefCountPtr<double> >
+    ArrayRCP<const RCP<double> >
       rcp_ptr2 = rcp_ptr1.getConst();
 
-    test_ArrayRefCountPtr_iterators(rcp_ptr2,verbose,*out);
+    test_ArrayRCP_iterators(rcp_ptr2,verbose,*out);
 
     if(verbose)
       *out << "\nCreating an ARCP<double*> object doubleptr_ptr1 and dynamically allocation each element\n";
 
-    ArrayRefCountPtr<double*>
+    ArrayRCP<double*>
       doubleptr_ptr1 = arcp<double*>(total_bytes);
 
     for( int i = 0; i < doubleptr_ptr1.size(); ++i )
       doubleptr_ptr1[i] = new double(i);
 
-    test_ArrayRefCountPtr_iterators(doubleptr_ptr1,verbose,*out);
+    test_ArrayRCP_iterators(doubleptr_ptr1,verbose,*out);
 
     if(verbose)
       *out << "\nCreating an ARCP<double*const> view of a doubleptr_ptr1\n";
     
-    ArrayRefCountPtr<double*const>
+    ArrayRCP<double*const>
       doubleptr_ptr2 = doubleptr_ptr1.getConst();
 
-    test_ArrayRefCountPtr_iterators(doubleptr_ptr2,verbose,*out);
+    test_ArrayRCP_iterators(doubleptr_ptr2,verbose,*out);
 
 #ifdef SHOW_COMPILE_FAILURE_2
     // This will not compile since this function tries to use operator[] to
@@ -437,10 +437,10 @@ int main( int argc, char* argv[] ) {
     if(verbose)
       *out << "\nCreating an ARCP<const double * const> view of a doubleptr_ptr1\n";
     
-    ArrayRefCountPtr<const double*const>
+    ArrayRCP<const double*const>
       doubleptr_ptr3 = Teuchos::arcp_implicit_cast<const double*const>(doubleptr_ptr1);
 
-    test_ArrayRefCountPtr_iterators(doubleptr_ptr3,verbose,*out);
+    test_ArrayRCP_iterators(doubleptr_ptr3,verbose,*out);
 
 #ifdef SHOW_COMPILE_FAILURE_3
     // This will not compile since this function tries to use operator[] to
@@ -458,15 +458,15 @@ int main( int argc, char* argv[] ) {
     if(verbose)
       *out << "\nWrapping std::vector<T> objects as ArrayRefCount objects ...\n";
 
-    ArrayRefCountPtr<char>
+    ArrayRCP<char>
       vchar_ptr1 = arcp(rcp(new std::vector<char>(total_bytes)));
 
     if(verbose)
       *out << "\nvchar_ptr1 = " << vchar_ptr1 << "\n";
     
-    test_ArrayRefCountPtr(vchar_ptr1,verbose,*out);
+    test_ArrayRCP(vchar_ptr1,verbose,*out);
     
-    ArrayRefCountPtr<const char>
+    ArrayRCP<const char>
       vchar_ptr2 = arcp(
         Teuchos::rcp_implicit_cast<const std::vector<char> >(
           Teuchos::get_std_vector(vchar_ptr1)
@@ -476,7 +476,7 @@ int main( int argc, char* argv[] ) {
     if(verbose)
       *out << "\nvchar_ptr2 = " << vchar_ptr2 << "\n";
 
-    test_ArrayRefCountPtr_iterators(vchar_ptr2,verbose,*out);
+    test_ArrayRCP_iterators(vchar_ptr2,verbose,*out);
 
 #ifndef __sun
     // RAB: 2006/07/12: The sun compiler declares this call to
@@ -488,7 +488,7 @@ int main( int argc, char* argv[] ) {
     // ToDo: Fill in the rest of the tests!
     
 		if(verbose)
-			*out << "\nAll tests for ArrayRefCountPtr seem to check out!\n";
+			*out << "\nAll tests for ArrayRCP seem to check out!\n";
     
 	}
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);

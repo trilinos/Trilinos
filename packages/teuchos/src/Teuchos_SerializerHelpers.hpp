@@ -116,7 +116,7 @@ public:
   /** \brief . */
   Ordinal getCount() const;
 private:
-  typedef Array<RefCountPtr<T> >  buffer_ptr_t;
+  typedef Array<RCP<T> >  buffer_ptr_t;
   typedef Array<T*>               buffer_t;
   const Serializer<Ordinal,T>  &serializer_;
   Ordinal                      bytes_;
@@ -150,7 +150,7 @@ public:
   /** \brief . */
   Ordinal getCount() const;
 private:
-  typedef Array<RefCountPtr<T> >  buffer_ptr_t;
+  typedef Array<RCP<T> >  buffer_ptr_t;
   typedef Array<T*>               buffer_t;
   const Serializer<Ordinal,T>  &serializer_;
   Ordinal                      bytes_;

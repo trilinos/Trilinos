@@ -143,7 +143,7 @@ namespace Thyra
                            "a product vector");
         return *this;
       }
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > b = pv->getVectorBlock(i);
+    Teuchos::RCP<const Thyra::VectorBase<Scalar> > b = pv->getVectorBlock(i);
     return b;
   }
 
@@ -160,7 +160,7 @@ namespace Thyra
                            "a product vector");
         return *this;
       }
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > b = pv->getNonconstVectorBlock(i);
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > b = pv->getNonconstVectorBlock(i);
     return b;
   }
 

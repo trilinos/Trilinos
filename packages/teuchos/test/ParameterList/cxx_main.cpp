@@ -821,7 +821,7 @@ int main( int argc, char *argv[] )
   PL_Main_valid.setParameters(PL_Main);
 
   // Create a validator for the "Nonlinear Solver" parameter
-  Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<int> >
+  Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
     nonlinearSolverValidator = rcp(
     new Teuchos::StringToIntegralParameterEntryValidator<int>(
       Teuchos::tuple<std::string>("Line Search Based","Trust Region Based")
@@ -837,7 +837,7 @@ int main( int argc, char *argv[] )
   // Create a validator for the parameter "Line Search"->"Polynomial"->"Max Iters"
   // that accepts an 'int', a 'double' or a 'string' value!
   typedef Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes AcceptedTypes;
-  Teuchos::RefCountPtr<Teuchos::AnyNumberParameterEntryValidator>
+  Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
     linesearchMaxItersValiator = rcp(
       new Teuchos::AnyNumberParameterEntryValidator(
         Teuchos::AnyNumberParameterEntryValidator::PREFER_INT, // Not used here!
@@ -853,7 +853,7 @@ int main( int argc, char *argv[] )
   // Create a validator for the parameter "Direction"->"Newton"->"Linear Solver"->"Tol"
   // that accepts a 'double' or a 'string' value!
   typedef Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes AcceptedTypes;
-  Teuchos::RefCountPtr<Teuchos::AnyNumberParameterEntryValidator>
+  Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
     linSolveTolValidator = rcp(
       new Teuchos::AnyNumberParameterEntryValidator(
         Teuchos::AnyNumberParameterEntryValidator::PREFER_INT, // Not used here!

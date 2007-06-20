@@ -116,14 +116,14 @@ public:
   /** \brief Calls <tt>intialize(...)</tt>. */
   DefaultMultiPeriodModelEvaluator(
     const int N,
-    const Teuchos::Array<Teuchos::RefCountPtr<ModelEvaluator<Scalar> > > &periodModels,
+    const Teuchos::Array<Teuchos::RCP<ModelEvaluator<Scalar> > > &periodModels,
     const Teuchos::Array<int> &z_indexes,
-    const Teuchos::Array<Teuchos::Array<Teuchos::RefCountPtr<const VectorBase<Scalar> > > > &z,
+    const Teuchos::Array<Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > > &z,
     const int g_index,
     const Teuchos::Array<Scalar> g_weights,
-    const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &x_bar_space = Teuchos::null,
-    const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &f_bar_space = Teuchos::null,
-    const Teuchos::RefCountPtr<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory = Teuchos::null
+    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space = Teuchos::null,
+    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space = Teuchos::null,
+    const Teuchos::RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory = Teuchos::null
     );
 
   /** \brief Initialize.
@@ -188,14 +188,14 @@ public:
    */
   void initialize(
     const int N,
-    const Teuchos::Array<Teuchos::RefCountPtr<ModelEvaluator<Scalar> > > &periodModels,
+    const Teuchos::Array<Teuchos::RCP<ModelEvaluator<Scalar> > > &periodModels,
     const Teuchos::Array<int> &z_indexes,
-    const Teuchos::Array<Teuchos::Array<Teuchos::RefCountPtr<const VectorBase<Scalar> > > > &z,
+    const Teuchos::Array<Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > > &z,
     const int g_index,
     const Teuchos::Array<Scalar> g_weights,
-    const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &x_bar_space = Teuchos::null,
-    const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &f_bar_space = Teuchos::null,
-    const Teuchos::RefCountPtr<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory = Teuchos::null
+    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space = Teuchos::null,
+    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space = Teuchos::null,
+    const Teuchos::RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory = Teuchos::null
     );
 
   /** \brief Reset z.
@@ -209,7 +209,7 @@ public:
    * 
    */
   void reset_z(
-    const Teuchos::Array<Teuchos::Array<Teuchos::RefCountPtr<const VectorBase<Scalar> > > > &z
+    const Teuchos::Array<Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > > &z
     );
   
   //@}
@@ -222,15 +222,15 @@ public:
   /** \brief . */
   int Ng() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_x_space() const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief. */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
@@ -238,15 +238,15 @@ public:
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > create_W() const;
+  Teuchos::RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \breif . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_W_op() const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
@@ -270,21 +270,21 @@ private:
   // Private types
 
   typedef Teuchos::Array<Scalar> g_weights_t;
-  typedef Teuchos::Array<Teuchos::Array<Teuchos::RefCountPtr<const VectorBase<Scalar> > > > z_t;
+  typedef Teuchos::Array<Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > > z_t;
 
   // /////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<ModelEvaluator<Scalar> > periodModel_;
-  Teuchos::Array<Teuchos::RefCountPtr<ModelEvaluator<Scalar> > > periodModels_;
+  Teuchos::RCP<ModelEvaluator<Scalar> > periodModel_;
+  Teuchos::Array<Teuchos::RCP<ModelEvaluator<Scalar> > > periodModels_;
   Teuchos::Array<int> z_indexes_;
   Teuchos::Array<int> period_l_map_;
   z_t z_; // size == N
   int g_index_;
   g_weights_t g_weights_; // size == N
-  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > x_bar_space_;
-  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > f_bar_space_;
-  Teuchos::RefCountPtr<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > W_bar_factory_;
+  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > x_bar_space_;
+  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > f_bar_space_;
+  Teuchos::RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > W_bar_factory_;
   int Np_;
   int Ng_;
   ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
@@ -299,9 +299,9 @@ private:
   void wrapNominalValuesAndBounds();
 
   static
-  Teuchos::RefCountPtr<ProductVectorBase<Scalar> >
+  Teuchos::RCP<ProductVectorBase<Scalar> >
   createProductVector(
-    const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &prodVecSpc
+    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &prodVecSpc
     );
 
   // Return the index of a "free" parameter in the period model given its
@@ -335,14 +335,14 @@ DefaultMultiPeriodModelEvaluator<Scalar>::DefaultMultiPeriodModelEvaluator()
 template<class Scalar>
 DefaultMultiPeriodModelEvaluator<Scalar>::DefaultMultiPeriodModelEvaluator(
   const int N,
-  const Teuchos::Array<Teuchos::RefCountPtr<ModelEvaluator<Scalar> > > &periodModels,
+  const Teuchos::Array<Teuchos::RCP<ModelEvaluator<Scalar> > > &periodModels,
   const Teuchos::Array<int> &z_indexes,
-  const Teuchos::Array<Teuchos::Array<Teuchos::RefCountPtr<const VectorBase<Scalar> > > > &z,
+  const Teuchos::Array<Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > > &z,
   const int g_index,
   const Teuchos::Array<Scalar> g_weights,
-  const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &x_bar_space,
-  const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &f_bar_space,
-  const Teuchos::RefCountPtr<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory
+  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space,
+  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space,
+  const Teuchos::RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory
   )
   :g_index_(-1), Np_(-1), Ng_(-1)
 {
@@ -356,18 +356,18 @@ DefaultMultiPeriodModelEvaluator<Scalar>::DefaultMultiPeriodModelEvaluator(
 template<class Scalar>
 void DefaultMultiPeriodModelEvaluator<Scalar>::initialize(
   const int N,
-  const Teuchos::Array<Teuchos::RefCountPtr<ModelEvaluator<Scalar> > > &periodModels,
+  const Teuchos::Array<Teuchos::RCP<ModelEvaluator<Scalar> > > &periodModels,
   const Teuchos::Array<int> &z_indexes,
-  const Teuchos::Array<Teuchos::Array<Teuchos::RefCountPtr<const VectorBase<Scalar> > > > &z,
+  const Teuchos::Array<Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > > &z,
   const int g_index,
   const Teuchos::Array<Scalar> g_weights,
-  const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &x_bar_space,
-  const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &f_bar_space,
-  const Teuchos::RefCountPtr<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory
+  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &x_bar_space,
+  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &f_bar_space,
+  const Teuchos::RCP<const Teuchos::AbstractFactory<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > > &W_bar_factory
   )
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::Array;
   using Teuchos::implicit_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -444,11 +444,11 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultMultiPeriodModelEvaluator<Scalar>::reset_z(
-  const Teuchos::Array<Teuchos::Array<Teuchos::RefCountPtr<const VectorBase<Scalar> > > > &z
+  const Teuchos::Array<Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > > &z
   )
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::Array;
   using Teuchos::implicit_cast;
   
@@ -460,7 +460,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::reset_z(
 #endif 
 
   for( int i = 0; i < N; ++i ) {
-    const Array<RefCountPtr<const VectorBase<Scalar> > >  &z_i = z[i];
+    const Array<RCP<const VectorBase<Scalar> > >  &z_i = z[i];
 #ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPT( z_i.size() != z_indexes_.size() ); 
 #endif 
@@ -488,7 +488,7 @@ int DefaultMultiPeriodModelEvaluator<Scalar>::Ng() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::get_x_space() const
 {
   return x_bar_space_;
@@ -496,7 +496,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::get_x_space() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::get_f_space() const
 {
   return f_bar_space_;
@@ -504,7 +504,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::get_f_space() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::get_p_space(int l) const
 {
   return  periodModel_->get_p_space(period_l(l));
@@ -512,7 +512,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::get_p_space(int l) const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+Teuchos::RCP<const Teuchos::Array<std::string> >
 DefaultMultiPeriodModelEvaluator<Scalar>::get_p_names(int l) const
 {
   return  periodModel_->get_p_names(period_l(l));
@@ -520,7 +520,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::get_p_names(int l) const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::get_g_space(int j) const
 {
   TEST_FOR_EXCEPT(j!=0);
@@ -553,7 +553,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::getUpperBounds() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::create_W() const
 {
   return W_bar_factory_->create();
@@ -561,7 +561,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::create_W() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::create_W_op() const
 {
   TEST_FOR_EXCEPT("This class does not support W as just a linear operator yet.");
@@ -570,7 +570,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::create_W_op() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::create_DfDp_op(int l) const
 {
   TEST_FOR_EXCEPT("This class does not support DfDp(l) as a linear operator yet.");
@@ -579,7 +579,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::create_DfDp_op(int l) const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::create_DgDx_op(int j) const
 {
   TEST_FOR_EXCEPT("This class does not support DgDx(j) as a linear operator yet.");
@@ -588,7 +588,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::create_DgDx_op(int j) const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::create_DgDp_op( int j, int l ) const
 {
   TEST_FOR_EXCEPT("This class does not support DgDp(j,l) as a linear operator yet.");
@@ -676,7 +676,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModel(
 {
 
   using Teuchos::Array;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef ModelEvaluatorBase MEB;
@@ -696,7 +696,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModel(
   //
 
   // Get product vector x_bar if it is supported
-  RefCountPtr<const ProductVectorBase<Scalar> > x_bar;
+  RCP<const ProductVectorBase<Scalar> > x_bar;
   if (inArgs.supports(MEB::IN_ARG_x)) {
     x_bar = rcp_dynamic_cast<const ProductVectorBase<Scalar> >(
       inArgs.get_x(), true );
@@ -709,14 +709,14 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModel(
   // OutArgs
   
   // Get product vector f_bar if it is supported and was set
-  RefCountPtr<ProductVectorBase<Scalar> > f_bar;
+  RCP<ProductVectorBase<Scalar> > f_bar;
   if (outArgs.supports(MEB::OUT_ARG_f)) {
     f_bar = rcp_dynamic_cast<ProductVectorBase<Scalar> >(
       outArgs.get_f(), true );
   }
 
   Array<MEB::Derivative<Scalar> > DfDp_bar(Np);
-  Array<RefCountPtr<ProductMultiVectorBase<Scalar> > > DfDp_bar_mv(Np);
+  Array<RCP<ProductMultiVectorBase<Scalar> > > DfDp_bar_mv(Np);
   for ( int l = 0; l < Np; ++l ) {
     if (!outArgs.supports(MEB::OUT_ARG_DfDp,l).none()) {
       MEB::Derivative<Scalar>
@@ -740,18 +740,18 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModel(
     }
   }
 
-  RefCountPtr<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > W_bar;
+  RCP<PhysicallyBlockedLinearOpWithSolveBase<Scalar> > W_bar;
   if (outArgs.supports(MEB::OUT_ARG_W)) {
     W_bar = rcp_dynamic_cast<PhysicallyBlockedLinearOpWithSolveBase<Scalar> >(
       outArgs.get_W(), true
       );
   }
 
-  RefCountPtr<VectorBase<Scalar> >
+  RCP<VectorBase<Scalar> >
     g_bar = outArgs.get_g(0);
 
   MEB::Derivative<Scalar> DgDx_bar;
-  RefCountPtr<ProductMultiVectorBase<Scalar> > DgDx_bar_mv;
+  RCP<ProductMultiVectorBase<Scalar> > DgDx_bar_mv;
   if (!outArgs.supports(MEB::OUT_ARG_DgDx,0).none()) {
     DgDx_bar = outArgs.get_DgDx(0);
     DgDx_bar_mv = rcp_dynamic_cast<ProductMultiVectorBase<Scalar> >(
@@ -772,7 +772,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModel(
   }
 
   Array<MEB::Derivative<Scalar> > DgDp_bar(Np);
-  Array<RefCountPtr<MultiVectorBase<Scalar> > > DgDp_bar_mv(Np);
+  Array<RCP<MultiVectorBase<Scalar> > > DgDp_bar_mv(Np);
   for ( int l = 0; l < Np; ++l ) {
     if (!outArgs.supports(MEB::OUT_ARG_DgDp,0,l).none()) {
       MEB::Derivative<Scalar>
@@ -999,7 +999,7 @@ template<class Scalar>
 void DefaultMultiPeriodModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef ModelEvaluatorBase MEB;
 
@@ -1017,7 +1017,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
     if( !is_null(periodNominalValues.get_x()) ) {
       // If the first peroid model has nominal values for x, then all of them
       // must also!
-      Teuchos::RefCountPtr<Thyra::ProductVectorBase<Scalar> >
+      Teuchos::RCP<Thyra::ProductVectorBase<Scalar> >
         x_bar_init = createProductVector(x_bar_space_);
       const int N = this->N();
       for ( int i = 0; i < N; ++i ) {
@@ -1032,7 +1032,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
     if( !is_null(periodLowerBounds.get_x()) ) {
       // If the first peroid model has lower bounds for for x, then all of
       // them must also!
-      Teuchos::RefCountPtr<Thyra::ProductVectorBase<Scalar> >
+      Teuchos::RCP<Thyra::ProductVectorBase<Scalar> >
         x_bar_l = createProductVector(x_bar_space_);
       const int N = this->N();
       for ( int i = 0; i < N; ++i ) {
@@ -1047,7 +1047,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
     if( !is_null(periodUpperBounds.get_x()) ) {
       // If the first peroid model has upper bounds for for x, then all of
       // them must also!
-      Teuchos::RefCountPtr<Thyra::ProductVectorBase<Scalar> >
+      Teuchos::RCP<Thyra::ProductVectorBase<Scalar> >
         x_bar_u = createProductVector(x_bar_space_);
       const int N = this->N();
       for ( int i = 0; i < N; ++i ) {
@@ -1074,9 +1074,9 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<ProductVectorBase<Scalar> >
+Teuchos::RCP<ProductVectorBase<Scalar> >
 DefaultMultiPeriodModelEvaluator<Scalar>::createProductVector(
-  const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &prodVecSpc
+  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &prodVecSpc
   )
 {
   return Teuchos::rcp_dynamic_cast<ProductVectorBase<Scalar> >(

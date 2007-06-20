@@ -96,8 +96,8 @@ public:
     );
   /** \brief . */
   void beginBlockFill(
-    const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >  &productRange
-    ,const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &productDomain
+    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >  &productRange
+    ,const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productDomain
     );
   /** \brief . */
   bool blockFillIsActive() const;
@@ -106,12 +106,12 @@ public:
   /** \brief . */
   void setNonconstBlock(
     const int i, const int j
-    ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &block
+    ,const Teuchos::RCP<LinearOpBase<Scalar> > &block
     );
   /** \brief . */
   void setBlock(
     const int i, const int j
-    ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &block
+    ,const Teuchos::RCP<const LinearOpBase<Scalar> > &block
     );
   /** \brief . */
   void endBlockFill();
@@ -124,20 +124,20 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
+  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
   productRange() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
+  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
   productDomain() const;
   /** \brief . */
   bool blockExists(const int i, const int j) const; 
   /** \brief . */
   bool blockIsConst(const int i, const int j) const; 
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+  Teuchos::RCP<LinearOpBase<Scalar> >
   getNonconstBlock(const int i, const int j); 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+  Teuchos::RCP<const LinearOpBase<Scalar> >
   getBlock(const int i, const int j) const; 
 
   //@}
@@ -146,11 +146,11 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
   /** \brief . */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
 
   //@}
 
@@ -204,7 +204,7 @@ private:
   // Private types
 
   typedef Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > CNCLO;
-  typedef Teuchos::Array<Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > > vec_array_t;
+  typedef Teuchos::Array<Teuchos::RCP<const VectorSpaceBase<Scalar> > > vec_array_t;
 
   template<class Scalar2>
   struct BlockEntry {
@@ -220,8 +220,8 @@ private:
   // /////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >  productRange_;
-  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >  productDomain_;
+  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >  productRange_;
+  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >  productDomain_;
   int                                                          numRowBlocks_; // M
   int                                                          numColBlocks_; // N
  
@@ -244,7 +244,7 @@ private:
   template<class LinearOpType>
   void setBlockImpl(
     const int i, const int j
-    ,const Teuchos::RefCountPtr<LinearOpType> &block
+    ,const Teuchos::RCP<LinearOpType> &block
     );
 
   // Not defined and not to be called
@@ -258,12 +258,12 @@ private:
  * \relates DefaultBlockedLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 block2x2(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A01
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A10
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A11
+  const Teuchos::RCP<const LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A01
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A10
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A11
   );
 
 /** \brief Form an implicit block 2x1 linear operator <tt>[ A00; A10 ]</tt>.
@@ -271,10 +271,10 @@ block2x2(
  * \relates DefaultBlockedLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 block2x1(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A10
+  const Teuchos::RCP<const LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A10
   );
 
 /** \brief Form an implicit block 1x2 linear operator <tt>[ A00, A01 ]</tt>.
@@ -282,10 +282,10 @@ block2x1(
  * \relates DefaultBlockedLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 block1x2(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A01
+  const Teuchos::RCP<const LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &A01
   );
 
 /** \brief Form an implicit block 2x2 linear operator <tt>[ A00, A01; A10, A11 ]</tt>.
@@ -293,12 +293,12 @@ block1x2(
  * \relates DefaultBlockedLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 nonconstBlock2x2(
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A01
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A10
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A11
+  const Teuchos::RCP<LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A01
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A10
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A11
   );
 
 /** \brief Form an implicit block 2x1 linear operator <tt>[ A00; A10 ]</tt>.
@@ -306,10 +306,10 @@ nonconstBlock2x2(
  * \relates DefaultBlockedLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 nonconstBlock2x1(
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A10
+  const Teuchos::RCP<LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A10
   );
 
 /** \brief Form an implicit block 1x2 linear operator <tt>[ A00, A01 ]</tt>.
@@ -317,10 +317,10 @@ nonconstBlock2x1(
  * \relates DefaultBlockedLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 nonconstBlock1x2(
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A01
+  const Teuchos::RCP<LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RCP<LinearOpBase<Scalar> >   &A01
   );
 
 } // namespace Thyra

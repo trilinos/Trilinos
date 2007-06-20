@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
   //
   // Get a default output stream from the Teuchos::VerboseObjectBase
   //
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
   const Tpetra::VectorSpace<OT,ST> vectorSpace(elementSpace,scalarPlatform);
   
   // Allocate the Tpetra::CisMatrix object.
-  RefCountPtr<Tpetra::CisMatrix<OT,ST> >
+  RCP<Tpetra::CisMatrix<OT,ST> >
     tpetra_A = rcp(new Tpetra::CisMatrix<OT,ST>(vectorSpace));
 
   // Get the indexes of the rows on this processor
@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
   tpetra_A->fillComplete();
 
   // Create a Thyra linear operator (A) using the Tpetra::CisMatrix (tpetra_A).
-  RefCountPtr<Thyra::LinearOpBase<ST> >
+  RCP<Thyra::LinearOpBase<ST> >
     A = Teuchos::rcp( new Thyra::TpetraLinearOp<OT,ST>(
                       Teuchos::rcp_implicit_cast<Tpetra::Operator<OT,ST> >(tpetra_A) ) );
 
@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
   ST one = Teuchos::ScalarTraits<ST>::one();
   ST zero = Teuchos::ScalarTraits<ST>::zero();
   
-  Teuchos::RefCountPtr<Teuchos::ParameterList>
+  Teuchos::RCP<Teuchos::ParameterList>
     belosLOWSFPL = Teuchos::rcp( new Teuchos::ParameterList() );
   
   belosLOWSFPL->set("Solver Type","GMRES");
@@ -186,7 +186,7 @@ int main(int argc, char* argv[])
   int numRhs = 5;
 
   // Create smart pointer to right-hand side and solution vector to be filled in below.
-  Teuchos::RefCountPtr<Thyra::MultiVectorBase<ST> > x, b;
+  Teuchos::RCP<Thyra::MultiVectorBase<ST> > x, b;
 
   if (numRhs==1) {
     //
@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
     //
 
     // Create RHS vector
-    Teuchos::RefCountPtr<Tpetra::Vector<OT,ST> > tpetra_b =
+    Teuchos::RCP<Tpetra::Vector<OT,ST> > tpetra_b =
       Teuchos::rcp( new Tpetra::Vector<OT,ST>(vectorSpace) );
 
     // Randomize RHS vector
@@ -204,7 +204,7 @@ int main(int argc, char* argv[])
     b = Thyra::create_Vector(tpetra_b);
     
     // Create solution (LHS) vector
-    Teuchos::RefCountPtr<Tpetra::Vector<OT,ST> > tpetra_x =
+    Teuchos::RCP<Tpetra::Vector<OT,ST> > tpetra_x =
       Teuchos::rcp( new Tpetra::Vector<OT,ST>(vectorSpace) );
 
     // Initialize solution to zero
@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
     //
     
     // Get the domain space for the Thyra linear operator 
-    Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<ST> > domain = A->domain();
+    Teuchos::RCP<const Thyra::VectorSpaceBase<ST> > domain = A->domain();
     
     // Create a right-hand side and solution vectors with numRhs vectors in it.
     x = Thyra::createMembers(domain, numRhs);
@@ -235,13 +235,13 @@ int main(int argc, char* argv[])
       //
       // Get the j-th column from b as a Tpetra vector and randomize it.
       // 
-      Teuchos::RefCountPtr<Tpetra::Vector<OT,ST> > 
+      Teuchos::RCP<Tpetra::Vector<OT,ST> > 
 	tpetra_b_j = Thyra::get_Tpetra_Vector(vectorSpace,b->col(j));
       tpetra_b_j->setAllToRandom();
       // 
       // Get the j-th column from x as a Tpetra vector and set it to zero.
       //
-      Teuchos::RefCountPtr<Tpetra::Vector<OT,ST> > 
+      Teuchos::RCP<Tpetra::Vector<OT,ST> > 
 	tpetra_x_j = Thyra::get_Tpetra_Vector(vectorSpace,x->col(j));
       tpetra_x_j->setAllToScalar( zero );
       //
@@ -270,7 +270,7 @@ int main(int argc, char* argv[])
   // --------------------------------------------------------------------------------
 
   // Create the Belos LOWS factory.
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<ST> >
+  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<ST> >
     belosLOWSFactory = Teuchos::rcp(new Thyra::BelosLinearOpWithSolveFactory<ST>());
   
   // Set the output stream and the verbosity level (prints to std::cout by defualt)
@@ -281,7 +281,7 @@ int main(int argc, char* argv[])
   belosLOWSFactory->setParameterList( belosLOWSFPL );
   
   // Create a BelosLinearOpWithSolve object from the Belos LOWS factory.
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<ST> >
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<ST> >
     nsA = belosLOWSFactory->createOp();
   
   // Initialize the BelosLinearOpWithSolve object with the Thyra linear operator.
@@ -308,10 +308,10 @@ int main(int argc, char* argv[])
     //
     // Get the j-th columns from x and b as Tpetra vectors.
     // 
-    Teuchos::RefCountPtr<Tpetra::Vector<OT,ST> > 
+    Teuchos::RCP<Tpetra::Vector<OT,ST> > 
       tpetra_x_j = Thyra::get_Tpetra_Vector(vectorSpace,x->col(j));
 
-    Teuchos::RefCountPtr<Tpetra::Vector<OT,ST> > 
+    Teuchos::RCP<Tpetra::Vector<OT,ST> > 
       tpetra_b_j = Thyra::get_Tpetra_Vector(vectorSpace,b->col(j));
     
     // Compute the column norms of the right-hand side b.

@@ -169,18 +169,18 @@ public:
 
   /** \brief . */
   EpetraModelEvaluator(
-    const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> &epetraModel,
-    const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > &W_factory
+    const Teuchos::RCP<const EpetraExt::ModelEvaluator> &epetraModel,
+    const Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
     );
 
   /** \brief . */
   void initialize(
-    const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> &epetraModel,
-    const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > &W_factory
+    const Teuchos::RCP<const EpetraExt::ModelEvaluator> &epetraModel,
+    const Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
     );
 
   /** \brief . */
-  Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> getEpetraModel() const;
+  Teuchos::RCP<const EpetraExt::ModelEvaluator> getEpetraModel() const;
 
   /** \brief Set the nominal values.
    *
@@ -197,26 +197,26 @@ public:
    * ToDo: Move this into an external strategy class object!
    */
   void setStateVariableScalingVec(
-    const Teuchos::RefCountPtr<const Epetra_Vector> &stateVariableScalingVec
+    const Teuchos::RCP<const Epetra_Vector> &stateVariableScalingVec
     );
   
   /** \brief Get the state variable scaling vector <tt>s_x</tt> (see above). */
-  Teuchos::RefCountPtr<const Epetra_Vector>
+  Teuchos::RCP<const Epetra_Vector>
   getStateVariableScalingVec() const;
   
   /** \brief Set the state function scaling vector <tt>s_f</tt> (see above). */
   void setStateFunctionScalingVec(
-    const Teuchos::RefCountPtr<const Epetra_Vector> &stateFunctionScalingVec
+    const Teuchos::RCP<const Epetra_Vector> &stateFunctionScalingVec
     );
   
   /** \brief Get the state function scaling vector <tt>s_f</tt> (see above). */
-  Teuchos::RefCountPtr<const Epetra_Vector>
+  Teuchos::RCP<const Epetra_Vector>
   getStateFunctionScalingVec() const;
 
   /** \brief . */
   void uninitialize(
-    Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> *epetraModel = NULL,
-    Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > *W_factory = NULL
+    Teuchos::RCP<const EpetraExt::ModelEvaluator> *epetraModel = NULL,
+    Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > *W_factory = NULL
     );
   
   /** \brief . */
@@ -231,15 +231,15 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
@@ -251,15 +251,15 @@ public:
   /** \brief . */
   int Ng() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<double> > get_x_space() const;
+  Teuchos::RCP<const VectorSpaceBase<double> > get_x_space() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<double> > get_f_space() const;
+  Teuchos::RCP<const VectorSpaceBase<double> > get_f_space() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<double> > get_p_space(int l) const;
+  Teuchos::RCP<const VectorSpaceBase<double> > get_p_space(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<double> > get_g_space(int j) const;
+  Teuchos::RCP<const VectorSpaceBase<double> > get_g_space(int j) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<double> getNominalValues() const;
   /** \brief . */
@@ -267,15 +267,15 @@ public:
   /** \brief . */
   ModelEvaluatorBase::InArgs<double> getUpperBounds() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<double> > create_W() const;
+  Teuchos::RCP<LinearOpWithSolveBase<double> > create_W() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<double> > create_W_op() const;
+  Teuchos::RCP<LinearOpBase<double> > create_W_op() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<double> > create_DfDp_op(int l) const;
+  Teuchos::RCP<LinearOpBase<double> > create_DfDp_op(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<double> > create_DgDx_op(int j) const;
+  Teuchos::RCP<LinearOpBase<double> > create_DgDx_op(int j) const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<double> > create_DgDp_op( int j, int l ) const;
+  Teuchos::RCP<LinearOpBase<double> > create_DgDp_op( int j, int l ) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<double> createInArgs() const;
   /** \brief . */
@@ -310,35 +310,35 @@ private:
   // ////////////////////
   // Private types
 
-  typedef Teuchos::Array<Teuchos::RefCountPtr<const Epetra_Map> > p_map_t;
-  typedef Teuchos::Array<Teuchos::RefCountPtr<const Epetra_Map> > g_map_t;
+  typedef Teuchos::Array<Teuchos::RCP<const Epetra_Map> > p_map_t;
+  typedef Teuchos::Array<Teuchos::RCP<const Epetra_Map> > g_map_t;
   typedef std::vector<bool> p_map_is_local_t;
   typedef std::vector<bool> g_map_is_local_t;
 
-  typedef Teuchos::Array<Teuchos::RefCountPtr<const VectorSpaceBase<double> > >
+  typedef Teuchos::Array<Teuchos::RCP<const VectorSpaceBase<double> > >
   p_space_t;
-  typedef Teuchos::Array<Teuchos::RefCountPtr<const VectorSpaceBase<double> > >
+  typedef Teuchos::Array<Teuchos::RCP<const VectorSpaceBase<double> > >
   g_space_t;
 
   // /////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> epetraModel_;
+  Teuchos::RCP<const EpetraExt::ModelEvaluator> epetraModel_;
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_;
+  Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
-  Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > W_factory_;
+  Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > W_factory_;
 
-  Teuchos::RefCountPtr<const Epetra_Map> x_map_;
+  Teuchos::RCP<const Epetra_Map> x_map_;
   p_map_t p_map_;
   g_map_t g_map_;
   p_map_is_local_t p_map_is_local_;
   p_map_is_local_t g_map_is_local_;
-  Teuchos::RefCountPtr<const Epetra_Map> f_map_;
+  Teuchos::RCP<const Epetra_Map> f_map_;
 
-  Teuchos::RefCountPtr<const VectorSpaceBase<double> > x_space_;
+  Teuchos::RCP<const VectorSpaceBase<double> > x_space_;
   p_space_t p_space_;
-  Teuchos::RefCountPtr<const VectorSpaceBase<double> > f_space_;
+  Teuchos::RCP<const VectorSpaceBase<double> > f_space_;
   g_space_t g_space_;
 
   mutable ModelEvaluatorBase::InArgs<double> nominalValues_;
@@ -349,15 +349,15 @@ private:
   ModelEvaluatorBase::InArgs<double> finalPoint_;
 
   EStateFunctionScaling stateFunctionScaling_;
-  mutable Teuchos::RefCountPtr<const Epetra_Vector> stateFunctionScalingVec_;
+  mutable Teuchos::RCP<const Epetra_Vector> stateFunctionScalingVec_;
 
-  Teuchos::RefCountPtr<const Epetra_Vector> stateVariableScalingVec_; // S_x
-  mutable Teuchos::RefCountPtr<const Epetra_Vector> invStateVariableScalingVec_; // inv(S_x)
+  Teuchos::RCP<const Epetra_Vector> stateVariableScalingVec_; // S_x
+  mutable Teuchos::RCP<const Epetra_Vector> invStateVariableScalingVec_; // inv(S_x)
   mutable EpetraExt::ModelEvaluator::InArgs epetraInArgsScaling_;
   mutable EpetraExt::ModelEvaluator::OutArgs epetraOutArgsScaling_;
   
-  mutable Teuchos::RefCountPtr<Epetra_Vector> x_unscaled_;
-  mutable Teuchos::RefCountPtr<Epetra_Vector> x_dot_unscaled_;
+  mutable Teuchos::RCP<Epetra_Vector> x_unscaled_;
+  mutable Teuchos::RCP<Epetra_Vector> x_dot_unscaled_;
 
   bool finalPointWasSolved_;
 
@@ -397,10 +397,10 @@ private:
 /** \brief .
  * \relates EpetraModelEvaluator
  */
-Teuchos::RefCountPtr<EpetraModelEvaluator>
+Teuchos::RCP<EpetraModelEvaluator>
 epetraModelEvaluator(
-  const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> &epetraModel,
-  const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> > &W_factory
+  const Teuchos::RCP<const EpetraExt::ModelEvaluator> &epetraModel,
+  const Teuchos::RCP<LinearOpWithSolveFactoryBase<double> > &W_factory
   );
 
 
@@ -438,8 +438,8 @@ convert( const EpetraExt::ModelEvaluator::DerivativeSupport &derivativeSupport )
 EpetraExt::ModelEvaluator::Derivative
 convert(
   const ModelEvaluatorBase::Derivative<double> &derivative,
-  const Teuchos::RefCountPtr<const Epetra_Map> &fnc_map,
-  const Teuchos::RefCountPtr<const Epetra_Map> &var_map
+  const Teuchos::RCP<const Epetra_Map> &fnc_map,
+  const Teuchos::RCP<const Epetra_Map> &var_map
   );
 
 

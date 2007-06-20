@@ -29,7 +29,7 @@
 #ifndef TEUCHOS_CONST_NONCONST_OBJECT_CONTAINER_HPP
 #define TEUCHOS_CONST_NONCONST_OBJECT_CONTAINER_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace Teuchos {
 
@@ -51,18 +51,18 @@ public:
   ConstNonconstObjectContainer()
     :constObj_(null),isConst_(true) {}
   /** \brief. Calls <tt>initialize()</tt> with a non-const object. */
-  ConstNonconstObjectContainer( const RefCountPtr<ObjType> &obj )
+  ConstNonconstObjectContainer( const RCP<ObjType> &obj )
     { initialize(obj); }
   /** \brief. Calls <tt>initialize()</tt> with a const object. */
-  ConstNonconstObjectContainer( const RefCountPtr<const ObjType> &obj )
+  ConstNonconstObjectContainer( const RCP<const ObjType> &obj )
     { initialize(obj); }
   /** \brief. Initialize using a non-const object.
    * Allows both const and non-const access to the contained object. */
-  void initialize( const RefCountPtr<ObjType> &obj )
+  void initialize( const RCP<ObjType> &obj )
     { TEST_FOR_EXCEPT(!obj.get()); constObj_=obj; isConst_=false; }
   /** \brief. Initialize using a const object.
    * Allows only const access enforced with a runtime check. */
-  void initialize( const RefCountPtr<const ObjType> &obj )
+  void initialize( const RCP<const ObjType> &obj )
     { TEST_FOR_EXCEPT(!obj.get()); constObj_=obj; isConst_=true; }
   /** \brief. Uninitialize. */
   void uninitialize()
@@ -83,7 +83,7 @@ public:
    * <li>[<tt>getConstObj().get()!=NULL</tt>] <tt>return.get()!=NULL</tt>
    * </ul>
    */
-  RefCountPtr<ObjType> getNonconstObj()
+  RCP<ObjType> getNonconstObj()
     {
       TEST_FOR_EXCEPTION(
         constObj_.get() && isConst_, std::logic_error
@@ -97,14 +97,14 @@ public:
    * If <tt>return.get()==NULL</tt>, then this means that no object was given
    * to <tt>*this</tt> data container object.
    */
-  RefCountPtr<const ObjType> getConstObj() const
+  RCP<const ObjType> getConstObj() const
     { return constObj_; }
   /** \brief Perform shorthand for <tt>getConstObj(). */
-  RefCountPtr<const ObjType> operator()() const
+  RCP<const ObjType> operator()() const
     { return getConstObj(); }
   
 private:
-  RefCountPtr<const ObjType>   constObj_;
+  RCP<const ObjType>   constObj_;
   bool                         isConst_;
 };
 

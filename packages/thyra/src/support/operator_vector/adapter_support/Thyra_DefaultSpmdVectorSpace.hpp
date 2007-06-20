@@ -54,7 +54,7 @@ DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
 
 template<class Scalar>
 DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
-  const Teuchos::RefCountPtr<const Teuchos::Comm<Index> > &comm
+  const Teuchos::RCP<const Teuchos::Comm<Index> > &comm
   ,const Index localSubDim, const Index globalDim
   )
   :localSubDim_(0),numProc_(0),procRank_(0)
@@ -72,7 +72,7 @@ void DefaultSpmdVectorSpace<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultSpmdVectorSpace<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const Teuchos::Comm<Index> > &comm
+  const Teuchos::RCP<const Teuchos::Comm<Index> > &comm
   ,const Index localSubDim, const Index globalDim
   )
 {
@@ -103,7 +103,7 @@ void DefaultSpmdVectorSpace<Scalar>::uninitialize()
 // Overridden from VectorSpace
 
 template<class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
+Teuchos::RCP<VectorBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::createMember() const
 {
   return Teuchos::rcp(
@@ -120,7 +120,7 @@ DefaultSpmdVectorSpace<Scalar>::createMember() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< MultiVectorBase<Scalar> >
+Teuchos::RCP< MultiVectorBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::createMembers(int numMembers) const
 {
   return Teuchos::rcp(
@@ -134,7 +134,7 @@ DefaultSpmdVectorSpace<Scalar>::createMembers(int numMembers) const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
+Teuchos::RCP<VectorBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::createMemberView(
   const RTOpPack::SubVectorView<Scalar> &raw_v
   ) const
@@ -152,7 +152,7 @@ DefaultSpmdVectorSpace<Scalar>::createMemberView(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
+Teuchos::RCP<const VectorBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::createMemberView(
   const RTOpPack::ConstSubVectorView<Scalar> &raw_v
   ) const
@@ -170,7 +170,7 @@ DefaultSpmdVectorSpace<Scalar>::createMemberView(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -187,7 +187,7 @@ DefaultSpmdVectorSpace<Scalar>::createMembersView( const RTOpPack::SubMultiVecto
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+Teuchos::RCP<const MultiVectorBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -214,7 +214,7 @@ bool DefaultSpmdVectorSpace<Scalar>::hasInCoreView(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::clone() const
 {
   return Teuchos::rcp(
@@ -225,7 +225,7 @@ DefaultSpmdVectorSpace<Scalar>::clone() const
 // Overridden from SpmdVectorSpaceDefaultBase
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
+Teuchos::RCP<const Teuchos::Comm<Index> >
 DefaultSpmdVectorSpace<Scalar>::getComm() const
 {
   return comm_;

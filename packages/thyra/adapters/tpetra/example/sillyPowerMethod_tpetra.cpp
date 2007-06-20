@@ -18,11 +18,11 @@
 template<class Ordinal, class Scalar>
 void scaleFirstDiagElement( const Scalar diagScale, Thyra::LinearOpBase<Scalar> *A )
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   TEST_FOR_EXCEPT(A==NULL);
   // (A) Get at the underlying Tpetra::Operator object that the TpetraLinearOp
   // object directly maintains.
-  const RefCountPtr<Tpetra::Operator<Ordinal,Scalar> >
+  const RCP<Tpetra::Operator<Ordinal,Scalar> >
     tpetra_op = Thyra::get_Tpetra_Operator<Ordinal>(*A);
   // (B) Perform a dynamic cast to Tpetra::CisMatrix.
   // Note, the dyn_cast<>() template function will throw std::bad_cast
@@ -45,7 +45,7 @@ bool runPowerMethodExample(
   )
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -54,7 +54,7 @@ bool runPowerMethodExample(
   bool success = true;
   bool result;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = (verbose ? Teuchos::VerboseObjectBase::getDefaultOStream() : Teuchos::null);
 
   if(verbose)
@@ -75,7 +75,7 @@ bool runPowerMethodExample(
   //       [             -1   2 ]
   //
   if(verbose) *out << "\n(1) Constructing tridagonal Tpetra::CisMatrix A of global dimension = " << globalDim << " ...\n";
-  RefCountPtr<Thyra::LinearOpBase<Scalar> >
+  RCP<Thyra::LinearOpBase<Scalar> >
     A = createExampleTridiagTpetraLinearOp<Ordinal,Scalar>(
       globalDim
 #ifdef HAVE_MPI
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {

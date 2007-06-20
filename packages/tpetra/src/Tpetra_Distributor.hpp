@@ -29,7 +29,7 @@
 #ifndef TPETRA_DISTRIBUTOR_HPP
 #define TPETRA_DISTRIBUTOR_HPP
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Util.hpp"
@@ -53,7 +53,7 @@ namespace Tpetra {
 		//@{ \name Constructor/Destructor
     
 		//! Comm Constuctor (default ctr)
-		Distributor(Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > const& comm) 
+		Distributor(Teuchos::RCP< Comm<OrdinalType, OrdinalType> > const& comm) 
 			: Object("Tpetra::Distributor")
 			, Comm_(comm)
 			, numExports_(Teuchos::OrdinalTraits<OrdinalType>::zero())
@@ -414,7 +414,7 @@ namespace Tpetra {
 		Comm<OrdinalType, OrdinalType> const& comm() const {return(*Comm_);};
 
 		// private data members
-		Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > Comm_;
+		Teuchos::RCP< Comm<OrdinalType, OrdinalType> > Comm_;
 
 		OrdinalType numExports_;
 		OrdinalType selfMessage_;
@@ -432,7 +432,7 @@ namespace Tpetra {
 		std::vector<OrdinalType> startsFrom_;
 
 		bool hasReverse_;
-		Teuchos::RefCountPtr< Distributor<OrdinalType> > reverseDistributor_;
+		Teuchos::RCP< Distributor<OrdinalType> > reverseDistributor_;
 
 		void computeReceives(OrdinalType myImageID, OrdinalType numImages) {
 			OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();

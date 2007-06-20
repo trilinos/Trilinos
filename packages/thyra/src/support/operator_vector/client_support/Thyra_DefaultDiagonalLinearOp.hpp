@@ -43,7 +43,7 @@ DefaultDiagonalLinearOp<Scalar>::DefaultDiagonalLinearOp()
 
 template<class Scalar>
 DefaultDiagonalLinearOp<Scalar>::DefaultDiagonalLinearOp(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &space
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &space
   )
 {
   initialize(space);
@@ -51,7 +51,7 @@ DefaultDiagonalLinearOp<Scalar>::DefaultDiagonalLinearOp(
 
 template<class Scalar>
 DefaultDiagonalLinearOp<Scalar>::DefaultDiagonalLinearOp(
-  const Teuchos::RefCountPtr<VectorBase<Scalar> >   &diag
+  const Teuchos::RCP<VectorBase<Scalar> >   &diag
   )
 {
   initialize(diag);
@@ -59,7 +59,7 @@ DefaultDiagonalLinearOp<Scalar>::DefaultDiagonalLinearOp(
 
 template<class Scalar>
 DefaultDiagonalLinearOp<Scalar>::DefaultDiagonalLinearOp(
-  const Teuchos::RefCountPtr<const VectorBase<Scalar> >   &diag
+  const Teuchos::RCP<const VectorBase<Scalar> >   &diag
   )
 {
   initialize(diag);
@@ -67,7 +67,7 @@ DefaultDiagonalLinearOp<Scalar>::DefaultDiagonalLinearOp(
 
 template<class Scalar>
 void DefaultDiagonalLinearOp<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >  &space
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >  &space
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -78,7 +78,7 @@ void DefaultDiagonalLinearOp<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultDiagonalLinearOp<Scalar>::initialize(
-  const Teuchos::RefCountPtr<VectorBase<Scalar> >   &diag
+  const Teuchos::RCP<VectorBase<Scalar> >   &diag
   )
 {
   diag_.initialize(diag);
@@ -86,7 +86,7 @@ void DefaultDiagonalLinearOp<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultDiagonalLinearOp<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const VectorBase<Scalar> >   &diag
+  const Teuchos::RCP<const VectorBase<Scalar> >   &diag
   )
 {
   diag_.initialize(diag);
@@ -107,14 +107,14 @@ bool DefaultDiagonalLinearOp<Scalar>::isDiagConst() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >  
+Teuchos::RCP<VectorBase<Scalar> >  
 DefaultDiagonalLinearOp<Scalar>::getNonconstDiag()
 {
   return diag_.getNonconstObj();
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >  
+Teuchos::RCP<const VectorBase<Scalar> >  
 DefaultDiagonalLinearOp<Scalar>::getDiag() const
 {
   return diag_.getConstObj();
@@ -123,21 +123,21 @@ DefaultDiagonalLinearOp<Scalar>::getDiag() const
 // Overridden from LinearOpBase
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultDiagonalLinearOp<Scalar>::range() const
 {
   return diag_.getConstObj()->space();
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultDiagonalLinearOp<Scalar>::domain() const
 {
   return diag_.getConstObj()->space();
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultDiagonalLinearOp<Scalar>::clone() const
 {
   return Teuchos::rcp(new DefaultDiagonalLinearOp<Scalar>(diag_.getConstObj()->clone_v()));

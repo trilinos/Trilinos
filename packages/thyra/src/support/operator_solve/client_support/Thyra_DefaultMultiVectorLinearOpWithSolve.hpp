@@ -52,9 +52,9 @@ DefaultMultiVectorLinearOpWithSolve<Scalar>::DefaultMultiVectorLinearOpWithSolve
 
 template<class Scalar>
 void DefaultMultiVectorLinearOpWithSolve<Scalar>::initialize(
-  const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &lows,
-  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
-  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
+  const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &lows,
+  const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
+  const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
   )
 {
   validateInitialize(lows,multiVecRange,multiVecDomain);
@@ -66,9 +66,9 @@ void DefaultMultiVectorLinearOpWithSolve<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultMultiVectorLinearOpWithSolve<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &lows,
-  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
-  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
+  const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &lows,
+  const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
+  const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
   )
 {
   validateInitialize(lows,multiVecRange,multiVecDomain);
@@ -79,7 +79,7 @@ void DefaultMultiVectorLinearOpWithSolve<Scalar>::initialize(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
 DefaultMultiVectorLinearOpWithSolve<Scalar>::getNonconstLinearOpWithSolve()
 {
   return lows_.getNonconstObj();
@@ -87,7 +87,7 @@ DefaultMultiVectorLinearOpWithSolve<Scalar>::getNonconstLinearOpWithSolve()
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<const LinearOpWithSolveBase<Scalar> >
 DefaultMultiVectorLinearOpWithSolve<Scalar>::getLinearOpWithSolve() const
 {
   return lows_.getConstObj();
@@ -107,7 +107,7 @@ void DefaultMultiVectorLinearOpWithSolve<Scalar>::uninitialize()
 
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultMultiVectorLinearOpWithSolve<Scalar>::range() const
 {
   return multiVecRange_;
@@ -115,7 +115,7 @@ DefaultMultiVectorLinearOpWithSolve<Scalar>::range() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultMultiVectorLinearOpWithSolve<Scalar>::domain() const
 {
   return multiVecDomain_;
@@ -123,7 +123,7 @@ DefaultMultiVectorLinearOpWithSolve<Scalar>::domain() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultMultiVectorLinearOpWithSolve<Scalar>::clone() const
 {
   return Teuchos::null; // ToDo: Implement if needed ???
@@ -159,16 +159,16 @@ void DefaultMultiVectorLinearOpWithSolve<Scalar>::apply(
 {
 
   using Teuchos::dyn_cast;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   typedef DefaultMultiVectorProductVector<Scalar> MVPV;
 
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(0==y);
 #endif
  
-  RefCountPtr<const MultiVectorBase<Scalar> >
+  RCP<const MultiVectorBase<Scalar> >
     X = dyn_cast<const MVPV>(x).getMultiVector().assert_not_null();
-  RefCountPtr<MultiVectorBase<Scalar> >
+  RCP<MultiVectorBase<Scalar> >
     Y = dyn_cast<MVPV>(*y).getNonconstMultiVector().assert_not_null();
 
   Thyra::apply( *lows_.getConstObj(), M_trans, *X, &*Y, alpha, beta );
@@ -212,16 +212,16 @@ DefaultMultiVectorLinearOpWithSolve<Scalar>::solve(
 {
 
   using Teuchos::dyn_cast;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   typedef DefaultMultiVectorProductVector<Scalar> MVPV;
 
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(0==x);
 #endif
  
-  RefCountPtr<const MultiVectorBase<Scalar> >
+  RCP<const MultiVectorBase<Scalar> >
     B = dyn_cast<const MVPV>(b).getMultiVector().assert_not_null();
-  RefCountPtr<MultiVectorBase<Scalar> >
+  RCP<MultiVectorBase<Scalar> >
     X = dyn_cast<MVPV>(*x).getNonconstMultiVector().assert_not_null();
 
   return Thyra::solve(
@@ -237,9 +237,9 @@ DefaultMultiVectorLinearOpWithSolve<Scalar>::solve(
 
 template<class Scalar>
 void DefaultMultiVectorLinearOpWithSolve<Scalar>::validateInitialize(
-  const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &lows,
-  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
-  const Teuchos::RefCountPtr<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
+  const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &lows,
+  const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecRange,
+  const Teuchos::RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &multiVecDomain
   )
 {
 #ifdef TEUCHOS_DEBUG

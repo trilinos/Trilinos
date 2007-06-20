@@ -130,15 +130,15 @@ namespace Tpetra {
 		// Import and Export
 		bool haveImporter_;
 		bool haveExporter_;
-		Teuchos::RefCountPtr< Import<OrdinalType> > importer_;
-		Teuchos::RefCountPtr< Export<OrdinalType> > exporter_;
-		Teuchos::RefCountPtr< Vector<OrdinalType, ScalarType> > rowVec_;
-		Teuchos::RefCountPtr< Vector<OrdinalType, ScalarType> > columnVec_;
+		Teuchos::RCP< Import<OrdinalType> > importer_;
+		Teuchos::RCP< Export<OrdinalType> > exporter_;
+		Teuchos::RCP< Vector<OrdinalType, ScalarType> > rowVec_;
+		Teuchos::RCP< Vector<OrdinalType, ScalarType> > columnVec_;
 
 		// Platform & Comm
-		Teuchos::RefCountPtr<Platform<OrdinalType, ScalarType> const> platform_;
-		Teuchos::RefCountPtr<Comm<OrdinalType, ScalarType> const> comm_;
-		Teuchos::RefCountPtr<Comm<OrdinalType, OrdinalType> const> ordinalComm_;
+		Teuchos::RCP<Platform<OrdinalType, ScalarType> const> platform_;
+		Teuchos::RCP<Comm<OrdinalType, ScalarType> const> comm_;
+		Teuchos::RCP<Comm<OrdinalType, OrdinalType> const> ordinalComm_;
 
 	private:
 		//! Copy constructor (declared but not defined, do not use)

@@ -62,7 +62,7 @@ public:
   /** \brief Create a new vector space with scalar type <tt>ScalarTo</tt>
    * given an existing vector space with scalar type <tt>ScalarFrom</tt>.
    */
-  virtual Teuchos::RefCountPtr<const VectorSpaceBase<ScalarTo> >
+  virtual Teuchos::RCP<const VectorSpaceBase<ScalarTo> >
   createVectorSpaceTo(
     const VectorSpaceBase<ScalarFrom>    &vecSpc
     ) const = 0;
@@ -70,7 +70,7 @@ public:
   /** \brief Create a new vector space with scalar type <tt>ScalarFrom</tt>
    * given an existing vector space with scalar type <tt>ScalarTo</tt>.
    */
-  virtual Teuchos::RefCountPtr<const VectorSpaceBase<ScalarFrom> >
+  virtual Teuchos::RCP<const VectorSpaceBase<ScalarFrom> >
   createVectorSpaceFrom(
     const VectorSpaceBase<ScalarTo>    &vecSpc
     ) const = 0;

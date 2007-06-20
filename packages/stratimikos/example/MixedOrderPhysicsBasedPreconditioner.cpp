@@ -63,7 +63,7 @@ namespace {
 
 
 // Read a Epetra_CrsMatrix from a Matrix market file
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
 readEpetraCrsMatrixFromMatrixMarket(
   const std::string fileName, const Epetra_Comm &comm
   )
@@ -79,7 +79,7 @@ readEpetraCrsMatrixFromMatrixMarket(
 
 
 // Read an Epetra_CrsMatrix in as a wrapped Thyra::EpetraLinearOp object
-Teuchos::RefCountPtr<const Thyra::LinearOpBase<double> >
+Teuchos::RCP<const Thyra::LinearOpBase<double> >
 readEpetraCrsMatrixFromMatrixMarketAsLinearOp(
   const std::string fileName, const Epetra_Comm &comm,
   const std::string &label
@@ -101,21 +101,21 @@ int main(int argc, char* argv[])
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::rcp_const_cast;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::CommandLineProcessor;
   using Teuchos::ParameterList;
   typedef ParameterList::PrintOptions PLPrintOptions;
   using Teuchos::sublist;
   using Thyra::inverse;
-  typedef RefCountPtr<const Thyra::LinearOpBase<double> > LinearOpPtr;
-  typedef RefCountPtr<Thyra::VectorBase<double> > VectorPtr;
+  typedef RCP<const Thyra::LinearOpBase<double> > LinearOpPtr;
+  typedef RCP<Thyra::VectorBase<double> > VectorPtr;
   
   bool success = true;
   bool verbose = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {
@@ -275,7 +275,7 @@ int main(int argc, char* argv[])
     // that specify the type of linear solver and/or preconditioner to use.
     //
 
-    RefCountPtr<ParameterList> paramList = rcp(new ParameterList);
+    RCP<ParameterList> paramList = rcp(new ParameterList);
     Teuchos::updateParametersFromXmlFile( baseDir+"/"+paramsFile, &*paramList );
     if(extraParamsFile.length())
       Teuchos::updateParametersFromXmlFile( baseDir+"/"+extraParamsFile, &*paramList );
@@ -308,19 +308,19 @@ int main(int argc, char* argv[])
     // For M11 and M22, we want full linear solver factories with embedded
     // algebraic preconditioner factories.
 
-    RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       M11_linsolve_strategy
       = createLinearSolveStrategy(M11_linsolve_strategy_builder);
       
-    RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       M22_linsolve_strategy
       = createLinearSolveStrategy(M22_linsolve_strategy_builder);
       
     // For P1, we only want its preconditioner factory.
 
-    RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       P1_linsolve_strategy;
-    RefCountPtr<Thyra::PreconditionerFactoryBase<double> >
+    RCP<Thyra::PreconditionerFactoryBase<double> >
       P1_prec_strategy;
     if(invertP1)
       P1_linsolve_strategy
@@ -332,7 +332,7 @@ int main(int argc, char* argv[])
     // For P2, we only want a linear solver factory.  We will supply the
     // preconditioner ourselves (that is the whole point of this example).
 
-    RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       P2_linsolve_strategy
       = createLinearSolveStrategy(P2_linsolve_strategy_builder);
 
@@ -356,7 +356,7 @@ int main(int argc, char* argv[])
     }
     else {
       *out << "\nCreating prec(P1) as just an algebraic preconditioner ...\n";
-      RefCountPtr<Thyra::PreconditionerBase<double> >
+      RCP<Thyra::PreconditionerBase<double> >
         precP1 = prec(*P1_prec_strategy,P1);
       *out << "\nprecP1 = " << describe(*precP1,verbLevel) << "\n";
       precP1Op = precP1->getUnspecifiedPrecOp();
@@ -378,7 +378,7 @@ int main(int argc, char* argv[])
     *out << "\nD) Setup the solver for P2 ...\n";
     //
 
-    RefCountPtr<Thyra::LinearOpWithSolveBase<double> >
+    RCP<Thyra::LinearOpWithSolveBase<double> >
       P2_lows = P2_linsolve_strategy->createOp();
     if(useP1Prec) {
       *out << "\nCreating the solver P2 using the specialized precP2Op\n";

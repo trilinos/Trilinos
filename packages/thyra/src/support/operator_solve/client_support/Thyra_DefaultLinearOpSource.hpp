@@ -41,7 +41,7 @@ DefaultLinearOpSource<RangeScalar,DomainScalar>::DefaultLinearOpSource()
 
 template <class RangeScalar, class DomainScalar>
 DefaultLinearOpSource<RangeScalar,DomainScalar>::DefaultLinearOpSource(
-  const Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >    &op
+  const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &op
   )
 {
   op_.initialize(op);
@@ -49,7 +49,7 @@ DefaultLinearOpSource<RangeScalar,DomainScalar>::DefaultLinearOpSource(
 
 template <class RangeScalar, class DomainScalar>
 DefaultLinearOpSource<RangeScalar,DomainScalar>::DefaultLinearOpSource(
-  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &op
+  const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &op
   )
 {
   op_.initialize(op);
@@ -57,7 +57,7 @@ DefaultLinearOpSource<RangeScalar,DomainScalar>::DefaultLinearOpSource(
 
 template <class RangeScalar, class DomainScalar>
 void DefaultLinearOpSource<RangeScalar,DomainScalar>::initialize(
-  const Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >    &op
+  const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &op
   )
 {
   op_.initialize(op);
@@ -65,7 +65,7 @@ void DefaultLinearOpSource<RangeScalar,DomainScalar>::initialize(
 
 template <class RangeScalar, class DomainScalar>
 void DefaultLinearOpSource<RangeScalar,DomainScalar>::initialize(
-  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &op
+  const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &op
   )
 {
   op_.initialize(op);
@@ -86,14 +86,14 @@ bool DefaultLinearOpSource<RangeScalar,DomainScalar>::isOpConst() const
 }
 
 template <class RangeScalar, class DomainScalar>
-Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >
+Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >
 DefaultLinearOpSource<RangeScalar,DomainScalar>::getNonconstOp()
 {
   return op_.getNonconstObj();
 }
 
 template <class RangeScalar, class DomainScalar>
-Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >
+Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >
 DefaultLinearOpSource<RangeScalar,DomainScalar>::getOp() const
 {
   return op_.getConstObj();

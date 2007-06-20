@@ -36,7 +36,7 @@
 namespace Thyra {
 
 template<class ScalarFrom, class ScalarTo>
-Teuchos::RefCountPtr<const VectorSpaceBase<ScalarTo> >
+Teuchos::RCP<const VectorSpaceBase<ScalarTo> >
 DefaultSerialVectorSpaceConverter<ScalarFrom,ScalarTo>::createVectorSpaceTo(
   const VectorSpaceBase<ScalarFrom>  &vecSpc
   ) const
@@ -45,7 +45,7 @@ DefaultSerialVectorSpaceConverter<ScalarFrom,ScalarTo>::createVectorSpaceTo(
 }
 
 template<class ScalarFrom, class ScalarTo>
-Teuchos::RefCountPtr<const VectorSpaceBase<ScalarFrom> >
+Teuchos::RCP<const VectorSpaceBase<ScalarFrom> >
 DefaultSerialVectorSpaceConverter<ScalarFrom,ScalarTo>::createVectorSpaceFrom(
   const VectorSpaceBase<ScalarTo>  &vecSpc
   ) const

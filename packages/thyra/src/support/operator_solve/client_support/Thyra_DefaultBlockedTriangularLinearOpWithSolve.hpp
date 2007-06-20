@@ -64,7 +64,7 @@ bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::acceptsLOWSBlock(
 template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setNonconstLOWSBlock(
   const int i, const int j,
-  const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &block
+  const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &block
   )
 {
   setLOWSBlockImpl(i,j,block);
@@ -74,7 +74,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setNonconstLOWSBlock(
 template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setLOWSBlock(
   const int i, const int j,
-  const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &block
+  const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &block
   )
 {
   setLOWSBlockImpl(i,j,block);
@@ -104,8 +104,8 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::beginBlockFill(
 
 template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::beginBlockFill(
-  const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >  &productRange,
-  const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &productDomain
+  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >  &productRange,
+  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productDomain
   )
 {
   assertBlockFillIsActive(false);
@@ -141,7 +141,7 @@ bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::acceptsBlock(
 template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setNonconstBlock(
   const int i, const int j,
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &block
+  const Teuchos::RCP<LinearOpBase<Scalar> > &block
   )
 {
   assertBlockFillIsActive(true);
@@ -152,7 +152,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setNonconstBlock(
 template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setBlock(
   const int i, const int j,
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &block
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &block
   )
 {
   assertBlockFillIsActive(true);
@@ -189,7 +189,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::uninitialize()
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
 DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getNonconstLOWSBlock(
   const int i, const int j
   )
@@ -203,7 +203,7 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getNonconstLOWSBlock(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<const LinearOpWithSolveBase<Scalar> >
 DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getLOWSBlock(
   const int i, const int j
   ) const
@@ -220,7 +220,7 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getLOWSBlock(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
+Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
 DefaultBlockedTriangularLinearOpWithSolve<Scalar>::productRange() const
 {
   return productRange_;
@@ -228,7 +228,7 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::productRange() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
+Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
 DefaultBlockedTriangularLinearOpWithSolve<Scalar>::productDomain() const
 {
   return productDomain_;
@@ -260,7 +260,7 @@ bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::blockIsConst(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getNonconstBlock(
   const int i, const int j
   )
@@ -274,7 +274,7 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getNonconstBlock(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getBlock(
   const int i, const int j
   ) const
@@ -291,7 +291,7 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getBlock(
 
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultBlockedTriangularLinearOpWithSolve<Scalar>::range() const
 {
   return this->productRange();
@@ -299,7 +299,7 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::range() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 DefaultBlockedTriangularLinearOpWithSolve<Scalar>::domain() const
 {
   return this->productDomain();
@@ -307,7 +307,7 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::domain() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 DefaultBlockedTriangularLinearOpWithSolve<Scalar>::clone() const
 {
   return Teuchos::null;  // ToDo: Implement clone when needed!
@@ -404,7 +404,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solve(
   ) const
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::dyn_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Thyra::solve;
@@ -491,7 +491,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::apply(
   ) const
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::dyn_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Thyra::apply;
@@ -563,7 +563,7 @@ template<class Scalar>
 template<class LinearOpWithSolveType>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setLOWSBlockImpl(
   const int i, const int j,
-  const Teuchos::RefCountPtr<LinearOpWithSolveType> &block
+  const Teuchos::RCP<LinearOpWithSolveType> &block
   )
 {
   assertBlockFillIsActive(true);

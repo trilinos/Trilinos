@@ -76,8 +76,8 @@ public:
   /** Calls <tt>initialize()</tt>.
    */
   DefaultZeroLinearOp(
-    const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &range
-    ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >  &domain
+    const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &range
+    ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >  &domain
     );
 
   /** \brief Initialize given a list of non-const linear operators.
@@ -96,8 +96,8 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &range
-    ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >  &domain
+    const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &range
+    ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >  &domain
     );
 
   /** \brief Set to uninitialized.
@@ -114,13 +114,13 @@ public:
   //@{
   
   /** \brief Returns <tt>Teuchos::null</tt> if uninitialized. */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
   
   /** \brief Returns <tt>Teuchos::null</tt> if uninitialized. */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
   
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
   
   //@}
   
@@ -155,8 +155,8 @@ protected:
 
 private:
 
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >  range_;
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >  domain_;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> >  range_;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> >  domain_;
 
   // Not defined and not to be called
   DefaultZeroLinearOp(const DefaultZeroLinearOp&);
@@ -169,10 +169,10 @@ private:
  * \relates DefaultZeroLinearOp
  */
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 zero(
-  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >   &range
-  ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >  &domain
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >   &range
+  ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >  &domain
   );
 
 }	// end namespace Thyra

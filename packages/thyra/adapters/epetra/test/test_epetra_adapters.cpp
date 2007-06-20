@@ -110,7 +110,7 @@ int main( int argc, char* argv[] )
 
   using Teuchos::dyn_cast;
   using Teuchos::CommandLineProcessor;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_static_cast;
   using Teuchos::rcp_const_cast;
@@ -133,7 +133,7 @@ int main( int argc, char* argv[] )
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
-  RefCountPtr<Teuchos::FancyOStream>
+  RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   
   try {
@@ -204,10 +204,10 @@ int main( int argc, char* argv[] )
     // Create two different vector spaces (one Epetra and one
     // non-Epetra) that should be compatible.
     //
-    RefCountPtr<const Epetra_Comm> epetra_comm;
-    RefCountPtr<const Epetra_Map> epetra_map;
-    RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > epetra_vs;
-    RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > non_epetra_vs;
+    RCP<const Epetra_Comm> epetra_comm;
+    RCP<const Epetra_Map> epetra_map;
+    RCP<const Thyra::VectorSpaceBase<Scalar> > epetra_vs;
+    RCP<const Thyra::VectorSpaceBase<Scalar> > non_epetra_vs;
 #ifdef RTOp_USE_MPI
     if(useMPI) {
       //
@@ -264,17 +264,17 @@ int main( int argc, char* argv[] )
     // Create vectors and multi-vectors from each vector space
     //
 
-    RefCountPtr<Thyra::VectorBase<Scalar> >
+    RCP<Thyra::VectorBase<Scalar> >
       ev1 = createMember(epetra_vs),
       ev2 = createMember(epetra_vs);
-    RefCountPtr<Thyra::VectorBase<Scalar> >
+    RCP<Thyra::VectorBase<Scalar> >
       nev1 = createMember(non_epetra_vs),
       nev2 = createMember(non_epetra_vs);
 
-    RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+    RCP<Thyra::MultiVectorBase<Scalar> >
       eV1 = createMembers(epetra_vs,num_mv_cols),
       eV2 = createMembers(epetra_vs,num_mv_cols);
-    RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+    RCP<Thyra::MultiVectorBase<Scalar> >
       neV1 = createMembers(non_epetra_vs,num_mv_cols),
       neV2 = createMembers(non_epetra_vs,num_mv_cols);
 
@@ -430,7 +430,7 @@ int main( int argc, char* argv[] )
     const std::string s2_n = "scalar^2*global_dim*num_mv_cols";
     const Scalar s2 = scalar*scalar*global_dim*num_mv_cols;
 
-    RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+    RCP<Thyra::MultiVectorBase<Scalar> >
       T = createMembers(eV1->domain(),num_mv_cols);
 
     if(verbose) *out << "\n*** (B.5) Test MultiVector::apply(...)\n";
@@ -469,11 +469,11 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\n*** (B.6) Creating a diagonal Epetra_Operator Op\n";
 
-    RefCountPtr<Epetra_Operator>  epetra_op;
+    RCP<Epetra_Operator>  epetra_op;
 
     {
       // Create a diagonal matrix with scalar on the diagonal
-      RefCountPtr<Epetra_CrsMatrix>
+      RCP<Epetra_CrsMatrix>
         epetra_mat = rcp(new Epetra_CrsMatrix(::Copy,*epetra_map,1));
       Scalar values[1] = { scalar };
       int indices[1];
@@ -491,7 +491,7 @@ int main( int argc, char* argv[] )
       epetra_op = epetra_mat;
     } // end epetra_op
 
-    RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    RCP<const Thyra::LinearOpBase<Scalar> >
       Op = rcp(new Thyra::EpetraLinearOp(epetra_op));
 
     if(verbose && dumpAll) *out << "\nOp=\n" << *Op;
@@ -502,13 +502,13 @@ int main( int argc, char* argv[] )
     result = linearOpTester.check(*Op,verbose?&*out:NULL);
     if(!result) success = false;
 
-    RefCountPtr<Thyra::VectorBase<Scalar> >
+    RCP<Thyra::VectorBase<Scalar> >
       ey  = createMember(epetra_vs);
-    RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+    RCP<Thyra::MultiVectorBase<Scalar> >
       eY  = createMembers(epetra_vs,num_mv_cols);
-    RefCountPtr<Thyra::VectorBase<Scalar> >
+    RCP<Thyra::VectorBase<Scalar> >
       ney = createMember(non_epetra_vs);
-    RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+    RCP<Thyra::MultiVectorBase<Scalar> >
       neY = createMembers(non_epetra_vs,num_mv_cols);
 
     if(verbose) *out << "\n*** (B.8) Mix and match vector and Multi-vectors with Epetra opeator\n";
@@ -585,10 +585,10 @@ int main( int argc, char* argv[] )
     const int numCols = 2;
     const int cols[] = { 2, 3 };
 
-    RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
+    RCP<const Thyra::MultiVectorBase<Scalar> >
       eV1_v1  = rcp_static_cast<const Thyra::MultiVectorBase<Scalar> >(eV1)->subView(col_rng),
       eV1_v2  = rcp_static_cast<const Thyra::MultiVectorBase<Scalar> >(eV1)->subView(numCols,cols);
-    RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
+    RCP<const Thyra::MultiVectorBase<Scalar> >
       neV1_v1  = rcp_static_cast<const Thyra::MultiVectorBase<Scalar> >(neV1)->subView(col_rng),
       neV1_v2  = rcp_static_cast<const Thyra::MultiVectorBase<Scalar> >(neV1)->subView(numCols,cols);
     if(verbose && dumpAll) {
@@ -657,7 +657,7 @@ int main( int argc, char* argv[] )
 
       std::fill_n( t_raw_values.begin(), t_raw_values.size(), ST::zero() );
       Thyra::assign( &*createMemberView(T->range(),t_raw), scalar );
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > t_view = createMemberView(T->range(),static_cast<RTOpPack::ConstSubVectorView<Scalar>&>(t_raw));
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > t_view = createMemberView(T->range(),static_cast<RTOpPack::ConstSubVectorView<Scalar>&>(t_raw));
       Scalar t_nrm = Thyra::norm_1(*t_view);
       if(!testRelErr("Thyra::norm_1(t_view)",t_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
       if(verbose && dumpAll) *out << "\nt_view =\n" << *t_view;
@@ -678,7 +678,7 @@ int main( int argc, char* argv[] )
 
       std::fill_n( T_raw_values.begin(), T_raw_values.size(), ST::zero() );
       Thyra::assign( &*createMembersView(T->range(),T_raw), scalar );
-      Teuchos::RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
+      Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
         T_view = createMembersView(T->range(),static_cast<RTOpPack::ConstSubMultiVectorView<Scalar>&>(T_raw));
       Scalar T_nrm = Thyra::norm_1(*T_view);
       if(!testRelErr("Thyra::norm_1(T_view)",T_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -701,19 +701,19 @@ int main( int argc, char* argv[] )
 
     {
 
-      Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceBase<Scalar> >
+      Teuchos::RCP<const Thyra::SpmdVectorSpaceBase<Scalar> >
         mpi_vs = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar> >(epetra_vs,true);
 
       if(verbose) *out << "\nCreating temporary Epetra_Vector et1 and Epetra_MultiVector eT1 objects ...\n";
-      Teuchos::RefCountPtr<Epetra_Vector>
+      Teuchos::RCP<Epetra_Vector>
         et1 = Teuchos::rcp(new Epetra_Vector(*epetra_map));
-      Teuchos::RefCountPtr<Epetra_MultiVector>
+      Teuchos::RCP<Epetra_MultiVector>
         eT1 = Teuchos::rcp(new Epetra_MultiVector(*epetra_map,num_mv_cols));
 
       if(verbose) *out << "\nCreating non-const VectorBase t1 and MultiVectorBase T1 objects from et1 and eT2 ...\n";
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
+      Teuchos::RCP<Thyra::VectorBase<Scalar> >
         t1 = create_Vector(et1,mpi_vs);
-      Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+      Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >
         T1 = create_MultiVector(eT1,mpi_vs);
 
       if(verbose) *out << "\nPerforming t1 = ev1 ...\n";
@@ -732,22 +732,22 @@ int main( int argc, char* argv[] )
 
       if(verbose) *out << "\nChecking that t1 and T1 yield the same objects as et1 and eT2 ...\n";
   
-      Teuchos::RefCountPtr<Epetra_Vector>
+      Teuchos::RCP<Epetra_Vector>
         et1_v = get_Epetra_Vector(*epetra_map,t1);
       result = et1_v.get() == et1.get();
       if(verbose) *out << "\net1_v.get() = " << et1_v.get() << " == et1.get() = " << et1.get() << " : " << passfail(result) << endl;
       if(!result) success = false;
 
-      Teuchos::RefCountPtr<Epetra_MultiVector>
+      Teuchos::RCP<Epetra_MultiVector>
         eT1_v = get_Epetra_MultiVector(*epetra_map,T1);
       result = eT1_v.get() == eT1.get();
       if(verbose) *out << "\neT1_v.get() = " << eT1_v.get() << " == eT1.get() = " << eT1.get() << " : " << passfail(result) << endl;
       if(!result) success = false;
 
       if(verbose) *out << "\nCreating const VectorBase ct1 and MultiVectorBase cT1 objects from et1 and eT2 ...\n";
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> >
         ct1 = create_Vector(Teuchos::rcp_implicit_cast<const Epetra_Vector>(et1),mpi_vs);
-      Teuchos::RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
+      Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
         cT1 = create_MultiVector(Teuchos::rcp_implicit_cast<const Epetra_MultiVector>(eT1),mpi_vs);
 
       if(!testRelErr(
@@ -762,22 +762,22 @@ int main( int argc, char* argv[] )
 
       if(verbose) *out << "\nChecking that ct1 and cT1 yield the same objects as et1 and eT2 ...\n";
   
-      Teuchos::RefCountPtr<const Epetra_Vector>
+      Teuchos::RCP<const Epetra_Vector>
         cet1_v = get_Epetra_Vector(*epetra_map,ct1);
       result = cet1_v.get() == et1.get();
       if(verbose) *out << "\ncet1_v.get() = " << cet1_v.get() << " == et1.get() = " << et1.get() << " : " << passfail(result) << endl;
       if(!result) success = false;
 
-      Teuchos::RefCountPtr<const Epetra_MultiVector>
+      Teuchos::RCP<const Epetra_MultiVector>
         ceT1_v = get_Epetra_MultiVector(*epetra_map,cT1);
       result = ceT1_v.get() == eT1.get();
       if(verbose) *out << "\nceT1_v.get() = " << ceT1_v.get() << " == eT1.get() = " << eT1.get() << " : " << passfail(result) << endl;
       if(!result) success = false;
 
       if(verbose) *out << "\nCreating non-const Epetra_Vector ett1 and Epetra_MultiVector etT1 objects from clones of t1 and T2 ...\n";
-      Teuchos::RefCountPtr<Epetra_Vector>
+      Teuchos::RCP<Epetra_Vector>
         ett1 = get_Epetra_Vector(*epetra_map,t1->clone_v());
-      Teuchos::RefCountPtr<Epetra_MultiVector>
+      Teuchos::RCP<Epetra_MultiVector>
         etT1 = get_Epetra_MultiVector(*epetra_map,T1->clone_mv());
 
       if(verbose) *out << "\nChecking that ett1 and etT1 yield objects with the same value as et1 and eT2 ...\n";
@@ -793,9 +793,9 @@ int main( int argc, char* argv[] )
         ) success=false;
 
       if(verbose) *out << "\nCreating const Epetra_Vector cett1 and Epetra_MultiVector cetT1 objects from clones of t1 and T2 ...\n";
-      Teuchos::RefCountPtr<const Epetra_Vector>
+      Teuchos::RCP<const Epetra_Vector>
         cett1 = get_Epetra_Vector(*epetra_map,Teuchos::rcp_implicit_cast<const Thyra::VectorBase<Scalar> >(t1->clone_v()));
-      Teuchos::RefCountPtr<const Epetra_MultiVector>
+      Teuchos::RCP<const Epetra_MultiVector>
         cetT1 = get_Epetra_MultiVector(*epetra_map,Teuchos::rcp_implicit_cast<const Thyra::MultiVectorBase<Scalar> >(T1->clone_mv()));
 
       if(verbose) *out << "\nChecking that cett1 and cetT1 yield objects with the same value as et1 and eT2 ...\n";
@@ -822,7 +822,7 @@ int main( int argc, char* argv[] )
       
       Thyra::DiagonalEpetraLinearOpWithSolveFactory diagLOWSFactory;
 
-      Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
+      Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
         diagLOWS = Thyra::linearOpWithSolve<double>(diagLOWSFactory,Op);
 
       if(verbose) *out << "\nTesting LinearOpBase interface of diagLOWS ...\n";
@@ -876,8 +876,8 @@ int main( int argc, char* argv[] )
     {
         
       // Get references to Epetra_MultiVector objects in eV1 and eV2
-      const RefCountPtr<Epetra_MultiVector>       eeV1 = get_Epetra_MultiVector(*epetra_map,eV1);
-      const RefCountPtr<const Epetra_MultiVector> eeV2 = get_Epetra_MultiVector(*epetra_map,eV2);
+      const RCP<Epetra_MultiVector>       eeV1 = get_Epetra_MultiVector(*epetra_map,eV1);
+      const RCP<const Epetra_MultiVector> eeV2 = get_Epetra_MultiVector(*epetra_map,eV2);
       
       if(verbose)
         *out << "\nPerforming eeV1 = eeV2 (using raw Epetra_MultiVector::operator=(...)) " << num_time_loops_1 << " times ...\n";
@@ -925,8 +925,8 @@ int main( int argc, char* argv[] )
     {
       
       // Get constant references to Epetra_MultiVector objects in eV1 and eV2
-      const RefCountPtr<const Epetra_MultiVector> eeV1 = get_Epetra_MultiVector(*epetra_map,eV1);
-      const RefCountPtr<const Epetra_MultiVector> eeV2 = get_Epetra_MultiVector(*epetra_map,eV2);
+      const RCP<const Epetra_MultiVector> eeV1 = get_Epetra_MultiVector(*epetra_map,eV1);
+      const RCP<const Epetra_MultiVector> eeV2 = get_Epetra_MultiVector(*epetra_map,eV2);
       
       Epetra_LocalMap eT_map(T->range()->dim(),0,*epetra_comm);
       Epetra_MultiVector eT(eT_map,T->domain()->dim());
@@ -971,8 +971,8 @@ int main( int argc, char* argv[] )
     {
       
       // Get constant references to Epetra_MultiVector objects in eV1 and eV2
-      const RefCountPtr<const Epetra_MultiVector> eeV1 = get_Epetra_MultiVector(*epetra_map,eV1);
-      const RefCountPtr<Epetra_MultiVector>       eeY  = get_Epetra_MultiVector(*epetra_map,eY);
+      const RCP<const Epetra_MultiVector> eeV1 = get_Epetra_MultiVector(*epetra_map,eV1);
+      const RCP<Epetra_MultiVector>       eeY  = get_Epetra_MultiVector(*epetra_map,eY);
       
       if(verbose)
         *out << "\nPerforming eeY = 2*eOp*eeV1 (using raw Epetra_Operator::apply(...)) " << num_time_loops_3 << " times ...\n";

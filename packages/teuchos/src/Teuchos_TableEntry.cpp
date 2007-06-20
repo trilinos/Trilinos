@@ -88,8 +88,8 @@ string StringEntry::toString() const
 /* --------- CompoundEntryWithParentheses methods ------------------------- */
 
 CompoundEntryWithParentheses
-::CompoundEntryWithParentheses(const RefCountPtr<TableEntry>& first,
-                                const RefCountPtr<TableEntry>& second,
+::CompoundEntryWithParentheses(const RCP<TableEntry>& first,
+                                const RCP<TableEntry>& second,
                                 bool spaceBeforeParens)
   : TableEntry(), 
     first_(first), 

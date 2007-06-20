@@ -27,21 +27,21 @@
 // @HEADER
 
 #include "Teuchos_ParameterListAcceptor.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace Teuchos {
 
 ParameterListAcceptor::~ParameterListAcceptor()
 {}
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 ParameterListAcceptor::getParameterList() const
 
 {
   return const_cast<ParameterListAcceptor*>(this)->getParameterList();
 }
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 ParameterListAcceptor::getValidParameters() const
 {
   return Teuchos::null;

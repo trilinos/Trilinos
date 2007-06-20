@@ -45,13 +45,13 @@ namespace Thyra {
 // Cloning
 
 template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 MultiVectorDefaultBase<Scalar>::clone_mv() const
 {
   const VectorSpaceBase<Scalar>
     &domain = *this->domain(),
     &range  = *this->range();
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  Teuchos::RCP<MultiVectorBase<Scalar> >
     copy = createMembers(range,domain.dim());
   assign( &*copy, *this );
   return copy;
@@ -99,9 +99,9 @@ void MultiVectorDefaultBase<Scalar>::applyOp(
   // target vectors and reduce each of the reduction objects.
   //
 
-  Workspace< Teuchos::RefCountPtr<const VectorBase<Scalar> > >   vecs_s(wss,num_multi_vecs);
+  Workspace< Teuchos::RCP<const VectorBase<Scalar> > >   vecs_s(wss,num_multi_vecs);
   Workspace<const VectorBase<Scalar>*>                           vecs(wss,num_multi_vecs,false);
-  Workspace< Teuchos::RefCountPtr<VectorBase<Scalar> > >         targ_vecs_s(wss,num_targ_multi_vecs);
+  Workspace< Teuchos::RCP<VectorBase<Scalar> > >         targ_vecs_s(wss,num_targ_multi_vecs);
   Workspace<VectorBase<Scalar>*>                                 targ_vecs(wss,num_targ_multi_vecs,false);
 
   for(Index j = sec_first_ele_offset_in; j < sec_first_ele_offset_in + sec_sub_dim; ++j) {
@@ -165,7 +165,7 @@ void MultiVectorDefaultBase<Scalar>::applyOp(
 
   // Create a temporary buffer for the reduction objects of the primary reduction
   // so that we can call the companion version of this method.
-  Workspace<Teuchos::RefCountPtr<RTOpPack::ReductTarget> >
+  Workspace<Teuchos::RCP<RTOpPack::ReductTarget> >
     rcp_reduct_objs(wss,reduct_obj!=NULL?sec_sub_dim:0);
   Workspace<RTOpPack::ReductTarget*>
     reduct_objs(wss,reduct_obj!=NULL?sec_sub_dim:0,false);
@@ -229,7 +229,7 @@ void MultiVectorDefaultBase<Scalar>::acquireDetachedView(
   // Extract multi-vector values column by column
   RTOpPack::ConstSubVectorView<Scalar> sv; // uninitialized by default
   for( int k = colRng.lbound(); k <= colRng.ubound(); ++k ) {
-    Teuchos::RefCountPtr<const VectorBase<Scalar> > col_k = this->col(k);
+    Teuchos::RCP<const VectorBase<Scalar> > col_k = this->col(k);
     col_k->acquireDetachedView( rowRng, &sv );
     for( int i = 0; i < rowRng.size(); ++i )
       values[ i + k*rowRng.size() ] = sv[i];
@@ -289,7 +289,7 @@ void MultiVectorDefaultBase<Scalar>::commitDetachedView(
   const Range1D rowRng(sub_mv->globalOffset(),sub_mv->globalOffset()+sub_mv->subDim()-1);
   RTOpPack::SubVectorView<Scalar> msv; // uninitialized by default
   for( int k = sub_mv->colOffset(); k < sub_mv->numSubCols(); ++k ) {
-    Teuchos::RefCountPtr<VectorBase<Scalar> > col_k = this->col(k);
+    Teuchos::RCP<VectorBase<Scalar> > col_k = this->col(k);
     col_k->acquireDetachedView( rowRng, &msv );
     for( int i = 0; i < rowRng.size(); ++i )
       msv[i] = sub_mv->values()[ i + k*rowRng.size() ];
@@ -304,7 +304,7 @@ void MultiVectorDefaultBase<Scalar>::commitDetachedView(
 // Sub-view methods
 
 template<class Scalar>
-Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+Teuchos::RCP<const MultiVectorBase<Scalar> >
 MultiVectorDefaultBase<Scalar>::subView( const Range1D& colRng_in ) const
 {
   using Teuchos::Workspace;
@@ -317,7 +317,7 @@ MultiVectorDefaultBase<Scalar>::subView( const Range1D& colRng_in ) const
     return Teuchos::rcp(this,false); // Takes all of the columns!
   if( colRng.size() ) {
     // We have to create a view of a subset of the columns
-    Workspace< Teuchos::RefCountPtr< VectorBase<Scalar> > >  col_vecs(wss,colRng.size());
+    Workspace< Teuchos::RCP< VectorBase<Scalar> > >  col_vecs(wss,colRng.size());
     for( Index j = colRng.lbound(); j <= colRng.ubound(); ++j )
       col_vecs[j-colRng.lbound()] = Teuchos::rcp_const_cast<VectorBase<Scalar> >(this->col(j));
     return Teuchos::rcp(new DefaultColumnwiseMultiVector<Scalar>(this->range(),range.smallVecSpcFcty()->createVecSpc(colRng.size()),&col_vecs[0]));
@@ -326,7 +326,7 @@ MultiVectorDefaultBase<Scalar>::subView( const Range1D& colRng_in ) const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 MultiVectorDefaultBase<Scalar>::subView( const Range1D& colRng_in )
 {
   using Teuchos::Workspace;
@@ -339,7 +339,7 @@ MultiVectorDefaultBase<Scalar>::subView( const Range1D& colRng_in )
     return Teuchos::rcp(this,false); // Takes all of the columns!
   if( colRng.size() ) {
     // We have to create a view of a subset of the columns
-    Workspace< Teuchos::RefCountPtr< VectorBase<Scalar> > >  col_vecs(wss,colRng.size());
+    Workspace< Teuchos::RCP< VectorBase<Scalar> > >  col_vecs(wss,colRng.size());
     for( Index j = colRng.lbound(); j <= colRng.ubound(); ++j )
       col_vecs[j-colRng.lbound()] = this->col(j);
     return Teuchos::rcp(new DefaultColumnwiseMultiVector<Scalar>(this->range(),range.smallVecSpcFcty()->createVecSpc(colRng.size()),&col_vecs[0]));
@@ -348,7 +348,7 @@ MultiVectorDefaultBase<Scalar>::subView( const Range1D& colRng_in )
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+Teuchos::RCP<const MultiVectorBase<Scalar> >
 MultiVectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] ) const
 {
   using Teuchos::Workspace;
@@ -361,7 +361,7 @@ MultiVectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] ) c
    TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
 #endif
   // We have to create a view of a subset of the columns
-  Workspace< Teuchos::RefCountPtr< VectorBase<Scalar> > > col_vecs(wss,numCols);
+  Workspace< Teuchos::RCP< VectorBase<Scalar> > > col_vecs(wss,numCols);
   for( int k = 0; k < numCols; ++k ) {
     const int col_k = cols[k];
 #ifdef TEUCHOS_DEBUG
@@ -376,7 +376,7 @@ MultiVectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] ) c
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+Teuchos::RCP<MultiVectorBase<Scalar> >
 MultiVectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] )
 {
   using Teuchos::Workspace;
@@ -389,7 +389,7 @@ MultiVectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] )
    TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
 #endif
   // We have to create a view of a subset of the columns
-  Workspace< Teuchos::RefCountPtr< VectorBase<Scalar> > > col_vecs(wss,numCols);
+  Workspace< Teuchos::RCP< VectorBase<Scalar> > > col_vecs(wss,numCols);
   for( int k = 0; k < numCols; ++k ) {
     const int col_k = cols[k];
 #ifdef TEUCHOS_DEBUG

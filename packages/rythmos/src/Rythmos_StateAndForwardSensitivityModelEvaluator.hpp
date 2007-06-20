@@ -202,7 +202,7 @@ public:
    *           will be extracted.
    */
   void initializeStructure(
-    const Teuchos::RefCountPtr<const ForwardSensitivityModelEvaluator<Scalar> > &sensModel
+    const Teuchos::RCP<const ForwardSensitivityModelEvaluator<Scalar> > &sensModel
     );
 
   // 2007/05/30: rabartl: ToDo: Add function to set the nominal values etc.
@@ -212,10 +212,10 @@ public:
    * Note: This does not copy any vector data, it only creates the wrapped
    * product vector.
    */
-  Teuchos::RefCountPtr<const Thyra::DefaultProductVector<Scalar> >
+  Teuchos::RCP<const Thyra::DefaultProductVector<Scalar> >
   create_x_bar_vec(
-    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_vec,
-    const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &s_bar_vec
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_vec,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &s_bar_vec
     ) const;
 
   //@}
@@ -226,17 +226,17 @@ public:
   /** \brief Returns 0 . */
   int Np() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
@@ -254,11 +254,11 @@ private:
   // /////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<const ForwardSensitivityModelEvaluator<Scalar> > sensModel_;
+  Teuchos::RCP<const ForwardSensitivityModelEvaluator<Scalar> > sensModel_;
 
   int Np_;
-  Teuchos::RefCountPtr<const Thyra::DefaultProductVectorSpace<Scalar> > x_bar_space_;
-  Teuchos::RefCountPtr<const Thyra::DefaultProductVectorSpace<Scalar> > f_bar_space_;
+  Teuchos::RCP<const Thyra::DefaultProductVectorSpace<Scalar> > x_bar_space_;
+  Teuchos::RCP<const Thyra::DefaultProductVectorSpace<Scalar> > f_bar_space_;
   
 };
 
@@ -278,28 +278,28 @@ StateAndForwardSensitivityModelEvaluator<Scalar>::StateAndForwardSensitivityMode
 
 template<class Scalar>
 void StateAndForwardSensitivityModelEvaluator<Scalar>::initializeStructure(
-  const Teuchos::RefCountPtr<const ForwardSensitivityModelEvaluator<Scalar> > &sensModel
+  const Teuchos::RCP<const ForwardSensitivityModelEvaluator<Scalar> > &sensModel
   )
 {
 
-  using Teuchos::tuple; using Teuchos::RefCountPtr;
+  using Teuchos::tuple; using Teuchos::RCP;
   typedef Thyra::ModelEvaluatorBase MEB;
 
   TEST_FOR_EXCEPT( is_null(sensModel) );
   
   sensModel_ = sensModel;
 
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
     stateModel = sensModel_->getStateModel();
   
   x_bar_space_ = Thyra::productVectorSpace(
-    tuple<RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >(
+    tuple<RCP<const Thyra::VectorSpaceBase<Scalar> > >(
       stateModel->get_x_space(), sensModel_->get_x_space()
       )
     );
 
   f_bar_space_ = Thyra::productVectorSpace(
-    tuple<RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >(
+    tuple<RCP<const Thyra::VectorSpaceBase<Scalar> > >(
       stateModel->get_f_space(), sensModel_->get_f_space()
       )
     );
@@ -310,16 +310,16 @@ void StateAndForwardSensitivityModelEvaluator<Scalar>::initializeStructure(
 
 
 template<class Scalar> 
-Teuchos::RefCountPtr<const Thyra::DefaultProductVector<Scalar> >
+Teuchos::RCP<const Thyra::DefaultProductVector<Scalar> >
 StateAndForwardSensitivityModelEvaluator<Scalar>::create_x_bar_vec(
-  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_vec,
-  const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &s_bar_vec
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_vec,
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &s_bar_vec
   ) const
 {
 
   using Teuchos::tuple;
-  using Teuchos::RefCountPtr;
-  typedef RefCountPtr<const Thyra::VectorBase<Scalar> > RCPCV;
+  using Teuchos::RCP;
+  typedef RCP<const Thyra::VectorBase<Scalar> > RCPCV;
 
   return Thyra::defaultProductVector<Scalar>(
     x_bar_space_, tuple<RCPCV>(x_vec,s_bar_vec)
@@ -339,7 +339,7 @@ int StateAndForwardSensitivityModelEvaluator<Scalar>::Np() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 StateAndForwardSensitivityModelEvaluator<Scalar>::get_p_space(int l) const
 {
   return sensModel_->getStateModel()->get_p_space(l);
@@ -347,7 +347,7 @@ StateAndForwardSensitivityModelEvaluator<Scalar>::get_p_space(int l) const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+Teuchos::RCP<const Teuchos::Array<std::string> >
 StateAndForwardSensitivityModelEvaluator<Scalar>::get_p_names(int l) const
 {
   return sensModel_->getStateModel()->get_p_names(l);
@@ -355,7 +355,7 @@ StateAndForwardSensitivityModelEvaluator<Scalar>::get_p_names(int l) const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 StateAndForwardSensitivityModelEvaluator<Scalar>::get_x_space() const
 {
   return x_bar_space_;
@@ -363,7 +363,7 @@ StateAndForwardSensitivityModelEvaluator<Scalar>::get_x_space() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 StateAndForwardSensitivityModelEvaluator<Scalar>::get_f_space() const
 {
   return f_bar_space_;
@@ -379,7 +379,7 @@ StateAndForwardSensitivityModelEvaluator<Scalar>::getNominalValues() const
 
 
 template<class Scalar>
-Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
 StateAndForwardSensitivityModelEvaluator<Scalar>::create_W() const
 {
   TEST_FOR_EXCEPT("ToDo: Implement create_W() when needed!");

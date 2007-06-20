@@ -122,7 +122,7 @@ public:
   /** \brief Returns the SPMD vector space object for the range of
    * <tt>*this</tt> multi-vector.
    */
-  virtual Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const = 0;
+  virtual Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const = 0;
 
   /** \brief Returns a non-<tt>const</tt> pointer to a Fortran-style view of
    * the local multi-vector data.
@@ -204,7 +204,7 @@ public:
   //@{
 
   /// Returns <tt>spmdSpace</tt>.
-  Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
+  Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
 
   //@}
 

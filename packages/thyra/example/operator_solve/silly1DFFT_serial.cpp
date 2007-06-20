@@ -89,14 +89,14 @@ bool run1DFFTExample(
   ,const int                                                     outputPrec
   )
 {
-  using Teuchos::RefCountPtr; using Teuchos::rcp;
+  using Teuchos::RCP; using Teuchos::rcp;
   using Teuchos::OSTab;
   typedef std::complex<RealScalar> ComplexScalar;
   typedef Teuchos::ScalarTraits<RealScalar> RST;
   bool success = true;
   bool result;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = ( verbose ? Teuchos::VerboseObjectBase::getDefaultOStream() : Teuchos::null );
 
   if(outputPrec > 0) out->precision(outputPrec);
@@ -109,21 +109,21 @@ bool run1DFFTExample(
 
   if(verbose) *out << "\nA) Constructing a 1D complex-to-complex FFT linear operator C ...\n";
 
-  Teuchos::RefCountPtr< const Thyra::LinearOpWithSolveBase<ComplexScalar> >
+  Teuchos::RCP< const Thyra::LinearOpWithSolveBase<ComplexScalar> >
     C = Teuchos::rcp( new ComplexFFTLinearOp<RealScalar>(N) );
 
   if(verbose) *out << "\nB) Constructing as set of simple known vectors to be used as random domain and range vectors ...\n";
   Thyra::DefaultSerialVectorSpaceConverter<RealScalar,ComplexScalar>
     realToComplexConverter;
-  RefCountPtr<const Thyra::VectorSpaceBase<RealScalar> >
+  RCP<const Thyra::VectorSpaceBase<RealScalar> >
     realDomainVecSpc = realToComplexConverter.createVectorSpaceFrom(*C->domain());
-  RefCountPtr<Thyra::MultiVectorBase<RealScalar> >
+  RCP<Thyra::MultiVectorBase<RealScalar> >
     realDomainVec = Thyra::createMember(realDomainVecSpc);
   Thyra::seed_randomize<RealScalar>(0);
   Thyra::randomize( RealScalar(-RST::one()), RST::one(), &*realDomainVec );
   if(verbose && dumpAll)
     *out << "\nrealDomainVec:\n" << *realDomainVec;
-  RefCountPtr<Thyra::MultiVectorBase<ComplexScalar> >
+  RCP<Thyra::MultiVectorBase<ComplexScalar> >
     complexDomainVec = Thyra::createMember(C->domain()),
     complexRangeVec = Thyra::createMember(C->range());
   realToComplexConverter.convert(*realDomainVec,&*complexDomainVec);
@@ -131,10 +131,10 @@ bool run1DFFTExample(
   if(verbose && dumpAll)
     *out << "\ncomplexDomainVec:\n" << *complexDomainVec << "\ncomplexRangeVec:\n" << *complexRangeVec;
   Thyra::ListedMultiVectorRandomizer<RealScalar>
-    realDomainRand( Teuchos::arrayArg<RefCountPtr<const Thyra::MultiVectorBase<RealScalar> > >(realDomainVec)(), 1 );
+    realDomainRand( Teuchos::arrayArg<RCP<const Thyra::MultiVectorBase<RealScalar> > >(realDomainVec)(), 1 );
   Thyra::ListedMultiVectorRandomizer<ComplexScalar>
-    complexDomainRand( Teuchos::arrayArg<RefCountPtr<const Thyra::MultiVectorBase<ComplexScalar> > >(complexDomainVec)(), 1 ),
-    complexRangeRand( Teuchos::arrayArg<RefCountPtr<const Thyra::MultiVectorBase<ComplexScalar> > >(complexRangeVec)(), 1 );
+    complexDomainRand( Teuchos::arrayArg<RCP<const Thyra::MultiVectorBase<ComplexScalar> > >(complexDomainVec)(), 1 ),
+    complexRangeRand( Teuchos::arrayArg<RCP<const Thyra::MultiVectorBase<ComplexScalar> > >(complexRangeVec)(), 1 );
 
   if(verbose) *out << "\nC) Testing the LinearOpBase interface of the constructed linear operator C ...\n";
   Thyra::LinearOpTester<ComplexScalar> linearOpTester;
@@ -158,7 +158,7 @@ bool run1DFFTExample(
 
   if(out.get()) *out << "\nE) Creating a DefaultInverseLinearOp object invC from C and testing the LinearOpBase interface ...\n";
 
-  Teuchos::RefCountPtr<const Thyra::LinearOpBase<ComplexScalar> >
+  Teuchos::RCP<const Thyra::LinearOpBase<ComplexScalar> >
     invC = inverse(C);
 
   result = linearOpTester.check(*invC,out.get());
@@ -166,7 +166,7 @@ bool run1DFFTExample(
 
   if(verbose) *out << "\nF) Constructing a 1D real-to-complex FFT linear operator R ...\n";
 
-  Teuchos::RefCountPtr< const Thyra::LinearOpWithSolveBase< ComplexScalar, RealScalar > >
+  Teuchos::RCP< const Thyra::LinearOpWithSolveBase< ComplexScalar, RealScalar > >
     R = Teuchos::rcp( new RealComplexFFTLinearOp<RealScalar>(N) );
 
   if(verbose) *out << "\nG) Testing the LinearOpBase interface of the constructed linear operator R ...\n";
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
   bool verbose = true;
   bool result;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {

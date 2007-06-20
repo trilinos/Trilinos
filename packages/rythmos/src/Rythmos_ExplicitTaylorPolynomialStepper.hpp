@@ -30,7 +30,7 @@
 #define RYTHMOS_EXPLICIT_TAYLOR_POLYNOMIAL_STEPPER_H
 
 #include "Rythmos_StepperBase.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
@@ -151,10 +151,10 @@ namespace Rythmos {
     ~ExplicitTaylorPolynomialStepper();
 
     //! Set model
-    void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
+    void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
 
     /** \brief . */
-    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
     getModel() const;
     
     //! Take a time step of magnitude \c dt
@@ -165,13 +165,13 @@ namespace Rythmos {
 
     /// Redefined from Teuchos::ParameterListAcceptor
     /** \brief . */
-    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+    void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
 
     /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> getParameterList();
 
     /** \brief . */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
 
     /** \brief . */
     std::string description() const;
@@ -188,16 +188,16 @@ namespace Rythmos {
     /// Add points to buffer
     bool setPoints(
       const std::vector<Scalar>& time_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
       ,const std::vector<ScalarMag> & accuracy_vec 
       );
     
     /// Get values from buffer
     bool getPoints(
       const std::vector<Scalar>& time_vec
-      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec
-      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
       ,std::vector<ScalarMag>* accuracy_vec) const;
 
     /// Fill data in from another interpolation buffer
@@ -230,25 +230,25 @@ namespace Rythmos {
     ScalarMag estimateLogRadius_();
 
     //! Underlying model
-    Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
+    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
 
     //! Parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
+    Teuchos::RCP<Teuchos::ParameterList> parameterList_;
 
     //! Current solution vector
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_vector_;
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > x_vector_;
 
     //! Vector store approximation to \f$dx/dt\f$
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_vector_;
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_vector_;
 
     //! Vector store ODE residual
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > f_vector_;
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > f_vector_;
 
     //! Polynomial for x
-    Teuchos::RefCountPtr<Teuchos::Polynomial<Thyra::VectorBase<Scalar> > > x_poly_;
+    Teuchos::RCP<Teuchos::Polynomial<Thyra::VectorBase<Scalar> > > x_poly_;
 
     //! Polynomial for f
-    Teuchos::RefCountPtr<Teuchos::Polynomial<Thyra::VectorBase<Scalar> > > f_poly_;
+    Teuchos::RCP<Teuchos::Polynomial<Thyra::VectorBase<Scalar> > > f_poly_;
 
     //! Current time
     Scalar t_;
@@ -357,7 +357,7 @@ namespace Rythmos {
   log_norm_inf(const Thyra::VectorBase<Scalar>& x)
   {
     ROpLogNormInf<Scalar> log_norm_inf_op;
-    Teuchos::RefCountPtr<RTOpPack::ReductTarget> log_norm_inf_targ = 
+    Teuchos::RCP<RTOpPack::ReductTarget> log_norm_inf_targ = 
       log_norm_inf_op.reduct_obj_create();
     const Thyra::VectorBase<Scalar>* vecs[] = { &x };
     Thyra::applyOp<Scalar>(log_norm_inf_op,1,vecs,0,
@@ -379,7 +379,7 @@ namespace Rythmos {
 
   template<class Scalar>
   void ExplicitTaylorPolynomialStepper<Scalar>::setModel(
-    const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
     )
   {
     TEST_FOR_EXCEPT(model == Teuchos::null)
@@ -392,7 +392,7 @@ namespace Rythmos {
 
 
   template<class Scalar>
-  Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
   ExplicitTaylorPolynomialStepper<Scalar>::getModel() const
   {
     return model_;
@@ -524,7 +524,7 @@ namespace Rythmos {
   }
 
   template<class Scalar>
-  void ExplicitTaylorPolynomialStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+  void ExplicitTaylorPolynomialStepper<Scalar>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   {
     typedef Teuchos::ScalarTraits<Scalar> ST;
 
@@ -554,17 +554,17 @@ namespace Rythmos {
   }
 
   template<class Scalar>
-  Teuchos::RefCountPtr<Teuchos::ParameterList>
+  Teuchos::RCP<Teuchos::ParameterList>
   ExplicitTaylorPolynomialStepper<Scalar>::getParameterList()
   {
     return parameterList_;
   }
 
   template<class Scalar>
-  Teuchos::RefCountPtr<Teuchos::ParameterList>
+  Teuchos::RCP<Teuchos::ParameterList>
   ExplicitTaylorPolynomialStepper<Scalar>:: unsetParameterList()
   {
-    Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList_;
+    Teuchos::RCP<Teuchos::ParameterList> temp_param_list = parameterList_;
     parameterList_ = Teuchos::null;
     return temp_param_list;
   }
@@ -614,8 +614,8 @@ namespace Rythmos {
   template<class Scalar>
   bool ExplicitTaylorPolynomialStepper<Scalar>::setPoints(
     const std::vector<Scalar>& time_vec
-    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
     ,const std::vector<ScalarMag> & accuracy_vec 
     )
   {
@@ -625,8 +625,8 @@ namespace Rythmos {
   template<class Scalar>
   bool ExplicitTaylorPolynomialStepper<Scalar>::getPoints(
     const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+    ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
     ,std::vector<ScalarMag>* accuracy_vec) const
   {
     return(false);
@@ -674,7 +674,7 @@ namespace Rythmos {
   void
   ExplicitTaylorPolynomialStepper<Scalar>::computeTaylorSeriesSolution_()
   {
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > tmp;
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > tmp;
 
     // Set degree_ of polynomials to 0
     x_poly_->setDegree(0);

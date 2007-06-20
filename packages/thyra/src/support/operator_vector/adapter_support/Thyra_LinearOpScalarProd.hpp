@@ -43,13 +43,13 @@ LinearOpScalarProd<Scalar>::LinearOpScalarProd()
 {}
 
 template<class Scalar>
-LinearOpScalarProd<Scalar>::LinearOpScalarProd( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &op )
+LinearOpScalarProd<Scalar>::LinearOpScalarProd( const Teuchos::RCP<const LinearOpBase<Scalar> > &op )
 {
   this->initialize(op);
 }
 
 template<class Scalar>
-void LinearOpScalarProd<Scalar>::initialize( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &op )
+void LinearOpScalarProd<Scalar>::initialize( const Teuchos::RCP<const LinearOpBase<Scalar> > &op )
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(op.get()==NULL);
@@ -58,7 +58,7 @@ void LinearOpScalarProd<Scalar>::initialize( const Teuchos::RefCountPtr<const Li
 }
 
 template<class Scalar>
-void LinearOpScalarProd<Scalar>::uninitialize( Teuchos::RefCountPtr<const LinearOpBase<Scalar> > *op )
+void LinearOpScalarProd<Scalar>::uninitialize( Teuchos::RCP<const LinearOpBase<Scalar> > *op )
 {
   if(op) *op = op_;
   op_ = Teuchos::null;
@@ -69,7 +69,7 @@ void LinearOpScalarProd<Scalar>::uninitialize( Teuchos::RefCountPtr<const Linear
 template<class Scalar>
 void LinearOpScalarProd<Scalar>::scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const
 {
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  Teuchos::RCP<MultiVectorBase<Scalar> >
     T = createMembers(Y.range(),Y.domain()->dim());
   Thyra::apply(*op_,NOTRANS,Y,&*T);
   dots(X,*T,scalar_prods);
@@ -88,7 +88,7 @@ void LinearOpScalarProd<Scalar>::apply(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(Y==NULL);
 #endif
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  Teuchos::RCP<MultiVectorBase<Scalar> >
     T = createMembers(X.range(),X.domain()->dim());
   Thyra::apply(*op_,NOTRANS,X,&*T);
   Thyra::euclideanApply(M,M_trans,*T,Y,alpha,beta);

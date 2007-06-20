@@ -49,7 +49,7 @@
  */
 template <class Scalar>
 bool run_composite_linear_ops_tests(
-  const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >   comm
+  const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >   comm
   ,const int                                                       n
   ,const bool                                                      useSpmd
   ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType     &tol
@@ -63,7 +63,7 @@ bool run_composite_linear_ops_tests(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType    ScalarMag;
   typedef Teuchos::ScalarTraits<ScalarMag> STM;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::null;
   using Teuchos::rcp_const_cast;
@@ -71,7 +71,7 @@ bool run_composite_linear_ops_tests(
   using Teuchos::dyn_cast;
   using Teuchos::OSTab;
 
-  RefCountPtr<Teuchos::FancyOStream>
+  RCP<Teuchos::FancyOStream>
     out = rcp(new Teuchos::FancyOStream(rcp(out_arg,false)));
 
   const Teuchos::EVerbosityLevel
@@ -93,17 +93,17 @@ bool run_composite_linear_ops_tests(
   symLinearOpTester.symmetry_warning_tol(STM::squareroot(warning_tol));
   symLinearOpTester.symmetry_error_tol(STM::squareroot(error_tol));
 
-  RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > space;
+  RCP<const Thyra::VectorSpaceBase<Scalar> > space;
   if(useSpmd) space = rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(comm,n,-1));
   else       space = rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(n));
   if(out.get()) *out << "\nUsing a basic vector space described as " << describe(*space,verbLevel) << " ...\n";
   
   if(out.get()) *out << "\nCreating random n x (n/2) multi-vector origA ...\n";
-  RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+  RCP<Thyra::MultiVectorBase<Scalar> >
     mvOrigA = createMembers(space,n/2,"origA");
   Thyra::seed_randomize<Scalar>(0);
   Thyra::randomize( Scalar(Scalar(-1)*ST::one()), Scalar(Scalar(+1)*ST::one()), &*mvOrigA );
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     origA = mvOrigA;
   if(out.get()) *out << "\norigA =\n" << describe(*origA,verbLevel);
 
@@ -113,7 +113,7 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
   
   if(out.get()) *out << "\nCreating implicit scaled linear operator A1 = scale(0.5,origA) ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A1 = scale(Scalar(0.5),origA);
   if(out.get()) *out << "\nA1 =\n" << describe(*A1,verbLevel);
 
@@ -180,7 +180,7 @@ bool run_composite_linear_ops_tests(
   }
   
   if(out.get()) *out << "\nCreating implicit scaled linear operator A2 = adjoint(A1) ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A2 = adjoint(A1);
   if(out.get()) *out << "\nA2 =\n" << describe(*A2,verbLevel);
 
@@ -195,7 +195,7 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
   
   if(out.get()) *out << "\nCreating implicit scaled, adjoined linear operator A3 = adjoint(scale(2.0,(A2)) ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A3 = adjoint(scale(Scalar(2.0),A2));
   if(out.get()) *out << "\nA3 =\n" << describe(*A3,verbLevel);
 
@@ -210,7 +210,7 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
 
   if(out.get()) *out << "\nCalling all of the rest of the functions for non-const just to test them ...\n";
-  RefCountPtr<Thyra::LinearOpBase<Scalar> >
+  RCP<Thyra::LinearOpBase<Scalar> >
     A4 = nonconstScale(
       Scalar(0.25)
       ,nonconstAdjoint(
@@ -234,7 +234,7 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
 
   if(out.get()) *out << "\nCalling all of the rest of the functions for const just to test them ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A5 = scale(
       Scalar(0.25)
       ,adjoint(
@@ -258,7 +258,7 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
 
   if(out.get()) *out << "\nCreating a multiplied operator A6 = origA^H*A1 ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A6 = multiply(adjoint(origA),A1);
   if(out.get()) *out << "\nA6 =\n" << describe(*A6,verbLevel);
 
@@ -272,7 +272,7 @@ bool run_composite_linear_ops_tests(
 #ifdef TEUCHOS_DEBUG
   if(out.get()) *out << "\nCreating an invalid multiplied operator A6b = origA*origA (should throw an exception) ...\n\n";
   try {
-    RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    RCP<const Thyra::LinearOpBase<Scalar> >
       A6b = multiply(origA,origA);
     result = true;
   }
@@ -283,7 +283,7 @@ bool run_composite_linear_ops_tests(
 #endif // TEUCHOS_DEBUG
 
   if(out.get()) *out << "\nCreating a non-const multiplied operator A7 = origA^H*A1 ...\n";
-  RefCountPtr<Thyra::LinearOpBase<Scalar> >
+  RCP<Thyra::LinearOpBase<Scalar> >
     A7 = nonconstMultiply(
       rcp_const_cast<Thyra::LinearOpBase<Scalar> >(adjoint(origA))
       ,rcp_const_cast<Thyra::LinearOpBase<Scalar> >(A1)
@@ -296,7 +296,7 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
 
   if(out.get()) *out << "\nCreating an added operator A8 = origA + A1 ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A8 = add(origA,A1);
   if(out.get()) *out << "\nA8 =\n" << describe(*A8,verbLevel);
 
@@ -306,7 +306,7 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
 
   if(out.get()) *out << "\nCreating a symmetric added operator A8b = A6 + adjoint(origA)*origA ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A8b = add(A6,multiply(adjoint(origA),origA));
   if(out.get()) *out << "\nA8b =\n" << describe(*A8b,verbLevel);
 
@@ -318,7 +318,7 @@ bool run_composite_linear_ops_tests(
 #ifdef TEUCHOS_DEBUG
   if(out.get()) *out << "\nCreating an invalid added operator A8c = origA + adjoint(origA) (should throw an exception) ...\n\n";
   try {
-    RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    RCP<const Thyra::LinearOpBase<Scalar> >
       A8c = add(origA,adjoint(origA));
     result = true;
   }
@@ -329,7 +329,7 @@ bool run_composite_linear_ops_tests(
 #endif // TEUCHOS_DEBUG
 
   if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A9 = [ A6, A1^H; A1, null ] ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A9 = Thyra::block2x2<Scalar>(
       A6,  adjoint(A1)
       ,A1, null
@@ -344,7 +344,7 @@ bool run_composite_linear_ops_tests(
   // against the non-transpose mode!
 
   if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A9_a = [ A6, A1^H; A1, null ] using pre-formed range and domain product spaces ...\n";
-  RefCountPtr<Thyra::PhysicallyBlockedLinearOpBase<Scalar> >
+  RCP<Thyra::PhysicallyBlockedLinearOpBase<Scalar> >
     A9_a = rcp(new Thyra::DefaultBlockedLinearOp<Scalar>());
   A9_a->beginBlockFill(
     rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<Scalar> >(A9,true)->productRange()
@@ -369,7 +369,7 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
 
   if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A9_b = [ A6, A1^H; A1, null ] using flexible fill ...\n";
-  RefCountPtr<Thyra::PhysicallyBlockedLinearOpBase<Scalar> >
+  RCP<Thyra::PhysicallyBlockedLinearOpBase<Scalar> >
     A9_b = rcp(new Thyra::DefaultBlockedLinearOp<Scalar>());
   A9_b->beginBlockFill();
   A9_b->setBlock(0,0,A6);
@@ -391,7 +391,7 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
 
   if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A9a = [ null, A1^H; A1, null ] ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A9a = Thyra::block2x2<Scalar>(
       null,  adjoint(A1)
       ,A1,   null
@@ -408,7 +408,7 @@ bool run_composite_linear_ops_tests(
 #ifdef TEUCHOS_DEBUG
   if(out.get()) *out << "\nCreating an invalid blocked 2x2 operator A9b = [ A6, A1^H; A1, A1 ] (should throw an exception) ...\n\n";
   try {
-    RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    RCP<const Thyra::LinearOpBase<Scalar> >
       A9b = Thyra::block2x2<Scalar>(
         A6,  adjoint(A1)
         ,A1, A1
@@ -424,7 +424,7 @@ bool run_composite_linear_ops_tests(
 #ifdef TEUCHOS_DEBUG
   if(out.get()) *out << "\nCreating an invalid blocked 2x2 operator A9c = [ A1, A1 ; null, null ] (should throw an exception) ...\n\n";
   try {
-    RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    RCP<const Thyra::LinearOpBase<Scalar> >
       A9c = Thyra::block2x2<Scalar>(
         A1,    A1
         ,null, null
@@ -440,7 +440,7 @@ bool run_composite_linear_ops_tests(
 #ifdef TEUCHOS_DEBUG
   if(out.get()) *out << "\nCreating an invalid blocked 2x2 operator A9d = [ A1, null; A1, null ] (should throw an exception) ...\n\n";
   try {
-    RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    RCP<const Thyra::LinearOpBase<Scalar> >
       A9d = Thyra::block2x2<Scalar>(
         A1,  null
         ,A1, null
@@ -454,7 +454,7 @@ bool run_composite_linear_ops_tests(
 #endif // TEUCHOS_DEBUG
 
   if(out.get()) *out << "\nCreating a blocked 2x1 linear operator A10 = [ A6; A1 ] ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A10 = Thyra::block2x1<Scalar>(
       A6
       ,A1
@@ -467,7 +467,7 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
 
   if(out.get()) *out << "\nCreating a blocked 1x2 linear operator A11 = [ A9, A10 ] ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A11 = Thyra::block1x2<Scalar>( A9, A10 );
   if(out.get()) *out << "\nA11 =\n" << describe(*A11,verbLevel);
   
@@ -477,7 +477,7 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
 
   if(out.get()) *out << "\nCreating a zero linear operator A12 = 0 (range and domain spaces of origA) ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A12 = Thyra::zero(origA->range(),origA->domain());
   if(out.get()) *out << "\nA12 =\n" << describe(*A12,verbLevel);
 
@@ -487,7 +487,7 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
 
   if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A13 = [ zero, A1^H; A1, zero ] ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A13 = Thyra::block2x2<Scalar>(
       Thyra::zero(A1->domain(),A1->domain()),  adjoint(A1)
       ,A1,                                     Thyra::zero(A1->range(),A1->range())
@@ -500,7 +500,7 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
 
   if(out.get()) *out << "\nCreating a zero linear operator A14 = I (range space of origA) ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+  RCP<const Thyra::LinearOpBase<Scalar> >
     A14 = Thyra::identity(origA->range());
   if(out.get()) *out << "\nA14 =\n" << describe(*A14,verbLevel);
   
@@ -524,10 +524,10 @@ int main( int argc, char* argv[] ) {
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
-  const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >
+  const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >
     comm = Teuchos::DefaultComm<Thyra::Index>::getComm();
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   
   try {

@@ -42,11 +42,11 @@
 template<class Scalar>
 bool testRTOp(
   const Teuchos::Comm<Teuchos_Index>                   &comm
-  ,const Teuchos::RefCountPtr<Teuchos::FancyOStream>   &out 
+  ,const Teuchos::RCP<Teuchos::FancyOStream>   &out 
   )
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::FancyOStream;
   using Teuchos::VerboseObjectBase;
@@ -92,7 +92,7 @@ bool testRTOp(
   *out << "\nComputing the sum of x ...\n";
 
   RTOpPack::ROpSum<Scalar> sumOp;
-  RefCountPtr<RTOpPack::ReductTarget>
+  RCP<RTOpPack::ReductTarget>
     sumTarget = sumOp.reduct_obj_create();
   RTOpPack::SPMD_apply_op<Scalar>(
     &comm,sumOp,1,&x,0,0,&*sumTarget
@@ -103,7 +103,7 @@ bool testRTOp(
 
   *out << "\nBroadcasting the sum of x to all processes ...\n";
 
-  RefCountPtr<RTOpPack::ReductTarget>
+  RCP<RTOpPack::ReductTarget>
     sumTarget2 = sumOp.reduct_obj_create();
   if(procRank==0)
     sumOp.reduce_reduct_objs(*sumTarget,&*sumTarget2);
@@ -125,7 +125,7 @@ bool testRTOp(
 int main(int argc, char* argv[])
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::FancyOStream;
   using Teuchos::VerboseObjectBase;
@@ -150,12 +150,12 @@ int main(int argc, char* argv[])
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
       return parse_return;
 
-    RefCountPtr<FancyOStream>
+    RCP<FancyOStream>
       out = VerboseObjectBase::getDefaultOStream();
 
     //*out << std::endl << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
-    RefCountPtr<const Teuchos::Comm<Ordinal> >
+    RCP<const Teuchos::Comm<Ordinal> >
       comm = Teuchos::DefaultComm<Ordinal>::getComm();
     
     result = testRTOp<double>(*comm,out);

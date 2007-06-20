@@ -48,7 +48,7 @@ namespace RTOpPack {
 template<class Scalar>
 void print( const ConstSubVectorView<Scalar> &v, Teuchos::FancyOStream &out_arg )
 {
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = Teuchos::rcp(&out_arg,false);
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::rcp(&out_arg,false);
   Teuchos::OSTab tab(out);
   *out << "globalOffset="<<v.globalOffset()<<"\n";
   *out << "subDim="<<v.subDim()<<"\n";
@@ -69,7 +69,7 @@ class MpiReductionOp : public Teuchos::MpiReductionOpBase {
 public:
 
   MpiReductionOp(
-    const Teuchos::RefCountPtr<const RTOpT<Scalar> >  &op
+    const Teuchos::RCP<const RTOpT<Scalar> >  &op
     )
     : op_(op)
     {
@@ -96,7 +96,7 @@ public:
         *in_reduct_obj_ext = reinterpret_cast<char*>(invec);
       char
         *inout_reduct_obj_ext = reinterpret_cast<char*>(inoutvec);
-      Teuchos::RefCountPtr<ReductTarget>
+      Teuchos::RCP<ReductTarget>
         in_reduct_obj    = op_->reduct_obj_create(),
         inout_reduct_obj = op_->reduct_obj_create();
       for( int i = 0; i < (*len); ++i, in_reduct_obj_ext += reduct_obj_ext_size, inout_reduct_obj_ext += reduct_obj_ext_size  )
@@ -111,7 +111,7 @@ public:
       }
     }
 private:
-  Teuchos::RefCountPtr<const RTOpT<Scalar> >  op_;
+  Teuchos::RCP<const RTOpT<Scalar> >  op_;
   // Not defined and not to be called!
   MpiReductionOp();
   MpiReductionOp(const MpiReductionOp<Scalar>&);
@@ -418,7 +418,7 @@ void RTOpPack::MPI_all_reduce(
     //
     Workspace<char> // This is raw memory for external intermediate reduction object.
       i_reduct_objs_tmp( wss, reduct_obj_ext_size*num_cols, false );
-    Teuchos::RefCountPtr<ReductTarget> i_reduct_obj_tmp_uninit = op.reduct_obj_create(); // Just an unreduced object!
+    Teuchos::RCP<ReductTarget> i_reduct_obj_tmp_uninit = op.reduct_obj_create(); // Just an unreduced object!
     for( int kc = 0; kc < num_cols; ++kc ) {
       extract_reduct_obj_ext_state( // Initialize to no initial reduction
         op,*i_reduct_obj_tmp_uninit,num_reduct_type_values,num_reduct_type_indexes,num_reduct_type_chars
@@ -449,7 +449,7 @@ void RTOpPack::MPI_all_reduce(
 #endif // RTOp_USE_MPI
     // Load the updated state of the reduction target object and reduce.
     {
-      Teuchos::RefCountPtr<ReductTarget> tmp_reduct_obj = op.reduct_obj_create();
+      Teuchos::RCP<ReductTarget> tmp_reduct_obj = op.reduct_obj_create();
       for( int kc = 0; kc < num_cols; ++kc ) {
         load_reduct_obj_ext_state( op, &i_reduct_objs_tmp[0]+kc*reduct_obj_ext_size, &*tmp_reduct_obj );
         op.reduce_reduct_objs( *tmp_reduct_obj, reduct_objs[kc] );
@@ -472,7 +472,7 @@ void RTOpPack::MPI_apply_op(
   )
 {
 #ifdef RTOPPACK_MPI_APPLY_OP_DUMP
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::OSTab tab(out);
   if(show_mpi_apply_op_dump) {
@@ -556,7 +556,7 @@ void RTOpPack::MPI_apply_op(
       // Allocate the intermediate target object and perform the
       // reduction for the vector elements on this processor.
       //
-      Workspace<Teuchos::RefCountPtr<ReductTarget> >
+      Workspace<Teuchos::RCP<ReductTarget> >
         i_reduct_objs( wss, num_cols );
       for( int kc = 0; kc < num_cols; ++kc ) {
         i_reduct_objs[kc] = op.reduct_obj_create();

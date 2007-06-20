@@ -53,11 +53,11 @@ public:
   /** \brief Returns 0 . */
   int Ng() const;
   /** \brief Throws exception. */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief Throws exception. */
-  Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
   /** \brief Throws exception. */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief Returns this->createInArgs(). */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief Returns this->createInArgs(). */
@@ -65,15 +65,15 @@ public:
   /** \brief Returns this->createInArgs(). */
   ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
   /** \brief Returns Teuchos::null. */
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > create_W() const;
+  Teuchos::RCP<LinearOpWithSolveBase<Scalar> > create_W() const;
   /** \brief Returns Teuchos::null. */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_W_op() const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_W_op() const;
   /** \brief Throws exception. */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
   /** \brief Throws exception. */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
   /** \brief Throws exception. */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
+  Teuchos::RCP<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
   /** \brief Does nothing and ignores input. */
   void reportFinalPoint(
     const ModelEvaluatorBase::InArgs<Scalar> &finalPoint,
@@ -98,7 +98,7 @@ int StateFuncModelEvaluatorBase<Scalar>::Ng() const
 { return 0; }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::get_p_space(int l) const
 {
   TEST_FOR_EXCEPTION(
@@ -110,7 +110,7 @@ StateFuncModelEvaluatorBase<Scalar>::get_p_space(int l) const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+Teuchos::RCP<const Teuchos::Array<std::string> >
 StateFuncModelEvaluatorBase<Scalar>::get_p_names(int l) const
 {
   TEST_FOR_EXCEPTION(
@@ -122,7 +122,7 @@ StateFuncModelEvaluatorBase<Scalar>::get_p_names(int l) const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+Teuchos::RCP<const VectorSpaceBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::get_g_space(int j) const
 {
   TEST_FOR_EXCEPTION(
@@ -150,7 +150,7 @@ StateFuncModelEvaluatorBase<Scalar>::getUpperBounds() const
 { return this->createInArgs(); }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::create_W() const
 {
   TEST_FOR_EXCEPTION(
@@ -163,7 +163,7 @@ StateFuncModelEvaluatorBase<Scalar>::create_W() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::create_W_op() const
 {
   TEST_FOR_EXCEPTION(
@@ -176,7 +176,7 @@ StateFuncModelEvaluatorBase<Scalar>::create_W_op() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::create_DfDp_op(int l) const
 {
   typedef ModelEvaluatorBase MEB;
@@ -191,7 +191,7 @@ StateFuncModelEvaluatorBase<Scalar>::create_DfDp_op(int l) const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::create_DgDx_op(int j) const
 {
   typedef ModelEvaluatorBase MEB;
@@ -206,7 +206,7 @@ StateFuncModelEvaluatorBase<Scalar>::create_DgDx_op(int j) const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+Teuchos::RCP<LinearOpBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::create_DgDp_op( int j, int l ) const
 {
   typedef ModelEvaluatorBase MEB;

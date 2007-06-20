@@ -142,7 +142,7 @@ void TimeMonitor::summarize(ostream &out, bool alwaysWriteLocal,
 
   format().setColumnWidths(columnWidths);
 
-  RefCountPtr<std::ostream> outPtr = rcp(&out, false);
+  RCP<std::ostream> outPtr = rcp(&out, false);
   bool writeOnThisProcessor = ( comm.getRank()==0 || alwaysWriteLocal );
   if (writeOnThisProcessor)
     {

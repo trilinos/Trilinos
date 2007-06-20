@@ -70,7 +70,7 @@ bool VectorSpaceTester<Scalar>::check(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType    ScalarMag;
 
-  Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
+  Teuchos::RCP<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
   OSTab tab(out,1,"THYRA");
@@ -95,7 +95,7 @@ bool VectorSpaceTester<Scalar>::check(
   if(out.get()) *out << result << " == true : " << passfail(result) << std::endl;
 
   if(out.get()) *out <<endl<< "C) Creating a randomized vector member v ...\n";
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >
     v = createMember(vs);
   randomize(Scalar(-ST::one()),Scalar(+ST::one()),&*v);
 
@@ -105,7 +105,7 @@ bool VectorSpaceTester<Scalar>::check(
   if(!result) success = false;
 
   if(out.get()) *out <<endl<< "C) Creating a randomized MultiVector member mv ...\n";
-  Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+  Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >
     mv = createMembers(vs,num_mv_cols());
   randomize(Scalar(-ST::one()),Scalar(+ST::one()),&*mv);
 

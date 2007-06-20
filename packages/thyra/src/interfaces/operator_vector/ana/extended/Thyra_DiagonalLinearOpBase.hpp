@@ -80,14 +80,14 @@ public:
    * A return value of <tt>return.get()==NULL</tt> indicates that
    * <tt>this</tt> is not fully initialized.
    */
-  virtual Teuchos::RefCountPtr<VectorBase<Scalar> > getNonconstDiag() = 0;
+  virtual Teuchos::RCP<VectorBase<Scalar> > getNonconstDiag() = 0;
 
   /** \brief Returns the const diagonal vector <tt>diag</tt>.
    *
    * A return value of <tt>return.get()==NULL</tt> indicates that
    * <tt>this</tt> is not fully initialized.
    */
-  virtual Teuchos::RefCountPtr<const VectorBase<Scalar> > getDiag() const = 0;
+  virtual Teuchos::RCP<const VectorBase<Scalar> > getDiag() const = 0;
 
   //@}
 

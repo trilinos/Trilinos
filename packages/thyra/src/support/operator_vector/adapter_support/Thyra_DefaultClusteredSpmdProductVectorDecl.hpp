@@ -64,8 +64,8 @@ public:
 
   /** \brief Constructs to initialized (calls <tt>initialize()</tt>). */
   DefaultClusteredSpmdProductVector(
-    const Teuchos::RefCountPtr<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
-    ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                                   vecs[]
+    const Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
+    ,const Teuchos::RCP<VectorBase<Scalar> >                                   vecs[]
     );
 
   /** \brief Initialize.
@@ -73,8 +73,8 @@ public:
    * ToDo: Finish documentation.
    */
   void initialize(
-    const Teuchos::RefCountPtr<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
-    ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                                   vecs[]
+    const Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
+    ,const Teuchos::RCP<VectorBase<Scalar> >                                   vecs[]
     );
 
   /** \brief Uninitialize.
@@ -82,8 +82,8 @@ public:
    * ToDo: Finish documentation.
    */
   void uninitialize(
-    Teuchos::RefCountPtr<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  *productSpace = NULL
-    ,Teuchos::RefCountPtr<VectorBase<Scalar> >                                   vecs[]        = NULL
+    Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  *productSpace = NULL
+    ,Teuchos::RCP<VectorBase<Scalar> >                                   vecs[]        = NULL
     );
 
   //@}
@@ -92,9 +92,9 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<VectorBase<Scalar> > getNonconstVectorBlock(const int k); 
+  Teuchos::RCP<VectorBase<Scalar> > getNonconstVectorBlock(const int k); 
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorBase<Scalar> > getVectorBlock(const int k) const;
+  Teuchos::RCP<const VectorBase<Scalar> > getVectorBlock(const int k) const;
 
   //@}
 
@@ -102,13 +102,13 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > productSpace() const;
+  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > productSpace() const;
   /** \brief . */
   bool blockIsConst(const int k) const; 
   /** \brief . */
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > getNonconstMultiVectorBlock(const int k); 
+  Teuchos::RCP<MultiVectorBase<Scalar> > getNonconstMultiVectorBlock(const int k); 
   /** \brief . */
-  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > getMultiVectorBlock(const int k) const;
+  Teuchos::RCP<const MultiVectorBase<Scalar> > getMultiVectorBlock(const int k) const;
 
   //@}
 
@@ -116,7 +116,7 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > space() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > space() const;
   /** \brief . */
   void applyOp(
     const RTOpPack::RTOpT<Scalar>    &op
@@ -137,8 +137,8 @@ private:
   // //////////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<const DefaultClusteredSpmdProductVectorSpace<Scalar> >   productSpace_;
-  std::vector<Teuchos::RefCountPtr<VectorBase<Scalar> > >                       vecs_;
+  Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >   productSpace_;
+  std::vector<Teuchos::RCP<VectorBase<Scalar> > >                       vecs_;
 
 };
 

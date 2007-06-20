@@ -209,7 +209,7 @@ namespace Thyra {
     )
   {
     // Create the view
-    Teuchos::RefCountPtr< Thyra::MultiVectorBase<Scalar> >
+    RCP< Thyra::MultiVectorBase<Scalar> >
       X_view = X->subView(Teuchos::Range1D(0,0));
     // Change the parent while the view is still active
     Teuchos::assign( X, Teuchos::ScalarTraits<Scalar>::one() );
@@ -237,7 +237,7 @@ namespace Thyra {
     )
   {
     // Create the view
-    Teuchos::RefCountPtr< Thyra::MultiVectorBase<Scalar> >
+    RCP< Thyra::MultiVectorBase<Scalar> >
       X_view = X->subView(Teuchos::Range1D(0,0));
     // Change the view
     Teuchos::assign( *&X_view, Teuchos::ScalarTraits<Scalar>::one() );
@@ -264,7 +264,7 @@ namespace Thyra {
     )
   {
     // Create two overlapping views
-    Teuchos::RefCountPtr< Thyra::MultiVectorBase<Scalar> >
+    RCP< Thyra::MultiVectorBase<Scalar> >
       X_view1 = X->subView(Teuchos::Range1D(0,0)),
       X_view2 = X->subView(Teuchos::Range1D(0,0));
     // Change one of the views but not the other
@@ -307,7 +307,7 @@ namespace Thyra {
     )
   {
     // Create two non-overlapping views
-    Teuchos::RefCountPtr< Thyra::MultiVectorBase<Scalar> >
+    RCP< Thyra::MultiVectorBase<Scalar> >
       X_view1 = X->subView(Teuchos::Range1D(0,0)),
       X_view2 = X->subView(Teuchos::Range1D(1,1));
     // Change the two views
@@ -358,7 +358,7 @@ namespace Thyra {
  {
    typedef Teuchos::ScalarTraits<Scalar> ST;
    // Create the multi-vector B used for the update
-   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+   RCP<Thyra::MultiVectorBase<Scalar> >
      B = createMembers(V.domain(),b);
    // Fill up B for the update
    ...
@@ -394,14 +394,14 @@ namespace Thyra {
  \code
 
  template<class Scalar>
- Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+ RCP<Thyra::MultiVectorBase<Scalar> >
  void myBlockInnerProd(
    const Thyra::MultiVectorBase<Scalar>                    &V
    ,const Thyra::MultiVectorBase<Scalar>                   &X
    )
  {
    // Create the multi-vector B used for the result
-   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
+   RCP<Thyra::MultiVectorBase<Scalar> >
      B = createMembers(V.domain(),X.domain()->dim());
    // Do the inner product B = adjoint(V)*X
    V.applyTranspose(Thyra::CONJ_ELE,X,&*B);
@@ -504,7 +504,7 @@ public:
    * implementation needed by most subclasses) is based on the
    * non-const version <tt>col()</tt>.
    */
-  virtual Teuchos::RefCountPtr<const VectorBase<Scalar> > col(Index j) const;
+  virtual RCP<const VectorBase<Scalar> > col(Index j) const;
 
   /** \brief Return a changeable view of a constituent column vector.
    *
@@ -526,7 +526,7 @@ public:
    * <b>Note:</b> <tt>*this</tt> is not guaranteed to be modified until the
    * smart pointer returned by this function is destroyed.
    */
-  virtual Teuchos::RefCountPtr<VectorBase<Scalar> > col(Index j) = 0;
+  virtual RCP<VectorBase<Scalar> > col(Index j) = 0;
 
   //@}
 
@@ -556,7 +556,7 @@ public:
    * See \ref Thyra_MVB_subviews_sec and \ref Thyra_MVB_view_behavior_sec for
    * the behavior of this view.
    */
-  virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+  virtual RCP<const MultiVectorBase<Scalar> >
   subView( const Range1D& colRng ) const = 0;
   
   /** \brief Return a changeable sub-view of a contiguous set of columns of
@@ -583,7 +583,7 @@ public:
    * See \ref Thyra_MVB_subviews_sec and \ref Thyra_MVB_view_behavior_sec for
    * the behavior of this view.
    */
-  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  virtual RCP<MultiVectorBase<Scalar> >
   subView( const Range1D& colRng ) = 0;
 
   /** \brief Return a non-changeable sub-view of a non-contiguous set of columns of this multi-vector.
@@ -611,7 +611,7 @@ public:
    * See \ref Thyra_MVB_subviews_sec and \ref Thyra_MVB_view_behavior_sec for
    * the behavior of this view.
    */
-  virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+  virtual RCP<const MultiVectorBase<Scalar> >
   subView( const int numCols, const int cols[] ) const = 0;
 
   /** \brief Return a changeable sub-view of a non-contiguous set of columns of this multi-vector.
@@ -639,7 +639,7 @@ public:
    * See \ref Thyra_MVB_subviews_sec and \ref Thyra_MVB_view_behavior_sec for
    * the behavior of this view.
    */
-  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  virtual RCP<MultiVectorBase<Scalar> >
   subView( const int numCols, const int cols[] ) = 0;
   
   //@}
@@ -936,7 +936,7 @@ public:
    * this function if it can do something more sophisticated
    * (i.e. lazy evaluation) but in general, this is not needed.
    */
-  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > clone_mv() const = 0;
+  virtual RCP<MultiVectorBase<Scalar> > clone_mv() const = 0;
 
   //@}
 
@@ -944,7 +944,7 @@ public:
   //@{
 
   /// This function is simply overridden to return <tt>this->clone_mv()</tt>.
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  RCP<const LinearOpBase<Scalar> > clone() const;
 
   //@}
 
@@ -972,26 +972,11 @@ void applyOp(
   const int num_targ_multi_vecs,
   MultiVectorBase<Scalar>*const targ_multi_vecs[],
   RTOpPack::ReductTarget*const reduct_objs[],
-  const Index primary_first_ele_offset
-#ifndef __sun
-  = 0
-#endif
-  ,const Index primary_sub_dim
-#ifndef __sun
-  = -1
-#endif
-  ,const Index primary_global_offset
-#ifndef __sun
-  = 0
-#endif
-  ,const Index secondary_first_ele_offset
-#ifndef __sun
-  = 0
-#endif
-  ,const Index secondary_sub_dim
-#ifndef __sun
-  = -1
-#endif
+  const Index primary_first_ele_offset = 0,
+  const Index primary_sub_dim = -1,
+  const Index primary_global_offset = 0,
+  const Index secondary_first_ele_offset = 0,
+  const Index secondary_sub_dim = -1
   )
 {
   if(num_multi_vecs)
@@ -1009,26 +994,6 @@ void applyOp(
       ,secondary_first_ele_offset,secondary_sub_dim
       );
 }
-
-#ifdef __sun
-template<class Scalar>
-inline
-void applyOp(
-  const RTOpPack::RTOpT<Scalar> &primary_op,
-  const int num_multi_vecs,
-  const MultiVectorBase<Scalar>*const multi_vecs[],
-  const int num_targ_multi_vecs,
-  MultiVectorBase<Scalar>*const targ_multi_vecs[],
-  RTOpPack::ReductTarget*const reduct_objs[]
-  )
-{
-  applyOp(
-    primary_op
-    ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-    ,reduct_objs,0,-1,0,0,-1
-    );
-}
-#endif
 
 /** \brief Apply a reduction/transformation operator column by column and
  * reduce the intermediate reduction objects into one reduction object.
@@ -1047,26 +1012,11 @@ void applyOp(
   const int num_targ_multi_vecs,
   MultiVectorBase<Scalar>*const targ_multi_vecs[],
   RTOpPack::ReductTarget *reduct_obj,
-  const Index primary_first_ele_offset
-#ifndef __sun
-  = 0
-#endif
-  ,const Index primary_sub_dim
-#ifndef __sun
-  = -1
-#endif
-  ,const Index primary_global_offset
-#ifndef __sun
-  = 0
-#endif
-  ,const Index secondary_first_ele_offset
-#ifndef __sun
-  = 0
-#endif
-  ,const Index secondary_sub_dim
-#ifndef __sun
-  = -1
-#endif
+  const Index primary_first_ele_offset = 0,
+  const Index primary_sub_dim = -1,
+  const Index primary_global_offset = 0,
+  const Index secondary_first_ele_offset = 0,
+  const Index secondary_sub_dim = -1
   )
 {
   if(num_multi_vecs)
@@ -1084,29 +1034,6 @@ void applyOp(
       ,secondary_first_ele_offset,secondary_sub_dim
       );
 }
-
-#ifdef __sun
-
-template<class Scalar>
-inline
-void applyOp(
-  const RTOpPack::RTOpT<Scalar> &primary_op,
-  const RTOpPack::RTOpT<Scalar> &secondary_op,
-  const int num_multi_vecs,
-  const MultiVectorBase<Scalar>*const multi_vecs[],
-  const int num_targ_multi_vecs,
-  MultiVectorBase<Scalar>*const targ_multi_vecs[],
-  RTOpPack::ReductTarget *reduct_obj
-  )
-{
-  applyOp(
-    primary_op,secondary_op
-    ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-    ,reduct_obj,0,-1,0,0,-1
-    );
-}
-
-#endif // __sun
 
 } // namespace Thyra
 

@@ -30,7 +30,7 @@
 #define Rythmos_DATA_STORE_H
 
 #include "Thyra_VectorBase.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Describable.hpp"
 
 namespace Rythmos {
@@ -51,18 +51,18 @@ class DataStore : virtual public Teuchos::Describable
 
     /** \brief. */
     DataStore(Scalar &time_
-      ,const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_
-      ,const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &xdot_
+      ,const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_
+      ,const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &xdot_
       ,ScalarMag &accuracy_);
 
     /// Time value of data:
     Scalar time;
 
     /// Solution value of data at above time:
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > x;
+    Teuchos::RCP<const Thyra::VectorBase<Scalar> > x;
 
     /// Solution dot value of data at above time:
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xdot;
+    Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot;
 
     /// Accuracy of x data.  This is the accuracy of interpolations
     ScalarMag accuracy;
@@ -127,16 +127,16 @@ template<class Scalar>
 void dataStoreVectorToVector(
       const typename DataStore<Scalar>::DataStoreVector_t &ds
       ,std::vector<Scalar> *time_vec
-      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > *x_vec
-      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > *xdot_vec
+      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > *x_vec
+      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > *xdot_vec
       ,std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> *accuracy_vec);
 
 // This is a helper function to convert vectors of t,x,xdot,accuracy to a vector of DataStore objects
 template<class Scalar>
 void vectorToDataStoreVector(
       const std::vector<Scalar> &time_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &x_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &xdot_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
       ,const std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &accuracy_vec
       ,typename DataStore<Scalar>::DataStoreVector_t *ds);
 
@@ -144,24 +144,24 @@ void vectorToDataStoreVector(
 template<class Scalar>
 void vectorToDataStoreList(
       const std::vector<Scalar> &time_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &x_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &xdot_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
       ,const std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &accuracy_vec
       ,typename DataStore<Scalar>::DataStoreList_t *ds);
 
 template<class Scalar>
 void vectorToDataStoreList(
       const std::vector<Scalar> &time_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &x_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &xdot_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
       ,typename DataStore<Scalar>::DataStoreList_t *ds);
 
 // DataStore definitions:
 template<class Scalar>
 DataStore<Scalar>::DataStore(
   Scalar &time_
-  ,const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &x_
-  ,const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &xdot_
+  ,const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &x_
+  ,const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &xdot_
   ,ScalarMag &accuracy_)
 {
   time = time_;
@@ -261,8 +261,8 @@ template<class Scalar>
 void dataStoreVectorToVector(
       const typename DataStore<Scalar>::DataStoreVector_t &ds
       ,std::vector<Scalar> *time_vec
-      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > *x_vec
-      ,std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > *xdot_vec
+      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > *x_vec
+      ,std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > *xdot_vec
       ,std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> *accuracy_vec)
 {
   if(time_vec)
@@ -289,8 +289,8 @@ void dataStoreVectorToVector(
 template<class Scalar>
 void vectorToDataStoreVector(
       const std::vector<Scalar> &time_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &x_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &xdot_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
       ,const std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &accuracy_vec
       ,typename DataStore<Scalar>::DataStoreVector_t *ds
       ) 
@@ -306,8 +306,8 @@ void vectorToDataStoreVector(
   ds->clear();
   for (int i=0; i<N ; ++i) {
     Scalar time_temp = time_vec[i];
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > x_temp = x_vec[i];
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xdot_temp = xdot_vec[i];
+    Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_temp = x_vec[i];
+    Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot_temp = xdot_vec[i];
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType accuracy_temp = accuracy_vec[i];
     DataStore<Scalar> ds_tmp(time_temp,x_temp,xdot_temp,accuracy_temp);
     ds->push_back(ds_tmp);
@@ -317,8 +317,8 @@ void vectorToDataStoreVector(
 template<class Scalar>
 void vectorToDataStoreList(
       const std::vector<Scalar> &time_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &x_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &xdot_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
       ,const std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &accuracy_vec
       ,typename DataStore<Scalar>::DataStoreList_t *ds) 
 {
@@ -333,8 +333,8 @@ void vectorToDataStoreList(
   ds->clear();
   for (int i=0; i<N ; ++i) {
     Scalar time_temp = time_vec[i];
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > x_temp = x_vec[i];
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > xdot_temp = xdot_vec[i];
+    Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_temp = x_vec[i];
+    Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot_temp = xdot_vec[i];
     typename Teuchos::ScalarTraits<Scalar>::magnitudeType accuracy_temp = accuracy_vec[i];
     DataStore<Scalar> ds_tmp(time_temp,x_temp,xdot_temp,accuracy_temp);
     ds->push_back(ds_tmp);
@@ -344,8 +344,8 @@ void vectorToDataStoreList(
 template<class Scalar>
 void vectorToDataStoreList(
       const std::vector<Scalar> &time_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &x_vec
-      ,const std::vector<Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > > &xdot_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &x_vec
+      ,const std::vector<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > &xdot_vec
       ,typename DataStore<Scalar>::DataStoreList_t *ds) 
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;

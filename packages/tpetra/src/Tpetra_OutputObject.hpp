@@ -31,7 +31,7 @@
 
 #include "Tpetra_ConfigDefs.hpp" // for iostream and string
 #include "Tpetra_OutputManager.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace Tpetra
 {
@@ -55,7 +55,7 @@ namespace Tpetra
 		}
 
 		//! OutputObject Constructor passing in an existing output manager.
-		OutputObject(const Teuchos::RefCountPtr<OutputManager> &om)
+		OutputObject(const Teuchos::RCP<OutputManager> &om)
 			: om_(om)
 		{}
 
@@ -78,7 +78,7 @@ namespace Tpetra
 		//! Set the output manager we should use.
 		/*! Defines the label used to describe the \e this object.  
 		 */
-		virtual void setOutputManager(Teuchos::RefCountPtr<OutputManager> const& om) {
+		virtual void setOutputManager(Teuchos::RCP<OutputManager> const& om) {
 			om_ = om;
 		}
 
@@ -95,7 +95,7 @@ namespace Tpetra
 		//! OutputObject Label access funtion.
 		/*! Returns the string used to define this object.  
 		 */
-		Teuchos::RefCountPtr<OutputManager> getOutputManager() const {
+		Teuchos::RCP<OutputManager> getOutputManager() const {
 			return(om_);
 		}
 
@@ -137,7 +137,7 @@ namespace Tpetra
 		    \param os (InOut) The ostream to which information will be printed.
 		*/
 		virtual void newPrint(ostream& os) const {
-			Teuchos::RefCountPtr<OutputManager> om = getOutputManager();
+			Teuchos::RCP<OutputManager> om = getOutputManager();
 			if (om->isVerbosityAndPrint(Tpetra::Signature)) 
 				printSignature(os);
 			if (om->isVerbosityAndPrint(Tpetra::Summary)) 
@@ -149,13 +149,13 @@ namespace Tpetra
 		//! Assignment operator (declared but not defined, do not use)
 		OutputObject& operator = (OutputObject const& source);
   
-		Teuchos::RefCountPtr<OutputManager> om_;
+		Teuchos::RCP<OutputManager> om_;
 
 	}; // class OutputObject
 
 #ifdef HAVE_NEW_OUTPUT
 	inline ostream& operator<<(ostream& os, Tpetra::OutputObject const& outputObject) {
-		Teuchos::RefCountPtr<OutputManager> om = outputObject.getOutputManager();
+		Teuchos::RCP<OutputManager> om = outputObject.getOutputManager();
 		if (om->isVerbosityAndPrint(Tpetra::Signature)) 
 			outputObject.printSignature(os);
 		if (om->isVerbosityAndPrint(Tpetra::Summary)) 

@@ -29,7 +29,7 @@
 #ifndef TPETRA_SERIALPLATFORM_HPP
 #define TPETRA_SERIALPLATFORM_HPP
 
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_SerialComm.hpp"
@@ -59,8 +59,8 @@ namespace Tpetra {
 		~SerialPlatform() {};
 
 		//! Clone constructor
-		Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > clone() const {
-			Teuchos::RefCountPtr< Platform<OrdinalType, ScalarType> > platform;
+		Teuchos::RCP< Platform<OrdinalType, ScalarType> > clone() const {
+			Teuchos::RCP< Platform<OrdinalType, ScalarType> > platform;
 			platform = Teuchos::rcp(new SerialPlatform<OrdinalType, ScalarType>(*this));
 			return(platform);
 		};
@@ -70,13 +70,13 @@ namespace Tpetra {
 		//@{ \name Class Creation and Accessor Methods
 
 		//! Comm Instances
-		Teuchos::RefCountPtr< Comm<OrdinalType, ScalarType> > createScalarComm() const {
-			Teuchos::RefCountPtr< SerialComm<OrdinalType, ScalarType> > comm;
+		Teuchos::RCP< Comm<OrdinalType, ScalarType> > createScalarComm() const {
+			Teuchos::RCP< SerialComm<OrdinalType, ScalarType> > comm;
 			comm = Teuchos::rcp(new SerialComm<OrdinalType, ScalarType>());
 			return(comm);
 		};
-		Teuchos::RefCountPtr< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const {
-			Teuchos::RefCountPtr< SerialComm<OrdinalType, OrdinalType> > comm;
+		Teuchos::RCP< Comm<OrdinalType, OrdinalType> > createOrdinalComm() const {
+			Teuchos::RCP< SerialComm<OrdinalType, OrdinalType> > comm;
 			comm = Teuchos::rcp(new SerialComm<OrdinalType, OrdinalType>());
 			return(comm);
 		};

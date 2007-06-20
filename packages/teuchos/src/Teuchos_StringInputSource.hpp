@@ -56,7 +56,7 @@ namespace Teuchos
       virtual ~StringInputSource(){;}
 
       /** \brief Create a StringInputStream */
-      virtual RefCountPtr<XMLInputStream> stream() const;
+      virtual RCP<XMLInputStream> stream() const;
 
     private:
       string text_;

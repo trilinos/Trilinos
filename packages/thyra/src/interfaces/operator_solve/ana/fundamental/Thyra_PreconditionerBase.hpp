@@ -88,12 +88,12 @@ public:
    * <li>[<tt>isLeftPrecOpConst()==true</tt>] <tt>getLeftPrecOp().get()==NULL</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<LinearOpBase<DomainScalar,RangeScalar> > getNonconstLeftPrecOp() = 0;
+  virtual Teuchos::RCP<LinearOpBase<DomainScalar,RangeScalar> > getNonconstLeftPrecOp() = 0;
 
   /** \brief Return a const left preconditioner linear operator if one is
    * designed or targeted to be applied on the left.
    */
-  virtual Teuchos::RefCountPtr<const LinearOpBase<DomainScalar,RangeScalar> > getLeftPrecOp()const = 0;
+  virtual Teuchos::RCP<const LinearOpBase<DomainScalar,RangeScalar> > getLeftPrecOp()const = 0;
 
   /** \brief Return if the underlying right preconditioner operator is
    * const-only or allows non-const access.
@@ -107,12 +107,12 @@ public:
    * <li>[<tt>isRightPrecOpConst()==true</tt>] <tt>getRightPrecOp().get()==NULL</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<LinearOpBase<DomainScalar,RangeScalar> > getNonconstRightPrecOp() = 0;
+  virtual Teuchos::RCP<LinearOpBase<DomainScalar,RangeScalar> > getNonconstRightPrecOp() = 0;
 
   /** \brief Return a const right preconditioner linear operator if one is
    * designed or targeted to be applied on the right.
    */
-  virtual Teuchos::RefCountPtr<const LinearOpBase<DomainScalar,RangeScalar> > getRightPrecOp() const = 0;
+  virtual Teuchos::RCP<const LinearOpBase<DomainScalar,RangeScalar> > getRightPrecOp() const = 0;
 
   /** \brief Return if the underlying unspecified preconditioner operator is
    * const-only or allows non-const access.
@@ -122,7 +122,7 @@ public:
   /** \brief Return a non-const generic preconditioner linear operator that is
    * not designed or targeted to be applied on the left or on the right.
    */
-  virtual Teuchos::RefCountPtr<LinearOpBase<DomainScalar,RangeScalar> > getNonconstUnspecifiedPrecOp() = 0;
+  virtual Teuchos::RCP<LinearOpBase<DomainScalar,RangeScalar> > getNonconstUnspecifiedPrecOp() = 0;
 
   /** \brief Return a const generic preconditioner linear operator that is not
    * designed or targeted to be applied on the left or on the right.
@@ -131,7 +131,7 @@ public:
    * <li>[<tt>isUnspecifiedPrecOpConst()==true</tt>] <tt>getUnspecifiedPrecOp().get()==NULL</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<const LinearOpBase<DomainScalar,RangeScalar> > getUnspecifiedPrecOp() const = 0;
+  virtual Teuchos::RCP<const LinearOpBase<DomainScalar,RangeScalar> > getUnspecifiedPrecOp() const = 0;
   
   //@}
 
