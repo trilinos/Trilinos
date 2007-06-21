@@ -76,7 +76,7 @@
 
 #define ML_MPI_MSG_NUM 2391
 
-#define ML_FUNCTION_NAME ML_exchange_rows
+#define ML_FUNCTION_NAME "ML_exchange_rows"
 void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended, 
                       ML_CommInfoOP *comm_info)
 {
@@ -527,7 +527,7 @@ example (with nonutilized ghost variables still works
  *                    of the matrix.
  ******************************************************************************/
 
-#define ML_FUNCTION_NAME ML_add_appended_rows
+#define ML_FUNCTION_NAME "ML_add_appended_rows"
 void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix, 
                           int orig_rows, int total_rcvd, int appended_nzs)
 {
@@ -772,7 +772,7 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
 #undef ML_FUNCTION_NAME
 #endif
 
-#define ML_FUNCTION_NAME ML_globalcsr2localcsr
+#define ML_FUNCTION_NAME "ML_globalcsr2localcsr"
 void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc)
 {
   int    lower, upper, col, i, j, k, Nexternal;
@@ -857,7 +857,7 @@ void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc)
  *                 and where received information is stored locally.
  ******************************************************************************/
 
-#define ML_FUNCTION_NAME ML_back_to_csrlocal
+#define ML_FUNCTION_NAME "ML_back_to_csrlocal"
 void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
                          int max_per_proc)
 {
@@ -1009,7 +1009,7 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
  *                 and where received information is stored locally.
  ******************************************************************************/
 
-#define ML_FUNCTION_NAME ML_back_to_local
+#define ML_FUNCTION_NAME "ML_back_to_local"
 void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
                       int max_per_proc)
 {
@@ -1189,7 +1189,7 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
                   
 *****************************************************************************/
 
-#define ML_FUNCTION_NAME ML_CommInfoOP_GenUsingGIDExternals
+#define ML_FUNCTION_NAME "ML_CommInfoOP_GenUsingGIDExternals"
 void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[], 
 					int max_per_proc, ML_Operator *matrix)
 
@@ -1441,7 +1441,7 @@ void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
 /*********************************************************************/
 /*********************************************************************/
 
-#define ML_FUNCTION_NAME ML_convert_data_org
+#define ML_FUNCTION_NAME "ML_convert_data_org"
 void ML_convert_data_org(ML_Operator *matrix, int data_org[],
         int rcv_list[], int remap[], int leng, int add_or_not)
 {
