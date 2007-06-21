@@ -2603,7 +2603,7 @@ double ML_srandom1(int *seed)
 
 /* Essentially, like printf , but we exit at the end */
 #include <stdarg.h>
-int pr_error(char *fmt,  ... ) 
+void pr_error(char *fmt,  ... ) 
 {
   char ml_message_string[800];
   va_list ap;
@@ -2634,12 +2634,10 @@ int pr_error(char *fmt,  ... )
   */
   va_end(ap);
   fprintf(stderr,"\n%sn",ml_message_string);
-#ifdef ML_MPI
-  MPI_Abort(MPI_COMM_WORLD, 1);
-#else
-  exit(1);
-#endif
-  return(1);
+# ifdef ML_MPI
+  MPI_Abort(MPI_COMM_WORLD,1);
+# endif
+  exit(EXIT_FAILURE);
 }
 
 #define SERIAL_TYPE 790331
@@ -2730,17 +2728,13 @@ void ML_Pause(ML_Comm *comm)
 {
   char go = ' ';
 
-#ifdef HAVE_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
-#endif
+  ML_Comm_Barrier(comm);
                                                                                 
   if (comm->ML_mypid == 0) {
       printf( "** Press enter to continue > "); fflush(stdout);
       scanf("%c",&go);
   }
-#ifdef HAVE_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
-#endif
+  ML_Comm_Barrier(comm);
 }
 
 
@@ -2918,7 +2912,7 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
          if( label != NULL ) fclose(fid);
      }
 #ifdef ML_MPI
-     MPI_Barrier( matrix->comm->USR_comm );
+     ML_Comm_Barrier( matrix->comm);
 #endif
      
    }

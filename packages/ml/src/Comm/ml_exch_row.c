@@ -264,6 +264,7 @@ example (with nonutilized ghost variables still works
      {
         j = comm_info->neighbors[ii].send_list[jj];
 	iptr = &(ibuff[i]);
+/*FIXME*/
         ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, &iptr,
                           &dummy1, &row_length, 0);
         i += row_length;
@@ -329,6 +330,7 @@ example (with nonutilized ghost variables still works
      {
         j = comm_info->neighbors[ii].send_list[jj];
 	dptr = &(dbuff[i]);
+/*FIXME*/
         ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, (int **) &dummy1,
                           &dptr, &row_length, 0);
         i += row_length;

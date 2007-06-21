@@ -374,12 +374,12 @@ int ML_SuperLU_Solve(ML_Solver *vsolver,int ilen,double *x,int olen,double *rhs)
           */
          (lugrid_tiles[g]).grid.nprow = nprow;
          (lugrid_tiles[g]).grid.npcol = npcol;
-         MPI_Comm_group( MPI_COMM_WORLD, &mpi_base_group );
+         MPI_Comm_group( mlcomm->USR_comm, &mpi_base_group );
          MPI_Group_incl( mpi_base_group, tsz2, usermap, &superlu_grp );
-         MPI_Comm_create(MPI_COMM_WORLD,superlu_grp,&(lugrid_tiles[g].grid.comm));
+         MPI_Comm_create(mlcomm->USR_comm,superlu_grp,&(lugrid_tiles[g].grid.comm));
          if ( lugrid_tiles[g].grid.comm == MPI_COMM_NULL ) 
          {
-            lugrid_tiles[g].grid.comm = MPI_COMM_WORLD;
+            lugrid_tiles[g].grid.comm = mlcomm->USR_comm;
             lugrid_tiles[g].grid.iam  = iam;
          } 
          else 
@@ -2243,7 +2243,8 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
       return(ML_Smoother_Set(&(ml->post_smoother[nl]),  
                              (void *) data, fun, ntimes, 0.0, str));
    }
-   else return(pr_error("Print unknown pre_or_post choice\n"));
+   else pr_error("Print unknown pre_or_post choice\n");
+   return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -2352,7 +2353,8 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
       return(ML_Smoother_Set(&(ml->post_smoother[nl]),  
                              (void *) data, fun, ntimes, 0.0, str));
    }
-   else return(pr_error("Print unknown pre_or_post choice\n"));
+   else pr_error("Print unknown pre_or_post choice\n");
+   return 0;
 }
 
 
@@ -2697,12 +2699,12 @@ for ( int KK = 0 ; KK != ep_x.NumVectors() ; KK++ ) {
           */
          (lugrid_tiles[g]).grid.nprow = nprow;
          (lugrid_tiles[g]).grid.npcol = npcol;
-         MPI_Comm_group( MPI_COMM_WORLD, &mpi_base_group );
+         MPI_Comm_group( mlcomm->USR_comm, &mpi_base_group );
          MPI_Group_incl( mpi_base_group, tsz2, usermap, &superlu_grp );
-         MPI_Comm_create(MPI_COMM_WORLD,superlu_grp,&(lugrid_tiles[g].grid.comm));
+         MPI_Comm_create(mlcomm->USR_comm,superlu_grp,&(lugrid_tiles[g].grid.comm));
          if ( lugrid_tiles[g].grid.comm == MPI_COMM_NULL ) 
          {
-            lugrid_tiles[g].grid.comm = MPI_COMM_WORLD;
+            lugrid_tiles[g].grid.comm = mlcomm->USR_comm;
             lugrid_tiles[g].grid.iam  = iam;
          } 
          else 

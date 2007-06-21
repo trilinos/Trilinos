@@ -73,6 +73,11 @@ MatrixFreePreconditioner(const Epetra_Operator& Operator,
 
   // ML communicator, here based on MPI_COMM_WORLD
   ML_Comm_Create(&Comm_ML_);
+#ifdef ML_MPI
+  const Epetra_MpiComm *epcomm = dynamic_cast<const Epetra_MpiComm*>(&(Operator.Comm()));
+  // Get the MPI communicator, as it may not be MPI_COMM_W0RLD, and update the ML comm object
+  if (epcomm) ML_Comm_Set_UsrComm(Comm_ML_,epcomm->Comm());
+#endif
 
   Time_ = rcp(new Epetra_Time(Comm()));
 

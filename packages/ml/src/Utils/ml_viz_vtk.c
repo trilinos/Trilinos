@@ -228,7 +228,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
 
   if (Naggregates > 0) {
 #ifdef ML_MPI
-    MPI_Barrier(comm->USR_comm);
+    ML_Comm_Barrier(comm);
     MPI_Scan (&Naggregates, &offset, 1, MPI_INT, MPI_SUM, comm->USR_comm);
     offset -= Naggregates;
 #else
@@ -237,7 +237,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
   }
 
 #ifdef ML_MPI
-  MPI_Barrier(comm->USR_comm);
+  ML_Comm_Barrier(comm);
   MPI_Scan (&Nrows, &vertex_offset, 1, MPI_INT, MPI_SUM, comm->USR_comm);
   vertex_offset -= Nrows;
 #else
@@ -296,9 +296,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
         }
         fclose(fp);
       }
-#ifdef ML_MPI
-      MPI_Barrier(comm->USR_comm);
-#endif
+      ML_Comm_Barrier(comm);
     }
   }
   else /* no aggregates */
@@ -321,9 +319,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
         }
         fclose(fp);
       }
-#ifdef ML_MPI
-      MPI_Barrier(comm->USR_comm);
-#endif
+      ML_Comm_Barrier(comm);
     }
   } /* if-else Naggregates > 0 */
 
@@ -381,9 +377,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
 #endif
     fclose(fp);
   }
-#ifdef ML_MPI
-  MPI_Barrier(comm->USR_comm);
-#endif
+  ML_Comm_Barrier(comm);
 
   /********************************************
     Write out connectivity information. 
@@ -408,9 +402,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
       }
       fclose(fp);
     }
-#ifdef ML_MPI
-    MPI_Barrier(comm->USR_comm);
-#endif
+    ML_Comm_Barrier(comm);
   }
 
   /****************************************************
@@ -436,9 +428,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
       }
       fclose(fp);
     }
-#ifdef ML_MPI
-    MPI_Barrier(comm->USR_comm);
-#endif
+    ML_Comm_Barrier(comm);
   }
 #endif /*ifdef UNSTRUCTURED*/
 
@@ -513,9 +503,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
         }
         fclose(fp);
       }
-#ifdef ML_MPI
-      MPI_Barrier(comm->USR_comm);
-#endif
+      ML_Comm_Barrier(comm);
     }
   }
   else /* no aggregates */
@@ -534,9 +522,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
         }
         fclose(fp);
       }
-#ifdef ML_MPI
-      MPI_Barrier(comm->USR_comm);
-#endif
+      ML_Comm_Barrier(comm);
     }
   } /*if-else Naggregates > 0 */
 
@@ -565,9 +551,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
           fprintf(fp,"%lf\n",vector[irow]);
         fclose(fp);
       }
-#ifdef ML_MPI
-      MPI_Barrier(comm->USR_comm);
-#endif
+      ML_Comm_Barrier(comm);
     }
   }
 
@@ -586,7 +570,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
 
 int ML_PlotVTK(int Npoints, double* x, double* y, double* z,
            char base_filename[],
-           USR_COMM comm, double * vector)
+           ML_Comm *comm, double * vector)
 {
 
   int irow;
@@ -600,8 +584,8 @@ int ML_PlotVTK(int Npoints, double* x, double* y, double* z,
   /* ------------------- execution begins --------------------------------- */
 
 #ifdef ML_MPI
-  MPI_Comm_rank(comm,&mypid);
-  MPI_Comm_size(comm,&nprocs);
+  MPI_Comm_rank(comm->USR_comm,&mypid);
+  MPI_Comm_size(comm->USR_comm,&nprocs);
 #endif
 
   if( mypid == 0 ) filemode[0] = 'w';
@@ -634,9 +618,7 @@ int ML_PlotVTK(int Npoints, double* x, double* y, double* z,
       }
       fclose(fp);
     }
-#ifdef ML_MPI
-    MPI_Barrier(comm);
-#endif
+    ML_Comm_Barrier(comm);
   }
   
   return 0;

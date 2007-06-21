@@ -175,9 +175,7 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
       }
       fclose(fp);
     }
-#ifdef ML_MPI
-    MPI_Barrier(comm->USR_comm);
-#endif
+    ML_Comm_Barrier(comm);
   }
   
   if( reorder != NULL ) free(reorder);
@@ -191,7 +189,7 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 
 int ML_PlotXYZ(int Npoints, double* x, double* y, double* z,
 	       char base_filename[],
-	       USR_COMM comm, double * vector)
+	       ML_Comm *comm, double * vector)
 {
 
   int irow;
@@ -205,8 +203,8 @@ int ML_PlotXYZ(int Npoints, double* x, double* y, double* z,
   /* ------------------- execution begins --------------------------------- */
 
 #ifdef ML_MPI
-  MPI_Comm_rank(comm,&mypid);
-  MPI_Comm_size(comm,&nprocs);
+  MPI_Comm_rank(comm->USR_comm,&mypid);
+  MPI_Comm_size(comm->USR_comm,&nprocs);
 #endif
 
   if( mypid == 0 ) filemode[0] = 'w';
@@ -239,9 +237,7 @@ int ML_PlotXYZ(int Npoints, double* x, double* y, double* z,
       }
       fclose(fp);
     }
-#ifdef ML_MPI
-    MPI_Barrier(comm);
-#endif
+    ML_Comm_Barrier(comm);
   }
   
   return 0;

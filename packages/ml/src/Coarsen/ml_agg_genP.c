@@ -292,9 +292,8 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
         }
       }
 
-#ifdef ML_MPI
-MPI_Barrier(MPI_COMM_WORLD);
-#endif
+      ML_Comm_Barrier(ml->comm);
+
       if (ML_Get_PrintLevel() > 10) {
         sprintf(str,"Node_before_repartitioning");
         ML_Operator_Profile(ml->Amat+next,str);
@@ -307,9 +306,7 @@ MPI_Barrier(MPI_COMM_WORLD);
         ML_Operator_Profile(ml->Amat+next,str);
       }
 
-#ifdef ML_MPI
-MPI_Barrier(MPI_COMM_WORLD);
-#endif
+      ML_Comm_Barrier(ml->comm);
 
       ML_Operator_ImplicitTranspose(&(ml->Rmat[level]),
       			    &(ml->Pmat[next]), ML_TRUE);
@@ -2624,9 +2621,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
           ML_Project_Coordinates(ml->Amat+level, Ptent, ml->Amat+next);
         }
       }
-#ifdef ML_MPI
-      MPI_Barrier(ml->comm->USR_comm);
-#endif
+      ML_Comm_Barrier(ml->comm);
       if (ML_Get_PrintLevel() > 10) {
         sprintf(str,"Node_before_repartitioning");
         ML_Operator_Profile(ml->Amat+next,str);
@@ -2639,9 +2634,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
         sprintf(str,"Node_after_repartitioning");
         ML_Operator_Profile(ml->Amat+next,str);
       }
-#ifdef ML_MPI
-      MPI_Barrier(ml->comm->USR_comm);
-#endif
+      ML_Comm_Barrier(ml->comm);
 
 #ifdef ML_TIMING
       t0 = GetClock() - t0;

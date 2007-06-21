@@ -929,7 +929,10 @@ int ML_Set_Smoother( ML *ml , int nl , int pre_or_post, void *data,
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), data,
                              func, 1, (double) ML_DEFAULT, tptr));
    }
-   else return(pr_error("ML_Set_Smoother: unknown pre_or_post choice\n"));
+   else {
+      pr_error("ML_Set_Smoother: unknown pre_or_post choice\n");
+      return 0;
+   }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -976,7 +979,7 @@ int ML_Gen_Smoother_Jacobi( ML *ml , int nl, int pre_or_post, int ntimes,
                              fun, ntimes,omega, str);
       }
    }
-   else return(pr_error("ML_Gen_Smoother_Jacobi: unknown pre_or_post choice\n"));
+   else pr_error("ML_Gen_Smoother_Jacobi: unknown pre_or_post choice\n");
 
    return(status);
 }
@@ -1051,7 +1054,7 @@ int ML_Gen_Smoother_SymGaussSeidelSequential(ML *ml , int nl, int pre_or_post,
          status = ML_Smoother_Set(&(ml->post_smoother[i]),  NULL,
                                   fun, ntimes, omega, str);
       }
-      else return(pr_error("ML_Gen_SGSSequential: unknown pre_or_post choice\n"));
+      else pr_error("ML_Gen_SGSSequential: unknown pre_or_post choice\n");
    }
    return(status);
 }
@@ -1133,7 +1136,7 @@ sgs_nums[3] = (double *) extra;
                              fun, ntimes, omega, NULL);
 	 ml->post_smoother[i].data_destroy = fun2;
       }
-   else return(pr_error("Print unknown pre_or_post choice\n"));
+   else pr_error("Print unknown pre_or_post choice\n");
    return(status);
 }
 
@@ -1188,7 +1191,7 @@ int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
          ml->timing->total_build_time   += ml->post_smoother[i].build_time;
 #endif
       }
-   else return(pr_error("Print unknown pre_or_post choice\n"));
+   else pr_error("Print unknown pre_or_post choice\n");
    return(status);
 }
 
@@ -1294,7 +1297,7 @@ int ML_Gen_Smoother_GaussSeidel(ML *ml , int nl, int pre_or_post,
 			      NULL, fun, ntimes, tomega, str);
       }
    }
-   else return(pr_error("Print unknown pre_or_post choice\n"));
+   else pr_error("Print unknown pre_or_post choice\n");
    return(status);
 }
 int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
@@ -1401,7 +1404,7 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 	 ml->post_smoother[i].data_destroy = ML_Smoother_Clean_BGS_Data;
       }
    }
-   else return(pr_error("Print unknown pre_or_post choice\n"));
+   else pr_error("Print unknown pre_or_post choice\n");
    return(status);
 }
 
@@ -1454,7 +1457,8 @@ int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), 
                              (void *) data, fun, ntimes, myomega, str));
    }
-   else return(pr_error("Print unknown pre_or_post choice\n"));
+   else pr_error("Print unknown pre_or_post choice\n");
+   return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1503,7 +1507,8 @@ int ML_Gen_Smoother_VBlockSymGaussSeidel( ML *ml , int nl, int pre_or_post,
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), 
                              (void *) data, fun, ntimes, omega, str));
    }
-   else return(pr_error("Print unknown pre_or_post choice\n"));
+   else pr_error("Print unknown pre_or_post choice\n");
+   return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1552,7 +1557,8 @@ int ML_Gen_Smoother_VBlockSymGaussSeidelSequential( ML *ml , int nl,
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), 
                              (void *) data, fun, ntimes, omega, str));
    }
-   else return(pr_error("Print unknown pre_or_post choice\n"));
+   else pr_error("Print unknown pre_or_post choice\n");
+   return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1604,7 +1610,8 @@ int ML_Gen_Smoother_VBlockKrylovJacobi( ML *ml , int nl, int pre_or_post,
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), 
                              (void *) data, fun, ntimes, myomega, str));
    }
-   else return(pr_error("Print unknown pre_or_post choice\n"));
+   else pr_error("Print unknown pre_or_post choice\n");
+   return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1689,7 +1696,8 @@ int ML_Gen_Smoother_OverlappedDDILUT( ML *ml , int nl, int pre_or_post )
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), 
                              (void *) data, fun, 1, 0.0,str));
    }
-   else return(pr_error("Print unknown pre_or_post choice\n"));
+   else pr_error("Print unknown pre_or_post choice\n");
+   return 0;
 }
 
 #ifdef out
@@ -1941,7 +1949,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
    struct MLSthing *widget = (struct MLSthing *) smooth_ptr->smoother->data;
 
    if (deg > MLS_MAX_DEG) {
-       return (pr_error("*** value of deg larger than MLS_MAX_DEG !\n"));
+       pr_error("*** value of deg larger than MLS_MAX_DEG !\n");
    }
 
    ML_Gimmie_Eigenvalues(Amat, ML_DIAGSCALE, Amat->spectral_radius_scheme, 
@@ -2317,7 +2325,7 @@ int ML_Gen_Smoother_Cheby(ML *ml, int nl, int pre_or_post,
 	   /* set up the values needed for MLS  */
 	   if (fun == ML_Smoother_Cheby_Apply) {
 	     if (ML_MLS_Setup_Coef(&(ml->pre_smoother[i]), 1,ml->symmetrize_matrix)) {
-	       return pr_error("*** MLS setup failed!\n");
+	       pr_error("*** MLS setup failed!\n");
 	     }
 	   }
 	 }
@@ -2330,7 +2338,7 @@ int ML_Gen_Smoother_Cheby(ML *ml, int nl, int pre_or_post,
 	   /* set up the values needed for MLS  */
 	   if (fun == ML_Smoother_Cheby_Apply) {
 	     if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1,ml->symmetrize_matrix)) {
-	       return pr_error("*** MLS setup failed!\n");
+	       pr_error("*** MLS setup failed!\n");
 	     }
 	   }
 	 }
@@ -2351,11 +2359,11 @@ int ML_Gen_Smoother_Cheby(ML *ml, int nl, int pre_or_post,
 
 	   if (fun == ML_Smoother_Cheby_Apply) {
 	     if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1,ml->symmetrize_matrix)) {
-	       return pr_error("*** MLS setup failed!\n");
+	       pr_error("*** MLS setup failed!\n");
 	     }
 	   }
 	 }
-	 else return(pr_error("Print unknown pre_or_post choice\n"));
+	 else pr_error("Print unknown pre_or_post choice\n");
 
 #ifdef ML_TIMING
          if (pre_or_post == ML_PRESMOOTHER)
@@ -2425,7 +2433,7 @@ int ML_Gen_Smoother_ERF_1StepKrylov(ML *ml, int nl, int pre_or_post)
 	   errCode = ML_Smoother_Set(&(ml->post_smoother[i]), 
 				     NULL, fun, ntimes, 0.0, str);
 	 }
-	 else return(pr_error("Print unknown pre_or_post choice\n"));
+	 else pr_error("Print unknown pre_or_post choice\n");
 
 #ifdef ML_TIMING
          if (pre_or_post == ML_PRESMOOTHER)
@@ -3749,8 +3757,8 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
    FILE    *fp;
 #endif
 
-#if defined(ML_MPI) && defined(ML_SYNCH)
-   MPI_Barrier(MPI_COMM_WORLD);
+#if defined(ML_SYNCH)
+   ML_Comm_Barrier(comm);
 #endif
 
    Amat     = curr->Amat;
@@ -3812,8 +3820,8 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
    /* smoothing or coarse solve                                    */
    /* ------------------------------------------------------------ */
    if (Rmat->to == NULL) {    /* coarsest grid */
-#if defined(ML_MPI) && defined(ML_SYNCH)
-   MPI_Barrier(MPI_COMM_WORLD);
+#if defined(ML_SYNCH)
+   ML_Comm_Barrier(comm);
 #endif
       if ( ML_CSolve_Check( csolve ) == 1 ) {
          ML_CSolve_Apply(csolve, lengf, sol, lengf, rhss);
@@ -3835,8 +3843,8 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       /* --------------------------------------------------------- */
       /* pre-smoothing and compute residual                        */
       /* --------------------------------------------------------- */
-#if defined(ML_MPI) && defined(ML_SYNCH)
-   MPI_Barrier(MPI_COMM_WORLD);
+#if defined(ML_SYNCH)
+   ML_Comm_Barrier(comm);
 #endif
       ML_Smoother_Apply(pre, lengf, sol, lengf, rhss, approx_all_zeros);
 
@@ -4058,12 +4066,12 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
    }
 
 #else
-#if defined(ML_MPI) && defined(ML_SYNCH)
-      MPI_Barrier(MPI_COMM_WORLD);
+#if defined(ML_SYNCH)
+      ML_Comm_Barrier(comm);
 #endif
       ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
-#if defined(ML_MPI) && defined(ML_SYNCH)
-      MPI_Barrier(MPI_COMM_WORLD);
+#if defined(ML_SYNCH)
+      ML_Comm_Barrier(comm);
 #endif
       if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
         ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
@@ -4092,8 +4100,8 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       /* --------------------------------------------------------- */
       /* post-smoothing                                            */
       /* --------------------------------------------------------- */
-#if defined(ML_MPI) && defined(ML_SYNCH)
-   MPI_Barrier(MPI_COMM_WORLD);
+#if defined(ML_SYNCH)
+   ML_Comm_Barrier(comm);
 #endif
       for ( i = 0; i < lengf; i++ ) sol[i] += res[i];
 #if defined(RAP_CHECK) || defined(ANALYSIS)
@@ -4211,8 +4219,8 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
    }
 
    ML_free(rhss);
-#if defined(ML_MPI) && defined(ML_SYNCH)
-   MPI_Barrier(MPI_COMM_WORLD);
+#if defined(ML_SYNCH)
+   ML_Comm_Barrier(comm);
 #endif
    return(res_norm);
 }
@@ -5666,9 +5674,9 @@ int ML_Gen_GridXsferUsingFEBasis(ML *ml, int L1, int L2, int stride)
 #endif
 
    if (ml->SingleLevel[L1].Grid->gridfcn == NULL)
-      return(pr_error("ML_Gen_GridXsferUsingFEBasis: First grid is missing.\n"));
+      pr_error("ML_Gen_GridXsferUsingFEBasis: First grid is missing.\n");
    if (ml->SingleLevel[L2].Grid->gridfcn == NULL)
-      return(pr_error("ML_Gen_GridXsferUsingFEBasis: Second grid is missing.\n"));
+      pr_error("ML_Gen_GridXsferUsingFEBasis: Second grid is missing.\n");
    ML_setup_grid_xsfer_op((void*) ml->SingleLevel[L1].Grid->Grid,
                           ml->SingleLevel[L1].Grid->gridfcn,
                           (void*) ml->SingleLevel[L2].Grid->Grid,
@@ -6073,7 +6081,7 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 #endif
       }
    }
-   else return(pr_error("ML_Gen_Smoother_BlockHiptmair: unknown pre_or_post choice\n"));
+   else pr_error("ML_Gen_Smoother_BlockHiptmair: unknown pre_or_post choice\n");
    return(status);
 }
 
@@ -6225,7 +6233,7 @@ int ML_Gen_Smoother_Hiptmair2( ML *ml , int nl, int pre_or_post, int ntimes,
 #endif
       }
    }
-   else return(pr_error("ML_Gen_Smoother_Hiptmair: unknown pre_or_post choice\n"));
+   else pr_error("ML_Gen_Smoother_Hiptmair: unknown pre_or_post choice\n");
    return(status);
 }
 

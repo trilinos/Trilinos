@@ -14,7 +14,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
                char base_filename[], ML_Comm *comm, double * vector);
 
 int ML_PlotVTK(int Npoints, double* x, double* y, double* z,
-               char base_filename[], USR_COMM comm, double * vector);
+               char base_filename[], ML_Comm *comm, double * vector);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

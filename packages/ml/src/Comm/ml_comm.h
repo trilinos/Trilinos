@@ -124,6 +124,7 @@ extern int    ML_Comm_Irecv(void*,unsigned int,int *,int *,USR_COMM,USR_REQ*);
 extern int    ML_Comm_Wait (void*,unsigned int,int *,int *,USR_COMM,USR_REQ*);
 extern void   ML_Comm_CheapWait (void*,unsigned int,int *,int *,USR_COMM,USR_REQ*);
 extern int    ML_Comm_Send (void*,unsigned int,int,  int,  USR_COMM );
+extern int    ML_Comm_Barrier(ML_Comm *com_ptr);
 extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
 

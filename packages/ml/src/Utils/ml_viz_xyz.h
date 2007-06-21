@@ -17,7 +17,7 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 
 int ML_PlotXYZ(int Npoints, double* x, double* y, double* z,
 	       char base_filename[],
-	       USR_COMM comm, double * vector);
+	       ML_Comm *comm, double * vector);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

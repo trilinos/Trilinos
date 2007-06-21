@@ -2279,15 +2279,11 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel)
     A->getrow->post_comm->time = 0.0;
   }
 
-#ifdef ML_MPI
-  MPI_Barrier(A->comm->USR_comm);
-#endif
+  ML_Comm_Barrier(A->comm);
   t0 = GetClock();
   for (j=0; j<numits; j++) {
     ML_Operator_Apply(A,A->invec_leng,xvec,A->outvec_leng,bvec);
-#ifdef ML_MPI
-  MPI_Barrier(A->comm->USR_comm);
-#endif
+  ML_Comm_Barrier(A->comm);
   }
   /* If communication time is zero, the matrix was probably created by Epetra */
   /* (i.e. outside ML). Thus, ML cannot time only communication. However, ML  */
@@ -2313,9 +2309,7 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel)
     for (j=0; j<numits; j++) {
        ML_exchange_bdry(bvec,A->getrow->pre_comm, A->invec_leng, 
                         A->comm, ML_OVERWRITE,NULL);
-#ifdef ML_MPI
-       MPI_Barrier(A->comm->USR_comm);
-#endif
+    ML_Comm_Barrier(A->comm);
     }
 
     A->apply_without_comm_time = A->apply_time - A->getrow->pre_comm->time;

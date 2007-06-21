@@ -74,7 +74,7 @@ int ML_Gen_Smoother_Self(ML *ml, int Overlap, int nl, int pre_or_post,
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Self;
    }
    else 
-     return(pr_error("ML_Gen_Smoother_Self: unknown pre_or_post choice\n"));
+     pr_error("ML_Gen_Smoother_Self: unknown pre_or_post choice\n");
 
    return(status);
 

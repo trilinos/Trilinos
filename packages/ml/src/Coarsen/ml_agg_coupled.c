@@ -2528,9 +2528,7 @@ printf("\n");
    (*aggr_cnt_leng_in)  = aggr_cnt_leng;
    (*aggr_cnt_array_in) = aggr_cnt_array;
 
-#ifdef ML_MPI
-   MPI_Barrier(MPI_COMM_WORLD);
-#endif
+   ML_Comm_Barrier(comm);
 
    return 0;
 }
@@ -2709,9 +2707,7 @@ int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme,
    (*aggr_count_in)     = aggr_count;
    (*aggr_cnt_array_in) = aggr_cnt_array;
 
-#ifdef ML_MPI
-   MPI_Barrier(MPI_COMM_WORLD);
-#endif
+   ML_Comm_Barrier(comm);
 
    return 0;
 }

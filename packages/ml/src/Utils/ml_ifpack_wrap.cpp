@@ -78,7 +78,7 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
    }
    else 
-     return(pr_error("ML_Gen_Smoother_Ifpack: unknown pre_or_post choice\n"));
+     pr_error("ML_Gen_Smoother_Ifpack: unknown pre_or_post choice\n");
 
    return(status);
 

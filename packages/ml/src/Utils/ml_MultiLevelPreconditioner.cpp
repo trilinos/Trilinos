@@ -517,6 +517,11 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
                   false,CPUTime);
 
   ML_Comm_Create(&ml_comm);
+#ifdef ML_MPI
+  const Epetra_MpiComm *epcomm = dynamic_cast<const Epetra_MpiComm*>(&(EdgeMatrix.Comm()));
+  // Get the MPI communicator, as it may not be MPI_COMM_W0RLD, and update the ML comm object
+  if (epcomm) ML_Comm_Set_UsrComm(ml_comm,epcomm->Comm());
+#endif
   loc_ML_Kn = ML_Operator_Create(ml_comm);
   AZ_convert_aztec_matrix_2ml_matrix(AZ_NodeMatrix,loc_ML_Kn,proc_config);
   ML_Operator2EpetraCrsMatrix(loc_ML_Kn, NodeMatrix,MaxNumNonzeros,
@@ -743,7 +748,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   // 'ML output' replaces just 'output' but for backward compatibility
   // we still allow just 'output' if 'ML output' is not set.
-
   int OutputLevel = List_.get("ML output", -47);  
   if (OutputLevel == -47) OutputLevel = List_.get("output", 0);  
   ML_Set_PrintLevel(OutputLevel);

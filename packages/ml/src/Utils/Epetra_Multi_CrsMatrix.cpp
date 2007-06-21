@@ -6,6 +6,9 @@
 #if defined(HAVE_ML_EPETRA)
 
 #include "Epetra_Comm.h"
+#ifdef ML_MPI
+#include "Epetra_MpiComm.h"
+#endif
 
 #define NO_OUTPUT
 #ifdef NO_OUTPUT
@@ -111,6 +114,11 @@ int ML_Epetra::Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply(const Epetra_CrsMat
 {
   ML_Comm* comm;
   ML_Comm_Create(&comm);
+#ifdef ML_MPI
+  const Epetra_MpiComm *epcomm = dynamic_cast<const Epetra_MpiComm*>(&(A.Comm()));
+  // Get the MPI communicator, as it may not be MPI_COMM_W0RLD, and update the ML comm object
+  if (epcomm) ML_Comm_Set_UsrComm(comm,epcomm->Comm());
+#endif
   ML_Operator *C_;
   int rv=MatrixMatrix_Multiply(A,comm,&C_);
   Epetra_CrsMatrix_Wrap_ML_Operator(C_,*Comm_,*RangeMap_,C,Copy);//,A.IndexBase());

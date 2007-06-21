@@ -444,7 +444,7 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
   MLZ_z = old_z;
 
 #ifdef ML_MPI
-  MPI_Scan(&Nrows, &MLZ_offset, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Scan(&Nrows, &MLZ_offset, 1, MPI_INT, MPI_SUM, comm->USR_comm);
   MLZ_offset -= Nrows;
 #else
   MLZ_offset = 0;
@@ -476,7 +476,7 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
   /*
    *  Create a Zoltan structure.
    */
-  if ((zz = Zoltan_Create(MPI_COMM_WORLD)) == NULL) {
+  if ((zz = Zoltan_Create(comm->USR_comm)) == NULL) {
     printf("fatal(11)  NULL returned from Zoltan_Create()\n");
     goto End;
   }

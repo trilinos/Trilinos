@@ -1322,7 +1322,7 @@ int MLI_Solver_Get_IJAFromFile(MLI_Solver *solver, char *matfile, char *rhsfile)
    int      blksize=3, local_N, ncnt;
    int      mat_N, *mat_ia, *mat_ja, *ia, *ja;
    double   *mat_a, *mat_rhs, *val, *rhs;
-   MPI_Comm comm;
+   USR_COMM comm;
 
    comm = solver->comm;
 
@@ -1333,26 +1333,26 @@ int MLI_Solver_Get_IJAFromFile(MLI_Solver *solver, char *matfile, char *rhsfile)
       MLI_Solver_Read_IJAFromFile(&mat_a, &mat_ia, &mat_ja, &mat_N,
                                   &mat_rhs, "matrix.data", "rhs.data");
       nnz = mat_ia[mat_N];
-      MPI_Bcast(&mat_N, 1, MPI_INT, 0, MPI_COMM_WORLD);
-      MPI_Bcast(&nnz,   1, MPI_INT, 0, MPI_COMM_WORLD);
+      MPI_Bcast(&mat_N, 1, MPI_INT, 0, comm);
+      MPI_Bcast(&nnz,   1, MPI_INT, 0, comm);
 
-      MPI_Bcast(mat_ia,  mat_N+1, MPI_INT,    0, MPI_COMM_WORLD);
-      MPI_Bcast(mat_ja,  nnz,     MPI_INT,    0, MPI_COMM_WORLD);
-      MPI_Bcast(mat_a,   nnz,     MPI_DOUBLE, 0, MPI_COMM_WORLD);
-      MPI_Bcast(mat_rhs, mat_N,   MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      MPI_Bcast(mat_ia,  mat_N+1, MPI_INT,    0, comm);
+      MPI_Bcast(mat_ja,  nnz,     MPI_INT,    0, comm);
+      MPI_Bcast(mat_a,   nnz,     MPI_DOUBLE, 0, comm);
+      MPI_Bcast(mat_rhs, mat_N,   MPI_DOUBLE, 0, comm);
 
    } else {
-      MPI_Bcast(&mat_N, 1, MPI_INT, 0, MPI_COMM_WORLD);
-      MPI_Bcast(&nnz,   1, MPI_INT, 0, MPI_COMM_WORLD);
+      MPI_Bcast(&mat_N, 1, MPI_INT, 0, comm);
+      MPI_Bcast(&nnz,   1, MPI_INT, 0, comm);
       mat_ia  = (int    *) ML_allocate( (mat_N + 1) * sizeof( int ) );
       mat_ja  = (int    *) ML_allocate( nnz * sizeof( int ) );
       mat_a   = (double *) ML_allocate( nnz * sizeof( double ) );
       mat_rhs = (double *) ML_allocate( mat_N * sizeof( double ) );
 
-      MPI_Bcast(mat_ia,  mat_N+1, MPI_INT,    0, MPI_COMM_WORLD);
-      MPI_Bcast(mat_ja,  nnz,     MPI_INT,    0, MPI_COMM_WORLD);
-      MPI_Bcast(mat_a,   nnz,     MPI_DOUBLE, 0, MPI_COMM_WORLD);
-      MPI_Bcast(mat_rhs, mat_N,   MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      MPI_Bcast(mat_ia,  mat_N+1, MPI_INT,    0, comm);
+      MPI_Bcast(mat_ja,  nnz,     MPI_INT,    0, comm);
+      MPI_Bcast(mat_a,   nnz,     MPI_DOUBLE, 0, comm);
+      MPI_Bcast(mat_rhs, mat_N,   MPI_DOUBLE, 0, comm);
    }
 
    chunksize = mat_N / blksize;
@@ -1407,7 +1407,7 @@ int MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *solver, char *rbmfile)
    int      i, k, chunksize, mybegin, myend, my_id, nprocs;
    int      blksize=3, local_N, ncnt, global_N, nullDimension;
    double   dtemp, *rbm_global, *rbm;
-   MPI_Comm comm;
+   USR_COMM comm;
    FILE     *fp;
 
    comm = solver->comm;
@@ -1416,7 +1416,7 @@ int MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *solver, char *rbmfile)
    MPI_Comm_size(comm, &nprocs);
 
    local_N = solver->nRows;
-   MPI_Allreduce(&local_N, &global_N, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+   MPI_Allreduce(&local_N, &global_N, 1, MPI_INT, MPI_SUM, comm);
 
    if ( my_id == 0 ) {
       fp = fopen( rbmfile, "r" );
@@ -1460,11 +1460,11 @@ int MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *solver, char *rbmfile)
       exit(1);
    }
 
-   MPI_Bcast(&nullDimension, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&nullDimension, 1, MPI_INT, 0, comm);
    if ( my_id != 0 )
       rbm_global = (double *) ML_allocate(global_N*nullDimension*sizeof(double));
 
-   MPI_Bcast(rbm_global,global_N*nullDimension,MPI_DOUBLE,0,MPI_COMM_WORLD);
+   MPI_Bcast(rbm_global,global_N*nullDimension,MPI_DOUBLE,0,comm);
 
    rbm = (double *) ML_allocate(local_N * nullDimension * sizeof(double));
    ncnt = 0;
@@ -1478,7 +1478,7 @@ int MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *solver, char *rbmfile)
    solver->nullSpace = rbm;
    ML_free( rbm_global);
    return mybegin;
-} 
+}
 
 /****************************************************************************/
 /* MLI_Solver_SetupDD                                                       */

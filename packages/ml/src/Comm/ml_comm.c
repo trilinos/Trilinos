@@ -103,7 +103,7 @@ int ML_Comm_Check( ML_Comm *com_ptr )
 }
 
 /* ******************************************************************** */
-/* Functions to set communicator parameters                             */
+/* Functions to set/replace MPI communicator.                           */
 /* -------------------------------------------------------------------- */
 
 int ML_Comm_Set_UsrComm( ML_Comm *com_ptr, USR_COMM com )
@@ -1262,6 +1262,22 @@ int ML_Comm_Send(void* buf, unsigned int count, int dest, int mid,
    }
 #endif
 
+   return err;
+}
+
+/*------------------------------------------------------------------------*/
+
+int ML_Comm_Barrier(ML_Comm *com_ptr)
+{
+   int err = 0;
+
+   if (com_ptr == NULL)
+     pr_error("ML_Comm_Barrier:  ML_Comm pointer is null.\n");
+   if (com_ptr->ML_id != ML_ID_COMM)
+     pr_error("ML_Comm_Barrier:  ML_Comm pointer is invalid.\n");
+#  ifdef ML_MPI
+   err = MPI_Barrier(com_ptr->USR_comm);
+#  endif
    return err;
 }
 

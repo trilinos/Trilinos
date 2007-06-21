@@ -1335,7 +1335,7 @@ if ( mypid == 1 )
          printf("P%d(%6d,%6d) = %e;\n", ml_amg->cur_level, i+1, 
                  new_ja[j]+1, new_val[j]);
    } 
-MPI_Barrier(MPI_COMM_WORLD);
+ML_Comm_Barrier(comm);
 */
 
    /* ------------------------------------------------------------- */

@@ -147,7 +147,7 @@ std::cout << "--- Leaving:
 #endif
 #endif
 
-   int    pr_error(char *fmt,  ... );
+   void   pr_error(char *fmt,  ... );
    double GetClock(void);
    void StartTimer(double* t0);
    void StopTimer(double* t0, double* delta);

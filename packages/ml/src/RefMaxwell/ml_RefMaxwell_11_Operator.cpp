@@ -1,11 +1,15 @@
 #include "ml_config.h"
 #include "ml_epetra.h"
+#include "ml_epetra.h"
 #include "ml_RefMaxwell_11_Operator.h"
 #include "ml_epetra_utils.h"
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_EPETRAEXT)
 #include "EpetraExt_Transpose_RowMatrix.h"
 #include "EpetraExt_SolverMap_CrsMatrix.h"
 #include "EpetraExt_MatrixMatrix.h" //haq
+#ifdef ML_MPI
+#include "Epetra_MpiComm.h"
+#endif
 
 
 #define BASE_IDX 0
@@ -192,6 +196,11 @@ int ML_Epetra::ML_RefMaxwell_11_Operator::MatrixMatrix_Multiply(const Epetra_Crs
 {
   ML_Comm* comm;
   ML_Comm_Create(&comm);
+#ifdef ML_MPI
+  const Epetra_MpiComm *epcomm = dynamic_cast<const Epetra_MpiComm*>(&(A.Comm()));
+  // Get the MPI communicator, as it may not be MPI_COMM_W0RLD, and update the ML comm object
+  if (epcomm) ML_Comm_Set_UsrComm(comm,epcomm->Comm());
+#endif
   ML_Operator *C_;
   int rv=MatrixMatrix_Multiply(A,comm,&C_);
   Epetra_CrsMatrix_Wrap_ML_Operator(C_,*Comm_,*DomainMap_,C,Copy,A.IndexBase());
