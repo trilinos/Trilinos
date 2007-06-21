@@ -144,7 +144,11 @@ namespace Belos {
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
     Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const { return defaultParams_; }
-    
+
+    /*! \brief Get a parameter list containing the current parameters for this object.
+     */
+    Teuchos::RefCountPtr<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
+ 
     /*! \brief Return the timers for this object. 
      *
      * The timers are ordered as follows:
@@ -546,27 +550,49 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountP
     if (expConvTest_ != Teuchos::null)
       expConvTest_->setTolerance( convtol_ );
   }
-  
+ 
+  // Check for a change in scaling, if so we need to build new residual tests.
+  bool newImpResTest = false, newExpResTest = false; 
   if (params->isParameter("Implicit Residual Scaling")) {
     string tempImpResScale = Teuchos::getParameter<string>( *params, "Implicit Residual Scaling" );
-    typename StatusTestResNorm_t::ScaleType impResScaleType = convertStringToScaleType( tempImpResScale );
-    impResScale_ = tempImpResScale;
 
-    // Update parameter in our list and residual tests
-    params_->set("Implicit Residual Scaling", impResScale_);
-    if (impConvTest_ != Teuchos::null)
-      impConvTest_->defineScaleForm( impResScaleType, Belos::TwoNorm );
+    // Only update the scaling if it's different.
+    if (impResScale_ != tempImpResScale) {
+      typename StatusTestResNorm_t::ScaleType impResScaleType = convertStringToScaleType( tempImpResScale );
+      impResScale_ = tempImpResScale;
+
+      // Update parameter in our list and residual tests
+      params_->set("Implicit Residual Scaling", impResScale_);
+      if (impConvTest_ != Teuchos::null) {
+        try { 
+          impConvTest_->defineScaleForm( impResScaleType, Belos::TwoNorm );
+        }
+        catch (exception& e) { 
+	  newImpResTest = true;
+        }
+      }
+    }      
   }
   
   if (params->isParameter("Explicit Residual Scaling")) {
     string tempExpResScale = Teuchos::getParameter<string>( *params, "Explicit Residual Scaling" );
-    typename StatusTestResNorm_t::ScaleType expResScaleType = convertStringToScaleType( tempExpResScale );
-    expResScale_ = tempExpResScale;
 
-    // Update parameter in our list and residual tests
-    params_->set("Explicit Residual Scaling", expResScale_);
-    if (expConvTest_ != Teuchos::null)
-      expConvTest_->defineScaleForm( expResScaleType, Belos::TwoNorm );
+    // Only update the scaling if it's different.
+    if (expResScale_ != tempExpResScale) {
+      typename StatusTestResNorm_t::ScaleType expResScaleType = convertStringToScaleType( tempExpResScale );
+      expResScale_ = tempExpResScale;
+
+      // Update parameter in our list and residual tests
+      params_->set("Explicit Residual Scaling", expResScale_);
+      if (expConvTest_ != Teuchos::null) {
+        try { 
+          expConvTest_->defineScaleForm( expResScaleType, Belos::TwoNorm );
+        }
+        catch (exception& e) {
+	  newExpResTest = true;
+        }
+      }
+    }      
   }
 
 
@@ -588,27 +614,27 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountP
     maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
-  if (impConvTest_ == Teuchos::null) {
+  if (impConvTest_ == Teuchos::null || newImpResTest) {
     impConvTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
     impConvTest_->defineScaleForm( convertStringToScaleType(impResScale_), Belos::TwoNorm );
     impConvTest_->setShowMaxResNormOnly( showMaxResNormOnly_ );
   }
 
   // Explicit residual test once the native residual is below the tolerance
-  if (expConvTest_ == Teuchos::null) {
+  if (expConvTest_ == Teuchos::null || newExpResTest) {
     expConvTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
     expConvTest_->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
     expConvTest_->defineScaleForm( convertStringToScaleType(expResScale_), Belos::TwoNorm );
     expConvTest_->setShowMaxResNormOnly( showMaxResNormOnly_ );
   }
 
-  if (convTest_ == Teuchos::null)
+  if (convTest_ == Teuchos::null || newImpResTest || newExpResTest)
     convTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, impConvTest_, expConvTest_ ) );
 
-  if (sTest_ == Teuchos::null)
+  if (sTest_ == Teuchos::null || newImpResTest || newExpResTest)
     sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
   
-  if (outputTest_ == Teuchos::null) {
+  if (outputTest_ == Teuchos::null || newImpResTest || newExpResTest) {
     if (outputFreq_ > 0) {
       outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
 									  sTest_, 
@@ -725,7 +751,21 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   // Parameter list
   Teuchos::ParameterList plist;
   plist.set("Block Size",blockSize_);
-  plist.set("Num Blocks",numBlocks_);
+
+  int dim = MVT::GetVecLength( *(problem_->getRHS()) );  
+  if (blockSize_*numBlocks_ > dim) {
+    int tmpNumBlocks = 0;
+    if (blockSize_ == 1)
+      tmpNumBlocks = dim / blockSize_;  // Allow for a good breakdown.
+    else
+      tmpNumBlocks = ( dim - blockSize_) / blockSize_;  // Allow for restarting.
+    printer_->stream(Warnings) << 
+      "Warning! Requested Krylov subspace dimension is larger that operator dimension!" << endl <<
+      " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << tmpNumBlocks << endl;
+    plist.set("Num Blocks",tmpNumBlocks);
+  } 
+  else 
+    plist.set("Num Blocks",numBlocks_);
   
   // Reset the status test.  
   outputTest_->reset();
@@ -746,7 +786,16 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
     while ( numRHS2Solve > 0 ) {
 
       // Set the current number of blocks and blocksize with the Gmres iteration.
-      block_gmres_iter->setSize( blockSize_, numBlocks_ );
+      if (blockSize_*numBlocks_ > dim) {
+        int tmpNumBlocks = 0;
+        if (blockSize_ == 1)
+          tmpNumBlocks = dim / blockSize_;  // Allow for a good breakdown.
+        else
+          tmpNumBlocks = ( dim - blockSize_) / blockSize_;  // Allow for restarting.
+        block_gmres_iter->setSize( blockSize_, tmpNumBlocks );
+      }
+      else
+        block_gmres_iter->setSize( blockSize_, numBlocks_ );
 
       // Reset the number of iterations.
       block_gmres_iter->resetNumIters();
@@ -863,22 +912,26 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    printer_->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration " 
 				    << block_gmres_iter->getNumIters() << endl 
 				    << e.what() << endl;
-	    throw;
-          }
-          // If the block size is one, try to recover the most recent least-squares solution
-	  block_gmres_iter->updateLSQR( block_gmres_iter->getCurSubspaceDim() );
+	    if (convTest_->getStatus() != Passed)
+	      isConverged = false;
+            break;
+          } 
+          else {
+            // If the block size is one, try to recover the most recent least-squares solution
+  	    block_gmres_iter->updateLSQR( block_gmres_iter->getCurSubspaceDim() );
 
-	  // Check to see if the most recent least-squares solution yielded convergence.
-	  sTest_->checkStatus( &*block_gmres_iter );
-	  if (convTest_->getStatus() != Passed)
-	    isConverged = false;
-	  break;
+	    // Check to see if the most recent least-squares solution yielded convergence.
+	    sTest_->checkStatus( &*block_gmres_iter );
+	    if (convTest_->getStatus() != Passed)
+	      isConverged = false;
+	    break;
+          }
         }
-	catch (std::exception e) {
+        catch (std::exception e) {
 	  printer_->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration " 
-				  << block_gmres_iter->getNumIters() << endl 
-				  << e.what() << endl;
-	  throw;
+	                           << block_gmres_iter->getNumIters() << endl 
+				   << e.what() << endl;
+          throw;
 	}
       }
       
@@ -919,6 +972,9 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
     }// while ( numRHS2Solve > 0 )
     
   }
+
+  // print final summary
+  sTest_->print( printer_->stream(FinalSummary) );
  
   // print timing information
   Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
@@ -936,7 +992,8 @@ std::string BlockGmresSolMgr<ScalarType,MV,OP>::description() const
   std::ostringstream oss;
   oss << "Belos::BlockGmresSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
   oss << "{";
-  oss << "Ortho Type='"<<orthoType_<<"\'";
+  oss << "Ortho Type='"<<orthoType_<<"\', Block Size=" <<blockSize_;
+  oss << ", Num Blocks=" <<numBlocks_<< ", Max Restarts=" << maxRestarts_;
   oss << "}";
   return oss.str();
 }

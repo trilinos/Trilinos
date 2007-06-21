@@ -186,6 +186,9 @@ int main(int argc, char *argv[]) {
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  if (numrhs > 1) {
+    belosList.set( "Show Maximum Residual Norm Only", true );  // Show only the maximum residual norm
+  }
   if (verbose) {
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
 		   Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
@@ -193,7 +196,7 @@ int main(int argc, char *argv[]) {
       belosList.set( "Output Frequency", frequency );
   }
   else
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::FinalSummary );
   //
   // *******Construct a preconditioned linear problem********
   //

@@ -144,6 +144,10 @@ namespace Belos {
      */
     Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const { return defaultParams_; }
     
+    /*! \brief Get a parameter list containing the current parameters for this object.
+     */
+    Teuchos::RefCountPtr<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
+    
     /*! \brief Return the timers for this object. 
      *
      * The timers are ordered as follows:
@@ -569,114 +573,6 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setDefaultParams()
   defaultParams_->set("Orthogonalization Constant",orthoKappa_default_);
 }
 
-  /*
-// Constructor
-template<class ScalarType, class MV, class OP>
-BlockCGSolMgr<ScalarType,MV,OP>::BlockCGSolMgr( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem,
-						Teuchos::ParameterList &pl ) : 
-  problem_(problem),
-  orthoType_("DGKS"),
-  orthoKappa_(-1.0),
-  convtol_(0),
-  adaptiveBlockSize_(true),
-  blockSize_(0),
-  verbosity_(Belos::Errors),
-  outputFreq_(-1),
-  label_("Belos")
-{
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
-  
-  // convergence tolerance
-  convtol_ = pl.get("Convergence Tolerance",MT::prec());
-  
-  // maximum number of iterations
-  maxIters_ = pl.get("Maximum Iterations",maxIters_);
-
-  // block size: default is 1
-  blockSize_ = pl.get("Block Size",1);
-  TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
-                     "Belos::BlockCGSolMgr: \"Block Size\" must be strictly positive.");
-  adaptiveBlockSize_ = pl.get("Adaptive Block Size",adaptiveBlockSize_);
-
-  // timer label and create timer
-  label_ = pl.get("Timer Label", "Belos");
-  string solveLabel = label_ + ": BlockCGSolMgr total solve time";
-  timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
-
-  // which orthogonalization to use
-  orthoType_ = pl.get("Orthogonalization",orthoType_);
-  if (orthoType_ != "DGKS" && orthoType_ != "ICGS") {
-    orthoType_ = "DGKS";
-  }
-
-  // which orthogonalization constant to use
-  orthoKappa_ = pl.get("Orthogonalization Constant",orthoKappa_);
-  
-  // verbosity level
-  if (pl.isParameter("Verbosity")) {
-    if (Teuchos::isParameterType<int>(pl,"Verbosity")) {
-      verbosity_ = pl.get("Verbosity", verbosity_);
-    } else {
-      verbosity_ = (int)Teuchos::getParameter<Belos::MsgType>(pl,"Verbosity");
-    }
-  }
-  
-  // frequency level
-  if (verbosity_ & Belos::StatusTestDetails) {
-    if (pl.isParameter("Output Frequency")) {
-      outputFreq_ = pl.get("Output Frequency", outputFreq_);
-    }
-  }
-
-  // Create output manager
-  printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_) );
-  
-  // Create status tests
-
-  // Convergence
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
-  
-  // Basic test checks maximum iterations and native residual.
-  maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
-  
-  // Implicit residual test, using the native residual to determine if convergence was achieved.
-  convTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, 1 ) );
-  
-  sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
-  
-  if (outputFreq_ > 0) {
-    outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
-                                                                        sTest_, 
-									outputFreq_, 
-									Passed+Failed+Undefined ) ); 
-  }
-  else {
-    outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
-									sTest_, 1 ) );
-  }
-
-  // Create orthogonalization manager
-  if (orthoType_=="DGKS") {
-    if (orthoKappa_ <= 0) {
-      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-    }
-    else {
-      ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-      Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
-    }
-  }
-  else if (orthoType_=="ICGS") {
-    ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
-  } 
-  else {
-    TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS",std::logic_error,
-		       "Belos::BlockCGSolMgr(): Invalid orthogonalization type.");
-  }  
-
-}
-  */
-
   
 // solve()
 template<class ScalarType, class MV, class OP>
@@ -887,6 +783,9 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
     }// while ( numRHS2Solve > 0 )
     
   }
+
+  // print final summary
+  sTest_->print( printer_->stream(FinalSummary) );
  
   // print timing information
   Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
@@ -904,7 +803,7 @@ std::string BlockCGSolMgr<ScalarType,MV,OP>::description() const
   std::ostringstream oss;
   oss << "Belos::BlockCGSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
   oss << "{";
-  oss << "Ortho Type='"<<orthoType_<<"\'";
+  oss << "Ortho Type='"<<orthoType_<<"\', Block Size=" << blockSize_;
   oss << "}";
   return oss.str();
 }

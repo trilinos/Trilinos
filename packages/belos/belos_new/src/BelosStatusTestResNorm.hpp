@@ -539,7 +539,7 @@ void StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) const
     os << ", tol = " << tolerance_ << endl;
   else {
     os << endl;
-    if(showMaxResNormOnly_) {
+    if(showMaxResNormOnly_ && curBlksz_ > 1) {
       const MagnitudeType maxRelRes = *std::max_element(
         testvector_.begin()+curLSIdx_[0],testvector_.begin()+curLSIdx_[curBlksz_-1]
         );

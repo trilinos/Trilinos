@@ -463,6 +463,9 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
 	}
 	
 	// Initialize the state storage
+        TEST_FOR_EXCEPTION(blockSize_*numBlocks_ > MVT::GetVecLength(*rhsMV),std::invalid_argument,
+                           "Belos::BlockGmresIter::setStateSize(): Cannot generate a Krylov basis with dimension larger the operator!");
+
 	// If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
 	if (V_ == Teuchos::null) {
 	  // Get the multivector that is not null.
