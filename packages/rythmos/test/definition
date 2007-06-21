@@ -6,168 +6,168 @@
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --verbose --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Scalar Forward Euler
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --method=FE --maxerror=1e-1 --verbose --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Scalar Backward Euler
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --verbose --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Scalar ImplicitBDF with forcing term
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3  --verbose --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Vector Explicit Runge-Kutta 4 stage
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --numelements=10 --verbose --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Vector Forward Euler
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --method=FE --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Vector Backward Euler
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Scalar Backward Euler using Amesos
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=1 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Scalar Backward Euler using AztecOO
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample_aztecoo.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=1 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Vector Backward Euler using Amesos
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Vector Backward Euler using AztecOO
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample_aztecoo.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=100 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
-    COMM = SERIAL,MPI;
+    COMM = SERIAL,MPI(1);
 }
 
 # Vector Backward Euler using Belos
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample_belos.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=100 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
-    COMM = SERIAL,MPI;
+    COMM = SERIAL,MPI(1);
 }
 
 # Vector Forward Euler with same accuracy as ERK
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
     ARGS = --numelements=100 --method=FE --T=0.1 --numsteps=5000 --verbose --echo-command-line;
-    COMM = SERIAL,MPI;
+    COMM = SERIAL,MPI(1);
 }
 
 # Vector Backward Euler with same accuracy as ERK
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --numelements=10 --method=BE --T=0.1 --numsteps=5000 --verbose --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Vector Implicit BDF
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --numelements=10 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Vector Backward Euler
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BDF --maxorder=1 --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Vector Implicit BDF with AztecOO
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample_aztecoo.exe;
     ARGS = --numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
-    COMM = SERIAL,MPI;
+    COMM = SERIAL,MPI(1);
 }
 
 # Vector Implicit BDF with Belos
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample_belos.exe;
     ARGS = --numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
-    COMM = SERIAL,MPI;
+    COMM = SERIAL,MPI(1);
 }
 
 # Vector 1DfemTransient with Backward Euler 
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_amesos.exe;
     ARGS = --verbose --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Vector 1DfemTransient with Backward Euler using AztecOO
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_aztecoo.exe;
     ARGS = --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
-    COMM = SERIAL,MPI;
+    COMM = SERIAL,MPI(1);
 }
 
 # Vector 1DfemTransient with Backward Euler using Belos
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_belos.exe;
     ARGS = --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
-    COMM = SERIAL,MPI;
+    COMM = SERIAL,MPI(1);
 }
 
 # Vector 1DfemTransient with ImplicitBDF
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_amesos.exe;
     ARGS = --verbose --method=BDF --echo-command-line;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # Vector 1DfemTransient with ImplicitBDF with AztecOO
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_aztecoo.exe;
     ARGS = --verbose --method=BDF --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
-    COMM = SERIAL,MPI;
+    COMM = SERIAL,MPI(1);
 }
 
 # Vector 1DfemTransient with ImplicitBDF with Belos
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_belos.exe;
     ARGS = --verbose --method=BDF --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
-    COMM = SERIAL,MPI;
+    COMM = SERIAL,MPI(1);
 }
 
 
@@ -189,7 +189,8 @@
           </ParameterList>
         </ParameterList>" \
       --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_MEDIUM;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
 }
 
 
@@ -212,7 +213,8 @@
           </ParameterList>
         </ParameterList>" \
       --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_MEDIUM;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
 }
 
 
@@ -258,7 +260,8 @@
           </ParameterList>
         </ParameterList>" \
       --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_EXTREME;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI;
+    EXIT-STATUS = STRING-COMPARISON;
 }
 
 
@@ -291,7 +294,7 @@
           </ParameterList>
         </ParameterList>" \
       --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_EXTREME;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI;
 }
 
 
@@ -332,7 +335,8 @@
       --max-state-error=1e-6 \
       --max-sens-error=1e-6 \
       --dump-final-solutions;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
 }
 
 
@@ -373,7 +377,8 @@
       --max-state-error=1e-6 \
       --max-sens-error=1e-6 \
       --dump-final-solutions;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
 }
 
 
@@ -414,7 +419,8 @@
       --max-state-error=1e-6 \
       --max-sens-error=1e-6 \
       --dump-final-solutions;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
 }
 
 
@@ -449,7 +455,8 @@
       --max-state-error=1e-6 \
       --dump-final-solutions \
       --use-BDF;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
 }
 
 
@@ -484,7 +491,8 @@
       --max-state-error=1e-6 \
       --dump-final-solutions \
       --use-BDF;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
 }
 
 # Test the computation of DxDp using the BDF stepper
@@ -529,7 +537,8 @@
       --max-sens-error=1e-6 \
       --dump-final-solutions \
       --use-BDF;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
 }
 
 
@@ -574,7 +583,8 @@
       --max-sens-error=1e-6 \
       --dump-final-solutions \
       --use-BDF;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
 }
 
 
@@ -582,6 +592,6 @@
 (FRAMEWORK,INSTALL) {
     TESTS = ExplicitTaylorPolynomialStepper/VanDerPolOscillator/vdp.exe;
     ARGS = --verbose;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
     EXIT-STATUS = STRING-COMPARISON(Test passed!);
 }
