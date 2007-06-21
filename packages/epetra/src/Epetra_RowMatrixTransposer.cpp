@@ -232,7 +232,7 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
   const Epetra_Map& domain_map = OrigMatrix_->OperatorDomainMap();
   const Epetra_Map& range_map = OrigMatrix_->OperatorRangeMap();
 
-  EPETRA_CHK_ERR(TempTransA1.FillComplete(range_map, domain_map));
+  EPETRA_CHK_ERR(TempTransA1.FillComplete(range_map, domain_map, false));
 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
@@ -306,7 +306,6 @@ int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixW
   const Epetra_Map & TransMap = OrigMatrix_->RowMatrixColMap();
 
   Epetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz_);
-  TransMyGlobalEquations_ = new int[NumMyCols_];
   TransMap.MyGlobalElements(TransMyGlobalEquations_);
   
   /* Add  rows one-at-a-time */
@@ -322,7 +321,7 @@ int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixW
   const Epetra_Map& domain_map = OrigMatrix_->OperatorDomainMap();
   const Epetra_Map& range_map = OrigMatrix_->OperatorRangeMap();
 
-  EPETRA_CHK_ERR(TempTransA1.FillComplete(range_map, domain_map));
+  EPETRA_CHK_ERR(TempTransA1.FillComplete(range_map, domain_map, false));
 
   // Now that transpose matrix with shared rows is entered, update values of target transpose matrix
 
