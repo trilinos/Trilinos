@@ -4,7 +4,7 @@
 #                                                                             #
 ###############################################################################
 
-Trilinos Website: http://software.sandia.gov/trilinos
+Trilinos Website: http://trilinos.sandia.gov
 
 -------------------------------------------------------------------------------
 
@@ -24,13 +24,13 @@ Trilinos Website: http://software.sandia.gov/trilinos
 
   These can all be found at:
 
-      http://software.sandia.gov/trilinos/publications.html
+      http://trilinos.sandia.gov/documentation.html
 
 - For help with a particular package, see the website and accompanying
   documentation for that package. Links to these can be found down the
   right side of any page on the website and at:
 
-      http://software.sandia.gov/trilinos/packages
+      http://trilinos.sandia.gov/packages/
 
 - Sample build scripts for various platforms can be found in:
 
@@ -41,4 +41,4 @@ Trilinos Website: http://software.sandia.gov/trilinos
 
 - If you are having problems, visit:
 
-      http://software.sandia.gov/trilinos/help.html
+      http://trilinos.sandia.gov/contact.html
