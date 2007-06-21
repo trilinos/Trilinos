@@ -92,7 +92,6 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->num_rigid           = 1;
    mat->N_total_cols_est    = -1;
    mat->subspace            = NULL;
-   mat->vbr                 = NULL;
    mat->spectral_radius_scheme = ML_USE_CG;
    mat->spectral_radius_max_iters = 10;
    ML_Aux_Data_Create(&(mat->aux_data));
@@ -216,13 +215,6 @@ int ML_Operator_Clean( ML_Operator *mat)
      ML_free(mat->subspace->vec1); ML_free(mat->subspace->vec2);
      ML_free(mat->subspace->res1); ML_free(mat->subspace->res2);
      ML_free(mat->subspace);
-   }
-   if (mat->vbr != NULL){
-     ML_free(mat->vbr);
-   }
-   if ((mat->data_destroy != NULL) && (mat->data != NULL)) {
-      mat->data_destroy(mat->data);
-      mat->data = NULL;
    }
    if (mat->diagonal != NULL) {
       ML_DVector_Destroy( &(mat->diagonal) );
@@ -2128,16 +2120,6 @@ int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs, int vecleng)
    Amat->subspace->vec2 = (double *) ML_allocate((Amat->outvec_leng +
                                         Amat->invec_leng) * sizeof(double) );
    return 0;
-}
-
-void ML_Operator_SetVBR_Info(ML_Operator *mat, int *cpntr, int *rpntr)
-{
-  mat->vbr = (ML_VBR_Info *)ML_allocate(sizeof(struct ML_VBR_Info_Struct));
-  mat->vbr->cpntr = cpntr;
-  mat->vbr->rpntr = rpntr;
-  mat->vbr->bindx = NULL;
-  mat->vbr->indx = NULL;
-  mat->vbr->bpntr = NULL;
 }
 
 int ML_Operator_MoveFromHierarchyAndClean(ML_Operator *newmat, 

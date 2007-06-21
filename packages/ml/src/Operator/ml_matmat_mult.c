@@ -1552,7 +1552,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 /*Recives an ML_Operator in a sparse data structure(csr, msr or vbr and returns  */
 /*the same ML_Operator stored as a vbr matrix.                                   */
 /*********************************************************************************/
-void ML_convert2vbr(ML_Operator *in_matrix)
+void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int col_block_size, int cpntr[])
 {
    int i, j, k, kk;
    int jj = 0;
@@ -1570,7 +1570,7 @@ void ML_convert2vbr(ML_Operator *in_matrix)
    int *A_i_cols; /*columns for the single point row of values*/
    double *accum_val; /*storage of a single point row of values*/
    double *vals;  /*block row storage of matrix*/
-   int *rpntr, *cpntr, *bindx, *indx, *bpntr; /*quick links to needed structures
+   int *bindx, *indx, *bpntr; /*quick links to needed structures
                                                 also makes the code look prettier*/
    int iplus1 = 0;
    double x;
@@ -1582,10 +1582,6 @@ void ML_convert2vbr(ML_Operator *in_matrix)
    in_matrix->type = ML_TYPE_VBR_MATRIX;
    in_matrix->matvec->func_ptr = NULL;
    /*in_matrix->matvec->func_ptr = VBR_matvec;  this needs to be put back in at some point once the function exists*/
-
-   /*setup quick link aliases*/
-   rpntr = in_matrix->vbr->rpntr;
-   cpntr = in_matrix->vbr->cpntr;
 
    /*find number of block rows and block columns*/
    i = rpntr[0];
@@ -1790,6 +1786,12 @@ void ML_convert2vbr(ML_Operator *in_matrix)
    /*memory cleanup*/
    ML_free(A_i_cols);
    ML_free(accum_val);
+ 
+   /*if we have more data we need to convert*/
+/*   if(in_matrix->sub_matrix != NULL)
+   {
+     ML_convert2vbr(in_matrix->sub_matrix);
+   }*/
 }
 
 /************************************************************************/
@@ -1994,7 +1996,7 @@ void ML_2matmult_block(ML_Operator *Mat1, ML_Operator *Mat2,
       ML_exchange_rows( Mat2, &Mat2comm, Mat1->getrow->pre_comm);
    else Mat2comm = Mat2;
 
-   ML_convert2vbr(Mat2comm);
+   /*ML_convert2vbr(Mat2comm);*/
       
    ML_matmat_mult(Mat1, Mat2comm , &Mat1Mat2);
 

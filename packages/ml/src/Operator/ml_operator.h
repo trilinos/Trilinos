@@ -18,7 +18,6 @@
 /* ******************************************************************** */
 
 typedef struct ML_Operator_Subspace_Struct ML_Operator_Subspace;
-typedef struct ML_VBR_Info_Struct ML_VBR_Info;
 typedef struct ML_Operator_Struct ML_Operator;
 typedef struct ML_Function_Struct ML_Function;
 typedef struct ML_GetrowFunc_Struct ML_GetrowFunc;
@@ -85,19 +84,6 @@ struct ML_Operator_Subspace_Struct {
    int    *pivots;                  /** pivots for VAV factorization */
    int    VAVdone;                  /** true if VAV is calculated already */
    double *res1,*res2,*vec1,*vec2;      /* work vectors */
-};
-
-/* -------------------------------------------------------------------- */
-/* This data structure stores all the blockrow and blockcolumn
-   information nessary to covert a msr of csr matrix to a vbr matrix.   */
-/* -------------------------------------------------------------------- */
-
-struct ML_VBR_Info_Struct {
-   int *cpntr; /*Pointer to an array to define blockcolumn widths*/
-   int *rpntr; /*Pointer to an array to define blockrow heights*/
-   int *bindx; /*Array to store block block columns for non-zero blocks*/
-   int *indx;  /*Array to store number of entries in each block*/
-   int *bpntr; /*Array to store number of non-zero blocks in a blockrow*/
 };
 
 typedef struct {
@@ -168,7 +154,6 @@ struct ML_Operator_Struct {
                           for the finest-level operator.
 
                         */
-  ML_VBR_Info    *vbr; /*Contains block column and row information*/                  
 };
 
 
@@ -356,7 +341,6 @@ extern ML_Operator **ML_Operator_ArrayCreate( int length);
 extern int ML_Operator_ArrayDestroy( ML_Operator **array, int length);
 extern int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs,
                                    int vecleng);
-extern void ML_Operator_SetVBR_Info(ML_Operator *mat, int *cpntr, int *rpntr);
 extern int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked, 
                                             int **unblocked, int *size);
 extern int AZ_get_MSR_arrays(ML_Operator *, int **bindx, double **val);
