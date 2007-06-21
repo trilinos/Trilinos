@@ -66,8 +66,8 @@ namespace LOCA {
 
       //! Constructor
       CompositeConstraint(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const vector< Teuchos::RefCountPtr<
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const vector< Teuchos::RCP<
 	LOCA::MultiContinuation::ConstraintInterface> >& constraintObjects);
       
       //! Copy constructor
@@ -88,7 +88,7 @@ namespace LOCA {
 
       //! Cloning function
       virtual 
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+      Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Return number of constraints
@@ -199,20 +199,20 @@ namespace LOCA {
 
       //! Initialize object when using default constructor
      virtual void init(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const vector< Teuchos::RefCountPtr<
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const vector< Teuchos::RCP<
 	LOCA::MultiContinuation::ConstraintInterface> >& constraintObjects);
 
     protected:
 
       //! LOCA global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Number of constraint objects
       int numConstraintObjects;
 
       //! Array of constraint pointers
-      vector< Teuchos::RefCountPtr<
+      vector< Teuchos::RCP<
 	LOCA::MultiContinuation::ConstraintInterface> > constraintPtrs;
 
       //! Indices of each sub-constraint in the composite constraint

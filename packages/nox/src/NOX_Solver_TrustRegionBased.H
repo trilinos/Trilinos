@@ -243,19 +243,19 @@ public:
 
     See reset() for description. 
   */
-  TrustRegionBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-		   const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-		   const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
+  TrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+		   const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+		   const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   //! Destructor
   virtual ~TrustRegionBased();
 
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+		     const Teuchos::RCP<Teuchos::ParameterList>& params);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
@@ -278,47 +278,47 @@ protected:
 protected:
   
   //! Pointer to the global data object.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Printing Utils
-  Teuchos::RefCountPtr<NOX::Utils> utilsPtr;
+  Teuchos::RCP<NOX::Utils> utilsPtr;
 
   //! Current solution.
-  Teuchos::RefCountPtr<NOX::Abstract::Group> solnPtr;		
+  Teuchos::RCP<NOX::Abstract::Group> solnPtr;		
 
   //! Previous solution pointer. 
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Teuchos::RefCountPtr<NOX::Abstract::Group> oldSolnPtr;
+  Teuchos::RCP<NOX::Abstract::Group> oldSolnPtr;
 
   //! Current search direction.pointer.
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> newtonVecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> newtonVecPtr;
 
   //! Current search direction.pointer.
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> cauchyVecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> cauchyVecPtr;
 
   //! Extra vector used in computations
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> aVecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> aVecPtr;
 
   //! Extra vector used in computations
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> bVecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> bVecPtr;
 
   //! Stopping test.
-  Teuchos::RefCountPtr<NOX::StatusTest::Generic> testPtr;		
+  Teuchos::RCP<NOX::StatusTest::Generic> testPtr;		
 
   //! Type of check to use for status tests.  See NOX::StatusTest for more details.
   NOX::StatusTest::CheckType checkType;
 
   //! Input parameters.
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramsPtr;	
+  Teuchos::RCP<Teuchos::ParameterList> paramsPtr;	
 
   //! %Newton %Search %Direction. 
   NOX::Direction::Manager newton; 
@@ -383,7 +383,7 @@ protected:
   StepType stepType;
 
   //! Stores a user supplied merit function if supplied in the parameter list.
-  Teuchos::RefCountPtr<NOX::MeritFunction::Generic> meritFuncPtr;
+  Teuchos::RCP<NOX::MeritFunction::Generic> meritFuncPtr;
 
   //! If set to true, the minimum improvement ratio condition uses an Ared/Pred approach. 
   bool useAredPredRatio;

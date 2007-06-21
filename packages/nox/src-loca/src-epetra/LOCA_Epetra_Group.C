@@ -64,9 +64,9 @@
 #endif
 
 LOCA::Epetra::Group::Group(
-	    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	    Teuchos::ParameterList& printingParams, 
-	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
+	    const Teuchos::RCP<LOCA::Epetra::Interface::Required>& i, 
 	    NOX::Epetra::Vector& initialGuess,
 	    const LOCA::ParameterVector& p) :
   NOX::Epetra::Group(printingParams, i, initialGuess),
@@ -93,11 +93,11 @@ LOCA::Epetra::Group::Group(
 }
 
 LOCA::Epetra::Group::Group(
-	    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	    Teuchos::ParameterList& printingParams, 
-	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
+	    const Teuchos::RCP<LOCA::Epetra::Interface::Required>& i, 
 	    NOX::Epetra::Vector& initialGuess, 
-	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
+	    const Teuchos::RCP<NOX::Epetra::LinearSystem>& linSys,
 	    const LOCA::ParameterVector& p) :
   NOX::Epetra::Group(printingParams, i, initialGuess, linSys),
   LOCA::Abstract::Group(global_data),
@@ -123,12 +123,12 @@ LOCA::Epetra::Group::Group(
 }
 
 LOCA::Epetra::Group::Group(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	Teuchos::ParameterList& printingParams, 
-	const Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent>& i, 
+	const Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent>& i, 
 	NOX::Epetra::Vector& initialGuess, 
-	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
-	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& shiftedLinSys,
+	const Teuchos::RCP<NOX::Epetra::LinearSystem>& linSys,
+	const Teuchos::RCP<NOX::Epetra::LinearSystem>& shiftedLinSys,
 	const LOCA::ParameterVector& p) :
   NOX::Epetra::Group(printingParams, i, initialGuess, linSys),
   LOCA::Abstract::Group(global_data),
@@ -157,12 +157,12 @@ LOCA::Epetra::Group::Group(
 }
 
 LOCA::Epetra::Group::Group(
-	    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	    Teuchos::ParameterList& printingParams, 
-	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependentMatrixFree>& i, 
+	    const Teuchos::RCP<LOCA::Epetra::Interface::TimeDependentMatrixFree>& i, 
 	    NOX::Epetra::Vector& initialGuess, 
-	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
-	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& shiftedLinSys,
+	    const Teuchos::RCP<NOX::Epetra::LinearSystem>& linSys,
+	    const Teuchos::RCP<NOX::Epetra::LinearSystem>& shiftedLinSys,
 	    const LOCA::ParameterVector& p) :
   NOX::Epetra::Group(printingParams, i, initialGuess, linSys),
   LOCA::Abstract::Group(global_data),
@@ -272,7 +272,7 @@ LOCA::Epetra::Group::operator=(const NOX::Epetra::Group& source)
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Group>
+Teuchos::RCP<NOX::Abstract::Group>
 LOCA::Epetra::Group::clone(NOX::CopyType type) const 
 {
   return Teuchos::rcp(new LOCA::Epetra::Group(*this, type));
@@ -315,11 +315,11 @@ LOCA::Epetra::Group::applyJacobianTransposeInverse(
   NOX::Abstract::Group::ReturnType status;
   
   // Get non-const linsys
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> linSys = 
+  Teuchos::RCP<NOX::Epetra::LinearSystem> linSys = 
     sharedLinearSystem.getObject(this);
 
   // Get Jacobian operator
-  Teuchos::RefCountPtr<Epetra_Operator> jac =
+  Teuchos::RCP<Epetra_Operator> jac =
     linSys->getJacobianOperator();
 
   // Instantiate transpose solver
@@ -364,11 +364,11 @@ LOCA::Epetra::Group::applyJacobianTransposeInverseMultiVector(
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
 
   // Get non-const linsys
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> linSys = 
+  Teuchos::RCP<NOX::Epetra::LinearSystem> linSys = 
     sharedLinearSystem.getObject(this);
 
   // Get Jacobian operator
-  Teuchos::RefCountPtr<Epetra_Operator> jac =
+  Teuchos::RCP<Epetra_Operator> jac =
     linSys->getJacobianOperator();
 
   // Instantiate transpose solver
@@ -490,8 +490,8 @@ LOCA::Epetra::Group::computeScaledDotProduct(
   if (scaleVecPtr == Teuchos::null)
     return a.innerProduct(b) / a.length();
   else {
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> as = a.clone(NOX::DeepCopy);
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> bs = b.clone(NOX::DeepCopy);
+    Teuchos::RCP<NOX::Abstract::Vector> as = a.clone(NOX::DeepCopy);
+    Teuchos::RCP<NOX::Abstract::Vector> bs = b.clone(NOX::DeepCopy);
     double d;
 
     as->scale(*scaleVecPtr);
@@ -537,8 +537,8 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double a, double b)
   tmpVectorPtr2->PutScalar(b);
 
   // See if it is an Epetra_CrsMatrix
-  Teuchos::RefCountPtr<const Epetra_CrsMatrix> constTestCrs;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> testCrs;
+  Teuchos::RCP<const Epetra_CrsMatrix> constTestCrs;
+  Teuchos::RCP<Epetra_CrsMatrix> testCrs;
   constTestCrs = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>
     (sharedLinearSystem.getObject(this)->getJacobianOperator());
   if (constTestCrs != Teuchos::null) {
@@ -552,8 +552,8 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double a, double b)
   }
 
   // See if it is an Epetra_VbrMatrix
-  Teuchos::RefCountPtr<const Epetra_VbrMatrix> constTestVbr;
-  Teuchos::RefCountPtr<Epetra_VbrMatrix> testVbr;
+  Teuchos::RCP<const Epetra_VbrMatrix> constTestVbr;
+  Teuchos::RCP<Epetra_VbrMatrix> testVbr;
   constTestVbr = Teuchos::rcp_dynamic_cast<const Epetra_VbrMatrix>
     (sharedLinearSystem.getObject(this)->getJacobianOperator());
   if (constTestVbr != Teuchos::null) {
@@ -575,7 +575,7 @@ LOCA::Epetra::Group::computeShiftedMatrix(double alpha, double beta)
 {
   // We store a real shifted matrix
   if (userInterfaceTime != Teuchos::null) {
-    Teuchos::RefCountPtr<Epetra_Operator> mass = 
+    Teuchos::RCP<Epetra_Operator> mass = 
       shiftedSharedLinearSystem->getObject(this)->getJacobianOperator();
 
     bool res = 
@@ -585,7 +585,7 @@ LOCA::Epetra::Group::computeShiftedMatrix(double alpha, double beta)
     
     // Check if Jacobian and mass matrices are the same, in which case
     // the Jacobian is no longer valid
-    Teuchos::RefCountPtr<Epetra_Operator> jac = 
+    Teuchos::RCP<Epetra_Operator> jac = 
       sharedLinearSystem.getObject(this)->getJacobianOperator();
     if (mass.get() == jac.get())
       isValidJacobian = false;
@@ -747,7 +747,7 @@ LOCA::Epetra::Group::computeComplex(double frequency)
   NOX::Abstract::Group::ReturnType status;
 
   // Get Jacobian matrix
-  Teuchos::RefCountPtr<Epetra_RowMatrix> jac = Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(sharedLinearSystem.getObject(this)->getJacobianOperator());
+  Teuchos::RCP<Epetra_RowMatrix> jac = Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(sharedLinearSystem.getObject(this)->getJacobianOperator());
    
   // Create complex matrix
   if (complexMatrix == Teuchos::null) {
@@ -770,7 +770,7 @@ LOCA::Epetra::Group::computeComplex(double frequency)
   }
 
   // Get mass matrix M
-  Teuchos::RefCountPtr<Epetra_RowMatrix> mass = Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(shiftedSharedLinearSystem->getObject(this)->getJacobianOperator());
+  Teuchos::RCP<Epetra_RowMatrix> mass = Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(shiftedSharedLinearSystem->getObject(this)->getJacobianOperator());
 
   // Compute w*M
   status = computeShiftedMatrix(0.0, frequency);
@@ -808,13 +808,13 @@ LOCA::Epetra::Group::computeComplex(double frequency)
 
     NOX::Epetra::Vector nev(complexVec, NOX::Epetra::Vector::CreateView);
 
-    Teuchos::RefCountPtr<Teuchos::ParameterList> lsParams = 
+    Teuchos::RCP<Teuchos::ParameterList> lsParams = 
       globalData->parsedParams->getSublist("Linear Solver");
 
     // Create the Linear System
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq;
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac;
-    Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> complexLinSys = 
+    Teuchos::RCP<NOX::Epetra::Interface::Required> iReq;
+    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac;
+    Teuchos::RCP<NOX::Epetra::LinearSystem> complexLinSys = 
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
 							*lsParams,
 							iReq, 
@@ -934,7 +934,7 @@ LOCA::Epetra::Group::applyComplexMultiVector(
     dynamic_cast<NOX::Epetra::MultiVector&>(result_imag);
 
   // Get Jacobian matrix for row map
-  Teuchos::RefCountPtr<Epetra_RowMatrix> jac = Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(sharedLinearSystem.getObject(this)->getJacobianOperator());
+  Teuchos::RCP<Epetra_RowMatrix> jac = Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(sharedLinearSystem.getObject(this)->getJacobianOperator());
 
   EpetraExt::BlockMultiVector complex_input(jac->RowMatrixRowMap(),
 					    complexMatrix->RowMap(),
@@ -1148,9 +1148,9 @@ LOCA::Epetra::Group::applyComplexTransposeInverseMultiVector(
     NOX::Epetra::Vector nev(complexVec, NOX::Epetra::Vector::CreateView);
 
     // Create the Linear System
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq;
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac;
-    Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> complexLinSys = 
+    Teuchos::RCP<NOX::Epetra::Interface::Required> iReq;
+    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac;
+    Teuchos::RCP<NOX::Epetra::LinearSystem> complexLinSys = 
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
 							lsParams,
 							iReq, 
@@ -1162,7 +1162,7 @@ LOCA::Epetra::Group::applyComplexTransposeInverseMultiVector(
       Teuchos::rcp(new NOX::SharedObject<NOX::Epetra::LinearSystem, 
 		                         LOCA::Epetra::Group>(complexLinSys));
   }
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> complexLinSys = 
+  Teuchos::RCP<NOX::Epetra::LinearSystem> complexLinSys = 
     Teuchos::rcp_const_cast<NOX::Epetra::LinearSystem>(complexSharedLinearSystem->getObject());
 
   // Instantiate transpose solver
@@ -1254,7 +1254,7 @@ LOCA::Epetra::Group::applyComplexTransposeInverseMultiVector(
 //     // Otherwise, construct a shift and invert operator, and use AztecOO to 
 //     // solve linear system
 
-//     Teuchos::RefCountPtr<LOCA::Epetra::ShiftInvertOperator> A =
+//     Teuchos::RCP<LOCA::Epetra::ShiftInvertOperator> A =
 //       Teuchos::rcp(new LOCA::Epetra::ShiftInvertOperator(
 // 		  globalData,
 // 		  Teuchos::rcp(this,false),
@@ -1264,7 +1264,7 @@ LOCA::Epetra::Group::applyComplexTransposeInverseMultiVector(
 
 //     NOX::Epetra::Vector dummy(epetraResult, NOX::ShapeCopy);
 //     Epetra_Vector& epetra_dummy = dummy.getEpetraVector();    
-//     Teuchos::RefCountPtr<LOCA::Epetra::ShiftInvertInterface> interface = 
+//     Teuchos::RCP<LOCA::Epetra::ShiftInvertInterface> interface = 
 //       Teuchos::rcp(new LOCA::Epetra::ShiftInvertInterface); 
 //     Teuchos::ParameterList& solveList = params.sublist("NOX").sublist("Direction").sublist("Newton").sublist("Linear Solver");
 
@@ -1285,7 +1285,7 @@ LOCA::Epetra::Group::applyComplexTransposeInverseMultiVector(
 //   return NOX::Abstract::Group::Ok;  
 // }
 
-Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>
+Teuchos::RCP<NOX::Epetra::Interface::Required>
 LOCA::Epetra::Group::getUserInterface()
 {
   return userInterface;
@@ -1308,7 +1308,7 @@ LOCA::Epetra::Group::setScaleVector(const NOX::Abstract::Vector& s)
 
 void
 LOCA::Epetra::Group::setJacobianOperatorForSolve(
-		  const Teuchos::RefCountPtr<const Epetra_Operator>& op) const
+		  const Teuchos::RCP<const Epetra_Operator>& op) const
 {
   // Set Jacobian operator for solve
   sharedLinearSystem.getObject(this)->setJacobianOperatorForSolve(op);
@@ -1324,13 +1324,13 @@ LOCA::Epetra::Group::resetIsValid()
   isValidComplexPrec = false;
 }
 
-Teuchos::RefCountPtr<const NOX::Epetra::LinearSystem>
+Teuchos::RCP<const NOX::Epetra::LinearSystem>
 LOCA::Epetra::Group::getComplexLinearSystem() const
 {
   return complexSharedLinearSystem->getObject();
 }
 
-Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>
+Teuchos::RCP<NOX::Epetra::LinearSystem>
 LOCA::Epetra::Group::getComplexLinearSystem()
 {
   return complexSharedLinearSystem->getObject(this);
@@ -1338,8 +1338,8 @@ LOCA::Epetra::Group::getComplexLinearSystem()
 
 void
 LOCA::Epetra::Group::getComplexMaps(
-		 Teuchos::RefCountPtr<const Epetra_BlockMap>& baseMap,
-		 Teuchos::RefCountPtr<const Epetra_BlockMap>& globalMap) const
+		 Teuchos::RCP<const Epetra_BlockMap>& baseMap,
+		 Teuchos::RCP<const Epetra_BlockMap>& globalMap) const
 {
   baseMap = Teuchos::rcp(&(xVector.getEpetraVector().Map()),false);
   globalMap = Teuchos::rcp(&(complexVec->Map()),false);

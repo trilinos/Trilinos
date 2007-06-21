@@ -47,7 +47,7 @@
 #include "NOX_Utils.H"
 
 ChanProblemInterface::ChanProblemInterface(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    int N, double a, double b, double s)  : 
   globalData(global_data),
   initialGuess(N),
@@ -61,7 +61,7 @@ ChanProblemInterface::ChanProblemInterface(
 }
 
 ChanProblemInterface::ChanProblemInterface(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    int N, double a, double b, double s, ofstream& file)  : 
   globalData(global_data),
   initialGuess(N),

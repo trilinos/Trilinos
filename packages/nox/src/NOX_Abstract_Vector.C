@@ -56,7 +56,7 @@ void NOX::Abstract::Vector::print(std::ostream& stream) const
   return;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Abstract::Vector::createMultiVector(
 				    const NOX::Abstract::Vector* const* vecs,
 				    int numVecs, NOX::CopyType type) const
@@ -74,7 +74,7 @@ NOX::Abstract::Vector::createMultiVector(
   for (int i=0; i<numVecs; i++)
     tmp[i+1] = vecs[i];
 
-  Teuchos::RefCountPtr<NOX::MultiVector> mv = 
+  Teuchos::RCP<NOX::MultiVector> mv = 
     Teuchos::rcp(new NOX::MultiVector(tmp, numVecs+1, type));
 
   delete [] tmp;
@@ -82,7 +82,7 @@ NOX::Abstract::Vector::createMultiVector(
   return mv;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Abstract::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
 {
   if (numVecs <= 0) {

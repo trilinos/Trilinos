@@ -70,7 +70,7 @@ namespace LOCA {
 
       //! Initialize factory
       virtual void 
-      init(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+      init(const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       /*! 
        * @name Strategy create methods
@@ -81,19 +81,19 @@ namespace LOCA {
       virtual bool
       createBorderedSolverStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-       Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>& strategy);
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+       Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>& strategy);
 
       //! Create Anasazi operator strategy for Floquet option
       virtual bool
       createAnasaziOperatorStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
-       Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>& strategy);
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+       const Teuchos::RCP<NOX::Abstract::Group>& grp,
+       Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy>& strategy);
 
       //@}
 
@@ -108,7 +108,7 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
     }; // Class Factory
 

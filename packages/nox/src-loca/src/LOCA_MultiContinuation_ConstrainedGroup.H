@@ -42,7 +42,7 @@
 #ifndef LOCA_MULTICONTINUATION_CONSTRAINEDGROUP_H
 #define LOCA_MULTICONTINUATION_CONSTRAINEDGROUP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_Extended_MultiAbstractGroup.H"           // base class
 #include "LOCA_MultiContinuation_AbstractGroup.H"       // base class
@@ -110,11 +110,11 @@ namespace LOCA {
        * \param paramIDs [in] Parameter IDs of the constraint parameters.
        */
       ConstrainedGroup(
-       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& constraintParams,
-       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
-       const Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>& constraints,
+       const Teuchos::RCP<LOCA::GlobalData>& global_data,
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& constraintParams,
+       const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
+       const Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>& constraints,
        const vector<int>& paramIDs);
 
       //! Copy constructor
@@ -144,7 +144,7 @@ namespace LOCA {
       operator=(const NOX::Abstract::Group& source);
 
       //! Clone function
-      virtual Teuchos::RefCountPtr<NOX::Abstract::Group>
+      virtual Teuchos::RCP<NOX::Abstract::Group>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Set the solution vector to y.
@@ -245,12 +245,12 @@ namespace LOCA {
 
       //! Return underlying group
       virtual 
-      Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
+      Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
       getUnderlyingGroup() const;
       
       //! Return underlying group
       virtual 
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+      Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
       getUnderlyingGroup();
 
       //@}
@@ -353,7 +353,7 @@ namespace LOCA {
       virtual int getBorderedWidth() const;
 
       //! Get bottom-level unbordered group
-      virtual Teuchos::RefCountPtr<const NOX::Abstract::Group>
+      virtual Teuchos::RCP<const NOX::Abstract::Group>
       getUnborderedGroup() const;
 
       //! Indicates whether combined A block is zero
@@ -406,12 +406,12 @@ namespace LOCA {
       //@}
 
       //! Get group
-      virtual Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+      virtual Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
       getGroup();
 
       //! Get constraints
       virtual 
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+      Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
       getConstraints();
 
     protected:
@@ -430,22 +430,22 @@ namespace LOCA {
     protected:
 
       //! Pointer LOCA global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Parsed top-level parameters
-      Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
+      Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams;
 
       //! Constraint parameter list
-      Teuchos::RefCountPtr<Teuchos::ParameterList> constraintParams;
+      Teuchos::RCP<Teuchos::ParameterList> constraintParams;
 
       //! Pointer to base group that defines \f$F\f$
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grpPtr;
+      Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> grpPtr;
 
       //! Pointer to base group as a bordered group
-      Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractGroup> bordered_grp;
+      Teuchos::RCP<LOCA::BorderedSystem::AbstractGroup> bordered_grp;
 
       //! Pointer to constraint object
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> constraintsPtr;
+      Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> constraintsPtr;
 
       //! Number of parameters
       int numParams;
@@ -463,28 +463,28 @@ namespace LOCA {
       LOCA::MultiContinuation::ExtendedMultiVector gradientMultiVec;
 
       //! Stores view of first column of xMultiVec
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> xVec;
+      Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> xVec;
 
       //! Stores view of first column of fMultiVec
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> fVec;
+      Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> fVec;
       
       //! Stores view of first column of fMultiVec as a multivec
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> ffMultiVec;
+      Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> ffMultiVec;
 
       //! Stores view of df/dp columns of fMultiVec
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> dfdpMultiVec;
+      Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> dfdpMultiVec;
 
       //! Stores view of first column of newtonMultiVec
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> newtonVec;
+      Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> newtonVec;
 
       //! Stores view of first column of gradientMultiVec
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> gradientVec;
+      Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> gradientVec;
 
       // Stores operator for bordered solver
-      Teuchos::RefCountPtr<LOCA::BorderedSolver::JacobianOperator> jacOp;
+      Teuchos::RCP<LOCA::BorderedSolver::JacobianOperator> jacOp;
 
       //! Stores bordered solver strategy
-      Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
+      Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
 
       //! Stores indices for getting f part of fMultiVec
       vector<int> index_f;

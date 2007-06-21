@@ -56,9 +56,9 @@ using namespace NOX::Solver;
 //**** Constructor
 //*************************************************************************
 NOX::Solver::InexactTrustRegionBased::
-InexactTrustRegionBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-			const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-			const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
+InexactTrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+			const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+			const Teuchos::RCP<Teuchos::ParameterList>& p) :
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
   utils(globalDataPtr->getUtils()), 
   solnPtr(grp),		// pointer to grp
@@ -250,9 +250,9 @@ void NOX::Solver::InexactTrustRegionBased::throwError(const string& method,
 //**** reset
 //*************************************************************************
 bool NOX::Solver::InexactTrustRegionBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) 
+reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+      const Teuchos::RCP<Teuchos::ParameterList>& p) 
 {
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   utils = globalDataPtr->getUtils();
@@ -269,8 +269,8 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
 //**** reset (without reparsing of parameter list)
 //*************************************************************************
 bool NOX::Solver::InexactTrustRegionBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& t)
 {
   solnPtr = grp;
   testPtr = t;
@@ -308,7 +308,7 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
 //**** reset (without reparsing of parameter list or status tests)
 //*************************************************************************
 bool NOX::Solver::InexactTrustRegionBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& grp)
 {
   solnPtr = grp;
 
@@ -458,7 +458,7 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
     if (useCounters)
       numTrustRegionInnerIterations += 1;
 
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> dirPtr;
+    Teuchos::RCP<NOX::Abstract::Vector> dirPtr;
     double step;
 
     // Trust region step

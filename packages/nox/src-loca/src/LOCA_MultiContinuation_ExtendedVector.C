@@ -43,7 +43,7 @@
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H"
 
 LOCA::MultiContinuation::ExtendedVector::ExtendedVector(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    const NOX::Abstract::Vector& xVec,
 		    int nScalars) :
   LOCA::Extended::Vector(global_data,1,nScalars)
@@ -86,33 +86,33 @@ LOCA::MultiContinuation::ExtendedVector::operator=(const
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector>
+Teuchos::RCP<NOX::Abstract::Vector>
 LOCA::MultiContinuation::ExtendedVector::clone(NOX::CopyType type) const
 {
   return 
     Teuchos::rcp(new LOCA::MultiContinuation::ExtendedVector(*this, type));
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+Teuchos::RCP<const NOX::Abstract::Vector>
 LOCA::MultiContinuation::ExtendedVector::getXVec() const
 {
   return LOCA::Extended::Vector::getVector(0);
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector>
+Teuchos::RCP<NOX::Abstract::Vector>
 LOCA::MultiContinuation::ExtendedVector::getXVec()
 {
   return LOCA::Extended::Vector::getVector(0);
 }
 
 LOCA::MultiContinuation::ExtendedVector::ExtendedVector(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    int nScalars) :
   LOCA::Extended::Vector(global_data,1,nScalars)
 {
 }
 
-Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
+Teuchos::RCP<LOCA::Extended::MultiVector>
 LOCA::MultiContinuation::ExtendedVector::generateMultiVector(
 							int nColumns, 
 							int nVectorRows, 

@@ -45,7 +45,7 @@
 
 #include "NOX_Epetra_Interface_Required.H" // for enum FillType
 #include "NOX_Common.H"                    // for <string>
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Epetra_Vector.h"
 
 // Forward Declarations
@@ -98,32 +98,32 @@ class FiniteDifference : public Epetra_RowMatrix,
 
   //! Constructor with scalar beta.
   FiniteDifference(Teuchos::ParameterList& printingParams,
-                   const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
+                   const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
 		   const NOX::Epetra::Vector& initialGuess,
 		   double beta = 1.0e-6, 
 		   double alpha = 1.0e-4);
 
   //! Constructor with vector beta.
   FiniteDifference(Teuchos::ParameterList& printingParams,
-                   const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
+                   const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
 		   const NOX::Epetra::Vector& initialGuess,
-		   const Teuchos::RefCountPtr<const Epetra_Vector>& beta, 
+		   const Teuchos::RCP<const Epetra_Vector>& beta, 
 		   double alpha = 1.0e-4);
 
   //! Constructor that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
   FiniteDifference(Teuchos::ParameterList& printingParams,
-                   const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
+                   const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
 		   const NOX::Epetra::Vector& initialGuess,
-		   const Teuchos::RefCountPtr<Epetra_CrsGraph>& g, 
+		   const Teuchos::RCP<Epetra_CrsGraph>& g, 
 		   double beta = 1.0e-6,
 		   double alpha = 1.0e-4);
 
   //! Constructor with output control that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
   FiniteDifference(Teuchos::ParameterList& printingParams,
-                   const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
+                   const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
 		   const NOX::Epetra::Vector& initialGuess,
-		   const Teuchos::RefCountPtr<Epetra_CrsGraph>& g, 
-		   const Teuchos::RefCountPtr<const Epetra_Vector>& beta,
+		   const Teuchos::RCP<Epetra_CrsGraph>& g, 
+		   const Teuchos::RCP<const Epetra_Vector>& beta,
 		   double alpha = 1.0e-4);
 
   //! Pure virtual destructor
@@ -263,7 +263,7 @@ class FiniteDifference : public Epetra_RowMatrix,
 protected:
 
   //! Constructs an Epetra_CrsGraph and Epetra_RowMatrix for the Jacobian.  This is only called if the user does not supply an Epetra_CrsGraph.
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> 
+  Teuchos::RCP<Epetra_CrsMatrix> 
   createGraphAndJacobian(Interface::Required& i, const Epetra_Vector& x);
 
   bool computeF(const Epetra_Vector& input, Epetra_Vector& result,
@@ -275,13 +275,13 @@ protected:
   const NOX::Utils utils;
 
   //! Pointer to the Jacobian graph.
-  Teuchos::RefCountPtr<Epetra_CrsGraph> graph;
+  Teuchos::RCP<Epetra_CrsGraph> graph;
 
   //! Pointer to the Jacobian.
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> jacobian;
+  Teuchos::RCP<Epetra_CrsMatrix> jacobian;
 
   //! User provided interface function.
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> interface;
+  Teuchos::RCP<NOX::Epetra::Interface::Required> interface;
 
   //! Perturbed solution vector - a work array that needs to be mutable.
   mutable Epetra_Vector x_perturb;
@@ -293,7 +293,7 @@ protected:
   mutable Epetra_Vector fp;
 
   //! Optional pointer to function evaluation at -perturbX - needed only for centered finite differencing
-  Teuchos::RefCountPtr<Epetra_Vector> fmPtr;
+  Teuchos::RCP<Epetra_Vector> fmPtr;
 
   //! Column vector of the jacobian - a work array that needs to be mutable.
   mutable Epetra_Vector Jc;
@@ -305,7 +305,7 @@ protected:
   double beta;
 
   //! Vector for the perturbation calculation.
-  Teuchos::RefCountPtr<const Epetra_Vector> betaVector;
+  Teuchos::RCP<const Epetra_Vector> betaVector;
 
   //! Define types for the \f$ \beta \f$ parameter during the computation of the perturbation parameter \f$ \delta\f$.
   enum BetaType {Scalar, Vector};
@@ -323,7 +323,7 @@ protected:
   bool useGroupForComputeF;
 
   //! Pointer to the group for possible use in computeF() calls.
-  Teuchos::RefCountPtr<NOX::Abstract::Group> groupPtr;
+  Teuchos::RCP<NOX::Abstract::Group> groupPtr;
 
 };
 }  // namespace Epetra

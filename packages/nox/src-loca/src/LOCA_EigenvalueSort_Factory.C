@@ -47,7 +47,7 @@
 #include "LOCA_EigenvalueSort_Strategies.H"
 
 LOCA::EigenvalueSort::Factory::Factory(
-	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
@@ -56,13 +56,13 @@ LOCA::EigenvalueSort::Factory::~Factory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>
+Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy>
 LOCA::EigenvalueSort::Factory::create(
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams)
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams)
 {
   string methodName = "LOCA::EigenvalueSort::Factory::create()";
-  Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy> strategy;
 
   // Get name of strategy
   const string& name = strategyName(*eigenParams);
@@ -110,9 +110,9 @@ LOCA::EigenvalueSort::Factory::create(
       eigenParams->get("User-Defined Sorting Method Name",
 				"???");
     if ((*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> >(userDefinedName))
+	isType< Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy> >(userDefinedName))
       strategy = (*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> >(userDefinedName);
+	get< Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 			     methodName,

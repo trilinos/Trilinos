@@ -136,10 +136,10 @@ namespace LOCA {
 
 	//! Constructor
 	Constraint(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& hpfParams,
-	 const Teuchos::RefCountPtr<LOCA::Hopf::MinimallyAugmented::AbstractGroup>& g,
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& hpfParams,
+	 const Teuchos::RCP<LOCA::Hopf::MinimallyAugmented::AbstractGroup>& g,
 	 bool is_symmetric,
 	 const NOX::Abstract::Vector& a_real,
 	 const NOX::Abstract::Vector& a_imag,
@@ -161,25 +161,25 @@ namespace LOCA {
 	 * is copied, since we don't explicitly copy the underlying group
 	 * here.
 	 */
-	virtual void setGroup(const Teuchos::RefCountPtr<LOCA::Hopf::MinimallyAugmented::AbstractGroup>& g);
+	virtual void setGroup(const Teuchos::RCP<LOCA::Hopf::MinimallyAugmented::AbstractGroup>& g);
 
 	//! Set Hopf frequency
 	virtual void setFrequency(double freq);
 
 	//! Returns real component of left null vector w
-	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+	virtual Teuchos::RCP<const NOX::Abstract::Vector>
 	getLeftNullVecReal() const;
 
 	//! Returns imaginary component of left null vector w
-	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+	virtual Teuchos::RCP<const NOX::Abstract::Vector>
 	getLeftNullVecImag() const;
 
 	//! Returns real component of right null vector v
-	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+	virtual Teuchos::RCP<const NOX::Abstract::Vector>
 	getRightNullVecReal() const;
 
 	//! Returns imaginary component of right null vector v
-	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+	virtual Teuchos::RCP<const NOX::Abstract::Vector>
 	getRightNullVecImag() const;
 
 	//! Returns real component of sigma
@@ -200,7 +200,7 @@ namespace LOCA {
 
 	//! Cloning function
 	virtual 
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+	Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
 	//! Return number of constraints
@@ -280,40 +280,40 @@ namespace LOCA {
       protected:
 
 	//! Pointer LOCA global data object
-	Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+	Teuchos::RCP<LOCA::GlobalData> globalData;
 
 	//! Parsed top-level parameters
-	Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
+	Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams;
 
 	//! Bifurcation parameter list
-	Teuchos::RefCountPtr<Teuchos::ParameterList> hopfParams;
+	Teuchos::RCP<Teuchos::ParameterList> hopfParams;
 
 	//! Pointer to base group that defines \f$F\f$
-	Teuchos::RefCountPtr<LOCA::Hopf::MinimallyAugmented::AbstractGroup> grpPtr;
+	Teuchos::RCP<LOCA::Hopf::MinimallyAugmented::AbstractGroup> grpPtr;
 
 	//! Vector for \f$a\f$
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> a_vector;
+	Teuchos::RCP<NOX::Abstract::MultiVector> a_vector;
 
 	//! Vector for \f$b\f$
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> b_vector;
+	Teuchos::RCP<NOX::Abstract::MultiVector> b_vector;
 
 	//! Stores left null vector
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> w_vector;
+	Teuchos::RCP<NOX::Abstract::MultiVector> w_vector;
 
 	//! Stores right null vector
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> v_vector;
+	Teuchos::RCP<NOX::Abstract::MultiVector> v_vector;
 
 	//! Stores C*v
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> Cv_vector;
+	Teuchos::RCP<NOX::Abstract::MultiVector> Cv_vector;
 
 	//! Stores sigma_x
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> sigma_x;
+	Teuchos::RCP<NOX::Abstract::MultiVector> sigma_x;
 
 	//! Constraint values
 	NOX::Abstract::MultiVector::DenseMatrix constraints;
 
 	//! Stores bordered solver strategy
-	Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
+	Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
 
 	//! Stores vector length as a double
 	double dn;

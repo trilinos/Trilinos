@@ -47,8 +47,8 @@
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H"
 
 LOCA::MultiPredictor::Random::Random(
-	      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams) :
+	      const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	      const Teuchos::RCP<Teuchos::ParameterList>& predParams) :
   globalData(global_data),
   predictor(),
   secant(),
@@ -99,7 +99,7 @@ LOCA::MultiPredictor::Random::operator=(
   return *this;
 }
 
-Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
 LOCA::MultiPredictor::Random::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new Random(*this, type));
@@ -133,11 +133,11 @@ LOCA::MultiPredictor::Random::compute(
   predictor->init(0.0);
 
   // Get references to solution components
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> v_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> v_x = 
     predictor->getXMultiVec();
   const LOCA::MultiContinuation::ExtendedVector mx = 
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(xVec);
-  Teuchos::RefCountPtr<const NOX::Abstract::Vector> x_x = mx.getXVec();
+  Teuchos::RCP<const NOX::Abstract::Vector> x_x = mx.getXVec();
 
   // Fill predictor with random values
   v_x->random();

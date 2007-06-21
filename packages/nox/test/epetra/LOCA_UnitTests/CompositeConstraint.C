@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
     pVector.addParameter("Param 5",  2.53);
 
     // Create parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList =
+    Teuchos::RCP<Teuchos::ParameterList> paramList =
       Teuchos::rcp(new Teuchos::ParameterList);
 
     Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
@@ -120,30 +120,30 @@ int main(int argc, char *argv[])
        nlPrintParams.set("Output Information", NOX::Utils::Error);
 
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+    Teuchos::RCP<LOCA::GlobalData> globalData =
       LOCA::createGlobalData(paramList);
 
     Epetra_Vector clone_vec(map);
     NOX::Epetra::Vector nox_clone_vec(clone_vec);
 
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> x = 
+    Teuchos::RCP<NOX::Abstract::Vector> x = 
       nox_clone_vec.clone(NOX::ShapeCopy);
     x->random();
 
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> dx1 = 
+    Teuchos::RCP<NOX::Abstract::MultiVector> dx1 = 
       nox_clone_vec.createMultiVector(3);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> dx2 = 
+    Teuchos::RCP<NOX::Abstract::MultiVector> dx2 = 
       nox_clone_vec.createMultiVector(1);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> dx3 = 
+    Teuchos::RCP<NOX::Abstract::MultiVector> dx3 = 
       nox_clone_vec.createMultiVector(2);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> dx4 = 
+    Teuchos::RCP<NOX::Abstract::MultiVector> dx4 = 
       nox_clone_vec.createMultiVector(2);
     dx1->random();
     dx2->random();
     dx3->init(0.0);
     dx4->random();
 
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> dx_all = 
+    Teuchos::RCP<NOX::Abstract::MultiVector> dx_all = 
       dx1->clone(NOX::DeepCopy);
     dx_all->augment(*dx2);
     dx_all->augment(*dx3);
@@ -176,8 +176,8 @@ int main(int argc, char *argv[])
     }
 
 
-    vector< Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> > constraintObjs(4);
-    Teuchos::RefCountPtr<LinearConstraint> linear_constraint;
+    vector< Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> > constraintObjs(4);
+    Teuchos::RCP<LinearConstraint> linear_constraint;
 
     linear_constraint = Teuchos::rcp(new LinearConstraint(dx1->numVectors(),
 							  pVector,
@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
     combined.computeDX();
 
     int numMultiply = 5;
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A = 
+    Teuchos::RCP<NOX::Abstract::MultiVector> A = 
       nox_clone_vec.createMultiVector(numMultiply);
     A->random();
     NOX::Abstract::MultiVector::DenseMatrix composite_multiply(numConstraints,
@@ -296,16 +296,16 @@ int main(int argc, char *argv[])
     NOX::Abstract::MultiVector::DenseMatrix B2(numAdd, numConstraints);
     B2.random();
 
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> composite_add1 = 
+    Teuchos::RCP<NOX::Abstract::MultiVector> composite_add1 = 
       nox_clone_vec.createMultiVector(numAdd);
     composite_add1->random();
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> composite_add2 = 
+    Teuchos::RCP<NOX::Abstract::MultiVector> composite_add2 = 
       nox_clone_vec.createMultiVector(numAdd);
     composite_add2->random();
 
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> combined_add1 = 
+    Teuchos::RCP<NOX::Abstract::MultiVector> combined_add1 = 
       composite_add1->clone(NOX::DeepCopy);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> combined_add2 = 
+    Teuchos::RCP<NOX::Abstract::MultiVector> combined_add2 = 
       composite_add2->clone(NOX::DeepCopy);
 
     composite.addDX(Teuchos::NO_TRANS, 1.45, B1, 2.78, *composite_add1);

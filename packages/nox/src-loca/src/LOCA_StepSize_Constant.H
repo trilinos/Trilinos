@@ -42,7 +42,7 @@
 #ifndef LOCA_STEPSIZE_CONSTANT_H
 #define LOCA_STEPSIZE_CONSTANT_H
 
-#include "Teuchos_RefCountPtr.hpp" 
+#include "Teuchos_RCP.hpp" 
 
 #include "LOCA_StepSize_AbstractStrategy.H"  // base class
 
@@ -94,9 +94,9 @@ namespace LOCA {
 
       //! Constructor. 
       Constant(
-         const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepsizeParams);
+         const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams);
 
       //! Destructor
       virtual ~Constant();
@@ -143,7 +143,7 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Maximum step size
       double maxStepSize;

@@ -42,7 +42,7 @@
 #ifndef LOCA_ERRORCHECK_H
 #define LOCA_ERRORCHECK_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "NOX_Common.H"          // for string
 #include "NOX_Abstract_Group.H"  // for ReturnType
@@ -65,7 +65,7 @@ namespace LOCA {
   public:
 
     //! Constructor
-    ErrorCheck(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+    ErrorCheck(const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
     //! Destructor
     ~ErrorCheck();
@@ -142,7 +142,7 @@ namespace LOCA {
   protected:
 
     //! Global data
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+    Teuchos::RCP<LOCA::GlobalData> globalData;
 
   };
 } // namespace LOCA

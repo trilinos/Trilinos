@@ -90,29 +90,29 @@ namespace LOCA {
        * The constructor calls resetWrapper() to grab the proper solution
        * groups.
        */
-      Wrapper(const Teuchos::RefCountPtr<NOX::Solver::Generic>& solver);
+      Wrapper(const Teuchos::RCP<NOX::Solver::Generic>& solver);
 
       //! Constructor with a const ref-count pointer to a %NOX solver
       /*!
        * The constructor calls resetWrapper() to grab the proper solution
        * groups.
        */
-      Wrapper(const Teuchos::RefCountPtr<const NOX::Solver::Generic>& solver);
+      Wrapper(const Teuchos::RCP<const NOX::Solver::Generic>& solver);
 
       //! Destructor
       ~Wrapper();
 
       //! Implementation of reset method (forwarded to wrapped solver)
-      bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-		 const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-		 const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
+      bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+		 const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+		 const Teuchos::RCP<Teuchos::ParameterList>& params);
 
       //! Implementation of reset method (forwarded to wrapped solver)
-      bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
+      bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp);
   
       //! Implementation of reset method (forwarded to wrapped solver)
-      bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-		 const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
+      bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+		 const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
       
       //! Implementation of getStatus method (forwarded to wrapped solver)
       NOX::StatusTest::StatusType getStatus();
@@ -155,16 +155,16 @@ namespace LOCA {
     protected:
       
       //! Pointer to the solver object
-      Teuchos::RefCountPtr<NOX::Solver::Generic> solverPtr;
+      Teuchos::RCP<NOX::Solver::Generic> solverPtr;
 
       //! Pointer to the const solver object
-      Teuchos::RefCountPtr<const NOX::Solver::Generic> constSolverPtr;
+      Teuchos::RCP<const NOX::Solver::Generic> constSolverPtr;
 
       //! Pointer to solution group
-      Teuchos::RefCountPtr<const NOX::Abstract::Group> solnGrpPtr;
+      Teuchos::RCP<const NOX::Abstract::Group> solnGrpPtr;
 
       //! Pointer to previous solution group
-      Teuchos::RefCountPtr<const NOX::Abstract::Group> oldSolnGrpPtr;
+      Teuchos::RCP<const NOX::Abstract::Group> oldSolnGrpPtr;
 
     };
   }

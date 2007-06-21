@@ -49,7 +49,7 @@
 #include "LOCA_StepSize_Adaptive.H"
 
 LOCA::StepSize::Factory::Factory(
-	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
@@ -58,13 +58,13 @@ LOCA::StepSize::Factory::~Factory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy>
+Teuchos::RCP<LOCA::StepSize::AbstractStrategy>
 LOCA::StepSize::Factory::create(
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepsizeParams)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams)
 {
   string methodName = "LOCA::StepSize::Factory::create()";
-  Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::StepSize::AbstractStrategy> strategy;
 
   // Get name of strategy
   const string& name = strategyName(*stepsizeParams);
@@ -85,9 +85,9 @@ LOCA::StepSize::Factory::create(
     string userDefinedName = stepsizeParams->get("User-Defined Name",
 							  "???");
     if ((*stepsizeParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy> >(userDefinedName))
+	isType< Teuchos::RCP<LOCA::StepSize::AbstractStrategy> >(userDefinedName))
       strategy = (*stepsizeParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy> >(userDefinedName);
+	get< Teuchos::RCP<LOCA::StepSize::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,

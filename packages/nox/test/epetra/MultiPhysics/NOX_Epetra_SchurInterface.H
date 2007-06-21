@@ -72,7 +72,7 @@ public:
     { return false; }
 
   //! Access explicit operator
-  virtual Teuchos::RefCountPtr<Epetra_Operator> getExplicitOperator( int rowBlock, int colBlock )
+  virtual Teuchos::RCP<Epetra_Operator> getExplicitOperator( int rowBlock, int colBlock )
     { return Teuchos::null; }
 
 };

@@ -46,9 +46,9 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::TurningPoint::MooreSpence::SalingerBordering::SalingerBordering(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams) : 
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& slvrParams) : 
   globalData(global_data),
   solverParams(slvrParams),
   group(),
@@ -66,12 +66,12 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::~SalingerBordering()
 
 void
 LOCA::TurningPoint::MooreSpence::SalingerBordering::setBlocks(
-	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::AbstractGroup>& group_,
-	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedGroup>& tpGroup_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& nullVector_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& JnVector_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dfdp_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dJndp_)
+	 const Teuchos::RCP<LOCA::TurningPoint::MooreSpence::AbstractGroup>& group_,
+	 const Teuchos::RCP<LOCA::TurningPoint::MooreSpence::ExtendedGroup>& tpGroup_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dJndp_)
 {
   group = group_;
   tpGroup = tpGroup_;
@@ -92,18 +92,18 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solve(
   NOX::Abstract::Group::ReturnType status;
   
   // Get components of input
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_x = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
     input.getXMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_null = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_null = 
     input.getNullMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_param = input.getScalars();
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_param = input.getScalars();
 
   // Get components of result
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
     result.getXMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_null = 
     result.getNullMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
     result.getScalars();
 
   int m = input.numVectors();
@@ -116,14 +116,14 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solve(
   // First m columns store input_x, input_null, result_x, result_null
   // respectively, last column stores dfdp, dJndp, J^-1 dfdp, J^-1 dJndp
   // respectively
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_x = 
     input_x->clone(m+1);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_null = 
     input_null->clone(m+1);
   
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x = 
     result_x->clone(m+1);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_null = 
     result_null->clone(m+1);
   
   // Set first m columns to input_x
@@ -148,9 +148,9 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solve(
 			   *result_param);
   
   // Create views of first m columns for result_x, result_null
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x_view = 
     cont_result_x->subView(index_input);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_null_view = 
     cont_result_null->subView(index_input);
   
   // Copy first m columns back into result_x, result_null
@@ -201,13 +201,13 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous(
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> A = 
     result_x.subView(index_input);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> b = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> b = 
     result_x.subView(index_dp);
 
   // compute (Jn)_x[A b]
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp = 
     result_x.clone(NOX::ShapeCopy);
   status = group->computeDJnDxaMulti(*nullVector, *JnVector, result_x,
 				     *tmp);
@@ -232,9 +232,9 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solveContiguous(
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> C = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> C = 
     result_null.subView(index_input);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> d = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> d = 
     result_null.subView(index_dp);
 
   // compute z = (h + phi^T C) / phi^T d

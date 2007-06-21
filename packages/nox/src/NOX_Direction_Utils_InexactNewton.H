@@ -43,7 +43,7 @@
 #define NOX_DIRECTION_UTILS_INEXACTNEWTON_H
 
 #include "NOX_Common.H"  // for string
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward declaration
 namespace Teuchos {
@@ -180,14 +180,14 @@ class InexactNewton {
 public:
 
   //! Constructor
-  InexactNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  InexactNewton(const Teuchos::RCP<NOX::GlobalData>& gd,
 		Teuchos::ParameterList& directionSublist);
 
   //! Destructor
   virtual ~InexactNewton();
 
   //! Reset the utilities
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+  virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd, 
 		     Teuchos::ParameterList& directionSublist);
 
   //! Called each iteration to reset the forcing term (ie, the
@@ -209,10 +209,10 @@ private:
 private:
 
   //! Global data pointer.  Keep this so the parameter list remains valid.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Printing Utilities
-  Teuchos::RefCountPtr<NOX::Utils> printing;
+  Teuchos::RCP<NOX::Utils> printing;
 
   //! Type of forcing term calculations available
   enum ForcingTermType {
@@ -235,10 +235,10 @@ private:
   Teuchos::ParameterList* paramsPtr;
 
   //! Vector containing the predicted RHS
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> predRhs;
+  Teuchos::RCP<NOX::Abstract::Vector> predRhs;
 
   //! Vector containing the step direction
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> stepDir;
+  Teuchos::RCP<NOX::Abstract::Vector> stepDir;
 
   //! Current linear solve tolerance.
   double eta_k;

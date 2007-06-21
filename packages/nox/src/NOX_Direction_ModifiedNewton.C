@@ -49,7 +49,7 @@
 #include "NOX_GlobalData.H"
 
 NOX::Direction::ModifiedNewton::
-ModifiedNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+ModifiedNewton(const Teuchos::RCP<NOX::GlobalData>& gd,
 	       Teuchos::ParameterList& p)
 {
   reset(gd, p);
@@ -63,7 +63,7 @@ NOX::Direction::ModifiedNewton::~ModifiedNewton()
 }
 
 bool NOX::Direction::ModifiedNewton::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
 {
   globalDataPtr = gd;

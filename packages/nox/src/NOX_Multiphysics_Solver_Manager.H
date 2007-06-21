@@ -85,36 +85,36 @@ public:
 
     See reset() for a full description.
   */
-  Manager(const Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
-          const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& i, 
-	  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-	  const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
+  Manager(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+          const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
+	  const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+	  const Teuchos::RCP<Teuchos::ParameterList>& p);
 
   /*!
     \brief Constructor
 
     See reset() for a full description.
   */
-  Manager(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-	  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-	  const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
+  Manager(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+	  const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+	  const Teuchos::RCP<Teuchos::ParameterList>& p);
 
   //! Destructor.
   virtual ~Manager();
 
-  virtual bool reset(const Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
-                     const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& i, 
-	             const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-	             const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
+  virtual bool reset(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+                     const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
+	             const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+	             const Teuchos::RCP<Teuchos::ParameterList>& params);
   
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-	             const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-	             const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+	             const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+	             const Teuchos::RCP<Teuchos::ParameterList>& params);
   
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
-	             const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp,
+	             const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
 
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp);
 
   virtual NOX::StatusTest::StatusType getStatus();
 

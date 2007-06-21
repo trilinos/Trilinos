@@ -42,7 +42,7 @@
 #ifndef LOCA_ANASAZIOPERATOR_JACOBIANINVERSE_H
 #define LOCA_ANASAZIOPERATOR_JACOBIANINVERSE_H
 
-#include "Teuchos_RefCountPtr.hpp" 
+#include "Teuchos_RCP.hpp" 
 
 #include "LOCA_AnasaziOperator_AbstractStrategy.H"  // base class
 
@@ -69,11 +69,11 @@ namespace LOCA {
 
       //! Constructor. 
       JacobianInverse(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-	const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+	const Teuchos::RCP<NOX::Abstract::Group>& grp);
 
       //! Destructor
       virtual ~JacobianInverse();
@@ -115,25 +115,25 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Name of this operator
       string myLabel;
 
       //! Stores parameters relating to the operator
-      Teuchos::RefCountPtr<Teuchos::ParameterList> eigenParams;
+      Teuchos::RCP<Teuchos::ParameterList> eigenParams;
 
       //! Stores linear solver parameters
-      Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
+      Teuchos::RCP<Teuchos::ParameterList> solverParams;
 
       //! Stores group representing Jacobian
-      Teuchos::RefCountPtr<NOX::Abstract::Group> grp;
+      Teuchos::RCP<NOX::Abstract::Group> grp;
 
       //! Stores a temporary vector for computing Rayleigh quotients
-      mutable Teuchos::RefCountPtr<NOX::Abstract::Vector> tmp_r;
+      mutable Teuchos::RCP<NOX::Abstract::Vector> tmp_r;
 
       //! Stores a temporary vector for computing Rayleigh quotients
-      mutable Teuchos::RefCountPtr<NOX::Abstract::Vector> tmp_i;
+      mutable Teuchos::RCP<NOX::Abstract::Vector> tmp_i;
 
     };
   } // namespace AnasaziOperator

@@ -55,9 +55,9 @@ using namespace NOX::Epetra;
 
 BroydenOperator::BroydenOperator(
        Teuchos::ParameterList & nlParams_                ,
-       const Teuchos::RefCountPtr<NOX::Utils>& utils_    ,
+       const Teuchos::RCP<NOX::Utils>& utils_    ,
        Epetra_Vector & solnVec                           ,
-       const Teuchos::RefCountPtr<Epetra_CrsMatrix>& mat ,
+       const Teuchos::RCP<Epetra_CrsMatrix>& mat ,
        bool verbose_ ) :
   verbose        ( verbose_                                  ) ,
   crsMatrix      ( Teuchos::rcp( new Epetra_CrsMatrix(*mat)) ) ,
@@ -116,7 +116,7 @@ BroydenOperator::initialize( Teuchos::ParameterList & nlParams, const Epetra_Vec
   // RPP 9/20/2005: This is a very bad idea!  It breaks the rcp and
   // user's expectations.  For now we will have to create rcp without
   // ownership.  What happens if a user write their own PPO?
-  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> me = Teuchos::rcp(this, false);
+  Teuchos::RCP<NOX::Abstract::PrePostOperator> me = Teuchos::rcp(this, false);
   nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", me);
 
   return true;
@@ -322,7 +322,7 @@ BroydenOperator::computeJacobian( const Epetra_Vector & x, Epetra_Operator& Jac 
 
   for( ; iter_end != iter; ++iter )
   {
-    Teuchos::RefCountPtr<const Epetra_CrsMatrix> pMat = (*iter)->getReplacementValuesMatrix(x, ReplacementInterface::JACOBIAN );
+    Teuchos::RCP<const Epetra_CrsMatrix> pMat = (*iter)->getReplacementValuesMatrix(x, ReplacementInterface::JACOBIAN );
     replaceBroydenMatrixValues( *pMat );
   }
 
@@ -346,7 +346,7 @@ BroydenOperator::computePreconditioner( const Epetra_Vector & x,
 
   for( ; iter_end != iter; ++iter )
   {
-    Teuchos::RefCountPtr<const Epetra_CrsMatrix> pMat = (*iter)->getReplacementValuesMatrix(x, ReplacementInterface::PRECONDITIONER );
+    Teuchos::RCP<const Epetra_CrsMatrix> pMat = (*iter)->getReplacementValuesMatrix(x, ReplacementInterface::PRECONDITIONER );
     replaceBroydenMatrixValues( *pMat );
   }
 

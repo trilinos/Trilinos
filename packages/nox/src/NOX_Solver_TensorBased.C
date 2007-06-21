@@ -58,9 +58,9 @@
 #define USE_INITIAL_GUESS_LOGIC
 
 NOX::Solver::TensorBased::
-TensorBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
-	    const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-	    const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
+TensorBased(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
+	    const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+	    const Teuchos::RCP<Teuchos::ParameterList>& p) :
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
   utilsPtr(globalDataPtr->getUtils()), 
   solnPtr(xGrp),		
@@ -106,9 +106,9 @@ void NOX::Solver::TensorBased::init()
 
 
 bool NOX::Solver::TensorBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& p)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
+      const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+      const Teuchos::RCP<Teuchos::ParameterList>& p)
 {
   solnPtr = xGrp;
   testPtr = t;
@@ -260,8 +260,8 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
 }
 
 bool NOX::Solver::TensorBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
+      const Teuchos::RCP<NOX::StatusTest::Generic>& t)
 {
   solnPtr = xGrp;
   testPtr = t;
@@ -270,7 +270,7 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
 }
 
 bool NOX::Solver::TensorBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp)
 {
   solnPtr = xGrp;
   init();
@@ -1055,7 +1055,7 @@ NOX::Solver::TensorBased::getNormModelResidual(
 {
   
   // Compute residual of Newton model...
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> residualPtr = 
+  Teuchos::RCP<NOX::Abstract::Vector> residualPtr = 
     soln.getF().clone(ShapeCopy);
   soln.applyJacobian(dir, *residualPtr);
   numJvMults++;
@@ -1107,7 +1107,7 @@ double NOX::Solver::TensorBased::getDirectionalDerivative(
 				       const NOX::Abstract::Vector& dir,
 				       const NOX::Abstract::Group& soln) const
 {
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmpPtr = 
+  Teuchos::RCP<NOX::Abstract::Vector> tmpPtr = 
     soln.getF().clone(ShapeCopy);
   soln.applyJacobian(dir, *tmpPtr);
   numJvMults++;

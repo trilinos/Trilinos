@@ -42,7 +42,7 @@
 #ifndef LOCA_EPETRA_COMPACTWYOP_H
 #define LOCA_EPETRA_COMPACTWYOP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_BLAS.hpp"     // class data element
 
 #include "Epetra_Operator.h"	// base class
@@ -87,12 +87,12 @@ namespace LOCA {
        *  compact WY representation.
        */
       CompactWYOp(
-        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<const Epetra_Operator>& jacOperator, 
-	const Teuchos::RefCountPtr<const Epetra_MultiVector>& A_multiVec, 
-	const Teuchos::RefCountPtr<const Epetra_MultiVector>& Y_x_multiVec,
-	const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& Y_p_matrix,
-	const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& T_matrix);
+        const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<const Epetra_Operator>& jacOperator, 
+	const Teuchos::RCP<const Epetra_MultiVector>& A_multiVec, 
+	const Teuchos::RCP<const Epetra_MultiVector>& Y_x_multiVec,
+	const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& Y_p_matrix,
+	const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& T_matrix);
 
       //! Destructor
       virtual ~CompactWYOp();
@@ -186,7 +186,7 @@ namespace LOCA {
     protected:
 
       //! Global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Label for operator
       string label;
@@ -195,13 +195,13 @@ namespace LOCA {
       Epetra_LocalMap localMap;
     
       //! Stores operator representing J
-      Teuchos::RefCountPtr<const Epetra_Operator> J;
+      Teuchos::RCP<const Epetra_Operator> J;
   
       //! Stores multivector representing A
-      Teuchos::RefCountPtr<const Epetra_MultiVector> A;
+      Teuchos::RCP<const Epetra_MultiVector> A;
 
       //! Stores multivector representing solution component of Y
-      Teuchos::RefCountPtr<const Epetra_MultiVector> Y_x;
+      Teuchos::RCP<const Epetra_MultiVector> Y_x;
 
       //! Stores multivector representing parameter component of Y
       Epetra_MultiVector Y_p;

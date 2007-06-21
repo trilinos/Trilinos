@@ -56,10 +56,10 @@
 
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
 ExtendedGroup(
-       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& pfParams,
-       const Teuchos::RefCountPtr<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup>& g)
+       const Teuchos::RCP<LOCA::GlobalData>& global_data,
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& pfParams,
+       const Teuchos::RCP<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup>& g)
   : globalData(global_data),
     parsedParams(topParams),
     pitchforkParams(pfParams),
@@ -111,14 +111,14 @@ ExtendedGroup(
   }
   psiVec = 
     (*pitchforkParams).INVALID_TEMPLATE_QUALIFIER 
-    get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >("Antisymmetric Vector");
+    get< Teuchos::RCP<NOX::Abstract::Vector> >("Antisymmetric Vector");
 
   // Get symmetric flag
   bool isSymmetric = pitchforkParams->get("Symmetric Jacobian", false);
 
   // Compute/get initial "a" & "b" vectors
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> aVecPtr;
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> bVecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> aVecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> bVecPtr;
   getInitialVectors(aVecPtr, bVecPtr, isSymmetric);
 
   // Create constraint equation
@@ -246,7 +246,7 @@ operator=(const NOX::Abstract::Group& source)
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Group>
+Teuchos::RCP<NOX::Abstract::Group>
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
 clone(NOX::CopyType type) const
 {
@@ -498,9 +498,9 @@ applyJacobian(const NOX::Abstract::Vector& input,
 	      NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input = 
     input.createMultiVector(1, NOX::DeepCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_result = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result = 
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobian
@@ -519,9 +519,9 @@ applyJacobianTranspose(const NOX::Abstract::Vector& input,
 		       NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input = 
     input.createMultiVector(1, NOX::DeepCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_result = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result = 
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobianTranspose
@@ -541,9 +541,9 @@ applyJacobianInverse(Teuchos::ParameterList& params,
 		     NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input = 
     input.createMultiVector(1, NOX::DeepCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_result = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result = 
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobianInverse
@@ -576,14 +576,14 @@ applyJacobianMultiVector(const NOX::Abstract::MultiVector& input,
     dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector&>(result);
 
   // Get x, param componenets of input vector
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_x = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
     c_input.getXMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_param = c_input.getScalars();
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_param = c_input.getScalars();
 
   // Get references to x, param components of result vector
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
     c_result.getXMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
     c_result.getScalars();
 
   // Call bordered solver apply method
@@ -613,14 +613,14 @@ applyJacobianTransposeMultiVector(const NOX::Abstract::MultiVector& input,
     dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector&>(result);
 
   // Get x, param componenets of input vector
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_x = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
     c_input.getXMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_param = c_input.getScalars();
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_param = c_input.getScalars();
 
   // Get references to x, param components of result vector
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
     c_result.getXMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
     c_result.getScalars();
 
   // Call bordered solver applyTranspose method
@@ -652,14 +652,14 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& params,
     dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector&>(result);
 
   // Get x, param componenets of input vector
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_x = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
     c_input.getXMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_param = c_input.getScalars();
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_param = c_input.getScalars();
 
   // Get references to x, param components of result vector
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
     c_result.getXMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
     c_result.getScalars();
 
   // Call bordered solver applyInverse method
@@ -749,14 +749,14 @@ getNormNewtonSolveResidual() const
   return residual.norm();
 }
 
-Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
 getUnderlyingGroup() const
 {
   return grpPtr;
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
 getUnderlyingGroup()
 {
@@ -1069,7 +1069,7 @@ getBorderedWidth() const
     return my_width;
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Group>
+Teuchos::RCP<const NOX::Abstract::Group>
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
 getUnborderedGroup() const
 {
@@ -1110,7 +1110,7 @@ extractSolutionComponent(const NOX::Abstract::MultiVector& v,
     dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(v);
   
   // get solution component
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> mc_v_x =
+  Teuchos::RCP<const NOX::Abstract::MultiVector> mc_v_x =
     mc_v.getXMultiVec();
 
   // If the underlying system isn't bordered, we're done
@@ -1134,9 +1134,9 @@ extractParameterComponent(bool use_transpose,
     dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(v);
   
   // get solution and parameter components
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> mc_v_x =
+  Teuchos::RCP<const NOX::Abstract::MultiVector> mc_v_x =
     mc_v.getXMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> mc_v_p =
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> mc_v_p =
     mc_v.getScalars();
 
   // If the underlying system isn't bordered, we're done
@@ -1192,9 +1192,9 @@ loadNestedComponents(const NOX::Abstract::MultiVector& v_x,
     dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector&>(v);
 
   // get solution and parameter components
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mc_v_x =
+  Teuchos::RCP<NOX::Abstract::MultiVector> mc_v_x =
     mc_v.getXMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> mc_v_p =
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> mc_v_p =
     mc_v.getScalars();
 
   // If the underlying system isn't bordered, we're done
@@ -1226,7 +1226,7 @@ fillA(NOX::Abstract::MultiVector& A) const
   string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::fillA";
 
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_A = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> my_A = 
     dfdpMultiVec->getXMultiVec();
 
   // If the underlying system isn't bordered, we're done
@@ -1240,7 +1240,7 @@ fillA(NOX::Abstract::MultiVector& A) const
   std::vector<int> idx1(w);
   for (int i=0; i<w; i++)
     idx1[i] = i;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> underlyingA = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> underlyingA = 
     A.subView(idx1);
 
   // Fill A block in underlying group
@@ -1250,7 +1250,7 @@ fillA(NOX::Abstract::MultiVector& A) const
   std::vector<int> idx2(2);
   for (int i=0; i<2; i++)
     idx2[i] = w+i;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> my_A_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> my_A_x = 
     A.subView(idx2);
 
   // Extract solution component from my_A and store in A
@@ -1264,7 +1264,7 @@ fillB(NOX::Abstract::MultiVector& B) const
   string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::fillB";
 
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_B =
+  Teuchos::RCP<const NOX::Abstract::MultiVector> my_B =
     Teuchos::rcp(constraintsPtr->getDX(),false);
 
   // If the underlying system isn't bordered, we're done
@@ -1278,7 +1278,7 @@ fillB(NOX::Abstract::MultiVector& B) const
   std::vector<int> idx1(w);
   for (int i=0; i<w; i++)
     idx1[i] = i;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> underlyingB = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> underlyingB = 
     B.subView(idx1);
 
   // Combine blocks in underlying group
@@ -1288,7 +1288,7 @@ fillB(NOX::Abstract::MultiVector& B) const
   std::vector<int> idx2(2);
   for (int i=0; i<2; i++)
     idx2[i] = w+i;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> my_B_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> my_B_x = 
     B.subView(idx2);
 
   // Extract solution component from my_B and store in B
@@ -1302,7 +1302,7 @@ fillC(NOX::Abstract::MultiVector::DenseMatrix& C) const
   string callingFunction = 
     "LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::fillC";
 
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> my_C = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> my_C = 
     dfdpMultiVec->getScalars();
 
   // If the underlying system isn't bordered, we're done
@@ -1311,10 +1311,10 @@ fillC(NOX::Abstract::MultiVector::DenseMatrix& C) const
     return;
   }
 
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_B = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> my_B = 
     Teuchos::rcp(constraintsPtr->getDX(),false);
 
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_A = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> my_A = 
     dfdpMultiVec->getXMultiVec();
   
   // Create views for underlying group
@@ -1389,8 +1389,8 @@ setBifParam(double val)
 
 void
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
-getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
-		  Teuchos::RefCountPtr<NOX::Abstract::Vector>& bVecPtr,
+getInitialVectors(Teuchos::RCP<NOX::Abstract::Vector>& aVecPtr,
+		  Teuchos::RCP<NOX::Abstract::Vector>& bVecPtr,
 		  bool isSymmetric)
 {
   string callingFunction = 
@@ -1404,7 +1404,7 @@ getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
     NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
     std::vector<int> paramID(1);
     paramID[0] = bifParamID;
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> fdfdp = 
+    Teuchos::RCP<NOX::Abstract::MultiVector> fdfdp = 
       grpPtr->getX().createMultiVector(2);
     aVecPtr = grpPtr->getX().clone(NOX::ShapeCopy);
     bVecPtr = grpPtr->getX().clone(NOX::ShapeCopy);
@@ -1426,7 +1426,7 @@ getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
 							     callingFunction);
 
     // Compute b = J^-1*dfdp
-    Teuchos::RefCountPtr<Teuchos::ParameterList> lsParams =
+    Teuchos::RCP<Teuchos::ParameterList> lsParams =
       parsedParams->getSublist("Linear Solver");
     status = grpPtr->applyJacobianInverse(*lsParams, (*fdfdp)[1], *bVecPtr);
     finalStatus = 
@@ -1437,7 +1437,7 @@ getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
     // Compute a = J^-T*dfdp if necessary
     if (!isSymmetric) {
       // Cast group to one that can solve J^T
-      Teuchos::RefCountPtr<LOCA::Abstract::TransposeSolveGroup> ts_grp = 
+      Teuchos::RCP<LOCA::Abstract::TransposeSolveGroup> ts_grp = 
 	Teuchos::rcp_dynamic_cast<LOCA::Abstract::TransposeSolveGroup>(grpPtr);
       if (ts_grp == Teuchos::null)
 	globalData->locaErrorCheck->throwError(
@@ -1445,7 +1445,7 @@ getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
 	   string("Group must implement LOCA::Abstract::TransposeSolveGroup") +
 	   string(" to compute initial left null vector"));
       
-      Teuchos::RefCountPtr<Teuchos::ParameterList> lsParams =
+      Teuchos::RCP<Teuchos::ParameterList> lsParams =
 	parsedParams->getSublist("Linear Solver");
       status = 
 	ts_grp->applyJacobianTransposeInverse(*lsParams, (*fdfdp)[1], 
@@ -1473,7 +1473,7 @@ getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
     }
     aVecPtr = 
       (*pitchforkParams).INVALID_TEMPLATE_QUALIFIER 
-      get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >("Initial A Vector");
+      get< Teuchos::RCP<NOX::Abstract::Vector> >("Initial A Vector");
 
     // Get initial "b" vector
     if (!isSymmetric) {
@@ -1483,7 +1483,7 @@ getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
       }
       bVecPtr = 
 	(*pitchforkParams).INVALID_TEMPLATE_QUALIFIER 
-        get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >("Initial B Vector");
+        get< Teuchos::RCP<NOX::Abstract::Vector> >("Initial B Vector");
     }
   }
 }

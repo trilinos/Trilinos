@@ -45,7 +45,7 @@
 #include "Teuchos_LAPACK.hpp"
 
 LOCA::LAPACK::Group::Group(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    LOCA::LAPACK::Interface& interface) : 
   NOX::LAPACK::Group(interface), 
   LOCA::Abstract::Group(global_data),
@@ -104,7 +104,7 @@ LOCA::LAPACK::Group::operator=(const NOX::LAPACK::Group& source) {
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Group>
+Teuchos::RCP<NOX::Abstract::Group>
 LOCA::LAPACK::Group::clone(NOX::CopyType type) const {
   return Teuchos::rcp(new LOCA::LAPACK::Group(*this, type));
 }

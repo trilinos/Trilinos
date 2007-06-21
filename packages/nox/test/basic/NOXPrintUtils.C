@@ -73,9 +73,9 @@ int main(int argc, char *argv[])
     cout << "***************" << endl;
     cout << "\nBuilding utils1 using ctor #1...";
   }
-  Teuchos::RefCountPtr<std::ostream> outputstream = 
+  Teuchos::RCP<std::ostream> outputstream = 
     Teuchos::rcp(&(std::cout), false);
-  Teuchos::RefCountPtr<std::ostream> errorstream = 
+  Teuchos::RCP<std::ostream> errorstream = 
     Teuchos::rcp(&(std::cerr), false);
   NOX::Utils utils1(outputInfo, myPID, printProc, 6, outputstream, 
 		    errorstream);
@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
     cout << "\nTest #11: Testing output to a file:" << endl;
     cout << "******************************************" << endl;
   
-    Teuchos::RefCountPtr<std::ostream> fileStream = 
+    Teuchos::RCP<std::ostream> fileStream = 
       Teuchos::rcp(new std::ofstream("testfile.out"));
     p.set("Output Stream", fileStream);
     NOX::Utils utils4(p);

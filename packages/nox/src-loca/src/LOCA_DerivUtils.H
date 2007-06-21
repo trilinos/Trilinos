@@ -42,7 +42,7 @@
 #ifndef LOCA_DERIVUTILS_H
 #define LOCA_DERIVUTILS_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "NOX_Abstract_Group.H" // For CopyType
 #include "NOX_Abstract_MultiVector.H" // For DenseMatrix
@@ -84,7 +84,7 @@ namespace LOCA {
      * \brief Default constructor.  perturb is the relative perturbation size 
      * used in differencing calculations. 
      */
-    DerivUtils(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+    DerivUtils(const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	       double perturb = 1.0e-6);
 
     //! Copy constructor.
@@ -97,7 +97,7 @@ namespace LOCA {
      * \brief Cloning function.  Creates a copy of the %DerivUtils object 
      * of the same type. 
      */
-    virtual Teuchos::RefCountPtr<DerivUtils> 
+    virtual Teuchos::RCP<DerivUtils> 
     clone(NOX::CopyType type = NOX::DeepCopy) const;
 
     /*! 
@@ -254,7 +254,7 @@ namespace LOCA {
   protected:
 
     //! Global data
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+    Teuchos::RCP<LOCA::GlobalData> globalData;
     
     //! Relative perturbation size using in differencing calculations.
     double perturb;

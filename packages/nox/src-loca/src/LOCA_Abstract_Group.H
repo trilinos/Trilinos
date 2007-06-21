@@ -42,7 +42,7 @@
 #ifndef LOCA_ABSTRACT_GROUP_H
 #define LOCA_ABSTRACT_GROUP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_Homotopy_AbstractGroup.H"
 #include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
@@ -77,11 +77,11 @@ namespace LOCA {
     public:
 
       //! Constructor
-      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+      Group(const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       //! Constructor
-      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    const Teuchos::RefCountPtr<LOCA::DerivUtils>& deriv);
+      Group(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	    const Teuchos::RCP<LOCA::DerivUtils>& deriv);
  
       //! Copy constructor
       Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
@@ -289,7 +289,7 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
       
     };
   } // namespace Abstract

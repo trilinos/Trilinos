@@ -102,9 +102,9 @@ namespace LOCA {
        * \param solverParams [in] Bordered solver parameters as described above
        */
       Nested(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
       //! Destructor
       virtual ~Nested();
@@ -116,10 +116,10 @@ namespace LOCA {
        * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
-	  const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
+	  const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>& op,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
+	  const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
 
        //! Intialize solver for a solve
       /*!
@@ -239,19 +239,19 @@ namespace LOCA {
     protected:
 
       //! Global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Solver parameters
-      Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
+      Teuchos::RCP<Teuchos::ParameterList> solverParams;
 
       //! Underlying solver
-      Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> solver;
+      Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> solver;
 
       //! Pointer to group storing J
-      Teuchos::RefCountPtr<const LOCA::BorderedSystem::AbstractGroup> grp;
+      Teuchos::RCP<const LOCA::BorderedSystem::AbstractGroup> grp;
 
       //! Pointer to unbordered group
-      Teuchos::RefCountPtr<const NOX::Abstract::Group> unbordered_grp;
+      Teuchos::RCP<const NOX::Abstract::Group> unbordered_grp;
 
       //! Width for bordered rows/columns
       int myWidth;

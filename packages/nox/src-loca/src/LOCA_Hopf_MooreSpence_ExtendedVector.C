@@ -43,7 +43,7 @@
 #include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
 
 LOCA::Hopf::MooreSpence::ExtendedVector::ExtendedVector(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    const NOX::Abstract::Vector& xVec,
 		    const NOX::Abstract::Vector& realEigenVec,
 		    const NOX::Abstract::Vector& imagEigenVec,
@@ -92,7 +92,7 @@ LOCA::Hopf::MooreSpence::ExtendedVector::operator=(
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+Teuchos::RCP<NOX::Abstract::Vector> 
 LOCA::Hopf::MooreSpence::ExtendedVector::clone(NOX::CopyType type) const
 {
   return 
@@ -114,19 +114,19 @@ LOCA::Hopf::MooreSpence::ExtendedVector::setVec(
   setScalar(1, bifPar);
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+Teuchos::RCP<const NOX::Abstract::Vector>
 LOCA::Hopf::MooreSpence::ExtendedVector::getXVec() const
 {
   return getVector(0);
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+Teuchos::RCP<const NOX::Abstract::Vector>
 LOCA::Hopf::MooreSpence::ExtendedVector::getRealEigenVec() const
 {
   return getVector(1);
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+Teuchos::RCP<const NOX::Abstract::Vector>
 LOCA::Hopf::MooreSpence::ExtendedVector::getImagEigenVec() const
 {
   return getVector(2);
@@ -144,19 +144,19 @@ LOCA::Hopf::MooreSpence::ExtendedVector::getBifParam() const
   return getScalar(1);
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector>
+Teuchos::RCP<NOX::Abstract::Vector>
 LOCA::Hopf::MooreSpence::ExtendedVector::getXVec()
 {
   return getVector(0);
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector>
+Teuchos::RCP<NOX::Abstract::Vector>
 LOCA::Hopf::MooreSpence::ExtendedVector::getRealEigenVec()
 {
   return getVector(1);
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector>
+Teuchos::RCP<NOX::Abstract::Vector>
 LOCA::Hopf::MooreSpence::ExtendedVector::getImagEigenVec()
 {
   return getVector(2);
@@ -175,12 +175,12 @@ LOCA::Hopf::MooreSpence::ExtendedVector::getBifParam()
 }
 
 LOCA::Hopf::MooreSpence::ExtendedVector::ExtendedVector(
-		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) :
+		  const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   LOCA::Extended::Vector(global_data,3,2)
 {
 }
 
-Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
+Teuchos::RCP<LOCA::Extended::MultiVector>
 LOCA::Hopf::MooreSpence::ExtendedVector::generateMultiVector(
 							int nColumns, 
 							int nVectorRows, 

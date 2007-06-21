@@ -42,7 +42,7 @@
 #ifndef LOCA_HOPF_MOORESPENCE_EXTENDEDGROUP_H
 #define LOCA_HOPF_MOORESPENCE_EXTENDEDGROUP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_MultiContinuation_AbstractGroup.H"         // base class
 #include "LOCA_Extended_MultiAbstractGroup.H"             // base class
@@ -122,14 +122,14 @@ namespace LOCA {
        * <li> "Bifurcation Parameter" -- [string] (Must be supplied) Name of 
        *      the bifurcation parameter \f$p\f$
        * <li> "Length Normalization Vector" -- 
-       *      [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) 
+       *      [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) 
        *     Vector storing length normalization vector \f$l\f$
        * <li> "Initial Real Eigenvector"  -- 
-       *      [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied)
+       *      [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied)
        *     Vector storing initial guess for the real component of the  
        *     eigenvector \f$y\f$
        * <li> "Initial Imaginary Eigenvector"  -- 
-       *      [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied)
+       *      [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied)
        *     Vector storing initial guess for the imaginary component of the  
        *     eigenvector \f$z\f$
        * <li> "Initial Frequency" -- [double] (Must be supplied)
@@ -150,10 +150,10 @@ namespace LOCA {
 	 * \brief Constructor with initial data passed through parameter lists.
 	 */
 	ExtendedGroup(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-         const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& hopfParams,
-	 const Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::AbstractGroup>& g);
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& hopfParams,
+	 const Teuchos::RCP<LOCA::Hopf::MooreSpence::AbstractGroup>& g);
 
 	//! Copy constructor.
 	ExtendedGroup(const ExtendedGroup& source, 
@@ -172,7 +172,7 @@ namespace LOCA {
 	operator=(const NOX::Abstract::Group& source);
      
 	//! Cloning function
-	virtual Teuchos::RefCountPtr<NOX::Abstract::Group>
+	virtual Teuchos::RCP<NOX::Abstract::Group>
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
 	//! Set the solution vector, x, to y.
@@ -282,12 +282,12 @@ namespace LOCA {
 	
 	//! Return underlying group
 	virtual 
-	Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
+	Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
 	getUnderlyingGroup() const;
 	
 	//! Return underlying group
 	virtual 
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+	Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 	getUnderlyingGroup();
 
 	//@}
@@ -418,16 +418,16 @@ namespace LOCA {
       protected:
 
 	//! Pointer LOCA global data object
-	Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+	Teuchos::RCP<LOCA::GlobalData> globalData;
 
 	//! Parsed top-level parameters
-	Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
+	Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams;
 
 	//! Bifurcation parameter list
-	Teuchos::RefCountPtr<Teuchos::ParameterList> hopfParams;
+	Teuchos::RCP<Teuchos::ParameterList> hopfParams;
 
 	//! Pointer to base group that defines \f$F\f$
-	Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::AbstractGroup> grpPtr;
+	Teuchos::RCP<LOCA::Hopf::MooreSpence::AbstractGroup> grpPtr;
 
 	//! Stores the extended solution vector
 	LOCA::Hopf::MooreSpence::ExtendedMultiVector xMultiVec;
@@ -439,37 +439,37 @@ namespace LOCA {
 	LOCA::Hopf::MooreSpence::ExtendedMultiVector newtonMultiVec;
 
 	//! Stores the length normalization vector
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> lengthMultiVec;
+	Teuchos::RCP<NOX::Abstract::MultiVector> lengthMultiVec;
 	
 	//! Stores view of first column of xMultiVec
-	Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::ExtendedVector> xVec;
+	Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedVector> xVec;
 	
 	//! Stores view of first column of fMultiVec
-	Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::ExtendedVector> fVec;
+	Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedVector> fVec;
 	
 	//! Stores view of first column of fMultiVec as a multivec
-	Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::ExtendedMultiVector> ffMultiVec;
+	Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedMultiVector> ffMultiVec;
 
 	//! Stores view of df/dp columns of fMultiVec
-	Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::ExtendedMultiVector> dfdpMultiVec;
+	Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedMultiVector> dfdpMultiVec;
 
 	//! Stores view of first column of newtonMultiVec
-	Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::ExtendedVector> newtonVec;
+	Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedVector> newtonVec;
 
 	//! Stores view of first column of lengthMultiVec
-	Teuchos::RefCountPtr<NOX::Abstract::Vector> lengthVec;
+	Teuchos::RCP<NOX::Abstract::Vector> lengthVec;
 
 	//! Stores mass matrix times real component of eigenvector
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> massTimesY;
+	Teuchos::RCP<NOX::Abstract::MultiVector> massTimesY;
 
 	/*!
 	 * \brief Stores negative of mass matrix times imaginary component of 
 	 eigenvector
 	*/
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> minusMassTimesZ;
+	Teuchos::RCP<NOX::Abstract::MultiVector> minusMassTimesZ;
 
 	//! Stores bordering strategy
-	Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::SolverStrategy> solverStrategy;
+	Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy> solverStrategy;
 
 	//! Stores indices for getting f part of fMultiVec
 	vector<int> index_f;

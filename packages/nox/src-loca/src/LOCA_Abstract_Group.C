@@ -45,15 +45,15 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Abstract::Group::Group(
-	       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) :
+	       const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   globalData(global_data)
 {
   setDerivUtils(Teuchos::rcp(new LOCA::DerivUtils(globalData)));
 }
 
 LOCA::Abstract::Group::Group(
-	       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	       const Teuchos::RefCountPtr<LOCA::DerivUtils>& deriv ) :
+	       const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	       const Teuchos::RCP<LOCA::DerivUtils>& deriv ) :
   globalData(global_data)
 {
   setDerivUtils(deriv);

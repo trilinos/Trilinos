@@ -60,10 +60,10 @@
 #include "LOCA_MultiContinuation_ConstraintInterface.H"
 
 LOCA::Stepper::Stepper(
-                     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-		     const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
+                     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+		     const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+		     const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+		     const Teuchos::RCP<Teuchos::ParameterList>& p) :
   LOCA::Abstract::Iterator(),
   globalData(),
   parsedParams(),
@@ -105,10 +105,10 @@ LOCA::Stepper::~Stepper()
 
 bool
 LOCA::Stepper::reset(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-		    const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-		    const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-		    const Teuchos::RefCountPtr<Teuchos::ParameterList>& p)
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+		    const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+		    const Teuchos::RCP<Teuchos::ParameterList>& p)
 {
   globalData = global_data;
   paramListPtr = p;
@@ -125,14 +125,14 @@ LOCA::Stepper::reset(
   LOCA::Abstract::Iterator::resetIterator(*stepperList);
 
   // Create predictor strategy
-  Teuchos::RefCountPtr<Teuchos::ParameterList> predictorParams = 
+  Teuchos::RCP<Teuchos::ParameterList> predictorParams = 
     parsedParams->getSublist("Predictor");
   predictor = globalData->locaFactory->createPredictorStrategy(
 							      parsedParams,
 							      predictorParams);
 
   // Create eigensolver
-  Teuchos::RefCountPtr<Teuchos::ParameterList> eigenParams = 
+  Teuchos::RCP<Teuchos::ParameterList> eigenParams = 
     parsedParams->getSublist("Eigensolver");
   eigensolver = globalData->locaFactory->createEigensolverStrategy(
 								parsedParams,
@@ -144,7 +144,7 @@ LOCA::Stepper::reset(
 								eigenParams);
 
   // Create step size strategy
-  Teuchos::RefCountPtr<Teuchos::ParameterList> stepsizeParams = 
+  Teuchos::RCP<Teuchos::ParameterList> stepsizeParams = 
     parsedParams->getSublist("Step Size");
    stepSizeStrategyPtr = globalData->locaFactory->createStepSizeStrategy(
 							     parsedParams,
@@ -209,16 +209,16 @@ LOCA::Stepper::reset(
 
   // Make a copy of the parameter list, change continuation method to
   // natural
-  Teuchos::RefCountPtr<Teuchos::ParameterList> firstStepperParams = 
+  Teuchos::RCP<Teuchos::ParameterList> firstStepperParams = 
     Teuchos::rcp(new Teuchos::ParameterList(*stepperList));
   firstStepperParams->set("Continuation Method", "Natural");
 
   // Create constrained group
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> constraintsGrp
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> constraintsGrp
     = buildConstrainedGroup(initialGuess);
 
   // Create bifurcation group
-  Teuchos::RefCountPtr<Teuchos::ParameterList> bifurcationParams = 
+  Teuchos::RCP<Teuchos::ParameterList> bifurcationParams = 
     parsedParams->getSublist("Bifurcation");
   bifGroupPtr = globalData->locaFactory->createBifurcationStrategy(
 						       parsedParams,
@@ -275,7 +275,7 @@ LOCA::Stepper::start() {
   const LOCA::MultiContinuation::ExtendedGroup& constSolnGrp =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedGroup&>(
        solverPtr->getSolutionGroup());
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> underlyingGroup 
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> underlyingGroup 
     = Teuchos::rcp_const_cast<LOCA::MultiContinuation::AbstractGroup>(constSolnGrp.getUnderlyingGroup());
 
   // Create continuation strategy
@@ -309,10 +309,10 @@ LOCA::Stepper::start() {
 
   // Compute eigenvalues/eigenvectors if requested
   if (calcEigenvalues) {
-    Teuchos::RefCountPtr< std::vector<double> > evals_r;
-    Teuchos::RefCountPtr< std::vector<double> > evals_i;
-    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > evecs_r;
-    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > evecs_i;
+    Teuchos::RCP< std::vector<double> > evals_r;
+    Teuchos::RCP< std::vector<double> > evals_i;
+    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_r;
+    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_i;
     eigensolver->computeEigenvalues(
 				 *curGroupPtr->getBaseLevelUnderlyingGroup(),
 				 evals_r, evals_i, evecs_r, evecs_i);
@@ -367,11 +367,11 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
     prevGroupPtr->copy(*curGroupPtr);
 
     // Get bifurcation group if there is one, or solution group if not
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> underlyingGrp
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> underlyingGrp
       = curGroupPtr->getUnderlyingGroup();
 
     // Create predictor strategy
-    Teuchos::RefCountPtr<Teuchos::ParameterList> lastStepPredictorParams = 
+    Teuchos::RCP<Teuchos::ParameterList> lastStepPredictorParams = 
       parsedParams->getSublist("Last Step Predictor");
     // change default method to constant to avoid infinite stack recursion
     lastStepPredictorParams->get("Method", "Constant");  
@@ -381,7 +381,7 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
 
     // Make a copy of the parameter list, change continuation method to
     // natural
-    Teuchos::RefCountPtr<Teuchos::ParameterList> lastStepperParams = 
+    Teuchos::RCP<Teuchos::ParameterList> lastStepperParams = 
       Teuchos::rcp(new Teuchos::ParameterList(*stepperList));
     lastStepperParams->set("Continuation Method", "Natural");
 
@@ -556,10 +556,10 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   // Compute eigenvalues/eigenvectors
   if (calcEigenvalues) {
-    Teuchos::RefCountPtr< std::vector<double> > evals_r;
-    Teuchos::RefCountPtr< std::vector<double> > evals_i;
-    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > evecs_r;
-    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > evecs_i;
+    Teuchos::RCP< std::vector<double> > evals_r;
+    Teuchos::RCP< std::vector<double> > evals_i;
+    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_r;
+    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_i;
     eigensolver->computeEigenvalues(
 				 *curGroupPtr->getBaseLevelUnderlyingGroup(),
 				 evals_r, evals_i, evecs_r, evecs_i);
@@ -632,12 +632,12 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
   return LOCA::Abstract::Iterator::NotFinished;
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 LOCA::Stepper::buildConstrainedGroup(
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp)
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp)
 {
   // Get constraints sublist
-  Teuchos::RefCountPtr<Teuchos::ParameterList> constraintsList =
+  Teuchos::RCP<Teuchos::ParameterList> constraintsList =
     parsedParams->getSublist("Constraints");
 
   // If we don't have a constraint object, return original group
@@ -646,26 +646,26 @@ LOCA::Stepper::buildConstrainedGroup(
 
   string methodName = "LOCA::Stepper::buildConstrainedGroup()";
 
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> constraints;
-  Teuchos::RefCountPtr< vector<string> > constraintParamNames;
+  Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> constraints;
+  Teuchos::RCP< vector<string> > constraintParamNames;
 
   // Get constraint object
   if ((*constraintsList).INVALID_TEMPLATE_QUALIFIER
-      isType< Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> >("Constraint Object"))
+      isType< Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> >("Constraint Object"))
     constraints = (*constraintsList).INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> >("Constraint Object");
+      get< Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> >("Constraint Object");
   else
     globalData->locaErrorCheck->throwError(methodName,
-	  "\"Constraint Object\" parameter is not of type Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>!");
+	  "\"Constraint Object\" parameter is not of type Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>!");
 
   // Get parameter names for constraints
   if ((*constraintsList).INVALID_TEMPLATE_QUALIFIER
-      isType< Teuchos::RefCountPtr< vector<string> > > ("Constraint Parameter Names"))
+      isType< Teuchos::RCP< vector<string> > > ("Constraint Parameter Names"))
     constraintParamNames = (*constraintsList).INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RefCountPtr< vector<string> > > ("Constraint Parameter Names");
+      get< Teuchos::RCP< vector<string> > > ("Constraint Parameter Names");
   else
     globalData->locaErrorCheck->throwError(methodName,
-	  "\"Constraint Parameter Names\" parameter is not of type Teuchos::RefCountPtr< vector<string> >!");
+	  "\"Constraint Parameter Names\" parameter is not of type Teuchos::RCP< vector<string> >!");
 
   // Convert names to integer IDs
   vector<int> constraintParamIDs(constraintParamNames->size());
@@ -725,25 +725,25 @@ LOCA::Stepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
   return LOCA::Abstract::Iterator::Successful;
 }
 
-Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
 LOCA::Stepper::getSolutionGroup() const
 {
   return curGroupPtr->getBaseLevelUnderlyingGroup();
 }
 
-Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
 LOCA::Stepper::getBifurcationGroup() const
 {
   return curGroupPtr->getUnderlyingGroup();
 }
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 LOCA::Stepper::getList() const
 {
   return paramListPtr;
 }
 
-Teuchos::RefCountPtr<const NOX::Solver::Generic>
+Teuchos::RCP<const NOX::Solver::Generic>
 LOCA::Stepper::getSolver() const
 {
   if (solverPtr.get() == NULL) {
@@ -884,7 +884,7 @@ LOCA::Stepper::printEndInfo()
 bool
 LOCA::Stepper::withinThreshold()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> stepSizeList = 
+  Teuchos::RCP<Teuchos::ParameterList> stepSizeList = 
     parsedParams->getSublist("Step Size");
   double relt = stepperList->get("Relative Stopping Threshold", 0.9);
   double initialStep = stepSizeList->get("Initial Step Size", 1.0);

@@ -42,7 +42,7 @@
 #ifndef LOCA_EIGENVALUESORT_STRATEGIES_H
 #define LOCA_EIGENVALUESORT_STRATEGIES_H
 
-#include "Teuchos_RefCountPtr.hpp" 
+#include "Teuchos_RCP.hpp" 
 
 #include "NOX_Abstract_Group.H"   // for ReturnType
 
@@ -76,8 +76,8 @@ namespace LOCA {
      * class Derived : public AbstractStrategy {
      * public:
      *   Derived(
-     *      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-     *      const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
+     *      const Teuchos::RCP<LOCA::GlobalData>& global_data,
+     *      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
      *   ...
      * };
      * \endcode
@@ -156,8 +156,8 @@ namespace LOCA {
        * \param eigenParams [in] Eigensolver parameters.
        */
       LargestMagnitude(
-	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) {}
+	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~LargestMagnitude() {}
@@ -197,8 +197,8 @@ namespace LOCA {
        * \param eigenParams [in] Eigensolver parameters.
        */
       SmallestMagnitude(
-	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) {}
+	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~SmallestMagnitude() {}
@@ -238,8 +238,8 @@ namespace LOCA {
        * \param eigenParams [in] Eigensolver parameters.
        */
       LargestReal(
-	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) {}
+	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~LargestReal() {}
@@ -279,8 +279,8 @@ namespace LOCA {
        * \param eigenParams [in] Eigensolver parameters.
        */
       SmallestReal(
-	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) {}
+	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~SmallestReal() {}
@@ -320,8 +320,8 @@ namespace LOCA {
        * \param eigenParams [in] Eigensolver parameters.
        */
       LargestImaginary(
-	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) {}
+	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~LargestImaginary() {}
@@ -361,8 +361,8 @@ namespace LOCA {
        * \param eigenParams [in] Eigensolver parameters.
        */
       SmallestImaginary(
-	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) {}
+	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~SmallestImaginary() {}
@@ -403,8 +403,8 @@ namespace LOCA {
        * \param eigenParams [in] Eigensolver parameters.
        */
       LargestRealInverseCayley(
-	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
+	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
 
       //! Destructor
       ~LargestRealInverseCayley() {}

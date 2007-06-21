@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
   int NumProc = Comm.NumProc();
 
   // Set up theolver options parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> noxParamsPtr = Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::RCP<Teuchos::ParameterList> noxParamsPtr = Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList & noxParams = *(noxParamsPtr.get());
 
   // Set up the printing utilities
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     printParams.set("Output Information", NOX::Utils::Error +
 		NOX::Utils::TestDetails);
 
-  Teuchos::RefCountPtr<NOX::Utils> printing = Teuchos::rcp( new NOX::Utils(printParams) );
+  Teuchos::RCP<NOX::Utils> printing = Teuchos::rcp( new NOX::Utils(printParams) );
 
   // Identify the test problem
   if (printing->isPrintType(NOX::Utils::TestDetails))
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 
   broydenWorkGraph.FillComplete();
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> broydenWorkMatrix = 
+  Teuchos::RCP<Epetra_CrsMatrix> broydenWorkMatrix = 
     Teuchos::rcp( new Epetra_CrsMatrix( Copy, broydenWorkGraph ) );
 
   // Create an identity matrix
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
   broydenOp.computeSparseBroydenUpdate();
 
   // Create the gold matrix for comparison
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> goldMatrix = Teuchos::rcp( new Epetra_CrsMatrix( Copy, broydenWorkGraph ) );
+  Teuchos::RCP<Epetra_CrsMatrix> goldMatrix = Teuchos::rcp( new Epetra_CrsMatrix( Copy, broydenWorkGraph ) );
 
   int      numCols ;
   double * values  ;
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
 
   broydenWorkGraph2.FillComplete();
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> broydenWorkMatrix2 = Teuchos::rcp( new Epetra_CrsMatrix( Copy, broydenWorkGraph2 ) );
+  Teuchos::RCP<Epetra_CrsMatrix> broydenWorkMatrix2 = Teuchos::rcp( new Epetra_CrsMatrix( Copy, broydenWorkGraph2 ) );
 
   // Create an identity matrix
   broydenWorkVec.PutScalar(1.0);
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
   broydenOp2.computeSparseBroydenUpdate();
 
   // Create the gold matrix for comparison
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> goldMatrix2 = Teuchos::rcp( new Epetra_CrsMatrix( Copy, broydenWorkGraph2 ) );
+  Teuchos::RCP<Epetra_CrsMatrix> goldMatrix2 = Teuchos::rcp( new Epetra_CrsMatrix( Copy, broydenWorkGraph2 ) );
 
   // Row 1 answers
   goldMatrix2->ExtractMyRowView( 0, numCols, values );

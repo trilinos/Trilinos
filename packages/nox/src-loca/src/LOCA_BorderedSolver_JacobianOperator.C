@@ -43,7 +43,7 @@
 #include "LOCA_Abstract_TransposeSolveGroup.H"
 
 LOCA::BorderedSolver::JacobianOperator::
-JacobianOperator(const Teuchos::RefCountPtr<const NOX::Abstract::Group>& grp) :
+JacobianOperator(const Teuchos::RCP<const NOX::Abstract::Group>& grp) :
   grpPtr(grp)
 {
 }
@@ -53,7 +53,7 @@ LOCA::BorderedSolver::JacobianOperator::
 {
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Group>
+Teuchos::RCP<const NOX::Abstract::Group>
 LOCA::BorderedSolver::JacobianOperator::
 getGroup() const
 {
@@ -91,7 +91,7 @@ applyInverseTranspose(Teuchos::ParameterList& params,
 		      const NOX::Abstract::MultiVector& B,
 		      NOX::Abstract::MultiVector& X) const
 {
-  Teuchos::RefCountPtr<const LOCA::Abstract::TransposeSolveGroup> tsgrp = 
+  Teuchos::RCP<const LOCA::Abstract::TransposeSolveGroup> tsgrp = 
     Teuchos::rcp_dynamic_cast<const LOCA::Abstract::TransposeSolveGroup>(grpPtr);
   if (tsgrp != Teuchos::null)
     return tsgrp->applyJacobianTransposeInverseMultiVector(params, B, X);

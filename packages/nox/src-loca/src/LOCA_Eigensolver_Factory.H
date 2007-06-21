@@ -42,7 +42,7 @@
 #ifndef LOCA_EIGENSOLVER_FACTORY_H
 #define LOCA_EIGENSOLVER_FACTORY_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // forward declarations
 namespace Teuchos {
@@ -85,7 +85,7 @@ namespace LOCA {
     public:
 
       //! Constructor
-      Factory(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+      Factory(const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       //! Destructor
       virtual ~Factory();
@@ -95,10 +95,10 @@ namespace LOCA {
        * \param topParams [in] Parsed top-level parameter list.  
        * \param eigenParams [in] %Eigensolver parameters as described above
        */
-      Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
+      Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy>
       create(
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
 
       //! Return strategy name given by \c eigenParams
       const string& strategyName(Teuchos::ParameterList& eigenParams) const;
@@ -114,7 +114,7 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
     }; // Class Factory
 

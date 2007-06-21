@@ -119,10 +119,10 @@ void Group::resetIsValid() //private
   isValidPreconditioner = false;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Group> 
+Teuchos::RCP<NOX::Abstract::Group> 
 Group::clone(CopyType type) const 
 {
-  Teuchos::RefCountPtr<NOX::Abstract::Group> newgrp = 
+  Teuchos::RCP<NOX::Abstract::Group> newgrp = 
     Teuchos::rcp(new NOX::Petsc::Group(*this, type));
   return newgrp;
 }

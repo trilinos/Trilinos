@@ -61,7 +61,7 @@ namespace LOCA {
      *
      * The parameters used by this class supplied in the constructor are:
      * <ul>
-     * <li> "Restart Vector" - Teuchos::RefCountPtr to a 
+     * <li> "Restart Vector" - Teuchos::RCP to a 
      *      LOCA::MultiContinuation::ExtendedVector or ExtendedMultiVector 
      *      storing the predictor direction.
      * </ul>
@@ -75,8 +75,8 @@ namespace LOCA {
        * \param global_data [in] Global data object 
        * \param predParams [in] Predictor parameters as described above.
        */
-      Restart(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams);
+      Restart(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	      const Teuchos::RCP<Teuchos::ParameterList>& predParams);
 
       //! Destructor
       virtual ~Restart();
@@ -89,7 +89,7 @@ namespace LOCA {
       operator=(const LOCA::MultiPredictor::AbstractStrategy& source);
 
       //! Clone function
-      virtual Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+      virtual Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       /*! 
@@ -132,10 +132,10 @@ namespace LOCA {
     protected:
 
       //! LOCA global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Stores predictor vector
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> predictor;
+      Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> predictor;
 
     };
   } // namespace Predictor

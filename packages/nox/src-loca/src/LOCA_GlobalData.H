@@ -42,7 +42,7 @@
 #ifndef LOCA_GLOBALDATA_H
 #define LOCA_GLOBALDATA_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Global data objects forward declarations
 namespace Teuchos {
@@ -81,24 +81,24 @@ namespace LOCA {
   public:
 
     //! Constructor taking a ref-count pointer to each global object
-    GlobalData(const Teuchos::RefCountPtr<NOX::Utils>& loca_utils,
-	       const Teuchos::RefCountPtr<LOCA::ErrorCheck>& loca_error_check,
-	       const Teuchos::RefCountPtr<LOCA::Factory>& loca_factory);
+    GlobalData(const Teuchos::RCP<NOX::Utils>& loca_utils,
+	       const Teuchos::RCP<LOCA::ErrorCheck>& loca_error_check,
+	       const Teuchos::RCP<LOCA::Factory>& loca_factory);
 
     //! Destructor
     virtual ~GlobalData();
 
     //! Ref-count pointer to NOX::Utils object
-    Teuchos::RefCountPtr<NOX::Utils> locaUtils;
+    Teuchos::RCP<NOX::Utils> locaUtils;
 
     //! Ref-count pointer to LOCA::ErrorCheck object
-    Teuchos::RefCountPtr<LOCA::ErrorCheck> locaErrorCheck;
+    Teuchos::RCP<LOCA::ErrorCheck> locaErrorCheck;
 
     //! Ref-count pointer to LOCA::Factory object
-    Teuchos::RefCountPtr<LOCA::Factory> locaFactory;
+    Teuchos::RCP<LOCA::Factory> locaFactory;
 
     //! Ref-count pointer to parsed parameter list
-    Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
+    Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams;
 
   private:
 
@@ -111,16 +111,16 @@ namespace LOCA {
   }; // Class GlobalData
 
   //! Creates and initializes a LOCA::GlobalData object
-  Teuchos::RefCountPtr<LOCA::GlobalData>
-  createGlobalData(const Teuchos::RefCountPtr<Teuchos::ParameterList>& paramList,
-		   const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory = Teuchos::null);
+  Teuchos::RCP<LOCA::GlobalData>
+  createGlobalData(const Teuchos::RCP<Teuchos::ParameterList>& paramList,
+		   const Teuchos::RCP<LOCA::Abstract::Factory>& userFactory = Teuchos::null);
 
   //! De-initializes a LOCA::GlobalData object for destruction
   /*!
    * Sets the data members to Teuchos::null to remove circular references
    */
   void
-  destroyGlobalData(const Teuchos::RefCountPtr<LOCA::GlobalData>& globalData);
+  destroyGlobalData(const Teuchos::RCP<LOCA::GlobalData>& globalData);
 
 } // Namespace LOCA
 

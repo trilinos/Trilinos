@@ -42,7 +42,7 @@
 #ifndef LOCA_TURNINGPOINT_MOORESPENCE_SOLVERSTRATEGY_H
 #define LOCA_TURNINGPOINT_MOORESPENCE_SOLVERSTRATEGY_H
 
-#include "Teuchos_RefCountPtr.hpp" 
+#include "Teuchos_RCP.hpp" 
 
 #include "NOX_Abstract_Group.H"  // for ReturnType
 
@@ -112,12 +112,12 @@ namespace LOCA {
 	 * \param dJndp [in] Vector representing d(Jv)/dp
 	 */
 	virtual void setBlocks(
-	  const Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::AbstractGroup>& group,
-	  const Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedGroup>& tpGroup,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& nullVector,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& JnVector,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dfdp,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dJndp) = 0;
+	  const Teuchos::RCP<LOCA::TurningPoint::MooreSpence::AbstractGroup>& group,
+	  const Teuchos::RCP<LOCA::TurningPoint::MooreSpence::ExtendedGroup>& tpGroup,
+	  const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector,
+	  const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector,
+	  const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp,
+	  const Teuchos::RCP<const NOX::Abstract::Vector>& dJndp) = 0;
 
 	/*! 
 	 * \brief Solves the extended system as defined above

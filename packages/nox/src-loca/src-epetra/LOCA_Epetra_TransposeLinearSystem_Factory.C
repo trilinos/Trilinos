@@ -54,7 +54,7 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Epetra::TransposeLinearSystem::Factory::Factory(
-		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+		  const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
@@ -63,13 +63,13 @@ LOCA::Epetra::TransposeLinearSystem::Factory::~Factory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy>
+Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy>
 LOCA::Epetra::TransposeLinearSystem::Factory::create(
-		const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-		const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linsys)
+		const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+		const Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys)
 {
   string methodName = "LOCA::Epetra::TransposeLinearSystem::Factory::create()";
-  Teuchos::RefCountPtr<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> strategy;
 
   // Get name of strategy
   const string& name = strategyName(*solverParams);
@@ -96,9 +96,9 @@ LOCA::Epetra::TransposeLinearSystem::Factory::create(
     string userDefinedName = solverParams->get("User-Defined Name",
 							"???");
     if ((*solverParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> >(userDefinedName))
+	isType< Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> >(userDefinedName))
       strategy = (*solverParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> >(userDefinedName);
+	get< Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> >(userDefinedName);
     else 
       globalData->locaErrorCheck->throwError(
 				      methodName,

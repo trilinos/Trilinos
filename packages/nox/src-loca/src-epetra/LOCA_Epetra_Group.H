@@ -113,9 +113,9 @@ namespace LOCA {
        * limited to simple algorithms like nonlinear-CG with no
        * preconditioning.
        */
-      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+      Group(const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	    Teuchos::ParameterList& printingParams, 
-	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
+	    const Teuchos::RCP<LOCA::Epetra::Interface::Required>& i, 
 	    NOX::Epetra::Vector& initialGuess,
 	    const LOCA::ParameterVector& p);
 
@@ -125,11 +125,11 @@ namespace LOCA {
        * all %LOCA algorithms except shift-invert and Cayley transformations
        * and Hopf bifurcations.
        */
-      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+      Group(const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	    Teuchos::ParameterList& printingParams, 
-	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
+	    const Teuchos::RCP<LOCA::Epetra::Interface::Required>& i, 
 	    NOX::Epetra::Vector& initialGuess, 
-	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
+	    const Teuchos::RCP<NOX::Epetra::LinearSystem>& linSys,
 	    const LOCA::ParameterVector& p);
 
       //! Constructor with time-dependent interface and shifted linear system
@@ -144,12 +144,12 @@ namespace LOCA {
        * more matrix fills.
        */
       Group(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	Teuchos::ParameterList& printingParams,
-        const Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent>& i,
+        const Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent>& i,
 	NOX::Epetra::Vector& initialGuess,
-	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
-	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& shiftedLinSys,
+	const Teuchos::RCP<NOX::Epetra::LinearSystem>& linSys,
+	const Teuchos::RCP<NOX::Epetra::LinearSystem>& shiftedLinSys,
 	const LOCA::ParameterVector& p);
 
       /*!
@@ -162,12 +162,12 @@ namespace LOCA {
        * method for solving the shifted system.
        */
       Group(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	Teuchos::ParameterList& printingParams,
-        const Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependentMatrixFree>& i,
+        const Teuchos::RCP<LOCA::Epetra::Interface::TimeDependentMatrixFree>& i,
 	NOX::Epetra::Vector& initialGuess,
-	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
-	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& shiftedLinSys,
+	const Teuchos::RCP<NOX::Epetra::LinearSystem>& linSys,
+	const Teuchos::RCP<NOX::Epetra::LinearSystem>& shiftedLinSys,
 	const LOCA::ParameterVector& p);
 
 
@@ -197,7 +197,7 @@ namespace LOCA {
       operator=(const NOX::Epetra::Group& source);
 
       //! Cloning function
-      virtual Teuchos::RefCountPtr<NOX::Abstract::Group>
+      virtual Teuchos::RCP<NOX::Abstract::Group>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Overloaded computeF()
@@ -505,7 +505,7 @@ namespace LOCA {
       //@}
 
       //! Return the userInterface.
-      virtual Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> 
+      virtual Teuchos::RCP<NOX::Epetra::Interface::Required> 
       getUserInterface();
 
       //! Call the user interface print() routine, any vector
@@ -517,19 +517,19 @@ namespace LOCA {
 
       //! Sets the Jacobian operator
       void setJacobianOperatorForSolve(
-		 const Teuchos::RefCountPtr<const Epetra_Operator>& op) const;
+		 const Teuchos::RCP<const Epetra_Operator>& op) const;
 
       //! Return the Linear System.
-      virtual Teuchos::RefCountPtr<const NOX::Epetra::LinearSystem> 
+      virtual Teuchos::RCP<const NOX::Epetra::LinearSystem> 
       getComplexLinearSystem() const;
 
       //! Return the Linear System.
-      virtual Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> 
+      virtual Teuchos::RCP<NOX::Epetra::LinearSystem> 
       getComplexLinearSystem();
 
       virtual void
-      getComplexMaps(Teuchos::RefCountPtr<const Epetra_BlockMap>& baseMap,
-		     Teuchos::RefCountPtr<const Epetra_BlockMap>& globalMap) const;
+      getComplexMaps(Teuchos::RCP<const Epetra_BlockMap>& baseMap,
+		     Teuchos::RCP<const Epetra_BlockMap>& globalMap) const;
 
     protected:
 
@@ -539,7 +539,7 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Printing parameters
       Teuchos::ParameterList& printParams;
@@ -548,16 +548,16 @@ namespace LOCA {
       LOCA::ParameterVector params;
 
       //! Reference to the user supplied interface functions
-      Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> userInterface;
+      Teuchos::RCP<LOCA::Epetra::Interface::Required> userInterface;
 
       //! Interface for shifted-matrix
-      Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent> userInterfaceTime;
+      Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> userInterfaceTime;
 
       //! Interface for matrix-free shifted-matrix
-      Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependentMatrixFree> userInterfaceTimeMF;
+      Teuchos::RCP<LOCA::Epetra::Interface::TimeDependentMatrixFree> userInterfaceTimeMF;
 
       //! Shared shifted linear system
-      Teuchos::RefCountPtr< NOX::SharedObject<NOX::Epetra::LinearSystem, 
+      Teuchos::RCP< NOX::SharedObject<NOX::Epetra::LinearSystem, 
 					      LOCA::Epetra::Group> > shiftedSharedLinearSystem;
 
       //! Is preconditioner for shifted matrix valid
@@ -573,22 +573,22 @@ namespace LOCA {
       /*! NOTE: there already is a tmpVectorPtr in the NOX::Epetra::Group.  
        * This is a second temporary vector if that one extra isn't enough.
        */
-      Teuchos::RefCountPtr<Epetra_Vector> tmpVectorPtr2;
+      Teuchos::RCP<Epetra_Vector> tmpVectorPtr2;
 
       //! Stores a pointer to the scale vector
-      Teuchos::RefCountPtr<NOX::Abstract::Vector> scaleVecPtr;
+      Teuchos::RCP<NOX::Abstract::Vector> scaleVecPtr;
 
       //! Stores transpose linear solver strategy
-      mutable Teuchos::RefCountPtr<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> tls_strategy;
+      mutable Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> tls_strategy;
 
       //! Shared complex system
-      mutable Teuchos::RefCountPtr< NOX::SharedObject<NOX::Epetra::LinearSystem, LOCA::Epetra::Group> > complexSharedLinearSystem;
+      mutable Teuchos::RCP< NOX::SharedObject<NOX::Epetra::LinearSystem, LOCA::Epetra::Group> > complexSharedLinearSystem;
 
       //! Complex matrix
-      Teuchos::RefCountPtr<EpetraExt::BlockCrsMatrix> complexMatrix;
+      Teuchos::RCP<EpetraExt::BlockCrsMatrix> complexMatrix;
 
       //! Complex vector
-      Teuchos::RefCountPtr<EpetraExt::BlockVector> complexVec;
+      Teuchos::RCP<EpetraExt::BlockVector> complexVec;
 
       //! Is complex matrix valid
       bool isValidComplex;

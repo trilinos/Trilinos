@@ -42,7 +42,7 @@
 #ifndef LOCA_HOPF_MOORESPENCE_SOLVERSTRATEGY_H
 #define LOCA_HOPF_MOORESPENCE_SOLVERSTRATEGY_H
 
-#include "Teuchos_RefCountPtr.hpp" 
+#include "Teuchos_RCP.hpp" 
 
 #include "NOX_Abstract_Group.H"  // for ReturnType
 
@@ -123,17 +123,17 @@ namespace LOCA {
 	 * \param w [in] Bifurcation frequency w
 	 */
 	virtual void setBlocks(
-	 const Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::AbstractGroup>& group,
-	 const Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::ExtendedGroup>& hopfGroup,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& yVector,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& zVector,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& CeRealVector,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& CeImagVector,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dfdp,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dCedpReal,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dCedpImag,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& ByVector,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& mBzVector,
+	 const Teuchos::RCP<LOCA::Hopf::MooreSpence::AbstractGroup>& group,
+	 const Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedGroup>& hopfGroup,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& yVector,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& zVector,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& CeRealVector,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& CeImagVector,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dCedpReal,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dCedpImag,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& ByVector,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& mBzVector,
 	 double w) = 0;
 
 	/*! 

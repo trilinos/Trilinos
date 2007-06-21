@@ -106,9 +106,9 @@ namespace LOCA {
        * solver.
        */
       AnasaziStrategy(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
       
       //! Destructor
       virtual ~AnasaziStrategy();
@@ -121,10 +121,10 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType
       computeEigenvalues(
 	      NOX::Abstract::Group& group,
-	      Teuchos::RefCountPtr< std::vector<double> >& evals_r,
-	      Teuchos::RefCountPtr< std::vector<double> >& evals_i,
-	      Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_r,
-	      Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_i);
+	      Teuchos::RCP< std::vector<double> >& evals_r,
+	      Teuchos::RCP< std::vector<double> >& evals_i,
+	      Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_r,
+	      Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_i);
 
     private:
 
@@ -137,10 +137,10 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Parsed parameter list
-      Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> topParams;
+      Teuchos::RCP<LOCA::Parameter::SublistParser> topParams;
 
       //! Typedef to simplify templating
       typedef NOX::Abstract::MultiVector MV;
@@ -149,10 +149,10 @@ namespace LOCA {
       typedef LOCA::AnasaziOperator::AbstractStrategy OP;
 
       //! Eigensolver parameter list
-      Teuchos::RefCountPtr<Teuchos::ParameterList> eigenParams;
+      Teuchos::RCP<Teuchos::ParameterList> eigenParams;
 
       //! Linear solver parameter list
-      Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
+      Teuchos::RCP<Teuchos::ParameterList> solverParams;
 
       //! The block size
       int blksz;
@@ -164,7 +164,7 @@ namespace LOCA {
       bool isSymmetric;
 
       //! Sorting manager to handle the sorting of eigenvalues
-      Teuchos::RefCountPtr< Anasazi::SortManager<double, MV, OP> > locaSort;
+      Teuchos::RCP< Anasazi::SortManager<double, MV, OP> > locaSort;
 
     }; // Class AnasaziStrategy
 

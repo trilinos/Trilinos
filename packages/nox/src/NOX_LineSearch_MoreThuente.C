@@ -50,7 +50,7 @@
 #include "NOX_GlobalData.H"
 
 NOX::LineSearch::MoreThuente::
-MoreThuente(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+MoreThuente(const Teuchos::RCP<NOX::GlobalData>& gd, 
 	    Teuchos::ParameterList& params) :
   globalDataPtr(gd),
   print(gd->getUtils()),
@@ -65,7 +65,7 @@ NOX::LineSearch::MoreThuente::~MoreThuente()
 }
 
 bool NOX::LineSearch::MoreThuente::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
 { 
   globalDataPtr = gd;

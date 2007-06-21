@@ -42,15 +42,15 @@
 #include "LOCA_Extended_MultiAbstractGroup.H"
 #include "LOCA_MultiContinuation_AbstractGroup.H"
 
-Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
 LOCA::Extended::MultiAbstractGroup::getBaseLevelUnderlyingGroup() const
 {
   // First get the underlying group
-  Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> ulg = 
+  Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> ulg = 
     getUnderlyingGroup();
 
   // Cast underlying group to an extended group
-  Teuchos::RefCountPtr<const LOCA::Extended::MultiAbstractGroup> ulgPtr = 
+  Teuchos::RCP<const LOCA::Extended::MultiAbstractGroup> ulgPtr = 
     Teuchos::rcp_dynamic_cast<const LOCA::Extended::MultiAbstractGroup>(ulg);
 
   if (ulgPtr.get() == NULL) {
@@ -65,15 +65,15 @@ LOCA::Extended::MultiAbstractGroup::getBaseLevelUnderlyingGroup() const
 
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 LOCA::Extended::MultiAbstractGroup::getBaseLevelUnderlyingGroup()
 {
   // First get the underlying group
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> ulg = 
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> ulg = 
     getUnderlyingGroup();
 
   // Cast underlying group to an extended group
-  Teuchos::RefCountPtr<LOCA::Extended::MultiAbstractGroup> ulgPtr = 
+  Teuchos::RCP<LOCA::Extended::MultiAbstractGroup> ulgPtr = 
     Teuchos::rcp_dynamic_cast<LOCA::Extended::MultiAbstractGroup>(ulg);
 
   if (ulgPtr.get() == NULL) {

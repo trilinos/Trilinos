@@ -46,7 +46,7 @@
 
 #include "NOX_Direction_Generic.H" // base class
 #include "Teuchos_ParameterList.hpp"	   // class data element 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward Declarations
 namespace NOX {
@@ -87,14 +87,14 @@ class ModifiedNewton : public Generic {
 public:
 
   //! Constructor
-  ModifiedNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  ModifiedNewton(const Teuchos::RCP<NOX::GlobalData>& gd,
 		 Teuchos::ParameterList& params);
 
   //! Destructor
   virtual ~ModifiedNewton();
 
   // derived
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 		     Teuchos::ParameterList& params);
 
   // derived
@@ -128,10 +128,10 @@ private:
 private:
 
   //! Global data pointer.  Keep this so the parameter list remains valid.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Printing Utilities
-  Teuchos::RefCountPtr<NOX::Utils> utils;
+  Teuchos::RCP<NOX::Utils> utils;
 
   //! "Direction" sublist with parameters for the direction vector
   /*! 
@@ -144,7 +144,7 @@ private:
   bool doRescue;
   
   //! Group containing the old Jacobian
-  Teuchos::RefCountPtr<NOX::Abstract::Group> oldJacobianGrpPtr;
+  Teuchos::RCP<NOX::Abstract::Group> oldJacobianGrpPtr;
 
   //! Integer counting how old the Jacobian is
   int ageOfJacobian;

@@ -43,7 +43,7 @@
 #define NOX_MERITFUNCTION_SUMOFSQUARES_H
 
 #include "NOX_Common.H"  // for ostream
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "NOX_Utils.H"
 #include "NOX_MeritFunction_Generic.H"
 #include "NOX_LineSearch_Utils_Slope.H"
@@ -74,7 +74,7 @@ namespace MeritFunction {
   public:			
 
     //! Constructor.
-    SumOfSquares(const Teuchos::RefCountPtr<NOX::Utils>& u);
+    SumOfSquares(const Teuchos::RCP<NOX::Utils>& u);
     
     //! Destructor.
     virtual ~SumOfSquares();
@@ -159,14 +159,14 @@ namespace MeritFunction {
   private:
 
     //!Printing utilities.
-    Teuchos::RefCountPtr<Utils> utils;
+    Teuchos::RCP<Utils> utils;
 
     //! Temporary vector for computations.
-    mutable Teuchos::RefCountPtr<NOX::Abstract::Vector> tmpVecPtr;
+    mutable Teuchos::RCP<NOX::Abstract::Vector> tmpVecPtr;
 
     //! Temporary vector for computations.
     /*! Only allocated if the method computeJacobianWithOutJac is called. */
-    mutable Teuchos::RefCountPtr<NOX::Abstract::Group> tmpGrpPtr;
+    mutable Teuchos::RCP<NOX::Abstract::Group> tmpGrpPtr;
 
     //! Name of this function
     string meritFunctionName;

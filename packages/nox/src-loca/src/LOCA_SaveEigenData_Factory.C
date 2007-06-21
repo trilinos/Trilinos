@@ -48,7 +48,7 @@
 #include "LOCA_SaveEigenData_DefaultStrategy.H"
 
 LOCA::SaveEigenData::Factory::Factory(
-	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
@@ -57,13 +57,13 @@ LOCA::SaveEigenData::Factory::~Factory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy>
+Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy>
 LOCA::SaveEigenData::Factory::create(
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& eigenParams)
 {
   string methodName = "LOCA::SaveEigenData::Factory::create()";
-  Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> strategy;
 
   // Get name of strategy
   const string& name = strategyName(*eigenParams);
@@ -80,9 +80,9 @@ LOCA::SaveEigenData::Factory::create(
 					  "User-Defined Save Eigen Data Name",
 					  "???");
     if ((*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy> >(userDefinedName))
+	isType< Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> >(userDefinedName))
       strategy = (*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy> >(userDefinedName);
+	get< Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,

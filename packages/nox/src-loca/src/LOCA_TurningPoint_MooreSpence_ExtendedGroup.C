@@ -51,10 +51,10 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-         const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& tpParams,
-	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::AbstractGroup>& g)
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& tpParams,
+	 const Teuchos::RCP<LOCA::TurningPoint::MooreSpence::AbstractGroup>& g)
   : LOCA::Extended::MultiAbstractGroup(),
     LOCA::MultiContinuation::AbstractGroup(),
     globalData(global_data),
@@ -95,17 +95,17 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
     globalData->locaErrorCheck->throwError(func,
 			   "\"Length Normalization Vector\" is not set!");
   }
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> lenVecPtr = 
+  Teuchos::RCP<NOX::Abstract::Vector> lenVecPtr = 
     (*turningPointParams).INVALID_TEMPLATE_QUALIFIER 
-    get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >("Length Normalization Vector");
+    get< Teuchos::RCP<NOX::Abstract::Vector> >("Length Normalization Vector");
 
   if (!turningPointParams->isParameter("Initial Null Vector")) {
     globalData->locaErrorCheck->throwError(func,
 				 "\"Initial Null Vector\" is not set!");
   }
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> nullVecPtr = 
+  Teuchos::RCP<NOX::Abstract::Vector> nullVecPtr = 
     (*turningPointParams).INVALID_TEMPLATE_QUALIFIER 
-    get<Teuchos::RefCountPtr<NOX::Abstract::Vector> >("Initial Null Vector");
+    get<Teuchos::RCP<NOX::Abstract::Vector> >("Initial Null Vector");
 
   bool perturbSoln = turningPointParams->get(
 					       "Perturb Initial Solution", 
@@ -184,7 +184,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::operator=(
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Group>
+Teuchos::RCP<NOX::Abstract::Group>
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::clone(
 						    NOX::CopyType type) const 
 {
@@ -376,9 +376,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobian(
 					  NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input = 
     input.createMultiVector(1, NOX::DeepCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_result = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result = 
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobian
@@ -397,9 +397,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTranspose(
 					  NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input = 
     input.createMultiVector(1, NOX::DeepCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_result = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result = 
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobianTranspose
@@ -419,9 +419,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianInverse(
 					  NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input = 
     input.createMultiVector(1, NOX::DeepCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_result = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result = 
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobianInverse
@@ -456,23 +456,23 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
     dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(result);
 
   // Get constant references to input vector components
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_x = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
     tp_input.getXMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_null = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_null = 
     tp_input.getNullMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_param = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_param = 
     tp_input.getScalars();
 
   // Get non-constant references to result vector components
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
     tp_result.getXMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_null = 
     tp_result.getNullMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
     tp_result.getScalars();
 
   // Temporary vector
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp = 
     input_null->clone(NOX::ShapeCopy);
 
   // verify underlying Jacobian is valid
@@ -622,13 +622,13 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual() con
   return residual.norm();
 }
 
-Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::getUnderlyingGroup() const
 {
   return grpPtr;
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::getUnderlyingGroup()
 {
   return grpPtr;
@@ -936,7 +936,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(bool perturbSoln,
        "applying random perturbation to initial solution of size: " << 
        globalData->locaUtils->sciformat(perturbSize) << endl;
     }
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> perturb = 
+    Teuchos::RCP<NOX::Abstract::Vector> perturb = 
       xVec->getXVec()->clone(NOX::ShapeCopy);
     perturb->random();
     perturb->scale(*(xVec->getXVec()));

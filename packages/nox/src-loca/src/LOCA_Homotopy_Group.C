@@ -50,8 +50,8 @@
 
 LOCA::Homotopy::Group::Group(
 	 Teuchos::ParameterList& locaSublist,
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Homotopy::AbstractGroup>& g,
 	 double scalarRandom,
 	 double scalarInitialGuess) :
   globalData(global_data),
@@ -89,8 +89,8 @@ LOCA::Homotopy::Group::Group(
 
 LOCA::Homotopy::Group::Group(
 	 Teuchos::ParameterList& locaSublist,
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Homotopy::AbstractGroup>& g,
 	 const NOX::Abstract::Vector& randomVector) :
   globalData(global_data),
   grpPtr(g),
@@ -172,7 +172,7 @@ LOCA::Homotopy::Group::operator=(const NOX::Abstract::Group& source)
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Group>
+Teuchos::RCP<NOX::Abstract::Group>
 LOCA::Homotopy::Group::clone(NOX::CopyType type) const 
 {
   return Teuchos::rcp(new LOCA::Homotopy::Group(*this, type));
@@ -455,13 +455,13 @@ LOCA::Homotopy::Group::getNewton() const
   return *newtonVecPtr;
 }
 
-Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
+Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
 LOCA::Homotopy::Group::getUnderlyingGroup() const
 {
   return grpPtr;
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> 
+Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> 
 LOCA::Homotopy::Group::getUnderlyingGroup()
 {
   return grpPtr;
@@ -578,7 +578,7 @@ LOCA::Homotopy::Group::computeDfDpMulti(const vector<int>& paramIDs,
     }
 
   // Create view of dfdp for parameters that aren't the continuation parameter
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> fp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> fp = 
     dfdp.subView(idx);
 
   // Compute df/dp for non-continuation parameter parameters

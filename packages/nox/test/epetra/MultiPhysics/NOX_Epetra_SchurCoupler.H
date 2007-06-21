@@ -156,16 +156,16 @@ public:
   virtual bool hasExplicitOperator( int rowBlock, int colBlock );
 
   //! Access explicit operator
-  virtual Teuchos::RefCountPtr<Epetra_Operator> getExplicitOperator( int rowBlock, int colBlock );
+  virtual Teuchos::RCP<Epetra_Operator> getExplicitOperator( int rowBlock, int colBlock );
 
   //! Access to our Schur Operators
-  virtual Teuchos::RefCountPtr<NOX::Epetra::SchurOp> getSchurOperator( int rowBlock, int colBlock );
+  virtual Teuchos::RCP<NOX::Epetra::SchurOp> getSchurOperator( int rowBlock, int colBlock );
 
   //! @name Schur-based modifying methods
   //@{ 
 
     //! Modifies the RHS vector using block operations
-    //virtual void modifyRHS( Teuchos::RefCountPtr<Epetra_Vector> &, Teuchos::RefCountPtr<Epetra_Vector> & );
+    //virtual void modifyRHS( Teuchos::RCP<Epetra_Vector> &, Teuchos::RCP<Epetra_Vector> & );
   //@}
 
 protected:
@@ -178,7 +178,7 @@ protected:
   Problem_Manager & problemManager ;
 
   //! Container of SchurOps
-  map<int, Teuchos::RefCountPtr<NOX::Epetra::SchurOp> > schurOperators;
+  map<int, Teuchos::RCP<NOX::Epetra::SchurOp> > schurOperators;
 
   //! Label for operator
   string label;

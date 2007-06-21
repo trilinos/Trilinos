@@ -42,7 +42,7 @@
 #ifndef LOCA_BORDEREDSOLVER_JACOBIANOPERATOR_H
 #define LOCA_BORDEREDSOLVER_JACOBIANOPERATOR_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_BorderedSolver_AbstractOperator.H" // base class
 
@@ -60,13 +60,13 @@ namespace LOCA {
 
       //! Constructor
       JacobianOperator(
-		 const Teuchos::RefCountPtr<const NOX::Abstract::Group>& grp);
+		 const Teuchos::RCP<const NOX::Abstract::Group>& grp);
 
       //! Destructor
       virtual ~JacobianOperator();
 
       //! Get group pointer
-      virtual Teuchos::RefCountPtr<const NOX::Abstract::Group>
+      virtual Teuchos::RCP<const NOX::Abstract::Group>
       getGroup() const;
   
       //! Apply the operator
@@ -106,7 +106,7 @@ namespace LOCA {
     protected:
 
       //! Pointer to group
-      Teuchos::RefCountPtr<const NOX::Abstract::Group> grpPtr;
+      Teuchos::RCP<const NOX::Abstract::Group> grpPtr;
 
     }; // Class JacobianOperator
 

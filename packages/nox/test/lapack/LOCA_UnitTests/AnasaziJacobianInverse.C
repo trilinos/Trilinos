@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 	verbose = true;
 
     // Create parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -116,15 +116,15 @@ int main(int argc, char *argv[])
        nlPrintParams.set("Output Information", NOX::Utils::Error);
 
     // Create LAPACK factory
-    Teuchos::RefCountPtr<LOCA::Abstract::Factory> lapackFactory =
+    Teuchos::RCP<LOCA::Abstract::Factory> lapackFactory =
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+    Teuchos::RCP<LOCA::GlobalData> globalData =
       LOCA::createGlobalData(paramList, lapackFactory);
 
     // Create parsed parameter list
-    Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams = 
+    Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams = 
       Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
     parsedParams->parseSublists(paramList);
 
@@ -146,15 +146,15 @@ int main(int argc, char *argv[])
     grp.computeJacobian();
 
     // Create Anasazi eigensolver
-    Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> anasaziStrategy
+    Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> anasaziStrategy
       = globalData->locaFactory->createEigensolverStrategy(
 				     parsedParams, 
 				     parsedParams->getSublist("Eigensolver"));
 
-    Teuchos::RefCountPtr< std::vector<double> > anasazi_evals_r;
-    Teuchos::RefCountPtr< std::vector<double> > anasazi_evals_i;
-    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > anasazi_evecs_r;
-    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > anasazi_evecs_i;
+    Teuchos::RCP< std::vector<double> > anasazi_evals_r;
+    Teuchos::RCP< std::vector<double> > anasazi_evals_i;
+    Teuchos::RCP< NOX::Abstract::MultiVector > anasazi_evecs_r;
+    Teuchos::RCP< NOX::Abstract::MultiVector > anasazi_evecs_i;
     NOX::Abstract::Group::ReturnType anasaziStatus = 
       anasaziStrategy->computeEigenvalues(grp, 
 					  anasazi_evals_r, 
@@ -170,15 +170,15 @@ int main(int argc, char *argv[])
     aList.set("Sorting Order","SM");
 
     // Create DGGEV eigensolver
-    Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> dggevStrategy
+    Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> dggevStrategy
       = globalData->locaFactory->createEigensolverStrategy(
 				      parsedParams,
 				      parsedParams->getSublist("Eigensolver"));
 
-    Teuchos::RefCountPtr< std::vector<double> > dggev_evals_r;
-    Teuchos::RefCountPtr< std::vector<double> > dggev_evals_i;
-    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > dggev_evecs_r;
-    Teuchos::RefCountPtr< NOX::Abstract::MultiVector > dggev_evecs_i;
+    Teuchos::RCP< std::vector<double> > dggev_evals_r;
+    Teuchos::RCP< std::vector<double> > dggev_evals_i;
+    Teuchos::RCP< NOX::Abstract::MultiVector > dggev_evecs_r;
+    Teuchos::RCP< NOX::Abstract::MultiVector > dggev_evecs_i;
     NOX::Abstract::Group::ReturnType dggevStatus = 
       dggevStrategy->computeEigenvalues(grp, 
 					dggev_evals_r, 

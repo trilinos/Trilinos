@@ -55,7 +55,7 @@ using namespace NOX::Epetra;
 
 FiniteDifference::FiniteDifference(
     Teuchos::ParameterList& printingParams,
-    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i,
+    const Teuchos::RCP<NOX::Epetra::Interface::Required>& i,
     const NOX::Epetra::Vector& x,
     double beta_,
     double alpha_) :
@@ -79,9 +79,9 @@ FiniteDifference::FiniteDifference(
 FiniteDifference::
 FiniteDifference(
     Teuchos::ParameterList& printingParams,
-    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i,
+    const Teuchos::RCP<NOX::Epetra::Interface::Required>& i,
     const NOX::Epetra::Vector& x,
-    const Teuchos::RefCountPtr<const Epetra_Vector>& beta_,
+    const Teuchos::RCP<const Epetra_Vector>& beta_,
     double alpha_) :
   utils(printingParams),
   interface(i),
@@ -103,9 +103,9 @@ FiniteDifference(
 
 FiniteDifference::FiniteDifference(
     Teuchos::ParameterList& printingParams,
-    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i,
+    const Teuchos::RCP<NOX::Epetra::Interface::Required>& i,
     const NOX::Epetra::Vector& x,
-    const Teuchos::RefCountPtr<Epetra_CrsGraph>& userGraph,
+    const Teuchos::RCP<Epetra_CrsGraph>& userGraph,
     double beta_,
     double alpha_) :
   utils(printingParams),
@@ -130,10 +130,10 @@ FiniteDifference::FiniteDifference(
 
 FiniteDifference::FiniteDifference(
     Teuchos::ParameterList& printingParams,
-    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i,
+    const Teuchos::RCP<NOX::Epetra::Interface::Required>& i,
     const NOX::Epetra::Vector& x,
-    const Teuchos::RefCountPtr<Epetra_CrsGraph>& userGraph,
-    const Teuchos::RefCountPtr<const Epetra_Vector>& beta_,
+    const Teuchos::RCP<Epetra_CrsGraph>& userGraph,
+    const Teuchos::RCP<const Epetra_Vector>& beta_,
     double alpha_) :
   utils(printingParams),
   graph(userGraph),
@@ -455,7 +455,7 @@ bool FiniteDifference::computePreconditioner(const Epetra_Vector& x,
   return computeJacobian(x, *this);
 }
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix> FiniteDifference::
+Teuchos::RCP<Epetra_CrsMatrix> FiniteDifference::
 createGraphAndJacobian(Interface::Required& i, const Epetra_Vector& x)
 {
 
@@ -556,7 +556,7 @@ bool FiniteDifference::computeF(const Epetra_Vector& input,
     // Get rid of const for NOX::Epetra:Vector Ctor.
     Epetra_Vector& nonconstInput = const_cast<Epetra_Vector&>(input);
 
-    Teuchos::RefCountPtr<Epetra_Vector> tmpEpetraInputVec = 
+    Teuchos::RCP<Epetra_Vector> tmpEpetraInputVec = 
       //Teuchos::rcp(&nonconstInput, false);
       Teuchos::rcp(new Epetra_Vector(nonconstInput));
     NOX::Epetra::Vector noxX(tmpEpetraInputVec, 

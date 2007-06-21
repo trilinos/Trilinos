@@ -178,7 +178,7 @@ public:
 
   //@}
 
-  virtual Teuchos::RefCountPtr<NOX::Abstract::Group> 
+  virtual Teuchos::RCP<NOX::Abstract::Group> 
   clone(CopyType type = DeepCopy) const;
 
 protected:

@@ -122,7 +122,7 @@
 // **************************************************************************
 // *** Constructor
 // **************************************************************************
-NOX::Direction::Tensor::Tensor(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+NOX::Direction::Tensor::Tensor(const Teuchos::RCP<NOX::GlobalData>& gd,
 			       Teuchos::ParameterList& params) :
   inexactNewtonUtils(gd, params)
 {
@@ -183,7 +183,7 @@ NOX::Direction::Tensor::~Tensor()
 
 
 bool NOX::Direction::Tensor::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
 {
   globalDataPtr = gd;
@@ -564,11 +564,11 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 
     // Compute the tensor terms....
     // (note that ac is not multiplied by 2)
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> sPtr = 
+    Teuchos::RCP<NOX::Abstract::Vector> sPtr = 
       soln.getX().clone(ShapeCopy);
     *sPtr = *scPtr;
     sPtr->scale(1/normS);
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> aPtr = 
+    Teuchos::RCP<NOX::Abstract::Vector> aPtr = 
       soln.getF().clone(ShapeCopy);
     *aPtr = *acPtr;
     aPtr->scale(normS*normS);
@@ -689,7 +689,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 	matC[iterations][j] = 0;
       matC[iterations][iterations] = gamma;
             
-      Teuchos::RefCountPtr<NOX::Abstract::Vector> bPtr = 
+      Teuchos::RCP<NOX::Abstract::Vector> bPtr = 
 	soln.getF().clone(ShapeCopy);
       *bPtr = soln.getF();
       if (precondition == Left) {
@@ -2340,7 +2340,7 @@ double NOX::Direction::Tensor::getNormModelResidual(
 				       bool isTensorModel) const
 {
   // Compute residual of Newton model...
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> residualPtr = 
+  Teuchos::RCP<NOX::Abstract::Vector> residualPtr = 
     soln.getF().clone(ShapeCopy);
   soln.applyJacobian(dir, *residualPtr);      multsJv++;
   residualPtr->update(1.0, soln.getF(), 1.0);
@@ -2349,9 +2349,9 @@ double NOX::Direction::Tensor::getNormModelResidual(
 
 #ifdef DEPRECATED_CODE
     // Compute the tensor term ac....
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> sPtr = 
+    Teuchos::RCP<NOX::Abstract::Vector> sPtr = 
       soln.getX().clone(ShapeCopy);
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> aPtr = 
+    Teuchos::RCP<NOX::Abstract::Vector> aPtr = 
       soln.getF().clone(ShapeCopy);
     *sPtr = soln.getX();
     sPtr->update(1.0, solver.getPreviousSolutionGroup().getX(), -1.0);
@@ -2377,7 +2377,7 @@ double NOX::Direction::Tensor::getNormModelResidual(
   }
 
   if (precondition == Left) {
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> tmpPtr = 
+    Teuchos::RCP<NOX::Abstract::Vector> tmpPtr = 
       soln.getF().clone(ShapeCopy);
     *tmpPtr = *residualPtr;
     applyPreconditioner(false, soln, *localParamsPtr, *tmpPtr, *residualPtr,
@@ -2393,7 +2393,7 @@ double NOX::Direction::Tensor::getDirectionalDerivative(
 				       const NOX::Abstract::Vector& dir,
 				       const NOX::Abstract::Group& soln) const
 {
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmpPtr = 
+  Teuchos::RCP<NOX::Abstract::Vector> tmpPtr = 
     soln.getF().clone(ShapeCopy);
   soln.applyJacobian(dir,*tmpPtr);      multsJv++;
   double fprime = tmpPtr->innerProduct(soln.getF());

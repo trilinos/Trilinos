@@ -156,14 +156,14 @@ class NonlinearCG : public Generic {
 public:
 
   //! Constructor. 
-  NonlinearCG(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  NonlinearCG(const Teuchos::RCP<NOX::GlobalData>& gd,
 	      Teuchos::ParameterList& params);
 
   //! Destructor.
   virtual ~NonlinearCG();
 
   //! derived
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 		     Teuchos::ParameterList& p);
 
   //! derived
@@ -177,31 +177,31 @@ public:
 private:
   
   //! Global data pointer.  Keep this so the parameter list remains valid.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Printing Utils
-  Teuchos::RefCountPtr<NOX::Utils> utils;
+  Teuchos::RCP<NOX::Utils> utils;
 
   //! Previous solution pointer. 
   const Abstract::Group* oldSolnPtr;	
 
   //! Temporary vector used in applying preconditioner.
-  Teuchos::RefCountPtr<Abstract::Vector> tmpVecPtr;
+  Teuchos::RCP<Abstract::Vector> tmpVecPtr;
 
   //! Previous search direction pointer.
   /*! The current search direction is found by orthogonalizing against the
       previous search direction.  This vector provides storage for the 
       old search direction. */
-  Teuchos::RefCountPtr<Abstract::Vector> oldDirPtr;
+  Teuchos::RCP<Abstract::Vector> oldDirPtr;
 
   //! Pointer to previous descent direction.
   /*! This vector stores the old descent direction which was orthogonalized
       to determine the old search direction.  It is needed in the numerator
       of the expression for Polak-Ribiere \f$ \beta \f$. */
-  Teuchos::RefCountPtr<Abstract::Vector> oldDescentDirPtr;  
+  Teuchos::RCP<Abstract::Vector> oldDescentDirPtr;  
 
   //! Temporary vector used in computing the numerator of Polak-Ribiere \f$ \beta \f$.
-  Teuchos::RefCountPtr<Abstract::Vector> diffVecPtr;  
+  Teuchos::RCP<Abstract::Vector> diffVecPtr;  
 
   //! Input parameters.
   Teuchos::ParameterList* paramsPtr;	

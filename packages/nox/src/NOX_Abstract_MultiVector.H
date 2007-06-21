@@ -172,25 +172,25 @@ namespace NOX {
        * \return Pointer to newly created vector or NULL if clone is not 
        * supported. 
        */
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
       clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
 
       //! Creates a new multi-vector with \c numvecs columns
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       clone(int numvecs) const = 0;
 
       /*! 
        * \brief Creates a new multi-vector with \c index.size() columns whose 
        * columns are copies of the columns of \c *this given by \c index.
        */
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       subCopy(const vector<int>& index) const = 0;
 
       /*! 
        * \brief Creates a new multi-vector with \c ndex.size() columns that 
        * shares the columns of \c *this given by \c index.
        */
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       subView(const vector<int>& index) const = 0;
 
       //@}

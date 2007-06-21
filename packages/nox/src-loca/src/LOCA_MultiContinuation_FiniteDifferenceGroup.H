@@ -86,7 +86,7 @@ namespace LOCA {
 
       //! Set the LOCA::DerivUtils object
       virtual void setDerivUtils(
-			 const Teuchos::RefCountPtr<LOCA::DerivUtils>& deriv);
+			 const Teuchos::RCP<LOCA::DerivUtils>& deriv);
 
       /*! 
        * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
@@ -112,7 +112,7 @@ namespace LOCA {
     protected:
 
       //! Pointer to current DerivUtils derivative computation object
-      Teuchos::RefCountPtr<DerivUtils> derivPtr;
+      Teuchos::RCP<DerivUtils> derivPtr;
 
     };
   } // namespace MultiContinuation

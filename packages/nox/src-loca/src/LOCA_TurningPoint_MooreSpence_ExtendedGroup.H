@@ -42,7 +42,7 @@
 #ifndef LOCA_TURNINGPOINT_MOORESPENCE_EXTENDEDGROUP_H
 #define LOCA_TURNINGPOINT_MOORESPENCE_EXTENDEDGROUP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_MultiContinuation_AbstractGroup.H"         // base class
 #include "LOCA_Extended_MultiAbstractGroup.H"             // base class
@@ -117,10 +117,10 @@ namespace LOCA {
        <ul>
        <li> "Bifurcation Parameter" -- [string] (Must be supplied) Name of the bifurcation parameter \f$p\f$
        <li> "Length Normalization Vector" -- 
-            [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) 
+            [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) 
             Vector storing length normalization vector \f$l\f$
        <li> "Initial Null Vector"  -- 
-            [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) - 
+            [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) - 
             Vector storing initial guess for the null vector \f$n\f$
        <li> "Perturb Initial Solution" -- [bool] (default: false) Flag 
             indicating whether to perturb the initial solution
@@ -139,10 +139,10 @@ namespace LOCA {
 	 * \brief Constructor with initial data passed through parameter lists.
 	 */
 	ExtendedGroup(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-         const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& tpParams,
-	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::AbstractGroup>& g);
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& tpParams,
+	 const Teuchos::RCP<LOCA::TurningPoint::MooreSpence::AbstractGroup>& g);
 
 	//! Copy constructor.
 	ExtendedGroup(const ExtendedGroup& source, 
@@ -161,7 +161,7 @@ namespace LOCA {
 	operator=(const NOX::Abstract::Group& source);
      
 	//! Cloning function
-	virtual Teuchos::RefCountPtr<NOX::Abstract::Group>
+	virtual Teuchos::RCP<NOX::Abstract::Group>
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
 	//! Set the solution vector, x, to y.
@@ -330,12 +330,12 @@ namespace LOCA {
 	
 	//! Return underlying group
 	virtual 
-	Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
+	Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
 	getUnderlyingGroup() const;
 	
 	//! Return underlying group
 	virtual 
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+	Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 	getUnderlyingGroup();
 
 	//@}
@@ -463,16 +463,16 @@ namespace LOCA {
       protected:
 
 	//! Pointer LOCA global data object
-	Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+	Teuchos::RCP<LOCA::GlobalData> globalData;
 
 	//! Parsed top-level parameters
-	Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
+	Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams;
 
 	//! Bifurcation parameter list
-	Teuchos::RefCountPtr<Teuchos::ParameterList> turningPointParams;
+	Teuchos::RCP<Teuchos::ParameterList> turningPointParams;
 
 	//! Pointer to base group that defines \f$F\f$
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::AbstractGroup> grpPtr;
+	Teuchos::RCP<LOCA::TurningPoint::MooreSpence::AbstractGroup> grpPtr;
 
 	//! Stores the extended solution vector
 	LOCA::TurningPoint::MooreSpence::ExtendedMultiVector xMultiVec;
@@ -484,28 +484,28 @@ namespace LOCA {
 	LOCA::TurningPoint::MooreSpence::ExtendedMultiVector newtonMultiVec;
 
 	//! Stores the length normalization vector
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> lengthMultiVec;
+	Teuchos::RCP<NOX::Abstract::MultiVector> lengthMultiVec;
 	
 	//! Stores view of first column of xMultiVec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedVector> xVec;
+	Teuchos::RCP<LOCA::TurningPoint::MooreSpence::ExtendedVector> xVec;
 	
 	//! Stores view of first column of fMultiVec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedVector> fVec;
+	Teuchos::RCP<LOCA::TurningPoint::MooreSpence::ExtendedVector> fVec;
 	
 	//! Stores view of first column of fMultiVec as a multivec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector> ffMultiVec;
+	Teuchos::RCP<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector> ffMultiVec;
 
 	//! Stores view of df/dp columns of fMultiVec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector> dfdpMultiVec;
+	Teuchos::RCP<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector> dfdpMultiVec;
 
 	//! Stores view of first column of newtonMultiVec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedVector> newtonVec;
+	Teuchos::RCP<LOCA::TurningPoint::MooreSpence::ExtendedVector> newtonVec;
 
 	//! Stores view of first column of lengthMultiVec
-	Teuchos::RefCountPtr<NOX::Abstract::Vector> lengthVec;
+	Teuchos::RCP<NOX::Abstract::Vector> lengthVec;
 
 	//! Stores bordering strategy
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy> solverStrategy;
+	Teuchos::RCP<LOCA::TurningPoint::MooreSpence::SolverStrategy> solverStrategy;
 
 	//! Stores indices for getting f part of fMultiVec
 	vector<int> index_f;

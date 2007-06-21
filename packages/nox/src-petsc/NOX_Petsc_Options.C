@@ -219,7 +219,7 @@ bool Options::setOptions(Teuchos::ParameterList& nlParams)
   return true;
 }
 
-Teuchos::RefCountPtr<NOX::StatusTest::Combo> & 
+Teuchos::RCP<NOX::StatusTest::Combo> & 
 Options::getStatusTest()
 {
   return testCombo;

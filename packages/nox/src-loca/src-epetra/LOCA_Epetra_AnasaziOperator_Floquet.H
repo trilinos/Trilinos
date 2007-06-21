@@ -33,7 +33,7 @@
 #ifndef LOCA_EPETRA_ANASAZIOPERATOR_FLOQUET_H
 #define LOCA_EPETRA_ANASAZIOPERATOR_FLOQUET_H
 
-#include "Teuchos_RefCountPtr.hpp" 
+#include "Teuchos_RCP.hpp" 
 
 #include "LOCA_AnasaziOperator_AbstractStrategy.H"  // base class
 #include "LOCA_TimeDependent_AbstractGroup.H"
@@ -92,11 +92,11 @@ namespace LOCA {
        * See class description for a list of eigenParams.
        */
       Floquet(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-	const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+	const Teuchos::RCP<NOX::Abstract::Group>& grp);
 
       //! Destructor
       virtual ~Floquet();
@@ -142,22 +142,22 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Name of this operator
       string myLabel;
 
       //! Stores parameters relating to the operator
-      Teuchos::RefCountPtr<Teuchos::ParameterList> eigenParams;
+      Teuchos::RCP<Teuchos::ParameterList> eigenParams;
 
       //! Stores linear solver parameters
-      Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
+      Teuchos::RCP<Teuchos::ParameterList> solverParams;
 
       //! Stores group representing Jacobian and Mass matrix
-      Teuchos::RefCountPtr<NOX::Abstract::Group> grp;
+      Teuchos::RCP<NOX::Abstract::Group> grp;
 
       //! Stores interface for space-time periodic formulation
-      Teuchos::RefCountPtr<LOCA::Epetra::Interface::xyzt> xyztInterface;
+      Teuchos::RCP<LOCA::Epetra::Interface::xyzt> xyztInterface;
 
     };
   } // namespace AnasaziOperator

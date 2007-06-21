@@ -49,7 +49,7 @@
 #include "LOCA_TurningPoint_MooreSpence_PhippsBordering.H"
 
 LOCA::TurningPoint::MooreSpence::SolverFactory::SolverFactory(
-	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
@@ -58,14 +58,14 @@ LOCA::TurningPoint::MooreSpence::SolverFactory::~SolverFactory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>
+Teuchos::RCP<LOCA::TurningPoint::MooreSpence::SolverStrategy>
 LOCA::TurningPoint::MooreSpence::SolverFactory::create(
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
   string methodName = 
     "LOCA::TurningPoint::MooreSpence::SolverFactory::create()";
-  Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy> strategy;
+  Teuchos::RCP<LOCA::TurningPoint::MooreSpence::SolverStrategy> strategy;
 
   // Get name of strategy
   const string& name = strategyName(*solverParams);
@@ -90,9 +90,9 @@ LOCA::TurningPoint::MooreSpence::SolverFactory::create(
     string userDefinedName = solverParams->get("User-Defined Name",
 							"???");
     if ((*solverParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy> >(userDefinedName))
+	isType< Teuchos::RCP<LOCA::TurningPoint::MooreSpence::SolverStrategy> >(userDefinedName))
       strategy = (*solverParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy> >(userDefinedName);
+	get< Teuchos::RCP<LOCA::TurningPoint::MooreSpence::SolverStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,

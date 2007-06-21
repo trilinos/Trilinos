@@ -81,7 +81,7 @@ namespace LOCA {
   
 	//! %Constructor.
 	ExtendedVector(
-		   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		   const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		   const NOX::Abstract::Vector& xVec,
 		   const NOX::Abstract::Vector& nullVec,
 		   double bifParam);
@@ -105,7 +105,7 @@ namespace LOCA {
 	virtual ExtendedVector& operator=(const ExtendedVector& y);
 
 	//! Cloning function
-	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector>
+	virtual Teuchos::RCP<NOX::Abstract::Vector>
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
 	//! Sets the %Vector by setting its three components 
@@ -114,21 +114,21 @@ namespace LOCA {
 			    double bifPar);
 
 	//! Returns the solution vector component of extended vector
-	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+	virtual Teuchos::RCP<const NOX::Abstract::Vector> 
 	getXVec() const;
 
 	//! Returns the null vector component of extended vector
-	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+	virtual Teuchos::RCP<const NOX::Abstract::Vector> 
 	getNullVec() const;
 
 	//! Get %Bifurcation parameter
 	virtual double getBifParam() const;
 
 	//! Returns the solution vector component of extended vector
-	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> getXVec();
+	virtual Teuchos::RCP<NOX::Abstract::Vector> getXVec();
 
 	//! Returns the null vector component of extended vector
-	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> getNullVec();
+	virtual Teuchos::RCP<NOX::Abstract::Vector> getNullVec();
 
 	//! Get %Bifurcation parameter
 	virtual double& getBifParam();
@@ -137,14 +137,14 @@ namespace LOCA {
 
 	//! Default Constructor
 	ExtendedVector(
-		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+		  const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
 	//! generate an extended multi-vector
 	/*!
 	 * Returns an empty multivector of type 
 	 * LOCA::TurningPoint::MooreSpence::ExtendedMultiVector
 	 */
-	virtual Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
+	virtual Teuchos::RCP<LOCA::Extended::MultiVector>
 	generateMultiVector(int nColumns, int nVectorRows, 
 			    int nScalarRows) const;
 

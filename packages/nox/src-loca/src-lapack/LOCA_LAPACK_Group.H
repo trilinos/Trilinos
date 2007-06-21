@@ -97,7 +97,7 @@ namespace LOCA {
     public:
 
       //! Constructor 
-      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+      Group(const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	    LOCA::LAPACK::Interface& i);
 
       //! Copy constructor
@@ -122,7 +122,7 @@ namespace LOCA {
       NOX::LAPACK::Group& operator=(const NOX::LAPACK::Group& source);
 
       //! Cloning function
-      Teuchos::RefCountPtr<NOX::Abstract::Group> 
+      Teuchos::RCP<NOX::Abstract::Group> 
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Overloaded computeF()
@@ -391,7 +391,7 @@ namespace LOCA {
     protected:
 
       //! LOCA Global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Referece to current problem
       LOCA::LAPACK::Interface& locaProblemInterface;

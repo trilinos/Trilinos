@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
   Mat& A = Problem.getJacobian();
 
   // Create the Group
-  Teuchos::RefCountPtr<NOX::Petsc::Group> grp = Teuchos::rcp( new NOX::Petsc::Group(interface, soln, A) );
+  Teuchos::RCP<NOX::Petsc::Group> grp = Teuchos::rcp( new NOX::Petsc::Group(interface, soln, A) );
   grp->computeF(); // Needed to establish the initial convergence state
 
   // Create the method and solve

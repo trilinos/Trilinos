@@ -57,7 +57,7 @@ LOCA::LAPACK::Factory::~Factory()
 
 void
 LOCA::LAPACK::Factory::init(
-		   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data)
+		   const Teuchos::RCP<LOCA::GlobalData>& global_data)
 {
   globalData = global_data;
 }
@@ -65,9 +65,9 @@ LOCA::LAPACK::Factory::init(
 bool
 LOCA::LAPACK::Factory::createBorderedSolverStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-       Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>& strategy)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+       Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>& strategy)
 {
   // Instantiate DGGEV strategy if requested
   if (strategyName == "LAPACK Direct Solve") {
@@ -84,9 +84,9 @@ LOCA::LAPACK::Factory::createBorderedSolverStrategy(
 bool
 LOCA::LAPACK::Factory::createEigensolverStrategy(
          const string& strategyName,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy)
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+	 Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy>& strategy)
 {
   // Instantiate DGGEV strategy if requested
   if (strategyName == "DGGEV") {

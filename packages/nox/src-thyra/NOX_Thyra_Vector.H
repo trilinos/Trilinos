@@ -44,7 +44,7 @@
 #ifndef NOX_THYRA_VECTOR_H
 #define NOX_THYRA_VECTOR_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "NOX_Abstract_Vector.H" // base class
 #include "Thyra_VectorBase.hpp"
@@ -61,7 +61,7 @@ namespace NOX {
 
       //! Construct a vector as a view of a given Thyra vector
       /*! Creates a view and does not allocate a new vector */
-      Vector(const Teuchos::RefCountPtr< ::Thyra::VectorBase<double> >& src);
+      Vector(const Teuchos::RCP< ::Thyra::VectorBase<double> >& src);
 
       //! Construct a vector from a given Thyra vector
       /*! Allocates an entirely new vector */
@@ -137,7 +137,7 @@ namespace NOX {
        * \brief Create a new %Vector of the same underlying type by
        * cloning "this", and return a pointer to the new vector.
        */
-      Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+      Teuchos::RCP<NOX::Abstract::Vector> 
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       // The NOX::Thyra::MultiVector is not currently used because 
@@ -149,14 +149,14 @@ namespace NOX {
 //        * of Vectors.  The vector stored under \c this will be the first column 
 //        * with the remaining \c numVecs columns given by \c vecs.
 //        */
-//       virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+//       virtual Teuchos::RCP<NOX::Abstract::MultiVector>
 //       createMultiVector(const NOX::Abstract::Vector* const* vecs,
 // 			int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 
 //       /*! 
 //        * \brief Create a MultiVector with \c numVecs columns.  
 //        */
-//       virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+//       virtual Teuchos::RCP<NOX::Abstract::MultiVector>
 //       createMultiVector(int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
   
       //@}
@@ -187,7 +187,7 @@ namespace NOX {
     protected:
 
       //! Pointer to Thyra vector owned by this object
-      Teuchos::RefCountPtr< ::Thyra::VectorBase<double> > thyraVec;
+      Teuchos::RCP< ::Thyra::VectorBase<double> > thyraVec;
 
     };
 

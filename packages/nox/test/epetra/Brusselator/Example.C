@@ -156,17 +156,17 @@ int main(int argc, char *argv[])
   // Epetra objects for the problem and allows calls to the 
   // function (F) and Jacobian evaluation routines.
   Brusselator::OverlapType OType = Brusselator::NODES;
-  Teuchos::RefCountPtr<Brusselator> Problem = 
+  Teuchos::RCP<Brusselator> Problem = 
     Teuchos::rcp(new Brusselator(NumGlobalNodes, Comm, OType));
 
   // Get the vector from the Problem
-  Teuchos::RefCountPtr<Epetra_Vector> soln = Problem->getSolution();
+  Teuchos::RCP<Epetra_Vector> soln = Problem->getSolution();
   NOX::Epetra::Vector noxSoln(soln, NOX::Epetra::Vector::CreateView);
 
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
   lsParams.set("Preconditioner", "AztecOO"); 
 
   // Create the interface between the test problem and the nonlinear solver
-  Teuchos::RefCountPtr<Problem_Interface> interface = 
+  Teuchos::RCP<Problem_Interface> interface = 
     Teuchos::rcp(new Problem_Interface(*Problem));
 
 #ifndef HAVE_NOX_EPETRAEXT 
@@ -232,14 +232,14 @@ int main(int argc, char *argv[])
   bool distance1 = false; 
   EpetraExt::CrsGraph_MapColoring tmpMapColoring(
     algType, reordering, distance1, verbosityLevel);
-  Teuchos::RefCountPtr<Epetra_MapColoring> colorMap = 
+  Teuchos::RCP<Epetra_MapColoring> colorMap = 
     Teuchos::rcp(&tmpMapColoring(*(Problem->getGraph())));
   EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
-  Teuchos::RefCountPtr< std::vector<Epetra_IntVector> > columns = 
+  Teuchos::RCP< std::vector<Epetra_IntVector> > columns = 
     Teuchos::rcp(&colorMapIndex(*(Problem->getGraph())));
 
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
-  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifferenceColoring> FDC = 
+  Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RCP<NOX::Epetra::FiniteDifferenceColoring> FDC = 
     Teuchos::rcp(new NOX::Epetra::FiniteDifferenceColoring(printParams,
 							   iReq, 
 							   noxSoln, 
@@ -259,14 +259,14 @@ int main(int argc, char *argv[])
 
 
   // Create the Linear System
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = FDC;
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = FDC;
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 						      iReq, iJac, FDC, 
 						      noxSoln));
 
   // Create the Group
-  Teuchos::RefCountPtr<NOX::Epetra::Group> grpPtr = 
+  Teuchos::RCP<NOX::Epetra::Group> grpPtr = 
     Teuchos::rcp(new NOX::Epetra::Group(printParams, 
 					iReq, 
 					noxSoln, 
@@ -274,11 +274,11 @@ int main(int argc, char *argv[])
   NOX::Epetra::Group& grp = *(grpPtr.get());
 
   // Create the convergence tests
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8, NOX::StatusTest::NormF::Unscaled));
-  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(25));
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(absresid);
   combo->addStatusTest(maxiters);

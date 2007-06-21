@@ -47,9 +47,9 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Pitchfork::MooreSpence::SalingerBordering::SalingerBordering(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams) : 
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& slvrParams) : 
   globalData(global_data),
   solverParams(slvrParams),
   group(),
@@ -69,13 +69,13 @@ LOCA::Pitchfork::MooreSpence::SalingerBordering::~SalingerBordering()
 
 void
 LOCA::Pitchfork::MooreSpence::SalingerBordering::setBlocks(
-	 const Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::AbstractGroup>& group_,
-	 const Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::ExtendedGroup>& pfGroup_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& asymMultiVector_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& nullVector_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& JnVector_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dfdp_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dJndp_)
+	 const Teuchos::RCP<LOCA::Pitchfork::MooreSpence::AbstractGroup>& group_,
+	 const Teuchos::RCP<LOCA::Pitchfork::MooreSpence::ExtendedGroup>& pfGroup_,
+	 const Teuchos::RCP<const NOX::Abstract::MultiVector>& asymMultiVector_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dJndp_)
 {
   group = group_;
   pfGroup = pfGroup_;
@@ -98,21 +98,21 @@ LOCA::Pitchfork::MooreSpence::SalingerBordering::solve(
   NOX::Abstract::Group::ReturnType status;
   
   // Get components of input
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_x = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
     input.getXMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_null = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_null = 
     input.getNullMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_slack = input.getSlacks();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_param = input.getBifParams();
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_slack = input.getSlacks();
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_param = input.getBifParams();
 
   // Get components of result
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
     result.getXMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_null = 
     result.getNullMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_slack = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_slack = 
     result.getSlacks();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
     result.getBifParams();
 
   int m = input.numVectors();
@@ -124,14 +124,14 @@ LOCA::Pitchfork::MooreSpence::SalingerBordering::solve(
   // First m columns store input_x, input_null, result_x, result_null
   // respectively, next column stores dfdp, dJndp, J^-1 dfdp, J^-1 dJndp
   // respectively, last column stores psi, 0, J^-1 psi, etc...
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_x = 
     input_x->clone(m+2);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_null = 
     input_null->clone(m+2);
   
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x = 
     result_x->clone(m+2);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_null = 
     result_null->clone(m+2);
   
   // Set first m columns to input_x
@@ -163,9 +163,9 @@ LOCA::Pitchfork::MooreSpence::SalingerBordering::solve(
 			   *result_slack, *result_param);
   
   // Create views of first m columns for result_x, result_null
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x_view = 
     cont_result_x->subView(index_input);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_null_view = 
     cont_result_null->subView(index_input);
 
   // Copy first m columns back into result_x, result_null
@@ -221,15 +221,15 @@ LOCA::Pitchfork::MooreSpence::SalingerBordering::solveContiguous(
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> A = 
     result_x.subView(index_input);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> b = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> b = 
     result_x.subView(index_dp);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> c = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> c = 
     result_x.subView(index_s);
 
   // compute (Jn)_x[A b c]
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp = 
     result_x.clone(NOX::ShapeCopy);
   status = group->computeDJnDxaMulti(*nullVector, *JnVector, result_x,
 				     *tmp);
@@ -254,11 +254,11 @@ LOCA::Pitchfork::MooreSpence::SalingerBordering::solveContiguous(
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> D = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> D = 
     result_null.subView(index_input);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> e = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> e = 
     result_null.subView(index_dp);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> g = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> g = 
     result_null.subView(index_s);
 
   // compute w = (phi^T e)(<A,psi> - s) - <b,psi>(phi^T D - h) / 

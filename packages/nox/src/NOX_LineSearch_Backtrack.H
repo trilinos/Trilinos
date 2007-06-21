@@ -44,7 +44,7 @@
 
 #include "NOX_LineSearch_Generic.H" // base class
 #include "NOX_Abstract_Vector.H" // for NOX::Abstract::Vector::NormType
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward declarations
 namespace NOX {
@@ -87,14 +87,14 @@ class Backtrack : public Generic {
 public:
 
   //! Constructor
-  Backtrack(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  Backtrack(const Teuchos::RCP<NOX::GlobalData>& gd,
 	    Teuchos::ParameterList& params);
 
   //! Destructor
   ~Backtrack();
   
   // derived
-  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 	     Teuchos::ParameterList& params);
 
   // derived
@@ -105,10 +105,10 @@ public:
 private:
   
   //! Printing Utilities
-  Teuchos::RefCountPtr<NOX::Utils> utils;
+  Teuchos::RCP<NOX::Utils> utils;
 
   //! Merit function
-  Teuchos::RefCountPtr<NOX::MeritFunction::Generic> meritFunctionPtr;
+  Teuchos::RCP<NOX::MeritFunction::Generic> meritFunctionPtr;
 
    //! Minimum step length (i.e., when we give up)
   double minStep;

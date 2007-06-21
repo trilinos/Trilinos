@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
   // parameter list as wwell as its own convergence test(s).
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
@@ -219,19 +219,19 @@ int main(int argc, char *argv[])
   // Create the convergence tests
   // Note: as for the parameter list, both (all) problems use the same 
   // convergence test(s) for now, but each could have its own.
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF>          absresid  =
+  Teuchos::RCP<NOX::StatusTest::NormF>          absresid  =
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormUpdate>     update    = 
+  Teuchos::RCP<NOX::StatusTest::NormUpdate>     update    = 
       Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo>          converged = 
+  Teuchos::RCP<NOX::StatusTest::Combo>          converged = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
   converged->addStatusTest(absresid);
   //converged->addStatusTest(update);
-  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(500));
-  Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> finiteValue = 
+  Teuchos::RCP<NOX::StatusTest::FiniteValue> finiteValue = 
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(converged);
   combo->addStatusTest(maxiters);
@@ -322,8 +322,8 @@ int main(int argc, char *argv[])
   {
     Epetra_CrsGraph maskGraph(Copy, problemManager.getCompositeSoln()->Map(), 0);
 
-    map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
-    map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = problemManager.getProblems().end();
+    map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
+    map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = problemManager.getProblems().end();
 
     // Loop over each problem being managed and ascertain its graph as well
     // as its graph from its dependencies
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
 
       // Get the indices map for copying data from this problem into 
       // the composite problem
-      map<int, Teuchos::RefCountPtr<Epetra_IntVector> > & problemToCmpositeIndices = 
+      map<int, Teuchos::RCP<Epetra_IntVector> > & problemToCmpositeIndices = 
         problemManager.getProblemToCompositeIndices();
       Epetra_IntVector & problemIndices = *(problemToCmpositeIndices[probId]);
 
@@ -435,10 +435,10 @@ int main(int argc, char *argv[])
     default            :
     {
       // Create the loose coupling solver manager
-      Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > > solversVec =
-        Teuchos::rcp( new vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > );
+      Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > > solversVec =
+        Teuchos::rcp( new vector<Teuchos::RCP<NOX::Solver::Manager> > );
 
-      map<int, Teuchos::RefCountPtr<NOX::Solver::Manager> >::iterator iter = problemManager.getSolvers().begin(),
+      map<int, Teuchos::RCP<NOX::Solver::Manager> >::iterator iter = problemManager.getSolvers().begin(),
                                                                   iter_end = problemManager.getSolvers().end()   ;
       for( ; iter_end != iter; ++iter )
       {
@@ -447,10 +447,10 @@ int main(int argc, char *argv[])
       }
 
       // Package the Problem_Manager as the DataExchange::Intreface
-      Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface> dataExInterface =
+      Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface> dataExInterface =
         Teuchos::rcp( &problemManager, false );
       
-      Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> fixedPt_maxiters = 
+      Teuchos::RCP<NOX::StatusTest::MaxIters> fixedPt_maxiters = 
         Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
 
       if( "jacobi" == solvType )
@@ -482,7 +482,7 @@ int main(int argc, char *argv[])
   double abstol = 1.e-4;
   double reltol = 1.e-4 ;
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator iter = problemManager.getProblems().begin(),
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator iter = problemManager.getProblems().begin(),
                                                               iter_end = problemManager.getProblems().end()   ;
   for( ; iter_end != iter; ++iter )
   {

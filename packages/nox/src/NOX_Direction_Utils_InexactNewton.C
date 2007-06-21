@@ -54,7 +54,7 @@
 // *** Constructor
 // **************************************************************************
 NOX::Direction::Utils::InexactNewton::
-InexactNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+InexactNewton(const Teuchos::RCP<NOX::GlobalData>& gd, 
 	      Teuchos::ParameterList& directionSublist) :
   paramsPtr(0)
 {
@@ -72,7 +72,7 @@ NOX::Direction::Utils::InexactNewton::~InexactNewton()
 // *** reset
 // **************************************************************************
 bool NOX::Direction::Utils::InexactNewton::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+reset(const Teuchos::RCP<NOX::GlobalData>& gd, 
       Teuchos::ParameterList& directionSublist)
 {
   globalDataPtr = gd;

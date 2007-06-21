@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 // Additional NOX setup
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
 
   // Create the Group
   //NOX::Petsc::Group* grp = new NOX::Petsc::Group(interface, x, J);
-  Teuchos::RefCountPtr<NOX::Petsc::Group> grp = Teuchos::rcp( new NOX::Petsc::Group(interface, x, J) );
+  Teuchos::RCP<NOX::Petsc::Group> grp = Teuchos::rcp( new NOX::Petsc::Group(interface, x, J) );
   grp->computeF(); // Needed to establish the initial convergence state
 
   // Create the method and solve

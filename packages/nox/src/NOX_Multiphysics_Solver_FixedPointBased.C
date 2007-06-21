@@ -44,10 +44,10 @@
 #include "NOX_GlobalData.H"
 
 NOX::Multiphysics::Solver::FixedPointBased::
-FixedPointBased(const Teuchos::RefCountPtr< vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
-		const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& i, 
-		const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-		const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
+FixedPointBased(const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+		const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
+		const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+		const Teuchos::RCP<Teuchos::ParameterList>& p) :
   solveType( JACOBI ),
   solversVecPtr(solvers),
   dataExInterface(i),
@@ -113,10 +113,10 @@ NOX::Multiphysics::Solver::FixedPointBased::init()
 
 bool 
 NOX::Multiphysics::Solver::FixedPointBased::reset(
-      const Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
-      const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& i, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) 
+      const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+      const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+      const Teuchos::RCP<Teuchos::ParameterList>& p) 
 {
   solversVecPtr = solvers;
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
@@ -136,24 +136,24 @@ NOX::Multiphysics::Solver::FixedPointBased::reset(
 
 bool 
 NOX::Multiphysics::Solver::FixedPointBased::reset(
-      const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) 
+      const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+      const Teuchos::RCP<Teuchos::ParameterList>& p) 
 {
   return false;
 }
 
 bool 
 NOX::Multiphysics::Solver::FixedPointBased::reset(
-      const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t)
+      const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& t)
 {
   return false;
 }
 
 bool 
 NOX::Multiphysics::Solver::FixedPointBased::reset(
-      const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp)
+      const Teuchos::RCP<NOX::Abstract::Group>& xGrp)
 {
   return false;
 }
@@ -214,7 +214,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
 
   NOX::StatusTest::StatusType status = NOX::StatusTest::Unconverged;
 
-  vector<Teuchos::RefCountPtr<NOX::Solver::Manager> >::iterator iter = (*solversVecPtr).begin(),
+  vector<Teuchos::RCP<NOX::Solver::Manager> >::iterator iter = (*solversVecPtr).begin(),
                                                             iter_end = (*solversVecPtr).end()   ;
   
   for( int i = 0; iter_end != iter; ++iter, ++i )
@@ -228,7 +228,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
     // Reset the problem's group
     const_cast<NOX::Abstract::Group&>((*iter)->getSolutionGroup()).setX((*iter)->getSolutionGroup().getX());
 
-    const Teuchos::RefCountPtr<NOX::Abstract::Group> sameGrp = 
+    const Teuchos::RCP<NOX::Abstract::Group> sameGrp = 
         Teuchos::rcp( const_cast<NOX::Abstract::Group*>(&(*iter)->getSolutionGroup()), false );
 
     (*iter)->reset( sameGrp );

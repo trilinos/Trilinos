@@ -40,7 +40,7 @@
 #ifndef LOCA_EPETRA_SHIFTINVERTOPERATOR_H
 #define LOCA_EPETRA_SHIFTINVERTOPERATOR_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "Epetra_Operator.h"
 #include "NOX_Epetra_Interface_Jacobian.H"
@@ -80,9 +80,9 @@ namespace LOCA {
 
       //! Constructor
       ShiftInvertOperator(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-		    const Teuchos::RefCountPtr<LOCA::Epetra::Group>& grp,
-		    const Teuchos::RefCountPtr<const Epetra_Operator>& jac, 
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::Epetra::Group>& grp,
+		    const Teuchos::RCP<const Epetra_Operator>& jac, 
 		    double shift);
 
       //! Destructor
@@ -140,13 +140,13 @@ namespace LOCA {
     protected:  
 
       //! Global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
   
       //! LOCA group
-      Teuchos::RefCountPtr<const LOCA::Epetra::Group> locagrp; 
+      Teuchos::RCP<const LOCA::Epetra::Group> locagrp; 
 
       //! Jacobian operator
-      Teuchos::RefCountPtr<const Epetra_Operator> jacOper;
+      Teuchos::RCP<const Epetra_Operator> jacOper;
 
       //! Shift value
       double shift_;

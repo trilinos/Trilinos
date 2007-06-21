@@ -78,7 +78,7 @@
 #include "NOX_Solver_TensorBasedTest.H"
 
 NOX::LineSearch::Tensor::
-Tensor(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+Tensor(const Teuchos::RCP<NOX::GlobalData>& gd, 
        Teuchos::ParameterList& params) :
   globalDataPtr(gd),
   paramsPtr(NULL),
@@ -95,7 +95,7 @@ NOX::LineSearch::Tensor::~Tensor()
 }
 
 bool NOX::LineSearch::Tensor::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& lsParams)
 {
   globalDataPtr = gd;
@@ -328,7 +328,7 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
   }
 
   // Local variables
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> dir2;
+  Teuchos::RCP<NOX::Abstract::Vector> dir2;
   bool isFailed = false;
   bool isAccepted = false;
   bool isFirstPass = true;

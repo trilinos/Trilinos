@@ -51,9 +51,9 @@
 #include "LOCA_Abstract_TransposeSolveGroup.H"
 
 LOCA::BorderedSolver::Bordering::Bordering(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams): 
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& slvrParams): 
   globalData(global_data),
   solverParams(slvrParams),
   op(),
@@ -74,10 +74,10 @@ LOCA::BorderedSolver::Bordering::~Bordering()
 
 void
 LOCA::BorderedSolver::Bordering::setMatrixBlocks(
-         const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& oper,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	 const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
+         const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>& oper,
+	 const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
+	 const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	 const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
   op = oper;
   A = blockA;
@@ -223,11 +223,11 @@ LOCA::BorderedSolver::Bordering::applyInverse(
      int numColsRHS = numColsF + numColsA;
 
      // copy F & A into 1 multivector
-     Teuchos::RefCountPtr<NOX::Abstract::MultiVector> RHS = 
+     Teuchos::RCP<NOX::Abstract::MultiVector> RHS = 
        F->clone(numColsRHS);
-     Teuchos::RefCountPtr<NOX::Abstract::MultiVector> LHS = 
+     Teuchos::RCP<NOX::Abstract::MultiVector> LHS = 
        X.clone(numColsRHS);
-     Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X1 = 
+     Teuchos::RCP<NOX::Abstract::MultiVector> X1 = 
        LHS->subView(indexF);
      RHS->setBlock(*F, indexF);
      RHS->setBlock(*A, indexA);
@@ -258,7 +258,7 @@ LOCA::BorderedSolver::Bordering::applyInverseTranspose(
   isZeroG = (G == NULL);
 
   // For the transpose solve, B must be a multi-vec constraint if it is nonzero
-  Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> B_mvdx;
+  Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> B_mvdx;
   const NOX::Abstract::MultiVector* BB = NULL;
 
   if (!isZeroB) {
@@ -299,11 +299,11 @@ LOCA::BorderedSolver::Bordering::applyInverseTranspose(
      int numColsRHS = numColsF + numColsB;
 
      // copy F & A into 1 multivector
-     Teuchos::RefCountPtr<NOX::Abstract::MultiVector> RHS = 
+     Teuchos::RCP<NOX::Abstract::MultiVector> RHS = 
        F->clone(numColsRHS);
-     Teuchos::RefCountPtr<NOX::Abstract::MultiVector> LHS = 
+     Teuchos::RCP<NOX::Abstract::MultiVector> LHS = 
        X.clone(numColsRHS);
-     Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X1 = 
+     Teuchos::RCP<NOX::Abstract::MultiVector> X1 = 
        LHS->subView(indexF);
      RHS->setBlock(*F, indexF);
      RHS->setBlock(*BB, indexB);
@@ -345,7 +345,7 @@ LOCA::BorderedSolver::Bordering::solveFZero(
     return finalStatus;
   }
 
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> Xt = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> Xt = 
     AA->clone(NOX::ShapeCopy);
 
   // compute Xt = J^-1 A
@@ -410,8 +410,8 @@ LOCA::BorderedSolver::Bordering::solveContiguous(
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X1 = X.subView(indexF);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X2 = X.subView(indexA);
+  Teuchos::RCP<NOX::Abstract::MultiVector> X1 = X.subView(indexF);
+  Teuchos::RCP<NOX::Abstract::MultiVector> X2 = X.subView(indexA);
   
   // compute t1 = -B^T*X1, for efficiency t1 is stored in Y
   BB->multiplyDX(-1.0, *X1, Y);
@@ -477,7 +477,7 @@ LOCA::BorderedSolver::Bordering::solveFZeroTrans(
     return finalStatus;
   }
 
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> Xt = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> Xt = 
     BB->clone(NOX::ShapeCopy);
 
   // compute Xt = J^-T B
@@ -544,8 +544,8 @@ LOCA::BorderedSolver::Bordering::solveContiguousTrans(
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X1 = X.subView(indexF);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X2 = X.subView(indexB);
+  Teuchos::RCP<NOX::Abstract::MultiVector> X1 = X.subView(indexF);
+  Teuchos::RCP<NOX::Abstract::MultiVector> X2 = X.subView(indexB);
   
   // compute t1 = -A^T*X1, for efficiency t1 is stored in Y
   X1->multiply(-1.0, *AA, Y);

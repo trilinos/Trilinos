@@ -42,7 +42,7 @@
 #ifndef LOCA_EPETRA_LOWRANKUPDATEOP_H
 #define LOCA_EPETRA_LOWRANKUPDATEOP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "Epetra_Operator.h"	// base class
 #include "Epetra_LocalMap.h"    // class data element
@@ -79,10 +79,10 @@ namespace LOCA {
        * \param V_multiVec [in] Multivector representing V
        */
       LowRankUpdateOp(
-        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<Epetra_Operator>& jacOperator, 
-	const Teuchos::RefCountPtr<const Epetra_MultiVector>& U_multiVec, 
-	const Teuchos::RefCountPtr<const Epetra_MultiVector>& V_multiVec);
+        const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<Epetra_Operator>& jacOperator, 
+	const Teuchos::RCP<const Epetra_MultiVector>& U_multiVec, 
+	const Teuchos::RCP<const Epetra_MultiVector>& V_multiVec);
 
       //! Destructor
       virtual ~LowRankUpdateOp();
@@ -152,7 +152,7 @@ namespace LOCA {
     protected:
 
       //! Global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Label for operator
       string label;
@@ -161,19 +161,19 @@ namespace LOCA {
       Epetra_LocalMap localMap;
     
       //! Stores operator representing J
-      Teuchos::RefCountPtr<Epetra_Operator> J;
+      Teuchos::RCP<Epetra_Operator> J;
   
       //! Stores multivector representing U
-      Teuchos::RefCountPtr<const Epetra_MultiVector> U;
+      Teuchos::RCP<const Epetra_MultiVector> U;
 
       //! Stores multivector representing V
-      Teuchos::RefCountPtr<const Epetra_MultiVector> V;
+      Teuchos::RCP<const Epetra_MultiVector> V;
 
       //! Flag indicating whether to use the transpose
       bool useTranspose;
 
       //! Temporary matrix
-      mutable Teuchos::RefCountPtr<Epetra_MultiVector> tmpMat;
+      mutable Teuchos::RCP<Epetra_MultiVector> tmpMat;
 
     };
   } // namespace Epetra

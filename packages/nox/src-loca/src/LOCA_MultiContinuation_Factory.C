@@ -49,7 +49,7 @@
 #include "LOCA_MultiContinuation_ArcLengthGroup.H"
 
 LOCA::MultiContinuation::Factory::Factory(
-	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
@@ -58,16 +58,16 @@ LOCA::MultiContinuation::Factory::~Factory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>
+Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy>
 LOCA::MultiContinuation::Factory::create(
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepperParams,
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
-      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& stepperParams,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs)
 {
   string methodName = "LOCA::MultiContinuation::Factory::create()";
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy> strategy;
 
   // Get name of strategy
   const string& name = strategyName(*stepperParams);
@@ -96,9 +96,9 @@ LOCA::MultiContinuation::Factory::create(
     string userDefinedName = stepperParams->get("User-Defined Name",
 							 "???");
     if ((*stepperParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> >(userDefinedName))
+	isType< Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy> >(userDefinedName))
       strategy = (*stepperParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> >(userDefinedName);
+	get< Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,

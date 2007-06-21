@@ -88,7 +88,7 @@ void NOX::Direction::Broyden::BroydenMemoryUnit::setStep(double step)
   }
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector> NOX::Direction::Broyden::
+Teuchos::RCP<const NOX::Abstract::Vector> NOX::Direction::Broyden::
 BroydenMemoryUnit::sPtr() const
 {
   return sptr;
@@ -179,7 +179,7 @@ NOX::Direction::Broyden::BroydenMemory::operator[](int i)
 //------------------------------------------------------------
 
 NOX::Direction::Broyden::
-Broyden(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+Broyden(const Teuchos::RCP<NOX::GlobalData>& gd, 
 	Teuchos::ParameterList& p) :
   lsParamsPtr(NULL),
   inexactNewtonUtils(gd, p)
@@ -193,7 +193,7 @@ NOX::Direction::Broyden::~Broyden()
 }
 
 bool NOX::Direction::Broyden::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+reset(const Teuchos::RCP<NOX::GlobalData>& gd, 
       Teuchos::ParameterList& params)
 {
   globalDataPtr = gd;
@@ -305,12 +305,12 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
 
     // Information corresponding to index i
     double step;
-    Teuchos::RefCountPtr<const NOX::Abstract::Vector> sPtr;
+    Teuchos::RCP<const NOX::Abstract::Vector> sPtr;
 
     // Information corresponding to index i + 1 
     // (initialized for i = -1)
     double stepNext = memory[0].step();
-    Teuchos::RefCountPtr<const NOX::Abstract::Vector> sPtrNext = 
+    Teuchos::RCP<const NOX::Abstract::Vector> sPtrNext = 
       memory[0].sPtr();
 
     // Intermediate storage

@@ -60,7 +60,7 @@ LOCA::Epetra::Factory::~Factory()
 
 void
 LOCA::Epetra::Factory::init(
-		   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data)
+		   const Teuchos::RCP<LOCA::GlobalData>& global_data)
 {
   globalData = global_data;
 }
@@ -68,9 +68,9 @@ LOCA::Epetra::Factory::init(
 bool
 LOCA::Epetra::Factory::createBorderedSolverStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-       Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>& strategy)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+       Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>& strategy)
 {
   // Instantiate Householder strategy if requested
   if (strategyName == "Householder") {
@@ -95,11 +95,11 @@ LOCA::Epetra::Factory::createBorderedSolverStrategy(
 bool
 LOCA::Epetra::Factory::createAnasaziOperatorStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
-       Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>& strategy)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+       const Teuchos::RCP<NOX::Abstract::Group>& grp,
+       Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy>& strategy)
 {
 #ifdef HAVE_MPI
 if (strategyName == "Floquet") {

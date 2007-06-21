@@ -39,7 +39,7 @@
 #include "NOX_Multiphysics_Solver_Manager.H"	// class definition
 #include "NOX_Multiphysics_DataExchange_Interface.H"	// class definition
 #include "NOX_Utils.H"		// for static function doPrint
-#include "Teuchos_RefCountPtr.hpp" // for RefCountPtr 
+#include "Teuchos_RCP.hpp" // for RCP 
 
 // Header files for different solvers
 #include "NOX_Multiphysics_Solver_FixedPointBased.H"	 // LineSearch method
@@ -48,10 +48,10 @@
 #endif
 
 NOX::Multiphysics::Solver::Manager::Manager(
-        const Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
-        const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& i, 
-	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
+        const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+        const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
+	const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+	const Teuchos::RCP<Teuchos::ParameterList>& p) :
   utils(p->sublist("Printing")),
   method(""),
   cplPtr(NULL)
@@ -60,9 +60,9 @@ NOX::Multiphysics::Solver::Manager::Manager(
 }
 
 NOX::Multiphysics::Solver::Manager::Manager(
-        const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
+        const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+	const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+	const Teuchos::RCP<Teuchos::ParameterList>& p) :
   utils(p->sublist("Printing")),
   method(""),
   cplPtr(NULL)
@@ -82,18 +82,18 @@ NOX::Multiphysics::Solver::Manager::~Manager()
 }
 
 bool NOX::Multiphysics::Solver::Manager::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& params)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+      const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   return false;
 }
 
 bool NOX::Multiphysics::Solver::Manager::reset(
-      const Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
-      const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& interface, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& params)
+      const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+      const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& interface, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+      const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   string newmethod = 
     params->get("Coupling Strategy", "Fixed Point Based");
@@ -137,14 +137,14 @@ bool NOX::Multiphysics::Solver::Manager::reset(
 
 bool 
 NOX::Multiphysics::Solver::Manager::reset(
-      const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests)
+      const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& tests)
 {
   return cplPtr->reset(grp, tests);
 }
 
 bool 
-NOX::Multiphysics::Solver::Manager::reset( const Teuchos::RefCountPtr<Abstract::Group>& grp )
+NOX::Multiphysics::Solver::Manager::reset( const Teuchos::RCP<Abstract::Group>& grp )
 {
   return cplPtr->reset(grp);
 }

@@ -49,7 +49,7 @@
 #include "LOCA_BorderedSolver_Nested.H"
 
 LOCA::BorderedSolver::Factory::Factory(
-	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
@@ -58,13 +58,13 @@ LOCA::BorderedSolver::Factory::~Factory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>
+Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>
 LOCA::BorderedSolver::Factory::create(
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
   string methodName = "LOCA::BorderedSolver::Factory::create()";
-  Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> strategy;
 
   // Get name of strategy
   const string& name = strategyName(*solverParams);
@@ -86,9 +86,9 @@ LOCA::BorderedSolver::Factory::create(
     string userDefinedName = solverParams->get("User-Defined Name",
 							"???");
     if ((*solverParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> >(userDefinedName))
+	isType< Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> >(userDefinedName))
       strategy = (*solverParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> >(userDefinedName);
+	get< Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,

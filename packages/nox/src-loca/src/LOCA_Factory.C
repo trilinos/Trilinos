@@ -46,7 +46,7 @@
 #include "LOCA_Abstract_Factory.H"
 
 LOCA::Factory::Factory(
-	  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) :
+	  const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   globalData(global_data),
   factory(),
   haveFactory(false),
@@ -68,8 +68,8 @@ LOCA::Factory::Factory(
 }
 
 LOCA::Factory::Factory(
-	  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	  const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory) :
+	  const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	  const Teuchos::RCP<LOCA::Abstract::Factory>& userFactory) :
   globalData(global_data),
   factory(userFactory),
   haveFactory(true),
@@ -97,13 +97,13 @@ LOCA::Factory::~Factory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
 LOCA::Factory::createPredictorStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& predictorParams)
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& predictorParams)
 {
   string methodName = "LOCA::Factory::createPredictorStrategy()";
-  Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
@@ -123,16 +123,16 @@ LOCA::Factory::createPredictorStrategy(
   return strategy;
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>
+Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy>
 LOCA::Factory::createContinuationStrategy(
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepperParams,
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
-      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& stepperParams,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs)
 {
   string methodName = "LOCA::Factory::createContinuationStrategy()";
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
@@ -154,14 +154,14 @@ LOCA::Factory::createContinuationStrategy(
   return strategy;
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 LOCA::Factory::createBifurcationStrategy(
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& bifurcationParams,
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp)
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& bifurcationParams,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp)
 {
   string methodName = "LOCA::Factory::createBifurcationStrategy()";
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> strategy;
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
@@ -181,13 +181,13 @@ LOCA::Factory::createBifurcationStrategy(
   return strategy;
 }
 
-Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy>
+Teuchos::RCP<LOCA::StepSize::AbstractStrategy>
 LOCA::Factory::createStepSizeStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepsizeParams)
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams)
 {
   string methodName = "LOCA::Factory::createStepSizeStrategy()";
-  Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::StepSize::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
@@ -207,13 +207,13 @@ LOCA::Factory::createStepSizeStrategy(
   return strategy;
 }
 
-Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>
+Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>
 LOCA::Factory::createBorderedSolverStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams)
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
   string methodName = "LOCA::Factory::createBorderedSolverStrategy()";
-  Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
@@ -233,13 +233,13 @@ LOCA::Factory::createBorderedSolverStrategy(
   return strategy;
 }
 
-Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
+Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy>
 LOCA::Factory::createEigensolverStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams)
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams)
 {
   string methodName = "LOCA::Factory::createEigensolverStrategy()";
-  Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
@@ -259,13 +259,13 @@ LOCA::Factory::createEigensolverStrategy(
   return strategy;
 }
 
-Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>
+Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy>
 LOCA::Factory::createEigenvalueSortStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams)
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams)
 {
   string methodName = "LOCA::Factory::createEigenvalueSortStrategy()";
-  Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
@@ -285,13 +285,13 @@ LOCA::Factory::createEigenvalueSortStrategy(
   return strategy;
 }
 
-Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy>
+Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy>
 LOCA::Factory::createSaveEigenDataStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams)
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams)
 {
   string methodName = "LOCA::Factory::createSaveEigenDataStrategy()";
-  Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
@@ -311,15 +311,15 @@ LOCA::Factory::createSaveEigenDataStrategy(
   return strategy;
 }
 
-Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>
+Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy>
 LOCA::Factory::createAnasaziOperatorStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-	 const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp)
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+	 const Teuchos::RCP<NOX::Abstract::Group>& grp)
 {
   string methodName = "LOCA::Factory::createAnasaziOperatorStrategy()";
-  Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
@@ -342,14 +342,14 @@ LOCA::Factory::createAnasaziOperatorStrategy(
   return strategy;
 }
 
-Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>
+Teuchos::RCP<LOCA::TurningPoint::MooreSpence::SolverStrategy>
 LOCA::Factory::createMooreSpenceTurningPointSolverStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams)
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
   string methodName = 
     "LOCA::Factory::createMooreSpenceTurningPointSolverStrategy()";
-  Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy> strategy;
+  Teuchos::RCP<LOCA::TurningPoint::MooreSpence::SolverStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
@@ -371,14 +371,14 @@ LOCA::Factory::createMooreSpenceTurningPointSolverStrategy(
   return strategy;
 }
 
-Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy>
+Teuchos::RCP<LOCA::Pitchfork::MooreSpence::SolverStrategy>
 LOCA::Factory::createMooreSpencePitchforkSolverStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams)
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
   string methodName = 
     "LOCA::Factory::createMooreSpencePitchforkSolverStrategy()";
-  Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy> strategy;
+  Teuchos::RCP<LOCA::Pitchfork::MooreSpence::SolverStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
@@ -400,14 +400,14 @@ LOCA::Factory::createMooreSpencePitchforkSolverStrategy(
   return strategy;
 }
 
-Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::SolverStrategy>
+Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy>
 LOCA::Factory::createMooreSpenceHopfSolverStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams)
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
   string methodName = 
     "LOCA::Factory::createMooreSpenceHopfSolverStrategy()";
-  Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::SolverStrategy> strategy;
+  Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it

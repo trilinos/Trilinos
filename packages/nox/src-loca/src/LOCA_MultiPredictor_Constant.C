@@ -46,8 +46,8 @@
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H"
 
 LOCA::MultiPredictor::Constant::Constant(
-	      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams) :
+	      const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	      const Teuchos::RCP<Teuchos::ParameterList>& predParams) :
   globalData(global_data),
   predictor(),
   secant(),
@@ -95,7 +95,7 @@ LOCA::MultiPredictor::Constant::operator=(
   return *this;
 }
 
-Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
 LOCA::MultiPredictor::Constant::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new Constant(*this, type));

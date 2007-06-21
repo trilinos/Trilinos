@@ -50,9 +50,9 @@
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H"
 
 LOCA::MultiPredictor::Secant::Secant(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams) :
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& predParams) :
   globalData(global_data),
   firstStepPredictor(),
   isFirstStep(true),
@@ -61,7 +61,7 @@ LOCA::MultiPredictor::Secant::Secant(
   secant(),
   initialized(false)
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> firstStepList = 
+  Teuchos::RCP<Teuchos::ParameterList> firstStepList = 
     topParams->getSublist("First Step Predictor");
   // change default method to constant to avoid infinite stack recursion
   firstStepList->get("Method", "Constant");
@@ -116,7 +116,7 @@ LOCA::MultiPredictor::Secant::operator=(
   return *this;
 }
 
-Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
 LOCA::MultiPredictor::Secant::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new Secant(*this, type));

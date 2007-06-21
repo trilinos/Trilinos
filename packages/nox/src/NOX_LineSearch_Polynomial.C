@@ -52,7 +52,7 @@
 #include "NOX_GlobalData.H"
 
 NOX::LineSearch::Polynomial::
-Polynomial(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+Polynomial(const Teuchos::RCP<NOX::GlobalData>& gd,
 	   Teuchos::ParameterList& params) :
   globalDataPtr(gd),
   paramsPtr(NULL),
@@ -68,7 +68,7 @@ NOX::LineSearch::Polynomial::~Polynomial()
 }
 
 bool NOX::LineSearch::Polynomial::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
 { 
   globalDataPtr = gd;

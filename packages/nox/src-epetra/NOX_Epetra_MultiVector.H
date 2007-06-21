@@ -43,7 +43,7 @@
 #define NOX_EPETRA_MULTIVECTOR_H
 
 #include "NOX_Abstract_MultiVector.H" // base class
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward declaration
 class Epetra_MultiVector;
@@ -74,7 +74,7 @@ namespace NOX {
       /*! \brief Constructor that creates a COPY or VIEW of the Epetra_MultiVector.
  
         NOTE: This ctor should just always create a view.  It should
-        be implicit from the fact that a RefCountPtr object is being
+        be implicit from the fact that a RCP object is being
         passed in that a persisting relationship is present.  However,
         since this could cause confusion, the default is to make a
         copy and if a user wants a view, they must pass in an explicit
@@ -84,7 +84,7 @@ namespace NOX {
         A View can be dangerous since multiple objects can access the
         same memory locations.
       */
-      MultiVector(const Teuchos::RefCountPtr<Epetra_MultiVector>& source, 
+      MultiVector(const Teuchos::RCP<Epetra_MultiVector>& source, 
 		  NOX::CopyType type = NOX::DeepCopy,
 		  NOX::Epetra::MultiVector::MemoryType memoryType = 
 		  NOX::Epetra::MultiVector::CreateCopy);
@@ -232,25 +232,25 @@ namespace NOX {
        * \return Pointer to newly created vector or NULL if clone is not 
        * supported. 
        */
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
       clone(CopyType type = DeepCopy) const;
 
       //! Creates a new multi-vector with \c numvecs columns
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       clone(int numvecs) const;
 
       /*! 
        * \brief Creates a new multi-vector with \c index.size() columns whose 
        * columns are copies of the columns of \c *this given by \c index.
        */
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
       subCopy(const vector<int>& index) const;
 
       /*! 
        * \brief Creates a new multi-vector with \c ndex.size() columns that 
        * shares the columns of \c *this given by \c index.
        */
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
       subView(const vector<int>& index) const;
 
       //@}
@@ -288,7 +288,7 @@ namespace NOX {
     protected:
 
        //! Pointer to petra vector owned by this object
-      Teuchos::RefCountPtr<Epetra_MultiVector> epetraMultiVec;
+      Teuchos::RCP<Epetra_MultiVector> epetraMultiVec;
 
       //! NOX::Epetra::Vector's for each column of the multivector
       /*!

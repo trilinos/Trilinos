@@ -45,8 +45,8 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::MultiContinuation::ArcLengthConstraint::ArcLengthConstraint(
-    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-    const Teuchos::RefCountPtr<LOCA::MultiContinuation::ArcLengthGroup>& grp) :
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const Teuchos::RCP<LOCA::MultiContinuation::ArcLengthGroup>& grp) :
   globalData(global_data),
   arcLengthGroup(grp),
   constraints(grp->getNumParams(), 1),
@@ -73,7 +73,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::~ArcLengthConstraint()
 }
 
 void
-LOCA::MultiContinuation::ArcLengthConstraint::setArcLengthGroup(const Teuchos::RefCountPtr<LOCA::MultiContinuation::ArcLengthGroup>& grp)
+LOCA::MultiContinuation::ArcLengthConstraint::setArcLengthGroup(const Teuchos::RCP<LOCA::MultiContinuation::ArcLengthGroup>& grp)
 {
   arcLengthGroup = grp;
 }
@@ -93,7 +93,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::copy(
   }
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
 LOCA::MultiContinuation::ArcLengthConstraint::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new ArcLengthConstraint(*this, type));
@@ -153,7 +153,7 @@ LOCA::MultiContinuation::ArcLengthConstraint::computeConstraints()
     arcLengthGroup->getPredictorTangent();
 
   // Compute secant vector
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> secant = 
+  Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> secant = 
     Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(tangent.clone(1));
   (*secant)[0].update(1.0, arcLengthGroup->getX(), 
 		      -1.0, arcLengthGroup->getPrevX(), 0.0);

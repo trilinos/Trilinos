@@ -42,7 +42,7 @@
 #ifndef NOX_DIRECTION_GENERIC_H
 #define NOX_DIRECTION_GENERIC_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward declarations
 namespace Teuchos {
@@ -89,7 +89,7 @@ public:
   virtual ~Generic() {};
 
   //! Reset direction based on possibly new parameters.
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 		     Teuchos::ParameterList& params) = 0;
   
   /*!

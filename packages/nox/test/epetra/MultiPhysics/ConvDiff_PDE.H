@@ -148,7 +148,7 @@ public:
   double getInterfaceTemp();
 
   // Accessor
-  Teuchos::RefCountPtr<Epetra_Vector> getExactSolution()
+  Teuchos::RCP<Epetra_Vector> getExactSolution()
   { return exactSolution; }
 
   // Additional status output
@@ -180,10 +180,10 @@ protected:
 
   double bcWeight                       ;
 
-  Teuchos::RefCountPtr<Epetra_Import> ColumnToOverlapImporter        ;
-  Teuchos::RefCountPtr<Epetra_Vector> oldSolution                    ;
-  Teuchos::RefCountPtr<Epetra_Vector> exactSolution                  ;
-  Teuchos::RefCountPtr<Epetra_Vector> dTdx                           ;
+  Teuchos::RCP<Epetra_Import> ColumnToOverlapImporter        ;
+  Teuchos::RCP<Epetra_Vector> oldSolution                    ;
+  Teuchos::RCP<Epetra_Vector> exactSolution                  ;
+  Teuchos::RCP<Epetra_Vector> dTdx                           ;
 
   int             interface_elem        ;
   int             local_node            ;

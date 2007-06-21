@@ -47,7 +47,7 @@
 #include "NOX_LineSearch_Utils_Printing.H"  // data class member
 #include "NOX_LineSearch_Utils_Counters.H"  // data class member
 #include "NOX_LineSearch_Utils_Slope.H"     // data class member
-#include "Teuchos_RefCountPtr.hpp"          // data class member
+#include "Teuchos_RCP.hpp"          // data class member
 
 // Forward Declarations
 namespace NOX {
@@ -201,14 +201,14 @@ class MoreThuente : public Generic {
 public:
 
   //! Constructor
-  MoreThuente(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  MoreThuente(const Teuchos::RCP<NOX::GlobalData>& gd,
 	      Teuchos::ParameterList& params);
   
   //! Destructor
   ~MoreThuente();
   
   // derived
-  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 	     Teuchos::ParameterList& params);
 
   // derived
@@ -455,7 +455,7 @@ private:
 private:
 
   //! Global data pointer.  Keep this so the parameter list remains valid.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Common line search printing utilities.
   NOX::LineSearch::Utils::Printing print;
@@ -508,7 +508,7 @@ private:
   bool useOptimizedSlopeCalc;
 
   //! Stores the merit function.
-  Teuchos::RefCountPtr<NOX::MeritFunction::Generic> meritFuncPtr;
+  Teuchos::RCP<NOX::MeritFunction::Generic> meritFuncPtr;
 
 };
 } // namespace LineSearch

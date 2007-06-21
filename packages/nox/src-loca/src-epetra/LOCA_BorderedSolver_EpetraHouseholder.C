@@ -69,9 +69,9 @@
 #endif
 
 LOCA::BorderedSolver::EpetraHouseholder::EpetraHouseholder(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams): 
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& slvrParams): 
   globalData(global_data),
   solverParams(slvrParams),
   grp(),
@@ -123,10 +123,10 @@ LOCA::BorderedSolver::EpetraHouseholder::~EpetraHouseholder()
 
 void
 LOCA::BorderedSolver::EpetraHouseholder::setMatrixBlocks(
-         const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	 const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
+         const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>& op_,
+	 const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
+	 const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	 const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
   string callingFunction = 
     "LOCA::BorderedSolver::EpetraHouseholder::setMatrixBlocks";
@@ -175,7 +175,7 @@ LOCA::BorderedSolver::EpetraHouseholder::setMatrixBlocks(
   // a matrix of zeros and apply the standard algorithm
   if (isZeroC && !isZeroA && !isZeroB) {
 
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> tmpC = 
+    Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> tmpC = 
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(
 							   B->numVectors(),
 							   B->numVectors()));
@@ -188,9 +188,9 @@ LOCA::BorderedSolver::EpetraHouseholder::setMatrixBlocks(
   isValidForSolve = false;
   isValidForTransposeSolve = false;
 
-  Teuchos::RefCountPtr<const LOCA::BorderedSolver::JacobianOperator> jacOp =
+  Teuchos::RCP<const LOCA::BorderedSolver::JacobianOperator> jacOp =
     Teuchos::rcp_dynamic_cast<const LOCA::BorderedSolver::JacobianOperator>(op);
-  Teuchos::RefCountPtr<const LOCA::BorderedSolver::ComplexOperator> complexOp =
+  Teuchos::RCP<const LOCA::BorderedSolver::ComplexOperator> complexOp =
     Teuchos::rcp_dynamic_cast<const LOCA::BorderedSolver::ComplexOperator>(op);
 
   if (jacOp != Teuchos::null) {
@@ -198,7 +198,7 @@ LOCA::BorderedSolver::EpetraHouseholder::setMatrixBlocks(
     isComplex = false;
 
     // Group must be an Epetra group
-    Teuchos::RefCountPtr<const LOCA::Epetra::Group> constGrp = 
+    Teuchos::RCP<const LOCA::Epetra::Group> constGrp = 
       Teuchos::rcp_dynamic_cast<const LOCA::Epetra::Group>(jacOp->getGroup());
     if (constGrp.get() == NULL)
       globalData->locaErrorCheck->throwError(
@@ -225,7 +225,7 @@ LOCA::BorderedSolver::EpetraHouseholder::setMatrixBlocks(
     omega = complexOp->getFrequency();
 
     // Group must be an Epetra group
-    Teuchos::RefCountPtr<const LOCA::Epetra::Group> constGrp = 
+    Teuchos::RCP<const LOCA::Epetra::Group> constGrp = 
       Teuchos::rcp_dynamic_cast<const LOCA::Epetra::Group>(complexOp->getGroup());
     if (constGrp.get() == NULL)
       globalData->locaErrorCheck->throwError(
@@ -430,10 +430,10 @@ LOCA::BorderedSolver::EpetraHouseholder::applyInverse(
   if (!isComplex)
     res = solve(params, F, G, X, Y);
   else {
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> blockF;
+    Teuchos::RCP<NOX::Abstract::MultiVector> blockF;
     if (!isZeroF)
       blockF = createBlockMV(*F);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> blockX = createBlockMV(X);
+    Teuchos::RCP<NOX::Abstract::MultiVector> blockX = createBlockMV(X);
     res = solve(params, blockF.get(), G, *blockX, Y);
     setBlockMV(*blockX, X);
   }
@@ -460,7 +460,7 @@ LOCA::BorderedSolver::EpetraHouseholder::applyInverseTranspose(
   }
 
   // If A or B is zero, we use bordering, which requires a transpose solve
-  Teuchos::RefCountPtr<const LOCA::Abstract::TransposeSolveGroup> ts_grp;
+  Teuchos::RCP<const LOCA::Abstract::TransposeSolveGroup> ts_grp;
   if (isZeroA || isZeroB) {
     ts_grp = 
       Teuchos::rcp_dynamic_cast<const LOCA::Abstract::TransposeSolveGroup>(grp);
@@ -486,10 +486,10 @@ LOCA::BorderedSolver::EpetraHouseholder::applyInverseTranspose(
   if (!isComplex)
     res = solveTranspose(params, F, G, X, Y);
   else {
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> blockF;
+    Teuchos::RCP<NOX::Abstract::MultiVector> blockF;
     if (!isZeroF)
       blockF = createBlockMV(*F);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> blockX = createBlockMV(X);
+    Teuchos::RCP<NOX::Abstract::MultiVector> blockX = createBlockMV(X);
     res = solveTranspose(params, blockF.get(), G, *blockX, Y);
     setBlockMV(*blockX, X);
   }
@@ -520,16 +520,16 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
 		   string("applyInverse() called with invalid constraint") + 
 		   string(" factorizations.  Call initForSolve() first."));
 
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> cRHS;
+  Teuchos::RCP<const NOX::Abstract::MultiVector> cRHS;
 
   if (!isZeroG) {
      
-    Teuchos::RefCountPtr<NOX::Epetra::MultiVector> tmp_x = 
+    Teuchos::RCP<NOX::Epetra::MultiVector> tmp_x = 
       Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(X.clone(NOX::ShapeCopy));
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> tmp_y = 
+    Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> tmp_y = 
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(G->numRows(),
 							       G->numCols()));
-    Teuchos::RefCountPtr<NOX::Epetra::MultiVector> RHS = 
+    Teuchos::RCP<NOX::Epetra::MultiVector> RHS = 
       Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(X.clone(NOX::ShapeCopy));
 
     // Compute Z_y = R^-T * G
@@ -570,19 +570,19 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
     dynamic_cast<const NOX::Epetra::Vector&>(grp->getX());
   
   // Create operator for P = J + U*V^T
-  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> nox_epetra_U = 
+  Teuchos::RCP<NOX::Epetra::MultiVector> nox_epetra_U = 
     Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(U);
-  Teuchos::RefCountPtr<Epetra_MultiVector> epetra_U = 
+  Teuchos::RCP<Epetra_MultiVector> epetra_U = 
     Teuchos::rcp(&(nox_epetra_U->getEpetraMultiVector()), false);
-  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> nox_epetra_V = 
+  Teuchos::RCP<NOX::Epetra::MultiVector> nox_epetra_V = 
     Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(V);
-  Teuchos::RefCountPtr<Epetra_MultiVector> epetra_V = 
+  Teuchos::RCP<Epetra_MultiVector> epetra_V = 
     Teuchos::rcp(&(nox_epetra_V->getEpetraMultiVector()), false);
 
   // Create a row-matrix version of P if J is a row matrix
-  Teuchos::RefCountPtr<Epetra_RowMatrix> jac_rowmatrix = 
+  Teuchos::RCP<Epetra_RowMatrix> jac_rowmatrix = 
     Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(epetraOp);
-  Teuchos::RefCountPtr<Epetra_Operator> op;
+  Teuchos::RCP<Epetra_Operator> op;
   if (jac_rowmatrix != Teuchos::null) 
     op = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateRowMatrix(globalData, 
 							       jac_rowmatrix, 
@@ -597,7 +597,7 @@ LOCA::BorderedSolver::EpetraHouseholder::solve(
   
   // Overwrite J with J + U*V^T if it's a CRS matrix and we aren't
   // using P for the preconditioner
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> jac_crs;
+  Teuchos::RCP<Epetra_CrsMatrix> jac_crs;
   if (includeUV && !use_P_For_Prec) {
     jac_crs = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(epetraOp);
     if (jac_crs != Teuchos::null) {
@@ -681,16 +681,16 @@ LOCA::BorderedSolver::EpetraHouseholder::solveTranspose(
 	    string("applyInverseTranspose() called with invalid constraint") + 
 	    string(" factorizations.  Call initForSolve() first."));
 
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> cRHS;
+  Teuchos::RCP<const NOX::Abstract::MultiVector> cRHS;
   
   if (!isZeroG) {
     
-    Teuchos::RefCountPtr<NOX::Epetra::MultiVector> tmp_x = 
+    Teuchos::RCP<NOX::Epetra::MultiVector> tmp_x = 
       Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(X.clone(NOX::ShapeCopy));
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> tmp_y = 
+    Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> tmp_y = 
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(G->numRows(),
 							       G->numCols()));
-    Teuchos::RefCountPtr<NOX::Epetra::MultiVector> RHS = 
+    Teuchos::RCP<NOX::Epetra::MultiVector> RHS = 
       Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(X.clone(NOX::ShapeCopy));
 
     // Compute Z_y = R^-T * G
@@ -734,28 +734,28 @@ LOCA::BorderedSolver::EpetraHouseholder::solveTranspose(
 
   // Instantiate transpose solver
   LOCA::Epetra::TransposeLinearSystem::Factory tls_factory(globalData);
-//   Teuchos::RefCountPtr<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> tls_strategy = tls_factory.create(Teuchos::rcp(&params, false), linSys);
-  Teuchos::RefCountPtr<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> tls_strategy = tls_factory.create(solverParams, linSys);
+//   Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> tls_strategy = tls_factory.create(Teuchos::rcp(&params, false), linSys);
+  Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> tls_strategy = tls_factory.create(solverParams, linSys);
      
   // Compute Jacobian transpose (J^T)
   tls_strategy->createJacobianTranspose();
-  Teuchos::RefCountPtr<Epetra_Operator> jac_trans = 
+  Teuchos::RCP<Epetra_Operator> jac_trans = 
     tls_strategy->getJacobianTransposeOperator();
 
   // Create operator for P = J^T + U*V^T
-  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> nox_epetra_U = 
+  Teuchos::RCP<NOX::Epetra::MultiVector> nox_epetra_U = 
     Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(U_trans);
-  Teuchos::RefCountPtr<Epetra_MultiVector> epetra_U = 
+  Teuchos::RCP<Epetra_MultiVector> epetra_U = 
     Teuchos::rcp(&(nox_epetra_U->getEpetraMultiVector()), false);
-  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> nox_epetra_V = 
+  Teuchos::RCP<NOX::Epetra::MultiVector> nox_epetra_V = 
     Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(V_trans);
-  Teuchos::RefCountPtr<Epetra_MultiVector> epetra_V = 
+  Teuchos::RCP<Epetra_MultiVector> epetra_V = 
     Teuchos::rcp(&(nox_epetra_V->getEpetraMultiVector()), false);
 
   // Create a row-matrix version of P if J^T is a row matrix
-  Teuchos::RefCountPtr<Epetra_RowMatrix> jac_trans_rowmatrix = 
+  Teuchos::RCP<Epetra_RowMatrix> jac_trans_rowmatrix = 
     Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(jac_trans);
-  Teuchos::RefCountPtr<Epetra_Operator> op;
+  Teuchos::RCP<Epetra_Operator> op;
   if (jac_trans_rowmatrix != Teuchos::null) 
     op = Teuchos::rcp(new LOCA::Epetra::LowRankUpdateRowMatrix(
 							  globalData, 
@@ -771,7 +771,7 @@ LOCA::BorderedSolver::EpetraHouseholder::solveTranspose(
   
   // Overwrite J^T with J^T + U*V^T if it's a CRS matrix and we aren't
   // using P for the preconditioner
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> jac_trans_crs;
+  Teuchos::RCP<Epetra_CrsMatrix> jac_trans_crs;
   if (includeUV && !use_P_For_Prec) {
     jac_trans_crs = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(jac_trans);
     if (jac_trans_crs != Teuchos::null) {
@@ -926,23 +926,23 @@ LOCA::BorderedSolver::EpetraHouseholder::updateJacobianForPreconditioner(
   }
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::BorderedSolver::EpetraHouseholder::createBlockMV(
 				    const NOX::Abstract::MultiVector& v) const
 {
 #ifdef HAVE_NOX_EPETRAEXT
   const LOCA::Hopf::ComplexMultiVector& cv =
     dynamic_cast<const LOCA::Hopf::ComplexMultiVector&>(v);
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> v_real =
+  Teuchos::RCP<const NOX::Abstract::MultiVector> v_real =
     cv.getRealMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> v_imag =
+  Teuchos::RCP<const NOX::Abstract::MultiVector> v_imag =
     cv.getImagMultiVec();
-  Teuchos::RefCountPtr<const NOX::Epetra::MultiVector> nox_epetra_v_real =
+  Teuchos::RCP<const NOX::Epetra::MultiVector> nox_epetra_v_real =
     Teuchos::rcp_dynamic_cast<const NOX::Epetra::MultiVector>(v_real);
-  Teuchos::RefCountPtr<const NOX::Epetra::MultiVector> nox_epetra_v_imag =
+  Teuchos::RCP<const NOX::Epetra::MultiVector> nox_epetra_v_imag =
     Teuchos::rcp_dynamic_cast<const NOX::Epetra::MultiVector>(v_imag);
 
-  Teuchos::RefCountPtr<EpetraExt::BlockMultiVector> epetra_v = 
+  Teuchos::RCP<EpetraExt::BlockMultiVector> epetra_v = 
     Teuchos::rcp(new EpetraExt::BlockMultiVector(*baseMap, *globalMap,
 						 v.numVectors()));
   epetra_v->LoadBlockValues(nox_epetra_v_real->getEpetraMultiVector(), 0);
@@ -967,13 +967,13 @@ LOCA::BorderedSolver::EpetraHouseholder::setBlockMV(
 #ifdef HAVE_NOX_EPETRAEXT
   LOCA::Hopf::ComplexMultiVector& cv =
     dynamic_cast<LOCA::Hopf::ComplexMultiVector&>(v);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> v_real =
+  Teuchos::RCP<NOX::Abstract::MultiVector> v_real =
     cv.getRealMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> v_imag =
+  Teuchos::RCP<NOX::Abstract::MultiVector> v_imag =
     cv.getImagMultiVec();
-  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> nox_epetra_v_real =
+  Teuchos::RCP<NOX::Epetra::MultiVector> nox_epetra_v_real =
     Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(v_real);
-  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> nox_epetra_v_imag =
+  Teuchos::RCP<NOX::Epetra::MultiVector> nox_epetra_v_imag =
     Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(v_imag);
 
   const NOX::Epetra::MultiVector& nox_epetra_bv =

@@ -42,7 +42,7 @@
 #ifndef LOCA_EPETRA_LEFTPRECONDITIONEDOP_H
 #define LOCA_EPETRA_LEFTPRECONDITIONEDOP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "Epetra_Operator.h"	// base class
 #include "NOX_Common.H"         // for string data member
@@ -69,8 +69,8 @@ namespace LOCA {
        * \param precOperator [in] Preconditioner operator M
        */
       LeftPreconditionedOp(
-	const Teuchos::RefCountPtr<Epetra_Operator>& jacOperator, 
-	const Teuchos::RefCountPtr<Epetra_Operator>& precOperator);
+	const Teuchos::RCP<Epetra_Operator>& jacOperator, 
+	const Teuchos::RCP<Epetra_Operator>& precOperator);
 
       //! Destructor
       virtual ~LeftPreconditionedOp();
@@ -144,10 +144,10 @@ namespace LOCA {
       string label;
     
       //! Stores operator representing J
-      Teuchos::RefCountPtr<Epetra_Operator> J;
+      Teuchos::RCP<Epetra_Operator> J;
 
       //! Stores operator representing M
-      Teuchos::RefCountPtr<Epetra_Operator> M;
+      Teuchos::RCP<Epetra_Operator> M;
 
       //! Flag indicating whether to use the transpose
       bool useTranspose;

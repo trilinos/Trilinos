@@ -47,7 +47,7 @@
 
 #include "Problem_Interface.H"
 #include "GenericEpetraProblem.H"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
 class OffBlock_Manager;
@@ -96,7 +96,7 @@ public:
   map<int, std::string> & getNames() { return Names; }
 
   // Return my Problems container
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> > & getProblems() 
+  map<int, Teuchos::RCP<GenericEpetraProblem> > & getProblems() 
   { return Problems; }
 
   // Get a problem given its unique id
@@ -118,26 +118,26 @@ public:
   NOX::Epetra::Group& getGroup(int id);
 
   // Get the compositeSoln vector
-  Teuchos::RefCountPtr<Epetra_Vector> getCompositeSoln();
+  Teuchos::RCP<Epetra_Vector> getCompositeSoln();
 
   // Get the compositeSoln Map
-  Teuchos::RefCountPtr<Epetra_Map> getCompositeMap()
+  Teuchos::RCP<Epetra_Map> getCompositeMap()
     { return compositeMap; }
 
   // Get the container of solver managers
-  map<int, Teuchos::RefCountPtr<NOX::Solver::Manager> > & getSolvers()
+  map<int, Teuchos::RCP<NOX::Solver::Manager> > & getSolvers()
   {  return Solvers; }
 
   // Get the composite NOX solver
-  Teuchos::RefCountPtr<NOX::Solver::Manager> & getCompositeSolver()
+  Teuchos::RCP<NOX::Solver::Manager> & getCompositeSolver()
   {  return compositeSolver; }
 
   // Get mapping of problem indices to composite
-  map<int, Teuchos::RefCountPtr<Epetra_IntVector> > & getProblemToCompositeIndices()
+  map<int, Teuchos::RCP<Epetra_IntVector> > & getProblemToCompositeIndices()
   {  return ProblemToCompositeIndices; }
 
   // Get jacobian operator
-  Teuchos::RefCountPtr<Epetra_Operator> & getJacobianOperator()
+  Teuchos::RCP<Epetra_Operator> & getJacobianOperator()
   {  return jacOperator; }
 
   // Create a dependence of Problem A equations on Problem B variables
@@ -148,10 +148,10 @@ public:
                         bool interfacialCoupling = false);
 
   // Register NLSolver parameter list
-  void registerParameters(const Teuchos::RefCountPtr<Teuchos::ParameterList>& List);
+  void registerParameters(const Teuchos::RCP<Teuchos::ParameterList>& List);
 
   // Register Convergence Test(s)
-  void registerStatusTest(const Teuchos::RefCountPtr<NOX::StatusTest::Combo>& comboTest);
+  void registerStatusTest(const Teuchos::RCP<NOX::StatusTest::Combo>& comboTest);
 
   // Signal completion of problem, parameter, and convergence test
   // regitrations and trigger the problem setup
@@ -198,10 +198,10 @@ public:
 
   // Get an individual block Jacobian given an integer pairing of problem and
   // the problem variables on which it depends
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> getBlockJacobianMatrix(int i, int j = -1);
+  Teuchos::RCP<Epetra_CrsMatrix> getBlockJacobianMatrix(int i, int j = -1);
 
   // Get an individual block Jacobian inverse operator 
-  Teuchos::RefCountPtr<Epetra_Operator> getBlockInverseOperator(int i);
+  Teuchos::RCP<Epetra_Operator> getBlockInverseOperator(int i);
 
   // Compute sum of norms of each problem residual
   double getNormSum();
@@ -282,19 +282,19 @@ public:
   virtual bool exchangeDataTo(int solverId);
 
   // Inherited method to allow matrix replacement with BroydenOperator
-  virtual Teuchos::RefCountPtr<const Epetra_CrsMatrix> 
+  virtual Teuchos::RCP<const Epetra_CrsMatrix> 
   getReplacementValuesMatrix( const Epetra_Vector & x, NOX::Epetra::BroydenOperator::ReplacementInterface::FILL_TYPE );
 
   // method to generate only a diagonal block composite graph
-  virtual Teuchos::RefCountPtr<Epetra_CrsGraph> 
+  virtual Teuchos::RCP<Epetra_CrsGraph> 
   generateBlockDiagonalGraph( const Epetra_Map &, bool includeProblemOffContribs = false );
 
   // method to generate only off-diagonal block composite graph
-  virtual Teuchos::RefCountPtr<Epetra_CrsGraph> 
+  virtual Teuchos::RCP<Epetra_CrsGraph> 
   generateOffDiagonalBlockGraph( const Epetra_Map & );
 
   // method to combine (compose) two composite graphs into a new one
-  virtual Teuchos::RefCountPtr<Epetra_CrsGraph> 
+  virtual Teuchos::RCP<Epetra_CrsGraph> 
   composeGraphs( const Epetra_CrsGraph &, const Epetra_CrsGraph & );
 
   // Inherited from NOX::Epetra::SchurInterface
@@ -313,7 +313,7 @@ public:
   virtual bool hasExplicitOperator( int rowBlock, int colBlock );
 
   //! Access explicit operator
-  virtual Teuchos::RefCountPtr<Epetra_Operator> getExplicitOperator( int rowBlock, int colBlock );
+  virtual Teuchos::RCP<Epetra_Operator> getExplicitOperator( int rowBlock, int colBlock );
 
   // method to create an inverse or its approximation to a diagonal block matrix
   virtual bool createBlockInverseOperator( int probId, Teuchos::ParameterList & );
@@ -325,8 +325,8 @@ protected:
 
 public:
   // Made these public for now
-  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParams; // NLSolver parameter list
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> statusTest;       // Convergence criterion (ia)
+  Teuchos::RCP<Teuchos::ParameterList> nlParams; // NLSolver parameter list
+  Teuchos::RCP<NOX::StatusTest::Combo> statusTest;       // Convergence criterion (ia)
 
 private:
 
@@ -335,40 +335,40 @@ private:
 			// off-diagonal composite Jacobian blocks via FDC
   bool useMatlab;	// Flag to specify whether or not to use a Matlab interactive session
 
-  Teuchos::RefCountPtr<Epetra_Map> compositeMap;	// Composite map for all registered problems
-  Teuchos::RefCountPtr<Epetra_Vector> compositeSoln;	// Composite map for all registered problems
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> > Problems; // Problem container
+  Teuchos::RCP<Epetra_Map> compositeMap;	// Composite map for all registered problems
+  Teuchos::RCP<Epetra_Vector> compositeSoln;	// Composite map for all registered problems
+  map<int, Teuchos::RCP<GenericEpetraProblem> > Problems; // Problem container
   map<int, string> Names;                   // Problem names
   map<string, int> NameLookup;              // Needed to lookup problems by name
-  map<int, Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> > LinearSystems;
+  map<int, Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> > LinearSystems;
   					    // Linear Systems container
-  map<int, Teuchos::RefCountPtr<NOX::Epetra::Group> >Groups;     // Groups container
-  map<int, Teuchos::RefCountPtr<Problem_Interface>  >Interfaces; // Interfaces container
-  map<int, Teuchos::RefCountPtr<NOX::Solver::Manager> > Solvers; // Solvers container
-  map<int, Teuchos::RefCountPtr<Epetra_IntVector> > ProblemToCompositeIndices;
+  map<int, Teuchos::RCP<NOX::Epetra::Group> >Groups;     // Groups container
+  map<int, Teuchos::RCP<Problem_Interface>  >Interfaces; // Interfaces container
+  map<int, Teuchos::RCP<NOX::Solver::Manager> > Solvers; // Solvers container
+  map<int, Teuchos::RCP<Epetra_IntVector> > ProblemToCompositeIndices;
     // Essentially a mapping from a problems indices to the composite indices
 
-  Teuchos::RefCountPtr<Epetra_Operator> jacOperator   ; // The composite Jacobian operator
-  Teuchos::RefCountPtr<Epetra_Operator> precOperator  ; // The composite Preconditioner operator
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInterface;
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> precInterface;
-  Teuchos::RefCountPtr<NOX::Epetra::Group> compositeGroup  ; // The composite solution group
-  Teuchos::RefCountPtr<NOX::Solver::Manager> compositeSolver ; // The composite solver
+  Teuchos::RCP<Epetra_Operator> jacOperator   ; // The composite Jacobian operator
+  Teuchos::RCP<Epetra_Operator> precOperator  ; // The composite Preconditioner operator
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> jacInterface;
+  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> precInterface;
+  Teuchos::RCP<NOX::Epetra::Group> compositeGroup  ; // The composite solution group
+  Teuchos::RCP<NOX::Solver::Manager> compositeSolver ; // The composite solver
 
 #ifdef HAVE_NOX_EPETRAEXT
   // Additional containers to allow each problem to use FD Coloring
-  map<int, Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoring> > TmpMapColorings;
-  map<int, Teuchos::RefCountPtr<Epetra_MapColoring> > ColorMaps;
-  map<int, Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoringIndex> > ColorMapIndexSets;
-  map<int, Teuchos::RefCountPtr<vector<Epetra_IntVector> > > ColumnsSets;
-  map<int, Teuchos::RefCountPtr<Epetra_Operator> > MatrixOperators;
+  map<int, Teuchos::RCP<EpetraExt::CrsGraph_MapColoring> > TmpMapColorings;
+  map<int, Teuchos::RCP<Epetra_MapColoring> > ColorMaps;
+  map<int, Teuchos::RCP<EpetraExt::CrsGraph_MapColoringIndex> > ColorMapIndexSets;
+  map<int, Teuchos::RCP<vector<Epetra_IntVector> > > ColumnsSets;
+  map<int, Teuchos::RCP<Epetra_Operator> > MatrixOperators;
 
   // These containers allow off-diagonal block contributions representing
   // inter-problem coupling
   map<int, vector<OffBlock_Manager*> > OffBlock_Managers;    
 #endif
 
-  map<int, Teuchos::RefCountPtr<Epetra_Operator> > BlockInverseOperators; // inverses (or approximations) to diagonal blocks
+  map<int, Teuchos::RCP<Epetra_Operator> > BlockInverseOperators; // inverses (or approximations) to diagonal blocks
 
 };
 #endif

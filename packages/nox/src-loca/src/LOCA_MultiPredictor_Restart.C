@@ -48,8 +48,8 @@
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H"
 
 LOCA::MultiPredictor::Restart::Restart(
-	      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams) :
+	      const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	      const Teuchos::RCP<Teuchos::ParameterList>& predParams) :
   globalData(global_data),
   predictor()
 {
@@ -61,19 +61,19 @@ LOCA::MultiPredictor::Restart::Restart(
     globalData->locaErrorCheck->throwError(func, name + " is not set!");
 
   if ((*predParams).INVALID_TEMPLATE_QUALIFIER
-      isType< Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> >(name)) 
+      isType< Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> >(name)) 
     predictor = (*predParams).INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> >(name);
+      get< Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> >(name);
 
   else if ((*predParams).INVALID_TEMPLATE_QUALIFIER
-	   isType< Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> >(name)) {
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> v =
+	   isType< Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> >(name)) {
+    Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> v =
       (*predParams).INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> >(name);
+      get< Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> >(name);
     predictor = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(v->createMultiVector(1, NOX::DeepCopy));
   }
   else
-    globalData->locaErrorCheck->throwError(func, name + " is not a Teuchos::RefCountPtr to a LOCA::Extended::Vector nor a LOCA::Extended::MultiVector!");
+    globalData->locaErrorCheck->throwError(func, name + " is not a Teuchos::RCP to a LOCA::Extended::Vector nor a LOCA::Extended::MultiVector!");
 
   // Note we don't need a secant vector since it is assumed the orientation
   // is already correct
@@ -106,7 +106,7 @@ LOCA::MultiPredictor::Restart::operator=(
   return *this;
 }
 
-Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
 LOCA::MultiPredictor::Restart::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new Restart(*this, type));

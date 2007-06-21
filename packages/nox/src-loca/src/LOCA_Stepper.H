@@ -42,7 +42,7 @@
 #ifndef LOCA_STEPPER_H
 #define LOCA_STEPPER_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_Abstract_Iterator.H"    // base class
 #include "Teuchos_ParameterList.hpp"	       // class data element
@@ -92,23 +92,23 @@ namespace LOCA {
   public:
 
     //! Constructor
-    Stepper(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-	    const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-	    const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
+    Stepper(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	    const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+	    const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+	    const Teuchos::RCP<Teuchos::ParameterList>& p);
 
     //! Destructor
     virtual ~Stepper();
 
     //! Reset the Stepper to start a new continuation run
     virtual bool 
-    reset(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	  const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-	  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-	  const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
+    reset(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	  const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+	  const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+	  const Teuchos::RCP<Teuchos::ParameterList>& p);
 
     //! Return the current solution group.
-    virtual Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
+    virtual Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
     getSolutionGroup() const;
 
     //! Return the current bifurcation group.
@@ -117,18 +117,18 @@ namespace LOCA {
      * is the same as getSolutionGroup(), otherwise this method returns the
      * current bifurcation group (e.g., a turning point group).
      */
-    virtual Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
+    virtual Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
     getBifurcationGroup() const;
 
     //! Return the output parameters from the stepper algorithm.
-    virtual Teuchos::RefCountPtr<const Teuchos::ParameterList> 
+    virtual Teuchos::RCP<const Teuchos::ParameterList> 
     getList() const;
 
     /*! @brief Return the current nonlinear solver pointer.
      *
      * Will throw an error if the solver does not exist yet.
      */
-    virtual Teuchos::RefCountPtr<const NOX::Solver::Generic> 
+    virtual Teuchos::RCP<const NOX::Solver::Generic> 
     getSolver() const;
 
   protected:
@@ -157,9 +157,9 @@ namespace LOCA {
     stop(LOCA::Abstract::Iterator::StepStatus stepStatus);
 
     //! Builds a constrained group is specified through parameter lists
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
     buildConstrainedGroup(
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp);
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp);
 
     //! Compute a new step size based on results from the previous step
     LOCA::Abstract::Iterator::StepStatus
@@ -192,49 +192,49 @@ namespace LOCA {
   protected:
 
     //! Global data
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+    Teuchos::RCP<LOCA::GlobalData> globalData;
 
     //! Parsed parameter list
-    Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
+    Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams;
 
     //! Predictor strategy
-    Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy> predictor;
+    Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy> predictor;
 
     //! Current continuation group
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> curGroupPtr;
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy> curGroupPtr;
 
     //! Continuation group from previous step
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> prevGroupPtr;
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy> prevGroupPtr;
 
     //! Eigensolver for computing eigenvalues after each continuation step
-    Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> eigensolver;
+    Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> eigensolver;
 
     //! Strategy for saving eigenvectors/values
-    Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy> saveEigenData;
+    Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigenData;
 
     //! Pointer to bifurcation group
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> bifGroupPtr;
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> bifGroupPtr;
 
     //! Pointer to the status test.
-    Teuchos::RefCountPtr<NOX::StatusTest::Generic> statusTestPtr;
+    Teuchos::RCP<NOX::StatusTest::Generic> statusTestPtr;
 
     //! Pointer to parameter list passed in constructor/reset method
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramListPtr;
+    Teuchos::RCP<Teuchos::ParameterList> paramListPtr;
 
     //! Pointer to stepper parameters
-    Teuchos::RefCountPtr<Teuchos::ParameterList> stepperList;
+    Teuchos::RCP<Teuchos::ParameterList> stepperList;
 
     //! Solver (a.k.a corrector)
-    Teuchos::RefCountPtr<NOX::Solver::Manager> solverPtr;
+    Teuchos::RCP<NOX::Solver::Manager> solverPtr;
 
     //! Current predictor direction
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> curPredictorPtr;
+    Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> curPredictorPtr;
 
     //! previous predictor direction
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> prevPredictorPtr;
+    Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> prevPredictorPtr;
 
     //! Step size control strategy
-    Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy> stepSizeStrategyPtr;
+    Teuchos::RCP<LOCA::StepSize::AbstractStrategy> stepSizeStrategyPtr;
 
     //! Name of continuation parameter
     string conParamName;

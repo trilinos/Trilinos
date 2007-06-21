@@ -45,11 +45,11 @@
 #include "Teuchos_ParameterList.hpp"
 
 LOCA::AnasaziOperator::JacobianInverse::JacobianInverse(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams_,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams_,
-	const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp_)
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams_,
+	const Teuchos::RCP<Teuchos::ParameterList>& solverParams_,
+	const Teuchos::RCP<NOX::Abstract::Group>& grp_)
   : globalData(global_data),
     myLabel("Jacobian Inverse"),
     eigenParams(eigenParams_),

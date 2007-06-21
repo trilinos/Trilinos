@@ -44,7 +44,7 @@
 
 #include "NOX_Common.H"
 #include "NOX_Utils.H"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward declaration
 namespace NOX {
@@ -71,13 +71,13 @@ class Slope {
 public:
 
   //! Default constructor
-  Slope(const Teuchos::RefCountPtr<NOX::GlobalData>& gd);
+  Slope(const Teuchos::RCP<NOX::GlobalData>& gd);
 
   //! Destructor
   virtual ~Slope();
 
   //! Reset method.
-  void reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd);
+  void reset(const Teuchos::RCP<NOX::GlobalData>& gd);
 
   //! Compute the inner product of the given direction and the gradient associated with the given group.
   /*!
@@ -132,10 +132,10 @@ private:
   NOX::Utils utils;
 
   //! A vector that *may* be used in computeSlope()
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> vecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> vecPtr;
 
   //! An extra group that will only be allocated if computeSlopeWithOutJac() is called.
-  Teuchos::RefCountPtr<NOX::Abstract::Group> grpPtr;
+  Teuchos::RCP<NOX::Abstract::Group> grpPtr;
 
 };
 } // namespace Utils

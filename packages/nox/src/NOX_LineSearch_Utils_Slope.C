@@ -45,7 +45,7 @@
 #include "NOX_GlobalData.H"
 
 NOX::LineSearch::Utils::Slope::
-Slope(const Teuchos::RefCountPtr<NOX::GlobalData>& gd) :
+Slope(const Teuchos::RCP<NOX::GlobalData>& gd) :
   utils(*(gd->getUtils()))
 {
 
@@ -57,7 +57,7 @@ NOX::LineSearch::Utils::Slope::~Slope()
 }
 
 void NOX::LineSearch::Utils::Slope::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd)
+reset(const Teuchos::RCP<NOX::GlobalData>& gd)
 {
   utils = *(gd->getUtils());
 }

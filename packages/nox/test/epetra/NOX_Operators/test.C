@@ -101,11 +101,11 @@ int main(int argc, char *argv[])
   directionVec.Random();
 
   // Set up the problem interface
-  Teuchos::RefCountPtr<SimpleProblemInterface> interface = 
+  Teuchos::RCP<SimpleProblemInterface> interface = 
     Teuchos::rcp(new SimpleProblemInterface(&Problem) );
   
   // Set up theolver options parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> noxParamsPtr = Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::RCP<Teuchos::ParameterList> noxParamsPtr = Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList & noxParams = *(noxParamsPtr.get());
 
   // Set the nonlinear solver method
@@ -155,21 +155,21 @@ int main(int argc, char *argv[])
 
   int status = 0;
 
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
 
   // Need a NOX::Epetra::Vector for constructor
   NOX::Epetra::Vector noxInitGuess(InitialGuess, NOX::DeepCopy);
 
   // Analytic matrix
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( Problem.GetMatrix(), false );
+  Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( Problem.GetMatrix(), false );
 
   Epetra_Vector A_resultVec(Problem.GetMatrix()->Map());
   interface->computeJacobian( InitialGuess, *A );
   A->Apply( directionVec, A_resultVec );
 
   // FD operator
-  Teuchos::RefCountPtr<Epetra_CrsGraph> graph = Teuchos::rcp( const_cast<Epetra_CrsGraph*>(&A->Graph()), false );
-  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifference> FD = Teuchos::rcp(
+  Teuchos::RCP<Epetra_CrsGraph> graph = Teuchos::rcp( const_cast<Epetra_CrsGraph*>(&A->Graph()), false );
+  Teuchos::RCP<NOX::Epetra::FiniteDifference> FD = Teuchos::rcp(
     new NOX::Epetra::FiniteDifference(printParams, iReq, noxInitGuess, graph) );
   
   Epetra_Vector FD_resultVec(Problem.GetMatrix()->Map());
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
   FD->Apply( directionVec, FD_resultVec );
 
   // Matrix-Free operator
-  Teuchos::RefCountPtr<NOX::Epetra::MatrixFree> MF = Teuchos::rcp(
+  Teuchos::RCP<NOX::Epetra::MatrixFree> MF = Teuchos::rcp(
     new NOX::Epetra::MatrixFree(printParams, iReq, noxInitGuess) );
 
   Epetra_Vector MF_resultVec(Problem.GetMatrix()->Map());

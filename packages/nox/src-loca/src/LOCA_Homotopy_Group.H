@@ -42,7 +42,7 @@
 #ifndef LOCA_HOMOTOPY_GROUP_H
 #define LOCA_HOMOTOPY_GROUP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_MultiContinuation_AbstractGroup.H"    // base class
 #include "LOCA_Extended_MultiAbstractGroup.H"        // base class
@@ -155,16 +155,16 @@ namespace LOCA {
        */
       Group(
 	 Teuchos::ParameterList& locaSublist,
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Homotopy::AbstractGroup>& g,
 	 double scaleRandom = 1.0,
 	 double scaleInitialGuess = 0.0);
 
       //! Constructor with a user supplied random vector.
       Group(
 	 Teuchos::ParameterList& locaSublist,
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Homotopy::AbstractGroup>& g,
 	 const NOX::Abstract::Vector& randomVector);
 
       //! Copy constructor.
@@ -183,7 +183,7 @@ namespace LOCA {
       operator=(const NOX::Abstract::Group& source);
      
       //! Cloning function
-      virtual Teuchos::RefCountPtr<NOX::Abstract::Group> 
+      virtual Teuchos::RCP<NOX::Abstract::Group> 
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Set the solution vector, x, to y.
@@ -278,12 +278,12 @@ namespace LOCA {
 
       //! Return underlying group
       virtual 
-      Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
+      Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
       getUnderlyingGroup() const;
       
 	//! Return underlying group
       virtual 
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+      Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
       getUnderlyingGroup();
       
       //@}
@@ -390,28 +390,28 @@ namespace LOCA {
     protected:
 
       //! Pointer LOCA global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Stores the underlying loca group.
-      Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup> grpPtr;   
+      Teuchos::RCP<LOCA::Homotopy::AbstractGroup> grpPtr;   
   
       //! Stores the homotopy residual vector, \f$ g \f$.
-      Teuchos::RefCountPtr<NOX::Abstract::Vector> gVecPtr;
+      Teuchos::RCP<NOX::Abstract::Vector> gVecPtr;
 
       //! Stores the random Vector, \f$ a \f$.
-      Teuchos::RefCountPtr<NOX::Abstract::Vector> randomVecPtr;
+      Teuchos::RCP<NOX::Abstract::Vector> randomVecPtr;
 
       /*! 
        * \brief Stores the homotopy Newton vector, 
        * \f$ \frac{\partial r}{\partial x} \f$.
        */
-      Teuchos::RefCountPtr<NOX::Abstract::Vector> newtonVecPtr;
+      Teuchos::RCP<NOX::Abstract::Vector> newtonVecPtr;
 
       /*! 
        * Stores the homotopy gradient vector if needed, 
        * \f$ \frac{\partial r}{\partial x} \f$.
        */
-      Teuchos::RefCountPtr<NOX::Abstract::Vector> gradVecPtr;
+      Teuchos::RCP<NOX::Abstract::Vector> gradVecPtr;
 
       //! Is residual vector valid
       bool isValidF;

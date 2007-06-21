@@ -45,7 +45,7 @@
 #include "NOX_Direction_Manager.H"            // class data element
 #include "NOX_Solver_PrePostOperator.H"       // class data element
 #include "NOX_Utils.H"		              // class data element
-#include "Teuchos_RefCountPtr.hpp"            // class data element
+#include "Teuchos_RCP.hpp"            // class data element
 
 // Forward declarations
 namespace NOX {
@@ -119,24 +119,24 @@ public:
   /*!
     See reset(NOX::Abstract::Group&, NOX::StatusTest::Generic&, Teuchos::ParameterList&) for description
    */
-  FixedPointBased(const Teuchos::RefCountPtr< vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers,
-		  const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& interface, 
-		  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-		  const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
+  FixedPointBased(const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers,
+		  const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& interface, 
+		  const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+		  const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   //! Destructor
   virtual ~FixedPointBased();
 
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
-  virtual bool reset(const Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
-		     const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& interface, 
-		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+		     const Teuchos::RCP<Teuchos::ParameterList>& params);
+  virtual bool reset(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+		     const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& interface, 
+		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+		     const Teuchos::RCP<Teuchos::ParameterList>& params);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
@@ -162,31 +162,31 @@ protected:
   SOLVE_TYPE solveType;
 
   //! Pointer to the container of solvers for each problem to be coupled
-  Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > > solversVecPtr;
+  Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > > solversVecPtr;
 
   //! Pointer to the callback interface needed to echange data among solvers
-  Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface> dataExInterface;
+  Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface> dataExInterface;
 
   //! Pointer to the global data object.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Utils
-  Teuchos::RefCountPtr<NOX::Utils> utilsPtr;
+  Teuchos::RCP<NOX::Utils> utilsPtr;
   
   //! Current solution.
-  Teuchos::RefCountPtr<NOX::Multiphysics::Group> solnPtr;		
+  Teuchos::RCP<NOX::Multiphysics::Group> solnPtr;		
 
   //! Previous solution pointer. 
-  Teuchos::RefCountPtr<NOX::Multiphysics::Group> oldSolnPtr;	
+  Teuchos::RCP<NOX::Multiphysics::Group> oldSolnPtr;	
 
   //! Current search direction pointer.
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> dirPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> dirPtr;
 
   //! Stopping test.
-  Teuchos::RefCountPtr<NOX::StatusTest::Generic> testPtr;
+  Teuchos::RCP<NOX::StatusTest::Generic> testPtr;
 
   //! Input parameters.
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramsPtr;
+  Teuchos::RCP<Teuchos::ParameterList> paramsPtr;
 
   //! Linesearch. 
   NOX::LineSearch::Manager lineSearch; 

@@ -81,9 +81,9 @@ namespace LOCA {
      * class Derived : public AbstractStrategy {
      * public:
      *   Derived(
-     *   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-     *   const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepsizeParams);
+     *   const Teuchos::RCP<LOCA::GlobalData>& global_data,
+     *   const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams);
      *   ...
      * };
      * \endcode

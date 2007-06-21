@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
-  Teuchos::RefCountPtr<Interface> interface = 
+  Teuchos::RCP<Interface> interface = 
     Teuchos::rcp(new Interface(NumGlobalElements, Comm));
 
   // Set the PDE factor (for nonlinear forcing term).  This could be specified
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> IfpackParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> IfpackParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
 
   // Set the printing parameters in the "Printing" sublist
@@ -165,13 +165,13 @@ int main(int argc, char *argv[])
   // Get the vector from the Problem
   if (verbose)
     p.out() << "Creating Vectors and Matrices" << endl;
-  Teuchos::RefCountPtr<Epetra_Vector> solution_vec = 
+  Teuchos::RCP<Epetra_Vector> solution_vec = 
     interface->getSolution();
-  Teuchos::RefCountPtr<Epetra_Vector> rhs_vec = 
+  Teuchos::RCP<Epetra_Vector> rhs_vec = 
     Teuchos::rcp(new Epetra_Vector(*solution_vec));
-  Teuchos::RefCountPtr<Epetra_Vector> lhs_vec = 
+  Teuchos::RCP<Epetra_Vector> lhs_vec = 
     Teuchos::rcp(new Epetra_Vector(*solution_vec));
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> jacobian_matrix = 
+  Teuchos::RCP<Epetra_CrsMatrix> jacobian_matrix = 
     interface->getJacobian();
 
 
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
     p.out() << "Creating Ifpack preconditioner" << endl;
     
   Ifpack Factory;
-  Teuchos::RefCountPtr<Ifpack_Preconditioner> PreconditionerPtr;
+  Teuchos::RCP<Ifpack_Preconditioner> PreconditionerPtr;
   PreconditionerPtr = Teuchos::rcp(Factory.Create("ILU",
 						  jacobian_matrix.get(),0));
   Teuchos::ParameterList teuchosParams;
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
   if (verbose)
     p.out() << "Creating Aztec Solver" << endl;
 
-  Teuchos::RefCountPtr<AztecOO> aztecSolverPtr = Teuchos::rcp(new AztecOO());
+  Teuchos::RCP<AztecOO> aztecSolverPtr = Teuchos::rcp(new AztecOO());
   if (verbose)
     aztecSolverPtr->SetAztecOption(AZ_output, AZ_last);
   else

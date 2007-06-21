@@ -68,7 +68,7 @@ namespace LOCA {
 
       //! Initialize factory
       virtual void 
-      init(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+      init(const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       /*! 
        * @name Strategy create methods
@@ -79,17 +79,17 @@ namespace LOCA {
       virtual bool
       createBorderedSolverStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-       Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>& strategy);
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+       Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>& strategy);
 
       //! Create eigensolver strategy
       virtual bool
       createEigensolverStrategy(
          const string& strategyName,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy);
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+	 Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy>& strategy);
 
       //@}
 
@@ -104,7 +104,7 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
     }; // Class Factory
 

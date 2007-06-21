@@ -325,7 +325,7 @@ bool Burgers::evaluate(
   return true;
 }
 
-Teuchos::RefCountPtr<Epetra_Vector> Burgers::getSolution()
+Teuchos::RCP<Epetra_Vector> Burgers::getSolution()
 {
   return initialSolution;
 }

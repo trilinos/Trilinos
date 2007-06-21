@@ -43,7 +43,7 @@
 #define NOX_SOLVER_PREPOSTOPERATOR_H
 
 #include "NOX_Common.H"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "NOX_Abstract_PrePostOperator.H"
 
 // Forward declaration
@@ -94,7 +94,7 @@ private:
 public:
 
   //! Ctor.
-  PrePostOperator(const Teuchos::RefCountPtr<NOX::Utils>& utils, 
+  PrePostOperator(const Teuchos::RCP<NOX::Utils>& utils, 
 		  Teuchos::ParameterList& solverOptionsSubList);
 
   //! Destructor.
@@ -102,7 +102,7 @@ public:
 
   //! Resets the pre/post operator.
   virtual void
-  reset(const Teuchos::RefCountPtr<NOX::Utils>& utils, 
+  reset(const Teuchos::RCP<NOX::Utils>& utils, 
 	Teuchos::ParameterList& solverOptionsSublist);
 
   //! User defined method that will be executed at the start of a call to NOX::Solver::Generic::iterate().
@@ -123,7 +123,7 @@ protected:
   bool havePrePostOperator;
 
   //! Points to user defined pre/post operator.
-  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> prePostOperatorPtr;
+  Teuchos::RCP<NOX::Abstract::PrePostOperator> prePostOperatorPtr;
 
 };
 } // namespace Solver

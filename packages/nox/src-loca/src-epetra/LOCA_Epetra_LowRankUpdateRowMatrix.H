@@ -42,7 +42,7 @@
 #ifndef LOCA_EPETRA_LOWRANKUPDATEROWMATRIX_H
 #define LOCA_EPETRA_LOWRANKUPDATEROWMATRIX_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_Epetra_LowRankUpdateOp.H" // base class
 #include "Epetra_RowMatrix.h"	    // base class
@@ -88,10 +88,10 @@ namespace LOCA {
        *        InvColSums(), NormInf() and NormOne().
        */
       LowRankUpdateRowMatrix(
-        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<Epetra_RowMatrix>& jacRowMatrix, 
-	const Teuchos::RefCountPtr<Epetra_MultiVector>& U_multiVec, 
-	const Teuchos::RefCountPtr<Epetra_MultiVector>& V_multiVec,
+        const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<Epetra_RowMatrix>& jacRowMatrix, 
+	const Teuchos::RCP<Epetra_MultiVector>& U_multiVec, 
+	const Teuchos::RCP<Epetra_MultiVector>& V_multiVec,
 	bool include_UV_terms);
 
       //! Destructor
@@ -250,13 +250,13 @@ namespace LOCA {
     protected:
     
       //! Stores row matrix representing J
-      Teuchos::RefCountPtr<Epetra_RowMatrix> J_rowMatrix;
+      Teuchos::RCP<Epetra_RowMatrix> J_rowMatrix;
 
       //! Stores pointer to non-const U
-      Teuchos::RefCountPtr<Epetra_MultiVector> nonconst_U;
+      Teuchos::RCP<Epetra_MultiVector> nonconst_U;
 
       //! Stores pointer to non-const V
-      Teuchos::RefCountPtr<Epetra_MultiVector> nonconst_V;
+      Teuchos::RCP<Epetra_MultiVector> nonconst_V;
 
       //! Flag indicating whether to include U*V^T terms
       bool includeUV;

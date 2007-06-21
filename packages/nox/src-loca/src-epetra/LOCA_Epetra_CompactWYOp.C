@@ -48,12 +48,12 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Epetra::CompactWYOp::CompactWYOp(
-        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<const Epetra_Operator>& jacOperator, 
-	const Teuchos::RefCountPtr<const Epetra_MultiVector>& A_multiVec, 
-	const Teuchos::RefCountPtr<const Epetra_MultiVector>& Y_x_multiVec,
-	const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& Y_p_matrix,
-	const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& T_matrix) :
+        const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<const Epetra_Operator>& jacOperator, 
+	const Teuchos::RCP<const Epetra_MultiVector>& A_multiVec, 
+	const Teuchos::RCP<const Epetra_MultiVector>& Y_x_multiVec,
+	const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& Y_p_matrix,
+	const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& T_matrix) :
   globalData(global_data),
   label("LOCA::Epetra::CompactWYOp"),
   localMap(Y_x_multiVec->NumVectors(), 0, jacOperator->Comm()),

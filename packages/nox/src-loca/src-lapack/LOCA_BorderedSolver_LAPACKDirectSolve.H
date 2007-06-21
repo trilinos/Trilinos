@@ -97,9 +97,9 @@ namespace LOCA {
        * are referenced.
        */
       LAPACKDirectSolve(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
       //! Destructor
       virtual ~LAPACKDirectSolve();
@@ -111,10 +111,10 @@ namespace LOCA {
        * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
-          const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
+          const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>& op,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
+	  const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
 
       //! Intialize solver for a solve
       /*!
@@ -243,31 +243,31 @@ namespace LOCA {
     protected:
 
       //! Global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Solver parameters
-      Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
+      Teuchos::RCP<Teuchos::ParameterList> solverParams;
 
       //! Pointer to group
-      Teuchos::RefCountPtr<const LOCA::LAPACK::Group> grp;
+      Teuchos::RCP<const LOCA::LAPACK::Group> grp;
 
       //! Pointer to operator
-      Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator> op;
+      Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator> op;
 
       //! Pointer to A block
-      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> A;
+      Teuchos::RCP<const NOX::Abstract::MultiVector> A;
 
       //! Pointer to B block
-      Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> B;
+      Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> B;
 
       //! Pointer to C block
-      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> C;
+      Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> C;
 
       //! The augmented Jacobian matrix solver
-      Teuchos::RefCountPtr< NOX::LAPACK::LinearSolver<double> > augJacSolver;
+      Teuchos::RCP< NOX::LAPACK::LinearSolver<double> > augJacSolver;
 
       //! The augmented complex matrix solver
-      Teuchos::RefCountPtr< NOX::LAPACK::LinearSolver< std::complex<double> > > augComplexSolver;
+      Teuchos::RCP< NOX::LAPACK::LinearSolver< std::complex<double> > > augComplexSolver;
 
       //! Matrix dimension
       int n;

@@ -99,7 +99,7 @@ LinearConstraint::copy(const LOCA::MultiContinuation::ConstraintInterface& src)
   }
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
 LinearConstraint::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new LinearConstraint(*this, type));

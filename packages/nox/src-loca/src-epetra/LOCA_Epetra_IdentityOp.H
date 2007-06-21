@@ -42,7 +42,7 @@
 #ifndef LOCA_EPETRA_IDENTITYOP_H
 #define LOCA_EPETRA_IDENTITYOP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "Epetra_Operator.h"	// base class
 #include "NOX_Common.H"         // for string data member
@@ -63,8 +63,8 @@ namespace LOCA {
        * \param comm [in] Comm object
        * \param map [in] Map object
        */
-      IdentityOp(const Teuchos::RefCountPtr<const Epetra_Comm>& comm,
-		 const Teuchos::RefCountPtr<const Epetra_Map>& map);
+      IdentityOp(const Teuchos::RCP<const Epetra_Comm>& comm,
+		 const Teuchos::RCP<const Epetra_Map>& map);
 
       //! Destructor
       virtual ~IdentityOp();
@@ -133,10 +133,10 @@ namespace LOCA {
       string label;
     
       //! Stores comm
-      Teuchos::RefCountPtr<const Epetra_Comm> comm;
+      Teuchos::RCP<const Epetra_Comm> comm;
 
       //! Stores map
-      Teuchos::RefCountPtr<const Epetra_Map> map;
+      Teuchos::RCP<const Epetra_Map> map;
 
       //! Flag indicating whether transpose was selected
       bool useTranspose;

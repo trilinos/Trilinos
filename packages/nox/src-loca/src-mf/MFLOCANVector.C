@@ -56,7 +56,7 @@ void MFLOCANVAdd(void*,void*,void*);
 void MFLOCANVPrint(FILE*, void*);
 MFNVector MFCloneLOCANVector(void*);
 void MFFreeLOCANVectorData(void*);
-MFNVector MFCreateLOCANVectorWithData(const Teuchos::RefCountPtr<LMCEV>&);
+MFNVector MFCreateLOCANVectorWithData(const Teuchos::RCP<LMCEV>&);
 void MFSetError(int,char*,char*,int,char*);
 
 static char MFNVectorErrorMsg[256]="";
@@ -67,9 +67,9 @@ void MFLOCANVDiff(void *adata, void *bdata, void *cdata)
   LOCANVectorData *a_vec_data;
   LOCANVectorData *b_vec_data;
   LOCANVectorData *c_vec_data;
-  Teuchos::RefCountPtr<LMCEV> a;
-  Teuchos::RefCountPtr<LMCEV> b;
-  Teuchos::RefCountPtr<LMCEV> c;
+  Teuchos::RCP<LMCEV> a;
+  Teuchos::RCP<LMCEV> b;
+  Teuchos::RCP<LMCEV> c;
 
   a_vec_data = (LOCANVectorData*) adata;
   if(a_vec_data==(LOCANVectorData*)NULL)
@@ -114,9 +114,9 @@ void MFLOCANVAdd(void *adata,void *bdata,void *cdata)
   LOCANVectorData *a_vec_data;
   LOCANVectorData *b_vec_data;
   LOCANVectorData *c_vec_data;
-  Teuchos::RefCountPtr<LMCEV> a;
-  Teuchos::RefCountPtr<LMCEV> b;
-  Teuchos::RefCountPtr<LMCEV> c;
+  Teuchos::RCP<LMCEV> a;
+  Teuchos::RCP<LMCEV> b;
+  Teuchos::RCP<LMCEV> c;
 
   a_vec_data = (LOCANVectorData*) adata;
   if(a_vec_data==(LOCANVectorData*)NULL)
@@ -161,7 +161,7 @@ void MFLOCANVPrint(FILE *ifp, void *u)
 MFNVector MFCloneLOCANVector(void *data)
 {
   LOCANVectorData *vec_data = (LOCANVectorData*) data;
-  Teuchos::RefCountPtr<LMCEV> u2 = 
+  Teuchos::RCP<LMCEV> u2 = 
     Teuchos::rcp_dynamic_cast<LMCEV>(vec_data->u_ptr->clone(),true);
   
   return  MFCreateLOCANVectorWithData(u2);
@@ -173,7 +173,7 @@ void MFFreeLOCANVectorData(void *data)
   delete vec_data;
 }
 
-MFNVector MFCreateLOCANVectorWithData(const Teuchos::RefCountPtr<LMCEV>& u)
+MFNVector MFCreateLOCANVectorWithData(const Teuchos::RCP<LMCEV>& u)
 {
   MFNVector cthis;
 

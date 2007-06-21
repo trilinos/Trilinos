@@ -155,7 +155,7 @@ GenericEpetraProblem &
 Problem_Manager::getProblem( int id_ )
 {
   // Get a problem given its unique id
-  Teuchos::RefCountPtr<GenericEpetraProblem> problem = Problems[id_];
+  Teuchos::RCP<GenericEpetraProblem> problem = Problems[id_];
 
   if( Teuchos::is_null(problem) ) 
   {
@@ -232,7 +232,7 @@ NOX::Epetra::Group &
 Problem_Manager::getGroup(int id_)
 {
   // Get a group given its unique id
-  Teuchos::RefCountPtr<NOX::Epetra::Group> group = Groups[id_];
+  Teuchos::RCP<NOX::Epetra::Group> group = Groups[id_];
 
   if( Teuchos::is_null(group) ) 
   {
@@ -246,7 +246,7 @@ Problem_Manager::getGroup(int id_)
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RefCountPtr<Epetra_Vector> 
+Teuchos::RCP<Epetra_Vector> 
 Problem_Manager::getCompositeSoln()
 {
   if( !compositeSoln.get() ) {
@@ -308,7 +308,7 @@ Problem_Manager::createDependency( GenericEpetraProblem & problemA,
 //-----------------------------------------------------------------------------
 
 void 
-Problem_Manager::registerParameters(const Teuchos::RefCountPtr<Teuchos::ParameterList>& List)
+Problem_Manager::registerParameters(const Teuchos::RCP<Teuchos::ParameterList>& List)
 {
   nlParams = List;
    
@@ -318,7 +318,7 @@ Problem_Manager::registerParameters(const Teuchos::RefCountPtr<Teuchos::Paramete
 //-----------------------------------------------------------------------------
 
 void 
-Problem_Manager::registerStatusTest(const Teuchos::RefCountPtr<NOX::StatusTest::Combo>& comboTest)
+Problem_Manager::registerStatusTest(const Teuchos::RCP<NOX::StatusTest::Combo>& comboTest)
 {
   statusTest = comboTest;
 
@@ -350,8 +350,8 @@ Problem_Manager::registerComplete()
 
   // Iterate over each problem and construct the necessary objects
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator iter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator last = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator iter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator last = Problems.end();
 
   iter = Problems.begin();
 
@@ -415,7 +415,7 @@ Problem_Manager::registerComplete()
 
     // Use this for analytic Matrix Fills
 #ifndef USE_FD
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInt = Interfaces[probId];
+    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> jacInt = Interfaces[probId];
     LinearSystems[probId] = Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(
       nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
@@ -449,7 +449,7 @@ Problem_Manager::registerComplete()
     ColorMapIndexSets[probId] = Teuchos::rcp(new EpetraExt::CrsGraph_MapColoringIndex( *(ColorMaps[probId]) ));
     ColumnsSets[probId] = Teuchos::rcp(& (*(ColorMapIndexSets[probId]))( *problem.getGraph() ));
 
-    Teuchos::RefCountPtr<Epetra_CrsGraph> & problemGraph = problem.getGraph();
+    Teuchos::RCP<Epetra_CrsGraph> & problemGraph = problem.getGraph();
 
     if (MyPID == 0)
       printf("\n\tTime to color Jacobian # %d --> %e sec. \n\n",
@@ -470,7 +470,7 @@ Problem_Manager::registerComplete()
     //            problemGraph ));
     //NOX::Epetra::Interface::Jacobian& jacInt = 
     NOX::Epetra::Interface::Jacobian * p_jacInt = dynamic_cast<NOX::Epetra::FiniteDifference*>(MatrixOperators[probId].get());
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInt = Teuchos::rcp(p_jacInt, false);
+    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> jacInt = Teuchos::rcp(p_jacInt, false);
       //dynamic_cast<NOX::Epetra::Interface::Jacobian&>(*(*(MatrixOperators[probId]);
     LinearSystems[probId] = Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(
       nlParams->sublist("Printing"),
@@ -524,7 +524,7 @@ Problem_Manager::registerComplete()
   copyProblemsToComposite(*(compositeSoln.get()), SOLUTION);
 
   // Set up a problem interface for the Problem Manager
-  Teuchos::RefCountPtr<Problem_Interface> interface = Teuchos::rcp(new Problem_Interface(*this));
+  Teuchos::RCP<Problem_Interface> interface = Teuchos::rcp(new Problem_Interface(*this));
   // Now create a composite matrix graph needed for preconditioning
   AA = Teuchos::rcp( new Epetra_CrsGraph(Copy, *compositeMap, 0) );
   generateGraph();
@@ -569,16 +569,16 @@ Problem_Manager::registerComplete()
 
   //NOX::Epetra::Interface::Required& reqInt = 
   //  dynamic_cast<NOX::Epetra::Interface::Required&>(interface);
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> compositeNOXSoln = 
+  Teuchos::RCP<NOX::Epetra::Vector> compositeNOXSoln = 
     Teuchos::rcp( new NOX::Epetra::Vector(*(compositeSoln.get())) );
 
   Teuchos::ParameterList & printParams = nlParams->sublist("Printing");
   Teuchos::ParameterList & lsParams    = nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver");
-  Teuchos::RefCountPtr<NOX::Utils> utilsPtr = Teuchos::rcp( new NOX::Utils(printParams) );
+  Teuchos::RCP<NOX::Utils> utilsPtr = Teuchos::rcp( new NOX::Utils(printParams) );
 
   // Setup appropriate operators and their use
 
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> composite_linearSystem;
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> composite_linearSystem;
 
   if( 1 ) // default for MultiPhyics tests
   {
@@ -606,7 +606,7 @@ Problem_Manager::registerComplete()
     NOX::Epetra::Interface::Jacobian * p_jacInt = dynamic_cast<NOX::Epetra::MatrixFree*>(jacOperator.get());
     jacInterface = Teuchos::rcp(p_jacInt, false);
 
-    Teuchos::RefCountPtr<NOX::Epetra::BroydenOperator> broydenOp = 
+    Teuchos::RCP<NOX::Epetra::BroydenOperator> broydenOp = 
       Teuchos::rcp(new NOX::Epetra::BroydenOperator( *nlParams, utilsPtr, *compositeSoln, A, true) );
     precOperator = broydenOp;
     precInterface = broydenOp;
@@ -627,9 +627,9 @@ Problem_Manager::registerComplete()
     broydenParams.set("Write Broyden Info", true);
 
     // Create some temp objects needed for construction
-    Teuchos::RefCountPtr<Epetra_CrsGraph>  blockAA = generateBlockDiagonalGraph( *compositeMap, false );
+    Teuchos::RCP<Epetra_CrsGraph>  blockAA = generateBlockDiagonalGraph( *compositeMap, false );
     blockAA->FillComplete();
-    Teuchos::RefCountPtr<Epetra_CrsMatrix> blockA = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *blockAA) ); 
+    Teuchos::RCP<Epetra_CrsMatrix> blockA = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *blockAA) ); 
     blockA->FillComplete();
     evaluate( NOX::Epetra::Interface::Required::Jac, &(*compositeSoln), NULL );
     copyProblemJacobiansToComposite( *blockA );
@@ -637,7 +637,7 @@ Problem_Manager::registerComplete()
     cout << blockA->Graph() << endl;
     cout << *blockA << endl;
 
-    Teuchos::RefCountPtr<NOX::Epetra::BroydenOperator> broydenOp = 
+    Teuchos::RCP<NOX::Epetra::BroydenOperator> broydenOp = 
       Teuchos::rcp(new NOX::Epetra::BroydenOperator( *nlParams, utilsPtr, *compositeSoln, blockA, true) );
     jacOperator = broydenOp;
     jacInterface = broydenOp;
@@ -705,9 +705,9 @@ Problem_Manager::syncAllProblems()
     throw "Problem_Manager ERROR";
   }
   
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter;
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemBegin = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast  = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter;
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemBegin = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast  = Problems.end();
 
   // Give each problem an opportunity to do things before transferring data, eg compute fluxes
   for( problemIter = problemBegin ; problemIter != problemLast; ++problemIter )
@@ -735,8 +735,8 @@ Problem_Manager::setAlldt( double dt )
     throw "Problem_Manager ERROR";
   }
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   for( ; problemIter != problemLast; ++problemIter)
     (*problemIter).second->setdt(dt);
@@ -749,7 +749,7 @@ Problem_Manager::setAlldt( double dt )
 void 
 Problem_Manager::setGroupX(int probId)
 {
-  Teuchos::RefCountPtr<GenericEpetraProblem> problem = Problems[probId];
+  Teuchos::RCP<GenericEpetraProblem> problem = Problems[probId];
 
   if( Teuchos::is_null(problem) ) 
   {
@@ -758,7 +758,7 @@ Problem_Manager::setGroupX(int probId)
     throw "Problem_Manager ERROR";
   }
 
-  Teuchos::RefCountPtr<NOX::Epetra::Group> grp = Groups[probId];
+  Teuchos::RCP<NOX::Epetra::Group> grp = Groups[probId];
 
   if( Teuchos::is_null(grp) ) {
     cout << "ERROR: Could not get appropriate group for use in setX !!"
@@ -776,7 +776,7 @@ Problem_Manager::setGroupX(int probId)
 void 
 Problem_Manager::setGroupX(int probId, Epetra_Vector & vec)
 {
-  Teuchos::RefCountPtr<GenericEpetraProblem> problem = Problems[probId];
+  Teuchos::RCP<GenericEpetraProblem> problem = Problems[probId];
 
   if( Teuchos::is_null(problem) ) 
   {
@@ -784,7 +784,7 @@ Problem_Manager::setGroupX(int probId, Epetra_Vector & vec)
     throw "Problem_Manager ERROR";
   }
 
-  Teuchos::RefCountPtr<NOX::Epetra::Group> grp = Groups[probId];
+  Teuchos::RCP<NOX::Epetra::Group> grp = Groups[probId];
 
   if( Teuchos::is_null(grp) ) 
   {
@@ -806,8 +806,8 @@ Problem_Manager::setAllGroupX()
     throw "Problem_Manager ERROR";
   }
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   // Loop over each problem being managed and set the corresponding group
   // solution vector (used by NOX) with the problem's (used by application)
@@ -856,8 +856,8 @@ void
 Problem_Manager::resetProblems()
 { 
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   // Loop over each problem and copy its solution into its old solution
   for( ; problemIter != problemLast; problemIter++) 
@@ -880,8 +880,8 @@ Problem_Manager::computeAllF()
     throw "Problem_Manager ERROR";
   }
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   // Loop over each problem being managed and invoke the corresponding group's
   // residual evaluation
@@ -900,7 +900,7 @@ Problem_Manager::computeAllF()
 void 
 Problem_Manager::computeGroupF(int probId)
 {
-  Teuchos::RefCountPtr<NOX::Epetra::Group> grp = Groups[ probId ];
+  Teuchos::RCP<NOX::Epetra::Group> grp = Groups[ probId ];
 
   if( Teuchos::is_null(grp) ) 
   {
@@ -918,8 +918,8 @@ Problem_Manager::computeGroupF(int probId)
 void 
 Problem_Manager::computeAllJacobian()
 {
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   // Do diagoanl blocks
   for( ; problemLast != problemIter; ++problemIter )
@@ -947,7 +947,7 @@ Problem_Manager::computeAllJacobian()
     for( ; problemIter != problemLast; problemIter++) 
     {
       int probId = (*problemIter).first;
-      Teuchos::RefCountPtr<NOX::Epetra::Group> grp = Groups[probId]; 
+      Teuchos::RCP<NOX::Epetra::Group> grp = Groups[probId]; 
       if( Teuchos::is_null(grp) ) 
       {
         cout << "ERROR: Could not find valid group for compouteJacobian !!"
@@ -1051,7 +1051,7 @@ Problem_Manager::computeBlockJacobian(int probId, int depId)
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
+Teuchos::RCP<Epetra_CrsMatrix>
 Problem_Manager::getBlockJacobianMatrix(int probId, int depId)
 {
 
@@ -1100,14 +1100,14 @@ Problem_Manager::getBlockJacobianMatrix(int probId, int depId)
     p_problemMatrix = &((*iter)->getMatrix());
   }
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> mat = Teuchos::rcp( p_problemMatrix, false );
+  Teuchos::RCP<Epetra_CrsMatrix> mat = Teuchos::rcp( p_problemMatrix, false );
 
   return mat;
 }
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 Problem_Manager::getBlockInverseOperator(int probId)
 {
 
@@ -1118,7 +1118,7 @@ Problem_Manager::getBlockInverseOperator(int probId)
     throw "Problem_Manager ERROR";
   }
 
-  Teuchos::RefCountPtr<Epetra_Operator> pInvOp = BlockInverseOperators[probId];
+  Teuchos::RCP<Epetra_Operator> pInvOp = BlockInverseOperators[probId];
 
   return pInvOp;
 }
@@ -1142,7 +1142,7 @@ Problem_Manager::copyGroupCurrentXtoProblemX(int probId)
 {
   // Copy Current solution X from NOX solver group into the problem's solution vector
 
-  Teuchos::RefCountPtr<GenericEpetraProblem> problem = Problems[probId];
+  Teuchos::RCP<GenericEpetraProblem> problem = Problems[probId];
 
   if( Teuchos::is_null(problem) ) 
   {
@@ -1151,7 +1151,7 @@ Problem_Manager::copyGroupCurrentXtoProblemX(int probId)
     throw "Problem_Manager ERROR";
   }
 
-  Teuchos::RefCountPtr<NOX::Solver::Manager> solver = Solvers[probId];
+  Teuchos::RCP<NOX::Solver::Manager> solver = Solvers[probId];
 
   if( Teuchos::is_null(solver) ) 
   {
@@ -1178,8 +1178,8 @@ Problem_Manager::copyAllGroupXtoProblems()
 {
   // Copy final solution from NOX solvers into each problem's solution vector
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   for( ; problemIter != problemLast; ++problemIter )
   {
@@ -1197,7 +1197,7 @@ Problem_Manager::resetCurrentGroupX(int probId)
 {
   // Reset each solvers current solution group X vector with itself, thereby resetting all valid flags
 
-  Teuchos::RefCountPtr<NOX::Solver::Manager> solver = Solvers[probId];
+  Teuchos::RCP<NOX::Solver::Manager> solver = Solvers[probId];
 
   if( Teuchos::is_null(solver) ) 
   {
@@ -1220,8 +1220,8 @@ Problem_Manager::resetAllCurrentGroupX()
 {
   // Reset each solvers current solution group X vector with itself, thereby resetting all valid flags
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   for( ; problemIter != problemLast; ++problemIter )
   {
@@ -1239,8 +1239,8 @@ Problem_Manager::copyCompositeToProblems( const Epetra_Vector& compositeVec, Pro
 {
   // Copy a composite problem vector to each problem's vector
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   Epetra_Vector* problemVec(0);
 
@@ -1274,8 +1274,8 @@ Problem_Manager::copyProblemsToComposite( Epetra_Vector& compositeVec, Problem_M
 {
   // Copy vectors from each problem into a composite problem vector
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   const Epetra_Vector* problemVec(0);
 
@@ -1358,8 +1358,8 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
 
   Epetra_CrsMatrix & compositeMatrix = mat;
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   int problemMaxNodes = compositeSoln.get()->GlobalLength();
 
@@ -1460,7 +1460,7 @@ Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
       // Loop over each problem on which this one depends
       for( unsigned int k = 0; k < problem.depProblems.size(); ++k) 
       {
-        Teuchos::RefCountPtr<GenericEpetraProblem> p_depProblem = Problems[problem.depProblems[k]];
+        Teuchos::RCP<GenericEpetraProblem> p_depProblem = Problems[problem.depProblems[k]];
 
         // Copy the off-block jacobian matrices for this 
         // problem-problem coupling
@@ -1522,13 +1522,13 @@ Problem_Manager::getNormSum()
   // Get each problem's residual norm and sum into a total
   double normSum(0.0);
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   for( ; problemIter != problemLast; problemIter++) {
     int probId = (*problemIter).first;
 
-    //Teuchos::RefCountPtr<NOX::Epetra::Group> grp = Groups[ probId ];
+    //Teuchos::RCP<NOX::Epetra::Group> grp = Groups[ probId ];
     NOX::Epetra::Group grp = const_cast<NOX::Epetra::Group&>(dynamic_cast<const NOX::Epetra::Group&>(Solvers[ probId ]->getSolutionGroup()));
 
     //if( Teuchos::is_null(grp) ) 
@@ -1567,8 +1567,8 @@ Problem_Manager::solve()
     throw "Problem_Manager ERROR";
   }
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   // Sync all the problems and get initial convergence state
   syncAllProblems();
@@ -1583,19 +1583,19 @@ Problem_Manager::solve()
   NOX::StatusTest::StatusType status;
 
   // RPP: Inner status test
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid =
+  Teuchos::RCP<NOX::StatusTest::NormF> absresid =
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-10));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormUpdate> update =
+  Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
     Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> converged =
+  Teuchos::RCP<NOX::StatusTest::Combo> converged =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
   converged->addStatusTest(absresid);
   converged->addStatusTest(update);
-  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters =
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(15));
-  Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> finiteValue =
+  Teuchos::RCP<NOX::StatusTest::FiniteValue> finiteValue =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo =
+  Teuchos::RCP<NOX::StatusTest::Combo> combo =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(converged);
   combo->addStatusTest(maxiters);
@@ -1614,7 +1614,7 @@ Problem_Manager::solve()
 
       int probId = problem.getId();
 
-      Teuchos::RefCountPtr<NOX::Epetra::Group> problemGroup = Groups[probId];
+      Teuchos::RCP<NOX::Epetra::Group> problemGroup = Groups[probId];
       NOX::Solver::Manager & problemSolver = *(Solvers[probId]);
     
       // Sync all dependent data with this problem 
@@ -1698,8 +1698,8 @@ Problem_Manager::solveSchurBased()
     throw "Problem_Manager ERROR";
   }
 
-  Teuchos::RefCountPtr<Epetra_Vector> resA = Teuchos::rcp( new Epetra_Vector( getResidualVec(1)) );
-  Teuchos::RefCountPtr<Epetra_Vector> resB = Teuchos::rcp( new Epetra_Vector( getResidualVec(2)) );
+  Teuchos::RCP<Epetra_Vector> resA = Teuchos::rcp( new Epetra_Vector( getResidualVec(1)) );
+  Teuchos::RCP<Epetra_Vector> resB = Teuchos::rcp( new Epetra_Vector( getResidualVec(2)) );
 
   NOX::Epetra::SchurCoupler schurCoupler(*this);
   NOX::Epetra::SchurOp & schurCplOp = *schurCoupler.getSchurOperator(0, 0);
@@ -1735,7 +1735,7 @@ Problem_Manager::solveSchurBased()
   if( 1 )
   {
     double conditionNumberEstimate = -1.0;
-    Teuchos::RefCountPtr<Epetra_CrsMatrix> pMatrix = getBlockJacobianMatrix(1);
+    Teuchos::RCP<Epetra_CrsMatrix> pMatrix = getBlockJacobianMatrix(1);
     aztecoo_solver->SetPrecMatrix(pMatrix.get());
     aztecoo_solver->SetAztecOption(AZ_precond, AZ_dom_decomp);
     aztecoo_solver->SetAztecOption(AZ_overlap, 0);
@@ -1839,15 +1839,15 @@ Problem_Manager::evaluate(
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RefCountPtr<Epetra_CrsGraph> 
+Teuchos::RCP<Epetra_CrsGraph> 
 Problem_Manager::generateBlockDiagonalGraph( const Epetra_Map & rowMap, bool includeProblemOffContribs )
 { 
-  Teuchos::RefCountPtr<Epetra_CrsGraph> graphPtr = 
+  Teuchos::RCP<Epetra_CrsGraph> graphPtr = 
     Teuchos::rcp( new Epetra_CrsGraph(Copy, rowMap, 0) );
 
   // First construct a graph for each problem's self-dependence
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   // Loop over each problem being managed and ascertain its graph as well
   // as its graph from its dependencies
@@ -1931,10 +1931,10 @@ Problem_Manager::generateBlockDiagonalGraph( const Epetra_Map & rowMap, bool inc
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RefCountPtr<Epetra_CrsGraph> 
+Teuchos::RCP<Epetra_CrsGraph> 
 Problem_Manager::generateOffDiagonalBlockGraph( const Epetra_Map & rowMap )
 { 
-  Teuchos::RefCountPtr<Epetra_CrsGraph> graphPtr = 
+  Teuchos::RCP<Epetra_CrsGraph> graphPtr = 
     Teuchos::rcp( new Epetra_CrsGraph(Copy, rowMap, 0) );
 
   // Two things are achieved here: 1) The composite Graph is augmented to
@@ -1943,8 +1943,8 @@ Problem_Manager::generateOffDiagonalBlockGraph( const Epetra_Map & rowMap )
 
 #ifdef HAVE_NOX_EPETRAEXT
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   problemIter = Problems.begin();
 
@@ -2056,10 +2056,10 @@ Problem_Manager::generateOffDiagonalBlockGraph( const Epetra_Map & rowMap )
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RefCountPtr<Epetra_CrsGraph> 
+Teuchos::RCP<Epetra_CrsGraph> 
 Problem_Manager::composeGraphs( const Epetra_CrsGraph & graph1, const Epetra_CrsGraph & graph2 )
 { 
-  Teuchos::RefCountPtr<Epetra_CrsGraph> graphPtr = 
+  Teuchos::RCP<Epetra_CrsGraph> graphPtr = 
     Teuchos::rcp( new Epetra_CrsGraph(Copy, graph1.RowMap(), 0) );
 
   if( !graph1.Filled() || !graph2.Filled() )
@@ -2127,14 +2127,14 @@ Problem_Manager::generateGraph()
 { 
 
   // First construct a graph for each problem's self-dependence
-  Teuchos::RefCountPtr<Epetra_CrsGraph> diagBlkGraph = generateBlockDiagonalGraph( *compositeMap, false );
+  Teuchos::RCP<Epetra_CrsGraph> diagBlkGraph = generateBlockDiagonalGraph( *compositeMap, false );
   diagBlkGraph->FillComplete();
 
   // Next create inter-problem block graph contributions if desired;
   //   default is false
   if( doOffBlocks ) 
   {
-    Teuchos::RefCountPtr<Epetra_CrsGraph> offBlkGraph = generateOffDiagonalBlockGraph( *compositeMap );
+    Teuchos::RCP<Epetra_CrsGraph> offBlkGraph = generateOffDiagonalBlockGraph( *compositeMap );
     offBlkGraph->FillComplete();
 
     AA = composeGraphs( *diagBlkGraph, *offBlkGraph );
@@ -2171,8 +2171,8 @@ void
 Problem_Manager::outputSolutions( const string outputDir, int timeStep )
 {
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
   // Loop over each problem being managed and write its solution vector
   // to a file.
@@ -2209,8 +2209,8 @@ void
 Problem_Manager::outputStatus( ostream & os ) 
 { 
 
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::const_iterator problemIter = Problems.begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::const_iterator problemLast = Problems.end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::const_iterator problemIter = Problems.begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::const_iterator problemLast = Problems.end();
 
   os << endl << endl << "\t\t********************************"   << endl;
   os                 << "\t\t*******  PROBLEM SUMMARY  ******"   << endl;
@@ -2295,7 +2295,7 @@ Problem_Manager::exchangeDataTo(int solverId)
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RefCountPtr<const Epetra_CrsMatrix> 
+Teuchos::RCP<const Epetra_CrsMatrix> 
 Problem_Manager::getReplacementValuesMatrix( const Epetra_Vector & x, FILL_TYPE )
 { 
   cout << "Problem_Manager::getReplacementValuesMatrix(...) called." << endl;
@@ -2319,7 +2319,7 @@ bool
 Problem_Manager::applyBlockAction( int probId, int depId, const Epetra_Vector & x, Epetra_Vector & result )
 {
   // We currently rely on an existing MatrixFree jacobian operator for this action
-  Teuchos::RefCountPtr<NOX::Epetra::MatrixFree> mfOp = Teuchos::rcp_dynamic_cast<NOX::Epetra::MatrixFree>( jacOperator );
+  Teuchos::RCP<NOX::Epetra::MatrixFree> mfOp = Teuchos::rcp_dynamic_cast<NOX::Epetra::MatrixFree>( jacOperator );
   if( Teuchos::is_null(mfOp) )
   {
     cout << "ERROR: Problem_Manager::applyBlockAction : jacOperator is not of type NOX::Epetra::MatrixFree." << endl;
@@ -2332,8 +2332,8 @@ Problem_Manager::applyBlockAction( int probId, int depId, const Epetra_Vector & 
     cout << "ERROR: Problem_Manager::applyBlockAction : vector sizes not compatible with domain and/or range of block dimensions." << endl;
     throw "Problem_Manager ERROR";
   }
-  Teuchos::RefCountPtr<Epetra_Vector> tmpXcomposite = Teuchos::rcp( new Epetra_Vector(*compositeSoln) );
-  Teuchos::RefCountPtr<Epetra_Vector> tmpYcomposite = Teuchos::rcp( new Epetra_Vector(*compositeSoln) );
+  Teuchos::RCP<Epetra_Vector> tmpXcomposite = Teuchos::rcp( new Epetra_Vector(*compositeSoln) );
+  Teuchos::RCP<Epetra_Vector> tmpYcomposite = Teuchos::rcp( new Epetra_Vector(*compositeSoln) );
 
   tmpXcomposite->PutScalar(0.0);
   copyVectorToComposite( *tmpXcomposite, depId, x );
@@ -2366,7 +2366,7 @@ Problem_Manager::hasExplicitOperator( int rowBlock, int colBlock )
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 Problem_Manager::getExplicitOperator( int rowBlock, int colBlock )
 {
   return getBlockJacobianMatrix(rowBlock);
@@ -2380,14 +2380,14 @@ Problem_Manager::createBlockInverseOperator( int probId, Teuchos::ParameterList 
   // For now, we will hard-code use of Ifpack.  Note that direct inverses via Amesos can be
   // used by propoer specification in the Teuchos::ParameterList.
 
-  Teuchos::RefCountPtr<Ifpack_Preconditioner> inverseOperator;
+  Teuchos::RCP<Ifpack_Preconditioner> inverseOperator;
 
   // Get any relevant parameters for the Inverting package using sublists
   Teuchos::ParameterList& teuchosParams = pList.sublist("Ifpack");
 
   Ifpack Factory;
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> pMatrix = getBlockJacobianMatrix(probId);
+  Teuchos::RCP<Epetra_CrsMatrix> pMatrix = getBlockJacobianMatrix(probId);
 
   if( NULL == pMatrix.get() )
   {

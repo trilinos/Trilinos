@@ -32,16 +32,16 @@
 
 #include "LOCA_Epetra_AnasaziOperator_Floquet.H"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtrDecl.hpp"
+#include "Teuchos_RCPDecl.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Epetra::AnasaziOperator::Floquet::Floquet(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams_,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams_,
-	const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp_)
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams_,
+	const Teuchos::RCP<Teuchos::ParameterList>& solverParams_,
+	const Teuchos::RCP<NOX::Abstract::Group>& grp_)
   : globalData(global_data),
     myLabel("Floquet Transformation"),
     eigenParams(eigenParams_),
@@ -55,7 +55,7 @@ LOCA::Epetra::AnasaziOperator::Floquet::Floquet(
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
-  Teuchos::RefCountPtr<NOX::Epetra::Group> NEGrp
+  Teuchos::RCP<NOX::Epetra::Group> NEGrp
       = Teuchos::rcp_dynamic_cast<NOX::Epetra::Group>(grp);
   if (NEGrp == Teuchos::null) cout << callingFunction << "  NEGrp cast failed " << endl;
   else cout << callingFunction << "  NEGrp cast succeeded." << endl;
@@ -91,7 +91,7 @@ LOCA::Epetra::AnasaziOperator::Floquet::apply(const NOX::Abstract::MultiVector& 
 {
 
   // Apply first part of monodromy operator on input vector
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmpVec =  input.clone();
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmpVec =  input.clone();
   for (int i=0; i < input.numVectors(); i++) {
     NOX::Abstract::Vector& nAV = tmpVec->operator[](i);
     NOX::Epetra::Vector& nEV = dynamic_cast<NOX::Epetra::Vector&>(nAV);
@@ -124,7 +124,7 @@ LOCA::Epetra::AnasaziOperator::Floquet::apply(const NOX::Abstract::MultiVector& 
 /*
   cout << " Fixing apply so Floquets at 1/2 1/3 1/4 ... " << endl;
 
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmpVec =  input.clone();
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmpVec =  input.clone();
   for (int i=0; i < input.numVectors(); i++) {
     NOX::Abstract::Vector& nAV = output.operator[](i);
     NOX::Epetra::Vector& nEV = dynamic_cast<NOX::Epetra::Vector&>(nAV);
@@ -158,9 +158,9 @@ LOCA::Epetra::AnasaziOperator::Floquet::rayleighQuotient(
     "LOCA::Epetra::AnasaziOperator::Floquet::rayleighQuotient()";
 
   // create two-column  multivector of two eigenvectors
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> z = evec_r.createMultiVector(2, NOX::DeepCopy);
+  Teuchos::RCP<NOX::Abstract::MultiVector> z = evec_r.createMultiVector(2, NOX::DeepCopy);
   z->operator[](1) = evec_i;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> Az = z->clone(NOX::ShapeCopy);
+  Teuchos::RCP<NOX::Abstract::MultiVector> Az = z->clone(NOX::ShapeCopy);
 
   apply(*(z.get()), *(Az.get()));
   NOX::Abstract::Vector&  Ax = Az->operator[](0);

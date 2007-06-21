@@ -68,13 +68,13 @@ int MFLOCAProjectForBB(MFNVector,double*,void*);
 double MFPrintMetricLOCA(double*,double*);
 
 LOCAData::LOCAData(
-     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-     const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& top_params,
-     const Teuchos::RefCountPtr<NOX::Solver::Generic>& s, 
-     const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>& g, 
-     const Teuchos::RefCountPtr<Teuchos::ParameterList>& par,
-     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& st,
-     const Teuchos::RefCountPtr< list<ParamData> >& conParamData) :
+     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+     const Teuchos::RCP<LOCA::Parameter::SublistParser>& top_params,
+     const Teuchos::RCP<NOX::Solver::Generic>& s, 
+     const Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy>& g, 
+     const Teuchos::RCP<Teuchos::ParameterList>& par,
+     const Teuchos::RCP<NOX::StatusTest::Generic>& st,
+     const Teuchos::RCP< list<ParamData> >& conParamData) :
   globalData(global_data),
   topParams(top_params),
   solver(s), 
@@ -91,7 +91,7 @@ LOCAData::LOCAData(
   minRadius(0.0),
   solutionMax(0.0)
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> stepperList = 
+  Teuchos::RCP<Teuchos::ParameterList> stepperList = 
     topParams->getSublist("Stepper");
   maxNonlinearIterations = 
     static_cast<double>(stepperList->get("Max Nonlinear Iterations", 
@@ -263,7 +263,7 @@ int MFTangentLOCA(int n,int k,MFNVector vu,MFNKMatrix mPhi,void *d)
      data->grp->getPredictorTangent();
 
    for (int i=0; i<k; i++) {
-     Teuchos::RefCountPtr<LMCEV> t = 
+     Teuchos::RCP<LMCEV> t = 
        Teuchos::rcp_dynamic_cast<LMCEV>(pred[i].clone());
      MFNVector tmp =  MFCreateLOCANVectorWithData(t);
      MFMSetColumn(mPhi, i, tmp);

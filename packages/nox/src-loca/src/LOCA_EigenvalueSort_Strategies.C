@@ -412,8 +412,8 @@ LOCA::EigenvalueSort::SmallestImaginary::sort(int n, double* r_evals,
 }
 
 LOCA::EigenvalueSort::LargestRealInverseCayley::LargestRealInverseCayley(
-	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) :
+	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	     const Teuchos::RCP<Teuchos::ParameterList>& eigenParams) :
   sigma(0.0),
   mu(0.0)
 {

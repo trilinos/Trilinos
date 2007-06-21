@@ -45,8 +45,8 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::MultiContinuation::NaturalConstraint::NaturalConstraint(
-    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-    const Teuchos::RefCountPtr<LOCA::MultiContinuation::NaturalGroup>& grp) :
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const Teuchos::RCP<LOCA::MultiContinuation::NaturalGroup>& grp) :
   globalData(global_data),
   naturalGroup(grp),
   constraints(grp->getNumParams(), 1),
@@ -73,7 +73,7 @@ LOCA::MultiContinuation::NaturalConstraint::~NaturalConstraint()
 }
 
 void
-LOCA::MultiContinuation::NaturalConstraint::setNaturalGroup(const Teuchos::RefCountPtr<LOCA::MultiContinuation::NaturalGroup>& grp)
+LOCA::MultiContinuation::NaturalConstraint::setNaturalGroup(const Teuchos::RCP<LOCA::MultiContinuation::NaturalGroup>& grp)
 {
   naturalGroup = grp;
 }
@@ -93,7 +93,7 @@ LOCA::MultiContinuation::NaturalConstraint::copy(
   }
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
 LOCA::MultiContinuation::NaturalConstraint::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new NaturalConstraint(*this, type));

@@ -87,7 +87,7 @@ NormConstraint::copy(const LOCA::MultiContinuation::ConstraintInterface& src)
   }
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
 NormConstraint::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new NormConstraint(*this, type));

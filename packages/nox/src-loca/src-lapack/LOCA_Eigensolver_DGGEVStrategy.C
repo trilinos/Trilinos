@@ -55,9 +55,9 @@
 
 
 LOCA::Eigensolver::DGGEVStrategy::DGGEVStrategy(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& tpParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigParams) :
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& tpParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& eigParams) :
   globalData(global_data),
   topParams(tpParams),
   eigenParams(eigParams),
@@ -75,10 +75,10 @@ LOCA::Eigensolver::DGGEVStrategy::~DGGEVStrategy()
 NOX::Abstract::Group::ReturnType
 LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
 		 NOX::Abstract::Group& group,
-		 Teuchos::RefCountPtr< std::vector<double> >& evals_r,
-		 Teuchos::RefCountPtr< std::vector<double> >& evals_i,
-		 Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_r,
-		 Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_i)
+		 Teuchos::RCP< std::vector<double> >& evals_r,
+		 Teuchos::RCP< std::vector<double> >& evals_i,
+		 Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_r,
+		 Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_i)
 {
 
   // Get LAPACK group
@@ -191,9 +191,9 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   // Compute all of the eigenvalues and eigenvectors before sorting
   std::vector<double> evals_r_tmp(n);
   std::vector<double> evals_i_tmp(n);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> evecs_r_tmp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> evecs_r_tmp = 
     group.getX().createMultiVector(n, NOX::ShapeCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector>evecs_i_tmp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector>evecs_i_tmp = 
     group.getX().createMultiVector(n, NOX::ShapeCopy);
   NOX::LAPACK::Vector* tmpr;
   NOX::LAPACK::Vector* tmpi;
@@ -265,7 +265,7 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   }
 
   // Instantiate a sorting strategy
-  Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> evalSort = 
+  Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy> evalSort = 
     globalData->locaFactory->createEigenvalueSortStrategy(topParams,
 							  eigenParams);
 

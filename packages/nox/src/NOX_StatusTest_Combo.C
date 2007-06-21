@@ -55,7 +55,7 @@ Combo(ComboType t, const NOX::Utils* u) :
 
 NOX::StatusTest::Combo::
 Combo(ComboType t, 
-      const Teuchos::RefCountPtr<Generic>& a, 
+      const Teuchos::RCP<Generic>& a, 
       const NOX::Utils* u) :
   type(t)
 {
@@ -69,8 +69,8 @@ Combo(ComboType t,
 
 NOX::StatusTest::Combo::
 Combo(ComboType t, 
-      const Teuchos::RefCountPtr<Generic>& a, 
-      const Teuchos::RefCountPtr<Generic>& b, 
+      const Teuchos::RCP<Generic>& a, 
+      const Teuchos::RCP<Generic>& b, 
       const NOX::Utils* u) :
   type(t)
 {
@@ -83,7 +83,7 @@ Combo(ComboType t,
 }
 
 NOX::StatusTest::Combo& NOX::StatusTest::Combo::
-addStatusTest(const Teuchos::RefCountPtr<Generic>& a)
+addStatusTest(const Teuchos::RCP<Generic>& a)
 {
   if (isSafe(*(a.get())))
     tests.push_back(a);
@@ -108,7 +108,7 @@ bool NOX::StatusTest::Combo::isSafe(Generic& a)
   
   // Recursively test that we're not adding something that's already
   // in the list because that can also lead to infinite recursions.
-  for (vector<Teuchos::RefCountPtr<Generic> >::iterator i = tests.begin(); i != tests.end(); ++i) 
+  for (vector<Teuchos::RCP<Generic> >::iterator i = tests.begin(); i != tests.end(); ++i) 
   {
     
     Combo* ptr = dynamic_cast<Combo*>(i->get());
@@ -152,7 +152,7 @@ void NOX::StatusTest::Combo::orOp(const Solver::Generic& problem,
 
   // Checks the status of each test. The first test it encounters, if
   // any, that is unconverged is the status that it sets itself too.
-  for (vector<Teuchos::RefCountPtr<Generic> >::const_iterator i = tests.begin(); i != tests.end(); ++i) 
+  for (vector<Teuchos::RCP<Generic> >::const_iterator i = tests.begin(); i != tests.end(); ++i) 
   {
     NOX::StatusTest::StatusType s = (*i)->checkStatus(problem, checkType);
 
@@ -180,7 +180,7 @@ void NOX::StatusTest::Combo::andOp(const Solver::Generic& problem,
 
   bool isUnconverged = false;
 
-  for (vector<Teuchos::RefCountPtr<Generic> >::const_iterator i = tests.begin(); i != tests.end(); ++i) {
+  for (vector<Teuchos::RCP<Generic> >::const_iterator i = tests.begin(); i != tests.end(); ++i) {
 
     NOX::StatusTest::StatusType s = (*i)->checkStatus(problem, checkType);
 
@@ -218,7 +218,7 @@ ostream& NOX::StatusTest::Combo::print(ostream& stream, int indent) const
   stream << " Combination";
   stream << " -> " << endl;
 
-  for (vector<Teuchos::RefCountPtr<Generic> >::const_iterator i = tests.begin(); i != tests.end(); ++i) 
+  for (vector<Teuchos::RCP<Generic> >::const_iterator i = tests.begin(); i != tests.end(); ++i) 
     (*i)->print(stream, indent+2);
     
   return stream;

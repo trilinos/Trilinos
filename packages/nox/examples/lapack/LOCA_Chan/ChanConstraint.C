@@ -84,7 +84,7 @@ ChanConstraint::copy(const LOCA::MultiContinuation::ConstraintInterface& src)
   }
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
 ChanConstraint::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new ChanConstraint(*this, type));

@@ -53,7 +53,7 @@
 #include "LOCA_MultiPredictor_Restart.H"
 
 LOCA::MultiPredictor::Factory::Factory(
-	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
@@ -62,16 +62,16 @@ LOCA::MultiPredictor::Factory::~Factory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
 LOCA::MultiPredictor::Factory::create(
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& predictorParams)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& predictorParams)
 {
   string methodName = "LOCA::MultiPredictor::Factory::create()";
-  Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy> strategy;
 
   // Get solver sublist
-  Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams = 
+  Teuchos::RCP<Teuchos::ParameterList> solverParams = 
     topParams->getSublist("Linear Solver");
 
   // Get name of strategy
@@ -107,9 +107,9 @@ LOCA::MultiPredictor::Factory::create(
     string userDefinedName = predictorParams->get("User-Defined Name",
 							   "???");
     if ((*predictorParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy> >(userDefinedName))
+	isType< Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy> >(userDefinedName))
       strategy = (*predictorParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy> >(userDefinedName);
+	get< Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,

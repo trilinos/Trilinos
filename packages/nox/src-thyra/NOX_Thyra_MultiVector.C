@@ -47,7 +47,7 @@
 
 NOX::Thyra::MultiVector::
 MultiVector(
-       const Teuchos::RefCountPtr< ::Thyra::MultiVectorBase<double> >& source)
+       const Teuchos::RCP< ::Thyra::MultiVectorBase<double> >& source)
   : thyraMultiVec(source)
 {
 }
@@ -121,7 +121,7 @@ setBlock(const NOX::Abstract::MultiVector& src, const vector<int>& index)
     dynamic_cast<const NOX::Thyra::MultiVector&>(src);
 
   // Create view
-  Teuchos::RefCountPtr< ::Thyra::MultiVectorBase<double> > v = 
+  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > v = 
     thyraMultiVec->subView(index.size(), &index[0]);
 
   // Assign
@@ -142,13 +142,13 @@ augment(const NOX::Abstract::MultiVector& src)
     source.thyraMultiVec->domain()->dim();
 
   // Create new multivector with num_cols columns
-  Teuchos::RefCountPtr< ::Thyra::MultiVectorBase<double> > new_mv = 
+  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > new_mv = 
     ::Thyra::createMembers(thyraMultiVec->range(), num_cols);
 
   // Create views
-  Teuchos::RefCountPtr< ::Thyra::MultiVectorBase<double> > v1 = 
+  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > v1 = 
     new_mv->subView(::Thyra::Range1D(0,thyraMultiVec->domain()->dim()-1));
-  Teuchos::RefCountPtr< ::Thyra::MultiVectorBase<double> > v2 = 
+  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > v2 = 
     new_mv->subView(::Thyra::Range1D(thyraMultiVec->domain()->dim(),
 				     num_cols-1));
 
@@ -231,7 +231,7 @@ update(Teuchos::ETransp transb, double alpha,
   
   int m = b.numRows();
   int n = b.numCols();
-  Teuchos::RefCountPtr<const ::Thyra::MultiVectorBase<double> > bb =
+  Teuchos::RCP<const ::Thyra::MultiVectorBase<double> > bb =
     ::Thyra::createMembersView(
 	aa.thyraMultiVec->domain(), 
 	RTOpPack::ConstSubMultiVectorView<double>(0,m,0,n,&b(0,0),b.stride()));
@@ -246,36 +246,36 @@ update(Teuchos::ETransp transb, double alpha,
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Thyra::MultiVector::
 clone(CopyType type) const
 {
   return Teuchos::rcp(new NOX::Thyra::MultiVector(*this, type));
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+Teuchos::RCP<NOX::Abstract::MultiVector> 
 NOX::Thyra::MultiVector::
 clone(int numvecs) const
 {
-  Teuchos::RefCountPtr< ::Thyra::MultiVectorBase<double> > mv =
+  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > mv =
     ::Thyra::createMembers(thyraMultiVec->range(), numvecs);
   return Teuchos::rcp(new NOX::Thyra::MultiVector(mv));
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+Teuchos::RCP<NOX::Abstract::MultiVector> 
 NOX::Thyra::MultiVector::
 subCopy(const vector<int>& index) const
 {
-  Teuchos::RefCountPtr< ::Thyra::MultiVectorBase<double> > mv =
+  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > mv =
     thyraMultiVec->subView(index.size(), &index[0]);
   return Teuchos::rcp(new NOX::Thyra::MultiVector(*mv));
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Thyra::MultiVector::
 subView(const vector<int>& index) const
 {
-  Teuchos::RefCountPtr< ::Thyra::MultiVectorBase<double> > mv =
+  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > mv =
     thyraMultiVec->subView(index.size(), &index[0]);
   return Teuchos::rcp(new NOX::Thyra::MultiVector(mv));
 }
@@ -303,7 +303,7 @@ multiply(double alpha,
 
   int m = b.numRows();
   int n = b.numCols();
-  Teuchos::RefCountPtr< ::Thyra::MultiVectorBase<double> > bb =
+  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > bb =
     ::Thyra::createMembersView(
 	yy.thyraMultiVec->domain(), 
 	RTOpPack::SubMultiVectorView<double>(0,m,0,n,&b(0,0),b.stride()));

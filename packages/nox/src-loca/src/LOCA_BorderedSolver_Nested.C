@@ -51,9 +51,9 @@
 #include "Teuchos_ParameterList.hpp"
 
 LOCA::BorderedSolver::Nested::Nested(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams): 
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& slvrParams): 
   globalData(global_data),
   solverParams(slvrParams),
   solver(),
@@ -64,7 +64,7 @@ LOCA::BorderedSolver::Nested::Nested(
   numConstraints(0)
 {
   // Get "Nested Solver" sublist
-  Teuchos::RefCountPtr<Teuchos::ParameterList> nestedSolverList = 
+  Teuchos::RCP<Teuchos::ParameterList> nestedSolverList = 
     Teuchos::rcp(&(solverParams->sublist("Nested Bordered Solver")),false);
   
   // Instantiate underlying solver
@@ -79,16 +79,16 @@ LOCA::BorderedSolver::Nested::~Nested()
 
 void
 LOCA::BorderedSolver::Nested::setMatrixBlocks(
-         const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& oper,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	 const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
+         const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>& oper,
+	 const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
+	 const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	 const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
   string callingFunction = 
     "LOCA::BorderedSolver::Nested::setMatrixBlocks()";
 
   // Cast oper to a bordered operator
-  Teuchos::RefCountPtr<const LOCA::BorderedSolver::JacobianOperator> op = 
+  Teuchos::RCP<const LOCA::BorderedSolver::JacobianOperator> op = 
     Teuchos::rcp_dynamic_cast<const LOCA::BorderedSolver::JacobianOperator>(oper);
   if (op == Teuchos::null) 
     globalData->locaErrorCheck->throwError(
@@ -104,7 +104,7 @@ LOCA::BorderedSolver::Nested::setMatrixBlocks(
       string("Group must be of type LOCA::BorderedSystem::AbstractGroup")
       + string(" in order to use nested bordered solver strategy."));
 
-  Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> con_mvdx = Teuchos::rcp_dynamic_cast<const LOCA::MultiContinuation::ConstraintInterfaceMVDX>(blockB);
+  Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> con_mvdx = Teuchos::rcp_dynamic_cast<const LOCA::MultiContinuation::ConstraintInterfaceMVDX>(blockB);
   if (con_mvdx == Teuchos::null)
     globalData->locaErrorCheck->throwError(
 		 callingFunction,
@@ -113,7 +113,7 @@ LOCA::BorderedSolver::Nested::setMatrixBlocks(
   bool isZeroA = (blockA.get() == NULL);
   bool isZeroB = con_mvdx->isDXZero();
   bool isZeroC = (blockC.get() == NULL);
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> blockB_dx;
+  Teuchos::RCP<const NOX::Abstract::MultiVector> blockB_dx;
   if (!isZeroB)
     blockB_dx = Teuchos::rcp(con_mvdx->getDX(), false);
 
@@ -146,9 +146,9 @@ LOCA::BorderedSolver::Nested::setMatrixBlocks(
   bool isCombinedAZero = grp->isCombinedAZero();
   bool isCombinedBZero = grp->isCombinedBZero();
   bool isCombinedCZero = grp->isCombinedCZero();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> B;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> C;
+  Teuchos::RCP<NOX::Abstract::MultiVector> A;
+  Teuchos::RCP<NOX::Abstract::MultiVector> B;
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> C;
   
   if (!isCombinedAZero || !isZeroA) {
     A = unbordered_grp->getX().createMultiVector(myWidth);
@@ -169,12 +169,12 @@ LOCA::BorderedSolver::Nested::setMatrixBlocks(
   for (int i=0; i<underlyingWidth; i++)
     idx1[i] = i;
   if (!isCombinedAZero) {
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> underlyingA = 
+    Teuchos::RCP<NOX::Abstract::MultiVector> underlyingA = 
       A->subView(idx1);
     grp->fillA(*underlyingA);
   }
   if (!isCombinedBZero) {
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> underlyingB = 
+    Teuchos::RCP<NOX::Abstract::MultiVector> underlyingB = 
       B->subView(idx1);
     grp->fillB(*underlyingB);
   }
@@ -191,7 +191,7 @@ LOCA::BorderedSolver::Nested::setMatrixBlocks(
   for (int i=0; i<numConstraints; i++)
     idx2[i] = underlyingWidth+i;
   if (!isZeroA) {
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> my_A_x = A->subView(idx2);
+    Teuchos::RCP<NOX::Abstract::MultiVector> my_A_x = A->subView(idx2);
     NOX::Abstract::MultiVector::DenseMatrix my_A_p(Teuchos::View, *C,
 						   underlyingWidth, 
 						   numConstraints, 0, 
@@ -201,7 +201,7 @@ LOCA::BorderedSolver::Nested::setMatrixBlocks(
   }
 
   if (!isZeroB) {
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> my_B_x = B->subView(idx2);
+    Teuchos::RCP<NOX::Abstract::MultiVector> my_B_x = B->subView(idx2);
     NOX::Abstract::MultiVector::DenseMatrix my_B_p(Teuchos::View, *C,
 						   numConstraints, 
 						   underlyingWidth, 
@@ -220,7 +220,7 @@ LOCA::BorderedSolver::Nested::setMatrixBlocks(
   }
 
   // Create unbordered operator
-  Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractOperator> unbordered_op = 
+  Teuchos::RCP<LOCA::BorderedSolver::AbstractOperator> unbordered_op = 
     Teuchos::rcp(new LOCA::BorderedSolver::JacobianOperator(unbordered_grp));
     
   // set blocks in solver
@@ -247,9 +247,9 @@ LOCA::BorderedSolver::Nested::apply(
 			  NOX::Abstract::MultiVector::DenseMatrix& V) const
 {
   int num_cols = X.numVectors();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> XX = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> XX = 
     unbordered_grp->getX().createMultiVector(num_cols);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> UU = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> UU = 
     unbordered_grp->getX().createMultiVector(num_cols);
   NOX::Abstract::MultiVector::DenseMatrix YY(myWidth, num_cols);
   NOX::Abstract::MultiVector::DenseMatrix VV(myWidth, num_cols);
@@ -287,9 +287,9 @@ LOCA::BorderedSolver::Nested::applyTranspose(
 			  NOX::Abstract::MultiVector::DenseMatrix& V) const
 {
   int num_cols = X.numVectors();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> XX = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> XX = 
     unbordered_grp->getX().createMultiVector(num_cols);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> UU = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> UU = 
     unbordered_grp->getX().createMultiVector(num_cols);
   NOX::Abstract::MultiVector::DenseMatrix YY(myWidth, num_cols);
   NOX::Abstract::MultiVector::DenseMatrix VV(myWidth, num_cols);
@@ -336,7 +336,7 @@ LOCA::BorderedSolver::Nested::applyInverse(
   }
 
   int num_cols = X.numVectors();  
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> FF;
+  Teuchos::RCP<NOX::Abstract::MultiVector> FF;
   if (!isZeroF) 
     FF = unbordered_grp->getX().createMultiVector(num_cols);
   NOX::Abstract::MultiVector::DenseMatrix GG(myWidth, num_cols);  
@@ -356,7 +356,7 @@ LOCA::BorderedSolver::Nested::applyInverse(
     GG2.assign(*G);
   }
 
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> XX = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> XX = 
     unbordered_grp->getX().createMultiVector(num_cols);
   NOX::Abstract::MultiVector::DenseMatrix YY(myWidth, num_cols);
   NOX::Abstract::MultiVector::DenseMatrix YY1(Teuchos::View, YY,
@@ -392,7 +392,7 @@ LOCA::BorderedSolver::Nested::applyInverseTranspose(
   }
 
   int num_cols = X.numVectors();  
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> FF;
+  Teuchos::RCP<NOX::Abstract::MultiVector> FF;
   if (!isZeroF) 
     FF = unbordered_grp->getX().createMultiVector(num_cols);
   NOX::Abstract::MultiVector::DenseMatrix GG(myWidth, num_cols);  
@@ -412,7 +412,7 @@ LOCA::BorderedSolver::Nested::applyInverseTranspose(
     GG2.assign(*G);
   }
 
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> XX = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> XX = 
     unbordered_grp->getX().createMultiVector(num_cols);
   NOX::Abstract::MultiVector::DenseMatrix YY(myWidth, num_cols);
   NOX::Abstract::MultiVector::DenseMatrix YY1(Teuchos::View, YY,

@@ -41,7 +41,7 @@
 
 #include "NOX_Common.H"           // for <string>
 #include "NOX_Abstract_Vector.H"  // 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward Declarations
 class Epetra_Vector;
@@ -78,13 +78,13 @@ public:
   virtual ~Scaling();
   
   //! Add a user supplied diagonal scale vector to the scaling object.
-  virtual void addUserScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D);
+  virtual void addUserScaling(ScaleType type, const Teuchos::RCP<Epetra_Vector>& D);
 
   //! Add "Row Sum" scaling to the scaling object.  The supplied vector is used to store the current row sum vector.
-  virtual void addRowSumScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D);
+  virtual void addRowSumScaling(ScaleType type, const Teuchos::RCP<Epetra_Vector>& D);
 
   //! Add "Col Sum" scaling to the scaling object.  The supplied vector is used to store the current column sum vector.
-  virtual void addColSumScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D);
+  virtual void addColSumScaling(ScaleType type, const Teuchos::RCP<Epetra_Vector>& D);
 
   //! Computes Row Sum scaling diagonal vectors.  Only needs to be called if a row or column sum scaling has been requested.
   virtual void computeScaling(const Epetra_LinearProblem& problem);
@@ -115,10 +115,10 @@ private:
   vector<SourceType> sourceType;
 
   //! Scaling vector pointer
-  vector< Teuchos::RefCountPtr<Epetra_Vector> > scaleVector;
+  vector< Teuchos::RCP<Epetra_Vector> > scaleVector;
 
   //! Temporary vector
-  Teuchos::RefCountPtr<Epetra_Vector> tmpVectorPtr;
+  Teuchos::RCP<Epetra_Vector> tmpVectorPtr;
 
 };
 }  // namespace Epetra

@@ -42,7 +42,7 @@
 #ifndef LOCA_EPETRA_TRANSPOSELINEARSYSTEM_ABSTRACTSTRATEGY_H
 #define LOCA_EPETRA_TRANSPOSELINEARSYSTEM_ABSTRACTSTRATEGY_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward declares
 class Epetra_Operator;
@@ -114,20 +114,20 @@ namespace LOCA {
 				      Teuchos::ParameterList& p) = 0;
 
 	//! Get Jacobian-transpose operator
-	virtual Teuchos::RefCountPtr<Epetra_Operator> 
+	virtual Teuchos::RCP<Epetra_Operator> 
 	getJacobianTransposeOperator() = 0;
 
 	//! Get transpose-preconditioner
-	virtual Teuchos::RefCountPtr<Epetra_Operator> 
+	virtual Teuchos::RCP<Epetra_Operator> 
 	getTransposePreconditioner() = 0;
 
 	//! Set Jacobian-transpose operator
 	virtual void setJacobianTransposeOperator(
-	       const Teuchos::RefCountPtr<Epetra_Operator>& new_jac_trans) = 0;
+	       const Teuchos::RCP<Epetra_Operator>& new_jac_trans) = 0;
 
 	//! Set transpose-preconditioner
 	virtual void setTransposePreconditioner(
-	      const Teuchos::RefCountPtr<Epetra_Operator>& new_prec_trans) = 0;
+	      const Teuchos::RCP<Epetra_Operator>& new_prec_trans) = 0;
 
       }; // class AbstractStrategy
 

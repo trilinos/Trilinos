@@ -51,7 +51,7 @@
 using namespace NOX;
 using namespace NOX::Direction;
 
-NonlinearCG::NonlinearCG(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+NonlinearCG::NonlinearCG(const Teuchos::RCP<NOX::GlobalData>& gd, 
 			 Teuchos::ParameterList& params) :
   paramsPtr(0)
 {
@@ -60,7 +60,7 @@ NonlinearCG::NonlinearCG(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
 
 
 bool NonlinearCG::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params) 
 {
   globalDataPtr = gd;

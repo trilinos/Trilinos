@@ -328,20 +328,20 @@ int main(int argc, char* argv[])
   // Create a group which uses that problem interface. The group will
   // be initialized to contain the default initial guess for the
   // specified problem.
-  Teuchos::RefCountPtr<NOX::LAPACK::Group> grp = 
+  Teuchos::RCP<NOX::LAPACK::Group> grp = 
     Teuchos::rcp(new NOX::LAPACK::Group(linear));
   
   // ** Status Tests **
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> normf =
+  Teuchos::RCP<NOX::StatusTest::NormF> normf =
     Teuchos::rcp(new NOX::StatusTest::NormF(*grp, 1.0e-8));
-  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters =
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters( 5 * n ));
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> statusTestsCombo =
+  Teuchos::RCP<NOX::StatusTest::Combo> statusTestsCombo =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
 					    normf, maxiters));
 
   // ** Paramter List **
-  Teuchos::RefCountPtr<Teuchos::ParameterList> solverParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> solverParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& solverParams = *solverParamsPtr.get();
 

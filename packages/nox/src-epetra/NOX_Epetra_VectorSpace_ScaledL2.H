@@ -43,7 +43,7 @@
 #define NOX_EPETRA_VECTORSPACE_SCALEDL2_H
 
 #include "NOX_Epetra_VectorSpace.H" // base class
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "NOX_Epetra_Scaling.H"
 
 // Forward declarations
@@ -65,7 +65,7 @@ namespace Epetra {
   public:
     
     //! Constructor
-    VectorSpaceScaledL2(const Teuchos::RefCountPtr<NOX::Epetra::Scaling>& s,
+    VectorSpaceScaledL2(const Teuchos::RCP<NOX::Epetra::Scaling>& s,
 			NOX::Epetra::Scaling::ScaleType st = 
 			NOX::Epetra::Scaling::Left);
     
@@ -92,13 +92,13 @@ namespace Epetra {
   protected:
     
     //! Scaling vector used in the inner product
-    Teuchos::RefCountPtr<NOX::Epetra::Scaling> scalingPtr;
+    Teuchos::RCP<NOX::Epetra::Scaling> scalingPtr;
 
     //! Scaling type to apply to vector space
     NOX::Epetra::Scaling::ScaleType scaleType;
 
     //! Temporary vector used in scaling computations
-    mutable Teuchos::RefCountPtr<Epetra_Vector> tmpVectorPtr;
+    mutable Teuchos::RCP<Epetra_Vector> tmpVectorPtr;
 
   };
 } // namespace Epetra

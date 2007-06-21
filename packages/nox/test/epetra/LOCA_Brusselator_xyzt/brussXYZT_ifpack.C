@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
       numTimeSteps = atoi(argv[3]);
 
     // MPI MANIPULATION FOR XYZT PROBLEMS
-    Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm = 
+    Teuchos::RCP<EpetraExt::MultiMpiComm> globalComm = 
       Teuchos::rcp(new EpetraExt::MultiMpiComm(MPI_COMM_WORLD, 
 					       spatialProcs, numTimeSteps));
     Epetra_MpiComm& Comm = globalComm->SubDomainComm();
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
     // Begin Nonlinear Solver ************************************
     
     // Create the top level parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList =
+    Teuchos::RCP<Teuchos::ParameterList> paramList =
       Teuchos::rcp(new Teuchos::ParameterList);
     getParamList(&(*paramList), MyPID);
     
@@ -191,11 +191,11 @@ int main(int argc, char *argv[])
       printParams.set("Output Information", NOX::Utils::Error);
       
     // Create the interface between the test problem and the nonlinear solver
-    Teuchos::RefCountPtr<Problem_Interface> interface = 
+    Teuchos::RCP<Problem_Interface> interface = 
       Teuchos::rcp(new Problem_Interface(Problem));
       
     // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
-    Teuchos::RefCountPtr<Epetra_RowMatrix> A = 
+    Teuchos::RCP<Epetra_RowMatrix> A = 
       Teuchos::rcp(&Problem.getJacobian(),false);
       
     // Create initial guess
@@ -205,21 +205,21 @@ int main(int argc, char *argv[])
       *(initGuess(i)) = soln;
       
     // Create the XYZT object
-    Teuchos::RefCountPtr<LOCA::Epetra::Interface::xyzt> ixyzt = 
+    Teuchos::RCP<LOCA::Epetra::Interface::xyzt> ixyzt = 
       Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface,
                                                      initGuess, A,
                                                      globalComm,
                                                      soln, 0.5));
 
     // Create the XYZT operator and solution
-    Teuchos::RefCountPtr<Epetra_RowMatrix> Axyzt =
+    Teuchos::RCP<Epetra_RowMatrix> Axyzt =
       Teuchos::rcp(&(ixyzt->getJacobian()),false);
     Epetra_Vector& solnxyzt = ixyzt->getSolution();
       
     // Create the Linear System
-    Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq = ixyzt;
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = ixyzt;
-    Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys =
+    Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = ixyzt;
+    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = ixyzt;
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 							iReq, iJac, Axyzt, 
 							solnxyzt));
@@ -235,14 +235,14 @@ int main(int argc, char *argv[])
     pVector.addParameter("D2",D2);
       
     // Create Epetra factory
-    Teuchos::RefCountPtr<LOCA::Abstract::Factory> epetraFactory =
+    Teuchos::RCP<LOCA::Abstract::Factory> epetraFactory =
       Teuchos::rcp(new LOCA::Epetra::Factory);
       
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData = 
+    Teuchos::RCP<LOCA::GlobalData> globalData = 
       LOCA::createGlobalData(paramList, epetraFactory);
       
-    Teuchos::RefCountPtr<LOCA::Epetra::Group> grp =
+    Teuchos::RCP<LOCA::Epetra::Group> grp =
       Teuchos::rcp(new LOCA::Epetra::Group(globalData, printParams,
 					   iReq, initialGuess, linSys, 
 					   pVector));
@@ -250,12 +250,12 @@ int main(int argc, char *argv[])
     grp->computeF();
       
     // Create the convergence tests
-    Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
+    Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8, 
 					      NOX::StatusTest::NormF::Unscaled));
-    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(MAX_NEWTON_ITERS));
-    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo =
+    Teuchos::RCP<NOX::StatusTest::Combo> combo =
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
     combo->addStatusTest(absresid);
     combo->addStatusTest(maxiters);
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
     }
       
     // Get the final solution from the stepper
-    Teuchos::RefCountPtr<const LOCA::Epetra::Group> finalGroup = 
+    Teuchos::RCP<const LOCA::Epetra::Group> finalGroup = 
       Teuchos::rcp_dynamic_cast<const LOCA::Epetra::Group>(stepper.getSolutionGroup());
     const NOX::Epetra::Vector& finalSolution = 
       dynamic_cast<const NOX::Epetra::Vector&>(finalGroup->getX());

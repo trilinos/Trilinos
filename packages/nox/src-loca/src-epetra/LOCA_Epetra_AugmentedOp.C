@@ -47,11 +47,11 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Epetra::AugmentedOp::AugmentedOp(
- const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
- const Teuchos::RefCountPtr<Epetra_Operator>& jac, 
- const Teuchos::RefCountPtr<const Epetra_MultiVector>& a_, 
- const Teuchos::RefCountPtr<const Epetra_MultiVector>& b_,
- const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> c_)
+ const Teuchos::RCP<LOCA::GlobalData>& global_data,
+ const Teuchos::RCP<Epetra_Operator>& jac, 
+ const Teuchos::RCP<const Epetra_MultiVector>& a_, 
+ const Teuchos::RCP<const Epetra_MultiVector>& b_,
+ const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> c_)
   : globalData(global_data),
     label("LOCA::Epetra::AugmentedOp"),
     jacOperator(jac),
@@ -356,13 +356,13 @@ LOCA::Epetra::AugmentedOp::init(const Epetra_MultiVector& x)
   }
 }
 
-Teuchos::RefCountPtr<Epetra_MultiVector>
+Teuchos::RCP<Epetra_MultiVector>
 LOCA::Epetra::AugmentedOp::buildEpetraAugmentedMultiVec(
 			     const Epetra_MultiVector& x,
 			     const NOX::Abstract::MultiVector::DenseMatrix *y, 
 			     bool doCopy) const
 {
-  Teuchos::RefCountPtr<Epetra_MultiVector> extVec = 
+  Teuchos::RCP<Epetra_MultiVector> extVec = 
     Teuchos::rcp(new Epetra_MultiVector(*extendedMapPtr, x.NumVectors()));
 
   if (doCopy) {

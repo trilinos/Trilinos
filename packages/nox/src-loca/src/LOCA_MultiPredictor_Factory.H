@@ -42,7 +42,7 @@
 #ifndef LOCA_MULTIPREDICTOR_FACTORY_H
 #define LOCA_MULTIPREDICTOR_FACTORY_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // forward declarations
 namespace Teuchos {
@@ -84,7 +84,7 @@ namespace LOCA {
     public:
 
       //! Constructor
-      Factory(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+      Factory(const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       //! Destructor
       virtual ~Factory();
@@ -94,10 +94,10 @@ namespace LOCA {
        * \param topParams [in] Parsed top-level parameter list.  
        * \param predictorParams [in] %Predictor parameters as described above
        */
-      Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+      Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
       create(
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& predictorParams);
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& predictorParams);
 
       //! Return strategy name given by \c predictorParams
       const string& strategyName(Teuchos::ParameterList& predictorParams) const;
@@ -113,7 +113,7 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
     }; // Class Factory
 

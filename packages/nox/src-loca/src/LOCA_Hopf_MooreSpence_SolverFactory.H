@@ -42,7 +42,7 @@
 #ifndef LOCA_HOPF_MOORESPENCE_SOLVERFACTORY_H
 #define LOCA_HOPF_MOORESPENCE_SOLVERFACTORY_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // forward declarations
 namespace Teuchos {
@@ -88,7 +88,7 @@ namespace LOCA {
 
 	//! Constructor
 	SolverFactory(
-		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+		  const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
 	//! Destructor
 	virtual ~SolverFactory();
@@ -98,10 +98,10 @@ namespace LOCA {
 	 * \param topParams [in] Parsed top-level parameter list.  
 	 * \param solverParams [in] Solver parameters as described above
 	 */
-	Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::SolverStrategy>
+	Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy>
 	create(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
 	//! Return strategy name given by \c solverParams
 	const string& strategyName(Teuchos::ParameterList& solverParams) const;
@@ -117,7 +117,7 @@ namespace LOCA {
       protected:
 
 	//! Global data
-	Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+	Teuchos::RCP<LOCA::GlobalData> globalData;
 
       }; // Class SolverFactory
       

@@ -46,9 +46,9 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Hopf::MooreSpence::SalingerBordering::SalingerBordering(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams) : 
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& slvrParams) : 
   globalData(global_data),
   solverParams(slvrParams),
   group(),
@@ -71,17 +71,17 @@ LOCA::Hopf::MooreSpence::SalingerBordering::~SalingerBordering()
 
 void
 LOCA::Hopf::MooreSpence::SalingerBordering::setBlocks(
-	 const Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::AbstractGroup>& group_,
-	 const Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::ExtendedGroup>& hopfGroup_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& yVector_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& zVector_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& CeRealVector_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& CeImagVector_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dfdp_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dCedpReal_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dCedpImag_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& ByVector_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& mBzVector_,
+	 const Teuchos::RCP<LOCA::Hopf::MooreSpence::AbstractGroup>& group_,
+	 const Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedGroup>& hopfGroup_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& yVector_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& zVector_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& CeRealVector_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& CeImagVector_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dCedpReal_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dCedpImag_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& ByVector_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& mBzVector_,
 	 double w_)
 {
   group = group_;
@@ -109,27 +109,27 @@ LOCA::Hopf::MooreSpence::SalingerBordering::solve(
   NOX::Abstract::Group::ReturnType status;
   
   // Get components of input
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_x = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
     input.getXMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_y = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_y = 
     input.getRealEigenMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_z = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_z = 
     input.getImagEigenMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_w 
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_w 
     = input.getFrequencies();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_p 
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_p 
     = input.getBifParams();
 
   // Get components of result
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
     result.getXMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_y = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_y = 
     result.getRealEigenMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_z = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_z = 
     result.getImagEigenMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_w = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_w = 
     result.getFrequencies();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_p = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_p = 
     result.getBifParams();
 
   int m = input.numVectors();
@@ -143,18 +143,18 @@ LOCA::Hopf::MooreSpence::SalingerBordering::solve(
   // and result_z respectively, next column stores df/dp, (Jy-wBz)_p, 
   // (Jz+wBy)_p, J^-1 dfdp, C^-1 (Jy-wBz)_p, C^-1 (Jz+wBy)_p
   // respectively.  Last column stores -Bz, By C^-1 (-Bz) and C^-1 (By)
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_x = 
     input_x->clone(m+1);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_y = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_y = 
     input_y->clone(m+2);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_z = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_z = 
     input_z->clone(m+2);
   
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x = 
     result_x->clone(m+1);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_y = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_y = 
     result_y->clone(m+2);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_z = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_z = 
     result_y->clone(m+2);
   
   // Set first m columns to input_x
@@ -192,11 +192,11 @@ LOCA::Hopf::MooreSpence::SalingerBordering::solve(
 			   *cont_result_z, *result_w, *result_p);
   
   // Create views of first m columns for result_x, result_y, result_z
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x_view = 
     cont_result_x->subView(index_input);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_y_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_y_view = 
     cont_result_y->subView(index_input);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_z_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_z_view = 
     cont_result_z->subView(index_input);
   
   // Copy first m columns back into result_x, result_null
@@ -260,9 +260,9 @@ LOCA::Hopf::MooreSpence::SalingerBordering::solveContiguous(
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> A = 
     result_x.subView(index_input);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> b = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> b = 
     result_x.subView(index_dp);
 
   // verify underlying complex matrix is valid
@@ -275,13 +275,13 @@ LOCA::Hopf::MooreSpence::SalingerBordering::solveContiguous(
   }
 
   // compute (J+iwB)(y+iz)_x [A b]
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp_real = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp_real = 
     result_y.clone(NOX::ShapeCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp_real_sub =
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp_real_sub =
     tmp_real->subView(index_ip);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp_imag = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp_imag = 
     result_y.clone(NOX::ShapeCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp_imag_sub =
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp_imag_sub =
     tmp_imag->subView(index_ip);
   tmp_real->init(0.0);
   tmp_imag->init(0.0);
@@ -311,17 +311,17 @@ LOCA::Hopf::MooreSpence::SalingerBordering::solveContiguous(
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> C = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> C = 
     result_y.subView(index_input);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> D = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> D = 
     result_z.subView(index_input);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> e = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> e = 
     result_y.subView(index_dp);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> f = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> f = 
     result_z.subView(index_dp);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> g = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> g = 
     result_y.subView(index_B);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> h = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> h = 
     result_z.subView(index_B);
 
   // compute lambda = ((phi^T h)(phi^T C-u) - (phi^T g)(phi^T D-v)) /

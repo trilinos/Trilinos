@@ -50,7 +50,7 @@
 #include "LOCA_AnasaziOperator_Cayley.H"
 
 LOCA::AnasaziOperator::Factory::Factory(
-	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
@@ -59,15 +59,15 @@ LOCA::AnasaziOperator::Factory::~Factory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>
+Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy>
 LOCA::AnasaziOperator::Factory::create(
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+       const Teuchos::RCP<NOX::Abstract::Group>& grp)
 {
   string methodName = "LOCA::AnasaziOperator::Factory::create()";
-  Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy> strategy;
 
   // Get name of strategy
   const string& name = strategyName(*eigenParams);
@@ -80,7 +80,7 @@ LOCA::AnasaziOperator::Factory::create(
 							      solverParams,
 							      grp));
   else if (name == "Shift-Invert") {
-    Teuchos::RefCountPtr<LOCA::TimeDependent::AbstractGroup> tdGrp = 
+    Teuchos::RCP<LOCA::TimeDependent::AbstractGroup> tdGrp = 
       Teuchos::rcp_dynamic_cast<LOCA::TimeDependent::AbstractGroup>(grp);
     if (tdGrp == Teuchos::null)
       globalData->locaErrorCheck->throwError(
@@ -95,7 +95,7 @@ LOCA::AnasaziOperator::Factory::create(
 							  tdGrp));
   }
   else if (name == "Cayley") {
-    Teuchos::RefCountPtr<LOCA::TimeDependent::AbstractGroup> tdGrp = 
+    Teuchos::RCP<LOCA::TimeDependent::AbstractGroup> tdGrp = 
       Teuchos::rcp_dynamic_cast<LOCA::TimeDependent::AbstractGroup>(grp);
     if (tdGrp == Teuchos::null)
       globalData->locaErrorCheck->throwError(
@@ -115,9 +115,9 @@ LOCA::AnasaziOperator::Factory::create(
     string userDefinedName = 
       eigenParams->get("Operator User-Defined Name", "???");
     if ((*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy> >(userDefinedName))
+	isType< Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy> >(userDefinedName))
       strategy = (*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy> >(userDefinedName);
+	get< Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,

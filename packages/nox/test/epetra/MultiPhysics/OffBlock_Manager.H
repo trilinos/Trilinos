@@ -77,13 +77,13 @@ public:
   { };
 
   // Return the underlying Group 
-  Teuchos::RefCountPtr<NOX::Epetra::Group> getGroup();
+  Teuchos::RCP<NOX::Epetra::Group> getGroup();
 
   // Return the underlying CrsMatrix 
   Epetra_CrsMatrix& getMatrix();
 
   // Return the rowMapVec
-  Teuchos::RefCountPtr<Epetra_Vector>  getRowMapVec() const;
+  Teuchos::RCP<Epetra_Vector>  getRowMapVec() const;
 
   // Return the problemEqId
   int getProblemEqId() const;
@@ -123,23 +123,23 @@ private:
   int problemEqId;      // Problem Id of off-diagonal block equations
   int problemVarId;     // Problem Id of off-diagonal block variables
 
-  Teuchos::RefCountPtr<Problem_Interface> offBlockInterface; // A problem interface to 
+  Teuchos::RCP<Problem_Interface> offBlockInterface; // A problem interface to 
   // this off-block problem manager.  
 
   // These allow off-diagonal block contributions representing
   // inter-problem coupling computed via FDC
-  Teuchos::RefCountPtr<Epetra_Map>                              blockRowMap     ;
-  Teuchos::RefCountPtr<Epetra_Map>                              blockColMap     ;
-  Teuchos::RefCountPtr<Epetra_Vector>                           rowMapVec       ;
-  Teuchos::RefCountPtr<Epetra_CrsGraph>                         graph           ;
-  Teuchos::RefCountPtr<NOX::Epetra::Vector>                     noxVec          ;
-  Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoring>         mapColoring     ;
-  Teuchos::RefCountPtr<Epetra_MapColoring>                      colorMap        ;
-  Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoringIndex>    colorMapIndex   ;
-  Teuchos::RefCountPtr<vector<Epetra_IntVector> >               columnSet       ;
-  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifference>           matrixOperator  ;
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO>        linearSystem    ;
-  Teuchos::RefCountPtr<NOX::Epetra::Group>                      group           ;
+  Teuchos::RCP<Epetra_Map>                              blockRowMap     ;
+  Teuchos::RCP<Epetra_Map>                              blockColMap     ;
+  Teuchos::RCP<Epetra_Vector>                           rowMapVec       ;
+  Teuchos::RCP<Epetra_CrsGraph>                         graph           ;
+  Teuchos::RCP<NOX::Epetra::Vector>                     noxVec          ;
+  Teuchos::RCP<EpetraExt::CrsGraph_MapColoring>         mapColoring     ;
+  Teuchos::RCP<Epetra_MapColoring>                      colorMap        ;
+  Teuchos::RCP<EpetraExt::CrsGraph_MapColoringIndex>    colorMapIndex   ;
+  Teuchos::RCP<vector<Epetra_IntVector> >               columnSet       ;
+  Teuchos::RCP<NOX::Epetra::FiniteDifference>           matrixOperator  ;
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO>        linearSystem    ;
+  Teuchos::RCP<NOX::Epetra::Group>                      group           ;
   
   // These are needed to shift indices for coloring and 
   // block-based condition number estimates

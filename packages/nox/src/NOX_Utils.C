@@ -49,8 +49,8 @@
 
 NOX::Utils::Utils(int outputInformation, int MyPID, int outputProcess, 
 		  int outputPrecision, 
-		  const Teuchos::RefCountPtr<std::ostream>& outputStream,
-		  const Teuchos::RefCountPtr<std::ostream>& errStream) :
+		  const Teuchos::RCP<std::ostream>& outputStream,
+		  const Teuchos::RCP<std::ostream>& errStream) :
   precision(outputPrecision),
   myPID(MyPID),
   printTest(outputInformation),
@@ -139,19 +139,19 @@ void NOX::Utils::reset(Teuchos::ParameterList& p)
   blackholeStream = Teuchos::rcp(new Teuchos::oblackholestream);
 
   if (p.INVALID_TEMPLATE_QUALIFIER
-      isType< Teuchos::RefCountPtr<std::ostream> >("Output Stream"))
+      isType< Teuchos::RCP<std::ostream> >("Output Stream"))
     printStream =
       (p).INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RefCountPtr<std::ostream> >("Output Stream");
+      get< Teuchos::RCP<std::ostream> >("Output Stream");
   else 
     printStream = Teuchos::rcp(&(std::cout), false);
   myStream = (myPID == printProc) ? printStream : blackholeStream;
   
   if (p.INVALID_TEMPLATE_QUALIFIER 
-      isType< Teuchos::RefCountPtr<std::ostream> >("Error Stream"))
+      isType< Teuchos::RCP<std::ostream> >("Error Stream"))
     errorStream =
       (p).INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RefCountPtr<std::ostream> >("Error Stream");
+      get< Teuchos::RCP<std::ostream> >("Error Stream");
   else 
     errorStream = Teuchos::rcp(&(std::cerr), false);
 }

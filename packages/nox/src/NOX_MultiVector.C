@@ -308,18 +308,18 @@ NOX::MultiVector::update(Teuchos::ETransp transb, double alpha,
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+Teuchos::RCP<NOX::Abstract::MultiVector> 
 NOX::MultiVector::clone(NOX::CopyType type) const
 {
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp = 
     Teuchos::rcp(new NOX::MultiVector(*this, type));
   return tmp;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+Teuchos::RCP<NOX::Abstract::MultiVector> 
 NOX::MultiVector::clone(int numvecs) const
 {
-  Teuchos::RefCountPtr<NOX::MultiVector> tmp = 
+  Teuchos::RCP<NOX::MultiVector> tmp = 
     Teuchos::rcp(new NOX::MultiVector(numvecs));
   for (int i=0; i<numvecs; i++) {
     tmp->vecs[i] = vecs[0]->clone(NOX::ShapeCopy);
@@ -327,10 +327,10 @@ NOX::MultiVector::clone(int numvecs) const
   return tmp;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::MultiVector::subCopy(const vector<int>& index) const
 {
-  Teuchos::RefCountPtr<NOX::MultiVector> tmp = 
+  Teuchos::RCP<NOX::MultiVector> tmp = 
     Teuchos::rcp(new NOX::MultiVector(index.size()));
   int ind;
   for (unsigned int i=0; i<index.size(); i++) {
@@ -341,10 +341,10 @@ NOX::MultiVector::subCopy(const vector<int>& index) const
   return tmp;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+Teuchos::RCP<NOX::Abstract::MultiVector> 
 NOX::MultiVector::subView(const vector<int>& index) const
 {
-  Teuchos::RefCountPtr<NOX::MultiVector> tmp = 
+  Teuchos::RCP<NOX::MultiVector> tmp = 
     Teuchos::rcp(new NOX::MultiVector(index.size()));
   int ind;
   for (unsigned int i=0; i<index.size(); i++) {

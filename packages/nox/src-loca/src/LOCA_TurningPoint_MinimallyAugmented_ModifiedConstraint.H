@@ -104,10 +104,10 @@ namespace LOCA {
 
 	//! Constructor
 	ModifiedConstraint(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& tpParams,
-	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g,
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& tpParams,
+	 const Teuchos::RCP<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g,
 	 bool is_symmetric,
 	 const NOX::Abstract::Vector& a,
 	 const NOX::Abstract::Vector* b,
@@ -132,7 +132,7 @@ namespace LOCA {
 
 	//! Cloning function
 	virtual 
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+	Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
 	//! Compute continuation constraint equations
@@ -173,19 +173,19 @@ namespace LOCA {
       protected:
 
 	//! Stores update to left null vector
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> w_vector_update;
+	Teuchos::RCP<NOX::Abstract::MultiVector> w_vector_update;
 
 	//! Stores update to right null vector
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> v_vector_update;
+	Teuchos::RCP<NOX::Abstract::MultiVector> v_vector_update;
 
 	//! Stores left null vector residual
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> w_residual;
+	Teuchos::RCP<NOX::Abstract::MultiVector> w_residual;
 
 	//! Stores right null vector residual
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> v_residual;
+	Teuchos::RCP<NOX::Abstract::MultiVector> v_residual;
 
 	//! Stores solution update
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> deltaX;
+	Teuchos::RCP<NOX::Abstract::MultiVector> deltaX;
 
 	//! Stores sigma_1
 	NOX::Abstract::MultiVector::DenseMatrix sigma1;

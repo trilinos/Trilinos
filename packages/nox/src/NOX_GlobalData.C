@@ -44,7 +44,7 @@
 #include "NOX_MeritFunction_SumOfSquares.H"
 
 NOX::GlobalData::
-GlobalData(const Teuchos::RefCountPtr<Teuchos::ParameterList>& noxParams)
+GlobalData(const Teuchos::RCP<Teuchos::ParameterList>& noxParams)
 {
   paramListPtr = noxParams;
 
@@ -54,11 +54,11 @@ GlobalData(const Teuchos::RefCountPtr<Teuchos::ParameterList>& noxParams)
     noxParams->sublist("Solver Options");
   
   if (solverOptionsList.INVALID_TEMPLATE_QUALIFIER
-      isType< Teuchos::RefCountPtr<NOX::MeritFunction::Generic> >
+      isType< Teuchos::RCP<NOX::MeritFunction::Generic> >
       ("User Defined Merit Function")) {
     
     meritFunctionPtr = solverOptionsList.INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RefCountPtr<NOX::MeritFunction::Generic> >
+      get< Teuchos::RCP<NOX::MeritFunction::Generic> >
       ("User Defined Merit Function");
   }
   else {
@@ -69,8 +69,8 @@ GlobalData(const Teuchos::RefCountPtr<Teuchos::ParameterList>& noxParams)
 }
 
 NOX::GlobalData::
-GlobalData(const Teuchos::RefCountPtr<NOX::Utils>& utils,
-	   const Teuchos::RefCountPtr<NOX::MeritFunction::Generic>& mf) :
+GlobalData(const Teuchos::RCP<NOX::Utils>& utils,
+	   const Teuchos::RCP<NOX::MeritFunction::Generic>& mf) :
   utilsPtr(utils),
   meritFunctionPtr(mf)
 {
@@ -83,18 +83,18 @@ NOX::GlobalData::~GlobalData()
 }
 
 
-Teuchos::RefCountPtr<NOX::Utils> NOX::GlobalData::getUtils() const
+Teuchos::RCP<NOX::Utils> NOX::GlobalData::getUtils() const
 {
   return utilsPtr;
 }
 
-Teuchos::RefCountPtr<NOX::MeritFunction::Generic> 
+Teuchos::RCP<NOX::MeritFunction::Generic> 
 NOX::GlobalData::getMeritFunction() const
 {
   return meritFunctionPtr;
 }
 
-Teuchos::RefCountPtr<Teuchos::ParameterList> 
+Teuchos::RCP<Teuchos::ParameterList> 
 NOX::GlobalData::getNoxParameterList() const
 {
   return paramListPtr;

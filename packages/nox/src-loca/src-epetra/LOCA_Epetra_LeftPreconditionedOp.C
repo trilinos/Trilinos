@@ -44,8 +44,8 @@
 #include "LOCA_Epetra_LeftPreconditionedOp.H"
 
 LOCA::Epetra::LeftPreconditionedOp::LeftPreconditionedOp(
-	const Teuchos::RefCountPtr<Epetra_Operator>& jacOperator, 
-	const Teuchos::RefCountPtr<Epetra_Operator>& precOperator) :
+	const Teuchos::RCP<Epetra_Operator>& jacOperator, 
+	const Teuchos::RCP<Epetra_Operator>& precOperator) :
   label("LOCA::Epetra::LeftPreconditionedOp"),
   J(jacOperator),
   M(precOperator),

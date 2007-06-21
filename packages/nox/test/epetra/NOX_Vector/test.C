@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
   int MyPID = Comm.MyPID();
 
   // Set up the printing utilities
-  Teuchos::RefCountPtr<Teuchos::ParameterList> noxParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> noxParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& noxParams = *(noxParamsPtr.get());
   // Only print output if the "-v" flag is set on the command line

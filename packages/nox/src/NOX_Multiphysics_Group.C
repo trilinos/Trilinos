@@ -39,9 +39,9 @@
 #include "NOX_Multiphysics_Group.H"
 
 NOX::Multiphysics::Group::Group(
-          const Teuchos::RefCountPtr< vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
-          const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-          const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
+          const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+          const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+          const Teuchos::RCP<Teuchos::ParameterList>& p) :
   solversVecPtr(solvers),
   normRHS(0.0)
 {
@@ -181,10 +181,10 @@ NOX::Multiphysics::Group::getNormF() const
 
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Group> 
+Teuchos::RCP<NOX::Abstract::Group> 
 NOX::Multiphysics::Group::clone(NOX::CopyType type) const 
 {
-  Teuchos::RefCountPtr<NOX::Abstract::Group> newgrp = 
+  Teuchos::RCP<NOX::Abstract::Group> newgrp = 
     Teuchos::rcp(new NOX::Multiphysics::Group(*this, type));
 
   return newgrp;

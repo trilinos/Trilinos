@@ -55,7 +55,7 @@
 #endif
 
 NOX::Direction::Manager::
-Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd) :
+Manager(const Teuchos::RCP<NOX::GlobalData>& gd) :
   utils(gd->getUtils()),
   method("")
 {
@@ -63,7 +63,7 @@ Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd) :
 }
 
 NOX::Direction::Manager::
-Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+Manager(const Teuchos::RCP<NOX::GlobalData>& gd, 
 	Teuchos::ParameterList& params) :
   method("")
 {
@@ -76,7 +76,7 @@ NOX::Direction::Manager::~Manager()
 }
 
 bool NOX::Direction::Manager::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
 {
   utils = gd->getUtils();
@@ -110,16 +110,16 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
 #endif
   else if (method == "User Defined") {
     if (params.INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<NOX::Direction::Generic> >
+	isType< Teuchos::RCP<NOX::Direction::Generic> >
 	("User Defined Direction")) {
       
       ptr = params.INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<NOX::Direction::Generic> >
+	get< Teuchos::RCP<NOX::Direction::Generic> >
 	("User Defined Direction");
       ptr->reset(gd, params);
     }
     else {
-      this->printWarning("reset", " a \"User Defined\" Direction was chosen for the \"Method\" in the \"Direction\" sublist, but a Teuchos::RefCountPtr<NOX::Direction::Generic> object was not found in the parameter list!");
+      this->printWarning("reset", " a \"User Defined\" Direction was chosen for the \"Method\" in the \"Direction\" sublist, but a Teuchos::RCP<NOX::Direction::Generic> object was not found in the parameter list!");
       throw "NOX Error";
     }
   }

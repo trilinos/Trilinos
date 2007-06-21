@@ -41,7 +41,7 @@
 #include "NOX_Epetra.H" // Epetra Interface headers
 #include "NOX_TestError.H" // Test Suite headers
 #include "NOX_TestCompare.H" // Test Suite headers
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Trilinos headers
 #ifdef HAVE_MPI
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   int MyPID = Comm.MyPID();
 
   // Set up the printing utilities
-  Teuchos::RefCountPtr<Teuchos::ParameterList> noxParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> noxParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& noxParams = *(noxParamsPtr.get());
   // Only print output if the "-v" flag is set on the command line
@@ -106,34 +106,34 @@ int main(int argc, char *argv[]) {
   // *** Start Testing Here!!! ***
 
   // Create a map describing data distribution
-  Teuchos::RefCountPtr<Epetra_Map> standardMap = 
+  Teuchos::RCP<Epetra_Map> standardMap = 
     Teuchos::rcp(new Epetra_Map(globalLength, 0, Comm));
   
   // Create the L2 vector space
-  Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vectorSpace1 =
+  Teuchos::RCP<NOX::Epetra::VectorSpace> vectorSpace1 =
     Teuchos::rcp(new NOX::Epetra::VectorSpaceL2);
 
   // Create the scaled L2 vector space
-  Teuchos::RefCountPtr<Epetra_Vector> scaleVec =
+  Teuchos::RCP<Epetra_Vector> scaleVec =
     Teuchos::rcp(new Epetra_Vector(*standardMap,true));
-  Teuchos::RefCountPtr<NOX::Epetra::Scaling> scaling = 
+  Teuchos::RCP<NOX::Epetra::Scaling> scaling = 
     Teuchos::rcp(new NOX::Epetra::Scaling);
   scaleVec->PutScalar(2.0);
   scaling->addUserScaling(NOX::Epetra::Scaling::Left, scaleVec);
-  Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vectorSpace2 =
+  Teuchos::RCP<NOX::Epetra::VectorSpace> vectorSpace2 =
     Teuchos::rcp(new NOX::Epetra::VectorSpaceScaledL2(scaling));
   
   // Create a base Epetra_Vector 
-  Teuchos::RefCountPtr<Epetra_Vector> epVec = 
+  Teuchos::RCP<Epetra_Vector> epVec = 
     Teuchos::rcp(new Epetra_Vector(*standardMap, true));
 
   // Create NOX::Epetra::Vectors
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> vecL2 = 
+  Teuchos::RCP<NOX::Epetra::Vector> vecL2 = 
     Teuchos::rcp(new NOX::Epetra::Vector(epVec, 
 					 NOX::Epetra::Vector::CreateView, 
 					 NOX::DeepCopy, 
 					 vectorSpace1));
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> vecScaledL2 = 
+  Teuchos::RCP<NOX::Epetra::Vector> vecScaledL2 = 
     Teuchos::rcp(new NOX::Epetra::Vector(*epVec, NOX::DeepCopy, vectorSpace2));
   
   // Test our norms
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
 			     tolerance, "Scaled Two-Norm Test", aComp);
 
   // Test the inner products for L2
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmpVector = 
+  Teuchos::RCP<NOX::Abstract::Vector> tmpVector = 
     vecL2->clone();
   vecL2->init(2.0);
   tmpVector->init(1.0);

@@ -44,17 +44,17 @@
 #include "LOCA_MultiContinuation_ConstrainedGroup.H"
 
 LOCA::MultiContinuation::NaturalGroup::NaturalGroup(
-      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& continuationParams,
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
-      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const Teuchos::RCP<LOCA::GlobalData>& global_data,
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& continuationParams,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs)
   : LOCA::MultiContinuation::ExtendedGroup(global_data, topParams,
 					   continuationParams,
 					   grp, pred, paramIDs)
 {
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> cons 
+  Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> cons 
     = Teuchos::rcp(new LOCA::MultiContinuation::NaturalConstraint(
 	globalData, Teuchos::rcp(this, false)));
   LOCA::MultiContinuation::ExtendedGroup::setConstraints(cons);
@@ -81,7 +81,7 @@ LOCA::MultiContinuation::NaturalGroup::operator=(
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Group>
+Teuchos::RCP<NOX::Abstract::Group>
 LOCA::MultiContinuation::NaturalGroup::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new LOCA::MultiContinuation::NaturalGroup(*this, type));

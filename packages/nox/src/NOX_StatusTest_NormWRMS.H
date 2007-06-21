@@ -43,7 +43,7 @@
 #define NOX_STATUS_NORM_WRMS_H
 
 #include "NOX_StatusTest_Generic.H"	// base class
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward declarations
 namespace NOX {
@@ -156,7 +156,7 @@ public:
 
   //! Constructor where ATOL is a vector
   NormWRMS(double rtol,
-	   const Teuchos::RefCountPtr<NOX::Abstract::Vector>& atol,
+	   const Teuchos::RCP<NOX::Abstract::Vector>& atol,
 	   double BDFMultiplier = 1.0, 
 	   double tolerance = 1.0,
 	   double alpha = 1.0,
@@ -218,7 +218,7 @@ private:
   double atol;
 
   //! Absolute tolerance for convergence (vector).
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> atolVec;
+  Teuchos::RCP<NOX::Abstract::Vector> atolVec;
 
   //! Time integration method multiplier (BDF Multiplier).
   double factor;
@@ -242,10 +242,10 @@ private:
   StatusType status;
 
   //! Temporary vector used in computation.
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> u;
+  Teuchos::RCP<NOX::Abstract::Vector> u;
 
   //! Temporary vector used in computation.
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> v;
+  Teuchos::RCP<NOX::Abstract::Vector> v;
 
   //! Flag that tells the print method whether to print the criteria 2 information.
   bool printCriteria2Info;

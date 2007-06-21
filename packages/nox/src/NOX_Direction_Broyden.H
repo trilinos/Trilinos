@@ -47,7 +47,7 @@
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Direction_Utils_InexactNewton.H" // class data element
 #include "Teuchos_ParameterList.hpp"	   // class data element 
-#include "Teuchos_RefCountPtr.hpp" // class data element
+#include "Teuchos_RCP.hpp" // class data element
 
 // Forward declaration
 namespace NOX {
@@ -180,7 +180,7 @@ public:
     void setStep(double step);
 
     //! Get pointer to \f$s\f$
-    Teuchos::RefCountPtr<const NOX::Abstract::Vector> sPtr() const;
+    Teuchos::RCP<const NOX::Abstract::Vector> sPtr() const;
     
     //! Get the step, \f$\lambda\f$
     double step() const;
@@ -191,7 +191,7 @@ public:
   private:
     
     //! A pointer to the \f$s\f$-vector
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> sptr;
+    Teuchos::RCP<NOX::Abstract::Vector> sptr;
     
     /*! 
         \brief The associated step length, i.e., \f$\lambda\f$
@@ -320,14 +320,14 @@ public:
 public:
 
   //! Constructor
-  Broyden(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+  Broyden(const Teuchos::RCP<NOX::GlobalData>& gd, 
 	  Teuchos::ParameterList& params);
 
   //! Destructor
   virtual ~Broyden();
 
   // derived
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+  virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd, 
 		     Teuchos::ParameterList& params);
 
   //! Not supported for this direction - only works for line search based solver
@@ -371,10 +371,10 @@ NOX::Direction::Broyden::<functionName> - <errorMsg>
 private:
 
   //! Global data pointer.  Keep this so the parameter list remains valid.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Printing Utils
-  Teuchos::RefCountPtr<NOX::Utils> utils;
+  Teuchos::RCP<NOX::Utils> utils;
 
   //! "Linear Solver" sublist from "Direction"/"Broyden"
   /*! 
@@ -384,7 +384,7 @@ private:
   Teuchos::ParameterList* lsParamsPtr;
 
   //! Group to hold the "old" Jacobian
-  Teuchos::RefCountPtr<NOX::Abstract::Group> oldJacobianGrpPtr;
+  Teuchos::RCP<NOX::Abstract::Group> oldJacobianGrpPtr;
 
   /*! 
     \brief Counter of how many times the Jacobian associated with

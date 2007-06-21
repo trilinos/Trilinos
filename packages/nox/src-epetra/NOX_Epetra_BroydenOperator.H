@@ -111,15 +111,15 @@ class BroydenOperator : public Epetra_RowMatrix,
     virtual ~ReplacementInterface()
     { }
 
-    virtual Teuchos::RefCountPtr<const Epetra_CrsMatrix> getReplacementValuesMatrix( const Epetra_Vector & x, FILL_TYPE ) = 0;
+    virtual Teuchos::RCP<const Epetra_CrsMatrix> getReplacementValuesMatrix( const Epetra_Vector & x, FILL_TYPE ) = 0;
 
   };
 
   //! Constructor taking an initial matrix to be updated
   BroydenOperator(Teuchos::ParameterList & nlParams, 
-                  const Teuchos::RefCountPtr<NOX::Utils>& utils, 
+                  const Teuchos::RCP<NOX::Utils>& utils, 
 		  Epetra_Vector & solnVec,
-                  const Teuchos::RefCountPtr<Epetra_CrsMatrix>& broydMat0, 
+                  const Teuchos::RCP<Epetra_CrsMatrix>& broydMat0, 
 		  bool verbose = false);
 
   //! Copy Constructor
@@ -317,29 +317,29 @@ class BroydenOperator : public Epetra_RowMatrix,
 
   bool verbose;
 
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> stepVec  ;
+  Teuchos::RCP<NOX::Epetra::Vector> stepVec  ;
 
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> yieldVec ;
+  Teuchos::RCP<NOX::Epetra::Vector> yieldVec ;
 
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> workVec  ;
+  Teuchos::RCP<NOX::Epetra::Vector> workVec  ;
 
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> oldX     ;
+  Teuchos::RCP<NOX::Epetra::Vector> oldX     ;
 
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> oldF     ;
+  Teuchos::RCP<NOX::Epetra::Vector> oldF     ;
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> crsMatrix;
+  Teuchos::RCP<Epetra_CrsMatrix> crsMatrix;
 
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacIntPtr;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> jacMatrixPtr;
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> jacIntPtr;
+  Teuchos::RCP<Epetra_CrsMatrix> jacMatrixPtr;
 
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> precIntPtr;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> precMatrixPtr;
+  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> precIntPtr;
+  Teuchos::RCP<Epetra_CrsMatrix> precMatrixPtr;
 
   //! Reference to top-level nonlinear solver parameters list
   Teuchos::ParameterList & nlParams; 
 
   //! Reference to NOX::Utils object
-  const Teuchos::RefCountPtr<NOX::Utils>& utils;
+  const Teuchos::RCP<NOX::Utils>& utils;
 
   //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
   NOX::Solver::PrePostOperator prePostOperator;

@@ -42,7 +42,7 @@
 #ifndef LOCA_MULTICONTINUATION_FACTORY_H
 #define LOCA_MULTICONTINUATION_FACTORY_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // forward declarations
 namespace Teuchos {
@@ -85,7 +85,7 @@ namespace LOCA {
     public:
 
       //! Constructor
-      Factory(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+      Factory(const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       //! Destructor
       virtual ~Factory();
@@ -98,12 +98,12 @@ namespace LOCA {
        * \param pred [in] Predictor strategy
        * \param paramIDs [in] Indicies of continuation parameters
        */
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>
+      Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy>
       create(
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepperParams,
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
-      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& stepperParams,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs);
 
       //! Return strategy name given by \c stepperParams
@@ -120,7 +120,7 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
     }; // Class Factory
 

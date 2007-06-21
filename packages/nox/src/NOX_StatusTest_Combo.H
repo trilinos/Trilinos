@@ -90,19 +90,19 @@ public:
   Combo(ComboType t, const NOX::Utils* u = NULL);
 
   //! Constructor with a single test.
-  Combo(ComboType t, const Teuchos::RefCountPtr<Generic>& a,
+  Combo(ComboType t, const Teuchos::RCP<Generic>& a,
 	const NOX::Utils* u = NULL);
 
   //! Constructor with two tests.
-  Combo(ComboType t, const Teuchos::RefCountPtr<Generic>& a, 
-	const Teuchos::RefCountPtr<Generic>& b,
+  Combo(ComboType t, const Teuchos::RCP<Generic>& a, 
+	const Teuchos::RCP<Generic>& b,
 	const NOX::Utils* u = NULL);
 
   //! Add another test to this combination. 
   /*!
     Calls isSafe() to determine if it is safe to add \c a to the combination.
   */
-  virtual Combo& addStatusTest(const Teuchos::RefCountPtr<Generic>& a);
+  virtual Combo& addStatusTest(const Teuchos::RCP<Generic>& a);
 
   //! Destructor
   virtual ~Combo();
@@ -170,7 +170,7 @@ private:
   const ComboType type;
 
   //! Vector of generic status tests
-  vector<Teuchos::RefCountPtr<Generic> > tests;
+  vector<Teuchos::RCP<Generic> > tests;
 
   //! %Status
   StatusType status;

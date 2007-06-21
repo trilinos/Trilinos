@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
   FiniteElementProblem Problem(NumGlobalElements, Comm);
 
   // Get the vector from the Problem
-  Teuchos::RefCountPtr<Epetra_Vector> soln = Problem.getSolution();
+  Teuchos::RCP<Epetra_Vector> soln = Problem.getSolution();
   NOX::Epetra::Vector noxSoln(soln, NOX::Epetra::Vector::CreateView);
 
   // Initialize Solution
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
   // NLS_PetraGroupInterface
-  Teuchos::RefCountPtr<Problem_Interface> interface = 
+  Teuchos::RCP<Problem_Interface> interface = 
     Teuchos::rcp(new Problem_Interface(Problem));
 
   // Create the Epetra_RowMatrix using Finite Difference with Coloring
@@ -235,12 +235,12 @@ int main(int argc, char *argv[])
 
   EpetraExt::CrsGraph_MapColoring tmpMapColoring( algType, verbose_ );
 
-  Teuchos::RefCountPtr<Epetra_MapColoring> colorMap = 
+  Teuchos::RCP<Epetra_MapColoring> colorMap = 
     Teuchos::rcp(&tmpMapColoring(*(Problem.getGraph())));
 
   EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
 
-  Teuchos::RefCountPtr< vector<Epetra_IntVector> > columns = 
+  Teuchos::RCP< vector<Epetra_IntVector> > columns = 
     Teuchos::rcp(&colorMapIndex(*(Problem.getGraph())));
 
   // Use this constructor to create the graph numerically as a means of timing
@@ -250,8 +250,8 @@ int main(int argc, char *argv[])
   // Or use this as the standard way of using finite differencing with coloring
   // where the application is responsible for creating the matrix graph 
   // beforehand, ie as is done in Problem.
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
-  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifferenceColoring> A = 
+  Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RCP<NOX::Epetra::FiniteDifferenceColoring> A = 
     Teuchos::rcp(new NOX::Epetra::FiniteDifferenceColoring(printParams,
 							   iReq, noxSoln, 
 							   Problem.getGraph(),
@@ -260,13 +260,13 @@ int main(int argc, char *argv[])
 							   false));
 
   // Create the linear system
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 						      iReq, iJac, A, noxSoln));
 
   // Create the Group
-  Teuchos::RefCountPtr<NOX::Epetra::Group> grpPtr = 
+  Teuchos::RCP<NOX::Epetra::Group> grpPtr = 
     Teuchos::rcp(new NOX::Epetra::Group(printParams, 
 					iReq, 
 					noxSoln, 
@@ -278,25 +278,25 @@ int main(int argc, char *argv[])
   weights.scale(1.0e-8);
 
   // Create the convergence tests
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> relresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> relresid = 
     Teuchos::rcp(new NOX::StatusTest::NormF(grp, 1.0e-2));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormUpdate> update =
+  Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
     Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormWRMS> wrms =
+  Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
     Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> converged =
+  Teuchos::RCP<NOX::StatusTest::Combo> converged =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
   converged->addStatusTest(absresid);
   converged->addStatusTest(relresid);
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
-  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
-  Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> fv =
+  Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(fv);
   combo->addStatusTest(converged);

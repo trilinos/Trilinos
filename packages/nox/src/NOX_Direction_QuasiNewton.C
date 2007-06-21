@@ -167,7 +167,7 @@ NOX::Direction::QuasiNewton::Memory::operator[](int i) const
 //------------------------------------------------------------
 
 NOX::Direction::QuasiNewton::
-QuasiNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+QuasiNewton(const Teuchos::RCP<NOX::GlobalData>& gd, 
 	    Teuchos::ParameterList& p) :
   paramsPtr(NULL)
 {
@@ -179,7 +179,7 @@ NOX::Direction::QuasiNewton::~QuasiNewton()
 }
 
 bool NOX::Direction::QuasiNewton::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
 {
   globalDataPtr = gd;

@@ -44,7 +44,7 @@
 
 #include "NOX_Abstract_Vector.H" // for NOX::CopyType
 #include "NOX_Common.H" // for string 
-#include "Teuchos_RefCountPtr.hpp" 
+#include "Teuchos_RCP.hpp" 
 
 namespace Teuchos {
   class ParameterList;
@@ -513,7 +513,7 @@ namespace Abstract {
     \note Any <em>shared data</em> should have its ownership transfered to this
     group from the source for a NOX::DeepCopy.
   */
-   virtual Teuchos::RefCountPtr<NOX::Abstract::Group> 
+   virtual Teuchos::RCP<NOX::Abstract::Group> 
    clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
 
   //@}

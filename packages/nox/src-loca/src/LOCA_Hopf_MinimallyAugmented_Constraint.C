@@ -53,10 +53,10 @@
 
 LOCA::Hopf::MinimallyAugmented::Constraint::
 Constraint(
-    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-    const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-    const Teuchos::RefCountPtr<Teuchos::ParameterList>& hpfParams,
-    const Teuchos::RefCountPtr<LOCA::Hopf::MinimallyAugmented::AbstractGroup>& g,
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& hpfParams,
+    const Teuchos::RCP<LOCA::Hopf::MinimallyAugmented::AbstractGroup>& g,
     bool is_symmetric,
     const NOX::Abstract::Vector& a_real,
     const NOX::Abstract::Vector& a_imag,
@@ -157,7 +157,7 @@ LOCA::Hopf::MinimallyAugmented::Constraint::
 
 void
 LOCA::Hopf::MinimallyAugmented::Constraint::
-setGroup(const Teuchos::RefCountPtr<LOCA::Hopf::MinimallyAugmented::AbstractGroup>& g)
+setGroup(const Teuchos::RCP<LOCA::Hopf::MinimallyAugmented::AbstractGroup>& g)
 {
   grpPtr = g;
 }
@@ -171,28 +171,28 @@ setFrequency(double freq)
   isValidDX = false;
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+Teuchos::RCP<const NOX::Abstract::Vector>
 LOCA::Hopf::MinimallyAugmented::Constraint::
 getLeftNullVecReal() const
 {
   return Teuchos::rcp(&(*w_vector)[0], false);
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+Teuchos::RCP<const NOX::Abstract::Vector>
 LOCA::Hopf::MinimallyAugmented::Constraint::
 getLeftNullVecImag() const
 {
   return Teuchos::rcp(&(*w_vector)[1], false);
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+Teuchos::RCP<const NOX::Abstract::Vector>
 LOCA::Hopf::MinimallyAugmented::Constraint::
 getRightNullVecReal() const
 {
   return Teuchos::rcp(&(*v_vector)[0], false);
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+Teuchos::RCP<const NOX::Abstract::Vector>
 LOCA::Hopf::MinimallyAugmented::Constraint::
 getRightNullVecImag() const
 {
@@ -253,7 +253,7 @@ copy(const LOCA::MultiContinuation::ConstraintInterface& src)
   }
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
 LOCA::Hopf::MinimallyAugmented::Constraint::
 clone(NOX::CopyType type) const
 {
@@ -315,7 +315,7 @@ computeConstraints()
 							   callingFunction);
 
   // Compute A and B blocks
-  Teuchos::RefCountPtr<LOCA::Hopf::ComplexMultiVector> A = 
+  Teuchos::RCP<LOCA::Hopf::ComplexMultiVector> A = 
     Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(globalData, 
 						    (*a_vector)[0], 2));
   (*(A->getRealMultiVec()))[0] = (*a_vector)[0];
@@ -324,7 +324,7 @@ computeConstraints()
   (*(A->getImagMultiVec()))[1] = (*a_vector)[0];
   (*(A->getRealMultiVec()))[1].scale(-1.0);
 
-  Teuchos::RefCountPtr<LOCA::Hopf::ComplexMultiVector> B = 
+  Teuchos::RCP<LOCA::Hopf::ComplexMultiVector> B = 
     Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(globalData, 
 						    (*b_vector)[0], 2));
   (*(B->getRealMultiVec()))[0] = (*b_vector)[0];
@@ -334,7 +334,7 @@ computeConstraints()
   (*(B->getRealMultiVec()))[1].scale(-1.0);
 
   // Set up bordered systems
-  Teuchos::RefCountPtr<const LOCA::BorderedSolver::ComplexOperator> op =
+  Teuchos::RCP<const LOCA::BorderedSolver::ComplexOperator> op =
     Teuchos::rcp(new  LOCA::BorderedSolver::ComplexOperator(grpPtr, omega));
   borderedSolver->setMatrixBlocksMultiVecConstraint(op, A, B, 
 						    Teuchos::null);
@@ -345,12 +345,12 @@ computeConstraints()
   one(1,0) = 0.0;
 
   // Get linear solver parameters
-  Teuchos::RefCountPtr<Teuchos::ParameterList> linear_solver_params =
+  Teuchos::RCP<Teuchos::ParameterList> linear_solver_params =
     parsedParams->getSublist("Linear Solver");
 
   // Compute sigma_1 and right null vector v
   NOX::Abstract::MultiVector::DenseMatrix s1(2,1);
-  Teuchos::RefCountPtr<LOCA::Hopf::ComplexMultiVector> V = 
+  Teuchos::RCP<LOCA::Hopf::ComplexMultiVector> V = 
     Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(globalData, 
 						    (*v_vector)[0], 1));
   (*(V->getRealMultiVec()))[0] = (*v_vector)[0];
@@ -372,7 +372,7 @@ computeConstraints()
   (*v_vector)[0] = (*(V->getRealMultiVec()))[0];
   (*v_vector)[1] = (*(V->getImagMultiVec()))[0];
 
-//   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> rV = 
+//   Teuchos::RCP<NOX::Abstract::MultiVector> rV = 
 //     v_vector->clone(NOX::ShapeCopy);
 //   NOX::Abstract::MultiVector::DenseMatrix rs1(2,1);
 //   rV->init(0.0);
@@ -395,7 +395,7 @@ computeConstraints()
 //   rs1.print(cout);
 
 //   cout << "checking error..." << endl;
-//   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> rV = 
+//   Teuchos::RCP<NOX::Abstract::MultiVector> rV = 
 //     V->clone(NOX::ShapeCopy);
 //   NOX::Abstract::MultiVector::DenseMatrix rs1(2,1);
 //   borderedSolver->apply(*V, s1, *rV, rs1);
@@ -405,7 +405,7 @@ computeConstraints()
 
   // Compute sigma_2 and left null vector w
   NOX::Abstract::MultiVector::DenseMatrix s2(2,1);
-  Teuchos::RefCountPtr<LOCA::Hopf::ComplexMultiVector> W = 
+  Teuchos::RCP<LOCA::Hopf::ComplexMultiVector> W = 
     Teuchos::rcp(new LOCA::Hopf::ComplexMultiVector(globalData, 
 						    (*w_vector)[0], 1));
   (*(W->getRealMultiVec()))[0] = (*w_vector)[0];
@@ -435,7 +435,7 @@ computeConstraints()
     s2.assign(s1);
   }
 
-//   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> rW = 
+//   Teuchos::RCP<NOX::Abstract::MultiVector> rW = 
 //     v_vector->clone(NOX::ShapeCopy);
 //   NOX::Abstract::MultiVector::DenseMatrix rs2(2,1);
 //   rW->init(0.0);
@@ -458,7 +458,7 @@ computeConstraints()
 //   cout << "rs2 = " << endl;
 //   rs2.print(cout);
 
-//   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> rW = 
+//   Teuchos::RCP<NOX::Abstract::MultiVector> rW = 
 //     W->clone(NOX::ShapeCopy);
 //   NOX::Abstract::MultiVector::DenseMatrix rs2(2,1);
 //   borderedSolver->applyTranspose(*W, s2, *rW, rs2);
@@ -700,7 +700,7 @@ computeDOmega(NOX::Abstract::MultiVector::DenseMatrix& domega)
 							   callingFunction);
 
   // Compute M*v
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp_vector =
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp_vector =
     v_vector->clone(NOX::ShapeCopy);
   status = grpPtr->applyShiftedMatrixMultiVector(*v_vector, *tmp_vector);
   finalStatus = 

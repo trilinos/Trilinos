@@ -44,7 +44,7 @@
 
 #include "NOX_Common.H"
 #include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward declarations
 namespace Teuchos {
@@ -71,10 +71,10 @@ namespace NOX {
   - "Output Precision" - Specifis the default number of decimal places
     to be used when printing floating point numbers. The default is 4.
 
-  - "Output Stream" - A Teuchos::RefCountPtr<std::ostream> object that 
+  - "Output Stream" - A Teuchos::RCP<std::ostream> object that 
     will be used for standard output. 
 
-  - "Error Stream" - A Teuchos::RefCountPtr<std::ostream> object that 
+  - "Error Stream" - A Teuchos::RCP<std::ostream> object that 
     will be used for output of error information. 
 
   The public variables should never be modified directly.
@@ -173,9 +173,9 @@ public:
     memory management. */
   Utils(int outputInformation=0xf, int MyPID=0, int outputProcess=0, 
 	int outputPrecision=3, 
-	const Teuchos::RefCountPtr<std::ostream>& outputStream=
+	const Teuchos::RCP<std::ostream>& outputStream=
 	Teuchos::null,
-	const Teuchos::RefCountPtr<std::ostream>& errorStream=
+	const Teuchos::RCP<std::ostream>& errorStream=
 	Teuchos::null);
 
   //! Constructor via a parameter list
@@ -253,16 +253,16 @@ private:
   //! std::ostream derived object that deletes the output.
   /*! This is useful for parallel printing to eliminate errors due to printing to all processors.
    */
-  Teuchos::RefCountPtr<std::ostream> blackholeStream;
+  Teuchos::RCP<std::ostream> blackholeStream;
 
   //! Output stream to be used for printing.
-  Teuchos::RefCountPtr<std::ostream> printStream;
+  Teuchos::RCP<std::ostream> printStream;
 
   //! Output stream used for printing to the print process.
-  Teuchos::RefCountPtr<std::ostream> myStream;
+  Teuchos::RCP<std::ostream> myStream;
 
   //! Output stream used for printing to the print process.
-  Teuchos::RefCountPtr<std::ostream> errorStream;
+  Teuchos::RCP<std::ostream> errorStream;
 
 }; // class Utils
 

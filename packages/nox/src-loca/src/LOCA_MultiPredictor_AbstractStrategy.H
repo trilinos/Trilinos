@@ -42,7 +42,7 @@
 #ifndef LOCA_MULTIPREDICTOR_ABSTRACTSTRATEGY_H
 #define LOCA_MULTIPREDICTOR_ABSTRACTSTRATEGY_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "NOX_Abstract_Group.H"  // for ReturnType, Teuchos::ParameterList
 
@@ -77,9 +77,9 @@ namespace LOCA {
      * class Derived : public AbstractStrategy {
      * public:
      *   Derived(
-     *   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-     *   const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& predictorParams);
+     *   const Teuchos::RCP<LOCA::GlobalData>& global_data,
+     *   const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& predictorParams);
      *   ...
      * };
      * \endcode
@@ -107,7 +107,7 @@ namespace LOCA {
       operator=(const LOCA::MultiPredictor::AbstractStrategy& source) = 0;
 
       //! Clone function
-      virtual Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+      virtual Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
       clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
 
       /*! 

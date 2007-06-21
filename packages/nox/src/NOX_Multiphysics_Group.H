@@ -43,7 +43,7 @@
 #include "NOX_MultiVector.H" 
 #include "NOX_Common.H"                 // for string 
 #include "NOX.H"                        // for NOX::Solver::Manager
-#include "Teuchos_RefCountPtr.hpp" 
+#include "Teuchos_RCP.hpp" 
 
 namespace NOX {
   namespace Parameter {
@@ -86,9 +86,9 @@ namespace Multiphysics {
      \note Constructors for any derived object should always define a default
      x-value so that getX() is always defined.
    */
-   Group( const Teuchos::RefCountPtr< vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
-          const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-          const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
+   Group( const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+          const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+          const Teuchos::RCP<Teuchos::ParameterList>& p);
 
    //! Constructor.
    Group( const Group & grp, NOX::CopyType typ );
@@ -211,7 +211,7 @@ namespace Multiphysics {
     \note Any <em>shared data</em> should have its ownership transfered to this
     group from the source for a NOX::DeepCopy.
   */
-   virtual Teuchos::RefCountPtr<NOX::Abstract::Group> 
+   virtual Teuchos::RCP<NOX::Abstract::Group> 
    clone(NOX::CopyType type = NOX::DeepCopy) const;
 
   //@}
@@ -224,7 +224,7 @@ protected:
 protected:
 
   //! Pointer to the container of solvers for each problem to be coupled
-  Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > > solversVecPtr;
+  Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > > solversVecPtr;
 
   /** @name IsValid flags 
    *  

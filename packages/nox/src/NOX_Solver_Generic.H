@@ -53,7 +53,7 @@ namespace NOX {
     class Group;
   }
 }
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace NOX {
 
@@ -115,9 +115,9 @@ public:
     call reset() again with the modified objects.
   */
   virtual bool 
-  reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& params) = 0;
+  reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+	const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+	const Teuchos::RCP<Teuchos::ParameterList>& params) = 0;
 
   /*! 
     \brief An even softer reset of the nonlinear solver for a new problem.
@@ -130,7 +130,7 @@ public:
     parsing of the parameter lists and to re-use existing status tests.
   */
   virtual bool 
-  reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp) = 0;
+  reset(const Teuchos::RCP<NOX::Abstract::Group>& grp) = 0;
 
   /*! 
     \brief A soft reset of the nonlinear solver for a new problem.
@@ -144,8 +144,8 @@ public:
     parsing of the parameter lists.
   */
   virtual bool 
-  reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests) = 0;
+  reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+	const Teuchos::RCP<NOX::StatusTest::Generic>& tests) = 0;
 
   //! Check current convergence and failure status. 
   virtual NOX::StatusTest::StatusType getStatus() = 0;

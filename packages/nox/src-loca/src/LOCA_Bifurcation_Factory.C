@@ -58,7 +58,7 @@
 #include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
 
 LOCA::Bifurcation::Factory::Factory(
-	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
@@ -67,14 +67,14 @@ LOCA::Bifurcation::Factory::~Factory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 LOCA::Bifurcation::Factory::create(
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& bifurcationParams,
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp)
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& bifurcationParams,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp)
 {
   string methodName = "LOCA::Bifurcation::Factory::create()";
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> strategy;
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> strategy;
 
   // Get name of strategy
   const string& name = strategyName(*bifurcationParams);
@@ -85,7 +85,7 @@ LOCA::Bifurcation::Factory::create(
   else if (name == "Turning Point:  Moore-Spence") {
 
     // Cast group to MooreSpence group
-    Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::AbstractGroup> msg = 
+    Teuchos::RCP<LOCA::TurningPoint::MooreSpence::AbstractGroup> msg = 
       Teuchos::rcp_dynamic_cast<LOCA::TurningPoint::MooreSpence::AbstractGroup>(grp);
     if (msg.get() == NULL)
       globalData->locaErrorCheck->throwError(
@@ -104,7 +104,7 @@ LOCA::Bifurcation::Factory::create(
   else if (name == "Turning Point:  Minimally Augmented") {
 
     // Cast group to MinimallyAugmented group
-    Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup> mag = 
+    Teuchos::RCP<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup> mag = 
       Teuchos::rcp_dynamic_cast<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>(grp);
     if (mag.get() == NULL)
       globalData->locaErrorCheck->throwError(
@@ -123,7 +123,7 @@ LOCA::Bifurcation::Factory::create(
   else if (name == "Pitchfork:  Moore-Spence") {
 
     // Cast group to MooreSpence group
-    Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::AbstractGroup> msg = 
+    Teuchos::RCP<LOCA::Pitchfork::MooreSpence::AbstractGroup> msg = 
       Teuchos::rcp_dynamic_cast<LOCA::Pitchfork::MooreSpence::AbstractGroup>(grp);
     if (msg.get() == NULL)
       globalData->locaErrorCheck->throwError(
@@ -142,7 +142,7 @@ LOCA::Bifurcation::Factory::create(
   else if (name == "Pitchfork:  Minimally Augmented") {
 
     // Cast group to MinimallyAugmented group
-    Teuchos::RefCountPtr<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup> mag = 
+    Teuchos::RCP<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup> mag = 
       Teuchos::rcp_dynamic_cast<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup>(grp);
     if (mag.get() == NULL)
       globalData->locaErrorCheck->throwError(
@@ -161,7 +161,7 @@ LOCA::Bifurcation::Factory::create(
   else if (name == "Hopf:  Moore-Spence") {
 
     // Cast group to MooreSpence group
-    Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::AbstractGroup> msg = 
+    Teuchos::RCP<LOCA::Hopf::MooreSpence::AbstractGroup> msg = 
       Teuchos::rcp_dynamic_cast<LOCA::Hopf::MooreSpence::AbstractGroup>(grp);
     if (msg.get() == NULL)
       globalData->locaErrorCheck->throwError(
@@ -180,7 +180,7 @@ LOCA::Bifurcation::Factory::create(
   else if (name == "Hopf:  Minimally Augmented") {
 
     // Cast group to MinimallyAugmented group
-    Teuchos::RefCountPtr<LOCA::Hopf::MinimallyAugmented::AbstractGroup> mag = 
+    Teuchos::RCP<LOCA::Hopf::MinimallyAugmented::AbstractGroup> mag = 
       Teuchos::rcp_dynamic_cast<LOCA::Hopf::MinimallyAugmented::AbstractGroup>(grp);
     if (mag.get() == NULL)
       globalData->locaErrorCheck->throwError(
@@ -203,9 +203,9 @@ LOCA::Bifurcation::Factory::create(
 							 "User-Defined Name",
 							 "???");
     if ((*bifurcationParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> >(userDefinedName))
+	isType< Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> >(userDefinedName))
       strategy = (*bifurcationParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> >(userDefinedName);
+	get< Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,

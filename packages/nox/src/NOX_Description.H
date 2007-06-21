@@ -361,7 +361,7 @@ Abstract::Group which contains the initial guess as its x-vector. See
 
 // Construct an object that derives from the abstract Group object. Here
 // we call it the ExampleGroup. It should contain the initial guess.
-Teuchos::RefCountPtr<UserConcreteGroup> grp = 
+Teuchos::RCP<UserConcreteGroup> grp = 
   Teuchos::rcp(new UserConcreteGroup);
 \endcode
 
@@ -392,11 +392,11 @@ Here is some sample code.
 
 \code
 // Set up the status tests
-Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestNormF =
+Teuchos::RCP<NOX::StatusTest::NormF> statusTestNormF =
   Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-4));
-Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestMaxIters =
+Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestMaxIters =
   Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
-Teuchos::RefCountPtr<NOX::StatusTest::Combo> statusTestsCombo =
+Teuchos::RCP<NOX::StatusTest::Combo> statusTestsCombo =
   Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
                                           statusTestNormF, 
                                           statusTestMaxIters));
@@ -411,7 +411,7 @@ types of solvers and so forth should be used.
 
 \code
 // Create the list of solver parameters
-Teuchos::RefCountPtr<Teuchos::ParameterList> solverParametersPtr =
+Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr =
   Teuchos::rcp(new Teuchos::ParameterList);
 
 // Select the solver (this is the default)
@@ -591,7 +591,7 @@ The following pages are relevant to developers.
  %NOX/%LOCA version 7.0 will be release as part of Trilinos 7.0 in early September 2006.  %NOX and %LOCA have undergone many important changes between the 6.0 and 7.0 release:
 
 <ul>
-  <li> %NOX is now using reference counted smart pointers (RCPs) for memory management.  Passing an RCP wrapped object through a method call implies a persisting relationship.  We are using the Teuchos::RefCountPtr object for the RCP.
+  <li> %NOX is now using reference counted smart pointers (RCPs) for memory management.  Passing an RCP wrapped object through a method call implies a persisting relationship.  We are using the Teuchos::RCP object for the RCP.
   <li> The NOX::Parameter::List has been removed.  We are now using the Teuchos::ParameterList object.  This has the same functionality with minor changes to the syntax of method calls.
   <li> %NOX now has a non-optional dependency on the <a href="http://software.sandia.gov/Trilinos/packages/teuchos">Teuchos</a> package (also part of Trilinos).  While it can be built stand-alone, we recomend building %NOX as part of Trilinos with the teuchos library enabled to simplify dependencies.
   <li> %NOX and %LOCA now generate Makefiles that users can include in their own makefiles to get all dependencies correct.  For example if %NOX is built with Epetra support enabled, nox depends on epetra, aztecoo and ifpack headers and libraries.  To keep the user from having to learn about those packages so they can link nox into their codes, just include the %NOX file Makefile.export.nox file to get variables that have all sub package dependencies correct. In the installation directory, look at the files include/Makefiles.export.nox and include/Makefiles.export.nox.macros.  The important flags in Makefile.export.nox are NOX_INCLUDES, NOX_LIBS, LOCA_INCLUDES, and LOCA_LIBS flags.  The Makefile.export.nmox.macros file contains the compiler flags that were used to build the %NOX and %LOCA packages.  It is very important to use consistent flags when linking your application against Trilinos.
@@ -644,7 +644,7 @@ natural decoupling of the parallel linear algebra data structures (i.e., the
 group) from the eigensolver method/package (eigensolver strategy object).
 The use of strategy interfaces instead of group methods is a major theme in
 the new %LOCA framework, and is discussed more fully on the new framework page.
-<li> Teuchos::RefCountPtr support has been added to improve software quality.
+<li> Teuchos::RCP support has been added to improve software quality.
 For the most part, ref-count pointers are only used in the new framework.
 <li> Many regression tests have been added to improve software quality.
 <li> Libtool support has been removed from %LOCA due to portability issues.
@@ -1653,17 +1653,17 @@ immediately before the word that is causing the link. For example,
      <ul>
 
      <li> "User Defined Pre/Post Operator" - a
-     Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> object that
+     Teuchos::RCP<NOX::Abstract::PrePostOperator> object that
      allows users to insert pre and post method calls into nox's
      solvers (before and after the NOX::Solver::Generic::step() and
      before and after the NOX::Solver::Generic::solve() methods).
      Users write a class that derives from
      NOX::Abstract::PrePostOperator.  They then wrap the construction
-     in a Teuchos::RefCountPtr object.  These objects can be set in
+     in a Teuchos::RCP object.  These objects can be set in
      the parameter list with the following code.
 
      \code
-  Teuchos::RefCountPtr<UserPrePostOperator> ppo =
+  Teuchos::RCP<UserPrePostOperator> ppo =
     Teuchos::rcp(new UserPrePostOperator(printing));
   nlParams.sublist("Solver Options").set
     <NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", ppo);
@@ -1671,10 +1671,10 @@ immediately before the word that is causing the link. For example,
 
      <li> "Status Test Check Type" - an enumerated type (NOX::StatusTest::CheckType) that determines if all or just a minimal set of status tests should be run at each iteration.  The status tests can be run efficiently if set to NOX::StatusTest::Minimal and all test run every iteration is set to NOX::StatusTest::Complete.  
 
-     <li> "User Defined Merit Function" - Teuchos::RefCountPtr<NOX::MeritFunction::Generic> object that allows the user to define their own merit function for use in the globalization algorithms.  The user must implement a derived class from NOX::MeritFunction::Generic and then pass it into %NOX through the parameter list.  
+     <li> "User Defined Merit Function" - Teuchos::RCP<NOX::MeritFunction::Generic> object that allows the user to define their own merit function for use in the globalization algorithms.  The user must implement a derived class from NOX::MeritFunction::Generic and then pass it into %NOX through the parameter list.  
 
      \code
-  Teuchos::RefCountPtr<UserMeritFunction> mf =
+  Teuchos::RCP<UserMeritFunction> mf =
     Teuchos::rcp(new UserMeritFunction);
   nlParams.sublist("Solver Options").set
     <NOX::MeritFunction::Generic>("User Defined Merit Function", mf);
@@ -1987,7 +1987,7 @@ int main(int argc, char *argv[])
 \code
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
-  Teuchos::RefCountPtr<Interface> interface = 
+  Teuchos::RCP<Interface> interface = 
     Teuchos::rcp(new Interface(NumGlobalElements, Comm));
 \endcode
 
@@ -1995,8 +1995,8 @@ int main(int argc, char *argv[])
 
 \code
   // Get the vector from the Problem
-  Teuchos::RefCountPtr<Epetra_Vector> soln = interface->getSolution();
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> noxSoln = 
+  Teuchos::RCP<Epetra_Vector> soln = interface->getSolution();
+  Teuchos::RCP<NOX::Epetra::Vector> noxSoln = 
     Teuchos::rcp(new NOX::Epetra::Vector(soln, 
 					 NOX::Epetra::Vector::CreateView));
 
@@ -2014,7 +2014,7 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
@@ -2066,7 +2066,7 @@ int main(int argc, char *argv[])
 
 \code 
   // Add a user defined pre/post operator object
-  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> ppo =
+  Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
     Teuchos::rcp(new UserPrePostOperator(printing));
   nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", 
 					 ppo);
@@ -2084,7 +2084,7 @@ int main(int argc, char *argv[])
 
 \code
   // 2. Matrix-Free (Epetra_Operator)
-  Teuchos::RefCountPtr<NOX::Epetra::MatrixFree> MF = 
+  Teuchos::RCP<NOX::Epetra::MatrixFree> MF = 
     Teuchos::rcp(new NOX::Epetra::MatrixFree(printParams, interface, 
 					     *noxSoln));
 \endcode
@@ -2093,7 +2093,7 @@ int main(int argc, char *argv[])
 
 \code
   // 3. Finite Difference (Epetra_RowMatrix)
-  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifference> FD = 
+  Teuchos::RCP<NOX::Epetra::FiniteDifference> FD = 
     Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, interface, 
 						   *soln));
 \endcode
@@ -2102,9 +2102,9 @@ int main(int argc, char *argv[])
 
 \code
   // Create the linear system
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = MF;
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> iPrec = FD;
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = MF;
+  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = FD;
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 						      iJac, MF, 
 						      iPrec, FD, 
@@ -2116,7 +2116,7 @@ int main(int argc, char *argv[])
 \code
   // Create the Group
   NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
-  Teuchos::RefCountPtr<NOX::Epetra::Group> grpPtr = 
+  Teuchos::RCP<NOX::Epetra::Group> grpPtr = 
     Teuchos::rcp(new NOX::Epetra::Group(printParams, 
 					iReq, 
 					initialGuess, 
@@ -2128,25 +2128,25 @@ int main(int argc, char *argv[])
 
 \code
   // Create the convergence tests
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> relresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> relresid = 
     Teuchos::rcp(new NOX::StatusTest::NormF(grp, 1.0e-2));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormUpdate> update =
+  Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
     Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormWRMS> wrms =
+  Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
     Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> converged =
+  Teuchos::RCP<NOX::StatusTest::Combo> converged =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
   converged->addStatusTest(absresid);
   converged->addStatusTest(relresid);
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
-  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
-  Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> fv =
+  Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(fv);
   combo->addStatusTest(converged);

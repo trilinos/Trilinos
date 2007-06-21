@@ -64,7 +64,7 @@ int main()
     outFile << n << endl;
 
     // Create parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -114,11 +114,11 @@ int main()
 		      NOX::Utils::StepperParameters);  // Should set
 
     // Create LAPACK Factory
-    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+    Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory = 
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+    Teuchos::RCP<LOCA::GlobalData> globalData =
       LOCA::createGlobalData(paramList, lapackFactory);
 
     // Set up the problem interface
@@ -131,17 +131,17 @@ int main()
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> grp = 
       Teuchos::rcp(new LOCA::LAPACK::Group(globalData, chan));
     
     grp->setParams(p);
 
     // Set up the status tests
-    Teuchos::RefCountPtr<NOX::StatusTest::NormF> normF = 
+    Teuchos::RCP<NOX::StatusTest::NormF> normF = 
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxIters = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxIters = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
-    Teuchos::RefCountPtr<NOX::StatusTest::Generic> comboOR = 
+    Teuchos::RCP<NOX::StatusTest::Generic> comboOR = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
 					      normF, 
 					      maxIters));
@@ -160,7 +160,7 @@ int main()
     }
 
     // Get the final solution from the stepper
-    Teuchos::RefCountPtr<const LOCA::LAPACK::Group> finalGroup = 
+    Teuchos::RCP<const LOCA::LAPACK::Group> finalGroup = 
       Teuchos::rcp_dynamic_cast<const LOCA::LAPACK::Group>(stepper.getSolutionGroup());
     const NOX::LAPACK::Vector& finalSolution = 
       dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup->getX());

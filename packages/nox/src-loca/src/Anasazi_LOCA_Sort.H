@@ -41,7 +41,7 @@
 #ifndef ANASAZI_LOCA_SORT_HPP
 #define ANASAZI_LOCA_SORT_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "AnasaziSortManager.hpp"
 
@@ -85,8 +85,8 @@ namespace Anasazi {
      * @param global_data [in] Global data object
      * @param strategy_ [in] Ref-count ptr to LOCA sorting strategy
      */
-    LOCASort(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy_);
+    LOCASort(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	     const Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy>& strategy_);
       
     //! Destructor
     virtual ~LOCASort();
@@ -128,10 +128,10 @@ namespace Anasazi {
   protected: 
 
     //! Global data
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+    Teuchos::RCP<LOCA::GlobalData> globalData;
       
     //! EigenvalueSort strategy
-    Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> strategy;
+    Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy> strategy;
 
   }; // Class LOCASort
   

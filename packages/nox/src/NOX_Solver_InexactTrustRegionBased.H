@@ -50,7 +50,7 @@
 #include "Teuchos_ParameterList.hpp"	    
 #include "NOX_Direction_Utils_InexactNewton.H" 
 #include "NOX_Solver_PrePostOperator.H"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward declarations
 namespace NOX {
@@ -284,19 +284,19 @@ public:
     See reset() for description. 
   */
   InexactTrustRegionBased(
-     const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-     const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
+     const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+     const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+     const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   //! Destructor
   virtual ~InexactTrustRegionBased();
 
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+		     const Teuchos::RCP<Teuchos::ParameterList>& params);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
@@ -359,43 +359,43 @@ protected:
   };
 
   //! Pointer to the global data object.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Utils
-  Teuchos::RefCountPtr<NOX::Utils> utils;
+  Teuchos::RCP<NOX::Utils> utils;
   
   //! Current status of the trust region inner iteration.
   InnerIterationReturnType innerIterationStatus;
 
   //! Current solution.
-  Teuchos::RefCountPtr<NOX::Abstract::Group> solnPtr;		
+  Teuchos::RCP<NOX::Abstract::Group> solnPtr;		
 
   //! Previous solution pointer. 
-  Teuchos::RefCountPtr<NOX::Abstract::Group> oldSolnPtr;	
+  Teuchos::RCP<NOX::Abstract::Group> oldSolnPtr;	
 
   //! Current newton direction pointer.
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> newtonVecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> newtonVecPtr;
 
   //! Current cauchy direction pointer.
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> cauchyVecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> cauchyVecPtr;
 
   //! Extra vector used in computations
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> rCauchyVecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> rCauchyVecPtr;
 
   //! Extra vector used in computations
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> residualVecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> residualVecPtr;
 
   //! Extra vector used in computations
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> aVecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> aVecPtr;
 
   //! Extra vector used in computations
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> bVecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> bVecPtr;
 
   //! Stopping test.
-  Teuchos::RefCountPtr<NOX::StatusTest::Generic> testPtr;		
+  Teuchos::RCP<NOX::StatusTest::Generic> testPtr;		
 
   //! Input parameters.
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramsPtr;	
+  Teuchos::RCP<Teuchos::ParameterList> paramsPtr;	
 
   //! Inexact Newton utitilities.
   NOX::Direction::Utils::InexactNewton inNewtonUtils;
@@ -472,7 +472,7 @@ protected:
   StepType stepType;
 
   //! Stores merit function supplied by global data.
-  Teuchos::RefCountPtr<NOX::MeritFunction::Generic> meritFuncPtr;
+  Teuchos::RCP<NOX::MeritFunction::Generic> meritFuncPtr;
 
   //! If set to true, the initial guess for the Newton direction computation will use the Cauchy direction as the initial guess. 
   bool useCauchyInNewtonDirection;

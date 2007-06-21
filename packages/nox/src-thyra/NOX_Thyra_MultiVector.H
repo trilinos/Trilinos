@@ -43,7 +43,7 @@
 #define NOX_THYRA_MULTIVECTOR_H
 
 #include "NOX_Abstract_MultiVector.H" // base class
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 
 namespace NOX {
@@ -67,7 +67,7 @@ namespace NOX {
       
       //! \brief Constructor that creates a VIEW of the Thyra multivector.
       MultiVector(
-       const Teuchos::RefCountPtr< ::Thyra::MultiVectorBase<double> >& source);
+       const Teuchos::RCP< ::Thyra::MultiVectorBase<double> >& source);
 
       //! Construct from a given Thyra multivector
       MultiVector(const ::Thyra::MultiVectorBase<double>& source);
@@ -188,25 +188,25 @@ namespace NOX {
        * \return Pointer to newly created vector or NULL if clone is not 
        * supported. 
        */
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
       clone(CopyType type = DeepCopy) const;
 
       //! Creates a new multi-vector with \c numvecs columns
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       clone(int numvecs) const;
 
       /*! 
        * \brief Creates a new multi-vector with \c index.size() columns whose 
        * columns are copies of the columns of \c *this given by \c index.
        */
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
       subCopy(const vector<int>& index) const;
 
       /*! 
        * \brief Creates a new multi-vector with \c ndex.size() columns that 
        * shares the columns of \c *this given by \c index.
        */
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
       subView(const vector<int>& index) const;
 
       //@}
@@ -242,14 +242,14 @@ namespace NOX {
     protected:
 
        //! Pointer to petra vector owned by this object
-      Teuchos::RefCountPtr< ::Thyra::MultiVectorBase<double> > thyraMultiVec;
+      Teuchos::RCP< ::Thyra::MultiVectorBase<double> > thyraMultiVec;
 
       //! NOX::Thyra::Vector's for each column of the multivector
       /*!
        * Each Thyra_Vector in the NOX::Thyra::Vector has a view into a 
        * column of the multivector and get filled in as needed by operator[].
        */
-      mutable std::vector< Teuchos::RefCountPtr<NOX::Thyra::Vector> > noxThyraVectors;
+      mutable std::vector< Teuchos::RCP<NOX::Thyra::Vector> > noxThyraVectors;
 
     };
   } // namespace Thyra

@@ -74,10 +74,10 @@ SchurCoupler::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 //  // Convert X and Y from an Epetra_MultiVectors to Epetra_Vectors
 //  // and NOX::Epetra::Vectors.  This is done so we use a consistent
 //  // vector space for norms and inner products.
-//  Teuchos::RefCountPtr<Epetra_Vector> wrappedX = Teuchos::rcp(new Epetra_Vector(View, X, 0));
-//  Teuchos::RefCountPtr<Epetra_Vector> wrappedY = Teuchos::rcp(new Epetra_Vector(View, Y, 0));
-//  Teuchos::RefCountPtr<Epetra_Vector> tempX    = Teuchos::rcp(new Epetra_Vector(*wrappedX) );
-//  Teuchos::RefCountPtr<Epetra_Vector> tempY    = Teuchos::rcp(new Epetra_Vector(*wrappedY) );
+//  Teuchos::RCP<Epetra_Vector> wrappedX = Teuchos::rcp(new Epetra_Vector(View, X, 0));
+//  Teuchos::RCP<Epetra_Vector> wrappedY = Teuchos::rcp(new Epetra_Vector(View, Y, 0));
+//  Teuchos::RCP<Epetra_Vector> tempX    = Teuchos::rcp(new Epetra_Vector(*wrappedX) );
+//  Teuchos::RCP<Epetra_Vector> tempY    = Teuchos::rcp(new Epetra_Vector(*wrappedY) );
 //
 //  // The substance of this operator ----- to do RWH 10/24/2006
 //
@@ -173,13 +173,13 @@ SchurCoupler::hasExplicitOperator( int rowBlock, int colBlock )
   return ( rowBlock == colBlock );
 }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 SchurCoupler::getExplicitOperator( int rowBlock, int colBlock )
 {
   return problemManager.getBlockJacobianMatrix(rowBlock+1);
 }
 
-Teuchos::RefCountPtr<SchurOp>
+Teuchos::RCP<SchurOp>
 SchurCoupler::getSchurOperator( int rowBlock, int colBlock )
 {
 

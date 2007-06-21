@@ -42,7 +42,7 @@
 #ifndef LOCA_BORDEREDSOLVER_BORDEREDOPERATOR_H
 #define LOCA_BORDEREDSOLVER_BORDEREDOPERATOR_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_BorderedSolver_AbstractOperator.H" // base class
 #include "LOCA_BorderedSystem_AbstractGroup.H"
@@ -60,12 +60,12 @@ namespace LOCA {
     public:
 
       //! Constructor
-      BorderedOperator(const Teuchos::RefCountPtr<const LOCA::BorderedSystem::AbstractGroup>& grp) : grpPtr(grp) {}
+      BorderedOperator(const Teuchos::RCP<const LOCA::BorderedSystem::AbstractGroup>& grp) : grpPtr(grp) {}
 
       //! Destructor
       virtual ~BorderedOperator() {}
 
-      virtual Teuchos::RefCountPtr<const LOCA::BorderedSystem::AbstractGroup>
+      virtual Teuchos::RCP<const LOCA::BorderedSystem::AbstractGroup>
       getBorderedGroup() const { return grpPtr; }
   
       //! Apply the operator
@@ -109,7 +109,7 @@ namespace LOCA {
     protected:
 
       //! Pointer to group
-      Teuchos::RefCountPtr<const LOCA::BorderedSystem::AbstractGroup> grpPtr;
+      Teuchos::RCP<const LOCA::BorderedSystem::AbstractGroup> grpPtr;
 
     }; // Class BorderedOperator
 

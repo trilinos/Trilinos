@@ -42,7 +42,7 @@
 #ifndef NOX_LINESEARCH_GENERIC_H
 #define NOX_LINESEARCH_GENERIC_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward Declarations
 namespace Teuchos {
@@ -81,7 +81,7 @@ public:
   virtual ~Generic() {};
 
   //! Reset parameters
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 		     Teuchos::ParameterList& params) = 0;
   
   //! Perform a line search

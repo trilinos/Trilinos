@@ -52,10 +52,10 @@
 
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
 Constraint(
-    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-    const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-    const Teuchos::RefCountPtr<Teuchos::ParameterList>& tpParams,
-    const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g,
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& tpParams,
+    const Teuchos::RCP<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g,
     bool is_symmetric,
     const NOX::Abstract::Vector& a,
     const NOX::Abstract::Vector* b,
@@ -148,19 +148,19 @@ LOCA::TurningPoint::MinimallyAugmented::Constraint::
 
 void
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
-setGroup(const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g)
+setGroup(const Teuchos::RCP<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g)
 {
   grpPtr = g;
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+Teuchos::RCP<const NOX::Abstract::Vector>
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
 getLeftNullVec() const
 {
   return Teuchos::rcp(&(*w_vector)[0], false);
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+Teuchos::RCP<const NOX::Abstract::Vector>
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
 getRightNullVec() const
 {
@@ -214,7 +214,7 @@ copy(const LOCA::MultiContinuation::ConstraintInterface& src)
   }
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
 clone(NOX::CopyType type) const
 {
@@ -276,7 +276,7 @@ computeConstraints()
 							   callingFunction);
 
   // Set up bordered systems
-  Teuchos::RefCountPtr<const LOCA::BorderedSolver::JacobianOperator> op =
+  Teuchos::RCP<const LOCA::BorderedSolver::JacobianOperator> op =
     Teuchos::rcp(new  LOCA::BorderedSolver::JacobianOperator(grpPtr));
   borderedSolver->setMatrixBlocksMultiVecConstraint(op, 
 						    a_vector, 
@@ -288,7 +288,7 @@ computeConstraints()
   one(0,0) = dn;
 
   // Get linear solver parameters
-  Teuchos::RefCountPtr<Teuchos::ParameterList> linear_solver_params =
+  Teuchos::RCP<Teuchos::ParameterList> linear_solver_params =
     parsedParams->getSublist("Linear Solver");
 
   // Compute sigma_1 and right null vector v

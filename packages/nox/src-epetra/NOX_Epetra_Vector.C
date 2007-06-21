@@ -45,10 +45,10 @@
 #include "NOX_Epetra_VectorSpace_L2.H"
 
 NOX::Epetra::Vector::
-Vector(const Teuchos::RefCountPtr<Epetra_Vector>& source,
+Vector(const Teuchos::RCP<Epetra_Vector>& source,
        NOX::Epetra::Vector::MemoryType memoryType, 
        NOX::CopyType type,
-       Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vs)
+       Teuchos::RCP<NOX::Epetra::VectorSpace> vs)
 {
   if (Teuchos::is_null(vs))
     vectorSpace = Teuchos::rcp(new NOX::Epetra::VectorSpaceL2);
@@ -76,7 +76,7 @@ Vector(const Teuchos::RefCountPtr<Epetra_Vector>& source,
 }
 
 NOX::Epetra::Vector::Vector(const Epetra_Vector& source, NOX::CopyType type,
-			    Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vs)
+			    Teuchos::RCP<NOX::Epetra::VectorSpace> vs)
 {
   if (Teuchos::is_null(vs))
     vectorSpace = Teuchos::rcp(new NOX::Epetra::VectorSpaceL2);
@@ -235,15 +235,15 @@ NOX::Abstract::Vector& NOX::Epetra::Vector::scale(const NOX::Epetra::Vector& a)
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector> NOX::Epetra::Vector::
+Teuchos::RCP<NOX::Abstract::Vector> NOX::Epetra::Vector::
 clone(CopyType type) const
 {
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> newVec = 
+  Teuchos::RCP<NOX::Abstract::Vector> newVec = 
     Teuchos::rcp(new NOX::Epetra::Vector(*epetraVec, type, vectorSpace));
   return newVec;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Epetra::Vector::createMultiVector(
 				    const NOX::Abstract::Vector* const* vecs,
 				    int numVecs, NOX::CopyType type) const
@@ -268,7 +268,7 @@ NOX::Epetra::Vector::createMultiVector(
 
   Epetra_MultiVector epetra_mv(View, map, v, numVecs+1);
 
-  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> mv = 
+  Teuchos::RCP<NOX::Epetra::MultiVector> mv = 
     Teuchos::rcp(new NOX::Epetra::MultiVector(epetra_mv, type));
 
   delete [] v;
@@ -276,7 +276,7 @@ NOX::Epetra::Vector::createMultiVector(
   return mv;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
 {
   if (numVecs <= 0) {
@@ -299,7 +299,7 @@ NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
     }
   }
 
-  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> mv = 
+  Teuchos::RCP<NOX::Epetra::MultiVector> mv = 
     Teuchos::rcp(new NOX::Epetra::MultiVector(*epetra_mv, type));
 
   delete epetra_mv;
@@ -344,7 +344,7 @@ void NOX::Epetra::Vector::print(std::ostream& stream) const
   return;
 }
 
-Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> 
+Teuchos::RCP<NOX::Epetra::VectorSpace> 
 NOX::Epetra::Vector::getVectorSpace() const
 {
   return vectorSpace;

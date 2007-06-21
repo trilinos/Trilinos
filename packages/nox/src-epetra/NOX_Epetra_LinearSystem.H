@@ -45,7 +45,7 @@
 #include "NOX_Epetra_Vector.H"	    // class data element
 #include "NOX_Utils.H"              // class data element
 #include "NOX_Common.H"             // class data element (string)
-#include "Teuchos_RefCountPtr.hpp"  // class data element
+#include "Teuchos_RCP.hpp"  // class data element
 
 // Forward declares
 namespace NOX {
@@ -145,7 +145,7 @@ public:
 				      NOX::Epetra::Vector& result) const = 0;
 
   //! Get the scaling object
-  virtual Teuchos::RefCountPtr<NOX::Epetra::Scaling> getScaling() = 0;
+  virtual Teuchos::RCP<NOX::Epetra::Scaling> getScaling() = 0;
 
   /*! 
     \brief Sets the diagonal scaling vector(s) used in scaling the linear system.  
@@ -154,7 +154,7 @@ public:
     of the linear system.  
    */
   virtual void 
-  resetScaling(const Teuchos::RefCountPtr<NOX::Epetra::Scaling>& s) = 0;
+  resetScaling(const Teuchos::RCP<NOX::Epetra::Scaling>& s) = 0;
 
   //! Evaluates the Jacobian based on the solution vector x.
   virtual bool computeJacobian(const NOX::Epetra::Vector& x) = 0;
@@ -202,32 +202,32 @@ public:
   virtual bool hasPreconditioner() const = 0;
 
   //! Return Jacobian operator
-  virtual Teuchos::RefCountPtr<const Epetra_Operator> 
+  virtual Teuchos::RCP<const Epetra_Operator> 
   getJacobianOperator() const = 0;
 
   //! Return Jacobian operator
-  virtual Teuchos::RefCountPtr<Epetra_Operator> getJacobianOperator() = 0;
+  virtual Teuchos::RCP<Epetra_Operator> getJacobianOperator() = 0;
 
   //! Return preconditioner operator
   /*!
    * Note:  This should only be called if hasPreconditioner() returns true.
    */
-  virtual Teuchos::RefCountPtr<const Epetra_Operator> 
+  virtual Teuchos::RCP<const Epetra_Operator> 
   getGeneratedPrecOperator() const = 0;
 
   //! Return preconditioner operator
-  virtual Teuchos::RefCountPtr<Epetra_Operator> getGeneratedPrecOperator() = 0;
+  virtual Teuchos::RCP<Epetra_Operator> getGeneratedPrecOperator() = 0;
 
   //! Set Jacobian operator for solve
   virtual void setJacobianOperatorForSolve(const 
-		 Teuchos::RefCountPtr<const Epetra_Operator>& solveJacOp) = 0;
+		 Teuchos::RCP<const Epetra_Operator>& solveJacOp) = 0;
 
   //! Set preconditioner operator for solve
   /*!
    * Note:  This should only be called if hasPreconditioner() returns true.
    */
   virtual void setPrecOperatorForSolve(const 
-		 Teuchos::RefCountPtr<const Epetra_Operator>& solvePrecOp) = 0;
+		 Teuchos::RCP<const Epetra_Operator>& solvePrecOp) = 0;
 };
 
 } // namespace Epetra

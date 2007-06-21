@@ -46,7 +46,7 @@
 #include "NOX_Epetra_Interface_Required.H"
 #include "NOX_Epetra_Interface_Jacobian.H"
 #include "NOX_Epetra_Interface_Preconditioner.H"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "EpetraExt_ModelEvaluator.h"
   
 namespace NOX {
@@ -66,7 +66,7 @@ namespace Epetra {
   public:
     
     //! Constructor
-    ModelEvaluatorInterface(const Teuchos::RefCountPtr<EpetraExt::ModelEvaluator>& m);
+    ModelEvaluatorInterface(const Teuchos::RCP<EpetraExt::ModelEvaluator>& m);
     
     //! Destructor
     virtual ~ModelEvaluatorInterface();
@@ -83,7 +83,7 @@ namespace Epetra {
   protected:
     
     //! RCP to the Model Evaluator.
-    Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> model_;
+    Teuchos::RCP<EpetraExt::ModelEvaluator> model_;
     
     //! Inargs object.
     EpetraExt::ModelEvaluator::InArgs inargs_;
@@ -93,13 +93,13 @@ namespace Epetra {
     
 
     //! RCP for the solution vector.
-    Teuchos::RefCountPtr<const Epetra_Vector> x_;
+    Teuchos::RCP<const Epetra_Vector> x_;
 
     //! RCP for the residual vector.
-    Teuchos::RefCountPtr<Epetra_Vector> f_;
+    Teuchos::RCP<Epetra_Vector> f_;
 
     //! RCP for the Jacobian operator.
-    Teuchos::RefCountPtr<Epetra_Operator> jacobian_;
+    Teuchos::RCP<Epetra_Operator> jacobian_;
 
     //! RCP for the residual vector wrapper.
     EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> eval_f_;

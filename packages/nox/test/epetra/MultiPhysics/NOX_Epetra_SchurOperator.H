@@ -141,7 +141,7 @@ public:
   //@{ 
 
     //! Modifies the RHS vector using block operations
-    virtual void modifyRHS( Teuchos::RefCountPtr<Epetra_Vector> &, Teuchos::RefCountPtr<Epetra_Vector> & );
+    virtual void modifyRHS( Teuchos::RCP<Epetra_Vector> &, Teuchos::RCP<Epetra_Vector> & );
   //@}
 
 protected:

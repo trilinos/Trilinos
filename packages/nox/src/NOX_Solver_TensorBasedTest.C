@@ -81,9 +81,9 @@
 
 
 NOX::Solver::TensorBasedTest::
-TensorBasedTest(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp,
-		const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-		const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
+TensorBasedTest(const Teuchos::RCP<NOX::Abstract::Group>& xgrp,
+		const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+		const Teuchos::RCP<Teuchos::ParameterList>& p) :
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
   utilsPtr(globalDataPtr->getUtils()), 
   solnptr(xgrp),		
@@ -123,9 +123,9 @@ void NOX::Solver::TensorBasedTest::init()
 
 
 bool NOX::Solver::TensorBasedTest::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp,
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& p)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& xgrp,
+      const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+      const Teuchos::RCP<Teuchos::ParameterList>& p)
 {
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   utilsPtr = globalDataPtr->getUtils(); 
@@ -142,8 +142,8 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp,
 }
 
 bool NOX::Solver::TensorBasedTest::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp,
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& xgrp,
+      const Teuchos::RCP<NOX::StatusTest::Generic>& t)
 {
   solnptr = xgrp;
   testptr = t;
@@ -152,7 +152,7 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp,
 }
 
 bool NOX::Solver::TensorBasedTest::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& xgrp)
 {
   solnptr = xgrp;
   init();

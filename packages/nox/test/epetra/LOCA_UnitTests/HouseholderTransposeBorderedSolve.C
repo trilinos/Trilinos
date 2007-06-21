@@ -63,23 +63,23 @@
 #include "LinearConstraint.H"
 
 // Global variables used in main() and testSolve()
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp;
-Teuchos::RefCountPtr<LOCA::BorderedSolver::JacobianOperator> op;
-Teuchos::RefCountPtr<LinearConstraint> constraints;
-Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
-Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> bordering;
-Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> householder;
-Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
-Teuchos::RefCountPtr<NOX::TestCompare> testCompare;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> B;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> C;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> F;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> G;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_bordering;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> Y_bordering;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_householder;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> Y_householder;
+Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> grp;
+Teuchos::RCP<LOCA::BorderedSolver::JacobianOperator> op;
+Teuchos::RCP<LinearConstraint> constraints;
+Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams;
+Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> bordering;
+Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> householder;
+Teuchos::RCP<LOCA::GlobalData> globalData;
+Teuchos::RCP<NOX::TestCompare> testCompare;
+Teuchos::RCP<NOX::Abstract::MultiVector> A;
+Teuchos::RCP<NOX::Abstract::MultiVector> B;
+Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> C;
+Teuchos::RCP<NOX::Abstract::MultiVector> F;
+Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> G;
+Teuchos::RCP<NOX::Abstract::MultiVector> X_bordering;
+Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> Y_bordering;
+Teuchos::RCP<NOX::Abstract::MultiVector> X_householder;
+Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> Y_householder;
 
 int  
 testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
@@ -91,13 +91,13 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
     globalData->locaUtils->out() 
       << std::endl << "***** " << testName << " *****" << std::endl;
 
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> a = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> a = 
     Teuchos::null;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> c = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> c = 
     Teuchos::null;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> f = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> f = 
     Teuchos::null;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> g = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> g = 
     Teuchos::null;
 
   if (!flagA)
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
     }
 
     // Create parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -275,17 +275,17 @@ int main(int argc, char *argv[])
     // Create the interface between the test problem and the nonlinear solver
     // This is created by the user using inheritance of the abstract base 
     // class:
-    Teuchos::RefCountPtr<Problem_Interface> interface = 
+    Teuchos::RCP<Problem_Interface> interface = 
       Teuchos::rcp(new Problem_Interface(Problem));
-    Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq = interface;
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
+    Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = interface;
+    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
     
     // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
-    Teuchos::RefCountPtr<Epetra_RowMatrix> Amat = 
+    Teuchos::RCP<Epetra_RowMatrix> Amat = 
       Teuchos::rcp(&Problem.getJacobian(),false);
     
     // Create the linear systems
-    Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys = 
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, 
 							lsParams, iReq, iJac, 
 							Amat, soln));
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
     NOX::Epetra::Vector locaSoln(soln);
 
     // Create Epetra factory
-    Teuchos::RefCountPtr<LOCA::Abstract::Factory> epetraFactory =
+    Teuchos::RCP<LOCA::Abstract::Factory> epetraFactory =
       Teuchos::rcp(new LOCA::Epetra::Factory);
 
      // Create global data object
@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
     op = Teuchos::rcp(new LOCA::BorderedSolver::JacobianOperator(grp));
     
     // Change initial guess to a random vector
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> xnew = 
+    Teuchos::RCP<NOX::Abstract::Vector> xnew = 
       grp->getX().clone();
     xnew->random();
     grp->setX(*xnew);

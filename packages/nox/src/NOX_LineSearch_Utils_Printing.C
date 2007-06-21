@@ -44,7 +44,7 @@
 #include "NOX_Common.H"
 
 NOX::LineSearch::Utils::Printing::
-Printing(const Teuchos::RefCountPtr<NOX::Utils>& u) :
+Printing(const Teuchos::RCP<NOX::Utils>& u) :
   NOX::Utils(*u)
 {
 
@@ -56,7 +56,7 @@ NOX::LineSearch::Utils::Printing::~Printing()
 }
 
 void NOX::LineSearch::Utils::Printing::
-reset(const Teuchos::RefCountPtr<NOX::Utils>& u)
+reset(const Teuchos::RCP<NOX::Utils>& u)
 {
   NOX::Utils* tmp = this;
   tmp = u.get();

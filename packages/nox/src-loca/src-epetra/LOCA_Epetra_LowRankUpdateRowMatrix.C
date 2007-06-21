@@ -50,10 +50,10 @@
 
 LOCA::Epetra::LowRankUpdateRowMatrix::
 LowRankUpdateRowMatrix(
-        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<Epetra_RowMatrix>& jacRowMatrix, 
-	const Teuchos::RefCountPtr<Epetra_MultiVector>& U_multiVec, 
-	const Teuchos::RefCountPtr<Epetra_MultiVector>& V_multiVec,
+        const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<Epetra_RowMatrix>& jacRowMatrix, 
+	const Teuchos::RCP<Epetra_MultiVector>& U_multiVec, 
+	const Teuchos::RCP<Epetra_MultiVector>& V_multiVec,
 	bool include_UV_terms) :
   LOCA::Epetra::LowRankUpdateOp(global_data, jacRowMatrix, U_multiVec,
 				V_multiVec),

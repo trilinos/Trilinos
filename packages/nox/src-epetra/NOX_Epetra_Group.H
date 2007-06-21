@@ -48,7 +48,7 @@
 #include "NOX_Common.H"         // class data element (string)
 #include "NOX_Epetra_LinearSystem.H"  // class data element 
 #include "NOX_SharedObjectTemplate.H"  // class data element 
-#include "Teuchos_RefCountPtr.hpp"  // class data element
+#include "Teuchos_RCP.hpp"  // class data element
 
 // Forward declares
 namespace NOX {
@@ -88,14 +88,14 @@ public:
     preconditioning.
   */
   Group(Teuchos::ParameterList& printingParams, 
-	const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
+	const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
 	const NOX::Epetra::Vector& initialGuess);
 
   //! Standard Constructor.
   Group(Teuchos::ParameterList& printingParams, 
-	const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
+	const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
 	const NOX::Epetra::Vector& initialGuess, 
-	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys);
+	const Teuchos::RCP<NOX::Epetra::LinearSystem>& linSys);
 
   /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
     valid shared linear system. */
@@ -261,19 +261,19 @@ in NOX::Abstract::Group
 
   //@}
 
-  virtual Teuchos::RefCountPtr<NOX::Abstract::Group> 
+  virtual Teuchos::RCP<NOX::Abstract::Group> 
   clone(CopyType type = DeepCopy) const;
 
   //! Return the userInterface.
-  virtual Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> 
+  virtual Teuchos::RCP<NOX::Epetra::Interface::Required> 
   getRequiredInterface();
 
   //! Return the Linear System.
-  virtual Teuchos::RefCountPtr<const NOX::Epetra::LinearSystem> 
+  virtual Teuchos::RCP<const NOX::Epetra::LinearSystem> 
   getLinearSystem() const;
 
   //! Return the Linear System.
-  virtual Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> getLinearSystem();
+  virtual Teuchos::RCP<NOX::Epetra::LinearSystem> getLinearSystem();
 
   /* \brief Computes the condition number of the Jacobian matrix.
 
@@ -309,23 +309,23 @@ protected:
   /** @name Vectors */
   //@{
   //! Solution vector pointer.
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> xVectorPtr;
+  Teuchos::RCP<NOX::Epetra::Vector> xVectorPtr;
   //! Solution vector.
   NOX::Epetra::Vector& xVector;
   //! Right-hand-side vector (function evaluation).
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> RHSVectorPtr;
+  Teuchos::RCP<NOX::Epetra::Vector> RHSVectorPtr;
   //! Right-hand-side vector pointer (function evaluation).
   NOX::Epetra::Vector& RHSVector;
   //! Gradient vector pointer(steepest descent vector).
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> gradVectorPtr;
+  Teuchos::RCP<NOX::Epetra::Vector> gradVectorPtr;
   //! Gradient vector (steepest descent vector).
   NOX::Epetra::Vector& gradVector;
   //! Newton direction vector pointer.
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> NewtonVectorPtr;
+  Teuchos::RCP<NOX::Epetra::Vector> NewtonVectorPtr;
   //! Newton direction vector.
   NOX::Epetra::Vector& NewtonVector;
   //! An extra temporary vector, only allocated if needed.
-  mutable Teuchos::RefCountPtr<Epetra_Vector> tmpVectorPtr;
+  mutable Teuchos::RCP<Epetra_Vector> tmpVectorPtr;
   //@}
 
   /** @name IsValid flags 
@@ -350,12 +350,12 @@ protected:
   double conditionNumber;
 
   //! Pointer to the condition number object.
-  Teuchos::RefCountPtr<AztecOOConditionNumber> azConditionNumberPtr;
+  Teuchos::RCP<AztecOOConditionNumber> azConditionNumberPtr;
 
   /** @name Shared Operators */
   //@{
   //! Pointer to shared Jacobian matrix 
-  Teuchos::RefCountPtr< 
+  Teuchos::RCP< 
     NOX::SharedObject<NOX::Epetra::LinearSystem, NOX::Epetra::Group> 
     > sharedLinearSystemPtr;
 
@@ -366,7 +366,7 @@ protected:
   //@}
 
   //! Reference to the user supplied interface functions
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> userInterfacePtr;
+  Teuchos::RCP<NOX::Epetra::Interface::Required> userInterfacePtr;
 
 };
 

@@ -249,8 +249,8 @@ Coupling_Matlab_Interface::CMD_doXfers::doCommand( std::string command )
 bool 
 Coupling_Matlab_Interface::CMD_getAllX::doCommand( std::string command )
 {
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = problemManager.getProblems().end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = problemManager.getProblems().end();
 
   // Do diagonal blocks
   for( ; problemLast != problemIter; ++problemIter )
@@ -309,8 +309,8 @@ Coupling_Matlab_Interface::CMD_getJac::doCommand( std::string commandLine )
 bool 
 Coupling_Matlab_Interface::CMD_getAllJac::doCommand( std::string commandLine )
 {
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = problemManager.getProblems().end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = problemManager.getProblems().end();
 
   // Do diagonal blocks
   for( ; problemLast != problemIter; ++problemIter )
@@ -389,8 +389,8 @@ Coupling_Matlab_Interface::CMD_getRes::doCommand( std::string commandLine )
 bool 
 Coupling_Matlab_Interface::CMD_getAllRes::doCommand( std::string command )
 {
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
-  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = problemManager.getProblems().end();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
+  map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator problemLast = problemManager.getProblems().end();
 
   // Do diagonal blocks
   for( ; problemLast != problemIter; ++problemIter )

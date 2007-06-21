@@ -39,7 +39,7 @@
 #ifndef LOCA_EPETRA_AUGMENTEDOP_H
 #define LOCA_EPETRA_AUGMENTEDOP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "Epetra_Operator.h"	       // base class
 #include "Epetra_LocalMap.h"           // class data element
@@ -123,11 +123,11 @@ namespace LOCA {
        * and Epetra_Vector's \em a and \em b.  It is assumed \em a, \em b,
        * and \em jac all have the same map.
        */
-      AugmentedOp(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-		  const Teuchos::RefCountPtr<Epetra_Operator>& jac, 
-		  const Teuchos::RefCountPtr<const Epetra_MultiVector>& a, 
-		  const Teuchos::RefCountPtr<const Epetra_MultiVector>& b,
-                  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> c);
+      AugmentedOp(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+		  const Teuchos::RCP<Epetra_Operator>& jac, 
+		  const Teuchos::RCP<const Epetra_MultiVector>& a, 
+		  const Teuchos::RCP<const Epetra_MultiVector>& b,
+                  const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> c);
 
       //! Destructor
       virtual ~AugmentedOp();
@@ -248,7 +248,7 @@ namespace LOCA {
        * copied into the extended vector, otherwise only space for the 
        * extended vector is created.
        */
-      virtual Teuchos::RefCountPtr<Epetra_MultiVector> 
+      virtual Teuchos::RCP<Epetra_MultiVector> 
       buildEpetraAugmentedMultiVec(
 			     const Epetra_MultiVector& x,
 			     const NOX::Abstract::MultiVector::DenseMatrix *y, 
@@ -288,13 +288,13 @@ namespace LOCA {
     protected:
 
       //! LOCA global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Label for operator
       string label;
     
       //! Stores operator representing \f$J\f$
-      Teuchos::RefCountPtr<Epetra_Operator> jacOperator;
+      Teuchos::RCP<Epetra_Operator> jacOperator;
 
        //! Stores underlying domain map
       const Epetra_BlockMap& underlyingMap;
@@ -306,10 +306,10 @@ namespace LOCA {
       Epetra_LocalMap localMap;
   
       //! Stores pointer to a multivector
-      Teuchos::RefCountPtr<const Epetra_MultiVector> a;
+      Teuchos::RCP<const Epetra_MultiVector> a;
 
       //! Stores pointer to b multivector
-      Teuchos::RefCountPtr<const Epetra_MultiVector> b;
+      Teuchos::RCP<const Epetra_MultiVector> b;
 
       //! Stores c matrix
       Epetra_MultiVector c;

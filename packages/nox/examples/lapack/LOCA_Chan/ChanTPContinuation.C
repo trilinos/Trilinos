@@ -62,21 +62,21 @@ int main()
     outFile << n << endl;
 
     // Create initial guess for the null vector of jacobian
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> nullVec = 
+    Teuchos::RCP<NOX::Abstract::Vector> nullVec = 
       Teuchos::rcp(new NOX::LAPACK::Vector(n));
     nullVec->init(1.0);               // initial value 1.0
 
     // Create initial values for a and b for minimally augmented method
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> a_vec = 
+    Teuchos::RCP<NOX::Abstract::Vector> a_vec = 
       Teuchos::rcp(new NOX::LAPACK::Vector(n));
     a_vec->init(1.0);
 
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> b_vec = 
+    Teuchos::RCP<NOX::Abstract::Vector> b_vec = 
       Teuchos::rcp(new NOX::LAPACK::Vector(n));
     b_vec->init(1.0);
 
     // Create parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -160,11 +160,11 @@ int main()
 		      NOX::Utils::StepperParameters);            // Should set
 
     // Create LAPACK Factory
-    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+    Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory = 
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+    Teuchos::RCP<LOCA::GlobalData> globalData =
       LOCA::createGlobalData(paramList, lapackFactory);
 
     // Set up the problem interface
@@ -177,18 +177,18 @@ int main()
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> grp = 
       Teuchos::rcp(new LOCA::LAPACK::Group(globalData, chan));
     
     grp->setParams(p);
 
     // Set up the status tests
-    Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+    Teuchos::RCP<NOX::StatusTest::NormF> statusTestA = 
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-10, 
 					      NOX::StatusTest::NormF::Scaled));
-    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
-    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+    Teuchos::RCP<NOX::StatusTest::Combo> combo = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
 					      statusTestA, statusTestB));
 

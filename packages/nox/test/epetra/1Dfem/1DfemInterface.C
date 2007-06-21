@@ -289,17 +289,17 @@ bool Interface::evaluate(NOX::Epetra::Interface::Required::FillType flag,
   return true;
 }
 
-Teuchos::RefCountPtr<Epetra_Vector> Interface::getSolution()
+Teuchos::RCP<Epetra_Vector> Interface::getSolution()
 {
   return initialSolution;
 }
   
-Teuchos::RefCountPtr<Epetra_Vector> Interface::getMesh()
+Teuchos::RCP<Epetra_Vector> Interface::getMesh()
 {
   return xptr;
 }
   
-Teuchos::RefCountPtr<Epetra_CrsMatrix> Interface::getJacobian()
+Teuchos::RCP<Epetra_CrsMatrix> Interface::getJacobian()
 {
   return jacobian;
 }

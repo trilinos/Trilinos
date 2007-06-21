@@ -72,7 +72,7 @@ NormWRMS::NormWRMS(double rtol_, double atol_, double BDFmult_, double tol_,
 }
 
 NormWRMS::NormWRMS(double rtol_, 
-		   const Teuchos::RefCountPtr<NOX::Abstract::Vector>& atolVec_,
+		   const Teuchos::RCP<NOX::Abstract::Vector>& atolVec_,
 		   double BDFmult_, double tol_, double alpha_, double beta_) :
   value(0.0),
   rtol(rtol_),

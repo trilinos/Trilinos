@@ -44,7 +44,7 @@
 
 #include "NOX_LineSearch_Generic.H"     // base class
 #include "NOX_Common.H"		        // class data element (string)
-#include "Teuchos_RefCountPtr.hpp"      // class data element
+#include "Teuchos_RCP.hpp"      // class data element
 
 // Forward declarations
 namespace NOX {
@@ -115,17 +115,17 @@ class Manager : public Generic {
 public:
 
   //! Empty constructor, reset must be called if this ctor is used.
-  Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd);
+  Manager(const Teuchos::RCP<NOX::GlobalData>& gd);
 
   //! Constructor
-  Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  Manager(const Teuchos::RCP<NOX::GlobalData>& gd,
 	  Teuchos::ParameterList& params);
 
   //! Destructor
   ~Manager();
 
   // derived
-  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 	     Teuchos::ParameterList& params);
 
   // derived
@@ -145,13 +145,13 @@ private:
 
 private:
   //! Printing utilities
-  Teuchos::RefCountPtr<NOX::Utils> utils;
+  Teuchos::RCP<NOX::Utils> utils;
 
   //! Method name
   string method;
 
   //! Pointer to method
-  Teuchos::RefCountPtr<NOX::LineSearch::Generic> ptr;
+  Teuchos::RCP<NOX::LineSearch::Generic> ptr;
 
 };
 } // namespace LineSearch

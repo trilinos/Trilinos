@@ -208,12 +208,12 @@ bool DennisSchnabel::evaluate(
   return true;
 }
 
-Teuchos::RefCountPtr<Epetra_Vector> DennisSchnabel::getSolution()
+Teuchos::RCP<Epetra_Vector> DennisSchnabel::getSolution()
 {
   return initialSolution;
 }
   
-Teuchos::RefCountPtr<Epetra_CrsMatrix> DennisSchnabel::getJacobian()
+Teuchos::RCP<Epetra_CrsMatrix> DennisSchnabel::getJacobian()
 {
   return A;
 }

@@ -43,7 +43,7 @@
 #include "Epetra_Vector.h"
 
 NOX::Epetra::VectorSpaceScaledL2::
-VectorSpaceScaledL2(const Teuchos::RefCountPtr<NOX::Epetra::Scaling>& s,
+VectorSpaceScaledL2(const Teuchos::RCP<NOX::Epetra::Scaling>& s,
 		    NOX::Epetra::Scaling::ScaleType st) :
   scalingPtr(s),
   scaleType(st)

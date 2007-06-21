@@ -44,12 +44,12 @@
 
 void
 LOCA::BorderedSolver::AbstractStrategy::setMatrixBlocksMultiVecConstraint(
-          const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockB,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
+          const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>& op,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockB,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::MultiVecConstraint> con = 
+  Teuchos::RCP<LOCA::MultiContinuation::MultiVecConstraint> con = 
     Teuchos::rcp(new LOCA::MultiContinuation::MultiVecConstraint(blockB));
 
   setMatrixBlocks(op, blockA, con, blockC);

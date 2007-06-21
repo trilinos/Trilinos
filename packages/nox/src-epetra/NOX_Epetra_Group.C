@@ -53,7 +53,7 @@ using namespace NOX::Epetra;
 using namespace Teuchos;
 
 Group::Group(Teuchos::ParameterList& printParams,
-	     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
+	     const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
 	     const NOX::Epetra::Vector& x):
   utils(printParams),
   xVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(x.clone(DeepCopy))),
@@ -74,9 +74,9 @@ Group::Group(Teuchos::ParameterList& printParams,
 }
 
 Group::Group(Teuchos::ParameterList& printParams,
-	     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
+	     const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
 	     const NOX::Epetra::Vector& x,
-	     const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys):
+	     const Teuchos::RCP<NOX::Epetra::LinearSystem>& linSys):
   utils(printParams),
   xVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(x.clone(DeepCopy))),
   xVector(*xVectorPtr),    
@@ -160,9 +160,9 @@ void Group::resetIsValid() //private
   return;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Group> Group::clone(CopyType type) const 
+Teuchos::RCP<NOX::Abstract::Group> Group::clone(CopyType type) const 
 {
-  Teuchos::RefCountPtr<NOX::Abstract::Group> newgrp = 
+  Teuchos::RCP<NOX::Abstract::Group> newgrp = 
     Teuchos::rcp(new NOX::Epetra::Group(*this, type));
   return newgrp;
 }
@@ -578,19 +578,19 @@ Abstract::Group::ReturnType NOX::Epetra::Group::getNormLastLinearSolveResidual(d
   return NOX::Abstract::Group::BadDependency;
 }  
   
-Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> Group::
+Teuchos::RCP<NOX::Epetra::Interface::Required> Group::
 getRequiredInterface()
 {
   return userInterfacePtr;
 }
  
-Teuchos::RefCountPtr<const NOX::Epetra::LinearSystem> Group::
+Teuchos::RCP<const NOX::Epetra::LinearSystem> Group::
 getLinearSystem() const
 {
   return sharedLinearSystem.getObject();
 }
 
-Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> Group::getLinearSystem()
+Teuchos::RCP<NOX::Epetra::LinearSystem> Group::getLinearSystem()
 {
   return sharedLinearSystem.getObject(this);
 }

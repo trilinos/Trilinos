@@ -50,7 +50,7 @@
 
 
 NOX::Direction::Newton::
-Newton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+Newton(const Teuchos::RCP<NOX::GlobalData>& gd,
        Teuchos::ParameterList& p)
 {
   reset(gd, p);
@@ -61,7 +61,7 @@ NOX::Direction::Newton::~Newton()
 }
 
 bool NOX::Direction::Newton::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
 {
   globalDataPtr = gd;

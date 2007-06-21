@@ -42,7 +42,7 @@
 #ifndef LOCA_PARAMETER_SUBLISTPARSER_H
 #define LOCA_PARAMETER_SUBLISTPARSER_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "NOX_Common.H"
 
@@ -69,7 +69,7 @@ namespace LOCA {
 
       //! Map type to hold sublists
       typedef map<string, 
-		  Teuchos::RefCountPtr<Teuchos::ParameterList> > SublistMap;
+		  Teuchos::RCP<Teuchos::ParameterList> > SublistMap;
 
       //! Iterator type to traverse SublistMap
       typedef SublistMap::iterator SublistMapIterator;
@@ -77,17 +77,17 @@ namespace LOCA {
     public:
 
       //! Constructor
-      SublistParser(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+      SublistParser(const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       //! Destructor
       ~SublistParser();
 
       //! Parse parameter list to find sublists
       void parseSublists(
-	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& topLevelParams);
+	     const Teuchos::RCP<Teuchos::ParameterList>& topLevelParams);
 
       //! Return sublist of name \c name
-      Teuchos::RefCountPtr<Teuchos::ParameterList> 
+      Teuchos::RCP<Teuchos::ParameterList> 
       getSublist(const string& name);
 
     private:
@@ -101,7 +101,7 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Map to hold sublists
       SublistMap sublistMap;

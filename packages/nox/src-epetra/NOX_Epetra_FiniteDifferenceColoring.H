@@ -43,7 +43,7 @@
 #include "NOX_Epetra_FiniteDifference.H"    // base class
 
 #include "NOX_Common.H"          // for <string>
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "vector"                // for column indices from coloring
 #include "list"                  //
@@ -152,10 +152,10 @@ class FiniteDifferenceColoring : public FiniteDifference {
   //! Constructor with output control
   FiniteDifferenceColoring(
       Teuchos::ParameterList& printingParams,
-      const Teuchos::RefCountPtr<Interface::Required>& i, 
+      const Teuchos::RCP<Interface::Required>& i, 
       const NOX::Epetra::Vector& initialGuess, 
-      const Teuchos::RefCountPtr<Epetra_MapColoring>& colorMap,
-      const Teuchos::RefCountPtr< vector<Epetra_IntVector> >& columns,
+      const Teuchos::RCP<Epetra_MapColoring>& colorMap,
+      const Teuchos::RCP< vector<Epetra_IntVector> >& columns,
       bool parallelColoring = false, 
       bool distance1 = false, 
       double beta = 1.0e-6, double alpha = 1.0e-4);
@@ -163,11 +163,11 @@ class FiniteDifferenceColoring : public FiniteDifference {
   //! Constructor with output control
   FiniteDifferenceColoring(
       Teuchos::ParameterList& printingParams,
-      const Teuchos::RefCountPtr<Interface::Required>& i, 
+      const Teuchos::RCP<Interface::Required>& i, 
       const NOX::Epetra::Vector& initialGuess, 
-      const Teuchos::RefCountPtr<Epetra_CrsGraph>& rawGraph,
-      const Teuchos::RefCountPtr<Epetra_MapColoring>& colorMap,
-      const Teuchos::RefCountPtr< vector<Epetra_IntVector> >& columns,
+      const Teuchos::RCP<Epetra_CrsGraph>& rawGraph,
+      const Teuchos::RCP<Epetra_MapColoring>& colorMap,
+      const Teuchos::RCP< vector<Epetra_IntVector> >& columns,
       bool parallelColoring = false,
       bool distance1 = false, 
       double beta = 1.0e-6, double alpha = 1.0e-4);
@@ -196,10 +196,10 @@ protected:
   bool distance1;
 
   //! Color Map created by external algorithm 
-  Teuchos::RefCountPtr<const Epetra_MapColoring> colorMap;
+  Teuchos::RCP<const Epetra_MapColoring> colorMap;
 
   //! vector of Epetra_IntVectors containing columns corresponding to a given row and color
-  Teuchos::RefCountPtr< vector<Epetra_IntVector> > columns;
+  Teuchos::RCP< vector<Epetra_IntVector> > columns;
 
   //! Number of colors in Color Map 
   int numColors;

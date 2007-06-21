@@ -48,7 +48,7 @@
 
 #include "NOX_Direction_Generic.H" // base class
 #include "Teuchos_ParameterList.hpp"	   // class data element 
-#include "Teuchos_RefCountPtr.hpp" // class data element
+#include "Teuchos_RCP.hpp" // class data element
 
 // Forward declaration
 namespace NOX {
@@ -206,10 +206,10 @@ public:
   private:
     
     //! s-vector pointer
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> sPtr;
+    Teuchos::RCP<NOX::Abstract::Vector> sPtr;
     
     //! y-vector pointer
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> yPtr;
+    Teuchos::RCP<NOX::Abstract::Vector> yPtr;
     
     //! \f$s^Ty\f$
     double sdotyValue;
@@ -284,14 +284,14 @@ public:
 public:
 
   //! Constructor
-  QuasiNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  QuasiNewton(const Teuchos::RCP<NOX::GlobalData>& gd,
 	      Teuchos::ParameterList& params);
 
   //! Destructor
   virtual ~QuasiNewton();
 
   // derived
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 		     Teuchos::ParameterList& params);
 
   // derived
@@ -310,10 +310,10 @@ private:
 private:
 
   //! Global data pointer.  Keep this so the parameter list remains valid.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Printing Utils
-  Teuchos::RefCountPtr<NOX::Utils> utils;
+  Teuchos::RCP<NOX::Utils> utils;
 
   //! "Direction" sublist with parameters for the direction vector
   /*! 

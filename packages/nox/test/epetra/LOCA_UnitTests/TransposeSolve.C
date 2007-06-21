@@ -64,8 +64,8 @@ int testTransposeSolve(
 		 double reltol, 
 		 double abstol,
 		 Epetra_Comm& Comm,
-		 const Teuchos::RefCountPtr<LOCA::GlobalData>& globalData,
-		 const Teuchos::RefCountPtr<Teuchos::ParameterList>& paramList)
+		 const Teuchos::RCP<LOCA::GlobalData>& globalData,
+		 const Teuchos::RCP<Teuchos::ParameterList>& paramList)
 {
   int ierr = 0;
 
@@ -93,13 +93,13 @@ int testTransposeSolve(
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base 
   // class:
-  Teuchos::RefCountPtr<Problem_Interface> interface = 
+  Teuchos::RCP<Problem_Interface> interface = 
     Teuchos::rcp(new Problem_Interface(Problem));
-  Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq = interface;
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
+  Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
     
   // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
-  Teuchos::RefCountPtr<Epetra_RowMatrix> Amat = 
+  Teuchos::RCP<Epetra_RowMatrix> Amat = 
     Teuchos::rcp(&Problem.getJacobian(),false);
 
   // Get sublists
@@ -110,7 +110,7 @@ int testTransposeSolve(
   Teuchos::ParameterList& lsParams = newParams.sublist("Linear Solver");
     
   // Create the linear systems
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, 
 						      lsParams, iReq, iJac, 
 						      Amat, soln));
@@ -119,25 +119,25 @@ int testTransposeSolve(
   NOX::Epetra::Vector locaSoln(soln);
   
   // Create the Group
-  Teuchos::RefCountPtr<LOCA::Epetra::Group> grp_tp = 
+  Teuchos::RCP<LOCA::Epetra::Group> grp_tp = 
     Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, 
 					 iReq, locaSoln, 
 					 linsys, pVector));
   
   // Create the Group
-  Teuchos::RefCountPtr<LOCA::Epetra::Group> grp_lp = 
+  Teuchos::RCP<LOCA::Epetra::Group> grp_lp = 
     Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, 
 					 iReq, locaSoln, 
 					 linsys, pVector));
 
   // Create the Group
-  Teuchos::RefCountPtr<LOCA::Epetra::Group> grp_ep = 
+  Teuchos::RCP<LOCA::Epetra::Group> grp_ep = 
     Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, 
 					 iReq, locaSoln, 
 					 linsys, pVector));
   
   // Change initial guess to a random vector
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> xnew = 
+  Teuchos::RCP<NOX::Abstract::Vector> xnew = 
     grp_tp->getX().clone();
   xnew->random();
   grp_tp->setX(*xnew);
@@ -145,7 +145,7 @@ int testTransposeSolve(
   grp_ep->setX(*xnew);
 
   // Check some statistics on the solution
-  Teuchos::RefCountPtr<NOX::TestCompare> testCompare = 
+  Teuchos::RCP<NOX::TestCompare> testCompare = 
     Teuchos::rcp(new NOX::TestCompare(globalData->locaUtils->out(), 
 				      *(globalData->locaUtils)));
 
@@ -158,25 +158,25 @@ int testTransposeSolve(
   grp_ep->computeJacobian();
   
     // Set up left- and right-hand sides
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> F = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> F = 
     grp_tp->getX().createMultiVector(nRHS);
   F->random();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_tp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> X_tp = 
     F->clone(NOX::ShapeCopy); 
   X_tp->init(0.0);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_lp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> X_lp = 
     F->clone(NOX::ShapeCopy); 
   X_lp->init(0.0);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_ep = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> X_ep = 
     F->clone(NOX::ShapeCopy); 
   X_ep->init(0.0);
 
   // Set up residuals
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> R_tp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> R_tp = 
     F->clone(NOX::ShapeCopy); 
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> R_lp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> R_lp = 
     F->clone(NOX::ShapeCopy); 
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> R_ep = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> R_ep = 
     F->clone(NOX::ShapeCopy); 
 
   // Set up linear solver lists
@@ -320,7 +320,7 @@ int main(int argc, char *argv[])
     }
 
     // Create parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
@@ -359,11 +359,11 @@ int main(int argc, char *argv[])
     //lsParams.set("Drop Tolerance", 1.0e-12);
 
     // Create Epetra factory
-    Teuchos::RefCountPtr<LOCA::Abstract::Factory> epetraFactory =
+    Teuchos::RCP<LOCA::Abstract::Factory> epetraFactory =
       Teuchos::rcp(new LOCA::Epetra::Factory);
 
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData = 
+    Teuchos::RCP<LOCA::GlobalData> globalData = 
       LOCA::createGlobalData(paramList, epetraFactory);
 
     // Test transpose solves with Ifpack preconditioner

@@ -134,7 +134,7 @@ namespace NOX {
       //@{ \name Creating new Vectors. 
   
       // derived
-      Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+      Teuchos::RCP<NOX::Abstract::Vector> 
       clone(NOX::CopyType type = NOX::DeepCopy) const;
   
       //@}

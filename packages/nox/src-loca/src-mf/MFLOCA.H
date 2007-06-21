@@ -71,21 +71,21 @@ struct ParamData {
 
 struct LOCAData {
   LOCAData(
-     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-     const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& top_params,
-     const Teuchos::RefCountPtr<NOX::Solver::Generic>& s, 
-     const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>& g, 
-     const Teuchos::RefCountPtr<Teuchos::ParameterList>& par,
-     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& st,
-     const Teuchos::RefCountPtr< list<ParamData> >& conParamData);
+     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+     const Teuchos::RCP<LOCA::Parameter::SublistParser>& top_params,
+     const Teuchos::RCP<NOX::Solver::Generic>& s, 
+     const Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy>& g, 
+     const Teuchos::RCP<Teuchos::ParameterList>& par,
+     const Teuchos::RCP<NOX::StatusTest::Generic>& st,
+     const Teuchos::RCP< list<ParamData> >& conParamData);
 
-  Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
-  Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> topParams;
-  Teuchos::RefCountPtr<NOX::Solver::Generic> solver;
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> grp;
-  Teuchos::RefCountPtr<Teuchos::ParameterList> p;
-  Teuchos::RefCountPtr<NOX::StatusTest::Generic> status;
-  Teuchos::RefCountPtr< list<ParamData> > paramData;
+  Teuchos::RCP<LOCA::GlobalData> globalData;
+  Teuchos::RCP<LOCA::Parameter::SublistParser> topParams;
+  Teuchos::RCP<NOX::Solver::Generic> solver;
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy> grp;
+  Teuchos::RCP<Teuchos::ParameterList> p;
+  Teuchos::RCP<NOX::StatusTest::Generic> status;
+  Teuchos::RCP< list<ParamData> > paramData;
   MFNSpace space;
   int np;
   double maxNonlinearIterations;
@@ -101,8 +101,8 @@ private:
 };
 
 struct LOCANVectorData {
-  LOCANVectorData(const Teuchos::RefCountPtr<LMCEV>& u) : u_ptr(u) {}
-  Teuchos::RefCountPtr<LMCEV> u_ptr;
+  LOCANVectorData(const Teuchos::RCP<LMCEV>& u) : u_ptr(u) {}
+  Teuchos::RCP<LMCEV> u_ptr;
 };
 
 extern "C" {
@@ -110,7 +110,7 @@ extern "C" {
 MFNSpace MFCreateLOCANSpace(LOCAData*);
 MFNRegion MFNRegionCreateLOCA(LOCAData*);
 MFImplicitMF MFIMFCreateLOCA(LOCAData*);
-MFNVector MFCreateLOCANVectorWithData(const Teuchos::RefCountPtr<LMCEV>&);
+MFNVector MFCreateLOCANVectorWithData(const Teuchos::RCP<LMCEV>&);
 
 }
 

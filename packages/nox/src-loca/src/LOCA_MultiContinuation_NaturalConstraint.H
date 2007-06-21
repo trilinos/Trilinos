@@ -78,8 +78,8 @@ namespace LOCA {
 
       //! Constructor
       NaturalConstraint(
-     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-     const Teuchos::RefCountPtr<LOCA::MultiContinuation::NaturalGroup>& grp);
+     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+     const Teuchos::RCP<LOCA::MultiContinuation::NaturalGroup>& grp);
 
       //! Copy constructor
       NaturalConstraint(const NaturalConstraint& source, 
@@ -89,7 +89,7 @@ namespace LOCA {
       ~NaturalConstraint();
 
       //! Set pointer to natural group
-      virtual void setNaturalGroup(const Teuchos::RefCountPtr<LOCA::MultiContinuation::NaturalGroup>& grp);
+      virtual void setNaturalGroup(const Teuchos::RCP<LOCA::MultiContinuation::NaturalGroup>& grp);
 
       /*! 
        * @name Implementation of LOCA::MultiContinuation::ConstraintInterface 
@@ -102,7 +102,7 @@ namespace LOCA {
 
       //! Cloning function
       virtual 
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+      Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Return number of constraints
@@ -172,10 +172,10 @@ namespace LOCA {
     protected:
 
       //! LOCA global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Pointer to arc-length group
-      Teuchos::RefCountPtr<
+      Teuchos::RCP<
 	LOCA::MultiContinuation::NaturalGroup> naturalGroup;
 
       //! Constraint values

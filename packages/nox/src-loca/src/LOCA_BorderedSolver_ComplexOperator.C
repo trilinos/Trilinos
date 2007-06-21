@@ -45,7 +45,7 @@
 #include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
 
 LOCA::BorderedSolver::ComplexOperator::
-ComplexOperator(const Teuchos::RefCountPtr<const LOCA::Hopf::MooreSpence::AbstractGroup>& grp,
+ComplexOperator(const Teuchos::RCP<const LOCA::Hopf::MooreSpence::AbstractGroup>& grp,
 		double Omega) :
   grpPtr(grp),
   omega(Omega)
@@ -57,7 +57,7 @@ LOCA::BorderedSolver::ComplexOperator::
 {
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Group>
+Teuchos::RCP<const NOX::Abstract::Group>
 LOCA::BorderedSolver::ComplexOperator::
 getGroup() const
 {
@@ -91,7 +91,7 @@ LOCA::BorderedSolver::ComplexOperator::
 applyTranspose(const NOX::Abstract::MultiVector& X,
 	       NOX::Abstract::MultiVector& Y) const
 {
-  Teuchos::RefCountPtr<const LOCA::Hopf::MinimallyAugmented::AbstractGroup> magrp = Teuchos::rcp_dynamic_cast<const LOCA::Hopf::MinimallyAugmented::AbstractGroup>(grpPtr);
+  Teuchos::RCP<const LOCA::Hopf::MinimallyAugmented::AbstractGroup> magrp = Teuchos::rcp_dynamic_cast<const LOCA::Hopf::MinimallyAugmented::AbstractGroup>(grpPtr);
   const LOCA::Hopf::ComplexMultiVector& cX = 
     dynamic_cast<const LOCA::Hopf::ComplexMultiVector&>(X);
   LOCA::Hopf::ComplexMultiVector& cY = 
@@ -129,7 +129,7 @@ applyInverseTranspose(Teuchos::ParameterList& params,
 		      const NOX::Abstract::MultiVector& B,
 		      NOX::Abstract::MultiVector& X) const
 {
-  Teuchos::RefCountPtr<const LOCA::Hopf::MinimallyAugmented::AbstractGroup> magrp = Teuchos::rcp_dynamic_cast<const LOCA::Hopf::MinimallyAugmented::AbstractGroup>(grpPtr);
+  Teuchos::RCP<const LOCA::Hopf::MinimallyAugmented::AbstractGroup> magrp = Teuchos::rcp_dynamic_cast<const LOCA::Hopf::MinimallyAugmented::AbstractGroup>(grpPtr);
   const LOCA::Hopf::ComplexMultiVector& cB = 
     dynamic_cast<const LOCA::Hopf::ComplexMultiVector&>(B);
   LOCA::Hopf::ComplexMultiVector& cX = 

@@ -252,9 +252,9 @@ namespace LOCA {
        * \param solverParams [in] Bordered solver parameters as described above
        */
       EpetraHouseholder(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
       //! Destructor
       virtual ~EpetraHouseholder();
@@ -266,10 +266,10 @@ namespace LOCA {
        * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
-          const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
+          const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>& op,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
+	  const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
 
       //! Intialize solver for a solve
       /*!
@@ -421,7 +421,7 @@ namespace LOCA {
 					   const NOX::Abstract::MultiVector& V,
 					   Epetra_CrsMatrix& jac) const;
 
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+      Teuchos::RCP<NOX::Abstract::MultiVector> 
       createBlockMV(const NOX::Abstract::MultiVector& v) const;
 
       void
@@ -439,34 +439,34 @@ namespace LOCA {
     protected:
 
       //! Global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Solver parameters
-      Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
+      Teuchos::RCP<Teuchos::ParameterList> solverParams;
 
       //! Pointer to group storing J
-      Teuchos::RefCountPtr<LOCA::Epetra::Group> grp;
+      Teuchos::RCP<LOCA::Epetra::Group> grp;
 
       // Operator
-      Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator> op;
+      Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator> op;
 
       //! Pointer to A block
-      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> A;
+      Teuchos::RCP<const NOX::Abstract::MultiVector> A;
 
       //! Pointer to B block
-      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> B;
+      Teuchos::RCP<const NOX::Abstract::MultiVector> B;
 
       //! Pointer to C block
-      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> C;
+      Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> C;
 
       //! Pointer to constraint interface
-      Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints;
+      Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints;
 
       //! QR Factorization object
       LOCA::BorderedSolver::HouseholderQR qrFact;
 
       //! Solution component of Householder multivec
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> house_x;
+      Teuchos::RCP<NOX::Abstract::MultiVector> house_x;
 
       //! Parameter component of Householder multivec
       NOX::Abstract::MultiVector::DenseMatrix house_p;
@@ -478,13 +478,13 @@ namespace LOCA {
       NOX::Abstract::MultiVector::DenseMatrix R;
 
       //! U matrix in low-rank update form P = J + U*V^T
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> U;
+      Teuchos::RCP<NOX::Abstract::MultiVector> U;
 
       //! V matrix in low-rank update form P = J + U*V^T
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> V;
+      Teuchos::RCP<NOX::Abstract::MultiVector> V;
 
       //! Solution component of Householder multivec for transposed system
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> house_x_trans;
+      Teuchos::RCP<NOX::Abstract::MultiVector> house_x_trans;
 
       //! Parameter component of Householder multivec for transposed system
       NOX::Abstract::MultiVector::DenseMatrix house_p_trans;
@@ -496,28 +496,28 @@ namespace LOCA {
       NOX::Abstract::MultiVector::DenseMatrix R_trans;
 
       //! U matrix in low-rank update form P = J + U*V^T for transposed system
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> U_trans;
+      Teuchos::RCP<NOX::Abstract::MultiVector> U_trans;
 
       //! V matrix in low-rank update form P = J + U*V^T for transposed system
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> V_trans;
+      Teuchos::RCP<NOX::Abstract::MultiVector> V_trans;
 
       //! Pointer to A block as an Epetra multivector
-      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> Ablock;
+      Teuchos::RCP<const NOX::Abstract::MultiVector> Ablock;
 
       //! Pointer to B block as an Epetra multivector
-      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> Bblock;
+      Teuchos::RCP<const NOX::Abstract::MultiVector> Bblock;
 
       //! Pointer to linear system
-      Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> linSys;
+      Teuchos::RCP<NOX::Epetra::LinearSystem> linSys;
 
       //! Pointer to Epetra operator
-      Teuchos::RefCountPtr<Epetra_Operator> epetraOp;
+      Teuchos::RCP<Epetra_Operator> epetraOp;
 
       //! Pointer to base map for block vectors
-      Teuchos::RefCountPtr<const Epetra_BlockMap> baseMap;
+      Teuchos::RCP<const Epetra_BlockMap> baseMap;
 
       //! Pointer to global map for block vectors
-      Teuchos::RefCountPtr<const Epetra_BlockMap> globalMap;
+      Teuchos::RCP<const Epetra_BlockMap> globalMap;
 
       //! Number of constraint equations
       int numConstraints;

@@ -240,12 +240,12 @@ bool FiniteElementProblem::evaluate(FillType f,
   return true;
 }
 
-Teuchos::RefCountPtr<Epetra_Vector> FiniteElementProblem::getSolution()
+Teuchos::RCP<Epetra_Vector> FiniteElementProblem::getSolution()
 {
   return initialSolution;
 }
   
-Teuchos::RefCountPtr<Epetra_CrsMatrix> FiniteElementProblem::getJacobian()
+Teuchos::RCP<Epetra_CrsMatrix> FiniteElementProblem::getJacobian()
 {
   return A;
 }

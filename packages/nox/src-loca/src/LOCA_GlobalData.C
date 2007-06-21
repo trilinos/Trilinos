@@ -47,9 +47,9 @@
 #include "LOCA_Parameter_SublistParser.H"
 
 LOCA::GlobalData::GlobalData(
-	       const Teuchos::RefCountPtr<NOX::Utils>& loca_utils,
-	       const Teuchos::RefCountPtr<LOCA::ErrorCheck>& loca_error_check,
-	       const Teuchos::RefCountPtr<LOCA::Factory>& loca_factory) :
+	       const Teuchos::RCP<NOX::Utils>& loca_utils,
+	       const Teuchos::RCP<LOCA::ErrorCheck>& loca_error_check,
+	       const Teuchos::RCP<LOCA::Factory>& loca_factory) :
   locaUtils(loca_utils),
   locaErrorCheck(loca_error_check),
   locaFactory(loca_factory),
@@ -61,13 +61,13 @@ LOCA::GlobalData::~GlobalData()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::GlobalData>
+Teuchos::RCP<LOCA::GlobalData>
 LOCA::createGlobalData(
-	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& paramList,
-	      const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory)
+	      const Teuchos::RCP<Teuchos::ParameterList>& paramList,
+	      const Teuchos::RCP<LOCA::Abstract::Factory>& userFactory)
 {
   // Create a global data object with null data fields
-  Teuchos::RefCountPtr<LOCA::GlobalData> globalData = 
+  Teuchos::RCP<LOCA::GlobalData> globalData = 
     Teuchos::rcp(new LOCA::GlobalData(Teuchos::null, 
 				      Teuchos::null, 
 				      Teuchos::null));
@@ -97,7 +97,7 @@ LOCA::createGlobalData(
 
 void
 LOCA::destroyGlobalData(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& globalData)
+		    const Teuchos::RCP<LOCA::GlobalData>& globalData)
 {
   globalData->locaUtils = Teuchos::null;
   globalData->locaErrorCheck = Teuchos::null;

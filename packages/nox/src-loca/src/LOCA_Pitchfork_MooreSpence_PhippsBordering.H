@@ -157,9 +157,9 @@ namespace LOCA {
 	 *        description of available solvers.
 	 */
 	PhippsBordering(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
 	//! Destructor
 	virtual ~PhippsBordering();
@@ -177,13 +177,13 @@ namespace LOCA {
 	 * \param dJndp [in] Vector representing d(Jv)/dp
 	 */
 	virtual void setBlocks(
-	  const Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::AbstractGroup>& group,
-	  const Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::ExtendedGroup>& pfGroup,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& asymMultiVector,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& nullVector,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& JnVector,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dfdp,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dJndp);
+	  const Teuchos::RCP<LOCA::Pitchfork::MooreSpence::AbstractGroup>& group,
+	  const Teuchos::RCP<LOCA::Pitchfork::MooreSpence::ExtendedGroup>& pfGroup,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& asymMultiVector,
+	  const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector,
+	  const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector,
+	  const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp,
+	  const Teuchos::RCP<const NOX::Abstract::Vector>& dJndp);
 
 	/*! 
 	 * \brief Solves the extended system as defined above
@@ -223,43 +223,43 @@ namespace LOCA {
       protected:
 
 	//! Global data object
-	Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+	Teuchos::RCP<LOCA::GlobalData> globalData;
 	
 	//! Solver parameters
-	Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
+	Teuchos::RCP<Teuchos::ParameterList> solverParams;
 
 	//! Underlying group
-	Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::AbstractGroup> group;
+	Teuchos::RCP<LOCA::Pitchfork::MooreSpence::AbstractGroup> group;
 
 	//! Turning point group
-	Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::ExtendedGroup> pfGroup;
+	Teuchos::RCP<LOCA::Pitchfork::MooreSpence::ExtendedGroup> pfGroup;
 
 	//! Antisymmetric vector (psi)
-	Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> asymMultiVector;
+	Teuchos::RCP<const NOX::Abstract::MultiVector> asymMultiVector;
 
 	//! Antisymmetric vector (psi)
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> asymVector;
+	Teuchos::RCP<const NOX::Abstract::Vector> asymVector;
 
 	//! Null vector
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> nullVector;
+	Teuchos::RCP<const NOX::Abstract::Vector> nullVector;
 
 	//! Jacobian times null vector
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> JnVector;
+	Teuchos::RCP<const NOX::Abstract::Vector> JnVector;
 
 	//! df/dp
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> dfdp;
+	Teuchos::RCP<const NOX::Abstract::Vector> dfdp;
 
 	//! d(Jn)/dp
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> dJndp;
+	Teuchos::RCP<const NOX::Abstract::Vector> dJndp;
 
 	//! Bordered solver for solving (n+1)x(n+1) sets of equations
-	Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
+	Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
 
 	//! Null vector as a multivector
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> nullMultiVector;
+	Teuchos::RCP<NOX::Abstract::MultiVector> nullMultiVector;
 
 	//! Jacobian times null vector as a multivector
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> JnMultiVector;
+	Teuchos::RCP<NOX::Abstract::MultiVector> JnMultiVector;
 
 	//! Norm of JnVector
 	double sigma;

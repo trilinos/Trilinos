@@ -43,20 +43,20 @@
 #include "LOCA_MultiContinuation_ExtendedVector.H"  
 
 LOCA::MultiContinuation::ExtendedMultiVector::ExtendedMultiVector(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    const NOX::Abstract::Vector& xVec,
 		    int nColumns,
 		    int nScalarRows, 
 		    NOX::CopyType type) :
   LOCA::Extended::MultiVector(global_data, nColumns, 1, nScalarRows)
 {
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv = 
     xVec.createMultiVector(nColumns, type);
   LOCA::Extended::MultiVector::setMultiVectorPtr(0, mv);
 }
 
 LOCA::MultiContinuation::ExtendedMultiVector::ExtendedMultiVector(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    const NOX::Abstract::MultiVector& xVec, 
 		    int nScalarRows) :
   LOCA::Extended::MultiVector(global_data, xVec.numVectors(), 1, nScalarRows)
@@ -65,7 +65,7 @@ LOCA::MultiContinuation::ExtendedMultiVector::ExtendedMultiVector(
 }
 
 LOCA::MultiContinuation::ExtendedMultiVector::ExtendedMultiVector(
-		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		     const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		     const NOX::Abstract::MultiVector& xVec,
 		     const NOX::Abstract::MultiVector::DenseMatrix& params) :
   LOCA::Extended::MultiVector(global_data, xVec.numVectors(), 1, 
@@ -124,7 +124,7 @@ LOCA::MultiContinuation::ExtendedMultiVector::operator=(const
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::MultiContinuation::ExtendedMultiVector::clone(NOX::CopyType type) const
 {
   return 
@@ -132,7 +132,7 @@ LOCA::MultiContinuation::ExtendedMultiVector::clone(NOX::CopyType type) const
 								  type));
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::MultiContinuation::ExtendedMultiVector::clone(int numvecs) const
 {
   return 
@@ -140,7 +140,7 @@ LOCA::MultiContinuation::ExtendedMultiVector::clone(int numvecs) const
 								  numvecs));
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+Teuchos::RCP<NOX::Abstract::MultiVector> 
 LOCA::MultiContinuation::ExtendedMultiVector::subCopy(
 					       const vector<int>& index) const
 {
@@ -150,7 +150,7 @@ LOCA::MultiContinuation::ExtendedMultiVector::subCopy(
 								  false));
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::MultiContinuation::ExtendedMultiVector::subView(
 					      const vector<int>& index) const
 {
@@ -160,27 +160,27 @@ LOCA::MultiContinuation::ExtendedMultiVector::subView(
 								  true));
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>
+Teuchos::RCP<const NOX::Abstract::MultiVector>
 LOCA::MultiContinuation::ExtendedMultiVector::getXMultiVec() const
 {
   return LOCA::Extended::MultiVector::getMultiVector(0);
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::MultiContinuation::ExtendedMultiVector::getXMultiVec()
 {
   return LOCA::Extended::MultiVector::getMultiVector(0);
 }
 
 LOCA::MultiContinuation::ExtendedMultiVector::ExtendedMultiVector(
-		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		     const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		     int nColumns,
 		     int nScalarRows) :
   LOCA::Extended::MultiVector(global_data, nColumns, 1, nScalarRows)
 {
 }
 
-Teuchos::RefCountPtr<LOCA::Extended::Vector>
+Teuchos::RCP<LOCA::Extended::Vector>
 LOCA::MultiContinuation::ExtendedMultiVector::generateVector(
 							int nVecs, 
 							int nScalarRows) const

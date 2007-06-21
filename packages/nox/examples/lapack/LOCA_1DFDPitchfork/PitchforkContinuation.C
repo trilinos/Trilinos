@@ -56,22 +56,22 @@ int main()
     int maxNewtonIters = 20;
 
     // Create asymmetry vector
-    Teuchos::RefCountPtr<NOX::LAPACK::Vector> asymLapackVec = 
+    Teuchos::RCP<NOX::LAPACK::Vector> asymLapackVec = 
       Teuchos::rcp(new NOX::LAPACK::Vector(n));  // length n
     for (int i=0; i<n; i++)
       (*asymLapackVec)(i) = sin( pi/2.0 * (-1.0 + h*i) );
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> asymVec = asymLapackVec;
+    Teuchos::RCP<NOX::Abstract::Vector> asymVec = asymLapackVec;
 
     // Create parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create initial values for a and b for minimally augmented method
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> a_vec = 
+    Teuchos::RCP<NOX::Abstract::Vector> a_vec = 
       Teuchos::rcp(new NOX::LAPACK::Vector(n));
     *a_vec = *asymVec;
 
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> b_vec = 
+    Teuchos::RCP<NOX::Abstract::Vector> b_vec = 
       Teuchos::rcp(new NOX::LAPACK::Vector(n));
     *b_vec = *asymVec;
 
@@ -157,11 +157,11 @@ int main()
 		      NOX::Utils::StepperParameters);
 
     // Create LAPACK Factory
-    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+    Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory = 
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+    Teuchos::RCP<LOCA::GlobalData> globalData =
       LOCA::createGlobalData(paramList, lapackFactory);
 
     // Set up the problem interface
@@ -174,18 +174,18 @@ int main()
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> grp = 
       Teuchos::rcp(new LOCA::LAPACK::Group(globalData, pf));
     
     grp->setParams(p);
 
     // Set up the status tests
-    Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+    Teuchos::RCP<NOX::StatusTest::NormF> statusTestA = 
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-10, 
 					      NOX::StatusTest::NormF::Scaled));
-    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
-    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+    Teuchos::RCP<NOX::StatusTest::Combo> combo = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
 					      statusTestA, statusTestB));
 

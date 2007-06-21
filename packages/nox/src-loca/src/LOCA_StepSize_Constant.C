@@ -48,9 +48,9 @@
 #include "LOCA_Stepper.H"
 
 LOCA::StepSize::Constant::Constant(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepsizeParams) :
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams) :
   globalData(global_data),
   maxStepSize(1.0e+12),
   minStepSize(1.0e-12),

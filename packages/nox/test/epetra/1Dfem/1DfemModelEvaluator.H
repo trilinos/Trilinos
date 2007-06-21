@@ -53,7 +53,7 @@
 #include "EpetraExt_ModelEvaluator.h" // base class
 #include "NOX_Epetra_Interface_Jacobian.H" // base class
 #include "NOX_Epetra_Interface_Preconditioner.H" // base class
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward Declarations
 class Epetra_Comm;
@@ -86,13 +86,13 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_x_map() const;
+  Teuchos::RCP<const Epetra_Map> get_x_map() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_f_map() const;
+  Teuchos::RCP<const Epetra_Map> get_f_map() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
+  Teuchos::RCP<const Epetra_Vector> get_x_init() const;
   /** \brief . */
-  Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
+  Teuchos::RCP<Epetra_Operator> create_W() const;
   /** \brief . */
   InArgs createInArgs() const;
   /** \brief . */
@@ -133,14 +133,14 @@ protected:
   double factor; 	  // PDE factor
 
   Epetra_Comm* Comm;
-  Teuchos::RefCountPtr<Epetra_Map> StandardMap; 
-  Teuchos::RefCountPtr<Epetra_Map> OverlapMap;
+  Teuchos::RCP<Epetra_Map> StandardMap; 
+  Teuchos::RCP<Epetra_Map> OverlapMap;
   Epetra_Import* Importer;
-  Teuchos::RefCountPtr<Epetra_Vector> initialSolution;
+  Teuchos::RCP<Epetra_Vector> initialSolution;
   mutable Epetra_Vector* rhs;
   Epetra_CrsGraph* Graph;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> jacobian;
-  Teuchos::RefCountPtr<Epetra_Vector> xptr;
+  Teuchos::RCP<Epetra_CrsMatrix> jacobian;
+  Teuchos::RCP<Epetra_Vector> xptr;
 
 };
 

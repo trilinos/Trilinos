@@ -161,20 +161,20 @@ int main()
   // Create a group which uses that problem interface. The group will
   // be initialized to contain the default initial guess for the
   // specified problem.
-  Teuchos::RefCountPtr<NOX::LAPACK::Group> grp = 
+  Teuchos::RCP<NOX::LAPACK::Group> grp = 
     Teuchos::rcp(new NOX::LAPACK::Group(rosenbrock));
 
   // Set up the status tests
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+  Teuchos::RCP<NOX::StatusTest::NormF> statusTestA = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-4));
-  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> statusTestsCombo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> statusTestsCombo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
 					    statusTestA, statusTestB));
 
   // Create the list of solver parameters
-  Teuchos::RefCountPtr<Teuchos::ParameterList> solverParametersPtr =
+  Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& solverParameters = *solverParametersPtr;
 

@@ -40,7 +40,7 @@
 #define NOX_LINESEARCH_NONLINEARCG_H
 
 #include "NOX_LineSearch_Generic.H" // base class
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward declarations
 namespace NOX {
@@ -144,14 +144,14 @@ class NonlinearCG : public Generic {
 public:
 
   //! Constructor
-  NonlinearCG(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  NonlinearCG(const Teuchos::RCP<NOX::GlobalData>& gd,
 	      Teuchos::ParameterList& params);
 
   //! Destructor
   ~NonlinearCG();
   
   // derived
-  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 	     Teuchos::ParameterList& params);
 
   // derived
@@ -167,13 +167,13 @@ private:
                             const Abstract::Group& grp);
 
   //! Printing utilities
-  Teuchos::RefCountPtr<NOX::Utils> utils;
+  Teuchos::RCP<NOX::Utils> utils;
 
   //! Temporary Vector pointer used to compute directional derivatives
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> vecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> vecPtr;
 
   //! Temporary Group pointer used to compute directional derivatives
-  Teuchos::RefCountPtr<NOX::Abstract::Group> grpPtr;
+  Teuchos::RCP<NOX::Abstract::Group> grpPtr;
 
 };
 } // namespace LineSearch

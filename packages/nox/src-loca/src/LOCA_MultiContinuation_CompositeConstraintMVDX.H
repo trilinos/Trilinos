@@ -63,8 +63,8 @@ namespace LOCA {
 
       //! Constructor
       CompositeConstraintMVDX(
-       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-       const vector< Teuchos::RefCountPtr<
+       const Teuchos::RCP<LOCA::GlobalData>& global_data,
+       const vector< Teuchos::RCP<
        LOCA::MultiContinuation::ConstraintInterfaceMVDX> >& constraintObjects);
       
       //! Copy constructor
@@ -85,7 +85,7 @@ namespace LOCA {
 
       //! Cloning function
       virtual 
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+      Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Compute derivative of constraints w.r.t. solution vector x
@@ -142,11 +142,11 @@ namespace LOCA {
     protected:
 
       //! Array of constraintMVDX pointers
-      vector< Teuchos::RefCountPtr<
+      vector< Teuchos::RCP<
 	LOCA::MultiContinuation::ConstraintInterfaceMVDX> > constraintMVDXPtrs;
 
       //! Composite constraint derivative
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> compositeDX;
+      Teuchos::RCP<NOX::Abstract::MultiVector> compositeDX;
 
     }; // Class CompositeConstraintMVDX
 

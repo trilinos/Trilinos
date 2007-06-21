@@ -45,11 +45,11 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::AnasaziOperator::ShiftInvert::ShiftInvert(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams_,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams_,
-	const Teuchos::RefCountPtr<LOCA::TimeDependent::AbstractGroup>& grp_)
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams_,
+	const Teuchos::RCP<Teuchos::ParameterList>& solverParams_,
+	const Teuchos::RCP<LOCA::TimeDependent::AbstractGroup>& grp_)
   : globalData(global_data),
     myLabel("Shift-Invert"),
     eigenParams(eigenParams_),

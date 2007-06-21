@@ -41,7 +41,7 @@
 
 #include "NOX_Solver_Manager.H"	// class definition
 #include "NOX_Utils.H"		// for static function doPrint
-#include "Teuchos_RefCountPtr.hpp" // for RefCountPtr 
+#include "Teuchos_RCP.hpp" // for RCP 
 
 // Header files for different solvers
 #include "NOX_Solver_LineSearchBased.H"	 // LineSearch method
@@ -53,9 +53,9 @@
 #endif
 
 NOX::Solver::Manager::
-Manager(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
+Manager(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+	const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+	const Teuchos::RCP<Teuchos::ParameterList>& p) :
   utils(p->sublist("Printing")),
   method(""),
   ptr(NULL)
@@ -75,9 +75,9 @@ NOX::Solver::Manager::~Manager()
 }
 
 bool NOX::Solver::Manager::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& params)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+      const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   string newmethod = 
     params->get("Nonlinear Solver", "Line Search Based");
@@ -142,14 +142,14 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
 }
 
 bool NOX::Solver::Manager::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& tests)
 {
   return ptr->reset(grp, tests);
 }
 
 bool NOX::Solver::Manager::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& grp)
 {
   return ptr->reset(grp);
 }

@@ -42,7 +42,7 @@
 #ifndef LOCA_BORDEREDSOLVER_ABSTRACTSTRATEGY_H
 #define LOCA_BORDEREDSOLVER_ABSTRACTSTRATEGY_H
 
-#include "Teuchos_RefCountPtr.hpp" 
+#include "Teuchos_RCP.hpp" 
 
 #include "NOX_Abstract_Group.H"           // for ReturnType, CopyType
 #include "NOX_Abstract_MultiVector.H"     // for DenseMatrix
@@ -97,9 +97,9 @@ namespace LOCA {
      * class Derived : public AbstractStrategy {
      * public:
      *   Derived(
-     *   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-     *   const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
+     *   const Teuchos::RCP<LOCA::GlobalData>& global_data,
+     *   const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
      *   ...
      * };
      * \endcode
@@ -129,10 +129,10 @@ namespace LOCA {
        * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
-	  const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC) = 0;
+	  const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>& op,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
+	  const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC) = 0;
 
       //! Set blocks with multivector constraint
       /*!
@@ -142,10 +142,10 @@ namespace LOCA {
        * is then passed to the setMatrixBlocks() method.
        */
       virtual void setMatrixBlocksMultiVecConstraint(
-	  const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockB,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
+	  const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>& op,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockB,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
 
       //! Intialize solver for a solve
       /*!

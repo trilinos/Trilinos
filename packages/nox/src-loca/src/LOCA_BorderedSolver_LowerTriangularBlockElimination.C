@@ -49,7 +49,7 @@
 
 LOCA::BorderedSolver::LowerTriangularBlockElimination::
 LowerTriangularBlockElimination(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }

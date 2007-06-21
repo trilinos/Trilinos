@@ -182,21 +182,21 @@ int main(int argc, char *argv[])
     NOX::Epetra::Vector phi(initialGuess);
     phi.init(1.0);
 
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> y_vec =
+    Teuchos::RCP<NOX::Abstract::Vector> y_vec =
       Teuchos::rcp(&y,false);
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> z_vec =
+    Teuchos::RCP<NOX::Abstract::Vector> z_vec =
       Teuchos::rcp(&z,false);
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> phi_vec =
+    Teuchos::RCP<NOX::Abstract::Vector> phi_vec =
       Teuchos::rcp(&phi,false);
 
     // Create initial values for a and b for minimally augmented method
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> a_vec_real = 
+    Teuchos::RCP<NOX::Abstract::Vector> a_vec_real = 
       Teuchos::rcp(new NOX::Epetra::Vector(initialGuess));
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> a_vec_imag = 
+    Teuchos::RCP<NOX::Abstract::Vector> a_vec_imag = 
       Teuchos::rcp(new NOX::Epetra::Vector(initialGuess));
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> b_vec_real = 
+    Teuchos::RCP<NOX::Abstract::Vector> b_vec_real = 
       Teuchos::rcp(new NOX::Epetra::Vector(initialGuess));
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> b_vec_imag = 
+    Teuchos::RCP<NOX::Abstract::Vector> b_vec_imag = 
       Teuchos::rcp(new NOX::Epetra::Vector(initialGuess));
     *a_vec_real = *y_vec;
     *a_vec_imag = *z_vec;
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
 
     // Create the top level parameter list
 
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList =
+    Teuchos::RCP<Teuchos::ParameterList> paramList =
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -313,30 +313,30 @@ int main(int argc, char *argv[])
     lsParams.set("Preconditioner", "Ifpack"); 
 
     // Create the interface between the test problem and the nonlinear solver
-    Teuchos::RefCountPtr<Problem_Interface> interface = 
+    Teuchos::RCP<Problem_Interface> interface = 
       Teuchos::rcp(new Problem_Interface(Problem));
 
     // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
-    Teuchos::RefCountPtr<Epetra_RowMatrix> A = 
+    Teuchos::RCP<Epetra_RowMatrix> A = 
       Teuchos::rcp(&Problem.getJacobian(),false);
 
     // Use an Epetra Scaling object if desired
-    Teuchos::RefCountPtr<Epetra_Vector> scaleVec = 
+    Teuchos::RCP<Epetra_Vector> scaleVec = 
       Teuchos::rcp(new Epetra_Vector(soln));
     NOX::Epetra::Scaling scaling;
     scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
 
-    Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq = interface;
+    Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = interface;
 
     // Create the Linear System
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
-    Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 							iReq, iJac, A, soln));
                                                         //&scaling);
 
     // Create shifted Linear System
-    Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> shiftedLinSys = 
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> shiftedLinSys = 
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 							iReq, iJac, A, soln));
                                                         //&scaling);
@@ -349,17 +349,17 @@ int main(int argc, char *argv[])
     pVector.addParameter("D2",D2);
 
     // Create Epetra factory
-    Teuchos::RefCountPtr<LOCA::Abstract::Factory> epetraFactory =
+    Teuchos::RCP<LOCA::Abstract::Factory> epetraFactory =
       Teuchos::rcp(new LOCA::Epetra::Factory);
 
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData = 
+    Teuchos::RCP<LOCA::GlobalData> globalData = 
       LOCA::createGlobalData(paramList, epetraFactory);
 
     // Create the Group
-    Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent> iTime =
+    Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime =
       interface;
-    Teuchos::RefCountPtr<LOCA::Epetra::Group> grp =
+    Teuchos::RCP<LOCA::Epetra::Group> grp =
       Teuchos::rcp(new LOCA::Epetra::Group(globalData, printParams,
 					   iTime, initialGuess, linSys, 
 					   shiftedLinSys,
@@ -367,12 +367,12 @@ int main(int argc, char *argv[])
     grp->computeF();
 
     // Create the convergence tests
-    Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
+    Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8, 
 					   NOX::StatusTest::NormF::Unscaled));
-    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
-    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo =
+    Teuchos::RCP<NOX::StatusTest::Combo> combo =
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
     combo->addStatusTest(absresid);
     combo->addStatusTest(maxiters);
@@ -390,7 +390,7 @@ int main(int argc, char *argv[])
     }
 
     // Get the final solution from the stepper
-    Teuchos::RefCountPtr<const LOCA::Epetra::Group> finalGroup = 
+    Teuchos::RCP<const LOCA::Epetra::Group> finalGroup = 
       Teuchos::rcp_dynamic_cast<const LOCA::Epetra::Group>(stepper.getSolutionGroup());
 
     // Output the parameter list

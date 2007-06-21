@@ -57,9 +57,9 @@
 #endif
 
 LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams_,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigParams) :
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams_,
+	const Teuchos::RCP<Teuchos::ParameterList>& eigParams) :
   globalData(global_data),
   topParams(topParams_),
   eigenParams(eigParams),
@@ -88,7 +88,7 @@ LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
 		     Anasazi::FinalSummary);
 		   
   // Create a sorting manager to handle the sorting of eigenvalues 
-  Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> sortingStrategy
+  Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy> sortingStrategy
     = globalData->locaFactory->createEigenvalueSortStrategy(topParams,
 							    eigenParams);
   locaSort =
@@ -103,10 +103,10 @@ LOCA::Eigensolver::AnasaziStrategy::~AnasaziStrategy()
 NOX::Abstract::Group::ReturnType
 LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
 		 NOX::Abstract::Group& group,
-		 Teuchos::RefCountPtr< std::vector<double> >& evals_r,
-		 Teuchos::RefCountPtr< std::vector<double> >& evals_i,
-		 Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_r,
-		 Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_i)
+		 Teuchos::RCP< std::vector<double> >& evals_r,
+		 Teuchos::RCP< std::vector<double> >& evals_i,
+		 Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_r,
+		 Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_i)
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
     globalData->locaUtils->out() << "\n" << 
@@ -119,17 +119,17 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   const NOX::Abstract::Vector& xVector = group.getX();
 
   // Create the operator and initial vector
-  Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy> anasaziOp
+  Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy> anasaziOp
     = globalData->locaFactory->createAnasaziOperatorStrategy(
 						   topParams, 
 						   eigenParams,
 						   solverParams,
 						   Teuchos::rcp(&group,false));
-  Teuchos::RefCountPtr<MV> ivec = xVector.createMultiVector(blksz);
+  Teuchos::RCP<MV> ivec = xVector.createMultiVector(blksz);
   ivec->random();
 
   // Create an instance of the eigenproblem
-  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > 
+  Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > 
     LOCAProblem =
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(anasaziOp, 
 								 ivec) );
@@ -169,7 +169,7 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
        anasaziOp->label() << ")" << std::endl;
   
   // Obtain the eigenvectors
-  Teuchos::RefCountPtr<MV> evecs = anasaziSolution.Evecs;
+  Teuchos::RCP<MV> evecs = anasaziSolution.Evecs;
   evecs_r = evecs->clone(nev);
   evecs_i = evecs->clone(nev);
   for (int i=0; i<nev; i++) {

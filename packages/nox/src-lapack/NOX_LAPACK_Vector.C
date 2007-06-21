@@ -200,10 +200,10 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::scale(const NOX::LAPACK::Vector& a)
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector> NOX::LAPACK::Vector::
+Teuchos::RCP<NOX::Abstract::Vector> NOX::LAPACK::Vector::
 clone(CopyType type) const
 {
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmp;
+  Teuchos::RCP<NOX::Abstract::Vector> tmp;
   tmp = Teuchos::rcp(new NOX::LAPACK::Vector(*this, type));
   return tmp;
 }

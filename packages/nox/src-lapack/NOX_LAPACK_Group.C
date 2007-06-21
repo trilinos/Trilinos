@@ -99,10 +99,10 @@ void NOX::LAPACK::Group::resetIsValid() //private
   jacSolver.reset(); // Reset factorization
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Group> NOX::LAPACK::Group::
+Teuchos::RCP<NOX::Abstract::Group> NOX::LAPACK::Group::
 clone(NOX::CopyType type) const 
 {
-  Teuchos::RefCountPtr<NOX::Abstract::Group> newgrp = 
+  Teuchos::RCP<NOX::Abstract::Group> newgrp = 
     Teuchos::rcp(new NOX::LAPACK::Group(*this, type));
   return newgrp;
 }

@@ -110,14 +110,14 @@ public:
   };
 
   //! Constructor
-  SteepestDescent(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+  SteepestDescent(const Teuchos::RCP<NOX::GlobalData>& gd, 
 		  Teuchos::ParameterList& params);
 
   //! Destructor
   ~SteepestDescent();
 
   // derived
-  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 	     Teuchos::ParameterList& params);
 
   // derived
@@ -136,19 +136,19 @@ private:
 private:
 
   //! Global data pointer.  Keep this so any stored parameter list remains valid.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Printing Utils
-  Teuchos::RefCountPtr<NOX::Utils> utils;
+  Teuchos::RCP<NOX::Utils> utils;
 
   //! Temporary vector used in Cauchy scaling factor calculation
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmpVecPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> tmpVecPtr;
 
   //! Type of scaling of the Cauchy direction
   ScalingType scaleType;
 
   //! Pointer to a user defined merit function
-  Teuchos::RefCountPtr<NOX::MeritFunction::Generic> meritFuncPtr;
+  Teuchos::RCP<NOX::MeritFunction::Generic> meritFuncPtr;
   
 };
 } // namespace Direction

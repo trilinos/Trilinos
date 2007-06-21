@@ -62,14 +62,14 @@ class FullStep : public Generic {
 public:
 
   //! Constructor
-  FullStep(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  FullStep(const Teuchos::RCP<NOX::GlobalData>& gd,
 	   Teuchos::ParameterList& params);
 
   //! Destructor
   ~FullStep();
   
   // derived
-  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 	     Teuchos::ParameterList& params);
 
   // derived

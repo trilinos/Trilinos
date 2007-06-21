@@ -120,14 +120,14 @@ namespace LOCA {
 
 	//! Constructor
 	Constraint(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& pfParams,
-	 const Teuchos::RefCountPtr<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup>& g,
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& pfParams,
+	 const Teuchos::RCP<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup>& g,
 	 bool is_symmetric,
 	 const NOX::Abstract::Vector& a,
 	 const NOX::Abstract::Vector* b,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& psi,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& psi,
 	 int bif_param);
 
 	//! Copy constructor
@@ -143,7 +143,7 @@ namespace LOCA {
 	 * is copied, since we don't explicitly copy the underlying group
 	 * here.
 	 */
-	virtual void setGroup(const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g);
+	virtual void setGroup(const Teuchos::RCP<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g);
 
 	/*! 
 	 * @name Implementation of LOCA::MultiContinuation::ConstraintInterface
@@ -157,7 +157,7 @@ namespace LOCA {
 
 	//! Cloning function
 	virtual 
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+	Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
 	//! Return number of constraints
@@ -200,13 +200,13 @@ namespace LOCA {
       protected:
 
 	//! Pointer to pitchfork group
-	Teuchos::RefCountPtr<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup> pf_grp;
+	Teuchos::RCP<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup> pf_grp;
 
 	//! Vector for \f$\psi\f$
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> psi_vector;
+	Teuchos::RCP<const NOX::Abstract::Vector> psi_vector;
 
 	//! Stores dg/dx
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> dgdx;
+	Teuchos::RCP<NOX::Abstract::MultiVector> dgdx;
 
 	//! Constraint values
 	NOX::Abstract::MultiVector::DenseMatrix pf_constraints;

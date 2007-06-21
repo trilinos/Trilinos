@@ -47,7 +47,7 @@
 #include "NOX_Direction_Utils_InexactNewton.H" // class data element
 #include "Teuchos_ParameterList.hpp"	   // class data element 
 #include "NOX_Abstract_Group.H"    // returnType
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward declaration
 namespace NOX {
@@ -88,14 +88,14 @@ class Tensor : public Generic {
 public:
 
   //! Constructor
-  Tensor(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  Tensor(const Teuchos::RCP<NOX::GlobalData>& gd,
 	 Teuchos::ParameterList& params);
 
   //! Destructor
   virtual ~Tensor();
 
   // derived
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 		     Teuchos::ParameterList& params);
 
   // derived
@@ -255,10 +255,10 @@ private:
 private:
 
   //! Global data pointer.  Keep this so the parameter list remains valid.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Printing Utilities
-  Teuchos::RefCountPtr<NOX::Utils> utils;
+  Teuchos::RCP<NOX::Utils> utils;
 
   //! Flag for the base direction to compute after the first iteration 
   stepType requestedBaseStep;
@@ -291,34 +291,34 @@ private:
   bool doRescue;
 
   //! Vector containing the tensor term sc
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> scPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> scPtr;
 
   //! Vector containing the tensor term ac
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> acPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> acPtr;
 
   //! Vector containing the product Jc*sc/norm(sc)
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> jcxshatPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> jcxshatPtr;
 
   //! Vector containing M'\sc
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> mtinvscPtr;
+  Teuchos::RCP<NOX::Abstract::Vector> mtinvscPtr;
 
   //! Temporary storage vectors
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> vecw;
+  Teuchos::RCP<NOX::Abstract::Vector> vecw;
 
   //! Tensor step
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> dTensor;
+  Teuchos::RCP<NOX::Abstract::Vector> dTensor;
 
   //! Initial guess of the step
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> dInitial;
+  Teuchos::RCP<NOX::Abstract::Vector> dInitial;
 
   //! Curvilinear step at the value lambdaBar
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> dTLambda;
+  Teuchos::RCP<NOX::Abstract::Vector> dTLambda;
 
   //! Newton step
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> dNewton;  // maybe get rid of this once dn gets into group
+  Teuchos::RCP<NOX::Abstract::Vector> dNewton;  // maybe get rid of this once dn gets into group
 
   //! Array of orthonormal basis vectors
-  std::vector< Teuchos::RefCountPtr<NOX::Abstract::Vector> > basisVptr;
+  std::vector< Teuchos::RCP<NOX::Abstract::Vector> > basisVptr;
 
   //! Flag for "continuing" with reset() inside compute() where n is known
   bool isFreshlyReset;

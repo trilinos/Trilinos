@@ -52,7 +52,7 @@
 #include "NOX_GlobalData.H"
 
 NOX::LineSearch::Backtrack::
-Backtrack(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+Backtrack(const Teuchos::RCP<NOX::GlobalData>& gd,
 	  Teuchos::ParameterList& params)
 {
   reset(gd, params);
@@ -64,7 +64,7 @@ NOX::LineSearch::Backtrack::~Backtrack()
 }
 
 bool NOX::LineSearch::Backtrack::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
 { 
   utils = gd->getUtils();

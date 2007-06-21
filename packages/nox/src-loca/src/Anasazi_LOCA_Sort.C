@@ -45,8 +45,8 @@
 #include "LOCA_ErrorCheck.H"
 
 Anasazi::LOCASort::LOCASort(
- const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
- const Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy_)
+ const Teuchos::RCP<LOCA::GlobalData>& global_data,
+ const Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy>& strategy_)
   : globalData(global_data),
     strategy(strategy_)
 {

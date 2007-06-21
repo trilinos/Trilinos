@@ -212,8 +212,8 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 		         <ul>
                          <li> "Moore-Spence" -- [Default] Moore-Spence formulation (LOCA::TurningPoint::MooreSpence::ExtendedGroup)
 			      <ul>
-			      <li> <B>"Length Normalization Vector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding length normalization vector.
-			      <li> <B>"Initial Null Vector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Initial guess for null vector.
+			      <li> <B>"Length Normalization Vector"</B> -- [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding length normalization vector.
+			      <li> <B>"Initial Null Vector"</B> -- [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) Initial guess for null vector.
 			      <li> <B>"Perturb Initial Solution"</B> -- [bool] (default: false) Flag indicating whether to apply an initial perturbation to the initial guess for the solution vector before starting bifurcation algorithm
 			      <li> <B>"Relative Perturbation Size"</B> -- [double] (default: 1.0e-3) Size of relative perturbation of initial guess for solution vector.
 			      <li> <B>"Solver Method"</B> -- [string] (default:  "Salinger Bordering") Solver method for solving extended turning point equations.  Valid choices are
@@ -238,8 +238,8 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 			           <ul>
 				   <li> "User Provided" - Initial vectors are provided in the parameter list, in which case the following parameters are relevant:
 				        <ul>
-					<li> <B>"Initial A Vector"</B>  -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Vector storing initial value for \f$a\f$ vector
-					<li> <B>"Initial B Vector"</B>  -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied for nonsymmetric Jacobians) Vector storing initial value for \f$b\f$ vector
+					<li> <B>"Initial A Vector"</B>  -- [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) Vector storing initial value for \f$a\f$ vector
+					<li> <B>"Initial B Vector"</B>  -- [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied for nonsymmetric Jacobians) Vector storing initial value for \f$b\f$ vector
 					</ul>
 				   <li> "Solve df/dp" -- Compute \f$a = J^{-T}df/dp\f$ and \f$b = J^{-1} df/dp\f$ where \f$p\f$ is the bifurcation parameter.
 				   </ul>
@@ -254,9 +254,9 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 		         <ul>
 		         <li> "Moore-Spence" [Default] -- Moore-Spence formulation (LOCA::Pitchfork::MooreSpence::ExtendedGroup)
 			      <ul>
-			      <li> <B>"Length Normalization Vector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding length normalization vector.
-			      <li> <B>"Initial Null Vector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Initial guess for null vector.
-			      <li> <B>"Asymmetric Vector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding asymmetric vector \f$\psi\f$ used in pitchfork algorithm.
+			      <li> <B>"Length Normalization Vector"</B> -- [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding length normalization vector.
+			      <li> <B>"Initial Null Vector"</B> -- [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) Initial guess for null vector.
+			      <li> <B>"Asymmetric Vector"</B> -- [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding asymmetric vector \f$\psi\f$ used in pitchfork algorithm.
 			      <li> <B>"Perturb Initial Solution"</B> -- [bool] (default: false) Flag indicating whether to apply an initial perturbation to the initial guess for the solution vector before starting bifurcation algorithm
 			      <li> <B>"Relative Perturbation Size"</B> -- [double] (default: 1.0e-3) Size of relative perturbation of initial guess for solution vector.
 			      <li> <B>"Solver Method"</B> -- [string] (default:  "Salinger Bordering") Solver method for solving extended turning point equations.  Valid choices are
@@ -272,13 +272,13 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 			      <ul>
 			      <li> <B>"Bordered Solver Method"</B> -- Method for solving bordered systems of equations.  See description in the "Stepper" sublist above.
 			      <li> <B>"Symmetric Jacobian"</B>  -- [bool] (default: false) Flag indicating whether Jacobian matrix is symmetric.
-			      <li> <B>"Asymmetric Vector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding asymmetric vector \f$\psi\f$ used in pitchfork algorithm.
+			      <li> <B>"Asymmetric Vector"</B> -- [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding asymmetric vector \f$\psi\f$ used in pitchfork algorithm.
 			      <li> <B>"Initial Null Vector Compuation"</B> -- [string] (default: "User Provided") - Method to compute initial \f$a\f$ and \f$b\f$ vectors.  Valid choices are:
 			           <ul>
 				   <li> "User Provided" - Initial vectors are provided in the parameter list, in which case the following parameters are relevant:
 				        <ul>
-					<li> <B>"Initial A Vector"</B>  -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Vector storing initial value for \f$a\f$ vector
-					<li> <B>"Initial B Vector"</B>  -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied for nonsymmetric Jacobians) Vector storing initial value for \f$b\f$ vector
+					<li> <B>"Initial A Vector"</B>  -- [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) Vector storing initial value for \f$a\f$ vector
+					<li> <B>"Initial B Vector"</B>  -- [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied for nonsymmetric Jacobians) Vector storing initial value for \f$b\f$ vector
 					</ul>
 				   <li> "Solve df/dp" -- Compute \f$a = J^{-T}df/dp\f$ and \f$b = J^{-1} df/dp\f$ where \f$p\f$ is the bifurcation parameter.
 				   </ul>
@@ -293,9 +293,9 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 		         <ul>
 			 <li> "Moore-Spence" -- [Default] -- Moore-Spence formulation (LOCA::Hopf::MooreSpence::ExtendedGroup)
 			      <ul>
-			      <li> <B>"Length Normalization Vector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding length normalization vector.
-			      <li> <B>"Initial Real Eigenvector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Initial guess for real component of generalized eigenvector in Hopf algorithm
-			      <li> <B>"Initial Imaginary  Eigenvector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Initial guess for imaginary component of generalized eigenvector in Hopf algorithm
+			      <li> <B>"Length Normalization Vector"</B> -- [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding length normalization vector.
+			      <li> <B>"Initial Real Eigenvector"</B> -- [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) Initial guess for real component of generalized eigenvector in Hopf algorithm
+			      <li> <B>"Initial Imaginary  Eigenvector"</B> -- [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) Initial guess for imaginary component of generalized eigenvector in Hopf algorithm
 			      <li> <B>"Initial Frequency"</B> -- [double] (Must be supplied) Initial guess for Hopf frequency \f$\omega\f$ in Hopf algorithm
 			      <li> <B>"Perturb Initial Solution"</B> -- [bool] (default: false) Flag indicating whether to apply an initial perturbation to the initial guess for the solution vector before starting bifurcation algorithm
 			      <li> <B>"Relative Perturbation Size"</B> -- [double] (default: 1.0e-3) Size of relative perturbation of initial guess for solution vector.
@@ -307,7 +307,7 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 			 </ul>
 		    </ul>
 	       <li> <B>"User-Defined"</B> User defined bifurcation.  Set 
-                   <B>"User-Defined Name"</B> to be the parameter list name containing user-defined strategy, which must be of type Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>.
+                   <B>"User-Defined Name"</B> to be the parameter list name containing user-defined strategy, which must be of type Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>.
                </ul>
           </ul>
      <li> <B>"Predictor"</B> sublist -- used by LOCA::MultiPredictor::Factory to determine what type of predictor to use for each continuation step
@@ -339,8 +339,8 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 	  </ul>
       <li> <B>"Constraints"</B> sublist -- Used to provide additional constraint equations.
           <ul>
-	  <li> <B>"Constraint Object"</B> -- [Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>] (Must be supplied) Pointer to object implementig constraint interface LOCA::MultiContinuation::ConstraintInterface.
-	  <li> <B>"Constraint Parameter Names"</B> -- [Teuchos::RefCountPtr< std::vector<std::string> >] (Must be supplied) Pointer to vector of string names of parameters that become additional unkowns for solving constrained system.
+	  <li> <B>"Constraint Object"</B> -- [Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>] (Must be supplied) Pointer to object implementig constraint interface LOCA::MultiContinuation::ConstraintInterface.
+	  <li> <B>"Constraint Parameter Names"</B> -- [Teuchos::RCP< std::vector<std::string> >] (Must be supplied) Pointer to vector of string names of parameters that become additional unkowns for solving constrained system.
 	  <li> <B>"Bordered Solver Method"</B> -- Method for solving bordered systems of equations arising from constraints.  See description in the "Stepper" sublist above.
 	  </ul>
       </ul>
@@ -348,7 +348,7 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 
 \section user_defined_list User-Defined Strategies Through Parameter Lists
 
-Most strategy choices above have another available option that is not listed above for providing user-defined strategies.  To use a user-defined strategy, one must implement the corresponding strategy abstract interface (e.g., LOCA::MultiPredictor::AbstractStrategy) and instantiate an object of the user-defined type.  Then set the corrsponding "Method" (or similar) parameter of the relevant sublist to "User-Defined", set the parameter "User-Defined Name" to the parameter list name of the strategy (e.g., "My Predictor"), and set the parameter with that name to be a ref-count pointer to that object with the type of the abstract strategy interface (e.g., Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>).  
+Most strategy choices above have another available option that is not listed above for providing user-defined strategies.  To use a user-defined strategy, one must implement the corresponding strategy abstract interface (e.g., LOCA::MultiPredictor::AbstractStrategy) and instantiate an object of the user-defined type.  Then set the corrsponding "Method" (or similar) parameter of the relevant sublist to "User-Defined", set the parameter "User-Defined Name" to the parameter list name of the strategy (e.g., "My Predictor"), and set the parameter with that name to be a ref-count pointer to that object with the type of the abstract strategy interface (e.g., Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>).  
 
 \section user_defined_factory User-Defined Strategies Through Factories
 
@@ -566,7 +566,7 @@ component of the solution vector.
 
 \code
     // Create parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -633,11 +633,11 @@ what output we want printed to the screen.
 \code
 
     // Create LAPACK Factory
-    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+    Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory = 
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+    Teuchos::RCP<LOCA::GlobalData> globalData =
       LOCA::createGlobalData(paramList, lapackFactory);
 
 \endcode
@@ -663,7 +663,7 @@ supplied.
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> grp = 
       Teuchos::rcp(new LOCA::LAPACK::Group(globalData, chan));
     
     grp->setParams(p);
@@ -676,11 +676,11 @@ the problem interface.
 
 \code
     // Set up the status tests
-    Teuchos::RefCountPtr<NOX::StatusTest::NormF> normF = 
+    Teuchos::RCP<NOX::StatusTest::NormF> normF = 
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxIters = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxIters = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
-    Teuchos::RefCountPtr<NOX::StatusTest::Generic> comboOR = 
+    Teuchos::RCP<NOX::StatusTest::Generic> comboOR = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
 					      normF, 
 					      maxIters));
@@ -711,7 +711,7 @@ returned status.
 
 \code
     // Get the final solution from the stepper
-    Teuchos::RefCountPtr<const LOCA::LAPACK::Group> finalGroup = 
+    Teuchos::RCP<const LOCA::LAPACK::Group> finalGroup = 
       Teuchos::rcp_dynamic_cast<const LOCA::LAPACK::Group>(stepper.getSolutionGroup());
     const NOX::LAPACK::Vector& finalSolution = 
       dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup->getX());
@@ -846,16 +846,16 @@ By examining the plot in \ref loca_continuation_tutorial, a turning point bifurc
     outFile << n << endl;
 
     // Create initial guess for the null vector of jacobian
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> nullVec = 
+    Teuchos::RCP<NOX::Abstract::Vector> nullVec = 
       Teuchos::rcp(new NOX::LAPACK::Vector(n));
     nullVec->init(1.0);               // initial value 1.0
 
     // Create initial values for a and b for minimally augmented method
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> a_vec = 
+    Teuchos::RCP<NOX::Abstract::Vector> a_vec = 
       Teuchos::rcp(new NOX::LAPACK::Vector(n));
     a_vec->init(1.0);
 
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> b_vec = 
+    Teuchos::RCP<NOX::Abstract::Vector> b_vec = 
       Teuchos::rcp(new NOX::LAPACK::Vector(n));
     b_vec->init(1.0);
 \endcode
@@ -864,7 +864,7 @@ The only additional set up required for turning point tracking in this problem i
 
 \code
     // Create parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -958,11 +958,11 @@ We again use a secant predictor to compute an initial guess at each continuation
 		      NOX::Utils::StepperParameters);            // Should set
 
     // Create LAPACK Factory
-    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+    Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory = 
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+    Teuchos::RCP<LOCA::GlobalData> globalData =
       LOCA::createGlobalData(paramList, lapackFactory);
 
     // Set up the problem interface
@@ -975,18 +975,18 @@ We again use a secant predictor to compute an initial guess at each continuation
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> grp = 
       Teuchos::rcp(new LOCA::LAPACK::Group(globalData, chan));
     
     grp->setParams(p);
 
     // Set up the status tests
-    Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+    Teuchos::RCP<NOX::StatusTest::NormF> statusTestA = 
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-10, 
 					      NOX::StatusTest::NormF::Scaled));
-    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
-    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+    Teuchos::RCP<NOX::StatusTest::Combo> combo = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
 					      statusTestA, statusTestB));
 
@@ -1100,12 +1100,12 @@ title('Locus of Turning Points');
 
 Most of %LOCA has been rewritten to more fully support multi-parameter continuation, constraint tracking, higher-order predictors and advanced bifurcation algorithms.  The new framework completely replaces the old framework, with the old one now removed.  However the interfaces for both the new and old frameworks are still very similar, so the conversion between them is fairly simple.  There are three major components to this refactoring:
 <ul>
-<li> Use of Teuchos::RefCountPtr objects instead of raw pointers or references for better C++ memory management.
+<li> Use of Teuchos::RCP objects instead of raw pointers or references for better C++ memory management.
 <li> Use of strategy interfaces and factories to choose between alternative numerical algorithms.
 <li> Use of multi-vectors throughout %LOCA to consolidate single and multiple parameter continuation code and to more fully support block algorithms.
 </ul>
 
-In the new framework, Teuchos::RefCountPtr's are used whenever objects are passed into an object method and the supplied arguments have a persisting relationship with that object beyond the lifetime of the function call.  This greatly simplifies memory management since the owning object does not need to worry about deleting any of the supplied arguments.  For the most part this is transparent to the user since the only place where users must use ref-count pointers is when passing the group, parameter list, and status test objects to the stepper constructor (or when implementing a strategy interface as discussed below).
+In the new framework, Teuchos::RCP's are used whenever objects are passed into an object method and the supplied arguments have a persisting relationship with that object beyond the lifetime of the function call.  This greatly simplifies memory management since the owning object does not need to worry about deleting any of the supplied arguments.  For the most part this is transparent to the user since the only place where users must use ref-count pointers is when passing the group, parameter list, and status test objects to the stepper constructor (or when implementing a strategy interface as discussed below).
 
 In the old framework, whenever a numerical continuation or bifurcation algorithm needed the result of a computation that was problem or data structure dependent, a group method was created for that computation which the user could implement in their own concrete group.  The problem with this however is it ties the implementation of this method to the group and makes it difficult for the group to support multiple ways of implementing the computation.  In the new framework, a strategy interface approach is taken instead where an abstract interface class is written the encapsulates the interface for the computation (strategy interface) and strategy objects are written that implement that interface for different strategies.  Then a factory is written that instantiates strategy objects based on a name provided in a parameter list (see for example LOCA::Eigensolver::AbstractStrategy and LOCA::Eigensolver::Factory or LOCA::BorderedSystem::AbstractStrategy and LOCA::BorderedSystem::Factory).  This allows the same group to use multiple strategies for a given computation and separates the interface to parallel linear algebra data structures in the group from the often many ways data structure dependent computations can be written in the strategy objects.  (In many ways this is similar to the Manager concept in %NOX, except it allows users to easily provide their own strategy implementations by implementing their own factory, see LOCA::Factory and LOCA::Abstract::Factory).
 

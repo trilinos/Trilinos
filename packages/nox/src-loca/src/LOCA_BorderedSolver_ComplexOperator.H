@@ -42,7 +42,7 @@
 #ifndef LOCA_BORDEREDSOLVER_COMPLEXOPERATOR_H
 #define LOCA_BORDEREDSOLVER_COMPLEXOPERATOR_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_BorderedSolver_AbstractOperator.H" // base class
 
@@ -68,14 +68,14 @@ namespace LOCA {
     public:
 
       //! Constructor
-      ComplexOperator(const Teuchos::RefCountPtr<const LOCA::Hopf::MooreSpence::AbstractGroup>& grp,
+      ComplexOperator(const Teuchos::RCP<const LOCA::Hopf::MooreSpence::AbstractGroup>& grp,
 		      double omega);
 
       //! Destructor
       virtual ~ComplexOperator();
 
       //! Get group pointer
-      virtual Teuchos::RefCountPtr<const NOX::Abstract::Group>
+      virtual Teuchos::RCP<const NOX::Abstract::Group>
       getGroup() const;
 
       //! Get frequency
@@ -122,7 +122,7 @@ namespace LOCA {
     protected:
 
       //! Pointer to group
-      Teuchos::RefCountPtr<const LOCA::Hopf::MooreSpence::AbstractGroup> grpPtr;
+      Teuchos::RCP<const LOCA::Hopf::MooreSpence::AbstractGroup> grpPtr;
 
       //! Complex frequency
       double omega;

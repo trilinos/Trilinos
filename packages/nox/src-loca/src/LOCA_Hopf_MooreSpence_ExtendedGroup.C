@@ -51,10 +51,10 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Hopf::MooreSpence::ExtendedGroup::ExtendedGroup(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-         const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& hpfParams,
-	 const Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::AbstractGroup>& g)
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& hpfParams,
+	 const Teuchos::RCP<LOCA::Hopf::MooreSpence::AbstractGroup>& g)
   : LOCA::Extended::MultiAbstractGroup(),
     LOCA::MultiContinuation::AbstractGroup(),
     globalData(global_data),
@@ -95,27 +95,27 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::ExtendedGroup(
     globalData->locaErrorCheck->throwError(func,
 			   "\"Length Normalization Vector\" is not set!");
   }
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> lenVecPtr = 
+  Teuchos::RCP<NOX::Abstract::Vector> lenVecPtr = 
     (*hopfParams).INVALID_TEMPLATE_QUALIFIER 
-    get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >(
+    get< Teuchos::RCP<NOX::Abstract::Vector> >(
 					       "Length Normalization Vector");
 
   if (!hopfParams->isParameter("Initial Real Eigenvector")) {
     globalData->locaErrorCheck->throwError(func,
 				 "\"Initial Real Eigenvector\" is not set!");
   }
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> realEigVecPtr = 
+  Teuchos::RCP<NOX::Abstract::Vector> realEigVecPtr = 
     (*hopfParams).INVALID_TEMPLATE_QUALIFIER 
-    get<Teuchos::RefCountPtr<NOX::Abstract::Vector> >(
+    get<Teuchos::RCP<NOX::Abstract::Vector> >(
 						  "Initial Real Eigenvector");
 
   if (!hopfParams->isParameter("Initial Imaginary Eigenvector")) {
     globalData->locaErrorCheck->throwError(func,
 			      "\"Initial Imaginary Eigenvector\" is not set!");
   }
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> imagEigVecPtr = 
+  Teuchos::RCP<NOX::Abstract::Vector> imagEigVecPtr = 
     (*hopfParams).INVALID_TEMPLATE_QUALIFIER 
-    get<Teuchos::RefCountPtr<NOX::Abstract::Vector> >(
+    get<Teuchos::RCP<NOX::Abstract::Vector> >(
 					       "Initial Imaginary Eigenvector");
 
   if (!hopfParams->isParameter("Initial Frequency")) {
@@ -201,7 +201,7 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::operator=(
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Group>
+Teuchos::RCP<NOX::Abstract::Group>
 LOCA::Hopf::MooreSpence::ExtendedGroup::clone(NOX::CopyType type) const 
 {
   return 
@@ -434,9 +434,9 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::applyJacobian(
 					  NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input = 
     input.createMultiVector(1, NOX::DeepCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_result = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result = 
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobian
@@ -455,9 +455,9 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::applyJacobianTranspose(
 					  NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input = 
     input.createMultiVector(1, NOX::DeepCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_result = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result = 
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobianTranspose
@@ -477,9 +477,9 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::applyJacobianInverse(
 					  NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_input = 
     input.createMultiVector(1, NOX::DeepCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_result = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv_result = 
     result.createMultiVector(1, NOX::DeepCopy);
 
   // Call multivector version of applyJacobianInverse
@@ -514,33 +514,33 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::applyJacobianMultiVector(
     dynamic_cast<LOCA::Hopf::MooreSpence::ExtendedMultiVector&>(result);
 
   // Get constant references to input vector components
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_x = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
     hopf_input.getXMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_y = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_y = 
     hopf_input.getRealEigenMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_z = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_z = 
     hopf_input.getImagEigenMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_w =
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_w =
     hopf_input.getFrequencies();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_p =
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_p =
     hopf_input.getBifParams();
 
   // Get non-constant references to result vector components
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
     hopf_result.getXMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_y = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_y = 
     hopf_result.getRealEigenMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_z = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_z = 
     hopf_result.getImagEigenMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_w = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_w = 
     hopf_result.getFrequencies();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_p = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_p = 
     hopf_result.getBifParams();
 
   // Temporary vectors
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp_real = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp_real = 
     input_y->clone(NOX::ShapeCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp_imag = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp_imag = 
     input_z->clone(NOX::ShapeCopy);
 
   // verify underlying Jacobian is valid
@@ -702,13 +702,13 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual() const
   return residual.norm();
 }
 
-Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
 LOCA::Hopf::MooreSpence::ExtendedGroup::getUnderlyingGroup() const
 {
   return grpPtr;
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 LOCA::Hopf::MooreSpence::ExtendedGroup::getUnderlyingGroup()
 {
   return grpPtr;
@@ -1036,7 +1036,7 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::init(bool perturbSoln,
   double denom = ldy*ldy + ldz*ldz;
   double a =  ldy/denom;
   double b = -ldz/denom;
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> y_tmp = 
+  Teuchos::RCP<NOX::Abstract::Vector> y_tmp = 
     xVec->getRealEigenVec()->clone();
 
   // y <- a*y - b*z
@@ -1052,7 +1052,7 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::init(bool perturbSoln,
        "applying random perturbation to initial solution of size: " << 
        globalData->locaUtils->sciformat(perturbSize) << endl;
     }
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> perturb = 
+    Teuchos::RCP<NOX::Abstract::Vector> perturb = 
       xVec->getXVec()->clone(NOX::ShapeCopy);
     perturb->random();
     perturb->scale(*(xVec->getXVec()));

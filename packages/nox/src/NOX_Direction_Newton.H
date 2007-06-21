@@ -44,7 +44,7 @@
 
 #include "NOX_Direction_Generic.H" // base class
 #include "Teuchos_ParameterList.hpp"	   // class data element 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward declaration
 namespace NOX {
@@ -197,14 +197,14 @@ class Newton : public Generic {
 public:
 
   //! Constructor
-  Newton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+  Newton(const Teuchos::RCP<NOX::GlobalData>& gd, 
 	 Teuchos::ParameterList& params);
 
   //! Destructor
   virtual ~Newton();
 
   // derived
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 		     Teuchos::ParameterList& params);
 
   // derived
@@ -234,10 +234,10 @@ private:
 private:
 
   //! Global data pointer.  Keep this so the parameter list remains valid.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Printing Utilities
-  Teuchos::RefCountPtr<NOX::Utils> utils;
+  Teuchos::RCP<NOX::Utils> utils;
 
   //! "Direction" sublist with parameters for the direction vector
   /*! 
@@ -250,10 +250,10 @@ private:
   bool doRescue;
 
   //! Vector containing the predicted RHS
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> predRhs;
+  Teuchos::RCP<NOX::Abstract::Vector> predRhs;
 
   //! Vector containing the computed direction
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> stepDir;
+  Teuchos::RCP<NOX::Abstract::Vector> stepDir;
 
   //! Flag used to determine if adjustable forcing term is being used.
   bool useAdjustableForcingTerm;

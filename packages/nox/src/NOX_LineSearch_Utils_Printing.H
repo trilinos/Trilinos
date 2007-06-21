@@ -68,12 +68,12 @@ class Printing : public NOX::Utils {
 public:
 
   //! Default constructor
-  Printing(const Teuchos::RefCountPtr<NOX::Utils>& u);
+  Printing(const Teuchos::RCP<NOX::Utils>& u);
 
   //! Destructor
   virtual ~Printing();
 
-  void reset(const Teuchos::RefCountPtr<NOX::Utils>& u);
+  void reset(const Teuchos::RCP<NOX::Utils>& u);
 
   //! Prints the opening information.
   void printOpeningRemarks(const string& lineSearchName) const;

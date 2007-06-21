@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
   DennisSchnabel Problem(NumGlobalElements, Comm);
 
   // Get the vector from the Problem
-  Teuchos::RefCountPtr<Epetra_Vector> soln = Problem.getSolution();
+  Teuchos::RCP<Epetra_Vector> soln = Problem.getSolution();
   NOX::Epetra::Vector noxSoln(soln, NOX::Epetra::Vector::CreateView);
 
   // Initialize Solution
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
@@ -193,35 +193,35 @@ int main(int argc, char *argv[])
     sdParams.set("Scaling Type", "Quadratic Model Min");
 
   // Create the interface between the test problem and the nonlinear solver
-  Teuchos::RefCountPtr<Problem_Interface> interface = 
+  Teuchos::RCP<Problem_Interface> interface = 
     Teuchos::rcp(new Problem_Interface(Problem));
   
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
-  Teuchos::RefCountPtr<Epetra_RowMatrix> A = Problem.getJacobian();
+  Teuchos::RCP<Epetra_RowMatrix> A = Problem.getJacobian();
 
   // Create the callback interfaces for filling the residual and Jacbian
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
+  Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
 
   // Create the Linear System
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 						      iReq, iJac, A, noxSoln));
 
   // Create the Group
-  Teuchos::RefCountPtr<NOX::Epetra::Group> grpPtr = 
+  Teuchos::RCP<NOX::Epetra::Group> grpPtr = 
     Teuchos::rcp(new NOX::Epetra::Group(printParams, 
 					iReq, 
 					noxSoln, 
 					linSys)); 
 
   // Create the convergence tests
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> testNormF = 
+  Teuchos::RCP<NOX::StatusTest::NormF> testNormF = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-6));
-  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> testMaxIters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> testMaxIters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(25));
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
 					    testNormF, testMaxIters));
 

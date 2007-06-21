@@ -47,7 +47,7 @@
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member
 #include "NOX_LineSearch_Utils_Counters.H"  // class data member
 #include "NOX_LineSearch_Utils_Slope.H"     // class data member
-#include "Teuchos_RefCountPtr.hpp"          // class data member
+#include "Teuchos_RCP.hpp"          // class data member
 
 // Forward Declarations
 namespace NOX {
@@ -323,14 +323,14 @@ class Polynomial : public Generic {
 public:
 
   //! Constructor
-  Polynomial(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  Polynomial(const Teuchos::RCP<NOX::GlobalData>& gd,
 	     Teuchos::ParameterList& params);
   
   //! Destructor
   ~Polynomial();
   
   // derived
-  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 	     Teuchos::ParameterList& params);
 
   // derived
@@ -552,7 +552,7 @@ protected:
   bool useCounter;
 
   //! Global data pointer.  Keep this so the parameter list remains valid.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Pointer to the input parameter list. 
   /*! We need this to later create an "Output" sublist to store output
@@ -570,7 +570,7 @@ protected:
   NOX::LineSearch::Utils::Slope slopeUtil;
 
   //! Pointer to a user supplied merit function.
-  Teuchos::RefCountPtr<NOX::MeritFunction::Generic> meritFuncPtr;
+  Teuchos::RCP<NOX::MeritFunction::Generic> meritFuncPtr;
 
 };
 } // namespace LineSearch

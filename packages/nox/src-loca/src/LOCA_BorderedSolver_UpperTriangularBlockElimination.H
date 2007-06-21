@@ -96,7 +96,7 @@ namespace LOCA {
        * \param global_data [in] Global data object
        */
       UpperTriangularBlockElimination(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       //! Destructor
       virtual ~UpperTriangularBlockElimination();
@@ -146,7 +146,7 @@ namespace LOCA {
     protected:
 
       //! Global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
     }; // class UpperTriangularBlockElimination
   } // namespace BorderedSolver

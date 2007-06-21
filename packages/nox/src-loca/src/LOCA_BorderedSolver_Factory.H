@@ -42,7 +42,7 @@
 #ifndef LOCA_BORDEREDSOLVER_FACTORY_H
 #define LOCA_BORDEREDSOLVER_FACTORY_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // forward declarations
 namespace Teuchos {
@@ -87,7 +87,7 @@ namespace LOCA {
     public:
 
       //! Constructor
-      Factory(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+      Factory(const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       //! Destructor
       virtual ~Factory();
@@ -97,10 +97,10 @@ namespace LOCA {
        * \param topParams [in] Parsed top-level parameter list.  
        * \param solverParams [in] Solver parameters as described above
        */
-      Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>
+      Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>
       create(
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
       //! Return strategy name given by \c solverParams
       const string& strategyName(Teuchos::ParameterList& solverParams) const;
@@ -116,7 +116,7 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
     }; // Class Factory
 

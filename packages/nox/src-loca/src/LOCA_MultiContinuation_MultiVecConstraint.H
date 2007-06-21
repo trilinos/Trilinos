@@ -61,7 +61,7 @@ namespace LOCA {
 
       //! Constructor
       MultiVecConstraint(
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& dx);
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& dx);
 
       //! Copy constructor
       MultiVecConstraint(const MultiVecConstraint& source, 
@@ -72,7 +72,7 @@ namespace LOCA {
 
       //! Set constraint vector
       virtual void setDx(
-	    const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& dx);
+	    const Teuchos::RCP<const NOX::Abstract::MultiVector>& dx);
 
       /*! 
        * @name Implementation of LOCA::MultiContinuation::ConstraintInterfaceMVDX 
@@ -85,7 +85,7 @@ namespace LOCA {
 
       //! Cloning function
       virtual 
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+      Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Return number of constraints
@@ -157,10 +157,10 @@ namespace LOCA {
     protected:
 
       //! Constraint vector
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> dx;
+      Teuchos::RCP<NOX::Abstract::MultiVector> dx;
 
       //! Solution vector
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> x;
+      Teuchos::RCP<NOX::Abstract::MultiVector> x;
 
       //! Constraint values
       NOX::Abstract::MultiVector::DenseMatrix constraints;

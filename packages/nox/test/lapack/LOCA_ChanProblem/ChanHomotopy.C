@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 	verbose = true;
 
     // Create parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -91,11 +91,11 @@ int main(int argc, char *argv[])
        nlPrintParams.set("Output Information", NOX::Utils::Error);
 
     // Create LAPACK Factory
-    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+    Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory = 
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+    Teuchos::RCP<LOCA::GlobalData> globalData =
       LOCA::createGlobalData(paramList, lapackFactory);
 
     // Set up the problem interface
@@ -108,21 +108,21 @@ int main(int argc, char *argv[])
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    Teuchos::RefCountPtr<LOCA::LAPACK::Group> grp = 
+    Teuchos::RCP<LOCA::LAPACK::Group> grp = 
       Teuchos::rcp(new LOCA::LAPACK::Group(globalData, chan));
     grp->setParams(p);
 
     // Set up the status tests
-    Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+    Teuchos::RCP<NOX::StatusTest::NormF> statusTestA = 
       Teuchos::rcp(new NOX::StatusTest::NormF(*grp, 1.0e-8));
-    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
-    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+    Teuchos::RCP<NOX::StatusTest::Combo> combo = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
 					       statusTestA, statusTestB));
 
     // Create the homotopy group
-    Teuchos::RefCountPtr<LOCA::Homotopy::Group> hGrp = 
+    Teuchos::RCP<LOCA::Homotopy::Group> hGrp = 
       Teuchos::rcp(new LOCA::Homotopy::Group(locaParamsList, globalData, grp));
 
     // Override default parameters
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
     }
 
     // Get the final solution from the stepper
-    Teuchos::RefCountPtr<const LOCA::LAPACK::Group> finalGroup = 
+    Teuchos::RCP<const LOCA::LAPACK::Group> finalGroup = 
       Teuchos::rcp_dynamic_cast<const LOCA::LAPACK::Group>(stepper.getSolutionGroup());
     const NOX::LAPACK::Vector& finalSolution = 
       dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup->getX());

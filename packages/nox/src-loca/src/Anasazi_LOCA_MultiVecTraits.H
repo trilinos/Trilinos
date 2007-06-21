@@ -76,7 +76,7 @@ namespace Anasazi {
      *
      * \return Reference-counted pointer to the new multivector of type \c MV.
      */
-    static Teuchos::RefCountPtr<MV> Clone( const MV& mv, const int numvecs ) 
+    static Teuchos::RCP<MV> Clone( const MV& mv, const int numvecs ) 
     {
       return mv.clone(numvecs);
     }
@@ -87,7 +87,7 @@ namespace Anasazi {
      *
      * \return Reference-counted pointer to the new multivector of type \c MV.
      */
-    static Teuchos::RefCountPtr<MV> CloneCopy( const MV& mv ) 
+    static Teuchos::RCP<MV> CloneCopy( const MV& mv ) 
     {
       return mv.clone(NOX::DeepCopy);
     }
@@ -100,7 +100,7 @@ namespace Anasazi {
      * indices in \c index.      
      * \return Reference-counted pointer to the new multivector of type \c MV.
      */
-    static Teuchos::RefCountPtr<MV> CloneCopy( const MV& mv, 
+    static Teuchos::RCP<MV> CloneCopy( const MV& mv, 
 					       const std::vector<int>& index )
     {
       return mv.subCopy(index);
@@ -114,7 +114,7 @@ namespace Anasazi {
      * indicated by the indices given in \c index.
      * \return Reference-counted pointer to the new multivector of type \c MV.
      */      
-    static Teuchos::RefCountPtr<MV> CloneView( MV& mv, 
+    static Teuchos::RCP<MV> CloneView( MV& mv, 
 					       const std::vector<int>& index )
     {
       return mv.subView(index);
@@ -129,7 +129,7 @@ namespace Anasazi {
      * \return Reference-counted pointer to the new const multivector of 
      * type \c MV.
      */      
-    static Teuchos::RefCountPtr<const MV> CloneView( const MV& mv, 
+    static Teuchos::RCP<const MV> CloneView( const MV& mv, 
 						     const std::vector<int>& index ) 
     {
       return mv.subView(index);

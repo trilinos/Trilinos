@@ -80,11 +80,11 @@ namespace LOCA {
        * \param paramIDs [in] Parameter IDs of continuation parameters.
        */
       NaturalGroup(
-      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& continuationParams,
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
-      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const Teuchos::RCP<LOCA::GlobalData>& global_data,
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& continuationParams,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs);
 
       //! Copy constructor
@@ -104,7 +104,7 @@ namespace LOCA {
       operator=(const NOX::Abstract::Group& source);
 
       //! Clone function
-      virtual Teuchos::RefCountPtr<NOX::Abstract::Group>
+      virtual Teuchos::RCP<NOX::Abstract::Group>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
       
       //@}

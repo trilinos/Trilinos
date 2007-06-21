@@ -198,25 +198,25 @@ namespace LOCA {
        * \return Pointer to newly created vector or NULL if clone is not 
        * supported. 
        */
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Creates a new multi-vector with \c numvecs columns
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       clone(int numvecs) const;
 
       /*! 
        * \brief Creates a new multi-vector with \c index.size() columns whose 
        * columns are copies of the columns of \c *this given by \c index.
        */
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       subCopy(const vector<int>& index) const;
 
       /*! 
        * \brief Creates a new multi-vector with \c index.size() columns that 
        * shares the columns of \c *this given by \c index.
        */
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       subView(const vector<int>& index) const;
 
       //! Norm.
@@ -247,20 +247,20 @@ namespace LOCA {
       //@{ \name Additional public accessor methods
 
       //! Returns const ref-count pointer to the ith multi-vector
-      virtual Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> 
+      virtual Teuchos::RCP<const NOX::Abstract::MultiVector> 
       getMultiVector(int i) const;
 
       //! Returns ref-count pointer to the ith multi-vector
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
       getMultiVector(int i);
 
       //! Returns const ref-count pointer to scalar matrix
       virtual 
-      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>
+      Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>
       getScalars() const;
 
       //! Returns ref-count pointer to scalar matrix
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> 
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> 
       getScalars();
 
       /*! 
@@ -268,14 +268,14 @@ namespace LOCA {
        * scalar matrix starting at row \c row.
        */
       virtual 
-      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>
+      Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>
       getScalarRows(int num_rows, int row) const;
 
       /*! 
        * \brief Returns ref-count pointer to \c num_rows rows of 
        * scalar matrix starting at row \c row.
        */
-      virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> 
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> 
       getScalarRows(int num_rows, int row);
 
       //! Returns const reference to the scalar for row i, column j
@@ -288,13 +288,13 @@ namespace LOCA {
        * \brief Return a ref-count pointer to the i-th column of the 
        * multivector as an abstract vector.  
        */
-      virtual Teuchos::RefCountPtr<LOCA::Extended::Vector> getVector(int i);
+      virtual Teuchos::RCP<LOCA::Extended::Vector> getVector(int i);
     
       /*!
        * \brief Return a const ref-count pointer to the i-th column of the 
        * multivector as an abstract vector.  
        */
-      virtual Teuchos::RefCountPtr<const LOCA::Extended::Vector> 
+      virtual Teuchos::RCP<const LOCA::Extended::Vector> 
       getVector(int i) const;
 
       //! Returns number of scalars rows
@@ -308,7 +308,7 @@ namespace LOCA {
     protected:
 
       //! Constructor that creates an empty multivector to be filled in later.
-      MultiVector(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+      MultiVector(const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		  int nColumns, int nVectorRows, int nScalarRows);
 
       //@{ \name Additional interface derived classes must implement
@@ -320,7 +320,7 @@ namespace LOCA {
        * This allows the operator[] methods to work correctly for 
        * derived classes.
        */
-      virtual Teuchos::RefCountPtr<LOCA::Extended::Vector> 
+      virtual Teuchos::RCP<LOCA::Extended::Vector> 
       generateVector(int nVecs, int nScalarRows) const;
 
       //@}
@@ -330,7 +330,7 @@ namespace LOCA {
       //! Sets the pointer to the ith multivector
       void setMultiVectorPtr(
 			  int i, 
-			  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> v);
+			  Teuchos::RCP<NOX::Abstract::MultiVector> v);
 
       //! Checks multi-vec argument dimensions are consistent
       void checkDimensions(const string& callingFunction, 
@@ -353,7 +353,7 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       /*! 
        * \brief Number of columns in each multivec and number of scalar 
@@ -368,13 +368,13 @@ namespace LOCA {
       int numScalarRows;
 
       //! Array of multi-vector pointers, one for each block ROW
-      vector< Teuchos::RefCountPtr<NOX::Abstract::MultiVector> > multiVectorPtrs;
+      vector< Teuchos::RCP<NOX::Abstract::MultiVector> > multiVectorPtrs;
 
       //! Dense matrix of scalars
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> scalarsPtr;
+      Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> scalarsPtr;
 
       //! Pointers to each column as a LOCA::Extended::Vector
-      mutable vector< Teuchos::RefCountPtr<LOCA::Extended::Vector> > extendedVectorPtrs;
+      mutable vector< Teuchos::RCP<LOCA::Extended::Vector> > extendedVectorPtrs;
 
       //! Flag indicating whether this vector is a view
       bool isView;

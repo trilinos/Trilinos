@@ -42,7 +42,7 @@
 #ifndef LOCA_EXTENDED_MULTIABSTRACTGROUP_H
 #define LOCA_EXTENDED_MULTIABSTRACTGROUP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "NOX_Abstract_Group.H"    // base class
 
@@ -88,7 +88,7 @@ namespace LOCA {
        * This method should the underlying group data member.
        */
       virtual 
-      Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
+      Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
       getUnderlyingGroup() const = 0;
       
       //! Return underlying group
@@ -96,7 +96,7 @@ namespace LOCA {
        * This method should the underlying group data member.
        */
       virtual 
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+      Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
       getUnderlyingGroup() = 0;
 
       //@}
@@ -118,7 +118,7 @@ namespace LOCA {
        * implementation that should work in most cases.
        */
       virtual 
-      Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
+      Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
       getBaseLevelUnderlyingGroup() const;
       
       //! Return base-level underlying group
@@ -130,7 +130,7 @@ namespace LOCA {
        * implementation that should work in most cases.
        */
       virtual 
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+      Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
       getBaseLevelUnderlyingGroup();
 
       //@}

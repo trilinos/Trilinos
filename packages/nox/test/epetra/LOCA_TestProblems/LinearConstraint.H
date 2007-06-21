@@ -81,7 +81,7 @@ public:
 
   //! Cloning function
   virtual 
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+  Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
   clone(NOX::CopyType type = NOX::DeepCopy) const;
 
   //! Return number of constraints
@@ -168,10 +168,10 @@ protected:
   bool isValidConstraints;
 
   //! Solution vector
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> x;
+  Teuchos::RCP<NOX::Abstract::MultiVector> x;
 
   //! Solution component of constraint derivative
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> dgdx;
+  Teuchos::RCP<NOX::Abstract::MultiVector> dgdx;
 
   //! Flag indicating whether dgdx is zero
   bool isZeroDgDx;

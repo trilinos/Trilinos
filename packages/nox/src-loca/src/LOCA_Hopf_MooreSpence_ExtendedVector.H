@@ -82,7 +82,7 @@ namespace LOCA {
   
 	//! Constructor.
 	ExtendedVector(
-		   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		   const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		   const NOX::Abstract::Vector& xVec,
 		   const NOX::Abstract::Vector& realEigenVec,
 		   const NOX::Abstract::Vector& imagEigenVec,
@@ -108,7 +108,7 @@ namespace LOCA {
 	operator=(const ExtendedVector& y);
 
 	//! Cloning function
-	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+	virtual Teuchos::RCP<NOX::Abstract::Vector> 
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
 	//! Sets the Hopf vector by setting its five components 
@@ -119,21 +119,21 @@ namespace LOCA {
 			    double bifPar);
 
 	//! Returns the solution vector component of extended vector
-	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+	virtual Teuchos::RCP<const NOX::Abstract::Vector> 
 	getXVec() const;
 
 	/*! 
 	 * \brief Returns the real part of the eigenvector component of 
 	 * extended vector
 	 */
-	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+	virtual Teuchos::RCP<const NOX::Abstract::Vector> 
 	getRealEigenVec() const;
 
 	/*! 
 	 * \brief Returns the imaginary part of the eigenvector component of 
 	 * extended vector
 	 */
-	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+	virtual Teuchos::RCP<const NOX::Abstract::Vector> 
 	getImagEigenVec() const;
 
 	//! Returns the frequency component of the extended vector
@@ -143,19 +143,19 @@ namespace LOCA {
 	virtual double getBifParam() const;
 
 	//! Returns the solution vector component of extended vector
-	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> getXVec();
+	virtual Teuchos::RCP<NOX::Abstract::Vector> getXVec();
 
 	/*! 
 	 * \brief Returns the real part of the eigenvector component of 
 	 * extended vector
 	 */
-	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> getRealEigenVec();
+	virtual Teuchos::RCP<NOX::Abstract::Vector> getRealEigenVec();
 
 	/*! 
 	 * \brief Returns the imaginary part of the eigenvector component of 
 	 * extended vector
 	 */
-	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> getImagEigenVec();
+	virtual Teuchos::RCP<NOX::Abstract::Vector> getImagEigenVec();
 
 	//! Returns the frequency component of the extended vector
 	virtual double& getFrequency();
@@ -167,14 +167,14 @@ namespace LOCA {
 
 	//! Default Constructor
 	ExtendedVector(
-		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+		  const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
 	//! generate an extended multi-vector
 	/*!
 	 * Returns an empty multivector of type 
 	 * LOCA::Hopf::MooreSpence::ExtendedMultiVector
 	 */
-	virtual Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
+	virtual Teuchos::RCP<LOCA::Extended::MultiVector>
 	generateMultiVector(int nColumns, int nVectorRows, 
 			    int nScalarRows) const;
 

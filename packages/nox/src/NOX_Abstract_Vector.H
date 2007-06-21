@@ -43,7 +43,7 @@
 #define NOX_ABSTRACT_VECTOR_H
 
 #include "NOX_Common.H"  // for NOX_Config.h
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward declaration of MultiVector class
 namespace NOX {
@@ -213,7 +213,7 @@ public:
 
     \return Pointer to newly created vector or NULL if clone is not supported. 
   */
-  virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+  virtual Teuchos::RCP<NOX::Abstract::Vector> 
   clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
 
   /*! 
@@ -224,7 +224,7 @@ public:
    * The default implementation creates a generic NOX::MultiVector with
    * either Shape or Deep copies of the supplied vectors.
    */
-  virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+  virtual Teuchos::RCP<NOX::Abstract::MultiVector>
   createMultiVector(const NOX::Abstract::Vector* const* vecs,
 		    int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 
@@ -234,7 +234,7 @@ public:
    * The default implementation creates a generic NOX::MultiVector with
    * either Shape or Deep copies of the supplied vector.
    */
-  virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+  virtual Teuchos::RCP<NOX::Abstract::MultiVector>
   createMultiVector(int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 
   //@}

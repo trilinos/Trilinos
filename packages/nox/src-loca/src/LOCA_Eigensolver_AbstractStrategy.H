@@ -42,7 +42,7 @@
 #ifndef LOCA_EIGENSOLVER_ABSTRACTSTRATEGY_H
 #define LOCA_EIGENSOLVER_ABSTRACTSTRATEGY_H
 
-#include "Teuchos_RefCountPtr.hpp" 
+#include "Teuchos_RCP.hpp" 
 
 #include "NOX_Abstract_Group.H" // for ReturnType
 
@@ -66,9 +66,9 @@ namespace LOCA {
      * class Derived : public AbstractStrategy {
      * public:
      *   Derived(
-     *   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-     *   const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
+     *   const Teuchos::RCP<LOCA::GlobalData>& global_data,
+     *   const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
      *   ...
      * };
      * \endcode
@@ -103,10 +103,10 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType 
       computeEigenvalues(
 	      NOX::Abstract::Group& group,
-	      Teuchos::RefCountPtr< std::vector<double> >& evals_r,
-	      Teuchos::RefCountPtr< std::vector<double> >& evals_i,
-	      Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_r,
-	      Teuchos::RefCountPtr< NOX::Abstract::MultiVector >& evecs_i) = 0;
+	      Teuchos::RCP< std::vector<double> >& evals_r,
+	      Teuchos::RCP< std::vector<double> >& evals_i,
+	      Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_r,
+	      Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_i) = 0;
 
     private:
 

@@ -259,25 +259,25 @@ bool ModelEvaluatorInterface::evaluate(const Epetra_Vector* soln,
   return true;
 }
 
-Teuchos::RefCountPtr<const Epetra_Map> ModelEvaluatorInterface::
+Teuchos::RCP<const Epetra_Map> ModelEvaluatorInterface::
 get_x_map() const
 {
   return StandardMap;
 }
   
-Teuchos::RefCountPtr<const Epetra_Map> ModelEvaluatorInterface::
+Teuchos::RCP<const Epetra_Map> ModelEvaluatorInterface::
 get_f_map() const
 {
   return StandardMap;
 }
   
-Teuchos::RefCountPtr<const Epetra_Vector> ModelEvaluatorInterface::
+Teuchos::RCP<const Epetra_Vector> ModelEvaluatorInterface::
 get_x_init() const
 {
   return initialSolution;
 }
   
-Teuchos::RefCountPtr<Epetra_Operator> ModelEvaluatorInterface::
+Teuchos::RCP<Epetra_Operator> ModelEvaluatorInterface::
 create_W() const
 {
   return jacobian;

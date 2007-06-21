@@ -82,7 +82,7 @@ public:
 
   //! Cloning function
   virtual 
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+  Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
   clone(NOX::CopyType type = NOX::DeepCopy) const;
 
   //! Return number of constraints
@@ -166,7 +166,7 @@ protected:
   LOCA::ParameterVector p;
 
   //! Solution vector
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> x;
+  Teuchos::RCP<NOX::Abstract::MultiVector> x;
 
   //! Flag indicating whether dgdx is zero
   bool isZeroDgDx;

@@ -56,8 +56,8 @@ LOCA::MultiContinuation::CompositeConstraint::CompositeConstraint() :
 }
 
 LOCA::MultiContinuation::CompositeConstraint::CompositeConstraint(
-    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-    const vector< Teuchos::RefCountPtr<
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const vector< Teuchos::RCP<
     LOCA::MultiContinuation::ConstraintInterface> >& constraintObjects) :
   globalData(),
   numConstraintObjects(0),
@@ -110,7 +110,7 @@ LOCA::MultiContinuation::CompositeConstraint::copy(
   }
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
 LOCA::MultiContinuation::CompositeConstraint::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new CompositeConstraint(*this, type));
@@ -214,7 +214,7 @@ LOCA::MultiContinuation::CompositeConstraint::computeDP(
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
 
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> dgdp_sub;
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> dgdp_sub;
   int num_rows;
   int num_cols = dgdp.numCols();
   for (int i=0; i<numConstraintObjects; i++) {
@@ -275,7 +275,7 @@ LOCA::MultiContinuation::CompositeConstraint::multiplyDX(
     return finalStatus;
   }
 
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_p_sub;
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_p_sub;
   int num_rows;
   int num_cols = result_p.numCols();
   for (int i=0; i<numConstraintObjects; i++) {
@@ -335,8 +335,8 @@ LOCA::MultiContinuation::CompositeConstraint::addDX(
   if (isDXZero())
     return finalStatus;
 
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> b_sub;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x_sub;
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> b_sub;
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x_sub;
   int num_rows;
   int num_cols = result_x.numVectors();
   for (int j=0; j<numConstraintObjects; j++) {
@@ -410,8 +410,8 @@ LOCA::MultiContinuation::CompositeConstraint::postProcessContinuationStep(
 
 void
 LOCA::MultiContinuation::CompositeConstraint::init(
-    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-    const vector< Teuchos::RefCountPtr<
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const vector< Teuchos::RCP<
     LOCA::MultiContinuation::ConstraintInterface> >& constraintObjects)
 {
   globalData = global_data;

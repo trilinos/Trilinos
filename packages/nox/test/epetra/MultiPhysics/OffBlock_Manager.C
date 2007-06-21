@@ -150,7 +150,7 @@ OffBlock_Manager::evaluate( NOX::Epetra::Interface::Required::FillType flag,
   return true;
 }
 
-Teuchos::RefCountPtr<NOX::Epetra::Group> 
+Teuchos::RCP<NOX::Epetra::Group> 
 OffBlock_Manager::getGroup()
 {
   if( Teuchos::is_null(group) ) 
@@ -178,7 +178,7 @@ OffBlock_Manager::getMatrix()
   return( matrixOperator->getUnderlyingMatrix() );
 }
 
-Teuchos::RefCountPtr<Epetra_Vector> 
+Teuchos::RCP<Epetra_Vector> 
 OffBlock_Manager::getRowMapVec() const
 {
   if( Teuchos::is_null(rowMapVec) ) 
@@ -249,7 +249,7 @@ OffBlock_Manager::createFDobjects( bool useColoring )
 //  	compositeVec, 
   	graph) );
   
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInt = matrixOperator;
+    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> jacInt = matrixOperator;
   
     // Here we create a linear system solely for the sake of filling an
     // off-diagonal block Jacobian contribution using FDC.  The nlParams and
@@ -327,7 +327,7 @@ OffBlock_Manager::createFDobjects( bool useColoring )
   	useParallel,
   	distance1 ) );
   
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInt = matrixOperator;
+    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> jacInt = matrixOperator;
   
     // Here we create a linear system solely for the sake of filling an
     // off-diagonal block Jacobian contribution using FDC.  The nlParams and

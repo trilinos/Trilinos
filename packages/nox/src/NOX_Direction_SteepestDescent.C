@@ -49,7 +49,7 @@
 #include "NOX_GlobalData.H"
 
 NOX::Direction::SteepestDescent::
-SteepestDescent(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+SteepestDescent(const Teuchos::RCP<NOX::GlobalData>& gd, 
 		Teuchos::ParameterList& params)
 {
   reset(gd, params);
@@ -61,7 +61,7 @@ NOX::Direction::SteepestDescent::~SteepestDescent()
 }
 
 bool NOX::Direction::SteepestDescent::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
 {
   globalDataPtr = gd;

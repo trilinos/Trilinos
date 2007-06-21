@@ -141,9 +141,9 @@ namespace LOCA {
 	 * are referenced.
 	 */
 	SalingerBordering(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
 	//! Destructor
 	virtual ~SalingerBordering();
@@ -164,17 +164,17 @@ namespace LOCA {
 	 * \param w [in] Bifurcation frequency w
 	 */
 	virtual void setBlocks(
-	 const Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::AbstractGroup>& group,
-	 const Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::ExtendedGroup>& hopfGroup,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& yVector,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& zVector,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& CeRealVector,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& CeImagVector,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dfdp,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dCedpReal,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dCedpImag,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& ByVector,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& mBzVector,
+	 const Teuchos::RCP<LOCA::Hopf::MooreSpence::AbstractGroup>& group,
+	 const Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedGroup>& hopfGroup,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& yVector,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& zVector,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& CeRealVector,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& CeImagVector,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dCedpReal,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dCedpImag,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& ByVector,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& mBzVector,
 	 double w);
 
 	/*! 
@@ -217,43 +217,43 @@ namespace LOCA {
       protected:
 
 	//! Global data object
-	Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+	Teuchos::RCP<LOCA::GlobalData> globalData;
 	
 	//! Solver parameters
-	Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
+	Teuchos::RCP<Teuchos::ParameterList> solverParams;
 
 	//! Underlying group
-	Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::AbstractGroup> group;
+	Teuchos::RCP<LOCA::Hopf::MooreSpence::AbstractGroup> group;
 
 	//! Hopf group
-	Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::ExtendedGroup> hopfGroup;
+	Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedGroup> hopfGroup;
 
 	//! Real component of eigenvector
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> yVector;
+	Teuchos::RCP<const NOX::Abstract::Vector> yVector;
 
 	//! Imaginary component of eigenvector
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> zVector;
+	Teuchos::RCP<const NOX::Abstract::Vector> zVector;
 
 	//! Jy-wBz vector
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> CeRealVector;
+	Teuchos::RCP<const NOX::Abstract::Vector> CeRealVector;
 
 	//! Jz+wBy vector
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> CeImagVector;
+	Teuchos::RCP<const NOX::Abstract::Vector> CeImagVector;
 
 	//! df/dp vector
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> dfdp;
+	Teuchos::RCP<const NOX::Abstract::Vector> dfdp;
 
 	//! d(Jy-wBz)/dp vector
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> dCedpReal;
+	Teuchos::RCP<const NOX::Abstract::Vector> dCedpReal;
 
 	//! d(Jz+wBy)/dp vector
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> dCedpImag;
+	Teuchos::RCP<const NOX::Abstract::Vector> dCedpImag;
 
 	//! By vector
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> ByVector;
+	Teuchos::RCP<const NOX::Abstract::Vector> ByVector;
 
 	//! -Bz vector
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector> minusBzVector;
+	Teuchos::RCP<const NOX::Abstract::Vector> minusBzVector;
 
 	//! Frequency w
 	double w;

@@ -91,9 +91,9 @@ NOX::Epetra::LinearSystemAztecOO::
 LinearSystemAztecOO(
  Teuchos::ParameterList& printParams, 
  Teuchos::ParameterList& linearSolverParams, 
- const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+ const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
  const NOX::Epetra::Vector& cloneVector,
- const Teuchos::RefCountPtr<NOX::Epetra::Scaling> s):
+ const Teuchos::RCP<NOX::Epetra::Scaling> s):
   utils(printParams),
   jacType(EpetraOperator),
   precType(EpetraOperator),
@@ -123,11 +123,11 @@ NOX::Epetra::LinearSystemAztecOO::
 LinearSystemAztecOO(
  Teuchos::ParameterList& printParams, 
  Teuchos::ParameterList& linearSolverParams,  
- const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
- const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian>& iJac, 
- const Teuchos::RefCountPtr<Epetra_Operator>& jacobian,
+ const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
+ const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
+ const Teuchos::RCP<Epetra_Operator>& jacobian,
  const NOX::Epetra::Vector& cloneVector,
- const Teuchos::RefCountPtr<NOX::Epetra::Scaling> s):
+ const Teuchos::RCP<NOX::Epetra::Scaling> s):
   utils(printParams),
   jacInterfacePtr(iJac),
   jacType(EpetraOperator),
@@ -160,11 +160,11 @@ NOX::Epetra::LinearSystemAztecOO::
 LinearSystemAztecOO(
  Teuchos::ParameterList& printParams, 
  Teuchos::ParameterList& linearSolverParams, 
- const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
- const Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner>& iPrec, 
- const Teuchos::RefCountPtr<Epetra_Operator>& preconditioner,
+ const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
+ const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec, 
+ const Teuchos::RCP<Epetra_Operator>& preconditioner,
  const NOX::Epetra::Vector& cloneVector,
- const Teuchos::RefCountPtr<NOX::Epetra::Scaling> s):
+ const Teuchos::RCP<NOX::Epetra::Scaling> s):
   utils(printParams),
   jacType(EpetraOperator),
   precInterfacePtr(iPrec),
@@ -197,12 +197,12 @@ NOX::Epetra::LinearSystemAztecOO::
 LinearSystemAztecOO(
  Teuchos::ParameterList& printParams, 
  Teuchos::ParameterList& linearSolverParams,
- const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian>& iJac, 
- const Teuchos::RefCountPtr<Epetra_Operator>& jacobian,
- const Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner>& iPrec, 
- const Teuchos::RefCountPtr<Epetra_Operator>& preconditioner,
+ const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
+ const Teuchos::RCP<Epetra_Operator>& jacobian,
+ const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec, 
+ const Teuchos::RCP<Epetra_Operator>& preconditioner,
  const NOX::Epetra::Vector& cloneVector,
- const Teuchos::RefCountPtr<NOX::Epetra::Scaling> s):
+ const Teuchos::RCP<NOX::Epetra::Scaling> s):
   utils(printParams),
   jacInterfacePtr(iJac),
   jacType(EpetraOperator),
@@ -482,7 +482,7 @@ setAztecOptions(Teuchos::ParameterList& p, AztecOO& aztec) const
 bool NOX::Epetra::LinearSystemAztecOO::createJacobianOperator(
        Teuchos::ParameterList& printParams,
        Teuchos::ParameterList& lsParams,
-       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+       const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
        const NOX::Epetra::Vector& cloneVector)
 {
   string choice = lsParams.get("Jacobian Operator", "Matrix-Free");
@@ -512,7 +512,7 @@ bool NOX::Epetra::LinearSystemAztecOO::createJacobianOperator(
 bool NOX::Epetra::LinearSystemAztecOO::createPrecOperator(
        Teuchos::ParameterList& printParams,
        Teuchos::ParameterList& lsParams,
-       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+       const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
        const NOX::Epetra::Vector& cloneVector)
 {
   string choice = lsParams.get("Preconditioner Operator", 
@@ -1314,7 +1314,7 @@ computeJacobian(const NOX::Epetra::Vector& x)
 }
 
 //***********************************************************************
-Teuchos::RefCountPtr<NOX::Epetra::Scaling>
+Teuchos::RCP<NOX::Epetra::Scaling>
 NOX::Epetra::LinearSystemAztecOO::getScaling()
 {
   return scaling;
@@ -1322,7 +1322,7 @@ NOX::Epetra::LinearSystemAztecOO::getScaling()
 
 //***********************************************************************
 void NOX::Epetra::LinearSystemAztecOO::
-resetScaling(const Teuchos::RefCountPtr<NOX::Epetra::Scaling>& scalingObject)
+resetScaling(const Teuchos::RCP<NOX::Epetra::Scaling>& scalingObject)
 {
   scaling = scalingObject;
   return;
@@ -1340,14 +1340,14 @@ throwError(const string& functionName, const string& errorMsg) const
 }
 
 //***********************************************************************
-Teuchos::RefCountPtr<const NOX::Epetra::Interface::Jacobian> 
+Teuchos::RCP<const NOX::Epetra::Interface::Jacobian> 
 NOX::Epetra::LinearSystemAztecOO::getJacobianInterface() const
 {
   return jacInterfacePtr;
 }
 
 //***********************************************************************
-Teuchos::RefCountPtr<const NOX::Epetra::Interface::Preconditioner> 
+Teuchos::RCP<const NOX::Epetra::Interface::Preconditioner> 
 NOX::Epetra::LinearSystemAztecOO::getPrecInterface() const
 {
   return precInterfacePtr;
@@ -1368,35 +1368,35 @@ NOX::Epetra::LinearSystemAztecOO::isPreconditionerConstructed() const
 }
 
 //***********************************************************************
-Teuchos::RefCountPtr<const Epetra_Operator>
+Teuchos::RCP<const Epetra_Operator>
 NOX::Epetra::LinearSystemAztecOO::getJacobianOperator() const
 {
   return jacPtr;
 }
 
 //***********************************************************************
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 NOX::Epetra::LinearSystemAztecOO::getJacobianOperator()
 {
   return jacPtr;
 }
 
 //***********************************************************************
-Teuchos::RefCountPtr<const Epetra_Operator>
+Teuchos::RCP<const Epetra_Operator>
 NOX::Epetra::LinearSystemAztecOO::getPrecOperator() const
 {
   return precPtr;
 }
 
 //***********************************************************************
-Teuchos::RefCountPtr<const Epetra_Operator> 
+Teuchos::RCP<const Epetra_Operator> 
 NOX::Epetra::LinearSystemAztecOO::getGeneratedPrecOperator() const
 {
   return solvePrecOpPtr;
 }
 
 //***********************************************************************
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 NOX::Epetra::LinearSystemAztecOO::getGeneratedPrecOperator()
 {
   return solvePrecOpPtr;
@@ -1487,7 +1487,7 @@ NOX::Epetra::LinearSystemAztecOO::getTimeApplyJacobianInverse() const
 //***********************************************************************
 void
 NOX::Epetra::LinearSystemAztecOO::setJacobianOperatorForSolve(
-	       const Teuchos::RefCountPtr<const Epetra_Operator>& solveJacOp)
+	       const Teuchos::RCP<const Epetra_Operator>& solveJacOp)
 {
   jacPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solveJacOp);
   jacType = getOperatorType(*solveJacOp);
@@ -1497,7 +1497,7 @@ NOX::Epetra::LinearSystemAztecOO::setJacobianOperatorForSolve(
 //***********************************************************************
 void
 NOX::Epetra::LinearSystemAztecOO::setPrecOperatorForSolve(
-	       const Teuchos::RefCountPtr<const Epetra_Operator>& solvePrecOp)
+	       const Teuchos::RCP<const Epetra_Operator>& solvePrecOp)
 {
   solvePrecOpPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solvePrecOp);
   this->setAztecOOPreconditioner();

@@ -122,14 +122,14 @@ int main(int argc, char *argv[])
   soln.PutScalar(1.0);
 
   // Create initial guess for the null vector of jacobian
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> nullVec = 
+  Teuchos::RCP<NOX::Abstract::Vector> nullVec = 
     Teuchos::rcp(new NOX::Epetra::Vector(soln));  
   nullVec->init(1.0);             // initial value 1.0
   
   // Begin LOCA Solver ************************************
 
   // Create parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+  Teuchos::RCP<Teuchos::ParameterList> paramList = 
     Teuchos::rcp(new Teuchos::ParameterList);
 
   // Create LOCA sublist
@@ -238,27 +238,27 @@ int main(int argc, char *argv[])
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
-  Teuchos::RefCountPtr<Problem_Interface> interface = 
+  Teuchos::RCP<Problem_Interface> interface = 
     Teuchos::rcp(new Problem_Interface(Problem));
-  Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq = interface;
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
+  Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
   
   // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
-  Teuchos::RefCountPtr<Epetra_RowMatrix> Amat = 
+  Teuchos::RCP<Epetra_RowMatrix> Amat = 
     Teuchos::rcp(&Problem.getJacobian(),false);
 
   // Create scaling object
-  Teuchos::RefCountPtr<NOX::Epetra::Scaling> scaling = Teuchos::null;
+  Teuchos::RCP<NOX::Epetra::Scaling> scaling = Teuchos::null;
 //   scaling = Teuchos::rcp(new NOX::Epetra::Scaling);
-//   Teuchos::RefCountPtr<Epetra_Vector> scalingVector = 
+//   Teuchos::RCP<Epetra_Vector> scalingVector = 
 //     Teuchos::rcp(new Epetra_Vector(soln.Map()));
 //   //scaling->addRowSumScaling(NOX::Epetra::Scaling::Left, scalingVector);
 //   scaling->addColSumScaling(NOX::Epetra::Scaling::Right, scalingVector);
 
   // Create transpose scaling object
-  Teuchos::RefCountPtr<NOX::Epetra::Scaling> trans_scaling = Teuchos::null;
+  Teuchos::RCP<NOX::Epetra::Scaling> trans_scaling = Teuchos::null;
 //   trans_scaling = Teuchos::rcp(new NOX::Epetra::Scaling);
-//   Teuchos::RefCountPtr<Epetra_Vector> transScalingVector = 
+//   Teuchos::RCP<Epetra_Vector> transScalingVector = 
 //     Teuchos::rcp(new Epetra_Vector(soln.Map()));
 //   trans_scaling->addRowSumScaling(NOX::Epetra::Scaling::Right, 
 // 				  transScalingVector);
@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
   //bifurcationList.set("Transpose Scaling", trans_scaling);
 
   // Create the linear systems
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams,
 						      iReq, iJac, Amat, soln,
 						      scaling));
@@ -276,15 +276,15 @@ int main(int argc, char *argv[])
   NOX::Epetra::Vector locaSoln(soln);
 
   // Create Epetra factory
-  Teuchos::RefCountPtr<LOCA::Abstract::Factory> epetraFactory =
+  Teuchos::RCP<LOCA::Abstract::Factory> epetraFactory =
     Teuchos::rcp(new LOCA::Epetra::Factory);
 
   // Create global data object
-  Teuchos::RefCountPtr<LOCA::GlobalData> globalData = 
+  Teuchos::RCP<LOCA::GlobalData> globalData = 
     LOCA::createGlobalData(paramList, epetraFactory);
 
   // Create the Group
-  Teuchos::RefCountPtr<LOCA::Epetra::Group> grp = 
+  Teuchos::RCP<LOCA::Epetra::Group> grp = 
     Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, iReq, 
 					 locaSoln, linsys,
 					 pVector));
@@ -292,11 +292,11 @@ int main(int argc, char *argv[])
 
   // Create the Solver convergence test
   //NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> wrms = 
+  Teuchos::RCP<NOX::StatusTest::NormF> wrms = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-12));
-  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(locaStepperList.get("Max Nonlinear Iterations", 10)));
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(wrms);
   combo->addStatusTest(maxiters);

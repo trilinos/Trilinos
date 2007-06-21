@@ -49,7 +49,7 @@
 #include "LOCA_Pitchfork_MooreSpence_PhippsBordering.H"
 
 LOCA::Pitchfork::MooreSpence::SolverFactory::SolverFactory(
-	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
@@ -58,14 +58,14 @@ LOCA::Pitchfork::MooreSpence::SolverFactory::~SolverFactory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy>
+Teuchos::RCP<LOCA::Pitchfork::MooreSpence::SolverStrategy>
 LOCA::Pitchfork::MooreSpence::SolverFactory::create(
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
   string methodName = 
     "LOCA::Pitchfork::MooreSpence::SolverFactory::create()";
-  Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy> strategy;
+  Teuchos::RCP<LOCA::Pitchfork::MooreSpence::SolverStrategy> strategy;
 
   // Get name of strategy
   const string& name = strategyName(*solverParams);
@@ -90,9 +90,9 @@ LOCA::Pitchfork::MooreSpence::SolverFactory::create(
     string userDefinedName = solverParams->get("User-Defined Name",
 							"???");
     if ((*solverParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy> >(userDefinedName))
+	isType< Teuchos::RCP<LOCA::Pitchfork::MooreSpence::SolverStrategy> >(userDefinedName))
       strategy = (*solverParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy> >(userDefinedName);
+	get< Teuchos::RCP<LOCA::Pitchfork::MooreSpence::SolverStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,

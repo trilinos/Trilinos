@@ -76,7 +76,7 @@ namespace LOCA {
     public:
   
       //! Constructor.
-      ExtendedVector(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+      ExtendedVector(const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		     const NOX::Abstract::Vector& xVec, int nScalars);
 
       //! Copy constructor.
@@ -99,20 +99,20 @@ namespace LOCA {
       operator=(const NOX::Abstract::Vector& y);
 
       //! Assignment operator
-      virtual Teuchos::RefCountPtr<NOX::Abstract::Vector>
+      virtual Teuchos::RCP<NOX::Abstract::Vector>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Returns the solution vector component of extended vector
-      virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+      virtual Teuchos::RCP<const NOX::Abstract::Vector> 
       getXVec() const;
 
       //! Returns the solution vector component of extended vector
-      virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> getXVec();
+      virtual Teuchos::RCP<NOX::Abstract::Vector> getXVec();
 
     protected:
 
       //! Constructor
-      ExtendedVector(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+      ExtendedVector(const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		     int nScalars);
 
       //! generate an extended multi-vector
@@ -120,7 +120,7 @@ namespace LOCA {
        * Returns an empty multivector of type 
        * LOCA::MultiContinuation::ExtendedMultiVector
        */
-      virtual Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
+      virtual Teuchos::RCP<LOCA::Extended::MultiVector>
       generateMultiVector(int nColumns, int nVectorRows, 
 			  int nScalarRows) const;
 

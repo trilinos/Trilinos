@@ -45,7 +45,7 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Parameter::SublistParser::SublistParser(
-		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) :
+		  const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   globalData(global_data),
   sublistMap()
 {
@@ -57,7 +57,7 @@ LOCA::Parameter::SublistParser::~SublistParser()
 
 void
 LOCA::Parameter::SublistParser::parseSublists(
-	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& topLevelParams)
+	     const Teuchos::RCP<Teuchos::ParameterList>& topLevelParams)
 {
   // Top level sublist
   sublistMap["Top Level"] = topLevelParams;
@@ -129,7 +129,7 @@ LOCA::Parameter::SublistParser::parseSublists(
   sublistMap["Printing"] = Teuchos::rcp(&printingSublist, false);
 }
 
-Teuchos::RefCountPtr<Teuchos::ParameterList> 
+Teuchos::RCP<Teuchos::ParameterList> 
 LOCA::Parameter::SublistParser::getSublist(const string& name)
 {
   // Find name in list, if it exists.

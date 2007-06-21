@@ -17,7 +17,7 @@
 // 	    LOCA::Continuation::AbstractGroup& initialGuess,
 // 	    NOX::StatusTest::Generic& t,
 // 	    NOX::Parameter::List& p,
-// 	    const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory);
+// 	    const Teuchos::RCP<LOCA::Abstract::Factory>& userFactory);
 %rename(Print) LOCA::ParameterVector::print(ostream& stream) const;
 
 // include std_string to convert between python strings and C++ strings

@@ -50,9 +50,9 @@
 #include "LOCA_Hopf_ComplexMultiVector.H"
 
 LOCA::BorderedSolver::LAPACKDirectSolve::LAPACKDirectSolve(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams): 
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& slvrParams): 
   globalData(global_data),
   solverParams(slvrParams),
   grp(),
@@ -80,10 +80,10 @@ LOCA::BorderedSolver::LAPACKDirectSolve::~LAPACKDirectSolve()
 
 void
 LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
-         const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& oper,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	 const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
+         const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>& oper,
+	 const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
+	 const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	 const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
   string callingFunction = 
     "LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks()";
@@ -121,9 +121,9 @@ LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
 				    "Blocks A and C cannot both be zero");
 
   // Fill augmented matrix
-  Teuchos::RefCountPtr<const LOCA::BorderedSolver::JacobianOperator> jacOp =
+  Teuchos::RCP<const LOCA::BorderedSolver::JacobianOperator> jacOp =
     Teuchos::rcp_dynamic_cast<const LOCA::BorderedSolver::JacobianOperator>(op);
-  Teuchos::RefCountPtr<const LOCA::BorderedSolver::ComplexOperator> complexOp =
+  Teuchos::RCP<const LOCA::BorderedSolver::ComplexOperator> complexOp =
     Teuchos::rcp_dynamic_cast<const LOCA::BorderedSolver::ComplexOperator>(op);
 
   if (jacOp != Teuchos::null) {
@@ -208,14 +208,14 @@ LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
 
   }
   else if (complexOp != Teuchos::null) {
-    Teuchos::RefCountPtr<const LOCA::Hopf::ComplexMultiVector> cA;
-    Teuchos::RefCountPtr<const LOCA::Hopf::ComplexMultiVector> cB;
-    Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> A_real;
-    Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> A_imag;
-    Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> B_real;
-    Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> B_imag;
+    Teuchos::RCP<const LOCA::Hopf::ComplexMultiVector> cA;
+    Teuchos::RCP<const LOCA::Hopf::ComplexMultiVector> cB;
+    Teuchos::RCP<const NOX::Abstract::MultiVector> A_real;
+    Teuchos::RCP<const NOX::Abstract::MultiVector> A_imag;
+    Teuchos::RCP<const NOX::Abstract::MultiVector> B_real;
+    Teuchos::RCP<const NOX::Abstract::MultiVector> B_imag;
     const NOX::LAPACK::Vector *v1, *v2;
-    Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> BV;
+    Teuchos::RCP<const NOX::Abstract::MultiVector> BV;
 
     isComplex = true;
 
@@ -377,10 +377,10 @@ LOCA::BorderedSolver::LAPACKDirectSolve::apply(
 //   else {
 //     const LOCA::Hopf::ComplexMultiVector* cX;
 //     LOCA::Hopf::ComplexMultiVector* cU;
-//     Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> X_real;
-//     Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> X_imag;
-//     Teuchos::RefCountPtr<NOX::Abstract::MultiVector> U_real;
-//     Teuchos::RefCountPtr<NOX::Abstract::MultiVector> U_imag;
+//     Teuchos::RCP<const NOX::Abstract::MultiVector> X_real;
+//     Teuchos::RCP<const NOX::Abstract::MultiVector> X_imag;
+//     Teuchos::RCP<NOX::Abstract::MultiVector> U_real;
+//     Teuchos::RCP<NOX::Abstract::MultiVector> U_imag;
 //     const NOX::LAPACK::Vector *v1, *v2;
 //     NOX::LAPACK::Vector *w1, *w2;
 
@@ -573,10 +573,10 @@ LOCA::BorderedSolver::LAPACKDirectSolve::solve(
   else {
     const LOCA::Hopf::ComplexMultiVector* cF;
     LOCA::Hopf::ComplexMultiVector* cX;
-    Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> F_real;
-    Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> F_imag;
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_real;
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_imag;
+    Teuchos::RCP<const NOX::Abstract::MultiVector> F_real;
+    Teuchos::RCP<const NOX::Abstract::MultiVector> F_imag;
+    Teuchos::RCP<NOX::Abstract::MultiVector> X_real;
+    Teuchos::RCP<NOX::Abstract::MultiVector> X_imag;
     const NOX::LAPACK::Vector *v1, *v2;
     NOX::LAPACK::Vector *w1, *w2;
 

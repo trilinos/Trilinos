@@ -42,7 +42,7 @@
 #ifndef BRUSSELATORPROBLEMINTERFACE_H
 #define BRUSSELATORPROBLEMINTERFACE_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_LAPACK_Interface.H" // base class
 #include "NOX_LAPACK_Vector.H" // class data element
@@ -76,7 +76,7 @@ public:
  
   //! Constructor.  Also generates an initial guess
   BrusselatorProblemInterface(
-		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		     const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		     int N, double a, double b, double d1, double d2,
 		     ofstream& file);
 
@@ -113,7 +113,7 @@ public:
 private:
 
    //! Global data
-  Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+  Teuchos::RCP<LOCA::GlobalData> globalData;
 
   //! Stores the initial guess
   NOX::LAPACK::Vector initialGuess;

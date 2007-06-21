@@ -460,25 +460,25 @@ LOCA::Extended::MultiVector::update(
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::Extended::MultiVector::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new LOCA::Extended::MultiVector(*this, type));
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::Extended::MultiVector::clone(int numvecs) const
 {
   return Teuchos::rcp(new LOCA::Extended::MultiVector(*this, numvecs));
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::Extended::MultiVector::subCopy(const vector<int>& index) const
 {
   return Teuchos::rcp(new LOCA::Extended::MultiVector(*this, index, false));
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::Extended::MultiVector::subView(const vector<int>& index) const
 {
   return Teuchos::rcp(new LOCA::Extended::MultiVector(*this, index, true));
@@ -632,7 +632,7 @@ LOCA::Extended::MultiVector::print(std::ostream& stream) const
   scalarsPtr->print(stream);
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>
+Teuchos::RCP<const NOX::Abstract::MultiVector>
 LOCA::Extended::MultiVector::getMultiVector(int i) const
 {
   checkVectorRowIndex("LOCA::Extended::MultiVector::getMultiVector()", i);
@@ -640,7 +640,7 @@ LOCA::Extended::MultiVector::getMultiVector(int i) const
   return multiVectorPtrs[i];
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::Extended::MultiVector::getMultiVector(int i)
 {
   checkVectorRowIndex("LOCA::Extended::MultiVector::getMultiVector()", i);
@@ -648,19 +648,19 @@ LOCA::Extended::MultiVector::getMultiVector(int i)
   return multiVectorPtrs[i];
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>
+Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>
 LOCA::Extended::MultiVector::getScalars() const 
 {
   return scalarsPtr;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix>
+Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix>
 LOCA::Extended::MultiVector::getScalars()
 {
   return scalarsPtr;
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>
+Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>
 LOCA::Extended::MultiVector::getScalarRows(int num_rows, int row) const 
 {
   return
@@ -672,7 +672,7 @@ LOCA::Extended::MultiVector::getScalarRows(int num_rows, int row) const
 							     0));
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix>
+Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix>
 LOCA::Extended::MultiVector::getScalarRows(int num_rows, int row)
 {
   return
@@ -700,7 +700,7 @@ LOCA::Extended::MultiVector::getScalar(int i, int j)
   return (*scalarsPtr)(i,j);
 }
 
-Teuchos::RefCountPtr<LOCA::Extended::Vector>
+Teuchos::RCP<LOCA::Extended::Vector>
 LOCA::Extended::MultiVector::getVector(int i) 
 {
   // Verify index is valid
@@ -721,7 +721,7 @@ LOCA::Extended::MultiVector::getVector(int i)
   return extendedVectorPtrs[i];
 }
 
-Teuchos::RefCountPtr<const LOCA::Extended::Vector>
+Teuchos::RCP<const LOCA::Extended::Vector>
 LOCA::Extended::MultiVector::getVector(int i) const
 {
   // Verify index is valid
@@ -755,7 +755,7 @@ LOCA::Extended::MultiVector::getNumMultiVectors() const
 }
 
 LOCA::Extended::MultiVector::MultiVector(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    int nColumns, int nVectorRows,
 		    int nScalarRows) :
   globalData(global_data),
@@ -776,7 +776,7 @@ LOCA::Extended::MultiVector::MultiVector(
 							     numColumns));
 }
 
-Teuchos::RefCountPtr<LOCA::Extended::Vector> 
+Teuchos::RCP<LOCA::Extended::Vector> 
 LOCA::Extended::MultiVector::generateVector(int nVecs, int nScalarRows) const
 {
   return Teuchos::rcp(new LOCA::Extended::Vector(globalData, nVecs, 
@@ -786,7 +786,7 @@ LOCA::Extended::MultiVector::generateVector(int nVecs, int nScalarRows) const
 void
 LOCA::Extended::MultiVector::setMultiVectorPtr(
 			   int i, 
-			   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> v)
+			   Teuchos::RCP<NOX::Abstract::MultiVector> v)
 {
   checkVectorRowIndex("LOCA::Extended::MultiVector::setMultiVectorPtr()",i);
 

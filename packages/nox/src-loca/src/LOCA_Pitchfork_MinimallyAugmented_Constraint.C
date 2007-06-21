@@ -51,14 +51,14 @@
 
 LOCA::Pitchfork::MinimallyAugmented::Constraint::
 Constraint(
-    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-    const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-    const Teuchos::RefCountPtr<Teuchos::ParameterList>& pfParams,
-    const Teuchos::RefCountPtr<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup>& g,
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& pfParams,
+    const Teuchos::RCP<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup>& g,
     bool is_symmetric,
     const NOX::Abstract::Vector& a,
     const NOX::Abstract::Vector* b,
-    const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& psi,
+    const Teuchos::RCP<const NOX::Abstract::Vector>& psi,
     int bif_param) :
   LOCA::TurningPoint::MinimallyAugmented::Constraint(global_data, topParams,
 						     pfParams, g, is_symmetric,
@@ -90,7 +90,7 @@ LOCA::Pitchfork::MinimallyAugmented::Constraint::
 
 void
 LOCA::Pitchfork::MinimallyAugmented::Constraint::
-setGroup(const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g)
+setGroup(const Teuchos::RCP<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g)
 {
   LOCA::TurningPoint::MinimallyAugmented::Constraint::setGroup(g);
   pf_grp = Teuchos::rcp_dynamic_cast<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup>(g,true);
@@ -114,7 +114,7 @@ copy(const LOCA::MultiContinuation::ConstraintInterface& src)
   }
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
 LOCA::Pitchfork::MinimallyAugmented::Constraint::
 clone(NOX::CopyType type) const
 {

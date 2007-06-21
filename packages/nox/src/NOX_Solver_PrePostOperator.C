@@ -60,7 +60,7 @@ operator=(const PrePostOperator& p)
 { return *this; }
 
 NOX::Solver::PrePostOperator::
-PrePostOperator(const Teuchos::RefCountPtr<NOX::Utils>& utils,
+PrePostOperator(const Teuchos::RCP<NOX::Utils>& utils,
 		Teuchos::ParameterList& p) :
   havePrePostOperator(false)
 { reset(utils, p); }
@@ -69,16 +69,16 @@ NOX::Solver::PrePostOperator::~PrePostOperator()
 { }
 
 void NOX::Solver::PrePostOperator::
-reset(const Teuchos::RefCountPtr<NOX::Utils>& utils, Teuchos::ParameterList& p)
+reset(const Teuchos::RCP<NOX::Utils>& utils, Teuchos::ParameterList& p)
 {
   havePrePostOperator = false;
 
   if (p.INVALID_TEMPLATE_QUALIFIER
-      isType< Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> >
+      isType< Teuchos::RCP<NOX::Abstract::PrePostOperator> >
       ("User Defined Pre/Post Operator")) 
   {
     prePostOperatorPtr = p.INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> >
+      get< Teuchos::RCP<NOX::Abstract::PrePostOperator> >
       ("User Defined Pre/Post Operator");
     havePrePostOperator = true;
   }

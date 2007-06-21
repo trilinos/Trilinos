@@ -48,7 +48,7 @@
 #include "NOX_Common.H"
 #include "Epetra_Import.h"
 #include "NOX_Epetra_Vector.H"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Forward Declarations
 class Epetra_Comm;
@@ -94,7 +94,7 @@ class MatrixFree : public Epetra_Operator,
     The vector \c x is used to clone the solution vector.
   */
   MatrixFree(Teuchos::ParameterList& printParams, 
-	     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
+	     const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
 	     const NOX::Epetra::Vector& cloneVector, 
 	     bool useNewPerturbation = false);
 
@@ -184,7 +184,7 @@ protected:
   string label;
 
   //! User provided interface function
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> interface;
+  Teuchos::RCP<NOX::Epetra::Interface::Required> interface;
 
   //! The current solution vector
   NOX::Epetra::Vector currentX;
@@ -199,12 +199,12 @@ protected:
   mutable NOX::Epetra::Vector fp;
 
   //! Optional pointer to function evaluation at -perturbX - needed only for centered finite differencing
-  mutable Teuchos::RefCountPtr<NOX::Epetra::Vector> fmPtr;
+  mutable Teuchos::RCP<NOX::Epetra::Vector> fmPtr;
 
   //! Epetra_Map object used in the returns of the Epetra_Operator derived methods.
   /*! If the user is using Epetra_BlockMaps, then NOX::Epetra::MatrixFree must create an equivalent Epetra_Map from the Epetra_BlockMap that can be used as the return object of the OperatorDomainMap() and OperatorRangeMap() methods.
    */
-  Teuchos::RefCountPtr<const Epetra_Map> epetraMap;
+  Teuchos::RCP<const Epetra_Map> epetraMap;
 
   //! Define types for use of the perturbation parameter \f$ \delta\f$.
   DifferenceType diffType;
@@ -228,7 +228,7 @@ protected:
   bool useNewPerturbation;
 
   //! Pointer to the group for possible use in computeF() calls.
-  Teuchos::RefCountPtr<NOX::Abstract::Group> groupPtr;
+  Teuchos::RCP<NOX::Abstract::Group> groupPtr;
 
   //! Printing utilities.
   NOX::Utils utils;

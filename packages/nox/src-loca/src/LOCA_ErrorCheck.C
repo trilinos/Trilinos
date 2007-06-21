@@ -44,7 +44,7 @@
 #include "NOX_Utils.H"          // for printing utilities
 
 LOCA::ErrorCheck::ErrorCheck(
-		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) :
+		  const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   globalData(global_data)
 {
 }

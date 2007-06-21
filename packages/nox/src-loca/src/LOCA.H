@@ -39,7 +39,7 @@
 // This file should include ALL objects that the user
 // is required to instantiate to call LOCA!
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "NOX.H"
 
 // Primary LOCA Objects

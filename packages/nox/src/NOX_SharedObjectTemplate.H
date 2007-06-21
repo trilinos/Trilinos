@@ -43,7 +43,7 @@
 #define NOX_SHARED_OBJECT_TEMPLATE_H
 
 #include "NOX_Common.H"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace NOX {
 
@@ -60,14 +60,14 @@ class SharedObject {
 public:
 
   //! Constructor
-  SharedObject(const Teuchos::RefCountPtr<Object>& newObject) : 
+  SharedObject(const Teuchos::RCP<Object>& newObject) : 
     object(newObject), owner(NULL) {};
 
   //! Destructor
   ~SharedObject(){};
 
   //! Get a non-const reference to the underlying object
-  Teuchos::RefCountPtr<Object> 
+  Teuchos::RCP<Object> 
   getObject(const Owner* newOwner)
   {
     owner = newOwner;
@@ -75,7 +75,7 @@ public:
   };
 
   //! Return a const reference to the underlying object
-  Teuchos::RefCountPtr<const Object> getObject() const 
+  Teuchos::RCP<const Object> getObject() const 
   { return object;};
 
   //! Return true if testOwner is the owner of the Jacobian
@@ -85,7 +85,7 @@ public:
 protected:
 
   //! Pointer to the shared object.
-  Teuchos::RefCountPtr<Object> object;
+  Teuchos::RCP<Object> object;
 
   //! Pointer to const object that owns the shared object.
   const Owner* owner;

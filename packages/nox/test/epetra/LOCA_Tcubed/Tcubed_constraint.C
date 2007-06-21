@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
     // Begin LOCA Solver ************************************
 
     // Create parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
   
     // Create LOCA sublist
@@ -209,17 +209,17 @@ int main(int argc, char *argv[])
     // Create the interface between the test problem and the nonlinear solver
     // This is created by the user using inheritance of the abstract base 
     // class:
-    Teuchos::RefCountPtr<Problem_Interface> interface = 
+    Teuchos::RCP<Problem_Interface> interface = 
       Teuchos::rcp(new Problem_Interface(Problem));
-    Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq = interface;
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
+    Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = interface;
+    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
     
     // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
-    Teuchos::RefCountPtr<Epetra_RowMatrix> Amat = 
+    Teuchos::RCP<Epetra_RowMatrix> Amat = 
       Teuchos::rcp(&Problem.getJacobian(),false);
     
     // Create the linear systems
-    Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys = 
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, 
 							lsParams, iReq, iJac, 
 							Amat, soln));
@@ -237,26 +237,26 @@ int main(int argc, char *argv[])
 			 locaSoln.length());
 
     // Create Epetra factory
-    Teuchos::RefCountPtr<LOCA::Abstract::Factory> epetraFactory =
+    Teuchos::RCP<LOCA::Abstract::Factory> epetraFactory =
       Teuchos::rcp(new LOCA::Epetra::Factory);
 
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData = 
+    Teuchos::RCP<LOCA::GlobalData> globalData = 
       LOCA::createGlobalData(paramList, epetraFactory);
 
     // Create the Group
-    Teuchos::RefCountPtr<LOCA::Epetra::Group> grp = 
+    Teuchos::RCP<LOCA::Epetra::Group> grp = 
       Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, 
 					   iReq, locaSoln, 
 					   linsys, pVector));
     grp->computeF();
 
     // Create the constraints object & constraint param names list
-    Teuchos::RefCountPtr<NormConstraint> normConstraint = 
+    Teuchos::RCP<NormConstraint> normConstraint = 
       Teuchos::rcp(new NormConstraint(locaSoln.length(), pVector, locaSoln));
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> constraints = normConstraint;
+    Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> constraints = normConstraint;
 
-    Teuchos::RefCountPtr< vector<string> > constraintParamNames = 
+    Teuchos::RCP< vector<string> > constraintParamNames = 
       Teuchos::rcp(new vector<string>(numConstraints));
     //(*constraintParamNames)[0] = "Constraint Param";
     (*constraintParamNames)[0] = "Left BC";
@@ -271,11 +271,11 @@ int main(int argc, char *argv[])
     constraintsList.set("Bordered Solver Method", "Householder");
 
     // Create the Solver convergence test
-    Teuchos::RefCountPtr<NOX::StatusTest::NormF> wrms = 
+    Teuchos::RCP<NOX::StatusTest::NormF> wrms = 
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(15));
-    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+    Teuchos::RCP<NOX::StatusTest::Combo> combo = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
     combo->addStatusTest(wrms);
     combo->addStatusTest(maxiters);
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
     }
 
     // Get the final solution from the stepper
-    Teuchos::RefCountPtr<const LOCA::Epetra::Group> finalGroup = 
+    Teuchos::RCP<const LOCA::Epetra::Group> finalGroup = 
       Teuchos::rcp_dynamic_cast<const LOCA::Epetra::Group>(stepper.getSolutionGroup());
     const NOX::Epetra::Vector& finalSolution = 
       dynamic_cast<const NOX::Epetra::Vector&>(finalGroup->getX());

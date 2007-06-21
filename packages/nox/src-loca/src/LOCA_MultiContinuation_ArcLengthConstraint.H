@@ -82,8 +82,8 @@ namespace LOCA {
 
       //! Constructor
       ArcLengthConstraint(
-     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-     const Teuchos::RefCountPtr<LOCA::MultiContinuation::ArcLengthGroup>& grp);
+     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+     const Teuchos::RCP<LOCA::MultiContinuation::ArcLengthGroup>& grp);
 
       //! Copy constructor
       ArcLengthConstraint(const ArcLengthConstraint& source, 
@@ -93,7 +93,7 @@ namespace LOCA {
       ~ArcLengthConstraint();
 
       //! Set pointer to arclength group
-      virtual void setArcLengthGroup(const Teuchos::RefCountPtr<LOCA::MultiContinuation::ArcLengthGroup>& grp);
+      virtual void setArcLengthGroup(const Teuchos::RCP<LOCA::MultiContinuation::ArcLengthGroup>& grp);
 
       /*! 
        * @name Implementation of LOCA::MultiContinuation::ConstraintInterface 
@@ -106,7 +106,7 @@ namespace LOCA {
 
       //! Cloning function
       virtual 
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+      Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Return number of constraints
@@ -172,10 +172,10 @@ namespace LOCA {
     protected:
 
       //! LOCA global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Pointer to arc-length group
-      Teuchos::RefCountPtr<
+      Teuchos::RCP<
 	LOCA::MultiContinuation::ArcLengthGroup> arcLengthGroup;
 
       //! Constraint values

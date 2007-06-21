@@ -69,14 +69,14 @@ class Tensor : public Generic {
 public:
 
   //! Constructor
-  Tensor(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  Tensor(const Teuchos::RCP<NOX::GlobalData>& gd,
 	 Teuchos::ParameterList& params);
 
   //! Destructor
   ~Tensor();
   
   // derived
-  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 	     Teuchos::ParameterList& lsParams);
 
   // derived
@@ -150,7 +150,7 @@ protected:
   double alpha;
 
   //! Global data pointer.  Keep this so the parameter list remains valid.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Pointer to the input parameter list.  We need this to create an "Output" sublist to store output parameters from the counter object.  
   Teuchos::ParameterList* paramsPtr;

@@ -52,7 +52,7 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
 	 Epetra_Import &overlapImporter_,
 	 Teuchos::ParameterList &precPrintParams_, 
 	 Teuchos::ParameterList &precLSParams_, 
-	 const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm_) :  
+	 const Teuchos::RCP<EpetraExt::MultiMpiComm> globalComm_) :  
   jacobian(jacobian_),
   splitJac(splitJac_),
   solution(solution_),
@@ -62,9 +62,9 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
   lsParams(precLSParams_), 
   globalComm(globalComm_),
   linSys(std::vector<NOX::Epetra::LinearSystemAztecOO*>(globalComm_->NumTimeStepsOnDomain())),
-  jacobianBlock(std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
-  massBlock(std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
-  diagBlockSubdiag(std::vector<Teuchos::RefCountPtr<Epetra_Vector> >(globalComm_->NumTimeStepsOnDomain())),
+  jacobianBlock(std::vector<Teuchos::RCP<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
+  massBlock(std::vector<Teuchos::RCP<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
+  diagBlockSubdiag(std::vector<Teuchos::RCP<Epetra_Vector> >(globalComm_->NumTimeStepsOnDomain())),
   residual(0),
   splitVec(0),
   splitRes(0),
@@ -74,9 +74,9 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
 
   string prec = lsParams.get("XYZTPreconditioner","None");
 
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = 
+  Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = 
     Teuchos::rcp(&((NOX::Epetra::Interface::Required&)*this),false);
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = 
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = 
     Teuchos::rcp(&((NOX::Epetra::Interface::Jacobian&)*this),false);
 
   if (prec == "Global") {

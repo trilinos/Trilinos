@@ -79,10 +79,10 @@ SchurOp::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // Convert X and Y from an Epetra_MultiVectors to Epetra_Vectors
   // and NOX::Epetra::Vectors.  This is done so we use a consistent
   // vector space for norms and inner products.
-  Teuchos::RefCountPtr<Epetra_Vector> wrappedX = Teuchos::rcp(new Epetra_Vector(View, X, 0));
-  Teuchos::RefCountPtr<Epetra_Vector> wrappedY = Teuchos::rcp(new Epetra_Vector(View, Y, 0));
-  Teuchos::RefCountPtr<Epetra_Vector> tempX    = Teuchos::rcp(new Epetra_Vector(*wrappedX) );
-  Teuchos::RefCountPtr<Epetra_Vector> tempY    = Teuchos::rcp(new Epetra_Vector(*wrappedY) );
+  Teuchos::RCP<Epetra_Vector> wrappedX = Teuchos::rcp(new Epetra_Vector(View, X, 0));
+  Teuchos::RCP<Epetra_Vector> wrappedY = Teuchos::rcp(new Epetra_Vector(View, Y, 0));
+  Teuchos::RCP<Epetra_Vector> tempX    = Teuchos::rcp(new Epetra_Vector(*wrappedX) );
+  Teuchos::RCP<Epetra_Vector> tempY    = Teuchos::rcp(new Epetra_Vector(*wrappedY) );
 
   // The substance of this operator ----- to do RWH 10/24/2006
 
@@ -195,12 +195,12 @@ SchurOp::OperatorRangeMap() const
 //-----------------------------------------------------------------------------
 
 void
-SchurOp::modifyRHS( Teuchos::RefCountPtr<Epetra_Vector> & probVec, Teuchos::RefCountPtr<Epetra_Vector> & depVec )
+SchurOp::modifyRHS( Teuchos::RCP<Epetra_Vector> & probVec, Teuchos::RCP<Epetra_Vector> & depVec )
 {
   //Problem_Manager & problemManager =  dynamic_cast<Problem_Manager&>(schurInterface);
 
-  Teuchos::RefCountPtr<Epetra_Vector> tempX = Teuchos::rcp( new Epetra_Vector(*probVec) );
-  Teuchos::RefCountPtr<Epetra_Vector> tempY = Teuchos::rcp( new Epetra_Vector(*depVec ) );
+  Teuchos::RCP<Epetra_Vector> tempX = Teuchos::rcp( new Epetra_Vector(*probVec) );
+  Teuchos::RCP<Epetra_Vector> tempY = Teuchos::rcp( new Epetra_Vector(*depVec ) );
 
   //problemManager.getBlockInverseOperator(depId)->ApplyInverse(*depVec, *tempY);
   //problemManager.applyBlockAction( probId, depId, *tempY, *tempX);

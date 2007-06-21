@@ -53,7 +53,7 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::DerivUtils::DerivUtils(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    double perturb) :
   globalData(global_data),
   perturb(perturb)
@@ -73,7 +73,7 @@ LOCA::DerivUtils::~DerivUtils()
  
 }
 
-Teuchos::RefCountPtr<LOCA::DerivUtils> 
+Teuchos::RCP<LOCA::DerivUtils> 
 LOCA::DerivUtils::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new DerivUtils(*this));  //Call Copy Constructor
@@ -205,7 +205,7 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
   // Allocate base Jn vector and fill with J times n
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> baseJnVectorPtr = 
+  Teuchos::RCP<NOX::Abstract::Vector> baseJnVectorPtr = 
     nullVector.clone(NOX::ShapeCopy);
   
   if (!grp.isJacobian()) {
@@ -241,7 +241,7 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
   // Copy original solution vector
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> Xvec = 
+  Teuchos::RCP<NOX::Abstract::Vector> Xvec = 
     grp.getX().clone(NOX::DeepCopy);
 
   // Loop over each column of multivector
@@ -286,7 +286,7 @@ LOCA::DerivUtils::computeDwtJnDp(
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
   // Vector to store J*n
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> Jn = 
+  Teuchos::RCP<NOX::Abstract::Vector> Jn = 
     w.clone(NOX::ShapeCopy);
   double base_wtJn;
 
@@ -423,7 +423,7 @@ LOCA::DerivUtils::computeDwtJnDx(LOCA::MultiContinuation::AbstractGroup& grp,
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
   // Vector to store w^T*J
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> wtJ = 
+  Teuchos::RCP<NOX::Abstract::Vector> wtJ = 
     w.clone(NOX::ShapeCopy);
   
   // Compute base w^T*J
@@ -436,7 +436,7 @@ LOCA::DerivUtils::computeDwtJnDx(LOCA::MultiContinuation::AbstractGroup& grp,
 							   callingFunction);
   
   // Copy original solution vector
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> Xvec = 
+  Teuchos::RCP<NOX::Abstract::Vector> Xvec = 
     grp.getX().clone(NOX::DeepCopy);
 
   // Perturb solution vector in direction of nullVector, return perturbation
@@ -548,9 +548,9 @@ LOCA::DerivUtils::computeDCeDxa(
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
   // Allocate base Ce
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> CeReal = 
+  Teuchos::RCP<NOX::Abstract::Vector> CeReal = 
     yVector.clone(NOX::ShapeCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> CeImag = 
+  Teuchos::RCP<NOX::Abstract::Vector> CeImag = 
     zVector.clone(NOX::ShapeCopy);
 
   // Compute base Ce
@@ -592,7 +592,7 @@ LOCA::DerivUtils::computeDCeDxa(
     NOX::Abstract::Group::Ok;
 
   // Copy original solution vector
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> Xvec = 
+  Teuchos::RCP<NOX::Abstract::Vector> Xvec = 
     grp.getX().clone(NOX::DeepCopy);
 
   // Loop over each column of multivector
@@ -645,9 +645,9 @@ LOCA::DerivUtils::computeDwtCeDp(
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
   // Views of Ce, d(Ce)/dp
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> CeReal = 
+  Teuchos::RCP<NOX::Abstract::Vector> CeReal = 
     w1.clone(NOX::ShapeCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> CeImag = 
+  Teuchos::RCP<NOX::Abstract::Vector> CeImag = 
     w2.clone(NOX::ShapeCopy);
 
   // Compute base w^T*C*e
@@ -721,9 +721,9 @@ LOCA::DerivUtils::computeDwtCeDx(
     NOX::Abstract::Group::Ok;
 
   // Vectors to store w^T*C
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> wtC_real = 
+  Teuchos::RCP<NOX::Abstract::Vector> wtC_real = 
     w1.clone(NOX::ShapeCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> wtC_imag = 
+  Teuchos::RCP<NOX::Abstract::Vector> wtC_imag = 
     w2.clone(NOX::ShapeCopy);
   
   // Compute base w^T*C
@@ -736,7 +736,7 @@ LOCA::DerivUtils::computeDwtCeDx(
 							   callingFunction);
 
   // Copy original solution vector
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> Xvec = 
+  Teuchos::RCP<NOX::Abstract::Vector> Xvec = 
     grp.getX().clone(NOX::DeepCopy);
 
   // Perturb solution vector in direction of yVector, return perturbation
@@ -776,9 +776,9 @@ LOCA::DerivUtils::computeDwtCeDx(
 							   finalStatus,
 							   callingFunction);
 
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmp_r = 
+  Teuchos::RCP<NOX::Abstract::Vector> tmp_r = 
     result_real.clone(NOX::ShapeCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmp_i = 
+  Teuchos::RCP<NOX::Abstract::Vector> tmp_i = 
     result_imag.clone(NOX::ShapeCopy);
   status = 
     grp.applyComplexTranspose(w1, w2, *tmp_r, *tmp_i);
@@ -831,7 +831,7 @@ LOCA::DerivUtils::perturbXVec(LOCA::MultiContinuation::AbstractGroup& grp,
 			      const NOX::Abstract::Vector& aVector) const
 {
   // Allocate tempertory xVector
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmpXVecPtr = 
+  Teuchos::RCP<NOX::Abstract::Vector> tmpXVecPtr = 
     xVector.clone(NOX::DeepCopy);
 
   // Get perturbation size for directional derivative

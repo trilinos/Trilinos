@@ -226,10 +226,10 @@ Vector::update(double alpha, const Vector& a,
 }
 
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+Teuchos::RCP<NOX::Abstract::Vector> 
 Vector::clone(CopyType type) const
 {
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> newVec = 
+  Teuchos::RCP<NOX::Abstract::Vector> newVec = 
     Teuchos::rcp(new NOX::Petsc::Vector(petscVec, type));
   return newVec;
 }

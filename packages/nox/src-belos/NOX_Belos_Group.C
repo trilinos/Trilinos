@@ -55,7 +55,7 @@
 #include "BelosBlockGmres.hpp"
 #include "BelosBlockCG.hpp"
 
-NOX::Belos::Group::Group(const Teuchos::RefCountPtr<NOX::Abstract::Group>& g,
+NOX::Belos::Group::Group(const Teuchos::RCP<NOX::Abstract::Group>& g,
 			 NOX::Parameter::List& printParams)
   : grpPtr(g),
     newtonVecPtr(g->getX().clone(NOX::ShapeCopy)),
@@ -109,10 +109,10 @@ NOX::Belos::Group::operator=(const NOX::Abstract::Group& source)
     dynamic_cast<const NOX::Belos::Group&>(source);
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Group>
+Teuchos::RCP<NOX::Abstract::Group>
 NOX::Belos::Group::clone(NOX::CopyType type) const 
 {
-  Teuchos::RefCountPtr<NOX::Belos::Group> newGrp = 
+  Teuchos::RCP<NOX::Belos::Group> newGrp = 
     Teuchos::rcp(new NOX::Belos::Group(*this, type));
   return newGrp;
 }
@@ -206,9 +206,9 @@ NOX::Belos::Group::applyJacobianInverse(NOX::Parameter::List& params,
 					NOX::Abstract::Vector& result) const 
 {
   // Create multivectors out of input, result
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> inputs = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> inputs = 
     input.createMultiVector(NULL, 0, NOX::DeepCopy);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> results = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> results = 
     result.createMultiVector(NULL, 0, NOX::DeepCopy);
   
   // Call multivector version
@@ -398,7 +398,7 @@ double
 NOX::Belos::Group::getNormNewtonSolveResidual() const 
 {
   NOX::Abstract::Group::ReturnType status;
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> residual = 
+  Teuchos::RCP<NOX::Abstract::Vector> residual = 
     getF().clone(NOX::DeepCopy);
   
   status = applyJacobian(*newtonVecPtr, *residual);

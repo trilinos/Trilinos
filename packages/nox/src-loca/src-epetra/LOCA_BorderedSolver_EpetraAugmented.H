@@ -103,9 +103,9 @@ namespace LOCA {
        * are referenced.
        */
       EpetraAugmented(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
       //! Destructor
       virtual ~EpetraAugmented();
@@ -117,10 +117,10 @@ namespace LOCA {
        * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
-          const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
+          const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>& op,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
+	  const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	  const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
 
       //! Intialize solver for a solve
       /*!
@@ -244,28 +244,28 @@ namespace LOCA {
     protected:
 
       //! Global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Solver parameters
-      Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
+      Teuchos::RCP<Teuchos::ParameterList> solverParams;
 
       //! Pointer to group storing J
-      Teuchos::RefCountPtr<LOCA::Epetra::Group> grp;
+      Teuchos::RCP<LOCA::Epetra::Group> grp;
 
       // Operator
-      Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator> op;
+      Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator> op;
 
       //! Pointer to A block
-      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> A;
+      Teuchos::RCP<const NOX::Abstract::MultiVector> A;
 
       //! Pointer to B block
-      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> B;
+      Teuchos::RCP<const NOX::Abstract::MultiVector> B;
 
       //! Pointer to C block
-      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> C;
+      Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> C;
 
       //! Pointer to constraint interface
-      Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints;
+      Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints;
 
       //! Number of constraint equations
       int numConstraints;

@@ -42,7 +42,7 @@
 #ifndef NOX_GLOBALDATA_H
 #define NOX_GLOBALDATA_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Global data objects forward declarations
 namespace Teuchos {
@@ -73,20 +73,20 @@ namespace NOX {
   public:
     
     //! Consturctor using the top level NOX parameter list.
-    GlobalData(const Teuchos::RefCountPtr<Teuchos::ParameterList>& noxParams);
+    GlobalData(const Teuchos::RCP<Teuchos::ParameterList>& noxParams);
 
     //! Constructor taking a ref-count pointer to each global object.
-    GlobalData(const Teuchos::RefCountPtr<NOX::Utils>& utils,
-	       const Teuchos::RefCountPtr<NOX::MeritFunction::Generic>& mf);
+    GlobalData(const Teuchos::RCP<NOX::Utils>& utils,
+	       const Teuchos::RCP<NOX::MeritFunction::Generic>& mf);
     
     //! Destructor.
     virtual ~GlobalData();
     
     //! Returns the print utils object.
-    Teuchos::RefCountPtr<NOX::Utils> getUtils() const;
+    Teuchos::RCP<NOX::Utils> getUtils() const;
 
     //! Returns the merit function object.
-    Teuchos::RefCountPtr<NOX::MeritFunction::Generic> getMeritFunction() const;
+    Teuchos::RCP<NOX::MeritFunction::Generic> getMeritFunction() const;
     
     /*! \brief Returns the top-level nox parameter list input by the user.
 
@@ -100,7 +100,7 @@ namespace NOX {
        stores a reference to a sublist should also store the global
        data object.
     */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> getNoxParameterList() const;
+    Teuchos::RCP<Teuchos::ParameterList> getNoxParameterList() const;
 
   private:
 
@@ -117,7 +117,7 @@ namespace NOX {
        that has the potential to output (especially for warnings and
        errors) needs this object.
     */
-    Teuchos::RefCountPtr<NOX::Utils> utilsPtr;
+    Teuchos::RCP<NOX::Utils> utilsPtr;
 
     //! Ref-count pointer to a NOX::MeritFunction::Generic object.
     /* This is global because both line searches and directions
@@ -127,7 +127,7 @@ namespace NOX {
        direction needs a merit function.  But we need all objects to
        have a consistent merit function.  
     */
-    Teuchos::RefCountPtr<NOX::MeritFunction::Generic> meritFunctionPtr;
+    Teuchos::RCP<NOX::MeritFunction::Generic> meritFunctionPtr;
 
     /*! \brief The top-level nox parameter list input by the user.
 
@@ -141,7 +141,7 @@ namespace NOX {
        stores a reference to a sublist should also store the global
        data object.
     */
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramListPtr;
+    Teuchos::RCP<Teuchos::ParameterList> paramListPtr;
 
   }; // Class GlobalData
 

@@ -88,21 +88,21 @@ int main()
     NOX::LAPACK::Vector phi(2*n);
     phi.init(1.0);
 
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> y_vec =
+    Teuchos::RCP<NOX::Abstract::Vector> y_vec =
       Teuchos::rcp(&y,false);
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> z_vec =
+    Teuchos::RCP<NOX::Abstract::Vector> z_vec =
       Teuchos::rcp(&z,false);
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> phi_vec =
+    Teuchos::RCP<NOX::Abstract::Vector> phi_vec =
       Teuchos::rcp(&phi,false);
 
     // Create initial values for a and b for minimally augmented method
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> a_vec_real = 
+    Teuchos::RCP<NOX::Abstract::Vector> a_vec_real = 
       Teuchos::rcp(new NOX::LAPACK::Vector(2*n));
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> a_vec_imag = 
+    Teuchos::RCP<NOX::Abstract::Vector> a_vec_imag = 
       Teuchos::rcp(new NOX::LAPACK::Vector(2*n));
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> b_vec_real = 
+    Teuchos::RCP<NOX::Abstract::Vector> b_vec_real = 
       Teuchos::rcp(new NOX::LAPACK::Vector(2*n));
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> b_vec_imag = 
+    Teuchos::RCP<NOX::Abstract::Vector> b_vec_imag = 
       Teuchos::rcp(new NOX::LAPACK::Vector(2*n));
     *a_vec_real = *y_vec;
     *a_vec_imag = *z_vec;
@@ -110,7 +110,7 @@ int main()
     *b_vec_imag = *z_vec;
 
     // Create parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -203,11 +203,11 @@ int main()
     searchParams.set("Method", "Full Step");
 
     // Create LAPACK Factory
-    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+    Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory = 
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+    Teuchos::RCP<LOCA::GlobalData> globalData =
       LOCA::createGlobalData(paramList, lapackFactory);
 
      // Set up the problem interface
@@ -222,18 +222,18 @@ int main()
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    Teuchos::RefCountPtr<LOCA::LAPACK::Group> grp = 
+    Teuchos::RCP<LOCA::LAPACK::Group> grp = 
       Teuchos::rcp(new LOCA::LAPACK::Group(globalData, brus));
 
     grp->setParams(p);
 
     // Set up the status tests
-    Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+    Teuchos::RCP<NOX::StatusTest::NormF> statusTestA = 
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-10, 
 					      NOX::StatusTest::NormF::Scaled));
-    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
-    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+    Teuchos::RCP<NOX::StatusTest::Combo> combo = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
 					      statusTestA, statusTestB));
 

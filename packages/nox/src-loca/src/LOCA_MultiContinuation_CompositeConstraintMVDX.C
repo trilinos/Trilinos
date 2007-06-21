@@ -44,14 +44,14 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::MultiContinuation::CompositeConstraintMVDX::CompositeConstraintMVDX(
-    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-    const vector< Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterfaceMVDX> >& constraintObjects) :
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const vector< Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterfaceMVDX> >& constraintObjects) :
   LOCA::MultiContinuation::CompositeConstraint(),
   constraintMVDXPtrs(constraintObjects),
   compositeDX()
 {
   // Copy constraint object pointers into temporary array of base class
-  vector<Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> > tmp(constraintObjects.size());
+  vector<Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> > tmp(constraintObjects.size());
   for (unsigned int i=0; i<constraintObjects.size(); i++)
     tmp[i] = constraintObjects[i];
 
@@ -107,7 +107,7 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::copy(
   }
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
 LOCA::MultiContinuation::CompositeConstraintMVDX::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new CompositeConstraintMVDX(*this, type));
@@ -127,7 +127,7 @@ LOCA::MultiContinuation::CompositeConstraintMVDX::computeDX()
   if (isDXZero())
     return finalStatus;
 
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> dx;
+  Teuchos::RCP<NOX::Abstract::MultiVector> dx;
   for (int i=0; i<numConstraintObjects; i++) {
 
     if (!constraintMVDXPtrs[i]->isDXZero()) {

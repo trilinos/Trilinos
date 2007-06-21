@@ -54,7 +54,7 @@ NOX::Epetra::MultiVector::MultiVector(int numvecs)
 }
 
 NOX::Epetra::MultiVector::
-MultiVector(const Teuchos::RefCountPtr<Epetra_MultiVector>& source, 
+MultiVector(const Teuchos::RCP<Epetra_MultiVector>& source, 
 	    NOX::CopyType type,
 	    NOX::Epetra::MultiVector::MemoryType memoryType)
   : noxEpetraVectors(source->NumVectors())
@@ -258,7 +258,7 @@ NOX::Epetra::MultiVector::operator [] (int i)
     throw "NOX::Epetra Error";
   }
   if (noxEpetraVectors[i] == NULL) {
-    Teuchos::RefCountPtr<Epetra_Vector> epetra_vec = 
+    Teuchos::RCP<Epetra_Vector> epetra_vec = 
       Teuchos::rcp(epetraMultiVec->operator() (i), false);
     noxEpetraVectors[i] = 
       new NOX::Epetra::Vector(epetra_vec, NOX::Epetra::Vector::CreateView);
@@ -275,7 +275,7 @@ NOX::Epetra::MultiVector::operator [] (int i) const
     throw "NOX::Epetra Error";
   }
   if (noxEpetraVectors[i] == NULL) {
-    Teuchos::RefCountPtr<Epetra_Vector> epetra_vec = 
+    Teuchos::RCP<Epetra_Vector> epetra_vec = 
       Teuchos::rcp(epetraMultiVec->operator() (i), false);
     noxEpetraVectors[i] = 
       new NOX::Epetra::Vector(epetra_vec, NOX::Epetra::Vector::CreateView);
@@ -372,29 +372,29 @@ NOX::Epetra::MultiVector::update(
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Epetra::MultiVector::clone(CopyType type) const
 {
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> newVec = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> newVec = 
     Teuchos::rcp(new NOX::Epetra::MultiVector(*epetraMultiVec, type));
   return newVec;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+Teuchos::RCP<NOX::Abstract::MultiVector> 
 NOX::Epetra::MultiVector::clone(int numvecs) const
 {
-  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> newVec = 
+  Teuchos::RCP<NOX::Epetra::MultiVector> newVec = 
     Teuchos::rcp(new NOX::Epetra::MultiVector(numvecs));
   newVec->epetraMultiVec = 
     Teuchos::rcp(new Epetra_MultiVector(epetraMultiVec->Map(), numvecs));
   return newVec;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+Teuchos::RCP<NOX::Abstract::MultiVector> 
 NOX::Epetra::MultiVector::subCopy(const vector<int>& index) const
 {
   int numvecs = index.size();
-  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> newVec = 
+  Teuchos::RCP<NOX::Epetra::MultiVector> newVec = 
     Teuchos::rcp(new NOX::Epetra::MultiVector(numvecs));
   newVec->epetraMultiVec = 
     Teuchos::rcp(new Epetra_MultiVector(Copy, *epetraMultiVec,
@@ -403,11 +403,11 @@ NOX::Epetra::MultiVector::subCopy(const vector<int>& index) const
   return newVec;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Epetra::MultiVector::subView(const vector<int>& index) const
 {
   int numvecs = index.size();
-  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> newVec = 
+  Teuchos::RCP<NOX::Epetra::MultiVector> newVec = 
     Teuchos::rcp(new NOX::Epetra::MultiVector(numvecs));
   newVec->epetraMultiVec = 
     Teuchos::rcp(new Epetra_MultiVector(View, *epetraMultiVec,

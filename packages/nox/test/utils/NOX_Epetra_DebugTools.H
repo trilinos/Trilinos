@@ -68,7 +68,7 @@ class DebugTools
                             MATRIX_MARKET = 1              };
 
   static NOX_EPETRA_OP_TYPE get_operator_type( const Epetra_Operator *                     );
-  static NOX_EPETRA_OP_TYPE get_operator_type( const Teuchos::RefCountPtr<Epetra_Operator> );
+  static NOX_EPETRA_OP_TYPE get_operator_type( const Teuchos::RCP<Epetra_Operator> );
 
   // Factory-like method to create an operator - needed RWH ?
   //static Epetra_Operator * create_nonlinear_operator( NOX_EPETRA_OP_TYPE );

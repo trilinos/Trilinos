@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
-  Teuchos::RefCountPtr<Interface> interface = 
+  Teuchos::RCP<Interface> interface = 
     Teuchos::rcp(new Interface(NumGlobalElements, Comm));
 
   // Set the PDE factor (for nonlinear forcing term).  This could be specified
@@ -125,15 +125,15 @@ int main(int argc, char *argv[])
   interface->setPDEfactor(1000.0);
 
   // Get the vector from the Problem
-  Teuchos::RefCountPtr<Epetra_Vector> soln = interface->getSolution();
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> noxSoln = 
+  Teuchos::RCP<Epetra_Vector> soln = interface->getSolution();
+  Teuchos::RCP<NOX::Epetra::Vector> noxSoln = 
     Teuchos::rcp(new NOX::Epetra::Vector(soln, 
 					 NOX::Epetra::Vector::CreateView));
 
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
@@ -238,12 +238,12 @@ int main(int argc, char *argv[])
 
   // Create all possible Epetra_Operators.
   // 1. User supplied (Epetra_RowMatrix)
-  Teuchos::RefCountPtr<Epetra_RowMatrix> Analytic = interface->getJacobian();
+  Teuchos::RCP<Epetra_RowMatrix> Analytic = interface->getJacobian();
 
   // Create the linear system
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+  Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 						      iReq, 
 						      iJac, Analytic,
@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
   
   // Create the Group
   NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
-  Teuchos::RefCountPtr<NOX::Epetra::Group> grpPtr = 
+  Teuchos::RCP<NOX::Epetra::Group> grpPtr = 
     Teuchos::rcp(new NOX::Epetra::Group(printParams, 
 					iReq, 
 					initialGuess, 
@@ -260,25 +260,25 @@ int main(int argc, char *argv[])
   NOX::Epetra::Group& grp = *grpPtr;
 
   // Create the convergence tests
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> relresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> relresid = 
     Teuchos::rcp(new NOX::StatusTest::NormF(grp, 1.0e-2));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormUpdate> update =
+  Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
     Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormWRMS> wrms =
+  Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
     Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> converged =
+  Teuchos::RCP<NOX::StatusTest::Combo> converged =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
   converged->addStatusTest(absresid);
   converged->addStatusTest(relresid);
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
-  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
-  Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> fv =
+  Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(fv);
   combo->addStatusTest(converged);

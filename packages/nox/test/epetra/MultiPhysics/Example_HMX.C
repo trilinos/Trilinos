@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
   // parameter list as wwell as its own convergence test(s).
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
@@ -204,18 +204,18 @@ int main(int argc, char *argv[])
   // Create the convergence tests
   // Note: as for the parameter list, both (all) problems use the same 
   // convergence test(s) for now, but each could have its own.
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF>          absresid  =
+  Teuchos::RCP<NOX::StatusTest::NormF>          absresid  =
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormUpdate>     update    = 
+  Teuchos::RCP<NOX::StatusTest::NormUpdate>     update    = 
       Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo>          converged = 
+  Teuchos::RCP<NOX::StatusTest::Combo>          converged = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
   converged->addStatusTest(absresid);
-  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
-  Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> finiteValue = 
+  Teuchos::RCP<NOX::StatusTest::FiniteValue> finiteValue = 
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(converged);
   combo->addStatusTest(maxiters);
@@ -416,10 +416,10 @@ int main(int argc, char *argv[])
     else // Loose coupling via NOX library
     {
       // Create the loose coupling solver manager
-      Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > > solversVec =
-        Teuchos::rcp( new vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > );
+      Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > > solversVec =
+        Teuchos::rcp( new vector<Teuchos::RCP<NOX::Solver::Manager> > );
 
-      map<int, Teuchos::RefCountPtr<NOX::Solver::Manager> >::iterator iter = problemManager.getSolvers().begin(),
+      map<int, Teuchos::RCP<NOX::Solver::Manager> >::iterator iter = problemManager.getSolvers().begin(),
                                                                   iter_end = problemManager.getSolvers().end()   ;
       for( ; iter_end != iter; ++iter )
       {
@@ -428,7 +428,7 @@ int main(int argc, char *argv[])
       }
 
       // Package the Problem_Manager as the DataExchange::Intreface
-      Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface> dataExInterface =
+      Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface> dataExInterface =
         Teuchos::rcp( &problemManager, false );
 
       NOX::Multiphysics::Solver::Manager cplSolv( solversVec, dataExInterface, combo, nlParamsPtr );
@@ -445,7 +445,7 @@ int main(int argc, char *argv[])
   if( verbose )
     problemManager.outputSolutions( outputDir, timeStep );
 
-    map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator iter = problemManager.getProblems().begin(),
+    map<int, Teuchos::RCP<GenericEpetraProblem> >::iterator iter = problemManager.getProblems().begin(),
                                                                 iter_end = problemManager.getProblems().end()   ;
     for( ; iter_end != iter; ++iter )
     {
@@ -465,7 +465,7 @@ int main(int argc, char *argv[])
         break;
       }
 
-      Teuchos::RefCountPtr<Epetra_Vector> goldSoln = Teuchos::rcp( tmpVec );
+      Teuchos::RCP<Epetra_Vector> goldSoln = Teuchos::rcp( tmpVec );
 
       // Need NOX::Epetra::Vectors for tests
       NOX::Epetra::Vector numerical ( problem.getSolution() , NOX::Epetra::Vector::CreateView );

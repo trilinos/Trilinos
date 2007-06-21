@@ -45,9 +45,9 @@
 
 //=============================================================================
 LOCA::Epetra::ShiftInvertOperator::ShiftInvertOperator(
-                   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-		   const Teuchos::RefCountPtr<LOCA::Epetra::Group>& grp, 
-		   const Teuchos::RefCountPtr<const Epetra_Operator>& jac, 
+                   const Teuchos::RCP<LOCA::GlobalData>& global_data,
+		   const Teuchos::RCP<LOCA::Epetra::Group>& grp, 
+		   const Teuchos::RCP<const Epetra_Operator>& jac, 
 		   double shift) :
   globalData(global_data),
   locagrp(grp),

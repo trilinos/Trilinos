@@ -75,7 +75,7 @@ namespace LOCA {
     public:
   
       //! Constructor.
-      ComplexVector(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+      ComplexVector(const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    const NOX::Abstract::Vector& realVec,
 		    const NOX::Abstract::Vector& imagVec);
 
@@ -99,7 +99,7 @@ namespace LOCA {
       operator=(const ComplexVector& y);
 
       //! Cloning function
-      virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+      virtual Teuchos::RCP<NOX::Abstract::Vector> 
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Sets the vector by setting its components 
@@ -107,33 +107,33 @@ namespace LOCA {
 			  const NOX::Abstract::Vector& imagVec);
 
       //! Returns the real component of extended vector
-      virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+      virtual Teuchos::RCP<const NOX::Abstract::Vector> 
       getRealVec() const;
 
       //! Returns the imaginary component of extended vector
-      virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+      virtual Teuchos::RCP<const NOX::Abstract::Vector> 
       getImagVec() const;
 
       //! Returns the real component of extended vector
-      virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+      virtual Teuchos::RCP<NOX::Abstract::Vector> 
       getRealVec();
 
       //! Returns the imaginary component of extended vector
-      virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+      virtual Teuchos::RCP<NOX::Abstract::Vector> 
       getImagVec();
 
     protected:
 
       //! Default Constructor
       ComplexVector(
-		   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+		   const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       //! generate an extended multi-vector
       /*!
        * Returns an empty multivector of type 
        * LOCA::Hopf::ComplexMultiVector
        */
-      virtual Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
+      virtual Teuchos::RCP<LOCA::Extended::MultiVector>
       generateMultiVector(int nColumns, int nVectorRows, 
 			  int nScalarRows) const;
 

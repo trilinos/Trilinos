@@ -44,7 +44,7 @@
 
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Common.H"            // class data element (string)
-#include "Teuchos_RefCountPtr.hpp" 
+#include "Teuchos_RCP.hpp" 
 
 // Forward declaration
 namespace NOX {
@@ -115,17 +115,17 @@ class Manager : public Generic {
 public:
 
   //! Empty Constructor
-  Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd);
+  Manager(const Teuchos::RCP<NOX::GlobalData>& gd);
 
   //! Constructor
-  Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  Manager(const Teuchos::RCP<NOX::GlobalData>& gd,
 	  Teuchos::ParameterList& params);
 
   //! Destructor
   ~Manager();
 
   // derived
-  bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 	     Teuchos::ParameterList& params);
 
   // derived
@@ -149,13 +149,13 @@ private:
 private:
 
   //! Printing Utils.
-  Teuchos::RefCountPtr<NOX::Utils> utils;
+  Teuchos::RCP<NOX::Utils> utils;
 
   //! Method name.
   string method;
 
   //! Pointer to actual direction calculation method.
-  Teuchos::RefCountPtr<NOX::Direction::Generic> ptr;
+  Teuchos::RCP<NOX::Direction::Generic> ptr;
 
 };
 } // namespace Direction

@@ -42,7 +42,7 @@
 #ifndef LOCA_ABSTRACT_FACTORY_H
 #define LOCA_ABSTRACT_FACTORY_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "NOX_Abstract_Group.H"
 
@@ -132,7 +132,7 @@ namespace LOCA {
        * any needed initialization here that cannot occur at construction.
        */
       virtual void 
-      init(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) = 0;
+      init(const Teuchos::RCP<LOCA::GlobalData>& global_data) = 0;
 
       /*! 
        * @name Strategy create methods
@@ -143,103 +143,103 @@ namespace LOCA {
       virtual bool
       createPredictorStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& predictorParams,
-       Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& strategy);
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& predictorParams,
+       Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& strategy);
 
       //! Create continuation strategy
       virtual bool
       createContinuationStrategy(
       const string& strategyName,
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepperParams,
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
-      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& stepperParams,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs,
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>& strategy);
+      Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy>& strategy);
 
       //! Create bifurcation strategy
       virtual bool
       createBifurcationStrategy(
       const string& strategyName,
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& bifurcationParams,
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& strategy);
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& bifurcationParams,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
+      Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& strategy);
 
       //! Create step size strategy
       virtual bool
       createStepSizeStrategy(
          const string& strategyName,
-         const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepsizeParams,
-	 Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy>& strategy);
+         const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams,
+	 Teuchos::RCP<LOCA::StepSize::AbstractStrategy>& strategy);
 
       //! Create bordered system solver strategy
       virtual bool
       createBorderedSolverStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-       Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>& strategy);
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+       Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>& strategy);
 
       //! Create eigensolver strategy
       virtual bool
       createEigensolverStrategy(
          const string& strategyName,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy);
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+	 Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy>& strategy);
 
       //! Create eigenvalue sorting strategy
       virtual bool
       createEigenvalueSortStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-       Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy);
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+       Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy>& strategy);
 
       //! Create strategy to save eigenvector/value data
       virtual bool
       createSaveEigenDataStrategy(
         const string& strategyName,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-	Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy>& strategy);
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+	Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy>& strategy);
 
       //! Create Anasazi operator
       virtual bool
       createAnasaziOperatorStrategy(
       const string& strategyName,
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-      const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
-      Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>& strategy);
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+      const Teuchos::RCP<NOX::Abstract::Group>& grp,
+      Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy>& strategy);
 
       //! Create Moore-Spence turning point solver strategy
       virtual bool
       createMooreSpenceTurningPointSolverStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-       Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>& strategy);
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+       Teuchos::RCP<LOCA::TurningPoint::MooreSpence::SolverStrategy>& strategy);
 
       //! Create Moore-Spence pitchfork solver strategy
       virtual bool
       createMooreSpencePitchforkSolverStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-       Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy>& strategy);
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+       Teuchos::RCP<LOCA::Pitchfork::MooreSpence::SolverStrategy>& strategy);
 
       //! Create Moore-Spence Hopf solver strategy
       virtual bool
       createMooreSpenceHopfSolverStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-       Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::SolverStrategy>& strategy);
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+       Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy>& strategy);
 
       //@}
     

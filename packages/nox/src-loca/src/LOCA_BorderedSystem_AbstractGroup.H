@@ -42,7 +42,7 @@
 #ifndef LOCA_BORDEREDSYSTEM_ABSTRACTGROUP_H
 #define LOCA_BORDEREDSYSTEM_ABSTRACTGROUP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "NOX_Abstract_Group.H"       // base class
 #include "NOX_Abstract_MultiVector.H" // for DenseMatrix
 
@@ -90,7 +90,7 @@ namespace LOCA {
       virtual int getBorderedWidth() const = 0;
 
       //! Get bottom-level unbordered group
-      virtual Teuchos::RefCountPtr<const NOX::Abstract::Group>
+      virtual Teuchos::RCP<const NOX::Abstract::Group>
       getUnborderedGroup() const = 0;
 
       //! Indicates whether combined A block is zero

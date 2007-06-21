@@ -47,9 +47,9 @@
 
 LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
 TransposePreconditioner(
-	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-	     const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linsys_) :
+	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	     const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+	     const Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys_) :
   globalData(global_data),
   linsys(linsys_),
   jac(),
@@ -59,7 +59,7 @@ TransposePreconditioner(
   // Get transpose scaling object
   if (solverParams->isParameter("Transpose Scaling"))
     scaling_trans = (*solverParams).INVALID_TEMPLATE_QUALIFIER 
-      get< Teuchos::RefCountPtr<NOX::Epetra::Scaling> >("Transpose Scaling");
+      get< Teuchos::RCP<NOX::Epetra::Scaling> >("Transpose Scaling");
 }
 
 LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
@@ -79,7 +79,7 @@ applyJacobianTransposeInverse(Teuchos::ParameterList &params,
     linsys->setPrecOperatorForSolve(prec);
 
   // Set the transpose scaling object if we have one
-  Teuchos::RefCountPtr<NOX::Epetra::Scaling> scaling_orig;
+  Teuchos::RCP<NOX::Epetra::Scaling> scaling_orig;
   if (scaling_trans != Teuchos::null) {
     scaling_orig = linsys->getScaling();
     linsys->resetScaling(scaling_trans);
@@ -119,7 +119,7 @@ createTransposePreconditioner(const NOX::Epetra::Vector& x,
   bool res1 = linsys->destroyPreconditioner();
 
   // Set the transpose scaling object if we have one
-  Teuchos::RefCountPtr<NOX::Epetra::Scaling> scaling_orig;
+  Teuchos::RCP<NOX::Epetra::Scaling> scaling_orig;
   if (scaling_trans != Teuchos::null) {
     scaling_orig = linsys->getScaling();
     linsys->resetScaling(scaling_trans);
@@ -138,14 +138,14 @@ createTransposePreconditioner(const NOX::Epetra::Vector& x,
   return res1 && res2;
 }
 
-Teuchos::RefCountPtr<Epetra_Operator> 
+Teuchos::RCP<Epetra_Operator> 
 LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
 getJacobianTransposeOperator()
 {
   return jac;
 }
 
-Teuchos::RefCountPtr<Epetra_Operator> 
+Teuchos::RCP<Epetra_Operator> 
 LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
 getTransposePreconditioner()
 {
@@ -155,7 +155,7 @@ getTransposePreconditioner()
 void
 LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
 setJacobianTransposeOperator(
-	       const Teuchos::RefCountPtr<Epetra_Operator>& new_jac_trans)
+	       const Teuchos::RCP<Epetra_Operator>& new_jac_trans)
 {
   jac = new_jac_trans;
 }
@@ -163,7 +163,7 @@ setJacobianTransposeOperator(
 void
 LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
 setTransposePreconditioner(
-	      const Teuchos::RefCountPtr<Epetra_Operator>& new_prec_trans)
+	      const Teuchos::RCP<Epetra_Operator>& new_prec_trans)
 {
   prec = new_prec_trans;
 }

@@ -48,7 +48,7 @@
 #include "LOCA_Hopf_MooreSpence_SalingerBordering.H"
 
 LOCA::Hopf::MooreSpence::SolverFactory::SolverFactory(
-	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
@@ -57,14 +57,14 @@ LOCA::Hopf::MooreSpence::SolverFactory::~SolverFactory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::SolverStrategy>
+Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy>
 LOCA::Hopf::MooreSpence::SolverFactory::create(
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
   string methodName = 
     "LOCA::Hopf::MooreSpence::SolverFactory::create()";
-  Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::SolverStrategy> strategy;
+  Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy> strategy;
 
   // Get name of strategy
   const string& name = strategyName(*solverParams);
@@ -81,9 +81,9 @@ LOCA::Hopf::MooreSpence::SolverFactory::create(
     // Get name of user-defined strategy
     string userDefinedName = solverParams->get("User-Defined Name", "???");
     if ((*solverParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::SolverStrategy> >(userDefinedName))
+	isType< Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy> >(userDefinedName))
       strategy = (*solverParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::SolverStrategy> >(userDefinedName);
+	get< Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,

@@ -44,7 +44,7 @@
 #include "LOCA_Extended_MultiAbstractGroup.H"
 
 LOCA::Solver::Wrapper::
-Wrapper(const Teuchos::RefCountPtr<NOX::Solver::Generic>& solver) :
+Wrapper(const Teuchos::RCP<NOX::Solver::Generic>& solver) :
   solverPtr(solver),
   constSolverPtr(solver)
 {
@@ -52,7 +52,7 @@ Wrapper(const Teuchos::RefCountPtr<NOX::Solver::Generic>& solver) :
 }
 
 LOCA::Solver::Wrapper::
-Wrapper(const Teuchos::RefCountPtr<const NOX::Solver::Generic>& solver) :
+Wrapper(const Teuchos::RCP<const NOX::Solver::Generic>& solver) :
   solverPtr(Teuchos::null),
   constSolverPtr(solver)
 {
@@ -65,9 +65,9 @@ LOCA::Solver::Wrapper::~Wrapper()
 
 bool
 LOCA::Solver::Wrapper::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& params)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+      const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   bool res = solverPtr->reset(grp, tests, params);
   resetWrapper();
@@ -76,8 +76,8 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
 
 bool 
 LOCA::Solver::Wrapper::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests) 
+reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& tests) 
 {
   bool res =  solverPtr->reset(grp, tests);
   resetWrapper();
@@ -86,7 +86,7 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
 
 bool 
 LOCA::Solver::Wrapper::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp) 
+reset(const Teuchos::RCP<NOX::Abstract::Group>& grp) 
 {
   bool res =  solverPtr->reset(grp);
   resetWrapper();

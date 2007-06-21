@@ -48,10 +48,10 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Epetra::LowRankUpdateOp::LowRankUpdateOp(
-        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<Epetra_Operator>& jacOperator, 
-	const Teuchos::RefCountPtr<const Epetra_MultiVector>& U_multiVec, 
-	const Teuchos::RefCountPtr<const Epetra_MultiVector>& V_multiVec) :
+        const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<Epetra_Operator>& jacOperator, 
+	const Teuchos::RCP<const Epetra_MultiVector>& U_multiVec, 
+	const Teuchos::RCP<const Epetra_MultiVector>& V_multiVec) :
   globalData(global_data),
   label("LOCA::Epetra::LowRankUpdateOp"),
   localMap(V_multiVec->NumVectors(), 0, jacOperator->Comm()),

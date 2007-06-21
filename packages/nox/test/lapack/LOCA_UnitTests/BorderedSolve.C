@@ -51,23 +51,23 @@
 #include "NOX_TestCompare.H"
 
 // Global variables used in main() and testSolve()
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp;
-Teuchos::RefCountPtr<LOCA::BorderedSolver::JacobianOperator> op;
-Teuchos::RefCountPtr<LinearConstraint> constraints;
-Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
-Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> bordering;
-Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> direct;
-Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
-Teuchos::RefCountPtr<NOX::TestCompare> testCompare;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> B;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> C;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> F;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> G;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_bordering;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> Y_bordering;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_direct;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> Y_direct;
+Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> grp;
+Teuchos::RCP<LOCA::BorderedSolver::JacobianOperator> op;
+Teuchos::RCP<LinearConstraint> constraints;
+Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams;
+Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> bordering;
+Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> direct;
+Teuchos::RCP<LOCA::GlobalData> globalData;
+Teuchos::RCP<NOX::TestCompare> testCompare;
+Teuchos::RCP<NOX::Abstract::MultiVector> A;
+Teuchos::RCP<NOX::Abstract::MultiVector> B;
+Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> C;
+Teuchos::RCP<NOX::Abstract::MultiVector> F;
+Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> G;
+Teuchos::RCP<NOX::Abstract::MultiVector> X_bordering;
+Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> Y_bordering;
+Teuchos::RCP<NOX::Abstract::MultiVector> X_direct;
+Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> Y_direct;
 
 int  
 testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
@@ -78,13 +78,13 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
     globalData->locaUtils->out() 
       << std::endl << "***** " << testName << " *****" << std::endl;
 
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> a = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> a = 
     Teuchos::null;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> c = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> c = 
     Teuchos::null;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> f = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> f = 
     Teuchos::null;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> g = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> g = 
     Teuchos::null;
 
   if (!flagA)
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
 	verbose = true;
 
     // Create parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
        nlPrintParams.set("Output Information", NOX::Utils::Error);
 
     // Create LAPACK factory
-    Teuchos::RefCountPtr<LOCA::Abstract::Factory> lapackFactory =
+    Teuchos::RCP<LOCA::Abstract::Factory> lapackFactory =
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
     // Create global data object
@@ -228,13 +228,13 @@ int main(int argc, char *argv[])
     op = Teuchos::rcp(new LOCA::BorderedSolver::JacobianOperator(grp));
 
     // Change initial guess to a random vector
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> xnew = grp->getX().clone();
+    Teuchos::RCP<NOX::Abstract::Vector> xnew = grp->getX().clone();
     xnew->random();
     grp->setX(*xnew);
 
     // Create the constraints object & constraint param IDs list
     constraints = Teuchos::rcp(new LinearConstraint(nConstraints, p, *xnew));
-    Teuchos::RefCountPtr< vector<int> > constraintParamIDs = 
+    Teuchos::RCP< vector<int> > constraintParamIDs = 
       Teuchos::rcp(new vector<int>(1));
     (*constraintParamIDs)[0] = p.getIndex("alpha");
 

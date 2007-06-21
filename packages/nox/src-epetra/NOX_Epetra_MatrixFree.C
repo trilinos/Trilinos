@@ -52,7 +52,7 @@ using namespace NOX;
 using namespace NOX::Epetra;
 
 MatrixFree::MatrixFree(Teuchos::ParameterList& printParams, 
-		       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
+		       const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
 		       const NOX::Epetra::Vector& x, bool p) :
   label("NOX::Matrix-Free"),
   interface(i),
@@ -125,9 +125,9 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // Convert X and Y from an Epetra_MultiVector to a Epetra_Vectors
   // and NOX::epetra::Vectors.  This is done so we use a consistent
   // vector space for norms and inner products.
-  Teuchos::RefCountPtr<Epetra_Vector> wrappedX = 
+  Teuchos::RCP<Epetra_Vector> wrappedX = 
     Teuchos::rcp(new Epetra_Vector(View, X, 0));
-  Teuchos::RefCountPtr<Epetra_Vector> wrappedY = 
+  Teuchos::RCP<Epetra_Vector> wrappedY = 
     Teuchos::rcp(new Epetra_Vector(View, Y, 0));
   NOX::Epetra::Vector nevX(wrappedX, NOX::Epetra::Vector::CreateView);
   NOX::Epetra::Vector nevY(wrappedY, NOX::Epetra::Vector::CreateView);

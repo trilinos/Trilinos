@@ -49,7 +49,7 @@
 // *****************************************************************
 NOX::Epetra::ModelEvaluatorInterface::
 ModelEvaluatorInterface(const 
-			Teuchos::RefCountPtr<EpetraExt::ModelEvaluator>& m) :
+			Teuchos::RCP<EpetraExt::ModelEvaluator>& m) :
   model_(m)
 {
   inargs_ = model_->createInArgs();

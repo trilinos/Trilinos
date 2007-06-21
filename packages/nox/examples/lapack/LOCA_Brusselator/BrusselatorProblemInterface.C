@@ -47,7 +47,7 @@
 #include "NOX_Utils.H"
 
 BrusselatorProblemInterface::BrusselatorProblemInterface(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    int N, double a, 
 		    double b, 
 		    double d1,

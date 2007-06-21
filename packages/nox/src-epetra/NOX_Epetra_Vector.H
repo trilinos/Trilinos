@@ -43,7 +43,7 @@
 #define NOX_EPETRA_VECTOR_H
 
 #include "NOX_Abstract_Vector.H"     // base class
-#include "Teuchos_RefCountPtr.hpp"   // class data element
+#include "Teuchos_RCP.hpp"   // class data element
 #include "NOX_Epetra_VectorSpace.H"  // class data element
 
 // Forward declarations
@@ -75,7 +75,7 @@ class Vector : public virtual NOX::Abstract::Vector {
   /*! \brief Constructor that creates a COPY or VIEW of the Epetra_Vector.
  
     NOTE: This ctor should just always create a view.  It should be
-    implicit from the fact that a RefCountPtr object is being passed
+    implicit from the fact that a RCP object is being passed
     in that a persisting relationship is present.  However, since this
     could cause confusion, the default is to make a copy and if a user
     wants a view, they must pass in an explicit flag.
@@ -84,18 +84,18 @@ class Vector : public virtual NOX::Abstract::Vector {
     WARNING: A View can be dangerous since multiple objects can access
     the same memory locations.  
    */
-  Vector(const Teuchos::RefCountPtr<Epetra_Vector>& source, 
+  Vector(const Teuchos::RCP<Epetra_Vector>& source, 
 	 NOX::Epetra::Vector::MemoryType memoryType = 
 	 NOX::Epetra::Vector::CreateCopy,
 	 NOX::CopyType type = NOX::DeepCopy,
-	 Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vs = 
+	 Teuchos::RCP<NOX::Epetra::VectorSpace> vs = 
 	 Teuchos::null);
 
   //! Construct by copying map and/or elements of an Epetra_Vector.
   /*! Allocates an entirely new vector. Does NOT allow for a view. */
   Vector(const Epetra_Vector& source, 
 	 NOX::CopyType type = NOX::DeepCopy,
-	 Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vs = 
+	 Teuchos::RCP<NOX::Epetra::VectorSpace> vs = 
 	 Teuchos::null);
 
   //! Copy constructor.
@@ -171,7 +171,7 @@ class Vector : public virtual NOX::Abstract::Vector {
   //@{ \name Creating new Vectors. 
 
   // derived
-  virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+  virtual Teuchos::RCP<NOX::Abstract::Vector> 
   clone(CopyType type = DeepCopy) const;
 
   /*! 
@@ -182,7 +182,7 @@ class Vector : public virtual NOX::Abstract::Vector {
    * The implementation here creates a NOX::Epetra::MultiVector with
    * either Shape or Deep copies of the supplied vectors.
    */
-  virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+  virtual Teuchos::RCP<NOX::Abstract::MultiVector>
   createMultiVector(const NOX::Abstract::Vector* const* vecs,
 		    int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 
@@ -192,7 +192,7 @@ class Vector : public virtual NOX::Abstract::Vector {
    * The implementation here creates a NOX::Epetra::MultiVector with
    * either Shape or Deep copies of the supplied vector.
    */
-  virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+  virtual Teuchos::RCP<NOX::Abstract::MultiVector>
   createMultiVector(int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 
   //@}
@@ -223,16 +223,16 @@ class Vector : public virtual NOX::Abstract::Vector {
   virtual void print(std::ostream& stream) const;
 
   //! Returns the NOX::Epetra::VectorSpace associated with this vector.
-  virtual Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> 
+  virtual Teuchos::RCP<NOX::Epetra::VectorSpace> 
   getVectorSpace() const;
 
  protected:
   
   //! Pointer to petra vector owned by this object
-  Teuchos::RefCountPtr<Epetra_Vector> epetraVec;
+  Teuchos::RCP<Epetra_Vector> epetraVec;
 
   //! Pointer to the vector space. 
-  Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> vectorSpace;
+  Teuchos::RCP<NOX::Epetra::VectorSpace> vectorSpace;
 
 };
 } // namespace Epetra

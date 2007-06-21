@@ -71,8 +71,8 @@ namespace LOCA {
        * \param predParams [in] Predictor parameters.  None are currently
        * referenced.
        */
-      Constant(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	       const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams);
+      Constant(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	       const Teuchos::RCP<Teuchos::ParameterList>& predParams);
 
       //! Destructor
       virtual ~Constant();
@@ -85,7 +85,7 @@ namespace LOCA {
       operator=(const LOCA::MultiPredictor::AbstractStrategy& source);
 
       //! Clone function
-      virtual Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+      virtual Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       
@@ -129,13 +129,13 @@ namespace LOCA {
     protected:
 
       //! LOCA global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Stores predictor vector
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> predictor;
+      Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> predictor;
 
       //! Stores secant vector for setting orientation
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> secant;
+      Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> secant;
 
       //! Flag indicating whether vectors have been initialized
       bool initialized;

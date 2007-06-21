@@ -42,7 +42,7 @@
 #ifndef LOCA_BORDEREDSOLVER_HOUSEHOLDERQR_H
 #define LOCA_BORDEREDSOLVER_HOUSEHOLDERQR_H
 
-#include "Teuchos_RefCountPtr.hpp"  // class data element
+#include "Teuchos_RCP.hpp"  // class data element
 #include "Teuchos_BLAS.hpp"         // class data element
 
 #include "NOX_Abstract_MultiVector.H" // for DenseMatrix
@@ -97,7 +97,7 @@ namespace LOCA {
       /*!
        * \param global_data [in] Global data object
        */
-      HouseholderQR(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+      HouseholderQR(const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       //! Destructor
       virtual ~HouseholderQR();
@@ -184,7 +184,7 @@ namespace LOCA {
     protected:
 
       //! Global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! BLAS Wrappers
       Teuchos::BLAS<int,double> dblas;

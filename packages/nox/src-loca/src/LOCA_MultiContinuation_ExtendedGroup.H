@@ -42,7 +42,7 @@
 #ifndef LOCA_MULTICONTINUATION_EXTENDEDGROUP_H
 #define LOCA_MULTICONTINUATION_EXTENDEDGROUP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_MultiContinuation_AbstractStrategy.H"    // base class
 #include "LOCA_BorderedSystem_AbstractGroup.H"          // base class
@@ -131,7 +131,7 @@ namespace LOCA {
       operator=(const NOX::Abstract::Group& source);
 
       //! Cloning function
-      virtual Teuchos::RefCountPtr<NOX::Abstract::Group>
+      virtual Teuchos::RCP<NOX::Abstract::Group>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Set the solution vector to y.
@@ -232,12 +232,12 @@ namespace LOCA {
 
       //! Return underlying group
       virtual 
-      Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
+      Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
       getUnderlyingGroup() const;
       
       //! Return underlying group
       virtual 
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+      Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
       getUnderlyingGroup();
 
       //@}
@@ -359,7 +359,7 @@ namespace LOCA {
       virtual int getBorderedWidth() const;
 
       //! Get bottom-level unbordered group
-      virtual Teuchos::RefCountPtr<const NOX::Abstract::Group>
+      virtual Teuchos::RCP<const NOX::Abstract::Group>
       getUnborderedGroup() const;
 
       //! Indicates whether combined A block is zero
@@ -415,11 +415,11 @@ namespace LOCA {
 
       //! Constructor used by derived classes
       ExtendedGroup(
-      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& continuationParams,
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
-      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const Teuchos::RCP<LOCA::GlobalData>& global_data,
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& continuationParams,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs);
 
       //! Set constraint object
@@ -427,7 +427,7 @@ namespace LOCA {
        * This allows the constraint object to be set after the group
        * is constructed using the above constructor.
        */
-      virtual void setConstraints(const Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>& constraints);
+      virtual void setConstraints(const Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>& constraints);
 
     private:
 
@@ -437,22 +437,22 @@ namespace LOCA {
     protected:
 
       //! Pointer LOCA global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Parsed top-level parameters
-      Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
+      Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams;
 
       //! Continuation parameter list
-      Teuchos::RefCountPtr<Teuchos::ParameterList> continuationParams;
+      Teuchos::RCP<Teuchos::ParameterList> continuationParams;
 
       //! Pointer to underlying group
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grpPtr;
+      Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> grpPtr;
 
       //! Pointer to predictor object
-      Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy> predictor;
+      Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy> predictor;
 
       //! Pointer to constrained group implementation
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstrainedGroup> conGroup;
+      Teuchos::RCP<LOCA::MultiContinuation::ConstrainedGroup> conGroup;
 
       //! Number of parameters
       int numParams;

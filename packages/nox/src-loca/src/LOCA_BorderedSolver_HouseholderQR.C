@@ -44,7 +44,7 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::BorderedSolver::HouseholderQR::HouseholderQR(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data),
   dblas()
 {
@@ -80,14 +80,14 @@ LOCA::BorderedSolver::HouseholderQR::computeQR(
     R.assign(C);
 
   // A temporary vector
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> v2 = Y2.clone(1);
+  Teuchos::RCP<NOX::Abstract::MultiVector> v2 = Y2.clone(1);
 
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> v1;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> h2;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> h1;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> y2;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> y1;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> z;
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> v1;
+  Teuchos::RCP<NOX::Abstract::MultiVector> h2;
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> h1;
+  Teuchos::RCP<NOX::Abstract::MultiVector> y2;
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> y1;
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> z;
   vector<int> h_idx;
   vector<int> y_idx;
   y_idx.reserve(m);

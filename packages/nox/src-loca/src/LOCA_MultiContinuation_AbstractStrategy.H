@@ -42,7 +42,7 @@
 #ifndef LOCA_MULTICONTINUATION_ABSTRACTSTRATEGY_H
 #define LOCA_MULTICONTINUATION_ABSTRACTSTRATEGY_H
 
-#include "Teuchos_RefCountPtr.hpp" 
+#include "Teuchos_RCP.hpp" 
 
 #include "LOCA_Extended_MultiAbstractGroup.H" // base class
 #include "LOCA_Abstract_Iterator.H" // for StepStatus

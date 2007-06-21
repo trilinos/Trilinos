@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     // Create a communicator for Epetra objects
-    Teuchos::RefCountPtr<Epetra_Comm> Comm;
+    Teuchos::RCP<Epetra_Comm> Comm;
 #ifdef HAVE_MPI
     Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
       x[i] = h*i;
 
     // Set up application parameters
-    Teuchos::RefCountPtr<Teuchos::ParameterList> appParams = 
+    Teuchos::RCP<Teuchos::ParameterList> appParams = 
       Teuchos::rcp(new Teuchos::ParameterList);
     Teuchos::ParameterList& problemParams = 
       appParams->sublist("Problem");
@@ -92,25 +92,25 @@ int main(int argc, char *argv[]) {
     problemParams.set("D2", D2);
 
     // Create application
-    Teuchos::RefCountPtr<FEApp::Application> app = 
+    Teuchos::RCP<FEApp::Application> app = 
       Teuchos::rcp(new FEApp::Application(x, Comm, appParams, false));
 
     // Create initial guess
-    Teuchos::RefCountPtr<const Epetra_Vector> u = app->getInitialSolution();
+    Teuchos::RCP<const Epetra_Vector> u = app->getInitialSolution();
     NOX::Epetra::Vector nox_u(*u);
 
     // Create model evaluator
-    Teuchos::RefCountPtr<FEApp::ModelEvaluator> model = 
+    Teuchos::RCP<FEApp::ModelEvaluator> model = 
       Teuchos::rcp(new FEApp::ModelEvaluator(app));
 
     //app->getJacobianGraph()->Print(cout);
 
     // Create NOX interface
-    Teuchos::RefCountPtr<NOX::Epetra::ModelEvaluatorInterface> interface =
+    Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> interface =
       Teuchos::rcp(new NOX::Epetra::ModelEvaluatorInterface(model));
 
     // Set up NOX parameters
-    Teuchos::RefCountPtr<Teuchos::ParameterList> noxParams =
+    Teuchos::RCP<Teuchos::ParameterList> noxParams =
       Teuchos::rcp(&(appParams->sublist("NOX")),false);
 
     // Set the nonlinear solver method
@@ -153,27 +153,27 @@ int main(int argc, char *argv[]) {
     lsParams.set("Preconditioner", "Ifpack");
 
     // Create the Jacobian matrix
-    Teuchos::RefCountPtr<Epetra_Operator> A = model->create_W(); 
+    Teuchos::RCP<Epetra_Operator> A = model->create_W(); 
 
     // Create the linear system
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
-    Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
+    Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
+    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys = 
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
 							lsParams,
 							iReq, iJac, A, nox_u));
 
     // Create the Group
-    Teuchos::RefCountPtr<NOX::Epetra::Group> grp =
+    Teuchos::RCP<NOX::Epetra::Group> grp =
       Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, nox_u, linsys)); 
 
     // Create the Solver convergence test
-    Teuchos::RefCountPtr<NOX::StatusTest::NormF> wrms = 
+    Teuchos::RCP<NOX::StatusTest::NormF> wrms = 
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8, 
 					   NOX::StatusTest::NormF::Unscaled));
-    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(10));
-    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+    Teuchos::RCP<NOX::StatusTest::Combo> combo = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
     combo->addStatusTest(wrms);
     combo->addStatusTest(maxiters);

@@ -48,9 +48,9 @@
 #include "NOX_GlobalData.H"
 
 NOX::Solver::LineSearchBased::
-LineSearchBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
-		const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-		const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
+LineSearchBased(const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
+		const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+		const Teuchos::RCP<Teuchos::ParameterList>& p) :
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
   utilsPtr(globalDataPtr->getUtils()), 
   solnPtr(xGrp),		                       // pointer to xGrp
@@ -99,9 +99,9 @@ void NOX::Solver::LineSearchBased::init()
 }
 
 bool NOX::Solver::LineSearchBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) 
+reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+      const Teuchos::RCP<Teuchos::ParameterList>& p) 
 {
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   solnPtr = xGrp;
@@ -118,8 +118,8 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
 }
 
 bool NOX::Solver::LineSearchBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& t)
 {
   solnPtr = xGrp;
   testPtr = t;
@@ -128,7 +128,7 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
 }
 
 bool NOX::Solver::LineSearchBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp)
 {
   solnPtr = xGrp;
   init();

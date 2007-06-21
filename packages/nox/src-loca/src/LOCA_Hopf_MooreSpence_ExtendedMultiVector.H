@@ -85,13 +85,13 @@ namespace LOCA {
 	 * Generates a multivector with \em nColumns columns from \em cloneVec
 	 */
 	ExtendedMultiVector(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    const NOX::Abstract::Vector& cloneVec,
 		    int nColumns);
   
 	//! Constructor.  
 	ExtendedMultiVector(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    const NOX::Abstract::MultiVector& xVec,
 		    const NOX::Abstract::MultiVector& realEigenVec,
 		    const NOX::Abstract::MultiVector& imagEigenVec,
@@ -134,11 +134,11 @@ namespace LOCA {
 	 * \brief Create a new multi-vector of the same underlying type by
 	 * cloning "this", and return a pointer to the new vector.  
 	 */
-	virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+	virtual Teuchos::RCP<NOX::Abstract::MultiVector>
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
 	//! Creates a new multi-vector with \c numvecs columns
-	virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+	virtual Teuchos::RCP<NOX::Abstract::MultiVector>
 	clone(int numvecs) const;
 
 	/*! 
@@ -146,80 +146,80 @@ namespace LOCA {
 	 * whose columns are copies of the columns of \c *this given by 
 	 * \c index.
 	 */
-	virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+	virtual Teuchos::RCP<NOX::Abstract::MultiVector>
 	subCopy(const vector<int>& index) const;
 
 	/*! 
 	 * \brief Creates a new multi-vector with \c index.size() columns that 
 	 * shares the columns of \c *this given by \c index.
 	 */
-	virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector>
+	virtual Teuchos::RCP<NOX::Abstract::MultiVector>
 	subView(const vector<int>& index) const;
 
 	//! Returns the solution vector component of extended multivector
-	virtual Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> 
+	virtual Teuchos::RCP<const NOX::Abstract::MultiVector> 
 	getXMultiVec() const;
 
 	//! Returns the solution vector component of extended multivector
-	virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+	virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
 	getXMultiVec();
 
 	/*! 
 	 * \brief Returns the real part of the eigenvector component of 
 	 * extended multivector
 	 */
-	virtual Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> 
+	virtual Teuchos::RCP<const NOX::Abstract::MultiVector> 
 	getRealEigenMultiVec() const;
 
 	/*! 
 	 * \brief Returns the real part of the eigenvector component of 
 	 * extended multivector
 	 */
-	virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+	virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
 	getRealEigenMultiVec();
 
 	/*! 
 	 * \brief Returns the imaginary part of the eigenvector component of 
 	 * extended multivector
 	 */
-	virtual Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> 
+	virtual Teuchos::RCP<const NOX::Abstract::MultiVector> 
 	getImagEigenMultiVec() const;
 
 	/*! 
 	 * \brief Returns the imaginary part of the eigenvector component of 
 	 * extended multivector
 	 */
-	virtual Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+	virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
 	getImagEigenMultiVec();
 
 	//! Returns frequency component of extended multi vector
 	virtual 
-	Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>
+	Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>
 	getFrequencies() const;
 
 	//! Returns frequency component of extended multi vector
 	virtual 
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix>
+	Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix>
 	getFrequencies();
 
 	//! Returns bifurcation parameter component of extended multi vector
 	virtual 
-	Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>
+	Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>
 	getBifParams() const;
 
 	//! Returns bifurcation parameter component of extended multi vector
 	virtual 
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix>
+	Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix>
 	getBifParams();
 
 	//! Returns ith column as an extended vector
 	virtual 
-	Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::ExtendedVector>
+	Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedVector>
 	getColumn(int i);
 
 	//! Returns ith column as an extended vector
 	virtual 
-	Teuchos::RefCountPtr<const LOCA::Hopf::MooreSpence::ExtendedVector>
+	Teuchos::RCP<const LOCA::Hopf::MooreSpence::ExtendedVector>
 	getColumn(int i) const;
 
       protected:
@@ -229,7 +229,7 @@ namespace LOCA {
 	 * Creates an empty multivector with \em nColumns columns
 	 */
 	ExtendedMultiVector(
-		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		     const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		     int nColumns);
 
 	//! Generate a derived extended vector
@@ -237,7 +237,7 @@ namespace LOCA {
 	 * Returns a vector of type 
 	 * LOCA::Hopf::MooreSpence::ExtendedVector
 	 */
-	virtual Teuchos::RefCountPtr<LOCA::Extended::Vector>
+	virtual Teuchos::RCP<LOCA::Extended::Vector>
 	generateVector(int nVecs, int nScalarRows) const;
 
       }; // class ExtendedVector

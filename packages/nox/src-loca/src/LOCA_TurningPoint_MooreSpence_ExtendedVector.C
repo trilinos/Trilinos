@@ -43,7 +43,7 @@
 #include "LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.H"
 
 LOCA::TurningPoint::MooreSpence::ExtendedVector::ExtendedVector(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    const NOX::Abstract::Vector& xVec,
 		    const NOX::Abstract::Vector& nullVec,
 		    double bifParam) :
@@ -90,7 +90,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedVector::operator=(
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector>
+Teuchos::RCP<NOX::Abstract::Vector>
 LOCA::TurningPoint::MooreSpence::ExtendedVector::clone(
 						    NOX::CopyType type) const
 {
@@ -110,13 +110,13 @@ LOCA::TurningPoint::MooreSpence::ExtendedVector::setVec(
   setScalar(0, bifPar);
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+Teuchos::RCP<const NOX::Abstract::Vector>
 LOCA::TurningPoint::MooreSpence::ExtendedVector::getXVec() const
 {
   return getVector(0);
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+Teuchos::RCP<const NOX::Abstract::Vector>
 LOCA::TurningPoint::MooreSpence::ExtendedVector::getNullVec() const
 {
   return getVector(1);
@@ -128,13 +128,13 @@ LOCA::TurningPoint::MooreSpence::ExtendedVector::getBifParam() const
   return getScalar(0);
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector>
+Teuchos::RCP<NOX::Abstract::Vector>
 LOCA::TurningPoint::MooreSpence::ExtendedVector::getXVec()
 {
   return getVector(0);
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector>
+Teuchos::RCP<NOX::Abstract::Vector>
 LOCA::TurningPoint::MooreSpence::ExtendedVector::getNullVec()
 {
   return getVector(1);
@@ -147,12 +147,12 @@ LOCA::TurningPoint::MooreSpence::ExtendedVector::getBifParam()
 }
 
 LOCA::TurningPoint::MooreSpence::ExtendedVector::ExtendedVector(
-		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) :
+		  const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   LOCA::Extended::Vector(global_data,2,1)
 {
 }
 
-Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
+Teuchos::RCP<LOCA::Extended::MultiVector>
 LOCA::TurningPoint::MooreSpence::ExtendedVector::generateMultiVector(
 							int nColumns, 
 							int nVectorRows, 

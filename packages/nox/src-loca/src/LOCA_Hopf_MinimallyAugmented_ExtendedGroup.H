@@ -42,7 +42,7 @@
 #ifndef LOCA_HOPF_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
 #define LOCA_HOPF_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_Extended_MultiAbstractGroup.H"           // base class
 #include "LOCA_MultiContinuation_AbstractGroup.H"       // base class
@@ -179,22 +179,22 @@ namespace LOCA {
        *           are relevant:
        *           <ul>
        *           <li> "Initial Real A Vector"  -- 
-       *                [Teuchos::RefCountPtr<NOX::Abstract::Vector>] 
+       *                [Teuchos::RCP<NOX::Abstract::Vector>] 
        *                (Must be supplied) - 
        *                 Vector storing initial value for the real component
        *                 of the \f$a\f$ vector
        *           <li> "Initial Imaginary A Vector"  -- 
-       *                [Teuchos::RefCountPtr<NOX::Abstract::Vector>] 
+       *                [Teuchos::RCP<NOX::Abstract::Vector>] 
        *                (Must be supplied) - 
        *                 Vector storing initial value for the imaginary 
        *                 component of the \f$a\f$ vector
        *           <li> "Initial Real B Vector"  -- 
-       *                 [Teuchos::RefCountPtr<NOX::Abstract::Vector>] 
+       *                 [Teuchos::RCP<NOX::Abstract::Vector>] 
        *                 (Must be supplied for nonsymmetric Jacobians) - 
        *                 Vector storing initial value for the real component
        *                 of the \f$b\f$ vector
        *           <li> "Initial Imaginary B Vector"  -- 
-       *                [Teuchos::RefCountPtr<NOX::Abstract::Vector>] 
+       *                [Teuchos::RCP<NOX::Abstract::Vector>] 
        *                (Must be supplied) - 
        *                 Vector storing initial value for the imaginary 
        *                 component of the \f$b\f$ vector
@@ -229,10 +229,10 @@ namespace LOCA {
 	 * \param grp [in] Group representing \f$f\f$.
 	 */
       ExtendedGroup(
-       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& hpfParams,
-       const Teuchos::RefCountPtr<LOCA::Hopf::MinimallyAugmented::AbstractGroup>& grp);
+       const Teuchos::RCP<LOCA::GlobalData>& global_data,
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& hpfParams,
+       const Teuchos::RCP<LOCA::Hopf::MinimallyAugmented::AbstractGroup>& grp);
 
 	//! Copy constructor
 	ExtendedGroup(const ExtendedGroup& source, 
@@ -254,7 +254,7 @@ namespace LOCA {
 	operator=(const NOX::Abstract::Group& source);
 
 	//! Clone function
-	virtual Teuchos::RefCountPtr<NOX::Abstract::Group>
+	virtual Teuchos::RCP<NOX::Abstract::Group>
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
 	//! Set the solution vector to y.
@@ -355,12 +355,12 @@ namespace LOCA {
 	
 	//! Return underlying group
 	virtual 
-	Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
+	Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
 	getUnderlyingGroup() const;
       
 	//! Return underlying group
 	virtual 
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+	Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 	getUnderlyingGroup();
 	
 	//@}
@@ -461,7 +461,7 @@ namespace LOCA {
 	virtual int getBorderedWidth() const;
 	
 	//! Get bottom-level unbordered group
-	virtual Teuchos::RefCountPtr<const NOX::Abstract::Group>
+	virtual Teuchos::RCP<const NOX::Abstract::Group>
 	getUnborderedGroup() const;
 
 	//! Indicates whether combined A block is zero
@@ -527,10 +527,10 @@ namespace LOCA {
 
 	//! Computes initial "a" and "b" vectors
 	void getInitialVectors(
-		    Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr_real,
-		    Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr_imag,
-		    Teuchos::RefCountPtr<NOX::Abstract::Vector>& bVecPtr_real,
-		    Teuchos::RefCountPtr<NOX::Abstract::Vector>& bVecPtr_imag,
+		    Teuchos::RCP<NOX::Abstract::Vector>& aVecPtr_real,
+		    Teuchos::RCP<NOX::Abstract::Vector>& aVecPtr_imag,
+		    Teuchos::RCP<NOX::Abstract::Vector>& bVecPtr_real,
+		    Teuchos::RCP<NOX::Abstract::Vector>& bVecPtr_imag,
 		    bool isSymmetric);
 
       private:
@@ -541,22 +541,22 @@ namespace LOCA {
       protected:
 
 	//! Pointer LOCA global data object
-	Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+	Teuchos::RCP<LOCA::GlobalData> globalData;
 
 	//! Parsed top-level parameters
-	Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
+	Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams;
 
 	//! Hopf parameter list
-	Teuchos::RefCountPtr<Teuchos::ParameterList> hopfParams;
+	Teuchos::RCP<Teuchos::ParameterList> hopfParams;
 
 	//! Pointer to base group that defines \f$F\f$
-	Teuchos::RefCountPtr<LOCA::Hopf::MinimallyAugmented::AbstractGroup> grpPtr;
+	Teuchos::RCP<LOCA::Hopf::MinimallyAugmented::AbstractGroup> grpPtr;
 
 	//! Pointer to base group as a bordered group
-	Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractGroup> bordered_grp;
+	Teuchos::RCP<LOCA::BorderedSystem::AbstractGroup> bordered_grp;
 
 	//! Pointer to constraint object
-	Teuchos::RefCountPtr<LOCA::Hopf::MinimallyAugmented::Constraint> constraintsPtr;
+	Teuchos::RCP<LOCA::Hopf::MinimallyAugmented::Constraint> constraintsPtr;
 
 	//! Stores the extended solution vector
 	LOCA::MultiContinuation::ExtendedMultiVector xMultiVec;
@@ -571,31 +571,31 @@ namespace LOCA {
 	LOCA::MultiContinuation::ExtendedMultiVector gradientMultiVec;
 
 	//! Stores view of first column of xMultiVec
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> xVec;
+	Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> xVec;
 
 	//! Stores view of first column of fMultiVec
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> fVec;
+	Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> fVec;
       
 	//! Stores view of first column of fMultiVec as a multivec
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> ffMultiVec;
+	Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> ffMultiVec;
 
 	//! Stores view of df/dp columns of fMultiVec
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> dfdpMultiVec;
+	Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> dfdpMultiVec;
 
 	//! Stores view of f and first column of df/dp
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> fBifMultiVec;
+	Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> fBifMultiVec;
 
 	//! Stores view of first column of newtonMultiVec
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> newtonVec;
+	Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> newtonVec;
 
 	//! Stores view of first column of gradientMultiVec
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> gradientVec;
+	Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> gradientVec;
 
 	// Stores operator for bordered solver
-	Teuchos::RefCountPtr<LOCA::BorderedSolver::JacobianOperator> jacOp;
+	Teuchos::RCP<LOCA::BorderedSolver::JacobianOperator> jacOp;
 
 	//! Stores bordered solver strategy
-	Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
+	Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
 
 	//! Stores indices for getting f part of fMultiVec
 	vector<int> index_f;

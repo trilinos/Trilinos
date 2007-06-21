@@ -45,7 +45,7 @@
 #include "NOX_Abstract_Group.H"
 
 NOX::MeritFunction::SumOfSquares::
-SumOfSquares(const Teuchos::RefCountPtr<NOX::Utils>& u) :
+SumOfSquares(const Teuchos::RCP<NOX::Utils>& u) :
   meritFunctionName("Sum Of Squares (default): 0.5 * ||F|| * ||F||")
 {
   utils = u;

@@ -50,9 +50,9 @@
 #include "Teuchos_ParameterList.hpp"
 
 LOCA::MultiPredictor::Tangent::Tangent(
-	      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams,
-	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams) :
+	      const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	      const Teuchos::RCP<Teuchos::ParameterList>& predParams,
+	      const Teuchos::RCP<Teuchos::ParameterList>& solverParams) :
   globalData(global_data),
   linSolverParams(solverParams),
   fdfdp(),
@@ -109,7 +109,7 @@ LOCA::MultiPredictor::Tangent::operator=(
   return *this;
 }
 
-Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
 LOCA::MultiPredictor::Tangent::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new Tangent(*this, type));
@@ -133,7 +133,7 @@ LOCA::MultiPredictor::Tangent::compute(
   int numParams = stepSize.size();
 
   // Get underlying group
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> underlyingGroup 
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> underlyingGroup 
     = grp.getUnderlyingGroup();
 
   if (!initialized) {
@@ -152,9 +152,9 @@ LOCA::MultiPredictor::Tangent::compute(
   }
 
   // Get references to x, parameter components of predictor
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tanX = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> tanX = 
     tangent->getXMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> tanP = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> tanP = 
     tangent->getScalars();
 
   // Get continuation parameter IDs
@@ -167,7 +167,7 @@ LOCA::MultiPredictor::Tangent::compute(
   vector<int> index_dfdp(conParamIDs.size());
   for (unsigned int i=0; i<conParamIDs.size(); i++)
     index_dfdp[i] = i+1;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector>dfdp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector>dfdp = 
     fdfdp->subView(index_dfdp);
 
   // Scale dfdp by -1.0

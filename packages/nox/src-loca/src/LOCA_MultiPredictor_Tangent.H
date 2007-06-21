@@ -76,9 +76,9 @@ namespace LOCA {
        * \param solverParams [in] Linear solver parameters used in linear
        * solve to compute tangent vectors \f$v\f$.
        */
-      Tangent(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams,
-	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
+      Tangent(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	      const Teuchos::RCP<Teuchos::ParameterList>& predParams,
+	      const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
       //! Destructor
       virtual ~Tangent();
@@ -91,7 +91,7 @@ namespace LOCA {
       operator=(const LOCA::MultiPredictor::AbstractStrategy& source);
 
       //! Clone function
-      virtual Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+      virtual Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       /*! 
@@ -133,19 +133,19 @@ namespace LOCA {
     protected:
 
       //! LOCA global data object
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Stores linear solver parameters
-      Teuchos::RefCountPtr<Teuchos::ParameterList> linSolverParams;
+      Teuchos::RCP<Teuchos::ParameterList> linSolverParams;
 
       //! Stores derivative of residual w.r.t. parameters
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> fdfdp;
+      Teuchos::RCP<NOX::Abstract::MultiVector> fdfdp;
 
       //! Stores tangent vector
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> tangent;
+      Teuchos::RCP<LOCA::MultiContinuation::ExtendedMultiVector> tangent;
 
       //! Stores secant vector for setting orientation
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> secant;
+      Teuchos::RCP<LOCA::MultiContinuation::ExtendedVector> secant;
 
       //! Flag indicating whether vectors have been initialized
       bool initialized;

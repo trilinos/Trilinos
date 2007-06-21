@@ -77,9 +77,9 @@ namespace LOCA {
 
 	//! Constructor
 	LeftPreconditioning(
-	    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linsys);
+	    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	    const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+	    const Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys);
 
 	//! Destructor
 	virtual ~LeftPreconditioning();
@@ -125,34 +125,34 @@ namespace LOCA {
 				      Teuchos::ParameterList& p);
 
 	//! Get Jacobian-transpose operator
-	virtual Teuchos::RefCountPtr<Epetra_Operator> 
+	virtual Teuchos::RCP<Epetra_Operator> 
 	getJacobianTransposeOperator();
 
 	//! Get transpose-preconditioner
-	virtual Teuchos::RefCountPtr<Epetra_Operator> 
+	virtual Teuchos::RCP<Epetra_Operator> 
 	getTransposePreconditioner();
 
 	//! Set Jacobian-transpose operator
 	virtual void setJacobianTransposeOperator(
-	       const Teuchos::RefCountPtr<Epetra_Operator>& new_jac_trans);
+	       const Teuchos::RCP<Epetra_Operator>& new_jac_trans);
 
 	//! Set transpose-preconditioner
 	virtual void setTransposePreconditioner(
-	      const Teuchos::RefCountPtr<Epetra_Operator>& new_prec_trans);
+	      const Teuchos::RCP<Epetra_Operator>& new_prec_trans);
 
       protected:
 
 	//! Global data object
-	Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+	Teuchos::RCP<LOCA::GlobalData> globalData;
 
 	//! Linear system solver
-	Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> linsys;
+	Teuchos::RCP<NOX::Epetra::LinearSystem> linsys;
 
 	//! Jacobian operator
-	Teuchos::RefCountPtr<Epetra_Operator> jac;
+	Teuchos::RCP<Epetra_Operator> jac;
 
 	//! Preconditioner
-	Teuchos::RefCountPtr<Epetra_Operator> prec;
+	Teuchos::RCP<Epetra_Operator> prec;
 
       }; // class TransposePreconditioner
 

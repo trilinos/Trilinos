@@ -114,11 +114,11 @@ namespace LOCA {
 	  class the information needed to construct the space-time system. 
 	*/
 	MultiPoint(
-             const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> &iReq,
-             const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> &iJac,
+             const Teuchos::RCP<LOCA::Epetra::Interface::Required> &iReq,
+             const Teuchos::RCP<NOX::Epetra::Interface::Jacobian> &iJac,
 	     const Epetra_MultiVector &splitMultiVec,
-	     const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitJac,
-	     const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> &globalComm);
+	     const Teuchos::RCP<Epetra_RowMatrix> &splitJac,
+	     const Teuchos::RCP<EpetraExt::MultiMpiComm> &globalComm);
 	
 	//! Destructor
 	virtual ~MultiPoint();
@@ -160,14 +160,14 @@ namespace LOCA {
       private:
 	
 	//! Pointer to interface for usual time-dependent problem
-	Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq;
-	Teuchos::RefCountPtr< NOX::Epetra::Interface::Jacobian> iJac;
+	Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq;
+	Teuchos::RCP< NOX::Epetra::Interface::Jacobian> iJac;
 	
 	//! Pointer to split (spatial) Jacobian matrix.
-	Teuchos::RefCountPtr<Epetra_RowMatrix> splitJac;
+	Teuchos::RCP<Epetra_RowMatrix> splitJac;
 	
 	//! Pointer to the global (full XYZT) communicator.
-	Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm;
+	Teuchos::RCP<EpetraExt::MultiMpiComm> globalComm;
 	
 	//! Split (spatial) input vector.
 	Epetra_Vector splitVec;

@@ -48,7 +48,7 @@
 
 LOCA::BorderedSolver::UpperTriangularBlockElimination::
 UpperTriangularBlockElimination(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
@@ -126,7 +126,7 @@ solve(Teuchos::ParameterList& params,
 							     callingFunction);
   }
   else {
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> RHS;
+    Teuchos::RCP<NOX::Abstract::MultiVector> RHS;
 
     if (isZeroF) {
       RHS = A->clone(Y.numCols());
@@ -215,7 +215,7 @@ solveTranspose(Teuchos::ParameterList& params,
 							     callingFunction);
   }
   else {
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> RHS;
+    Teuchos::RCP<NOX::Abstract::MultiVector> RHS;
 
     if (isZeroF) {
       RHS = A->clone(Y.numCols());

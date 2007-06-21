@@ -71,21 +71,21 @@ int main(int argc, char *argv[])
   if (verbose)
     outputInfo += NOX::Utils::Debug;
   int printProc = 0;
-  Teuchos::RefCountPtr<std::ostream> outputstream = 
+  Teuchos::RCP<std::ostream> outputstream = 
     Teuchos::rcp(&(std::cout), false);
-  Teuchos::RefCountPtr<std::ostream> errorstream = 
+  Teuchos::RCP<std::ostream> errorstream = 
     Teuchos::rcp(&(std::cerr), false);
-  Teuchos::RefCountPtr<NOX::Utils> u = 
+  Teuchos::RCP<NOX::Utils> u = 
     Teuchos::rcp(new NOX::Utils(outputInfo, myPID, printProc, 6, outputstream, 
 				errorstream));
 
   // Let's share a merit function between status tests
-  Teuchos::RefCountPtr<NOX::MeritFunction::Generic> mf = 
+  Teuchos::RCP<NOX::MeritFunction::Generic> mf = 
     Teuchos::rcp(new NOX::MeritFunction::SumOfSquares(u));
-  Teuchos::RefCountPtr<NOX::StatusTest::Generic> test1 = 
+  Teuchos::RCP<NOX::StatusTest::Generic> test1 = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND, 
 					    u.get()));
-  Teuchos::RefCountPtr<NOX::StatusTest::Generic> test2 = 
+  Teuchos::RCP<NOX::StatusTest::Generic> test2 = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND, 
 					    u.get()));
   
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
   u->out(NOX::Utils::Debug) << "Testing isOwner() via const get()...";
 
   sharedObject.getObject(test2.get());  // change ownership to test 2
-  Teuchos::RefCountPtr<const NOX::MeritFunction::Generic> tmpPtr = 
+  Teuchos::RCP<const NOX::MeritFunction::Generic> tmpPtr = 
     sharedObject.getObject();
 
   if ( !(sharedObject.isOwner(test2.get())) )

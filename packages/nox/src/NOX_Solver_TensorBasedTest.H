@@ -129,19 +129,19 @@ class TensorBasedTest : public Generic {
 public:
 
   //! %TensorBasedTest-method constructor. 
-  TensorBasedTest(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
-		  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests,
-		  const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
+  TensorBasedTest(const Teuchos::RCP<NOX::Abstract::Group>& grp,
+		  const Teuchos::RCP<NOX::StatusTest::Generic>& tests,
+		  const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   //! Destructor
   virtual ~TensorBasedTest();
 
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
-		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests,
-		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
-		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
-  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp,
+		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests,
+		     const Teuchos::RCP<Teuchos::ParameterList>& params);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp,
+		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
@@ -164,28 +164,28 @@ protected:
 protected:
   
   //! Pointer to the global data object.
-  Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
+  Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Utils
-  Teuchos::RefCountPtr<NOX::Utils> utilsPtr;
+  Teuchos::RCP<NOX::Utils> utilsPtr;
   
   //! Current solution.
-  Teuchos::RefCountPtr<NOX::Abstract::Group> solnptr;		
+  Teuchos::RCP<NOX::Abstract::Group> solnptr;		
 
   //! Previous solution pointer. 
-  Teuchos::RefCountPtr<NOX::Abstract::Group> oldsolnptr;
+  Teuchos::RCP<NOX::Abstract::Group> oldsolnptr;
 
   //! Current search direction.pointer.
-  Teuchos::RefCountPtr<NOX::Abstract::Vector> dirptr;
+  Teuchos::RCP<NOX::Abstract::Vector> dirptr;
 
   //! Stopping test.
-  Teuchos::RefCountPtr<NOX::StatusTest::Generic> testptr;		
+  Teuchos::RCP<NOX::StatusTest::Generic> testptr;		
 
   //! Type of check to use for status tests.  See NOX::StatusTest for more details.
   NOX::StatusTest::CheckType checkType;
 
   //! Input parameters.
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramsPtr;	
+  Teuchos::RCP<Teuchos::ParameterList> paramsPtr;	
 
   //! Linesearch
   NOX::LineSearch::Tensor lineSearch;

@@ -42,7 +42,7 @@
 #ifndef LOCA_MULTICONTINUATION_CONSTRAINTINTERFACE_H
 #define LOCA_MULTICONTINUATION_CONSTRAINTINTERFACE_H
 
-#include "Teuchos_RefCountPtr.hpp"           // for RefCountPtr
+#include "Teuchos_RCP.hpp"           // for RCP
 
 #include "NOX_Abstract_Group.H"              // for CopyType, ReturnType
 #include "NOX_Abstract_MultiVector.H"        // for MultiVector, DenseMatrix
@@ -98,7 +98,7 @@ namespace LOCA {
 
       //! Cloning function
       virtual 
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+      Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
       clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
 
       //! Return number of constraints

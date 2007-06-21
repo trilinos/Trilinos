@@ -42,7 +42,7 @@
 #ifndef LOCA_FACTORY_H
 #define LOCA_FACTORY_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "NOX_Abstract_Group.H"
 
@@ -100,7 +100,7 @@ namespace LOCA {
      * \param global_data [in] Global data object.  The constructor sets the
      * factory member of the global data to this.
      */
-    Factory(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+    Factory(const Teuchos::RCP<LOCA::GlobalData>& global_data);
     
     //! Constructor with user-supplied factory
     /*!
@@ -109,8 +109,8 @@ namespace LOCA {
      * \param userFactory [in] A user-supplied factory for instantiating
      * user-defined strategies.
      */
-    Factory(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory);
+    Factory(const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	    const Teuchos::RCP<LOCA::Abstract::Factory>& userFactory);
 
     //! Destructor
     virtual ~Factory();
@@ -126,10 +126,10 @@ namespace LOCA {
      * "Method" parameter of the "Predictor" sublist.  See 
      * LOCA::MultiPredictor::Factory for a description of available strategies.
      */
-    Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
+    Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>
     createPredictorStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& predictorParams);
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& predictorParams);
 
     //! Create continuation strategy
     /*!
@@ -138,12 +138,12 @@ namespace LOCA {
      * LOCA::MultiContinuation::Factory for a description of available 
      * strategies.
      */
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy>
     createContinuationStrategy(
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepperParams,
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
-      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& stepperParams,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs);
 
     //! Create bifurcation strategy
@@ -153,11 +153,11 @@ namespace LOCA {
      * LOCA::Bifurcation::Factory for a description of available 
      * strategies.
      */
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
     createBifurcationStrategy(
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& bifurcationParams,
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp);
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& bifurcationParams,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp);
 
     //! Create step size control strategy
     /*!
@@ -165,10 +165,10 @@ namespace LOCA {
      * "Method" parameter of the "Step Size" sublist.  See 
      * LOCA::StepSize::Factory for a description of available strategies.
      */
-    Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy>
+    Teuchos::RCP<LOCA::StepSize::AbstractStrategy>
     createStepSizeStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepsizeParams);
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams);
 
     //! Create bordered system solver strategy
     /*!
@@ -177,10 +177,10 @@ namespace LOCA {
      * of the "Linear Solver" sublist.  See LOCA::BorderedSolver::Factory for 
      * a description of available strategies.
      */
-    Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>
+    Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>
     createBorderedSolverStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
     //! Create eigensolver strategy
     /*!
@@ -188,10 +188,10 @@ namespace LOCA {
      * of the "Eigensolver" sublist.  See LOCA::Eigensolver::Factory for a 
      * description of available strategies.
      */
-    Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
+    Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy>
     createEigensolverStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
 
     //! Create eigenvalue sort strategy
     /*!
@@ -199,10 +199,10 @@ namespace LOCA {
      * "Sorting Method" parameter of the "Eigensolver" sublist.  See 
      * LOCA::EigenvalueSort::Factory for a description of available strategies.
      */
-    Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>
+    Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy>
     createEigenvalueSortStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
 
     //! Create strategy to save eigenvector/value data
     /*!
@@ -211,10 +211,10 @@ namespace LOCA {
      * See LOCA::SaveEigenData::Factory for a description of available 
      * strategies.
      */
-    Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy>
+    Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy>
     createSaveEigenDataStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
 
     //! Create Anasazi operator strategy
     /*!
@@ -223,12 +223,12 @@ namespace LOCA {
      * LOCA::AnasaziOperator::Factory for a description of available 
      * strategies.
      */
-    Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>
+    Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy>
     createAnasaziOperatorStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-	 const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+	 const Teuchos::RCP<NOX::Abstract::Group>& grp);
 
     //! Create Moore-Spence turning point solver strategy
     /*!
@@ -237,10 +237,10 @@ namespace LOCA {
      * LOCA::TurningPoint::MooreSpence::SolverFactory for a description of 
      * available strategies.
      */
-    Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>
+    Teuchos::RCP<LOCA::TurningPoint::MooreSpence::SolverStrategy>
     createMooreSpenceTurningPointSolverStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
     //! Create Moore-Spence pitchfork solver strategy
     /*!
@@ -249,10 +249,10 @@ namespace LOCA {
      * LOCA::Pitchfork::MooreSpence::SolverFactory for a description of 
      * available strategies.
      */
-    Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy>
+    Teuchos::RCP<LOCA::Pitchfork::MooreSpence::SolverStrategy>
     createMooreSpencePitchforkSolverStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
     //! Create Moore-Spence Hopf solver strategy
     /*!
@@ -261,10 +261,10 @@ namespace LOCA {
      * LOCA::Hopf::MooreSpence::SolverFactory for a description of 
      * available strategies.
      */
-    Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::SolverStrategy>
+    Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy>
     createMooreSpenceHopfSolverStrategy(
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
     //@}
 
@@ -279,10 +279,10 @@ namespace LOCA {
   protected:
 
     //! Global data
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+    Teuchos::RCP<LOCA::GlobalData> globalData;
 
     //! User provided factory
-    Teuchos::RefCountPtr<LOCA::Abstract::Factory> factory;
+    Teuchos::RCP<LOCA::Abstract::Factory> factory;
 
     //! Flag indicating whether we have a factory or not
     bool haveFactory;

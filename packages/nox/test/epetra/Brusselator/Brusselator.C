@@ -494,12 +494,12 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   return true;
 }
 
-Teuchos::RefCountPtr<Epetra_Vector> Brusselator::getSolution()
+Teuchos::RCP<Epetra_Vector> Brusselator::getSolution()
 {
   return initialSolution;
 }
   
-Teuchos::RefCountPtr<Epetra_CrsMatrix> Brusselator::getJacobian()
+Teuchos::RCP<Epetra_CrsMatrix> Brusselator::getJacobian()
 {
   if( Teuchos::is_null(A) ) return A;
   else {
@@ -509,7 +509,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix> Brusselator::getJacobian()
   }
 }
 
-Teuchos::RefCountPtr<Epetra_Vector> Brusselator::getMesh()
+Teuchos::RCP<Epetra_Vector> Brusselator::getMesh()
 { 
   return xptr;
 }
@@ -524,7 +524,7 @@ double Brusselator::getdt()
   return dt;
 }
 
-Teuchos::RefCountPtr<Epetra_CrsGraph> Brusselator::getGraph()
+Teuchos::RCP<Epetra_CrsGraph> Brusselator::getGraph()
 {
   return AA;
 }

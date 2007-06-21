@@ -46,8 +46,8 @@
 #include "LOCA_Epetra_IdentityOp.H"
 
 LOCA::Epetra::IdentityOp::IdentityOp(
-			 const Teuchos::RefCountPtr<const Epetra_Comm>& comm_,
-			 const Teuchos::RefCountPtr<const Epetra_Map>& map_) :
+			 const Teuchos::RCP<const Epetra_Comm>& comm_,
+			 const Teuchos::RCP<const Epetra_Map>& map_) :
   label("LOCA::Epetra::IdentityOp"),
   comm(comm_),
   map(map_),

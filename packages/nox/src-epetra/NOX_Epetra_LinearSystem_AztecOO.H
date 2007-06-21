@@ -49,7 +49,7 @@
 #include "Epetra_Map.h" // This appears to be needed to precede the ml include
 #include "ml_epetra_preconditioner.h"
 #endif
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 // Forward declares
@@ -332,9 +332,9 @@ public:
   LinearSystemAztecOO(
     Teuchos::ParameterList& printingParams, 
     Teuchos::ParameterList& linearSolverParams,
-    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+    const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
     const NOX::Epetra::Vector& cloneVector,
-    const Teuchos::RefCountPtr<NOX::Epetra::Scaling> scalingObject = 
+    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject = 
     Teuchos::null);
 
   //! Constructor with a user supplied Jacobian Operator only.  
@@ -346,11 +346,11 @@ public:
   LinearSystemAztecOO(
     Teuchos::ParameterList& printingParams, 
     Teuchos::ParameterList& linearSolverParams, 
-    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
-    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian>& iJac, 
-    const Teuchos::RefCountPtr<Epetra_Operator>& J,
+    const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
+    const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
+    const Teuchos::RCP<Epetra_Operator>& J,
     const NOX::Epetra::Vector& cloneVector,
-    const Teuchos::RefCountPtr<NOX::Epetra::Scaling> scalingObject = 
+    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject = 
     Teuchos::null);
 
   //! Constructor with a user supplied Preconditioner Operator only.  
@@ -362,11 +362,11 @@ public:
   LinearSystemAztecOO(
     Teuchos::ParameterList& printingParams, 
     Teuchos::ParameterList& linearSolverParams, 
-    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
-    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner>& iPrec,
-    const Teuchos::RefCountPtr<Epetra_Operator>& M,
+    const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
+    const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec,
+    const Teuchos::RCP<Epetra_Operator>& M,
     const NOX::Epetra::Vector& cloneVector,
-    const Teuchos::RefCountPtr<NOX::Epetra::Scaling> scalingObject = 
+    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject = 
     Teuchos::null);
   
   //! Constructor with user supplied separate objects for the
@@ -375,12 +375,12 @@ public:
   LinearSystemAztecOO(
     Teuchos::ParameterList& printingParams, 
     Teuchos::ParameterList& linearSolverParams, 
-    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian>& iJac, 
-    const Teuchos::RefCountPtr<Epetra_Operator>& J,  
-    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner>& iPrec, 
-    const Teuchos::RefCountPtr<Epetra_Operator>& M,
+    const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
+    const Teuchos::RCP<Epetra_Operator>& J,  
+    const Teuchos::RCP<NOX::Epetra::Interface::Preconditioner>& iPrec, 
+    const Teuchos::RCP<Epetra_Operator>& M,
     const NOX::Epetra::Vector& cloneVector,
-    const Teuchos::RefCountPtr<NOX::Epetra::Scaling> scalingObject = 
+    const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject = 
     Teuchos::null);
 
   //! Destructor.
@@ -430,20 +430,20 @@ public:
   virtual void reset(Teuchos::ParameterList& linearSolverParams);
 
   //! Get the scaling object.
-  virtual Teuchos::RefCountPtr<NOX::Epetra::Scaling> getScaling();
+  virtual Teuchos::RCP<NOX::Epetra::Scaling> getScaling();
 
   //! Sets the diagonal scaling vector(s) used in scaling the linear system.  See NOX::Epetra::Scaling for details on how to specify scaling of the linear system.  
-  void resetScaling(const Teuchos::RefCountPtr<NOX::Epetra::Scaling>& s);
+  void resetScaling(const Teuchos::RCP<NOX::Epetra::Scaling>& s);
 
   //! Compute the Jacobian 
   virtual bool computeJacobian(const NOX::Epetra::Vector& x);
 
   //! NOX::Interface::Jacobian accessor
-  virtual Teuchos::RefCountPtr<const NOX::Epetra::Interface::Jacobian> 
+  virtual Teuchos::RCP<const NOX::Epetra::Interface::Jacobian> 
   getJacobianInterface() const;
 
   //! NOX::Interface::Preconditioiner accessor
-  virtual Teuchos::RefCountPtr<const NOX::Epetra::Interface::Preconditioner> 
+  virtual Teuchos::RCP<const NOX::Epetra::Interface::Preconditioner> 
   getPrecInterface() const;
 
   //! Indicates whether a preconditioner has been constructed
@@ -453,23 +453,23 @@ public:
   virtual bool hasPreconditioner() const;
 
   //! Jacobian Epetra_Operator accessor
-  virtual Teuchos::RefCountPtr<const Epetra_Operator> getJacobianOperator() const;
+  virtual Teuchos::RCP<const Epetra_Operator> getJacobianOperator() const;
 
   //! Jacobian Epetra_Operator accessor
-  virtual Teuchos::RefCountPtr<Epetra_Operator> getJacobianOperator();
+  virtual Teuchos::RCP<Epetra_Operator> getJacobianOperator();
 
   //! Preconditioner Epetra_Operator accessor (only the base matrix if using an internal preconditioner - aztecoo or ifpack). 
-  virtual Teuchos::RefCountPtr<const Epetra_Operator> getPrecOperator() const;
+  virtual Teuchos::RCP<const Epetra_Operator> getPrecOperator() const;
 
   //! Return preconditioner operator generated and stored in AztecOO
   /*!
    * Note:  This should only be called if hasPreconditioner() returns true.
    */
-  virtual Teuchos::RefCountPtr<const Epetra_Operator> 
+  virtual Teuchos::RCP<const Epetra_Operator> 
   getGeneratedPrecOperator() const;
 
   //! Return preconditioner operator generated and stored in AztecOO
-  virtual Teuchos::RefCountPtr<Epetra_Operator> getGeneratedPrecOperator();
+  virtual Teuchos::RCP<Epetra_Operator> getGeneratedPrecOperator();
 
   //virtual void getNormLastLinearSolveResidual(double & residual) const;
 
@@ -480,13 +480,13 @@ public:
   double getTimeApplyJacobianInverse() const;
 
   //! Set Jacobian operator for solve
-  virtual void setJacobianOperatorForSolve(const Teuchos::RefCountPtr<const Epetra_Operator>& solveJacOp);
+  virtual void setJacobianOperatorForSolve(const Teuchos::RCP<const Epetra_Operator>& solveJacOp);
 
   //! Set preconditioner operator for solve
   /*!
    * Note:  This should only be called if hasPreconditioner() returns true.
    */
-  virtual void setPrecOperatorForSolve(const Teuchos::RefCountPtr<const Epetra_Operator>& solvePrecOp);
+  virtual void setPrecOperatorForSolve(const Teuchos::RCP<const Epetra_Operator>& solvePrecOp);
 
 protected:
 
@@ -498,14 +498,14 @@ protected:
   virtual bool createJacobianOperator(
        Teuchos::ParameterList& printParams,
        Teuchos::ParameterList& lsParams,
-       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+       const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
        const NOX::Epetra::Vector& cloneVector); 
 
   //! Creates an internally owned Epetra_Operator for the Preconditioner. 
   virtual bool createPrecOperator(
        Teuchos::ParameterList& printParams,
        Teuchos::ParameterList& lsParams,
-       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
+       const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
        const NOX::Epetra::Vector& cloneVector); 
 
   //! Checks to make sure that the supplied operators are valid for the requested preconditioning options set in the parameter list. 
@@ -572,22 +572,22 @@ protected:
   NOX::Utils utils;
 
   //! Reference to the user supplied Jacobian interface functions
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInterfacePtr;
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> jacInterfacePtr;
 
   //! Type of operator for the Jacobian.
   OperatorType jacType;
   
   //! Pointer to the Jacobian operator.
-  mutable Teuchos::RefCountPtr<Epetra_Operator> jacPtr;
+  mutable Teuchos::RCP<Epetra_Operator> jacPtr;
 
   //! Reference to the user supplied preconditioner interface functions
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> precInterfacePtr;
+  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> precInterfacePtr;
 
   //! Type of operator for the preconditioner. 
   OperatorType precType;
 
   //! Pointer to the preconditioner operator.
-  mutable Teuchos::RefCountPtr<Epetra_Operator> precPtr;
+  mutable Teuchos::RCP<Epetra_Operator> precPtr;
 
   //! Source of the RowMatrix if using an AztecOO native preconditioner 
   enum PreconditionerMatrixSourceType {UseJacobian, 
@@ -598,39 +598,39 @@ protected:
   PreconditionerType precAlgorithm;
   
   //! Aztec solver object.
-  mutable Teuchos::RefCountPtr<AztecOO> aztecSolverPtr;
+  mutable Teuchos::RCP<AztecOO> aztecSolverPtr;
 
   /*! 
     \brief Stores the ifpack graph. 
     Mutable since the applyRightPreconditioner() is a const method.
   */
-  mutable Teuchos::RefCountPtr<Ifpack_IlukGraph> ifpackGraphPtr;
+  mutable Teuchos::RCP<Ifpack_IlukGraph> ifpackGraphPtr;
 
   /*! \brief Stores the ifpack preconditioner.
     Mutable since the applyRightPreconditioner() is a const method.
   */
-  mutable Teuchos::RefCountPtr<Ifpack_CrsRiluk> 
+  mutable Teuchos::RCP<Ifpack_CrsRiluk> 
   ifpackPreconditionerPtr;
 
   /*! \brief Stores the new ifpack preconditioner.
     Mutable since the applyRightPreconditioner() is a const method.
   */
-  mutable Teuchos::RefCountPtr<Ifpack_Preconditioner> 
+  mutable Teuchos::RCP<Ifpack_Preconditioner> 
   newIfpackPreconditionerPtr;
 
 #ifdef HAVE_NOX_ML_EPETRA
   /*! \brief Stores the ml preconditioner.
     Mutable since the applyRightPreconditioner() is a const method.
   */
-  mutable Teuchos::RefCountPtr<ML_Epetra::MultiLevelPreconditioner> 
+  mutable Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> 
   MLPreconditionerPtr;
 #endif
 
   //! Scaling object supplied by the user
-  Teuchos::RefCountPtr<NOX::Epetra::Scaling> scaling;
+  Teuchos::RCP<NOX::Epetra::Scaling> scaling;
 
   //! An extra temporary vector, only allocated if needed.
-  mutable Teuchos::RefCountPtr<NOX::Epetra::Vector> tmpVectorPtr;
+  mutable Teuchos::RCP<NOX::Epetra::Vector> tmpVectorPtr;
 
   mutable double conditionNumberEstimate;
 
@@ -665,7 +665,7 @@ protected:
   mutable double timeApplyJacbianInverse;
 
   //! Preconditioner operator that will be used in solves.
-  mutable Teuchos::RefCountPtr<Epetra_Operator> solvePrecOpPtr;
+  mutable Teuchos::RCP<Epetra_Operator> solvePrecOpPtr;
 
 #ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT

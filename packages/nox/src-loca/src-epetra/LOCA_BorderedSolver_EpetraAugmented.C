@@ -53,9 +53,9 @@
 #include "LOCA_BorderedSolver_JacobianOperator.H"
 
 LOCA::BorderedSolver::EpetraAugmented::EpetraAugmented(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams): 
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& slvrParams): 
   globalData(global_data),
   solverParams(slvrParams),
   grp(),
@@ -77,10 +77,10 @@ LOCA::BorderedSolver::EpetraAugmented::~EpetraAugmented()
 
 void
 LOCA::BorderedSolver::EpetraAugmented::setMatrixBlocks(
-         const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
-	 const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
+         const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>& op_,
+	 const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
+	 const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+	 const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
   string callingFunction = 
     "LOCA::BorderedSolver::EpetraAugmented::setMatrixBlocks";
@@ -88,14 +88,14 @@ LOCA::BorderedSolver::EpetraAugmented::setMatrixBlocks(
   op = op_;
 
   // Get Jacobian operator
-  Teuchos::RefCountPtr<const LOCA::BorderedSolver::JacobianOperator> jacOp =
+  Teuchos::RCP<const LOCA::BorderedSolver::JacobianOperator> jacOp =
     Teuchos::rcp_dynamic_cast<const LOCA::BorderedSolver::JacobianOperator>(op);
 
-  Teuchos::RefCountPtr<const NOX::Abstract::Group> group = 
+  Teuchos::RCP<const NOX::Abstract::Group> group = 
     jacOp->getGroup();
 
   // Cast away const
-  Teuchos::RefCountPtr<NOX::Abstract::Group> non_const_group = 
+  Teuchos::RCP<NOX::Abstract::Group> non_const_group = 
     Teuchos::rcp_const_cast<NOX::Abstract::Group>(group);
 
   // Cast group to an Epetra group
@@ -148,7 +148,7 @@ LOCA::BorderedSolver::EpetraAugmented::setMatrixBlocks(
   // a matrix of zeros and apply the standard algorithm
   if (isZeroC && !isZeroA && !isZeroB) {
 
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> tmpC = 
+    Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> tmpC = 
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(
 							   B->numVectors(),
 							   B->numVectors()));
@@ -272,33 +272,33 @@ LOCA::BorderedSolver::EpetraAugmented::applyInverse(
   }
    
   // Get underlying Epetra vectors
-  Teuchos::RefCountPtr<const NOX::Epetra::MultiVector> nox_epetra_a = 
+  Teuchos::RCP<const NOX::Epetra::MultiVector> nox_epetra_a = 
     Teuchos::rcp_dynamic_cast<const NOX::Epetra::MultiVector>(A);
-  Teuchos::RefCountPtr<const NOX::Epetra::MultiVector> nox_epetra_b = 
+  Teuchos::RCP<const NOX::Epetra::MultiVector> nox_epetra_b = 
     Teuchos::rcp_dynamic_cast<const NOX::Epetra::MultiVector>(B);
-  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> nox_epetra_x = 
+  Teuchos::RCP<NOX::Epetra::MultiVector> nox_epetra_x = 
     Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(Teuchos::rcp(&X, 
 								     false));
-  Teuchos::RefCountPtr<const NOX::Epetra::MultiVector> nox_epetra_f = 
+  Teuchos::RCP<const NOX::Epetra::MultiVector> nox_epetra_f = 
     Teuchos::rcp_dynamic_cast<const NOX::Epetra::MultiVector>(Teuchos::rcp(F, false));
-  Teuchos::RefCountPtr<const Epetra_MultiVector> epetra_a = 
+  Teuchos::RCP<const Epetra_MultiVector> epetra_a = 
     Teuchos::rcp(&(nox_epetra_a->getEpetraMultiVector()), false);
-  Teuchos::RefCountPtr<const Epetra_MultiVector> epetra_b = 
+  Teuchos::RCP<const Epetra_MultiVector> epetra_b = 
     Teuchos::rcp(&(nox_epetra_b->getEpetraMultiVector()), false);
-  Teuchos::RefCountPtr<Epetra_MultiVector> epetra_x = 
+  Teuchos::RCP<Epetra_MultiVector> epetra_x = 
     Teuchos::rcp(&(nox_epetra_x->getEpetraMultiVector()), false);
-  Teuchos::RefCountPtr<const Epetra_MultiVector> epetra_f = 
+  Teuchos::RCP<const Epetra_MultiVector> epetra_f = 
      Teuchos::rcp(&(nox_epetra_f->getEpetraMultiVector()), false);
   
   const NOX::Epetra::Vector& solution_vec = 
     dynamic_cast<const NOX::Epetra::Vector&>(grp->getX());
   
   // Get linear system
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> linSys = 
+  Teuchos::RCP<NOX::Epetra::LinearSystem> linSys = 
     grp->getLinearSystem();
 
   // Get Jacobian
-  Teuchos::RefCountPtr<Epetra_Operator> jac = 
+  Teuchos::RCP<Epetra_Operator> jac = 
     linSys->getJacobianOperator();
 
   // Set Jacobian
@@ -309,7 +309,7 @@ LOCA::BorderedSolver::EpetraAugmented::applyInverse(
   linSys->createPreconditioner(solution_vec, params, false);
 
   // Get preconditioner
-  Teuchos::RefCountPtr<Epetra_Operator> prec =
+  Teuchos::RCP<Epetra_Operator> prec =
     linSys->getGeneratedPrecOperator();
 
   // Create augmented operators
@@ -323,9 +323,9 @@ LOCA::BorderedSolver::EpetraAugmented::applyInverse(
   linSys->setPrecOperatorForSolve(Teuchos::rcp(&extended_prec,false));
    
   // Create augmented Epetra vectors for x, f
-  Teuchos::RefCountPtr<Epetra_MultiVector> epetra_augmented_x = 
+  Teuchos::RCP<Epetra_MultiVector> epetra_augmented_x = 
     extended_jac.buildEpetraAugmentedMultiVec(*epetra_x, &Y, false);
-  Teuchos::RefCountPtr<Epetra_MultiVector> epetra_augmented_f = 
+  Teuchos::RCP<Epetra_MultiVector> epetra_augmented_f = 
     extended_jac.buildEpetraAugmentedMultiVec(*epetra_f, G, true);
   
   // Create augmented NOX::Epetra::MultiVectors as views

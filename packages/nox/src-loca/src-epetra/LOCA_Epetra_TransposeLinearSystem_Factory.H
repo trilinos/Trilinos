@@ -42,7 +42,7 @@
 #ifndef LOCA_EPETRA_TRANSPOSELINEARSYSTEM_FACTORY_H
 #define LOCA_EPETRA_TRANSPOSELINEARSYSTEM_FACTORY_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // forward declarations
 class Epetra_Operator;
@@ -93,7 +93,7 @@ namespace LOCA {
       public:
 
 	//! Constructor
-	Factory(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+	Factory(const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
 	//! Destructor
 	virtual ~Factory();
@@ -103,10 +103,10 @@ namespace LOCA {
 	 * \param solverParams [in] Solver parameters as described above
 	 * \param linsys [in] Linear system solver
 	 */
-	Teuchos::RefCountPtr<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy>
+	Teuchos::RCP<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy>
 	create(
-	    const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linsys);
+	    const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+	    const Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys);
 
 	//! Return strategy name given by \c solverParams
 	const string& strategyName(Teuchos::ParameterList& solverParams) const;
@@ -122,7 +122,7 @@ namespace LOCA {
       protected:
 	
 	//! Global data object
-	Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+	Teuchos::RCP<LOCA::GlobalData> globalData;
 	
       }; // Class Factory
 

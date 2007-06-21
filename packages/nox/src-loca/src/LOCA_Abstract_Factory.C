@@ -44,9 +44,9 @@
 bool
 LOCA::Abstract::Factory::createPredictorStrategy(
         const string& strategyName,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& predictorParams,
-	Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& strategy)
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& predictorParams,
+	Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& strategy)
 {
   return false;
 }
@@ -54,12 +54,12 @@ LOCA::Abstract::Factory::createPredictorStrategy(
 bool
 LOCA::Abstract::Factory::createContinuationStrategy(
     const string& strategyName,
-    const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-    const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepperParams,
-    const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
-    const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& stepperParams,
+    const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
+    const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
     const vector<int>& paramIDs,
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>& strategy)
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractStrategy>& strategy)
 {
   return false;
 }
@@ -67,10 +67,10 @@ LOCA::Abstract::Factory::createContinuationStrategy(
 bool
 LOCA::Abstract::Factory::createBifurcationStrategy(
     const string& strategyName,
-    const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-    const Teuchos::RefCountPtr<Teuchos::ParameterList>& bifurcationParams,
-    const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& strategy)
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& bifurcationParams,
+    const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& strategy)
 {
   return false;
 }
@@ -78,9 +78,9 @@ LOCA::Abstract::Factory::createBifurcationStrategy(
 bool
 LOCA::Abstract::Factory::createStepSizeStrategy(
         const string& strategyName,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepsizeParams,
-	Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy>& strategy)
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& stepsizeParams,
+	Teuchos::RCP<LOCA::StepSize::AbstractStrategy>& strategy)
 {
   return false;
 }
@@ -88,9 +88,9 @@ LOCA::Abstract::Factory::createStepSizeStrategy(
 bool
 LOCA::Abstract::Factory::createBorderedSolverStrategy(
         const string& strategyName,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-	Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>& strategy)
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+	Teuchos::RCP<LOCA::BorderedSolver::AbstractStrategy>& strategy)
 {
   return false;
 }
@@ -98,9 +98,9 @@ LOCA::Abstract::Factory::createBorderedSolverStrategy(
 bool
 LOCA::Abstract::Factory::createEigensolverStrategy(
          const string& strategyName,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy)
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+	 Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy>& strategy)
 {
   return false;
 }
@@ -108,9 +108,9 @@ LOCA::Abstract::Factory::createEigensolverStrategy(
 bool
 LOCA::Abstract::Factory::createEigenvalueSortStrategy(
         const string& strategyName,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-	Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy)
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+	Teuchos::RCP<LOCA::EigenvalueSort::AbstractStrategy>& strategy)
 {
   return false;
 }
@@ -118,9 +118,9 @@ LOCA::Abstract::Factory::createEigenvalueSortStrategy(
 bool
 LOCA::Abstract::Factory::createSaveEigenDataStrategy(
          const string& strategyName,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-	 Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy>& strategy)
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+	 Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy>& strategy)
 {
   return false;
 }
@@ -128,11 +128,11 @@ LOCA::Abstract::Factory::createSaveEigenDataStrategy(
 bool
 LOCA::Abstract::Factory::createAnasaziOperatorStrategy(
       const string& strategyName,
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-      const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
-      Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>& strategy)
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+      const Teuchos::RCP<NOX::Abstract::Group>& grp,
+      Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy>& strategy)
 {
   return false;
 }
@@ -140,9 +140,9 @@ LOCA::Abstract::Factory::createAnasaziOperatorStrategy(
 bool
 LOCA::Abstract::Factory::createMooreSpenceTurningPointSolverStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-       Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>& strategy)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+       Teuchos::RCP<LOCA::TurningPoint::MooreSpence::SolverStrategy>& strategy)
 {
   return false;
 }
@@ -150,9 +150,9 @@ LOCA::Abstract::Factory::createMooreSpenceTurningPointSolverStrategy(
 bool
 LOCA::Abstract::Factory::createMooreSpencePitchforkSolverStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-       Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy>& strategy)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+       Teuchos::RCP<LOCA::Pitchfork::MooreSpence::SolverStrategy>& strategy)
 {
   return false;
 }
@@ -160,9 +160,9 @@ LOCA::Abstract::Factory::createMooreSpencePitchforkSolverStrategy(
 bool
 LOCA::Abstract::Factory::createMooreSpenceHopfSolverStrategy(
        const string& strategyName,
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-       Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::SolverStrategy>& strategy)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+       Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy>& strategy)
 {
   return false;
 }

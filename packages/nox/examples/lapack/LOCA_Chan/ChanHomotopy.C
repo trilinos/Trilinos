@@ -67,7 +67,7 @@ int main()
   try {
 
     // Create parameter list
-    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -92,11 +92,11 @@ int main()
 		      NOX::Utils::StepperParameters);
 
     // Create LAPACK Factory
-    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+    Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory = 
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
     // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+    Teuchos::RCP<LOCA::GlobalData> globalData =
       LOCA::createGlobalData(paramList, lapackFactory);
 
     // Set up the problem interface
@@ -109,31 +109,31 @@ int main()
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    Teuchos::RefCountPtr<LOCA::LAPACK::Group> grp = 
+    Teuchos::RCP<LOCA::LAPACK::Group> grp = 
       Teuchos::rcp(new LOCA::LAPACK::Group(globalData, chan));
     grp->setParams(p);
 
     // Set up the status tests
-    Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+    Teuchos::RCP<NOX::StatusTest::NormF> statusTestA = 
       Teuchos::rcp(new NOX::StatusTest::NormF(*grp, 1.0e-8));
-    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
-    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+    Teuchos::RCP<NOX::StatusTest::Combo> combo = 
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
 					       statusTestA, statusTestB));
 
     // Create the homotopy group
-//     Teuchos::RefCountPtr<LOCA::Homotopy::Group> hGrp = 
+//     Teuchos::RCP<LOCA::Homotopy::Group> hGrp = 
 //       Teuchos::rcp(new LOCA::Homotopy::Group(locaParamsList, globalData, grp));
 
-    Teuchos::RefCountPtr<Teuchos::ParameterList> hParams = 
+    Teuchos::RCP<Teuchos::ParameterList> hParams = 
       Teuchos::rcp(&locaParamsList.sublist("Homotopy"),false);
     hParams->set("Bordered Solver Method", "LAPACK Direct Solve");
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> startVec = 
+    Teuchos::RCP<NOX::Abstract::Vector> startVec = 
       grp->getX().clone(NOX::ShapeCopy);
     startVec->random(true, seed1); /* Always use same seed for testing */
     startVec->abs(*startVec);
-    std::vector< Teuchos::RefCountPtr<const NOX::Abstract::Vector> > solns;
+    std::vector< Teuchos::RCP<const NOX::Abstract::Vector> > solns;
 
     LOCA::Abstract::Iterator::IteratorStatus status
          = LOCA::Abstract::Iterator::Finished;
@@ -147,7 +147,7 @@ int main()
       // ToDo:  Add deflateAndReset(vec) to Homotopy group,
       //        including option to perturb startVec
 
-      Teuchos::RefCountPtr<LOCA::Homotopy::DeflatedGroup> hGrp = 
+      Teuchos::RCP<LOCA::Homotopy::DeflatedGroup> hGrp = 
         Teuchos::rcp(new LOCA::Homotopy::DeflatedGroup(globalData,
                         paramList, hParams, grp, startVec, solns,homScale)); 
 

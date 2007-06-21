@@ -121,7 +121,7 @@ namespace LOCA {
 	       Epetra_Import &overlapImporter,
 	       Teuchos::ParameterList& precPrintParams, 
 	       Teuchos::ParameterList& precLSParams, 
-	       const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm_);
+	       const Teuchos::RCP<EpetraExt::MultiMpiComm> globalComm_);
       
       //! Destructor
       virtual ~xyztPrec();
@@ -208,19 +208,19 @@ namespace LOCA {
       Teuchos::ParameterList& lsParams;
       
       //! Reference to global communicator for global XYZT operator.
-      const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm;
+      const Teuchos::RCP<EpetraExt::MultiMpiComm> globalComm;
       
       //! Pointer to global XYZT linear system to be solved.
       std::vector<NOX::Epetra::LinearSystemAztecOO *> linSys;
       
       //! Pointer to jacobian blocks of global XYZT system.
-      std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> > jacobianBlock;
+      std::vector<Teuchos::RCP<Epetra_CrsMatrix> > jacobianBlock;
       
       //! Pointer to mass matrix blocks of global XYZT system.
-      std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> > massBlock;
+      std::vector<Teuchos::RCP<Epetra_CrsMatrix> > massBlock;
       
       //! Pointer to subdiagonal blocks used in the BDSDT perconditioner.
-      std::vector<Teuchos::RefCountPtr<Epetra_Vector> > diagBlockSubdiag;
+      std::vector<Teuchos::RCP<Epetra_Vector> > diagBlockSubdiag;
       
       //! Pointer to global XYZT residual vector.
       EpetraExt::BlockVector *residual;

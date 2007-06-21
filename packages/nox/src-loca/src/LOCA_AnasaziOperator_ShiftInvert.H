@@ -42,7 +42,7 @@
 #ifndef LOCA_ANASAZIOPERATOR_SHIFTINVERT_H
 #define LOCA_ANASAZIOPERATOR_SHIFTINVERT_H
 
-#include "Teuchos_RefCountPtr.hpp" 
+#include "Teuchos_RCP.hpp" 
 
 #include "LOCA_AnasaziOperator_AbstractStrategy.H"  // base class
 #include "LOCA_TimeDependent_AbstractGroup.H"
@@ -97,11 +97,11 @@ namespace LOCA {
        * See class description for a list of eigenParams.
        */
       ShiftInvert(
-	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
-	const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
-	const Teuchos::RefCountPtr<LOCA::TimeDependent::AbstractGroup>& grp);
+	const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+	const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+	const Teuchos::RCP<LOCA::TimeDependent::AbstractGroup>& grp);
 
       //! Destructor
       virtual ~ShiftInvert();
@@ -147,25 +147,25 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
       //! Name of this operator
       string myLabel;
 
       //! Stores parameters relating to the operator
-      Teuchos::RefCountPtr<Teuchos::ParameterList> eigenParams;
+      Teuchos::RCP<Teuchos::ParameterList> eigenParams;
 
       //! Stores linear solver parameters
-      Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
+      Teuchos::RCP<Teuchos::ParameterList> solverParams;
 
       //! Stores group representing Jacobian and Mass matrix
-      Teuchos::RefCountPtr<LOCA::TimeDependent::AbstractGroup> grp;
+      Teuchos::RCP<LOCA::TimeDependent::AbstractGroup> grp;
 
       //! Stores a temporary vector for computing Rayleigh quotients
-      mutable Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp_r;
+      mutable Teuchos::RCP<NOX::Abstract::MultiVector> tmp_r;
 
       //! Stores a temporary vector for computing Rayleigh quotients
-      mutable Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp_i;
+      mutable Teuchos::RCP<NOX::Abstract::MultiVector> tmp_i;
 
       //! Stores shift value
       double shift;

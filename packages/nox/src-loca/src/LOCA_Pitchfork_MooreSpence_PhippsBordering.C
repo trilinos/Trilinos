@@ -50,9 +50,9 @@
 #include "LOCA_BorderedSolver_JacobianOperator.H"
 
 LOCA::Pitchfork::MooreSpence::PhippsBordering::PhippsBordering(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams) : 
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& slvrParams) : 
   globalData(global_data),
   solverParams(slvrParams),
   group(),
@@ -79,13 +79,13 @@ LOCA::Pitchfork::MooreSpence::PhippsBordering::~PhippsBordering()
 
 void
 LOCA::Pitchfork::MooreSpence::PhippsBordering::setBlocks(
-	 const Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::AbstractGroup>& group_,
-	 const Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::ExtendedGroup>& pfGroup_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& asymMultiVector_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& nullVector_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& JnVector_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dfdp_,
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dJndp_)
+	 const Teuchos::RCP<LOCA::Pitchfork::MooreSpence::AbstractGroup>& group_,
+	 const Teuchos::RCP<LOCA::Pitchfork::MooreSpence::ExtendedGroup>& pfGroup_,
+	 const Teuchos::RCP<const NOX::Abstract::MultiVector>& asymMultiVector_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp_,
+	 const Teuchos::RCP<const NOX::Abstract::Vector>& dJndp_)
 {
   group = group_;
   pfGroup = pfGroup_;
@@ -103,7 +103,7 @@ LOCA::Pitchfork::MooreSpence::PhippsBordering::setBlocks(
   JnMultiVector->scale(1.0/sigma);
 
   // Set blocks in bordered solver
-  Teuchos::RefCountPtr<const LOCA::BorderedSolver::JacobianOperator> op =
+  Teuchos::RCP<const LOCA::BorderedSolver::JacobianOperator> op =
     Teuchos::rcp(new  LOCA::BorderedSolver::JacobianOperator(group));
   borderedSolver->setMatrixBlocksMultiVecConstraint(op, 
 						    JnMultiVector, 
@@ -125,21 +125,21 @@ LOCA::Pitchfork::MooreSpence::PhippsBordering::solve(
   NOX::Abstract::Group::ReturnType status;
   
   // Get components of input
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_x = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_x = 
     input.getXMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> input_null = 
+  Teuchos::RCP<const NOX::Abstract::MultiVector> input_null = 
     input.getNullMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_slack = input.getSlacks();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> input_param = input.getBifParams();
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_slack = input.getSlacks();
+  Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> input_param = input.getBifParams();
 
   // Get components of result
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x = 
     result.getXMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_null = 
     result.getNullMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_slack = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_slack = 
     result.getSlacks();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
+  Teuchos::RCP<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
     result.getBifParams();
 
   int m = input.numVectors();
@@ -152,14 +152,14 @@ LOCA::Pitchfork::MooreSpence::PhippsBordering::solve(
   // respectively, next column stores dfdp, dJndp, J^-1 dfdp, J^-1 dJndp
   // respectively, next column stores psi, 0, J^-1 psi, etc...  
   // Last column is for solving (Jv)_x v
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_x = 
     input_x->clone(m+3);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_input_null = 
     input_null->clone(m+3);
   
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x = 
     result_x->clone(m+3);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_null = 
     result_null->clone(m+3);
 
   // Set first m columns to input_x
@@ -197,9 +197,9 @@ LOCA::Pitchfork::MooreSpence::PhippsBordering::solve(
 			   *result_slack, *result_param);
   
   // Create views of first m columns for result_x, result_null
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_x_view = 
     cont_result_x->subView(index_input);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> cont_result_null_view = 
     cont_result_null->subView(index_input);
   
   // Copy first m columns back into result_x, result_null
@@ -252,9 +252,9 @@ LOCA::Pitchfork::MooreSpence::PhippsBordering::solveContiguous(
   NOX::Abstract::MultiVector::DenseMatrix tmp_mat_2(1, m+3);
 
   // Create view of first m+2 columns of input_x, result_x
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> input_x_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> input_x_view = 
       input_x.subView(index_input_dp);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> result_x_view = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> result_x_view = 
       result_x.subView(index_input_dp);
 
   // verify underlying Jacobian is valid
@@ -273,18 +273,18 @@ LOCA::Pitchfork::MooreSpence::PhippsBordering::solveContiguous(
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> A = 
     result_x.subView(index_input);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> B = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> B = 
     result_x.subView(index_dp);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> C = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> C = 
     result_x.subView(index_s);
   double b = tmp_mat_1(0,m);
   double c = tmp_mat_1(0,m+1);
 
   // compute (Jv)_x[A B C v]
   result_x[m+2] = *nullVector;
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> tmp = 
     result_x.clone(NOX::ShapeCopy);
   status = group->computeDJnDxaMulti(*nullVector, *JnVector, result_x,
 				     *tmp);
@@ -311,13 +311,13 @@ LOCA::Pitchfork::MooreSpence::PhippsBordering::solveContiguous(
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> D = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> D = 
     result_null.subView(index_input);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> E = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> E = 
     result_null.subView(index_dp);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> K = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> K = 
     result_null.subView(index_s);
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> L = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> L = 
     result_null.subView(index_null);
   double e = tmp_mat_2(0, m);
   double k = tmp_mat_2(0, m+1);

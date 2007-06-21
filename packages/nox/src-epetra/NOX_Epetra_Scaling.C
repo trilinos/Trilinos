@@ -55,7 +55,7 @@ NOX::Epetra::Scaling::~Scaling()
 
 }
 
-void NOX::Epetra::Scaling::addUserScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D)
+void NOX::Epetra::Scaling::addUserScaling(ScaleType type, const Teuchos::RCP<Epetra_Vector>& D)
 {
   if ( Teuchos::is_null(tmpVectorPtr) ) 
     tmpVectorPtr = Teuchos::rcp(new Epetra_Vector(*D));
@@ -65,7 +65,7 @@ void NOX::Epetra::Scaling::addUserScaling(ScaleType type, const Teuchos::RefCoun
   scaleVector.push_back(D);
 }
 
-void NOX::Epetra::Scaling::addRowSumScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D)
+void NOX::Epetra::Scaling::addRowSumScaling(ScaleType type, const Teuchos::RCP<Epetra_Vector>& D)
 {
   if ( Teuchos::is_null(tmpVectorPtr) )
     tmpVectorPtr = Teuchos::rcp(new Epetra_Vector(*D));
@@ -75,7 +75,7 @@ void NOX::Epetra::Scaling::addRowSumScaling(ScaleType type, const Teuchos::RefCo
   scaleVector.push_back(D);
 }
 
-void NOX::Epetra::Scaling::addColSumScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D)
+void NOX::Epetra::Scaling::addColSumScaling(ScaleType type, const Teuchos::RCP<Epetra_Vector>& D)
 {
   if ( Teuchos::is_null(tmpVectorPtr) )
     tmpVectorPtr = Teuchos::rcp(new Epetra_Vector(*D));

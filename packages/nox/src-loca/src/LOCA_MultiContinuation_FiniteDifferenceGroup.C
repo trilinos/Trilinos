@@ -79,7 +79,7 @@ LOCA::MultiContinuation::FiniteDifferenceGroup::operator=(
 
 void
 LOCA::MultiContinuation::FiniteDifferenceGroup::setDerivUtils(
-			  const Teuchos::RefCountPtr<LOCA::DerivUtils>& deriv)
+			  const Teuchos::RCP<LOCA::DerivUtils>& deriv)
 {
   derivPtr = deriv;
 }

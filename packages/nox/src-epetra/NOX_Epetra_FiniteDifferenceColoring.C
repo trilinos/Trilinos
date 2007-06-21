@@ -59,10 +59,10 @@ using namespace NOX::Epetra;
 // coloring in parallel since the raw matrix graph is not known.
 FiniteDifferenceColoring::FiniteDifferenceColoring(
 	 Teuchos::ParameterList& printingParams,
-	 const Teuchos::RefCountPtr<Interface::Required>& i,
+	 const Teuchos::RCP<Interface::Required>& i,
 	 const NOX::Epetra::Vector& x,
-	 const Teuchos::RefCountPtr<Epetra_MapColoring>& colorMap_,
-	 const Teuchos::RefCountPtr< vector<Epetra_IntVector> >& columns_,
+	 const Teuchos::RCP<Epetra_MapColoring>& colorMap_,
+	 const Teuchos::RCP< vector<Epetra_IntVector> >& columns_,
 	 bool parallelColoring,
 	 bool distance1_,
 	 double beta_, double alpha_) :
@@ -93,11 +93,11 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
 
 FiniteDifferenceColoring::FiniteDifferenceColoring(
          Teuchos::ParameterList& printingParams,
-	 const Teuchos::RefCountPtr<Interface::Required>& i,
+	 const Teuchos::RCP<Interface::Required>& i,
 	 const NOX::Epetra::Vector& x,
-	 const Teuchos::RefCountPtr<Epetra_CrsGraph>& rawGraph_,
-	 const Teuchos::RefCountPtr<Epetra_MapColoring>& colorMap_,
-	 const Teuchos::RefCountPtr< vector<Epetra_IntVector> >& columns_,
+	 const Teuchos::RCP<Epetra_CrsGraph>& rawGraph_,
+	 const Teuchos::RCP<Epetra_MapColoring>& colorMap_,
+	 const Teuchos::RCP< vector<Epetra_IntVector> >& columns_,
 	 bool parallelColoring,
 	 bool distance1_,
 	 double beta_, double alpha_) :

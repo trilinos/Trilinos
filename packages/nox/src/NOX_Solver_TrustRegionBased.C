@@ -52,9 +52,9 @@ using namespace NOX;
 using namespace NOX::Solver;
 
 TrustRegionBased::
-TrustRegionBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
-		 const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-		 const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
+TrustRegionBased(const Teuchos::RCP<NOX::Abstract::Group>& grp,
+		 const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+		 const Teuchos::RCP<Teuchos::ParameterList>& p) :
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
   utilsPtr(globalDataPtr->getUtils()), 
   solnPtr(grp),		
@@ -165,9 +165,9 @@ invalid(const string& name, double value) const
 }
 
 bool TrustRegionBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) 
+reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+      const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
+      const Teuchos::RCP<Teuchos::ParameterList>& p) 
 {
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   utilsPtr = globalDataPtr->getUtils(); 
@@ -180,8 +180,8 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
 }
 
 bool TrustRegionBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
-      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& grp,
+      const Teuchos::RCP<NOX::StatusTest::Generic>& t)
 {
   // New initial guess and status test
   solnPtr = grp;
@@ -203,7 +203,7 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
 }
 
 bool TrustRegionBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp)
+reset(const Teuchos::RCP<NOX::Abstract::Group>& grp)
 {
   // New initial guess and status test
   solnPtr = grp;
@@ -307,7 +307,7 @@ NOX::StatusTest::StatusType TrustRegionBased::step()
   while ((ratio < minRatio) && (radius > minRadius)) 
   {
 
-    Teuchos::RefCountPtr<NOX::Abstract::Vector> dirPtr;
+    Teuchos::RCP<NOX::Abstract::Vector> dirPtr;
     double step;
 
     // Trust region step

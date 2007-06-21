@@ -55,7 +55,7 @@
 #include "NOX_LineSearch_NonlinearCG.H"
 
 NOX::LineSearch::Manager::
-Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd) :
+Manager(const Teuchos::RCP<NOX::GlobalData>& gd) :
   utils(gd->getUtils()),
   method("")
 {
@@ -63,7 +63,7 @@ Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd) :
 }
 
 NOX::LineSearch::Manager::
-Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+Manager(const Teuchos::RCP<NOX::GlobalData>& gd, 
 	Teuchos::ParameterList& params) :
   method("")
 {
@@ -76,7 +76,7 @@ NOX::LineSearch::Manager::~Manager()
 }
 
 bool NOX::LineSearch::Manager::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
 {
   utils = gd->getUtils();
@@ -102,16 +102,16 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
     ptr = Teuchos::rcp(new NonlinearCG(gd, params));
   else if (method == "User Defined") {
     if (params.INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<NOX::LineSearch::Generic> >
+	isType< Teuchos::RCP<NOX::LineSearch::Generic> >
 	("User Defined Line Search")) {
       
       ptr = params.INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<NOX::LineSearch::Generic> >
+	get< Teuchos::RCP<NOX::LineSearch::Generic> >
 	("User Defined Line Search");
       ptr->reset(gd, params);
     }
     else {
-      this->printWarning("reset", " a \"User Defined\" line search was chosen for the \"Method\" in the \"Line Search\" sublist, but a Teuchos::RefCountPtr<NOX::LineSearch::Generic> object was not found in the parameter list!");
+      this->printWarning("reset", " a \"User Defined\" line search was chosen for the \"Method\" in the \"Line Search\" sublist, but a Teuchos::RCP<NOX::LineSearch::Generic> object was not found in the parameter list!");
       throw "NOX Error";
     }
   }

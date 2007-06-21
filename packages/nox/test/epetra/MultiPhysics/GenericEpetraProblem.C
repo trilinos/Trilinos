@@ -236,7 +236,7 @@ GenericEpetraProblem::getMesh()
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RefCountPtr<Epetra_Vector> 
+Teuchos::RCP<Epetra_Vector> 
 GenericEpetraProblem::getSolution()
 {
   return initialSolution;
@@ -244,7 +244,7 @@ GenericEpetraProblem::getSolution()
 
 //-----------------------------------------------------------------------------
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix> 
+Teuchos::RCP<Epetra_CrsMatrix> 
 GenericEpetraProblem::getJacobian()
 {
   if(A.get())

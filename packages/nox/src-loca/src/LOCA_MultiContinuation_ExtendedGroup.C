@@ -90,7 +90,7 @@ LOCA::MultiContinuation::ExtendedGroup::operator=(
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Group>
+Teuchos::RCP<NOX::Abstract::Group>
 LOCA::MultiContinuation::ExtendedGroup::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new ExtendedGroup(*this, type));
@@ -249,13 +249,13 @@ LOCA::MultiContinuation::ExtendedGroup::getNormNewtonSolveResidual() const
   return conGroup->getNormNewtonSolveResidual();
 }
 
-Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
 LOCA::MultiContinuation::ExtendedGroup::getUnderlyingGroup() const
 {
   return conGroup->getUnderlyingGroup();
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 LOCA::MultiContinuation::ExtendedGroup::getUnderlyingGroup()
 {
   return conGroup->getUnderlyingGroup();
@@ -503,7 +503,7 @@ LOCA::MultiContinuation::ExtendedGroup::getBorderedWidth() const
   return conGroup->getBorderedWidth();
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Group>
+Teuchos::RCP<const NOX::Abstract::Group>
 LOCA::MultiContinuation::ExtendedGroup::getUnborderedGroup() const
 {
   return conGroup->getUnborderedGroup();
@@ -575,11 +575,11 @@ LOCA::MultiContinuation::ExtendedGroup::fillC(
 }
 
 LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
-      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& conParams,
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
-      const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
+      const Teuchos::RCP<LOCA::GlobalData>& global_data,
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& conParams,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp,
+      const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs)
   : globalData(global_data),
     parsedParams(topParams),
@@ -602,7 +602,7 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
 }
 
 void
-LOCA::MultiContinuation::ExtendedGroup::setConstraints(const Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>& constraints)
+LOCA::MultiContinuation::ExtendedGroup::setConstraints(const Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>& constraints)
 {
   // Form constrained group using original group and continuation constraints
   conGroup = Teuchos::rcp(new ConstrainedGroup(globalData, parsedParams,

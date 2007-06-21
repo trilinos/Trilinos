@@ -47,7 +47,7 @@
 #include "NOX_GlobalData.H"
 
 NOX::LineSearch::NonlinearCG::
-NonlinearCG(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+NonlinearCG(const Teuchos::RCP<NOX::GlobalData>& gd,
 	    Teuchos::ParameterList& params)
 {
   reset(gd, params);
@@ -59,7 +59,7 @@ NOX::LineSearch::NonlinearCG::~NonlinearCG()
 }
 
 bool NOX::LineSearch::NonlinearCG::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
+reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
 { 
   utils = gd->getUtils();

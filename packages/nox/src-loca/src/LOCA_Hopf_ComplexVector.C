@@ -43,7 +43,7 @@
 #include "LOCA_Hopf_ComplexMultiVector.H"
 
 LOCA::Hopf::ComplexVector::ComplexVector(
-		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
 		    const NOX::Abstract::Vector& realVec,
 		    const NOX::Abstract::Vector& imagVec) :
   LOCA::Extended::Vector(global_data,2,0)
@@ -83,7 +83,7 @@ LOCA::Hopf::ComplexVector::operator=(const LOCA::Hopf::ComplexVector& y)
   return *this;
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+Teuchos::RCP<NOX::Abstract::Vector> 
 LOCA::Hopf::ComplexVector::clone(NOX::CopyType type) const
 {
   return 
@@ -98,37 +98,37 @@ LOCA::Hopf::ComplexVector::setVec(const NOX::Abstract::Vector& realVec,
   setVector(1, imagVec);
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+Teuchos::RCP<const NOX::Abstract::Vector>
 LOCA::Hopf::ComplexVector::getRealVec() const
 {
   return getVector(0);
 }
 
-Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+Teuchos::RCP<const NOX::Abstract::Vector>
 LOCA::Hopf::ComplexVector::getImagVec() const
 {
   return getVector(1);
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector>
+Teuchos::RCP<NOX::Abstract::Vector>
 LOCA::Hopf::ComplexVector::getRealVec()
 {
   return getVector(0);
 }
 
-Teuchos::RefCountPtr<NOX::Abstract::Vector>
+Teuchos::RCP<NOX::Abstract::Vector>
 LOCA::Hopf::ComplexVector::getImagVec()
 {
   return getVector(1);
 }
 
 LOCA::Hopf::ComplexVector::ComplexVector(
-		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) :
+		  const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   LOCA::Extended::Vector(global_data,2,0)
 {
 }
 
-Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
+Teuchos::RCP<LOCA::Extended::MultiVector>
 LOCA::Hopf::ComplexVector::generateMultiVector(int nColumns, 
 					       int nVectorRows, 
 					       int nScalarRows) const

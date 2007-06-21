@@ -63,10 +63,10 @@ extern "C" {
 }
 
 LOCA::MultiStepper::MultiStepper(
-            const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	   const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-	   const Teuchos::RefCountPtr< NOX::StatusTest::Generic>& t,
-	   const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	   const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+	   const Teuchos::RCP< NOX::StatusTest::Generic>& t,
+	   const Teuchos::RCP<Teuchos::ParameterList>& p) :
   globalData(),
   parsedParams(),
   predictor(),
@@ -89,10 +89,10 @@ LOCA::MultiStepper::~MultiStepper()
 
 bool 
 LOCA::MultiStepper::reset(
-		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-		  const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-		  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-		  const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) 
+		  const Teuchos::RCP<LOCA::GlobalData>& global_data,
+		  const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+		  const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+		  const Teuchos::RCP<Teuchos::ParameterList>& p) 
 {
   globalData = global_data;
   paramListPtr = p;
@@ -103,7 +103,7 @@ LOCA::MultiStepper::reset(
   parsedParams->parseSublists(paramListPtr);
 
   // Create predictor strategy
-  Teuchos::RefCountPtr<Teuchos::ParameterList> predictorParams = 
+  Teuchos::RCP<Teuchos::ParameterList> predictorParams = 
     parsedParams->getSublist("Predictor");
   predictor = globalData->locaFactory->createPredictorStrategy(
 							     parsedParams,
@@ -120,16 +120,16 @@ LOCA::MultiStepper::reset(
 
   // Make a copy of the parameter list, change continuation method to
   // natural
-  Teuchos::RefCountPtr<Teuchos::ParameterList> firstStepperParams = 
+  Teuchos::RCP<Teuchos::ParameterList> firstStepperParams = 
     Teuchos::rcp(new Teuchos::ParameterList(*stepperList));
   firstStepperParams->set("Continuation Method", "Natural");
 
   // Create constrained group
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> constraintsGrp
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> constraintsGrp
     = buildConstrainedGroup(initialGuess);
 
   // Create bifurcation group
-  Teuchos::RefCountPtr<Teuchos::ParameterList> bifurcationParams = 
+  Teuchos::RCP<Teuchos::ParameterList> bifurcationParams = 
     parsedParams->getSublist("Bifurcation");
   bifGroupPtr = globalData->locaFactory->createBifurcationStrategy(
 						       parsedParams,
@@ -176,7 +176,7 @@ LOCA::MultiStepper::run() {
   const LOCA::MultiContinuation::ExtendedGroup& constSolnGrp =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedGroup&>(
        solverPtr->getSolutionGroup());
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> underlyingGroup 
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> underlyingGroup 
     = Teuchos::rcp_const_cast<LOCA::MultiContinuation::AbstractGroup>(constSolnGrp.getUnderlyingGroup());
 
   // Create continuation strategy
@@ -251,13 +251,13 @@ LOCA::MultiStepper::run() {
   return LOCA::Abstract::Iterator::Finished;
 }
 
-Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
 LOCA::MultiStepper::getSolutionGroup()
 {
   return curGroupPtr->getBaseLevelUnderlyingGroup();
 }
 
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 LOCA::MultiStepper::getList() const
 {
   return paramListPtr;
@@ -389,12 +389,12 @@ LOCA::MultiStepper::getConParamData()
   }
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 LOCA::MultiStepper::buildConstrainedGroup(
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp)
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp)
 {
   // Get constraints sublist
-  Teuchos::RefCountPtr<Teuchos::ParameterList> constraintsList =
+  Teuchos::RCP<Teuchos::ParameterList> constraintsList =
     parsedParams->getSublist("Constraints");
 
   // If we don't have a constraint object, return original group
@@ -403,26 +403,26 @@ LOCA::MultiStepper::buildConstrainedGroup(
 
   string methodName = "LOCA::MultiStepper::buildConstrainedGroup()";
 
-  Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> constraints;
-  Teuchos::RefCountPtr< vector<string> > constraintParamNames;
+  Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> constraints;
+  Teuchos::RCP< vector<string> > constraintParamNames;
 
   // Get constraint object
   if ((*constraintsList).INVALID_TEMPLATE_QUALIFIER
-      isType< Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> >("Constraint Object"))
+      isType< Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> >("Constraint Object"))
     constraints = (*constraintsList).INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> >("Constraint Object");
+      get< Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> >("Constraint Object");
   else
     globalData->locaErrorCheck->throwError(methodName,
-	  "\"Constraint Object\" parameter is not of type Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>!");
+	  "\"Constraint Object\" parameter is not of type Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>!");
 
   // Get parameter names for constraints
   if ((*constraintsList).INVALID_TEMPLATE_QUALIFIER
-      isType< Teuchos::RefCountPtr< vector<string> > >("Constraint Parameter Names"))
+      isType< Teuchos::RCP< vector<string> > >("Constraint Parameter Names"))
     constraintParamNames = (*constraintsList).INVALID_TEMPLATE_QUALIFIER
-      get< Teuchos::RefCountPtr< vector<string> > >("Constraint Parameter Names");
+      get< Teuchos::RCP< vector<string> > >("Constraint Parameter Names");
   else
     globalData->locaErrorCheck->throwError(methodName,
-	  "\"Constraint Parameter Names\" parameter is not of type Teuchos::RefCountPtr< vector<string> >!");
+	  "\"Constraint Parameter Names\" parameter is not of type Teuchos::RCP< vector<string> >!");
 
   // Convert names to integer IDs
   vector<int> constraintParamIDs(constraintParamNames->size());

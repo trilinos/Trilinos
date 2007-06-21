@@ -52,10 +52,10 @@
 
 LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint::
 ModifiedConstraint(
-    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-    const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-    const Teuchos::RefCountPtr<Teuchos::ParameterList>& tpParams,
-    const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g,
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& tpParams,
+    const Teuchos::RCP<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g,
     bool is_symmetric,
     const NOX::Abstract::Vector& a,
     const NOX::Abstract::Vector* b,
@@ -126,7 +126,7 @@ copy(const LOCA::MultiContinuation::ConstraintInterface& src)
   }
 }
 
-Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
 LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint::
 clone(NOX::CopyType type) const
 {
@@ -153,7 +153,7 @@ computeConstraints()
 							   callingFunction);
 
   // Set up bordered systems
-  Teuchos::RefCountPtr<const LOCA::BorderedSolver::JacobianOperator> op =
+  Teuchos::RCP<const LOCA::BorderedSolver::JacobianOperator> op =
     Teuchos::rcp(new  LOCA::BorderedSolver::JacobianOperator(grpPtr));
   borderedSolver->setMatrixBlocksMultiVecConstraint(op, 
 						    a_vector, 
@@ -161,7 +161,7 @@ computeConstraints()
 						    Teuchos::null);
 
   // Get linear solver parameters
-  Teuchos::RefCountPtr<Teuchos::ParameterList> linear_solver_params =
+  Teuchos::RCP<Teuchos::ParameterList> linear_solver_params =
     parsedParams->getSublist("Linear Solver");
 
   // Solve for w and v
@@ -238,7 +238,7 @@ computeConstraints()
     if (includeNewtonTerms) {
 
       // Compute (Jv)_x*dx
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> Jv_x_dx = 
+      Teuchos::RCP<NOX::Abstract::MultiVector> Jv_x_dx = 
 	deltaX->clone(NOX::ShapeCopy);
       status = grpPtr->computeDJnDxaMulti((*v_vector)[0], *deltaX, *Jv_x_dx);
       finalStatus = 
@@ -248,10 +248,10 @@ computeConstraints()
 							     callingFunction);
 
       // Compute (Jv)_p
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> Jv_p1 = 
+      Teuchos::RCP<NOX::Abstract::MultiVector> Jv_p1 = 
 	deltaX->clone(2);
       vector<int> idx(1); idx[0] = 0;
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> Jv_p = 
+      Teuchos::RCP<NOX::Abstract::MultiVector> Jv_p = 
 	Jv_p1->subView(idx);
       status = grpPtr->computeDJnDpMulti(bifParamID, (*v_vector)[0], *Jv_p1, 
 					 false);
@@ -314,7 +314,7 @@ computeConstraints()
       if (includeNewtonTerms) {
 
 	// Compute (J^T*w)_x*dx
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> Jtw_x_dx = 
+	Teuchos::RCP<NOX::Abstract::MultiVector> Jtw_x_dx = 
 	  deltaX->clone(NOX::ShapeCopy);
 	status = grpPtr->computeDwtJnDx((*w_vector)[0], (*deltaX)[0], 
 					(*Jtw_x_dx)[0]);
@@ -325,10 +325,10 @@ computeConstraints()
 							     callingFunction);
 
 	// Compute (J^T*w)_p
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> Jtw_p1 = 
+	Teuchos::RCP<NOX::Abstract::MultiVector> Jtw_p1 = 
 	  deltaX->clone(2);
 	vector<int> idx(1); idx[0] = 0;
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> Jtw_p = 
+	Teuchos::RCP<NOX::Abstract::MultiVector> Jtw_p = 
 	  Jtw_p1->subView(idx);
 	status = grpPtr->computeDwtJDp(bifParamID, (*w_vector)[0], *Jtw_p1, 
 				       false);

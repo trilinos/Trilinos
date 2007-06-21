@@ -42,7 +42,7 @@
 #ifndef LOCA_BIFURCATION_FACTORY_H
 #define LOCA_BIFURCATION_FACTORY_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // forward declarations
 namespace Teuchos {
@@ -78,7 +78,7 @@ namespace LOCA {
      *      <li> "User-Defined" User defined bifurcation.  Set 
      *           "User-Defined Name" to be the parameter list name containing
      *           user-defined strategy, which must be of type
-     *           Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>.
+     *           Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>.
      *      </ul>
      * <li> "Formulation" - Name of the bifurcation formulation. Valid 
      *      choices are
@@ -112,7 +112,7 @@ namespace LOCA {
     public:
 
       //! Constructor
-      Factory(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+      Factory(const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       //! Destructor
       virtual ~Factory();
@@ -123,11 +123,11 @@ namespace LOCA {
        * \param bifurcationParams [in] Bifurcation parameters as described above
        * \param grp [in] Underlying group
        */
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+      Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
       create(
-      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<Teuchos::ParameterList>& bifurcationParams,
-      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp);
+      const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+      const Teuchos::RCP<Teuchos::ParameterList>& bifurcationParams,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& grp);
 
       //! Return strategy name given by \c bifurcationParams
       string 
@@ -144,7 +144,7 @@ namespace LOCA {
     protected:
 
       //! Global data
-      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+      Teuchos::RCP<LOCA::GlobalData> globalData;
 
     }; // Class Factory
 

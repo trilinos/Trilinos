@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
-  Teuchos::RefCountPtr<Interface> interface = 
+  Teuchos::RCP<Interface> interface = 
     Teuchos::rcp(new Interface(NumGlobalElements, Comm));
 
   // Set the PDE factor (for nonlinear forcing term).  This could be specified
@@ -126,20 +126,20 @@ int main(int argc, char *argv[])
 
   // Use a scaled vector space.  The scaling must also be registered
   // with the linear solver so the linear system is consistent!
-  Teuchos::RefCountPtr<Epetra_Vector> scaleVec = 
+  Teuchos::RCP<Epetra_Vector> scaleVec = 
     Teuchos::rcp(new Epetra_Vector( *(interface->getSolution())));
   scaleVec->PutScalar(2.0);
-  Teuchos::RefCountPtr<NOX::Epetra::Scaling> scaling = 
+  Teuchos::RCP<NOX::Epetra::Scaling> scaling = 
     Teuchos::rcp(new NOX::Epetra::Scaling);
   scaling->addUserScaling(NOX::Epetra::Scaling::Left, scaleVec);
 
   // Use a weighted vector space for scaling all norms
-  Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> weightedVectorSpace = 
+  Teuchos::RCP<NOX::Epetra::VectorSpace> weightedVectorSpace = 
     Teuchos::rcp(new NOX::Epetra::VectorSpaceScaledL2(scaling));
 
   // Get the vector from the Problem
-  Teuchos::RefCountPtr<Epetra_Vector> soln = interface->getSolution();
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> noxSoln = 
+  Teuchos::RCP<Epetra_Vector> soln = interface->getSolution();
+  Teuchos::RCP<NOX::Epetra::Vector> noxSoln = 
     Teuchos::rcp(new NOX::Epetra::Vector(soln, 
 					 NOX::Epetra::Vector::CreateCopy,
 					 NOX::DeepCopy,
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
   sdParams.set("Scaling Type", "Quadratic Model Min");
 
   // Add a user defined pre/post operator object
-  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> ppo =
+  Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
     Teuchos::rcp(new UserPrePostOperator(printing));
   nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", 
 					 ppo);
@@ -222,12 +222,12 @@ int main(int argc, char *argv[])
     set("Status Test Check Type", NOX::StatusTest::Complete);
 
   // User supplied (Epetra_RowMatrix)
-  Teuchos::RefCountPtr<Epetra_RowMatrix> Analytic = interface->getJacobian();
+  Teuchos::RCP<Epetra_RowMatrix> Analytic = interface->getJacobian();
 
   // Create the linear system
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+  Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 						      iReq,
 						      iJac, Analytic, 
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 						      scaling));
   
   // Create the Group
-  Teuchos::RefCountPtr<NOX::Epetra::Group> grpPtr = 
+  Teuchos::RCP<NOX::Epetra::Group> grpPtr = 
     Teuchos::rcp(new NOX::Epetra::Group(printParams, 
 					iReq, 
 					*noxSoln, 
@@ -247,25 +247,25 @@ int main(int argc, char *argv[])
   //FD->setGroupForComputeF(*grpPtr);
 
   // Create the convergence tests
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> relresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> relresid = 
     Teuchos::rcp(new NOX::StatusTest::NormF(grp, 1.0e-2));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormUpdate> update =
+  Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
     Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormWRMS> wrms =
+  Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
     Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> converged =
+  Teuchos::RCP<NOX::StatusTest::Combo> converged =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
   converged->addStatusTest(absresid);
   converged->addStatusTest(relresid);
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
-  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(200));
-  Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> fv =
+  Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(fv);
   combo->addStatusTest(converged);

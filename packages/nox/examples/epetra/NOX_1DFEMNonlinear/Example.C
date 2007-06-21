@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
   FiniteElementProblem Problem(NumGlobalElements, Comm);
 
   // Get the vector from the Problem
-  Teuchos::RefCountPtr<Epetra_Vector> soln = Problem.getSolution();
+  Teuchos::RCP<Epetra_Vector> soln = Problem.getSolution();
   NOX::Epetra::Vector noxSoln(soln, NOX::Epetra::Vector::CreateView);
 
   // Initialize Solution
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+  Teuchos::RCP<Teuchos::ParameterList> nlParamsPtr =
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& nlParams = *nlParamsPtr.get();
 
@@ -195,54 +195,54 @@ int main(int argc, char *argv[])
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
   // NOX_Epetra_Interface
-  Teuchos::RefCountPtr<Problem_Interface> interface = 
+  Teuchos::RCP<Problem_Interface> interface = 
     Teuchos::rcp(new Problem_Interface(Problem));
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
-  Teuchos::RefCountPtr<Epetra_RowMatrix> Analytic = Problem.getJacobian();
+  Teuchos::RCP<Epetra_RowMatrix> Analytic = Problem.getJacobian();
   // 2. Matrix-Free (Epetra_Operator)
-  Teuchos::RefCountPtr<NOX::Epetra::MatrixFree> MF = 
+  Teuchos::RCP<NOX::Epetra::MatrixFree> MF = 
     Teuchos::rcp(new NOX::Epetra::MatrixFree(printParams, interface, noxSoln));
   // 3. Finite Difference (Epetra_RowMatrix)
-  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifference> FD = 
+  Teuchos::RCP<NOX::Epetra::FiniteDifference> FD = 
     Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, interface, noxSoln));
 
   // Create the linear system
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = MF;
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> iPrec = 
+  Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
+  Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = MF;
+  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = 
     interface;
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 						      iReq, iJac, MF,
 						      noxSoln));
 
   // Create the Group
-  Teuchos::RefCountPtr<NOX::Epetra::Group> grp =
+  Teuchos::RCP<NOX::Epetra::Group> grp =
     Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, noxSoln, 
 					linSys)); 
 
   // Create the convergence tests
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> relresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> relresid = 
     Teuchos::rcp(new NOX::StatusTest::NormF(*grp.get(), 1.0e-2));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormUpdate> update =
+  Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
     Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormWRMS> wrms =
+  Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
     Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> converged =
+  Teuchos::RCP<NOX::StatusTest::Combo> converged =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
   converged->addStatusTest(absresid);
   converged->addStatusTest(relresid);
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
-  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
-  Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> fv =
+  Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(fv);
   combo->addStatusTest(converged);
@@ -255,11 +255,11 @@ int main(int argc, char *argv[])
 
   // Read in the parameter list from a file
   cout << "Reading parameter list from \"input.xml\"" << endl;
-  Teuchos::RefCountPtr<Teuchos::ParameterList> finalParamsPtr = 
+  Teuchos::RCP<Teuchos::ParameterList> finalParamsPtr = 
     Teuchos::rcp(new Teuchos::ParameterList);
   Teuchos::updateParametersFromXmlFile("input.xml", finalParamsPtr.get());
 #else
-  Teuchos::RefCountPtr<Teuchos::ParameterList> finalParamsPtr = nlParamsPtr;
+  Teuchos::RCP<Teuchos::ParameterList> finalParamsPtr = nlParamsPtr;
 #endif
 
   // Create the method

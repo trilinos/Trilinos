@@ -42,7 +42,7 @@
 #ifndef LOCA_TURNINGPOINT_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
 #define LOCA_TURNINGPOINT_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_MultiContinuation_AbstractGroup.H"         // base class
 #include "LOCA_Extended_MultiAbstractGroup.H"             // base class
@@ -177,11 +177,11 @@ namespace LOCA {
        *           are relevant:
        *           <ul>
        *           <li> "Initial A Vector"  -- 
-       *                [Teuchos::RefCountPtr<NOX::Abstract::Vector>] 
+       *                [Teuchos::RCP<NOX::Abstract::Vector>] 
        *                (Must be supplied) - 
        *                 Vector storing initial value for \f$a\f$ vector
        *           <li> "Initial B Vector"  -- 
-       *                 [Teuchos::RefCountPtr<NOX::Abstract::Vector>] 
+       *                 [Teuchos::RCP<NOX::Abstract::Vector>] 
        *                 (Must be supplied for nonsymmetric Jacobians) - 
        *                 Vector storing initial value for \f$b\f$ vector
        *           </ul>
@@ -210,10 +210,10 @@ namespace LOCA {
 	 * \brief Constructor with initial data passed through parameter lists.
 	 */
 	ExtendedGroup(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-         const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& tpParams,
-	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g);
+	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+	 const Teuchos::RCP<Teuchos::ParameterList>& tpParams,
+	 const Teuchos::RCP<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g);
 
 	//! Copy constructor.
 	ExtendedGroup(const ExtendedGroup& source, 
@@ -232,7 +232,7 @@ namespace LOCA {
 	operator=(const NOX::Abstract::Group& source);
      
 	//! Cloning function
-	virtual Teuchos::RefCountPtr<NOX::Abstract::Group>
+	virtual Teuchos::RCP<NOX::Abstract::Group>
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
 	//! Set the solution vector, x, to y.
@@ -352,12 +352,12 @@ namespace LOCA {
 	
 	//! Return underlying group
 	virtual 
-	Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
+	Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
 	getUnderlyingGroup() const;
 	
 	//! Return underlying group
 	virtual 
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+	Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 	getUnderlyingGroup();
 
 	//@}
@@ -465,7 +465,7 @@ namespace LOCA {
 	virtual int getBorderedWidth() const;
 	
 	//! Get bottom-level unbordered group
-	virtual Teuchos::RefCountPtr<const NOX::Abstract::Group>
+	virtual Teuchos::RCP<const NOX::Abstract::Group>
 	getUnborderedGroup() const;
 	
 	//! Indicates whether combined A block is zero
@@ -528,8 +528,8 @@ namespace LOCA {
 
 	//! Computes initial "a" and "b" vectors
 	void getInitialVectors(
-			 Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
-			 Teuchos::RefCountPtr<NOX::Abstract::Vector>& bVecPtr,
+			 Teuchos::RCP<NOX::Abstract::Vector>& aVecPtr,
+			 Teuchos::RCP<NOX::Abstract::Vector>& bVecPtr,
 			 bool isSymmetric);
 
       private:
@@ -540,22 +540,22 @@ namespace LOCA {
       protected:
 
 	//! Pointer LOCA global data object
-	Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+	Teuchos::RCP<LOCA::GlobalData> globalData;
 
 	//! Parsed top-level parameters
-	Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
+	Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams;
 
 	//! Bifurcation parameter list
-	Teuchos::RefCountPtr<Teuchos::ParameterList> turningPointParams;
+	Teuchos::RCP<Teuchos::ParameterList> turningPointParams;
 
 	//! Pointer to base group that defines \f$F\f$
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup> grpPtr;
+	Teuchos::RCP<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup> grpPtr;
 
 	//! Pointer to the constraint equation
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::Constraint> constraint;
+	Teuchos::RCP<LOCA::TurningPoint::MinimallyAugmented::Constraint> constraint;
 
 	//! Pointer to constrained group implementation
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstrainedGroup> conGroup;
+	Teuchos::RCP<LOCA::MultiContinuation::ConstrainedGroup> conGroup;
 
 	//! Stores the bifurcation parameter index
 	int bifParamID;

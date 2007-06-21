@@ -51,7 +51,7 @@
 #endif
 
 LOCA::Eigensolver::Factory::Factory(
-	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
@@ -60,13 +60,13 @@ LOCA::Eigensolver::Factory::~Factory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
+Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy>
 LOCA::Eigensolver::Factory::create(
-       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams)
+       const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RCP<Teuchos::ParameterList>& eigenParams)
 {
   string methodName = "LOCA::Eigensolver::Factory::create()";
-  Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> strategy;
+  Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> strategy;
 
   // Get name of strategy
   const string& name = strategyName(*eigenParams);
@@ -93,9 +93,9 @@ LOCA::Eigensolver::Factory::create(
     string userDefinedName = eigenParams->get("User-Defined Name",
 						       "???");
     if ((*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> >(userDefinedName))
+	isType< Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> >(userDefinedName))
       strategy = (*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> >(userDefinedName);
+	get< Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,

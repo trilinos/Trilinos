@@ -63,7 +63,7 @@ namespace Abstract {
 
   The user should implement their own concrete implementation of this
   class and register it as a
-  Teuchos::RefCountPtr<NOX::Abstract::PrePostoperator> in the "Solver
+  Teuchos::RCP<NOX::Abstract::PrePostoperator> in the "Solver
   Options" sublist.
 
   
@@ -84,7 +84,7 @@ namespace Abstract {
   <li> Create the appropriate entries in the parameter list, as follows.
 
   \code
-  Teuchos::RefCountPtr<Foo> foo = Teuchos::rcp(new Foo);
+  Teuchos::RCP<Foo> foo = Teuchos::rcp(new Foo);
   params.sublist("Sovler Options").set<NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", foo);
   \endcode
 
