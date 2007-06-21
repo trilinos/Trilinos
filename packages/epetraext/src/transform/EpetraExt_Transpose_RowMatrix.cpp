@@ -185,7 +185,7 @@ operator()( OriginalTypeRef orig )
  
   // Note: The following call to FillComplete is currently necessary because
   //      some global constants that are needed by the Export () are computed in this routine
-  err = TempTransA1.FillComplete(orig.OperatorRangeMap(),*TransposeRowMap_);
+  err = TempTransA1.FillComplete(orig.OperatorRangeMap(),*TransposeRowMap_, false);
   if (err != 0) {
     throw TempTransA1.ReportError("FillComplete failed.",err);
   }
@@ -261,7 +261,7 @@ bool EpetraExt::RowMatrix_Transpose::fwd()
  
   // Note: The following call to FillComplete is currently necessary because
   //     some global constants that are needed by the Export () are computed in this routine
-  EPETRA_CHK_ERR(TempTransA1.FillComplete());
+  EPETRA_CHK_ERR(TempTransA1.FillComplete(false));
 
   // Now that transpose matrix with shared rows is entered, update values of target transpose matrix
   TransposeMatrix_->PutScalar(0.0);  // Zero out all values of the matrix
