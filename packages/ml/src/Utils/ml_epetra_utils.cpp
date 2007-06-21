@@ -898,12 +898,11 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
 #define LIGHTWEIGHT_WRAP
 #ifdef LIGHTWEIGHT_WRAP
   /* This is a very dangerous way to do this.  Live on the edge. */
-  int *cols, *gcols;
+  int *cols;
   double* vals;
   struct ML_CSR_MSRdata* M_= (struct ML_CSR_MSRdata*)ML_Get_MyGetrowData(A);
 
   /* Build the Column Map */
-  int *global_colmap;
   Epetra_Map *DomainMap,*ColMap;
   ML_Build_Epetra_Maps(A,&DomainMap,NULL,&ColMap,base);
   
@@ -1976,7 +1975,7 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   int    isize_offset, osize_offset;
   int Nghost;
   ML_Comm *comm;
-  
+
   comm = Amat->comm;
 #ifdef ML_MPI
   MPI_Comm mpi_comm ;
@@ -2003,6 +2002,11 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
 
   int isize = Amat->invec_leng;
   int osize = Amat->outvec_leng;
+
+  int g_isize, g_osize;
+  EpetraComm.SumAll(&isize,&g_isize,1);
+  EpetraComm.SumAll(&osize,&g_osize,1);
+  bool isSquare = (g_isize == g_osize);
 
   EpetraComm.ScanSum(&isize,&isize_offset,1); isize_offset-=isize + base;
   EpetraComm.ScanSum(&osize,&osize_offset,1); osize_offset-=osize + base;
@@ -2108,7 +2112,7 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
       colVal[NumNonzeros] = 1.0;
       NumNonzeros++;
     }
-    else if(NumNonzeros>0 && !has_diagonal && CheckNonzeroRow){
+    else if(NumNonzeros>0 && !has_diagonal && CheckNonzeroRow && isSquare) {
       if(verbose) printf("Row %d/%d has no diagonal entry\n",i,global_osize_as_int[i]);
       // insert a 1 on the diagonal
       colInd[NumNonzeros] = global_isize_as_int[i];
