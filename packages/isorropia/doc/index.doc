@@ -15,8 +15,10 @@ built and used with minimal capability without Zoltan. To enable Isorropia's
 Zoltan support, you need to add '--enable-isorropia-zoltan' and
 '--enable-epetraext' to your Trilinos configure command, and provide
 include-paths and library specifications
-for Zoltan version 2.0 (provide these to configure using the
+for Zoltan version 3.0 or higher (provide these to configure using the
 '--with-incdirs' and '--with-libs' configure arguments).
+If you built Zoltan with third party libraries, e.g. ParMETIS,
+then you must also link with these libraries.
 
 <ul>
 <li> <a href="#overview">Overview of Isorropia</a>
