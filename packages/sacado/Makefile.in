@@ -241,7 +241,10 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I config
-EXTRA_DIST = bootstrap 
+EXTRA_DIST = bootstrap config/generate-makeoptions.pl \
+	config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
+	config/replace-install-prefix.pl config/string-replace.pl
+
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	configure config.status config.log \
