@@ -1549,8 +1549,20 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 } /* ML_matmat_mult() */
 
 /*********************************************************************************/
-/*Recives an ML_Operator in a sparse data structure(csr, msr or vbr and returns  */
-/*the same ML_Operator stored as a vbr matrix.                                   */
+/*Recives an ML_Operator in_matrix in a sparse data structure(csr, msr or vbr and returns  */
+/*the same ML_Operator stored as a vbr matrix. 
+
+  On input row_block_size and col_block_size are positive integers if either the column
+  or row block sizes are fixed.  They are zero if there is not a constant block size.
+
+  When row_block_size is zero then rpntr contains the row blocking information.
+  When col_block_size is zero then cpntr contains the column blocking information.
+
+  If either row_block_size or col_block_size is negative there is a problem and the function should
+  quit with an error.
+
+  This function assumes no empty columns.
+                                  */
 /*********************************************************************************/
 void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int col_block_size, int cpntr[])
 {
@@ -1577,27 +1589,81 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    double *temp_double;
    struct ML_vbrdata *out_data;
    int nnz = 0;
+   int Nghost_nodes, total_cols;
 
    /*settings to change since we now have a vbr matrix*/
    in_matrix->type = ML_TYPE_VBR_MATRIX;
    in_matrix->matvec->func_ptr = NULL;
    /*in_matrix->matvec->func_ptr = VBR_matvec;  this needs to be put back in at some point once the function exists*/
 
-   /*find number of block rows and block columns*/
-   i = rpntr[0];
-   j = 0;
-   while(i < in_matrix->invec_leng)
+   /*find number of block rows and block columnsi and their location if using a fixed width*/
+   if (row_block_size < 0)
    {
-     blockrows++;
-     i = rpntr[++j];
+     pr_error("In function convert2vbr row_block_size is negative which is undefined.  Please see function header and pass in the appropriate value.\n");
    }
-
-   i = cpntr[0];
-   j = 0;
-   while(i < in_matrix->outvec_leng)
+   if (row_block_size == 0)
+   { 
+     if(rpntr == NULL)
+     {
+       pr_error("In function convert2vbr rpntr is NULL when expecting row blocking data.\n");
+     }
+     i = rpntr[0];
+     j = 0;
+     while(i < in_matrix->outvec_leng)
+     {
+       blockrows++;
+       i = rpntr[++j];
+     }
+   }
+   else
    {
-     blockcolumns++;
-     i = cpntr[++j];
+     blockrows = in_matrix->outvec_leng/row_block_size;
+     if(in_matrix->outvec_leng != row_block_size*blockrows)
+     {
+       pr_error("In function convert2vbr the incoming row_block_size does not evenly divide the matrix rows.\n");
+     }
+     if(rpntr != NULL)
+       ML_free(rpntr);
+     rpntr = (int*)ML_allocate((blockrows+1) * sizeof(int));
+     rpntr[0] = 0;
+     for(i = 1; i <= blockrows; i++)
+       rpntr[i] = rpntr[i-1] + row_block_size;
+   }
+   
+   if (col_block_size < 0)
+   {
+     pr_error("In function convert2vbr col_block_size is negative which is undefined.  Please see function header and pass in the appropriate value.\n");
+   }
+   if (col_block_size == 0)
+   { 
+     if(cpntr == NULL)
+     {
+       pr_error("In function convert2vbr cpntr is NULL when expecting column blocking data.\n");
+     }
+     i = cpntr[0];
+     j = 0;
+     while(i < in_matrix->invec_leng)
+     {
+       blockcolumns++;
+       i = cpntr[++j];
+     }
+   }
+   else
+   { 
+     ML_CommInfoOP_Compute_TotalRcvLength(in_matrix->getrow->pre_comm);
+     Nghost_nodes = in_matrix->getrow->pre_comm->total_rcv_length;
+     total_cols = in_matrix->invec_leng+Nghost_nodes;
+     blockcolumns = total_cols/col_block_size;
+     if(total_cols != col_block_size*blockcolumns)
+     {
+       pr_error("In function convert2vbr the incoming col_block_size does not evenly divide the matrix rows.\n");
+     }
+     if(cpntr != NULL)
+       ML_free(cpntr);
+     cpntr = (int*)ML_allocate((blockcolumns+1) * sizeof(int));
+     cpntr[0] = 0;
+     for(i = 1; i <= blockcolumns; i++)
+       cpntr[i] = cpntr[i-1] + col_block_size;
    }
 
    /*at most we have the lesser of blockrows times blockcolumns blocks and the nnz in the matrix which might be better but we are not gareenteed to know the nnz this is a gross overestimate so finding a better prediction might be in order but nnz may not be right so we can't use that*/
@@ -1616,12 +1682,17 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    indx[0] = bpntr[0] = 0;
 
    /*Space for each point row being read in*/ 
-   if(in_matrix->max_nz_per_row > 0)
-     A_i_allocated = in_matrix->max_nz_per_row + 1; /*this is exact*/
-   else
-     A_i_allocated = in_matrix->outvec_leng; /*This is a very bad but safe estimate.*/
+   /*if(in_matrix->max_nz_per_row > 0)
+     A_i_allocated = in_matrix->max_nz_per_row + 1; this is exact
+   else*/
+     A_i_allocated = total_cols; /*This is a very bad but safe estimate.*/
    A_i_cols  = (int    *) ML_allocate(A_i_allocated * sizeof(int) );
    accum_val = (double *) ML_allocate(A_i_allocated * sizeof(double));
+   
+   if((A_i_cols == NULL) || (accum_val == NULL)) 
+   { 
+     pr_error("Not enough space to allocate %d doubles and ints in convert2vbr.\n", A_i_allocated);
+   }
 
 
 /*   if(in_matrix->N_nonzeros <= 0)*/ 
@@ -1629,12 +1700,11 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
      N_nonzeros even when set is not always correct*/
    for(i=0; i<in_matrix->invec_leng;i++)
    {  
-     in_matrix->getrow->func_ptr(in_matrix, 1, &(j), A_i_allocated, A_i_cols, accum_val, &row_length);
+     in_matrix->getrow->func_ptr(in_matrix, 1, &(i), A_i_allocated, A_i_cols, accum_val, &row_length);
      nnz += row_length;
    }
    /*else lets use our good estimate we already have
      nnz = in_matrix->N_nonzeros;*/
-
 
    /*10 is a complete guess.  One would hope the matrix resulting block matrix was more dense than this but there is no gareentee*/
    vals = (double *) ML_allocate(nnz*10*sizeof(double));
@@ -1680,8 +1750,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        printf("Not enough space in ML_convert2vbr\n");
        printf("trying to allocate %d ints and %d doubles \n",A_i_allocated+spaceneeded*2+blockrows,in_matrix->N_nonzeros+A_i_allocated);
        printf("Matrix has %d rows \n", in_matrix->getrow->Nrows);
-       printf("Matrix has %d nz\n", in_matrix->N_nonzeros);
-       exit(1);
+       pr_error("Matrix has %d nz\n", in_matrix->N_nonzeros);
      } 
    } 
    /*Converting functions start by looping over all block rows*/
@@ -1735,8 +1804,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
                  printf("Not enough space in ML_convert2vbr to create a bigger values array\n");
                  printf("trying to allocate %d ints and %d doubles \n",A_i_allocated+spaceneeded*2+blockrows,in_matrix->N_nonzeros+A_i_allocated);
                  printf("Matrix has %d rows \n", in_matrix->getrow->Nrows);
-                 printf("Matrix has %d nz\n", in_matrix->N_nonzeros);
-                 exit(1);
+                 pr_error("Matrix has %d nz\n", in_matrix->N_nonzeros);
                }
                else
                  vals = temp_double;
