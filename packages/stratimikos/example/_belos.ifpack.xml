@@ -8,10 +8,10 @@
       <ParameterList name="GMRES">
         <Parameter name="Max Number of Krylov Vectors" type="int" value="300"/>
       </ParameterList>
-      <Parameter name="Max Iters" type="int" value="400"/>
+      <Parameter name="Maximum Iterations" type="int" value="400"/>
       <ParameterList name="Outputter">
         <Parameter name="Output Frequency" type="int" value="1"/>
-        <Parameter name="Output Max Res Only" type="bool" value="1"/>
+        <Parameter name="Show Maximum Residual Norm Only" type="bool" value="1"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

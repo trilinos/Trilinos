@@ -6,7 +6,7 @@
     <ParameterList name="Linear Solver Types">
       <ParameterList name="Belos">
         <Parameter name="Default Rel Res Norm" type="double" value="1e-08"/>
-        <Parameter name="Max Iters" type="int" value="400"/>
+        <Parameter name="Maximum Iterations" type="int" value="400"/>
         <Parameter name="Solver Type" type="string" value="CG"/>
         <ParameterList name="GMRES">
           <Parameter name="Variant" type="string" value="Standard"/>
@@ -38,7 +38,7 @@
     <ParameterList name="Linear Solver Types">
       <ParameterList name="Belos">
         <Parameter name="Default Rel Res Norm" type="double" value="1e-14"/>
-        <Parameter name="Max Iters" type="int" value="400"/>
+        <Parameter name="Maximum Iterations" type="int" value="400"/>
         <Parameter name="Solver Type" type="string" value="CG"/>
         <ParameterList name="GMRES">
           <Parameter name="Variant" type="string" value="Standard"/>
@@ -70,7 +70,7 @@
     <ParameterList name="Linear Solver Types">
       <ParameterList name="Belos">
         <Parameter name="Default Rel Res Norm" type="double" value="1e-08"/>
-        <Parameter name="Max Iters" type="int" value="400"/>
+        <Parameter name="Maximum Iterations" type="int" value="400"/>
         <Parameter name="Solver Type" type="string" value="GMRES"/>
         <ParameterList name="GMRES">
           <Parameter name="Variant" type="string" value="Standard"/>
@@ -103,7 +103,7 @@
     <ParameterList name="Linear Solver Types">
       <ParameterList name="Belos">
         <Parameter name="Default Rel Res Norm" type="double" value="1e-08"/>
-        <Parameter name="Max Iters" type="int" value="400"/>
+        <Parameter name="Maximum Iterations" type="int" value="400"/>
         <Parameter name="Solver Type" type="string" value="GMRES"/>
         <ParameterList name="GMRES">
           <Parameter name="Variant" type="string" value="Flexible"/>
