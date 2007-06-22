@@ -4,7 +4,7 @@
 /////////////////////////////////////////////////////////////
 #include "ml_include.h"
 
-#if defined(HAVE_ML_EPETRA)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO)
 #include "Epetra_ConfigDefs.h"
 
 #include "Epetra_CrsMatrix.h"
@@ -29,7 +29,9 @@
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Import.h"
 #include "AztecOO.h"
+#include "Teuchos_ParameterList.hpp"
 #include <fstream>
+#include <vector>
 using namespace Teuchos;
 
 int main(int argc, char *argv[]) {
@@ -89,7 +91,7 @@ int main(int argc, char *argv[]) {
   if ( ypid < NBigYDirection) endy++;
 
   int NumMyElements = (endx - startx) * (endy - starty);
-  vector<int> MyGlobalElements(NumMyElements);
+  std::vector<int> MyGlobalElements(NumMyElements);
   int count = 0;
 
   double *x_coords, *y_coords;
@@ -322,7 +324,7 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("Please configure ML with --enable-epetra ");
+  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-aztecoo");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
