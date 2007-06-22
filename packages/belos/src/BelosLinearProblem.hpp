@@ -48,12 +48,21 @@ using Teuchos::ParameterList;
 /*! \class Belos::LinearProblem  
   \brief The Belos::LinearProblem class is a wrapper that encapsulates the 
   general information needed for solving a linear system of equations.  
-  The general information is being held as either Belos::Operator or
-  Belos::MultiVec objects.
 */
 
 namespace Belos {
+
+  //! @name LinearProblem Exceptions
+  //@{
   
+  /** \brief Exception thrown to signal error with the Belos::LinearProblem object.
+   */
+  class LinearProblemError : public BelosError
+  {public: LinearProblemError(const std::string& what_arg) : BelosError(what_arg) {}};
+  
+  //@}
+  
+
   template <class ScalarType, class MV, class OP>
   class LinearProblem {
    
@@ -63,7 +72,7 @@ namespace Belos {
     //@{ 
     //!  Default Constructor.
     /*! Creates an empty Belos::LinearProblem instance. The operator A, left-hand-side X
-      and right-hand-side B must be set using the SetOperator(), SetLHS() and SetRHS()
+      and right-hand-side B must be set using the setOperator(), setLHS() and setRHS()
       methods respectively.
     */
     LinearProblem(void);
@@ -71,8 +80,8 @@ namespace Belos {
     //! Unpreconditioned linear system constructor.
     /*! Creates an unpreconditioned LinearProblem instance with the 
       Belos::Operator (\c A), initial guess (\c X), and right hand side (\c B). 
-      Preconditioners can be set using the SetLeftPrec() and SetRightPrec() methods, and
-      scaling can also be set using the SetLeftScale() and SetRightScale() methods.
+      Preconditioners can be set using the setLeftPrec() and setRightPrec() methods, and
+      scaling can also be set using the setLeftScale() and setRightScale() methods.
     */
     LinearProblem(const RefCountPtr<const OP> &A, 
 		  const RefCountPtr<MV> &X, 
@@ -96,104 +105,118 @@ namespace Belos {
     //! Set Operator A of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
      */
-    void SetOperator(const RefCountPtr<const OP> &A) { A_ = A; };
+    void setOperator(const RefCountPtr<const OP> &A) { A_ = A; isSet_=false; }
     
     //! Set left-hand-side X of linear problem AX = B.
     /*! Sets a pointer to a MultiVec.  No copy of the object is made.
      */
-    void SetLHS(const RefCountPtr<MV> &X);
+    void setLHS(const RefCountPtr<MV> &X) { X_ = X; isSet_=false; }
     
     //! Set right-hand-side B of linear problem AX = B.
     /*! Sets a pointer to a MultiVec.  No copy of the object is made.
      */
-    void SetRHS(const RefCountPtr<const MV> &B) { B_ = B; };
+    void setRHS(const RefCountPtr<const MV> &B) { B_ = B; isSet_=false; }
     
     //! Set left preconditioning operator (\c LP) of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
      */
-    void SetLeftPrec(const RefCountPtr<const OP> &LP) {  LP_ = LP; Left_Prec_ = true; };
+    void setLeftPrec(const RefCountPtr<const OP> &LP) {  LP_ = LP; }
     
     //! Set right preconditioning operator (\c RP) of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
      */
-    void SetRightPrec(const RefCountPtr<const OP> &RP) { RP_ = RP; Right_Prec_ = true; };
-    
-    //! Set the parameter list for defining the behavior of the linear problem class.
-    void SetParameterList(const RefCountPtr<ParameterList> &PL) { PL_ = PL; };
-
-    //! Set the blocksize of the linear problem.  This information is used to set up the linear problem for block solvers.
-    void SetBlockSize(int blocksize) { default_blocksize_ = blocksize; blocksize_ = blocksize; };
+    void setRightPrec(const RefCountPtr<const OP> &RP) { RP_ = RP; }
     
     //! Inform the linear problem that the solver is finished with the current linear system.
-    /*! \note This method is to be <b> only </b> used by the solver to inform the linear problem manager that it's
+    /*! \note This method is to be <b> only </b> used by the solver to inform the linear problem that it's
       finished with this block of linear systems.  The next time the Curr(RHS/LHS)Vec() is called, the next
       linear system will be returned.  Computing the next linear system isn't done in this method in case the 
       blocksize is changed.
     */
-    void SetCurrLSVec();
+    void setCurrLS();
     
-    //! Inform the linear problem that the operator is symmetric.
+    //! Inform the linear problem of the linear systems that need to be solved next.
+    /*! Any calls to get the current RHS/LHS vectors after this method is called will return the new
+      linear systems indicated by \c index.  The length of \c index is assumed to be the blocksize and entries
+      of \c index must be between 0 and the number of vectors in the RHS/LHS multivector.  An entry of the
+      \c index vector can also be -1, which means this column of the linear system is augmented using a random
+      vector.
+    */
+    void setLSIndex(std::vector<int>& index); 
+    
+    //! Inform the linear problem that the operator is Hermitian.
     /*! This knowledge may allow the operator to take advantage of the linear problem symmetry.
-      However, this should not be set to true if the preconditioner is not symmetric, or symmetrically
+      However, this should not be set to true if the preconditioner is not Hermitian, or symmetrically
       applied.
     */
-    void AssertSymmetric(){ operatorSymmetric_ = true; };
-    
-    //! Inform the linear problem that the solution has been updated.
-    /*! Next time GetCurrResVecs is called, a new residual will be computed.  This keeps the
-      linear problem from having to recompute the residual vector everytime it's asked for if
-      the solution hasn't been updated.
+    void setHermitian(){ isHermitian_ = true; }
+   
+    //! Set the label prefix used by the timers in this object.  The default is "Belos".
+    /*! \note The timers are created during the first call to setProblem().  Any calls to this method to change 
+        the label after that will not change the label used in the timer.
+    */ 
+    void setLabel(const string& label) { label_ = label; }
+
+    //! Compute the new solution to the linear system given the /c update.
+    /*! \note If \c updateLP is true, then the next time GetCurrResVecs is called, a new residual will be computed.  
+      This keeps the linear problem from having to recompute the residual vector everytime it's asked for if
+      the solution hasn't been updated.  If \c updateLP is false, the new solution is computed without actually 
+      updating the linear problem.
     */
-    void SolutionUpdated( const MV* SolnUpdate = 0,
-                          ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() );
-    
+    RefCountPtr<MV> updateSolution( const RefCountPtr<MV>& update = null,
+				    bool updateLP = false,
+                                    ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() );    
+
+    //! Compute the new solution to the linear system given the /c update without updating the linear problem.
+    RefCountPtr<MV> updateSolution( const RefCountPtr<MV>& update = null,
+                                    ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() ) const
+    { return const_cast<LinearProblem<ScalarType,MV,OP> *>(this)->updateSolution( update, false, scale ); }
+
     //@}
     
-    //! @name Reset method
+    //! @name Set / Reset method
     //@{ 
     
-    //! Reset the linear problem manager.
-    /*! This is useful for solving the linear system with another right-hand side.  
-      The internal flags will be set as if the linear system manager was just initialized.
+    //! Setup the linear problem manager.
+    /*! This is useful for solving the linear system with another right-hand side or getting
+      the linear problem prepared to solve the linear system that was already passed in.  
+      The internal flags will be set as if the linear system manager was just initialized 
+      and the initial residual will be computed.
     */
-    void Reset( const RefCountPtr<MV> &newX = null, const RefCountPtr<const MV> &newB = null );
+    bool setProblem( const RefCountPtr<MV> &newX = null, const RefCountPtr<const MV> &newB = null );
+
     //@}
     
     //! @name Accessor methods
     //@{ 
     
     //! Get a pointer to the operator A.
-    RefCountPtr<const OP> GetOperator() const { return(A_); };
+    RefCountPtr<const OP> getOperator() const { return(A_); }
     
     //! Get a pointer to the left-hand side X.
-    RefCountPtr<MV> GetLHS() const { return(X_); };
+    RefCountPtr<MV> getLHS() const { return(X_); }
     
     //! Get a pointer to the right-hand side B.
-    RefCountPtr<const MV> GetRHS() const { return(B_); };
+    RefCountPtr<const MV> getRHS() const { return(B_); }
     
     //! Get a pointer to the initial residual vector.
-    /*! \note This may be the preconditioned residual, if the linear problem is left-preconditioned.
+    /*! \note This is the preconditioned residual if the linear system is preconditioned on the left.
      */
-    const MV& GetInitResVec();
+    RefCountPtr<const MV> getInitResVec() const { return(R0_); }
+    
+    //! Get a pointer to the preconditioned initial residual vector.
+    /*! \note This is the unpreconditioned residual.
+     */
+    RefCountPtr<const MV> getActualInitResVec() const { return(R0_); }
     
     //! Get a pointer to the current residual vector.
-    /*!
-      
-    \param  CurrSoln  [in] If non-null, then this is the LHS that is used to compute
-    the current residual.  If null, then GetCurrLHSVec() is used.
-    
-    Note, the current residual is always computed with respect to GetCurrRHSVec().		    
-    
-    \note <ul>
-    <li> This method computes the true residual of the current linear system
-    with respect to GetCurrRHSVec() and GetCurrLHSVec() if CurrSoln==NULL
-    or with respect to *CurrSoln if CurrSoln!=NULL.  
-    <li> If the solution hasn't been updated in the LinearProblem and
-    a current solution has been computed by the solver (like GMRES), it can
-    be passed into this method to compute the residual.
-    </ul>
+    /*! This method is called by the solver of any method that is interested in the current linear system
+      being solved for.
+      <ol>
+      <li> If the solution has been updated by the solver, then this vector is current ( see SolutionUpdated() ).
+      </ol>
     */
-    const MV& GetCurrResVec( const MV* CurrSoln = 0 );
+    RefCountPtr<MV> getCurrResVec() { return curR_; }
     
     //! Get a pointer to the current left-hand side (solution) of the linear system.
     /*! This method is called by the solver or any method that is interested in the current linear system
@@ -203,7 +226,7 @@ namespace Belos {
       <li> If there is no linear system to solve, this method will return a NULL pointer
       </ol>
     */
-    RefCountPtr<MV> GetCurrLHSVec();
+    RefCountPtr<MV> getCurrLHSVec();
     
     //! Get a pointer to the current right-hand side of the linear system.
     /*! This method is called by the solver of any method that is interested in the current linear system
@@ -213,56 +236,57 @@ namespace Belos {
       <li> If there is no linear system to solve, this method will return a NULL pointer
       </ol>
     */	
-    RefCountPtr<MV> GetCurrRHSVec();
+    RefCountPtr<MV> getCurrRHSVec();
     
     //! Get a pointer to the left preconditioning operator.
-    RefCountPtr<const OP> GetLeftPrec() const { return(LP_); };
+    RefCountPtr<const OP> getLeftPrec() const { return(LP_); };
     
     //! Get a pointer to the right preconditioning operator.
-    RefCountPtr<const OP> GetRightPrec() const { return(RP_); };
+    RefCountPtr<const OP> getRightPrec() const { return(RP_); };
     
-    //! Get a pointer to the parameter list.
-    RefCountPtr<ParameterList> GetParameterList() const { return(PL_); };
-
-    //! Get the default blocksize being used by the linear problem.
-    int GetBlockSize() const { return( default_blocksize_ ); };
-    
-    //! Get the current blocksize being used by the linear problem.
-    /*! This may be different from the default blocksize set for the linear problem in the event
-      that the default blocksize doesn't divide evenly into the number of right-hand sides, but
-      it should not be more than the default blocksize.
-    */
-    int GetCurrBlockSize() const { return( blocksize_ ); };
-
-    //! Get the current number of linear systems being solved for.
-    /*! Since the block size is independent of the number of right-hand sides, 
-      it is important to know how many linear systems
-      are being solved for when the status is checked.  This is informative for residual
-      checks because the entire block of residuals may not be of interest.  Thus, this 
-      number can be anywhere between 1 and the blocksize of the linear system.
-    */
-    int GetNumToSolve() const { return( num_to_solve_ ); };
-    
-    //! Get the 0-based index of the first vector in the current right-hand side block being solved for.
+    //! Get the 0-based index vector indicating the current linear systems being solved for.
     /*! Since the block size is independent of the number of right-hand sides for
-      some solvers (GMRES, CG, etc.), it is important to know which right-hand sides
+      some solvers (GMRES, CG, etc.), it is important to know which linear systems
       are being solved for.  That may mean you need to update the information
       about the norms of your initial residual vector for weighting purposes.  This
       information can keep you from querying the solver for information that rarely
       changes.
+      \note The length of the index vector is the number of right-hand sides being solved for.
+            If an entry of this vector is -1 then that linear system is an augmented linear
+	    system and doesn't need to be considered for convergence.
     */
-    int GetRHSIndex() const { return( rhs_index_ ); };
+    std::vector<int> getLSIndex() const { if (isSet_) return(rhsIndex_); }
+
+    //! Get the number of linear systems that have been set with this LinearProblem object.
+    /* This can be used by status test classes to determine if the solver manager has advanced 
+       and is solving another linear system.
+    */
+    int getLSNumber() const { return(lsNum_); }
+
+    //@}
+    
+    //! @name State methods
+    //@{ 
     
     //! Get the current status of the solution.
-    /*! This only means that the current linear system being solved for ( obtained by GetCurr<LHS/RHS>Vec() )
+    /*! This only means that the current linear system being solved for ( obtained by getCurr<LHS/RHS>Vec() )
       has been updated by the solver.  This will be true every iteration for solvers like CG, but not
       true until restarts for GMRES.
     */
-    bool IsSolutionUpdated() const { return(solutionUpdated_); };
+    bool isSolutionUpdated() const { return(solutionUpdated_); }
+
+    //! If the problem has been set, this will return true.
+    bool isProblemSet() const { return(isSet_); }
     
-    //! Get operator symmetry bool.
-    bool IsOperatorSymmetric() const { return(operatorSymmetric_); };
+    //! Get the current symmetry of the operator.
+    bool isHermitian() const { return(isHermitian_); }
     
+    //! Get information on whether the linear system is being preconditioned on the left.
+    bool isLeftPrec() const { return(LP_!=null); }
+
+    //! Get information on whether the linear system is being preconditioned on the right.
+    bool isRightPrec() const { return(RP_!=null); }
+ 
     //@}
     
     //! @name Apply / Compute methods
@@ -273,48 +297,52 @@ namespace Belos {
       Most Krylov methods will use this application method within their code.
       
       Precondition:<ul>
-      <li><tt>GetOperator().get()!=NULL</tt>
+      <li><tt>getOperator().get()!=NULL</tt>
       </ul>
     */
-    ReturnType Apply( const MV& x, MV& y );
+    void apply( const MV& x, MV& y ) const;
     
     //! Apply ONLY the operator to \c x, returning \c y.
     /*! This application is only of the linear problem operator, no preconditioners are applied.
       Flexible variants of Krylov methods will use this application method within their code.
       
       Precondition:<ul>
-      <li><tt>GetOperator().get()!=NULL</tt>
+      <li><tt>getOperator().get()!=NULL</tt>
       </ul>
     */
-    ReturnType ApplyOp( const MV& x, MV& y );
+    void applyOp( const MV& x, MV& y ) const;
     
     //! Apply ONLY the left preconditioner to \c x, returning \c y.  
     /*! This application is only of the left preconditioner, which may be required for flexible variants
       of Krylov methods.
       \note This will return Undefined if the left preconditioner is not defined for this operator.
     */  
-    ReturnType ApplyLeftPrec( const MV& x, MV& y );
+    void applyLeftPrec( const MV& x, MV& y ) const;
     
     //! Apply ONLY the right preconditioner to \c x, returning \c y.
     /*! This application is only of the right preconditioner, which may be required for flexible variants
       of Krylov methods.
       \note This will return Undefined if the right preconditioner is not defined for this operator.
     */
-    ReturnType ApplyRightPrec( const MV& x, MV& y );
+    void applyRightPrec( const MV& x, MV& y ) const;
     
     //! Compute a residual \c R for this operator given a solution \c X, and right-hand side \c B.
     /*! This method will compute the residual for the current linear system if \c X and \c B are null pointers.
       The result will be returned into R.  Otherwise <tt>R = OP(A)X - B</tt> will be computed and returned.
       \note This residual will be a preconditioned residual if the system has a left preconditioner.
     */
-    ReturnType ComputeResVec( MV* R, const MV* X = 0, const MV* B = 0 );
+    void computeCurrResVec( MV* R , const MV* X = 0, const MV* B = 0 ) const;
+
+    //! Compute a residual \c R for this operator given a solution \c X, and right-hand side \c B.
+    /*! This method will compute the residual for the current linear system if \c X and \c B are null pointers.
+      The result will be returned into R.  Otherwise <tt>R = OP(A)X - B</tt> will be computed and returned.
+      \note This residual will not be preconditioned if the system has a left preconditioner.
+    */
+    void computeActualResVec( MV* R, const MV* X = 0, const MV* B = 0 ) const;
     
     //@}
     
   private:
-    
-    //! Private method for populating the next block linear system.
-    void SetUpBlocks();
     
     //! Operator of linear system. 
     RefCountPtr<const OP> A_;
@@ -323,16 +351,16 @@ namespace Belos {
     RefCountPtr<MV> X_;
     
     //! Current solution vector of the linear system.
-    RefCountPtr<MV> CurX_;
+    RefCountPtr<MV> curX_;
     
     //! Right-hand side of linear system.
     RefCountPtr<const MV> B_;
     
     //! Current right-hand side of the linear system.
-    RefCountPtr<MV> CurB_;
+    RefCountPtr<MV> curB_;
     
     //! Current residual of the linear system.
-    RefCountPtr<MV> R_;
+    RefCountPtr<MV> curR_;
     
     //! Initial residual of the linear system.
     RefCountPtr<MV> R0_;
@@ -343,34 +371,31 @@ namespace Belos {
     //! Right preconditioning operator of linear system
     RefCountPtr<const OP> RP_;
     
-    //! Parameter list for defining the behavior of the linear problem class
-    RefCountPtr<ParameterList> PL_;
-
     //! Timers
-    Teuchos::RefCountPtr<Teuchos::Time> timerOp_, timerPrec_;
+    mutable Teuchos::RefCountPtr<Teuchos::Time> timerOp_, timerPrec_;
 
-    //! Default block size of linear system.
-    int default_blocksize_;
-    
     //! Current block size of linear system.
     int blocksize_;
 
     //! Number of linear systems that are currently being solver for ( <= blocksize_ )
-    int num_to_solve_;
+    int num2Solve_;
     
-    //! Index of current block of right-hand sides being solver for ( RHS[:, rhs_index_:(rhs_index_+_blocksize)] ).
-    int rhs_index_;
-    
+    //! Indices of current linear systems being solver for.
+    std::vector<int> rhsIndex_;    
+
+    //! Number of linear systems that have been loaded in this linear problem object.
+    int lsNum_;
+
     //! Booleans to keep track of linear problem attributes/status.
-    bool Left_Prec_;
-    bool Right_Prec_;
     bool Left_Scale_;
     bool Right_Scale_;
-    bool operatorSymmetric_;
+    bool isSet_;
+    bool isHermitian_;
     bool solutionUpdated_;    
-    bool solutionFinal_;
-    bool initresidsComputed_;
-    
+   
+    //! Linear problem label that prefixes the timer labels.
+    string label_;
+ 
     typedef MultiVecTraits<ScalarType,MV>  MVT;
     typedef OperatorTraits<ScalarType,MV,OP>  OPT;
   };
@@ -381,20 +406,15 @@ namespace Belos {
   
   template <class ScalarType, class MV, class OP>
   LinearProblem<ScalarType,MV,OP>::LinearProblem(void) : 
-    timerOp_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Op*x")),
-    timerPrec_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Prec*x")),
-    default_blocksize_(1),
-    blocksize_(1),
-    num_to_solve_(0),
-    rhs_index_(0),  
-    Left_Prec_(false),
-    Right_Prec_(false),
+    blocksize_(0),
+    num2Solve_(0),
+    lsNum_(0),
     Left_Scale_(false),
     Right_Scale_(false),
-    operatorSymmetric_(false),
+    isSet_(false),
+    isHermitian_(false),
     solutionUpdated_(false),
-    solutionFinal_(true),
-    initresidsComputed_(false)
+    label_("Belos")
   {
   }
   
@@ -406,50 +426,41 @@ namespace Belos {
     A_(A),
     X_(X),
     B_(B),
-    timerOp_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Op*x")),
-    timerPrec_(Teuchos::TimeMonitor::getNewTimer("Belos: Operation Prec*x")),
-    default_blocksize_(1),
-    blocksize_(1),
-    num_to_solve_(1),
-    rhs_index_(0),
-    Left_Prec_(false),
-    Right_Prec_(false),
+    blocksize_(0),
+    num2Solve_(0),
+    lsNum_(0),
     Left_Scale_(false),
     Right_Scale_(false),
-    operatorSymmetric_(false),
+    isSet_(false),
+    isHermitian_(false),
     solutionUpdated_(false),
-    solutionFinal_(true),
-    initresidsComputed_(false)
+    label_("Belos")
   {
-    R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
   }
   
   template <class ScalarType, class MV, class OP>
   LinearProblem<ScalarType,MV,OP>::LinearProblem(const LinearProblem<ScalarType,MV,OP>& Problem) :
     A_(Problem.A_),
     X_(Problem.X_),
-    CurX_(Problem.CurX_),
+    curX_(Problem.curX_),
     B_(Problem.B_),
-    CurB_(Problem.CurB_),
-    R_(Problem.R_),
+    curB_(Problem.curB_),
+    curR_(Problem.curR_),
     R0_(Problem.R0_),
     LP_(Problem.LP_),
     RP_(Problem.RP_),
-    PL_(Problem.PL_),
     timerOp_(Problem.timerOp_),
     timerPrec_(Problem.timerPrec_),
-    default_blocksize_(Problem.default_blocksize_),
     blocksize_(Problem.blocksize_),
-    num_to_solve_(Problem.num_to_solve_),
-    rhs_index_(Problem.rhs_index_),
-    Left_Prec_(Problem.Left_Prec_),
-    Right_Prec_(Problem.Right_Prec_),
+    num2Solve_(Problem.num2Solve_),
+    rhsIndex_(Problem.rhsIndex_),
+    lsNum_(Problem.lsNum_),
     Left_Scale_(Problem.Left_Scale_),
     Right_Scale_(Problem.Right_Scale_),
-    operatorSymmetric_(Problem.operatorSymmetric_),
+    isSet_(Problem.isSet_),
+    isHermitian_(Problem.isHermitian_),
     solutionUpdated_(Problem.solutionUpdated_),
-    solutionFinal_(Problem.solutionFinal_),
-    initresidsComputed_(Problem.initresidsComputed_)
+    label_(Problem.label_)
   {
   }
   
@@ -458,224 +469,233 @@ namespace Belos {
   {}
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::SetUpBlocks()
+  void LinearProblem<ScalarType,MV,OP>::setLSIndex(std::vector<int>& index)
   {
+    // Set new linear systems using the indices in index.
+    rhsIndex_ = index;
+    
     // Compute the new block linear system.
     // ( first clean up old linear system )
-    if (CurB_.get()) CurB_ = null;
-    if (CurX_.get()) CurX_ = null;
-    if (R_.get()) R_ = null;
-    //
-    // Determine how many linear systems are left to solve for and populate LHS and RHS vector.
-    // If the number of linear systems left are less than the current blocksize, then
-    // we create a multivector and copy the left over LHS and RHS vectors into them.
-    // The rest of the multivector is populated with random vectors (RHS) or zero vectors (LHS).
-    //
-    num_to_solve_ = MVT::GetNumberVecs(*X_) - rhs_index_;
-    //
-    // Return the NULL pointer if we don't have any more systems to solve for.
-    if ( num_to_solve_ <= 0 ) { return; }  
-    //
-    int i;
-    std::vector<int> index( num_to_solve_ );
-    for ( i=0; i<num_to_solve_; i++ ) { index[i] = rhs_index_ + i; }
-    //
-/*    if ( num_to_solve_ < default_blocksize_ )
-      blocksize_ = num_to_solve_;
-    else
-      blocksize_ = default_blocksize_;
-*/
-    //
-    if ( num_to_solve_ < blocksize_ ) 
-      {
-	std::vector<int> index2(num_to_solve_);
-	for (i=0; i<num_to_solve_; i++) {
-	  index2[i] = i;
-	}
-	//
-	// First create multivectors of blocksize and fill the RHS with random vectors LHS with zero vectors.
-	CurX_ = MVT::Clone( *X_, blocksize_ );
-	MVT::MvInit(*CurX_);
-	CurB_ = MVT::Clone( *B_, blocksize_ );
-	MVT::MvRandom(*CurB_);
-	R_ = MVT::Clone( *X_, blocksize_);
-	//
-	RefCountPtr<const MV> tptr = MVT::CloneView( *B_, index );
-	MVT::SetBlock( *tptr, index2, *CurB_ );
-	//
-	RefCountPtr<MV> tptr2 = MVT::CloneView( *X_, index );
-	MVT::SetBlock( *tptr2, index2, *CurX_ );
-      } else { 
-	//
-	// If the number of linear systems left are more than or equal to the current blocksize, then
-	// we create a view into the LHS and RHS.
-	//
-	num_to_solve_ = blocksize_;
-	index.resize( num_to_solve_ );
-	for ( i=0; i<num_to_solve_; i++ ) { index[i] = rhs_index_ + i; }
-	CurX_ = MVT::CloneView( *X_, index );
-	CurB_ = rcp_const_cast<MV>(MVT::CloneView( *B_, index ));
-	R_ = MVT::Clone( *X_, num_to_solve_ );
-	//
+    curB_ = null;
+    curX_ = null;
+    curR_ = null;
+   
+    // Create indices for the new linear system.
+    int validIdx = 0;
+    blocksize_ = rhsIndex_.size();
+    std::vector<int> vldIndex( blocksize_ );
+    std::vector<int> newIndex( blocksize_ );
+    for (int i=0; i<blocksize_; ++i) {
+      if (rhsIndex_[i] > -1) {
+        vldIndex[validIdx] = rhsIndex_[i];
+        newIndex[validIdx] = i;
+        validIdx++;
       }
+    }
+    num2Solve_ = validIdx;
+
+    // Create the new linear system using index
+    if (num2Solve_ != blocksize_) {
+      newIndex.resize(num2Solve_);
+      vldIndex.resize(num2Solve_);
+      //
+      // First create multivectors of blocksize.
+      // Fill the RHS with random vectors LHS with zero vectors.
+      curX_ = MVT::Clone( *X_, blocksize_ );
+      MVT::MvInit(*curX_);
+      curB_ = MVT::Clone( *B_, blocksize_ );
+      MVT::MvRandom(*curB_);
+      curR_ = MVT::Clone( *X_, blocksize_);
+      //
+      RefCountPtr<const MV> tptr = MVT::CloneView( *B_, vldIndex );
+      MVT::SetBlock( *tptr, newIndex, *curB_ );
+      //
+      RefCountPtr<MV> tptr2 = MVT::CloneView( *X_, vldIndex );
+      MVT::SetBlock( *tptr2, newIndex, *curX_ );
+    }
+    else {
+      curX_ = MVT::CloneView( *X_, rhsIndex_ );
+      curB_ = rcp_const_cast<MV>(MVT::CloneView( *B_, rhsIndex_ ));
+      curR_ = MVT::Clone( *X_, blocksize_ );
+    }
     //
     // Compute the current residual.
     // 
-    if (R_.get()) {
-      OPT::Apply( *A_, *CurX_, *R_ );
-      MVT::MvAddMv( 1.0, *CurB_, -1.0, *R_, *R_ );
-      solutionUpdated_ = false;
-    }
+    OPT::Apply( *A_, *curX_, *curR_ );
+    MVT::MvAddMv( 1.0, *curB_, -1.0, *curR_, *curR_ );
+    solutionUpdated_ = false;
+    //
+    // Increment the number of linear systems that have been loaded into this object.
+    //
+    lsNum_++;
   }
-  
+
+
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::SetLHS(const RefCountPtr<MV> &X)
-  {
-    X_ = X; 
-    R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) ); 
-  }
-  
-  template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::SetCurrLSVec() 
+  void LinearProblem<ScalarType,MV,OP>::setCurrLS() 
   { 
-    int i;
     //
     // We only need to copy the solutions back if the linear systems of
     // interest are less than the block size.
     //
-    if (num_to_solve_ < blocksize_) {
-      //
-      std::vector<int> index( num_to_solve_ );
-      //
-      RefCountPtr<MV> tptr;
+    if (num2Solve_ < blocksize_) {
       //
       // Get a view of the current solutions and correction vector.
       //
-      for (i=0; i<num_to_solve_; i++) { 
-	index[i] = i;	
+      int validIdx = 0;
+      std::vector<int> newIndex( num2Solve_ );
+      std::vector<int> vldIndex( num2Solve_ );
+      for (int i=0; i<blocksize_; ++i) {
+        if ( rhsIndex_[i] > -1 ) { 
+          vldIndex[validIdx] = rhsIndex_[i];
+	  newIndex[validIdx] = i;
+          validIdx++;
+        }	
       }
-      tptr = MVT::CloneView( *CurX_, index );
-      //
-      // Copy the correction vector to the solution vector.
-      //
-      for (i=0; i<num_to_solve_; i++) { 
-	index[i] = rhs_index_ + i; 
-      }
-      MVT::SetBlock( *tptr, index, *X_ );
+      RefCountPtr<MV> tptr = MVT::CloneView( *curX_, newIndex );
+      MVT::SetBlock( *tptr, vldIndex, *X_ );
     }
     //
-    // Get the linear problem ready to determine the next linear system.
+    // Clear the current vectors of this linear system so that any future calls
+    // to get the vectors for this system return null pointers.
     //
-    solutionFinal_ = true; 
-    rhs_index_ += num_to_solve_; 
+    curX_ = null;
+    curB_ = null;
+    curR_ = null;
+    rhsIndex_.resize(0);
   }
   
+
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::SolutionUpdated( const MV* SolnUpdate, ScalarType scale )
+  RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::updateSolution( const RefCountPtr<MV>& update, 
+								   bool updateLP,
+								   ScalarType scale )
   { 
-    if (SolnUpdate) {
-      if (Right_Prec_) {
-	//
-	// Apply the right preconditioner before computing the current solution.
-	RefCountPtr<MV> TrueUpdate = MVT::Clone( *SolnUpdate, MVT::GetNumberVecs( *SolnUpdate ) );
-	OPT::Apply( *RP_, *SolnUpdate, *TrueUpdate ); 
-	MVT::MvAddMv( 1.0, *CurX_, scale, *TrueUpdate, *CurX_ ); 
-      } else {
-	MVT::MvAddMv( 1.0, *CurX_, scale, *SolnUpdate, *CurX_ ); 
+    RefCountPtr<MV> newSoln;
+    if (update != null) {
+      if (updateLP == true) {
+	if (RP_!=null) {
+	  //
+	  // Apply the right preconditioner before computing the current solution.
+	  RefCountPtr<MV> TrueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
+	  OPT::Apply( *RP_, *update, *TrueUpdate ); 
+	  MVT::MvAddMv( 1.0, *curX_, scale, *TrueUpdate, *curX_ ); 
+	} 
+	else {
+	  MVT::MvAddMv( 1.0, *curX_, scale, *update, *curX_ ); 
+	}
+	solutionUpdated_ = true; 
+	newSoln = curX_;
+      }
+      else {
+	newSoln = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
+	if (RP_!=null) {
+	  //
+	  // Apply the right preconditioner before computing the current solution.
+	  RefCountPtr<MV> trueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
+	  OPT::Apply( *RP_, *update, *trueUpdate ); 
+	  MVT::MvAddMv( 1.0, *curX_, scale, *trueUpdate, *newSoln ); 
+	} 
+	else {
+	  MVT::MvAddMv( 1.0, *curX_, scale, *update, *newSoln ); 
+	}
       }
     }
-    solutionUpdated_ = true; 
+    else {
+      newSoln = curX_;
+    }
+    return newSoln;
   }
   
+
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::Reset( const RefCountPtr<MV> &newX, const RefCountPtr<const MV> &newB )
+  bool LinearProblem<ScalarType,MV,OP>::setProblem( const RefCountPtr<MV> &newX, const RefCountPtr<const MV> &newB )
   {
+    // Set the linear system using the arguments newX and newB
+    if (newX != null)
+      X_ = newX;
+    if (newB != null)
+      B_ = newB;
+
+    // Invalidate the current linear system indices and multivectors.
+    rhsIndex_.resize(0);
+    curX_ = null;
+    curB_ = null;
+    curR_ = null;
+
+    // Check the validity of the linear problem object.
+    // If no operator A exists, then throw an exception.
+    if (A_ == null || X_ == null || B_ == null) {
+      isSet_ = false;
+      return isSet_;
+    }
+
+    // Initialize the state booleans
     solutionUpdated_ = false;
-    solutionFinal_ = true;
-    initresidsComputed_ = false;
-    rhs_index_ = 0;
     
-    X_ = newX;
-    B_ = newB;
-    GetInitResVec();
-  }
-  
-  template <class ScalarType, class MV, class OP>
-  const MV& LinearProblem<ScalarType,MV,OP>::GetInitResVec() 
-  {
-    // Compute the initial residual if it hasn't been computed
-    // and all the components of the linear system are there.
-    // The left preconditioner will be applied if it exists, resulting
-    // in a preconditioned residual.
-    if (!initresidsComputed_ && A_.get() && X_.get() && B_.get()) 
-      {
-	if (R0_.get()) R0_ = null;
-	R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
-	OPT::Apply( *A_, *X_, *R0_ );
-	MVT::MvAddMv( 1.0, *B_, -1.0, *R0_, *R0_ );
-	initresidsComputed_ = true;
-      }
-    return (*R0_);
-  }
-  
-  template <class ScalarType, class MV, class OP>
-  const MV& LinearProblem<ScalarType,MV,OP>::GetCurrResVec( const MV* CurrSoln ) 
-  {
-    // Compute the residual of the current linear system.
-    // This should be used if the solution has been updated.
-    // Alternatively, if the current solution has been computed by GMRES
-    // this can be passed in and the current residual will be updated using
-    // it.
-    //
-    if (solutionUpdated_) 
-      {
-	OPT::Apply( *A_, *GetCurrLHSVec(), *R_ );
-	MVT::MvAddMv( 1.0, *GetCurrRHSVec(), -1.0, *R_, *R_ ); 
-	solutionUpdated_ = false;
-      }
-    else if (CurrSoln) 
-      {
-	OPT::Apply( *A_, *CurrSoln, *R_ );
-	MVT::MvAddMv( 1.0, *GetCurrRHSVec(), -1.0, *R_, *R_ ); 
-      }
-    return (*R_);
-  }
-  
-  template <class ScalarType, class MV, class OP>
-  RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::GetCurrLHSVec()
-  {
-    if (solutionFinal_) {
-      solutionFinal_ = false;	// make sure we don't populate the current linear system again.
-      SetUpBlocks();
+    // Compute the initial residual vector.
+    if (R0_==null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *X_ )) {
+      R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
     }
-    return CurX_; 
-  }
-  
-  template <class ScalarType, class MV, class OP>
-  RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::GetCurrRHSVec()
-  {
-    if (solutionFinal_) {
-      solutionFinal_ = false;	// make sure we don't populate the current linear system again.
-      SetUpBlocks();
+    OPT::Apply( *A_, *X_, *R0_ );
+    MVT::MvAddMv( 1.0, *B_, -1.0, *R0_, *R0_ );
+
+    // Create timers if the haven't been created yet.
+    if (timerOp_ == Teuchos::null) {
+      string opLabel = label_ + ": Operation Op*x";
+      timerOp_ = Teuchos::TimeMonitor::getNewTimer( opLabel );
     }
-    return CurB_;
+    if (timerPrec_ == Teuchos::null) {
+      string precLabel = label_ + ": Operation Prec*x";
+      timerPrec_ = Teuchos::TimeMonitor::getNewTimer( precLabel );
+    }
+
+    // The problem has been set and is ready for use.
+    isSet_ = true;
+
+    // Return isSet.
+    return isSet_;
   }
   
   template <class ScalarType, class MV, class OP>
-  ReturnType LinearProblem<ScalarType,MV,OP>::Apply( const MV& x, MV& y )
+  RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::getCurrLHSVec()
+  {
+    if (isSet_) {
+      return curX_;
+    }
+    else {
+      return Teuchos::null;
+    }
+  }
+  
+  template <class ScalarType, class MV, class OP>
+  RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::getCurrRHSVec()
+  {
+    if (isSet_) {
+      return curB_;
+    }
+    else {
+      return Teuchos::null;
+    }
+  }
+  
+  template <class ScalarType, class MV, class OP>
+  void LinearProblem<ScalarType,MV,OP>::apply( const MV& x, MV& y ) const
   {
     RefCountPtr<MV> ytemp = MVT::Clone( y, MVT::GetNumberVecs( y ) );
+    bool leftPrec = LP_!=null;
+    bool rightPrec = RP_!=null;
     //
     // No preconditioning.
     // 
-    if (!Left_Prec_ && !Right_Prec_){ 
+    if (!leftPrec && !rightPrec){ 
       Teuchos::TimeMonitor OpTimer(*timerOp_);
       OPT::Apply( *A_, x, y );
     }
     //
     // Preconditioning is being done on both sides
     //
-    else if( Left_Prec_ && Right_Prec_ ) 
+    else if( leftPrec && rightPrec ) 
       {
         {
           Teuchos::TimeMonitor PrecTimer(*timerPrec_);
@@ -693,7 +713,7 @@ namespace Belos {
     //
     // Preconditioning is only being done on the left side
     //
-    else if( Left_Prec_ ) 
+    else if( leftPrec ) 
       {
         {
           Teuchos::TimeMonitor PrecTimer(*timerPrec_);
@@ -718,77 +738,119 @@ namespace Belos {
       	  OPT::Apply( *A_, *ytemp, y );
         }
       }  
-    return Ok;
   }
   
   template <class ScalarType, class MV, class OP>
-  ReturnType LinearProblem<ScalarType,MV,OP>::ApplyOp( const MV& x, MV& y )
-  {
+  void LinearProblem<ScalarType,MV,OP>::applyOp( const MV& x, MV& y ) const {
     if (A_.get()) {
       Teuchos::TimeMonitor OpTimer(*timerOp_);
-      return ( OPT::Apply( *A_,x, y) );   
+      OPT::Apply( *A_,x, y);   
     }
-    else
-      return Undefined;
+    else {
+      MVT::MvAddMv( Teuchos::ScalarTraits<ScalarType>::one(), x, 
+		    Teuchos::ScalarTraits<ScalarType>::zero(), x, y );
+    }
   }
   
   template <class ScalarType, class MV, class OP>
-  ReturnType LinearProblem<ScalarType,MV,OP>::ApplyLeftPrec( const MV& x, MV& y )
-  {
-    if (Left_Prec_) {
+  void LinearProblem<ScalarType,MV,OP>::applyLeftPrec( const MV& x, MV& y ) const {
+    if (LP_!=null) {
       Teuchos::TimeMonitor PrecTimer(*timerPrec_);
       return ( OPT::Apply( *LP_,x, y) );
     }
-    else 
-      return Undefined;
+    else {
+      MVT::MvAddMv( Teuchos::ScalarTraits<ScalarType>::one(), x, 
+		    Teuchos::ScalarTraits<ScalarType>::zero(), x, y );
+    }
   }
   
   template <class ScalarType, class MV, class OP>
-  ReturnType LinearProblem<ScalarType,MV,OP>::ApplyRightPrec( const MV& x, MV& y )
-  {
-    if (Right_Prec_) {
+  void LinearProblem<ScalarType,MV,OP>::applyRightPrec( const MV& x, MV& y ) const {
+    if (RP_!=null) {
       Teuchos::TimeMonitor PrecTimer(*timerPrec_);
       return ( OPT::Apply( *RP_,x, y) );
     }
-    else
-      return Undefined;
+    else {
+      MVT::MvAddMv( Teuchos::ScalarTraits<ScalarType>::one(), x, 
+		    Teuchos::ScalarTraits<ScalarType>::zero(), x, y );
+    }
   }
   
   template <class ScalarType, class MV, class OP>
-  ReturnType LinearProblem<ScalarType,MV,OP>::ComputeResVec( MV* R, const MV* X, const MV* B )
-  {
-    if (X && B) // The entries are specified, so compute the residual of Op(A)X = B
-      {
-	if (Left_Prec_)
+  void LinearProblem<ScalarType,MV,OP>::computeCurrResVec( MV* R, const MV* X, const MV* B ) const {
+
+    if (R) {
+      if (X && B) // The entries are specified, so compute the residual of Op(A)X = B
+	{
+	  if (LP_!=null)
+	    {
+	      RefCountPtr<MV> R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
+	      OPT::Apply( *A_, *X, *R_temp );
+	      MVT::MvAddMv( -1.0, *R_temp, 1.0, *B, *R_temp );
+	      OPT::Apply( *LP_, *R_temp, *R );
+	    }
+	  else 
+	    {
+	      OPT::Apply( *A_, *X, *R );
+	      MVT::MvAddMv( -1.0, *R, 1.0, *B, *R );
+	    }
+	}
+      else { 
+	// The solution and right-hand side may not be specified, check and use which ones exist.
+	RefCountPtr<const MV> localB, localX;
+	if (B)
+	  localB = rcp( B, false );
+	else
+	  localB = curB_;
+	
+	if (X)
+	  localX = rcp( X, false );
+	else
+	  localX = curX_;
+	
+	if (LP_!=null)
 	  {
-	    RefCountPtr<MV> R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
-	    OPT::Apply( *A_, *X, *R_temp );
-	    MVT::MvAddMv( -1.0, *R_temp, 1.0, *B, *R_temp );
+	    RefCountPtr<MV> R_temp = MVT::Clone( *localX, MVT::GetNumberVecs( *localX ) );
+	    OPT::Apply( *A_, *localX, *R_temp );
+	    MVT::MvAddMv( -1.0, *R_temp, 1.0, *localB, *R_temp );
 	    OPT::Apply( *LP_, *R_temp, *R );
 	  }
 	else 
 	  {
-	    OPT::Apply( *A_, *X, *R );
-	    MVT::MvAddMv( -1.0, *R, 1.0, *B, *R );
+	    OPT::Apply( *A_, *localX, *R );
+	    MVT::MvAddMv( -1.0, *R, 1.0, *localB, *R );
 	  }
-      }
-    else { 
-      // One of the entries is not specified, so just use the linear system information we have.
-      // Later we may want to check to see which multivec is not specified, and use what is specified.
-      if (Left_Prec_)
+      }    
+    }
+  }
+  
+  
+  template <class ScalarType, class MV, class OP>
+  void LinearProblem<ScalarType,MV,OP>::computeActualResVec( MV* R, const MV* X, const MV* B ) const {
+
+    if (R) {
+      if (X && B) // The entries are specified, so compute the residual of Op(A)X = B
 	{
-	  RefCountPtr<MV> R_temp = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
-	  OPT::Apply( *A_, *X_, *R_temp );
-	  MVT::MvAddMv( -1.0, *R_temp, 1.0, *B_, *R_temp );
-	  OPT::Apply( *LP_, *R_temp, *R );
+	  OPT::Apply( *A_, *X, *R );
+	  MVT::MvAddMv( -1.0, *R, 1.0, *B, *R );
 	}
-      else 
-	{
-	  OPT::Apply( *A_, *X_, *R );
-	  MVT::MvAddMv( -1.0, *R, 1.0, *B_, *R );
-	}
-    }    
-    return Ok;
+      else { 
+	// The solution and right-hand side may not be specified, check and use which ones exist.
+	RefCountPtr<const MV> localB, localX;
+	if (B)
+	  localB = rcp( B, false );
+	else
+	  localB = curB_;
+	
+	if (X)
+	  localX = rcp( X, false );
+	else
+	  localX = curX_;
+	
+	OPT::Apply( *A_, *localX, *R );
+	MVT::MvAddMv( -1.0, *R, 1.0, *localB, *R );
+      }    
+    }
   }
   
 } // end Belos namespace

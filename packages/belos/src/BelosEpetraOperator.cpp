@@ -42,14 +42,9 @@ using namespace Belos;
 // Constructor.
 //
 EpetraOperator::EpetraOperator( const RefCountPtr<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> >& lp,
-				const RefCountPtr<StatusTest<double,Epetra_MultiVector,Epetra_Operator> >& stest,
-				const RefCountPtr<OutputManager<double> >& om,
 				const RefCountPtr<Teuchos::ParameterList>& plist )
   : lp_(lp), 
-    stest_(stest), 
-    om_(om), 
-    plist_(plist), 
-    Maxits(plist->get("Max Iters", 25))
+    plist_(plist) 
 {
   string solver = plist_->get("Solver", "BlockGMRES");
   
@@ -65,27 +60,30 @@ EpetraOperator::EpetraOperator( const RefCountPtr<LinearProblem<double,Epetra_Mu
   // Create solver and solve problem.  This is inefficient, an instance of the solver should
   // exist already and just be reset with a new RHS.
   //
-  if (strcmp(&Solver[0],"BlockGMRES")==0) {
-    solver_ = Teuchos::rcp( new BlockGmres<double,Epetra_MultiVector,Epetra_Operator>( lp_, stest_, om_, plist_ ) );
+  if (solver == "BlockGMRES") {
+    solver_ = Teuchos::rcp( new BlockGmresSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, plist_ ) );
+  } 
+  else if (solver == "PseudoBlockGMRES") {
+    solver_ = Teuchos::rcp( new PseudoBlockGmresSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, plist_ ) );
   }
-  if (strcmp(&Solver[0],"BlockCG")==0) {
-    solver_ = Teuchos::rcp( new BlockCG<double,Epetra_MultiVector,Epetra_Operator>( lp_, stest_, om_) );
+  else if (solver == "BlockCG") {
+    solver_ = Teuchos::rcp( new BlockCGSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, plist) );
   }
 }
 
 const Epetra_Comm& EpetraOperator::Comm() const 
 { 
-  return (lp_->GetOperator()->Comm());
+  return (lp_->getOperator()->Comm());
 }
   
 const Epetra_Map& EpetraOperator::OperatorDomainMap() const 
 { 
-  return (lp_->GetOperator()->OperatorDomainMap());
+  return (lp_->getOperator()->OperatorDomainMap());
 }
 
 const Epetra_Map& EpetraOperator::OperatorRangeMap() const 
 { 
-  return (lp_->GetOperator()->OperatorRangeMap());
+  return (lp_->getOperator()->OperatorRangeMap());
 }
 
 int EpetraOperator::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
@@ -94,12 +92,12 @@ int EpetraOperator::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) 
   RefCountPtr<Epetra_MultiVector> vec_Y;
   vec_X = rcp( &X, false );
   vec_Y = rcp( &Y, false );
-  solver_->Reset();
-  lp_->Reset( vec_Y, vec_X );
-  stest_->Reset();
-  solver_->Solve();
+  lp_->setProblem( vec_Y, vec_X );
+  Belos::ReturnType ret = solver_->solve();
   
-  // Assume a good return right now since Belos doesn't have return types yet.
+  if (ret != Converged) 
+    return(-1);
+
   return(0);
 }
 
@@ -109,12 +107,12 @@ int EpetraOperator::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVecto
   RefCountPtr<Epetra_MultiVector> vec_Y;
   vec_X = rcp( &X, false );
   vec_Y = rcp( &Y, false );
-  solver_->Reset();
-  lp_->Reset( vec_Y, vec_X );
-  stest_->Reset();
-  solver_->Solve();
+  lp_->setProblem( vec_Y, vec_X );
+  Belos::ReturnType ret = solver_->solve();
   
-  // Assume a good return right now since Belos doesn't have return types yet.
+  if (ret != Converged) 
+    return(-1);
+
   return(0);
 }
 

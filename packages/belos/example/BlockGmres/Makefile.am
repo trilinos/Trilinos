@@ -16,11 +16,11 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 EXEEXT = .exe
 
 if BUILD_TRIUTILS
-#if BUILD_IFPACK
-#BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb bl_fgmres_hb
-#endif
 if BUILD_EPETRAEXT
-BELOS_BGMRES_NOPREC_EX = BlockGmresEpetraExFile Dummy 
+if BUILD_IFPACK
+BELOS_BGMRES_IFPACK_EX = BlockPrecGmresEpetraExFile PseudoBlockPrecGmresEpetraExFile
+endif
+BELOS_BGMRES_NOPREC_EX = BlockGmresEpetraExFile PseudoBlockGmresEpetraExFile Dummy 
 endif
 endif
 
@@ -32,10 +32,11 @@ endif
 
 
 #noinst_PROGRAMS = $(BELOS_BGMRES_EX) $(BELOS_BGMRES_IFPACK_EX) $(BELOS_BGMRES_NOPREC_EX) $(BELOS_BGMRES_COMPLEX_EX)
-noinst_PROGRAMS = $(BELOS_BGMRES_NOPREC_EX)
+noinst_PROGRAMS = $(BELOS_BGMRES_NOPREC_EX) $(BELOS_BGMRES_IFPACK_EX)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/orsirr1.hb orsirr1.hb; cp  $(srcdir)/fidap036.hb fidap036.hb; fi
+	cp  $(srcdir)/orsirr1.hb orsirr1.hb
+	cp  $(srcdir)/fidap036.hb fidap036.hb
 
 Dummy_SOURCES = Dummy
 
@@ -45,13 +46,13 @@ Dummy_SOURCES = Dummy
 
 #ComplexDummy_SOURCES = Dummy
 
-#bl_pgmres_hb_SOURCES = $(srcdir)/test_bl_pgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
-
-#bl_fgmres_hb_SOURCES = $(srcdir)/test_bl_fgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
+BlockPrecGmresEpetraExFile_SOURCES = $(srcdir)/BlockPrecGmresEpetraExFile.cpp 
 
 BlockGmresEpetraExFile_SOURCES = $(srcdir)/BlockGmresEpetraExFile.cpp 
 
-#bl_gmres_complex_hb_SOURCES = $(srcdir)/test_bl_gmres_complex_hb.cpp
+PseudoBlockPrecGmresEpetraExFile_SOURCES = $(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp 
+
+PseudoBlockGmresEpetraExFile_SOURCES = $(srcdir)/PseudoBlockGmresEpetraExFile.cpp 
 
 #bl_pgmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
@@ -61,27 +62,50 @@ BlockGmresEpetraExFile_SOURCES = $(srcdir)/BlockGmresEpetraExFile.cpp
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a			
 
-BlockGmresEpetraExFile_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+BlockGmresEpetraExFile_DEPENDENCIES = \
+			$(top_builddir)/../epetraext/src/libepetraext.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+BlockPrecGmresEpetraExFile_DEPENDENCIES = \
+			$(top_builddir)/../ifpack/src/libifpack.a \
+			$(top_builddir)/../epetraext/src/libepetraext.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+PseudoBlockGmresEpetraExFile_DEPENDENCIES = \
+			$(top_builddir)/../epetraext/src/libepetraext.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+PseudoBlockPrecGmresEpetraExFile_DEPENDENCIES = \
+			$(top_builddir)/../ifpack/src/libifpack.a \
+			$(top_builddir)/../epetraext/src/libepetraext.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
 #bl_gmres_complex_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+#bl_gmres_complex_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 #			$(top_builddir)/../epetra/src/libepetra.a \
 #			$(top_builddir)/../teuchos/src/libteuchos.a
 
-#bl_pgmres_hb_CXXFLAGS = -I$(top_srcdir)/src
-
-#bl_fgmres_hb_CXXFLAGS = -I$(top_srcdir)/src 
-
 BlockGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
+
+BlockPrecGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
+
+PseudoBlockGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
+
+PseudoBlockPrecGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 
 #bl_gmres_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
-#bl_pgmres_hb_LDADD = $(EXPORT_LIBS)
-
-#bl_fgmres_hb_LDADD = $(EXPORT_LIBS)
-
 BlockGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
+
+BlockPrecGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
+
+PseudoBlockGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
+
+PseudoBlockPrecGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
 
 #bl_gmres_complex_hb_LDADD = $(EXPORT_LIBS)
 

@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            Belos: An Object-Oriented Solver Framework
+#            Trilinos: An Object-Oriented Solver Framework
 #                 Copyright (2001,2002,2003) Sandia Corporation
 #
 
@@ -92,10 +92,10 @@ endif
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
+
 ## #######################################################################
 ## Target for circular dependencies
 ## #######################################################################
-
 all-libs:
 	cd src ; $(MAKE) all-libs
 
@@ -147,7 +147,7 @@ install-exec-hook:
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
-		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../triutils:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../tpetra:@abs_top_builddir@/../epetraext
+		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../triutils:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../epetraext::@abs_top_builddir@/../tpetra
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile BELOS > $(exec_prefix)/include/Makefile.export.belos.macros
 
 uninstall-hook:

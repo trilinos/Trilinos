@@ -16,15 +16,18 @@ all-local:
 # ------------------------------------------------------------------------
 
 CORE_H = \
-	$(srcdir)/BelosBlockCG.hpp \
-	$(srcdir)/BelosBlockGmres.hpp \
-	$(srcdir)/BelosCG.hpp \
+	$(srcdir)/BelosBlockCGSolMgr.hpp \
+	$(srcdir)/BelosBlockCGIter.hpp \
+	$(srcdir)/BelosBlockGmresIter.hpp \
+	$(srcdir)/BelosBlockGmresSolMgr.hpp \
+	$(srcdir)/BelosCGIter.hpp \
+	$(srcdir)/BelosCGIteration.hpp \
 	$(srcdir)/BelosConfigDefs.hpp \
 	$(srcdir)/BelosDGKSOrthoManager.hpp \
 	$(srcdir)/BelosEpetraAdapter.hpp \
 	$(srcdir)/BelosEpetraOperator.h \
 	$(srcdir)/BelosICGSOrthoManager.hpp \
-	$(srcdir)/BelosIterativeSolver.hpp \
+	$(srcdir)/BelosIteration.hpp \
 	$(srcdir)/BelosLinearProblem.hpp \
 	$(srcdir)/BelosMatOrthoManager.hpp \
 	$(srcdir)/BelosMultiVec.hpp \
@@ -33,11 +36,12 @@ CORE_H = \
 	$(srcdir)/BelosOperatorTraits.hpp \
 	$(srcdir)/BelosOrthoManager.hpp \
 	$(srcdir)/BelosOutputManager.hpp \
-	$(srcdir)/BelosPseudoBlockGmres.hpp \
+	$(srcdir)/BelosPseudoBlockGmresIter.hpp \
+	$(srcdir)/BelosPseudoBlockGmresSolMgr.hpp \
 	$(srcdir)/BelosStatusTest.hpp \
 	$(srcdir)/BelosStatusTestCombo.hpp \
 	$(srcdir)/BelosStatusTestMaxIters.hpp \
-	$(srcdir)/BelosStatusTestMaxRestarts.hpp \
+	$(srcdir)/BelosStatusTestOutput.hpp \
 	$(srcdir)/BelosStatusTestOutputter.hpp \
 	$(srcdir)/BelosStatusTestResNorm.hpp \
 	$(srcdir)/BelosTypes.hpp

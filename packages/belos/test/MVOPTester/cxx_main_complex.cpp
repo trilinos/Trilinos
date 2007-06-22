@@ -32,8 +32,10 @@
 //
 
 #include "BelosConfigDefs.hpp"
+#include "BelosEpetraAdapter.hpp"
 #include "BelosMVOPTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "BelosOutputManager.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -52,18 +54,19 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[])
 {
-  int ierr, gerr;
-  gerr = 0;
+  bool ierr, gerr;
+  gerr = true;
 
 #ifdef HAVE_MPI
   // Initialize MPI and setup an Epetra communicator
   MPI_Init(&argc,&argv);
 #endif
 
-  // PID info
-  int MyPID = 0;
+  int MyPID;
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
+#else 
+  MyPID = 0;
 #endif
   bool verbose = false;
   std::string filename("mhd1280b.cua");
@@ -73,6 +76,7 @@ int main(int argc, char *argv[])
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("debug","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
@@ -101,6 +105,7 @@ int main(int argc, char *argv[])
 #endif
 
   // Issue several useful typedefs;
+  //typedef Belos::MultiVec<ST> MV;
   typedef Belos::MultiVec<ST> MV;
   typedef Belos::Operator<ST> OP;
   typedef Belos::MultiVecTraits<ST,MV> MVT;
@@ -108,19 +113,18 @@ int main(int argc, char *argv[])
 
   // Create an output manager to handle the I/O from the solver
   RefCountPtr<Belos::OutputManager<ST> > MyOM 
-    = rcp( new Belos::OutputManager<ST>( MyPID ) );
+    = rcp( new Belos::OutputManager<ST>() );
   if (verbose) {
+    MyOM->setVerbosity( Belos::Warnings );
   }
 
 
 #ifndef HAVE_BELOS_TRIUTILS
   cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
-#ifdef HAVE_MPI
+#ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
-  if (verbose && MyPID==0) {
-    cout << "End Result: TEST FAILED" << endl;	
-  }
+  MyOM->print(Belos::Warnings,"End Result: TEST FAILED\n");
   return -1;
 #endif
 
@@ -129,28 +133,26 @@ int main(int argc, char *argv[])
   int dim,dim2,nnz;
   double *dvals;
   int *colptr,*rowind;
-  ST *cvals;
   nnz = -1;
   info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
-    if (MyOM->isVerbosityAndPrint( Belos::Errors )) {
-      cout << "Error reading '" << filename << "'" << endl;
-      cout << "End Result: TEST FAILED" << endl;
-    }
+    MyOM->stream(Belos::Warnings) 
+      << "Warning reading '" << filename << "'" << endl
+      << "End Result: TEST FAILED" << endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
     return -1;
   }
   // Convert interleaved doubles to complex values
-  cvals = new ST[nnz];
+  std::vector<ST> cvals(nnz);
   for (int ii=0; ii<nnz; ii++) {
     cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
   }
-
   // Build the problem matrix
   RefCountPtr< MyBetterOperator<ST> > A1
-    = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,cvals) );
+    = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,&cvals[0]) );
+
 
   // Create a MyMultiVec for cloning
   std::vector<ScalarTraits<ST>::magnitudeType> v(blockSize);
@@ -162,69 +164,51 @@ int main(int argc, char *argv[])
 
   // test the multivector and its adapter
   ierr = Belos::TestMultiVecTraits<ST,MV>(MyOM,ivec);
-  gerr |= ierr;
-  switch (ierr) {
-  case Belos::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** MyMultiVec<complex> PASSED TestMultiVecTraits()" << endl;
-    }
-    break;
-  case Belos::Error:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** MyMultiVec<complex> FAILED TestMultiVecTraits() ***" 
-           << endl << endl;
-    }
-    break;
+  gerr &= ierr;
+  if (ierr) {
+    MyOM->print(Belos::Warnings, "*** MyMultiVec<complex> PASSED TestMultiVecTraits()\n");
+  }
+  else {
+    MyOM->print(Belos::Warnings, "*** MyMultiVec<complex> FAILED TestMultiVecTraits() ***\n\n");
   }
 
   // test the operator and its adapter
   ierr = Belos::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,A2);
-  gerr |= ierr;
-  switch (ierr) {
-  case Belos::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** MyOperator<complex> PASSED TestOperatorTraits()" << endl;
-    }
-    break;
-  case Belos::Error:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** MyOperator<complex> FAILED TestOperatorTraits() ***" 
-           << endl << endl;
-    }
-    break;
+  gerr &= ierr;
+  if (ierr) {
+    MyOM->print(Belos::Warnings,"*** MyOperator<complex> PASSED TestOperatorTraits()\n");
+  }
+  else {
+    MyOM->print(Belos::Warnings,"*** MyOperator<complex> FAILED TestOperatorTraits() ***\n\n");
   }
 
   // test the operator and its adapter
   ierr = Belos::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,A1);
-  gerr |= ierr;
-  switch (ierr) {
-  case Belos::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** MyBetterOperator<complex> PASSED TestOperatorTraits()" << endl;
-    }
-    break;
-  case Belos::Error:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** MyBetterOperator<complex> FAILED TestOperatorTraits() ***" 
-           << endl << endl;
-    }
-    break;
+  gerr &= ierr;
+  if (ierr) {
+    MyOM->print(Belos::Warnings,"*** MyBetterOperator<complex> PASSED TestOperatorTraits()\n");
+  }
+  else {
+    MyOM->print(Belos::Warnings,"*** MyBetterOperator<complex> FAILED TestOperatorTraits() ***\n\n");
   }
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  if (gerr) {
-    if (verbose && MyPID==0)
-      cout << "End Result: TEST FAILED" << endl;
+  // Clean up.
+  free( dvals );
+  free( colptr );
+  free( rowind );
+
+  if (gerr == false) {
+    MyOM->print(Belos::Warnings,"End Result: TEST FAILED\n");
     return -1;
   }
   //
   // Default return value
   //
-  if (verbose && MyPID==0)
-    cout << "End Result: TEST PASSED" << endl;
+  MyOM->print(Belos::Warnings,"End Result: TEST PASSED\n");
   return 0;
 
 }

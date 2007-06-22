@@ -187,6 +187,20 @@ namespace Belos {
 
     //@}
 
+
+    //! @name Label methods
+    //@{
+
+    /*! \brief This method sets the label used by the timers in the orthogonalization manager.
+     */
+    virtual void setLabel(const string& label) = 0;
+ 
+    /*! \brief This method returns the label being used by the timers in the orthogonalization manager.
+     */
+    virtual const string& getLabel() const = 0;
+    
+    //@}
+
   };
 
 } // end of Belos namespace

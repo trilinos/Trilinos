@@ -65,7 +65,8 @@ namespace Belos {
     //! @name Constructor/Destructor
     //@{ 
     //! Constructor specifying re-orthogonalization tolerance.
-    DGKSOrthoManager( Teuchos::RefCountPtr<const OP> Op = Teuchos::null,
+    DGKSOrthoManager( const string& label = "Belos",
+                      Teuchos::RefCountPtr<const OP> Op = Teuchos::null,
 		      const int max_blk_ortho = 2,
 		      const MagnitudeType blk_tol = 10*MGT::squareroot( MGT::eps() ),
 		      const MagnitudeType dep_tol = MGT::one()/MGT::squareroot( 2*MGT::one() ),
@@ -74,10 +75,15 @@ namespace Belos {
 	max_blk_ortho_( max_blk_ortho ),
 	blk_tol_( blk_tol ),
 	dep_tol_( dep_tol ),
-	sing_tol_( sing_tol ) {};
+	sing_tol_( sing_tol ),
+	label_( label )
+    {
+        string orthoLabel = label_ + ": Orthogonalization";
+        timerOrtho_ = Teuchos::TimeMonitor::getNewTimer( orthoLabel );
+    }    
 
     //! Destructor
-    ~DGKSOrthoManager() {};
+    ~DGKSOrthoManager() {}
     //@}
 
 
@@ -268,6 +274,19 @@ namespace Belos {
 
     //@}
 
+    //! @name Label methods
+    //@{
+
+    /*! \brief This method sets the label used by the timers in the orthogonalization manager.
+     */
+    void setLabel(const string& label);
+
+    /*! \brief This method returns the label being used by the timers in the orthogonalization manager.
+     */
+    const string& getLabel() const { return label_; }
+
+    //@}
+
   private:
     
     //! Parameters for re-orthogonalization.
@@ -275,7 +294,11 @@ namespace Belos {
     MagnitudeType blk_tol_;
     MagnitudeType dep_tol_;
     MagnitudeType sing_tol_;
-  
+
+    //! Timer and timer label.
+    string label_;
+    Teuchos::RefCountPtr<Teuchos::Time> timerOrtho_;
+
     //! Routine to find an orthonormal basis for X
     int findBasis(MV &X, Teuchos::RefCountPtr<MV> MX, 
 		  Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
@@ -292,6 +315,17 @@ namespace Belos {
 		       Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const;    
   };
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Set the label for this orthogonalization manager and create new timers if it's changed
+  template<class ScalarType, class MV, class OP>
+  void DGKSOrthoManager<ScalarType,MV,OP>::setLabel(const string& label)
+  {
+    if (label != label_) {
+      label_ = label;
+      string orthoLabel = label_ + ": Orthogonalization";
+      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+    }
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Compute the distance from orthonormality
@@ -328,6 +362,8 @@ namespace Belos {
                                     Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                                     Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
                                     Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const {
+    
+    Teuchos::TimeMonitor orthotimer(*timerOrtho_);
 
     ScalarType    ONE  = SCT::one();
     ScalarType    ZERO  = SCT::zero();
@@ -437,6 +473,9 @@ namespace Belos {
   int DGKSOrthoManager<ScalarType, MV, OP>::normalize(
                                 MV &X, Teuchos::RefCountPtr<MV> MX, 
                                 Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const {
+
+    Teuchos::TimeMonitor orthotimer(*timerOrtho_);
+
     // call findBasis, with the instruction to try to generate a basis of rank numvecs(X)
     return findBasis(X, MX, B, true);
   }
@@ -463,6 +502,8 @@ namespace Belos {
     //
     // Q  : Bases to orthogonalize against. These are assumed orthonormal, mutually and independently.
     //
+
+    Teuchos::TimeMonitor orthotimer(*timerOrtho_);
 
     int xc = MVT::GetNumberVecs( X );
     int xr = MVT::GetVecLength( X );

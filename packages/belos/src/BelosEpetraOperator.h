@@ -43,8 +43,9 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosEpetraAdapter.hpp"
-#include "BelosBlockGmres.hpp"
-#include "BelosBlockCG.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "BelosBlockCGSolMgr.hpp"
 
 #include "Teuchos_ParameterList.hpp"
 using Teuchos::RefCountPtr;
@@ -73,8 +74,6 @@ public:
   
   //! Constructor
   EpetraOperator( const RefCountPtr<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> >& lp, 
-		  const RefCountPtr<StatusTest<double,Epetra_MultiVector,Epetra_Operator> >& stest, 
-		  const RefCountPtr<OutputManager<double> >& om, 
 		  const RefCountPtr<ParameterList>& plist );
   
   //! Destructor
@@ -128,13 +127,10 @@ public:
   //@}	   
 private:
 
-  RefCountPtr<IterativeSolver<double,Epetra_MultiVector,Epetra_Operator> > solver_;
+  RefCountPtr<SolverManager<double,Epetra_MultiVector,Epetra_Operator> > solver_;
   RefCountPtr<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> > lp_;
-  RefCountPtr<StatusTest<double,Epetra_MultiVector,Epetra_Operator> > stest_;
-  RefCountPtr<OutputManager<double> > om_;
   RefCountPtr<ParameterList> plist_;
 
-  const int Maxits;
   std::vector<char> Solver;
 };
 

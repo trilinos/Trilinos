@@ -36,7 +36,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = $(am__EXEEXT_1)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2)
 subdir = example/BlockGmres
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -68,7 +68,10 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
 @BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = BlockGmresEpetraExFile$(EXEEXT) \
+@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@	PseudoBlockGmresEpetraExFile$(EXEEXT) \
 @BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@	Dummy$(EXEEXT)
+@BUILD_EPETRAEXT_TRUE@@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 = BlockPrecGmresEpetraExFile$(EXEEXT) \
+@BUILD_EPETRAEXT_TRUE@@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@	PseudoBlockPrecGmresEpetraExFile$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_BlockGmresEpetraExFile_OBJECTS =  \
 	BlockGmresEpetraExFile-BlockGmresEpetraExFile.$(OBJEXT)
@@ -80,9 +83,27 @@ am__DEPENDENCIES_1 =
 BlockGmresEpetraExFile_LINK = $(CXXLD) \
 	$(BlockGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_BlockPrecGmresEpetraExFile_OBJECTS = BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.$(OBJEXT)
+BlockPrecGmresEpetraExFile_OBJECTS =  \
+	$(am_BlockPrecGmresEpetraExFile_OBJECTS)
+BlockPrecGmresEpetraExFile_LINK = $(CXXLD) \
+	$(BlockPrecGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_Dummy_OBJECTS =
 Dummy_OBJECTS = $(am_Dummy_OBJECTS)
 Dummy_LDADD = $(LDADD)
+am_PseudoBlockGmresEpetraExFile_OBJECTS = PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.$(OBJEXT)
+PseudoBlockGmresEpetraExFile_OBJECTS =  \
+	$(am_PseudoBlockGmresEpetraExFile_OBJECTS)
+PseudoBlockGmresEpetraExFile_LINK = $(CXXLD) \
+	$(PseudoBlockGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_PseudoBlockPrecGmresEpetraExFile_OBJECTS = PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.$(OBJEXT)
+PseudoBlockPrecGmresEpetraExFile_OBJECTS =  \
+	$(am_PseudoBlockPrecGmresEpetraExFile_OBJECTS)
+PseudoBlockPrecGmresEpetraExFile_LINK = $(CXXLD) \
+	$(PseudoBlockPrecGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -95,8 +116,14 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(BlockGmresEpetraExFile_SOURCES) $(Dummy_SOURCES)
-DIST_SOURCES = $(BlockGmresEpetraExFile_SOURCES) $(Dummy_SOURCES)
+SOURCES = $(BlockGmresEpetraExFile_SOURCES) \
+	$(BlockPrecGmresEpetraExFile_SOURCES) $(Dummy_SOURCES) \
+	$(PseudoBlockGmresEpetraExFile_SOURCES) \
+	$(PseudoBlockPrecGmresEpetraExFile_SOURCES)
+DIST_SOURCES = $(BlockGmresEpetraExFile_SOURCES) \
+	$(BlockPrecGmresEpetraExFile_SOURCES) $(Dummy_SOURCES) \
+	$(PseudoBlockGmresEpetraExFile_SOURCES) \
+	$(PseudoBlockPrecGmresEpetraExFile_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -226,11 +253,8 @@ top_srcdir = @top_srcdir@
 @USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
-
-#if BUILD_IFPACK
-#BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb bl_fgmres_hb
-#endif
-@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_NOPREC_EX = BlockGmresEpetraExFile Dummy 
+@BUILD_EPETRAEXT_TRUE@@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_IFPACK_EX = BlockPrecGmresEpetraExFile PseudoBlockPrecGmresEpetraExFile
+@BUILD_EPETRAEXT_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_NOPREC_EX = BlockGmresEpetraExFile PseudoBlockGmresEpetraExFile Dummy 
 @BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_COMPLEX_EX = bl_gmres_complex_hb ComplexDummy
 Dummy_SOURCES = Dummy
 
@@ -239,13 +263,10 @@ Dummy_SOURCES = Dummy
 #	cp  $(top_srcdir)/test/MVOPTester/mhd1280a.cua mhd1280a.cua
 
 #ComplexDummy_SOURCES = Dummy
-
-#bl_pgmres_hb_SOURCES = $(srcdir)/test_bl_pgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
-
-#bl_fgmres_hb_SOURCES = $(srcdir)/test_bl_fgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
+BlockPrecGmresEpetraExFile_SOURCES = $(srcdir)/BlockPrecGmresEpetraExFile.cpp 
 BlockGmresEpetraExFile_SOURCES = $(srcdir)/BlockGmresEpetraExFile.cpp 
-
-#bl_gmres_complex_hb_SOURCES = $(srcdir)/test_bl_gmres_complex_hb.cpp
+PseudoBlockPrecGmresEpetraExFile_SOURCES = $(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp 
+PseudoBlockGmresEpetraExFile_SOURCES = $(srcdir)/PseudoBlockGmresEpetraExFile.cpp 
 
 #bl_pgmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 #			$(top_builddir)/../epetra/src/libepetra.a \
@@ -254,26 +275,43 @@ BlockGmresEpetraExFile_SOURCES = $(srcdir)/BlockGmresEpetraExFile.cpp
 #bl_fgmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 #			$(top_builddir)/../epetra/src/libepetra.a \
 #			$(top_builddir)/../teuchos/src/libteuchos.a			
-BlockGmresEpetraExFile_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+BlockGmresEpetraExFile_DEPENDENCIES = \
+			$(top_builddir)/../epetraext/src/libepetraext.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+BlockPrecGmresEpetraExFile_DEPENDENCIES = \
+			$(top_builddir)/../ifpack/src/libifpack.a \
+			$(top_builddir)/../epetraext/src/libepetraext.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+PseudoBlockGmresEpetraExFile_DEPENDENCIES = \
+			$(top_builddir)/../epetraext/src/libepetraext.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+PseudoBlockPrecGmresEpetraExFile_DEPENDENCIES = \
+			$(top_builddir)/../ifpack/src/libifpack.a \
+			$(top_builddir)/../epetraext/src/libepetraext.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
 
 #bl_gmres_complex_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+#bl_gmres_complex_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 #			$(top_builddir)/../epetra/src/libepetra.a \
 #			$(top_builddir)/../teuchos/src/libteuchos.a
-
-#bl_pgmres_hb_CXXFLAGS = -I$(top_srcdir)/src
-
-#bl_fgmres_hb_CXXFLAGS = -I$(top_srcdir)/src 
 BlockGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
+BlockPrecGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
+PseudoBlockGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
+PseudoBlockPrecGmresEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 
 #bl_gmres_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
-
-#bl_pgmres_hb_LDADD = $(EXPORT_LIBS)
-
-#bl_fgmres_hb_LDADD = $(EXPORT_LIBS)
 BlockGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
+BlockPrecGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
+PseudoBlockGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
+PseudoBlockPrecGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -313,6 +351,15 @@ clean-noinstPROGRAMS:
 BlockGmresEpetraExFile$(EXEEXT): $(BlockGmresEpetraExFile_OBJECTS) $(BlockGmresEpetraExFile_DEPENDENCIES) 
 	@rm -f BlockGmresEpetraExFile$(EXEEXT)
 	$(BlockGmresEpetraExFile_LINK) $(BlockGmresEpetraExFile_OBJECTS) $(BlockGmresEpetraExFile_LDADD) $(LIBS)
+BlockPrecGmresEpetraExFile$(EXEEXT): $(BlockPrecGmresEpetraExFile_OBJECTS) $(BlockPrecGmresEpetraExFile_DEPENDENCIES) 
+	@rm -f BlockPrecGmresEpetraExFile$(EXEEXT)
+	$(BlockPrecGmresEpetraExFile_LINK) $(BlockPrecGmresEpetraExFile_OBJECTS) $(BlockPrecGmresEpetraExFile_LDADD) $(LIBS)
+PseudoBlockGmresEpetraExFile$(EXEEXT): $(PseudoBlockGmresEpetraExFile_OBJECTS) $(PseudoBlockGmresEpetraExFile_DEPENDENCIES) 
+	@rm -f PseudoBlockGmresEpetraExFile$(EXEEXT)
+	$(PseudoBlockGmresEpetraExFile_LINK) $(PseudoBlockGmresEpetraExFile_OBJECTS) $(PseudoBlockGmresEpetraExFile_LDADD) $(LIBS)
+PseudoBlockPrecGmresEpetraExFile$(EXEEXT): $(PseudoBlockPrecGmresEpetraExFile_OBJECTS) $(PseudoBlockPrecGmresEpetraExFile_DEPENDENCIES) 
+	@rm -f PseudoBlockPrecGmresEpetraExFile$(EXEEXT)
+	$(PseudoBlockPrecGmresEpetraExFile_LINK) $(PseudoBlockPrecGmresEpetraExFile_OBJECTS) $(PseudoBlockPrecGmresEpetraExFile_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -321,6 +368,9 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockGmresEpetraExFile-BlockGmresEpetraExFile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -349,6 +399,48 @@ BlockGmresEpetraExFile-BlockGmresEpetraExFile.obj: $(srcdir)/BlockGmresEpetraExF
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockGmresEpetraExFile.cpp' object='BlockGmresEpetraExFile-BlockGmresEpetraExFile.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -c -o BlockGmresEpetraExFile-BlockGmresEpetraExFile.obj `if test -f '$(srcdir)/BlockGmresEpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockGmresEpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockGmresEpetraExFile.cpp'; fi`
+
+BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.o: $(srcdir)/BlockPrecGmresEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockPrecGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -MT BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.o -MD -MP -MF $(DEPDIR)/BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.Tpo -c -o BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.o `test -f '$(srcdir)/BlockPrecGmresEpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/BlockPrecGmresEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.Tpo $(DEPDIR)/BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockPrecGmresEpetraExFile.cpp' object='BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockPrecGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -c -o BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.o `test -f '$(srcdir)/BlockPrecGmresEpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/BlockPrecGmresEpetraExFile.cpp
+
+BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.obj: $(srcdir)/BlockPrecGmresEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockPrecGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -MT BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.obj -MD -MP -MF $(DEPDIR)/BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.Tpo -c -o BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.obj `if test -f '$(srcdir)/BlockPrecGmresEpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockPrecGmresEpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockPrecGmresEpetraExFile.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.Tpo $(DEPDIR)/BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockPrecGmresEpetraExFile.cpp' object='BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockPrecGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -c -o BlockPrecGmresEpetraExFile-BlockPrecGmresEpetraExFile.obj `if test -f '$(srcdir)/BlockPrecGmresEpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockPrecGmresEpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockPrecGmresEpetraExFile.cpp'; fi`
+
+PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.o: $(srcdir)/PseudoBlockGmresEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PseudoBlockGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -MT PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.o -MD -MP -MF $(DEPDIR)/PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.Tpo -c -o PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.o `test -f '$(srcdir)/PseudoBlockGmresEpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/PseudoBlockGmresEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.Tpo $(DEPDIR)/PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PseudoBlockGmresEpetraExFile.cpp' object='PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PseudoBlockGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -c -o PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.o `test -f '$(srcdir)/PseudoBlockGmresEpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/PseudoBlockGmresEpetraExFile.cpp
+
+PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.obj: $(srcdir)/PseudoBlockGmresEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PseudoBlockGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -MT PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.obj -MD -MP -MF $(DEPDIR)/PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.Tpo -c -o PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.obj `if test -f '$(srcdir)/PseudoBlockGmresEpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/PseudoBlockGmresEpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PseudoBlockGmresEpetraExFile.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.Tpo $(DEPDIR)/PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PseudoBlockGmresEpetraExFile.cpp' object='PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PseudoBlockGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -c -o PseudoBlockGmresEpetraExFile-PseudoBlockGmresEpetraExFile.obj `if test -f '$(srcdir)/PseudoBlockGmresEpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/PseudoBlockGmresEpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PseudoBlockGmresEpetraExFile.cpp'; fi`
+
+PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.o: $(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PseudoBlockPrecGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -MT PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.o -MD -MP -MF $(DEPDIR)/PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.Tpo -c -o PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.o `test -f '$(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.Tpo $(DEPDIR)/PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp' object='PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PseudoBlockPrecGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -c -o PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.o `test -f '$(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp
+
+PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.obj: $(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PseudoBlockPrecGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -MT PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.obj -MD -MP -MF $(DEPDIR)/PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.Tpo -c -o PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.obj `if test -f '$(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.Tpo $(DEPDIR)/PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp' object='PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(PseudoBlockPrecGmresEpetraExFile_CXXFLAGS) $(CXXFLAGS) -c -o PseudoBlockPrecGmresEpetraExFile-PseudoBlockPrecGmresEpetraExFile.obj `if test -f '$(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PseudoBlockPrecGmresEpetraExFile.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -528,7 +620,8 @@ uninstall-am:
 include $(top_builddir)/Makefile.export.belos
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/orsirr1.hb orsirr1.hb; cp  $(srcdir)/fidap036.hb fidap036.hb; fi
+	cp  $(srcdir)/orsirr1.hb orsirr1.hb
+	cp  $(srcdir)/fidap036.hb fidap036.hb
 #
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

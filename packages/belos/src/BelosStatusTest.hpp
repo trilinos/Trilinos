@@ -37,7 +37,7 @@
 */
 
 #include "BelosTypes.hpp"
-#include "BelosIterativeSolver.hpp"
+#include "BelosIteration.hpp"
 #include "BelosConfigDefs.hpp"
 
   /*! 
@@ -50,6 +50,16 @@
   */
 
 namespace Belos {
+
+  //! @name StatusTest Exceptions
+  //@{
+
+  /** \brief Exception thrown to signal error in a status test during Belos::StatusTest::checkStatus().
+   */
+  class StatusTestError : public BelosError 
+  {public: StatusTestError(const std::string& what_arg) : BelosError(what_arg) {}};
+
+  //@}
 
 template <class ScalarType, class MV, class OP>
 class StatusTest {
@@ -76,10 +86,10 @@ class StatusTest {
 
     \return Belos::StatusType: Unconverged, Converged or Failed.
   */
-  virtual StatusType CheckStatus( IterativeSolver<ScalarType,MV,OP>* iSolver ) = 0;
+  virtual StatusType checkStatus( Iteration<ScalarType,MV,OP>* iSolver ) = 0;
 
   //! Return the result of the most recent CheckStatus call.
-  virtual StatusType GetStatus() const = 0;
+  virtual StatusType getStatus() const = 0;
   //@}
 
   //! @name Reset methods
@@ -90,41 +100,26 @@ class StatusTest {
     internal information will be reset back to the initialized state.  The user specified information that
     the convergence test uses will remain.
   */
-  virtual void Reset() = 0;
-  //@}
-
-  //! @name Attribute methods
-  //@{ 
-
-  //! Indicates if residual vector is required by this convergence test.
-  /*! If this method returns true, then the ResidualVector argument to the Converged() method will
-    defined.  If this method returns false, then the ResidualVector may not be defined when Converged() is
-    called.  Some iterative methods do not explicitly construct the residual vector at each iteration.  Thus,
-    if this vector is not required, this vector will not need to be constructed if this method returns false.
-  */
-  virtual bool ResidualVectorRequired() const = 0;
+  virtual void reset() = 0;
   //@}
 
   //! @name Print methods
   //@{ 
 
   //! Output formatted description of stopping test to output stream.
-  virtual ostream& Print(ostream& os, int indent = 0) const = 0;
+  virtual void print(ostream& os, int indent = 0) const = 0;
  
   //! Output the result of the most recent CheckStatus call.
-  virtual void PrintStatus(ostream& os, StatusType type) const {
+  virtual void printStatus(ostream& os, StatusType type) const {
     os << setiosflags(ios::left) << setw(13) << setfill('.');
     switch (type) {
+    case  Passed:
+      os << "Passed";
+      break;
     case  Failed:
       os << "Failed";
       break;
-    case  NaN:  
-      os << "NaN";
-      break;
-    case  Converged:
-      os << "Converged";
-      break;
-    case  Unconverged:
+    case  Undefined:  
     default:
       os << "**";
       break;

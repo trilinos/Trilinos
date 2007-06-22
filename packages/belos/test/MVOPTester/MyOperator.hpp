@@ -59,9 +59,9 @@ public:
   {}
   
   //! Applies the tridiagonal or diagonal matrix to a multivector.
-  Belos::ReturnType Apply(const Belos::MultiVec<ScalarType>& X, 
-                            Belos::MultiVec<ScalarType>& Y,
-			    Belos::ETrans trans = Belos::NOTRANS) const
+  void Apply(const Belos::MultiVec<ScalarType>& X, 
+             Belos::MultiVec<ScalarType>& Y,
+             Belos::ETrans trans = Belos::NOTRANS) const
   {
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
@@ -107,7 +107,6 @@ public:
         }
       }      
     }
-    return(Belos::Ok);
   }
   
 private:

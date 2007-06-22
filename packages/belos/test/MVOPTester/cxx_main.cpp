@@ -46,11 +46,13 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosMVOPTester.hpp"
 #include "BelosEpetraAdapter.hpp"
+#include "BelosOutputManager.hpp"
 
 int main(int argc, char *argv[])
 {
-  int i, ierr, gerr;
-  gerr = 0;
+  int i;
+  bool ierr, gerr;
+  gerr = true;
 
 #ifdef HAVE_MPI
   // Initialize MPI and setup an Epetra communicator
@@ -65,10 +67,7 @@ int main(int argc, char *argv[])
   int dim = 100;
   int blockSize = 5;
 
-  // PID info
-  int MyPID = Comm->MyPID();
-  bool verbose = 0;
-
+  bool verbose = false;
   if (argc>1) {
     if (argv[1][0]=='-' && argv[1][1]=='v') {
       verbose = true;
@@ -136,9 +135,6 @@ int main(int argc, char *argv[])
   ierr = A->FillComplete();
   assert(ierr==0);
 
-  // Create an Belos::Op from this Epetra_CrsMatrix
-  Teuchos::RefCountPtr<Belos::EpetraOp> op = Teuchos::rcp(new Belos::EpetraOp(A));
-
   // Issue several useful typedefs;
   typedef Belos::MultiVec<double> EMV;
   typedef Belos::Operator<double> EOP;
@@ -149,60 +145,33 @@ int main(int argc, char *argv[])
   ivec->Random();
 
   // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Belos::OutputManager<double> > MyOM = Teuchos::rcp( new Belos::OutputManager<double>( MyPID ) );
+  Teuchos::RefCountPtr<Belos::OutputManager<double> > MyOM = Teuchos::rcp( new Belos::OutputManager<double>() );
   if (verbose) {
-    MyOM->SetVerbosity( Belos::Errors + Belos::Warnings );
+    MyOM->setVerbosity( Belos::Warnings );
   }
 
   // test the Epetra adapter multivector
   ierr = Belos::TestMultiVecTraits<double,EMV>(MyOM,ivec);
-  gerr |= ierr;
-  switch (ierr) {
-  case Belos::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter PASSED TestMultiVecTraits()" << endl;
-    }
-    break;
-  case Belos::Error:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter FAILED TestMultiVecTraits() ***" 
-           << endl << endl;
-    }
-    break;
+  gerr &= ierr;
+  if (ierr) {
+    MyOM->print(Belos::Warnings,"*** EpetraAdapter PASSED TestMultiVecTraits()\n");
   }
-
-  // test the Epetra adapter operator 
-  ierr = Belos::TestOperatorTraits<double,EMV,EOP>(MyOM,ivec,op);
-  gerr |= ierr;
-  switch (ierr) {
-  case Belos::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter PASSED TestOperatorTraits()" << endl;
-    }
-    break;
-  case Belos::Error:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter FAILED TestOperatorTraits() ***" 
-           << endl << endl;
-    }
-    break;
+  else {
+    MyOM->print(Belos::Warnings,"*** EpetraAdapter FAILED TestMultiVecTraits() ***\n\n");
   }
-
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  if (gerr) {
-    if (verbose && MyPID==0)
-      cout << "End Result: TEST FAILED" << endl;	
+  if (gerr == false) {
+    MyOM->print(Belos::Warnings,"End Result: TEST FAILED\n");
     return -1;
   }
   //
   // Default return value
   //
-  if (verbose && MyPID==0)
-    cout << "End Result: TEST PASSED" << endl;
+  MyOM->print(Belos::Warnings,"End Result: TEST PASSED\n");
   return 0;
 
 }

@@ -42,9 +42,29 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosMultiVec.hpp"
 #include "BelosOperator.hpp"
+#include "BelosTypes.hpp"
 
 namespace Belos {
-  
+ 
+  //! @name Epetra Adapter Exceptions
+  //@{
+
+  /** \brief EpetraMultiVecFailure is thrown when a return value from an Epetra
+   * call on an Epetra_MultiVector is non-zero.
+   */
+  class EpetraMultiVecFailure : public BelosError {public:
+    EpetraMultiVecFailure(const std::string& what_arg) : BelosError(what_arg)
+    {}};
+
+  /** \brief EpetraOpFailure is thrown when a return value from an Epetra
+   * call on an Epetra_Operator is non-zero.
+   */
+  class EpetraOpFailure : public BelosError {public:
+    EpetraOpFailure(const std::string& what_arg) : BelosError(what_arg)
+    {}};
+
+  //@}
+ 
   //--------template class BelosEpetraMultiVec-------------------------------------
   class EpetraMultiVec : public MultiVec<double>, public Epetra_MultiVector {
   public:
@@ -117,11 +137,15 @@ namespace Belos {
     //
     // random vectors in i-th column of (*this)
     //
-    void MvRandom() { assert( Random() == 0 ); };
+    void MvRandom() { 
+      TEST_FOR_EXCEPTION( Random()!=0, EpetraMultiVecFailure, 
+			  "Belos::EpetraMultiVec::MvRandom() call to Random() returned a nonzero value."); }
     //
     // initializes each element of (*this) with alpha
     //
-    void MvInit ( const double alpha ) { assert( PutScalar( alpha ) == 0 ); };
+    void MvInit ( const double alpha ) { 
+      TEST_FOR_EXCEPTION( PutScalar(alpha)!=0, EpetraMultiVecFailure, 
+			  "Belos::EpetraMultiVec::MvInit() call to PutScalar() returned a nonzero value."); }
     //
     // print (*this)
     //
@@ -137,7 +161,7 @@ namespace Belos {
   public:
     EpetraOp( const Teuchos::RefCountPtr<Epetra_Operator> &Op );
     ~EpetraOp() {};
-    ReturnType Apply ( const MultiVec<double>& x, MultiVec<double>& y, ETrans trans=NOTRANS ) const;
+    void Apply ( const MultiVec<double>& x, MultiVec<double>& y, ETrans trans=NOTRANS ) const;
   private:
     Teuchos::RefCountPtr<Epetra_Operator> Epetra_Op;
   };
@@ -154,7 +178,7 @@ namespace Belos {
     virtual ~EpetraPrecOp() {};
 
     //! Apply method for a Belos::MultiVec [inherited from Belos::Operator class]
-    ReturnType Apply ( const MultiVec<double>& x, MultiVec<double>& y, ETrans trans=NOTRANS ) const;
+    void Apply ( const MultiVec<double>& x, MultiVec<double>& y, ETrans trans=NOTRANS ) const;
 
     //! Apply method for an Epetra_MultiVector [inherited from Epetra_Operator class]
     int Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
@@ -241,12 +265,16 @@ namespace Belos {
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
       Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
       
-      assert( mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta ) == 0 );   
+      int info = mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta );
+      TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvTimesMatAddMv call to Multiply() returned a nonzero value.");
     }
     ///
     static void MvAddMv( const double alpha, const Epetra_MultiVector& A, const double beta, const Epetra_MultiVector& B, Epetra_MultiVector& mv )
     { 
-      assert( mv.Update( alpha, A, beta, B, 0.0 ) == 0 );
+      int info = mv.Update( alpha, A, beta, B, 0.0 );
+      TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+			 "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvAddMv call to Update() returned a nonzero value.");
     }
     ///
     static void MvTransMv( const double alpha, const Epetra_MultiVector& A, const Epetra_MultiVector& mv, Teuchos::SerialDenseMatrix<int,double>& B )
@@ -254,37 +282,44 @@ namespace Belos {
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
       Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
       
-      assert( B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 ) == 0 );
+      int info = B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 );
+      TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvTransMv call to Multiply() returned a nonzero value.");
     }
     ///
     static void MvDot( const Epetra_MultiVector& mv, const Epetra_MultiVector& A, std::vector<double>* b )
     {
-      assert( mv.Dot( A, &(*b)[0] ) == 0 );
+      int info = mv.Dot( A, &(*b)[0] );
+      TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvDot call to Dot() returned a nonzero value.");   
     }
     ///
     static void MvNorm( const Epetra_MultiVector& mv, std::vector<double>* normvec, NormType type = TwoNorm )
     { 
       if (normvec && ((int)normvec->size() >= mv.NumVectors())) {
+        int info = 0;
 	switch( type ) {
 	case ( OneNorm ) :
-	  assert( mv.Norm1(&(*normvec)[0]) == 0 );
+	  info = mv.Norm1(&(*normvec)[0]);
 	  break;
 	case ( TwoNorm ) :
-	  assert( mv.Norm2(&(*normvec)[0]) == 0 );
+	  info = mv.Norm2(&(*normvec)[0]);
 	  break;
 	case ( InfNorm ) :	
-	  assert( mv.NormInf(&(*normvec)[0]) == 0 );
+	  info = mv.NormInf(&(*normvec)[0]);
 	  break;
 	default:
 	  break;
 	}
+        TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+			   "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvNorm call to Norm() returned a nonzero value.");
       }
     }
     ///
     static void SetBlock( const Epetra_MultiVector& A, const std::vector<int>& index, Epetra_MultiVector& mv )
     { 
       // Extract the "numvecs" columns of mv indicated by the index vector.
-      int numvecs = index.size();
+      int numvecs = index.size(), info = 0;
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       Epetra_MultiVector temp_vec(View, mv, &tmp_index[0], numvecs);
       
@@ -293,17 +328,24 @@ namespace Belos {
         for(int i=0; i<numvecs; i++)
 	  index2[i] = i;
         Epetra_MultiVector A_vec(View, A, &index2[0], numvecs);      
-        assert( temp_vec.Update( 1.0, A_vec, 0.0, A_vec, 0.0 ) == 0 );
+        info = temp_vec.Update( 1.0, A_vec, 0.0, A_vec, 0.0 );
       }
-      else
-        assert( temp_vec.Update( 1.0, A, 0.0, A, 0.0 ) == 0 );
+      else {
+        info = temp_vec.Update( 1.0, A, 0.0, A, 0.0 );
+      }
+      TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
+			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::SetBlock call to Update() returned a nonzero value.");
     }
     ///
     static void MvRandom( Epetra_MultiVector& mv )
-    { assert( mv.Random() == 0 ); }
+    { TEST_FOR_EXCEPTION( mv.Random()!=0, EpetraMultiVecFailure, 
+			  "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvRandom() call to Random() returned a nonzero value.");
+    }
     ///
     static void MvInit( Epetra_MultiVector& mv, double alpha = Teuchos::ScalarTraits<double>::zero() )
-    { assert( mv.PutScalar(alpha) == 0); }
+    { TEST_FOR_EXCEPTION( mv.PutScalar(alpha)!=0, EpetraMultiVecFailure, 
+			  "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvInit() call to PutScalar() returned a nonzero value.");
+    }
     ///
     static void MvPrint( const Epetra_MultiVector& mv, ostream& os )
     { os << mv << endl; }
@@ -322,10 +364,10 @@ namespace Belos {
   public:
     
     ///
-    static ReturnType Apply ( const Epetra_Operator& Op, 
-			      const Epetra_MultiVector& x, 
-			      Epetra_MultiVector& y,
-			      ETrans trans=NOTRANS )
+    static void Apply ( const Epetra_Operator& Op, 
+     		        const Epetra_MultiVector& x, 
+			Epetra_MultiVector& y,
+			ETrans trans=NOTRANS )
     { 
       int info = 0;
       if ( trans )
@@ -333,8 +375,8 @@ namespace Belos {
       info = Op.Apply( x, y );
       if ( trans )
 	const_cast<Epetra_Operator &>(Op).SetUseTranspose( false );      
-      
-      return ( info == 0 ? Ok : Error ); 
+      TEST_FOR_EXCEPTION(info!=0, EpetraOpFailure, 
+			 "Belos::OperatorTraits<double,Epetra_MultiVector,Epetra_Operator>::Apply call to Apply() returned a nonzero value.");
     }
     
   };

@@ -36,7 +36,6 @@
 
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVec.hpp"
-#include "BelosTypes.hpp"
 #include "BelosConfigDefs.hpp"
 
 /*!	\class Belos::Operator
@@ -76,9 +75,11 @@ namespace Belos {
     
     /*! \brief This routine takes the Belos::MultiVec \c x and applies the operator
       to it resulting in the Belos::MultiVec \c y, which is returned.
+        \note It is expected that any problem with applying this operator to \c x will be
+	indicated by an exception being thrown.
     */
-    virtual ReturnType Apply ( const MultiVec<ScalarType>& x, 
-			       MultiVec<ScalarType>& y, ETrans trans=NOTRANS ) const = 0;
+    virtual void Apply ( const MultiVec<ScalarType>& x, 
+			 MultiVec<ScalarType>& y, ETrans trans=NOTRANS ) const = 0;
   };
   
   ////////////////////////////////////////////////////////////////////
@@ -101,11 +102,11 @@ namespace Belos {
   public:
     
     ///
-    static ReturnType Apply ( const Operator<ScalarType>& Op, 
-			      const MultiVec<ScalarType>& x, 
-			      MultiVec<ScalarType>& y,
-			      ETrans trans=NOTRANS )
-    { return Op.Apply( x, y, trans ); }
+    static void Apply ( const Operator<ScalarType>& Op, 
+			const MultiVec<ScalarType>& x, 
+			MultiVec<ScalarType>& y,
+			ETrans trans=NOTRANS )
+    { Op.Apply( x, y, trans ); }
     
   };
   

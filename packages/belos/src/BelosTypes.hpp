@@ -34,6 +34,8 @@
   \brief Collection of types and exceptions used within the Belos solvers.
 */
 
+#include "BelosConfigDefs.hpp"
+#include "Teuchos_TestForException.hpp"
 
 namespace Belos {
  
@@ -70,14 +72,13 @@ namespace Belos {
   
   /*!	
     \enum Belos::ReturnType
-    \brief Any method in the Belos abstract interfaces may fail or not be defined. 
-    This information needs to be passed back to the algorithm or user.  This will be used 
-    by the algorithm or user to decide what should be done.
+    When the solve() method of any Belos::SolverManager is called a variable of type
+    Belos::ReturnType is returned indicating whether the solver manager sucessfully computed
+    solutions to the linear system.
   */
   
-  enum ReturnType {		Ok, 		/*!< Computation completed sucessfully */
-				Undefined, 	/*!< This operation is not defined */
-				Error		/*!< This operator returned an error */
+  enum ReturnType  {    Converged,     /*!< Convergence was reached for all linear systems. */
+                        Unconverged    /*!< Convergence was not reached for some or all linear systems. */
   };
   
   /*! 
@@ -86,12 +87,9 @@ namespace Belos {
     variable of type Belos::StatusType is returned.
   */
   
-  enum StatusType { 	Unchecked = 2,   /*!< Initial state of status */
-			Unconverged = 1, /*!< Convergence is not reached. */
-			Converged = 0,   /*!< Convergence is reached. */
-			Failed = -1,     /*!< Some failure occured.  Should stop */
-			NaN = -2         /*!< Result from test contains a NaN value.  Should stop */
-			
+  enum StatusType { 	Passed = 0x1,      /*!< Some event occured, the iteration needs to stop. */
+                        Failed = 0x2,      /*!< No event has occurred requiring the iteration to stop. */
+			Undefined = 0x4    /*!< Status test has not been checked yet. */
   };
 
   /*!
@@ -101,16 +99,12 @@ namespace Belos {
   const char* toString(const StatusType status)
   {
     switch(status) {
-      case Unchecked:
-        return "Unchecked";
-      case Unconverged:
-        return "Unconverged";
-      case Converged:
-        return "Converged";
+      case Passed:
+        return "Passed";
       case Failed:
         return "Failed";
-      case NaN:
-        return "NaN";
+      case Undefined:
+        return "Undefined";
       default:
         TEST_FOR_EXCEPT(true);
     }
@@ -140,7 +134,8 @@ namespace Belos {
       OrthoDetails = 0x4,         /*!< Orthogonalization/orthonormalization details */
       FinalSummary = 0x8,         /*!< Final computational summary */
       TimingDetails = 0x10,       /*!< Timing details */
-      Debug = 0x20                /*!< Debugging information */
+      StatusTestDetails = 0x20,   /*!< Status test details */
+      Debug = 0x40                /*!< Debugging information */
     };
 
 } // end Belos namespace

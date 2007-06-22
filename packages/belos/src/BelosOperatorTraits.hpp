@@ -34,7 +34,6 @@
 	required by the iterative linear solver.
 */
 
-#include "BelosTypes.hpp"
 #include "BelosConfigDefs.hpp"
 
 namespace Belos {
@@ -43,7 +42,7 @@ namespace Belos {
   struct UndefinedOperatorTraits
   {
     //! This function should not compile if there is an attempt to instantiate!
-    static inline ReturnType notDefined() { return OP::this_type_is_missing_a_specialization(); };
+    static inline void notDefined() { OP::this_type_is_missing_a_specialization(); };
   };
   
   template <class ScalarType, class MV, class OP>
@@ -52,11 +51,11 @@ namespace Belos {
   public:
     
     ///
-    static ReturnType Apply ( const OP& Op, 
-			      const MV& x, 
-			      MV& y, 
-			      ETrans trans = NOTRANS )
-    { return UndefinedOperatorTraits<ScalarType, MV, OP>::notDefined(); };
+    static void Apply ( const OP& Op, 
+			const MV& x, 
+			MV& y, 
+			ETrans trans = NOTRANS )
+    { UndefinedOperatorTraits<ScalarType, MV, OP>::notDefined(); };
     
   };
   

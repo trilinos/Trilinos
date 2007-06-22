@@ -36,7 +36,7 @@
 /*! 	\class Belos::MultiVec
 
 	\brief Belos's templated pure virtual class for constructing multivectors that 
-	are used by the eigensolver.
+	are used by the linear solver.
 
 	A concrete implementation of this class is necessary.  The user can create
 	their own implementation if those supplied are not suitable for their needs.

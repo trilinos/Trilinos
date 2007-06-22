@@ -34,18 +34,14 @@
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
-#include "BelosOutputManager.hpp"
-#include "BelosStatusTestMaxIters.hpp"
-#include "BelosStatusTestOutputter.hpp"
-#include "BelosStatusTestResNorm.hpp"
-#include "BelosStatusTestCombo.hpp"
 #include "BelosEpetraAdapter.hpp"
-#include "BelosBlockCG.hpp"
+#include "BelosBlockCGSolMgr.hpp"
 #include "createEpetraProblem.hpp"
 #include "Trilinos_Util.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 int main(int argc, char *argv[]) {
   //
@@ -63,7 +59,8 @@ int main(int argc, char *argv[]) {
   bool verbose = false, proc_verbose = false;
   int frequency = -1;  // how often residuals are printed by solver
   int numrhs = 1;  // total number of right-hand sides to solve for
-  int blockSize = 1;  // blocksize used by solver
+  int blocksize = 1;  // blocksize used by solver
+  int maxiters = -1;  // maximum number of iterations for solver to use
   std::string filename("bcsstk14.hb");
   double tol = 1.0e-5;  // relative residual tolerance
 
@@ -73,7 +70,8 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("block-size",&blockSize,"Block size to be used by CG solver.");
+  cmdp.setOption("block-size",&blocksize,"Block size to be used by CG solver.");
+  cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -87,7 +85,6 @@ int main(int argc, char *argv[]) {
   RefCountPtr<Epetra_MultiVector> B, X;
   int return_val =Belos::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
   if(return_val != 0) return return_val;
-  const Epetra_Map &Map = A->RowMap();
   proc_verbose = ( verbose && (MyPID==0) );
   //
   // Solve using Belos
@@ -98,45 +95,50 @@ int main(int argc, char *argv[]) {
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
   typedef Belos::MultiVecTraits<ST,MV>    MVT;
   //
-  // ********Other information used by block solver***********
-  // *****************(can be user specified)******************
-  //
-  const int NumGlobalElements = B->GlobalLength();
-  int maxits = NumGlobalElements/blockSize - 1; // maximum number of iterations to run
-  //
   // *****Construct initial guess and random right-hand-sides *****
   //
   if (numrhs != 1) {
-    X = rcp( new Epetra_MultiVector( Map, numrhs ) );
+    X = rcp( new Epetra_MultiVector( A->Map(), numrhs ) );
     MVT::MvRandom( *X );
-    B = rcp( new Epetra_MultiVector( Map, numrhs ) );
+    B = rcp( new Epetra_MultiVector( A->Map(), numrhs ) );
     OPT::Apply( *A, *X, *B );
     MVT::MvInit( *X, 0.0 );
   }
   //
-  //  Construct an unpreconditioned linear problem instance.
+  // ********Other information used by block solver***********
+  // *****************(can be user specified)******************
   //
-  Belos::LinearProblem<ST,MV,OP> My_LP( A, X, B );
-  My_LP.SetBlockSize( blockSize );
+  const int NumGlobalElements = B->GlobalLength();
+  if (maxiters = -1)
+    maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
   //
-  // *******************************************************************
-  // *************Start the block CG iteration*************************
-  // *******************************************************************
+  ParameterList belosList;
+  belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
+  belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
+  belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  if (verbose) {
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
+		   Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
+    if (frequency > 0)
+      belosList.set( "Output Frequency", frequency );
+  }
+  else
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
   //
-  Belos::OutputManager<ST> My_OM( MyPID );
-  if (verbose)
-    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings 
-			+ Belos::TimingDetails + Belos::FinalSummary );
+  // Construct an unpreconditioned linear problem instance.
   //
-  Belos::StatusTestMaxIters<ST,MV,OP> test1( maxits );
-  Belos::StatusTestResNorm<ST,MV,OP>  test2( tol );
-  Belos::StatusTestOutputter<ST,MV,OP> test3( frequency, false );
-  test3.set_resNormStatusTest( rcp(&test2,false) );
-  test3.set_outputManager( rcp(&My_OM,false) );
-  Belos::StatusTestCombo<ST,MV,OP> My_Test( Belos::StatusTestCombo<ST,MV,OP>::OR, test1, test3 );
+  Belos::LinearProblem<double,MV,OP> problem( A, X, B );
+  bool set = problem.setProblem();
+  if (set == false) {
+    if (proc_verbose)
+      cout << endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << endl;
+    return -1;
+  }
   //
-  Belos::BlockCG<ST,MV,OP>
-    MyBlockCG(rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false) );
+  // Create an iterative solver manager.
+  //
+  RefCountPtr< Belos::SolverManager<double,MV,OP> > newSolver
+    = rcp( new Belos::BlockCGSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)) );
   //
   // **********Print out information about problem*******************
   //
@@ -144,34 +146,45 @@ int main(int argc, char *argv[]) {
     cout << endl << endl;
     cout << "Dimension of matrix: " << NumGlobalElements << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
-    cout << "Block size used by solver: " << blockSize << endl;
-    cout << "Max number of CG iterations: " << maxits << endl; 
+    cout << "Block size used by solver: " << blocksize << endl;
+    cout << "Max number of CG iterations: " << maxiters << endl; 
     cout << "Relative residual tolerance: " << tol << endl;
     cout << endl;
   }
   //
+  // Perform solve
   //
+  Belos::ReturnType ret = newSolver->solve();
+  //
+  // Compute actual residuals.
+  //
+  bool badRes = false;
+  std::vector<double> actual_resids( numrhs );
+  std::vector<double> rhs_norm( numrhs );
+  Epetra_MultiVector resid(A->Map(), numrhs);
+  OPT::Apply( *A, *X, resid );
+  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid ); 
+  MVT::MvNorm( resid, &actual_resids );
+  MVT::MvNorm( *B, &rhs_norm );
   if (proc_verbose) {
-    cout << endl << endl;
-    cout << "Running Block CG -- please wait" << endl;
-    cout << (numrhs+blockSize-1)/blockSize 
-	 << " pass(es) through the solver required to solve for " << endl; 
-    cout << numrhs << " right-hand side(s) -- using a block size of " << blockSize
-	 << endl << endl;
+    cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+    for ( int i=0; i<numrhs; i++) {
+      double actRes = actual_resids[i]/rhs_norm[i];
+      cout<<"Problem "<<i<<" : \t"<< actRes <<endl;
+      if (actRes > tol) badRes = true;
+    }
   }
 
-  MyBlockCG.Solve();
-  
-  if (My_Test.GetStatus()!=Belos::Converged) {
-    if (verbose)
-      cout << "End Result: TEST FAILED" << endl;	
+  if (ret!=Belos::Converged || badRes) {
+    if (proc_verbose)
+      cout << endl << "End Result: TEST FAILED" << endl;	
     return -1;
   }
   //
   // Default return value
   //
   if (proc_verbose)
-    cout << "End Result: TEST PASSED" << endl;
+    cout << endl << "End Result: TEST PASSED" << endl;
   return 0;
   //
 } // end test_bl_cg_hb.cpp

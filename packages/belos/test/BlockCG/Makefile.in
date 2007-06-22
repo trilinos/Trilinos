@@ -69,7 +69,8 @@ CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
 @BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 =  \
 @BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@	bl_pcg_hb$(EXEEXT)
-@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 = bl_cg_hb$(EXEEXT) Dummy$(EXEEXT)
+@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 = bl_cg_hb$(EXEEXT) \
+@BUILD_TRIUTILS_TRUE@	resolve_cg_hb$(EXEEXT) Dummy$(EXEEXT)
 @BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_3 = bl_cg_complex_hb$(EXEEXT) \
 @BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@	ComplexDummy$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
@@ -98,6 +99,11 @@ am_bl_pcg_hb_OBJECTS = bl_pcg_hb-test_bl_pcg_hb.$(OBJEXT) \
 bl_pcg_hb_OBJECTS = $(am_bl_pcg_hb_OBJECTS)
 bl_pcg_hb_LINK = $(CXXLD) $(bl_pcg_hb_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_resolve_cg_hb_OBJECTS = resolve_cg_hb-test_resolve_cg_hb.$(OBJEXT) \
+	resolve_cg_hb-createEpetraProblem.$(OBJEXT)
+resolve_cg_hb_OBJECTS = $(am_resolve_cg_hb_OBJECTS)
+resolve_cg_hb_LINK = $(CXXLD) $(resolve_cg_hb_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -112,10 +118,10 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(ComplexDummy_SOURCES) $(Dummy_SOURCES) \
 	$(bl_cg_complex_hb_SOURCES) $(bl_cg_hb_SOURCES) \
-	$(bl_pcg_hb_SOURCES)
+	$(bl_pcg_hb_SOURCES) $(resolve_cg_hb_SOURCES)
 DIST_SOURCES = $(ComplexDummy_SOURCES) $(Dummy_SOURCES) \
 	$(bl_cg_complex_hb_SOURCES) $(bl_cg_hb_SOURCES) \
-	$(bl_pcg_hb_SOURCES)
+	$(bl_pcg_hb_SOURCES) $(resolve_cg_hb_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -244,18 +250,23 @@ top_srcdir = @top_srcdir@
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
 @BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BCG_IFPACK_EX = bl_pcg_hb 
-@BUILD_TRIUTILS_TRUE@BELOS_BCG_HB_EX = bl_cg_hb Dummy
+@BUILD_TRIUTILS_TRUE@BELOS_BCG_HB_EX = bl_cg_hb resolve_cg_hb Dummy
 @BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BCG_COMPLEX_TEST = bl_cg_complex_hb ComplexDummy
 Dummy_SOURCES = Dummy
 ComplexDummy_SOURCES = Dummy
 bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp $(srcdir)/createEpetraProblem.cpp
 bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
+resolve_cg_hb_SOURCES = $(srcdir)/test_resolve_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
 bl_cg_complex_hb_SOURCES = $(srcdir)/test_bl_cg_complex_hb.cpp
 bl_pcg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
 bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+resolve_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -266,9 +277,11 @@ bl_cg_complex_hb_DEPENDENCIES = $(top_builddir)/src/libbelos.a \
 
 bl_pcg_hb_CXXFLAGS = -I$(top_srcdir)/src
 bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
+resolve_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
 bl_cg_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 bl_pcg_hb_LDADD = $(EXPORT_LIBS)
 bl_cg_hb_LDADD = $(EXPORT_LIBS)
+resolve_cg_hb_LDADD = $(EXPORT_LIBS)
 bl_cg_complex_hb_LDADD = $(EXPORT_LIBS)
 all: all-am
 
@@ -315,6 +328,9 @@ bl_cg_hb$(EXEEXT): $(bl_cg_hb_OBJECTS) $(bl_cg_hb_DEPENDENCIES)
 bl_pcg_hb$(EXEEXT): $(bl_pcg_hb_OBJECTS) $(bl_pcg_hb_DEPENDENCIES) 
 	@rm -f bl_pcg_hb$(EXEEXT)
 	$(bl_pcg_hb_LINK) $(bl_pcg_hb_OBJECTS) $(bl_pcg_hb_LDADD) $(LIBS)
+resolve_cg_hb$(EXEEXT): $(resolve_cg_hb_OBJECTS) $(resolve_cg_hb_DEPENDENCIES) 
+	@rm -f resolve_cg_hb$(EXEEXT)
+	$(resolve_cg_hb_LINK) $(resolve_cg_hb_OBJECTS) $(resolve_cg_hb_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -327,6 +343,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_pcg_hb-createEpetraProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_pcg_hb-test_bl_pcg_hb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resolve_cg_hb-createEpetraProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resolve_cg_hb-test_resolve_cg_hb.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -411,6 +429,34 @@ bl_pcg_hb-createEpetraProblem.obj: $(srcdir)/createEpetraProblem.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='bl_pcg_hb-createEpetraProblem.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pcg_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_pcg_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`
+
+resolve_cg_hb-test_resolve_cg_hb.o: $(srcdir)/test_resolve_cg_hb.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(resolve_cg_hb_CXXFLAGS) $(CXXFLAGS) -MT resolve_cg_hb-test_resolve_cg_hb.o -MD -MP -MF $(DEPDIR)/resolve_cg_hb-test_resolve_cg_hb.Tpo -c -o resolve_cg_hb-test_resolve_cg_hb.o `test -f '$(srcdir)/test_resolve_cg_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_resolve_cg_hb.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/resolve_cg_hb-test_resolve_cg_hb.Tpo $(DEPDIR)/resolve_cg_hb-test_resolve_cg_hb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_resolve_cg_hb.cpp' object='resolve_cg_hb-test_resolve_cg_hb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(resolve_cg_hb_CXXFLAGS) $(CXXFLAGS) -c -o resolve_cg_hb-test_resolve_cg_hb.o `test -f '$(srcdir)/test_resolve_cg_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_resolve_cg_hb.cpp
+
+resolve_cg_hb-test_resolve_cg_hb.obj: $(srcdir)/test_resolve_cg_hb.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(resolve_cg_hb_CXXFLAGS) $(CXXFLAGS) -MT resolve_cg_hb-test_resolve_cg_hb.obj -MD -MP -MF $(DEPDIR)/resolve_cg_hb-test_resolve_cg_hb.Tpo -c -o resolve_cg_hb-test_resolve_cg_hb.obj `if test -f '$(srcdir)/test_resolve_cg_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_resolve_cg_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_resolve_cg_hb.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/resolve_cg_hb-test_resolve_cg_hb.Tpo $(DEPDIR)/resolve_cg_hb-test_resolve_cg_hb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_resolve_cg_hb.cpp' object='resolve_cg_hb-test_resolve_cg_hb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(resolve_cg_hb_CXXFLAGS) $(CXXFLAGS) -c -o resolve_cg_hb-test_resolve_cg_hb.obj `if test -f '$(srcdir)/test_resolve_cg_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_resolve_cg_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_resolve_cg_hb.cpp'; fi`
+
+resolve_cg_hb-createEpetraProblem.o: $(srcdir)/createEpetraProblem.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(resolve_cg_hb_CXXFLAGS) $(CXXFLAGS) -MT resolve_cg_hb-createEpetraProblem.o -MD -MP -MF $(DEPDIR)/resolve_cg_hb-createEpetraProblem.Tpo -c -o resolve_cg_hb-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/resolve_cg_hb-createEpetraProblem.Tpo $(DEPDIR)/resolve_cg_hb-createEpetraProblem.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='resolve_cg_hb-createEpetraProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(resolve_cg_hb_CXXFLAGS) $(CXXFLAGS) -c -o resolve_cg_hb-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp
+
+resolve_cg_hb-createEpetraProblem.obj: $(srcdir)/createEpetraProblem.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(resolve_cg_hb_CXXFLAGS) $(CXXFLAGS) -MT resolve_cg_hb-createEpetraProblem.obj -MD -MP -MF $(DEPDIR)/resolve_cg_hb-createEpetraProblem.Tpo -c -o resolve_cg_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/resolve_cg_hb-createEpetraProblem.Tpo $(DEPDIR)/resolve_cg_hb-createEpetraProblem.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/createEpetraProblem.cpp' object='resolve_cg_hb-createEpetraProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(resolve_cg_hb_CXXFLAGS) $(CXXFLAGS) -c -o resolve_cg_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -590,10 +636,11 @@ uninstall-am:
 include $(top_builddir)/Makefile.export.belos
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/bcsstk14.hb  bcsstk14.hb; cp  $(srcdir)/bcsstk15.hb  bcsstk15.hb; fi
+	cp  $(top_srcdir)/example/BlockCG/bcsstk14.hb  bcsstk14.hb
+	cp  $(top_srcdir)/example/BlockCG/bcsstk15.hb  bcsstk15.hb
 
 ComplexDummy$(EXEEXT): $(srcdir)/Dummy
-	if [ $(srcdir) != '.' ]; then cp  $(top_srcdir)/test/MVOPTester/mhd1280b.cua mhd1280b.cua; fi
+	cp  $(top_srcdir)/test/MVOPTester/mhd1280b.cua mhd1280b.cua
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
