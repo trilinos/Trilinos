@@ -242,9 +242,9 @@ exAmesos_Factory.py.
 %include "Amesos_Mumps.h"
 #endif
 
-//////////////////////////
+////////////////////////////
 // Amesos DSCPACK support //
-//////////////////////////
+////////////////////////////
 #ifdef HAVE_AMESOS_DSCPACK
 %rename(Dscpack) Amesos_Dscpack;
 %include "Amesos_Dscpack.h"
