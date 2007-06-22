@@ -99,7 +99,7 @@
 #elif HAVE_STDIO_H
 #include <stdio.h>
 #else
-#error "Found neither cstdio nor stdio.h"
+#error "Found neither <cstdio> nor <stdio.h>"
 #endif
 
 #if HAVE_CSTDARG
@@ -108,6 +108,14 @@
 #include <stdarg.h>
 #else
 #error "Found neither cstdarg nor stdarg.h"
+#endif
+
+#if HAVE_CERRNO
+#include <cerrno>
+#elif HAVE_ERRNO_H
+#include <errno.h>
+#else
+#error "Found neither cerrno nor errno.h"
 #endif
 
 #if HAVE_CSTDLIB
@@ -120,10 +128,16 @@
 
 #if HAVE_STRING
 #include <string>
+#else
+#error "Could not find <string>"
+#endif
+
+#if HAVE_CSTRING
+#include <cstring>
 #elif HAVE_STRING_H
 #include <string.h>
 #else
-#error "Found neither string nor string.h"
+#error "Found neither <cstring> nor <string.h>"
 #endif
 
 #if HAVE_IOSTREAM
