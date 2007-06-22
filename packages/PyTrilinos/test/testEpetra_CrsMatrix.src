@@ -773,7 +773,7 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
         crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 3)
         self.fillMatrixGlobal(crsm)
         for lrid in range(self.mySize):
-            grid = self.rowMap.GID(lrid)
+            grid = crsm.GRID(lrid)
             if grid in (0, self.size-1): numEntries = 2
             else:                        numEntries = 3
             self.assertEqual(crsm.NumAllocatedMyEntries(lrid), numEntries)
