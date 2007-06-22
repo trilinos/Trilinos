@@ -1,0 +1,12 @@
+include @abs_top_builddir@/../epetra/Makefile.export.epetra
+
+_TRILINOSCOUPLINGS_INCLUDES = -I@abs_top_srcdir@/src -I@abs_top_builddir@/src \
+			$(EPETRA_INCLUDES)
+_TRILINOSCOUPLINGS_LIBS     = @LDFLAGS@ -L@abs_top_builddir@/src -ltrilinoscouplings \
+			$(EPETRA_LIBS)
+
+@USING_GNUMAKE_TRUE@TRILINOSCOUPLINGS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_TRILINOSCOUPLINGS_INCLUDES))
+@USING_GNUMAKE_TRUE@TRILINOSCOUPLINGS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_TRILINOSCOUPLINGS_LIBS))
+
+@USING_GNUMAKE_FALSE@TRILINOSCOUPLINGS_INCLUDES = $(_TRILINOSCOUPLINGS_INCLUDES)
+@USING_GNUMAKE_FALSE@TRILINOSCOUPLINGS_LIBS     = $(_TRILINOSCOUPLINGS_LIBS)
