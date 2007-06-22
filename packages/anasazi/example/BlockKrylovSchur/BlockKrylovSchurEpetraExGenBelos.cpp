@@ -55,9 +55,6 @@
 // Include header for Belos solver and solver interface for Epetra_Operator
 #include "BelosEpetraOperator.h"
 #include "BelosEpetraAdapter.hpp"
-#include "BelosStatusTestResNorm.hpp"
-#include "BelosStatusTestMaxIters.hpp"
-#include "BelosStatusTestCombo.hpp"
 
 // Include header for Ifpack incomplete Cholesky preconditioner
 #include "Ifpack_CrsIct.h"
@@ -160,36 +157,21 @@ int main(int argc, char *argv[]) {
   //
   Teuchos::RefCountPtr<Belos::LinearProblem<double,Epetra_MultiVector,Epetra_Operator> > 
 	  My_LP = Teuchos::rcp( new Belos::LinearProblem<double,Epetra_MultiVector,Epetra_Operator>() );
-  My_LP->SetOperator( K );
-  My_LP->SetLeftPrec( ICT );
-  My_LP->SetBlockSize( blockSize );
-  //
-  // Create the Belos::StatusTest
-  //
-  Belos::StatusTestMaxIters<double,Epetra_MultiVector,Epetra_Operator> test1( maxits );
-  Belos::StatusTestResNorm<double,Epetra_MultiVector,Epetra_Operator> test2( btol );
-  Teuchos::RefCountPtr<Belos::StatusTestCombo<double,Epetra_MultiVector,Epetra_Operator> >
-	  My_Test = Teuchos::rcp( 
-			  new Belos::StatusTestCombo<double,Epetra_MultiVector,Epetra_Operator>
-			  ( Belos::StatusTestCombo<double,Epetra_MultiVector,Epetra_Operator>::OR, 
-			  test1, test2 ) );
-  //
-  // Create the Belos::OutputManager
-  //
-  Teuchos::RefCountPtr<Belos::OutputManager<double> > My_OM = 
-	  Teuchos::rcp( new Belos::OutputManager<double>( MyPID ) );
-  //My_OM->SetVerbosity( 2 );
+  My_LP->setOperator( K );
+  My_LP->setLeftPrec( ICT );
   //
   // Create the ParameterList for the Belos Operator
   // 
   Teuchos::RefCountPtr<Teuchos::ParameterList> My_List = Teuchos::rcp( new Teuchos::ParameterList() );
   My_List->set( "Solver", "BlockCG" );
-  My_List->set( "MaxIters", maxits );
+  My_List->set( "Maximum Iterations", maxits );
+  My_List->set( "Block Size", blockSize );
+  My_List->set( "Convergence Tolerance", btol );
   //
   // Create the Belos::EpetraOperator
   //
   Teuchos::RefCountPtr<Belos::EpetraOperator> BelosOp = 
-    Teuchos::rcp( new Belos::EpetraOperator( My_LP, My_Test, My_OM, My_List ));
+    Teuchos::rcp( new Belos::EpetraOperator( My_LP, My_List ));
   //
   // ************************************
   // Start the block Arnoldi iteration
