@@ -401,3 +401,12 @@ CLEANFILES = \
 	tradoptestd.cpp \
 	tradopteste.cpp \
 	tradoptestf.cpp
+
+EXTRA_DIST = \
+	tradoptest.c0 \
+	tradoptesta.c0 \
+	tradoptestb.c0 \
+	tradoptestc.c0 \
+	tradoptestd.c0 \
+	tradopteste.c0 \
+	tradoptestf.c0
