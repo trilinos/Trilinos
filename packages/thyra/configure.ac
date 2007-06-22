@@ -316,8 +316,14 @@ AC_CONFIG_FILES([
     adapters/epetraext/Makefile
     adapters/epetraext/src/Makefile
     adapters/epetraext/example/Makefile
-    adapters/epetraext/example/model_evaluator/Makefile
     ])
+
+#     adapters/epetraext/example/model_evaluator/Makefile
+
+# 2007/06/21: rabartl: ToDo: In need to add the above Makefile back once we
+# get the new make system working where we don't need to do recursive builds.
+# I had to remove this temporary since is was breaking the testing of the
+# tarball
 
 AC_OUTPUT()
 
