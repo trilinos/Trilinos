@@ -578,7 +578,7 @@ PACKAGE_VERSION='1.0'
 PACKAGE_STRING='belos 1.0'
 PACKAGE_BUGREPORT='hkthorn@sandia.gov'
 
-ac_unique_file="src/BelosBlockCG.hpp"
+ac_unique_file="src/BelosMultiVecTraits.hpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
