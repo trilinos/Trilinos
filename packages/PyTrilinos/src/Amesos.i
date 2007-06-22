@@ -144,8 +144,6 @@ exAmesos_Factory.py.
 // Auto-documentation feature
 %feature("autodoc", "1");
 
-// Rename directives for Amesos
-
 // SWIG library includes
 %include "stl.i"
 

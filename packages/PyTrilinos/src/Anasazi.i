@@ -37,9 +37,43 @@ Anasazi:
 
     http://trilinos.sandia.gov/packages/anasazi
 
-Anasazi is a collection of eigensolver technologies.  Currently, this
-python module is a stub, and none of the Anasazi classes are yet
-supported.
+Anasazi is a collection of eigensolver technologies.  The C++ version
+makes liberal use of templates to abstract out the scalar type,
+multivector type and operator type.  Currently, the python version
+supports only an Epetra interface, so that the scalar type is float
+(C++ double), the multivector type is Epetra.MultiVector and the
+operator type is Epetra.Operator.  The following python factories
+produce python wrappers to underlying C++ instances of the given C++
+names with concrete Epetra implementations:
+
+    * SortManager
+    * BasicSort
+    * Eigenproblem
+    * BasicEigenproblem
+    * StatusTest
+    * StatusTestCombo
+    * StatusTestMaxIters
+    * StatusTestOrderedResNorm
+    * StatusTestOutput
+    * StatusTestResNorm
+    * OrthoManager
+    * MatOrthoManager
+    * SVQBOrthoManager
+    * Eigensolver
+    * SolverManager
+    * BlockDavidson
+    * BlockDavidsonSolMgr
+    * BlockKrylovSchur
+    * BlockKrylovSchurSolMgr
+    * LOBPCG
+    * LOBPCGSolMgr
+    * Eigensolution
+
+For an example of usage of Anasazi to solve an eigenproblem, see the
+following script in the example subdirectory of the PyTrilinos
+package:
+
+    * exAnasazi_BlockDavidson.py
 "
 %enddef
 
