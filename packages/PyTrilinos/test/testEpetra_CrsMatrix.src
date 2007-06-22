@@ -617,7 +617,7 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
         crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 3)
         self.assertEqual(crsm.StorageOptimized(), False)
         self.fillMatrixGlobal(crsm)
-        self.assertEqual(crsm.StorageOptimized(), False)
+        self.assertEqual(crsm.StorageOptimized(), True)
         crsm.OptimizeStorage()
         self.assertEqual(crsm.StorageOptimized(), True)
 
@@ -742,7 +742,9 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
         crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 3)
         self.fillMatrixGlobal(crsm)
         for grid in self.rowMap.MyGlobalElements():
-            self.assertEqual(crsm.NumAllocatedGlobalEntries(grid), 3)
+            if grid in (0, self.size-1): numEntries = 2
+            else:                        numEntries = 3
+            self.assertEqual(crsm.NumAllocatedGlobalEntries(grid), numEntries)
 
     def testMaxNumEntries(self):
         "Test Epetra.CrsMatrix MaxNumEntries method"
@@ -771,7 +773,10 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
         crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 3)
         self.fillMatrixGlobal(crsm)
         for lrid in range(self.mySize):
-            self.assertEqual(crsm.NumAllocatedMyEntries(lrid), 3)
+            grid = self.rowMap.GID(lrid)
+            if grid in (0, self.size-1): numEntries = 2
+            else:                        numEntries = 3
+            self.assertEqual(crsm.NumAllocatedMyEntries(lrid), numEntries)
 
     def testIndexBase(self):
         "Test Epetra.CrsMatrix IndexBase method"
