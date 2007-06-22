@@ -32,7 +32,7 @@
 "
 PyTrilinos.ML is the python interface to Trilinos package ML/MLAPI:
 
-    http://software.sandia.gov/trilinos/packages/ml
+    http://trilinos.sandia.gov/packages/ml
 
 The purpose of ML is to provide multilevel preconditioners to
 Trilinos.

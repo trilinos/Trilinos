@@ -33,7 +33,7 @@
 PyTrilinos.NOX.Epetra.Interface is the python interface to the
 Epetra::Interface namespace of the Trilinos package NOX:
 
-    http://software.sandia.gov/trilinos/packages/nox
+    http://trilinos.sandia.gov/packages/nox
 
 The purpose of NOX.Epetra.Interface is to provide base classes the
 user should derive from in order to define the nonlinear function to

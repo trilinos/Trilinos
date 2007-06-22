@@ -33,7 +33,7 @@
 PyTrilinos.NOX.StatusTest is the python interface to the namespace
 StatusTest in Trilinos package NOX:
 
-    http://software.sandia.gov/trilinos/packages/nox
+    http://trilinos.sandia.gov/packages/nox
 
 The purpose of NOX.StatusTest is to provide clompletely flexible
 specification of stopping tests for NOX algorithms.

@@ -32,7 +32,7 @@
 "
 PyTrilinos.Amesos is the python interface to Trilinos package Amesos:
 
-    http://software.sandia.gov/trilinos/packages/amesos
+    http://trilinos.sandia.gov/packages/amesos
 
 The purpose of Amesos is to provide a common interface to a variety of
 third-party direct solvers, made compatible with PyTrilinos.Epetra.
@@ -90,7 +90,7 @@ exAmesos_Factory.py.
 #include "Epetra_FEVbrMatrix.h"
 
 // Teuchos includes
-#include "Teuchos_RCPDecl.hpp"
+#include "Teuchos_RefCountPtrDecl.hpp"
 
 // Teuchos Python utility code
 #include "Teuchos_PythonParameter.h"
@@ -145,18 +145,6 @@ exAmesos_Factory.py.
 %feature("autodoc", "1");
 
 // Rename directives for Amesos
-%rename(BaseSolver ) Amesos_BaseSolver;
-%rename(Factory    ) Amesos;
-%rename(Klu        ) Amesos_Klu;
-%rename(Lapack     ) Amesos_Lapack;
-%rename(Umfpack    ) Amesos_Umfpack;
-%rename(Scalapack  ) Amesos_Scalapack;
-%rename(Taucs      ) Amesos_Taucs;
-%rename(Pardiso    ) Amesos_Pardiso;
-%rename(Superlu    ) Amesos_Superlu;
-%rename(Superludist) Amesos_Superludist;
-%rename(Mumps      ) Amesos_Mumps;
-%rename(Dscpack    ) Amesos_Dscpack;
 
 // SWIG library includes
 %include "stl.i"
@@ -166,7 +154,9 @@ exAmesos_Factory.py.
 /////////////////////////
 %include "Amesos_config.h"
 %include "Amesos_ConfigDefs.h"
+%rename(Factory) Amesos;
 %include "Amesos.h"
+%rename(BaseSolver) Amesos_BaseSolver;
 %include "Amesos_BaseSolver.h"
 %extend Amesos_BaseSolver 
 {
@@ -184,6 +174,7 @@ exAmesos_Factory.py.
 // Amesos LAPACK support //
 ///////////////////////////
 #ifdef HAVE_AMESOS_LAPACK
+%rename(Lapack) Amesos_Lapack;
 %include "Amesos_Lapack.h"
 #endif
 
@@ -191,6 +182,7 @@ exAmesos_Factory.py.
 // Amesos KLU support //
 ////////////////////////
 #ifdef HAVE_AMESOS_KLU
+%rename(Klu) Amesos_Klu;
 %include "Amesos_Klu.h"
 #endif
 
@@ -198,6 +190,7 @@ exAmesos_Factory.py.
 // Amesos UMFPACK support //
 ////////////////////////////
 #ifdef HAVE_AMESOS_UMFPACK
+%rename(Umfpack) Amesos_Umfpack;
 %include "Amesos_Umfpack.h"
 #endif
 
@@ -205,6 +198,7 @@ exAmesos_Factory.py.
 // Amesos ScaLAPACK support //
 //////////////////////////////
 #ifdef HAVE_AMESOS_SCALAPACK
+%rename(Scalapack) Amesos_Scalapack;
 %include "Amesos_Scalapack.h"
 #endif
 
@@ -212,6 +206,7 @@ exAmesos_Factory.py.
 // Amesos Taucs support //
 //////////////////////////
 #ifdef HAVE_AMESOS_TAUCS
+%rename(Taucs) Amesos_Taucs;
 %include "Amesos_Taucs.h"
 #endif
 
@@ -219,6 +214,7 @@ exAmesos_Factory.py.
 // Amesos Pardiso support //
 ////////////////////////////
 #ifdef HAVE_AMESOS_PARDISO
+%rename(Pardiso) Amesos_Pardiso;
 %include "Amesos_Pardiso.h"
 #endif
 
@@ -226,6 +222,7 @@ exAmesos_Factory.py.
 // Amesos SuperLU support //
 ////////////////////////////
 #ifdef HAVE_AMESOS_SUPERLU
+%rename(Superlu) Amesos_Superlu;
 %include "Amesos_Superlu.h"
 #endif
 
@@ -233,6 +230,7 @@ exAmesos_Factory.py.
 // Amesos SuperLUDist support //
 ////////////////////////////////
 #ifdef HAVE_AMESOS_SUPERLUDIST
+%rename(Superludist) Amesos_Superludist;
 %include "Amesos_Superludist.h"
 #endif
 
@@ -240,5 +238,14 @@ exAmesos_Factory.py.
 // Amesos MUMPS support //
 //////////////////////////
 #ifdef HAVE_AMESOS_MUMPS
+%rename(Mumps) Amesos_Mumps;
 %include "Amesos_Mumps.h"
+#endif
+
+//////////////////////////
+// Amesos DSCPACK support //
+//////////////////////////
+#ifdef HAVE_AMESOS_DSCPACK
+%rename(Dscpack) Amesos_Dscpack;
+%include "Amesos_Dscpack.h"
 #endif

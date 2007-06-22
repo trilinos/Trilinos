@@ -32,7 +32,7 @@
 "
 PyTrilinos.NOX is the python interface to Trilinos package NOX:
 
-    http://software.sandia.gov/trilinos/packages/nox
+    http://trilinos.sandia.gov/packages/nox
 
 The purpose of NOX is to provide robust nonlinear solvers for the
 problem of finding x such that F(x)=0.  In C++, NOX supports several

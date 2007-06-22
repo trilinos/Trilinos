@@ -33,7 +33,7 @@
 PyTrilinos.NOX.Solver is the python interface to the Solver namespace
 of the Trilinos package NOX:
 
-    http://software.sandia.gov/trilinos/packages/nox
+    http://trilinos.sandia.gov/packages/nox
 
 The purpose of NOX.Solver is to provide a solver manager class for
 NOX.  NOX.Solver provides the following user-level classes:

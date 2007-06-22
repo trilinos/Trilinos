@@ -33,7 +33,7 @@
 PyTrilinos.NOX.Epetra is the python interface to namespace Epetra for
 the Trilinos package NOX:
 
-    http://software.sandia.gov/trilinos/packages/nox
+    http://trilinos.sandia.gov/packages/nox
 
 The purpose of NOX.Epetra is to provide a concrete interface beteen
 NOX and Epetra.

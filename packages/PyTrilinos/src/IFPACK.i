@@ -32,7 +32,7 @@
 "
 PyTrilinos.IFPACK is the python interface to Trilinos package IFPACK:
 
-    http://software.sandia.gov/trilinos/packages/ifpack
+    http://trilinos.sandia.gov/packages/ifpack
 
 The purpose of IFPACK is to provide incomplete foctorization
 preconditioners to Trilinos.  Note that the C++ version of IFPACK uses

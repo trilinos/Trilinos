@@ -28,144 +28,188 @@
 // ***********************************************************************
 // @HEADER
 
-%define %komplex_docstring
+%define %ifpack_docstring
 "
-PyTrilinos.Komplex is the python interface to Trilinos package Komplex:
+PyTrilinos.IFPACK is the python interface to Trilinos package IFPACK:
 
-    http://software.sandia.gov/trilinos/packages/komplex
+    http://trilinos.sandia.gov/packages/ifpack
 
-The purpose of Komplex is to provide complex vectors and operators by
-encapsulating two Epetra objects to represent real and imaginary
-components.  Note that the C++ version of Komplex uses the prefix
-'Komplex_' which has been stripped from the python version.
+The purpose of IFPACK is to provide incomplete foctorization
+preconditioners to Trilinos.  Note that the C++ version of IFPACK uses
+the prefix 'Ifpack_' which has been stripped from the python version.
 
-Komplex provides the following user-level classes:
+IFPACK provides the following user-level classes:
 
-    * MultiVector    - A class for complex-valued double-precison
-                       multi-vectors stored in equivalent real formation
-    * MultiVector    - A class for complex-valued double-precison
-                       vectors stored in equivalent real formation
-    * Ordering       - A class for manipulating the KForm of various Komplex
-                       objects
-    * Operator       - A class for using complex-valued double-precision
-                       operators stored in equivalent real formation
-    * RowMatrix      - A class for using complex-valued double-precision
-                       row matrices stored in equivalent real formation
-    * LinearProblem  - A class for explicitly eliminating matrix rows
-                       and columns
+    * Factory         - A factory for creating IFPACK preconditioners
+    * Preconditioner  - Pure virtual base class for defining interface
+    * IC              - Incomplete Cholesky preconditioner
+    * ICT             - Incomplete Cholesky preconditioner w/threshold
+    * ILU             - Incomplete lower/upper preconditioner
+    * ILUT            - Incomplete lower/upper preconditioner w/threshold
+    * PointRelaxation - Point relaxation predonditioner
+    * Amesos          - Use Amesos factorizations as preconditioners
+
+and functions:
+
+    * AnalyzeMatrix          - Analyze the basic properties of a matrix
+    * AnalyzeMatrixElements  - Analyze the distribution of values of a matrix
+    * AnalyzeVectorElements  - Analyze the distribution of values of a vector
+    * PrintSparsity          - Create PS file with sparsity pattern of matrix
 
 For examples of usage, please consult the following scripts in the
 example subdirectory of the PyTrilinos package:
 
-    * exKomplex.py
+    * exIFPACK.py
 "
 %enddef
 
 %module(package   = "PyTrilinos",
 	autodoc   = "1",
-	docstring = %komplex_docstring) Komplex
+	docstring = %ifpack_docstring) IFPACK
 
 %{
 // System includes
-//#include <iostream>
-//#include <sstream>
-//#include <vector>
+#include <iostream>
+#include <sstream>
+#include <vector>
 
 // Configuration includes
 #include "PyTrilinos_config.h"
 
 // Epetra includes
-// #ifdef HAVE_MPI
-// #include "Epetra_MpiComm.h"
-// #endif
-// #include "Epetra_LocalMap.h"
-// #include "Epetra_FEVector.h"
-// #include "Epetra_Operator.h"
-// #include "Epetra_InvOperator.h"
-// #include "Epetra_RowMatrix.h"
-// #include "Epetra_VbrMatrix.h"
-// #include "Epetra_BasicRowMatrix.h"
-// #include "Epetra_JadMatrix.h"
-// #include "Epetra_JadOperator.h"
-// #include "Epetra_FECrsMatrix.h"
-// #include "Epetra_FEVbrMatrix.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
+#include "Epetra_LocalMap.h"
+#include "Epetra_FEVector.h"
+#include "Epetra_Operator.h"
+#include "Epetra_InvOperator.h"
+#include "Epetra_RowMatrix.h"
+#include "Epetra_VbrMatrix.h"
+#include "Epetra_BasicRowMatrix.h"
+#include "Epetra_JadMatrix.h"
+#include "Epetra_JadOperator.h"
+#include "Epetra_FECrsMatrix.h"
+#include "Epetra_FEVbrMatrix.h"
 
 // Epetra python includes
-// #include "NumPyImporter.h"
-// #include "Epetra_NumPyMultiVector.h"
-// #include "Epetra_NumPyVector.h"
-// #include "Epetra_NumPyFEVector.h"
+#include "NumPyImporter.h"
+#include "Epetra_NumPyMultiVector.h"
+#include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyFEVector.h"
 
 // Teuchos Python utility code
-//#include "Teuchos_PythonParameter.h"
+#include "Teuchos_PythonParameter.h"
 
-// Komplex includes
-#include "Komplex_Version.h"
-#include "Komplex_MultiVector.h"
-#include "Komplex_Vector.h"
-#include "Komplex_Ordering.h"
-#include "Komplex_Operator.h"
-#include "Komplex_RowMatrix.h"
-#include "Komplex_LinearProblem.h"
+// IFPACK includes
+#include "Ifpack.h"
+#include "Ifpack_Version.h"
+#include "Ifpack_Utils.h"
+#include "Ifpack_Preconditioner.h"
+#include "Ifpack_IC.h"
+#include "Ifpack_ICT.h"
+#include "Ifpack_ILU.h"
+#include "Ifpack_ILUT.h"
+#include "Ifpack_PointRelaxation.h"
+#include "Ifpack_Amesos.h"
 
 %}
 
 // Auto-documentation feature
 %feature("autodoc", "1");
 
-// General ignores
-%ignore *::operator=;
-%ignore *::operator[];
-%ignore *::operator();
-
 // External Trilinos modules
+%import "Teuchos.i"
+%ignore Epetra_Version();
 %import "Epetra.i"
 
-///////////////////////////////////
-// Komplex configuration support //
-///////////////////////////////////
-%include "Komplex_config.h"
+//////////////////////////////////
+// IFPACK configuration support //
+//////////////////////////////////
+%include "Ifpack_config.h"
+%include "Ifpack_ConfigDefs.h"
 
-/////////////////////////////
-// Komplex Version support //
-/////////////////////////////
-%include "Komplex_Version.h"
+////////////////////////////
+// IFPACK factory support //
+////////////////////////////
+%rename(Factory) Ifpack;
+%include "Ifpack.h"
+
+////////////////////////////
+// IFPACK_Version support //
+////////////////////////////
+%rename(Version) Ifpack_Version;
+%include "Ifpack_Version.h"
 %pythoncode %{
-__version__ = Komplex_Version().split()[2]
+__version__ = Version().split()[2]
 %}
 
-/////////////////////////////////
-// Komplex MultiVector support //
-/////////////////////////////////
-//%rename(MultiVector) Komplex_MultiVector;
-%include "Komplex_MultiVector.h"
-
-////////////////////////////
-// Komplex Vector support //
-////////////////////////////
- //%rename(Vector) Komplex_Vector;
-%include "Komplex_Vector.h"
-
-//////////////////////////////
-// Komplex Ordering support //
-//////////////////////////////
- //%rename(Ordering) Komplex_Ordering;
-%include "Komplex_Ordering.h"
-
-//////////////////////////////
-// Komplex Operator support //
-//////////////////////////////
- //%rename(Operator) Komplex_Operator;
-%include "Komplex_Operator.h"
-
-///////////////////////////////
-// Komplex RowMatrix support //
-///////////////////////////////
- //%rename(RowMatrix) Komplex_RowMatrix;
-%include "Komplex_RowMatrix.h"
+//////////////////////////
+// IFPACK_Utils support //
+//////////////////////////
+%rename(AnalyzeMatrix        ) Ifpack_Analyze;
+%rename(AnalyzeMatrixElements) Ifpack_AnalyzeMatrixElements;
+%rename(AnalyzeVectorElements) Ifpack_AnalyzeVectorElements;
+%rename(PrintSparsity        ) Ifpack_PrintSparsity;
+%include "Ifpack_Utils.h"
 
 ///////////////////////////////////
-// Komplex LinearProblem support //
+// IFPACK_Preconditioner support //
 ///////////////////////////////////
- //%rename(LinearProblem) Komplex_LinearProblem;
-%include "Komplex_LinearProblem.h"
+%ignore operator<<(ostream &, const Ifpack_Preconditioner &);
+%ignore Ifpack_Preconditioner::Condest() const;
+%rename(Preconditioner) Ifpack_Preconditioner;
+%include "Ifpack_Preconditioner.h"
+%extend Ifpack_Preconditioner {
+  std::string __str__() {
+    std::stringstream os;
+    os << *self;
+    return os.str();
+  }
+  void __del__()
+  {
+    delete self;
+  }
+}
+
+///////////////////////
+// IFPACK_IC support //
+///////////////////////
+%ignore Ifpack_IC::Condest() const;
+%rename(IC) Ifpack_IC;
+%include "Ifpack_IC.h"
+
+////////////////////////
+// IFPACK_ICT support //
+////////////////////////
+%ignore Ifpack_ICT::Condest() const;
+%rename(ICT) Ifpack_ICT;
+%include "Ifpack_ICT.h"
+
+////////////////////////
+// IFPACK_ILU support //
+////////////////////////
+%ignore Ifpack_ILU::Condest() const;
+%rename(ILU) Ifpack_ILU;
+%include "Ifpack_ILU.h"
+
+/////////////////////////
+// IFPACK_ILUT support //
+/////////////////////////
+%ignore Ifpack_ILUT::Condest() const;
+%rename(ILUT) Ifpack_ILUT;
+%include "Ifpack_ILUT.h"
+
+////////////////////////////////////
+// IFPACK_PointRelaxation support //
+////////////////////////////////////
+%ignore Ifpack_PointRelaxation::Condest() const;
+%rename(PointRelaxation) Ifpack_PointRelaxation;
+%include "Ifpack_PointRelaxation.h"
+
+///////////////////////////
+// IFPACK_Amesos support //
+///////////////////////////
+%ignore Ifpack_Amesos::Condest() const;
+%rename(Amesos) Ifpack_Amesos;
+%include "Ifpack_Amesos.h"

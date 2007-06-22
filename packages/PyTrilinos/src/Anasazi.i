@@ -35,7 +35,7 @@
 PyTrilinos.Anasazi is the python interface to Trilinos package
 Anasazi:
 
-    http://software.sandia.gov/trilinos/packages/anasazi
+    http://trilinos.sandia.gov/packages/anasazi
 
 Anasazi is a collection of eigensolver technologies.  Currently, this
 python module is a stub, and none of the Anasazi classes are yet

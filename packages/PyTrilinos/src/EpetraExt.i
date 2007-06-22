@@ -33,7 +33,7 @@
 PyTrilinos.EpetraExt is the python interface to Trilinos package
 EpetraExt:
 
-    http://software.sandia.gov/trilinos/packages/epetraext
+    http://trilinos.sandia.gov/packages/epetraext
 
 The purpose of EpetraExt is to provide various extensions to Epetra
 that were not considered appropriate for the Epetra package.  These

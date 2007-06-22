@@ -33,7 +33,7 @@
 PyTrilinos.AztecOO is the python interface to Trilinos package
 AztecOO:
 
-    http://software.sandia.gov/trilinos/packages/aztecoo
+    http://trilinos.sandia.gov/packages/aztecoo
 
 AztecOO is the object-oriented interface to Aztec, Sandia's venerable
 Krylov-space linear system solver package.  Note that the C++ version

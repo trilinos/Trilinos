@@ -32,7 +32,7 @@
 "
 PyTrilinos.LOCA is the python interface to Trilinos package LOCA:
 
-    http://software.sandia.gov/trilinos/packages/nox
+    http://trilinos.sandia.gov/packages/nox
 
 The purpose of LOCA is to provide a library of continuation
 algorithms.  This module is not currently supported, but the plan is

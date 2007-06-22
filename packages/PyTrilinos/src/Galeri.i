@@ -32,7 +32,7 @@
 "
 PyTrilinos.Galeri is the python interface to Trilinos package Galeri:
 
-    http://software.sandia.gov/trilinos/packages/galeri
+    http://trilinos.sandia.gov/packages/galeri
 
 The purpose of Galeri is to provide a set of example matrices
 distributed across a set of common processor decompositions for
