@@ -78,7 +78,7 @@ NOX.StatusTest provides the following user-level classes:
 // Trilinos interface file imports
 %import "Teuchos.i"
 
-// RefCountPtr typemaps
+// RCP typemaps
 %teuchos_rcp_typemaps(NOX::StatusTest::Generic)
 
 // General ignore directives

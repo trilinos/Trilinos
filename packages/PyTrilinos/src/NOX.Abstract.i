@@ -72,7 +72,7 @@ NOX.Abstract provides the following user-level classes:
 // Trilinos module imports
 %import "Teuchos.i"
 
-// Support for Teuchos::RefCountPtrs
+// Support for Teuchos::RCPs
 %teuchos_rcp_typemaps(NOX::Abstract::Group)
 
 ////////////////////////////////

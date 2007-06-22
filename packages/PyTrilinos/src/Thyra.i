@@ -62,7 +62,8 @@ experimental, and at this time is inoperable.
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_OperatorVectorTypes.hpp"
 
-using namespace Teuchos;
+// Namespace flattening
+using Teuchos::RCP;
 %}
 
 // Ignore directives
@@ -85,7 +86,7 @@ namespace std {
 %import  "Teuchos_VerbosityLevel.hpp"
 %import  "Teuchos_Describable.hpp"
 %import  "Teuchos_TypeNameTraits.hpp"
-%import  "Teuchos_RefCountPtrDecl.hpp"
+%import  "Teuchos_RCPDecl.hpp"
 %import  "RTOp_MPI_config.h"
 %import  "Thyra_OperatorVectorTypes.hpp"
 %import  "Thyra_ScalarProdBaseDecl.hpp"
@@ -103,8 +104,8 @@ namespace std {
 // Macro for an interface, templated on type
 %define %thyra_interface(type)
 
-%ignore Teuchos::RefCountPtr<Thyra::VectorBase<type> >::access_node() const;
-%ignore Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<type> >::access_node() const;
+%ignore RCP<Thyra::VectorBase<type> >::access_node() const;
+%ignore RCP<const Thyra::VectorSpaceBase<type> >::access_node() const;
 
 %ignore Thyra::VectorSpaceBase<type>::createMember() const;
 %ignore Thyra::VectorSpaceBase<type>::createMembers(int) const;
@@ -113,13 +114,13 @@ namespace std {
 %ignore Thyra::VectorSpaceBase<type>::createMembersView(const RTOpPack::SubMultiVectorView<type> &raw_mv) const;
 %ignore Thyra::VectorSpaceBase<type>::createMembersView(const RTOpPack::ConstSubMultiVectorView<type> &raw_mv) const;
 
-%feature("pythonappend") Teuchos::RefCountPtr<Thyra::VectorBase<type> >::
-  RefCountPtr<Thyra::VectorBase<type> > {print "Hello World!"}
+%feature("pythonappend") RCP<Thyra::VectorBase<type> >::
+  RCP<Thyra::VectorBase<type> > {print "Hello World!"}
 
 // Teuchos templates
 %template (HandleableVectorSpaceBase_ ## type) Teuchos::Handleable<Thyra::VectorSpaceBase<type> >;
-%template (RCPVectorBase_ ## type)             Teuchos::RefCountPtr<Thyra::VectorBase<type> >;
-%template (RCPVectorSpaceBase_ ## type)        Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<type> >;
+%template (RCPVectorBase_ ## type)             RCP<Thyra::VectorBase<type> >;
+%template (RCPVectorSpaceBase_ ## type)        RCP<const Thyra::VectorSpaceBase<type> >;
 
 // Thyra templates
 %template (VectorSpaceBase_ ## type)           	  Thyra::VectorSpaceBase<type>;

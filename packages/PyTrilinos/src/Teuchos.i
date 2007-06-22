@@ -83,7 +83,7 @@ ParameterList will accept a python dictionary.
 // Teuchos includes
 #include "Teuchos_FILEstream.hpp"
 #include "Teuchos_Version.hpp"
-#include "Teuchos_RefCountPtrDecl.hpp"
+#include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_any.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -100,7 +100,13 @@ ParameterList will accept a python dictionary.
 
 // Teuchos python interface includes
 #include "Teuchos_PythonParameter.h"
+
+// Namespace flattening
+using Teuchos::RCP;
 %}
+
+// Namespace flattening
+using Teuchos::RCP;
 
 // Global swig features
 %feature("autodoc", "1");
@@ -151,7 +157,7 @@ namespace std {
 //Teuchos imports
 namespace Teuchos { class any; }
 %import "Teuchos_TypeNameTraits.hpp"
-%import "Teuchos_RefCountPtrDecl.hpp"
+%import "Teuchos_RCPDecl.hpp"
 %import "Teuchos_ParameterEntry.hpp"
 %import "Teuchos_XMLObjectImplem.hpp"
 %import "Teuchos_PythonParameter.h"
@@ -227,8 +233,7 @@ Teuchos::ParameterList &
 ////////////////////////////////////////////
 // Teuchos::ParameterListAcceptor support //
 ////////////////////////////////////////////
-%ignore Teuchos::ParameterListAcceptor::setParameterList(Teuchos::RefCountPtr<
-							 Teuchos::ParameterList > const &);
+%ignore Teuchos::ParameterListAcceptor::setParameterList(RCP<Teuchos::ParameterList > const &);
 %ignore Teuchos::ParameterListAcceptor::getParameterList();
 %ignore Teuchos::ParameterListAcceptor::unsetParameterList();
 %ignore Teuchos::ParameterListAcceptor::getParameterList() const;
@@ -237,19 +242,18 @@ Teuchos::ParameterList &
 
   // The ParameterListAcceptor Class has the following virtual
   // functions with default implementations: getParameterList() const;
-  // and getValidParameters() const.  These both return
-  // RefCountPtr<const ParameterList> objects, which presents a
-  // problem: there are typemaps for RefCountPtr< > and for
-  // ParameterList, but combinations of the two must be handled in a
-  // "brute force" manner.
+  // and getValidParameters() const.  These both return RCP<const
+  // ParameterList> objects, which presents a problem: there are
+  // typemaps for RCP< > and for ParameterList, but combinations of
+  // the two must be handled in a "brute force" manner.
 
   const Teuchos::ParameterList * getParameterList() const {
-    Teuchos::RefCountPtr<const Teuchos::ParameterList> p_plist = self->getParameterList();
+    RCP<const Teuchos::ParameterList> p_plist = self->getParameterList();
     return p_plist.get();
   }
 
   const Teuchos::ParameterList * getValidParameters() const {
-    Teuchos::RefCountPtr<const Teuchos::ParameterList> p_plist = self->getValidParameters();
+    RCP<const Teuchos::ParameterList> p_plist = self->getValidParameters();
     return p_plist.get();
   }
 }
@@ -346,10 +350,9 @@ def ScalarTraits(scalarType):
 ////////////////////////////////////////////////////////////////////////
 
 // Extend the %extend_smart_pointer macro to handle derived classes.
-// This has been specialized for RefCountPtr, because the constructor
-// for creating a RefCountPtr has an additional argument: a boolean
-// false
-%define %extend_RefCountPtr(Type...)
+// This has been specialized for RCP, because the constructor for
+// creating an RCP has an additional argument: a boolean false.
+%define %extend_RCP(Type...)
 %typemap(in, noblock=1) const SWIGTYPE & SMARTPOINTER (void* argp = 0, int res = 0) {
   res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
   if (!SWIG_IsOK(res)) {
@@ -378,25 +381,25 @@ def ScalarTraits(scalarType):
   delete $1;
 }
 
-%extend_smart_pointer(Teuchos::RefCountPtr< Type >)
-%template()           Teuchos::RefCountPtr< Type >;
+%extend_smart_pointer(RCP< Type >)
+%template()           RCP< Type >;
 
 %enddef
 
 // These typemap macros allow developers to generate typemaps for any
-// classes that are wrapped in Teuchos::RefCountPtr<...> and used as
-// function or method arguments.
+// classes that are wrapped in RCP<...> and used as function or method
+// arguments.
 %define %teuchos_rcp_typemaps(Type...)
 
-%extend_RefCountPtr(      Type)
-%extend_RefCountPtr(const Type)
+%extend_RCP(      Type)
+%extend_RCP(const Type)
 
 %enddef
 
-// The following directives are for the special case of a
-// Teuchos::RefCountPtr that points to a Teuchos::ParameterList
+// The following directives are for the special case of an RCP that
+// points to a Teuchos::ParameterList
 
-// Apply the RefCountPtr typemap macros to selected Teuchos classes
-%ignore Teuchos::RefCountPtr< Teuchos::ParameterList >::get() const;
+// Apply the RCP typemap macros to selected Teuchos classes
+%ignore RCP< Teuchos::ParameterList >::get() const;
 %teuchos_rcp_typemaps(Teuchos::ParameterList)
 %teuchos_rcp_typemaps(Teuchos::Time         )

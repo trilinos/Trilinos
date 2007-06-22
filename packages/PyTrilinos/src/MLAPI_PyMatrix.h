@@ -32,7 +32,7 @@
 #include "ml_common.h"
 #include "MLAPI_BaseOperator.h"
 #include "MLAPI_Operator.h"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_FECrsMatrix.h"
 
@@ -56,26 +56,26 @@ public:
     if (ColSpace.IsLinear())
     {
       ColMap_ = rcp(new Epetra_Map(-1, ColSpace.GetNumMyElements(), 0,
-                                      GetEpetra_Comm()));
+				   GetEpetra_Comm()));
     }
     else
     {
-      RefCountPtr<Epetra_IntSerialDenseVector> IMap = ColSpace.GetRCPMyGlobalElements();
+      RCP<Epetra_IntSerialDenseVector> IMap = ColSpace.GetRCPMyGlobalElements();
       ColMap_ = rcp(new Epetra_Map(-1, IMap->Length(), IMap->Values(), 0, 
-                                      GetEpetra_Comm()));
+				   GetEpetra_Comm()));
     }
 
     // range map
     if (RowSpace.IsLinear())
     {
       RowMap_ = rcp(new Epetra_Map(-1, RowSpace.GetNumMyElements(), 0,
-                                      GetEpetra_Comm()));
+				   GetEpetra_Comm()));
     }
     else
     {
-      RefCountPtr<Epetra_IntSerialDenseVector> IMap = RowSpace.GetRCPMyGlobalElements();
+      RCP<Epetra_IntSerialDenseVector> IMap = RowSpace.GetRCPMyGlobalElements();
       RowMap_ = rcp(new Epetra_Map(-1, IMap->Length(), IMap->Values(), 0, 
-                                      GetEpetra_Comm()));
+				   GetEpetra_Comm()));
     }
 
     // I suppose that RowMap == RowMatrixRowMap
@@ -129,9 +129,9 @@ private:
   Space ColSpace_;
   //! Row space.
   Space RowSpace_;
-  RefCountPtr<Epetra_Map> ColMap_;
-  RefCountPtr<Epetra_Map> RowMap_;
-  RefCountPtr<Epetra_FECrsMatrix> Matrix_;
+  RCP<Epetra_Map> ColMap_;
+  RCP<Epetra_Map> RowMap_;
+  RCP<Epetra_FECrsMatrix> Matrix_;
 
 }; // PyMatrix
 

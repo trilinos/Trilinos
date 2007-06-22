@@ -90,7 +90,7 @@ exAmesos_Factory.py.
 #include "Epetra_FEVbrMatrix.h"
 
 // Teuchos includes
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCPDecl.hpp"
 
 // Teuchos Python utility code
 #include "Teuchos_PythonParameter.h"

@@ -86,7 +86,7 @@ NOX.Epetra.Interface provides the following user-level classes:
 // Trilinos module imports
 %import "Teuchos.i"
 
-// Teuchos::RefCountPtrs typemaps
+// Teuchos::RCPs typemaps
 %teuchos_rcp_typemaps(NOX::Epetra::Interface::Required)
 %teuchos_rcp_typemaps(NOX::Epetra::Interface::Jacobian)
 %teuchos_rcp_typemaps(NOX::Epetra::Interface::Preconditioner)

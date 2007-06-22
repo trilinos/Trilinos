@@ -105,6 +105,8 @@ NOX.Epetra provides the following user-level classes:
 #include "Epetra_NumPyFEVector.h"
 
 // Namespace flattening
+using Teuchos::RCP;
+using Teuchos::rcp;
 using namespace NOX;
 using namespace NOX::Abstract;
 using namespace NOX::Epetra;
@@ -150,7 +152,7 @@ using namespace NOX::Epetra;
 // Trilinos interface support
 %import "Teuchos.i"
 
-// Support for Teuchos::RefCountPtrs
+// Support for Teuchos::RCPs
 %teuchos_rcp_typemaps(NOX::Epetra::LinearSystem)
 %teuchos_rcp_typemaps(NOX::Epetra::Scaling)
 %teuchos_rcp_typemaps(Epetra_CrsGraph)
@@ -252,18 +254,17 @@ namespace NOX {
 			       bool distance1 = false,
 			       double beta = 1.0e-6, double alpha = 1.0e-4) {
 	// Wrap the interface and CRS graph in reference counters
-	Teuchos::RefCountPtr<Interface::Required> i_ptr     = Teuchos::rcp(&i,        false);
-	Teuchos::RefCountPtr<Epetra_CrsGraph>     graph_ptr = Teuchos::rcp(&rawGraph, false);
+	RCP<Interface::Required> i_ptr     = rcp(&i,        false);
+	RCP<Epetra_CrsGraph>     graph_ptr = rcp(&rawGraph, false);
 	// Construct the coloring algorithm functor and generate the color map
-	EpetraExt::CrsGraph_MapColoring          *mapColor =
+	EpetraExt::CrsGraph_MapColoring *mapColor =
 	  new EpetraExt::CrsGraph_MapColoring();
-	Teuchos::RefCountPtr<Epetra_MapColoring> colorMap  = 
-	  Teuchos::rcp(&(*mapColor)(rawGraph));
+	RCP<Epetra_MapColoring> colorMap = rcp(&(*mapColor)(rawGraph));
 	// Construct the color index functor and generate the column indexes
-	EpetraExt::CrsGraph_MapColoringIndex                 *mapColorIndex =
+	EpetraExt::CrsGraph_MapColoringIndex *mapColorIndex =
 	  new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
-	Teuchos::RefCountPtr<std::vector<Epetra_IntVector> > columns        =
-	  Teuchos::rcp(&(*mapColorIndex)(rawGraph));
+	RCP<std::vector<Epetra_IntVector> > columns =
+	  rcp(&(*mapColorIndex)(rawGraph));
 	// Construct the FiniteDifferenceColoring object
 	FiniteDifferenceColoring *fdc = new FiniteDifferenceColoring(printingParams,
 								     i_ptr,

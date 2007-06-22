@@ -64,6 +64,9 @@ NOX.  NOX.Solver provides the following user-level classes:
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Solver_Manager.H"
+
+// Namespace flattening
+using Teuchos::RCP;
 %}
 
 // Define macro for handling exceptions thrown by NOX.Solver methods and
@@ -116,23 +119,22 @@ NOX.  NOX.Solver provides the following user-level classes:
 //////////////////////////////////
 %nox_solver_exception(Manager,Manager)
 %nox_solver_exception(Manager,getList)
-%ignore NOX::Solver::Manager::Manager(const Teuchos::RefCountPtr< NOX::Abstract::Group & >,
-                                   const Teuchos::RefCountPtr< NOX::StatusTest::Generic & >,
-                                   const Teuchos::RefCountPtr< Teuchos::ParameterList > &);
-%ignore NOX::Solver::Manager::reset(const Teuchos::RefCountPtr< NOX::Abstract::Group & >,
-                                 const Teuchos::RefCountPtr< NOX::StatusTest::Generic & >,
-                                 const Teuchos::RefCountPtr< Teuchos::ParameterList & >);
+%ignore NOX::Solver::Manager::Manager(const RCP< NOX::Abstract::Group & >,
+                                   const RCP< NOX::StatusTest::Generic & >,
+                                   const RCP< Teuchos::ParameterList > &);
+%ignore NOX::Solver::Manager::reset(const RCP< NOX::Abstract::Group & >,
+                                 const RCP< NOX::StatusTest::Generic & >,
+                                 const RCP< Teuchos::ParameterList & >);
 %extend NOX::Solver::Manager {
 
-  // The Manager constructor and reset() method both take a
-  // Teuchos::RefCountPtr<Teuchos::ParameterList > argument.  I have
-  // typemaps for Teuchos::RefCountPtr<...> and typemaps for
-  // Teuchos::ParameterList, but I cannot get a special typemap for
-  // the two combined to work.  Therefore I brute force the two
-  // functions here.
+  // The Manager constructor and reset() method both take an
+  // RCP<Teuchos::ParameterList > argument.  I have typemaps for
+  // RCP<...> and typemaps for Teuchos::ParameterList, but I cannot
+  // get a special typemap for the two combined to work.  Therefore I
+  // brute force the two functions here.
 
-  Manager(const Teuchos::RefCountPtr< NOX::Abstract::Group > & grp,
-	  const Teuchos::RefCountPtr< NOX::StatusTest::Generic > & test,
+  Manager(const RCP< NOX::Abstract::Group > & grp,
+	  const RCP< NOX::StatusTest::Generic > & test,
 	  PyObject * dict) {
 
     // Initialization
@@ -140,10 +142,10 @@ NOX.  NOX.Solver provides the following user-level classes:
     Teuchos::ParameterList * params = NULL;
     void                   * argp   = NULL;
     NOX::Solver::Manager   * mgr    = NULL;
-    Teuchos::RefCountPtr<Teuchos::ParameterList> * params_rcp = NULL;
+    RCP<Teuchos::ParameterList> * params_rcp = NULL;
     static swig_type_info * swig_TPL_ptr = SWIG_TypeQuery("Teuchos::ParameterList *");
 
-    // Convert third argument to a Teuchos::RefCountPtr<Teuchos::ParameterList> *
+    // Convert third argument to a RCP<Teuchos::ParameterList> *
     if (PyDict_Check(dict)) {
       params = Teuchos::pyDictToNewParameterList(dict);
       if (params == NULL) {
@@ -161,7 +163,7 @@ NOX.  NOX.Solver provides the following user-level classes:
       }
       params = reinterpret_cast< Teuchos::ParameterList * >(argp);
     }
-    params_rcp = new Teuchos::RefCountPtr<Teuchos::ParameterList> (params, false);
+    params_rcp = new RCP<Teuchos::ParameterList> (params, false);
 
     // Construct and return a new Manager object
     mgr = new NOX::Solver::Manager(grp, test, *params_rcp);
@@ -171,8 +173,8 @@ NOX.  NOX.Solver provides the following user-level classes:
     return NULL;
   }
 
-  bool reset(const Teuchos::RefCountPtr< NOX::Abstract::Group > & grp,
-	     const Teuchos::RefCountPtr< NOX::StatusTest::Generic > & test,
+  bool reset(const RCP< NOX::Abstract::Group > & grp,
+	     const RCP< NOX::StatusTest::Generic > & test,
 	     PyObject * dict) {
 
     // Initialization
@@ -180,10 +182,10 @@ NOX.  NOX.Solver provides the following user-level classes:
     bool                     result = false;
     Teuchos::ParameterList * params = NULL;
     void                   * argp   = NULL;
-    Teuchos::RefCountPtr<Teuchos::ParameterList> * params_rcp = NULL;
+    RCP<Teuchos::ParameterList> * params_rcp = NULL;
     static swig_type_info * swig_TPL_ptr = SWIG_TypeQuery("Teuchos::ParameterList *");
 
-    // Convert third argument to a Teuchos::RefCountPtr<Teuchos::ParameterList> *
+    // Convert third argument to a RCP<Teuchos::ParameterList> *
     if (PyDict_Check(dict)) {
       params = Teuchos::pyDictToNewParameterList(dict);
       if (params == NULL) {
@@ -201,7 +203,7 @@ NOX.  NOX.Solver provides the following user-level classes:
       }
       params = reinterpret_cast< Teuchos::ParameterList * >(argp);
     }
-    params_rcp = new Teuchos::RefCountPtr<Teuchos::ParameterList> (params, false);
+    params_rcp = new RCP<Teuchos::ParameterList> (params, false);
 
     // Call result() method and return the result
     result = self->reset(grp, test, *params_rcp);

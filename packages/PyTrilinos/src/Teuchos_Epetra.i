@@ -29,17 +29,17 @@
 // @HEADER
 
 // The swig interface file Teucos.i defines typemaps that greatly
-// expand the usefulness of the Teuchos::RefCountPtr class.  The
-// Epetra.i swig interface file defines new classes that inherit from
-// Epetra array-like classes (such as Epetra_MultiVector or
-// Epetra_Vector) that also behave like NumPy arrays, making them much
-// more usable in python.
+// expand the usefulness of the RCP class.  The Epetra.i swig
+// interface file defines new classes that inherit from Epetra
+// array-like classes (such as Epetra_MultiVector or Epetra_Vector)
+// that also behave like NumPy arrays, making them much more usable in
+// python.
 
 // The purpose of this swig interface file is provide for the cases
-// that involve a Teuchos::RefCountPtr<...> wrapped around an
-// Epetra_Vector or other array-like class.  In this case, what the
-// python user will expect is an enhanced Epetra array-like object. To
-// use this interface file, use the directive
+// that involve an RCP<...> wrapped around an Epetra_Vector or other
+// array-like class.  In this case, what the python user will expect
+// is an enhanced Epetra array-like object. To use this interface
+// file, use the directive
 //
 // %include "Teuchos_Epetra.i"
 //
@@ -51,6 +51,9 @@
 // PyObject * PyExc_EpetraError;
 // std::string Epetra_Object___str__(Epetra_Object*);
 // void        Epetra_Object_Print(  Epetra_Object*,PyObject*pf=NULL);
+
+// Namespace flattening
+using Teuchos::RCP;
 %}
 
 // Imports
@@ -59,14 +62,14 @@
 
 // Define the macro that defines the typemap
 %define %teuchos_rcp_epetra_array_typemaps(ClassName)
-%typemap(out) Teuchos::RefCountPtr<Epetra_##ClassName> {
+%typemap(out) RCP<Epetra_##ClassName> {
   if (Teuchos::is_null($1)) $result = Py_BuildValue("");
   else {
     Epetra_NumPy##ClassName * npa = new Epetra_NumPy##ClassName(*$1);
     $result = SWIG_NewPointerObj(npa, $descriptor(Epetra_NumPy##ClassName*), 1);
   }
 }
-%typemap(varout) Teuchos::RefCountPtr<Epetra_##ClassName> {
+%typemap(varout) RCP<Epetra_##ClassName> {
   if (Teuchos::is_null($1)) $result = Py_BuildValue("");
   else {
     Epetra_NumPy##ClassName * npa = new Epetra_NumPy##ClassName(*$1);
@@ -74,9 +77,9 @@
   }
 }
 
-// %ignore Teuchos::RefCountPtr< Epetra_##ClassName >::access_node() const;
+// %ignore RCP< Epetra_##ClassName >::access_node() const;
 // %template (RCP_Epetra_##ClassName)
-//   Teuchos::RefCountPtr< Epetra_##ClassName >;
+//   RCP< Epetra_##ClassName >;
 %enddef
 
 // Implement the macro for concrete classes
