@@ -181,6 +181,7 @@ CORE = \
 	$(srcdir)/Teuchos_Utils.cpp \
 	$(srcdir)/Teuchos_VerboseObject.cpp \
 	$(srcdir)/Teuchos_VerboseObjectParameterListHelpers.cpp \
+	$(srcdir)/Teuchos_VerbosityLevel.cpp \
 	$(srcdir)/Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp \
 	$(srcdir)/Teuchos_Workspace.cpp \
 	$(srcdir)/Teuchos_dyn_cast.cpp \

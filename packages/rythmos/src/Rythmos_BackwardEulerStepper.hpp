@@ -485,6 +485,7 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
 
   using Teuchos::as;
+  using Teuchos::incrVerbLevel;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Thyra::NonlinearSolverBase<Scalar> NSB;
   typedef Teuchos::VerboseObjectTempState<NSB> VOTSNSB;
@@ -492,7 +493,7 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::takeStep");
-  VOTSNSB solver_outputTempState(solver_,out,verbLevel);
+  VOTSNSB solver_outputTempState(solver_,out,incrVerbLevel(verbLevel,-1));
 
   if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
     *out

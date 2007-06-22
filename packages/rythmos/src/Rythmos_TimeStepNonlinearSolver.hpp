@@ -47,7 +47,7 @@ namespace Rythmos {
  * ToDo: Finish documentation.
  *
  * 2007/05/18: rabartl: ToDo: Derive NonlinearSolverBase from
- * Teuchos::ParameterListAcceptor and accept options through a validated
+ * ParameterListAcceptor and accept options through a validated
  * parameter list!  Then remove these STANDARD_MEMBER_COMPOSITION_MEMBERS()
  * macros.
  */
@@ -74,15 +74,15 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
+  void setParameterList(RCP<ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
+  RCP<ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+  RCP<ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
+  RCP<const ParameterList> getParameterList() const;
   /** \brief . */
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  RCP<const ParameterList> getValidParameters() const;
 
   //@}
 
@@ -91,10 +91,10 @@ public:
 
   /** \brief . */
   void setModel(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &model
     );
   /** \brief . */
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
+  RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const;
   /** \brief . */
   Thyra::SolveStatus<Scalar> solve(
     Thyra::VectorBase<Scalar> *x,
@@ -104,16 +104,16 @@ public:
   /** \brief . */
   bool supportsCloning() const;
   /** \brief . */
-  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
+  RCP<Thyra::NonlinearSolverBase<Scalar> >
   cloneNonlinearSolver() const;  
   /** \brief . */
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > get_current_x() const;
+  RCP<const Thyra::VectorBase<Scalar> > get_current_x() const;
   /** \brief . */
   bool is_W_current() const;
   /** \brief . */
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > get_nonconst_W();
+  RCP<Thyra::LinearOpWithSolveBase<Scalar> > get_nonconst_W();
   /** \brief . */
-  Teuchos::RCP<const Thyra::LinearOpWithSolveBase<Scalar> > get_W() const;
+  RCP<const Thyra::LinearOpWithSolveBase<Scalar> > get_W() const;
   /** \brief . */
   void set_W_is_current(bool W_is_current);
 
@@ -123,10 +123,10 @@ private:
 
   // private object data members
 
-  Teuchos::RCP<Teuchos::ParameterList> paramList_;
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > J_;
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > current_x_;
+  RCP<ParameterList> paramList_;
+  RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+  RCP<Thyra::LinearOpWithSolveBase<Scalar> > J_;
+  RCP<Thyra::VectorBase<Scalar> > current_x_;
   bool J_is_current_;
 
   double defaultTol_;
@@ -237,12 +237,12 @@ TimeStepNonlinearSolver<Scalar>::TimeStepNonlinearSolver()
 {}
 
 
-// Overridden from Teuchos::ParameterListAcceptor
+// Overridden from ParameterListAcceptor
 
 
 template<class Scalar>
 void TimeStepNonlinearSolver<Scalar>::setParameterList(
-  Teuchos::RCP<Teuchos::ParameterList> const& paramList
+  RCP<ParameterList> const& paramList
   )
 {
   using Teuchos::get;
@@ -264,7 +264,7 @@ void TimeStepNonlinearSolver<Scalar>::setParameterList(
 
 
 template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
+RCP<ParameterList>
 TimeStepNonlinearSolver<Scalar>::getParameterList()
 {
   return paramList_;
@@ -272,17 +272,17 @@ TimeStepNonlinearSolver<Scalar>::getParameterList()
 
 
 template<class Scalar>
-Teuchos::RCP<Teuchos::ParameterList>
+RCP<ParameterList>
 TimeStepNonlinearSolver<Scalar>::unsetParameterList()
 {
-  Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
+  RCP<ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const ParameterList>
 TimeStepNonlinearSolver<Scalar>::getParameterList() const
 {
   return paramList_;
@@ -290,14 +290,13 @@ TimeStepNonlinearSolver<Scalar>::getParameterList() const
 
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
+RCP<const ParameterList>
 TimeStepNonlinearSolver<Scalar>::getValidParameters() const
 {
   using Teuchos::setDoubleParameter; using Teuchos::setIntParameter;
-  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
+  static RCP<const ParameterList> validPL;
   if (is_null(validPL)) {
-    Teuchos::RCP<Teuchos::ParameterList>
-      pl = Teuchos::parameterList();
+    RCP<ParameterList> pl = Teuchos::parameterList();
     setDoubleParameter(
       DefaultTol_name_, DefaultTol_default_,
       "The default base tolerance for the nonlinear timestep solve.\n"
@@ -345,7 +344,7 @@ TimeStepNonlinearSolver<Scalar>::getValidParameters() const
 
 template <class Scalar>
 void TimeStepNonlinearSolver<Scalar>::setModel(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &model
   )
 {
   TEST_FOR_EXCEPT(model.get()==NULL);
@@ -357,7 +356,7 @@ void TimeStepNonlinearSolver<Scalar>::setModel(
 
 
 template <class Scalar>
-Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+RCP<const Thyra::ModelEvaluator<Scalar> >
 TimeStepNonlinearSolver<Scalar>::getModel() const
 {
   return model_;
@@ -373,10 +372,10 @@ TimeStepNonlinearSolver<Scalar>::solve(
 {
 
   using std::endl;
+  using Teuchos::incrVerbLevel;
   using Teuchos::describe;
   using Teuchos::as;
   using Teuchos::rcp;
-  using Teuchos::RCP;
   using Teuchos::OSTab;
   using Teuchos::getFancyOStream;
   typedef Thyra::ModelEvaluatorBase MEB;
@@ -393,12 +392,12 @@ TimeStepNonlinearSolver<Scalar>::solve(
     0!=solveCriteria && "ToDo: Support passed in solve criteria!" );
 #endif
 
-  const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  const RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   const bool showNewtonDetails = (as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM));
   const bool dumpAll = (as<int>(verbLevel) == as<int>(Teuchos::VERB_EXTREME)); 
   TEUCHOS_OSTAB;
-  VOTSME stateModel_outputTempState(model_,out,verbLevel);
+  VOTSME stateModel_outputTempState(model_,out,incrVerbLevel(verbLevel,-1));
   if(out.get() && showNewtonDetails)
     *out
       << "\nEntering TimeStepNonlinearSolver::solve(...) ...\n"
@@ -449,7 +448,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
           ),
         linearTolSafety*tol
         );
-    VOTSLOWSB J_outputTempState(J_,out,verbLevel);
+    VOTSLOWSB J_outputTempState(J_,out,incrVerbLevel(verbLevel,-1));
     Thyra::SolveStatus<Scalar> linearSolveStatus
       = Thyra::solve( *J_, Thyra::NOTRANS, *f, &*dx, &linearSolveCriteria );
     if(out.get() && showNewtonDetails)
@@ -575,10 +574,10 @@ bool TimeStepNonlinearSolver<Scalar>::supportsCloning() const
 
 
 template <class Scalar>
-Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >
+RCP<Thyra::NonlinearSolverBase<Scalar> >
 TimeStepNonlinearSolver<Scalar>::cloneNonlinearSolver() const
 {
-  Teuchos::RCP<TimeStepNonlinearSolver<Scalar> >
+  RCP<TimeStepNonlinearSolver<Scalar> >
     nonlinearSolver = Teuchos::rcp(new TimeStepNonlinearSolver<Scalar>);
   nonlinearSolver->model_ = model_; // Shallow copy is okay, model is stateless
   nonlinearSolver->defaultTol_ = defaultTol_;
@@ -595,7 +594,7 @@ TimeStepNonlinearSolver<Scalar>::cloneNonlinearSolver() const
 
 
 template <class Scalar>
-Teuchos::RCP<const Thyra::VectorBase<Scalar> >
+RCP<const Thyra::VectorBase<Scalar> >
 TimeStepNonlinearSolver<Scalar>::get_current_x() const
 {
   return current_x_;
@@ -610,7 +609,7 @@ bool TimeStepNonlinearSolver<Scalar>::is_W_current() const
 
 
 template <class Scalar>
-Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+RCP<Thyra::LinearOpWithSolveBase<Scalar> >
 TimeStepNonlinearSolver<Scalar>::get_nonconst_W()
 {
   return J_;
@@ -618,7 +617,7 @@ TimeStepNonlinearSolver<Scalar>::get_nonconst_W()
 
 
 template <class Scalar>
-Teuchos::RCP<const Thyra::LinearOpWithSolveBase<Scalar> >
+RCP<const Thyra::LinearOpWithSolveBase<Scalar> >
 TimeStepNonlinearSolver<Scalar>::get_W() const
 {
   return J_;

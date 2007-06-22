@@ -169,7 +169,8 @@ int main(int argc, char *argv[])
 
     Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
     setVerbosityLevelOption( "verb-level", &verbLevel,
-      "Overall verbosity level.", &clp );
+      "Top-level verbosity level.  By default, this gets deincremented as you go deeper into numerical objects.",
+      &clp );
 
     bool testExactSensitivity = false;
     clp.setOption( "test-exact-sens", "no-test-exact-sens", &testExactSensitivity,

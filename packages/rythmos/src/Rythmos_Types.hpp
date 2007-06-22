@@ -29,8 +29,12 @@
 #ifndef Rythmos_TYPES_HPP
 #define Rythmos_TYPES_HPP
 
-#include "Teuchos_RCP.hpp"
+
+#include "Rythmos_ConfigDefs.h"
+#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
@@ -42,17 +46,19 @@ namespace Rythmos {
 
 
 /** \brief . */
-using Teuchos::typeName;
-/** \brief . */
-using Teuchos::TypeNameTraits;
-/** \brief . */
 using Teuchos::RCP;
 /** \brief . */
 using Teuchos::FancyOStream;
 /** \brief . */
 using Teuchos::Array;
 /** \brief . */
+using Teuchos::ParameterList;
+/** \brief . */
 using Teuchos::ScalarTraits;
+/** \brief . */
+using Teuchos::typeName;
+/** \brief . */
+using Teuchos::TypeNameTraits;
 
 
 } // namespace Rythmos

@@ -34,6 +34,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
@@ -44,17 +45,19 @@ namespace Thyra {
 // Using declarations from Teuchos
 
 /** \brief . */
-using Teuchos::typeName;
-/** \brief . */
-using Teuchos::TypeNameTraits;
-/** \brief . */
 using Teuchos::RCP;
 /** \brief . */
 using Teuchos::FancyOStream;
 /** \brief . */
 using Teuchos::Array;
 /** \brief . */
+using Teuchos::ParameterList;
+/** \brief . */
 using Teuchos::ScalarTraits;
+/** \brief . */
+using Teuchos::typeName;
+/** \brief . */
+using Teuchos::TypeNameTraits;
 
 /** \defgroup Thyra_Op_Vec_BasicTypes_grp Basic Thyra types.
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp

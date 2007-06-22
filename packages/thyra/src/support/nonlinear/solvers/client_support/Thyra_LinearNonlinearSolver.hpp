@@ -195,6 +195,7 @@ SolveStatus<Scalar> LinearNonlinearSolver<Scalar>::solve(
 {
 
   using std::endl;
+  using Teuchos::incrVerbLevel;
   using Teuchos::describe;
   using Teuchos::as;
   using Teuchos::rcp;
@@ -221,7 +222,7 @@ SolveStatus<Scalar> LinearNonlinearSolver<Scalar>::solve(
   const bool showTrace = (as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW));
   const bool dumpAll = (as<int>(verbLevel) == as<int>(Teuchos::VERB_EXTREME)); 
   TEUCHOS_OSTAB;
-  VOTSME stateModel_outputTempState(model_,out,verbLevel);
+  VOTSME stateModel_outputTempState(model_,out,incrVerbLevel(verbLevel,-1));
   if(out.get() && showTrace)
     *out
       << "\nEntering LinearNonlinearSolver::solve(...) ...\n"
@@ -245,7 +246,7 @@ SolveStatus<Scalar> LinearNonlinearSolver<Scalar>::solve(
     dx = createMember(model_->get_x_space());
   if(out.get() && showTrace)
     *out << "\nSolving the system J*dx = -f ...\n";
-  VOTSLOWSB J_outputTempState(J_,out,verbLevel);
+  VOTSLOWSB J_outputTempState(J_,out,incrVerbLevel(verbLevel,-1));
   assign( &*dx, ST::zero() );
   Thyra::SolveStatus<Scalar>
     linearSolveStatus = Thyra::solve( *J_, NOTRANS, *f, &*dx );

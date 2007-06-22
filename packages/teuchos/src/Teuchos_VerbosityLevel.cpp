@@ -26,58 +26,63 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_VERBOSITY_LEVEL_HPP
-#define TEUCHOS_VERBOSITY_LEVEL_HPP
+#include "Teuchos_VerbosityLevel.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_as.hpp"
 
 
-/*! \file Teuchos_VerbosityLevel.hpp
-    \brief .
-*/
+namespace {
 
 
-#include "Teuchos_TestForException.hpp"
-
-
-namespace Teuchos {
-
-
-/** \brief Verbosity level.
- *
- * \ingroup teuchos_outputting_grp
- */
-enum EVerbosityLevel {
-	VERB_DEFAULT=-1,  ///< Generate output as defined by the object
-	VERB_NONE=0,      ///< Generate no output
-	VERB_LOW=1,       ///< Generate only a minimal amount of output
-	VERB_MEDIUM=2,    ///< Generate more output
-	VERB_HIGH=3,      ///< Generate a high level of output
-	VERB_EXTREME=4    ///< Generate the most output possible
-};
-
-
-/** \brief Return a string representation of the verbosity level.
- *
- * \ingroup teuchos_outputting_grp
- */
-std::string toString(const EVerbosityLevel verbLevel);
-
-
-/** \brief Return an increased or decreased verbosity level.
- *
- * \param  inputVerbLevel
- *           [in] The base verbosity level.
- * \param  numLevels
- *           [in] The number of levels to increase (>0) or decrease (<0).
- *
- * See the function implementation for details on what it does!
- */
-EVerbosityLevel incrVerbLevel(
-  const EVerbosityLevel inputVerbLevel,
-  const int numLevels
+const Teuchos::Array<Teuchos::EVerbosityLevel>
+verbLevelArray = Teuchos::tuple<Teuchos::EVerbosityLevel>(
+	Teuchos::VERB_NONE,
+	Teuchos::VERB_LOW,
+	Teuchos::VERB_MEDIUM,
+	Teuchos::VERB_HIGH,
+	Teuchos::VERB_EXTREME
   );
 
 
-} // namespace Teuchos
+} // namespace
 
 
-#endif // TEUCHOS_VERBOSITY_LEVEL_HPP
+
+std::string Teuchos::toString(const EVerbosityLevel verbLevel)
+{
+  switch(verbLevel) {
+    case VERB_DEFAULT:
+      return "VERB_DEFAULT";
+    case VERB_NONE:
+      return "VERB_NONE";
+    case VERB_LOW:
+      return "VERB_LOW";
+    case VERB_MEDIUM:
+      return "VERB_MEDIUM";
+    case VERB_HIGH:
+      return "VERB_HIGH";
+    case VERB_EXTREME:
+      return "VERB_EXTREME";
+    default:
+      TEST_FOR_EXCEPT("Should never get here!");
+  }
+  return ""; // Never get here!
+}
+
+
+Teuchos::EVerbosityLevel
+Teuchos::incrVerbLevel(
+  const EVerbosityLevel inputVerbLevel,
+  const int numLevels
+  )
+{
+  if (inputVerbLevel == VERB_DEFAULT)
+    return VERB_DEFAULT;
+  const int intVerbLevel = as<int>(inputVerbLevel) + numLevels;
+  if (intVerbLevel < as<int>(VERB_NONE))
+    return VERB_NONE;
+  else if (intVerbLevel > as<int>(VERB_EXTREME))
+    return VERB_EXTREME;
+  // If we get here, then intVerbLevel is a valid verbosity level.
+  return verbLevelArray[intVerbLevel];
+}

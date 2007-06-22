@@ -254,10 +254,12 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
   using Teuchos::RCP;
   using Teuchos::describe;
   typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef Teuchos::VerboseObjectTempState<InterpolationBufferBase<Scalar> > VOTSSB;
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(
     "Rythmos::StepperAsModelEvaluator", inArgs, outArgs, Teuchos::null
     );
+  VOTSSB stepper_outputTempState(stepper_,out,incrVerbLevel(verbLevel,-1));
 
   // InArgs
 

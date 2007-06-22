@@ -536,6 +536,7 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
 {
 
   using Teuchos::as;
+  using Teuchos::incrVerbLevel;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
   typedef Thyra::NonlinearSolverBase<Scalar> NSB;
@@ -544,7 +545,7 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"takeStep");
-  VOTSNSB solver_outputTempState(solver_,out,verbLevel);
+  VOTSNSB solver_outputTempState(solver_,out,incrVerbLevel(verbLevel,-1));
 
   if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
     *out
@@ -639,14 +640,14 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
     
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
       *out << "xn0_ = " << std::endl;
-      xn0_->describe(*out,this->getVerbLevel());
+      xn0_->describe(*out,verbLevel);
       *out << "ee_ = " << std::endl;
-      ee_->describe(*out,this->getVerbLevel());
+      ee_->describe(*out,verbLevel);
       *out << "delta_ = " << std::endl;
-      delta_->describe(*out,this->getVerbLevel());
+      delta_->describe(*out,verbLevel);
       for (int i=0; i<max(2,maxOrder_); ++i) {
         *out << "xHistory_[" << i << "] = " << std::endl;
-        xHistory_[i]->describe(*out,this->getVerbLevel());
+        xHistory_[i]->describe(*out,verbLevel);
       }
       *out << "ck_ = " << ck_ << endl;
       *out << "enorm = " << enorm << endl;
@@ -1170,9 +1171,9 @@ void ImplicitBDFStepper<Scalar>::obtainPredictor_()
   }
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "xn0_ = " << std::endl;
-    xn0_->describe(*out,this->getVerbLevel());
+    xn0_->describe(*out,verbLevel);
     *out << "xpn0_ = " << std::endl;
-    xpn0_->describe(*out,this->getVerbLevel());
+    xpn0_->describe(*out,verbLevel);
   }
 }
 
@@ -1252,7 +1253,7 @@ void ImplicitBDFStepper<Scalar>::updateHistory_()
   if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     for (int i=0;i<max(2,maxOrder_);++i) {
       *out << "xHistory_[" << i << "] = " << endl;
-      xHistory_[i]->describe(*out,this->getVerbLevel());
+      xHistory_[i]->describe(*out,verbLevel);
     }
   }
 
@@ -1282,7 +1283,7 @@ void ImplicitBDFStepper<Scalar>::restoreHistory_()
     }
     for (int i=0;i<maxOrder_;++i) {
       *out << "xHistory_[" << i << "] = " << endl;
-      xHistory_[i]->describe(*out,this->getVerbLevel());
+      xHistory_[i]->describe(*out,verbLevel);
     }
   }
 
@@ -1476,9 +1477,9 @@ Scalar ImplicitBDFStepper<Scalar>::checkReduceOrder_()
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "sigma_[" << currentOrder_ << "] = " << sigma_[currentOrder_] << std::endl;
     *out << "ee_ = " << endl;
-    ee_->describe(*out,this->getVerbLevel());
+    ee_->describe(*out,verbLevel);
     *out << "errWtVec_ = " << endl;
-    errWtVec_->describe(*out,this->getVerbLevel());
+    errWtVec_->describe(*out,verbLevel);
   }
 
   Scalar enorm = WRMSNorm(*errWtVec_,*ee_);
@@ -1610,7 +1611,7 @@ BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep_()
         *out << "numberOfSteps_ == 0:" << endl;
         *out << "psi_[0] = " << psi_[0] << endl;
         *out << "xHistory_[1] = " << std::endl;
-        xHistory_[1]->describe(*out,this->getVerbLevel());
+        xHistory_[1]->describe(*out,verbLevel);
       }
     }
   } else if (!adjustStep) {
@@ -1711,7 +1712,7 @@ void ImplicitBDFStepper<Scalar>::completeStep_()
       Ekp1_ = Tkp1_/(currentOrder_+2);
       if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
         *out << "delta_ = " << endl;
-        delta_->describe(*out,this->getVerbLevel());
+        delta_->describe(*out,verbLevel);
         *out << "Tkp1_ = ||delta_||_WRMS = " << Tkp1_ << endl;
         *out << "Ekp1_ = " << Ekp1_ << endl;
       }
