@@ -322,8 +322,11 @@ namespace Teuchos {
 #ifdef TEUCHOS_DEBUG
         TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
           x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
-#endif      
-        return ::sqrt(x);
+#endif
+        const float rtn = ::sqrt(x);
+        if (errno)
+          return nan();
+        return rtn;
       };
     static inline float pow(float x, float y) { return ::pow(x,y); };
   };
@@ -444,7 +447,10 @@ namespace Teuchos {
         TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
           x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
 #endif      
-        return ::sqrt(x);
+        const double rtn = ::sqrt(x);
+        if (errno)
+          return nan();
+        return rtn;
       };
     static inline double pow(double x, double y) { return ::pow(x,y); };
   };

@@ -35,6 +35,9 @@
 /* Define to 1 if you have the <cassert> header file. */
 #undef HAVE_CASSERT
 
+/* Define to 1 if you have the <cerrno> header file. */
+#undef HAVE_CERRNO
+
 /* Define to 1 if you have the <cmath> header file. */
 #undef HAVE_CMATH
 
@@ -52,6 +55,12 @@
 
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
+
+/* Define to 1 if you have the <cstring> header file. */
+#undef HAVE_CSTRING
+
+/* Define to 1 if you have the <errno.h> header file. */
+#undef HAVE_ERRNO_H
 
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES

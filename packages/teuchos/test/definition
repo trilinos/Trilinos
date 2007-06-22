@@ -79,6 +79,12 @@
 }
 
 (FRAMEWORK,INSTALL) {
+    TESTS = ScalarTraits/ScalarTraits_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK,INSTALL) {
     TESTS = FancyOutputting/FancyOutputting_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI,SERIAL;

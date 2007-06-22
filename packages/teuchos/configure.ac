@@ -181,13 +181,15 @@ TAC_ARG_CHECK_MPI
 # Checks for header files - used in Teuchos_ConfigDefs.hpp
 # ------------------------------------------------------------------------
 
+AC_CHECK_HEADERS([cerrno errno.h], [break],)
 AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
 AC_CHECK_HEADERS([cstdio stdio.h], [break],)
 AC_CHECK_HEADERS([cassert assert.h], [break],)
 AC_CHECK_HEADERS([cmath math.h], [break],)
 AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
-AC_CHECK_HEADERS([string string.h], [break],)
+AC_CHECK_HEADERS([string],,)
+AC_CHECK_HEADERS([cstring string.h], [break],)
 AC_CHECK_HEADERS([complex complex.h], [break],)
 AC_CHECK_HEADERS([algorithm algo.h algorithm.h], [break],)
 AC_CHECK_HEADERS([map map.h], [break],)
@@ -766,27 +768,28 @@ AC_CONFIG_FILES([
 		Makefile.export 
 		Makefile.export.teuchos 
 		src/Makefile
-		test/Makefile
 		test/BLAS/Makefile
 		test/Comm/Makefile
-		test/LAPACK/Makefile
+		test/Containers/Makefile
 		test/DenseMatrix/Makefile
-		test/dyn_cast/Makefile
-		test/exit/Makefile
 		test/FancyOutputting/Makefile
 		test/Handle/Makefile
+		test/LAPACK/Makefile
+		test/Makefile
 		test/ParameterList/Makefile
-		test/Containers/Makefile
-		test/Time/Makefile
+		test/Polling/Makefile
 		test/RefCountPtr/Makefile
+		test/ScalarTraits/Makefile
+		test/Time/Makefile
+		test/Workspace/Makefile
 		test/XML/Makefile
 		test/XMLParser/Makefile
-		test/Workspace/Makefile
-		test/Polling/Makefile
+		test/dyn_cast/Makefile
+		test/exit/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
-		test/scripts/daily/serial/run-teuchos-tests.pl
 		test/scripts/daily/mpi/Makefile
+		test/scripts/daily/serial/run-teuchos-tests.pl
 		example/Makefile
 		example/BLAS/Makefile
 		example/CommandLineProcessor/Makefile

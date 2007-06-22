@@ -31,7 +31,7 @@
 
 // Define this to throw exceptions when any Teuchos::ScalarTraits function
 // encounters a NaN or an Inf.
-#define TEUCHOS_SCALAR_TRAITS_THROW_NAN_INF_ERR
+//#define TEUCHOS_SCALAR_TRAITS_THROW_NAN_INF_ERR
 
 
 namespace {
