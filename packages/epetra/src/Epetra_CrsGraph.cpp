@@ -963,13 +963,16 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& DomainMap,
   for (i=0; i<numDomainElements; i++) LocalGIDs[i] = false; // Assume domain GIDs are not local
 
   // In principle it is good to have RemoteGIDs and RemotGIDList be as long as the number of remote GIDs
-  // on this processor, but this would require two passes through the column IDs, so we make it 100
-  Epetra_HashTable RemoteGIDs(100); 
-  Epetra_HashTable RemoteGIDList(100);
+  // on this processor, but this would require two passes through the column IDs, so we make it the max of 100
+  // and the number of block rows.
+  const int numMyBlockRows = NumMyBlockRows();
+  int  hashsize = numMyBlockRows; if (hashsize < 100) hashsize = 100;
+  //cout << "numMyBlockRows = " << numMyBlockRows << " hashsize = " << hashsize << endl;
+  Epetra_HashTable RemoteGIDs(hashsize); 
+  Epetra_HashTable RemoteGIDList(hashsize);
 
   int NumLocalColGIDs = 0;
   int NumRemoteColGIDs = 0;
-  const int numMyBlockRows = NumMyBlockRows();
   for(i = 0; i < numMyBlockRows; i++) {
     const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
     int* ColIndices = CrsGraphData_->Indices_[i];
