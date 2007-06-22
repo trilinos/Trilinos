@@ -9,31 +9,6 @@
 
 namespace Thyra {
 
-namespace PrivateUtilities {
-
-template<class LP>
-class BelosLinearProblemTempBlockSizeSetter {
-public:
-  BelosLinearProblemTempBlockSizeSetter( const Teuchos::RCP<LP> &lp, const int newBlockSize )
-    :lp_(lp), oldBlockSize_(lp->GetBlockSize())
-    {
-      lp_->SetBlockSize(newBlockSize);
-    }
-  ~BelosLinearProblemTempBlockSizeSetter()
-    {
-      lp_->SetBlockSize(oldBlockSize_);
-    }
-private:
-  Teuchos::RCP<LP> lp_;
-  int                      oldBlockSize_;
-  // Not defined and not to be called
-  BelosLinearProblemTempBlockSizeSetter();
-  BelosLinearProblemTempBlockSizeSetter(const BelosLinearProblemTempBlockSizeSetter&);
-  BelosLinearProblemTempBlockSizeSetter& operator=(const BelosLinearProblemTempBlockSizeSetter&);
-};
-
-}
-
 // Constructors/initializers/accessors
 
 template<class Scalar>
@@ -46,56 +21,47 @@ BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve()
 template<class Scalar>
 BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve(
   const Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
-  ,const bool                                                                 adjustableBlockSize
-  ,const int                                                                  maxNumberOfKrylovVectors
-  ,const Teuchos::RCP<Teuchos::ParameterList>                         &gmresPL
-  ,const Teuchos::RCP<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
-  ,const Teuchos::RCP<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
-  ,const Teuchos::RCP<Belos::OutputManager<Scalar> >                  &outputManager
+  ,const int                                                          maxNumberOfKrylovVectors
+  ,const Teuchos::RCP<Teuchos::ParameterList>                         &solverPL
+  ,const Teuchos::RCP<Belos::SolverManager<Scalar,MV_t,LO_t> >        &iterativeSolver
   ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
   ,const Teuchos::RCP<const PreconditionerBase<Scalar> >              &prec
-  ,const bool                                                                 isExternalPrec
+  ,const bool                                                         isExternalPrec
   ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &approxFwdOpSrc
-  ,const ESupportSolveUse                                                     &supportSolveUse
+  ,const ESupportSolveUse                                             &supportSolveUse
   )
 {
   initialize(
-    lp,adjustableBlockSize,maxNumberOfKrylovVectors,gmresPL,resNormST,iterativeSolver
-    ,outputManager,fwdOpSrc,prec,isExternalPrec,approxFwdOpSrc,supportSolveUse
+    lp,maxNumberOfKrylovVectors,iterativeSolver
+    ,fwdOpSrc,prec,isExternalPrec,approxFwdOpSrc,supportSolveUse
     );
 }
 
 template<class Scalar>
 void BelosLinearOpWithSolve<Scalar>::initialize(
   const Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
-  ,const bool                                                                 adjustableBlockSize
-  ,const int                                                                  maxNumberOfKrylovVectors
-  ,const Teuchos::RCP<Teuchos::ParameterList>                         &gmresPL
-  ,const Teuchos::RCP<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
-  ,const Teuchos::RCP<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
-  ,const Teuchos::RCP<Belos::OutputManager<Scalar> >                  &outputManager
+  ,const int                                                          maxNumberOfKrylovVectors
+  ,const Teuchos::RCP<Teuchos::ParameterList>                         &solverPL
+  ,const Teuchos::RCP<Belos::SolverManager<Scalar,MV_t,LO_t> >        &iterativeSolver
   ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
   ,const Teuchos::RCP<const PreconditionerBase<Scalar> >              &prec
-  ,const bool                                                                 isExternalPrec
+  ,const bool                                                         isExternalPrec
   ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &approxFwdOpSrc
-  ,const ESupportSolveUse                                                     &supportSolveUse
+  ,const ESupportSolveUse                                             &supportSolveUse
   )
 {
   this->setLinePrefix("BELOS/T");
   // ToDo: Validate input
   lp_ = lp;
-  adjustableBlockSize_ = adjustableBlockSize;
   maxNumberOfKrylovVectors_ = maxNumberOfKrylovVectors;
-  gmresPL_ = gmresPL;
-  resNormST_ = resNormST;
+  solverPL_ = solverPL;
   iterativeSolver_ = iterativeSolver;
-  outputManager_ = outputManager;
   fwdOpSrc_ = fwdOpSrc;
   prec_ = prec;
   isExternalPrec_ = isExternalPrec;
   approxFwdOpSrc_ = approxFwdOpSrc;
   supportSolveUse_ = supportSolveUse;
-  defaultTol_ = resNormST_->GetTolerance(); // We need to remember this!
+  defaultTol_ = solverPL_->get<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>("Convergence Tolerance");
 }
 
 template<class Scalar>
@@ -143,26 +109,20 @@ ESupportSolveUse BelosLinearOpWithSolve<Scalar>::supportSolveUse() const
 template<class Scalar>
 void BelosLinearOpWithSolve<Scalar>::uninitialize(
   Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         *lp
-  ,bool                                                                 *adjustableBlockSize
-  ,int                                                                  *maxNumberOfKrylovVectors
-  ,Teuchos::RCP<Teuchos::ParameterList>                         *gmresPL
-  ,Teuchos::RCP<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    *resNormST
-  ,Teuchos::RCP<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      *iterativeSolver
-  ,Teuchos::RCP<Belos::OutputManager<Scalar> >                  *outputManager
+  ,int                                                          *maxNumberOfKrylovVectors
+  ,Teuchos::RCP<Teuchos::ParameterList>                         *solverPL
+  ,Teuchos::RCP<Belos::SolverManager<Scalar,MV_t,LO_t> >        *iterativeSolver
   ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >              *fwdOpSrc
   ,Teuchos::RCP<const PreconditionerBase<Scalar> >              *prec
-  ,bool                                                                 *isExternalPrec
+  ,bool                                                         *isExternalPrec
   ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >              *approxFwdOpSrc
-  ,ESupportSolveUse                                                     *supportSolveUse
+  ,ESupportSolveUse                                             *supportSolveUse
   )
 {
   if(lp) *lp = lp_;
-  if(adjustableBlockSize) *adjustableBlockSize = adjustableBlockSize_;
   if(maxNumberOfKrylovVectors) *maxNumberOfKrylovVectors = maxNumberOfKrylovVectors_;
-  if(gmresPL) *gmresPL = gmresPL_;
-  if(resNormST) *resNormST = resNormST_;
+  if(solverPL) *solverPL = solverPL_;
   if(iterativeSolver) *iterativeSolver = iterativeSolver_;
-  if(outputManager) *outputManager = outputManager_;
   if(fwdOpSrc) *fwdOpSrc = fwdOpSrc_;
   if(prec) *prec = prec_;
   if(isExternalPrec) *isExternalPrec = isExternalPrec_;
@@ -170,12 +130,9 @@ void BelosLinearOpWithSolve<Scalar>::uninitialize(
   if(supportSolveUse) *supportSolveUse = supportSolveUse_;
 
   lp_ = Teuchos::null;
-  adjustableBlockSize_ = false;
   maxNumberOfKrylovVectors_ = 0;
-  gmresPL_ = Teuchos::null;
-  resNormST_ = Teuchos::null;
+  solverPL_ = Teuchos::null;
   iterativeSolver_ = Teuchos::null;
-  outputManager_ = Teuchos::null;
   fwdOpSrc_ = Teuchos::null;
   prec_ = Teuchos::null;
   isExternalPrec_ = false;
@@ -189,14 +146,14 @@ template<class Scalar>
 Teuchos::RCP< const VectorSpaceBase<Scalar> >
 BelosLinearOpWithSolve<Scalar>::range() const
 {
-  return lp_->GetOperator()->range();
+  return lp_->getOperator()->range();
 }
 
 template<class Scalar>
 Teuchos::RCP< const VectorSpaceBase<Scalar> >
 BelosLinearOpWithSolve<Scalar>::domain() const
 {
-  return lp_->GetOperator()->domain();
+  return lp_->getOperator()->domain();
 }
 
 template<class Scalar>
@@ -213,17 +170,17 @@ std::string BelosLinearOpWithSolve<Scalar>::description() const
 {
   std::ostringstream oss;
   oss << Teuchos::Describable::description();
-  if( !is_null(lp_) && !is_null(lp_->GetOperator()) ) {
+  if( !is_null(lp_) && !is_null(lp_->getOperator()) ) {
     oss << "{";
     oss << "iterativeSolver=\'"<<iterativeSolver_->description()<<"\'";
-    oss << ",fwdOp=\'"<<lp_->GetOperator()->description()<<"\'";
-    if(lp_->GetLeftPrec().get())
-      oss << ",leftPrecOp=\'"<<lp_->GetLeftPrec()->description()<<"\'";
-    if(lp_->GetRightPrec().get())
-      oss << ",rightPrecOp=\'"<<lp_->GetRightPrec()->description()<<"\'";
+    oss << ",fwdOp=\'"<<lp_->getOperator()->description()<<"\'";
+    if(lp_->getLeftPrec().get())
+      oss << ",leftPrecOp=\'"<<lp_->getLeftPrec()->description()<<"\'";
+    if(lp_->getRightPrec().get())
+      oss << ",rightPrecOp=\'"<<lp_->getRightPrec()->description()<<"\'";
     oss << "}";
   }
-  // ToDo: Make Belos::IterativeSolver derive from Teuchos::Describable so
+  // ToDo: Make Belos::SolverManager derive from Teuchos::Describable so
   // that we can get better information.
   return oss.str();
 }
@@ -254,15 +211,15 @@ void BelosLinearOpWithSolve<Scalar>::describe(
         << Teuchos::Describable::description()<< "{"
         << "rangeDim=" << this->range()->dim()
         << ",domainDim=" << this->domain()->dim() << "}\n";
-      if(lp_->GetOperator().get()) {
+      if(lp_->getOperator().get()) {
         OSTab tab(out);
         *out
           << "iterativeSolver = "<<describe(*iterativeSolver_,verbLevel)
-          << "fwdOp = " << describe(*lp_->GetOperator(),verbLevel);
-        if(lp_->GetLeftPrec().get())
-          *out << "leftPrecOp = "<<describe(*lp_->GetLeftPrec(),verbLevel);
-        if(lp_->GetRightPrec().get())
-          *out << "rightPrecOp = "<<describe(*lp_->GetRightPrec(),verbLevel);
+          << "fwdOp = " << describe(*lp_->getOperator(),verbLevel);
+        if(lp_->getLeftPrec().get())
+          *out << "leftPrecOp = "<<describe(*lp_->getLeftPrec(),verbLevel);
+        if(lp_->getRightPrec().get())
+          *out << "rightPrecOp = "<<describe(*lp_->getRightPrec(),verbLevel);
       }
       break;
     }
@@ -278,7 +235,7 @@ void BelosLinearOpWithSolve<Scalar>::describe(
 template<class Scalar>
 bool BelosLinearOpWithSolve<Scalar>::opSupported(ETransp M_trans) const
 {
-  return ::Thyra::opSupported(*lp_->GetOperator(),M_trans);
+  return ::Thyra::opSupported(*lp_->getOperator(),M_trans);
 }
 
 template<class Scalar>
@@ -290,7 +247,7 @@ void BelosLinearOpWithSolve<Scalar>::apply(
   ,const Scalar                     beta
   ) const
 {
-  ::Thyra::apply(*lp_->GetOperator(),M_trans,X,Y,alpha,beta);
+  ::Thyra::apply(*lp_->getOperator(),M_trans,X,Y,alpha,beta);
 }
 
 // Overridden from SingleScalarLinearOpWithSolveBase
@@ -309,7 +266,7 @@ bool BelosLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(ETransp M_tra
     return (
       solveMeasureType.useDefault()
       ||
-      (solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS) && resNormST_.get())
+      (solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS) && true)
       );
   }
   // TRANS
@@ -352,123 +309,106 @@ void BelosLinearOpWithSolve<Scalar>::solve(
     *out << "Using iterative solver = " << describe(*iterativeSolver_,verbLevel);
     *out << "With #Eqns="<<numEquations<<", #RHSs="<<numRhs<<" ...\n";
   }
-
-  //
-  // Temporarily reset the blocksize if we are allowed to due so
-  //
-  const int currBlockSize = lp_->GetBlockSize();
-  const int newBlockSize =
-    ( adjustableBlockSize_
-      ? TEUCHOS_MIN(numRhs,TEUCHOS_MIN(currBlockSize,numEquations/2))
-      // Above: Don't add more vectors than are in the RHS and don't add more
-      // vectors than half the number of equations or orthogonalization will
-      // fail on the first iteration!
-      : currBlockSize
-      // Above: Just use the user-set block size if we are not allowed to
-      // ajust this!
-      );
-  // Note: Above, we may also need to adjust the block size to be an even
-  // multiple of the number of RHS.  Also, it would be good if
-  // Belos::LinearProblem itself allowed for dynamic resizing of the block
-  // size between restarts.
-  PrivateUtilities::BelosLinearProblemTempBlockSizeSetter<Belos::LinearProblem<Scalar,MV_t,LO_t> >
-    tempBlockSizeSetter(lp_,newBlockSize);
-  if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
-    *out << "\nAdjusted block size = " << newBlockSize << "\n";
-  //
-  // Set the number of Krylov blocks if we are using GMRES!
-  //
-  if(gmresPL_.get()) {
-    const int BlockGmres_length = maxNumberOfKrylovVectors_/newBlockSize; 
-    gmresPL_->set("Length",BlockGmres_length);
-    if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
-      *out
-        << "\nAdjusted max number of GMRES Krylov basis blocks (maxNumberOfKrylovVectors/blockSize) = ("
-        << maxNumberOfKrylovVectors_ << ")/(" << newBlockSize << ") = " << BlockGmres_length << "\n";
-  }
   //
   // Set RHS and LHS
   //
-  lp_->Reset(Teuchos::rcp(X,false),Teuchos::rcp(&B,false));
+  bool ret = lp_->setProblem(Teuchos::rcp(X,false),Teuchos::rcp(&B,false));
+  TEST_FOR_EXCEPTION(
+		     ret == false, CatastrophicSolveFailure
+		     ,"Error, the Belos::LinearProblem could not be set for the current solve!"
+		     );
   //
   // Set the solution criteria
   //
+  Teuchos::RCP<Teuchos::ParameterList> tmpPL = Teuchos::rcp( new Teuchos::ParameterList() );
+
   SolveMeasureType solveMeasureType;
   if(numBlocks==1) {
     solveMeasureType = blockSolveCriteria[0].solveCriteria.solveMeasureType;
     const ScalarMag requestedTol = blockSolveCriteria[0].solveCriteria.requestedTol;
     TEST_FOR_EXCEPT( !( solveMeasureType.useDefault() || solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS) ) );
     if( solveMeasureType.useDefault() ) {
-        resNormST_->ResetTolerance(defaultTol_);
+	tmpPL->set("Convergence Tolerance", defaultTol_);
     }
     else if( solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS) ) {
       if( requestedTol != SolveCriteria<Scalar>::unspecifiedTolerance() )
-        resNormST_->ResetTolerance(requestedTol);
+	tmpPL->set("Convergence Tolerance", requestedTol);
       else
-        resNormST_->ResetTolerance(defaultTol_);
-      resNormST_->DefineScaleForm(StatusTestResNorm_t::NormOfRHS,Belos::TwoNorm);
+	tmpPL->set("Convergence Tolerance", defaultTol_);
+      tmpPL->set("Explicit Residual Scaling", "Norm of RHS");
     }
     else {
       TEST_FOR_EXCEPT(true); // Should never get there.
     }
   }
   else {
-    resNormST_->ResetTolerance(defaultTol_);
+    tmpPL->set("Convergence Tolerance", defaultTol_);
+  }
+  //
+  // Reset the blocksize if we adding more vectors than half the number of equations,
+  // orthogonalization will fail on the first iteration!
+  //
+  Teuchos::RCP<const Teuchos::ParameterList> solverParams = iterativeSolver_->getCurrentParameters();
+  const int currBlockSize = Teuchos::getParameter<int>(*solverParams, "Block Size");
+  const int newBlockSize = TEUCHOS_MIN(currBlockSize,numEquations/2);
+  if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE) && newBlockSize != currBlockSize)
+    *out << "\nAdjusted block size = " << newBlockSize << "\n";
+  //
+  // Set the number of Krylov blocks if we are using GMRES!
+  //
+  const int BlockGmres_length = maxNumberOfKrylovVectors_/newBlockSize;
+  tmpPL->set("Block Size",newBlockSize);
+  tmpPL->set("Num Blocks",BlockGmres_length);
+  if(newBlockSize != currBlockSize) {
+    if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
+      *out
+        << "\nAdjusted max number of GMRES Krylov basis blocks (maxNumberOfKrylovVectors/blockSize) = ("
+        << maxNumberOfKrylovVectors_ << ")/(" << newBlockSize << ") = " << BlockGmres_length << "\n";
   }
   //
   // Solve the linear system
   //
-  iterativeSolver_->GetStatusTest()->Reset(); 
-  iterativeSolver_->Reset();
+  Belos::ReturnType belosSolveStatus;
   {
-    RCP<FancyOStream>
+    RCP<std::ostream>
       outUsed =
       ( static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE)
         ? out
         : rcp(new FancyOStream(rcp(new Teuchos::oblackholestream())))
         );
-    outputManager_->SetOStream(outUsed);
     Teuchos::OSTab tab(outUsed,1,"BELOS");
-    iterativeSolver_->Solve();
+    tmpPL->set("Output Stream", outUsed);
+    iterativeSolver_->setParameters( tmpPL );
+    belosSolveStatus = iterativeSolver_->solve();
   }
   //
   // Report the solve status
   //
   totalTimer.stop();
-  const Belos::StatusType belosSolveStatus = resNormST_->GetStatus();
-  const std::vector<ScalarMag>* resNormValues = resNormST_->GetTestValue();
-  TEST_FOR_EXCEPT(resNormValues==NULL);
-  const ScalarMag belosAchievedTol = *std::max_element(resNormValues->begin(),resNormValues->end());
-  TEST_FOR_EXCEPTION(
-    belosSolveStatus==Belos::Failed || belosSolveStatus==Belos::NaN, CatastrophicSolveFailure
-    ,"Error, something really bad happened in the Belos solver!"
-    ); // ToDo: Get Belos to return a more informative error mesage to embed here?
   //
   ESolveStatus solveStatus = SOLVE_STATUS_UNKNOWN;
   ScalarMag    achievedTol = SolveStatus<Scalar>::unknownTolerance();
-  if(solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)) {
-    switch(belosSolveStatus) {
-      case Belos::Unchecked:
-        solveStatus = SOLVE_STATUS_UNKNOWN;
-        break;
-      case Belos::Unconverged:
-        solveStatus = SOLVE_STATUS_UNCONVERGED;
-        break;
-      case Belos::Converged:
-        solveStatus = SOLVE_STATUS_CONVERGED;
-        break;
-      default:
-        TEST_FOR_EXCEPT(true); // Should never get here!
-    }
-    achievedTol = belosAchievedTol;
+  switch(belosSolveStatus) {
+    case Belos::Unconverged:
+      solveStatus = SOLVE_STATUS_UNCONVERGED;
+      break;
+    case Belos::Converged:
+      solveStatus = SOLVE_STATUS_CONVERGED;
+      achievedTol = tmpPL->get("Convergence Tolerance", defaultTol_);
+      break;
+    default:
+      TEST_FOR_EXCEPT(true); // Should never get here!
   }
-  const int iterations = iterativeSolver_->GetNumIters();
-  //
+  //const int iterations = iterativeSolver_->getNumIters();
+
   std::ostringstream ossmessage;
   ossmessage
     << "The Belos solver of type \""<<iterativeSolver_->description()<<"\" returned a solve status of \""
-    << toString(belosSolveStatus) << "\" in " << iterations << " iterations and achieved an approximate max tolerance of "
-    << belosAchievedTol << " with total CPU time of " << totalTimer.totalElapsedTime() << " sec" ;
+    << toString(solveStatus) << 
+    /* "\" in " << iterations << " iterations and achieved an approximate max tolerance of "
+    << belosAchievedTol << 
+    */
+    " with total CPU time of " << totalTimer.totalElapsedTime() << " sec" ;
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
     *out << "\n" << ossmessage.str() << "\n";
   //
@@ -477,6 +417,7 @@ void BelosLinearOpWithSolve<Scalar>::solve(
     blockSolveStatus[0].achievedTol = achievedTol;
     blockSolveStatus[0].message     = ossmessage.str();
   }
+
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out
       << "\nTotal solve time = "<<totalTimer.totalElapsedTime()<<" sec\n";

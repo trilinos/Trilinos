@@ -366,10 +366,9 @@ namespace Belos {
     /*! \brief This method takes the MultiVectorBase \c x and
       applies the LinearOpBase \c Op to it resulting in the MultiVectorBase \c y.
     */    
-    static ReturnType Apply ( const TLOB& Op, const TMVB& x, TMVB& y )
+    static void Apply ( const TLOB& Op, const TMVB& x, TMVB& y )
     { 
       Op.apply(Thyra::NONCONJ_ELE,x,&y);
-      return Ok; 
     }
     
   };

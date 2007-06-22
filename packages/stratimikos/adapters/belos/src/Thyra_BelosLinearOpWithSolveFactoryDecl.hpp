@@ -49,9 +49,9 @@ public:
   /** \brief . */           
   static const int          BlockSize_default;
   /** \brief . */           
-  static const std::string  AdjustableBlockSize_name;
+  static const std::string  AdaptiveBlockSize_name;
   /** \brief . */           
-  static const bool         AdjustableBlockSize_default;
+  static const bool         AdaptiveBlockSize_default;
   /** \brief . */           
   static const std::string  DefaultRelResNorm_name;
   /** \brief . */
@@ -95,7 +95,7 @@ public:
 
   /** \brief Calls <tt>this->setPreconditionerFactory(precFactory)</tt.  . */
   BelosLinearOpWithSolveFactory(
-    const Teuchos::RCP<PreconditionerFactoryBase<Scalar> >  &precFactory
+    const Teuchos::RCP<PreconditionerFactoryBase<Scalar> >      &precFactory
     );
 
   //@}
@@ -106,15 +106,15 @@ public:
   bool acceptsPreconditionerFactory() const;
   /** \brief . */
   void setPreconditionerFactory(
-    const Teuchos::RCP<PreconditionerFactoryBase<Scalar> >  &precFactory
-    ,const std::string                                              &precFactoryName
+    const Teuchos::RCP<PreconditionerFactoryBase<Scalar> >      &precFactory
+    ,const std::string                                          &precFactoryName
     );
   /** \brief . */
   Teuchos::RCP<PreconditionerFactoryBase<Scalar> > getPreconditionerFactory() const;
   /** \brief . */
   void unsetPreconditionerFactory(
-    Teuchos::RCP<PreconditionerFactoryBase<Scalar> >  *precFactory
-    ,std::string                                              *precFactoryName
+    Teuchos::RCP<PreconditionerFactoryBase<Scalar> >            *precFactory
+    ,std::string                                                *precFactoryName
     );
   /** \brief . */
   bool isCompatible( const LinearOpSourceBase<Scalar> &fwdOpSrc ) const;
@@ -122,21 +122,21 @@ public:
   Teuchos::RCP<LinearOpWithSolveBase<Scalar> > createOp() const;
   /** \brief . */
   void initializeOp(
-    const Teuchos::RCP<const LinearOpSourceBase<Scalar> >    &fwdOpSrc
-    ,LinearOpWithSolveBase<Scalar>                                   *Op
-    ,const ESupportSolveUse                                          supportSolveUse
+    const Teuchos::RCP<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
+    ,LinearOpWithSolveBase<Scalar>                              *Op
+    ,const ESupportSolveUse                                     supportSolveUse
     ) const;
   /** \brief . */
   void initializeAndReuseOp(
-    const Teuchos::RCP<const LinearOpSourceBase<Scalar> >    &fwdOpSrc
-    ,LinearOpWithSolveBase<Scalar>                                   *Op
+    const Teuchos::RCP<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
+    ,LinearOpWithSolveBase<Scalar>                              *Op
     ) const;
   /** \brief . */
   void uninitializeOp(
     LinearOpWithSolveBase<Scalar>                               *Op
-    ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >    *fwdOpSrc
-    ,Teuchos::RCP<const PreconditionerBase<Scalar> >    *prec
-    ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >    *approxFwdOpSrc
+    ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >            *fwdOpSrc
+    ,Teuchos::RCP<const PreconditionerBase<Scalar> >            *prec
+    ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >            *approxFwdOpSrc
     ,ESupportSolveUse                                           *supportSolveUse
     ) const;
   /** \brief . */
@@ -145,15 +145,15 @@ public:
   void initializePreconditionedOp(
     const Teuchos::RCP<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
     ,const Teuchos::RCP<const PreconditionerBase<Scalar> >      &prec
-    ,LinearOpWithSolveBase<Scalar>                                      *Op
-    ,const ESupportSolveUse                                             supportSolveUse
+    ,LinearOpWithSolveBase<Scalar>                              *Op
+    ,const ESupportSolveUse                                     supportSolveUse
     ) const;
   /** \brief . */
   void initializeApproxPreconditionedOp(
     const Teuchos::RCP<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
     ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >      &approxFwdOpSrc
-    ,LinearOpWithSolveBase<Scalar>                                      *Op
-    ,const ESupportSolveUse                                             supportSolveUse
+    ,LinearOpWithSolveBase<Scalar>                              *Op
+    ,const ESupportSolveUse                                     supportSolveUse
     ) const;
   //@}
 
@@ -187,10 +187,10 @@ private:
   // Private data members
 
   Teuchos::RCP<PreconditionerFactoryBase<Scalar> >  precFactory_;
-  std::string                                               precFactoryName_;
+  std::string                                       precFactoryName_;
   Teuchos::RCP<Teuchos::ParameterList>              thisValidParamList_;
   Teuchos::RCP<Teuchos::ParameterList>              paramList_;
-  bool                                                      useGmres_;
+  bool                                              useGmres_;
 
   // /////////////////////////
   // Private member functions
@@ -203,9 +203,9 @@ private:
     const Teuchos::RCP<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
     ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >      &approxFwdOpSrc
     ,const Teuchos::RCP<const PreconditionerBase<Scalar> >      &prec
-    ,const bool                                                         reusePrec
-    ,LinearOpWithSolveBase<Scalar>                                      *Op
-    ,const ESupportSolveUse                                             supportSolveUse
+    ,const bool                                                 reusePrec
+    ,LinearOpWithSolveBase<Scalar>                              *Op
+    ,const ESupportSolveUse                                     supportSolveUse
     ) const;
 
 };

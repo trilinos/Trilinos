@@ -66,15 +66,15 @@ int main(int argc, char* argv[])
     Teuchos::ParameterList belosLOWSFPL;
 
     belosLOWSFPL.set("Solver Type","GMRES");
-    belosLOWSFPL.set("Max Iters",int(maxIterations));
+    belosLOWSFPL.set("Maximum Iterations",int(maxIterations));
     belosLOWSFPL.set("Default Rel Res Norm",double(maxResid));
-    belosLOWSFPL.set("Max Restarts",int(maxRestarts));
+    belosLOWSFPL.set("Maximum Restarts",int(maxRestarts));
     belosLOWSFPL.set("Block Size",int(blockSize));
     belosLOWSFPL.sublist("GMRES").set("Max Number of Krylov Vectors",int(gmresKrylovLength*blockSize));
     belosLOWSFPL.sublist("GMRES").set("Variant","Standard");
     Teuchos::ParameterList &outputterSL = belosLOWSFPL.sublist("Outputter");
     outputterSL.set("Output Frequency",int(outputFrequency));
-    outputterSL.set("Output Max Res Only",bool(outputMaxResOnly));
+    outputterSL.set("Show Maximum Residual Norm Only",bool(outputMaxResOnly));
     if(usePreconditioner) {
       Teuchos::ParameterList &ifpackPFSL = belosLOWSFPL.sublist("Ifpack");
       ifpackPFSL.set("Overlap",int(2));

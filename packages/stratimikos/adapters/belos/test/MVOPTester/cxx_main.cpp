@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
   // Create an output manager to handle the I/O from the solver
   Teuchos::RCP<Belos::OutputManager<double> > MyOM = Teuchos::rcp( new Belos::OutputManager<double>( MyPID ) );
   if (verbose) {
-    MyOM->SetVerbosity( Belos::Errors + Belos::Warnings );
+    MyOM->setVerbosity( Belos::Errors + Belos::Warnings );
   }
 
 #ifdef HAVE_EPETRA_THYRA
