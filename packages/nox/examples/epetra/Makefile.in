@@ -249,7 +249,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = NOX_1DFEMNonlinear NOX_Sacado_FEApp LOCA_Brusselator_xyzt LOCA_Tcubed
+SUBDIRS = NOX_1DFEMNonlinear NOX_Sacado_FEApp LOCA_Brusselator_xyzt LOCA_Tcubed LOCA_Sacado_FEApp
 all: all-recursive
 
 .SUFFIXES:

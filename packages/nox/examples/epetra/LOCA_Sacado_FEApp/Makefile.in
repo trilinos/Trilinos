@@ -100,8 +100,8 @@ host_triplet = @host@
 target_triplet = @target@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/../sacado/example/FEApp/MakefileFEAppStub.am
-@BUILD_EPETRA_EXAMPLES_TRUE@@ENABLE_NOX_SACADO_TRUE@noinst_PROGRAMS = brusselator$(EXEEXT)
-subdir = examples/epetra/NOX_Sacado_FEApp
+@BUILD_EPETRA_EXAMPLES_TRUE@@ENABLE_LOCA_SACADO_TRUE@noinst_PROGRAMS = brusselator$(EXEEXT)
+subdir = examples/epetra/LOCA_Sacado_FEApp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/ac_cxx_invalid_template_qualifier.m4 \
@@ -452,11 +452,11 @@ brusselator_SOURCES = \
 
 brusselator_CXXFLAGS = \
 	-I$(FEAPP_PATH) \
-	$(NOX_INCLUDES) \
+	$(LOCA_INCLUDES) \
 	$(SACADO_INCLUDES)
 
 brusselator_LDADD = \
-	$(NOX_LIBS) \
+	$(LOCA_LIBS) \
 	$(SACADO_LIBS)
 
 all: all-am
@@ -472,9 +472,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  examples/epetra/NOX_Sacado_FEApp/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  examples/epetra/LOCA_Sacado_FEApp/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  examples/epetra/NOX_Sacado_FEApp/Makefile
+	  $(AUTOMAKE) --foreign  examples/epetra/LOCA_Sacado_FEApp/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -1002,7 +1002,7 @@ uninstall-am:
 # Include export Makefiles for correct paths
 include $(top_builddir)/Makefile.export.nox
 
-@BUILD_EPETRA_EXAMPLES_TRUE@@ENABLE_NOX_SACADO_TRUE@include $(top_builddir)/../sacado/Makefile.export.sacado
+@BUILD_EPETRA_EXAMPLES_TRUE@@ENABLE_LOCA_SACADO_TRUE@include $(top_builddir)/../sacado/Makefile.export.sacado
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

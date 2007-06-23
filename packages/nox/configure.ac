@@ -609,7 +609,8 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, ml, NOX_ML_EPETRA, BUILD_NOX_EPETRA_ML_SUPPO
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   nox, sacado, NOX_SACADO, ENABLE_NOX_SACADO, yes
   ,[Build the Sacado adapater support in NOX.]
-  ,[Build the Sacado adapater support in NOX.  Can be overridden with --disable-epetraext-sacado.])
+  ,[Build the Sacado adapater support in NOX.  Can be overridden with --disable-nox-sacado.])
+AM_CONDITIONAL(ENABLE_LOCA_SACADO, test "X$BUILD_LIBLOCA" = "Xyes" && test "X$ac_cv_use_sacado" = "Xyes")
 
 # ------------------------------------------------------------------------
 # User defined directories 
@@ -898,6 +899,7 @@ AC_CONFIG_FILES([
 		examples/epetra/NOX_Sacado_FEApp/Makefile
 		examples/epetra/LOCA_Tcubed/Makefile
 		examples/epetra/LOCA_Brusselator_xyzt/Makefile
+		examples/epetra/LOCA_Sacado_FEApp/Makefile
                 examples/petsc/Makefile
                 examples/petsc/DS6.5.1/Makefile
                 examples/petsc/1DFiniteDifference/Makefile
