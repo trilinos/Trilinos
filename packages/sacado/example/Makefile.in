@@ -398,7 +398,8 @@ PROBLEM_H = \
 	$(FEAPP_PATH)/FEApp_AbstractProblem.hpp \
 	$(FEAPP_PATH)/FEApp_BrusselatorProblem.hpp \
 	$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.hpp \
-	$(FEAPP_PATH)/FEApp_ProblemFactory.hpp
+	$(FEAPP_PATH)/FEApp_ProblemFactory.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorParameters.hpp
 
 PROBLEM = \
 	$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp \
