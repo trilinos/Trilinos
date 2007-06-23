@@ -40,3 +40,7 @@
 #include "LOCA_Epetra_Group.H"
 #include "LOCA_Epetra_Interface_Required.H"
 #include "LOCA_Epetra_Factory.H"
+
+#ifdef HAVE_NOX_EPETRAEXT
+#include "LOCA_Epetra_ModelEvaluatorInterface.H"
+#endif

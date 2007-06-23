@@ -90,25 +90,19 @@ LOCA_EPETRA_XYZT = \
 	$(srcdir)/LOCA_Epetra_Interface_MultiPoint.C \
 	$(srcdir)/LOCA_Epetra_xyztPrec.C \
 	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C
-else
-LOCA_EPETRA_XYZT_H = 
-
-LOCA_EPETRA_XYZT = 
 endif
 
 if BUILD_NOX_EPETRAEXT_SUPPORT
 
 EPETRAEXT_TLS_H = \
 	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_ExplicitTranspose.H
+MODELEVAL_H = \
+        $(srcdir)/LOCA_Epetra_ModelEvaluatorInterface.H
 
 EPETRAEXT_TLS = \
 	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_ExplicitTranspose.C
-
-else
-
-EPETRAEXT_TLS_H = 
-
-EPETRAEXT_TLS = 
+MODELEVAL = \
+        $(srcdir)/LOCA_Epetra_ModelEvaluatorInterface.C
 
 endif
 
@@ -130,8 +124,9 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # ------------------------------------------------------------------------
 
 liblocaepetra_a_SOURCES = \
-	$(LOCA_EPETRA)  $(LOCA_EPETRA_XYZT) $(EPETRAEXT_TLS) \
-	$(LOCA_EPETRA_H) $(LOCA_EPETRA_XYZT_H) $(EPETRAEXT_TLS_H)
+	$(LOCA_EPETRA)  $(LOCA_EPETRA_XYZT) $(EPETRAEXT_TLS) $(MODELEVAL) \
+	$(LOCA_EPETRA_H) $(LOCA_EPETRA_XYZT_H) $(EPETRAEXT_TLS_H) \
+	$(MODELEVAL_H)
 
 # ------------------------------------------------------------------------
 # When to turn it on
@@ -145,7 +140,8 @@ lib_LIBRARIES = liblocaepetra.a
 
 # List of all headers to install in $(includedir)
 
-include_HEADERS = $(LOCA_EPETRA_H) $(LOCA_EPETRA_XYZT_H) $(EPETRAEXT_TLS_H)
+include_HEADERS = $(LOCA_EPETRA_H) $(LOCA_EPETRA_XYZT_H) $(EPETRAEXT_TLS_H) \
+	$(MODELEVAL_H)
 
 endif
 
