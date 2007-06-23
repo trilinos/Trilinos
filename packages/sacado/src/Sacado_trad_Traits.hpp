@@ -159,6 +159,18 @@ namespace Sacado {
       return x.val(); }
   };
 
+  //! Specialization of %MarkConstant to ADvar types
+  template <typename T> 
+  struct MarkConstant< SNS::ADvar<T> > {
+    static void eval(SNS::ADvar<T>& x) { AD_Const(x); }
+  };
+
+  //! Specialization of %MarkConstant to ADvari types
+  template <typename T> 
+  struct MarkConstant< SNS::ADvari<T> > {
+    static void eval(SNS::ADvari<T>& x) { AD_Const(x); }
+  };
+
 } // namespace Sacado
 
 #undef SNS

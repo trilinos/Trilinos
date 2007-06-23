@@ -32,6 +32,8 @@
 #ifndef SACADO_PARAMETERVECTORBASE_HPP
 #define SACADO_PARAMETERVECTORBASE_HPP
 
+#include "Teuchos_Array.hpp"
+
 #include "Sacado_ParameterFamilyBase.hpp"
 
 namespace Sacado {
@@ -64,7 +66,7 @@ namespace Sacado {
   protected:
 
     //! Vector of all parameter families
-    typedef std::vector<Entry> EntryVector;
+    typedef Teuchos::Array<Entry> EntryVector;
 
   public:
 

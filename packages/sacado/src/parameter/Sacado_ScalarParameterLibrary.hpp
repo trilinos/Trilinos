@@ -34,6 +34,7 @@
 
 #include "Sacado_ParameterLibraryBase.hpp"
 #include "Sacado_ScalarParameterFamily.hpp"
+#include "Sacado_ScalarParameterVector.hpp"
 
 #include "Teuchos_TestForException.hpp"
 
@@ -58,18 +59,38 @@ namespace Sacado {
     void setRealValueForAllTypes(const std::string& name, double value);
 
     //! Set parameter to value \em value
+    /*!
+     * Treat the set parameter as a constant for derivative computations.
+     */
     template <class ValueType>
-    void setValue(const std::string& name, const ValueType& value);
+    void setValueAsConstant(const std::string& name, 
+			    const ValueType& value);
+
+    //! Set parameter to value \em value
+    /*!
+     * Treat the set parameter as an independent for derivative computations.
+     */
+    template <class ValueType>
+    void setValueAsIndependent(const std::string& name, 
+			       const ValueType& value);
 
     //! Get parameter value
     template <class ValueType>
-    ValueType getValue(const std::string& name) const;
+    const ValueType& getValue(const std::string& name) const;
 
     //! Returns a parameter library (singleton object).
     static ScalarParameterLibrary& getInstance() {
       static ScalarParameterLibrary instance;
       return instance;
     }
+
+    //! Fill a vector with the supplied parameter names
+    /*!
+     * baseValue will be computed from each individual parameter
+     */
+    void
+    fillVector(const Teuchos::Array<std::string>& names,
+	       ScalarParameterVector& pv);
 
   private:
 
@@ -86,19 +107,33 @@ namespace Sacado {
 template <class ValueType>
 void
 Sacado::ScalarParameterLibrary::
-setValue(const std::string& name, const ValueType& value)
+setValueAsConstant(const std::string& name, const ValueType& value)
 {
   FamilyMap::iterator it = library.find(name);
   TEST_FOR_EXCEPTION(
-		 it == library.end(), 
-		 std::logic_error,
-		 std::string("Sacado::ScalarParameterLibrary::setValue():  ")
-		 + "Invalid parameter family " + name);
-  (*it).second->setValue(value);
+	 it == library.end(), 
+	 std::logic_error,
+	 std::string("Sacado::ScalarParameterLibrary::setValueAsConstant():  ")
+	 + "Invalid parameter family " + name);
+  (*it).second->setValueAsConstant(value);
 }
 
 template <class ValueType>
-ValueType
+void
+Sacado::ScalarParameterLibrary::
+setValueAsIndependent(const std::string& name, const ValueType& value)
+{
+  FamilyMap::iterator it = library.find(name);
+  TEST_FOR_EXCEPTION(
+      it == library.end(), 
+      std::logic_error,
+      std::string("Sacado::ScalarParameterLibrary::setValueAsIndependent():  ")
+      + "Invalid parameter family " + name);
+  (*it).second->setValueAsIndependent(value);
+}
+
+template <class ValueType>
+const ValueType&
 Sacado::ScalarParameterLibrary::
 getValue(const std::string& name) const
 {

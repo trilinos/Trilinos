@@ -135,8 +135,8 @@ template <typename FamilyType, template<typename> class EntryType>
 template <typename BaseValueType>
 void
 Sacado::ParameterLibraryBase<FamilyType,EntryType>::
-fillVector(const std::vector<std::string>& names,
-	   const std::vector<BaseValueType>& values,
+fillVector(const Teuchos::Array<std::string>& names,
+	   const Teuchos::Array<BaseValueType>& values,
 	   ParameterVectorBase<FamilyType,BaseValueType>& pv)
 {
   typename FamilyMap::iterator it;

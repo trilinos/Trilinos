@@ -123,6 +123,11 @@ namespace Sacado {
    */
   template <typename T> struct Value {};
 
+  //! Base template specification for marking constants
+  template <typename T> struct MarkConstant {
+    static void eval(T& x) {}
+  };
+
   //! Specialization of above classes to builtin types
 #define SACADO_BUILTIN_SPECIALIZATION(t)                  \
   template <> struct ScalarType< t > {		          \

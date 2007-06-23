@@ -43,3 +43,23 @@ setRealValueForAllTypes(const std::string& name, double value)
      + "Invalid parameter family " + name);
   (*it).second->setRealValueForAllTypes(value);
 }
+
+void
+Sacado::ScalarParameterLibrary::
+fillVector(const Teuchos::Array<std::string>& names,
+	   Sacado::ScalarParameterVector& pv)
+{
+  FamilyMap::iterator it;
+
+  // Fill in parameters
+  for (unsigned int i=0; i<names.size(); i++) {
+    it = library.find(names[i]);
+    TEST_FOR_EXCEPTION(
+		   it == library.end(), 
+		   std::logic_error,
+		   std::string("Sacado::ParameterLibraryBase::fillVector():  ")
+		   + "Invalid parameter family " + names[i]);
+    pv.addParam((*it).second, 0.0);
+    pv[i].baseValue = (*it).second->getValue<double>();
+  }
+}

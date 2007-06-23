@@ -64,41 +64,42 @@ buildObjects()
 
 template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
 template<typename ScalarT>
-BaseT&
+Teuchos::RefCountPtr<BaseT>
 Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::
 getAsBase()
 {
   int idx = mpl::find<TypeSeq,ScalarT>::value;
-  return *(objects[idx]);
+  return objects[idx];
 }
 
 template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
 template<typename ScalarT>
-const BaseT&
+Teuchos::RefCountPtr<const BaseT>
 Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::getAsBase() const
 {
   int idx = mpl::find<TypeSeq,ScalarT>::value;
-  return *(objects[idx]);
+  return objects[idx];
 }
 
 template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
 template<typename ScalarT>
-ObjectT<ScalarT>&
+Teuchos::RefCountPtr< ObjectT<ScalarT> >
 Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::
 getAsObject()
 {
-  return
-    dynamic_cast< ObjectT<ScalarT>& >( (*this).template getAsBase<ScalarT>() );
+  int idx = mpl::find<TypeSeq,ScalarT>::value;
+  return Teuchos::rcp_dynamic_cast< ObjectT<ScalarT> >(objects[idx], true);
 }
 
 template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
 template<typename ScalarT>
-const ObjectT<ScalarT>&
+Teuchos::RefCountPtr< const ObjectT<ScalarT> >
 Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::
 getAsObject() const
 {
-  return
-    dynamic_cast< const ObjectT<ScalarT>& >( (*this).template getAsBase<ScalarT>() );
+  int idx = mpl::find<TypeSeq,ScalarT>::value;
+  return Teuchos::rcp_dynamic_cast< const ObjectT<ScalarT> >(objects[idx], 
+							     true);
 }
 
 template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
@@ -111,10 +112,28 @@ begin()
 }
 
 template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
+typename Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::const_iterator
+Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::
+begin() const
+{
+  return Sacado::ConstTemplateIterator<TypeSeq,BaseT,ObjectT>(*this,
+							      objects.begin());
+}
+
+template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
 typename Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::iterator
 Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::
 end()
 {
   return Sacado::TemplateIterator<TypeSeq,BaseT,ObjectT>(*this,
 							 objects.end());
+}
+
+template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
+typename Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::const_iterator
+Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::
+end() const
+{
+  return Sacado::ConstTemplateIterator<TypeSeq,BaseT,ObjectT>(*this,
+							      objects.end());
 }

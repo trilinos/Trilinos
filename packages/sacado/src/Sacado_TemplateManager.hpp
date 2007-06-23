@@ -45,6 +45,8 @@ namespace Sacado {
   // Forward declaration
   template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
   class TemplateIterator;
+  template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
+  class ConstTemplateIterator;
 
   //! Container class to manager template instantiations of a template class
   /*!
@@ -98,6 +100,9 @@ namespace Sacado {
     //! Typedef for iterator
     typedef TemplateIterator<TypeSeq,BaseT,ObjectT> iterator;
 
+    //! Typedef for const_iterator
+    typedef ConstTemplateIterator<TypeSeq,BaseT,ObjectT> const_iterator;
+
     //! The default builder class for building objects for each ScalarT
     struct DefaultBuilderOp {
 
@@ -122,27 +127,35 @@ namespace Sacado {
     //! Build objects for each ScalarT using default builder
     void buildObjects();
 
-    //! Get reference to object corrensponding to ScalarT as BaseT
+    //! Get RCP to object corrensponding to ScalarT as BaseT
     template<typename ScalarT>
-    BaseT& getAsBase();
+    Teuchos::RefCountPtr<BaseT> getAsBase();
 
-    //! Get reference to object corrensponding to ScalarT as BaseT
+    //! Get RCP to object corrensponding to ScalarT as BaseT
     template<typename ScalarT>
-    const BaseT& getAsBase() const;
+    Teuchos::RefCountPtr<const BaseT> getAsBase() const;
 
-    //! Get reference to object corrensponding to ScalarT as ObjectT<ScalarT>
+    //! Get RCP to object corrensponding to ScalarT as ObjectT<ScalarT>
     template<typename ScalarT>
-    ObjectT<ScalarT>& getAsObject();
+    Teuchos::RefCountPtr< ObjectT<ScalarT> > getAsObject();
 
-    //! Get reference to object corrensponding to ScalarT as ObjectT<ScalarT>
+    //! Get RCP to object corrensponding to ScalarT as ObjectT<ScalarT>
     template<typename ScalarT>
-    const ObjectT<ScalarT>& getAsObject() const;
+    Teuchos::RefCountPtr< const ObjectT<ScalarT> > getAsObject() const;
 
     //! Return an iterator that points to the first type object
     typename Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::iterator begin();
 
+    //! Return an iterator that points to the first type object
+    typename Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::const_iterator 
+    begin() const;
+
     //! Return an iterator that points one past the last type object
     typename Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::iterator end();
+
+    //! Return an iterator that points one past the last type object
+    typename Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::const_iterator 
+    end() const;
 
   private:
 

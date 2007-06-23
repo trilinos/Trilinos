@@ -103,6 +103,73 @@ namespace Sacado {
     
   };
 
+  /*! 
+   * Iterator for traversing through template instantiations stored by
+   * the TemplateManager class.
+   */
+  /*!
+   * This class implements a standard forward iterator for the 
+   * TemplateManager.
+   */
+  template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
+  class ConstTemplateIterator : public std::iterator<std::input_iterator_tag,
+						     BaseT> {
+  public:
+
+    //! Constructor
+    ConstTemplateIterator(
+       const Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>& m,
+       typename std::vector< Teuchos::RefCountPtr<BaseT> >::const_iterator p) :
+      manager(&m), object_iterator(p) {}
+    
+    // No default constructor
+    // Use default copy constructor and copy assignment
+
+    //! Equal operator
+    bool operator==(const ConstTemplateIterator& t) const {
+      return object_iterator == t.objectIterator; 
+    }
+
+    //! Not equal operator
+    bool operator!=(const ConstTemplateIterator& t) const {
+      return object_iterator != t.object_iterator; 
+    }
+
+    //! Dereference operator
+    const typename Sacado::ConstTemplateIterator<TypeSeq, BaseT, ObjectT>::reference 
+    operator*() const {
+      return *(*object_iterator);
+    }
+
+    //! -> operator
+    const typename Sacado::ConstTemplateIterator<TypeSeq, BaseT, ObjectT>::pointer 
+    operator->() const {
+      return &(*(*object_iterator));
+    }
+
+    //! Prefix ++
+    ConstTemplateIterator& operator++() {
+      ++object_iterator;
+      return *this;
+    }
+
+    //! Postfix ++
+    ConstTemplateIterator operator++(int) {
+      ConstTemplateIterator tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+
+  private:
+
+    //! Underlying template manager
+    const Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>* manager;
+
+    //! Underlying object iterator
+    typename std::vector< Teuchos::RefCountPtr<BaseT> >::const_iterator object_iterator;
+    
+  };
+
 }
 
 #endif

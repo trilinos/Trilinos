@@ -65,15 +65,21 @@ namespace Sacado {
 	(*it).second->setRealValue(value);
     }
 
-    //! Set parameter to value \em value
+    //! Set parameter to value \em value treating parameter as a constant
     template <class ValueType>
-    void setValue(const ValueType& value) {
-      getEntry<ValueType>()->setValue(value);
+    void setValueAsConstant(const ValueType& value) {
+      getEntry<ValueType>()->setValueAsConstant(value);
+    }
+
+    //! Set parameter to value \em value treating parameter as an independent
+    template <class ValueType>
+    void setValueAsIndependent(const ValueType& value) {
+      getEntry<ValueType>()->setValueAsIndependent(value);
     }
 
     //! Get parameter value
     template <class ValueType>
-    ValueType getValue() const {
+    const ValueType& getValue() const {
       return getEntry<ValueType>()->getValue();
     }
 

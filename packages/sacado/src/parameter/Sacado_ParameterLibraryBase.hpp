@@ -32,6 +32,8 @@
 #ifndef SACADO_PARAMETERLIBRARYBASE_HPP
 #define SACADO_PARAMETERLIBRARYBASE_HPP
 
+#include "Teuchos_Array.hpp"
+
 #include "Sacado_ParameterFamilyBase.hpp"
 #include "Sacado_ParameterVectorBase.hpp"
 
@@ -108,11 +110,11 @@ namespace Sacado {
     //! Iterator pointing at end of library
     const_iterator end() const { return library.end(); }
 
-    //! Fill a vector with the supplied parameters
+    //! Fill a vector with the supplied parameter names and values
     template <typename BaseValueType>
     void
-    fillVector(const std::vector<std::string>& names,
-	       const std::vector<BaseValueType>& values,
+    fillVector(const Teuchos::Array<std::string>& names,
+	       const Teuchos::Array<BaseValueType>& values,
 	       ParameterVectorBase<FamilyType,BaseValueType>& pv);
 
   private:

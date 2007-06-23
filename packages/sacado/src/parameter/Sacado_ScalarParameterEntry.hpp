@@ -63,10 +63,19 @@ namespace Sacado {
     virtual ~ScalarParameterEntry() {}
 
     //! Set parameter this object represents to \em value
-    virtual void setValue(const ValueType& value) = 0;
+    /*!
+     * Treat the set parameter as a constant for derivative computations.
+     */
+    virtual void setValueAsConstant(const ValueType& value) = 0;
+
+    //! Set parameter this object represents to \em value
+    /*!
+     * Treat the set parameter as an independent for derivative computations.
+     */
+    virtual void setValueAsIndependent(const ValueType& value) = 0;
 
     //! Get parameter value this object represents
-    virtual ValueType getValue() const = 0;
+    virtual const ValueType& getValue() const = 0;
 
   };
 }
