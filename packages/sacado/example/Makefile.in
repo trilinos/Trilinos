@@ -381,11 +381,17 @@ PDE = \
 	$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp
 
 BC_H = \
-	$(FEAPP_PATH)/FEApp_AbstractBC.hpp \
-	$(FEAPP_PATH)/FEApp_ConstantDirichletBC.hpp
+	$(FEAPP_PATH)/FEApp_AbstractNodeBCStrategy_NTBase.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractNodeBCStrategy.hpp \
+	$(FEAPP_PATH)/FEApp_NodeBC.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategyImpl.hpp \
+	$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.hpp \
+	$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategyImpl.hpp
 
 BC = \
-	$(FEAPP_PATH)/FEApp_ConstantDirichletBC.cpp
+	$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp \
+	$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp
 
 PROBLEM_H = \
 	$(FEAPP_PATH)/FEApp_TemplateTypes.hpp \
