@@ -30,6 +30,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Version.hpp"
+#include "Teuchos_as.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -40,6 +41,7 @@ using Teuchos::TimeMonitor;
 using Teuchos::Time;
 using Teuchos::RCP;
 using Teuchos::ScalarTraits;
+using Teuchos::as;
 
 /* Test of Teuchos timing classes */
 
@@ -79,67 +81,67 @@ int main(int argc, char* argv[])
     cout << Teuchos::Teuchos_Version() << endl << endl;
 
   try
+  {
+
+    // Prototypes???
+    double sqrtFunc();
+    double factFunc(int x);
+    double exceptFunc();
+    double localFunc();
+    double anotherFunc();
+    double yetAnotherFunc();
+    double yetOneMoreFunc();
+      
+    /* time a simple function */
+    for (int i=0; i<100; i++)
     {
-      double sqrtFunc();
-      double factFunc(int x);
-      double exceptFunc();
-      double localFunc();
-      double anotherFunc();
-      double yetAnotherFunc();
-      double yetOneMoreFunc();
-
-      
-      /* time a simple function */
-      for (int i=0; i<100; i++)
-        {
-          double x = 0.0;
-          x = sqrtFunc();
-        }
-
-      /* time a reentrant function */
-      for (int i=0; i<100; i++)
-        {
-          factFunc(100);
-        }
-
-      /* time a couple of silly functions */
-      for (int i=0; i<100; i++)
-        {
-          anotherFunc();
-          yetAnotherFunc();
-          yetOneMoreFunc();
-        }
-
-      /* Time a function that will be called only on the root proc. This 
-       * checks that the TimeMonitor will work properly when different
-       * processors have different sets of timers. */
-      if (procRank==0)
-        {
-          for (int i=0; i<100; i++)
-            {
-              double x = 0.0;
-              x = localFunc();
-            }
-        }
-
-      /* time a function that throws an exception */
-       for (int i=0; i<100; i++)
-         {
-           double x = 0.0;
-           x = exceptFunc();
-         }
-
-      
+      double x = 0.0;
+      x = sqrtFunc();
     }
+
+    /* time a reentrant function */
+    for (int i=0; i<100; i++)
+    {
+      factFunc(100);
+    }
+
+    /* time a couple of silly functions */
+    for (int i=0; i<100; i++)
+    {
+      anotherFunc();
+      yetAnotherFunc();
+      yetOneMoreFunc();
+    }
+
+    /* Time a function that will be called only on the root proc. This 
+     * checks that the TimeMonitor will work properly when different
+     * processors have different sets of timers. */
+    if (procRank==0)
+    {
+      for (int i=0; i<100; i++)
+      {
+        double x = 0.0;
+        x = localFunc();
+      }
+    }
+
+    /* time a function that throws an exception */
+    for (int i=0; i<100; i++)
+    {
+      double x = 0.0;
+      x = exceptFunc();
+    }
+
+      
+  }
   catch(std::exception& e)
-    {
-      if (verbose && procRank==0)
+  {
+    if (verbose && procRank==0)
+      cerr << "Caught exception [expected]:  " << e.what() << endl;
 
-	cerr << "Caught exception [expected]:  " << e.what() << endl;
-
-      // Return 0 since we caught the exception
-      FailedTests = 0;
-    }
+    // Return 0 since we caught the exception
+    FailedTests = 0;
+  }
 
   /* Summarize timings. This must be done before finalizing MPI  */
   TimeMonitor::format().setRowsBetweenLines(3);
@@ -153,12 +155,13 @@ int main(int argc, char* argv[])
 
   if (FailedTests != 0) {
     cout << "End Result: TEST FAILED" << endl;
-    return -1;
+    return 1;
   }
 
   cout << "End Result: TEST PASSED" << endl;
   return FailedTests;
 }
+
 
 /* sum sqrt(x), x=[0, 10000). */
 double sqrtFunc()
@@ -169,11 +172,11 @@ double sqrtFunc()
   double sum = 0.0;
 
   for (int i=0; i<10000; i++) 
-    {
-      TEST_FOR_EXCEPTION(ScalarTraits<double>::squareroot((double) i) > 1000.0, std::runtime_error,
-                         "throw an exception");
-      sum += ScalarTraits<double>::squareroot((double) i);
-    }
+  {
+    TEST_FOR_EXCEPTION(ScalarTraits<double>::squareroot(as<double>(i)) > 1000.0, std::runtime_error,
+      "throw an exception");
+    sum += ScalarTraits<double>::squareroot(as<double>(i));
+  }
 
   return sum;
 }
@@ -187,9 +190,8 @@ double factFunc(int x)
 
   if (x==0) return 0;
   if (x==1) return 1;
-  return log((double) x)  + factFunc(x-1);
+  return log(as<double>(x))  + factFunc(x-1);
 }
-
 
 
 /* sum sqrt(x), x=[0, 10000). */
@@ -200,14 +202,14 @@ double exceptFunc()
 
   double sum = 0.0;
   for (int i=0; i<10000; i++)
-    {
-      TEST_FOR_EXCEPTION(ScalarTraits<double>::squareroot((double) i) > 60.0, std::runtime_error,
-                         "throw an exception");
-      sum += ScalarTraits<double>::squareroot((double) i);
-    }
+  {
+    TEST_FOR_EXCEPTION(
+      ScalarTraits<double>::squareroot(as<double>(i)) > 60.0, std::runtime_error,
+      "throw an exception");
+    sum += ScalarTraits<double>::squareroot(as<double>(i));
+  }
   return sum;
 }
-
 
 
 /* sum x, x=[0, 10000). */
@@ -219,12 +221,13 @@ double localFunc()
   double sum = 0.0;
 
   for (int i=0; i<10000; i++) 
-    {
-      sum += i;
-    }
+  {
+    sum += i;
+  }
 
   return sum;
 }
+
 
 /* sum x^2, x=[0, 10000). */
 double anotherFunc()
@@ -235,12 +238,13 @@ double anotherFunc()
   double sum = 0.0;
 
   for (int i=0; i<10000; i++) 
-    {
-      sum += i*i;
-    }
+  {
+    sum += i*i;
+  }
 
   return sum;
 }
+
 
 /* sum x^3, x=[0, 10000). */
 double yetAnotherFunc()
@@ -251,12 +255,13 @@ double yetAnotherFunc()
   double sum = 0.0;
 
   for (int i=0; i<10000; i++) 
-    {
-      sum += i*i*i;
-    }
+  {
+    sum += i*i*i;
+  }
 
   return sum;
 }
+
 
 /* sum x+1, x=[0, 10000). */
 double yetOneMoreFunc()
@@ -267,14 +272,9 @@ double yetOneMoreFunc()
   double sum = 0.0;
 
   for (int i=0; i<10000; i++) 
-    {
-      sum += i+1;
-    }
+  {
+    sum += i+1;
+  }
 
   return sum;
 }
-
-
-
-
-
