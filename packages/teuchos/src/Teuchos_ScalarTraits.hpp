@@ -323,6 +323,7 @@ namespace Teuchos {
         TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
           x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
 #endif
+        errno = 0;
         const float rtn = ::sqrt(x);
         if (errno)
           return nan();
@@ -447,6 +448,7 @@ namespace Teuchos {
         TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
           x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
 #endif      
+        errno = 0;
         const double rtn = ::sqrt(x);
         if (errno)
           return nan();
