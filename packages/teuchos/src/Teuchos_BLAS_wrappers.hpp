@@ -318,7 +318,9 @@ double PREFIX ZNRM2_F77(const int* n, const complex<double> x[], const int* incx
 void PREFIX ZSCAL_F77(const int* n, const complex<double>* alpha, complex<double> *x, const int* incx);
 int PREFIX IZAMAX_F77(const int* n, const complex<double> *x, const int* incx);
 
-#endif
+#endif // HAVE_TEUCHOS_COMPLEX
+
+#ifdef HAVE_TEUCHOS_BLASFLOAT
 
 /* Single precision BLAS 1 */ 
 void PREFIX SROTG_F77(float* da, float* db, float* c, float* s);
@@ -331,8 +333,10 @@ float PREFIX SNRM2_F77(const int* n, const float x[], const int* incx);
 void PREFIX SSCAL_F77(const int* n, const float* alpha, float *x, const int* incx);
 int PREFIX ISAMAX_F77(const int* n, const float *x, const int* incx);
 
+#endif // HAVE_TEUCHOS_BLASFLOAT
+
 /* Single complex precision BLAS 1 */ 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TEUCHOS_BLASFLOAT)
 
 void PREFIX CROTG_F77(complex<float>* da, complex<float>* db, float* c, complex<float>* s);
 void PREFIX CROT_F77(const int* n, complex<float>* dx, const int* incx, complex<float>* dy, const int* incy, float* c, complex<float>* s);
@@ -344,7 +348,7 @@ float PREFIX CNRM2_F77(const int* n, const complex<float> x[], const int* incx);
 void PREFIX CSCAL_F77(const int* n, const complex<float>* alpha, complex<float> *x, const int* incx);
 int PREFIX ICAMAX_F77(const int* n, const complex<float> *x, const int* incx);
 
-#endif /* HAVE_TEUCHOS_COMPLEX */
+#endif //  defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TEUCHOS_BLASFLOAT)
 
 /* Double precision BLAS 2 */
 void PREFIX DGEMV_F77(Teuchos_fcd, const int* m, const int* n, const double* alpha, const double A[], const int* lda,
@@ -366,6 +370,8 @@ void PREFIX ZGER_F77(const int *m, const int *n, const complex<double> *alpha, c
 
 #endif /* HAVE_TEUCHOS_COMPLEX */
 
+#ifdef HAVE_TEUCHOS_BLASFLOAT
+
 /* Single precision BLAS 2 */
 void PREFIX SGEMV_F77(Teuchos_fcd, const int* m, const int* n, const float* alpha, const float A[], const int* lda,
                  const float x[], const int* incx, const float* beta, float y[], const int* incy);
@@ -374,8 +380,10 @@ void PREFIX STRMV_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int *n,
 void PREFIX SGER_F77(const int *m, const int *n, const float *alpha, const float *x, const int *incx, const float *y,
                const int *incy, float *a, const int *lda);
 
+#endif // HAVE_TEUCHOS_BLASFLOAT
+
 /* Single complex precision BLAS 2 */
-#ifdef HAVE_TEUCHOS_COMPLEX
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TEUCHOS_BLASFLOAT)
 
 void PREFIX CGEMV_F77(Teuchos_fcd, const int* m, const int* n, const complex<float>* alpha, const complex<float> A[], const int* lda,
                  const complex<float> x[], const int* incx, const complex<float>* beta, complex<float> y[], const int* incy);
@@ -384,7 +392,7 @@ void PREFIX CTRMV_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int *n,
 void PREFIX CGER_F77(const int *m, const int *n, const complex<float> *alpha, const complex<float> *x, const int *incx, const complex<float> *y,
                const int *incy, complex<float> *a, const int *lda);
 
-#endif /* HAVE_TEUCHOS_COMPLEX */
+#endif // defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TEUCHOS_BLASFLOAT)
 
 /* Double precision BLAS 3 */
 void PREFIX DGEMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int * 
@@ -416,6 +424,8 @@ void PREFIX ZTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
 
 #endif /* HAVE_TEUCHOS_COMPLEX */
 
+#ifdef HAVE_TEUCHOS_BLASFLOAT
+
 /* Single precision BLAS 3 */
 void PREFIX SGEMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int *
                 n, const int *k, const float *alpha, const float *a, const int *lda, 
@@ -429,7 +439,10 @@ void PREFIX STRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
                 const int *m, const int *n, const float *alpha, const float *a, const int *
                 lda, float *b, const int *ldb);
 
+#endif // HAVE_TEUCHOS_BLASFLOAT
+
 /* Single complex precision BLAS 3 */
+
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 void PREFIX CGEMM_F77(Teuchos_fcd, Teuchos_fcd, const int *m, const int *

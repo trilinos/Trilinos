@@ -740,6 +740,8 @@ HAVE_TEUCHOS_COMPLEX_TRUE
 HAVE_TEUCHOS_COMPLEX_FALSE
 HAVE_TEUCHOS_EXTENDED_TRUE
 HAVE_TEUCHOS_EXTENDED_FALSE
+HAVE_TEUCHOS_BLASFLOAT_TRUE
+HAVE_TEUCHOS_BLASFLOAT_FALSE
 HAVE_TEUCHOS_BOOST_TRUE
 HAVE_TEUCHOS_BOOST_FALSE
 FLIBS
@@ -1381,6 +1383,9 @@ Optional Features:
                           Enable Teuchos extended code (default is yes)
   --enable-teuchos-arprec Enable Teuchos interface support for the ARbitrary
                           PRECision Library (default is no)
+  --enable-teuchos-blasfloat
+                          Enable support for float BLAS wrappers code (default
+                          is yes)
   --enable-teuchos-gmp    Enable Teuchos interface support for the GNU MP
                           Library (default is no)
   --enable-teuchos-expat  Enable Teuchos interface support for the Expat XML
@@ -10253,6 +10258,44 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
+#
+#  --enable-teuchos-blasfloat
+#
+
+
+# Check whether --enable-teuchos-blasfloat was given.
+if test "${enable_teuchos_blasfloat+set}" = set; then
+  enableval=$enable_teuchos_blasfloat; ac_cv_use_teuchos_blasfloat=$enableval
+else
+  ac_cv_use_teuchos_blasfloat=yes
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use teuchos-blasfloat" >&5
+echo $ECHO_N "checking whether to use teuchos-blasfloat... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_teuchos_blasfloat" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TEUCHOS_BLASFLOAT
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_teuchos_blasfloat" != "Xno"; then
+  HAVE_TEUCHOS_BLASFLOAT_TRUE=
+  HAVE_TEUCHOS_BLASFLOAT_FALSE='#'
+else
+  HAVE_TEUCHOS_BLASFLOAT_TRUE='#'
+  HAVE_TEUCHOS_BLASFLOAT_FALSE=
+fi
+
+
 if test "X$ac_cv_use_teuchos_arprec" != "Xno"; then
 
 #  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
@@ -14649,6 +14692,13 @@ echo "$as_me: error: conditional \"HAVE_TEUCHOS_EXTENDED\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${HAVE_TEUCHOS_BLASFLOAT_TRUE}" && test -z "${HAVE_TEUCHOS_BLASFLOAT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_TEUCHOS_BLASFLOAT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_TEUCHOS_BLASFLOAT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_TEUCHOS_BOOST_TRUE}" && test -z "${HAVE_TEUCHOS_BOOST_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_TEUCHOS_BOOST\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -15410,6 +15460,8 @@ HAVE_TEUCHOS_COMPLEX_TRUE!$HAVE_TEUCHOS_COMPLEX_TRUE$ac_delim
 HAVE_TEUCHOS_COMPLEX_FALSE!$HAVE_TEUCHOS_COMPLEX_FALSE$ac_delim
 HAVE_TEUCHOS_EXTENDED_TRUE!$HAVE_TEUCHOS_EXTENDED_TRUE$ac_delim
 HAVE_TEUCHOS_EXTENDED_FALSE!$HAVE_TEUCHOS_EXTENDED_FALSE$ac_delim
+HAVE_TEUCHOS_BLASFLOAT_TRUE!$HAVE_TEUCHOS_BLASFLOAT_TRUE$ac_delim
+HAVE_TEUCHOS_BLASFLOAT_FALSE!$HAVE_TEUCHOS_BLASFLOAT_FALSE$ac_delim
 HAVE_TEUCHOS_BOOST_TRUE!$HAVE_TEUCHOS_BOOST_TRUE$ac_delim
 HAVE_TEUCHOS_BOOST_FALSE!$HAVE_TEUCHOS_BOOST_FALSE$ac_delim
 FLIBS!$FLIBS$ac_delim
@@ -15431,7 +15483,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 47; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 49; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

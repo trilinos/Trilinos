@@ -209,14 +209,6 @@
 #include <set.h>
 #endif
 
-#ifdef HAVE_STRING
-#include <string>
-#elif defined(HAVE_STRING_H) 
-#include <string.h>
-#elif defined(HAVE_STRINGS_H)
-#include <strings.h>
-#endif
-
 #ifdef HAVE_TYPEINFO
 #include <typeinfo>
 #endif

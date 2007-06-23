@@ -423,6 +423,13 @@ AM_CONDITIONAL(HAVE_TEUCHOS_EXTENDED, [test "X$ac_cv_use_teuchos_extended" != "X
 TAC_ARG_ENABLE_FEATURE_SUB( teuchos, arprec, [Enable Teuchos interface support for the ARbitrary PRECision Library], 
 		TEUCHOS_ARPREC, no)  
 
+#
+#  --enable-teuchos-blasfloat
+#
+
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, blasfloat, [Enable support for float BLAS wrappers code], TEUCHOS_BLASFLOAT, yes)
+AM_CONDITIONAL(HAVE_TEUCHOS_BLASFLOAT, [test "X$ac_cv_use_teuchos_blasfloat" != "Xno"])
+
 if test "X$ac_cv_use_teuchos_arprec" != "Xno"; then
 
 #  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )

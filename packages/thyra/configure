@@ -702,6 +702,8 @@ ENABLE_THYRA_TPETRA_TRUE
 ENABLE_THYRA_TPETRA_FALSE
 ENABLE_THYRA_EPETRAEXT_TRUE
 ENABLE_THYRA_EPETRAEXT_FALSE
+ENABLE_THYRA_TEUCHOS_BLASFLOAT_TRUE
+ENABLE_THYRA_TEUCHOS_BLASFLOAT_FALSE
 USING_EXPORT_MAKEFILES_TRUE
 USING_EXPORT_MAKEFILES_FALSE
 PERL_EXE
@@ -1342,6 +1344,13 @@ Optional Features:
                           be overridden with --disable-thyra-epetraext.
   --enable-thyra-epetraext
                           Build the Thyra adapater support for EpetraExt.
+  --enable-teuchos        Determines if float support is enabled or not. See
+                          thyra/configure --help
+  --enable-blasfloat      Determines if float support is enabled or not. See
+                          thyra/configure --help
+  --enable-teuchos-blasfloat
+                          Determines if float support is enabled or not. See
+                          thyra/configure --help
   --enable-export-makefiles
                           Creates export makefiles in the install (prefix)
                           directory. This option requires perl to be set in
@@ -5621,6 +5630,69 @@ fi
 
 
 
+
+
+# Check whether --enable-teuchos was given.
+if test "${enable_teuchos+set}" = set; then
+  enableval=$enable_teuchos; ac_cv_implicit_use_teuchos=$enableval
+else
+  ac_cv_implicit_use_teuchos=no
+fi
+
+
+# Check whether --enable-blasfloat was given.
+if test "${enable_blasfloat+set}" = set; then
+  enableval=$enable_blasfloat; ac_cv_implicit_use_blasfloat=$enableval
+else
+  ac_cv_implicit_use_blasfloat=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  if test "X$ac_cv_implicit_use_teuchos" != "Xno"; then
+    ac_cv_teuchos_using_blasfloat_default=$ac_cv_implicit_use_blasfloat
+  else
+    ac_cv_teuchos_using_blasfloat_default=no
+  fi
+else
+  ac_cv_teuchos_using_blasfloat_default=no
+fi
+
+# Check whether --enable-teuchos-blasfloat was given.
+if test "${enable_teuchos_blasfloat+set}" = set; then
+  enableval=$enable_teuchos_blasfloat; ac_cv_use_blasfloat=$enableval
+else
+  ac_cv_use_blasfloat=$ac_cv_teuchos_using_blasfloat_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional blasfloat dependent code in teuchos" >&5
+echo $ECHO_N "checking whether to build optional blasfloat dependent code in teuchos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_blasfloat" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_THYRA_TEUCHOS_BLASFLOAT 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_blasfloat" = "Xyes"; then
+  ENABLE_THYRA_TEUCHOS_BLASFLOAT_TRUE=
+  ENABLE_THYRA_TEUCHOS_BLASFLOAT_FALSE='#'
+else
+  ENABLE_THYRA_TEUCHOS_BLASFLOAT_TRUE='#'
+  ENABLE_THYRA_TEUCHOS_BLASFLOAT_FALSE=
+fi
+
+
+
+
 # ------------------------------------------------------------------------
 # Specify other directories
 # ------------------------------------------------------------------------
@@ -6640,6 +6712,13 @@ echo "$as_me: error: conditional \"ENABLE_THYRA_EPETRAEXT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${ENABLE_THYRA_TEUCHOS_BLASFLOAT_TRUE}" && test -z "${ENABLE_THYRA_TEUCHOS_BLASFLOAT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_THYRA_TEUCHOS_BLASFLOAT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_THYRA_TEUCHOS_BLASFLOAT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${USING_EXPORT_MAKEFILES_TRUE}" && test -z "${USING_EXPORT_MAKEFILES_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"USING_EXPORT_MAKEFILES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -7378,6 +7457,8 @@ ENABLE_THYRA_TPETRA_TRUE!$ENABLE_THYRA_TPETRA_TRUE$ac_delim
 ENABLE_THYRA_TPETRA_FALSE!$ENABLE_THYRA_TPETRA_FALSE$ac_delim
 ENABLE_THYRA_EPETRAEXT_TRUE!$ENABLE_THYRA_EPETRAEXT_TRUE$ac_delim
 ENABLE_THYRA_EPETRAEXT_FALSE!$ENABLE_THYRA_EPETRAEXT_FALSE$ac_delim
+ENABLE_THYRA_TEUCHOS_BLASFLOAT_TRUE!$ENABLE_THYRA_TEUCHOS_BLASFLOAT_TRUE$ac_delim
+ENABLE_THYRA_TEUCHOS_BLASFLOAT_FALSE!$ENABLE_THYRA_TEUCHOS_BLASFLOAT_FALSE$ac_delim
 USING_EXPORT_MAKEFILES_TRUE!$USING_EXPORT_MAKEFILES_TRUE$ac_delim
 USING_EXPORT_MAKEFILES_FALSE!$USING_EXPORT_MAKEFILES_FALSE$ac_delim
 PERL_EXE!$PERL_EXE$ac_delim
@@ -7393,7 +7474,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 39; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 41; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

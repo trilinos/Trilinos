@@ -210,6 +210,9 @@
 /* Define if want to build teuchos-abc */
 #undef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
+/* Define if want to build teuchos-blasfloat */
+#undef HAVE_TEUCHOS_BLASFLOAT
+
 /* Define if want to build teuchos-boost */
 #undef HAVE_TEUCHOS_BOOST
 

@@ -30,6 +30,9 @@
 /* Define if want to build thyra-tests */
 #undef HAVE_THYRA_TESTS
 
+/* Define if want to build with teuchos enabled */
+#undef HAVE_THYRA_TEUCHOS_BLASFLOAT
+
 /* Define if want to build with thyra enabled */
 #undef HAVE_THYRA_TPETRA
 

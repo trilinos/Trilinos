@@ -199,6 +199,11 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   [Build the Thyra adapater support for EpetraExt.],
   [Build the Thyra adapater support for EpetraExt.  Can be overridden with --disable-thyra-epetraext.])
 
+TAC_ARG_INFORM_SUBPACKAGE_USED(
+  teuchos, blasfloat, THYRA_TEUCHOS_BLASFLOAT, ENABLE_THYRA_TEUCHOS_BLASFLOAT, yes,
+  [Determines if float support is enabled or not.  See thyra/configure --help],
+  [Determines if float support is enabled or not.  See thyra/configure --help])
+
 # ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------

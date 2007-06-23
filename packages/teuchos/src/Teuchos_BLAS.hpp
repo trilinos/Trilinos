@@ -1489,6 +1489,8 @@ namespace Teuchos
   
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
+#ifdef HAVE_TEUCHOS_BLASFLOAT
+
   template<typename OrdinalType>
   class BLAS<OrdinalType, float>
   {    
@@ -1581,6 +1583,7 @@ namespace Teuchos
   void BLAS<OrdinalType, float>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const float alpha, const float* A, const OrdinalType lda, float* B, const OrdinalType ldb) const
   { STRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
 
+#endif // HAVE_TEUCHOS_BLASFLOAT
 
   template<typename OrdinalType>
   class BLAS<OrdinalType, double>
@@ -1673,6 +1676,8 @@ namespace Teuchos
   
 #ifdef HAVE_TEUCHOS_COMPLEX
 
+#ifdef HAVE_TEUCHOS_BLASFLOAT
+
   template<typename OrdinalType>
   class BLAS<OrdinalType, complex<float> >
   {    
@@ -1762,6 +1767,7 @@ namespace Teuchos
   void BLAS<OrdinalType, complex<float> >::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const complex<float> alpha, const complex<float>* A, const OrdinalType lda, complex<float>* B, const OrdinalType ldb) const
   { CTRSM_F77(CHAR_MACRO(ESideChar[side]), CHAR_MACRO(EUploChar[uplo]), CHAR_MACRO(ETranspChar[transa]), CHAR_MACRO(EDiagChar[diag]), &m, &n, &alpha, A, &lda, B, &ldb); }
 
+#endif // HAVE_TEUCHOS_BLASFLOAT
 
   template<typename OrdinalType>
   class BLAS<OrdinalType, complex<double> >

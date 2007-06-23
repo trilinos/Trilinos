@@ -558,6 +558,9 @@ void PREFIX DPOSVX_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, 
 void PREFIX DTRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, double* a, const int* lda, double* b, const int* ldb, int* info);
 
 // Single precision LAPACK linear solvers
+
+#ifdef HAVE_TEUCHOS_BLASFLOAT
+
 void PREFIX SGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrhs, float* a, const int* lda, float* b, const int* ldb, float* work, const int* lwork, int* info);
 void PREFIX SGEQRF_F77(const int* m, const int* n, float* a, const int* lda, float* tau, float* work, const int* lwork, int* info);
 void PREFIX SGETRF_F77(const int* m, const int* n, float* a, const int* lda, int* ipiv, int* info);
@@ -584,6 +587,8 @@ void PREFIX SPORFS_F77(Teuchos_fcd, const int* n, const int* nrhs, float* a, con
 void PREFIX SPOSVX_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, float* a, const int* lda, float* af, const int* ldaf, Teuchos_fcd, float* s, float* b, const int* ldb, float* x, const int* ldx, float* rcond, float* ferr, float* berr, float* work, int* iwork, int* info);
 void PREFIX STRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, float* a, const int* lda, float* b, const int* ldb, int* info);
 
+#endif // HAVE_TEUCHOS_BLASFLOAT
+
 // Double precision LAPACK eigen solvers
 void PREFIX DSPEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, double* ap, double* w, double* z, const int* ldz, double* work, int* info);
 void PREFIX DSYEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, double* a, const int* lda, double* w, double* work, const int* lwork, int* info);
@@ -601,6 +606,9 @@ void PREFIX DTREVC_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(double*,double*
 void PREFIX DTREXC_F77(Teuchos_fcd, const int* n, double* t, const int* ldt, double* q, const int* ldq, int* ifst, int* ilst, double* work, int* info);
 
 // Single precision LAPACK eigen solvers
+
+#ifdef HAVE_TEUCHOS_BLASFLOAT
+
 void PREFIX SSPEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, float* ap, float* w, float* z, const int* ldz, float* work, int* info);
 void PREFIX SSYEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, float* a, const int* lda, float* w, float* work, const int* lwork, int* info);
 void PREFIX SSYGV_F77(const int* itype, Teuchos_fcd, Teuchos_fcd, const int* n, float* a, const int* lda, float* B, const int* ldb, float* w, float* work, const int* lwork, int* info);
@@ -615,6 +623,8 @@ void PREFIX SORGQR_F77(const int* m, const int* n, const int* k, float* a, const
 void PREFIX SORMQR_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, const int* k, float* a, const int* lda, const float* tau, float* C, const int* ldc, float* work, const int* lwork, int* info);
 void PREFIX STREVC_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(float*,float*), const int* n, const float* t, const int* ldt, float* vl, const int* ldvl, float* vr, const int* ldvr, const int* mm, int* m, float* work, int* info); 
 void PREFIX STREXC_F77(Teuchos_fcd, const int* n, float* t, const int* ldt, float* q, const int* ldq, int* ifst, int* ilst, float* work, int* info);
+
+#endif // HAVE_TEUCHOS_BLASFLOAT
 
 void PREFIX SLARTG_F77(const float* f, const float* g, float* c, float* s, float* r);
 void PREFIX DLARTG_F77(const double* f, const double* g, double* c, double* s, double* r);
@@ -669,6 +679,9 @@ void PREFIX ZPOSVX_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, 
 void PREFIX ZTRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, complex<double>* a, const int* lda, complex<double>* b, const int* ldb, int* info);
 
 // Single precision complex LAPACK linear solvers
+
+#ifdef HAVE_TEUCHOS_BLASFLOAT
+
 void PREFIX CGELS_F77(Teuchos_fcd ch, const int* m, const int* n, const int* nrhs, complex<float>* a, const int* lda, complex<float>* b, const int* ldb, complex<float>* work, const int* lwork, int* info);
 void PREFIX CGEQRF_F77(const int* m, const int* n, complex<float>* a, const int* lda, complex<float>* tau, complex<float>* work, const int* lwork, int* info);
 void PREFIX CUNGQR_F77(const int* m, const int* n, const int* k, complex<float>* a, const int* lda, const complex<float>* tau, complex<float>* work, const int* lwork, int* info);
@@ -694,6 +707,8 @@ void PREFIX CPORFS_F77(Teuchos_fcd, const int* n, const int* nrhs, complex<float
 void PREFIX CPOSVX_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, complex<float>* a, const int* lda, complex<float>* af, const int* ldaf, Teuchos_fcd, float* s, complex<float>* b, const int* ldb, complex<float>* x, const int* ldx, float* rcond, float* ferr, float* berr, complex<float>* work, float* rwork, int* info);
 void PREFIX CTRTRS_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const int* n, const int* nrhs, complex<float>* a, const int* lda, complex<float>* b, const int* ldb, int* info);
 
+#endif // HAVE_TEUCHOS_BLASFLOAT
+
 // Double precision complex LAPACK eigen solvers
 void PREFIX ZSTEQR_F77(Teuchos_fcd, const int* n, double* D, double* E, complex<double>* Z, const int* ldz, complex<double>* work, int* info);
 void PREFIX ZHEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, complex<double>* a, const int* lda, double* w, complex<double>* work, const int* lwork, double* rwork, int* info);
@@ -706,6 +721,9 @@ void PREFIX ZTREVC_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(complex<double>
 void PREFIX ZTREXC_F77(Teuchos_fcd, const int* n, complex<double>* t, const int* ldt, complex<double>* q, const int* ldq, int* ifst, int* ilst, int* info);
 
 // Single precision complex LAPACK eigen solvers
+
+#ifdef HAVE_TEUCHOS_BLASFLOAT
+
 void PREFIX CSTEQR_F77(Teuchos_fcd, const int* n, complex<float>* D, complex<float>* E, complex<float>* Z, const int* ldz, complex<float>* work, int* info);
 void PREFIX CHEEV_F77(Teuchos_fcd, Teuchos_fcd, const int* n, complex<float>* a, const int* lda, float* w, complex<float>* work, const int* lwork, float* rwork, int* info);
 void PREFIX CHEGV_F77(const int* itype, Teuchos_fcd, Teuchos_fcd, const int* n, complex<float>* a, const int* lda, complex<float>* B, const int* ldb, float* w, complex<float>* work, const int* lwork, float *rwork, int* info);
@@ -715,6 +733,8 @@ void PREFIX CHSEQR_F77(Teuchos_fcd job, Teuchos_fcd, const int* n, const int* il
 void PREFIX CGEES_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(complex<float>*), const int* n, complex<float>* a, const int* lda, int* sdim, complex<float>* w, complex<float>* vs, const int* ldvs, complex<float>* work, const int* lwork, float* rwork, int* bwork, int* info);
 void PREFIX CTREVC_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(complex<float>*), const int* n, const complex<float>* t, const int* ldt, complex<float>* vl, const int* ldvl, complex<float>* vr, const int* ldvr, const int* mm, int* m, complex<float>* work, float* rwork, int* info); 
 void PREFIX CTREXC_F77(Teuchos_fcd, const int* n, complex<float>* t, const int* ldt, complex<float>* q, const int* ldq, int* ifst, int* ilst, int* info);
+
+#endif // HAVE_TEUCHOS_BLASFLOAT
 
 void PREFIX CLARTG_F77(const complex<float>* f, const complex<float>* g, float* c, complex<float>* s, complex<float>* r);
 void PREFIX ZLARTG_F77(const complex<double>* f, const complex<double>* g, double* c, complex<double>* s, complex<double>* r);
