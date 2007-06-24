@@ -77,8 +77,8 @@ namespace Anasazi {
     
     //! Application method which performs operation <b>y = Op*x</b>. An OperatorError exception is thrown if there is an error.
     static void Apply ( const OP& Op, 
-			      const MV& x, 
-			      MV& y )
+                        const MV& x, 
+                        MV& y )
     { UndefinedOperatorTraits<ScalarType, MV, OP>::notDefined(); };
     
     //@}

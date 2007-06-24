@@ -69,7 +69,7 @@ class OutputManager {
   virtual void setVerbosity( int vb ) { vb_ = vb; }
 
   //! Get the message output types for this manager.
-  virtual int getVerbosity( ) { return vb_; }
+  virtual int getVerbosity( ) const { return vb_; }
 
   //@}
 
@@ -80,7 +80,7 @@ class OutputManager {
   /*! This method is used by the solver to determine whether computations are
       necessary for this message type.
   */
-  virtual bool isVerbosity( MsgType type ) = 0;
+  virtual bool isVerbosity( MsgType type ) const = 0;
 
   //! Send output to the output manager.
   virtual void print( MsgType type, const string output ) = 0;

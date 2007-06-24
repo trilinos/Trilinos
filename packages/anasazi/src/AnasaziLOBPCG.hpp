@@ -542,9 +542,9 @@ namespace Anasazi {
     //
     // Information obtained from the eigenproblem
     //
-    Teuchos::RefCountPtr<OP> Op_;
-    Teuchos::RefCountPtr<OP> MOp_;
-    Teuchos::RefCountPtr<OP> Prec_;
+    Teuchos::RefCountPtr<const OP> Op_;
+    Teuchos::RefCountPtr<const OP> MOp_;
+    Teuchos::RefCountPtr<const OP> Prec_;
     bool hasM_;
     //
     // Internal timers

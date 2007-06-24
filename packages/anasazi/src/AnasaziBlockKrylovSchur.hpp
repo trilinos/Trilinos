@@ -460,7 +460,7 @@ namespace Anasazi {
     //
     // Information obtained from the eigenproblem
     //
-    Teuchos::RefCountPtr<OP> Op_;
+    Teuchos::RefCountPtr<const OP> Op_;
     //
     // Internal timers
     //

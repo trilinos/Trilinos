@@ -67,10 +67,10 @@ class Eigensolver {
     four arguments are sufficient enough for constructing any Anasazi::Eigensolver object.
   */
   Eigensolver( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-               const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
-               const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-               const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-               const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> > &ortho,
+               const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> >  &sorter,
+               const Teuchos::RefCountPtr<OutputManager<ScalarType> >      &printer,
+               const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >   &tester,
+               const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> >    &ortho,
                Teuchos::ParameterList &params );
 
   //! Destructor.

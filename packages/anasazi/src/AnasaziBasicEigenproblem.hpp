@@ -56,10 +56,10 @@ namespace Anasazi {
     BasicEigenproblem();
     
     //! Standard Eigenvalue Problem Constructor.
-    BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<MV>& InitVec );
+    BasicEigenproblem( const Teuchos::RefCountPtr<const OP>& Op, const Teuchos::RefCountPtr<MV>& InitVec );
     
     //! Generalized Eigenvalue Problem Constructor.
-    BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<OP>& B, const Teuchos::RefCountPtr<MV>& InitVec );
+    BasicEigenproblem( const Teuchos::RefCountPtr<const OP>& Op, const Teuchos::RefCountPtr<const OP>& B, const Teuchos::RefCountPtr<MV>& InitVec );
     
     //! Copy Constructor.
     BasicEigenproblem( const BasicEigenproblem<ScalarType, MV, OP>& Problem );
@@ -77,19 +77,19 @@ namespace Anasazi {
     For example, this operator may apply the operation \f$(A-\sigma I)^{-1}\f$ if you are
     looking for eigenvalues of \c A around \f$\sigma\f$.  
     */
-    void setOperator( const Teuchos::RefCountPtr<OP>& Op ) { _Op = Op; _isSet=false; };
+    void setOperator( const Teuchos::RefCountPtr<const OP>& Op ) { _Op = Op; _isSet=false; };
     
     /*! \brief Set the operator \c A of the eigenvalue problem \f$Ax=Mx\lambda\f$.
     */
-    void setA( const Teuchos::RefCountPtr<OP>& A ) { _AOp = A; _isSet=false; };
+    void setA( const Teuchos::RefCountPtr<const OP>& A ) { _AOp = A; _isSet=false; };
     
     /*! \brief Set the operator \c M of the eigenvalue problem \f$Ax = Mx\lambda\f$.
      */
-    void setM( const Teuchos::RefCountPtr<OP>& M ) { _MOp = M; _isSet=false; };
+    void setM( const Teuchos::RefCountPtr<const OP>& M ) { _MOp = M; _isSet=false; };
     
     /*! \brief Set the preconditioner for this eigenvalue problem \f$Ax = Mx\lambda\f$.
      */
-    void setPrec( const Teuchos::RefCountPtr<OP>& Prec ) { _Prec = Prec; _isSet=false; };
+    void setPrec( const Teuchos::RefCountPtr<const OP>& Prec ) { _Prec = Prec; _isSet=false; };
     
     /*! \brief Set the initial guess.  
 
@@ -105,16 +105,16 @@ namespace Anasazi {
     \note This multivector can have any number of columns, and most likely will contain vectors that
     will be used by the eigensolver to orthogonalize against.
     */
-    void setAuxVecs( const Teuchos::RefCountPtr<MV>& AuxVecs ) { _AuxVecs = AuxVecs; _isSet=false; };
+    void setAuxVecs( const Teuchos::RefCountPtr<const MV>& AuxVecs ) { _AuxVecs = AuxVecs; _isSet=false; };
 
     //! Specify the number of eigenvalues (NEV) that are requested.
-    void setNEV( const int nev ){ _nev = nev; _isSet=false; };
+    void setNEV( int nev ){ _nev = nev; _isSet=false; };
 
     //! Specify the symmetry of this eigenproblem.
     /*! This knowledge may allow the solver to take advantage of the eigenproblems' symmetry.
       Some computational work can be avoided by setting this properly.
     */
-    void setHermitian( const bool isSym ){ _isSym = isSym; _isSet=false; };
+    void setHermitian( bool isSym ){ _isSym = isSym; _isSet=false; };
 
     /*! \brief Specify that this eigenproblem is fully defined.
      *
@@ -147,16 +147,16 @@ namespace Anasazi {
     //@{ 
     
     //! Get a pointer to the operator for which eigenvalues will be computed.
-    Teuchos::RefCountPtr<OP> getOperator() const { return( _Op ); };
+    Teuchos::RefCountPtr<const OP> getOperator() const { return( _Op ); };
     
     //! Get a pointer to the operator \c A of the eigenproblem \f$Ax=\lambda Mx\f$.
-    Teuchos::RefCountPtr<OP> getA() const { return( _AOp ); };
+    Teuchos::RefCountPtr<const OP> getA() const { return( _AOp ); };
     
     //! Get a pointer to the operator \c M of the eigenproblem \f$Ax=\lambda Mx\f$.
-    Teuchos::RefCountPtr<OP> getM() const { return( _MOp ); };
+    Teuchos::RefCountPtr<const OP> getM() const { return( _MOp ); };
     
     //! Get a pointer to the preconditioner of the eigenproblem \f$Ax=\lambda Mx\f$.
-    Teuchos::RefCountPtr<OP> getPrec() const { return( _Prec ); };
+    Teuchos::RefCountPtr<const OP> getPrec() const { return( _Prec ); };
     
     //! Get a pointer to the initial vector
     Teuchos::RefCountPtr<const MV> getInitVec() const { return( _InitVec ); };
@@ -185,22 +185,22 @@ namespace Anasazi {
   protected:
     
     //! Reference-counted pointer for \c A of the eigenproblem \f$Ax=\lambda Mx\f$
-    Teuchos::RefCountPtr<OP> _AOp;
+    Teuchos::RefCountPtr<const OP> _AOp;
 
     //! Reference-counted pointer for \c M of the eigenproblem \f$Ax=\lambda Mx\f$
-    Teuchos::RefCountPtr<OP> _MOp; 
+    Teuchos::RefCountPtr<const OP> _MOp; 
 
     //! Reference-counted pointer for the operator of the eigenproblem \f$Ax=\lambda Mx\f$
-    Teuchos::RefCountPtr<OP> _Op;
+    Teuchos::RefCountPtr<const OP> _Op;
 
     //! Reference-counted pointer for the preconditioner of the eigenproblem \f$Ax=\lambda Mx\f$
-    Teuchos::RefCountPtr<OP> _Prec;
+    Teuchos::RefCountPtr<const OP> _Prec;
 
     //! Reference-counted pointer for the initial vector of the eigenproblem \f$Ax=\lambda Mx\f$
     Teuchos::RefCountPtr<MV> _InitVec;
 
     //! Reference-counted pointer for the auxiliary vector of the eigenproblem \f$Ax=\lambda Mx\f$
-    Teuchos::RefCountPtr<MV> _AuxVecs;
+    Teuchos::RefCountPtr<const MV> _AuxVecs;
 
     //! Number of eigenvalues requested
     int _nev;
@@ -238,7 +238,7 @@ namespace Anasazi {
 
   //=============================================================================
   template <class ScalarType, class MV, class OP>
-  BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<MV>& InitVec ) :    
+  BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<const OP>& Op, const Teuchos::RefCountPtr<MV>& InitVec ) :    
     _Op(Op), 
     _InitVec(InitVec), 
     _nev(0), 
@@ -250,7 +250,7 @@ namespace Anasazi {
 
   //=============================================================================
   template <class ScalarType, class MV, class OP>
-  BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<OP>& M,
+  BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<const OP>& Op, const Teuchos::RefCountPtr<const OP>& M,
                                                             const Teuchos::RefCountPtr<MV>& InitVec ) :
     _MOp(M), 
     _Op(Op), 

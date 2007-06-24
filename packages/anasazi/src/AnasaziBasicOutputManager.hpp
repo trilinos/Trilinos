@@ -84,12 +84,12 @@ class BasicOutputManager : public OutputManager<ScalarType> {
   /*! This method is used by the solver to determine whether computations are
       necessary for this message type.
   */
-  bool isVerbosity( MsgType type );
+  bool isVerbosity( MsgType type ) const;
 
   //! Send some output to this output stream.
   void print( MsgType type, const string output );
 
-  //! Create a stream for outputting to.
+  //! Return a stream for outputting to.
   ostream &stream( MsgType type );
 
   //@}
@@ -139,7 +139,7 @@ Teuchos::RefCountPtr<ostream> BasicOutputManager<ScalarType>::getOStream() {
 }
 
 template<class ScalarType>
-bool BasicOutputManager<ScalarType>::isVerbosity( MsgType type ) {
+bool BasicOutputManager<ScalarType>::isVerbosity( MsgType type ) const {
   if ( (type & this->vb_) == type ) {
     return true;
   }

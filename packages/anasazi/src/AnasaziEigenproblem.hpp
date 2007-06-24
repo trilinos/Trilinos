@@ -72,16 +72,16 @@ namespace Anasazi {
      * \f$(A-\sigma I)^{-1}\f$ if you are looking for eigenvalues of \c A
      * around \f$\sigma\f$.  
      */
-    virtual void setOperator( const Teuchos::RefCountPtr<OP> &Op ) = 0;
+    virtual void setOperator( const Teuchos::RefCountPtr<const OP> &Op ) = 0;
 
     //! \brief Set the operator \c A of the eigenvalue problem \f$Ax=\lambda Mx\f$.
-    virtual void setA( const Teuchos::RefCountPtr<OP> &A ) = 0;
+    virtual void setA( const Teuchos::RefCountPtr<const OP> &A ) = 0;
 
     //! \brief Set the operator \c M of the eigenvalue problem \f$Ax=\lambda Mx\f$.
-    virtual void setM( const Teuchos::RefCountPtr<OP> &M ) = 0;
+    virtual void setM( const Teuchos::RefCountPtr<const OP> &M ) = 0;
 
     //! \brief Set the preconditioner for this eigenvalue problem \f$Ax=\lambda Mx\f$.
-    virtual void setPrec( const Teuchos::RefCountPtr<OP> &Prec ) = 0;
+    virtual void setPrec( const Teuchos::RefCountPtr<const OP> &Prec ) = 0;
 
     /*! \brief Set the initial guess.  
      *
@@ -95,17 +95,17 @@ namespace Anasazi {
      * will contain vectors that will be used by the eigensolver to
      * orthogonalize against.
      */
-    virtual void setAuxVecs( const Teuchos::RefCountPtr<MV> &AuxVecs ) = 0;
+    virtual void setAuxVecs( const Teuchos::RefCountPtr<const MV> &AuxVecs ) = 0;
 
     //! The number of eigenvalues (NEV) that are requested.
-    virtual void setNEV( const int nev ) = 0;
+    virtual void setNEV( int nev ) = 0;
 
     /*! \brief Specify the symmetry of the eigenproblem.
      *
      *  This knowledge may allow the solver to take advantage of the eigenproblems' symmetry.
      *  Some computational work may be avoided by setting this properly.
      */
-    virtual void setHermitian( const bool isSym ) = 0;
+    virtual void setHermitian( bool isSym ) = 0;
 
     /*! \brief Specify that this eigenproblem is fully defined.
      *
@@ -136,16 +136,16 @@ namespace Anasazi {
     //@{ 
 
     //! Get a pointer to the operator for which eigenvalues will be computed.
-    virtual Teuchos::RefCountPtr<OP> getOperator() const = 0;
+    virtual Teuchos::RefCountPtr<const OP> getOperator() const = 0;
 
     //! Get a pointer to the operator \c A of the eigenproblem \f$AX=\lambda Mx\f$.
-    virtual Teuchos::RefCountPtr<OP> getA() const = 0;
+    virtual Teuchos::RefCountPtr<const OP> getA() const = 0;
 
     //! Get a pointer to the operator \c M of the eigenproblem \f$AX=\lambda Mx\f$.
-    virtual Teuchos::RefCountPtr<OP> getM() const = 0;
+    virtual Teuchos::RefCountPtr<const OP> getM() const = 0;
 
     //! Get a pointer to the preconditioner.
-    virtual Teuchos::RefCountPtr<OP> getPrec() const = 0;
+    virtual Teuchos::RefCountPtr<const OP> getPrec() const = 0;
 
     //! Get a pointer to the initial vector
     virtual Teuchos::RefCountPtr<const MV> getInitVec() const = 0;

@@ -96,7 +96,7 @@ namespace Anasazi {
     All concepts of orthogonality discussed in this class are with respect to this inner product.
      */
     void innerProd( const MV& X, const MV& Y, 
-                                  Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
+                    Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;
       typedef OperatorTraits<ScalarType,MV,OP>  OPT;
