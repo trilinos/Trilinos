@@ -3,16 +3,35 @@
 
    \section intro Introduction
 
-%Anasazi is an extensible and interoperable framework for the numerical solution of large-scale eigenvalue algorithms implemented in templated ANSI C++. The motivation for this framework is to provide a generic interface to a collection of algorithms for solving large-scale eigenvalue problems. %Anasazi is interoperable because both the matrix and vectors (defining the eigenspace) are considered to be opaque objects---only knowledge of the matrix and vectors via elementary operations is necessary. Hence the user has the flexibility to specify the data representation (existing data structures) for the matrix and vectors and so leverage any existing software investment. This flexibility is accomplished with the software interface \ref anasazi_opvec_interfaces "Anasazi Operator/Vector abstract interface". 
+%Anasazi is a powerful, extensible and interoperable C++ framework for the
+numerical solution of large-scale eigenvalue problems. The motivation for this
+framework is to provide a generic interface to a collection of algorithms for
+solving large-scale eigenvalue problems. %Anasazi's interoperability results
+from its understanding of operators and vectors as opaque objects---these
+objects are accessed only via elementary operations. Hence the user has the
+flexibility to specify the data representation for operators and vectors and
+may so leverage any existing software investment. This mechanism is
+accomplished via the \ref anasazi_opvec_interfaces "Anasazi Operator/Vector abstract interface". 
+Current interfaces available include Thyra and Epetra. As a result, any
+existing code employing Thyra or Epetra operators and vectors (such as other
+packages in Trilinos) may also be used in conjunction with %Anasazi.
 
-The \ref anasazi_solver_framework "Anasazi eigensolver framework" describes eigensolver and eigensolver managers that allow for efficient, convenient and powerful computational ability.
-
-Current interfaces available include Epetra and so any libraries that understand Epetra matrices and vectors (such as other packages in Trilinos) may also be used in conjunction with %Anasazi.
-
+The \ref anasazi_solver_framework "Anasazi eigensolver framework" describes
+eigensolver and eigensolver managers that provide efficient, convenient and
+powerful computational methods. %Anasazi's power is a result of the
+distribution of functionality across different computational entities in the
+framework: orthogonalization, sorting/selection, eigenvalue iterations,
+restarting methodologies, etc. 
+%Anasazi's extensibility comes via 
+the abstract interfaces describing these entities. %Anasazi currently provides
+a robust set of options, and users are able to expand this set as their
+research and/or application needs demand. The ability to interact directly with
+these objects provides great flexibility in computation, while the existence of
+solver managers allow convenient programming for standard use cases.
 
    \section solvers Current Eigensolvers
 
-The algorithms that are currently available are:
+Unlike <a href="http://www.caam.rice.edu/software/ARPACK/">ARPACK</a>, which provides a single eigensolver, %Anasazi provides a framework capable of describing a wide variety of eigenproblems and algorithms for solving them. %Anasazi can currently solve complex and real, Hermitian and non-Hermitian, eigenvalue problems, via the following included methods:
 
    <ul>
    <li>Block Krylov-Schur method, a block extension of <em>A Krylov-Schur Algorithm for Large Eigenproblems</em>, G. W. Stewart, SIAM J. Matrix Anal. Appl., 23, pp. 601-614.
