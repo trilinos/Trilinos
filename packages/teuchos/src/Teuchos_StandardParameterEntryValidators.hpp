@@ -139,18 +139,36 @@ public:
   /** \brief Perform a mapping from a string value embedded in a
    * <tt>ParameterEntry</tt> object and return its associated integral value.
    *
-   * \param  str  [in] String that is being used to lookup the corresponding
-   *              integral value.
+   * \param  entry
+   *              [in] The string entry.
    * \param  paramName
    *              [in] Optional name that will be used to generate error messages.
+   * \param  sublistName
+   *              [in] The name of the sublist.
    * \param  activeQuery
    *              [in] If true, then this lookup will be recored as an active query
    *              which will turn the <tt>isUsed</tt> bool to <tt>true</tt>.
-   *
-   * If the string name <tt>str</tt> does not exist, the an exception will be
-   * thrown with a very descriptive error message.
    */
   IntegralType getIntegralValue(
+    const ParameterEntry &entry, const std::string &paramName = "",
+    const std::string &sublistName = "", const bool activeQuery = true
+    ) const;
+
+  /** \brief Get and validate a string value embedded in a
+   * <tt>ParameterEntry</tt> object.
+   *
+   *
+   * \param  entry
+   *              [in] The string entry.
+   * \param  paramName
+   *              [in] Optional name that will be used to generate error messages.
+   * \param  sublistName
+   *              [in] The name of the sublist.
+   * \param  activeQuery
+   *              [in] If true, then this lookup will be recored as an active query
+   *              which will turn the <tt>isUsed</tt> bool to <tt>true</tt>.
+   */
+  std::string getStringValue(
     const ParameterEntry &entry, const std::string &paramName = "",
     const std::string &sublistName = "", const bool activeQuery = true
     ) const;
@@ -336,15 +354,44 @@ void setStringToIntegralParameter(
 /** \brief Get an integral value for a parameter that is assumed to already be set.
  *
  * This function does a dynamic cast to get the underlying valiator of type
- * StringToIntegralParameterEntryValidator.  If this dynamic cast failes then
- * an <tt>Exceptions::InvalidParameterType</tt> exception is thrown with an
- * excellent error message.
+ * StringToIntegralParameterEntryValidator<IntegralType>.  If this dynamic
+ * cast failes then an <tt>Exceptions::InvalidParameterType</tt> exception is
+ * thrown with an excellent error message.
  *
  * \relates ParameterList
  */
 template<class IntegralType>
 IntegralType getIntegralValue(
   ParameterList const& paramList, std::string const& paramName
+  );
+
+
+/** \brief Get a string value for a parameter that is assumed to already be set.
+ *
+ * This function does a dynamic cast to get the underlying valiator of type
+ * StringToIntegralParameterEntryValidator<IntegralValue>.  The default type
+ * for IntegralValue is int.  If this dynamic cast failes then an
+ * <tt>Exceptions::InvalidParameterType</tt> exception is thrown with an
+ * excellent error message.
+ *
+ * \relates ParameterList
+ */
+template<class IntegralType>
+std::string getStringValue(
+  ParameterList const& paramList, std::string const& paramName
+  );
+
+
+/** \brief Get a StringToIntegralParameterEntryValidator<IntegralType> object out of
+ * a ParameterEntry object.
+ *
+ * This function with thrown of the validator does not exist.
+ */
+template<class IntegralType>
+RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
+getStringToIntegralParameterEntryValidator(
+  ParameterEntry const& entry, ParameterList const& paramList,
+  std::string const& paramName
   );
 
 
@@ -770,6 +817,20 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
 
 
 template<class IntegralType>
+std::string
+StringToIntegralParameterEntryValidator<IntegralType>::getStringValue(
+  const ParameterEntry &entry, const std::string &paramName
+  ,const std::string &sublistName, const bool activeQuery
+  ) const
+{
+  // Validate the parameter's type and value
+  this->getIntegralValue(entry,paramName,sublistName,activeQuery);
+  // Return the string value which is now validated!
+  return any_cast<std::string>(entry.getAny(activeQuery)); // This cast should not fail!
+}
+
+
+template<class IntegralType>
 IntegralType
 StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
   ParameterList &paramList, const std::string &paramName
@@ -1004,6 +1065,39 @@ IntegralType Teuchos::getIntegralValue(
   )
 {
   const ParameterEntry &entry = paramList.getEntry(paramName);
+  RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
+    integralValidator = getStringToIntegralParameterEntryValidator<IntegralType>(
+      entry, paramList, paramName
+      );
+  return integralValidator->getIntegralValue(
+    entry, paramName, paramList.name(), true
+    );
+}
+
+
+template<class IntegralType>
+std::string Teuchos::getStringValue(
+  ParameterList const& paramList, std::string const& paramName
+  )
+{
+  const ParameterEntry &entry = paramList.getEntry(paramName);
+  RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
+    integralValidator = getStringToIntegralParameterEntryValidator<IntegralType>(
+      entry, paramList, paramName
+      );
+  return integralValidator->getStringValue(
+    entry, paramName, paramList.name(), true
+    );
+}
+
+
+template<class IntegralType>
+Teuchos::RCP<const Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
+Teuchos::getStringToIntegralParameterEntryValidator(
+  ParameterEntry const& entry, ParameterList const& paramList,
+  std::string const& paramName
+  )
+{
   RCP<const ParameterEntryValidator>
     validator = entry.validator();
   TEST_FOR_EXCEPTION_PURE_MSG(
@@ -1013,7 +1107,6 @@ IntegralType Teuchos::getIntegralValue(
     "but it does not contain any validator needed to extract\n"
     "an integral value of type \""<<TypeNameTraits<IntegralType>::name()<<"\"!"
     );
-
   RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
     integralValidator
     =
@@ -1028,9 +1121,7 @@ IntegralType Teuchos::getIntegralValue(
     "is \""<<TypeNameTraits<StringToIntegralParameterEntryValidator<IntegralType> >::name()<<"\"\n"
     "but the contained validator type is \""<<typeName(*validator)<<"\"!"
     );
-  return integralValidator->getIntegralValue(
-    entry, paramName, paramList.name(), true
-    );
+  return integralValidator;
 }
 
 

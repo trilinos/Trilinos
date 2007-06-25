@@ -821,6 +821,14 @@ int main( int argc, char *argv[] )
   PL_Main_valid.setParameters(PL_Main);
 
   // Create a validator for the "Nonlinear Solver" parameter
+  Teuchos::setStringToIntegralParameter<int>(
+    "Nonlinear Solver", "Line Search Based",
+    "Selects the type of nonlinear solver to use",
+    Teuchos::tuple<std::string>("Line Search Based","Trust Region Based"),
+    &PL_Main
+    );
+
+/*    
   Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
     nonlinearSolverValidator = rcp(
     new Teuchos::StringToIntegralParameterEntryValidator<int>(
@@ -833,6 +841,7 @@ int main( int argc, char *argv[] )
     ,"Selects the type of nonlinear solver to use"
     ,nonlinearSolverValidator
     );
+*/
 
   // Create a validator for the parameter "Line Search"->"Polynomial"->"Max Iters"
   // that accepts an 'int', a 'double' or a 'string' value!
@@ -995,8 +1004,7 @@ int main( int argc, char *argv[] )
   }
   try {
     const int
-      nonlinearSolverValue
-      = nonlinearSolverValidator->getIntegralValue(PL_Main,"Nonlinear Solver","Trust Region Based");
+      nonlinearSolverValue = Teuchos::getIntegralValue<int>(PL_Main,"Nonlinear Solver");
     const bool
       result = (nonlinearSolverValue == 0);
     cout
@@ -1019,8 +1027,7 @@ int main( int argc, char *argv[] )
   }
   try {
     const std::string
-      nonlinearSolverValue
-      = nonlinearSolverValidator->getStringValue(PL_Main,"Nonlinear Solver","Trust Region Based");
+      nonlinearSolverValue = Teuchos::getStringValue<int>(PL_Main,"Nonlinear Solver");
     const bool
       result = (nonlinearSolverValue == "Line Search Based");
     cout
