@@ -11117,7 +11117,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 ##
 
-ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile example/BlockCG/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/BlockTFQMR/Makefile test/MVOPTester/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile example/Makefile example/BlockGmres/Makefile example/BlockCG/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/MVOPTester/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11813,7 +11813,6 @@ do
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/BlockCG/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockCG/Makefile" ;;
     "test/BlockGmres/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockGmres/Makefile" ;;
-    "test/BlockTFQMR/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockTFQMR/Makefile" ;;
     "test/MVOPTester/Makefile") CONFIG_FILES="$CONFIG_FILES test/MVOPTester/Makefile" ;;
     "test/scripts/Makefile") CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
     "test/scripts/daily/Makefile") CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;

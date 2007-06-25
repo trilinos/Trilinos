@@ -332,7 +332,6 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/BlockCG/Makefile
 		test/BlockGmres/Makefile
-		test/BlockTFQMR/Makefile
 		test/MVOPTester/Makefile
                 test/scripts/Makefile
 		test/scripts/daily/Makefile

@@ -254,8 +254,9 @@ namespace Belos {
       \note The length of the index vector is the number of right-hand sides being solved for.
             If an entry of this vector is -1 then that linear system is an augmented linear
 	    system and doesn't need to be considered for convergence.
+      \note The vector returned from this method is valid if isProblemSet() returns true.
     */
-    std::vector<int> getLSIndex() const { if (isSet_) return(rhsIndex_); }
+    std::vector<int> getLSIndex() const { return(rhsIndex_); }
 
     //! Get the number of linear systems that have been set with this LinearProblem object.
     /* This can be used by status test classes to determine if the solver manager has advanced 
@@ -408,6 +409,7 @@ namespace Belos {
   LinearProblem<ScalarType,MV,OP>::LinearProblem(void) : 
     blocksize_(0),
     num2Solve_(0),
+    rhsIndex_(0),
     lsNum_(0),
     Left_Scale_(false),
     Right_Scale_(false),
@@ -428,6 +430,7 @@ namespace Belos {
     B_(B),
     blocksize_(0),
     num2Solve_(0),
+    rhsIndex_(0),
     lsNum_(0),
     Left_Scale_(false),
     Right_Scale_(false),
