@@ -111,6 +111,8 @@ TAC_ARG_ENABLE_FEATURE(moocho, [Build moocho, an optimization package], MOOCHO, 
 
 TAC_ARG_ENABLE_FEATURE(tpetra, [Build tpetra, a templated linear algebra package], TPETRA, no)
 
+TAC_ARG_ENABLE_FEATURE(trilinoscouplings, [Build trilinoscouplings, a package of interfaces between Trilinos packages], TRILINOSCOUPLINGS, no)
+
 TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils, a utility package], TRIUTILS, no)
 
 TAC_ARG_ENABLE_FEATURE(galeri, [Build galeri, a gallery package], GALERI, no)
@@ -521,6 +523,17 @@ else
   BUILD_TPETRA=no
 fi
 AM_CONDITIONAL(BUILD_TPETRA, test "X$BUILD_TPETRA" != "Xno")
+
+if test "X$ac_cv_use_trilinoscouplings" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/trilinoscouplings])
+  BUILD_TRILINOSCOUPLINGS=yes
+  if test "X$ac_cv_use_trilinoscouplings_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-trilinoscouplings"
+  fi
+else
+  BUILD_TRILINOSCOUPLINGS=no
+fi
+AM_CONDITIONAL(BUILD_TRILINOSCOUPLINGS, test "X$BUILD_TRILINOSCOUPLINGS" != "Xno")
 
 if test "X$ac_cv_use_didasko" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/didasko])

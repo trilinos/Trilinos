@@ -102,6 +102,9 @@
 /* Define if want to build tpetra */
 #undef HAVE_TPETRA
 
+/* Define if want to build trilinoscouplings */
+#undef HAVE_TRILINOSCOUPLINGS
+
 /* Define if want to build triutils */
 #undef HAVE_TRIUTILS
 

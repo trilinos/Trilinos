@@ -255,6 +255,10 @@ TPETRA_LIBS_BUILD_CMND = cd tpetra ; $(MAKE) libs ;
 TPETRA_ALL_LIBS_BUILD_CMND = cd tpetra ; $(MAKE) all-libs ;
 endif
 
+if BUILD_TRILINOSCOUPLINGS
+TRILINOSCOUPLINGS_SUBDIR = trilinoscouplings
+endif
+
 if BUILD_TRIUTILS
 TRIUTILS_SUBDIR = triutils
 TRIUTILS_LIBS_BUILD_CMND = cd triutils ; $(MAKE) libs ;
@@ -298,6 +302,7 @@ SUBDIRS = \
 	$(NOX_SUBDIR)          \
 	$(CAPO_SUBDIR)         \
 	$(RYTHMOS_SUBDIR)      \
+	$(TRILINOSCOUPLINGS_SUBDIR) \
 	$(NEW_PACKAGE_SUBDIR)  \
 	$(MOOCHO_SUBDIR)       \
 	$(PYTRILINOS_SUBDIR)   \

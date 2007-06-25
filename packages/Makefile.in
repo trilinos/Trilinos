@@ -90,8 +90,8 @@ CTAGS = ctags
 DIST_SUBDIRS = teuchos rtop kokkos epetra triutils tpetra epetraext \
 	thyra isorropia aztecoo galeri amesos ifpack komplex claps \
 	belos anasazi rbgen pliris ml aristos moertel stratimikos \
-	meros sacado nox capo rythmos new_package moocho PyTrilinos \
-	didasko WebTrilinos external
+	meros sacado nox capo rythmos trilinoscouplings new_package \
+	moocho PyTrilinos didasko WebTrilinos external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -273,6 +273,7 @@ ACLOCAL_AMFLAGS = -I config
 @BUILD_TPETRA_TRUE@TPETRA_SUBDIR = tpetra
 @BUILD_TPETRA_TRUE@TPETRA_LIBS_BUILD_CMND = cd tpetra ; $(MAKE) libs ;
 @BUILD_TPETRA_TRUE@TPETRA_ALL_LIBS_BUILD_CMND = cd tpetra ; $(MAKE) all-libs ;
+@BUILD_TRILINOSCOUPLINGS_TRUE@TRILINOSCOUPLINGS_SUBDIR = trilinoscouplings
 @BUILD_TRIUTILS_TRUE@TRIUTILS_SUBDIR = triutils
 @BUILD_TRIUTILS_TRUE@TRIUTILS_LIBS_BUILD_CMND = cd triutils ; $(MAKE) libs ;
 @BUILD_TRIUTILS_TRUE@TRIUTILS_ALL_LIBS_BUILD_CMND = cd triutils ; $(MAKE) all-libs ;
@@ -310,6 +311,7 @@ SUBDIRS = \
 	$(NOX_SUBDIR)          \
 	$(CAPO_SUBDIR)         \
 	$(RYTHMOS_SUBDIR)      \
+	$(TRILINOSCOUPLINGS_SUBDIR) \
 	$(NEW_PACKAGE_SUBDIR)  \
 	$(MOOCHO_SUBDIR)       \
 	$(PYTRILINOS_SUBDIR)   \
