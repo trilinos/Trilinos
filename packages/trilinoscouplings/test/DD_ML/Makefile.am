@@ -28,15 +28,12 @@
 
 include $(top_builddir)/Makefile.export.trilinoscouplings
 
-TEST_LIBS     = $(ML_EXTRA_LIBS)     $(ML_LIBS)
-TEST_INCLUDES = $(ML_EXTRA_INCLUDES) $(ML_INCLUDES)
+TEST_LIBS     = $(TRILINOSCOUPLINGS_LIBS)
+TEST_INCLUDES = $(TRILINOSCOUPLINGS_INCLUDES)
 
 EXEEXT = .exe
 
-if ML_USING_IFPACK
-if ML_USING_EPETRA
-if ML_USING_TEUCHOS
-if ML_USING_AZTECOO
+if BUILD_IFPACK_ML
 
 noinst_PROGRAMS = DDwithMLSubsolves
 
@@ -46,6 +43,4 @@ DDwithMLSubsolves_CXXFLAGS     = ${TEST_INCLUDES}
 DDwithMLSubsolves_LDADD        = ${TEST_LIBS}
 
 endif
-endif
-endif
-endif
+

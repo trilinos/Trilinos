@@ -1,9 +1,13 @@
-include @abs_top_builddir@/../epetra/Makefile.export.epetra
+## Optional dependency on ifpack
+@BUILD_IFPACK_ML_TRUE@include @abs_top_builddir@/../ifpack/Makefile.export.ifpack
+
+## Optional dependency on ml
+@BUILD_IFPACK_ML_TRUE@include @abs_top_builddir@/../ml/Makefile.export.ml
 
 _TRILINOSCOUPLINGS_INCLUDES = -I@abs_top_srcdir@/src -I@abs_top_builddir@/src \
-			$(EPETRA_INCLUDES)
+			$(ML_INCLUDES) $(IFPACK_INCLUDES)
 _TRILINOSCOUPLINGS_LIBS     = @LDFLAGS@ -L@abs_top_builddir@/src -ltrilinoscouplings \
-			$(EPETRA_LIBS)
+			$(ML_LIBS) $(IFPACK_LIBS)
 
 @USING_GNUMAKE_TRUE@TRILINOSCOUPLINGS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_TRILINOSCOUPLINGS_INCLUDES))
 @USING_GNUMAKE_TRUE@TRILINOSCOUPLINGS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_TRILINOSCOUPLINGS_LIBS))

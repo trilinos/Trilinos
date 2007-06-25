@@ -32,14 +32,14 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
-/* Define if want to build examples */
-#undef HAVE_EXAMPLES
-
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
 
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
+
+/* Define if want to build ifpack */
+#undef HAVE_IFPACK
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -59,17 +59,14 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Define if want to build ml */
+#undef HAVE_ML
+
 /* define if we want to use MPI */
 #undef HAVE_MPI
 
 /* Define if want to build with newp_swahili enabled */
 #undef HAVE_NEWP_SWAHILI
-
-/* Define if want to build TrilinosCouplings examples */
-#undef HAVE_TRILINOSCOUPLINGS_EXAMPLES
-
-/* Define if want to build TrilinosCouplings tests */
-#undef HAVE_TRILINOSCOUPLINGS_TESTS
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -97,6 +94,9 @@
 
 /* Define if want to build tests */
 #undef HAVE_TESTS
+
+/* Define if want to build trilinoscouplings-tests */
+#undef HAVE_TRILINOSCOUPLINGS_TESTS
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

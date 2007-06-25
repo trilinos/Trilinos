@@ -231,9 +231,9 @@ TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all pa
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( trilinoscouplings, tests, [Build TrilinosCouplings tests], TRILINOSCOUPLINGS_TESTS)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_trilinoscouplings_tests" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( trilinoscouplings, examples, [Build TrilinosCouplings examples], TRILINOSCOUPLINGS_EXAMPLES)
-AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_trilinoscouplings_examples" != "Xno")
+#TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+#TAC_ARG_ENABLE_FEATURE_SUB_CHECK( trilinoscouplings, examples, [Build TrilinosCouplings examples], TRILINOSCOUPLINGS_EXAMPLES)
+#AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_trilinoscouplings_examples" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
@@ -255,6 +255,12 @@ AC_F77_WRAPPERS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+TAC_ARG_ENABLE_FEATURE(ifpack, [Make ifpack available for use in trilinoscouplings interfaces], IFPACK)
+
+TAC_ARG_ENABLE_FEATURE(ml, [Make ml available for use in trilinoscouplings interfaces], ML)
+
+AM_CONDITIONAL(BUILD_IFPACK_ML, test "X$ac_cv_use_ml" = "Xyes" && test "X$ac_cv_use_ifpack" = "Xyes")
+
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
 
@@ -262,7 +268,7 @@ AC_F77_WRAPPERS
 # If a package does not have tests or examples, the corresponding check(s)
 # should be pulled out of the "if" statement below.
 #if test "X$ac_cv_use_trilinoscouplings_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
-if test "X$ac_cv_use_trilinoscouplings_tests" != "Xno" || test "X$ac_cv_use_trilinoscouplings_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+if test "X$ac_cv_use_trilinoscouplings_tests" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 # #np# - 
 # To add any libraries that you want to check for, replace pow below 
@@ -315,8 +321,6 @@ AC_CONFIG_FILES([
 		Makefile
 		Makefile.export.trilinoscouplings
 		src/Makefile
-		example/Makefile
-		example/generate-sample-output.pl.stub
 		test/Makefile
 		test/DD_ML/Makefile
 		])

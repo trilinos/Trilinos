@@ -49,100 +49,45 @@ all-local:
 #
 # Make sure to list all source files in one of the following categories.
 CORE_H = \
-	$(srcdir)/ifpack/Ifpack_ML.h \
 	$(srcdir)/TrilinosCouplings_ConfigDefs.h
 
-CORE = \
-	$(srcdir)/ifpack/Ifpack_ML.cpp
+CORE =
 
 UTIL_H = \
 	$(srcdir)/TrilinosCouplings_Version.h
 
 UTIL = 
 
-ENUM_H = 
-
-UNIPROC_H = 
-
-UNIPROC = 
-
-SERIAL_H = 
-
-SERIAL = 
-
 #
 #  Files which are included in select builds are typically have
 #  names that start with EXTRA
 #
-#  EXTRA_MPI is control by --with-mpi and --without-mpi which is
-#  set up by TAC_ARC_CONFIG_MPI 
-#
-EXTRA_MPI_H =
 
-EXTRA_MPI = 
+# Because TrilinosCouplings interfaces are only build when all required
+# packages are available, interface files must be listed as conditionally
+# compiled files (ie with an EXTRA_ prefix).
+EXTRA_IFPACK_ML_H = \
+	$(srcdir)/ifpack/Ifpack_ML.h 
 
-if HAVE_MPI 
-MPI_H = \
-	$(EXTRA_MPI_H)
-MPI = \
-	$(EXTRA_MPI)
+EXTRA_IFPACK_ML = \
+	$(srcdir)/ifpack/Ifpack_ML.cpp
 
-else
+if BUILD_IFPACK_ML 
 
-MPI_H =
-MPI =
-
-endif
-#np# This section should come out, or be modified to reflect options in the 
-#np# package being autotool'ed
-EXTRA_NEWP_SWAHILI_H = \
-	$(srcdir)/Newp_Jambo.h 
-
-EXTRA_NEWP_SWAHILI = \
-	$(srcdir)/Newp_Jambo.cpp
-
-if HAVE_NEWP_SWAHILI
-
-NEWP_SWAHILI_H = \
-	$(EXTRA_NEWP_SWAHILI_H)
-NEWP_SWAHILI = \
-	$(EXTRA_NEWP_SWAHILI)
+IFPACK_ML_H = \
+	$(EXTRA_IFPACK_ML_H)
+IFPACK_ML = \
+	$(EXTRA_IFPACK_ML)
 
 else
 
-NEWP_SWAHILI_H =
-NEWP_SWAHILI =
+IFPACK_ML_H =
+IFPACK_ML =
 
 endif
 
+#AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 
-
-USERBASE_H = 
-
-
-LANG_WRAPS_H = 
-
-LANG_WRAPS = 
-
-DIST_H = 
-
-DIST = 
-
-COMP_H =
-
-COMP = 
-
-
-#np# List locations of include files within Trilinos but outside of this 
-#np# package
-#np# - Add packages that this package is dependent on
-#np#   Remove epetra if this package does not need it
-#  
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
-
-#np# The following section can be duplicated for building multiple libraries -
-#np# make sure to list the correct categories with each library.
-#np# replace trilinoscouplings with the name of the package being autotool'ed here
 # ------------------------------------------------------------------------
 # TrilinosCouplings library specifications
 # ------------------------------------------------------------------------
@@ -153,31 +98,17 @@ TRILINOSCOUPLINGS_LIB = libtrilinoscouplings.a
 TRILINOSCOUPLINGS_H = \
 	$(CORE_H) \
 	$(UTIL_H) \
-	$(ENUM_H) \
-	$(UNIPROC_H) \
-	$(SERIAL_H) \
-	$(USERBASE_H) \
-	$(DIST_H) \
-	$(COMP_H) \
-	$(MPI_H) \
-	$(NEWP_SWAHILI_H)
+	$(IFAPCK_ML_H)
 
 #np# replace trilinoscouplings with the name of the package being autotool'ed here
 libtrilinoscouplings_a_SOURCES = \
 	$(CORE) \
 	$(UTIL) \
-	$(UNIPROC) \
-	$(SERIAL) \
-	$(DIST) \
-	$(COMP) \
-	$(MPI) \
-	$(NEWP_SWAHILI)
+	$(IFAPCK_ML)
 
 EXTRA_libtrilinoscouplings_a_SOURCES = \
-	$(EXTRA_MPI) \
-	$(EXTRA_MPI_H) \
-	$(EXTRA_NEWP_SWAHILI) \
-	$(EXTRA_NEWP_SWAHILI_H)
+	$(EXTRA_IFPACK_ML) \
+	$(EXTRA_IFPACK_ML_H)
 
 #We need the following to support separate build directories
 #AM_CPPFLAGS=-I$(builddir)/src
