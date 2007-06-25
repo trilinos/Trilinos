@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
     cvals[ii] = ScalarType(dvals[ii*2],dvals[ii*2+1]);
   }
   // Build the problem matrix
-  RefCountPtr< MyBetterOperator<ScalarType> > K 
+  RefCountPtr< const MyBetterOperator<ScalarType> > K 
     = rcp( new MyBetterOperator<ScalarType>(dim,colptr,nnz,rowind,&cvals[0]) );
 
   // Create initial vectors

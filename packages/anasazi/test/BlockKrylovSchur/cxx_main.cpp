@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
   
   RefCountPtr<BlockPCGSolver> opStiffness = rcp( new BlockPCGSolver(Comm, M.get(), tolCG, maxIterCG, 0) );
   opStiffness->setPreconditioner( 0 );
-  RefCountPtr<Anasazi::EpetraGenOp> InverseOp = rcp( new Anasazi::EpetraGenOp( opStiffness, K ) );
+  RefCountPtr<const Anasazi::EpetraGenOp> InverseOp = rcp( new Anasazi::EpetraGenOp( opStiffness, K ) );
 
   // Create the initial vectors
   int blockSize = 3;

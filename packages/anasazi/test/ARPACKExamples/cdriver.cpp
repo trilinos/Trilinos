@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 
   // Create matrices
   RefCountPtr< ARPACK_Example<ST> > prob;
-  RefCountPtr<OP> A, M, Op;
+  RefCountPtr<const OP> A, M, Op;
 
   prob = GetARPACKExample<ST>(problem,dim);
   if (!prob.get()) {

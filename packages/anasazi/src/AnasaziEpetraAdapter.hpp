@@ -112,7 +112,7 @@ namespace Anasazi {
       the new vector (deep copy).
       
       \returns Pointer to an EpetraMultiVec
-    */	
+    */
     MultiVec<double> * CloneCopy () const;
 
     /*! \brief Creates a new EpetraMultiVec and copies the selected contents of \c *this 
@@ -135,7 +135,7 @@ namespace Anasazi {
 
     //@}
 
-    //! @name Attribute methods	
+    //! @name Attribute methods
     //@{ 
 
     //! Obtain the vector length of *this.
@@ -150,33 +150,34 @@ namespace Anasazi {
     //@{ 
     /*! \brief Update \c *this with \f$\alpha AB + \beta (*this)\f$.
      */
-    void MvTimesMatAddMv ( const double alpha, const MultiVec<double>& A, 
-			   const Teuchos::SerialDenseMatrix<int,double>& B, const double beta );
+    void MvTimesMatAddMv ( double alpha, const MultiVec<double>& A, 
+                           const Teuchos::SerialDenseMatrix<int,double>& B, 
+                           double beta );
 
     /*! \brief Replace \c *this with \f$\alpha A + \beta B\f$.
      */
-    void MvAddMv ( const double alpha, const MultiVec<double>& A, const double beta,
-		   const MultiVec<double>& B);
+    void MvAddMv ( double alpha, const MultiVec<double>& A, 
+                   double beta, const MultiVec<double>& B);
 
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$\alpha A^T(*this)\f$.
     */
-    void MvTransMv ( const double alpha, const MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B 
+    void MvTransMv ( double alpha, const MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B 
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
-		     , ConjType conj = Anasazi::CONJ
+        , ConjType conj = Anasazi::CONJ
 #endif
-		     ) const;
+        ) const;
   
     /*! \brief Compute a vector \c b where the components are the individual dot-products, i.e. \f$ b[i] = A[i]^H(this[i])\f$ where \c A[i] is the i-th column of \c A.
-	*/
+    */
     void MvDot ( const MultiVec<double>& A, std::vector<double>* b
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
-		 , ConjType conj = Anasazi::CONJ
+        , ConjType conj = Anasazi::CONJ
 #endif
-		 ) const;
+        ) const;
 
     /*! \brief Scale each element of the vectors in \c *this with \c alpha.
      */
-    void MvScale ( const double alpha ) { int ret = this->Scale( alpha ); assert(ret == 0); }
+    void MvScale ( double alpha ) { int ret = this->Scale( alpha ); assert(ret == 0); }
     
     /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
      */
@@ -191,8 +192,8 @@ namespace Anasazi {
     */
     void MvNorm ( std::vector<double>* normvec ) const {
       if ((normvec!=NULL) && ((int)normvec->size() >= GetNumberVecs()) ) {
-	int ret = Norm2(&(*normvec)[0]);
-	assert( ret == 0 );
+        int ret = Norm2(&(*normvec)[0]);
+        assert( ret == 0 );
       }
     };
     //@}
@@ -212,7 +213,7 @@ namespace Anasazi {
 
     /*! \brief Replace each element of the vectors in \c *this with \c alpha.
      */
-    void MvInit ( const double alpha ) { int ret = PutScalar( alpha ); assert( ret == 0 ); };
+    void MvInit ( double alpha ) { int ret = PutScalar( alpha ); assert( ret == 0 ); };
 
     //@}
     //! @name Print method
@@ -291,7 +292,7 @@ namespace Anasazi {
     */
     EpetraGenOp(const Teuchos::RefCountPtr<Epetra_Operator> &AOp, 
                 const Teuchos::RefCountPtr<Epetra_Operator> &MOp,
-		bool isAInverse = true );
+                bool isAInverse = true );
 
     //! Destructor
     ~EpetraGenOp();
@@ -364,7 +365,7 @@ namespace Anasazi {
     //! Basic constructor for applying operator \f$A^TA\f$ [default] or \f$AA^T\f$.
     /*! If \c isTrans is false this operator will apply \f$A^TA\f$, else it will apply \f$AA^T\f$.
     */
-    EpetraSymOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op, const bool isTrans = false );
+    EpetraSymOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op, bool isTrans = false );
 
     //! Destructor
     ~EpetraSymOp();
@@ -438,8 +439,8 @@ namespace Anasazi {
     //! Basic constructor for applying operator \f$A^TA\f$ [default] or \f$AA^T\f$.
     /*! If \c isTrans is false this operator will apply \f$A^TA\f$, else it will apply \f$AA^T\f$.
     */
-    EpetraSymMVOp(const Teuchos::RefCountPtr<Epetra_MultiVector> &MV, 
-		  const bool isTrans = false );
+    EpetraSymMVOp(const Teuchos::RefCountPtr<const Epetra_MultiVector> &MV, 
+                  bool isTrans = false );
     
     //! Destructor
     ~EpetraSymMVOp() {};
@@ -450,7 +451,7 @@ namespace Anasazi {
     void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
 
   private:
-    Teuchos::RefCountPtr<Epetra_MultiVector> Epetra_MV;
+    Teuchos::RefCountPtr<const Epetra_MultiVector> Epetra_MV;
     Teuchos::RefCountPtr<const Epetra_Map> MV_localmap;
     Teuchos::RefCountPtr<const Epetra_BlockMap> MV_blockmap;
     bool isTrans_;
@@ -479,8 +480,8 @@ namespace Anasazi {
     //! Basic constructor for applying operator \f$A^TA\f$ [default] or \f$AA^T\f$.
     /*! If \c isTrans is false this operator will apply \f$A^TA\f$, else it will apply \f$AA^T\f$.
     */
-    EpetraWSymMVOp(const Teuchos::RefCountPtr<Epetra_MultiVector> &MV, 
-		   const Teuchos::RefCountPtr<Epetra_Operator> &OP );
+    EpetraWSymMVOp(const Teuchos::RefCountPtr<const Epetra_MultiVector> &MV, 
+                   const Teuchos::RefCountPtr<Epetra_Operator> &OP );
     
     //! Destructor
     ~EpetraWSymMVOp() {};
@@ -491,8 +492,9 @@ namespace Anasazi {
     void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
 
   private:
-    Teuchos::RefCountPtr<Epetra_MultiVector> Epetra_MV, Epetra_WMV;
+    Teuchos::RefCountPtr<const Epetra_MultiVector> Epetra_MV;
     Teuchos::RefCountPtr<Epetra_Operator> Epetra_OP;
+    Teuchos::RefCountPtr<Epetra_MultiVector> Epetra_WMV;
     Teuchos::RefCountPtr<const Epetra_Map> MV_localmap;
     Teuchos::RefCountPtr<const Epetra_BlockMap> MV_blockmap;
   };
@@ -589,9 +591,9 @@ namespace Anasazi {
 
     /*! \brief Update \c mv with \f$ \alpha AB + \beta mv \f$.
      */
-    static void MvTimesMatAddMv( const double alpha, const Epetra_MultiVector& A, 
-				 const Teuchos::SerialDenseMatrix<int,double>& B, 
-				 const double beta, Epetra_MultiVector& mv )
+    static void MvTimesMatAddMv( double alpha, const Epetra_MultiVector& A, 
+                                 const Teuchos::SerialDenseMatrix<int,double>& B, 
+                                 double beta, Epetra_MultiVector& mv )
     { 
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
       Epetra_MultiVector B_Pvec(::Copy, LocalMap, B.values(), B.stride(), B.numCols());
@@ -602,7 +604,7 @@ namespace Anasazi {
 
     /*! \brief Replace \c mv with \f$\alpha A + \beta B\f$.
      */
-    static void MvAddMv( const double alpha, const Epetra_MultiVector& A, const double beta, const Epetra_MultiVector& B, Epetra_MultiVector& mv )
+    static void MvAddMv( double alpha, const Epetra_MultiVector& A, double beta, const Epetra_MultiVector& B, Epetra_MultiVector& mv )
     { 
       int ret = mv.Update( alpha, A, beta, B, 0.0 );
       assert( ret == 0 );
@@ -610,11 +612,11 @@ namespace Anasazi {
 
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Tmv \f$.
     */
-    static void MvTransMv( const double alpha, const Epetra_MultiVector& A, const Epetra_MultiVector& mv, Teuchos::SerialDenseMatrix<int,double>& B
+    static void MvTransMv( double alpha, const Epetra_MultiVector& A, const Epetra_MultiVector& mv, Teuchos::SerialDenseMatrix<int,double>& B
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
-			   , ConjType conj = Anasazi::CONJ
+                          , ConjType conj = Anasazi::CONJ
 #endif
-			   )
+                        )
     { 
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
       Epetra_MultiVector B_Pvec(::View, LocalMap, B.values(), B.stride(), B.numCols());
@@ -627,9 +629,9 @@ namespace Anasazi {
      */
     static void MvDot( const Epetra_MultiVector& mv, const Epetra_MultiVector& A, std::vector<double>* b
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
-		       , ConjType conj = Anasazi::CONJ
+                      , ConjType conj = Anasazi::CONJ
 #endif
-		       )
+                      )
     {
       int ret = mv.Dot( A, &(*b)[0] );
       assert( ret == 0 );
@@ -664,20 +666,20 @@ namespace Anasazi {
       if ( A.NumVectors() != numvecs ) {
         std::vector<int> index2( numvecs );
         for(int i=0; i<numvecs; i++)
-	  index2[i] = i;
+          index2[i] = i;
         Epetra_MultiVector A_vec(::View, A, &index2[0], numvecs);      
         int ret = temp_vec.Update( 1.0, A_vec, 0.0, A_vec, 0.0 );
-	assert( ret == 0 );
+        assert( ret == 0 );
       }
       else {
         int ret = temp_vec.Update( 1.0, A, 0.0, A, 0.0 );
-	assert( ret == 0 );
+        assert( ret == 0 );
       }
     }
 
     /*! \brief Scale each element of the vectors in \c mv with \c alpha.
      */
-    static void MvScale ( Epetra_MultiVector& mv, const double alpha ) 
+    static void MvScale ( Epetra_MultiVector& mv, double alpha ) 
     { int ret = mv.Scale( alpha ); 
       assert( ret == 0 );
     }
@@ -693,10 +695,10 @@ namespace Anasazi {
       int ret = 0;
       std::vector<int> tmp_index( 1, 0 );
       for (int i=0; i<numvecs; i++) {
-	Epetra_MultiVector temp_vec(::View, mv, &tmp_index[0], 1);
+        Epetra_MultiVector temp_vec(::View, mv, &tmp_index[0], 1);
         ret = temp_vec.Scale( alpha[i] );
-	assert (ret == 0);
-	tmp_index[0]++;
+        assert (ret == 0);
+        tmp_index[0]++;
       }
     }
 
@@ -749,8 +751,8 @@ namespace Anasazi {
       applies the Epetra_Operator \c Op to it resulting in the Epetra_MultiVector \c y.
     */    
     static void Apply ( const Epetra_Operator& Op, 
-			      const Epetra_MultiVector& x, 
-			      Epetra_MultiVector& y )
+                        const Epetra_MultiVector& x, 
+                        Epetra_MultiVector& y )
     { 
       TEST_FOR_EXCEPTION( Op.Apply( x, y ) != 0, OperatorError, "Error in Epetra_Operator::Apply()!" );
     }

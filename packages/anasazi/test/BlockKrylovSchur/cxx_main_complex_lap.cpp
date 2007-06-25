@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
   int dim = 10;
   
   // Build the problem matrix
-  RefCountPtr< MyOperator<ST> > K 
+  RefCountPtr< const MyOperator<ST> > K 
     = rcp( new MyOperator<ST>(dim) );
 
   // Create initial vectors

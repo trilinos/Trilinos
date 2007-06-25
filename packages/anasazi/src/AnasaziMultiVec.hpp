@@ -115,19 +115,19 @@ public:
 	/*! \brief Update \c *this with \c alpha * \c A * \c B + \c beta * (\c *this).
 	*/
 
-	virtual void MvTimesMatAddMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, 
-		const Teuchos::SerialDenseMatrix<int,ScalarType>& B, const ScalarType beta ) = 0;
+	virtual void MvTimesMatAddMv ( ScalarType alpha, const MultiVec<ScalarType>& A, 
+		const Teuchos::SerialDenseMatrix<int,ScalarType>& B, ScalarType beta ) = 0;
 
 	/*! \brief Replace \c *this with \c alpha * \c A + \c beta * \c B.
 	*/
 
-	virtual void MvAddMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, const ScalarType beta, const MultiVec<ScalarType>& B ) = 0;
+	virtual void MvAddMv ( ScalarType alpha, const MultiVec<ScalarType>& A, ScalarType beta, const MultiVec<ScalarType>& B ) = 0;
 
 	/*! \brief Compute a dense matrix \c B through the matrix-matrix multiply 
 	   \c alpha * \c A^T * (\c *this).
 	*/
 
-	virtual void MvTransMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, Teuchos::SerialDenseMatrix<int,ScalarType>& B
+	virtual void MvTransMv ( ScalarType alpha, const MultiVec<ScalarType>& A, Teuchos::SerialDenseMatrix<int,ScalarType>& B
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
 				 , ConjType conj = Anasazi::CONJ
 #endif				 
@@ -165,7 +165,7 @@ public:
 	/*! \brief Scale each element of the vectors in \c *this with \c alpha.
 	*/
 
-	virtual void MvScale ( const ScalarType alpha ) = 0;
+	virtual void MvScale ( ScalarType alpha ) = 0;
 
 	/*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
 	*/
@@ -180,7 +180,7 @@ public:
 	/*! \brief Replace each element of the vectors in \c *this with \c alpha.
 	*/
 
-	virtual void MvInit ( const ScalarType alpha ) = 0;
+	virtual void MvInit ( ScalarType alpha ) = 0;
 
 	//@}
   //! @name Print method
@@ -311,7 +311,7 @@ public:
 
     /*! \brief Scale each element of the vectors in \c *this with \c alpha.
      */    
-    static void MvScale ( MultiVec<ScalarType>& mv, const ScalarType alpha )
+    static void MvScale ( MultiVec<ScalarType>& mv, ScalarType alpha )
     { mv.MvScale( alpha ); }
     
     /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].

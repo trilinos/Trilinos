@@ -43,7 +43,7 @@ namespace Anasazi {
   // Construction/Destruction
   
   EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map, double * array, 
-				 const int numvecs, const int stride)
+				                         const int numvecs, const int stride)
     : Epetra_MultiVector(Copy, Map, array, stride, numvecs) 
   {
   }
@@ -55,8 +55,9 @@ namespace Anasazi {
   }
   
   
-  EpetraMultiVec::EpetraMultiVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, 				
-				 const std::vector<int>& index )
+  EpetraMultiVec::EpetraMultiVec(Epetra_DataAccess CV, 
+                                 const Epetra_MultiVector& P_vec, 				
+				                         const std::vector<int>& index )
     : Epetra_MultiVector(CV, P_vec, &(const_cast<std::vector<int> &>(index))[0], index.size())
   {
   }
@@ -134,8 +135,8 @@ namespace Anasazi {
   //
   //-------------------------------------------------------------
   
-  void EpetraMultiVec::MvTimesMatAddMv ( const double alpha, const MultiVec<double>& A, 
-					 const Teuchos::SerialDenseMatrix<int,double>& B, const double beta ) 
+  void EpetraMultiVec::MvTimesMatAddMv ( double alpha, const MultiVec<double>& A, 
+      const Teuchos::SerialDenseMatrix<int,double>& B, double beta ) 
   {
     Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
     Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
@@ -153,8 +154,8 @@ namespace Anasazi {
   //
   //-------------------------------------------------------------
   
-  void EpetraMultiVec::MvAddMv ( const double alpha , const MultiVec<double>& A, 
-				 const double beta, const MultiVec<double>& B) 
+  void EpetraMultiVec::MvAddMv ( double alpha , const MultiVec<double>& A, 
+				 double beta, const MultiVec<double>& B) 
   {
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
     assert(A_vec!=NULL);
@@ -171,7 +172,7 @@ namespace Anasazi {
   //
   //-------------------------------------------------------------
   
-  void EpetraMultiVec::MvTransMv ( const double alpha, const MultiVec<double>& A,
+  void EpetraMultiVec::MvTransMv ( double alpha, const MultiVec<double>& A,
 				   Teuchos::SerialDenseMatrix<int,double>& B
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
 				   , ConjType conj
@@ -278,8 +279,8 @@ namespace Anasazi {
   //
   
   EpetraGenOp::EpetraGenOp(const Teuchos::RefCountPtr<Epetra_Operator> &AOp,
-			   const Teuchos::RefCountPtr<Epetra_Operator> &MOp,
-			   bool isAInverse_) 
+			                     const Teuchos::RefCountPtr<Epetra_Operator> &MOp,
+			                     bool isAInverse_) 
     : isAInverse( isAInverse_ ), Epetra_AOp(AOp), Epetra_MOp(MOp) 
   {
   }
@@ -373,7 +374,7 @@ namespace Anasazi {
   // AnasaziOperator constructors
   //
   EpetraSymOp::EpetraSymOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op, 
-			   const bool isTrans) 
+			                     bool isTrans) 
     : Epetra_Op(Op), isTrans_(isTrans)
   {
   }
@@ -385,7 +386,7 @@ namespace Anasazi {
   // AnasaziOperator applications
   //
   void EpetraSymOp::Apply ( const MultiVec<double>& X, 
-				  MultiVec<double>& Y ) const 
+				                          MultiVec<double>& Y ) const 
   {
     int info=0;
     MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
@@ -514,7 +515,8 @@ namespace Anasazi {
   //
   // Anasazi::Operator constructors
   //
-  EpetraSymMVOp::EpetraSymMVOp(const Teuchos::RefCountPtr<Epetra_MultiVector> &MV, const bool isTrans) 
+  EpetraSymMVOp::EpetraSymMVOp(const Teuchos::RefCountPtr<const Epetra_MultiVector> &MV, 
+                               bool isTrans) 
     : Epetra_MV(MV), isTrans_(isTrans)
   {
     if (isTrans)
@@ -572,8 +574,8 @@ namespace Anasazi {
   //
   // Anasazi::Operator constructors
   //
-  EpetraWSymMVOp::EpetraWSymMVOp(const Teuchos::RefCountPtr<Epetra_MultiVector> &MV, 
-                                const Teuchos::RefCountPtr<Epetra_Operator> &OP ) 
+  EpetraWSymMVOp::EpetraWSymMVOp(const Teuchos::RefCountPtr<const Epetra_MultiVector> &MV, 
+                                 const Teuchos::RefCountPtr<Epetra_Operator> &OP ) 
     : Epetra_MV(MV), Epetra_OP(OP)
   {
       MV_blockmap = Teuchos::rcp( &Epetra_MV->Map(), false );

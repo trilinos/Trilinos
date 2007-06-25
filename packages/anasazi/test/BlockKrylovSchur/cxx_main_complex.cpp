@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
     cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
   }
   // Build the problem matrix
-  RefCountPtr< MyBetterOperator<ST> > K 
+  RefCountPtr< const MyBetterOperator<ST> > K 
     = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,&cvals[0]) );
 
   // Create initial vectors
