@@ -929,6 +929,7 @@ AC_CONFIG_FILES([
                 test/epetra/MultiPhysics/Makefile
                 test/epetra/DS6.5.1/Makefile
                 test/epetra/Brusselator/Makefile
+                test/epetra/PelletTransport/Makefile
                 test/epetra/FiniteDifferenceColoring/Makefile
                 test/petsc/Makefile
 		])
