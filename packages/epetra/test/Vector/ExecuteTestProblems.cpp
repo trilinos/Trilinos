@@ -245,19 +245,23 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   // Test range checking for operator[](int)
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   try {
+  if (verbose) cout << "XXXXX Testing operator[A.MyLength()] bounds check     ";
     A[A.MyLength()]; // Should throw!
     // If we get here the test failed!
     EPETRA_TEST_ERR( 1, ierr );
   }
   catch ( const int& err_code ) {
+  if (verbose) cout << "\t Checked OK" << endl;
     EPETRA_TEST_ERR( ( err_code == -99 ? 0 : 1 ), ierr );
   }
   try {
+  if (verbose) cout << "XXXXX Testing operator[-1] bounds check     ";
     A[-1]; // Should throw!
     // If we get here the test failed!
     EPETRA_TEST_ERR( 1, ierr );
   }
   catch ( const int& err_code ) {
+  if (verbose) cout << "\t Checked OK" << endl;
     EPETRA_TEST_ERR( ( err_code == -99 ? 0 : 1 ), ierr );
   }
 #endif
