@@ -1,9 +1,9 @@
 #include "ml_config.h"
+#if defined(HAVE_ML_EPETRA)
 #include "Epetra_Multi_CrsMatrix.h"
 #include "ml_epetra.h"
 #include "ml_epetra_utils.h"
 #include "ml_mat_formats.h"
-#if defined(HAVE_ML_EPETRA)
 
 #include "Epetra_Comm.h"
 #ifdef ML_MPI

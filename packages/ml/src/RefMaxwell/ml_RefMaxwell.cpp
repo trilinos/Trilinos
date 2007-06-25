@@ -1,4 +1,5 @@
 #include "ml_config.h"
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT) && defined(HAVE_ML_IFPACK)
 #include <string.h>
 #include "ml_RefMaxwell.h"
 #include "ml_epetra.h"
@@ -7,7 +8,6 @@
 #include "ml_RefMaxwell_11_Operator.h"
 #include "ml_EdgeMatrixFreePreconditioner.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT) && defined(HAVE_ML_IFPACK)
 #include "EpetraExt_MatrixMatrix.h" //haq
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_CrsMatrixIn.h"//haq

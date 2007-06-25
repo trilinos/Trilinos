@@ -35,6 +35,7 @@ Modified by:      $Author$
 
 
 #include "ml_config.h"
+#if defined(HAVE_ML_EPETRA)
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -130,3 +131,28 @@ int test_bug2863(Epetra_Comm& Comm, bool verbose)
 
   return 0;
 }
+#else
+
+#include <stdlib.h>
+#include <stdio.h>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
+
+int main(int argc, char *argv[])
+{
+#ifdef HAVE_MPI
+  MPI_Init(&argc,&argv);
+#endif
+
+  puts("Please configure ML with:");
+  puts("--enable-epetra");
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+
+  exit(EXIT_SUCCESS);
+}
+
+#endif /*HAVE_ML_EPETRA*/

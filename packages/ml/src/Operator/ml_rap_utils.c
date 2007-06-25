@@ -326,6 +326,7 @@ void ML_get_matrix_row(ML_Operator *input_matrix, int N_requested_rows,
    }
 }
 
+#ifdef HAVE_ML_AZTECOO
 void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
         int requested_rows[], int *allocated_space, int **columns,
         int **values, int row_lengths[], int index)
@@ -414,6 +415,8 @@ void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
          (*columns)[i+index] = mapper[(*columns)[index+i]];
    }
 }
+#endif /*ifdef HAVE_ML_AZTECOO*/
+
 void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
         int requested_rows[], int *allocated_space, int **columns,
         double **values, int row_lengths[], int index)

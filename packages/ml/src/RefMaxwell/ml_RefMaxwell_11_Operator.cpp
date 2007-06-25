@@ -1,9 +1,9 @@
 #include "ml_config.h"
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_EPETRAEXT)
 #include "ml_epetra.h"
 #include "ml_epetra.h"
 #include "ml_RefMaxwell_11_Operator.h"
 #include "ml_epetra_utils.h"
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_EPETRAEXT)
 #include "EpetraExt_Transpose_RowMatrix.h"
 #include "EpetraExt_SolverMap_CrsMatrix.h"
 #include "EpetraExt_MatrixMatrix.h" //haq

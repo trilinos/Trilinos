@@ -1,10 +1,10 @@
 #include "ml_config.h"
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 #include "ml_EdgeMatrixFreePreconditioner.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_epetra.h"
 #include "ml_epetra_utils.h"
 #include "ml_mat_formats.h"
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 
 //mucho hax
 void cms_residual_check(const char * tag, const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
