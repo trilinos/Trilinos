@@ -161,22 +161,6 @@ DoubleAvoid<double> {
  template<typename Double> class ADvari_block;
  template<typename Double> class ADvarn;
  template<typename Double> class Derp;
- template<typename Double> void AD_Indep(ADvar<Double>&);
- template<typename Double> void AD_Indep1(Double*, ADvar<Double>&);
-
-// The silliness here and below involving AD_Indep, AD_Indep1, AD_Const
-// and AD_Const1 instead of just AD_Indep and AD_Const is for portability:
-// friend declarations work more portably with AD_Indep1 and AD_Const1,
-// apparently because they involve Double explicitly in their signatures.
-
-#ifndef RAD_AUTO_AD_Const
- template<typename Double> struct
-AD_IndepVlist {
-	typedef ADvari<Double> ADVari;
-	AD_IndepVlist *next;
-	ADVari *v;
-	};
-#endif
 
  template<typename Double> struct
 ADmemblock {	// We get memory in ADmemblock chunks and never give it back,
@@ -227,15 +211,7 @@ ADcontext {	// A singleton class: one instance in radops.c
 	int rad_busy_blocks;
 	ADMemblock *rad_Oldcurmb;
 #endif
-#ifdef RAD_AUTO_AD_Const
  public:
-#else
- public:
-	typedef AD_IndepVlist<Double> AD_INdepVlist;
-	AD_INdepVlist *IVfirst;
-	AD_INdepVlist **IVnextp;
-	static AD_INdepVlist *AD_Indep_vars();
-#endif
 	static const Double One, negOne;
 	ADcontext();
 	void *Memalloc(size_t len);
@@ -590,7 +566,6 @@ IndepADvar {		// an independent ADvar
 		}
  protected:
 	static void AD_Const(const IndepADvar&);
-	static void AD_Indep(IndepADvar&);
 	mutable ADvari<Double> *cv;
  public:
 	typedef Double value_type;
@@ -753,7 +728,6 @@ ADvar: public IndepADvar<Double> {	// an "active" variable
 	ADvar(int i)	{ ADvar_ctr(Double(i)); }
 	ADvar(long i)	{ ADvar_ctr(Double(i)); }
 	inline ~ADvar() {}
-	friend void AD_Indep1<>(Double*, ADvar&);
 #ifdef RAD_AUTO_AD_Const
 	inline ADvar(IndepADVar &x) {
 		this->cv = x.cv ? new ADVar1(this, x) : 0;
@@ -811,16 +785,6 @@ ADvar: public IndepADvar<Double> {	// an "active" variable
 	static inline void Weighted_Gradcomp(int n, ADvar **v, Double *w)
 				{ ADcontext<Double>::Weighted_Gradcomp(n, v, w); }
 	};
-
-template<typename Double>
- inline void AD_Indep1(Double *unused, ADvar<Double>&v) {
-#ifndef RAD_AUTO_AD_Const
-	IndepADvar<Double>::AD_Indep(*(IndepADvar<Double>*)&v);
-#endif
-	}
-
-template<typename Double>
- inline void AD_Indep(ADvar<Double>&v) { AD_Indep1((Double*)0, v); }
 
 template<typename Double>
  inline void AD_Const1(Double *notused, const IndepADvar<Double>&v)
@@ -1075,14 +1039,6 @@ template<typename Double>
 		LastDerp = this;
 		}
 
-#ifndef RAD_AUTO_AD_Const
-template<typename Double> inline Double Val(AD_IndepVlist<Double> *x)
-{ return x->v->Val; }
-
-template<typename Double> inline Double Adj(AD_IndepVlist<Double> *x)
-{ return x->v->aval; }
-#endif
-
 /**** radops ****/
 
 template<typename Double> Derp<Double> *Derp<Double>::LastDerp = 0;
@@ -1126,10 +1082,6 @@ ADcontext<Double>::ADcontext()
 	Ainext = fb->pADvari;
 	fb->next = fb->prev = 0;
 	fb->limit = Ailimit = fb->pADvari + ADVari_block::Gulp;
-#ifndef RAD_AUTO_AD_Const
-	IVfirst = 0;
-	IVnextp = &IVfirst;
-#endif
 	rad_need_reinit = 0;
 #ifdef RAD_DEBUG_BLOCKKEEP
 	rad_busy_blocks = 0;
@@ -1187,8 +1139,6 @@ ADcontext<Double>::new_ADmemblock(size_t len)
 			Busy = mb;
 			Mbase = (char*)First->memblk;
 			Mleft = sizeof(First->memblk);
-			*IVnextp = 0;
-			IVnextp = &IVfirst;
 			}
 
 #else /* !RAD_DEBUG_BLOCKKEEP */
@@ -1204,10 +1154,6 @@ ADcontext<Double>::new_ADmemblock(size_t len)
 		Busy = mb;
 		Mbase = (char*)First->memblk;
 		Mleft = sizeof(First->memblk);
-#ifndef RAD_AUTO_AD_Const
-		IVfirst = 0;
-		IVnextp = &IVfirst;
-#endif
 #endif /*RAD_DEBUG_BLOCKKEEP*/
 		if (Mleft >= len)
 			return Mbase + (Mleft -= len);
@@ -1416,29 +1362,11 @@ ADcontext<Double>::Weighted_Gradcomp(int n, ADVar **V, Double *w)
 		}
 
  template<typename Double>
-#ifdef RAD_AUTO_AD_Const
- inline
-#endif
- void
-IndepADvar<Double>::AD_Indep(IndepADvar<Double> &v)
-{
-#ifndef RAD_AUTO_AD_Const
-	typedef AD_IndepVlist<Double> AD_INdepVlist;
-
-	AD_INdepVlist *x = (AD_INdepVlist *)ADVari::adc.Memalloc(sizeof(AD_INdepVlist));
-	*ADVari::adc.IVnextp = x;
-	ADVari::adc.IVnextp = &x->next;
-	x->v = v.cv;
-#endif
-	}
-
- template<typename Double>
 IndepADvar<Double>::IndepADvar(Ttype d)
 {
 
 	ADVari *x = new ADVari(Hv_const, d);
 	cv = x;
-	AD_Indep(*(ADVar*)this);
 	}
 
  template<typename Double>
@@ -1447,7 +1375,6 @@ IndepADvar<Double>::IndepADvar(double i)
 
 	ADVari *x = new ADVari(Hv_const, Double(i));
 	cv = x;
-	AD_Indep(*(ADVar*)this);
 	}
 
  template<typename Double>
@@ -1456,7 +1383,6 @@ IndepADvar<Double>::IndepADvar(int i)
 
 	ADVari *x = new ADVari(Hv_const, Double(i));
 	cv = x;
-	AD_Indep(*(ADVar*)this);
 	}
 
  template<typename Double>
@@ -1465,7 +1391,6 @@ IndepADvar<Double>::IndepADvar(long i)
 
 	ADVari *x = new ADVari(Hv_const, Double(i));
 	cv = x;
-	AD_Indep(*(ADVar*)this);
 	}
 
  template<typename Double>
@@ -1593,7 +1518,6 @@ IndepADvar<Double>::operator=(Double d)
 	this->cv = new ADVari(Hv_const, this,d);
 #else
 	this->cv = new ADVari(Hv_const, d);
-	AD_Indep(*this);
 #endif
 	return *this;
 	}

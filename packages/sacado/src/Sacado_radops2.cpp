@@ -83,10 +83,6 @@ ADcontext::ADcontext()
 	Ainext = AiFirst.pADvari;
 	AiFirst.next = AiFirst.prev = 0;
 	AiFirst.limit = Ailimit = AiFirst.pADvari + ADvari_block::Gulp;
-#ifndef RAD_AUTO_AD_Const
-	IVfirst = 0;
-	IVnextp = &IVfirst;
-#endif
 	}
 
  void*
@@ -138,8 +134,6 @@ ADcontext::new_ADmemblock(size_t len)
 			Busy = mb;
 			Mbase = (char*)First.memblk;
 			Mleft = sizeof(First.memblk);
-			*IVnextp = 0;
-			IVnextp = &IVfirst;
 			}
 
 #else /* !RAD_DEBUG_BLOCKKEEP */
@@ -165,9 +159,6 @@ ADcontext::new_ADmemblock(size_t len)
 					v->cv = new ADvari(v, a->Val);
 				}
 			}
-#else
-		*ADvari::adc.IVnextp = 0;
-		ADvari::adc.IVnextp = &ADvari::adc.IVfirst;
 #endif /*RAD_AUTO_AD_Const*/
 #endif /* RAD_DEBUG_BLOCKKEEP */
 		if (Mleft >= len)
@@ -272,37 +263,22 @@ IndepADvar::IndepADvar(long d)
 
 #else /*!RAD_AUTO_AD_Const*/
 
- AD_IndepVlist *ADcontext::AD_Indep_vars()
-{ return ADvari::adc.IVfirst; }
-
- void
-IndepADvar::AD_Indep(const IndepADvar &v)
-{
-	AD_IndepVlist *x = (AD_IndepVlist *)ADvari::adc.Memalloc(sizeof(AD_IndepVlist));
-	*ADvari::adc.IVnextp = x;
-	ADvari::adc.IVnextp = &x->next;
-	x->v = (ADvari*)v.cv;
-	}
-
 IndepADvar::IndepADvar(double d)
 {
 	ADvari *x = new ADvari(Hv_const, d);
 	cv = x;
-	AD_Indep(*(ADvar*)this);
 	}
 
 IndepADvar::IndepADvar(int d)
 {
 	ADvari *x = new ADvari(Hv_const, (double)d);
 	cv = x;
-	AD_Indep(*(ADvar*)this);
 	}
 
 IndepADvar::IndepADvar(long d)
 {
 	ADvari *x = new ADvari(Hv_const, (double)d);
 	cv = x;
-	AD_Indep(*(ADvar*)this);
 	}
 
 #endif /*RAD_AUTO_AD_Const*/
@@ -413,7 +389,6 @@ IndepADvar::operator=(double d)
 	cv = new ADvari(Hv_const, this,d);
 #else
 	cv = new ADvari(Hv_const, d);
-	AD_Indep(*this);
 #endif
 	return *this;
 	}

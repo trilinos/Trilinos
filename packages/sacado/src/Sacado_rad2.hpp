@@ -78,14 +78,6 @@ namespace Rad2d { // "2" for 2nd derivatives, "d" for "double"
  class Derp;
  class IndepADvar;
 
-#ifndef RAD_AUTO_AD_Const
- struct
-AD_IndepVlist {
-	AD_IndepVlist *next;
-	ADvari *v;
-	};
-#endif
-
  struct
 ADmemblock {	// We get memory in ADmemblock chunks and never give it back,
 		// but reuse it once computations start anew after call(s) on
@@ -114,11 +106,6 @@ ADcontext {	// A singleton class: one instance in radops.c
 	void *new_ADmemblock(size_t);
 	void new_ADvari_block();
  public:
-#ifndef RAD_AUTO_AD_Const
-	AD_IndepVlist *IVfirst;
-	AD_IndepVlist **IVnextp;
-	static AD_IndepVlist *AD_Indep_vars();
-#endif
 	ADcontext();
 	void *Memalloc(size_t len);
 	static void Gradcomp();
@@ -341,7 +328,6 @@ IndepADvar
 #endif /* RAD_AUTO_AD_Const */
 		}
  protected:
-	static void AD_Indep(const IndepADvar&);
 	static void AD_Const(const IndepADvar&);
 	ADvari *cv;
  public:
@@ -471,7 +457,6 @@ ADvar: public IndepADvar {		// an "active" variable
 		}
 #else
 	friend ADvar& ADvar_operatoreq(ADvar*, const ADvari&);
-	friend void AD_Indep(const ADvar&);
 #ifdef RAD_EQ_ALIAS
 	/* allow aliasing v and w after "v = w;" */
 	inline ADvar(const IndepADvar &x) { cv = x.cv; }
@@ -512,9 +497,6 @@ ADvar: public IndepADvar {		// an "active" variable
 				{ ADcontext::Weighted_Gradcomp(n, v, w); }
 	};
 
-#ifndef RAD_AUTO_AD_Const
- inline void AD_Indep(const ADvar&v) { IndepADvar::AD_Indep(*(const IndepADvar*)&v); }
-#endif
  inline void AD_Const(const IndepADvar&v) { IndepADvar::AD_Const(v); }
 
  class
@@ -638,11 +620,6 @@ inline int operator>=(double L, const ADvari &R) { return L >= R.Val; }
 inline int operator>(const ADvari &L, const ADvari &R) { return L.Val > R.Val; }
 inline int operator>(const ADvari &L, double R) { return L.Val > R; }
 inline int operator>(double L, const ADvari &R) { return L > R.Val; }
-
-#ifndef RAD_AUTO_AD_Const
-inline double Val(const AD_IndepVlist *x) { return x->v->Val; }
-inline double Adj(const AD_IndepVlist *x) { return x->v->aval; }
-#endif
 
 inline ADvari& copy(const IndepADvar &x)
 { return *(new ADvar1(Hv_copy, x.cv->Val, &CADcontext::One, x.cv)); }

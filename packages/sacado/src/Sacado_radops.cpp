@@ -1,29 +1,29 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -71,10 +71,6 @@ ADcontext::ADcontext()
 	Free = 0;
 	Mbase = (char*)First.memblk;
 	Mleft = sizeof(First.memblk);
-#ifndef RAD_AUTO_AD_Const
-	IVfirst = 0;
-	IVnextp = &IVfirst;
-#endif
 	}
 
  void*
@@ -119,8 +115,6 @@ ADcontext::new_ADmemblock(size_t len)
 			Busy = mb;
 			Mbase = (char*)First.memblk;
 			Mleft = sizeof(First.memblk);
-			*IVnextp = 0;
-			IVnextp = &IVfirst;
 			}
 
 #else /* !RAD_DEBUG_BLOCKKEEP */
@@ -146,9 +140,6 @@ ADcontext::new_ADmemblock(size_t len)
 					v->cv = new ADvari(v, a->Val);
 				}
 			}
-#else
-		*ADvari::adc.IVnextp = 0;
-		ADvari::adc.IVnextp = &ADvari::adc.IVfirst;
 #endif /*RAD_AUTO_AD_Const*/
 #endif /* RAD_DEBUG_BLOCKKEEP */
 		if (Mleft >= len)
@@ -236,37 +227,22 @@ IndepADvar::IndepADvar(long d)
 
 #else /*!RAD_AUTO_AD_Const*/
 
- AD_IndepVlist *ADcontext::AD_Indep_vars()
-{ return ADvari::adc.IVfirst; }
-
- void
-IndepADvar::AD_Indep(const IndepADvar &v)
-{
-	AD_IndepVlist *x = (AD_IndepVlist *)ADvari::adc.Memalloc(sizeof(AD_IndepVlist));
-	*ADvari::adc.IVnextp = x;
-	ADvari::adc.IVnextp = &x->next;
-	x->v = (ADvari*)v.cv;
-	}
-
 IndepADvar::IndepADvar(double d)
 {
 	ADvari *x = new ADvari(d);
 	cv = x;
-	AD_Indep(*(ADvar*)this);
 	}
 
 IndepADvar::IndepADvar(int d)
 {
 	ADvari *x = new ADvari((double)d);
 	cv = x;
-	AD_Indep(*(ADvar*)this);
 	}
 
 IndepADvar::IndepADvar(long d)
 {
 	ADvari *x = new ADvari((double)d);
 	cv = x;
-	AD_Indep(*(ADvar*)this);
 	}
 
 #endif /*RAD_AUTO_AD_Const*/
@@ -369,7 +345,6 @@ IndepADvar::operator=(double d)
 	cv = new ADvari(this,d);
 #else
 	cv = new ADvari(d);
-	AD_Indep(*this);
 #endif
 	return *this;
 	}
