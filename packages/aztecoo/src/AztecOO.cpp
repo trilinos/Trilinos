@@ -73,9 +73,9 @@ AztecOO::OperatorData::~OperatorData()
 }
 
 //=============================================================================
-AztecOO::AztecOO(Epetra_Operator * A, 
-                   Epetra_MultiVector * X,
-                   Epetra_MultiVector * B) {
+AztecOO::AztecOO(Epetra_Operator    * A, 
+		 Epetra_MultiVector * X,
+		 Epetra_MultiVector * B) {
   out_stream_ = 0;
   err_stream_ = 0;
 
@@ -146,7 +146,8 @@ AztecOO::AztecOO(const AztecOO& source) {
   AllocAzArrays();
   SetAztecDefaults();
 
-  SetProblem(*source.GetProblem());
+  Epetra_LinearProblem *problem = source.GetProblem();
+  if (problem) SetProblem(*problem);
   SetUserMatrix(source.GetUserMatrix());
   SetUserOperator(source.GetUserOperator());
   SetPrecMatrix(source.GetPrecMatrix());   // Assume user want to base preconditioner on this matrix
@@ -365,6 +366,7 @@ int AztecOO::SetAztecDefaults() {
 int AztecOO::SetProblem(const Epetra_LinearProblem& prob,
                         bool call_SetPrecMatrix) {
 
+  bool prevInConstructor = inConstructor_;
   inConstructor_ = true;  // Shut down complaints about zero pointers for a while
                           //  Although this routine is not a constructor, we treat it like one
   
@@ -392,7 +394,7 @@ int AztecOO::SetProblem(const Epetra_LinearProblem& prob,
     }
   }
     
-  inConstructor_ = false;  // Turn back on
+  inConstructor_ = prevInConstructor;  // Revert to previous value
 
   return(0);
 
