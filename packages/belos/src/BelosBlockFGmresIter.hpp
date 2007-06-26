@@ -26,11 +26,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef BELOS_BLOCK_GMRES_ITER_HPP
-#define BELOS_BLOCK_GMRES_ITER_HPP
+#ifndef BELOS_BLOCK_FGMRES_ITER_HPP
+#define BELOS_BLOCK_FGMRES_ITER_HPP
 
-/*! \file BelosBlockGmresIter.hpp
-    \brief Belos concrete class for performing the block GMRES iteration.
+/*! \file BelosBlockFGmresIter.hpp
+    \brief Belos concrete class for performing the block, flexible GMRES iteration.
 */
 
 #include "BelosConfigDefs.hpp"
@@ -53,9 +53,9 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 /*!	
-  \class Belos::BlockGmresIter
+  \class Belos::BlockFGmresIter
   
-  \brief This class implements the block GMRES iteration, where a
+  \brief This class implements the block flexible GMRES iteration, where a
   block Krylov subspace is constructed.  The QR decomposition of 
   block, upper Hessenberg matrix is performed each iteration to update
   the least squares system and give the current linear system residuals.
@@ -66,7 +66,7 @@
 namespace Belos {
   
 template<class ScalarType, class MV, class OP>
-class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
+class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 
   public:
     
@@ -81,7 +81,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   //! @name Constructors/Destructor
   //@{ 
 
-  /*! \brief %BlockGmresIter constructor with linear problem, solver utilities, and parameter list of solver options.
+  /*! \brief %BlockFGmresIter constructor with linear problem, solver utilities, and parameter list of solver options.
    *
    * This constructor takes pointers required by the linear solver, in addition
    * to a parameter list of options for the linear solver. These options include the following:
@@ -90,31 +90,31 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
    *   - "Restart Timers" = a \c bool specifying whether the timers should be restarted each time iterate() is called. Default: false
    *   - "Keep Hessenberg" = a \c bool specifying whether the upper Hessenberg should be stored separately from the least squares system. Default: false
    */
-  BlockGmresIter( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
-		  const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-		  const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-		  const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
-		  Teuchos::ParameterList &params );
-
+  BlockFGmresIter( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
+		   const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
+		   const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
+		   const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+		   Teuchos::ParameterList &params );
+  
   //! Destructor.
-  virtual ~BlockGmresIter() {};
+  virtual ~BlockFGmresIter() {};
   //@}
-
-
+  
+  
   //! @name Solver methods
   //@{ 
   
-  /*! \brief This method performs block Gmres iterations until the status
+  /*! \brief This method performs block FGmres iterations until the status
    * test indicates the need to stop or an error occurs (in which case, an
    * exception is thrown).
    *
    * iterate() will first determine whether the solver is inintialized; if
    * not, it will call initialize() using default arguments. After
-   * initialization, the solver performs block Gmres iterations until the
+   * initialization, the solver performs block FGmres iterations until the
    * status test evaluates as ::Passed, at which point the method returns to
    * the caller. 
    *
-   * The block Gmres iteration proceeds as follows:
+   * The block FGmres iteration proceeds as follows:
    * -# The operator problem->applyOp() is applied to the newest \c blockSize vectors in the Krylov basis.
    * -# The resulting vectors are orthogonalized against the previous basis vectors, and made orthonormal.
    * -# The Hessenberg matrix is updated.
@@ -129,7 +129,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 
   /*! \brief Initialize the solver to an iterate, providing a complete state.
    *
-   * The %BlockGmresIter contains a certain amount of state, consisting of the current 
+   * The %BlockFGmresIter contains a certain amount of state, consisting of the current 
    * Krylov basis and the associated Hessenberg matrix.
    *
    * initialize() gives the user the opportunity to manually set these,
@@ -170,6 +170,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     GmresIterationState<ScalarType,MV> state;
     state.curDim = curDim_;
     state.V = V_;
+    state.Z = Z_;
     state.H = H_;
     state.R = R_;
     state.z = z_;
@@ -193,7 +194,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   Teuchos::RefCountPtr<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
 
   //! Get the current update to the linear system.
-  /*! \note Some solvers, like GMRES, do not compute updates to the solution every iteration.
+  /*! \note Some solvers, like flexible GMRES, do not compute updates to the solution every iteration.
             This method forces its computation.  Other solvers, like CG, update the solution
             each iteration, so this method will return a zero vector indicating that the linear
             problem contains the current solution.
@@ -218,7 +219,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   //@}
 
   
-    //! @name Accessor methods
+  //! @name Accessor methods
   //@{ 
 
   //! Get a constant reference to the linear problem.
@@ -254,7 +255,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   //
   // Internal methods
   //
-  //! Method for initalizing the state storage needed by block GMRES.
+  //! Method for initalizing the state storage needed by block flexible GMRES.
   void setStateSize();
   
   //
@@ -298,6 +299,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   // State Storage
   //
   Teuchos::RefCountPtr<MV> V_;
+  Teuchos::RefCountPtr<MV> Z_;
   //
   // Projected matrices
   // H_ : Projected matrix from the Krylov factorization AV = VH + FE^T
@@ -314,7 +316,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
   template<class ScalarType, class MV, class OP>
-  BlockGmresIter<ScalarType,MV,OP>::BlockGmresIter(const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
+  BlockFGmresIter<ScalarType,MV,OP>::BlockFGmresIter(const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
 						   const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
 						   const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
 						   const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
@@ -332,7 +334,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   {
     // Get the maximum number of blocks allowed for this Krylov subspace
     TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument,
-                       "Belos::BlockGmresIter::constructor: mandatory parameter 'Num Blocks' is not specified.");
+                       "Belos::BlockFGmresIter::constructor: mandatory parameter 'Num Blocks' is not specified.");
     int nb = Teuchos::getParameter<int>(params, "Num Blocks");
 
     // Set the block size and allocate data
@@ -343,12 +345,12 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the block size and make necessary adjustments.
   template <class ScalarType, class MV, class OP>
-  void BlockGmresIter<ScalarType,MV,OP>::setSize (int blockSize, int numBlocks)
+  void BlockFGmresIter<ScalarType,MV,OP>::setSize (int blockSize, int numBlocks)
   {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
 
-    TEST_FOR_EXCEPTION(numBlocks <= 0 || blockSize <= 0, std::invalid_argument, "Belos::BlockGmresIter::setSize was passed a non-positive argument.");
+    TEST_FOR_EXCEPTION(numBlocks <= 0 || blockSize <= 0, std::invalid_argument, "Belos::BlockFGmresIter::setSize was passed a non-positive argument.");
     if (blockSize == blockSize_ && numBlocks == numBlocks_) {
       // do nothing
       return;
@@ -371,7 +373,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Setup the state storage.
   template <class ScalarType, class MV, class OP>
-  void BlockGmresIter<ScalarType,MV,OP>::setStateSize ()
+  void BlockFGmresIter<ScalarType,MV,OP>::setStateSize ()
   {
     if (!stateStorageInitialized_) {
 
@@ -399,14 +401,14 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 	
 	// Initialize the state storage
         TEST_FOR_EXCEPTION(blockSize_*numBlocks_ > MVT::GetVecLength(*rhsMV),std::invalid_argument,
-                           "Belos::BlockGmresIter::setStateSize(): Cannot generate a Krylov basis with dimension larger the operator!");
+                           "Belos::BlockFGmresIter::setStateSize(): Cannot generate a Krylov basis with dimension larger the operator!");
 
 	// If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
 	if (V_ == Teuchos::null) {
 	  // Get the multivector that is not null.
 	  Teuchos::RefCountPtr<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
 	  TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
-			     "Belos::BlockGmresIter::setStateSize(): linear problem does not specify multivectors to clone from.");
+			     "Belos::BlockFGmresIter::setStateSize(): linear problem does not specify multivectors to clone from.");
 	  V_ = MVT::Clone( *tmp, newsd );
 	}
 	else {
@@ -416,7 +418,22 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 	    V_ = MVT::Clone( *tmp, newsd );
 	  }
 	}
-	
+
+	if (Z_ == Teuchos::null) {
+	  // Get the multivector that is not null.
+	  Teuchos::RefCountPtr<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
+	  TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
+			     "Belos::BlockFGmresIter::setStateSize(): linear problem does not specify multivectors to clone from.");
+	  Z_ = MVT::Clone( *tmp, newsd );
+	}
+	else {
+	  // Generate Z_ by cloning itself ONLY if more space is needed.
+	  if (MVT::GetNumberVecs(*Z_) < newsd) {
+	    Teuchos::RefCountPtr<const MV> tmp = Z_;
+	    Z_ = MVT::Clone( *tmp, newsd );
+	  }
+	} 
+
 	// Generate H_ only if it doesn't exist, otherwise resize it.
 	if (H_ == Teuchos::null)
 	  H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-blockSize_ ) );	
@@ -440,7 +457,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the current update from this subspace.
   template <class ScalarType, class MV, class OP>
-  Teuchos::RefCountPtr<MV> BlockGmresIter<ScalarType,MV,OP>::getCurrentUpdate() const
+  Teuchos::RefCountPtr<MV> BlockFGmresIter<ScalarType,MV,OP>::getCurrentUpdate() const
   {
     //
     // If this is the first iteration of the Arnoldi factorization, 
@@ -453,7 +470,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
       const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
       Teuchos::BLAS<int,ScalarType> blas;
-      currentUpdate = MVT::Clone( *V_, blockSize_ );
+      currentUpdate = MVT::Clone( *Z_, blockSize_ );
       //
       //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
       //
@@ -471,8 +488,8 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       for ( int i=0; i<curDim_; i++ ) {   
         index[i] = i;
       }
-      RefCountPtr<const MV> Vjp1 = MVT::CloneView( *V_, index );
-      MVT::MvTimesMatAddMv( one, *Vjp1, y, zero, *currentUpdate );
+      RefCountPtr<const MV> Zjp1 = MVT::CloneView( *Z_, index );
+      MVT::MvTimesMatAddMv( one, *Zjp1, y, zero, *currentUpdate );
     }
     return currentUpdate;
   }
@@ -480,9 +497,9 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the native residuals stored in this iteration.  
-  // Note:  No residual vector will be returned by Gmres.
+  // Note:  No residual vector will be returned by FGmres.
   template <class ScalarType, class MV, class OP>
-  Teuchos::RefCountPtr<const MV> BlockGmresIter<ScalarType,MV,OP>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const 
+  Teuchos::RefCountPtr<const MV> BlockFGmresIter<ScalarType,MV,OP>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const 
   {
     //
     // NOTE: Make sure the incoming vector is the correct size!
@@ -504,20 +521,20 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void BlockGmresIter<ScalarType,MV,OP>::initialize(GmresIterationState<ScalarType,MV> newstate)
+  void BlockFGmresIter<ScalarType,MV,OP>::initialize(GmresIterationState<ScalarType,MV> newstate)
   {
     // Initialize the state storage if it isn't already.
     if (!stateStorageInitialized_) 
       setStateSize();
 
     TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
-		       "Belos::BlockGmresIter::initialize(): Cannot initialize state storage!");
+		       "Belos::BlockFGmresIter::initialize(): Cannot initialize state storage!");
     
-    // NOTE:  In BlockGmresIter, V and Z are required!!!  
+    // NOTE:  In BlockFGmresIter, V and Z are required!!!  
     // inconsitent multivectors widths and lengths will not be tolerated, and
     // will be treated with exceptions.
     //
-    std::string errstr("Belos::BlockGmresIter::initialize(): Specified multivectors must have a consistent length and width.");
+    std::string errstr("Belos::BlockFGmresIter::initialize(): Specified multivectors must have a consistent length and width.");
 
     if (newstate.V != Teuchos::null && newstate.z != Teuchos::null) {
 
@@ -541,7 +558,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       if (newstate.V != V_) {
         // only copy over the first block and print a warning.
         if (curDim_ == 0 && lclDim > blockSize_) {
-	  om_->stream(Warnings) << "Belos::BlockGmresIter::initialize(): the solver was initialized with a kernel of " << lclDim << endl
+	  om_->stream(Warnings) << "Belos::BlockFGmresIter::initialize(): the solver was initialized with a kernel of " << lclDim << endl
 				<< "The block size however is only " << blockSize_ << endl
 				<< "The last " << lclDim - blockSize_ << " vectors will be discarded." << endl;
 	}
@@ -559,22 +576,22 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       if (newstate.z != z_) {
         z_->putScalar();
         Teuchos::SerialDenseMatrix<int,ScalarType> newZ(Teuchos::View,*newstate.z,curDim_+blockSize_,blockSize_);
-        Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclZ;
-        lclZ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*z_,curDim_+blockSize_,blockSize_) );
-        lclZ->assign(newZ);
+        Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclz;
+        lclz = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*z_,curDim_+blockSize_,blockSize_) );
+        lclz->assign(newZ);
 
         // done with local pointers
-        lclZ = Teuchos::null;
+        lclz = Teuchos::null;
       }
 
     }
     else {
 
       TEST_FOR_EXCEPTION(newstate.V == Teuchos::null,std::invalid_argument,
-                         "Belos::BlockGmresIter::initialize(): BlockGmresStateIterState does not have initial kernel V_0.");
+                         "Belos::BlockFGmresIter::initialize(): BlockFGmresStateIterState does not have initial kernel V_0.");
 
       TEST_FOR_EXCEPTION(newstate.z == Teuchos::null,std::invalid_argument,
-                         "Belos::BlockGmresIter::initialize(): BlockGmresStateIterState does not have initial norms z_0.");
+                         "Belos::BlockFGmresIter::initialize(): BlockFGmresStateIterState does not have initial norms z_0.");
     }
 
     // the solver is initialized
@@ -597,7 +614,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
   template <class ScalarType, class MV, class OP>
-  void BlockGmresIter<ScalarType,MV,OP>::iterate()
+  void BlockFGmresIter<ScalarType,MV,OP>::iterate()
   {
     //
     // Allocate/initialize data structures
@@ -630,10 +647,15 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       // This is used for orthogonalization and for computing V^H K H
       for (int i=0; i<blockSize_; i++) { curind[i] = curDim_ + i; }
       Teuchos::RefCountPtr<MV> Vprev = MVT::CloneView(*V_,curind);
+      Teuchos::RefCountPtr<MV> Znext = MVT::CloneView(*Z_,curind);
 
-      // Compute the next vector in the Krylov basis:  Vnext = Op*Vprev
-      lp_->apply(*Vprev,*Vnext);
+      // Compute the next vector in the Krylov basis:  Znext = M*Vprev
+      lp_->applyRightPrec(*Vprev,*Znext);
       Vprev = Teuchos::null;
+
+      // Compute the next vector in the Krylov basis:  Vnext = A*Znext
+      lp_->applyOp(*Znext,*Vnext);
+      Znext = Teuchos::null;
       
       // Remove all previous Krylov basis vectors from Vnext      
       // Get a view of all the previous vectors
@@ -655,7 +677,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 			     ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
       int rank = ortho_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
       TEST_FOR_EXCEPTION(rank != blockSize_,GmresIterationOrthoFailure,
-			 "Belos::BlockGmresIter::iterate(): couldn't generate basis of full rank.");
+			 "Belos::BlockFGmresIter::iterate(): couldn't generate basis of full rank.");
       //
       // V has been extended, and H has been extended. 
       //
@@ -690,7 +712,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 
   
   template<class ScalarType, class MV, class OP>
-  void BlockGmresIter<ScalarType,MV,OP>::updateLSQR( int dim )
+  void BlockFGmresIter<ScalarType,MV,OP>::updateLSQR( int dim )
   {
     int i, j, maxidx;
     ScalarType sigma, mu, vscale, maxelem;
@@ -793,4 +815,4 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 
 } // end Belos namespace
 
-#endif /* BELOS_BLOCK_GMRES_ITER_HPP */
+#endif /* BELOS_BLOCK_FGMRES_ITER_HPP */

@@ -153,4 +153,4 @@ class CGIteration : virtual public Iteration<ScalarType,MV,OP> {
 
 } // end Belos namespace
 
-#endif /* BELOS_ITERATION_HPP */
+#endif /* BELOS_CG_ITERATION_HPP */

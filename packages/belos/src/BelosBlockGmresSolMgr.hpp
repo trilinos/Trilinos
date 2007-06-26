@@ -39,7 +39,9 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
 
+#include "BelosGmresIteration.hpp"
 #include "BelosBlockGmresIter.hpp"
+#include "BelosBlockFGmresIter.hpp"
 #include "BelosDGKSOrthoManager.hpp"
 #include "BelosICGSOrthoManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
@@ -53,6 +55,10 @@
 
 /** \example BlockGmres/BlockGmresEpetraEx.cpp
     This is an example of how to use the Belos::BlockGmresSolMgr solver manager.
+    \example BlockGmres/BlockPrecGmresEpetraEx.cpp
+    This is an example of how to use the Belos::BlockGmresSolMgr solver manager with an Ifpack preconditioner.
+    \example BlockGmres/BlockFlexGmresEpetraEx.cpp
+    This is an example of how to use the Belos::BlockGmresSolMgr solver manager with flexible Gmres.
 */
 
 /*! \class Belos::BlockGmresSolMgr
@@ -249,6 +255,7 @@ namespace Belos {
     static const int maxIters_default_;
     static const bool adaptiveBlockSize_default_;
     static const bool showMaxResNormOnly_default_;
+    static const bool flexibleGmres_default_;
     static const int blockSize_default_;
     static const int numBlocks_default_;
     static const int verbosity_default_;
@@ -263,7 +270,7 @@ namespace Belos {
     MagnitudeType convtol_, orthoKappa_;
     int maxRestarts_, maxIters_;
     int blockSize_, numBlocks_, verbosity_, outputFreq_;
-    bool adaptiveBlockSize_, showMaxResNormOnly_;
+    bool adaptiveBlockSize_, showMaxResNormOnly_, isFlexible_;
     std::string orthoType_; 
     std::string impResScale_, expResScale_;
     
@@ -294,6 +301,9 @@ const bool BlockGmresSolMgr<ScalarType,MV,OP>::adaptiveBlockSize_default_ = true
 
 template<class ScalarType, class MV, class OP>
 const bool BlockGmresSolMgr<ScalarType,MV,OP>::showMaxResNormOnly_default_ = false;
+
+template<class ScalarType, class MV, class OP>
+const bool BlockGmresSolMgr<ScalarType,MV,OP>::flexibleGmres_default_ = false;
 
 template<class ScalarType, class MV, class OP>
 const int BlockGmresSolMgr<ScalarType,MV,OP>::blockSize_default_ = 1;
@@ -337,6 +347,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
   outputFreq_(outputFreq_default_),
   adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
+  isFlexible_(flexibleGmres_default_),
   orthoType_(orthoType_default_),
   impResScale_(impResScale_default_),
   expResScale_(expResScale_default_),
@@ -369,6 +380,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
   outputFreq_(outputFreq_default_),
   adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
+  isFlexible_(flexibleGmres_default_),
   orthoType_(orthoType_default_),
   impResScale_(impResScale_default_),
   expResScale_(expResScale_default_),
@@ -667,6 +679,11 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountP
     }  
   }
 
+  // Determine whether this solver should be "flexible".
+  if (params->isParameter("Flexible Gmres")) {
+    isFlexible_ = Teuchos::getParameter<bool>(*params,"Flexible Gmres");
+  }
+
   // Create the timer if we need to.
   if (timerSolve_ == Teuchos::null) {
     string solveLabel = label_ + ": BlockGmresSolMgr total solve time";
@@ -694,6 +711,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setDefaultParams()
   defaultParams_->set("Output Frequency", outputFreq_default_);  
   defaultParams_->set("Output Stream", outputStream_default_);
   defaultParams_->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_);
+  defaultParams_->set("Flexible Gmres", flexibleGmres_default_);
   defaultParams_->set("Implicit Residual Scaling", impResScale_default_);
   defaultParams_->set("Explicit Residual Scaling", expResScale_default_);
   defaultParams_->set("Timer Label", label_default_);
@@ -720,6 +738,11 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
   TEST_FOR_EXCEPTION(!problem_->isProblemSet(),BlockGmresSolMgrLinearProblemFailure,
                      "Belos::BlockGmresSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
+
+  if (isFlexible_) {
+    TEST_FOR_EXCEPTION(problem_->getRightPrec()==Teuchos::null,BlockGmresSolMgrLinearProblemFailure,
+                       "Belos::BlockGmresSolMgr::solve(): Linear problem does not have a preconditioner, call setRightPrec().");
+  }
 
   // Create indices for the linear systems to be solved.
   int startPtr = 0;
@@ -776,8 +799,12 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockGmres solver
 
-  Teuchos::RefCountPtr<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter
-    = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
+  Teuchos::RefCountPtr<GmresIteration<ScalarType,MV,OP> > block_gmres_iter;
+
+  if (isFlexible_)
+    block_gmres_iter = Teuchos::rcp( new BlockFGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
+  else
+    block_gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
   
   // Enter solve() iterations
   {
@@ -808,18 +835,18 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       problem_->computeCurrResVec( &*V_0 );
 
       // Get a matrix to hold the orthonormalization coefficients.
-      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > Z_0 = 
+      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > z_0 = 
         rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(blockSize_, blockSize_) );
       
       // Orthonormalize the new V_0
-      int rank = ortho_->normalize( *V_0, Z_0 );
+      int rank = ortho_->normalize( *V_0, z_0 );
       TEST_FOR_EXCEPTION(rank != blockSize_,BlockGmresSolMgrOrthoFailure,
 			 "Belos::BlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
      
       // Set the new state and initialize the solver.
-      BlockGmresIterState<ScalarType,MV> newstate;
+      GmresIterationState<ScalarType,MV> newstate;
       newstate.V = V_0;
-      newstate.Z = Z_0;
+      newstate.z = z_0;
       newstate.curDim = 0;
       block_gmres_iter->initialize(newstate);
       int numRestarts = 0;
@@ -869,7 +896,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    problem_->updateSolution( update, true );
 	    
 	    // Get the state.
-	    BlockGmresIterState<ScalarType,MV> oldState = block_gmres_iter->getState();
+	    GmresIterationState<ScalarType,MV> oldState = block_gmres_iter->getState();
 	    
 	    // Compute the restart vector.
 	    // Get a view of the current Krylov basis.
@@ -877,18 +904,18 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    problem_->computeCurrResVec( &*V_0 );
 
 	    // Get a view of the first block of the Krylov basis.
-            Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > Z_0 = 
+            Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > z_0 = 
               rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(blockSize_, blockSize_) );
 	    
 	    // Orthonormalize the new V_0
-	    int rank = ortho_->normalize( *V_0, Z_0 );
+	    int rank = ortho_->normalize( *V_0, z_0 );
 	    TEST_FOR_EXCEPTION(rank != blockSize_,BlockGmresSolMgrOrthoFailure,
 			       "Belos::BlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors after restart.");
 
 	    // Set the new state and initialize the solver.
-	    BlockGmresIterState<ScalarType,MV> newstate;
+	    GmresIterationState<ScalarType,MV> newstate;
 	    newstate.V = V_0;
-	    newstate.Z = Z_0;
+	    newstate.z = z_0;
 	    newstate.curDim = 0;
 	    block_gmres_iter->initialize(newstate);
 
@@ -906,7 +933,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 			       "Belos::BlockGmresSolMgr::solve(): Invalid return from BlockGmresIter::iterate().");
 	  }
 	}
-        catch (BlockGmresIterOrthoFailure e) {
+        catch (GmresIterationOrthoFailure e) {
 	  // If the block size is not one, it's not considered a lucky breakdown.
 	  if (blockSize_ != 1) {
 	    printer_->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration " 
@@ -992,6 +1019,9 @@ std::string BlockGmresSolMgr<ScalarType,MV,OP>::description() const
   std::ostringstream oss;
   oss << "Belos::BlockGmresSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
   oss << "{";
+  if (isFlexible_) {
+    oss << "Variant=\'Flexible\', ";
+  }
   oss << "Ortho Type='"<<orthoType_<<"\', Block Size=" <<blockSize_;
   oss << ", Num Blocks=" <<numBlocks_<< ", Max Restarts=" << maxRestarts_;
   oss << "}";
