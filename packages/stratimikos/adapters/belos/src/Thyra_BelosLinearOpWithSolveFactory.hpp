@@ -586,6 +586,9 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       restartTimers = _gmresPL.get(Restart_Timers_name,Restart_Timers_default);
     }
     solverPL->set(Restart_Timers_name, restartTimers);
+    if (GMRES_Variant == "Flexible") {
+      solverPL->set("Flexible Gmres", true);
+    }
     // 
     // Create the solver
     // 
