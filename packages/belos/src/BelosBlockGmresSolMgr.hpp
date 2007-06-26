@@ -470,6 +470,17 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountP
     }
   }
 
+  // Determine whether this solver should be "flexible".
+  if (params->isParameter("Flexible Gmres")) {
+    isFlexible_ = Teuchos::getParameter<bool>(*params,"Flexible Gmres");
+    if (isFlexible_ && expConvTest_!=Teuchos::null) {
+      // Use an implicit convergence test if the Gmres solver is flexible
+      expConvTest_ == Teuchos::null;
+      convTest_ = Teuchos::null;
+    }
+  }
+
+
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
     string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
@@ -564,7 +575,6 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountP
   }
  
   // Check for a change in scaling, if so we need to build new residual tests.
-  bool newImpResTest = false, newExpResTest = false; 
   if (params->isParameter("Implicit Residual Scaling")) {
     string tempImpResScale = Teuchos::getParameter<string>( *params, "Implicit Residual Scaling" );
 
@@ -580,7 +590,9 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountP
           impConvTest_->defineScaleForm( impResScaleType, Belos::TwoNorm );
         }
         catch (exception& e) { 
-	  newImpResTest = true;
+          // Delete the convergence test so it gets constructed again.
+	  impConvTest_ = Teuchos::null;
+          convTest_ = Teuchos::null;
         }
       }
     }      
@@ -601,7 +613,9 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountP
           expConvTest_->defineScaleForm( expResScaleType, Belos::TwoNorm );
         }
         catch (exception& e) {
-	  newExpResTest = true;
+          // Delete the convergence test so it gets constructed again.
+	  expConvTest_ = Teuchos::null;
+          convTest_ = Teuchos::null;
         }
       }
     }      
@@ -626,37 +640,40 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountP
     maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
 
   // Implicit residual test, using the native residual to determine if convergence was achieved.
-  if (impConvTest_ == Teuchos::null || newImpResTest) {
+  if (impConvTest_ == Teuchos::null) {
     impConvTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
     impConvTest_->defineScaleForm( convertStringToScaleType(impResScale_), Belos::TwoNorm );
     impConvTest_->setShowMaxResNormOnly( showMaxResNormOnly_ );
   }
 
   // Explicit residual test once the native residual is below the tolerance
-  if (expConvTest_ == Teuchos::null || newExpResTest) {
+  if (expConvTest_ == Teuchos::null && !isFlexible_) {
     expConvTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_ ) );
     expConvTest_->defineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm );
     expConvTest_->defineScaleForm( convertStringToScaleType(expResScale_), Belos::TwoNorm );
     expConvTest_->setShowMaxResNormOnly( showMaxResNormOnly_ );
   }
 
-  if (convTest_ == Teuchos::null || newImpResTest || newExpResTest)
-    convTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, impConvTest_, expConvTest_ ) );
-
-  if (sTest_ == Teuchos::null || newImpResTest || newExpResTest)
-    sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
-  
-  if (outputTest_ == Teuchos::null || newImpResTest || newExpResTest) {
-    if (outputFreq_ > 0) {
-      outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
-									  sTest_, 
-									  outputFreq_, 
-									  Passed+Failed+Undefined ) ); 
+  if (convTest_ == Teuchos::null) {
+    if (isFlexible_) {
+      convTest_ = impConvTest_;
     }
     else {
-      outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
-									  sTest_, 1 ) );
+      convTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::SEQ, impConvTest_, expConvTest_ ) );
     }
+  }
+
+  sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
+  
+  if (outputFreq_ > 0) {
+    outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
+  								        sTest_, 
+									outputFreq_, 
+									Passed+Failed+Undefined ) ); 
+  }
+  else {
+    outputTest_ = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer_, 
+									  sTest_, 1 ) );
   }
 
   // Create orthogonalization manager if we need to.
@@ -677,11 +694,6 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountP
       TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS",std::logic_error,
 			 "Belos::BlockGmresSolMgr(): Invalid orthogonalization type.");
     }  
-  }
-
-  // Determine whether this solver should be "flexible".
-  if (params->isParameter("Flexible Gmres")) {
-    isFlexible_ = Teuchos::getParameter<bool>(*params,"Flexible Gmres");
   }
 
   // Create the timer if we need to.
@@ -893,8 +905,15 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    
 	    // Update the linear problem.
 	    Teuchos::RefCountPtr<MV> update = block_gmres_iter->getCurrentUpdate();
-	    problem_->updateSolution( update, true );
-	    
+            if (isFlexible_) {
+              // Update the solution manually, since the preconditioning doesn't need to be undone.
+              Teuchos::RefCountPtr<MV> curX = problem_->getCurrLHSVec();
+              MVT::MvAddMv( 1.0, *curX, 1.0, *update, *curX );
+            }
+            else {
+	      problem_->updateSolution( update, true );
+	    }
+
 	    // Get the state.
 	    GmresIterationState<ScalarType,MV> oldState = block_gmres_iter->getState();
 	    
@@ -965,7 +984,14 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       // Compute the current solution.
       // Update the linear problem.
       Teuchos::RefCountPtr<MV> update = block_gmres_iter->getCurrentUpdate();
-      problem_->updateSolution( update, true );
+      if (isFlexible_) {
+        // Update the solution manually, since the preconditioning doesn't need to be undone.
+	Teuchos::RefCountPtr<MV> curX = problem_->getCurrLHSVec();
+        MVT::MvAddMv( 1.0, *curX, 1.0, *update, *curX );
+      }
+      else {
+        problem_->updateSolution( update, true );
+      }
 
       // Inform the linear problem that we are finished with this block linear system.
       problem_->setCurrLS();
