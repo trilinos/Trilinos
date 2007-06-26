@@ -89,7 +89,7 @@ ADcontext::ADcontext()
 ADcontext::new_ADmemblock(size_t len)
 {
 	ADmemblock *mb, *mb0, *mb1, *mbf, *x;
-	ADvari_block *b, *b0, *b1;
+	ADvari_block *b;
 #ifdef RAD_AUTO_AD_Const
 	ADvari *a, *anext;
 	IndepADvar *v;
@@ -98,10 +98,8 @@ ADcontext::new_ADmemblock(size_t len)
 	if (rad_need_reinit && this == &ADvari::adc) {
 		rad_need_reinit = 0;
 		Derp::LastDerp = 0;
-		for(b0 = 0, b = Aibusy; b1 = b->next; b0 = b, b = b1)
-			b->next = b0;
-		Aifree = b0;
-		Aibusy = b;
+		Aibusy = b = &AiFirst;
+		Aifree = b->next;
 		b->next = b->prev = 0;
 		Ailimit = b->limit = (Ainext = b->pADvari) + ADvari_block::Gulp;
 #ifdef RAD_DEBUG_BLOCKKEEP

@@ -1094,15 +1094,13 @@ template<typename Double> void*
 ADcontext<Double>::new_ADmemblock(size_t len)
 {
 	ADMemblock *mb, *mb0, *mb1, *mbf, *x;
-	ADVari_block *b, *b0, *b1;
+	ADVari_block *b;
 
 	if ((rad_need_reinit & 1) && this == &ADVari::adc) {
 		rad_need_reinit &= ~1;
 		DErp::LastDerp = 0;
-		for(b0 = 0, b = Aibusy; b1 = b->next; b0 = b, b = b1)
-			b->next = b0;
-		Aifree = b0;
-		Aibusy = b;
+		Aibusy = b = AiFirst;
+		Aifree = b->next;
 		b->next = b->prev = 0;
 		Ailimit = b->limit = (Ainext = b->pADvari) + ADVari_block::Gulp;
 #ifdef RAD_DEBUG_BLOCKKEEP
