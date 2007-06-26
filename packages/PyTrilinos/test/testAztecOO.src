@@ -166,17 +166,17 @@ class AztecOOTestCase(unittest.TestCase):
         self.failUnless((solver.GetRHS() == b).all())
 
     # This currently triggers a bus error
-    #def testConstructor4(self):
-    #    "Test AztecOO copy constructor, with non-Epetra.LinearOperator source"
-    #    op = TestOperator(self.map)
-    #    x  = Epetra.Vector(self.map)
-    #    b  = Epetra.Vector(self.map)
-    #    x.Random()
-    #    b.Random()
-    #    solver1 = AztecOO.AztecOO(op, x, b)
-    #    solver2 = AztecOO.AztecOO(solver1)
-    #    self.failUnless((solver2.GetLHS() == x).all())
-    #    self.failUnless((solver2.GetRHS() == b).all())
+    def testConstructor4(self):
+        "Test AztecOO copy constructor, with non-Epetra.LinearOperator source"
+        op = TestOperator(self.map)
+        x  = Epetra.Vector(self.map)
+        b  = Epetra.Vector(self.map)
+        x.Random()
+        b.Random()
+        solver1 = AztecOO.AztecOO(op, x, b)
+        solver2 = AztecOO.AztecOO(solver1)
+        self.failUnless((solver2.GetLHS() == x).all())
+        self.failUnless((solver2.GetRHS() == b).all())
 
     def testConstructor5(self):
         "Test AztecOO copy constructor with Epetra.LinearOperator source"
