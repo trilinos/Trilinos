@@ -31,24 +31,21 @@
 // The initial guesses are all set to zero. 
 //
 // As currently set up, this driver tests the case when the number of right-hand
-// sides (numrhs = 15) is greater than the blocksize (block = 10) used by 
-// the solver. Here, 2 passes through the solver are required to solve 
+// sides (numrhs = 15) is greater than the blocksize (block = 4) used by 
+// the solver. Here, 4 passes through the solver are required to solve 
 // for all right-hand sides. This information can be edited (see below - other
 // information used by block solver - can be user specified) to solve for
 // other sizes of systems. For example, one could set numrhs = 1 and block = 1,
 // to solve a single right-hand side system in the traditional way, or, set
-// numrhs = 1 and block > 1 to sove a single rhs-system with a block implementation. 
+// numrhs = 1 and block > 1 to solve a single rhs-system with a block implementation. 
 //
 // 
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
-#include "BelosOutputManager.hpp"
-#include "BelosStatusTestMaxIters.hpp"
-#include "BelosStatusTestMaxRestarts.hpp"
-#include "BelosStatusTestResNorm.hpp"
-#include "BelosStatusTestCombo.hpp"
 #include "BelosEpetraAdapter.hpp"
-#include "BelosBlockGmres.hpp"
+#include "BelosEpetraOperator.h"
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "createEpetraProblem.hpp"
 #include "Ifpack_IlukGraph.h"
 #include "Ifpack_CrsRiluk.h"
@@ -67,8 +64,8 @@ int main(int argc, char *argv[]) {
   typedef double                            ST;
   typedef Teuchos::ScalarTraits<ST>        SCT;
   typedef SCT::magnitudeType                MT;
-  typedef Belos::MultiVec<ST>               MV;
-  typedef Belos::Operator<ST>               OP;
+  typedef Epetra_MultiVector                MV;
+  typedef Epetra_Operator                   OP;
   typedef Belos::MultiVecTraits<ST,MV>     MVT;
   typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 
@@ -77,40 +74,50 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
-  int blocksize = 1;
-  int numrhs = 1;
-  int numrestarts = 25; // number of restarts allowed 
+  bool leftprec = true; // use left preconditioning to solve these linear systems
+  int frequency = -1;  // how often residuals are printed by solver
+  int blocksize = 4;
+  int numrhs = 15;
+  int maxrestarts = 15; // number of restarts allowed 
+  int length = 25;
+  int maxiters = -1;    // maximum iterations allowed
   std::string filename("orsirr1.hb");
   MT tol = 1.0e-5;  // relative residual tolerance
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("left-prec","right-prec",&leftprec,"Left preconditioning or right.");
+  cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("num-restarts",&numrestarts,"Number of restarts allowed for GMRES solver.");
-  cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
+  cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
+  cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
+  cmdp.setOption("maxiters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
+  cmdp.setOption("subspace-size",&length,"Dimension of Krylov subspace used by GMRES.");  
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
+  if (!verbose)
+    frequency = -1;  // reset frequency if test is not verbose
   //
   // Get the problem
   //
   int MyPID;
   RefCountPtr<Epetra_CrsMatrix> A;
   int return_val =Belos::createEpetraProblem(filename,NULL,&A,NULL,NULL,&MyPID);
-  if(return_val != 0) return return_val;
   const Epetra_Map &Map = A->RowMap();
-  proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
+  if(return_val != 0) return return_val;
+  proc_verbose = verbose && (MyPID==0); /* Only print on zero processor */
   //
   // *****Construct the Preconditioner*****
   //
   if (proc_verbose) cout << endl << endl;
   if (proc_verbose) cout << "Constructing ILU preconditioner" << endl;
-  int Lfill = 0;
+  int Lfill = 2;
   // if (argc > 2) Lfill = atoi(argv[2]);
   if (proc_verbose) cout << "Using Lfill = " << Lfill << endl;
-  int Overlap = 0;
+  int Overlap = 2;
   // if (argc > 3) Overlap = atoi(argv[3]);
   if (proc_verbose) cout << "Using Level Overlap = " << Overlap << endl;
   double Athresh = 0.0;
@@ -124,9 +131,9 @@ int main(int argc, char *argv[]) {
   Teuchos::RefCountPtr<Ifpack_CrsRiluk> ilukFactors;
   //
   if (Lfill > -1) {
-    ilukGraph = Teuchos::rcp( new Ifpack_IlukGraph(A->Graph(), Lfill, Overlap) );
+    ilukGraph = Teuchos::rcp(new Ifpack_IlukGraph(A->Graph(), Lfill, Overlap));
     assert(ilukGraph->ConstructFilledGraph()==0);
-    ilukFactors = Teuchos::rcp( new Ifpack_CrsRiluk(*ilukGraph) );
+    ilukFactors = Teuchos::rcp(new Ifpack_CrsRiluk(*ilukGraph));
     int initerr = ilukFactors->InitValues(*A);
     if (initerr != 0) cout << "InitValues error = " << initerr;
     assert(ilukFactors->Factor() == 0);
@@ -139,62 +146,82 @@ int main(int argc, char *argv[]) {
     cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
     cout << endl;
   }
+
   //
-  // Solve using Belos
-  //
-  // Construct a Belos::Operator instance through the Epetra interface.
-  //
-  Belos::EpetraOp Amat( A );
-  //
-  // call the ctor for the preconditioning object
-  //
-  Belos::EpetraPrecOp Prec( ilukFactors );
+  // Create the Belos preconditioned operator from the Ifpack preconditioner.
+  // NOTE:  This is necessary because Belos expects an operator to apply the
+  //        preconditioner with Apply() NOT ApplyInverse().
+  RefCountPtr<Belos::EpetraPrecOp> Prec = rcp( new Belos::EpetraPrecOp( ilukFactors ) );
+
   //
   // ********Other information used by block solver***********
-  // *****************(can be user specified)******************
+  // **************(can be user specified)********************
   //
   const int NumGlobalElements = Map.NumGlobalElements();
-  int maxits = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
-  int length = 25;
+  if (maxiters = -1)
+    maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
   //
-  ParameterList My_PL;
-  My_PL.set( "Length", length );
-  My_PL.set( "Variant", "Flexible" );
+  ParameterList innerBelosList;
+  innerBelosList.set( "Solver", "BlockGmres" );               // Set the inner solver to use block Gmres
+  innerBelosList.set( "Num Blocks", length );                 // Maximum number of blocks in Krylov factorization
+  innerBelosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
+  innerBelosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
+  innerBelosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
+  innerBelosList.set( "Convergence Tolerance", 1.0e-2 );       // Relative convergence tolerance requested
+  innerBelosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
+  innerBelosList.set( "Timer Label", "Belos Preconditioner Solve" );// Choose a different label for the inner solve
+  //
+  // *****Construct linear problem using A and Prec*****
+  // ***The solution and RHS vectors will be set later**
+  Belos::LinearProblem<double,MV,OP> innerProblem;
+  innerProblem.setOperator( A );
+  if (leftprec)
+    innerProblem.setLeftPrec( Prec );
+  else
+    innerProblem.setRightPrec( Prec );
+  innerProblem.setLabel( "Belos Preconditioner Solve" );
+  // 
+  // *****Create the inner block Gmres iteration********
+  //
+  RefCountPtr<Belos::EpetraOperator> innerSolver;
+  innerSolver = rcp( new Belos::EpetraOperator( rcp(&innerProblem,false) , rcp(&innerBelosList,false), true ) );
   //
   // *****Construct solution vector and random right-hand-sides *****
   //
-  Belos::EpetraMultiVec soln(Map, numrhs);
-  Belos::EpetraMultiVec rhs(Map, numrhs);
-  rhs.MvRandom();
-  Belos::LinearProblem<double,MV,OP>
-    My_LP( rcp(&Amat,false), rcp(&soln,false), rcp(&rhs,false) );
-  My_LP.SetRightPrec( rcp(&Prec,false) );
-  //My_LP.SetLeftPrec( rcp(&Prec,false) );
-  My_LP.SetBlockSize( blocksize );
-  
-  typedef Belos::StatusTestCombo<double,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestResNorm<double,MV,OP>  StatusTestResNorm_t;
-  Belos::StatusTestMaxIters<double,MV,OP> test1( maxits );
-  Belos::StatusTestMaxRestarts<double,MV,OP> test2( numrestarts );
-  StatusTestCombo_t BasicTest( StatusTestCombo_t::OR, test1, test2 );
-  StatusTestResNorm_t test3( tol );
-  test3.DefineScaleForm( StatusTestResNorm_t::NormOfPrecInitRes, Belos::TwoNorm );
-  BasicTest.AddStatusTest( test3 );
-  StatusTestResNorm_t ExpTest( tol );
-  ExpTest.DefineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm ); 
-  StatusTestCombo_t My_Test( StatusTestCombo_t::SEQ, BasicTest, ExpTest );
-  
-  Belos::OutputManager<double> My_OM( MyPID );
-  if (verbose)
-    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings		
-			+ Belos::TimingDetails + Belos::FinalSummary );
+  RefCountPtr<Epetra_MultiVector> X = rcp( new Epetra_MultiVector(Map, numrhs) );
+  X->PutScalar( 0.0 );
+  RefCountPtr<Epetra_MultiVector> B = rcp( new Epetra_MultiVector(Map, numrhs) );
+  B->Random();
+  Belos::LinearProblem<double,MV,OP> problem( A, X, B );
+  problem.setRightPrec( innerSolver );
+  problem.setLabel( "Belos Flexible Gmres Solve" );
+  bool set = problem.setProblem();
+  if (set == false) {
+    if (proc_verbose)
+      cout << endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << endl;
+    return -1;
+  }
+  //
+  // Copy the list for the inner solver
+  //
+  Teuchos::ParameterList belosList( innerBelosList );
+  belosList.set( "Flexible Gmres" , true );              // Use flexible Gmres to solve this problem
+  belosList.set( "Timer Label", "Belos Flexible Gmres Solve" );// Choose a different label for the outer solve
+  belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  if (verbose) {
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
+		   Belos::TimingDetails + Belos::StatusTestDetails );
+    if (frequency > 0)
+      belosList.set( "Output Frequency", frequency );
+  }
   //
   // *******************************************************************
-  // *************Start the block Gmres iteration*************************
+  // **********Create the flexible, block Gmres iteration***************
   // *******************************************************************
   //
-  Belos::BlockGmres<double,MV,OP>
-    MyBlockGmres( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false));
+  RefCountPtr< Belos::SolverManager<double,MV,OP> > solver;
+  solver = rcp( new Belos::BlockGmresSolMgr<double,MV,OP>( rcp(&problem,false), rcp(&belosList,false) ) );
+  //
   //
   // **********Print out information about problem*******************
   //
@@ -203,49 +230,39 @@ int main(int argc, char *argv[]) {
     cout << "Dimension of matrix: " << NumGlobalElements << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
     cout << "Block size used by solver: " << blocksize << endl;
-    cout << "Number of restarts allowed: " << numrestarts << endl;
+    cout << "Number of restarts allowed: " << maxrestarts << endl;
     cout << "Length of block Arnoldi factorization: " << length*blocksize << " ( "<< length << " blocks ) " <<endl;
-    cout << "Max number of Gmres iterations: " << maxits << endl; 
+    cout << "Max number of Gmres iterations: " << maxiters << endl; 
     cout << "Relative residual tolerance: " << tol << endl;
     cout << endl;
   }
   //
+  // Perform solve
   //
-  if (proc_verbose) {
-    cout << endl << endl;
-    cout << "Running Block Gmres -- please wait" << endl;
-    cout << (numrhs+blocksize-1)/blocksize 
-	 << " pass(es) through the solver required to solve for " << endl; 
-    cout << numrhs << " right-hand side(s) -- using a block size of " << blocksize
-	 << endl << endl;
-  }
-
-  //
-  // Perform solve.
-  //
-  MyBlockGmres.Solve();
-
+  Belos::ReturnType ret = solver->solve();  
   //
   // Compute actual residuals.
   //
+  bool badRes = false;
   std::vector<double> actual_resids( numrhs );
   std::vector<double> rhs_norm( numrhs );
-  Belos::EpetraMultiVec resid(Map, numrhs);
-  OPT::Apply( Amat, soln, resid );
-  MVT::MvAddMv( -1.0, resid, 1.0, rhs, resid ); 
-  MVT::MvNorm( resid, &actual_resids );
-  MVT::MvNorm( rhs, &rhs_norm );
+  Epetra_MultiVector R(Map, numrhs);
+  OPT::Apply( *A, *X, R );
+  MVT::MvAddMv( -1.0, R, 1.0, *B, R ); 
+  MVT::MvNorm( R, &actual_resids );
+  MVT::MvNorm( *B, &rhs_norm );
   if (proc_verbose) {
     cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
     for ( int i=0; i<numrhs; i++) {
-      cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
+      double actRes = actual_resids[i]/rhs_norm[i];
+      cout<<"Problem "<<i<<" : \t"<< actRes <<endl;
+      if (actRes > tol ) badRes = true;
     }
   }
-
-  if (My_Test.GetStatus()!=Belos::Converged) {
-        if (proc_verbose)
-                cout << "End Result: TEST FAILED" << endl;
-        return -1;
+  if (ret!=Belos::Converged || badRes==true) {
+    if (proc_verbose)
+      cout << "End Result: TEST FAILED" << endl;	
+    return -1;
   }
   //
   // Default return value

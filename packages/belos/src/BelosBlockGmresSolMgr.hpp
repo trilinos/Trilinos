@@ -473,6 +473,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountP
   // Determine whether this solver should be "flexible".
   if (params->isParameter("Flexible Gmres")) {
     isFlexible_ = Teuchos::getParameter<bool>(*params,"Flexible Gmres");
+    params_->set("Flexible Gmres", isFlexible_);
     if (isFlexible_ && expConvTest_!=Teuchos::null) {
       // Use an implicit convergence test if the Gmres solver is flexible
       expConvTest_ == Teuchos::null;
@@ -854,7 +855,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       int rank = ortho_->normalize( *V_0, z_0 );
       TEST_FOR_EXCEPTION(rank != blockSize_,BlockGmresSolMgrOrthoFailure,
 			 "Belos::BlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
-     
+      
       // Set the new state and initialize the solver.
       GmresIterationState<ScalarType,MV> newstate;
       newstate.V = V_0;

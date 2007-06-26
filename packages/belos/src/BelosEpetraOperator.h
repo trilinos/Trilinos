@@ -74,7 +74,8 @@ public:
   
   //! Constructor
   EpetraOperator( const RefCountPtr<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> >& lp, 
-		  const RefCountPtr<ParameterList>& plist );
+		  const RefCountPtr<ParameterList>& plist,
+                  bool initSolnVec = false );
   
   //! Destructor
   virtual ~EpetraOperator() {}
@@ -132,6 +133,7 @@ private:
   RefCountPtr<ParameterList> plist_;
 
   std::vector<char> Solver;
+  bool initSolnVec_;
 };
 
 } //end namespace Belos

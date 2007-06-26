@@ -42,11 +42,13 @@ using namespace Belos;
 // Constructor.
 //
 EpetraOperator::EpetraOperator( const RefCountPtr<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> >& lp,
-				const RefCountPtr<Teuchos::ParameterList>& plist )
+				const RefCountPtr<Teuchos::ParameterList>& plist,
+                                bool initSolnVec )
   : lp_(lp), 
-    plist_(plist) 
+    plist_(plist),
+    initSolnVec_(initSolnVec)
 {
-  string solver = plist_->get("Solver", "BlockGMRES");
+  string solver = plist_->get("Solver", "BlockGmres");
   
   // Copy string to character array.  
   // Not using conversion routine copy() because it's not supported by RW on Janus. (HKT 11/13/2003) 
@@ -60,10 +62,10 @@ EpetraOperator::EpetraOperator( const RefCountPtr<LinearProblem<double,Epetra_Mu
   // Create solver and solve problem.  This is inefficient, an instance of the solver should
   // exist already and just be reset with a new RHS.
   //
-  if (solver == "BlockGMRES") {
+  if (solver == "BlockGmres") {
     solver_ = Teuchos::rcp( new BlockGmresSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, plist_ ) );
   } 
-  else if (solver == "PseudoBlockGMRES") {
+  else if (solver == "PseudoBlockGmres") {
     solver_ = Teuchos::rcp( new PseudoBlockGmresSolMgr<double,Epetra_MultiVector,Epetra_Operator>( lp_, plist_ ) );
   }
   else if (solver == "BlockCG") {
@@ -92,6 +94,8 @@ int EpetraOperator::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) 
   RefCountPtr<Epetra_MultiVector> vec_Y;
   vec_X = rcp( &X, false );
   vec_Y = rcp( &Y, false );
+  if (initSolnVec_)
+    vec_Y->PutScalar( 0.0 );
   lp_->setProblem( vec_Y, vec_X );
   Belos::ReturnType ret = solver_->solve();
   
@@ -107,6 +111,8 @@ int EpetraOperator::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVecto
   RefCountPtr<Epetra_MultiVector> vec_Y;
   vec_X = rcp( &X, false );
   vec_Y = rcp( &Y, false );
+  if (initSolnVec_)
+    vec_Y->PutScalar( 0.0 );
   lp_->setProblem( vec_Y, vec_X );
   Belos::ReturnType ret = solver_->solve();
   

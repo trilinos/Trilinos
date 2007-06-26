@@ -276,7 +276,7 @@ Iterative_Inverse_Operator::Iterative_Inverse_Operator(int n, int blocksize,
   double tol = 1.0e-10;
   int verbosity = Belos::Errors + Belos::Warnings;
   if (print)
-    verbosity += Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails;
+    verbosity += Belos::TimingDetails + Belos::StatusTestDetails;
   
   pList = Teuchos::rcp( new Teuchos::ParameterList );
   pList->set( "Num Blocks", n/blocksize );

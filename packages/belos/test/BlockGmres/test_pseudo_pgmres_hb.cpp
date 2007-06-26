@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
   belosList.set( "Timer Label", "Belos Init" );          // Label used by timers in this solver
   if (verbose) {
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
-		   Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails );
+		   Belos::TimingDetails + Belos::StatusTestDetails );
     if (frequency > 0)
       belosList.set( "Output Frequency", frequency );
   }

@@ -790,11 +790,13 @@ namespace Belos {
       // Normalize Xj.
       // Xj <- Xj / sqrt(newDot)
       ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
-      
-      MVT::MvAddMv( ONE/diag, *Xj, ZERO, *Xj, *Xj );
-      if (this->_hasOp) {
-	// Update MXj.
-	MVT::MvAddMv( ONE/diag, *MXj, ZERO, *MXj, *MXj );
+
+      if (SCT::magnitude(diag) > ZERO) {      
+        MVT::MvAddMv( ONE/diag, *Xj, ZERO, *Xj, *Xj );
+        if (this->_hasOp) {
+	  // Update MXj.
+	  MVT::MvAddMv( ONE/diag, *MXj, ZERO, *MXj, *MXj );
+        }
       }
 
       // If we've added a random vector, enter a zero in the j'th diagonal element.
