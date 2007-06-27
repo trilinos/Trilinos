@@ -516,8 +516,8 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   // Generate the parameter list
   //
   typedef Belos::SolverManager<Scalar,MV_t,LO_t> IterativeSolver_t;
-  RefCountPtr<IterativeSolver_t> iterativeSolver = Teuchos::null;
-  RefCountPtr<Teuchos::ParameterList> solverPL = Teuchos::rcp( new Teuchos::ParameterList() );
+  RCP<IterativeSolver_t> iterativeSolver = Teuchos::null;
+  RCP<Teuchos::ParameterList> solverPL = Teuchos::rcp( new Teuchos::ParameterList() );
 
   // Set the block size
   int blockSize = BlockSize_default;
