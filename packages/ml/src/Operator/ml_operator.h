@@ -60,9 +60,10 @@ struct ML_Function_Struct {
 
 struct ML_GetrowFunc_Struct {
    int           ML_id; 
-   int           Nrows;
-   ML_CommInfoOP *pre_comm;
-   ML_CommInfoOP *post_comm;
+   int           Nrows; /*used for all point rows even VBR point getrows*/
+   int           N_block_rows; /*used to store number of block rows for VBR matrices*/
+   ML_CommInfoOP *pre_comm; /*This is for all normal cases*/
+   ML_CommInfoOP *post_comm; /*This is only used for the weird matvec/transpose*/
    int           (*func_ptr)(ML_Operator *,int,int*,int,int*,double*,int*);
    void          *data;
    int           use_loc_glob_map;
