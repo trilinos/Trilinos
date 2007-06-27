@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
   // *****************(can be user specified)******************
   //
   const int NumGlobalElements = B->GlobalLength();
-  if (maxiters = -1)
+  if (maxiters == -1)
     maxiters = NumGlobalElements - 1; // maximum number of iterations to run
   //
   ParameterList belosList;

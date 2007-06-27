@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
   // *****Create parameter list for the block CG solver manager*****
   //
   const int NumGlobalElements = B->GlobalLength();
-  if (maxiters = -1)
+  if (maxiters == -1)
     maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
   //
   ParameterList belosList;
