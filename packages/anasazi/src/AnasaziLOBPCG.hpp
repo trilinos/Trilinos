@@ -101,30 +101,30 @@ namespace Anasazi {
   template <class ScalarType, class MV>
   struct LOBPCGState {
     //! The current eigenvectors.
-    Teuchos::RefCountPtr<const MV> X; 
+    Teuchos::RCP<const MV> X; 
     //! The image of the current eigenvectors under K.
-    Teuchos::RefCountPtr<const MV> KX; 
+    Teuchos::RCP<const MV> KX; 
     //! The image of the current eigenvectors under M, or Teuchos::null if M was not specified.
-    Teuchos::RefCountPtr<const MV> MX;
+    Teuchos::RCP<const MV> MX;
     //! The current search direction.
-    Teuchos::RefCountPtr<const MV> P; 
+    Teuchos::RCP<const MV> P; 
     //! The image of the current search direction under K.
-    Teuchos::RefCountPtr<const MV> KP; 
+    Teuchos::RCP<const MV> KP; 
     //! The image of the current search direction under M, or Teuchos::null if M was not specified.
-    Teuchos::RefCountPtr<const MV> MP;
+    Teuchos::RCP<const MV> MP;
     /*! \brief The current preconditioned residual vectors.
      *
      *  H is only useful when LOBPCG::iterate() throw a LOBPCGRitzFailure exception.
      */
-    Teuchos::RefCountPtr<const MV> H; 
+    Teuchos::RCP<const MV> H; 
     //! The image of the current preconditioned residual vectors under K.
-    Teuchos::RefCountPtr<const MV> KH; 
+    Teuchos::RCP<const MV> KH; 
     //! The image of the current preconditioned residual vectors under M, or Teuchos::null if M was not specified.
-    Teuchos::RefCountPtr<const MV> MH;
+    Teuchos::RCP<const MV> MH;
     //! The current residual vectors.
-    Teuchos::RefCountPtr<const MV> R;
+    Teuchos::RCP<const MV> R;
     //! The current Ritz values.
-    Teuchos::RefCountPtr<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
+    Teuchos::RCP<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
     LOBPCGState() : X(Teuchos::null),KX(Teuchos::null),MX(Teuchos::null),
                     P(Teuchos::null),KP(Teuchos::null),MP(Teuchos::null),
                     H(Teuchos::null),KH(Teuchos::null),MH(Teuchos::null),
@@ -206,11 +206,11 @@ namespace Anasazi {
      *   - "Block Size" - an \c int specifying the block size used by the algorithm. This can also be specified using the setBlockSize() method.
      *   - "Full Ortho" - a \c bool specifying whether the solver should employ a full orthogonalization technique. This can also be specified using the setFullOrtho() method.
      */
-    LOBPCG( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-            const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
-            const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-            const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-            const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+    LOBPCG( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
+            const Teuchos::RCP<SortManager<ScalarType,MV,OP> > &sorter,
+            const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+            const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+            const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
             Teuchos::ParameterList &params 
           );
     
@@ -299,7 +299,7 @@ namespace Anasazi {
      *      - MP == M*P if M != Teuchos::null\n
      *        Otherwise, MP == Teuchos::null
      */
-    bool isInitialized() { return initialized_; }
+    bool isInitialized() const;
 
     /*! \brief Get the current state of the eigensolver.
      * 
@@ -308,31 +308,10 @@ namespace Anasazi {
      * true. Finally, the data for the preconditioned residual (H) is only meaningful in the situation where
      * the solver throws an ::LOBPCGRitzFailure exception during iterate().
      *
-     * \returns An LOBPCGState object containing const pointers to the current
+     * \returns An LOBPCGState object containing const views to the current
      * solver state.
      */
-    LOBPCGState<ScalarType,MV> getState() const {
-      LOBPCGState<ScalarType,MV> state;
-      state.X = X_;
-      state.KX = KX_;
-      state.P = P_;
-      state.KP = KP_;
-      state.H = H_;
-      state.KH = KH_;
-      state.R = R_;
-      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(theta_));
-      if (hasM_) {
-        state.MX = MX_;
-        state.MP = MP_;
-        state.MH = MH_;
-      }
-      else {
-        state.MX = Teuchos::null;
-        state.MP = Teuchos::null;
-        state.MH = Teuchos::null;
-      }
-      return state;
-    }
+    LOBPCGState<ScalarType,MV> getState() const;
 
     //@}
 
@@ -340,10 +319,10 @@ namespace Anasazi {
     //@{
 
     //! \brief Get the current iteration count.
-    int getNumIters() const { return(iter_); };
+    int getNumIters() const;
 
     //! \brief Reset the iteration count.
-    void resetNumIters() { iter_=0; };
+    void resetNumIters();
 
     /*! \brief Get the Ritz vectors from the previous iteration.
       
@@ -352,21 +331,14 @@ namespace Anasazi {
         The i-th vector of the return corresponds to the i-th Ritz vector; there is no need to use
         getRitzIndex().
      */
-    Teuchos::RefCountPtr<const MV> getRitzVectors() {return X_;}
+    Teuchos::RCP<const MV> getRitzVectors();
 
     /*! \brief Get the Ritz values from the previous iteration.
      *
      *  \return A vector of length getCurSubspaceDim() containing the Ritz values from the
      *  previous projected eigensolve.
      */
-    std::vector<Value<ScalarType> > getRitzValues() { 
-      std::vector<Value<ScalarType> > ret(nevLocal_);
-      for (int i=0; i<nevLocal_; i++) {
-        ret[i].realpart = theta_[i];
-        ret[i].imagpart = ZERO;
-      }
-      return ret;
-    }
+    std::vector<Value<ScalarType> > getRitzValues();
 
     /*! \brief Get the index used for extracting Ritz vectors from getRitzVectors().
      *
@@ -375,12 +347,7 @@ namespace Anasazi {
      *
      * \return An \c int vector of size getCurSubspaceDim() composed of zeros.
      */
-    std::vector<int> getRitzIndex() {
-      std::vector<int> ret(nevLocal_,0);
-      return ret;
-    }
-
-
+    std::vector<int> getRitzIndex();
 
 
     /*! \brief Get the current residual norms
@@ -403,11 +370,7 @@ namespace Anasazi {
      *
      *  \return A vector of length getCurSubspaceDim() containing the 2-norms of the Ritz residuals.
      */
-    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms() {
-      std::vector<MagnitudeType> ret = ritz2norms_;
-      ret.resize(nevLocal_);
-      return ret;
-    }
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms();
 
 
     /*! \brief Get the dimension of the search subspace used to generate the current eigenvectors and eigenvalues.
@@ -418,15 +381,12 @@ namespace Anasazi {
      *  \return An integer specifying the rank of the subspace generated by the eigensolver. If isInitialized() == \c false, 
      *  the return is 0. Otherwise, the return will be 2*getBlockSize() or 3*getBlockSize().
      */
-    int getCurSubspaceDim() const {
-      if (!initialized_) return 0;
-      return nevLocal_;
-    }
+    int getCurSubspaceDim() const;
 
     /*! \brief Get the maximum dimension allocated for the search subspace. For %LOBPCG, this always returns 3*getBlockSize(), the dimension of the 
      *   subspace colspan([X H P]).
      */
-    int getMaxSubspaceDim() const {return 3*blockSize_;}
+    int getMaxSubspaceDim() const;
 
     //@}
 
@@ -435,7 +395,7 @@ namespace Anasazi {
 
 
     //! Get a constant reference to the eigenvalue problem.
-    const Eigenproblem<ScalarType,MV,OP>& getProblem() const { return(*problem_); };
+    const Eigenproblem<ScalarType,MV,OP>& getProblem() const;
 
 
     /*! \brief Set the blocksize to be used by the iterative solver in solving
@@ -450,7 +410,7 @@ namespace Anasazi {
 
 
     //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
-    int getBlockSize() const { return(blockSize_); }
+    int getBlockSize() const;
 
 
     /*! \brief Set the auxiliary vectors for the solver.
@@ -464,10 +424,10 @@ namespace Anasazi {
      *  auxiliary vectors, and manually reinitialize the solver using
      *  initialize().
      */
-    void setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs);
+    void setAuxVecs(const Teuchos::Array<Teuchos::RCP<const MV> > &auxvecs);
 
     //! Get the current auxiliary vectors.
-    Teuchos::Array<Teuchos::RefCountPtr<const MV> > getAuxVecs() const {return auxVecs_;}
+    Teuchos::Array<Teuchos::RCP<const MV> > getAuxVecs() const;
 
     //@}
 
@@ -482,10 +442,10 @@ namespace Anasazi {
     void setFullOrtho(bool fullOrtho);
 
     //! Determine if the LOBPCG iteration is using full orthogonality.
-    bool getFullOrtho() const { return(fullOrtho_); }
+    bool getFullOrtho() const;
     
     //! Indicates whether the search direction given by getState() is valid.
-    bool hasP() {return hasP_;}
+    bool hasP();
 
     //@}
     
@@ -502,7 +462,6 @@ namespace Anasazi {
     //
     //
     void setupViews();
-    void clearViews();
     //
     // Convenience typedefs
     //
@@ -534,26 +493,26 @@ namespace Anasazi {
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
-    const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> >     problem_;
-    const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> >      sm_;
-    const Teuchos::RefCountPtr<OutputManager<ScalarType> >          om_;
-    const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >       tester_;
-    const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> >  orthman_;
+    const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
+    const Teuchos::RCP<SortManager<ScalarType,MV,OP> >      sm_;
+    const Teuchos::RCP<OutputManager<ScalarType> >          om_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       tester_;
+    const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> >  orthman_;
     //
     // Information obtained from the eigenproblem
     //
-    Teuchos::RefCountPtr<const OP> Op_;
-    Teuchos::RefCountPtr<const OP> MOp_;
-    Teuchos::RefCountPtr<const OP> Prec_;
+    Teuchos::RCP<const OP> Op_;
+    Teuchos::RCP<const OP> MOp_;
+    Teuchos::RCP<const OP> Prec_;
     bool hasM_;
     //
     // Internal timers
     //
-    Teuchos::RefCountPtr<Teuchos::Time> timerOp_, timerMOp_, timerPrec_,
-                                        timerSort_, 
-                                        timerLocalProj_, timerDS_,
-                                        timerLocalUpdate_, timerCompRes_,
-                                        timerOrtho_, timerInit_;
+    Teuchos::RCP<Teuchos::Time> timerOp_, timerMOp_, timerPrec_,
+                                timerSort_, 
+                                timerLocalProj_, timerDS_,
+                                timerLocalUpdate_, timerCompRes_,
+                                timerOrtho_, timerInit_;
     //
     // Counters
     //
@@ -588,11 +547,11 @@ namespace Anasazi {
     // State Multivecs
     // V_, KV_ MV_  and  R_ are primary pointers to allocated multivectors
     // the rest are multivector views into V_, KV_ and MV_
-    Teuchos::RefCountPtr<MV> V_, KV_, MV_,
-                             X_, KX_, MX_,
-                             H_, KH_, MH_,
-                             P_, KP_, MP_,
-                             R_;
+    Teuchos::RCP<MV> V_, KV_, MV_, R_;
+    Teuchos::RCP<MV> X_, KX_, MX_,
+                     H_, KH_, MH_,
+                     P_, KP_, MP_;
+
     //
     // if fullOrtho_ == true, then we must produce the following on every iteration:
     // [newX newP] = [X H P] [CX;CP]
@@ -603,10 +562,10 @@ namespace Anasazi {
     // [newX newP] = [X H P] [CX1  0 ]
     //                       [CX2 CP2]  allows us to work using only R as work space
     //                       [CX3 CP3] 
-    Teuchos::RefCountPtr<MV> tmpMV_;        
+    Teuchos::RCP<MV> tmpmvec_;        
     // 
     // auxiliary vectors
-    Teuchos::Array<Teuchos::RefCountPtr<const MV> > auxVecs_;
+    Teuchos::Array<Teuchos::RCP<const MV> > auxVecs_;
     int numAuxVecs_;
     //
     // Number of iterations that have been performed.
@@ -627,11 +586,11 @@ namespace Anasazi {
   // Constructor
   template <class ScalarType, class MV, class OP>
   LOBPCG<ScalarType,MV,OP>::LOBPCG(
-        const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-        const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
-        const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-        const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-        const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
+        const Teuchos::RCP<SortManager<ScalarType,MV,OP> > &sorter,
+        const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+        const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+        const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
         Teuchos::ParameterList &params
         ) :
     ONE(Teuchos::ScalarTraits<MagnitudeType>::one()),
@@ -663,7 +622,7 @@ namespace Anasazi {
     initialized_(false),
     nevLocal_(0),
     hasP_(false),
-    auxVecs_( Teuchos::Array<Teuchos::RefCountPtr<const MV> >(0) ), 
+    auxVecs_( Teuchos::Array<Teuchos::RCP<const MV> >(0) ), 
     numAuxVecs_(0),
     iter_(0),
     Rnorms_current_(false),
@@ -710,7 +669,7 @@ namespace Anasazi {
     // if size is decreased, take the first newBS vectors of all and leave state as is
     // otherwise, grow/allocate space and set solver to unitialized
 
-    Teuchos::RefCountPtr<const MV> tmp;
+    Teuchos::RCP<const MV> tmp;
     // grab some Multivector to Clone
     // in practice, getInitVec() should always provide this, but it is possible to use a 
     // Eigenproblem with nothing in getInitVec() by manually initializing with initialize(); 
@@ -734,8 +693,16 @@ namespace Anasazi {
       //
       // shrink vectors
 
-      // release views
-      clearViews();
+      // release views so we can modify the bases
+      X_ = Teuchos::null;
+      KX_ = Teuchos::null;
+      MX_ = Teuchos::null;
+      H_ = Teuchos::null;
+      KH_ = Teuchos::null;
+      MH_ = Teuchos::null;
+      P_ = Teuchos::null;
+      KP_ = Teuchos::null;
+      MP_ = Teuchos::null;
 
       // make new indices vectors
       std::vector<int> newind(newBS), oldind(newBS);
@@ -744,7 +711,7 @@ namespace Anasazi {
         oldind[i] = i;
       }
 
-      Teuchos::RefCountPtr<MV> newV, newMV, newKV, newR, src;
+      Teuchos::RCP<MV> newV, newMV, newKV, newR, src;
       // allocate R and newV
       newR = MVT::Clone(*tmp,newBS);
       newV = MVT::Clone(*tmp,newBS*3);
@@ -769,6 +736,7 @@ namespace Anasazi {
       // we will not copy the M data if !hasM_, because it doesn't exist
       //
 
+      // these are shrink operations which preserve their data
       theta_.resize(3*newBS);
       ritz2norms_.resize(3*newBS);
       Rnorms_.resize(newBS);
@@ -780,8 +748,8 @@ namespace Anasazi {
       // free old memory and point to new memory
       R_ = newR;
 
-      // copy in order: newX newP newKX newKP newMX newMP
-      // for  X: [0   ,   bs-1] <-- [0      ,         bs-1] 
+      // copy in order: newX newKX newMX, then newP newKP newMP
+      // for  X: [0,bs-1] <-- [0,bs-1] 
       src = MVT::CloneView(*V_,oldind);
       MVT::SetBlock(*src,newind,*newV);
       src = MVT::CloneView(*KV_,oldind);
@@ -824,7 +792,15 @@ namespace Anasazi {
       hasP_ = false;
 
       // release views
-      clearViews();
+      X_ = Teuchos::null;
+      KX_ = Teuchos::null;
+      MX_ = Teuchos::null;
+      H_ = Teuchos::null;
+      KH_ = Teuchos::null;
+      MH_ = Teuchos::null;
+      P_ = Teuchos::null;
+      KP_ = Teuchos::null;
+      MP_ = Teuchos::null;
 
       // free allocated storage
       R_ = Teuchos::null;
@@ -849,9 +825,9 @@ namespace Anasazi {
     }
 
     // allocate tmp space
-    tmpMV_ = Teuchos::null;
+    tmpmvec_ = Teuchos::null;
     if (fullOrtho_) {
-      tmpMV_ = MVT::Clone(*tmp,newBS);
+      tmpmvec_ = MVT::Clone(*tmp,newBS);
     }
 
     // set new block size
@@ -863,24 +839,7 @@ namespace Anasazi {
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Clear views
-  template <class ScalarType, class MV, class OP>
-  void LOBPCG<ScalarType,MV,OP>::clearViews() 
-  {
-    X_ = Teuchos::null;
-    KX_ = Teuchos::null;
-    MX_ = Teuchos::null;
-    H_ = Teuchos::null;
-    KH_ = Teuchos::null;
-    MH_ = Teuchos::null;
-    P_ = Teuchos::null;
-    KP_ = Teuchos::null;
-    MP_ = Teuchos::null;
-  }
-
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Setup old views
+  // Setup views into V,KV,MV
   template <class ScalarType, class MV, class OP>
   void LOBPCG<ScalarType,MV,OP>::setupViews() 
   {
@@ -927,8 +886,8 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the auxiliary vectors
   template <class ScalarType, class MV, class OP>
-  void LOBPCG<ScalarType,MV,OP>::setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs) {
-    typedef typename Teuchos::Array<Teuchos::RefCountPtr<const MV> >::iterator tarcpmv;
+  void LOBPCG<ScalarType,MV,OP>::setAuxVecs(const Teuchos::Array<Teuchos::RCP<const MV> > &auxvecs) {
+    typedef typename Teuchos::Array<Teuchos::RCP<const MV> >::iterator tarcpmv;
 
     // set new auxiliary vectors
     auxVecs_ = auxvecs;
@@ -979,8 +938,6 @@ namespace Anasazi {
 
     Teuchos::TimeMonitor lcltimer( *timerInit_ );
 
-    hasP_ = false;  // this will be set to true below if appropriate
-
     std::vector<int> bsind(blockSize_);
     for (int i=0; i<blockSize_; i++) bsind[i] = i;
 
@@ -1003,7 +960,9 @@ namespace Anasazi {
 
     // set up X, KX, MX: get them from "state" if user specified them
 
+    //----------------------------------------
     // set up X, MX, KX
+    //----------------------------------------
     if (newstate.X != Teuchos::null) {
       TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.X) != MVT::GetVecLength(*X_),
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.X not correct." );
@@ -1011,13 +970,13 @@ namespace Anasazi {
       TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.X) < blockSize_,
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.X must have at least block size vectors.");
 
-      // put data in X
+      // put X data in X_
       MVT::SetBlock(*newstate.X,bsind,*X_);
 
-      // put data in MX
+      // put MX data in MX_
       if (hasM_) {
         if (newstate.MX != Teuchos::null) {
-          TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.MX) != MVT::GetVecLength(*X_),
+          TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.MX) != MVT::GetVecLength(*MX_),
                               std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.MX not correct." );
           // newstate.MX must have blockSize_ vectors; any more will be ignored
           TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.MX) < blockSize_,
@@ -1025,23 +984,20 @@ namespace Anasazi {
           MVT::SetBlock(*newstate.MX,bsind,*MX_);
         }
         else {
+          // user didn't specify MX, compute it
           {
             Teuchos::TimeMonitor lcltimer( *timerMOp_ );
             OPT::Apply(*MOp_,*X_,*MX_);
             count_ApplyM_ += blockSize_;
           }
-          // we generated KX; we will generate R as well
+          // we generated MX; we will generate R as well
           newstate.R = Teuchos::null;
         }
-      }
-      else {
-        // the assignment MX_==X_ would be redundant; take advantage of this opportunity to debug a little
-        TEST_FOR_EXCEPTION(MX_ != X_, std::logic_error, "Anasazi::LOBPCG::initialize(): solver invariant not satisfied (MX==X).");
       }
   
       // put data in KX
       if (newstate.KX != Teuchos::null) {
-        TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.KX) != MVT::GetVecLength(*X_),
+        TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.KX) != MVT::GetVecLength(*KX_),
                             std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.KX not correct." );
         // newstate.KX must have blockSize_ vectors; any more will be ignored
         TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.KX) < blockSize_,
@@ -1049,18 +1005,20 @@ namespace Anasazi {
         MVT::SetBlock(*newstate.KX,bsind,*KX_);
       }
       else {
+        // user didn't specify KX, compute it
         {
           Teuchos::TimeMonitor lcltimer( *timerOp_ );
           OPT::Apply(*Op_,*X_,*KX_);
           count_ApplyOp_ += blockSize_;
         }
-        // we generated MX; we will generate R as well
+        // we generated KX; we will generate R as well
         newstate.R = Teuchos::null;
       }
     }
     else {
       // user did not specify X
-
+      // we will initialize X, compute KX and MX, and compute R
+      //
       // clear state so we won't use any data from it below
       newstate.P  = Teuchos::null;
       newstate.KP = Teuchos::null;
@@ -1068,8 +1026,8 @@ namespace Anasazi {
       newstate.R  = Teuchos::null;
       newstate.T  = Teuchos::null;
 
-      // generate something and projectAndNormalize
-      Teuchos::RefCountPtr<const MV> ivec = problem_->getInitVec();
+      // generate a basis and projectAndNormalize
+      Teuchos::RCP<const MV> ivec = problem_->getInitVec();
       TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::logic_error,
                          "Anasazi::LOBPCG::initialize(): Eigenproblem did not specify initial vectors to clone from.");
 
@@ -1082,7 +1040,7 @@ namespace Anasazi {
         ivec = MVT::CloneView(*ivec,ind);
       }
 
-      // assign ivec to first part of X_
+      // assign ivec to first part of X_ 
       if (initSize > 0) {
         std::vector<int> ind(initSize);
         for (int i=0; i<initSize; i++) ind[i] = i;
@@ -1092,7 +1050,7 @@ namespace Anasazi {
       if (blockSize_ > initSize) {
         std::vector<int> ind(blockSize_ - initSize);
         for (int i=0; i<blockSize_ - initSize; i++) ind[i] = initSize + i;
-        Teuchos::RefCountPtr<MV> rX = MVT::CloneView(*X_,ind);
+        Teuchos::RCP<MV> rX = MVT::CloneView(*X_,ind);
         MVT::MvRandom(*rX);
         rX = Teuchos::null;
       }
@@ -1103,15 +1061,11 @@ namespace Anasazi {
         OPT::Apply(*MOp_,*X_,*MX_);
         count_ApplyM_ += blockSize_;
       }
-      else {
-        // the assignment MX_==X_ would be redundant; take advantage of this opportunity to debug a little
-        TEST_FOR_EXCEPTION(MX_ != X_, std::logic_error, "Anasazi::LOBPCG::initialize(): solver invariant not satisfied (MX==X).");
-      }
   
       // remove auxVecs from X_ and normalize it
       if (numAuxVecs_ > 0) {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
-        Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
+        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
         int rank = orthman_->projectAndNormalize(*X_,MX_,dummy,Teuchos::null,auxVecs_);
         TEST_FOR_EXCEPTION(rank != blockSize_, LOBPCGInitFailure,
                            "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
@@ -1129,11 +1083,12 @@ namespace Anasazi {
         OPT::Apply(*Op_,*X_,*KX_);
         count_ApplyOp_ += blockSize_;
       }
-
     } // end if (newstate.X != Teuchos::null)
 
 
+    //----------------------------------------
     // set up Ritz values
+    //----------------------------------------
     theta_.resize(3*blockSize_,NANVAL);
     ritz2norms_.resize(3*blockSize_,NANVAL);
     if (newstate.T != Teuchos::null) {
@@ -1197,7 +1152,7 @@ namespace Anasazi {
         }
       }
 
-      // update the solution
+      // update the solution, use R for storage
       {
         Teuchos::TimeMonitor lcltimer( *timerLocalUpdate_ );
         // X <- X*S
@@ -1214,13 +1169,14 @@ namespace Anasazi {
       }
     }
 
-  
-    // set up R
+    //----------------------------------------
+    // compute R
+    //----------------------------------------
     if (newstate.R != Teuchos::null) {
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) < blockSize_,
-                          std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.R must have blockSize number of vectors." );
       TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.R not correct." );
+      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) < blockSize_,
+                          std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.R must have blockSize number of vectors." );
       MVT::SetBlock(*newstate.R,bsind,*R_);
     }
     else {
@@ -1228,7 +1184,6 @@ namespace Anasazi {
       // form R <- KX - MX*T
       MVT::MvAddMv(ZERO,*KX_,ONE,*KX_,*R_);
       Teuchos::SerialDenseMatrix<int,ScalarType> T(blockSize_,blockSize_);
-      T.putScalar(ZERO);
       for (int i=0; i<blockSize_; i++) T(i,i) = theta_[i];
       MVT::MvTimesMatAddMv(-ONE,*MX_,T,ONE,*R_);
     }
@@ -1238,7 +1193,7 @@ namespace Anasazi {
     R2norms_current_ = false;
   
     // put data in P,KP,MP: P is not used to set theta
-    if (newstate.P != Teuchos::null) { 
+    if (newstate.P != Teuchos::null) {
       TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.P) < blockSize_ ,
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.P must have blockSize number of vectors." );
       TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.P) != MVT::GetVecLength(*P_),
@@ -1278,7 +1233,9 @@ namespace Anasazi {
         }
       }
     }
-
+    else {
+      hasP_ = false;
+    }
 
     // finally, we are initialized
     initialized_ = true;
@@ -1326,13 +1283,13 @@ namespace Anasazi {
     // the user has called setFullOrtho, so the class has been instantiated
     // ergo, the data has already been allocated, i.e., setBlockSize() has been called
     // if it is already allocated, it should be the proper size
-    if (fullOrtho_ && tmpMV_ == Teuchos::null) {
+    if (fullOrtho_ && tmpmvec_ == Teuchos::null) {
       // allocated the workspace
-      tmpMV_ = MVT::Clone(*X_,blockSize_);
+      tmpmvec_ = MVT::Clone(*X_,blockSize_);
     }
     else if (fullOrtho_==false) {
       // free the workspace
-      tmpMV_ = Teuchos::null;
+      tmpmvec_ = Teuchos::null;
     }
   }
 
@@ -1354,7 +1311,14 @@ namespace Anasazi {
     const int oneBlock    =   blockSize_;
     const int twoBlocks   = 2*blockSize_;
     const int threeBlocks = 3*blockSize_;
-    
+
+    std::vector<int> indblock1(blockSize_), indblock2(blockSize_), indblock3(blockSize_);
+    for (int i=0; i<blockSize_; i++) {
+      indblock1[i] = i;
+      indblock2[i] = i +  blockSize_;
+      indblock3[i] = i + 2*blockSize_;
+    }
+
     //
     // Define dense projected/local matrices
     //   KK = Local stiffness matrix               (size: 3*blockSize_ x 3*blockSize_)
@@ -1374,8 +1338,9 @@ namespace Anasazi {
         currentStatus( om_->stream(IterationDetails) );
       }
 
+      // increment iteration counter
       iter_++;
-      
+
       // Apply the preconditioner on the residuals: H <- Prec*R
       if (Prec_ != Teuchos::null) {
         Teuchos::TimeMonitor lcltimer( *timerPrec_ );
@@ -1383,9 +1348,7 @@ namespace Anasazi {
         count_ApplyPrec_ += blockSize_;
       }
       else {
-        std::vector<int> ind(blockSize_);
-        for (int i=0; i<blockSize_; i++) { ind[i] = i; }
-        MVT::SetBlock(*R_,ind,*H_);
+        MVT::MvAddMv(ONE,*R_,ZERO,*R_,*H_);
       }
 
       // Apply the mass matrix on H
@@ -1397,9 +1360,9 @@ namespace Anasazi {
 
       // orthogonalize H against the auxiliary vectors
       // optionally: orthogonalize H against X and P ([X P] is already orthonormal)
-      Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q;
-      Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C = 
-        Teuchos::tuple<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null);
+      Teuchos::Array<Teuchos::RCP<const MV> > Q;
+      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C = 
+        Teuchos::tuple<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null);
       Q = auxVecs_;
       if (fullOrtho_) {
         // X and P are not contiguous, so there is not much point in putting them under 
@@ -1443,35 +1406,132 @@ namespace Anasazi {
         nevLocal_ = twoBlocks;
       }
 
-      // clear the views: we don't need X H and P individually
-      // we only need a basis: lclV = [X H] or lclV = [X H P]
-      Teuchos::RefCountPtr<MV> lclV, lclKV, lclMV;
+      //
+      // we need bases: [X H P] and [H P] (only need the latter if fullOrtho == false)
+      // we need to perform the following operations:
+      //    X' [KX KH KP]
+      //    X' [MX MH MP]
+      //    H' [KH KP]
+      //    H' [MH MP]
+      //    P' [KP]
+      //    P' [MP]
+      //    [X H P] CX
+      //    { [X H P] CP    if  fullOrtho
+      //    {   [H P] CP    if !fullOrtho
+      //
+      // since M[X H P] is potentially the same memory as [X H P], and 
+      // because we are not allowed to have overlapping non-const views of 
+      // a multivector, we will now abandon our non-const views in favor of 
+      // const views
+      //
+      X_ = Teuchos::null;
+      KX_ = Teuchos::null;
+      MX_ = Teuchos::null;
+      H_ = Teuchos::null;
+      KH_ = Teuchos::null;
+      MH_ = Teuchos::null;
+      P_ = Teuchos::null;
+      KP_ = Teuchos::null;
+      MP_ = Teuchos::null;
+      Teuchos::RCP<const MV> cX, cH, cXHP, cHP, cK_XHP, cK_HP, cM_XHP, cM_HP, cP, cK_P, cM_P;
+      {
+        cX = MVT::CloneView(*Teuchos::rcp_implicit_cast<const MV>(V_),indblock1);
+        cH = MVT::CloneView(*Teuchos::rcp_implicit_cast<const MV>(V_),indblock2);
+
+        std::vector<int> indXHP(nevLocal_);
+        for (int i=0; i<nevLocal_; i++) {
+          indXHP[i] = i;
+        }
+        cXHP = MVT::CloneView(*Teuchos::rcp_implicit_cast<const MV>(V_),indXHP);
+        cK_XHP = MVT::CloneView(*Teuchos::rcp_implicit_cast<const MV>(KV_),indXHP);
+        if (hasM_) {
+          cM_XHP = MVT::CloneView(*Teuchos::rcp_implicit_cast<const MV>(MV_),indXHP);
+        }
+        else {
+          cM_XHP = cXHP;
+        }
+
+        std::vector<int> indHP(nevLocal_-blockSize_);
+        for (int i=blockSize_; i<nevLocal_; i++) {
+          indHP[i-blockSize_] = i;
+        }
+        cHP = MVT::CloneView(*Teuchos::rcp_implicit_cast<const MV>(V_),indHP);
+        cK_HP = MVT::CloneView(*Teuchos::rcp_implicit_cast<const MV>(KV_),indHP);
+        if (hasM_) {
+          cM_HP = MVT::CloneView(*Teuchos::rcp_implicit_cast<const MV>(MV_),indHP);
+        }
+        else {
+          cM_HP = cHP;
+        }
+
+        if (nevLocal_ == threeBlocks) {
+          cP = MVT::CloneView(*Teuchos::rcp_implicit_cast<const MV>(V_),indblock3);
+          cK_P = MVT::CloneView(*Teuchos::rcp_implicit_cast<const MV>(KV_),indblock3);
+          if (hasM_) {
+            cM_P = MVT::CloneView(*Teuchos::rcp_implicit_cast<const MV>(MV_),indblock3);
+          }
+          else {
+            cM_P = cP;
+          }
+        }
+      }
+
+      //
+      //----------------------------------------
+      // Form "local" mass and stiffness matrices
+      //----------------------------------------
+      {
+        // We will form only the block upper triangular part of 
+        // [X H P]' K [X H P]  and  [X H P]' M [X H P]
+        // Get the necessary views into KK and MM:
+        //      [--K1--]        [--M1--]
+        // KK = [  -K2-]   MM = [  -M2-]
+        //      [    K3]        [    M3]
+        // 
+        // It is okay to declare a zero-area view of a Teuchos::SerialDenseMatrix
+        //
+        Teuchos::SerialDenseMatrix<int,ScalarType> 
+          K1(Teuchos::View,KK,blockSize_,nevLocal_             ,0*blockSize_,0*blockSize_),
+          K2(Teuchos::View,KK,blockSize_,nevLocal_-1*blockSize_,1*blockSize_,1*blockSize_),
+          K3(Teuchos::View,KK,blockSize_,nevLocal_-2*blockSize_,2*blockSize_,2*blockSize_),
+          M1(Teuchos::View,MM,blockSize_,nevLocal_             ,0*blockSize_,0*blockSize_),
+          M2(Teuchos::View,MM,blockSize_,nevLocal_-1*blockSize_,1*blockSize_,1*blockSize_),
+          M3(Teuchos::View,MM,blockSize_,nevLocal_-2*blockSize_,2*blockSize_,2*blockSize_);
+        {
+          Teuchos::TimeMonitor lcltimer( *timerLocalProj_ );
+          MVT::MvTransMv( ONE, *cX, *cK_XHP, K1 );
+          MVT::MvTransMv( ONE, *cX, *cM_XHP, M1 );
+          MVT::MvTransMv( ONE, *cH, *cK_HP , K2 );
+          MVT::MvTransMv( ONE, *cH, *cM_HP , M2 );
+          if (nevLocal_ == threeBlocks) {
+            MVT::MvTransMv( ONE, *cP, *cK_P, K3 );
+            MVT::MvTransMv( ONE, *cP, *cM_P, M3 );
+          }
+        }
+      }
+      // below, we only need bases [X H P] and [H P] and friends
+      // furthermore, we only need [H P] and friends if fullOrtho == false
+      // clear the others now
+      cX   = Teuchos::null;
+      cH   = Teuchos::null;
+      cP   = Teuchos::null;
+      cK_P = Teuchos::null;
+      cM_P = Teuchos::null;
+      if (fullOrtho_ == true) {
+        cHP = Teuchos::null;
+        cK_HP = Teuchos::null;
+        cM_HP = Teuchos::null;
+      }
+
+      //
+      //---------------------------------------------------
+      // Perform a spectral decomposition of (KK,MM)
+      //---------------------------------------------------
+      //
+      // Get pointers to relevant part of KK, MM and S for Rayleigh-Ritz analysis
       Teuchos::SerialDenseMatrix<int,ScalarType> lclKK(Teuchos::View,KK,nevLocal_,nevLocal_), 
                                                  lclMM(Teuchos::View,MM,nevLocal_,nevLocal_),
                                                   lclS(Teuchos::View, S,nevLocal_,nevLocal_);
-      clearViews();
-      {
-        std::vector<int> lclind(nevLocal_);
-        for (int i=0; i<nevLocal_; i++) {
-          lclind[i] = i;
-        }
-        lclV = MVT::CloneView(*V_,lclind);
-        lclKV = MVT::CloneView(*KV_,lclind);
-        if (hasM_) {
-          lclMV = MVT::CloneView(*MV_,lclind);
-        }
-        else {
-          lclMV = lclV;
-        }
-      }
-      // Form "local" mass and stiffness matrices
-      {
-        Teuchos::TimeMonitor lcltimer( *timerLocalProj_ );
-        MVT::MvTransMv( ONE, *lclV, *lclKV, lclKK );
-        MVT::MvTransMv( ONE, *lclV, *lclMV, lclMM );
-      }
-
-      // Perform a spectral decomposition
       {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
         int localSize = nevLocal_;
@@ -1487,25 +1547,28 @@ namespace Anasazi {
             "Anasazi::LOBPCG::iterate(): indefiniteness detected in projected mass matrix." );
       }
 
-      Teuchos::LAPACK<int,ScalarType> lapack;
-      Teuchos::BLAS<int,ScalarType> blas;
       //
       //---------------------------------------------------
       // Sort the ritz values using the sort manager
       //---------------------------------------------------
+      Teuchos::LAPACK<int,ScalarType> lapack;
+      Teuchos::BLAS<int,ScalarType> blas;
       {
         Teuchos::TimeMonitor lcltimer( *timerSort_ );
 
         std::vector<int> order(nevLocal_);
         // 
-        // sort the first nevLocal_ values in theta_
+        // Sort the first nevLocal_ values in theta_
         sm_->sort( this, nevLocal_, theta_, &order );   // don't catch exception
         //
         // Sort the primitive ritz vectors
         Utils::permuteVectors(order,lclS);
       }
 
-      // compute ritz residual norms
+      //
+      //----------------------------------------
+      // Compute ritz residual norms
+      //----------------------------------------
       {
         Teuchos::SerialDenseMatrix<int,ScalarType> R(nevLocal_,nevLocal_);
         // R = MM*S*diag(theta) - KK*S
@@ -1522,16 +1585,20 @@ namespace Anasazi {
         }
       }
 
-      // before computing X,P: perform second orthogonalization per Ulrich,Rich paper
+      //
+      //----------------------------------------
+      // Compute coefficients for X and P under [X H P]
+      //----------------------------------------
+      // Before computing X,P, optionally perform orthogonalization per Hetmaniuk,Lehoucq paper
       // CX will be the coefficients of [X,H,P] for new X, CP for new P
       // The paper suggests orthogonalizing CP against CX and orthonormalizing CP, w.r.t. MM
       // Here, we will also orthonormalize CX.
       // This is accomplished using the Cholesky factorization of [CX CP]^H lclMM [CX CP]
-      Teuchos::SerialDenseMatrix<int,ScalarType> CX(nevLocal_,oneBlock), CP(nevLocal_,oneBlock);
+      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > CX, CP;
       if (fullOrtho_) {
-        // build orthonormal basis for (  0  ) that is orthogonal to ( S11 )
-        //                             ( S21 )                       ( S21 )
-        //                             ( S31 )                       ( S31 )
+        // build orthonormal basis for (  0  ) that is MM orthogonal to ( S11 )
+        //                             ( S21 )                          ( S21 )
+        //                             ( S31 )                          ( S31 )
         // Do this using Cholesky factorization of ( S11  0  )
         //                                         ( S21 S21 )
         //                                         ( S31 S31 )
@@ -1592,17 +1659,9 @@ namespace Anasazi {
         blas.TRSM(Teuchos::RIGHT_SIDE,Teuchos::UPPER_TRI,Teuchos::NO_TRANS,Teuchos::NON_UNIT_DIAG,
                   nevLocal_,twoBlocks,ONE,tmp2.values(),tmp2.stride(),C.values(),C.stride());
         // put C(:,0:oneBlock-1) into CX
-        for (int j=0; j<oneBlock; j++) {
-          for (int i=0; i<nevLocal_; i++) {
-            CX(i,j) = C(i,j);
-          }
-        }
+        CX = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::Copy,C,nevLocal_,oneBlock,0,0) );
         // put C(:,oneBlock:twoBlocks-1) into CP
-        for (int j=0; j<oneBlock; j++) {
-          for (int i=0; i<nevLocal_; i++) {
-            CP(i,j) = C(i,oneBlock+j);
-          }
-        }
+        CP = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::Copy,C,nevLocal_,oneBlock,0,oneBlock) );
 
         // check the results
         if (om_->isVerbosity( Debug ) ) {
@@ -1618,11 +1677,11 @@ namespace Anasazi {
 
           // check CX^T MM CX == I
           // compute tmp1 = MM*CX
-          teuchosret = tmp1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,CX,ZERO);
+          teuchosret = tmp1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,*CX,ZERO);
           TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
               "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // compute tmp2 = CX^H*tmp1 == CX^H*MM*CX
-          teuchosret = tmp2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,CX,tmp1,ZERO);
+          teuchosret = tmp2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,*CX,tmp1,ZERO);
           TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
               "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // subtrace tmp2 - I == CX^H * MM * CX - I
@@ -1632,11 +1691,11 @@ namespace Anasazi {
 
           // check CP^T MM CP == I
           // compute tmp1 = MM*CP
-          teuchosret = tmp1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,CP,ZERO);
+          teuchosret = tmp1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,*CP,ZERO);
           TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
               "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // compute tmp2 = CP^H*tmp1 == CP^H*MM*CP
-          teuchosret = tmp2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,CP,tmp1,ZERO);
+          teuchosret = tmp2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,*CP,tmp1,ZERO);
           TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
               "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // subtrace tmp2 - I == CP^H * MM * CP - I
@@ -1646,10 +1705,10 @@ namespace Anasazi {
 
           // check CX^T MM CP == 0
           // compute tmp1 = MM*CP
-          teuchosret = tmp1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,CP,ZERO);
+          teuchosret = tmp1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,*CP,ZERO);
           TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // compute tmp2 = CX^H*tmp1 == CX^H*MM*CP
-          teuchosret = tmp2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,CX,tmp1,ZERO);
+          teuchosret = tmp2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,*CX,tmp1,ZERO);
           TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // subtrace tmp2 == CX^H * MM * CP
           tmp = tmp2.normFrobenius();          
@@ -1660,113 +1719,128 @@ namespace Anasazi {
         }
       }
       else {
-        //      [S11]
-        // S1 = [S21]
+        //     [S11 ... ...]
+        // S = [S21 ... ...]
+        //     [S31 ... ...]
+        //
+        // CX = [S11]
+        //      [S21]
+        //      [S31]   ->  X = [X H P] CX
+        //      
+        // CP = [S21]   ->  P =   [H P] CP
         //      [S31]
         //
-        // CX = S1
-        //
-        //      [ 0 ]
-        // CP = [S21]
-        //      [S31]
-        //
-        Teuchos::SerialDenseMatrix<int,ScalarType> S1(Teuchos::View,lclS,nevLocal_,oneBlock);
-        CX.assign(S1);
-        CP.assign(S1);
-        // remove first block of rows from CP
-        for (int j=0; j<oneBlock; j++) {
-          for (int i=0; i<oneBlock; i++) {
-            CP(i,j) = ZERO;
-          }
-        }
+        CX = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::Copy,lclS,nevLocal_         ,oneBlock,0       ,0) );
+        CP = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::Copy,lclS,nevLocal_-oneBlock,oneBlock,oneBlock,0) );
       }
 
       //
-      // Update the spaces: compute new X and new P
+      //----------------------------------------
+      // Compute new X and new P
+      //----------------------------------------
       // Note: Use R as a temporary work space and (if full ortho) tmpMV as well
-      hasP_ = true;
       {
         Teuchos::TimeMonitor lcltimer( *timerLocalUpdate_ );
 
-        TEST_FOR_EXCEPTION(nevLocal_==oneBlock,std::logic_error,
-            "Anasazi::LOBPCG::iterate(): Logic error in local update.");
-
-        std::vector<int> block1(blockSize_), block3(blockSize_);
-        for (int i=0; i<blockSize_; i++) {
-          block1[i] = i;
-          block3[i] = 2*blockSize_ + i;
-        }
-
         // if full ortho, then CX and CP are dense
-        // we multiply lclV*CX into tmpMV
-        //             lclV*CP into R
-        // then put X <- tmpMV
-        //          P <- R
-        // the same for the K[XP] and M[XP]
+        // we multiply [X H P]*CX into tmpMV
+        //             [X H P]*CP into R
+        // then put V(:,firstblock) <- tmpMV
+        //          V(:,thirdblock) <- R
         //
-        // if no full ortho, then lclV*CP doesn't reference first part (X part) of 
-        // lclV
-        // so we multiply lclV*CX into R
-        //                X <- R
-        //       multiply lclV*CP into R (let the zeros do their "work")
-        //                P <- R
+        // if no full ortho, then [H P]*CP doesn't reference first block (X) 
+        // of V, so that we can modify it before computing P
+        // so we multiply [X H P]*CX into R
+        //                V(:,firstblock) <- R
+        //       multiply [H P]*CP into R
+        //                V(:,thirdblock) <- R
+        //
         // mutatis mutandis for K[XP] and M[XP]
         //
         // use SetBlock to do the assignments into V_
         //
+        // in either case, views are only allowed to be overlapping
+        // if they are const, and it should be assume that SetBlock
+        // creates a view of the associated part
+        //
+        // we have from above const-pointers to [KM]XHP, [KM]HP and (if hasP) [KM]P
+        //
         if (fullOrtho_) {
-          // V
-          MVT::MvTimesMatAddMv(ONE,*lclV,CX,ZERO,*tmpMV_);
-          MVT::MvTimesMatAddMv(ONE,*lclV,CP,ZERO,*R_);
-          lclV = Teuchos::null;
-          MVT::SetBlock(*tmpMV_,block1,*V_);
-          MVT::SetBlock(*R_    ,block3,*V_);
-          // KV
-          MVT::MvTimesMatAddMv(ONE,*lclKV,CX,ZERO,*tmpMV_);
-          MVT::MvTimesMatAddMv(ONE,*lclKV,CP,ZERO,*R_);
-          lclKV = Teuchos::null;
-          MVT::SetBlock(*tmpMV_,block1,*KV_);
-          MVT::SetBlock(*R_    ,block3,*KV_);
-          // KV
+          // X,P
+          MVT::MvTimesMatAddMv(ONE,*cXHP,*CX,ZERO,*tmpmvec_);
+          MVT::MvTimesMatAddMv(ONE,*cXHP,*CP,ZERO,*R_);
+          cXHP = Teuchos::null;
+          MVT::SetBlock(*tmpmvec_,indblock1,*V_);
+          MVT::SetBlock(*R_      ,indblock3,*V_);
+          // KX,KP
+          MVT::MvTimesMatAddMv(ONE,*cK_XHP,*CX,ZERO,*tmpmvec_);
+          MVT::MvTimesMatAddMv(ONE,*cK_XHP,*CP,ZERO,*R_);
+          cK_XHP = Teuchos::null;
+          MVT::SetBlock(*tmpmvec_,indblock1,*KV_);
+          MVT::SetBlock(*R_      ,indblock3,*KV_);
+          // MX,MP
           if (hasM_) {
-            MVT::MvTimesMatAddMv(ONE,*lclMV,CX,ZERO,*tmpMV_);
-            MVT::MvTimesMatAddMv(ONE,*lclMV,CP,ZERO,*R_);
-            lclMV = Teuchos::null;
-            MVT::SetBlock(*tmpMV_,block1,*MV_);
-            MVT::SetBlock(*R_    ,block3,*MV_);
+            MVT::MvTimesMatAddMv(ONE,*cM_XHP,*CX,ZERO,*tmpmvec_);
+            MVT::MvTimesMatAddMv(ONE,*cM_XHP,*CP,ZERO,*R_);
+            cM_XHP = Teuchos::null;
+            MVT::SetBlock(*tmpmvec_,indblock1,*MV_);
+            MVT::SetBlock(*R_      ,indblock3,*MV_);
+          }
+          else {
+            cM_XHP = Teuchos::null;
           }
         }
         else {
-          //
-          // we're not allowed to modify V_ until lclV has been released
-          // same with KV and MV
-          //
-          // V
-          MVT::MvTimesMatAddMv(ONE,*lclV,CX,ZERO,*R_);
-          MVT::SetBlock(*R_,block1,*lclV);
-          MVT::MvTimesMatAddMv(ONE,*lclV,CP,ZERO,*R_);
-          lclV = Teuchos::null;
-          MVT::SetBlock(*R_,block3,*V_);
-          // KV
-          MVT::MvTimesMatAddMv(ONE,*lclKV,CX,ZERO,*R_);
-          MVT::SetBlock(*R_,block1,*lclKV);
-          MVT::MvTimesMatAddMv(ONE,*lclKV,CP,ZERO,*R_);
-          lclKV = Teuchos::null;
-          MVT::SetBlock(*R_,block3,*KV_);
-          // MV
+          // X,P
+          MVT::MvTimesMatAddMv(ONE,*cXHP,*CX,ZERO,*R_);
+          cXHP = Teuchos::null;
+          MVT::SetBlock(*R_,indblock1,*V_);
+          MVT::MvTimesMatAddMv(ONE,*cHP,*CP,ZERO,*R_);
+          cHP = Teuchos::null;
+          MVT::SetBlock(*R_,indblock3,*V_);
+          // KX,KP
+          MVT::MvTimesMatAddMv(ONE,*cK_XHP,*CX,ZERO,*R_);
+          cK_XHP = Teuchos::null;
+          MVT::SetBlock(*R_,indblock1,*KV_);
+          MVT::MvTimesMatAddMv(ONE,*cK_HP,*CP,ZERO,*R_);
+          cK_HP = Teuchos::null;
+          MVT::SetBlock(*R_,indblock3,*KV_);
+          // MX,MP
           if (hasM_) {
-            MVT::MvTimesMatAddMv(ONE,*lclMV,CX,ZERO,*R_);
-            MVT::SetBlock(*R_,block1,*lclMV);
-            MVT::MvTimesMatAddMv(ONE,*lclMV,CP,ZERO,*R_);
-            lclMV = Teuchos::null;
-            MVT::SetBlock(*R_,block3,*MV_);
+            MVT::MvTimesMatAddMv(ONE,*cM_XHP,*CX,ZERO,*R_);
+            cM_XHP = Teuchos::null;
+            MVT::SetBlock(*R_,indblock1,*MV_);
+            MVT::MvTimesMatAddMv(ONE,*cM_HP,*CP,ZERO,*R_);
+            cM_HP = Teuchos::null;
+            MVT::SetBlock(*R_,indblock3,*MV_);
+          }
+          else {
+            cM_XHP = Teuchos::null;
+            cM_HP = Teuchos::null;
           }
         }
       } // end timing block
+      // done with coefficient matrices
+      CX = Teuchos::null;
+      CP = Teuchos::null;
 
-      // recreate our MV views
+      //
+      // we now have a P direction
+      hasP_ = true;
+
+      // debugging check: all of our const views should have been cleared by now
+      // if not, we have a logic error above
+      TEST_FOR_EXCEPTION(   cXHP != Teuchos::null || cK_XHP != Teuchos::null || cM_XHP != Teuchos::null
+                          || cHP != Teuchos::null ||  cK_HP != Teuchos::null || cM_HP  != Teuchos::null
+                          ||  cP != Teuchos::null ||   cK_P != Teuchos::null || cM_P   != Teuchos::null,
+                          std::logic_error,
+                          "Anasazi::BlockKrylovSchur::iterate(): const views were not all cleared! Something went wrong!" );
+
+      //
+      // recreate our const MV views of X,H,P and friends
       setupViews();
 
+      //
       // Compute the new residuals, explicitly
       {
         Teuchos::TimeMonitor lcltimer( *timerCompRes_ );
@@ -1940,7 +2014,9 @@ namespace Anasazi {
       Teuchos::SerialDenseMatrix<int,ScalarType> xTx(blockSize_,blockSize_);
       MVT::MvTransMv(ONE,*X_,*R_,xTx);
       tmp = xTx.normFrobenius();
-      os << " >> Error in X^H R == 0   : " << tmp << endl;
+      MVT::MvTransMv(ONE,*R_,*R_,xTx);
+      double normR = xTx.normFrobenius();
+      os << " >> RelError in X^H R == 0: " << tmp/normR << endl;
     }
 
     // Q
@@ -2005,7 +2081,151 @@ namespace Anasazi {
     os << endl;
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // are we initialized or not?
+  template <class ScalarType, class MV, class OP>
+  bool LOBPCG<ScalarType,MV,OP>::isInitialized() const { 
+    return initialized_; 
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // is P valid or not?
+  template <class ScalarType, class MV, class OP>
+  bool LOBPCG<ScalarType,MV,OP>::hasP() {
+    return hasP_;
+  }
   
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // is full orthogonalization enabled or not?
+  template <class ScalarType, class MV, class OP>
+  bool LOBPCG<ScalarType,MV,OP>::getFullOrtho() const { 
+    return(fullOrtho_); 
+  }
+
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return the current auxilliary vectors
+  template <class ScalarType, class MV, class OP>
+  Teuchos::Array<Teuchos::RCP<const MV> > LOBPCG<ScalarType,MV,OP>::getAuxVecs() const {
+    return auxVecs_;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return the current block size
+  template <class ScalarType, class MV, class OP>
+  int LOBPCG<ScalarType,MV,OP>::getBlockSize() const {
+    return(blockSize_); 
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return the current eigenproblem
+  template <class ScalarType, class MV, class OP>
+  const Eigenproblem<ScalarType,MV,OP>& LOBPCG<ScalarType,MV,OP>::getProblem() const { 
+    return(*problem_); 
+  }
+
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return the max subspace dimension
+  template <class ScalarType, class MV, class OP>
+  int LOBPCG<ScalarType,MV,OP>::getMaxSubspaceDim() const {
+    return 3*blockSize_;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return the current subspace dimension
+  template <class ScalarType, class MV, class OP>
+  int LOBPCG<ScalarType,MV,OP>::getCurSubspaceDim() const {
+    if (!initialized_) return 0;
+    return nevLocal_;
+  }
+
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return the current ritz residual norms
+  template <class ScalarType, class MV, class OP>
+  std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> 
+  LOBPCG<ScalarType,MV,OP>::getRitzRes2Norms() 
+  {
+    std::vector<MagnitudeType> ret = ritz2norms_;
+    ret.resize(nevLocal_);
+    return ret;
+  }
+
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return the current compression indices
+  template <class ScalarType, class MV, class OP>
+  std::vector<int> LOBPCG<ScalarType,MV,OP>::getRitzIndex() {
+    std::vector<int> ret(nevLocal_,0);
+    return ret;
+  }
+
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return the current ritz values
+  template <class ScalarType, class MV, class OP>
+  std::vector<Value<ScalarType> > LOBPCG<ScalarType,MV,OP>::getRitzValues() { 
+    std::vector<Value<ScalarType> > ret(nevLocal_);
+    for (int i=0; i<nevLocal_; i++) {
+      ret[i].realpart = theta_[i];
+      ret[i].imagpart = ZERO;
+    }
+    return ret;
+  }
+
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return the current ritz vectors
+  template <class ScalarType, class MV, class OP>
+  Teuchos::RCP<const MV> LOBPCG<ScalarType,MV,OP>::getRitzVectors() {
+    return X_;
+  }
+
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // reset the iteration counter
+  template <class ScalarType, class MV, class OP>
+  void LOBPCG<ScalarType,MV,OP>::resetNumIters() {
+    iter_=0; 
+  }
+
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return the number of iterations
+  template <class ScalarType, class MV, class OP>
+  int LOBPCG<ScalarType,MV,OP>::getNumIters() const { 
+    return(iter_); 
+  }
+
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return the state
+  template <class ScalarType, class MV, class OP>
+  LOBPCGState<ScalarType,MV> LOBPCG<ScalarType,MV,OP>::getState() const {
+    LOBPCGState<ScalarType,MV> state;
+    state.X = X_;
+    state.KX = KX_;
+    state.P = P_;
+    state.KP = KP_;
+    state.H = H_;
+    state.KH = KH_;
+    state.R = R_;
+    state.T = Teuchos::rcp(new std::vector<MagnitudeType>(theta_));
+    if (hasM_) {
+      state.MX = MX_;
+      state.MP = MP_;
+      state.MH = MH_;
+    }
+    else {
+      state.MX = Teuchos::null;
+      state.MP = Teuchos::null;
+      state.MH = Teuchos::null;
+    }
+    return state;
+  }
+
 } // end Anasazi namespace
 
 #endif // ANASAZI_LOBPCG_HPP

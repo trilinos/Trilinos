@@ -227,7 +227,7 @@ namespace Anasazi {
      *    - the first getCurSubspaceDim() vectors of V are orthogonal to auxiliary vectors and have orthonormal columns
      *    - the principal Hessenberg submatrix of of H contains the Hessenberg matrix associated with V
      */
-    bool isInitialized() { return initialized_; }
+    bool isInitialized() const { return initialized_; }
 
     /*! \brief Get the current state of the eigensolver.
      * 

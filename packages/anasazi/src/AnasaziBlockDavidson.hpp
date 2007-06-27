@@ -241,7 +241,7 @@ namespace Anasazi {
      *      Otherwise, MX == Teuchos::null
      *    - R contains the residual vectors with respect to X
      */
-    bool isInitialized();
+    bool isInitialized() const;
 
     /*! \brief Get access to the current state of the eigensolver.
      * 
@@ -730,7 +730,7 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Return initialized state
   template <class ScalarType, class MV, class OP>
-  bool BlockDavidson<ScalarType,MV,OP>::isInitialized() { return initialized_; }
+  bool BlockDavidson<ScalarType,MV,OP>::isInitialized() const { return initialized_; }
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////

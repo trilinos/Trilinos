@@ -165,7 +165,7 @@ class Eigensolver {
   virtual Teuchos::Array<Teuchos::RefCountPtr<const MV> > getAuxVecs() const = 0;
 
   //! States whether the solver has been initialized or not.
-  virtual bool isInitialized() = 0;
+  virtual bool isInitialized() const = 0;
 
   //@}
 
