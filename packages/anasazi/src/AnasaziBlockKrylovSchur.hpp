@@ -588,7 +588,6 @@ namespace Anasazi {
   }
   
   // Template specialization for the complex scalar type.
-  template<>
   void sortRitzValues( const std::vector<double>& rRV, 
                        const std::vector<double>& iRV,
                        std::vector<Value<ANSZI_CPLX_CLASS<double> > >* RV, 
