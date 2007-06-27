@@ -1,9 +1,9 @@
+Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 Echoing the command-line:
 
 ./test_single_stratimikos_solver_driver.exe --echo-command-line --input-file=FourByFour.belos.ml.xml 
 
-Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 Reading parameters from XML file "FourByFour.belos.ml.xml" ...
 
@@ -125,25 +125,20 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
         Output File : string = none
         Verbosity Level : string = default
     Belos -> 
-      Adjustable Block Size : bool = 1
+      Adaptive Block Size : bool = 1
       Block Size : int = 1
-      Default Rel*** Caught standard exception : /home/rabartl/PROJECTS/Trilinos.base/Trilinos/packages/teuchos/src/Teuchos_RCP.cpp:59:
-
-Throw test that evaluated to true: itr != extra_data_map_->end()
-
-Error, the type:name pair 'RCP<Thyra::PreconditionerBase<double, double>>:Belos::InternalPrec' already exists and force_unique==true!
- Res Norm : double = 1e-06
-      Max Iters : int = 400
-      Max Restarts : int = 25
+      Default Rel Res Norm : double = 1e-06
+      Maximum Iterations : int = 400
+      Maximum Restarts : int = 25
+      Orthogonalization : string = DGKS
       Solver Type : string = GMRES
       GMRES -> 
         Max Number of Krylov Vectors : int = 300
-        Ortho Type : string = DGKS
         Restart Timers : bool = 1
         Variant : string = Standard
       Outputter -> 
         Output Frequency : int = 10
-        Output Max Res Only : bool = 1
+        Show Maximum Residual Norm Only : bool = 1
       VerboseObject -> 
         Output File : string = none
         Verbosity Level : string = default
@@ -202,14 +197,14 @@ Error, the type:name pair 'RCP<Thyra::PreconditionerBase<double, double>>:Belos:
         max levels : int = 10
         prec type : string = MGV
         smoother: Aztec as solver : bool = 0
-        smoother: Aztec options : int* = 0xb234d0
-        smoother: Aztec params : double* = 0xb23d90
+        smoother: Aztec options : int* = 0xb59ba0
+        smoother: Aztec params : double* = 0xb5a460
         smoother: Hiptmair efficient symmetric : bool = 1
         smoother: damping factor : double = 1
         smoother: pre or post : string = both
         smoother: sweeps : int = 1
         smoother: type : string = Hiptmair
-        subsmoother: Chebyshev alpha : double = 27
+        subsmoother: Chebyshev alpha : double = 20
         subsmoother: edge sweeps : int = 4
         subsmoother: node sweeps : int = 4
         subsmoother: type : string = Chebyshev
@@ -227,11 +222,66 @@ Running example use cases ...
     Performing a single linear solve ...
     
     Solve status:
-      solveStatus = SOLVE_STATUS_UNKNOWN
-      achievedTol = unknownTolerance()
-      message: "The Belos solver of type "Belos::BlockGmres<...,double>{Variant='Standard',Ortho Type='DGKS'}" returned a solve status of "Converged" in 1 iterations and achieved an approximate max tolerance of 0 with total CPU time of 0.002894 sec"
+      solveStatus = SOLVE_STATUS_CONVERGED
+      achievedTol = 1e-06
+      message:
+        The Belos solver of type "Belos::BlockGmresSolMgr<...,double>{Ortho Type='DGKS', Block Size=1, Num Blocks=300, Max Restarts=25}" returned a solve status of "SOLVE_STATUS_CONVERGED with total CPU time of 0.003201 sec
       extraParameters: NONE
     
     Performing a solve, changing the operator, then performing another solve ...
+    
+    Performing a solve, changing the operator in a very small way, then performing another solve ...
+    
+    Performing a solve, changing the operator in a major way, then performing another solve ...
 
-Oh no! At least one of the tests failed!
+Printing the parameter list (showing what was used) ...
+  Matrix File : string = FourByFour.mtx
+  Linear Solver Builder -> 
+    Linear Solver Type : string = Belos
+    Preconditioner Type : string = ML
+    Linear Solver Types -> 
+      Belos -> 
+        Adaptive Block Size : bool = 1   [default]
+        Block Size : int = 1   [default]
+        Default Rel Res Norm : double = 1e-06   [default]
+        Maximum Iterations : int = 400   [default]
+        Maximum Restarts : int = 25   [default]
+        Orthogonalization : string = DGKS   [default]
+        Solver Type : string = GMRES   [default]
+        GMRES -> 
+          Max Number of Krylov Vectors : int = 300   [default]
+          Restart Timers : bool = 1   [default]
+          Variant : string = Standard   [default]
+        Outputter -> 
+          Output Frequency : int = 10   [default]
+          Show Maximum Residual Norm Only : bool = 1   [default]
+        VerboseObject -> 
+          Output File : string = none   [default]
+          Verbosity Level : string = default   [default]
+    Preconditioner Types -> 
+      ML -> 
+        Base Method Defaults : string = DD   [default]
+        ML Settings -> 
+          aggregation: damping factor : double = 1.333   [unused]
+          aggregation: local aggregates : int = 1   [unused]
+          aggregation: type : string = METIS   [unused]
+          coarse: max size : int = 128   [unused]
+          coarse: type : string = Amesos-KLU   [unused]
+          default values : string = DD   [unused]
+          eigen-analysis: iterations : int = 20   [unused]
+          eigen-analysis: type : string = power-method   [unused]
+          increasing or decreasing : string = increasing   [unused]
+          max levels : int = 2   [unused]
+          prec type : string = MGV   [unused]
+          smoother: Aztec as solver : bool = 0   [unused]
+          smoother: Aztec options : int* = 0xb5bb20   [unused]
+          smoother: Aztec params : double* = 0xb5bbf0   [unused]
+          smoother: pre or post : string = both   [unused]
+          smoother: sweeps : int = 1   [unused]
+          smoother: type : string = Aztec   [unused]
+  LinearOpTester -> 
+    [empty list]
+  LinearOpWithSolveTester -> 
+    [empty list]
+
+Congratulations! All of the tests checked out!

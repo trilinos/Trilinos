@@ -113,20 +113,20 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Belos">
-      <Parameter name="Adjustable Block Size" type="bool" value="1"/>
+      <Parameter name="Adaptive Block Size" type="bool" value="1"/>
       <Parameter name="Block Size" type="int" value="1"/>
       <Parameter name="Default Rel Res Norm" type="double" value="1e-06"/>
       <ParameterList name="GMRES">
         <Parameter name="Max Number of Krylov Vectors" type="int" value="300"/>
-        <Parameter name="Ortho Type" type="string" value="DGKS"/>
         <Parameter name="Restart Timers" type="bool" value="1"/>
         <Parameter name="Variant" type="string" value="Standard"/>
       </ParameterList>
-      <Parameter name="Max Iters" type="int" value="400"/>
-      <Parameter name="Max Restarts" type="int" value="25"/>
+      <Parameter name="Maximum Iterations" type="int" value="400"/>
+      <Parameter name="Maximum Restarts" type="int" value="25"/>
+      <Parameter name="Orthogonalization" type="string" value="DGKS"/>
       <ParameterList name="Outputter">
         <Parameter name="Output Frequency" type="int" value="10"/>
-        <Parameter name="Output Max Res Only" type="bool" value="1"/>
+        <Parameter name="Show Maximum Residual Norm Only" type="bool" value="1"/>
       </ParameterList>
       <Parameter name="Solver Type" type="string" value="GMRES"/>
       <ParameterList name="VerboseObject">
@@ -194,14 +194,14 @@
         <Parameter name="max levels" type="int" value="10"/>
         <Parameter name="prec type" type="string" value="MGV"/>
         <Parameter name="smoother: Aztec as solver" type="bool" value="0"/>
-        <Parameter name="smoother: Aztec options" type="any" value="0xb13ee0   [unused]"/>
-        <Parameter name="smoother: Aztec params" type="any" value="0xb147a0   [unused]"/>
+        <Parameter name="smoother: Aztec options" type="any" value="0xb4a6c0   [unused]"/>
+        <Parameter name="smoother: Aztec params" type="any" value="0xb4af80   [unused]"/>
         <Parameter name="smoother: Hiptmair efficient symmetric" type="bool" value="1"/>
         <Parameter name="smoother: damping factor" type="double" value="1"/>
         <Parameter name="smoother: pre or post" type="string" value="both"/>
         <Parameter name="smoother: sweeps" type="int" value="1"/>
         <Parameter name="smoother: type" type="string" value="Hiptmair"/>
-        <Parameter name="subsmoother: Chebyshev alpha" type="double" value="27"/>
+        <Parameter name="subsmoother: Chebyshev alpha" type="double" value="20"/>
         <Parameter name="subsmoother: edge sweeps" type="int" value="4"/>
         <Parameter name="subsmoother: node sweeps" type="int" value="4"/>
         <Parameter name="subsmoother: type" type="string" value="Chebyshev"/>

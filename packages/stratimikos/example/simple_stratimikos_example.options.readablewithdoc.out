@@ -154,13 +154,17 @@
             Drop Tolerance : double = 0
               # The tolerance below which an entry from the factors of an internal "ilut"
               # preconditioner will be dropped.
+              #  Accepted types: "int", "double", "string".
             Fill Factor : double = 1
               # The amount of fill allowed for an internal "ilut" preconditioner.
+              #  Accepted types: "int", "double", "string".
             Graph Fill : int = 0
               # The amount of fill allowed for the internal "ilu" preconditioner.
+              #  Accepted types: "int", "double", "string".
             Ill-Conditioning Threshold : double = 1e+11
               # The threshold tolerance above which a system is considered
               # ill conditioned.
+              #  Accepted types: "int", "double", "string".
             Orthogonalization : string = Classical
               # The type of orthogonalization to use with the "GMRES" solver.
               #   Valid string values:
@@ -170,11 +174,14 @@
               #     }
             Output Frequency : int = 0
               # The number of iterations between each output of the solver's progress.
+              #  Accepted types: "int", "double", "string".
             Overlap : int = 0
               # The amount of overlap used for the internal "ilu" and "ilut" preconditioners.
+              #  Accepted types: "int", "double", "string".
             Polynomial Order : int = 3
               # The order for of the polynomials used for the "Polynomial" and
               # "Least-squares Polynomial" internal preconditioners.
+              #  Accepted types: "int", "double", "string".
             RCM Reordering : string = Disabled
               # Determines if RCM reordering is used with the internal
               # "ilu" or "ilut" preconditioners.
@@ -186,9 +193,11 @@
             Size of Krylov Subspace : int = 300
               # The maximum size of the Krylov subspace used with "GMRES" before
               # a restart is performed.
+              #  Accepted types: "int", "double", "string".
             Steps : int = 3
               # Number of steps taken for the "Jacobi" or the "Symmetric Gauss-Seidel"
               # internal preconditioners for each preconditioner application.
+              #  Accepted types: "int", "double", "string".
         Forward Solve -> 
           # Gives the options for the forward solve.
           Max Iterations : int = 400
@@ -237,13 +246,17 @@
             Drop Tolerance : double = 0
               # The tolerance below which an entry from the factors of an internal "ilut"
               # preconditioner will be dropped.
+              #  Accepted types: "int", "double", "string".
             Fill Factor : double = 1
               # The amount of fill allowed for an internal "ilut" preconditioner.
+              #  Accepted types: "int", "double", "string".
             Graph Fill : int = 0
               # The amount of fill allowed for the internal "ilu" preconditioner.
+              #  Accepted types: "int", "double", "string".
             Ill-Conditioning Threshold : double = 1e+11
               # The threshold tolerance above which a system is considered
               # ill conditioned.
+              #  Accepted types: "int", "double", "string".
             Orthogonalization : string = Classical
               # The type of orthogonalization to use with the "GMRES" solver.
               #   Valid string values:
@@ -253,11 +266,14 @@
               #     }
             Output Frequency : int = 0
               # The number of iterations between each output of the solver's progress.
+              #  Accepted types: "int", "double", "string".
             Overlap : int = 0
               # The amount of overlap used for the internal "ilu" and "ilut" preconditioners.
+              #  Accepted types: "int", "double", "string".
             Polynomial Order : int = 3
               # The order for of the polynomials used for the "Polynomial" and
               # "Least-squares Polynomial" internal preconditioners.
+              #  Accepted types: "int", "double", "string".
             RCM Reordering : string = Disabled
               # Determines if RCM reordering is used with the internal
               # "ilu" or "ilut" preconditioners.
@@ -269,9 +285,11 @@
             Size of Krylov Subspace : int = 300
               # The maximum size of the Krylov subspace used with "GMRES" before
               # a restart is performed.
+              #  Accepted types: "int", "double", "string".
             Steps : int = 3
               # Number of steps taken for the "Jacobi" or the "Symmetric Gauss-Seidel"
               # internal preconditioners for each preconditioner application.
+              #  Accepted types: "int", "double", "string".
         VerboseObject -> 
           Output File : string = none
             # The file to send output to.  If the value "none" is used, then
@@ -297,20 +315,20 @@
             #          Produce the highest level of output
             #     }
       Belos -> 
-        Adjustable Block Size : bool = 1
+        Adaptive Block Size : bool = 1
         Block Size : int = 1
         Default Rel Res Norm : double = 1e-06
-        Max Iters : int = 400
-        Max Restarts : int = 25
+        Maximum Iterations : int = 400
+        Maximum Restarts : int = 25
+        Orthogonalization : string = DGKS
         Solver Type : string = GMRES
         GMRES -> 
           Max Number of Krylov Vectors : int = 300
-          Ortho Type : string = DGKS
           Restart Timers : bool = 1
           Variant : string = Standard
         Outputter -> 
           Output Frequency : int = 10
-          Output Max Res Only : bool = 1
+          Show Maximum Residual Norm Only : bool = 1
         VerboseObject -> 
           Output File : string = none
             # The file to send output to.  If the value "none" is used, then
@@ -466,14 +484,14 @@
           max levels : int = 10
           prec type : string = MGV
           smoother: Aztec as solver : bool = 0
-          smoother: Aztec options : int* = 0xb13f00
-          smoother: Aztec params : double* = 0xb147c0
+          smoother: Aztec options : int* = 0xb4a6e0
+          smoother: Aztec params : double* = 0xb4afa0
           smoother: Hiptmair efficient symmetric : bool = 1
           smoother: damping factor : double = 1
           smoother: pre or post : string = both
           smoother: sweeps : int = 1
           smoother: type : string = Hiptmair
-          subsmoother: Chebyshev alpha : double = 27
+          subsmoother: Chebyshev alpha : double = 20
           subsmoother: edge sweeps : int = 4
           subsmoother: node sweeps : int = 4
           subsmoother: type : string = Chebyshev

@@ -1,3 +1,4 @@
+Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 Echoing the command-line:
 
@@ -34,4 +35,3 @@ To print out just the valid options use --matrix-file="" --only-print-options wi
 To solve a linear system from a system read from a file use --matrix-file="SomeFile.mtx" with options read from an XML file using --linear-solver-params-file="SomeFile.xml"
 
 
-Teuchos::GlobalMPISession::GlobalMPISession(): started serial run

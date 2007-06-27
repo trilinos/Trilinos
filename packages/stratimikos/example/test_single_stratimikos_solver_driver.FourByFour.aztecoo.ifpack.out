@@ -1,9 +1,9 @@
+Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 Echoing the command-line:
 
 ./test_single_stratimikos_solver_driver.exe --echo-command-line --input-file=FourByFour.aztecoo.ifpack.xml 
 
-Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 Reading parameters from XML file "FourByFour.aztecoo.ifpack.xml" ...
 
@@ -125,20 +125,20 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
         Output File : string = none
         Verbosity Level : string = default
     Belos -> 
-      Adjustable Block Size : bool = 1
+      Adaptive Block Size : bool = 1
       Block Size : int = 1
       Default Rel Res Norm : double = 1e-06
-      Max Iters : int = 400
-      Max Restarts : int = 25
+      Maximum Iterations : int = 400
+      Maximum Restarts : int = 25
+      Orthogonalization : string = DGKS
       Solver Type : string = GMRES
       GMRES -> 
         Max Number of Krylov Vectors : int = 300
-        Ortho Type : string = DGKS
         Restart Timers : bool = 1
         Variant : string = Standard
       Outputter -> 
         Output Frequency : int = 10
-        Output Max Res Only : bool = 1
+        Show Maximum Residual Norm Only : bool = 1
       VerboseObject -> 
         Output File : string = none
         Verbosity Level : string = default
@@ -197,14 +197,14 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
         max levels : int = 10
         prec type : string = MGV
         smoother: Aztec as solver : bool = 0
-        smoother: Aztec options : int* = 0xb234d0
-        smoother: Aztec params : double* = 0xb23d90
+        smoother: Aztec options : int* = 0xb59ba0
+        smoother: Aztec params : double* = 0xb5a460
         smoother: Hiptmair efficient symmetric : bool = 1
         smoother: damping factor : double = 1
         smoother: pre or post : string = both
         smoother: sweeps : int = 1
         smoother: type : string = Hiptmair
-        subsmoother: Chebyshev alpha : double = 27
+        subsmoother: Chebyshev alpha : double = 20
         subsmoother: edge sweeps : int = 4
         subsmoother: node sweeps : int = 4
         subsmoother: type : string = Chebyshev
@@ -225,7 +225,8 @@ Running example use cases ...
     Solve status:
       solveStatus = SOLVE_STATUS_UNKNOWN
       achievedTol = unknownTolerance()
-      message: "AztecOO solver converged on m = 1 RHSs using 1 cumulative iterations for an average of 1 iterations/RHS and total CPU time of 0.00051 sec."
+      message:
+        AztecOO solver converged on m = 1 RHSs using 1 cumulative iterations for an average of 1 iterations/RHS and total CPU time of 0.000519 sec.
       extraParameters: NONE
     
     Performing a solve, changing the operator, then performing another solve ...
@@ -255,13 +256,17 @@ Printing the parameter list (showing what was used) ...
             Aztec Preconditioner : string = ilu   [default]
             Aztec Solver : string = GMRES   [default]
             Convergence Test : string = r0   [default]
-            Graph Fill : int = 0   [default]
-            Ill-Conditioning Threshold : double = 1e+11   [default]
+            Drop Tolerance : double = 0   [unused]
+            Fill Factor : double = 1   [unused]
+            Graph Fill : int = 0
+            Ill-Conditioning Threshold : double = 1e+11
             Orthogonalization : string = Classical   [default]
-            Output Frequency : int = 0   [default]
-            Overlap : int = 0   [default]
+            Output Frequency : int = 0
+            Overlap : int = 0
+            Polynomial Order : int = 3   [unused]
             RCM Reordering : string = Disabled   [default]
-            Size of Krylov Subspace : int = 300   [default]
+            Size of Krylov Subspace : int = 300
+            Steps : int = 3   [unused]
         Forward Solve -> 
           Max Iterations : int = 400   [default]
           Tolerance : double = 1e-06   [default]
@@ -269,11 +274,17 @@ Printing the parameter list (showing what was used) ...
             Aztec Preconditioner : string = none   [default]
             Aztec Solver : string = GMRES   [default]
             Convergence Test : string = r0   [default]
-            Ill-Conditioning Threshold : double = 1e+11   [default]
+            Drop Tolerance : double = 0   [unused]
+            Fill Factor : double = 1   [unused]
+            Graph Fill : int = 0   [unused]
+            Ill-Conditioning Threshold : double = 1e+11
             Orthogonalization : string = Classical   [default]
-            Output Frequency : int = 0   [default]
+            Output Frequency : int = 0
+            Overlap : int = 0   [unused]
+            Polynomial Order : int = 3   [unused]
             RCM Reordering : string = Disabled   [default]
-            Size of Krylov Subspace : int = 300   [default]
+            Size of Krylov Subspace : int = 300
+            Steps : int = 3   [unused]
         VerboseObject -> 
           Output File : string = none   [default]
           Verbosity Level : string = default   [default]
