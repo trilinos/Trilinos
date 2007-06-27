@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
   typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 
   using Teuchos::ParameterList;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
@@ -90,8 +90,8 @@ int main(int argc, char *argv[]) {
   // Get the problem
   //
   int MyPID;
-  RefCountPtr<Epetra_CrsMatrix> A;
-  RefCountPtr<Epetra_MultiVector> B, X;
+  RCP<Epetra_CrsMatrix> A;
+  RCP<Epetra_MultiVector> B, X;
   int return_val =Belos::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
   if(return_val != 0) return return_val;
   const Epetra_Map &Map = A->RowMap();
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
   // *************Start the block Gmres iteration*************************
   // *******************************************************************
   //
-  Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > solver;
+  Teuchos::RCP< Belos::SolverManager<double,MV,OP> > solver;
   if (pseudo)
     solver = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&problem,false), rcp(&belosList,false) ) );
   else 

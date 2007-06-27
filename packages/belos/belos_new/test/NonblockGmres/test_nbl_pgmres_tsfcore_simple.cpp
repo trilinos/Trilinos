@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 	typedef Teuchos::ScalarTraits<Scalar>  ST;
 	typedef ST::magnitudeType ScalarMag;
 	using Teuchos::CommandLineProcessor;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::getConst;
   Teuchos::Time timer("");

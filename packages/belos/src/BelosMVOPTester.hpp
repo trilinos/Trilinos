@@ -50,7 +50,7 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosOutputManager.hpp"
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 /** \example MVOPTester/MVOPTesterEx.cpp
     This is an example of how to use the Belos::TestMultiVecTraits() and Belos::TestOperatorTraits() methods.
@@ -65,8 +65,8 @@ namespace Belos {
 */
   template< class ScalarType, class MV >
   bool TestMultiVecTraits( 
-                const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
-                const Teuchos::RefCountPtr<const MV> &A ) {
+                const Teuchos::RCP<OutputManager<ScalarType> > &om,
+                const Teuchos::RCP<const MV> &A ) {
 
     /* MVT Contract:
 
@@ -201,7 +201,7 @@ namespace Belos {
        4) MvNorm result vector should not be resized
     *********************************************************************/
     {
-      Teuchos::RefCountPtr<MV> B = MVT::Clone(*A,numvecs);
+      Teuchos::RCP<MV> B = MVT::Clone(*A,numvecs);
       std::vector<MagType> norms(2*numvecs);
       bool ResizeWarning = false;
       if ( MVT::GetNumberVecs(*B) != numvecs ) {
@@ -250,7 +250,7 @@ namespace Belos {
        Also, make sure vector norms aren't negative.
     *********************************************************************/
     {
-      Teuchos::RefCountPtr<MV> B = MVT::Clone(*A,numvecs);
+      Teuchos::RCP<MV> B = MVT::Clone(*A,numvecs);
       std::vector<MagType> norms(numvecs), norms2(numvecs);
 
       MVT::MvInit(*B);
@@ -305,7 +305,7 @@ namespace Belos {
               Right now, this has been demoted to a warning.
     *********************************************************************/
     {
-      Teuchos::RefCountPtr<MV> B = MVT::Clone(*A,numvecs);
+      Teuchos::RCP<MV> B = MVT::Clone(*A,numvecs);
       std::vector<MagType> norms(numvecs);
 
       MVT::MvInit(*B,one);
@@ -338,7 +338,7 @@ namespace Belos {
        We must know this works before the next tests.
     *********************************************************************/
     {
-      Teuchos::RefCountPtr<MV> B = MVT::Clone(*A,numvecs);
+      Teuchos::RCP<MV> B = MVT::Clone(*A,numvecs);
       std::vector<MagType> norms(numvecs);
       MVT::MvInit(*B, zero_mag);
       MVT::MvNorm(*B, &norms);
@@ -365,7 +365,7 @@ namespace Belos {
        3) Zero out B and make sure that C norms are not affected
     *********************************************************************/
     {
-      Teuchos::RefCountPtr<MV> B, C;
+      Teuchos::RCP<MV> B, C;
       std::vector<MagType> norms(numvecs), norms2(numvecs);
 
       B = MVT::Clone(*A,numvecs);
@@ -413,7 +413,7 @@ namespace Belos {
        3) Zero out B and make sure that C is still okay
     *********************************************************************/
     {
-      Teuchos::RefCountPtr<MV> B, C;
+      Teuchos::RCP<MV> B, C;
       std::vector<MagType> norms(numvecs), norms2(numvecs);
 
       B = MVT::Clone(*A,numvecs);
@@ -455,7 +455,7 @@ namespace Belos {
        3) Zero out B and make sure that C is zero as well
     *********************************************************************/
     {
-      Teuchos::RefCountPtr<MV> B, C;
+      Teuchos::RCP<MV> B, C;
       std::vector<MagType> norms(numvecs), norms2(numvecs);
 
       B = MVT::Clone(*A,numvecs); 
@@ -500,8 +500,8 @@ namespace Belos {
        3) Zero out B and make sure that C is zerod as well
     *********************************************************************/
     {
-      Teuchos::RefCountPtr<MV> B;
-      Teuchos::RefCountPtr<const MV> constB, C;
+      Teuchos::RCP<MV> B;
+      Teuchos::RCP<const MV> constB, C;
       std::vector<MagType> normsB(numvecs), normsC(numvecs_2);
       std::vector<int> allind(numvecs);
       for (i=0; i<numvecs; i++) {
@@ -557,7 +557,7 @@ namespace Belos {
        overwritten, making it more difficult to test.
     *********************************************************************/
     {
-      Teuchos::RefCountPtr<MV> B, C;
+      Teuchos::RCP<MV> B, C;
       std::vector<MagType> normsB1(numvecs), normsB2(numvecs),
                            normsC1(numvecs_2), normsC2(numvecs_2);
 
@@ -638,7 +638,7 @@ namespace Belos {
        of vectors in C, so that not all of C is put into B.
     *********************************************************************/
     {
-      Teuchos::RefCountPtr<MV> B, C;
+      Teuchos::RCP<MV> B, C;
       // set these: we assume below that setSize*2=BSize
       const int BSize   = 10, 
                 CSize   = 6,
@@ -729,7 +729,7 @@ namespace Belos {
     {
       const int p = 7;
       const int q = 9;
-      Teuchos::RefCountPtr<MV> B, C;
+      Teuchos::RCP<MV> B, C;
       std::vector<MagType> normsB(p), normsC(q);
       Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
 
@@ -819,7 +819,7 @@ namespace Belos {
     {
       const int p = 7;
       const int q = 9;
-      Teuchos::RefCountPtr<MV> B, C;
+      Teuchos::RCP<MV> B, C;
       vector<ScalarType> iprods(p+q);
       std::vector<MagType> normsB(numvecs), normsC(numvecs);
 
@@ -880,7 +880,7 @@ namespace Belos {
     *********************************************************************/
     {
       const int p = 7;
-      Teuchos::RefCountPtr<MV> B, C, D;
+      Teuchos::RCP<MV> B, C, D;
       std::vector<MagType> normsB1(p), normsB2(p),
                            normsC1(p), normsC2(p),
                            normsD1(p), normsD2(p);
@@ -1020,7 +1020,7 @@ namespace Belos {
     *********************************************************************/
     {
       const int p = 7;
-      Teuchos::RefCountPtr<MV> B, C, D;
+      Teuchos::RCP<MV> B, C, D;
       std::vector<MagType> normsB(p),
                            normsD(p);
       std::vector<int> lclindex(p);
@@ -1071,7 +1071,7 @@ namespace Belos {
     *********************************************************************/
     {
       const int p = 7, q = 5;
-      Teuchos::RefCountPtr<MV> B, C;
+      Teuchos::RCP<MV> B, C;
       Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
       std::vector<MagType> normsC1(q), normsC2(q),
                            normsB1(p), normsB2(p);
@@ -1207,7 +1207,7 @@ namespace Belos {
     *********************************************************************/
     {
       const int p = 5, q = 7;
-      Teuchos::RefCountPtr<MV> B, C;
+      Teuchos::RCP<MV> B, C;
       Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
       std::vector<MagType> normsC1(q), normsC2(q),
                            normsB1(p), normsB2(p);
@@ -1348,9 +1348,9 @@ namespace Belos {
 */
   template< class ScalarType, class MV, class OP>
   bool TestOperatorTraits( 
-                const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
-                const Teuchos::RefCountPtr<const MV> &A,
-                const Teuchos::RefCountPtr<const OP> &M) {
+                const Teuchos::RCP<OutputManager<ScalarType> > &om,
+                const Teuchos::RCP<const MV> &A,
+                const Teuchos::RCP<const OP> &M) {
 
     /* OPT Contract:
        Apply()
@@ -1366,7 +1366,7 @@ namespace Belos {
 
     const int numvecs = 10;
 
-    Teuchos::RefCountPtr<MV> B = MVT::Clone(*A,numvecs), 
+    Teuchos::RCP<MV> B = MVT::Clone(*A,numvecs), 
                              C = MVT::Clone(*A,numvecs);
 
     std::vector<MagType> normsB1(numvecs), normsB2(numvecs),

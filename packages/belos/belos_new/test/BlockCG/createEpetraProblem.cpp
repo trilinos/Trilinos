@@ -41,10 +41,10 @@
 
 int Belos::createEpetraProblem(
 			       std::string                      &filename
-			       ,RefCountPtr<Epetra_Map>         *rowMap
-			       ,RefCountPtr<Epetra_CrsMatrix>   *A
-			       ,RefCountPtr<Epetra_MultiVector> *B
-			       ,RefCountPtr<Epetra_MultiVector> *X
+			       ,RCP<Epetra_Map>         *rowMap
+			       ,RCP<Epetra_CrsMatrix>   *A
+			       ,RCP<Epetra_MultiVector> *B
+			       ,RCP<Epetra_MultiVector> *X
 			       ,int                             *MyPID_out
 			       )
 {
@@ -57,7 +57,7 @@ int Belos::createEpetraProblem(
   double *val=0, *row_vals=0;
   double *xguess=0, *b=0, *xexact=0;
 
-  RefCountPtr<Epetra_Comm> epetraComm;
+  RCP<Epetra_Comm> epetraComm;
 #ifdef EPETRA_MPI	
   epetraComm = rcp(new Epetra_MpiComm( MPI_COMM_WORLD ) );	
 #else	
@@ -95,7 +95,7 @@ int Belos::createEpetraProblem(
     NumNz[i] = bindx[i+1] - bindx[i] + 1;
   }
   //
-  RefCountPtr<Epetra_Map> epetraMap = rcp(new Epetra_Map(NumGlobalElements, NumMyElements, update, 0, *epetraComm));
+  RCP<Epetra_Map> epetraMap = rcp(new Epetra_Map(NumGlobalElements, NumMyElements, update, 0, *epetraComm));
   Teuchos::set_extra_data( epetraComm, "Map::Comm", &epetraMap );
   if(rowMap) *rowMap = epetraMap;
   //

@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
   typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 
   using Teuchos::ParameterList;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
@@ -105,10 +105,10 @@ int main(int argc, char *argv[]) {
   //
   // *************Get the problem*********************
   //
-  RefCountPtr<Epetra_Map> Map;
-  RefCountPtr<Epetra_CrsMatrix> A;
-  RefCountPtr<Epetra_MultiVector> B, X;
-  RefCountPtr<Epetra_Vector> vecB, vecX;
+  RCP<Epetra_Map> Map;
+  RCP<Epetra_CrsMatrix> A;
+  RCP<Epetra_MultiVector> B, X;
+  RCP<Epetra_Vector> vecB, vecX;
   EpetraExt::readEpetraLinearSystem(filename, Comm, &A, &Map, &vecX, &vecB);
   A->OptimizeStorage();
   proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
   int OverlapLevel = 1; // must be >= 0. If Comm.NumProc() == 1,
                         // it is ignored.
 
-  RefCountPtr<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*A, OverlapLevel) );
+  RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*A, OverlapLevel) );
   assert(Prec != Teuchos::null);
 
   // specify parameters for ILU
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
   // Create the Belos preconditioned operator from the Ifpack preconditioner.
   // NOTE:  This is necessary because Belos expects an operator to apply the
   //        preconditioner with Apply() NOT ApplyInverse().
-  RefCountPtr<Belos::EpetraPrecOp> belosPrec = rcp( new Belos::EpetraPrecOp( Prec ) );
+  RCP<Belos::EpetraPrecOp> belosPrec = rcp( new Belos::EpetraPrecOp( Prec ) );
 
   //
   // *****Create parameter list for the block CG solver manager*****
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
   //
   // *******Construct a preconditioned linear problem********
   //
-  RefCountPtr<Belos::LinearProblem<double,MV,OP> > problem
+  RCP<Belos::LinearProblem<double,MV,OP> > problem
     = rcp( new Belos::LinearProblem<double,MV,OP>( A, X, B ) );
   problem->setLeftPrec( belosPrec );
 
@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
   }
   
   // Create an iterative solver manager.
-  RefCountPtr< Belos::SolverManager<double,MV,OP> > solver
+  RCP< Belos::SolverManager<double,MV,OP> > solver
     = rcp( new Belos::BlockCGSolMgr<double,MV,OP>(problem, rcp(&belosList,false)) );
   
   //

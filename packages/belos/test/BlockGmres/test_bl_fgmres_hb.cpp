@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 
   using Teuchos::ParameterList;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
   // Get the problem
   //
   int MyPID;
-  RefCountPtr<Epetra_CrsMatrix> A;
+  RCP<Epetra_CrsMatrix> A;
   int return_val =Belos::createEpetraProblem(filename,NULL,&A,NULL,NULL,&MyPID);
   const Epetra_Map &Map = A->RowMap();
   if(return_val != 0) return return_val;
@@ -127,8 +127,8 @@ int main(int argc, char *argv[]) {
   // if (argc >5) Rthresh = atof(argv[5]);
   if (proc_verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
   //
-  Teuchos::RefCountPtr<Ifpack_IlukGraph> ilukGraph;
-  Teuchos::RefCountPtr<Ifpack_CrsRiluk> ilukFactors;
+  Teuchos::RCP<Ifpack_IlukGraph> ilukGraph;
+  Teuchos::RCP<Ifpack_CrsRiluk> ilukFactors;
   //
   if (Lfill > -1) {
     ilukGraph = Teuchos::rcp(new Ifpack_IlukGraph(A->Graph(), Lfill, Overlap));
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
   // Create the Belos preconditioned operator from the Ifpack preconditioner.
   // NOTE:  This is necessary because Belos expects an operator to apply the
   //        preconditioner with Apply() NOT ApplyInverse().
-  RefCountPtr<Belos::EpetraPrecOp> Prec = rcp( new Belos::EpetraPrecOp( ilukFactors ) );
+  RCP<Belos::EpetraPrecOp> Prec = rcp( new Belos::EpetraPrecOp( ilukFactors ) );
 
   //
   // ********Other information used by block solver***********
@@ -183,14 +183,14 @@ int main(int argc, char *argv[]) {
   // 
   // *****Create the inner block Gmres iteration********
   //
-  RefCountPtr<Belos::EpetraOperator> innerSolver;
+  RCP<Belos::EpetraOperator> innerSolver;
   innerSolver = rcp( new Belos::EpetraOperator( rcp(&innerProblem,false) , rcp(&innerBelosList,false), true ) );
   //
   // *****Construct solution vector and random right-hand-sides *****
   //
-  RefCountPtr<Epetra_MultiVector> X = rcp( new Epetra_MultiVector(Map, numrhs) );
+  RCP<Epetra_MultiVector> X = rcp( new Epetra_MultiVector(Map, numrhs) );
   X->PutScalar( 0.0 );
-  RefCountPtr<Epetra_MultiVector> B = rcp( new Epetra_MultiVector(Map, numrhs) );
+  RCP<Epetra_MultiVector> B = rcp( new Epetra_MultiVector(Map, numrhs) );
   B->Random();
   Belos::LinearProblem<double,MV,OP> problem( A, X, B );
   problem.setRightPrec( innerSolver );
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
   // **********Create the flexible, block Gmres iteration***************
   // *******************************************************************
   //
-  RefCountPtr< Belos::SolverManager<double,MV,OP> > solver;
+  RCP< Belos::SolverManager<double,MV,OP> > solver;
   solver = rcp( new Belos::BlockGmresSolMgr<double,MV,OP>( rcp(&problem,false), rcp(&belosList,false) ) );
   //
   //

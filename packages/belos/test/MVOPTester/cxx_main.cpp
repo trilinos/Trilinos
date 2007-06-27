@@ -57,10 +57,10 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   // Initialize MPI and setup an Epetra communicator
   MPI_Init(&argc,&argv);
-  Teuchos::RefCountPtr<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
+  Teuchos::RCP<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
 #else
   // If we aren't using MPI, then setup a serial communicator.
-  Teuchos::RefCountPtr<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
+  Teuchos::RCP<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
 #endif
 
    // number of global elements
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
-  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( new Epetra_Map(dim, 0, *Comm) );
+  Teuchos::RCP<Epetra_Map> Map = Teuchos::rcp( new Epetra_Map(dim, 0, *Comm) );
   
   // Get update list and number of local equations from newly created Map.
   int NumMyElements = Map->NumMyElements();
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
   }
 
   // Create an Epetra_Matrix
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Map, &NumNz[0]) );
+  Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Map, &NumNz[0]) );
    
   // Add  rows one-at-a-time
   // Need some vectors to help
@@ -141,11 +141,11 @@ int main(int argc, char *argv[])
 
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note that this needs to have the same number of columns as the blocksize.
-  Teuchos::RefCountPtr<Belos::EpetraMultiVec> ivec = Teuchos::rcp( new Belos::EpetraMultiVec(*Map, blockSize) );
+  Teuchos::RCP<Belos::EpetraMultiVec> ivec = Teuchos::rcp( new Belos::EpetraMultiVec(*Map, blockSize) );
   ivec->Random();
 
   // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Belos::OutputManager<double> > MyOM = Teuchos::rcp( new Belos::OutputManager<double>() );
+  Teuchos::RCP<Belos::OutputManager<double> > MyOM = Teuchos::rcp( new Belos::OutputManager<double>() );
   if (verbose) {
     MyOM->setVerbosity( Belos::Warnings );
   }

@@ -100,12 +100,12 @@ public:
 	 * The convergence tester <tt>statusTest</tt> being attached can be
 	 * dealt any way that <tt>*this</tt> chooses.
 	 */
-	virtual void attach( const Teuchos::RefCountPtr<StatusTest<Scalar> > &statusTest );
+	virtual void attach( const Teuchos::RCP<StatusTest<Scalar> > &statusTest );
 
 	///
 	/** Get a smart pointer to non-<tt>const</tt> attached status test.
 	 */
-	virtual Teuchos::RefCountPtr<StatusTest<Scalar> > getAttachedStatusTest();
+	virtual Teuchos::RCP<StatusTest<Scalar> > getAttachedStatusTest();
 
 	///
 	/** Get a smart pointer to <tt>const</tt> attached status test.
@@ -120,7 +120,7 @@ public:
 	 *
 	 * No override of this function should be needed.
 	 */
-	virtual Teuchos::RefCountPtr<const StatusTest<Scalar> > getAttachedStatusTest() const;
+	virtual Teuchos::RCP<const StatusTest<Scalar> > getAttachedStatusTest() const;
 
 	//@}
 
@@ -180,7 +180,7 @@ protected:
 
 private:
 
-	Teuchos::RefCountPtr<StatusTest<Scalar> > attachedStatusTest_;
+	Teuchos::RCP<StatusTest<Scalar> > attachedStatusTest_;
 
 	static EStatusType andOrStatus( const EStatusType status1, const EStatusType status2 );
 
@@ -203,14 +203,14 @@ AttachStatusTestBase<Scalar>::AttachStatusTestBase(
 
 template<class Scalar>
 void AttachStatusTestBase<Scalar>::attach(
-	const Teuchos::RefCountPtr<StatusTest<Scalar> > &statusTest
+	const Teuchos::RCP<StatusTest<Scalar> > &statusTest
 	)
 {
 	attachedStatusTest_ = statusTest;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<StatusTest<Scalar> >
+Teuchos::RCP<StatusTest<Scalar> >
 AttachStatusTestBase<Scalar>::getAttachedStatusTest()
 {
 	return attachedStatusTest_;
@@ -218,7 +218,7 @@ AttachStatusTestBase<Scalar>::getAttachedStatusTest()
 
 template<class Scalar>
 inline
-Teuchos::RefCountPtr<const StatusTest<Scalar> >
+Teuchos::RCP<const StatusTest<Scalar> >
 AttachStatusTestBase<Scalar>::getAttachedStatusTest() const
 {
 	return const_cast<AttachStatusTestBase<Scalar>*>(this)->getAttachedStatusTest();

@@ -64,7 +64,7 @@ namespace Belos {
     //@{ 
     
     //! Basic constructor.
-    OutputManager( int vb = Belos::Errors, const Teuchos::RefCountPtr<ostream> &os = Teuchos::rcp(&std::cout,false) );
+    OutputManager( int vb = Belos::Errors, const Teuchos::RCP<ostream> &os = Teuchos::rcp(&std::cout,false) );
     
     //! Destructor.
     virtual ~OutputManager() {};
@@ -74,7 +74,7 @@ namespace Belos {
     //@{ 
     
     //! Set the output stream for this manager.
-    void setOStream( const Teuchos::RefCountPtr<ostream> &os ) { myOS_ = os; };
+    void setOStream( const Teuchos::RCP<ostream> &os ) { myOS_ = os; };
     
     //! Set the verbosity level for this manager.
     void setVerbosity( int vb ) { vb_ = vb; }; 
@@ -94,7 +94,7 @@ namespace Belos {
     }
  
     //! Get the output stream for this manager.
-    Teuchos::RefCountPtr<ostream> getOStream() { return myOS_; };
+    Teuchos::RCP<ostream> getOStream() { return myOS_; };
     
     //@}
     
@@ -131,13 +131,13 @@ namespace Belos {
     //@}
     
     int vb_;
-    Teuchos::RefCountPtr<ostream> myOS_;	
+    Teuchos::RCP<ostream> myOS_;	
     Teuchos::oblackholestream myBHS_;  
     bool iPrint_;
   };
   
   template<class ScalarType>
-  OutputManager<ScalarType>::OutputManager( int vb, const Teuchos::RefCountPtr<ostream> &os ) :
+  OutputManager<ScalarType>::OutputManager( int vb, const Teuchos::RCP<ostream> &os ) :
     vb_(vb),
     myOS_(os)
   {

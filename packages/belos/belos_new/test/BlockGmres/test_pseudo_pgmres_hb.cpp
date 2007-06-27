@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
   typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 
   using Teuchos::ParameterList;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
   // Get the problem
   //
   int MyPID;
-  RefCountPtr<Epetra_CrsMatrix> A;
+  RCP<Epetra_CrsMatrix> A;
   int return_val =Belos::createEpetraProblem(filename,NULL,&A,NULL,NULL,&MyPID);
   const Epetra_Map &Map = A->RowMap();
   if(return_val != 0) return return_val;
@@ -127,8 +127,8 @@ int main(int argc, char *argv[]) {
   // if (argc >5) Rthresh = atof(argv[5]);
   if (proc_verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
   //
-  Teuchos::RefCountPtr<Ifpack_IlukGraph> ilukGraph;
-  Teuchos::RefCountPtr<Ifpack_CrsRiluk> ilukFactors;
+  Teuchos::RCP<Ifpack_IlukGraph> ilukGraph;
+  Teuchos::RCP<Ifpack_CrsRiluk> ilukFactors;
   //
   if (Lfill > -1) {
     ilukGraph = Teuchos::rcp(new Ifpack_IlukGraph(A->Graph(), Lfill, Overlap));
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
   // Create the Belos preconditioned operator from the Ifpack preconditioner.
   // NOTE:  This is necessary because Belos expects an operator to apply the
   //        preconditioner with Apply() NOT ApplyInverse().
-  RefCountPtr<Belos::EpetraPrecOp> Prec = rcp( new Belos::EpetraPrecOp( ilukFactors ) );
+  RCP<Belos::EpetraPrecOp> Prec = rcp( new Belos::EpetraPrecOp( ilukFactors ) );
 
   //
   // ********Other information used by block solver***********
@@ -180,8 +180,8 @@ int main(int argc, char *argv[]) {
   //
   // *****Construct solution vector and random right-hand-sides *****
   //
-  RefCountPtr<Epetra_MultiVector> initX = rcp( new Epetra_MultiVector(Map, init_numrhs) );
-  RefCountPtr<Epetra_MultiVector> initB = rcp( new Epetra_MultiVector(Map, init_numrhs) );
+  RCP<Epetra_MultiVector> initX = rcp( new Epetra_MultiVector(Map, init_numrhs) );
+  RCP<Epetra_MultiVector> initB = rcp( new Epetra_MultiVector(Map, init_numrhs) );
   initX->Random();
   OPT::Apply( *A, *initX, *initB );
   initX->PutScalar( 0.0 );
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
   // *********************Perform initial solve*************************
   // *******************************************************************
   //
-  Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > initSolver
+  Teuchos::RCP< Belos::SolverManager<double,MV,OP> > initSolver
     = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&initProblem,false), rcp(&belosList,false) ) );
   //
   // Perform solve
@@ -239,8 +239,8 @@ int main(int argc, char *argv[]) {
   //
   // ***************Construct augmented linear system****************
   //
-  RefCountPtr<Epetra_MultiVector> augX = rcp( new Epetra_MultiVector(Map, init_numrhs+aug_numrhs) );
-  RefCountPtr<Epetra_MultiVector> augB = rcp( new Epetra_MultiVector(Map, init_numrhs+aug_numrhs) );
+  RCP<Epetra_MultiVector> augX = rcp( new Epetra_MultiVector(Map, init_numrhs+aug_numrhs) );
+  RCP<Epetra_MultiVector> augB = rcp( new Epetra_MultiVector(Map, init_numrhs+aug_numrhs) );
   if (aug_numrhs) {
     augX->Random();
     OPT::Apply( *A, *augX, *augB );
@@ -248,8 +248,8 @@ int main(int argc, char *argv[]) {
   }
   
   // Copy previous linear system into 
-  RefCountPtr<Epetra_MultiVector> tmpX = rcp( new Epetra_MultiVector( View, *augX, 0, init_numrhs ) );
-  RefCountPtr<Epetra_MultiVector> tmpB = rcp( new Epetra_MultiVector( View, *augB, 0, init_numrhs ) );
+  RCP<Epetra_MultiVector> tmpX = rcp( new Epetra_MultiVector( View, *augX, 0, init_numrhs ) );
+  RCP<Epetra_MultiVector> tmpB = rcp( new Epetra_MultiVector( View, *augB, 0, init_numrhs ) );
   tmpX->Scale( 1.0, *initX );
   tmpB->Scale( 1.0, *initB );
     
@@ -277,7 +277,7 @@ int main(int argc, char *argv[]) {
   belosList.set( "Timer Label", "Belos Aug" );                 // Label used by timers in this solver
   belosList.set( "Implicit Residual Scaling", "Norm of RHS" ); // Implicit residual scaling for convergence
   belosList.set( "Explicit Residual Scaling", "Norm of RHS" ); // Explicit residual scaling for convergence
-  Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > augSolver
+  Teuchos::RCP< Belos::SolverManager<double,MV,OP> > augSolver
     = Teuchos::rcp( new Belos::PseudoBlockGmresSolMgr<double,MV,OP>( rcp(&augProblem,false), rcp(&belosList,false) ) );
   //
   // Perform solve

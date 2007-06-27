@@ -140,7 +140,7 @@ public:
 	///
 	bool setupCurrSystem();
 	///
-	RefCountPtr<TSFCore::MultiVector<Scalar> > getCurrLhs();
+	RCP<TSFCore::MultiVector<Scalar> > getCurrLhs();
 	///
 	void setCurrLhsUpdated( const bool isCurrLhsUpdated );
 	///
@@ -148,7 +148,7 @@ public:
 	///
 	void setCurrLhs( const TSFCore::MultiVector<Scalar> &nativeLhs );
 	///
-	RefCountPtr<TSFCore::MultiVector<Scalar> > getCurrResidual();
+	RCP<TSFCore::MultiVector<Scalar> > getCurrResidual();
 	///
 	void setCurrResidualComputed( const bool isCurrResidualComputed );
 	///
@@ -177,8 +177,8 @@ public:
 	void initialize(
 		const TSFCore::LinearOpHandle<Scalar>                    &op
 		,const EOpSymmetry                                       symmetry
-		,const RefCountPtr<const TSFCore::MultiVector<Scalar> >  &rhs
-		,const RefCountPtr<TSFCore::MultiVector<Scalar> >        &lhs
+		,const RCP<const TSFCore::MultiVector<Scalar> >  &rhs
+		,const RCP<TSFCore::MultiVector<Scalar> >        &lhs
 		);
 	///
 	void setOperator( const TSFCore::LinearOpHandle<Scalar> &op, const EOpSymmetry symmetry );
@@ -193,15 +193,15 @@ public:
 	///
 	TSFCore::LinearOpHandle<Scalar> getLeftPrec();
 	///
-	void setRhs( const RefCountPtr<const TSFCore::MultiVector<Scalar> > &rhs );
+	void setRhs( const RCP<const TSFCore::MultiVector<Scalar> > &rhs );
 	///
-	RefCountPtr<const TSFCore::MultiVector<Scalar> > getRhs();
+	RCP<const TSFCore::MultiVector<Scalar> > getRhs();
 	///
-	void setLhs( const RefCountPtr<TSFCore::MultiVector<Scalar> > &lhs );
+	void setLhs( const RCP<TSFCore::MultiVector<Scalar> > &lhs );
 	///
-	RefCountPtr<TSFCore::MultiVector<Scalar> > getLhs();
+	RCP<TSFCore::MultiVector<Scalar> > getLhs();
 	///
-	void setStatusTest( const RefCountPtr<StatusTest<Scalar> > &statusTest );
+	void setStatusTest( const RCP<StatusTest<Scalar> > &statusTest );
 	///
 	void completeSetup();
 	///
@@ -228,12 +228,12 @@ private:
 	EOpSymmetry                                       rightPrecSymmetry_;
 	TSFCore::LinearOpHandle<Scalar>                   leftPrec_;
 	EOpSymmetry                                       leftPrecSymmetry_;
-	RefCountPtr<const TSFCore::Vector<Scalar> >       rightScaling_;
-	RefCountPtr<const TSFCore::Vector<Scalar> >       leftScaling_;
+	RCP<const TSFCore::Vector<Scalar> >       rightScaling_;
+	RCP<const TSFCore::Vector<Scalar> >       leftScaling_;
 	TSFCore::LinearOpHandle<Scalar>                   compositeOperator_;
-	RefCountPtr<const TSFCore::MultiVector<Scalar> >  rhs_;
-	RefCountPtr<TSFCore::MultiVector<Scalar> >        lhs_;
-	RefCountPtr<StatusTest<Scalar> >                  statusTest_;
+	RCP<const TSFCore::MultiVector<Scalar> >  rhs_;
+	RCP<TSFCore::MultiVector<Scalar> >        lhs_;
+	RCP<StatusTest<Scalar> >                  statusTest_;
 
 	// Members for controlling setup of current block	
 	int                                               blockSize_;
@@ -245,19 +245,19 @@ private:
 	int                                               currNumRhs_;
 	int                                               currBlockSize_;
 	std::vector<int>                                  currRhsIndexes_;
-	RefCountPtr<TSFCore::MultiVector<Scalar> >        currRhs_store_;
-	RefCountPtr<TSFCore::MultiVector<Scalar> >        currRhs_;
-	RefCountPtr<TSFCore::MultiVector<Scalar> >        currInitResidual_store_;
-	RefCountPtr<TSFCore::MultiVector<Scalar> >        currInitResidual_;
+	RCP<TSFCore::MultiVector<Scalar> >        currRhs_store_;
+	RCP<TSFCore::MultiVector<Scalar> >        currRhs_;
+	RCP<TSFCore::MultiVector<Scalar> >        currInitResidual_store_;
+	RCP<TSFCore::MultiVector<Scalar> >        currInitResidual_;
 	mutable bool                                      isCurrInitResidualComputed_;
-	RefCountPtr<TSFCore::MultiVector<Scalar> >        currInitLhs_store_;
-	RefCountPtr<TSFCore::MultiVector<Scalar> >        currInitLhs_;
-	RefCountPtr<TSFCore::MultiVector<Scalar> >        currLhs_store_;
-	RefCountPtr<TSFCore::MultiVector<Scalar> >        currLhs_;
+	RCP<TSFCore::MultiVector<Scalar> >        currInitLhs_store_;
+	RCP<TSFCore::MultiVector<Scalar> >        currInitLhs_;
+	RCP<TSFCore::MultiVector<Scalar> >        currLhs_store_;
+	RCP<TSFCore::MultiVector<Scalar> >        currLhs_;
 	mutable bool                                      currLhsIsCurrInitLhs_;
 	mutable bool                                      isCurrLhsUpdated_;
-	RefCountPtr<TSFCore::MultiVector<Scalar> >        currResidual_store_;
-	RefCountPtr<TSFCore::MultiVector<Scalar> >        currResidual_;
+	RCP<TSFCore::MultiVector<Scalar> >        currResidual_store_;
+	RCP<TSFCore::MultiVector<Scalar> >        currResidual_;
 	mutable bool                                      isCurrResidualComputed_;
 
 	// RAB: 2004/09/17: Warning, do not access the values of any
@@ -588,8 +588,8 @@ bool LinearProblem<Scalar>::setupCurrSystem()
 	const int currNumRhs      = min( numRhsRemaining, blockSize_ );
 	const int blockSize       = ( augmentationAllowed_ ? blockSize_ : currNumRhs );
 	// Setup the current block system
-	RefCountPtr<const TSFCore::VectorSpace<Scalar> > rhs_range = rhs_->range();
-	RefCountPtr<const TSFCore::VectorSpace<Scalar> > lhs_range = lhs_->range();
+	RCP<const TSFCore::VectorSpace<Scalar> > rhs_range = rhs_->range();
+	RCP<const TSFCore::VectorSpace<Scalar> > lhs_range = lhs_->range();
 	currRhs_store_ = rhs_range->createMembers(blockSize);
 	currRhs_ = currRhs_store_;
 	currInitLhs_store_ = lhs_range->createMembers(blockSize);
@@ -626,7 +626,7 @@ bool LinearProblem<Scalar>::setupCurrSystem()
 }
 
 template<class Scalar>
-RefCountPtr<TSFCore::MultiVector<Scalar> >
+RCP<TSFCore::MultiVector<Scalar> >
 LinearProblem<Scalar>::getCurrLhs()
 {
 	assertCurrNumRhs();
@@ -681,7 +681,7 @@ void LinearProblem<Scalar>::setCurrLhs( const TSFCore::MultiVector<Scalar> &nati
 }
 
 template<class Scalar>
-RefCountPtr<TSFCore::MultiVector<Scalar> >
+RCP<TSFCore::MultiVector<Scalar> >
 LinearProblem<Scalar>::getCurrResidual()
 {
 	assertCurrNumRhs();
@@ -802,8 +802,8 @@ template<class Scalar>
 void LinearProblem<Scalar>::initialize(
 	const TSFCore::LinearOpHandle<Scalar>                    &op
 	,const EOpSymmetry                                       symmetry
-	,const RefCountPtr<const TSFCore::MultiVector<Scalar> >  &rhs
-	,const RefCountPtr<TSFCore::MultiVector<Scalar> >        &lhs
+	,const RCP<const TSFCore::MultiVector<Scalar> >  &rhs
+	,const RCP<TSFCore::MultiVector<Scalar> >        &lhs
 	)
 {
 #ifdef TEUCHOS_DEBUG
@@ -873,7 +873,7 @@ TSFCore::LinearOpHandle<Scalar> LinearProblem<Scalar>::getLeftPrec()
 }
 
 template<class Scalar>
-void LinearProblem<Scalar>::setRhs( const RefCountPtr<const TSFCore::MultiVector<Scalar> > &rhs )
+void LinearProblem<Scalar>::setRhs( const RCP<const TSFCore::MultiVector<Scalar> > &rhs )
 {
 #ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT( rhs.get() == NULL );
@@ -884,14 +884,14 @@ void LinearProblem<Scalar>::setRhs( const RefCountPtr<const TSFCore::MultiVector
 }
 
 template<class Scalar>
-RefCountPtr<const TSFCore::MultiVector<Scalar> >
+RCP<const TSFCore::MultiVector<Scalar> >
 LinearProblem<Scalar>::getRhs()
 {
 	return rhs_;
 }
 
 template<class Scalar>
-void LinearProblem<Scalar>::setLhs( const RefCountPtr<TSFCore::MultiVector<Scalar> > &lhs )
+void LinearProblem<Scalar>::setLhs( const RCP<TSFCore::MultiVector<Scalar> > &lhs )
 {
 #ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT( lhs.get() == NULL );
@@ -902,14 +902,14 @@ void LinearProblem<Scalar>::setLhs( const RefCountPtr<TSFCore::MultiVector<Scala
 }
 
 template<class Scalar>
-RefCountPtr<TSFCore::MultiVector<Scalar> >
+RCP<TSFCore::MultiVector<Scalar> >
 LinearProblem<Scalar>::getLhs()
 {
 	return lhs_;
 }
 
 template<class Scalar>
-void LinearProblem<Scalar>::setStatusTest( const RefCountPtr<StatusTest<Scalar> > &statusTest )
+void LinearProblem<Scalar>::setStatusTest( const RCP<StatusTest<Scalar> > &statusTest )
 {
 	statusTest_ = statusTest;
 	totalNumRhs_ = 0;

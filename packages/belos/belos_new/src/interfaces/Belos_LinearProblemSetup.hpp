@@ -78,8 +78,8 @@ public:
 	virtual void initialize(
 		const TSFCore::LinearOpHandle<Scalar>                    &op
 		,const EOpSymmetry                                       symmetry
-		,const RefCountPtr<const TSFCore::MultiVector<Scalar> >  &rhs
-		,const RefCountPtr<TSFCore::MultiVector<Scalar> >        &lhs
+		,const RCP<const TSFCore::MultiVector<Scalar> >  &rhs
+		,const RCP<TSFCore::MultiVector<Scalar> >        &lhs
 		) = 0;
 
 	///
@@ -170,12 +170,12 @@ public:
 	 * <li><tt>this->getCurrNumRhs() == 0</tt>
 	 * </ul>
 	 */
-	virtual void setRhs( const RefCountPtr<const TSFCore::MultiVector<Scalar> > &rhs ) = 0;
+	virtual void setRhs( const RCP<const TSFCore::MultiVector<Scalar> > &rhs ) = 0;
 
 	///
 	/** Set the RHS multi-vector \f$B\f$.
 	 */
-	virtual RefCountPtr<const TSFCore::MultiVector<Scalar> > getRhs() = 0;
+	virtual RCP<const TSFCore::MultiVector<Scalar> > getRhs() = 0;
 
 	///
 	/** Set the LHS multi-vector \f$X\f$.
@@ -195,12 +195,12 @@ public:
 	 * <li><tt>this->getCurrNumRhs() == 0</tt>
 	 * </ul>
 	 */
-	virtual void setLhs( const RefCountPtr<TSFCore::MultiVector<Scalar> > &lhs ) = 0;
+	virtual void setLhs( const RCP<TSFCore::MultiVector<Scalar> > &lhs ) = 0;
 
 	///
 	/** Set the LHS multi-vector \f$X\f$.
 	 */
-	virtual RefCountPtr<TSFCore::MultiVector<Scalar> > getLhs() = 0;
+	virtual RCP<TSFCore::MultiVector<Scalar> > getLhs() = 0;
 
 	///
 	/** Set the status test.
@@ -214,7 +214,7 @@ public:
 	 * <li><tt>this->getCurrNumRhs() == 0</tt>
 	 * </ul>
 	 */
-	virtual void setStatusTest( const RefCountPtr<StatusTest<Scalar> > &statusTest ) = 0;
+	virtual void setStatusTest( const RCP<StatusTest<Scalar> > &statusTest ) = 0;
 
 	///
 	/** Complete setup of the linear problem

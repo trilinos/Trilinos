@@ -76,8 +76,8 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
    * @param[in] printStates A combination of ::StatusType values for which the output may be printed. Default: ::Passed (attempt to print whenever checkStatus() will return ::Passed)
    *
    */
-  StatusTestOutput(const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer, 
-                   Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > test,
+  StatusTestOutput(const Teuchos::RCP<OutputManager<ScalarType> > &printer, 
+                   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test,
                    int mod = 1,
                    int printStates = Passed)
     : printer_(printer), test_(test), state_(Undefined), stateTest_(printStates), modTest_(mod), numCalls_(0) {}
@@ -101,7 +101,7 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
     printed, regardless of the mod parameter, as the current number of calls
     will be zero.
 
-    If the specified Teuchos::RefCountPtr for the child class is Teuchos::null, then calling checkStatus() will result in a StatusTestError exception being thrown.
+    If the specified Teuchos::RCP for the child class is Teuchos::null, then calling checkStatus() will result in a StatusTestError exception being thrown.
     
     \return ::StatusType indicating whether the underlying test passed or failed.
   */
@@ -135,7 +135,7 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
 
   /*! \brief Set the output manager.
    */ 
-  void setOutputManager(const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer) { printer_ = printer; }
+  void setOutputManager(const Teuchos::RCP<OutputManager<ScalarType> > &printer) { printer_ = printer; }
 
   /*! \brief Set how often the child test is printed.
    */
@@ -145,13 +145,13 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
    *
    *  \note This also resets the test status to ::Undefined.
    */
-  void setChild(Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > test) {
+  void setChild(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) {
     test_ = test;
     state_ = Undefined;
   }
 
   //! \brief Get child test.
-  Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > getChild() const {
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > getChild() const {
     return test_;
   }
 
@@ -218,8 +218,8 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
   //@}
 
   private:
-    Teuchos::RefCountPtr<OutputManager<ScalarType> > printer_;
-    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > test_;
+    Teuchos::RCP<OutputManager<ScalarType> > printer_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test_;
     StatusType state_;
     int stateTest_;
     int modTest_;

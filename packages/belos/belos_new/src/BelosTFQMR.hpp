@@ -83,10 +83,10 @@ namespace Belos {
     //@{ 
 
     //! %Belos::TFQMR constructor.
-    TFQMR(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp, 
-	  const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest, 
-	  const RefCountPtr<OutputManager<ScalarType> > &om,
-	  const RefCountPtr<ParameterList> &pl = Teuchos::null
+    TFQMR(const RCP<LinearProblem<ScalarType,MV,OP> > &lp, 
+	  const RCP<StatusTest<ScalarType,MV,OP> > &stest, 
+	  const RCP<OutputManager<ScalarType> > &om,
+	  const RCP<ParameterList> &pl = Teuchos::null
 	  );
     
     //! %Belos::TFQMR destructor.
@@ -106,21 +106,21 @@ namespace Belos {
     /*! 
       \note The memory for the residual MultiVec must be handled by the calling routine.
     */
-    RefCountPtr<const MV> GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const;
+    RCP<const MV> GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const;
     
     //! Get the actual residual vector for the current linear system.
     /*! This may force the solver to compute a current residual for its linear
       system.  For TFQMR, this method is not useful since the linear problem
       manager always has the current solution.
     */
-    RefCountPtr<MV> GetCurrentSoln() { return MVT::CloneCopy( *_cur_block_sol ); };
+    RCP<MV> GetCurrentSoln() { return MVT::CloneCopy( *_cur_block_sol ); };
   
     //! Get a constant reference to the current linear problem.  
     /*! This may include a current solution, if the solver has recently restarted or completed.
      */
-    RefCountPtr<LinearProblem<ScalarType,MV,OP> > GetLinearProblem() const { return( _lp ); }
+    RCP<LinearProblem<ScalarType,MV,OP> > GetLinearProblem() const { return( _lp ); }
     
-    RefCountPtr<StatusTest<ScalarType,MV,OP> > GetStatusTest() const { return( _stest ); }
+    RCP<StatusTest<ScalarType,MV,OP> > GetStatusTest() const { return( _stest ); }
 
     //@} 
     
@@ -145,28 +145,28 @@ namespace Belos {
   private:
     
     //! Linear problem manager [ must be passed in by the user ]
-    RefCountPtr<LinearProblem<ScalarType,MV,OP> > _lp; 
+    RCP<LinearProblem<ScalarType,MV,OP> > _lp; 
     
     //! Status test [ must be passed in by the user ]
-    RefCountPtr<StatusTest<ScalarType,MV,OP> > _stest; 
+    RCP<StatusTest<ScalarType,MV,OP> > _stest; 
     
     //! Output manager [ must be passed in by the user ]
-    RefCountPtr<OutputManager<ScalarType> > _om;
+    RCP<OutputManager<ScalarType> > _om;
     
     //! Parameter list containing information for configuring the linear solver. [ must be passed in by the user ]
-    RefCountPtr<ParameterList> _pl;     
+    RCP<ParameterList> _pl;     
 
     //! Pointer to current linear systems block of solution vectors [obtained from linear problem manager]
-    RefCountPtr<MV> _cur_block_sol;
+    RCP<MV> _cur_block_sol;
     
     //! Pointer to current linear systems block of right-hand sides [obtained from linear problem manager]
-    RefCountPtr<MV> _cur_block_rhs; 
+    RCP<MV> _cur_block_rhs; 
     
     //! Pointer to block of the current residual vectors.
-    RefCountPtr<MV> _residvec;
+    RCP<MV> _residvec;
     
     //! Output stream.
-    RefCountPtr<ostream> _os;
+    RCP<ostream> _os;
     
     //! Current iteration number.
     int _iter;
@@ -178,7 +178,7 @@ namespace Belos {
     bool _restartTimers;
 
     //! Internal timers
-    Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerTotal;
+    Teuchos::RCP<Teuchos::Time> _timerOp, _timerTotal;
   };
   
   //
@@ -186,10 +186,10 @@ namespace Belos {
   //
   
   template <class ScalarType, class MV, class OP>
-  TFQMR<ScalarType,MV,OP>::TFQMR(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp,
-				 const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest,
-				 const RefCountPtr<OutputManager<ScalarType> > &om,
-				 const RefCountPtr<ParameterList> &pl 
+  TFQMR<ScalarType,MV,OP>::TFQMR(const RCP<LinearProblem<ScalarType,MV,OP> > &lp,
+				 const RCP<StatusTest<ScalarType,MV,OP> > &stest,
+				 const RCP<OutputManager<ScalarType> > &om,
+				 const RCP<ParameterList> &pl 
 				 ) : 
     _lp(lp), 
     _stest(stest),
@@ -205,7 +205,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  RefCountPtr<const MV> 
+  RCP<const MV> 
   TFQMR<ScalarType,MV,OP>::GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
   {
     MagnitudeType one = Teuchos::ScalarTraits<MagnitudeType>::one();
@@ -234,7 +234,7 @@ namespace Belos {
     bool exit_flg = false;
     Teuchos::SerialDenseMatrix<int,ScalarType> _alpha( 1, 1 );
     Teuchos::SerialDenseMatrix<int,ScalarType> _rho( 1, 1 ), _rho_old( 1, 1 );
-    RefCountPtr<MV> _v, _w, _u, _Au, _d, _rtilde;
+    RCP<MV> _v, _w, _u, _Au, _d, _rtilde;
     ScalarType _eta = STzero, _beta = STzero;
     std::vector<MagnitudeType> _cs(1,MTzero), _theta(1,MTzero);
     //

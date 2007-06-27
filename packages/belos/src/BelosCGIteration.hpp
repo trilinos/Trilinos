@@ -50,16 +50,16 @@ namespace Belos {
   struct CGIterationState {
 
     /*! \brief The current residual. */
-    Teuchos::RefCountPtr<MV> R;
+    Teuchos::RCP<MV> R;
 
     /*! \brief The current preconditioned residual. */
-    Teuchos::RefCountPtr<MV> Z;
+    Teuchos::RCP<MV> Z;
 
     /*! \brief The current decent direction vector */
-    Teuchos::RefCountPtr<MV> P;
+    Teuchos::RCP<MV> P;
 
     /*! \brief The matrix A applied to current decent direction vector */
-    Teuchos::RefCountPtr<MV> AP;
+    Teuchos::RCP<MV> AP;
     
     CGIterationState() : R(Teuchos::null), Z(Teuchos::null), 
 		    P(Teuchos::null), AP(Teuchos::null)

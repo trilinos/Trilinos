@@ -159,11 +159,11 @@ namespace Belos {
   
   class EpetraOp : public virtual Operator<double> {
   public:
-    EpetraOp( const Teuchos::RefCountPtr<Epetra_Operator> &Op );
+    EpetraOp( const Teuchos::RCP<Epetra_Operator> &Op );
     ~EpetraOp() {};
     void Apply ( const MultiVec<double>& x, MultiVec<double>& y, ETrans trans=NOTRANS ) const;
   private:
-    Teuchos::RefCountPtr<Epetra_Operator> Epetra_Op;
+    Teuchos::RCP<Epetra_Operator> Epetra_Op;
   };
   
   ///////////////////////////////////////////////////////////////
@@ -172,7 +172,7 @@ namespace Belos {
   class EpetraPrecOp : public virtual Operator<double>, public virtual Epetra_Operator {
   public:
     //! Basic constructor for applying the operator as its inverse.
-    EpetraPrecOp( const Teuchos::RefCountPtr<Epetra_Operator> &Op );
+    EpetraPrecOp( const Teuchos::RCP<Epetra_Operator> &Op );
 
     //! Destructor
     virtual ~EpetraPrecOp() {};
@@ -212,7 +212,7 @@ namespace Belos {
     
   private:
 
-    Teuchos::RefCountPtr<Epetra_Operator> Epetra_Op;
+    Teuchos::RCP<Epetra_Operator> Epetra_Op;
 
   };
 
@@ -228,25 +228,25 @@ namespace Belos {
   {
   public:
     ///
-    static Teuchos::RefCountPtr<Epetra_MultiVector> Clone( const Epetra_MultiVector& mv, const int numvecs )
+    static Teuchos::RCP<Epetra_MultiVector> Clone( const Epetra_MultiVector& mv, const int numvecs )
     { return Teuchos::rcp( new Epetra_MultiVector(mv.Map(), numvecs, false) ); }
     ///
-    static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv )
+    static Teuchos::RCP<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv )
     { return Teuchos::rcp( new Epetra_MultiVector( mv ) ); }
     ///
-    static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv, const std::vector<int>& index )
+    static Teuchos::RCP<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(Copy, mv, &tmp_index[0], index.size()) ); 
     }
     ///
-    static Teuchos::RefCountPtr<Epetra_MultiVector> CloneView( Epetra_MultiVector& mv, const std::vector<int>& index )
+    static Teuchos::RCP<Epetra_MultiVector> CloneView( Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(View, mv, &tmp_index[0], index.size()) ); 
     }
     ///
-    static Teuchos::RefCountPtr<const Epetra_MultiVector> CloneView( const Epetra_MultiVector& mv, const std::vector<int>& index )
+    static Teuchos::RCP<const Epetra_MultiVector> CloneView( const Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(View, mv, &tmp_index[0], index.size()) ); 

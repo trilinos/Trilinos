@@ -93,10 +93,10 @@ public:
   //@{ 
 
   //! %Belos::BlockCG constructor.
-  BlockCG(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp,
-	  const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest,
-	  const RefCountPtr<OutputManager<ScalarType> > &om,	  
-	  const RefCountPtr<ParameterList> &pl = Teuchos::null
+  BlockCG(const RCP<LinearProblem<ScalarType,MV,OP> > &lp,
+	  const RCP<StatusTest<ScalarType,MV,OP> > &stest,
+	  const RCP<OutputManager<ScalarType> > &om,	  
+	  const RCP<ParameterList> &pl = Teuchos::null
 	  );
 
   //! %BlockCG destructor.
@@ -116,7 +116,7 @@ public:
   /*! 
       \note The memory for the residual MultiVec must be handled by the calling routine.
    */
-  RefCountPtr<const MV> GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const;
+  RCP<const MV> GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const;
   
   //! Get the actual residual vectors for the current block of linear systems.
   /*! This may force the solver to compute a current residual for its linear
@@ -124,14 +124,14 @@ public:
 	manager always has the current solution (even when the blocksize is larger
 	than the current number of linear systems being solved for).  
   */
-  RefCountPtr<MV> GetCurrentSoln() { return MVT::CloneCopy( *_cur_block_sol ); };
+  RCP<MV> GetCurrentSoln() { return MVT::CloneCopy( *_cur_block_sol ); };
   
   //! Get a constant reference to the current linear problem.  
   /*! This may include a current solution, if the solver has recently restarted or completed.
    */
-  RefCountPtr<LinearProblem<ScalarType,MV,OP> > GetLinearProblem() const { return( _lp ); }
+  RCP<LinearProblem<ScalarType,MV,OP> > GetLinearProblem() const { return( _lp ); }
 
-  RefCountPtr<StatusTest<ScalarType,MV,OP> > GetStatusTest() const { return( _stest ); }
+  RCP<StatusTest<ScalarType,MV,OP> > GetStatusTest() const { return( _stest ); }
 
   //@} 
   
@@ -163,28 +163,28 @@ private:
   void BlockIteration();
 
   //! Linear problem manager [ must be passed in by the user ]
-  RefCountPtr<LinearProblem<ScalarType,MV,OP> > _lp; 
+  RCP<LinearProblem<ScalarType,MV,OP> > _lp; 
 
   //! Status test [ must be passed in by the user ]
-  RefCountPtr<StatusTest<ScalarType,MV,OP> > _stest; 
+  RCP<StatusTest<ScalarType,MV,OP> > _stest; 
 
   //! Output manager [ must be passed in by the user ]
-  RefCountPtr<OutputManager<ScalarType> > _om;
+  RCP<OutputManager<ScalarType> > _om;
 
   //! Parameter list containing information for configuring the linear solver. [ must be passed in by the user ]
-  RefCountPtr<ParameterList> _pl;     
+  RCP<ParameterList> _pl;     
   
   //! Pointer to current linear systems block of solution vectors [obtained from linear problem manager]
-  RefCountPtr<MV> _cur_block_sol;
+  RCP<MV> _cur_block_sol;
 
   //! Pointer to current linear systems block of right-hand sides [obtained from linear problem manager]
-  RefCountPtr<MV> _cur_block_rhs; 
+  RCP<MV> _cur_block_rhs; 
 
   //! Pointer to block of the current residual vectors.
-  RefCountPtr<MV> _residvecs;
+  RCP<MV> _residvecs;
 
   //! Output stream.
-  RefCountPtr<ostream> _os;
+  RCP<ostream> _os;
 
   //! Current blocksize, iteration number, and basis pointer.
   int _blocksize, _iter, _new_blk;
@@ -196,7 +196,7 @@ private:
   bool _restartTimers;
 
   //! Internal timers
-  Teuchos::RefCountPtr<Teuchos::Time> _timerOrtho, _timerTotal;
+  Teuchos::RCP<Teuchos::Time> _timerOrtho, _timerTotal;
 };
   
   //
@@ -204,10 +204,10 @@ private:
   //
   
   template <class ScalarType, class MV, class OP>
-  BlockCG<ScalarType,MV,OP>::BlockCG(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp,
-				     const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest,
-				     const RefCountPtr<OutputManager<ScalarType> > &om,
-				     const RefCountPtr<ParameterList> &pl
+  BlockCG<ScalarType,MV,OP>::BlockCG(const RCP<LinearProblem<ScalarType,MV,OP> > &lp,
+				     const RCP<StatusTest<ScalarType,MV,OP> > &stest,
+				     const RCP<OutputManager<ScalarType> > &om,
+				     const RCP<ParameterList> &pl
 				     ) : 
     _lp(lp), 
     _stest(stest),
@@ -241,7 +241,7 @@ private:
   }
   
   template <class ScalarType, class MV, class OP>
-  RefCountPtr<const MV> 
+  RCP<const MV> 
   BlockCG<ScalarType,MV,OP>::GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
   {
     int i;
@@ -250,7 +250,7 @@ private:
       for (i=0; i<_blocksize; i++) { index[i] = i; }
     else
       for (i=0; i<_blocksize; i++) { index[i] = _blocksize + i; }
-    RefCountPtr<MV> ResidMV = MVT::CloneView( *_residvecs, index );
+    RCP<MV> ResidMV = MVT::CloneView( *_residvecs, index );
     return ResidMV;
   }
   
@@ -332,7 +332,7 @@ private:
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     Teuchos::LAPACK<int,ScalarType> lapack;
-    RefCountPtr<MV> P_prev, R_prev, AP_prev, P_new, R_new;
+    RCP<MV> P_prev, R_prev, AP_prev, P_new, R_new;
     //
     // Make additional space needed during iteration
     //
@@ -345,8 +345,8 @@ private:
     // We save 3 blocks of these vectors.  Also create 2 vectors of _blocksize to store
     // The residual norms used to determine valid direction/residual vectors.
     //
-    RefCountPtr<MV> _basisvecs = MVT::Clone( *_cur_block_sol, 2*_blocksize ); 
-    RefCountPtr<MV> temp_blk = MVT::Clone( *_cur_block_sol, _blocksize );
+    RCP<MV> _basisvecs = MVT::Clone( *_cur_block_sol, 2*_blocksize ); 
+    RCP<MV> temp_blk = MVT::Clone( *_cur_block_sol, _blocksize );
     std::vector<MagnitudeType> _cur_resid_norms( _blocksize );
     std::vector<MagnitudeType> _init_resid_norms( _blocksize );
     _residvecs = MVT::Clone( *_cur_block_sol, 2*_blocksize ); 
@@ -763,7 +763,7 @@ private:
     int nb = MVT::GetNumberVecs( VecIn );
     std::vector<int> index, dep_idx;
     std::vector<int> index2( 1 );
-    RefCountPtr<MV> qj, Qj;
+    RCP<MV> qj, Qj;
     Teuchos::SerialDenseVector<int,ScalarType> rj;
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -924,7 +924,7 @@ private:
     int numvecs1 = MVT::GetNumberVecs( P1 );
     int numvecs2 = MVT::GetNumberVecs( P2 );
     //
-    RefCountPtr<MV> AP = MVT::Clone( P1, numvecs1 );
+    RCP<MV> AP = MVT::Clone( P1, numvecs1 );
     _lp->ApplyOp(P1, *AP);
     //
     Teuchos::SerialDenseMatrix<int,ScalarType> PAP(numvecs2, numvecs1);

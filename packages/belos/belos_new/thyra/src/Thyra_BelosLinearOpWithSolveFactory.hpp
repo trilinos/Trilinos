@@ -89,7 +89,7 @@ BelosLinearOpWithSolveFactory<Scalar>::BelosLinearOpWithSolveFactory()
 
 template<class Scalar>
 BelosLinearOpWithSolveFactory<Scalar>::BelosLinearOpWithSolveFactory(
-  const Teuchos::RefCountPtr<PreconditionerFactoryBase<Scalar> >  &precFactory
+  const Teuchos::RCP<PreconditionerFactoryBase<Scalar> >  &precFactory
   )
   :useGmres_(true)
 {
@@ -106,12 +106,12 @@ bool BelosLinearOpWithSolveFactory<Scalar>::acceptsPreconditionerFactory() const
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::setPreconditionerFactory(
-  const Teuchos::RefCountPtr<PreconditionerFactoryBase<Scalar> >  &precFactory
+  const Teuchos::RCP<PreconditionerFactoryBase<Scalar> >  &precFactory
   ,const std::string                                              &precFactoryName
   )
 {
   TEST_FOR_EXCEPT(!precFactory.get());
-  Teuchos::RefCountPtr<const Teuchos::ParameterList>
+  Teuchos::RCP<const Teuchos::ParameterList>
     precFactoryValidPL = precFactory->getValidParameters();
   const std::string _precFactoryName =
     ( precFactoryName != ""
@@ -124,7 +124,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::setPreconditionerFactory(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<PreconditionerFactoryBase<Scalar> >
+Teuchos::RCP<PreconditionerFactoryBase<Scalar> >
 BelosLinearOpWithSolveFactory<Scalar>::getPreconditionerFactory() const
 {
   return precFactory_;
@@ -132,7 +132,7 @@ BelosLinearOpWithSolveFactory<Scalar>::getPreconditionerFactory() const
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::unsetPreconditionerFactory(
-  Teuchos::RefCountPtr<PreconditionerFactoryBase<Scalar> >  *precFactory
+  Teuchos::RCP<PreconditionerFactoryBase<Scalar> >  *precFactory
   ,std::string                                              *precFactoryName
   )
 {
@@ -154,7 +154,7 @@ bool BelosLinearOpWithSolveFactory<Scalar>::isCompatible(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
 BelosLinearOpWithSolveFactory<Scalar>::createOp() const
 {
   return Teuchos::rcp(new BelosLinearOpWithSolve<Scalar>());
@@ -162,7 +162,7 @@ BelosLinearOpWithSolveFactory<Scalar>::createOp() const
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
-  const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >    &fwdOpSrc
+  const Teuchos::RCP<const LinearOpSourceBase<Scalar> >    &fwdOpSrc
   ,LinearOpWithSolveBase<Scalar>                                   *Op
   ,const ESupportSolveUse                                          supportSolveUse
   ) const
@@ -173,7 +173,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::initializeAndReuseOp(
-  const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >    &fwdOpSrc
+  const Teuchos::RCP<const LinearOpSourceBase<Scalar> >    &fwdOpSrc
   ,LinearOpWithSolveBase<Scalar>                                   *Op
   ) const
 {
@@ -193,8 +193,8 @@ bool BelosLinearOpWithSolveFactory<Scalar>::supportsPreconditionerInputType(
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
-  ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >      &prec
+  const Teuchos::RCP<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
+  ,const Teuchos::RCP<const PreconditionerBase<Scalar> >      &prec
   ,LinearOpWithSolveBase<Scalar>                                      *Op
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
@@ -205,8 +205,8 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::initializeApproxPreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >      &fwdOpSrc
-  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >     &approxFwdOpSrc
+  const Teuchos::RCP<const LinearOpSourceBase<Scalar> >      &fwdOpSrc
+  ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >     &approxFwdOpSrc
   ,LinearOpWithSolveBase<Scalar>                                      *Op
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
@@ -218,9 +218,9 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeApproxPreconditionedOp(
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::uninitializeOp(
   LinearOpWithSolveBase<Scalar>                               *Op
-  ,Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >    *fwdOpSrc
-  ,Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >    *prec
-  ,Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >    *approxFwdOpSrc
+  ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >    *fwdOpSrc
+  ,Teuchos::RCP<const PreconditionerBase<Scalar> >    *prec
+  ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >    *approxFwdOpSrc
   ,ESupportSolveUse                                           *supportSolveUse
   ) const
 {
@@ -229,14 +229,14 @@ void BelosLinearOpWithSolveFactory<Scalar>::uninitializeOp(
 #endif
   BelosLinearOpWithSolve<Scalar>
     &belosOp = Teuchos::dyn_cast<BelosLinearOpWithSolve<Scalar> >(*Op);
-  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> > 
+  Teuchos::RCP<const LinearOpSourceBase<Scalar> > 
     _fwdOpSrc = belosOp.extract_fwdOpSrc();
-  Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >
+  Teuchos::RCP<const PreconditionerBase<Scalar> >
     _prec = ( belosOp.isExternalPrec() ? belosOp.extract_prec() : Teuchos::null );
   // Note: above we only extract the preconditioner if it was passed in
   // externally.  Otherwise, we need to hold on to it so that we can reuse it
   // in the next initialization.
-  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >
+  Teuchos::RCP<const LinearOpSourceBase<Scalar> >
     _approxFwdOpSrc = belosOp.extract_approxFwdOpSrc();
   ESupportSolveUse
     _supportSolveUse = belosOp.supportSolveUse();
@@ -249,7 +249,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::uninitializeOp(
 // Overridden from ParameterListAcceptor
 
 template<class Scalar>
-void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
   TEST_FOR_EXCEPT(paramList.get()==NULL);
   paramList->validateParameters(*this->getValidParameters(),1); // Validate 0th and 1st level deep
@@ -282,30 +282,30 @@ void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(Teuchos::RefCountPt
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 BelosLinearOpWithSolveFactory<Scalar>::getParameterList()
 {
   return paramList_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 BelosLinearOpWithSolveFactory<Scalar>::unsetParameterList()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> _paramList = paramList_;
+  Teuchos::RCP<Teuchos::ParameterList> _paramList = paramList_;
   paramList_ = Teuchos::null;
   return _paramList;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 BelosLinearOpWithSolveFactory<Scalar>::getParameterList() const
 {
   return paramList_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 BelosLinearOpWithSolveFactory<Scalar>::getValidParameters() const
 {
   return thisValidParamList_;
@@ -327,10 +327,10 @@ std::string BelosLinearOpWithSolveFactory<Scalar>::description() const
 // private
 
 template<class Scalar>
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
+Teuchos::RCP<const Teuchos::ParameterList>
 BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 {
-  static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
+  static Teuchos::RCP<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("BelosLinearOpWithSolveFactory"));
     validParamList->set(SolverType_name,SolverType_default);
@@ -360,7 +360,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::updateThisValidParamList()
     new Teuchos::ParameterList(*generateAndGetValidParameters())
     );
   if(precFactory_.get()) {
-    Teuchos::RefCountPtr<const Teuchos::ParameterList>
+    Teuchos::RCP<const Teuchos::ParameterList>
       precFactoryValidParamList = precFactory_->getValidParameters();
     if(precFactoryValidParamList.get()) {
       thisValidParamList_->sublist(precFactoryName_).setParameters(*precFactoryValidParamList);
@@ -371,16 +371,16 @@ void BelosLinearOpWithSolveFactory<Scalar>::updateThisValidParamList()
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
-  const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
-  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >      &approxFwdOpSrc
-  ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >      &prec_in
+  const Teuchos::RCP<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
+  ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >      &approxFwdOpSrc
+  ,const Teuchos::RCP<const PreconditionerBase<Scalar> >      &prec_in
   ,const bool                                                         reusePrec
   ,LinearOpWithSolveBase<Scalar>                                      *Op
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
 
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::set_extra_data;
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -388,7 +388,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   typedef MultiVectorBase<Scalar>    MV_t;
   typedef LinearOpBase<Scalar>       LO_t;
 
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
+  const Teuchos::RCP<Teuchos::FancyOStream> out       = this->getOStream();
   const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
@@ -400,7 +400,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   TEST_FOR_EXCEPT(Op==NULL);
   TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
   TEST_FOR_EXCEPT(fwdOpSrc->getOp().get()==NULL);
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+  Teuchos::RCP<const LinearOpBase<Scalar> >
     fwdOp = fwdOpSrc->getOp(),
     approxFwdOp = ( approxFwdOpSrc.get() ? approxFwdOpSrc->getOp() : Teuchos::null );
 
@@ -412,8 +412,8 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   //
   // Get/Create the preconditioner
   //
-  RefCountPtr<PreconditionerBase<Scalar> >         myPrec = Teuchos::null;
-  RefCountPtr<const PreconditionerBase<Scalar> >   prec = Teuchos::null;
+  RCP<PreconditionerBase<Scalar> >         myPrec = Teuchos::null;
+  RCP<const PreconditionerBase<Scalar> >   prec = Teuchos::null;
   if(prec_in.get()) {
     // Use an externally defined preconditioner
     prec = prec_in;
@@ -455,11 +455,11 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   int oldMaxNumberOfKrylovVectors = 0;
   bool oldAdjustableBlockSize = false;
   bool oldIsExternalPrec = false;
-  RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >     oldLP = Teuchos::null;
-  RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >   oldIterSolver = Teuchos::null;
-  RefCountPtr<Belos::OutputManager<Scalar> >               oldOutputManager = Teuchos::null;
-  RefCountPtr<const LinearOpSourceBase<Scalar> >           oldFwdOpSrc = Teuchos::null;
-  RefCountPtr<const LinearOpSourceBase<Scalar> >           oldApproxFwdOpSrc = Teuchos::null;   
+  RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >     oldLP = Teuchos::null;
+  RCP<Belos::IterativeSolver<Scalar,MV_t,LO_t> >   oldIterSolver = Teuchos::null;
+  RCP<Belos::OutputManager<Scalar> >               oldOutputManager = Teuchos::null;
+  RCP<const LinearOpSourceBase<Scalar> >           oldFwdOpSrc = Teuchos::null;
+  RCP<const LinearOpSourceBase<Scalar> >           oldApproxFwdOpSrc = Teuchos::null;   
   ESupportSolveUse                                         oldSupportSolveUse = SUPPORT_SOLVE_UNSPECIFIED;
 
   belosOp->uninitialize( &oldLP,
@@ -478,7 +478,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   // Create the Belos linear problem
   // NOTE:  If one exists already, reuse it.
   typedef Belos::LinearProblem<Scalar,MV_t,LO_t> LP_t;
-  RefCountPtr<LP_t> lp;
+  RCP<LP_t> lp;
   if (oldLP != Teuchos::null) {
     lp = oldLP;
   }
@@ -493,9 +493,9 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   // Set the preconditioner
   //
   if(prec.get()) {
-    RefCountPtr<const LinearOpBase<Scalar> > unspecified = prec->getUnspecifiedPrecOp();
-    RefCountPtr<const LinearOpBase<Scalar> > left        = prec->getLeftPrecOp();
-    RefCountPtr<const LinearOpBase<Scalar> > right       = prec->getRightPrecOp();
+    RCP<const LinearOpBase<Scalar> > unspecified = prec->getUnspecifiedPrecOp();
+    RCP<const LinearOpBase<Scalar> > left        = prec->getLeftPrecOp();
+    RCP<const LinearOpBase<Scalar> > right       = prec->getRightPrecOp();
     TEST_FOR_EXCEPTION(
       !( left.get() || right.get() || unspecified.get() ), std::logic_error
       ,"Error, at least one preconditoner linear operator objects must be set!"
@@ -515,11 +515,11 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     }
   }
   if(myPrec.get()) {
-    set_extra_data<RefCountPtr<PreconditionerBase<Scalar> > >(myPrec,"Belos::InternalPrec",
+    set_extra_data<RCP<PreconditionerBase<Scalar> > >(myPrec,"Belos::InternalPrec",
 							      &lp, Teuchos::POST_DESTROY, false);
   }
   else if(prec.get()) {
-    set_extra_data<RefCountPtr<const PreconditionerBase<Scalar> > >(prec,"Belos::ExternalPrec",
+    set_extra_data<RCP<const PreconditionerBase<Scalar> > >(prec,"Belos::ExternalPrec",
 								    &lp, Teuchos::POST_DESTROY, false);
   }
   //
@@ -540,7 +540,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       ? Belos::Warnings | Belos::FinalSummary | Belos::IterationDetails
       : Belos::Errors
       );
-  RefCountPtr<OutputManager_t>
+  RCP<OutputManager_t>
     outputManager = rcp(new OutputManager_t(0,belosVerbLevel));
   // Note: The stream itself will be set in the BelosLinearOpWithSolve object!
   //
@@ -565,24 +565,24 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   typedef Belos::StatusTestMaxRestarts<Scalar,MV_t,LO_t>  StatusTestMaxRestarts_t;
   typedef Belos::StatusTestOutputter<Scalar,MV_t,LO_t>    StatusTestOutputter_t;
   typedef Belos::StatusTestCombo<Scalar,MV_t,LO_t>        StatusTestCombo_t;
-  RefCountPtr<StatusTestMaxIters_t>
+  RCP<StatusTestMaxIters_t>
     maxItersST = rcp(new StatusTestMaxIters_t(defaultMaxIterations));
-  RefCountPtr<StatusTestMaxRestarts_t>
+  RCP<StatusTestMaxRestarts_t>
     maxRestartsST = rcp(new StatusTestMaxRestarts_t(defaultMaxRestarts));
-  RefCountPtr<StatusTestResNorm_t>
+  RCP<StatusTestResNorm_t>
     resNormST = rcp(new StatusTestResNorm_t(defaultResNorm,outputMaxResOnly));
-  RefCountPtr<StatusTestOutputter_t>
+  RCP<StatusTestOutputter_t>
     outputterResNormST = rcp(new StatusTestOutputter_t());
   outputterResNormST->outputFrequency(outputFrequency);
   outputterResNormST->outputMaxResOnly(outputMaxResOnly);
   outputterResNormST->resString("||A*x-b||/||b||");
   outputterResNormST->set_resNormStatusTest(resNormST);
   outputterResNormST->set_outputManager(outputManager);
-  RefCountPtr<StatusTestCombo_t>
+  RCP<StatusTestCombo_t>
     maxItersOrRestartsST = rcp(new StatusTestCombo_t(StatusTestCombo_t::OR,*maxItersST,*maxRestartsST));
   set_extra_data(maxItersST,"maxItersST",&maxItersOrRestartsST);
   set_extra_data(maxRestartsST,"maxRestartsST",&maxItersOrRestartsST);
-  RefCountPtr<StatusTestCombo_t>
+  RCP<StatusTestCombo_t>
     comboST = rcp(new StatusTestCombo_t(StatusTestCombo_t::OR,*maxItersOrRestartsST,*outputterResNormST));
   set_extra_data(maxItersOrRestartsST,"maxItersOrRestartsST",&comboST);
   set_extra_data(outputterResNormST,"resNormST",&comboST);
@@ -590,8 +590,8 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   // Generate the parameter list
   //
   typedef Belos::IterativeSolver<Scalar,MV_t,LO_t> IterativeSolver_t;
-  RefCountPtr<IterativeSolver_t> iterativeSolver = Teuchos::null;
-  RefCountPtr<Teuchos::ParameterList> gmresPL;
+  RCP<IterativeSolver_t> iterativeSolver = Teuchos::null;
+  RCP<Teuchos::ParameterList> gmresPL;
   int maxNumberOfKrylovVectors = -1; // Only gets used if getPL.get()!=NULL
   bool restartTimers = Restart_Timers_default;
   std::string orthoType = OrthoType_default;

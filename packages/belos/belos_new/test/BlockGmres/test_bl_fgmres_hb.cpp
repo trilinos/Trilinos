@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
   typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 
   using Teuchos::ParameterList;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
   // Get the problem
   //
   int MyPID;
-  RefCountPtr<Epetra_CrsMatrix> A;
+  RCP<Epetra_CrsMatrix> A;
   int return_val =Belos::createEpetraProblem(filename,NULL,&A,NULL,NULL,&MyPID);
   if(return_val != 0) return return_val;
   const Epetra_Map &Map = A->RowMap();
@@ -120,8 +120,8 @@ int main(int argc, char *argv[]) {
   // if (argc >5) Rthresh = atof(argv[5]);
   if (proc_verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
   //
-  Teuchos::RefCountPtr<Ifpack_IlukGraph> ilukGraph;
-  Teuchos::RefCountPtr<Ifpack_CrsRiluk> ilukFactors;
+  Teuchos::RCP<Ifpack_IlukGraph> ilukGraph;
+  Teuchos::RCP<Ifpack_CrsRiluk> ilukFactors;
   //
   if (Lfill > -1) {
     ilukGraph = Teuchos::rcp( new Ifpack_IlukGraph(A->Graph(), Lfill, Overlap) );

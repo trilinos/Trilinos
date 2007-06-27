@@ -79,7 +79,7 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-  typedef std::vector< Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > st_vector;
+  typedef std::vector< Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > st_vector;
   typedef typename st_vector::iterator iterator;
   typedef typename st_vector::const_iterator const_iterator;
 
@@ -106,15 +106,15 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
 
   //! Single test constructor.
   StatusTestCombo(ComboType t, 
-		  const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& test1);
+		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test1);
 
   //! Dual test constructor.
   StatusTestCombo(ComboType t, 
-		  const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& test1, 
-		  const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& test2);
+		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test1, 
+		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test2);
 
   //! Add another test to this combination.
-  StatusTestCombo<ScalarType,MV,OP>& addStatusTest(const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& add_test);
+  StatusTestCombo<ScalarType,MV,OP>& addStatusTest(const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& add_test);
 
   //! Destructor
   virtual ~StatusTestCombo() {};
@@ -175,7 +175,7 @@ protected:
 
   //! Check whether or not it is safe to add a to the list of
   //! tests. This is necessary to avoid any infinite recursions.
-  bool isSafe( const Teuchos:: RefCountPtr<StatusTest<ScalarType,MV,OP> >& test1);
+  bool isSafe( const Teuchos:: RCP<StatusTest<ScalarType,MV,OP> >& test1);
   //@}
 
  private:
@@ -203,7 +203,7 @@ StatusTestCombo<ScalarType,MV,OP>::StatusTestCombo(ComboType t)
 
 template <class ScalarType, class MV, class OP>
 StatusTestCombo<ScalarType,MV,OP>::StatusTestCombo(ComboType t, 
-						   const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& test1)
+						   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test1)
 {
   type_ = t;
   tests_.push_back(test1);
@@ -212,8 +212,8 @@ StatusTestCombo<ScalarType,MV,OP>::StatusTestCombo(ComboType t,
 
 template <class ScalarType, class MV, class OP>
 StatusTestCombo<ScalarType,MV,OP>::StatusTestCombo(ComboType t, 
-						   const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& test1, 
-						   const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& test2)
+						   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test1, 
+						   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test2)
 {
   type_ = t;
   tests_.push_back(test1);
@@ -222,7 +222,7 @@ StatusTestCombo<ScalarType,MV,OP>::StatusTestCombo(ComboType t,
 }
 
 template <class ScalarType, class MV, class OP>
-StatusTestCombo<ScalarType,MV,OP>& StatusTestCombo<ScalarType,MV,OP>::addStatusTest(const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& add_test)
+StatusTestCombo<ScalarType,MV,OP>& StatusTestCombo<ScalarType,MV,OP>::addStatusTest(const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& add_test)
 {
   if (isSafe(add_test))
     tests_.push_back(add_test);
@@ -240,7 +240,7 @@ StatusTestCombo<ScalarType,MV,OP>& StatusTestCombo<ScalarType,MV,OP>::addStatusT
 }
 
 template <class ScalarType, class MV, class OP>
-bool StatusTestCombo<ScalarType,MV,OP>::isSafe( const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >& test1)
+bool StatusTestCombo<ScalarType,MV,OP>::isSafe( const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >& test1)
 {
   // Are we trying to add "this" to "this"? This would result in an infinite recursion.
   if (test1.get() == this)

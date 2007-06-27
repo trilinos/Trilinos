@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
 #endif
   //
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
     cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
   }
   // Build the problem matrix
-  RefCountPtr< MyBetterOperator<ST> > A 
+  RCP< MyBetterOperator<ST> > A 
     = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,cvals) );
   //
   // ********Other information used by block solver***********
@@ -178,15 +178,15 @@ int main(int argc, char *argv[]) {
   // NOTE:  The right-hand side will be constructed such that the solution is
   // a vectors of one.
   //
-  RefCountPtr<MyMultiVec<ST> > soln = rcp( new MyMultiVec<ST>(dim,numrhs) );
-  RefCountPtr<MyMultiVec<ST> > rhs = rcp( new MyMultiVec<ST>(dim,numrhs) );
+  RCP<MyMultiVec<ST> > soln = rcp( new MyMultiVec<ST>(dim,numrhs) );
+  RCP<MyMultiVec<ST> > rhs = rcp( new MyMultiVec<ST>(dim,numrhs) );
   MVT::MvRandom( *soln );
   OPT::Apply( *A, *soln, *rhs );
   MVT::MvInit( *soln, zero );
   //
   //  Construct an unpreconditioned linear problem instance.
   //
-  RefCountPtr<Belos::LinearProblem<ST,MV,OP> > problem = 
+  RCP<Belos::LinearProblem<ST,MV,OP> > problem = 
     rcp( new Belos::LinearProblem<ST,MV,OP>( A, soln, rhs ) );
   bool set = problem->setProblem();
   if (set == false) {
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
   //
   // Compute actual residuals.
   //
-  RefCountPtr<MyMultiVec<ST> > temp = rcp( new MyMultiVec<ST>(dim,numrhs) );
+  RCP<MyMultiVec<ST> > temp = rcp( new MyMultiVec<ST>(dim,numrhs) );
   OPT::Apply( *A, *soln, *temp );
   MVT::MvAddMv( one, *rhs, -one, *temp, *temp );
   std::vector<MT> norm_num(numrhs), norm_denom(numrhs);

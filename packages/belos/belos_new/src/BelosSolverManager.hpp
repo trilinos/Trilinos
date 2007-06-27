@@ -39,7 +39,7 @@
 #include "BelosLinearProblem.hpp"
 
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Describable.hpp"
 
 /*! \class Belos::SolverManager
@@ -69,18 +69,18 @@ class SolverManager : virtual public Teuchos::Describable {
 
   virtual const LinearProblem<ScalarType,MV,OP>& getProblem() const = 0;
 
-  virtual Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const = 0;
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const = 0;
 
-  virtual Teuchos::RefCountPtr<const Teuchos::ParameterList> getCurrentParameters() const = 0;
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const = 0;
  
   //@}
 
   //! @name Set methods
   //@{
 
-  virtual void setProblem( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem ) = 0;
+  virtual void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) = 0;
 
-  virtual void setParameters( const Teuchos::RefCountPtr<Teuchos::ParameterList> &params ) = 0;
+  virtual void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) = 0;
 
   //@}
 

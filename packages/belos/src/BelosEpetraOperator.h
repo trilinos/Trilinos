@@ -48,7 +48,7 @@
 #include "BelosBlockCGSolMgr.hpp"
 
 #include "Teuchos_ParameterList.hpp"
-using Teuchos::RefCountPtr;
+using Teuchos::RCP;
 using Teuchos::ParameterList;
 
 /*! \class Belos::EpetraOperator
@@ -73,8 +73,8 @@ public:
   //@{ 
   
   //! Constructor
-  EpetraOperator( const RefCountPtr<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> >& lp, 
-		  const RefCountPtr<ParameterList>& plist,
+  EpetraOperator( const RCP<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> >& lp, 
+		  const RCP<ParameterList>& plist,
                   bool initSolnVec = false );
   
   //! Destructor
@@ -128,9 +128,9 @@ public:
   //@}	   
 private:
 
-  RefCountPtr<SolverManager<double,Epetra_MultiVector,Epetra_Operator> > solver_;
-  RefCountPtr<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> > lp_;
-  RefCountPtr<ParameterList> plist_;
+  RCP<SolverManager<double,Epetra_MultiVector,Epetra_Operator> > solver_;
+  RCP<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> > lp_;
+  RCP<ParameterList> plist_;
 
   std::vector<char> Solver;
   bool initSolnVec_;

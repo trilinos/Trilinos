@@ -240,7 +240,7 @@ void EpetraMultiVec::MvNorm ( std::vector<double>* normvec, NormType norm_type )
 // BelosOperator constructors
 //
 
-EpetraOp::EpetraOp( const Teuchos::RefCountPtr<Epetra_Operator> &Op ) 
+EpetraOp::EpetraOp( const Teuchos::RCP<Epetra_Operator> &Op ) 
   : Epetra_Op(Op)
 {
 }
@@ -283,7 +283,7 @@ void EpetraOp::Apply ( const MultiVec<double>& x,
 // BelosOperator constructors
 //
 
-EpetraPrecOp::EpetraPrecOp( const Teuchos::RefCountPtr<Epetra_Operator> &Op ) 
+EpetraPrecOp::EpetraPrecOp( const Teuchos::RCP<Epetra_Operator> &Op ) 
   : Epetra_Op(Op)
 {
 }

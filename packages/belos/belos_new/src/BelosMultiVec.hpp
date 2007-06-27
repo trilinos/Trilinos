@@ -182,19 +182,19 @@ public:
   {
   public:
     ///
-    static Teuchos::RefCountPtr<MultiVec<ScalarType> > Clone( const MultiVec<ScalarType>& mv, const int numvecs )
+    static Teuchos::RCP<MultiVec<ScalarType> > Clone( const MultiVec<ScalarType>& mv, const int numvecs )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).Clone(numvecs) ); }
     ///
-    static Teuchos::RefCountPtr<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv )
+    static Teuchos::RCP<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneCopy() ); }
     ///
-    static Teuchos::RefCountPtr<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
+    static Teuchos::RCP<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneCopy(index) ); }
     ///
-    static Teuchos::RefCountPtr<MultiVec<ScalarType> > CloneView( MultiVec<ScalarType>& mv, const std::vector<int>& index )
+    static Teuchos::RCP<MultiVec<ScalarType> > CloneView( MultiVec<ScalarType>& mv, const std::vector<int>& index )
     { return Teuchos::rcp( mv.CloneView(index) ); }
     ///
-    static Teuchos::RefCountPtr<const MultiVec<ScalarType> > CloneView( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
+    static Teuchos::RCP<const MultiVec<ScalarType> > CloneView( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneView(index) ); }
     ///
     static int GetVecLength( const MultiVec<ScalarType>& mv )

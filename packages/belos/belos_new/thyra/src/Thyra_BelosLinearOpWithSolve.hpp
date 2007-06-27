@@ -14,7 +14,7 @@ namespace PrivateUtilities {
 template<class LP>
 class BelosLinearProblemTempBlockSizeSetter {
 public:
-  BelosLinearProblemTempBlockSizeSetter( const Teuchos::RefCountPtr<LP> &lp, const int newBlockSize )
+  BelosLinearProblemTempBlockSizeSetter( const Teuchos::RCP<LP> &lp, const int newBlockSize )
     :lp_(lp), oldBlockSize_(lp->GetBlockSize())
     {
       lp_->SetBlockSize(newBlockSize);
@@ -24,7 +24,7 @@ public:
       lp_->SetBlockSize(oldBlockSize_);
     }
 private:
-  Teuchos::RefCountPtr<LP> lp_;
+  Teuchos::RCP<LP> lp_;
   int                      oldBlockSize_;
   // Not defined and not to be called
   BelosLinearProblemTempBlockSizeSetter();
@@ -45,17 +45,17 @@ BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve()
 
 template<class Scalar>
 BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve(
-  const Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
+  const Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
   ,const bool                                                                 adjustableBlockSize
   ,const int                                                                  maxNumberOfKrylovVectors
-  ,const Teuchos::RefCountPtr<Teuchos::ParameterList>                         &gmresPL
-  ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
-  ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
-  ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
-  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
-  ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              &prec
+  ,const Teuchos::RCP<Teuchos::ParameterList>                         &gmresPL
+  ,const Teuchos::RCP<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
+  ,const Teuchos::RCP<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
+  ,const Teuchos::RCP<Belos::OutputManager<Scalar> >                  &outputManager
+  ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
+  ,const Teuchos::RCP<const PreconditionerBase<Scalar> >              &prec
   ,const bool                                                                 isExternalPrec
-  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &approxFwdOpSrc
+  ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &approxFwdOpSrc
   ,const ESupportSolveUse                                                     &supportSolveUse
   )
 {
@@ -67,17 +67,17 @@ BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve(
 
 template<class Scalar>
 void BelosLinearOpWithSolve<Scalar>::initialize(
-  const Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
+  const Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
   ,const bool                                                                 adjustableBlockSize
   ,const int                                                                  maxNumberOfKrylovVectors
-  ,const Teuchos::RefCountPtr<Teuchos::ParameterList>                         &gmresPL
-  ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
-  ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
-  ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
-  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
-  ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              &prec
+  ,const Teuchos::RCP<Teuchos::ParameterList>                         &gmresPL
+  ,const Teuchos::RCP<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
+  ,const Teuchos::RCP<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
+  ,const Teuchos::RCP<Belos::OutputManager<Scalar> >                  &outputManager
+  ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
+  ,const Teuchos::RCP<const PreconditionerBase<Scalar> >              &prec
   ,const bool                                                                 isExternalPrec
-  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &approxFwdOpSrc
+  ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &approxFwdOpSrc
   ,const ESupportSolveUse                                                     &supportSolveUse
   )
 {
@@ -99,20 +99,20 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >
+Teuchos::RCP<const LinearOpSourceBase<Scalar> >
 BelosLinearOpWithSolve<Scalar>::extract_fwdOpSrc()
 {
-  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >
+  Teuchos::RCP<const LinearOpSourceBase<Scalar> >
     _fwdOpSrc = fwdOpSrc_;
   fwdOpSrc_ = Teuchos::null;
   return _fwdOpSrc;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >
+Teuchos::RCP<const PreconditionerBase<Scalar> >
 BelosLinearOpWithSolve<Scalar>::extract_prec()
 {
-  Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >
+  Teuchos::RCP<const PreconditionerBase<Scalar> >
     _prec = prec_;
   prec_ = Teuchos::null;
   return _prec;
@@ -125,10 +125,10 @@ bool BelosLinearOpWithSolve<Scalar>::isExternalPrec() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >
+Teuchos::RCP<const LinearOpSourceBase<Scalar> >
 BelosLinearOpWithSolve<Scalar>::extract_approxFwdOpSrc()
 {
-  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >
+  Teuchos::RCP<const LinearOpSourceBase<Scalar> >
     _approxFwdOpSrc = approxFwdOpSrc_;
   approxFwdOpSrc_ = Teuchos::null;
   return _approxFwdOpSrc;
@@ -142,17 +142,17 @@ ESupportSolveUse BelosLinearOpWithSolve<Scalar>::supportSolveUse() const
 
 template<class Scalar>
 void BelosLinearOpWithSolve<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         *lp
+  Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         *lp
   ,bool                                                                 *adjustableBlockSize
   ,int                                                                  *maxNumberOfKrylovVectors
-  ,Teuchos::RefCountPtr<Teuchos::ParameterList>                         *gmresPL
-  ,Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    *resNormST
-  ,Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      *iterativeSolver
-  ,Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  *outputManager
-  ,Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              *fwdOpSrc
-  ,Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              *prec
+  ,Teuchos::RCP<Teuchos::ParameterList>                         *gmresPL
+  ,Teuchos::RCP<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    *resNormST
+  ,Teuchos::RCP<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      *iterativeSolver
+  ,Teuchos::RCP<Belos::OutputManager<Scalar> >                  *outputManager
+  ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >              *fwdOpSrc
+  ,Teuchos::RCP<const PreconditionerBase<Scalar> >              *prec
   ,bool                                                                 *isExternalPrec
-  ,Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              *approxFwdOpSrc
+  ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >              *approxFwdOpSrc
   ,ESupportSolveUse                                                     *supportSolveUse
   )
 {
@@ -186,21 +186,21 @@ void BelosLinearOpWithSolve<Scalar>::uninitialize(
 // Overridden from LinearOpBase
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 BelosLinearOpWithSolve<Scalar>::range() const
 {
   return lp_->GetOperator()->range();
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
+Teuchos::RCP< const VectorSpaceBase<Scalar> >
 BelosLinearOpWithSolve<Scalar>::domain() const
 {
   return lp_->GetOperator()->domain();
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+Teuchos::RCP<const LinearOpBase<Scalar> >
 BelosLinearOpWithSolve<Scalar>::clone() const
 {
   return Teuchos::null; // Not supported yet but could be
@@ -235,11 +235,11 @@ void BelosLinearOpWithSolve<Scalar>::describe(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   using Teuchos::describe;
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:
@@ -326,7 +326,7 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   ,SolveStatus<Scalar>                  blockSolveStatus[]
   ) const
 {
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
@@ -342,7 +342,7 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   const int numRhs = B.domain()->dim();
   const int numEquations = B.range()->dim();
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>  out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream>  out = this->getOStream();
   Teuchos::EVerbosityLevel                     verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE)) {
@@ -421,7 +421,7 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   iterativeSolver_->GetStatusTest()->Reset(); 
   iterativeSolver_->Reset();
   {
-    RefCountPtr<FancyOStream>
+    RCP<FancyOStream>
       outUsed =
       ( static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE)
         ? out

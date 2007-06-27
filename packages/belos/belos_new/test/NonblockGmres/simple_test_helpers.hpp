@@ -112,7 +112,7 @@ public:
 		
 	/// Create tolerances and linear problem
 	void setupLinearProblemEtc(
-		const Teuchos::RefCountPtr<std::ostream>  &out
+		const Teuchos::RCP<std::ostream>  &out
 		,const bool                               verbose
 		,const bool                               dumpAll
 		,std::vector<ScalarMag>                   *tols
@@ -120,21 +120,21 @@ public:
 		) const
 		{
 			TEST_FOR_EXCEPT(lpup==NULL||tols==NULL);
-			using Teuchos::RefCountPtr;
+			using Teuchos::RCP;
 			using Teuchos::rcp;
 			//
 			// A) Create operator, (optional) preconditioner, RHS and LHS
 			//
 			if(verbose)
 				*out << "\nCreating diagonal opeator of dimension " << dim_ << " with condition number " << opCondNum_ << " ...\n";
-			RefCountPtr<TSFCore::VectorSpace<Scalar> > space = rcp(new TSFCore::SerialVectorSpaceStd<Scalar>(dim_));
-			RefCountPtr<TSFCore::Vector<Scalar> > A_diag = space->createMember();
+			RCP<TSFCore::VectorSpace<Scalar> > space = rcp(new TSFCore::SerialVectorSpaceStd<Scalar>(dim_));
+			RCP<TSFCore::Vector<Scalar> > A_diag = space->createMember();
 			{
 				TSFCore::ExplicitMutableVectorView<Scalar> A_diag_ev(*A_diag);
 				for( int k = 1; k <= dim_; ++k ) A_diag_ev(k) = ( opCondNum_ - 1 ) / ( dim_ - 1 ) * (k - 1) + 1;
 			}
-	    RefCountPtr<TSFCore::LinearOp<Scalar> > A = rcp( new TSFCore::DiagonalLinearOp<Scalar>(A_diag) );
-			RefCountPtr<TSFCore::LinearOp<Scalar> > P_L, P_R;
+	    RCP<TSFCore::LinearOp<Scalar> > A = rcp( new TSFCore::DiagonalLinearOp<Scalar>(A_diag) );
+			RCP<TSFCore::LinearOp<Scalar> > P_L, P_R;
 			if( precType_!=PREC_NONE ) {
 				double precCondNum = opCondNum_ / combinedOpCondNum_; 
 				if( precType_==PREC_LEFT_RIGHT ) {
@@ -150,7 +150,7 @@ public:
 							<< "\nCreating diagonal " << ( precType_==PREC_LEFT ? "left" : "right" )
 							<< " preconditioner of dimension  " << dim_ << " with condition number " << precCondNum << " ...\n";
 				}
-				RefCountPtr<TSFCore::Vector<Scalar> > P_diag = space->createMember();
+				RCP<TSFCore::Vector<Scalar> > P_diag = space->createMember();
 				{
 					TSFCore::ExplicitMutableVectorView<Scalar> P_diag_ev(*P_diag);
 					for( int k = 1; k <= dim_; ++k ) P_diag_ev(k) = 1 / ( ( precCondNum - 1 ) / ( dim_ - 1 ) * (k - 1) + 1 );
@@ -168,7 +168,7 @@ public:
 			}
 			if(verbose)
 				*out << "\nCreating RHS and LHS multi-vectors with " << dim_ << " rows and " << numRhs_ << " columns ...\n";
-			RefCountPtr<TSFCore::MultiVector<Scalar> > B = space->createMembers(numRhs_),	X = space->createMembers(numRhs_);
+			RCP<TSFCore::MultiVector<Scalar> > B = space->createMembers(numRhs_),	X = space->createMembers(numRhs_);
 			TSFCore::randomize( -ST::one(), +ST::one(), &*B );
 			Teuchos::set_extra_data( space, "space", &X );
 			Teuchos::set_extra_data( space, "space", &B );
@@ -189,7 +189,7 @@ public:
 			//
 			// C) Setup status test
 			//
-			RefCountPtr<Belos::AttachStatusTestBase<Scalar> > statusTest;
+			RCP<Belos::AttachStatusTestBase<Scalar> > statusTest;
 			// C.1) Summary outputting
 			if(verbose) {
 				statusTest = rcp(
@@ -201,7 +201,7 @@ public:
 					);
 			}
 			// C.2) Native norm based
-			RefCountPtr<Belos::AttachStatusTestBase<Scalar> > compStatusTest;
+			RCP<Belos::AttachStatusTestBase<Scalar> > compStatusTest;
 			if(useNativeNormStatusTest_)
 				compStatusTest = rcp(new Belos::NativeNormStatusTest<Scalar>(numRhs_,&(*tols)[0]));
 			else
@@ -239,19 +239,19 @@ bool checkResidual(
 	typedef Teuchos::ScalarTraits<Scalar>  ST;
 	typedef typename ST::magnitudeType ScalarMag;
 	using Teuchos::CommandLineProcessor;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
 	if(verbose) {
 		if(P_L.op().get()) out << "\nChecking preconditioned residual norms ...\n";
 		else               out << "\nChecking unpreconditioned residual norms ...\n";
 	}
 	const int numRhs = B.domain()->dim();
-	RefCountPtr<TSFCore::MultiVector<Scalar> > R = A.range()->createMembers(numRhs);
+	RCP<TSFCore::MultiVector<Scalar> > R = A.range()->createMembers(numRhs);
 	assign( &*R, B );
 	A.apply( TSFCore::NOTRANS, X, &*R, ST::one(), -ST::one() );
-	RefCountPtr<const TSFCore::MultiVector<Scalar> > PR, PB;
+	RCP<const TSFCore::MultiVector<Scalar> > PR, PB;
 	if(P_L.op().get()) {
-		RefCountPtr<TSFCore::MultiVector<Scalar> > _PR, _PB;
+		RCP<TSFCore::MultiVector<Scalar> > _PR, _PB;
 		_PR = P_L.range()->createMembers(numRhs);
 		_PB = P_L.range()->createMembers(numRhs);
 		P_L.apply( TSFCore::NOTRANS, *R, &*_PR );

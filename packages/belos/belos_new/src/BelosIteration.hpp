@@ -37,7 +37,7 @@
 #include "BelosTypes.hpp"
 
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 
 namespace Belos {
@@ -70,10 +70,10 @@ class Iteration {
     Belos::OrthoManager, Belos::OutputManager, and Teuchos::ParameterList as input.  
     These four arguments are sufficient enough for constructing any Belos::Iteration object.
   */
-  Iteration( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
-	     const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-	     const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-	     const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+  Iteration( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+	     const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+	     const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+	     const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
 	     Teuchos::ParameterList &params );
 
   //! Destructor.
@@ -108,13 +108,13 @@ class Iteration {
 
   //! Get the residuals native to the solver.
   //! \return A multivector with blockSize vectors containing the native residuals, else the native residual norm is returned.
-  virtual Teuchos::RefCountPtr<const MV> getNativeResiduals( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> *norms ) const = 0;
+  virtual Teuchos::RCP<const MV> getNativeResiduals( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> *norms ) const = 0;
 
   //! Get the current update to the linear system.
   /*! \note Some solvers, like GMRES, do not compute updates to the solution every iteration.
             This method forces the computation of the current update.
   */
-  virtual Teuchos::RefCountPtr<MV> getCurrentUpdate() const = 0;
+  virtual Teuchos::RCP<MV> getCurrentUpdate() const = 0;
 
   //@}
 

@@ -85,7 +85,7 @@ public:
 	NonblockGmres(
 		const int                                                           maxKrylovDim  = 1000
 		,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType        breakdown_tol = 0.0
-		,const Teuchos::RefCountPtr<std::ostream>                           &out          = Teuchos::null
+		,const Teuchos::RCP<std::ostream>                           &out          = Teuchos::null
 		,const bool                                                         dump_all      = false
 		);
 
@@ -119,9 +119,9 @@ public:
 	/// Returns <tt>false</tt>
 	bool adjointRequired() const;
 	///
-	void setProblem( const RefCountPtr<LinearProblemIteration<Scalar> > &lpi );
+	void setProblem( const RCP<LinearProblemIteration<Scalar> > &lpi );
 	///
-	RefCountPtr<LinearProblemIteration<Scalar> > getProblem();
+	RCP<LinearProblemIteration<Scalar> > getProblem();
 	///
 	void initialize();
 	///
@@ -142,13 +142,13 @@ private:
 	// //////////////////////////////////
 	// Private data members
 	
-	RefCountPtr<LinearProblemIteration<Scalar> >           lpi_;
+	RCP<LinearProblemIteration<Scalar> >           lpi_;
 	int                                                    currNumIters_;
 	int                                                    currTotalNumIters_;
 	int                                                    currNumRestarts_;
 	Scalar                                                 r0_nrm_; 
 	Scalar			                                           rel_r_nrm_;
-	Teuchos::RefCountPtr< TSFCore::MultiVector<Scalar> >   V_;
+	Teuchos::RCP< TSFCore::MultiVector<Scalar> >   V_;
 	mutable std::valarray<Scalar>                          z_;
 	mutable std::valarray<Scalar>                          z_tmp_;
 	Teuchos::SerialDenseMatrix<int,Scalar>                 H_;
@@ -175,7 +175,7 @@ template<class Scalar>
 NonblockGmres<Scalar>::NonblockGmres(
 	const int                                                           maxKrylovDim
 	,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType        breakdown_tol
-	,const Teuchos::RefCountPtr<std::ostream>                           &out
+	,const Teuchos::RCP<std::ostream>                           &out
 	,const bool                                                         dump_all
 	)
 	:maxKrylovDim_(maxKrylovDim)
@@ -217,11 +217,11 @@ void NonblockGmres<Scalar>::forceCurrLhsUpdate() const
 			,currNumIters_, 1, one, H_.values(), maxKrylovDim()+1, &z_tmp_[0], maxKrylovDim()+1
 			);
 		// Compute the new solution update
-		RefCountPtr<const TSFCore::MultiVector<Scalar> >
+		RCP<const TSFCore::MultiVector<Scalar> >
 			V = V_->subView(TSFCore::Range1D(1,currNumIters_));
-		RefCountPtr<const TSFCore::Vector<Scalar> >
+		RCP<const TSFCore::Vector<Scalar> >
 			z_vec	= V->domain()->createMemberView(RTOpPack::SubVectorT<Scalar>(0,currNumIters_,&z_tmp_[0],1));
-		RefCountPtr<TSFCore::Vector<Scalar> >
+		RCP<TSFCore::Vector<Scalar> >
 			nativeLhsStep = V->range()->createMember();
 		V->apply( TSFCore::NOTRANS, *z_vec, &*nativeLhsStep, -one );
 		lpi_->updateCurrLhs( *nativeLhsStep );
@@ -264,7 +264,7 @@ bool NonblockGmres<Scalar>::adjointRequired() const
 }
 
 template<class Scalar>
-void NonblockGmres<Scalar>::setProblem( const RefCountPtr<LinearProblemIteration<Scalar> > &lpi )
+void NonblockGmres<Scalar>::setProblem( const RCP<LinearProblemIteration<Scalar> > &lpi )
 {
 #ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT(lpi.get()==NULL);
@@ -273,7 +273,7 @@ void NonblockGmres<Scalar>::setProblem( const RefCountPtr<LinearProblemIteration
 }
 
 template<class Scalar>
-RefCountPtr<LinearProblemIteration<Scalar> > NonblockGmres<Scalar>::getProblem()
+RCP<LinearProblemIteration<Scalar> > NonblockGmres<Scalar>::getProblem()
 {
 	return lpi_;
 }
@@ -353,8 +353,8 @@ IterateReturn NonblockGmres<Scalar>::nextBlock( const int maxNumIter, bool *allF
 					currNumIters_ = 0;
 					++currNumRestarts_;
 				}
-				Teuchos::RefCountPtr<TSFCore::Vector<Scalar> > v_1 = V_->col(1);	// Get a mutable view of the first column of V_
-				RefCountPtr<TSFCore::Vector<Scalar> > r_curr_0 = v_1;             // Just a name change!
+				Teuchos::RCP<TSFCore::Vector<Scalar> > v_1 = V_->col(1);	// Get a mutable view of the first column of V_
+				RCP<TSFCore::Vector<Scalar> > r_curr_0 = v_1;             // Just a name change!
 				lpi_->computeCurrCompositeResidual(NULL,NULL,&*r_curr_0);
 				const ScalarMag r_curr_0_nrm = norm(*r_curr_0);
 				if( currTotalNumIters_ == 0 ) r0_nrm_ = r_curr_0_nrm;             // Remember initial residual for convergence test!
@@ -416,7 +416,7 @@ bool NonblockGmres<Scalar>::computeIteration()
 	std::valarray<Scalar> &z = z_, &cs = cs_, &sn = sn_;
 	const int jm1 = currNumIters_;
 	// 
-	Teuchos::RefCountPtr<TSFCore::Vector<Scalar> >
+	Teuchos::RCP<TSFCore::Vector<Scalar> >
 		w = V_->col(jm1+2);                                              // w = v_{j+1}
 	Op.apply( TSFCore::NOTRANS, *V_->col(jm1+1), &*w );                // w = M * v_{j}	
 	//

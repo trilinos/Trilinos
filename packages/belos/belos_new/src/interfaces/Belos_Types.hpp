@@ -31,14 +31,14 @@
 
 #include "BelosConfigDefs.hpp"
 #include "TSFCoreTypes.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 /*!	\file Belos_Types.hpp
 */
 
 namespace Belos {
 
-using Teuchos::RefCountPtr;
+using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
 const Teuchos::ENull null = Teuchos::null;

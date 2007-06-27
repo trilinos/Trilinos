@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 
   using Teuchos::ParameterList;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
@@ -107,10 +107,10 @@ int main(int argc, char *argv[]) {
   //
   // Get the problem
   //
-  RefCountPtr<Epetra_Map> Map;
-  RefCountPtr<Epetra_CrsMatrix> A;
-  RefCountPtr<Epetra_MultiVector> B, X;
-  RefCountPtr<Epetra_Vector> vecB, vecX;
+  RCP<Epetra_Map> Map;
+  RCP<Epetra_CrsMatrix> A;
+  RCP<Epetra_MultiVector> B, X;
+  RCP<Epetra_Vector> vecB, vecX;
   EpetraExt::readEpetraLinearSystem(filename, Comm, &A, &Map, &vecX, &vecB);
   A->OptimizeStorage();
   proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
   Belos::OutputManager<double> My_OM();
  
   // Create an iterative solver manager.
-  RefCountPtr< Belos::SolverManager<double,MV,OP> > newSolver
+  RCP< Belos::SolverManager<double,MV,OP> > newSolver
     = rcp( new Belos::BlockGmresSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));
 
   //

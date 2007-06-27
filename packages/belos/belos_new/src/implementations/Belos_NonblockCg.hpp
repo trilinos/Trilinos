@@ -96,9 +96,9 @@ public:
 	/// Returns <tt>false</tt>
 	bool adjointRequired() const;
 	///
-	void setProblem( const RefCountPtr<LinearProblemIteration<Scalar> > &lpi );
+	void setProblem( const RCP<LinearProblemIteration<Scalar> > &lpi );
 	///
-	RefCountPtr<LinearProblemIteration<Scalar> > getProblem();
+	RCP<LinearProblemIteration<Scalar> > getProblem();
 	///
 	void initialize();
 	///
@@ -120,14 +120,14 @@ private:
 	// //////////////////////////////////
 	// Private data members
 	
-	RefCountPtr<LinearProblemIteration<Scalar> >  lpi_;
+	RCP<LinearProblemIteration<Scalar> >  lpi_;
 	int                                           currNumIters_;
 	EOpPrec                                       opPrecType_;
-	RefCountPtr<TSFCore::MultiVector<Scalar> >    X_; // Only used if we need it
-	RefCountPtr<TSFCore::MultiVector<Scalar> >    R_; // Only used if we need it
-	RefCountPtr<TSFCore::MultiVector<Scalar> >    Q_;
-	RefCountPtr<TSFCore::MultiVector<Scalar> >    Z_;
-	RefCountPtr<TSFCore::MultiVector<Scalar> >    P_;
+	RCP<TSFCore::MultiVector<Scalar> >    X_; // Only used if we need it
+	RCP<TSFCore::MultiVector<Scalar> >    R_; // Only used if we need it
+	RCP<TSFCore::MultiVector<Scalar> >    Q_;
+	RCP<TSFCore::MultiVector<Scalar> >    Z_;
+	RCP<TSFCore::MultiVector<Scalar> >    P_;
 	std::vector<Scalar>                           rho_;
 	std::vector<Scalar>                           rho_old_;
 	std::vector<Scalar>                           beta_;
@@ -153,9 +153,9 @@ private:
 	///
 	TSFCore::LinearOpHandle<Scalar> getPrec() const;
 	///
-	RefCountPtr<TSFCore::MultiVector<Scalar> > getCurrLhs() const;
+	RCP<TSFCore::MultiVector<Scalar> > getCurrLhs() const;
 	///
-	RefCountPtr<TSFCore::MultiVector<Scalar> > getCurrResidual() const;
+	RCP<TSFCore::MultiVector<Scalar> > getCurrResidual() const;
 	///
 	void cleanUp();
 
@@ -240,7 +240,7 @@ bool NonblockCg<Scalar>::adjointRequired() const
 }
 
 template<class Scalar>
-void NonblockCg<Scalar>::setProblem( const RefCountPtr<LinearProblemIteration<Scalar> > &lpi )
+void NonblockCg<Scalar>::setProblem( const RCP<LinearProblemIteration<Scalar> > &lpi )
 {
 #ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT(lpi.get()==NULL);
@@ -249,7 +249,7 @@ void NonblockCg<Scalar>::setProblem( const RefCountPtr<LinearProblemIteration<Sc
 }
 
 template<class Scalar>
-RefCountPtr<LinearProblemIteration<Scalar> > NonblockCg<Scalar>::getProblem()
+RCP<LinearProblemIteration<Scalar> > NonblockCg<Scalar>::getProblem()
 {
 	return lpi_;
 }
@@ -362,7 +362,7 @@ bool NonblockCg<Scalar>::setupCurrSystem()
 	if(!lpi_->setupCurrSystem()) return false; // All systems are solved!
 	// Create private objects needed by the algorithm
 	const int currInitNumRhs = lpi_->getCurrNumRhs();
-	const RefCountPtr<const TSFCore::VectorSpace<Scalar> >
+	const RCP<const TSFCore::VectorSpace<Scalar> >
 		space = this->getOperator().range(); // Range and domain should be the same for a symmetric operator!
 	if(opPrecType_==COMPOSITE_OP) {
 		X_ = space->createMembers(currInitNumRhs);
@@ -466,7 +466,7 @@ void NonblockCg<Scalar>::computeIteration()
 	TSFCore::LinearOpHandle<Scalar> Op   = this->getOperator();
 	TSFCore::LinearOpHandle<Scalar> Prec = this->getPrec();
 	// Get current views of data
-	RefCountPtr<TSFCore::MultiVector<Scalar> >
+	RCP<TSFCore::MultiVector<Scalar> >
 		X = this->getCurrLhs(),
 		R = this->getCurrResidual(),
 		Q = Q_->subView(currRng),
@@ -482,7 +482,7 @@ void NonblockCg<Scalar>::computeIteration()
 	}
 	// Negate the residual to be currRhs - Operator * currLhs as according to standard CG
 	scale( -ST::one(), &*R );
-	RefCountPtr<const TSFCore::VectorSpace<Scalar> >
+	RCP<const TSFCore::VectorSpace<Scalar> >
 		space = R->range(); // Operator should be symmetric so any space will do!
 	int j;
 	if( Prec.op().get() ) {  // Preconditioner is available
@@ -587,7 +587,7 @@ TSFCore::LinearOpHandle<Scalar> NonblockCg<Scalar>::getPrec() const
 }
 
 template<class Scalar>
-RefCountPtr<TSFCore::MultiVector<Scalar> > NonblockCg<Scalar>::getCurrLhs() const
+RCP<TSFCore::MultiVector<Scalar> > NonblockCg<Scalar>::getCurrLhs() const
 {
 	if(opPrecType_ == COMPOSITE_OP)
 		return X_->subView(TSFCore::Range1D(1,lpi_->getCurrBlockSize()));
@@ -596,7 +596,7 @@ RefCountPtr<TSFCore::MultiVector<Scalar> > NonblockCg<Scalar>::getCurrLhs() cons
 }
 
 template<class Scalar>
-RefCountPtr<TSFCore::MultiVector<Scalar> > NonblockCg<Scalar>::getCurrResidual() const
+RCP<TSFCore::MultiVector<Scalar> > NonblockCg<Scalar>::getCurrResidual() const
 {
 	if(opPrecType_ == COMPOSITE_OP)
 		return R_->subView(TSFCore::Range1D(1,lpi_->getCurrBlockSize()));

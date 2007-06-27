@@ -125,8 +125,8 @@ namespace Belos {
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
      *   - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled for the purposing of deciding convergence. Default: true
      */
-    BlockGmresSolMgr( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem,
-		      const Teuchos::RefCountPtr<Teuchos::ParameterList> &pl );
+    BlockGmresSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+		      const Teuchos::RCP<Teuchos::ParameterList> &pl );
     
     //! Destructor.
     virtual ~BlockGmresSolMgr() {};
@@ -143,18 +143,18 @@ namespace Belos {
 
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
-    Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const { return defaultParams_; }
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const { return defaultParams_; }
 
     /*! \brief Get a parameter list containing the current parameters for this object.
      */
-    Teuchos::RefCountPtr<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
  
     /*! \brief Return the timers for this object. 
      *
      * The timers are ordered as follows:
      *   - time spent in solve() routine
      */
-    Teuchos::Array<Teuchos::RefCountPtr<Teuchos::Time> > getTimers() const {
+    Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
       return tuple(timerSolve_);
     }
     
@@ -163,9 +163,9 @@ namespace Belos {
     //! @name Set methods
     //@{
     
-    void setProblem( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; }
+    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; }
     
-    void setParameters( const Teuchos::RefCountPtr<Teuchos::ParameterList> &params );
+    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
     
     //@}
     
@@ -223,24 +223,24 @@ namespace Belos {
     }
 
     // Linear problem.
-    Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > problem_;
+    Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
     
     // Output manager.
-    Teuchos::RefCountPtr<OutputManager<ScalarType> > printer_;
-    Teuchos::RefCountPtr<ostream> outputStream_;
+    Teuchos::RCP<OutputManager<ScalarType> > printer_;
+    Teuchos::RCP<ostream> outputStream_;
 
     // Status test.
-    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > sTest_;
-    Teuchos::RefCountPtr<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
-    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > convTest_;
-    Teuchos::RefCountPtr<StatusTestResNorm<ScalarType,MV,OP> > expConvTest_, impConvTest_;
-    Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
+    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
+    Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > expConvTest_, impConvTest_;
+    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
 
     // Orthogonalization manager.
-    Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
+    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
     
     // Current parameter list.
-    Teuchos::RefCountPtr<ParameterList> params_, defaultParams_;
+    Teuchos::RCP<ParameterList> params_, defaultParams_;
 
     // Default solver values.
     static const MagnitudeType convtol_default_;
@@ -257,7 +257,7 @@ namespace Belos {
     static const std::string expResScale_default_; 
     static const std::string label_default_;
     static const std::string orthoType_default_;
-    static const Teuchos::RefCountPtr<ostream> outputStream_default_;
+    static const Teuchos::RCP<ostream> outputStream_default_;
 
     // Current solver values.
     MagnitudeType convtol_, orthoKappa_;
@@ -269,7 +269,7 @@ namespace Belos {
     
     // Timers.
     std::string label_;
-    Teuchos::RefCountPtr<Teuchos::Time> timerSolve_;
+    Teuchos::RCP<Teuchos::Time> timerSolve_;
 
     // Internal state variables.
     bool isSet_;
@@ -320,7 +320,7 @@ template<class ScalarType, class MV, class OP>
 const std::string BlockGmresSolMgr<ScalarType,MV,OP>::orthoType_default_ = "DGKS";
 
 template<class ScalarType, class MV, class OP>
-const Teuchos::RefCountPtr<ostream> BlockGmresSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
+const Teuchos::RCP<ostream> BlockGmresSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
 
 
 // Empty Constructor
@@ -355,8 +355,8 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr() :
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
 BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr( 
-						     const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem,
-						     const Teuchos::RefCountPtr<Teuchos::ParameterList> &pl ) : 
+						     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+						     const Teuchos::RCP<Teuchos::ParameterList> &pl ) : 
   problem_(problem),
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
@@ -392,7 +392,7 @@ BlockGmresSolMgr<ScalarType,MV,OP>::BlockGmresSolMgr(
 
 
 template<class ScalarType, class MV, class OP>
-void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountPtr<Teuchos::ParameterList> &params )
+void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
 {
   // Create the internal parameter list if ones doesn't already exist.
   if (params_ == Teuchos::null) {
@@ -510,7 +510,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RefCountP
 
   // output stream
   if (params->isParameter("Output Stream")) {
-    outputStream_ = Teuchos::getParameter<Teuchos::RefCountPtr<ostream> >(*params,"Output Stream");
+    outputStream_ = Teuchos::getParameter<Teuchos::RCP<ostream> >(*params,"Output Stream");
 
     // Update parameter in our list.
     params_->set("Output Stream", outputStream_);
@@ -776,7 +776,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockGmres solver
 
-  Teuchos::RefCountPtr<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter
+  Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter
     = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
   
   // Enter solve() iterations
@@ -804,11 +804,11 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       outputTest_->resetNumCalls();
 
       // Create the first block in the current Krylov basis.
-      Teuchos::RefCountPtr<MV> V_0 = MVT::Clone( *(problem_->getRHS()), blockSize_ );
+      Teuchos::RCP<MV> V_0 = MVT::Clone( *(problem_->getRHS()), blockSize_ );
       problem_->computeCurrResVec( &*V_0 );
 
       // Get a matrix to hold the orthonormalization coefficients.
-      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > Z_0 = 
+      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > Z_0 = 
         rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(blockSize_, blockSize_) );
       
       // Orthonormalize the new V_0
@@ -865,7 +865,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    printer_->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << endl << endl;
 	    
 	    // Update the linear problem.
-	    Teuchos::RefCountPtr<MV> update = block_gmres_iter->getCurrentUpdate();
+	    Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
 	    problem_->updateSolution( update, true );
 	    
 	    // Get the state.
@@ -873,11 +873,11 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 	    
 	    // Compute the restart vector.
 	    // Get a view of the current Krylov basis.
-	    Teuchos::RefCountPtr<MV> V_0  = MVT::Clone( *(oldState.V), blockSize_ );
+	    Teuchos::RCP<MV> V_0  = MVT::Clone( *(oldState.V), blockSize_ );
 	    problem_->computeCurrResVec( &*V_0 );
 
 	    // Get a view of the first block of the Krylov basis.
-            Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > Z_0 = 
+            Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > Z_0 = 
               rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(blockSize_, blockSize_) );
 	    
 	    // Orthonormalize the new V_0
@@ -937,7 +937,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       
       // Compute the current solution.
       // Update the linear problem.
-      Teuchos::RefCountPtr<MV> update = block_gmres_iter->getCurrentUpdate();
+      Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
       problem_->updateSolution( update, true );
 
       // Inform the linear problem that we are finished with this block linear system.

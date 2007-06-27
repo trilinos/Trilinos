@@ -119,7 +119,7 @@ public:
 	 * </ul>
 	 */
 	SummaryOutputterStatusTest(
-		const Teuchos::RefCountPtr<std::ostream> &out
+		const Teuchos::RCP<std::ostream> &out
 		,const std::string                       &leadingOutputStr       = std::string("")
 		,const bool                              printMaxNativeRhsNorm   = true
 		,const bool                              printEachNativeRhsNorm  = false
@@ -195,7 +195,7 @@ SummaryOutputterStatusTest<Scalar>::SummaryOutputterStatusTest()
 
 template<class Scalar>
 SummaryOutputterStatusTest<Scalar>::SummaryOutputterStatusTest(
-	const Teuchos::RefCountPtr<std::ostream>  &out
+	const Teuchos::RCP<std::ostream>  &out
 	,const std::string                        &leadingOutputStr
 	,const bool                               printMaxNativeRhsNorm
 	,const bool                               printEachNativeRhsNorm
@@ -222,7 +222,7 @@ SummaryOutputterStatusTest<Scalar>::SummaryOutputterStatusTest(
 template<class Scalar>
 void SummaryOutputterStatusTest<Scalar>::reset()
 {
-	Teuchos::RefCountPtr<StatusTest<Scalar> > attachedStatusTest = getAttachedStatusTest();
+	Teuchos::RCP<StatusTest<Scalar> > attachedStatusTest = getAttachedStatusTest();
 	if(attachedStatusTest.get()) attachedStatusTest->reset();
 	resetCalled_ = true;
 }
@@ -235,7 +235,7 @@ void SummaryOutputterStatusTest<Scalar>::checkStatus(
 	,EStatusType                              status[]
 	)
 {
-	Teuchos::RefCountPtr<StatusTest<Scalar> > attachedStatusTest = getAttachedStatusTest();
+	Teuchos::RCP<StatusTest<Scalar> > attachedStatusTest = getAttachedStatusTest();
 	if(attachedStatusTest.get()) attachedStatusTest->checkStatus(bis,currBlockSize,currNumRhs,status);
 	const LinearProblemState<Scalar> &lps = bis.getProblem();
 	const bool getCurrRhsIndexes = resetCalled_ || printEachNativeRhsNorm() || printEachOrigRhsNorm();

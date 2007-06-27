@@ -83,10 +83,10 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
    * This constructor takes pointers required by the linear solver iteration, in addition
    * to a parameter list of options for the linear solver.
    */
-  BlockCGIter( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
-	       const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-	       const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-	       const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+  BlockCGIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+	       const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+	       const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+	       const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
 	       Teuchos::ParameterList &params );
 
   //! Destructor.
@@ -165,12 +165,12 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   //! Get the norms of the residuals native to the solver.
   //! \return A vector of length blockSize containing the native residuals.
-  Teuchos::RefCountPtr<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return R_; }
+  Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return R_; }
 
   //! Get the current update to the linear system.
   /*! \note This method returns a null pointer because the linear problem is current.
   */
-  Teuchos::RefCountPtr<MV> getCurrentUpdate() const { return Teuchos::null; }
+  Teuchos::RCP<MV> getCurrentUpdate() const { return Teuchos::null; }
 
   //@}
   
@@ -202,10 +202,10 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
   //
   // Classes inputed through constructor that define the linear problem to be solved.
   //
-  const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> >    lp_;
-  const Teuchos::RefCountPtr<OutputManager<ScalarType> >          om_;
-  const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >       stest_;
-  const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> >        ortho_;
+  const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
+  const Teuchos::RCP<OutputManager<ScalarType> >          om_;
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+  const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
 
   //
   // Algorithmic parameters
@@ -233,26 +233,26 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
   // State Storage
   // 
   // Residual
-  Teuchos::RefCountPtr<MV> R_;
+  Teuchos::RCP<MV> R_;
   //
   // Preconditioned residual
-  Teuchos::RefCountPtr<MV> Z_;
+  Teuchos::RCP<MV> Z_;
   //
   // Direction vector
-  Teuchos::RefCountPtr<MV> P_;
+  Teuchos::RCP<MV> P_;
   //
   // Operator applied to direction vector
-  Teuchos::RefCountPtr<MV> AP_;
+  Teuchos::RCP<MV> AP_;
 
 };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
   template<class ScalarType, class MV, class OP>
-  BlockCGIter<ScalarType,MV,OP>::BlockCGIter(const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
-					     const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-					     const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-					     const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+  BlockCGIter<ScalarType,MV,OP>::BlockCGIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+					     const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+					     const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+					     const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
 					     Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
@@ -276,8 +276,8 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
     if (!stateStorageInitialized_) {
 
       // Check if there is any multivector to clone from.
-      Teuchos::RefCountPtr<const MV> lhsMV = lp_->getLHS();
-      Teuchos::RefCountPtr<const MV> rhsMV = lp_->getRHS();
+      Teuchos::RCP<const MV> lhsMV = lp_->getLHS();
+      Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
       if (lhsMV == Teuchos::null && rhsMV == Teuchos::null) {
 	stateStorageInitialized_ = false;
 	return;
@@ -288,7 +288,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
 	// If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
 	if (R_ == Teuchos::null || MVT::GetNumberVecs(*R_)!=blockSize_) {
 	  // Get the multivector that is not null.
-	  Teuchos::RefCountPtr<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
+	  Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
 	  TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
 			     "Belos::BlockCGIter::setStateSize(): linear problem does not specify multivectors to clone from.");
 	  R_ = MVT::Clone( *tmp, blockSize_ );
@@ -409,7 +409,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     
     // Get the current solution vector.
-    Teuchos::RefCountPtr<MV> cur_soln_vec = lp_->getCurrLHSVec();
+    Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
     // Check that the current solution vector has blockSize_ columns. 
     TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != blockSize_, CGIterateFailure,
@@ -481,7 +481,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
       //
       // Compute the new direction vectors P_ = Z_ + P_ * beta 
       //
-      Teuchos::RefCountPtr<MV> Pnew = MVT::CloneCopy( *Z_ );
+      Teuchos::RCP<MV> Pnew = MVT::CloneCopy( *Z_ );
       MVT::MvTimesMatAddMv(one, *P_, beta, one, *Pnew);
       P_ = Pnew;
 

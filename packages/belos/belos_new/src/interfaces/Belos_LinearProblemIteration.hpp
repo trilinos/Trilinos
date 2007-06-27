@@ -276,7 +276,7 @@ public:
 	 * unscaled unpreconditioned solution using
 	 * <tt>this->setCurrLhs()</tt>.
 	 */
-	virtual RefCountPtr<TSFCore::MultiVector<Scalar> > getCurrLhs() = 0;
+	virtual RCP<TSFCore::MultiVector<Scalar> > getCurrLhs() = 0;
 
 	///
 	/** Inform that current unscaled unpreconditioned LHS \f$\bar{X}\f$ is up to date or not.
@@ -354,7 +354,7 @@ public:
 	 * this function and instead just let <tt>*this</tt> compute it when
 	 * requested by the status test.
 	 */
-	virtual RefCountPtr<TSFCore::MultiVector<Scalar> > getCurrResidual() = 0;
+	virtual RCP<TSFCore::MultiVector<Scalar> > getCurrResidual() = 0;
 
 	///
 	/** Inform that current unscaled unpreconditioned residual \f$\bar{R}\f$ is up to date or not.

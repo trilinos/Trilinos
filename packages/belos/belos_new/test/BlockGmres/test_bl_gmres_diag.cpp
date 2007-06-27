@@ -131,8 +131,8 @@ class Composed_Operator : public Vector_Operator
 public:
   
   Composed_Operator(int n, 
-		    const Teuchos::RefCountPtr<Vector_Operator>& pA, 
-		    const Teuchos::RefCountPtr<Vector_Operator>& pB);
+		    const Teuchos::RCP<Vector_Operator>& pA, 
+		    const Teuchos::RCP<Vector_Operator>& pB);
   
   virtual ~Composed_Operator() {};
   
@@ -140,13 +140,13 @@ public:
   
 private:
   
-  Teuchos::RefCountPtr<Vector_Operator> pA; 
-  Teuchos::RefCountPtr<Vector_Operator> pB; 
+  Teuchos::RCP<Vector_Operator> pA; 
+  Teuchos::RCP<Vector_Operator> pB; 
 };
 
 Composed_Operator::Composed_Operator(int n, 
-                                     const Teuchos::RefCountPtr<Vector_Operator>& pA, 
-                                     const Teuchos::RefCountPtr<Vector_Operator>& pB) 
+                                     const Teuchos::RCP<Vector_Operator>& pA, 
+                                     const Teuchos::RCP<Vector_Operator>& pB) 
   : Vector_Operator(n, n), pA(pA), pB(pB) 
 {
 }
@@ -164,9 +164,9 @@ class Trilinos_Interface : public Epetra_Operator
 {
 public:
   
-  Trilinos_Interface(const Teuchos::RefCountPtr<Vector_Operator>   pA,
-		     const Teuchos::RefCountPtr<const Epetra_Comm> pComm,
-		     const Teuchos::RefCountPtr<const Epetra_Map>  pMap)
+  Trilinos_Interface(const Teuchos::RCP<Vector_Operator>   pA,
+		     const Teuchos::RCP<const Epetra_Comm> pComm,
+		     const Teuchos::RCP<const Epetra_Map>  pMap)
     : pA(pA), pComm(pComm), pMap(pMap) 
   {
   };
@@ -198,9 +198,9 @@ public:
   
 private:
   
-  Teuchos::RefCountPtr<Vector_Operator>   pA;
-  Teuchos::RefCountPtr<const Epetra_Comm> pComm;
-  Teuchos::RefCountPtr<const Epetra_Map>  pMap;
+  Teuchos::RCP<Vector_Operator>   pA;
+  Teuchos::RCP<const Epetra_Comm> pComm;
+  Teuchos::RCP<const Epetra_Map>  pMap;
   
   bool use_transpose;
 };
@@ -223,7 +223,7 @@ class Iterative_Inverse_Operator : public Vector_Operator
 public:
   
   Iterative_Inverse_Operator(int n, int blocksize, 
-			     const Teuchos::RefCountPtr<Vector_Operator>& pA, 
+			     const Teuchos::RCP<Vector_Operator>& pA, 
 			     string opString="Iterative Solver", bool print=false);              
   
   virtual ~Iterative_Inverse_Operator() {}
@@ -232,22 +232,22 @@ public:
   
 private:
   
-  Teuchos::RefCountPtr<Vector_Operator> pA;       // operator which will be inverted 
+  Teuchos::RCP<Vector_Operator> pA;       // operator which will be inverted 
   // supplies a matrix vector multiply
   const bool print;
   
   Teuchos::Time timer;
-  Teuchos::RefCountPtr<Epetra_Comm> pComm;
-  Teuchos::RefCountPtr<Epetra_Map>  pMap;
+  Teuchos::RCP<Epetra_Comm> pComm;
+  Teuchos::RCP<Epetra_Map>  pMap;
   
-  Teuchos::RefCountPtr<OP> pPE;   
-  Teuchos::RefCountPtr<Teuchos::ParameterList>         pList;
-  Teuchos::RefCountPtr<LinearProblem<double,MV,OP> >   pProb;
-  Teuchos::RefCountPtr<BlockGmresSolMgr<double,MV,OP> >      pBelos;
+  Teuchos::RCP<OP> pPE;   
+  Teuchos::RCP<Teuchos::ParameterList>         pList;
+  Teuchos::RCP<LinearProblem<double,MV,OP> >   pProb;
+  Teuchos::RCP<BlockGmresSolMgr<double,MV,OP> >      pBelos;
 };
 
 Iterative_Inverse_Operator::Iterative_Inverse_Operator(int n, int blocksize,
-                                                       const Teuchos::RefCountPtr<Vector_Operator>& pA, 
+                                                       const Teuchos::RCP<Vector_Operator>& pA, 
                                                        string opString, bool print)
   : Vector_Operator(n, n),      // square operator
     pA(pA), 
@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
   X.PutScalar( 1.0 );
 
   // Inner computes inv(D2)*y
-  Teuchos::RefCountPtr<Diagonal_Operator_2> D2 = Teuchos::rcp(new Diagonal_Operator_2(n, 1.0));
+  Teuchos::RCP<Diagonal_Operator_2> D2 = Teuchos::rcp(new Diagonal_Operator_2(n, 1.0));
   Iterative_Inverse_Operator A2(n, 1, D2, "Belos (inv(D2))", true); 
   
   // should return x=(1, 1/2, 1/3, ..., 1/10)
@@ -351,16 +351,16 @@ int main(int argc, char *argv[])
   Y.Print(std::cout);
   
   // Inner computes inv(D)*x
-  Teuchos::RefCountPtr<Diagonal_Operator> D = Teuchos::rcp(new Diagonal_Operator(n, 4.0));
-  Teuchos::RefCountPtr<Iterative_Inverse_Operator> Inner = 
+  Teuchos::RCP<Diagonal_Operator> D = Teuchos::rcp(new Diagonal_Operator(n, 4.0));
+  Teuchos::RCP<Iterative_Inverse_Operator> Inner = 
     Teuchos::rcp(new Iterative_Inverse_Operator(n, 1, D, "Belos (inv(D))", false)); 
   
   // Composed_Operator computed inv(D)*B*x
-  Teuchos::RefCountPtr<Diagonal_Operator> B = Teuchos::rcp(new Diagonal_Operator(n, 4.0));
-  Teuchos::RefCountPtr<Composed_Operator> C = Teuchos::rcp(new Composed_Operator(n, Inner, B)); 
+  Teuchos::RCP<Diagonal_Operator> B = Teuchos::rcp(new Diagonal_Operator(n, 4.0));
+  Teuchos::RCP<Composed_Operator> C = Teuchos::rcp(new Composed_Operator(n, Inner, B)); 
   
   // Outer computes inv(C) = inv(inv(D)*B)*x = inv(B)*D*x = x
-  Teuchos::RefCountPtr<Iterative_Inverse_Operator> Outer =
+  Teuchos::RCP<Iterative_Inverse_Operator> Outer =
     Teuchos::rcp(new Iterative_Inverse_Operator(n, 1, C, "Belos (inv(C)=inv(inv(D)*B))", true)); 
   
   // should return x=1/4

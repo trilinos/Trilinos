@@ -418,7 +418,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
     // Otherwise the native residual is assumed to be stored in the resvector_.
     //
     std::vector<MagnitudeType> tmp_resvector( curBlksz_ );
-    RefCountPtr<const MV> residMV = iSolver->getNativeResiduals( &tmp_resvector );     
+    RCP<const MV> residMV = iSolver->getNativeResiduals( &tmp_resvector );     
     if ( residMV != Teuchos::null ) { 
       tmp_resvector.resize( MVT::GetNumberVecs( *residMV ) );
       MVT::MvNorm( *residMV, &tmp_resvector, resnormtype_ );    
@@ -441,9 +441,9 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
     //
     // Request the true residual for this block of right-hand sides.
     //
-    RefCountPtr<MV> cur_update = iSolver->getCurrentUpdate();
-    RefCountPtr<MV> cur_soln = lp.updateSolution( cur_update );
-    RefCountPtr<MV> cur_res = MVT::Clone( *cur_soln, MVT::GetNumberVecs( *cur_soln ) );
+    RCP<MV> cur_update = iSolver->getCurrentUpdate();
+    RCP<MV> cur_soln = lp.updateSolution( cur_update );
+    RCP<MV> cur_res = MVT::Clone( *cur_soln, MVT::GetNumberVecs( *cur_soln ) );
     lp.computeActualResVec( &*cur_res, &*cur_soln );
     std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( *cur_res ) );
     MVT::MvNorm( *cur_res, &tmp_resvector, resnormtype_ );
@@ -595,7 +595,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( Itera
     firstcallCheckStatus_ = false;
 
     if (scaletype_== NormOfRHS) {
-      RefCountPtr<const MV> rhs = lp.getRHS();
+      RCP<const MV> rhs = lp.getRHS();
       numrhs_ = MVT::GetNumberVecs( *rhs );
       scalevector_.resize( numrhs_ );
       resvector_.resize( numrhs_ ); 
@@ -603,7 +603,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( Itera
       MVT::MvNorm( *rhs, &scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfInitRes) {
-      RefCountPtr<const MV> init_res = lp.getInitResVec();
+      RCP<const MV> init_res = lp.getInitResVec();
       numrhs_ = MVT::GetNumberVecs( *init_res );
       scalevector_.resize( numrhs_ );
       resvector_.resize( numrhs_ ); 
@@ -611,13 +611,13 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::firstCallCheckStatusSetup( Itera
       MVT::MvNorm( *init_res, &scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfPrecInitRes) {
-      RefCountPtr<const MV> init_res = lp.getInitResVec();
+      RCP<const MV> init_res = lp.getInitResVec();
       numrhs_ = MVT::GetNumberVecs( *init_res );
       scalevector_.resize( numrhs_ );
       resvector_.resize( numrhs_ ); 
       testvector_.resize( numrhs_ );
       if (lp.isLeftPrec()) {
-        RefCountPtr<MV> prec_init_res = MVT::Clone( *init_res, numrhs_ );
+        RCP<MV> prec_init_res = MVT::Clone( *init_res, numrhs_ );
         lp.applyLeftPrec( *init_res, *prec_init_res );
         MVT::MvNorm( *prec_init_res, &scalevector_, scalenormtype_ );
       }

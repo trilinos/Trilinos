@@ -81,10 +81,10 @@ namespace Belos {
     //@{ 
 
     //! %Belos::CG constructor.
-    CG(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp, 
-       const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest, 
-       const RefCountPtr<OutputManager<ScalarType> > &om,
-       const RefCountPtr<ParameterList> &pl = Teuchos::null
+    CG(const RCP<LinearProblem<ScalarType,MV,OP> > &lp, 
+       const RCP<StatusTest<ScalarType,MV,OP> > &stest, 
+       const RCP<OutputManager<ScalarType> > &om,
+       const RCP<ParameterList> &pl = Teuchos::null
        );
     
     //! %Belos::CG destructor.
@@ -104,21 +104,21 @@ namespace Belos {
     /*! 
       \note The memory for the residual MultiVec must be handled by the calling routine.
     */
-    RefCountPtr<const MV> GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const;
+    RCP<const MV> GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const;
     
     //! Get the actual residual vector for the current linear system.
     /*! This may force the solver to compute a current residual for its linear
       system.  For CG, this method is not useful since the linear problem
       manager always has the current solution.
     */
-    RefCountPtr<MV> GetCurrentSoln() { return MVT::CloneCopy( *_cur_block_sol ); };
+    RCP<MV> GetCurrentSoln() { return MVT::CloneCopy( *_cur_block_sol ); };
   
     //! Get a constant reference to the current linear problem.  
     /*! This may include a current solution, if the solver has recently restarted or completed.
      */
-    RefCountPtr<LinearProblem<ScalarType,MV,OP> > GetLinearProblem() const { return( _lp ); }
+    RCP<LinearProblem<ScalarType,MV,OP> > GetLinearProblem() const { return( _lp ); }
     
-    RefCountPtr<StatusTest<ScalarType,MV,OP> > GetStatusTest() const { return( _stest ); }
+    RCP<StatusTest<ScalarType,MV,OP> > GetStatusTest() const { return( _stest ); }
 
     //@} 
     
@@ -143,28 +143,28 @@ namespace Belos {
   private:
     
     //! Linear problem manager [ must be passed in by the user ]
-    RefCountPtr<LinearProblem<ScalarType,MV,OP> > _lp; 
+    RCP<LinearProblem<ScalarType,MV,OP> > _lp; 
     
     //! Status test [ must be passed in by the user ]
-    RefCountPtr<StatusTest<ScalarType,MV,OP> > _stest; 
+    RCP<StatusTest<ScalarType,MV,OP> > _stest; 
     
     //! Output manager [ must be passed in by the user ]
-    RefCountPtr<OutputManager<ScalarType> > _om;
+    RCP<OutputManager<ScalarType> > _om;
     
     //! Parameter list containing information for configuring the linear solver. [ must be passed in by the user ]
-    RefCountPtr<ParameterList> _pl;     
+    RCP<ParameterList> _pl;     
 
     //! Pointer to current linear systems block of solution vectors [obtained from linear problem manager]
-    RefCountPtr<MV> _cur_block_sol;
+    RCP<MV> _cur_block_sol;
     
     //! Pointer to current linear systems block of right-hand sides [obtained from linear problem manager]
-    RefCountPtr<MV> _cur_block_rhs; 
+    RCP<MV> _cur_block_rhs; 
     
     //! Pointer to block of the current residual vectors.
-    RefCountPtr<MV> _residvec;
+    RCP<MV> _residvec;
     
     //! Output stream.
-    RefCountPtr<ostream> _os;
+    RCP<ostream> _os;
     
     //! Current blocksize, iteration number, and basis pointer.
     int _iter;
@@ -173,7 +173,7 @@ namespace Belos {
     bool _restartTimers;
 
     //! Internal timers
-    Teuchos::RefCountPtr<Teuchos::Time> _timerTotal;
+    Teuchos::RCP<Teuchos::Time> _timerTotal;
   };
   
   //
@@ -181,10 +181,10 @@ namespace Belos {
   //
   
   template <class ScalarType, class MV, class OP>
-  CG<ScalarType,MV,OP>::CG(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp,
-			   const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest,
-			   const RefCountPtr<OutputManager<ScalarType> > &om,
-			   const RefCountPtr<ParameterList> &pl 
+  CG<ScalarType,MV,OP>::CG(const RCP<LinearProblem<ScalarType,MV,OP> > &lp,
+			   const RCP<StatusTest<ScalarType,MV,OP> > &stest,
+			   const RCP<OutputManager<ScalarType> > &om,
+			   const RCP<ParameterList> &pl 
 			   ) : 
     _lp(lp), 
     _stest(stest),
@@ -198,12 +198,12 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  RefCountPtr<const MV> 
+  RCP<const MV> 
   CG<ScalarType,MV,OP>::GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
   {
     std::vector<int> index( 1 );
     index[0] = 0;
-    RefCountPtr<MV> ResidMV = MVT::CloneView( *_residvec, index );
+    RCP<MV> ResidMV = MVT::CloneView( *_residvec, index );
     return ResidMV;
   }
   
@@ -223,7 +223,7 @@ namespace Belos {
     Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
     Teuchos::SerialDenseMatrix<int,ScalarType> beta( 1, 1 );
     Teuchos::SerialDenseMatrix<int,ScalarType> rHz( 1, 1 ), rHz_old( 1, 1 ), pAp( 1, 1 );
-    RefCountPtr<MV> _p, _Ap, _z;
+    RCP<MV> _p, _Ap, _z;
     //
     // Retrieve the first linear system to be solved.
     //

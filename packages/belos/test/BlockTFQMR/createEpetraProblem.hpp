@@ -34,8 +34,8 @@ class Epetra_Map;
 class Epetra_CrsMatrix;
 class Epetra_MultiVector;
 
-#include "Teuchos_RefCountPtr.hpp"
-using Teuchos::RefCountPtr;
+#include "Teuchos_RCP.hpp"
+using Teuchos::RCP;
 using Teuchos::rcp;
 
 namespace Belos {
@@ -51,10 +51,10 @@ public:
 
 int createEpetraProblem(
 			std::string                      &filename
-			,RefCountPtr<Epetra_Map>         *rowMap
-			,RefCountPtr<Epetra_CrsMatrix>   *A
-			,RefCountPtr<Epetra_MultiVector> *B
-			,RefCountPtr<Epetra_MultiVector> *X
+			,RCP<Epetra_Map>         *rowMap
+			,RCP<Epetra_CrsMatrix>   *A
+			,RCP<Epetra_MultiVector> *B
+			,RCP<Epetra_MultiVector> *X
 			,int                             *MyPID
 			);
 

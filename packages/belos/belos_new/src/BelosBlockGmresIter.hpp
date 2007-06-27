@@ -80,17 +80,17 @@ namespace Belos {
      */
     int curDim;
     /*! \brief The current Krylov basis. */
-    Teuchos::RefCountPtr<const MV> V;
+    Teuchos::RCP<const MV> V;
     /*! \brief The current Hessenberg matrix. 
      *
      * The \c curDim by \c curDim leading submatrix of H is the 
      * projection of problem->getOperator() by the first \c curDim vectors in V. 
      */
-    Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > H;
+    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > H;
     /*! \brief The current upper-triangular matrix from the QR reduction of H. */
-    Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > R;
+    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > R;
     /*! \brief The current right-hand side of the least squares system RY = Z. */
-    Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > Z;
+    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > Z;
     
     BlockGmresIterState() : curDim(0), V(Teuchos::null),
 			    H(Teuchos::null), R(Teuchos::null), 
@@ -155,10 +155,10 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
    *   - "Restart Timers" = a \c bool specifying whether the timers should be restarted each time iterate() is called. Default: false
    *   - "Keep Hessenberg" = a \c bool specifying whether the upper Hessenberg should be stored separately from the least squares system. Default: false
    */
-  BlockGmresIter( const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
-		  const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-		  const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-		  const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+  BlockGmresIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+		  const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+		  const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
 		  Teuchos::ParameterList &params );
 
   //! Destructor.
@@ -255,7 +255,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
 
   //! Get the norms of the residuals native to the solver.
   //! \return A vector of length blockSize containing the native residuals.
-  Teuchos::RefCountPtr<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
+  Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
 
   //! Get the current update to the linear system.
   /*! \note Some solvers, like GMRES, do not compute updates to the solution every iteration.
@@ -263,7 +263,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
             each iteration, so this method will return a zero vector indicating that the linear
             problem contains the current solution.
   */
-  Teuchos::RefCountPtr<MV> getCurrentUpdate() const;
+  Teuchos::RCP<MV> getCurrentUpdate() const;
 
   //! Method for updating QR factorization of upper Hessenberg matrix
   /*! \note If \c dim >= \c getCurSubspaceDim() and \c dim < \c getMaxSubspaceDim(), then 
@@ -325,10 +325,10 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   //
   // Classes inputed through constructor that define the linear problem to be solved.
   //
-  const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> >    lp_;
-  const Teuchos::RefCountPtr<OutputManager<ScalarType> >          om_;
-  const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >       stest_;
-  const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> >        ortho_;
+  const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
+  const Teuchos::RCP<OutputManager<ScalarType> >          om_;
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+  const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
 
   //
   // Algorithmic parameters
@@ -362,27 +362,27 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   // 
   // State Storage
   //
-  Teuchos::RefCountPtr<MV> V_;
+  Teuchos::RCP<MV> V_;
   //
   // Projected matrices
   // H_ : Projected matrix from the Krylov factorization AV = VH + FE^T
   //
-  Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > H_;
+  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H_;
   // 
   // QR decomposition of Projected matrices for solving the least squares system HY = B.
   // R_: Upper triangular reduction of H
   // Z_: Q applied to right-hand side of the least squares system
-  Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R_;
-  Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > Z_;  
+  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > R_;
+  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > Z_;  
 };
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
   template<class ScalarType, class MV, class OP>
-  BlockGmresIter<ScalarType,MV,OP>::BlockGmresIter(const Teuchos::RefCountPtr<LinearProblem<ScalarType,MV,OP> > &problem, 
-						   const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-						   const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-						   const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+  BlockGmresIter<ScalarType,MV,OP>::BlockGmresIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+						   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+						   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+						   const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
 						   Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
@@ -441,8 +441,8 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
     if (!stateStorageInitialized_) {
 
       // Check if there is any multivector to clone from.
-      Teuchos::RefCountPtr<const MV> lhsMV = lp_->getLHS();
-      Teuchos::RefCountPtr<const MV> rhsMV = lp_->getRHS();
+      Teuchos::RCP<const MV> lhsMV = lp_->getLHS();
+      Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
       if (lhsMV == Teuchos::null && rhsMV == Teuchos::null) {
 	stateStorageInitialized_ = false;
 	return;
@@ -469,7 +469,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
 	// If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
 	if (V_ == Teuchos::null) {
 	  // Get the multivector that is not null.
-	  Teuchos::RefCountPtr<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
+	  Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
 	  TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
 			     "Belos::BlockGmresIter::setStateSize(): linear problem does not specify multivectors to clone from.");
 	  V_ = MVT::Clone( *tmp, newsd );
@@ -477,7 +477,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
 	else {
 	  // Generate V_ by cloning itself ONLY if more space is needed.
 	  if (MVT::GetNumberVecs(*V_) < newsd) {
-	    Teuchos::RefCountPtr<const MV> tmp = V_;
+	    Teuchos::RCP<const MV> tmp = V_;
 	    V_ = MVT::Clone( *tmp, newsd );
 	  }
 	}
@@ -505,13 +505,13 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the current update from this subspace.
   template <class ScalarType, class MV, class OP>
-  Teuchos::RefCountPtr<MV> BlockGmresIter<ScalarType,MV,OP>::getCurrentUpdate() const
+  Teuchos::RCP<MV> BlockGmresIter<ScalarType,MV,OP>::getCurrentUpdate() const
   {
     //
     // If this is the first iteration of the Arnoldi factorization, 
     // there is no update, so return Teuchos::null. 
     //
-    RefCountPtr<MV> currentUpdate = Teuchos::null;
+    RCP<MV> currentUpdate = Teuchos::null;
     if (curDim_==0) { 
       return currentUpdate; 
     } else {
@@ -536,7 +536,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       for ( int i=0; i<curDim_; i++ ) {   
         index[i] = i;
       }
-      RefCountPtr<const MV> Vjp1 = MVT::CloneView( *V_, index );
+      RCP<const MV> Vjp1 = MVT::CloneView( *V_, index );
       MVT::MvTimesMatAddMv( one, *Vjp1, y, zero, *currentUpdate );
     }
     return currentUpdate;
@@ -547,7 +547,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
   // Get the native residuals stored in this iteration.  
   // Note:  No residual vector will be returned by Gmres.
   template <class ScalarType, class MV, class OP>
-  Teuchos::RefCountPtr<const MV> BlockGmresIter<ScalarType,MV,OP>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const 
+  Teuchos::RCP<const MV> BlockGmresIter<ScalarType,MV,OP>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const 
   {
     //
     // NOTE: Make sure the incoming vector is the correct size!
@@ -612,8 +612,8 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
 	}
         std::vector<int> nevind(curDim_+blockSize_);
         for (int i=0; i<curDim_+blockSize_; i++) nevind[i] = i;
-	Teuchos::RefCountPtr<const MV> newV = MVT::CloneView( *newstate.V, nevind );
-	Teuchos::RefCountPtr<MV> lclV = MVT::CloneView( *V_, nevind );
+	Teuchos::RCP<const MV> newV = MVT::CloneView( *newstate.V, nevind );
+	Teuchos::RCP<MV> lclV = MVT::CloneView( *V_, nevind );
         MVT::MvAddMv( 1.0, *newV, 0.0, *newV, *lclV );
 
         // done with local pointers
@@ -624,7 +624,7 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       if (newstate.Z != Z_) {
         Z_->putScalar();
         Teuchos::SerialDenseMatrix<int,ScalarType> newZ(Teuchos::View,*newstate.Z,curDim_+blockSize_,blockSize_);
-        Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclZ;
+        Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclZ;
         lclZ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*Z_,curDim_+blockSize_,blockSize_) );
         lclZ->assign(newZ);
 
@@ -689,12 +689,12 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       // Get the current part of the basis.
       std::vector<int> curind(blockSize_);
       for (int i=0; i<blockSize_; i++) { curind[i] = lclDim + i; }
-      Teuchos::RefCountPtr<MV> Vnext = MVT::CloneView(*V_,curind);
+      Teuchos::RCP<MV> Vnext = MVT::CloneView(*V_,curind);
 
       // Get a view of the previous vectors.
       // This is used for orthogonalization and for computing V^H K H
       for (int i=0; i<blockSize_; i++) { curind[i] = curDim_ + i; }
-      Teuchos::RefCountPtr<MV> Vprev = MVT::CloneView(*V_,curind);
+      Teuchos::RCP<MV> Vprev = MVT::CloneView(*V_,curind);
 
       // Compute the next vector in the Krylov basis:  Vnext = Op*Vprev
       lp_->apply(*Vprev,*Vnext);
@@ -705,17 +705,17 @@ class BlockGmresIter : virtual public Iteration<ScalarType,MV,OP> {
       std::vector<int> prevind(lclDim);
       for (int i=0; i<lclDim; i++) { prevind[i] = i; }
       Vprev = MVT::CloneView(*V_,prevind);
-      Teuchos::Array<Teuchos::RefCountPtr<const MV> > AVprev(1, Vprev);
+      Teuchos::Array<Teuchos::RCP<const MV> > AVprev(1, Vprev);
       
       // Get a view of the part of the Hessenberg matrix needed to hold the ortho coeffs.
-      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> >
+      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >
 	subH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
 			     ( Teuchos::View,*H_,lclDim,blockSize_,0,curDim_ ) );
-      Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > AsubH;
+      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > AsubH;
       AsubH.append( subH );
       
       // Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
-      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> >
+      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >
 	subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
 			     ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
       int rank = ortho_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);

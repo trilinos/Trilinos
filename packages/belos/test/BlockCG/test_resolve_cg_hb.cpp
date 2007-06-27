@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 
   using Teuchos::ParameterList;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
@@ -89,8 +89,8 @@ int main(int argc, char *argv[]) {
   // Get the problem
   //
   int MyPID;
-  RefCountPtr<Epetra_CrsMatrix> A;
-  RefCountPtr<Epetra_MultiVector> B, X;
+  RCP<Epetra_CrsMatrix> A;
+  RCP<Epetra_MultiVector> B, X;
   int return_val =Belos::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
   if(return_val != 0) return return_val;
   const Epetra_Map &Map = A->RowMap();
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
   // *************Start the block CG iteration*************************
   // *******************************************************************
   //
-  Teuchos::RefCountPtr< Belos::SolverManager<double,MV,OP> > solver;
+  Teuchos::RCP< Belos::SolverManager<double,MV,OP> > solver;
   solver = Teuchos::rcp( new Belos::BlockCGSolMgr<double,MV,OP>( rcp(&problem,false), rcp(&belosList,false) ) );
   //
   // Perform solve
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
   //
   // Construct a second unpreconditioned linear problem instance.
   //
-  RefCountPtr<Epetra_MultiVector> X2 = MVT::Clone(*X, numrhs); 
+  RCP<Epetra_MultiVector> X2 = MVT::Clone(*X, numrhs); 
   MVT::MvInit( *X2, 0.0 );
   Belos::LinearProblem<double,MV,OP> problem2( A, X2, B );
   problem2.setLabel("Belos Resolve");
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
   solver = Teuchos::rcp( new Belos::BlockCGSolMgr<double,MV,OP>() );
 
   // Get the valid list of parameters from the solver and print it.
-  RefCountPtr<const Teuchos::ParameterList> validList = solver->getValidParameters();
+  RCP<const Teuchos::ParameterList> validList = solver->getValidParameters();
   cout << endl << "Valid parameters from the block CG solver manager:" << endl;
   cout << *validList << endl;
 

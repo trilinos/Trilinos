@@ -39,7 +39,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-using Teuchos::RefCountPtr;
+using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::null;
 using Teuchos::rcp_const_cast;
@@ -83,9 +83,9 @@ namespace Belos {
       Preconditioners can be set using the setLeftPrec() and setRightPrec() methods, and
       scaling can also be set using the setLeftScale() and setRightScale() methods.
     */
-    LinearProblem(const RefCountPtr<const OP> &A, 
-		  const RefCountPtr<MV> &X, 
-		  const RefCountPtr<const MV> &B
+    LinearProblem(const RCP<const OP> &A, 
+		  const RCP<MV> &X, 
+		  const RCP<const MV> &B
 		  );
     
     //! Copy Constructor.
@@ -105,27 +105,27 @@ namespace Belos {
     //! Set Operator A of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
      */
-    void setOperator(const RefCountPtr<const OP> &A) { A_ = A; isSet_=false; }
+    void setOperator(const RCP<const OP> &A) { A_ = A; isSet_=false; }
     
     //! Set left-hand-side X of linear problem AX = B.
     /*! Sets a pointer to a MultiVec.  No copy of the object is made.
      */
-    void setLHS(const RefCountPtr<MV> &X) { X_ = X; isSet_=false; }
+    void setLHS(const RCP<MV> &X) { X_ = X; isSet_=false; }
     
     //! Set right-hand-side B of linear problem AX = B.
     /*! Sets a pointer to a MultiVec.  No copy of the object is made.
      */
-    void setRHS(const RefCountPtr<const MV> &B) { B_ = B; isSet_=false; }
+    void setRHS(const RCP<const MV> &B) { B_ = B; isSet_=false; }
     
     //! Set left preconditioning operator (\c LP) of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
      */
-    void setLeftPrec(const RefCountPtr<const OP> &LP) {  LP_ = LP; }
+    void setLeftPrec(const RCP<const OP> &LP) {  LP_ = LP; }
     
     //! Set right preconditioning operator (\c RP) of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
      */
-    void setRightPrec(const RefCountPtr<const OP> &RP) { RP_ = RP; }
+    void setRightPrec(const RCP<const OP> &RP) { RP_ = RP; }
     
     //! Inform the linear problem that the solver is finished with the current linear system.
     /*! \note This method is to be <b> only </b> used by the solver to inform the linear problem that it's
@@ -163,12 +163,12 @@ namespace Belos {
       the solution hasn't been updated.  If \c updateLP is false, the new solution is computed without actually 
       updating the linear problem.
     */
-    RefCountPtr<MV> updateSolution( const RefCountPtr<MV>& update = null,
+    RCP<MV> updateSolution( const RCP<MV>& update = null,
 				    bool updateLP = false,
                                     ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() );    
 
     //! Compute the new solution to the linear system given the /c update without updating the linear problem.
-    RefCountPtr<MV> updateSolution( const RefCountPtr<MV>& update = null,
+    RCP<MV> updateSolution( const RCP<MV>& update = null,
                                     ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() ) const
     { return const_cast<LinearProblem<ScalarType,MV,OP> *>(this)->updateSolution( update, false, scale ); }
 
@@ -183,7 +183,7 @@ namespace Belos {
       The internal flags will be set as if the linear system manager was just initialized 
       and the initial residual will be computed.
     */
-    bool setProblem( const RefCountPtr<MV> &newX = null, const RefCountPtr<const MV> &newB = null );
+    bool setProblem( const RCP<MV> &newX = null, const RCP<const MV> &newB = null );
 
     //@}
     
@@ -191,23 +191,23 @@ namespace Belos {
     //@{ 
     
     //! Get a pointer to the operator A.
-    RefCountPtr<const OP> getOperator() const { return(A_); }
+    RCP<const OP> getOperator() const { return(A_); }
     
     //! Get a pointer to the left-hand side X.
-    RefCountPtr<MV> getLHS() const { return(X_); }
+    RCP<MV> getLHS() const { return(X_); }
     
     //! Get a pointer to the right-hand side B.
-    RefCountPtr<const MV> getRHS() const { return(B_); }
+    RCP<const MV> getRHS() const { return(B_); }
     
     //! Get a pointer to the initial residual vector.
     /*! \note This is the preconditioned residual if the linear system is preconditioned on the left.
      */
-    RefCountPtr<const MV> getInitResVec() const { return(R0_); }
+    RCP<const MV> getInitResVec() const { return(R0_); }
     
     //! Get a pointer to the preconditioned initial residual vector.
     /*! \note This is the unpreconditioned residual.
      */
-    RefCountPtr<const MV> getActualInitResVec() const { return(R0_); }
+    RCP<const MV> getActualInitResVec() const { return(R0_); }
     
     //! Get a pointer to the current residual vector.
     /*! This method is called by the solver of any method that is interested in the current linear system
@@ -216,7 +216,7 @@ namespace Belos {
       <li> If the solution has been updated by the solver, then this vector is current ( see SolutionUpdated() ).
       </ol>
     */
-    RefCountPtr<MV> getCurrResVec() { return curR_; }
+    RCP<MV> getCurrResVec() { return curR_; }
     
     //! Get a pointer to the current left-hand side (solution) of the linear system.
     /*! This method is called by the solver or any method that is interested in the current linear system
@@ -226,7 +226,7 @@ namespace Belos {
       <li> If there is no linear system to solve, this method will return a NULL pointer
       </ol>
     */
-    RefCountPtr<MV> getCurrLHSVec();
+    RCP<MV> getCurrLHSVec();
     
     //! Get a pointer to the current right-hand side of the linear system.
     /*! This method is called by the solver of any method that is interested in the current linear system
@@ -236,13 +236,13 @@ namespace Belos {
       <li> If there is no linear system to solve, this method will return a NULL pointer
       </ol>
     */	
-    RefCountPtr<MV> getCurrRHSVec();
+    RCP<MV> getCurrRHSVec();
     
     //! Get a pointer to the left preconditioning operator.
-    RefCountPtr<const OP> getLeftPrec() const { return(LP_); };
+    RCP<const OP> getLeftPrec() const { return(LP_); };
     
     //! Get a pointer to the right preconditioning operator.
-    RefCountPtr<const OP> getRightPrec() const { return(RP_); };
+    RCP<const OP> getRightPrec() const { return(RP_); };
     
     //! Get the 0-based index vector indicating the current linear systems being solved for.
     /*! Since the block size is independent of the number of right-hand sides for
@@ -345,34 +345,34 @@ namespace Belos {
   private:
     
     //! Operator of linear system. 
-    RefCountPtr<const OP> A_;
+    RCP<const OP> A_;
     
     //! Solution vector of linear system.
-    RefCountPtr<MV> X_;
+    RCP<MV> X_;
     
     //! Current solution vector of the linear system.
-    RefCountPtr<MV> curX_;
+    RCP<MV> curX_;
     
     //! Right-hand side of linear system.
-    RefCountPtr<const MV> B_;
+    RCP<const MV> B_;
     
     //! Current right-hand side of the linear system.
-    RefCountPtr<MV> curB_;
+    RCP<MV> curB_;
     
     //! Current residual of the linear system.
-    RefCountPtr<MV> curR_;
+    RCP<MV> curR_;
     
     //! Initial residual of the linear system.
-    RefCountPtr<MV> R0_;
+    RCP<MV> R0_;
     
     //! Left preconditioning operator of linear system
-    RefCountPtr<const OP> LP_;  
+    RCP<const OP> LP_;  
     
     //! Right preconditioning operator of linear system
-    RefCountPtr<const OP> RP_;
+    RCP<const OP> RP_;
     
     //! Timers
-    mutable Teuchos::RefCountPtr<Teuchos::Time> timerOp_, timerPrec_;
+    mutable Teuchos::RCP<Teuchos::Time> timerOp_, timerPrec_;
 
     //! Current block size of linear system.
     int blocksize_;
@@ -419,9 +419,9 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  LinearProblem<ScalarType,MV,OP>::LinearProblem(const RefCountPtr<const OP> &A, 
-						 const RefCountPtr<MV> &X, 
-						 const RefCountPtr<const MV> &B
+  LinearProblem<ScalarType,MV,OP>::LinearProblem(const RCP<const OP> &A, 
+						 const RCP<MV> &X, 
+						 const RCP<const MV> &B
 						 ) :
     A_(A),
     X_(X),
@@ -507,10 +507,10 @@ namespace Belos {
       MVT::MvRandom(*curB_);
       curR_ = MVT::Clone( *X_, blocksize_);
       //
-      RefCountPtr<const MV> tptr = MVT::CloneView( *B_, vldIndex );
+      RCP<const MV> tptr = MVT::CloneView( *B_, vldIndex );
       MVT::SetBlock( *tptr, newIndex, *curB_ );
       //
-      RefCountPtr<MV> tptr2 = MVT::CloneView( *X_, vldIndex );
+      RCP<MV> tptr2 = MVT::CloneView( *X_, vldIndex );
       MVT::SetBlock( *tptr2, newIndex, *curX_ );
     }
     else {
@@ -552,7 +552,7 @@ namespace Belos {
           validIdx++;
         }	
       }
-      RefCountPtr<MV> tptr = MVT::CloneView( *curX_, newIndex );
+      RCP<MV> tptr = MVT::CloneView( *curX_, newIndex );
       MVT::SetBlock( *tptr, vldIndex, *X_ );
     }
     //
@@ -567,17 +567,17 @@ namespace Belos {
   
 
   template <class ScalarType, class MV, class OP>
-  RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::updateSolution( const RefCountPtr<MV>& update, 
+  RCP<MV> LinearProblem<ScalarType,MV,OP>::updateSolution( const RCP<MV>& update, 
 								   bool updateLP,
 								   ScalarType scale )
   { 
-    RefCountPtr<MV> newSoln;
+    RCP<MV> newSoln;
     if (update != null) {
       if (updateLP == true) {
 	if (RP_!=null) {
 	  //
 	  // Apply the right preconditioner before computing the current solution.
-	  RefCountPtr<MV> TrueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
+	  RCP<MV> TrueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
 	  OPT::Apply( *RP_, *update, *TrueUpdate ); 
 	  MVT::MvAddMv( 1.0, *curX_, scale, *TrueUpdate, *curX_ ); 
 	} 
@@ -592,7 +592,7 @@ namespace Belos {
 	if (RP_!=null) {
 	  //
 	  // Apply the right preconditioner before computing the current solution.
-	  RefCountPtr<MV> trueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
+	  RCP<MV> trueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
 	  OPT::Apply( *RP_, *update, *trueUpdate ); 
 	  MVT::MvAddMv( 1.0, *curX_, scale, *trueUpdate, *newSoln ); 
 	} 
@@ -609,7 +609,7 @@ namespace Belos {
   
 
   template <class ScalarType, class MV, class OP>
-  bool LinearProblem<ScalarType,MV,OP>::setProblem( const RefCountPtr<MV> &newX, const RefCountPtr<const MV> &newB )
+  bool LinearProblem<ScalarType,MV,OP>::setProblem( const RCP<MV> &newX, const RCP<const MV> &newB )
   {
     // Set the linear system using the arguments newX and newB
     if (newX != null)
@@ -658,7 +658,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::getCurrLHSVec()
+  RCP<MV> LinearProblem<ScalarType,MV,OP>::getCurrLHSVec()
   {
     if (isSet_) {
       return curX_;
@@ -669,7 +669,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  RefCountPtr<MV> LinearProblem<ScalarType,MV,OP>::getCurrRHSVec()
+  RCP<MV> LinearProblem<ScalarType,MV,OP>::getCurrRHSVec()
   {
     if (isSet_) {
       return curB_;
@@ -682,7 +682,7 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void LinearProblem<ScalarType,MV,OP>::apply( const MV& x, MV& y ) const
   {
-    RefCountPtr<MV> ytemp = MVT::Clone( y, MVT::GetNumberVecs( y ) );
+    RCP<MV> ytemp = MVT::Clone( y, MVT::GetNumberVecs( y ) );
     bool leftPrec = LP_!=null;
     bool rightPrec = RP_!=null;
     //
@@ -784,7 +784,7 @@ namespace Belos {
 	{
 	  if (LP_!=null)
 	    {
-	      RefCountPtr<MV> R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
+	      RCP<MV> R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
 	      OPT::Apply( *A_, *X, *R_temp );
 	      MVT::MvAddMv( -1.0, *R_temp, 1.0, *B, *R_temp );
 	      OPT::Apply( *LP_, *R_temp, *R );
@@ -797,7 +797,7 @@ namespace Belos {
 	}
       else { 
 	// The solution and right-hand side may not be specified, check and use which ones exist.
-	RefCountPtr<const MV> localB, localX;
+	RCP<const MV> localB, localX;
 	if (B)
 	  localB = rcp( B, false );
 	else
@@ -810,7 +810,7 @@ namespace Belos {
 	
 	if (LP_!=null)
 	  {
-	    RefCountPtr<MV> R_temp = MVT::Clone( *localX, MVT::GetNumberVecs( *localX ) );
+	    RCP<MV> R_temp = MVT::Clone( *localX, MVT::GetNumberVecs( *localX ) );
 	    OPT::Apply( *A_, *localX, *R_temp );
 	    MVT::MvAddMv( -1.0, *R_temp, 1.0, *localB, *R_temp );
 	    OPT::Apply( *LP_, *R_temp, *R );
@@ -836,7 +836,7 @@ namespace Belos {
 	}
       else { 
 	// The solution and right-hand side may not be specified, check and use which ones exist.
-	RefCountPtr<const MV> localB, localX;
+	RCP<const MV> localB, localX;
 	if (B)
 	  localB = rcp( B, false );
 	else

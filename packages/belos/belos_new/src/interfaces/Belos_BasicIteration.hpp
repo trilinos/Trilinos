@@ -66,12 +66,12 @@ public:
 	 * <li><tt>this->getProblem().get() == lpi.get()</tt>
 	 * </ul>
 	 */
-	virtual void setProblem( const RefCountPtr<LinearProblemIteration<Scalar> > &lpi ) = 0;
+	virtual void setProblem( const RCP<LinearProblemIteration<Scalar> > &lpi ) = 0;
 
 	///
 	/** Return smart pointer to the <tt>LinearProblemIteration</tt> object.
 	 */
-	virtual RefCountPtr<LinearProblemIteration<Scalar> > getProblem() = 0;
+	virtual RCP<LinearProblemIteration<Scalar> > getProblem() = 0;
 
 	///
 	/** Initialize the linear solver ???

@@ -42,17 +42,17 @@ public:
 
   /// Calls <tt>initialize()</tt>
   BelosLinearOpWithSolve(
-    const Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
+    const Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
     ,const bool                                                                 adjustableBlockSize
     ,const int                                                                  maxNumberOfKrylovVectors
-    ,const Teuchos::RefCountPtr<Teuchos::ParameterList>                         &gmresPL
-    ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
-    ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
-    ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
-    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
-    ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              &prec
+    ,const Teuchos::RCP<Teuchos::ParameterList>                         &gmresPL
+    ,const Teuchos::RCP<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
+    ,const Teuchos::RCP<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
+    ,const Teuchos::RCP<Belos::OutputManager<Scalar> >                  &outputManager
+    ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
+    ,const Teuchos::RCP<const PreconditionerBase<Scalar> >              &prec
     ,const bool                                                                 isExternalPrec
-    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &approxFwdOpSrc
+    ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &approxFwdOpSrc
     ,const ESupportSolveUse                                                     &supportSolveUse
     );
 
@@ -103,31 +103,31 @@ public:
    * ToDo: Finish documentation!
    */
   void initialize(
-    const Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
+    const Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
     ,const bool                                                                 adjustableBlockSize
     ,const int                                                                  maxNumberOfKrylovVectors
-    ,const Teuchos::RefCountPtr<Teuchos::ParameterList>                         &gmresPL
-    ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
-    ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
-    ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
-    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
-    ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              &prec
+    ,const Teuchos::RCP<Teuchos::ParameterList>                         &gmresPL
+    ,const Teuchos::RCP<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
+    ,const Teuchos::RCP<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
+    ,const Teuchos::RCP<Belos::OutputManager<Scalar> >                  &outputManager
+    ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
+    ,const Teuchos::RCP<const PreconditionerBase<Scalar> >              &prec
     ,const bool                                                                 isExternalPrec
-    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &approxFwdOpSrc
+    ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &approxFwdOpSrc
     ,const ESupportSolveUse                                                     &supportSolveUse
     );
 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> > extract_fwdOpSrc();
+  Teuchos::RCP<const LinearOpSourceBase<Scalar> > extract_fwdOpSrc();
 
   /** \brief . */
-  Teuchos::RefCountPtr<const PreconditionerBase<Scalar> > extract_prec();
+  Teuchos::RCP<const PreconditionerBase<Scalar> > extract_prec();
 
   /** \brief . */
   bool isExternalPrec() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> > extract_approxFwdOpSrc();
+  Teuchos::RCP<const LinearOpSourceBase<Scalar> > extract_approxFwdOpSrc();
 
   /** \brief . */
   ESupportSolveUse supportSolveUse() const;
@@ -137,17 +137,17 @@ public:
    * ToDo: Finish documentation!
    */
   void uninitialize(
-    Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         *lp                        = NULL
+    Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         *lp                        = NULL
     ,bool                                                                 *adjustableBlockSize       = NULL
     ,int                                                                  *maxNumberOfKrylovVectors  = NULL
-    ,Teuchos::RefCountPtr<Teuchos::ParameterList>                         *gmresPL                   = NULL
-    ,Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    *resNormST                 = NULL
-    ,Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      *iterativeSolver           = NULL
-    ,Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  *outputManager             = NULL
-    ,Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              *fwdOpSrc                  = NULL
-    ,Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              *prec                      = NULL
+    ,Teuchos::RCP<Teuchos::ParameterList>                         *gmresPL                   = NULL
+    ,Teuchos::RCP<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    *resNormST                 = NULL
+    ,Teuchos::RCP<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      *iterativeSolver           = NULL
+    ,Teuchos::RCP<Belos::OutputManager<Scalar> >                  *outputManager             = NULL
+    ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >              *fwdOpSrc                  = NULL
+    ,Teuchos::RCP<const PreconditionerBase<Scalar> >              *prec                      = NULL
     ,bool                                                                 *isExternalPrec            = NULL
-    ,Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              *approxFwdOpSrc            = NULL
+    ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >              *approxFwdOpSrc            = NULL
     ,ESupportSolveUse                                                     *supportSolveUse           = NULL
     );
 
@@ -156,11 +156,11 @@ public:
   /** @name Overridden from LinearOpBase */
   //@{
   /** \brief. */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
   /** \brief. */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
   /** \brief. */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
   //@}
 
   /** @name Overridden from Teuchos::Describable */
@@ -178,15 +178,15 @@ public:
   //@{
 
   /** \brief . */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   //@}
 
@@ -230,18 +230,18 @@ private:
 
   typedef Belos::StatusTestResNorm<Scalar,MV_t,LO_t>                      StatusTestResNorm_t;
 
-  Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >           lp_;
+  Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >           lp_;
   bool                                                                    adjustableBlockSize_;
   int                                                                     maxNumberOfKrylovVectors_;
-  Teuchos::RefCountPtr<Teuchos::ParameterList>                            gmresPL_;
-  Teuchos::RefCountPtr<StatusTestResNorm_t>                               resNormST_;
-  Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >         iterativeSolver_;
-  Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                     outputManager_;
+  Teuchos::RCP<Teuchos::ParameterList>                            gmresPL_;
+  Teuchos::RCP<StatusTestResNorm_t>                               resNormST_;
+  Teuchos::RCP<Belos::IterativeSolver<Scalar,MV_t,LO_t> >         iterativeSolver_;
+  Teuchos::RCP<Belos::OutputManager<Scalar> >                     outputManager_;
 
-  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >                 fwdOpSrc_;
-  Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >                 prec_;
+  Teuchos::RCP<const LinearOpSourceBase<Scalar> >                 fwdOpSrc_;
+  Teuchos::RCP<const PreconditionerBase<Scalar> >                 prec_;
   bool                                                                    isExternalPrec_;
-  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >                 approxFwdOpSrc_;
+  Teuchos::RCP<const LinearOpSourceBase<Scalar> >                 approxFwdOpSrc_;
   ESupportSolveUse                                                        supportSolveUse_;
 
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType                   defaultTol_;

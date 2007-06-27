@@ -29,7 +29,7 @@
 #ifndef BELOS_MULTI_VEC_TRAITS_HPP
 #define BELOS_MULTI_VEC_TRAITS_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "BelosTypes.hpp"
 
@@ -47,19 +47,19 @@ namespace Belos {
   {
   public:
     ///
-    static Teuchos::RefCountPtr<MV> Clone( const MV& mv, const int numvecs )
+    static Teuchos::RCP<MV> Clone( const MV& mv, const int numvecs )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
     ///
-    static Teuchos::RefCountPtr<MV> CloneCopy( const MV& mv )
+    static Teuchos::RCP<MV> CloneCopy( const MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
     ///
-    static Teuchos::RefCountPtr<MV> CloneCopy( const MV& mv, const std::vector<int>& index )
+    static Teuchos::RCP<MV> CloneCopy( const MV& mv, const std::vector<int>& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
     ///
-    static Teuchos::RefCountPtr<MV> CloneView( MV& mv, const std::vector<int>& index )
+    static Teuchos::RCP<MV> CloneView( MV& mv, const std::vector<int>& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
     ///
-    static Teuchos::RefCountPtr<const MV> CloneView( const MV& mv, const std::vector<int>& index )
+    static Teuchos::RCP<const MV> CloneView( const MV& mv, const std::vector<int>& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
     ///
     static int GetVecLength( const MV& mv )

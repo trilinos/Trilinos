@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 	typedef double Scalar;
 	typedef Teuchos::ScalarTraits<Scalar>  ST;
 	typedef ST::magnitudeType ScalarMag;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   Teuchos::Time timer("Belos Preconditioned CG");
   bool success = true;
@@ -73,8 +73,8 @@ int main(int argc, char *argv[]) {
     //
     // Get the problem
     //
-    RefCountPtr<Epetra_Map> rowMap;
-    RefCountPtr<Epetra_CrsMatrix> A;
+    RCP<Epetra_Map> rowMap;
+    RCP<Epetra_CrsMatrix> A;
     int MyPID;
     bool verbose;
     int return_val =Belos::createEpetraProblem(argc,argv,&rowMap,&A,NULL,NULL,&MyPID,&verbose);
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
     // Construct a Belos::Operator instance through the Epetra interface.
     //
     TSFCore::EpetraLinearOp Amat(A);
-    RefCountPtr<TSFCore::EpetraVectorSpace> vs = rcp(new TSFCore::EpetraVectorSpace(rowMap));
+    RCP<TSFCore::EpetraVectorSpace> vs = rcp(new TSFCore::EpetraVectorSpace(rowMap));
     //
     // call the ctor for the preconditioning object
     //
@@ -141,16 +141,16 @@ int main(int argc, char *argv[]) {
     //
     // Construct solution vector and random right-hand-sides *****
     //
-    RefCountPtr<Epetra_MultiVector> B = rcp( new Epetra_MultiVector(*rowMap, totalNumRhs) );
+    RCP<Epetra_MultiVector> B = rcp( new Epetra_MultiVector(*rowMap, totalNumRhs) );
     B->SetSeed(0);
     B->Random();
-    RefCountPtr<Epetra_MultiVector> X = rcp( new Epetra_MultiVector(*rowMap, totalNumRhs) );
+    RCP<Epetra_MultiVector> X = rcp( new Epetra_MultiVector(*rowMap, totalNumRhs) );
     TSFCore::EpetraMultiVector rhs( B, vs );
     TSFCore::EpetraMultiVector soln( X, vs );
     //
     // Create and setup the linear problem object
     //
-		Teuchos::RefCountPtr<Belos::LinearProblemSetup<Scalar> > lpup = Teuchos::rcp( new Belos::LinearProblem<Scalar>() );
+		Teuchos::RCP<Belos::LinearProblemSetup<Scalar> > lpup = Teuchos::rcp( new Belos::LinearProblem<Scalar>() );
 		lpup->setOperator(TSFCore::LinOp<Scalar>(rcp(&Amat,false)),Belos::OP_SYMMETRIC);
 		lpup->setRhs(rcp(&rhs,false));
 		lpup->setLhs(rcp(&soln,false));
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
     //
     double* actual_resids = new double[totalNumRhs];
     double* rhs_norm = new double[totalNumRhs];
-    RefCountPtr<Epetra_MultiVector> R = rcp( new Epetra_MultiVector(*rowMap, totalNumRhs) );
+    RCP<Epetra_MultiVector> R = rcp( new Epetra_MultiVector(*rowMap, totalNumRhs) );
     TSFCore::EpetraMultiVector resid( R, vs );
     OPT::Apply( Amat, soln, resid );
     MVT::MvAddMv( -1.0, resid, 1.0, rhs, resid ); 

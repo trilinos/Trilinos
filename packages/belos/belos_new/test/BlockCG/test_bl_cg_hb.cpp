@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
   Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
 #endif
   //
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::rcp;
   //
   // Get test parameters from command-line processor
@@ -81,8 +81,8 @@ int main(int argc, char *argv[]) {
   // Get the problem
   //
   int MyPID;
-  RefCountPtr<Epetra_CrsMatrix> A;
-  RefCountPtr<Epetra_MultiVector> B, X;
+  RCP<Epetra_CrsMatrix> A;
+  RCP<Epetra_MultiVector> B, X;
   int return_val =Belos::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
   if(return_val != 0) return return_val;
   proc_verbose = ( verbose && (MyPID==0) );
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
   //
   // Create an iterative solver manager.
   //
-  RefCountPtr< Belos::SolverManager<double,MV,OP> > newSolver
+  RCP< Belos::SolverManager<double,MV,OP> > newSolver
     = rcp( new Belos::BlockCGSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)) );
   //
   // **********Print out information about problem*******************

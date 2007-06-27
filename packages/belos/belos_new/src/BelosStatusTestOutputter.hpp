@@ -138,7 +138,7 @@ StatusType StatusTestOutputter<ScalarType,MV,OP>::checkStatus(Iteration<ScalarTy
 {
   typedef MultiVecTraits<ScalarType,MV>  MVT;
   StatusType status = resNormStatusTest_->checkStatus(iSolver);
-  RefCountPtr<LinearProblem<ScalarType,MV,OP> > lp = iSolver->getProblem();
+  RCP<LinearProblem<ScalarType,MV,OP> > lp = iSolver->getProblem();
   const int currIter = iSolver->GetNumIters();
   const int currRestart = iSolver->GetNumRestarts();
   if(currIter==0 && !iterZeroWasOutput_)

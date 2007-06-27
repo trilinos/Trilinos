@@ -55,10 +55,10 @@ namespace Belos {
     int curDim;
 
     /*! \brief The current Krylov basis. */
-    Teuchos::RefCountPtr<const MV> V;
+    Teuchos::RCP<const MV> V;
 
     /*! \brief The current preconditioned Krylov basis (only used in flexible GMRES). */
-    Teuchos::RefCountPtr<const MV> Z;
+    Teuchos::RCP<const MV> Z;
 
     /*! \brief The current Hessenberg matrix. 
      *
@@ -66,13 +66,13 @@ namespace Belos {
      * projection of problem->getOperator() by the first \c curDim vectors in V. 
      */
 
-    Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > H;
+    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > H;
     /*! \brief The current upper-triangular matrix from the QR reduction of H. */
 
-    Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > R;
+    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > R;
     /*! \brief The current right-hand side of the least squares system RY = Z. */
 
-    Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > z;
+    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > z;
     
 
     GmresIterationState() : curDim(0), V(Teuchos::null), Z(Teuchos::null),
