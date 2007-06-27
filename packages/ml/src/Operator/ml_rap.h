@@ -66,7 +66,7 @@ extern void ML_matmat_mult(ML_Operator *Amat, ML_Operator *Bmat,
 extern void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
                        ML_Operator **Cmatrix);
 #endif
-extern void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int *rpntr, int col_block_size, int *cpntr);
+extern void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int *rpntr, int col_block_size, int *cpntr, int submatrix);
 
 extern void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
 			ML_Operator *Result, int matrix_type);
