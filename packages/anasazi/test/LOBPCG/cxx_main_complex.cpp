@@ -153,17 +153,17 @@ int main(int argc, char *argv[])
     cvals[ii] = ScalarType(dvals[ii*2],dvals[ii*2+1]);
   }
   // Build the problem matrix
-  RefCountPtr< const MyBetterOperator<ScalarType> > K 
+  RCP< const MyBetterOperator<ScalarType> > K 
     = rcp( new MyBetterOperator<ScalarType>(dim,colptr,nnz,rowind,&cvals[0]) );
 
   // Create initial vectors
   int blockSize = 5;
-  RefCountPtr<MyMultiVec<ScalarType> > ivec = rcp( new MyMultiVec<ScalarType>(dim,blockSize) );
+  RCP<MyMultiVec<ScalarType> > ivec = rcp( new MyMultiVec<ScalarType>(dim,blockSize) );
   ivec->MvRandom();
 
   // Create eigenproblem
   const int nev = 4;
-  RefCountPtr<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
+  RCP<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
     rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(K,ivec) );
   //
   // Inform the eigenproblem that the operator K is symmetric
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
-  RefCountPtr<MV> evecs = sol.Evecs;
+  RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   if (numev > 0) {
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
     for (int i=0; i<numev; i++) {
       T(i,i) = sol.Evals[i].realpart;
     }
-    RefCountPtr<MV> Kvecs = MVT::Clone( *evecs, numev );
+    RCP<MV> Kvecs = MVT::Clone( *evecs, numev );
 
     OPT::Apply( *K, *evecs, *Kvecs );
 

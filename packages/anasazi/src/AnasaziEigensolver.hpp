@@ -44,7 +44,7 @@
 #include "AnasaziOutputManager.hpp"
 #include "AnasaziOrthoManager.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 
 
@@ -66,11 +66,11 @@ class Eigensolver {
     Anasazi::SortManager, Anasazi::OutputManager, and Teuchos::ParameterList as input.  These
     four arguments are sufficient enough for constructing any Anasazi::Eigensolver object.
   */
-  Eigensolver( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-               const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> >  &sorter,
-               const Teuchos::RefCountPtr<OutputManager<ScalarType> >      &printer,
-               const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >   &tester,
-               const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> >    &ortho,
+  Eigensolver( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
+               const Teuchos::RCP<SortManager<ScalarType,MV,OP> >  &sorter,
+               const Teuchos::RCP<OutputManager<ScalarType> >      &printer,
+               const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >   &tester,
+               const Teuchos::RCP<OrthoManager<ScalarType,MV> >    &ortho,
                Teuchos::ParameterList &params );
 
   //! Destructor.
@@ -107,7 +107,7 @@ class Eigensolver {
    *
    * For a description of the indexing scheme, see getRitzIndex().
    */
-  virtual Teuchos::RefCountPtr<const MV> getRitzVectors() = 0;
+  virtual Teuchos::RCP<const MV> getRitzVectors() = 0;
 
   //! \brief Get the Ritz values from the previous iteration.
   virtual std::vector<Value<ScalarType> > getRitzValues() = 0;
@@ -159,10 +159,10 @@ class Eigensolver {
   virtual void setBlockSize(int blockSize) = 0;
 
   //! Set the auxiliary vectors for the solver.
-  virtual void setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs) = 0;
+  virtual void setAuxVecs(const Teuchos::Array<Teuchos::RCP<const MV> > &auxvecs) = 0;
 
   //! Get the auxiliary vectors for the solver.
-  virtual Teuchos::Array<Teuchos::RefCountPtr<const MV> > getAuxVecs() const = 0;
+  virtual Teuchos::Array<Teuchos::RCP<const MV> > getAuxVecs() const = 0;
 
   //! States whether the solver has been initialized or not.
   virtual bool isInitialized() const = 0;

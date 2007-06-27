@@ -108,17 +108,17 @@ int main(int argc, char *argv[])
   int dim = 10;
   
   // Build the problem matrix
-  RefCountPtr< const MyOperator<ST> > K 
+  RCP< const MyOperator<ST> > K 
     = rcp( new MyOperator<ST>(dim) );
 
   // Create initial vectors
   int blockSize = 2;
-  RefCountPtr<MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
+  RCP<MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
   ivec->MvRandom();
 
   // Create eigenproblem
   const int nev = 1;
-  RefCountPtr<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
+  RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
     rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(K,ivec) );
   //
   // Inform the eigenproblem that the operator K is non-Hermitian (even when it truly is Hermitian)
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ST,MV> sol = problem->getSolution();
-  RefCountPtr<MV> evecs = sol.Evecs;
+  RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   if (numev > 0) {
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
     for (int i=0; i<numev; i++) {
       T(i,i) = sol.Evals[i].realpart;
     }
-    RefCountPtr<MV> Kvecs = MVT::Clone( *evecs, numev );
+    RCP<MV> Kvecs = MVT::Clone( *evecs, numev );
 
     OPT::Apply( *K, *evecs, *Kvecs );
 

@@ -34,7 +34,7 @@
 */
 
 #include "AnasaziConfigDefs.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
 namespace Anasazi {
@@ -74,21 +74,21 @@ namespace Anasazi {
 
     \return Reference-counted pointer to a new dense matrix of type \c DM.
     */
-    static Teuchos::RefCountPtr<DM> Clone( const DM& dm, const int numrows, const int numcols )
+    static Teuchos::RCP<DM> Clone( const DM& dm, const int numrows, const int numcols )
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
 
     /*! \brief Creates a new \c DM and copies the contents of \c dm into the new matrix (deep copy).
       
       \return Reference-counted pointer to the new matrix of type \c DM.
     */
-    static Teuchos::RefCountPtr<DM> CloneCopy( const DM& dm )
+    static Teuchos::RCP<DM> CloneCopy( const DM& dm )
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
 
     /*! \brief Creates a new \c DM and copies the selected contents of \c dm into the new matrix (deep copy).
       
       \return Reference-counted pointer to the new matrix of type \c DM.
     */
-    static Teuchos::RefCountPtr<DM> CloneCopy( const DM& dm, const int numrows, const int numcols, 
+    static Teuchos::RCP<DM> CloneCopy( const DM& dm, const int numrows, const int numcols, 
          const int firstrow, const int firstcol )
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
 
@@ -96,7 +96,7 @@ namespace Anasazi {
 
     \return Reference-counted pointer to the new matrix of type \c DM.
     */      
-    static Teuchos::RefCountPtr<DM> CloneView( DM& dm, const int numrows, const int numcols, 
+    static Teuchos::RCP<DM> CloneView( DM& dm, const int numrows, const int numcols, 
          const int firstrow, const int firstcol )
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
 
@@ -104,7 +104,7 @@ namespace Anasazi {
 
     \return Reference-counted pointer to the new matrix of type \c DM.
     */      
-    static Teuchos::RefCountPtr<const DM> CloneView( const DM& dm, const int numrows, const int numcols, 
+    static Teuchos::RCP<const DM> CloneView( const DM& dm, const int numrows, const int numcols, 
          const int firstrow, const int firstcol )
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); return Teuchos::null; }     
 

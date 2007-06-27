@@ -115,7 +115,7 @@ However, the code for performing restarting and locking and similar features is 
 
     \code
         // create an eigenproblem
-        Teuchos::RefCountPtr<Anasazi::Eigenproblem<ScalarType,MV,OP> > prob = ...
+        Teuchos::RCP<Anasazi::Eigenproblem<ScalarType,MV,OP> > prob = ...
 
         // create a parameter list for the Anasazi::BlockDavidsonSolMgr solver manager
         Teuchos::ParameterList pl;

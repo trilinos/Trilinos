@@ -50,7 +50,7 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_Array.hpp"
 
@@ -120,8 +120,8 @@ namespace Anasazi {
      orthonormal columns, and the <tt>Q[i]</tt> are assumed to be mutually orthogonal.
     */
     virtual void project ( MV &X, 
-                           Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                           Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const = 0;
+                           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                           Teuchos::Array<Teuchos::RCP<const MV> > Q) const = 0;
 
     /*! \brief This method takes a multivector \c X and attempts to compute an orthonormal basis for \f$colspan(X)\f$, with respect to innerProd().
      *
@@ -137,7 +137,7 @@ namespace Anasazi {
 
      @return Rank of the basis computed by this method.
     */
-    virtual int normalize ( MV &X, Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const = 0;
+    virtual int normalize ( MV &X, Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const = 0;
 
 
     /*! \brief Given a set of bases <tt>Q[i]</tt> and a multivector \c X, this method computes an orthonormal basis for \f$colspan(X) - \sum_i colspan(Q[i])\f$.
@@ -168,9 +168,9 @@ namespace Anasazi {
      @return Rank of the basis computed by this method.
     */
     virtual int projectAndNormalize ( MV &X, 
-                                      Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                      Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const = 0;
+                                      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                                      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
+                                      Teuchos::Array<Teuchos::RCP<const MV> > Q ) const = 0;
 
     //@}
 

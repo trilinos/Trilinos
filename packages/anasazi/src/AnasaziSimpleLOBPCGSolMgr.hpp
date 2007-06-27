@@ -106,7 +106,7 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
    *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision
    */
-  SimpleLOBPCGSolMgr( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
+  SimpleLOBPCGSolMgr( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
 
   //! Destructor.
@@ -137,7 +137,7 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   //@}
 
   private:
-  Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > problem_;
+  Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > problem_;
   string whch_; 
   MagnitudeType tol_;
   int verb_;
@@ -149,7 +149,7 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
 ////////////////////////////////////////////////////////////////////////////////////////
 template<class ScalarType, class MV, class OP>
 SimpleLOBPCGSolMgr<ScalarType,MV,OP>::SimpleLOBPCGSolMgr( 
-        const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
+        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
         Teuchos::ParameterList &pl ) : 
   problem_(problem),
   whch_("LM"),
@@ -199,31 +199,31 @@ ReturnType
 SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // sort manager
-  Teuchos::RefCountPtr<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(whch_) );
+  Teuchos::RCP<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(whch_) );
   // output manager
-  Teuchos::RefCountPtr<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(verb_) );
+  Teuchos::RCP<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(verb_) );
   // status tests
-  Teuchos::RefCountPtr<StatusTestMaxIters<ScalarType,MV,OP> > max;
+  Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > max;
   if (maxIters_ > 0) {
     max = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>(maxIters_) );
   }
   else {
     max = Teuchos::null;
   }
-  Teuchos::RefCountPtr<StatusTestResNorm<ScalarType,MV,OP> > norm 
+  Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > norm 
       = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(tol_) );
-  Teuchos::Array< Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > alltests;
+  Teuchos::Array< Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > alltests;
   alltests.push_back(norm);
   if (max != Teuchos::null) alltests.push_back(max);
-  Teuchos::RefCountPtr<StatusTestCombo<ScalarType,MV,OP> > combo 
+  Teuchos::RCP<StatusTestCombo<ScalarType,MV,OP> > combo 
       = Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP>(
               StatusTestCombo<ScalarType,MV,OP>::OR, alltests
         ));
   // printing StatusTest
-  Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputtest
+  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputtest
     = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combo,1,Passed ) );
   // orthomanager
-  Teuchos::RefCountPtr<SVQBOrthoManager<ScalarType,MV,OP> > ortho 
+  Teuchos::RCP<SVQBOrthoManager<ScalarType,MV,OP> > ortho 
     = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
   // parameter list
   Teuchos::ParameterList plist;
@@ -231,17 +231,17 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   plist.set("Full Ortho",true);
 
   // create an LOBPCG solver
-  Teuchos::RefCountPtr<LOBPCG<ScalarType,MV,OP> > lobpcg_solver 
+  Teuchos::RCP<LOBPCG<ScalarType,MV,OP> > lobpcg_solver 
     = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(problem_,sorter,printer,outputtest,ortho,plist) );
   // add the auxillary vecs from the eigenproblem to the solver
   if (problem_->getAuxVecs() != Teuchos::null) {
-    lobpcg_solver->setAuxVecs( Teuchos::tuple<Teuchos::RefCountPtr<const MV> >(problem_->getAuxVecs()) );
+    lobpcg_solver->setAuxVecs( Teuchos::tuple<Teuchos::RCP<const MV> >(problem_->getAuxVecs()) );
   }
 
   int numfound = 0;
   int nev = problem_->getNEV();
-  Teuchos::Array< Teuchos::RefCountPtr<MV> > foundvecs;
-  Teuchos::Array< Teuchos::RefCountPtr< std::vector<MagnitudeType> > > foundvals;
+  Teuchos::Array< Teuchos::RCP<MV> > foundvecs;
+  Teuchos::Array< Teuchos::RCP< std::vector<MagnitudeType> > > foundvals;
   while (numfound < nev) {
     // reduce the strain on norm test, if we are almost done
     if (nev - numfound < blockSize_) {
@@ -277,17 +277,17 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       }
 
       // copy the converged eigenvectors
-      Teuchos::RefCountPtr<MV> newvecs = MVT::CloneCopy(*lobpcg_solver->getRitzVectors(),ind);
+      Teuchos::RCP<MV> newvecs = MVT::CloneCopy(*lobpcg_solver->getRitzVectors(),ind);
       // store them
       foundvecs.push_back(newvecs);
       // add them as auxiliary vectors
-      Teuchos::Array<Teuchos::RefCountPtr<const MV> > auxvecs = lobpcg_solver->getAuxVecs();
+      Teuchos::Array<Teuchos::RCP<const MV> > auxvecs = lobpcg_solver->getAuxVecs();
       auxvecs.push_back(newvecs);
       // setAuxVecs() will reset the solver to uninitialized, without messing with numIters()
       lobpcg_solver->setAuxVecs(auxvecs);
 
       // copy the converged eigenvalues
-      Teuchos::RefCountPtr<std::vector<MagnitudeType> > newvals = Teuchos::rcp( new std::vector<MagnitudeType>(num) );
+      Teuchos::RCP<std::vector<MagnitudeType> > newvals = Teuchos::rcp( new std::vector<MagnitudeType>(num) );
       std::vector<Value<ScalarType> > all = lobpcg_solver->getRitzValues();
       for (int i=0; i<num; i++) {
         (*newvals)[i] = all[ind[i]].realpart;
@@ -303,7 +303,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       
       if (num > 0) {
         // copy the converged eigenvectors
-        Teuchos::RefCountPtr<MV> newvecs = MVT::CloneCopy(*lobpcg_solver->getRitzVectors(),ind);
+        Teuchos::RCP<MV> newvecs = MVT::CloneCopy(*lobpcg_solver->getRitzVectors(),ind);
         // orthornormalize to be safe
         ortho->normalize(*newvecs,Teuchos::null,Teuchos::null);
         // store them
@@ -311,7 +311,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         // don't bother adding them as auxiliary vectors; we have reached maxiters and are going to quit
         
         // copy the converged eigenvalues
-        Teuchos::RefCountPtr<std::vector<MagnitudeType> > newvals = Teuchos::rcp( new std::vector<MagnitudeType>(num) );
+        Teuchos::RCP<std::vector<MagnitudeType> > newvals = Teuchos::rcp( new std::vector<MagnitudeType>(num) );
         std::vector<Value<ScalarType> > all = lobpcg_solver->getRitzValues();
         for (int i=0; i<num; i++) {
           (*newvals)[i] = all[ind[i]].realpart;

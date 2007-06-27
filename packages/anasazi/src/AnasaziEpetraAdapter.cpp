@@ -240,7 +240,7 @@ namespace Anasazi {
   //
   // AnasaziOperator constructors
   //  
-  EpetraOp::EpetraOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op) 
+  EpetraOp::EpetraOp(const Teuchos::RCP<Epetra_Operator> &Op) 
     : Epetra_Op(Op)
   {
   }
@@ -278,8 +278,8 @@ namespace Anasazi {
   // AnasaziOperator constructors
   //
   
-  EpetraGenOp::EpetraGenOp(const Teuchos::RefCountPtr<Epetra_Operator> &AOp,
-			                     const Teuchos::RefCountPtr<Epetra_Operator> &MOp,
+  EpetraGenOp::EpetraGenOp(const Teuchos::RCP<Epetra_Operator> &AOp,
+			                     const Teuchos::RCP<Epetra_Operator> &MOp,
 			                     bool isAInverse_) 
     : isAInverse( isAInverse_ ), Epetra_AOp(AOp), Epetra_MOp(MOp) 
   {
@@ -373,7 +373,7 @@ namespace Anasazi {
   //
   // AnasaziOperator constructors
   //
-  EpetraSymOp::EpetraSymOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op, 
+  EpetraSymOp::EpetraSymOp(const Teuchos::RCP<Epetra_Operator> &Op, 
 			                     bool isTrans) 
     : Epetra_Op(Op), isTrans_(isTrans)
   {
@@ -515,7 +515,7 @@ namespace Anasazi {
   //
   // Anasazi::Operator constructors
   //
-  EpetraSymMVOp::EpetraSymMVOp(const Teuchos::RefCountPtr<const Epetra_MultiVector> &MV, 
+  EpetraSymMVOp::EpetraSymMVOp(const Teuchos::RCP<const Epetra_MultiVector> &MV, 
                                bool isTrans) 
     : Epetra_MV(MV), isTrans_(isTrans)
   {
@@ -574,8 +574,8 @@ namespace Anasazi {
   //
   // Anasazi::Operator constructors
   //
-  EpetraWSymMVOp::EpetraWSymMVOp(const Teuchos::RefCountPtr<const Epetra_MultiVector> &MV, 
-                                 const Teuchos::RefCountPtr<Epetra_Operator> &OP ) 
+  EpetraWSymMVOp::EpetraWSymMVOp(const Teuchos::RCP<const Epetra_MultiVector> &MV, 
+                                 const Teuchos::RCP<Epetra_Operator> &OP ) 
     : Epetra_MV(MV), Epetra_OP(OP)
   {
       MV_blockmap = Teuchos::rcp( &Epetra_MV->Map(), false );

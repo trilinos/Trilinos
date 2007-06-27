@@ -30,7 +30,7 @@
 #define ANASAZI_TYPES_HPP
 
 #include "AnasaziConfigDefs.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
 /*! \file AnasaziTypes.hpp
@@ -74,9 +74,9 @@ namespace Anasazi {
   template <class ScalarType, class MV>
   struct Eigensolution {
     //! The computed eigenvectors
-    Teuchos::RefCountPtr<MV> Evecs;
+    Teuchos::RCP<MV> Evecs;
     //! An orthonormal basis for the computed eigenspace
-    Teuchos::RefCountPtr<MV> Espace;
+    Teuchos::RCP<MV> Espace;
     //! The computed eigenvalues
     std::vector<Value<ScalarType> >  Evals;
     /*! \brief An index into Evecs to allow compressed storage of eigenvectors for real, non-Hermitian problems.

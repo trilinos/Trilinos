@@ -65,10 +65,10 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   // Initialize MPI and setup an Epetra communicator
   MPI_Init(&argc,&argv);
-  Teuchos::RefCountPtr<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
+  Teuchos::RCP<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
 #else
   // If we aren't using MPI, then setup a serial communicator.
-  Teuchos::RefCountPtr<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
+  Teuchos::RCP<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
 #endif
 
    // number of global elements
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
   }
 
   // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<double>() );
+  Teuchos::RCP<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<double>() );
   if (verbose) {
     MyOM->setVerbosity( Anasazi::Warnings );
   }
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
-  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( new Epetra_Map(dim, 0, *Comm) );
+  Teuchos::RCP<Epetra_Map> Map = Teuchos::rcp( new Epetra_Map(dim, 0, *Comm) );
   
   // Get update list and number of local equations from newly created Map.
   int NumMyElements = Map->NumMyElements();
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
   }
 
   // Create an Epetra_Matrix
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Map, &NumNz[0]) );
+  Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Map, &NumNz[0]) );
    
   // Add  rows one-at-a-time
   // Need some vectors to help
@@ -165,13 +165,13 @@ int main(int argc, char *argv[])
   typedef Thyra::LinearOpBase<double>    TLOB;
 
   // first, create a Thyra::VectorSpaceBase from an Epetra_Map using the Epetra-Thyra wrappers
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > space = Thyra::create_VectorSpace(Map);
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > space = Thyra::create_VectorSpace(Map);
 
   // then, create a Thyra::MultiVectorBase from the Thyra::VectorSpaceBase using Thyra creational functions
-  Teuchos::RefCountPtr<Thyra::MultiVectorBase<double> > thyra_ivec = Thyra::createMembers(space,blockSize);
+  Teuchos::RCP<Thyra::MultiVectorBase<double> > thyra_ivec = Thyra::createMembers(space,blockSize);
 
   // then, create a Thyra::LinearOpBase from the Epetra_CrsMatrix using the Epetra-Thyra wrappers
-  Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > thyra_op = Teuchos::rcp( new Thyra::EpetraLinearOp(A) );
+  Teuchos::RCP<Thyra::LinearOpBase<double> > thyra_op = Teuchos::rcp( new Thyra::EpetraLinearOp(A) );
 
   // test the Thyra multivector adapter
   ierr = Anasazi::TestMultiVecTraits<double,TMVB>(MyOM,thyra_ivec);

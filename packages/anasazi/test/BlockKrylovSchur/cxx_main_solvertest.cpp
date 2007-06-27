@@ -70,9 +70,9 @@ class get_out : public std::logic_error {
   public: get_out(const std::string &whatarg) : std::logic_error(whatarg) {}
 };
 
-void checks( RefCountPtr<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocksize, int numblocks, 
-             RefCountPtr<Eigenproblem<ScalarType,MV,OP> > problem,
-             RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > ortho,
+void checks( RCP<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocksize, int numblocks, 
+             RCP<Eigenproblem<ScalarType,MV,OP> > problem,
+             RCP<MatOrthoManager<ScalarType,MV,OP> > ortho,
              SolverUtils<ScalarType,MV,OP> &msutils) {
   BlockKrylovSchurState<ScalarType,MV> state = solver->getState();
 	
@@ -100,7 +100,7 @@ void checks( RefCountPtr<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocks
     std::vector<int> ritzIndex = solver->getRitzIndex();
     
     // get Ritz vector
-    RefCountPtr<const MV> ritzVectors = solver->getRitzVectors();
+    RCP<const MV> ritzVectors = solver->getRitzVectors();
     
     // check Ritz vector
     const int numRitzVecs = MVT::GetNumberVecs( *ritzVectors );
@@ -112,7 +112,7 @@ void checks( RefCountPtr<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocks
       
       // Compute Ritz residuals like R = OP*X - X*T 
       Teuchos::SerialDenseMatrix<int,ScalarType> T(numRitzVecs,numRitzVecs);
-      Teuchos::RefCountPtr<MV> ritzResiduals = MVT::Clone( *ritzVectors, numRitzVecs );
+      Teuchos::RCP<MV> ritzResiduals = MVT::Clone( *ritzVectors, numRitzVecs );
       for (int i=0; i<T.numRows(); i++) T(i,i) = ritzValues[i].realpart;
       OPT::Apply( *(problem->getOperator()), *ritzVectors, *ritzResiduals );
       MVT::MvTimesMatAddMv(-1.0,*ritzVectors,T,1.0,*ritzResiduals);
@@ -144,17 +144,17 @@ void checks( RefCountPtr<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocks
   }
 }
 
-void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
-                 RefCountPtr< OutputManager<ScalarType> > printer,
-                 RefCountPtr< MatOrthoManager<ScalarType,MV,OP> > ortho,
-                 RefCountPtr< SortManager<ScalarType,MV,OP> > sorter,
+void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
+                 RCP< OutputManager<ScalarType> > printer,
+                 RCP< MatOrthoManager<ScalarType,MV,OP> > ortho,
+                 RCP< SortManager<ScalarType,MV,OP> > sorter,
                  ParameterList &pls)
 {
   // create a status tester
-  RefCountPtr< StatusTest<ScalarType,MV,OP> > tester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
+  RCP< StatusTest<ScalarType,MV,OP> > tester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
 
   // create the solver
-  RefCountPtr< BlockKrylovSchur<ScalarType,MV,OP> > solver = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
+  RCP< BlockKrylovSchur<ScalarType,MV,OP> > solver = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
 
   const int  blocksize = pls.get<int>("Block Size");
   const int  numblocks = pls.get<int>("Num Blocks");
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
   if (debug) {
     verbosity += Anasazi::Debug;
   }
-  RefCountPtr< OutputManager<ScalarType> > printer = 
+  RCP< OutputManager<ScalarType> > printer = 
     rcp( new BasicOutputManager<ScalarType>( verbosity ) );
 
   if (verbose||debug) {
@@ -246,20 +246,20 @@ int main(int argc, char *argv[])
   elements[0] = 100;
 
   // Create problem
-  RefCountPtr<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+  RCP<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
   //
   // Get the stiffness and mass matrices
-  RefCountPtr<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  RefCountPtr<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  RCP<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+  RCP<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   //
   // Create the initial vectors
   const int nev = 4;
-  RefCountPtr<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), nev) );
+  RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), nev) );
   ivec->Random();
   //
   // Create eigenproblem: one standard and one generalized
-  RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > probstd = rcp( new BasicEigenproblem<ScalarType, MV, OP>(K, ivec) );
-  RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > probgen = rcp( new BasicEigenproblem<ScalarType, MV, OP>(K, M, ivec) );
+  RCP<BasicEigenproblem<ScalarType,MV,OP> > probstd = rcp( new BasicEigenproblem<ScalarType, MV, OP>(K, ivec) );
+  RCP<BasicEigenproblem<ScalarType,MV,OP> > probgen = rcp( new BasicEigenproblem<ScalarType, MV, OP>(K, M, ivec) );
   //
   // Inform the eigenproblem that the operator A is not symmetric (even though it is)
   probstd->setHermitian(false);
@@ -282,10 +282,10 @@ int main(int argc, char *argv[])
   }
 
   // create the orthogonalization managers: one standard and one M-based
-  RefCountPtr< MatOrthoManager<ScalarType,MV,OP> > orthostd = rcp( new SVQBOrthoManager<ScalarType,MV,OP>() );
-  RefCountPtr< MatOrthoManager<ScalarType,MV,OP> > orthogen = rcp( new SVQBOrthoManager<ScalarType,MV,OP>(M) );
+  RCP< MatOrthoManager<ScalarType,MV,OP> > orthostd = rcp( new SVQBOrthoManager<ScalarType,MV,OP>() );
+  RCP< MatOrthoManager<ScalarType,MV,OP> > orthogen = rcp( new SVQBOrthoManager<ScalarType,MV,OP>(M) );
   // create the sort manager
-  RefCountPtr< SortManager<ScalarType,MV,OP> > sorter = rcp( new BasicSort<ScalarType,MV,OP>("LM") );
+  RCP< SortManager<ScalarType,MV,OP> > sorter = rcp( new BasicSort<ScalarType,MV,OP>("LM") );
   // create the parameter list specifying blocksize > nev and full orthogonalization
   ParameterList pls;
 

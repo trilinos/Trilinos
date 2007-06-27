@@ -157,17 +157,17 @@ int main(int argc, char *argv[])
     cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
   }
   // Build the problem matrix
-  RefCountPtr< const MyBetterOperator<ST> > K 
+  RCP< const MyBetterOperator<ST> > K 
     = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,&cvals[0]) );
 
   // Create initial vectors
   int blockSize = 5;
-  RefCountPtr<MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
+  RCP<MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
   ivec->MvRandom();
 
   // Create eigenproblem
   const int nev = 4;
-  RefCountPtr<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
+  RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
     rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(K,ivec) );
   //
   // Inform the eigenproblem that the operator K is symmetric
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ST,MV> sol = problem->getSolution();
-  RefCountPtr<MV> evecs = sol.Evecs;
+  RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   if (numev > 0) {
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
     for (int i=0; i<numev; i++) {
       T(i,i) = sol.Evals[i].realpart;
     }
-    RefCountPtr<MV> Kvecs = MVT::Clone( *evecs, numev );
+    RCP<MV> Kvecs = MVT::Clone( *evecs, numev );
 
     OPT::Apply( *K, *evecs, *Kvecs );
 

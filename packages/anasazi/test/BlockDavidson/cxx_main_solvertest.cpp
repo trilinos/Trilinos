@@ -71,9 +71,9 @@ class get_out : public std::logic_error {
   public: get_out(const std::string &whatarg) : std::logic_error(whatarg) {}
 };
 
-void checks( RefCountPtr<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize, int numblocks, 
-             RefCountPtr<Eigenproblem<ScalarType,MV,OP> > problem,
-             RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > ortho,
+void checks( RCP<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize, int numblocks, 
+             RCP<Eigenproblem<ScalarType,MV,OP> > problem,
+             RCP<MatOrthoManager<ScalarType,MV,OP> > ortho,
              SolverUtils<ScalarType,MV,OP> &msutils) {
   BlockDavidsonState<ScalarType,MV> state = solver->getState();
   
@@ -112,8 +112,8 @@ void checks( RefCountPtr<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize
       TEST_FOR_EXCEPTION(index[i] != 0,get_out,"Ritz index contained non-zeros.");
     }
     // check residuals
-    RefCountPtr<const MV> evecs = state.X;
-    RefCountPtr<MV> Kevecs, Mevecs;
+    RCP<const MV> evecs = state.X;
+    RCP<MV> Kevecs, Mevecs;
     Kevecs = MVT::Clone(*evecs,blocksize);
     OPT::Apply(*problem->getOperator(),*evecs,*Kevecs);
     if (problem->getM() == null) {
@@ -147,21 +147,21 @@ void checks( RefCountPtr<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize
   }
 }
 
-void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
-                 RefCountPtr< OutputManager<ScalarType> > printer,
-                 RefCountPtr< MatOrthoManager<ScalarType,MV,OP> > ortho,
-                 RefCountPtr< SortManager<ScalarType,MV,OP> > sorter,
+void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
+                 RCP< OutputManager<ScalarType> > printer,
+                 RCP< MatOrthoManager<ScalarType,MV,OP> > ortho,
+                 RCP< SortManager<ScalarType,MV,OP> > sorter,
                  ParameterList &pls,bool invalid,
                  BlockDavidsonState<ScalarType,MV> initstate, bool invalidinit)
 {
   // create a status tester to run for two iterations
-  RefCountPtr< StatusTest<ScalarType,MV,OP> > tester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(2) );
+  RCP< StatusTest<ScalarType,MV,OP> > tester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(2) );
 
   const int blocksize = pls.get<int>("Block Size",problem->getNEV());
   const int numblocks = pls.get<int>("Num Blocks",2);
 
   // create the solver
-  RefCountPtr< BlockDavidson<ScalarType,MV,OP> > solver;
+  RCP< BlockDavidson<ScalarType,MV,OP> > solver;
   try {
     solver = rcp( new BlockDavidson<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
     TEST_FOR_EXCEPTION(invalid, get_out, "Instantiating with invalid parameters failed to throw exception.")
@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
   }
 
   // create the output manager
-  RefCountPtr< OutputManager<ScalarType> > printer = rcp( new BasicOutputManager<ScalarType>() );
+  RCP< OutputManager<ScalarType> > printer = rcp( new BasicOutputManager<ScalarType>() );
 
   if (verbose) printer->stream(Errors) << Anasazi_Version() << endl << endl;
 
@@ -280,21 +280,21 @@ int main(int argc, char *argv[])
   elements[0] = veclength+1;
 
   // Create problem
-  RefCountPtr<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+  RCP<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
   //
   // Get the stiffness and mass matrices
-  RefCountPtr<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  RefCountPtr<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  RCP<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+  RCP<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   //
   // Create the initial vectors
   // For BlockDavidson, this will dictate the initial size of the basis after a call to initialize()
   const int nev = 4;
-  RefCountPtr<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), nev) );
+  RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), nev) );
   ivec->Random();
   //
   // Create eigenproblem: one standard and one generalized
-  RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > probstd = rcp( new BasicEigenproblem<ScalarType, MV, OP>(K, ivec) );
-  RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > probgen = rcp( new BasicEigenproblem<ScalarType, MV, OP>(K, M, ivec) );
+  RCP<BasicEigenproblem<ScalarType,MV,OP> > probstd = rcp( new BasicEigenproblem<ScalarType, MV, OP>(K, ivec) );
+  RCP<BasicEigenproblem<ScalarType,MV,OP> > probgen = rcp( new BasicEigenproblem<ScalarType, MV, OP>(K, M, ivec) );
   //
   // Inform the eigenproblem that the operator A is symmetric
   probstd->setHermitian(true);
@@ -317,10 +317,10 @@ int main(int argc, char *argv[])
   }
 
   // create the orthogonalization managers: one standard and one M-based
-  RefCountPtr< MatOrthoManager<ScalarType,MV,OP> > orthostd = rcp( new SVQBOrthoManager<ScalarType,MV,OP>() );
-  RefCountPtr< MatOrthoManager<ScalarType,MV,OP> > orthogen = rcp( new SVQBOrthoManager<ScalarType,MV,OP>(M) );
+  RCP< MatOrthoManager<ScalarType,MV,OP> > orthostd = rcp( new SVQBOrthoManager<ScalarType,MV,OP>() );
+  RCP< MatOrthoManager<ScalarType,MV,OP> > orthogen = rcp( new SVQBOrthoManager<ScalarType,MV,OP>(M) );
   // create the sort manager
-  RefCountPtr< SortManager<ScalarType,MV,OP> > sorter = rcp( new BasicSort<ScalarType,MV,OP>("LR") );
+  RCP< SortManager<ScalarType,MV,OP> > sorter = rcp( new BasicSort<ScalarType,MV,OP>("LR") );
   // create the parameter list specifying blocksize > nev and full orthogonalization
   ParameterList pls;
 
@@ -445,12 +445,12 @@ int main(int argc, char *argv[])
 
 
     // create a dummy status tester
-    RefCountPtr< StatusTest<ScalarType,MV,OP> > dumtester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
+    RCP< StatusTest<ScalarType,MV,OP> > dumtester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
 
     // try with a null problem
     if (verbose) printer->stream(Errors) << "Testing solver with null eigenproblem..." << endl;
     try {
-      RefCountPtr< BlockDavidson<ScalarType,MV,OP> > solver 
+      RCP< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(Teuchos::null,sorter,printer,dumtester,orthostd,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
@@ -461,7 +461,7 @@ int main(int argc, char *argv[])
     // try with a null sortman
     if (verbose) printer->stream(Errors) << "Testing solver with null sort manager..." << endl;
     try {
-      RefCountPtr< BlockDavidson<ScalarType,MV,OP> > solver 
+      RCP< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,Teuchos::null,printer,dumtester,orthostd,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
@@ -472,7 +472,7 @@ int main(int argc, char *argv[])
     // try with a output man problem
     if (verbose) printer->stream(Errors) << "Testing solver with null output manager..." << endl;
     try {
-      RefCountPtr< BlockDavidson<ScalarType,MV,OP> > solver 
+      RCP< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,Teuchos::null,dumtester,orthostd,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
@@ -483,7 +483,7 @@ int main(int argc, char *argv[])
     // try with a null status test
     if (verbose) printer->stream(Errors) << "Testing solver with null status test..." << endl;
     try {
-      RefCountPtr< BlockDavidson<ScalarType,MV,OP> > solver 
+      RCP< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,printer,Teuchos::null,orthostd,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
@@ -494,7 +494,7 @@ int main(int argc, char *argv[])
     // try with a null orthoman
     if (verbose) printer->stream(Errors) << "Testing solver with null ortho manager..." << endl;
     try {
-      RefCountPtr< BlockDavidson<ScalarType,MV,OP> > solver 
+      RCP< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,printer,dumtester,Teuchos::null,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }

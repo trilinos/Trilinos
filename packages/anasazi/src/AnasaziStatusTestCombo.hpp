@@ -62,7 +62,7 @@ template <class ScalarType, class MV, class OP>
 class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
 
  private:
-   typedef Teuchos::Array< Teuchos::RefCountPtr< StatusTest<ScalarType,MV,OP> > > STPArray;
+   typedef Teuchos::Array< Teuchos::RCP< StatusTest<ScalarType,MV,OP> > > STPArray;
 
  public:
 
@@ -78,8 +78,8 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-  typedef Teuchos::Array< Teuchos::RefCountPtr< StatusTest<ScalarType,MV,OP> > > t_arr;
-  typedef std::vector< Teuchos::RefCountPtr< StatusTest<ScalarType,MV,OP> > > st_vector;
+  typedef Teuchos::Array< Teuchos::RCP< StatusTest<ScalarType,MV,OP> > > t_arr;
+  typedef std::vector< Teuchos::RCP< StatusTest<ScalarType,MV,OP> > > st_vector;
   typedef typename st_vector::iterator                 iterator;
   typedef typename st_vector::const_iterator     const_iterator;
 
@@ -94,7 +94,7 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
 
   //! Constructor
   //! \brief Constructor specifying the ComboType and the tests.
-  StatusTestCombo(ComboType type, Teuchos::Array< Teuchos::RefCountPtr< StatusTest<ScalarType,MV,OP> > > tests) :
+  StatusTestCombo(ComboType type, Teuchos::Array< Teuchos::RCP< StatusTest<ScalarType,MV,OP> > > tests) :
     state_(Undefined), 
     type_(type)
   {
@@ -136,19 +136,19 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
   /*! \brief Set the tests
    *  This also resets the test status to ::Undefined.
    */
-  void setTests(Teuchos::Array<Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > tests) {
+  void setTests(Teuchos::Array<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > tests) {
     tests_ = tests;
     state_ = Undefined;
   }
 
   //! Get the tests
-  Teuchos::Array<Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > getTests() const {return tests_;}
+  Teuchos::Array<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > getTests() const {return tests_;}
 
   /*! \brief Add a test to the combination.
    *
    *  This also resets the test status to ::Undefined.
    */
-  void addTest(Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > test) {
+  void addTest(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) {
     tests_.push_back(test);
     state_ = Undefined;
   }
@@ -157,7 +157,7 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
    *
    * This also resets the test status to ::Undefined, if a test was removed.
    */
-  void removeTest(const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &test);
+  void removeTest(const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &test);
 
   //@}
 
@@ -201,7 +201,7 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
 
 
 template <class ScalarType, class MV, class OP>
-void StatusTestCombo<ScalarType,MV,OP>::removeTest(const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &test) 
+void StatusTestCombo<ScalarType,MV,OP>::removeTest(const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &test) 
 {
   typename STPArray::iterator iter1;
   iter1 = find(tests_.begin(),tests_.end(),test);

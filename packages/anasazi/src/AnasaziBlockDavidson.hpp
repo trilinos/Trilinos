@@ -79,28 +79,28 @@ namespace Anasazi {
      *
      * V has BlockDavidson::getMaxSubspaceDim() vectors, but only the first \c curDim are valid.
      */
-    Teuchos::RefCountPtr<const MV> V;
+    Teuchos::RCP<const MV> V;
     //! The current eigenvectors.
-    Teuchos::RefCountPtr<const MV> X; 
+    Teuchos::RCP<const MV> X; 
     //! The image of the current eigenvectors under K.
-    Teuchos::RefCountPtr<const MV> KX; 
+    Teuchos::RCP<const MV> KX; 
     //! The image of the current eigenvectors under M, or Teuchos::null if M was not specified.
-    Teuchos::RefCountPtr<const MV> MX;
+    Teuchos::RCP<const MV> MX;
     //! The current residual vectors
-    Teuchos::RefCountPtr<const MV> R;
+    Teuchos::RCP<const MV> R;
     /*! \brief The current preconditioned residual vectors.
      *
      *  H is a pointer into V, and is only useful when BlockDavidson::iterate() throw a BlockDavidsonOrthoFailure exception.
      */
-    Teuchos::RefCountPtr<const MV> H;
+    Teuchos::RCP<const MV> H;
     //! The current Ritz values. This vector is a copy of the internal 
-    Teuchos::RefCountPtr<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
+    Teuchos::RCP<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
     /*! \brief The current projected K matrix.
      *
      * KK is of order BlockDavidson::getMaxSubspaceDim(), but only the principal submatrix of order \c curDim is meaningful. It is Hermitian in memory.
      *
      */
-    Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > KK;
+    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > KK;
     BlockDavidsonState() : curDim(0), V(Teuchos::null),
                            X(Teuchos::null), KX(Teuchos::null), MX(Teuchos::null),
                            R(Teuchos::null), H(Teuchos::null),
@@ -155,11 +155,11 @@ namespace Anasazi {
      *   - "Block Size" - an \c int specifying the block size used by the algorithm. This can also be specified using the setBlockSize() method.
      *   - "Num Blocks" - an \c int specifying the maximum number of blocks allocated for the solver basis.
      */
-    BlockDavidson( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-                   const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
-                   const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-                   const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-                   const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+    BlockDavidson( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
+                   const Teuchos::RCP<SortManager<ScalarType,MV,OP> > &sorter,
+                   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                   const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
                    Teuchos::ParameterList &params 
                  );
     
@@ -276,7 +276,7 @@ namespace Anasazi {
         The i-th vector of the return corresponds to the i-th Ritz vector; there is no need to use
         getRitzIndex().
      */
-    Teuchos::RefCountPtr<const MV> getRitzVectors();
+    Teuchos::RCP<const MV> getRitzVectors();
 
     /*! \brief Get the Ritz values for the previous iteration.
      *
@@ -364,10 +364,10 @@ namespace Anasazi {
      *  it from the solver using getState(), orthogonalize it against the
      *  new auxiliary vectors, and reinitialize using initialize().
      */
-    void setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs);
+    void setAuxVecs(const Teuchos::Array<Teuchos::RCP<const MV> > &auxvecs);
 
     //! Get the auxiliary vectors for the solver.
-    Teuchos::Array<Teuchos::RefCountPtr<const MV> > getAuxVecs() const;
+    Teuchos::Array<Teuchos::RCP<const MV> > getAuxVecs() const;
 
     //@}
 
@@ -428,22 +428,22 @@ namespace Anasazi {
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
-    const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> >     problem_;
-    const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> >      sm_;
-    const Teuchos::RefCountPtr<OutputManager<ScalarType> >          om_;
-    const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >       tester_;
-    const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> >  orthman_;
+    const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
+    const Teuchos::RCP<SortManager<ScalarType,MV,OP> >      sm_;
+    const Teuchos::RCP<OutputManager<ScalarType> >          om_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       tester_;
+    const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> >  orthman_;
     //
     // Information obtained from the eigenproblem
     //
-    Teuchos::RefCountPtr<const OP> Op_;
-    Teuchos::RefCountPtr<const OP> MOp_;
-    Teuchos::RefCountPtr<const OP> Prec_;
+    Teuchos::RCP<const OP> Op_;
+    Teuchos::RCP<const OP> MOp_;
+    Teuchos::RCP<const OP> Prec_;
     bool hasM_;
     //
     // Internal timers
     //
-    Teuchos::RefCountPtr<Teuchos::Time> timerOp_, timerMOp_, timerPrec_,
+    Teuchos::RCP<Teuchos::Time> timerOp_, timerMOp_, timerPrec_,
                                         timerSortEval_, timerDS_,
                                         timerLocal_, timerCompRes_, 
                                         timerOrtho_, timerInit_;
@@ -479,16 +479,16 @@ namespace Anasazi {
     // H_,KH_,MH_ will not own any storage
     // H_ will occasionally point at the current block of vectors in the basis V_
     // MH_,KH_ will occasionally point at MX_,KX_ when they are used as temporary storage
-    Teuchos::RefCountPtr<MV> X_, KX_, MX_, R_,
+    Teuchos::RCP<MV> X_, KX_, MX_, R_,
                              H_, KH_, MH_,
                              V_;
     //
     // Projected matrices
     //
-    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > KK_;
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > KK_;
     // 
     // auxiliary vectors
-    Teuchos::Array<Teuchos::RefCountPtr<const MV> > auxVecs_;
+    Teuchos::Array<Teuchos::RCP<const MV> > auxVecs_;
     int numAuxVecs_;
     //
     // Number of iterations that have been performed.
@@ -515,11 +515,11 @@ namespace Anasazi {
   // Constructor
   template <class ScalarType, class MV, class OP>
   BlockDavidson<ScalarType,MV,OP>::BlockDavidson(
-        const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-        const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
-        const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-        const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-        const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
+        const Teuchos::RCP<SortManager<ScalarType,MV,OP> > &sorter,
+        const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+        const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+        const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
         Teuchos::ParameterList &params
         ) :
     ONE(Teuchos::ScalarTraits<MagnitudeType>::one()),
@@ -549,7 +549,7 @@ namespace Anasazi {
     numBlocks_(0),
     initialized_(false),
     curDim_(0),
-    auxVecs_( Teuchos::Array<Teuchos::RefCountPtr<const MV> >(0) ), 
+    auxVecs_( Teuchos::Array<Teuchos::RCP<const MV> >(0) ), 
     numAuxVecs_(0),
     iter_(0),
     Rnorms_current_(false),
@@ -604,7 +604,7 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Return the current auxiliary vectors
   template <class ScalarType, class MV, class OP>
-  Teuchos::Array<Teuchos::RefCountPtr<const MV> > BlockDavidson<ScalarType,MV,OP>::getAuxVecs() const {
+  Teuchos::Array<Teuchos::RCP<const MV> > BlockDavidson<ScalarType,MV,OP>::getAuxVecs() const {
     return auxVecs_;
   }
 
@@ -678,7 +678,7 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // return pointer to ritz vectors
   template <class ScalarType, class MV, class OP>
-  Teuchos::RefCountPtr<const MV> BlockDavidson<ScalarType,MV,OP>::getRitzVectors() {
+  Teuchos::RCP<const MV> BlockDavidson<ScalarType,MV,OP>::getRitzVectors() {
     return X_;
   }
 
@@ -754,7 +754,7 @@ namespace Anasazi {
     blockSize_ = blockSize;
     numBlocks_ = numBlocks;
 
-    Teuchos::RefCountPtr<const MV> tmp;
+    Teuchos::RCP<const MV> tmp;
     // grab some Multivector to Clone
     // in practice, getInitVec() should always provide this, but it is possible to use a 
     // Eigenproblem with nothing in getInitVec() by manually initializing with initialize(); 
@@ -822,8 +822,8 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the auxiliary vectors
   template <class ScalarType, class MV, class OP>
-  void BlockDavidson<ScalarType,MV,OP>::setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs) {
-    typedef typename Teuchos::Array<Teuchos::RefCountPtr<const MV> >::iterator tarcpmv;
+  void BlockDavidson<ScalarType,MV,OP>::setAuxVecs(const Teuchos::Array<Teuchos::RCP<const MV> > &auxvecs) {
+    typedef typename Teuchos::Array<Teuchos::RCP<const MV> >::iterator tarcpmv;
 
     // set new auxiliary vectors
     auxVecs_ = auxvecs;
@@ -894,8 +894,8 @@ namespace Anasazi {
 
     // set up V and KK: get them from newstate if user specified them
     // otherwise, set them manually
-    Teuchos::RefCountPtr<MV> lclV;
-    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclKK;
+    Teuchos::RCP<MV> lclV;
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclKK;
 
     if (newstate.V != Teuchos::null && newstate.KK != Teuchos::null) {
       TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_), std::invalid_argument, 
@@ -944,7 +944,7 @@ namespace Anasazi {
     else {
       // user did not specify one of V or KK
       // get vectors from problem or generate something, projectAndNormalize
-      Teuchos::RefCountPtr<const MV> ivec = problem_->getInitVec();
+      Teuchos::RCP<const MV> ivec = problem_->getInitVec();
       TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::invalid_argument,
                          "Anasazi::BlockDavdison::initialize(newstate): Eigenproblem did not specify initial vectors to clone from.");
       // clear newstate so we won't use any data from it below
@@ -992,7 +992,7 @@ namespace Anasazi {
         // assign ivec to first part of lclV
         MVT::SetBlock(*ivec,dimind,*lclV);
       }
-      Teuchos::RefCountPtr<MV> tmpVecs; 
+      Teuchos::RCP<MV> tmpVecs; 
       if (curDim_*2 <= blockSize_*numBlocks_) {
         // partition V_ = [lclV tmpVecs _leftover_]
         std::vector<int> block2(curDim_);
@@ -1015,7 +1015,7 @@ namespace Anasazi {
       if (auxVecs_.size() > 0) {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 
-        Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
+        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
         int rank = orthman_->projectAndNormalize(*lclV,tmpVecs,dummy,Teuchos::null,auxVecs_);
         TEST_FOR_EXCEPTION(rank != curDim_,BlockDavidsonInitFailure,
                            "Anasazi::BlockDavidson::initialize(): Couldn't generate initial basis of full rank.");
@@ -1297,16 +1297,16 @@ namespace Anasazi {
       // this is used for orthogonalization and for computing V^H K H
       std::vector<int> prevind(curDim_);
       for (int i=0; i<curDim_; ++i) prevind[i] = i;
-      Teuchos::RefCountPtr<MV> Vprev = MVT::CloneView(*V_,prevind);
+      Teuchos::RCP<MV> Vprev = MVT::CloneView(*V_,prevind);
 
       // Orthogonalize H against the previous vectors and the auxiliary vectors, and normalize
       {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 
-        Teuchos::Array<Teuchos::RefCountPtr<const MV> > against = auxVecs_;
+        Teuchos::Array<Teuchos::RCP<const MV> > against = auxVecs_;
         against.push_back(Vprev);
         int rank = orthman_->projectAndNormalize(*H_,MH_,
-                                            Teuchos::tuple<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null),
+                                            Teuchos::tuple<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null),
                                             Teuchos::null,against);
         TEST_FOR_EXCEPTION(rank != blockSize_,BlockDavidsonOrthoFailure,
                            "Anasazi::BlockDavidson::iterate(): unable to compute orthonormal basis for H.");
@@ -1338,7 +1338,7 @@ namespace Anasazi {
 
       // compute next part of the projected matrices
       // this this in two parts
-      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > nextKK;
+      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > nextKK;
       // Vprev*K*H
       nextKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,blockSize_,0,curDim_) );
       MVT::MvTransMv(ONE,*Vprev,*KH_,*nextKK);
@@ -1368,7 +1368,7 @@ namespace Anasazi {
       // Get pointer to complete basis
       curind.resize(curDim_);
       for (int i=0; i<curDim_; ++i) curind[i] = i;
-      Teuchos::RefCountPtr<const MV> curV = MVT::CloneView(*V_,curind);
+      Teuchos::RCP<const MV> curV = MVT::CloneView(*V_,curind);
 
       // Perform spectral decomposition
       {
@@ -1546,7 +1546,7 @@ namespace Anasazi {
     // V and friends
     std::vector<int> lclind(curDim_);
     for (int i=0; i<curDim_; ++i) lclind[i] = i;
-    Teuchos::RefCountPtr<MV> lclV,lclKV;
+    Teuchos::RCP<MV> lclV,lclKV;
     if (initialized_) {
       lclV = MVT::CloneView(*V_,lclind);
     }
@@ -1558,7 +1558,7 @@ namespace Anasazi {
         os << " >> Error in V^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
       Teuchos::SerialDenseMatrix<int,ScalarType> curKK(curDim_,curDim_);
-      Teuchos::RefCountPtr<MV> lclKV = MVT::Clone(*V_,curDim_);
+      Teuchos::RCP<MV> lclKV = MVT::Clone(*V_,curDim_);
       OPT::Apply(*Op_,*lclV,*lclKV);
       MVT::MvTransMv(ONE,*lclV,*lclKV,curKK);
       Teuchos::SerialDenseMatrix<int,ScalarType> subKK(Teuchos::View,*KK_,curDim_,curDim_);

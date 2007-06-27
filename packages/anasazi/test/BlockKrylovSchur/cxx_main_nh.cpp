@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
 
   // Create an Epetra_Matrix
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]) );
+  Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]) );
 
   // Diffusion coefficient, can be set by user.
   // When rho*h/2 <= 1, the discrete convection-diffusion operator has real eigenvalues.
@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
   // -->  Make sure the reference-counted pointer is of type Anasazi::SortManager<>
   // -->  The block Krylov-Schur solver manager uses Anasazi::BasicSort<> by default,
   //      so you can also pass in the parameter "Which", instead of a sort manager.
-  Teuchos::RefCountPtr<Anasazi::SortManager<ScalarType,MV,OP> > MySort =     
+  Teuchos::RCP<Anasazi::SortManager<ScalarType,MV,OP> > MySort =     
     Teuchos::rcp( new Anasazi::BasicSort<ScalarType,MV,OP>( which ) );
 
   // Set verbosity level
@@ -296,11 +296,11 @@ int main(int argc, char *argv[]) {
 
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
-  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blockSize) );
+  Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blockSize) );
   ivec->Random();
 
   // Create the eigenproblem.
-  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
+  Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(A, ivec) );
 
   // Inform the eigenproblem that the operator A is non-Hermitian
@@ -354,7 +354,7 @@ int main(int argc, char *argv[]) {
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ScalarType,MV> sol = MyProblem->getSolution();
   std::vector<Anasazi::Value<ScalarType> > evals = sol.Evals;
-  Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
+  Teuchos::RCP<MV> evecs = sol.Evecs;
   std::vector<int> index = sol.index;
   int numev = sol.numVecs;
 
@@ -367,7 +367,7 @@ int main(int argc, char *argv[]) {
     int i=0;
     std::vector<int> curind(1);
     std::vector<double> resnorm(1), tempnrm(1);
-    Teuchos::RefCountPtr<MV> evecr, eveci, tempAevec;
+    Teuchos::RCP<MV> evecr, eveci, tempAevec;
     Epetra_MultiVector Aevec(Map,numev);
 
     // Compute A*evecs

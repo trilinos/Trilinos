@@ -219,14 +219,14 @@ public:
       
     \return Reference-counted pointer to the new \c Anasazi::MultiVec.
     */
-    static Teuchos::RefCountPtr<MultiVec<ScalarType> > Clone( const MultiVec<ScalarType>& mv, const int numvecs )
+    static Teuchos::RCP<MultiVec<ScalarType> > Clone( const MultiVec<ScalarType>& mv, const int numvecs )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).Clone(numvecs) ); }
 
     /*! \brief Creates a new \c Anasazi::MultiVec and copies contents of \c mv into the new vector (deep copy).
       
       \return Reference-counted pointer to the new \c Anasazi::MultiVec.
     */
-    static Teuchos::RefCountPtr<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv )
+    static Teuchos::RCP<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneCopy() ); }
 
     /*! \brief Creates a new \c Anasazi::MultiVec and copies the selected contents of \c mv into the new vector (deep copy).  
@@ -234,7 +234,7 @@ public:
       The copied vectors from \c mv are indicated by the \c index.size() indices in \c index.      
       \return Reference-counted pointer to the new \c Anasazi::MultiVec.
     */
-    static Teuchos::RefCountPtr<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
+    static Teuchos::RCP<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneCopy(index) ); }
 
     /*! \brief Creates a new \c Anasazi::MultiVec that shares the selected contents of \c mv (shallow copy).
@@ -242,7 +242,7 @@ public:
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new \c Anasazi::MultiVec.
     */    
-    static Teuchos::RefCountPtr<MultiVec<ScalarType> > CloneView( MultiVec<ScalarType>& mv, const std::vector<int>& index )
+    static Teuchos::RCP<MultiVec<ScalarType> > CloneView( MultiVec<ScalarType>& mv, const std::vector<int>& index )
     { return Teuchos::rcp( mv.CloneView(index) ); }
 
     /*! \brief Creates a new const \c Anasazi::MultiVec that shares the selected contents of \c mv (shallow copy).
@@ -250,7 +250,7 @@ public:
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new const \c Anasazi::MultiVec.
     */      
-    static Teuchos::RefCountPtr<const MultiVec<ScalarType> > CloneView( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
+    static Teuchos::RCP<const MultiVec<ScalarType> > CloneView( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneView(index) ); }
 
     //@}

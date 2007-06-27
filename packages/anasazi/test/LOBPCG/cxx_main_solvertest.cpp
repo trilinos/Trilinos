@@ -70,9 +70,9 @@ class get_out : public std::logic_error {
   public: get_out(const std::string &whatarg) : std::logic_error(whatarg) {}
 };
 
-void checks( RefCountPtr<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool fullortho, 
-             RefCountPtr<Eigenproblem<ScalarType,MV,OP> > problem,
-             RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > ortho,
+void checks( RCP<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool fullortho, 
+             RCP<Eigenproblem<ScalarType,MV,OP> > problem,
+             RCP<MatOrthoManager<ScalarType,MV,OP> > ortho,
              SolverUtils<ScalarType,MV,OP> &msutils) {
   LOBPCGState<ScalarType,MV> state = solver->getState();
   
@@ -104,8 +104,8 @@ void checks( RefCountPtr<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool 
     TEST_FOR_EXCEPTION(solver->getRes2Norms().size() != (unsigned int)blocksize,get_out,"getRes2Norms.size() does not match block.");
     TEST_FOR_EXCEPTION(solver->getRitzRes2Norms().size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzRes2Norms.size() does not match getCurSubpsaceDim().");
     // check residuals
-    RefCountPtr<const MV> evecs = state.X;
-    RefCountPtr<MV> Kevecs, Mevecs;
+    RCP<const MV> evecs = state.X;
+    RCP<MV> Kevecs, Mevecs;
     Kevecs = MVT::Clone(*evecs,blocksize);
     OPT::Apply(*problem->getOperator(),*evecs,*Kevecs);
     if (problem->getM() == null) {
@@ -147,17 +147,17 @@ void checks( RefCountPtr<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool 
   }
 }
 
-void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
-                 RefCountPtr< OutputManager<ScalarType> > printer,
-                 RefCountPtr< MatOrthoManager<ScalarType,MV,OP> > ortho,
-                 RefCountPtr< SortManager<ScalarType,MV,OP> > sorter,
+void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
+                 RCP< OutputManager<ScalarType> > printer,
+                 RCP< MatOrthoManager<ScalarType,MV,OP> > ortho,
+                 RCP< SortManager<ScalarType,MV,OP> > sorter,
                  ParameterList &pls,bool invalid=false)
 {
   // create a status tester to run for one iteration
-  RefCountPtr< StatusTest<ScalarType,MV,OP> > tester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
+  RCP< StatusTest<ScalarType,MV,OP> > tester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
 
   // create the solver
-  RefCountPtr< LOBPCG<ScalarType,MV,OP> > solver;
+  RCP< LOBPCG<ScalarType,MV,OP> > solver;
   try {
     solver = rcp( new LOBPCG<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
     TEST_FOR_EXCEPTION(invalid, get_out, "Initializing with invalid parameters failed to throw exception.")
@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
   }
 
   // create the output manager
-  RefCountPtr< OutputManager<ScalarType> > printer = rcp( new BasicOutputManager<ScalarType>() );
+  RCP< OutputManager<ScalarType> > printer = rcp( new BasicOutputManager<ScalarType>() );
 
   if (verbose) printer->stream(Errors) << Anasazi_Version() << endl << endl;
 
@@ -284,20 +284,20 @@ int main(int argc, char *argv[])
   elements[0] = veclength+1;
 
   // Create problem
-  RefCountPtr<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+  RCP<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
   //
   // Get the stiffness and mass matrices
-  RefCountPtr<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  RefCountPtr<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  RCP<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+  RCP<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   //
   // Create the initial vectors
   const int nev = 4;
-  RefCountPtr<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), nev) );
+  RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), nev) );
   ivec->Random();
   //
   // Create eigenproblem: one standard and one generalized
-  RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > probstd = rcp( new BasicEigenproblem<ScalarType, MV, OP>(K, ivec) );
-  RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > probgen = rcp( new BasicEigenproblem<ScalarType, MV, OP>(K, M, ivec) );
+  RCP<BasicEigenproblem<ScalarType,MV,OP> > probstd = rcp( new BasicEigenproblem<ScalarType, MV, OP>(K, ivec) );
+  RCP<BasicEigenproblem<ScalarType,MV,OP> > probgen = rcp( new BasicEigenproblem<ScalarType, MV, OP>(K, M, ivec) );
   //
   // Inform the eigenproblem that the operator A is symmetric
   probstd->setHermitian(true);
@@ -320,10 +320,10 @@ int main(int argc, char *argv[])
   }
 
   // create the orthogonalization managers: one standard and one M-based
-  RefCountPtr< MatOrthoManager<ScalarType,MV,OP> > orthostd = rcp( new SVQBOrthoManager<ScalarType,MV,OP>() );
-  RefCountPtr< MatOrthoManager<ScalarType,MV,OP> > orthogen = rcp( new SVQBOrthoManager<ScalarType,MV,OP>(M) );
+  RCP< MatOrthoManager<ScalarType,MV,OP> > orthostd = rcp( new SVQBOrthoManager<ScalarType,MV,OP>() );
+  RCP< MatOrthoManager<ScalarType,MV,OP> > orthogen = rcp( new SVQBOrthoManager<ScalarType,MV,OP>(M) );
   // create the sort manager
-  RefCountPtr< SortManager<ScalarType,MV,OP> > sorter = rcp( new BasicSort<ScalarType,MV,OP>("LM") );
+  RCP< SortManager<ScalarType,MV,OP> > sorter = rcp( new BasicSort<ScalarType,MV,OP>("LM") );
   // create the parameter list specifying blocksize > nev and full orthogonalization
   ParameterList pls;
 
@@ -416,12 +416,12 @@ int main(int argc, char *argv[])
     probstd->setProblem();
 
     // create a dummy status tester
-    RefCountPtr< StatusTest<ScalarType,MV,OP> > dumtester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
+    RCP< StatusTest<ScalarType,MV,OP> > dumtester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
 
     // try with a null problem
     if (verbose) printer->stream(Errors) << "Testing solver with null eigenproblem..." << endl;
     try {
-      RefCountPtr< LOBPCG<ScalarType,MV,OP> > solver 
+      RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(Teuchos::null,sorter,printer,dumtester,orthostd,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
     }
@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
     // try with a null sortman
     if (verbose) printer->stream(Errors) << "Testing solver with null sort manager..." << endl;
     try {
-      RefCountPtr< LOBPCG<ScalarType,MV,OP> > solver 
+      RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,Teuchos::null,printer,dumtester,orthostd,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
     }
@@ -443,7 +443,7 @@ int main(int argc, char *argv[])
     // try with a output man problem
     if (verbose) printer->stream(Errors) << "Testing solver with null output manager..." << endl;
     try {
-      RefCountPtr< LOBPCG<ScalarType,MV,OP> > solver 
+      RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,sorter,Teuchos::null,dumtester,orthostd,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
     }
@@ -454,7 +454,7 @@ int main(int argc, char *argv[])
     // try with a null status test
     if (verbose) printer->stream(Errors) << "Testing solver with null status test..." << endl;
     try {
-      RefCountPtr< LOBPCG<ScalarType,MV,OP> > solver 
+      RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,sorter,printer,Teuchos::null,orthostd,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
     }
@@ -465,7 +465,7 @@ int main(int argc, char *argv[])
     // try with a null orthoman
     if (verbose) printer->stream(Errors) << "Testing solver with null ortho manager..." << endl;
     try {
-      RefCountPtr< LOBPCG<ScalarType,MV,OP> > solver 
+      RCP< LOBPCG<ScalarType,MV,OP> > solver 
         = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,sorter,printer,dumtester,Teuchos::null,pls) );
       TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
     }

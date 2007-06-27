@@ -60,7 +60,7 @@ class BasicOutputManager : public OutputManager<ScalarType> {
   //@{ 
 
   //! Default constructor
-  BasicOutputManager( int vb = Anasazi::Errors, Teuchos::RefCountPtr<ostream> os = Teuchos::rcp(&std::cout,false) );
+  BasicOutputManager( int vb = Anasazi::Errors, Teuchos::RCP<ostream> os = Teuchos::rcp(&std::cout,false) );
 
   //! Destructor.
   virtual ~BasicOutputManager() {};
@@ -70,10 +70,10 @@ class BasicOutputManager : public OutputManager<ScalarType> {
   //@{ 
 
   //! Set the output stream for this manager.
-  void setOStream( Teuchos::RefCountPtr<ostream> os );
+  void setOStream( Teuchos::RCP<ostream> os );
 
   //! Get the output stream for this manager.
-  Teuchos::RefCountPtr<ostream> getOStream();
+  Teuchos::RCP<ostream> getOStream();
 
   //@}
 
@@ -107,13 +107,13 @@ class BasicOutputManager : public OutputManager<ScalarType> {
 
   //@}
 
-  Teuchos::RefCountPtr<ostream> myOS_;
+  Teuchos::RCP<ostream> myOS_;
   Teuchos::oblackholestream myBHS_;
   bool iPrint_;
 };
 
 template<class ScalarType>
-BasicOutputManager<ScalarType>::BasicOutputManager(int vb, Teuchos::RefCountPtr<ostream> os)
+BasicOutputManager<ScalarType>::BasicOutputManager(int vb, Teuchos::RCP<ostream> os)
     : OutputManager<ScalarType>(vb), myOS_(os) {
   int MyPID;
 #ifdef HAVE_MPI
@@ -129,12 +129,12 @@ BasicOutputManager<ScalarType>::BasicOutputManager(int vb, Teuchos::RefCountPtr<
 } 
 
 template<class ScalarType>
-void BasicOutputManager<ScalarType>::setOStream( Teuchos::RefCountPtr<ostream> os ) { 
+void BasicOutputManager<ScalarType>::setOStream( Teuchos::RCP<ostream> os ) { 
   myOS_ = os; 
 }
 
 template<class ScalarType>
-Teuchos::RefCountPtr<ostream> BasicOutputManager<ScalarType>::getOStream() { 
+Teuchos::RCP<ostream> BasicOutputManager<ScalarType>::getOStream() { 
   return myOS_; 
 }
 

@@ -82,8 +82,8 @@ class AmesosGenOp : public virtual Epetra_Operator
 public:
   // Basic constructor
   AmesosGenOp( Epetra_LinearProblem& problem,
-	       const Teuchos::RefCountPtr<Amesos_BaseSolver>& solver,
-	       const Teuchos::RefCountPtr<Epetra_Operator>& massMtx,
+	       const Teuchos::RCP<Amesos_BaseSolver>& solver,
+	       const Teuchos::RCP<Epetra_Operator>& massMtx,
 	       bool useTranspose = false );
   // Destructor
   ~AmesosGenOp() {};
@@ -113,8 +113,8 @@ private:
 
   // Epetra_LinearProblem contained in the Amesos_BaseSolver
   bool useTranspose_;
-  Teuchos::RefCountPtr<Amesos_BaseSolver> solver_;
-  Teuchos::RefCountPtr<Epetra_Operator> massMtx_;
+  Teuchos::RCP<Amesos_BaseSolver> solver_;
+  Teuchos::RCP<Epetra_Operator> massMtx_;
   Epetra_LinearProblem* problem_;
   
 };
@@ -150,11 +150,11 @@ int main(int argc, char *argv[]) {
   elements[1] = 10;
   
   // Create problem
-  Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
+  Teuchos::RCP<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
   
   // Get the stiffness and mass matrices
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  Teuchos::RCP<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+  Teuchos::RCP<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
 
   //
   // *******************************************************
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
   
   // Create Amesos factory and solver for solving "Kx = b" using a direct factorization
   Amesos amesosFactory;
-  Teuchos::RefCountPtr<Amesos_BaseSolver> AmesosSolver = 
+  Teuchos::RCP<Amesos_BaseSolver> AmesosSolver = 
     Teuchos::rcp( amesosFactory.Create( "Klu", AmesosProblem ) );
 
   // The AmesosGenOp class assumes that the symbolic/numeric factorizations have already
@@ -210,14 +210,14 @@ int main(int argc, char *argv[]) {
   
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
-  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->Map(), blockSize) );
+  Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->Map(), blockSize) );
   MVT::MvRandom( *ivec );
   
   // Create the Epetra_Operator for the spectral transformation using the Amesos direct solver.
-  Teuchos::RefCountPtr<AmesosGenOp> Aop = Teuchos::rcp( new AmesosGenOp(AmesosProblem,
+  Teuchos::RCP<AmesosGenOp> Aop = Teuchos::rcp( new AmesosGenOp(AmesosProblem,
 									AmesosSolver, M) );	
   
-  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
+  Teuchos::RCP<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, M, ivec) );
   
   // Inform the eigenproblem that the matrix pencil (K,M) is symmetric
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
   std::vector<Anasazi::Value<double> > evals = sol.Evals;
-  Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
+  Teuchos::RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
   
   if (numev > 0) {
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
     // Get the eigenvalues and eigenvectors from the eigenproblem
     Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
     std::vector<Anasazi::Value<double> > evals = sol.Evals;
-    Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
+    Teuchos::RCP<MV> evecs = sol.Evecs;
     int numev = sol.numVecs;
     
     Teuchos::SerialDenseMatrix<int,double> dmatr(numev,numev);
@@ -302,8 +302,8 @@ int main(int argc, char *argv[]) {
 
 
 AmesosGenOp::AmesosGenOp( Epetra_LinearProblem& problem,
-			  const Teuchos::RefCountPtr<Amesos_BaseSolver>& solver,
-			  const Teuchos::RefCountPtr<Epetra_Operator>& massMtx,
+			  const Teuchos::RCP<Amesos_BaseSolver>& solver,
+			  const Teuchos::RCP<Epetra_Operator>& massMtx,
 			  bool useTranspose )
   : useTranspose_(useTranspose),
     solver_(solver),

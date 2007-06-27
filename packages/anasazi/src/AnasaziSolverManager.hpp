@@ -39,7 +39,7 @@
 #include "AnasaziEigenproblem.hpp"
 
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 /*! \class Anasazi::SolverManager
   \brief The Anasazi::SolverManager is a templated virtual base class that defines the

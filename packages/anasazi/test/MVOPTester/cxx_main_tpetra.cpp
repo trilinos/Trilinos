@@ -67,7 +67,7 @@ template<class OrdinalType, class ScalarType>
 class TpetraOperator : public Anasazi::Operator<ScalarType>
 {
 public:
-  TpetraOperator(Teuchos::RefCountPtr<Tpetra::CisMatrix<OrdinalType, ScalarType> > Op) :
+  TpetraOperator(Teuchos::RCP<Tpetra::CisMatrix<OrdinalType, ScalarType> > Op) :
     Op_(Op)
   {}
 
@@ -89,7 +89,7 @@ public:
   }
 
 private:
-  Teuchos::RefCountPtr<Tpetra::CisMatrix<OrdinalType, ScalarType> > Op_;
+  Teuchos::RCP<Tpetra::CisMatrix<OrdinalType, ScalarType> > Op_;
 
 }; // class TpetraOperator
 
@@ -111,7 +111,7 @@ public:
 
   // This is a shallow copy
   TpetraMultiVec(const Tpetra::VectorSpace<OrdinalType, ScalarType>& vectorSpace, 
-                 std::vector<Teuchos::RefCountPtr<Tpetra::Vector<OrdinalType, ScalarType> > > list) :
+                 std::vector<Teuchos::RCP<Tpetra::Vector<OrdinalType, ScalarType> > > list) :
     Tpetra::MultiVector<OrdinalType, ScalarType>(vectorSpace, list)
   {}
 
@@ -170,7 +170,7 @@ public:
   */
   MultiVec<ScalarType> * CloneView ( const std::vector<int>& index )
   {
-    std::vector<Teuchos::RefCountPtr<Tpetra::Vector<OrdinalType, ScalarType> > > list(index.size());
+    std::vector<Teuchos::RCP<Tpetra::Vector<OrdinalType, ScalarType> > > list(index.size());
     for (int i = 0 ; i < index.size() ; ++i)
       list[i] = this->GetRCP(index[i]);
 
@@ -382,11 +382,11 @@ OrdinalType const OrdinalOne  = Teuchos::ScalarTraits<OrdinalType>::one();
 ScalarType const ScalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
 ScalarType const ScalarOne  = Teuchos::ScalarTraits<ScalarType>::one();
 
-Teuchos::RefCountPtr<Anasazi::TpetraOperator<OrdinalType, ScalarType> >
+Teuchos::RCP<Anasazi::TpetraOperator<OrdinalType, ScalarType> >
   CreateMatrix(Tpetra::VectorSpace<OrdinalType, ScalarType>& vectorSpace,
                const ScalarType& a, const ScalarType& b, const ScalarType& c)
 {
-  Teuchos::RefCountPtr<Tpetra::CisMatrix<OrdinalType,ScalarType> > matrix =
+  Teuchos::RCP<Tpetra::CisMatrix<OrdinalType,ScalarType> > matrix =
     Teuchos::rcp(new Tpetra::CisMatrix<OrdinalType, ScalarType>(vectorSpace));
 
   OrdinalType NumMyElements = vectorSpace.elementSpace().getNumMyElements();
@@ -420,7 +420,7 @@ Teuchos::RefCountPtr<Anasazi::TpetraOperator<OrdinalType, ScalarType> >
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -458,9 +458,9 @@ int main(int argc, char *argv[])
   typedef Anasazi::TpetraOperator<OrdinalType, ScalarType> TOP;        
   typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
 
-  Teuchos::RefCountPtr<TOP> A = CreateMatrix(vectorSpace, 4.0 * ScalarOne, -ScalarOne, -ScalarOne);
-  Teuchos::RefCountPtr<TOP> B = CreateMatrix(vectorSpace, 2.0 * ScalarOne, -ScalarOne, -ScalarOne);
-  Teuchos::RefCountPtr<TOP> K = CreateMatrix(vectorSpace, ScalarOne, ScalarZero, ScalarZero);
+  Teuchos::RCP<TOP> A = CreateMatrix(vectorSpace, 4.0 * ScalarOne, -ScalarOne, -ScalarOne);
+  Teuchos::RCP<TOP> B = CreateMatrix(vectorSpace, 2.0 * ScalarOne, -ScalarOne, -ScalarOne);
+  Teuchos::RCP<TOP> K = CreateMatrix(vectorSpace, ScalarOne, ScalarZero, ScalarZero);
 
   Anasazi::ReturnType returnCode = Anasazi::Ok;	
 
@@ -480,11 +480,11 @@ int main(int argc, char *argv[])
   // ================== //
 
 
-  Teuchos::RefCountPtr<MV> ivec = Teuchos::rcp(new Anasazi::TpetraMultiVec(vectorSpace, BLOCKSIZE));        
+  Teuchos::RCP<MV> ivec = Teuchos::rcp(new Anasazi::TpetraMultiVec(vectorSpace, BLOCKSIZE));        
   ivec->MvRandom();
 
   // Create the eigenproblem.
-  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<ScalarType, MV, OP> > MyProblem =
+  Teuchos::RCP<Anasazi::BasicEigenproblem<ScalarType, MV, OP> > MyProblem =
     Teuchos::rcp( new Anasazi::BasicEigenproblem<ScalarType, MV, OP>(A, B, ivec) );
 
   MyProblem->SetPrec(K); 
@@ -499,12 +499,12 @@ int main(int argc, char *argv[])
   MyProblem->SetProblem();
 
   // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<ScalarType> > MyOM =
+  Teuchos::RCP<Anasazi::OutputManager<ScalarType> > MyOM =
     Teuchos::rcp(new Anasazi::OutputManager<ScalarType>(Comm.getMyImageID()));
   MyOM->SetVerbosity(Anasazi::FinalSummary);	
 
   // Create a sort manager
-  Teuchos::RefCountPtr<Anasazi::BasicSort<ScalarType, MV, OP> > MySM =
+  Teuchos::RCP<Anasazi::BasicSort<ScalarType, MV, OP> > MySM =
     Teuchos::rcp(new Anasazi::BasicSort<ScalarType, MV, OP>("SM"));
 
 

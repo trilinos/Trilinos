@@ -60,14 +60,14 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   class MatOrthoManager : public OrthoManager<ScalarType,MV> {
   protected:
-    Teuchos::RefCountPtr<const OP> _Op;
+    Teuchos::RCP<const OP> _Op;
     bool _hasOp;
 
   public:
     //! @name Constructor/Destructor
     //@{ 
     //! Default constructor.
-    MatOrthoManager(Teuchos::RefCountPtr<const OP> Op = Teuchos::null) : _Op(Op), _hasOp(Op!=Teuchos::null) {};
+    MatOrthoManager(Teuchos::RCP<const OP> Op = Teuchos::null) : _Op(Op), _hasOp(Op!=Teuchos::null) {};
 
     //! Destructor.
     virtual ~MatOrthoManager() {};
@@ -77,13 +77,13 @@ namespace Anasazi {
     //@{ 
 
     //! Set operator.
-    void setOp( Teuchos::RefCountPtr<const OP> Op ) { 
+    void setOp( Teuchos::RCP<const OP> Op ) { 
       _Op = Op; 
       _hasOp = (_Op != Teuchos::null);
     };
 
     //! Get operator.
-    Teuchos::RefCountPtr<const OP> getOp() const { return _Op; } 
+    Teuchos::RCP<const OP> getOp() const { return _Op; } 
 
     //@}
 
@@ -101,8 +101,8 @@ namespace Anasazi {
       typedef MultiVecTraits<ScalarType,MV>     MVT;
       typedef OperatorTraits<ScalarType,MV,OP>  OPT;
 
-      Teuchos::RefCountPtr<const MV> P,Q;
-      Teuchos::RefCountPtr<MV> R;
+      Teuchos::RCP<const MV> P,Q;
+      Teuchos::RCP<MV> R;
 
       if (_hasOp) {
         // attempt to minimize the amount of work in applying 
@@ -133,13 +133,13 @@ namespace Anasazi {
      *  If pointer \c MY is null, then this routine calls innerProd(X,Y,Z). Otherwise, it forgoes the 
      *  operator application and uses \c *MY in the computation of the inner product.
      */
-    void innerProd( const MV& X, const MV& Y, Teuchos::RefCountPtr<const MV> MY, 
+    void innerProd( const MV& X, const MV& Y, Teuchos::RCP<const MV> MY, 
                             Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;
       typedef OperatorTraits<ScalarType,MV,OP>  OPT;
 
-      Teuchos::RefCountPtr<MV> P,Q;
+      Teuchos::RCP<MV> P,Q;
 
       if ( MY == Teuchos::null ) {
         innerProd(X,Y,Z);
@@ -163,7 +163,7 @@ namespace Anasazi {
     /*! \brief Provides the norm induced by innerProd().
      *  The method has the options of exploiting a caller-provided \c MX.
      */
-    void norm( const MV& X, Teuchos::RefCountPtr<const MV> MX, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const {
+    void norm( const MV& X, Teuchos::RCP<const MV> MX, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const {
 
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;
@@ -173,13 +173,13 @@ namespace Anasazi {
         MX = Teuchos::rcp(&X,false);
       }
       else if (MX == Teuchos::null) {
-        Teuchos::RefCountPtr<MV> R = MVT::Clone(X,MVT::GetNumberVecs(X));
+        Teuchos::RCP<MV> R = MVT::Clone(X,MVT::GetNumberVecs(X));
         OPT::Apply(*_Op,X,*R);
         MX = R;
       }
 
       Teuchos::SerialDenseMatrix<int,ScalarType> z(1,1);
-      Teuchos::RefCountPtr<const MV> Xi, MXi;
+      Teuchos::RCP<const MV> Xi, MXi;
       std::vector<int> ind(1);
       for (int i=0; i<MVT::GetNumberVecs(X); i++) {
         ind[0] = i;
@@ -212,17 +212,17 @@ namespace Anasazi {
      @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
      orthonormal columns, and the <tt>Q[i]</tt> are assumed to be mutually orthogonal.
     */
-    virtual void project ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                           Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                           Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const = 0;
+    virtual void project ( MV &X, Teuchos::RCP<MV> MX, 
+                           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                           Teuchos::Array<Teuchos::RCP<const MV> > Q) const = 0;
 
 
     
     /*! \brief This method calls project(X,Teuchos::null,C,Q); see documentation for that function.
     */
     virtual void project ( MV &X, 
-                           Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                           Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const {
+                           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                           Teuchos::Array<Teuchos::RCP<const MV> > Q) const {
       project(X,Teuchos::null,C,Q);
     }
 
@@ -247,13 +247,13 @@ namespace Anasazi {
 
      @return Rank of the basis computed by this method.
     */
-    virtual int normalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                            Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const = 0;
+    virtual int normalize ( MV &X, Teuchos::RCP<MV> MX, 
+                            Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const = 0;
 
 
     /*! \brief This method calls normalize(X,Teuchos::null,B); see documentation for that function.
     */
-    virtual int normalize ( MV &X, Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const {
+    virtual int normalize ( MV &X, Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const {
       return normalize(X,Teuchos::null,B);
     }
 
@@ -292,17 +292,17 @@ namespace Anasazi {
 
      @return Rank of the basis computed by this method.
     */
-    virtual int projectAndNormalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                                      Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                      Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const = 0;
+    virtual int projectAndNormalize ( MV &X, Teuchos::RCP<MV> MX, 
+                                      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                                      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
+                                      Teuchos::Array<Teuchos::RCP<const MV> > Q ) const = 0;
 
     /*! \brief This method calls projectAndNormalize(X,Teuchos::null,C,B,Q); see documentation for that function.
     */
     virtual int projectAndNormalize ( MV &X, 
-                                      Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                      Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const {
+                                      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                                      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
+                                      Teuchos::Array<Teuchos::RCP<const MV> > Q ) const {
       return projectAndNormalize(X,Teuchos::null,C,B,Q);
     }
 
@@ -322,7 +322,7 @@ namespace Anasazi {
      *  The method has the option of exploiting a caller-provided \c MX.
      */
     virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
-    orthonormError(const MV &X, Teuchos::RefCountPtr<const MV> MX) const = 0;
+    orthonormError(const MV &X, Teuchos::RCP<const MV> MX) const = 0;
 
     /*! \brief This method computes the error in orthogonality of two multivectors. This method 
      */
@@ -336,7 +336,7 @@ namespace Anasazi {
      *  exploiting a caller-provided \c MX.
      */
     virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
-    orthogError(const MV &X1, Teuchos::RefCountPtr<const MV> MX1, const MV &X2) const = 0;
+    orthogError(const MV &X1, Teuchos::RCP<const MV> MX1, const MV &X2) const = 0;
 
     //@}
 

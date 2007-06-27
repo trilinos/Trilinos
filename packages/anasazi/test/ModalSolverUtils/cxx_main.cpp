@@ -36,7 +36,7 @@
 #include "AnasaziSolverUtils.hpp"
 #include "AnasaziBasicOrthoManager.hpp"
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
 

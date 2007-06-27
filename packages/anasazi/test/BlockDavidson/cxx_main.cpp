@@ -112,20 +112,20 @@ int main(int argc, char *argv[])
   elements[0] = 100;
 
   // Create problem
-  RefCountPtr<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+  RCP<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
   //
   // Get the stiffness and mass matrices
-  RefCountPtr<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  RefCountPtr<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  RCP<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+  RCP<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   //
   // Create the initial vectors
   int blockSize = 5;
-  RefCountPtr<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
+  RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
 
   // Create eigenproblem
   const int nev = 5;
-  RefCountPtr<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
+  RCP<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
     rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(K,M,ivec) );
   //
   // Inform the eigenproblem that the operator K is symmetric
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
-  RefCountPtr<MV> evecs = sol.Evecs;
+  RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   if (numev > 0) {
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
     for (int i=0; i<numev; i++) {
       T(i,i) = sol.Evals[i].realpart;
     }
-    RefCountPtr<MV> Mvecs = MVT::Clone( *evecs, numev ),
+    RCP<MV> Mvecs = MVT::Clone( *evecs, numev ),
                     Kvecs = MVT::Clone( *evecs, numev );
     OPT::Apply( *K, *evecs, *Kvecs );
     OPT::Apply( *M, *evecs, *Mvecs );

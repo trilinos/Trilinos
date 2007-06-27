@@ -70,12 +70,12 @@ int main(int argc, char *argv[]) {
   elements[1] = 10;
   
   // Create problem
-  Teuchos::RefCountPtr<ModalProblem> testCase = 
+  Teuchos::RCP<ModalProblem> testCase = 
     Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
   
   // Get the stiffness and mass matrices
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  Teuchos::RCP<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+  Teuchos::RCP<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
 
   // Eigensolver parameters
   int nev = 10;
@@ -83,11 +83,11 @@ int main(int argc, char *argv[]) {
   int maxIters = 500;
   double tol = 1.0e-8;
 
-  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
+  Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
 
   // Create the eigenproblem.
-  Teuchos::RefCountPtr<BasicEigenproblem<double, MV, OP> > MyProblem =
+  Teuchos::RCP<BasicEigenproblem<double, MV, OP> > MyProblem =
     Teuchos::rcp( new BasicEigenproblem<double, MV, OP>(K, M, ivec) );
 
   // Inform the eigenproblem that the operator A is symmetric
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
   //
   Eigensolution<double,MV> sol = MyProblem->getSolution();
   std::vector<Value<double> > evals = sol.Evals;
-  Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
+  Teuchos::RCP<MV> evecs = sol.Evecs;
 
   // Compute residuals.
   //

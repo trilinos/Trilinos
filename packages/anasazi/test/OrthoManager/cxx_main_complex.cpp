@@ -86,14 +86,14 @@ const MT TOL = 1.0e-13;
 const MT ATOL = 100;
 
 // declare an output manager for handling local output
-RefCountPtr< Anasazi::BasicOutputManager<ST> > MyOM;
+RCP< Anasazi::BasicOutputManager<ST> > MyOM;
 
 // some forward declarations
-int testProjectAndNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, 
-                            RefCountPtr<MV> X, RefCountPtr<const MV> Q);
-int testProject(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, 
-                RefCountPtr<const MV> X, RefCountPtr<const MV> Q);
-int testNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, RefCountPtr<MV> X);
+int testProjectAndNormalize(RCP<MatOrthoManager<ST,MV,OP> > OM, 
+                            RCP<MV> X, RCP<const MV> Q);
+int testProject(RCP<MatOrthoManager<ST,MV,OP> > OM, 
+                RCP<const MV> X, RCP<const MV> Q);
+int testNormalize(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<MV> X);
 MT MVDiff(const MV &X, const MV &Y);
 
 int main(int argc, char *argv[]) 
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
     cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
   }
   // Build the problem matrix
-  RefCountPtr< MyBetterOperator<ST> > M 
+  RCP< MyBetterOperator<ST> > M 
     = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,&cvals[0]) );
 
   const int sizeX = 4;
@@ -177,14 +177,14 @@ int main(int argc, char *argv[])
 
 
   // Create an SVQB ortho manager 
-  RefCountPtr<MatOrthoManager<ST,MV,OP> > OM   = rcp( new SVQBOrthoManager<ST,MV,OP>(Teuchos::null,debug) );
-  RefCountPtr<MatOrthoManager<ST,MV,OP> > OM_M = rcp( new SVQBOrthoManager<ST,MV,OP>(M,debug) );
+  RCP<MatOrthoManager<ST,MV,OP> > OM   = rcp( new SVQBOrthoManager<ST,MV,OP>(Teuchos::null,debug) );
+  RCP<MatOrthoManager<ST,MV,OP> > OM_M = rcp( new SVQBOrthoManager<ST,MV,OP>(M,debug) );
 
   // multivector to spawn off of
-  RefCountPtr<MV> X = rcp( new MyMultiVec<ST>(dim, sizeX) );
+  RCP<MV> X = rcp( new MyMultiVec<ST>(dim, sizeX) );
 
   MyOM->stream(Errors) << " Generating Q1 for project() : testing... " << endl;
-  RefCountPtr<MV> Q1  = MVT::Clone(*X,sizeQ);
+  RCP<MV> Q1  = MVT::Clone(*X,sizeQ);
   MVT::MvRandom(*Q1);
   int dummy = 0;
   dummy = OM_M->normalize(*Q1,null);
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
   }
 
   MyOM->stream(Errors) << " Generating Q2 for project() : testing... " << endl;
-  RefCountPtr<MV> Q2 = MVT::Clone(*X,sizeQ);
+  RCP<MV> Q2 = MVT::Clone(*X,sizeQ);
   MVT::MvRandom(*Q2);
   tfail = false;
   dummy = OM->normalize(*Q2,null);
@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
     // Assuming here that sizeX == 4
     MVT::MvRandom(*X);
     ind[0] = 1;
-    RefCountPtr<MV> mid = MVT::CloneCopy(*X,ind);
+    RCP<MV> mid = MVT::CloneCopy(*X,ind);
     ind[0] = 2;
     MVT::SetBlock(*mid,ind,*X);
     
@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
     // Assuming here that sizeX == 4
     MVT::MvRandom(*X);
     ind[0] = 1;
-    RefCountPtr<MV> mid = MVT::CloneCopy(*X,ind);
+    RCP<MV> mid = MVT::CloneCopy(*X,ind);
     ind[0] = 2;
     MVT::SetBlock(*mid,ind,*X);
     
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
     MVT::MvRandom(*X);
     // get column 0
     ind[0] = 0;
-    RefCountPtr<MV> mid = MVT::CloneCopy(*X,ind);
+    RCP<MV> mid = MVT::CloneCopy(*X,ind);
     // put column 0 in columns 1:sizeX-1
     for (int i=1; i<sizeX; i++) {
       ind[0] = i;
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
     MVT::MvRandom(*X);
     // get column 0
     ind[0] = 0;
-    RefCountPtr<MV> mid = MVT::CloneCopy(*X,ind);
+    RCP<MV> mid = MVT::CloneCopy(*X,ind);
     // put column 0 in columns 1:sizeX-1
     for (int i=1; i<sizeX; i++) {
       ind[0] = i;
@@ -344,7 +344,7 @@ int main(int argc, char *argv[])
     MVT::MvRandom(*X);
     // Assuming here that sizeX == 4
     ind[0] = 1;
-    RefCountPtr<MV> mid = MVT::CloneCopy(*X,ind);
+    RCP<MV> mid = MVT::CloneCopy(*X,ind);
     ind[0] = 2;
     MVT::SetBlock(*mid,ind,*X);
     
@@ -356,7 +356,7 @@ int main(int argc, char *argv[])
     MVT::MvRandom(*X);
     // Assuming here that sizeX == 4
     ind[0] = 1;
-    RefCountPtr<MV> mid = MVT::CloneCopy(*X,ind);
+    RCP<MV> mid = MVT::CloneCopy(*X,ind);
     ind[0] = 2;
     MVT::SetBlock(*mid,ind,*X);
     
@@ -369,7 +369,7 @@ int main(int argc, char *argv[])
     std::vector<int> ind(1); 
     // get column 0
     ind[0] = 0;
-    RefCountPtr<MV> mid = MVT::CloneCopy(*X,ind);
+    RCP<MV> mid = MVT::CloneCopy(*X,ind);
     // put column 0 in columns 1:sizeX-1
     for (int i=1; i<sizeX; i++) {
       ind[0] = i;
@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
     std::vector<int> ind(1); 
     // get column 0
     ind[0] = 0;
-    RefCountPtr<MV> mid = MVT::CloneCopy(*X,ind);
+    RCP<MV> mid = MVT::CloneCopy(*X,ind);
     // put column 0 in columns 1:sizeX-1
     for (int i=1; i<sizeX; i++) {
       ind[0] = i;
@@ -420,24 +420,24 @@ int main(int argc, char *argv[])
 
 
 //////////////////////////////////////////////////////////////////////
-int testProjectAndNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, 
-                            RefCountPtr<MV> X, RefCountPtr<const MV> Q) {
+int testProjectAndNormalize(RCP<MatOrthoManager<ST,MV,OP> > OM, 
+                            RCP<MV> X, RCP<const MV> Q) {
 
   const int sizeX = MVT::GetNumberVecs(*X);
   const int sizeQ = MVT::GetNumberVecs(*Q);
   MT err;
   int rank;
-  RefCountPtr<MV> tmp, smlX, smlMX;
+  RCP<MV> tmp, smlX, smlMX;
   std::vector<int> ind;
   int numerr = 0;
   bool hasM = (OM->getOp() != null);
   std::ostringstream sout;
-  RefCountPtr<MV> xcopy, mxcopy, smlOX;
-  RefCountPtr<SerialDenseMatrix<int,ST> > C, smlC, R, smlR, newR;
+  RCP<MV> xcopy, mxcopy, smlOX;
+  RCP<SerialDenseMatrix<int,ST> > C, smlC, R, smlR, newR;
   bool warning = false;
 
   int numtests;
-  RefCountPtr<MV> MX;
+  RCP<MV> MX;
   if (hasM) {
     numtests = 4;
     MX = MVT::Clone(*X,sizeX);
@@ -480,8 +480,8 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM,
 
     try {
       rank = OM->projectAndNormalize(*xcopy,mxcopy,
-                                     tuple< RefCountPtr< SerialDenseMatrix<int,ST> > >(C),R,
-                                     tuple<RefCountPtr<const MV> >(Q) );
+                                     tuple< RCP< SerialDenseMatrix<int,ST> > >(C),R,
+                                     tuple<RCP<const MV> >(Q) );
 
       sout << "projectAndNormalize() returned rank " << rank << endl;
 
@@ -571,22 +571,22 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM,
 
 
 //////////////////////////////////////////////////////////////////////
-int testProject(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, 
-                RefCountPtr<const MV> X, RefCountPtr<const MV> Q) {
+int testProject(RCP<MatOrthoManager<ST,MV,OP> > OM, 
+                RCP<const MV> X, RCP<const MV> Q) {
 
   const int sizeX = MVT::GetNumberVecs(*X);
   const int sizeQ = MVT::GetNumberVecs(*Q);
   MT err;
-  RefCountPtr<MV> tmp;
+  RCP<MV> tmp;
   bool hasM = (OM->getOp() != null);
   int numerr = 0;
   std::ostringstream sout;
-  RefCountPtr<MV> xcopy, mxcopy;
-  RefCountPtr<SerialDenseMatrix<int,ST> > C;
+  RCP<MV> xcopy, mxcopy;
+  RCP<SerialDenseMatrix<int,ST> > C;
   bool warning = false;
 
   int numtests;
-  RefCountPtr<MV> MX;
+  RCP<MV> MX;
   if (hasM) {
     numtests = 4;
     MX = MVT::Clone(*X,sizeX);
@@ -621,8 +621,8 @@ int testProject(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM,
 
     try {
       OM->project(*xcopy,mxcopy,
-                  tuple<RefCountPtr<SerialDenseMatrix<int,ST> > >(C),
-                  tuple<RefCountPtr<const MV> >(Q));
+                  tuple<RCP<SerialDenseMatrix<int,ST> > >(C),
+                  tuple<RCP<const MV> >(Q));
       // MX == M*X
       if (mxcopy != null) {
         tmp = MVT::CloneCopy(*xcopy);
@@ -672,22 +672,22 @@ int testProject(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM,
 
 
 //////////////////////////////////////////////////////////////////////
-int testNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, RefCountPtr<MV> X) {
+int testNormalize(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<MV> X) {
 
   const int sizeX = MVT::GetNumberVecs(*X);
   MT err;
   int rank;
-  RefCountPtr<MV> tmp, smlX, smlMX;
+  RCP<MV> tmp, smlX, smlMX;
   std::vector<int> ind;
   bool hasM = (OM->getOp() != null);
   int numerr = 0;
   std::ostringstream sout;
-  RefCountPtr<MV> xcopy, mxcopy, smlOX;
-  RefCountPtr<SerialDenseMatrix<int,ST> > R, smlR, newR;
+  RCP<MV> xcopy, mxcopy, smlOX;
+  RCP<SerialDenseMatrix<int,ST> > R, smlR, newR;
   bool warning = false;
 
   int numtests;
-  RefCountPtr<MV> MX;
+  RCP<MV> MX;
   if (hasM) {
     numtests = 4;
     MX = MVT::Clone(*X,sizeX);
@@ -794,7 +794,7 @@ MT MVDiff(const MV &X, const MV &Y) {
   SerialDenseMatrix<int,ST> xTmx(sizeX,sizeX);
 
   // tmp <- X
-  RefCountPtr<MV> tmp = MVT::CloneCopy(X);
+  RCP<MV> tmp = MVT::CloneCopy(X);
 
   // tmp <- tmp - Y
   MVT::MvAddMv(-ONE,Y,ONE,*tmp,*tmp);

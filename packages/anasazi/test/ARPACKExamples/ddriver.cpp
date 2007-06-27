@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 
 
   // Create default output manager 
-  RefCountPtr<Anasazi::OutputManager<ST> > MyOM = rcp( new Anasazi::BasicOutputManager<ST>() );
+  RCP<Anasazi::OutputManager<ST> > MyOM = rcp( new Anasazi::BasicOutputManager<ST>() );
   // Set verbosity level
   int verbosity = Anasazi::Errors;
   if (verbose) {
@@ -114,12 +114,12 @@ int main(int argc, char *argv[])
   int maxRestarts = 500;
 
   // Create initial vectors
-  RefCountPtr<MV> ivec = rcp( new MyMultiVec<ST>(dim,1) );
+  RCP<MV> ivec = rcp( new MyMultiVec<ST>(dim,1) );
   ivec->MvRandom();
 
   // Create matrices
-  RefCountPtr< ARPACK_Example<ST> > prob;
-  RefCountPtr<const OP> A, M, Op, B;
+  RCP< ARPACK_Example<ST> > prob;
+  RCP<const OP> A, M, Op, B;
 
   prob = GetARPACKExample<ST>(problem,dim);
   if (!prob.get()) {
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
   }
 
   // Create eigenproblem
-  RefCountPtr<Anasazi::Eigenproblem<ST,MV,OP> > MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(Op, B, ivec) );
+  RCP<Anasazi::Eigenproblem<ST,MV,OP> > MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(Op, B, ivec) );
   //
   // Inform the eigenproblem if the operator is symmetric
   MyProblem->setHermitian(prob->isHerm());
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ST,MV> sol = MyProblem->getSolution();
-  RefCountPtr<MV> evecs = sol.Evecs;
+  RCP<MV> evecs = sol.Evecs;
   std::vector<Anasazi::Value<ST> > evals = sol.Evals;
   std::vector<int> index = sol.index;
 
@@ -218,8 +218,8 @@ int main(int argc, char *argv[])
   for (int i=0; i<nevecs; i++) {
     L(i,i) = (*evals)[i];
   }
-  RefCountPtr<MV > Avecs = MVT::Clone( *evecs, nevecs );
-  RefCountPtr<MV > Mvecs = MVT::Clone( *evecs, nevecs );
+  RCP<MV > Avecs = MVT::Clone( *evecs, nevecs );
+  RCP<MV > Mvecs = MVT::Clone( *evecs, nevecs );
 
   OPT::Apply( *A, *evecs, *Avecs );
   OPT::Apply( *M, *evecs, *Mvecs );

@@ -107,7 +107,7 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - "Locking Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide locking. Default: 0.1*convergence tolerance
    *   - "Relative Locking Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding locking. Default: true
    */
-  BlockDavidsonSolMgr( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
+  BlockDavidsonSolMgr( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
 
   //! Destructor.
@@ -151,7 +151,7 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
   //@}
 
   private:
-  Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > problem_;
+  Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > problem_;
 
   string whch_; 
 
@@ -171,7 +171,7 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
 // Constructor
 template<class ScalarType, class MV, class OP>
 BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr( 
-        const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
+        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
         Teuchos::ParameterList &pl ) : 
   problem_(problem),
   whch_("SR"),
@@ -282,38 +282,38 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Sort manager
-  Teuchos::RefCountPtr<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(whch_) );
+  Teuchos::RCP<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(whch_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Output manager
-  Teuchos::RefCountPtr<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity_) );
+  Teuchos::RCP<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Status tests
   //
   // convergence
-  Teuchos::RefCountPtr<StatusTestOrderedResNorm<ScalarType,MV,OP> > convtest 
+  Teuchos::RCP<StatusTestOrderedResNorm<ScalarType,MV,OP> > convtest 
       = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(sorter,convtol_,nev,StatusTestOrderedResNorm<ScalarType,MV,OP>::RES_ORTH,relconvtol_) );
   // locking
-  Teuchos::RefCountPtr<StatusTestResNorm<ScalarType,MV,OP> > locktest;
+  Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > locktest;
   if (useLocking_) {
     locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(locktol_,lockQuorum_,StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH,rellocktol_) );
   }
   // combo class
-  Teuchos::Array<Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > alltests;
+  Teuchos::Array<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > alltests;
   // for an OR test, the order doesn't matter
   alltests.push_back(convtest);
   if (locktest != Teuchos::null)   alltests.push_back(locktest);
   // combo: convergence || locking 
-  Teuchos::RefCountPtr<StatusTestCombo<ScalarType,MV,OP> > combotest
+  Teuchos::RCP<StatusTestCombo<ScalarType,MV,OP> > combotest
     = Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP>( StatusTestCombo<ScalarType,MV,OP>::OR, alltests) );
   // printing StatusTest
-  Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputtest
+  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputtest
     = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combotest,1,Passed ) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
-  Teuchos::RefCountPtr<SVQBOrthoManager<ScalarType,MV,OP> > ortho 
+  Teuchos::RCP<SVQBOrthoManager<ScalarType,MV,OP> > ortho 
     = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
 
   //////////////////////////////////////////////////////////////////////////////////////
@@ -324,19 +324,19 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockDavidson solver
-  Teuchos::RefCountPtr<BlockDavidson<ScalarType,MV,OP> > bd_solver 
+  Teuchos::RCP<BlockDavidson<ScalarType,MV,OP> > bd_solver 
     = Teuchos::rcp( new BlockDavidson<ScalarType,MV,OP>(problem_,sorter,printer,outputtest,ortho,plist) );
   // set any auxiliary vectors defined in the problem
-  Teuchos::RefCountPtr< const MV > probauxvecs = problem_->getAuxVecs();
+  Teuchos::RCP< const MV > probauxvecs = problem_->getAuxVecs();
   if (probauxvecs != Teuchos::null) {
-    bd_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs) );
+    bd_solver->setAuxVecs( Teuchos::tuple< Teuchos::RCP<const MV> >(probauxvecs) );
   }
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Storage
   // for locked vectors
   int curNumLocked = 0;
-  Teuchos::RefCountPtr<MV> lockvecs;
+  Teuchos::RCP<MV> lockvecs;
   // lockvecs is used to hold the locked eigenvectors, as well as for temporary storage when locking.
   // when locking, we will lock some number of vectors numnew, where numnew <= maxlocked - curlocked
   // we will produce numnew random vectors, which will go into the space with the new basis.
@@ -393,7 +393,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   // Therefore, we must allocate workMV when ((maxRestarts_ > 0) || (useLocking_ == true)) && inSituRestart == false
   // It will be allocated to size (numBlocks-1)*blockSize
   //
-  Teuchos::RefCountPtr<MV> workMV;
+  Teuchos::RCP<MV> workMV;
   if (inSituRestart_ == false) {
     // we need storage space to restart, either if we may lock or if may restart after a full basis
     if (useLocking_==true || maxRestarts_ > 0) {
@@ -529,7 +529,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         if (inSituRestart_ == true) {
           //
           // get non-const pointer to solver's basis so we can work in situ
-          Teuchos::RefCountPtr<MV> solverbasis = Teuchos::rcp_const_cast<MV>(state.V);
+          Teuchos::RCP<MV> solverbasis = Teuchos::rcp_const_cast<MV>(state.V);
           // 
           // perform Householder QR of Sr = Q [D;0], where D is unit diag.
           // WARNING: this will overwrite Sr; however, we do not need Sr anymore after this
@@ -555,7 +555,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           {
             std::vector<int> curind(curdim);
             for (int i=0; i<curdim; i++) curind[i] = i;
-            Teuchos::RefCountPtr<MV> oldV = MVT::CloneView(*solverbasis,curind);
+            Teuchos::RCP<MV> oldV = MVT::CloneView(*solverbasis,curind);
             msutils::applyHouse(newdim,*oldV,Sr,tau,workMV);
           }
           // 
@@ -569,8 +569,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           std::vector<int> curind(curdim), newind(newdim);
           for (int i=0; i<curdim; i++) curind[i] = i;
           for (int i=0; i<newdim; i++) newind[i] = i;
-          Teuchos::RefCountPtr<const MV> oldV = MVT::CloneView(*state.V,curind);
-          Teuchos::RefCountPtr<MV>       newV = MVT::CloneView(*workMV ,newind);
+          Teuchos::RCP<const MV> oldV = MVT::CloneView(*state.V,curind);
+          Teuchos::RCP<MV>       newV = MVT::CloneView(*workMV ,newind);
 
           MVT::MvTimesMatAddMv(ONE,*oldV,Sr,ZERO,*newV);
           // 
@@ -676,11 +676,11 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         // we will need a pointer to defV below to generate the off-diagonal block of newKK
         // go ahead and setup pointer to augV
         //
-        Teuchos::RefCountPtr<MV> defV, augV;
+        Teuchos::RCP<MV> defV, augV;
         if (inSituRestart_ == true) {
           //
           // get non-const pointer to solver's basis so we can work in situ
-          Teuchos::RefCountPtr<MV> solverbasis = Teuchos::rcp_const_cast<MV>(state.V);
+          Teuchos::RCP<MV> solverbasis = Teuchos::rcp_const_cast<MV>(state.V);
           // 
           // perform Householder QR of Su = Q [D;0], where D is unit diag.
           // work on a copy of Su, since we need Su below to build newKK
@@ -705,7 +705,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           // this actually performs oldV*[Su Sl*M] = [defV lockV], for some unitary M
           // we are actually interested in only the first numUnlocked vectors of the result
           {
-            Teuchos::RefCountPtr<MV> oldV = MVT::CloneView(*solverbasis,curind);
+            Teuchos::RCP<MV> oldV = MVT::CloneView(*solverbasis,curind);
             msutils::applyHouse(numUnlocked,*oldV,copySu,tau,workMV);
           }
           std::vector<int> defind(numUnlocked), augind(numNewLocked);
@@ -719,7 +719,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           std::vector<int> defind(numUnlocked), augind(numNewLocked);
           for (int i=0; i<numUnlocked ; i++) defind[i] = i;
           for (int i=0; i<numNewLocked; i++) augind[i] = numUnlocked+i;
-          Teuchos::RefCountPtr<const MV> oldV = MVT::CloneView(*state.V,curind);
+          Teuchos::RCP<const MV> oldV = MVT::CloneView(*state.V,curind);
           defV = MVT::CloneView(*workMV,defind);
           augV = MVT::CloneView(*workMV,augind);
           
@@ -737,8 +737,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         // newL is the new locked vectors; newL = oldV*Sl = RitzVectors(lockind)
         // we will not produce them, but instead retrieve them from RitzVectors
         //
-        Teuchos::RefCountPtr<const MV> curlocked, newLocked;
-        Teuchos::RefCountPtr<MV> augTmp;
+        Teuchos::RCP<const MV> curlocked, newLocked;
+        Teuchos::RCP<MV> augTmp;
         {
           // setup curlocked
           if (curNumLocked > 0) {
@@ -765,8 +765,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         // orthogonalize it against auxvecs, defV, and all locked vectors (new and current)
         // use augTmp as storage for M*augV, if hasM
         {
-          Teuchos::Array<Teuchos::RefCountPtr<const MV> > against;
-          Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
+          Teuchos::Array<Teuchos::RCP<const MV> > against;
+          Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
           if (probauxvecs != Teuchos::null) against.push_back(probauxvecs);
           if (curlocked != Teuchos::null)   against.push_back(curlocked);
           against.push_back(newLocked);
@@ -846,7 +846,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         {
           convtest->setAuxVals(lockvals);
 
-          Teuchos::Array< Teuchos::RefCountPtr<const MV> > aux;
+          Teuchos::Array< Teuchos::RCP<const MV> > aux;
           if (probauxvecs != Teuchos::null) aux.push_back(probauxvecs);
           aux.push_back(curlocked);
           bd_solver->setAuxVecs(aux);
@@ -926,7 +926,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       int lclnum = insolver.size();
       std::vector<int> tosol(lclnum);
       for (int i=0; i<lclnum; i++) tosol[i] = i;
-      Teuchos::RefCountPtr<const MV> v = MVT::CloneView(*bd_solver->getRitzVectors(),insolver);
+      Teuchos::RCP<const MV> v = MVT::CloneView(*bd_solver->getRitzVectors(),insolver);
       MVT::SetBlock(*v,tosol,*sol.Evecs);
       // set vals
       std::vector<Value<ScalarType> > fromsolver = bd_solver->getRitzValues();
@@ -942,7 +942,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       int lclnum = inlocked.size();
       std::vector<int> tosol(lclnum);
       for (int i=0; i<lclnum; i++) tosol[i] = solnum + i;
-      Teuchos::RefCountPtr<const MV> v = MVT::CloneView(*lockvecs,inlocked);
+      Teuchos::RCP<const MV> v = MVT::CloneView(*lockvecs,inlocked);
       MVT::SetBlock(*v,tosol,*sol.Evecs);
       // set vals
       for (unsigned int i=0; i<inlocked.size(); i++) {

@@ -100,11 +100,11 @@ int main(int argc, char *argv[]) {
   elements[1] = 10;
   
   // Create problem
-  Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
+  Teuchos::RCP<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
   
   // Get the stiffness and mass matrices
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  Teuchos::RCP<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+  Teuchos::RCP<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   
   //
   //*****Select the Preconditioner*****
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
   if (MyPID==0) cout << "Using Relative Threshold Value of " << Rthresh << endl;
   double dropTol = 1.0e-6;
   //
-  Teuchos::RefCountPtr<Ifpack_CrsIct> ICT;
+  Teuchos::RCP<Ifpack_CrsIct> ICT;
   //
   if (Lfill > -1) {
     ICT = Teuchos::rcp( new Ifpack_CrsIct(*K, dropTol, Lfill) );
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
   precSolver.SetAztecOption(AZ_solver, AZ_cg);
   
   // Use AztecOO solver to create the AztecOO_Operator
-  Teuchos::RefCountPtr<AztecOO_Operator> precOperator =
+  Teuchos::RCP<AztecOO_Operator> precOperator =
     Teuchos::rcp( new AztecOO_Operator(&precSolver, 100) );	
   //
   // ************************************
@@ -196,13 +196,13 @@ int main(int argc, char *argv[]) {
   
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
-  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->Map(), blockSize) );
+  Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->Map(), blockSize) );
   MVT::MvRandom( *ivec );
   
   // Call the ctor that calls the petra ctor for a matrix
-  Teuchos::RefCountPtr<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(precOperator, M) );	
+  Teuchos::RCP<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(precOperator, M) );	
   
-  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
+  Teuchos::RCP<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, M, ivec) );
   
   // Inform the eigenproblem that the matrix pencil (K,M) is symmetric
@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
   std::vector<Anasazi::Value<double> > evals = sol.Evals;
-  Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
+  Teuchos::RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   if (numev > 0) {
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
     // Get the eigenvalues and eigenvectors from the eigenproblem
     Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
     std::vector<Anasazi::Value<double> > evals = sol.Evals;
-    Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
+    Teuchos::RCP<MV> evecs = sol.Evecs;
     int numev = sol.numVecs;
     
     Teuchos::SerialDenseMatrix<int,double> dmatr(numev,numev);

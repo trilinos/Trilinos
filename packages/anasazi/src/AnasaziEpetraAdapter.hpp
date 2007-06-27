@@ -245,7 +245,7 @@ namespace Anasazi {
     //@{ 
     
     //! Basic constructor.  Accepts reference-counted pointer to an Epetra_Operator.
-    EpetraOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op );
+    EpetraOp(const Teuchos::RCP<Epetra_Operator> &Op );
     
     //! Destructor
     ~EpetraOp();
@@ -261,7 +261,7 @@ namespace Anasazi {
     //@} 
     
   private:
-    Teuchos::RefCountPtr<Epetra_Operator> Epetra_Op;
+    Teuchos::RCP<Epetra_Operator> Epetra_Op;
   };
   //-------------------------------------------------------------
 
@@ -290,8 +290,8 @@ namespace Anasazi {
     /*! If \c isAInverse is true this operator will apply \f$A^{-1}M\f$, else
       it will apply \f$AM\f$.
     */
-    EpetraGenOp(const Teuchos::RefCountPtr<Epetra_Operator> &AOp, 
-                const Teuchos::RefCountPtr<Epetra_Operator> &MOp,
+    EpetraGenOp(const Teuchos::RCP<Epetra_Operator> &AOp, 
+                const Teuchos::RCP<Epetra_Operator> &MOp,
                 bool isAInverse = true );
 
     //! Destructor
@@ -338,8 +338,8 @@ namespace Anasazi {
 
   private:
     bool isAInverse;
-    Teuchos::RefCountPtr<Epetra_Operator> Epetra_AOp;
-    Teuchos::RefCountPtr<Epetra_Operator> Epetra_MOp;
+    Teuchos::RCP<Epetra_Operator> Epetra_AOp;
+    Teuchos::RCP<Epetra_Operator> Epetra_MOp;
   };
   
   ///////////////////////////////////////////////////////////////
@@ -365,7 +365,7 @@ namespace Anasazi {
     //! Basic constructor for applying operator \f$A^TA\f$ [default] or \f$AA^T\f$.
     /*! If \c isTrans is false this operator will apply \f$A^TA\f$, else it will apply \f$AA^T\f$.
     */
-    EpetraSymOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op, bool isTrans = false );
+    EpetraSymOp(const Teuchos::RCP<Epetra_Operator> &Op, bool isTrans = false );
 
     //! Destructor
     ~EpetraSymOp();
@@ -411,7 +411,7 @@ namespace Anasazi {
     const Epetra_Map& OperatorRangeMap() const { return Epetra_Op->OperatorRangeMap(); };
 
   private:
-    Teuchos::RefCountPtr<Epetra_Operator> Epetra_Op;
+    Teuchos::RCP<Epetra_Operator> Epetra_Op;
     bool isTrans_;
   };
 
@@ -439,7 +439,7 @@ namespace Anasazi {
     //! Basic constructor for applying operator \f$A^TA\f$ [default] or \f$AA^T\f$.
     /*! If \c isTrans is false this operator will apply \f$A^TA\f$, else it will apply \f$AA^T\f$.
     */
-    EpetraSymMVOp(const Teuchos::RefCountPtr<const Epetra_MultiVector> &MV, 
+    EpetraSymMVOp(const Teuchos::RCP<const Epetra_MultiVector> &MV, 
                   bool isTrans = false );
     
     //! Destructor
@@ -451,9 +451,9 @@ namespace Anasazi {
     void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
 
   private:
-    Teuchos::RefCountPtr<const Epetra_MultiVector> Epetra_MV;
-    Teuchos::RefCountPtr<const Epetra_Map> MV_localmap;
-    Teuchos::RefCountPtr<const Epetra_BlockMap> MV_blockmap;
+    Teuchos::RCP<const Epetra_MultiVector> Epetra_MV;
+    Teuchos::RCP<const Epetra_Map> MV_localmap;
+    Teuchos::RCP<const Epetra_BlockMap> MV_blockmap;
     bool isTrans_;
   };
 
@@ -480,8 +480,8 @@ namespace Anasazi {
     //! Basic constructor for applying operator \f$A^TA\f$ [default] or \f$AA^T\f$.
     /*! If \c isTrans is false this operator will apply \f$A^TA\f$, else it will apply \f$AA^T\f$.
     */
-    EpetraWSymMVOp(const Teuchos::RefCountPtr<const Epetra_MultiVector> &MV, 
-                   const Teuchos::RefCountPtr<Epetra_Operator> &OP );
+    EpetraWSymMVOp(const Teuchos::RCP<const Epetra_MultiVector> &MV, 
+                   const Teuchos::RCP<Epetra_Operator> &OP );
     
     //! Destructor
     ~EpetraWSymMVOp() {};
@@ -492,11 +492,11 @@ namespace Anasazi {
     void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
 
   private:
-    Teuchos::RefCountPtr<const Epetra_MultiVector> Epetra_MV;
-    Teuchos::RefCountPtr<Epetra_Operator> Epetra_OP;
-    Teuchos::RefCountPtr<Epetra_MultiVector> Epetra_WMV;
-    Teuchos::RefCountPtr<const Epetra_Map> MV_localmap;
-    Teuchos::RefCountPtr<const Epetra_BlockMap> MV_blockmap;
+    Teuchos::RCP<const Epetra_MultiVector> Epetra_MV;
+    Teuchos::RCP<Epetra_Operator> Epetra_OP;
+    Teuchos::RCP<Epetra_MultiVector> Epetra_WMV;
+    Teuchos::RCP<const Epetra_Map> MV_localmap;
+    Teuchos::RCP<const Epetra_BlockMap> MV_blockmap;
   };
 
   
@@ -529,14 +529,14 @@ namespace Anasazi {
       
     \return Reference-counted pointer to the new Epetra_MultiVector.
     */
-    static Teuchos::RefCountPtr<Epetra_MultiVector> Clone( const Epetra_MultiVector& mv, const int numvecs )
+    static Teuchos::RCP<Epetra_MultiVector> Clone( const Epetra_MultiVector& mv, const int numvecs )
     { return Teuchos::rcp( new Epetra_MultiVector(mv.Map(), numvecs) ); }
 
     /*! \brief Creates a new Epetra_MultiVector and copies contents of \c mv into the new vector (deep copy).
       
       \return Reference-counted pointer to the new Epetra_MultiVector.
     */
-    static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv )
+    static Teuchos::RCP<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv )
     { return Teuchos::rcp( new Epetra_MultiVector( mv ) ); }
 
     /*! \brief Creates a new Epetra_MultiVector and copies the selected contents of \c mv into the new vector (deep copy).  
@@ -544,7 +544,7 @@ namespace Anasazi {
       The copied vectors from \c mv are indicated by the \c indeX.size() indices in \c index.      
       \return Reference-counted pointer to the new Epetra_MultiVector.
     */
-    static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv, const std::vector<int>& index )
+    static Teuchos::RCP<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(::Copy, mv, &tmp_index[0], index.size()) ); 
@@ -555,7 +555,7 @@ namespace Anasazi {
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new Epetra_MultiVector.
     */      
-    static Teuchos::RefCountPtr<Epetra_MultiVector> CloneView( Epetra_MultiVector& mv, const std::vector<int>& index )
+    static Teuchos::RCP<Epetra_MultiVector> CloneView( Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(::View, mv, &tmp_index[0], index.size()) ); 
@@ -566,7 +566,7 @@ namespace Anasazi {
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new const Epetra_MultiVector.
     */      
-    static Teuchos::RefCountPtr<const Epetra_MultiVector> CloneView( const Epetra_MultiVector& mv, const std::vector<int>& index )
+    static Teuchos::RCP<const Epetra_MultiVector> CloneView( const Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(::View, mv, &tmp_index[0], index.size()) ); 

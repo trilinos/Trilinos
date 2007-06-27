@@ -35,7 +35,7 @@
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Anasazi {
@@ -74,14 +74,14 @@ namespace Anasazi {
       
     \return Reference-counted pointer to the new multivector of type \c MV.
     */
-    static Teuchos::RefCountPtr<MV> Clone( const MV& mv, const int numvecs )
+    static Teuchos::RCP<MV> Clone( const MV& mv, const int numvecs )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
 
     /*! \brief Creates a new \c MV and copies contents of \c mv into the new vector (deep copy).
       
       \return Reference-counted pointer to the new multivector of type \c MV.
     */
-    static Teuchos::RefCountPtr<MV> CloneCopy( const MV& mv )
+    static Teuchos::RCP<MV> CloneCopy( const MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
 
     /*! \brief Creates a new \c MV and copies the selected contents of \c mv into the new vector (deep copy).  
@@ -89,7 +89,7 @@ namespace Anasazi {
       The copied vectors from \c mv are indicated by the \c index.size() indices in \c index.      
       \return Reference-counted pointer to the new multivector of type \c MV.
     */
-    static Teuchos::RefCountPtr<MV> CloneCopy( const MV& mv, const std::vector<int>& index )
+    static Teuchos::RCP<MV> CloneCopy( const MV& mv, const std::vector<int>& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
 
     /*! \brief Creates a new \c MV that shares the selected contents of \c mv (shallow copy).
@@ -97,7 +97,7 @@ namespace Anasazi {
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new multivector of type \c MV.
     */      
-    static Teuchos::RefCountPtr<MV> CloneView( MV& mv, const std::vector<int>& index )
+    static Teuchos::RCP<MV> CloneView( MV& mv, const std::vector<int>& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
 
     /*! \brief Creates a new const \c MV that shares the selected contents of \c mv (shallow copy).
@@ -105,7 +105,7 @@ namespace Anasazi {
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new const multivector of type \c MV.
     */      
-    static Teuchos::RefCountPtr<const MV> CloneView( const MV& mv, const std::vector<int>& index )
+    static Teuchos::RCP<const MV> CloneView( const MV& mv, const std::vector<int>& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
 
     //@}

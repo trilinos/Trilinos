@@ -7,7 +7,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 using namespace Teuchos;
 
@@ -562,7 +562,7 @@ private:
   std::vector<ScalarType> _d, _e;
   ScalarType _rho;
   int _ferror;
-  RefCountPtr< Anasazi::Operator<ScalarType> > _Aop;
+  RCP< Anasazi::Operator<ScalarType> > _Aop;
   
 public:
   
@@ -654,7 +654,7 @@ private:
   std::vector<ScalarType> _dl, _dd, _du, _du2;
   std::vector<int> _ipiv;
   int _ferror;
-  RefCountPtr< Anasazi::Operator<ScalarType> > _Mop;
+  RCP< Anasazi::Operator<ScalarType> > _Mop;
   
 public:
   
@@ -1133,7 +1133,7 @@ private:
   std::vector<ScalarType> _dl, _dd, _du, _du2;
   std::vector<int> _ipiv;
   int _ferror;
-  RefCountPtr< Anasazi::Operator<ScalarType> > _Aop;
+  RCP< Anasazi::Operator<ScalarType> > _Aop;
   
 public:
   
@@ -1236,7 +1236,7 @@ private:
   std::vector<ScalarType> _dl, _dd, _du, _du2;
   std::vector<int> _ipiv;
   int _ferror;
-  RefCountPtr< Anasazi::Operator<ScalarType> > _Mop;
+  RCP< Anasazi::Operator<ScalarType> > _Mop;
   
 public:
   
@@ -1338,7 +1338,7 @@ private:
   std::vector<ScalarType> _dl, _dd, _du, _du2;
   std::vector<int> _ipiv;
   int _ferror;
-  RefCountPtr< Anasazi::Operator<ScalarType> > _Aop;
+  RCP< Anasazi::Operator<ScalarType> > _Aop;
   
 public:
   
@@ -1440,7 +1440,7 @@ private:
   std::vector<ScalarType> _dl, _dd, _du, _du2;
   std::vector<int> _ipiv;
   int _ferror;
-  RefCountPtr< Anasazi::Operator<ScalarType> > _Aop, _Mop;
+  RCP< Anasazi::Operator<ScalarType> > _Aop, _Mop;
   
 public:
   
@@ -1508,7 +1508,7 @@ public:
     int nvecs = X.GetNumberVecs();
     
     // Perform  Y <--- OP*X = inv[A-SIGMA*M]*A*X using GTTRS
-    RefCountPtr< MyMultiVec<ScalarType> > temp1 = rcp( MyX->Clone(MyX->GetNumberVecs()) ),
+    RCP< MyMultiVec<ScalarType> > temp1 = rcp( MyX->Clone(MyX->GetNumberVecs()) ),
                                           temp2 = rcp( MyX->Clone(MyX->GetNumberVecs()) );
     int p;
     // set Y = A*X
@@ -1543,14 +1543,14 @@ class GenOp : public Anasazi::Operator<ScalarType> {
 private:
   Anasazi::Operator<ScalarType> _op1, _op2;
 public:
-  GenOp(RefCountPtr< Anasazi::Operator<ScalarType> > op1, 
-        RefCountPtr< Anasazi::Operator<ScalarType> > op2) : _op1(op1), _op2(op2) {}
+  GenOp(RCP< Anasazi::Operator<ScalarType> > op1, 
+        RCP< Anasazi::Operator<ScalarType> > op2) : _op1(op1), _op2(op2) {}
   void Apply(const Anasazi::MultiVec<ScalarType>& X, 
         Anasazi::MultiVec<ScalarType>& Y ) const
   {
     typedef Anasazi::MultiVec<ScalarType> MV;
     typedef Anasazi::MultiVecTraits<ScalarType,MV> MVT;
-    RefCountPtr<MV> W = MVT::Clone(X,MVT::GetNumberVecs(X));
+    RCP<MV> W = MVT::Clone(X,MVT::GetNumberVecs(X));
     _op1->Apply(X,*W);
     _op2->Apply(*W,Y);
   }
@@ -1562,10 +1562,10 @@ class ARPACK_Example {
   public:
     virtual ~ARPACK_Example() {};
     virtual void xformeval(std::vector<ScalarType> &) const = 0;
-    virtual RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const = 0;
-    virtual RefCountPtr< Anasazi::Operator<ScalarType> > getB()  const = 0;
-    virtual RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const = 0;
-    virtual RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const = 0;
+    virtual RCP< Anasazi::Operator<ScalarType> > getA()  const = 0;
+    virtual RCP< Anasazi::Operator<ScalarType> > getB()  const = 0;
+    virtual RCP< Anasazi::Operator<ScalarType> > getM()  const = 0;
+    virtual RCP< Anasazi::Operator<ScalarType> > getOp() const = 0;
     virtual bool        isHerm() const = 0;
     virtual std::string getSort() const = 0;
 };
@@ -1578,10 +1578,10 @@ class ARPACK_NDRV1 : public ARPACK_Example<ScalarType> {
     ARPACK_NDRV1(ScalarType rho = ScalarTraits<ScalarType>::zero()) : _rho(rho) {}
     
     void xformeval(std::vector<ScalarType> &vals) const {}
-    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPB<ScalarType>(_rho)); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPA<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPB<ScalarType>(_rho)); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPA<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPB<ScalarType>(_rho)); }
+    RCP< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPA<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPB<ScalarType>(_rho)); }
+    RCP< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPA<ScalarType>()); }
     bool isHerm() const {return false;}
     std::string getSort() const {return string("SM");}
 };
@@ -1603,10 +1603,10 @@ class ARPACK_NDRV2 : public ARPACK_Example<ScalarType> {
         *i = ONE / *i + _sigma;
       }
     }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPD<ScalarType>(_n,_rho,_sigma)); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPA<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPC<ScalarType>(_rho)); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPA<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPD<ScalarType>(_n,_rho,_sigma)); }
+    RCP< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPA<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPC<ScalarType>(_rho)); }
+    RCP< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPA<ScalarType>()); }
     bool isHerm() const {return false;}
     std::string getSort() const {return string("LM");}
 };
@@ -1621,10 +1621,10 @@ class ARPACK_NDRV3 : public ARPACK_Example<ScalarType> {
                  ScalarType rho = (ScalarType)(1.0e+1) ) : _n(n), _rho(rho) {}
     
     void xformeval(std::vector<ScalarType> &vals) const {}
-    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPG<ScalarType>(_n,_rho)); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPF<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPE<ScalarType>(_rho)); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPF<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPG<ScalarType>(_n,_rho)); }
+    RCP< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPF<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPE<ScalarType>(_rho)); }
+    RCP< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPF<ScalarType>()); }
     bool isHerm() const {return false;}
     std::string getSort() const {return string("LM");}
 };
@@ -1646,10 +1646,10 @@ class ARPACK_NDRV4 : public ARPACK_Example<ScalarType> {
         *i = ONE / *i + _sigma;
       }
     }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPH<ScalarType>(_n,_rho,_sigma)); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPF<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPE<ScalarType>(_rho)); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPF<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPH<ScalarType>(_n,_rho,_sigma)); }
+    RCP< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPF<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPE<ScalarType>(_rho)); }
+    RCP< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPF<ScalarType>()); }
     bool isHerm() const {return false;}
     std::string getSort() const {return string("LM");}
 };
@@ -1675,10 +1675,10 @@ class ARPACK_SDRV1 : public ARPACK_Example<ScalarType> {
   private:
   public:
     void xformeval(std::vector<ScalarType> &vals) const {}
-    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPM<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPA<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPM<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPA<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPM<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPA<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPM<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPA<ScalarType>()); }
     bool isHerm() const {return true;}
     std::string getSort() const {return string("SM");}
 };
@@ -1698,10 +1698,10 @@ class ARPACK_SDRV2 : public ARPACK_Example<ScalarType> {
         *i = ONE / *i + _sigma;
       }
     }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPO<ScalarType>(_n,_sigma)); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPA<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPN<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPA<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPO<ScalarType>(_n,_sigma)); }
+    RCP< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPA<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPN<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPA<ScalarType>()); }
     bool isHerm() const {return true;}
     std::string getSort() const {return string("LM");}
 };
@@ -1713,10 +1713,10 @@ class ARPACK_SDRV3 : public ARPACK_Example<ScalarType> {
   public:
     ARPACK_SDRV3(int n) : _n(n) {}
     void xformeval(std::vector<ScalarType> &vals) const {}
-    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPR<ScalarType>(_n)); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPQ<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPP<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPQ<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPR<ScalarType>(_n)); }
+    RCP< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPQ<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPP<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPQ<ScalarType>()); }
     bool isHerm() const {return true;}
     std::string getSort() const {return string("LM");}
 };
@@ -1736,10 +1736,10 @@ class ARPACK_SDRV4 : public ARPACK_Example<ScalarType> {
         *i = ONE / *i + _sigma;
       }
     }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPS<ScalarType>(_n,_sigma)); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPQ<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPP<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPQ<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPS<ScalarType>(_n,_sigma)); }
+    RCP< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPQ<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPP<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPQ<ScalarType>()); }
     bool isHerm() const {return true;}
     std::string getSort() const {return string("LM");}
 };
@@ -1759,10 +1759,10 @@ class ARPACK_SDRV5 : public ARPACK_Example<ScalarType> {
         *i = _sigma * (*i) / (*i - ONE);
       }
     }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPT<ScalarType>(_n,_sigma)); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPP<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPP<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPQ<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPT<ScalarType>(_n,_sigma)); }
+    RCP< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPP<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPP<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPQ<ScalarType>()); }
     bool isHerm() const {return true;}
     std::string getSort() const {return string("LM");}
 };
@@ -1782,10 +1782,10 @@ class ARPACK_SDRV6 : public ARPACK_Example<ScalarType> {
         *i = _sigma * (*i + ONE) / (*i - ONE);
       }
     }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPU<ScalarType>(_n,_sigma)); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPQ<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPP<ScalarType>()); }
-    RefCountPtr< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPQ<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getOp() const { return rcp(new OPU<ScalarType>(_n,_sigma)); }
+    RCP< Anasazi::Operator<ScalarType> > getB()  const { return rcp(new OPQ<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getA()  const { return rcp(new OPP<ScalarType>()); }
+    RCP< Anasazi::Operator<ScalarType> > getM()  const { return rcp(new OPQ<ScalarType>()); }
     bool isHerm() const {return true;}
     std::string getSort() const {return string("LM");}
 };
@@ -1793,8 +1793,8 @@ class ARPACK_SDRV6 : public ARPACK_Example<ScalarType> {
 
 
 template <class ScalarType>
-RefCountPtr< ARPACK_Example<ScalarType> > GetARPACKExample(const std::string &drivername, int dim) {
-  RefCountPtr< ARPACK_Example<ScalarType> > nullptr;
+RCP< ARPACK_Example<ScalarType> > GetARPACKExample(const std::string &drivername, int dim) {
+  RCP< ARPACK_Example<ScalarType> > nullptr;
 
   std::string dncopy(drivername);
   // if they sent the full driver name, remove the scalar type [sdcz]

@@ -109,28 +109,28 @@ int main(int argc, char *argv[])
   elements[0] = 100;
 
   // Create problem
-  RefCountPtr<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+  RCP<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
   //
   // Get the stiffness and mass matrices
-  RefCountPtr<Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  RefCountPtr<Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  RCP<Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+  RCP<Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   //
   // Create solver for mass matrix
   const int maxIterCG = 100;
   const double tolCG = 1e-7;
   
-  RefCountPtr<BlockPCGSolver> opStiffness = rcp( new BlockPCGSolver(Comm, M.get(), tolCG, maxIterCG, 0) );
+  RCP<BlockPCGSolver> opStiffness = rcp( new BlockPCGSolver(Comm, M.get(), tolCG, maxIterCG, 0) );
   opStiffness->setPreconditioner( 0 );
-  RefCountPtr<const Anasazi::EpetraGenOp> InverseOp = rcp( new Anasazi::EpetraGenOp( opStiffness, K ) );
+  RCP<const Anasazi::EpetraGenOp> InverseOp = rcp( new Anasazi::EpetraGenOp( opStiffness, K ) );
 
   // Create the initial vectors
   int blockSize = 3;
-  RefCountPtr<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
+  RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
 
   // Create eigenproblem
   const int nev = 5;
-  RefCountPtr<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
+  RCP<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
     rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(InverseOp,M,ivec) );
   //
   // Inform the eigenproblem that the operator InverseOp is Hermitian under an M inner-product
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
   // -->  Make sure the reference-counted pointer is of type Anasazi::SortManager<>
   // -->  The block Krylov-Schur solver manager uses Anasazi::BasicSort<> by default,
   //      so you can also pass in the parameter "Which", instead of a sort manager.
-  RefCountPtr<Anasazi::SortManager<ScalarType,MV,OP> > MySort =     
+  RCP<Anasazi::SortManager<ScalarType,MV,OP> > MySort =     
     rcp( new Anasazi::BasicSort<ScalarType,MV,OP>( which ) );
   //
   // Create parameter list to pass into the solver manager
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
   std::vector<Anasazi::Value<ScalarType> > evals = sol.Evals;
-  RefCountPtr<MV> evecs = sol.Evecs;
+  RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   if (numev > 0) {
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
     for (int i=0; i<numev; i++) {
       T(i,i) = evals[i].realpart;
     }
-    RefCountPtr<MV> Mvecs = MVT::Clone( *evecs, numev ),
+    RCP<MV> Mvecs = MVT::Clone( *evecs, numev ),
                     Kvecs = MVT::Clone( *evecs, numev );
     OPT::Apply( *K, *evecs, *Kvecs );
     OPT::Apply( *M, *evecs, *Mvecs );

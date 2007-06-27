@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
 
   // Create an Epetra_Matrix
   //
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]) );
+  Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]) );
 
   // Compute coefficients for discrete convection-diffution operator
   //
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
   A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 
   // Create a identity matrix for the temporary mass matrix
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> M = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, 1) );
+  Teuchos::RCP<Epetra_CrsMatrix> M = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, 1) );
   for (int i=0; i<NumMyElements; i++)
   {
     Values[0] = one;
@@ -248,12 +248,12 @@ int main(int argc, char *argv[]) {
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
   //
-  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blockSize) );
+  Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blockSize) );
   ivec->Random();
 
   // Create the eigenproblem.
   //
-  Teuchos::RefCountPtr<BasicEigenproblem<double, MV, OP> > MyProblem =
+  Teuchos::RCP<BasicEigenproblem<double, MV, OP> > MyProblem =
     Teuchos::rcp( new BasicEigenproblem<double, MV, OP>(A, ivec) );
 
   // Inform the eigenproblem that the operator A is symmetric
@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
   //
   Eigensolution<double,MV> sol = MyProblem->getSolution();
   std::vector<Value<double> > evals = sol.Evals;
-  Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
+  Teuchos::RCP<MV> evecs = sol.Evecs;
 
   // Compute residuals.
   //

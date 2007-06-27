@@ -37,7 +37,7 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 
 /*! \class Anasazi::Eigenproblem
@@ -72,22 +72,22 @@ namespace Anasazi {
      * \f$(A-\sigma I)^{-1}\f$ if you are looking for eigenvalues of \c A
      * around \f$\sigma\f$.  
      */
-    virtual void setOperator( const Teuchos::RefCountPtr<const OP> &Op ) = 0;
+    virtual void setOperator( const Teuchos::RCP<const OP> &Op ) = 0;
 
     //! \brief Set the operator \c A of the eigenvalue problem \f$Ax=\lambda Mx\f$.
-    virtual void setA( const Teuchos::RefCountPtr<const OP> &A ) = 0;
+    virtual void setA( const Teuchos::RCP<const OP> &A ) = 0;
 
     //! \brief Set the operator \c M of the eigenvalue problem \f$Ax=\lambda Mx\f$.
-    virtual void setM( const Teuchos::RefCountPtr<const OP> &M ) = 0;
+    virtual void setM( const Teuchos::RCP<const OP> &M ) = 0;
 
     //! \brief Set the preconditioner for this eigenvalue problem \f$Ax=\lambda Mx\f$.
-    virtual void setPrec( const Teuchos::RefCountPtr<const OP> &Prec ) = 0;
+    virtual void setPrec( const Teuchos::RCP<const OP> &Prec ) = 0;
 
     /*! \brief Set the initial guess.  
      *
      * \note This multivector should have the same number of columns as the blocksize.
      */
-    virtual void setInitVec( const Teuchos::RefCountPtr<MV> &InitVec ) = 0; 
+    virtual void setInitVec( const Teuchos::RCP<MV> &InitVec ) = 0; 
 
     /*! \brief Set auxiliary vectors. 
      *
@@ -95,7 +95,7 @@ namespace Anasazi {
      * will contain vectors that will be used by the eigensolver to
      * orthogonalize against.
      */
-    virtual void setAuxVecs( const Teuchos::RefCountPtr<const MV> &AuxVecs ) = 0;
+    virtual void setAuxVecs( const Teuchos::RCP<const MV> &AuxVecs ) = 0;
 
     //! The number of eigenvalues (NEV) that are requested.
     virtual void setNEV( int nev ) = 0;
@@ -136,22 +136,22 @@ namespace Anasazi {
     //@{ 
 
     //! Get a pointer to the operator for which eigenvalues will be computed.
-    virtual Teuchos::RefCountPtr<const OP> getOperator() const = 0;
+    virtual Teuchos::RCP<const OP> getOperator() const = 0;
 
     //! Get a pointer to the operator \c A of the eigenproblem \f$AX=\lambda Mx\f$.
-    virtual Teuchos::RefCountPtr<const OP> getA() const = 0;
+    virtual Teuchos::RCP<const OP> getA() const = 0;
 
     //! Get a pointer to the operator \c M of the eigenproblem \f$AX=\lambda Mx\f$.
-    virtual Teuchos::RefCountPtr<const OP> getM() const = 0;
+    virtual Teuchos::RCP<const OP> getM() const = 0;
 
     //! Get a pointer to the preconditioner.
-    virtual Teuchos::RefCountPtr<const OP> getPrec() const = 0;
+    virtual Teuchos::RCP<const OP> getPrec() const = 0;
 
     //! Get a pointer to the initial vector
-    virtual Teuchos::RefCountPtr<const MV> getInitVec() const = 0;
+    virtual Teuchos::RCP<const MV> getInitVec() const = 0;
 
     //! Get a pointer to the auxiliary vector
-    virtual Teuchos::RefCountPtr<const MV> getAuxVecs() const = 0;
+    virtual Teuchos::RCP<const MV> getAuxVecs() const = 0;
 
     //! Get the number of eigenvalues (NEV) that are required by this eigenproblem.
     virtual int getNEV() const = 0;

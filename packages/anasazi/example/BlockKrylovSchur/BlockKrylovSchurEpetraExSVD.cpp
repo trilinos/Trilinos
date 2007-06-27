@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
   */
 
   // Create an Epetra_Matrix
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, RowMap, n) );
+  Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, RowMap, n) );
 
   // Compute coefficients for discrete integral operator
   std::vector<double> Values(n);
@@ -158,12 +158,12 @@ int main(int argc, char *argv[]) {
 
   // Create an Anasazi::EpetraMultiVec for an initial vector to start the solver. 
   // Note:  This needs to have the same number of columns as the blocksize.
-  Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(ColMap, blockSize) );
+  Teuchos::RCP<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(ColMap, blockSize) );
   ivec->MvRandom();
 
   // Call the constructor for the (A^T*A) operator
-  Teuchos::RefCountPtr<Anasazi::EpetraSymOp>  Amat = Teuchos::rcp( new Anasazi::EpetraSymOp(A) );  
-  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
+  Teuchos::RCP<Anasazi::EpetraSymOp>  Amat = Teuchos::rcp( new Anasazi::EpetraSymOp(A) );  
+  Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(Amat, ivec) );
 
   // Inform the eigenproblem that the matrix A is symmetric

@@ -115,11 +115,11 @@ int main(int argc, char *argv[])
   elements[0] = 100;
 
   // Create problem
-  RefCountPtr<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+  RCP<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
   //
   // Get the stiffness and mass matrices
-  RefCountPtr<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  RefCountPtr<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  RCP<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+  RCP<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   const int FIRST_BS = 5;
   const int SECOND_BS = 5;
   const int THIRD_BS = 5;
@@ -129,9 +129,9 @@ int main(int argc, char *argv[])
   ////////////////////////////////////////////////////////////////////////////////
   //
   // Shared parameters
-  RefCountPtr<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem;
+  RCP<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem;
   Anasazi::Eigensolution<ScalarType,MV> sol1, sol21, sol22, sol23;
-  RefCountPtr<MV> cpoint, ev2 = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), FIRST_BS+SECOND_BS+THIRD_BS) );
+  RCP<MV> cpoint, ev2 = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), FIRST_BS+SECOND_BS+THIRD_BS) );
   Anasazi::ReturnType returnCode;
   //
   // Verbosity level
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
     //
     // Build the first eigenproblem
     {
-      RefCountPtr<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), FIRST_BS+SECOND_BS+THIRD_BS) );
+      RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), FIRST_BS+SECOND_BS+THIRD_BS) );
       ivec->Random();
       problem = rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(K,M,ivec) );
       problem->setHermitian(true);
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
     //
     // Build the second/1 eigenproblem
     {
-      RefCountPtr<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), FIRST_BS ) );
+      RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), FIRST_BS ) );
       ivec->Random();
       problem->setInitVec(ivec);
       problem->setNEV( FIRST_BS );
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
     //
     // Build the second/2 eigenproblem
     {
-      RefCountPtr<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), SECOND_BS ) );
+      RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), SECOND_BS ) );
       ivec->Random();
       problem->setAuxVecs(cpoint);
       problem->setInitVec(ivec);
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
     //
     // Build the second/3 eigenproblem
     {
-      RefCountPtr<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), THIRD_BS ) );
+      RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), THIRD_BS ) );
       ivec->Random();
       problem->setAuxVecs(cpoint);
       problem->setInitVec(ivec);
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
     }
     //
     // Second, check the eigenspaces
-    RefCountPtr<MV> Mev1;
+    RCP<MV> Mev1;
     if (M != null) {
       Mev1 = MVT::Clone(*sol1.Evecs,NEV);
       OPT::Apply(*M,*sol1.Evecs,*Mev1);

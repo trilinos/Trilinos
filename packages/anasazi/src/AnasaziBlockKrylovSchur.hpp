@@ -1668,7 +1668,7 @@ namespace Anasazi {
               //
               // Sort using both the real and imaginary parts of the Ritz values.
               sm_->sort( this, curDim_, tmp_rRitzValues, tmp_iRitzValues, &ritzOrder_ );
-              sortRitzValues<ScalarType>( tmp_rRitzValues, tmp_iRitzValues, &ritzValues_, &ritzOrder_, &ritzIndex_ );
+              sortRitzValues( tmp_rRitzValues, tmp_iRitzValues, &ritzValues_, &ritzOrder_, &ritzIndex_ );
             }
             //
             // Sort the ritzResiduals_ based on the ordering from the Sort Manager.

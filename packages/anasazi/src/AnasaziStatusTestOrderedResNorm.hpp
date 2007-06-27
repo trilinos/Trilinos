@@ -94,7 +94,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   //! Constructor
-  StatusTestOrderedResNorm(Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > sorter, typename Teuchos::ScalarTraits<ScalarType>::magnitudeType tol, int quorum = -1, ResType whichNorm = RES_ORTH, bool scaled = true);
+  StatusTestOrderedResNorm(Teuchos::RCP<SortManager<ScalarType,MV,OP> > sorter, typename Teuchos::ScalarTraits<ScalarType>::magnitudeType tol, int quorum = -1, ResType whichNorm = RES_ORTH, bool scaled = true);
 
   //! Destructor
   virtual ~StatusTestOrderedResNorm() {};
@@ -219,12 +219,12 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
     bool scaled_;
     ResType whichNorm_;
     std::vector<MagnitudeType> rvals_, ivals_;
-    Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > sorter_;
+    Teuchos::RCP<SortManager<ScalarType,MV,OP> > sorter_;
 };
 
 
 template <class ScalarType, class MV, class OP>
-StatusTestOrderedResNorm<ScalarType,MV,OP>::StatusTestOrderedResNorm(Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > sorter, typename Teuchos::ScalarTraits<ScalarType>::magnitudeType tol, int quorum, ResType whichNorm, bool scaled)
+StatusTestOrderedResNorm<ScalarType,MV,OP>::StatusTestOrderedResNorm(Teuchos::RCP<SortManager<ScalarType,MV,OP> > sorter, typename Teuchos::ScalarTraits<ScalarType>::magnitudeType tol, int quorum, ResType whichNorm, bool scaled)
   : state_(Undefined), quorum_(quorum), scaled_(scaled), whichNorm_(whichNorm), sorter_(sorter) 
 {
   TEST_FOR_EXCEPTION(sorter_ == Teuchos::null, StatusTestError, "StatusTestOrderedResNorm::constructor() was passed null pointer for SortManager.");

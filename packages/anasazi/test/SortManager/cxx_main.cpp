@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
 
   //
   // Create an output manager
-  RefCountPtr<OutputManager<ST> > printer 
+  RCP<OutputManager<ST> > printer 
     = rcp( new BasicOutputManager<ST>() );
   int verbosity = Errors;
   if (verbose || debug) {

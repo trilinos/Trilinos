@@ -99,7 +99,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
    *   - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
    */
-  BlockKrylovSchurSolMgr( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
+  BlockKrylovSchurSolMgr( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
 
   //! Destructor.
@@ -126,7 +126,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - time spent in solve() routine
    *   - time spent restarting
    */
-   Teuchos::Array<Teuchos::RefCountPtr<Teuchos::Time> > getTimers() const {
+   Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
      return tuple(_timerSolve, _timerRestarting);
    }
 
@@ -157,8 +157,8 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
   //@}
 
   private:
-  Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem;
-  Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sort;
+  Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > _problem;
+  Teuchos::RCP<SortManager<ScalarType,MV,OP> > _sort;
 
   string _whch, _ortho; 
   MagnitudeType _ortho_kappa;
@@ -172,7 +172,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   std::vector<Value<ScalarType> > _ritzValues;
 
-  Teuchos::RefCountPtr<Teuchos::Time> _timerSolve, _timerRestarting;
+  Teuchos::RCP<Teuchos::Time> _timerSolve, _timerRestarting;
 
 };
 
@@ -180,7 +180,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
 // Constructor
 template<class ScalarType, class MV, class OP>
 BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr( 
-        const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
+        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
         Teuchos::ParameterList &pl ) : 
   _problem(problem),
   _whch("LM"),
@@ -245,7 +245,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
 
   // get the sort manager
   if (pl.isParameter("Sort Manager")) {
-    _sort = Teuchos::getParameter<Teuchos::RefCountPtr<Anasazi::SortManager<ScalarType,MV,OP> > >(pl,"Sort Manager");
+    _sort = Teuchos::getParameter<Teuchos::RCP<Anasazi::SortManager<ScalarType,MV,OP> > >(pl,"Sort Manager");
   } else {
     // which values to solve for
     _whch = pl.get("Which",_whch);
@@ -298,23 +298,23 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Output manager
-  Teuchos::RefCountPtr<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(_verbosity) );
+  Teuchos::RCP<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(_verbosity) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Status tests
   //
   // convergence
-  Teuchos::RefCountPtr<StatusTestOrderedResNorm<ScalarType,MV,OP> > convtest 
+  Teuchos::RCP<StatusTestOrderedResNorm<ScalarType,MV,OP> > convtest 
     = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(_sort,_convtol,nev,StatusTestOrderedResNorm<ScalarType,MV,OP>::RITZRES_2NORM,_relconvtol) );
 
   // printing StatusTest
-  Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputtest
+  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputtest
     = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,convtest,1,Passed ) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
   //
-  Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> > ortho; 
+  Teuchos::RCP<OrthoManager<ScalarType,MV> > ortho; 
   if (_ortho=="SVQB") {
     ortho = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(_problem->getM()) );
   } else if (_ortho=="DGKS") {
@@ -338,12 +338,12 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockKrylovSchur solver
-  Teuchos::RefCountPtr<BlockKrylovSchur<ScalarType,MV,OP> > bks_solver 
+  Teuchos::RCP<BlockKrylovSchur<ScalarType,MV,OP> > bks_solver 
     = Teuchos::rcp( new BlockKrylovSchur<ScalarType,MV,OP>(_problem,_sort,printer,outputtest,ortho,plist) );
   // set any auxiliary vectors defined in the problem
-  Teuchos::RefCountPtr< const MV > probauxvecs = _problem->getAuxVecs();
+  Teuchos::RCP< const MV > probauxvecs = _problem->getAuxVecs();
   if (probauxvecs != Teuchos::null) {
-    bks_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs) );
+    bks_solver->setAuxVecs( Teuchos::tuple< Teuchos::RCP<const MV> >(probauxvecs) );
   }
 
   // Create workspace for the Krylov basis generated during a restart
@@ -351,7 +351,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   //  ---> (_nevBlocks*_blockSize+1) + _blockSize
   // If Hermitian, this becomes _nevBlocks*_blockSize + _blockSize
   // we only need this if there is the possibility of restarting, ex situ
-  Teuchos::RefCountPtr<MV> workMV;
+  Teuchos::RCP<MV> workMV;
   if (_maxRestarts > 0) {
     if (_inSituRestart==true) {
       // still need one work vector for applyHouse()
@@ -451,7 +451,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
           // Get a view of the current Krylov basis.
           std::vector<int> curind( curDim );
           for (int i=0; i<curDim; i++) { curind[i] = i; }
-          Teuchos::RefCountPtr<const MV> basistemp = MVT::CloneView( *(oldState.V), curind );
+          Teuchos::RCP<const MV> basistemp = MVT::CloneView( *(oldState.V), curind );
 
           // Compute the new Krylov basis: Vnew = V*Qnev
           // 
@@ -461,11 +461,11 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
           // we will also set a pointer for the location that the current factorization residual block (F),
           // currently located after the current basis in oldstate.V, will be moved to
           //
-          Teuchos::RefCountPtr<MV> newF;
+          Teuchos::RCP<MV> newF;
           if (_inSituRestart) {
             //
             // get non-const pointer to solver's basis so we can work in situ
-            Teuchos::RefCountPtr<MV> solverbasis = Teuchos::rcp_const_cast<MV>(oldState.V);
+            Teuchos::RCP<MV> solverbasis = Teuchos::rcp_const_cast<MV>(oldState.V);
             Teuchos::SerialDenseMatrix<int,ScalarType> copyQnev(Qnev);
             // 
             // perform Householder QR of copyQnev = Q [D;0], where D is unit diag. We will want D below.
@@ -495,7 +495,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
             // we are interested in only the first cur_nevBlocks vectors of the result
             curind.resize(curDim);
             for (int i=0; i<curDim; i++) curind[i] = i;
-            Teuchos::RefCountPtr<MV> oldV = MVT::CloneView(*solverbasis,curind);
+            Teuchos::RCP<MV> oldV = MVT::CloneView(*solverbasis,curind);
             msutils::applyHouse(cur_nevBlocks,*oldV,copyQnev,tau,workMV);
             // clear pointer
             oldV = Teuchos::null;
@@ -515,7 +515,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
             // get pointer to first part of work space
             curind.resize(cur_nevBlocks);
             for (int i=0; i<cur_nevBlocks; i++) { curind[i] = i; }
-            Teuchos::RefCountPtr<MV> tmp_newV = MVT::CloneView(*workMV, curind );
+            Teuchos::RCP<MV> tmp_newV = MVT::CloneView(*workMV, curind );
             // perform V*Qnev
             MVT::MvTimesMatAddMv( one, *basistemp, Qnev, zero, *tmp_newV );
             tmp_newV = Teuchos::null;
@@ -528,7 +528,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
           // Move the current factorization residual block (F) to the last block of newV.
           curind.resize(_blockSize);
           for (int i=0; i<_blockSize; i++) { curind[i] = curDim + i; }
-          Teuchos::RefCountPtr<const MV> oldF = MVT::CloneView( *(oldState.V), curind );
+          Teuchos::RCP<const MV> oldF = MVT::CloneView( *(oldState.V), curind );
           for (int i=0; i<_blockSize; i++) { curind[i] = i; }
           MVT::SetBlock( *oldF, curind, *newF );
           newF = Teuchos::null;
@@ -538,7 +538,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
           // Create storage for the new Schur matrix of the Krylov-Schur factorization
           // Copy over the current quasi-triangular factorization of oldState.H which is stored in oldState.S.
           Teuchos::SerialDenseMatrix<int,ScalarType> oldS(Teuchos::View, *(oldState.S), cur_nevBlocks+_blockSize, cur_nevBlocks);
-          Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > newH = 
+          Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > newH = 
             Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( oldS ) );
           //
           // Get a view of the B block of the current factorization

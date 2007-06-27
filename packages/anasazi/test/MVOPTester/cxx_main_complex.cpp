@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   typedef Anasazi::OperatorTraits<ST,MV,OP> OPT;
 
   // Create an output manager to handle the I/O from the solver
-  RefCountPtr<Anasazi::OutputManager<ST> > MyOM 
+  RCP<Anasazi::OutputManager<ST> > MyOM 
     = rcp( new Anasazi::BasicOutputManager<ST>() );
   if (verbose) {
     MyOM->setVerbosity( Anasazi::Warnings );
@@ -151,17 +151,17 @@ int main(int argc, char *argv[])
     cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
   }
   // Build the problem matrix
-  RefCountPtr< const MyBetterOperator<ST> > A1
+  RCP< const MyBetterOperator<ST> > A1
     = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,&cvals[0]) );
 
 
   // Create a MyMultiVec for cloning
   std::vector<ScalarTraits<ST>::magnitudeType> v(blockSize);
-  RefCountPtr< MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
+  RCP< MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
   MVT::MvNorm(*ivec,&v);
 
   // Create a MyOperator for testing against
-  RefCountPtr<MyOperator<ST> > A2 = rcp( new MyOperator<ST>(dim) );
+  RCP<MyOperator<ST> > A2 = rcp( new MyOperator<ST>(dim) );
 
   // test the multivector and its adapter
   ierr = Anasazi::TestMultiVecTraits<ST,MV>(MyOM,ivec);

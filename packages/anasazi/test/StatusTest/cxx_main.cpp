@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
   //
   // Create an output manager
-  RefCountPtr<OutputManager<ST> > printer 
+  RCP<OutputManager<ST> > printer 
     = rcp( new BasicOutputManager<ST>() );
   int verbosity = Errors;
   if (verbose || debug) {
@@ -115,11 +115,11 @@ int main(int argc, char *argv[])
   printer->setVerbosity( verbosity );
   // 
   // Create a sort manager
-  RefCountPtr< SortManager<ST,MV,OP> > sorter = 
+  RCP< SortManager<ST,MV,OP> > sorter = 
     rcp( new BasicSort<ST,MV,OP>("LM") );
   //
   // Create an orthogonalization manager
-  RefCountPtr< MatOrthoManager<ST,MV,OP> > ortho = 
+  RCP< MatOrthoManager<ST,MV,OP> > ortho = 
     rcp( new SVQBOrthoManager<ST,MV,OP>() );
 
   printer->stream(Warnings) << Anasazi_Version() << endl << endl;
@@ -128,11 +128,11 @@ int main(int argc, char *argv[])
   // Create an identity matrix
   std::vector<ST> diag(dim);
   for (int i=0; i<dim; i++) diag[i] = 1.0;
-  RefCountPtr<MyOperator<ST> > I = rcp( new MyOperator<ST>(diag) );
+  RCP<MyOperator<ST> > I = rcp( new MyOperator<ST>(diag) );
   //
   // Create the solution eigenvectors
   std::vector<SCT::magnitudeType> v(blockSize);
-  RefCountPtr< MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
+  RCP< MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
   for (int i=0; i<blockSize; i++) (*ivec)(i,i) = 1.0;
   //
   // Create the solution eigenvalues
@@ -141,11 +141,11 @@ int main(int argc, char *argv[])
   for (int i=0; i<blockSize; i++) T[i] = 1.0;
   //
   // Create the residual vectors
-  RefCountPtr< MyMultiVec<ST> > R = rcp( new MyMultiVec<ST>(dim,blockSize) );
+  RCP< MyMultiVec<ST> > R = rcp( new MyMultiVec<ST>(dim,blockSize) );
   MVT::MvScale(*R,0.0);
   // 
   // Create an eigenvalue problem
-  RefCountPtr< Eigenproblem<ST,MV,OP> > problem = 
+  RCP< Eigenproblem<ST,MV,OP> > problem = 
     rcp( new BasicEigenproblem<ST,MV,OP>(I,ivec) );
   problem->setHermitian(true);
   problem->setNEV(blockSize);
@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
     {
       stoutput.setChild(rcp(&stcombo,false));
       TEST_FOR_EXCEPTION( stoutput.getStatus()          != Undefined, get_out, "StatusTestOutput::setChild() should reset status to Undefined.");
-      stcombo.setTests( tuple<RefCountPtr<StatusTest<ST,MV,OP> > >(rcp(&stresnorm,false),rcp(&stmaxiter,false)) );
+      stcombo.setTests( tuple<RCP<StatusTest<ST,MV,OP> > >(rcp(&stresnorm,false),rcp(&stmaxiter,false)) );
       TEST_FOR_EXCEPTION( stcombo.getTests().size() != 2, get_out, "StatusTestCombo::getTests() should have two tests.");
       TEST_FOR_EXCEPTION( stcombo.getStatus()    != Undefined, get_out, "StatusTestCombo::setTests() should reset status to Undefined.");
       stcombo.setComboType( stcombo.AND );

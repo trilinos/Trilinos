@@ -111,7 +111,7 @@ namespace Anasazi {
       If the multivector is \f$m \times n\f$ and we apply \f$k\f$ Householder reflectors, the total cost of the method is
       \f$4mnk - 2m(k^2-k)\f$ flops. For \f$k=n\f$, this becomes \f$2mn^2\f$, the same as for a matrix-matrix multiplication by the accumulated Householder reflectors.
      */
-    static void applyHouse(int k, MV &V, const Teuchos::SerialDenseMatrix<int,ScalarType> &H, const std::vector<ScalarType> &tau, Teuchos::RefCountPtr<MV> workMV = Teuchos::null);
+    static void applyHouse(int k, MV &V, const Teuchos::SerialDenseMatrix<int,ScalarType> &H, const std::vector<ScalarType> &tau, Teuchos::RCP<MV> workMV = Teuchos::null);
 
     //@}
 
@@ -158,7 +158,7 @@ namespace Anasazi {
     //! Return the maximum coefficient of the matrix \f$M * X - MX\f$ scaled by the maximum coefficient of \c MX.
     /*! \note When \c M is not specified, the identity is used.
      */
-    static typename Teuchos::ScalarTraits<ScalarType>::magnitudeType errorEquality(const MV &X, const MV &MX, Teuchos::RefCountPtr<const OP> M = Teuchos::null);
+    static typename Teuchos::ScalarTraits<ScalarType>::magnitudeType errorEquality(const MV &X, const MV &MX, Teuchos::RCP<const OP> M = Teuchos::null);
     
     //@}
     
@@ -243,10 +243,10 @@ namespace Anasazi {
       //
       // Swap corresponding vectors
       index[0] = j;
-      Teuchos::RefCountPtr<MV> tmpQ = MVT::CloneCopy( Q, index );
-      Teuchos::RefCountPtr<MV> tmpQj = MVT::CloneView( Q, index );
+      Teuchos::RCP<MV> tmpQ = MVT::CloneCopy( Q, index );
+      Teuchos::RCP<MV> tmpQj = MVT::CloneView( Q, index );
       index[0] = i;
-      Teuchos::RefCountPtr<MV> tmpQi = MVT::CloneView( Q, index );
+      Teuchos::RCP<MV> tmpQi = MVT::CloneView( Q, index );
       MVT::MvAddMv( one, *tmpQi, zero, *tmpQi, *tmpQj );
       MVT::MvAddMv( one, *tmpQ, zero, *tmpQ, *tmpQi );
     }
@@ -284,7 +284,7 @@ namespace Anasazi {
 
   // apply householder reflectors to multivector
   template<class ScalarType, class MV, class OP>
-  void SolverUtils<ScalarType, MV, OP>::applyHouse(int k, MV &V, const Teuchos::SerialDenseMatrix<int,ScalarType> &H, const std::vector<ScalarType> &tau, Teuchos::RefCountPtr<MV> workMV) {
+  void SolverUtils<ScalarType, MV, OP>::applyHouse(int k, MV &V, const Teuchos::SerialDenseMatrix<int,ScalarType> &H, const std::vector<ScalarType> &tau, Teuchos::RCP<MV> workMV) {
 
     const int n = MVT::GetNumberVecs(V);
     const ScalarType ONE = SCT::one();
@@ -320,7 +320,7 @@ namespace Anasazi {
       // because of the structure of v_i+1, this transform does not affect the first i columns of V
       std::vector<int> activeind(n-i);
       for (int j=0; j<n-i; j++) activeind[j] = j+i;
-      Teuchos::RefCountPtr<MV> actV = MVT::CloneView(V,activeind);
+      Teuchos::RCP<MV> actV = MVT::CloneView(V,activeind);
 
       // note, below H_i, v_i and tau_i are mathematical objects which use 1-based indexing
       // while H, v and tau are data structures using 0-based indexing
@@ -423,8 +423,8 @@ namespace Anasazi {
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
 
-    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > KKcopy, MMcopy;
-    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > U;
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > KKcopy, MMcopy;
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > U;
 
     switch (esType) {
 
@@ -609,7 +609,7 @@ namespace Anasazi {
 
   template<class ScalarType, class MV, class OP>
   typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
-  SolverUtils<ScalarType, MV, OP>::errorEquality(const MV &X, const MV &MX, Teuchos::RefCountPtr<const OP> M)
+  SolverUtils<ScalarType, MV, OP>::errorEquality(const MV &X, const MV &MX, Teuchos::RCP<const OP> M)
   {
     // Return the maximum coefficient of the matrix M * X - MX
     // scaled by the maximum coefficient of MX.
@@ -635,7 +635,7 @@ namespace Anasazi {
     }
 
     std::vector<int> index( 1 );
-    Teuchos::RefCountPtr<MV> MtimesX; 
+    Teuchos::RCP<MV> MtimesX; 
     if (M != Teuchos::null) {
       MtimesX = MVT::Clone( X, xc );
       OPT::Apply( *M, X, *MtimesX );

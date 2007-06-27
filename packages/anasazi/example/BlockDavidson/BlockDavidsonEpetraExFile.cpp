@@ -96,8 +96,8 @@ int main(int argc, char *argv[]) {
   //
   // *****Read in matrix from file******
   //
-  Teuchos::RefCountPtr<Epetra_Map> Map;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> K, M;
+  Teuchos::RCP<Epetra_Map> Map;
+  Teuchos::RCP<Epetra_CrsMatrix> K, M;
   EpetraExt::readEpetraLinearSystem( k_filename, Comm, &K, &Map );
 
   if (haveM) {
@@ -140,10 +140,10 @@ int main(int argc, char *argv[]) {
   //
   // Create the eigenproblem to be solved.
   //
-  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(*Map, blockSize) );
+  Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(*Map, blockSize) );
   ivec->Random();
   
-  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem;
+  Teuchos::RCP<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem;
   if (haveM) {
     MyProblem = Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>( K, M, ivec ) );
   } 
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
   std::vector<Anasazi::Value<double> > evals = sol.Evals;
-  Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
+  Teuchos::RCP<MV> evecs = sol.Evecs;
   std::vector<int> index = sol.index;
   int numev = sol.numVecs;
 
@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
     std::vector<double> normR(numev);
     
     // Get storage
-    Teuchos::RefCountPtr<Epetra_MultiVector> Kevecs, Mevecs;
+    Teuchos::RCP<Epetra_MultiVector> Kevecs, Mevecs;
     Teuchos::SerialDenseMatrix<int,double> B(numev,numev);
     B.putScalar(0.0); 
     for (int i=0; i<numev; i++) {B(i,i) = evals[i].realpart;}

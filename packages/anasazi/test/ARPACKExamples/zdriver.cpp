@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 
 
   // Create default output manager 
-  RefCountPtr<Anasazi::OutputManager<ST> > MyOM = rcp( new Anasazi::BasicOutputManager<ST>() );
+  RCP<Anasazi::OutputManager<ST> > MyOM = rcp( new Anasazi::BasicOutputManager<ST>() );
   // Set verbosity level
   if (verbose) {
     MyOM->setVerbosity( Anasazi::Warning + Anasazi::FinalSummary );
@@ -142,12 +142,12 @@ int main(int argc, char *argv[])
   MyPL.set( "Max Restarts", maxIters );
 
   // Create initial vectors
-  RefCountPtr<MV> ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
+  RCP<MV> ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
   ivec->MvRandom();
 
   // Create matrices
-  RefCountPtr< ARPACK_Example<ST> > prob;
-  RefCountPtr<const OP> A, M, Op;
+  RCP< ARPACK_Example<ST> > prob;
+  RCP<const OP> A, M, Op;
 
   prob = GetARPACKExample<ST>(problem,dim);
   if (!prob.get()) {
@@ -215,11 +215,11 @@ int main(int argc, char *argv[])
   }
 
   // Create the sort manager
-  RefCountPtr<Anasazi::BasicSort<ST,MV,OP> > MySM = 
+  RCP<Anasazi::BasicSort<ST,MV,OP> > MySM = 
      rcp( new Anasazi::BasicSort<ST,MV,OP>(which) );
 
   // Create eigenproblem
-  RefCountPtr<Anasazi::BasicEigenproblem<ST,MV,OP> > MyProblem;
+  RCP<Anasazi::BasicEigenproblem<ST,MV,OP> > MyProblem;
   if (solver == "LOBPCG" || solver == "BD") {
     MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(A, M, ivec) );
   }
@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
   }
 
   // Create the eigensolver 
-  RefCountPtr< Anasazi::Eigensolver<ST,MV,OP> > MySolver;
+  RCP< Anasazi::Eigensolver<ST,MV,OP> > MySolver;
   if (solver == "LOBPCG") {
     MySolver = rcp( new Anasazi::LOBPCG<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
   }
@@ -278,8 +278,8 @@ int main(int argc, char *argv[])
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
-  RefCountPtr<std::vector<ST> > evals = MyProblem->GetEvals();
-  RefCountPtr<MV > evecs = MyProblem->GetEvecs();
+  RCP<std::vector<ST> > evals = MyProblem->GetEvals();
+  RCP<MV > evecs = MyProblem->GetEvecs();
   int nevecs = MVT::GetNumberVecs(*evecs);
 
   // Perform spectral transform on eigenvalues, if we used the 
@@ -295,8 +295,8 @@ int main(int argc, char *argv[])
   for (int i=0; i<nevecs; i++) {
     L(i,i) = (*evals)[i];
   }
-  RefCountPtr<MV > Avecs = MVT::Clone( *evecs, nevecs );
-  RefCountPtr<MV > Mvecs = MVT::Clone( *evecs, nevecs );
+  RCP<MV > Avecs = MVT::Clone( *evecs, nevecs );
+  RCP<MV > Mvecs = MVT::Clone( *evecs, nevecs );
 
   OPT::Apply( *A, *evecs, *Avecs );
   OPT::Apply( *M, *evecs, *Mvecs );

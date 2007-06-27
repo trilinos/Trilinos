@@ -116,7 +116,7 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - \c "Relative Locking Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding locking. Default: true
    *   - \c "Init" - a LOBPCGState<ScalarType,MV> struct used to initialize the LOBPCG eigensolver.
    */
-  LOBPCGSolMgr( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
+  LOBPCGSolMgr( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
 
   //! Destructor.
@@ -165,7 +165,7 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   //@}
 
   private:
-  Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > problem_;
+  Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > problem_;
 
   string whch_; 
 
@@ -179,14 +179,14 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   int verbosity_;
   int lockQuorum_;
   bool recover_;
-  Teuchos::RefCountPtr<LOBPCGState<ScalarType,MV> > state_;
+  Teuchos::RCP<LOBPCGState<ScalarType,MV> > state_;
 };
 
 
 // Constructor
 template<class ScalarType, class MV, class OP>
 LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr( 
-        const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
+        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
         Teuchos::ParameterList &pl ) : 
   problem_(problem),
   whch_("SR"),
@@ -271,7 +271,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
 
   // get (optionally) an initial state
   if (pl.isParameter("Init")) {
-    state_ = Teuchos::getParameter<Teuchos::RefCountPtr<Anasazi::LOBPCGState<ScalarType,MV> > >(pl,"Init");
+    state_ = Teuchos::getParameter<Teuchos::RCP<Anasazi::LOBPCGState<ScalarType,MV> > >(pl,"Init");
   }
 }
 
@@ -287,38 +287,38 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Sort manager
-  Teuchos::RefCountPtr<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(whch_) );
+  Teuchos::RCP<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(whch_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Output manager
-  Teuchos::RefCountPtr<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity_) );
+  Teuchos::RCP<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Status tests
   //
   // maximum number of iterations: optional test
-  Teuchos::RefCountPtr<StatusTestMaxIters<ScalarType,MV,OP> > maxtest;
+  Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxtest;
   if (maxIters_ > 0) {
     maxtest = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>(maxIters_) );
   }
   // convergence
-  Teuchos::RefCountPtr<StatusTestOrderedResNorm<ScalarType,MV,OP> > convtest 
+  Teuchos::RCP<StatusTestOrderedResNorm<ScalarType,MV,OP> > convtest 
       = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(sorter,convtol_,nev,StatusTestOrderedResNorm<ScalarType,MV,OP>::RES_ORTH,relconvtol_) );
   // locking
-  Teuchos::RefCountPtr<StatusTestResNorm<ScalarType,MV,OP> > locktest;
+  Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > locktest;
   if (useLocking_) {
     locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(locktol_,lockQuorum_,StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH,rellocktol_) );
   }
-  Teuchos::Array<Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > alltests;
+  Teuchos::Array<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > alltests;
   // for an OR test, the order doesn't matter
   alltests.push_back(convtest);
   if (maxtest != Teuchos::null) alltests.push_back(maxtest);
   if (locktest != Teuchos::null)   alltests.push_back(locktest);
   // combo: convergence || locking || max iters
-  Teuchos::RefCountPtr<StatusTestCombo<ScalarType,MV,OP> > combotest
+  Teuchos::RCP<StatusTestCombo<ScalarType,MV,OP> > combotest
     = Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP>( StatusTestCombo<ScalarType,MV,OP>::OR, alltests) );
   // printing StatusTest
-  Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputtest;
+  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputtest;
   if ( printer->isVerbosity(Debug) ) {
     outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combotest,1,Passed+Failed+Undefined ) );
   }
@@ -328,7 +328,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
-  Teuchos::RefCountPtr<SVQBOrthoManager<ScalarType,MV,OP> > ortho 
+  Teuchos::RCP<SVQBOrthoManager<ScalarType,MV,OP> > ortho 
     = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
 
   //////////////////////////////////////////////////////////////////////////////////////
@@ -342,12 +342,12 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // LOBPCG solver
-  Teuchos::RefCountPtr<LOBPCG<ScalarType,MV,OP> > lobpcg_solver 
+  Teuchos::RCP<LOBPCG<ScalarType,MV,OP> > lobpcg_solver 
     = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(problem_,sorter,printer,outputtest,ortho,plist) );
   // set any auxiliary vectors defined in the problem
-  Teuchos::RefCountPtr< const MV > probauxvecs = problem_->getAuxVecs();
+  Teuchos::RCP< const MV > probauxvecs = problem_->getAuxVecs();
   if (probauxvecs != Teuchos::null) {
-    lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs) );
+    lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RCP<const MV> >(probauxvecs) );
   }
 
   //////////////////////////////////////////////////////////////////////////////////////
@@ -355,7 +355,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   // 
   // lockvecs will contain eigenvectors that have been determined "locked" by the status test
   int numlocked = 0;
-  Teuchos::RefCountPtr<MV> lockvecs;
+  Teuchos::RCP<MV> lockvecs;
   if (useLocking_) {
     lockvecs = MVT::Clone(*problem_->getInitVec(),maxLocked_);
   }
@@ -368,7 +368,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   // for locking
   // workMV = [X P MX MP], with MX,MP needing storage only if hasM==true
   // total size: 2*blocksize or 4*blocksize
-  Teuchos::RefCountPtr<MV> workMV;
+  Teuchos::RCP<MV> workMV;
   if (fullOrtho_ == false && recover_ == true) {
     workMV = MVT::Clone(*problem_->getInitVec(),2*3*blockSize_);
   }
@@ -429,7 +429,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           printer->print(Debug,"\n");
         }
         std::vector<MagnitudeType> newvals(numnew);
-        Teuchos::RefCountPtr<const MV> newvecs;
+        Teuchos::RCP<const MV> newvecs;
         {
           // work in a local scope, to hide the variabes needed for extracting this info
           // get the vectors
@@ -454,12 +454,12 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         {
           std::vector<int> indlock(numlocked);
           for (int i=0; i<numlocked; i++) indlock[i] = i;
-          Teuchos::RefCountPtr<const MV> curlocked = MVT::CloneView(*lockvecs,indlock);
+          Teuchos::RCP<const MV> curlocked = MVT::CloneView(*lockvecs,indlock);
           if (probauxvecs != Teuchos::null) {
-            lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs,curlocked) );
+            lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RCP<const MV> >(probauxvecs,curlocked) );
           }
           else {
-            lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(curlocked) );
+            lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RCP<const MV> >(curlocked) );
           }
         }
         // add locked vals to convtest
@@ -467,7 +467,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         // fill out the empty state in the solver
         {
           LOBPCGState<ScalarType,MV> state = lobpcg_solver->getState();
-          Teuchos::RefCountPtr<MV> newstateX, newstateMX, newstateP, newstateMP;
+          Teuchos::RCP<MV> newstateX, newstateMX, newstateP, newstateMP;
           //
           // workMV will be partitioned as follows: workMV = [X P MX MP], 
           //
@@ -486,17 +486,17 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           //
           // get select part, set to random, apply M
           {
-            Teuchos::RefCountPtr<MV> newX = MVT::CloneView(*newstateX,indnew);
+            Teuchos::RCP<MV> newX = MVT::CloneView(*newstateX,indnew);
             MVT::MvRandom(*newX);
 
             if (newstateMX != Teuchos::null) {
-              Teuchos::RefCountPtr<MV> newMX = MVT::CloneView(*newstateMX,indnew);
+              Teuchos::RCP<MV> newMX = MVT::CloneView(*newstateMX,indnew);
               OPT::Apply(*problem_->getM(),*newX,*newMX);
             }
           }
 
-          Teuchos::Array<Teuchos::RefCountPtr<const MV> > curauxvecs = lobpcg_solver->getAuxVecs();
-          Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
+          Teuchos::Array<Teuchos::RCP<const MV> > curauxvecs = lobpcg_solver->getAuxVecs();
+          Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
           // ortho X against the aux vectors
           ortho->projectAndNormalize(*newstateX,newstateMX,dummy,Teuchos::null,curauxvecs);
 
@@ -559,7 +559,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       //
       // workMV = [X H P OpX OpH OpP], where OpX OpH OpP will be used for K and M
       LOBPCGState<ScalarType,MV> curstate = lobpcg_solver->getState();
-      Teuchos::RefCountPtr<MV> restart, Krestart, Mrestart;
+      Teuchos::RCP<MV> restart, Krestart, Mrestart;
       int localsize = lobpcg_solver->hasP() ? 3*blockSize_ : 2*blockSize_;
       bool hasM = problem_->getM() != Teuchos::null;
       {
@@ -616,13 +616,13 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         }
       }
       // project against auxvecs and locked vecs, and orthonormalize the basis
-      Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
-      Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q;
+      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
+      Teuchos::Array<Teuchos::RCP<const MV> > Q;
       {
         if (numlocked > 0) {
           std::vector<int> indlock(numlocked);
           for (int i=0; i<numlocked; i++) indlock[i] = i;
-          Teuchos::RefCountPtr<const MV> curlocked = MVT::CloneView(*lockvecs,indlock);
+          Teuchos::RCP<const MV> curlocked = MVT::CloneView(*lockvecs,indlock);
           Q.push_back(curlocked);
         }
         if (probauxvecs != Teuchos::null) {
@@ -688,7 +688,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       //
       // compute the ritz vectors: store them in Krestart
       LOBPCGState<ScalarType,MV> newstate;
-      Teuchos::RefCountPtr<MV> newX; 
+      Teuchos::RCP<MV> newX; 
       {
         std::vector<int> bsind(blockSize_);
         for (int i=0; i<blockSize_; i++) bsind[i] = i;
@@ -737,7 +737,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       int lclnum = insolver.size();
       std::vector<int> tosol(lclnum);
       for (int i=0; i<lclnum; i++) tosol[i] = i;
-      Teuchos::RefCountPtr<const MV> v = MVT::CloneView(*lobpcg_solver->getRitzVectors(),insolver);
+      Teuchos::RCP<const MV> v = MVT::CloneView(*lobpcg_solver->getRitzVectors(),insolver);
       MVT::SetBlock(*v,tosol,*sol.Evecs);
       // set vals
       std::vector<Value<ScalarType> > fromsolver = lobpcg_solver->getRitzValues();
@@ -753,7 +753,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       int lclnum = inlocked.size();
       std::vector<int> tosol(lclnum);
       for (int i=0; i<lclnum; i++) tosol[i] = solnum + i;
-      Teuchos::RefCountPtr<const MV> v = MVT::CloneView(*lockvecs,inlocked);
+      Teuchos::RCP<const MV> v = MVT::CloneView(*lockvecs,inlocked);
       MVT::SetBlock(*v,tosol,*sol.Evecs);
       // set vals
       for (unsigned int i=0; i<inlocked.size(); i++) {

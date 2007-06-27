@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 #endif
 
   // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<double>() );
+  Teuchos::RCP<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<double>() );
   MyOM->setVerbosity( Anasazi::Warnings );
   MyOM->stream(Anasazi::Errors) << Anasazi::Anasazi_Version() << endl << endl;
 
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
   }
 
   // Create an Epetra_Matrix
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A 
+  Teuchos::RCP<Epetra_CrsMatrix> A 
     = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, NumNz) );
   
   // Add  rows one-at-a-time
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note that this needs to have the same number of columns as the blocksize.
-  Teuchos::RefCountPtr<MV> ivec 
+  Teuchos::RCP<MV> ivec 
     = Teuchos::rcp( new MV(Map, blockSize) );
   ivec->Random();
 

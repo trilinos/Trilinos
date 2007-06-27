@@ -122,40 +122,40 @@ int main(int argc, char *argv[])
   elements[0] = 100;
 
   // Create problem
-  RefCountPtr<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+  RCP<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
   //
   // Get the stiffness and mass matrices
-  RefCountPtr<Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  RefCountPtr<Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  RCP<Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+  RCP<Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   //
   // Create the initial vectors
   int blockSize = 5;
   //
   // Get a pointer to the Epetra_Map
-  RefCountPtr<const Epetra_Map> Map =  rcp( &K->OperatorDomainMap(), false );
+  RCP<const Epetra_Map> Map =  rcp( &K->OperatorDomainMap(), false );
   //
   // create an epetra multivector
-  RefCountPtr<Epetra_MultiVector> ivec = 
+  RCP<Epetra_MultiVector> ivec = 
       rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
 
   // create a Thyra::VectorSpaceBase
-  RefCountPtr<const Thyra::VectorSpaceBase<double> > epetra_vs = 
+  RCP<const Thyra::VectorSpaceBase<double> > epetra_vs = 
     Thyra::create_VectorSpace(Map);
 
   // create a MultiVectorBase (from the Epetra_MultiVector)
-  RefCountPtr<Thyra::MultiVectorBase<double> > thyra_ivec = 
+  RCP<Thyra::MultiVectorBase<double> > thyra_ivec = 
     Thyra::create_MultiVector(ivec, epetra_vs);
 
   // Create Thyra LinearOpBase objects from the Epetra_Operator objects
-  RefCountPtr<Thyra::LinearOpBase<double> > thyra_K = 
+  RCP<Thyra::LinearOpBase<double> > thyra_K = 
     rcp( new Thyra::EpetraLinearOp(K) );
-  RefCountPtr<Thyra::LinearOpBase<double> > thyra_M = 
+  RCP<Thyra::LinearOpBase<double> > thyra_M = 
     rcp( new Thyra::EpetraLinearOp(M) );
 
   // Create eigenproblem
   const int nev = 5;
-  RefCountPtr<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
+  RCP<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
     rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(thyra_K,thyra_M,thyra_ivec) );
   //
   // Inform the eigenproblem that the operator K is symmetric
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
   }
 
   // Create default output manager 
-  RefCountPtr<Anasazi::OutputManager<double> > MyOM = rcp( new Anasazi::BasicOutputManager<double>( MyPID ) );
+  RCP<Anasazi::OutputManager<double> > MyOM = rcp( new Anasazi::BasicOutputManager<double>( MyPID ) );
 
 
   // Set verbosity level
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
   std::vector<Anasazi::Value<ScalarType> > evals = sol.Evals;
-  RefCountPtr<MV> evecs = sol.Evecs;
+  RCP<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   if (numev > 0) {
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
     for (int i=0; i<numev; i++) {
       T(i,i) = evals[i].realpart;
     }
-    RefCountPtr<MV> Mvecs = MVT::Clone( *evecs, numev ),
+    RCP<MV> Mvecs = MVT::Clone( *evecs, numev ),
                     Kvecs = MVT::Clone( *evecs, numev );
     OPT::Apply( *thyra_K, *evecs, *Kvecs );
     OPT::Apply( *thyra_M, *evecs, *Mvecs );
