@@ -42,8 +42,6 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
-
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
@@ -91,11 +89,8 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_RunValgrind_OBJECTS =
 RunValgrind_OBJECTS = $(am_RunValgrind_OBJECTS)
 RunValgrind_LDADD = $(LDADD)
-am_hello_test_OBJECTS = hello_test-cxx_main.$(OBJEXT)
+am_hello_test_OBJECTS = cxx_main.$(OBJEXT)
 hello_test_OBJECTS = $(am_hello_test_OBJECTS)
-am__DEPENDENCIES_1 =
-hello_test_LINK = $(CXXLD) $(hello_test_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -246,7 +241,7 @@ RunValgrind_SOURCES = $(srcdir)/RunValgrind \
 
 #np# Specify locations of include files within Trilinos, but outside np
 #np# Add packages that np is dependent on; remove epetra if np does not need it
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+AM_CPPFLAGS = $(NEW_PACKAGE_INCLUDES)
 
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
 #np# optional.
@@ -254,13 +249,9 @@ hello_test_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libnew_package.a 
 
-hello_test_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
-hello_test_LDADD = $(top_builddir)/src/libnew_package.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
-
+hello_test_LDADD = $(NEW_PACKAGE_LIBS)
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
@@ -310,7 +301,7 @@ clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 hello_test$(EXEEXT): $(hello_test_OBJECTS) $(hello_test_DEPENDENCIES) 
 	@rm -f hello_test$(EXEEXT)
-	$(hello_test_LINK) $(hello_test_OBJECTS) $(hello_test_LDADD) $(LIBS)
+	$(CXXLINK) $(hello_test_OBJECTS) $(hello_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -318,7 +309,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hello_test-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cxx_main.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -334,19 +325,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-hello_test-cxx_main.o: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hello_test_CXXFLAGS) $(CXXFLAGS) -MT hello_test-cxx_main.o -MD -MP -MF $(DEPDIR)/hello_test-cxx_main.Tpo -c -o hello_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/hello_test-cxx_main.Tpo $(DEPDIR)/hello_test-cxx_main.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='hello_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
+cxx_main.o: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT cxx_main.o -MD -MP -MF $(DEPDIR)/cxx_main.Tpo -c -o cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/cxx_main.Tpo $(DEPDIR)/cxx_main.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='cxx_main.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hello_test_CXXFLAGS) $(CXXFLAGS) -c -o hello_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
 
-hello_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hello_test_CXXFLAGS) $(CXXFLAGS) -MT hello_test-cxx_main.obj -MD -MP -MF $(DEPDIR)/hello_test-cxx_main.Tpo -c -o hello_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/hello_test-cxx_main.Tpo $(DEPDIR)/hello_test-cxx_main.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='hello_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
+cxx_main.obj: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT cxx_main.obj -MD -MP -MF $(DEPDIR)/cxx_main.Tpo -c -o cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/cxx_main.Tpo $(DEPDIR)/cxx_main.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='cxx_main.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hello_test_CXXFLAGS) $(CXXFLAGS) -c -o hello_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.
@@ -625,6 +616,10 @@ uninstall-am:
 	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
 	tags tags-recursive uninstall uninstall-am
 
+
+include $(top_builddir)/Makefile.export.new_package
+
+# The following line helps the test harness recover from build errors.
 
 all-local: generate-sample-output.pl
 	@echo ""

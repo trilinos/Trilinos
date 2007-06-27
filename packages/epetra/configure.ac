@@ -214,6 +214,15 @@ TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output],
 TAC_ARG_WITH_PACKAGE(zoltan, [Enable Zoltan interface support], ZOLTAN, no)
 
 # ------------------------------------------------------------------------
+# Checks for package dependencies
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  epetra, teuchos, EPETRA_TEUCHOS, ENABLE_EPETRA_TEUCHOS, yes,
+  [Built in support for some Teuchos utilities into Epetra.],
+  [Built in support for some Teuchos utilities into Epetra.  Can be overridden with --disable-epetra-teuchos.])
+
+# ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
 

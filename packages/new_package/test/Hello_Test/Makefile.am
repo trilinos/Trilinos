@@ -28,12 +28,14 @@
 #Builds a simple tester program.  Note that executables must end with a .exe
 #to allow certain proprietary operating systems to use them.
 
+include $(top_builddir)/Makefile.export.new_package
+
 bin_PROGRAMS = Hello_Test.exe
 
 Hello_Test_exe_SOURCES = $(srcdir)/Hello_Test.cpp
 
 Hello_Test_exe_DEPENDENCIES = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a
 
-Hello_Test_exe_LDADD = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a $(LIBS) $(BLAS_LIBS) $(FLIBS)
+Hello_Test_exe_LDADD = $(NEW_PACKAGE_LIBS)
 
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../new_package/src -I$(top_builddir)../new_package/src
+AM_CPPFLAGS = $(NEW_PACKAGE_INCLUDES)

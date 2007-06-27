@@ -26,16 +26,16 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.epetra
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = MapColoring_test
 
 MapColoring_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-MapColoring_test_DEPENDENCIES = $(EPETRA_LIBS)
+MapColoring_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-MapColoring_test_CXXFLAGS = $(EPETRA_INCLUDE)
+MapColoring_test_CXXFLAGS = $(EPETRA_INCLUDES)
 
-MapColoring_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
-
-
+MapColoring_test_LDADD = $(EPETRA_LIBS)

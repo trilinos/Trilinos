@@ -26,6 +26,8 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.epetra
+
 EXAMPLE = UG_ExMaps
 
 noinst_PROGRAMS = $(EXAMPLE)
@@ -34,7 +36,6 @@ UG_ExMaps_SOURCES = $(srcdir)/cxx_main.cpp
 
 UG_ExMaps_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-UG_ExMaps_CXXFLAGS = -I$(top_srcdir)/src
+UG_ExMaps_CXXFLAGS = $(EPETRA_INCLUDES)
 
-UG_ExMaps_LDADD = $(top_builddir)/src/libepetra.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+UG_ExMaps_LDADD = $(EPETRA_LIBS)

@@ -26,16 +26,16 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.epetra
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = Map_test
 
 Map_test_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/checkmap.cpp $(srcdir)/checkmap.h
 
-Map_test_DEPENDENCIES = $(EPETRA_LIBS)
+Map_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-Map_test_CXXFLAGS = $(EPETRA_INCLUDE)
-#Unsure why this test has to link with BLAS for IBM
-Map_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+Map_test_CXXFLAGS = $(EPETRA_INCLUDES)
 
-
+Map_test_LDADD = $(EPETRA_LIBS)

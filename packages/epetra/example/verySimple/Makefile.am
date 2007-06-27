@@ -26,6 +26,8 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.epetra
+
 EXAMPLE = example
 
 noinst_PROGRAMS = $(EXAMPLE)
@@ -34,7 +36,6 @@ example_SOURCES = $(srcdir)/cxx_main.cpp
 
 example_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-example_CXXFLAGS = -I$(top_srcdir)/src
+example_CXXFLAGS = $(EPETRA_INCLUDES)
 
-example_LDADD = $(top_builddir)/src/libepetra.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+example_LDADD = $(EPETRA_LIBS)

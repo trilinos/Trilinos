@@ -30,9 +30,23 @@
 #include "ExecuteTestProblems.h"
 #include "BuildTestProblems.h"
 #include "Epetra_Comm.h"
+
+#ifdef HAVE_EPETRA_TEUCHOS
+#  include "Teuchos_VerboseObject.hpp"
+#endif
+
   int MatrixTests(const Epetra_BlockMap & Map, const Epetra_LocalMap & LocalMap, 
-		      bool verbose)
+    bool verbose)
   {
+
+#ifdef HAVE_EPETRA_TEUCHOS
+  Teuchos::RCP<Teuchos::FancyOStream>
+    fancyOut = Teuchos::VerboseObjectBase::getDefaultOStream();
+  std::ostream &out = *fancyOut;
+#else
+  std::ostream &out = std::cout
+#endif
+
     int NumVectors = 1;
     const Epetra_Comm & Comm = Map.Comm();
     int ierr = 0, i;
@@ -107,12 +121,12 @@
 
 	if (verbose && ierr==0)
 	  {
-	    cout << "XXXXX Replicated Local Vector GEMM tests";
+	    out << "XXXXX Replicated Local Vector GEMM tests";
 	    if (strided)
-	    cout << " (Strided Multivectors)" << endl;
+	    out << " (Strided Multivectors)" << endl;
 	    else
-	    cout << " (Non-Strided Multivectors)" << endl;
-	    cout << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
+	    out << " (Non-Strided Multivectors)" << endl;
+	    out << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
 		 <<", transb = " << transb;
 	  }
 	if (ierr==0 && BadResidual(verbose,residual)) return(-1);
@@ -154,8 +168,8 @@
 
     if (verbose && ierr==0)
       {
-	cout << "XXXXX Generalized 2D dot product via GEMM call     " << endl;
-	cout << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
+	out << "XXXXX Generalized 2D dot product via GEMM call     " << endl;
+	out << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
 	     <<", transb = " << transb;
       }
     if (BadResidual(verbose,residual)) return(-1);
@@ -188,8 +202,8 @@
 	
 	if (verbose)
 	  {
-	    cout << "XXXXX Generalized 2D vector update via GEMM call     " << endl;
-	    cout << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
+	    out << "XXXXX Generalized 2D vector update via GEMM call     " << endl;
+	    out << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
 		 <<", transb = " << transb;
 	  }
 	if (BadResidual(verbose,residual)) return(-1);
@@ -206,6 +220,14 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   int NumVectors = 1;
   int ierr = 0;
   double *residual = new double[NumVectors];
+
+#ifdef HAVE_EPETRA_TEUCHOS
+  Teuchos::RCP<Teuchos::FancyOStream>
+    fancyOut = Teuchos::VerboseObjectBase::getDefaultOStream();
+  std::ostream &out = *fancyOut;
+#else
+  std::ostream &out = std::cout
+#endif
   
   Epetra_BLAS BLAS;
   /* get number of processors and the name of this processor */
@@ -230,7 +252,9 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   double *minval_A = new double[NumVectors];
   double *maxval_A = new double[NumVectors];
   double *meanval_A = new double[NumVectors];
-  
+
+  A.SetTracebackMode(1);
+ 
   // Generate data 
 
   
@@ -245,28 +269,28 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   // Test range checking for operator[](int)
 #ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
   try {
-  if (verbose) cout << "XXXXX Testing operator[A.MyLength()] bounds check     ";
+    if (verbose) out << "XXXXX Testing operator[A.MyLength()] bounds check     ";
     A[A.MyLength()]; // Should throw!
     // If we get here the test failed!
     EPETRA_TEST_ERR( 1, ierr );
   }
   catch ( const int& err_code ) {
-  if (verbose) cout << "\t Checked OK" << endl;
+    if (verbose) out << "\t Checked OK" << endl;
     EPETRA_TEST_ERR( ( err_code == -99 ? 0 : 1 ), ierr );
   }
   try {
-  if (verbose) cout << "XXXXX Testing operator[-1] bounds check     ";
+    if (verbose) out << "XXXXX Testing operator[-1] bounds check     ";
     A[-1]; // Should throw!
     // If we get here the test failed!
     EPETRA_TEST_ERR( 1, ierr );
   }
   catch ( const int& err_code ) {
-  if (verbose) cout << "\t Checked OK" << endl;
+    if (verbose) out << "\t Checked OK" << endl;
     EPETRA_TEST_ERR( ( err_code == -99 ? 0 : 1 ), ierr );
   }
 #endif
 
-  if (verbose) cout << "XXXXX Testing alpha * A     ";
+  if (verbose) out << "XXXXX Testing alpha * A     ";
   // Test alpha*A
   Epetra_Vector alphaA(A); // Copy of A
   EPETRA_TEST_ERR(alphaA.Scale(alpha),err);
@@ -279,7 +303,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   }
 
   err = 0;
-  if (verbose) cout << "XXXXX Testing C = alpha * A + B      ";
+  if (verbose) out << "XXXXX Testing C = alpha * A + B      ";
   // Test alpha*A + B
   Epetra_Vector alphaAplusB(A); // Copy of A
   EPETRA_TEST_ERR(alphaAplusB.Update(1.0, B, alpha, A, 0.0),err);
@@ -292,7 +316,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   }
 
   err = 0;
-  if (verbose) cout << "XXXXX Testing C += B      ";
+  if (verbose) out << "XXXXX Testing C += B      ";
   // Test + B
   Epetra_Vector plusB(C); // Copy of C
   EPETRA_TEST_ERR(plusB.Update(1.0, B, 1.0),err);
@@ -305,7 +329,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   }
 
   err = 0;
-  if (verbose) cout << "XXXXX Testing A.dotProd(B)     ";
+  if (verbose) out << "XXXXX Testing A.dotProd(B)     ";
   // Test A.dotvec(B)
   double *dotvec = residual;
   EPETRA_TEST_ERR(A.Dot(B,dotvec),err);
@@ -317,7 +341,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   }
   
   err = 0;
-  if (verbose) cout << "XXXXX Testing norm1_A      ";
+  if (verbose) out << "XXXXX Testing norm1_A      ";
   // Test A.norm1()
   double *norm1 = residual;
   EPETRA_TEST_ERR(A.Norm1(norm1),err);
@@ -329,7 +353,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   }
 	  
   err = 0;
-  if (verbose) cout << "XXXXX Testing norm2_sqrtA     ";
+  if (verbose) out << "XXXXX Testing norm2_sqrtA     ";
   // Test sqrtA.norm2()
   double *norm2 = residual;
   EPETRA_TEST_ERR(sqrtA.Norm2(norm2),err);
@@ -341,7 +365,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   }
 	
   err = 0;
-  if (verbose) cout << "XXXXX Testing norminf_A     ";
+  if (verbose) out << "XXXXX Testing norminf_A     ";
   // Test A.norminf()
   double *norminf = residual;
   EPETRA_TEST_ERR(A.NormInf(norminf),ierr);
@@ -353,7 +377,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   }
 	
   err = 0;
-  if (verbose) cout << "XXXXX Testing normw_A     ";
+  if (verbose) out << "XXXXX Testing normw_A     ";
   // Test A.NormWeighted()
   double *normw = residual;
   EPETRA_TEST_ERR(A.NormWeighted(Weights, normw),err);
@@ -365,7 +389,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   }
 	
   err = 0;
-  if (verbose) cout << "XXXXX Testing minval_A     ";
+  if (verbose) out << "XXXXX Testing minval_A     ";
   // Test A.MinValue()
   double *minval = residual;
   EPETRA_TEST_ERR(A.MinValue(minval),err);
@@ -377,7 +401,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   }
 	
   err = 0;
-  if (verbose) cout << "XXXXX Testing maxval_A     ";
+  if (verbose) out << "XXXXX Testing maxval_A     ";
   // Test A.MaxValue()
   double *maxval = residual;
   EPETRA_TEST_ERR(A.MaxValue(maxval),err);
@@ -389,7 +413,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   }
 
   err = 0;
-  if (verbose) cout << "XXXXX Testing meanval_A     ";
+  if (verbose) out << "XXXXX Testing meanval_A     ";
   // Test A.MeanValue()
   double *meanval = residual;
   EPETRA_TEST_ERR(A.MeanValue(meanval),err);
@@ -401,7 +425,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
   }
 	
   err = 0;
-  if (verbose) cout << "XXXXX Testing abs_A     ";
+  if (verbose) out << "XXXXX Testing abs_A     ";
   // Test A.Abs()
   Epetra_Vector Abs_A = A;
   EPETRA_TEST_ERR(Abs_A.Abs(A),err);
@@ -430,14 +454,23 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
 
 int BadResidual(bool verbose, double * Residual)
 {
+
+#ifdef HAVE_EPETRA_TEUCHOS
+  Teuchos::RCP<Teuchos::FancyOStream>
+    fancyOut = Teuchos::VerboseObjectBase::getDefaultOStream();
+  std::ostream &out = *fancyOut;
+#else
+  std::ostream &out = std::cout
+#endif
+
   double threshold = 5.0E-6;
   int ierr = 0;
     if (Residual[0]>threshold) {
       ierr = 1;// Output will be more useful after returning from method
-      if (verbose) cout << endl << "     Residual = " << Residual[0];
+      if (verbose) out << endl << "     Residual = " << Residual[0];
     }
   if (verbose)
-    if (ierr==0) cout << "\t Checked OK" << endl;
+    if (ierr==0) out << "\t Checked OK" << endl;
   
   return(ierr);
 }

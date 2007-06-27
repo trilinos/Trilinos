@@ -26,6 +26,8 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.new_package
+
 # The following line helps the test harness recover from build errors.
 
 all-local: generate-sample-output.pl
@@ -49,7 +51,7 @@ RunValgrind_SOURCES = $(srcdir)/RunValgrind \
 #np# Specify locations of include files within Trilinos, but outside np
 #np# Add packages that np is dependent on; remove epetra if np does not need it
 
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+AM_CPPFLAGS = $(NEW_PACKAGE_INCLUDES)
 
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
 #np# optional.
@@ -57,12 +59,8 @@ hello_test_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libnew_package.a 
 
-hello_test_CXXFLAGS = -I$(top_srcdir)/src
-
 #np# List libraries that np is dependent on.
-hello_test_LDADD = $(top_builddir)/src/libnew_package.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+hello_test_LDADD = $(NEW_PACKAGE_LIBS)
 
 #
 #  This is a crude but effective way to move files from the source tree to the build tree

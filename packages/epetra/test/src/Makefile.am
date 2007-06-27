@@ -43,7 +43,7 @@ CORE = \
 EXTRA_DIST = \
 	$(srcdir)/Epetra_test_functions.h \
 	$(srcdir)/Epetra_matrix_data.h
-	
+
 DEFAULT_INCLUDES = \
 	-I$(top_srcdir)/test/src \
 	-I$(top_builddir)/src \
@@ -54,7 +54,6 @@ DEFAULT_INCLUDES = \
 # ------------------------------------------------------------------------
 
 EPETRA_TEST_LIB = libepetra_test.a
-
 
 libepetra_test_a_SOURCES = \
 	$(CORE)

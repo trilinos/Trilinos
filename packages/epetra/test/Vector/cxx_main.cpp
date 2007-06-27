@@ -31,16 +31,22 @@
 #include "Epetra_Time.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Vector.h"
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
-#include <mpi.h>
-#else
-#include "Epetra_SerialComm.h"
-#endif
 #include "BuildTestProblems.h"
 #include "ExecuteTestProblems.h"
 #include "../epetra_test_err.h"
 #include "Epetra_Version.h"
+
+#ifdef EPETRA_MPI
+#  include "Epetra_MpiComm.h"
+#  include <mpi.h>
+#else
+#  include "Epetra_SerialComm.h"
+#endif
+
+#ifdef HAVE_EPETRA_TEUCHOS
+#  include "Teuchos_VerboseObject.hpp"
+#endif
+
 
 int main(int argc, char *argv[]) {
 
@@ -63,6 +69,18 @@ int main(int argc, char *argv[]) {
 
 #endif
 
+#ifdef HAVE_EPETRA_TEUCHOS
+  Teuchos::RCP<Teuchos::FancyOStream>
+    fancyOut = Teuchos::VerboseObjectBase::getDefaultOStream();
+  if (Comm.NumProc() > 1 ) {
+    fancyOut->setShowProcRank(true);
+    fancyOut->setOutputToRootOnly(-1);
+  }
+  std::ostream &out = *fancyOut;
+#else
+  std::ostream &out = std::cout
+#endif
+
   Comm.SetTracebackMode(0); // This should shut down any error tracing
   bool verbose = false;
 
@@ -70,7 +88,7 @@ int main(int argc, char *argv[]) {
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
   //  char tmp;
-  //  if (rank==0) cout << "Press any key to continue..."<< endl;
+  //  if (rank==0) out << "Press any key to continue..."<< endl;
   //  if (rank==0) cin >> tmp;
   //  Comm.Barrier();
 
@@ -79,9 +97,9 @@ int main(int argc, char *argv[]) {
   int NumProc = Comm.NumProc(); 
 
   if (verbose && MyPID==0)
-    cout << Epetra_Version() << endl << endl;
+    out << Epetra_Version() << endl << endl;
 
-  if (verbose) cout << Comm <<endl;
+  if (verbose) out << Comm <<endl;
 
   bool verbose1 = verbose;
 
@@ -98,10 +116,10 @@ int main(int argc, char *argv[]) {
   // Test LocalMap constructor
   // and Petra-defined uniform linear distribution constructor
 
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_LocalMap(NumMyElements1, IndexBase, Comm)" << endl;
-  if (verbose) cout << "     and Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
+  if (verbose) out << "\n*********************************************************" << endl;
+  if (verbose) out << "Checking Epetra_LocalMap(NumMyElements1, IndexBase, Comm)" << endl;
+  if (verbose) out << "     and Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm)" << endl;
+  if (verbose) out << "*********************************************************" << endl;
 
   Epetra_LocalMap *LocalMap = new Epetra_LocalMap(NumMyElements1, IndexBase,
                               Comm);
@@ -114,9 +132,9 @@ int main(int argc, char *argv[]) {
 
   // Test User-defined linear distribution constructor
 
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
+  if (verbose) out << "\n*********************************************************" << endl;
+  if (verbose) out << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm)" << endl;
+  if (verbose) out << "*********************************************************" << endl;
 
   BlockMap = new Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm);
 
@@ -134,9 +152,9 @@ int main(int argc, char *argv[]) {
   if (Comm.MyPID()>2) MaxMyGID+=3;
   for (i = 0; i<NumMyElements; i++) MyGlobalElements[i] = MaxMyGID-i;
 
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSize, IndexBase, Comm)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
+  if (verbose) out << "\n*********************************************************" << endl;
+  if (verbose) out << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSize, IndexBase, Comm)" << endl;
+  if (verbose) out << "*********************************************************" << endl;
 
   BlockMap = new Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements, ElementSize,
 		      IndexBase, Comm);
@@ -166,9 +184,9 @@ int main(int argc, char *argv[]) {
 	NumGlobalEquations -= (Comm.NumProc()-3)*((NumMyElements-1)%6+2);
     }
 
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSizeList, IndexBase, Comm)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
+  if (verbose) out << "\n*********************************************************" << endl;
+  if (verbose) out << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSizeList, IndexBase, Comm)" << endl;
+  if (verbose) out << "*********************************************************" << endl;
 
   BlockMap = new Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements, ElementSizeList,
 		      IndexBase, Comm);
@@ -178,9 +196,9 @@ int main(int argc, char *argv[]) {
 
   // Test Copy constructor
 
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_BlockMap(*BlockMap)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
+  if (verbose) out << "\n*********************************************************" << endl;
+  if (verbose) out << "Checking Epetra_BlockMap(*BlockMap)" << endl;
+  if (verbose) out << "*********************************************************" << endl;
 
   Epetra_BlockMap * BlockMap1 = new Epetra_BlockMap(*BlockMap);
 
@@ -196,9 +214,9 @@ int main(int argc, char *argv[]) {
 
   // Test Petra-defined uniform linear distribution constructor
 
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, IndexBase, Comm)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
+  if (verbose) out << "\n*********************************************************" << endl;
+  if (verbose) out << "Checking Epetra_Map(NumGlobalElements, IndexBase, Comm)" << endl;
+  if (verbose) out << "*********************************************************" << endl;
 
   Epetra_Map * Map = new Epetra_Map(NumGlobalElements, IndexBase, Comm);
   EPETRA_TEST_ERR(VectorTests(*Map, verbose),ierr);
@@ -209,9 +227,9 @@ int main(int argc, char *argv[]) {
 
   // Test User-defined linear distribution constructor
 
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
+  if (verbose) out << "\n*********************************************************" << endl;
+  if (verbose) out << "Checking Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm)" << endl;
+  if (verbose) out << "*********************************************************" << endl;
 
   Map = new Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm);
 
@@ -229,9 +247,9 @@ int main(int argc, char *argv[]) {
   if (Comm.MyPID()>2) MaxMyGID+=3;
   for (i = 0; i<NumMyElements; i++) MyGlobalElements[i] = MaxMyGID-i;
 
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,  IndexBase, Comm)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
+  if (verbose) out << "\n*********************************************************" << endl;
+  if (verbose) out << "Checking Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,  IndexBase, Comm)" << endl;
+  if (verbose) out << "*********************************************************" << endl;
 
   Map = new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements, 
 		      IndexBase, Comm);
@@ -241,9 +259,9 @@ int main(int argc, char *argv[]) {
 
   // Test Copy constructor
 
-  if (verbose) cout << "\n*********************************************************" << endl;
-  if (verbose) cout << "Checking Epetra_Map(*Map)" << endl;
-  if (verbose) cout << "*********************************************************" << endl;
+  if (verbose) out << "\n*********************************************************" << endl;
+  if (verbose) out << "Checking Epetra_Map(*Map)" << endl;
+  if (verbose) out << "*********************************************************" << endl;
  
   Epetra_Map Map1(*Map);
 
@@ -269,30 +287,30 @@ int main(int argc, char *argv[]) {
       // Test Epetra_Vector label
       const char* VecLabel = A.Label();
       const char* VecLabel1 = "Epetra::Vector";
-      if (verbose) cout << endl << endl <<"This should say " << VecLabel1 << ": " << VecLabel << endl << endl << endl;
+      if (verbose) out << endl << endl <<"This should say " << VecLabel1 << ": " << VecLabel << endl << endl << endl;
       EPETRA_TEST_ERR(strcmp(VecLabel1,VecLabel),ierr);
-      if (verbose) cout << "Testing Assignment operator" << endl;
+      if (verbose) out << "Testing Assignment operator" << endl;
 
       double tmp1 = 1.00001* (double) (MyPID+1);
       double tmp2 = tmp1;
       A[1] = tmp1;
       tmp2 = A[1];
-      cout << "On PE "<< MyPID << "  A[1] should equal = " << tmp1;
-      if (tmp1==tmp2) cout << " and it does!" << endl;
-      else cout << " but it equals " << tmp2;
+      out << "On PE "<< MyPID << "  A[1] should equal = " << tmp1;
+      if (tmp1==tmp2) out << " and it does!" << endl;
+      else out << " but it equals " << tmp2;
  
       Comm.Barrier();
 	  
-      if (verbose) cout << endl << endl << "Testing MFLOPs" << endl;
+      if (verbose) out << endl << endl << "Testing MFLOPs" << endl;
       Epetra_Flops counter;
       C.SetFlopCounter(counter);
       Epetra_Time mytimer(Comm);
       C.Multiply('T', 'N', 0.5, A, B, 0.0);
       double Multiply_time = mytimer.ElapsedTime();
       double Multiply_flops = C.Flops();
-      if (verbose) cout << "\n\nTotal FLOPs = " << Multiply_flops << endl;
-      if (verbose) cout << "Total Time  = " << Multiply_time << endl;
-      if (verbose) cout << "MFLOPs      = " << Multiply_flops/Multiply_time/1000000.0 << endl;
+      if (verbose) out << "\n\nTotal FLOPs = " << Multiply_flops << endl;
+      if (verbose) out << "Total Time  = " << Multiply_time << endl;
+      if (verbose) out << "MFLOPs      = " << Multiply_flops/Multiply_time/1000000.0 << endl;
 
       Comm.Barrier(); 
 	  
@@ -305,11 +323,11 @@ int main(int argc, char *argv[]) {
 	Dp[i] = i;
       Epetra_Vector D(View, Map4,Dp);
 	  
-      if (verbose) cout << "\n\nTesting ostream operator:  Multivector  should be 100-by-2 and print i,j indices" 
+      if (verbose) out << "\n\nTesting ostream operator:  Multivector  should be 100-by-2 and print i,j indices" 
 	   << endl << endl;
-      cout << D << endl;
+      out << D << endl;
 
-      if (verbose) cout << "Traceback Mode value = " << D.GetTracebackMode() << endl;
+      if (verbose) out << "Traceback Mode value = " << D.GetTracebackMode() << endl;
       delete [] Dp;
     }
 
@@ -318,5 +336,6 @@ int main(int argc, char *argv[]) {
 #endif
 
   return ierr;
+
 }
 

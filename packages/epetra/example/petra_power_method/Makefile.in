@@ -69,6 +69,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
@@ -92,7 +93,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_power_method_example_OBJECTS =  \
 	power_method_example-cxx_main.$(OBJEXT)
 power_method_example_OBJECTS = $(am_power_method_example_OBJECTS)
-am__DEPENDENCIES_1 =
 power_method_example_LINK = $(CXXLD) $(power_method_example_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
@@ -230,10 +230,8 @@ top_srcdir = @top_srcdir@
 EXAMPLE = power_method_example
 power_method_example_SOURCES = $(srcdir)/cxx_main.cpp
 power_method_example_DEPENDENCIES = $(top_builddir)/src/libepetra.a
-power_method_example_CXXFLAGS = -I$(top_srcdir)/src
-power_method_example_LDADD = $(top_builddir)/src/libepetra.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
-
+power_method_example_CXXFLAGS = $(EPETRA_INCLUDES)
+power_method_example_LDADD = $(EPETRA_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -484,6 +482,8 @@ uninstall-am:
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am
 
+
+include $(top_builddir)/Makefile.export.epetra
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

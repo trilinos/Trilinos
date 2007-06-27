@@ -38,7 +38,8 @@
 EPETRA_SOURCE_DIRECTORY = @abs_srcdir@
 EPETRA_BUILD_DIRECTORY = @EPETRA_BUILD_DIRECTORY@
 
-EPETRA_INCLUDE=-I$(EPETRA_SOURCE_DIRECTORY)/src -I$(EPETRA_BUILD_DIRECTORY)/src
+include @top_builddir@/Makefile.export.epetra
 
-EPETRA_LIBS=$(EPETRA_BUILD_DIRECTORY)/src/libepetra.a
+EPETRA_INCLUDE=$(EPETRA_INCLUDES)
 
+# EPETRA_LIBS is defined in Makefile.export.epetra!

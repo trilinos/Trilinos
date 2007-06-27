@@ -91,7 +91,6 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_Hello_Test_exe_OBJECTS = Hello_Test.$(OBJEXT)
 Hello_Test_exe_OBJECTS = $(am_Hello_Test_exe_OBJECTS)
-am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -223,8 +222,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 Hello_Test_exe_SOURCES = $(srcdir)/Hello_Test.cpp
 Hello_Test_exe_DEPENDENCIES = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a
-Hello_Test_exe_LDADD = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a $(LIBS) $(BLAS_LIBS) $(FLIBS)
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../new_package/src -I$(top_builddir)../new_package/src
+Hello_Test_exe_LDADD = $(NEW_PACKAGE_LIBS)
+AM_CPPFLAGS = $(NEW_PACKAGE_INCLUDES)
 all: all-am
 
 .SUFFIXES:
@@ -498,6 +497,8 @@ uninstall-am: uninstall-binPROGRAMS
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-binPROGRAMS
 
+
+include $(top_builddir)/Makefile.export.new_package
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

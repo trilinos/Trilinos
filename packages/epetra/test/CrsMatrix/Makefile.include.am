@@ -26,15 +26,17 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.epetra
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = CrsMatrix_test
 
 CrsMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-CrsMatrix_test_DEPENDENCIES = $(EPETRA_LIBS)
+CrsMatrix_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-CrsMatrix_test_CXXFLAGS = $(EPETRA_INCLUDE)
+CrsMatrix_test_CXXFLAGS = $(EPETRA_INCLUDES)
 
-CrsMatrix_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+CrsMatrix_test_LDADD = $(EPETRA_LIBS)
 

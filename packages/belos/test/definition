@@ -38,7 +38,7 @@
             BlockGmres/resolve_gmres_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --filename="./BlockGmres/orsirr1.hb" --pseudo;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL, MPI(1-2);
 }
 
 (FRAMEWORK,INSTALL) {

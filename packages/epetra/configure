@@ -738,6 +738,8 @@ USING_GNUMAKE_TRUE
 USING_GNUMAKE_FALSE
 HAVE_THREADS_TRUE
 HAVE_THREADS_FALSE
+ENABLE_EPETRA_TEUCHOS_TRUE
+ENABLE_EPETRA_TEUCHOS_FALSE
 BUILD_TESTS_TRUE
 BUILD_TESTS_FALSE
 BUILD_EXAMPLES_TRUE
@@ -1367,6 +1369,11 @@ Optional Features:
                           is no)
   --enable-format_io      Use package-defined IO formatting for output
                           (default is yes)
+  --enable-teuchos        Built in support for some Teuchos utilities into
+                          Epetra. Can be overridden with
+                          --disable-epetra-teuchos.
+  --enable-epetra-teuchos Built in support for some Teuchos utilities into
+                          Epetra.
   --enable-tests          Build tests for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
@@ -7394,6 +7401,61 @@ fi
 
 
 # ------------------------------------------------------------------------
+# Checks for package dependencies
+# ------------------------------------------------------------------------
+
+
+
+# Check whether --enable-teuchos was given.
+if test "${enable_teuchos+set}" = set; then
+  enableval=$enable_teuchos; ac_cv_implicit_use_teuchos=$enableval
+else
+  ac_cv_implicit_use_teuchos=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_epetra_using_teuchos_default=$ac_cv_implicit_use_teuchos
+else
+  ac_cv_epetra_using_teuchos_default=no
+fi
+
+# Check whether --enable-epetra-teuchos was given.
+if test "${enable_epetra_teuchos+set}" = set; then
+  enableval=$enable_epetra_teuchos; ac_cv_use_teuchos=$enableval
+else
+  ac_cv_use_teuchos=$ac_cv_epetra_using_teuchos_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional teuchos dependent code in epetra" >&5
+echo $ECHO_N "checking whether to build optional teuchos dependent code in epetra... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_teuchos" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_EPETRA_TEUCHOS 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_teuchos" = "Xyes"; then
+  ENABLE_EPETRA_TEUCHOS_TRUE=
+  ENABLE_EPETRA_TEUCHOS_FALSE='#'
+else
+  ENABLE_EPETRA_TEUCHOS_TRUE='#'
+  ENABLE_EPETRA_TEUCHOS_FALSE=
+fi
+
+
+
+
+# ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
 
@@ -10914,6 +10976,13 @@ echo "$as_me: error: conditional \"HAVE_THREADS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${ENABLE_EPETRA_TEUCHOS_TRUE}" && test -z "${ENABLE_EPETRA_TEUCHOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_EPETRA_TEUCHOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_EPETRA_TEUCHOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_TESTS_TRUE}" && test -z "${BUILD_TESTS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -11681,6 +11750,8 @@ USING_GNUMAKE_TRUE!$USING_GNUMAKE_TRUE$ac_delim
 USING_GNUMAKE_FALSE!$USING_GNUMAKE_FALSE$ac_delim
 HAVE_THREADS_TRUE!$HAVE_THREADS_TRUE$ac_delim
 HAVE_THREADS_FALSE!$HAVE_THREADS_FALSE$ac_delim
+ENABLE_EPETRA_TEUCHOS_TRUE!$ENABLE_EPETRA_TEUCHOS_TRUE$ac_delim
+ENABLE_EPETRA_TEUCHOS_FALSE!$ENABLE_EPETRA_TEUCHOS_FALSE$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
 BUILD_TESTS_FALSE!$BUILD_TESTS_FALSE$ac_delim
 BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim
@@ -11695,7 +11766,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 38; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 40; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -26,6 +26,7 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.epetra
 
 EXEEXT = .exe
 
@@ -33,10 +34,10 @@ noinst_PROGRAMS = Directory_test
 
 Directory_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-Directory_test_DEPENDENCIES = $(EPETRA_LIBS)
+Directory_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-Directory_test_CXXFLAGS = $(EPETRA_INCLUDE)
+Directory_test_CXXFLAGS = $(EPETRA_INCLUDES)
 
-Directory_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+Directory_test_LDADD = $(EPETRA_LIBS)
 
 

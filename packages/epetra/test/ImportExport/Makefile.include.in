@@ -70,6 +70,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
@@ -91,7 +92,6 @@ CONFIG_CLEAN_FILES = Makefile
 PROGRAMS = $(noinst_PROGRAMS)
 am_ImportExport_test_OBJECTS = ImportExport_test-cxx_main.$(OBJEXT)
 ImportExport_test_OBJECTS = $(am_ImportExport_test_OBJECTS)
-am__DEPENDENCIES_1 =
 ImportExport_test_LINK = $(CXXLD) $(ImportExport_test_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
@@ -227,9 +227,9 @@ target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ImportExport_test_SOURCES = $(srcdir)/cxx_main.cpp
-ImportExport_test_DEPENDENCIES = $(EPETRA_LIBS)
-ImportExport_test_CXXFLAGS = $(EPETRA_INCLUDE)
-ImportExport_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+ImportExport_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
+ImportExport_test_CXXFLAGS = $(EPETRA_INCLUDES)
+ImportExport_test_LDADD = $(EPETRA_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -482,6 +482,8 @@ uninstall-am:
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am
 
+
+include $(top_builddir)/Makefile.export.epetra
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

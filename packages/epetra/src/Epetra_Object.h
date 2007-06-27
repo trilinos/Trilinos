@@ -100,6 +100,10 @@ class Epetra_Object {
 
   //! Get the value of the Epetra_Object error report mode.
   static int GetTracebackMode();
+
+  //! Get the output stream for error reporting
+  static std::ostream& GetTracebackStream();
+
   //@}
 
   //! @name Miscellaneous

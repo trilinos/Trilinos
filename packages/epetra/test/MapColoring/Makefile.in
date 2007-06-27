@@ -27,7 +27,5 @@
 #@HEADER
 
 
-include ../../Makefile.export
-
 include Makefile.include
 

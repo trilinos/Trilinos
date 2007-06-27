@@ -26,6 +26,8 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.epetra
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = FECrsGraph_test
@@ -34,9 +36,9 @@ FECrsGraph_test_SOURCES = $(srcdir)/cxx_main.cpp \
                   $(srcdir)/ExecuteTestProblems.cpp \
 		  $(srcdir)/ExecuteTestProblems.h 
 
-FECrsGraph_test_DEPENDENCIES = $(EPETRA_LIBS)
+FECrsGraph_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-FECrsGraph_test_CXXFLAGS = $(EPETRA_INCLUDE)
+FECrsGraph_test_CXXFLAGS = $(EPETRA_INCLUDES)
 
-FECrsGraph_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+FECrsGraph_test_LDADD = $(EPETRA_LIBS)
 

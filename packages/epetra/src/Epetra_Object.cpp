@@ -29,6 +29,9 @@
 
 #include "Epetra_Object.h"
 
+#ifdef HAVE_EPETRA_TEUCHOS
+#include "Teuchos_VerboseObject.hpp"
+#endif
 
 //=============================================================================
 Epetra_Object::Epetra_Object(int TracebackModeIn, bool set_label) 
@@ -69,6 +72,14 @@ int Epetra_Object::GetTracebackMode() {
   return(temp);
 }
 
+std::ostream& Epetra_Object::GetTracebackStream() {
+#ifdef HAVE_EPETRA_TEUCHOS
+  return (*Teuchos::VerboseObjectBase::getDefaultOStream());
+#else
+  return cerr;
+#endif
+}
+
 //=============================================================================
 void Epetra_Object::Print(ostream & os) const {
   (void)os;//prevents unused variable compiler-warning
@@ -77,16 +88,20 @@ void Epetra_Object::Print(ostream & os) const {
 }
 //=============================================================================
 int Epetra_Object::ReportError(const string Message, int ErrorCode) const {
-
 #ifndef EPETRA_NO_ERROR_REPORTS
   // NOTE:  We are extracting a C-style string from Message because
   //        the SGI compiler does not have a real string class with 
   //        the << operator.  Some day we should get rid of ".c_str()"
-                              if ((ErrorCode < 0 && Epetra_Object::GetTracebackMode() > 0) || \
-                                  (ErrorCode > 0 && Epetra_Object::GetTracebackMode() > 1)) { \
-  cerr << endl << "Error in Epetra Object with label:  " << Label_ << endl
-       << "Epetra Error:  " << Message.c_str() << "  Error Code:  " << ErrorCode << endl;
-}
+  if (
+    ( ErrorCode < 0 && Epetra_Object::GetTracebackMode() > 0 )
+    ||
+    ( ErrorCode > 0 && Epetra_Object::GetTracebackMode() > 1 )
+    )
+  {
+    GetTracebackStream()
+      << endl << "Error in Epetra Object with label:  " << Label_ << endl
+      << "Epetra Error:  " << Message.c_str() << "  Error Code:  " << ErrorCode << endl;
+  }
 #endif
   return(ErrorCode);
 }

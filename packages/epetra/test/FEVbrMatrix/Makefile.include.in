@@ -70,6 +70,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
@@ -92,7 +93,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_FEVbrMatrix_test_OBJECTS = FEVbrMatrix_test-cxx_main.$(OBJEXT) \
 	FEVbrMatrix_test-ExecuteTestProblems.$(OBJEXT)
 FEVbrMatrix_test_OBJECTS = $(am_FEVbrMatrix_test_OBJECTS)
-am__DEPENDENCIES_1 =
 FEVbrMatrix_test_LINK = $(CXXLD) $(FEVbrMatrix_test_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
@@ -235,9 +235,9 @@ FEVbrMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp \
                   $(srcdir)/ExecuteTestProblems.cpp \
 		  $(srcdir)/ExecuteTestProblems.h 
 
-FEVbrMatrix_test_DEPENDENCIES = $(EPETRA_LIBS)
-FEVbrMatrix_test_CXXFLAGS = $(EPETRA_INCLUDE)
-FEVbrMatrix_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+FEVbrMatrix_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
+FEVbrMatrix_test_CXXFLAGS = $(EPETRA_INCLUDES)
+FEVbrMatrix_test_LDADD = $(EPETRA_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -505,6 +505,8 @@ uninstall-am:
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am
 
+
+include $(top_builddir)/Makefile.export.epetra
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

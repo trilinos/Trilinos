@@ -26,6 +26,8 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.epetra
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = MultiVector_test
@@ -34,9 +36,9 @@ MultiVector_test_SOURCES = $(srcdir)/cxx_main.cpp \
            $(srcdir)/BuildTestProblems.cpp $(srcdir)/ExecuteTestProblems.cpp \
 	   $(srcdir)/BuildTestProblems.h $(srcdir)/ExecuteTestProblems.h
 
-MultiVector_test_DEPENDENCIES = $(EPETRA_LIBS)
+MultiVector_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-MultiVector_test_CXXFLAGS = $(EPETRA_INCLUDE)
+MultiVector_test_CXXFLAGS = $(EPETRA_INCLUDES)
 
-MultiVector_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+MultiVector_test_LDADD = $(EPETRA_LIBS)
 

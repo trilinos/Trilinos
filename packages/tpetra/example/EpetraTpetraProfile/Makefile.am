@@ -26,6 +26,10 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.tpetra
+include $(top_builddir)/../epetra/Makefile.export.epetra
+include $(top_builddir)/../triutils/Makefile.export.triutils
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = EpetraTpetraProfile
@@ -38,16 +42,14 @@ EpetraTpetraProfile_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../triutils/src/libtriutils.a
 
-EpetraTpetraProfile_CXXFLAGS = -I$(top_srcdir)/src \
-	-I$(top_srcdir)/../triutils/src \
-	-I$(top_builddir)/../triutils/src \
-	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
-	-I$(top_srcdir)/../kokkos/src -I$(top_builddir)/../kokkos/src
+_EXPORT_INCLUDES = $(TPETRA_INCLUDES)  $(EPETRA_INCLUDES) $(TRIUTILS_INCLUDES)
+_EXPORT_LIBS =  $(TPETRA_LIBS) $(EPETRA_LIBS) $(TRIUTILS_LIBS)
 
-EpetraTpetraProfile_LDADD = $(top_builddir)/src/libtpetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../kokkos/src/libkokkos.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
+@USING_GNUMAKE_TRUE@EXPORT_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_EXPORT_LIBS))
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
+@USING_GNUMAKE_FALSE@EXPORT_LIBS     = $(_EXPORT_LIBS)
+
+EpetraTpetraProfile_CXXFLAGS = $(EXPORT_INCLUDES)
+
+EpetraTpetraProfile_LDADD = $(EXPORT_LIBS)

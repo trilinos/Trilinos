@@ -26,15 +26,16 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.epetra
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = BasicPerfTest_test
 
 BasicPerfTest_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-BasicPerfTest_test_DEPENDENCIES = $(EPETRA_LIBS)
+BasicPerfTest_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-BasicPerfTest_test_CXXFLAGS = $(EPETRA_INCLUDE)
+BasicPerfTest_test_CXXFLAGS = $(EPETRA_INCLUDES)
 
-BasicPerfTest_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
-
+BasicPerfTest_test_LDADD = $(EPETRA_LIBS)

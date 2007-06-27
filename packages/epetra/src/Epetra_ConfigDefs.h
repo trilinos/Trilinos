@@ -274,7 +274,7 @@ const int DefaultTracebackMode = 1;
 #define EPETRA_CHK_ERR(a) { { int epetra_err = a; \
                               if ((epetra_err < 0 && Epetra_Object::GetTracebackMode() > 0) || \
                                   (epetra_err > 0 && Epetra_Object::GetTracebackMode() > 1)) { \
-                      cerr << "Epetra ERROR " << epetra_err << ", " \
+                      Epetra_Object::GetTracebackStream() << "Epetra ERROR " << epetra_err << ", " \
                            << __FILE__ << ", line " << __LINE__ << endl; }\
                       if (epetra_err != 0) return(epetra_err);  }\
                    }
@@ -282,14 +282,14 @@ const int DefaultTracebackMode = 1;
 // Extension of same macro for pointer, returns zero if bad
 
 #define EPETRA_CHK_PTR(a) { if (a == 0 && Epetra_Object::GetTracebackMode() > 0) { \
-                      cerr << "Epetra returning zero pointer " << ", " \
+                      Epetra_Object::GetTracebackStream() << "Epetra returning zero pointer " << ", " \
                            << __FILE__ << ", line " << __LINE__ << endl; } \
                       return(a); \
                    }
 // Extension of same macro for reference, returns a default reference
 
 #define EPETRA_CHK_REF(a) { if (Epetra_Object::GetTracebackMode() > 0) {\
-                      cerr << "Epetra returning default reference " << ", " \
+                      Epetra_Object::GetTracebackStream() << "Epetra returning default reference " << ", " \
                            << __FILE__ << ", line " << __LINE__ << endl; } \
                       return(a); \
                    }

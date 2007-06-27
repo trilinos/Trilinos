@@ -26,15 +26,17 @@
 # ************************************************************************
 #@HEADER
 
+include $(top_builddir)/Makefile.export.epetra
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = RowMatrix_test
 
 RowMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-RowMatrix_test_DEPENDENCIES = $(EPETRA_LIBS)
+RowMatrix_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-RowMatrix_test_CXXFLAGS = $(EPETRA_INCLUDE)
+RowMatrix_test_CXXFLAGS = $(EPETRA_INCLUDES)
 
-RowMatrix_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+RowMatrix_test_LDADD = $(EPETRA_LIBS)
 
