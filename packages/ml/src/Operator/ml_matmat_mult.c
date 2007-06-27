@@ -1552,6 +1552,8 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 /*Recives an ML_Operator in_matrix in a sparse data structure(csr, msr or vbr and returns  */
 /*the same ML_Operator stored as a vbr matrix. 
 
+  When submatrix != 0
+
   On input row_block_size and col_block_size are positive integers if either the column
   or row block sizes are fixed.  They are zero if there is not a constant block size.
 
@@ -1562,11 +1564,20 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   quit with an error.
 
   This function assumes no empty columns.
+
+  When submatrix = 1
+
+  On input the only parameter that matters is the col_block_size which must be greater
+  than 0.  All other parameters are ignored as there are not important to the final result.
+  However rpntr and cpntr are allocated and used in the new VBR structure.
+
+  The matrix passed in should not be a submatrix and will be untouched however its 
+  submatrices will be converted.
                                   */
 /*********************************************************************************/
-void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int col_block_size, int cpntr[])
+void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int col_block_size, int cpntr[], int submatrix)
 {
-   int i, j, k, kk;
+   int i, j, k, kk, ii, ll;
    int jj = 0;
    int blockrows = 0;
    int blockcolumns = 0;
@@ -1589,8 +1600,152 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    double *temp_double;
    struct ML_vbrdata *out_data;
    int nnz = 0;
-   int Nghost_nodes, total_cols;
+   int Nghost_nodes, total_cols = 0;
+   int **all_rpntr; /*stores all rpntr's on recieve*/
+   USR_REQ *recv_requests;
+   int rows_sent;
+   int *send_buffer;
+   ML_Operator *cur_matrix;
+   struct ML_CSR_MSRdata *cur_data;
+  
+   if(submatrix == 1)
+   {
+     /*We need to free rpntr if it is allocated since we are using it later*/
+     if(rpntr != NULL)
+       ML_free(rpntr);
+     /*we only need to worry about block column informtion as this is all we will use*/  
+     if (col_block_size < 0)
+     {
+       pr_error("In function convert2vbr col_block_size is negative which is undefined.  Please see function header and pass in the appropriate value.\n");
+     }
+     if (col_block_size == 0)
+     {
+         pr_error("In function convert2vbr col_block_size is 0 which is undefined for submatrices.  Please see function header and pass in the appropriate value\n");
+     }
+     else
+     {
+       printf("1\n"); fflush(stdout);
+       all_rpntr = (int**)ML_allocate(in_matrix->getrow->pre_comm->N_neighbors*sizeof (int*));
+       recv_requests = (USR_REQ*)ML_allocate(in_matrix->getrow->pre_comm->N_neighbors*sizeof(USR_REQ));
+       for(i = 0; i < in_matrix->getrow->pre_comm->N_neighbors; i++)
+       {
+         if(in_matrix->getrow->pre_comm->neighbors[i].N_rcv > 0)
+         {
+           /*Plus 1 since the first one will be the block size*/
+           all_rpntr[i] = (int*)ML_allocate((in_matrix->getrow->N_block_rows+1)*sizeof(int));
+           ML_Comm_Irecv(all_rpntr[i], (in_matrix->getrow->N_block_rows+1)*sizeof(int), &(in_matrix->getrow->pre_comm->neighbors[i].ML_id), &(in_matrix->getrow->pre_comm->neighbors[i].ML_id), in_matrix->comm->USR_comm, &recv_requests[i]);
+         }
+       }
+       printf("2\n"); fflush(stdout);
+       send_buffer = (int*)ML_allocate((in_matrix->getrow->N_block_rows+1)*sizeof(int));
+       out_data = (struct ML_vbrdata *)in_matrix->data;
+       printf("4\n"); fflush(stdout);
+       for(i = 0; i < in_matrix->getrow->pre_comm->N_neighbors; i++)
+       {
+         if(in_matrix->getrow->pre_comm->neighbors[i].N_send > 0)
+         {
+           j = 0;
+       printf("5\n"); fflush(stdout);
+           k = 0;
+           kk = 0;
+           rows_sent = 0;
+           /*figure out what needs to be sent*/
+           while(j < in_matrix->getrow->pre_comm->neighbors[i].N_send)
+           {
+       printf("6\n"); fflush(stdout);
+             rows_sent++;
 
+       printf("%d\n", out_data->rpntr[kk]); fflush(stdout);
+       
+       printf("%d\n", in_matrix->getrow->pre_comm->neighbors[i].send_list[k]); fflush(stdout);
+             while(out_data->rpntr[kk] > in_matrix->getrow->pre_comm->neighbors[i].send_list[k])
+             {
+       printf("7\n"); fflush(stdout);
+               kk++;
+             }
+             k += out_data->rpntr[kk] - out_data->rpntr[kk - 1];              
+             j += out_data->val[out_data->bpntr[kk]] - out_data->val[out_data->bpntr[kk - 1]];
+             send_buffer[rows_sent] = out_data->rpntr[kk] - out_data->rpntr[kk - 1];
+           }
+           send_buffer[0] = rows_sent;
+           /*send info here*/
+           ML_Comm_Send(send_buffer, (rows_sent+1)*sizeof(int), in_matrix->getrow->pre_comm->neighbors[i].ML_id, in_matrix->ML_id, in_matrix->comm->USR_comm);
+         }
+       }
+     }
+     printf("3\n"); fflush(stdout);
+     cur_matrix = in_matrix->sub_matrix;
+     /*loop over submatrices*/
+     while(cur_matrix != NULL)
+     {
+       cur_data = (struct ML_CSR_MSRdata *)cur_matrix->data;
+       i = 0; /*which blockrow*/
+       k = 0; /*which processor*/
+       cpntr = (int*)ML_allocate(((cur_matrix->invec_leng/col_block_size)+1)*sizeof(int));
+       rpntr = (int*)ML_allocate((cur_matrix->outvec_leng+1)*sizeof(int));
+       bpntr = (int*)ML_allocate((cur_matrix->outvec_leng+1)*sizeof(int));
+       jj = (cur_matrix->invec_leng/col_block_size)*cur_matrix->outvec_leng;
+       if (jj > cur_data->rowptr[cur_matrix->outvec_leng])
+         jj = cur_data->rowptr[cur_matrix->outvec_leng];
+       bindx = (int*)ML_allocate(jj*sizeof(int));
+       indx = (int*)ML_allocate((jj+1)*sizeof(int));
+       vals = (double*)ML_allocate(cur_data->rowptr[cur_matrix->outvec_leng]*sizeof(double));
+       cpntr[0] = 0;
+       /*set up column pointer for submatrix*/
+       for(kk = 1; kk <= cur_matrix->invec_leng/col_block_size; kk++)
+       {
+         cpntr[kk] += cpntr[kk-1] + col_block_size;
+       }
+       rpntr[0] = bpntr[0] = indx[0] = jj = 0;
+       /*loop a processor worth of matrix rows*/
+       while(rpntr[i] < cur_matrix->getrow->N_block_rows)
+       {
+         /*loop over one processors rows*/
+         for(j = 1; j <= all_rpntr[k][0]; j++)
+         {
+           i++; /*blockrow*/
+           rpntr[i] = rpntr[i-1] + all_rpntr[k][j]; 
+           bpntr[i] = bpntr[i-1] + (cur_data->rowptr[rpntr[i-1]]-cur_data->rowptr[rpntr[i-1]+1])/col_block_size;
+           ll = indx[bpntr[i-1]];
+           /*loop over one blockrow*/
+           for(kk = bpntr[i-1]; kk < bpntr[i]; kk++)
+           { 
+             bindx[kk] = cur_data->columns[ll]/col_block_size;
+             indx[kk+1] = indx[kk]+col_block_size*(rpntr[i] - rpntr[i-1]);
+             /*loop over a block and store data columns then rows*/
+             for(ii = 0; ii < all_rpntr[k][j]; ii++) 
+             {
+               for(jj = 0; jj < col_block_size; jj++)
+               {
+                 vals[indx[kk]+jj+ii*col_block_size] = cur_data->values[ll+ii+jj*(cur_data->rowptr[rpntr[i-1]]-cur_data->rowptr[rpntr[i-1]+1])];
+               }
+             }
+             ll += col_block_size;
+           }
+         }
+         k++;
+       }        
+       out_data = (struct ML_vbrdata *)ML_allocate(sizeof(struct ML_vbrdata)); 
+       out_data->bindx = bindx;
+       out_data->indx = indx;
+       out_data->bpntr = bpntr;
+       out_data->cpntr = cpntr;
+       out_data->rpntr = rpntr;
+       out_data->val = vals;
+       in_matrix->getrow->N_block_rows = rpntr[i];
+       cur_matrix->getrow->data = (void *)out_data;
+       cur_matrix->data = (void *)out_data;
+       bindx = NULL;
+       indx = NULL;
+       bpntr = NULL;
+       cpntr = NULL;
+       rpntr = NULL;
+       vals = NULL;
+       cur_matrix = cur_matrix->sub_matrix;
+     }
+   }
+   else
+   {
    /*settings to change since we now have a vbr matrix*/
    in_matrix->type = ML_TYPE_VBR_MATRIX;
    in_matrix->matvec->func_ptr = NULL;
@@ -1839,7 +1994,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    out_data->cpntr = cpntr;
    out_data->rpntr = rpntr;
    out_data->val = vals;
-
+   in_matrix->getrow->N_block_rows = blockrows;
    /*delete old csr matrix*/
 
    if ((in_matrix->data_destroy != NULL) && (in_matrix->data != NULL)) {
@@ -1855,11 +2010,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    ML_free(A_i_cols);
    ML_free(accum_val);
  
-   /*if we have more data we need to convert*/
-/*   if(in_matrix->sub_matrix != NULL)
-   {
-     ML_convert2vbr(in_matrix->sub_matrix);
-   }*/
+   }
 }
 
 /************************************************************************/
