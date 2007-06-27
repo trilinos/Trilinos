@@ -48,10 +48,12 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+#ifdef HAVE_TEUCHOS_COMPLEX	
 #if defined(HAVE_COMPLEX)
 #define ANSZI_CPLX_CLASS std::complex
 #elif  defined(HAVE_COMPLEX_H)
 #define ANSZI_CPLX_CLASS ::complex
+#endif
 #endif
 
 /*!     \class Anasazi::BlockKrylovSchur
@@ -85,17 +87,17 @@ namespace Anasazi {
      */
     int curDim;
     /*! \brief The current Krylov basis. */
-    Teuchos::RefCountPtr<const MulVec> V;
+    Teuchos::RCP<const MulVec> V;
     /*! \brief The current Hessenberg matrix. 
      *
      * The \c curDim by \c curDim leading submatrix of H is the 
      * projection of problem->getOperator() by the first \c curDim vectors in V. 
      */
-    Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > H;
+    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > H;
     /*! \brief The current Schur form reduction of the valid part of H. */
-    Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > S;
+    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > S;
     /*! \brief The current Schur vectors of the valid part of H. */
-    Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > Q;
+    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > Q;
     BlockKrylovSchurState() : curDim(0), V(Teuchos::null),
                               H(Teuchos::null), S(Teuchos::null),
                               Q(Teuchos::null) {}
@@ -152,11 +154,11 @@ namespace Anasazi {
      *   - "Number of Ritz Vectors" - an \c int specifying how many Ritz vectors are computed on calls to getRitzVectors(). Default: 0
      *   - "Print Number of Ritz Values" - an \c int specifying how many Ritz values are printed on calls to currentStatus(). Default: "Block Size"
      */
-    BlockKrylovSchur( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-                   const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
-                   const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-                   const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-                   const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> > &ortho,
+    BlockKrylovSchur( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
+                   const Teuchos::RCP<SortManager<ScalarType,MV,OP> > &sorter,
+                   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+                   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                   const Teuchos::RCP<OrthoManager<ScalarType,MV> > &ortho,
                    Teuchos::ParameterList &params 
                  );
     
@@ -265,7 +267,7 @@ namespace Anasazi {
      *
      *  \note To see if the returned Ritz vectors are current, call isRitzVecsCurrent().
      */
-    Teuchos::RefCountPtr<const MV> getRitzVectors() { return ritzVectors_; }
+    Teuchos::RCP<const MV> getRitzVectors() { return ritzVectors_; }
 
     /*! \brief Get the Ritz values.
      *
@@ -375,10 +377,10 @@ namespace Anasazi {
      *  it from the solver using getState(), orthogonalize it against the
      *  new auxiliary vectors, and reinitialize using initialize().
      */
-    void setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs);
+    void setAuxVecs(const Teuchos::Array<Teuchos::RCP<const MV> > &auxvecs);
 
     //! Get the auxiliary vectors for the solver.
-    Teuchos::Array<Teuchos::RefCountPtr<const MV> > getAuxVecs() const {return auxVecs_;}
+    Teuchos::Array<Teuchos::RCP<const MV> > getAuxVecs() const {return auxVecs_;}
 
     //@}
 
@@ -452,19 +454,19 @@ namespace Anasazi {
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
-    const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> >     problem_;
-    const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> >      sm_;
-    const Teuchos::RefCountPtr<OutputManager<ScalarType> >          om_;
-    const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >       tester_;
-    const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> >        orthman_;
+    const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
+    const Teuchos::RCP<SortManager<ScalarType,MV,OP> >      sm_;
+    const Teuchos::RCP<OutputManager<ScalarType> >          om_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       tester_;
+    const Teuchos::RCP<OrthoManager<ScalarType,MV> >        orthman_;
     //
     // Information obtained from the eigenproblem
     //
-    Teuchos::RefCountPtr<const OP> Op_;
+    Teuchos::RCP<const OP> Op_;
     //
     // Internal timers
     //
-    Teuchos::RefCountPtr<Teuchos::Time> timerOp_, timerSortRitzVal_,
+    Teuchos::RCP<Teuchos::Time> timerOp_, timerSortRitzVal_,
                                         timerCompSF_, timerSortSF_,
                                         timerCompRitzVec_, timerOrtho_;
     //
@@ -500,22 +502,22 @@ namespace Anasazi {
     int curDim_;
     //
     // State Multivecs
-    Teuchos::RefCountPtr<MV> ritzVectors_, V_;
+    Teuchos::RCP<MV> ritzVectors_, V_;
     int numRitzVecs_;
     //
     // Projected matrices
     // H_ : Projected matrix from the Krylov-Schur factorization AV = VH + FB^T
     //
-    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > H_;
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H_;
     // 
     // Schur form of Projected matrices (these are only updated when the Ritz values/vectors are updated).
     // schurH_: Schur form reduction of H
     // Q_: Schur vectors of H
-    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > schurH_;
-    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > Q_;
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > schurH_;
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > Q_;
     // 
     // Auxiliary vectors
-    Teuchos::Array<Teuchos::RefCountPtr<const MV> > auxVecs_;
+    Teuchos::Array<Teuchos::RCP<const MV> > auxVecs_;
     int numAuxVecs_;
     //
     // Number of iterations that have been performed.
@@ -587,6 +589,7 @@ namespace Anasazi {
     }
   }
   
+#ifdef HAVE_TEUCHOS_COMPLEX	
   // Template specialization for the complex scalar type.
   void sortRitzValues( const std::vector<double>& rRV, 
                        const std::vector<double>& iRV,
@@ -606,7 +609,7 @@ namespace Anasazi {
       i++;
     }    
   }
-  
+#endif
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Helper function for correctly scaling the eigenvectors of the projected eigenproblem.
@@ -644,7 +647,6 @@ namespace Anasazi {
 
 #ifdef HAVE_TEUCHOS_COMPLEX	
   // Template specialization for the complex scalar type.
-  template<>
   void scaleRitzVectors( const std::vector<double>& iRV,
                          Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<double> >* S )
   {
@@ -700,7 +702,6 @@ namespace Anasazi {
 
 #ifdef HAVE_TEUCHOS_COMPLEX	
   // Template specialization for the complex scalar type.
-  template<>
   void computeRitzResiduals( const std::vector<double>& iRV,
 			     const Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<double> >& S,
 			     std::vector<double>* RR
@@ -724,11 +725,11 @@ namespace Anasazi {
   // Constructor
   template <class ScalarType, class MV, class OP>
   BlockKrylovSchur<ScalarType,MV,OP>::BlockKrylovSchur(
-        const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-        const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
-        const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-        const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-        const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> > &ortho,
+        const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem, 
+        const Teuchos::RCP<SortManager<ScalarType,MV,OP> > &sorter,
+        const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+        const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+        const Teuchos::RCP<OrthoManager<ScalarType,MV> > &ortho,
         Teuchos::ParameterList &params
         ) :
     MT_ONE(Teuchos::ScalarTraits<MagnitudeType>::one()),
@@ -758,7 +759,7 @@ namespace Anasazi {
     initialized_(false),
     curDim_(0),
     numRitzVecs_(0),
-    auxVecs_( Teuchos::Array<Teuchos::RefCountPtr<const MV> >(0) ), 
+    auxVecs_( Teuchos::Array<Teuchos::RCP<const MV> >(0) ), 
     numAuxVecs_(0),
     iter_(0),
     ritzVecsCurrent_(false),
@@ -851,7 +852,7 @@ namespace Anasazi {
     blockSize_ = blockSize;
     numBlocks_ = numBlocks;
 
-    Teuchos::RefCountPtr<const MV> tmp;
+    Teuchos::RCP<const MV> tmp;
     // grab some Multivector to Clone
     // in practice, getInitVec() should always provide this, but it is possible to use a 
     // Eigenproblem with nothing in getInitVec() by manually initializing with initialize(); 
@@ -890,8 +891,8 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the auxiliary vectors
   template <class ScalarType, class MV, class OP>
-  void BlockKrylovSchur<ScalarType,MV,OP>::setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs) {
-    typedef typename Teuchos::Array<Teuchos::RefCountPtr<const MV> >::iterator tarcpmv;
+  void BlockKrylovSchur<ScalarType,MV,OP>::setAuxVecs(const Teuchos::Array<Teuchos::RCP<const MV> > &auxvecs) {
+    typedef typename Teuchos::Array<Teuchos::RCP<const MV> >::iterator tarcpmv;
 
     // set new auxiliary vectors
     auxVecs_ = auxvecs;
@@ -976,7 +977,7 @@ namespace Anasazi {
       if (newstate.H != H_) {
         H_->putScalar( ST_ZERO );
         Teuchos::SerialDenseMatrix<int,ScalarType> newH(Teuchos::View,*newstate.H,curDim_+blockSize_,curDim_);
-        Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclH;
+        Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lclH;
         lclH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*H_,curDim_+blockSize_,curDim_) );
         lclH->assign(newH);
 
@@ -988,7 +989,7 @@ namespace Anasazi {
     else {
       // user did not specify a basis V
       // get vectors from problem or generate something, projectAndNormalize, call initialize() recursively
-      Teuchos::RefCountPtr<const MV> ivec = problem_->getInitVec();
+      Teuchos::RCP<const MV> ivec = problem_->getInitVec();
       TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::invalid_argument,
                          "Anasazi::BlockKrylovSchur::initialize(): eigenproblem did not specify initial vectors to clone from.");
 
@@ -1006,7 +1007,7 @@ namespace Anasazi {
         for (int i=0; i<lclDim; i++) { dimind2[i] = i; }
 
         // alloc newV as a view of the first block of V
-        Teuchos::RefCountPtr<MV> newV1 = MVT::CloneView(*V_,dimind2);
+        Teuchos::RCP<MV> newV1 = MVT::CloneView(*V_,dimind2);
 
         // copy the initial vectors into the first lclDim vectors of V
         MVT::SetBlock(*ivec,dimind2,*newV1);
@@ -1016,28 +1017,28 @@ namespace Anasazi {
         for (int i=0; i<blockSize_-lclDim; i++) { dimind2[i] = lclDim + i; }
 
         // initialize the rest of the vectors with random vectors
-        Teuchos::RefCountPtr<MV> newV2 = MVT::CloneView(*V_,dimind2);
+        Teuchos::RCP<MV> newV2 = MVT::CloneView(*V_,dimind2);
         MVT::MvRandom(*newV2);
       }
       else {
         // alloc newV as a view of the first block of V
-        Teuchos::RefCountPtr<MV> newV1 = MVT::CloneView(*V_,bsind);
+        Teuchos::RCP<MV> newV1 = MVT::CloneView(*V_,bsind);
        
         // get a view of the first block of initial vectors
-        Teuchos::RefCountPtr<const MV> ivecV = MVT::CloneView(*ivec,bsind);
+        Teuchos::RCP<const MV> ivecV = MVT::CloneView(*ivec,bsind);
  
         // assign ivec to first part of newV
         MVT::SetBlock(*ivecV,bsind,*newV1);
       }
 
       // get pointer into first block of V
-      Teuchos::RefCountPtr<MV> newV = MVT::CloneView(*V_,bsind);
+      Teuchos::RCP<MV> newV = MVT::CloneView(*V_,bsind);
 
       // remove auxVecs from newV and normalize newV
       if (auxVecs_.size() > 0) {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
         
-        Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
+        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
         int rank = orthman_->projectAndNormalize(*newV,dummy,Teuchos::null,auxVecs_);
         TEST_FOR_EXCEPTION( rank != blockSize_,BlockKrylovSchurInitFailure,
                             "Anasazi::BlockKrylovSchur::initialize(): couldn't generate initial basis of full rank." );
@@ -1128,12 +1129,12 @@ namespace Anasazi {
       // Get the current part of the basis.
       std::vector<int> curind(blockSize_);
       for (int i=0; i<blockSize_; i++) { curind[i] = lclDim + i; }
-      Teuchos::RefCountPtr<MV> Vnext = MVT::CloneView(*V_,curind);
+      Teuchos::RCP<MV> Vnext = MVT::CloneView(*V_,curind);
 
       // Get a view of the previous vectors
       // this is used for orthogonalization and for computing V^H K H
       for (int i=0; i<blockSize_; i++) { curind[i] = curDim_ + i; }
-      Teuchos::RefCountPtr<MV> Vprev = MVT::CloneView(*V_,curind);
+      Teuchos::RCP<MV> Vprev = MVT::CloneView(*V_,curind);
 
       // Compute the next vector in the Krylov basis:  Vnext = Op*Vprev
       {
@@ -1151,13 +1152,13 @@ namespace Anasazi {
         std::vector<int> prevind(lclDim);
         for (int i=0; i<lclDim; i++) { prevind[i] = i; }
         Vprev = MVT::CloneView(*V_,prevind);
-        Teuchos::Array<Teuchos::RefCountPtr<const MV> > AVprev(1, Vprev);
+        Teuchos::Array<Teuchos::RCP<const MV> > AVprev(1, Vprev);
         
         // Get a view of the part of the Hessenberg matrix needed to hold the ortho coeffs.
-        Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> >
+        Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >
           subH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
                                ( Teuchos::View,*H_,lclDim,blockSize_,0,curDim_ ) );
-        Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > AsubH;
+        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > AsubH;
         AsubH.append( subH );
         
         // Add the auxiliary vectors to the current basis vectors if any exist
@@ -1169,7 +1170,7 @@ namespace Anasazi {
         }
         
         // Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
-        Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> >
+        Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >
           subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
                                ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
         int rank = orthman_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
@@ -1248,7 +1249,7 @@ namespace Anasazi {
     std::vector<int> bsind(blockSize_);
     for (int i=0; i<blockSize_; i++) { bsind[i] = curDim_ + i; }
     
-    Teuchos::RefCountPtr<MV> lclV,lclF,lclAV;
+    Teuchos::RCP<MV> lclV,lclF,lclAV;
     if (curDim_)
       lclV = MVT::CloneView(*V_,lclind);
     lclF = MVT::CloneView(*V_,bsind);
@@ -1278,7 +1279,7 @@ namespace Anasazi {
 
       if (curDim_) {
         // Compute AV      
-        Teuchos::RefCountPtr<MV> lclAV = MVT::Clone(*V_,curDim_);
+        Teuchos::RCP<MV> lclAV = MVT::Clone(*V_,curDim_);
         {
           Teuchos::TimeMonitor lcltimer( *timerOp_ );
           OPT::Apply(*Op_,*lclV,*lclAV);
@@ -1401,7 +1402,7 @@ namespace Anasazi {
         // Get a view of the current Krylov-Schur basis vectors and Schur vectors
         std::vector<int> curind( curDim_ );
         for (int i=0; i<curDim_; i++) { curind[i] = i; }
-        Teuchos::RefCountPtr<MV> Vtemp = MVT::CloneView( *V_, curind );
+        Teuchos::RCP<MV> Vtemp = MVT::CloneView( *V_, curind );
         if (problem_->isHermitian()) {
           // Get a view into the current Schur vectors
           Teuchos::SerialDenseMatrix<int,ScalarType> subQ( Teuchos::View, *Q_, curDim_, numRitzVecs_ );
@@ -1415,7 +1416,7 @@ namespace Anasazi {
           Teuchos::SerialDenseMatrix<int,ScalarType> subQ( Teuchos::View, *Q_, curDim_, curDim_ );
           
           // Get a set of work vectors to hold the current Ritz vectors.
-          Teuchos::RefCountPtr<MV> tmpritzVectors_ = MVT::Clone( *V_, curDim_ );
+          Teuchos::RCP<MV> tmpritzVectors_ = MVT::Clone( *V_, curDim_ );
 
           // Compute the current Krylov-Schur vectors.
           MVT::MvTimesMatAddMv( ST_ONE, *Vtemp, subQ, ST_ZERO, *tmpritzVectors_ );          
@@ -1446,7 +1447,7 @@ namespace Anasazi {
           std::vector<int> curind( (numRitzVecs_) );
           for (int i=0; i<(int)curind.size(); i++) { curind[i] = i; }
 
-          Teuchos::RefCountPtr<MV> view_ritzVectors = MVT::CloneView( *ritzVectors_, curind );
+          Teuchos::RCP<MV> view_ritzVectors = MVT::CloneView( *ritzVectors_, curind );
           MVT::MvTimesMatAddMv( ST_ONE, *tmpritzVectors_, subCopyQ, ST_ZERO, *view_ritzVectors );
 
           // Compute the norm of the new Ritz vectors
@@ -1620,10 +1621,10 @@ namespace Anasazi {
             /* TO DO:  There's be an incorrect assumption made in the computation of the Ritz residuals.
                        This assumption is that the next vector in the Krylov subspace is euclidean orthonormal.
                        It may not be normalized using euclidean norm.
-            Teuchos::RefCountPtr<MV> ritzResVecs = MVT::Clone( *V_, curDim_ );
+            Teuchos::RCP<MV> ritzResVecs = MVT::Clone( *V_, curDim_ );
             std::vector<int> curind(blockSize_);
             for (int i=0; i<blockSize_; i++) { curind[i] = curDim_ + i; }
-            Teuchos::RefCountPtr<MV> Vtemp = MVT::CloneView(*V_,curind);     
+            Teuchos::RCP<MV> Vtemp = MVT::CloneView(*V_,curind);     
             
             MVT::MvTimesMatAddMv( ST_ONE, *Vtemp, ritzRes, ST_ZERO, *ritzResVecs );
             std::vector<MagnitudeType> ritzResNrms(curDim_);
