@@ -182,6 +182,7 @@ TAC_ARG_CHECK_MPI
 # ------------------------------------------------------------------------
 
 AC_CHECK_HEADERS([cerrno errno.h], [break],)
+AC_CHECK_HEADERS([limits.h climits], [break],)
 AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
 AC_CHECK_HEADERS([cstdio stdio.h], [break],)
 AC_CHECK_HEADERS([cassert assert.h], [break],)
@@ -201,6 +202,7 @@ AC_CHECK_HEADERS([stdexcept stdexcept.h], [break],)
 AC_CHECK_HEADERS([cstdarg stdarg.h], [break],)
 AC_CHECK_HEADERS([typeinfo],,)
 AC_CHECK_HEADERS([fpu_control.h],,)
+AC_CHECK_HEADERS([memory],,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Teuchos requires at least one or the other.]])

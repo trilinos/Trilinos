@@ -91,7 +91,7 @@ class VecSpaceA : public VecSpaceBase
 public:
   VecSpaceA(int n) : n_(n) {;}
   virtual RCP<VecBase> create(const RCP<const VecSpaceBase>& s) const ;
-  TEUCHOS_GET_CONST_RCP(VecSpaceBase);
+  TEUCHOS_GET_CONST_RCP(VecSpaceBase)
 private:
   int n_;
 };
@@ -165,7 +165,7 @@ public:
 
   int dim() const {return x_.size();}
 
-  TEUCHOS_GET_RCP(VecBase);
+  TEUCHOS_GET_RCP(VecBase)
 private:
   Array<double> x_;
   RCP<const VecSpaceBase> sp_;
@@ -184,7 +184,7 @@ class Vector;
 class ConstVector : public virtual ConstHandle<VecBase>
 {
 public:
-  TEUCHOS_CONST_HANDLE_CTORS(ConstVector, VecBase);
+  TEUCHOS_CONST_HANDLE_CTORS(ConstVector, VecBase)
   
 
   RCP<const VecSpaceBase> space() const {return constPtr()->space();}
@@ -204,7 +204,7 @@ class Vector : public ConstVector,
                public Handle<VecBase>
 {
 public:
-  TEUCHOS_HANDLE_CTORS(Vector, VecBase);
+  TEUCHOS_HANDLE_CTORS(Vector, VecBase)
 
   void scale(const double& a) {ptr()->scale(a);}
 
@@ -258,7 +258,7 @@ void ConstVector::copyInto(Vector& result) const
 class VectorSpace : public ConstHandle<VecSpaceBase>
 {
 public:
-  TEUCHOS_CONST_HANDLE_CTORS(VectorSpace, VecSpaceBase);
+  TEUCHOS_CONST_HANDLE_CTORS(VectorSpace, VecSpaceBase)
   
   Vector create() const {return constPtr()->create(constPtr());}
 };

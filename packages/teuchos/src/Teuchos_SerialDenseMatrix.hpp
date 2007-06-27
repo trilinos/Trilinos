@@ -241,7 +241,7 @@ namespace Teuchos {
 
     //! Data array access method.
     /*! \return Pointer to the ScalarType data array contained in the object. */
-    ScalarType* values() const { return(values_); };
+    ScalarType* values() const { return(values_); }
 
   //@}
 
@@ -315,13 +315,13 @@ namespace Teuchos {
   //@{ 
 
     //! Returns the row dimension of this matrix.
-    int numRows() const { return(numRows_); };
+    int numRows() const { return(numRows_); }
 
     //! Returns the column dimension of this matrix.
-    int numCols() const { return(numCols_); };
+    int numCols() const { return(numCols_); }
 
     //! Returns the stride between the columns of this matrix in memory.
-    int stride() const { return(stride_); };
+    int stride() const { return(stride_); }
   //@}
 
   //! @name Norm methods.

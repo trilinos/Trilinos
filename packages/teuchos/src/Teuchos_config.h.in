@@ -38,6 +38,9 @@
 /* Define to 1 if you have the <cerrno> header file. */
 #undef HAVE_CERRNO
 
+/* Define to 1 if you have the <climits> header file. */
+#undef HAVE_CLIMITS
+
 /* Define to 1 if you have the <cmath> header file. */
 #undef HAVE_CMATH
 
@@ -98,6 +101,9 @@
 /* Define if want to build libcheck */
 #undef HAVE_LIBCHECK
 
+/* Define to 1 if you have the <limits.h> header file. */
+#undef HAVE_LIMITS_H
+
 /* Define to 1 if you have the <list> header file. */
 #undef HAVE_LIST
 
@@ -112,6 +118,9 @@
 
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
+
+/* Define to 1 if you have the <memory> header file. */
+#undef HAVE_MEMORY
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H

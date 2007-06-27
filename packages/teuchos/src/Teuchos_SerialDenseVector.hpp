@@ -89,7 +89,7 @@ namespace Teuchos {
 	This method can be called at any point after construction.  Any values previously in
 	this object will be destroyed and the resized vector starts with all zero values.
     */
-    int size(int length) {return(SerialDenseMatrix<OrdinalType, ScalarType>::shape(length, 1));};
+    int size(int length) {return(SerialDenseMatrix<OrdinalType, ScalarType>::shape(length, 1));}
 
     //! Resizing method for changing the size of a SerialDenseVector, keeping the entries.
     /*!
@@ -98,7 +98,7 @@ namespace Teuchos {
 	This method can be called at any point after construction.  Any values previously in
 	this object will be copied to the resized vector.
     */	
-    int resize(int length) {return(SerialDenseMatrix<OrdinalType,ScalarType>::reshape(length, 1));};
+    int resize(int length) {return(SerialDenseMatrix<OrdinalType,ScalarType>::reshape(length, 1));}
   //@}
 
   //! @name Comparison methods.
@@ -162,7 +162,7 @@ namespace Teuchos {
   //! @name Attribute methods.
   //@{ 
     //! Returns the length of this vector.
-    int length() const {return(this->numRows_);};
+    int length() const {return(this->numRows_);}
   //@}
 
   //! @name I/O methods.

@@ -127,13 +127,13 @@ namespace Teuchos
     //@{ 
     
     //! Default constructor.
-    inline BLAS(void) {};
+    inline BLAS(void) {}
 
     //! Copy constructor.
-    inline BLAS(const BLAS<OrdinalType, ScalarType>& BLAS_source) {};
+    inline BLAS(const BLAS<OrdinalType, ScalarType>& BLAS_source) {}
 
     //! Destructor.
-    inline virtual ~BLAS(void) {};
+    inline virtual ~BLAS(void) {}
     //@}
 
     //! @name Level 1 BLAS Routines.
@@ -1495,9 +1495,9 @@ namespace Teuchos
   class BLAS<OrdinalType, float>
   {    
   public:
-    inline BLAS(void) {};
-    inline BLAS(const BLAS<OrdinalType, float>& BLAS_source) {};
-    inline virtual ~BLAS(void) {};
+    inline BLAS(void) {}
+    inline BLAS(const BLAS<OrdinalType, float>& BLAS_source) {}
+    inline virtual ~BLAS(void) {}
     void ROTG(float* da, float* db, float* c, float* s) const;
     void ROT(const OrdinalType n, float* dx, const OrdinalType incx, float* dy, const OrdinalType incy, float* c, float* s) const;
     float ASUM(const OrdinalType n, const float* x, const OrdinalType incx) const;
@@ -1589,9 +1589,9 @@ namespace Teuchos
   class BLAS<OrdinalType, double>
   {    
   public:
-    inline BLAS(void) {};
-    inline BLAS(const BLAS<OrdinalType, double>& BLAS_source) {};
-    inline virtual ~BLAS(void) {};
+    inline BLAS(void) {}
+    inline BLAS(const BLAS<OrdinalType, double>& BLAS_source) {}
+    inline virtual ~BLAS(void) {}
     void ROTG(double* da, double* db, double* c, double* s) const;
     void ROT(const OrdinalType n, double* dx, const OrdinalType incx, double* dy, const OrdinalType incy, double* c, double* s) const;
     double ASUM(const OrdinalType n, const double* x, const OrdinalType incx) const;
@@ -1682,9 +1682,9 @@ namespace Teuchos
   class BLAS<OrdinalType, complex<float> >
   {    
   public:
-    inline BLAS(void) {};
-    inline BLAS(const BLAS<OrdinalType, complex<float> >& BLAS_source) {};
-    inline virtual ~BLAS(void) {};
+    inline BLAS(void) {}
+    inline BLAS(const BLAS<OrdinalType, complex<float> >& BLAS_source) {}
+    inline virtual ~BLAS(void) {}
     void ROTG(complex<float>* da, complex<float>* db, float* c, complex<float>* s) const;
     void ROT(const OrdinalType n, complex<float>* dx, const OrdinalType incx, complex<float>* dy, const OrdinalType incy, float* c, complex<float>* s) const;
     float ASUM(const OrdinalType n, const complex<float>* x, const OrdinalType incx) const;
@@ -1773,9 +1773,9 @@ namespace Teuchos
   class BLAS<OrdinalType, complex<double> >
   {    
   public:
-    inline BLAS(void) {};
-    inline BLAS(const BLAS<OrdinalType, complex<double> >& BLAS_source) {};
-    inline virtual ~BLAS(void) {};
+    inline BLAS(void) {}
+    inline BLAS(const BLAS<OrdinalType, complex<double> >& BLAS_source) {}
+    inline virtual ~BLAS(void) {}
     void ROTG(complex<double>* da, complex<double>* db, double* c, complex<double>* s) const;
     void ROT(const OrdinalType n, complex<double>* dx, const OrdinalType incx, complex<double>* dy, const OrdinalType incy, double* c, complex<double>* s) const;
     double ASUM(const OrdinalType n, const complex<double>* x, const OrdinalType incx) const;

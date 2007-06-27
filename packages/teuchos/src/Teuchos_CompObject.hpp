@@ -70,40 +70,40 @@ class CompObject
   //! @name Set/Get counter method.
   //@{ 
   //! Set the internal Teuchos::Flops() pointer.
-  void setFlopCounter(const Flops &FlopCounter) {flopCounter_= (Flops *) &FlopCounter; return;};
+  void setFlopCounter(const Flops &FlopCounter) {flopCounter_= (Flops *) &FlopCounter; return;}
   
   //! Set the internal Teuchos::Flops() pointer to the flop counter of another Teuchos::CompObject.
-  void setFlopCounter(const CompObject &compObject) {flopCounter_= (Flops *) (compObject.getFlopCounter()); return;};
+  void setFlopCounter(const CompObject &compObject) {flopCounter_= (Flops *) (compObject.getFlopCounter()); return;}
   
   //! Set the internal Teuchos::Flops() pointer to 0 (no flops counted).
-  void unsetFlopCounter() {flopCounter_=0; return;};
+  void unsetFlopCounter() {flopCounter_=0; return;}
   
   //! Get the pointer to the Teuchos::Flops() object associated with this object, returns 0 if none.
-  Flops * getFlopCounter() const {return(flopCounter_);};
+  Flops * getFlopCounter() const {return(flopCounter_);}
   //@}
 
   //! @name Set flop count methods.
   //@{ 
   //! Resets the number of floating point operations to zero for \e this multi-vector.
-  void resetFlops() const {if (flopCounter_!=0) flopCounter_->resetFlops(); return;};
+  void resetFlops() const {if (flopCounter_!=0) flopCounter_->resetFlops(); return;}
 
   //! Returns the number of floating point operations with \e this multi-vector.
-  double getFlops() const {if (flopCounter_!=0) return(flopCounter_->flops()); else return(0.0);};
+  double getFlops() const {if (flopCounter_!=0) return(flopCounter_->flops()); else return(0.0);}
   //@}
 
   //! @name Update flop count methods.
   //@{ 
   //! Increment Flop count for \e this object
-  void updateFlops(int addflops) const { if (flopCounter_!=0) flopCounter_->updateFlops(addflops); return;};
+  void updateFlops(int addflops) const { if (flopCounter_!=0) flopCounter_->updateFlops(addflops); return;}
 
   //! Increment Flop count for \e this object
-  void updateFlops(long int addflops) const { if (flopCounter_!=0) flopCounter_->updateFlops(addflops); return;};
+  void updateFlops(long int addflops) const { if (flopCounter_!=0) flopCounter_->updateFlops(addflops); return;}
 
   //! Increment Flop count for \e this object
-  void updateFlops(double addflops) const { if (flopCounter_!=0) flopCounter_->updateFlops(addflops); return;};
+  void updateFlops(double addflops) const { if (flopCounter_!=0) flopCounter_->updateFlops(addflops); return;}
 
   //! Increment Flop count for \e this object
-  void updateFlops(float addflops) const {if (flopCounter_!=0) flopCounter_->updateFlops(addflops); return;};
+  void updateFlops(float addflops) const {if (flopCounter_!=0) flopCounter_->updateFlops(addflops); return;}
   //@}
 
  protected:

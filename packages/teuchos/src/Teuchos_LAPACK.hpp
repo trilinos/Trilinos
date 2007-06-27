@@ -94,7 +94,7 @@ namespace Teuchos
   struct UndefinedLAPACKRoutine
   {
     // This function should not compile if there is an attempt to instantiate!
-    static inline T notDefined() { return T::LAPACK_routine_not_defined_for_this_type(); };
+    static inline T notDefined() { return T::LAPACK_routine_not_defined_for_this_type(); }
   };
 
   template<typename OrdinalType, typename ScalarType>
@@ -108,13 +108,13 @@ namespace Teuchos
     //@{ 
 
     //! Default Constructor.
-    inline LAPACK(void) {};
+    inline LAPACK(void) {}
 
     //! Copy Constructor.
-    inline LAPACK(const LAPACK<OrdinalType, ScalarType>& lapack) {};
+    inline LAPACK(const LAPACK<OrdinalType, ScalarType>& lapack) {}
 
     //! Destructor.
-    inline virtual ~LAPACK(void) {};
+    inline virtual ~LAPACK(void) {}
     //@}
 
     //! @name Symmetric Positive Definite Linear System Routines.
@@ -684,9 +684,9 @@ namespace Teuchos
   class LAPACK<OrdinalType, float>
   {    
   public:
-    inline LAPACK(void) {};
-    inline LAPACK(const LAPACK<OrdinalType, float>& lapack) {};
-    inline virtual ~LAPACK(void) {};
+    inline LAPACK(void) {}
+    inline LAPACK(const LAPACK<OrdinalType, float>& lapack) {}
+    inline virtual ~LAPACK(void) {}
 
     // Symmetric positive definite linear system routines
     void POTRF(const char UPLO, const OrdinalType n, float* A, const OrdinalType lda, OrdinalType* info) const;
@@ -757,9 +757,9 @@ namespace Teuchos
     float LAMCH(const char CMACH) const;
     OrdinalType ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1 = -1, const OrdinalType N2 = -1, const OrdinalType N3 = -1, const OrdinalType N4 = -1 ) const;
 
-
     // Miscellaneous routines.
     float LAPY2(const float x, const float y) const;
+
   };
 
   // END FLOAT PARTIAL SPECIALIZATION DECLARATION //
@@ -1091,9 +1091,9 @@ namespace Teuchos
   class LAPACK<OrdinalType, double>
   {    
   public:
-    inline LAPACK(void) {};
-    inline LAPACK(const LAPACK<OrdinalType, double>& lapack) {};
-    inline virtual ~LAPACK(void) {};
+    inline LAPACK(void) {}
+    inline LAPACK(const LAPACK<OrdinalType, double>& lapack) {}
+    inline virtual ~LAPACK(void) {}
 
     // Symmetric positive definite linear system routines
     void PTTRF(const OrdinalType n, double* d, double* e, OrdinalType* info) const;
@@ -1164,6 +1164,7 @@ namespace Teuchos
 
     // Miscellaneous routines.
     double LAPY2(const double x, const double y) const;
+
   };
 
   // END DOUBLE PARTIAL SPECIALIZATION DECLARATION //
@@ -1502,9 +1503,9 @@ namespace Teuchos
   class LAPACK<OrdinalType, complex<float> >
   {    
   public:
-    inline LAPACK(void) {};
-    inline LAPACK(const LAPACK<OrdinalType, complex<float> >& lapack) {};
-    inline virtual ~LAPACK(void) {};
+    inline LAPACK(void) {}
+    inline LAPACK(const LAPACK<OrdinalType, complex<float> >& lapack) {}
+    inline virtual ~LAPACK(void) {}
 
     // Symmetric positive definite linear system routines
     void PTTRF(const OrdinalType n, complex<float>* d, complex<float>* e, OrdinalType* info) const;
@@ -1834,9 +1835,9 @@ namespace Teuchos
   class LAPACK<OrdinalType, complex<double> >
   {    
   public:
-    inline LAPACK(void) {};
-    inline LAPACK(const LAPACK<OrdinalType, complex<double> >& lapack) {};
-    inline virtual ~LAPACK(void) {};
+    inline LAPACK(void) {}
+    inline LAPACK(const LAPACK<OrdinalType, complex<double> >& lapack) {}
+    inline virtual ~LAPACK(void) {}
 
     // Symmetric positive definite linear system routines
     void PTTRF(const OrdinalType n, complex<double>* d, complex<double>* e, OrdinalType* info) const;

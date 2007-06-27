@@ -118,10 +118,18 @@
 #error "Found neither cerrno nor errno.h"
 #endif
 
-#if HAVE_CSTDLIB
-#include <cstdlib>
-#elif HAVE_STDLIB_H
+#if HAVE_LIMITS_H
+#include <limits.h>
+#elif HAVE_CLIMITS
+#include <climits>
+#else
+#error "Found neither <limits.h> or <climits>h"
+#endif
+
+#if HAVE_STDLIB_H
 #include <stdlib.h>
+#elif HAVE_CSTDLIB
+#include <cstdlib>
 #else
 #error "Found neither cstdlib nor stdlib.h"
 #endif
@@ -215,6 +223,10 @@
 
 #ifdef HAVE_NUMERIC_LIMITS
 #include <limits>
+#endif
+
+#ifdef HAVE_MEMORY
+#include <memory>
 #endif
 
 /******************************************************************************
