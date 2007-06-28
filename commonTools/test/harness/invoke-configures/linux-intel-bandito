@@ -43,6 +43,7 @@ CC=icc CXX=icpc F77=ifort \
 --enable-teuchos-extended \
 --enable-thyra \
 --enable-tpetra \
+--enable-trilinoscouplings \
 --enable-triutils \
 --enable-sacado \
 --enable-sacado-alltests \

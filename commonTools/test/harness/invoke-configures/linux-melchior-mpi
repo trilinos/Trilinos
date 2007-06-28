@@ -55,6 +55,7 @@ FFLAGS="-O5 -funroll-all-loops" \
 --disable-teuchos-expat \
 --enable-thyra \
 --enable-tpetra \
+--enable-trilinoscouplings \
 --enable-triutils \
 --enable-sacado \
 --disable-sacado-alltests \

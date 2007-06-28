@@ -56,5 +56,6 @@ CPPFLAGS=-Wno-long-double \
 --enable-teuchos-expat \
 --enable-teuchos-extended \
 --enable-thyra \
+--enable-trilinoscouplings \
 --enable-triutils \
 --enable-webtrilinos

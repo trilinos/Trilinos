@@ -64,6 +64,7 @@ FFLAGS=-O3 \
 --enable-teuchos-expat \
 --enable-thyra \
 --enable-tpetra \
+--enable-trilinoscouplings \
 --enable-triutils \
 --enable-sacado \
 --enable-sacado-alltests \
