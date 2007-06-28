@@ -114,7 +114,7 @@ ML_Aux_Data* ML_Aux_Data_Clone(ML_Aux_Data* original);
 /* -------------------------------------------------------------------- */
 
 struct ML_Operator_Struct {
-   int           ML_id;
+   int           ML_id; /*this and the getrow are not the pid that lives in comm ML_id is used as the pid for communication in the neighbor list however*/
    ML_Comm       *comm;
    ML_1Level     *to, *from;
    int           invec_leng, outvec_leng;
