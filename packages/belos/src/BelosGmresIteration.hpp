@@ -50,7 +50,7 @@ namespace Belos {
   struct GmresIterationState {
     /*! \brief The current dimension of the reduction.
      *
-     * This should always be equal to BlockFGmresIter::getCurSubspaceDim()
+     * This should always be equal to GmresIteration::getCurSubspaceDim()
      */
     int curDim;
 
@@ -80,6 +80,8 @@ namespace Belos {
 			    z(Teuchos::null)
     {}
   };
+
+  //@}
 
   //! @name GmresIteration Exceptions
   //@{ 
