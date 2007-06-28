@@ -34,7 +34,7 @@ extern "C" {
 /****************************************************************************/
 
 static int partition_stats(ZZ *zz, int ndots, 
-                   float *weights, int *obj_sizes,
+                   Dots *dots, int *obj_sizes,
                    float *work_fraction, int *parts, int *new_parts);
 
 /* This structure is the Zoltan convention for user settable parameters */
@@ -530,7 +530,7 @@ int Zoltan_HSFC(
          }
        }
      }
-     err = partition_stats(zz, ndots, weights, objSizes, work_fraction, 
+     err = partition_stats(zz, ndots, dots, objSizes, work_fraction, 
                            parts, new_part);
   
      if (err != ZOLTAN_OK){
@@ -778,7 +778,7 @@ void  Zoltan_HSFC_mpi_sum_max_min (void *in, void *inout, int *len,
    }
 
 static int partition_stats(ZZ *zz, int ndots, 
-                   float *weights, int *obj_sizes,
+                   Dots *dots, int *obj_sizes,
                    float *work_fraction, int *parts, int *new_parts)
 {
 int wgtDim = zz->Obj_Weight_Dim;
@@ -793,7 +793,7 @@ double *gpartWgt = NULL;
   for (i = 0, max=0; i < ndots; i++){
     if (new_parts[i] > max) max = new_parts[i];
     if (wgtDim){
-      lwtot += weights[i * wgtDim];
+      lwtot += dots[i * wgtDim].weight;
     }
     else{
       lwtot += 1.0;
@@ -815,7 +815,7 @@ double *gpartWgt = NULL;
 
   for (i = 0, j=0, move=0.0; i < ndots; i++, j += wgtDim){
     if (wgtDim)
-      lpartWgt[new_parts[i]] +=  (double)weights[j];
+      lpartWgt[new_parts[i]] +=  (double)dots[j].weight;
     else
       lpartWgt[new_parts[i]] += 1.0; 
 
