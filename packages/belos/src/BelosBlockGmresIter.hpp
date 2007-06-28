@@ -286,11 +286,16 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   // For the implications of the state of initialized_, please see documentation for initialize()
   bool initialized_;
 
-  // stateStorageInitialized_ specified that the state storage has be initialized to the current
+  // stateStorageInitialized_ specifies that the state storage has be initialized to the current
   // blockSize_ and numBlocks_.  This initialization may be postponed if the linear problem was
   // generated without the right-hand side or solution vectors.
   bool stateStorageInitialized_;
 
+  // keepHessenberg_ specifies that the iteration must keep the Hessenberg matrix formed via the 
+  // Arnoldi factorization and the upper triangular matrix that is the Hessenberg matrix reduced via
+  // QR factorization separate.
+  bool keepHessenberg_;
+ 
   // Current subspace dimension, and number of iterations performed.
   int curDim_, iter_;
   
@@ -327,9 +332,13 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
     numBlocks_(0),
     initialized_(false),
     stateStorageInitialized_(false),
+    keepHessenberg_(false),
     curDim_(0),
     iter_(0)
   {
+    // Find out whether we are saving the Hessenberg matrix.
+    keepHessenberg_ = params.get("Keep Hessenberg", false);
+
     // Get the maximum number of blocks allowed for this Krylov subspace
     TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument,
                        "Belos::BlockGmresIter::constructor: mandatory parameter 'Num Blocks' is not specified.");
@@ -417,14 +426,24 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 	  }
 	}
 	
-	// Generate H_ only if it doesn't exist, otherwise resize it.
-	if (H_ == Teuchos::null)
-	  H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-blockSize_ ) );	
+	// Generate R_ only if it doesn't exist, otherwise resize it.
+	if (R_ == Teuchos::null)
+	  R_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-blockSize_ ) );	
 	else
-	  H_->shapeUninitialized( newsd, newsd-blockSize_ );
+	  R_->shapeUninitialized( newsd, newsd-blockSize_ );
 	
-	// TODO:  Insert logic so that Hessenberg matrix can be saved and reduced matrix is stored in R_
-	//R_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-blockSize_ ) );
+	// Generate H_ only if it doesn't exist, and we are keeping the upper Hessenberg matrix.
+	if (keepHessenberg_) {
+	  if (H_ == Teuchos::null) 
+	    H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-blockSize_ ) );
+	  else
+	    H_->shapeUninitialized( newsd, newsd-blockSize_ );
+	}
+	else {
+	  // Point H_ and R_ at the same object.
+	  H_ = R_;
+	}
+	
 	// Generate z_ only if it doesn't exist, otherwise resize it.
 	if (z_ == Teuchos::null)
 	  z_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,blockSize_) );
@@ -463,7 +482,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       //
       blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
 		 Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,  
-		 H_->values(), H_->stride(), y.values(), y.stride() );
+		 R_->values(), R_->stride(), y.values(), y.stride() );
       //
       //  Compute the current update.
       //
@@ -651,9 +670,26 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       
       // Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >
-	subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
-			     ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
-      int rank = ortho_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
+	subH2 = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
+			      ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
+      int rank = ortho_->projectAndNormalize(*Vnext,AsubH,subH2,AVprev);
+
+      // Copy over the coefficients if we are saving the upper Hessenberg matrix,
+      // just in case we run into an error.
+      if (keepHessenberg_) {
+	// Copy over the orthogonalization coefficients.
+	Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >
+	  subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
+			       ( Teuchos::View,*R_,lclDim,blockSize_,0,curDim_ ) );
+	subR->assign(*subH);
+	
+	// Copy over the lower diagonal block of the Hessenberg matrix.
+	Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >
+	  subR2 = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
+				( Teuchos::View,*R_,blockSize_,blockSize_,lclDim,curDim_ ) );
+	subR2->assign(*subH2);
+      }
+
       TEST_FOR_EXCEPTION(rank != blockSize_,GmresIterationOrthoFailure,
 			 "Belos::BlockGmresIter::iterate(): couldn't generate basis of full rank.");
       //
@@ -718,13 +754,13 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 	//
 	// Apply previous Givens rotations to new column of Hessenberg matrix
 	//
-	blas.ROT( 1, &(*H_)(i,curDim), 1, &(*H_)(i+1, curDim), 1, &cs[i], &sn[i] );
+	blas.ROT( 1, &(*R_)(i,curDim), 1, &(*R_)(i+1, curDim), 1, &cs[i], &sn[i] );
       }
       //
       // Calculate new Givens rotation
       //
-      blas.ROTG( &(*H_)(curDim,curDim), &(*H_)(curDim+1,curDim), &cs[curDim], &sn[curDim] );
-      (*H_)(curDim+1,curDim) = zero;
+      blas.ROTG( &(*R_)(curDim,curDim), &(*R_)(curDim+1,curDim), &cs[curDim], &sn[curDim] );
+      (*R_)(curDim+1,curDim) = zero;
       //
       // Update RHS w/ new transformation
       //
@@ -739,45 +775,45 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 	// Apply previous Householder reflectors to new block of Hessenberg matrix
 	//
 	for (i=0; i<curDim+j; i++) {
-	  sigma = blas.DOT( blockSize_, &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim+j), 1);
-	  sigma += (*H_)(i,curDim+j);
+	  sigma = blas.DOT( blockSize_, &(*R_)(i+1,i), 1, &(*R_)(i+1,curDim+j), 1);
+	  sigma += (*R_)(i,curDim+j);
 	  sigma *= beta[i];
-	  blas.AXPY(blockSize_, -sigma, &(*H_)(i+1,i), 1, &(*H_)(i+1,curDim+j), 1);
-	  (*H_)(i,curDim+j) -= sigma;
+	  blas.AXPY(blockSize_, -sigma, &(*R_)(i+1,i), 1, &(*R_)(i+1,curDim+j), 1);
+	  (*R_)(i,curDim+j) -= sigma;
 	}
 	//
 	// Compute new Householder reflector
 	//
-	maxidx = blas.IAMAX( blockSize_+1, &(*H_)(curDim+j,curDim+j), 1 );
-	maxelem = (*H_)(curDim+j+maxidx-1,curDim+j);
+	maxidx = blas.IAMAX( blockSize_+1, &(*R_)(curDim+j,curDim+j), 1 );
+	maxelem = (*R_)(curDim+j+maxidx-1,curDim+j);
 	for (i=0; i<blockSize_+1; i++)
-	  (*H_)(curDim+j+i,curDim+j) /= maxelem;
-	sigma = blas.DOT( blockSize_, &(*H_)(curDim+j+1,curDim+j), 1,
-			  &(*H_)(curDim+j+1,curDim+j), 1 );
+	  (*R_)(curDim+j+i,curDim+j) /= maxelem;
+	sigma = blas.DOT( blockSize_, &(*R_)(curDim+j+1,curDim+j), 1,
+			  &(*R_)(curDim+j+1,curDim+j), 1 );
 	if (sigma == zero) {
 	  beta[curDim + j] = zero;
 	} else {
-	  mu = sqrt((*H_)(curDim+j,curDim+j)*(*H_)(curDim+j,curDim+j)+sigma);
-	  if ( Teuchos::ScalarTraits<ScalarType>::real((*H_)(curDim+j,curDim+j)) 
+	  mu = sqrt((*R_)(curDim+j,curDim+j)*(*R_)(curDim+j,curDim+j)+sigma);
+	  if ( Teuchos::ScalarTraits<ScalarType>::real((*R_)(curDim+j,curDim+j)) 
 	       < Teuchos::ScalarTraits<MagnitudeType>::zero() ) {
-	    vscale = (*H_)(curDim+j,curDim+j) - mu;
+	    vscale = (*R_)(curDim+j,curDim+j) - mu;
 	  } else {
-	    vscale = -sigma / ((*H_)(curDim+j,curDim+j) + mu);
+	    vscale = -sigma / ((*R_)(curDim+j,curDim+j) + mu);
 	  }
 	  beta[curDim+j] = 2.0*vscale*vscale/(sigma + vscale*vscale);
-	  (*H_)(curDim+j,curDim+j) = maxelem*mu;
+	  (*R_)(curDim+j,curDim+j) = maxelem*mu;
 	  for (i=0; i<blockSize_; i++)
-	    (*H_)(curDim+j+1+i,curDim+j) /= vscale;
+	    (*R_)(curDim+j+1+i,curDim+j) /= vscale;
 	}
 	//
 	// Apply new Householder reflector to rhs
 	//
 	for (i=0; i<blockSize_; i++) {
-	  sigma = blas.DOT( blockSize_, &(*H_)(curDim+j+1,curDim+j),
+	  sigma = blas.DOT( blockSize_, &(*R_)(curDim+j+1,curDim+j),
 			    1, &(*z_)(curDim+j+1,i), 1);
 	  sigma += (*z_)(curDim+j,i);
 	  sigma *= beta[curDim+j];
-	  blas.AXPY(blockSize_, -sigma, &(*H_)(curDim+j+1,curDim+j),
+	  blas.AXPY(blockSize_, -sigma, &(*R_)(curDim+j+1,curDim+j),
 		    1, &(*z_)(curDim+j+1,i), 1);
 	  (*z_)(curDim+j,i) -= sigma;
 	}
