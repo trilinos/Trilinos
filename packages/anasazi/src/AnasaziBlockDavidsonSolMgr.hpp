@@ -470,7 +470,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         Teuchos::SerialDenseMatrix<int,ScalarType> S(curdim,curdim);
         std::vector<MagnitudeType> theta(curdim);
         int rank = curdim;
-        int info = msutils::directSolver(curdim,*state.KK,NULL,&S,&theta,&rank,10);
+        int info = msutils::directSolver(curdim,*state.KK,Teuchos::null,S,theta,rank,10);
         TEST_FOR_EXCEPTION(info != 0     ,std::logic_error,
             "Anasazi::BlockDavidsonSolMgr::solve(): error calling SolverUtils::directSolver.");       // this should never happen
         TEST_FOR_EXCEPTION(rank != curdim,std::logic_error,
@@ -644,7 +644,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         std::vector<MagnitudeType> theta(curdim);
         {
           int rank = curdim;
-          int info = msutils::directSolver(curdim,*state.KK,NULL,&S,&theta,&rank,10);
+          int info = msutils::directSolver(curdim,*state.KK,Teuchos::null,S,theta,rank,10);
           TEST_FOR_EXCEPTION(info != 0     ,std::logic_error,
               "Anasazi::BlockDavidsonSolMgr::solve(): error calling SolverUtils::directSolver.");       // this should never happen
           TEST_FOR_EXCEPTION(rank != curdim,std::logic_error,

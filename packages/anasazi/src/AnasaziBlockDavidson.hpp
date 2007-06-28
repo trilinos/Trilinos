@@ -1065,7 +1065,7 @@ namespace Anasazi {
       {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
         int rank = curDim_;
-        Utils::directSolver(curDim_, *lclKK, 0, &S, &theta_, &rank, 10);
+        Utils::directSolver(curDim_, *lclKK, Teuchos::null, S, theta_, rank, 10);
         // we want all ritz values back
         TEST_FOR_EXCEPTION(rank != curDim_,BlockDavidsonInitFailure,
                            "Anasazi::BlockDavidson::initialize(newstate): Not enough Ritz vectors to initialize algorithm.");
@@ -1374,7 +1374,7 @@ namespace Anasazi {
       {
         Teuchos::TimeMonitor lcltimer(*timerDS_);
         int nevlocal = curDim_;
-        int info = Utils::directSolver(curDim_,*KK_,0,&S,&theta_,&nevlocal,10);
+        int info = Utils::directSolver(curDim_,*KK_,Teuchos::null,S,theta_,nevlocal,10);
         TEST_FOR_EXCEPTION(info != 0,std::logic_error,"Anasazi::BlockDavidson::iterate(): direct solve returned error code.");
         // we did not ask directSolver to perform deflation, so nevLocal better be curDim_
         TEST_FOR_EXCEPTION(nevlocal != curDim_,std::logic_error,"Anasazi::BlockDavidson::iterate(): direct solve did not compute all eigenvectors."); // this should never happen

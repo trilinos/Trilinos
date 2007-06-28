@@ -1115,7 +1115,7 @@ namespace Anasazi {
       // solve the projected problem
       {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
-        Utils::directSolver(blockSize_, KK, &MM, &S, &theta_, &nevLocal_, 1);
+        Utils::directSolver(blockSize_, KK, Teuchos::rcp(&MM,false), S, theta_, nevLocal_, 1);
         TEST_FOR_EXCEPTION(nevLocal_ != blockSize_,LOBPCGInitFailure,
                            "Anasazi::LOBPCG::initialize(): Initial Ritz analysis did not produce enough Ritz pairs to initialize algorithm.");
       }
@@ -1141,12 +1141,12 @@ namespace Anasazi {
         // R = MM*S*diag(theta) - KK*S
         int info;
         info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,MM,S,ZERO);
-        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply.");
+        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::LOBPCG::initialize(): Logic error calling SerialDenseMatrix::multiply.");
         for (int i=0; i<blockSize_; i++) {
           blas.SCAL(blockSize_,theta_[i],R[i],1);
         }
         info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,KK,S,ONE);
-        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply.");
+        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::LOBPCG::initialize(): Logic error calling SerialDenseMatrix::multiply.");
         for (int i=0; i<blockSize_; i++) {
           ritz2norms_[i] = blas.NRM2(blockSize_,R[i],1);
         }
@@ -1535,7 +1535,7 @@ namespace Anasazi {
       {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
         int localSize = nevLocal_;
-        Utils::directSolver(localSize, lclKK, &lclMM, &lclS, &theta_, &nevLocal_, 0);
+        Utils::directSolver(localSize, lclKK, Teuchos::rcp(&lclMM,false), lclS, theta_, nevLocal_, 0);
         // localSize tells directSolver() how big KK,MM are
         // however, directSolver() may choose to use only the principle submatrices of KK,MM 
         // because of loss of MM-orthogonality in the projected eigenvectors

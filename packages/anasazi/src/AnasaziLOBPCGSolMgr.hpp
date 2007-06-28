@@ -664,7 +664,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       // KK = restart^H K restart
       MVT::MvTransMv(1.0,*restart,*Krestart,KK);
       rank = localsize;
-      msutils.directSolver(localsize,KK,&MM,&S,&theta,&rank,1);
+      msutils.directSolver(localsize,KK,Teuchos::rcp(&MM,false),S,theta,rank,1);
       if (rank < blockSize_) {
         printer->stream(Errors) << "Error! Recovered basis of rank " << rank << " produced only " << rank << "ritz vectors.\n"
                                 << "Block size is " << blockSize_ << ".\n"
