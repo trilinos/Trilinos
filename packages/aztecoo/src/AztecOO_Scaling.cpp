@@ -145,6 +145,11 @@ int AZOO_Scale(int action,
         }
         return(-1);
       }
+      if (scaling->scaling_data != NULL) {
+        Epetra_Vector* oldvec =
+          static_cast<Epetra_Vector*>(scaling->scaling_data);
+        delete oldvec;
+      }
       scaling->scaling_data = (void*)vec;
     }
     else {
