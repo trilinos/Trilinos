@@ -19,6 +19,7 @@ CORE_H = \
 	$(srcdir)/BelosBlockCGSolMgr.hpp \
 	$(srcdir)/BelosBlockCGIter.hpp \
 	$(srcdir)/BelosBlockGmresIter.hpp \
+	$(srcdir)/BelosBlockFGmresIter.hpp \
 	$(srcdir)/BelosBlockGmresSolMgr.hpp \
 	$(srcdir)/BelosCGIter.hpp \
 	$(srcdir)/BelosCGIteration.hpp \
@@ -26,6 +27,9 @@ CORE_H = \
 	$(srcdir)/BelosDGKSOrthoManager.hpp \
 	$(srcdir)/BelosEpetraAdapter.hpp \
 	$(srcdir)/BelosEpetraOperator.h \
+	$(srcdir)/BelosGCRODRIter.hpp \
+	$(srcdir)/BelosGCRODRSolMgr.hpp \
+        $(srcdir)/BelosGmresIteration.hpp \
 	$(srcdir)/BelosICGSOrthoManager.hpp \
 	$(srcdir)/BelosIteration.hpp \
 	$(srcdir)/BelosLinearProblem.hpp \
@@ -38,6 +42,7 @@ CORE_H = \
 	$(srcdir)/BelosOutputManager.hpp \
 	$(srcdir)/BelosPseudoBlockGmresIter.hpp \
 	$(srcdir)/BelosPseudoBlockGmresSolMgr.hpp \
+	$(srcdir)/BelosSolverManager.hpp \
 	$(srcdir)/BelosStatusTest.hpp \
 	$(srcdir)/BelosStatusTestCombo.hpp \
 	$(srcdir)/BelosStatusTestMaxIters.hpp \
@@ -48,7 +53,6 @@ CORE_H = \
 CORE = \
 	$(srcdir)/BelosEpetraAdapter.cpp \
 	$(srcdir)/BelosEpetraOperator.cpp
-
 
 UTIL = \
 	$(srcdir)/BelosVersion.cpp
