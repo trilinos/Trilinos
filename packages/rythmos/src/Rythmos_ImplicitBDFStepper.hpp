@@ -367,9 +367,7 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->setMaxLenLinePrefix(30);
-  if( parameterList != Teuchos::null ) {
-    this->setParameterList(parameterList);
-  }
+  this->setParameterList(parameterList);
   // Now we instantiate the model and the solver
   setModel(model);
   setSolver(solver);
@@ -397,9 +395,6 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
 template<class Scalar>
 bool ImplicitBDFStepper<Scalar>::ErrWtVecSet(Thyra::VectorBase<Scalar> *w_in, const Thyra::VectorBase<Scalar> &y)
 {
-  if (!isInitialized_) {
-    return(false);
-  }
   typedef Teuchos::ScalarTraits<Scalar> ST;
   Thyra::VectorBase<Scalar> &w = *w_in;
   abs(&w,y);
@@ -577,6 +572,9 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
   if ((stepType == VARIABLE_STEP) && (dt != ST::zero())) {
     maxTimeStep_ = dt;
     h_max_inv_ = Scalar(ST::one()/maxTimeStep_);
+  }
+  if (hh_ > maxTimeStep_) {
+    hh_ = maxTimeStep_;
   }
   
   // Set Error weight vector once for each step.
@@ -844,57 +842,18 @@ void ImplicitBDFStepper<Scalar>::setParameterList(
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
+  TEST_FOR_EXCEPT(paramList == Teuchos::null);
   parameterList_ = paramList;
-  if (parameterList_ == Teuchos::null) {
-    parameterList_ = Teuchos::rcp(new Teuchos::ParameterList);
-  }
 
   Teuchos::readVerboseObjectSublist(&*parameterList_,this);
 
   maxOrder_ = parameterList_->get("maxOrder",int(5)); // maximum order
   maxOrder_ = max(1,min(maxOrder_,5)); // 1 <= maxOrder <= 5
-  currentOrder_=1; // Current order of integration
-  oldOrder_=1; // previous order of integration
-  usedOrder_=1;  // order used in current step (used after currentOrder_ is updated)
-  alpha_s_=Scalar(-ST::one());  // $\alpha_s$ fixed-leading coefficient of this BDF method
-  alpha_.reserve(maxOrder_+1);  // $\alpha_j(n)=h_n/\psi_j(n)$ coefficient used in local error test
-  // note:   $h_n$ = current step size, n = current time step
-  gamma_.reserve(maxOrder_+1);  // calculate time derivative of history array for predictor 
-  beta_.reserve(maxOrder_+1);   // coefficients used to evaluate predictor from history array
-  psi_.reserve(maxOrder_+1);    // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to 
-  // compute $\beta_j(n;$
-  sigma_.reserve(maxOrder_+1);  // $\sigma_j(n) = \frac{h_n^j(j-1)!}{\psi_1(n)*\cdots *\psi_j(n)}$
-  for (int i=0 ; i<maxOrder_ ; ++i) {
-    alpha_.push_back(ST::zero());
-    beta_.push_back(ST::zero());
-    gamma_.push_back(ST::zero());
-    psi_.push_back(ST::zero());
-    sigma_.push_back(ST::zero());
-  }
-  alpha_0_=ST::zero();   // $-\sum_{j=1}^k \alpha_j(n)$ coefficient used in local error test
-  cj_=ST::zero();      // $-\alpha_s/h_n$ coefficient used in local error test
-  ck_=ST::zero();      // local error coefficient gamma_[0] = 0; // $\gamma_j(n)=\sum_{l=1}^{j-1}1/\psi_l(n)$ coefficient used to
-  hh_=ST::zero();
-  numberOfSteps_=0;   // number of total time integration steps taken
-  nef_=0;
-  usedStep_=ST::zero();
-  nscsco_=0;
-  Ek_=ST::zero();
-  Ekm1_=ST::zero();
-  Ekm2_=ST::zero();
-  Ekp1_=ST::zero();
-  Est_=ST::zero();
-  Tk_=ST::zero();
-  Tkm1_=ST::zero();
-  Tkm2_=ST::zero();
-  Tkp1_=ST::zero();
-  newOrder_=1;
-  initialPhase_=true;
 
   relErrTol_ = parameterList_->get( "relErrTol", Scalar(1.0e-4) );
   absErrTol_ = parameterList_->get( "absErrTol", Scalar(1.0e-6) );
   constantStepSize_ = parameterList_->get( "constantStepSize", false );
-  stopTime_ = parameterList_->get( "stopTime", Scalar(10.0) );
+  stopTime_ = parameterList_->get( "stopTime", Scalar(1.0) );
 
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -905,35 +864,6 @@ void ImplicitBDFStepper<Scalar>::setParameterList(
 
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "maxOrder_ = " << maxOrder_ << endl;
-    *out << "currentOrder_ = " << currentOrder_ << endl;
-    *out << "oldOrder_ = " << oldOrder_ << endl;
-    *out << "usedOrder_ = " << usedOrder_ << endl;
-    *out << "alpha_s_ = " << alpha_s_ << endl;
-    for (int i=0 ; i<maxOrder_ ; ++i) {
-      *out << "alpha_[" << i << "] = " << alpha_[i] << endl;
-      *out << "beta_[" << i << "] = " << beta_[i] << endl;
-      *out << "gamma_[" << i << "] = " << gamma_[i] << endl;
-      *out << "psi_[" << i << "] = " << psi_[i] << endl;
-      *out << "sigma_[" << i << "] = " << sigma_[i] << endl;
-    }
-    *out << "alpha_0_ = " << alpha_0_ << endl;
-    *out << "cj_ = " << cj_ << endl;
-    *out << "ck_ = " << ck_ << endl;
-    *out << "numberOfSteps_ = " << numberOfSteps_ << endl;
-    *out << "nef_ = " << nef_ << endl;
-    *out << "usedStep_ = " << usedStep_ << endl;
-    *out << "nscsco_ = " << nscsco_ << endl;
-    *out << "Ek_ = " << Ek_ << endl;
-    *out << "Ekm1_ = " << Ekm1_ << endl;
-    *out << "Ekm2_ = " << Ekm2_ << endl;
-    *out << "Ekp1_ = " << Ekp1_ << endl;
-    *out << "Est_ = " << Est_ << endl;
-    *out << "Tk_ = " << Tk_ << endl;
-    *out << "Tkm1_ = " << Tkm1_ << endl;
-    *out << "Tkm2_ = " << Tkm2_ << endl;
-    *out << "Tkp1_ = " << Tkp1_ << endl;
-    *out << "newOrder_ = " << newOrder_ << endl;
-    *out << "initialPhase_ = " << initialPhase_ << endl;
     *out << "relErrTol  = " << relErrTol_  << endl;
     *out << "absErrTol  = " << absErrTol_  << endl;
     *out << "constantStepSize_  = " << constantStepSize_  << endl;
@@ -1371,13 +1301,84 @@ void ImplicitBDFStepper<Scalar>::initialize_()
       << "::initialize_()...\n";
   }
 
-  TEST_FOR_EXCEPT(model_ == Teuchos::null)
-    TEST_FOR_EXCEPT(solver_ == Teuchos::null)
+  TEST_FOR_EXCEPT(model_ == Teuchos::null);
+  TEST_FOR_EXCEPT(solver_ == Teuchos::null);
 
-    if (parameterList_ == Teuchos::null) {
-      Teuchos::RCP<Teuchos::ParameterList> emptyParameterList;
-      this->setParameterList(emptyParameterList);
+  if (parameterList_ == Teuchos::null) {
+    Teuchos::RCP<Teuchos::ParameterList> emptyParameterList;
+    this->setParameterList(emptyParameterList);
+  }
+
+  currentOrder_=1; // Current order of integration
+  oldOrder_=1; // previous order of integration
+  usedOrder_=1;  // order used in current step (used after currentOrder_ is updated)
+  alpha_s_=Scalar(-ST::one());  // $\alpha_s$ fixed-leading coefficient of this BDF method
+  alpha_.clear();  // $\alpha_j(n)=h_n/\psi_j(n)$ coefficient used in local error test
+  // note:   $h_n$ = current step size, n = current time step
+  gamma_.clear();  // calculate time derivative of history array for predictor 
+  beta_.clear();   // coefficients used to evaluate predictor from history array
+  psi_.clear();    // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to 
+  // compute $\beta_j(n;$
+  sigma_.clear();  // $\sigma_j(n) = \frac{h_n^j(j-1)!}{\psi_1(n)*\cdots *\psi_j(n)}$
+  Scalar zero = ST::zero();
+  for (int i=0 ; i<=maxOrder_ ; ++i) {
+    alpha_.push_back(zero);
+    beta_.push_back(zero);
+    gamma_.push_back(zero);
+    psi_.push_back(zero);
+    sigma_.push_back(zero);
+  }
+  alpha_0_=zero;   // $-\sum_{j=1}^k \alpha_j(n)$ coefficient used in local error test
+  cj_=zero;      // $-\alpha_s/h_n$ coefficient used in local error test
+  ck_=zero;      // local error coefficient gamma_[0] = 0; // $\gamma_j(n)=\sum_{l=1}^{j-1}1/\psi_l(n)$ coefficient used to
+  hh_=zero;
+  numberOfSteps_=0;   // number of total time integration steps taken
+  nef_=0;
+  usedStep_=zero;
+  nscsco_=0;
+  Ek_=zero;
+  Ekm1_=zero;
+  Ekm2_=zero;
+  Ekp1_=zero;
+  Est_=zero;
+  Tk_=zero;
+  Tkm1_=zero;
+  Tkm2_=zero;
+  Tkp1_=zero;
+  newOrder_=currentOrder_;
+  initialPhase_=true;
+
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+    *out << "currentOrder_ = " << currentOrder_ << endl;
+    *out << "oldOrder_ = " << oldOrder_ << endl;
+    *out << "usedOrder_ = " << usedOrder_ << endl;
+    *out << "alpha_s_ = " << alpha_s_ << endl;
+    for (int i=0 ; i<=maxOrder_ ; ++i) {
+      *out << "alpha_[" << i << "] = " << alpha_[i] << endl;
+      *out << "beta_[" << i << "] = " << beta_[i] << endl;
+      *out << "gamma_[" << i << "] = " << gamma_[i] << endl;
+      *out << "psi_[" << i << "] = " << psi_[i] << endl;
+      *out << "sigma_[" << i << "] = " << sigma_[i] << endl;
     }
+    *out << "alpha_0_ = " << alpha_0_ << endl;
+    *out << "cj_ = " << cj_ << endl;
+    *out << "ck_ = " << ck_ << endl;
+    *out << "numberOfSteps_ = " << numberOfSteps_ << endl;
+    *out << "nef_ = " << nef_ << endl;
+    *out << "usedStep_ = " << usedStep_ << endl;
+    *out << "nscsco_ = " << nscsco_ << endl;
+    *out << "Ek_ = " << Ek_ << endl;
+    *out << "Ekm1_ = " << Ekm1_ << endl;
+    *out << "Ekm2_ = " << Ekm2_ << endl;
+    *out << "Ekp1_ = " << Ekp1_ << endl;
+    *out << "Est_ = " << Est_ << endl;
+    *out << "Tk_ = " << Tk_ << endl;
+    *out << "Tkm1_ = " << Tkm1_ << endl;
+    *out << "Tkm2_ = " << Tkm2_ << endl;
+    *out << "Tkp1_ = " << Tkp1_ << endl;
+    *out << "newOrder_ = " << newOrder_ << endl;
+    *out << "initialPhase_ = " << initialPhase_ << endl;
+  }
 
   this->getInitialCondition_();
   // Generate vectors for use in calculations
@@ -1388,16 +1389,17 @@ void ImplicitBDFStepper<Scalar>::initialize_()
   x_dot_base_ = createMember(x_space);
   ee_ = createMember(x_space);
   delta_ = createMember(x_space);
-  V_S(&*delta_,ST::zero()); // tscoffe 06/14/07:  Initialize delta_ 
+  V_S(&*delta_,zero); // tscoffe 06/14/07:  Initialize delta_ 
   residual_ = createMember(f_space);
   errWtVec_ = createMember(x_space); 
   ErrWtVecSet(&*errWtVec_,*xn0_);
+  xHistory_.clear();
   xHistory_.push_back(xn0_->clone_v());
   xHistory_.push_back(xpn0_->clone_v());
   // Store maxOrder_+1 vectors
   for (int i=2 ; i<=maxOrder_ ; ++i) {
     xHistory_.push_back(createMember(x_space)); 
-    V_S(&*xHistory_[i],ST::zero());
+    V_S(&*xHistory_[i],zero);
   }
 
   // Choose initial step-size
@@ -1410,13 +1412,13 @@ void ImplicitBDFStepper<Scalar>::initialize_()
   } else {
     // compute an initial step-size based on rate of change in the solution initially
     Scalar ypnorm = WRMSNorm(*errWtVec_,*xHistory_[1]);
-    if (ypnorm > ST::zero()) { // time-dependent DAE
+    if (ypnorm > zero) { // time-dependent DAE
       currentTimeStep = min(h0_max_factor_*abs(time_to_stop),sqrt(2.0)/(h0_safety_*ypnorm));
     } else { // non-time-dependent DAE
       currentTimeStep = h0_max_factor_*abs(time_to_stop);
     }
     // choose min of user specified value and our value:
-    if (hh_ > ST::zero()) {
+    if (hh_ > zero) {
       currentTimeStep = min(hh_, currentTimeStep);
     }
     // check for maximum step-size:
@@ -1430,15 +1432,11 @@ void ImplicitBDFStepper<Scalar>::initialize_()
   
   // x history
   assign(&*xHistory_[0],*xn0_);
-  V_S(&*xHistory_[1],ST::zero());
+  V_S(&*xHistory_[1],zero);
 
   // Coefficient initialization 
-  numberOfSteps_ = 0;    // number of total time integration steps taken
-  currentOrder_ = 1;
-  usedOrder_ = 1;
   psi_[0] = hh_;
   cj_ = 1/psi_[0];
-  nscsco_ = 0;
 
   isInitialized_ = true;
 
