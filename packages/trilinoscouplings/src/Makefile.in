@@ -65,7 +65,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 subdir = src
-DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
+DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/TrilinosCouplings_config.h.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/acx_blas.m4 \
@@ -100,8 +100,13 @@ LIBRARIES = $(lib_LIBRARIES)
 AR = ar
 ARFLAGS = cru
 libtrilinoscouplings_a_DEPENDENCIES =
+am__libtrilinoscouplings_a_SOURCES_DIST =  \
+	$(srcdir)/ifpack/Ifpack_ML.cpp
 am__objects_1 =
-am_libtrilinoscouplings_a_OBJECTS = $(am__objects_1) $(am__objects_1)
+am__objects_2 = Ifpack_ML.$(OBJEXT)
+@BUILD_IFPACK_ML_TRUE@am__objects_3 = $(am__objects_2)
+am_libtrilinoscouplings_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
+	$(am__objects_3)
 libtrilinoscouplings_a_OBJECTS = $(am_libtrilinoscouplings_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -117,8 +122,11 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libtrilinoscouplings_a_SOURCES) \
 	$(EXTRA_libtrilinoscouplings_a_SOURCES)
-DIST_SOURCES = $(libtrilinoscouplings_a_SOURCES) \
+DIST_SOURCES = $(am__libtrilinoscouplings_a_SOURCES_DIST) \
 	$(EXTRA_libtrilinoscouplings_a_SOURCES)
+am__include_HEADERS_DIST = $(srcdir)/TrilinosCouplings_ConfigDefs.h \
+	$(srcdir)/TrilinosCouplings_Version.h \
+	$(srcdir)/ifpack/Ifpack_ML.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -301,23 +309,24 @@ TRILINOSCOUPLINGS_LIB = libtrilinoscouplings.a
 TRILINOSCOUPLINGS_H = \
 	$(CORE_H) \
 	$(UTIL_H) \
-	$(IFAPCK_ML_H)
+	$(IFPACK_ML_H)
 
 
 #np# replace trilinoscouplings with the name of the package being autotool'ed here
 libtrilinoscouplings_a_SOURCES = \
 	$(CORE) \
 	$(UTIL) \
-	$(IFAPCK_ML)
+	$(IFPACK_ML)
 
 EXTRA_libtrilinoscouplings_a_SOURCES = \
 	$(EXTRA_IFPACK_ML) \
 	$(EXTRA_IFPACK_ML_H)
 
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(TRILINOSCOUPLINGS_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(TRILINOSCOUPLINGS_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 @USE_ALTERNATE_AR_FALSE@libtrilinoscouplings_a_AR = $(AR) cru
 
-#We need the following to support separate build directories
-#AM_CPPFLAGS=-I$(builddir)/src
 # ------------------------------------------------------------------------
 # For using a special archiver
 # ------------------------------------------------------------------------
@@ -704,6 +713,8 @@ all-local:
 	@echo ""
 	@echo "Trilinos package trilinoscouplings subdirectory src built successfully."
 	@echo ""
+
+include $(top_builddir)/Makefile.export.trilinoscouplings
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -322,7 +322,6 @@ AC_CONFIG_FILES([
 		Makefile.export.trilinoscouplings
 		src/Makefile
 		test/Makefile
-		test/DD_ML/Makefile
 		])
 
 AC_OUTPUT()

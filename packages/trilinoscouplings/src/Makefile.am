@@ -98,20 +98,29 @@ TRILINOSCOUPLINGS_LIB = libtrilinoscouplings.a
 TRILINOSCOUPLINGS_H = \
 	$(CORE_H) \
 	$(UTIL_H) \
-	$(IFAPCK_ML_H)
+	$(IFPACK_ML_H)
 
 #np# replace trilinoscouplings with the name of the package being autotool'ed here
 libtrilinoscouplings_a_SOURCES = \
 	$(CORE) \
 	$(UTIL) \
-	$(IFAPCK_ML)
+	$(IFPACK_ML)
 
 EXTRA_libtrilinoscouplings_a_SOURCES = \
 	$(EXTRA_IFPACK_ML) \
 	$(EXTRA_IFPACK_ML_H)
 
-#We need the following to support separate build directories
-#AM_CPPFLAGS=-I$(builddir)/src
+include $(top_builddir)/Makefile.export.trilinoscouplings
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(TRILINOSCOUPLINGS_INCLUDES))
+else
+EXPORT_INCLUDES = $(TRILINOSCOUPLINGS_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+
 # ------------------------------------------------------------------------
 # For using a special archiver
 # ------------------------------------------------------------------------
