@@ -143,7 +143,9 @@ namespace Anasazi {
   };
 
   template<class ScalarType, class MV, class OP>
-  void BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, const int n, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &evals, std::vector<int> *perm) const
+  void BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, const int n, 
+                              std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &evals, 
+                              std::vector<int> *perm) const
   {
     int i=0,j=0;
 
