@@ -59,10 +59,6 @@ namespace Anasazi {
 
   template <class ScalarType, class MV, class OP>
   class MatOrthoManager : public OrthoManager<ScalarType,MV> {
-  protected:
-    Teuchos::RCP<const OP> _Op;
-    bool _hasOp;
-
   public:
     //! @name Constructor/Destructor
     //@{ 
@@ -83,7 +79,26 @@ namespace Anasazi {
     };
 
     //! Get operator.
-    Teuchos::RCP<const OP> getOp() const { return _Op; } 
+    Teuchos::RCP<const OP> getOp() const { 
+      return _Op; 
+    } 
+
+    //! Retrieve operator counter.
+    /*! This counter returns the number of applications of the operator specifying the inner 
+     * product. When the operator is applied to a multivector, the counter is incremented by the
+     * number of vectors in the multivector. If the operator is not specified, the counter is never 
+     * incremented.
+     */
+    int getOpCounter() const {
+      return _OpCounter;
+    }
+
+    //! Reset the operator counter.
+    /*! See getOpCounter() for more details.
+     */
+    void resetOpCounter() {
+      _OpCounter = 0;
+    }
 
     //@}
 
@@ -109,6 +124,7 @@ namespace Anasazi {
         if ( MVT::GetNumberVecs(X) < MVT::GetNumberVecs(Y) ) {
           R = MVT::Clone(X,MVT::GetNumberVecs(X));
           OPT::Apply(*_Op,X,*R);
+          _OpCounter += MVT::GetNumberVecs(X);
           P = R;
           Q = Teuchos::rcp( &Y, false );
         }
@@ -116,6 +132,7 @@ namespace Anasazi {
           P = Teuchos::rcp( &X, false );
           R = MVT::Clone(Y,MVT::GetNumberVecs(Y));
           OPT::Apply(*_Op,Y,*R);
+          _OpCounter += MVT::GetNumberVecs(Y);
           Q = R;
         }
       }
@@ -175,6 +192,7 @@ namespace Anasazi {
       else if (MX == Teuchos::null) {
         Teuchos::RCP<MV> R = MVT::Clone(X,MVT::GetNumberVecs(X));
         OPT::Apply(*_Op,X,*R);
+        _OpCounter += MVT::GetNumberVecs(X);
         MX = R;
       }
 
@@ -339,6 +357,11 @@ namespace Anasazi {
     orthogError(const MV &X1, Teuchos::RCP<const MV> MX1, const MV &X2) const = 0;
 
     //@}
+
+  protected:
+    Teuchos::RCP<const OP> _Op;
+    bool _hasOp;
+    mutable int _OpCounter;
 
   };
 

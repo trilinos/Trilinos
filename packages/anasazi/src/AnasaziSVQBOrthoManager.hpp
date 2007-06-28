@@ -472,6 +472,7 @@ namespace Anasazi {
         // we need to allocate space for MX
         MX = MVT::Clone(X,xc);
         OPT::Apply(*(this->_Op),X,*MX);
+        this->_OpCounter += MVT::GetNumberVecs(X);
       }
     }
     else {
@@ -575,6 +576,7 @@ namespace Anasazi {
         // Recompute the vectors in MX
         if (this->_hasOp) {
           OPT::Apply(*(this->_Op),X,*MX);
+          this->_OpCounter += MVT::GetNumberVecs(X);
         }
 
         //          
@@ -714,6 +716,7 @@ namespace Anasazi {
             if (maxLambda >= tolerance * minLambda) {
               // explicit update of MX
               OPT::Apply(*(this->_Op),X,*MX);
+              this->_OpCounter += MVT::GetNumberVecs(X);
             }
             else {
               // implicit update of MX
@@ -758,6 +761,7 @@ namespace Anasazi {
             if (this->_hasOp) {
               MXnull = MVT::CloneView(*MX,ind);
               OPT::Apply(*(this->_Op),*Xnull,*MXnull);
+              this->_OpCounter += MVT::GetNumberVecs(*Xnull);
               MXnull = Teuchos::null;
             }
             Xnull = Teuchos::null;

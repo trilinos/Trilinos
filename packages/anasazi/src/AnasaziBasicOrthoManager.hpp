@@ -331,6 +331,7 @@ namespace Anasazi {
         // we need to allocate space for MX
         MX = MVT::Clone(X,MVT::GetNumberVecs(X));
         OPT::Apply(*(this->_Op),X,*MX);
+        this->_OpCounter += MVT::GetNumberVecs(X);
       }
     }
     else {
@@ -430,6 +431,7 @@ namespace Anasazi {
         if (this->_hasOp) {
           curMX = MVT::CloneView(*MX,ind);
           OPT::Apply( *(this->_Op), *curX, *curMX );
+          this->_OpCounter += MVT::GetNumberVecs(*curX);
         }
 
         // orthogonalize against Q
@@ -503,6 +505,7 @@ namespace Anasazi {
         // we need to allocate space for MX
         MX = MVT::Clone(X,MVT::GetNumberVecs(X));
         OPT::Apply(*(this->_Op),X,*MX);
+        this->_OpCounter += MVT::GetNumberVecs(X);
       }
     }
     else {
@@ -557,11 +560,13 @@ namespace Anasazi {
       if (this->_hasOp) {
         if (xc <= qcs[i]) {
           OPT::Apply( *(this->_Op), X, *MX);
+          this->_OpCounter += MVT::GetNumberVecs(X);
         }
         else {
           // this will possibly be used again below; don't delete it
           MQ[i] = MVT::Clone( *Q[i], qcs[i] );
           OPT::Apply( *(this->_Op), *Q[i], *MQ[i] );
+          this->_OpCounter += MVT::GetNumberVecs(*Q[i]);
           MVT::MvTimesMatAddMv( -ONE, *MQ[i], *C[i], ONE, *MX );
         }
       }
@@ -593,6 +598,7 @@ namespace Anasazi {
             else if (xc <= qcs[i]) {
               // MQ was not allocated and computed above; it was cheaper to use X before and it still is
               OPT::Apply( *(this->_Op), X, *MX);
+              this->_OpCounter += MVT::GetNumberVecs(X);
             }
           }
         }
@@ -651,6 +657,7 @@ namespace Anasazi {
         // we need to allocate space for MX
         MX = MVT::Clone(X,xc);
         OPT::Apply(*(this->_Op),X,*MX);
+        this->_OpCounter += MVT::GetNumberVecs(X);
       }
     }
 
@@ -831,6 +838,7 @@ namespace Anasazi {
             MVT::MvRandom( *Xj );
             if (this->_hasOp) {
               OPT::Apply( *(this->_Op), *Xj, *MXj );
+              this->_OpCounter += MVT::GetNumberVecs(*Xj);
             }
           }
           else {
