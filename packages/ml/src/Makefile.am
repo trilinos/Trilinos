@@ -171,6 +171,7 @@ $(srcdir)/Utils/ml_Epetra_wrap_CrsGraph_as_RowMatrix.H   \
 $(srcdir)/Utils/ml_Preconditioner.h                      \
 $(srcdir)/Utils/Epetra_Operator_With_MatMat.h            \
 $(srcdir)/Utils/Epetra_Multi_CrsMatrix.h                 \
+$(srcdir)/Utils/ml_ValidateParameters.h                  \
 $(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.h   \
 $(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.h         \
 $(srcdir)/RefMaxwell/ml_RefMaxwell.h                     \
@@ -251,6 +252,7 @@ $(srcdir)/Utils/ml_MultiLevelOperator.cpp                        \
 $(srcdir)/Utils/ml_RowMatrix.cpp                                 \
 $(srcdir)/Utils/ml_DD_prec.cpp                                   \
 $(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp                       \
+$(srcdir)/Utils/ml_ValidateParameters.cpp                        \
 $(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp         \
 $(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp               \
 $(srcdir)/RefMaxwell/ml_RefMaxwell.cpp                           \

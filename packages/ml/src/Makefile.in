@@ -135,6 +135,7 @@ am__objects_2 = ml_rbm.$(OBJEXT) ml_aztec_utils.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_XML.$(OBJEXT) ml_anasazi.$(OBJEXT) \
 	ml_MultiLevelOperator.$(OBJEXT) ml_RowMatrix.$(OBJEXT) \
 	ml_DD_prec.$(OBJEXT) Epetra_Multi_CrsMatrix.$(OBJEXT) \
+	ml_ValidateParameters.$(OBJEXT) \
 	ml_EdgeMatrixFreePreconditioner.$(OBJEXT) \
 	ml_RefMaxwell_11_Operator.$(OBJEXT) ml_RefMaxwell.$(OBJEXT) \
 	ml_MatrixFreePreconditioner.$(OBJEXT) MLAPI_Defaults.$(OBJEXT) \
@@ -467,6 +468,7 @@ $(srcdir)/Utils/ml_Epetra_wrap_CrsGraph_as_RowMatrix.H   \
 $(srcdir)/Utils/ml_Preconditioner.h                      \
 $(srcdir)/Utils/Epetra_Operator_With_MatMat.h            \
 $(srcdir)/Utils/Epetra_Multi_CrsMatrix.h                 \
+$(srcdir)/Utils/ml_ValidateParameters.h                  \
 $(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.h   \
 $(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.h         \
 $(srcdir)/RefMaxwell/ml_RefMaxwell.h                     \
@@ -547,6 +549,7 @@ $(srcdir)/Utils/ml_MultiLevelOperator.cpp                        \
 $(srcdir)/Utils/ml_RowMatrix.cpp                                 \
 $(srcdir)/Utils/ml_DD_prec.cpp                                   \
 $(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp                       \
+$(srcdir)/Utils/ml_ValidateParameters.cpp                        \
 $(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp         \
 $(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp               \
 $(srcdir)/RefMaxwell/ml_RefMaxwell.cpp                           \
@@ -881,6 +884,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_RefMaxwell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_RefMaxwell_11_Operator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_RowMatrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_ValidateParameters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_METIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_MIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_ParMETIS.Po@am__quote@
@@ -2265,6 +2269,20 @@ Epetra_Multi_CrsMatrix.obj: $(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp' object='Epetra_Multi_CrsMatrix.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_Multi_CrsMatrix.obj `if test -f '$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp'; fi`
+
+ml_ValidateParameters.o: $(srcdir)/Utils/ml_ValidateParameters.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_ValidateParameters.o -MD -MP -MF $(DEPDIR)/ml_ValidateParameters.Tpo -c -o ml_ValidateParameters.o `test -f '$(srcdir)/Utils/ml_ValidateParameters.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_ValidateParameters.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ml_ValidateParameters.Tpo $(DEPDIR)/ml_ValidateParameters.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_ValidateParameters.cpp' object='ml_ValidateParameters.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_ValidateParameters.o `test -f '$(srcdir)/Utils/ml_ValidateParameters.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_ValidateParameters.cpp
+
+ml_ValidateParameters.obj: $(srcdir)/Utils/ml_ValidateParameters.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_ValidateParameters.obj -MD -MP -MF $(DEPDIR)/ml_ValidateParameters.Tpo -c -o ml_ValidateParameters.obj `if test -f '$(srcdir)/Utils/ml_ValidateParameters.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_ValidateParameters.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_ValidateParameters.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ml_ValidateParameters.Tpo $(DEPDIR)/ml_ValidateParameters.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/ml_ValidateParameters.cpp' object='ml_ValidateParameters.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_ValidateParameters.obj `if test -f '$(srcdir)/Utils/ml_ValidateParameters.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_ValidateParameters.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_ValidateParameters.cpp'; fi`
 
 ml_EdgeMatrixFreePreconditioner.o: $(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_EdgeMatrixFreePreconditioner.o -MD -MP -MF $(DEPDIR)/ml_EdgeMatrixFreePreconditioner.Tpo -c -o ml_EdgeMatrixFreePreconditioner.o `test -f '$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp

@@ -88,6 +88,7 @@
 #include "ml_agg_ParMETIS.h"
 #include "ml_anasazi.h"
 #include "ml_FilterType.h"
+#include "ml_ValidateParameters.h"
 
 #ifdef HAVE_ML_EPETRAEXT
 #include "EpetraExt_RowMatrixOut.h"
@@ -683,11 +684,19 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
 int ML_Epetra::MultiLevelPreconditioner::
 ComputePreconditioner(const bool CheckPreconditioner)
 {
-
+  
  try {
 
   BreakForDebugger();
 
+
+  // Validate Parameter List
+  if(!ValidateMLPParameters(List_)){    
+    cout<<"ERROR: ML's Teuchos::ParameterList contains an incorrect parameter!"<<endl;
+    exit(1);
+  }
+
+  
   // ============================================================== //
   // check whether the old filtering is still ok for the new matrix //
   // ============================================================== //

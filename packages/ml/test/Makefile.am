@@ -51,6 +51,7 @@ SUBDIRS = MultiLevelPreconditioner_NonSym    \
       METISCoarsening                    \
       MatrixFree                         \
       Scalability                        \
+      RefMaxwell                         \
       Miscellaneous
 
 EXTRA_DIST = definition

@@ -50,6 +50,7 @@ _ML_INCLUDES = \
 	    -I@abs_top_srcdir@/src/Utils \
 	    -I@abs_top_srcdir@/src/MLAPI \
 	    -I@abs_top_srcdir@/src/MatrixFree \
+	    -I@abs_top_srcdir@/src/RefMaxwell \
 	    -I@abs_top_srcdir@/src/Include \
 	    $(GALERI_INCLUDES) \
 	    $(EPETRA_INCLUDES) \
