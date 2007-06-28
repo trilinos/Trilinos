@@ -162,7 +162,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   PL->set("smoother: ifpack type",std::string(""));
   PL->set("read XML",true); 
   PL->set("zero starting solution",true);
-
+  PL->set("print hierarchy",false);  
+  
   /* Unlisted options that should probably go away */
   setIntParameter("output",0,"Output Level",PL);
   setIntParameter("smoother: polynomial order",2,"Unlisted option",PL);
