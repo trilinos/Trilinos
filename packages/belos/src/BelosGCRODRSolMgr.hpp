@@ -123,13 +123,13 @@ namespace Belos {
      * to a parameter list of options for the solver manager. These options include the following:
      *   - "Block Size" - a \c int specifying the block size to be used by the underlying block Krylov-Schur solver. Default: 1
      *   - "Adaptive Block Size" - a \c bool specifying whether the block size can be modified throughout the solve. Default: true
-     *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 3*nev
+     *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. 25
+     *   - "Num Recycled Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 5
      *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 300
      *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
      *   - "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS and ICGS. Default: "DGKS"
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
-     *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
-     *   - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled for the purposing of deciding convergence. Default: true
+     *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: 1e-8.
      */
     GCRODRSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 		      const Teuchos::RCP<Teuchos::ParameterList> &pl );
@@ -271,7 +271,7 @@ namespace Belos {
     std::string impResScale_, expResScale_;
 
     // Recycled subspace and its image.
-    Teuchos::RCP<MV> U_, C_;
+    Teuchos::RCP<MV> U_, C_, Y_, r_;
 
     // Timers.
     std::string label_;
@@ -703,6 +703,8 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
   Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
+  ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+  ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
   
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null,GCRODRSolMgrLinearProblemFailure,
                      "Belos::GCRODRSolMgr::solve(): Linear problem is not a valid object.");
@@ -741,6 +743,9 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
   // Reset the status test.  
   outputTest_->reset();
 
+  //////////////////////////////////////////////////////////////////////////////////////
+  // Initialize recycled subspace for GCRODR
+
   // If there is a subspace to recycle, recycle it, otherwise generate the initial recycled subspace.
   if (keff > 0) {
 
@@ -752,17 +757,54 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
     problem_->apply( *Ukeff, *Ckeff );
 
     // Orthogonalize this block
-    int rank = ortho_->normalize(*Ckeff);
+    // Get a matrix to hold the orthonormalization coefficients.
+    Teuchos::SerialDenseMatrix<int,ScalarType> R(keff,keff);
+    int rank = ortho_->normalize(*Ckeff, Teuchos::rcp(R,false));
 
+    // Throw an error if we could not orthogonalize this block
     TEST_FOR_EXCEPTION(rank != keff,GCRODRSolMgrOrthoFailure,
 		       "Belos::GCRODRSolMgr::solve(): Failed to compute orthonormal basis for initial recycled subspace.");
 
+    // U_ = U_*R^{-1}
+    
+    // First, compute LU factorization of R
+    int info = 0;
+    std::vector<int> ipiv(R.numRows());
+    lapack.GETRF(R.numRows(),R.numCols(),R.values(),R.numRows(),&ipiv[0],&info);
+    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
+		       "Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization".);
+    
+    // Now, form inv(R)
+    int lwork = R.numRows();
+    std::vector<ScalarType> work(lwork);
+    lapack.GETRI(R.numRows(),R.values(),R.numRows(),&ipiv[0],&work[0],lwork,&info);
+    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
+		       "Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to compute an LU factorization".);
+
+    Teuchos::RCP<MV> tempU = Clone( *U_, keff );
+    MVT::MvTimesMatAddMv( one, *U_, R, zero, *tempU );
+
+    // Compute C_'*r_
+    Teuchos::SerialDenseMatrix<int,ScalarType> Ctr(keff,1);
+    MVT::MvTransMv( *C_, *(problem->getCurrResVec()), Ctr );
+
+    // Update solution ( x += U_*C_'*r_ )
+    MVT::MvTimeMatAddMv( one, *U_, Ctr, one, *problem_->getCurrLHSVec() );
+
+    // Update residual norm ( r -= C_*C_'*r_ )
+    MVT::MvTimeMatAddMv( one, *C_, Ctr, -one, *problem_->getCurrLHSVec() );
+
   }
   else {
+
     // Do one cycle of Gmres to "prime the pump" if there is no subspace to recycle
 
-    // Tell the block solver that the blocksize is 1.
-    plist.set("Block Size",1);
+    Teuchos::ParameterList primeList;
+  
+    // Tell the block solver that the block size is one.
+    primeList.set("Block Size",1);
+    primeList.set("Num Blocks",numBlocks_);
+    primtList.set("Keep Hessenberg", true);
 
     //  Create Gmres iteration object to perform one cycle of Gmres.
     Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > gmres_iter;
@@ -774,7 +816,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
     
     // Get a matrix to hold the orthonormalization coefficients.
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z_0 = 
-      rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(blockSize_, blockSize_) );
+      rcp( new Teuchos::SerialDenseVector<int,ScalarType>(1) );
     
     // Orthonormalize the new V_0
     int rank = ortho_->normalize( *V_0, z_0 );
@@ -835,7 +877,9 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
     // Get the state.
     GmresIterationState<ScalarType,MV> oldState = gmres_iter->getState();
-	    
+    
+    
+
     // NOTE:  Extract the initial recycled subspace from the state.
 
     // Reset the number of calls that the status test output knows about.
