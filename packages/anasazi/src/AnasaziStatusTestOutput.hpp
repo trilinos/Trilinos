@@ -195,9 +195,9 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
       os << " none )" << endl;
     }
     else {
-      if ( stateTest_ & Passed == Passed ) os << " Passed";
-      if ( stateTest_ & Failed == Failed ) os << " Failed";
-      if ( stateTest_ & Undefined == Undefined ) os << " Undefined";
+      if ( (stateTest_ & Passed) == Passed ) os << " Passed";
+      if ( (stateTest_ & Failed) == Failed ) os << " Failed";
+      if ( (stateTest_ & Undefined) == Undefined ) os << " Undefined";
       os << " )" << endl;
     }
     // print child, with extra indention
