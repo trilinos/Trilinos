@@ -323,10 +323,13 @@ int main(int argc, char *argv[])
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-5, NOX::StatusTest::NormF::Unscaled));
   Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(25));
+  Teuchos::RCP<NOX::StatusTest::FiniteValue> finiteval = 
+    Teuchos::rcp(new NOX::StatusTest::FiniteValue());
   Teuchos::RCP<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(absresid);
   combo->addStatusTest(maxiters);
+  combo->addStatusTest(finiteval);
 
   // Create the method
   NOX::Solver::Manager solver(grpPtr, combo, nlParamsPtr);
@@ -374,15 +377,35 @@ int main(int argc, char *argv[])
     const Epetra_Vector& finalSolution = 
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
+    // Get the Epetra_Vector with the last residual from the solver
+    const Epetra_Vector& finalResidual = 
+      (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getF())).getEpetraVector();
+
     // End Nonlinear Solver **************************************
 
     // Print solution
-    (void) sprintf(file_name, "output.%03d_%05d",MyPID,timeStep);
+    (void) sprintf(file_name, "T_output.%03d_%05d",MyPID,timeStep);
+    ifp = fopen(file_name, "w");
+    for( int i = 0; i < NumMyNodes; ++i )
+      fprintf(ifp, "%d  %E  %E\n", soln->Map().MinMyGID()+i,
+                                   xMesh[i], finalSolution[2*i]);
+
+    fclose(ifp);
+    
+    (void) sprintf(file_name, "x_output.%03d_%05d",MyPID,timeStep);
+    ifp = fopen(file_name, "w");
+    for( int i = 0; i < NumGlobalElementsUO2 + 1; ++i )
+      fprintf(ifp, "%d  %E  %E\n", soln->Map().MinMyGID()+i,
+                                   xMesh[i], finalSolution[2*i+1]);
+    fclose(ifp);
+
+    // Print residual
+    (void) sprintf(file_name, "residual.%03d_%05d",MyPID,timeStep);
     ifp = fopen(file_name, "w");
     for( int i = 0; i < NumMyNodes; ++i )
       fprintf(ifp, "%d  %E  %E  %E\n", soln->Map().MinMyGID()+i,
-                                   xMesh[i], finalSolution[2*i],
-                                   finalSolution[2*i+1]);
+                                   xMesh[i], finalResidual[2*i],
+                                   finalResidual[2*i+1]);
     fclose(ifp);
 
     NOX::Epetra::DebugTools::writeVector( "restartVec", finalSolution, NOX::Epetra::DebugTools::MATRIX_MARKET );

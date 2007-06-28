@@ -235,8 +235,6 @@ PelletTransport::PelletTransport( int NumGlobalElementsUO2_  , double xminUO2_  
     inode++;
   }
 
-  //cout << "xptr : " << *xptr << endl;
-
   initializeSoln();
 
 }
@@ -342,7 +340,6 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   for( int ne = 0; ne < OverlapNumMyNodes - 1; ++ne )
   {
     propType = (ACTIVE_REGIONS) (*elemTypes)[ne];
-    cout << ne << "\t" << propType << endl;
 
     // Loop Over Gauss Points
     for( int gp = 0; gp < 2; ++gp )
@@ -420,8 +417,6 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
     (*rhs)[lastDof - 1] = (*soln)[lastDof - 1] - 750.0;
     (*rhs)[lastDof] = (*soln)[lastDof] - 0.02;
   }
-
-  //cout << *soln << endl << *rhs << endl;
 
   // Sync up processors to be safe
   Comm->Barrier();

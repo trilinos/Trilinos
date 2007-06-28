@@ -72,7 +72,7 @@ MaterialProp_He::computeProps( double T, double x, MaterialPropBase::PropData & 
   props.Cp        = 5190.0;
   props.Qstar     = 0.0;
   props.Qdot      = 0.0;
-  props.thermoF   = 0.0;
+  props.thermoF   = 1.0;
   props.D_diff    = 0.0;
 
   return;
@@ -112,7 +112,8 @@ MaterialProp_UO2::computeProps( double T, double x, MaterialPropBase::PropData &
 
   double lambda0  = 1.0 / (3.24e-2 + 2.51e-4*T);
   double theta    = 3.67*exp(-4.73e-4*T)*sqrt(2.0*x*lambda0);
-  props.k_thermal = lambda0* 1.0/* *atan(theta)/theta */+ 5.95e-11*T*T*T;
+  props.k_thermal = lambda0*atan(theta)/theta + 5.95e-11*T*T*T;
+  //props.k_thermal = lambda0* 1.0 + 5.95e-11*T*T*T;
 
   props.Cp        = 264256.0 + 47.0*T;
   props.Qstar     = -1380.8 - 134435.5*exp(-x/0.0261);
@@ -139,11 +140,11 @@ void
 MaterialProp_Clad::computeProps( double T, double x, MaterialPropBase::PropData & props )
 {
   props.density   = 7817.0;
-  props.k_thermal = 10.98 + 0.014*T - 7.44*T*T;
+  props.k_thermal = 10.98 + 0.014*T - 7.44e-6*T*T;
   props.Cp        = 420.0;
   props.Qstar     = 0.0;
   props.Qdot      = 0.0;
-  props.thermoF   = 0.0;
+  props.thermoF   = 1.0;
 
   return;
 }
