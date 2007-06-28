@@ -164,9 +164,61 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   PL->set("zero starting solution",true);
 
   /* Unlisted options that should probably go away */
+  setIntParameter("output",0,"Output Level",PL);
   setIntParameter("smoother: polynomial order",2,"Unlisted option",PL);
  
   return PL;
 }
+
+
+/***************************************************************************************************/
+/***************************************************************************************************/
+/***************************************************************************************************/
+
+bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inList){
+  Teuchos::ParameterList List,*validList;
+  bool rv=true;
+  
+  /* Build a list with level-specific stuff stripped */
+  for(ParameterList::ConstIterator param=inList.begin(); param!=inList.end(); param++){
+    const string pname=inList.name(param);
+    if(pname.find("(level",0) == string::npos)
+      List.setEntry(pname,inList.entry(param));
+  }
+
+  /* Get Defaults + Validate */
+  try{
+  validList=GetValidRefMaxwellParameters();
+  }
+  catch(...) {cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<endl;exit(1);}
+  try{
+    List.validateParameters(*validList,0,VALIDATE_USED_DISABLED,VALIDATE_DEFAULTS_DISABLED);
+  }
+  catch(Exceptions::InvalidParameterName &excpt)  {rv=false; cout<<excpt.what()<<endl;}
+  catch(Exceptions::InvalidParameterType &excpt)  {rv=false; cout<<excpt.what()<<endl;}
+  catch(Exceptions::InvalidParameterValue &excpt) {rv=false; cout<<excpt.what()<<endl;}
+  catch(...) {rv=false;}
+  delete validList;
+  return rv;
+}
+
+
+Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
+  Teuchos::ParameterList dummy;
+  ParameterList * PL = GetValidMLPParameters();
+
+  /* RefMaxwell Options - This should get added to the manual */
+  setStringToIntegralParameter<int>("refmaxwell: 11solver","edge matrix free","(1,1) Block Solver",tuple<std::string>("edge matrix free"),PL);
+  setStringToIntegralParameter<int>("refmaxwell: 22solver","multilevel","(2,2) Block Solver",tuple<std::string>("multilevel"),PL);
+  setStringToIntegralParameter<int>("refmaxwell: mode","additive","Mode for RefMaxwell",tuple<std::string>("additive","212","121"),PL);
+  PL->set("refmaxwell: 11list",dummy);
+  PL->set("refmaxwell: 22list",dummy);
+
+  /* RefMaxwell Options - Unsupported */
+  PL->set("refmaxwell: aggregate with sigma",false); 
+  
+  return PL;
+}
+
 
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/

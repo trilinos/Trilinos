@@ -7,6 +7,7 @@
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_RefMaxwell_11_Operator.h"
 #include "ml_EdgeMatrixFreePreconditioner.h"
+#include "ml_ValidateParameters.h"
 
 #include "EpetraExt_MatrixMatrix.h" //haq
 #include "EpetraExt_RowMatrixOut.h"
@@ -194,6 +195,9 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 #ifndef NO_OUTPUT
   List_.print(cout);
 #endif
+
+  /* Validate List */
+  ValidateRefMaxwellParameters(List_);
   
   /* Pull Solver Mode, verbosity */
   mode=List_.get("refmaxwell: mode","212");
