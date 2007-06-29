@@ -1223,10 +1223,12 @@ process (or possibly to more than one), in a very simple way:
 \item In the part of the code where one wish to start debugging, call
   the following function:
 \begin{verbatim}
-ML_PauseForDebugger(Comm);
+ML_BreakForDebugger(Comm);
 \end{verbatim}
-where \verb!Comm! is an \verb!ML_Comm! structure.
-(This step is unnecessary if you are using the class MultiLevelPreconditioner.)
+where \verb!Comm! is either an \verb!ML_Comm! structure or an \verb!Epetra_Comm!
+object.
+If you are using the class MultiLevelPreconditioner, you can just set the
+parameter "ML debug mode" to be true.
 \item Define the environmental variable \verb!ML_BREAK_FOR_DEBUGGER!.
   In the Bash shell, for instance:\\
 {\tt export ML\_BREAK\_FOR\_DEBUGGER=1}.\\
