@@ -334,5 +334,20 @@ bool Epetra_ML_writegidviz(char* filename, int label,
 #ifdef __cplusplus
 }
 #endif
+  
+//! Stops the code, waiting for a debugger to attach
+/*! BreakForDebugger() is useful when the user wants to attach to the running
+* process(es). This is a very easy task for serial runs -- just run gdb.
+* Parallel runs may result more problematic. In this case, one can proceed as
+* follows:
+* - Either define the enviromental variable ML_BREAK_FOR_DEBUGGER
+*   or create an empty file called ML_Debug_Now
+* - Run the parallel code on a terminal (example, \c mpirun \c -np \c 4 \c
+*   ml_example.exe )
+* - The code will stop and print each process ID.
+* - In another terminal, attach to the desired process.
+* - Type one character to let the code continue, and debug as required.
+*/
+void ML_BreakForDebugger(const Epetra_Comm& comm);
 
 #endif /* _ML_EPETRA_UTILS_H_ */

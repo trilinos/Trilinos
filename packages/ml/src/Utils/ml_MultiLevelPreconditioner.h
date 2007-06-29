@@ -490,26 +490,6 @@ public:
   {
     return(RowMatrix_->NumMyCols());
   }
-  
-  //@}
-  //@{ \name debugging and other utilities
-
-  //! Stops the code, waiting for a debugger to attach
-  /*! BreakForDebugger() is useful when the user wants to attach to the running
-   * process(es). This is a very easy task for serial runs -- just run gdb.
-   * Parallel runs may result more problematic. In this case, one can proceed as
-   * follows:
-   * - define the enviromental variable ML_BREAK_FOR_DEBUGGER (example, in BASH,
-   *   \c export \c ML_BREAK_FOR_DEBUGGER=1 )
-   * - run the parallel code on a terminal (example, \c mpirun \c -np \c 4 \c
-   *   ml_example.exe )
-   * - the code will stop in the first call to ComputePreconditioner(). This may
-   *   occur in the construction phase. Some information about the ID number of
-   *   each process will be shown.
-   * - in another terminal, attach to the desired process.
-   * - insert one character to let the code continue, and debug as required.
-   */
-  int BreakForDebugger();
 
   //! Prints the computational stencil for the specified row and equation (for 2D Cartesian grids only)
   /*! For problems defined on 2D Cartesian grids (with node numbering increasing
@@ -591,6 +571,11 @@ public:
 
   //! Reads a parameter list from an XML file.
   int ReadXML(const string& FileName);
+  
+  /*! Creates label for this object (printed out by AztecOO).  This does not
+      allocate/reallocate any memory.
+  */
+  int CreateLabel();
 
 //@}
 
@@ -653,9 +638,6 @@ private:
 
   //! Sets damping parameter for classical smoothed aggregation.
   int SetSmoothingDampingClassic();
-  
-  //! Creates label for this object (printed out by AztecOO)
-  int CreateLabel();
 
 #define OLD_AUX
 #ifdef OLD_AUX

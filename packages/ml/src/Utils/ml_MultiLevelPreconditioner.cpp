@@ -687,7 +687,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
   
  try {
 
-  BreakForDebugger();
+  if (List_.get("ML debug mode", false))
+    ML_BreakForDebugger(*Comm_);
 
   if (List_.get("ML print parameter list",false))
     PrintList(0);
@@ -3272,68 +3273,6 @@ PrintStencil2D(const int nx, const int ny,
   }
   cout << endl;
   
-  return 0;
-}
-
-// ============================================================================
-
-int ML_Epetra::MultiLevelPreconditioner::BreakForDebugger()
-{
-  // print out some junk for debugging (copied from code in
-  // Utils/ml_utils.c, suggested by Jonathan)
-  // LAM/MPI has some difficulties related to environmental variables.
-  // The problem is that LAM/MPI uses ssh to log in, and on some
-  // machine "export ML_BREAK_FOR_DEBUGGER" does not work. So, we
-  // allow two options:
-  // 1.) export ML_BREAK_FOR_DEBUGGER=1
-  // 2.) create a file in the executable directory, called ML_debug_now
-
-  if (!List_.get("ML debug mode", false)) return(0);
-  char * str = (char *) getenv("ML_BREAK_FOR_DEBUGGER");
-  int i = 0, j = 0;
-  char buf[80];
-  char go = ' ';
-  char hostname[80];
-  if (str != NULL) i++;
-
-  FILE * ML_capture_flag;
-  ML_capture_flag = fopen("ML_debug_now","r");
-  if(ML_capture_flag) {
-    i++;
-    fclose(ML_capture_flag);
-  }
-
-  Comm().SumAll(&i, &j, 1);
-
-  if (j != 0)
-  {
-    if (Comm().MyPID()  == 0) cout << "Host and Process Ids for tasks" << endl;
-    for (i = 0; i <Comm().NumProc() ; i++) {
-      if (i == Comm().MyPID() ) {
-#if defined(TFLOP) || defined(JANUS_STLPORT) || defined(COUGAR)
-    sprintf(buf, "Host: %s   PID: %d", "janus", getpid());
-#else
-    gethostname(hostname, sizeof(hostname));
-    sprintf(buf, "Host: %s\tComm().MyPID(): %d\tPID: %d", 
-        hostname, Comm().MyPID(), getpid());
-#endif
-    printf("%s\n",buf);
-    fflush(stdout);
-    sleep(1);
-      }
-    }
-    if(Comm().MyPID() == 0) {
-      printf("\n");
-      printf("** Pausing because environment variable ML_BREAK_FOR_DEBUGGER has been set,\n");
-      puts("** or file ML_debug_now has been created");
-      printf("**\n");
-      printf("** You may now attach debugger to the processes listed above.\n");
-      printf( "**\n");
-      printf( "** Enter a character to continue > "); fflush(stdout);
-      scanf("%c",&go);
-    }
-  }
-
   return 0;
 }
 

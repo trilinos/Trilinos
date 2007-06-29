@@ -192,7 +192,7 @@ std::cout << "--- Leaving:
    int    ML_gmax_int(int val, ML_Comm *comm);
    int    ML_find_index(int key, int list[], int length);
    void   ML_use_param(void *data, int junk);
-   void   ML_PauseForDebugger(ML_Comm *comm);
+   void   ML_BreakForDebugger(ML_Comm *comm);
    void ML_Pause(ML_Comm *comm);
    void ML_print_line (const char *charstr, int ntimes);
 

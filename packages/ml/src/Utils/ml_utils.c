@@ -2671,7 +2671,7 @@ void ML_serial_end(ML_Comm *comm)
 /* (Based on code from ALEGRA).                                         */
 /* ******************************************************************** */
 #include <unistd.h>
-void ML_PauseForDebugger(ML_Comm *comm)
+void ML_BreakForDebugger(ML_Comm *comm)
 {
   int i,j;
   int mypid = comm->ML_mypid;
