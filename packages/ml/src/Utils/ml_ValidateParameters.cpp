@@ -51,6 +51,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   /* General Options (Section 6.4.1) */
   setIntParameter("ML output",0,"Output Level",PL);
   setIntParameter("print unused",-2,"Print unused parameters",PL);
+  PL->set("ML print parameter list",false);
   setIntParameter("PDE equations",1,"# of PDE equations per node",PL);
   setStringToIntegralParameter<int>("eigen-analysis: type","cg","Scheme to compute spectral radius",
                                tuple<std::string>("cg","Anorm","power-method"),PL);
@@ -161,6 +162,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   PL->set("smoother: ifpack list",dummy);
   PL->set("smoother: ifpack type",std::string(""));
   PL->set("read XML",true); 
+  PL->set("XML input file","ml_ParameterList.xml",std::string(""));
   PL->set("zero starting solution",true);
   PL->set("print hierarchy",false);  
   

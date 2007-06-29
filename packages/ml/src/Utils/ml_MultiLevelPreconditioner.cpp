@@ -689,14 +689,16 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   BreakForDebugger();
 
+  if (List_.get("ML print parameter list",false))
+    PrintList(0);
 
   // Validate Parameter List
   if(!ValidateMLPParameters(List_)){    
-    cout<<"ERROR: ML's Teuchos::ParameterList contains an incorrect parameter!"<<endl;
+    if (Comm_->MyPID() == 0)
+      cout<<"ERROR: ML's Teuchos::ParameterList contains an incorrect parameter!"<<endl;
     exit(1);
   }
 
-  
   // ============================================================== //
   // check whether the old filtering is still ok for the new matrix //
   // ============================================================== //
@@ -1767,12 +1769,14 @@ agg_->keep_P_tentative = 1;
  } 
  catch(...)
  {
-   fprintf(stderr,"\n**********************************************************\n");
-   fprintf(stderr,"Looks like something is wrong with ML's parameter list.The \n");
-   fprintf(stderr,"most common problem is having the wrong data type for one\n");
-   fprintf(stderr,"of ML's options (e.g. 'int' instead of 'bool').\n\n");
-   fprintf(stderr,"Note: PrintUnused(0) might help figure out the bad one.\n");
-   fprintf(stderr,"**********************************************************\n\n");
+   if (Comm().MyPID() == 0) {
+     fprintf(stderr,"\n*********************************************************\n");
+     fprintf(stderr,"ML failed to compute the multigrid preconditioner. The\n");
+     fprintf(stderr,"most common problem is an incorrect  data type in ML's\n");
+     fprintf(stderr,"parameter list (e.g. 'int' instead of 'bool').\n\n");
+     fprintf(stderr,"Note: List.set(\"ML print parameter list\",true) might help\nfigure out the bad one.\n");
+     fprintf(stderr,"*********************************************************\n\n");
+   }
 
    ML_CHK_ERR(-1);
  }
@@ -2008,9 +2012,13 @@ void ML_Epetra::MultiLevelPreconditioner::PrintUnused(const int MyPID) const
 void ML_Epetra::MultiLevelPreconditioner::PrintList(int MyPID) 
 {
   if( Comm().MyPID() == MyPID ) {
-    ML_print_line("-",78);
-    cout << List_;
-    ML_print_line("-",78);
+    cout << "+++++++++++++++++++++++++++++++++++" << endl;
+    cout << "++++ start of ML parameter list +++" << endl;
+    cout << "+++++++++++++++++++++++++++++++++++" << endl;
+    List_.print(cout);
+    cout << "-----------------------------------" << endl;
+    cout << "---- end of ML parameter list -----" << endl;
+    cout << "-----------------------------------" << endl;
   }
 }
 
