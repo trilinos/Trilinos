@@ -29,14 +29,14 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef DTAYLORUNITTESTS_HPP
-#define DTAYLORUNITTESTS_HPP
+#ifndef CACHETAYLORUNITTESTS_HPP
+#define CACHETAYLORUNITTESTS_HPP
 
 // Sacado includes
 #include "Sacado.hpp"
 #include "Sacado_Random.hpp"
 
-typedef Sacado::Taylor::DTaylor<double> DTaylorType;
+typedef Sacado::Tay::CacheTaylor<double> TaylorType;
 
 // ADOL-C includes
 #include "adouble.h"
@@ -102,6 +102,39 @@ inline adouble min(double v, const adouble& b) { return fmin(v,b); }
 #define CPPUNIT_BINARY_OP_TEST(TESTNAME)	\
   CPPUNIT_TEST(TESTNAME);			\
   CPPUNIT_TEST(TESTNAME ## LeftConstant);	\
+  CPPUNIT_TEST(TESTNAME ## RightConstant)
+
+#define RELOP_OP2_TEST(TESTNAME,OP)	                \
+  void TESTNAME () {			                \
+    bool r1 = a_dtay OP b_dtay;		                \
+    bool r2 = a_dtay.coeff(0) OP b_dtay.coeff(0);	\
+    CPPUNIT_ASSERT(r1 == r2);				\
+  }
+
+#define RELOP_OPLC_TEST(TESTNAME,OP)	                \
+  void TESTNAME () {			                \
+    double val = urand.number();                        \
+    bool r1 = val OP b_dtay;		                \
+    bool r2 = val OP b_dtay.coeff(0);	                \
+    CPPUNIT_ASSERT(r1 == r2);				\
+  }
+
+#define RELOP_OPRC_TEST(TESTNAME,OP)	                \
+  void TESTNAME () {			                \
+    double val = urand.number();                        \
+    bool r1 = a_dtay OP val;		                \
+    bool r2 = a_dtay.coeff(0) OP val;	                \
+    CPPUNIT_ASSERT(r1 == r2);				\
+  }
+
+#define RELOP_OP_TEST(TESTNAME,OP)			\
+  RELOP_OP2_TEST(TESTNAME,OP);                          \
+  RELOP_OPLC_TEST(TESTNAME ## LeftConstant,OP);	        \
+  RELOP_OPRC_TEST(TESTNAME ## RightConstant,OP)
+
+#define CPPUNIT_RELOP_OP_TEST(TESTNAME)	                \
+  CPPUNIT_TEST(TESTNAME);			        \
+  CPPUNIT_TEST(TESTNAME ## LeftConstant);	        \
   CPPUNIT_TEST(TESTNAME ## RightConstant)
 
 #define BINARY_FUNC2_TEST(TESTNAME,FUNC)    \
@@ -241,14 +274,21 @@ inline adouble min(double v, const adouble& b) { return fmin(v,b); }
   CPPUNIT_TEST(TESTNAME ## RightConstant)
 
 // A class for testing each DTaylor operation
-class DTaylorOpsUnitTest : public CppUnit::TestFixture {
+class CacheTaylorOpsUnitTest : public CppUnit::TestFixture {
 
-  CPPUNIT_TEST_SUITE( DTaylorOpsUnitTest );
+  CPPUNIT_TEST_SUITE( CacheTaylorOpsUnitTest );
 
   CPPUNIT_BINARY_OP_TEST(testAddition);
   CPPUNIT_BINARY_OP_TEST(testSubtraction);
   CPPUNIT_BINARY_OP_TEST(testMultiplication);
   CPPUNIT_BINARY_OP_TEST(testDivision);
+
+  CPPUNIT_RELOP_OP_TEST(testEquals);
+  CPPUNIT_RELOP_OP_TEST(testNotEquals);
+  CPPUNIT_RELOP_OP_TEST(testLessThanOrEquals);
+  CPPUNIT_RELOP_OP_TEST(testGreaterThanOrEquals);
+  CPPUNIT_RELOP_OP_TEST(testLessThan);
+  CPPUNIT_RELOP_OP_TEST(testGreaterThan);
 
   CPPUNIT_BINARY_FUNC_TEST(testPow);
   CPPUNIT_BINARY_FUNC_TEST(testMax);
@@ -283,19 +323,19 @@ class DTaylorOpsUnitTest : public CppUnit::TestFixture {
 
 public:
 
-  DTaylorOpsUnitTest();
+  CacheTaylorOpsUnitTest();
 
-  DTaylorOpsUnitTest(unsigned int degree, double absolute_tolerance, 
+  CacheTaylorOpsUnitTest(unsigned int degree, double absolute_tolerance, 
 		     double relative_tolerance);
 
-  ~DTaylorOpsUnitTest();
+  ~CacheTaylorOpsUnitTest();
 
   void setUp();
 
   void tearDown();
 
   // Assert to Fad objects are the same
-  void comparePolys(const DTaylorType& x_dtay,
+  void comparePolys(const TaylorType& x_dtay,
 		    double* x_adolc);
 
   // Assert to doubles are the same to relative precision
@@ -305,6 +345,13 @@ public:
   BINARY_OP_TEST(testSubtraction, -);
   BINARY_OP_TEST(testMultiplication, *);
   BINARY_OP_TEST(testDivision, /);
+
+  RELOP_OP_TEST(testEquals, ==);
+  RELOP_OP_TEST(testNotEquals, !=);
+  RELOP_OP_TEST(testLessThanOrEquals, <=);
+  RELOP_OP_TEST(testGreaterThanOrEquals, >=);
+  RELOP_OP_TEST(testLessThan, <);
+  RELOP_OP_TEST(testGreaterThan, >);
 
   BINARY_FUNC_TEST(testPow, pow);
   BINARY_FUNC_TEST(testMax, max);
@@ -362,12 +409,12 @@ public:
 
   void print_poly(double *x);
 
-  void print_diff(const DTaylorType& x_dtay, double* x_adolc);
+  void print_diff(const TaylorType& x_dtay, double* x_adolc);
 
 protected:
 
-  // DTaylor variables
-  DTaylorType a_dtay, b_dtay, c_dtay;
+  // CacheTaylor variables
+  TaylorType a_dtay, b_dtay, c_dtay;
 
   // ADOL-C arrays
   double **X, **Y;
@@ -381,6 +428,6 @@ protected:
   // Tolerances to which fad objects should be the same
   double tol_a, tol_r;
 
-}; // class DTaylorOpsUnitTest
+}; // class CacheTaylorOpsUnitTest
 
-#endif // DTAYUNITTESTS_HPP
+#endif // CACHETAYLORUNITTESTS_HPP

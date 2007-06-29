@@ -29,21 +29,51 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_HPP
-#define SACADO_HPP
+#ifndef SACADO_STATICARRAYTRAITS_HPP
+#define SACADO_STATICARRAYTRAITS_HPP
 
-#include "Sacado_Version.hpp"
-#include "Sacado_Fad_DFad.hpp"
-#include "Sacado_CacheFad_DFad.hpp"
-#include "Sacado_Fad_SFad.hpp"
-#include "Sacado_Fad_SLFad.hpp"
-#include "Sacado_Tay_Taylor.hpp"
-#include "Sacado_Tay_CacheTaylor.hpp"
-#include "Sacado_trad.hpp"
+#include "Sacado_ConfigDefs.h"
+#include "Sacado_Traits.hpp"
 
-#include "Sacado_Fad_MemPoolManager.hpp"
-#include "Sacado_Fad_DMFad.hpp"
+namespace Sacado {
 
-#include "Sacado_Fad_ExpressionTraits.hpp"
+  /*!
+   * \brief Static array allocation class that works for any type
+   */
+  template <typename T, bool isScalar = IsScalarType<T>::value>
+  struct ss_array {
+    
+    //! Copy array from \c src to \c dest of length \c sz
+    static inline void copy(const T* src, T*  dest, int sz) {
+      for (int i=0; i<sz; ++i)
+	*(dest++) = *(src++);
+    }
 
-#endif // SACADO_HPP 
+    //! Zero out array \c dest of length \c sz
+    static inline void zero(T* dest, int sz) {
+      for (int i=0; i<sz; ++i)
+	*(dest++) = T(0.);
+    }
+  };
+
+  /*!
+   * \brief Static array allocation class that is specialized for scalar
+   * i.e., fundamental or built-in types (float, double, etc...).
+   */
+//     template <typename T>
+//     struct ss_array<T,true> {
+
+//       //! Copy array from \c src to \c dest of length \c sz
+//       static inline void copy(const T* src, T* dest, int sz) {
+// 	memcpy(dest,src,sz*sizeof(T));
+//       }
+
+//       //! Zero out array \c dest of length \c sz
+//       static inline void zero(T* dest, int sz) {
+// 	memset(dest,0,sz*sizeof(T));
+//       }
+//     };
+
+} // namespace Sacado
+
+#endif // SACAD0_STATICARRAYTRAITS_HPP

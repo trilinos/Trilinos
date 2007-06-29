@@ -33,33 +33,42 @@ EXEEXT = .exe
 
 if ENABLE_SACADO_TEUCHOS
 
-# Include NOX export Makefile for correct paths
-include $(top_builddir)/../teuchos/Makefile.export.teuchos
+# Include export Makefile for correct paths
+include $(top_builddir)/Makefile.export.sacado
 
 noinst_PROGRAMS = \
-	dfad_nonlinear \
-	mult
+	fad_expr_depth \
+	fad_expr \
+	taylor_expr
 
 endif
 
-dfad_nonlinear_SOURCES = dfad_nonlinear.cpp 
-dfad_nonlinear_CXXFLAGS = -O2  \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/mpl \
-	-I$(top_builddir)/src \
-	-I$(top_srcdir)/test/utils \
+fad_expr_depth_SOURCES = fad_expr_depth.cpp 
+fad_expr_depth_CXXFLAGS = -O2  \
+	$(SACADO_INCLUDES) \
 	-I$(top_srcdir)/Fad \
-        $(TEUCHOS_INCLUDES)
-dfad_nonlinear_DEPENDENCIES = \
+	-I$(top_srcdir)/test/utils
+fad_expr_depth_DEPENDENCIES = \
         $(top_builddir)/src/libsacado.a \
 	$(top_builddir)/test/utils/libsacadoutils.a
-dfad_nonlinear_LDADD = \
-	-L$(top_builddir)/src -lsacado \
+fad_expr_depth_LDADD = \
 	-L$(top_builddir)/test/utils -lsacadoutils \
-	$(TEUCHOS_LIBS) \
-	$(LIBS) $(FLIBS)
+	$(SACADO_LIBS) 
 
-mult_SOURCES = mult.cpp
-mult_CXXFLAGS = $(dfad_nonlinear_CXXFLAGS)
-mult_DEPENDENCIES = $(dfad_nonlinear_DEPENDENCIES)
-mult_LDADD = $(dfad_nonlinear_LDADD)
+fad_expr_SOURCES = fad_expr.cpp
+fad_expr_CXXFLAGS = $(fad_expr_depth_CXXFLAGS)
+fad_expr_DEPENDENCIES = $(fad_expr_depth_DEPENDENCIES)
+fad_expr_LDADD = $(fad_expr_depth_LDADD)
+
+if ENABLE_ADOLC
+TAYLOR_CXXFLAGS = -I$(ADOLC_INCDIR)
+TAYLOR_LDADD = -L$(ADOLC_LIBDIR) $(ADOLC_LIBS)
+else
+TAYLOR_CXXFLAGS = 
+TAYLOR_LDADD = 
+endif
+
+taylor_expr_SOURCES = taylor_expr.cpp
+taylor_expr_CXXFLAGS = $(TAYLOR_CXXFLAGS) $(fad_expr_depth_CXXFLAGS)
+taylor_expr_DEPENDENCIES = $(fad_expr_depth_DEPENDENCIES)
+taylor_expr_LDADD = $(TAYLOR_LDADD) $(fad_expr_depth_LDADD)

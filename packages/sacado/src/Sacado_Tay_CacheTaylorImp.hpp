@@ -31,8 +31,8 @@
 
 template <typename T> 
 template <typename S> 
-inline Sacado::Taylor::DTaylor<T>::DTaylor(const Expr<S>& x) : 
-  Expr< DTaylorImplementation<T> >(x.degree(), T(0))
+inline Sacado::Tay::CacheTaylor<T>::CacheTaylor(const Expr<S>& x) : 
+  Expr< CacheTaylorImplementation<T> >(x.degree(), T(0))
 {
   unsigned int d = this->degree();
 
@@ -51,8 +51,8 @@ inline Sacado::Taylor::DTaylor<T>::DTaylor(const Expr<S>& x) :
 }
 
 template <typename T> 
-inline Sacado::Taylor::DTaylor<T>& 
-Sacado::Taylor::DTaylor<T>::operator=(const T& val) 
+inline Sacado::Tay::CacheTaylor<T>& 
+Sacado::Tay::CacheTaylor<T>::operator=(const T& val) 
 {
   this->coeff_[0] = val;
 
@@ -63,8 +63,8 @@ Sacado::Taylor::DTaylor<T>::operator=(const T& val)
 }
 
 template <typename T> 
-inline Sacado::Taylor::DTaylor<T>& 
-Sacado::Taylor::DTaylor<T>::operator=(const Sacado::Taylor::DTaylor<T>& x) 
+inline Sacado::Tay::CacheTaylor<T>& 
+Sacado::Tay::CacheTaylor<T>::operator=(const Sacado::Tay::CacheTaylor<T>& x) 
 {
   if (x.coeff_.size() != this->coeff_.size()) 
     this->coeff_.resize(x.coeff_.size());
@@ -75,8 +75,8 @@ Sacado::Taylor::DTaylor<T>::operator=(const Sacado::Taylor::DTaylor<T>& x)
 
 template <typename T> 
 template <typename S> 
-inline Sacado::Taylor::DTaylor<T>& 
-Sacado::Taylor::DTaylor<T>::operator=(const Expr<S>& x) 
+inline Sacado::Tay::CacheTaylor<T>& 
+Sacado::Tay::CacheTaylor<T>::operator=(const Expr<S>& x) 
 {
   unsigned int d = this->degree();
   unsigned int xd = x.degree();
@@ -106,8 +106,8 @@ Sacado::Taylor::DTaylor<T>::operator=(const Expr<S>& x)
 }
 
 template <typename T> 
-inline  Sacado::Taylor::DTaylor<T>& 
-Sacado::Taylor::DTaylor<T>::operator += (const T& val)
+inline  Sacado::Tay::CacheTaylor<T>& 
+Sacado::Tay::CacheTaylor<T>::operator += (const T& val)
 {
   this->coeff_[0] += val;
 
@@ -115,8 +115,8 @@ Sacado::Taylor::DTaylor<T>::operator += (const T& val)
 }
 
 template <typename T> 
-inline Sacado::Taylor::DTaylor<T>& 
-Sacado::Taylor::DTaylor<T>::operator -= (const T& val)
+inline Sacado::Tay::CacheTaylor<T>& 
+Sacado::Tay::CacheTaylor<T>::operator -= (const T& val)
 {
   this->coeff_[0] -= val;
 
@@ -124,8 +124,8 @@ Sacado::Taylor::DTaylor<T>::operator -= (const T& val)
 }
 
 template <typename T> 
-inline Sacado::Taylor::DTaylor<T>& 
-Sacado::Taylor::DTaylor<T>::operator *= (const T& val)
+inline Sacado::Tay::CacheTaylor<T>& 
+Sacado::Tay::CacheTaylor<T>::operator *= (const T& val)
 {
   this->coeff_ *= val;
 
@@ -133,8 +133,8 @@ Sacado::Taylor::DTaylor<T>::operator *= (const T& val)
 }
 
 template <typename T> 
-inline Sacado::Taylor::DTaylor<T>& 
-Sacado::Taylor::DTaylor<T>::operator /= (const T& val)
+inline Sacado::Tay::CacheTaylor<T>& 
+Sacado::Tay::CacheTaylor<T>::operator /= (const T& val)
 {
   this->coeff_ /= val;
 
@@ -143,8 +143,8 @@ Sacado::Taylor::DTaylor<T>::operator /= (const T& val)
 
 template <typename T> 
 template <typename S> 
-inline Sacado::Taylor::DTaylor<T>& 
-Sacado::Taylor::DTaylor<T>::operator += (const S& x)
+inline Sacado::Tay::CacheTaylor<T>& 
+Sacado::Tay::CacheTaylor<T>::operator += (const S& x)
 {
   unsigned int xd = x.degree();
   unsigned int d = this->degree();
@@ -169,8 +169,8 @@ Sacado::Taylor::DTaylor<T>::operator += (const S& x)
 
 template <typename T> 
 template <typename S> 
-inline Sacado::Taylor::DTaylor<T>& 
-Sacado::Taylor::DTaylor<T>::operator -= (const S& x)
+inline Sacado::Tay::CacheTaylor<T>& 
+Sacado::Tay::CacheTaylor<T>::operator -= (const S& x)
 {
   unsigned int xd = x.degree();
   unsigned int d = this->degree();
@@ -195,8 +195,8 @@ Sacado::Taylor::DTaylor<T>::operator -= (const S& x)
 
 template <typename T> 
 template <typename S> 
-inline Sacado::Taylor::DTaylor<T>& 
-Sacado::Taylor::DTaylor<T>::operator *= (const S& x)
+inline Sacado::Tay::CacheTaylor<T>& 
+Sacado::Tay::CacheTaylor<T>::operator *= (const S& x)
 {
   unsigned int xd = x.degree();
   unsigned int d = this->degree();
@@ -245,8 +245,8 @@ Sacado::Taylor::DTaylor<T>::operator *= (const S& x)
 
 template <typename T>
 template <typename S> 
-inline Sacado::Taylor::DTaylor<T>& 
-Sacado::Taylor::DTaylor<T>::operator /= (const S& x)
+inline Sacado::Tay::CacheTaylor<T>& 
+Sacado::Tay::CacheTaylor<T>::operator /= (const S& x)
 {
   unsigned int xd = x.degree();
   unsigned int d = this->degree();

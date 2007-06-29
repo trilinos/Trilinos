@@ -8814,6 +8814,13 @@ else
   ENABLE_ADOLC_FALSE=
 fi
 
+if test X${ENABLE_ADOLC_SUPPORT} = Xyes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ADOLC
+_ACEOF
+
+fi
 
 
 # Check whether --with-adolc-incdir was given.

@@ -35,6 +35,9 @@
 #include "Fad/fad.h"
 #include "Teuchos_Time.hpp"
 
+// A simple performance test that computes the derivative of expressions of
+// various depths.
+
 void FAD::error(char *msg) {
   std::cout << msg << std::endl;
 }

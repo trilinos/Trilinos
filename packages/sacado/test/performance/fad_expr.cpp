@@ -29,18 +29,17 @@
 // ***********************************************************************
 // @HEADER
 
-//#include "Sacado_Random.hpp"
-#include "Sacado_Fad_DFad.hpp"
-#include "Sacado_Fad_DMFad.hpp"
-#include "Sacado_Fad_MemPoolManager.hpp"
-#include "Sacado_Fad_SFad.hpp"
-#include "Sacado_Fad_SLFad.hpp"
-#include "Sacado_CacheFad_DFad.hpp"
+#include "Sacado_Random.hpp"
+#include "Sacado.hpp"
+
 #include "Fad/fad.h"
 #include "TinyFadET/tfad.h"
 
 #include "Teuchos_Time.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+
+// A simple performance test that computes the derivative of a simple
+// expression using many variants of Fad.
 
 template <>
 Sacado::Fad::MemPool* Sacado::Fad::MemPoolStorage<double>::defaultPool_ = NULL;
@@ -51,8 +50,8 @@ void FAD::error(char *msg) {
 
 template <typename T>
 inline void
-mult1(const T& x1, const T& x2, T& y) {
-  y = x1*x2;
+func1(const T& x1, const T& x2, T& y) {
+  y = x1*x2 + sin(x1)/x2;
 }
 
 template <typename FadType>
@@ -60,24 +59,20 @@ double
 do_time(int nderiv, int nloop)
 {
   FadType x1, x2, y;
-//   Sacado::Random urand(0.0, 1.0);
+  Sacado::Random urand(0.0, 1.0);
 
-//   x1 = FadType(nderiv,  urand.number());
-//   x2 = FadType(nderiv,  urand.number());
-  x1 = FadType(nderiv,  2.0);
-  x2 = FadType(nderiv,  3.0);
+  x1 = FadType(nderiv,  urand.number());
+  x2 = FadType(nderiv,  urand.number());
   y = 0.0;
   for (int j=0; j<nderiv; j++) {
-//     x1.fastAccessDx(j) = urand.number();
-//     x2.fastAccessDx(j) = urand.number();
-    x1.fastAccessDx(j) = 2.0 + static_cast<double>(j)/10.0;
-    x2.fastAccessDx(j) = 3.0 + static_cast<double>(j)/10.0;;
+    x1.fastAccessDx(j) = urand.number();
+    x2.fastAccessDx(j) = urand.number();
   }
   
   Teuchos::Time timer("mult", false);
   timer.start(true);
   for (int j=0; j<nloop; j++) {
-    mult1(x1, x2, y);
+    func1(x1, x2, y);
   }
   timer.stop();
 
@@ -97,7 +92,7 @@ int main(int argc, char* argv[]) {
     clp.setDocString("This program tests the speed of various forward mode AD implementations for a single multiplication operation");
     int nderiv = 10;
     clp.setOption("nderiv", &nderiv, "Number of derivative components");
-    int nloop = 10000000;
+    int nloop = 1000000;
     clp.setOption("nloop", &nloop, "Number of loops");
 
     // Parse options

@@ -44,7 +44,7 @@ noinst_PROGRAMS = \
 	dmfad_example \
 	trad_example \
 	trad_dfad_example \
-	dtaylor_example
+	taylor_example
 
 dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
 dfad_example_CXXFLAGS = \
@@ -84,10 +84,10 @@ trad_dfad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
 trad_dfad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
 trad_dfad_example_LDADD = $(dfad_example_LDADD)
 
-dtaylor_example_SOURCES = $(srcdir)/dtaylor_example.cpp
-dtaylor_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
-dtaylor_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
-dtaylor_example_LDADD = $(dfad_example_LDADD)
+taylor_example_SOURCES = $(srcdir)/taylor_example.cpp
+taylor_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+taylor_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+taylor_example_LDADD = $(dfad_example_LDADD)
 
 include FEApp/MakefileFEAppStub.am
 EXTRA_DIST = $(FEAPP_H) $(FEAPP)

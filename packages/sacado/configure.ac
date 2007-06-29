@@ -344,6 +344,9 @@ if test "X$ac_cv_use_sacado_tests" != "Xno"; then
   AC_MSG_RESULT([${ENABLE_ADOLC_SUPPORT}])
 fi
 AM_CONDITIONAL(ENABLE_ADOLC, test X${ENABLE_ADOLC_SUPPORT} = Xyes)
+if test X${ENABLE_ADOLC_SUPPORT} = Xyes; then
+  AC_DEFINE([HAVE_ADOLC],,[Define if ADOL-C is enabled])
+fi
   
 AC_ARG_WITH(adolc-incdir,
             [AC_HELP_STRING([--with-adolc-incdir=PATH],

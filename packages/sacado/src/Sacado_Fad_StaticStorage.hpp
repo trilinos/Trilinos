@@ -32,46 +32,11 @@
 #ifndef SACADO_FAD_STATICSTORAGE_HPP
 #define SACADO_FAD_STATICSTORAGE_HPP
 
+#include "Sacado_StaticArrayTraits.hpp"
+
 namespace Sacado {
 
   namespace Fad {
-
-    /*!
-     * \brief Static array allocation class that works for any type
-     */
-    template <typename T, bool isScalar = IsScalarType<T>::value>
-    struct ss_array {
-
-      //! Copy array from \c src to \c dest of length \c sz
-      static inline void copy(const T* src, T*  dest, int sz) {
-	for (int i=0; i<sz; ++i)
-	  *(dest++) = *(src++);
-      }
-
-      //! Zero out array \c dest of length \c sz
-      static inline void zero(T* dest, int sz) {
-	for (int i=0; i<sz; ++i)
-	  *(dest++) = T(0.);
-      }
-    };
-
-    /*!
-     * \brief Static array allocation class that is specialized for scalar
-     * i.e., fundamental or built-in types (float, double, etc...).
-     */
-//     template <typename T>
-//     struct ss_array<T,true> {
-
-//       //! Copy array from \c src to \c dest of length \c sz
-//       static inline void copy(const T* src, T* dest, int sz) {
-// 	memcpy(dest,src,sz*sizeof(T));
-//       }
-
-//       //! Zero out array \c dest of length \c sz
-//       static inline void zero(T* dest, int sz) {
-// 	memset(dest,0,sz*sizeof(T));
-//       }
-//     };
 
     //! Derivative array storage class using static memory allocation
     /*!

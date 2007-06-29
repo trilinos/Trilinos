@@ -29,15 +29,15 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_TAYLOR_DTAYLOR_HPP
-#define SACADO_TAYLOR_DTAYLOR_HPP
+#ifndef SACADO_TAY_CACHETAYLOR_HPP
+#define SACADO_TAY_CACHETAYLOR_HPP
 
 #include "Sacado_ConfigDefs.h"
-#include "Sacado_Taylor_Expression.hpp"
+#include "Sacado_Tay_CacheTaylorExpr.hpp"
 
 // forward decalarations
 namespace Sacado {
-  namespace Taylor {
+  namespace Tay {
     template <class ExprT> class UnaryPlusOp;
     template <class ExprT> class UnaryMinusOp;
   }
@@ -45,17 +45,16 @@ namespace Sacado {
 
 namespace Sacado {
 
-  //! Namespace for forward-mode AD classes
-  namespace Taylor {
+  namespace Tay {
 
-    //! Forward-mode AD class using dynamic memory allocation
+    //! Taylor polynomial class using caching expression templates
     /*!
      * This class provides the implementation of the Taylor object required
-     * for expression templating.  Class DTaylor provides the complete
+     * for expression templating.  Class CacheTaylor provides the complete
      * user inteface.
      */
     template <typename T> 
-    class DTaylorImplementation {
+    class CacheTaylorImplementation {
 
     public:
 
@@ -63,28 +62,29 @@ namespace Sacado {
       typedef T value_type;
 
       //! Default constructor
-      DTaylorImplementation() : coeff_(T(0),1) {}
+      CacheTaylorImplementation() : coeff_(T(0),1) {}
 
       //! Constructor with supplied value \c x
       /*!
        * Sets the first coefficient to x
        */
-      DTaylorImplementation(const T& x) : coeff_(x,1) {}
+      CacheTaylorImplementation(const T& x) : coeff_(x,1) {}
 
       //! Constructor with degree d and value \c x
       /*!
        * Initializes first coeffienct to \c x and of a polynomial of degree d
        */
-      DTaylorImplementation(unsigned int d, const T & x) : coeff_(T(0),d+1) {
+      CacheTaylorImplementation(unsigned int d, const T & x) : 
+	coeff_(T(0),d+1) {
 	coeff_[0] = x;
       }
 
       //! Copy constructor
-      DTaylorImplementation(const DTaylorImplementation& x) : 
+      CacheTaylorImplementation(const CacheTaylorImplementation& x) : 
 	coeff_(x.coeff_) {}
 
       //! Destructor
-      ~DTaylorImplementation() {}
+      ~CacheTaylorImplementation() {}
 
       /*!
        * @name Value accessor methods
@@ -147,45 +147,45 @@ namespace Sacado {
       //! Taylor polynomial coefficients
       std::valarray<T> coeff_;
 
-    }; // class DTaylorImplementation
+    }; // class CacheTaylorImplementation
 
-    //! DTaylor expression template specialization
+    //! CacheTaylor expression template specialization
     /*!
-     * This template class represents a simple DTaylor expression.
+     * This template class represents a simple CacheTaylor expression.
      */
     template <typename T> 
-    class Expr< DTaylorImplementation<T> > : 
-      public DTaylorImplementation<T> {
+    class Expr< CacheTaylorImplementation<T> > : 
+      public CacheTaylorImplementation<T> {
 
     public:
 
       //! Default constructor
-      Expr() : DTaylorImplementation<T>() {}
+      Expr() : CacheTaylorImplementation<T>() {}
 
       //! Constructor with supplied value \c x
       /*!
        * Sets the first coefficient to x
        */
-      Expr(const T & x) : DTaylorImplementation<T>(x) {}
+      Expr(const T & x) : CacheTaylorImplementation<T>(x) {}
 
       //! Constructor with degree d and value \c x
       /*!
        * Initializes first coeffienct to \c x and of a polynomial of degree d
        */
-      Expr(unsigned int d, const T & x) : DTaylorImplementation<T>(d,x) {}
+      Expr(unsigned int d, const T & x) : CacheTaylorImplementation<T>(d,x) {}
 
       //! Copy constructor
-      Expr(const Expr& x) : DTaylorImplementation<T>(x) {}
+      Expr(const Expr& x) : CacheTaylorImplementation<T>(x) {}
 
-    }; // class Expr< DTaylorImplementation<T> >
+    }; // class Expr< CacheTaylorImplementation<T> >
 
     //! Forward-mode AD class using dynamic memory allocation
     /*!
      * This class provides the user interface of the Taylor object.  Class
-     * DTaylorImplementation provides the implementation.
+     * CacheTaylorImplementation provides the implementation.
      */
     template <typename T>
-    class DTaylor : public Expr< DTaylorImplementation<T> > {
+    class CacheTaylor : public Expr< CacheTaylorImplementation<T> > {
 
     public:
 
@@ -195,31 +195,31 @@ namespace Sacado {
       //@{
 
       //! Default constructor.
-      DTaylor() : Expr< DTaylorImplementation<T> >() {}
+      CacheTaylor() : Expr< CacheTaylorImplementation<T> >() {}
 
       //! Constructor with supplied value \c x
       /*!
        * Sets the first coefficient to x
        */
-      DTaylor(const T & x) : Expr< DTaylorImplementation<T> >(x) {}
+      CacheTaylor(const T & x) : Expr< CacheTaylorImplementation<T> >(x) {}
 
       //! Constructor with degree d and value \c x
       /*!
        * Initializes first coeffienct to \c x and of a polynomial of degree d
        */
-      DTaylor(unsigned int d, const T & x) : 
-	Expr< DTaylorImplementation<T> >(d,x) {}
+      CacheTaylor(unsigned int d, const T & x) : 
+	Expr< CacheTaylorImplementation<T> >(d,x) {}
 
       //! Copy constructor
-      DTaylor(const DTaylor& x) : Expr< DTaylorImplementation<T> >(x) {}
+      CacheTaylor(const CacheTaylor& x) : Expr< CacheTaylorImplementation<T> >(x) {}
 
       //! Copy constructor from any Expression object
-      template <typename S> DTaylor(const Expr<S>& x);
+      template <typename S> CacheTaylor(const Expr<S>& x);
 
       //@}
 
       //! Destructor
-      ~DTaylor() {}
+      ~CacheTaylor() {}
 
       /*!
        * @name Assignment operators
@@ -227,13 +227,13 @@ namespace Sacado {
       //@{
 
       //! Assignment operator with constant right-hand-side
-      DTaylor<T>& operator=(const T& val);
+      CacheTaylor<T>& operator=(const T& val);
 
-      //! Assignment with DTaylor right-hand-side
-      DTaylor<T>& operator=(const DTaylor<T>& x);
+      //! Assignment with CacheTaylor right-hand-side
+      CacheTaylor<T>& operator=(const CacheTaylor<T>& x);
 
       //! Assignment operator with any expression right-hand-side
-      template <typename S> DTaylor<T>& operator=(const Expr<S>& x); 
+      template <typename S> CacheTaylor<T>& operator=(const Expr<S>& x); 
 
       //@}
 
@@ -243,53 +243,53 @@ namespace Sacado {
       //@{
 
       //! Unary-plus operator
-      inline Expr< UnaryExpr< DTaylor<T>, UnaryPlusOp > >
+      inline Expr< UnaryExpr< CacheTaylor<T>, UnaryPlusOp > >
       operator + () const {
-	typedef UnaryExpr< DTaylor<T>, UnaryPlusOp > expr_t;
+	typedef UnaryExpr< CacheTaylor<T>, UnaryPlusOp > expr_t;
 	return Expr<expr_t>(expr_t(*this));
       }
 
       //! Unary-minus operator
-      inline Expr< UnaryExpr< DTaylor<T>, UnaryMinusOp > >
+      inline Expr< UnaryExpr< CacheTaylor<T>, UnaryMinusOp > >
       operator - () const {
-	typedef UnaryExpr< DTaylor<T>, UnaryMinusOp > expr_t;
+	typedef UnaryExpr< CacheTaylor<T>, UnaryMinusOp > expr_t;
 	return Expr<expr_t>(expr_t(*this));
       }
 
       //! Addition-assignment operator with constant right-hand-side
-      DTaylor<T>& operator += (const T& x);
+      CacheTaylor<T>& operator += (const T& x);
 
       //! Subtraction-assignment operator with constant right-hand-side
-      DTaylor<T>& operator -= (const T& x);
+      CacheTaylor<T>& operator -= (const T& x);
 
       //! Multiplication-assignment operator with constant right-hand-side
-      DTaylor<T>& operator *= (const T& x);
+      CacheTaylor<T>& operator *= (const T& x);
 
       //! Division-assignment operator with constant right-hand-side
-      DTaylor<T>& operator /= (const T& x);
+      CacheTaylor<T>& operator /= (const T& x);
 
       //! Addition-assignment operator with Taylor right-hand-side
-      template <typename S> DTaylor<T>& operator += (const S& x);
+      template <typename S> CacheTaylor<T>& operator += (const S& x);
 
       //! Subtraction-assignment operator with Taylor right-hand-side
-      template <typename S> DTaylor<T>& operator -= (const S& x);
+      template <typename S> CacheTaylor<T>& operator -= (const S& x);
   
       //! Multiplication-assignment operator with Taylor right-hand-side
-      template <typename S> DTaylor<T>& operator *= (const S& x);
+      template <typename S> CacheTaylor<T>& operator *= (const S& x);
 
       //! Division-assignment operator with Taylor right-hand-side
-      template <typename S> DTaylor<T>& operator /= (const S& x);
+      template <typename S> CacheTaylor<T>& operator /= (const S& x);
 
       //@}
 
-    }; // class DTaylor<T>
+    }; // class CacheTaylor<T>
 
-  } // namespace Taylor
+  } // namespace Tay
 
 } // namespace Sacado
 
-#include "Sacado_Taylor_DTaylorTraits.hpp"
-#include "Sacado_Taylor_DTaylorImp.hpp"
-#include "Sacado_Taylor_Ops.hpp"
+#include "Sacado_Tay_CacheTaylorTraits.hpp"
+#include "Sacado_Tay_CacheTaylorImp.hpp"
+#include "Sacado_Tay_CacheTaylorOps.hpp"
 
-#endif // SACADO_TAYLOR_DTAYLOR_HPP
+#endif // SACADO_TAYLOR_CACHETAYLOR_HPP

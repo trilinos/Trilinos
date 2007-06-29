@@ -29,10 +29,10 @@
 // ***********************************************************************
 // @HEADER
 
-// sacado_test
+// taylor_example
 //
 //  usage: 
-//     sacado_test
+//     taylor_example
 //
 //  output:  
 //     prints a summary line and one line "Hello" for each process to standard out
@@ -41,7 +41,8 @@
 
 template <typename ScalarT>
 void func(const ScalarT& a, const ScalarT& b) {
-  ScalarT t1 = a*(b-1.);
+  //ScalarT t1 = a*(b-1.);
+  ScalarT t1 = asin(a);
 
   std::cout << t1 << std::endl;
 }
@@ -49,9 +50,19 @@ void func(const ScalarT& a, const ScalarT& b) {
 int main(int argc, char **argv)
 {
 
-  Sacado::Taylor::DTaylor<double> a_dtaylor(3, 2.0);
-  Sacado::Taylor::DTaylor<double> b_dtaylor(3, 3.0);
+  Sacado::Tay::CacheTaylor<double> a_dtaylor(3, 0.5);
+  a_dtaylor.fastAccessCoeff(1) = 0.5;
+  a_dtaylor.fastAccessCoeff(2) = 0.5;
+  a_dtaylor.fastAccessCoeff(3) = 0.5;
+  Sacado::Tay::CacheTaylor<double> b_dtaylor(3, 3.0);
   func(a_dtaylor, b_dtaylor);
+
+  Sacado::Tay::Taylor<double> a_staylor(3, 0.5);
+  a_staylor.fastAccessCoeff(1) = 0.5;
+  a_staylor.fastAccessCoeff(2) = 0.5;
+  a_staylor.fastAccessCoeff(3) = 0.5;
+  Sacado::Tay::Taylor<double> b_staylor(3, 3.0);
+  func(a_staylor, b_staylor);
 
   return 0;
 }

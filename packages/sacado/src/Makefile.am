@@ -75,11 +75,14 @@ SACADO_CACHEFAD_H = \
 	$(srcdir)/Sacado_CacheFad_DFad.hpp
 
 SACADO_TAYLOR_H = \
-	$(srcdir)/Sacado_Taylor_DTaylorTraits.hpp \
-	$(srcdir)/Sacado_Taylor_DTaylor.hpp \
-	$(srcdir)/Sacado_Taylor_DTaylorImp.hpp \
-	$(srcdir)/Sacado_Taylor_Expression.hpp \
-	$(srcdir)/Sacado_Taylor_Ops.hpp
+	$(srcdir)/Sacado_Tay_CacheTaylorTraits.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylor.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylorImp.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylorExpr.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylorOps.hpp \
+	$(srcdir)/Sacado_Tay_TaylorTraits.hpp \
+	$(srcdir)/Sacado_Tay_Taylor.hpp \
+	$(srcdir)/Sacado_Tay_TaylorImp.hpp
 
 SACADO_RAD_H = \
 	$(srcdir)/Sacado_trad_Traits.hpp \
@@ -93,6 +96,11 @@ SACADO_RAD = \
 	$(srcdir)/Sacado_radops2.cpp \
 	$(srcdir)/uninit.c \
 	$(srcdir)/RAD_Const_Warn.c
+
+SACADO_UTIL_H = \
+	$(srcdir)/Sacado_DynamicArrayTraits.hpp \
+	$(srcdir)/Sacado_StaticArrayTraits.hpp \
+	$(srcdir)/Sacado_Handle.hpp
 
 if ENABLE_SACADO_TEUCHOS
 
@@ -150,7 +158,8 @@ SACADO_H = \
 	$(SACADO_MPL_H) \
 	$(SACADO_TEMPLATE_H) \
 	$(SACADO_PARAMETER_H) \
-	$(SACADO_SFC_H)
+	$(SACADO_SFC_H) \
+	$(SACADO_UTIL_H)
 
 SACADO = \
 	$(SACADO_RAD) \

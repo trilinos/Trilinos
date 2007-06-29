@@ -136,11 +136,14 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/Sacado_CacheFad_Ops.hpp \
 	$(srcdir)/Sacado_CacheFad_DFadTraits.hpp \
 	$(srcdir)/Sacado_CacheFad_DFad.hpp \
-	$(srcdir)/Sacado_Taylor_DTaylorTraits.hpp \
-	$(srcdir)/Sacado_Taylor_DTaylor.hpp \
-	$(srcdir)/Sacado_Taylor_DTaylorImp.hpp \
-	$(srcdir)/Sacado_Taylor_Expression.hpp \
-	$(srcdir)/Sacado_Taylor_Ops.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylorTraits.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylor.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylorImp.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylorExpr.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylorOps.hpp \
+	$(srcdir)/Sacado_Tay_TaylorTraits.hpp \
+	$(srcdir)/Sacado_Tay_Taylor.hpp \
+	$(srcdir)/Sacado_Tay_TaylorImp.hpp \
 	$(srcdir)/Sacado_trad_Traits.hpp $(srcdir)/Sacado_trad.hpp \
 	$(srcdir)/Sacado_trad2.hpp $(srcdir)/Sacado_rad.hpp \
 	$(srcdir)/Sacado_rad2.hpp $(srcdir)/mpl/Sacado_mpl_is_same.hpp \
@@ -172,7 +175,10 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterFamily.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterVector.hpp \
-	$(srcdir)/Sacado_ScalarFlopCounter.hpp
+	$(srcdir)/Sacado_ScalarFlopCounter.hpp \
+	$(srcdir)/Sacado_DynamicArrayTraits.hpp \
+	$(srcdir)/Sacado_StaticArrayTraits.hpp \
+	$(srcdir)/Sacado_Handle.hpp
 am__objects_1 = libsacado_a-Sacado_radops.$(OBJEXT) \
 	libsacado_a-Sacado_radops2.$(OBJEXT) uninit.$(OBJEXT) \
 	RAD_Const_Warn.$(OBJEXT)
@@ -181,7 +187,7 @@ am__objects_3 = $(am__objects_1) $(am__objects_2)
 am__objects_4 =
 am__objects_5 = $(am__objects_4) $(am__objects_4) $(am__objects_4) \
 	$(am__objects_4) $(am__objects_4) $(am__objects_4) \
-	$(am__objects_4) $(am__objects_4)
+	$(am__objects_4) $(am__objects_4) $(am__objects_4)
 am_libsacado_a_OBJECTS = $(am__objects_3) $(am__objects_5)
 libsacado_a_OBJECTS = $(am_libsacado_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -229,11 +235,14 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_CacheFad_Ops.hpp \
 	$(srcdir)/Sacado_CacheFad_DFadTraits.hpp \
 	$(srcdir)/Sacado_CacheFad_DFad.hpp \
-	$(srcdir)/Sacado_Taylor_DTaylorTraits.hpp \
-	$(srcdir)/Sacado_Taylor_DTaylor.hpp \
-	$(srcdir)/Sacado_Taylor_DTaylorImp.hpp \
-	$(srcdir)/Sacado_Taylor_Expression.hpp \
-	$(srcdir)/Sacado_Taylor_Ops.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylorTraits.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylor.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylorImp.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylorExpr.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylorOps.hpp \
+	$(srcdir)/Sacado_Tay_TaylorTraits.hpp \
+	$(srcdir)/Sacado_Tay_Taylor.hpp \
+	$(srcdir)/Sacado_Tay_TaylorImp.hpp \
 	$(srcdir)/Sacado_trad_Traits.hpp $(srcdir)/Sacado_trad.hpp \
 	$(srcdir)/Sacado_trad2.hpp $(srcdir)/Sacado_rad.hpp \
 	$(srcdir)/Sacado_rad2.hpp $(srcdir)/mpl/Sacado_mpl_is_same.hpp \
@@ -265,7 +274,10 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/parameter/Sacado_ScalarParameterFamily.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterVector.hpp \
-	$(srcdir)/Sacado_ScalarFlopCounter.hpp
+	$(srcdir)/Sacado_ScalarFlopCounter.hpp \
+	$(srcdir)/Sacado_DynamicArrayTraits.hpp \
+	$(srcdir)/Sacado_StaticArrayTraits.hpp \
+	$(srcdir)/Sacado_Handle.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -435,11 +447,14 @@ SACADO_CACHEFAD_H = \
 	$(srcdir)/Sacado_CacheFad_DFad.hpp
 
 SACADO_TAYLOR_H = \
-	$(srcdir)/Sacado_Taylor_DTaylorTraits.hpp \
-	$(srcdir)/Sacado_Taylor_DTaylor.hpp \
-	$(srcdir)/Sacado_Taylor_DTaylorImp.hpp \
-	$(srcdir)/Sacado_Taylor_Expression.hpp \
-	$(srcdir)/Sacado_Taylor_Ops.hpp
+	$(srcdir)/Sacado_Tay_CacheTaylorTraits.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylor.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylorImp.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylorExpr.hpp \
+	$(srcdir)/Sacado_Tay_CacheTaylorOps.hpp \
+	$(srcdir)/Sacado_Tay_TaylorTraits.hpp \
+	$(srcdir)/Sacado_Tay_Taylor.hpp \
+	$(srcdir)/Sacado_Tay_TaylorImp.hpp
 
 SACADO_RAD_H = \
 	$(srcdir)/Sacado_trad_Traits.hpp \
@@ -453,6 +468,11 @@ SACADO_RAD = \
 	$(srcdir)/Sacado_radops2.cpp \
 	$(srcdir)/uninit.c \
 	$(srcdir)/RAD_Const_Warn.c
+
+SACADO_UTIL_H = \
+	$(srcdir)/Sacado_DynamicArrayTraits.hpp \
+	$(srcdir)/Sacado_StaticArrayTraits.hpp \
+	$(srcdir)/Sacado_Handle.hpp
 
 @ENABLE_SACADO_TEUCHOS_TRUE@SACADO_TEMPLATE_H = \
 @ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_TemplateManager.hpp \
@@ -507,7 +527,8 @@ SACADO_H = \
 	$(SACADO_MPL_H) \
 	$(SACADO_TEMPLATE_H) \
 	$(SACADO_PARAMETER_H) \
-	$(SACADO_SFC_H)
+	$(SACADO_SFC_H) \
+	$(SACADO_UTIL_H)
 
 SACADO = \
 	$(SACADO_RAD) \

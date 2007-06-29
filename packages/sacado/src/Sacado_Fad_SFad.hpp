@@ -57,7 +57,7 @@
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_Fad_SFadTraits.hpp"
 #include "Sacado_Fad_Expression.hpp"
-#include "Sacado_Fad_StaticStorage.hpp"
+#include "Sacado_StaticArrayTraits.hpp"
 
 namespace Sacado {
 

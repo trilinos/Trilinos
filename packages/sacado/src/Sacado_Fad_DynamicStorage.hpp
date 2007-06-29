@@ -34,99 +34,11 @@
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_Traits.hpp"
+#include "Sacado_DynamicArrayTraits.hpp"
 
 namespace Sacado {
 
   namespace Fad {
-
-    /*!
-     * \brief Dynamic array allocation class that works for any type
-     */
-    template <typename T, bool isScalar = IsScalarType<T>::value>
-    struct ds_array {
-
-      //! Get memory for new array of length \c sz and fill with zeros
-      static inline T* get_and_fill(int sz) {
-	T* m = static_cast<T* >(operator new(sz*sizeof(T)));
-	T* p = m;
-	for (int i=0; i<sz; ++i)
-	  new (p++) T(0.);
-	return m;
-      }
-
-      /*! 
-       * \brief Get memory for new array of length \c sz and fill with 
-       * entries from \c src
-       */
-      static inline T* get_and_fill(const T* src, int sz) {
-	T* m = static_cast<T* >(operator new(sz*sizeof(T)));
-	T* p = m; 
-	for (int i=0; i<sz; ++i)
-	  new (p++) T(*(src++));
-	return m;
-      }
-
-      //! Copy array from \c src to \c dest of length \c sz
-      static inline void copy(const T* src, T*  dest, int sz) {
-	for (int i=0; i<sz; ++i)
-	  *(dest++) = *(src++);
-      }
-
-      //! Zero out array \c dest of length \c sz
-      static inline void zero(T* dest, int sz) {
-	for (int i=0; i<sz; ++i)
-	  *(dest++) = T(0.);
-      }
-
-      //! Destroy array elements and release memory
-      static inline void destroy_and_release(T* m, int sz) {
-	T* e = m+sz;
-	for (T* b = m; b!=e; b++)
-	  b->~T();
-	operator delete((void*) m);
-      }
-    };
-
-    /*!
-     * \brief Dynamic array allocation class that is specialized for scalar
-     * i.e., fundamental or built-in types (float, double, etc...).
-     */
-    template <typename T>
-    struct ds_array<T,true> {
-
-      //! Get memory for new array of length \c sz and fill with zeros
-      static inline T* get_and_fill(int sz) {
-	T* m = static_cast<T* >(operator new(sz*sizeof(T)));
-	memset(m,0,sz*sizeof(T));
-	return m;
-      }
-
-      /*! 
-       * \brief Get memory for new array of length \c sz and fill with 
-       * entries from \c src
-       */
-      static inline T* get_and_fill(const T* src, int sz) {
-	T* m = static_cast<T* >(operator new(sz*sizeof(T)));
-	for (int i=0; i<sz; ++i)
-	  m[i] = src[i];
-	return m;
-      }
-
-      //! Copy array from \c src to \c dest of length \c sz
-      static inline void copy(const T* src, T* dest, int sz) {
-	memcpy(dest,src,sz*sizeof(T));
-      }
-
-      //! Zero out array \c dest of length \c sz
-      static inline void zero(T* dest, int sz) {
-	memset(dest,0,sz*sizeof(T));
-      }
-
-      //! Destroy array elements and release memory
-      static inline void destroy_and_release(T* m, int sz) {
-	operator delete((void*) m);
-      }
-    };
 
     //! Derivative array storage class using dynamic memory allocation
     template <typename T> 

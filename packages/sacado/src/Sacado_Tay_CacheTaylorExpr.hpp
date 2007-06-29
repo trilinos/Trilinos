@@ -29,18 +29,18 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_TAYLOR_EXPRESSION_HPP
-#define SACADO_TAYLOR_EXPRESSION_HPP
+#ifndef SACADO_TAY_CACHETAYLOREXPR_HPP
+#define SACADO_TAY_CACHETAYLOREXPR_HPP
 
 #include "Sacado_Traits.hpp"
 
 namespace Sacado {
 
-  namespace Taylor {
+  namespace Tay {
 
     //! Wrapper for a generic expression template
     /*!
-     * This template class serves as a wrapper for all Fad expression
+     * This template class serves as a wrapper for all CacheTaylor expression
      * template classes.
      */
     template <typename ExprT> 
@@ -359,8 +359,8 @@ namespace Sacado {
 
     }; // class BinaryExpr
 
-  } // namespace Taylor
+  } // namespace Tay
 
 } // namespace Sacado
 
-#endif // SACADO_TAYLOR_EXPRESSION_HPP
+#endif // SACADO_TAY_CACHETAYLOREXPR_HPP

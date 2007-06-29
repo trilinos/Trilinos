@@ -29,15 +29,15 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_TAYLOR_OPS_HPP
-#define SACADO_TAYLOR_OPS_HPP
+#ifndef SACADO_TAY_CACHETAYLOROPS_HPP
+#define SACADO_TAY_CACHETAYLOROPS_HPP
 
 #include "Sacado_ConfigDefs.h"
-#include "Sacado_Taylor_Expression.hpp"
+#include "Sacado_Tay_CacheTaylorExpr.hpp"
 
 // Import the standard math functions into the Sacado::Taylor namespace
 namespace Sacado {
-  namespace Taylor {
+  namespace Tay {
     using std::exp;
     using std::log;
     using std::log10;
@@ -61,7 +61,7 @@ namespace Sacado {
 
 namespace Sacado {
 
-  namespace Taylor {
+  namespace Tay {
 
     // ---------------------- Unary Addition operator ------------------------
 
@@ -589,13 +589,13 @@ namespace Sacado {
 
     }; // class FAbsOp
 
-  } // namespace Taylor
+  } // namespace Tay
 
 } // namespace Sacado
 
 #define TAYLOR_UNARYOP_MACRO(OPNAME,OP)					\
 namespace Sacado {							\
-  namespace Taylor {							\
+  namespace Tay {							\
     template <typename T>						\
     inline Expr< UnaryExpr< Expr<T>, OP > >				\
     OPNAME (const Expr<T>& expr)					\
@@ -608,7 +608,7 @@ namespace Sacado {							\
 }                                                                       \
                                                                         \
 namespace std {                                                         \
-  using Sacado::Taylor::OPNAME;                                         \
+  using Sacado::Tay::OPNAME;                                            \
 }
 
 TAYLOR_UNARYOP_MACRO(operator+, UnaryPlusOp)
@@ -627,7 +627,7 @@ TAYLOR_UNARYOP_MACRO(fabs, FAbsOp)
 
 namespace Sacado {
 
-  namespace Taylor {
+  namespace Tay {
 
     // ---------------------- Addition operator -----------------------------
 
@@ -1447,13 +1447,13 @@ namespace Sacado {
 
     }; // class ATanQuadOp
 
-  } // namespace Taylor
+  } // namespace Tay
 
 } // namespace Sacado
 
 #define TAYLOR_BINARYOP_MACRO(OPNAME,OP)				\
 namespace Sacado {							\
-  namespace Taylor {							\
+  namespace Tay {							\
     template <typename T1, typename T2>					\
     inline Expr< BinaryExpr< Expr<T1>, Expr<T2>, OP > >			\
     OPNAME (const Expr<T1>& expr1, const Expr<T2>& expr2)		\
@@ -1506,7 +1506,7 @@ TAYLOR_BINARYOP_MACRO(operator/, DivisionOp)
 
 #define TAYLOR_SFINAE_BINARYOP_MACRO(OPNAME,OP)				\
 namespace Sacado {							\
-  namespace Taylor {							\
+  namespace Tay {							\
     template <typename T1, typename T2>					\
     inline                                                              \
     typename                                                            \
@@ -1552,13 +1552,13 @@ TAYLOR_SFINAE_BINARYOP_MACRO(min, MinOp)
 #undef TAYLOR_SFINAE_BINARYOP_MACRO
 
 namespace std {
-  using Sacado::Taylor::min;
-  using Sacado::Taylor::max;
+  using Sacado::Tay::min;
+  using Sacado::Tay::max;
 }
 
 namespace Sacado {
 
-  namespace Taylor {
+  namespace Tay {
 
     template <typename T1, typename T2>
     inline Expr< BinaryExpr< Expr<T1>, Expr<T2>, ASinQuadOp > >
@@ -1753,25 +1753,25 @@ namespace Sacado {
       return sinh(expr)/cosh(expr);
     }
 
-  } // namespace Taylor
+  } // namespace Tay
 
 } // namespace Sacado
 
 namespace std {
-  using Sacado::Taylor::pow;
-  using Sacado::Taylor::log10;
-  using Sacado::Taylor::tan;
-  using Sacado::Taylor::asin;
-  using Sacado::Taylor::acos;
-  using Sacado::Taylor::atan;
-  using Sacado::Taylor::tanh;
+  using Sacado::Tay::pow;
+  using Sacado::Tay::log10;
+  using Sacado::Tay::tan;
+  using Sacado::Tay::asin;
+  using Sacado::Tay::acos;
+  using Sacado::Tay::atan;
+  using Sacado::Tay::tanh;
 }
 
 //-------------------------- Relational Operators -----------------------
 
 #define TAYLOR_RELOP_MACRO(OP)						\
 namespace Sacado {							\
-  namespace Taylor {							\
+  namespace Tay {							\
     template <typename ExprT1, typename ExprT2>				\
     inline bool								\
     operator OP (const Expr<ExprT1>& expr1,				\
@@ -1813,7 +1813,7 @@ TAYLOR_RELOP_MACRO(|)
 
 namespace Sacado {
 
-  namespace Taylor {
+  namespace Tay {
 
     template <typename ExprT>
     inline bool operator ! (const Expr<ExprT>& expr) 
@@ -1821,7 +1821,7 @@ namespace Sacado {
       return ! expr.fastAccessCoeff(0);
     }
 
-  } // namespace Taylor
+  } // namespace Tay
 
 } // namespace Sacado
 
@@ -1829,7 +1829,7 @@ namespace Sacado {
 
 namespace Sacado {
 
-  namespace Taylor {
+  namespace Tay {
 
     template <typename ExprT>
     std::ostream& operator << (std::ostream& os, const Expr<ExprT>& x) {
@@ -1846,9 +1846,9 @@ namespace Sacado {
       return os;
     }
 
-  } // namespace Taylor
+  } // namespace Tay
 
 } // namespace Sacado
 
 
-#endif // SACADO_TAYLOR_OPS_HPP
+#endif // SACADO_TAY_CACHETAYLOROPS_HPP

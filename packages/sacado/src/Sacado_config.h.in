@@ -1,5 +1,8 @@
 /* src/Sacado_config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define if ADOL-C is enabled */
+#undef HAVE_ADOLC
+
 /* Define to 1 if you have the <algorithm> header file. */
 #undef HAVE_ALGORITHM
 

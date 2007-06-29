@@ -70,6 +70,7 @@ namespace Sacado {
     using std::acos;
     using std::asin;
     using std::atan;
+    using std::atan2;
     using std::cosh;
     using std::sinh;
     using std::tanh;

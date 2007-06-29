@@ -29,11 +29,11 @@
 // ***********************************************************************
 // @HEADER
 
-#include "DTaylorUnitTests.hpp"
+#include "TaylorUnitTests.hpp"
 
-CPPUNIT_TEST_SUITE_REGISTRATION( DTaylorOpsUnitTest );
+CPPUNIT_TEST_SUITE_REGISTRATION( TaylorOpsUnitTest );
 
-DTaylorOpsUnitTest::DTaylorOpsUnitTest() :
+TaylorOpsUnitTest::TaylorOpsUnitTest() :
   urand(0.0, 1.0), d(5), tol_a(1.0e-14), tol_r(1.0e-13) 
 {
   X = new double*[2];
@@ -44,9 +44,9 @@ DTaylorOpsUnitTest::DTaylorOpsUnitTest() :
   Y[0] = new double[d+1];
 }
 
-DTaylorOpsUnitTest::DTaylorOpsUnitTest(unsigned int degree, 
-				       double absolute_tolerance, 
-				       double relative_tolerance) :
+TaylorOpsUnitTest::TaylorOpsUnitTest(unsigned int degree, 
+				     double absolute_tolerance, 
+				     double relative_tolerance) :
   urand(0.0, 1.0), 
   d(degree), 
   tol_a(absolute_tolerance), 
@@ -60,7 +60,7 @@ DTaylorOpsUnitTest::DTaylorOpsUnitTest(unsigned int degree,
   Y[0] = new double[d+1];
 }
 
-DTaylorOpsUnitTest::~DTaylorOpsUnitTest()
+TaylorOpsUnitTest::~TaylorOpsUnitTest()
 {
   delete [] X[1];
   delete [] X[0];
@@ -70,11 +70,11 @@ DTaylorOpsUnitTest::~DTaylorOpsUnitTest()
   delete [] Y;
 }
 
-void DTaylorOpsUnitTest::setUp() {
+void TaylorOpsUnitTest::setUp() {
   double val;
 
-  a_dtay = DTaylorType(d,0.0);
-  b_dtay = DTaylorType(d,0.0);
+  a_dtay = TaylorType(d,0.0);
+  b_dtay = TaylorType(d,0.0);
   
   for (unsigned int i=0; i<=d; i++) {
     val = urand.number();
@@ -89,15 +89,15 @@ void DTaylorOpsUnitTest::setUp() {
   }
 }
 
-void DTaylorOpsUnitTest::tearDown() {}
+void TaylorOpsUnitTest::tearDown() {}
 
-void DTaylorOpsUnitTest::comparePolys(const DTaylorType& x_dtay,
-					double* x_adolc) {
+void TaylorOpsUnitTest::comparePolys(const TaylorType& x_dtay,
+				     double* x_adolc) {
 
   // Compare degrees
   CPPUNIT_ASSERT(x_dtay.degree() == d);
 
-//   std::cout << std::endl << "DTaylor:" << x_dtay << std::endl;
+//   std::cout << std::endl << "Taylor:" << x_dtay << std::endl;
 //   std::cout << "ADOLC:  ";
 //   print_poly(x_adolc);
 //   std::cout << ":Diff:  ";
@@ -111,12 +111,12 @@ void DTaylorOpsUnitTest::comparePolys(const DTaylorType& x_dtay,
   }
 }
 
-void DTaylorOpsUnitTest::compareDoubles(double a, double b) {
+void TaylorOpsUnitTest::compareDoubles(double a, double b) {
   //cout << fabs(a-b) << "   " << tol_a + tol_r*fabs(a) << endl;
   CPPUNIT_ASSERT( fabs(a-b) < tol_a + tol_r*fabs(a) );
 }
 
-void DTaylorOpsUnitTest::print_poly(double *x) {
+void TaylorOpsUnitTest::print_poly(double *x) {
   std::cout.setf(std::ios::fixed,std::ios::floatfield);
   std::cout.width(12);
   std::cout << "[";
@@ -129,8 +129,8 @@ void DTaylorOpsUnitTest::print_poly(double *x) {
   std::cout << "]\n";
 }
 
-void DTaylorOpsUnitTest::print_diff(const DTaylorType& x_dtay,
-				    double *x) {
+void TaylorOpsUnitTest::print_diff(const TaylorType& x_dtay,
+				   double *x) {
   std::cout.setf(std::ios::scientific,std::ios::floatfield);
   //std::cout.width(12);
   std::cout << "[";

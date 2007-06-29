@@ -34,8 +34,10 @@ noinst_PROGRAMS = TestSuite.exe
 if ENABLE_ADOLC
 
 TAYLOR_SOURCES = \
-	$(srcdir)/DTaylorUnitTests.hpp \
-	$(srcdir)/DTaylorUnitTests.cpp
+	$(srcdir)/CacheTaylorUnitTests.hpp \
+	$(srcdir)/CacheTaylorUnitTests.cpp \
+	$(srcdir)/TaylorUnitTests.hpp \
+	$(srcdir)/TaylorUnitTests.cpp
 
 TAYLOR_CXXFLAGS = -I$(ADOLC_INCDIR)
 

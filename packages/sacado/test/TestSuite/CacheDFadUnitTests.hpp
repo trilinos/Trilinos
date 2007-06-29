@@ -60,6 +60,22 @@ typedef Sacado::CacheFad::DFad<double> DFadType;
     compareFads(c_dfad, c_fad);	    \
   }
 
+#define RELOP_TEST(TESTNAME,OP)     \
+  void TESTNAME () {		    \
+    bool r1 = a_dfad OP b_dfad;	    \
+    bool r2 = a_fad OP b_fad;	    \
+    CPPUNIT_ASSERT(r1 == r2);	    \
+				    \
+    double val = urand.number();    \
+    r1 = a_dfad OP val;	            \
+    r2 = a_fad OP val;	            \
+    CPPUNIT_ASSERT(r1 == r2);	    \
+				    \
+    r1 = val OP b_dfad;	            \
+    r2 = val OP b_fad;	            \
+    CPPUNIT_ASSERT(r1 == r2);	    \
+  }
+
 #define BINARY_FUNC_TEST(TESTNAME,FUNC) \
   void TESTNAME () {			\
     c_dfad = FUNC (a_dfad,b_dfad);	\
@@ -111,6 +127,13 @@ class CacheDFadOpsUnitTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testSubtraction);
   CPPUNIT_TEST(testMultiplication);
   CPPUNIT_TEST(testDivision);
+
+  CPPUNIT_TEST(testEquals);
+  CPPUNIT_TEST(testNotEquals);
+  CPPUNIT_TEST(testLessThanOrEquals);
+  CPPUNIT_TEST(testGreaterThanOrEquals);
+  CPPUNIT_TEST(testLessThan);
+  CPPUNIT_TEST(testGreaterThan);
 
   CPPUNIT_TEST(testPow);
   CPPUNIT_TEST(testMax);
@@ -171,6 +194,13 @@ public:
   BINARY_OP_TEST(testSubtraction, -);
   BINARY_OP_TEST(testMultiplication, *);
   BINARY_OP_TEST(testDivision, /);
+
+  RELOP_TEST(testEquals, ==);
+  RELOP_TEST(testNotEquals, !=);
+  RELOP_TEST(testLessThanOrEquals, <=);
+  RELOP_TEST(testGreaterThanOrEquals, >=);
+  RELOP_TEST(testLessThan, <);
+  RELOP_TEST(testGreaterThan, >);
 
   BINARY_FUNC_TEST(testPow, pow);
 

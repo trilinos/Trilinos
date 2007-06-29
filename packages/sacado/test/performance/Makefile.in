@@ -62,8 +62,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@ENABLE_SACADO_TEUCHOS_TRUE@noinst_PROGRAMS = dfad_nonlinear$(EXEEXT) \
-@ENABLE_SACADO_TEUCHOS_TRUE@	mult$(EXEEXT)
+@ENABLE_SACADO_TEUCHOS_TRUE@noinst_PROGRAMS = fad_expr_depth$(EXEEXT) \
+@ENABLE_SACADO_TEUCHOS_TRUE@	fad_expr$(EXEEXT) \
+@ENABLE_SACADO_TEUCHOS_TRUE@	taylor_expr$(EXEEXT)
 subdir = test/performance
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -90,16 +91,20 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Sacado_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_dfad_nonlinear_OBJECTS = dfad_nonlinear-dfad_nonlinear.$(OBJEXT)
-dfad_nonlinear_OBJECTS = $(am_dfad_nonlinear_OBJECTS)
+am_fad_expr_OBJECTS = fad_expr-fad_expr.$(OBJEXT)
+fad_expr_OBJECTS = $(am_fad_expr_OBJECTS)
 am__DEPENDENCIES_1 =
-dfad_nonlinear_LINK = $(CXXLD) $(dfad_nonlinear_CXXFLAGS) $(CXXFLAGS) \
+fad_expr_LINK = $(CXXLD) $(fad_expr_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_mult_OBJECTS = mult-mult.$(OBJEXT)
-mult_OBJECTS = $(am_mult_OBJECTS)
-am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
-mult_LINK = $(CXXLD) $(mult_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
+am_fad_expr_depth_OBJECTS = fad_expr_depth-fad_expr_depth.$(OBJEXT)
+fad_expr_depth_OBJECTS = $(am_fad_expr_depth_OBJECTS)
+fad_expr_depth_LINK = $(CXXLD) $(fad_expr_depth_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_taylor_expr_OBJECTS = taylor_expr-taylor_expr.$(OBJEXT)
+taylor_expr_OBJECTS = $(am_taylor_expr_OBJECTS)
+@ENABLE_ADOLC_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
+taylor_expr_LINK = $(CXXLD) $(taylor_expr_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -108,8 +113,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(dfad_nonlinear_SOURCES) $(mult_SOURCES)
-DIST_SOURCES = $(dfad_nonlinear_SOURCES) $(mult_SOURCES)
+SOURCES = $(fad_expr_SOURCES) $(fad_expr_depth_SOURCES) \
+	$(taylor_expr_SOURCES)
+DIST_SOURCES = $(fad_expr_SOURCES) $(fad_expr_depth_SOURCES) \
+	$(taylor_expr_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -235,29 +242,32 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-dfad_nonlinear_SOURCES = dfad_nonlinear.cpp 
-dfad_nonlinear_CXXFLAGS = -O2  \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/mpl \
-	-I$(top_builddir)/src \
-	-I$(top_srcdir)/test/utils \
+fad_expr_depth_SOURCES = fad_expr_depth.cpp 
+fad_expr_depth_CXXFLAGS = -O2  \
+	$(SACADO_INCLUDES) \
 	-I$(top_srcdir)/Fad \
-        $(TEUCHOS_INCLUDES)
+	-I$(top_srcdir)/test/utils
 
-dfad_nonlinear_DEPENDENCIES = \
+fad_expr_depth_DEPENDENCIES = \
         $(top_builddir)/src/libsacado.a \
 	$(top_builddir)/test/utils/libsacadoutils.a
 
-dfad_nonlinear_LDADD = \
-	-L$(top_builddir)/src -lsacado \
+fad_expr_depth_LDADD = \
 	-L$(top_builddir)/test/utils -lsacadoutils \
-	$(TEUCHOS_LIBS) \
-	$(LIBS) $(FLIBS)
+	$(SACADO_LIBS) 
 
-mult_SOURCES = mult.cpp
-mult_CXXFLAGS = $(dfad_nonlinear_CXXFLAGS)
-mult_DEPENDENCIES = $(dfad_nonlinear_DEPENDENCIES)
-mult_LDADD = $(dfad_nonlinear_LDADD)
+fad_expr_SOURCES = fad_expr.cpp
+fad_expr_CXXFLAGS = $(fad_expr_depth_CXXFLAGS)
+fad_expr_DEPENDENCIES = $(fad_expr_depth_DEPENDENCIES)
+fad_expr_LDADD = $(fad_expr_depth_LDADD)
+@ENABLE_ADOLC_FALSE@TAYLOR_CXXFLAGS = 
+@ENABLE_ADOLC_TRUE@TAYLOR_CXXFLAGS = -I$(ADOLC_INCDIR)
+@ENABLE_ADOLC_FALSE@TAYLOR_LDADD = 
+@ENABLE_ADOLC_TRUE@TAYLOR_LDADD = -L$(ADOLC_LIBDIR) $(ADOLC_LIBS)
+taylor_expr_SOURCES = taylor_expr.cpp
+taylor_expr_CXXFLAGS = $(TAYLOR_CXXFLAGS) $(fad_expr_depth_CXXFLAGS)
+taylor_expr_DEPENDENCIES = $(fad_expr_depth_DEPENDENCIES)
+taylor_expr_LDADD = $(TAYLOR_LDADD) $(fad_expr_depth_LDADD)
 all: all-am
 
 .SUFFIXES:
@@ -294,12 +304,15 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-dfad_nonlinear$(EXEEXT): $(dfad_nonlinear_OBJECTS) $(dfad_nonlinear_DEPENDENCIES) 
-	@rm -f dfad_nonlinear$(EXEEXT)
-	$(dfad_nonlinear_LINK) $(dfad_nonlinear_OBJECTS) $(dfad_nonlinear_LDADD) $(LIBS)
-mult$(EXEEXT): $(mult_OBJECTS) $(mult_DEPENDENCIES) 
-	@rm -f mult$(EXEEXT)
-	$(mult_LINK) $(mult_OBJECTS) $(mult_LDADD) $(LIBS)
+fad_expr$(EXEEXT): $(fad_expr_OBJECTS) $(fad_expr_DEPENDENCIES) 
+	@rm -f fad_expr$(EXEEXT)
+	$(fad_expr_LINK) $(fad_expr_OBJECTS) $(fad_expr_LDADD) $(LIBS)
+fad_expr_depth$(EXEEXT): $(fad_expr_depth_OBJECTS) $(fad_expr_depth_DEPENDENCIES) 
+	@rm -f fad_expr_depth$(EXEEXT)
+	$(fad_expr_depth_LINK) $(fad_expr_depth_OBJECTS) $(fad_expr_depth_LDADD) $(LIBS)
+taylor_expr$(EXEEXT): $(taylor_expr_OBJECTS) $(taylor_expr_DEPENDENCIES) 
+	@rm -f taylor_expr$(EXEEXT)
+	$(taylor_expr_LINK) $(taylor_expr_OBJECTS) $(taylor_expr_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -307,8 +320,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dfad_nonlinear-dfad_nonlinear.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mult-mult.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fad_expr-fad_expr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fad_expr_depth-fad_expr_depth.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/taylor_expr-taylor_expr.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -324,33 +338,47 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-dfad_nonlinear-dfad_nonlinear.o: dfad_nonlinear.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dfad_nonlinear_CXXFLAGS) $(CXXFLAGS) -MT dfad_nonlinear-dfad_nonlinear.o -MD -MP -MF $(DEPDIR)/dfad_nonlinear-dfad_nonlinear.Tpo -c -o dfad_nonlinear-dfad_nonlinear.o `test -f 'dfad_nonlinear.cpp' || echo '$(srcdir)/'`dfad_nonlinear.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/dfad_nonlinear-dfad_nonlinear.Tpo $(DEPDIR)/dfad_nonlinear-dfad_nonlinear.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dfad_nonlinear.cpp' object='dfad_nonlinear-dfad_nonlinear.o' libtool=no @AMDEPBACKSLASH@
+fad_expr-fad_expr.o: fad_expr.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fad_expr_CXXFLAGS) $(CXXFLAGS) -MT fad_expr-fad_expr.o -MD -MP -MF $(DEPDIR)/fad_expr-fad_expr.Tpo -c -o fad_expr-fad_expr.o `test -f 'fad_expr.cpp' || echo '$(srcdir)/'`fad_expr.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fad_expr-fad_expr.Tpo $(DEPDIR)/fad_expr-fad_expr.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='fad_expr.cpp' object='fad_expr-fad_expr.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dfad_nonlinear_CXXFLAGS) $(CXXFLAGS) -c -o dfad_nonlinear-dfad_nonlinear.o `test -f 'dfad_nonlinear.cpp' || echo '$(srcdir)/'`dfad_nonlinear.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fad_expr_CXXFLAGS) $(CXXFLAGS) -c -o fad_expr-fad_expr.o `test -f 'fad_expr.cpp' || echo '$(srcdir)/'`fad_expr.cpp
 
-dfad_nonlinear-dfad_nonlinear.obj: dfad_nonlinear.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dfad_nonlinear_CXXFLAGS) $(CXXFLAGS) -MT dfad_nonlinear-dfad_nonlinear.obj -MD -MP -MF $(DEPDIR)/dfad_nonlinear-dfad_nonlinear.Tpo -c -o dfad_nonlinear-dfad_nonlinear.obj `if test -f 'dfad_nonlinear.cpp'; then $(CYGPATH_W) 'dfad_nonlinear.cpp'; else $(CYGPATH_W) '$(srcdir)/dfad_nonlinear.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/dfad_nonlinear-dfad_nonlinear.Tpo $(DEPDIR)/dfad_nonlinear-dfad_nonlinear.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='dfad_nonlinear.cpp' object='dfad_nonlinear-dfad_nonlinear.obj' libtool=no @AMDEPBACKSLASH@
+fad_expr-fad_expr.obj: fad_expr.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fad_expr_CXXFLAGS) $(CXXFLAGS) -MT fad_expr-fad_expr.obj -MD -MP -MF $(DEPDIR)/fad_expr-fad_expr.Tpo -c -o fad_expr-fad_expr.obj `if test -f 'fad_expr.cpp'; then $(CYGPATH_W) 'fad_expr.cpp'; else $(CYGPATH_W) '$(srcdir)/fad_expr.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fad_expr-fad_expr.Tpo $(DEPDIR)/fad_expr-fad_expr.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='fad_expr.cpp' object='fad_expr-fad_expr.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dfad_nonlinear_CXXFLAGS) $(CXXFLAGS) -c -o dfad_nonlinear-dfad_nonlinear.obj `if test -f 'dfad_nonlinear.cpp'; then $(CYGPATH_W) 'dfad_nonlinear.cpp'; else $(CYGPATH_W) '$(srcdir)/dfad_nonlinear.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fad_expr_CXXFLAGS) $(CXXFLAGS) -c -o fad_expr-fad_expr.obj `if test -f 'fad_expr.cpp'; then $(CYGPATH_W) 'fad_expr.cpp'; else $(CYGPATH_W) '$(srcdir)/fad_expr.cpp'; fi`
 
-mult-mult.o: mult.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mult_CXXFLAGS) $(CXXFLAGS) -MT mult-mult.o -MD -MP -MF $(DEPDIR)/mult-mult.Tpo -c -o mult-mult.o `test -f 'mult.cpp' || echo '$(srcdir)/'`mult.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/mult-mult.Tpo $(DEPDIR)/mult-mult.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='mult.cpp' object='mult-mult.o' libtool=no @AMDEPBACKSLASH@
+fad_expr_depth-fad_expr_depth.o: fad_expr_depth.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fad_expr_depth_CXXFLAGS) $(CXXFLAGS) -MT fad_expr_depth-fad_expr_depth.o -MD -MP -MF $(DEPDIR)/fad_expr_depth-fad_expr_depth.Tpo -c -o fad_expr_depth-fad_expr_depth.o `test -f 'fad_expr_depth.cpp' || echo '$(srcdir)/'`fad_expr_depth.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fad_expr_depth-fad_expr_depth.Tpo $(DEPDIR)/fad_expr_depth-fad_expr_depth.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='fad_expr_depth.cpp' object='fad_expr_depth-fad_expr_depth.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mult_CXXFLAGS) $(CXXFLAGS) -c -o mult-mult.o `test -f 'mult.cpp' || echo '$(srcdir)/'`mult.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fad_expr_depth_CXXFLAGS) $(CXXFLAGS) -c -o fad_expr_depth-fad_expr_depth.o `test -f 'fad_expr_depth.cpp' || echo '$(srcdir)/'`fad_expr_depth.cpp
 
-mult-mult.obj: mult.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mult_CXXFLAGS) $(CXXFLAGS) -MT mult-mult.obj -MD -MP -MF $(DEPDIR)/mult-mult.Tpo -c -o mult-mult.obj `if test -f 'mult.cpp'; then $(CYGPATH_W) 'mult.cpp'; else $(CYGPATH_W) '$(srcdir)/mult.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/mult-mult.Tpo $(DEPDIR)/mult-mult.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='mult.cpp' object='mult-mult.obj' libtool=no @AMDEPBACKSLASH@
+fad_expr_depth-fad_expr_depth.obj: fad_expr_depth.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fad_expr_depth_CXXFLAGS) $(CXXFLAGS) -MT fad_expr_depth-fad_expr_depth.obj -MD -MP -MF $(DEPDIR)/fad_expr_depth-fad_expr_depth.Tpo -c -o fad_expr_depth-fad_expr_depth.obj `if test -f 'fad_expr_depth.cpp'; then $(CYGPATH_W) 'fad_expr_depth.cpp'; else $(CYGPATH_W) '$(srcdir)/fad_expr_depth.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fad_expr_depth-fad_expr_depth.Tpo $(DEPDIR)/fad_expr_depth-fad_expr_depth.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='fad_expr_depth.cpp' object='fad_expr_depth-fad_expr_depth.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mult_CXXFLAGS) $(CXXFLAGS) -c -o mult-mult.obj `if test -f 'mult.cpp'; then $(CYGPATH_W) 'mult.cpp'; else $(CYGPATH_W) '$(srcdir)/mult.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fad_expr_depth_CXXFLAGS) $(CXXFLAGS) -c -o fad_expr_depth-fad_expr_depth.obj `if test -f 'fad_expr_depth.cpp'; then $(CYGPATH_W) 'fad_expr_depth.cpp'; else $(CYGPATH_W) '$(srcdir)/fad_expr_depth.cpp'; fi`
+
+taylor_expr-taylor_expr.o: taylor_expr.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(taylor_expr_CXXFLAGS) $(CXXFLAGS) -MT taylor_expr-taylor_expr.o -MD -MP -MF $(DEPDIR)/taylor_expr-taylor_expr.Tpo -c -o taylor_expr-taylor_expr.o `test -f 'taylor_expr.cpp' || echo '$(srcdir)/'`taylor_expr.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/taylor_expr-taylor_expr.Tpo $(DEPDIR)/taylor_expr-taylor_expr.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='taylor_expr.cpp' object='taylor_expr-taylor_expr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(taylor_expr_CXXFLAGS) $(CXXFLAGS) -c -o taylor_expr-taylor_expr.o `test -f 'taylor_expr.cpp' || echo '$(srcdir)/'`taylor_expr.cpp
+
+taylor_expr-taylor_expr.obj: taylor_expr.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(taylor_expr_CXXFLAGS) $(CXXFLAGS) -MT taylor_expr-taylor_expr.obj -MD -MP -MF $(DEPDIR)/taylor_expr-taylor_expr.Tpo -c -o taylor_expr-taylor_expr.obj `if test -f 'taylor_expr.cpp'; then $(CYGPATH_W) 'taylor_expr.cpp'; else $(CYGPATH_W) '$(srcdir)/taylor_expr.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/taylor_expr-taylor_expr.Tpo $(DEPDIR)/taylor_expr-taylor_expr.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='taylor_expr.cpp' object='taylor_expr-taylor_expr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(taylor_expr_CXXFLAGS) $(CXXFLAGS) -c -o taylor_expr-taylor_expr.obj `if test -f 'taylor_expr.cpp'; then $(CYGPATH_W) 'taylor_expr.cpp'; else $(CYGPATH_W) '$(srcdir)/taylor_expr.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -527,8 +555,8 @@ uninstall-am:
 	uninstall-am
 
 
-# Include NOX export Makefile for correct paths
-@ENABLE_SACADO_TEUCHOS_TRUE@include $(top_builddir)/../teuchos/Makefile.export.teuchos
+# Include export Makefile for correct paths
+@ENABLE_SACADO_TEUCHOS_TRUE@include $(top_builddir)/Makefile.export.sacado
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
