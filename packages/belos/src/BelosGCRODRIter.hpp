@@ -63,10 +63,10 @@
 */
 
 namespace Belos {
-
-//! @name GCRODRIter Structures
+  
+  //! @name GCRODRIter Structures
   //@{
-
+  
   /** \brief Structure to contain pointers to GCRODRIter state variables.
    *
    * This struct is utilized by GCRODRIter::initialize() and GCRODRIter::getState().
@@ -78,12 +78,12 @@ namespace Belos {
      * This should always be equal to BlockGmresIter::getCurSubspaceDim()
      */
     int curDim;
-
+    
     /*! \brief The current Krylov basis. */
     Teuchos::RCP<const MV> V;
    
-    /*! \brief The recycled subspace. */
-    Teuchos::RCP<const MV> C;
+    /*! \brief The recycled subspace and its projection. */
+    Teuchos::RCP<const MV> U, C;
 
     /*! \brief The current Hessenberg matrix.
      *
@@ -100,16 +100,18 @@ namespace Belos {
     Teuchos::RCP<const Teuchos::SerialDenseVector<int,ScalarType> > z;
 
 
-    GCRODRIterState() : curDim(0), V(Teuchos::null), C(Teuchos::null),
+    GCRODRIterState() : curDim(0), V(Teuchos::null), 
+			U(Teuchos::null), C(Teuchos::null),
 			H(Teuchos::null), R(Teuchos::null),
 			z(Teuchos::null)
     {}
   };
+  
   //@}
-
+  
   //! @name GCRODRIter Exceptions
   //@{
-
+  
   /** \brief GCRODRIterInitFailure is thrown when the GCRODRIter object is unable to
    * generate an initial iterate in the GCRODRIter::initialize() routine.
    *
@@ -124,7 +126,7 @@ namespace Belos {
   class GCRODRIterInitFailure : public BelosError {public:
     GCRODRIterInitFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-
+  
   /** \brief GCRODRIterOrthoFailure is thrown when the GCRODRIter object is unable to
    * compute independent direction vectors in the GCRODRIter::iterate() routine.
    *
@@ -134,7 +136,7 @@ namespace Belos {
   class GCRODRIterOrthoFailure : public BelosError {public:
     GCRODRIterOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-
+  
   /** \brief GCRODRIterLAPACKFailure is thrown when a nonzero return value is passed back
    * from an LAPACK routine.
    *
@@ -144,256 +146,267 @@ namespace Belos {
   class GCRODRIterLAPACKFailure : public BelosError {public:
     GCRODRIterLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-
+  
   //@}
   
-
-template<class ScalarType, class MV, class OP>
-class GCRODRIter : virtual public Iteration<ScalarType,MV,OP> {
-
+  
+  template<class ScalarType, class MV, class OP>
+  class GCRODRIter : virtual public Iteration<ScalarType,MV,OP> {
+    
   public:
     
-  //
-  // Convenience typedefs
-  //
-  typedef MultiVecTraits<ScalarType,MV> MVT;
-  typedef OperatorTraits<ScalarType,MV,OP> OPT;
-  typedef Teuchos::ScalarTraits<ScalarType> SCT;
-  typedef typename SCT::magnitudeType MagnitudeType;
-
-  //! @name Constructors/Destructor
-  //@{ 
-
-  /*! \brief %GCRODRIter constructor with linear problem, solver utilities, and parameter list of solver options.
-   *
-   * This constructor takes pointers required by the linear solver, in addition
-   * to a parameter list of options for the linear solver. These options include the following:
-   *   - "Num Blocks" - an \c int specifying the maximum number of blocks allocated for the solver basis. Default: 25
-   *   - "Restart Timers" = a \c bool specifying whether the timers should be restarted each time iterate() is called. Default: false
-   *   - "Keep Hessenberg" = a \c bool specifying whether the upper Hessenberg should be stored separately from the least squares system. Default: false
-   */
-  GCRODRIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
-		  const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-		  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-		  const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
-		  Teuchos::ParameterList &params );
-
-  //! Destructor.
-  virtual ~GCRODRIter() {};
-  //@}
-
-
-  //! @name Solver methods
-  //@{ 
-  
-  /*! \brief This method performs block Gmres iterations until the status
-   * test indicates the need to stop or an error occurs (in which case, an
-   * exception is thrown).
-   *
-   * iterate() will first determine whether the solver is inintialized; if
-   * not, it will call initialize() using default arguments. After
-   * initialization, the solver performs block Gmres iterations until the
-   * status test evaluates as ::Passed, at which point the method returns to
-   * the caller. 
-   *
-   * The block Gmres iteration proceeds as follows:
-   * -# The operator problem->applyOp() is applied to the newest \c blockSize vectors in the Krylov basis.
-   * -# The resulting vectors are orthogonalized against the previous basis vectors, and made orthonormal.
-   * -# The Hessenberg matrix is updated.
-   * -# The least squares system is updated.
-   *
-   * The status test is queried at the beginning of the iteration.
-   *
-   * Possible exceptions thrown include the GCRODRIterOrthoFailure.
-   *
-   */
-  void iterate();
-
-  /*! \brief Initialize the solver to an iterate, providing a complete state.
-   *
-   * The %GCRODRIter contains a certain amount of state, consisting of the current 
-   * Krylov basis and the associated Hessenberg matrix.
-   *
-   * initialize() gives the user the opportunity to manually set these,
-   * although this must be done with caution, abiding by the rules given
-   * below. All notions of orthogonality and orthonormality are derived from
-   * the inner product specified by the orthogonalization manager.
-   *
-   * \post 
-   * <li>isInitialized() == \c true (see post-conditions of isInitialize())
-   *
-   * The user has the option of specifying any component of the state using
-   * initialize(). However, these arguments are assumed to match the
-   * post-conditions specified under isInitialized(). Any necessary component of the
-   * state not given to initialize() will be generated.
-   *
-   * \note For any pointer in \c newstate which directly points to the multivectors in 
-   * the solver, the data is not copied.
-   */
-  void initialize(GCRODRIterState<ScalarType,MV> newstate);
-
-  /*! \brief Initialize the solver with the initial vectors from the linear problem
-   *  or random data.
-   */
-  void initialize()
-  {
-    GCRODRIterState<ScalarType,MV> empty;
-    initialize(empty);
-  }
-  
-  /*! \brief Get the current state of the linear solver.
-   *
-   * The data is only valid if isInitialized() == \c true.
-   *
-   * \returns A GCRODRIterState object containing const pointers to the current
-   * solver state.
-   */
-  GCROIterState<ScalarType,MV> getState() const {
-    GCRODRIterState<ScalarType,MV> state;
-    state.curDim = curDim_;
-    state.V = V_;
-    state.C = C_;
-    state.H = H_;
-    state.R = R_;
-    state.z = z_;
-    return state;
-  }
-
-  //@}
-
-  
-  //! @name Status methods
-  //@{ 
-
-  //! \brief Get the current iteration count.
-  int getNumIters() const { return iter_; }
-  
-  //! \brief Reset the iteration count.
-  void resetNumIters() { iter_ = 0; }
-
-  //! Get the norms of the residuals native to the solver.
-  //! \return A vector of length blockSize containing the native residuals.
-  Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
-
-  //! Get the current update to the linear system.
-  /*! \note Some solvers, like GMRES, do not compute updates to the solution every iteration.
-            This method forces its computation.  Other solvers, like CG, update the solution
-            each iteration, so this method will return a zero vector indicating that the linear
-            problem contains the current solution.
-  */
-  Teuchos::RCP<MV> getCurrentUpdate() const;
-
-  //! Method for updating QR factorization of upper Hessenberg matrix
-  /*! \note If \c dim >= \c getCurSubspaceDim() and \c dim < \c getMaxSubspaceDim(), then 
-            the \c dim-th equations of the least squares problem will be updated.
-  */
-  void updateLSQR( int dim = -1 );
-
-  //! Get the dimension of the search subspace used to generate the current solution to the linear problem.
-  int getCurSubspaceDim() const { 
-    if (!initialized_) return 0;
-    return curDim_;
-  };
-
-  //! Get the maximum dimension allocated for the search subspace.
-  int getMaxSubspaceDim() const { return blockSize_*numBlocks_; }
-
-  //@}
-
-  
+    //
+    // Convenience typedefs
+    //
+    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef OperatorTraits<ScalarType,MV,OP> OPT;
+    typedef Teuchos::ScalarTraits<ScalarType> SCT;
+    typedef typename SCT::magnitudeType MagnitudeType;
+    
+    //! @name Constructors/Destructor
+    //@{ 
+    
+    /*! \brief %GCRODRIter constructor with linear problem, solver utilities, and parameter list of solver options.
+     *
+     * This constructor takes pointers required by the linear solver, in addition
+     * to a parameter list of options for the linear solver. These options include the following:
+     *   - "Num Blocks" - an \c int specifying the maximum number of blocks allocated for the solver basis. Default: 25
+     *   - "Restart Timers" = a \c bool specifying whether the timers should be restarted each time iterate() is called. Default: false
+     *   - "Keep Hessenberg" = a \c bool specifying whether the upper Hessenberg should be stored separately from the least squares system. Default: false
+     */
+    GCRODRIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
+		const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+		const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+		const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+		Teuchos::ParameterList &params );
+    
+    //! Destructor.
+    virtual ~GCRODRIter() {};
+    //@}
+    
+    
+    //! @name Solver methods
+    //@{ 
+    
+    /*! \brief This method performs block Gmres iterations until the status
+     * test indicates the need to stop or an error occurs (in which case, an
+     * exception is thrown).
+     *
+     * iterate() will first determine whether the solver is inintialized; if
+     * not, it will call initialize() using default arguments. After
+     * initialization, the solver performs block Gmres iterations until the
+     * status test evaluates as ::Passed, at which point the method returns to
+     * the caller. 
+     *
+     * The block Gmres iteration proceeds as follows:
+     * -# The operator problem->applyOp() is applied to the newest \c blockSize vectors in the Krylov basis.
+     * -# The resulting vectors are orthogonalized against the previous basis vectors, and made orthonormal.
+     * -# The Hessenberg matrix is updated.
+     * -# The least squares system is updated.
+     *
+     * The status test is queried at the beginning of the iteration.
+     *
+     * Possible exceptions thrown include the GCRODRIterOrthoFailure.
+     *
+     */
+    void iterate();
+    
+    /*! \brief Initialize the solver to an iterate, providing a complete state.
+     *
+     * The %GCRODRIter contains a certain amount of state, consisting of the current 
+     * Krylov basis and the associated Hessenberg matrix.
+     *
+     * initialize() gives the user the opportunity to manually set these,
+     * although this must be done with caution, abiding by the rules given
+     * below. All notions of orthogonality and orthonormality are derived from
+     * the inner product specified by the orthogonalization manager.
+     *
+     * \post 
+     * <li>isInitialized() == \c true (see post-conditions of isInitialize())
+     *
+     * The user has the option of specifying any component of the state using
+     * initialize(). However, these arguments are assumed to match the
+     * post-conditions specified under isInitialized(). Any necessary component of the
+     * state not given to initialize() will be generated.
+     *
+     * \note For any pointer in \c newstate which directly points to the multivectors in 
+     * the solver, the data is not copied.
+     */
+    void initialize(GCRODRIterState<ScalarType,MV> newstate);
+    
+    /*! \brief Initialize the solver with the initial vectors from the linear problem
+     *  or random data.
+     */
+    void initialize()
+    {
+      GCRODRIterState<ScalarType,MV> empty;
+      initialize(empty);
+    }
+    
+    /*! \brief Get the current state of the linear solver.
+     *
+     * The data is only valid if isInitialized() == \c true.
+     *
+     * \returns A GCRODRIterState object containing const pointers to the current
+     * solver state.
+     */
+    GCRODRIterState<ScalarType,MV> getState() const {
+      GCRODRIterState<ScalarType,MV> state;
+      state.curDim = curDim_;
+      state.V = V_;
+      state.U = U_;
+      state.C = C_;
+      state.H = H_;
+      state.R = R_;
+      state.z = z_;
+      return state;
+    }
+    
+    //@}
+    
+    
+    //! @name Status methods
+    //@{ 
+    
+    //! \brief Get the current iteration count.
+    int getNumIters() const { return iter_; }
+    
+    //! \brief Reset the iteration count.
+    void resetNumIters() { iter_ = 0; }
+    
+    //! Get the norms of the residuals native to the solver.
+    //! \return A vector of length blockSize containing the native residuals.
+    Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
+    
+    //! Get the current update to the linear system.
+    /*! \note Some solvers, like GMRES, do not compute updates to the solution every iteration.
+      This method forces its computation.  Other solvers, like CG, update the solution
+      each iteration, so this method will return a zero vector indicating that the linear
+      problem contains the current solution.
+    */
+    Teuchos::RCP<MV> getCurrentUpdate() const;
+    
+    //! Method for updating QR factorization of upper Hessenberg matrix
+    /*! \note If \c dim >= \c getCurSubspaceDim() and \c dim < \c getMaxSubspaceDim(), then 
+      the \c dim-th equations of the least squares problem will be updated.
+    */
+    void updateLSQR( int dim = -1 );
+    
+    //! Get the dimension of the search subspace used to generate the current solution to the linear problem.
+    int getCurSubspaceDim() const { 
+      if (!initialized_) return 0;
+      return curDim_;
+    };
+    
+    //! Get the maximum dimension allocated for the search subspace.
+    int getMaxSubspaceDim() const { return numBlocks_; }
+    
+    //@}
+    
+    
     //! @name Accessor methods
-  //@{ 
+    //@{ 
+    
+    //! Get a constant reference to the linear problem.
+    const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
+    
+    //! Get the maximum number of blocks used by the iterative solver in solving this linear problem.
+    int getNumBlocks() const { return numBlocks_; }
+    
+    //! \brief Set the maximum number of blocks used by the iterative solver.
+    void setNumBlocks(int numBlocks) { setSize( recycledBlocks_, numBlocks ); };
+    
+    //! Get the maximum number of blocks used by the iterative solver in solving this linear problem.
+    int getRecycledBlocks() const { return recycledBlocks_; }
+    
 
-  //! Get a constant reference to the linear problem.
-  const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
+    //! Get the blocksize to be used by the iterative solver in solving this linear problem.
+    int getBlockSize() const { return 1; }
+    
+    //! \brief Set the blocksize.
+    void setBlockSize(int blockSize) {
+      TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
+			 "Belos::GCRODRIter::setBlockSize(): Cannot use a block size that is not one.");
+    }
 
-  //! Get the maximum number of blocks used by the iterative solver in solving this linear problem.
-  int getNumBlocks() const { return numBlocks_; }
-  
-  //! \brief Set the maximum number of blocks used by the iterative solver.
-  void setNumBlocks(int numBlocks);
+    //! \brief Set the maximum number of blocks used by the iterative solver and the number of recycled vectors.
+    void setSize( int recycledBlocks, int numBlocks );
 
-  //! Get the blocksize to be used by the iterative solver in solving this linear problem.
-  int getBlockSize() const { return 1; }
-  
-  //! \brief Set the blocksize.
-  void setBlockSize(int blockSize) {
-    TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
-		       "Belos::GCRODRIter::setBlockSize(): Cannot use a block size that is not one.");
-  }
-
-  //! States whether the solver has been initialized or not.
-  bool isInitialized() { return initialized_; }
-
-  //@}
-
+    //! States whether the solver has been initialized or not.
+    bool isInitialized() { return initialized_; }
+    
+    //@}
+    
   private:
+    
+    //
+    // Internal methods
+    //
+    //! Method for initalizing the state storage needed by block GMRES.
+    void setStateSize();
+    
+    //
+    // Classes inputed through constructor that define the linear problem to be solved.
+    //
+    const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
+    const Teuchos::RCP<OutputManager<ScalarType> >          om_;
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+    const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
+    
+    //
+    // Algorithmic parameters
+    //  
+    // numBlocks_ is the size of the allocated space for the Krylov basis, in blocks.
+    int numBlocks_; 
 
-  //
-  // Internal methods
-  //
-  //! Method for initalizing the state storage needed by block GMRES.
-  void setStateSize();
+    // recycledBlocks_ is the size of the allocated space for the recycled subspace, in blocks.
+    int recycledBlocks_; 
+    
+    // Storage for QR factorization of the least squares system.
+    Teuchos::SerialDenseVector<int,ScalarType> sn;
+    Teuchos::SerialDenseVector<int,MagnitudeType> cs;
+    
+    // 
+    // Current solver state
+    //
+    // initialized_ specifies that the basis vectors have been initialized and the iterate() routine
+    // is capable of running; _initialize is controlled  by the initialize() member method
+    // For the implications of the state of initialized_, please see documentation for initialize()
+    bool initialized_;
+    
+    // stateStorageInitialized_ specified that the state storage has be initialized to the current
+    // numBlocks_ and numRecycledBlocks_.  This initialization may be postponed if the linear problem was
+    // generated without the right-hand side or solution vectors.
+    bool stateStorageInitialized_;
+    
+    // Current subspace dimension, and number of iterations performed.
+    int curDim_, iter_;
+    
+    // 
+    // State Storage
+    //
+    Teuchos::RCP<MV> V_, U_, C_;
+    //
+    // Projected matrices
+    // H_ : Projected matrix from the Krylov factorization AV = VH + FE^T
+    //
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H_;
+    // 
+    // QR decomposition of Projected matrices for solving the least squares system HY = B.
+    // R_: Upper triangular reduction of H
+    // z_: Q applied to right-hand side of the least squares system
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > R_;
+    Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > z_;  
+  };
   
-  //
-  // Classes inputed through constructor that define the linear problem to be solved.
-  //
-  const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
-  const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
-  const Teuchos::RCP<OrthoManager<ScalarType,MV> >        ortho_;
-
-  //
-  // Algorithmic parameters
-  //  
-  // numBlocks_ is the size of the allocated space for the Krylov basis, in blocks.
-  int numBlocks_; 
-  
-  // Storage for QR factorization of the least squares system.
-  Teuchos::SerialDenseVector<int,ScalarType> sn;
-  Teuchos::SerialDenseVector<int,MagnitudeType> cs;
-  
-  // 
-  // Current solver state
-  //
-  // initialized_ specifies that the basis vectors have been initialized and the iterate() routine
-  // is capable of running; _initialize is controlled  by the initialize() member method
-  // For the implications of the state of initialized_, please see documentation for initialize()
-  bool initialized_;
-
-  // stateStorageInitialized_ specified that the state storage has be initialized to the current
-  // blockSize_ and numBlocks_.  This initialization may be postponed if the linear problem was
-  // generated without the right-hand side or solution vectors.
-  bool stateStorageInitialized_;
-
-  // Current subspace dimension, and number of iterations performed.
-  int curDim_, iter_;
-  
-  // 
-  // State Storage
-  //
-  Teuchos::RCP<MV> V_, C_;
-  //
-  // Projected matrices
-  // H_ : Projected matrix from the Krylov factorization AV = VH + FE^T
-  //
-  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H_;
-  // 
-  // QR decomposition of Projected matrices for solving the least squares system HY = B.
-  // R_: Upper triangular reduction of H
-  // z_: Q applied to right-hand side of the least squares system
-  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > R_;
-  Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > z_;  
-};
-
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
   template<class ScalarType, class MV, class OP>
   GCRODRIter<ScalarType,MV,OP>::GCRODRIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
-						   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-						   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-						   const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
-						   Teuchos::ParameterList &params ):
+					   const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+					   const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+					   const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+					   Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
     stest_(tester),
@@ -408,21 +421,21 @@ class GCRODRIter : virtual public Iteration<ScalarType,MV,OP> {
     TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument,
                        "Belos::GCRODRIter::constructor: mandatory parameter 'Num Blocks' is not specified.");
     int nb = Teuchos::getParameter<int>(params, "Num Blocks");
-
+    
     // Set the number of blocks and allocate data
     setNumBlocks( nb );
   }
-
+  
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the block size and make necessary adjustments.
   template <class ScalarType, class MV, class OP>
-  void GCRODRIter<ScalarType,MV,OP>::setNumBlocks( int numBlocks )
+  void GCRODRIter<ScalarType,MV,OP>::setSize( int recycledBlocks, int numBlocks )
   {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
 
     TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument, "Belos::GCRODRIter::setNumBlocks was passed a non-positive argument.");
-    if (numBlocks == numBlocks_) {
+    if (numBlocks == numBlocks_ && recycledBlocks == recycledBlocks_) {
       // do nothing
       return;
     }
@@ -431,6 +444,7 @@ class GCRODRIter : virtual public Iteration<ScalarType,MV,OP> {
     }
 
     numBlocks_ = numBlocks;
+    recycledBlocks_ = recycledBlocks;
 
     initialized_ = false;
     curDim_ = 0;
@@ -494,7 +508,7 @@ class GCRODRIter : virtual public Iteration<ScalarType,MV,OP> {
 	//R_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-1 ) );
 	// Generate z_ only if it doesn't exist, otherwise resize it.
 	if (z_ == Teuchos::null)
-	  z_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,1) );
+	  z_ = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(newsd) );
 	else
 	  z_->shapeUninitialized( newsd, 1 );
 	
@@ -520,16 +534,16 @@ class GCRODRIter : virtual public Iteration<ScalarType,MV,OP> {
       const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
       const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
       Teuchos::BLAS<int,ScalarType> blas;
-      currentUpdate = MVT::Clone( *V_, blockSize_ );
+      currentUpdate = MVT::Clone( *V_, 1 );
       //
       //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
       //
-      Teuchos::SerialDenseMatrix<int,ScalarType> y( Teuchos::Copy, *z_, curDim_, blockSize_ );
+      Teuchos::SerialDenseMatrix<int,ScalarType> y( Teuchos::Copy, *z_, curDim_, 1 );
       //
       //  Solve the least squares problem.
       //
       blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
-		 Teuchos::NON_UNIT_DIAG, curDim_, blockSize_, one,  
+		 Teuchos::NON_UNIT_DIAG, curDim_, 1, one,  
 		 H_->values(), H_->stride(), y.values(), y.stride() );
       //
       //  Compute the current update.
@@ -559,7 +573,7 @@ class GCRODRIter : virtual public Iteration<ScalarType,MV,OP> {
     
     if (norms) {
       Teuchos::BLAS<int,ScalarType> blas;
-      (*norms)[0] = blas.NRM2( blockSize_, &(*z_)(curDim_), 1);
+      (*norms)[0] = blas.NRM2( 1, &(*z_)(curDim_), 1);
     }
     return Teuchos::null;
   }
@@ -590,16 +604,16 @@ class GCRODRIter : virtual public Iteration<ScalarType,MV,OP> {
 
       TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_),
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < blockSize_,
+      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < 1,
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( newstate.curDim > blockSize_*(numBlocks_+1),
+      TEST_FOR_EXCEPTION( newstate.curDim > 1*(numBlocks_+1),
                           std::invalid_argument, errstr );
 
       curDim_ = newstate.curDim;
       int lclDim = MVT::GetNumberVecs(*newstate.V);
 
       // check size of Z
-      TEST_FOR_EXCEPTION(newstate.z->numRows() < curDim_ || newstate.z->numCols() < blockSize_, std::invalid_argument, errstr);
+      TEST_FOR_EXCEPTION(newstate.z->numRows() < curDim_ || newstate.z->numCols() < 1, std::invalid_argument, errstr);
       
 
       // copy basis vectors from newstate into V
@@ -685,7 +699,7 @@ class GCRODRIter : virtual public Iteration<ScalarType,MV,OP> {
 
       iter_++;
 
-      // F can be found at the curDim_ block, but the next block is at curDim_ + blockSize_.
+      // F can be found at the curDim_ block, but the next block is at curDim_ + 1.
       int lclDim = curDim_ + 1; 
 
       // Get the current part of the basis.
@@ -695,7 +709,7 @@ class GCRODRIter : virtual public Iteration<ScalarType,MV,OP> {
 
       // Get a view of the previous vectors.
       // This is used for orthogonalization and for computing V^H K H
-      curind[0] = curDim;
+      curind[0] = curDim_;
       Teuchos::RCP<MV> Vprev = MVT::CloneView(*V_,curind);
 
       // Compute the next vector in the Krylov basis:  Vnext = Op*Vprev
@@ -759,8 +773,7 @@ class GCRODRIter : virtual public Iteration<ScalarType,MV,OP> {
   template<class ScalarType, class MV, class OP>
   void GCRODRIter<ScalarType,MV,OP>::updateLSQR( int dim )
   {
-    int i, j, maxidx;
-    ScalarType sigma, mu, vscale, maxelem;
+    int i;
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     
     // Get correct dimension based on input "dim"

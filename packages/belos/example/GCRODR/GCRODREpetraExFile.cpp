@@ -36,7 +36,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
-#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosGCRODRSolMgr.hpp"
 
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Epetra_Map.h"
@@ -90,7 +90,6 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
   cmdp.setOption("max-subspace",&maxsubspace,"Maximum number of blocks the solver can use for the subspace.");
   cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
@@ -133,7 +132,6 @@ int main(int argc, char *argv[]) {
   //
   ParameterList belosList;
   belosList.set( "Num Blocks", maxsubspace);             // Maximum number of blocks in Krylov factorization
-  belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
@@ -157,14 +155,14 @@ int main(int argc, char *argv[]) {
   }
   //
   // *******************************************************************
-  // *************Start the block Gmres iteration*************************
+  // *************Start the GCRO-DR iteration*************************
   // *******************************************************************
   //
   Belos::OutputManager<double> My_OM();
  
   // Create an iterative solver manager.
   RCP< Belos::SolverManager<double,MV,OP> > newSolver
-    = rcp( new Belos::BlockGmresSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));
+    = rcp( new Belos::GCRODRSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));
 
   //
   // **********Print out information about problem*******************
@@ -175,7 +173,7 @@ int main(int argc, char *argv[]) {
     cout << "Number of right-hand sides: " << numrhs << endl;
     cout << "Block size used by solver: " << blocksize << endl;
     cout << "Max number of restarts allowed: " << maxrestarts << endl;
-    cout << "Max number of Gmres iterations per restart cycle: " << maxiters << endl; 
+    cout << "Max number of iterations per restart cycle: " << maxiters << endl; 
     cout << "Relative residual tolerance: " << tol << endl;
     cout << endl;
   }
