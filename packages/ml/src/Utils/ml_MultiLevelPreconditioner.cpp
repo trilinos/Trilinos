@@ -693,7 +693,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
     PrintList(0);
 
   // Validate Parameter List
-  if(!ValidateMLPParameters(List_)){    
+  if(List_.get("ML validate parameter list",true)
+     && !ValidateMLPParameters(List_))
+  {
     if (Comm_->MyPID() == 0)
       cout<<"ERROR: ML's Teuchos::ParameterList contains an incorrect parameter!"<<endl;
     exit(1);
