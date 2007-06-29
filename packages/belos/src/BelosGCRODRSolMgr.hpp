@@ -807,13 +807,14 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
     // Compute C_'*r_
     Teuchos::SerialDenseMatrix<int,ScalarType> Ctr(keff,1);
-    MVT::MvTransMv( *C_, *(problem->getCurrResVec()), Ctr );
+    r_ = problem_->computeCurrResVec( &*r_ );
+    MVT::MvTransMv( *C_, *r_, Ctr );
 
     // Update solution ( x += U_*C_'*r_ )
     MVT::MvTimeMatAddMv( one, *U_, Ctr, one, *problem_->getCurrLHSVec() );
 
     // Update residual norm ( r -= C_*C_'*r_ )
-    MVT::MvTimeMatAddMv( one, *C_, Ctr, -one, *problem_->getCurrLHSVec() );
+    MVT::MvTimeMatAddMv( one, *C_, Ctr, -one, *r_ );
 
   }
   else {
@@ -831,9 +832,11 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
     Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > gmres_iter;
     gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
 
-    // Create the first block in the current Krylov basis.
-    Teuchos::RCP<MV> V_0 = MVT::Clone( *(problem_->getRHS()), blockSize_ );
-    problem_->computeCurrResVec( &*V_0 );
+    // Create the first block in the current Krylov basis (residual).
+    if (r_ == Teuchos::null)
+      r_ = MVT::Clone( *(problem_->getRHS()), 1 );
+    problem_->computeCurrResVec( &*r_ );
+    Teuchos::RCP<MV> V_0 = MVT::CloneCopy( *r_ );
     
     // Get a matrix to hold the orthonormalization coefficients.
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z_0 = 
@@ -874,7 +877,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
     }
     catch (std::exception e) {
       printer_->stream(Errors) << "Error! Caught exception in GCRODRIter::iterate() at iteration " 
-			       << gcrodr_iter->getNumIters() << endl 
+			       << gmres_iter->getNumIters() << endl 
 			       << e.what() << endl;
       throw;
     }
