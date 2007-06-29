@@ -34,6 +34,14 @@
     COMM = SERIAL, MPI;
 }
 
+# NOX Epetra SERIAL tests
+(FRAMEWORK,INSTALL) {
+    DIRS = epetra/Thyra_2Dsim;
+    EXIT-STATUS = STRING-COMPARISON(Test passed!);
+    ARGS = -v;
+    COMM = SERIAL;
+}
+
 # NOX Epetra test that is limited to 2 processors
 (FRAMEWORK,INSTALL) {
     DIRS = epetra/DS6.5.1;

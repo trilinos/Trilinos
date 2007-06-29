@@ -82,6 +82,9 @@ namespace NOX {
       //! Get const reference to underlying Thyra vector.
       virtual const ::Thyra::VectorBase<double>& getThyraVector() const;
       
+      //! Get RCP to underlying Thyra vector.
+      virtual Teuchos::RCP< ::Thyra::VectorBase<double> >& getThyraRCPVector();
+      
       //@} 
 
       //@{ \name Initialization methods.
@@ -94,6 +97,7 @@ namespace NOX {
 
       //! Copy source vector \c y into this vector.
       NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
+      NOX::Abstract::Vector& operator=(const NOX::Thyra::Vector& y);
   
       /*! 
        * \brief Put element-wise absolute values of source vector \c y into 

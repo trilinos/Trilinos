@@ -124,6 +124,7 @@ ADDON_loca_lapack_TESTS = @ADDON_loca_lapack_TESTS@
 ADDON_loca_petsc_TESTS = @ADDON_loca_petsc_TESTS@
 ADDON_petsc_EXAMPLES = @ADDON_petsc_EXAMPLES@
 ADDON_petsc_TESTS = @ADDON_petsc_TESTS@
+ADDON_thyra_TESTS = @ADDON_thyra_TESTS@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMTAR = @AMTAR@
 AR = @AR@
@@ -249,7 +250,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Operators NOX_Group 1Dfem DS6.5.1 Brusselator PelletTransport FiniteDifferenceColoring MultiPhysics 
+NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Operators NOX_Group 1Dfem DS6.5.1 Brusselator PelletTransport FiniteDifferenceColoring MultiPhysics Thyra_2Dsim 
 LOCA_SUBDIRS = LOCA_TestProblems LOCA_UnitTests LOCA_Tcubed LOCA_Pitchfork LOCA_Brusselator LOCA_Brusselator_xyzt LOCA_MultiPoint_Tcubed
 SUBDIRS = $(NOX_SUBDIRS) $(LOCA_SUBDIRS)
 all: all-recursive

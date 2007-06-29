@@ -112,7 +112,7 @@ LIBRARIES = $(lib_LIBRARIES)
 ARFLAGS = cru
 am__DEPENDENCIES_1 =
 libnoxthyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__objects_1 = NOX_Thyra_Vector.$(OBJEXT)
+am__objects_1 = NOX_Thyra_Vector.$(OBJEXT) NOX_Thyra_Group.$(OBJEXT)
 am__objects_2 =
 am_libnoxthyra_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libnoxthyra_a_OBJECTS = $(am_libnoxthyra_a_OBJECTS)
@@ -130,7 +130,8 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libnoxthyra_a_SOURCES)
 DIST_SOURCES = $(libnoxthyra_a_SOURCES)
-am__include_HEADERS_DIST = $(srcdir)/NOX_Thyra_Vector.H
+am__include_HEADERS_DIST = $(srcdir)/NOX_Thyra.H \
+	$(srcdir)/NOX_Thyra_Vector.H $(srcdir)/NOX_Thyra_Group.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -150,6 +151,7 @@ ADDON_loca_lapack_TESTS = @ADDON_loca_lapack_TESTS@
 ADDON_loca_petsc_TESTS = @ADDON_loca_petsc_TESTS@
 ADDON_petsc_EXAMPLES = @ADDON_petsc_EXAMPLES@
 ADDON_petsc_TESTS = @ADDON_petsc_TESTS@
+ADDON_thyra_TESTS = @ADDON_thyra_TESTS@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMTAR = @AMTAR@
 AR = @AR@
@@ -283,10 +285,13 @@ top_srcdir = @top_srcdir@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 THYRA_H = \
-	$(srcdir)/NOX_Thyra_Vector.H 
+	$(srcdir)/NOX_Thyra.H \
+	$(srcdir)/NOX_Thyra_Vector.H \
+	$(srcdir)/NOX_Thyra_Group.H
 
 THYRA = \
-	$(srcdir)/NOX_Thyra_Vector.C 
+	$(srcdir)/NOX_Thyra_Vector.C \
+	$(srcdir)/NOX_Thyra_Group.C
 
 
 # ------------------------------------------------------------------------
@@ -405,6 +410,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Thyra_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Thyra_Vector.Po@am__quote@
 
 .C.o:
@@ -434,6 +440,20 @@ NOX_Thyra_Vector.obj: $(srcdir)/NOX_Thyra_Vector.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Thyra_Vector.C' object='NOX_Thyra_Vector.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Thyra_Vector.obj `if test -f '$(srcdir)/NOX_Thyra_Vector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Thyra_Vector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Thyra_Vector.C'; fi`
+
+NOX_Thyra_Group.o: $(srcdir)/NOX_Thyra_Group.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Thyra_Group.o -MD -MP -MF $(DEPDIR)/NOX_Thyra_Group.Tpo -c -o NOX_Thyra_Group.o `test -f '$(srcdir)/NOX_Thyra_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Thyra_Group.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/NOX_Thyra_Group.Tpo $(DEPDIR)/NOX_Thyra_Group.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Thyra_Group.C' object='NOX_Thyra_Group.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Thyra_Group.o `test -f '$(srcdir)/NOX_Thyra_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Thyra_Group.C
+
+NOX_Thyra_Group.obj: $(srcdir)/NOX_Thyra_Group.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Thyra_Group.obj -MD -MP -MF $(DEPDIR)/NOX_Thyra_Group.Tpo -c -o NOX_Thyra_Group.obj `if test -f '$(srcdir)/NOX_Thyra_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Thyra_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Thyra_Group.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/NOX_Thyra_Group.Tpo $(DEPDIR)/NOX_Thyra_Group.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Thyra_Group.C' object='NOX_Thyra_Group.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Thyra_Group.obj `if test -f '$(srcdir)/NOX_Thyra_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Thyra_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Thyra_Group.C'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

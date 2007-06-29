@@ -65,8 +65,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@noinst_PROGRAMS = pitchforkContinuation$(EXEEXT)
-subdir = examples/lapack/LOCA_1DFDPitchfork
+@BUILD_EPETRA_TESTS_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@BUILD_THYRA_TESTS_TRUE@@HAVE_MPI_FALSE@noinst_PROGRAMS = Thyra_2Dsim$(EXEEXT)
+subdir = test/epetra/Thyra_2Dsim
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
@@ -98,13 +98,13 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_pitchforkContinuation_OBJECTS = PitchforkContinuation.$(OBJEXT) \
-	PitchforkProblemInterface.$(OBJEXT)
-pitchforkContinuation_OBJECTS = $(am_pitchforkContinuation_OBJECTS)
+am_Thyra_2Dsim_OBJECTS = EpetraModelEval2DSim.$(OBJEXT) \
+	Thyra_2Dsim.$(OBJEXT)
+Thyra_2Dsim_OBJECTS = $(am_Thyra_2Dsim_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(LOCA_LIBS))
+@USING_GNUMAKE_TRUE@	$(NOX_TEST_LIBS))
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -117,8 +117,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(pitchforkContinuation_SOURCES)
-DIST_SOURCES = $(pitchforkContinuation_SOURCES)
+SOURCES = $(Thyra_2Dsim_SOURCES)
+DIST_SOURCES = $(Thyra_2Dsim_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -262,32 +262,21 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(LOCA_LIBS)
-@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_LIBS))
-@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(LOCA_INCLUDES)
-@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
-pitchforkContinuation_SOURCES = $(srcdir)/PitchforkContinuation.C \
-		$(srcdir)/PitchforkProblemInterface.H \
-		$(srcdir)/PitchforkProblemInterface.C
+@USING_GNUMAKE_FALSE@TEST_LIBS = $(NOX_TEST_LIBS)
+@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_TEST_LIBS))
+@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(NOX_TEST_INCLUDES)
+@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES))
+AM_CPPFLAGS = $(TEST_INCLUDES)
+Thyra_2Dsim_SOURCES = \
+	        $(srcdir)/EpetraModelEval2DSim.H \
+                $(srcdir)/EpetraModelEval2DSim.C \
+                $(srcdir)/Thyra_2Dsim.C
 
-pitchforkContinuation_DEPENDENCIES = \
-        $(top_builddir)/src/libnox.a \
-	$(top_builddir)/src-lapack/libnoxlapack.a \
-	$(top_builddir)/src-loca/src/libloca.a \
-        $(top_builddir)/src-loca/src-lapack/liblocalapack.a
+Thyra_2Dsim_DEPENDENCIES = \
+                     $(top_builddir)/src/libnox.a \
+                     $(top_builddir)/src-thyra/libnoxthyra.a
 
-pitchforkContinuation_LDADD = $(EXAMPLE_LIBS)
-
-# ------------------------------------------------------------------------
-# Files to be deleted by 'make maintainer-clean'
-# ------------------------------------------------------------------------
-MAINTAINERCLEANFILES = Makefile.in 
-
-# ------------------------------------------------------------------------
-# Files to be deleted by 'make clean'
-# ------------------------------------------------------------------------
-MOSTLYCLEANFILES = $(CXXREPOS)
+Thyra_2Dsim_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -301,9 +290,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  examples/lapack/LOCA_1DFDPitchfork/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/epetra/Thyra_2Dsim/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  examples/lapack/LOCA_1DFDPitchfork/Makefile
+	  $(AUTOMAKE) --foreign  test/epetra/Thyra_2Dsim/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -324,9 +313,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-pitchforkContinuation$(EXEEXT): $(pitchforkContinuation_OBJECTS) $(pitchforkContinuation_DEPENDENCIES) 
-	@rm -f pitchforkContinuation$(EXEEXT)
-	$(CXXLINK) $(pitchforkContinuation_OBJECTS) $(pitchforkContinuation_LDADD) $(LIBS)
+Thyra_2Dsim$(EXEEXT): $(Thyra_2Dsim_OBJECTS) $(Thyra_2Dsim_DEPENDENCIES) 
+	@rm -f Thyra_2Dsim$(EXEEXT)
+	$(CXXLINK) $(Thyra_2Dsim_OBJECTS) $(Thyra_2Dsim_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -334,8 +323,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PitchforkContinuation.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PitchforkProblemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraModelEval2DSim.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_2Dsim.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -351,33 +340,33 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-PitchforkContinuation.o: $(srcdir)/PitchforkContinuation.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PitchforkContinuation.o -MD -MP -MF $(DEPDIR)/PitchforkContinuation.Tpo -c -o PitchforkContinuation.o `test -f '$(srcdir)/PitchforkContinuation.C' || echo '$(srcdir)/'`$(srcdir)/PitchforkContinuation.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/PitchforkContinuation.Tpo $(DEPDIR)/PitchforkContinuation.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PitchforkContinuation.C' object='PitchforkContinuation.o' libtool=no @AMDEPBACKSLASH@
+EpetraModelEval2DSim.o: $(srcdir)/EpetraModelEval2DSim.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraModelEval2DSim.o -MD -MP -MF $(DEPDIR)/EpetraModelEval2DSim.Tpo -c -o EpetraModelEval2DSim.o `test -f '$(srcdir)/EpetraModelEval2DSim.C' || echo '$(srcdir)/'`$(srcdir)/EpetraModelEval2DSim.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraModelEval2DSim.Tpo $(DEPDIR)/EpetraModelEval2DSim.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EpetraModelEval2DSim.C' object='EpetraModelEval2DSim.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PitchforkContinuation.o `test -f '$(srcdir)/PitchforkContinuation.C' || echo '$(srcdir)/'`$(srcdir)/PitchforkContinuation.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraModelEval2DSim.o `test -f '$(srcdir)/EpetraModelEval2DSim.C' || echo '$(srcdir)/'`$(srcdir)/EpetraModelEval2DSim.C
 
-PitchforkContinuation.obj: $(srcdir)/PitchforkContinuation.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PitchforkContinuation.obj -MD -MP -MF $(DEPDIR)/PitchforkContinuation.Tpo -c -o PitchforkContinuation.obj `if test -f '$(srcdir)/PitchforkContinuation.C'; then $(CYGPATH_W) '$(srcdir)/PitchforkContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PitchforkContinuation.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/PitchforkContinuation.Tpo $(DEPDIR)/PitchforkContinuation.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PitchforkContinuation.C' object='PitchforkContinuation.obj' libtool=no @AMDEPBACKSLASH@
+EpetraModelEval2DSim.obj: $(srcdir)/EpetraModelEval2DSim.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraModelEval2DSim.obj -MD -MP -MF $(DEPDIR)/EpetraModelEval2DSim.Tpo -c -o EpetraModelEval2DSim.obj `if test -f '$(srcdir)/EpetraModelEval2DSim.C'; then $(CYGPATH_W) '$(srcdir)/EpetraModelEval2DSim.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraModelEval2DSim.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraModelEval2DSim.Tpo $(DEPDIR)/EpetraModelEval2DSim.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/EpetraModelEval2DSim.C' object='EpetraModelEval2DSim.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PitchforkContinuation.obj `if test -f '$(srcdir)/PitchforkContinuation.C'; then $(CYGPATH_W) '$(srcdir)/PitchforkContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PitchforkContinuation.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraModelEval2DSim.obj `if test -f '$(srcdir)/EpetraModelEval2DSim.C'; then $(CYGPATH_W) '$(srcdir)/EpetraModelEval2DSim.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraModelEval2DSim.C'; fi`
 
-PitchforkProblemInterface.o: $(srcdir)/PitchforkProblemInterface.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PitchforkProblemInterface.o -MD -MP -MF $(DEPDIR)/PitchforkProblemInterface.Tpo -c -o PitchforkProblemInterface.o `test -f '$(srcdir)/PitchforkProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/PitchforkProblemInterface.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/PitchforkProblemInterface.Tpo $(DEPDIR)/PitchforkProblemInterface.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PitchforkProblemInterface.C' object='PitchforkProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+Thyra_2Dsim.o: $(srcdir)/Thyra_2Dsim.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_2Dsim.o -MD -MP -MF $(DEPDIR)/Thyra_2Dsim.Tpo -c -o Thyra_2Dsim.o `test -f '$(srcdir)/Thyra_2Dsim.C' || echo '$(srcdir)/'`$(srcdir)/Thyra_2Dsim.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_2Dsim.Tpo $(DEPDIR)/Thyra_2Dsim.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_2Dsim.C' object='Thyra_2Dsim.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PitchforkProblemInterface.o `test -f '$(srcdir)/PitchforkProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/PitchforkProblemInterface.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_2Dsim.o `test -f '$(srcdir)/Thyra_2Dsim.C' || echo '$(srcdir)/'`$(srcdir)/Thyra_2Dsim.C
 
-PitchforkProblemInterface.obj: $(srcdir)/PitchforkProblemInterface.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT PitchforkProblemInterface.obj -MD -MP -MF $(DEPDIR)/PitchforkProblemInterface.Tpo -c -o PitchforkProblemInterface.obj `if test -f '$(srcdir)/PitchforkProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/PitchforkProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PitchforkProblemInterface.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/PitchforkProblemInterface.Tpo $(DEPDIR)/PitchforkProblemInterface.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PitchforkProblemInterface.C' object='PitchforkProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+Thyra_2Dsim.obj: $(srcdir)/Thyra_2Dsim.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_2Dsim.obj -MD -MP -MF $(DEPDIR)/Thyra_2Dsim.Tpo -c -o Thyra_2Dsim.obj `if test -f '$(srcdir)/Thyra_2Dsim.C'; then $(CYGPATH_W) '$(srcdir)/Thyra_2Dsim.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_2Dsim.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_2Dsim.Tpo $(DEPDIR)/Thyra_2Dsim.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_2Dsim.C' object='Thyra_2Dsim.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o PitchforkProblemInterface.obj `if test -f '$(srcdir)/PitchforkProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/PitchforkProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PitchforkProblemInterface.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_2Dsim.obj `if test -f '$(srcdir)/Thyra_2Dsim.C'; then $(CYGPATH_W) '$(srcdir)/Thyra_2Dsim.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_2Dsim.C'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -472,7 +461,6 @@ install-strip:
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
-	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 
@@ -482,7 +470,6 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
 clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
@@ -556,7 +543,6 @@ uninstall-am:
 	uninstall-am
 
 
-# Include NOX export makefile
 include $(top_builddir)/Makefile.export.nox
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

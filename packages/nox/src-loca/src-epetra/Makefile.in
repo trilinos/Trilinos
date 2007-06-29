@@ -246,6 +246,7 @@ ADDON_loca_lapack_TESTS = @ADDON_loca_lapack_TESTS@
 ADDON_loca_petsc_TESTS = @ADDON_loca_petsc_TESTS@
 ADDON_petsc_EXAMPLES = @ADDON_petsc_EXAMPLES@
 ADDON_petsc_TESTS = @ADDON_petsc_TESTS@
+ADDON_thyra_TESTS = @ADDON_thyra_TESTS@
 ALTERNATE_AR = @ALTERNATE_AR@
 AMTAR = @AMTAR@
 AR = @AR@

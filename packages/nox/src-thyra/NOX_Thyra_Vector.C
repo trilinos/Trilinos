@@ -73,7 +73,15 @@ operator=(const NOX::Abstract::Vector& src)
 {
   const NOX::Thyra::Vector& source = 
     dynamic_cast<const NOX::Thyra::Vector&>(src);
-  ::Thyra::copy(*source.thyraVec, thyraVec.get());
+  this->operator=(source);
+  return *this;
+}
+
+NOX::Abstract::Vector& 
+NOX::Thyra::Vector::
+operator=(const NOX::Thyra::Vector& src)
+{
+  ::Thyra::copy(*src.thyraVec, thyraVec.get());
   return *this;
 }
 
@@ -89,6 +97,13 @@ NOX::Thyra::Vector::
 getThyraVector() const
 {
   return *thyraVec;
+}
+
+Teuchos::RCP< ::Thyra::VectorBase<double> >& 
+NOX::Thyra::Vector::
+getThyraRCPVector()
+{
+  return thyraVec;
 }
 
 NOX::Abstract::Vector& 

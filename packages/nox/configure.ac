@@ -449,6 +449,11 @@ REQUIRE_LIB_CHECK=no
   AM_CONDITIONAL(BUILD_BELOS_TESTS, test X${ADDON_belos_TESTS} = Xyes)
   AC_SUBST(ADDON_belos_TESTS)
 
+  # thyra testing
+  NOX_TESTING(thyra)
+  AM_CONDITIONAL(BUILD_THYRA_TESTS, test X${ADDON_thyra_TESTS} = Xyes)
+  AC_SUBST(ADDON_thyra_TESTS)
+
   # Determine whether to build the new test utils library
   AM_CONDITIONAL(BUILD_TESTUTILS, test X${REQUIRE_LIB_CHECK} = Xyes)
 
@@ -694,6 +699,7 @@ fi
 if test X${ADDON_thyra} = Xyes; then
   TRILINOS_HEADER(thyra,Thyra_Config.h,src)
   TRILINOS_HEADER(thyra,Thyra_Version.hpp,src)
+  TRILINOS_HEADER(stratimikos,Stratimikos_Config.h,src)
   AC_DEFINE(HAVE_NOX_THYRA,1,[define that Thyra is activated in nox])
 fi
 
@@ -931,6 +937,7 @@ AC_CONFIG_FILES([
                 test/epetra/Brusselator/Makefile
                 test/epetra/PelletTransport/Makefile
                 test/epetra/FiniteDifferenceColoring/Makefile
+                test/epetra/Thyra_2Dsim/Makefile
                 test/petsc/Makefile
 		])
 

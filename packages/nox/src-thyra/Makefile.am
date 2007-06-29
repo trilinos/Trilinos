@@ -47,10 +47,13 @@ all-local:
 # ------------------------------------------------------------------------
 
 THYRA_H = \
-	$(srcdir)/NOX_Thyra_Vector.H 
+	$(srcdir)/NOX_Thyra.H \
+	$(srcdir)/NOX_Thyra_Vector.H \
+	$(srcdir)/NOX_Thyra_Group.H
 
 THYRA = \
-	$(srcdir)/NOX_Thyra_Vector.C 
+	$(srcdir)/NOX_Thyra_Vector.C \
+	$(srcdir)/NOX_Thyra_Group.C
 
 # ------------------------------------------------------------------------
 # Noxthyra library specifications

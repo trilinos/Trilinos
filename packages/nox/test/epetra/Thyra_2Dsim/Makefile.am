@@ -30,8 +30,42 @@
 # ************************************************************************
 #@HEADER
 
-NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Operators NOX_Group 1Dfem DS6.5.1 Brusselator PelletTransport FiniteDifferenceColoring MultiPhysics Thyra_2Dsim 
+include $(top_builddir)/Makefile.export.nox
 
-LOCA_SUBDIRS = LOCA_TestProblems LOCA_UnitTests LOCA_Tcubed LOCA_Pitchfork LOCA_Brusselator LOCA_Brusselator_xyzt LOCA_MultiPoint_Tcubed
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES))
+else
+TEST_LIBS     = $(NOX_TEST_LIBS)
+TEST_INCLUDES = $(NOX_TEST_INCLUDES)
+endif
 
-SUBDIRS = $(NOX_SUBDIRS) $(LOCA_SUBDIRS)
+AM_CPPFLAGS = $(TEST_INCLUDES)
+
+EXEEXT = .exe
+
+if BUILD_THYRA_TESTS
+
+if BUILD_EPETRA_TESTS
+
+if BUILD_NOX_EPETRAEXT_SUPPORT
+
+if HAVE_MPI
+else
+noinst_PROGRAMS = Thyra_2Dsim
+endif
+
+endif
+endif
+endif
+
+Thyra_2Dsim_SOURCES = \
+	        $(srcdir)/EpetraModelEval2DSim.H \
+                $(srcdir)/EpetraModelEval2DSim.C \
+                $(srcdir)/Thyra_2Dsim.C
+
+Thyra_2Dsim_DEPENDENCIES = \
+                     $(top_builddir)/src/libnox.a \
+                     $(top_builddir)/src-thyra/libnoxthyra.a
+
+Thyra_2Dsim_LDADD = $(TEST_LIBS)
