@@ -8,4 +8,4 @@ all-local:
 	@echo "Trilinos package belos subdirectory example built successfully."
 	@echo ""
 
-SUBDIRS = BlockGmres BlockCG
+SUBDIRS = BlockGmres BlockCG GCRODR

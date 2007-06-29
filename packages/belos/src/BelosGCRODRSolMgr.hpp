@@ -95,6 +95,26 @@ namespace Belos {
     GCRODRSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
   
+  /** \brief GCRODRSolMgrLAPACKFailure is thrown when a nonzero value is retuned
+   * from an LAPACK call.
+   *
+   * This exception is thrown from the GCRODRSolMgr::solve() method.
+   *
+   */
+  class GCRODRSolMgrLAPACKFailure : public BelosError {public:
+    GCRODRSolMgrLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
+    {}};
+
+  template<class ScalarType, class MV, class OP>
+  class GCRODRSolMgr : public SolverManager<ScalarType,MV,OP> {
+    
+   * This exception is thrown from the GCRODRSolMgr::solve() method.
+   *
+   */
+  class GCRODRSolMgrLAPACKFailure : public BelosError {public:
+    GCRODRSolMgrLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
+    {}};
+
   template<class ScalarType, class MV, class OP>
   class GCRODRSolMgr : public SolverManager<ScalarType,MV,OP> {
     
@@ -783,6 +803,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
     Teuchos::RCP<MV> tempU = Clone( *U_, keff );
     MVT::MvTimesMatAddMv( one, *U_, R, zero, *tempU );
+    U_ = tempU;
 
     // Compute C_'*r_
     Teuchos::SerialDenseMatrix<int,ScalarType> Ctr(keff,1);
@@ -877,7 +898,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
     // Get the state.
     GmresIterationState<ScalarType,MV> oldState = gmres_iter->getState();
-    
+        
     
 
     // NOTE:  Extract the initial recycled subspace from the state.
@@ -1034,17 +1055,6 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       }
       
       // Compute the current solution.
-      // Update the linear problem.
-      Teuchos::RCP<MV> update = gcrodr_iter->getCurrentUpdate();
-      problem_->updateSolution( update, true );
-      
-      // Inform the linear problem that we are finished with this block linear system.
-      problem_->setCurrLS();
-      
-      // Update indices for the linear systems to be solved.
-      numRHS2Solve -= numCurrRHS;
-      currIdx[0]++;
-      
       // Set the next indices.
       problem_->setLSIndex( currIdx );
       

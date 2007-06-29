@@ -329,6 +329,7 @@ AC_CONFIG_FILES([
 		example/Makefile
 		example/BlockGmres/Makefile
 		example/BlockCG/Makefile
+		example/GCRODR/Makefile
 		test/Makefile
 		test/BlockCG/Makefile
 		test/BlockGmres/Makefile
