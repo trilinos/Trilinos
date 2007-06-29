@@ -374,7 +374,7 @@ int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    /*this is a bit of an overestimate but better safe than sorry.
      If there were a way to figure out how many zeros there were
      we could subtract this out.*/
-   if ((indx[i] - indx[iminus1])/point_rows > allocated_space) {
+   if ((indx[bpntr[i]] - indx[bpntr[iminus1]])/point_rows > allocated_space) {
      ML_avoid_unused_param( (void *) &N_requested_rows);
      return(0);
    }
