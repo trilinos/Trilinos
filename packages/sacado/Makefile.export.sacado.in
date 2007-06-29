@@ -35,6 +35,7 @@ _SACADO_INCLUDES = \
 	-I@abs_top_srcdir@/src \
 	-I@abs_top_srcdir@/src/mpl \
 	-I@abs_top_srcdir@/src/parameter \
+	-I@abs_top_srcdir@/src/template \
 	-I@abs_top_builddir@/src \
 	$(TEUCHOS_INCLUDES)
 

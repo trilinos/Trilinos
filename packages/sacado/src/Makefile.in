@@ -163,9 +163,9 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_size_spec.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_at_spec.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp \
-	$(srcdir)/Sacado_TemplateManager.hpp \
-	$(srcdir)/Sacado_TemplateManagerImp.hpp \
-	$(srcdir)/Sacado_TemplateIterator.hpp \
+	$(srcdir)/template/Sacado_TemplateManager.hpp \
+	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
+	$(srcdir)/template/Sacado_TemplateIterator.hpp \
 	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
 	$(srcdir)/parameter/Sacado_ParameterFamilyBaseImp.hpp \
 	$(srcdir)/parameter/Sacado_ParameterLibraryBase.hpp \
@@ -262,9 +262,9 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/mpl/Sacado_mpl_vector_size_spec.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_at_spec.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp \
-	$(srcdir)/Sacado_TemplateManager.hpp \
-	$(srcdir)/Sacado_TemplateManagerImp.hpp \
-	$(srcdir)/Sacado_TemplateIterator.hpp \
+	$(srcdir)/template/Sacado_TemplateManager.hpp \
+	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
+	$(srcdir)/template/Sacado_TemplateIterator.hpp \
 	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
 	$(srcdir)/parameter/Sacado_ParameterFamilyBaseImp.hpp \
 	$(srcdir)/parameter/Sacado_ParameterLibraryBase.hpp \
@@ -475,9 +475,9 @@ SACADO_UTIL_H = \
 	$(srcdir)/Sacado_Handle.hpp
 
 @ENABLE_SACADO_TEUCHOS_TRUE@SACADO_TEMPLATE_H = \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_TemplateManager.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_TemplateManagerImp.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_TemplateIterator.hpp
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/template/Sacado_TemplateManager.hpp \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/template/Sacado_TemplateIterator.hpp
 
 @ENABLE_SACADO_TEUCHOS_TRUE@SACADO_PARAMETER_H = \
 @ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \

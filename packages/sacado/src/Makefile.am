@@ -105,9 +105,9 @@ SACADO_UTIL_H = \
 if ENABLE_SACADO_TEUCHOS
 
 SACADO_TEMPLATE_H = \
-	$(srcdir)/Sacado_TemplateManager.hpp \
-	$(srcdir)/Sacado_TemplateManagerImp.hpp \
-	$(srcdir)/Sacado_TemplateIterator.hpp
+	$(srcdir)/template/Sacado_TemplateManager.hpp \
+	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
+	$(srcdir)/template/Sacado_TemplateIterator.hpp
 
 SACADO_PARAMETER_H = \
 	$(srcdir)/parameter/Sacado_ParameterFamilyBase.hpp \
