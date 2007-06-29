@@ -1575,6 +1575,8 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   submatrices will be converted.
                                   */
 /*********************************************************************************/
+
+/*Where data is being exchanged things can become more efficient with an isend though this has risks*/
 void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int col_block_size, int cpntr[], int submatrix)
 {
    int i, j, k, kk, ii, ll;
@@ -1608,14 +1610,13 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    ML_Operator *cur_matrix;
    struct ML_CSR_MSRdata *cur_data;
    int src, mid;
-  
+   int *recv_lens;
+
    if(submatrix == 1)
    {
-       printf("1\n"); fflush(stdout);
      /*We need to free rpntr if it is allocated since we are using it later*/
      if(rpntr != NULL)
        ML_free(rpntr);
-       printf("1\n"); fflush(stdout);
      /*we only need to worry about block column informtion as this is all we will use*/  
      if (col_block_size < 0)
      {
@@ -1631,73 +1632,82 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        while(cur_matrix->sub_matrix != NULL)
          cur_matrix = cur_matrix->sub_matrix;
        out_data = (struct ML_vbrdata *)cur_matrix->data;
-       printf("1\n"); fflush(stdout);
        all_rpntr = (int**)ML_allocate(in_matrix->getrow->pre_comm->N_neighbors*sizeof (int*));
+       recv_lens = (int*)ML_allocate(in_matrix->getrow->pre_comm->N_neighbors*sizeof(int));
        recv_requests = (USR_REQ*)ML_allocate(in_matrix->getrow->pre_comm->N_neighbors*sizeof(USR_REQ));
        for(i = 0; i < in_matrix->getrow->pre_comm->N_neighbors; i++)
        {
          if(in_matrix->getrow->pre_comm->neighbors[i].N_rcv > 0)
          {
-           printf("i %d\n", i);
            /*Plus 1 since the first one will be the block size this is wrong we need a better number of how much can be coming*/
-           all_rpntr[i] = (int*)ML_allocate((cur_matrix->getrow->N_block_rows+1)*sizeof(int));
-              printf("space %d\n", cur_matrix->getrow->N_block_rows+1); fflush(stdout);
-                   printf("recv post %d %d\n", in_matrix->getrow->pre_comm->neighbors[i].ML_id, (in_matrix->getrow->pre_comm->neighbors[i].ML_id));
-           ML_Comm_Irecv(all_rpntr[i], (cur_matrix->getrow->N_block_rows+1)*sizeof(int), &(in_matrix->getrow->pre_comm->neighbors[i].ML_id), &(in_matrix->getrow->pre_comm->neighbors[i].ML_id), cur_matrix->comm->USR_comm, &recv_requests[i]);
+           ML_Comm_Irecv(&recv_lens[i], sizeof(int), &(in_matrix->getrow->pre_comm->neighbors[i].ML_id), &(in_matrix->getrow->pre_comm->neighbors[i].ML_id), cur_matrix->comm->USR_comm, &recv_requests[i]);
          }
        }
-       printf("2\n"); fflush(stdout);
-       send_buffer = (int*)ML_allocate((cur_matrix->getrow->N_block_rows+1)*sizeof(int));
-       printf("N_neighbors %d\n", in_matrix->getrow->pre_comm->N_neighbors); fflush(stdout);
+       /*this could be done later as the max actually sent but probably is not worth the few bytes savings*/
+       send_buffer = (int*)ML_allocate((cur_matrix->getrow->N_block_rows)*sizeof(int));
        for(i = 0; i < in_matrix->getrow->pre_comm->N_neighbors; i++)
        {
          if(in_matrix->getrow->pre_comm->neighbors[i].N_send > 0)
          {
            j = 0;
-       printf("Nsend %d i %d\n",  in_matrix->getrow->pre_comm->neighbors[i].N_send,i ); fflush(stdout);
-           k = 0;
            kk = 0;
            rows_sent = 0;
            /*figure out what needs to be sent*/
            while(j < in_matrix->getrow->pre_comm->neighbors[i].N_send)
            {
-       printf("j %d\n", j); fflush(stdout);
              rows_sent++;
-
-       printf("%d\n", out_data->rpntr[kk]); fflush(stdout);
-       
-       printf("%d\n", in_matrix->getrow->pre_comm->neighbors[i].send_list[k]); fflush(stdout);
-            printf("%d rpntr %d sendlist\n", out_data->rpntr[kk], in_matrix->getrow->pre_comm->neighbors[i].send_list[k]);
-             while(out_data->rpntr[kk] <= in_matrix->getrow->pre_comm->neighbors[i].send_list[k])
+             while(out_data->rpntr[kk] <= in_matrix->getrow->pre_comm->neighbors[i].send_list[j])
              {
-       printf("7\n"); fflush(stdout);
                kk++;
              }
-             k += out_data->rpntr[kk] - out_data->rpntr[kk - 1];              
              j += out_data->rpntr[kk] - out_data->rpntr[kk - 1];
-             send_buffer[rows_sent] = out_data->rpntr[kk] - out_data->rpntr[kk - 1];
            }
-           send_buffer[0] = rows_sent;
-           printf("%d send %d send\n", send_buffer[0], send_buffer[1]);
-           /*send info here*/
-           printf("send post %d %d\n", in_matrix->getrow->pre_comm->neighbors[i].ML_id, cur_matrix->comm->ML_mypid);
-           k =ML_Comm_Send(send_buffer, (rows_sent+1)*sizeof(int), in_matrix->getrow->pre_comm->neighbors[i].ML_id, cur_matrix->comm->ML_mypid, cur_matrix->comm->USR_comm);
-           printf("%d k %d k\n", k, k);
+           k =ML_Comm_Send(&rows_sent, sizeof(int), in_matrix->getrow->pre_comm->neighbors[i].ML_id, cur_matrix->comm->ML_mypid, cur_matrix->comm->USR_comm);
+           printf("%d %d %d\n", in_matrix->getrow->pre_comm->neighbors[i].ML_id, cur_matrix->comm->ML_mypid, rows_sent); fflush(stdout);
          }
        }
      }
      sleep(1);
-      for(i = 0; i < in_matrix->getrow->pre_comm->N_neighbors; i++)
+     for(i = 0; i < in_matrix->getrow->pre_comm->N_neighbors; i++)
+     {
+       if(in_matrix->getrow->pre_comm->neighbors[i].N_rcv > 0)
        {
-         if(in_matrix->getrow->pre_comm->neighbors[i].N_rcv > 0)
+         ML_Comm_CheapWait(send_buffer, j, &src, &mid, cur_matrix->comm->USR_comm, &recv_requests[i]);
+         all_rpntr[i] = (int*)ML_allocate((recv_lens[i])*sizeof(int));
+         ML_Comm_Irecv(all_rpntr[i], recv_lens[i]*sizeof(int), &(in_matrix->getrow->pre_comm->neighbors[i].ML_id), &(in_matrix->getrow->pre_comm->neighbors[i].ML_id), cur_matrix->comm->USR_comm, &recv_requests[i]);
+       }
+     }
+     for(i = 0; i < in_matrix->getrow->pre_comm->N_neighbors; i++)
+     {
+       j = 0;
+       kk = 0;
+       k = 0;
+       if(in_matrix->getrow->pre_comm->neighbors[i].N_send > 0)
+       {
+         while(j < in_matrix->getrow->pre_comm->neighbors[i].N_send)
          {
-     printf("3\n"); fflush(stdout);
-           ML_Comm_CheapWait(send_buffer, j, &src, &mid, cur_matrix->comm->USR_comm, &recv_requests[i]);
-     printf("3\n"); fflush(stdout);
-           printf("%d   %d\n", all_rpntr[0][0], all_rpntr[0][1]);
-     printf("3\n"); fflush(stdout);
+           while(out_data->rpntr[kk] <= in_matrix->getrow->pre_comm->neighbors[i].send_list[j])
+           {
+             kk++;
+           }
+           send_buffer[k] = out_data->rpntr[kk] - out_data->rpntr[kk - 1];
+             j += out_data->rpntr[kk] - out_data->rpntr[kk - 1];
          }
-      }
+         k++;
+     printf("here\n"); fflush(stdout);
+         k =ML_Comm_Send(send_buffer, (rows_sent)*sizeof(int), in_matrix->getrow->pre_comm->neighbors[i].ML_id, cur_matrix->comm->ML_mypid, cur_matrix->comm->USR_comm);
+           printf("%d %d %d\n", in_matrix->getrow->pre_comm->neighbors[i].ML_id, cur_matrix->comm->ML_mypid, rows_sent); fflush(stdout); 
+       }
+     }
+      for(i = 0; i < in_matrix->getrow->pre_comm->N_neighbors; i++)
+     {
+       if(in_matrix->getrow->pre_comm->neighbors[i].N_rcv > 0)
+       {
+         ML_Comm_CheapWait(send_buffer, j, &src, &mid, cur_matrix->comm->USR_comm, &recv_requests[i]);
+       }
+     }
+     
+     printf("3\n"); fflush(stdout);
      sleep(10);
      cur_matrix = in_matrix->sub_matrix;
      /*loop over submatrices*/
