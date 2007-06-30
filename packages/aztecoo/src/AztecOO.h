@@ -410,13 +410,22 @@ class AztecOO {
   int SetAztecDefaults();
 
   //! AztecOO option setting function.
-  /*! Set a specific Aztec parameter value.
+  /*! Set a specific Aztec option value.
     Example: problem.SetAztecOption(AZ_precond, AZ_Jacobi)
 
     See the Aztec 2.1 User Guide for a complete list of these options.
   */
   int SetAztecOption(int option, int value)
     {options_[option] = value; return(0);};
+
+  //! AztecOO option getting function.
+  /*! Get a specific Aztec optioin value.
+    Example: problem.GetAztecOption(AZ_precond)
+
+    See the Aztec 2.1 User Guide for a complete list of these options.
+  */
+  int GetAztecOption(int option)
+    {return(options_[option]);}
 
   //! AztecOO param setting function.
   /*! Set a specific Aztec parameter value.

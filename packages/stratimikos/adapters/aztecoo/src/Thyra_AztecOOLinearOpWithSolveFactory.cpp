@@ -720,13 +720,13 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       if( startingOver || !reusePrec ) {
         TEST_FOR_EXCEPTION(
           rowmatrix_epetraFwdOp.get()==NULL, std::logic_error
-          ,"AztecOOLinearOpWithSolveFactor::initializeOp_impl(...): Error, There is no preconditioner given by client, but the client "
+          ,"AztecOOLinearOpWithSolveFactory::initializeOp_impl(...): Error, There is no preconditioner given by client, but the client "
           "passed in an Epetra_Operator for the forward operator of type \'" <<typeName(*epetra_epetraFwdOp)<<"\' that does not "
           "support the Epetra_RowMatrix interface!"
           );
         TEST_FOR_EXCEPTION(
           epetra_epetraFwdOpTransp!=NOTRANS, std::logic_error
-          ,"AztecOOLinearOpWithSolveFactor::initializeOp_impl(...): Error, There is no preconditioner given by client and the client "
+          ,"AztecOOLinearOpWithSolveFactory::initializeOp_impl(...): Error, There is no preconditioner given by client and the client "
           "passed in an Epetra_RowMatrix for the forward operator but the overall transpose is not NOTRANS and therefore we can can just "
           "hand this over to aztec without making a copy which is not supported here!"
           );

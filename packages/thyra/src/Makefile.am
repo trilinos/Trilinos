@@ -253,6 +253,7 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditionerDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_InverseLinearOperator.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_LinearOpWithSolveFactoryHelpers.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_LinearOpWithSolveHelpers.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_LinearOpWithSolveTester.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_LinearOpWithSolveTesterDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_PreconditionerFactoryHelpers.hpp\

@@ -56,7 +56,7 @@ enum ESolveMeasureNormType {
 
 /** \brief . */
 inline
-const char* toString(const ESolveMeasureNormType solveMeasureNormType)
+const std::string toString(const ESolveMeasureNormType solveMeasureNormType)
 {
   switch(solveMeasureNormType) {
     case SOLVE_MEASURE_ONE:
@@ -194,7 +194,7 @@ enum ESolveStatus {
 
 /** \brief . */
 inline
-const char* toString(const ESolveStatus solveStatus)
+const std::string toString(const ESolveStatus solveStatus)
 {
   switch(solveStatus) {
     case SOLVE_STATUS_CONVERGED:    return "SOLVE_STATUS_CONVERGED";

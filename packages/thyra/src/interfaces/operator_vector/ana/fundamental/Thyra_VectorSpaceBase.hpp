@@ -34,6 +34,10 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 
+#ifdef TEUCHOS_DEBUG
+#define THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
+#endif
+
 namespace Thyra {
 
 // Virtual functions with default implementations

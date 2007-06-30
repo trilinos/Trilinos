@@ -138,6 +138,7 @@ all-libs:
 
 libs:
 	cd $(top_builddir)/src ; $(MAKE)
+	cd $(top_builddir)/adapters ; $(MAKE) libs
 
 if USING_EXPORT_MAKEFILES
 

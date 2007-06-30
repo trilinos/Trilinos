@@ -30,6 +30,7 @@
 #ifndef __sun
 
 #include "Thyra_AztecOOLinearOpWithSolve.hpp"
+#include "Thyra_LinearOpWithSolveHelpers.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraOperatorWrapper.hpp"
 #include "Teuchos_TimeMonitor.hpp"
@@ -58,61 +59,115 @@ Teuchos::ETransp convert( Thyra::ETransp trans_in )
 }
 
 
-class SetAztecOStream {
+// This class sets some solve instance specific state and then sets it back to
+// the default state on destruction.  But using the destructor to unset the
+// state we can be sure that the state is rest correctly even if an exception
+// is thrown.
+class SetAztecSolveState {
 public:
-  SetAztecOStream( 
+  SetAztecSolveState( 
     const Teuchos::RCP<AztecOO> &aztecSolver,
     const Teuchos::RCP<Teuchos::FancyOStream> &fancyOStream,
-    const Teuchos::EVerbosityLevel verbLevel
-    )
-    :aztecSolver_(aztecSolver.assert_not_null())
-    {
-      verbLevel_ = verbLevel;
-      if( Teuchos::VERB_NONE != verbLevel_ ) {
-        if(!is_null(fancyOStream)) {
-        // AztecOO puts in two tabs before it prints anything.  Therefore,
-        // there is not much that we can do to improve the layout of the
-        // indentation so just leave it!
-        fancyOStream_= Teuchos::tab(
-          fancyOStream,
-          0, // Don't indent since AztecOO already puts in two tabs (not spaces!)
-          Teuchos::implicit_cast<std::string>("AZTECOO")
-          );
-        aztecSolver_->SetOutputStream(*fancyOStream_);
-        aztecSolver_->SetErrorStream(*fancyOStream_);
-        // Note, above we can not save the current output and error streams
-        // since AztecOO does not define functions to get them.  In the
-        // future, AztecOO should define these functions if we are to avoid
-        // treading on each others print statements.  However, since the
-        // AztecOO object is most likely owned by these Thyra wrappers, this
-        // should not be a problem.
-        }
-      }
-      else {
-        outputFrequency_ = aztecSolver_->GetAllAztecOptions()[AZ_output];
-        aztecSolver_->SetAztecOption(AZ_output,0);
-      }
-    }
-  ~SetAztecOStream()
-    {
-      if( Teuchos::VERB_NONE != verbLevel_ ) {
-        if(!is_null(fancyOStream_)) {
-          aztecSolver_->SetOutputStream(std::cout);
-          aztecSolver_->SetErrorStream(std::cerr);
-          *fancyOStream_ << "\n";
-        }
-      }
-      else {
-        aztecSolver_->SetAztecOption(AZ_output,outputFrequency_);
-      }
-    }
+    const Teuchos::EVerbosityLevel verbLevel,
+    const Thyra::SolveMeasureType &solveMeasureType
+    );
+  ~SetAztecSolveState();
 private:
   Teuchos::RCP<AztecOO> aztecSolver_;
   Teuchos::RCP<Teuchos::FancyOStream>  fancyOStream_;
   Teuchos::EVerbosityLevel verbLevel_;
   int outputFrequency_;
-  SetAztecOStream(); // Not defined and not to be called!
+  int convergenceTest_;
+  SetAztecSolveState(); // Not defined and not to be called!
 };
+
+
+SetAztecSolveState::SetAztecSolveState( 
+  const Teuchos::RCP<AztecOO> &aztecSolver,
+  const Teuchos::RCP<Teuchos::FancyOStream> &fancyOStream,
+  const Teuchos::EVerbosityLevel verbLevel,
+  const Thyra::SolveMeasureType &solveMeasureType
+  )
+  :aztecSolver_(aztecSolver.assert_not_null())
+{
+  
+  // Output state
+  verbLevel_ = verbLevel;
+  if( Teuchos::VERB_NONE != verbLevel_ ) {
+    if(!is_null(fancyOStream)) {
+      // AztecOO puts in two tabs before it prints anything.  Therefore,
+      // there is not much that we can do to improve the layout of the
+      // indentation so just leave it!
+      fancyOStream_= Teuchos::tab(
+        fancyOStream,
+        0, // Don't indent since AztecOO already puts in two tabs (not spaces!)
+        Teuchos::implicit_cast<std::string>("AZTECOO")
+        );
+      aztecSolver_->SetOutputStream(*fancyOStream_);
+      aztecSolver_->SetErrorStream(*fancyOStream_);
+      // Note, above we can not save the current output and error streams
+      // since AztecOO does not define functions to get them.  In the
+      // future, AztecOO should define these functions if we are to avoid
+      // treading on each others print statements.  However, since the
+      // AztecOO object is most likely owned by these Thyra wrappers, this
+      // should not be a problem.
+    }
+  }
+  else {
+    outputFrequency_ = aztecSolver_->GetAllAztecOptions()[AZ_output];
+    aztecSolver_->SetAztecOption(AZ_output,0);
+  }
+
+  // Convergence test
+  convergenceTest_ = aztecSolver_->GetAztecOption(AZ_conv);
+  if (solveMeasureType.useDefault())
+  {
+    // Just use the default solve measure type already set!
+  }
+  else if (
+    solveMeasureType(
+      Thyra::SOLVE_MEASURE_NORM_RESIDUAL,
+      Thyra::SOLVE_MEASURE_NORM_RHS
+      )
+    )
+  {
+    aztecSolver_->SetAztecOption(AZ_conv,AZ_rhs);
+  }
+  else if (
+    solveMeasureType(
+      Thyra::SOLVE_MEASURE_NORM_RESIDUAL,
+      Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL
+      )
+    )
+  {
+    aztecSolver_->SetAztecOption(AZ_conv,AZ_r0);
+  }
+  else {
+    TEST_FOR_EXCEPT("Invalid solve measure type, you should never get here!");
+  }
+
+}
+
+
+SetAztecSolveState::~SetAztecSolveState()
+{
+      
+  // Output state
+  if( Teuchos::VERB_NONE != verbLevel_ ) {
+    if(!is_null(fancyOStream_)) {
+      aztecSolver_->SetOutputStream(std::cout);
+      aztecSolver_->SetErrorStream(std::cerr);
+      *fancyOStream_ << "\n";
+    }
+  }
+  else {
+    aztecSolver_->SetAztecOption(AZ_output,outputFrequency_);
+  }
+
+  // Convergence test
+  aztecSolver_->SetAztecOption(AZ_conv,convergenceTest_);
+      
+}
 
 
 } // namespace
@@ -144,14 +199,14 @@ AztecOOLinearOpWithSolve::AztecOOLinearOpWithSolve(
 
 
 void AztecOOLinearOpWithSolve::initialize(
-  const Teuchos::RCP<const LinearOpBase<double> >                 &fwdOp
-  ,const Teuchos::RCP<const LinearOpSourceBase<double> >          &fwdOpSrc
-  ,const Teuchos::RCP<const PreconditionerBase<double> >          &prec
+  const RCP<const LinearOpBase<double> >                 &fwdOp
+  ,const RCP<const LinearOpSourceBase<double> >          &fwdOpSrc
+  ,const RCP<const PreconditionerBase<double> >          &prec
   ,const bool                                                             isExternalPrec
-  ,const Teuchos::RCP<const LinearOpSourceBase<double> >          &approxFwdOpSrc
-  ,const Teuchos::RCP<AztecOO>                                    &aztecFwdSolver
+  ,const RCP<const LinearOpSourceBase<double> >          &approxFwdOpSrc
+  ,const RCP<AztecOO>                                    &aztecFwdSolver
   ,const bool                                                             allowInexactFwdSolve
-  ,const Teuchos::RCP<AztecOO>                                    &aztecAdjSolver
+  ,const RCP<AztecOO>                                    &aztecAdjSolver
   ,const bool                                                             allowInexactAdjSolve
   ,const double                                                           aztecSolverScalar
   )
@@ -177,20 +232,20 @@ void AztecOOLinearOpWithSolve::initialize(
 }
 
 
-Teuchos::RCP<const LinearOpSourceBase<double> >
+RCP<const LinearOpSourceBase<double> >
 AztecOOLinearOpWithSolve::extract_fwdOpSrc()
 {
-  Teuchos::RCP<const LinearOpSourceBase<double> >
+  RCP<const LinearOpSourceBase<double> >
     _fwdOpSrc = fwdOpSrc_;
   fwdOpSrc_ = Teuchos::null;
   return _fwdOpSrc;
 }
 
 
-Teuchos::RCP<const PreconditionerBase<double> >
+RCP<const PreconditionerBase<double> >
 AztecOOLinearOpWithSolve::extract_prec()
 {
-  Teuchos::RCP<const PreconditionerBase<double> >
+  RCP<const PreconditionerBase<double> >
     _prec = prec_;
   prec_ = Teuchos::null;
   return _prec;
@@ -203,10 +258,10 @@ bool AztecOOLinearOpWithSolve::isExternalPrec() const
 }
 
 
-Teuchos::RCP<const LinearOpSourceBase<double> >
+RCP<const LinearOpSourceBase<double> >
 AztecOOLinearOpWithSolve::extract_approxFwdOpSrc()
 {
-  Teuchos::RCP<const LinearOpSourceBase<double> >
+  RCP<const LinearOpSourceBase<double> >
     _approxFwdOpSrc = approxFwdOpSrc_;
   approxFwdOpSrc_ = Teuchos::null;
   return _approxFwdOpSrc;
@@ -214,14 +269,14 @@ AztecOOLinearOpWithSolve::extract_approxFwdOpSrc()
 
 
 void AztecOOLinearOpWithSolve::uninitialize(
-  Teuchos::RCP<const LinearOpBase<double> > *fwdOp,
-  Teuchos::RCP<const LinearOpSourceBase<double> > *fwdOpSrc,
-  Teuchos::RCP<const PreconditionerBase<double> > *prec,
+  RCP<const LinearOpBase<double> > *fwdOp,
+  RCP<const LinearOpSourceBase<double> > *fwdOpSrc,
+  RCP<const PreconditionerBase<double> > *prec,
   bool *isExternalPrec,
-  Teuchos::RCP<const LinearOpSourceBase<double> > *approxFwdOpSrc,
-  Teuchos::RCP<AztecOO> *aztecFwdSolver,
+  RCP<const LinearOpSourceBase<double> > *approxFwdOpSrc,
+  RCP<AztecOO> *aztecFwdSolver,
   bool *allowInexactFwdSolve,
-  Teuchos::RCP<AztecOO> *aztecAdjSolver,
+  RCP<AztecOO> *aztecAdjSolver,
   bool *allowInexactAdjSolve,
   double *aztecSolverScalar
   )
@@ -253,21 +308,21 @@ void AztecOOLinearOpWithSolve::uninitialize(
 // Overridden from LinearOpBase
 
 
-Teuchos::RCP< const VectorSpaceBase<double> >
+RCP< const VectorSpaceBase<double> >
 AztecOOLinearOpWithSolve::range() const
 {
   return ( fwdOp_.get() ? fwdOp_->range() : Teuchos::null );
 }
 
 
-Teuchos::RCP< const VectorSpaceBase<double> >
+RCP< const VectorSpaceBase<double> >
 AztecOOLinearOpWithSolve::domain() const
 {
   return  ( fwdOp_.get() ? fwdOp_->domain() : Teuchos::null );
 }
 
 
-Teuchos::RCP<const LinearOpBase<double> >
+RCP<const LinearOpBase<double> >
 AztecOOLinearOpWithSolve::clone() const
 {
   return Teuchos::null; // Not supported yet but could be
@@ -407,28 +462,68 @@ bool AztecOOLinearOpWithSolve::solveSupportsSolveMeasureType(
   ) const
 {
   if(real_trans(M_trans)==NOTRANS) {
-    return (
-      solveMeasureType.useDefault()
-      ||
-      ( solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)
-        &&
-        allowInexactFwdSolve_
+    if (solveMeasureType.useDefault())
+    {
+      return true;
+    }
+    else if (
+      solveMeasureType(
+        SOLVE_MEASURE_NORM_RESIDUAL,
+        SOLVE_MEASURE_NORM_RHS
         )
-      );
-  }
-  // TRANS
-  return (
-    aztecAdjSolver_.get()!=NULL
-    &&
-    (
-      solveMeasureType.useDefault()
-      ||
-      ( solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)
-        &&
-        allowInexactAdjSolve_
-        )
+      &&
+      allowInexactFwdSolve_
       )
-    );
+    {
+      return true;
+    }
+    else if (
+      solveMeasureType(
+        SOLVE_MEASURE_NORM_RESIDUAL,
+        SOLVE_MEASURE_NORM_INIT_RESIDUAL
+        )
+      &&
+      allowInexactFwdSolve_
+      )
+    {
+      return true;
+    }
+  }
+  else {
+    // TRANS
+    if (aztecAdjSolver_.get()==NULL)
+    {
+      return false;
+    }
+    else if (solveMeasureType.useDefault())
+    {
+      return true;
+    }
+    else if (
+      solveMeasureType(
+        SOLVE_MEASURE_NORM_RESIDUAL,
+        SOLVE_MEASURE_NORM_RHS
+        )
+      &&
+      allowInexactFwdSolve_
+      )
+    {
+      return true;
+    }
+    else if (
+      solveMeasureType(
+        SOLVE_MEASURE_NORM_RESIDUAL,
+        SOLVE_MEASURE_NORM_INIT_RESIDUAL
+        )
+      &&
+      allowInexactFwdSolve_
+      )
+    {
+      return true;
+    }
+  }
+  // If you get here then we don't support the solve measure type!
+  return false;
 }
 
 
@@ -452,7 +547,7 @@ void AztecOOLinearOpWithSolve::solve(
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
 
-  Teuchos::RCP<Teuchos::FancyOStream>  out = this->getOStream();
+  RCP<Teuchos::FancyOStream>  out = this->getOStream();
   Teuchos::EVerbosityLevel                     verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
@@ -462,11 +557,13 @@ void AztecOOLinearOpWithSolve::solve(
   // Validate input
   //
   TEST_FOR_EXCEPT(numBlocks > 1); // ToDo: Deal with multiple solve criteria later if needed
-//#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(!this->solveSupportsTrans(M_trans));
-  TEST_FOR_EXCEPT( numBlocks && blockSolveCriteria && !this->solveSupportsSolveMeasureType(M_trans,blockSolveCriteria[0].solveCriteria.solveMeasureType) );
+  SolveMeasureType solveMeasureType;
+  if (numBlocks && blockSolveCriteria) {
+    solveMeasureType = blockSolveCriteria[0].solveCriteria.solveMeasureType;
+    assertSupportsSolveMeasureType(*this,M_trans,solveMeasureType);
+  }
   TEST_FOR_EXCEPT(X==NULL);
-//#endif
   //
   // Get the transpose argument
   //
@@ -474,7 +571,7 @@ void AztecOOLinearOpWithSolve::solve(
   //
   // Get the solver, operator, and preconditioner that we will use
   //
-  Teuchos::RCP<AztecOO>
+  RCP<AztecOO>
     aztecSolver = ( aztecOpTransp == NOTRANS ? aztecFwdSolver_  : aztecAdjSolver_ );
   const Epetra_Operator
     *aztecOp = aztecSolver->GetUserOperator();
@@ -499,8 +596,8 @@ void AztecOOLinearOpWithSolve::solve(
   //
   // Get Epetra_MultiVector views of B and X
   //
-  Teuchos::RCP<const Epetra_MultiVector> epetra_B;
-  Teuchos::RCP<Epetra_MultiVector> epetra_X;
+  RCP<const Epetra_MultiVector> epetra_B;
+  RCP<Epetra_MultiVector> epetra_X;
 
   const EpetraOperatorWrapper* opWrapper 
     = dynamic_cast<const EpetraOperatorWrapper*>(aztecOp);
@@ -570,7 +667,8 @@ void AztecOOLinearOpWithSolve::solve(
     //
     timer.start(true);
     {
-      SetAztecOStream setAztecOStream(aztecSolver,out,verbLevel);
+      SetAztecSolveState
+        setAztecSolveState(aztecSolver,out,verbLevel,solveMeasureType);
       aztecSolver->Iterate( maxIterations, tol ); // We ignore the returned status but get it below
     }
     timer.stop();

@@ -189,10 +189,15 @@ NOX::Abstract::Group::ReturnType NOX::Thyra::Group::computeF()
   if (this->isF())
     return NOX::Abstract::Group::Ok;
 
-  in_args_.set_x(x_vec_->getThyraRCPVector());
-  out_args_.set_f(f_vec_->getThyraRCPVector());
-  out_args_.set_W(Teuchos::null);
+  in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
+  out_args_.set_f(f_vec_->getThyraRCPVector().assert_not_null());
   model_->evalModel(in_args_, out_args_);
+  in_args_.set_x(Teuchos::null);
+  out_args_.set_f(Teuchos::null);
+
+  *Teuchos::VerboseObjectBase::getDefaultOStream()
+    << "\nNOX::Thyra::Group::computeF() : f = \n"
+    << Teuchos::describe(*f_vec_->getThyraRCPVector(),Teuchos::VERB_EXTREME);
 
   is_valid_f_ = true;
 
@@ -208,9 +213,10 @@ NOX::Abstract::Group::ReturnType NOX::Thyra::Group::computeJacobian()
     return NOX::Abstract::Group::Ok;
 
   in_args_.set_x(x_vec_->getThyraRCPVector());
-  out_args_.set_f(Teuchos::null);
   out_args_.set_W(shared_jacobian_->getObject(this));
   model_->evalModel(in_args_, out_args_);
+  in_args_.set_x(Teuchos::null);
+  out_args_.set_W(Teuchos::null);
 
   is_valid_jacobian_ = true;
 
