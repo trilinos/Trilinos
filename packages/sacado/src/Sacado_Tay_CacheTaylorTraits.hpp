@@ -36,80 +36,80 @@
 
 // Forward declarations
 namespace Sacado {
-  namespace Taylor {
-    template <typename T> class DTaylor;
+  namespace Tay {
+    template <typename T> class CacheTaylor;
   }
 }
 
 namespace Sacado {
 
-  //! Specialization of %Promote to DTaylor types
+  //! Specialization of %Promote to CacheTaylor types
   template <typename T>
-  class Promote< Taylor::DTaylor<T>, Taylor::DTaylor<T> > {
+  class Promote< Tay::CacheTaylor<T>, Tay::CacheTaylor<T> > {
   public:
 
-    typedef Taylor::DTaylor<T> type;
+    typedef Tay::CacheTaylor<T> type;
   };
 
-  //! Specialization of %Promote to DTaylor types
+  //! Specialization of %Promote to CacheTaylor types
   template <typename L, typename R>
-  class Promote< Taylor::DTaylor<L>, R > {
+  class Promote< Tay::CacheTaylor<L>, R > {
   public:
 
-    typedef typename ValueType< Taylor::DTaylor<L> >::type value_type_l;
+    typedef typename ValueType< Tay::CacheTaylor<L> >::type value_type_l;
     typedef typename ValueType<R>::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef Taylor::DTaylor<value_type> type;
+    typedef Tay::CacheTaylor<value_type> type;
   };
 
-  //! Specialization of %Promote to DTaylor types
+  //! Specialization of %Promote to CacheTaylor types
   template <typename L, typename R>
-  class Promote< L, Taylor::DTaylor<R> > {
+  class Promote< L, Tay::CacheTaylor<R> > {
   public:
 
     typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< Taylor::DTaylor<R> >::type value_type_r;
+    typedef typename ValueType< Tay::CacheTaylor<R> >::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef Taylor::DTaylor<value_type> type;
+    typedef Tay::CacheTaylor<value_type> type;
   };
 
   //! Specialization of %ScalarType to DFad types
   template <typename T>
-  struct ScalarType< Taylor::DTaylor<T> > {
+  struct ScalarType< Tay::CacheTaylor<T> > {
     typedef T type;
   };
 
   //! Specialization of %ValueType to DFad types
   template <typename T>
-  struct ValueType< Taylor::DTaylor<T> > {
+  struct ValueType< Tay::CacheTaylor<T> > {
     typedef T type;
   };
 
    //! Specialization of %ScalarValueType to DFad types
   template <typename T>
-  struct ScalarValueType< Taylor::DTaylor<T> > {
+  struct ScalarValueType< Tay::CacheTaylor<T> > {
     typedef typename ScalarValueType< T >::type type;
   };
 
   //! Specialization of %IsADType to DFad types
   template <typename T>
-  struct IsADType< Taylor::DTaylor<T> > {
+  struct IsADType< Tay::CacheTaylor<T> > {
     static const bool value = true;
   };
 
   //! Specialization of %IsADType to DFad types
   template <typename T>
-  struct IsScalarType< Taylor::DTaylor<T> > {
+  struct IsScalarType< Tay::CacheTaylor<T> > {
     static const bool value = false;
   };
 
   //! Specialization of %Value to DFad types
   template <typename T>
-  struct Value< Taylor::DTaylor<T> > {
-    typedef typename ValueType< Taylor::DTaylor<T> >::type value_type;
-    static const value_type& eval(const Taylor::DTaylor<T>& x) { 
+  struct Value< Tay::CacheTaylor<T> > {
+    typedef typename ValueType< Tay::CacheTaylor<T> >::type value_type;
+    static const value_type& eval(const Tay::CacheTaylor<T>& x) { 
       return x.val(); }
   };
 

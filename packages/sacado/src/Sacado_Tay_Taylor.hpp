@@ -105,7 +105,7 @@ namespace Sacado {
       //! Assignment operator with constant right-hand-side
       Taylor<T>& operator=(const T& val);
 
-      //! Assignment with DTaylor right-hand-side
+      //! Assignment with Taylor right-hand-side
       Taylor<T>& operator=(const Taylor<T>& x);
 
       //@}
