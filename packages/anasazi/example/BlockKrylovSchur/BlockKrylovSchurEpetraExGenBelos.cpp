@@ -112,16 +112,16 @@ int main(int argc, char *argv[]) {
   if (MyPID==0) cout << endl << endl;
   if (MyPID==0) cout << "Constructing ICT preconditioner" << endl;
   int Lfill = 0;
-  if (argc > 2) Lfill = atoi(argv[2]);
+  if (argc > 1) Lfill = atoi(argv[1]);
   if (MyPID==0) cout << "Using Lfill = " << Lfill << endl;
   int Overlap = 0;
-  if (argc > 3) Overlap = atoi(argv[3]);
+  if (argc > 2) Overlap = atoi(argv[2]);
   if (MyPID==0) cout << "Using Level Overlap = " << Overlap << endl;
   double Athresh = 0.0;
-  if (argc > 4) Athresh = atof(argv[4]);
+  if (argc > 3) Athresh = atof(argv[3]);
   if (MyPID==0) cout << "Using Absolute Threshold Value of " << Athresh << endl;
   double Rthresh = 1.0;
-  if (argc >5) Rthresh = atof(argv[5]);
+  if (argc >4) Rthresh = atof(argv[4]);
   if (MyPID==0) cout << "Using Relative Threshold Value of " << Rthresh << endl;
   double dropTol = 1.0e-6;
   //
