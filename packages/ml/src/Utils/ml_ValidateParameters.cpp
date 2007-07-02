@@ -160,12 +160,25 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("aggregation: aux: max levels",10,"Unlisted option",PL);
   PL->set("low memory usage",false);
   setDoubleParameter("aggregation: edge prolongator drop threshold",0.0,"Unlisted option",PL);
-  PL->set("smoother: ifpack list",dummy);
-  PL->set("smoother: ifpack type",std::string(""));
   PL->set("read XML",true); 
   PL->set("XML input file","ml_ParameterList.xml",std::string(""));
   PL->set("zero starting solution",true);
   PL->set("print hierarchy",false);  
+  PL->set("smoother: self list",dummy);
+
+  // From ml_Multilevel_Smoothers.cpp:
+  setIntParameter("smoother: ParaSails matrix",0,"Unlisted option",PL);
+  setIntParameter("smoother: ParaSails levels",0,"Unlisted option",PL);
+  setDoubleParameter("smoother: ParaSails threshold",0.01,"Unlisted option",PL);
+  setDoubleParameter("smoother: ParaSails filter",0.05,"Unlisted option",PL);
+  setDoubleParameter("smoother: ParaSails load balancing",0,"Unlisted option",PL);
+  setIntParameter("smoother: ParaSails factorized",0,"Unlisted option",PL);
+  PL->set("smoother: ifpack list",dummy); 
+  PL->set("smoother: ifpack type",std::string(""));
+  setIntParameter("smoother: ifpack overlap",0,"Unlisted option",PL);
+  setDoubleParameter("smoother: ifpack level-of-fill",0.0,"Unlisted option",PL);
+  setDoubleParameter("smoother: ifpack relative threshold",1.0,"Unlisted option",PL);
+  setDoubleParameter("smoother: ifpack absolute threshold",0.0,"Unlisted option",PL);
   
   /* Unlisted options that should probably go away */
   setIntParameter("output",0,"Output Level",PL);
