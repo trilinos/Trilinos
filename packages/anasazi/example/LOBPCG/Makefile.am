@@ -44,7 +44,13 @@ if BUILD_EPETRAEXT
 ANASAZI_LOBPCG_EX_FILE = LOBPCGEpetraExFile
 endif
 
-noinst_PROGRAMS = LOBPCGEpetraEx LOBPCGEpetraExSimple LOBPCGEpetraExGen $(ANASAZI_LOBPCG_EX_FILE)
+if BUILD_AMESOS
+if BUILD_IFPACK
+ANASAZI_LOBPCG_EX_GEN_PREC_IFPACK = LOBPCGEpetraExGenPrecIfpack
+endif
+endif
+
+noinst_PROGRAMS = LOBPCGEpetraEx LOBPCGEpetraExSimple LOBPCGEpetraExGen $(ANASAZI_LOBPCG_EX_FILE) $(ANASAZI_LOBPCG_EX_GEN_PREC_IFPACK)
 
 LOBPCGEpetraEx_SOURCES = $(srcdir)/LOBPCGEpetraEx.cpp
 
@@ -53,6 +59,8 @@ LOBPCGEpetraExSimple_SOURCES = $(srcdir)/LOBPCGEpetraExSimple.cpp
 LOBPCGEpetraExGen_SOURCES = $(srcdir)/LOBPCGEpetraExGen.cpp
 
 LOBPCGEpetraExFile_SOURCES = $(srcdir)/LOBPCGEpetraExFile.cpp
+
+LOBPCGEpetraExGenPrecIfpack_SOURCES = $(srcdir)/LOBPCGEpetraExGenPrecIfpack.cpp
 
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
 #np# optional.
@@ -88,6 +96,7 @@ LOBPCGEpetraExGen_DEPENDENCIES = \
 
 LOBPCGEpetraExGen_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
 
+
 #np# List libraries that np is dependent on.
 LOBPCGEpetraExGen_LDADD = $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
                           $(EXPORT_LIBS)
@@ -96,10 +105,25 @@ LOBPCGEpetraExFile_DEPENDENCIES = \
  	$(EXPORT_LIBS)
 
 LOBPCGEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src \
-        -I$(top_srcdir)/../epetraext/src/inout -I$(top_builddir)/../epetraext/src
+							  -I$(top_srcdir)/../epetraext/src/inout -I$(top_builddir)/../epetraext/src
 
 #np# List libraries that np is dependent on.
-LOBPCGEpetraExFile_LDADD = $(EXPORT_LIBS)
+LOBPCGEpetraExFile_LDADD = $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+						   $(EXPORT_LIBS)
+
+LOBPCGEpetraExGenPrecIfpack_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(top_builddir)/../amesos/src/libamesos.a
+
+LOBPCGEpetraExGenPrecIfpack_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
+
+#np# List libraries that np is dependent on.
+LOBPCGEpetraExGenPrecIfpack_LDADD = $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+								 $(EXPORT_LIBS)
+
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
