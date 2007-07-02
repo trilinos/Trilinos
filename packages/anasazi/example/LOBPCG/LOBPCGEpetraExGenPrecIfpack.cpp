@@ -42,7 +42,7 @@ public:
   // Methods for supporting Epetra_Operator interface
   int SetUseTranspose(bool useTranspose) {return -1;}
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y ) const;
-  const char* Label() const { return "IFPACK ICT preconditioner"; }
+  const char* Label() const { return "IFPACK Incomplete Cholesky preconditioner"; }
   bool UseTranspose() const { return false; }
   const Epetra_Comm& Comm() const { return prec_->Comm(); }
   const Epetra_Map& OperatorDomainMap() const { return prec_->OperatorDomainMap(); }
@@ -89,15 +89,15 @@ int main(int argc, char *argv[]) {
   bool verbose = false;
   std::string which("LM");
   bool usePrec = true;
-  double prec_dropTol = 1e-4;
-  double prec_lofill = 0;
+  //double prec_dropTol = 1e-4;
+  //int prec_lofill = 0;
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("numElements",&numElements,"Number of elements in the discretization.");
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   cmdp.setOption("usePrec","noPrec",&usePrec,"Use Ifpack for preconditioning.");
-  cmdp.setOption("prec_dropTol",&prec_dropTol,"Preconditioner: drop tolerance.");
-  cmdp.setOption("prec_lofill",&prec_lofill,"Preconditioner: level of fill.");
+  //cmdp.setOption("prec_dropTol",&prec_dropTol,"Preconditioner: drop tolerance.");
+  //cmdp.setOption("prec_lofill",&prec_lofill,"Preconditioner: level of fill.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -160,13 +160,13 @@ int main(int argc, char *argv[]) {
     printer.stream(Errors) << "Constructing Incomplete Cholesky preconditioner..." << flush;
     Ifpack precFactory;
     // additive-Schwartz incomplete Cholesky with thresholding; see IFPACK documentation
-    string precType = "ICT stand-alone";
+    string precType = "IC stand-alone";
     int overlapLevel = 0;
     prec = Teuchos::rcp( precFactory.Create(precType,K.get(),overlapLevel) );
     // parameters for preconditioner
     Teuchos::ParameterList precParams;
-    precParams.set("fact: drop tolerance",prec_dropTol);
-    precParams.set("fact: ict level-of-fill",prec_lofill);
+    //precParams.set("fact: drop tolerance",prec_dropTol);
+    //precParams.set("fact: level-of-fill",prec_lofill);
     IFPACK_CHK_ERR(prec->SetParameters(precParams));
     IFPACK_CHK_ERR(prec->Initialize());
     IFPACK_CHK_ERR(prec->Compute());
