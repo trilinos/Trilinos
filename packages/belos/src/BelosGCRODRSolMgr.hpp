@@ -828,7 +828,8 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	// Update solution ( x += U_*C_'*r_ )
 	MVT::MvTimesMatAddMv( one, *U_, Ctr, one, *problem_->getCurrLHSVec() );
 	
-	// Update residual norm ( r -= C_*C_'*r_ )	MVT::MvTimeMatAddMv( one, *C_, Ctr, -one, *r_ );
+	// Update residual norm ( r -= C_*C_'*r_ )	
+	MVT::MvTimesMatAddMv( one, *C_, Ctr, -one, *r_ );
 	
       }
       else {
@@ -906,12 +907,34 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	// Compute harmonic Ritz vectors 
 	// NOTE:  The storage for the harmonic Ritz vectors (PP) is made one column larger 
         //        just in case we split a complex conjugate pair.
+	// NOTE:  Generate a recycled subspace only if we have enough vectors.  If we converged
+	//        too early, move on to the next linear system and try to generate a subspace again.
 	if (recycledBlocks_ < p+1) {
+
+	  int info = 0;
 	  Teuchos::SerialDenseMatrix<int,ScalarType> PP( p, recycledBlocks_+1 );  
 	  bool xtraVec = getHarmonicVecs1( p, *oldState.H, PP );
 
-	  // Check to see if we needed to save an extra vector.
+	  // Check to see if we needed to save an extra vector because of a complex harmonic Ritz pair.
 	  if (xtraVec) { keff++; }
+
+	  // We can generate a subspace to recycle and we know its size, so intialize U_ and C_;
+	  if (U_ == Teuchos::null) {
+	    U_ = MVT::Clone( *problem_->getRHS(), keff );
+	  }
+	  else {
+	    if (MVT::GetNumberVecs( *U_ ) < keff) {
+	      U_ = MVT::Clone( *problem_->getRHS(), keff );
+	    }
+	  }
+	  if (C_ == Teuchos::null) {
+	    C_ = MVT::Clone( *problem_->getRHS(), keff );
+	  }
+	  else {
+	    if (MVT::GetNumberVecs( *C_ ) < keff) {
+	      C_ = MVT::Clone( *problem_->getRHS(), keff );
+	    }
+	  }	  
 	  
 	  // Form U (the subspace to recycle)
           // U = oldState.V(:,1:p) * PP;
@@ -920,13 +943,67 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	  Teuchos::RCP<const MV> Vp = MVT::CloneView( *oldState.V, index );
           index.resize(keff);  // keff <= p
 	  Teuchos::RCP<MV> Up = MVT::CloneView( *U_, index );
-          MVT::MvTimesMatAddMv( one, *Vp, PP, zero, *Up );
-          Vp = null;
-          Up = null;
-	}
-	else {
-	  TEST_FOR_EXCEPTION(recycledBlocks_ > p,GCRODRSolMgrRecyclingFailure,
-			     "Belos::GCRODRSolMgr::solve(): Priming solve not able to acquire requested size of recycled subspace.");	  
+	  const Teuchos::SerialDenseMatrix<int,ScalarType> PPview( Teuchos::View, PP, p, keff );
+          MVT::MvTimesMatAddMv( one, *Vp, PPview, zero, *Up );
+	  Vp = null;
+
+	  // Form orthonormalized C and adjust U so that C = A*U
+	  // [Q, R] = qr(H*P);
+	  const Teuchos::SerialDenseMatrix<int,ScalarType> Hview( Teuchos::View, *oldState.H, p+1, p );
+	  Teuchos::SerialDenseMatrix<int,ScalarType> HP( p+1, keff );
+	  HP.multiply( Teuchos::NO_TRANS, Teuchos::NO_TRANS, one, Hview, PPview, zero );
+
+	  // Workspace size query for QR factorization of HP (the worksize will be placed in tau[0])
+          int lwork = -1;
+	  std::vector<ScalarType> tau(keff);
+          lapack.GEQRF(HP.numRows(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
+		       &tau[0],lwork,&info);
+	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
+			     "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
+
+          lwork = (int)tau[0];
+	  std::vector<ScalarType> work(lwork);
+          lapack.GEQRF(HP.numRows(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
+		       &work[0],lwork,&info);
+	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
+			     "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
+
+          // Explicitly construct Q and R factors 
+	  // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
+	  Teuchos::SerialDenseMatrix<int,ScalarType> R( Teuchos::Copy, HP, keff, keff );
+          lapack.ORGQR(HP.numRows(),HP.numCols(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
+		       &work[0],lwork,&info);
+	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
+			     "Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
+
+	  // Now compute C = V(:,1:p+1) * Q 
+	  index.resize( p+1 );
+          for (int i=0; i < p+1; ++i) { index[i] = i; }
+	  Vp = MVT::CloneView( *oldState.V, index );
+          index.resize(keff);  // keff <= p
+	  Teuchos::RCP<MV> Cp = MVT::CloneView( *C_, index );
+          MVT::MvTimesMatAddMv( one, *Vp, HP, zero, *Cp );
+	  Vp = null;
+          Cp = null;
+	  	  
+	  // Finally, compute U_ = U_*R^{-1}	
+	  // First, compute LU factorization of R
+	  std::vector<int> ipiv(R.numRows());
+	  lapack.GETRF(R.numRows(),R.numCols(),R.values(),R.numRows(),&ipiv[0],&info);
+	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
+			     "Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+	  
+	  // Now, form inv(R)
+	  lwork = R.numRows();
+	  work.resize(lwork);
+	  lapack.GETRI(R.numRows(),R.values(),R.numRows(),&ipiv[0],&work[0],lwork,&info);
+	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
+			     "Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to compute an LU factorization.");
+	  
+	  Teuchos::RCP<MV> tempU = MVT::Clone( *U_, keff );
+	  MVT::MvTimesMatAddMv( one, *Up, R, zero, *tempU );
+	  U_ = tempU;
+
 	}
 
         // Return to outer loop if the priming solve converged, set the next linear system.
