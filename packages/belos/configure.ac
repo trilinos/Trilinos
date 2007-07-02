@@ -334,9 +334,6 @@ AC_CONFIG_FILES([
 		test/BlockCG/Makefile
 		test/BlockGmres/Makefile
 		test/MVOPTester/Makefile
-                test/scripts/Makefile
-		test/scripts/daily/Makefile
-		test/scripts/daily/serial/Makefile
 		])
 
 AC_OUTPUT()
