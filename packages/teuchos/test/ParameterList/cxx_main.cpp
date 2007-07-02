@@ -229,6 +229,7 @@ int main( int argc, char *argv[] )
     string suff_dec_cond = PL_Polynomial.get("Sufficient Decrease Condition", "Armijo-Goldstein" );
     use_cntrs = PL_Polynomial.get("Use Counters", true );
     PL_Main.set("Nonlinear Solver", "Line Search Based");
+
     //-----------------------------------------------------------
     // Set the Line Search Parameter List equal to the one just constructed
     //-----------------------------------------------------------
@@ -240,8 +241,54 @@ int main( int argc, char *argv[] )
     } else {
       if (verbose) cout<< "no" << endl;
       FailedTests++;
-    }  
+    }
+
+    //-----------------------------------------------------------
+    // Set Copying of parameter sublists and names
+    //-----------------------------------------------------------
+
+    if (verbose) {
+      print_break();
+      if (verbose) cout << "Test copying of sublist\n";
+      print_break();
+      PL_Direction.print(cout);
+    }
+    {
+      const ParameterList
+        &linearSolverPL = PL_Main.sublist("Direction").sublist("Newton").sublist("Line Search");
+      const ParameterList
+        linearSolverPL_copy(linearSolverPL);
+      if (verbose) cout << "linearSolverPL.name() = " << linearSolverPL.name() << endl;
+      if (verbose) cout << "linearSolverPL_copy.name() = " << linearSolverPL_copy.name() << endl;
+      if (verbose) cout << "linearSolverPL_copy == linearSolverPL.name() : ";
+      if (linearSolverPL_copy == linearSolverPL.name()) {
+        if (verbose) cout << "passed" << endl;
+      }
+      else {
+        if (verbose) cout << "failed" << endl;
+        FailedTests++;
+      }
+    }
+
+    if (verbose) {
+      print_break();
+      if (verbose) cout << "General tests\n";
+      print_break();
+      PL_Direction.print(cout);
+    }
+
     ParameterList Copied_PL_Main(PL_Main);
+
+    if (verbose) cout << "Copied_PL_Main.name() == PL_Main.name() : ";
+    if (Copied_PL_Main.name() == PL_Main.name()) {
+      if (verbose) cout << "passed" << endl;
+    }
+    else {
+      if (verbose) cout << "failed" << endl;
+      FailedTests++;
+      if (verbose) cout << "Copyed_PL_Main.name() = " << Copied_PL_Main.name() << endl;
+    }
+
     if (verbose) cout<< "Is the copy constructor functional ... ";
     if ( Copied_PL_Main.isParameter("Nonlinear Solver") ) {
       if (verbose) cout<< "yes" << endl;
