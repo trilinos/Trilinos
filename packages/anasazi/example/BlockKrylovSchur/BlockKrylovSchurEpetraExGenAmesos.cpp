@@ -89,7 +89,6 @@ public:
   ~AmesosGenOp() {};
   
   // Methods for supporting Epetra_Operator interface
-  int SetUseTranpose(bool useTranspose);
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y ) const;
   const char* Label() const { return "Amesos direct solver for applying A^{-1}M"; };
   bool UseTranspose() const { return useTranspose_; };
