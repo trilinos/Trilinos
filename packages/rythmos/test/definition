@@ -80,7 +80,7 @@
 }
 
 # Vector Backward Euler using Belos
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK,INSTALL,RythmosBelos) {
     TESTS = ../example/basicExample/basicExample_belos.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=100 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
     COMM = SERIAL,MPI(1);
@@ -122,7 +122,7 @@
 }
 
 # Vector Implicit BDF with Belos
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK,INSTALL,RythmosBelos) {
     TESTS = ../example/basicExample/basicExample_belos.exe;
     ARGS = --numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
     COMM = SERIAL,MPI(1);
@@ -143,7 +143,7 @@
 }
 
 # Vector 1DfemTransient with Backward Euler using Belos
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK,INSTALL,RythmosBelos) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_belos.exe;
     ARGS = --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
     COMM = SERIAL,MPI(1);
@@ -164,7 +164,7 @@
 }
 
 # Vector 1DfemTransient with ImplicitBDF with Belos
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK,INSTALL,RythmosBelos) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_belos.exe;
     ARGS = --verbose --method=BDF --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
     COMM = SERIAL,MPI(1);
@@ -265,7 +265,7 @@
 }
 
 
-(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL2b) {
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL2b,RythmosBelos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_belos.exe;
     ARGS =
       --linear-solver-extra-params="

@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
 
     Teuchos::ParameterList belosLOWSFPL;
 
-    belosLOWSFPL.set("Solver Type","GMRES");
+    belosLOWSFPL.set("Solver Type","Block GMRES");
     belosLOWSFPL.set("Maximum Iterations",int(maxIterations));
     belosLOWSFPL.set("Default Rel Res Norm",double(maxResid));
     belosLOWSFPL.set("Maximum Restarts",int(maxRestarts));

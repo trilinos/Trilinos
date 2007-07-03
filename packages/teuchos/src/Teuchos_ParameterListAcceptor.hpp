@@ -76,7 +76,8 @@ public:
    * read the options from <tt>*paramList</tt> right away or may wait to read
    * some options until a later time.  There should be no expectation that if
    * an option is changed by the client that this will automatically be
-   * recognized by <tt>*this</tt> object.
+   * recognized by <tt>*this</tt> object.  To change even one parameter, this
+   * function must be called again, with the entire sublist.
    */
   virtual void setParameterList(RCP<ParameterList> const& paramList) = 0;
 
@@ -85,6 +86,10 @@ public:
   virtual RCP<ParameterList> getParameterList() = 0;
 
   /** \brief Unset the parameter list that was set using <tt>setParameterList()</tt>.
+   *
+   * This just means that the parameter list that was set using
+   * <tt>setParameterList()</tt> is detached from this object.  This does not
+   * mean that the effect of the parameters is undone.
    *
    * <b>Postconditions:</b><ul>
    * <li><tt>this->getParameterList().get() == NULL</tt>

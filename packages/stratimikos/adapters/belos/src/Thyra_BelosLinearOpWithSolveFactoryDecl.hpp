@@ -36,6 +36,18 @@ public:
   static const std::string  SolverType_name;
   /** \brief . */           
   static const std::string  SolverType_default;
+  /** \brief . */
+  static const std::string  SolverTypes_name;
+  /** \brief . */
+  static const std::string  BlockGMRES_name;
+  /** \brief . */
+  static const std::string  PseudoBlockGMRES_name;
+  /** \brief . */
+  static const std::string  BlockCG_name;
+
+
+
+
   /** \brief . */           
   static const std::string  MaxIters_name;
   /** \brief . */           
@@ -184,13 +196,23 @@ public:
 private:
 
   // /////////////////////////
+  // Private types
+
+  enum ESolverType {
+    SOLVER_TYPE_BLOCK_GMRES,
+    SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
+    SOLVER_TYPE_BLOCK_CG,
+    SOLVER_TYPE_GCRODR
+  };
+
+  // /////////////////////////
   // Private data members
 
   Teuchos::RCP<PreconditionerFactoryBase<Scalar> >  precFactory_;
   std::string                                       precFactoryName_;
   Teuchos::RCP<Teuchos::ParameterList>              thisValidParamList_;
   Teuchos::RCP<Teuchos::ParameterList>              paramList_;
-  bool                                              useGmres_;
+  ESolverType solverType_;
 
   // /////////////////////////
   // Private member functions

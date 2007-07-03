@@ -36,10 +36,11 @@ void Teuchos_exit_helper(
   ,int       error_code
   )
 {
-  TeuchosOStringStream omsg;
-  TestForException_break(); // Allows us to set a breakpoint!
+  std::ostringstream omsg;
   omsg << file << ":" << line << ": error code = " << error_code;
   if(msg)
     omsg << ": " << msg;
-  throw std::logic_error(TEUCHOS_OSTRINGSTREAM_GET_C_STR(omsg));
+  const std::string &omsgstr = omsg.str();
+  TestForException_break(omsgstr); // Allows us to set a breakpoint!
+  throw std::logic_error(omsgstr);
 }

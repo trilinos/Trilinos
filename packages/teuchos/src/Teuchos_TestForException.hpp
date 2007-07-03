@@ -40,8 +40,14 @@
 */
 //@{
 
+/** \brief Increment the throw number. */
+void TestForException_incrThrowNumber();
+
+/** \brief Increment the throw number. */
+int TestForException_getThrowNumber();
+
 /** \brief The only purpose for this function is to set a breakpoint. */
-void TestForException_break();
+void TestForException_break( const std::string &msg );
 
 /** \brief Macro for throwing an exception with breakpointing to ease debugging
  *
@@ -111,13 +117,16 @@ void TestForException_break();
 { \
     const bool throw_exception = (throw_exception_test); \
     if(throw_exception) { \
-        TestForException_break(); \
-	    TeuchosOStringStream omsg; \
+      TestForException_incrThrowNumber(); \
+      std::ostringstream omsg; \
 	    omsg \
-              << __FILE__ << ":" << __LINE__ << ":" \
-              << "\n\nThrow test that evaluated to true: "#throw_exception_test << "\n\n" \
-              << msg; \
-	    throw Exception(omsg.str());              \
+        << __FILE__ << ":" << __LINE__ << ":\n\n" \
+        << "Throw number = " << TestForException_getThrowNumber() << "\n\n" \
+        << "Throw test that evaluated to true: "#throw_exception_test << "\n\n" \
+        << msg; \
+      const std::string &omsgstr = omsg.str(); \
+      TestForException_break(omsgstr); \
+      throw Exception(omsgstr); \
     } \
 }
 
@@ -130,11 +139,13 @@ void TestForException_break();
 { \
     const bool throw_exception = (throw_exception_test); \
     if(throw_exception) { \
-        TestForException_break(); \
-	    TeuchosOStringStream omsg; \
-	    omsg \
-              << msg; \
-	    throw Exception(omsg.str());              \
+      TestForException_incrThrowNumber(); \
+      std::ostringstream omsg; \
+	    omsg << msg; \
+      omsg << "\n\nThrow number = " << TestForException_getThrowNumber() << "\n\n"; \
+      const std::string &omsgstr = omsg.str(); \
+      TestForException_break(omsgstr); \
+      throw Exception(omsgstr); \
     } \
 }
 
@@ -149,7 +160,8 @@ void TestForException_break();
  *
  * \note The exception thrown is <tt>std::logic_error</tt>.
  */
-#define TEST_FOR_EXCEPT(throw_exception_test) TEST_FOR_EXCEPTION(throw_exception_test,std::logic_error,"Error!")
+#define TEST_FOR_EXCEPT(throw_exception_test) \
+  TEST_FOR_EXCEPTION(throw_exception_test,std::logic_error,"Error!")
 
 /** \brief This macro is the same as <tt>TEST_FOR_EXCEPTION()</tt> except that the
  * exception will be caught, the message printed, and then rethrown.
@@ -188,7 +200,8 @@ catch(const std::exception &except) { \
  *               a printout of a line of output that gives the exception type and
  *               the error message that is generated.
  */
-#define TEST_FOR_EXCEPT_PRINT(throw_exception_test,out_ptr) TEST_FOR_EXCEPTION_PRINT(throw_exception_test,std::logic_error,"Error!",out_ptr)
+#define TEST_FOR_EXCEPT_PRINT(throw_exception_test,out_ptr) \
+  TEST_FOR_EXCEPTION_PRINT(throw_exception_test,std::logic_error,"Error!",out_ptr)
 
 
 /** \brief This macro intercepts an exception, prints a standardized message including
@@ -197,10 +210,10 @@ catch(const std::exception &except) { \
  */
 #define TEUCHOS_TRACE(exc)\
 { \
-  TeuchosOStringStream omsg; \
+  std::ostringstream omsg; \
 	omsg << exc.what() << endl \
   << "caught in " << __FILE__ << ":" << __LINE__ << endl ; \
-  throw std::runtime_error(TEUCHOS_OSTRINGSTREAM_GET_C_STR(omsg));  \
+  throw std::runtime_error(omsg.str()); \
 }
 
 

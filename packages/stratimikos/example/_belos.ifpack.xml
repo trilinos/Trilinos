@@ -4,7 +4,7 @@
     <ParameterList name="Belos">
       <Parameter name="Block Size" type="int" value="1"/>
       <Parameter name="Default Rel Res Norm" type="double" value="1e-13"/>
-      <Parameter name="Solver Type" type="string" value="GMRES"/>
+      <Parameter name="Solver Type" type="string" value="Block GMRES"/>
       <ParameterList name="GMRES">
         <Parameter name="Max Number of Krylov Vectors" type="int" value="300"/>
       </ParameterList>

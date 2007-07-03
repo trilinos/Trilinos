@@ -34,6 +34,7 @@
 #include "Thyra_DefaultPreconditioner.hpp"
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_MultiLevelOperator.h"
+#include "ml_ValidateParameters.h"
 #include "Epetra_RowMatrix.h"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_dyn_cast.hpp"
@@ -367,6 +368,7 @@ RCP<const ParameterList>
 MLPreconditionerFactory::getValidParameters() const
 {
 
+  using Teuchos::rcp;
   using Teuchos::tuple;
   using Teuchos::implicit_cast;
 
@@ -404,6 +406,17 @@ MLPreconditionerFactory::getValidParameters() const
       BaseMethodDefaults_validator
       );
 
+/* 2007/07/02: rabartl:  The statement below should be the correct way to
+ * get the list of valid parameters but it seems to be causing problems so
+ * I am commenting it out for now.
+ */
+/*
+    pl->sublist(
+      MLSettings_name, false,
+      "Parameters directly accpeted by ML_Epetra interface."
+      ).setParameters(*rcp(ML_Epetra::GetValidMLPParameters()));
+*/
+    
     {
       ParameterList &mlSettingsPL = pl->sublist(
         MLSettings_name, false,
@@ -440,8 +453,6 @@ MLPreconditionerFactory::getValidParameters() const
         }
       }
     }
-
-    //std::cout << "\nMLSettings doc after = " << pl->getEntryPtr(MLSettings_name)->docString() << "\n";
 
     validPL = pl;
 

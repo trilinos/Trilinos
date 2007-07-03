@@ -288,10 +288,11 @@ void AnyNumberParameterEntryValidator::throwTypeError(
   ,std::string    const& sublistName
   ) const
 {
+  const std::string &entryName = entry.getAny(false).typeName();
   TEST_FOR_EXCEPTION_PURE_MSG(
     true, Exceptions::InvalidParameterType
     ,"Error, the parameter {paramName=\""<<paramName<<"\""
-    ",type=\""<<entry.getAny(false).typeName()<<"\"}"
+    ",type=\""<<entryName<<"\"}"
     << "\nin the sublist \"" << sublistName << "\""
     << "\nhas the wrong type."
     << "\n\nThe accepted types are: " << acceptedTypesString_ << "!";
