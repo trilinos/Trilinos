@@ -69,6 +69,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->getrow->use_loc_glob_map = ML_NO;
    mat->getrow->loc_glob_map     = NULL;
    mat->getrow->row_map          = NULL;
+   mat->getrow->columns_loc_glob = -1;
 
    mat->to                  = NULL;
    mat->from                = NULL;
@@ -484,7 +485,7 @@ int ML_Operator_Set_Getrow(ML_Operator *Op,
         int size, int (*func)(ML_Operator *,int,int*,int,int*,double*,int*))
 {
   Op->getrow->func_ptr = func;
-  
+  Op->getrow->columns_loc_glob = ML_LOCAL_INDICES;
   Op->getrow->ML_id = ML_NONEMPTY;
   Op->getrow->Nrows = size;
 

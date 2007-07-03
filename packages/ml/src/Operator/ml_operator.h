@@ -66,7 +66,8 @@ struct ML_GetrowFunc_Struct {
    ML_CommInfoOP *post_comm; /*This is only used for the weird matvec/transpose*/
    int           (*func_ptr)(ML_Operator *,int,int*,int,int*,double*,int*);
    void          *data;
-   int           use_loc_glob_map;
+   int           use_loc_glob_map; /*If global when a point getrow is performed local indices are returned*/
+   int           columns_loc_glob; /*Set to ML_LOCAL_INDICES if local or ML_GLOBAL_INDICES if global*/
    int           *loc_glob_map;
    int           *row_map;
 };
