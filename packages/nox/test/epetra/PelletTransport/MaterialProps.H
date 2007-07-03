@@ -87,6 +87,7 @@ class MaterialPropFactory {
   { return factory().property_models[propType]->computeProps( T, x, props ); }
 
   MaterialPropBase *  add_model( MaterialPropBase * );
+  const MaterialPropBase &  get_model( PelletTransport::ACTIVE_REGIONS );
 
  private:
 
@@ -135,9 +136,16 @@ class MaterialProp_UO2 : public MaterialPropBase
   void set_qdot( double qdot_ )
     { qdot = qdot_; }
 
+  void set_xB( double xB_ )
+    { xB = xB_; }
+
+  const double & get_xB( ) const
+    { return xB; }
+
  private:
 
   double qdot;
+  double xB;
 
 };
 

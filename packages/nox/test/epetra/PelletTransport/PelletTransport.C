@@ -66,7 +66,7 @@ PelletTransport::PelletTransport( int NumGlobalElementsUO2_  , double xminUO2_  
   xmaxHe(xmaxHe_),
   xminClad(xminClad_),
   xmaxClad(xmaxClad_),
-  dt(1.0e+10), // steady-state for now
+  dt(1.0e-1), // steady-state for now
   restart(restart_),
   Comm(&Comm_)
 {
@@ -206,7 +206,8 @@ PelletTransport::PelletTransport( int NumGlobalElementsUO2_  , double xminUO2_  
     else
       (*elemTypes)[i] = CLAD;
       //(*elemTypes)[i] = UO2;
-    
+  delete elemMap;
+
   // Create the nodal coordinates - only works in serial for now - RWH
   xptr = Teuchos::rcp(new Epetra_Vector(*StandardNodeMap));
   int inode = 0;
@@ -247,6 +248,8 @@ PelletTransport::~PelletTransport()
   delete Importer;
   delete OverlapMap;
   delete StandardMap;
+  delete StandardNodeMap;
+  delete OverlapNodeMap;
 }
 
 // Reset function
@@ -390,6 +393,7 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
 
   // Insert Boundary Conditions and modify Jacobian and function (F)
   // Dirichlet BCs at xminUO2
+  const double xB = dynamic_cast<const MaterialProp_UO2 &>(MaterialPropFactory::factory().get_model(PelletTransport::UO2)).get_xB();
   if (MyPID==0) 
   {
     // Use no-flux BCs
@@ -401,21 +405,21 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
   {
     int lastUO2Dof = StandardMap->LID(NumSpecies*(NumGlobalElementsUO2) + 1);
     //(*rhs)[lastDof - 1] = (*soln)[lastDof - 1] - 840.0;
-    (*rhs)[lastUO2Dof] = (*soln)[lastUO2Dof] - 0.02;
+    (*rhs)[lastUO2Dof] = (*soln)[lastUO2Dof] - xB;
   }
   // Dirichlet BCs at all He and Clad species variables
   int lastUO2DofGID = NumSpecies*NumGlobalElementsUO2 + 1;
   int lastGID = StandardMap->MaxAllGID();
   for( int i = lastUO2DofGID; i < lastGID; i+=2 )
     if( StandardMap->LID(i) >= 0 ) 
-      (*rhs)[StandardMap->LID(i)] = (*soln)[StandardMap->LID(i)] - 0.02;
+      (*rhs)[StandardMap->LID(i)] = (*soln)[StandardMap->LID(i)] - xB;
     
   // Dirichlet BCs at xmaxClad
   if( StandardMap->LID(StandardMap->MaxAllGID()) >= 0 ) 
   {
     int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
     (*rhs)[lastDof - 1] = (*soln)[lastDof - 1] - 750.0;
-    (*rhs)[lastDof] = (*soln)[lastDof] - 0.02;
+    (*rhs)[lastDof] = (*soln)[lastDof] - xB;
   }
 
   // Sync up processors to be safe
@@ -423,6 +427,8 @@ PelletTransport::evaluate(NOX::Epetra::Interface::Required::FillType fType,
  
   // Do an assemble for overlap nodes
   tmp_rhs->Export(*rhs, *Importer, Add);
+
+  delete rhs;
 
   return true;
 }

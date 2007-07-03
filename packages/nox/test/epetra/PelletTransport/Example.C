@@ -141,6 +141,7 @@ int main(int argc, char *argv[])
   int    NumGlobalElementsClad  = 2001    ;
   // Physical parameters
   double qdot                   = 2.0e8   ;
+  double xB                     = 0.02    ;
   double xminUO2                = 0.0     ;
   double xmaxUO2                = 0.0043  ;
   double xminHe                 = 0.0043  ;
@@ -155,6 +156,7 @@ int main(int argc, char *argv[])
   clp.setOption( "nHe",   &NumGlobalElementsHe, "Number of elements in He domain" );
   clp.setOption( "nClad", &NumGlobalElementsClad, "Number of elements in Cladding domain" );
   clp.setOption( "qdot", &qdot, "Source term coefficient, Qdot" );
+  clp.setOption( "xB", &xB, "Non-stoichiometry at outer surface of fuel rod, xB" );
   clp.setOption( "xminUO2", &xminUO2, "Left boundary location of UO2 domain (m)" );
   clp.setOption( "xmaxUO2", &xmaxUO2, "Right boundary location of UO2 domain (m)" );
   clp.setOption( "xminHe", &xminHe, "Left boundary location of He domain (m)" );
@@ -204,6 +206,7 @@ int main(int argc, char *argv[])
   propEnity = MaterialPropFactory::factory().add_model( new MaterialProp_Clad() );
   propEnity = MaterialPropFactory::factory().add_model( new MaterialProp_UO2()  );
   dynamic_cast<MaterialProp_UO2 *>(propEnity)->set_qdot( qdot );
+  dynamic_cast<MaterialProp_UO2 *>(propEnity)->set_xB( xB );
 
 
 
@@ -335,9 +338,9 @@ int main(int argc, char *argv[])
   NOX::Solver::Manager solver(grpPtr, combo, nlParamsPtr);
 
   // Initialize time integration parameters
-  int maxTimeSteps = 1;
+  int maxTimeSteps = 10000000;
   int timeStep = 0;
-  double time = 0.;
+  double time = 100.;
   double dt = Problem->getdt();
   
   // Print initial solution
@@ -383,32 +386,37 @@ int main(int argc, char *argv[])
 
     // End Nonlinear Solver **************************************
 
-    // Print solution
-    (void) sprintf(file_name, "T_output.%03d_%05d",MyPID,timeStep);
-    ifp = fopen(file_name, "w");
-    for( int i = 0; i < NumMyNodes; ++i )
-      fprintf(ifp, "%d  %E  %E\n", soln->Map().MinMyGID()+i,
-                                   xMesh[i], finalSolution[2*i]);
+    if( 0 )
+    {
+      // Print solution
+      (void) sprintf(file_name, "T_output.%03d_%05d",MyPID,timeStep);
+      ifp = fopen(file_name, "w");
+      for( int i = 0; i < NumMyNodes; ++i )
+        fprintf(ifp, "%d  %E  %E\n", soln->Map().MinMyGID()+i,
+                                     xMesh[i], finalSolution[2*i]);
 
-    fclose(ifp);
-    
-    (void) sprintf(file_name, "x_output.%03d_%05d",MyPID,timeStep);
-    ifp = fopen(file_name, "w");
-    for( int i = 0; i < NumGlobalElementsUO2 + 1; ++i )
-      fprintf(ifp, "%d  %E  %E\n", soln->Map().MinMyGID()+i,
-                                   xMesh[i], finalSolution[2*i+1]);
-    fclose(ifp);
+      fclose(ifp);
+      
+      (void) sprintf(file_name, "x_output.%03d_%05d",MyPID,timeStep);
+      ifp = fopen(file_name, "w");
+      for( int i = 0; i < NumGlobalElementsUO2 + 1; ++i )
+        fprintf(ifp, "%d  %E  %E\n", soln->Map().MinMyGID()+i,
+                                     xMesh[i], finalSolution[2*i+1]);
+      fclose(ifp);
 
-    // Print residual
-    (void) sprintf(file_name, "residual.%03d_%05d",MyPID,timeStep);
-    ifp = fopen(file_name, "w");
-    for( int i = 0; i < NumMyNodes; ++i )
-      fprintf(ifp, "%d  %E  %E  %E\n", soln->Map().MinMyGID()+i,
-                                   xMesh[i], finalResidual[2*i],
-                                   finalResidual[2*i+1]);
-    fclose(ifp);
+      // Print residual
+      (void) sprintf(file_name, "residual.%03d_%05d",MyPID,timeStep);
+      ifp = fopen(file_name, "w");
+      for( int i = 0; i < NumMyNodes; ++i )
+        fprintf(ifp, "%d  %E  %E  %E\n", soln->Map().MinMyGID()+i,
+                                     xMesh[i], finalResidual[2*i],
+                                     finalResidual[2*i+1]);
+      fclose(ifp);
 
-    NOX::Epetra::DebugTools::writeVector( "restartVec", finalSolution, NOX::Epetra::DebugTools::MATRIX_MARKET );
+      NOX::Epetra::DebugTools::writeVector( "restartVec", finalSolution, NOX::Epetra::DebugTools::MATRIX_MARKET );
+    }
+
+    utils.out() << "Time Step: " << timeStep << ",\tTime: " << time << ", Tmax = " << finalSolution[0] << ", Xmax = " << finalSolution[1] << endl;
 
     Problem->reset(finalSolution);
     grp.setX(finalSolution);
@@ -416,6 +424,9 @@ int main(int argc, char *argv[])
     grp.computeF();
 
   } // end time step while loop
+
+  const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(grp.getX())).getEpetraVector();
+  NOX::Epetra::DebugTools::writeVector( "transient_restartVec", finalSolution, NOX::Epetra::DebugTools::MATRIX_MARKET );
 
   // Output the parameter list
   if (verbose) {

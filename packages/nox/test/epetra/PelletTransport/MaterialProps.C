@@ -53,6 +53,15 @@ MaterialPropFactory::add_model( MaterialPropBase * model )
   return model;
 }
 
+const MaterialPropBase &
+MaterialPropFactory::get_model(  PelletTransport::ACTIVE_REGIONS region )
+{
+  if( property_models.end() == property_models.find(region) )
+    throw "No valid property model.";
+    
+  return *(property_models[region]);
+}
+
 MaterialProp_He::MaterialProp_He() :
   MaterialPropBase()
 {
