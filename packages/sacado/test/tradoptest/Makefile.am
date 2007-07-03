@@ -41,36 +41,48 @@ noinst_PROGRAMS = \
 	tradoptesta4 \
 	tradoptesta5 \
 	tradoptesta6 \
+	tradoptesta7 \
+	tradoptesta8 \
 	tradoptestb1 \
 	tradoptestb2 \
 	tradoptestb3 \
 	tradoptestb4 \
 	tradoptestb5 \
 	tradoptestb6 \
+	tradoptestb7 \
+	tradoptestb8 \
 	tradoptestc1 \
 	tradoptestc2 \
 	tradoptestc3 \
 	tradoptestc4 \
 	tradoptestc5 \
 	tradoptestc6 \
+	tradoptestc7 \
+	tradoptestc8 \
 	tradoptestd1 \
 	tradoptestd2 \
 	tradoptestd3 \
 	tradoptestd4 \
 	tradoptestd5 \
 	tradoptestd6 \
+	tradoptestd7 \
+	tradoptestd8 \
 	tradopteste1 \
 	tradopteste2 \
 	tradopteste3 \
 	tradopteste4 \
 	tradopteste5 \
 	tradopteste6 \
+	tradopteste7 \
+	tradopteste8 \
 	tradoptestf1 \
 	tradoptestf2 \
 	tradoptestf3 \
 	tradoptestf4 \
 	tradoptestf5 \
 	tradoptestf6 \
+	tradoptestf7 \
+	tradoptestf8 \
 	hesopcheck
 
 testall : $(noinst_PROGRAMS)
@@ -80,36 +92,48 @@ testall : $(noinst_PROGRAMS)
 	./tradoptesta4$(EXEEXT)
 	./tradoptesta5$(EXEEXT)
 	./tradoptesta6$(EXEEXT)
+	./tradoptesta7$(EXEEXT)
+	./tradoptesta8$(EXEEXT)
 	./tradoptestb1$(EXEEXT)
 	./tradoptestb2$(EXEEXT)
 	./tradoptestb3$(EXEEXT)
 	./tradoptestb4$(EXEEXT)
 	./tradoptestb5$(EXEEXT)
 	./tradoptestb6$(EXEEXT)
+	./tradoptestb7$(EXEEXT)
+	./tradoptestb8$(EXEEXT)
 	./tradoptestc1$(EXEEXT)
 	./tradoptestc2$(EXEEXT)
 	./tradoptestc3$(EXEEXT)
 	./tradoptestc4$(EXEEXT)
 	./tradoptestc5$(EXEEXT)
 	./tradoptestc6$(EXEEXT)
+	./tradoptestc7$(EXEEXT)
+	./tradoptestc8$(EXEEXT)
 	./tradoptestd1$(EXEEXT)
 	./tradoptestd2$(EXEEXT)
 	./tradoptestd3$(EXEEXT)
 	./tradoptestd4$(EXEEXT)
 	./tradoptestd5$(EXEEXT)
 	./tradoptestd6$(EXEEXT)
+	./tradoptestd7$(EXEEXT)
+	./tradoptestd8$(EXEEXT)
 	./tradopteste1$(EXEEXT)
 	./tradopteste2$(EXEEXT)
 	./tradopteste3$(EXEEXT)
 	./tradopteste4$(EXEEXT)
 	./tradopteste5$(EXEEXT)
 	./tradopteste6$(EXEEXT)
+	./tradopteste7$(EXEEXT)
+	./tradopteste8$(EXEEXT)
 	./tradoptestf1$(EXEEXT)
 	./tradoptestf2$(EXEEXT)
 	./tradoptestf3$(EXEEXT)
 	./tradoptestf4$(EXEEXT)
 	./tradoptestf5$(EXEEXT)
 	./tradoptestf6$(EXEEXT)
+	./tradoptestf7$(EXEEXT)
+	./tradoptestf8$(EXEEXT)
 	./hesopcheck$(EXEEXT)
 
 tradoptesta1_SOURCES = tradoptesta.cpp
@@ -154,6 +178,20 @@ tradoptesta6_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_EQ_ALIAS \
 tradoptesta6_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
 tradoptesta6_LDADD = $(tradoptesta1_LDADD)
 
+tradoptesta7_SOURCES = tradoptesta.cpp
+tradoptesta7_CXXFLAGS = -DRAD_REINIT=1 \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+tradoptesta7_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptesta7_LDADD = $(tradoptesta1_LDADD)
+
+tradoptesta8_SOURCES = tradoptesta.cpp
+tradoptesta8_CXXFLAGS = -DRAD_REINIT=2 \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+tradoptesta8_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptesta8_LDADD = $(tradoptesta1_LDADD)
+
 
 tradoptestb1_SOURCES = tradoptestb.cpp
 tradoptestb1_CXXFLAGS = -USACADO_NAMESPACE \
@@ -196,6 +234,20 @@ tradoptestb6_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_EQ_ALIAS \
 	-I$(top_builddir)/src
 tradoptestb6_DEPENDENCIES = $(tradoptestb1_DEPENDENCIES)
 tradoptestb6_LDADD = $(tradoptestb1_LDADD)
+
+tradoptestb7_SOURCES = tradoptesta.cpp
+tradoptestb7_CXXFLAGS = -DRAD_REINIT=1 \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+tradoptestb7_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptestb7_LDADD = $(tradoptesta1_LDADD)
+
+tradoptestb8_SOURCES = tradoptesta.cpp
+tradoptestb8_CXXFLAGS = -DRAD_REINIT=2 \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+tradoptestb8_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptestb8_LDADD = $(tradoptesta1_LDADD)
 
 
 tradoptestc1_SOURCES = tradoptestc.cpp
@@ -240,6 +292,20 @@ tradoptestc6_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_EQ_ALIAS \
 tradoptestc6_DEPENDENCIES = $(tradoptestc1_DEPENDENCIES)
 tradoptestc6_LDADD = $(tradoptestc1_LDADD)
 
+tradoptestc7_SOURCES = tradoptesta.cpp
+tradoptestc7_CXXFLAGS = -DRAD_REINIT=1 \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+tradoptestc7_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptestc7_LDADD = $(tradoptesta1_LDADD)
+
+tradoptestc8_SOURCES = tradoptesta.cpp
+tradoptestc8_CXXFLAGS = -DRAD_REINIT=2 \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+tradoptestc8_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptestc8_LDADD = $(tradoptesta1_LDADD)
+
 
 tradoptestd1_SOURCES = tradoptestd.cpp
 tradoptestd1_CXXFLAGS = -USACADO_NAMESPACE \
@@ -283,6 +349,20 @@ tradoptestd6_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_EQ_ALIAS \
 tradoptestd6_DEPENDENCIES = $(tradoptestd1_DEPENDENCIES)
 tradoptestd6_LDADD = $(tradoptestd1_LDADD)
 
+tradoptestd7_SOURCES = tradoptesta.cpp
+tradoptestd7_CXXFLAGS = -DRAD_REINIT=1 \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+tradoptestd7_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptestd7_LDADD = $(tradoptesta1_LDADD)
+
+tradoptestd8_SOURCES = tradoptesta.cpp
+tradoptestd8_CXXFLAGS = -DRAD_REINIT=2 \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+tradoptestd8_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptestd8_LDADD = $(tradoptesta1_LDADD)
+
 
 tradopteste1_SOURCES = tradopteste.cpp
 tradopteste1_CXXFLAGS = -USACADO_NAMESPACE \
@@ -325,6 +405,20 @@ tradopteste6_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_EQ_ALIAS \
 	-I$(top_builddir)/src
 tradopteste6_DEPENDENCIES = $(tradopteste1_DEPENDENCIES)
 tradopteste6_LDADD = $(tradopteste1_LDADD)
+
+tradopteste7_SOURCES = tradoptesta.cpp
+tradopteste7_CXXFLAGS = -DRAD_REINIT=1 \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+tradopteste7_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradopteste7_LDADD = $(tradoptesta1_LDADD)
+
+tradopteste8_SOURCES = tradoptesta.cpp
+tradopteste8_CXXFLAGS = -DRAD_REINIT=2 \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+tradopteste8_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradopteste8_LDADD = $(tradoptesta1_LDADD)
 
 
 tradoptestf1_SOURCES = tradoptestf.cpp
@@ -375,6 +469,20 @@ hesopcheck_CXXFLAGS = -I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/mpl
 hesopcheck_DEPENDENCIES = $(tradoptestf1_DEPENDENCIES)
 hesopcheck_LDADD = $(tradoptestf1_LDADD)
+
+tradoptestf7_SOURCES = tradoptesta.cpp
+tradoptestf7_CXXFLAGS = -DRAD_REINIT=1 \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+tradoptestf7_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptestf7_LDADD = $(tradoptesta1_LDADD)
+
+tradoptestf8_SOURCES = tradoptesta.cpp
+tradoptestf8_CXXFLAGS = -DRAD_REINIT=2 \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+tradoptestf8_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptestf8_LDADD = $(tradoptesta1_LDADD)
 
 tradoptesta.cpp : testgen.as tradoptesta.c0
 	$(SHELL) testgen.as $(srcdir)/tradoptesta.c0 > tradoptesta.cpp
