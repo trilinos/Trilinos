@@ -152,7 +152,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setDoubleParameter("aggregation: aux: threshold",0.0,"Dropping threshold for auxillary matrix",PL);  
 
   /* Unlisted Options */ 
-  setIntParameter("ML debug mode",0,"Unlisted Option",PL);
+  PL->set("ML debug mode",false);
   setStringToIntegralParameter<int>("default values","SA","Internal Option",tuple<std::string>("SA","DD","DD-ML","maxwell","NSSA","RefMaxwell"),PL);
   PL->set("ML validate parameter list",true);
 
