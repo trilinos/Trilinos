@@ -65,7 +65,8 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = BlockDavidsonEpetraEx$(EXEEXT) \
-	BlockDavidsonEpetraExGen$(EXEEXT) $(am__EXEEXT_1)
+	BlockDavidsonEpetraExGen$(EXEEXT) $(am__EXEEXT_1) \
+	$(am__EXEEXT_2)
 subdir = example/BlockDavidson
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -99,6 +100,7 @@ CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
 @BUILD_EPETRAEXT_TRUE@am__EXEEXT_1 =  \
 @BUILD_EPETRAEXT_TRUE@	BlockDavidsonEpetraExFile$(EXEEXT)
+@BUILD_AMESOS_TRUE@@BUILD_IFPACK_TRUE@am__EXEEXT_2 = BlockDavidsonEpetraExGenPrecIfpack$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_BlockDavidsonEpetraEx_OBJECTS =  \
 	BlockDavidsonEpetraEx-BlockDavidsonEpetraEx.$(OBJEXT)
@@ -124,6 +126,12 @@ BlockDavidsonEpetraExGen_OBJECTS =  \
 BlockDavidsonEpetraExGen_LINK = $(CXXLD) \
 	$(BlockDavidsonEpetraExGen_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_BlockDavidsonEpetraExGenPrecIfpack_OBJECTS = BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.$(OBJEXT)
+BlockDavidsonEpetraExGenPrecIfpack_OBJECTS =  \
+	$(am_BlockDavidsonEpetraExGenPrecIfpack_OBJECTS)
+BlockDavidsonEpetraExGenPrecIfpack_LINK = $(CXXLD) \
+	$(BlockDavidsonEpetraExGenPrecIfpack_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -134,10 +142,12 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(BlockDavidsonEpetraEx_SOURCES) \
 	$(BlockDavidsonEpetraExFile_SOURCES) \
-	$(BlockDavidsonEpetraExGen_SOURCES)
+	$(BlockDavidsonEpetraExGen_SOURCES) \
+	$(BlockDavidsonEpetraExGenPrecIfpack_SOURCES)
 DIST_SOURCES = $(BlockDavidsonEpetraEx_SOURCES) \
 	$(BlockDavidsonEpetraExFile_SOURCES) \
-	$(BlockDavidsonEpetraExGen_SOURCES)
+	$(BlockDavidsonEpetraExGen_SOURCES) \
+	$(BlockDavidsonEpetraExGenPrecIfpack_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -277,9 +287,11 @@ top_srcdir = @top_srcdir@
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ANASAZI_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
 @BUILD_EPETRAEXT_TRUE@ANASAZI_BD_EX_FILE = BlockDavidsonEpetraExFile
+@BUILD_AMESOS_TRUE@@BUILD_IFPACK_TRUE@ANASAZI_BD_EX_GEN_PREC_IFPACK = BlockDavidsonEpetraExGenPrecIfpack
 BlockDavidsonEpetraEx_SOURCES = $(srcdir)/BlockDavidsonEpetraEx.cpp
 BlockDavidsonEpetraExGen_SOURCES = $(srcdir)/BlockDavidsonEpetraExGen.cpp
 BlockDavidsonEpetraExFile_SOURCES = $(srcdir)/BlockDavidsonEpetraExFile.cpp
+BlockDavidsonEpetraExGenPrecIfpack_SOURCES = $(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp
 
 #np# Specify locations of include files within Trilinos, but outside np
 #np# Add packages that np is dependent on; remove epetra if np does not need it
@@ -321,6 +333,19 @@ BlockDavidsonEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src \
 
 #np# List libraries that np is dependent on.
 BlockDavidsonEpetraExFile_LDADD = $(EXPORT_LIBS)
+BlockDavidsonEpetraExGenPrecIfpack_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(top_builddir)/../amesos/src/libamesos.a
+
+BlockDavidsonEpetraExGenPrecIfpack_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
+
+#np# List libraries that np is dependent on.
+BlockDavidsonEpetraExGenPrecIfpack_LDADD = $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+								 $(EXPORT_LIBS)
+
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
@@ -375,6 +400,9 @@ BlockDavidsonEpetraExFile$(EXEEXT): $(BlockDavidsonEpetraExFile_OBJECTS) $(Block
 BlockDavidsonEpetraExGen$(EXEEXT): $(BlockDavidsonEpetraExGen_OBJECTS) $(BlockDavidsonEpetraExGen_DEPENDENCIES) 
 	@rm -f BlockDavidsonEpetraExGen$(EXEEXT)
 	$(BlockDavidsonEpetraExGen_LINK) $(BlockDavidsonEpetraExGen_OBJECTS) $(BlockDavidsonEpetraExGen_LDADD) $(LIBS)
+BlockDavidsonEpetraExGenPrecIfpack$(EXEEXT): $(BlockDavidsonEpetraExGenPrecIfpack_OBJECTS) $(BlockDavidsonEpetraExGenPrecIfpack_DEPENDENCIES) 
+	@rm -f BlockDavidsonEpetraExGenPrecIfpack$(EXEEXT)
+	$(BlockDavidsonEpetraExGenPrecIfpack_LINK) $(BlockDavidsonEpetraExGenPrecIfpack_OBJECTS) $(BlockDavidsonEpetraExGenPrecIfpack_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -385,6 +413,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockDavidsonEpetraEx-BlockDavidsonEpetraEx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockDavidsonEpetraExFile-BlockDavidsonEpetraExFile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockDavidsonEpetraExGen-BlockDavidsonEpetraExGen.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -441,6 +470,20 @@ BlockDavidsonEpetraExGen-BlockDavidsonEpetraExGen.obj: $(srcdir)/BlockDavidsonEp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockDavidsonEpetraExGen.cpp' object='BlockDavidsonEpetraExGen-BlockDavidsonEpetraExGen.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockDavidsonEpetraExGen_CXXFLAGS) $(CXXFLAGS) -c -o BlockDavidsonEpetraExGen-BlockDavidsonEpetraExGen.obj `if test -f '$(srcdir)/BlockDavidsonEpetraExGen.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockDavidsonEpetraExGen.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockDavidsonEpetraExGen.cpp'; fi`
+
+BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.o: $(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockDavidsonEpetraExGenPrecIfpack_CXXFLAGS) $(CXXFLAGS) -MT BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.o -MD -MP -MF $(DEPDIR)/BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.Tpo -c -o BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.o `test -f '$(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp' || echo '$(srcdir)/'`$(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.Tpo $(DEPDIR)/BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp' object='BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockDavidsonEpetraExGenPrecIfpack_CXXFLAGS) $(CXXFLAGS) -c -o BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.o `test -f '$(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp' || echo '$(srcdir)/'`$(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp
+
+BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.obj: $(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockDavidsonEpetraExGenPrecIfpack_CXXFLAGS) $(CXXFLAGS) -MT BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.obj -MD -MP -MF $(DEPDIR)/BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.Tpo -c -o BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.obj `if test -f '$(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.Tpo $(DEPDIR)/BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp' object='BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockDavidsonEpetraExGenPrecIfpack_CXXFLAGS) $(CXXFLAGS) -c -o BlockDavidsonEpetraExGenPrecIfpack-BlockDavidsonEpetraExGenPrecIfpack.obj `if test -f '$(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp'; fi`
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.

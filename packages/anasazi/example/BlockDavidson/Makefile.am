@@ -47,13 +47,21 @@ if BUILD_EPETRAEXT
 ANASAZI_BD_EX_FILE = BlockDavidsonEpetraExFile
 endif
 
-noinst_PROGRAMS = BlockDavidsonEpetraEx BlockDavidsonEpetraExGen $(ANASAZI_BD_EX_FILE)
+if BUILD_AMESOS
+if BUILD_IFPACK
+ANASAZI_BD_EX_GEN_PREC_IFPACK = BlockDavidsonEpetraExGenPrecIfpack
+endif
+endif
+
+noinst_PROGRAMS = BlockDavidsonEpetraEx BlockDavidsonEpetraExGen $(ANASAZI_BD_EX_FILE) $(ANASAZI_BD_EX_GEN_PREC_IFPACK)
 
 BlockDavidsonEpetraEx_SOURCES = $(srcdir)/BlockDavidsonEpetraEx.cpp
 
 BlockDavidsonEpetraExGen_SOURCES = $(srcdir)/BlockDavidsonEpetraExGen.cpp
 
 BlockDavidsonEpetraExFile_SOURCES = $(srcdir)/BlockDavidsonEpetraExFile.cpp
+
+BlockDavidsonEpetraExGenPrecIfpack_SOURCES = $(srcdir)/BlockDavidsonEpetraExGenPrecIfpack.cpp
 
 #np# Specify locations of include files within Trilinos, but outside np
 #np# Add packages that np is dependent on; remove epetra if np does not need it
@@ -94,6 +102,19 @@ BlockDavidsonEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src \
 
 #np# List libraries that np is dependent on.
 BlockDavidsonEpetraExFile_LDADD = $(EXPORT_LIBS)
+
+BlockDavidsonEpetraExGenPrecIfpack_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(top_builddir)/../amesos/src/libamesos.a
+
+BlockDavidsonEpetraExGenPrecIfpack_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
+
+#np# List libraries that np is dependent on.
+BlockDavidsonEpetraExGenPrecIfpack_LDADD = $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+								 $(EXPORT_LIBS)
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only

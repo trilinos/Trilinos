@@ -81,9 +81,9 @@ int main(int argc, char *argv[]) {
   //
   //  Variables used for the Block Davidson Method
   //
-  const int    nev         = 4;
-  const int    blockSize   = 5;
-  const int    numBlocks   = 8;
+  const int    nev         = 10;
+  const int    blockSize   = 10;
+  const int    numBlocks   = 4;
   const int    maxRestarts = 100;
   const double tol         = 1.0e-8;
 

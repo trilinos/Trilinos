@@ -1,6 +1,6 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziLOBPCGSolMgr.hpp"
+#include "AnasaziBlockDavidsonSolMgr.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
@@ -86,8 +86,9 @@ int main(int argc, char *argv[]) {
   //************************************
   //
   int    nev       = 10;
-  int    blockSize = 5;
-  int    maxIters  = 500;
+  int    blockSize = 10;
+  int    numBlocks   = 4;
+  int    maxRestarts = 100;
   double tol       = 1.0e-8;
   int numElements = 10;
   bool verbose = false;
@@ -97,8 +98,9 @@ int main(int argc, char *argv[]) {
   int prec_lofill = 0;
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("nev",&nev,"Number of eigenpairs to compted.");
-  cmdp.setOption("maxIters",&maxIters,"Maximum number of iterations.");
   cmdp.setOption("blockSize",&blockSize,"Block size.");
+  cmdp.setOption("numBlocks",&numBlocks,"Number of blocks in basis.");
+  cmdp.setOption("maxRestarts",&maxRestarts,"Maximum number of restarts.");
   cmdp.setOption("tol",&tol,"Relative convergence tolerance.");
   cmdp.setOption("numElements",&numElements,"Number of elements in the discretization.");
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -187,7 +189,7 @@ int main(int argc, char *argv[]) {
 
 
   //************************************
-  // Call the LOBPCG solver manager
+  // Call the BlockDavidson solver manager
   //***********************************
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
@@ -230,13 +232,12 @@ int main(int argc, char *argv[]) {
   MyPL.set( "Verbosity", verbosity );
   MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Maximum Iterations", maxIters );
+  MyPL.set( "Num Blocks", numBlocks );
+  MyPL.set( "Maximum Restarts", maxRestarts );
   MyPL.set( "Convergence Tolerance", tol );
-  MyPL.set( "Full Ortho", true );
-  MyPL.set( "Use Locking", true );
   //
   // Create the solver manager
-  LOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
+  BlockDavidsonSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
 
 
   //************************************
