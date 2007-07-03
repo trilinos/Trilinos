@@ -44,14 +44,14 @@ extern "C" {
 
 namespace {
 
-using Teuchos::RefCountPtr;
+using Teuchos::RCP;
 
 template<class T, class DeleteFunctor>
 class DeallocFunctorDeleteWithCommon
 {
 public:
   DeallocFunctorDeleteWithCommon(
-				 const RefCountPtr<klu_common>  &common
+				 const RCP<klu_common>  &common
 				 ,DeleteFunctor                        deleteFunctor
 				 )
     : common_(common), deleteFunctor_(deleteFunctor)
@@ -61,7 +61,7 @@ public:
     if(ptr) deleteFunctor_(&ptr,&*common_);
   }
 private:
-  Teuchos::RefCountPtr<klu_common> common_;
+  Teuchos::RCP<klu_common> common_;
   DeleteFunctor deleteFunctor_;
   DeallocFunctorDeleteWithCommon(); // Not defined and not to be called!
 };
@@ -69,7 +69,7 @@ private:
 template<class T, class DeleteFunctor>
 DeallocFunctorDeleteWithCommon<T,DeleteFunctor>
 deallocFunctorDeleteWithCommon(
-			       const RefCountPtr<klu_common>  &common
+			       const RCP<klu_common>  &common
 			       ,DeleteFunctor                        deleteFunctor
 			       )
 {
@@ -82,9 +82,9 @@ deallocFunctorDeleteWithCommon(
 class Amesos_Klu_Pimpl 
 {
 public:
-  Teuchos::RefCountPtr<klu_symbolic> Symbolic_;
-  Teuchos::RefCountPtr<klu_numeric> Numeric_;
-  Teuchos::RefCountPtr<klu_common> common_;
+  Teuchos::RCP<klu_symbolic> Symbolic_;
+  Teuchos::RCP<klu_numeric> Numeric_;
+  Teuchos::RCP<klu_common> common_;
 };
 
 //=============================================================================
@@ -93,7 +93,14 @@ Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   CrsMatrixA_(0),
   TrustMe_(false),
   UseTranspose_(false),
-  Problem_(&prob)
+  Problem_(&prob),
+  MtxRedistTime_(-1),
+  MtxConvTime_(-1),
+  VecRedistTime_(-1),
+  SymFactTime_(-1),
+  NumFactTime_(-1),
+  SolveTime_(-1),
+  OverheadTime_(-1)
 {
   // MS // move declaration of Problem_ above because I need it
   // MS // set up before calling Comm()
@@ -172,7 +179,7 @@ int Amesos_Klu::ExportToSerial()
 
 int Amesos_Klu::CreateLocalMatrixAndExporters() 
 {
-  ResetTime(0);
+  ResetTimer(0);
 
   RowMatrixA_ = Problem_->GetMatrix(); // MS, 18-Apr-06 //
   if (RowMatrixA_ == 0) AMESOS_CHK_ERR(-1);
@@ -261,7 +268,7 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
     SerialMatrix_ = &*SerialCrsMatrixA_ ;
   }
 
-  AddTime("matrix redistribution", 0);
+  MtxRedistTime_ = AddTime("Total matrix redistribution time", MtxRedistTime_, 0);
 
   return(0);
 }
@@ -284,7 +291,7 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
 //
 int Amesos_Klu::ConvertToKluCRS(bool firsttime)
 {
-  ResetTime(0);
+  ResetTimer(0);
 
   //
   //  Convert matrix to the form that Klu expects (Ap, VecAi, VecAval)
@@ -388,7 +395,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime)
 
   }
 
-  AddTime("matrix conversion", 0);
+  MtxConvTime_ = AddTime("Total matrix conversion time", MtxConvTime_, 0);
 
   return 0;
 }
@@ -425,7 +432,7 @@ int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
 //=============================================================================
 int Amesos_Klu::PerformSymbolicFactorization() 
 {
-  ResetTime(0);
+  ResetTimer(0);
 
   if (MyPID_ == 0) {
 
@@ -448,7 +455,7 @@ int Amesos_Klu::PerformSymbolicFactorization()
 
   }
 
-  AddTime("symbolic", 0);
+  SymFactTime_ = AddTime("Total symbolic factorization time", SymFactTime_, 0);
 
   return 0;
 }
@@ -460,9 +467,10 @@ int Amesos_Klu::PerformNumericFactorization( )
   // Changed this; it was "if (!TrustMe)...
   // The behavior is not intuitive. Maybe we should introduce a new
   // parameter, FastSolvers or something like that, that does not perform
-  // any AddTime, ResetTime, GetTime.
+  // any AddTime, ResetTimer, GetTime.
+  // HKT, 1/18/2007:  The "TrustMe_" flag was put back in this code due to performance degradation; Bug# 3042.
   
-  ResetTime(0);
+  if (! TrustMe_ ) ResetTimer(0);
 
   if (MyPID_ == 0) {
 
@@ -518,10 +526,11 @@ int Amesos_Klu::PerformNumericFactorization( )
       if ( ! numeric_ok ) AMESOS_CHK_ERR( NumericallySingularMatrixError );  
       
     }
-    
   }
 
-  AddTime("numeric", 0);
+  if ( !TrustMe_ ) {
+    NumFactTime_ = AddTime("Total numeric factorization time", NumFactTime_, 0);
+  }
 
   return 0;
 }
@@ -549,9 +558,9 @@ int Amesos_Klu::SymbolicFactorization()
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
   
-  InitTime(Comm(), 2);
+  CreateTimer(Comm(), 2);
 
-  ResetTime(1);
+  ResetTimer(1);
 
   // "overhead" time for the following method is considered here
   AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
@@ -583,7 +592,7 @@ int Amesos_Klu::SymbolicFactorization()
 
   AMESOS_CHK_ERR( ConvertToKluCRS(true) );
 
-  AddTime("overhead", 1);
+  OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
 
   // All this time if KLU time
   AMESOS_CHK_ERR( PerformSymbolicFactorization() );
@@ -604,7 +613,7 @@ int Amesos_Klu::NumericFactorization()
     if (IsSymbolicFactorizationOK_ == false)
       AMESOS_CHK_ERR(SymbolicFactorization());
     
-    ResetTime(1); // "overhead" time
+    ResetTimer(1); // "overhead" time
 
     Epetra_CrsMatrix *CrsMatrixA = dynamic_cast<Epetra_CrsMatrix *>(RowMatrixA_);
     if ( CrsMatrixA == 0 )   // hack to get around Bug #1502 
@@ -621,7 +630,7 @@ int Amesos_Klu::NumericFactorization()
       AMESOS_CHK_ERR( ConvertToKluCRS(false) );
     }
 
-    AddTime("overhead", 1);
+    OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
   }
 
   // this time is all for KLU
@@ -640,12 +649,10 @@ int Amesos_Klu::Solve()
   Epetra_MultiVector* vecX = 0 ;
   Epetra_MultiVector* vecB = 0 ;
 
-
 #ifdef Bug_8212
   //  This demonstrates Bug #2812 - Valgrind does not catch this
   //  memory leak
   lose_this_ = (int *) malloc( 300 ) ;
-
   
 #ifdef Bug_8212_B
   //  This demonstrates Bug #2812 - Valgrind does catch this
@@ -657,6 +664,7 @@ int Amesos_Klu::Solve()
     }
 #endif
 #endif
+
   if ( !TrustMe_  ) { 
 
     SerialB_ = Problem_->GetRHS() ;
@@ -668,7 +676,7 @@ int Amesos_Klu::Solve()
     if (IsNumericFactorizationOK_ == false)
       AMESOS_CHK_ERR(NumericFactorization());
     
-    ResetTime(1);
+    ResetTimer(1);
 
     //
     //  Reindex the LHS and RHS 
@@ -693,7 +701,7 @@ int Amesos_Klu::Solve()
     
     //  Extract Serial versions of X and B
     
-    ResetTime(0);
+    ResetTimer(0);
 
     //  Copy B to the serial version of B
     //
@@ -719,11 +727,12 @@ int Amesos_Klu::Solve()
       SerialB_ = &*SerialBextract_ ;
       SerialX_ = &*SerialXextract_ ;
     }
-    AddTime("vector redistribution", 0);
+    
+    VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_, 0);
 
     //  Call KLU to perform the solve
     
-    ResetTime(0);
+    ResetTimer(0);
     if (MyPID_ == 0) {
       AMESOS_CHK_ERR(SerialB_->ExtractView(&SerialBvalues_,&SerialXlda_ ));
       AMESOS_CHK_ERR(SerialX_->ExtractView(&SerialXBvalues_,&SerialXlda_ ));
@@ -731,8 +740,9 @@ int Amesos_Klu::Solve()
 	AMESOS_CHK_ERR(-1);
     }
 
-    AddTime("overhead", 1);
+    OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
   }
+
   if ( MyPID_ == 0) {
     if ( NumVectors_ == 1 ) {
       for ( int i = 0 ; i < NumGlobalElements_ ; i++ ) 
@@ -749,36 +759,38 @@ int Amesos_Klu::Solve()
     }
   }
 
-  AddTime("solve", 0);
-
-  //  Copy X back to the original vector
-
-  ResetTime(0);
-  ResetTime(1);
-
-  if (UseDataInPlace_ == 0) {
-    ImportDomainToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecX->Map() ) );
-    vecX->Export( *SerialX_, *ImportDomainToSerial_, Insert ) ;
-
-  } // otherwise we are already in place.
-
-  AddTime("vector redistribution", 0);
-
+  if ( !TrustMe_ ) {
+    SolveTime_ = AddTime("Total solve time", SolveTime_, 0);
+    
+    //  Copy X back to the original vector
+    
+    ResetTimer(0);
+    ResetTimer(1);
+    
+    if (UseDataInPlace_ == 0) {
+      ImportDomainToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecX->Map() ) );
+      vecX->Export( *SerialX_, *ImportDomainToSerial_, Insert ) ;
+      
+    } // otherwise we are already in place.
+    
+    VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_, 0);
+    
 #if 0
-  //
-  //  ComputeTrueResidual causes TestOptions to fail on my linux box 
-  if (ComputeTrueResidual_) //  Bug #1417
-    ComputeTrueResidual(*SerialMatrix_, *vecX, *vecB, UseTranspose(), "Amesos_Klu");
+    //
+    //  ComputeTrueResidual causes TestOptions to fail on my linux box 
+    //  Bug #1417
+    if (ComputeTrueResidual_)
+      ComputeTrueResidual(*SerialMatrix_, *vecX, *vecB, UseTranspose(), "Amesos_Klu");
 #endif
-
-  if (ComputeVectorNorms_)
-    ComputeVectorNorms(*vecX, *vecB, "Amesos_Klu");
-
-  AddTime("overhead", 1);
-
+    
+    if (ComputeVectorNorms_)
+      ComputeVectorNorms(*vecX, *vecB, "Amesos_Klu");
+    
+    OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
+    
+  }
   ++NumSolve_;
-
-
+  
   return(0) ;
 }
 
@@ -811,13 +823,13 @@ void Amesos_Klu::PrintTiming() const
 {
   if (MyPID_) return;
 
-  double ConTime = GetTime("matrix conversion");
-  double MatTime = GetTime("matrix redistribution");
-  double VecTime = GetTime("vector redistribution");
-  double SymTime = GetTime("symbolic");
-  double NumTime = GetTime("numeric");
-  double SolTime = GetTime("solve");
-  double OveTime = GetTime("overhead");
+  double ConTime = GetTime(MtxConvTime_);
+  double MatTime = GetTime(MtxRedistTime_);
+  double VecTime = GetTime(VecRedistTime_);
+  double SymTime = GetTime(SymFactTime_);
+  double NumTime = GetTime(NumFactTime_);
+  double SolTime = GetTime(SolveTime_);
+  double OveTime = GetTime(OverheadTime_);
 
   if (NumSymbolicFact_)
     SymTime /= NumSymbolicFact_;

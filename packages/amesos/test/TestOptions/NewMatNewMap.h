@@ -1,7 +1,7 @@
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Epetra_CrsMatrix.h"
 using namespace Teuchos;
-RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In, 
+RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In, 
 					   int Diagonal,
 					   int ReindexRowMap,
 					   int ReindexColMap,

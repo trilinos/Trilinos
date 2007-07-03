@@ -172,7 +172,7 @@ int main(int argc, char **argv)
       cerr << "    maxerror = maximum allowed error  < 0 == no check " << endl ; 
       cerr << "    maxresid = maximum allowed residual < 0 == no check" << endl ; 
       cerr << "    if maxerror == -2 and maxresid == -2, failure (hang or abort) is expected" << endl ; 
-      cerr << "    if maxerror == 1e30 and maxresid == 1e30, the solver is expected to finish but prodcue incorrect results" << endl ; 
+      cerr << "    if maxerror == 1e30 and maxresid == 1e30, the solver is expected to finish but produce incorrect results" << endl ; 
       
     }
 #ifdef EPETRA_MPI

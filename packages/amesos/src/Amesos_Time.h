@@ -3,71 +3,142 @@
 
 #include "Epetra_Comm.h"
 #include "Epetra_Time.h"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
-#include <vector>
+#include "Teuchos_TestForException.hpp"
 
-using namespace Teuchos;
+using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::Array;
 
 /*!
- \class Amesos_Time
- 
- \brief Amesos_Time: Container for timing information.
+  \struct Amesos_Time_Data
+  
+  \brief Amesos_Time_Data: Simple struct for storing associated data for Amesos_Time.
+  
+  \author Heidi Thornquist, SNL 1437
+  \date Last updated on 26-March-07
+*/
+struct Amesos_Time_Data {
+  //! Character string identifying this timing data.
+  string timeName_;
+  //! Current timing data.
+  double timeVal_;
+  
+  //! Constructor
+  Amesos_Time_Data( string timeName, double timeVal ) : 
+    timeName_(timeName), 
+    timeVal_(timeVal)
+  {}
+  
+  //! Destructor
+  virtual ~Amesos_Time_Data() 
+  {}
+  
+};
 
- \author Marzio Sala, SNL 9214
-
- \date Last updated on 24-May-05 (Champions' League Final day)
+/*!
+  \class Amesos_Time
+  
+  \brief Amesos_Time: Container for timing information.
+  
+  \author Marzio Sala, SNL 9214
+  
+  \date Last updated on 26-March-07 by Heidi Thornquist
 */
 class Amesos_Time
 {
-public:
-
+ public:
+  
   //! Default constructor to create \c size timers.
   Amesos_Time() :
     size_(1)
   {}
-
+    
   //! Default destructor.
-  ~Amesos_Time()
+  virtual ~Amesos_Time()
   {}
-
+    
   //! Initializes the Time object.
-  inline void InitTime(const Epetra_Comm& Comm, int size = 1)
+  inline void CreateTimer(const Epetra_Comm& Comm, int size = 1)
   {
     size_ = size;
-    Time_.resize(size_);
+    time_.resize(size_);
 
     for (int i = 0 ; i < size_ ; ++i)
-      Time_[i] = rcp(new Epetra_Time(Comm));
+      time_[i] = rcp(new Epetra_Time(Comm));
   }
 
   //! Resets the internally stored time object.
-  inline void ResetTime(const int i = 0)
+  inline void ResetTimer(const int timerID = 0)
   {
-    Time_[i]->ResetStartTime();
+    time_[timerID]->ResetStartTime();
   }
 
-  //! Adds to field \c what the time elapsed since last call to ResetTime().
-  inline void AddTime(const string what, const int i = 0)
+  //! Adds to field \c what the time elapsed since last call to ResetTimer().
+  inline int AddTime(const string what, int dataID, const int timerID = 0)
   {
-    data_.set(what, data_.get(what,0.0) + Time_[i]->ElapsedTime());
+    // A valid data id is assumed to be > 0, if the id < 0, 
+    // then a new entry in the array is created.
+    if (dataID < 0) {
+      data_.push_back( Amesos_Time_Data( what, time_[timerID]->ElapsedTime() ) );
+      return data_.size()-1;
+    }
+    
+    // Check to make sure the data id is valid
+    TEST_FOR_EXCEPTION(
+      timerID >=  (int)(data_.size()), std::logic_error,
+      "Amesos_Time::AddTime(...): Error, dataID="<<dataID
+      <<" is >= data_.size()="<<data_.size() <<" for dataName=\""<<what<<"\"!"
+    );
+   
+    // The id is valid and the current elapsed time from the indicated timer will be added in. 
+    data_[dataID].timeVal_ += time_[timerID]->ElapsedTime();
+    return dataID;
   }
 
-  //! Gets the comulative time for field \c what.
+  //! Gets the cumulative time using the string.
   inline double GetTime(const string what) const
   {
-    return(data_.get(what, 0.0));
+    int dataSize = (int)(data_.size());
+    for (int i=0; i<dataSize; ++i) {
+      if ( data_[i].timeName_ == what ) {
+        return data_[i].timeVal_;
+      }
+    }
+    return 0.0;
+  }
+
+  //! Gets the cumulative time using the dataID.
+  inline double GetTime(const int dataID) const
+  {
+    // Return zero if the dataID is not valid
+    if ( dataID < 0 || dataID >= (int)(data_.size()) ) {
+      return 0.0;
+    }
+    return data_[dataID].timeVal_;
+  }
+	
+  //! Load up the current timing information into the parameter list.
+  inline void GetTiming( Teuchos::ParameterList& list ) const
+  {
+    int dataSize = (int)(data_.size());
+    for (int i=0; i<dataSize; ++i) {
+      list.set( data_[i].timeName_, data_[i].timeVal_ );
+    }
   }
 
 private:
+ 
   //! Number of Epetra_Time objects allocated in \c this object.
   int size_;
 
   //! Time object.
-  std::vector<RefCountPtr<Epetra_Time> > Time_;
+  Array<RCP<Epetra_Time> > time_;
   
-  //! Container for all fields.
-  mutable ParameterList data_;
+  //! Fast accessable container for timing data.
+  Array< Amesos_Time_Data > data_;
 };
 
 #endif

@@ -53,7 +53,7 @@ class Amesos_EpetraInterface;
 #else
 #include "Epetra_Comm.h"
 #endif
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include <map>
 using namespace Teuchos;
 
@@ -150,6 +150,19 @@ public:
   
   //@}
 
+  //@{ \name Solver status functions
+
+  //! Returns the number of symbolic factorizations performed by this object.
+  int NumSymbolicFact() const { return( Amesos_Status::NumSymbolicFact_ ); }
+
+  //! Returns the number of numeric factorizations performed by this object.
+  int NumNumericFact() const { return( Amesos_Status::NumNumericFact_ ); }
+
+  //! Returns the number of solves performed by this object.
+  int NumSolve() const { return( Amesos_Status::NumSolve_ ); }
+
+  //@}
+
   //@{ \name Print functions
   
   //! Prints timing information.
@@ -164,6 +177,9 @@ public:
     MUMPS, like the amount of required memory, the MFLOPS.
    */
   void PrintStatus() const;
+
+  //! Extracts timing information from the current solver and places it in the parameter list.
+  void GetTiming( Teuchos::ParameterList &TimingParameterList ) const { Amesos_Time::GetTiming(TimingParameterList); }
 
   //@}
 
@@ -352,7 +368,11 @@ protected:
   
   //! If \c true, solve the problem with AT.
   bool UseTranspose_;
-  
+
+  //! Quick access pointers to the internal timers
+  int MtxConvTime_, MtxRedistTime_, VecRedistTime_;
+  int SymFactTime_, NumFactTime_, SolveTime_;  
+
   //! Row and column scaling
   double * RowSca_, * ColSca_; 
 
@@ -365,23 +385,23 @@ protected:
   int * SchurComplementRows_;
 
   //! Pointer to the Schur complement, as CrsMatrix.
-  RefCountPtr<Epetra_CrsMatrix> CrsSchurComplement_; 
+  RCP<Epetra_CrsMatrix> CrsSchurComplement_; 
   //! Pointer to the Schur complement,as DenseMatrix.
-  RefCountPtr<Epetra_SerialDenseMatrix> DenseSchurComplement_;
+  RCP<Epetra_SerialDenseMatrix> DenseSchurComplement_;
 
   //! Pointer to the linear problem to be solved.
   const Epetra_LinearProblem* Problem_;
 
   //! Redistributed matrix.
-  RefCountPtr<Epetra_Map> RedistrMap_;
+  RCP<Epetra_Map> RedistrMap_;
   //! Redistributed importer (from Matrix().RowMatrixRowMap() to RedistrMatrix().RowMatrixRowMap()).
-  RefCountPtr<Epetra_Import> RedistrImporter_;
+  RCP<Epetra_Import> RedistrImporter_;
   //! Redistributed matrix (only if MaxProcs_ > 1).
-  RefCountPtr<Epetra_CrsMatrix> RedistrMatrix_;
+  RCP<Epetra_CrsMatrix> RedistrMatrix_;
   //! Map with all elements on process 0 (for solution and rhs).
-  RefCountPtr<Epetra_Map> SerialMap_;
+  RCP<Epetra_Map> SerialMap_;
   //! Importer from Matrix.OperatorDomainMap() to SerialMap_.
-  RefCountPtr<Epetra_Import> SerialImporter_;
+  RCP<Epetra_Import> SerialImporter_;
 
 #ifdef HAVE_MPI
   //! MPI communicator used by MUMPS

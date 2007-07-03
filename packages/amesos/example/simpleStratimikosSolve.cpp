@@ -3,7 +3,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_SpmdVectorSpaceBase.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
@@ -26,7 +26,7 @@ int simpleStratimikosSolve(
    )
   {
 
-    using Teuchos::RefCountPtr;
+    using Teuchos::RCP;
     using Teuchos::rcp;
 
 
@@ -41,8 +41,8 @@ int simpleStratimikosSolve(
  
     // Create RCPs that will be used to hold the Thyra wrappers
 
-    typedef RefCountPtr<const Thyra::LinearOpBase<double> > LinearOpPtr;
-    typedef RefCountPtr<Thyra::MutliVectorBase<double> > MultiVectorPtr;
+    typedef RCP<const Thyra::LinearOpBase<double> > LinearOpPtr;
+    typedef RCP<Thyra::MutliVectorBase<double> > MultiVectorPtr;
 
     LinearOpPtr A = Thyra::epetraLinearOp( epetra_A );
     VectorPtr   X = Thyra::create_Vector( rcp(epetra_X,false), A->domain() );
@@ -66,12 +66,12 @@ int simpleStratimikosSolve(
     linearSolverBuilder.setParameterList( rcp(paramList,false) ) ; 
     // Create a linear solver factory given information read from the
     // parameter list.
-    RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       lowsFactory = linearSolverBuilder.createLinearSolveStrategy("");
     // Setup the verbosity level
     lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
     // Create a linear solver based on the forward operator A
-    RefCountPtr<Thyra::LinearOpWithSolveBase<double> >
+    RCP<Thyra::LinearOpWithSolveBase<double> >
       lows = Thyra::linearOpWithSolve(*lowsFactory,A);
       //      lows = Thyra::linearOpWithSolve(*lowsFactory,rcp(&A,false));
     // Solve the linear system (note: the initial guess in 'X' is critical)

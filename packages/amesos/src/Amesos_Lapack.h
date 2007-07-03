@@ -45,7 +45,7 @@
 #include "Epetra_Import.h"
 class Epetra_RowMatrix;
 class Epetra_LinearProblem;
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 //! Amesos_Lapack: an interface to LAPACK.
 /*!
@@ -116,9 +116,9 @@ public:
    //!  Use this parameter list to read values from  
    /*!  Redefined from Teuchos::ParameterListAcceptor
     */
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList) ;
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList) ;
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList() ;
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() ;
 
 
   //!  Deprecated - Sets parameters 
@@ -137,11 +137,23 @@ public:
     */
   int GEEV(Epetra_Vector& Er, Epetra_Vector& Ei);
 
+  //! Returns the number of symbolic factorizations performed by this object.
+  int NumSymbolicFact() const { return( Amesos_Status::NumSymbolicFact_ ); }
+
+  //! Returns the number of numeric factorizations performed by this object.
+  int NumNumericFact() const { return( Amesos_Status::NumNumericFact_ ); }
+
+  //! Returns the number of solves performed by this object.
+  int NumSolve() const { return( Amesos_Status::NumSolve_ ); }
+
   //! Print timing information
   void PrintTiming() const;
   
   //! Print information about the factorization and solution phases.
   void PrintStatus() const;
+
+  //! Extracts timing information from the current solver and places it in the parameter list.
+  void GetTiming( Teuchos::ParameterList &TimingParameterList ) const { Amesos_Time::GetTiming(TimingParameterList); }
   
   //@}
 
@@ -188,7 +200,7 @@ protected:
     return(*(Importer_.get()));
   }
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> pl_ ; 
+  Teuchos::RCP<Teuchos::ParameterList> pl_ ; 
 
   //! Solves the linear system, when only one process is used.
   int SolveSerial(Epetra_MultiVector& X,
@@ -207,10 +219,10 @@ protected:
   //! Factors the matrix using LAPACK.
   int DenseToFactored();
 
-  Teuchos::RefCountPtr<Epetra_RowMatrix> SerialMatrix_;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrix_;
-  Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
-  Teuchos::RefCountPtr<Epetra_Import> Importer_;
+  Teuchos::RCP<Epetra_RowMatrix> SerialMatrix_;
+  Teuchos::RCP<Epetra_CrsMatrix> SerialCrsMatrix_;
+  Teuchos::RCP<Epetra_Map> SerialMap_;
+  Teuchos::RCP<Epetra_Import> Importer_;
 
   //! Dense matrix.
   Epetra_SerialDenseMatrix DenseMatrix_;
@@ -226,16 +238,13 @@ protected:
   //! Pointer to the linear problem.
   const Epetra_LinearProblem* Problem_;
 
-  //! Number of calls to SymbolicFactorization().
-  int NumSymbolicFact_;
-  //! Number of calls to NumericFactorization().
-  int NumNumericFact_;
-  //! Number of calls to Solver().
-  int NumSolve_;
+  //! Quick access ids for the individual timings
+  int MtxRedistTime_, MtxConvTime_, VecRedistTime_, SymFactTime_, NumFactTime_, SolveTime_;
 
   int NumGlobalRows_;
   int NumGlobalNonzeros_;
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> ParameterList_ ; 
+  Teuchos::RCP<Teuchos::ParameterList> ParameterList_ ; 
+
 };  // End of  class Amesos_Lapack
 #endif /* AMESOS_LAPACK_H */

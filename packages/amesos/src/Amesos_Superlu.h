@@ -73,7 +73,7 @@
 #include "Amesos_Time.h"
 #include "Amesos_Status.h"
 #include "Amesos_Control.h"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 class SLUData;
 class Epetra_Comm;
@@ -138,11 +138,23 @@ public:
 
   int SetParameters( Teuchos::ParameterList &ParameterList )  ;
 
+  //! Returns the number of symbolic factorizations performed by this object.
+  int NumSymbolicFact() const { return( Amesos_Status::NumSymbolicFact_ ); }
+
+  //! Returns the number of numeric factorizations performed by this object.
+  int NumNumericFact() const { return( Amesos_Status::NumNumericFact_ ); }
+
+  //! Returns the number of solves performed by this object.
+  int NumSolve() const { return( Amesos_Status::NumSolve_ ); }
+
   //! Prints timing information.
   void PrintTiming() const;
 
   //! Prints status information.
   void PrintStatus() const;
+
+  //! Extracts timing information from the current solver and places it in the parameter list.
+  void GetTiming( Teuchos::ParameterList &TimingParameterList ) const { Amesos_Time::GetTiming(TimingParameterList); }
 
 private:  
 
@@ -208,12 +220,15 @@ private:
   bool ReuseSymbolic_;
   //! Process number (i.e. Comm().MyPID() 
   int iam_;
+  //! Quick access pointer to internal timing data.
+  int MtxConvTime_, MtxRedistTime_, VecRedistTime_;
+  int NumFactTime_, SolveTime_, OverheadTime_;
   //! Contains a map with all elements assigned to processor 0.
-  Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
+  Teuchos::RCP<Epetra_Map> SerialMap_;
   //! Contains a matrix with all rows assigned to processor 0.
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrixA_;
+  Teuchos::RCP<Epetra_CrsMatrix> SerialCrsMatrixA_;
   //! Importer from distributed to SerialMap_.
-  Teuchos::RefCountPtr<Epetra_Import> ImportToSerial_;
+  Teuchos::RCP<Epetra_Import> ImportToSerial_;
   //! For parallel runs, stores the matrix defined on SerialMap_.
   Epetra_RowMatrix* SerialMatrix_ ;
   //! Pointer to the user's defined linear problem.

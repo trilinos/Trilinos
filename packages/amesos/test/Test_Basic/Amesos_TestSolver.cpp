@@ -418,39 +418,40 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       using namespace Teuchos;
 
       Amesos_Time AT; 
-      AT.InitTime(Comm, 2);
-      AT.ResetTime(0);
+      int setupTimePtr = -1, symTimePtr = -1, numTimePtr = -1, refacTimePtr = -1, solveTimePtr = -1;
+      AT.CreateTimer(Comm, 2);
+      AT.ResetTimer(0);
 
       Teuchos::ParameterList ParamList ;
-      //	ParamList.set("OutputLevel",2);
+      // ParamList.set("OutputLevel",2);
       Amesos_Klu A_klu( Problem ); 
       ParamList.set( "MaxProcs", -3 );
       ParamList.set( "TrustMe", false );
-      //  ParamList.set( "Refactorize", true );
+      // ParamList.set( "Refactorize", true );
       EPETRA_CHK_ERR( A_klu.SetParameters( ParamList ) ) ; 
       EPETRA_CHK_ERR( A_klu.SetUseTranspose( transpose ) ); 
-  AT.AddTime("Setup", 0);
+      setupTimePtr = AT.AddTime("Setup", setupTimePtr, 0);
       EPETRA_CHK_ERR( A_klu.SymbolicFactorization(  ) ); 
-  AT.AddTime("Symbolic", 0);
+      symTimePtr = AT.AddTime("Symbolic", symTimePtr, 0);
       EPETRA_CHK_ERR( A_klu.NumericFactorization(  ) ); 
-  AT.AddTime("Numeric", 0);
+      numTimePtr = AT.AddTime("Numeric", numTimePtr, 0);
       EPETRA_CHK_ERR( A_klu.NumericFactorization(  ) ); 
-  AT.AddTime("Refactor", 0);
-      //      for ( int i=0; i<100000 ; i++ ) 
-	EPETRA_CHK_ERR( A_klu.Solve(  ) ); 
-  AT.AddTime("Solve", 0);
+      refacTimePtr = AT.AddTime("Refactor", refacTimePtr, 0);
+      // for ( int i=0; i<100000 ; i++ ) 
+      EPETRA_CHK_ERR( A_klu.Solve(  ) ); 
+      solveTimePtr = AT.AddTime("Solve", solveTimePtr, 0);
 
-  double SetupTime = AT.GetTime("Setup");
-  double SymbolicTime = AT.GetTime("Symbolic");
-  double NumericTime = AT.GetTime("Numeric");
-  double RefactorTime = AT.GetTime("Refactor");
-  double SolveTime = AT.GetTime("Solve");
+      double SetupTime = AT.GetTime(setupTimePtr);
+      double SymbolicTime = AT.GetTime(symTimePtr);
+      double NumericTime = AT.GetTime(numTimePtr);
+      double RefactorTime = AT.GetTime(refacTimePtr);
+      double SolveTime = AT.GetTime(solveTimePtr);
 
-  cout << __FILE__ << "::"  << __LINE__ << " SetupTime = " << SetupTime << endl ; 
-  cout << __FILE__ << "::"  << __LINE__ << " SymbolicTime = " << SymbolicTime - SetupTime << endl ; 
-  cout << __FILE__ << "::"  << __LINE__ << " NumericTime = " << NumericTime - SymbolicTime<< endl ; 
-  cout << __FILE__ << "::"  << __LINE__ << " RefactorTime = " << RefactorTime - NumericTime << endl ; 
-  cout << __FILE__ << "::"  << __LINE__ << " SolveTime = " << SolveTime - RefactorTime << endl ; 
+      cout << __FILE__ << "::"  << __LINE__ << " SetupTime = " << SetupTime << endl ; 
+      cout << __FILE__ << "::"  << __LINE__ << " SymbolicTime = " << SymbolicTime - SetupTime << endl ; 
+      cout << __FILE__ << "::"  << __LINE__ << " NumericTime = " << NumericTime - SymbolicTime<< endl ; 
+      cout << __FILE__ << "::"  << __LINE__ << " RefactorTime = " << RefactorTime - NumericTime << endl ; 
+      cout << __FILE__ << "::"  << __LINE__ << " SolveTime = " << SolveTime - RefactorTime << endl ; 
 
 #endif
     } else { 

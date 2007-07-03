@@ -39,21 +39,25 @@ using namespace Teuchos;
 Amesos_Lapack::Amesos_Lapack(const Epetra_LinearProblem &Problem) :
   UseTranspose_(false),
   Problem_(&Problem),
-  NumSymbolicFact_(0),
-  NumNumericFact_(0),
-  NumSolve_(0)
+  MtxRedistTime_(-1), 
+  MtxConvTime_(-1), 
+  VecRedistTime_(-1),
+  SymFactTime_(-1), 
+  NumFactTime_(-1), 
+  SolveTime_(-1)
+
 {
   ParameterList_ = unsetParameterList();
 }
 
-Teuchos::RefCountPtr<Teuchos::ParameterList> Amesos_Lapack::unsetParameterList() {
-  Teuchos::RefCountPtr<Teuchos::ParameterList> PL = rcp( new Teuchos::ParameterList);
+Teuchos::RCP<Teuchos::ParameterList> Amesos_Lapack::unsetParameterList() {
+  Teuchos::RCP<Teuchos::ParameterList> PL = rcp( new Teuchos::ParameterList);
   setParameterList(PL);
   return PL ; 
 }
 
 
-void Amesos_Lapack::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& pl) {
+void Amesos_Lapack::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl) {
 
   pl_ = pl; 
   Teuchos::ParameterList& LAPACKParams = pl_->sublist("Lapack") ;
@@ -88,7 +92,8 @@ int Amesos_Lapack::SetParameters( Teuchos::ParameterList &ParameterList )
   bool Equilibrate = true;
   if (ParameterList.isSublist("Lapack") ) {
     const Teuchos::ParameterList& LAPACKParams = ParameterList.sublist("Lapack") ;
-    Equilibrate = LAPACKParams.get<bool>("Equilibrate");
+    if ( LAPACKParams.isParameter("Equilibrate") )
+      Equilibrate = LAPACKParams.get<bool>("Equilibrate");
   }
   DenseSolver_.FactorWithEquilibration(Equilibrate);
 
@@ -127,8 +132,8 @@ int Amesos_Lapack::SymbolicFactorization()
   if (GetProblem()->GetMatrix() == 0)
     AMESOS_CHK_ERR(-1); // problem still not properly set
 
-  InitTime(Comm()); // Initialize timer
-  ResetTime();
+  CreateTimer(Comm()); // Create timer
+  ResetTimer();
 
   MyPID_             = Comm().MyPID();
   NumProcs_          = Comm().NumProc();
@@ -154,7 +159,7 @@ int Amesos_Lapack::SymbolicFactorization()
       AMESOS_CHK_ERR(-1);
   }
 
-  AddTime("symbolic");
+  SymFactTime_ = AddTime("Total symbolic factorization time", SymFactTime_);
   IsSymbolicFactorizationOK_ = true;
   ++NumSymbolicFact_;
 
@@ -212,7 +217,7 @@ int Amesos_Lapack::Solve()
 int Amesos_Lapack::SolveSerial(Epetra_MultiVector& X,
 			       const Epetra_MultiVector& B) 
 {
-  ResetTime();
+  ResetTimer();
   
   int NumVectors = X.NumVectors();
 
@@ -231,7 +236,7 @@ int Amesos_Lapack::SolveSerial(Epetra_MultiVector& X,
     for (int j = 0 ; j < NumVectors ; ++j)
        X[j][i] = DenseX(i,j);
 
-  AddTime("solve");
+  SolveTime_ = AddTime("Total solve time", SolveTime_);
   ++NumSolve_;
 
   return(0) ;
@@ -241,7 +246,7 @@ int Amesos_Lapack::SolveSerial(Epetra_MultiVector& X,
 int Amesos_Lapack::SolveDistributed(Epetra_MultiVector& X,
 				    const Epetra_MultiVector& B) 
 {
-  ResetTime();
+  ResetTimer();
   
   int NumVectors = X.NumVectors();
 
@@ -251,8 +256,8 @@ int Amesos_Lapack::SolveDistributed(Epetra_MultiVector& X,
   // import off-process data
   AMESOS_CHK_ERR(SerialVector.Import(B,Importer(),Insert));
 
-  AddTime("vector redistribution");
-  ResetTime();
+  VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_);
+  ResetTimer();
 
   if (MyPID_ == 0) {
     Epetra_SerialDenseMatrix DenseX(NumGlobalRows(),NumVectors);
@@ -271,12 +276,12 @@ int Amesos_Lapack::SolveDistributed(Epetra_MultiVector& X,
 	SerialVector[j][i] = DenseX(i,j);
   }
 
-  AddTime("solve");
-  ResetTime();
+  SolveTime_ = AddTime("Total solve time", SolveTime_);
+  ResetTimer();
 
   AMESOS_CHK_ERR(X.Export(SerialVector,Importer(),Insert));
 
-  AddTime("vector redistribution");
+  VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_);
   ++NumSolve_;
 
   return(0) ;
@@ -288,7 +293,7 @@ int Amesos_Lapack::SerialToDense()
   if (MyPID_)
     return(0);
 
-  ResetTime();
+  ResetTimer();
 
   for (int i = 0 ; i < NumGlobalRows() ; ++i)
     for (int j = 0 ; j < NumGlobalRows() ; ++j)
@@ -326,14 +331,14 @@ int Amesos_Lapack::SerialToDense()
     }
   }
 
-  AddTime("matrix conversion");
+  MtxConvTime_ = AddTime("Total matrix conversion time", MtxConvTime_);
   return(0);
 }
 
 //=============================================================================
 int Amesos_Lapack::DistributedToSerial()
 {
-  ResetTime();
+  ResetTimer();
 
   if (NumProcs_ == 1)
     SerialMatrix_ = rcp(const_cast<Epetra_RowMatrix*>(Matrix()), false);
@@ -345,7 +350,7 @@ int Amesos_Lapack::DistributedToSerial()
     AMESOS_CHK_ERR(SerialCrsMatrix().FillComplete());
   }
 
-  AddTime("matrix redistribution");
+  MtxRedistTime_ = AddTime("Total matrix redistribution time", MtxRedistTime_);
 
   return(0);
 } 
@@ -362,8 +367,8 @@ int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
   AMESOS_CHK_ERR(DistributedToSerial());
   AMESOS_CHK_ERR(SerialToDense());
 
-  Teuchos::RefCountPtr<Epetra_Vector> LocalEr;
-  Teuchos::RefCountPtr<Epetra_Vector> LocalEi;
+  Teuchos::RCP<Epetra_Vector> LocalEr;
+  Teuchos::RCP<Epetra_Vector> LocalEi;
 
   if (NumProcs_ == 1)
   {
@@ -426,7 +431,7 @@ int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
 //=============================================================================
 int Amesos_Lapack::DenseToFactored() 
 {
-  ResetTime();
+  ResetTimer();
 
   if (MyPID_ == 0) {
     AMESOS_CHK_ERR(DenseSolver_.SetMatrix(DenseMatrix_));
@@ -434,7 +439,7 @@ int Amesos_Lapack::DenseToFactored()
     if (DenseSolverReturn == 2 ) return NumericallySingularMatrixError ;
   }
 
-  AddTime("numeric");
+  NumFactTime_ = AddTime("Total numeric factorization time", NumFactTime_);
   return(0);
 }
 
@@ -471,12 +476,12 @@ void Amesos_Lapack::PrintTiming() const
 {
   if (MyPID_ != 0) return;
 
-  double ConTime = GetTime("matrix conversion");
-  double MatTime = GetTime("matrix redistribution");
-  double VecTime = GetTime("vector redistribution");
-  double SymTime = GetTime("symbolic");
-  double NumTime = GetTime("numeric");
-  double SolTime = GetTime("solve");
+  double ConTime = GetTime(MtxConvTime_);
+  double MatTime = GetTime(MtxRedistTime_);
+  double VecTime = GetTime(VecRedistTime_);
+  double SymTime = GetTime(SymFactTime_);
+  double NumTime = GetTime(NumFactTime_);
+  double SolTime = GetTime(SolveTime_);
 
   if (NumSymbolicFact_)
     SymTime /= NumSymbolicFact_;

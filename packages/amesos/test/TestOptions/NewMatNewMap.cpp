@@ -3,7 +3,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Vector.h"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include <vector>
 #include <assert.h>
 
@@ -31,7 +31,7 @@ int SmallColPermute( int in ) { return in + 4 ; }
 //  DomainMap:
 //    0=no change, 1=serial map, 2=bizarre distribution, 3=replicated map
 //
-RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In, 
+RCP<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In, 
 					   int Diagonal, 
 					   int ReindexRowMap,
 					   int ReindexColMap,
@@ -53,7 +53,7 @@ RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
 #endif
 
   if ( Diagonal + ReindexRowMap + ReindexColMap + RangeMapType + DomainMapType == 0 ) {
-    RefCountPtr<Epetra_CrsMatrix> ReturnOrig = rcp( &In, false );
+    RCP<Epetra_CrsMatrix> ReturnOrig = rcp( &In, false );
     return ReturnOrig ;
   }
 
@@ -232,19 +232,19 @@ RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
     MyPermutedGlobalDomainElements[i] = 
       (*ColPermute)( MyGlobalDomainElements[i] ) ; 
 
-  RefCountPtr<Epetra_Map> PermutedRowMap = 
+  RCP<Epetra_Map> PermutedRowMap = 
     rcp( new Epetra_Map( NumGlobalRowElements, NumMyRowElements, 
 			 &MyPermutedGlobalRowElements[0], 0, In.Comm() ) ); 
 									
-  RefCountPtr<Epetra_Map> PermutedColMap = 
+  RCP<Epetra_Map> PermutedColMap = 
     rcp( new Epetra_Map( NumGlobalColElementsOut, NumMyColElementsOut, 
 			 &MyPermutedGlobalColElements[0], 0, In.Comm() ) ); 
 									
-  RefCountPtr<Epetra_Map> PermutedRangeMap = 
+  RCP<Epetra_Map> PermutedRangeMap = 
     rcp( new Epetra_Map( NumGlobalRangeElements, NumMyRangeElements, 
 			 &MyPermutedGlobalRangeElements[0], 0, In.Comm() ) ); 
 									
-  RefCountPtr<Epetra_Map> PermutedDomainMap = 
+  RCP<Epetra_Map> PermutedDomainMap = 
     rcp( new Epetra_Map( NumGlobalDomainElements, NumMyDomainElements, 
 			 &MyPermutedGlobalDomainElements[0], 0, In.Comm() ) ); 
 									
@@ -256,7 +256,7 @@ RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
   vector<int> PermutedGlobalColIndices( In.MaxNumEntries() );
 
   //cout << __FILE__ << "::" <<__LINE__ << endl ; 
-  RefCountPtr<Epetra_CrsMatrix> Out = 
+  RCP<Epetra_CrsMatrix> Out = 
     rcp( new Epetra_CrsMatrix( Copy, *PermutedRowMap, *PermutedColMap, 0 ) );
 
   for (int i=0; i<NumMyRowElements; i++)
@@ -318,8 +318,8 @@ RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
 
   Epetra_LocalMap ReplicatedMap( NumGlobalRangeElements, 0, In.Comm() );
 
-  RefCountPtr<Epetra_Map> OutRangeMap ;
-  RefCountPtr<Epetra_Map> OutDomainMap ;
+  RCP<Epetra_Map> OutRangeMap ;
+  RCP<Epetra_Map> OutDomainMap ;
   
   switch( RangeMapType ) {
   case 0:

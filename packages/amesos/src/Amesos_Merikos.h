@@ -322,6 +322,15 @@ public:
    */
   int SetParameters( Teuchos::ParameterList &ParameterList )  ;
 
+  //! Returns the number of symbolic factorizations performed by this object.
+  int NumSymbolicFact() const { return( NumSymbolicFact_ ); }
+
+  //! Returns the number of numeric factorizations performed by this object.
+  int NumNumericFact() const { return( NumNumericFact_ ); }
+
+  //! Returns the number of solves performed by this object.
+  int NumSolve() const { return( NumSolve_ ); }
+
   //! Print timing information
   void PrintTiming();
   

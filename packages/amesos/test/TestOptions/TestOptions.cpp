@@ -49,7 +49,7 @@
 #include "CrsMatrixTranspose.h"
 #include "TestAllClasses.h"
 #include <string>
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "NewMatNewMap.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -251,7 +251,7 @@ int TestErrors( const vector<bool> AmesosClassesInstalled,
     
     if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << endl ; 
     
-    RefCountPtr<Epetra_CrsMatrix> Bmat = NewMatNewMap( *Amat, 
+    RCP<Epetra_CrsMatrix> Bmat = NewMatNewMap( *Amat, 
 						       iterDiagonalOpts, 
 						       iterRowindex,
 						       iterColindex,
@@ -528,7 +528,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 
 		  if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << endl ; 
 
-		    RefCountPtr<Epetra_CrsMatrix> Bmat = NewMatNewMap( *Amat, 
+		    RCP<Epetra_CrsMatrix> Bmat = NewMatNewMap( *Amat, 
 								       iterDiagonalOpts, 
 								       iterRowindex,
 								       iterColindex,

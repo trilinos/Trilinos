@@ -44,7 +44,7 @@
 const int StructurallySingularMatrixError = -21;
 const int NumericallySingularMatrixError = -22;
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Epetra_LinearProblem.h"
@@ -225,7 +225,7 @@ class Amesos_BaseSolver
 
 #if 0      
  private:
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_ ; 
+  Teuchos::RCP<Teuchos::ParameterList> paramList_ ; 
 #endif
 
  public:
@@ -387,31 +387,42 @@ revert to their default values.
   //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
   virtual const Epetra_Comm & Comm() const = 0;
 
+  //! Returns the number of symbolic factorizations performed by this object.
+  virtual int NumSymbolicFact() const = 0;
+
+  //! Returns the number of numeric factorizations performed by this object.
+  virtual int NumNumericFact() const = 0;
+
+  //! Returns the number of solves performed by this object.
+  virtual int NumSolve() const = 0;
+
   //! Prints status information about the current solver.
   virtual void PrintStatus() const = 0;
 
   //! Prints timing information about the current solver. 
   virtual void PrintTiming() const = 0;
 
-
    //! Redefined from Teuchos::ParameterListAcceptor
-  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList){
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList){
     //    paramList_ = paramlist ;
     //    this->SetParameters( *paramList_ );
   }
 
   //!  This is an empty stub 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList() {
-    Teuchos::RefCountPtr<Teuchos::ParameterList> PL ;
+  Teuchos::RCP<Teuchos::ParameterList> getParameterList() {
+    Teuchos::RCP<Teuchos::ParameterList> PL ;
     return PL ;
   }
 
   //!  This is an empty stub 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList() {
-    Teuchos::RefCountPtr<Teuchos::ParameterList> PL ;
+  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() {
+    Teuchos::RCP<Teuchos::ParameterList> PL ;
     //    this->SetParameters( *paramList_ );
     return PL ; 
   }
+
+  //! Extracts timing information from the current solver and places it in the parameter list.
+  virtual void GetTiming( Teuchos::ParameterList &TimingParameterList ) const {}
 
   //@}
 

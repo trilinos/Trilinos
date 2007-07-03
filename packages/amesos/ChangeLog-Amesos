@@ -81,9 +81,9 @@ July 2005
 	
 June 2005
 
-*) Added full support for Teuchos' RefCountPtr to SuperLU_DIST and LAPACK
+*) Added full support for Teuchos' RCP to SuperLU_DIST and LAPACK
    class. All objects allocated by these two classes are automatically 
-   destroyed by the RefCountPtr, therefore reducing possible memory leaks.
+   destroyed by the RCP, therefore reducing possible memory leaks.
    The code of Amesos_Lapack is now sensibly shorter and easier to read.
    [M. Sala]
 
@@ -95,16 +95,16 @@ May 2005
 
 *) Added support for PARDISO. The interface, called Amesos_Pardiso, 
    supports non-symmetric matrices only, and makes use of Teuchos's
-   RefCountPtr to manage memory. Added description of this class and
+   RCP to manage memory. Added description of this class and
    the corresponding parameters to the reference guide. [M. Sala]
 
 *) Added support for TAUCS. The TAUCS interface makes use of Teuchos'
-   RefCountPtr to manage memory. Added description to the reference guide.
+   RCP to manage memory. Added description to the reference guide.
    [M. Sala]
 
 *) Re-design the interfaces by adding classes Amesos_Time, Amesos_Status
    and Amesos_Utils. Also updated the documentation, and added support
-   for RefCountPtr for memory management. to make the solvers more
+   for RCP for memory management. to make the solvers more
    robust. [M. Sala]
 
 *) A first version of Paraklete is added to the repository. [T. Davis]

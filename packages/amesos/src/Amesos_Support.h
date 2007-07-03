@@ -64,11 +64,11 @@ class Amesos_StandardIndex
 private:
 #ifdef HAVE_AMESOS_EPETRAEXT
   //! Points to a Map which standardized indices - i.e. from 0 to n-1 
-  Teuchos::RefCountPtr<Epetra_Map> StdIndexMap_;
+  Teuchos::RCP<Epetra_Map> StdIndexMap_;
   //! Points to an object which reindexes a CrsMatrix to a contiguous map
-  Teuchos::RefCountPtr<EpetraExt::CrsMatrix_Reindex> MatTrans_;
+  Teuchos::RCP<EpetraExt::CrsMatrix_Reindex> MatTrans_;
   //! Points to an object which reindexes a MultiVector to a contiguous map
-  Teuchos::RefCountPtr<EpetraExt::MultiVector_Reindex> VecTrans_;
+  Teuchos::RCP<EpetraExt::MultiVector_Reindex> VecTrans_;
 #endif
 } ;
 #endif

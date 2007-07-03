@@ -56,8 +56,8 @@ public:
 
 #define USE_REF_COUNT_PTR_FOR_A_AND_L
 #ifdef USE_REF_COUNT_PTR_FOR_A_AND_L
-   Teuchos::RefCountPtr<taucs_ccs_matrix> A_ ;
-   Teuchos::RefCountPtr<taucs_ccs_matrix> L_ ;
+   Teuchos::RCP<taucs_ccs_matrix> A_ ;
+   Teuchos::RCP<taucs_ccs_matrix> L_ ;
 #else
    taucs_ccs_matrix* A_ ;
    taucs_ccs_matrix* L_ ;
@@ -88,7 +88,13 @@ public:
 Amesos_Taucs::Amesos_Taucs(const Epetra_LinearProblem &prob) :
   PrivateTaucsData_( rcp( new Amesos_Taucs_Pimpl() ) ),
   Matrix_(0),
-  Problem_(&prob)
+  Problem_(&prob),
+  MtxConvTime_(-1),
+  MtxRedistTime_(-1),
+  VecRedistTime_(-1),
+  SymFactTime_(-1),
+  NumFactTime_(-1),
+  SolveTime_(-1)
 { }
 
 //=============================================================================
@@ -117,7 +123,7 @@ Amesos_Taucs::~Amesos_Taucs(void)
 //=============================================================================
 int Amesos_Taucs::ConvertToSerial() 
 {
-  ResetTime();
+  ResetTimer();
 
   int NumGlobalRows = Matrix_->NumGlobalRows();
 
@@ -144,7 +150,7 @@ int Amesos_Taucs::ConvertToSerial()
 
   SerialMatrix_ = rcp(SerialCrsMatrix_.get(), false);
 
-  AddTime("matrix redistribution");
+  MtxRedistTime_ = AddTime("Total matrix redistribution time", MtxRedistTime_);
 
   return 0;
 }
@@ -152,7 +158,7 @@ int Amesos_Taucs::ConvertToSerial()
 //=============================================================================
 int Amesos_Taucs::ConvertToTaucs()
 {
-  ResetTime();
+  ResetTimer();
 
   if (Comm().MyPID() == 0) 
   {
@@ -215,7 +221,7 @@ int Amesos_Taucs::ConvertToTaucs()
       AMESOS_CHK_ERR(-1); // something wrong here
   }
 
-  AddTime("conversion");
+  MtxConvTime_ = AddTime("Total matrix conversion time", MtxConvTime_);
 
   return 0;
 }
@@ -235,7 +241,7 @@ int Amesos_Taucs::SetParameters( Teuchos::ParameterList &ParameterList)
 //=============================================================================
 int Amesos_Taucs::PerformSymbolicFactorization() 
 {
-  ResetTime();
+  ResetTimer();
 
   if (Comm().MyPID() == 0)
   {
@@ -255,7 +261,7 @@ int Amesos_Taucs::PerformSymbolicFactorization()
 #endif 
   }
 
-  AddTime("symbolic");
+  SymFactTime_ = AddTime("Total symbolic factorization time", SymFactTime_);
 
   return 0;
 }
@@ -263,7 +269,7 @@ int Amesos_Taucs::PerformSymbolicFactorization()
 //=============================================================================
 int Amesos_Taucs::PerformNumericFactorization( ) 
 {
-  ResetTime();
+  ResetTimer();
 
   if (Comm().MyPID() == 0) 
   {
@@ -279,7 +285,7 @@ int Amesos_Taucs::PerformNumericFactorization( )
     }
   }
 
-  AddTime("numeric");
+  NumFactTime_ = AddTime("Total numeric factorization time", NumFactTime_);
 
   return 0;
 }
@@ -304,7 +310,7 @@ int Amesos_Taucs::SymbolicFactorization()
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
 
-  InitTime(Comm());
+  CreateTimer(Comm());
 
   ++NumSymbolicFact_;
 
@@ -386,10 +392,10 @@ int Amesos_Taucs::Solve()
     AMESOS_CHK_ERR(-1); 
 
   // vectors with SerialMap_
-  RefCountPtr<Epetra_MultiVector> SerialB;
-  RefCountPtr<Epetra_MultiVector> SerialX;
+  RCP<Epetra_MultiVector> SerialB;
+  RCP<Epetra_MultiVector> SerialX;
 
-  ResetTime();
+  ResetTimer();
 
   if (Comm().NumProc() == 1) 
   {
@@ -404,9 +410,9 @@ int Amesos_Taucs::Solve()
     SerialB->Import(*B,Importer(),Insert);
   }
 
-  AddTime("vector redistribution");
+  VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_);
 
-  ResetTime();
+  ResetTimer();
 
   if (Comm().MyPID() == 0) 
   {
@@ -433,14 +439,14 @@ int Amesos_Taucs::Solve()
     }
   }
 
-  AddTime("solve");
+  SolveTime_ = AddTime("Total solve time", SolveTime_);
 
-  ResetTime();
+  ResetTimer();
 
   if (Comm().NumProc() != 1) 
     X->Export(*SerialX, Importer(), Insert);
 
-  AddTime("vector redistribution");
+  VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_);
 
   if (ComputeTrueResidual_)
     ComputeTrueResidual(Matrix(), *X, *B, false, "Amesos_Taucs");
@@ -488,12 +494,12 @@ void Amesos_Taucs::PrintTiming() const
   if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
     return;
 
-  double ConTime = GetTime("conversion");
-  double MatTime = GetTime("matrix redistribution");
-  double VecTime = GetTime("vector redistribution");
-  double SymTime = GetTime("symbolic");
-  double NumTime = GetTime("numeric");
-  double SolTime = GetTime("solve");
+  double ConTime = GetTime(MtxConvTime_);
+  double MatTime = GetTime(MtxRedistTime_);
+  double VecTime = GetTime(VecRedistTime_);
+  double SymTime = GetTime(SymFactTime_);
+  double NumTime = GetTime(NumFactTime_);
+  double SolTime = GetTime(SolveTime_);
 
   if (NumSymbolicFact_)
     SymTime /= NumSymbolicFact_;

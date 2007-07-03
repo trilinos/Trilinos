@@ -53,6 +53,12 @@ using namespace Teuchos;
 Amesos_Pardiso::Amesos_Pardiso(const Epetra_LinearProblem &prob) :
   UseTranspose_(false),
   Problem_(&prob),
+  MtxConvTime_(-1),
+  MtxRedistTime_(-1),
+  VecRedistTime_(-1),
+  SymFactTime_(-1),
+  NumFactTime_(-1),
+  SolveTime_(-1),
   maxfct_(1),
   mnum_(1),
   msglvl_(0),
@@ -101,7 +107,7 @@ Amesos_Pardiso::~Amesos_Pardiso()
 //=============================================================================
 int Amesos_Pardiso::ConvertToSerial() 
 {
-  ResetTime();
+  ResetTimer();
 
   int NumGlobalRows = Matrix_->NumGlobalRows();
 
@@ -128,7 +134,7 @@ int Amesos_Pardiso::ConvertToSerial()
 
   SerialMatrix_ = rcp(SerialCrsMatrix_.get(), false);
 
-  AddTime("matrix redistribution");
+  MtxRedistTime_ = AddTime("Total matrix redistribution time", MtxRedistTime_);
 
   return 0;
 }
@@ -136,7 +142,7 @@ int Amesos_Pardiso::ConvertToSerial()
 //=============================================================================
 int Amesos_Pardiso::ConvertToPardiso()
 {
-  ResetTime();
+  ResetTimer();
 
   if (Comm().MyPID() == 0) 
   {
@@ -178,7 +184,7 @@ int Amesos_Pardiso::ConvertToPardiso()
       AMESOS_CHK_ERR(-1); // something wrong here
   }
 
-  AddTime("matrix conversion");
+  MtxConvTime_ = AddTime("Total matrix conversion time", MtxConvTime_);
 
   return 0;
 }
@@ -241,7 +247,7 @@ int Amesos_Pardiso::SetParameters( Teuchos::ParameterList &ParameterList)
 //=============================================================================
 int Amesos_Pardiso::PerformSymbolicFactorization() 
 {
-  ResetTime();
+  ResetTimer();
 
   if (Comm().MyPID() == 0) 
   {
@@ -287,7 +293,7 @@ int Amesos_Pardiso::PerformSymbolicFactorization()
     AMESOS_CHK_ERR(CheckError(error));
   }
 
-  AddTime("symbolic");
+  SymFactTime_ = AddTime("Total symbolic factorization time", SymFactTime_);
 
   return 0;
 }
@@ -295,7 +301,7 @@ int Amesos_Pardiso::PerformSymbolicFactorization()
 //=============================================================================
 int Amesos_Pardiso::PerformNumericFactorization( ) 
 {
-  ResetTime();
+  ResetTimer();
 
   if (Comm().MyPID() == 0) 
   {
@@ -312,7 +318,7 @@ int Amesos_Pardiso::PerformNumericFactorization( )
     AMESOS_CHK_ERR(CheckError(error));
   }
 
-  AddTime("numeric");
+  NumFactTime_ = AddTime("Total numeric factorization time", NumFactTime_);
 
   return 0;
 }
@@ -336,7 +342,7 @@ int Amesos_Pardiso::SymbolicFactorization()
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
 
-  InitTime(Comm());
+  CreateTimer(Comm());
 
   ++NumSymbolicFact_;
 
@@ -413,7 +419,7 @@ int Amesos_Pardiso::Solve()
   Epetra_MultiVector* SerialB;
   Epetra_MultiVector* SerialX;
 
-  ResetTime();
+  ResetTimer();
 
   if (Comm().NumProc() == 1) 
   {
@@ -428,9 +434,9 @@ int Amesos_Pardiso::Solve()
     SerialB->Import(*B,Importer(),Insert);
   }
 
-  AddTime("vector redistribution");
+  VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_);
 
-  ResetTime();
+  ResetTimer();
 
   if (Comm().MyPID() == 0) 
   {
@@ -459,11 +465,11 @@ int Amesos_Pardiso::Solve()
     AMESOS_CHK_ERR(CheckError(error));
   }
 
-  AddTime("solve");
+  SolveTime_ = AddTime("Total solve time", SolveTime_);
 
   //  Copy X back to the original vector
 
-  ResetTime();
+  ResetTimer();
 
   if (Comm().NumProc() != 1) 
   {
@@ -472,7 +478,7 @@ int Amesos_Pardiso::Solve()
     delete SerialX;
   } // otherwise we are already in place.
 
-  AddTime("vector redistribution");
+  VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_);
 
   if (ComputeTrueResidual_)
     ComputeTrueResidual(Matrix(), *X, *B, UseTranspose(), "Amesos_Pardiso");
@@ -525,12 +531,12 @@ void Amesos_Pardiso::PrintTiming() const
   if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
     return;
 
-  double ConTime = GetTime("conversion");
-  double MatTime = GetTime("matrix redistribution");
-  double VecTime = GetTime("vector redistribution");
-  double SymTime = GetTime("symbolic");
-  double NumTime = GetTime("numeric");
-  double SolTime = GetTime("solve");
+  double ConTime = GetTime(MtxConvTime_);
+  double MatTime = GetTime(MtxRedistTime_);
+  double VecTime = GetTime(VecRedistTime_);
+  double SymTime = GetTime(SymFactTime_);
+  double NumTime = GetTime(NumFactTime_);
+  double SolTime = GetTime(SolveTime_);
 
   if (NumSymbolicFact_)
     SymTime /= NumSymbolicFact_;

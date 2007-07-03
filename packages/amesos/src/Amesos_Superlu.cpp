@@ -68,6 +68,12 @@ Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
   FactorizationOK_(false),
   FactorizationDone_(false),
   iam_(0),
+  MtxConvTime_(-1),
+  MtxRedistTime_(-1),
+  VecRedistTime_(-1),
+  NumFactTime_(-1),
+  SolveTime_(-1),
+  OverheadTime_(-1),
   SerialMap_(Teuchos::null), 
   SerialCrsMatrixA_(Teuchos::null), 
   ImportToSerial_(Teuchos::null),
@@ -146,8 +152,8 @@ bool Amesos_Superlu::MatrixShapeOK() const
 // ======================================================================
 int Amesos_Superlu::ConvertToSerial() 
 { 
-  ResetTime(0);
-  ResetTime(1);
+  ResetTimer(0);
+  ResetTimer(1);
 
   RowMatrixA_ = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   if (RowMatrixA_ == 0)
@@ -188,7 +194,7 @@ int Amesos_Superlu::ConvertToSerial()
     
     // MS // Set zero element if not present, possibly add
     // MS // something to the diagonal
-    double AddToDiag = 0.0;
+    //double AddToDiag = 0.0;
     // FIXME??      bug #1371
 #if 0
     if (iam_ == 0)
@@ -213,8 +219,8 @@ int Amesos_Superlu::ConvertToSerial()
     SerialMatrix_ = SerialCrsMatrixA_.get();
   }
 
-  AddTime("matrix redistribution", 0);
-  AddTime("overhead", 1);
+  MtxRedistTime_ = AddTime("Total matrix redistribution time", MtxRedistTime_, 0);
+  OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
 
   return(0);
 }
@@ -241,10 +247,10 @@ int Amesos_Superlu::Factor()
   // I suppose that the matrix has already been formed on processor 0
   // as SerialMatrix_.
 
-  ResetTime(0);
+  ResetTimer(0);
   if (iam_ == 0) 
   {
-    ResetTime(1);
+    ResetTimer(1);
 
     if (NumGlobalRows_ != SerialMatrix_->NumGlobalRows() ||
         NumGlobalRows_ != SerialMatrix_->NumGlobalCols() ||
@@ -277,7 +283,7 @@ int Amesos_Superlu::Factor()
 
     Ap_[NumGlobalRows_] = Ai_index; 
 
-    AddTime("overhead", 1);
+    OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
 
     if ( FactorizationDone_ ) { 
       Destroy_SuperMatrix_Store(&data_->A);
@@ -291,7 +297,7 @@ int Amesos_Superlu::Factor()
 			    &Ai_[0], &Ap_[0], SLU::SLU_NR, SLU::SLU_D, SLU::SLU_GE );
   }
 
-  AddTime("conversion", 0);
+  MtxConvTime_ = AddTime("Total matrix conversion time", MtxConvTime_, 0);
 
   return 0;
 }   
@@ -308,7 +314,7 @@ int Amesos_Superlu::ReFactor()
 
   if (iam_ == 0) 
   {
-    ResetTime(1);
+    ResetTimer(1);
 
     if (NumGlobalRows_ != SerialMatrix_->NumGlobalRows() ||
         NumGlobalRows_ != SerialMatrix_->NumGlobalCols() ||
@@ -360,7 +366,7 @@ int Amesos_Superlu::ReFactor()
     assert( NumGlobalRows_ == MyRow );
     Ap_[ NumGlobalRows_ ] = Ai_index ; 
     
-    AddTime("overhead", 1);
+    OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
 
     assert ( FactorizationDone_ ) ; 
     Destroy_SuperMatrix_Store(&data_->A);
@@ -386,9 +392,9 @@ int Amesos_Superlu::SymbolicFactorization()
 // ======================================================================
 int Amesos_Superlu::NumericFactorization() 
 {
-  InitTime(Comm(), 2);
+  CreateTimer(Comm(), 2);
 
-  ResetTime(0);
+  ResetTimer(0);
 
   ConvertToSerial(); 
 
@@ -458,7 +464,7 @@ int Amesos_Superlu::NumericFactorization()
     SLU::StatFree( &SLU_stat ) ; 
   }
 
-  AddTime("numeric", 0);
+  NumFactTime_ = AddTime("Total numeric factorization time", NumFactTime_, 0);
 
   FactorizationDone_ = true; 
 
@@ -475,7 +481,7 @@ int Amesos_Superlu::Solve()
     AMESOS_CHK_ERR(NumericFactorization());
   }
 
-  ResetTime(1); // for "overhead'
+  ResetTimer(1); // for "overhead'
 
   Epetra_MultiVector* vecX = Problem_->GetLHS(); 
   Epetra_MultiVector* vecB = Problem_->GetRHS(); 
@@ -504,7 +510,7 @@ int Amesos_Superlu::Solve()
   } 
   else 
   { 
-    ResetTime(0);
+    ResetTimer(0);
 
     SerialX = new Epetra_MultiVector(SerialMap(), nrhs); 
     SerialB = new Epetra_MultiVector(SerialMap(), nrhs); 
@@ -513,10 +519,10 @@ int Amesos_Superlu::Solve()
     SerialB = SerialB; 
     SerialX = SerialX; 
 
-    AddTime("vector redistribution", 0);
+    VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_, 0);
   } 
 
-  ResetTime(0);
+  ResetTimer(0);
 
   // Call SUPERLU's dgssvx to perform the solve
   // At this point I have, on processor 0, the solution vector
@@ -567,7 +573,7 @@ int Amesos_Superlu::Solve()
 	    &ferr_[0], &berr_[0], &(data_->mem_usage), &Ierr[0] );
 #endif
 
-    AddTime("overhead", 1); // NOTE: only timings on processor 0 will be meaningful
+    OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1); // NOTE: only timings on processor 0 will be meaningful
 
     SLU::SuperLUStat_t SLU_stat ;
     SLU::StatInit( &SLU_stat ) ;//    Copy the scheme used in dgssvx1.c 
@@ -590,22 +596,22 @@ int Amesos_Superlu::Solve()
     StatFree( &SLU_stat ) ; 
   }
 
-  AddTime("solve", 0);
+  SolveTime_ = AddTime("Total solve time", SolveTime_, 0);
 
-  ResetTime(1); // for "overhead'
+  ResetTimer(1); // for "overhead'
 
   //
   //  Copy X back to the original vector
   // 
   if (Comm().NumProc() != 1) 
   { 
-    ResetTime(0);
+    ResetTimer(0);
 
     vecX->Export(*SerialX, ImportToSerial(), Insert);
     delete SerialB;
     delete SerialX;
 
-    AddTime("vector redistribution", 0);
+    VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_, 0);
   } 
 
   if (ComputeTrueResidual_)
@@ -615,7 +621,7 @@ int Amesos_Superlu::Solve()
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*vecX, *vecB, "Amesos_Superlu");
 
-  AddTime("overhead", 1);
+  OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
 
   ++NumSolve_;
 
@@ -658,12 +664,12 @@ void Amesos_Superlu::PrintTiming() const
   if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
     return;
 
-  double ConTime = GetTime("conversion");
-  double MatTime = GetTime("matrix redistribution");
-  double VecTime = GetTime("vector redistribution");
-  double NumTime = GetTime("numeric");
-  double SolTime = GetTime("solve");
-  double OveTime = GetTime("overhead");
+  double ConTime = GetTime(MtxConvTime_);
+  double MatTime = GetTime(MtxRedistTime_);
+  double VecTime = GetTime(VecRedistTime_);
+  double NumTime = GetTime(NumFactTime_);
+  double SolTime = GetTime(SolveTime_);
+  double OveTime = GetTime(OverheadTime_);
 
   if (NumNumericFact_)
     NumTime /= NumNumericFact_;

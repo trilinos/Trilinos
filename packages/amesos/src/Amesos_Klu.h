@@ -165,11 +165,23 @@ public:
 
   int SetParameters( Teuchos::ParameterList &ParameterList );
 
+  //! Returns the number of symbolic factorizations performed by this object.
+  int NumSymbolicFact() const { return( Amesos_Status::NumSymbolicFact_ ); }
+
+  //! Returns the number of numeric factorizations performed by this object.
+  int NumNumericFact() const { return( Amesos_Status::NumNumericFact_ ); }
+
+  //! Returns the number of solves performed by this object.
+  int NumSolve() const { return( Amesos_Status::NumSolve_ ); }
+
   //! Prints timing information
   void PrintTiming() const;
   
   //! Prints information about the factorization and solution phases.
   void PrintStatus() const;
+
+  //! Extracts timing information and places in parameter list.
+  void GetTiming( Teuchos::ParameterList &TimingParameterList ) const { Amesos_Time::GetTiming( TimingParameterList ); }
   
 private:  
   
@@ -254,10 +266,10 @@ private:
   //  PrivateKluData_ contains pointers to data needed by klu whose
   //  data structures are defined by klu.h
   //
-  Teuchos::RefCountPtr<Amesos_Klu_Pimpl> PrivateKluData_; 
-  Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndex_; 
-  Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndexRange_; 
-  Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndexDomain_; 
+  Teuchos::RCP<Amesos_Klu_Pimpl> PrivateKluData_; 
+  Teuchos::RCP<Amesos_StandardIndex> StdIndex_; 
+  Teuchos::RCP<Amesos_StandardIndex> StdIndexRange_; 
+  Teuchos::RCP<Amesos_StandardIndex> StdIndexDomain_; 
 
   //! Ap, Ai, Aval form the compressed row storage used by Klu
   //! Ai and Aval can point directly into a matrix if it is StorageOptimized(), hence
@@ -282,16 +294,16 @@ private:
   Epetra_CrsMatrix* CrsMatrixA_;
 #if 0
   //! Points to an object which reindexes a MultiVector to a contiguous map
-  Teuchos::RefCountPtr<EpetraExt::MultiVector_Reindex> VecTrans_;
+  Teuchos::RCP<EpetraExt::MultiVector_Reindex> VecTrans_;
   //! Points to an object which reindexes a CrsMatrix to a contiguous map
-  Teuchos::RefCountPtr<EpetraExt::CrsMatrix_Reindex> MatTrans_;
+  Teuchos::RCP<EpetraExt::CrsMatrix_Reindex> MatTrans_;
   //! Points to a Contiguous Map 
-  Teuchos::RefCountPtr<Epetra_Map> ContiguousMap_;
+  Teuchos::RCP<Epetra_Map> ContiguousMap_;
 #endif
   //! Points to a Serial Map (unused if UseDataInPlace_ == 1 )
-  Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
+  Teuchos::RCP<Epetra_Map> SerialMap_;
   //! Points to a Serial Copy of A (unused if UseDataInPlace_==1)
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrixA_;
+  Teuchos::RCP<Epetra_CrsMatrix> SerialCrsMatrixA_;
   //! Points to a Contiguous Copy of A 
   Epetra_RowMatrix* StdIndexMatrix_ ; 
   Epetra_MultiVector* StdIndexDomainVector_ ; 
@@ -313,8 +325,8 @@ private:
   Epetra_MultiVector* SerialB_ ;
   Epetra_MultiVector* SerialX_ ;
   //! Serial versions of the LHS and RHS (if necessary)
-  Teuchos::RefCountPtr<Epetra_MultiVector> SerialXextract_;
-  Teuchos::RefCountPtr<Epetra_MultiVector> SerialBextract_;
+  Teuchos::RCP<Epetra_MultiVector> SerialXextract_;
+  Teuchos::RCP<Epetra_MultiVector> SerialBextract_;
 
   //! If \c true, the transpose of A is used.
   bool UseTranspose_;
@@ -326,9 +338,12 @@ private:
   //! Only used for RowMatrices to extract copies.
   vector<double>RowValuesV_;
   //! Importer to process 0.
-  Teuchos::RefCountPtr<Epetra_Import> ImportToSerial_;
-  Teuchos::RefCountPtr<Epetra_Import> ImportRangeToSerial_;
-  Teuchos::RefCountPtr<Epetra_Import> ImportDomainToSerial_;
+  Teuchos::RCP<Epetra_Import> ImportToSerial_;
+  Teuchos::RCP<Epetra_Import> ImportRangeToSerial_;
+  Teuchos::RCP<Epetra_Import> ImportDomainToSerial_;
+  //! Quick access ids for the individual timings
+  int MtxRedistTime_, MtxConvTime_, VecRedistTime_;
+  int SymFactTime_, NumFactTime_, SolveTime_, OverheadTime_;
 
 };  // class Amesos_Klu  
 

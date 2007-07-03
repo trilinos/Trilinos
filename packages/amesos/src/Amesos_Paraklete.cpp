@@ -47,14 +47,14 @@ extern "C" {
 
 namespace {
 
-using Teuchos::RefCountPtr;
+using Teuchos::RCP;
 
 template<class T, class DeleteFunctor>
 class DeallocFunctorDeleteWithCommon
 {
 public:
   DeallocFunctorDeleteWithCommon(
-				 const RefCountPtr<paraklete_common>  &common
+				 const RCP<paraklete_common>  &common
 				 ,DeleteFunctor                        deleteFunctor
 				 )
     : common_(common), deleteFunctor_(deleteFunctor)
@@ -64,7 +64,7 @@ public:
     if(ptr) deleteFunctor_(&ptr,&*common_);
   }
 private:
-  Teuchos::RefCountPtr<paraklete_common> common_;
+  Teuchos::RCP<paraklete_common> common_;
   DeleteFunctor deleteFunctor_;
   DeallocFunctorDeleteWithCommon(); // Not defined and not to be called!
 };
@@ -72,7 +72,7 @@ private:
 template<class T, class DeleteFunctor>
 DeallocFunctorDeleteWithCommon<T,DeleteFunctor>
 deallocFunctorDeleteWithCommon(
-			       const RefCountPtr<paraklete_common>  &common
+			       const RCP<paraklete_common>  &common
 			       ,DeleteFunctor                        deleteFunctor
 			       )
 {
@@ -89,9 +89,9 @@ public:
 
 
   cholmod_sparse pk_A_ ;
-  Teuchos::RefCountPtr<paraklete_symbolic> LUsymbolic_ ;
-  Teuchos::RefCountPtr<paraklete_numeric> LUnumeric_ ;
-  Teuchos::RefCountPtr<paraklete_common> common_;
+  Teuchos::RCP<paraklete_symbolic> LUsymbolic_ ;
+  Teuchos::RCP<paraklete_numeric> LUnumeric_ ;
+  Teuchos::RCP<paraklete_common> common_;
 
 
 
@@ -101,10 +101,17 @@ public:
 Amesos_Paraklete::Amesos_Paraklete(const Epetra_LinearProblem &prob ) :
   PrivateParakleteData_( rcp( new Amesos_Paraklete_Pimpl() ) ),
   CrsMatrixA_(0),
-  UseTranspose_(false),
   TrustMe_(false),
+  UseTranspose_(false),
   Problem_(&prob),
-  ParakleteComm_(0)
+  ParakleteComm_(0),
+  MtxConvTime_(-1),
+  MtxRedistTime_(-1),
+  VecRedistTime_(-1),
+  SymFactTime_(-1),
+  NumFactTime_(-1),
+  SolveTime_(-1),
+  OverheadTime_(-1)
 {
 
   // MS // move declaration of Problem_ above because I need it
@@ -200,11 +207,11 @@ int Amesos_Paraklete::ExportToSerial()
 
 int Amesos_Paraklete::CreateLocalMatrixAndExporters() 
 {
-  ResetTime(0);
+  ResetTimer(0);
 
   RowMatrixA_ = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   if (RowMatrixA_ == 0) AMESOS_CHK_ERR(-1);
-
+  
   const Epetra_Map &OriginalMatrixMap = RowMatrixA_->RowMatrixRowMap() ;
   const Epetra_Map &OriginalDomainMap = 
     UseTranspose()?GetProblem()->GetOperator()->OperatorRangeMap():
@@ -212,33 +219,32 @@ int Amesos_Paraklete::CreateLocalMatrixAndExporters()
   const Epetra_Map &OriginalRangeMap = 
     UseTranspose()?GetProblem()->GetOperator()->OperatorDomainMap():
     GetProblem()->GetOperator()->OperatorRangeMap();
-
+  
   NumGlobalElements_ = RowMatrixA_->NumGlobalRows();
   numentries_ = RowMatrixA_->NumGlobalNonzeros();
   assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols() );
-
+  
   //
   //  Create a serial matrix
   //
   assert( NumGlobalElements_ == OriginalMatrixMap.NumGlobalElements() ) ;
   int NumMyElements_ = 0 ;
   if (MyPID_==0) NumMyElements_ = NumGlobalElements_;
-
+  
   //
   //  UseDataInPlace_ is set to 1 (true) only if everything is perfectly
   //  normal.  Anything out of the ordinary reverts to the more expensive
   //  path. 
   //
   UseDataInPlace_ = ( OriginalMatrixMap.NumMyElements() ==
-	       OriginalMatrixMap.NumGlobalElements() )?1:0;
+		      OriginalMatrixMap.NumGlobalElements() )?1:0;
   if ( ! OriginalRangeMap.SameAs( OriginalMatrixMap ) ) UseDataInPlace_ = 0 ; 
   if ( ! OriginalDomainMap.SameAs( OriginalMatrixMap ) ) UseDataInPlace_ = 0 ; 
   if ( AddZeroToDiag_ ) UseDataInPlace_ = 0 ; 
   Comm().Broadcast( &UseDataInPlace_, 1, 0 ) ;
-
+  
   UseDataInPlace_ = 0 ; // bug - remove this someday.
-
-
+    
   //
   //  Reindex matrix if necessary (and possible - i.e. CrsMatrix)
   //
@@ -247,35 +253,34 @@ int Amesos_Paraklete::CreateLocalMatrixAndExporters()
   //
   CrsMatrixA_ = dynamic_cast<Epetra_CrsMatrix *>(Problem_->GetOperator());
   Epetra_CrsMatrix* CcsMatrixA = 0 ; 
-
-
+    
   //
   //  CcsMatrixA points to a matrix in Compressed Column Format 
   //  i.e. the format needed by Paraklete.  If we are solving  
   //  A^T x = b, CcsMatrixA = CrsMatrixA_, otherwise we must 
   //  transpose the matrix.
   //
-    if (UseTranspose()) {
-      CcsMatrixA = CrsMatrixA_ ;
-    } else {
-      if ( CrsMatrixA_ == 0 ) AMESOS_CHK_ERR( -7 );   //  Amesos_Paraklete only supports CrsMatrix objects in the non-transpose case
+  if (UseTranspose()) {
+    CcsMatrixA = CrsMatrixA_ ;
+  } else {
+    if ( CrsMatrixA_ == 0 ) AMESOS_CHK_ERR( -7 );   //  Amesos_Paraklete only supports CrsMatrix objects in the non-transpose case
 #ifdef HAVE_AMESOS_EPETRAEXT
-      bool MakeDataContiguous = true;
-      transposer_ = rcp ( new EpetraExt::RowMatrix_Transpose( MakeDataContiguous ));
-
-      int OriginalTracebackMode = CrsMatrixA_->GetTracebackMode();
-      CrsMatrixA_->SetTracebackMode( EPETRA_MIN( OriginalTracebackMode, 0) );
-
-      CcsMatrixA = &(dynamic_cast<Epetra_CrsMatrix&>(((*transposer_)(*CrsMatrixA_))));
-      CrsMatrixA_->SetTracebackMode( OriginalTracebackMode );
+    bool MakeDataContiguous = true;
+    transposer_ = rcp ( new EpetraExt::RowMatrix_Transpose( MakeDataContiguous ));
+    
+    int OriginalTracebackMode = CrsMatrixA_->GetTracebackMode();
+    CrsMatrixA_->SetTracebackMode( EPETRA_MIN( OriginalTracebackMode, 0) );
+    
+    CcsMatrixA = &(dynamic_cast<Epetra_CrsMatrix&>(((*transposer_)(*CrsMatrixA_))));
+    CrsMatrixA_->SetTracebackMode( OriginalTracebackMode );
 #else
-      cerr << "Amesos_Paraklete requires the EpetraExt library to solve non-transposed problems. " << endl ; 
-      cerr << " To rebuild Amesos with EpetraExt, add --enable-epetraext to your configure invocation" << endl ;
-      AMESOS_CHK_ERR( -3 );
+    cerr << "Amesos_Paraklete requires the EpetraExt library to solve non-transposed problems. " << endl ; 
+    cerr << " To rebuild Amesos with EpetraExt, add --enable-epetraext to your configure invocation" << endl ;
+    AMESOS_CHK_ERR( -3 );
 #endif
-    }
-
-
+  }
+  
+  
   if  ( Reindex_ ) {
     if ( CcsMatrixA == 0 ) AMESOS_CHK_ERR(-4);
 #ifdef HAVE_AMESOS_EPETRAEXT
@@ -284,7 +289,7 @@ int Amesos_Paraklete::CreateLocalMatrixAndExporters()
     //const Epetra_Map& OriginalColMap = CcsMatrixA->RowMap();
     StdIndexDomain_ = rcp( new Amesos_StandardIndex( OriginalDomainMap  ) );
     StdIndexRange_ = rcp( new Amesos_StandardIndex( OriginalRangeMap  ) );
-
+    
     StdIndexMatrix_ = StdIndex_->StandardizeIndex( CcsMatrixA );
 #else
     cerr << "Amesos_Paraklete requires EpetraExt to reindex matrices." << endl 
@@ -298,7 +303,7 @@ int Amesos_Paraklete::CreateLocalMatrixAndExporters()
       StdIndexMatrix_ = CcsMatrixA ;
     } 
   }
-
+  
   //
   //  At this point, StdIndexMatrix_ points to a matrix with 
   //  standard indexing.  
@@ -325,9 +330,9 @@ int Amesos_Paraklete::CreateLocalMatrixAndExporters()
     SerialCrsMatrixA_ = rcp( new Epetra_CrsMatrix(Copy, *SerialMap_, 0) ) ;
     SerialMatrix_ = &*SerialCrsMatrixA_ ;
   }
-
-  AddTime("matrix redistribution", 0);
-
+  
+  MtxRedistTime_ = AddTime("Total matrix redistribution time", MtxRedistTime_, 0);
+  
   return(0);
 }
 
@@ -349,8 +354,8 @@ int Amesos_Paraklete::CreateLocalMatrixAndExporters()
 //
 int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
 {
-  ResetTime(0);
-
+  ResetTimer(0);
+  
   //
   //  Convert matrix to the form that Klu expects (Ap, VecAi, VecAval)
   //
@@ -477,40 +482,38 @@ int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
   pk_A.packed = 1 ; 
   }
 
-
-
-  AddTime("matrix conversion", 0);
+  MtxConvTime_ = AddTime("Total matrix conversion time", MtxConvTime_, 0);
 
   return 0;
 }
 
 //=============================================================================
 int Amesos_Paraklete::SetParameters( Teuchos::ParameterList &ParameterList ) {
-
+  
   // ========================================= //
   // retrive PARAKLETE's parameters from list.       //
   // default values defined in the constructor //
   // ========================================= //
-
+  
   // retrive general parameters
-
+  
   SetStatusParameters( ParameterList );
   SetControlParameters( ParameterList );
-
   
-
+  
+  
   if (ParameterList.isParameter("TrustMe") ) 
     TrustMe_ = ParameterList.get<bool>( "TrustMe" );
-
+  
 #if 0
-
+  
   unused for now
-
-  if (ParameterList.isSublist("Paraklete") ) {
-    Teuchos::ParameterList ParakleteParams = ParameterList.sublist("Paraklete") ;
-  }
+    
+    if (ParameterList.isSublist("Paraklete") ) {
+      Teuchos::ParameterList ParakleteParams = ParameterList.sublist("Paraklete") ;
+    }
 #endif
-
+  
   return 0;
 }
 
@@ -518,7 +521,7 @@ int Amesos_Paraklete::SetParameters( Teuchos::ParameterList &ParameterList ) {
 //=============================================================================
 int Amesos_Paraklete::PerformSymbolicFactorization() 
 {
-  ResetTime(0);
+  ResetTimer(0);
   
   if ( IamInGroup_ ) 
     PrivateParakleteData_->LUsymbolic_ =
@@ -528,8 +531,8 @@ int Amesos_Paraklete::PerformSymbolicFactorization()
 	   ,true
 	   );
   
-  AddTime("symbolic", 0);
-
+  SymFactTime_ = AddTime("Total symbolic factorization time", SymFactTime_, 0);
+  
   return 0;
 }
 
@@ -539,33 +542,30 @@ int Amesos_Paraklete::PerformNumericFactorization( )
   // Changed this; it was "if (!TrustMe)...
   // The behavior is not intuitive. Maybe we should introduce a new
   // parameter, FastSolvers or something like that, that does not perform
-  // any AddTime, ResetTime, GetTime.
+  // any AddTime, ResetTimer, GetTime.
   
-  ResetTime(0);
+  ResetTimer(0);
+  
+  //bool factor_with_pivoting = true ;
+  
+  if ( IamInGroup_ ) 
+    PrivateParakleteData_->LUnumeric_ =
+      rcp( paraklete_factorize ( &PrivateParakleteData_->pk_A_,
+                                 &*PrivateParakleteData_->LUsymbolic_, 
+                                 &*PrivateParakleteData_->common_ ) 
+           ,deallocFunctorDeleteWithCommon<paraklete_numeric>(PrivateParakleteData_->common_,paraklete_free_numeric)
+	   ,true
+	   );
 
-  if (MyPID_ == 0) {
-  }
-
-    bool factor_with_pivoting = true ;
-
-    if ( IamInGroup_ ) 
-      PrivateParakleteData_->LUnumeric_ =
-	rcp( paraklete_factorize ( &PrivateParakleteData_->pk_A_,
-				   &*PrivateParakleteData_->LUsymbolic_, 
-				   &*PrivateParakleteData_->common_ ) 
-	     ,deallocFunctorDeleteWithCommon<paraklete_numeric>(PrivateParakleteData_->common_,paraklete_free_numeric)
-	     ,true
-	     );
-
-  AddTime("numeric", 0);
-
+  NumFactTime_ = AddTime("Total numeric factorization time", NumFactTime_, 0);
+  
   return 0;
 }
 
 //=============================================================================
 bool Amesos_Paraklete::MatrixShapeOK() const {
   bool OK = true;
-
+  
   // Comment by Tim:  The following code seems suspect.  The variable "OK"
   // is not set if the condition is true.
   // Does the variable "OK" default to true?
@@ -578,43 +578,43 @@ bool Amesos_Paraklete::MatrixShapeOK() const {
 
 
 extern "C" {
-void my_handler (int status, char *file, int line, char *msg)
-{
+  void my_handler (int status, char *file, int line, char *msg)
+  {
     printf ("Error handler: %s %d %d: %s\n", file, line, status, msg) ;
     if (status != CHOLMOD_OK)
-    {
+      {
 	fprintf (stderr, "\n\n*********************************************\n");
 	fprintf (stderr, "**** Test failure: %s %d %d %s\n", file, line,
-	    status, msg) ;
+		 status, msg) ;
 	fprintf (stderr, "*********************************************\n\n");
 	fflush (stderr) ;
 	fflush (stdout) ;
-    }
-}
-}
+      }
+  }
+}  
 
 //=============================================================================
 int Amesos_Paraklete::SymbolicFactorization() 
 {
   MyPID_    = Comm().MyPID();
   NumProcs_ = Comm().NumProc();
-
+  
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
-
+  
 #ifdef HAVE_AMESOS_EPETRAEXT
   transposer_ = static_cast<Teuchos::ENull>( 0 ); 
 #endif
-
-  InitTime(Comm(), 2);
-
-  ResetTime(1);
-
+  
+  CreateTimer(Comm(), 2);
+  
+  ResetTimer(1);
+  
   // "overhead" time for the following method is considered here
   AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
   assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols() );
-
-
+  
+  
   SetMaxProcesses(MaxProcesses_, *RowMatrixA_);
   
   //
@@ -623,28 +623,28 @@ int Amesos_Paraklete::SymbolicFactorization()
   //
   assert( ! TrustMe_ ) ;
   if ( TrustMe_ ) { 
-     if ( CrsMatrixA_ == 0 ) AMESOS_CHK_ERR(10 );
-     if( UseDataInPlace_ != 1 ) AMESOS_CHK_ERR( 10 ) ;
-     if( Reindex_ )  AMESOS_CHK_ERR( 10 ) ;
-     if( ! Problem_->GetLHS() )  AMESOS_CHK_ERR( 10 ) ;
-     if( ! Problem_->GetRHS() )  AMESOS_CHK_ERR( 10 ) ;
-     if( ! Problem_->GetLHS()->NumVectors() ) AMESOS_CHK_ERR( 10 ) ;
-     if( ! Problem_->GetRHS()->NumVectors() ) AMESOS_CHK_ERR( 10 ) ; 
-     SerialB_ = Problem_->GetRHS() ;
-     SerialX_ = Problem_->GetLHS() ;
-     NumVectors_ = SerialX_->NumVectors();
-     if (MyPID_ == 0) {
-       AMESOS_CHK_ERR(SerialX_->ExtractView(&SerialXBvalues_,&SerialXlda_ ));
-       AMESOS_CHK_ERR(SerialB_->ExtractView(&SerialBvalues_,&SerialXlda_ ));
-     }
+    if ( CrsMatrixA_ == 0 ) AMESOS_CHK_ERR(10 );
+    if( UseDataInPlace_ != 1 ) AMESOS_CHK_ERR( 10 ) ;
+    if( Reindex_ )  AMESOS_CHK_ERR( 10 ) ;
+    if( ! Problem_->GetLHS() )  AMESOS_CHK_ERR( 10 ) ;
+    if( ! Problem_->GetRHS() )  AMESOS_CHK_ERR( 10 ) ;
+    if( ! Problem_->GetLHS()->NumVectors() ) AMESOS_CHK_ERR( 10 ) ;
+    if( ! Problem_->GetRHS()->NumVectors() ) AMESOS_CHK_ERR( 10 ) ; 
+    SerialB_ = Problem_->GetRHS() ;
+    SerialX_ = Problem_->GetLHS() ;
+    NumVectors_ = SerialX_->NumVectors();
+    if (MyPID_ == 0) {
+      AMESOS_CHK_ERR(SerialX_->ExtractView(&SerialXBvalues_,&SerialXlda_ ));
+      AMESOS_CHK_ERR(SerialB_->ExtractView(&SerialBvalues_,&SerialXlda_ ));
+    }
   }
-
-
+  
+  
   PrivateParakleteData_->common_ = rcp(new paraklete_common());
-
+  
   const Epetra_MpiComm* MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm());
   assert (MpiComm != 0);
- 
+  
   MPI_Comm PK_Comm;
   //
   //  Create an MPI group with MaxProcesses_ processes
@@ -670,7 +670,7 @@ int Amesos_Paraklete::SymbolicFactorization()
     IamInGroup_ = true; 
     PK_Comm = MpiComm->GetMpiComm() ;
   }
-
+  
   paraklete_common& pk_common =  *PrivateParakleteData_->common_ ;
   cholmod_common *cm = &(pk_common.cm) ;
   cholmod_start (cm) ;
@@ -693,7 +693,7 @@ int Amesos_Paraklete::SymbolicFactorization()
 
   AMESOS_CHK_ERR( ConvertToParakleteCRS(true) );
 
-  AddTime("overhead", 1);
+  OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
 
   // All this time if PARAKLETE time
   AMESOS_CHK_ERR( PerformSymbolicFactorization() );
@@ -714,7 +714,7 @@ int Amesos_Paraklete::NumericFactorization()
     if (IsSymbolicFactorizationOK_ == false)
       AMESOS_CHK_ERR(SymbolicFactorization());
     
-    ResetTime(1); // "overhead" time
+    ResetTimer(1); // "overhead" time
 
     Epetra_CrsMatrix *CrsMatrixA = dynamic_cast<Epetra_CrsMatrix *>(RowMatrixA_);
     if ( false && CrsMatrixA == 0 )   // hack to get around Bug #1502 
@@ -731,7 +731,7 @@ int Amesos_Paraklete::NumericFactorization()
       AMESOS_CHK_ERR( ConvertToParakleteCRS(false) );
     }
 
-    AddTime("overhead", 1);
+    OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
   }
 
   // this time is all for PARAKLETE
@@ -747,8 +747,8 @@ int Amesos_Paraklete::NumericFactorization()
 //=============================================================================
 int Amesos_Paraklete::Solve() 
 {
-  Epetra_MultiVector* vecX ;
-  Epetra_MultiVector* vecB ;
+  Epetra_MultiVector* vecX=0;
+  Epetra_MultiVector* vecB=0;
 
   if ( !TrustMe_ ) { 
 
@@ -761,7 +761,7 @@ int Amesos_Paraklete::Solve()
     if (IsNumericFactorizationOK_ == false)
       AMESOS_CHK_ERR(NumericFactorization());
     
-    ResetTime(1);
+    ResetTimer(1);
 
     //
     //  Reindex the LHS and RHS 
@@ -786,7 +786,7 @@ int Amesos_Paraklete::Solve()
     
     //  Extract Serial versions of X and B
     
-    ResetTime(0);
+    ResetTimer(0);
 
     //  Copy B to the serial version of B
     //
@@ -812,11 +812,11 @@ int Amesos_Paraklete::Solve()
       SerialB_ = &*SerialBextract_ ;
       SerialX_ = &*SerialXextract_ ;
     }
-    AddTime("vector redistribution", 0);
+    VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_, 0);
 
     //  Call PARAKLETE to perform the solve
     
-    ResetTime(0);
+    ResetTimer(0);
     if (MyPID_ == 0) {
       AMESOS_CHK_ERR(SerialB_->ExtractView(&SerialBvalues_,&SerialXlda_ ));
       AMESOS_CHK_ERR(SerialX_->ExtractView(&SerialXBvalues_,&SerialXlda_ ));
@@ -824,7 +824,7 @@ int Amesos_Paraklete::Solve()
 	AMESOS_CHK_ERR(-1);
     }
 
-    AddTime("overhead", 1);
+    OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
   }
   if ( MyPID_ == 0) {
     if ( NumVectors_ == 1 ) {
@@ -839,12 +839,12 @@ int Amesos_Paraklete::Solve()
       paraklete_solve(  &*PrivateParakleteData_->LUnumeric_, &*PrivateParakleteData_->LUsymbolic_,
 			&SerialXBvalues_[i*SerialXlda_],  &*PrivateParakleteData_->common_ );
     }
-  AddTime("solve", 0);
+  SolveTime_ = AddTime("Total solve time", SolveTime_, 0);
 
   //  Copy X back to the original vector
 
-  ResetTime(0);
-  ResetTime(1);
+  ResetTimer(0);
+  ResetTimer(1);
 
   if (UseDataInPlace_ == 0) {
     ImportDomainToSerial_ = rcp(new Epetra_Import ( *SerialMap_, vecX->Map() ) );
@@ -852,7 +852,7 @@ int Amesos_Paraklete::Solve()
 
   } // otherwise we are already in place.
 
-  AddTime("vector redistribution", 0);
+  VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_, 0);
 
 #if 0
   //
@@ -864,7 +864,7 @@ int Amesos_Paraklete::Solve()
   if (ComputeVectorNorms_)
     ComputeVectorNorms(*vecX, *vecB, "Amesos_Paraklete");
 
-  AddTime("overhead", 1);
+  OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
 
   ++NumSolve_;
 
@@ -900,13 +900,13 @@ void Amesos_Paraklete::PrintTiming() const
 {
   if (MyPID_) return;
 
-  double ConTime = GetTime("matrix conversion");
-  double MatTime = GetTime("matrix redistribution");
-  double VecTime = GetTime("vector redistribution");
-  double SymTime = GetTime("symbolic");
-  double NumTime = GetTime("numeric");
-  double SolTime = GetTime("solve");
-  double OveTime = GetTime("overhead");
+  double ConTime = GetTime(MtxConvTime_);
+  double MatTime = GetTime(MtxRedistTime_);
+  double VecTime = GetTime(VecRedistTime_);
+  double SymTime = GetTime(SymFactTime_);
+  double NumTime = GetTime(NumFactTime_);
+  double SolTime = GetTime(SolveTime_);
+  double OveTime = GetTime(OverheadTime_);
 
   if (NumSymbolicFact_)
     SymTime /= NumSymbolicFact_;

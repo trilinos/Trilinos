@@ -100,8 +100,8 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 
   bool MyVerbose = false ; //  setting this equal to verbose produces too much output and exceeds the test harnesses 1 Megabyte limit
 
-  RefCountPtr<Epetra_CrsMatrix> MyMat ; 
-  RefCountPtr<Epetra_CrsMatrix> MyMatWithDiag ; 
+  RCP<Epetra_CrsMatrix> MyMat ; 
+  RCP<Epetra_CrsMatrix> MyMatWithDiag ; 
 
   MyMat = rcp( new Epetra_CrsMatrix( *InMat ) ); 
 

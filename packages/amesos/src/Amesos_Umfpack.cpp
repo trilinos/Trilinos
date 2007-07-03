@@ -54,7 +54,14 @@ Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
   UseTranspose_(false),
   Problem_(&prob), 
   Rcond_(0.0), 
-  RcondValidOnAllProcs_(true)
+  RcondValidOnAllProcs_(true),
+  MtxConvTime_(-1),
+  MtxRedistTime_(-1),
+  VecRedistTime_(-1),
+  SymFactTime_(-1),
+  NumFactTime_(-1),
+  SolveTime_(-1),
+  OverheadTime_(-1)
 {
   
   // MS // move declaration of Problem_ above because I need it
@@ -93,8 +100,8 @@ Amesos_Umfpack::~Amesos_Umfpack(void)
 // are updated.
 int Amesos_Umfpack::ConvertToSerial(const bool FirstTime) 
 { 
-  ResetTime(0);
-  ResetTime(1);
+  ResetTimer(0);
+  ResetTimer(1);
   
   const Epetra_Map &OriginalMap = Matrix()->RowMatrixRowMap() ; 
 
@@ -164,9 +171,8 @@ int Amesos_Umfpack::ConvertToSerial(const bool FirstTime)
   }
 
 
-
-  AddTime("matrix redistribution", 0);
-  AddTime("overhead", 1);
+  MtxRedistTime_ = AddTime("Total matrix redistribution time", MtxRedistTime_, 0);
+  OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
   
   return(0);
 } 
@@ -174,8 +180,8 @@ int Amesos_Umfpack::ConvertToSerial(const bool FirstTime)
 //=============================================================================
 int Amesos_Umfpack::ConvertToUmfpackCRS()
 {
-  ResetTime(0);
-  ResetTime(1);
+  ResetTimer(0);
+  ResetTimer(1);
   
   // Convert matrix to the form that Umfpack expects (Ap, Ai, Aval),
   // only on processor 0. The matrix has already been assembled in
@@ -220,8 +226,8 @@ int Amesos_Umfpack::ConvertToUmfpackCRS()
     Ap[MyRow] = Ai_index ; 
   }
 
-  AddTime("conversion", 0);
-  AddTime("overhead", 1);
+  MtxConvTime_ = AddTime("Total matrix conversion time", MtxConvTime_, 0);
+  OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
   
   return 0;
 }   
@@ -245,7 +251,7 @@ int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList )
 int Amesos_Umfpack::PerformSymbolicFactorization() 
 {
   // MS // no overhead time in this method
-  ResetTime(0);  
+  ResetTimer(0);  
   
   double *Control = (double *) NULL, *Info = (double *) NULL;
   
@@ -257,7 +263,7 @@ int Amesos_Umfpack::PerformSymbolicFactorization()
 				&Symbolic, Control, Info) ;
   }
 
-  AddTime("symbolic", 0);
+  SymFactTime_ = AddTime("Total symbolic factorization time", SymFactTime_, 0);
 
   return 0;
 }
@@ -266,7 +272,7 @@ int Amesos_Umfpack::PerformSymbolicFactorization()
 int Amesos_Umfpack::PerformNumericFactorization( ) 
 {
   // MS // no overhead time in this method
-  ResetTime(0);
+  ResetTimer(0);
 
   RcondValidOnAllProcs_ = false ; 
   if (MyPID_ == 0) {
@@ -326,7 +332,7 @@ int Amesos_Umfpack::PerformNumericFactorization( )
     assert( status == 0 ) ; 
   }
   
-  AddTime("numeric", 0);
+  NumFactTime_ = AddTime("Total numeric factorization time", NumFactTime_, 0);
 
   return 0;
 }
@@ -364,7 +370,7 @@ int Amesos_Umfpack::SymbolicFactorization()
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
 
-  InitTime(Comm(), 2);
+  CreateTimer(Comm(), 2);
   // MS // Initialize two timers:
   // MS // timer 1: this will track all time spent in Amesos most
   // MS //          important functions, *including* UMFPACK functions
@@ -400,7 +406,7 @@ int Amesos_Umfpack::NumericFactorization()
   if (IsSymbolicFactorizationOK_ == false)
   {
     // Call here what is needed, to avoid double shipping of the matrix
-    InitTime(Comm(), 2);
+    CreateTimer(Comm(), 2);
 
     MyPID_    = Comm().MyPID();
     NumProcs_ = Comm().NumProc();
@@ -440,7 +446,7 @@ int Amesos_Umfpack::Solve()
   if (!IsNumericFactorizationOK_)
     AMESOS_CHK_ERR(NumericFactorization()); 
 
-  ResetTime(1);
+  ResetTimer(1);
 
   Epetra_MultiVector* vecX = Problem_->GetLHS(); 
   Epetra_MultiVector* vecB = Problem_->GetRHS(); 
@@ -464,7 +470,7 @@ int Amesos_Umfpack::Solve()
     
   //  Copy B to the serial version of B
   //
-  ResetTime(0);
+  ResetTimer(0);
   
   if (IsLocal_ == 1) { 
     SerialB = vecB ; 
@@ -479,15 +485,15 @@ int Amesos_Umfpack::Solve()
     SerialX = SerialXextract; 
   } 
 
-  AddTime("vector redistribution", 0);
+  VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_, 0);
   
   //  Call UMFPACK to perform the solve
   //  Note:  UMFPACK uses a Compressed Column Storage instead of compressed row storage, 
   //  Hence to compute A X = B, we ask UMFPACK to perform A^T X = B and vice versa
 
-  AddTime("overhead", 1);
+  OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1);
 
-  ResetTime(0);
+  ResetTimer(0);
 
   int SerialBlda, SerialXlda ; 
   int UmfpackRequest = UseTranspose()?UMFPACK_A:UMFPACK_At ;
@@ -515,12 +521,12 @@ int Amesos_Umfpack::Solve()
     
   if (status) AMESOS_CHK_ERR(status);
 
-  AddTime("solve", 0);
+  SolveTime_ = AddTime("Total solve time", SolveTime_, 0);
   
   //  Copy X back to the original vector
   
-  ResetTime(0);
-  ResetTime(1);
+  ResetTimer(0);
+  ResetTimer(1);
 
   if ( IsLocal_ == 0 ) {
     vecX->Export(*SerialX, Importer(), Insert ) ;
@@ -528,7 +534,7 @@ int Amesos_Umfpack::Solve()
     if (SerialXextract) delete SerialXextract ;
   }
 
-  AddTime("vector redistribution", 0);
+  VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_, 0);
 
   if (ComputeTrueResidual_)
   {
@@ -543,7 +549,7 @@ int Amesos_Umfpack::Solve()
 
   NumSolve_++;
 
-  AddTime("overhead", 1); // Amesos overhead
+  OverheadTime_ = AddTime("Total Amesos overhead time", OverheadTime_, 1); // Amesos overhead
 
   return(0);
 }
@@ -574,13 +580,13 @@ void Amesos_Umfpack::PrintTiming() const
   if (Problem_->GetOperator() == 0 || MyPID_ != 0)
     return;
 
-  double ConTime = GetTime("conversion");
-  double MatTime = GetTime("matrix redistribution");
-  double VecTime = GetTime("vector redistribution");
-  double SymTime = GetTime("symbolic");
-  double NumTime = GetTime("numeric");
-  double SolTime = GetTime("solve");
-  double OveTime = GetTime("overhead");
+  double ConTime = GetTime(MtxConvTime_);
+  double MatTime = GetTime(MtxRedistTime_);
+  double VecTime = GetTime(VecRedistTime_);
+  double SymTime = GetTime(SymFactTime_);
+  double NumTime = GetTime(NumFactTime_);
+  double SolTime = GetTime(SolveTime_);
+  double OveTime = GetTime(OverheadTime_);
 
   if (NumSymbolicFact_)
     SymTime /= NumSymbolicFact_;

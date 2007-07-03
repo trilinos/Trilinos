@@ -37,7 +37,7 @@
 #include "Amesos_Status.h"
 #include "Amesos_Control.h"
 #include "Epetra_LinearProblem.h"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -121,11 +121,23 @@ public:
 
   int SetParameters( Teuchos::ParameterList &ParameterList ) ;
 
+  //! Returns the number of symbolic factorizations performed by this object.
+  int NumSymbolicFact() const { return( Amesos_Status::NumSymbolicFact_ ); }
+
+  //! Returns the number of numeric factorizations performed by this object.
+  int NumNumericFact() const { return( Amesos_Status::NumNumericFact_ ); }
+
+  //! Returns the number of solves performed by this object.
+  int NumSolve() const { return( Amesos_Status::NumSolve_ ); }
+
   //! Print various timig.
   void PrintTiming() const;
   
   //! Print various information about the parameters used by Superludist.
   void PrintStatus() const;
+
+  //! Extracts timing information from the current solver and places it in the parameter list.
+  void GetTiming( Teuchos::ParameterList &TimingParameterList ) const { Amesos_Time::GetTiming(TimingParameterList); }
   
 private:  
   inline const Epetra_Comm& Comm() const {return(GetProblem()->GetOperator()->Comm());};
@@ -154,7 +166,7 @@ private:
   //  PrivateSuperluData_ contains pointers to data needed by klu whose
   //  data structures are defined by klu.h
   //
-  Teuchos::RefCountPtr<Amesos_Superlu_Pimpl> PrivateSuperluData_; 
+  Teuchos::RCP<Amesos_Superlu_Pimpl> PrivateSuperluData_; 
 
   int RedistributeA();
 
@@ -164,10 +176,10 @@ private:
   const Epetra_LinearProblem* Problem_;
   Epetra_RowMatrix *RowMatrixA_ ;  // Problem_->GetOperator()
 
-  RefCountPtr<Epetra_Map> UniformMap_;
-  RefCountPtr<Epetra_CrsMatrix> CrsUniformMatrix_;  
-  RefCountPtr<Epetra_RowMatrix> UniformMatrix_;  
-  Teuchos::RefCountPtr<Epetra_Import> Importer_;
+  RCP<Epetra_Map> UniformMap_;
+  RCP<Epetra_CrsMatrix> CrsUniformMatrix_;  
+  RCP<Epetra_RowMatrix> UniformMatrix_;  
+  Teuchos::RCP<Epetra_Import> Importer_;
 
   //! Allows FactOption to be used on subsequent calls to pdgssvx from NumericFactorization
   bool ReuseSymbolic_; 
@@ -202,8 +214,8 @@ private:
   bool ReplaceTinyPivot_;
   bool Equil_;
 
-  int NumNumericFact_;
-  int NumSolve_;
-  
+  int MtxConvTime_, MtxRedistTime_, VecRedistTime_;
+  int NumFactTime_, SolveTime_, OverheadTime_;
+ 
 };  // End of  class Amesos_Superludist  
 #endif /* AMESOS_SUPERLUDIST_H */

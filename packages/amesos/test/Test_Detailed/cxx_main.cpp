@@ -31,6 +31,54 @@ using namespace Teuchos;
 using namespace Galeri;
 
 //=============================================================================
+
+bool TestTiming(const Amesos_BaseSolver* Solver,
+                const Epetra_Comm& Comm)
+{
+  // Get the timings here
+  Teuchos::ParameterList TimingsList;
+  Solver->GetTiming( TimingsList );
+  
+  bool testPassed = true;
+  
+  try {
+    // you can find out how much time was spent in ...
+    double sfact_time, nfact_time, solve_time;
+    double mtx_conv_time, mtx_redist_time, vec_redist_time;
+    
+    // 1) The symbolic factorization
+    //    (parameter doesn't always exist)
+    sfact_time = TimingsList.get( "Total symbolic factorization time", 0.0 );
+    
+    // 2) The numeric factorization
+    //    (always exists if NumericFactorization() is called)
+    nfact_time = Teuchos::getParameter<double>( TimingsList, "Total numeric factorization time" );
+    
+    // 3) Solving the linear system
+    //    (always exists if Solve() is called)
+    solve_time = Teuchos::getParameter<double>( TimingsList, "Total solve time" );
+    
+    // 4) Converting the matrix to the accepted format for the solver
+    //    (always exists if SymbolicFactorization() is called)
+    mtx_conv_time = Teuchos::getParameter<double>( TimingsList, "Total solve time" );
+    
+    // 5) Redistributing the matrix for each solve to the accepted format for the solver
+    mtx_redist_time = TimingsList.get( "Total matrix redistribution time", 0.0 );
+    
+    // 6) Redistributing the vector for each solve to the accepted format for the solver
+    vec_redist_time = TimingsList.get( "Total vector redistribution time", 0.0 );
+  }
+  catch( exception& e ) {
+    if (Comm.MyPID() == 0)
+      cout << endl << "Exception caught in TestTiming() : " << e.what() << endl;
+    testPassed = false;
+  }
+  
+  return testPassed;
+
+}
+
+//=============================================================================
 bool CheckError(const string SolverType,
 		const string Descriptor,
 		const Epetra_RowMatrix& A,
@@ -112,7 +160,8 @@ bool Test(char* SolverType,
       AMESOS_CHK_ERR(Solver->Solve());
 
       TestPassed = TestPassed && 
-	CheckError(SolverType, "Solve() only", A,x_A,b_A,x_exactA);
+	CheckError(SolverType, "Solve() only", A,x_A,b_A,x_exactA) &&
+	TestTiming(Solver, A.Comm());
     }
     delete Solver; 
   }
@@ -139,7 +188,8 @@ bool Test(char* SolverType,
     AMESOS_CHK_ERR(Solver->Solve());
 
     TestPassed = TestPassed && 
-      CheckError(SolverType, "NumFact() + Solve()", A,x_A,b_A,x_exactA);
+      CheckError(SolverType, "NumFact() + Solve()", A,x_A,b_A,x_exactA) &&
+      TestTiming(Solver, A.Comm());
 
     delete Solver; 
   }
@@ -183,7 +233,8 @@ bool Test(char* SolverType,
 
     TestPassed = TestPassed && 
       CheckError(SolverType, "SymFact() + NumFact() + Solve()", 
-		 A,x_A,b_A,x_exactA);
+		 A,x_A,b_A,x_exactA) &&
+      TestTiming(Solver,A.Comm());
 
     delete Solver; 
   }
@@ -216,7 +267,8 @@ bool Test(char* SolverType,
     AMESOS_CHK_ERR(Solver->Solve());
 
     TestPassed = TestPassed && 
-      CheckError(SolverType, "Set A, solve B", B,x_B,b_B,x_exactB);
+      CheckError(SolverType, "Set A, solve B", B,x_B,b_B,x_exactB) &&
+      TestTiming(Solver, A.Comm());
 
     delete Solver; 
   }
@@ -247,7 +299,8 @@ bool Test(char* SolverType,
       AMESOS_CHK_ERR(Solver->Solve());
       
       TestPassed = TestPassed && 
-	CheckError(SolverType, "Set A, Solve C", C,x_C,b_C,x_exactC);
+	CheckError(SolverType, "Set A, Solve C", C,x_C,b_C,x_exactC) &&
+	TestTiming(Solver, A.Comm());
     }
     delete Solver; 
   }
@@ -278,7 +331,8 @@ bool Test(char* SolverType,
       AMESOS_CHK_ERR(Solver->Solve());
       
       TestPassed = TestPassed && 
-	CheckError(SolverType, "Solve A + Solve C", C,x_C,b_C,x_exactC);
+	CheckError(SolverType, "Solve A + Solve C", C,x_C,b_C,x_exactC) &&
+	TestTiming(Solver, A.Comm());
     }
     delete Solver; 
   }

@@ -60,7 +60,13 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
 #ifdef HAVE_MPI  
   MUMPSComm_(0),
 #endif
-  UseTranspose_(false)
+  UseTranspose_(false),
+  MtxConvTime_(-1), 
+  MtxRedistTime_(-1), 
+  VecRedistTime_(-1),
+  SymFactTime_(-1), 
+  NumFactTime_(-1), 
+  SolveTime_(-1)
 {
   // -777 is for me. It means: I never called MUMPS, so
   // SymbolicFactorization should not call Destroy() and ask MUMPS to
@@ -138,7 +144,7 @@ int Amesos_Mumps::ConvertToTriplet(const bool OnlyValues)
     ptr = &RedistrMatrix(true);
   }
 
-  ResetTime();
+  ResetTimer();
   
 #ifdef EXTRA_DEBUG_INFO
   Epetra_CrsMatrix* Eptr = dynamic_cast<Epetra_CrsMatrix*>( ptr );
@@ -189,7 +195,7 @@ int Amesos_Mumps::ConvertToTriplet(const bool OnlyValues)
     }
   }
 
-  AddTime("matrix conversion");
+  MtxConvTime_ = AddTime("Total matrix conversion time", MtxConvTime_);
   
   assert (count <= ptr->NumMyNonzeros());
 
@@ -382,7 +388,7 @@ int Amesos_Mumps::SymbolicFactorization()
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
 
-  InitTime(Comm());
+  CreateTimer(Comm());
   
   CheckParameters();
   AMESOS_CHK_ERR(ConvertToTriplet(false));
@@ -476,12 +482,12 @@ int Amesos_Mumps::SymbolicFactorization()
 
   // Perform symbolic factorization
 
-  ResetTime();
+  ResetTimer();
 
   if (Comm().MyPID() < MaxProcs_) 
     dmumps_c(&(MDS));
 
-  AddTime("symbolic");
+  SymFactTime_ = AddTime("Total symbolic factorization time", SymFactTime_);
 
   int IntWrong = CheckError()?1:0 ; 
   int AnyWrong;
@@ -522,13 +528,13 @@ int Amesos_Mumps::NumericFactorization()
   // Request numeric factorization 
   MDS.job = 2;
   // Perform numeric factorization
-  ResetTime();
+  ResetTimer();
 
   if (Comm().MyPID() < MaxProcs_) {
     dmumps_c(&(MDS));
   }
 
-  AddTime("numeric");
+  NumFactTime_ = AddTime("Total numeric factorization time", NumFactTime_);
   
   int IntWrong = CheckError()?1:0 ; 
   int AnyWrong;
@@ -567,7 +573,7 @@ int Amesos_Mumps::Solve()
     // do not import any data
     for (int j = 0 ; j < NumVectors; j++) 
     {
-      ResetTime();
+      ResetTimer();
 
       MDS.job = 3;     // Request solve
 
@@ -577,16 +583,16 @@ int Amesos_Mumps::Solve()
 
       dmumps_c(&(MDS)) ;  // Perform solve
       static_cast<void>( CheckError( ) );   // Can hang 
-      AddTime("solve");
+      SolveTime_ = AddTime("Total solve time", SolveTime_);
     }
   } 
   else 
   {
     Epetra_MultiVector SerialVector(SerialMap(),NumVectors);
 
-    ResetTime();
+    ResetTimer();
     AMESOS_CHK_ERR(SerialVector.Import(*vecB,SerialImporter(),Insert));
-    AddTime("vector redistribution");
+    VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_);
     
     for (int j = 0 ; j < NumVectors; j++) 
     {
@@ -595,18 +601,18 @@ int Amesos_Mumps::Solve()
 
       // solve the linear system and take time
       MDS.job = 3;     
-      ResetTime();
+      ResetTimer();
       if (Comm().MyPID() < MaxProcs_) 
 	dmumps_c(&(MDS)) ;  // Perform solve
       static_cast<void>( CheckError( ) );   // Can hang 
 
-      AddTime("solve");
+      SolveTime_ = AddTime("Total solve time", SolveTime_);
     }
 
     // ship solution back and take timing
-    ResetTime();
+    ResetTimer();
     AMESOS_CHK_ERR(vecX->Export(SerialVector,SerialImporter(),Insert));
-    AddTime("vector redistribution");
+    VecRedistTime_ = AddTime("Total vector redistribution time", VecRedistTime_);
   }
 
   if (ComputeTrueResidual_)
@@ -775,12 +781,12 @@ void Amesos_Mumps::PrintTiming() const
   if (Problem_->GetOperator() == 0 || Comm().MyPID() != 0)
     return;
 
-  double ConTime = GetTime("conversion");
-  double MatTime = GetTime("matrix redistribution");
-  double VecTime = GetTime("vector redistribution");
-  double SymTime = GetTime("symbolic");
-  double NumTime = GetTime("numeric");
-  double SolTime = GetTime("solve");
+  double ConTime = GetTime(MtxConvTime_);
+  double MatTime = GetTime(MtxRedistTime_);
+  double VecTime = GetTime(VecRedistTime_);
+  double SymTime = GetTime(SymFactTime_);
+  double NumTime = GetTime(SymFactTime_);
+  double SolTime = GetTime(SolveTime_);
 
   if (NumSymbolicFact_) SymTime /= NumSymbolicFact_;
   if (NumNumericFact_)  NumTime /= NumNumericFact_;

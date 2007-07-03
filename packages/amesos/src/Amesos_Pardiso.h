@@ -45,7 +45,7 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 //! Amesos_Pardiso: Interface to the PARDISO package.
 
@@ -111,12 +111,24 @@ public:
   //! Set parameters from the input parameters list, returns 0 if successful.
   int SetParameters( Teuchos::ParameterList &ParameterList);
 
+  //! Returns the number of symbolic factorizations performed by this object.
+  int NumSymbolicFact() const { return( Amesos_Status::NumSymbolicFact_ ); }
+
+  //! Returns the number of numeric factorizations performed by this object.
+  int NumNumericFact() const { return( Amesos_Status::NumNumericFact_ ); }
+
+  //! Returns the number of solves performed by this object.
+  int NumSolve() const { return( Amesos_Status::NumSolve_ ); }
+
   //! Prints timing information
   void PrintTiming() const;
   
   //! Prints information about the factorization and solution phases.
   void PrintStatus() const;
-  
+
+  //! Extracts timing information from the current solver and places it in the parameter list.
+  void GetTiming( Teuchos::ParameterList &TimingParameterList ) const { Amesos_Time::GetTiming(TimingParameterList); }
+ 
   //@}
 
 private:  
@@ -158,10 +170,10 @@ private:
   int PerformSymbolicFactorization();
   int PerformNumericFactorization(); 
 
-  Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrix_;
-  Teuchos::RefCountPtr<Epetra_RowMatrix> SerialMatrix_;
-  Teuchos::RefCountPtr<Epetra_Import> Importer_;
+  Teuchos::RCP<Epetra_Map> SerialMap_;
+  Teuchos::RCP<Epetra_CrsMatrix> SerialCrsMatrix_;
+  Teuchos::RCP<Epetra_RowMatrix> SerialMatrix_;
+  Teuchos::RCP<Epetra_Import> Importer_;
 
   const Epetra_Map* Map_;
   const Epetra_RowMatrix* Matrix_;
@@ -170,6 +182,10 @@ private:
   bool UseTranspose_;
   //! Pointer to the linear system problem.
   const Epetra_LinearProblem* Problem_;
+
+  //! Quick access pointers to the internal timing data.
+  int MtxConvTime_, MtxRefactTime_, VecRefactTime_;
+  int SymFactTime_, NumFactTime_, SolveTime_;
 
   // Data for PARDISO
   vector<double> aa_;

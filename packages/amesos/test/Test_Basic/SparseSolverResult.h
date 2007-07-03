@@ -79,10 +79,9 @@ class SparseSolverResult : public Epetra_Object {
   double total_time ;
   double error ;
   double residual ;
+  double Anorm ;
   double Xnorm ;
   double Bnorm ;
-  double Anorm ;
-
 } ;
 
 #endif

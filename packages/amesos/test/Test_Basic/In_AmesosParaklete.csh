@@ -116,8 +116,8 @@ $mpigo  3 amesos_test.exe PARAKLETE   ImpcolA.rua 0 1 1 1  1e-9  1e-11  >>SST.st
 # COMMENT bug #1953 no transpose case fails $mpigo  3 amesos_test.exe PARAKLETE   ImpcolB.rua 0 1 1 0  1e-9  1e-12  >>SST.stdout
 # COMMENT bug #1953 no transpose case fails $mpigo  1 amesos_test.exe PARAKLETE   ImpcolC.rua 0 1 1 0  1e-12 1e-13  >>SST.stdout
 # COMMENT bug #1953 no transpose case fails $mpigo  3 amesos_test.exe PARAKLETE   ImpcolC.rua 0 0 1 0  1e-12 1e-13  >>SST.stdout
-# COMMENT bug #1953 no transpose case fails $mpigo  1 amesos_test.exe PARAKLETE   ImpcolD.rua 0 1 1 0  1e-11 5e-13  >>SST.stdout
-# COMMENT bug #1953 no transpose case fails $mpigo  3 amesos_test.exe PARAKLETE   ImpcolD.rua 0 1 1 0  1e-11 5e-13  >>SST.stdout
+# COMMENT bug #1953 no transpose case fails $mpigo  1 amesos_test.exe PARAKLETE   ImpcolD.rua 0 1 1 0  1e-11 1e-12  >>SST.stdout
+# COMMENT bug #1953 no transpose case fails $mpigo  3 amesos_test.exe PARAKLETE   ImpcolD.rua 0 1 1 0  1e-11 1e-12  >>SST.stdout
 # COMMENT bug #1953 no transpose case fails $mpigo  1 amesos_test.exe PARAKLETE   ImpcolE.rua 0 1 1 0  1e-8  1e-9   >>SST.stdout
 # COMMENT bug #1953 no transpose case fails $mpigo  3 amesos_test.exe PARAKLETE   ImpcolE.rua 0 1 1 0  1e-8  1e-9   >>SST.stdout
 $mpigo  3 amesos_test.exe PARAKLETE   ImpcolE.rua 0 1 3 1  1e-7  1e-9   >>SST.stdout
@@ -146,8 +146,8 @@ $mpigo  2 amesos_test.exe PARAKLETE   ImpcolE.rua 0 1 6 1 1e-7  1e-9   >>SST.std
 #  Test multiple right hand sides
 #
 $mpigo  1 amesos_test.exe PARAKLETE   ImpcolC.rua 0 1 -1 0 1e-12 1e-13  >>SST.stdout
-$mpigo  5 amesos_test.exe PARAKLETE   ImpcolD.rua 0 1 -2 0 1e-11 5e-13  >>SST.stdout
-$mpigo  5 amesos_test.exe PARAKLETE   ImpcolD.rua 0 1 -2 1 1e-11 5e-13  >>SST.stdout
+$mpigo  5 amesos_test.exe PARAKLETE   ImpcolD.rua 0 1 -2 0 1e-11 1e-12  >>SST.stdout
+$mpigo  5 amesos_test.exe PARAKLETE   ImpcolD.rua 0 1 -2 1 1e-11 1e-12  >>SST.stdout
 $mpigo  2 amesos_test.exe PARAKLETE   ImpcolE.rua 0 1 -3 0 1e-7  1e-9   >>SST.stdout
 
 #
@@ -161,8 +161,8 @@ $mpigo  2 amesos_test.exe PARAKLETE   ImpcolE.rua 1 1 6 0 1e-7  1e-9   >>SST.std
 #  Test multiple right hand sides with distributed matrix input
 #
 $mpigo  1 amesos_test.exe PARAKLETE   ImpcolC.rua 1 1 -2 0 1e-12 1e-13 >>SST.stdout
-$mpigo  5 amesos_test.exe PARAKLETE   ImpcolD.rua 1 1 -3 1 1e-11 5e-13  >>SST.stdout
-$mpigo  5 amesos_test.exe PARAKLETE   ImpcolD.rua 1 1 -3 0 1e-11 5e-13  >>SST.stdout
+$mpigo  5 amesos_test.exe PARAKLETE   ImpcolD.rua 1 1 -3 1 1e-11 1e-12  >>SST.stdout
+$mpigo  5 amesos_test.exe PARAKLETE   ImpcolD.rua 1 1 -3 0 1e-11 1e-12  >>SST.stdout
 $mpigo  2 amesos_test.exe PARAKLETE   ImpcolE.rua 1 1 -1 0 1e-7  1e-10  >>SST.stdout
 #
 #  Test some triplet files

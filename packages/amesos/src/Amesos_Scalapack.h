@@ -104,7 +104,7 @@ parallel direct solvers.
 </ul> 
 
 <h1>Common control parameters :</h1>
-Amesos_Scalapack supports the following parameters which are common to accross multiple Amesos solvers:
+Amesos_Scalapack supports the following parameters which are common to across multiple Amesos solvers:
 <ul>
 <li>ParamList.set("MaxProcs", int MaximumProcessesToUse );  <br>By default, this is set to -1, which causes Amesos_Scalapack to use a heuristic to determine how many processes to use.  If set to a postive value, MaximumProcessesToUse, Amesos_Scalapack will use MaximumProcessesToUse provided that there are that many processes available.  Testing should be performed with MaximumProcessesToUse set to some value larger than one to force parallel execution.   
 <li><li>ParamList.set("PrintTiming", bool  );  <br>
@@ -291,12 +291,24 @@ revert to their default values.
    */
   int SetParameters( Teuchos::ParameterList &ParameterList ) ;
 
+  //! Returns the number of symbolic factorizations performed by this object.
+  int NumSymbolicFact() const { return( Amesos_Status::NumSymbolicFact_ ); }
+
+  //! Returns the number of numeric factorizations performed by this object.
+  int NumNumericFact() const { return( Amesos_Status::NumNumericFact_ ); }
+
+  //! Returns the number of solves performed by this object.
+  int NumSolve() const { return( Amesos_Status::NumSolve_ ); }
+
   //! Print timing information
   void PrintTiming() const;
   
   //! Print information about the factorization and solution phases.
   void PrintStatus() const;
-  
+ 
+  //! Extracts timing information from the current solver and places it in the parameter list.
+  void GetTiming( Teuchos::ParameterList &TimingParameterList ) const { Amesos_Time::GetTiming(TimingParameterList); }
+ 
   //@}
 
  private:  
@@ -369,20 +381,14 @@ revert to their default values.
   const Epetra_LinearProblem * Problem_;
   
   
-  // some timing internal to MUMPS
-  double ConTime_;                        // time to convert to MUMPS format
+  // some timing internal to ScaLAPACK
+  double ConTime_;                        // time to convert to ScaLAPACKformat
   double SymTime_;                        // time for symbolic factorization
   double NumTime_;                        // time for numeric factorization
   double SolTime_;                        // time for solution
   double VecTime_;                        // time to redistribute vectors
   double MatTime_;                        // time to redistribute matrix
   
-  int NumSymbolicFact_;
-  int NumNumericFact_;
-  int NumSolve_;  
-
-
-
   //
   //  Control of the data distribution
   //

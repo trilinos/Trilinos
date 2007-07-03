@@ -39,7 +39,7 @@
 #include "Epetra_LinearProblem.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_Import.h"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 // Amesos_Dscpack_Pimpl contains a pointer to the structure defined in 
 // dscmain.h.  This prevents Amesos_Dscpack.h from having to include dscmain.h.
@@ -116,11 +116,23 @@ public:
 
   int SetParameters( Teuchos::ParameterList &ParameterList )  ;
 
+  //! Returns the number of symbolic factorizations performed by this object.
+  int NumSymbolicFact() const { return( Amesos_Status::NumSymbolicFact_ ); }
+
+  //! Returns the number of numeric factorizations performed by this object.
+  int NumNumericFact() const { return( Amesos_Status::NumNumericFact_ ); }
+
+  //! Returns the number of solves performed by this object.
+  int NumSolve() const { return( Amesos_Status::NumSolve_ ); }
+
   //! Prints timing information
   void PrintTiming() const;
   
   //! Prints information about the factorization and solution phases.
   void PrintStatus() const;
+  
+  //! Extracts timing information from the current solver and places it in the parameter list.
+  void GetTiming( Teuchos::ParameterList &TimingParameterList ) const { Amesos_Time::GetTiming(TimingParameterList); }
 
   //@}
 
@@ -150,7 +162,7 @@ private:
   //! Pointer to the linear problem.
   const Epetra_LinearProblem * Problem_;
 
-  Teuchos::RefCountPtr<Amesos_Dscpack_Pimpl> PrivateDscpackData_; 
+  Teuchos::RCP<Amesos_Dscpack_Pimpl> PrivateDscpackData_; 
 
   bool FirstCallToSolve_;
   //! Tells us whether to free them
@@ -167,11 +179,14 @@ private:
   int NumLocalStructs;
   int NumLocalNonz ; 
 
-  RefCountPtr<Epetra_Import> Importer_;
-  RefCountPtr<Epetra_Map>    DscColMap_;
-  RefCountPtr<Epetra_Map>    DscRowMap_;
+  RCP<Epetra_Import> Importer_;
+  RCP<Epetra_Map>    DscColMap_;
+  RCP<Epetra_Map>    DscRowMap_;
 
   int MaxProcs_;
+ 
+  int MtxRedistTime_, MtxConvTime_, VecRedistTime_;
+  int SymFactTime_, NumFactTime_, SolveTime_, OverheadTime_;
   
   // track memory (as reported by DSCPACK routines)
   int TotalMemory_;                       // estimates of the total memory requirements

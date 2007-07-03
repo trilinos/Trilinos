@@ -54,7 +54,7 @@ bool TestSingleStratimikosSolver(
 {
 
   using Teuchos::rcp;
-  using Teuchos::RefCountPtr;
+  using Teuchos::RCP;
   using Teuchos::OSTab;
   using Teuchos::ParameterList;
   using Teuchos::getParameter;
@@ -64,7 +64,7 @@ bool TestSingleStratimikosSolver(
 
     TEST_FOR_EXCEPT(!paramList_inout);
 
-    RefCountPtr<ParameterList>
+    RCP<ParameterList>
       paramList = rcp(paramList_inout,false);
 
 #if 0
@@ -106,7 +106,7 @@ bool TestSingleStratimikosSolver(
 #else
     Epetra_SerialComm comm;
 #endif
-    Teuchos::RefCountPtr<Epetra_CrsMatrix> epetra_A;
+    Teuchos::RCP<Epetra_CrsMatrix> epetra_A;
     EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A );
 
     const int num_vecs = 1 ; 
@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
   bool success = true;
   bool verbose = true;
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {

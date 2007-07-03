@@ -52,7 +52,7 @@
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "Epetra_Import.h"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -128,11 +128,23 @@ public:
 
   int SetParameters( Teuchos::ParameterList &ParameterList ) ;
 
+  //! Returns the number of symbolic factorizations performed by this object.
+  int NumSymbolicFact() const { return( Amesos_Status::NumSymbolicFact_ ); }
+
+  //! Returns the number of numeric factorizations performed by this object.
+  int NumNumericFact() const { return( Amesos_Status::NumNumericFact_ ); }
+
+  //! Returns the number of solves performed by this object.
+  int NumSolve() const { return( Amesos_Status::NumSolve_ ); }
+
   //! Prints timing information
   void PrintTiming() const;
   
   //! Prints information about the factorization and solution phases.
   void PrintStatus() const;
+
+  //! Extracts timing information from the current solver and places it in the parameter list.
+  void GetTiming( Teuchos::ParameterList &TimingParameterList ) const { Amesos_Time::GetTiming(TimingParameterList); }
 
 private:  
   
@@ -226,14 +238,14 @@ private:
   int NumGlobalElements_;
 
   //! Points to a Serial Map (unused if IsLocal == 1 ) 
-  Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
+  Teuchos::RCP<Epetra_Map> SerialMap_;
   //! Points to a Serial Copy of A
   /* If IsLocal==1 - Points to the original matrix 
    * If  IsLocal==0 - Points to SerialCrsMatrixA
    */
   Epetra_RowMatrix* SerialMatrix_;
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrixA_;
+  Teuchos::RCP<Epetra_CrsMatrix> SerialCrsMatrixA_;
 
   //! If \c true, solve the problem with the transpose.
   bool UseTranspose_;
@@ -244,7 +256,11 @@ private:
   //  True if Rcond_ is the same on all processes
   mutable bool RcondValidOnAllProcs_;
   //! Importer from distributed to serial (all rows on process 0).
-  Teuchos::RefCountPtr<Epetra_Import> ImportToSerial_;
+  Teuchos::RCP<Epetra_Import> ImportToSerial_;
+
+  //! Quick access pointers to internal timer data
+  int MtxConvTime_, MtxRedistTime_, VecRedistTime_;
+  int SymFactTime_, NumFactTime_, SolveTime_, OverheadTime_;
   
 };  // class Amesos_Umfpack  
 #endif /* AMESOS_UMFPACK_H */

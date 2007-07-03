@@ -51,7 +51,7 @@ using namespace Galeri;
 #include "Trilinos_Util.h"
 #include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
 #include "CrsMatrixTranspose.h"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Epetra_Export.h"
 
 int MyCreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm, 
