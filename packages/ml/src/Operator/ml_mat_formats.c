@@ -371,9 +371,7 @@ int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    offset = indx[bpntr[iminus1]] + *requested_rows - rpntr[iminus1];
    point_rows = rpntr[i] - rpntr[iminus1];
                           
-   /*this is a bit of an overestimate but better safe than sorry.
-     If there were a way to figure out how many zeros there were
-     we could subtract this out.*/
+   /*Make sure we have enough allocated space here*/
    if ((indx[bpntr[i]] - indx[bpntr[iminus1]])/point_rows > allocated_space) {
      ML_avoid_unused_param( (void *) &N_requested_rows);
      return(0);
@@ -384,17 +382,37 @@ int VBR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    endblock = bpntr[i];
 
    *row_lengths = 0; /*data points stored*/
-   
-   /*iterate over the blocks*/
-   for(i = startblock; i < endblock; i++)
+  
+   /*we need something to check here but in time we'll have it*/
+   if(data->getrow->columns_loc_glob == ML_GLOBAL_INDICES)
    {
-     /*iterate over columns in each block*/
-     for(j = cpntr[bindx[i]]; j < cpntr[bindx[i]+1]; j++)
+     /*iterate over the blocks*/
+     for(i = startblock; i < endblock; i++)
      {
-       cur_val = val[point_rows*row_lengths[0]+offset];
-       values[*row_lengths] = cur_val;
-       columns[*row_lengths] = j;
-       row_lengths[0]++;
+       /*iterate over columns in each block since the cuts are all the same just
+         use the first pointer values*/
+       for(j = cpntr[0]; j < cpntr[1]; j++)
+       {
+         cur_val = val[point_rows*row_lengths[0]+offset];
+         values[*row_lengths] = cur_val;
+         columns[*row_lengths] = j+bindx[i]*(cpntr[1]-cpntr[0]);
+         row_lengths[0]++;
+       }
+     }
+   }
+   else
+   {
+     /*iterate over the blocks*/
+     for(i = startblock; i < endblock; i++)
+     {
+       /*iterate over columns in each block*/
+       for(j = cpntr[bindx[i]]; j < cpntr[bindx[i]+1]; j++)
+       {
+         cur_val = val[point_rows*row_lengths[0]+offset];
+         values[*row_lengths] = cur_val;
+         columns[*row_lengths] = j;
+         row_lengths[0]++;
+       }
      }
    }
    return(1);
