@@ -264,6 +264,7 @@ if HAVE_AMESOS_PARAKLETE
 PARAKLETE_H = \
 	$(srcdir)/Amesos_Paraklete.h \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete.h \
+	$(srcdir)/UFsparse/PARAKLETE/pk.h \
 	$(srcdir)/UFsparse/CCOLAMD/ccolamd.h 
 
 #  Note:  PARAKLETE rewuires KLU (for colamd) 

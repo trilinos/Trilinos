@@ -340,6 +340,7 @@ am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
 	$(srcdir)/UFsparse/BTF/Include/btf_internal.h \
 	$(srcdir)/Amesos_Klu.h $(srcdir)/Amesos_Paraklete.h \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete.h \
+	$(srcdir)/UFsparse/PARAKLETE/pk.h \
 	$(srcdir)/UFsparse/CCOLAMD/ccolamd.h $(srcdir)/Amesos_MC64.h \
 	$(srcdir)/Amesos_Scalapack.h \
 	$(srcdir)/Amesos_SCALAPACK_wrappers.h $(srcdir)/Amesos.h \
@@ -672,6 +673,7 @@ PARAKLETE_KLU_COMMON_H = \
 @HAVE_AMESOS_PARAKLETE_TRUE@PARAKLETE_H = \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/Amesos_Paraklete.h \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete.h \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/pk.h \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CCOLAMD/ccolamd.h 
 
 
