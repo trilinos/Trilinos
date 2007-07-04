@@ -58,8 +58,8 @@ operator()( OriginalTypeRef orig )
   int nnz = orig.NumMyNonzeros();
 
   //create std CRS format
-  vector<int> ia(n+1,0);
-  vector<int> ja(nnz);
+  std::vector<int> ia(n+1,0);
+  std::vector<int> ja(nnz);
   int cnt;
   for( int i = 0; i < n; ++i )
   {
@@ -69,8 +69,8 @@ operator()( OriginalTypeRef orig )
   }
 
   //trim down to local only
-  vector<int> iat(n+1);
-  vector<int> jat(nnz);
+  std::vector<int> iat(n+1);
+  std::vector<int> jat(nnz);
   int loc = 0;
   for( int i = 0; i < n; ++i )
   {
@@ -88,46 +88,46 @@ operator()( OriginalTypeRef orig )
 
   if( verbose_ )
   {
-    cout << "Orig Graph\n";
-    cout << orig << endl;
-    cout << "-----------------------------------------\n";
-    cout << "CRS Format Graph\n";
-    cout << "-----------------------------------------\n";
+    std::cout << "Orig Graph\n";
+    std::cout << orig << std::endl;
+    std::cout << "-----------------------------------------\n";
+    std::cout << "CRS Format Graph\n";
+    std::cout << "-----------------------------------------\n";
     for( int i = 0; i < n; ++i )
     {
-      cout << i << ": " << iat[i+1] << ": ";
+      std::cout << i << ": " << iat[i+1] << ": ";
       for( int j = iat[i]; j<iat[i+1]; ++j )
-        cout << " " << jat[j];
-      cout << endl;
+        std::cout << " " << jat[j];
+      std::cout << std::endl;
     }
-    cout << "-----------------------------------------\n";
+    std::cout << "-----------------------------------------\n";
   }
 
-  vector<int> perm(n);
-  vector<double> info(AMD_INFO);
+  std::vector<int> perm(n);
+  std::vector<double> info(AMD_INFO);
 
   amd_order( n, &iat[0], &jat[0], &perm[0], NULL, &info[0] ); 
 
   if( info[AMD_STATUS] == AMD_INVALID )
-    cout << "AMD ORDERING: Invalid!!!!\n";
+    std::cout << "AMD ORDERING: Invalid!!!!\n";
 
   if( verbose_ )
   {
-    cout << "-----------------------------------------\n";
-    cout << "AMD Output\n";
-    cout << "-----------------------------------------\n";
-    cout << "STATUS: " << info[AMD_STATUS] << endl;
-    cout << "SYMM: " << info[AMD_SYMMETRY] << endl;
-    cout << "N: " << info[AMD_N] << endl;
-    cout << "NZ: " << info[AMD_NZ] << endl;
-    cout << "SYMM: " << info[AMD_SYMMETRY] << endl;
-    cout << "NZDIAG: " << info[AMD_NZDIAG] << endl;
-    cout << "NZ A+At: " << info[AMD_NZ_A_PLUS_AT] << endl;
-    cout << "NDENSE: " << info[AMD_SYMMETRY] << endl;
-    cout << "Perm\n";
+    std::cout << "-----------------------------------------\n";
+    std::cout << "AMD Output\n";
+    std::cout << "-----------------------------------------\n";
+    std::cout << "STATUS: " << info[AMD_STATUS] << std::endl;
+    std::cout << "SYMM: " << info[AMD_SYMMETRY] << std::endl;
+    std::cout << "N: " << info[AMD_N] << std::endl;
+    std::cout << "NZ: " << info[AMD_NZ] << std::endl;
+    std::cout << "SYMM: " << info[AMD_SYMMETRY] << std::endl;
+    std::cout << "NZDIAG: " << info[AMD_NZDIAG] << std::endl;
+    std::cout << "NZ A+At: " << info[AMD_NZ_A_PLUS_AT] << std::endl;
+    std::cout << "NDENSE: " << info[AMD_SYMMETRY] << std::endl;
+    std::cout << "Perm\n";
     for( int i = 0; i<n; ++i )
-      cout << perm[i] << endl;
-    cout << "-----------------------------------------\n";
+      std::cout << perm[i] << std::endl;
+    std::cout << "-----------------------------------------\n";
   }
 
   //Generate New Domain and Range Maps
@@ -135,7 +135,7 @@ operator()( OriginalTypeRef orig )
   const Epetra_BlockMap & OldMap = orig.RowMap();
   int nG = orig.NumGlobalRows();
 
-  vector<int> newElements( n );
+  std::vector<int> newElements( n );
   for( int i = 0; i < n; ++i )
     newElements[i] = OldMap.GID( perm[i] );
 
@@ -143,10 +143,10 @@ operator()( OriginalTypeRef orig )
 
   if( verbose_ )
   {
-    cout << "Old Map\n";
-    cout << OldMap << endl;
-    cout << "New Map\n";
-    cout << *NewMap_ << endl;
+    std::cout << "Old Map\n";
+    std::cout << OldMap << std::endl;
+    std::cout << "New Map\n";
+    std::cout << *NewMap_ << std::endl;
   }
 
   //Generate New Graph
@@ -157,8 +157,8 @@ operator()( OriginalTypeRef orig )
 
   if( verbose_ )
   {
-    cout << "New CrsGraph\n";
-    cout << *NewGraph_ << endl;
+    std::cout << "New CrsGraph\n";
+    std::cout << *NewGraph_ << std::endl;
   }
 
   newObj_ = NewGraph_;

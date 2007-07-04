@@ -49,7 +49,7 @@ EpetraExt::ZoltanQuery::ZoltanQuery( const Epetra_CrsGraph & graph,
 
   int numIndices;
   int maxNumIndices = graph_.MaxNumIndices();
-  vector<int> indexList( maxNumIndices );
+  std::vector<int> indexList( maxNumIndices );
   for( int i = 0; i < numMyRows; ++i )
   {
     graph_.ExtractGlobalRowCopy( graph_.GRID(i),
@@ -132,7 +132,7 @@ int EpetraExt::ZoltanQuery::Number_Edges  ( void * data,
     int NumIndices = graph_.NumMyIndices( LocalRow );
     int IndiceCountReturn;
 
-    vector<int> nbr_edges( NumIndices );
+    std::vector<int> nbr_edges( NumIndices );
     int flag = graph_.ExtractGlobalRowCopy( ((int) *global_id),
                                          NumIndices,
                                          IndiceCountReturn,
@@ -154,7 +154,7 @@ int EpetraExt::ZoltanQuery::Number_Edges  ( void * data,
     if( tgraph_ )
     {
       int tNumIndices = tgraph_->NumMyIndices( LocalRow );
-      vector<int> t_nbr_edges( tNumIndices );
+      std::vector<int> t_nbr_edges( tNumIndices );
 
       flag = tgraph_->ExtractGlobalRowCopy( ((int) *global_id),
                                            tNumIndices,
@@ -171,7 +171,7 @@ int EpetraExt::ZoltanQuery::Number_Edges  ( void * data,
         }
     }
 
-//cout << "Indices Cnt: " << ((int)*global_id) << " " << ((int)*local_id) << " " << NumIndices-(self?1:0)-nonLocalEdges  << endl;
+//std::cout << "Indices Cnt: " << ((int)*global_id) << " " << ((int)*local_id) << " " << NumIndices-(self?1:0)-nonLocalEdges  << std::endl;
     return NumIndices - (self?1:0) - nonLocalEdges;
 
   }
@@ -199,7 +199,7 @@ void EpetraExt::ZoltanQuery::Edge_List    ( void * data,
 
   if( NumIndices != -1 )
   {
-    vector<int> nbr_edges( NumIndices );
+    std::vector<int> nbr_edges( NumIndices );
     int flag = graph_.ExtractGlobalRowCopy( ((int) *global_id), 
                                          NumIndices,
                                          IndiceCountReturn,
@@ -222,7 +222,7 @@ void EpetraExt::ZoltanQuery::Edge_List    ( void * data,
       sort( nbr_edges.begin(), nbr_edges.end() );
 
       int tNumIndices = tgraph_->NumMyIndices( ((int) *local_id) );
-      vector<int> t_nbr_edges( tNumIndices );
+      std::vector<int> t_nbr_edges( tNumIndices );
 
       flag = tgraph_->ExtractGlobalRowCopy( ((int) *global_id),
                                            tNumIndices,
@@ -243,12 +243,12 @@ void EpetraExt::ZoltanQuery::Edge_List    ( void * data,
 
 
 /*
-cout << "Edge List: " << ((int) *global_id) << " " << ((int) *local_id) << endl;
-cout << "NumIndices: " << NumIndices << " " << "ii: " << ii << endl;
+std::cout << "Edge List: " << ((int) *global_id) << " " << ((int) *local_id) << std::endl;
+std::cout << "NumIndices: " << NumIndices << " " << "ii: " << ii << std::endl;
 for( int i = 0; i < ii; ++i )
-  cout << " " << ((int *) neighbor_global_ids)[i] << " " <<
-        neighbor_procs[i] << endl;
-cout << endl;
+  std::cout << " " << ((int *) neighbor_global_ids)[i] << " " <<
+        neighbor_procs[i] << std::endl;
+std::cout << std::endl;
 */
 
     *ierr = ZOLTAN_OK;
@@ -262,7 +262,7 @@ int EpetraExt::ZoltanQuery::Number_HG_Edges ( void * data,
 					  int * ierr )
 {
   int num = graph_.NumMyRows();
-  cout << "NRows: " << num << endl;
+  std::cout << "NRows: " << num << std::endl;
 
   *ierr = ZOLTAN_OK;
   return num;
@@ -272,7 +272,7 @@ int EpetraExt::ZoltanQuery::Number_HG_Pins ( void * data,
 				         int * ierr )
 {
   int num = graph_.NumMyEntries();
-  cout << "NNZ: " << num << endl;
+  std::cout << "NNZ: " << num << std::endl;
 
   *ierr = ZOLTAN_OK;
   return num;
@@ -293,10 +293,10 @@ int EpetraExt::ZoltanQuery::HG_Edge_List   ( void * data,
   int maxEntries = graph_.MaxNumIndices();
 
   int numIndices;
-  vector<int> indices( maxEntries );
+  std::vector<int> indices( maxEntries );
 
-  cout << "nedge: " << nedge << endl;
-  cout << "maxsize: " << maxsize << endl;
+  std::cout << "nedge: " << nedge << std::endl;
+  std::cout << "maxsize: " << maxsize << std::endl;
 
   int loc = 0;
   for( int i = 0; i < NumHEs; ++i )
@@ -313,7 +313,7 @@ int EpetraExt::ZoltanQuery::HG_Edge_List   ( void * data,
     }
   }
 
-  cout << "last_loc: " << loc << endl;
+  std::cout << "last_loc: " << loc << std::endl;
 
   return ZOLTAN_OK;
 }

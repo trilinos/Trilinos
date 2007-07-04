@@ -68,7 +68,7 @@ struct CrsGraph_SymmRCM : public StructuralSameTypeTransform<Epetra_CrsGraph> {
     
    public:
 
-     BFT( const vector< vector<int> > & adjlist,
+    BFT( const std::vector< std::vector<int> > & adjlist,
           int root,
           int max_width,
           bool & failed );
@@ -76,10 +76,10 @@ struct CrsGraph_SymmRCM : public StructuralSameTypeTransform<Epetra_CrsGraph> {
      int Width() { return width_; }
      int Depth() { return depth_; }
 
-     void NonNeighborLeaves( vector<int> & leaves,
-                             const vector< vector<int> > & adjlist,
+     void NonNeighborLeaves( std::vector<int> & leaves,
+                             const std::vector< std::vector<int> > & adjlist,
                              int count );
-     void ReverseVector( vector<int> & ordered );
+     void ReverseVector( std::vector<int> & ordered );
 
    private:
 
@@ -88,7 +88,7 @@ struct CrsGraph_SymmRCM : public StructuralSameTypeTransform<Epetra_CrsGraph> {
      int depth_;
      int nodes_;
 
-     vector< vector<int> > levelSets_;
+     std::vector< std::vector<int> > levelSets_;
   };
 
 };

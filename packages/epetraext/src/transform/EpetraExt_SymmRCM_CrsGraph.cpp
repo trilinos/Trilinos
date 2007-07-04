@@ -66,7 +66,7 @@ operator()( CrsGraph_SymmRCM::OriginalTypeRef orig )
   int * LocalRow;
   int * LocalRowTrans;
   int RowSize, RowSizeTrans;
-  vector< vector<int> > AdjList( NumNodes );
+  std::vector< std::vector<int> > AdjList( NumNodes );
   int MinDegree = NumNodes;
   int MinDegreeNode;
   for( int i = 0; i < NumNodes; ++i )
@@ -74,14 +74,14 @@ operator()( CrsGraph_SymmRCM::OriginalTypeRef orig )
     orig.ExtractMyRowView( i, RowSize, LocalRow );
     trans.ExtractMyRowView( i, RowSizeTrans, LocalRowTrans );
 
-    set<int> adjSet;
+    std::set<int> adjSet;
     for( int j = 0; j < RowSize; ++j )
      if( LocalRow[j] < NumNodes ) adjSet.insert( LocalRow[j] );
     for( int j = 0; j < RowSizeTrans; ++j )
      if( LocalRowTrans[j] < NumNodes ) adjSet.insert( LocalRowTrans[j] );
 
-    set<int>::iterator iterS = adjSet.begin();
-    set<int>::iterator endS = adjSet.end();
+    std::set<int>::iterator iterS = adjSet.begin();
+    std::set<int>::iterator endS = adjSet.end();
     AdjList[i].resize( adjSet.size() );
     for( int j = 0; iterS != endS; ++iterS, ++j ) AdjList[i][j] = *iterS;
     
@@ -95,7 +95,7 @@ operator()( CrsGraph_SymmRCM::OriginalTypeRef orig )
   BFT * BestBFT;
   bool TooWide;
 
-  //cout << "SymmRCM::bruteForce_ : " << bruteForce_ << endl;
+  //std::cout << "SymmRCM::bruteForce_ : " << bruteForce_ << std::endl;
 
   if( bruteForce_ )
   {
@@ -124,7 +124,7 @@ operator()( CrsGraph_SymmRCM::OriginalTypeRef orig )
     int MinWidth = BestBFT->Width();
     int BestWidth = MinWidth;
     int Diameter = BestBFT->Depth();
-    vector<int> Leaves;
+    std::vector<int> Leaves;
     BestBFT->NonNeighborLeaves( Leaves, AdjList, testLeafWidth_ );
 
     bool DeeperFound;
@@ -176,13 +176,13 @@ operator()( CrsGraph_SymmRCM::OriginalTypeRef orig )
     }
   }
 
-  //cout << "\nSymmRCM:\n";
-  //cout << "----------------------------\n";
-  //cout << " Depth: " << BestBFT->Depth() << endl;
-  //cout << " Width: " << BestBFT->Width() << endl;
-  //cout << "----------------------------\n\n";
+  //std::cout << "\nSymmRCM:\n";
+  //std::cout << "----------------------------\n";
+  //std::cout << " Depth: " << BestBFT->Depth() << std::endl;
+  //std::cout << " Width: " << BestBFT->Width() << std::endl;
+  //std::cout << "----------------------------\n\n";
 
-  vector<int> RCM;
+  std::vector<int> RCM;
   BestBFT->ReverseVector( RCM );
   for( int i = 0; i < NumNodes; ++i )
     RCM[i] = orig.RowMap().GID( RCM[i] );
@@ -197,7 +197,7 @@ operator()( CrsGraph_SymmRCM::OriginalTypeRef orig )
   //Generate New Col Map
   if( RCMMap_->DistributedGlobal() )
   {
-    vector<int> colIndices = RCM;
+    std::vector<int> colIndices = RCM;
     const Epetra_BlockMap & origColMap = orig.ColMap();
 
     if( origColMap.NumMyElements() > RCMMap_->NumMyElements() )
@@ -222,10 +222,10 @@ operator()( CrsGraph_SymmRCM::OriginalTypeRef orig )
   RCMGraph->FillComplete();
 
 /*
-  cout << "origGraph\n";
-  cout << orig;
-  cout << "RCMGraph\n";
-  cout << *RCMGraph;
+  std::cout << "origGraph\n";
+  std::cout << orig;
+  std::cout << "RCMGraph\n";
+  std::cout << *RCMGraph;
 */
 
   newObj_ = RCMGraph;
@@ -234,7 +234,7 @@ operator()( CrsGraph_SymmRCM::OriginalTypeRef orig )
 }
 
 CrsGraph_SymmRCM::BFT::
-BFT( const vector< vector<int> > & adjlist,
+BFT( const std::vector< std::vector<int> > & adjlist,
      int root,
      int max_width,
      bool & failed )
@@ -243,10 +243,10 @@ BFT( const vector< vector<int> > & adjlist,
   nodes_(adjlist.size()),
   failed_(false)
 {
-  set<int> touchedNodes;
+  std::set<int> touchedNodes;
 
   //setup level 0 of traversal
-  levelSets_.push_back( vector<int>(1) );
+  levelSets_.push_back( std::vector<int>(1) );
   levelSets_[0][0] = root;
   ++depth_;
 
@@ -256,7 +256,7 @@ BFT( const vector< vector<int> > & adjlist,
   while( touchedNodes.size() < nodes_ )
   {
     //start new level set
-    levelSets_.push_back( vector<int>() );
+    levelSets_.push_back( std::vector<int>() );
     ++depth_;
 
     for( int i = 0; i < levelSets_[depth_-2].size(); ++i )
@@ -290,7 +290,7 @@ BFT( const vector< vector<int> > & adjlist,
       }
 
       //Increasing Order By Degree
-      vector<int> degrees( currWidth );
+      std::vector<int> degrees( currWidth );
       for( int i = 0; i < currWidth; ++i )
         degrees[i] = adjlist[ levelSets_[depth_-1][i] ].size();
       int ** indices = new int*[1];
@@ -331,26 +331,26 @@ BFT( const vector< vector<int> > & adjlist,
   }
 
 /*
-  cout << "BFT<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
-  cout << "Width: " << width_ << endl;
-  cout << "Depth: " << depth_ << endl;
-  cout << "Adj List: " << nodes_ << endl;
+  std::cout << "BFT<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
+  std::cout << "Width: " << width_ << std::endl;
+  std::cout << "Depth: " << depth_ << std::endl;
+  std::cout << "Adj List: " << nodes_ << std::endl;
   for( int i = 0; i < nodes_; ++i )
   {
-    cout << i << "\t";
+    std::cout << i << "\t";
     for( int j = 0; j < adjlist[i].size(); ++j )
-      cout << adjlist[i][j] << " ";
-    cout << endl;
+      std::cout << adjlist[i][j] << " ";
+    std::cout << std::endl;
   }
-  cout << "Level Sets: " << depth_ << endl;
+  std::cout << "Level Sets: " << depth_ << std::endl;
   for( int i = 0; i < depth_; ++i )
   {
-    cout << i << "\t";
+    std::cout << i << "\t";
     for( int j = 0; j < levelSets_[i].size(); ++j )
-      cout << levelSets_[i][j] << " ";
-    cout << endl;
+      std::cout << levelSets_[i][j] << " ";
+    std::cout << std::endl;
   }
-  cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
+  std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
 */
 
   failed = failed_;
@@ -358,15 +358,15 @@ BFT( const vector< vector<int> > & adjlist,
 
 void
 CrsGraph_SymmRCM::BFT::
-NonNeighborLeaves( vector<int> & leaves,
-                   const vector< vector<int> > & adjlist,
+NonNeighborLeaves( std::vector<int> & leaves,
+                   const std::vector< std::vector<int> > & adjlist,
                    int count )
 {
   assert( (depth_>0) && (failed_==false) );
 
   leaves.clear();
   int leafWidth = levelSets_[depth_-1].size();
-  set<int> adjSeen;
+  std::set<int> adjSeen;
   for( int i = 0; i < leafWidth; ++i )
   {
     int currLeaf = levelSets_[depth_-1][i];
@@ -382,7 +382,7 @@ NonNeighborLeaves( vector<int> & leaves,
 
 void
 CrsGraph_SymmRCM::BFT::
-ReverseVector( vector<int> & ordered )
+ReverseVector( std::vector<int> & ordered )
 {
   assert( (depth_>0) && (failed_==false) );
 

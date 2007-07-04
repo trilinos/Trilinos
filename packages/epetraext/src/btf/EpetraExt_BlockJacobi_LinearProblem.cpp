@@ -69,9 +69,9 @@ operator()( OriginalTypeRef orig )
   Epetra_VbrMatrix * OrigMatrix = dynamic_cast<Epetra_VbrMatrix*>( orig.GetMatrix() );
 
   if( OrigMatrix->RowMap().DistributedGlobal() )
-  { cout << "FAIL for Global!\n"; abort(); }
+  { std::cout << "FAIL for Global!\n"; abort(); }
   if( OrigMatrix->IndicesAreGlobal() )
-  { cout << "FAIL for Global Indices!\n"; abort(); }
+  { std::cout << "FAIL for Global Indices!\n"; abort(); }
 
   NumBlocks_ = OrigMatrix->NumMyBlockRows();
 
@@ -107,12 +107,12 @@ operator()( OriginalTypeRef orig )
 
   if( verbose_ > 2 )
   {
-    cout << "SVDs and Inverses!\n";
+    std::cout << "SVDs and Inverses!\n";
     for( int i = 0; i < NumBlocks_; ++i )
     {
-      cout << "Block: " << i << " Size: " << VbrBlockDim_[i] << endl;
-      if( SVDs_[i] ) SVDs_[i]->Print(cout);
-      cout << *(Inverses_[i]) << endl;
+      std::cout << "Block: " << i << " Size: " << VbrBlockDim_[i] << std::endl;
+      if( SVDs_[i] ) SVDs_[i]->Print(std::cout);
+      std::cout << *(Inverses_[i]) << std::endl;
     }
   }
 
@@ -139,15 +139,15 @@ fwd()
 {
   if( verbose_ > 2 )
   {
-    cout << "-------------------\n";
-    cout << "BlockJacobi\n";
-    cout << "-------------------\n";
+    std::cout << "-------------------\n";
+    std::cout << "BlockJacobi\n";
+    std::cout << "-------------------\n";
   }
   
   double MinSV =  1e15;
   double MaxSV =  0.0;
 
-  multiset<double> SVs;
+  std::multiset<double> SVs;
 
   for( int i = 0; i < NumBlocks_; ++i )
   {
@@ -161,19 +161,19 @@ fwd()
     else
     {
       SVs.insert(1.0);
-      MaxSV = max( MaxSV, 1.0 );
+      MaxSV = std::max( MaxSV, 1.0 );
     }
   }
 
-  multiset<double>::iterator iterSI = SVs.begin();
-  multiset<double>::iterator endSI = SVs.end();
+  std::multiset<double>::iterator iterSI = SVs.begin();
+  std::multiset<double>::iterator endSI = SVs.end();
   int i = 0;
   if( verbose_ > 2 )
   {
-    cout << endl;
-    cout << "Singular Values\n";
-    for( ; iterSI != endSI; ++iterSI, i++ ) cout << i << "\t" << *iterSI << endl;
-    cout << endl;
+    std::cout << std::endl;
+    std::cout << "Singular Values\n";
+    for( ; iterSI != endSI; ++iterSI, i++ ) std::cout << i << "\t" << *iterSI << std::endl;
+    std::cout << std::endl;
   }
 
   Epetra_VbrMatrix * OrigMatrix = dynamic_cast<Epetra_VbrMatrix*>( origObj_->GetMatrix() );
@@ -207,28 +207,28 @@ fwd()
 
     if( verbose_ > 2 )
     {
-      cout << "DiagBlock: " << i << endl;
-      cout << *(VbrBlocks_[i][VbrBlockCnt_[i]-1]);
-      cout << "RHSBlock: " << i << endl;
-      cout << *(RHSBlocks_[i]);
+      std::cout << "DiagBlock: " << i << std::endl;
+      std::cout << *(VbrBlocks_[i][VbrBlockCnt_[i]-1]);
+      std::cout << "RHSBlock: " << i << std::endl;
+      std::cout << *(RHSBlocks_[i]);
     }
   }
 
   if( verbose_ > 2 )
   {
-    cout << "Block Jacobi'd Matrix!\n";
-    if( removeDiag_ ) cout << *NewMatrix_ << endl;
-    else              cout << *(dynamic_cast<Epetra_VbrMatrix*>(origObj_->GetMatrix())) << endl;
-    cout << "Block Jacobi'd RHS!\n";
-    cout << *(origObj_->GetRHS());
-    cout << endl;
+    std::cout << "Block Jacobi'd Matrix!\n";
+    if( removeDiag_ ) std::cout << *NewMatrix_ << std::endl;
+    else              std::cout << *(dynamic_cast<Epetra_VbrMatrix*>(origObj_->GetMatrix())) << std::endl;
+    std::cout << "Block Jacobi'd RHS!\n";
+    std::cout << *(origObj_->GetRHS());
+    std::cout << std::endl;
   }
 
   if( verbose_ > 0 )
   {
-    cout << "Min Singular Value: " << MinSV << endl;
-    cout << "Max Singular Value: " << MaxSV << endl;
-    cout << "--------------------\n";
+    std::cout << "Min Singular Value: " << MinSV << std::endl;
+    std::cout << "Max Singular Value: " << MaxSV << std::endl;
+    std::cout << "--------------------\n";
   }
 
   return true;
