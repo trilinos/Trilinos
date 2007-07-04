@@ -443,6 +443,7 @@ AC_CONFIG_FILES([
 		Makefile 
 		Makefile.export.sacado
 		src/Makefile
+		Fad/Makefile
 		example/Makefile
 		test/Makefile
 		test/utils/Makefile
