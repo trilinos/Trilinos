@@ -265,7 +265,23 @@ PARAKLETE_H = \
 	$(srcdir)/Amesos_Paraklete.h \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete.h \
 	$(srcdir)/UFsparse/PARAKLETE/pk.h \
-	$(srcdir)/UFsparse/CCOLAMD/ccolamd.h 
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_complexity.h \
+	$(srcdir)/UFsparse/CCOLAMD/ccolamd.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_blas.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_modify.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_matrixops.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_cholesky.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_config.h \
+	$(srcdir)/UFsparse/CHOLMOD/Core/t_cholmod_dense.c \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_template.h \
+	$(srcdir)/UFsparse/CHOLMOD/Core/t_cholmod_change_factor.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/t_cholmod_transpose.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/t_cholmod_triplet.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/t_cholmod_solve.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/t_cholmod_lsolve.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/t_cholmod_ltsolve.c \
+	$(srcdir)/UFsparse/CAMD/Include/camd.h \
+	$(srcdir)/UFsparse/CAMD/Include/camd_internal.h 
 
 #  Note:  PARAKLETE rewuires KLU (for colamd) 
 
