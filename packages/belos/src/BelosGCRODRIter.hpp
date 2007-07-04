@@ -299,7 +299,7 @@ namespace Belos {
     };
     
     //! Get the maximum dimension allocated for the search subspace.
-    int getMaxSubspaceDim() const { return numBlocks_; }
+    int getMaxSubspaceDim() const { return numBlocks_-recycledBlocks_; }
     
     //@}
     
@@ -385,13 +385,19 @@ namespace Belos {
     // 
     // State Storage
     //
-    Teuchos::RCP<MV> V_, U_, C_;
+    // Krylov vectors.
+    Teuchos::RCP<MV> V_;
+    //
+    // Recycled subspace vectors.
+    Teuchos::RCP<const MV> U_, C_;
     //
     // Projected matrices
     // H_ : Projected matrix from the Krylov factorization AV = VH + FE^T
-    //
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H_;
-    // 
+    //
+    // B_ : Projected matrix from the recycled subspace B = C^H*A*V
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B_;
+    //
     // QR decomposition of Projected matrices for solving the least squares system HY = B.
     // R_: Upper triangular reduction of H
     // z_: Q applied to right-hand side of the least squares system
@@ -473,7 +479,7 @@ namespace Belos {
 	//////////////////////////////////
 	// blockSize*numBlocks dependent
 	//
-	int newsd = numBlocks_+1;
+	int newsd = numBlocks_ - recycledBlocks_ + 1;
 	
         cs.resize( newsd );
 	sn.resize( newsd );
@@ -497,16 +503,24 @@ namespace Belos {
 	    V_ = MVT::Clone( *tmp, newsd );
 	  }
 	}
+
+	// Generate B_ only if it doesn't exist, otherwise resize it.
+	if (B_ == Teuchos::null)
+	  B_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycledBlocks_, newsd-1 ) );
+	else
+	  B_->shapeUninitialized( recycledBlocks_, newsd-1 );
 	
 	// Generate H_ only if it doesn't exist, otherwise resize it.
 	if (H_ == Teuchos::null)
-	  H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-1 ) );	
-	else
+	  H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-1 ) );		else
 	  H_->shapeUninitialized( newsd, newsd-1 );
 	
-	// TODO:  Insert logic so that Hessenberg matrix can be saved and reduced matrix is stored in R_
-	//R_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-1 ) );
-	// Generate z_ only if it doesn't exist, otherwise resize it.
+	// Generate R_ only if it doesn't exist, otherwise resize it.
+	if (R_ == Teuchos::null)
+	  R_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( newsd, newsd-1 ) );
+	else
+	  R_->shapeUninitialized( newsd, newsd-1 );
+
 	if (z_ == Teuchos::null)
 	  z_ = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>(newsd) );
 	else
@@ -544,9 +558,9 @@ namespace Belos {
       //
       blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
 		 Teuchos::NON_UNIT_DIAG, curDim_, 1, one,  
-		 H_->values(), H_->stride(), y.values(), y.stride() );
+		 R_->values(), R_->stride(), y.values(), y.stride() );
       //
-      //  Compute the current update.
+      //  Compute the current update from the Krylov basis; V(:,1:curDim_)*y.
       //
       std::vector<int> index(curDim_);
       for ( int i=0; i<curDim_; i++ ) {   
@@ -554,6 +568,13 @@ namespace Belos {
       }
       RCP<const MV> Vjp1 = MVT::CloneView( *V_, index );
       MVT::MvTimesMatAddMv( one, *Vjp1, y, zero, *currentUpdate );
+      //
+      //  Add in portion of update from recycled subspace U; U(:,1:recycledBlocks_)*B*y.
+      //
+      Teuchos::SerialDenseMatrix<int,ScalarType> z(recycledBlocks_,1);
+      Teuchos::SerialDenseMatrix<int,ScalarType> subB( Teuchos::View, *B_, recycledBlocks_, curDim_ );
+      z.multiply( Teuchos::NO_TRANS, Teuchos::NO_TRANS, one, subB, y, zero );
+      MVT::MvTimesMatAddMv( one, *U_, z, one, *currentUpdate );
     }
     return currentUpdate;
   }
@@ -592,13 +613,13 @@ namespace Belos {
     TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,
 		       "Belos::GCRODRIter::initialize(): Cannot initialize state storage!");
     
-    // NOTE:  In GCRODRIter, V and Z are required!!!  
+    // NOTE:  In GCRODRIter, V and z are required!!!  
     // inconsitent multivectors widths and lengths will not be tolerated, and
     // will be treated with exceptions.
     //
     std::string errstr("Belos::GCRODRIter::initialize(): Specified multivectors must have a consistent length and width.");
 
-    if (newstate.V != Teuchos::null && newstate.C != Teuchos::null && newstate.z != Teuchos::null) {
+    if (newstate.V != Teuchos::null && newstate.U != Teuchos::null && newstate.C != Teuchos::null && newstate.z != Teuchos::null) {
 
       // initialize V_,z_, and curDim_
 
@@ -645,14 +666,28 @@ namespace Belos {
         lclZ = Teuchos::null;
       }
 
+      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.U) != recycledBlocks_,
+                          std::invalid_argument, errstr );
+      if (newstate.U != U_) {
+	U_ = newstate.U;
+      }
+
+      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.C) != recycledBlocks_,
+                          std::invalid_argument, errstr );
+      if (newstate.C != C_) {
+	C_ = newstate.C;
+      }
     }
     else {
 
       TEST_FOR_EXCEPTION(newstate.V == Teuchos::null,std::invalid_argument,
                          "Belos::GCRODRIter::initialize(): GCRODRStateIterState does not have initial kernel V_0.");
 
+      TEST_FOR_EXCEPTION(newstate.U == Teuchos::null,std::invalid_argument,
+                         "Belos::GCRODRIter::initialize(): GCRODRStateIterState does not have recycled basis U.");
+
       TEST_FOR_EXCEPTION(newstate.C == Teuchos::null,std::invalid_argument,
-                         "Belos::GCRODRIter::initialize(): GCRODRStateIterState does not have recycled basis C.");
+                         "Belos::GCRODRIter::initialize(): GCRODRStateIterState does not have recycled basis C = A*U.");
 
       TEST_FOR_EXCEPTION(newstate.z == Teuchos::null,std::invalid_argument,
                          "Belos::GCRODRIter::initialize(): GCRODRStateIterState does not have initial norms z_0.");
@@ -688,7 +723,7 @@ namespace Belos {
     }
     
     // Compute the current search dimension. 
-    int searchDim = numBlocks_;
+    int searchDim = numBlocks_ - recycledBlocks_;
 
     ////////////////////////////////////////////////////////////////
     // iterate until the status test tells us to stop.
@@ -715,14 +750,25 @@ namespace Belos {
       // Compute the next vector in the Krylov basis:  Vnext = Op*Vprev
       lp_->apply(*Vprev,*Vnext);
       Vprev = Teuchos::null;
-      
-      // Remove all previous Krylov basis vectors from Vnext      
+
+      // First, remove the recycled subspace (C) from Vnext and put coefficients in B.
+      Teuchos::Array<Teuchos::RCP<const MV> > C(1, C_);
+      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >
+	subB = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
+			     ( Teuchos::View,*B_,recycledBlocks_,1,0,curDim_ ) );
+      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > AsubB;
+      AsubB.append( subB );
+
+      // Project out the recycled subspace.
+      ortho_->project( *Vnext, AsubB, C );
+
+      // Now, remove all previous Krylov basis vectors from Vnext and put coefficients in H and R.          
       // Get a view of all the previous vectors
       std::vector<int> prevind(lclDim);
       for (int i=0; i<lclDim; i++) { prevind[i] = i; }
       Vprev = MVT::CloneView(*V_,prevind);
       Teuchos::Array<Teuchos::RCP<const MV> > AVprev(1, Vprev);
-      
+	
       // Get a view of the part of the Hessenberg matrix needed to hold the ortho coeffs.
       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >
 	subH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
@@ -734,7 +780,15 @@ namespace Belos {
       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> >
 	subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
 			     ( Teuchos::View,*H_,1,1,lclDim,curDim_ ) );
+
+      // Project out the previous Krylov vectors and normalize the next vector.
       int rank = ortho_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
+
+      // Copy over the coefficients to R just in case we run into an error.
+      Teuchos::SerialDenseMatrix<int,ScalarType> subR2( Teuchos::View,*R_,lclDim+1,1,0,curDim_ );
+      Teuchos::SerialDenseMatrix<int,ScalarType> subH2( Teuchos::View,*H_,lclDim+1,1,0,curDim_ );
+      subR2.assign(subH2);
+      
       TEST_FOR_EXCEPTION(rank != 1,GCRODRIterOrthoFailure,
 			 "Belos::GCRODRIter::iterate(): couldn't generate basis of full rank.");
       //
@@ -796,13 +850,13 @@ namespace Belos {
       //
       // Apply previous Givens rotations to new column of Hessenberg matrix
       //
-      blas.ROT( 1, &(*H_)(i,curDim), 1, &(*H_)(i+1, curDim), 1, &cs[i], &sn[i] );
+      blas.ROT( 1, &(*R_)(i,curDim), 1, &(*R_)(i+1, curDim), 1, &cs[i], &sn[i] );
     }
     //
     // Calculate new Givens rotation
     //
-    blas.ROTG( &(*H_)(curDim,curDim), &(*H_)(curDim+1,curDim), &cs[curDim], &sn[curDim] );
-    (*H_)(curDim+1,curDim) = zero;
+    blas.ROTG( &(*R_)(curDim,curDim), &(*R_)(curDim+1,curDim), &cs[curDim], &sn[curDim] );
+    (*R_)(curDim+1,curDim) = zero;
     //
     // Update RHS w/ new transformation
     //
