@@ -341,8 +341,24 @@ am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
 	$(srcdir)/Amesos_Klu.h $(srcdir)/Amesos_Paraklete.h \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete.h \
 	$(srcdir)/UFsparse/PARAKLETE/pk.h \
-	$(srcdir)/UFsparse/CCOLAMD/ccolamd.h $(srcdir)/Amesos_MC64.h \
-	$(srcdir)/Amesos_Scalapack.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_complexity.h \
+	$(srcdir)/UFsparse/CCOLAMD/ccolamd.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_blas.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_modify.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_matrixops.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_cholesky.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_config.h \
+	$(srcdir)/UFsparse/CHOLMOD/Core/t_cholmod_dense.c \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_template.h \
+	$(srcdir)/UFsparse/CHOLMOD/Core/t_cholmod_change_factor.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/t_cholmod_transpose.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/t_cholmod_triplet.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/t_cholmod_solve.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/t_cholmod_lsolve.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/t_cholmod_ltsolve.c \
+	$(srcdir)/UFsparse/CAMD/Include/camd.h \
+	$(srcdir)/UFsparse/CAMD/Include/camd_internal.h \
+	$(srcdir)/Amesos_MC64.h $(srcdir)/Amesos_Scalapack.h \
 	$(srcdir)/Amesos_SCALAPACK_wrappers.h $(srcdir)/Amesos.h \
 	$(srcdir)/Amesos_Superlu.h $(srcdir)/Amesos_Superludist.h \
 	$(srcdir)/Amesos_Lapack.h $(srcdir)/Amesos_BaseSolver.h \
@@ -674,7 +690,23 @@ PARAKLETE_KLU_COMMON_H = \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/Amesos_Paraklete.h \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/paraklete.h \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/PARAKLETE/pk.h \
-@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CCOLAMD/ccolamd.h 
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_complexity.h \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CCOLAMD/ccolamd.h \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_blas.h \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_modify.h \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_matrixops.h \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_cholesky.h \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_config.h \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/t_cholmod_dense.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_template.h \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/t_cholmod_change_factor.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/t_cholmod_transpose.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Core/t_cholmod_triplet.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/t_cholmod_solve.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/t_cholmod_lsolve.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CHOLMOD/Cholesky/t_cholmod_ltsolve.c \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Include/camd.h \
+@HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CAMD/Include/camd_internal.h 
 
 
 #  Note:  PARAKLETE rewuires KLU (for colamd) 
