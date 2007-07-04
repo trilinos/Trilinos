@@ -129,7 +129,7 @@ compute(NOX::Abstract::Vector& dir,
         utils->out() << "WARNING: NOX::Direction::ModifiedNewton::compute() - "
              << "Linear solve failed to achieve convergence - "
              << "using the step anyway since \"Rescue Bad Newton Solve\" "
-             << "is true. Also, flagging recompute of Jacobian." << endl;
+             << "is true. Also, flagging recompute of Jacobian." << std::endl;
       ageOfJacobian = maxAgeOfJacobian;
       status = NOX::Abstract::Group::Ok;
     }

@@ -123,7 +123,7 @@ private:
   bool rescueBadNewtonSolve(const NOX::Abstract::Group& soln) const;
   
   //! Print an error message
-  void throwError(const string& functionName, const string& errorMsg);
+  void throwError(const std::string& functionName, const std::string& errorMsg);
 
 private:
 
