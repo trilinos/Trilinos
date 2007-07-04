@@ -3,7 +3,7 @@
 
 int main(int argc, char* argv[])
 {
-  cout << Teuchos::Teuchos_Version() << endl << endl;
+  std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   // Creating an instance of the BLAS class for double-precision kernels looks like:
   Teuchos::BLAS<int, double> blas;
@@ -15,9 +15,9 @@ int main(int argc, char* argv[])
   for ( int i=0; i<n; i++ ) { x[i] = i; }
   blas.SCAL( n, alpha, x, 1 );
   int max_idx = blas.IAMAX( n, x, 1 );
-  cout<< "The index of the maximum magnitude entry of x[] is the "
+  std::cout<< "The index of the maximum magnitude entry of x[] is the "
       <<  max_idx <<"-th and x[ " << max_idx-1 << " ] = "<< x[max_idx-1] 
-      << endl;
+      << std::endl;
   
   return 0;
 }

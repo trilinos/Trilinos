@@ -47,7 +47,7 @@ namespace Teuchos
    */
   class TreeBuildingXMLHandler
     {
-      typedef Teuchos::map<string, string> Map;
+      typedef Teuchos::map<std::string, std::string> Map;
     public:
       /** \brief Empty constructor */
       TreeBuildingXMLHandler();
@@ -58,20 +58,20 @@ namespace Teuchos
           // valid XML requires a root object; we will allow empty XML files
           TEST_FOR_EXCEPTION(
             root_.isEmpty(), EmptyXMLError
-            ,"Error, An empty XML string or file was specified!"
+            ,"Error, An empty XML std::string or file was specified!"
             "  The XML specification requires at minimum the presence"
             " of a root element!" );
           return root_.getChild(0);
         }
 
       /** \brief Process character data */
-      void characters(const string& chars);
+      void characters(const std::string& chars);
 
       /** \brief Receive notification of the end of an element */
-      int endElement(const string& tag);
+      int endElement(const std::string& tag);
 
       /** \brief Receive notification of the start of an element */
-      void startElement(const string& tag,
+      void startElement(const std::string& tag,
                         const Map& attributes);
 
     private:

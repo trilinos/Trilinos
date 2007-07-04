@@ -82,7 +82,7 @@ class Object
   //! @name Set methods.
   //@{ 
 
-  //! Define object label using a character string.
+  //! Define object label using a character std::string.
   /*! Defines the label used to describe \c this object.
   */
   virtual void setLabel(const char* label);
@@ -108,7 +108,7 @@ class Object
   //@{ 
 
   //! Access the object label.
-  /*! Returns the string used to define \e this object.
+  /*! Returns the std::string used to define \e this object.
   */
   virtual char* label() const;  
 
@@ -121,28 +121,28 @@ class Object
   //@{ 
 
   //! Print method for placing the object in an output stream
-  virtual void print(ostream& os) const;
+  virtual void print(std::ostream& os) const;
   //@}
 
   //! @name Error reporting method.
   //@{ 
 
   //!  Method for reporting errors with Teuchos objects.
-  virtual int reportError(const string message, int errorCode) const 
+  virtual int reportError(const std::string message, int errorCode) const 
   {
-  // NOTE:  We are extracting a C-style string from Message because 
-  //        the SGI compiler does not have a real string class with 
+  // NOTE:  We are extracting a C-style std::string from Message because 
+  //        the SGI compiler does not have a real std::string class with 
   //        the << operator.  Some day we should get rid of ".c_str()"
 	if ( (tracebackMode==1) && (errorCode < 0) )
 	{  // Report fatal error
-	   cerr << endl << "Error in Teuchos Object with label: " << label_ << endl 
-		 << "Teuchos Error:  " << message.c_str() << "  Error Code:  " << errorCode << endl;
+	   std::cerr << std::endl << "Error in Teuchos Object with label: " << label_ << std::endl 
+		 << "Teuchos Error:  " << message.c_str() << "  Error Code:  " << errorCode << std::endl;
 	   return(errorCode);
         }
 	if ( (tracebackMode==2) && (errorCode != 0 ) ) 
 	{
-	   cerr << endl << "Error in Teuchos Object with label: " << label_ << endl 
-		 << "Teuchos Error:  " << message.c_str() << "  Error Code:  " << errorCode << endl;
+	   std::cerr << std::endl << "Error in Teuchos Object with label: " << label_ << std::endl 
+		 << "Teuchos Error:  " << message.c_str() << "  Error Code:  " << errorCode << std::endl;
 	   return(errorCode);
 	}
 	return(errorCode);
@@ -163,9 +163,9 @@ class Object
 /*! \relates Object
     Output stream operator for handling the printing of Object.
 */
-inline ostream& operator<<(ostream& os, const Teuchos::Object& Obj)
+inline std::ostream& operator<<(std::ostream& os, const Teuchos::Object& Obj)
 {
-  os << Obj.label() << endl;
+  os << Obj.label() << std::endl;
   Obj.print(os);
  
   return os;

@@ -41,16 +41,16 @@ void xmlSAX2StartElement(void* handler,
 {
 	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
 	
-	string tag = (const char*) name;
-	Teuchos::map<string, string> attributes;
+	std::string tag = (const char*) name;
+	Teuchos::map<std::string, std::string> attributes;
 	
 	/* the attribute data is stored in a C array of C strings, in order 
 	 * {key1, val1, key2, val2, ...}. */
 
 	for (int i=0; attr[i] != 0; i+=2)
 		{
-			string key = (const char*) attr[i];
-			string val = (const char*) attr[i+1];
+			std::string key = (const char*) attr[i];
+			std::string val = (const char*) attr[i+1];
 			attributes[key] = val;
 		}
 
@@ -62,7 +62,7 @@ void xmlSAX2EndElement(void* handler,
 {
 	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
 	
-	string tag = (const char*) name;
+	std::string tag = (const char*) name;
 
 	h->endElement(tag);
 }
@@ -76,7 +76,7 @@ void xmlSAX2CharacterData(void* handler,
 
 
   str[len] = '\0';
-	string chars = str;
+	std::string chars = str;
 
 	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
 	h->characters(chars);

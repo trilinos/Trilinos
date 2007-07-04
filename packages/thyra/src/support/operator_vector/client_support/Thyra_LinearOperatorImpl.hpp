@@ -60,8 +60,8 @@ namespace Thyra
           const RangeScalar& alpha,
           const RangeScalar& beta) const
   {
-    /* the result vector might not be initialized. If it's null,
-     * create a new vector in the range space */
+    /* the result std::vector might not be initialized. If it's null,
+     * create a new std::vector in the range space */
     if (out.ptr().get()==0)
       {
         out = this->range().createMember();
@@ -77,8 +77,8 @@ namespace Thyra
                    const DomainScalar& alpha,
                    const DomainScalar& beta) const
   {
-    /* the result vector might not be initialized. If it's null,
-     * create a new vector in the domain space (i.e., the range space
+    /* the result std::vector might not be initialized. If it's null,
+     * create a new std::vector in the domain space (i.e., the range space
      * of the transpose operator */
     if (out.ptr().get()==0)
       {
@@ -108,10 +108,10 @@ namespace Thyra
   {
     const Thyra::BlockedLinearOpBase<RangeScalar, DomainScalar>* p = 
       dynamic_cast<const Thyra::BlockedLinearOpBase<RangeScalar, DomainScalar>* >(this->constPtr().get());
-    TEST_FOR_EXCEPTION(p==0 && blockRow != 0, runtime_error,
+    TEST_FOR_EXCEPTION(p==0 && blockRow != 0, std::runtime_error,
                        "request for block row=" << blockRow << " in a non-block operator");
     
-    TEST_FOR_EXCEPTION(p==0 && blockCol != 0, runtime_error,
+    TEST_FOR_EXCEPTION(p==0 && blockCol != 0, std::runtime_error,
                        "request for block col=" << blockCol << " in a non-block operator");
     
     if (p != 0)
@@ -128,10 +128,10 @@ namespace Thyra
   {
     Thyra::BlockedLinearOpBase<RangeScalar, DomainScalar>* p = 
       dynamic_cast<Thyra::BlockedLinearOpBase<RangeScalar, DomainScalar>* >(this->ptr().get());
-    TEST_FOR_EXCEPTION(p==0 && blockRow != 0, runtime_error,
+    TEST_FOR_EXCEPTION(p==0 && blockRow != 0, std::runtime_error,
                        "request for block row=" << blockRow << " in a non-block operator");
     
-    TEST_FOR_EXCEPTION(p==0 && blockCol != 0, runtime_error,
+    TEST_FOR_EXCEPTION(p==0 && blockCol != 0, std::runtime_error,
                        "request for block col=" << blockCol << " in a non-block operator");
     
     if (p != 0)

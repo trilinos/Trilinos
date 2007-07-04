@@ -61,7 +61,7 @@ using Teuchos::ScalarTraits;
 // MVMIN/MAX define the minimum and maximum dimensions of generated matrices and vectors, respectively.
 #define MVMIN      2
 #define MVMAX      20
-// SCALARMAX defines the maximum positive value (with a little leeway) generated for matrix and vector elements and scalars:
+// SCALARMAX defines the maximum positive value (with a little leeway) generated for matrix and std::vector elements and scalars:
 // random numbers in [-SCALARMAX, SCALARMAX] will be generated.
 // Set SCALARMAX to a floating-point value (e.g. 10.0) to enable floating-point random number generation, such that
 // random numbers in (-SCALARMAX - 1, SCALARMAX + 1) will be generated.
@@ -97,10 +97,10 @@ template<>
 double GetRandom(double, double);
 
 template<typename TYPE>
-void PrintVector(TYPE* Vector, int Size, string Name, bool Matlab = 0);
+void PrintVector(TYPE* Vector, int Size, std::string Name, bool Matlab = 0);
 
 template<typename TYPE>
-void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, string Name, bool Matlab = 0);
+void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, std::string Name, bool Matlab = 0);
 
 template<typename TYPE1, typename TYPE2>
 bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, TYPE2 Tolerance ); 
@@ -183,14 +183,14 @@ int main(int argc, char *argv[])
     }
 
   if (verbose)
-    cout << Teuchos::Teuchos_Version() << endl << endl;
+    std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   if(InvalidCmdLineArgs || (argc > 4))
     {
-      cout << "Invalid command line arguments detected. Use the following flags:" << endl
-	   << "\t -v enables verbose mode (reports number of failed/successful tests)" << endl
-	   << "\t -d enables debug mode (same as verbose with output of each test, not recommended for large numbers of tests)" << endl
-	   << "\t -m enables matlab-style output; only has an effect if debug mode is enabled" << endl;
+      std::cout << "Invalid command line arguments detected. Use the following flags:" << std::endl
+	   << "\t -v enables verbose mode (reports number of failed/successful tests)" << std::endl
+	   << "\t -d enables debug mode (same as verbose with output of each test, not recommended for large numbers of tests)" << std::endl
+	   << "\t -m enables matlab-style output; only has an effect if debug mode is enabled" << std::endl;
       return 1;
     }
   BLAS<int, SType1> SType1BLAS;
@@ -248,28 +248,28 @@ int main(int argc, char *argv[])
       
       if(debug)
 	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  cout << "SType1alpha = "  << SType1alpha << endl;
-	  cout << "SType2alpha = " << SType2alpha << endl;
-	  cout << "SType1beta = "  << SType1beta << endl;
-	  cout << "SType2beta = " << SType2beta << endl;
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
+	  std::cout << "SType1alpha = "  << SType1alpha << std::endl;
+	  std::cout << "SType2alpha = " << SType2alpha << std::endl;
+	  std::cout << "SType1beta = "  << SType1beta << std::endl;
+	  std::cout << "SType2beta = " << SType2beta << std::endl;
 	}
       TotalTestCount++;
       SType1BLAS.ROTG(&SType1alpha, &SType1beta, &SType1COSresult, &SType1SINresult);
       SType2BLAS.ROTG(&SType2alpha, &SType2beta, &SType2COSresult, &SType2SINresult);
       if(debug)
 	{
-	  cout << "SType1 ROTG COS result: " << SType1COSresult << endl;
-	  cout << "SType2 ROTG COS result: " << SType2COSresult << endl;
-	  cout << "SType1 ROTG SIN result: " << SType1SINresult << endl;
-	  cout << "SType2 ROTG SIN result: " << SType2SINresult << endl;
+	  std::cout << "SType1 ROTG COS result: " << SType1COSresult << std::endl;
+	  std::cout << "SType2 ROTG COS result: " << SType2COSresult << std::endl;
+	  std::cout << "SType1 ROTG SIN result: " << SType1SINresult << std::endl;
+	  std::cout << "SType2 ROTG SIN result: " << SType2SINresult << std::endl;
 	}
       GoodTestSubcount += ( CompareScalars(SType1COSresult, SType2COSresult, TOL) && 
 			    CompareScalars(SType1SINresult, SType2SINresult, TOL) );
     }
   GoodTestCount += GoodTestSubcount;
-  if(verbose || debug) cout << "ROTG: " << GoodTestSubcount << " of " << ROTGTESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+  if(verbose || debug) std::cout << "ROTG: " << GoodTestSubcount << " of " << ROTGTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End ROTG Tests
   //--------------------------------------------------------------------------------
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
 	}
       if(debug)
 	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
 	  PrintVector(SType1x, M2, "SType1x", matlab);
 	  PrintVector(SType2x, M2, "SType2x", matlab);
 	}
@@ -301,16 +301,16 @@ int main(int argc, char *argv[])
       SType2ASUMresult = SType2BLAS.ASUM(M, SType2x, incx);
       if(debug)
 	{
-	  cout << "SType1 ASUM result: " << SType1ASUMresult << endl;
-	  cout << "SType2 ASUM result: " << SType2ASUMresult << endl;
+	  std::cout << "SType1 ASUM result: " << SType1ASUMresult << std::endl;
+	  std::cout << "SType2 ASUM result: " << SType2ASUMresult << std::endl;
 	}
       GoodTestSubcount += CompareScalars(SType1ASUMresult, SType2ASUMresult, TOL);
       delete [] SType1x;
       delete [] SType2x;
     }
   GoodTestCount += GoodTestSubcount;
-  if(verbose || debug) cout << "ASUM: " << GoodTestSubcount << " of " << ASUMTESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+  if(verbose || debug) std::cout << "ASUM: " << GoodTestSubcount << " of " << ASUMTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
 
   //--------------------------------------------------------------------------------
   // End ASUM Tests
@@ -325,8 +325,8 @@ int main(int argc, char *argv[])
       incx = GetRandom(-SCALARMAX, SCALARMAX);
       incy = GetRandom(-SCALARMAX, SCALARMAX);
       M = GetRandom(MVMIN, MVMAX);
-      Mx = M*abs(incx);
-      My = M*abs(incy);
+      Mx = M*std::abs(incx);
+      My = M*std::abs(incy);
       if (Mx == 0) { Mx = 1; }
       if (My == 0) { My = 1; }
       SType1x = new SType1[Mx];
@@ -347,9 +347,9 @@ int main(int argc, char *argv[])
       SType2alpha = ConvertType(SType1alpha, convertTo);
       if(debug)
 	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  cout << "SType1alpha = "  << SType1alpha << endl;
-	  cout << "SType2alpha = " << SType2alpha << endl;
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
+	  std::cout << "SType1alpha = "  << SType1alpha << std::endl;
+	  std::cout << "SType2alpha = " << SType2alpha << std::endl;
 	  PrintVector(SType1x, Mx, "SType1x", matlab);
 	  PrintVector(SType1y, My, "SType1y_before_operation", matlab);
 	  PrintVector(SType2x, Mx, "SType2x", matlab);
@@ -370,8 +370,8 @@ int main(int argc, char *argv[])
       delete [] SType2y;
     }
   GoodTestCount += GoodTestSubcount;
-  if(verbose || debug) cout << "AXPY: " << GoodTestSubcount << " of " << AXPYTESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+  if(verbose || debug) std::cout << "AXPY: " << GoodTestSubcount << " of " << AXPYTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End AXPY Tests
   //--------------------------------------------------------------------------------
@@ -385,8 +385,8 @@ int main(int argc, char *argv[])
       incx = GetRandom(-SCALARMAX, SCALARMAX);
       incy = GetRandom(-SCALARMAX, SCALARMAX);
       M = GetRandom(MVMIN, MVMAX);
-      Mx = M*abs(incx);
-      My = M*abs(incy);
+      Mx = M*std::abs(incx);
+      My = M*std::abs(incy);
       if (Mx == 0) { Mx = 1; }
       if (My == 0) { My = 1; }
       SType1x = new SType1[Mx];
@@ -405,7 +405,7 @@ int main(int argc, char *argv[])
 	}
       if(debug)
 	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
 	  PrintVector(SType1x, Mx, "SType1x", matlab);
 	  PrintVector(SType1y, My, "SType1y_before_operation", matlab);
 	  PrintVector(SType2x, Mx, "SType2x", matlab);
@@ -425,8 +425,8 @@ int main(int argc, char *argv[])
       delete [] SType2x;
       delete [] SType2y;
     }
-   GoodTestCount += GoodTestSubcount; if(verbose || debug) cout << "COPY: " << GoodTestSubcount << " of " << COPYTESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+   GoodTestCount += GoodTestSubcount; if(verbose || debug) std::cout << "COPY: " << GoodTestSubcount << " of " << COPYTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End COPY Tests
   //--------------------------------------------------------------------------------
@@ -440,8 +440,8 @@ int main(int argc, char *argv[])
       incx = GetRandom(-SCALARMAX, SCALARMAX);
       incy = GetRandom(-SCALARMAX, SCALARMAX);
       M = GetRandom(MVMIN, MVMAX);
-      Mx = M*abs(incx);
-      My = M*abs(incy);
+      Mx = M*std::abs(incx);
+      My = M*std::abs(incy);
       if (Mx == 0) { Mx = 1; }
       if (My == 0) { My = 1; }
       SType1x = new SType1[Mx];
@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
 	}
       if(debug)
 	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
 	  PrintVector(SType1x, Mx, "SType1x", matlab);
 	  PrintVector(SType1y, My, "SType1y", matlab);
 	  PrintVector(SType2x, Mx, "SType2x", matlab);
@@ -471,8 +471,8 @@ int main(int argc, char *argv[])
       SType2DOTresult = SType2BLAS.DOT(M, SType2x, incx, SType2y, incy);
       if(debug)
 	{
-	  cout << "SType1 DOT result: " << SType1DOTresult << endl;
-	  cout << "SType2 DOT result: " << SType2DOTresult << endl;
+	  std::cout << "SType1 DOT result: " << SType1DOTresult << std::endl;
+	  std::cout << "SType2 DOT result: " << SType2DOTresult << std::endl;
 	}
       GoodTestSubcount += CompareScalars(SType1DOTresult, SType2DOTresult, TOL);
       delete [] SType1x;
@@ -481,8 +481,8 @@ int main(int argc, char *argv[])
       delete [] SType2y;
     }
   GoodTestCount += GoodTestSubcount;
-  if(verbose || debug) cout << "DOT: " << GoodTestSubcount << " of " << DOTTESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+  if(verbose || debug) std::cout << "DOT: " << GoodTestSubcount << " of " << DOTTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End DOT Tests
   //--------------------------------------------------------------------------------
@@ -505,7 +505,7 @@ int main(int argc, char *argv[])
 	}
       if(debug)
 	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
 	  PrintVector(SType1x, M2, "SType1x", matlab);
 	  PrintVector(SType2x, M2, "SType2x", matlab);
 	}
@@ -514,15 +514,15 @@ int main(int argc, char *argv[])
       SType2NRM2result = SType2BLAS.NRM2(M, SType2x, incx);
       if(debug)
 	{
-	  cout << "SType1 NRM2 result: " << SType1NRM2result << endl;
-	  cout << "SType2 NRM2 result: " << SType2NRM2result << endl;
+	  std::cout << "SType1 NRM2 result: " << SType1NRM2result << std::endl;
+	  std::cout << "SType2 NRM2 result: " << SType2NRM2result << std::endl;
 	}
       GoodTestSubcount += CompareScalars(SType1NRM2result, SType2NRM2result, TOL);
       delete [] SType1x;
       delete [] SType2x;
     }
-   GoodTestCount += GoodTestSubcount; if(verbose || debug) cout << "NRM2: " << GoodTestSubcount << " of " << NRM2TESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+   GoodTestCount += GoodTestSubcount; if(verbose || debug) std::cout << "NRM2: " << GoodTestSubcount << " of " << NRM2TESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End NRM2 Tests
   //--------------------------------------------------------------------------------
@@ -550,9 +550,9 @@ int main(int argc, char *argv[])
       SType2alpha = ConvertType(SType1alpha, convertTo);
       if(debug)
 	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  cout << "SType1alpha = " << SType1alpha << endl;
-	  cout << "SType2alpha = " << SType2alpha << endl;
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
+	  std::cout << "SType1alpha = " << SType1alpha << std::endl;
+	  std::cout << "SType2alpha = " << SType2alpha << std::endl;
 	  PrintVector(SType1x, M2, "SType1x_before_operation", matlab);
 	  PrintVector(SType2x, M2, "SType2x_before_operation", matlab);
 	}
@@ -569,8 +569,8 @@ int main(int argc, char *argv[])
       delete [] SType2x;
     }
   GoodTestCount += GoodTestSubcount;
-  if(verbose || debug) cout << "SCAL: " << GoodTestSubcount << " of " << SCALTESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+  if(verbose || debug) std::cout << "SCAL: " << GoodTestSubcount << " of " << SCALTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End SCAL Tests
   //--------------------------------------------------------------------------------
@@ -593,7 +593,7 @@ int main(int argc, char *argv[])
 	}
       if(debug)
 	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
 	  PrintVector(SType1x, M2, "SType1x", matlab);
 	  PrintVector(SType2x, M2, "SType2x", matlab);
 	}
@@ -602,16 +602,16 @@ int main(int argc, char *argv[])
       SType2IAMAXresult = SType2BLAS.IAMAX(M, SType2x, incx);
       if(debug)
 	{
-	  cout << "SType1 IAMAX result: " << SType1IAMAXresult << endl;
-	  cout << "SType2 IAMAX result: " << SType2IAMAXresult << endl;
+	  std::cout << "SType1 IAMAX result: " << SType1IAMAXresult << std::endl;
+	  std::cout << "SType2 IAMAX result: " << SType2IAMAXresult << std::endl;
 	}
       GoodTestSubcount += (SType1IAMAXresult == SType2IAMAXresult);
       delete [] SType1x;
       delete [] SType2x;
     }
   GoodTestCount += GoodTestSubcount;
-  if(verbose || debug) cout << "IAMAX: " << GoodTestSubcount << " of " << IAMAXTESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+  if(verbose || debug) std::cout << "IAMAX: " << GoodTestSubcount << " of " << IAMAXTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End IAMAX Tests
   //--------------------------------------------------------------------------------
@@ -639,11 +639,11 @@ int main(int argc, char *argv[])
 
       TRANS = RandomTRANS();
       if (Teuchos::ETranspChar[TRANS] == 'N') {	
-      	M2 = M*abs(incy);
-      	N2 = N*abs(incx);   
+      	M2 = M*std::abs(incy);
+      	N2 = N*std::abs(incx);   
       } else {
-	M2 = N*abs(incy);
-	N2 = M*abs(incx);
+	M2 = N*std::abs(incy);
+	N2 = M*std::abs(incx);
       }
 
       LDA = GetRandom(MVMIN, MVMAX);
@@ -680,11 +680,11 @@ int main(int argc, char *argv[])
 	}
       if(debug)
 	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  cout << "SType1alpha = " << SType1alpha << endl;
-	  cout << "SType2alpha = " << SType2alpha << endl;
-	  cout << "SType1beta = " << SType1beta << endl;
-	  cout << "SType2beta = " << SType2beta << endl;
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
+	  std::cout << "SType1alpha = " << SType1alpha << std::endl;
+	  std::cout << "SType2alpha = " << SType2alpha << std::endl;
+	  std::cout << "SType1beta = " << SType1beta << std::endl;
+	  std::cout << "SType2beta = " << SType2beta << std::endl;
 	  PrintMatrix(SType1A, M, N, LDA, "SType1A", matlab);
 	  PrintVector(SType1x, N2, "SType1x", matlab);
 	  PrintVector(SType1y, M2, "SType1y_before_operation", matlab);
@@ -709,8 +709,8 @@ int main(int argc, char *argv[])
       delete [] SType2y;
     }
   GoodTestCount += GoodTestSubcount;
-  if(verbose || debug) cout << "GEMV: " << GoodTestSubcount << " of " << GEMVTESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+  if(verbose || debug) std::cout << "GEMV: " << GoodTestSubcount << " of " << GEMVTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End GEMV Tests
   //--------------------------------------------------------------------------------
@@ -733,7 +733,7 @@ int main(int argc, char *argv[])
       while (incx == 0) {
       	  incx = GetRandom(-SCALARMAX, SCALARMAX);
       }
-      N2 = N*abs(incx);
+      N2 = N*std::abs(incx);
       SType1x = new SType1[N2];
       SType2x = new SType2[N2];
 
@@ -805,7 +805,7 @@ int main(int argc, char *argv[])
       
       if(debug)
 	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
 	  PrintMatrix(SType1A, N, N, LDA,"SType1A", matlab);
 	  PrintVector(SType1x, N2, "SType1x_before_operation", matlab);
 	  PrintMatrix(SType2A, N, N, LDA, "SType2A", matlab);
@@ -826,8 +826,8 @@ int main(int argc, char *argv[])
       delete [] SType2x;
     }
   GoodTestCount += GoodTestSubcount;
-  if(verbose || debug) cout << "TRMV: " << GoodTestSubcount << " of " << TRMVTESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+  if(verbose || debug) std::cout << "TRMV: " << GoodTestSubcount << " of " << TRMVTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End TRMV Tests
   //--------------------------------------------------------------------------------
@@ -849,8 +849,8 @@ int main(int argc, char *argv[])
       M = GetRandom(MVMIN, MVMAX);
       N = GetRandom(MVMIN, MVMAX);
 
-      M2 = M*abs(incx);
-      N2 = N*abs(incy);   
+      M2 = M*std::abs(incx);
+      N2 = N*std::abs(incy);   
 
       LDA = GetRandom(MVMIN, MVMAX);
       while (LDA < M) {
@@ -882,9 +882,9 @@ int main(int argc, char *argv[])
 	}
       if(debug)
 	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  cout << "SType1alpha = " << SType1alpha << endl;
-	  cout << "SType2alpha = " << SType2alpha << endl;
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
+	  std::cout << "SType1alpha = " << SType1alpha << std::endl;
+	  std::cout << "SType2alpha = " << SType2alpha << std::endl;
 	  PrintMatrix(SType1A, M, N, LDA,"SType1A_before_operation", matlab);
 	  PrintVector(SType1x, M2, "SType1x", matlab);
 	  PrintVector(SType1y, N2, "SType1y", matlab);
@@ -909,8 +909,8 @@ int main(int argc, char *argv[])
       delete [] SType2y;
     }
   GoodTestCount += GoodTestSubcount;
-  if(verbose || debug) cout << "GER: " << GoodTestSubcount << " of " << GERTESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+  if(verbose || debug) std::cout << "GER: " << GoodTestSubcount << " of " << GERTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End GER Tests
   //--------------------------------------------------------------------------------
@@ -930,7 +930,7 @@ int main(int argc, char *argv[])
       P = GetRandom(MVMIN, MVMAX);
 
       if(debug)	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
       }
       LDA = GetRandom(MVMIN, MVMAX);
       if (Teuchos::ETranspChar[TRANSA] == 'N') {
@@ -1026,8 +1026,8 @@ int main(int argc, char *argv[])
       delete [] SType2C;
     }
   GoodTestCount += GoodTestSubcount;
-  if(verbose || debug) cout << "GEMM: " << GoodTestSubcount << " of " << GEMMTESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+  if(verbose || debug) std::cout << "GEMM: " << GoodTestSubcount << " of " << GEMMTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End GEMM Tests
   //--------------------------------------------------------------------------------
@@ -1086,11 +1086,11 @@ int main(int argc, char *argv[])
       SType2beta = ConvertType(SType1beta, convertTo);
       if(debug)
 	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  cout << "SType1alpha = " << SType1alpha << endl;
-	  cout << "SType2alpha = " << SType2alpha << endl;
-	  cout << "SType1beta = " << SType1beta << endl;
-	  cout << "SType2beta = " << SType2beta << endl;
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
+	  std::cout << "SType1alpha = " << SType1alpha << std::endl;
+	  std::cout << "SType2alpha = " << SType2alpha << std::endl;
+	  std::cout << "SType1beta = " << SType1beta << std::endl;
+	  std::cout << "SType2beta = " << SType2beta << std::endl;
 	  if (Teuchos::ESideChar[SIDE] == 'L') {
 	      PrintMatrix(SType1A, M, M, LDA,"SType1A", matlab);
 	      PrintMatrix(SType2A, M, M, LDA,"SType2A", matlab);
@@ -1122,8 +1122,8 @@ int main(int argc, char *argv[])
       delete [] SType2C;
     }
   GoodTestCount += GoodTestSubcount;
-  if(verbose || debug) cout << "SYMM: " << GoodTestSubcount << " of " << SYMMTESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+  if(verbose || debug) std::cout << "SYMM: " << GoodTestSubcount << " of " << SYMMTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End SYMM Tests
   //--------------------------------------------------------------------------------
@@ -1288,9 +1288,9 @@ int main(int argc, char *argv[])
       SType2alpha = ConvertType(SType1alpha, convertTo);
       if(debug)
 	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  cout << "SType1alpha = " << SType1alpha << endl;
-	  cout << "SType2alpha = " << SType2alpha << endl;
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
+	  std::cout << "SType1alpha = " << SType1alpha << std::endl;
+	  std::cout << "SType2alpha = " << SType2alpha << std::endl;
           if(Teuchos::ESideChar[SIDE] == 'L') { 
 	    PrintMatrix(SType1A, M, M, LDA, "SType1A", matlab);
 	    PrintMatrix(SType2A, M, M, LDA, "SType2A", matlab);
@@ -1316,8 +1316,8 @@ int main(int argc, char *argv[])
       delete [] SType2B;
     }
   GoodTestCount += GoodTestSubcount;
-  if(verbose || debug) cout << "TRMM: " << GoodTestSubcount << " of " << TRMMTESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+  if(verbose || debug) std::cout << "TRMM: " << GoodTestSubcount << " of " << TRMMTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End TRMM Tests
   //--------------------------------------------------------------------------------
@@ -1489,14 +1489,14 @@ int main(int argc, char *argv[])
       
       if(debug)
 	{
-	  cout << "Test #" << TotalTestCount << " --" << endl;
-	  cout << Teuchos::ESideChar[SIDE] << "\t" 
+	  std::cout << "Test #" << TotalTestCount << " --" << std::endl;
+	  std::cout << Teuchos::ESideChar[SIDE] << "\t" 
 	       << Teuchos::EUploChar[UPLO] << "\t" 
 	       << Teuchos::ETranspChar[TRANSA] << "\t" 
-	       << Teuchos::EDiagChar[DIAG] << endl;
-	  cout << "M="<<M << "\t" << "N="<<N << "\t" << "LDA="<<LDA << "\t" << "LDB="<<LDB << endl;
-	  cout << "SType1alpha = " << SType1alpha << endl;
-	  cout << "SType2alpha = " << SType2alpha << endl;
+	       << Teuchos::EDiagChar[DIAG] << std::endl;
+	  std::cout << "M="<<M << "\t" << "N="<<N << "\t" << "LDA="<<LDA << "\t" << "LDB="<<LDB << std::endl;
+	  std::cout << "SType1alpha = " << SType1alpha << std::endl;
+	  std::cout << "SType2alpha = " << SType2alpha << std::endl;
 	  if (Teuchos::ESideChar[SIDE] == 'L') {
 	      PrintMatrix(SType1A, M, M, LDA, "SType1A", matlab);
 	      PrintMatrix(SType2A, M, M, LDA, "SType2A", matlab);
@@ -1519,7 +1519,7 @@ int main(int argc, char *argv[])
 	}
 
       if (CompareMatrices(SType1B, SType2B, M, N, LDB, TOL)==0)
-	cout << "FAILED TEST!!!!!!" << endl;
+	std::cout << "FAILED TEST!!!!!!" << std::endl;
       GoodTestSubcount += CompareMatrices(SType1B, SType2B, M, N, LDB, TOL);
 
       delete [] SType1A;
@@ -1528,8 +1528,8 @@ int main(int argc, char *argv[])
       delete [] SType2B;
     }
   GoodTestCount += GoodTestSubcount; 
-  if(verbose || debug) cout << "TRSM: " << GoodTestSubcount << " of " << TRSMTESTS << " tests were successful." << endl;
-  if(debug) cout << endl;
+  if(verbose || debug) std::cout << "TRSM: " << GoodTestSubcount << " of " << TRSMTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End TRSM Tests
   //--------------------------------------------------------------------------------
@@ -1540,15 +1540,15 @@ int main(int argc, char *argv[])
 
   if((((TotalTestCount - 1) - GoodTestCount) != 0) || (verbose) || (debug))
     {
-      cout << GoodTestCount << " of " << (TotalTestCount - 1) << " total tests were successful." << endl;
+      std::cout << GoodTestCount << " of " << (TotalTestCount - 1) << " total tests were successful." << std::endl;
     }
 
   if ((TotalTestCount-1) == GoodTestCount) {
-    cout << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
     return 0;
   }
 
-  cout << "End Result: TEST FAILED" << endl;
+  std::cout << "End Result: TEST FAILED" << std::endl;
   return (TotalTestCount-GoodTestCount-1);
 }
 
@@ -1571,58 +1571,58 @@ double GetRandom(double Low, double High)
 }
 
 template<typename TYPE>
-void PrintVector(TYPE* Vector, int Size, string Name, bool Matlab)
+void PrintVector(TYPE* Vector, int Size, std::string Name, bool Matlab)
 {
-  cout << Name << " =" << endl;
+  std::cout << Name << " =" << std::endl;
   int i;
-  if(Matlab) cout << "[";
+  if(Matlab) std::cout << "[";
   for(i = 0; i < Size; i++)
     {
-      cout << Vector[i] << " ";
+      std::cout << Vector[i] << " ";
     }
-  if(Matlab) cout << "]";
+  if(Matlab) std::cout << "]";
   if(!Matlab)
     {
-      cout << endl << endl;
+      std::cout << std::endl << std::endl;
     }
   else
     {
-      cout << ";" << endl;
+      std::cout << ";" << std::endl;
     }
 }
 
 template<typename TYPE>
-void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, string Name, bool Matlab)
+void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, std::string Name, bool Matlab)
 {
   if(!Matlab)
     {
-      cout << Name << " =" << endl;
+      std::cout << Name << " =" << std::endl;
       int i, j;
       for(i = 0; i < Rows; i++)
 	{
       	  for(j = 0; j < Columns; j++)
 	    {
-	      cout << Matrix[i + (j * LDM)] << " ";
+	      std::cout << Matrix[i + (j * LDM)] << " ";
 	    }
-	  cout << endl;
+	  std::cout << std::endl;
 	}
-      cout << endl;
+      std::cout << std::endl;
     }
   else
     {
-      cout << Name << " = ";
+      std::cout << Name << " = ";
       int i, j;
-      cout << "[";
+      std::cout << "[";
       for(i = 0; i < Rows; i++)
         {
-	  cout << "[";
+	  std::cout << "[";
       	  for(j = 0; j < Columns; j++)
 	    {
-	      cout << Matrix[i + (j * LDM)] << " ";
+	      std::cout << Matrix[i + (j * LDM)] << " ";
 	    }
-	  cout << "];";
+	  std::cout << "];";
 	}
-      cout << "];" << endl;
+      std::cout << "];" << std::endl;
     }
 }
 

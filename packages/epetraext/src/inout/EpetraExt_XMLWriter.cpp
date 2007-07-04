@@ -18,7 +18,7 @@ using namespace Teuchos;
 
 // ============================================================================
 EpetraExt::XMLWriter::
-XMLWriter(const Epetra_Comm& comm, const string& FileName) :
+XMLWriter(const Epetra_Comm& comm, const std::string& FileName) :
   Comm_(comm),
   FileName_(FileName),
   IsOpen_(false)
@@ -26,12 +26,12 @@ XMLWriter(const Epetra_Comm& comm, const string& FileName) :
 
 // ============================================================================
 void EpetraExt::XMLWriter::
-Create(const string& Label)
+Create(const std::string& Label)
 {
   if (Comm_.MyPID() == 0) 
   {
     std::ofstream of(FileName_.c_str());
-    of << "<ObjectCollection Label=\"" << Label << "\">" << endl;
+    of << "<ObjectCollection Label=\"" << Label << "\">" << std::endl;
     of.close();
   }
 
@@ -44,7 +44,7 @@ void EpetraExt::XMLWriter:: Close()
   if (Comm_.MyPID() == 0) 
   {
     std::ofstream of(FileName_.c_str(), std::ios::app);
-    of << "</ObjectCollection>" << endl;
+    of << "</ObjectCollection>" << std::endl;
     of.close();
   }
 
@@ -53,7 +53,7 @@ void EpetraExt::XMLWriter:: Close()
   
 // ============================================================================
 void EpetraExt::XMLWriter::
-Write(const string& Label, const vector<string>& Content)
+Write(const std::string& Label, const std::vector<std::string>& Content)
 {
   TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
@@ -62,19 +62,19 @@ Write(const string& Label, const vector<string>& Content)
 
   std::ofstream of(FileName_.c_str(), std::ios::app);
 
-  of << "<Text Label=\"" << Label << "\">" << endl;
+  of << "<Text Label=\"" << Label << "\">" << std::endl;
   int Csize = (int) Content.size();
   for (int i = 0; i < Csize; ++i)
-    of << Content[i] << endl;
+    of << Content[i] << std::endl;
 
-  of << "</Text>" << endl;
+  of << "</Text>" << std::endl;
 
   of.close();
 }
 
 // ============================================================================
 void EpetraExt::XMLWriter::
-Write(const string& Label, const Epetra_RowMatrix& Matrix)
+Write(const std::string& Label, const Epetra_RowMatrix& Matrix)
 {
   TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
@@ -90,12 +90,12 @@ Write(const string& Label, const Epetra_RowMatrix& Matrix)
       << " Rows=\"" << Rows << '"'
       << " Columns=\"" << Cols<< '"'
       << " Nonzeros=\"" << Nonzeros << '"'
-      << " Type=\"double\" StartingIndex=\"0\">" << endl;
+      << " Type=\"double\" StartingIndex=\"0\">" << std::endl;
   }
 
   int Length = Matrix.MaxNumEntries();
-  vector<int> Indices(Length);
-  vector<double> Values(Length);
+  std::vector<int> Indices(Length);
+  std::vector<double> Values(Length);
 
   for (int iproc = 0; iproc < Comm_.NumProc(); iproc++)
   {
@@ -113,7 +113,7 @@ Write(const string& Label, const Epetra_RowMatrix& Matrix)
 
         for (int j = 0; j < NumMyEntries; ++j)
           of << GRID << " " << Matrix.RowMatrixColMap().GID(Indices[j])
-             << " " << setiosflags(ios::scientific) << Values[j] << endl;
+             << " " << setiosflags(std::ios::scientific) << Values[j] << std::endl;
       }
       of.close();
     }
@@ -123,14 +123,14 @@ Write(const string& Label, const Epetra_RowMatrix& Matrix)
   if (Comm_.MyPID() == 0)
   {
     std::ofstream of(FileName_.c_str(), std::ios::app);
-    of << "</PointMatrix>" << endl;
+    of << "</PointMatrix>" << std::endl;
     of.close();
   }
 }
 
 // ============================================================================
 void EpetraExt::XMLWriter::
-Write(const string& Label, const Epetra_MultiVector& MultiVector)
+Write(const std::string& Label, const Epetra_MultiVector& MultiVector)
 {
   TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
@@ -145,7 +145,7 @@ Write(const string& Label, const Epetra_MultiVector& MultiVector)
     of << "<MultiVector Label=\"" << Label 
       << "\" Length=\"" << Length << '"'
       << " NumVectors=\"" << NumVectors << '"'
-      << " Type=\"double\">" << endl;
+      << " Type=\"double\">" << std::endl;
   }
 
 
@@ -159,8 +159,8 @@ Write(const string& Label, const Epetra_MultiVector& MultiVector)
       for (int i = 0; i < MultiVector.MyLength(); ++i)
       {
         for (int j = 0; j < NumVectors; ++j)
-          of << setiosflags(ios::scientific) << MultiVector[j][i] << " ";
-        of << endl;
+          of << setiosflags(std::ios::scientific) << MultiVector[j][i] << " ";
+        of << std::endl;
       }
       of.close();
     }
@@ -170,14 +170,14 @@ Write(const string& Label, const Epetra_MultiVector& MultiVector)
   if (Comm_.MyPID() == 0)
   {
     std::ofstream of(FileName_.c_str(), std::ios::app);
-    of << "</MultiVector>" << endl;
+    of << "</MultiVector>" << std::endl;
     of.close();
   }
 }
 
 // ============================================================================
 void EpetraExt::XMLWriter::
-Write(const string& Label, const Epetra_Map& Map)
+Write(const std::string& Label, const Epetra_Map& Map)
 {
   TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
@@ -212,7 +212,7 @@ Write(const string& Label, const Epetra_Map& Map)
   if (Comm_.MyPID() == 0)
   {
     std::ofstream of(FileName_.c_str(), std::ios::app);
-    of << '>' << endl;
+    of << '>' << std::endl;
     of.close();
   }
 
@@ -222,14 +222,14 @@ Write(const string& Label, const Epetra_Map& Map)
     {
       std::ofstream of(FileName_.c_str(), std::ios::app);
 
-      of << "<Proc ID=\"" << Comm_.MyPID() << "\">" << endl;
+      of << "<Proc ID=\"" << Comm_.MyPID() << "\">" << std::endl;
 
       for (int i = 0; i < Map.NumMyElements(); ++i)
       {
-        of << MyGlobalElements[i] << endl;
+        of << MyGlobalElements[i] << std::endl;
       }
 
-      of << "</Proc>" << endl;
+      of << "</Proc>" << std::endl;
       of.close();
     }
     Comm_.Barrier();
@@ -238,14 +238,14 @@ Write(const string& Label, const Epetra_Map& Map)
   if (Comm_.MyPID() == 0)
   {
     std::ofstream of(FileName_.c_str(), std::ios::app);
-    of << "</Map>" << endl;
+    of << "</Map>" << std::endl;
     of.close();
   }
 }
 
 // ============================================================================
 void EpetraExt::XMLWriter::
-Write(const string& Label, Teuchos::ParameterList& List)
+Write(const std::string& Label, Teuchos::ParameterList& List)
 {
   TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
@@ -254,14 +254,14 @@ Write(const string& Label, Teuchos::ParameterList& List)
 
   std::ofstream of(FileName_.c_str(), std::ios::app);
 
-  of << "<List Label=\"" << Label << "\">" << endl;
+  of << "<List Label=\"" << Label << "\">" << std::endl;
 
   XMLParameterListWriter Writer;
   XMLObject Obj = Writer.toXML(List);
 
   of << Obj.toString();
 
-  of << "</List>" << endl;
+  of << "</List>" << std::endl;
 
   of.close();
 }

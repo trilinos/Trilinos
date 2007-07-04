@@ -269,7 +269,7 @@ void LinearInterpolator<Scalar>::setParameterList(
 {
   parameterList_ = paramList;
   int outputLevel = parameterList_->get( "outputLevel", int(-1) );
-  outputLevel = min(max(outputLevel,-1),4);
+  outputLevel = std::min(std::max(outputLevel,-1),4);
   this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
   // 2007/05/18: rabartl: ToDo: Replace with standard "Verbose Object"
   // sublist! and validate the sublist!

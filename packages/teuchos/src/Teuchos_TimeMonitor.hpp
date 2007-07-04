@@ -91,7 +91,7 @@ namespace Teuchos
    * destructor is called. 
    *
    * Termination upon destruction lets this timer behave
-   * correctly even if scope is exited because of an exception. 
+   * correctly even if scope is exited because of an std::exception. 
    *
    * \note Teuchos::TimeMonitor uses the Teuchos::Time class internally.
    */
@@ -113,14 +113,14 @@ namespace Teuchos
         }
 
       /** Wrapping of getNewCounter() for backwards compatibiity with old code*/
-      static Teuchos::RCP<Time> getNewTimer(const string& name)
+      static Teuchos::RCP<Time> getNewTimer(const std::string& name)
       {return getNewCounter(name);}
 
       /** \brief Print summary statistics for a group of timers. 
        * Timings are gathered from all processors 
        *
        * \note This method <b>must</b> be called by all processors */
-      static void summarize(ostream &out=std::cout, 
+      static void summarize(std::ostream &out=std::cout, 
                             bool alwaysWriteLocal=false,
                             bool writeGlobalStats=true);
 

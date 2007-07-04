@@ -42,7 +42,7 @@ namespace Teuchos
 {
   /** \ingroup MPI
    * \brief Object representation of an MPI communicator for templated containers
-   * \note Template specialization exists for <tt>string</tt>.
+   * \note Template specialization exists for <tt>std::string</tt>.
    * @author Kevin Long
    */
 
@@ -102,28 +102,28 @@ namespace Teuchos
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   /** \ingroup MPI
-   * Specialiaztion of MPIContainerComm<T> to string
+   * Specialiaztion of MPIContainerComm<T> to std::string
    */
-  template <> class MPIContainerComm<string>
+  template <> class MPIContainerComm<std::string>
   {
   public:
-    static void bcast(string& x, int src, const MPIComm& comm);
+    static void bcast(std::string& x, int src, const MPIComm& comm);
 
     /** bcast an array of objects */
-    static void bcast(Array<string>& x, int src, const MPIComm& comm);
+    static void bcast(Array<std::string>& x, int src, const MPIComm& comm);
 
     /** bcast an array of arrays  */
-    static void bcast(Array<Array<string> >& x,
+    static void bcast(Array<Array<std::string> >& x,
                       int src, const MPIComm& comm);
 
     /** AllGather: each process sends a single object to all other procs */
-    static void allGather(const string& outgoing,
-                          Array<string>& incoming,
+    static void allGather(const std::string& outgoing,
+                          Array<std::string>& incoming,
                           const MPIComm& comm);
 
     /** Gatherv: gather arrays of strings to the root processor */
-    static void gatherv(const Array<string>& outgoing,
-                        Array<Array<string> >& incoming,
+    static void gatherv(const Array<std::string>& outgoing,
+                        Array<Array<std::string> >& incoming,
                         int rootRank,
                         const MPIComm& comm);
 
@@ -134,16 +134,16 @@ namespace Teuchos
      * [numStrings, offset0, offset1, ..., offsetN, char data]
      * \endcode 
      */
-    static void pack(const Array<string>& x,
+    static void pack(const Array<std::string>& x,
                      Array<char>& packed);
 
     /** recover an array of strings from a single big array and
      * and offset table */
     static void unpack(const Array<char>& packed,
-                       Array<string>& x);
+                       Array<std::string>& x);
   private:
     /** get a single big array of characters from an array of strings */
-    static void getBigArray(const Array<string>& x,
+    static void getBigArray(const Array<std::string>& x,
                             Array<char>& bigArray,
                             Array<int>& offsets);
 
@@ -151,7 +151,7 @@ namespace Teuchos
      * and offset table */
     static void getStrings(const Array<char>& bigArray,
                            const Array<int>& offsets,
-                           Array<string>& x);
+                           Array<std::string>& x);
   };
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
@@ -441,9 +441,9 @@ namespace Teuchos
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-  /* --------------- string specializations --------------------- */
+  /* --------------- std::string specializations --------------------- */
 
-  inline void MPIContainerComm<string>::bcast(string& x,
+  inline void MPIContainerComm<std::string>::bcast(std::string& x,
                                               int src, const MPIComm& comm)
   {
     int len = x.length();
@@ -454,7 +454,7 @@ namespace Teuchos
   }
 
 
-  inline void MPIContainerComm<string>::bcast(Array<string>& x, int src,
+  inline void MPIContainerComm<std::string>::bcast(Array<std::string>& x, int src,
                                               const MPIComm& comm)
   {
     /* begin by packing all the data into a big char array. This will
@@ -477,7 +477,7 @@ namespace Teuchos
       }
   }
 
-  inline void MPIContainerComm<string>::bcast(Array<Array<string> >& x,
+  inline void MPIContainerComm<std::string>::bcast(Array<Array<std::string> >& x,
                                               int src, const MPIComm& comm)
   {
     int len = x.length();
@@ -486,13 +486,13 @@ namespace Teuchos
     x.resize(len);
     for (int i=0; i<len; i++)
       {
-        MPIContainerComm<string>::bcast(x[i], src, comm);
+        MPIContainerComm<std::string>::bcast(x[i], src, comm);
       }
   }
 
 
-  inline void MPIContainerComm<string>::allGather(const string& outgoing,
-                                                  Array<string>& incoming,
+  inline void MPIContainerComm<std::string>::allGather(const std::string& outgoing,
+                                                  Array<std::string>& incoming,
                                                   const MPIComm& comm)
   {
     int nProc = comm.getNProc();
@@ -531,7 +531,7 @@ namespace Teuchos
         char* tmp = new char[recvCounts[j]+1];
         memcpy(tmp, start, recvCounts[j]);
         tmp[recvCounts[j]] = '\0';
-        incoming[j] = string(tmp);
+        incoming[j] = std::string(tmp);
         delete [] tmp;
       }
     
@@ -540,8 +540,8 @@ namespace Teuchos
     delete [] recvBuf;
   }
   
-  inline void MPIContainerComm<string>::gatherv(const Array<string>& outgoing,
-                                                Array<Array<string> >& incoming,
+  inline void MPIContainerComm<std::string>::gatherv(const Array<std::string>& outgoing,
+                                                Array<Array<std::string> >& incoming,
                                                 int root,
                                                 const MPIComm& comm)
   {
@@ -575,16 +575,13 @@ namespace Teuchos
       }
 
     /* set the size to 1 on non-root procs */
-    Array<char> recvBuf(max(1,recvSize));
+    Array<char> recvBuf(std::max(1,recvSize));
     
 
     void* sendBuf = (void*) &(packedLocalArray[0]);
     void* inBuf = (void*) &(recvBuf[0]);
     int* inCounts = inCounts = &(recvCounts[0]);
     int* inDisps = inDisps = &(recvDisplacements[0]);
-
-
-    
 
     /* gather the packed data */
     comm.gatherv( sendBuf, sendCount, MPIComm::CHAR,
@@ -609,7 +606,7 @@ namespace Teuchos
   }
 
 
-  inline void MPIContainerComm<string>::getBigArray(const Array<string>& x,
+  inline void MPIContainerComm<std::string>::getBigArray(const Array<std::string>& x,
                                                     Array<char>& bigArray,
                                                     Array<int>& offsets)
   {
@@ -634,7 +631,7 @@ namespace Teuchos
       }
   }
 
-  inline void MPIContainerComm<string>::pack(const Array<string>& x,
+  inline void MPIContainerComm<std::string>::pack(const Array<std::string>& x,
                                              Array<char>& bigArray)
   {
     Array<int> offsets(x.size()+1);
@@ -671,8 +668,8 @@ namespace Teuchos
       }
   }
 
-  inline void MPIContainerComm<string>::unpack(const Array<char>& packed,
-                                             Array<string>& x)
+  inline void MPIContainerComm<std::string>::unpack(const Array<char>& packed,
+                                             Array<std::string>& x)
   {
     const int* header = reinterpret_cast<const int*>( &(packed[0]) );
 
@@ -690,9 +687,9 @@ namespace Teuchos
       }
   }
 
-  inline void MPIContainerComm<string>::getStrings(const Array<char>& bigArray,
+  inline void MPIContainerComm<std::string>::getStrings(const Array<char>& bigArray,
                                                    const Array<int>& offsets,
-                                                   Array<string>& x)
+                                                   Array<std::string>& x)
   {
     x.resize(offsets.length()-1);
     for (int i=0; i<x.length(); i++)

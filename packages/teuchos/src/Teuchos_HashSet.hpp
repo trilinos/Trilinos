@@ -73,8 +73,8 @@ namespace Teuchos
       //! Get list of keys in Array form
       inline void arrayify(Array<Key>& keys) const ;
 
-      //! Write to a string
-      inline string toString() const ;
+      //! Write to a std::string
+      inline std::string toString() const ;
 
     private:
       /** rebuild the hashtable when the size has changed */
@@ -93,10 +93,10 @@ namespace Teuchos
       \brief Write HashSet to a stream 
   */
   template<class Key>
-    ostream& operator<<(ostream& os, const HashSet<Key>& h);
+    std::ostream& operator<<(std::ostream& os, const HashSet<Key>& h);
 
   template<class Key> inline
-    string toString(const HashSet<Key>& h) {return h.toString();}
+    std::string toString(const HashSet<Key>& h) {return h.toString();}
 
 
   template<class Key> inline
@@ -205,9 +205,9 @@ namespace Teuchos
     }
 
   template<class Key>  inline
-    string HashSet<Key>::toString() const
+    std::string HashSet<Key>::toString() const
     {
-      string rtn = "HashSet[";
+      std::string rtn = "HashSet[";
 
       bool first = true;
 
@@ -229,7 +229,7 @@ namespace Teuchos
     void HashSet<Key>::remove(const Key& key)
     {
       TEST_FOR_EXCEPTION(!containsKey(key),
-                         runtime_error,
+                         std::runtime_error,
                          "HashSet<Key>::remove: key " 
                          << Teuchos::toString(key) 
                          << " not found in HashSet"
@@ -252,7 +252,7 @@ namespace Teuchos
 
 
   template<class Key>  inline
-    ostream& operator<<(ostream& os, const HashSet<Key>& h)
+    std::ostream& operator<<(std::ostream& os, const HashSet<Key>& h)
     {
       return os << h.toString();
     }

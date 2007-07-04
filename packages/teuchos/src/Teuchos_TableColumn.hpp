@@ -49,8 +49,8 @@ namespace Teuchos
     /** \brief Empty ctor */
     TableColumn() : data_() {;}
 
-    /** \brief  Form a column of string entries */
-    TableColumn(const Array<string>& vals); 
+    /** \brief  Form a column of std::string entries */
+    TableColumn(const Array<std::string>& vals); 
 
     /** \brief  Form a column of double entries */
     TableColumn(const Array<double>& vals, int precision); 

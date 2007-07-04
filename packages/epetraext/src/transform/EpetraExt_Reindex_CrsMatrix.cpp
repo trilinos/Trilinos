@@ -52,7 +52,7 @@ operator()( OriginalTypeRef orig )
 {
   origObj_ = &orig;
 
-  //test map, must have same number of local and global elements as original row map
+  //test std::map, must have same number of local and global elements as original row std::map
   Epetra_Map & OldRowMap = const_cast<Epetra_Map&>(orig.RowMap());
   Epetra_Map & OldColMap = const_cast<Epetra_Map&>(orig.ColMap());
   int NumMyElements = OldRowMap.NumMyElements();
@@ -68,7 +68,7 @@ operator()( OriginalTypeRef orig )
 
   NewCols.Import( Cols, Importer, Insert );
 
-  vector<int*> NewColIndices(1);
+  std::vector<int*> NewColIndices(1);
   NewCols.ExtractView( &NewColIndices[0] );
 
   int NumMyColElements = OldColMap.NumMyElements();

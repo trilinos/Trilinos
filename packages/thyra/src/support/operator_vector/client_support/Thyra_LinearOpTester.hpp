@@ -86,6 +86,8 @@ public:
     )
     {
 
+      using std::endl;
+
       bool result;
       using Teuchos::OSTab;
       typedef Teuchos::ScalarTraits<Scalar> ST;

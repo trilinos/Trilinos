@@ -44,21 +44,21 @@ void MPISession::init(int* argc, void*** argv)
 	if (!mpiHasBeenStarted)
 		{
 			mpierr = ::MPI_Init (argc, (char ***) argv);
-      TEST_FOR_EXCEPTION(mpierr != 0, runtime_error,
+      TEST_FOR_EXCEPTION(mpierr != 0, std::runtime_error,
                          "Error code=" << mpierr 
                          << " detected in MPI_Init()");
 		}
 	
 	/* find rank */
 	mpierr = ::MPI_Comm_rank (MPI_COMM_WORLD, &rank_);
-	TEST_FOR_EXCEPTION(mpierr != 0, runtime_error,
+	TEST_FOR_EXCEPTION(mpierr != 0, std::runtime_error,
                      "Error code=" << mpierr 
                      << " detected in MPI_Comm_rank()");
 
 	/* find number of procs */
 	mpierr = ::MPI_Comm_size (MPI_COMM_WORLD, &nProc_);
 
-	TEST_FOR_EXCEPTION(mpierr != 0, runtime_error,
+	TEST_FOR_EXCEPTION(mpierr != 0, std::runtime_error,
                      "Error code=" << mpierr 
                      << " detected in MPI_Comm_size()");
 
@@ -67,19 +67,19 @@ void MPISession::init(int* argc, void*** argv)
 	char procName[MPI_MAX_PROCESSOR_NAME];
   mpierr = ::MPI_Get_processor_name(procName,&nameLen);
 
-  TEST_FOR_EXCEPTION(mpierr != 0, runtime_error,
+  TEST_FOR_EXCEPTION(mpierr != 0, std::runtime_error,
                      "Error code=" << mpierr 
                      << " detected in MPI_Get_processor_name()");
 
   if (showStartupMessage())
     {
-      cerr << "Teuchos::MPISession::init() started processor " 
-           << procName << endl;
+      std::cerr << "Teuchos::MPISession::init() started processor " 
+           << procName << std::endl;
     }
   else
     {
 #else
-  cerr << "Teuchos::MPISession::init() started serial run" << endl;
+  std::cerr << "Teuchos::MPISession::init() started serial run" << std::endl;
 #endif
 #ifdef HAVE_MPI
     }
@@ -91,7 +91,7 @@ void MPISession::finalize()
 #ifdef HAVE_MPI
 	int mpierr = ::MPI_Finalize();
 
-	TEST_FOR_EXCEPTION(mpierr != 0, runtime_error,
+	TEST_FOR_EXCEPTION(mpierr != 0, std::runtime_error,
                      "Error code=" << mpierr << " detected in MPI_Finalize()");
 #endif
 }

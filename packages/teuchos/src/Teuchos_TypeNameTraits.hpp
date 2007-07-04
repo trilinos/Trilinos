@@ -121,7 +121,7 @@ public:
 template<typename T>
 class TypeNameTraits<std::vector<T> > {
 public:
-  static std::string name() { return "std::vector<"+TypeNameTraits<T>::name()+">"; }
+  static std::string name() { return "vector<"+TypeNameTraits<T>::name()+">"; }
 };
 
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
@@ -129,7 +129,7 @@ public:
 template<typename T>
 class TypeNameTraits<std::complex<T> > {
 public:
-  static std::string name() { return "std::complex<"+TypeNameTraits<T>::name()+">"; }
+  static std::string name() { return "complex<"+TypeNameTraits<T>::name()+">"; }
 };
 
 #endif // defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)

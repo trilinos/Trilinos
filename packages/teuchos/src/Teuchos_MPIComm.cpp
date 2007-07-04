@@ -390,9 +390,9 @@ MPI_Datatype MPIComm::getDataType(int type)
 }
 
 
-void MPIComm::errCheck(int errCode, const string& methodName)
+void MPIComm::errCheck(int errCode, const std::string& methodName)
 {
-  TEST_FOR_EXCEPTION(errCode != 0, runtime_error,
+  TEST_FOR_EXCEPTION(errCode != 0, std::runtime_error,
                      "MPI function MPI_" << methodName 
                      << " returned error code=" << errCode);
 }

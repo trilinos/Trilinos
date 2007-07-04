@@ -64,7 +64,7 @@ namespace Belos {
     //@{ 
     
     //! Basic constructor.
-    OutputManager( int vb = Belos::Errors, const Teuchos::RCP<ostream> &os = Teuchos::rcp(&std::cout,false) );
+    OutputManager( int vb = Belos::Errors, const Teuchos::RCP<std::ostream> &os = Teuchos::rcp(&std::cout,false) );
     
     //! Destructor.
     virtual ~OutputManager() {};
@@ -74,7 +74,7 @@ namespace Belos {
     //@{ 
     
     //! Set the output stream for this manager.
-    void setOStream( const Teuchos::RCP<ostream> &os ) { myOS_ = os; };
+    void setOStream( const Teuchos::RCP<std::ostream> &os ) { myOS_ = os; };
     
     //! Set the verbosity level for this manager.
     void setVerbosity( int vb ) { vb_ = vb; }; 
@@ -85,7 +85,7 @@ namespace Belos {
     //@{ 
 
     //! Get an output stream for outputting the input message type.
-    ostream& stream( MsgType type ) 
+    std::ostream& stream( MsgType type ) 
     {
       if ( (type & vb_) && iPrint_ ) {
 	return *myOS_;
@@ -94,7 +94,7 @@ namespace Belos {
     }
  
     //! Get the output stream for this manager.
-    Teuchos::RCP<ostream> getOStream() { return myOS_; };
+    Teuchos::RCP<std::ostream> getOStream() { return myOS_; };
     
     //@}
     
@@ -113,7 +113,7 @@ namespace Belos {
     //@{
     
     //! Send some output of a specified message type to the output stream.
-    void print( MsgType type, const string output );
+    void print( MsgType type, const std::string output );
 
     //@}
 
@@ -131,13 +131,13 @@ namespace Belos {
     //@}
     
     int vb_;
-    Teuchos::RCP<ostream> myOS_;	
+    Teuchos::RCP<std::ostream> myOS_;	
     Teuchos::oblackholestream myBHS_;  
     bool iPrint_;
   };
   
   template<class ScalarType>
-  OutputManager<ScalarType>::OutputManager( int vb, const Teuchos::RCP<ostream> &os ) :
+  OutputManager<ScalarType>::OutputManager( int vb, const Teuchos::RCP<std::ostream> &os ) :
     vb_(vb),
     myOS_(os)
   {
@@ -155,7 +155,7 @@ namespace Belos {
   }
  
   template<class ScalarType>
-  void OutputManager<ScalarType>::print( MsgType type, const string output ) {
+  void OutputManager<ScalarType>::print( MsgType type, const std::string output ) {
   if ( (type & vb_) && iPrint_ ) {
     *myOS_ << output;
   }

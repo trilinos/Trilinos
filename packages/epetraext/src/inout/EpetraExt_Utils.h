@@ -3,9 +3,9 @@
 
 namespace EpetraExt
 {
-  string toString(const int& x);
-  string toString(const unsigned int& x);
-  string toString(const double& x);
+  std::string toString(const int& x);
+  std::string toString(const unsigned int& x);
+  std::string toString(const double& x);
 }
 
 #endif

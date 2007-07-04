@@ -27,7 +27,7 @@
 // @HEADER
 
 /*! \file BelosThyraAdapter.hpp
-  \brief Specializations of the Belos multi-vector and operator traits 
+  \brief Specializations of the Belos multi-std::vector and operator traits 
   classes using Thyra base classes LinearOpBase and MultiVectorBase.
 */
 
@@ -79,7 +79,7 @@ namespace Belos {
       return c;
     }
 
-    /*! \brief Creates a new MultiVectorBase and copies contents of \c mv into the new vector (deep copy).
+    /*! \brief Creates a new MultiVectorBase and copies contents of \c mv into the new std::vector (deep copy).
       
       \return Reference-counted pointer to the new MultiVectorBase.
     */
@@ -93,7 +93,7 @@ namespace Belos {
       return cc;
     }
 
-    /*! \brief Creates a new MultiVectorBase and copies the selected contents of \c mv into the new vector (deep copy).  
+    /*! \brief Creates a new MultiVectorBase and copies the selected contents of \c mv into the new std::vector (deep copy).  
 
       The copied vectors from \c mv are indicated by the \c indeX.size() indices in \c index.      
       \return Reference-counted pointer to the new MultiVectorBase.
@@ -121,11 +121,11 @@ namespace Belos {
 
       // We do not assume that the indices are sorted, nor do we check that
       // index.size() > 0. This code is fail-safe, in the sense that a zero
-      // length index vector will pass the error on the Thyra.
+      // length index std::vector will pass the error on the Thyra.
 
       // Thyra has two ways to create an indexed View:
       // * contiguous (via a range of columns)
-      // * indexed (via a vector of column indices)
+      // * indexed (via a std::vector of column indices)
       // The former is significantly more efficient than the latter, in terms of
       // computations performed with/against the created view.
       // We will therefore check to see if the given indices are contiguous, and
@@ -161,11 +161,11 @@ namespace Belos {
 
       // We do not assume that the indices are sorted, nor do we check that
       // index.size() > 0. This code is fail-safe, in the sense that a zero
-      // length index vector will pass the error on the Thyra.
+      // length index std::vector will pass the error on the Thyra.
 
       // Thyra has two ways to create an indexed View:
       // * contiguous (via a range of columns)
-      // * indexed (via a vector of column indices)
+      // * indexed (via a std::vector of column indices)
       // The former is significantly more efficient than the latter, in terms of
       // computations performed with/against the created view.
       // We will therefore check to see if the given indices are contiguous, and
@@ -195,7 +195,7 @@ namespace Belos {
     /** \name Attribute methods */
     //@{
 
-    //! Obtain the vector length of \c mv.
+    //! Obtain the std::vector length of \c mv.
     static int GetVecLength( const TMVB& mv )
     { return mv.range()->dim(); }
 
@@ -259,7 +259,7 @@ namespace Belos {
       A.applyTranspose(Thyra::CONJ_ELE,mv,&*B_thyra,alpha,Teuchos::ScalarTraits<ScalarType>::zero());
     }
 
-    /*! \brief Compute a vector \c b where the components are the individual dot-products of the 
+    /*! \brief Compute a std::vector \c b where the components are the individual dot-products of the 
         \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Tmv[i]\f$.
      */
     static void MvDot( const TMVB& mv, const TMVB& A, std::vector<ScalarType>* b )
@@ -270,7 +270,7 @@ namespace Belos {
     /** \name Norm method */
     //@{
 
-    /*! \brief Compute the 2-norm of each individual vector of \c mv.  
+    /*! \brief Compute the 2-norm of each individual std::vector of \c mv.  
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
     */
     static void MvNorm( const TMVB& mv, std::vector<magType>* normvec, NormType type = TwoNorm )
@@ -285,7 +285,7 @@ namespace Belos {
      */
     static void SetBlock( const TMVB& A, const std::vector<int>& index, TMVB& mv )
     { 
-      // Extract the "numvecs" columns of mv indicated by the index vector.
+      // Extract the "numvecs" columns of mv indicated by the index std::vector.
       int numvecs = index.size();
       std::vector<int> indexA(numvecs);
       int numAcols = A.domain()->dim();
@@ -332,9 +332,9 @@ namespace Belos {
     /** \name Print method */
     //@{
 
-    /*! \brief Print the \c mv multi-vector to the \c os output stream.
+    /*! \brief Print the \c mv multi-std::vector to the \c os output stream.
      */
-    static void MvPrint( const TMVB& mv, ostream& os )
+    static void MvPrint( const TMVB& mv, std::ostream& os )
       { os << describe(mv,Teuchos::VERB_EXTREME); }
 
     //@}

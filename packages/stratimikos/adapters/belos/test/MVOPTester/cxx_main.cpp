@@ -53,7 +53,7 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #endif
 
-using namespace std;
+
 
 int main(int argc, char *argv[])
 {
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
   std::vector<int> MyGlobalElements(NumMyElements);
   Map->MyGlobalElements(&MyGlobalElements[0]);
 
-  // Create an integer vector NumNz that is used to build the Petra Matrix.
+  // Create an integer std::vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
   // on this processor
   std::vector<int> NumNz(NumMyElements);
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
   typedef Belos::MultiVec<double> EMV;
   typedef Belos::Operator<double> EOP;
 
-  // Create an Epetra_MultiVector for an initial vector to start the solver.
+  // Create an Epetra_MultiVector for an initial std::vector to start the solver.
   // Note that this needs to have the same number of columns as the blocksize.
   Teuchos::RCP<Belos::EpetraMultiVec> ivec = Teuchos::rcp( new Belos::EpetraMultiVec(*Map, blockSize) );
   ivec->Random();
@@ -190,13 +190,13 @@ int main(int argc, char *argv[])
   switch (ierr) {
   case Belos::Ok:
     if ( verbose && MyPID==0 ) {
-      cout << "*** ThyraAdapter PASSED TestMultiVecTraits()" << endl;
+      std::cout << "*** ThyraAdapter PASSED TestMultiVecTraits()" << std::endl;
     }
     break;
   case Belos::Error:
     if ( verbose && MyPID==0 ) {
-      cout << "*** ThyraAdapter FAILED TestMultiVecTraits() ***" 
-           << endl << endl;
+      std::cout << "*** ThyraAdapter FAILED TestMultiVecTraits() ***" 
+           << std::endl << std::endl;
     }
     break;
   }
@@ -207,13 +207,13 @@ int main(int argc, char *argv[])
   switch (ierr) {
   case Belos::Ok:
     if ( verbose && MyPID==0 ) {
-      cout << "*** ThyraAdapter PASSED TestOperatorTraits()" << endl;
+      std::cout << "*** ThyraAdapter PASSED TestOperatorTraits()" << std::endl;
     }
     break;
   case Belos::Error:
     if ( verbose && MyPID==0 ) {
-      cout << "*** ThyraAdapter FAILED TestOperatorTraits() ***" 
-           << endl << endl;
+      std::cout << "*** ThyraAdapter FAILED TestOperatorTraits() ***" 
+           << std::endl << std::endl;
     }
     break;
   }
@@ -225,14 +225,14 @@ int main(int argc, char *argv[])
 
   if (gerr) {
     if (verbose && MyPID==0)
-      cout << "End Result: TEST FAILED" << endl;	
+      std::cout << "End Result: TEST FAILED" << std::endl;	
     return -1;
   }
   //
   // Default return value
   //
   if (verbose && MyPID==0)
-    cout << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;
 
 }

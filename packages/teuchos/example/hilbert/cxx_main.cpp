@@ -41,12 +41,12 @@
 // ARPREC) and double. The mp_real datatype must be initialized with a maximum 
 // precision value, also customizable below. (Default is 32.)
   
-// For a given size n, an n-by-n Hilbert matrix H and a n-by-1 vector b are 
-// constructed such that, if Hx* = b, the true solution x* is a one-vector.
+// For a given size n, an n-by-n Hilbert matrix H and a n-by-1 std::vector b are 
+// constructed such that, if Hx* = b, the true solution x* is a one-std::vector.
 // Cholesky factorization is attempted on H; if it fails, no further tests are
 // attempted for that datatype. If it is successful, the approximate solution x~
 // is computed with a pair of BLAS TRSM (triangular solve) calls. Then, the
-// two-norm of (x* - x~) is computed with BLAS AXPY (vector update) and BLAS
+// two-norm of (x* - x~) is computed with BLAS AXPY (std::vector update) and BLAS
 // NRM2. The program output is of the form:
 
 //     [size of Hilbert matrix]: [two-norm of (x* - x~)]
@@ -73,7 +73,7 @@
 #include "gmpxx.h"
 #endif
 
-using namespace std;
+
 using namespace Teuchos;
 
 #ifdef HAVE_TEUCHOS_ARPREC
@@ -136,7 +136,7 @@ void PrintArrayAsMatrix(mp_real*, int, int);
 
 int main(int argc, char *argv[]) {
 
-  cout << Teuchos::Teuchos_Version() << endl << endl;
+  std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
   //
   // Create command line processor. 
   //
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef HAVE_TEUCHOS_GNU_MP
   mpf_set_default_prec( precision );
-  cout<< "The precision of the GNU MP variable is (in bits) : "<< mpf_get_default_prec() << endl;
+  std::cout<< "The precision of the GNU MP variable is (in bits) : "<< mpf_get_default_prec() << std::endl;
 #endif
   //
   // Keep track of valid datatypes
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
       //
       compSType1 = Solve(n, H1, b1, &result1);
       if (compSType1 < 0 && verbose) 
-	cout << typeid( result1 ).name() << " -- Cholesky factorization failed (negative diagonal) at row "<<-compSType1<< endl;
+	std::cout << typeid( result1 ).name() << " -- Cholesky factorization failed (negative diagonal) at row "<<-compSType1<< std::endl;
       //
       // Clean up always;
       delete [] H1; H1 = 0;
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
       //
       compSType2 = Solve(n, H2, b2, &result2);
       if (compSType2 < 0 && verbose) 
-	cout << typeid( result2 ).name() << " -- Cholesky factorization failed (negative diagonal) at row "<<-compSType2<< endl;
+	std::cout << typeid( result2 ).name() << " -- Cholesky factorization failed (negative diagonal) at row "<<-compSType2<< std::endl;
       //
       // Clean up always.
       delete [] H2; H2 = 0;
@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
       //
       convSType2 = Solve(n, H2, b2, &result1_2);
       if (convSType2 < 0 && verbose) 
-	cout << typeid( result1_2 ).name() << " (converted) -- Cholesky factorization failed (negative diagonal) at row "<<-convSType2<< endl;
+	std::cout << typeid( result1_2 ).name() << " (converted) -- Cholesky factorization failed (negative diagonal) at row "<<-convSType2<< std::endl;
       //
       // Clean up
       //
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
       //
       convSType1 = Solve(n, H1, b1, &result2_1);
       if (convSType1 < 0 && verbose) 
-	cout << typeid( result2_1 ).name() << " (converted) -- Cholesky factorization failed (negative diagonal) at row "<<-convSType1<< endl;
+	std::cout << typeid( result2_1 ).name() << " (converted) -- Cholesky factorization failed (negative diagonal) at row "<<-convSType1<< std::endl;
       //
       // Clean up
       //
@@ -280,23 +280,23 @@ int main(int argc, char *argv[]) {
       delete [] b2; b2 = 0;
     }
     if (verbose && (compSType1>0 || compSType2>0 || convSType1>0 || convSType2>0) ) {
-      cout << "***************************************************" << endl;
-      cout << "Dimension of Hilbert Matrix : "<< n << endl;
-      cout << "***************************************************" << endl;
-      cout << "Datatype : Absolute error || x_hat - x ||"<< endl;
-      cout << "---------------------------------------------------" << endl;
+      std::cout << "***************************************************" << std::endl;
+      std::cout << "Dimension of Hilbert Matrix : "<< n << std::endl;
+      std::cout << "***************************************************" << std::endl;
+      std::cout << "Datatype : Absolute error || x_hat - x ||"<< std::endl;
+      std::cout << "---------------------------------------------------" << std::endl;
     }    
     if (compSType1>0 && verbose)
-      cout << typeid( result1 ).name() << "\t : "<< result1 << endl;
+      std::cout << typeid( result1 ).name() << "\t : "<< result1 << std::endl;
     
     if (convSType1>0 && verbose)
-      cout << typeid( result2_1 ).name() <<"(converted) : "<< result2_1 << endl;
+      std::cout << typeid( result2_1 ).name() <<"(converted) : "<< result2_1 << std::endl;
 
     if (convSType2>0 && verbose)
-      cout << typeid( result1_2 ).name() <<"(converted) : "<< result2_1 << endl;
+      std::cout << typeid( result1_2 ).name() <<"(converted) : "<< result2_1 << std::endl;
 
     if (compSType2>0 && verbose) 
-      cout << typeid( result2 ).name() << "\t : "<< result2 << endl;
+      std::cout << typeid( result2 ).name() << "\t : "<< result2 << std::endl;
     //
     // Increment counter.
     //
@@ -428,64 +428,64 @@ int Solve(int n, TYPE* H, TYPE* b, TYPE* err) {
 
 template<typename TYPE>
 void PrintArrayAsVector(TYPE* x, int n) {
-  cout << "[";
+  std::cout << "[";
   for(int i = 0; i < n; i++) {
-    cout << " " << x[i];
+    std::cout << " " << x[i];
   }
-  cout << " ]" << endl;
+  std::cout << " ]" << std::endl;
 }
 
 template<typename TYPE>
 void PrintArrayAsMatrix(TYPE* a, int m, int n) {
-  cout << "[";
+  std::cout << "[";
   for(int i = 0; i < m; i++) {
     if(i != 0) {
-      cout << " ";
+      std::cout << " ";
     }
-    cout << "[";
+    std::cout << "[";
     for(int j = 0; j < n; j++) {
-      cout << " " << a[i + (j * m)];
+      std::cout << " " << a[i + (j * m)];
     }
-    cout << " ]";
+    std::cout << " ]";
     if(i != (m - 1)) {
-      cout << endl;
+      std::cout << std::endl;
     }
   }
-  cout << "]" << endl;
+  std::cout << "]" << std::endl;
 }
 
 #ifdef HAVE_TEUCHOS_ARPREC
 template<>
 void PrintArrayAsVector(mp_real* x, int n) {
-  cout << "[ ";
+  std::cout << "[ ";
   for(int i = 0; i < n; i++) {
     if(i != 0) {
-      cout << "  ";
+      std::cout << "  ";
     }
-    cout << x[i];
+    std::cout << x[i];
   }
-  cout << "]" << endl;
+  std::cout << "]" << std::endl;
 }
 
 template<>
 void PrintArrayAsMatrix(mp_real* a, int m, int n) {
-  cout << "[";
+  std::cout << "[";
   for(int i = 0; i < m; i++) {
     if(i != 0) {
-      cout << " ";
+      std::cout << " ";
     }
-    cout << "[";
+    std::cout << "[";
     for(int j = 0; j < n; j++) {
       if(j != 0) {
-	cout << "  ";
+	std::cout << "  ";
       }
-      cout << " " << a[i + (j * m)];
+      std::cout << " " << a[i + (j * m)];
     }
-    cout << " ]";
+    std::cout << " ]";
     if(i != (m - 1)) {
-      cout << endl;
+      std::cout << std::endl;
     }
   }
-  cout << "]" << endl; 
+  std::cout << "]" << std::endl; 
 }
 #endif

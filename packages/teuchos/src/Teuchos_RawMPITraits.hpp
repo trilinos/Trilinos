@@ -67,7 +67,7 @@ namespace Teuchos {
  */
 template <class T> class RawMPITraits {
 public:
-  /** \brief Return the adjusted cout of items. */
+  /** \brief Return the adjusted std::cout of items. */
   static int adjustCount(const int count) { bool *junk1; T *junk2 = &junk1; return 0; } // Should not compile!
 	/** \brief Return the raw MPI data type of the template argument. */
 	static MPI_Datatype type() { bool *junk1; T *junk2 = &junk1; return MPI_DATATYPE_NULL; } // Should not compile!
@@ -146,7 +146,7 @@ public:
 
 /** \brief Partial specialization of <tt>RawMPITraits</tt> for <tt>std::complex<T></tt>.
  *
- * Note, <tt>maxOp()</tt> and <tt>minOp()</tt> are not supported by complex
+ * Note, <tt>maxOp()</tt> and <tt>minOp()</tt> are not supported by std::complex
  * numbers.
  *
  * ToDo: If a platform is found where this simple implementation does not work

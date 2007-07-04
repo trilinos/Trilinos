@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
 #ifdef HAVE_COMPLEX
   typedef std::complex<double> ST;  // Scalar-type typedef
 #elif HAVE_COMPLEX_H
-  typedef ::complex<double> ST;     // Scalar-type typedef
+  typedef std::complex<double> ST;     // Scalar-type typedef
 #else
   typedef double ST;                // Scalar-type typedef
 #endif
@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
   // Declare global dimension of the linear operator
   OT globalDim = 500;
 
-  // Create the element space and vector space
+  // Create the element space and std::vector space
   const Tpetra::ElementSpace<OT> elementSpace(globalDim,0,ordinalPlatform);
   const Tpetra::VectorSpace<OT,ST> vectorSpace(elementSpace,scalarPlatform);
   
@@ -224,7 +224,7 @@ int main(int argc, char* argv[])
   Thyra::seed_randomize<ST>(0);
   Thyra::randomize(-one, one, &*b);
 
-  // Create an initial vector with numRhs vectors in it and initialize it to zero.
+  // Create an initial std::vector with numRhs vectors in it and initialize it to zero.
   Teuchos::RCP< Thyra::MultiVectorBase<ST> >
     x = Thyra::createMembers(domain, numRhs);
   Thyra::assign(&*x, zero);
@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
   solveStatus = Thyra::solve( *nsA, Thyra::NONCONJ_ELE, *b, &*x );
 
   // Print out status of solve.
-  *out << "\nBelos LOWS Status: "<< solveStatus << endl;
+  *out << "\nBelos LOWS Status: "<< solveStatus << std::endl;
 
   //
   // Compute residual and ST check convergence.
@@ -258,13 +258,13 @@ int main(int argc, char* argv[])
 
   // Print out the final relative residual norms.
   MT rel_res = 0.0;
-  *out << "Final relative residual norms" << endl;  
+  *out << "Final relative residual norms" << std::endl;  
   for (int i=0; i<numRhs; ++i) {
     rel_res = norm_res[i]/norm_b[i];
     if (rel_res > maxResid)
       success = false;
     *out << "RHS " << i+1 << " : " 
-         << std::setw(16) << std::right << rel_res << endl;
+         << std::setw(16) << std::right << rel_res << std::endl;
   }
 
   return ( success ? 0 : 1 );

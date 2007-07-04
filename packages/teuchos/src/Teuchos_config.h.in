@@ -17,15 +17,6 @@
 /* Define to 1 if you have the <algorithm> header file. */
 #undef HAVE_ALGORITHM
 
-/* Define to 1 if you have the <algorithm.h> header file. */
-#undef HAVE_ALGORITHM_H
-
-/* Define to 1 if you have the <algo.h> header file. */
-#undef HAVE_ALGO_H
-
-/* Define to 1 if you have the <assert.h> header file. */
-#undef HAVE_ASSERT_H
-
 /* Define if you have a BLAS library. */
 #undef HAVE_BLAS
 
@@ -47,23 +38,14 @@
 /* Define to 1 if you have the <complex> header file. */
 #undef HAVE_COMPLEX
 
-/* Define to 1 if you have the <complex.h> header file. */
-#undef HAVE_COMPLEX_H
-
 /* Define to 1 if you have the <cstdarg> header file. */
 #undef HAVE_CSTDARG
-
-/* Define to 1 if you have the <cstdio> header file. */
-#undef HAVE_CSTDIO
 
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
 /* Define to 1 if you have the <cstring> header file. */
 #undef HAVE_CSTRING
-
-/* Define to 1 if you have the <errno.h> header file. */
-#undef HAVE_ERRNO_H
 
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
@@ -86,14 +68,8 @@
 /* Define to 1 if you have the <iomanip> header file. */
 #undef HAVE_IOMANIP
 
-/* Define to 1 if you have the <iomanip.h> header file. */
-#undef HAVE_IOMANIP_H
-
 /* Define to 1 if you have the <iostream> header file. */
 #undef HAVE_IOSTREAM
-
-/* Define to 1 if you have the <iostream.h> header file. */
-#undef HAVE_IOSTREAM_H
 
 /* Define if you have LAPACK library. */
 #undef HAVE_LAPACK
@@ -101,23 +77,11 @@
 /* Define if want to build libcheck */
 #undef HAVE_LIBCHECK
 
-/* Define to 1 if you have the <limits.h> header file. */
-#undef HAVE_LIMITS_H
-
 /* Define to 1 if you have the <list> header file. */
 #undef HAVE_LIST
 
-/* Define to 1 if you have the <list.h> header file. */
-#undef HAVE_LIST_H
-
 /* Define to 1 if you have the <map> header file. */
 #undef HAVE_MAP
-
-/* Define to 1 if you have the <map.h> header file. */
-#undef HAVE_MAP_H
-
-/* Define to 1 if you have the <math.h> header file. */
-#undef HAVE_MATH_H
 
 /* Define to 1 if you have the <memory> header file. */
 #undef HAVE_MEMORY
@@ -150,32 +114,17 @@
 /* Define to 1 if you have the <set> header file. */
 #undef HAVE_SET
 
-/* Define to 1 if you have the <set.h> header file. */
-#undef HAVE_SET_H
-
 /* Define to 1 if you have the `sqrt' function. */
 #undef HAVE_SQRT
 
 /* Define to 1 if you have the <sstream> header file. */
 #undef HAVE_SSTREAM
 
-/* Define to 1 if you have the <sstream.h> header file. */
-#undef HAVE_SSTREAM_H
-
-/* Define to 1 if you have the <stdarg.h> header file. */
-#undef HAVE_STDARG_H
-
 /* Define to 1 if you have the <stdexcept> header file. */
 #undef HAVE_STDEXCEPT
 
-/* Define to 1 if you have the <stdexcept.h> header file. */
-#undef HAVE_STDEXCEPT_H
-
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
-
-/* Define to 1 if you have the <stdio.h> header file. */
-#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
@@ -197,12 +146,6 @@
 
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
-
-/* Define to 1 if you have the <strstream> header file. */
-#undef HAVE_STRSTREAM
-
-/* Define to 1 if you have the <strstream.h> header file. */
-#undef HAVE_STRSTREAM_H
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
@@ -260,9 +203,6 @@
 
 /* Define to 1 if you have the <vector> header file. */
 #undef HAVE_VECTOR
-
-/* Define to 1 if you have the <vector.h> header file. */
-#undef HAVE_VECTOR_H
 
 /* template qualifier required for calling template methods from non-template
    code */

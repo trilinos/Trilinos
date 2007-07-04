@@ -30,7 +30,7 @@
 #define TEUCHOS_STRINGINPUTSTREAM_H
 
 /*! \file Teuchos_StringInputStream.hpp
-    \brief Definition of XMLInputStream derived class for reading XML from a string
+    \brief Definition of XMLInputStream derived class for reading XML from a std::string
 */
 
 #include "Teuchos_ConfigDefs.hpp"
@@ -42,7 +42,7 @@ namespace Teuchos
   using std::string;
 
   /** 
-   * \brief Instantiation of XMLInputStream for reading an entire document from a string
+   * \brief Instantiation of XMLInputStream for reading an entire document from a std::string
    *
    * This is a low-level object and should not be needed at the user level.
    * FileInputSource is the user-level object.
@@ -52,8 +52,8 @@ namespace Teuchos
     {
     public:
 
-      //! Construct with the string from which data will be read
-      StringInputStream(const string& text)
+      //! Construct with the std::string from which data will be read
+      StringInputStream(const std::string& text)
         : XMLInputStream(), text_(text), pos_(0) {;}
 
       //! Destructor
@@ -64,7 +64,7 @@ namespace Teuchos
                                      const unsigned int maxToRead);
 
     private:
-      string text_;
+      std::string text_;
       unsigned int pos_;
     };
 

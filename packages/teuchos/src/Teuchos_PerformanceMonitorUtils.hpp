@@ -71,8 +71,8 @@ namespace Teuchos
        * \param allNames [out] the set union of name lists from all processors
        */
       static void synchNames(const MPIComm& comm,
-                             const Array<string>& localNames,
-                             Array<string>& allNames);
+                             const Array<std::string>& localNames,
+                             Array<std::string>& allNames);
 
       /** 
        * \brief Creates zero values for metrics absent on this
@@ -88,9 +88,9 @@ namespace Teuchos
        * \param allValues [out] the metric values from all processors
        */
       static void synchValues(const MPIComm& comm,
-                              const Array<string>& localNames,
+                              const Array<std::string>& localNames,
                               const Array<Array<double> >& localValues,
-                              Array<string>& allNames,
+                              Array<std::string>& allNames,
                               Array<Array<double> >& allValues);
 
       /** \brief Compute reduced performance metrics across processors, for

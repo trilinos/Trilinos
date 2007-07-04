@@ -31,7 +31,7 @@
 using namespace Teuchos;
 
 
-TableColumn::TableColumn(const Array<string>& vals)
+TableColumn::TableColumn(const Array<std::string>& vals)
   : data_(vals.size())
 {
   for (unsigned int i=0; i<vals.size(); i++)

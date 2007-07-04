@@ -43,27 +43,27 @@ static int SetLHSAndRHS(Epetra_Vector& LHS, Epetra_Vector& RHS,
 static void MLP_print(int count, char * str, double status[AZ_STATUS_SIZE], double time)
 {
 
-  cout << "#" << count;
-  if( count < 10  )      cout << ".....";
-  else if( count < 100 ) cout << "....";
-  else cout << "...";
+  std::cout << "#" << count;
+  if( count < 10  )      std::cout << ".....";
+  else if( count < 100 ) std::cout << "....";
+  else std::cout << "...";
 
-  cout.width(30); cout.setf(ios::left);
-  cout << str;
-  cout.width(10); cout.setf(ios::left);
-  cout << (int)status[AZ_its];
-  cout.width(15); cout.setf(ios::left);
-  cout << status[AZ_scaled_r];
-  cout.width(15); cout.setf(ios::left);
-  cout << time;
+  std::cout.width(30); std::cout.setf(std::ios::left);
+  std::cout << str;
+  std::cout.width(10); std::cout.setf(std::ios::left);
+  std::cout << (int)status[AZ_its];
+  std::cout.width(15); std::cout.setf(std::ios::left);
+  std::cout << status[AZ_scaled_r];
+  std::cout.width(15); std::cout.setf(std::ios::left);
+  std::cout << time;
   
-  if( status[AZ_why] == AZ_normal         ) cout << "N";
-  else if( status[AZ_why] == AZ_maxits    ) cout << "M";
-  else if( status[AZ_why] == AZ_loss      ) cout << "L";
-  else if( status[AZ_why] == AZ_ill_cond  ) cout << "I";
-  else if( status[AZ_why] == AZ_breakdown ) cout << "B";
+  if( status[AZ_why] == AZ_normal         ) std::cout << "N";
+  else if( status[AZ_why] == AZ_maxits    ) std::cout << "M";
+  else if( status[AZ_why] == AZ_loss      ) std::cout << "L";
+  else if( status[AZ_why] == AZ_ill_cond  ) std::cout << "I";
+  else if( status[AZ_why] == AZ_breakdown ) std::cout << "B";
 
-  cout << endl;
+  std::cout << std::endl;
 }
 
 // ============================================================================
@@ -122,29 +122,29 @@ TestSmoothers(Teuchos::ParameterList& InputList,
   // output
  
   if( Comm().MyPID() == 0 ) {
-    cout << endl;
+    std::cout << std::endl;
     ML_print_line("-",78);
-    cout << "*** Analysis of ML parameters (smoothers)" << endl;
-    cout << endl;;
-    cout << "maximum iterations = " << MaxIters << endl;
-    cout << "tolerance          = " << Tol << endl << endl;
-    cout << "All options as in the input parameter list, except that" << endl;
-    cout << "all levels have the same smoother" << endl << endl;
-    cout << "M: maximum iterations exceeded without convergence" << endl;
-    cout << "N: normal exit status (convergence achieved)" << endl;
-    cout << "B: breakdown occurred" << endl;
-    cout << "I: matrix is ill-conditioned" << endl;
-    cout << "L: numerical loss of precision occurred" << endl;
-    cout << endl;
-    cout << "count  ";
-    cout.width(30); cout.setf(ios::left); 
-    cout << "smoother type";
-    cout.width(10); cout.setf(ios::left);
-    cout << "its";
-    cout.width(15); cout.setf(ios::left);
-    cout << "||r||/||r_0||";
-    cout.width(15); cout.setf(ios::left);
-    cout << "time (s)" << endl;
+    std::cout << "*** Analysis of ML parameters (smoothers)" << std::endl;
+    std::cout << std::endl;;
+    std::cout << "maximum iterations = " << MaxIters << std::endl;
+    std::cout << "tolerance          = " << Tol << std::endl << std::endl;
+    std::cout << "All options as in the input parameter list, except that" << std::endl;
+    std::cout << "all levels have the same smoother" << std::endl << std::endl;
+    std::cout << "M: maximum iterations exceeded without convergence" << std::endl;
+    std::cout << "N: normal exit status (convergence achieved)" << std::endl;
+    std::cout << "B: breakdown occurred" << std::endl;
+    std::cout << "I: matrix is ill-conditioned" << std::endl;
+    std::cout << "L: numerical loss of precision occurred" << std::endl;
+    std::cout << std::endl;
+    std::cout << "count  ";
+    std::cout.width(30); std::cout.setf(std::ios::left); 
+    std::cout << "smoother type";
+    std::cout.width(10); std::cout.setf(std::ios::left);
+    std::cout << "its";
+    std::cout.width(15); std::cout.setf(std::ios::left);
+    std::cout << "||r||/||r_0||";
+    std::cout.width(15); std::cout.setf(std::ios::left);
+    std::cout << "time (s)" << std::endl;
   }
 
   // FIXME: this use of LevelID_ is dangerous...
@@ -155,7 +155,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
   if (InputList.get("test: Jacobi",true) == true) {
 
-    if( Comm().MyPID() == 0 ) cout << endl << "- Jacobi" << endl;
+    if( Comm().MyPID() == 0 ) std::cout << std::endl << "- Jacobi" << std::endl;
 
     for( double omega=0.25 ; omega<1.5 ; omega+=0.25) {
 
@@ -202,7 +202,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
   if (InputList.get("test: Gauss-Seidel",true) == true) {
 
-    if( Comm().MyPID() == 0 ) cout << endl << "- Gauss-Seidel" << endl;
+    if( Comm().MyPID() == 0 ) std::cout << std::endl << "- Gauss-Seidel" << std::endl;
 
     for( double omega=0.25 ; omega<1.5 ; omega+=0.25) {
 
@@ -249,7 +249,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
   if (InputList.get("test: symmetric Gauss-Seidel",true) == true) {
 
-    if( Comm().MyPID() == 0 ) cout << endl << "- Gauss-Seidel (sym)" << endl;
+    if( Comm().MyPID() == 0 ) std::cout << std::endl << "- Gauss-Seidel (sym)" << std::endl;
 
     for( double omega=0.25 ; omega<1.5 ; omega+=0.25) {
 
@@ -296,7 +296,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
   if (InputList.get("test: block Gauss-Seidel",true) == true) {
 
-    if( Comm().MyPID() == 0 ) cout << endl << "- Gauss-Seidel (block)" << endl;
+    if( Comm().MyPID() == 0 ) std::cout << std::endl << "- Gauss-Seidel (block)" << std::endl;
 
     for( double omega=0.25 ; omega<1.5 ; omega+=0.25)
     {
@@ -343,7 +343,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
   
   if (InputList.get("test: Aztec",true) == true) {
 
-    if( Comm().MyPID() == 0 ) cout << endl << "- Aztec preconditioner" << endl;
+    if( Comm().MyPID() == 0 ) std::cout << std::endl << "- Aztec preconditioner" << std::endl;
 
     for( int fillin=0 ; fillin<3 ; ++fillin ) {
 
@@ -399,7 +399,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
   
   if (InputList.get("test: Aztec as solver",true) == true) {
 
-    if( Comm().MyPID() == 0 ) cout << endl << "- Aztec as solver" << endl;
+    if( Comm().MyPID() == 0 ) std::cout << std::endl << "- Aztec as solver" << std::endl;
 
     for( int iters=1 ; iters<6 ; iters+=2 ) {
       Time.ResetStartTime();
@@ -448,7 +448,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 #ifdef HAVE_ML_PARASAILS
   if (InputList.get("test: ParaSails",true) == true) {
 
-    if( Comm().MyPID() == 0 ) cout << endl << "- ParaSails" << endl;
+    if( Comm().MyPID() == 0 ) std::cout << std::endl << "- ParaSails" << std::endl;
 
     Time.ResetStartTime();
 
@@ -490,7 +490,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 #if defined(HAVE_ML_IFPACK) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
   if (InputList.get("test: IFPACK",true) == true) {
     
-    if( Comm().MyPID() == 0 ) cout << endl << "- IFPACK" << endl;
+    if( Comm().MyPID() == 0 ) std::cout << std::endl << "- IFPACK" << std::endl;
 
     // test IFPACK with block symmetric Gauss-Seidel, block
     // defined by the aggregates, and dense.
@@ -601,7 +601,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
   if (InputList.get("test: ML self smoother",true) == true) {
 
-    if( Comm().MyPID() == 0 ) cout << endl << "- ML as local smoother" << endl;
+    if( Comm().MyPID() == 0 ) std::cout << std::endl << "- ML as local smoother" << std::endl;
 
     Time.ResetStartTime();
 
@@ -643,10 +643,10 @@ TestSmoothers(Teuchos::ParameterList& InputList,
   }
 
   if (Comm().MyPID() == 0) {
-    cout << endl;
-    cout << "*** The best iteration count was obtain in test " << BestItersCount << endl;
-    cout << "*** The best CPU-time was obtain in test " << BestTimeCount << endl;
-    cout << endl;
+    std::cout << std::endl;
+    std::cout << "*** The best iteration count was obtain in test " << BestItersCount << std::endl;
+    std::cout << "*** The best CPU-time was obtain in test " << BestTimeCount << std::endl;
+    std::cout << std::endl;
   }
 
   // ================ //
@@ -654,9 +654,9 @@ TestSmoothers(Teuchos::ParameterList& InputList,
   // ================ //
 
   if (Comm().MyPID() == 0) {
-    cout << endl << "*** Total time = " << GetClock() - time << "(s)" << endl;
+    std::cout << std::endl << "*** Total time = " << GetClock() - time << "(s)" << std::endl;
     ML_print_line("-",78);
-    cout << endl;
+    std::cout << std::endl;
   }
 
   return(0);

@@ -87,8 +87,8 @@ class LinearProblem_Scale : public InPlaceTransform<Epetra_LinearProblem>
 
   bool scaled_;
 
-  vector<Epetra_Vector*> lScaleVecs_;
-  vector<Epetra_Vector*> rScaleVecs_;
+  std::vector<Epetra_Vector*> lScaleVecs_;
+  std::vector<Epetra_Vector*> rScaleVecs_;
 };
 
 } //namespace EpetraExt

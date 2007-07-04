@@ -87,7 +87,7 @@ class Flops
   //! @name Reset methods.
   //@{ 
 
-  //! Resets the number of floating point operations to zero for \e this multi-vector.
+  //! Resets the number of floating point operations to zero for \e this multi-std::vector.
   void resetFlops() {flops_ = 0.0;}
 
   //@}

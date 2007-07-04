@@ -74,77 +74,10 @@
 #endif
 #endif
 
-#ifdef HAVE_CSTDLIB
-#include <cstdlib>
-#else
-#include <stdlib.h>
-#endif
+#include "Teuchos_ConfigDefs.hpp"
 
-#ifdef HAVE_CSTDIO
-#include <cstdio>
-#else
-#include <stdio.h>
-#endif
-
-#ifdef HAVE_CASSERT
-#include <cassert>
-#else
-#include <assert.h>
-#endif
-
-#ifdef HAVE_STRING
-#include <string>
-#else
-#include <string.h>
-#endif
-
-#ifdef HAVE_IOSTREAM
-#include <iostream>
-#else
-#include <iostream.h>
-#endif
-
-/* Every line that begins with 'using' should eventually be dependent
-   on some check within the configure script */
-
-
-#ifndef TFLOP
-#ifdef HAVE_CMATH
-#include <cmath>
-#else
-#include <math.h>
-#endif
-using namespace std;
-#else /* TFLOP defined */
-#ifdef HAVE_IOMANIP
-#include <iomanip>
-#else
-#include <iomanip.h>
-#endif
-#ifdef HAVE_STRING
-using std::string;
-#endif
-#ifdef HAVE_IOSTREAM
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
-#endif
-#endif
-
-/*
- * Rythmos_Version() method
- */
 namespace Rythmos {
-  string Rythmos_Version();
+  std::string Rythmos_Version();
 }
-
-/*-----------------------------------------------------------------------
-  Must refine the following up to #else HAVE_CONFIG_H is not defined
-  -----------------------------------------------------------------------*/
-
-// Define DefultTracebackMode (HAVE_WARNING_MESSAGES and HAVE_FATAL_MESSAGES can be defined
-// via the configure script command line)
 
 #endif /* RYTHMOS_CONFIGDEFS_H */

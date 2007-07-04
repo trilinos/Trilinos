@@ -48,7 +48,7 @@ int main (int argc, char **argv)
   Teuchos::ParameterList List;
   List.set("int parameter", 10);
   List.set("double parameter", 10.0);
-  List.set("string parameter", "string");
+  List.set("std::string parameter", "std::string");
 
   // ========================= //
   // Part I: generate XML file //
@@ -56,10 +56,10 @@ int main (int argc, char **argv)
   
   EpetraExt::XMLWriter XMLWriter(Comm, "data.xml");
 
-  vector<string> Content;
+  std::vector<std::string> Content;
   Content.push_back("This is an example of description");
   Content.push_back("The description is as long as desired,");
-  Content.push_back("just put it in a vector of strings.");
+  Content.push_back("just put it in a std::vector of strings.");
 
   XMLWriter.Create("MyProblem");
   XMLWriter.Write("Author", "myself and others");
@@ -83,9 +83,9 @@ int main (int argc, char **argv)
   Epetra_MultiVector* MyLHS;
   Epetra_MultiVector* MyRHS;
   Teuchos::ParameterList MyParameters;
-  vector<string> Author;
-  vector<string> Date;
-  vector<string> MyContent;
+  std::vector<std::string> Author;
+  std::vector<std::string> Date;
+  std::vector<std::string> MyContent;
 
   XMLReader.Read("Author", Author);
   XMLReader.Read("Date", Date);
@@ -96,19 +96,19 @@ int main (int argc, char **argv)
   XMLReader.Read("MyContent", MyContent);
   XMLReader.Read("MyParameters", MyParameters);
 
-  cout << *MyMap;
-  cout << *MyMatrix;
-  cout << *MyLHS;
-  cout << *MyRHS;
+  std::cout << *MyMap;
+  std::cout << *MyMatrix;
+  std::cout << *MyLHS;
+  std::cout << *MyRHS;
   if (Comm.MyPID() == 0)
   {
     int Msize = (int) MyContent.size();
     for (int i = 0; i < Msize; ++i)
-      cout << MyContent[i] << endl;
+      std::cout << MyContent[i] << std::endl;
 
-    cout << MyParameters;
-    cout << "Author = " << Author[0] << endl;
-    cout << "Date   = " << Date[0] << endl;
+    std::cout << MyParameters;
+    std::cout << "Author = " << Author[0] << std::endl;
+    std::cout << "Date   = " << Date[0] << std::endl;
   }
 
   delete MyMap;

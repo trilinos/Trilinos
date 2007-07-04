@@ -5,7 +5,7 @@
 
 int main(int argc, char* argv[])
 {
-  cout << Teuchos::Teuchos_Version() << endl << endl;
+  std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   // Creating an instance of the LAPACK class for double-precision routines looks like:
   Teuchos::LAPACK<int, double> lapack;
@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
 		ipiv, My_Vector.values(), My_Vector.stride(), &info );  
 
   // Print out the solution.
-  cout << My_Vector << endl;
+  std::cout << My_Vector << std::endl;
 
   return 0;
 }

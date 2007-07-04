@@ -61,17 +61,17 @@ namespace Teuchos
     /** \brief virtual dtor */
     virtual ~TableEntry() {}
     
-    /**  \brief Return a string representation of this entry */
-    virtual string toString() const = 0 ;
+    /**  \brief Return a std::string representation of this entry */
+    virtual std::string toString() const = 0 ;
 
-    /** \brief Return a string representation of this entry,
+    /** \brief Return a std::string representation of this entry,
      * truncated if necessary to fit within the given column width.
      *
-     * \param maxWidth [in] the maximum width of the string form. Larger
+     * \param maxWidth [in] the maximum width of the std::string form. Larger
      * strings must be truncated in a subclass-dependent way.
-     * \return the string, truncated if necessary
+     * \return the std::string, truncated if necessary
      */
-    virtual string toChoppedString(int maxWidth) const ;
+    virtual std::string toChoppedString(int maxWidth) const ;
 
   protected:
   };
@@ -87,8 +87,8 @@ namespace Teuchos
      * and a precision */
     DoubleEntry(const double& value, int precision);
     
-    /** \brief Write the specified entry to a string */
-    virtual string toString() const ;
+    /** \brief Write the specified entry to a std::string */
+    virtual std::string toString() const ;
 
   private:
     double data_;
@@ -105,8 +105,8 @@ namespace Teuchos
     /** \brief Construct with a value */
     IntEntry(int value);
     
-    /** \brief Write the specified entry to a string */
-    virtual string toString() const ;
+    /** \brief Write the specified entry to a std::string */
+    virtual std::string toString() const ;
 
   private:
     int data_;
@@ -114,19 +114,19 @@ namespace Teuchos
 
   
   /** 
-   * \brief A table entry that is a simple string
+   * \brief A table entry that is a simple std::string
    */
   class StringEntry : public TableEntry
   {
   public:
     /** \brief Construct with a value */
-    StringEntry(string value);
+    StringEntry(std::string value);
     
-    /** \brief Write the specified entry to a string */
-    virtual string toString() const ;
+    /** \brief Write the specified entry to a std::string */
+    virtual std::string toString() const ;
 
   private:
-    string data_;
+    std::string data_;
   };
 
   /** 
@@ -146,8 +146,8 @@ namespace Teuchos
                                  const RCP<TableEntry>& second,
                                  bool spaceBeforeParens=true);
     
-    /** \brief Write the specified entry to a string */
-    virtual string toString() const ;
+    /** \brief Write the specified entry to a std::string */
+    virtual std::string toString() const ;
     
   private:
     RCP<TableEntry> first_;

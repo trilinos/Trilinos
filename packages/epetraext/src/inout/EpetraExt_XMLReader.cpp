@@ -24,17 +24,17 @@
 #include "Epetra_Import.h"
 
 // ============================================================================
-static void Tokenize(const string& str, vector<string>& tokens,
-              const string& delimiters = " ")
+static void Tokenize(const std::string& str, std::vector<std::string>& tokens,
+              const std::string& delimiters = " ")
 {
   // Skip delimiters at beginning.
-  string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+  std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
   // Find first "non-delimiter".
-  string::size_type pos     = str.find_first_of(delimiters, lastPos);
+  std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
 
-  while (string::npos != pos || string::npos != lastPos)
+  while (std::string::npos != pos || std::string::npos != lastPos)
   {
-    // Found a token, add it to the vector.
+    // Found a token, add it to the std::vector.
     tokens.push_back(str.substr(lastPos, pos - lastPos));
     // Skip delimiters.  Note the "not_of"
     lastPos = str.find_first_not_of(delimiters, pos);
@@ -45,7 +45,7 @@ static void Tokenize(const string& str, vector<string>& tokens,
 using namespace Teuchos;
 
 // ============================================================================
-EpetraExt::XMLReader::XMLReader(const Epetra_Comm& comm, const string& FileName) :
+EpetraExt::XMLReader::XMLReader(const Epetra_Comm& comm, const std::string& FileName) :
   Comm_(comm)
 {
 #ifdef HAVE_TEUCHOS_EXPAT
@@ -53,15 +53,15 @@ EpetraExt::XMLReader::XMLReader(const Epetra_Comm& comm, const string& FileName)
   fileXML_ = rcp(new XMLObject(fileSrc.getObject()));
   IsOpen_ = true;
 #else
-  cerr << "Teuchos was not configured with support for expat." << endl;
-  cerr << "Please reconfigure teuchos with --enable-teuchos-expat." << endl;
+  std::cerr << "Teuchos was not configured with support for expat." << std::endl;
+  std::cerr << "Please reconfigure teuchos with --enable-teuchos-expat." << std::endl;
   exit(EXIT_FAILURE);
 #endif
 }
 
 // ============================================================================
 void EpetraExt::XMLReader::
-Read(const string& Label, Epetra_CrsGraph*& Graph)
+Read(const std::string& Label, Epetra_CrsGraph*& Graph)
 {
   TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
@@ -71,7 +71,7 @@ Read(const string& Label, Epetra_CrsGraph*& Graph)
   for (int i = 0; i < fileXML_->numChildren(); ++i)
   {
     const XMLObject& child = fileXML_->getChild(i);
-    string tag = child.getTag();
+    std::string tag = child.getTag();
 
     if (tag == "Graph")
     {
@@ -82,15 +82,15 @@ Read(const string& Label, Epetra_CrsGraph*& Graph)
         int NumGlobalCols = child.getRequiredInt("Columns");
         int NumGlobalEntries = child.getRequiredInt("Entries");
         int Offset = child.getRequiredInt("StartingIndex");
-	if (debug) std::cout << NumGlobalCols << NumGlobalEntries << Offset << endl;
+	if (debug) std::cout << NumGlobalCols << NumGlobalEntries << Offset << std::endl;
 
         Epetra_Map map(NumGlobalRows, 0, Comm_);
         Graph = new Epetra_CrsGraph(Copy, map, 0);
 
         for (int j = 0; j < child.numContentLines(); ++j)
         {
-          vector<string> tokens;
-          const string& line = child.getContentLine(j);
+          std::vector<std::string> tokens;
+          const std::string& line = child.getContentLine(j);
           Tokenize(line, tokens, " \n\r\t");
           if (tokens.size() < 2) continue;
 
@@ -109,7 +109,7 @@ Read(const string& Label, Epetra_CrsGraph*& Graph)
 
 // ============================================================================
 void EpetraExt::XMLReader::
-Read(const string& Label, Epetra_CrsMatrix*& matrix)
+Read(const std::string& Label, Epetra_CrsMatrix*& matrix)
 {
   TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
@@ -119,7 +119,7 @@ Read(const string& Label, Epetra_CrsMatrix*& matrix)
   for (int i = 0; i < fileXML_->numChildren(); ++i)
   {
     const XMLObject& child = fileXML_->getChild(i);
-    string tag = child.getTag();
+    std::string tag = child.getTag();
 
     if (tag == "PointMatrix")
     {
@@ -130,15 +130,15 @@ Read(const string& Label, Epetra_CrsMatrix*& matrix)
         int NumGlobalCols = child.getRequiredInt("Columns");
         int NumGlobalNonzeros = child.getRequiredInt("Nonzeros");
         int Offset = child.getRequiredInt("StartingIndex");
-	if (debug) std::cout << NumGlobalCols << NumGlobalNonzeros << Offset << endl;
+	if (debug) std::cout << NumGlobalCols << NumGlobalNonzeros << Offset << std::endl;
 
         Epetra_Map map(NumGlobalRows, 0, Comm_);
         matrix = new Epetra_CrsMatrix(Copy, map, 0);
 
         for (int j = 0; j < child.numContentLines(); ++j)
         {
-          vector<string> tokens;
-          const string& line = child.getContentLine(j);
+          std::vector<std::string> tokens;
+          const std::string& line = child.getContentLine(j);
           Tokenize(line, tokens, " \n\r\t");
           if (tokens.size() < 3) continue;
 
@@ -160,7 +160,7 @@ Read(const string& Label, Epetra_CrsMatrix*& matrix)
 
 // ============================================================================
 void EpetraExt::XMLReader::
-Read(const string& Label, Epetra_MultiVector*& MultiVector)
+Read(const std::string& Label, Epetra_MultiVector*& MultiVector)
 {
   TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
@@ -171,7 +171,7 @@ Read(const string& Label, Epetra_MultiVector*& MultiVector)
   for (int i = 0; i < fileXML_->numChildren(); ++i)
   {
     const XMLObject& child = fileXML_->getChild(i);
-    string tag = child.getTag();
+    std::string tag = child.getTag();
 
     if (tag == "MultiVector")
     {
@@ -187,9 +187,9 @@ Read(const string& Label, Epetra_MultiVector*& MultiVector)
         double val;
         for (int j = 0; j < child.numContentLines(); ++j)
         {
-          vector<string> tokens;
+          std::vector<std::string> tokens;
 
-          const string& line = child.getContentLine(j);
+          const std::string& line = child.getContentLine(j);
 
           Tokenize(line, tokens, " \n\r\t");
 
@@ -218,7 +218,7 @@ Read(const string& Label, Epetra_MultiVector*& MultiVector)
 
 // ============================================================================
 void EpetraExt::XMLReader::
-Read(const string& Label, Epetra_Map*& Map)
+Read(const std::string& Label, Epetra_Map*& Map)
 {
   TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
@@ -229,7 +229,7 @@ Read(const string& Label, Epetra_Map*& Map)
   for (int i = 0; i < fileXML_->numChildren(); ++i)
   {
     const XMLObject& child = fileXML_->getChild(i);
-    string tag = child.getTag();
+    std::string tag = child.getTag();
 
     if (tag == "Map")
     {
@@ -250,7 +250,7 @@ Read(const string& Label, Epetra_Map*& Map)
 
         sprintf(str, "ElementsOnProc%d", Comm_.MyPID());
 
-        vector<int> MyGlobalElements(NumMyElements);
+        std::vector<int> MyGlobalElements(NumMyElements);
 
         for (int iproc = 0; iproc < child.numChildren(); ++iproc)
         {
@@ -262,9 +262,9 @@ Read(const string& Label, Epetra_Map*& Map)
           {
             for (int j = 0; j < newChild.numContentLines(); ++j)
             {
-              vector<string> tokens;
+              std::vector<std::string> tokens;
 
-              const string& line = newChild.getContentLine(j);
+              const std::string& line = newChild.getContentLine(j);
 
               Tokenize(line, tokens, " \n\r\t");
 	      int tsize = (int) tokens.size();
@@ -285,7 +285,7 @@ Read(const string& Label, Epetra_Map*& Map)
 
 // ============================================================================
 void EpetraExt::XMLReader::
-Read(const string& Label, vector<string>& Content)
+Read(const std::string& Label, std::vector<std::string>& Content)
 {
   TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
@@ -293,7 +293,7 @@ Read(const string& Label, vector<string>& Content)
   for (int i = 0; i < fileXML_->numChildren(); ++i)
   {
     const XMLObject& child = fileXML_->getChild(i);
-    string tag = child.getTag();
+    std::string tag = child.getTag();
 
     if (tag == "Text")
     {
@@ -301,7 +301,7 @@ Read(const string& Label, vector<string>& Content)
       {
         for (int j = 0; j < child.numContentLines(); ++j)
         {
-          const string& line = child.getContentLine(j);
+          const std::string& line = child.getContentLine(j);
           if (line == "\n") continue;
           Content.push_back(line);
         }
@@ -312,7 +312,7 @@ Read(const string& Label, vector<string>& Content)
 
 // ============================================================================
 void EpetraExt::XMLReader::
-Read(const string& Label, Teuchos::ParameterList& List)
+Read(const std::string& Label, Teuchos::ParameterList& List)
 {
   TEST_FOR_EXCEPTION(IsOpen_ == false, std::logic_error,
                      "No file has been opened");
@@ -320,7 +320,7 @@ Read(const string& Label, Teuchos::ParameterList& List)
   for (int i = 0; i < fileXML_->numChildren(); ++i)
   {
     const XMLObject& child = fileXML_->getChild(i);
-    string tag = child.getTag();
+    std::string tag = child.getTag();
 
     if (tag == "List")
     {

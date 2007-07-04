@@ -59,7 +59,7 @@
     if((VERBOSE)) { \
       std::ostringstream oss; \
       oss \
-        << "\np="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught standard exception of type \'" \
+        << "\np="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught standard std::exception of type \'" \
         <<Teuchos::typeName(excpt)<<"\' :\n\n"; \
         Teuchos::OSTab(oss).o() << excpt.what() << std::endl; \
       (ERR_STREAM) << oss.str(); \
@@ -71,7 +71,7 @@
       std::ostringstream oss; \
       oss \
         << "\np="<<::Teuchos::GlobalMPISession::getRank() \
-        << ": *** Caught an integer exception with value = " \
+        << ": *** Caught an integer std::exception with value = " \
         << excpt_code << std::endl; \
       (ERR_STREAM) << oss.str(); \
     (SUCCESS_FLAG) = false; \
@@ -80,7 +80,7 @@
   catch( ... ) { \
     if((VERBOSE)) { \
       std::ostringstream oss; \
-      oss << "\np="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught an unknown exception\n"; \
+      oss << "\np="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught an unknown std::exception\n"; \
       (ERR_STREAM) << oss.str(); \
       (SUCCESS_FLAG) = false; \
     } \

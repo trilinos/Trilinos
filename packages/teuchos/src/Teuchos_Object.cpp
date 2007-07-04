@@ -68,9 +68,9 @@ int Object::getTracebackMode()
   return(temp);
 }
 //=============================================================================
-void Object::print(ostream& os) const
+void Object::print(std::ostream& os) const
 {
-  // os << label_; // No need to print label, since ostream does it already
+  // os << label_; // No need to print label, since std::ostream does it already
 }
 //=============================================================================
 Object::~Object()  

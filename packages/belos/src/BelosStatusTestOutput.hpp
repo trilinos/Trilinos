@@ -101,7 +101,7 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
     printed, regardless of the mod parameter, as the current number of calls
     will be zero.
 
-    If the specified Teuchos::RCP for the child class is Teuchos::null, then calling checkStatus() will result in a StatusTestError exception being thrown.
+    If the specified Teuchos::RCP for the child class is Teuchos::null, then calling checkStatus() will result in a StatusTestError std::exception being thrown.
     
     \return ::StatusType indicating whether the underlying test passed or failed.
   */
@@ -187,29 +187,29 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
   //@{ 
   
   //! Output formatted description of stopping test to output stream.
-  void print(ostream& os, int indent = 0) const {
-    string ind(indent,' ');
-    os << endl << ind << "Belos::StatusTestOutput: ";
+  void print(std::ostream& os, int indent = 0) const {
+    std::string ind(indent,' ');
+    os << std::endl << ind << "Belos::StatusTestOutput: ";
     switch (state_) {
     case Passed:
-      os << "Passed" << endl;
+      os << "Passed" << std::endl;
       break;
     case Failed:
-      os << "Failed" << endl;
+      os << "Failed" << std::endl;
       break;
     case Undefined:
-      os << "Undefined" << endl;
+      os << "Undefined" << std::endl;
       break;
     }
     os << ind << "  (Num calls,Mod test,State test): " << "(" << numCalls_ << ", " << modTest_ << ",";
     if (stateTest_ == 0) {
-      os << " none)" << endl;
+      os << " none)" << std::endl;
     }
     else {
       if ( stateTest_ & Passed ) os << " Passed";
       if ( stateTest_ & Failed ) os << " Failed";
       if ( stateTest_ & Undefined ) os << " Undefined";
-      os << ")" << endl;
+      os << ")" << std::endl;
     }
     // print child, with extra indention
     test_->print(os,indent+3);

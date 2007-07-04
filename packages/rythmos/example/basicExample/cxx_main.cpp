@@ -448,7 +448,7 @@ int main(int argc, char *argv[])
             TEST_FOR_EXCEPT(stepStatusMaster.order != stepStatusSlave.order);
             // We will allow a difference of some multiplier of machine epsilon:
             double eps = 1.0e4*Teuchos::ScalarTraits<double>::prec();
-            double normLETDiff = abs(stepStatusMaster.stepLETValue - stepStatusSlave.stepLETValue);
+            double normLETDiff = std::abs(stepStatusMaster.stepLETValue - stepStatusSlave.stepLETValue);
             TEST_FOR_EXCEPTION(
               normLETDiff > eps, std::logic_error,
               "Error, normLETDiff = " << normLETDiff << " > eps = " << eps << "!" );

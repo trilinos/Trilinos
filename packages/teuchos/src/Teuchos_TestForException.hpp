@@ -181,7 +181,7 @@ try { \
   TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg); \
 } \
 catch(const std::exception &except) { \
-  ostream *l_out_ptr = (out_ptr); \
+  std::ostream *l_out_ptr = (out_ptr); \
   if(l_out_ptr) { \
     *l_out_ptr \
       << "\nThorwing an std::exception of type \'"<<Teuchos::typeName(except)<<"\' with the error message: " \
@@ -211,8 +211,8 @@ catch(const std::exception &except) { \
 #define TEUCHOS_TRACE(exc)\
 { \
   std::ostringstream omsg; \
-	omsg << exc.what() << endl \
-  << "caught in " << __FILE__ << ":" << __LINE__ << endl ; \
+	omsg << exc.what() << std::endl \
+       << "caught in " << __FILE__ << ":" << __LINE__ << std::endl ; \
   throw std::runtime_error(omsg.str()); \
 }
 

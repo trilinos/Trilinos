@@ -30,7 +30,7 @@
 #define TEUCHOS_ARRAY_H
 
 /*! \file Teuchos_Array.hpp
-    \brief Templated array class derived from the STL vector
+    \brief Templated array class derived from the STL std::vector
 */
 
 #include "Teuchos_ConfigDefs.hpp"
@@ -48,7 +48,7 @@ namespace Teuchos
   {public:InvalidArrayStringRepresentation(const std::string& what_arg) : std::logic_error(what_arg) {}};
 
   /**
-   * \brief Array is a templated array class derived from the STL vector, but with
+   * \brief Array is a templated array class derived from the STL std::vector, but with
    * index boundschecking and an extended interface.
    */
   template<class T>
@@ -81,7 +81,7 @@ namespace Teuchos
     //! Read-only access to a the i-th element, with optional boundschecking.
     inline const T& operator[](int i) const;
 
-    //! Write Array as a string
+    //! Write Array as a std::string
     std::string toString() const ;
 
     //! Return true if Array has been compiled with boundschecking on 
@@ -164,7 +164,7 @@ namespace Teuchos
   }
 
   // print in form (), (1), or (1,2)
-  template<class T> inline ostream& operator<<(ostream& os, const Array<T>& array)
+  template<class T> inline std::ostream& operator<<(std::ostream& os, const Array<T>& array)
   {
     return os << Teuchos::toString(array);
   }
@@ -181,7 +181,7 @@ namespace Teuchos
 
   template<class T> inline std::string Array<T>::toString() const
   {
-    ostringstream ss;
+    std::ostringstream ss;
     ss << "{";
 
     for (int i=0; i<length(); i++)
@@ -201,17 +201,17 @@ namespace Teuchos
     return array.toString();
   }
 
-  /** \brief Converts from string representation (as created by
+  /** \brief Converts from std::string representation (as created by
    * <tt>toString()</tt>) back into the array object.
    *
    * \param  arrayStr
-   *           [in] The string representation of the array (see below).
+   *           [in] The std::string representation of the array (see below).
    *
-   * <b>Exceptions:</b> If the string representation is not valid, then an
-   * exception of type <tt>InvalidArrayStringRepresentation</tt> with be
+   * <b>Exceptions:</b> If the std::string representation is not valid, then an
+   * std::exception of type <tt>InvalidArrayStringRepresentation</tt> with be
    * thrown with a decent error message attached.
    *
-   * The formating of the string <tt>arrayStr</tt> must look like:
+   * The formating of the std::string <tt>arrayStr</tt> must look like:
    
    \verbatim
 
@@ -220,7 +220,7 @@ namespace Teuchos
    \endverbatim
 
    * Currently <tt>operator>>()</tt> is used to convert the entries from their
-   * string representation to objects of type <tt>T</tt>.  White space is
+   * std::string representation to objects of type <tt>T</tt>.  White space is
    * unimportant and the parser keys off of ',', '{' and '}' so even newlines
    * are allowed.  In the future, a traits class might be defined that will
    * allow for finer-grained control of how the conversion from strings to
@@ -234,21 +234,21 @@ namespace Teuchos
    * for nested arrays and other user defined types <tt>T</tt> can be added in
    * the future with no impact on user code.  Only the parser for the array
    * needs to be improved.  More specifically, the current implementation will
-   * not work for any types <tt>T</tt> who's string representation contains
+   * not work for any types <tt>T</tt> who's std::string representation contains
    * the characters <tt>','</tt> or <tt>'}'</tt>.  This implementation can be
    * modified to allow any such types by watching for the nesting of common
    * enclosing structures like <tt>[...]</tt>, <tt>{...}</tt> or
-   * <tt>(...)</tt> within each entry of the string representation.  However,
+   * <tt>(...)</tt> within each entry of the std::string representation.  However,
    * this should all just work fine on most machines for the types
    * <tt>int</tt>, <tt>bool</tt>, <tt>float</tt>, <tt>double</tt> etc.
    *
-   * <b>Warning!</b> Trying to read in an array in string format of doubles in
+   * <b>Warning!</b> Trying to read in an array in std::string format of doubles in
    * scientific notation such as <tt>{1e+2,3.53+6,...}</tt> into an array
    * object such as <tt>Array<int></tt> will not yield the correct results.
-   * If one wants to allow a neutral string representation to be read in as an
+   * If one wants to allow a neutral std::string representation to be read in as an
    * <tt>Array<double></tt> object or an <tt>Array<int></tt> object, then
    * general formating such as <tt>{100,3530000,...}</tt> should be used.
-   * This templated function is unable to deal complex type conversion issues.
+   * This templated function is unable to deal std::complex type conversion issues.
    * 
    * \relates Array.
    */
@@ -260,7 +260,7 @@ namespace Teuchos
     TEST_FOR_EXCEPTION(
       ( str[0]!='{' || str[str.length()-1] != '}' )
       ,InvalidArrayStringRepresentation
-      ,"Error, the string:\n"
+      ,"Error, the std::string:\n"
       "----------\n"
       <<str<<
       "\n----------\n"
@@ -272,14 +272,14 @@ namespace Teuchos
     // Now we are ready to begin reading the entries of the array!
     Array<T> a;
     while( !iss.eof() ) {
-      // Get the basic entry string
+      // Get the basic entry std::string
       std::string entryStr;
       std::getline(iss,entryStr,','); // Get next entry up to ,!
       // ToDo: Above, we might have to be careful to look for the opening and
       // closing of parentheses in order not to pick up an internal ',' in the
-      // middle of an entry (for a complex number for instance).  The above
+      // middle of an entry (for a std::complex number for instance).  The above
       // implementation assumes that there will be no commas in the middle of
-      // the string representation of an entry.  This is certainly true for
+      // the std::string representation of an entry.  This is certainly true for
       // the types bool, int, float, and double.
       //
       // Trim whitespace from beginning and end
@@ -296,7 +296,7 @@ namespace Teuchos
       TEST_FOR_EXCEPTION(
         0 == entryStr.length()
         ,InvalidArrayStringRepresentation
-        ,"Error, the string:\n"
+        ,"Error, the std::string:\n"
         "----------\n"
         <<str<<
         "\n----------\n"
@@ -307,16 +307,16 @@ namespace Teuchos
       T entry;
       entryiss >> entry; // Assumes type has operator>>(...) defined!
       // ToDo: We may need to define a traits class to allow us to specialized
-      // how conversion from a string to a object is done!
+      // how conversion from a std::string to a object is done!
       a.push_back(entry);
       // At the end of the loop body here, if we have reached the last '}'
       // then the input stream iss should be empty and iss.eof() should be
-      // true, so the loop should terminate.  We put an exception test here
+      // true, so the loop should terminate.  We put an std::exception test here
       // just in case something has gone wrong.
       TEST_FOR_EXCEPTION(
         found_end && !iss.eof()
         ,InvalidArrayStringRepresentation
-        ,"Error, the string:\n"
+        ,"Error, the std::string:\n"
         "----------\n"
         <<str<<
         "\n----------\n"

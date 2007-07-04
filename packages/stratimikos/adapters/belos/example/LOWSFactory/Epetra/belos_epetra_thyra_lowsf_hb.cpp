@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
   Thyra::seed_randomize<double>(0);
   Thyra::randomize(-1.0, 1.0, &*b);
 
-  // Create an initial vector with numRhs vectors in it and initialize it to zero.
+  // Create an initial std::vector with numRhs vectors in it and initialize it to zero.
   Teuchos::RCP< Thyra::MultiVectorBase<double> >
     x = Thyra::createMembers(domain, numRhs);
   Thyra::assign(&*x, 0.0);
@@ -160,7 +160,7 @@ int main(int argc, char* argv[])
   solveStatus = Thyra::solve( *nsA, Thyra::NONCONJ_ELE, *b, &*x );
 
   // Print out status of solve.
-  *out << "\nBelos LOWS Status: "<< solveStatus << endl;
+  *out << "\nBelos LOWS Status: "<< solveStatus << std::endl;
 
   //
   // Compute residual and double check convergence.
@@ -183,13 +183,13 @@ int main(int argc, char* argv[])
 
   // Print out the final relative residual norms.
   double rel_res = 0.0;
-  *out << "Final relative residual norms" << endl;  
+  *out << "Final relative residual norms" << std::endl;  
   for (int i=0; i<numRhs; ++i) {
     rel_res = norm_res[i]/norm_b[i];
     if (rel_res > maxResid)
       success = false;
     *out << "RHS " << i+1 << " : " 
-         << std::setw(16) << std::right << rel_res << endl;
+         << std::setw(16) << std::right << rel_res << std::endl;
   }
 
   return ( success ? 0 : 1 );

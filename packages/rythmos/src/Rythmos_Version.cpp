@@ -30,7 +30,7 @@
 
 namespace Rythmos {
 
-	string Rythmos_Version() { 
+	std::string Rythmos_Version() { 
 		return("Rythmos Version 1.0 - September 2006"); 
 	}
 

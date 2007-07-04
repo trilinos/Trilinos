@@ -34,9 +34,9 @@
 #define STYPE double
 
 template<typename TYPE>
-int PrintTestResults(string, TYPE, TYPE, bool);
+int PrintTestResults(std::string, TYPE, TYPE, bool);
 
-int ReturnCodeCheck(string, int, int, bool);
+int ReturnCodeCheck(std::string, int, int, bool);
 
 typedef Teuchos::SerialDenseMatrix<OTYPE, STYPE> DMatrix;
 typedef Teuchos::SerialDenseVector<OTYPE, STYPE> DVector;
@@ -49,35 +49,35 @@ int main(int argc, char* argv[])
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
   if (verbose)
-    cout << Teuchos::Teuchos_Version() << endl << endl;
+    std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   int numberFailedTests = 0;
   int returnCode = 0;
-  string testName = "";
+  std::string testName = "";
 
 
 
-  if (verbose) cout<<endl<<"********** CHECKING TEUCHOS SERIAL DENSE MATRIX **********"<<endl<<endl;
+  if (verbose) std::cout<<std::endl<<"********** CHECKING TEUCHOS SERIAL DENSE MATRIX **********"<<std::endl<<std::endl;
 
   // default constructor test
   DMatrix DefConTest;
-  if (verbose) cout <<"default constructor -- construct empty matrix ";
+  if (verbose) std::cout <<"default constructor -- construct empty matrix ";
   if ( DefConTest.values()!=NULL || DefConTest.numCols()!=0 || DefConTest.numRows()!=0 ||DefConTest.stride()!=0 ) {
-	if (verbose) cout << "unsuccessful."<<endl;
+	if (verbose) std::cout << "unsuccessful."<<std::endl;
 	numberFailedTests++;
   } else {
-	if (verbose) cout << "successful."<<endl;
+	if (verbose) std::cout << "successful."<<std::endl;
   }
 
   // constructor 1 (matrix w/ dimension but empty)
 
   DMatrix Con1Test( 3, 4 );
-  if (verbose) cout <<"constructor 1 -- empty matrix with given dimensions ";
+  if (verbose) std::cout <<"constructor 1 -- empty matrix with given dimensions ";
   if ( Con1Test.numRows()!=3 || Con1Test.numCols()!=4 || Con1Test( 1, 2 )!=0.0 ) {
-	if (verbose) cout << "unsuccessful."<<endl;
+	if (verbose) std::cout << "unsuccessful."<<std::endl;
         numberFailedTests++;
   } else {
-        if (verbose) cout << "successful."<<endl;
+        if (verbose) std::cout << "successful."<<std::endl;
   }
 	
   // constructor 2 (from array) tests
@@ -99,21 +99,21 @@ int main(int argc, char* argv[])
   // constructor 3 (copy constructor)
 
   DMatrix Con3TestCopy( Con2Test1ExpRes );
-  if(verbose) cout <<"constructor 3 -- copy constructor "; 
+  if(verbose) std::cout <<"constructor 3 -- copy constructor "; 
   if ( Con3TestCopy != Con2Test1ExpRes ) {
-	if (verbose) cout << "unsuccessful."<<endl;
+	if (verbose) std::cout << "unsuccessful."<<std::endl;
 	numberFailedTests++;
   } else {
-	if (verbose) cout << "successful."<<endl;
+	if (verbose) std::cout << "successful."<<std::endl;
   }
 
   DMatrix Con3TestCopyTrans( Con2Test1ExpRes, Teuchos::TRANS );
-  if(verbose) cout <<"constructor 3 -- copy constructor (transposed) "; 
+  if(verbose) std::cout <<"constructor 3 -- copy constructor (transposed) "; 
   if ( Con3TestCopyTrans(2, 0) != Con2Test1ExpRes(0, 2) ) {
-	if (verbose) cout << "unsuccessful."<<endl;
+	if (verbose) std::cout << "unsuccessful."<<std::endl;
 	numberFailedTests++;
   } else {
-	if (verbose) cout << "successful."<<endl;
+	if (verbose) std::cout << "successful."<<std::endl;
   }  
 
   // constructor 4 (submatrix)
@@ -320,22 +320,22 @@ int main(int argc, char* argv[])
   DMatrix ScalTest( 8, 8 );
   ScalTest.putScalar( 1.0 );
   //  Scale the entries by 8, it should be 8.
-  if (verbose) cout << "scale() -- scale matrix by some number ";
+  if (verbose) std::cout << "scale() -- scale matrix by some number ";
   returnCode = ScalTest.scale( 8.0 );
   if (ScalTest(2, 3) == 8.0) {
-	if (verbose) cout<< "successful." <<endl;
+	if (verbose) std::cout<< "successful." <<std::endl;
   } else {
-	if (verbose) cout<< "unsuccessful." <<endl;
+	if (verbose) std::cout<< "unsuccessful." <<std::endl;
 	numberFailedTests++;
   }
   //  Pointwise scale the entries by zero, they all should be zero.
   DMatrix ScalTest2( 8, 8 );
-  if (verbose) cout << "scale() -- point-wise scale matrix ";
+  if (verbose) std::cout << "scale() -- point-wise scale matrix ";
   ScalTest.scale( ScalTest2 );
   if (ScalTest.normOne() == 0.0) {
-	if (verbose) cout<< "successful." <<endl;
+	if (verbose) std::cout<< "successful." <<std::endl;
   } else {
-	if (verbose) cout<< "unsuccessful." <<endl;
+	if (verbose) std::cout<< "unsuccessful." <<std::endl;
 	numberFailedTests++;
   }
   //
@@ -353,66 +353,66 @@ int main(int argc, char* argv[])
   //  Check assignment operator.
   DMatrix CCC2( 5, 5 );
   CCC2.assign( CCC );
-  if (verbose) cout <<  "assign() -- copy the values of an input matrix ";  
+  if (verbose) std::cout <<  "assign() -- copy the values of an input matrix ";  
   if ( CCC( 3, 4 ) == 1.0 ) {
-    if (verbose) cout<< "successful" <<endl;
+    if (verbose) std::cout<< "successful" <<std::endl;
   } else {
-    if (verbose) cout<< "unsuccessful" <<endl;
+    if (verbose) std::cout<< "unsuccessful" <<std::endl;
     numberFailedTests++;
   }
   //  Create a view into a submatrix of CCC
   DMatrix CCCview( Teuchos::View, CCC, 3, 3 );   
   DMatrix CCCtest1( 2, 3 );
   CCCtest1 = CCCview;
-  if (verbose) cout << "operator= -- small(empty) = large(view) ";
+  if (verbose) std::cout << "operator= -- small(empty) = large(view) ";
   if (CCCtest1.numRows()==3 && CCCtest1.values()==CCC.values()) {
-    if (verbose) cout<< "successful" <<endl;
+    if (verbose) std::cout<< "successful" <<std::endl;
   } else {
-    if (verbose) cout<< "unsuccessful" <<endl;
+    if (verbose) std::cout<< "unsuccessful" <<std::endl;
     numberFailedTests++;
   }
   CCCtest1 = CCC;
-  if (verbose) cout << "operator= -- small(view) = large(copy) ";
+  if (verbose) std::cout << "operator= -- small(view) = large(copy) ";
   if (CCCtest1.numRows()==5 && CCCtest1.values()!=CCC.values()) {
-    if (verbose) cout<< "successful"<<endl;
+    if (verbose) std::cout<< "successful"<<std::endl;
   } else {
-    if (verbose) cout<< "unsuccessful"<<endl;
+    if (verbose) std::cout<< "unsuccessful"<<std::endl;
     numberFailedTests++;
   }
   DMatrix CCCtest2( 2, 2 );
   CCCtest2.putScalar( 3.0 );
   CCCtest1 = CCCtest2;
-  if (verbose) cout << "operator= -- large(copy) = small(copy) ";
+  if (verbose) std::cout << "operator= -- large(copy) = small(copy) ";
   if (CCCtest1.numRows()==2 ) {
-    if (verbose) cout<< "successful"<<endl;
+    if (verbose) std::cout<< "successful"<<std::endl;
   } else {
-    if (verbose) cout<< "unsuccessful"<<endl;
+    if (verbose) std::cout<< "unsuccessful"<<std::endl;
     numberFailedTests++;
   }
   CCCtest1 = CCCview;
-  if (verbose) cout << "operator= -- large(copy) = small(view) ";
+  if (verbose) std::cout << "operator= -- large(copy) = small(view) ";
   if (CCCtest1.numRows()==3 && CCCtest1.stride()==5) {
-    if(verbose) cout<<"successful" <<endl;
+    if(verbose) std::cout<<"successful" <<std::endl;
   } else {
-    if (verbose) cout<<"unsuccessful"<<endl;
+    if (verbose) std::cout<<"unsuccessful"<<std::endl;
     numberFailedTests++;   
   }  
   
   DMatrix CCCtest3( CCCview );
   CCCtest1 += CCCtest3;
-  if (verbose) cout << "operator+= -- add two matrices of the same size, but different leading dimension ";
+  if (verbose) std::cout << "operator+= -- add two matrices of the same size, but different leading dimension ";
   if (CCCtest1(1,1)==2.0) {
-    if(verbose) cout<<"successful" <<endl;
+    if(verbose) std::cout<<"successful" <<std::endl;
   } else {
-    if (verbose) cout<<"unsuccessful"<<endl;
+    if (verbose) std::cout<<"unsuccessful"<<std::endl;
     numberFailedTests++;   
   }  
-  if (verbose) cout << "operator+= -- add two matrices of different size (nothing should change) ";
+  if (verbose) std::cout << "operator+= -- add two matrices of different size (nothing should change) ";
   CCCtest1 += CCC;
   if (CCCtest1(1,1)==2.0) {
-    if(verbose) cout<<"successful" <<endl;
+    if(verbose) std::cout<<"successful" <<std::endl;
   } else {
-    if (verbose) cout<<"unsuccessful"<<endl;
+    if (verbose) std::cout<<"unsuccessful"<<std::endl;
     numberFailedTests++;   
   }  
   //
@@ -422,159 +422,159 @@ int main(int argc, char* argv[])
   MultTestHugeATimesHugeB.reshape(10, 10);
   op_result = (MultTestHugeATimesHugeB == MultTestHugeATimesHugeBExpResult);
   if (verbose) {
-	cout << "operator== -- results -- small == huge "<< (op_result == false ? "successful" : "failed" )<<endl;
+	std::cout << "operator== -- results -- small == huge "<< (op_result == false ? "successful" : "failed" )<<std::endl;
   }
   op_result = (MultTestHugeATimesHugeB != MultTestHugeATimesHugeBExpResult);
   if (verbose) {
-	cout << "operator!= -- results -- small != huge "<< (op_result == true ? "successful" : "failed" )<<endl;
-	cout << endl<< MultTestHugeATimesHugeB << endl;
+	std::cout << "operator!= -- results -- small != huge "<< (op_result == true ? "successful" : "failed" )<<std::endl;
+	std::cout << std::endl<< MultTestHugeATimesHugeB << std::endl;
   	//These won't work unless boundschecking is enabled.
-  	//cout << MultTestHugeATimesHugeB(100, 1) << endl;
-  	//cout << MultTestHugeATimesHugeB(1, 100) << endl;
+  	//std::cout << MultTestHugeATimesHugeB(100, 1) << std::endl;
+  	//std::cout << MultTestHugeATimesHugeB(1, 100) << std::endl;
   }
 
 
-  if (verbose) cout<<endl<<"********** CHECKING TEUCHOS SERIAL DENSE VECTOR **********"<<endl<<endl;
+  if (verbose) std::cout<<std::endl<<"********** CHECKING TEUCHOS SERIAL DENSE VECTOR **********"<<std::endl<<std::endl;
 
   DVector DefConTestV;
-  if (verbose) cout <<"default constructor -- construct empty vector ";
+  if (verbose) std::cout <<"default constructor -- construct empty std::vector ";
   if ( DefConTestV.values()!=NULL || DefConTestV.length()!=0 || DefConTestV.numRows()!=0 ||DefConTestV.stride()!=0 ) {
-        if (verbose) cout << "unsuccessful."<<endl;
+        if (verbose) std::cout << "unsuccessful."<<std::endl;
         numberFailedTests++;
   } else {
-        if (verbose) cout << "successful."<<endl;
+        if (verbose) std::cout << "successful."<<std::endl;
   }
 
   // constructor 1 (matrix w/ dimension but empty)
 
   DVector Con1TestV( 3 );
-  if (verbose) cout <<"constructor 1 -- empty vector with given dimensions ";
+  if (verbose) std::cout <<"constructor 1 -- empty std::vector with given dimensions ";
   if ( Con1TestV.length()!=3 || Con1TestV.numCols()!=1 || Con1TestV( 1 )!=0.0 ) {
-	if (verbose) cout << "unsuccessful."<<endl;
+	if (verbose) std::cout << "unsuccessful."<<std::endl;
         numberFailedTests++;
   } else {
-      	if (verbose) cout << "successful."<<endl;
+      	if (verbose) std::cout << "successful."<<std::endl;
   }
 	
   // constructor 2 (from array) tests
 
   DVector Con2Test1V(Teuchos::Copy, a, 4);
-  if (verbose) cout <<"constructor 2 -- construct vector from array subrange ";
+  if (verbose) std::cout <<"constructor 2 -- construct std::vector from array subrange ";
   if ( Con2Test1V.numRows()!=4 || Con2Test1V.numCols()!=1 || Con2Test1V[ 2 ]!=2.0 ) {
-        if (verbose) cout << "unsuccessful."<<endl;
+        if (verbose) std::cout << "unsuccessful."<<std::endl;
         numberFailedTests++;
   } else {
-        if (verbose) cout << "successful."<<endl; 
+        if (verbose) std::cout << "successful."<<std::endl; 
   }
 
   // constructor 3 (copy constructor)
      
   DVector Con3TestCopyV( Con2Test1V );
-  if(verbose) cout <<"constructor 3 -- copy constructor ";
+  if(verbose) std::cout <<"constructor 3 -- copy constructor ";
   if ( Con3TestCopyV != Con2Test1V ) {
-        if (verbose) cout << "unsuccessful."<<endl;
+        if (verbose) std::cout << "unsuccessful."<<std::endl;
         numberFailedTests++;
   } else {
-        if (verbose) cout << "successful."<<endl;
+        if (verbose) std::cout << "successful."<<std::endl;
   }
 
   // checking norms 
 
-  numberFailedTests += PrintTestResults("normOne of a 3x1 vector", Con2Test1V.normOne(), 6.0, verbose);
-  numberFailedTests += PrintTestResults("normInf of a 3x1 vector", Con2Test1V.normInf(), 3.0, verbose);
+  numberFailedTests += PrintTestResults("normOne of a 3x1 std::vector", Con2Test1V.normOne(), 6.0, verbose);
+  numberFailedTests += PrintTestResults("normInf of a 3x1 std::vector", Con2Test1V.normInf(), 3.0, verbose);
   Con2Test1V.putScalar( 1.0 );
-  numberFailedTests += PrintTestResults("normFrobenius of a 3x1 vector", Con2Test1V.normFrobenius(), 2.0, verbose);
+  numberFailedTests += PrintTestResults("normFrobenius of a 3x1 std::vector", Con2Test1V.normFrobenius(), 2.0, verbose);
 
   // check size/resize
 
   DVector SizeTestV1;
   SizeTestV1.size( 5 );
-  if(verbose) cout <<"size() -- test ";
+  if(verbose) std::cout <<"size() -- test ";
   if (SizeTestV1( 4 )!= 0.0) {
-    if (verbose) cout << "unsuccessful."<<endl;
+    if (verbose) std::cout << "unsuccessful."<<std::endl;
     numberFailedTests++;
   } else {
-    if (verbose) cout << "successful."<<endl;
+    if (verbose) std::cout << "successful."<<std::endl;
   }
   SizeTestV1.putScalar( 2.0 );
   SizeTestV1.resize( 10 );
-  if(verbose) cout <<"resize() -- test small --> large ";
+  if(verbose) std::cout <<"resize() -- test small --> large ";
   if (SizeTestV1[ 4 ]!= 2.0 || SizeTestV1[ 8 ]!=0.0 ) {
-    if (verbose) cout << "unsuccessful."<<endl;
+    if (verbose) std::cout << "unsuccessful."<<std::endl;
     numberFailedTests++;
   } else {
-    if (verbose) cout << "successful."<<endl;
+    if (verbose) std::cout << "successful."<<std::endl;
   }
   SizeTestV1.resize( 3 );
-  if(verbose) cout <<"resize() -- test large --> small ";
+  if(verbose) std::cout <<"resize() -- test large --> small ";
   if (SizeTestV1( 2 )!= 2.0) {
-    if (verbose) cout << "unsuccessful."<<endl;
+    if (verbose) std::cout << "unsuccessful."<<std::endl;
     numberFailedTests++;
   } else {
-    if (verbose) cout << "successful."<<endl;
+    if (verbose) std::cout << "successful."<<std::endl;
   }  
   
   DVector OpEqTestV1( 10 ); OpEqTestV1.putScalar( 3.0 );
   DVector OpEqTestV2( Teuchos::View, OpEqTestV1.values(), 3 );   
   DVector OpEqTestV3( 2 );
   OpEqTestV3 = OpEqTestV2;
-  if (verbose) cout << "operator= -- small(empty) = large(view) ";
+  if (verbose) std::cout << "operator= -- small(empty) = large(view) ";
   if (OpEqTestV3.length()==3 && OpEqTestV3.values()==OpEqTestV2.values()) {
-    if (verbose) cout<< "successful"<<endl;
+    if (verbose) std::cout<< "successful"<<std::endl;
   } else {
-    if (verbose) cout<< "unsuccessful"<<endl;
+    if (verbose) std::cout<< "unsuccessful"<<std::endl;
     numberFailedTests++;
   }
   OpEqTestV3 = OpEqTestV1;
-  if (verbose) cout << "operator= -- small(view) = large(copy) ";
+  if (verbose) std::cout << "operator= -- small(view) = large(copy) ";
   if (OpEqTestV3.length()==10 && OpEqTestV3.values()!=OpEqTestV1.values()) {
-    if (verbose) cout<< "successful"<<endl;
+    if (verbose) std::cout<< "successful"<<std::endl;
   } else {
-    if (verbose) cout<< "unsuccessful"<<endl;
+    if (verbose) std::cout<< "unsuccessful"<<std::endl;
     numberFailedTests++;
   }
   OpEqTestV3.size(5);
   OpEqTestV3 = OpEqTestV1;
-  if (verbose) cout << "operator= -- small(copy) = large(copy) ";
+  if (verbose) std::cout << "operator= -- small(copy) = large(copy) ";
   if (OpEqTestV3.length()==10 && OpEqTestV3.values()!=OpEqTestV1.values() && OpEqTestV3[ 9 ]==3.0) {
-    if (verbose) cout<< "successful"<<endl;
+    if (verbose) std::cout<< "successful"<<std::endl;
   } else {
-    if (verbose) cout<< "unsuccessful"<<endl;
+    if (verbose) std::cout<< "unsuccessful"<<std::endl;
     numberFailedTests++;
   }
 
   DVector OpSumTestV1( OpEqTestV2 );
   OpSumTestV1 += OpEqTestV2;
-  if (verbose) cout << "operator+= -- add two vectors of the same size, but different leading dimension ";
+  if (verbose) std::cout << "operator+= -- add two vectors of the same size, but different leading dimension ";
   if (OpSumTestV1( 1 )==6.0) {
-    if (verbose) cout<<"successful" <<endl;
+    if (verbose) std::cout<<"successful" <<std::endl;
   } else {
-    if (verbose) cout<<"unsuccessful"<<endl;
+    if (verbose) std::cout<<"unsuccessful"<<std::endl;
     numberFailedTests++;   
   }  
-  if (verbose) cout << "operator+= -- add two vectors of different size (nothing should change) ";
+  if (verbose) std::cout << "operator+= -- add two vectors of different size (nothing should change) ";
   OpSumTestV1 += OpEqTestV1;
   if (OpSumTestV1( 1 )==6.0) {
-    if (verbose) cout<<"successful" <<endl;
+    if (verbose) std::cout<<"successful" <<std::endl;
   } else {
-    if (verbose) cout<<"unsuccessful"<<endl;
+    if (verbose) std::cout<<"unsuccessful"<<std::endl;
     numberFailedTests++;   
   }  
  
   DVector OpCompTestV1( 5 );
   OpCompTestV1.putScalar( 2.0 );  
-  if(verbose) cout <<"operator== -- test large == small ";
+  if(verbose) std::cout <<"operator== -- test large == small ";
   if (OpCompTestV1 == SizeTestV1) {
-    if (verbose) cout << "unsuccessful."<<endl;
+    if (verbose) std::cout << "unsuccessful."<<std::endl;
     numberFailedTests++;
   } else {
-    if (verbose) cout << "successful."<<endl;
+    if (verbose) std::cout << "successful."<<std::endl;
   }  
-  if(verbose) cout <<"operator!= -- test large != small ";
+  if(verbose) std::cout <<"operator!= -- test large != small ";
   if (OpCompTestV1 != SizeTestV1) {
-    if (verbose) cout << "successful."<<endl;
+    if (verbose) std::cout << "successful."<<std::endl;
   } else {
-    if (verbose) cout << "successful."<<endl;
+    if (verbose) std::cout << "successful."<<std::endl;
     numberFailedTests++;
   }  
 
@@ -584,47 +584,47 @@ int main(int argc, char* argv[])
   if(numberFailedTests > 0) 
 	{ 
 	    if (verbose) {
-		cout << "Number of failed tests: " << numberFailedTests << endl;
-                cout << "End Result: TEST FAILED" << endl;
+		std::cout << "Number of failed tests: " << numberFailedTests << std::endl;
+                std::cout << "End Result: TEST FAILED" << std::endl;
 		return -1;
 	    }
 	}
   if(numberFailedTests == 0)
-    cout << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
 
   return 0;
 }  
 
 template<typename TYPE>
-int PrintTestResults(string testName, TYPE calculatedResult, TYPE expectedResult, bool verbose)
+int PrintTestResults(std::string testName, TYPE calculatedResult, TYPE expectedResult, bool verbose)
 {
   int result;
   if(calculatedResult == expectedResult)
     {
-      if(verbose) cout << testName << " successful." << endl;
+      if(verbose) std::cout << testName << " successful." << std::endl;
       result = 0;
     }
   else
     {
-      if(verbose) cout << testName << " unsuccessful." << endl;
+      if(verbose) std::cout << testName << " unsuccessful." << std::endl;
       result = 1;
     }
   return result;
 }
 
-int ReturnCodeCheck(string testName, int returnCode, int expectedResult, bool verbose)
+int ReturnCodeCheck(std::string testName, int returnCode, int expectedResult, bool verbose)
 {
   int result;
   if(expectedResult == 0)
     {
       if(returnCode == 0)
 	{
-	  if(verbose) cout << testName << " test successful." << endl;
+	  if(verbose) std::cout << testName << " test successful." << std::endl;
 	  result = 0;
 	}
       else
 	{
-	  if(verbose) cout << testName << " test unsuccessful. Return code was " << returnCode << "." << endl;
+	  if(verbose) std::cout << testName << " test unsuccessful. Return code was " << returnCode << "." << std::endl;
 	  result = 1;
 	}
     }
@@ -632,12 +632,12 @@ int ReturnCodeCheck(string testName, int returnCode, int expectedResult, bool ve
     {
       if(returnCode != 0)
 	{
-	  if(verbose) cout << testName << " test successful -- failed as expected." << endl;
+	  if(verbose) std::cout << testName << " test successful -- failed as expected." << std::endl;
 	  result = 0;
 	}
       else
 	{
-	  if(verbose) cout << testName << " test unsuccessful -- did not fail as expected. Return code was " << returnCode << "." << endl;
+	  if(verbose) std::cout << testName << " test unsuccessful -- did not fail as expected. Return code was " << returnCode << "." << std::endl;
 	  result = 1;
 	}
     }

@@ -154,7 +154,7 @@ public:
   {
     for (unsigned int i=0; i<x_.size(); i++) 
       {
-        os << i << " " << x_[i] << endl;
+        os << i << " " << x_[i] << std::endl;
       }
   }
 
@@ -277,7 +277,7 @@ std::ostream& operator<<(std::ostream& os, const ConstVector& v)
 int main(int argc, char** argv)
 {
   int state = 0;
-  cout << Teuchos::Teuchos_Version() << endl << endl;
+  std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -295,46 +295,46 @@ int main(int argc, char** argv)
         }
       Vector z = copy(x);
 
-      cout << "x = " << x << endl;
-      cout << "y = " << y << endl;
-      cout << "z = " << z << endl;
+      std::cout << "x = " << x << std::endl;
+      std::cout << "y = " << y << std::endl;
+      std::cout << "z = " << z << std::endl;
 
-      cout << "mess = " << 2.0*(x+y+3.0*z) << endl;
+      std::cout << "mess = " << 2.0*(x+y+3.0*z) << std::endl;
 
       Vector a = 2.0*(x+y+3.0*z);
-      cout << "a=" << endl;
+      std::cout << "a=" << std::endl;
       double err = 0.0;
       for (int i=0; i<a.dim(); i++)
         {
-          cout << i << " " << a.getElement(i) << endl;
+          std::cout << i << " " << a.getElement(i) << std::endl;
           double x_i = x.getElement(i);
           double y_i = y.getElement(i);
           double z_i = z.getElement(i);
           double t = 2.0*(x_i + y_i + 3.0*z_i);
-          err += ::fabs(t - a.getElement(i));
+          err += std::fabs(t - a.getElement(i));
         }
       
       VectorSpace s2 = new VecSpaceA(5);
       VecBase* vb = new VecA(5, s2.constPtr());
       Vector b = vb;
 
-      cout << "b = " << b << endl;
+      std::cout << "b = " << b << std::endl;
 
       if (err > 1.0e-12) state = 1;
     }
   catch(std::exception& e)
     {
-      cerr << e.what() << endl;
+      std::cerr << e.what() << std::endl;
       state = 1;
     }
 
   if (state != 0)
     {
-      cout << "TEST FAILED" << endl;
+      std::cout << "TEST FAILED" << std::endl;
       return -1;
     }
 
   
-  cout << "TEST PASSED" << endl;
+  std::cout << "TEST PASSED" << std::endl;
   return state;
 }

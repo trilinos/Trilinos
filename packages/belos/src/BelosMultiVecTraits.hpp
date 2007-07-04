@@ -94,7 +94,7 @@ namespace Belos {
     static void MvInit( MV& mv, const ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero() )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void MvPrint( const MV& mv, ostream& os )
+    static void MvPrint( const MV& mv, std::ostream& os )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
   };
   

@@ -61,7 +61,7 @@ EpetraOperatorWrapper::EpetraOperatorWrapper(const ConstLinearOperator<double>& 
 
 double EpetraOperatorWrapper::NormInf() const 
 {
-  TEST_FOR_EXCEPTION(true, runtime_error,
+  TEST_FOR_EXCEPTION(true, std::runtime_error,
                      "EpetraOperatorWrapper::NormInf not implemated");
   return 1.0;
 }
@@ -84,8 +84,8 @@ EpetraOperatorWrapper
     {
       for (int b=0; b<vs.numBlocks(); b++)
         {
-          TEST_FOR_EXCEPTION(!isSPMD(vs.getBlock(b)), runtime_error, 
-                             "EpetraOperatorWrapper requires vector space "
+          TEST_FOR_EXCEPTION(!isSPMD(vs.getBlock(b)), std::runtime_error, 
+                             "EpetraOperatorWrapper requires std::vector space "
                              "blocks to be SPMD vectors");
           myLocalElements += numLocalElements(vs.getBlock(b));
         }
@@ -106,7 +106,7 @@ EpetraOperatorWrapper
         }
     }
 
-  /* create the map */
+  /* create the std::map */
   RCP<Epetra_Map> rtn 
     = rcp(new Epetra_Map(globalDim, myLocalElements, &(myGIDs[0]), 0, *comm));
 
@@ -118,7 +118,7 @@ void EpetraOperatorWrapper::copyEpetraIntoThyra(const Epetra_MultiVector& x,
                                                 Vector<double> thyraVec) const
 {
   int numVecs = x.NumVectors();
-  TEST_FOR_EXCEPTION(numVecs != 1, runtime_error,
+  TEST_FOR_EXCEPTION(numVecs != 1, std::runtime_error,
                      "epetraToThyra does not work with MV dimension != 1");
 
   double* const epetraData = x[0];
@@ -128,27 +128,27 @@ void EpetraOperatorWrapper::copyEpetraIntoThyra(const Epetra_MultiVector& x,
   bool verbose = false;
   if (verbose)
     {
-      *out << "in ETO::copyEpetraIntoThyra()" << endl;
+      *out << "in ETO::copyEpetraIntoThyra()" << std::endl;
       double normIn=0;
       x.Norm2(&normIn);
-      *out << "before: norm(Epetra vec) = " << normIn << endl;
+      *out << "before: norm(Epetra vec) = " << normIn << std::endl;
     }
 
   int offset = 0;
   for (int b=0; b<thyraVec.numBlocks(); b++)
     {
       Vector<double> block = thyraVec.getBlock(b);
-      TEST_FOR_EXCEPTION(!isSPMD(Thyra::space(block)), runtime_error, "block is not SPMD");
+      TEST_FOR_EXCEPTION(!isSPMD(Thyra::space(block)), std::runtime_error, "block is not SPMD");
       int localOffset = lowestLocallyOwnedIndex(Thyra::space(block));
       int localNumElems = numLocalElements(Thyra::space(block));
 
       RCP<SpmdVectorBase<double> > spmd 
         = rcp_dynamic_cast<SpmdVectorBase<double> >(block.ptr());
 
-      /** get a non-const pointer to the data in the thyra vector */ 
+      /** get a non-const pointer to the data in the thyra std::vector */ 
       {
         /* limit the scope so that it gets destroyed, and thus committed,
-         * before using the vector */
+         * before using the std::vector */
         Teuchos::RCP<DetachedVectorView<double> > view 
           = rcp(new DetachedVectorView<double>(block.ptr(), 
                                                Thyra::Range1D(localOffset,
@@ -164,7 +164,7 @@ void EpetraOperatorWrapper::copyEpetraIntoThyra(const Epetra_MultiVector& x,
     }
   if (verbose)
     {
-      *out << "after: norm(Thyra vec) = " << norm2(thyraVec) << endl;
+      *out << "after: norm(Thyra vec) = " << norm2(thyraVec) << std::endl;
     }
 }
 
@@ -174,10 +174,10 @@ copyThyraIntoEpetra(const ConstVector<double>& thyraVec,
                     Epetra_MultiVector& v) const 
 {
   int numVecs = v.NumVectors();
-  TEST_FOR_EXCEPTION(numVecs != 1, runtime_error,
+  TEST_FOR_EXCEPTION(numVecs != 1, std::runtime_error,
                      "copyThyraIntoEpetra does not work with MV dimension != 1");
 
-  /* get a writable pointer to the contents of the Epetra vector */
+  /* get a writable pointer to the contents of the Epetra std::vector */
   double* epetraData = v[0];
 
   Teuchos::RCP<Teuchos::FancyOStream>
@@ -185,25 +185,25 @@ copyThyraIntoEpetra(const ConstVector<double>& thyraVec,
   bool verbose = false;
   if (verbose)
     {
-      *out << "in ETO::copyThyraIntoEpetra()" << endl;
-      *out << "before: norm(Thyra vec) = " << norm2(thyraVec) << endl;
+      *out << "in ETO::copyThyraIntoEpetra()" << std::endl;
+      *out << "before: norm(Thyra vec) = " << norm2(thyraVec) << std::endl;
     }
 
   int offset = 0;
   for (int b=0; b<thyraVec.numBlocks(); b++)
     {
       ConstVector<double> block = thyraVec.getBlock(b);
-      TEST_FOR_EXCEPTION(!isSPMD(Thyra::space(block)), runtime_error, 
+      TEST_FOR_EXCEPTION(!isSPMD(Thyra::space(block)), std::runtime_error, 
                          "block is not SPMD");
       int localOffset = lowestLocallyOwnedIndex(Thyra::space(block));
       int localNumElems = numLocalElements(Thyra::space(block));
       RCP<const SpmdVectorBase<double> > spmd 
         = rcp_dynamic_cast<const SpmdVectorBase<double> >(block.constPtr());
 
-      /** get a const pointer to the data in the thyra vector */ 
+      /** get a const pointer to the data in the thyra std::vector */ 
       {
         /* limit the scope so that it gets destroyed, and thus committed,
-         * before using the vector */
+         * before using the std::vector */
         Teuchos::RCP<const ConstDetachedVectorView<double> > view 
           = rcp(new ConstDetachedVectorView<double>(block.constPtr(), 
                                                Thyra::Range1D(localOffset,
@@ -222,7 +222,7 @@ copyThyraIntoEpetra(const ConstVector<double>& thyraVec,
     {
       double normOut=0;
       v.Norm2(&normOut);
-      *out << "after: norm(Epetra vec) = " << normOut << endl;
+      *out << "after: norm(Epetra vec) = " << normOut << std::endl;
     }
 }
 
@@ -234,13 +234,13 @@ int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X, Epetra_MultiVector
   bool verbose = false;
   if (verbose)
     {
-      *out << "in ETO::Apply()" << endl;
+      *out << "in ETO::Apply()" << std::endl;
       double normX=0;
       double normY=0;
       X.Norm2(&normX);
       Y.Norm2(&normY);
-      *out << "before: norm(in) = " << normX << endl;
-      *out << "before: norm(out) = " << normY << endl;
+      *out << "before: norm(in) = " << normX << std::endl;
+      *out << "before: norm(out) = " << normY << std::endl;
     }
 
   if (!useTranspose_)
@@ -268,9 +268,9 @@ int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X, Epetra_MultiVector
       double normY=0;
       X.Norm2(&normX);
       Y.Norm2(&normY);
-      *out << "after: norm(in) = " << normX << endl;
-      *out << "after: norm(out) = " << normY << endl;
-      *out << "leaving ETO::Apply()" << endl;
+      *out << "after: norm(in) = " << normX << std::endl;
+      *out << "after: norm(out) = " << normY << std::endl;
+      *out << "leaving ETO::Apply()" << std::endl;
     }
   return 0;
 }
@@ -279,7 +279,7 @@ int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X, Epetra_MultiVector
 int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& X, 
                                       Epetra_MultiVector& Y) const
 {
-  TEST_FOR_EXCEPTION(true, runtime_error,
+  TEST_FOR_EXCEPTION(true, std::runtime_error,
                      "EpetraOperatorWrapper::ApplyInverse not implemented");
   return 1;
 }
@@ -294,9 +294,9 @@ EpetraOperatorWrapper::getEpetraComm(const ConstLinearOperator<double>& thyraOp)
   RCP<const SpmdVectorSpaceBase<double> > spmd 
     = rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(vs.constPtr());
 
-  TEST_FOR_EXCEPTION(!isSPMD(vs), runtime_error, 
-                     "EpetraOperatorWrapper requires vector space "
-                     "blocks to be SPMD vector spaces");
+  TEST_FOR_EXCEPTION(!isSPMD(vs), std::runtime_error, 
+                     "EpetraOperatorWrapper requires std::vector space "
+                     "blocks to be SPMD std::vector spaces");
 
 
   const SerialComm<int>* serialComm 
@@ -306,8 +306,8 @@ EpetraOperatorWrapper::getEpetraComm(const ConstLinearOperator<double>& thyraOp)
   const MpiComm<int>* mpiComm 
     = dynamic_cast<const MpiComm<int>*>(spmd->getComm().get());
 
-  TEST_FOR_EXCEPTION(mpiComm==0 && serialComm==0, runtime_error, 
-                     "SPMD vector space has a communicator that is "
+  TEST_FOR_EXCEPTION(mpiComm==0 && serialComm==0, std::runtime_error, 
+                     "SPMD std::vector space has a communicator that is "
                      "neither a serial comm nor an MPI comm");
 
   if (mpiComm != 0)
@@ -319,14 +319,14 @@ EpetraOperatorWrapper::getEpetraComm(const ConstLinearOperator<double>& thyraOp)
       rtn = rcp(new Epetra_SerialComm());
     }
 #else
-  TEST_FOR_EXCEPTION(serialComm==0, runtime_error, 
-                     "SPMD vector space has a communicator that is "
+  TEST_FOR_EXCEPTION(serialComm==0, std::runtime_error, 
+                     "SPMD std::vector space has a communicator that is "
                      "neither a serial comm nor an MPI comm");
   rtn = rcp(new Epetra_SerialComm());
   
 #endif
 
-  TEST_FOR_EXCEPTION(rtn.get()==0, runtime_error, "null communicator created");
+  TEST_FOR_EXCEPTION(rtn.get()==0, std::runtime_error, "null communicator created");
   return rtn;
 }
 

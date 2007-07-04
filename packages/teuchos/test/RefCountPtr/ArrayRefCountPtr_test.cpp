@@ -268,7 +268,7 @@ int main( int argc, char* argv[] ) {
 		clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
 		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 		if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
-			*out << "\nEnd Result: TEST FAILED" << endl;
+			*out << "\nEnd Result: TEST FAILED" << std::endl;
 			return parse_return;
 		}
 

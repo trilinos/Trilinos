@@ -19,14 +19,14 @@
 	<ul>
 	<li><b>Teuchos::ESide</b> : Enumerated list for BLAS character input "SIDE".
 		<ul>
-		<li>LEFT_SIDE : The matrix/vector is on, or applied to, the left side of the equation
-		<li>RIGHT_SIDE : The matrix/vector is on, or applied to, the right side of the equation
+		<li>LEFT_SIDE : The matrix/std::vector is on, or applied to, the left side of the equation
+		<li>RIGHT_SIDE : The matrix/std::vector is on, or applied to, the right side of the equation
 		</ul><br>
 	<li><b>Teuchos::ETransp</b> : Enumerated list for BLAS character input "TRANS".
 		<ul>
-		<li>NO_TRANS : The matrix/vector is not transposed
-		<li>TRANS : The matrix/vector is transposed
-		<li>CONJ_TRANS : The matrix/vector is conjugate transposed
+		<li>NO_TRANS : The matrix/std::vector is not transposed
+		<li>TRANS : The matrix/std::vector is transposed
+		<li>CONJ_TRANS : The matrix/std::vector is conjugate transposed
 		</ul><br>
 	<li><b>Teuchos::EUplo</b> : Enumerated list for BLAS character input "UPLO".
 		<ul>

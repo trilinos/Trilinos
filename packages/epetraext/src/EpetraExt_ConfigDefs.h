@@ -34,8 +34,6 @@
 #define __cplusplus
 #endif
 
-#ifdef HAVE_CONFIG_H
-
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
  * be undef'd here to avoid warnings when this file is included from another package.
@@ -71,127 +69,6 @@
 
 #include <EpetraExt_config.h>
 
-#ifdef HAVE_CSTDLIB
-#include <cstdlib>
-#elif defined(HAVE_STDLIB_H)
-#include <stdlib.h>
-#endif
-
-#ifdef HAVE_CSTDIO
-#include <cstdio>
-#endif
-#if defined(HAVE_STDIO_H)
-#include <stdio.h>
-#endif
-
-#ifdef HAVE_CASSERT
-#include <cassert>
-#elif defined(HAVE_ASSERT_H)
-#include <assert.h>
-#endif
-
-#ifdef HAVE_STRING
-#include <string>
-#elif defined(HAVE_STRING_H)
-#include <string.h>
-#endif
-
-#ifdef HAVE_IOSTREAM
-#include <iostream>
-#elif defined(HAVE_IOSTREAM_H)
-#include <iostream.h>
-#endif
-
-#ifdef HAVE_ALGORITHM
-#include <algorithm>
-#elif defined(HAVE_ALGO_H)
-#include <algo.h>
-#elif defined(HAVE_ALGORITHM_H)
-#include <algorithm.h>
-#endif
-
-/* Every line that begins with 'using' should eventually be dependent
-   on some check within the configure script */
-
-#ifndef TFLOP
-
-#ifdef HAVE_CMATH
-#include <cmath>
-#else
-#include <math.h>
-#endif
-
-using namespace std;
-
-#else /* TFLOP defined */
-
-#ifdef HAVE_IOMANIP
-#include <iomanip>
-#else
-#include <iomanip.h>
-#endif
-
-#ifdef HAVE_STRING
-using std::string;
-#endif
-
-#ifdef HAVE_IOSTREAM
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
-#endif
-
-#endif
-
-/*-----------------------------------------------------------------------
-  Must refine the following up to #else HAVE_CONFIG_H is not defined
-  -----------------------------------------------------------------------*/
-
-#else /*HAVE_CONFIG_H is not defined*/
-
-#ifndef __cplusplus
-#define __cplusplus
-#endif
-
-#if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT)
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-#include <iostream>
-#include <math.h>
-#include <string>
-using namespace std;
-
-#elif defined(TFLOP)
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-#include <string>
-using std::string;
-#include <iostream>
-#include <iomanip>
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
-
-#else
-
-#include <cstdlib>
-#include <cstdio>
-#include <cassert>
-#include <iostream>
-#include <cmath>
-#include <string>
-using namespace std;
-
-#endif
-
-#endif
+#include "Teuchos_ConfigDefs.hpp"
 
 #endif /* EPETRAEXT_CONFIGDEFS_H */

@@ -37,9 +37,11 @@ AztecOO_MatlabInput_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src
 	-I$(top_srcdir)/../epetraext/src/inout -I$(top_srcdir)/../epetraext/src \
 	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../epetra/src \
         -I$(top_builddir)/../epetraext/src/inout -I$(top_builddir)/../epetraext/src \
+        -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
 	-I$(top_builddir)/../triutils/src
 
 AztecOO_MatlabInput_LDADD = $(AZTECOO_LIBS) $(top_builddir)/../epetraext/src/libepetraext.a \
      $(top_builddir)/../epetra/src/libepetra.a \
+     $(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 

@@ -91,7 +91,7 @@ namespace Teuchos
      * usually be created in this way rather than through a direct
      * ctor call so that they can be appended to the list.
      */
-    static RCP<T> getNewCounter(const string& name)
+    static RCP<T> getNewCounter(const std::string& name)
     {
       RCP<T> rtn = rcp(new T(name), true);
       counters().append(rtn);

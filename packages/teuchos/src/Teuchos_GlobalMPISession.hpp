@@ -69,7 +69,7 @@ public:
    * will be suppressed.
    *
    * <b>Warning!</b> This constructor can only be called once per
-   * executable or an error is printed to <tt>*out</tt> and an exception will
+   * executable or an error is printed to <tt>*out</tt> and an std::exception will
    * be thrown!
    */
   GlobalMPISession( int* argc, char*** argv, std::ostream *out = &std::cout );

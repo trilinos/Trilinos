@@ -53,7 +53,7 @@ operator()( OriginalTypeRef orig )
 
   assert( !orig.IndicesAreGlobal() );
 
-  //test if matrix has missing local columns in its col map
+  //test if matrix has missing local columns in its col std::map
   const Epetra_Map & RowMap = orig.RowMap();
   const Epetra_Map & DomainMap = orig.DomainMap();
   const Epetra_Map & ColMap = orig.ColMap();
@@ -78,7 +78,7 @@ operator()( OriginalTypeRef orig )
   else
   {
     //create ColMap with all local rows included
-    vector<int> Cols(NumCols);
+    std::vector<int> Cols(NumCols);
     //fill Cols list with GIDs of all local columns 
     for( int i = 0; i < NumCols; ++i )
       Cols[i] = DomainMap.GID(i);
@@ -91,18 +91,18 @@ operator()( OriginalTypeRef orig )
     int NewNumMyCols = Cols.size();
     int NewNumGlobalCols;
     Comm.SumAll( &NewNumMyCols, &NewNumGlobalCols, 1 );
-    //create new column map
+    //create new column std::map
     NewColMap_ = new Epetra_Map( NewNumGlobalCols, NewNumMyCols,&Cols[0], DomainMap.IndexBase(), Comm );
 
     //New Graph
-    vector<int> NumIndicesPerRow( NumMyRows );
+    std::vector<int> NumIndicesPerRow( NumMyRows );
     for( int i = 0; i < NumMyRows; ++i )
       NumIndicesPerRow[i] = orig.NumMyEntries(i);
     NewGraph_ = new Epetra_CrsGraph( Copy, RowMap, *NewColMap_, &NumIndicesPerRow[0] );
 
     int MaxNumEntries = orig.MaxNumEntries();
     int NumEntries;
-    vector<int> Indices( MaxNumEntries );
+    std::vector<int> Indices( MaxNumEntries );
     for( int i = 0; i < NumMyRows; ++i )
     {
       int RowGID = RowMap.GID(i);

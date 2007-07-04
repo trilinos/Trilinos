@@ -56,7 +56,7 @@ public:
   /** \brief Print documentation for this parameter.
    *
    * \param  docString 
-   *           [in] (Multi-line) documentation string.
+   *           [in] (Multi-line) documentation std::string.
    * \param  out
    *           [out] The std::ostream used for the output
    *
@@ -71,7 +71,7 @@ public:
 
   /** \brief Return an array of strings of valid values if applicable.
    *
-   * If there is no such array of string values that makes since, just return
+   * If there is no such array of std::string values that makes since, just return
    * <tt>return.get()==NULL</tt>.
    *
    * The returned strings must not contain any newlines (i.e. no <tt>'\n'</tt>
@@ -80,7 +80,7 @@ public:
   virtual Teuchos::RCP<const Array<std::string> >
   validStringValues() const = 0;
 
-  /** \brief Validate a parameter entry value and throw exception (with a
+  /** \brief Validate a parameter entry value and throw std::exception (with a
    * great error message) if validation fails.
    *
    * \param  entry

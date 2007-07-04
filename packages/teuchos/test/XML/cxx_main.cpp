@@ -43,7 +43,7 @@ using Teuchos::FileInputSource;
 
 int main(int argc, char** argv)
 {
-  cout << Teuchos::Teuchos_Version() << endl << endl;
+  std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -66,28 +66,28 @@ int main(int argc, char** argv)
 
       problem.addChild(solver);
 
-      string str = problem.toString();
-      cerr << str << endl;
+      std::string str = problem.toString();
+      std::cerr << str << std::endl;
 
-      /* parse XML in a string */
+      /* parse XML in a std::string */
       StringInputSource src(str);
       XMLObject reread = src.getObject();
       
-      cerr << reread << endl;
+      std::cerr << reread << std::endl;
 
       /* write to a file, and then read and parse the file */
-      ofstream of("tmp.xml");
-      of << reread << endl;
+      std::ofstream of("tmp.xml");
+      of << reread << std::endl;
       
       FileInputSource fileSrc("tmp.xml");
       XMLObject fileXML = fileSrc.getObject();
       
-      cerr << fileXML << endl;
+      std::cerr << fileXML << std::endl;
 
       return 0;
     }
   catch(std::exception& e)
     {
-      cerr << e.what() << endl;
+      std::cerr << e.what() << std::endl;
     }
 }

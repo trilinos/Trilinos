@@ -241,8 +241,8 @@ public:
     Epetra_MultiVector Xtmp(RowMatrixColMap(), X.NumVectors());
     Xtmp.Import(X, *RowMatrixImporter(), Insert);
 
-    vector<int> Indices(MaxNumEntries());
-    vector<double> Values(MaxNumEntries());
+    std::vector<int> Indices(MaxNumEntries());
+    std::vector<double> Values(MaxNumEntries());
 
     Y.PutScalar(0.0);
 
@@ -594,7 +594,7 @@ private:
     else endz = nz();
 
     int NumMyElements = (endx - startx) * (endy - starty) * (endz - startz);
-    vector<int> MyGlobalElements(NumMyElements);
+    std::vector<int> MyGlobalElements(NumMyElements);
     int count = 0;
 
     for (int i = startx ; i < endx ; ++i) {
@@ -649,12 +649,12 @@ private:
   //! Importer from RowMap() to ColMap().
   Epetra_Import* Importer_;
   //! Contains the already reordered indices for each local row.
-  vector<vector<int> > RowIndices_;
+  std::vector<std::vector<int> > RowIndices_;
   //! Contains the number of nonzeros in each local row.
-  vector<int> RowEntries_;
-  vector<double> x_coord;
-  vector<double> y_coord;
-  vector<double> z_coord;
+  std::vector<int> RowEntries_;
+  std::vector<double> x_coord;
+  std::vector<double> y_coord;
+  std::vector<double> z_coord;
 
 }; // class Laplace3D
 
@@ -687,7 +687,7 @@ int main(int argc, char *argv[])
   int n = 10;
   int m = (int)pow((double)Comm.NumProc(), 0.3334);
   double DampingFactor = 1.333;
-  string AggregationScheme = "Uncoupled";
+  std::string AggregationScheme = "Uncoupled";
   int NPA = 16;
   int MaxLevels = 5;
 
@@ -703,8 +703,8 @@ int main(int argc, char *argv[])
   if (m * m * m != Comm.NumProc()) {
     if (Comm.MyPID() == 0) 
     {
-      cout << "Number of processes must be a perfect cube." << endl;
-      cout << "Please re-run with --help option for details." << endl;
+      std::cout << "Number of processes must be a perfect cube." << std::endl;
+      std::cout << "Please re-run with --help option for details." << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -766,7 +766,7 @@ int main(int argc, char *argv[])
   LHS.Norm2(&norm);
 
   if (Comm.MyPID() == 0) 
-    cout << "Norm of the error = " << norm << endl;
+    std::cout << "Norm of the error = " << norm << std::endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
@@ -778,8 +778,8 @@ int main(int argc, char *argv[])
 
 #else
 
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #ifdef HAVE_MPI
 #include "mpi.h"
 #endif

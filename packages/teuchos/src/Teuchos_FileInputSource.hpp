@@ -46,7 +46,7 @@ namespace Teuchos
     {
     public:
       /** \brief Constructor */
-      FileInputSource(const string& filename);
+      FileInputSource(const std::string& filename);
 
       /** \brief Destructor */
       virtual ~FileInputSource(){;}
@@ -55,7 +55,7 @@ namespace Teuchos
       virtual RCP<XMLInputStream> stream() const;
 
     private:
-      string filename_;
+      std::string filename_;
     };
 
 }

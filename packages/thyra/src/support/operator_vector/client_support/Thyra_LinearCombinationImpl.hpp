@@ -158,13 +158,13 @@ namespace Thyra
 
   /*======================================================================
    *
-   *    scalar times vector
+   *    scalar times std::vector
    *
    *======================================================================*/
 
   /**
    * \relates Vector
-   * \brief Overloaded multiplication operator for scalar times vector 
+   * \brief Overloaded multiplication operator for scalar times std::vector 
    */
   template <class Scalar> inline
   OpTimesLC<Scalar, Thyra::ConstVector<Scalar> > 
@@ -176,7 +176,7 @@ namespace Thyra
 
   /**
    * \relates Vector
-   * \brief Overloaded multiplication operator for scalar times vector 
+   * \brief Overloaded multiplication operator for scalar times std::vector 
    */
   template <class Scalar> inline
   OpTimesLC<Scalar, Thyra::ConstVector<Scalar> > 
@@ -258,7 +258,7 @@ namespace Thyra
   operator*(const ConstLinearOperator<Scalar>& op, 
             const OpTimesLC<Scalar, Node>& x)
   {
-    TEST_FOR_EXCEPTION(op.constPtr().get()==0, runtime_error,
+    TEST_FOR_EXCEPTION(op.constPtr().get()==0, std::runtime_error,
                        "null operator in LinearOperator * ( OpTimesLC )");
     if (x.op().constPtr().get()==0)
       {
@@ -283,7 +283,7 @@ namespace Thyra
 
   /*======================================================================
    *
-   *    add/subtract vector, vector
+   *    add/subtract std::vector, std::vector
    *
    *======================================================================*/
   
@@ -307,7 +307,7 @@ namespace Thyra
 
   /*======================================================================
    *
-   *    add/subtract vector, OpTimesLC
+   *    add/subtract std::vector, OpTimesLC
    *
    *======================================================================*/
 
@@ -505,12 +505,12 @@ namespace Thyra
 
   /*======================================================================
    *
-   *    assignment of [OpTimesLC, LC2] to vector
+   *    assignment of [OpTimesLC, LC2] to std::vector
    *
    *======================================================================*/
   
   
-  /* definition of assignment from 1-term linear combination to a vector */
+  /* definition of assignment from 1-term linear combination to a std::vector */
   template <class Scalar> 
   template <class Node> inline
   Thyra::Vector<Scalar>& Thyra::Vector<Scalar>::operator=(const Thyra::OpTimesLC<Scalar, Node>& x)
@@ -531,7 +531,7 @@ namespace Thyra
     return *this;
   }
 
-  /* definition of add and assign from 1-term linear combination to a vector */
+  /* definition of add and assign from 1-term linear combination to a std::vector */
   template <class Scalar> 
   template <class Node> inline
   Thyra::Vector<Scalar>& Thyra::Vector<Scalar>::operator+=(const Thyra::OpTimesLC<Scalar, Node>& x)
@@ -540,7 +540,7 @@ namespace Thyra
     return *this;
   }
 
-  /* definition of assignment from N-term linear combination to a vector */
+  /* definition of assignment from N-term linear combination to a std::vector */
   template <class Scalar>
   template <class Node1, class Node2> inline
   Thyra::Vector<Scalar>& Thyra::Vector<Scalar>::operator=(const Thyra::LC2<Scalar, Node1, Node2>& x)
@@ -561,7 +561,7 @@ namespace Thyra
     return *this;
   }
 
-  /* definition of add and assign from N-term linear combination to a vector */
+  /* definition of add and assign from N-term linear combination to a std::vector */
   template <class Scalar>
   template <class Node1, class Node2> inline
   Thyra::Vector<Scalar>& Thyra::Vector<Scalar>::operator+=(const Thyra::LC2<Scalar, Node1, Node2>& x)

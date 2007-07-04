@@ -39,7 +39,7 @@
 namespace Teuchos
 {
 
-//! Thrown when attempting to parse an empty XML string.
+//! Thrown when attempting to parse an empty XML std::string.
 class EmptyXMLError : public std::runtime_error
 {public: EmptyXMLError(const std::string& what_arg) : std::runtime_error(what_arg) {}};
 
@@ -58,7 +58,7 @@ public:
   XMLObject() : ptr_() {;}
 
   //! Construct using a node labeled by tag
-  XMLObject(const string& tag);
+  XMLObject(const std::string& tag);
 
   /**
    * \brief Construct with a pointer to the low-level representation. 
@@ -80,35 +80,35 @@ public:
   //@{
 
   //! Return the tag of the current node
-  const string& getTag() const {return ptr_->getTag();}
+  const std::string& getTag() const {return ptr_->getTag();}
 
   //! Find out if the current node has an attribute of the specified name
-  bool hasAttribute(const string& name) const 
+  bool hasAttribute(const std::string& name) const 
     {return ptr_->hasAttribute(name);}
 
   //! Return the value of the attribute with the specified name
-  const string& getAttribute(const string& name) const 
+  const std::string& getAttribute(const std::string& name) const 
     {return ptr_->getAttribute(name);}
 
-  //! Get an attribute, throwing an exception if it is not found
-  const string& getRequired(const string& name) const ;
+  //! Get an attribute, throwing an std::exception if it is not found
+  const std::string& getRequired(const std::string& name) const ;
 
   //! Get a required attribute, returning it as a double
-  double getRequiredDouble(const string& name) const 
+  double getRequiredDouble(const std::string& name) const 
     {return atof(getRequired(name).c_str());}
 
   //! Get a required attribute, returning it as an int
-  int getRequiredInt(const string& name) const 
+  int getRequiredInt(const std::string& name) const 
     {return atoi(getRequired(name).c_str());}
 
   //! Get a required attribute, returning it as a bool
-  bool getRequiredBool(const string& name) const ;
+  bool getRequiredBool(const std::string& name) const ;
 
 
   /** \brief Get an attribute, assigning a default value if the requested
    * attribute does not exist */
-  string getWithDefault(const string& name, 
-                        const string& defaultValue) const ;
+  std::string getWithDefault(const std::string& name, 
+                        const std::string& defaultValue) const ;
 
   //! Return the number of child nodes owned by this node
   int numChildren() const {return ptr_->numChildren();}
@@ -120,49 +120,49 @@ public:
   int numContentLines() const {return ptr_->numContentLines();}
 
   //! Return the i-th line of character content stored in this node
-  const string& getContentLine(int i) const {return ptr_->getContentLine(i);}
+  const std::string& getContentLine(int i) const {return ptr_->getContentLine(i);}
 
-  //! Represent this node and its children as a string
-  string toString() const {return ptr_->toString();}
+  //! Represent this node and its children as a std::string
+  std::string toString() const {return ptr_->toString();}
 
   //! Print this node and its children to stream with the given indentation
-  void print(ostream& os, int indent) const
+  void print(std::ostream& os, int indent) const
     {ptr_->print(os, indent);}
 
 
-  //! Write the header for this object to a string
-  string header() const {return ptr_->header();}
+  //! Write the header for this object to a std::string
+  std::string header() const {return ptr_->header();}
 
-  //! Write the header for this object to a string
-  string terminatedHeader() const {return ptr_->terminatedHeader();}
+  //! Write the header for this object to a std::string
+  std::string terminatedHeader() const {return ptr_->terminatedHeader();}
 
-  //! Write the footer for this object to a string
-  string footer() const {return ptr_->footer();}
+  //! Write the footer for this object to a std::string
+  std::string footer() const {return ptr_->footer();}
 
   //! Find out if a node is empty
   bool isEmpty() const { return ptr_.get()==0;}
 
-  //! Check that a tag is equal to an expected string
-  void checkTag(const string& expected) const ;
+  //! Check that a tag is equal to an expected std::string
+  void checkTag(const std::string& expected) const ;
   //@}
 	
   //! @name Tree-Assembly methods 
   //@{
 
   //! Add an attribute to the current node's atribute list
-  void addAttribute(const string& name, const string& value)
+  void addAttribute(const std::string& name, const std::string& value)
     {ptr_->addAttribute(name, value);}
 			
   //! Add a double as an attribute
-  void addDouble(const string& name, double val)
+  void addDouble(const std::string& name, double val)
     {addAttribute(name, Teuchos::toString(val));}
 
   //! Add an int as an attribute
-  void addInt(const string& name, int val)
+  void addInt(const std::string& name, int val)
     {addAttribute(name, Teuchos::toString(val));}
 
   //! Add a bool as an attribute
-  void addBool(const string& name, bool val)
+  void addBool(const std::string& name, bool val)
     {addAttribute(name, Teuchos::toString(val));}
 			
   //! Add a child node to the node
@@ -170,7 +170,7 @@ public:
     {ptr_->addChild(child);}
 
   //! Add a line of character content
-  void addContent(const string& contentLine)
+  void addContent(const std::string& contentLine)
     {ptr_->addContent(contentLine);}
   //@}
 	
@@ -181,16 +181,16 @@ private:
 /** \relates XMLObject 
     \brief Write XMLObject to \c os stream 
 */
-inline ostream& operator<<(ostream& os, const XMLObject& xml)
+inline std::ostream& operator<<(std::ostream& os, const XMLObject& xml)
 {
   xml.print(os, 0);
   return os;
 }
 
 /** \relates XMLObject 
-    \brief Write XMLObject to string 
+    \brief Write XMLObject to std::string 
 */
-inline string toString(const XMLObject& xml)
+inline std::string toString(const XMLObject& xml)
 {
   return xml.toString();
 }

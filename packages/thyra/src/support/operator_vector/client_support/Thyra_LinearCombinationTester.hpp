@@ -120,7 +120,7 @@ namespace Thyra
     randomizeVec(y);
     randomizeVec(z);
 
-    this->out() << "starting linear combination tests" << endl;
+    this->out() << "starting linear combination tests" << std::endl;
 
     TESTER(x*Scalar(2.0), Scalar(2.0)*x);
 
@@ -228,7 +228,7 @@ namespace Thyra
     TestSpecifier<Scalar>
       specLooser(spec_.doTest(),1e+1*spec_.warningTol(),1e+2*spec_.errorTol());
 
-    this->out() << "starting linear combination tests" << endl;
+    this->out() << "starting linear combination tests" << std::endl;
 
     x = Scalar(2.0)*A*x;
     ScalarMag err = norm2(x - Scalar(2.0)*A*a);

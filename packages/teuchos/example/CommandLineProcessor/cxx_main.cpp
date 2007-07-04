@@ -30,8 +30,8 @@ int main(int argc, char* argv[])
       );
     
     /* To set and option, it must be given a name and default value.  Additionally,
-       each option can be given a help string.  Although it is not necessary, a help
-       string aids a users comprehension of the acceptable command line arguments.
+       each option can be given a help std::string.  Although it is not necessary, a help
+       std::string aids a users comprehension of the acceptable command line arguments.
        Some examples of setting command line options are:
     */
     // Set an integer command line option.
@@ -40,8 +40,8 @@ int main(int argc, char* argv[])
     // Set a double-precision command line option.
     double Tolerance = 1e-10;
     My_CLP.setOption("tolerance", &Tolerance, "Tolerance");
-    // Set a string command line option.
-    string Solver = "GMRES";
+    // Set a std::string command line option.
+    std::string Solver = "GMRES";
     My_CLP.setOption("solver", &Solver, "Linear solver");
     // Set a boolean command line option.    
     bool Precondition;
@@ -67,15 +67,15 @@ int main(int argc, char* argv[])
   
     /* Second, by default, if the parser finds a command line option it
        doesn't recognize or finds the --help option, it will throw an
-       exception.  If you want prevent a command line processor from
-       throwing an exception (which is important in this program since
+       std::exception.  If you want prevent a command line processor from
+       throwing an std::exception (which is important in this program since
        we don't have an try/catch around this) when it encounters a
        unrecognized option or help is printed, use:
     */
     My_CLP.throwExceptions(false);
 
     /* We now parse the command line where argc and argv are passed to
-       the parse method.  Note that since we have turned off exception
+       the parse method.  Note that since we have turned off std::exception
        throwing above we had better grab the return argument so that
        we can see what happened and act accordingly.
     */

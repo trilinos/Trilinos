@@ -16,7 +16,7 @@ using namespace Teuchos;
 int main(int argc, char* argv[])
 {
 
-  cout << Teuchos::Teuchos_Version() << endl << endl;
+  std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   // Create some reference-counted pointers.
   // Create a reference-counted NULL pointer of type A.

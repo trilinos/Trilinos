@@ -9,7 +9,7 @@
  * This is a simple, single processor example of user's defined
  * MultiVec-derived class. The class is templated with ScalarType;
  * possible choices are, for example, "float", "double", or
- * "complex<double>".
+ * "std::complex<double>".
  *
  * \author Oscar Chinallato (ETHZ/ICOS) and Marzio Sala (ETHZ/COLAB) 
  *
@@ -91,7 +91,7 @@ public:
         delete[] data_[v];
   }
   
-  //! Returns a clone of the current vector.
+  //! Returns a clone of the current std::vector.
   MyMultiVec* Clone(const int NumberVecs) const
   {
     // FIXME
@@ -104,7 +104,7 @@ public:
     return(tmp);
   }
   
-  // Returns a clone of the corrent multi-vector.
+  // Returns a clone of the corrent multi-std::vector.
   MyMultiVec* CloneCopy() const
   {
     return(new MyMultiVec(*this));
@@ -125,7 +125,7 @@ public:
     return(tmp);
   }
   
-  //! Returns a view of current vector (shallow copy)
+  //! Returns a view of current std::vector (shallow copy)
   MyMultiVec* CloneView(const std::vector< int > &index) 
   {
     int size = index.size();
@@ -137,7 +137,7 @@ public:
     return(new MyMultiVec(Length_, values));
   }
   
-  //! Returns a view of current vector (shallow copy), const version.
+  //! Returns a view of current std::vector (shallow copy), const version.
   const MyMultiVec* CloneView(const std::vector< int > &index) const
   {
     int size = index.size();
@@ -281,7 +281,7 @@ public:
   }
   
   
-  // Compute a vector b where the components are the individual dot-products, i.e.b[i] = A[i]^H*this[i] where A[i] is the i-th column of A. 
+  // Compute a std::vector b where the components are the individual dot-products, i.e.b[i] = A[i]^H*this[i] where A[i] is the i-th column of A. 
   void MvDot (const Belos::MultiVec<ScalarType>& A, std::vector<ScalarType>* b
 #ifdef HAVE_BELOS_EXPERIMENTAL
               , Belos::ConjType conj
@@ -379,17 +379,17 @@ public:
     }
   }
   
-  void MvPrint (ostream &os) const
+  void MvPrint (std::ostream &os) const
   {
-    os << "Object MyMultiVec" << endl;
-    os << "Number of rows = " << Length_ << endl;
-    os << "Number of vecs = " << NumberVecs_ << endl;
+    os << "Object MyMultiVec" << std::endl;
+    os << "Number of rows = " << Length_ << std::endl;
+    os << "Number of vecs = " << NumberVecs_ << std::endl;
     
     for (int i = 0 ; i < Length_ ; ++i)
       {
         for (int v = 0 ; v < NumberVecs_ ; ++v)
           os << (*this)(i, v) << " ";
-        os << endl;
+        os << std::endl;
       }
   }
   

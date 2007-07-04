@@ -578,7 +578,7 @@ ArrayRCP<const T> arcp( const RCP<const std::vector<T> > &v );
 
 /** \brief Get an <tt>std::vector<T></tt> object out of an
  * <tt>ArrayRCP<T></tt> object that was created using the
- * <tt>arcp()</tt> above to wrap the vector in the first place..
+ * <tt>arcp()</tt> above to wrap the std::vector in the first place..
  *
  * \relates ArrayRCP
  */
@@ -587,7 +587,7 @@ RCP<std::vector<T> > get_std_vector( const ArrayRCP<T> &ptr );
 
 /** \brief Get a <tt>const std::vector<T></tt> object out of an
  * <tt>ArrayRCP<const T></tt> object that was created using the
- * <tt>arcp()</tt> above to wrap the vector in the first place.
+ * <tt>arcp()</tt> above to wrap the std::vector in the first place.
  *
  * \relates ArrayRCP
  */
@@ -680,7 +680,7 @@ ArrayRCP<T2> arcp_reinterpret_cast(const ArrayRCP<T1>& p1);
  * <b>Warning!</b> Do not use this function unless you absolutely know what you
  * are doing.  While implicit casting of pointers to single objects is usually
  * 100% safe, implicit casting pointers to arrays of objects can be very
- * dangerous.  One exception that is always safe is when you are implicit
+ * dangerous.  One std::exception that is always safe is when you are implicit
  * casting an array of pointers to non-const objects to an array of const
  * pointers to const objects.  For example, the following implicit conversion
  * from a array pointer objects <tt>aptr1</tt> of type
@@ -719,7 +719,7 @@ ArrayRCP<T2> arcp_implicit_cast(const ArrayRCP<T1>& p1);
  * @param  force_unique
  *               [in] Determines if this type and name pair must be unique
  *               in which case if an object with this same type and name
- *               already exists, then an exception will be thrown.
+ *               already exists, then an std::exception will be thrown.
  *               The default is <tt>true</tt> for safety.
  *
  * If there is a call to this function with the same type of extra
@@ -746,9 +746,9 @@ ArrayRCP<T2> arcp_implicit_cast(const ArrayRCP<T1>& p1);
  * <b>Preconditions:</b><ul>
  * <li><tt>p->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
  * <li> If this function has already been called with the same template
- *      type <tt>T1</tt> for <tt>extra_data</tt> and the same string <tt>name</tt>
+ *      type <tt>T1</tt> for <tt>extra_data</tt> and the same std::string <tt>name</tt>
  *      and <tt>force_unique==true</tt>, then an <tt>std::invalid_argument</tt>
- *      exception will be thrown.
+ *      std::exception will be thrown.
  * </ul>
  *
  * Note, this function is made a non-member function to be consistent

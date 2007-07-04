@@ -34,7 +34,7 @@
 namespace Teuchos {
 
 /** \brief Simple class for containing an object and protecting const with
- * a runtime check which throws an exception.
+ * a runtime check which throws an std::exception.
  *
  * This class is simple enough and developers are encouraged to look at the
  * simple inline definition of this class.

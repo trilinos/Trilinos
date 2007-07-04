@@ -112,20 +112,20 @@ int main(int argc, char *argv[]) {
   //
   // *****Construct the Preconditioner*****
   //
-  if (proc_verbose) cout << endl << endl;
-  if (proc_verbose) cout << "Constructing ILU preconditioner" << endl;
+  if (proc_verbose) std::cout << std::endl << std::endl;
+  if (proc_verbose) std::cout << "Constructing ILU preconditioner" << std::endl;
   int Lfill = 2;
   // if (argc > 2) Lfill = atoi(argv[2]);
-  if (proc_verbose) cout << "Using Lfill = " << Lfill << endl;
+  if (proc_verbose) std::cout << "Using Lfill = " << Lfill << std::endl;
   int Overlap = 2;
   // if (argc > 3) Overlap = atoi(argv[3]);
-  if (proc_verbose) cout << "Using Level Overlap = " << Overlap << endl;
+  if (proc_verbose) std::cout << "Using Level Overlap = " << Overlap << std::endl;
   double Athresh = 0.0;
   // if (argc > 4) Athresh = atof(argv[4]);
-  if (proc_verbose) cout << "Using Absolute Threshold Value of " << Athresh << endl;
+  if (proc_verbose) std::cout << "Using Absolute Threshold Value of " << Athresh << std::endl;
   double Rthresh = 1.0;
   // if (argc >5) Rthresh = atof(argv[5]);
-  if (proc_verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
+  if (proc_verbose) std::cout << "Using Relative Threshold Value of " << Rthresh << std::endl;
   //
   Teuchos::RCP<Ifpack_IlukGraph> ilukGraph;
   Teuchos::RCP<Ifpack_CrsRiluk> ilukFactors;
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
     assert(ilukGraph->ConstructFilledGraph()==0);
     ilukFactors = Teuchos::rcp(new Ifpack_CrsRiluk(*ilukGraph));
     int initerr = ilukFactors->InitValues(*A);
-    if (initerr != 0) cout << "InitValues error = " << initerr;
+    if (initerr != 0) std::cout << "InitValues error = " << initerr;
     assert(ilukFactors->Factor() == 0);
   }
   //
@@ -143,8 +143,8 @@ int main(int argc, char *argv[]) {
   double Cond_Est;
   ilukFactors->Condest(transA, Cond_Est);
   if (proc_verbose) {
-    cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
-    cout << endl;
+    std::cout << "Condition number estimate for this preconditoner = " << Cond_Est << std::endl;
+    std::cout << std::endl;
   }
 
   //
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
   else
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
   //
-  // *****Construct solution vector and random right-hand-sides *****
+  // *****Construct solution std::vector and random right-hand-sides *****
   //
   RCP<Epetra_MultiVector> initX = rcp( new Epetra_MultiVector(Map, init_numrhs) );
   RCP<Epetra_MultiVector> initB = rcp( new Epetra_MultiVector(Map, init_numrhs) );
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
   bool set = initProblem.setProblem();
   if (set == false) {
     if (proc_verbose)
-      cout << endl << "ERROR:  Initial Belos::LinearProblem failed to set up correctly!" << endl;
+      std::cout << std::endl << "ERROR:  Initial Belos::LinearProblem failed to set up correctly!" << std::endl;
     return -1;
   }
   //
@@ -222,17 +222,17 @@ int main(int argc, char *argv[]) {
   MVT::MvNorm( initR, &actual_resids );
   MVT::MvNorm( *initB, &rhs_norm );
   if (proc_verbose) {
-    cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
     for (int i=0; i<init_numrhs; i++) {
       double actRes = actual_resids[i]/rhs_norm[i];
-      cout<<"Problem "<<i<<" : \t"<< actRes <<endl;
+      std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
       if (actRes > tol) badRes = true;
     }
   }
 
   if (ret != Belos::Converged || badRes==true) {
     if (proc_verbose)
-      cout << endl << "ERROR:  Initial solve did not converge to solution!" << endl;
+      std::cout << std::endl << "ERROR:  Initial solve did not converge to solution!" << std::endl;
     return -1;
   }
 
@@ -263,7 +263,7 @@ int main(int argc, char *argv[]) {
   set = augProblem.setProblem();
   if (set == false) {
     if (proc_verbose)
-      cout << endl << "ERROR:  Augmented Belos::LinearProblem failed to set up correctly!" << endl;
+      std::cout << std::endl << "ERROR:  Augmented Belos::LinearProblem failed to set up correctly!" << std::endl;
     return -1;
   }
   //
@@ -286,24 +286,24 @@ int main(int argc, char *argv[]) {
 
   if (ret != Belos::Converged) {
     if (proc_verbose)
-      cout << endl << "ERROR: Augmented solver did not converge to solution!" << endl;
+      std::cout << std::endl << "ERROR: Augmented solver did not converge to solution!" << std::endl;
     return -1;
   }
   //
   // **********Print out information about problem*******************
   //
   if (proc_verbose) {
-    cout << endl << endl;
-    cout << "Dimension of matrix: " << NumGlobalElements << endl;
-    cout << "Number of initial right-hand sides: " << init_numrhs << endl;
-    cout << "Number of augmented right-hand sides: " << aug_numrhs << endl;
-    cout << "Number of restarts allowed: " << maxrestarts << endl;
-    cout << "Length of block Arnoldi factorization: " << length <<endl;
-    cout << "Max number of Gmres iterations: " << maxiters << endl; 
-    cout << "Relative residual tolerance: " << tol << endl;
+    std::cout << std::endl << std::endl;
+    std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
+    std::cout << "Number of initial right-hand sides: " << init_numrhs << std::endl;
+    std::cout << "Number of augmented right-hand sides: " << aug_numrhs << std::endl;
+    std::cout << "Number of restarts allowed: " << maxrestarts << std::endl;
+    std::cout << "Length of block Arnoldi factorization: " << length <<std::endl;
+    std::cout << "Max number of Gmres iterations: " << maxiters << std::endl; 
+    std::cout << "Relative residual tolerance: " << tol << std::endl;
     if (aug_tol != tol)
-      cout << "Relative residual tolerance for augmented systems: " << aug_tol << endl;
-    cout << endl;
+      std::cout << "Relative residual tolerance for augmented systems: " << aug_tol << std::endl;
+    std::cout << std::endl;
   }
   //
   // Compute actual residuals.
@@ -318,24 +318,24 @@ int main(int argc, char *argv[]) {
   MVT::MvNorm( augR, &actual_resids );
   MVT::MvNorm( *augB, &rhs_norm );
   if (proc_verbose) {
-    cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
     for ( int i=0; i<total_numrhs; i++) {
       double actRes = actual_resids[i]/rhs_norm[i];
-      cout<<"Problem "<<i<<" : \t"<< actRes <<endl;
+      std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
       if (actRes > tol ) badRes = true;
     }
   }
 
   if (ret!=Belos::Converged || badRes==true) {
     if (proc_verbose)
-      cout << "End Result: TEST FAILED" << endl;	
+      std::cout << "End Result: TEST FAILED" << std::endl;	
     return -1;
   }
   //
   // Default return value
   //
   if (proc_verbose)
-    cout << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;
   //
 } // end test_pseudo_gmres_hb.cpp

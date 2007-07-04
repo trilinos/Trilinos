@@ -34,9 +34,9 @@
 namespace Teuchos {
 
 
-/** \brief Base class for objects that contain a string label.
+/** \brief Base class for objects that contain a std::string label.
  *
- * The object label string <tt>objectLabel</tt> set in
+ * The object label std::string <tt>objectLabel</tt> set in
  * <tt>setObjectLabel()</tt> should be a simple one-line label given to an
  * object to differentiate it from all other objects.  A subclass
  * implementation can define a default label in some cases but typically this

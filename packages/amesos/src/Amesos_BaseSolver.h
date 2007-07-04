@@ -44,6 +44,7 @@
 const int StructurallySingularMatrixError = -21;
 const int NumericallySingularMatrixError = -22;
 
+#include "Amesos_ConfigDefs.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"

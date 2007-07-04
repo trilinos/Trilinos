@@ -339,8 +339,8 @@ namespace Teuchos {
 
   //! @name I/O methods.
   //@{ 
-    //! Print method.  Defines the behavior of the ostream << operator inherited from the Object class.
-    virtual void print(ostream& os) const;
+    //! Print method.  Defines the behavior of the std::ostream << operator inherited from the Object class.
+    virtual void print(std::ostream& os) const;
 
   //@}
   protected:
@@ -819,24 +819,24 @@ namespace Teuchos {
   
   
   template<typename OrdinalType, typename ScalarType>
-  void SerialDenseMatrix<OrdinalType, ScalarType>::print(ostream& os) const
+  void SerialDenseMatrix<OrdinalType, ScalarType>::print(std::ostream& os) const
   {
-    os << endl;
+    os << std::endl;
     if(valuesCopied_)
-      os << "Values_copied : yes" << endl;
+      os << "Values_copied : yes" << std::endl;
     else
-      os << "Values_copied : no" << endl;
-      os << "Rows : " << numRows_ << endl;
-      os << "Columns : " << numCols_ << endl;
-      os << "LDA : " << stride_ << endl;
+      os << "Values_copied : no" << std::endl;
+      os << "Rows : " << numRows_ << std::endl;
+      os << "Columns : " << numCols_ << std::endl;
+      os << "LDA : " << stride_ << std::endl;
     if(numRows_ == 0 || numCols_ == 0) {
-      os << "(matrix is empty, no values to display)" << endl;
+      os << "(matrix is empty, no values to display)" << std::endl;
     } else {
       for(int i = 0; i < numRows_; i++) {
 	for(int j = 0; j < numCols_; j++){
 	  os << (*this)(i,j) << " ";
 	}
-	os << endl;
+	os << std::endl;
       }
     }
   }

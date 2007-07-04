@@ -1,6 +1,6 @@
 
-#include <string.h>
-#include <stdio.h>
+#include <cstring>
+#include <cstdio>
 #include <iostream>
 #include <fstream>
 
@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
 
   err = test_find_rows(Comm);
   if (err != 0) {
-    std::cout << "test_find_rows returned err=="<<err<<endl;
+    std::cout << "test_find_rows returned err=="<<err<<std::endl;
     return(err);
   }
 
@@ -281,7 +281,7 @@ int read_input_file(Epetra_Comm& Comm,
                     int& numfilenames_allocated)
 {
   int local_err = 0, global_err = 0;
-  ifstream* infile = NULL;
+  std::ifstream* infile = NULL;
   int pathlen = path != 0 ? (int)strlen(path): 0;
 
   if (Comm.MyPID() == 0) {
@@ -296,7 +296,7 @@ int read_input_file(Epetra_Comm& Comm,
       sprintf(full_name, "%s", input_file_name);
     }
 
-    infile = new ifstream(full_name);
+    infile = new std::ifstream(full_name);
     if (!(*infile)) {
       local_err = -1;
       delete infile;
@@ -315,7 +315,7 @@ int read_input_file(Epetra_Comm& Comm,
     int linelen = 512;
     char* line = NULL;
 
-    ifstream& ifile = *infile;
+    std::ifstream& ifile = *infile;
     while(!ifile.eof()) {
       line = new char[pathlen+1+linelen];
       if (pathlen>0) {
@@ -517,7 +517,7 @@ int read_matrix_file_names(Epetra_Comm& Comm,
   int pathlen = path!=0 ? (int)strlen(path) : 0;
 
   if (Comm.MyPID()==0) {
-    ifstream infile(input_file_name);
+    std::ifstream infile(input_file_name);
     if (!infile) {
       std::cout << "error opening input file " << input_file_name << std::endl;
       return(-1);
@@ -633,7 +633,7 @@ int two_proc_test(Epetra_Comm& Comm,
   //only run this test on 2 procs
   if (numprocs != 2) return(0);
 
-  //set up a row-map with 2 global elements,
+  //set up a row-std::map with 2 global elements,
   //1 on each proc.
   int numGlobalRows = 2;
   int numMyRows = 1;
@@ -641,7 +641,7 @@ int two_proc_test(Epetra_Comm& Comm,
   if (thisproc == 1) myrow = 7;
   Epetra_Map rowmap(numGlobalRows, numMyRows, &myrow, 0, Comm);
 
-  //set up a domain-map with columns 0 - 4 on proc 0,
+  //set up a domain-std::map with columns 0 - 4 on proc 0,
   //and columns 5 - 9 on proc 1.
   int numGlobalCols = 10;
   int numMyCols = 5;
@@ -674,14 +674,14 @@ int two_proc_test(Epetra_Comm& Comm,
 
   err += EpetraExt::MatrixMatrix::Multiply(A, false, B, true, C);
 
-  //cout << "two_proc_test, A: "<<endl;
-  //cout << A << endl;
+  //std::cout << "two_proc_test, A: "<<std::endl;
+  //std::cout << A << std::endl;
 
-  //cout << "two_proc_test, B: "<<endl;
-  //cout << B << endl;
+  //std::cout << "two_proc_test, B: "<<std::endl;
+  //std::cout << B << std::endl;
 
-  //cout << "two_proc_test, C: "<<endl;
-  //cout << C << endl;
+  //std::cout << "two_proc_test, C: "<<std::endl;
+  //std::cout << C << std::endl;
 
   if (C.NumGlobalNonzeros() != 4) {
     err += 1;

@@ -79,28 +79,28 @@ namespace Belos {
     //  member functions inherited from Belos::MultiVec
     //
     //  the following is a virtual copy constructor returning
-    //  a pointer to the pure virtual class. vector values are
+    //  a pointer to the pure virtual class. std::vector values are
     //  not copied; instead a new MultiVec is created containing
     //  a non-zero amount of columns.  
     //
     MultiVec<double> * Clone ( const int numvecs ) const;
     //
     //  the following is a virtual copy constructor returning
-    //  a pointer to the pure virtual class. vector values are
+    //  a pointer to the pure virtual class. std::vector values are
     //  copied and a new stand-alone MultiVector is created.
     //  (deep copy).
     //
     MultiVec<double> * CloneCopy () const;
     //
     //  the following is a virtual copy constructor returning
-    //  a pointer to the pure virtual class. vector values are
+    //  a pointer to the pure virtual class. std::vector values are
     //  copied and a new stand-alone MultiVector is created
     //  where only selected columns are chosen.  (deep copy).
     //
     MultiVec<double> * CloneCopy ( const std::vector<int>& index ) const;
     //
     //  the following is a virtual view constructor returning
-    //  a pointer to the pure virtual class. vector values are 
+    //  a pointer to the pure virtual class. std::vector values are 
     //  shared and hence no memory is allocated for the columns.
     //
     MultiVec<double> * CloneView ( const std::vector<int>& index );
@@ -149,7 +149,7 @@ namespace Belos {
     //
     // print (*this)
     //
-    void MvPrint( ostream& os ) const { os << *this << endl; };
+    void MvPrint( std::ostream& os ) const { os << *this << std::endl; };
   private:
   };
   
@@ -186,7 +186,7 @@ namespace Belos {
     //! Apply inverse method for an Epetra_MultiVector [inherited from Epetra_Operator class]
     int ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
 
-    //! Returns a character string describing the operator.
+    //! Returns a character std::string describing the operator.
     const char* Label() const { return "Epetra_Operator applying A^{-1} as A"; };
 
     //! Returns the current UseTranspose setting [always false for this operator].
@@ -318,7 +318,7 @@ namespace Belos {
     ///
     static void SetBlock( const Epetra_MultiVector& A, const std::vector<int>& index, Epetra_MultiVector& mv )
     { 
-      // Extract the "numvecs" columns of mv indicated by the index vector.
+      // Extract the "numvecs" columns of mv indicated by the index std::vector.
       int numvecs = index.size(), info = 0;
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       Epetra_MultiVector temp_vec(View, mv, &tmp_index[0], numvecs);
@@ -347,8 +347,8 @@ namespace Belos {
 			  "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvInit() call to PutScalar() returned a nonzero value.");
     }
     ///
-    static void MvPrint( const Epetra_MultiVector& mv, ostream& os )
-    { os << mv << endl; }
+    static void MvPrint( const Epetra_MultiVector& mv, std::ostream& os )
+    { os << mv << std::endl; }
     
   };        
   

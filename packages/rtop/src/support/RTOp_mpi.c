@@ -33,6 +33,8 @@
  * sinlge process implementation.
  */
 
+#include <assert.h>
+
 /*
  * RAB: 2004/01/22: This file is included because it includes
  * Thyra_Config.h which then defines RTOp_USE_MPI or not.  If

@@ -30,19 +30,19 @@
 #define TEUCHOS_MAP_H
 
 /*! \file Teuchos_map.hpp
-    \brief Provides map class for deficient platforms.
+    \brief Provides std::map class for deficient platforms.
 */
 
 #include "Teuchos_ConfigDefs.hpp"
 
-/*! \class Teuchos::map
-    \brief This class creates a basic map object for platforms where the std::map is
+/*! \class Teuchosstd::map
+    \brief This class creates a basic std::map object for platforms where the std::map is
 	deficient, otherwise the std::map is injected into the Teuchos namespace.  
 	
     \note 
     <ol>
-	<li> The map is an integral part of Teuchos::ParameterList and Teuchos::CommandLineProcessor.
-	<li> Currently the basic map class is only used on ASCI Red (Janus).
+	<li> The std::map is an integral part of Teuchos::ParameterList and Teuchos::CommandLineProcessor.
+	<li> Currently the basic std::map class is only used on ASCI Red (Janus).
     </ol>
 */
 
@@ -51,7 +51,7 @@ namespace Teuchos {
 #ifdef TFLOP
 
 template<class Key, class T>
-class map {
+class std::map {
 public:
   typedef Key key_type;
   typedef T mapped_type;
@@ -64,33 +64,33 @@ public:
   //@{ 
 
     //! Default Constructor
-    map() {}
+    std::map() {}
 
     //! Copy Constructor
-    map( const map<Key,T>& map_in ) : list_( map_in.list_ ) {}
+    std::map( const std::map<Key,T>& map_in ) : list_( map_in.list_ ) {}
 
     //! Destructor
-    virtual ~map() {}
+    virtual ~std::map() {}
   //@}
 
   //! @name Accessor methods.
   //@{ 
 
-    //! Return an iterator that points to the first pair in the map.  
+    //! Return an iterator that points to the first pair in the std::map.  
     iterator begin() { return list_.begin(); }
 
-    //! Return a const iterator that points to the first pair in the map.
+    //! Return a const iterator that points to the first pair in the std::map.
     const_iterator begin() const { return list_.begin(); }
 
-    //! Return an iterator that points to the last pair in the map.
+    //! Return an iterator that points to the last pair in the std::map.
     iterator end() { return list_.end(); }
 
-    //! Return a const iterator that points to the last pair in the map.
+    //! Return a const iterator that points to the last pair in the std::map.
     const_iterator end() const { return list_.end(); }
       
     //! Return a reference to the mapped value that belongs to the key \c k.
     /*! \param k - The key for which data should be retrieved.
-	If this key doesn't exist then the key is inserted into the map and a
+	If this key doesn't exist then the key is inserted into the std::map and a
 	reference to the mapped value is returned.
     */
     mapped_type& operator[]( const key_type& k )
@@ -105,7 +105,7 @@ public:
   //! @name Search methods.
   //@{ 
   
-    //! Locate element in the map with key_type \c k. 
+    //! Locate element in the std::map with key_type \c k. 
     /*! \param k - The key for which an iterator should be returned.
 	\return An iterator that points to the element with key_type \c k, else
 	return end(). 
@@ -120,7 +120,7 @@ public:
       return end();
     }
 
-    //! Locate element in the map with key_type \c k. 
+    //! Locate element in the std::map with key_type \c k. 
     /*! \param k - The key for which a constant iterator should be returned.
 	\return A constant iterator that points to the element with key_type \c k, else
 	return end(). 

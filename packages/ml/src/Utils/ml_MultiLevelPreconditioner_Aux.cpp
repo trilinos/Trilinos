@@ -72,11 +72,11 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
 
   // at least x-coordinates must be not null
   if( NumDimensions == 0 ) {
-    cerr << ErrorMsg_ << "Option `aggregation: use auxiliary matrix' == true" << endl
-         << ErrorMsg_ << "requires x-, y-, or z-coordinates." << endl
-         << ErrorMsg_ << "You must specify them using options" << endl
-         << ErrorMsg_ << "`x-coordinates' (and equivalently for" << endl
-         << ErrorMsg_ << "y- and z-." << endl;
+    std::cerr << ErrorMsg_ << "Option `aggregation: use auxiliary matrix' == true" << std::endl
+         << ErrorMsg_ << "requires x-, y-, or z-coordinates." << std::endl
+         << ErrorMsg_ << "You must specify them using options" << std::endl
+         << ErrorMsg_ << "`x-coordinates' (and equivalently for" << std::endl
+         << ErrorMsg_ << "y- and z-." << std::endl;
     ML_CHK_ERR(-2); // wrong parameters
   }
 
@@ -88,8 +88,8 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
 
   // small check to avoid strange behavior
   if( z_coord != 0 && y_coord == 0 ) {
-    cerr << ErrorMsg_ << "Something wrong: `y-coordinates'" << endl
-         << ErrorMsg_ << "is null, while `z-coordinates' is null" << endl;
+    std::cerr << ErrorMsg_ << "Something wrong: `y-coordinates'" << std::endl
+         << ErrorMsg_ << "is null, while `z-coordinates' is null" << std::endl;
     ML_CHK_ERR(-3); // something went wrong
   }
 
@@ -99,13 +99,13 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
 
   // usual crap to clutter the output
   if( verbose_ ) {
-    cout << endl;
-    cout << PrintMsg_ << "*** Using auxiliary matrix to create the aggregates" << endl
-         << PrintMsg_ << "*** Number of dimensions = " << NumDimensions << endl
+    std::cout << std::endl;
+    std::cout << PrintMsg_ << "*** Using auxiliary matrix to create the aggregates" << std::endl
+         << PrintMsg_ << "*** Number of dimensions = " << NumDimensions << std::endl
          << PrintMsg_ << "*** theta = " << theta;
-    if( SymmetricPattern ) cout << ", using symmetric pattern" << endl;
-    else                   cout << ", using original pattern" << endl;
-    cout << endl;
+    if( SymmetricPattern ) std::cout << ", using symmetric pattern" << std::endl;
+    else                   std::cout << ", using original pattern" << std::endl;
+    std::cout << std::endl;
   }
 
   // create vectors containing coordinates, replicated for all unknonws
@@ -145,10 +145,10 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
 
   // room for getrow()
   int MaxNnz = RowMatrix_->MaxNumEntries();
-  vector<int> colInd(MaxNnz);
-  vector<double> colVal(MaxNnz);
-  vector<double> coord_i(3);
-  vector<double> coord_j(3);
+  std::vector<int> colInd(MaxNnz);
+  std::vector<double> colVal(MaxNnz);
+  std::vector<double> coord_i(3);
+  std::vector<double> coord_j(3);
 
   // =================== //
   // cycle over all rows //
@@ -176,16 +176,16 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
       // NOTE: for VBR matrices, the "real" value that will be used in
       // the subsequent part of the code is only the one for the first
       // equations. For each block, I replace values with the sum of
-      // the abs of each block entry.
+      // the std::abs of each block entry.
       for (int j = 0 ; j < NumEntries ; j += NumPDEEqns_) {
-	colVal[j] = fabs(colVal[j]);
+	colVal[j] = std::fabs(colVal[j]);
 	for (int k = 1 ; k < NumPDEEqns_ ; ++k) {
-	  colVal[j] += fabs(colVal[j+k]);
+	  colVal[j] += std::fabs(colVal[j+k]);
 	}
       }
 
       // work only on the first equations. Theta will blend the
-      // coordinate part with the sub of abs of row elements.
+      // coordinate part with the sub of std::abs of row elements.
       int GlobalCol;
       double total = 0.0;
 
@@ -216,15 +216,15 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
 	      (coord_i[2] - coord_j[2]) * (coord_i[2] - coord_j[2]);
 
 	    if (d2 == 0.0) {
-	      cerr << endl;
-	      cerr << ErrorMsg_ << "distance between node " << i/NumPDEEqns_ << " and node " 
-                   << colInd[j]/NumPDEEqns_ << endl
-                   << ErrorMsg_ << "is zero. Coordinates of these nodes are" << endl
-	           << ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << endl  
-		   << ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << endl  
-		   << ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << endl  
-		   << ErrorMsg_ << "Now proceeding with distance = 1.0" << endl;
-	      cerr << endl;
+	      std::cerr << std::endl;
+	      std::cerr << ErrorMsg_ << "distance between node " << i/NumPDEEqns_ << " and node " 
+                   << colInd[j]/NumPDEEqns_ << std::endl
+                   << ErrorMsg_ << "is zero. Coordinates of these nodes are" << std::endl
+	           << ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << std::endl  
+		   << ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << std::endl  
+		   << ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << std::endl  
+		   << ErrorMsg_ << "Now proceeding with distance = 1.0" << std::endl;
+	      std::cerr << std::endl;
 	      d2 = 1.0;
 	    }
 
@@ -308,11 +308,11 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
 
   // at least x-coordinates must be not null
   if( NumDimensions == 0 ) {
-    cerr << ErrorMsg_ << "Option `aggregation: use auxiliary matrix' == true" << endl
-         << ErrorMsg_ << "requires x-, y-, or z-coordinates." << endl
-         << ErrorMsg_ << "You must specify them using options" << endl
-         << ErrorMsg_ << "`x-coordinates' (and equivalently for" << endl
-         << ErrorMsg_ << "y- and z-)." << endl;
+    std::cerr << ErrorMsg_ << "Option `aggregation: use auxiliary matrix' == true" << std::endl
+         << ErrorMsg_ << "requires x-, y-, or z-coordinates." << std::endl
+         << ErrorMsg_ << "You must specify them using options" << std::endl
+         << ErrorMsg_ << "`x-coordinates' (and equivalently for" << std::endl
+         << ErrorMsg_ << "y- and z-)." << std::endl;
     ML_CHK_ERR(-2); // wrong parameters
   }
 
@@ -324,18 +324,18 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
 
   // small check to avoid strange behavior
   if( z_coord != 0 && y_coord == 0 ) {
-    cerr << ErrorMsg_ << "Something wrong: `y-coordinates'" << endl
-         << ErrorMsg_ << "is null, while `z-coordinates' is not null" << endl;
+    std::cerr << ErrorMsg_ << "Something wrong: `y-coordinates'" << std::endl
+         << ErrorMsg_ << "is null, while `z-coordinates' is not null" << std::endl;
     ML_CHK_ERR(-3); // something went wrong
   }
 
   // usual crap to clutter the output
   if( verbose_ ) {
-    cout << endl;
-    cout << PrintMsg_ << "*** Using auxiliary matrix to create the aggregates" << endl
-         << PrintMsg_ << "*** Number of dimensions = " << NumDimensions << endl
-         << PrintMsg_ << "*** (the version for Epetra_VbrMatrix is currently used)" << endl;
-    cout << endl;
+    std::cout << std::endl;
+    std::cout << PrintMsg_ << "*** Using auxiliary matrix to create the aggregates" << std::endl
+         << PrintMsg_ << "*** Number of dimensions = " << NumDimensions << std::endl
+         << PrintMsg_ << "*** (the version for Epetra_VbrMatrix is currently used)" << std::endl;
+    std::cout << std::endl;
   }
 
   const Epetra_BlockMap& RowMap = FakeMatrix->RowMap();
@@ -373,10 +373,10 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
 
   // room for getrow()
   int MaxNnz = FakeMatrix->MaxNumEntries();
-  vector<int> colInd(MaxNnz);
-  vector<double> colVal(MaxNnz);
-  vector<double> coord_i(3);
-  vector<double> coord_j(3);
+  std::vector<int> colInd(MaxNnz);
+  std::vector<double> colVal(MaxNnz);
+  std::vector<double> coord_i(3);
+  std::vector<double> coord_j(3);
 
   // change the entries of FakeMatrix so that it corresponds to a discrete
   // Laplacian. Note: This is not exactly the same as in the Crs case.
@@ -428,15 +428,15 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
           (coord_i[2] - coord_j[2]) * (coord_i[2] - coord_j[2]);
 
         if (d2 == 0.0) {
-          cerr << endl;
-          cerr << ErrorMsg_ << "distance between node " << LocalRow << " and node " 
-            << LocalCol << endl
-            << ErrorMsg_ << "is zero. Coordinates of these nodes are" << endl
-            << ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << endl  
-            << ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << endl  
-            << ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << endl  
-            << ErrorMsg_ << "Now proceeding with distance = 1.0" << endl;
-          cerr << endl;
+          std::cerr << std::endl;
+          std::cerr << ErrorMsg_ << "distance between node " << LocalRow << " and node " 
+            << LocalCol << std::endl
+            << ErrorMsg_ << "is zero. Coordinates of these nodes are" << std::endl
+            << ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << std::endl  
+            << ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << std::endl  
+            << ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << std::endl  
+            << ErrorMsg_ << "Now proceeding with distance = 1.0" << std::endl;
+          std::cerr << std::endl;
           d2 = 1.0;
         }
 
@@ -529,7 +529,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
         Nghost = AAA->getrow->pre_comm->total_rcv_length;
       }
 
-      vector<double> tmp(Nghost + n);
+      std::vector<double> tmp(Nghost + n);
       for (int i = 0 ; i < Nghost + n ; ++i)
         tmp[i] = 0.0;
 

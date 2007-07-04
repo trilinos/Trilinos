@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
   std::vector<int> MyGlobalElements(NumMyElements);
   Map->MyGlobalElements(&MyGlobalElements[0]);
 
-  // Create an integer vector NumNz that is used to build the Petra Matrix.
+  // Create an integer std::vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
   // on this processor
   std::vector<int> NumNz(NumMyElements);
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
   typedef Belos::MultiVec<double> EMV;
   typedef Belos::Operator<double> EOP;
 
-  // Create an Epetra_MultiVector for an initial vector to start the solver.
+  // Create an Epetra_MultiVector for an initial std::vector to start the solver.
   // Note that this needs to have the same number of columns as the blocksize.
   Teuchos::RCP<Belos::EpetraMultiVec> ivec = Teuchos::rcp( new Belos::EpetraMultiVec(*Map, blockSize) );
   ivec->Random();

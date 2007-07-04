@@ -246,7 +246,7 @@ void AlgorithmA::doAlgorithm()
       OSTab tab = this->getOSTab(1,"DUMBALGO");
       // Now a Pass in the updated FancyOStream object, which is properly
       // indented now, through the std::ostream interface.  I also pass in
-      // the string that is being used for creating tabs.  The output from
+      // the std::string that is being used for creating tabs.  The output from
       // this function will be indented correctly without the dumb code
       // knowing it!
       someDumbFunction(*out,out->getTabIndentStr());

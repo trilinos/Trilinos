@@ -215,7 +215,7 @@ public:
 
     \note <ul>   <li> If the templated value type and templated type are not the same then a 
     bad_any_cast is thrown.
-    <li> If the dynamic cast fails, then a Teuchos::bad_any_cast exception is thrown.
+    <li> If the dynamic cast fails, then a Teuchos::bad_any_cast std::exception is thrown.
     </ul>
 */
 template<typename ValueType>
@@ -261,7 +261,7 @@ const ValueType& any_cast(const any &operand)
 }
 
 /*! \relates any
-    \brief Converts the value in <tt>any</tt> to a string.
+    \brief Converts the value in <tt>any</tt> to a std::string.
 */
 inline std::string toString(const any &rhs)
 {

@@ -1,13 +1,16 @@
+
+#include <assert.h>
+
+#include "Amesos_ConfigDefs.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Vector.h"
 #include "Teuchos_RCP.hpp"
-#include <vector>
-#include <assert.h>
 
 using namespace Teuchos;
+
 int SmallRowPermute( int in ) { return in + 2 ; } 
 int BigRowPermute( int in ) { return 5*in + 1 ; } 
 int NoPermute( int in ) { return in ; } 

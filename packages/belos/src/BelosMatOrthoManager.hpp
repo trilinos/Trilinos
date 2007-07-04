@@ -145,11 +145,11 @@ namespace Belos {
         innerProd(X,Y,Z);
       }
       else if ( _hasOp ) {
-        // the user has done the matrix vector for us
+        // the user has done the matrix std::vector for us
         MVT::MvTransMv(SCT::one(),X,*MY,Z);
       }
       else {
-        // there is no matrix vector
+        // there is no matrix std::vector
         MVT::MvTransMv(SCT::one(),X,Y,Z);
       }
     }
@@ -206,7 +206,7 @@ namespace Belos {
      @param C [out] The coefficients of \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
        and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
        routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
-       \c X and \c *Q[i], then a std::invalid_argument exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
+       \c X and \c *Q[i], then a std::invalid_argument std::exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
        pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
 
      @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
@@ -241,7 +241,7 @@ namespace Belos {
      @param B [out] The coefficients of \c X in the computed basis. If \c B is a non-null pointer 
        and \c *B has appropriate dimensions, then the coefficients computed during the orthogonalization
        routine will be stored in the matrix \c *B. If \c B is a non-null pointer whose size does not match the dimensions of 
-       \c X, then a std::invalid_argument exception will be thrown. Otherwise, 
+       \c X, then a std::invalid_argument std::exception will be thrown. Otherwise, 
        the orthogonalization manager will declare storage for the coefficients and the user will not have access to them. <b>This matrix may or may not be triangular; see 
        documentation for individual orthogonalization managers.</b>
 
@@ -277,13 +277,13 @@ namespace Belos {
      @param C [out] The coefficients of the original \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
        and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
        routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
-       \c X and \c *Q[i], then a std::invalid_argument exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
+       \c X and \c *Q[i], then a std::invalid_argument std::exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
        pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
 
      @param B [out] The coefficients of \c X in the computed basis. If \c B is a non-null pointer 
        and \c *B has appropriate dimensions, then the coefficients computed during the orthogonalization
        routine will be stored in the matrix \c *B. If \c B is a non-null pointer whose size does not match the dimensions of 
-       \c X, then a std::invalid_argument exception will be thrown. Otherwise, 
+       \c X, then a std::invalid_argument std::exception will be thrown. Otherwise, 
        the orthogonalization manager will declare storage for the coefficients and the user will not have access to them. <b>This matrix may or may not be triangular; see 
        documentation for individual orthogonalization managers.</b>
 

@@ -38,7 +38,7 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 
-#include <time.h>
+#include <ctime>
 #ifdef HAVE_MPI
 #include "mpi.h"
 #else
@@ -57,7 +57,7 @@ namespace Teuchos
    *
    *  To time a section of code, place it in between calls to start() and stop(). 
    *
-   *  \note For exception safety and correct behavior in reentrant code, this class should
+   *  \note For std::exception safety and correct behavior in reentrant code, this class should
    * generally be used only through the Teuchos::TimeMonitor mechanism. 
    *
    */
@@ -79,7 +79,7 @@ namespace Teuchos
 
   public:
     /** \brief Construct with a descriptive name */
-    Time(const string& name, bool start = false);
+    Time(const std::string& name, bool start = false);
   
     /** \brief Returns current wall-clock time in seconds.*/
     static double wallTime();
@@ -106,7 +106,7 @@ namespace Teuchos
     bool isRunning() const {return isRunning_;}
 
     /** \brief Return the name of this timer */
-    const string& name() const {return name_;}
+    const std::string& name() const {return name_;}
 
     /** \brief Increment the number of times this timer has been called */
     void incrementNumCalls() {numCalls_++;}
@@ -121,7 +121,7 @@ namespace Teuchos
 
     bool isRunning_;
 
-    string name_;
+    std::string name_;
 
     int numCalls_;
   };

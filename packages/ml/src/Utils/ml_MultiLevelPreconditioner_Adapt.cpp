@@ -43,18 +43,18 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
   
   // maximum number of relaxation sweeps
   int MaxSweeps = List_.get("adaptive: max sweeps", 10);
-  // number of vector to be added to the tentative null space
+  // number of std::vector to be added to the tentative null space
   int NumAdaptiveVectors = List_.get("adaptive: num vectors", 1);
 
   if (verbose_) {
-    cout << PrintMsg_ << "*** Adaptive Smoother Aggregation setup ***" << endl;
-    cout << PrintMsg_ << "    Maximum relaxation sweeps     = " << MaxSweeps << endl;
-    cout << PrintMsg_ << "    Additional vectors to compute = " << NumAdaptiveVectors << endl;
+    std::cout << PrintMsg_ << "*** Adaptive Smoother Aggregation setup ***" << std::endl;
+    std::cout << PrintMsg_ << "    Maximum relaxation sweeps     = " << MaxSweeps << std::endl;
+    std::cout << PrintMsg_ << "    Additional vectors to compute = " << NumAdaptiveVectors << std::endl;
   }
 
   // ==================================================== //
   // compute the preconditioner, set null space from user //
-  // (who will have to delete vector TentativeNullSpace)  //
+  // (who will have to delete std::vector TentativeNullSpace)  //
   // ==================================================== //
   
   double* NewNullSpace = 0;
@@ -90,14 +90,14 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
   ComputePreconditioner();
 
   // ====================== //
-  // add one vector at time //
+  // add one std::vector at time //
   // ====================== //
   
   for (int istep = 0 ; istep < NumAdaptiveVectors ; ++istep) {
 
     if (verbose_) {
-      cout << PrintMsg_ << "\tAdaptation step " << istep << endl;
-      cout << PrintMsg_ << "\t---------------" << endl;
+      std::cout << PrintMsg_ << "\tAdaptation step " << istep << std::endl;
+      std::cout << PrintMsg_ << "\t---------------" << std::endl;
     }
 
     // ==================== //
@@ -120,8 +120,8 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
       ML_CHK_ERR(LHS->Update(-1.0,*RHS,1.0));
       LHS->Norm2(&Norm2);
       if (verbose_) {
-        cout << PrintMsg_ << "\titer " << i << ", ||x||_2 = ";
-        cout << Norm2 << endl;
+        std::cout << PrintMsg_ << "\titer " << i << ", ||x||_2 = ";
+        std::cout << Norm2 << std::endl;
       }
     }
 
@@ -158,7 +158,7 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
       double* z_coord = List_.get("viz: z-coordinates", (double*)0);
       assert (x_coord != 0);
 
-      vector<double> plot_me(NumMyRows()/NumPDEEqns_);
+      std::vector<double> plot_me(NumMyRows()/NumPDEEqns_);
       ML_Aggregate_Viz_Stats info;
       info.Amatrix = &(ml_->Amat[LevelID_[0]]);
       info.x = x_coord;
@@ -176,7 +176,7 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
         char FileName[80];
         sprintf(FileName,"nullspace-mode%d-eq%d.xyz", istep, ieqn);
         if (verbose_)
-          cout << PrintMsg_ << "writing file " << FileName << "..." << endl;
+          std::cout << PrintMsg_ << "writing file " << FileName << "..." << std::endl;
         ML_Aggregate_VisualizeXYZ(info,FileName,
                                   ml_->comm,&plot_me[0]);
       }
@@ -237,10 +237,10 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
       AnasaziList.set("eigen-analysis: output", 10);
 
       // data to hold real and imag for eigenvalues and eigenvectors
-      vector<double> RealEigenvalues(BlockSize);
-      vector<double> ImagEigenvalues(BlockSize);
+      std::vector<double> RealEigenvalues(BlockSize);
+      std::vector<double> ImagEigenvalues(BlockSize);
 
-      vector<double> RealEigenvectors(BlockSize * NumMyRows());
+      std::vector<double> RealEigenvectors(BlockSize * NumMyRows());
 
       // this is the starting value -- random
       Epetra_MultiVector EigenVectors(OperatorDomainMap(),BlockSize);
@@ -255,9 +255,9 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
                             &NumRealEigenvectors, &NumImagEigenvectors, ml_);
 #else
       if( Comm().MyPID() == 0 ) {
-        cerr << ErrorMsg_ << "ML has been configure without the Anasazi interface" << endl
-          << ErrorMsg_ << "You must add the option --enable-anasazi to use" << endl
-          << ErrorMsg_ << "filtering and Anasazi" << endl;
+        std::cerr << ErrorMsg_ << "ML has been configure without the Anasazi interface" << std::endl
+          << ErrorMsg_ << "You must add the option --enable-anasazi to use" << std::endl
+          << ErrorMsg_ << "filtering and Anasazi" << std::endl;
       }
       ML_EXIT(EXIT_FAILURE);
 #endif
@@ -265,14 +265,14 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
       assert (NumRealEigenvectors != 0);
 
       if (verbose_) {
-        cout << PrintMsg_ << "\t- Computed eigenvalues of I - ML^{-1}A:" << endl;
+        std::cout << PrintMsg_ << "\t- Computed eigenvalues of I - ML^{-1}A:" << std::endl;
         for (int i = 0 ; i < BlockSize ; ++i) {
-          cout << PrintMsg_ << "\t  z = " << std::setw(10) << RealEigenvalues[i]
+          std::cout << PrintMsg_ << "\t  z = " << std::setw(10) << RealEigenvalues[i]
             << " + i(" << std::setw(10) << ImagEigenvalues[i] << " ),  |z| = "
-            << sqrt(RealEigenvalues[i]*RealEigenvalues[i] + ImagEigenvalues[i]*ImagEigenvalues[i]) << endl;
+            << std::sqrt(RealEigenvalues[i]*RealEigenvalues[i] + ImagEigenvalues[i]*ImagEigenvalues[i]) << std::endl;
         }
-        cout << PrintMsg_ << "\t- Using " << NumRealEigenvectors << " real and "
-          << NumImagEigenvectors << " imaginary eigenvector(s)" << endl;
+        std::cout << PrintMsg_ << "\t- Using " << NumRealEigenvectors << " real and "
+          << NumImagEigenvectors << " imaginary eigenvector(s)" << std::endl;
       }
 
       // FIXME: this is not very efficient...
@@ -282,9 +282,9 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
       }
     }
     else {
-      cerr << ErrorMsg_ << "`adaptive: type' has an incorrect value" << endl;
-      cerr << ErrorMsg_ << "(" << AdaptType << "). It should be:" << endl;
-      cerr << ErrorMsg_ << "<relaxation> / <Anasazi>" << endl;
+      std::cerr << ErrorMsg_ << "`adaptive: type' has an incorrect value" << std::endl;
+      std::cerr << ErrorMsg_ << "(" << AdaptType << "). It should be:" << std::endl;
+      std::cerr << ErrorMsg_ << "<relaxation> / <Anasazi>" << std::endl;
       ML_EXIT(-1);
     }
 #endif

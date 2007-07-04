@@ -106,7 +106,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   
   /*! \brief This method performs block Gmres iterations until the status
    * test indicates the need to stop or an error occurs (in which case, an
-   * exception is thrown).
+   * std::exception is thrown).
    *
    * iterate() will first determine whether the solver is inintialized; if
    * not, it will call initialize() using default arguments. After
@@ -189,13 +189,13 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
   void resetNumIters() { iter_ = 0; }
 
   //! Get the norms of the residuals native to the solver.
-  //! \return A vector of length blockSize containing the native residuals.
+  //! \return A std::vector of length blockSize containing the native residuals.
   Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
 
   //! Get the current update to the linear system.
   /*! \note Some solvers, like GMRES, do not compute updates to the solution every iteration.
             This method forces its computation.  Other solvers, like CG, update the solution
-            each iteration, so this method will return a zero vector indicating that the linear
+            each iteration, so this method will return a zero std::vector indicating that the linear
             problem contains the current solution.
   */
   Teuchos::RCP<MV> getCurrentUpdate() const;
@@ -499,12 +499,12 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the native residuals stored in this iteration.  
-  // Note:  No residual vector will be returned by Gmres.
+  // Note:  No residual std::vector will be returned by Gmres.
   template <class ScalarType, class MV, class OP>
   Teuchos::RCP<const MV> BlockGmresIter<ScalarType,MV,OP>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const 
   {
     //
-    // NOTE: Make sure the incoming vector is the correct size!
+    // NOTE: Make sure the incoming std::vector is the correct size!
     //
     if ( norms && (int)norms->size() < blockSize_ )                         
       norms->resize( blockSize_ );                                          
@@ -560,9 +560,9 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       if (newstate.V != V_) {
         // only copy over the first block and print a warning.
         if (curDim_ == 0 && lclDim > blockSize_) {
-	  om_->stream(Warnings) << "Belos::BlockGmresIter::initialize(): the solver was initialized with a kernel of " << lclDim << endl
-				<< "The block size however is only " << blockSize_ << endl
-				<< "The last " << lclDim - blockSize_ << " vectors will be discarded." << endl;
+	  om_->stream(Warnings) << "Belos::BlockGmresIter::initialize(): the solver was initialized with a kernel of " << lclDim << std::endl
+				<< "The block size however is only " << blockSize_ << std::endl
+				<< "The last " << lclDim - blockSize_ << " vectors will be discarded." << std::endl;
 	}
         std::vector<int> nevind(curDim_+blockSize_);
         for (int i=0; i<curDim_+blockSize_; i++) nevind[i] = i;
@@ -650,7 +650,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       for (int i=0; i<blockSize_; i++) { curind[i] = curDim_ + i; }
       Teuchos::RCP<MV> Vprev = MVT::CloneView(*V_,curind);
 
-      // Compute the next vector in the Krylov basis:  Vnext = Op*Vprev
+      // Compute the next std::vector in the Krylov basis:  Vnext = Op*Vprev
       lp_->apply(*Vprev,*Vnext);
       Vprev = Teuchos::null;
       
@@ -793,7 +793,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 	if (sigma == zero) {
 	  beta[curDim + j] = zero;
 	} else {
-	  mu = sqrt((*R_)(curDim+j,curDim+j)*(*R_)(curDim+j,curDim+j)+sigma);
+	  mu = std::sqrt((*R_)(curDim+j,curDim+j)*(*R_)(curDim+j,curDim+j)+sigma);
 	  if ( Teuchos::ScalarTraits<ScalarType>::real((*R_)(curDim+j,curDim+j)) 
 	       < Teuchos::ScalarTraits<MagnitudeType>::zero() ) {
 	    vscale = (*R_)(curDim+j,curDim+j) - mu;

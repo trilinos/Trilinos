@@ -181,7 +181,7 @@ void InterpolationBuffer<Scalar>::initialize(
 template<class Scalar>
 void InterpolationBuffer<Scalar>::SetStorage( int storage_ )
 {
-  storage_limit = max(2,storage_); // Minimum of two points so interpolation is possible
+  storage_limit = std::max(2,storage_); // Minimum of two points so interpolation is possible
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IB::SetStorage");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) ) {
@@ -616,10 +616,10 @@ void InterpolationBuffer<Scalar>::setParameterList(Teuchos::RCP<Teuchos::Paramet
 {
   parameterList = paramList;
   int outputLevel = parameterList->get( "outputLevel", int(-1) );
-  outputLevel = min(max(outputLevel,-1),4);
+  outputLevel = std::min(std::max(outputLevel,-1),4);
   this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
   int policyLevel = parameterList->get( "InterpolationBufferPolicy", int(1) );
-  policyLevel = min(max(policyLevel,0),1);
+  policyLevel = std::min(std::max(policyLevel,0),1);
   policy = static_cast<IBPolicy>(policyLevel);
 }
 

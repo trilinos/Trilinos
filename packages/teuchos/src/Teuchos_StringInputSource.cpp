@@ -32,7 +32,7 @@
 using namespace Teuchos;
 
 
-StringInputSource::StringInputSource(const string& text)
+StringInputSource::StringInputSource(const std::string& text)
 	: XMLInputSource(), text_(text)
 {;}
 

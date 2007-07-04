@@ -259,22 +259,22 @@ private:
   Scalar hh_;        // Current step-size
   int currentOrder_; // Current order of integration
   int oldOrder_;     // previous order of integration
-  int maxOrder_;     // maximum order = min(5,user option maxord) - see below.
+  int maxOrder_;     // maximum order = std::min(5,user option maxord) - see below.
   int usedOrder_;    // order used in current step (used after currentOrder is updated)
   Scalar alpha_s_;    // $\alpha_s$ fixed-leading coefficient of this BDF method
-  vector<Scalar> alpha_;    // $\alpha_j(n)=h_n/\psi_j(n)$ coefficient used in local error test
+  std::vector<Scalar> alpha_;    // $\alpha_j(n)=h_n/\psi_j(n)$ coefficient used in local error test
   // note:   $h_n$ = current step size, n = current time step
   Scalar alpha_0_;     // $-\sum_{j=1}^k \alpha_j(n)$ coefficient used in local error test
   Scalar cj_ ;        // $-\alpha_s/h_n$ coefficient used in local error test
   Scalar ck_ ;        // local error coefficient gamma[0] = 0; 
   Scalar ck_enorm_;   // ck * enorm
   EStepLETStatus stepLETStatus_; // Local Error Test Status
-  vector<Scalar> gamma_;    // $\gamma_j(n)=\sum_{l=1}^{j-1}1/\psi_l(n)$ coefficient used to
+  std::vector<Scalar> gamma_;    // $\gamma_j(n)=\sum_{l=1}^{j-1}1/\psi_l(n)$ coefficient used to
   // calculate time derivative of history array for predictor 
-  vector<Scalar> beta_;     // coefficients used to evaluate predictor from history array
-  vector<Scalar> psi_;      // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to 
+  std::vector<Scalar> beta_;     // coefficients used to evaluate predictor from history array
+  std::vector<Scalar> psi_;      // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to 
   // compute $\beta_j(n)$
-  vector<Scalar> sigma_;    // $\sigma_j(n) = \frac{h_n^j(j-1)!}{\psi_1(n)*\cdots *\psi_j(n)}$
+  std::vector<Scalar> sigma_;    // $\sigma_j(n) = \frac{h_n^j(j-1)!}{\psi_1(n)*\cdots *\psi_j(n)}$
   int numberOfSteps_;// number of total time integration steps taken
   int  nef_;
   Scalar usedStep_;
@@ -397,7 +397,7 @@ bool ImplicitBDFStepper<Scalar>::ErrWtVecSet(Thyra::VectorBase<Scalar> *w_in, co
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   Thyra::VectorBase<Scalar> &w = *w_in;
-  abs(&w,y);
+  Thyra::abs(&w,y);
   Vt_S(&w,relErrTol_);
   Vp_S(&w,absErrTol_);
   reciprocal(&w,w);
@@ -577,7 +577,7 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
     hh_ = maxTimeStep_;
   }
   
-  // Set Error weight vector once for each step.
+  // Set Error weight std::vector once for each step.
   ErrWtVecSet(&*errWtVec_,*xHistory_[0]);
 
   BDFstatusFlag status;
@@ -643,13 +643,13 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
       ee_->describe(*out,verbLevel);
       *out << "delta_ = " << std::endl;
       delta_->describe(*out,verbLevel);
-      for (int i=0; i<max(2,maxOrder_); ++i) {
+      for (int i=0; i<std::max(2,maxOrder_); ++i) {
         *out << "xHistory_[" << i << "] = " << std::endl;
         xHistory_[i]->describe(*out,verbLevel);
       }
-      *out << "ck_ = " << ck_ << endl;
-      *out << "enorm = " << enorm << endl;
-      *out << "Local Truncation Error Check: (ck*enorm) < 1:  (" << ck_enorm_ << ") <?= 1" << endl;
+      *out << "ck_ = " << ck_ << std::endl;
+      *out << "enorm = " << enorm << std::endl;
+      *out << "Local Truncation Error Check: (ck*enorm) < 1:  (" << ck_enorm_ << ") <?= 1" << std::endl;
     }
 
     // Check LTE here:
@@ -848,7 +848,7 @@ void ImplicitBDFStepper<Scalar>::setParameterList(
   Teuchos::readVerboseObjectSublist(&*parameterList_,this);
 
   maxOrder_ = parameterList_->get("maxOrder",int(5)); // maximum order
-  maxOrder_ = max(1,min(maxOrder_,5)); // 1 <= maxOrder <= 5
+  maxOrder_ = std::max(1,std::min(maxOrder_,5)); // 1 <= maxOrder <= 5
 
   relErrTol_ = parameterList_->get( "relErrTol", Scalar(1.0e-4) );
   absErrTol_ = parameterList_->get( "absErrTol", Scalar(1.0e-6) );
@@ -863,11 +863,11 @@ void ImplicitBDFStepper<Scalar>::setParameterList(
   setDefaultMagicNumbers_(parameterList_->sublist("magicNumbers"));
 
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "maxOrder_ = " << maxOrder_ << endl;
-    *out << "relErrTol  = " << relErrTol_  << endl;
-    *out << "absErrTol  = " << absErrTol_  << endl;
-    *out << "constantStepSize_  = " << constantStepSize_  << endl;
-    *out << "stopTime_  = " << stopTime_  << endl;
+    *out << "maxOrder_ = " << maxOrder_ << std::endl;
+    *out << "relErrTol  = " << relErrTol_  << std::endl;
+    *out << "absErrTol  = " << absErrTol_  << std::endl;
+    *out << "constantStepSize_  = " << constantStepSize_  << std::endl;
+    *out << "stopTime_  = " << stopTime_  << std::endl;
   }
 
 }
@@ -984,7 +984,7 @@ void ImplicitBDFStepper<Scalar>::describe(
     out << "x_dot_base_ = " << std::endl;
     x_dot_base_->describe(out,verbLevel);
     out << "xHistory_ = " << std::endl;
-    for (int i=0 ; i < max(2,maxOrder_) ; ++i) {
+    for (int i=0 ; i < std::max(2,maxOrder_) ; ++i) {
       out << "xHistory_[" << i << "] = " << std::endl;
       xHistory_[i]->describe(out,verbLevel);
     }
@@ -1032,22 +1032,22 @@ void ImplicitBDFStepper<Scalar>::setDefaultMagicNumbers_(
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"setDefaultMagicNumbers_");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "h0_safety_ = " << h0_safety_ << endl;
-    *out << "h0_max_factor_ = " << h0_max_factor_ << endl;
-    *out << "h_phase0_incr_ = " << h_phase0_incr_ << endl;
-    *out << "h_max_inv_ = " << h_max_inv_ << endl;
-    *out << "Tkm1_Tk_safety_ = " << Tkm1_Tk_safety_  << endl;
-    *out << "Tkp1_Tk_safety_ = " << Tkp1_Tk_safety_ << endl;
-    *out << "r_factor_ = " << r_factor_ << endl;
-    *out << "r_safety_ = " << r_safety_ << endl;
-    *out << "r_fudge_ = " << r_fudge_ << endl;
-    *out << "r_min_ = " << r_min_ << endl;
-    *out << "r_max_ = " << r_max_ << endl;
-    *out << "r_hincr_test_ = " << r_hincr_test_ << endl;
-    *out << "r_hincr_ = " << r_hincr_ << endl;
-    *out << "max_LET_fail_ = " << max_LET_fail_ << endl;
-    *out << "minTimeStep_ = " << minTimeStep_ << endl;
-    *out << "maxTimeStep_ = " << maxTimeStep_ << endl;
+    *out << "h0_safety_ = " << h0_safety_ << std::endl;
+    *out << "h0_max_factor_ = " << h0_max_factor_ << std::endl;
+    *out << "h_phase0_incr_ = " << h_phase0_incr_ << std::endl;
+    *out << "h_max_inv_ = " << h_max_inv_ << std::endl;
+    *out << "Tkm1_Tk_safety_ = " << Tkm1_Tk_safety_  << std::endl;
+    *out << "Tkp1_Tk_safety_ = " << Tkp1_Tk_safety_ << std::endl;
+    *out << "r_factor_ = " << r_factor_ << std::endl;
+    *out << "r_safety_ = " << r_safety_ << std::endl;
+    *out << "r_fudge_ = " << r_fudge_ << std::endl;
+    *out << "r_min_ = " << r_min_ << std::endl;
+    *out << "r_max_ = " << r_max_ << std::endl;
+    *out << "r_hincr_test_ = " << r_hincr_test_ << std::endl;
+    *out << "r_hincr_ = " << r_hincr_ << std::endl;
+    *out << "max_LET_fail_ = " << max_LET_fail_ << std::endl;
+    *out << "minTimeStep_ = " << minTimeStep_ << std::endl;
+    *out << "maxTimeStep_ = " << maxTimeStep_ << std::endl;
   }
 
 }
@@ -1181,8 +1181,8 @@ void ImplicitBDFStepper<Scalar>::updateHistory_()
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"updateHistory_");
   if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    for (int i=0;i<max(2,maxOrder_);++i) {
-      *out << "xHistory_[" << i << "] = " << endl;
+    for (int i=0;i<std::max(2,maxOrder_);++i) {
+      *out << "xHistory_[" << i << "] = " << std::endl;
       xHistory_[i]->describe(*out,verbLevel);
     }
   }
@@ -1209,10 +1209,10 @@ void ImplicitBDFStepper<Scalar>::restoreHistory_()
   Teuchos::OSTab ostab(out,1,"restoreHistory_");
   if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     for (int i=0;i<maxOrder_;++i) {
-      *out << "psi_[" << i << "] = " << psi_[i] << endl;
+      *out << "psi_[" << i << "] = " << psi_[i] << std::endl;
     }
     for (int i=0;i<maxOrder_;++i) {
-      *out << "xHistory_[" << i << "] = " << endl;
+      *out << "xHistory_[" << i << "] = " << std::endl;
       xHistory_[i]->describe(*out,verbLevel);
     }
   }
@@ -1235,7 +1235,7 @@ void ImplicitBDFStepper<Scalar>::updateCoeffs_()
   if ((hh_ != usedStep_) || (currentOrder_ != usedOrder_)) {
     nscsco_ = 0;
   }
-  nscsco_ = min(nscsco_+1,usedOrder_+2);
+  nscsco_ = std::min(nscsco_+1,usedOrder_+2);
   if (currentOrder_+1 >= nscsco_) {
     beta_[0] = ST::one();
     alpha_[0] = ST::one();
@@ -1259,23 +1259,23 @@ void ImplicitBDFStepper<Scalar>::updateCoeffs_()
       alpha_0_ = alpha_0_ - alpha_[i];
     }
     cj_ = -alpha_s_/hh_;
-    ck_ = abs(alpha_[currentOrder_]+alpha_s_-alpha_0_);
-    ck_ = max(ck_,alpha_[currentOrder_]);
+    ck_ = std::abs(alpha_[currentOrder_]+alpha_s_-alpha_0_);
+    ck_ = std::max(ck_,alpha_[currentOrder_]);
   }
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"updateCoeffs_");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     for (int i=0;i<=maxOrder_;++i) {
-      *out << "alpha_[" << i << "] = " << alpha_[i] << endl;
-      *out << "beta_[" << i << "] = " << beta_[i] << endl;
-      *out << "sigma_[" << i << "] = " << sigma_[i] << endl;
-      *out << "gamma_[" << i << "] = " << gamma_[i] << endl;
-      *out << "psi_[" << i << "] = " << psi_[i] << endl;
-      *out << "alpha_s_ = " << alpha_s_ << endl;
-      *out << "alpha_0_ = " << alpha_0_ << endl;
-      *out << "cj_ = " << cj_ << endl;
-      *out << "ck_ = " << ck_ << endl;
+      *out << "alpha_[" << i << "] = " << alpha_[i] << std::endl;
+      *out << "beta_[" << i << "] = " << beta_[i] << std::endl;
+      *out << "sigma_[" << i << "] = " << sigma_[i] << std::endl;
+      *out << "gamma_[" << i << "] = " << gamma_[i] << std::endl;
+      *out << "psi_[" << i << "] = " << psi_[i] << std::endl;
+      *out << "alpha_s_ = " << alpha_s_ << std::endl;
+      *out << "alpha_0_ = " << alpha_0_ << std::endl;
+      *out << "cj_ = " << cj_ << std::endl;
+      *out << "ck_ = " << ck_ << std::endl;
     }
   }
 
@@ -1349,35 +1349,35 @@ void ImplicitBDFStepper<Scalar>::initialize_()
   initialPhase_=true;
 
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "currentOrder_ = " << currentOrder_ << endl;
-    *out << "oldOrder_ = " << oldOrder_ << endl;
-    *out << "usedOrder_ = " << usedOrder_ << endl;
-    *out << "alpha_s_ = " << alpha_s_ << endl;
+    *out << "currentOrder_ = " << currentOrder_ << std::endl;
+    *out << "oldOrder_ = " << oldOrder_ << std::endl;
+    *out << "usedOrder_ = " << usedOrder_ << std::endl;
+    *out << "alpha_s_ = " << alpha_s_ << std::endl;
     for (int i=0 ; i<=maxOrder_ ; ++i) {
-      *out << "alpha_[" << i << "] = " << alpha_[i] << endl;
-      *out << "beta_[" << i << "] = " << beta_[i] << endl;
-      *out << "gamma_[" << i << "] = " << gamma_[i] << endl;
-      *out << "psi_[" << i << "] = " << psi_[i] << endl;
-      *out << "sigma_[" << i << "] = " << sigma_[i] << endl;
+      *out << "alpha_[" << i << "] = " << alpha_[i] << std::endl;
+      *out << "beta_[" << i << "] = " << beta_[i] << std::endl;
+      *out << "gamma_[" << i << "] = " << gamma_[i] << std::endl;
+      *out << "psi_[" << i << "] = " << psi_[i] << std::endl;
+      *out << "sigma_[" << i << "] = " << sigma_[i] << std::endl;
     }
-    *out << "alpha_0_ = " << alpha_0_ << endl;
-    *out << "cj_ = " << cj_ << endl;
-    *out << "ck_ = " << ck_ << endl;
-    *out << "numberOfSteps_ = " << numberOfSteps_ << endl;
-    *out << "nef_ = " << nef_ << endl;
-    *out << "usedStep_ = " << usedStep_ << endl;
-    *out << "nscsco_ = " << nscsco_ << endl;
-    *out << "Ek_ = " << Ek_ << endl;
-    *out << "Ekm1_ = " << Ekm1_ << endl;
-    *out << "Ekm2_ = " << Ekm2_ << endl;
-    *out << "Ekp1_ = " << Ekp1_ << endl;
-    *out << "Est_ = " << Est_ << endl;
-    *out << "Tk_ = " << Tk_ << endl;
-    *out << "Tkm1_ = " << Tkm1_ << endl;
-    *out << "Tkm2_ = " << Tkm2_ << endl;
-    *out << "Tkp1_ = " << Tkp1_ << endl;
-    *out << "newOrder_ = " << newOrder_ << endl;
-    *out << "initialPhase_ = " << initialPhase_ << endl;
+    *out << "alpha_0_ = " << alpha_0_ << std::endl;
+    *out << "cj_ = " << cj_ << std::endl;
+    *out << "ck_ = " << ck_ << std::endl;
+    *out << "numberOfSteps_ = " << numberOfSteps_ << std::endl;
+    *out << "nef_ = " << nef_ << std::endl;
+    *out << "usedStep_ = " << usedStep_ << std::endl;
+    *out << "nscsco_ = " << nscsco_ << std::endl;
+    *out << "Ek_ = " << Ek_ << std::endl;
+    *out << "Ekm1_ = " << Ekm1_ << std::endl;
+    *out << "Ekm2_ = " << Ekm2_ << std::endl;
+    *out << "Ekp1_ = " << Ekp1_ << std::endl;
+    *out << "Est_ = " << Est_ << std::endl;
+    *out << "Tk_ = " << Tk_ << std::endl;
+    *out << "Tkm1_ = " << Tkm1_ << std::endl;
+    *out << "Tkm2_ = " << Tkm2_ << std::endl;
+    *out << "Tkp1_ = " << Tkp1_ << std::endl;
+    *out << "newOrder_ = " << newOrder_ << std::endl;
+    *out << "initialPhase_ = " << initialPhase_ << std::endl;
   }
 
   this->getInitialCondition_();
@@ -1408,26 +1408,26 @@ void ImplicitBDFStepper<Scalar>::initialize_()
   if (constantStepSize_) {
     currentTimeStep = hh_;
     //currentTimeStep = 0.1 * time_to_stop;
-    //currentTimeStep = min(hh_, currentTimeStep);
+    //currentTimeStep = std::min(hh_, currentTimeStep);
   } else {
     // compute an initial step-size based on rate of change in the solution initially
     Scalar ypnorm = WRMSNorm(*errWtVec_,*xHistory_[1]);
     if (ypnorm > zero) { // time-dependent DAE
-      currentTimeStep = min(h0_max_factor_*abs(time_to_stop),sqrt(2.0)/(h0_safety_*ypnorm));
+      currentTimeStep = std::min(h0_max_factor_*std::abs(time_to_stop),std::sqrt(2.0)/(h0_safety_*ypnorm));
     } else { // non-time-dependent DAE
-      currentTimeStep = h0_max_factor_*abs(time_to_stop);
+      currentTimeStep = h0_max_factor_*std::abs(time_to_stop);
     }
-    // choose min of user specified value and our value:
+    // choose std::min of user specified value and our value:
     if (hh_ > zero) {
-      currentTimeStep = min(hh_, currentTimeStep);
+      currentTimeStep = std::min(hh_, currentTimeStep);
     }
     // check for maximum step-size:
-    Scalar rh = abs(currentTimeStep)*h_max_inv_; 
+    Scalar rh = std::abs(currentTimeStep)*h_max_inv_; 
     if (rh>1.0) currentTimeStep = currentTimeStep/rh;
   }
   hh_ = currentTimeStep;
   if (doTrace) {
-    *out << "\nhh_ = " << hh_ << endl;
+    *out << "\nhh_ = " << hh_ << std::endl;
   }
   
   // x history
@@ -1474,9 +1474,9 @@ Scalar ImplicitBDFStepper<Scalar>::checkReduceOrder_()
   Teuchos::OSTab ostab(out,1,"checkReduceOrder_");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "sigma_[" << currentOrder_ << "] = " << sigma_[currentOrder_] << std::endl;
-    *out << "ee_ = " << endl;
+    *out << "ee_ = " << std::endl;
     ee_->describe(*out,verbLevel);
-    *out << "errWtVec_ = " << endl;
+    *out << "errWtVec_ = " << std::endl;
     errWtVec_->describe(*out,verbLevel);
   }
 
@@ -1496,18 +1496,18 @@ Scalar ImplicitBDFStepper<Scalar>::checkReduceOrder_()
     Ekm1_ = sigma_[currentOrder_-1]*WRMSNorm(*errWtVec_,*delta_);
     Tkm1_ = currentOrder_*Ekm1_;
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-      *out << "Ekm1_ = " << Ekm1_ << endl;
-      *out << "Tkm1_ = " << Tkm1_ << endl;
+      *out << "Ekm1_ = " << Ekm1_ << std::endl;
+      *out << "Tkm1_ = " << Tkm1_ << std::endl;
     }
     if (currentOrder_>2) {
       Vp_V(&*delta_,*xHistory_[currentOrder_-1]);
       Ekm2_ = sigma_[currentOrder_-2]*WRMSNorm(*errWtVec_,*delta_);
       Tkm2_ = (currentOrder_-1)*Ekm2_;
       if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-        *out << "Ekm2_ = " << Ekm2_ << endl;
-        *out << "Tkm2_ = " << Tkm2_ << endl;
+        *out << "Ekm2_ = " << Ekm2_ << std::endl;
+        *out << "Tkm2_ = " << Tkm2_ << std::endl;
       }
-      if (max(Tkm1_,Tkm2_)<=Tk_) {
+      if (std::max(Tkm1_,Tkm2_)<=Tk_) {
         newOrder_--;
         Est_ = Ekm1_;
       }
@@ -1518,8 +1518,8 @@ Scalar ImplicitBDFStepper<Scalar>::checkReduceOrder_()
     }
   }
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "Est_ = " << Est_ << endl;
-    *out << "newOrder_= " << newOrder_ << endl;
+    *out << "Est_ = " << Est_ << std::endl;
+    *out << "newOrder_= " << newOrder_ << std::endl;
   }
   return(enorm);
 }
@@ -1553,18 +1553,18 @@ BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep_()
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"rejectStep_");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "adjustStep = " << adjustStep << endl;
-    *out << "nef_ = " << nef_ << endl;
+    *out << "adjustStep = " << adjustStep << std::endl;
+    *out << "nef_ = " << nef_ << std::endl;
   }
   if (nef_ >= max_LET_fail_)  {
-    cerr << "Rythmos_Stepper_ImplicitBDF::rejectStep_:  " 
-         << "  Maximum number of local error test failures.  " << endl;
+    std::cerr << "Rythmos_Stepper_ImplicitBDF::rejectStep_:  " 
+         << "  Maximum number of local error test failures.  " << std::endl;
     return(REP_ERR_FAIL);
   }
   initialPhase_ = false;
   if (adjustStep) {
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-      *out << "initialPhase_ = " << initialPhase_ << endl;
+      *out << "initialPhase_ = " << initialPhase_ << std::endl;
     }
     restoreHistory_();
     // restore psi_
@@ -1586,7 +1586,7 @@ BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep_()
       // succeeded). 
       if (nef_ == 1) { // first local error test failure
         rr = r_factor_*pow(r_safety_*Est_+r_fudge_,-1.0/(newOrder_+1.0));
-        rr = max(r_min_,min(r_max_,rr));
+        rr = std::max(r_min_,std::min(r_max_,rr));
         newTimeStep = rr * hh_;
       } else if (nef_ == 2) { // second failure
         rr = r_min_;
@@ -1598,31 +1598,31 @@ BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep_()
       }
     }
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-      *out << "rr = " << rr << endl;
-      *out << "newOrder_ = " << newOrder_ << endl;
+      *out << "rr = " << rr << std::endl;
+      *out << "newOrder_ = " << newOrder_ << std::endl;
     }
     currentOrder_ = newOrder_;
     if (numberOfSteps_ == 0) { // still first step
       psi_[0] = newTimeStep;
       Vt_S(&*xHistory_[1],rr);
       if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-        *out << "numberOfSteps_ == 0:" << endl;
-        *out << "psi_[0] = " << psi_[0] << endl;
+        *out << "numberOfSteps_ == 0:" << std::endl;
+        *out << "psi_[0] = " << psi_[0] << std::endl;
         *out << "xHistory_[1] = " << std::endl;
         xHistory_[1]->describe(*out,verbLevel);
       }
     }
   } else if (!adjustStep) {
-    cerr << "Rythmos_Stepper_ImplicitBDF::rejectStep_:  "
-         << "Warning: Local error test failed with constant step-size." << endl;
+    std::cerr << "Rythmos_Stepper_ImplicitBDF::rejectStep_:  "
+         << "Warning: Local error test failed with constant step-size." << std::endl;
   }
 
   BDFstatusFlag return_status = PREDICT_AGAIN;
 
   // If the step needs to be adjusted:
   if (adjustStep) {
-    newTimeStep = max(newTimeStep, minTimeStep_);
-    newTimeStep = min(newTimeStep, maxTimeStep_);
+    newTimeStep = std::max(newTimeStep, minTimeStep_);
+    newTimeStep = std::min(newTimeStep, maxTimeStep_);
 
     Scalar nextTimePt = time_ + newTimeStep;
 
@@ -1642,7 +1642,7 @@ BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep_()
     return_status = CONTINUE_ANYWAY;
   }
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "hh_ = " << hh_ << endl;
+    *out << "hh_ = " << hh_ << std::endl;
   }
   return(return_status);
 }
@@ -1663,9 +1663,9 @@ void ImplicitBDFStepper<Scalar>::completeStep_()
   Teuchos::OSTab ostab(out,1,"completeStep_");
 
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "numberOfSteps_ = " << numberOfSteps_ << endl;
-    *out << "nef_ = " << nef_ << endl;
-    *out << "time_ = " << time_ << endl;
+    *out << "numberOfSteps_ = " << numberOfSteps_ << std::endl;
+    *out << "nef_ = " << nef_ << std::endl;
+    *out << "time_ = " << time_ << std::endl;
   }
   
   // Only update the time step if we are NOT running constant stepsize.
@@ -1679,20 +1679,20 @@ void ImplicitBDFStepper<Scalar>::completeStep_()
   usedOrder_ = currentOrder_;
   usedStep_ = hh_;
   if ((newOrder_ == currentOrder_-1) || (currentOrder_ == maxOrder_)) {
-    // If we reduced our order or reached max order then move to the next phase
+    // If we reduced our order or reached std::max order then move to the next phase
     // of integration where we don't automatically double the step-size and
     // increase the order.
     initialPhase_ = false;
   }
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "initialPhase_ = " << initialPhase_ << endl;
+    *out << "initialPhase_ = " << initialPhase_ << std::endl;
   }
   if (initialPhase_) {
     currentOrder_++;
     newTimeStep = h_phase0_incr_ * hh_;
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-      *out << "currentOrder_ = " << currentOrder_ << endl;
-      *out << "newTimeStep = " << newTimeStep << endl;
+      *out << "currentOrder_ = " << currentOrder_ << std::endl;
+      *out << "newTimeStep = " << newTimeStep << std::endl;
     }
   } else { // not in the initial phase of integration
     BDFactionFlag action = ACTION_UNSET;
@@ -1709,10 +1709,10 @@ void ImplicitBDFStepper<Scalar>::completeStep_()
       Tkp1_ = WRMSNorm(*errWtVec_,*delta_);
       Ekp1_ = Tkp1_/(currentOrder_+2);
       if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-        *out << "delta_ = " << endl;
+        *out << "delta_ = " << std::endl;
         delta_->describe(*out,verbLevel);
-        *out << "Tkp1_ = ||delta_||_WRMS = " << Tkp1_ << endl;
-        *out << "Ekp1_ = " << Ekp1_ << endl;
+        *out << "Tkp1_ = ||delta_||_WRMS = " << Tkp1_ << std::endl;
+        *out << "Ekp1_ = " << Ekp1_ << std::endl;
       }
       if (currentOrder_ == 1) {
         if (Tkp1_ >= Tkp1_Tk_safety_ * Tk_) {
@@ -1721,7 +1721,7 @@ void ImplicitBDFStepper<Scalar>::completeStep_()
           action = ACTION_RAISE;
         }
       } else {
-        if (Tkm1_ <= min(Tk_,Tkp1_)) {
+        if (Tkm1_ <= std::min(Tk_,Tkp1_)) {
           action = ACTION_LOWER;
         } else if (Tkp1_ >= Tk_) {
           action = ACTION_MAINTAIN;
@@ -1743,14 +1743,14 @@ void ImplicitBDFStepper<Scalar>::completeStep_()
       rr = r_hincr_;
       newTimeStep = rr*hh_;
     } else if (rr <= 1) {
-      rr = max(r_min_,min(r_max_,rr));
+      rr = std::max(r_min_,std::min(r_max_,rr));
       newTimeStep = rr*hh_;
     }
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-      *out << "Est_ = " << Est_ << endl;
-      *out << "currentOrder_ = " << currentOrder_ << endl;
-      *out << "rr  = " << rr << endl;
-      *out << "newTimeStep = " << newTimeStep << endl;
+      *out << "Est_ = " << Est_ << std::endl;
+      *out << "currentOrder_ = " << currentOrder_ << std::endl;
+      *out << "rr  = " << rr << std::endl;
+      *out << "newTimeStep = " << newTimeStep << std::endl;
     }
   }
   // 03/22/04 tscoffe:  Note that updating the history has nothing to do with
@@ -1765,8 +1765,8 @@ void ImplicitBDFStepper<Scalar>::completeStep_()
   if (time_ < stopTime_) {
     // If the step needs to be adjusted:
     if (adjustStep) {
-      newTimeStep = max(newTimeStep, minTimeStep_);
-      newTimeStep = min(newTimeStep, maxTimeStep_);
+      newTimeStep = std::max(newTimeStep, minTimeStep_);
+      newTimeStep = std::min(newTimeStep, maxTimeStep_);
 
       Scalar nextTimePt = time_ + newTimeStep;
 
@@ -1786,7 +1786,7 @@ void ImplicitBDFStepper<Scalar>::completeStep_()
     }
   }
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-    *out << "hh_ = " << hh_ << endl;
+    *out << "hh_ = " << hh_ << std::endl;
   }
 }
 

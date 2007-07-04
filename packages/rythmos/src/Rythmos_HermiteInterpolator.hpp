@@ -289,7 +289,7 @@ void HermiteInterpolator<Scalar>::setParameterList(Teuchos::RCP<Teuchos::Paramet
 {
   parameterList = paramList;
   int outputLevel = parameterList->get( "outputLevel", int(-1) );
-  outputLevel = min(max(outputLevel,-1),4);
+  outputLevel = std::min(std::max(outputLevel,-1),4);
   this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
 }
 

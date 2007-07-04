@@ -85,7 +85,7 @@ class Iteration {
   //@{ 
   
   /*! \brief This method performs linear solver iterations until the status test
-    indicates the need to stop or an error occurs (in which case, an exception is thrown).
+    indicates the need to stop or an error occurs (in which case, an std::exception is thrown).
   */
   virtual void iterate() = 0;
 

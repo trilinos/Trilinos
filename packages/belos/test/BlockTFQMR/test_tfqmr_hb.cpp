@@ -131,12 +131,12 @@ int main(int argc, char *argv[]) {
   // **********Print out information about problem*******************
   //
   if (proc_verbose) {
-    cout << endl << endl;
-    cout << "Dimension of matrix: " << NumGlobalElements << endl;
-    cout << "Number of right-hand sides: " << numrhs << endl;
-    cout << "Max number of TFQMR iterations: " << numiters << endl; 
-    cout << "Relative residual tolerance: " << tol << endl;
-    cout << endl;
+    std::cout << std::endl << std::endl;
+    std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
+    std::cout << "Number of right-hand sides: " << numrhs << std::endl;
+    std::cout << "Max number of TFQMR iterations: " << numiters << std::endl; 
+    std::cout << "Relative residual tolerance: " << tol << std::endl;
+    std::cout << std::endl;
   }
   //
   // Perform solve
@@ -154,22 +154,22 @@ int main(int argc, char *argv[]) {
   MVT::MvNorm( resid, &actual_resids );
   MVT::MvNorm( *B, &rhs_norm );
   if (proc_verbose) {
-    cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
     for ( int i=0; i<numrhs; i++) {
-      cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
+      std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
     }
   }
 
   if (My_Test.GetStatus()!=Belos::Converged) {
 	if (proc_verbose)
-      		cout << "End Result: TEST FAILED" << endl;	
+      		std::cout << "End Result: TEST FAILED" << std::endl;	
 	return -1;
   }
   //
   // Default return value
   //
   if (proc_verbose)
-    cout << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;
   //
 } // end test_bl_tfqmr_hb.cpp

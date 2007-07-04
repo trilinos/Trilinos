@@ -267,6 +267,8 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
+TRILINOS_MPI_MAX_PROC = 4
+TRILINOS_TEST_CATEGORY = INSTALL
 @HAVE_MPI_FALSE@AMESOS_CHECK_COMM = serial
 @HAVE_MPI_TRUE@AMESOS_CHECK_COMM = mpi
 all: all-recursive
@@ -753,7 +755,7 @@ runtests-serial :
   --trilinos-dir=$(TRILINOS_HOME_DIR) \
   --comm=serial \
   --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=INSTALL \
+  --category=$(TRILINOS_TEST_CATEGORY) \
   --output-dir=@abs_top_builddir@/test/runtests-results \
   --verbosity=1 \
   --packages=amesos

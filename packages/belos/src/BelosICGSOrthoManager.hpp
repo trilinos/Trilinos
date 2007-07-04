@@ -65,7 +65,7 @@ namespace Belos {
     //! @name Constructor/Destructor
     //@{ 
     //! Constructor specifying re-orthogonalization tolerance.
-    ICGSOrthoManager( const string& label = "Belos",
+    ICGSOrthoManager( const std::string& label = "Belos",
                       Teuchos::RCP<const OP> Op = Teuchos::null,
 		      const int max_ortho_steps = 2,
 		      const MagnitudeType blk_tol = 10*MGT::squareroot( MGT::eps() ),
@@ -76,16 +76,16 @@ namespace Belos {
 	sing_tol_( sing_tol ),
         label_( label )
     {
-        string orthoLabel = label_ + ": Orthogonalization";
+        std::string orthoLabel = label_ + ": Orthogonalization";
         timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
 
-        string updateLabel = label_ + ": Ortho (Update)";
+        std::string updateLabel = label_ + ": Ortho (Update)";
         timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
 
-        string normLabel = label_ + ": Ortho (Norm)";
+        std::string normLabel = label_ + ": Ortho (Norm)";
         timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
 
-        string ipLabel = label_ + ": Ortho (Inner Product)";
+        std::string ipLabel = label_ + ": Ortho (Inner Product)";
         timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel); 
     };
 
@@ -136,7 +136,7 @@ namespace Belos {
      @param C [out] The coefficients of \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
        and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
        routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
-       \c X and \c *Q[i], then a std::invalid_argument exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
+       \c X and \c *Q[i], then a std::invalid_argument std::exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
        pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
 
      @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
@@ -213,7 +213,7 @@ namespace Belos {
      @param C [out] The coefficients of the original \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
        and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
        routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
-       \c X and \c *Q[i], then a std::invalid_argument exception will be thrown. Otherwise, if <tt>C.size() < i<\tt> or <tt>C[i]</tt> is a null
+       \c X and \c *Q[i], then a std::invalid_argument std::exception will be thrown. Otherwise, if <tt>C.size() < i<\tt> or <tt>C[i]</tt> is a null
        pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
 
      @param B [out] The coefficients of the original \c X with respect to the computed basis. The first rows in \c B
@@ -280,11 +280,11 @@ namespace Belos {
 
     /*! \brief This method sets the label used by the timers in the orthogonalization manager.
      */
-    void setLabel(const string& label);
+    void setLabel(const std::string& label);
 
     /*! \brief This method returns the label being used by the timers in the orthogonalization manager.
      */
-    const string& getLabel() const { return label_; }
+    const std::string& getLabel() const { return label_; }
 
     //@}
 
@@ -296,7 +296,7 @@ namespace Belos {
     MagnitudeType sing_tol_;
 
     //! Timers and timer label
-    string label_;
+    std::string label_;
     Teuchos::RCP<Teuchos::Time> timerOrtho_, timerUpdate_, 
                                         timerNorm_, timerScale_, timerInnerProd_;
   
@@ -324,20 +324,20 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the label for this orthogonalization manager and create new timers if it's changed
   template<class ScalarType, class MV, class OP>
-  void ICGSOrthoManager<ScalarType,MV,OP>::setLabel(const string& label)
+  void ICGSOrthoManager<ScalarType,MV,OP>::setLabel(const std::string& label)
   { 	
     if (label != label_) {
       label_ = label;
-      string orthoLabel = label_ + ": Orthogonalization";
+      std::string orthoLabel = label_ + ": Orthogonalization";
       timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
 
-      string updateLabel = label_ + ": Ortho (Update)";
+      std::string updateLabel = label_ + ": Ortho (Update)";
       timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
 
-      string normLabel = label_ + ": Ortho (Norm)";
+      std::string normLabel = label_ + ": Ortho (Norm)";
       timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
 
-      string ipLabel = label_ + ": Ortho (Inner Product)";
+      std::string ipLabel = label_ + ": Ortho (Inner Product)";
       timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel);
     }
   } 
@@ -445,7 +445,7 @@ namespace Belos {
     if (xc == 1) {
 
       // Use the cheaper block orthogonalization.
-      // NOTE: Don't check for dependencies because the update has one vector.
+      // NOTE: Don't check for dependencies because the update has one std::vector.
       dep_flg = blkOrtho1( X, MX, C, Q );
 
       // Normalize the new block X
@@ -472,7 +472,7 @@ namespace Belos {
       dep_flg = blkOrtho( X, MX, C, Q );
 
       // If a dependency has been detected in this block, then perform
-      // the more expensive single-vector orthogonalization.
+      // the more expensive single-std::vector orthogonalization.
       if (dep_flg) {
         rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
 
@@ -487,7 +487,7 @@ namespace Belos {
         rank = findBasis( X, MX, B, false );
         if (rank < xc) {
 	  // A dependency was found during orthonormalization of X,
-	  // rerun orthogonalization using more expensive single-vector orthogonalization.
+	  // rerun orthogonalization using more expensive single-std::vector orthogonalization.
 	  rank = blkOrthoSing( *tmpX, tmpMX, C, B, Q );
 
 	  // Copy tmpX back into X.
@@ -499,7 +499,7 @@ namespace Belos {
       }
     } // if (xc == 1) {
 
-    // this should not raise an exception; but our post-conditions oblige us to check
+    // this should not raise an std::exception; but our post-conditions oblige us to check
     TEST_FOR_EXCEPTION( rank > xc || rank < 0, std::logic_error, 
                         "Belos::ICGSOrthoManager::projectAndNormalize(): Debug error in rank variable." );
 
@@ -540,7 +540,7 @@ namespace Belos {
     //
     // X  : Vectors to be transformed
     //
-    // MX : Image of the block vector X by the mass matrix
+    // MX : Image of the block std::vector X by the mass matrix
     //
     // Q  : Bases to orthogonalize against. These are assumed orthonormal, mutually and independently.
     //
@@ -694,13 +694,13 @@ namespace Belos {
       int numX = j;
       bool addVec = false;
 
-      // Get a view of the vector currently being worked on.
+      // Get a view of the std::vector currently being worked on.
       std::vector<int> index(1);
       index[0] = numX;
       Teuchos::RCP<MV> Xj = MVT::CloneView( X, index );
       Teuchos::RCP<MV> MXj;
       if ((this->_hasOp)) {
-        // MXj is a view of the current vector in MX
+        // MXj is a view of the current std::vector in MX
         MXj = MVT::CloneView( *MX, index );
       }
       else {
@@ -726,7 +726,7 @@ namespace Belos {
       Teuchos::SerialDenseMatrix<int,ScalarType> product(numX, 1);
       std::vector<ScalarType> oldDot( 1 ), newDot( 1 );
       //
-      // Save old MXj vector and compute Op-norm
+      // Save old MXj std::vector and compute Op-norm
       //
       Teuchos::RCP<MV> oldMXj = MVT::CloneCopy( *MXj ); 
       MVT::MvDot( *Xj, *MXj, &oldDot );
@@ -774,17 +774,17 @@ namespace Belos {
       // Compute Op-norm with old MXj
       MVT::MvDot( *Xj, *oldMXj, &newDot );
 
-      // Check to see if the new vector is dependent.
+      // Check to see if the new std::vector is dependent.
       if (completeBasis) {
 	//
 	// We need a complete basis, so add random vectors if necessary
 	//
 	if ( SCT::magnitude(newDot[0]) < SCT::magnitude(sing_tol_*oldDot[0]) ) {
 	  
-	  // Add a random vector and orthogonalize it against previous vectors in block.
+	  // Add a random std::vector and orthogonalize it against previous vectors in block.
 	  addVec = true;
 #ifdef ORTHO_DEBUG
-	  cout << "Belos::ICGSOrthoManager::findBasis() --> Random for column " << numX << endl;
+	  std::cout << "Belos::ICGSOrthoManager::findBasis() --> Random for column " << numX << std::endl;
 #endif
 	  //
 	  Teuchos::RCP<MV> tempXj = MVT::Clone( X, 1 );
@@ -817,7 +817,7 @@ namespace Belos {
 	  MVT::MvDot( *tempXj, *tempMXj, &newDot );
 	  //
 	  if ( SCT::magnitude(newDot[0]) >= SCT::magnitude(oldDot[0]*sing_tol_) ) {
-	    // Copy vector into current column of _basisvecs
+	    // Copy std::vector into current column of _basisvecs
 	    MVT::MvAddMv( ONE, *tempXj, ZERO, *tempXj, *Xj );
 	    if (this->_hasOp) {
 	      MVT::MvAddMv( ONE, *tempMXj, ZERO, *tempMXj, *MXj );
@@ -837,9 +837,9 @@ namespace Belos {
 	}
       }
       
-      // If we haven't left this method yet, then we can normalize the new vector Xj.
+      // If we haven't left this method yet, then we can normalize the new std::vector Xj.
       // Normalize Xj.
-      // Xj <- Xj / sqrt(newDot)
+      // Xj <- Xj / std::sqrt(newDot)
       ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
       {
         MVT::MvAddMv( ONE/diag, *Xj, ZERO, *Xj, *Xj );
@@ -849,7 +849,7 @@ namespace Belos {
         }
       }
 
-      // If we've added a random vector, enter a zero in the j'th diagonal element.
+      // If we've added a random std::vector, enter a zero in the j'th diagonal element.
       if (addVec) {
 	(*B)(j,j) = ZERO;
       }
@@ -857,7 +857,7 @@ namespace Belos {
 	(*B)(j,j) = diag;
       }
 
-      // Save the coefficients, if we are working on the original vector and not a randomly generated one
+      // Save the coefficients, if we are working on the original std::vector and not a randomly generated one
       if (!addVec) {
 	for (int i=0; i<numX; i++) {
 	  (*B)(i,j) = product(i,0);
@@ -1048,7 +1048,7 @@ namespace Belos {
   }
   
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Routine to compute the block orthogonalization using single-vector orthogonalization
+  // Routine to compute the block orthogonalization using single-std::vector orthogonalization
   template<class ScalarType, class MV, class OP>
   int
   ICGSOrthoManager<ScalarType, MV, OP>::blkOrthoSing ( MV &X, Teuchos::RCP<MV> MX, 
@@ -1074,7 +1074,7 @@ namespace Belos {
     Teuchos::RCP<MV> Xj, MXj;
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > lastC;
 
-    // Perform the Gram-Schmidt transformation for each vector in the block of vectors.
+    // Perform the Gram-Schmidt transformation for each std::vector in the block of vectors.
     for (int j=0; j<xc; j++) {
       
       bool dep_flg = false;
@@ -1093,7 +1093,7 @@ namespace Belos {
 	qcs.push_back( MVT::GetNumberVecs( *lastQ ) );
       }
       
-      // Get a view of the current vector in X to orthogonalize.
+      // Get a view of the current std::vector in X to orthogonalize.
       indX[0] = j;
       Xj = MVT::CloneView( X, indX );
       if (this->_hasOp) {
@@ -1164,7 +1164,7 @@ namespace Belos {
 	dep_flg = true;
       }
       
-      // Normalize the new vector if it's not dependent
+      // Normalize the new std::vector if it's not dependent
       if (!dep_flg) {
 	ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
 	
@@ -1178,7 +1178,7 @@ namespace Belos {
 	(*B)(j,j) = diag;
       }
       else {
-	// Create a random vector and orthogonalize it against all previous columns of Q.
+	// Create a random std::vector and orthogonalize it against all previous columns of Q.
 	Teuchos::RCP<MV> tempXj = MVT::Clone( X, 1 );
 	Teuchos::RCP<MV> tempMXj;
 	MVT::MvRandom( *tempXj );
@@ -1218,14 +1218,14 @@ namespace Belos {
 	// Compute the Op-norms after the correction step.
 	MVT::MvDot( *tempXj, *tempMXj, &newDot );
 	
-	// Copy vector into current column of Xj
+	// Copy std::vector into current column of Xj
 	if ( SCT::magnitude(newDot[0]) >= SCT::magnitude(oldDot[0]*sing_tol_) ) {
 	  ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
 	  
 	  // Enter value on diagonal of B.
 	  (*B)(j,j) = ZERO;
 
-	  // Copy vector into current column of _basisvecs
+	  // Copy std::vector into current column of _basisvecs
 	  MVT::MvAddMv( ONE/diag, *tempXj, ZERO, *tempXj, *Xj );
 	  if (this->_hasOp) {
 	    MVT::MvAddMv( ONE/diag, *tempMXj, ZERO, *tempMXj, *MXj );

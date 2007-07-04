@@ -98,8 +98,8 @@ namespace Teuchos
       //! Set the density at which to do a rehash
       inline void setRehashDensity(double rehashDensity);
 
-      //! Write to a string
-      inline string toString() const ;
+      //! Write to a std::string
+      inline std::string toString() const ;
 
     private:
 
@@ -120,13 +120,13 @@ namespace Teuchos
     };
 
   template<class Key, class Value>
-  string toString(const Hashtable<Key, Value>& h);
+  std::string toString(const Hashtable<Key, Value>& h);
 
   /** \relates Hashtable 
       \brief Write Hashtable to a stream
   */
   template<class Key, class Value>
-  ostream& operator<<(ostream& os, const Hashtable<Key, Value>& h);
+  std::ostream& operator<<(std::ostream& os, const Hashtable<Key, Value>& h);
 
   template<class Key, class Value> inline
     Hashtable<Key, Value>::Hashtable(int capacity, double rehashDensity)
@@ -224,13 +224,13 @@ namespace Teuchos
     }
 
   template<class Key, class Value>  inline
-  string Hashtable<Key, Value>::toString() const 
+  std::string Hashtable<Key, Value>::toString() const 
   {
     Array<Key> keys;
     Array<Value> values;
     arrayify(keys, values);
     
-    string rtn = "[";
+    std::string rtn = "[";
     for (int i=0; i<keys.length(); i++)
       {
         rtn += "{" + Teuchos::toString(keys[i]) + ", " + Teuchos::toString(values[i])
@@ -243,13 +243,13 @@ namespace Teuchos
   }
 
   template<class Key, class Value>  inline
-    string toString(const Hashtable<Key, Value>& h)
+    std::string toString(const Hashtable<Key, Value>& h)
     {
       Array<Key> keys;
       Array<Value> values;
       h.arrayify(keys, values);
 
-      string rtn = "[";
+      std::string rtn = "[";
       for (int i=0; i<keys.length(); i++)
         {
           rtn += "{" + Teuchos::toString(keys[i]) + ", " + Teuchos::toString(values[i])
@@ -265,7 +265,7 @@ namespace Teuchos
     const Value& Hashtable<Key, Value>::get(const Key& key) const
     {
       TEST_FOR_EXCEPTION(!containsKey(key),
-                         runtime_error,
+                         std::runtime_error,
                          "Hashtable<Key, Value>::get: key " 
                          << Teuchos::toString(key) 
                          << " not found in Hashtable"
@@ -292,7 +292,7 @@ namespace Teuchos
     void Hashtable<Key, Value>::remove(const Key& key)
     {
       TEST_FOR_EXCEPTION(!containsKey(key),
-                         runtime_error,
+                         std::runtime_error,
                          "Hashtable<Key, Value>::remove: key " 
                          << Teuchos::toString(key) 
                          << " not found in Hashtable"
@@ -321,7 +321,7 @@ namespace Teuchos
     }
 
   template<class Key, class Value>  inline
-    ostream& operator<<(ostream& os, const Hashtable<Key, Value>& h)
+    std::ostream& operator<<(std::ostream& os, const Hashtable<Key, Value>& h)
     {
       return os << toString(h);
     }

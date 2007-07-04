@@ -49,7 +49,7 @@ namespace Teuchos {
  * array of primitive objects.
  *
  * The idea behind this traits class it that it allows an object of
- * semi-complex structure to be externalized into an array of
+ * semi-std::complex structure to be externalized into an array of
  * primitive data types.
  *
  * This default traits class works just fine for types that are

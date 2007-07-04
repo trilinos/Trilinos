@@ -48,6 +48,7 @@
 
 // Forward declaration
 namespace NOX {
+  using std::string;
   class Utils;
   namespace Parameter {
     class UserNorm;

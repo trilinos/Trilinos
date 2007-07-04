@@ -586,7 +586,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
         try { 
           impConvTest_->defineScaleForm( impResScaleType, Belos::TwoNorm );
         }
-        catch (exception& e) { 
+        catch (std::exception& e) { 
           // Delete the convergence test so it gets constructed again.
 	  impConvTest_ = Teuchos::null;
           convTest_ = Teuchos::null;
@@ -609,7 +609,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
         try { 
           expConvTest_->defineScaleForm( expResScaleType, Belos::TwoNorm );
         }
-        catch (exception& e) {
+        catch (std::exception& e) {
           // Delete the convergence test so it gets constructed again.
 	  expConvTest_ = Teuchos::null;
           convTest_ = Teuchos::null;

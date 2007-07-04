@@ -78,10 +78,10 @@ class MatrixFreePreconditioner : public Epetra_Operator
     //! Sets the use of the transpose of the operator (NOT SUPPORTED).
     int SetUseTranspose(bool UseTranspose);
 
-    //! Applies the operator to a vector (NOT SUPPORTED).
+    //! Applies the operator to a std::vector (NOT SUPPORTED).
     int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-    //! Applies the preconditioner to vector \c X, returns the result in \c Y.
+    //! Applies the preconditioner to std::vector \c X, returns the result in \c Y.
     int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
     //! Returns the infinite norm of the operator (NOT SUPPORTED).
@@ -190,7 +190,7 @@ class MatrixFreePreconditioner : public Epetra_Operator
                 int NullSpaceDim = 1, double* NullSpace = NULL);
 
     //! Probes for the block diagonal of the given operator.
-    int GetBlockDiagonal(const Epetra_CrsGraph& Graph, string DiagonalColoringType);
+    int GetBlockDiagonal(const Epetra_CrsGraph& Graph, std::string DiagonalColoringType);
 
   private:
 
@@ -207,17 +207,17 @@ class MatrixFreePreconditioner : public Epetra_Operator
     int ApplyPostSmoother(Epetra_MultiVector& X, const Epetra_MultiVector& Y,
                           Epetra_MultiVector& tmp) const;
 
-    //! Applies one sweep of Jacobi to vector \c X.
+    //! Applies one sweep of Jacobi to std::vector \c X.
     int ApplyJacobi(Epetra_MultiVector& X, const double omega) const;
 
-    //! Applies one sweep of Jacobi to vector \c X, using \c X as starting solution.
+    //! Applies one sweep of Jacobi to std::vector \c X, using \c X as starting solution.
     int ApplyJacobi(Epetra_MultiVector& X, const Epetra_MultiVector& B,
                     const double omega, Epetra_MultiVector& tmp) const;
 
-    //! Applies one sweep of block Jacobi to vector \c X.
+    //! Applies one sweep of block Jacobi to std::vector \c X.
     int ApplyBlockJacobi(Epetra_MultiVector& X, const double omega) const;
 
-    //! Applies one sweep of block Jacobi to vector \c X, using \c X as starting solution.
+    //! Applies one sweep of block Jacobi to std::vector \c X, using \c X as starting solution.
     int ApplyBlockJacobi(Epetra_MultiVector& X, const Epetra_MultiVector& B,
                     const double omega, Epetra_MultiVector& tmp) const;
 
@@ -232,14 +232,14 @@ class MatrixFreePreconditioner : public Epetra_Operator
       Time_->ResetStartTime();
     }
 
-    inline void AddAndResetStartTime(const string& Label, const int print = false) const
+    inline void AddAndResetStartTime(const std::string& Label, const int print = false) const
     {
       TimeTable[Label] += Time_->ElapsedTime();
       Time_->ResetStartTime();
       if (print)
       {
         if (MyPID() == 0 && ML_Get_PrintLevel() > 5)
-          cout << "Time for " << Label << " = " << TimeTable[Label] << " (s)" << endl;
+          std::cout << "Time for " << Label << " = " << TimeTable[Label] << " (s)" << std::endl;
       }
     }
 
@@ -248,9 +248,9 @@ class MatrixFreePreconditioner : public Epetra_Operator
       if (MyPID() == 0)
       {
         double Total = 0.0;
-        cout << "Cumulative timing so far:" << endl;
-        cout << "- for coarsening = " << TimeTable["coarsening"] << endl;
-        cout << "- total time     = " << Total << endl;
+        std::cout << "Cumulative timing so far:" << std::endl;
+        std::cout << "- for coarsening = " << TimeTable["coarsening"] << std::endl;
+        std::cout << "- total time     = " << Total << std::endl;
       }
     }
 
@@ -282,7 +282,7 @@ class MatrixFreePreconditioner : public Epetra_Operator
     //! Inverse of the point diagonal of the operator.
     Teuchos::RefCountPtr<Epetra_Vector> InvPointDiagonal_;
     //! Inverse of the diagonal of \c Operator_ as provided by the user.
-    vector<double> InvBlockDiag_;
+    std::vector<double> InvBlockDiag_;
 
     //! Presmoother
     Teuchos::RefCountPtr<Ifpack_Chebyshev> PreSmoother_;
@@ -303,7 +303,7 @@ class MatrixFreePreconditioner : public Epetra_Operator
 
     //! Time object.
     mutable Teuchos::RefCountPtr<Epetra_Time> Time_;
-    mutable map<string, double> TimeTable;
+    mutable std::map<std::string, double> TimeTable;
     // @} 
 
 }; // class MatrixFreePreconditioner

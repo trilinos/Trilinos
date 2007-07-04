@@ -123,7 +123,7 @@ bool
 LinearProblem_Scale::
 rvs()
 {
-  if( !scaled_ ) cout << "EpetraExt::LinearProblem_Scale::rvs() : Problem Not Scaled!\n";
+  if( !scaled_ ) std::cout << "EpetraExt::LinearProblem_Scale::rvs() : Problem Not Scaled!\n";
 
   if( iters_ > 0 )
   {

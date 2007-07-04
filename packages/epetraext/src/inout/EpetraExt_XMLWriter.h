@@ -31,7 +31,7 @@ The list of supported objects contains:
 - Epetra_RowMatrix;
 - Teuchos::ParameterList.
 
-All objects can be read and written, with the exception of Epetra_RowMatrix
+All objects can be read and written, with the std::exception of Epetra_RowMatrix
 objects, that can only be written to files.
 
 An example of usage is reported in file epetraext/example/inout/XML_IO.cpp.
@@ -52,7 +52,7 @@ XMLWriter.Write("MyMatrix", Matrix);
 XMLWriter.Write("MyLHS", LHS);
 XMLWriter.Write("MyRHS", RHS);
 \endcode
-A \c Teuchos::ParameterList (List), a \c string, and a \c vector<string> can be written as
+A \c Teuchos::ParameterList (List), a \c std::string, and a \c std::vector<std::string> can be written as
 \code
 XMLWriter.Write("MyParameters", List);
 XMLWriter.Write("Author", "myself and others");
@@ -62,7 +62,7 @@ Finally, we close the file
 \code
 XMLWriter.Close();
 \endcode
-Note that only processor 0 writes the Teuchos::ParameterList, \c string, and \c vector<string>.
+Note that only processor 0 writes the Teuchos::ParameterList, \c std::string, and \c std::vector<std::string>.
 
 The written file is as follows:
 \code
@@ -102,13 +102,13 @@ May 2006
 <Text Label="MyContent">
 This is an example of description
 The description is as long as desired,
-just put it in a vector of strings.
+just put it in a std::vector of strings.
 </Text>
 <List Label="MyParameters">
 <ParameterList>
 <Parameter name="double parameter" type="double" value="10"/>
 <Parameter name="int parameter" type="int" value="10"/>
-<Parameter name="string parameter" type="string" value="string"/>
+<Parameter name="std::string parameter" type="std::string" value="std::string"/>
 </ParameterList>
 </List>
 </ObjectCollection>
@@ -126,13 +126,13 @@ class XMLWriter
   public: 
     // @{ \name Constructor and destructor.
     //! ctor
-    XMLWriter(const Epetra_Comm& Comm, const string& FileName); 
+    XMLWriter(const Epetra_Comm& Comm, const std::string& FileName); 
 
     //! dtor
     ~XMLWriter() {}
 
     //! Creates the file, giving \c Label to the whole object.
-    void Create(const string& Label);
+    void Create(const std::string& Label);
 
     //! Closes the file. No Write operations can follow.
     void Close();
@@ -141,34 +141,34 @@ class XMLWriter
     // @{ \name Read operations
     
     //! Writes an Epetra_Map using label \c Label.
-    void Write(const string& Label, const Epetra_Map& Map);
+    void Write(const std::string& Label, const Epetra_Map& Map);
 
     //! Writes an Epetra_RowMatrix using label \c Label.
-    void Write(const string& Label, const Epetra_RowMatrix& Matrix);
+    void Write(const std::string& Label, const Epetra_RowMatrix& Matrix);
 
     //! Writes an Epetra_MultiVector using label \c Label.
-    void Write(const string& Label, const Epetra_MultiVector& MultiVector);
+    void Write(const std::string& Label, const Epetra_MultiVector& MultiVector);
 
-    //! Writes the vector of string's using label \c Label.
-    void Write(const string& Label, const vector<string>& Content);
+    //! Writes the std::vector of std::string's using label \c Label.
+    void Write(const std::string& Label, const std::vector<std::string>& Content);
 
-    //! Writes input string using label \c Label.
-    void Write(const string& Label, const string& Text)
+    //! Writes input std::string using label \c Label.
+    void Write(const std::string& Label, const std::string& Text)
     {
-      vector<string> Content;
+      std::vector<std::string> Content;
       Content.push_back(Text);
       Write(Label, Content);
     }
 
     //! Writes a Teuchos::ParameterList using label \c Label.
-    void Write(const string& Label, Teuchos::ParameterList& List);
+    void Write(const std::string& Label, Teuchos::ParameterList& List);
 
     // @}
   private:
     //! Epetra communicator.
     const Epetra_Comm& Comm_;
     //! Name of the file.
-    string FileName_;
+    std::string FileName_;
     //! If \c true, the file has been successfully opened.
     bool IsOpen_;
 };

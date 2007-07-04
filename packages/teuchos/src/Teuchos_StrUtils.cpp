@@ -33,10 +33,10 @@
 using namespace Teuchos;
 
 
-Array<string> StrUtils::readFile(istream& is, char comment)
+Array<std::string> StrUtils::readFile(std::istream& is, char comment)
 {
-  string line;
-  Array<string> rtn(0);
+  std::string line;
+  Array<std::string> rtn(0);
 
   while (readLine(is, line))
     {
@@ -47,10 +47,10 @@ Array<string> StrUtils::readFile(istream& is, char comment)
   return rtn;
 }
 
-Array<string> StrUtils::splitIntoLines(const string& input)
+Array<std::string> StrUtils::splitIntoLines(const std::string& input)
 {
   int begin = 0;
-  Array<string> rtn;
+  Array<std::string> rtn;
   const unsigned int len = input.length();
   for (unsigned int p=0; p<len; ++p) {
     const bool isEnd = p==len-1;
@@ -66,18 +66,18 @@ Array<string> StrUtils::splitIntoLines(const string& input)
   return rtn;
 }
 
-Array<Array<string> > StrUtils::tokenizeFile(istream& is, char comment)
+Array<Array<std::string> > StrUtils::tokenizeFile(std::istream& is, char comment)
 {
-  string line;
-  Array<Array<string> > rtn(0);
-  Array<string> lines = readFile(is, comment);
+  std::string line;
+  Array<Array<std::string> > rtn(0);
+  Array<std::string> lines = readFile(is, comment);
   rtn.reserve(lines.length());
 	
   int count = 0;
   for (int i=0; i<lines.length(); i++)
     {
       if (lines[i].length() == 0) continue;
-      Array<string> tokens = stringTokenizer(lines[i]);
+      Array<std::string> tokens = stringTokenizer(lines[i]);
       if (tokens.length() == 0) continue;
       rtn.append(tokens);
       count++;
@@ -86,7 +86,7 @@ Array<Array<string> > StrUtils::tokenizeFile(istream& is, char comment)
   return rtn;
 }
 
-bool StrUtils::readLine(istream& is, string& line)
+bool StrUtils::readLine(std::istream& is, std::string& line)
 {
   char c[500];
   if (line.length() > 0) line[0] = '\0';
@@ -94,7 +94,7 @@ bool StrUtils::readLine(istream& is, string& line)
   if (is.eof()) return false;
   if (is.getline(c, 499))
     {
-      line = string(c);
+      line = std::string(c);
     }
 	
   return true;
@@ -102,8 +102,8 @@ bool StrUtils::readLine(istream& is, string& line)
 
 	
 
-Array<string> StrUtils::getTokensPlusWhitespace(const string& str){
-  Array<string> rtn(0);
+Array<std::string> StrUtils::getTokensPlusWhitespace(const std::string& str){
+  Array<std::string> rtn(0);
   unsigned int start = 0;
 	
   while(start < str.length())
@@ -118,15 +118,15 @@ Array<string> StrUtils::getTokensPlusWhitespace(const string& str){
 			/* add the next word */
       int stop = findNextWhitespace(str, start);
       if (start-stop == 0) return rtn;
-      string sub = subString(str, start, stop);
+      std::string sub = subString(str, start, stop);
       rtn.append(sub);
 			start = stop;// findNextNonWhitespace(str, stop);
     }
   return rtn;
 }
 
-Array<string> StrUtils::stringTokenizer(const string& str){
-  Array<string> rtn(0);
+Array<std::string> StrUtils::stringTokenizer(const std::string& str){
+  Array<std::string> rtn(0);
   unsigned int start = 0;
 	
   while(start < str.length())
@@ -134,16 +134,16 @@ Array<string> StrUtils::stringTokenizer(const string& str){
       start =  findNextNonWhitespace(str, start);
       int stop = findNextWhitespace(str, start);
       if (start-stop == 0) return rtn;
-      string sub = subString(str, start, stop);
+      std::string sub = subString(str, start, stop);
       rtn.append(sub);
       start =  findNextNonWhitespace(str, stop);
     }
   return rtn;
 }
 
-string StrUtils::reassembleFromTokens(const Array<string>& tokens, int iStart)
+std::string StrUtils::reassembleFromTokens(const Array<std::string>& tokens, int iStart)
 {
-  string rtn;
+  std::string rtn;
 
   for (int i=iStart; i<tokens.length(); i++) 
     {
@@ -153,7 +153,7 @@ string StrUtils::reassembleFromTokens(const Array<string>& tokens, int iStart)
   return rtn;
 }
 
-void StrUtils::splitList(const string& big, Array<string>& list) 
+void StrUtils::splitList(const std::string& big, Array<std::string>& list) 
 {
   if (subString(big, 0,1)!="[") 
     {
@@ -164,7 +164,7 @@ void StrUtils::splitList(const string& big, Array<string>& list)
 	
   int parenDepth = 0;
   int localCount = 0;
-  string tmp(big);
+  std::string tmp(big);
   list.resize(0);
 
   // start at 1 to ignore '[';
@@ -193,10 +193,10 @@ void StrUtils::splitList(const string& big, Array<string>& list)
 }
 							
 
-// return the position of the next whitespace in a string. 
+// return the position of the next whitespace in a std::string. 
 // If no whitespace, return -1;
 
-int StrUtils::findNextWhitespace(const string& str, int offset)
+int StrUtils::findNextWhitespace(const std::string& str, int offset)
 {
   for (unsigned int i=0; i<(str.length()-offset); i++)
     {
@@ -208,7 +208,7 @@ int StrUtils::findNextWhitespace(const string& str, int offset)
   return str.length();
 }
 
-int StrUtils::findNextNonWhitespace(const string& str, int offset)
+int StrUtils::findNextNonWhitespace(const std::string& str, int offset)
 {
   for (unsigned int i=0; i<(str.length()-offset); i++)
     {
@@ -221,15 +221,15 @@ int StrUtils::findNextNonWhitespace(const string& str, int offset)
 }
 
 
-string StrUtils::varTableSubstitute(const string& rawLine,
-				    const Array<string>& varNames,
-				    const Array<string>& varValues)
+std::string StrUtils::varTableSubstitute(const std::string& rawLine,
+				    const Array<std::string>& varNames,
+				    const Array<std::string>& varValues)
 {
   TEST_FOR_EXCEPTION(varNames.length() != varValues.length(),
-                     runtime_error,
+                     std::runtime_error,
                      "mismatched variable tables in varTableSubstitute");
                      
-  string line = rawLine;
+  std::string line = rawLine;
   for (int i=0; i<varNames.length(); i++)
     {
       line = varSubstitute(line, varNames[i], varValues[i]);
@@ -240,24 +240,24 @@ string StrUtils::varTableSubstitute(const string& rawLine,
 
 
 
-string StrUtils::varSubstitute(const string& rawLine, 
-			       const string& varName, 
-			       const string& varValue)
+std::string StrUtils::varSubstitute(const std::string& rawLine, 
+			       const std::string& varName, 
+			       const std::string& varValue)
 {
-  string line = rawLine;
+  std::string line = rawLine;
   
   // iterate because there might be more than one occurance on this line
   while (find(line, varName) >= 0)
     {
-      string b = before(line, varName);
-      string a = after(line, varName);
+      std::string b = before(line, varName);
+      std::string a = after(line, varName);
       line = b + varValue + a;
     }
   return line;
 }
 
 
-string StrUtils::before(const string& str, char sub)
+std::string StrUtils::before(const std::string& str, char sub)
 {
   char c[2];
   c[0] = sub;
@@ -265,40 +265,40 @@ string StrUtils::before(const string& str, char sub)
   return before(str, c);
 }
 
-string StrUtils::before(const string& str, const string& sub)
+std::string StrUtils::before(const std::string& str, const std::string& sub)
 {
   TEST_FOR_EXCEPTION(sub.c_str()==0,
-                     runtime_error, "String::before: arg is null pointer");
+                     std::runtime_error, "String::before: arg is null pointer");
 
   char* p = strstr((char*) str.c_str(), (char*) sub.c_str());
   if (p==0) return str;
   int subLen = p-str.c_str();
-  string rtn(str.c_str(), subLen);
+  std::string rtn(str.c_str(), subLen);
   return rtn;
 }
 
-string StrUtils::after(const string& str, const string& sub)
+std::string StrUtils::after(const std::string& str, const std::string& sub)
 {
   TEST_FOR_EXCEPTION(sub.c_str()==0,
-                     runtime_error, "String::after: arg is null pointer");
+                     std::runtime_error, "String::after: arg is null pointer");
 
   // find beginning of substring
   char* p = strstr((char*) str.c_str(), (char*) sub.c_str()) ;
-  // if substring not found, return empty string
-  if (p==0) return string();
+  // if substring not found, return empty std::string
+  if (p==0) return std::string();
   // offset to end of substring
   p+= strlen(sub.c_str());
-  return string(p);
+  return std::string(p);
 }
 
-int StrUtils::find(const string& str, const string& sub)
+int StrUtils::find(const std::string& str, const std::string& sub)
 {
   char* p = strstr((char*) str.c_str(), (char*) sub.c_str());
   if (p==0) return -1;
   return p-str.c_str();
 }
 
-bool StrUtils::isWhite(const string& str)
+bool StrUtils::isWhite(const std::string& str)
 {
   for (unsigned int i=0; i<str.length(); i++)
     {
@@ -311,9 +311,9 @@ bool StrUtils::isWhite(const string& str)
   return true;
 }
 
-string StrUtils::fixUnprintableCharacters(const string& str)
+std::string StrUtils::fixUnprintableCharacters(const std::string& str)
 {
-  string rtn = str;
+  std::string rtn = str;
   for (unsigned int i=0; i<rtn.length(); i++)
     {
       unsigned char c = rtn[i];
@@ -328,33 +328,33 @@ string StrUtils::fixUnprintableCharacters(const string& str)
   return rtn;
 }
 
-string StrUtils::between(const string& str, const string& begin,
-			 const string& end, string& front,
-			 string& back)
+std::string StrUtils::between(const std::string& str, const std::string& begin,
+			 const std::string& end, std::string& front,
+			 std::string& back)
 {
   front = before(str, begin);
-  string middle = before(after(str, begin), end);
+  std::string middle = before(after(str, begin), end);
   back = after(str, end);
   return middle;
 }
 
 
-string StrUtils::subString(const string& str, int begin, int end)
+std::string StrUtils::subString(const std::string& str, int begin, int end)
 {
-return string(str.c_str()+begin, end-begin);
+return std::string(str.c_str()+begin, end-begin);
 }
 
-string StrUtils::readFromStream(istream& is)
+std::string StrUtils::readFromStream(std::istream& is)
 {
-  TEST_FOR_EXCEPTION(true, logic_error, 
+  TEST_FOR_EXCEPTION(true, std::logic_error, 
                      "StrUtils::readFromStream isn't implemented yet");
 
 	return "";
 }
 
-string StrUtils::allCaps(const string& s)
+std::string StrUtils::allCaps(const std::string& s)
 {
-  string rtn = s;
+  std::string rtn = s;
   for (unsigned int i=0; i<rtn.length(); i++)
     {
       rtn[i] = toupper(rtn[i]);
@@ -362,12 +362,12 @@ string StrUtils::allCaps(const string& s)
   return rtn;
 }
 
-double StrUtils::atof(const string& s)
+double StrUtils::atof(const std::string& s)
 {
 	return ::atof(s.c_str());
 }
 
-int StrUtils::atoi(const string& s)
+int StrUtils::atoi(const std::string& s)
 {
 	return ::atoi(s.c_str());
 }
@@ -378,7 +378,7 @@ std::ostream& StrUtils::printLines(
   ,const std::string       &lines
   )
 {
-  typedef Teuchos::Array<string> array_t;
+  typedef Teuchos::Array<std::string> array_t;
   array_t linesArray = splitIntoLines(lines);
   for( int i = 0; i < static_cast<int>(linesArray.size()); ++i )
   {

@@ -33,7 +33,7 @@ using namespace Teuchos;
 
 /* --------- base class methods ---------------------------------------------- */
 
-string TableEntry::toChoppedString(int maxWidth) const
+std::string TableEntry::toChoppedString(int maxWidth) const
 {
   return toString().substr(0, maxWidth);
 }
@@ -46,9 +46,9 @@ DoubleEntry::DoubleEntry(const double& value, int precision)
   : TableEntry(), data_(value), precision_(precision)
 {}
 
-string DoubleEntry::toString() const 
+std::string DoubleEntry::toString() const 
 {
-  TeuchosOStringStream toss;
+  std::ostringstream toss;
   toss << std::setprecision(precision_) << data_;
   return toss.str();
 }
@@ -61,9 +61,9 @@ IntEntry::IntEntry(int value)
   : TableEntry(), data_(value)
 {}
 
-string IntEntry::toString() const 
+std::string IntEntry::toString() const 
 {
-  TeuchosOStringStream toss;
+  std::ostringstream toss;
   toss << data_;
   return toss.str();
 }
@@ -72,11 +72,11 @@ string IntEntry::toString() const
 
 /* --------- StringEntry methods -------------------------------------------- */
 
-StringEntry::StringEntry(string value)
+StringEntry::StringEntry(std::string value)
   : TableEntry(), data_(value)
 {}
 
-string StringEntry::toString() const 
+std::string StringEntry::toString() const 
 {
   return data_;
 }
@@ -97,9 +97,9 @@ CompoundEntryWithParentheses
     spaceBeforeParens_(spaceBeforeParens)
 {}
 
-string CompoundEntryWithParentheses::toString() const 
+std::string CompoundEntryWithParentheses::toString() const 
 {
-  TeuchosOStringStream toss;
+  std::ostringstream toss;
   
   toss << first_->toString();
   if (spaceBeforeParens_) toss << " ";

@@ -99,7 +99,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
   
   /*! \brief This method performs BlockCG iterations until the status
    * test indicates the need to stop or an error occurs (in which case, an
-   * exception is thrown).
+   * std::exception is thrown).
    *
    * iterate() will first determine whether the solver is initialized; if
    * not, it will call initialize() using default arguments. After
@@ -164,7 +164,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
   void resetNumIters() { iter_ = 0; }
 
   //! Get the norms of the residuals native to the solver.
-  //! \return A vector of length blockSize containing the native residuals.
+  //! \return A std::vector of length blockSize containing the native residuals.
   Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return R_; }
 
   //! Get the current update to the linear system.
@@ -238,10 +238,10 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
   // Preconditioned residual
   Teuchos::RCP<MV> Z_;
   //
-  // Direction vector
+  // Direction std::vector
   Teuchos::RCP<MV> P_;
   //
-  // Operator applied to direction vector
+  // Operator applied to direction std::vector
   Teuchos::RCP<MV> AP_;
 
 };
@@ -408,10 +408,10 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     
-    // Get the current solution vector.
+    // Get the current solution std::vector.
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
 
-    // Check that the current solution vector has blockSize_ columns. 
+    // Check that the current solution std::vector has blockSize_ columns. 
     TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*cur_soln_vec) != blockSize_, CGIterateFailure,
                         "Belos::BlockCGIter::iterate(): current linear system does not have the right number of vectors!" );
     int rank = ortho_->normalize( *P_, Teuchos::null );
@@ -427,7 +427,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
       // Increment the iteration
       iter_++;
     
-      // Multiply the current direction vector by A and store in Ap_
+      // Multiply the current direction std::vector by A and store in Ap_
       lp_->applyOp( *P_, *AP_ );
       
       // Compute alpha := <P_,R_> / <P_,AP_>
@@ -450,7 +450,7 @@ class BlockCGIter : virtual public CGIteration<ScalarType,MV,OP> {
                          "Belos::BlockCGIter::iterate(): Failed to compute alpha using Cholesky factorization (POTRS).");
       
       //
-      // Update the solution vector X := X + alpha * P_
+      // Update the solution std::vector X := X + alpha * P_
       //
       MVT::MvTimesMatAddMv( one, *P_, alpha, one, *cur_soln_vec );
       lp_->updateSolution();

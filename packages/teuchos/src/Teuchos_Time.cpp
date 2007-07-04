@@ -35,7 +35,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <assert.h>
+#include <cassert>
 
 namespace {
 
@@ -62,7 +62,7 @@ inline void seconds_initialize() {
 namespace Teuchos {
 
 //=============================================================================
-Time::Time(const string& name, bool start) 
+Time::Time(const std::string& name, bool start) 
   : startTime_(0), totalTime_(0), isRunning_(false), name_(name), numCalls_(0)
 {
   if(start) this->start();

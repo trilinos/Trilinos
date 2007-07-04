@@ -37,8 +37,6 @@
 #define __cplusplus
 #endif
 
-#ifdef HAVE_CONFIG_H
-
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
  * be undef'd here to avoid warnings when this file is included from another package.
@@ -80,78 +78,13 @@
 #endif
 #endif
 
-#ifdef HAVE_CSTDLIB
-#include <cstdlib>
-#else
-#include <stdlib.h>
-#endif
-
-#ifdef HAVE_CSTDIO
-#include <cstdio>
-#else
-#include <stdio.h>
-#endif
-
-#ifdef HAVE_CASSERT
-#include <cassert>
-#else
-#include <assert.h>
-#endif
-
-#ifdef HAVE_STRING
-#include <string>
-#else
-#include <string.h>
-#endif
-
-#ifdef HAVE_IOSTREAM
-#include <iostream>
-#else
-#include <iostream.h>
-#endif
-
-#ifdef HAVE_CMATH
-#include <cmath>
-#else
-#include <math.h>
-#endif
-using namespace std;
-
-#else /*HAVE_CONFIG_H is not defined*/
-
-#include <iostream>
-#include <string>
-
-#if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT) || defined (TFLOP)
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-#include <math.h>
-
-#else
-
-#include <cstdlib>
-#include <cstdio>
-#include <cassert>
-#include <cmath>
-
-#endif
-
-using namespace std;
-
-#endif /*HAVE_CONFIG_H*/
+#include "Teuchos_ConfigDefs.hpp"
 
 /* Define some macros */
 #define BELOS_MAX(x,y) (( (x) > (y) ) ? (x)  : (y) )     /* max function  */
 #define BELOS_MIN(x,y) (( (x) < (y) ) ? (x)  : (y) )     /* min function  */
 #define BELOS_SGN(x)   (( (x) < 0.0 ) ? -1.0 : 1.0 )     /* sign function */
 
-/*
- * Belos_Version() method
- */
-namespace Belos {
-  string Belos_Version();
-}
+namespace Belos { std::string Belos_Version(); }
 
 #endif /* BELOS_CONFIGDEFS_HPP */

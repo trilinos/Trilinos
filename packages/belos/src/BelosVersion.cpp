@@ -34,7 +34,7 @@
 
 namespace Belos {
 
-	string Belos_Version() { 
+	std::string Belos_Version() { 
 		return("Belos Version 1.0 - Not yet publicly released"); 
 	}
 

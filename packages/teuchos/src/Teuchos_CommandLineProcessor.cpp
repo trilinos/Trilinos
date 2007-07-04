@@ -210,7 +210,7 @@ CommandLineProcessor::parse(
       else
         continue;
     }
-    // Changed access to second value of map to not use overloaded arrow operator, 
+    // Changed access to second value of std::map to not use overloaded arrow operator, 
     // otherwise this code will not compile on Janus (HKT, 12/01/2003) 
     opt_val_val_t &opt_val_val = (*itr).second;
     opt_val_val.was_read = true;
@@ -307,7 +307,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
       << std::setiosflags(std::ios::left) << setw(opt_type_w) << " "
 #endif
       << "Prints this help message"
-      << endl
+      << std::endl
       << spc_chars
       << "--"
 #ifdef HAVE_STD_IOS_BASE_FMTFLAGS
@@ -318,7 +318,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
       << std::setiosflags(std::ios::left) << setw(opt_type_w) << " "
 #endif
       << "Pauses for user input to allow attaching a debugger"
-      << endl
+      << std::endl
       << spc_chars
       << "--"
 #ifdef HAVE_STD_IOS_BASE_FMTFLAGS
@@ -329,9 +329,9 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
       << std::setiosflags(std::ios::left) << setw(opt_type_w) << " "
 #endif
       << "Echo the command-line but continue as normal"
-      << endl;
+      << std::endl;
     for( itr = options_documentation_list_.begin(); itr != options_documentation_list_.end(); ++itr ) {
-      // print top line with option name, type and short documentation string
+      // print top line with option name, type and short documentation std::string
       out
         << spc_chars
         << "--"
@@ -343,7 +343,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
         << std::setiosflags(std::ios::left) << setw(opt_type_w) << opt_type_str(itr->opt_type)
 #endif
         << ( itr->documentation.length() ? itr->documentation.c_str() : "No documentation" )
-        << endl;
+        << std::endl;
       // If an enumeration option then the next line is the value options
       if( itr->opt_type == OPT_ENUM_INT ) {
         out
@@ -353,7 +353,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
           << setw(opt_type_w) << "";
         print_enum_opt_names( any_cast<int>(itr->default_val), out );
         out
-          << endl;
+          << std::endl;
       }
       // Now print the line that contains the default values
       if( itr->opt_type == OPT_BOOL_TRUE ) {
@@ -405,7 +405,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
       out << ")\n";
     }
     if(doc_string_.length()) {
-      out << "\nDETAILED DOCUMENTATION:\n\n" << doc_string_ << endl << endl;
+      out << "\nDETAILED DOCUMENTATION:\n\n" << doc_string_ << std::endl << std::endl;
     }
     if(throwExceptions_)
       TEST_FOR_EXCEPTION( true, HelpPrinted, "Help message was printed" );
@@ -525,7 +525,7 @@ void CommandLineProcessor::print_enum_opt_names(
 {
   const enum_opt_data_t
     &enum_opt_data = enum_opt_data_list_.at(enum_id);
-  typedef std::vector<string>::const_iterator itr_t;
+  typedef std::vector<std::string>::const_iterator itr_t;
   out << "Valid options:";
   for( itr_t itr = enum_opt_data.enum_opt_names.begin(); itr != enum_opt_data.enum_opt_names.end() ; ++itr ) {
     if( itr != enum_opt_data.enum_opt_names.begin() ) out << ",";

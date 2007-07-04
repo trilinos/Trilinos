@@ -36,7 +36,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 
 /*! \class Teuchos::Utils
-    \brief This class provides some basic string and floating-point utilities for Teuchos
+    \brief This class provides some basic std::string and floating-point utilities for Teuchos
 */
 
 namespace Teuchos
@@ -66,17 +66,17 @@ namespace Teuchos
       static bool isWhiteSpace( const char c )
         { return ( c==' ' || c =='\t' || c=='\n' ); }
 
-      /** \brief Trim whitespace from beginning and end of string. */
+      /** \brief Trim whitespace from beginning and end of std::string. */
       static std::string trimWhiteSpace( const std::string& str );
 
-      /** \brief Write a double as a string. */
-      static string toString(const double& x);
+      /** \brief Write a double as a std::string. */
+      static std::string toString(const double& x);
 
-      /** \brief Write an int as a string. */
-      static string toString(const int& x);
+      /** \brief Write an int as a std::string. */
+      static std::string toString(const int& x);
 
-      /** \brief Write an unsigned int as a string. */
-      static string toString(const unsigned int& x);
+      /** \brief Write an unsigned int as a std::string. */
+      static std::string toString(const unsigned int& x);
 
       /** \brief pi. */
 #ifdef M_PI
@@ -96,16 +96,16 @@ namespace Teuchos
     };
 
   /** \relates Utils */
-  inline string toString(const int& x) {return Utils::toString(x);}
+  inline std::string toString(const int& x) {return Utils::toString(x);}
 
   /** \relates Utils */
-  inline string toString(const unsigned int& x) {return Utils::toString(x);}
+  inline std::string toString(const unsigned int& x) {return Utils::toString(x);}
 
   /** \relates Utils */
-  inline string toString(const double& x) {return Utils::toString(x);}
+  inline std::string toString(const double& x) {return Utils::toString(x);}
 
   /** \relates Utils */
-  inline string toString(const string& x) {return x;}
+  inline std::string toString(const std::string& x) {return x;}
 
 } // end namespace Teuchos
 

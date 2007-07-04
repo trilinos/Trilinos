@@ -27,7 +27,7 @@
 // ************************************************************************
 //@HEADER
 //
-//  This test instantiates the Belos classes using a complex scalar type
+//  This test instantiates the Belos classes using a std::complex scalar type
 //  and checks functionality.
 //
 
@@ -88,14 +88,14 @@ int main(int argc, char *argv[])
 #ifdef HAVE_COMPLEX
   typedef std::complex<double> ST;
 #elif HAVE_COMPLEX_H
-  typedef ::complex<double> ST;
+  typedef std::complex<double> ST;
 #else
   typedef double ST;
-  // no complex. quit with failure.
+  // no std::complex. quit with failure.
   if (verbose && MyPID==0) {
-    cout << "Not compiled with complex support." << endl;
+    std::cout << "Not compiled with std::complex support." << std::endl;
     if (verbose && MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;
+      std::cout << "End Result: TEST FAILED" << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 
 
 #ifndef HAVE_BELOS_TRIUTILS
-  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
+  std::cout << "This test requires Triutils. Please configure with --enable-triutils." << std::endl;
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
@@ -137,14 +137,14 @@ int main(int argc, char *argv[])
   info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
     MyOM->stream(Belos::Warnings) 
-      << "Warning reading '" << filename << "'" << endl
-      << "End Result: TEST FAILED" << endl;
+      << "Warning reading '" << filename << "'" << std::endl
+      << "End Result: TEST FAILED" << std::endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
     return -1;
   }
-  // Convert interleaved doubles to complex values
+  // Convert interleaved doubles to std::complex values
   std::vector<ST> cvals(nnz);
   for (int ii=0; ii<nnz; ii++) {
     cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
@@ -166,30 +166,30 @@ int main(int argc, char *argv[])
   ierr = Belos::TestMultiVecTraits<ST,MV>(MyOM,ivec);
   gerr &= ierr;
   if (ierr) {
-    MyOM->print(Belos::Warnings, "*** MyMultiVec<complex> PASSED TestMultiVecTraits()\n");
+    MyOM->print(Belos::Warnings, "*** MyMultiVec<std::complex> PASSED TestMultiVecTraits()\n");
   }
   else {
-    MyOM->print(Belos::Warnings, "*** MyMultiVec<complex> FAILED TestMultiVecTraits() ***\n\n");
+    MyOM->print(Belos::Warnings, "*** MyMultiVec<std::complex> FAILED TestMultiVecTraits() ***\n\n");
   }
 
   // test the operator and its adapter
   ierr = Belos::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,A2);
   gerr &= ierr;
   if (ierr) {
-    MyOM->print(Belos::Warnings,"*** MyOperator<complex> PASSED TestOperatorTraits()\n");
+    MyOM->print(Belos::Warnings,"*** MyOperator<std::complex> PASSED TestOperatorTraits()\n");
   }
   else {
-    MyOM->print(Belos::Warnings,"*** MyOperator<complex> FAILED TestOperatorTraits() ***\n\n");
+    MyOM->print(Belos::Warnings,"*** MyOperator<std::complex> FAILED TestOperatorTraits() ***\n\n");
   }
 
   // test the operator and its adapter
   ierr = Belos::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,A1);
   gerr &= ierr;
   if (ierr) {
-    MyOM->print(Belos::Warnings,"*** MyBetterOperator<complex> PASSED TestOperatorTraits()\n");
+    MyOM->print(Belos::Warnings,"*** MyBetterOperator<std::complex> PASSED TestOperatorTraits()\n");
   }
   else {
-    MyOM->print(Belos::Warnings,"*** MyBetterOperator<complex> FAILED TestOperatorTraits() ***\n\n");
+    MyOM->print(Belos::Warnings,"*** MyBetterOperator<std::complex> FAILED TestOperatorTraits() ***\n\n");
   }
 
 #ifdef HAVE_MPI

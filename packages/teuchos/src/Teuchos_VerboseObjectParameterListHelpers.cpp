@@ -68,9 +68,9 @@ Teuchos::getValidVerboseObjectSublist()
     pl->set(
       OutputFile_name, OutputFile_default,
       "The file to send output to.  If the value \"none\" is used, then\n"
-      "whatever is set in code will be used.  However, any other string value\n"
+      "whatever is set in code will be used.  However, any other std::string value\n"
       "will be used to create an std::ofstream object to a file with the given name.\n"
-      "Therefore, any valid file name is a valid string value for this parameter."
+      "Therefore, any valid file name is a valid std::string value for this parameter."
       );
     validParams = pl;
   }

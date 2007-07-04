@@ -31,7 +31,7 @@
 #define TEUCHOS_PARAMETER_ENTRY_H
 
 /*! \file Teuchos_ParameterEntry.hpp
-    \brief Object held as the "value" in the Teuchos::ParameterList map.
+    \brief Object held as the "value" in the Teuchos::ParameterList std::map.
 */
 
 #include "Teuchos_ConfigDefs.hpp"
@@ -45,7 +45,7 @@ namespace Teuchos {
 class ParameterList; // another parameter type (forward declaration)
 #endif
 
-/*! \brief This object is held as the "value" in the Teuchos::ParameterList map.
+/*! \brief This object is held as the "value" in the Teuchos::ParameterList std::map.
 
     This structure holds a \c Teuchos::any value and information on the status of this
     parameter (isUsed, isDefault, etc.).  The type of parameter is chosen through the
@@ -111,7 +111,7 @@ public:
     RCP<const ParameterEntryValidator> const& validator
     );
 
-  /*! \brief Set the documentation string. */
+  /*! \brief Set the documentation std::string. */
   void setDocString(const std::string &docString);
 
   //! Create a parameter entry that is an empty list.
@@ -128,7 +128,7 @@ public:
   /*! \brief Templated get method that uses the input pointer type to determine the type of parameter to return.  
 
       \note This method will cast the value to the type requested.  If that type is incorrect, 
-	    an exception will be thrown by the any_cast.
+	    an std::exception will be thrown by the any_cast.
   */
   template<typename T>
   T& getValue(T *ptr) const;
@@ -163,7 +163,7 @@ public:
   //! Indicate whether this entry takes on the default value.
   bool isDefault() const;
 
-  //! Return the (optional) documentation string
+  //! Return the (optional) documentation std::string
   std::string docString() const;
 
   //! Return the (optional) validator object
@@ -177,9 +177,9 @@ public:
 
       The parameter is followed by "[default]" if it is the default value given through a 
       Set method.  Otherwise, if the parameter was unused (not accessed through a Get method), 
-      it will be followed by "[unused]".  This function is called by the "ostream& operator<<". 
+      it will be followed by "[unused]".  This function is called by the "std::ostream& operator<<". 
   */
-  ostream& leftshift(ostream& os, bool printFlags = true) const;
+  std::ostream& leftshift(std::ostream& os, bool printFlags = true) const;
 
   //@}
 
@@ -240,7 +240,7 @@ inline bool operator!=(const ParameterEntry& e1, const ParameterEntry& e2)
 /*! \relates ParameterEntry 
     \brief Output stream operator for handling the printing of parameter entries.  
 */
-inline ostream& operator<<(ostream& os, const ParameterEntry& e) 
+inline std::ostream& operator<<(std::ostream& os, const ParameterEntry& e) 
 { 
   return e.leftshift(os);
 }

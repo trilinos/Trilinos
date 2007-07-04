@@ -41,7 +41,7 @@ XMLObject XMLParameterListWriter::toXML(const ParameterList& p) const
   for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i)
     {
       const ParameterEntry& val = p.entry(i);
-      const string& name = p.name(i);
+      const std::string& name = p.name(i);
       XMLObject child = toXML(val);
       child.addAttribute("name", name);
       rtn.addChild(child);
@@ -58,8 +58,8 @@ XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
     }
 
   XMLObject rtn("Parameter");
-  string type;
-  string value;
+  std::string type;
+  std::string value;
 
   if (entry.isType<int>())
     {
@@ -76,10 +76,10 @@ XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
       type = "float";
       value = toString(any_cast<float>(entry.getAny(false)));
     }
-  else if (entry.isType<string>())
+  else if (entry.isType<std::string>())
     {
-      type = "string";
-      value = toString(any_cast<string>(entry.getAny(false)));
+      type = "std::string";
+      value = toString(any_cast<std::string>(entry.getAny(false)));
     }
   else if (entry.isType<char>())
     {
@@ -117,7 +117,7 @@ XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
   else
     {
       type = "any";
-      TeuchosOStringStream ss;
+      std::ostringstream ss;
       ss << entry;
       value = TEUCHOS_OSTRINGSTREAM_GET_C_STR(ss);
     }

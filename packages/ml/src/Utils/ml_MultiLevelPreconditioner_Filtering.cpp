@@ -68,13 +68,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
     length = NumEigenvalues+1;
 
   if (verbose_) {
-    cout << endl;
-    cout << PrintMsg_ << "\tFiltering the preconditioner: computing low-convergent modes..." << endl;
-    cout << PrintMsg_ << "\t- number of eigenvectors to compute = " << NumEigenvalues << endl;
-    cout << PrintMsg_ << "\t- tolerance = " << tol << endl;
-    cout << PrintMsg_ << "\t- block size = " << BlockSize << endl;
-    cout << PrintMsg_ << "\t- length     = " << length << endl;
-    cout << PrintMsg_ << "\t  (Note that the resulting precondition is non-symmetric)" << endl;
+    std::cout << std::endl;
+    std::cout << PrintMsg_ << "\tFiltering the preconditioner: computing low-convergent modes..." << std::endl;
+    std::cout << PrintMsg_ << "\t- number of eigenvectors to compute = " << NumEigenvalues << std::endl;
+    std::cout << PrintMsg_ << "\t- tolerance = " << tol << std::endl;
+    std::cout << PrintMsg_ << "\t- block size = " << BlockSize << std::endl;
+    std::cout << PrintMsg_ << "\t- length     = " << length << std::endl;
+    std::cout << PrintMsg_ << "\t  (Note that the resulting precondition is non-symmetric)" << std::endl;
   }    
 
   // set parameters for Anasazi
@@ -90,11 +90,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
   AnasaziList.set("eigen-analysis: output", 0);
 
   // data to hold real and imag for eigenvalues and eigenvectors
-  vector<double> RealEigenvalues(NumEigenvalues);
-  vector<double> ImagEigenvalues(NumEigenvalues);
+  std::vector<double> RealEigenvalues(NumEigenvalues);
+  std::vector<double> ImagEigenvalues(NumEigenvalues);
 
-  vector<double> RealEigenvectors(NumEigenvalues * NumMyRows());
-  vector<double> ImagEigenvectors(NumEigenvalues * NumMyRows());
+  std::vector<double> RealEigenvectors(NumEigenvalues * NumMyRows());
+  std::vector<double> ImagEigenvectors(NumEigenvalues * NumMyRows());
 
   // this is the starting value -- random
   Epetra_MultiVector EigenVectors(OperatorDomainMap(),NumEigenvalues);
@@ -113,37 +113,37 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 #else
   /*
   if (Comm().MyPID() == 0) {
-    cerr << ErrorMsg_ << "ML has been configure without the Anasazi interface" << endl
-      << ErrorMsg_ << "You must add the option --enable-anasazi to use" << endl
-      << ErrorMsg_ << "filtering and Anasazi" << endl;
+    std::cerr << ErrorMsg_ << "ML has been configure without the Anasazi interface" << std::endl
+      << ErrorMsg_ << "You must add the option --enable-anasazi to use" << std::endl
+      << ErrorMsg_ << "filtering and Anasazi" << std::endl;
   }
   */
   if (Comm().MyPID() == 0) {
-    cerr << ErrorMsg_ << "The Anasazi support is no longer maintained in ML." << endl;
-    cerr << ErrorMsg_ << "Please check with the developers for more details." << endl;
+    std::cerr << ErrorMsg_ << "The Anasazi support is no longer maintained in ML." << std::endl;
+    std::cerr << ErrorMsg_ << "Please check with the developers for more details." << std::endl;
   }
 
   ML_EXIT(EXIT_FAILURE);
 #endif
 
   if (NumRealEigenvectors + NumImagEigenvectors == 0) {
-    cerr << ErrorMsg_ << "Anasazi has computed no nonzero eigenvalues" << endl
-      << ErrorMsg_ << "This sometimes happen because your fine grid matrix" << endl
-      << ErrorMsg_ << "is too small. In this case, try to change the Anasazi input" << endl
-      << ErrorMsg_ << "parameters, or drop the filtering correction." << endl;
+    std::cerr << ErrorMsg_ << "Anasazi has computed no nonzero eigenvalues" << std::endl
+      << ErrorMsg_ << "This sometimes happen because your fine grid matrix" << std::endl
+      << ErrorMsg_ << "is too small. In this case, try to change the Anasazi input" << std::endl
+      << ErrorMsg_ << "parameters, or drop the filtering correction." << std::endl;
     ML_EXIT(EXIT_FAILURE);
   }
 
   // some output, to print out how many vectors we are actually using
   if (verbose_) {
-    cout << PrintMsg_ << "\t- Computed largest magnitude eigenvalues of I - ML^{-1}A:" << endl;
+    std::cout << PrintMsg_ << "\t- Computed largest magnitude eigenvalues of I - ML^{-1}A:" << std::endl;
     for( int i=0 ; i<NumEigenvalues ; ++i ) {
-      cout << PrintMsg_ << "\t  z = " << std::setw(10) << RealEigenvalues[i]
+      std::cout << PrintMsg_ << "\t  z = " << std::setw(10) << RealEigenvalues[i]
         << " + i(" << std::setw(10) << ImagEigenvalues[i] << " ),  |z| = "
-        << sqrt(RealEigenvalues[i]*RealEigenvalues[i] + ImagEigenvalues[i]*ImagEigenvalues[i]) << endl;
+        << std::sqrt(RealEigenvalues[i]*RealEigenvalues[i] + ImagEigenvalues[i]*ImagEigenvalues[i]) << std::endl;
     }
-    cout << PrintMsg_ << "\t- Using " << NumRealEigenvectors << " real and "
-      << NumImagEigenvectors << " imaginary eigenvector(s)" << endl;
+    std::cout << PrintMsg_ << "\t- Using " << NumRealEigenvectors << " real and "
+      << NumImagEigenvectors << " imaginary eigenvector(s)" << std::endl;
   }
 
   int size = NumRealEigenvectors+NumImagEigenvectors;
@@ -154,7 +154,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
   // hierarchy, using the null space just computed. I have at least one
   // aggregate per subdomain, using METIS.
 
-  // copy the null space in a double vector, as now I have real
+  // copy the null space in a double std::vector, as now I have real
   // and imag null space in two different vectors (that may be only
   // partially populated)
 
@@ -175,8 +175,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
   // with the iteration matrix modes
 
   if (verbose_) 
-    cout << endl << PrintMsg_
-         << "Building ML hierarchy for filtering" << endl << endl;
+    std::cout << std::endl << PrintMsg_
+         << "Building ML hierarchy for filtering" << std::endl << std::endl;
 
   ML_Create(&flt_ml_,2); // now only 2-level methods
   ML_Operator_halfClone_Init(&(flt_ml_->Amat[1]),
@@ -201,11 +201,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
   ML_Gen_Solver(flt_ml_, ML_MGV, 1, 0);
 
   if (verbose_) 
-    cout << endl;
+    std::cout << std::endl;
 
   if (verbose_) 
-    cout << PrintMsg_ << "\t- Total Time for filtering setup = " 
-         << Time.ElapsedTime() << " (s)" << endl;
+    std::cout << PrintMsg_ << "\t- Total Time for filtering setup = " 
+         << Time.ElapsedTime() << " (s)" << std::endl;
 
   return(0);
 
@@ -220,7 +220,7 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
   Epetra_Time Time(Comm());
 
   if (verbose_) 
-    cout << PrintMsg_ << endl << "\tComputing the rate of convergence..." << endl;
+    std::cout << PrintMsg_ << std::endl << "\tComputing the rate of convergence..." << std::endl;
 
   int MaxIters = List_.get("reuse: max iters",(int)5);
   double Ratio = List_.get("reuse: ratio",(double)0.5);
@@ -254,10 +254,10 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
 #ifdef LATER
   if( (status[AZ_why] != AZ_normal ||
        status[AZ_why] != AZ_maxits ) && verbose_ ) {
-    cerr << endl;
-    cerr << ErrorMsg_ << "\tConvergence tests did not converge normally:" << endl;
-         << ErrorMsg_ << "\tstatus[AZ_why] = " << status[AZ_why] << endl;
-    cerr << endl;
+    std::cerr << std::endl;
+    std::cerr << ErrorMsg_ << "\tConvergence tests did not converge normally:" << std::endl;
+         << ErrorMsg_ << "\tstatus[AZ_why] = " << status[AZ_why] << std::endl;
+    std::cerr << std::endl;
   }
 #endif 
 
@@ -267,10 +267,10 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
     // This is the first time we are computing this
     RateOfConvergence_ = NewRateOfConvergence;
     if( verbose_ ) {
-      cout << PrintMsg_ << "\tRate of convergence : current = " 
-	   << RateOfConvergence_ << endl;
-      cout << PrintMsg_ << "\tTime to check convergence rate = " 
-	   << Time.ElapsedTime() << " (s)" << endl;
+      std::cout << PrintMsg_ << "\tRate of convergence : current = " 
+	   << RateOfConvergence_ << std::endl;
+      std::cout << PrintMsg_ << "\tTime to check convergence rate = " 
+	   << Time.ElapsedTime() << " (s)" << std::endl;
     }
     return(true);
 
@@ -278,8 +278,8 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
     // this is NOT the first time this function is called; we have to compare the
     // current rate of convergence with the previous one
     if (verbose_) {
-      cout << PrintMsg_ << "\tRate of convergence : previous = " << RateOfConvergence_ << endl;
-      cout << PrintMsg_ << "\tRate of convergence : current  = " << NewRateOfConvergence << endl;
+      std::cout << PrintMsg_ << "\tRate of convergence : previous = " << RateOfConvergence_ << std::endl;
+      std::cout << PrintMsg_ << "\tRate of convergence : current  = " << NewRateOfConvergence << std::endl;
     }
     // if the current rate of convergence is not too different from the previous
     // one, the already computed preconditioner is good enough, and we return true
@@ -291,11 +291,11 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
     else                                                    rv = true;
 
     if (rv == true && verbose_ ) 
-      cout << PrintMsg_ << endl << "\tTest passed: keep old preconditioner" << endl;
+      std::cout << PrintMsg_ << std::endl << "\tTest passed: keep old preconditioner" << std::endl;
     if (rv == false && verbose_) 
-      cout << PrintMsg_ << endl << "\tTest failed: now recompute the preconditioner" << endl;
-    cout << PrintMsg_ << "\tTime to check convergence rate = " 
-      << Time.ElapsedTime() << " (s)" << endl;
+      std::cout << PrintMsg_ << std::endl << "\tTest failed: now recompute the preconditioner" << std::endl;
+    std::cout << PrintMsg_ << "\tTime to check convergence rate = " 
+      << Time.ElapsedTime() << " (s)" << std::endl;
 
     RateOfConvergence_ = NewRateOfConvergence;
     return(rv);
@@ -303,8 +303,8 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
   }
   
 #else
-  cerr << ErrorMsg_ << "reuse preconditioner requires ML to be configured with" << endl
-       << ErrorMsg_ << "--enable-aztecoo." << endl;
+  std::cerr << ErrorMsg_ << "reuse preconditioner requires ML to be configured with" << std::endl
+       << ErrorMsg_ << "--enable-aztecoo." << std::endl;
   ML_EXIT(EXIT_FAILURE);
   return(false);
 #endif

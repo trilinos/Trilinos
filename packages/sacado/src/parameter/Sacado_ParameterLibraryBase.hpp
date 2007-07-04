@@ -39,6 +39,8 @@
 
 namespace Sacado {
 
+  using std::string;
+
   /*! 
    * \brief Class to provide a centralized library for setting/retrieving 
    * numerical parameter values.

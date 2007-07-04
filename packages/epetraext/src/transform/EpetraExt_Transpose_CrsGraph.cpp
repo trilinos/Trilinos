@@ -60,14 +60,14 @@ operator()( OriginalTypeRef orig )
 
   if( !ignoreNonLocalCols_ && orig.DistributedGlobal() )
   {
-    vector<int> TransNumNZ( nCols, 0 );
+    std::vector<int> TransNumNZ( nCols, 0 );
     for( int i = 0; i < nRows; ++i )
     {
       orig.ExtractMyRowView( i, numIndices, Indices );
       for( int j = 0; j < numIndices; ++j ) ++TransNumNZ[ Indices[j] ];
     }
 
-    vector< vector<int> > TransIndices( nCols );
+    std::vector< std::vector<int> > TransIndices( nCols );
     for( int i = 0; i < nCols; ++i )
       if( TransNumNZ[i] )
       {
@@ -94,7 +94,7 @@ operator()( OriginalTypeRef orig )
   }
   else
   {
-    vector<int> TransNumNZ( nRows, 0 );
+    std::vector<int> TransNumNZ( nRows, 0 );
     for( int i = 0; i < nRows; ++i )
     {
       orig.ExtractMyRowView( i, numIndices, Indices );
@@ -102,7 +102,7 @@ operator()( OriginalTypeRef orig )
         if( Indices[j] < nRows ) ++TransNumNZ[ Indices[j] ];
     }
 
-    vector< vector<int> > TransIndices( nRows );
+    std::vector< std::vector<int> > TransIndices( nRows );
     for( int i = 0; i < nRows; ++i )
       if( TransNumNZ[i] )
       {

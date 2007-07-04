@@ -48,33 +48,33 @@ class XMLObject;
 */
 class XMLObjectImplem
 {
-  typedef Teuchos::map<string, string> Map;
+  typedef Teuchos::map<std::string, std::string> Map;
 
 public:
-  //! Construct with a tag string 
-  XMLObjectImplem(const string& string);
+  //! Construct with a 'tag'
+  XMLObjectImplem(const std::string& tag);
 
   //! Deep copy
   XMLObjectImplem* deepCopy() const ;
 
   //! Add a [name, value] attribute
-  void addAttribute(const string& name, const string& value);
+  void addAttribute(const std::string& name, const std::string& value);
 
   //! Add a child XMLObject
   void addChild(const XMLObject& child);
 
   //! Add a content line
-  void addContent(const string& contentLine);
+  void addContent(const std::string& contentLine);
 
-  //! Return the tag string
-  const string& getTag() const {return tag_;}
+  //! Return the tag std::string
+  const std::string& getTag() const {return tag_;}
 
   //! Determine whether an attribute exists
-  bool hasAttribute(const string& name) const 
+  bool hasAttribute(const std::string& name) const 
     {return attributes_.find(name) != attributes_.end();}
 
   //! Look up an attribute by name
-  const string& getAttribute(const string& name) const 
+  const std::string& getAttribute(const std::string& name) const 
     {return (*(attributes_.find(name))).second;}
 
   //! Return the number of children
@@ -87,35 +87,35 @@ public:
   int numContentLines() const {return content_.length();}
 
   //! Look up a content line by index
-  const string& getContentLine(int i) const {return content_[i];}
+  const std::string& getContentLine(int i) const {return content_[i];}
 
   //!  Print to stream with the given indentation level. Output will be well-formed XML.
-  void print(ostream& os, int indent) const ;
+  void print(std::ostream& os, int indent) const ;
 
-  //! Write as a string. Output may be ill-formed XML.
-  string toString() const ;
+  //! Write as a std::string. Output may be ill-formed XML.
+  std::string toString() const ;
 
   //! Write the header
-  string header(bool strictXML = false) const ;
+  std::string header(bool strictXML = false) const ;
 
   //! Write the header terminated as <Header/>
-  string terminatedHeader(bool strictXML = false) const ;
+  std::string terminatedHeader(bool strictXML = false) const ;
 
   //! Write the footer
-  string footer() const {return "</" + getTag() + ">";}
+  std::string footer() const {return "</" + getTag() + ">";}
 
 private:
 
   //! Print content lines using the given indentation level
-  void printContent(ostream& os, int indent) const ;
+  void printContent(std::ostream& os, int indent) const ;
   
   //! Convert attribute value text into well-formed XML
-  static string XMLifyAttVal(const string &attval);
+  static std::string XMLifyAttVal(const std::string &attval);
 
-  string tag_;
+  std::string tag_;
   Map attributes_;
   Array<XMLObject> children_;
-  Array<string> content_;
+  Array<std::string> content_;
 
 };
 

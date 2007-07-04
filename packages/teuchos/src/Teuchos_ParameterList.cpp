@@ -131,12 +131,12 @@ ParameterList& ParameterList::setParametersNotAlreadySet(
 ParameterList::~ParameterList() 
 {}
 
-void ParameterList::unused(ostream& os) const
+void ParameterList::unused(std::ostream& os) const
 {
   for (ConstIterator i = params_.begin(); i != params_.end(); ++i) {
     if (!(entry(i).isUsed())) {
       os << "WARNING: Parameter \"" << name(i) << "\" " << entry(i)
-         << " is unused" << endl;
+         << " is unused" << std::endl;
     }
   }
 }
@@ -158,7 +158,7 @@ std::string ParameterList::currentParametersString() const
   return oss.str();
 }
 
-bool ParameterList::isSublist(const string& name) const
+bool ParameterList::isSublist(const std::string& name) const
 {
   ConstIterator i = params_.find(name);
   if (i != params_.end())
@@ -166,7 +166,7 @@ bool ParameterList::isSublist(const string& name) const
   return false;
 }
 
-bool ParameterList::isParameter(const string& name) const
+bool ParameterList::isParameter(const std::string& name) const
 {
   return (params_.find(name) != params_.end());
 }
@@ -188,8 +188,8 @@ bool ParameterList::remove(
 }
 
 ParameterList& ParameterList::sublist(
-  const string& name, bool mustAlreadyExist
-  ,const string& docString
+  const std::string& name, bool mustAlreadyExist
+  ,const std::string& docString
   )
 {
   // Find name in list, if it exists.
@@ -225,7 +225,7 @@ ParameterList& ParameterList::sublist(
   ParameterEntry &newParamEntry = params_.insert(
     Map::value_type(name,ParameterEntry(newSubList,false,true,docString))
     ).first->second;
-  // Make sure we set the documentation string!
+  // Make sure we set the documentation std::string!
 #ifdef TEUCHOS_DEBUG
   {
     ParameterEntry *newNewParamEntry = this->getEntryPtr(name);
@@ -236,7 +236,7 @@ ParameterList& ParameterList::sublist(
     const std::string newDocString = newNewParamEntry->docString();
   TEST_FOR_EXCEPTION(
     newDocString != docString, std::logic_error,
-    "Error, the set documentation string is not equal to the pass in string for\n"
+    "Error, the set documentation std::string is not equal to the pass in std::string for\n"
     "the sublist \"" << name << "\"."
     );
   }
@@ -244,7 +244,7 @@ ParameterList& ParameterList::sublist(
   return any_cast<ParameterList>(newParamEntry.getAny(false));
 }
 
-const ParameterList& ParameterList::sublist(const string& name) const
+const ParameterList& ParameterList::sublist(const std::string& name) const
 {
   // Find name in list, if it exists.
   ConstIterator i = params_.find(name);
@@ -264,12 +264,12 @@ const ParameterList& ParameterList::sublist(const string& name) const
   return getValue<ParameterList>(entry(i));
 }
   
-ostream& ParameterList::print(ostream& os, int indent, bool showTypes, bool showFlags) const
+std::ostream& ParameterList::print(std::ostream& os, int indent, bool showTypes, bool showFlags) const
 {
   return this->print(os,PrintOptions().indent(indent).showTypes(showTypes).showFlags(showFlags));
 }
   
-ostream& ParameterList::print(ostream& os, const PrintOptions &printOptions ) const
+std::ostream& ParameterList::print(std::ostream& os, const PrintOptions &printOptions ) const
 {
   const int   indent    = printOptions.indent();
   const bool  showTypes = printOptions.showTypes();
@@ -280,23 +280,23 @@ ostream& ParameterList::print(ostream& os, const PrintOptions &printOptions ) co
     out = getFancyOStream(rcp(&os,false));
   OSTab tab(out,indent);
   if (params_.begin() == params_.end()) {
-    *out <<"[empty list]" << endl;
+    *out <<"[empty list]" << std::endl;
   }
   else { 
     // Print parameters first
     for (ConstIterator i = params_.begin(); i != params_.end(); ++i) 
     {
-      const string &name = this->name(i);
+      const std::string &name = this->name(i);
       const ParameterEntry &entry_i = entry(i);
       RCP<const ParameterEntryValidator>
         validator = entry_i.validator();
       if(entry_i.isList())
         continue;
       *out << name;
-      const string &docString = entry_i.docString();
+      const std::string &docString = entry_i.docString();
       if(showTypes)
         *out << " : " << entry_i.getAny(false).typeName();
-      *out << " = "; entry_i.leftshift(os,showFlags); *out << endl;
+      *out << " = "; entry_i.leftshift(os,showFlags); *out << std::endl;
       if(showDoc) {
         if(validator.get()) {
           validator->printDoc(docString,OSTab(os).o());
@@ -312,9 +312,9 @@ ostream& ParameterList::print(ostream& os, const PrintOptions &printOptions ) co
       const ParameterEntry &entry_i = entry(i);
       if(!entry_i.isList())
         continue;
-      const string &docString = entry_i.docString();
-      const string &name = this->name(i);
-      *out << name << " -> " << endl;
+      const std::string &docString = entry_i.docString();
+      const std::string &name = this->name(i);
+      *out << name << " -> " << std::endl;
       if( docString.length() && showDoc ) {
         StrUtils::printLines(OSTab(out).o(),"# ",docString);
       }
@@ -336,7 +336,7 @@ ParameterList::ConstIterator ParameterList::end() const
 
 #if defined(TFLOP)
 
-const string& ParameterList::name(ConstIterator i) const
+const std::string& ParameterList::name(ConstIterator i) const
 {
   return ((*i).first);
 }
@@ -353,7 +353,7 @@ const ParameterEntry& ParameterList::entry(ConstIterator i) const
 
 #else // defined(TFLOP)
 
-const string& ParameterList::name(ConstIterator i) const
+const std::string& ParameterList::name(ConstIterator i) const
 {
   return (i->first);
 }

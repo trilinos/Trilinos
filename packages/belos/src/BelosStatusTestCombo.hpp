@@ -62,8 +62,8 @@
   the same fashion as the first.  If the second test is Converged, the third one is tested, and so on.
   
   The purpose of the SEQ combination is to allow the addition of expensive but more rigorous convergence tests.  For
-  example, we could define a test that used the implicit residual vector (the one produced by the iterative method)
-  as the first subtest and define a second test using the explicitly computed residual vector.  Explicitly computing
+  example, we could define a test that used the implicit residual std::vector (the one produced by the iterative method)
+  as the first subtest and define a second test using the explicitly computed residual std::vector.  Explicitly computing
   the residual requires a matrix multiplication with the original matrix operator, an expensive operation.  By using
   the SEQ combination, we can avoid the matrix multiplication associated with the explicit residual calculation
   until the implicit residual is small.
@@ -156,7 +156,7 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
   //@{ 
   
   //! Output formatted description of stopping test to output stream
-  void print(ostream& os, int indent = 0) const;
+  void print(std::ostream& os, int indent = 0) const;
   
   //@}
 
@@ -229,12 +229,12 @@ StatusTestCombo<ScalarType,MV,OP>& StatusTestCombo<ScalarType,MV,OP>::addStatusT
   else
     {
       const int indent = 2;
-      cout << "\n*** WARNING! ***\n";
-      cout << "This combo test currently consists of the following:\n";
-      this->print(cout, indent);
-      cout << "Unable to add the following test:\n";
-      add_test->print(cout, indent);
-      cout << "\n";
+      std::cout << "\n*** WARNING! ***\n";
+      std::cout << "This combo test currently consists of the following:\n";
+      this->print(std::cout, indent);
+      std::cout << "Unable to add the following test:\n";
+      add_test->print(std::cout, indent);
+      std::cout << "\n";
     }
   return *this;
 }
@@ -357,13 +357,13 @@ void StatusTestCombo<ScalarType,MV,OP>::seqOp( Iteration<ScalarType,MV,OP>* iSol
 }
 
 template <class ScalarType, class MV, class OP>
-void StatusTestCombo<ScalarType,MV,OP>::print(ostream& os, int indent) const {
+void StatusTestCombo<ScalarType,MV,OP>::print(std::ostream& os, int indent) const {
   for (int j = 0; j < indent; j ++)
     os << ' ';
   this->printStatus(os, status_);
   os << ((type_ == OR) ? "OR" : (type_ == AND) ? "AND" :"SEQ");
   os << " Combination";
-  os << " -> " << endl;
+  os << " -> " << std::endl;
 
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i)
     (*i)->print(os, indent+2);

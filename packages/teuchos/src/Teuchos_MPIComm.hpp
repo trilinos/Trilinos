@@ -146,7 +146,7 @@ namespace Teuchos
 
       // errCheck() checks the return value of an MPI call and throws
       // a ParallelException upon failure.
-      static void errCheck(int errCode, const string& methodName);
+      static void errCheck(int errCode, const std::string& methodName);
 
 #ifdef HAVE_MPI
       //! Converts a PMachine data type code to a MPI_Datatype

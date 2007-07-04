@@ -32,7 +32,7 @@
 using namespace Teuchos;
 
 
-FileInputSource::FileInputSource(const string& filename)
+FileInputSource::FileInputSource(const std::string& filename)
 	: XMLInputSource(), filename_(filename)
 {;}
 

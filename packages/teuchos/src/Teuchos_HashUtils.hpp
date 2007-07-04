@@ -94,9 +94,9 @@ namespace Teuchos
 
 
   /** \relates HashUtils 
-      \brief Get the hash code of a string 
+      \brief Get the hash code of a std::string 
   */
-  template <> inline int hashCode(const string& x)
+  template <> inline int hashCode(const std::string& x)
     {
       const char* str = x.c_str();
       int len = x.length();

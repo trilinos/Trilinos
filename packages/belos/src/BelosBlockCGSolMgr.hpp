@@ -73,7 +73,7 @@ namespace Belos {
   /** \brief BlockCGSolMgrLinearProblemFailure is thrown when the linear problem is
    * not setup (i.e. setProblem() was not called) when solve() is called.
    *
-   * This exception is thrown from the BlockCGSolMgr::solve() method.
+   * This std::exception is thrown from the BlockCGSolMgr::solve() method.
    *
    */
   class BlockCGSolMgrLinearProblemFailure : public BelosError {public:
@@ -83,7 +83,7 @@ namespace Belos {
   /** \brief BlockCGSolMgrOrthoFailure is thrown when the orthogonalization manager is
    * unable to generate orthonormal columns from the initial basis vectors.
    *
-   * This exception is thrown from the BlockCGSolMgr::solve() method.
+   * This std::exception is thrown from the BlockCGSolMgr::solve() method.
    *
    */
   class BlockCGSolMgrOrthoFailure : public BelosError {public:
@@ -121,7 +121,7 @@ namespace Belos {
      *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 3*nev
      *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 300
      *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
-     *   - "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS and ICGS. Default: "DGKS"
+     *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:  DGKS and ICGS. Default: "DGKS"
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
      *   - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled for the purposing of deciding convergence. Default: true
@@ -176,7 +176,7 @@ namespace Belos {
      * quit.
      *
      * This method calls BlockCGIter::iterate(), which will return either because a specially constructed status test evaluates to 
-     * ::Passed or an exception is thrown.
+     * ::Passed or an std::exception is thrown.
      *
      * A return from BlockCGIter::iterate() signifies one of the following scenarios:
      *    - the maximum number of restarts has been exceeded. In this scenario, the current solutions to the linear system
@@ -210,7 +210,7 @@ namespace Belos {
     
     // Output manager.
     Teuchos::RCP<OutputManager<ScalarType> > printer_;
-    Teuchos::RCP<ostream> outputStream_;
+    Teuchos::RCP<std::ostream> outputStream_;
 
     // Status test.
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
@@ -235,7 +235,7 @@ namespace Belos {
     static const int outputFreq_default_;
     static const std::string label_default_;
     static const std::string orthoType_default_;
-    static const Teuchos::RCP<ostream> outputStream_default_;
+    static const Teuchos::RCP<std::ostream> outputStream_default_;
 
     // Current solver values.
     MagnitudeType convtol_, orthoKappa_;
@@ -285,7 +285,7 @@ template<class ScalarType, class MV, class OP>
 const std::string BlockCGSolMgr<ScalarType,MV,OP>::orthoType_default_ = "DGKS";
 
 template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<ostream> BlockCGSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
+const Teuchos::RCP<std::ostream> BlockCGSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
 
 
 // Empty Constructor
@@ -385,20 +385,20 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos:
 
   // Check to see if the timer label changed.
   if (params->isParameter("Timer Label")) {
-    string tempLabel = params->get("Timer Label", label_default_);
+    std::string tempLabel = params->get("Timer Label", label_default_);
 
     // Update parameter in our list and solver timer
     if (tempLabel != label_) {
       label_ = tempLabel;
       params_->set("Timer Label", label_);
-      string solveLabel = label_ + ": BlockCGSolMgr total solve time";
+      std::string solveLabel = label_ + ": BlockCGSolMgr total solve time";
       timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
     }
   }
 
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
-    string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
+    std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
     TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS", std::invalid_argument,
 			"Belos::BlockCGSolMgr: \"Orthogonalization\" must be either \"DGKS\" or \"ICGS\".");
     if (tempOrthoType != orthoType_) {
@@ -448,7 +448,7 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos:
 
   // output stream
   if (params->isParameter("Output Stream")) {
-    outputStream_ = Teuchos::getParameter<Teuchos::RCP<ostream> >(*params,"Output Stream");
+    outputStream_ = Teuchos::getParameter<Teuchos::RCP<std::ostream> >(*params,"Output Stream");
 
     // Update parameter in our list.
     params_->set("Output Stream", outputStream_);
@@ -544,7 +544,7 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos:
 
   // Create the timer if we need to.
   if (timerSolve_ == Teuchos::null) {
-    string solveLabel = label_ + ": BlockCGSolMgr total solve time";
+    std::string solveLabel = label_ + ": BlockCGSolMgr total solve time";
     timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
   }
 
@@ -706,7 +706,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 	    // Set the remaining indices after deflation.
 	    problem_->setLSIndex( currRHSIdx );
 
-	    // Get the current residual vector.
+	    // Get the current residual std::vector.
 	    Teuchos::RCP<MV> R_0 = problem_->getCurrResVec();
 	    
 	    // Set the new blocksize for the solver.
@@ -741,9 +741,9 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 	  }
 	}
 	catch (std::exception e) {
-	  printer_->stream(Errors) << "Error! Caught exception in CGIteration::iterate() at iteration " 
-				   << block_cg_iter->getNumIters() << endl 
-				   << e.what() << endl;
+	  printer_->stream(Errors) << "Error! Caught std::exception in CGIteration::iterate() at iteration " 
+				   << block_cg_iter->getNumIters() << std::endl 
+				   << e.what() << std::endl;
 	  throw;
 	}
       }
@@ -796,7 +796,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
   return Converged; // return from BlockCGSolMgr::solve() 
 }
 
-//  This method requires the solver manager to return a string that describes itself.
+//  This method requires the solver manager to return a std::string that describes itself.
 template<class ScalarType, class MV, class OP>
 std::string BlockCGSolMgr<ScalarType,MV,OP>::description() const
 {

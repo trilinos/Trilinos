@@ -36,8 +36,8 @@ int main( int argc, char* argv[] ) {
   
   result = true;
   try {
-    std::cerr << "\nRaise an exception with TEUCHOS_MSG_EXIT(...) right here in C++ code with a message ...\n";
-    TEUCHOS_MSG_EXIT("This exception is raised from C++ code!",1);
+    std::cerr << "\nRaise an std::exception with TEUCHOS_MSG_EXIT(...) right here in C++ code with a message ...\n";
+    TEUCHOS_MSG_EXIT("This std::exception is raised from C++ code!",1);
 	}
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,result);
   if(result==true) success = false;

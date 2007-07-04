@@ -38,7 +38,7 @@ TreeBuildingXMLHandler::TreeBuildingXMLHandler()
 	current_ = root_;
 }
 
-void TreeBuildingXMLHandler::characters(const string& chars)
+void TreeBuildingXMLHandler::characters(const std::string& chars)
 {
   TEST_FOR_EXCEPTION(current_.isEmpty(), std::logic_error,
                      "TreeBuildingXMLHandler::trying to add content to an empty node");
@@ -46,7 +46,7 @@ void TreeBuildingXMLHandler::characters(const string& chars)
   current_.addContent(StrUtils::fixUnprintableCharacters(chars));
 }
 
-void TreeBuildingXMLHandler::startElement(const string& tag, 
+void TreeBuildingXMLHandler::startElement(const std::string& tag, 
 																					const Map& attributes)
 {
   XMLObject parent;
@@ -63,13 +63,13 @@ void TreeBuildingXMLHandler::startElement(const string& tag,
 
   for (Map::const_iterator i=attributes.begin(); i != attributes.end(); ++i)
     {
-      const string& key = (*i).first;
-      const string& val = (*i).second;
+      const std::string& key = (*i).first;
+      const std::string& val = (*i).second;
       current_.addAttribute(key, val);
     }
 }
 
-int TreeBuildingXMLHandler::endElement(const string& tag)
+int TreeBuildingXMLHandler::endElement(const std::string& tag)
 {
   int error = 0;
   if (path_.size() > 0)

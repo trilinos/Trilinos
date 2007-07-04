@@ -43,7 +43,7 @@ namespace Belos {
   //@{
 
   /*! \class BelosError 
-      \brief An exception class parent to all Belos exceptions.
+      \brief An std::exception class parent to all Belos exceptions.
    */
   class BelosError: public std::logic_error {
     public: BelosError(const std::string& what_arg) : std::logic_error(what_arg) {}
@@ -65,9 +65,9 @@ namespace Belos {
     \enum Belos::NormType
     \brief Enumerated list for describing the multivector norm type.
   */
-  enum NormType {   OneNorm,       /*!< Compute the one-norm \f$\sum_{i=1}^{n}(|x_i w_i|)\f$ for each vector. */
-		    TwoNorm,       /*!< Compute the two-norm *\f$\sqrt(\sum_{i=1}^{n}((x_i w_i)^2)\f$ for each vector. */
-		    InfNorm        /*!< Compute the infinity-norm \f$(\max_{i=1}^{n}\{|x_i w_i|\})\f$ for each vector. */
+  enum NormType {   OneNorm,       /*!< Compute the one-norm \f$\sum_{i=1}^{n}(|x_i w_i|)\f$ for each std::vector. */
+		    TwoNorm,       /*!< Compute the two-norm *\f$\std::sqrt(\sum_{i=1}^{n}((x_i w_i)^2)\f$ for each std::vector. */
+		    InfNorm        /*!< Compute the infinity-norm \f$(\max_{i=1}^{n}\{|x_i w_i|\})\f$ for each std::vector. */
   };
   
   /*!	
@@ -93,7 +93,7 @@ namespace Belos {
   };
 
   /*!
-    Return a string name for a StatusType object.
+    Return a std::string name for a StatusType object.
   */
   inline
   const char* toString(const StatusType status)

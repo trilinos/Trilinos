@@ -66,7 +66,7 @@ public:
   //! @name Public types 
   //@{
 
-  /// Thrown if a parse exception occurs and  throwExceptions==true
+  /// Thrown if a parse std::exception occurs and  throwExceptions==true
   class ParseError : public std::logic_error
   {public: ParseError(const std::string& what_arg) : std::logic_error(what_arg) {}};
 
@@ -116,10 +116,10 @@ public:
   //! @name Behavior modes 
   //@{
 
-  /// Set if an exception is thrown, there is a parse error, or help is printed.
+  /// Set if an std::exception is thrown, there is a parse error, or help is printed.
   void throwExceptions( const bool & throwExceptions );
   
-  /// Returns true if an exception is thrown, there is a parse error, or help is printed.
+  /// Returns true if an std::exception is thrown, there is a parse error, or help is printed.
   bool throwExceptions() const;
 
   /// Set if all options must be recognized or not.
@@ -145,14 +145,14 @@ public:
 
   /** \brief Set a boolean option.
    *
-   * \param  option_true    [in] (null terminated string) If this option is found then
+   * \param  option_true    [in] (null terminated std::string) If this option is found then
    *                        <tt>*option_val = true</tt> will be set.
-   * \param  option_false   [in] (null terminated string) If this option is found then
+   * \param  option_false   [in] (null terminated std::string) If this option is found then
    *                        <tt>*option_val = false</tt> will be set.
    * \param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
    *                        of the option (used for printing in --help).  On output,
    *                        will be set according to <tt>(argc,argv[])</tt>.
-   * \param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
+   * \param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated std::string
    *                        gives the documentation for the option.
    */
   void setOption(
@@ -164,12 +164,12 @@ public:
 
   /** \brief Set an integer option.
    *
-   * \param  option_name    [in] (null terminated string) The name of the option
+   * \param  option_name    [in] (null terminated std::string) The name of the option
    *                        (without the leading '--' or trailing '=').
    * \param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
    *                        of the option (used for printing in --help).  On output,
    *                        will be set according to <tt>(argc,argv[])</tt>.
-   * \param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
+   * \param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated std::string
    *                        gives the documentation for the option.
    */
   void setOption(
@@ -181,12 +181,12 @@ public:
 
   /** \brief Set a floating-point option.
    *
-   * \param  option_name    [in] (null terminated string) The name of the option
+   * \param  option_name    [in] (null terminated std::string) The name of the option
    *                        (without the leading '--' or trailing '=').
    * \param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
    *                        of the option (used for printing in --help).  On output,
    *                        will be set according to <tt>(argc,argv[])</tt>.
-   * \param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
+   * \param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated std::string
    *                        gives the documentation for the option.
    */
   void setOption(
@@ -196,14 +196,14 @@ public:
     ,const bool    required        = false
     );
 
-  /** \brief Set a string option.
+  /** \brief Set a std::string option.
    *
-   * \param  option_name    [in] (null terminated string) The name of the option
+   * \param  option_name    [in] (null terminated std::string) The name of the option
    *                        (without the leading '--' or trailing '=').
    * \param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
    *                        of the option (used for printing in --help).  On output,
    *                        will be set according to <tt>(argc,argv[])</tt>.
-   * \param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
+   * \param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated std::string
    *                        gives the documentation for the option.
    */
   void setOption(
@@ -216,7 +216,7 @@ public:
   /** \brief Set an enumeration option (templated by enumeration type).
    *
    * \param  enum_option_name
-   *              [in] (null terminated string) The name of the option
+   *              [in] (null terminated std::string) The name of the option
    *              (without the leading '--' or trailing '=').
    * \param  enum_option_val
    *              [in/out] On input, <tt>*enum_option_val</tt> give the default
@@ -232,10 +232,10 @@ public:
    *              array are used to set the actual option <tt>*enum_option_val</tt>.
    * \param  enum_opt_names
    *              [in] Array (length <tt>num_enum_opt_values</tt>)) that gives
-   *              the string names for each option.  The strings in this function
+   *              the std::string names for each option.  The strings in this function
    *              are what is used in the commandline.
    * \param  documentation
-   *              [in] If <tt>!=NULL</tt>, then this null terminated string
+   *              [in] If <tt>!=NULL</tt>, then this null terminated std::string
    *              gives the documentation for the option.
    *
    * Warning! Only use enumeration or <tt>int</tt> for <tt>EType</tt>.
@@ -273,7 +273,7 @@ public:
    *         <ul>
    *         <li>An error message will be printed to <tt>*errout</tt> and parsing will stop as follows:
    *         <li>If <tt>this->throwExceptions()==true</tt>
-   *             <ul><li>This method will throw an <tt>UnrecognizedOption</tt> exception</ul>
+   *             <ul><li>This method will throw an <tt>UnrecognizedOption</tt> std::exception</ul>
    *         <li>else
    *             <ul><li>This method will return <tt>PARSE_UNRECOGNIZED_OPTION</tt></ul>
    *         <li>endif
@@ -285,7 +285,7 @@ public:
    * <li>else if the option <tt>--help</tt> is found
    *     <ul>
    *     <li>If <tt>this->throwExceptions()==true</tt>
-   *         <ul><li>This method will throw a <tt>HelpPrinted</tt> exception</ul>
+   *         <ul><li>This method will throw a <tt>HelpPrinted</tt> std::exception</ul>
    *     <li>else
    *         <ul><li>This method will return <tt>PARSE_HELP_PRINTED</tt></ul>
    *     <li>endif
@@ -296,7 +296,7 @@ public:
    * </ul>
    *
    * Note that if the option <tt>--pause-for-debugging</tt> is
-   * present, then string <tt>Type 0 and press enter to continue
+   * present, then std::string <tt>Type 0 and press enter to continue
    * :</tt> will be printed to standard error (<tt>std::cerr</tt>) and
    * execution will be suspended until the user enters any non-null
    * character(s).  This option is designed to make it easier to
@@ -365,7 +365,7 @@ private:
       :opt_type(opt_type_in),opt_val(opt_val_in),required(required_in),was_read(false)
       {}
     EOptType     opt_type;
-    any          opt_val; // Will be bool*, int*, double*, string* or a small int (for OPT_ENUM_INT)
+    any          opt_val; // Will be bool*, int*, double*, std::string* or a small int (for OPT_ENUM_INT)
     bool         required;
     bool         was_read;
   };
@@ -414,7 +414,7 @@ private:
     int                  *enum_option_val;
     int                  num_enum_opt_values;
     std::vector<int>     enum_opt_values;
-    std::vector<string>  enum_opt_names;
+    std::vector<std::string>  enum_opt_names;
   };
 
   //
@@ -590,7 +590,7 @@ std::string CommandLineProcessor::opt_type_str( EOptType opt_type ) const
       str = "double";
       break;
     case OPT_STRING:
-      str = "string";
+      str = "std::string";
       break;
     case OPT_ENUM_INT:
       str = "enum";

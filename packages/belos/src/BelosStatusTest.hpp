@@ -79,7 +79,7 @@ class StatusTest {
   //@{ 
   //! Check convergence status: Unconverged, Converged, Failed.
   /*! This method checks to see if the convergence criteria are met.  The calling routine may pass in the
-    current native residual vector (the one naturally produced as part of the iterative method) or a
+    current native residual std::vector (the one naturally produced as part of the iterative method) or a
     pre-computed estimate of the two-norm of the current residual, or both or neither.  The calling routine
     should also indicate if the solution of the linear problem has been updated to be compatible with
     the residual.  Some methods, such as GMRES do not update the solution at each iteration.
@@ -107,11 +107,11 @@ class StatusTest {
   //@{ 
 
   //! Output formatted description of stopping test to output stream.
-  virtual void print(ostream& os, int indent = 0) const = 0;
+  virtual void print(std::ostream& os, int indent = 0) const = 0;
  
   //! Output the result of the most recent CheckStatus call.
-  virtual void printStatus(ostream& os, StatusType type) const {
-    os << setiosflags(ios::left) << setw(13) << setfill('.');
+  virtual void printStatus(std::ostream& os, StatusType type) const {
+    os << setiosflags(std::ios::left) << std::setw(13) << std::setfill('.');
     switch (type) {
     case  Passed:
       os << "Passed";
@@ -124,7 +124,7 @@ class StatusTest {
       os << "**";
       break;
     }
-    os << setiosflags(ios::left) << setfill(' ');
+    os << setiosflags(std::ios::left) << std::setfill(' ');
     return;
   };
   //@}

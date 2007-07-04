@@ -50,11 +50,15 @@ typedef ParameterList::PrintOptions PLPrintOptions;
 using Teuchos::ParameterEntry;
 using Teuchos::OSTab;
 
-void print_break() { cout << "---------------------------------------------------" << endl; }
+void print_break() { std::cout << "---------------------------------------------------" << std::endl; }
 double Plus ( double a, double b ) { return a+b; }
 
 int main( int argc, char *argv[] )
 {
+
+  using std::cout;
+  using std::endl;
+
   bool verbose = true;
   int FailedTests = 0;
   bool result;
@@ -71,8 +75,8 @@ int main( int argc, char *argv[] )
   clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
   CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
   if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
-    cout << "Processor "<< procRank <<", parse_return "<< parse_return << endl;
-    cout << "End Result: TEST FAILED" << endl;
+    cout << "Processor "<< procRank <<", parse_return "<< parse_return << std::endl;
+    cout << "End Result: TEST FAILED" << std::endl;
     return parse_return;
   }
 
@@ -81,7 +85,7 @@ int main( int argc, char *argv[] )
     verbose = false;
 
   if (verbose)
-    cout << Teuchos::Teuchos_Version() << endl << endl;
+    cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   //-----------------------------------------------------------
   // Create Main Parameter List / Sublist Structure
@@ -99,53 +103,53 @@ int main( int argc, char *argv[] )
   //-----------------------------------------------------------
   if (verbose) {
     print_break();
-    cout << "Empty Parameter List Structure" << endl;
+    cout << "Empty Parameter List Structure" << std::endl;
     print_break();
-    cout<<PL_Main<< endl;
+    cout<<PL_Main<< std::endl;
   }
   if (verbose) cout << "Is 'Direction' recognized as a sublist of 'Main' ... ";
   if ( PL_Main.isSublist( "Direction" ) ) {  
-    if (verbose) cout << "yes"<< endl;
+    if (verbose) cout << "yes"<< std::endl;
   } else {
-    if (verbose) cout << "no"<< endl;
+    if (verbose) cout << "no"<< std::endl;
     FailedTests++;        
   }
   if (verbose) cout << "Is 'Newton' recognized as a sublist of 'Direction' ... ";
   if ( PL_Direction.isSublist( "Newton" ) ) {  
-    if (verbose) cout << "yes"<< endl;
+    if (verbose) cout << "yes"<< std::endl;
   } else {
-    if (verbose) cout << "no"<< endl;
+    if (verbose) cout << "no"<< std::endl;
     FailedTests++;        
   }
   if (verbose) cout << "Is 'Linear Solver' recognized as a sublist of 'Newton' ... ";
   if ( PL_Newton.isSublist( "Linear Solver" ) ) {  
-    if (verbose) cout << "yes"<< endl;
+    if (verbose) cout << "yes"<< std::endl;
   } else {
-    if (verbose) cout << "no"<< endl;
+    if (verbose) cout << "no"<< std::endl;
     FailedTests++;        
   }
   if (verbose) cout << "Is 'Line Search' recognized as a sublist of 'Main' ... ";
   if ( PL_Main.isSublist( "Line Search" ) ) {  
-    if (verbose) cout << "yes"<< endl;
+    if (verbose) cout << "yes"<< std::endl;
   } else {
-    if (verbose) cout << "no"<< endl;
+    if (verbose) cout << "no"<< std::endl;
     FailedTests++;        
   }
 
-  if (verbose) cout << "Is subist documentation string maintained ...\n";
+  if (verbose) cout << "Is subist documentation std::string maintained ...\n";
   {
     Teuchos::OSTab tab(cout);
     const Teuchos::ParameterEntry
       *paramEntry = PL_Main.getEntryPtr("Direction");
     TEST_FOR_EXCEPT(0==paramEntry);
     const std::string extracted_Direction_Doc = paramEntry->docString();
-    if (verbose) tab.o() << "Expected doc string = \"" << Direction_Doc << "\"\n";
-    if (verbose) tab.o() << "Extracted doc string = \"" << extracted_Direction_Doc << "\"\n";
+    if (verbose) tab.o() << "Expected doc std::string = \"" << Direction_Doc << "\"\n";
+    if (verbose) tab.o() << "Extracted doc std::string = \"" << extracted_Direction_Doc << "\"\n";
     if (extracted_Direction_Doc == Direction_Doc) {
       if (verbose) tab.o() << "passed!  They match :-)\n";
     }
     else {
-      if (verbose) tab.o() << "failed!  They do not match :-("<< endl;
+      if (verbose) tab.o() << "failed!  They do not match :-("<< std::endl;
       FailedTests++;        
     }
   }
@@ -167,36 +171,36 @@ int main( int argc, char *argv[] )
   //-----------------------------------------------------------
   if (verbose) {
     print_break();
-    cout << "Direction Parameter List" << endl;
+    cout << "Direction Parameter List" << std::endl;
     print_break();
     PL_Direction.print(cout);
   }
   if (verbose) cout << "Is 'Newton' recognized as a parameter of 'Direction' ... ";
   if ( PL_Direction.isParameter( "Newton" ) ) {  
-    if (verbose) cout << "yes"<< endl;
+    if (verbose) cout << "yes"<< std::endl;
   } else {
-    if (verbose) cout << "no"<< endl;
+    if (verbose) cout << "no"<< std::endl;
     FailedTests++;        
   }
   if (verbose) cout << "Is 'Tolerance' recognized as a parameter of 'Newton' ... ";
   if ( PL_Newton.isParameter( "Tolerance" ) ) {  
-    if (verbose) cout << "yes (should be no)"<< endl;
+    if (verbose) cout << "yes (should be no)"<< std::endl;
     FailedTests++;
   } else {
-    if (verbose) cout << "no (as expected)"<< endl;
+    if (verbose) cout << "no (as expected)"<< std::endl;
   }
   if (verbose) cout << "Is 'Tolerance' recognized as a parameter of 'Linear Solver' ... ";
   if ( PL_LinSol.isParameter( "Tolerance" ) ) {  
-    if (verbose) cout << "yes"<< endl;
+    if (verbose) cout << "yes"<< std::endl;
   } else {
-    if (verbose) cout << "no"<< endl;
+    if (verbose) cout << "no"<< std::endl;
     FailedTests++;        
   }
   if (verbose) cout << "Is 'Rescue Bad Newton Solve' recognized as a parameter of 'Newton' ... ";
   if ( PL_Newton.isParameter( "Rescue Bad Newton Solve" ) ) {  
-    if (verbose) cout << "yes"<< endl;
+    if (verbose) cout << "yes"<< std::endl;
   } else {
-    if (verbose) cout << "no"<< endl;
+    if (verbose) cout << "no"<< std::endl;
     FailedTests++;
   }
 
@@ -208,7 +212,7 @@ int main( int argc, char *argv[] )
     int ARI = 0, default_step = 0, max_iter_inc = 0, rec_step = 0;
     double alpha_factor = 0.0, min_bnds_factor = 0.0, max_bnds_factor = 0.0;
     bool force_interp = true, use_cntrs = false;
-    string ls_method = "Polynomial";
+    std::string ls_method = "Polynomial";
     // This is to force a char* to be passed into the get method to see if the template
     // specialization for char* is working.
     char* ls_method_char = const_cast<char *>(ls_method.c_str());
@@ -219,14 +223,14 @@ int main( int argc, char *argv[] )
     alpha_factor = PL_Polynomial.get("Alpha Factor", 0.0001 );
     default_step = PL_Polynomial.get("Default Step", 1 );
     force_interp = PL_Polynomial.get("Force Interpolation", false );
-    string interp_type = PL_Polynomial.get("Interpolation Type", "Cubic" );
+    std::string interp_type = PL_Polynomial.get("Interpolation Type", "Cubic" );
     max_bnds_factor = PL_Polynomial.get("Max Bounds Factor", 0.5 );
     PL_Polynomial.set("Max Iters", 3 );
     max_iter_inc = PL_Polynomial.get("Maximum Iteration for Increase", 0 );
     min_bnds_factor = PL_Polynomial.get("Min Bounds Factor", 0.1 );
     rec_step = PL_Polynomial.get("Recovery Step", 1 );
-    string rec_step_type = PL_Polynomial.get("Recovery Step Type", "Constant");
-    string suff_dec_cond = PL_Polynomial.get("Sufficient Decrease Condition", "Armijo-Goldstein" );
+    std::string rec_step_type = PL_Polynomial.get("Recovery Step Type", "Constant");
+    std::string suff_dec_cond = PL_Polynomial.get("Sufficient Decrease Condition", "Armijo-Goldstein" );
     use_cntrs = PL_Polynomial.get("Use Counters", true );
     PL_Main.set("Nonlinear Solver", "Line Search Based");
 
@@ -237,9 +241,9 @@ int main( int argc, char *argv[] )
     ParameterList& PL_My_Polynomial = PL_LineSearch.sublist("Polynomial");
     if (verbose) cout<< "Is 'operator=' functional ... ";
     if ( PL_My_Polynomial.isParameter("Recovery Step Type") ) {
-      if (verbose) cout<< "yes" << endl;
+      if (verbose) cout<< "yes" << std::endl;
     } else {
-      if (verbose) cout<< "no" << endl;
+      if (verbose) cout<< "no" << std::endl;
       FailedTests++;
     }
 
@@ -291,9 +295,9 @@ int main( int argc, char *argv[] )
 
     if (verbose) cout<< "Is the copy constructor functional ... ";
     if ( Copied_PL_Main.isParameter("Nonlinear Solver") ) {
-      if (verbose) cout<< "yes" << endl;
+      if (verbose) cout<< "yes" << std::endl;
     } else {
-      if (verbose) cout<< "no" << endl;
+      if (verbose) cout<< "no" << std::endl;
       FailedTests++;
     }  
 
@@ -309,25 +313,25 @@ int main( int argc, char *argv[] )
     //  non-templated code needs ".template" before the method name )
     //-----------------------------------------------------------
     int max_iters = 0, max_iters_again = 0;
-    string nonlin_solver;
+    std::string nonlin_solver;
     tempMeth = true;
     try {
       max_iters = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER get<int>("Max Iters");
       max_iters_again = Teuchos::getConst(PL_My_Polynomial).INVALID_TEMPLATE_QUALIFIER get<int>("Max Iters");
-      nonlin_solver = PL_Main.INVALID_TEMPLATE_QUALIFIER get<string>("Nonlinear Solver");
+      nonlin_solver = PL_Main.INVALID_TEMPLATE_QUALIFIER get<std::string>("Nonlinear Solver");
     }
     catch( const Teuchos::Exceptions::InvalidParameter& e ) { tempMeth = false; }  
     if (verbose) {
-      cout<< "Is the templated 'get' method functional ... "<<endl;
+      cout<< "Is the templated 'get' method functional ... "<<std::endl;
       cout<< "  Can we retrieve information using the CORRECT variable type ... ";
     }
-    if (tempMeth && max_iters==3) { if (verbose) cout << "yes" << endl; }
-    else { if (verbose) cout << "no" << endl; FailedTests++; }
+    if (tempMeth && max_iters==3) { if (verbose) cout << "yes" << std::endl; }
+    else { if (verbose) cout << "no" << std::endl; FailedTests++; }
     if (verbose) {
       cout<< "  Can we retrieve const information using the CORRECT variable type ... ";
     }
-    if (tempMeth && max_iters_again==3) { if (verbose) cout << "yes" << endl; }
-    else { if (verbose) cout << "no" << endl; FailedTests++; }
+    if (tempMeth && max_iters_again==3) { if (verbose) cout << "yes" << std::endl; }
+    else { if (verbose) cout << "no" << std::endl; FailedTests++; }
 
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list that we know is a bad "get".
@@ -346,8 +350,8 @@ int main( int argc, char *argv[] )
     if (verbose) {
       cout<< "  Can we retrieve information using the WRONG variable type ... ";
     }
-    if (tempMeth) { if (verbose) cout << "no" << endl; }
-    else { if (verbose) cout << "yes" << endl; }
+    if (tempMeth) { if (verbose) cout << "no" << std::endl; }
+    else { if (verbose) cout << "yes" << std::endl; }
 
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list using templated "get" method.
@@ -357,15 +361,15 @@ int main( int argc, char *argv[] )
     tempMeth = true;
     try {
       max_iters = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER get<int>("Max Iters");
-      nonlin_solver = PL_Main.INVALID_TEMPLATE_QUALIFIER get<string>("Nonlinear Solver");
+      nonlin_solver = PL_Main.INVALID_TEMPLATE_QUALIFIER get<std::string>("Nonlinear Solver");
     }
     catch( const Teuchos::Exceptions::InvalidParameter& e ) { tempMeth = false; }  
     if (verbose) {
-      cout<< "Is the templated 'get' method functional ... "<<endl;
+      cout<< "Is the templated 'get' method functional ... "<<std::endl;
       cout<< "  Can we retrieve information using the CORRECT variable type ... ";
     }
-    if (tempMeth && max_iters==3) { if (verbose) cout << "yes" << endl; }
-    else { if (verbose) cout << "no" << endl; FailedTests++; }
+    if (tempMeth && max_iters==3) { if (verbose) cout << "yes" << std::endl; }
+    else { if (verbose) cout << "no" << std::endl; FailedTests++; }
 
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list that we know is a bad "get".
@@ -381,8 +385,8 @@ int main( int argc, char *argv[] )
     if (verbose) {
       cout<< "  Can we retrieve information using the WRONG variable type ... ";
     }
-    if (tempMeth) { if (verbose) cout << "no" << endl; }
-    else { if (verbose) cout << "yes" << endl; }
+    if (tempMeth) { if (verbose) cout << "no" << std::endl; }
+    else { if (verbose) cout << "yes" << std::endl; }
 
     //-----------------------------------------------------------
     // Check the templated 'getPtr' method.
@@ -395,30 +399,30 @@ int main( int argc, char *argv[] )
     //-----------------------------------------------------------
     int *max_iters_ptr = 0;
     const int *max_iters_ptr_again = 0;
-    string* nonlin_solver_ptr;
+    std::string* nonlin_solver_ptr;
 
     max_iters_ptr = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER getPtr<int>("Max Iters");
     max_iters_ptr_again = Teuchos::getConst(PL_My_Polynomial).INVALID_TEMPLATE_QUALIFIER getPtr<int>("Max Iters");
-    nonlin_solver_ptr = PL_Main.INVALID_TEMPLATE_QUALIFIER getPtr<string>("Nonlinear Solver");
+    nonlin_solver_ptr = PL_Main.INVALID_TEMPLATE_QUALIFIER getPtr<std::string>("Nonlinear Solver");
 
     if (verbose) {
-      cout<< "Is the templated 'getPtr' method functional ... "<<endl;
+      cout<< "Is the templated 'getPtr' method functional ... "<<std::endl;
       cout<< "  Can we retrieve information using the CORRECT variable type ... ";
     }
     if (max_iters_ptr) {
       if ((*max_iters_ptr)==3) {
-        if (verbose) cout << "yes" << endl; 
+        if (verbose) cout << "yes" << std::endl; 
       }
-      else { if (verbose) cout << "no" << endl; FailedTests++; }
+      else { if (verbose) cout << "no" << std::endl; FailedTests++; }
     }
     if (verbose) {
       cout<< "  Can we retrieve const information using the CORRECT variable type ... ";
     }
     if (max_iters_ptr_again) {
       if ((*max_iters_ptr_again)==3) {
-        if (verbose) cout << "yes" << endl; 
+        if (verbose) cout << "yes" << std::endl; 
       }
-      else { if (verbose) cout << "no" << endl; FailedTests++; }
+      else { if (verbose) cout << "no" << std::endl; FailedTests++; }
     }
 
     //-----------------------------------------------------------
@@ -436,8 +440,8 @@ int main( int argc, char *argv[] )
     if (verbose) {
       cout<< "  Can we retrieve information using the WRONG variable type ... ";
     }
-    if (!mbf_ptr) { if (verbose) cout << "no" << endl; }
-    else { if (verbose) cout << "yes" << endl; }
+    if (!mbf_ptr) { if (verbose) cout << "no" << std::endl; }
+    else { if (verbose) cout << "yes" << std::endl; }
 
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list using templated "get" method.
@@ -446,17 +450,17 @@ int main( int argc, char *argv[] )
     //-----------------------------------------------------------
 
     max_iters_ptr = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER getPtr<int>("Max Iters");
-    nonlin_solver_ptr = PL_Main.INVALID_TEMPLATE_QUALIFIER getPtr<string>("Nonlinear Solver");
+    nonlin_solver_ptr = PL_Main.INVALID_TEMPLATE_QUALIFIER getPtr<std::string>("Nonlinear Solver");
 
     if (verbose) {
-      cout<< "Is the templated 'getPtr' method functional ... "<<endl;
+      cout<< "Is the templated 'getPtr' method functional ... "<<std::endl;
       cout<< "  Can we retrieve information using the CORRECT variable type ... ";
     }
     if (max_iters_ptr) {
       if ((*max_iters_ptr)==3) {
-        if (verbose) cout << "yes" << endl; 
+        if (verbose) cout << "yes" << std::endl; 
       }
-      else { if (verbose) cout << "no" << endl; FailedTests++; }
+      else { if (verbose) cout << "no" << std::endl; FailedTests++; }
     }
 
     //-----------------------------------------------------------
@@ -473,8 +477,8 @@ int main( int argc, char *argv[] )
     if (verbose) {
       cout<< "  Can we retrieve information using the WRONG variable type ... ";
     }
-    if (!mbf_ptr) { if (verbose) cout << "no" << endl; }
-    else { if (verbose) cout << "yes" << endl; }
+    if (!mbf_ptr) { if (verbose) cout << "no" << std::endl; }
+    else { if (verbose) cout << "yes" << std::endl; }
 
     //-----------------------------------------------------------
     // Check the 'getParameter' helper function.
@@ -490,8 +494,8 @@ int main( int argc, char *argv[] )
     if (verbose && def_step==1) {
       cout<< "Is the helper function 'getParameter' functional ... ";
     }
-    if (tempMeth) { if (verbose) cout << "yes" << endl; }
-    else { if (verbose) cout << "no" << endl; FailedTests++; }
+    if (tempMeth) { if (verbose) cout << "yes" << std::endl; }
+    else { if (verbose) cout << "no" << std::endl; FailedTests++; }
 
     //-----------------------------------------------------------
     // Check templated isType functionality
@@ -501,23 +505,23 @@ int main( int argc, char *argv[] )
     bool PT1, PT2, PT3;
     PT1 = PL_Polynomial.INVALID_TEMPLATE_QUALIFIER isType<int>("Default Step");
     PT2 = PL_Polynomial.INVALID_TEMPLATE_QUALIFIER isType<long int>("Default Step");
-    PT3 = PL_Polynomial.INVALID_TEMPLATE_QUALIFIER isType<string>("Interpolation Type");
+    PT3 = PL_Polynomial.INVALID_TEMPLATE_QUALIFIER isType<std::string>("Interpolation Type");
     if (verbose) {
-      cout<< "Is the templated 'isType' method functional ... "<<endl;
+      cout<< "Is the templated 'isType' method functional ... "<<std::endl;
       cout<< "  Is the 'Default Step' of type 'int' ... ";
     }
-    if (PT1) { if (verbose) cout<< "yes" << endl; }
-    else { if (verbose) cout<< "no" << endl; FailedTests++; }
+    if (PT1) { if (verbose) cout<< "yes" << std::endl; }
+    else { if (verbose) cout<< "no" << std::endl; FailedTests++; }
     if (verbose) {
       cout<< "  Is the 'Default Step' of type 'long int' ... ";
     }
-    if (PT2) { if (verbose) cout<< "yes" << endl; FailedTests++; }
-    else { if (verbose) cout<< "no (as expected)" << endl; }
+    if (PT2) { if (verbose) cout<< "yes" << std::endl; FailedTests++; }
+    else { if (verbose) cout<< "no (as expected)" << std::endl; }
     if (verbose) {
-    	cout<< "  Is the 'Interpolation Type' of type 'string' ... ";
+    	cout<< "  Is the 'Interpolation Type' of type 'std::string' ... ";
     }
-    if (PT3) { if (verbose) cout<< "yes" << endl; }
-    else { if (verbose) cout<< "no" << endl; FailedTests++; }
+    if (PT3) { if (verbose) cout<< "yes" << std::endl; }
+    else { if (verbose) cout<< "no" << std::endl; FailedTests++; }
 
     //-----------------------------------------------------------
     // Check the 'isParameterType' helper function.
@@ -526,19 +530,19 @@ int main( int argc, char *argv[] )
     PT4 = Teuchos::isParameterType<double>(PL_Polynomial, "Max Bounds Factor");
     PT5 = Teuchos::isParameterType<float>(PL_Polynomial, "Max Bounds Factor");    
     if (verbose) {
-      cout<< "Is the helper function 'isParameterType' functional ... "<<endl;
+      cout<< "Is the helper function 'isParameterType' functional ... "<<std::endl;
       cout<< "  Is the 'Max Bounds Factor' of type 'double' ... ";
     }
-    if (PT4) { if (verbose) cout<< "yes" <<endl; }
-    else { if (verbose) cout<< "no" << endl; FailedTests++; }
+    if (PT4) { if (verbose) cout<< "yes" <<std::endl; }
+    else { if (verbose) cout<< "no" << std::endl; FailedTests++; }
     if (verbose) {
       cout<< "  Is the 'Max Bounds Factor' of type 'float' ... ";
     }
-    if (PT5) { if (verbose) cout<< "yes" <<endl; FailedTests++; }
-    else { if (verbose) cout<< "no (as expected)" << endl; }
+    if (PT5) { if (verbose) cout<< "yes" <<std::endl; FailedTests++; }
+    else { if (verbose) cout<< "no (as expected)" << std::endl; }
 
     //-----------------------------------------------------------
-    // Can we pass a pointer to a vector to the parameter list.
+    // Can we pass a pointer to a std::vector to the parameter list.
     //-----------------------------------------------------------
     double * tempvec1 = new double[10];
     for (int i=0; i<10; i++) { tempvec1[i] = i; }
@@ -546,21 +550,21 @@ int main( int argc, char *argv[] )
     double* tempvec2 = Teuchos::getParameter<double*>( PL_Main, "Address of Norm Vector" );
     tempvec1[4] = 2.0; tempvec1[6] = 1.0;
     if (verbose) {
-      cout<< "Can we pass a pointer to a vector to a parameter list ... ";
+      cout<< "Can we pass a pointer to a std::vector to a parameter list ... ";
     }
     if ((tempvec2[4]-tempvec1[4])!=0.0 || (tempvec2[6]-tempvec1[6])!=0.0) {
-      if (verbose) { cout<<"no"<<endl; }
+      if (verbose) { cout<<"no"<<std::endl; }
       FailedTests++;
     } else {
-      if (verbose) { cout<<"yes"<<endl; }
+      if (verbose) { cout<<"yes"<<std::endl; }
     }	    
 
     //-----------------------------------------------------------
-    // We can add Array<T> objects of various types T as string parameters!
+    // We can add Array<T> objects of various types T as std::string parameters!
     //-----------------------------------------------------------
     if(verbose) {
       print_break();
-      cout << "Setting int and double array objects as string parameters ...\n";
+      cout << "Setting int and double array objects as std::string parameters ...\n";
       print_break();
     }
     const Teuchos::Array<int>
@@ -623,7 +627,7 @@ int main( int argc, char *argv[] )
 
     if(verbose) {
       print_break();
-      cout << "Setting a array of doubles as a string parameter directly ...\n";
+      cout << "Setting a array of doubles as a std::string parameter directly ...\n";
       print_break();
     }
 
@@ -675,10 +679,10 @@ int main( int argc, char *argv[] )
       cout<< "Can we pass a pointer to a function to a parameter list ... ";
     }
     if ( pt2Function( 1.0, 2.0 ) != 3.0 ) {
-      if (verbose) cout<<"no"<<endl;
+      if (verbose) cout<<"no"<<std::endl;
       FailedTests++;
     } else {
-      if (verbose) cout<<"yes"<<endl;
+      if (verbose) cout<<"yes"<<std::endl;
     }    
 #endif
   }
@@ -694,36 +698,36 @@ int main( int argc, char *argv[] )
   {
     print_break();
     cout << " printing using public iterators " 
-         << endl;
+         << std::endl;
     print_break();
   }
   for (iter = PL_Main.begin(); iter != PL_Main.end(); ++iter)
   {
     const ParameterEntry& val = PL_Main.entry(iter);
-    const string& name = PL_Main.name(iter);
+    const std::string& name = PL_Main.name(iter);
     if (val.isList())
     {
-      if (verbose) cout << name << endl;
+      if (verbose) cout << name << std::endl;
       const ParameterList& sublist = Teuchos::getValue<ParameterList>(val);
       ParameterList::ConstIterator i;
       for (i=sublist.begin(); i != sublist.end(); ++i)
       {
-        const string& nm = sublist.name(i);              
+        const std::string& nm = sublist.name(i);              
         const ParameterEntry& v = sublist.entry(i);
         if (v.isList())
         {
-          if (verbose) cout << "  " << nm << endl;
+          if (verbose) cout << "  " << nm << std::endl;
           if (verbose) Teuchos::getValue<ParameterList>(v).print(cout, 6);
         }
         else
         {
-          if (verbose) cout << "  " << nm << " " << v << endl;
+          if (verbose) cout << "  " << nm << " " << v << std::endl;
         }
       }
     }
     else
     {
-      if (verbose) cout << name << " " << val << endl;
+      if (verbose) cout << name << " " << val << std::endl;
     }
   }
 
@@ -735,24 +739,24 @@ int main( int argc, char *argv[] )
     if (verbose) {
 
       print_break();
-      cout << "writing to XML ostream" << endl;
+      cout << "writing to XML std::ostream" << std::endl;
       print_break();
       writeParameterListToXmlOStream(PL_Main,cout);
 
       print_break();
-      cout << "writing to XML file" << endl;
+      cout << "writing to XML file" << std::endl;
       print_break();
       writeParameterListToXmlFile(PL_Main,"PL_Main.xml");
 
       print_break();
-      cout << "reading from XML file" << endl;
+      cout << "reading from XML file" << std::endl;
       print_break();
       ParameterList readBack;
       updateParametersFromXmlFile("PL_Main.xml",&readBack);
       if (verbose) readBack.print(cout);
 
       print_break();
-      cout << "reading from XML string" << endl;
+      cout << "reading from XML std::string" << std::endl;
       print_break();
       std::ifstream xmlInFile("PL_Main.xml");
       std::string xmlStr;
@@ -771,8 +775,8 @@ int main( int argc, char *argv[] )
   catch(const std::exception& e)
   {
     if(verbose) {
-      cerr << "caught exception:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught std::exception:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
     FailedTests++;
   }
@@ -785,11 +789,11 @@ int main( int argc, char *argv[] )
 
   if (verbose) {
     print_break();
-    cout << "The Final Parameter List" << endl;
+    cout << "The Final Parameter List" << std::endl;
     print_break();
     PL_Main.print(cout);
     print_break();
-    cout << "The unused parameters" << endl;
+    cout << "The unused parameters" << std::endl;
     PL_Main.unused(cout);
   }
 
@@ -799,62 +803,62 @@ int main( int argc, char *argv[] )
 
   if (verbose) {
     print_break();
-    cout << "Accessing a sublist using the wrong name (should throw a Teuchos::Exceptions::InvalidParameterName exception)...\n";
+    cout << "Accessing a sublist using the wrong name (should throw a Teuchos::Exceptions::InvalidParameterName std::exception)...\n";
     print_break();
   }
   try {
     PL_Main.sublist("Direction").sublist("Newton").sublist("Linear Solvers",true);
-    if (verbose) cout << "Did not throw exception, error!\n";
+    if (verbose) cout << "Did not throw std::exception, error!\n";
     ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameterName &e) {
-    cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
-    OSTab(cerr).o() << e.what() << endl;
+    std::cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
+    OSTab(std::cerr).o() << e.what() << std::endl;
   }
   if (verbose) {
     print_break();
-    cout << "Accessing a parameter using the wrong name (should throw a Teuchos::Exceptions::InvalidParameterName exception)...\n";
+    cout << "Accessing a parameter using the wrong name (should throw a Teuchos::Exceptions::InvalidParameterName std::exception)...\n";
     print_break();
   }
   try {
     Teuchos::getParameter<int>(PL_Main.sublist("Direction").sublist("Newton").sublist("Linear Solver"),"Tolerances");
-    if (verbose) cout << "Did not throw exception, error!\n";
+    if (verbose) cout << "Did not throw std::exception, error!\n";
     ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameterName &e) {
     if(verbose) {
-      cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
   }
   catch(const std::exception &e) {
     if(verbose) {
-      cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught unexpected std::exception:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
     ++FailedTests;
   }
 
   if (verbose) {
     print_break();
-    cout << "Accessing a parameter using the wrong parameter type (should throw a Teuchos::Exceptions::InvalidParameterType exception)...\n";
+    cout << "Accessing a parameter using the wrong parameter type (should throw a Teuchos::Exceptions::InvalidParameterType std::exception)...\n";
     print_break();
   }
   try {
     Teuchos::getParameter<int>(PL_Main.sublist("Direction").sublist("Newton").sublist("Linear Solver"),"Tolerance");
-    if (verbose) cout << "Did not throw exception, error!\n";
+    if (verbose) cout << "Did not throw std::exception, error!\n";
     ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameterType &e) {
     if(verbose) {
-      cerr << "caught expected Teuchos::Exceptions::InvalidParameterType:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught expected Teuchos::Exceptions::InvalidParameterType:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
   }
   catch(const std::exception &e) {
     if(verbose) {
-      cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught unexpected std::exception:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
     ++FailedTests;
   }
@@ -891,7 +895,7 @@ int main( int argc, char *argv[] )
 */
 
   // Create a validator for the parameter "Line Search"->"Polynomial"->"Max Iters"
-  // that accepts an 'int', a 'double' or a 'string' value!
+  // that accepts an 'int', a 'double' or a 'std::string' value!
   typedef Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes AcceptedTypes;
   Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
     linesearchMaxItersValiator = rcp(
@@ -907,7 +911,7 @@ int main( int argc, char *argv[] )
     );
 
   // Create a validator for the parameter "Direction"->"Newton"->"Linear Solver"->"Tol"
-  // that accepts a 'double' or a 'string' value!
+  // that accepts a 'double' or a 'std::string' value!
   typedef Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes AcceptedTypes;
   Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
     linSolveTolValidator = rcp(
@@ -925,42 +929,42 @@ int main( int argc, char *argv[] )
 
   if (verbose) {
     print_break();
-    cout << "Validating the parameter list against itself (should not throw exception)...\n";
+    cout << "Validating the parameter list against itself (should not throw std::exception)...\n";
     print_break();
   }
   try {
     PL_Main.validateParameters(PL_Main_valid);
-    if (verbose) cout << "Did not throw exception, success!\n\n";
+    if (verbose) cout << "Did not throw std::exception, success!\n\n";
   }
   catch(const std::exception &e) {
     if(verbose) {
-      cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught unexpected std::exception:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
     ++FailedTests;
   }
 
   if (verbose) {
     print_break();
-    cout << "Adding an invalid parameter type then validating (should throw a Teuchos::Exceptions::InvalidParameterType exception)...\n";
+    cout << "Adding an invalid parameter type then validating (should throw a Teuchos::Exceptions::InvalidParameterType std::exception)...\n";
     print_break();
   }
   try {
     PL_Main.sublist("Line Search").sublist("Polynomial").set("Max Iters",(short int)(3)); // Should be an int!
     PL_Main.validateParameters(PL_Main_valid);
-    if (verbose) cout << "Did not throw exception, error!\n";
+    if (verbose) cout << "Did not throw std::exception, error!\n";
     ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameterType &e) {
     if(verbose) {
-      cerr << "caught expected Teuchos::Exceptions::InvalidParameterType:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught expected Teuchos::Exceptions::InvalidParameterType:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
   }
   catch(const std::exception &e) {
     if(verbose) {
-      cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught unexpected std::exception:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
     ++FailedTests;
   }
@@ -968,25 +972,25 @@ int main( int argc, char *argv[] )
 
   if (verbose) {
     print_break();
-    cout << "Adding an invalid parameter name then validating (should throw a Teuchos::Exceptions::InvalidParameterName exception)...\n";
+    cout << "Adding an invalid parameter name then validating (should throw a Teuchos::Exceptions::InvalidParameterName std::exception)...\n";
     print_break();
   }
   try {
     PL_Main.sublist("Line Search").sublist("Polynomial").set("Max Iter",10);
     PL_Main.validateParameters(PL_Main_valid);
-    if (verbose) cout << "Did not throw exception, error!\n";
+    if (verbose) cout << "Did not throw std::exception, error!\n";
     ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameterName &e) {
     if(verbose) {
-      cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
   }
   catch(const std::exception &e) {
     if(verbose) {
-      cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught unexpected std::exception:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
     ++FailedTests;
   }
@@ -994,25 +998,25 @@ int main( int argc, char *argv[] )
 
   if (verbose) {
     print_break();
-    cout << "Adding an invalid parameter type then validating using validator (should throw a Teuchos::Exceptions::InvalidParameterType exception)...\n";
+    cout << "Adding an invalid parameter type then validating using validator (should throw a Teuchos::Exceptions::InvalidParameterType std::exception)...\n";
     print_break();
   }
   try {
-    PL_Main.set("Nonlinear Solver",int(0)); // Should be a string!
+    PL_Main.set("Nonlinear Solver",int(0)); // Should be a std::string!
     PL_Main.validateParameters(PL_Main_valid);
-    if (verbose) cout << "Did not throw exception, error!\n";
+    if (verbose) cout << "Did not throw std::exception, error!\n";
     ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameterType &e) {
     if(verbose) {
-      cerr << "caught expected Teuchos::Exceptions::InvalidParameterType:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught expected Teuchos::Exceptions::InvalidParameterType:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
   }
   catch(const std::exception &e) {
     if(verbose) {
-      cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught unexpected std::exception:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
     ++FailedTests;
   }
@@ -1020,25 +1024,25 @@ int main( int argc, char *argv[] )
 
   if (verbose) {
     print_break();
-    cout << "Adding an invalid parameter value then validating using validator (should throw a Teuchos::Exceptions::InvalidParameterValue exception)...\n";
+    cout << "Adding an invalid parameter value then validating using validator (should throw a Teuchos::Exceptions::InvalidParameterValue std::exception)...\n";
     print_break();
   }
   try {
     PL_Main.set("Nonlinear Solver","LineSearch Based"); // Should be "Line Search Based"!
     PL_Main.validateParameters(PL_Main_valid);
-    if (verbose) cout << "Did not throw exception, error!\n";
+    if (verbose) cout << "Did not throw std::exception, error!\n";
     ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameterValue &e) {
     if(verbose) {
-      cerr << "caught expected Teuchos::Exceptions::InvalidParameterValue:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught expected Teuchos::Exceptions::InvalidParameterValue:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
   }
   catch(const std::exception &e) {
     if(verbose) {
-      cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught unexpected std::exception:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
     ++FailedTests;
   }
@@ -1046,7 +1050,7 @@ int main( int argc, char *argv[] )
 
   if (verbose) {
     print_break();
-    cout << "Use the validator to access integral value (should *not* throw exception)...\n";
+    cout << "Use the validator to access integral value (should *not* throw std::exception)...\n";
     print_break();
   }
   try {
@@ -1061,15 +1065,15 @@ int main( int argc, char *argv[] )
   }
   catch(const std::exception &e) {
     if(verbose) {
-      cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught unexpected std::exception:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
     ++FailedTests;
   }
 
   if (verbose) {
     print_break();
-    cout << "Use the validator to access string value (should *not* throw exception)...\n";
+    cout << "Use the validator to access std::string value (should *not* throw std::exception)...\n";
     print_break();
   }
   try {
@@ -1084,8 +1088,8 @@ int main( int argc, char *argv[] )
   }
   catch(const std::exception &e) {
     if(verbose) {
-      cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught unexpected std::exception:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
     ++FailedTests;
   }
@@ -1104,19 +1108,19 @@ int main( int argc, char *argv[] )
   }
   try {
     validatedPL.validateParametersAndSetDefaults(PL_Main_valid);
-    if (verbose) cout << "Did not throw exception, success!\n\n";
+    if (verbose) cout << "Did not throw std::exception, success!\n\n";
   }
   catch(const std::exception &e) {
     if(verbose) {
-      cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught unexpected std::exception:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
     ++FailedTests;
   }
 
   if (verbose) {
     print_break();
-    cout << "Parameter list with defaults set:" << endl;
+    cout << "Parameter list with defaults set:" << std::endl;
     print_break();
     validatedPL.print(cout,PLPrintOptions().showTypes(true).showDoc(true));
     print_break();
@@ -1158,7 +1162,7 @@ int main( int argc, char *argv[] )
         Polynomial_sublist.set("Max Iters",(double)(3.0));
         break;
       case 2:
-        typeName = "string";
+        typeName = "std::string";
         Polynomial_sublist.set("Max Iters",(std::string)("3"));
         break;
       default:
@@ -1188,8 +1192,8 @@ int main( int argc, char *argv[] )
     }
     catch(const std::exception &e) {
       if(verbose) {
-        cerr << "caught unexpected exception:\n\n";
-        OSTab(cerr).o() << e.what() << endl;
+        std::cerr << "caught unexpected std::exception:\n\n";
+        OSTab(std::cerr).o() << e.what() << std::endl;
       }
       ++FailedTests;
     }
@@ -1215,15 +1219,15 @@ int main( int argc, char *argv[] )
     }
     catch(const std::exception &e) {
       if(verbose) {
-        cerr << "caught unexpected exception:\n\n";
-        OSTab(cerr).o() << e.what() << endl;
+        std::cerr << "caught unexpected std::exception:\n\n";
+        OSTab(std::cerr).o() << e.what() << std::endl;
       }
       ++FailedTests;
     }
 
     if (verbose) {
       print_break();
-      cout << "Use the external number validator to access a "<<typeName<<" as a string ...\n";
+      cout << "Use the external number validator to access a "<<typeName<<" as a std::string ...\n";
       print_break();
     }
     try {
@@ -1242,8 +1246,8 @@ int main( int argc, char *argv[] )
     }
     catch(const std::exception &e) {
       if(verbose) {
-        cerr << "caught unexpected exception:\n\n";
-        OSTab(cerr).o() << e.what() << endl;
+        std::cerr << "caught unexpected std::exception:\n\n";
+        OSTab(std::cerr).o() << e.what() << std::endl;
       }
       ++FailedTests;
     }
@@ -1271,8 +1275,8 @@ int main( int argc, char *argv[] )
     }
     catch(const std::exception &e) {
       if(verbose) {
-        cerr << "caught unexpected exception:\n\n";
-        OSTab(cerr).o() << e.what() << endl;
+        std::cerr << "caught unexpected std::exception:\n\n";
+        OSTab(std::cerr).o() << e.what() << std::endl;
       }
       ++FailedTests;
     }
@@ -1298,15 +1302,15 @@ int main( int argc, char *argv[] )
     }
     catch(const std::exception &e) {
       if(verbose) {
-        cerr << "caught unexpected exception:\n\n";
-        OSTab(cerr).o() << e.what() << endl;
+        std::cerr << "caught unexpected std::exception:\n\n";
+        OSTab(std::cerr).o() << e.what() << std::endl;
       }
       ++FailedTests;
     }
 
     if (verbose) {
       print_break();
-      cout << "Use the nomember help function to access a "<<typeName<<" as a string ...\n";
+      cout << "Use the nomember help function to access a "<<typeName<<" as a std::string ...\n";
       print_break();
     }
     try {
@@ -1325,8 +1329,8 @@ int main( int argc, char *argv[] )
     }
     catch(const std::exception &e) {
       if(verbose) {
-        cerr << "caught unexpected exception:\n\n";
-        OSTab(cerr).o() << e.what() << endl;
+        std::cerr << "caught unexpected std::exception:\n\n";
+        OSTab(std::cerr).o() << e.what() << std::endl;
       }
       ++FailedTests;
     }
@@ -1357,7 +1361,7 @@ int main( int argc, char *argv[] )
         Teuchos::setDoubleParameter("Max Iters",3.0,"",&Polynomial_sublist);
         break;
       case 2:
-        typeName = "string";
+        typeName = "std::string";
         Teuchos::setNumericStringParameter("Max Iters","3","",&Polynomial_sublist);
         break;
       default:
@@ -1387,8 +1391,8 @@ int main( int argc, char *argv[] )
     }
     catch(const std::exception &e) {
       if(verbose) {
-        cerr << "caught unexpected exception:\n\n";
-        OSTab(cerr).o() << e.what() << endl;
+        std::cerr << "caught unexpected std::exception:\n\n";
+        OSTab(std::cerr).o() << e.what() << std::endl;
       }
       ++FailedTests;
     }
@@ -1414,15 +1418,15 @@ int main( int argc, char *argv[] )
     }
     catch(const std::exception &e) {
       if(verbose) {
-        cerr << "caught unexpected exception:\n\n";
-        OSTab(cerr).o() << e.what() << endl;
+        std::cerr << "caught unexpected std::exception:\n\n";
+        OSTab(std::cerr).o() << e.what() << std::endl;
       }
       ++FailedTests;
     }
 
     if (verbose) {
       print_break();
-      cout << "Use the nomember help function to access a "<<typeName<<" as a string ...\n";
+      cout << "Use the nomember help function to access a "<<typeName<<" as a std::string ...\n";
       print_break();
     }
     try {
@@ -1441,8 +1445,8 @@ int main( int argc, char *argv[] )
     }
     catch(const std::exception &e) {
       if(verbose) {
-        cerr << "caught unexpected exception:\n\n";
-        OSTab(cerr).o() << e.what() << endl;
+        std::cerr << "caught unexpected std::exception:\n\n";
+        OSTab(std::cerr).o() << e.what() << std::endl;
       }
       ++FailedTests;
     }
@@ -1475,7 +1479,7 @@ int main( int argc, char *argv[] )
         Teuchos::setDoubleParameter("Max Iters",3.0,"",&Polynomial_sublist);
         break;
       case 2:
-        typeName = "string";
+        typeName = "std::string";
         Teuchos::setNumericStringParameter("Max Iters","3","",&Polynomial_sublist);
         break;
       default:
@@ -1511,8 +1515,8 @@ int main( int argc, char *argv[] )
     }
     catch(const std::exception &e) {
       if(verbose) {
-        cerr << "caught unexpected exception:\n\n";
-        OSTab(cerr).o() << e.what() << endl;
+        std::cerr << "caught unexpected std::exception:\n\n";
+        OSTab(std::cerr).o() << e.what() << std::endl;
       }
       ++FailedTests;
     }
@@ -1544,15 +1548,15 @@ int main( int argc, char *argv[] )
     }
     catch(const std::exception &e) {
       if(verbose) {
-        cerr << "caught unexpected exception:\n\n";
-        OSTab(cerr).o() << e.what() << endl;
+        std::cerr << "caught unexpected std::exception:\n\n";
+        OSTab(std::cerr).o() << e.what() << std::endl;
       }
       ++FailedTests;
     }
 
     if (verbose) {
       print_break();
-      cout << "Use validateParemetersAndSetDefaults(...) to access a "<<typeName<<" as a string ...\n";
+      cout << "Use validateParemetersAndSetDefaults(...) to access a "<<typeName<<" as a std::string ...\n";
       print_break();
     }
     try {
@@ -1577,8 +1581,8 @@ int main( int argc, char *argv[] )
     }
     catch(const std::exception &e) {
       if(verbose) {
-        cerr << "caught unexpected exception:\n\n";
-        OSTab(cerr).o() << e.what() << endl;
+        std::cerr << "caught unexpected std::exception:\n\n";
+        OSTab(std::cerr).o() << e.what() << std::endl;
       }
       ++FailedTests;
     }
@@ -1587,25 +1591,25 @@ int main( int argc, char *argv[] )
 
   if (verbose) {
     print_break();
-    cout << "Adding an invalid sublist then validating (should throw a Teuchos::Exceptions::InvalidParameterName exception)...\n";
+    cout << "Adding an invalid sublist then validating (should throw a Teuchos::Exceptions::InvalidParameterName std::exception)...\n";
     print_break();
   }
   try {
     PL_Main.sublist("Line Search").sublist("Polynomials").set("Max Iters",3); // param correct, sublist wrong
     PL_Main.validateParameters(PL_Main_valid);
-    if (verbose) cout << "Did not throw exception, error!\n";
+    if (verbose) cout << "Did not throw std::exception, error!\n";
     ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameterName &e) {
     if(verbose) {
-      cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
   }
   catch(const std::exception &e) {
     if(verbose) {
-      cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught unexpected std::exception:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
     ++FailedTests;
   }
@@ -1613,17 +1617,17 @@ int main( int argc, char *argv[] )
 
   if (verbose) {
     print_break();
-    cout << "Validating only the top level list (should not throw exception)...\n";
+    cout << "Validating only the top level list (should not throw std::exception)...\n";
     print_break();
   }
   try {
     PL_Main.validateParameters(PL_Main_valid,0);
-    if (verbose) cout << "Did not throw exception, success!\n\n";
+    if (verbose) cout << "Did not throw std::exception, success!\n\n";
   }
   catch(const std::exception &e) {
     if(verbose) {
-      cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr).o() << e.what() << endl;
+      std::cerr << "caught unexpected std::exception:\n\n";
+      OSTab(std::cerr).o() << e.what() << std::endl;
     }
     ++FailedTests;
   }
@@ -1688,14 +1692,14 @@ int main( int argc, char *argv[] )
 
   if (verbose) {
     print_break();
-    cout << "The Final Parameter List with Types and Documentation" << endl;
+    cout << "The Final Parameter List with Types and Documentation" << std::endl;
     print_break();
     PL_Main.print(cout,PLPrintOptions().showTypes(true).showDoc(true));
     print_break();
-    cout << "The unused parameters" << endl;
+    cout << "The unused parameters" << std::endl;
     PL_Main.unused(cout);
     print_break();
-    cout << "Number of Failed Tests : " << FailedTests << endl;
+    cout << "Number of Failed Tests : " << FailedTests << std::endl;
     print_break();
   }
 
@@ -1709,12 +1713,12 @@ int main( int argc, char *argv[] )
   if(!success) ++FailedTests;
 
   if ( FailedTests > 0 ) { 
-    cout << "End Result: TEST FAILED" << endl;
+    cout << "End Result: TEST FAILED" << std::endl;
     return 1; // Can't return negative numbers from main()!
   }
 
   if ( FailedTests == 0 )
-    cout << "End Result: TEST PASSED" << endl;
+    cout << "End Result: TEST PASSED" << std::endl;
 
   return 0;
 

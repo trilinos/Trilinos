@@ -139,8 +139,8 @@ namespace Belos {
     /*! Any calls to get the current RHS/LHS vectors after this method is called will return the new
       linear systems indicated by \c index.  The length of \c index is assumed to be the blocksize and entries
       of \c index must be between 0 and the number of vectors in the RHS/LHS multivector.  An entry of the
-      \c index vector can also be -1, which means this column of the linear system is augmented using a random
-      vector.
+      \c index std::vector can also be -1, which means this column of the linear system is augmented using a random
+      std::vector.
     */
     void setLSIndex(std::vector<int>& index); 
     
@@ -155,11 +155,11 @@ namespace Belos {
     /*! \note The timers are created during the first call to setProblem().  Any calls to this method to change 
         the label after that will not change the label used in the timer.
     */ 
-    void setLabel(const string& label) { label_ = label; }
+    void setLabel(const std::string& label) { label_ = label; }
 
     //! Compute the new solution to the linear system given the /c update.
     /*! \note If \c updateLP is true, then the next time GetCurrResVecs is called, a new residual will be computed.  
-      This keeps the linear problem from having to recompute the residual vector everytime it's asked for if
+      This keeps the linear problem from having to recompute the residual std::vector everytime it's asked for if
       the solution hasn't been updated.  If \c updateLP is false, the new solution is computed without actually 
       updating the linear problem.
     */
@@ -199,21 +199,21 @@ namespace Belos {
     //! Get a pointer to the right-hand side B.
     RCP<const MV> getRHS() const { return(B_); }
     
-    //! Get a pointer to the initial residual vector.
+    //! Get a pointer to the initial residual std::vector.
     /*! \note This is the preconditioned residual if the linear system is preconditioned on the left.
      */
     RCP<const MV> getInitResVec() const { return(R0_); }
     
-    //! Get a pointer to the preconditioned initial residual vector.
+    //! Get a pointer to the preconditioned initial residual std::vector.
     /*! \note This is the unpreconditioned residual.
      */
     RCP<const MV> getActualInitResVec() const { return(R0_); }
     
-    //! Get a pointer to the current residual vector.
+    //! Get a pointer to the current residual std::vector.
     /*! This method is called by the solver of any method that is interested in the current linear system
       being solved for.
       <ol>
-      <li> If the solution has been updated by the solver, then this vector is current ( see SolutionUpdated() ).
+      <li> If the solution has been updated by the solver, then this std::vector is current ( see SolutionUpdated() ).
       </ol>
     */
     RCP<MV> getCurrResVec() { return curR_; }
@@ -222,7 +222,7 @@ namespace Belos {
     /*! This method is called by the solver or any method that is interested in the current linear system
       being solved for.  
       <ol>
-      <li> If the solution has been updated by the solver, then this vector is current ( see SolutionUpdated() ).
+      <li> If the solution has been updated by the solver, then this std::vector is current ( see SolutionUpdated() ).
       <li> If there is no linear system to solve, this method will return a NULL pointer
       </ol>
     */
@@ -232,7 +232,7 @@ namespace Belos {
     /*! This method is called by the solver of any method that is interested in the current linear system
       being solved for.  
       <ol>
-      <li> If the solution has been updated by the solver, then this vector is current ( see SolutionUpdated() ).
+      <li> If the solution has been updated by the solver, then this std::vector is current ( see SolutionUpdated() ).
       <li> If there is no linear system to solve, this method will return a NULL pointer
       </ol>
     */	
@@ -244,17 +244,17 @@ namespace Belos {
     //! Get a pointer to the right preconditioning operator.
     RCP<const OP> getRightPrec() const { return(RP_); };
     
-    //! Get the 0-based index vector indicating the current linear systems being solved for.
+    //! Get the 0-based index std::vector indicating the current linear systems being solved for.
     /*! Since the block size is independent of the number of right-hand sides for
       some solvers (GMRES, CG, etc.), it is important to know which linear systems
       are being solved for.  That may mean you need to update the information
-      about the norms of your initial residual vector for weighting purposes.  This
+      about the norms of your initial residual std::vector for weighting purposes.  This
       information can keep you from querying the solver for information that rarely
       changes.
-      \note The length of the index vector is the number of right-hand sides being solved for.
-            If an entry of this vector is -1 then that linear system is an augmented linear
+      \note The length of the index std::vector is the number of right-hand sides being solved for.
+            If an entry of this std::vector is -1 then that linear system is an augmented linear
 	    system and doesn't need to be considered for convergence.
-      \note The vector returned from this method is valid if isProblemSet() returns true.
+      \note The std::vector returned from this method is valid if isProblemSet() returns true.
     */
     std::vector<int> getLSIndex() const { return(rhsIndex_); }
 
@@ -348,10 +348,10 @@ namespace Belos {
     //! Operator of linear system. 
     RCP<const OP> A_;
     
-    //! Solution vector of linear system.
+    //! Solution std::vector of linear system.
     RCP<MV> X_;
     
-    //! Current solution vector of the linear system.
+    //! Current solution std::vector of the linear system.
     RCP<MV> curX_;
     
     //! Right-hand side of linear system.
@@ -395,7 +395,7 @@ namespace Belos {
     bool solutionUpdated_;    
    
     //! Linear problem label that prefixes the timer labels.
-    string label_;
+    std::string label_;
  
     typedef MultiVecTraits<ScalarType,MV>  MVT;
     typedef OperatorTraits<ScalarType,MV,OP>  OPT;
@@ -543,7 +543,7 @@ namespace Belos {
     //
     if (num2Solve_ < blocksize_) {
       //
-      // Get a view of the current solutions and correction vector.
+      // Get a view of the current solutions and correction std::vector.
       //
       int validIdx = 0;
       std::vector<int> newIndex( num2Solve_ );
@@ -627,7 +627,7 @@ namespace Belos {
     curR_ = null;
 
     // Check the validity of the linear problem object.
-    // If no operator A exists, then throw an exception.
+    // If no operator A exists, then throw an std::exception.
     if (A_ == null || X_ == null || B_ == null) {
       isSet_ = false;
       return isSet_;
@@ -636,7 +636,7 @@ namespace Belos {
     // Initialize the state booleans
     solutionUpdated_ = false;
     
-    // Compute the initial residual vector.
+    // Compute the initial residual std::vector.
     if (R0_==null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *X_ )) {
       R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
     }
@@ -645,11 +645,11 @@ namespace Belos {
 
     // Create timers if the haven't been created yet.
     if (timerOp_ == Teuchos::null) {
-      string opLabel = label_ + ": Operation Op*x";
+      std::string opLabel = label_ + ": Operation Op*x";
       timerOp_ = Teuchos::TimeMonitor::getNewTimer( opLabel );
     }
     if (timerPrec_ == Teuchos::null) {
-      string precLabel = label_ + ": Operation Prec*x";
+      std::string precLabel = label_ + ": Operation Prec*x";
       timerPrec_ = Teuchos::TimeMonitor::getNewTimer( precLabel );
     }
 

@@ -125,7 +125,7 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y) co
   if (lWorkSpace < wSize) {
     if (workSpace)
       delete[] workSpace;
-    workSpace = new (nothrow) double[wSize];
+    workSpace = new (std::nothrow) double[wSize];
     if (workSpace == 0) {
       info = -1;
       return info;
@@ -156,8 +156,8 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y) co
   Y.PutScalar(0.0);
 
   if (localVerbose > 1) {
-    cout << endl;
-    cout  << " --- PCG Iterations --- " << endl;
+    std::cout << std::endl;
+    std::cout  << " --- PCG Iterations --- " << std::endl;
   }
 
   int iter;
@@ -190,11 +190,11 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y) co
 
     if (alpha <= 0.0) {
       if (MyComm.MyPID() == 0) {
-        cerr << endl << endl;
-        cerr.precision(4);
-        cerr.setf(ios::scientific, ios::floatfield);
-        cerr << " !!! Non-positive value for p^TKp (" << alpha << ") !!!";
-        cerr << endl << endl;
+        std::cerr << std::endl << std::endl;
+        std::cerr.precision(4);
+        std::cerr.setf(std::ios::scientific, std::ios::floatfield);
+        std::cerr << " !!! Non-positive value for p^TKp (" << alpha << ") !!!";
+        std::cerr << std::endl << std::endl;
       }
       assert(alpha > 0.0);
     }
@@ -209,10 +209,10 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y) co
     MyComm.SumAll(&tmp, &rNorm, 1);
 
     if (localVerbose > 1) {
-      cout  << "   Iter. " << iter;
-      cout.precision(4);
-      cout.setf(ios::scientific, ios::floatfield);
-      cout << " Residual reduction " << sqrt(rNorm/initNorm) << endl;
+      std::cout  << "   Iter. " << iter;
+      std::cout.precision(4);
+      std::cout.setf(std::ios::scientific, std::ios::floatfield);
+      std::cout << " Residual reduction " << std::sqrt(rNorm/initNorm) << std::endl;
     }
 
     if (rNorm <= tolSquare*initNorm)
@@ -221,17 +221,17 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y) co
   } // for (iter = 1; iter <= iterMax; ++iter)
 
   if (localVerbose == 1) {
-    cout << endl;
-    cout << " --- End of PCG solve ---" << endl;
-    cout << "   Iter. " << iter;
-    cout.precision(4);
-    cout.setf(ios::scientific, ios::floatfield);
-    cout << " Residual reduction " << sqrt(rNorm/initNorm) << endl;
-    cout << endl;
+    std::cout << std::endl;
+    std::cout << " --- End of PCG solve ---" << std::endl;
+    std::cout << "   Iter. " << iter;
+    std::cout.precision(4);
+    std::cout.setf(std::ios::scientific, std::ios::floatfield);
+    std::cout << " Residual reduction " << std::sqrt(rNorm/initNorm) << std::endl;
+    std::cout << std::endl;
   }
 
   if (localVerbose > 1) {
-    cout << endl;
+    std::cout << std::endl;
   }
 
   numSolve += 1;
@@ -274,7 +274,7 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
 
   if (lWorkSpace < wSize) {
     delete[] workSpace;
-    workSpace = new (nothrow) double[wSize];
+    workSpace = new (std::nothrow) double[wSize];
     if (workSpace == 0) {
       info = -1;
       return info;
@@ -354,14 +354,14 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
     R.Norm2(initNorm);
 
     if (localVerbose > 1) {
-      cout << endl;
-      cout << " Vectors " << iRHS << " to " << iRHS + numVec - 1 << endl;
+      std::cout << std::endl;
+      std::cout << " Vectors " << iRHS << " to " << iRHS + numVec - 1 << std::endl;
       if (localVerbose > 2) {
         fprintf(stderr,"\n");
         for (ii = 0; ii < numVec; ++ii) {
-          cout << " ... Initial Residual Norm " << ii << " = " << initNorm[ii] << endl;
+          std::cout << " ... Initial Residual Norm " << ii << " = " << initNorm[ii] << std::endl;
         }
-        cout << endl;
+        std::cout << std::endl;
       }
     }
 
@@ -420,9 +420,9 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
       for (ii = 0; ii < blkSize; ++ii) {
         if (da[ii] < 0.0) {
           if (MyComm.MyPID() == 0) {
-            cerr << endl << endl;
-            cerr << " !!! Negative eigenvalue for P^tKP (" << da[ii] << ") !!!";
-            cerr << endl << endl;
+            std::cerr << std::endl << std::endl;
+            std::cerr << " !!! Negative eigenvalue for P^tKP (" << da[ii] << ") !!!";
+            std::cerr << std::endl << std::endl;
           }
           exit(-1);
         }
@@ -461,19 +461,19 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
       }
 
       if (localVerbose > 1) {
-        cout << " Vectors " << iRHS << " to " << iRHS + numVec - 1;
-        cout << " -- Iteration " << iter << " -- " << nFound << " converged vectors\n"; 
+        std::cout << " Vectors " << iRHS << " to " << iRHS + numVec - 1;
+        std::cout << " -- Iteration " << iter << " -- " << nFound << " converged vectors\n"; 
         if (localVerbose > 2) {
-          cout << endl;
+          std::cout << std::endl;
           for (ii = 0; ii < numVec; ++ii) {
-            cout << " ... ";
-            cout.width(5);
-            cout << ii << " ... Residual = ";
-            cout.precision(2);
-            cout.setf(ios::scientific, ios::floatfield);
-            cout << resNorm[ii] << " ... Right Hand Side = " << initNorm[ii] << endl;
+            std::cout << " ... ";
+            std::cout.width(5);
+            std::cout << ii << " ... Residual = ";
+            std::cout.precision(2);
+            std::cout.setf(std::ios::scientific, std::ios::floatfield);
+            std::cout << resNorm[ii] << " ... Right Hand Side = " << initNorm[ii] << std::endl;
           }
-          cout << endl;
+          std::cout << std::endl;
         }
       }
 

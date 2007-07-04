@@ -84,10 +84,10 @@ class CompObject
 
   //! @name Set flop count methods.
   //@{ 
-  //! Resets the number of floating point operations to zero for \e this multi-vector.
+  //! Resets the number of floating point operations to zero for \e this multi-std::vector.
   void resetFlops() const {if (flopCounter_!=0) flopCounter_->resetFlops(); return;}
 
-  //! Returns the number of floating point operations with \e this multi-vector.
+  //! Returns the number of floating point operations with \e this multi-std::vector.
   double getFlops() const {if (flopCounter_!=0) return(flopCounter_->flops()); else return(0.0);}
   //@}
 

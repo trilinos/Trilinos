@@ -8,7 +8,7 @@ use strict;
 #
 my $g_use_msg =
   "Use: token-replace-list.pl token_file file_in file_out\n";
-if( scalar(@ARGV) != 3 ) {
+if( scalar(@ARGV) < 3 ) {
   print STDERR $g_use_msg;
   exit(-1);
 }
@@ -16,6 +16,7 @@ if( scalar(@ARGV) != 3 ) {
 my $token_file    = shift;
 my $file_in_name  = shift;
 my $file_out_name = shift;
+my $print_file_name = shift;
 #
 open TOKEN_NAMES_FILE, "<$token_file" || die "The file $token_file could not be opened!";
 my @token_names = <TOKEN_NAMES_FILE>;
@@ -33,12 +34,17 @@ close FILE_IN;
 #
 my @file_out_array;
 my $did_replacement = 0;
+my $printed_file_name = 0;
 foreach(@file_in_array) {
   my $line = $_;
   foreach(@token_names) {
 	my ($find_token, $replace_token) = split(" ",$_);
-	my $match_str = '([^\w\d_]|^)' . $find_token . '([^\w\d_]|$)';
+	my $match_str = '([^a-zA-Z_]|^)' . $find_token . '([^a-zA-Z0-9_]|$)';
 	$did_replacement = 1 if $line=~s/$match_str/$1$replace_token$2/g;
+        if ( $did_replacement && $print_file_name && !$printed_file_name ) {
+          print "Did token replacement in file : $file_in_name\n";
+          $printed_file_name = 1;
+        }
   }
   push @file_out_array, $line;
 }

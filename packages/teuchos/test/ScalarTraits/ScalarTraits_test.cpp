@@ -151,7 +151,7 @@ int main( int argc, char* argv[] ) {
     CommandLineProcessor  clp(false); // Don't throw exceptions
 		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 		if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
-			*out << "\nEnd Result: TEST FAILED" << endl;
+			*out << "\nEnd Result: TEST FAILED" << std::endl;
 			return parse_return;
 		}
 

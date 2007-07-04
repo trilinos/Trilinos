@@ -49,7 +49,7 @@ public:
 	virtual const char* what() const throw() { return msg.data(); }
 };
 
-// Throw the exception <tt>std::invalid_argument</tt> for below functions
+// Throw the std::exception <tt>std::invalid_argument</tt> for below functions
 void dyn_cast_throw_exception(
   const std::string   &type_from_name
   ,const std::string  &type_from_concr_name
@@ -80,7 +80,7 @@ void dyn_cast_throw_exception(
  *
  * This utility function is designed to cast an object reference of
  * type <tt>T_From</tt> to type <tt>T_To</tt> and if the cast fails at
- * runtime then an exception (derived from <tt>std::bad_cast</tt>) is
+ * runtime then an std::exception (derived from <tt>std::bad_cast</tt>) is
  * thrown that contains a very good error message.
  *
  * Consider the following class hierarchy:
@@ -101,14 +101,14 @@ void dyn_cast_throw_exception(
       dynamic_cast<C&>(a);
     }
     catch( const std::bad_cast &e ) {
-      std::cout << "\nCaught std::bad_cast exception e where e.what() = \"" << e.what() << "\"\n";
+      std::cout << "\nCaught std::bad_cast std::exception e where e.what() = \"" << e.what() << "\"\n";
     }
     try {
       std::cout << "\nTrying: Teuchos::dyn_cast<C>(a);\n";
       Teuchos::dyn_cast<C>(a);
     }
     catch( const std::bad_cast &e ) {
-      std::cout << "\nCaught std::bad_cast exception e where e.what() = \"" << e.what() << "\"\n";
+      std::cout << "\nCaught std::bad_cast std::exception e where e.what() = \"" << e.what() << "\"\n";
     }
   	return 0;
   }
@@ -121,11 +121,11 @@ void dyn_cast_throw_exception(
 
   Trying: dynamic_cast<C&>(a);
 
-  Caught std::bad_cast exception e where e.what() = "St8bad_cast"
+  Caught std::bad_cast std::exception e where e.what() = "St8bad_cast"
 
   Trying: Teuchos::dyn_cast<C>(a);
 
-  Caught std::bad_cast exception e where e.what() = "../../../../packages/teuchos/src/Teuchos_dyn_cast.cpp:46: true:
+  Caught std::bad_cast std::exception e where e.what() = "../../../../packages/teuchos/src/Teuchos_dyn_cast.cpp:46: true:
   dyn_cast<1C>(1A) : Error, the object with the concrete type '1B' (passed in through the interface type '1A')  does
   not support the interface '1C' and the dynamic cast failed!"
 

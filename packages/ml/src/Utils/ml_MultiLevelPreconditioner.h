@@ -109,7 +109,7 @@ namespace ML_Epetra
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
   /*! This function, defined in the namespace ML_Epetra, can be used to set
     default values in a user's defined Teuchos::ParameterList.
-    \param ProblemType (In) : a string, whose possible values are:
+    \param ProblemType (In) : a std::string, whose possible values are:
        - "SA" : classical smoothed aggregation preconditioners;
        - "maxwell" : default values for Maxwell.
        - "DD" : defaults for 2-level domain decomposition preconditioners based
@@ -131,7 +131,7 @@ namespace ML_Epetra
     parameter list will be preserved.  Default value is true, i.e., any
     pre-existing values may be overwritten. 
    */
-  int SetDefaults(string ProblemType, Teuchos::ParameterList & List,
+  int SetDefaults(std::string ProblemType, Teuchos::ParameterList & List,
 		  int * options = 0, double * params = 0, const bool OverWrite=true);
   
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
@@ -192,7 +192,7 @@ OverWrite=true);
     
     It is important to note that ML is more restrictive than Epetra for
     the definition of maps. It is required that RowMatrixRowMap() is equal 
-    to OperatorRangeMap(). This is because ML needs to perform matrix-vector
+    to OperatorRangeMap(). This is because ML needs to perform matrix-std::vector
     product, as well as getrow() functions, on the same data distribution.
     
     Also, for square matrices, OperatorDomainMap() must be as 
@@ -341,12 +341,12 @@ public:
   }
 
   //! Prints unused parameters in the input ParameterList on the specified stream.
-  void PrintUnused(ostream & os) const
+  void PrintUnused(std::ostream & os) const
   {
     List_.unused(os);
   }
 
-  //! Prints unused parameters in the input ParameterList to cout on proc \c MyPID. 
+  //! Prints unused parameters in the input ParameterList to std::cout on proc \c MyPID. 
   /*! Mispelled parameters are simply ignored. Therefore, it is often the best
    * choice to print out the parameters that have not been used in the
    * construction phase. 
@@ -366,7 +366,7 @@ public:
     return OutputList_;
   }
 
-  //! Prints on \c cout the values of the internally stored parameter list for processor \c MyPID
+  //! Prints on \c std::cout the values of the internally stored parameter list for processor \c MyPID
   void PrintList(int MyPID);
 
   //! Copies \c List into the internally stored parameter list object.
@@ -512,14 +512,14 @@ public:
                        const int PreCycles, const int PostCycles,
                        const int MLCycles);
 
-  //! Analyze the effect of each level's smoother on a random vector.
+  //! Analyze the effect of each level's smoother on a random std::vector.
   int AnalyzeSmoothers(const int NumPreCycles = 1,
                        const int NumPostCycles = 1);
 
-  //! Analyze the effect of the coarse solver on a random vector.
+  //! Analyze the effect of the coarse solver on a random std::vector.
   int AnalyzeCoarse();
 
-  //! Analyze the effect of the ML cycle on a random vector.
+  //! Analyze the effect of the ML cycle on a random std::vector.
   int AnalyzeCycle(const int NumCycles = 1);
 
   //! Test several smoothers on fine-level matrix.
@@ -562,15 +562,15 @@ public:
   //! Visualizes the shape of the aggregates.
   int VisualizeAggregates();
 
-  //! Visualizes the effect of smoothers on a random vector.
+  //! Visualizes the effect of smoothers on a random std::vector.
   int VisualizeSmoothers(int NumPrecCycles = 1,
 			 int NumPostCycles = 1);
 
-  //! Visualizes the effect of the ML cycle on a random vector.
+  //! Visualizes the effect of the ML cycle on a random std::vector.
   int VisualizeCycle(int NumCycles = 1);
 
   //! Reads a parameter list from an XML file.
-  int ReadXML(const string& FileName);
+  int ReadXML(const std::string& FileName);
   
   /*! Creates label for this object (printed out by AztecOO).  This does not
       allocate/reallocate any memory.
@@ -721,14 +721,14 @@ private:
     In this interface, all levels move from 0 to MaxLevels-1.
     ML's level for interface's level i is LevelID_[i]
   */
-  vector<int> LevelID_;
+  std::vector<int> LevelID_;
 
-  //! If not NULL, contains the allocated null space vector 
+  //! If not NULL, contains the allocated null space std::vector 
   double* NullSpaceToFree_;              
 
-  //! all cout's have this prefix (default'd in Initialize() )
-  string PrintMsg_;
-  //! all cerr's have this prefix (default'd in Initialize() )
+  //! all std::cout's have this prefix (default'd in Initialize() )
+  std::string PrintMsg_;
+  //! all std::cerr's have this prefix (default'd in Initialize() )
   char ErrorMsg_[80];
   //! true if information has to be printed on this process
   bool verbose_;
@@ -811,7 +811,7 @@ private:
   int memory_[ML_MEM_SIZE];
 
   // filtering stuff
-  vector<double> flt_NullSpace_;
+  std::vector<double> flt_NullSpace_;
   ML* flt_ml_;
   ML_Aggregate* flt_agg_;
   

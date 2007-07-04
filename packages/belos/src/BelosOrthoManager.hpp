@@ -113,7 +113,7 @@ namespace Belos {
      @param C [out] The coefficients of \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
        and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
        routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
-       \c X and \c *Q[i], then a std::invalid_argument exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
+       \c X and \c *Q[i], then a std::invalid_argument std::exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
        pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
 
      @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
@@ -156,7 +156,7 @@ namespace Belos {
      @param C [out] The coefficients of the original \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
        and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
        routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
-       \c X and \c *Q[i], then a std::invalid_argument exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
+       \c X and \c *Q[i], then a std::invalid_argument std::exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
        pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
 
      @param B [out] The coefficients of the original \c X with respect to the computed basis. This matrix is not necessarily triangular; see the documentation
@@ -193,11 +193,11 @@ namespace Belos {
 
     /*! \brief This method sets the label used by the timers in the orthogonalization manager.
      */
-    virtual void setLabel(const string& label) = 0;
+    virtual void setLabel(const std::string& label) = 0;
  
     /*! \brief This method returns the label being used by the timers in the orthogonalization manager.
      */
-    virtual const string& getLabel() const = 0;
+    virtual const std::string& getLabel() const = 0;
     
     //@}
 

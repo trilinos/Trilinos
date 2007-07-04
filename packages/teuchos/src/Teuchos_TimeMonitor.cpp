@@ -36,10 +36,10 @@ using namespace Teuchos;
 
 
 
-void TimeMonitor::summarize(ostream &out, bool alwaysWriteLocal,
+void TimeMonitor::summarize(std::ostream &out, bool alwaysWriteLocal,
                             bool writeGlobalStats)
 {
-  Array<string> localNames(counters().length());
+  Array<std::string> localNames(counters().length());
   Array<double> localTimings(counters().length());
   Array<double> localCallCounts(counters().length());
 
@@ -52,7 +52,7 @@ void TimeMonitor::summarize(ostream &out, bool alwaysWriteLocal,
   
   /* Gather timings from all procs, in case some timers have been activated
    * on other processors but not on this one.  */
-  Array<string> names;
+  Array<std::string> names;
   Array<Array<double> > data(2);
   PerformanceMonitorUtils::synchValues(MPIComm::world(), localNames, 
                                        tuple(localTimings, localCallCounts),
@@ -72,7 +72,7 @@ void TimeMonitor::summarize(ostream &out, bool alwaysWriteLocal,
   Array<TableColumn> columnsToWrite;
 
   TableColumn nameCol(names);
-  Array<string> titles;
+  Array<std::string> titles;
   titles.append("Timer Name");
 
   columnsToWrite.append(nameCol);

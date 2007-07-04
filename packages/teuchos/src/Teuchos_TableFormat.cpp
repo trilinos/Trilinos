@@ -31,9 +31,9 @@
 using namespace Teuchos;
 
 
-string TableFormat::thinline() const
+std::string TableFormat::thinline() const
 {
-  TeuchosOStringStream toss;
+  std::ostringstream toss;
   for (int i=0; i<pageWidth_; i++)
     {
       toss << "-";
@@ -43,9 +43,9 @@ string TableFormat::thinline() const
 
 
 
-string TableFormat::thickline() const
+std::string TableFormat::thickline() const
 {
-  TeuchosOStringStream toss;
+  std::ostringstream toss;
   for (int i=0; i<pageWidth_; i++)
     {
       toss << "=";
@@ -54,9 +54,9 @@ string TableFormat::thickline() const
 }
 
 
-string TableFormat::blanks(int size) const
+std::string TableFormat::blanks(int size) const
 {
-  TeuchosOStringStream toss;
+  std::ostringstream toss;
   for (int i=0; i<size; i++)
     {
       toss << " ";
@@ -67,7 +67,7 @@ string TableFormat::blanks(int size) const
 
 
 int TableFormat
-::computeRequiredColumnWidth(const string& name,
+::computeRequiredColumnWidth(const std::string& name,
                              const TableColumn& column) const
 {
   int rtn = name.length();
@@ -75,7 +75,7 @@ int TableFormat
   for (int i=0; i<column.numRows(); i++)
     {
       int x = column.entry(i)->toString().length();
-      rtn = max(rtn, x);
+      rtn = std::max(rtn, x);
     }
   
   return rtn + columnSpacing_;
@@ -116,8 +116,8 @@ void TableFormat::writeRow(RCP<std::ostream>& out,
 
 
 void TableFormat::writeWholeTable(RCP<std::ostream>& out,
-                                  const string& header,
-                                  const Array<string>& columnNames,
+                                  const std::string& header,
+                                  const Array<std::string>& columnNames,
                                   const Array<TableColumn>& columns) const
 {
   /* compute the total width */
@@ -128,14 +128,14 @@ void TableFormat::writeWholeTable(RCP<std::ostream>& out,
       if (columnWidths_.size() != 0) cw = columnWidths_[i];
       pageWidth += cw;
     }
-  setPageWidth(max(pageWidth_, pageWidth));
+  setPageWidth(std::max(pageWidth_, pageWidth));
   
   /* write the header */
-  *out << thickline() << endl;
-  *out << endl;
+  *out << thickline() << std::endl;
+  *out << std::endl;
   int numBlanks = (pageWidth_ - header.length())/2;
-  *out << blanks(numBlanks) << header << endl;
-  *out << endl;
+  *out << blanks(numBlanks) << header << std::endl;
+  *out << std::endl;
 
   /* write the column titles */
   for (unsigned int i=0; i<columnNames.size(); i++)
@@ -145,25 +145,25 @@ void TableFormat::writeWholeTable(RCP<std::ostream>& out,
 
       *out << std::left << std::setw(cw) << columnNames[i];
     }
-  *out << endl;
+  *out << std::endl;
 
   /* ensure that all columns have the same number of rows */
   int numRows = columns[0].numRows();
   for (unsigned int i=1; i<columns.size(); i++)
     {
-      TEST_FOR_EXCEPTION(columns[i].numRows() != numRows, runtime_error,
+      TEST_FOR_EXCEPTION(columns[i].numRows() != numRows, std::runtime_error,
                          "inconsistent column sizes");
     }
   
   /* write the table data */
   for (int i=0; i<numRows; i++)
     {
-      if (i % lineInterval_ == 0) *out << std::left << thinline() << endl;   
+      if (i % lineInterval_ == 0) *out << std::left << thinline() << std::endl;   
       writeRow(out, i, columns);
     }
   
   /* write the footer */
-  *out << thickline() << endl;
+  *out << thickline() << std::endl;
 }
 
 

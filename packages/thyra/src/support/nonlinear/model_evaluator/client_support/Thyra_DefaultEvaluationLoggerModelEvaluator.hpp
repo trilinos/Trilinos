@@ -264,6 +264,11 @@ void DefaultEvaluationLoggerModelEvaluator<Scalar>::printLine(
   ) const
 {
 
+  using std::right;
+  using std::left;
+  using std::setprecision;
+  using std::setw;
+
   const int Ng = outArgs.Ng();
 
   Teuchos::RCP<const VectorBase<Scalar> > f, g_j;

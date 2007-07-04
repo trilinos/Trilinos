@@ -44,7 +44,7 @@ const int HashUtils::primes_[]
 int HashUtils::nextPrime(int newCapacity) 
 {
 	TEST_FOR_EXCEPTION(newCapacity > primes_[primeCount_-1],
-                     length_error,
+                     std::logic_error,
                      "HashUtils::nextPrime() overflow");
 
 	for (int i=0; i<primeCount_; i++)
@@ -56,7 +56,7 @@ int HashUtils::nextPrime(int newCapacity)
 		}
 
   TEST_FOR_EXCEPTION(true,
-                     logic_error,
+                     std::logic_error,
                      "unexpected case in HashUtils::nextPrime()");
 	return 0;
 }

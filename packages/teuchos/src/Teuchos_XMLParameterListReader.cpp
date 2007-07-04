@@ -37,7 +37,7 @@ XMLParameterListReader::XMLParameterListReader()
 
 ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) const
 {
-  TEST_FOR_EXCEPTION(xml.getTag() != "ParameterList", runtime_error,
+  TEST_FOR_EXCEPTION(xml.getTag() != "ParameterList", std::runtime_error,
                      "XMLParameterListReader expected tag ParameterList, found "
                      << xml.getTag());
 
@@ -54,14 +54,14 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
 
       TEST_FOR_EXCEPTION( (child.getTag() != "ParameterList" 
                            && child.getTag() != "Parameter"), 
-                         runtime_error,
+                         std::runtime_error,
                          "XMLParameterListReader expected tag "
                          "ParameterList or Parameter, found "
                          << child.getTag());
 
       if (child.getTag()=="ParameterList")
         {
-          const string& name = child.getRequired("name");
+          const std::string& name = child.getRequired("name");
 
           ParameterList sublist = toParameterList(child);
           sublist.setName(name);
@@ -70,8 +70,8 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
         }
       else
         {
-          const string& name = child.getRequired("name");
-          const string& type = child.getRequired("type");
+          const std::string& name = child.getRequired("name");
+          const std::string& type = child.getRequired("type");
           
           bool isDefault = false;
           bool isUsed = false;
@@ -112,20 +112,20 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
                 bool tmp = entry.getValue<bool>(&tmp);
               }
             }
-          else if (type=="string")
+          else if (type=="std::string")
             {
-              entry.setValue<string>(child.getRequired("value"), 
+              entry.setValue<std::string>(child.getRequired("value"), 
                                      isDefault);
               if (isUsed) {
-                string tmp = entry.getValue<string>(&tmp);
+                std::string tmp = entry.getValue<std::string>(&tmp);
               }
             }
           else 
             {
-              entry.setValue<string>(child.getRequired("value"), 
+              entry.setValue<std::string>(child.getRequired("value"), 
                                    isDefault);
               if (isUsed) {
-                string tmp = entry.getValue<string>(&tmp);
+                std::string tmp = entry.getValue<std::string>(&tmp);
               }
             }
           rtn.setEntry(name, entry);

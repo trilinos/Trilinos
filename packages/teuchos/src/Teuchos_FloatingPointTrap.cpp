@@ -64,8 +64,8 @@ void Teuchos::doFloatingPointTrap(bool enableTrap)
 //
 
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #define TYSHORT 2
 #define TYLONG 3
@@ -127,8 +127,8 @@ double _0 = 0.;
 #ifdef MSpc
 
 #define IEEE0_done
-#include "float.h"
-#include "signal.h"
+#include "cfloat"
+#include "csignal"
 
 static void ieee0(bool enableTrap)
 {
@@ -156,19 +156,19 @@ static void ieee0(bool enableTrap)
 #ifdef __mips	/* must link with -lfpe */
 
 #define IEEE0_done
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include "/usr/include/sigfpe.h"	/* full pathname for lcc -N */
 #include "/usr/include/sys/fpu.h"
 
-static void ieeeuserhand(unsigned exception[5], int val[2])
+static void ieeeuserhand(unsigned std::exception[5], int val[2])
 {
 	fflush(stdout);
 	fprintf(stderr,"ieee0() aborting because of ");
-	if(exception[0]==_OVERFL) fprintf(stderr,"overflow\n");
-	else if(exception[0]==_UNDERFL) fprintf(stderr,"underflow\n");
-	else if(exception[0]==_DIVZERO) fprintf(stderr,"divide by 0\n");
-	else if(exception[0]==_INVALID) fprintf(stderr,"invalid operation\n");
+	if(std::exception[0]==_OVERFL) fprintf(stderr,"overflow\n");
+	else if(std::exception[0]==_UNDERFL) fprintf(stderr,"underflow\n");
+	else if(std::exception[0]==_DIVZERO) fprintf(stderr,"divide by 0\n");
+	else if(std::exception[0]==_INVALID) fprintf(stderr,"invalid operation\n");
 	else fprintf(stderr,"\tunknown reason\n");
 	fflush(stderr);
 	abort();
@@ -332,7 +332,7 @@ static void ieee0(bool enableTrap)
 #define IEEE0_done
 #define _INCLUDE_HPUX_SOURCE
 
-#include <math.h>
+#include <cmath>
 
 #ifndef FP_X_INV
 #  include <fenv.h>

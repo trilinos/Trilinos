@@ -43,7 +43,7 @@ namespace Teuchos
     {
     public:
       /** \brief Constructor */
-      ParameterXMLFileReader(const string& filename);
+      ParameterXMLFileReader(const std::string& filename);
 
       /** */
       ParameterList getParameters() const ;

@@ -28,19 +28,13 @@
 // @HEADER
 */
 
-/*
-  Kris
-  07.08.03 -- Move into Teuchos package/namespace
-*/
-
-#ifndef _TEUCHOS_CONFIGDEFS_HPP_
-#define _TEUCHOS_CONFIGDEFS_HPP_
+#ifndef TEUCHOS_CONFIGDEFS_HPP
+#define TEUCHOS_CONFIGDEFS_HPP
 
 /*! \file Teuchos_ConfigDefs.hpp
     \brief Teuchos header file which uses auto-configuration information 
 	to include necessary C++ headers.
 */
-#ifdef HAVE_CONFIG_H
 
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
@@ -88,320 +82,44 @@
 
 #ifdef __cplusplus
 
-/******************************************************************************
- *   Choose header file flavor: either ANSI-style (no .h, e.g. <iostream>) or
- * old-style (with .h, e.g., <iostream.h>). 
- * KL 9/26/03
- *****************************************************************************/
-
-#if HAVE_CSTDIO
 #include <cstdio>
-#elif HAVE_STDIO_H
-#include <stdio.h>
-#else
-#error "Found neither <cstdio> nor <stdio.h>"
-#endif
-
-#if HAVE_CSTDARG
 #include <cstdarg>
-#elif HAVE_STDARG_H
-#include <stdarg.h>
-#else
-#error "Found neither cstdarg nor stdarg.h"
-#endif
-
-#if HAVE_CERRNO
 #include <cerrno>
-#elif HAVE_ERRNO_H
-#include <errno.h>
-#else
-#error "Found neither cerrno nor errno.h"
-#endif
-
-#if HAVE_LIMITS_H
-#include <limits.h>
-#elif HAVE_CLIMITS
 #include <climits>
-#else
-#error "Found neither <limits.h> or <climits>h"
-#endif
-
-#if HAVE_STDLIB_H
-#include <stdlib.h>
-#elif HAVE_CSTDLIB
 #include <cstdlib>
-#else
-#error "Found neither cstdlib nor stdlib.h"
-#endif
-
-#if HAVE_STRING
 #include <string>
-#else
-#error "Could not find <string>"
-#endif
-
-#if HAVE_CSTRING
 #include <cstring>
-#elif HAVE_STRING_H
-#include <string.h>
-#else
-#error "Found neither <cstring> nor <string.h>"
-#endif
-
-#if HAVE_IOSTREAM
 #include <iostream>
-#elif HAVE_IOSTREAM_H
-#include <iostream.h>
-#else
-#error "Found neither iostream nor iostream.h"
-#endif
-
-#if HAVE_IOSTREAM
-#include <fstream>
-#elif HAVE_IOSTREAM_H
-#include <fstream.h>
-#else
-#error "Found neither fstream nor fstream.h"
-#endif
-
-#if HAVE_STDEXCEPT
-#include <stdexcept>
-#elif HAVE_STDEXCEPT_H
-#include <stdexcept.h>
-#else
-#error "Found neither stdexcept nor stdexcept.h"
-#endif
-
-#ifdef HAVE_CASSERT
-#include <cassert>
-#else
-#include <assert.h>   
-#endif
-
-#ifdef HAVE_COMPLEX
-#include <complex>
-#elif defined(HAVE_COMPLEX_H)
-#include <complex.h>
-#endif
-
-#ifdef HAVE_VECTOR
-#include <vector>
-#include <deque> // RAB: 2003/11/10: If you have <vector> you should have <deque>
-#elif defined(HAVE_VECTOR_H)
-#include <vector.h>
-#endif
-
-#ifdef HAVE_ALGORITHM
-#include <algorithm>
-#elif defined(HAVE_ALGO_H)
-#include <algo.h>
-#elif defined(HAVE_ALGORITHM_H)
-#include <algorithm.h>
-#endif
-
-#ifdef HAVE_MAP
-#include <map>
-#elif defined(HAVE_MAP_H)
-#include <map.h>
-#endif
-
-#ifdef HAVE_LIST
-#include <list>
-#elif defined(HAVE_LIST_H)
-#include <list.h>
-#endif
-
-#ifdef HAVE_SET
-#include <set>
-#elif defined(HAVE_SET_H)
-#include <set.h>
-#endif
-
-#ifdef HAVE_TYPEINFO
-#include <typeinfo>
-#endif
-
-#ifdef HAVE_NUMERIC_LIMITS
-#include <limits>
-#endif
-
-#ifdef HAVE_MEMORY
-#include <memory>
-#endif
-
-/******************************************************************************
- * Choose string stream type: preferably std::ostringstream, otherwise
- * ostringstream or (gasp!) ostrstream. 
- *
- * Ross is going to write ANSI-compatible stringstreams to replace ostrstream
- * on our non-compliant platforms.
- *
- * KL 09/26/03
- ******************************************************************************/
-
-#if HAVE_SSTREAM
-#include <sstream>
-typedef std::ostringstream TeuchosOStringStream;
-#define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str().c_str()
-#elif HAVE_SSTREAM_H
-#include <sstream.h>
-typedef ostringstream TeuchosOStringStream;
-#define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str().c_str()
-#elif HAVE_STRSTREAM
-#include <strstream>
-typedef std::ostrstream TeuchosOStringStream;
-/* STLPort is not configured on Janus to inject strstream into "std" namespace */ 
-#if JANUS_STLPORT
- namespace std { class ostrstream; }
-#endif
-#define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str()
-#elif HAVE_STRSTREAM_H
-#include <strstream.h>
-typedef ostrstream TeuchosOStringStream;
-#define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str()
-#else
-#error "Found neither sstream, sstream.h, strstream.h, nor strstream"
-#endif
-
-#if defined(TFLOP)
-#ifdef HAVE_STRING
-using std::string;
-#endif
-#ifdef HAVE_IOSTREAM
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
-#endif
-#ifdef HAVE_COMPLEX
-using std::complex;
-#endif
-#else /* NOT TFLOP */ 
-#ifndef JANUS_STLPORT
-#if HAVE_CMATH
-#include <cmath>
-#elif HAVE_MATH_H
-#include <math.h>
-#else
-#error "Found neither cmath nor math.h"
-#endif
-#else /* JANUS_STLPORT */
-#include <math.h>
-#endif /* JANUS_STLPORT */
-using namespace std;
-#endif /* defined(TFLOP) */
-
-// RAB: 20031002: Added this for all platforms in addition to TFLOPS?
-#ifdef HAVE_IOMANIP
 #include <iomanip>
-#else
-#include <iomanip.h>  
-#endif
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
+#include <cassert>
+#include <complex>
+#include <map>
+#include <vector>
+#include <deque>
+#include <algorithm>
+#include <list>
+#include <set>
+#include <typeinfo>
+#include <limits>
+#include <memory>
 
 namespace Teuchos { class DummyDummyClass; }
 // Above, is used for a dumb reason (see
 // Teuchs_StandardMemberCompositionMacros.hpp).
 
-#else /* __cplusplus not defined */
-
-#include <assert.h>   
-#include <limits.h>
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
-#include <math.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
-#endif /* __cplusplus */
-
-#else /* fallback for the amazingly unlikely event we have no HAVE_CONFIG_H! */
-
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <map>
-#include <algorithm>
-#include <sstream>
-#include <stdexcept>
-#include <typeinfo>
-
-#include <sstream>
-typedef std::ostringstream TeuchosOStringStream;
-#define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str().c_str()
-
-#if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT)
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-#include <math.h>
-using namespace std;
-
-#elif defined(TFLOP)
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-using std::string;
-#include <iomanip>
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
-#include <list>
-
-#else
-
-#include <cstdlib>
-#include <cstdio>
-#include <cassert>
-#include <cmath>
-using namespace std;
-
-#endif
-
-#endif /* end HAVE_CONFIG_H */
-
-/* Define bool in case we are running on an ancient, quirky, or merely
- * stupid compiler having no built-in bool.  WARNING: THIS IS EXTREMELY
- * DANGEROUS, BECAUSE OTHER CODES TO WHICH WE LINK MAY HACK THEIR BOOL
- * DEFINITIONS IN DIFFERENT WAYS, E.G. VIA A TYPEDEF. If that happens, 
- * a whole bunch of link errors will result. Avoid this hack if at all 
- * possible.
- */ 
-
-#ifdef TEUCHOS_SIMULATE_BOOL
-
-#ifdef bool
-#undef bool
-#endif
-#ifdef true
-#undef true
-#endif
-#ifdef false
-#undef false
-#endif
-
-#define bool int
-#define true 1
-#define false 0
-
-#endif
-
-#ifdef __cplusplus
-
 const double Teuchos_MinDouble = 1.0E-100;
 const double Teuchos_MaxDouble = 1.0E+100;
 const double Teuchos_Overflow = 1.79E308; // Used to test if equilibration should be done.
 const double Teuchos_Underflow = 2.23E-308;
+
+// 2007/06/29: These are hacks for std::ostringstream that should be removed
+// now what we assume that a faily complete standard C++ library is available.
+
+#define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str().c_str()
+typedef std::ostringstream TeuchosOStringStream;
 
 #endif /* __cplusplus */
 
@@ -417,7 +135,7 @@ const double Teuchos_Underflow = 2.23E-308;
 #undef TEUCHOS_CHK_REF
 #endif
 
-/* The integral type that is used for the largest vector space */
+/* The integral type that is used for the largest std::vector space */
 typedef int Teuchos_Index; /* ToDo: Determine this in configure for the machine */
 
 /* Make error report silent by defining TEUCHOS_NO_ERROR_REPORTS */
@@ -425,13 +143,14 @@ typedef int Teuchos_Index; /* ToDo: Determine this in configure for the machine 
 #define TEUCHOS_CHK_ERR(a) { if (a != 0)  return(a);}
 #define TEUCHOS_CHK_PTR(a) { return(a);}
 #define TEUCHOS_CHK_REF(a) { return(a);}
+
 #ifdef __cplusplus
 const int Teuchos_DefaultTracebackMode = 1; /* Default value for traceback behavior */
-#endif
+#endif /* __cplusplus */
 
 /* Define some macros */
 #define TEUCHOS_MAX(x,y) (( (x) > (y) ) ? (x)  : (y) )     /* max function  */
 #define TEUCHOS_MIN(x,y) (( (x) < (y) ) ? (x)  : (y) )     /* min function  */
 #define TEUCHOS_SGN(x)   (( (x) < 0.0 ) ? -1.0 : 1.0 )     /* sign function */
 
-#endif /* _TEUCHOS_CONFIGDEFS_HPP_ */
+#endif /* TEUCHOS_CONFIGDEFS_HPP */

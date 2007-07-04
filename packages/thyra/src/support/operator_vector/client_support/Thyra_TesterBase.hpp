@@ -40,110 +40,114 @@
 
 namespace Thyra
 {
-  using Teuchos::RCP;
-  using Teuchos::ScalarTraits;
+using Teuchos::RCP;
+using Teuchos::ScalarTraits;
+
+/** */
+template <class Scalar>
+class TesterBase 
+{
+public:
+  /** \brief Local typedef for promoted scalar magnitude */
+  typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
   /** */
-  template <class Scalar>
-  class TesterBase 
-  {
-  public:
-    /** \brief Local typedef for promoted scalar magnitude */
-    typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
-
-    /** */
-    TesterBase(const RCP<const Comm<int> >& comm,
-               const VectorSpace<Scalar>& space, int nCols,
-               Teuchos::RCP<Teuchos::FancyOStream>& out)
-      : comm_(comm), space_(space), nCols_(nCols), out_(out) 
+  TesterBase(const RCP<const Comm<int> >& comm,
+    const VectorSpace<Scalar>& space, int nCols,
+    Teuchos::RCP<Teuchos::FancyOStream>& out)
+    : comm_(comm), space_(space), nCols_(nCols), out_(out) 
     {
+      using std::endl;
       *out << "==========================================================================="
-          << endl;
+           << endl;
       *out << "       testing on type " 
-          << Teuchos::ScalarTraits<Scalar>::name() << endl;
+           << Teuchos::ScalarTraits<Scalar>::name() << endl;
       *out << "==========================================================================="
-          << endl;
+           << endl;
     }
 
-    /** */
-    virtual ~TesterBase(){;}
+  /** */
+  virtual ~TesterBase(){;}
 
-    /** */
-    virtual bool runAllTests() const = 0 ;
+  /** */
+  virtual bool runAllTests() const = 0 ;
 
 
-    /** */
-    bool checkTest(const TestSpecifier<Scalar>& spec,
-                   const ScalarMag& err, 
-                   const string& testName) const ;
+  /** */
+  bool checkTest(const TestSpecifier<Scalar>& spec,
+    const ScalarMag& err, 
+    const string& testName) const ;
 
-    /** */
-    void randomizeVec(Vector<Scalar>& x) const ;
+  /** */
+  void randomizeVec(Vector<Scalar>& x) const ;
 
-    /** */
-    LinearOperator<Scalar> randomDenseOp() const ;
+  /** */
+  LinearOperator<Scalar> randomDenseOp() const ;
 
-    /** */
-    const VectorSpace<Scalar>& space() const {return space_;}
+  /** */
+  const VectorSpace<Scalar>& space() const {return space_;}
 
-    /** */
-    ostream& out() const {return *out_;}
+  /** */
+  ostream& out() const {return *out_;}
 
-    /** */
-    const Comm<int>& comm() const {return *comm_;}
+  /** */
+  const Comm<int>& comm() const {return *comm_;}
     
-  private:
-    RCP<const Comm<int> > comm_;
-    VectorSpace<Scalar> space_;
-    int nCols_;
-    mutable Teuchos::RCP<Teuchos::FancyOStream> out_;
-  };
+private:
+  RCP<const Comm<int> > comm_;
+  VectorSpace<Scalar> space_;
+  int nCols_;
+  mutable Teuchos::RCP<Teuchos::FancyOStream> out_;
+};
 
-  template <class Scalar> 
-  inline void TesterBase<Scalar>
-  ::randomizeVec(Vector<Scalar>& x) const
-  {
-    typedef ScalarTraits<Scalar> ST;
-    randomize(Scalar(-ST::one()),Scalar(+ST::one()),x.ptr().get());
+template <class Scalar> 
+inline void TesterBase<Scalar>
+::randomizeVec(Vector<Scalar>& x) const
+{
+  typedef ScalarTraits<Scalar> ST;
+  randomize(Scalar(-ST::one()),Scalar(+ST::one()),x.ptr().get());
     
-  }
+}
 
-  template <class Scalar> 
-  inline bool TesterBase<Scalar>
-  ::checkTest(const TestSpecifier<Scalar>& spec,
-              const ScalarMag& err, 
-              const string& testName) const 
-  {
-    bool rtn = true;
-    if (err > spec.errorTol())
-      {
-        *out_ << testName << " test FAILED: err=" << err << ", tol = " 
-             << spec.errorTol() << endl;
-        rtn = false;
-      }
-    else if (err > spec.warningTol())
-      {
-        *out_ << "WARNING: " << testName << " test err="
-             << err << " could not beat tol = " 
-             << spec.warningTol() << endl;
-      }
-    else
-      {
-        *out_ << "test " << testName << " PASSED with tol=" << spec.errorTol() << endl;
-      }
-    return rtn;
-  }
+template <class Scalar> 
+inline bool TesterBase<Scalar>
+::checkTest(const TestSpecifier<Scalar>& spec,
+  const ScalarMag& err, 
+  const string& testName) const 
+{
+    
+  using std::endl;
 
-  template <class Scalar>
-  inline LinearOperator<Scalar> TesterBase<Scalar>
-  ::randomDenseOp() const 
+  bool rtn = true;
+  if (err > spec.errorTol())
   {
-    typedef ScalarTraits<Scalar> ST;
-    RCP<MultiVectorBase<Scalar> > mv = space_.createMembers(nCols_);
-    randomize(-ST::one(), ST::one(), &*mv);
-    RCP<LinearOpBase<Scalar> > rtn = mv;
-    return rtn;
+    *out_ << testName << " test FAILED: err=" << err << ", tol = " 
+          << spec.errorTol() << endl;
+    rtn = false;
   }
+  else if (err > spec.warningTol())
+  {
+    *out_ << "WARNING: " << testName << " test err="
+          << err << " could not beat tol = " 
+          << spec.warningTol() << endl;
+  }
+  else
+  {
+    *out_ << "test " << testName << " PASSED with tol=" << spec.errorTol() << endl;
+  }
+  return rtn;
+}
+
+template <class Scalar>
+inline LinearOperator<Scalar> TesterBase<Scalar>
+::randomDenseOp() const 
+{
+  typedef ScalarTraits<Scalar> ST;
+  RCP<MultiVectorBase<Scalar> > mv = space_.createMembers(nCols_);
+  randomize(-ST::one(), ST::one(), &*mv);
+  RCP<LinearOpBase<Scalar> > rtn = mv;
+  return rtn;
+}
 
   
   

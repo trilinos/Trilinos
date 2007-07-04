@@ -311,7 +311,7 @@ private:
  * used and the output it generates.
  */
 template <typename CharT, typename Traits = std::char_traits<CharT> >
-class basic_FancyOStream : public basic_ostream<CharT, Traits>
+class basic_FancyOStream : public std::basic_ostream<CharT, Traits>
 {
 public:
 
@@ -331,9 +331,9 @@ public:
   /** \brief . */
 
   /** \brief . */
-  typedef basic_FancyOStream_buf<CharT,Traits> 	streambuf_t;
+  typedef basic_FancyOStream_buf<CharT,Traits> streambuf_t;
   /** \brief . */
-  typedef basic_ostream<char_type, traits_type>	ostream_t;
+  typedef std::basic_ostream<char_type, traits_type> ostream_t;
 
   //@}
 
@@ -656,7 +656,7 @@ tab(
 }
 
 
-/** \brief Create a tab for an RCP-wrapped <tt>std:: ostream</tt> object to
+/** \brief Create a tab for an RCP-wrapped <tt>std:: std::ostream</tt> object to
  * cause the indentation of all output automatically!.
  *
  * This function returns an RCP object to a <tt>basic_FancyOStream</tt> object
@@ -980,7 +980,7 @@ void basic_FancyOStream_buf<CharT,Traits>::writeChars( const char_type s[], std:
       done_outputting = true;
     }
     else if( p == n-1 && s[p] == newline ) {
-      // The last character in the string is a newline
+      // The last character in the std::string is a newline
       done_outputting = true;
     }
     // Write the beginning of the line if we need to
@@ -988,7 +988,7 @@ void basic_FancyOStream_buf<CharT,Traits>::writeChars( const char_type s[], std:
       writeFrontMatter();
       wroteNewline_ = false;
     }
-    // Write up to the newline or the end of the string
+    // Write up to the newline or the end of the std::string
     out().write(s+first_p,p-first_p+1);
     if(s[p] == newline) {
       wroteNewline_ = true;

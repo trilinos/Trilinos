@@ -47,10 +47,10 @@ operator()( OriginalTypeRef orig )
 {
   origObj_ = &orig;
 
-  //test map, must have same number of local and global elements as original row map
+  //test std::map, must have same number of local and global elements as original row std::map
   assert( orig.Map().NumMyElements() == NewRowMap_.NumMyElements() );
 
-  vector<double*> MyValues(1);
+  std::vector<double*> MyValues(1);
   int MyLDA;
   int NumVectors = orig.NumVectors();
   orig.ExtractView( &MyValues[0], &MyLDA );

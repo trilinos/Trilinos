@@ -19,7 +19,7 @@ double factFunc( int x );
 
 int main(int argc, char* argv[])
 {
-  cout << Teuchos::Teuchos_Version() << endl << endl;
+  std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   int i;
   double x;

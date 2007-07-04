@@ -122,7 +122,7 @@ AnyNumberParameterEntryValidator::AnyNumberParameterEntryValidator(
   }
   if(acceptedTypes_.allowString()) {
     if(addedType) oss << ", ";
-    oss << "\"string\"";
+    oss << "\"std::string\"";
     addedType = true;
   }
   acceptedTypesString_ = oss.str();
@@ -143,7 +143,7 @@ int AnyNumberParameterEntryValidator::getInt(
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
     return static_cast<int>(any_cast<double>(anyValue));
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
-    return ::atoi(any_cast<string>(anyValue).c_str());
+    return ::atoi(any_cast<std::string>(anyValue).c_str());
   throwTypeError(entry,paramName,sublistName);
   return 0; // Will never get here!
 }
@@ -160,7 +160,7 @@ double AnyNumberParameterEntryValidator::getDouble(
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
     return any_cast<double>(anyValue);
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
-    return ::atof(any_cast<string>(anyValue).c_str());
+    return ::atof(any_cast<std::string>(anyValue).c_str());
   throwTypeError(entry,paramName,sublistName);
   return 0.0; // Will never get here!
 }
@@ -177,7 +177,7 @@ std::string AnyNumberParameterEntryValidator::getString(
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
     return Utils::toString(any_cast<double>(anyValue));
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
-    return any_cast<string>(anyValue);
+    return any_cast<std::string>(anyValue);
   throwTypeError(entry,paramName,sublistName);
   return ""; // Will never get here!
 }

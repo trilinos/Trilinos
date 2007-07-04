@@ -55,7 +55,7 @@
   \class Belos::GCRODRIter
   
   \brief This class implements the GCRODR iteration, where a
-  single-vector Krylov subspace is constructed.  The QR decomposition of 
+  single-std::vector Krylov subspace is constructed.  The QR decomposition of 
   block, upper Hessenberg matrix is performed each iteration to update
   the least squares system and give the current linear system residuals.
  
@@ -115,11 +115,11 @@ namespace Belos {
   /** \brief GCRODRIterInitFailure is thrown when the GCRODRIter object is unable to
    * generate an initial iterate in the GCRODRIter::initialize() routine.
    *
-   * This exception is thrown from the GCRODRIter::initialize() method, which is
+   * This std::exception is thrown from the GCRODRIter::initialize() method, which is
    * called by the user or from the GCRODRIter::iterate() method if isInitialized()
    * == \c false.
    *
-   * In the case that this exception is thrown,
+   * In the case that this std::exception is thrown,
    * GCRODRIter::isInitialized() will be \c false and the user will need to provide
    * a new initial iterate to the iteration.
    */
@@ -130,7 +130,7 @@ namespace Belos {
   /** \brief GCRODRIterOrthoFailure is thrown when the GCRODRIter object is unable to
    * compute independent direction vectors in the GCRODRIter::iterate() routine.
    *
-   * This exception is thrown from the GCRODRIter::iterate() method.
+   * This std::exception is thrown from the GCRODRIter::iterate() method.
    *
    */
   class GCRODRIterOrthoFailure : public BelosError {public:
@@ -140,7 +140,7 @@ namespace Belos {
   /** \brief GCRODRIterLAPACKFailure is thrown when a nonzero return value is passed back
    * from an LAPACK routine.
    *
-   * This exception is thrown from the GCRODRIter::iterate() method.
+   * This std::exception is thrown from the GCRODRIter::iterate() method.
    *
    */
   class GCRODRIterLAPACKFailure : public BelosError {public:
@@ -190,7 +190,7 @@ namespace Belos {
     
     /*! \brief This method performs block Gmres iterations until the status
      * test indicates the need to stop or an error occurs (in which case, an
-     * exception is thrown).
+     * std::exception is thrown).
      *
      * iterate() will first determine whether the solver is inintialized; if
      * not, it will call initialize() using default arguments. After
@@ -275,13 +275,13 @@ namespace Belos {
     void resetNumIters() { iter_ = 0; }
     
     //! Get the norms of the residuals native to the solver.
-    //! \return A vector of length blockSize containing the native residuals.
+    //! \return A std::vector of length blockSize containing the native residuals.
     Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
     
     //! Get the current update to the linear system.
     /*! \note Some solvers, like GMRES, do not compute updates to the solution every iteration.
       This method forces its computation.  Other solvers, like CG, update the solution
-      each iteration, so this method will return a zero vector indicating that the linear
+      each iteration, so this method will return a zero std::vector indicating that the linear
       problem contains the current solution.
     */
     Teuchos::RCP<MV> getCurrentUpdate() const;
@@ -582,12 +582,12 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the native residuals stored in this iteration.  
-  // Note:  No residual vector will be returned by Gmres.
+  // Note:  No residual std::vector will be returned by Gmres.
   template <class ScalarType, class MV, class OP>
   Teuchos::RCP<const MV> GCRODRIter<ScalarType,MV,OP>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const 
   {
     //
-    // NOTE: Make sure the incoming vector is the correct size!
+    // NOTE: Make sure the incoming std::vector is the correct size!
     //
     if ( norms && (int)norms->size()==0 )                         
       norms->resize( 1 );                                          
@@ -641,8 +641,8 @@ namespace Belos {
       if (newstate.V != V_) {
         // only copy over the first block and print a warning.
         if (curDim_ == 0 && lclDim > 1) {
-	  om_->stream(Warnings) << "Belos::GCRODRIter::initialize(): the solver was initialized with a kernel of " << lclDim << endl
-				<< "The last " << lclDim - 1 << " vectors will be discarded." << endl;
+	  om_->stream(Warnings) << "Belos::GCRODRIter::initialize(): the solver was initialized with a kernel of " << lclDim << std::endl
+				<< "The last " << lclDim - 1 << " vectors will be discarded." << std::endl;
 	}
         std::vector<int> nevind(curDim_+1);
         for (int i=0; i<curDim_+1; i++) nevind[i] = i;
@@ -747,7 +747,7 @@ namespace Belos {
       curind[0] = curDim_;
       Teuchos::RCP<MV> Vprev = MVT::CloneView(*V_,curind);
 
-      // Compute the next vector in the Krylov basis:  Vnext = Op*Vprev
+      // Compute the next std::vector in the Krylov basis:  Vnext = Op*Vprev
       lp_->apply(*Vprev,*Vnext);
       Vprev = Teuchos::null;
 

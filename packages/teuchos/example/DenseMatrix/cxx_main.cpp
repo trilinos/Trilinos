@@ -3,7 +3,7 @@
 
 int main(int argc, char* argv[])
 {
-  cout << Teuchos::Teuchos_Version() << endl << endl;
+  std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   // Creating a double-precision matrix can be done in several ways:
   // Create an empty matrix with no dimension
@@ -55,15 +55,15 @@ int main(int argc, char* argv[])
   // Matrices can be compared:
   // Check if the matrices are equal in dimension and values
   if (Empty_Matrix == My_Matrix) {
-    cout<< "The matrices are the same!" <<endl;
+    std::cout<< "The matrices are the same!" <<std::endl;
   }
   // Check if the matrices are different in dimension or values
   if (My_Copy2 != My_Matrix) {
-    cout<< "The matrices are different!" <<endl;
+    std::cout<< "The matrices are different!" <<std::endl;
   }
 
   // A matrix can be sent to the output stream:
-  cout<< My_Matrix << endl;
+  std::cout<< My_Matrix << std::endl;
 
   return 0;
 }

@@ -53,7 +53,7 @@ void updateParametersFromXmlFile(
   ,Teuchos::ParameterList      *paramList
   );
 
-/** \brief Reads XML parameters from a string and updates those already in the
+/** \brief Reads XML parameters from a std::string and updates those already in the
  * given parameter list.
  *
  * \param  xmlStr       [in] String containing XML parameter list specification.

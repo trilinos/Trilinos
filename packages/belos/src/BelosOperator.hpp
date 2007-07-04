@@ -76,7 +76,7 @@ namespace Belos {
     /*! \brief This routine takes the Belos::MultiVec \c x and applies the operator
       to it resulting in the Belos::MultiVec \c y, which is returned.
         \note It is expected that any problem with applying this operator to \c x will be
-	indicated by an exception being thrown.
+	indicated by an std::exception being thrown.
     */
     virtual void Apply ( const MultiVec<ScalarType>& x, 
 			 MultiVec<ScalarType>& y, ETrans trans=NOTRANS ) const = 0;

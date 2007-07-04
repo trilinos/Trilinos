@@ -33,7 +33,7 @@ using namespace Teuchos;
 
 
 
-XMLObject::XMLObject(const string& tag)
+XMLObject::XMLObject(const std::string& tag)
 	: ptr_(rcp(new XMLObjectImplem(tag)))
 {}
 
@@ -46,26 +46,26 @@ XMLObject XMLObject::deepCopy() const
 	return XMLObject(ptr_->deepCopy());
 }
 
-const string& XMLObject::getRequired(const string& name) const 
+const std::string& XMLObject::getRequired(const std::string& name) const 
 {
-	TEST_FOR_EXCEPTION(!hasAttribute(name), runtime_error,
+	TEST_FOR_EXCEPTION(!hasAttribute(name), std::runtime_error,
                      "XMLObject::getRequired: key " 
                      << name << " not found");
   return getAttribute(name);
 }
 
-string XMLObject::getWithDefault(const string& name, 
-																 const string& defaultValue) const
+std::string XMLObject::getWithDefault(const std::string& name, 
+																 const std::string& defaultValue) const
 {
 	if (hasAttribute(name)) return getRequired(name);
 	else return defaultValue;
 }
 
-bool XMLObject::getRequiredBool(const string& name) const
+bool XMLObject::getRequiredBool(const std::string& name) const
 {
 	if (hasAttribute(name))
 		{
-			string val = StrUtils::allCaps(getRequired(name));
+			std::string val = StrUtils::allCaps(getRequired(name));
 			if (val=="TRUE" || val=="YES" || val=="1")
 				{
 					return true;
@@ -76,7 +76,7 @@ bool XMLObject::getRequiredBool(const string& name) const
 				}
 			else
 				{
-					TEST_FOR_EXCEPTION(true, runtime_error, 
+					TEST_FOR_EXCEPTION(true, std::runtime_error, 
                              "XMLObject::getRequiredBool value [" << val 
                              << "] should have been {TRUE|FALSE|YES|NO|0|1}");
 				}
@@ -85,7 +85,7 @@ bool XMLObject::getRequiredBool(const string& name) const
 }
 
 
-void XMLObject::checkTag(const string& expected) const 
+void XMLObject::checkTag(const std::string& expected) const 
 {
 	TEST_FOR_EXCEPTION(getTag() != expected, std::runtime_error,
                      "XMLObject::checkTag error: expected <"

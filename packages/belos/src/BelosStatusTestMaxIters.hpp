@@ -101,10 +101,10 @@ class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   //! Output formatted description of stopping test to output stream.
-  void print(ostream& os, int indent = 0) const;
+  void print(std::ostream& os, int indent = 0) const;
 
   //! Print message for each status specific to this stopping test.
-  void printStatus(ostream& os, StatusType type) const;
+  void printStatus(std::ostream& os, StatusType type) const;
 
   //@}
   
@@ -155,7 +155,7 @@ private:
   }    
     
   template <class ScalarType, class MV, class OP>
-  void StatusTestMaxIters<ScalarType,MV,OP>::print(ostream& os, int indent) const
+  void StatusTestMaxIters<ScalarType,MV,OP>::print(std::ostream& os, int indent) const
   {
     for (int j = 0; j < indent; j ++)
       os << ' ';
@@ -164,13 +164,13 @@ private:
     os << nIters_;
     os << ((nIters_ < maxIters_) ? " < " : ((nIters_ == maxIters_) ? " == " : " > "));
     os << maxIters_;
-    os << endl;
+    os << std::endl;
   }
  
   template <class ScalarType, class MV, class OP>
-  void StatusTestMaxIters<ScalarType,MV,OP>::printStatus(ostream& os, StatusType type) const 
+  void StatusTestMaxIters<ScalarType,MV,OP>::printStatus(std::ostream& os, StatusType type) const 
   {
-    os << setiosflags(ios::left) << setw(13) << setfill('.');
+    os << setiosflags(std::ios::left) << std::setw(13) << std::setfill('.');
     switch (type) {
     case  Passed:
       os << "Failed";
@@ -183,7 +183,7 @@ private:
       os << "**";
       break;
     }
-    os << setiosflags(ios::left) << setfill(' ');
+    os << setiosflags(std::ios::left) << std::setfill(' ');
     return;
   } 
 

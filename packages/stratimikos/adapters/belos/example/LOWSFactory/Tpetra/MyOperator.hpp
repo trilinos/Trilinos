@@ -11,7 +11,7 @@
  * This is a simple, single processor example of user's defined
  * Tpetra::Operator-derived class. The class is templated
  * on OrdinalType and ScalarType; possible choices are, 
- * for example, "float", "double", or "complex<double>".
+ * for example, "float", "double", or "std::complex<double>".
  *
  */
 template <class OrdinalType, class ScalarType>
@@ -45,7 +45,7 @@ public:
   //! Returns the VectorSpace associated with the range of this linear operator.
   Tpetra::VectorSpace<OrdinalType,ScalarType> const& getRangeDist() const { return _vs; };
   
-  //! Computes the matrix-vector multiplication y = Ax.
+  //! Computes the matrix-std::vector multiplication y = Ax.
   void apply(Tpetra::Vector<OrdinalType,ScalarType> const& x, 
 	     Tpetra::Vector<OrdinalType, ScalarType> & y, 
 	     bool transpose=false) const 
@@ -54,7 +54,7 @@ public:
     const int numMyElements = _vs.getNumMyEntries();
     const std::vector<int> &myGlobalElements = _vs.elementSpace().getMyGlobalElements();
     
-    // Initialize output vector to zero.
+    // Initialize output std::vector to zero.
     y.setAllToScalar( Teuchos::ScalarTraits<ScalarType>::zero() );
 
     assert (x.getNumGlobalEntries() == y.getNumGlobalEntries());
@@ -87,7 +87,7 @@ private:
   typedef typename std::vector<ScalarType>::iterator STIter;
   typedef std::vector<int>::iterator        IntIter;
 
-  //! Tpetra vector space 
+  //! Tpetra std::vector space 
   Tpetra::VectorSpace<OrdinalType,ScalarType> _vs;
 
   //! Number of rows and columns

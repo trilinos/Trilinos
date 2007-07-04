@@ -122,10 +122,10 @@ bool runTest(Teuchos::RCP<Teuchos::FancyOStream>& out)
   typedef typename Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   *out << "==========================================================================="
-       << endl;
-  *out << "running block operator test for " << ST::name() << endl;
+       << std::endl;
+  *out << "running block operator test for " << ST::name() << std::endl;
   *out << "==========================================================================="
-       << endl;
+       << std::endl;
   Array<int> rangeSpaceSizes = tuple(5, 10);
   Array<int> domainSpaceSizes = tuple(5, 8);
   
@@ -155,14 +155,14 @@ bool runTest(Teuchos::RCP<Teuchos::FancyOStream>& out)
   VectorSpace<Scalar> domain = A.domain();
   VectorSpace<Scalar> range = A.range();
   
-  *out << "A num block rows = " << A.numBlockRows() << endl;
-  *out << "A num block cols = " << A.numBlockCols() << endl;
+  *out << "A num block rows = " << A.numBlockRows() << std::endl;
+  *out << "A num block cols = " << A.numBlockCols() << std::endl;
   
-  *out << "A domain size = " << domain.dim() << endl;
-  *out << "A range size = " << range.dim() << endl;
+  *out << "A domain size = " << domain.dim() << std::endl;
+  *out << "A range size = " << range.dim() << std::endl;
   
   Vector<Scalar> x = domain.createMember();
-  *out << "randomizing trial vector" << endl;
+  *out << "randomizing trial std::vector" << std::endl;
   Thyra::randomize(-ST::one(), ST::one(), x.ptr().get());
   
   Array<Vector<Scalar> > xBlock(domain.numBlocks());
@@ -171,17 +171,17 @@ bool runTest(Teuchos::RCP<Teuchos::FancyOStream>& out)
       xBlock[i] = x.getBlock(i);
     }
   
-  *out << "x size = " << space(x).dim() << endl;
+  *out << "x size = " << space(x).dim() << std::endl;
   
-  *out << "------------------------------------------------------------" << endl;
-  *out << "computing A*x..." << endl;
+  *out << "------------------------------------------------------------" << std::endl;
+  *out << "computing A*x..." << std::endl;
   Vector<Scalar> y0;
   y0 = A * x;
   
   
   Vector<Scalar> y1 = range.createMember();
-  *out << "------------------------------------------------------------" << endl;
-  *out << "computing A*x block-by-block..." << endl;
+  *out << "------------------------------------------------------------" << std::endl;
+  *out << "computing A*x block-by-block..." << std::endl;
   Array<Vector<Scalar> > yBlock(range.numBlocks());
   for (unsigned int i=0; i<yBlock.size(); i++)
     {
@@ -197,18 +197,18 @@ bool runTest(Teuchos::RCP<Teuchos::FancyOStream>& out)
     }
   
   ScalarMag err = norm2(y1 - y0);
-  *out << "error = " << err << endl;
+  *out << "error = " << err << std::endl;
   
   ScalarMag tol = 1.0e2 * ST::prec();
 
   bool ok = err < tol;
   if (ok)
     {
-      *out << "err=" << err << " tol=" << tol << ", test PASSED!" << endl;
+      *out << "err=" << err << " tol=" << tol << ", test PASSED!" << std::endl;
     }
   else
     {
-      *out << "err=" << err << " tol=" << tol << ", test FAILED!" << endl;
+      *out << "err=" << err << " tol=" << tol << ", test FAILED!" << std::endl;
     }
 
   return err < tol;

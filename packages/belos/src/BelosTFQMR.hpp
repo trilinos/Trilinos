@@ -28,7 +28,7 @@
 //
 // This file contains an implementation of the TFQMR algorithm
 // for solving non-Hermitian linear systems of equations Ax = b, 
-// where b is a single-vector and x is the corresponding solution.
+// where b is a single-std::vector and x is the corresponding solution.
 //
 // The implementation is a slight modification on the TFQMR algorithm
 // found in Saad's "Iterative Methods for Sparse Linear Systems".
@@ -61,7 +61,7 @@
 
 	\brief This class implements the preconditioned transpose-free QMR algorithm for
 	solving non-Hermitian linear systems of equations Ax = b, where b is the right-hand 
-	side vector and x is the corresponding solution.
+	side std::vector and x is the corresponding solution.
 
 	\author Heidi Thornquist
 */
@@ -108,7 +108,7 @@ namespace Belos {
     */
     RCP<const MV> GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const;
     
-    //! Get the actual residual vector for the current linear system.
+    //! Get the actual residual std::vector for the current linear system.
     /*! This may force the solver to compute a current residual for its linear
       system.  For TFQMR, this method is not useful since the linear problem
       manager always has the current solution.
@@ -166,7 +166,7 @@ namespace Belos {
     RCP<MV> _residvec;
     
     //! Output stream.
-    RCP<ostream> _os;
+    RCP<std::ostream> _os;
     
     //! Current iteration number.
     int _iter;
@@ -247,15 +247,15 @@ namespace Belos {
     //
     while (_cur_block_sol.get() && _cur_block_rhs.get() ) {
       //
-      // Only continue if the linear system is single-vector.
+      // Only continue if the linear system is single-std::vector.
       //
       if ( _lp->GetBlockSize() > 1 ) return;
       //
       if (_om->isVerbosityAndPrint( IterationDetails )) {
-	*_os << endl;
-	*_os << "===================================================" << endl;
-	*_os << "Solving linear system(s):  " << _lp->GetRHSIndex() << " through " << _lp->GetRHSIndex()+_lp->GetNumToSolve() << endl;
-	*_os << endl;
+	*_os << std::endl;
+	*_os << "===================================================" << std::endl;
+	*_os << "Solving linear system(s):  " << _lp->GetRHSIndex() << " through " << _lp->GetRHSIndex()+_lp->GetNumToSolve() << std::endl;
+	*_os << std::endl;
       }	
       //
       _d = MVT::Clone( *_cur_block_sol, 1 );
@@ -335,7 +335,7 @@ namespace Belos {
 	  MVT::MvNorm( *_w, &_theta );     // theta = ||w|| / tau
 	  _theta[0] /= _tau[0];
 
-	  // cs = sqrt( 1 + theta^2 )
+	  // cs = std::sqrt( 1 + theta^2 )
 	  _cs[0] = Teuchos::ScalarTraits<ScalarType>::squareroot(one + _theta[0]*_theta[0]);
 
 	  _tau[0] *= _theta[0]*_cs[0];     // tau = tau * theta * cs
@@ -409,10 +409,10 @@ namespace Belos {
 
     if (_om->isVerbosity( Belos::TimingDetails )) {
       if (_om->doPrint())
-        *_os <<"********************TIMING DETAILS********************"<<endl;
+        *_os <<"********************TIMING DETAILS********************"<<std::endl;
       Teuchos::TimeMonitor::summarize( *_os );
       if (_om->doPrint())
-        *_os <<"******************************************************"<<endl;
+        *_os <<"******************************************************"<<std::endl;
     }
   } // end TFQMRSolve()
 

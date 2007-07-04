@@ -49,7 +49,7 @@ namespace Teuchos
     {
     public:
       /** \brief Construct with a filename */
-      FileInputStream(const string& filename);
+      FileInputStream(const std::string& filename);
 
       /** \brief Destructor */
       virtual ~FileInputStream() { if( file_ ) { fclose(file_); } }

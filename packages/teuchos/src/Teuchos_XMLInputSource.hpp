@@ -46,7 +46,7 @@ namespace Teuchos
    * \note 
    *	<ul>
    *	<li>The source might be a file, a socket, a
-   * string. The XMLObject is created with a call to the getObject() method.
+   * std::string. The XMLObject is created with a call to the getObject() method.
    *
    *    <li> The source gets its data from a XMLInputStream object that is
    * created (internally) to work with this source.

@@ -16,8 +16,8 @@ bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList){
     
   /* Build a list with level-specific stuff stripped */
   for(ParameterList::ConstIterator param=inList.begin(); param!=inList.end(); param++){
-    const string pname=inList.name(param);
-    if(pname.find("(level",0) == string::npos)
+    const std::string pname=inList.name(param);
+    if(pname.find("(level",0) == std::string::npos)
       List.setEntry(pname,inList.entry(param));
   }
 
@@ -25,13 +25,13 @@ bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList){
   try{
   validList=GetValidMLPParameters();
   }
-  catch(...) {cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<endl;exit(1);}
+  catch(...) {std::cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<std::endl;exit(1);}
   try{
     List.validateParameters(*validList,0,VALIDATE_USED_DISABLED,VALIDATE_DEFAULTS_DISABLED);
   }
-  catch(Exceptions::InvalidParameterName &excpt)  {rv=false; cout<<excpt.what()<<endl;}
-  catch(Exceptions::InvalidParameterType &excpt)  {rv=false; cout<<excpt.what()<<endl;}
-  catch(Exceptions::InvalidParameterValue &excpt) {rv=false; cout<<excpt.what()<<endl;}
+  catch(Exceptions::InvalidParameterName &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
+  catch(Exceptions::InvalidParameterType &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
+  catch(Exceptions::InvalidParameterValue &excpt) {rv=false; std::cout<<excpt.what()<<std::endl;}
   catch(...) {rv=false;}
   delete validList;
   return rv;
@@ -198,8 +198,8 @@ bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inLis
   
   /* Build a list with level-specific stuff stripped */
   for(ParameterList::ConstIterator param=inList.begin(); param!=inList.end(); param++){
-    const string pname=inList.name(param);
-    if(pname.find("(level",0) == string::npos)
+    const std::string pname=inList.name(param);
+    if(pname.find("(level",0) == std::string::npos)
       List.setEntry(pname,inList.entry(param));
   }
 
@@ -207,13 +207,13 @@ bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inLis
   try{
   validList=GetValidRefMaxwellParameters();
   }
-  catch(...) {cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<endl;exit(1);}
+  catch(...) {std::cout<<"Error in GetValidMLPParameters: The developers messed something up.  Sorry."<<std::endl;exit(1);}
   try{
     List.validateParameters(*validList,0,VALIDATE_USED_DISABLED,VALIDATE_DEFAULTS_DISABLED);
   }
-  catch(Exceptions::InvalidParameterName &excpt)  {rv=false; cout<<excpt.what()<<endl;}
-  catch(Exceptions::InvalidParameterType &excpt)  {rv=false; cout<<excpt.what()<<endl;}
-  catch(Exceptions::InvalidParameterValue &excpt) {rv=false; cout<<excpt.what()<<endl;}
+  catch(Exceptions::InvalidParameterName &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
+  catch(Exceptions::InvalidParameterType &excpt)  {rv=false; std::cout<<excpt.what()<<std::endl;}
+  catch(Exceptions::InvalidParameterValue &excpt) {rv=false; std::cout<<excpt.what()<<std::endl;}
   catch(...) {rv=false;}
   delete validList;
   return rv;

@@ -32,14 +32,14 @@
 using namespace Teuchos;
 
 
-XMLObjectImplem::XMLObjectImplem(const string& tag)
+XMLObjectImplem::XMLObjectImplem(const std::string& tag)
 	: tag_(tag), attributes_(), children_(0), content_(0)
 {;}
 
 XMLObjectImplem* XMLObjectImplem::deepCopy() const 
 {
 	XMLObjectImplem* rtn = new XMLObjectImplem(tag_);
-	TEST_FOR_EXCEPTION(rtn==0, runtime_error, "XMLObjectImplem::deepCopy()");
+	TEST_FOR_EXCEPTION(rtn==0, std::runtime_error, "XMLObjectImplem::deepCopy()");
 	rtn->attributes_ = attributes_;
 	rtn->content_ = content_;
 	
@@ -53,7 +53,7 @@ XMLObjectImplem* XMLObjectImplem::deepCopy() const
 
 int XMLObjectImplem::numChildren() const {return children_.length();}
 
-void XMLObjectImplem::addAttribute(const string& name, const string& value)
+void XMLObjectImplem::addAttribute(const std::string& name, const std::string& value)
 {
   attributes_[name] = value;
 }
@@ -63,7 +63,7 @@ void XMLObjectImplem::addChild(const XMLObject& child)
   children_.append(child);
 }
 
-void XMLObjectImplem::addContent(const string& contentLine)
+void XMLObjectImplem::addContent(const std::string& contentLine)
 {
   content_.append(contentLine);
 }
@@ -73,9 +73,9 @@ const XMLObject& XMLObjectImplem::getChild(int i) const
 	return children_[i];
 }
 
-string XMLObjectImplem::header(bool strictXML) const
+std::string XMLObjectImplem::header(bool strictXML) const
 {
-	string rtn = "<" + tag_;
+	std::string rtn = "<" + tag_;
       
   for (Map::const_iterator i=attributes_.begin(); i!=attributes_.end(); ++i)
 		{
@@ -94,19 +94,19 @@ string XMLObjectImplem::header(bool strictXML) const
 	return rtn;
 }
 
-string XMLObjectImplem::XMLifyAttVal(const string &attval) {
-  string ret;
+std::string XMLObjectImplem::XMLifyAttVal(const std::string &attval) {
+  std::string ret;
   bool hasQuot, hasApos;
   char delim;
 
-  if (attval.find("\"") == string::npos) {
+  if (attval.find("\"") == std::string::npos) {
     hasQuot = false;
   }
   else {
     hasQuot = true;
   }
 
-  if (attval.find("\'") == string::npos) {
+  if (attval.find("\'") == std::string::npos) {
     hasApos = false;
   }
   else {
@@ -121,12 +121,12 @@ string XMLObjectImplem::XMLifyAttVal(const string &attval) {
   }
 
   // Rules:
-  // "-wrapped string cannot contain a literal "
-  // '-wrapped string cannot contain a literal '
+  // "-wrapped std::string cannot contain a literal "
+  // '-wrapped std::string cannot contain a literal '
   // attribute value cannot contain a literal <
   // attribute value cannot contain a literal &
   ret.push_back(delim);
-  for (string::const_iterator i=attval.begin(); i != attval.end(); i++) {
+  for (std::string::const_iterator i=attval.begin(); i != attval.end(); i++) {
     if (*i == delim) {
       if (delim == '\'') ret.append("&apos;");
       else if (delim == '\"') ret.append("&quot;");
@@ -146,9 +146,9 @@ string XMLObjectImplem::XMLifyAttVal(const string &attval) {
   return ret;
 }
 
-string XMLObjectImplem::terminatedHeader(bool strictXML) const
+std::string XMLObjectImplem::terminatedHeader(bool strictXML) const
 {
-	string rtn = "<" + tag_;
+	std::string rtn = "<" + tag_;
       
   for (Map::const_iterator i=attributes_.begin(); i!=attributes_.end(); ++i)
 		{
@@ -167,9 +167,9 @@ string XMLObjectImplem::terminatedHeader(bool strictXML) const
 	return rtn;
 }
 
-string XMLObjectImplem::toString() const
+std::string XMLObjectImplem::toString() const
 {
-  string rtn;
+  std::string rtn;
   
   if (content_.length()==0 && children_.length()==0) 
     {
@@ -204,18 +204,18 @@ string XMLObjectImplem::toString() const
   return rtn;
 }
 
-void XMLObjectImplem::print(ostream& os, int indent) const
+void XMLObjectImplem::print(std::ostream& os, int indent) const
 {
   for (int i=0; i<indent; i++) os << " ";
   
   if (content_.length()==0 && children_.length()==0) 
     {
-      os << terminatedHeader(true) << endl;
+      os << terminatedHeader(true) << std::endl;
       return;
     }
   else
     {
-      os << header(true) << endl;
+      os << header(true) << std::endl;
       printContent(os, indent+2);
       
       for (int i=0; i<children_.length(); i++)
@@ -227,9 +227,9 @@ void XMLObjectImplem::print(ostream& os, int indent) const
     }
 }
 
-void XMLObjectImplem::printContent(ostream& os, int indent) const 
+void XMLObjectImplem::printContent(std::ostream& os, int indent) const 
 {
-  string space = "";
+  std::string space = "";
   for (int i=0; i<indent; i++) space += " ";
 
   bool allBlankContent = true;

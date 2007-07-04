@@ -5,7 +5,7 @@
 
 int main(int argc, char* argv[])
 {
-  cout << Teuchos::Teuchos_Version() << endl << endl;
+  std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   // Creating an empty parameter list looks like:
   Teuchos::ParameterList My_List;
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
   /* In the above example, the first ``get'' method is a safe way of
      obtaining a parameter when its existence is indefinite but required.
      The second ``get'' method should be used when the existense of the parameter
-     is definite.  This method will throw an exception if the parameter doesn't exist. 
+     is definite.  This method will throw an std::exception if the parameter doesn't exist. 
      The safest way to use the second ``get'' method
      is in a try/catch block:
   */
@@ -122,22 +122,22 @@ int main(int argc, char* argv[])
       Teuchos::getParameter<Teuchos::RCP<Teuchos::Array<double> > >(My_List, "Initial Guess");
   }
   catch ( std::exception& e) {
-    cout << e.what() << endl;
+    std::cout << e.what() << std::endl;
   }
 
-  cout << "\n# Printing this parameter list using opeator<<(...) ...\n\n";
-  cout << My_List << endl;
+  std::cout << "\n# Printing this parameter list using opeator<<(...) ...\n\n";
+  std::cout << My_List << std::endl;
 
-  cout << "\n# Printing the parameter list only showing documentation fields ...\n\n";
-  My_List.print(cout,Teuchos::ParameterList::PrintOptions().showDoc(true).indent(2).showTypes(true)); 
+  std::cout << "\n# Printing the parameter list only showing documentation fields ...\n\n";
+  My_List.print(std::cout,Teuchos::ParameterList::PrintOptions().showDoc(true).indent(2).showTypes(true)); 
 
   /* It is important to note that mispelled parameters 
      (with additional space characters, capitalizations, etc.) may be ignored.  
      Therefore, it is important to be aware that a given parameter has not been used. 
      Unused parameters can be printed with method:
   */ 
-  cout << "\n# Showing unused parameters ...\n\n";
-  My_List.unused( cout );
+  std::cout << "\n# Showing unused parameters ...\n\n";
+  My_List.unused( std::cout );
 
   return 0;
 }

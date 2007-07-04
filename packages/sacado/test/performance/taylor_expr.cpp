@@ -41,6 +41,9 @@
 #include "interfaces.h"
 #endif
 
+using std::cout;
+using std::endl;
+
 // A simple performance test that computes a Taylor expansion of a simple
 // expression using many variants of Taylor polynomial classes.
 

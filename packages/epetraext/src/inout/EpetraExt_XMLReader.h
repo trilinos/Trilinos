@@ -39,9 +39,9 @@ Epetra_CrsMatrix* MyMatrix;
 Epetra_MultiVector* MyLHS;
 Epetra_MultiVector* MyRHS;
 Teuchos::ParameterList MyParameters;
-vector<string> Author;
-vector<string> Date;
-vector<string> MyContent;
+std::vector<std::string> Author;
+std::vector<std::string> Date;
+std::vector<std::string> MyContent;
 \endcode
 Reading simply goes as follows:
 \code
@@ -70,7 +70,7 @@ class XMLReader
   public: 
     // @{ \name Constructor and destructor.
     //! ctor
-    XMLReader(const Epetra_Comm& Comm, const string& FileName); 
+    XMLReader(const Epetra_Comm& Comm, const std::string& FileName); 
 
     //! dtor
     ~XMLReader() {}
@@ -79,22 +79,22 @@ class XMLReader
     // @{ \name Read operations
     
     //! Reads the Epetra_Map stored with label \c Label.
-    void Read(const string& Label, Epetra_Map*& Map);
+    void Read(const std::string& Label, Epetra_Map*& Map);
 
     //! Reads the Epetra_CrsGraph stored with label \c Label.
-    void Read(const string& Label, Epetra_CrsGraph*& Graph);
+    void Read(const std::string& Label, Epetra_CrsGraph*& Graph);
 
     //! Reads the Epetra_CrsMatrix stored with label \c Label.
-    void Read(const string& Label, Epetra_CrsMatrix*& Matrix);
+    void Read(const std::string& Label, Epetra_CrsMatrix*& Matrix);
 
     //! Reads the Epetra_MultiVector stored with label \c Label.
-    void Read(const string& Label, Epetra_MultiVector*& MultiVector);
+    void Read(const std::string& Label, Epetra_MultiVector*& MultiVector);
 
-    //! Reads a vector of strings with label \c Label.
-    void Read(const string& Label, vector<string>& Content);
+    //! Reads a std::vector of strings with label \c Label.
+    void Read(const std::string& Label, std::vector<std::string>& Content);
 
     //! Reads the Teuchos::ParameterList stored with label \c Label.
-    void Read(const string& Label, Teuchos::ParameterList& List);
+    void Read(const std::string& Label, Teuchos::ParameterList& List);
 
     // @}
   private:

@@ -59,7 +59,7 @@ namespace Teuchos
       XMLObject parse();
     private:
       RCP<XMLInputStream> _is;
-      Teuchos::map<string,string> _entities;
+      Teuchos::map<std::string,string> _entities;
       
       /** \brief Determine whether \c c matches the <tt>Letter</tt> production according to the XML specification.*/
       inline static bool isLetter(unsigned char c);
@@ -71,15 +71,15 @@ namespace Teuchos
       inline static bool isSpace(unsigned char c);
 
       /** \brief Consume a <tt>ETag</tt> production according to the XML specification.
-       *  <tt>getETag</tt> throws an exception if the input does not match the production rule.
+       *  <tt>getETag</tt> throws an std::exception if the input does not match the production rule.
        *  
        *  @param tag
        *         [out] On output, will be set to the tag name of the closing tag.
        */
-      void getETag(string &tag);
+      void getETag(std::string &tag);
 
       /** \brief Consume a <tt>STag</tt> production according to the XML specification.
-       *  <tt>getSTag</tt> throws an exception if the input does not match the production rule.
+       *  <tt>getSTag</tt> throws an std::exception if the input does not match the production rule.
        *  
        *  @param lookahead
        *         [in] Contains the first character of the tag name.
@@ -94,10 +94,10 @@ namespace Teuchos
        *         [out] On output, specifies if this was an empty element tag.
        *
        */
-      void getSTag(unsigned char lookahead, string &tag, Teuchos::map<string,string> &attrs, bool &emptytag);
+      void getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<std::string,string> &attrs, bool &emptytag);
 
       /** \brief Consume a <tt>Comment</tt> production according to the XML specification.
-       *  <tt>getComment</tt> throws an exception if the input does not match the production rule.
+       *  <tt>getComment</tt> throws an std::exception if the input does not match the production rule.
        */
       void getComment();
 
@@ -116,7 +116,7 @@ namespace Teuchos
        *         [out] On output, specifies the decoded reference.
        *
        */
-      void getReference(string &refstr);
+      void getReference(std::string &refstr);
 
       /** \brief Determines if the next character on the stream 
        *

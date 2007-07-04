@@ -48,9 +48,9 @@ EpetraOperator::EpetraOperator( const RCP<LinearProblem<double,Epetra_MultiVecto
     plist_(plist),
     initSolnVec_(initSolnVec)
 {
-  string solver = plist_->get("Solver", "BlockGmres");
+  std::string solver = plist_->get("Solver", "BlockGmres");
   
-  // Copy string to character array.  
+  // Copy std::string to character array.  
   // Not using conversion routine copy() because it's not supported by RW on Janus. (HKT 11/13/2003) 
   Solver.resize(solver.length()+1);
   for (int i=0; i<(int)solver.length()+1; i++) {

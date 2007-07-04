@@ -39,7 +39,7 @@ StringToIntMap::StringToIntMap(  const std::string& defaultGroupName, int n, con
 		TEST_FOR_EXCEPTION(
 			!unique, AlreadyExists
 			,"Teuchos::StringToIntMap::StringToIntMap(...): "
-			<< "Error, the string \"" << strings[i] << "\" is a duplicate for "
+			<< "Error, the std::string \"" << strings[i] << "\" is a duplicate for "
 			<< defaultGroupName_ );
 	}
 }
@@ -50,7 +50,7 @@ int StringToIntMap::get( const std::string& option, const std::string& groupName
 	TEST_FOR_EXCEPTION(
 		itr == map_.end(), DoesNotExist
 		,"Teuchos::StringToIntMap:::get(\""<<option<<"\",...): "
-		<< "Error, the string \"" << option << "\" is not recongnised for "
+		<< "Error, the std::string \"" << option << "\" is not recongnised for "
 		<< ( groupName.length() ? groupName : defaultGroupName_ )
     << "; valid selections include " << this->validSelections() << "."
     );

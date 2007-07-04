@@ -310,7 +310,7 @@ public:
 	/** \brief Set the size block of memory to be given as workspace.
 	 *
 	 * If there are any instantiated RawWorkspace objects then this
-	 * function willl throw an exception.  It must be called before
+	 * function willl throw an std::exception.  It must be called before
 	 * any RawWorkspace objects are created.
 	 */
 	void initialize(size_t num_bytes);

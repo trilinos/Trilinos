@@ -50,7 +50,7 @@
    \f]
    where 
    <ul>
-   <li> \f$r_i\f$ is the i-th residual vector, implicitly or explicitly computed (determined by enum ResType),
+   <li> \f$r_i\f$ is the i-th residual std::vector, implicitly or explicitly computed (determined by enum ResType),
    <li> \f$\|r_i\|\f$ is the i-th residual norm determined by the enum NormType  (1-norm, 2-norm or inf-norm), 
    <li> \f$\sigma_i\f$ is the i-th scale factor that can be passed in as a precomputed number of the templated type, 
    or can be selected from by the enum ScaleType (norm of RHS, norm of initial residual).
@@ -75,10 +75,10 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //! @name Enums.
   //@{ 
   /*! 
-    \brief Select how the residual vector is produced.
+    \brief Select how the residual std::vector is produced.
   */
-  enum ResType {Implicit, /*!< Use the residual vector produced by the iterative solver. */
-		Explicit  /*!< Explicitly compute the residual vector r = b - A*x using the 
+  enum ResType {Implicit, /*!< Use the residual std::vector produced by the iterative solver. */
+		Explicit  /*!< Explicitly compute the residual std::vector r = b - A*x using the 
 			    linear problem. */
   };
   /*! 
@@ -86,8 +86,8 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     \brief Select the scale type.
   */
   enum ScaleType {NormOfRHS,     /*!< Use the norm of the right-hand-side. */
-		  NormOfInitRes, /*!< Use the initial residual vector (explicitly computed). */
-		  NormOfPrecInitRes, /*!< Use the preconditioned initial residual vector (explicitly computed). */
+		  NormOfInitRes, /*!< Use the initial residual std::vector (explicitly computed). */
+		  NormOfPrecInitRes, /*!< Use the preconditioned initial residual std::vector (explicitly computed). */
 		  None,          /*!< Use unscaled residual. */
 		  UserProvided   /*!< User provides an explicit value that the norm of 
 				   the residual will be divided by. */
@@ -102,8 +102,8 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     as the stopping criterion, where \f$\|r\|_2\f$ uses the least costly form of the 2-norm of 
     residual available from the iterative method and \f$\|r^{(0)}\|_2\f$ is the corresponding norm 
     of the initial residual.  The least costly form of the 2-norm depends on the chosen iterative 
-    method.  Most Krylov methods produce the preconditioned residual vector in a form that would be 
-    exact in infinite precision arithmetic.  This vector may be different from the true residual 
+    method.  Most Krylov methods produce the preconditioned residual std::vector in a form that would be 
+    exact in infinite precision arithmetic.  This std::vector may be different from the true residual 
     either because left scaling or preconditioning was used, or because round-off error has 
     introduced significant error, or both.
 
@@ -119,17 +119,17 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //! @name Form and parameter definition methods.
   //@{ 
 
-  //! Define form of the residual, its norm and optional weighting vector.
+  //! Define form of the residual, its norm and optional weighting std::vector.
   /*! This method defines the form of \f$\|r\|\f$.  We specify:
     <ul>
-    <li> Whether the residual vector should be explicitly computed, or taken from the iterative method.
+    <li> Whether the residual std::vector should be explicitly computed, or taken from the iterative method.
     <li> The norm to be used on the residual (this may be different than the norm used in 
     DefineScaleForm()).
     </ul>
   */
   int defineResForm( ResType TypeOfResidual, NormType TypeOfNorm);
   
-  //! Define form of the scaling, its norm, its optional weighting vector, or, alternatively, define an explicit value.
+  //! Define form of the scaling, its norm, its optional weighting std::vector, or, alternatively, define an explicit value.
   /*! This method defines the form of how the residual is scaled (if at all).  It operates in two modes:
     <ol>
     <li> User-provided scaling value:
@@ -143,9 +143,9 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     
     <li> Use a supported Scaling Form:
     <ul>
-    <li> Define TypeOfScaling to be the norm of the right hand side, the initial residual vector, 
+    <li> Define TypeOfScaling to be the norm of the right hand side, the initial residual std::vector, 
     or to none.
-    <li> Define norm to be used on the scaling vector (this may be different than the norm used 
+    <li> Define norm to be used on the scaling std::vector (this may be different than the norm used 
     in DefineResForm()).
     </ul>
     </ol>
@@ -194,10 +194,10 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   //! Output formatted description of stopping test to output stream.
-  void print(ostream& os, int indent = 0) const;
+  void print(std::ostream& os, int indent = 0) const;
 
   //! Print message for each status specific to this stopping test.
-  void printStatus(ostream& os, StatusType type) const; 
+  void printStatus(std::ostream& os, StatusType type) const; 
   //@}
 
   //! @name Methods to access data members.
@@ -207,7 +207,7 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //! \note If \c quorum=-1 then all residuals must pass the convergence test before Passed is returned.
   int getQuorum() { return quorum_; }
 
-  //! Returns the vector containing the indices of the residuals that passed the test.
+  //! Returns the std::vector containing the indices of the residuals that passed the test.
   std::vector<int> convIndices() { return ind_; }
 
   //! Returns the value of the tolerance, \f$ \tau \f$, set in the constructor.
@@ -228,10 +228,10 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   /** @name Misc. */
   //@{
 
-  /** \brief Call to setup initial scaling vector.
+  /** \brief Call to setup initial scaling std::vector.
    *
    * After this function is called <tt>getScaledNormValue()</tt> can be called
-   * to get the scaling vector.
+   * to get the scaling std::vector.
    */
   StatusType firstCallCheckStatusSetup(Iteration<ScalarType,MV,OP>* iSolver);
 
@@ -266,13 +266,13 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //! Scaling value.
   MagnitudeType scalevalue_;
 
-  //! Scaling vector.
+  //! Scaling std::vector.
   std::vector<MagnitudeType> scalevector_;
   
-  //! Residual norm vector.
+  //! Residual norm std::vector.
   std::vector<MagnitudeType> resvector_;
 
-  //! Test vector = resvector_ / scalevector_
+  //! Test std::vector = resvector_ / scalevector_
   std::vector<MagnitudeType> testvector_;
 
   //! Vector containing the indices for the vectors that passed the test.
@@ -328,7 +328,7 @@ StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm( MagnitudeType Tolerance,
     firstcallDefineScaleForm_(true)
 {
   // This constructor will compute the residual ||r_i||/||r0_i|| <= tolerance using the 2-norm of
-  // the implicit residual vector.
+  // the implicit residual std::vector.
 }
 
 template <class ScalarType, class MV, class OP>
@@ -389,7 +389,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
     }
   }
   //
-  // This section computes the norm of the residual vector
+  // This section computes the norm of the residual std::vector
   //
   if ( curLSNum_ != lp.getLSNumber() ) {
     //
@@ -463,7 +463,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
     for (; p<curLSIdx_.end(); ++p) {
       // Check if this index is valid
       if (*p != -1) {     
-        // Scale the vector accordingly
+        // Scale the std::vector accordingly
         if ( scalevector_[ *p ] != zero ) {
           // Don't intentionally divide by zero.
           testvector_[ *p ] = resvector_[ *p ] / scalevector_[ *p ] / scalevalue_;
@@ -496,7 +496,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
         ind_[have] = *p;
         have++;
       } else {
-        // Throw an exception if a NaN is found.
+        // Throw an std::exception if a NaN is found.
         status_ = Failed;
         TEST_FOR_EXCEPTION(true,StatusTestError,"StatusTestResNorm::checkStatus(): NaN has been detected.");
       }
@@ -511,7 +511,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Iteration<ScalarTyp
 }
 
 template <class ScalarType, class MV, class OP>
-void StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) const
+void StatusTestResNorm<ScalarType,MV,OP>::print(std::ostream& os, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     os << ' ';
@@ -536,9 +536,9 @@ void StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) const
     os << ")";
   }
   if (status_==Undefined)
-    os << ", tol = " << tolerance_ << endl;
+    os << ", tol = " << tolerance_ << std::endl;
   else {
-    os << endl;
+    os << std::endl;
     if(showMaxResNormOnly_ && curBlksz_ > 1) {
       const MagnitudeType maxRelRes = *std::max_element(
         testvector_.begin()+curLSIdx_[0],testvector_.begin()+curLSIdx_[curBlksz_-1]
@@ -546,24 +546,24 @@ void StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) const
       for (int j = 0; j < indent + 13; j ++)
         os << ' ';
       os << "max{residual["<<curLSIdx_[0]<<"..."<<curLSIdx_[curBlksz_-1]<<"]} = " << maxRelRes
-         << ( maxRelRes <= tolerance_ ? " <= " : " > " ) << tolerance_ << endl;
+         << ( maxRelRes <= tolerance_ ? " <= " : " > " ) << tolerance_ << std::endl;
     }
     else {
       for ( int i=0; i<numrhs_; i++ ) {
         for (int j = 0; j < indent + 13; j ++)
           os << ' ';
         os << "residual [ " << i << " ] = " << testvector_[ i ];
-        os << ((testvector_[i]<tolerance_) ? " < " : (testvector_[i]==tolerance_) ? " == " : (testvector_[i]>tolerance_) ? " > " : " "  ) << tolerance_ << endl;
+        os << ((testvector_[i]<tolerance_) ? " < " : (testvector_[i]==tolerance_) ? " == " : (testvector_[i]>tolerance_) ? " > " : " "  ) << tolerance_ << std::endl;
       }
     }
   }
-  os << endl;
+  os << std::endl;
 }
 
 template <class ScalarType, class MV, class OP>
-void StatusTestResNorm<ScalarType,MV,OP>::printStatus(ostream& os, StatusType type) const 
+void StatusTestResNorm<ScalarType,MV,OP>::printStatus(std::ostream& os, StatusType type) const 
 {
-  os << setiosflags(ios::left) << setw(13) << setfill('.');
+  os << setiosflags(std::ios::left) << std::setw(13) << std::setfill('.');
   switch (type) {
   case  Passed:
     os << "Converged";
@@ -576,7 +576,7 @@ void StatusTestResNorm<ScalarType,MV,OP>::printStatus(ostream& os, StatusType ty
     os << "**";
     break;
   }
-  os << setiosflags(ios::left) << setfill(' ');
+  os << setiosflags(std::ios::left) << std::setfill(' ');
     return;
 }
 

@@ -69,7 +69,7 @@ public:
 	virtual MultiVec<ScalarType> * Clone ( const int numvecs ) const = 0;
 
 	/*! \brief Creates a new %Belos::MultiVec and copies contents of \c *this into
-	    the new vector (deep copy).
+	    the new std::vector (deep copy).
 	
 	    \return Pointer to the new multivector	
 	*/
@@ -77,7 +77,7 @@ public:
 	virtual MultiVec<ScalarType> * CloneCopy () const = 0;
 	
 	/*! \brief Creates a new %Belos::MultiVec and copies the selected contents of \c *this 
-	    into the new vector (deep copy).  The copied 
+	    into the new std::vector (deep copy).  The copied 
 	    vectors from \c *this are indicated by the \c index.size() indices in \c index.
 
 	    \return Pointer to the new multivector	
@@ -97,7 +97,7 @@ public:
 
   //! @name Dimension information methods	
 	//@{ 
-	//! Obtain the vector length of *this multivector block.
+	//! Obtain the std::vector length of *this multivector block.
 
 	virtual int GetVecLength () const = 0;
 
@@ -125,7 +125,7 @@ public:
 
 	virtual void MvTransMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, Teuchos::SerialDenseMatrix<int,ScalarType>& B) const = 0;
 
-	/*! \brief Compute a vector \c b where the components are the individual dot-products, i.e.\c b[i] = \c A[i]^T*\c this[i] where \c A[i] is the i-th column of A.
+	/*! \brief Compute a std::vector \c b where the components are the individual dot-products, i.e.\c b[i] = \c A[i]^T*\c this[i] where \c A[i] is the i-th column of A.
 	*/
 
 	virtual void MvDot ( const MultiVec<ScalarType>& A, std::vector<ScalarType>* b ) const = 0;
@@ -134,8 +134,8 @@ public:
   //! @name Norm method
 	//@{ 
 
-	/*! \brief Compute the 2-norm of each individual vector of \c *this.  
-	   Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
+	/*! \brief Compute the 2-norm of each individual std::vector of \c *this.  
+	   Upon return, \c normvec[i] holds the 2-norm of the \c i-th std::vector of \c *this
 	*/
 
         virtual void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec, NormType type = TwoNorm ) const = 0;
@@ -165,7 +165,7 @@ public:
 	//@{ 
 	/*! \brief Print the \c *this multivector.
 	*/
-	virtual void MvPrint ( ostream& os ) const = 0;
+	virtual void MvPrint ( std::ostream& os ) const = 0;
 	//@}
 };
 
@@ -229,7 +229,7 @@ public:
     static void MvInit( MultiVec<ScalarType>& mv, ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero() )
     { mv.MvInit(alpha); }
     ///
-    static void MvPrint( const MultiVec<ScalarType>& mv, ostream& os )
+    static void MvPrint( const MultiVec<ScalarType>& mv, std::ostream& os )
     { mv.MvPrint(os); }
     
   };

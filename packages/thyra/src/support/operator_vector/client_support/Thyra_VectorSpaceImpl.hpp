@@ -72,7 +72,7 @@ namespace Thyra
   template <class Scalar> inline
   bool VectorSpace<Scalar>::isCompatible(const VectorSpace<Scalar>& vecSpc) const 
   {
-    TEST_FOR_EXCEPTION(vecSpc.constPtr().get() == 0, runtime_error,
+    TEST_FOR_EXCEPTION(vecSpc.constPtr().get() == 0, std::runtime_error,
                        "null argument in VectorSpace<Scalar>::isCompatible()");
     return this->constPtr().get()->isCompatible(*(vecSpc.constPtr().get()));
   }
@@ -103,8 +103,8 @@ namespace Thyra
   {
     const Thyra::ProductVectorSpaceBase<Scalar>* pvs = 
       dynamic_cast<const Thyra::ProductVectorSpaceBase<Scalar>* > (this->constPtr().get());
-    TEST_FOR_EXCEPTION(pvs == 0 && numBlocks()!=1, runtime_error,
-                       "Space not a ProductVectorSpace" << endl);
+    TEST_FOR_EXCEPTION(pvs == 0 && numBlocks()!=1, std::runtime_error,
+                       "Space not a ProductVectorSpace" << std::endl);
     if (pvs != 0)
       {
         return pvs->getBlock(i);
@@ -120,8 +120,8 @@ namespace Thyra
   //   const Thyra::ProductVectorSpace<Scalar>*  pvs = 
   //     dynamic_cast<const Thyra::ProductVectorSpace<Scalar>* >  (this->constPtr().get());
 
-  //   TEST_FOR_EXCEPTION(pvs == 0, runtime_error,
-  // 		     "Can't set block of vector space that is " <<
+  //   TEST_FOR_EXCEPTION(pvs == 0, std::runtime_error,
+  // 		     "Can't set block of std::vector space that is " <<
   // 		     "not a ProductVectorSpace.");
 
   //   Thyra::ProductVectorSpace<Scalar>* pvsc = const_cast<ProductVectorSpace<Scalar>*> (pvs);

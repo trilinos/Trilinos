@@ -69,6 +69,8 @@
   Amesos requires STL vector class
 #endif
 
+using namespace std;
+
 #define AMESOS_PRINT(variable) { { \
                       if ( debug_ != 0) { cerr << "AMESOS_PRINT " << # variable << "= " << variable << ", " \
                            << __FILE__ << ", line " << __LINE__ << endl; }  }\

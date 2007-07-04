@@ -34,7 +34,7 @@ using namespace Teuchos;
 
 
 
-ParameterXMLFileReader::ParameterXMLFileReader(const string& filename)
+ParameterXMLFileReader::ParameterXMLFileReader(const std::string& filename)
   : fis_(filename)
 {;}
 

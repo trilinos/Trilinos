@@ -78,7 +78,7 @@ namespace Belos {
 /** \brief BlockGmresSolMgrLinearProblemFailure is thrown when the linear problem is
  * not setup (i.e. setProblem() was not called) when solve() is called.
  *
- * This exception is thrown from the BlockGmresSolMgr::solve() method.
+ * This std::exception is thrown from the BlockGmresSolMgr::solve() method.
  *
  */
 class BlockGmresSolMgrLinearProblemFailure : public BelosError {public:
@@ -88,7 +88,7 @@ class BlockGmresSolMgrLinearProblemFailure : public BelosError {public:
 /** \brief BlockGmresSolMgrOrthoFailure is thrown when the orthogonalization manager is
  * unable to generate orthonormal columns from the initial basis vectors.
  *
- * This exception is thrown from the BlockGmresSolMgr::solve() method.
+ * This std::exception is thrown from the BlockGmresSolMgr::solve() method.
  *
  */
 class BlockGmresSolMgrOrthoFailure : public BelosError {public:
@@ -126,7 +126,7 @@ public:
    *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 3*nev
    *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 300
    *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
-   *   - "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS and ICGS. Default: "DGKS"
+   *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:  DGKS and ICGS. Default: "DGKS"
    *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
    *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
    *   - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled for the purposing of deciding convergence. Default: true
@@ -183,7 +183,7 @@ public:
    * quit.
    *
    * This method calls BlockGmresIter::iterate(), which will return either because a specially constructed status test evaluates to 
-   * ::Passed or an exception is thrown.
+   * ::Passed or an std::exception is thrown.
    *
    * A return from BlockGmresIter::iterate() signifies one of the following scenarios:
    *    - the maximum number of restarts has been exceeded. In this scenario, the current solutions to the linear system
@@ -209,8 +209,8 @@ public:
     
 private:
 
-  // Method to convert string to enumerated type for residual.
-  typename StatusTestResNorm<ScalarType,MV,OP>::ScaleType convertStringToScaleType( string& scaleType ) {
+  // Method to convert std::string to enumerated type for residual.
+  typename StatusTestResNorm<ScalarType,MV,OP>::ScaleType convertStringToScaleType( std::string& scaleType ) {
     typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
     if (scaleType == "Norm of Initial Residual") {
       return StatusTestResNorm_t::NormOfInitRes;
@@ -230,7 +230,7 @@ private:
     
   // Output manager.
   Teuchos::RCP<OutputManager<ScalarType> > printer_;
-  Teuchos::RCP<ostream> outputStream_;
+  Teuchos::RCP<std::ostream> outputStream_;
 
   // Status test.
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
@@ -261,7 +261,7 @@ private:
   static const std::string expResScale_default_; 
   static const std::string label_default_;
   static const std::string orthoType_default_;
-  static const Teuchos::RCP<ostream> outputStream_default_;
+  static const Teuchos::RCP<std::ostream> outputStream_default_;
 
   // Current solver values.
   MagnitudeType convtol_, orthoKappa_;
@@ -327,7 +327,7 @@ template<class ScalarType, class MV, class OP>
 const std::string BlockGmresSolMgr<ScalarType,MV,OP>::orthoType_default_ = "DGKS";
 
 template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<ostream> BlockGmresSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
+const Teuchos::RCP<std::ostream> BlockGmresSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
 
 
 // Empty Constructor
@@ -482,13 +482,13 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
 
   // Check to see if the timer label changed.
   if (params->isParameter("Timer Label")) {
-    string tempLabel = params->get("Timer Label", label_default_);
+    std::string tempLabel = params->get("Timer Label", label_default_);
 
     // Update parameter in our list and solver timer
     if (tempLabel != label_) {
       label_ = tempLabel;
       params_->set("Timer Label", label_);
-      string solveLabel = label_ + ": BlockGmresSolMgr total solve time";
+      std::string solveLabel = label_ + ": BlockGmresSolMgr total solve time";
       timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
     }
   }
@@ -507,7 +507,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
 
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
-    string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
+    std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
     TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS", std::invalid_argument,
 			"Belos::BlockGmresSolMgr: \"Orthogonalization\" must be either \"DGKS\" or \"ICGS\".");
     if (tempOrthoType != orthoType_) {
@@ -557,7 +557,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
 
   // output stream
   if (params->isParameter("Output Stream")) {
-    outputStream_ = Teuchos::getParameter<Teuchos::RCP<ostream> >(*params,"Output Stream");
+    outputStream_ = Teuchos::getParameter<Teuchos::RCP<std::ostream> >(*params,"Output Stream");
 
     // Update parameter in our list.
     params_->set("Output Stream", outputStream_);
@@ -600,7 +600,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
  
   // Check for a change in scaling, if so we need to build new residual tests.
   if (params->isParameter("Implicit Residual Scaling")) {
-    string tempImpResScale = Teuchos::getParameter<string>( *params, "Implicit Residual Scaling" );
+    std::string tempImpResScale = Teuchos::getParameter<std::string>( *params, "Implicit Residual Scaling" );
 
     // Only update the scaling if it's different.
     if (impResScale_ != tempImpResScale) {
@@ -613,7 +613,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
         try { 
           impConvTest_->defineScaleForm( impResScaleType, Belos::TwoNorm );
         }
-        catch (exception& e) { 
+        catch (std::exception& e) { 
           // Delete the convergence test so it gets constructed again.
           impConvTest_ = Teuchos::null;
           convTest_ = Teuchos::null;
@@ -623,7 +623,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
   }
   
   if (params->isParameter("Explicit Residual Scaling")) {
-    string tempExpResScale = Teuchos::getParameter<string>( *params, "Explicit Residual Scaling" );
+    std::string tempExpResScale = Teuchos::getParameter<std::string>( *params, "Explicit Residual Scaling" );
 
     // Only update the scaling if it's different.
     if (expResScale_ != tempExpResScale) {
@@ -636,7 +636,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
         try { 
           expConvTest_->defineScaleForm( expResScaleType, Belos::TwoNorm );
         }
-        catch (exception& e) {
+        catch (std::exception& e) {
           // Delete the convergence test so it gets constructed again.
           expConvTest_ = Teuchos::null;
           convTest_ = Teuchos::null;
@@ -722,7 +722,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
 
   // Create the timer if we need to.
   if (timerSolve_ == Teuchos::null) {
-    string solveLabel = label_ + ": BlockGmresSolMgr total solve time";
+    std::string solveLabel = label_ + ": BlockGmresSolMgr total solve time";
     timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
   }
 
@@ -795,8 +795,8 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
     else
       tmpNumBlocks = ( dim - blockSize_) / blockSize_;  // Allow for restarting.
     printer_->stream(Warnings) << 
-      "Warning! Requested Krylov subspace dimension is larger that operator dimension!" << endl <<
-      " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << tmpNumBlocks << endl;
+      "Warning! Requested Krylov subspace dimension is larger that operator dimension!" << std::endl <<
+      " The maximum number of blocks allowed for the Krylov subspace will be adjusted to " << tmpNumBlocks << std::endl;
     plist.set("Num Blocks",tmpNumBlocks);
   } 
   else 
@@ -901,7 +901,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
             }
             numRestarts++;
 	    
-            printer_->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << endl << endl;
+            printer_->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << std::endl << std::endl;
 	    
             // Update the linear problem.
             Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
@@ -917,7 +917,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
             // Get the state.
             GmresIterationState<ScalarType,MV> oldState = block_gmres_iter->getState();
 	    
-            // Compute the restart vector.
+            // Compute the restart std::vector.
             // Get a view of the current Krylov basis.
             Teuchos::RCP<MV> V_0  = MVT::Clone( *(oldState.V), blockSize_ );
             problem_->computeCurrResVec( &*V_0 );
@@ -955,9 +955,9 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
         catch (GmresIterationOrthoFailure e) {
           // If the block size is not one, it's not considered a lucky breakdown.
           if (blockSize_ != 1) {
-            printer_->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration " 
-                                     << block_gmres_iter->getNumIters() << endl 
-                                     << e.what() << endl;
+            printer_->stream(Errors) << "Error! Caught std::exception in BlockGmresIter::iterate() at iteration " 
+                                     << block_gmres_iter->getNumIters() << std::endl 
+                                     << e.what() << std::endl;
             if (convTest_->getStatus() != Passed)
               isConverged = false;
             break;
@@ -974,9 +974,9 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
           }
         }
         catch (std::exception e) {
-          printer_->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration " 
-                                   << block_gmres_iter->getNumIters() << endl 
-                                   << e.what() << endl;
+          printer_->stream(Errors) << "Error! Caught std::exception in BlockGmresIter::iterate() at iteration " 
+                                   << block_gmres_iter->getNumIters() << std::endl 
+                                   << e.what() << std::endl;
           throw;
         }
       }
@@ -1038,7 +1038,7 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   return Converged; // return from BlockGmresSolMgr::solve() 
 }
 
-//  This method requires the solver manager to return a string that describes itself.
+//  This method requires the solver manager to return a std::string that describes itself.
 template<class ScalarType, class MV, class OP>
 std::string BlockGmresSolMgr<ScalarType,MV,OP>::description() const
 {

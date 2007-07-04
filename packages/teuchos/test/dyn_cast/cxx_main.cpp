@@ -58,18 +58,18 @@ int main( int argc, char* argv[] )
     B b;
     A &a = b;
     try {
-      if(verbose) std::cout << "\nTrying: dynamic_cast<C&>(a); [Should throw a std::bad_cast exception with very bad error message]\n";
+      if(verbose) std::cout << "\nTrying: dynamic_cast<C&>(a); [Should throw a std::bad_cast std::exception with very bad error message]\n";
       dynamic_cast<C&>(a);
     }
     catch( const std::bad_cast &e ) {
-      if(verbose) std::cout << "\nCaught std::bad_cast exception e where e.what() = \"" << e.what() << "\"\n";
+      if(verbose) std::cout << "\nCaught std::bad_cast std::exception e where e.what() = \"" << e.what() << "\"\n";
     }
     try {
-      if(verbose) std::cout << "\nTrying: Teuchos::dyn_cast<C>(a); [Should throw a std::bad_cast exception with a very good error message]\n";
+      if(verbose) std::cout << "\nTrying: Teuchos::dyn_cast<C>(a); [Should throw a std::bad_cast std::exception with a very good error message]\n";
       Teuchos::dyn_cast<C>(a);
     }
     catch( const std::bad_cast &e ) {
-      if(verbose) std::cout << "\nCaught std::bad_cast exception e where e.what() = \"" << e.what() << "\"\n";
+      if(verbose) std::cout << "\nCaught std::bad_cast std::exception e where e.what() = \"" << e.what() << "\"\n";
     }
     if(verbose) std::cout << "\nTrying:  Teuchos::dyn_cast<B>(a).f(); [Should succeed and print \"B::f() called\"]\n";
     Teuchos::dyn_cast<B>(a).f(verbose);
@@ -77,12 +77,12 @@ int main( int argc, char* argv[] )
   }
   catch( const std::exception &excpt ) {
     if(verbose)
-      std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
+      std::cerr << "*** Caught standard std::exception : " << excpt.what() << std::endl;
     return 1;
   }
   catch( ... ) {
     if(verbose)
-      std::cerr << "*** Caught an unknown exception\n";
+      std::cerr << "*** Caught an unknown std::exception\n";
     return 1;
   }
 	return 0;

@@ -73,8 +73,8 @@
      	 <li> ScalarTraits can be used with the Arbitrary Precision Library ( \c http://crd.lbl.gov/~dhbailey/mpdist/ )
             by configuring Teuchos with \c --enable-teuchos-arprec and giving the appropriate paths to ARPREC.
             Then ScalarTraits has the specialization: \c mp_real.
-     	 <li> If Teuchos is configured with \c --enable-teuchos-complex then ScalarTraits also has
-            a parital specialization for all complex numbers of the form <tt>complex<T></tt>.
+     	 <li> If Teuchos is configured with \c --enable-teuchos-std::complex then ScalarTraits also has
+            a parital specialization for all std::complex numbers of the form <tt>std::complex<T></tt>.
      </ol>
 */
 
@@ -95,7 +95,7 @@ struct ScalarTraits
 {
   //! Madatory typedef for result of magnitude
   typedef T magnitudeType;
-  //! Determines if scalar type is complex
+  //! Determines if scalar type is std::complex
   static const bool isComplex = false;
   //! Determines if scalar type supports relational operators such as <, >, <=, >=.
   static const bool isComparable = false;
@@ -171,7 +171,7 @@ struct ScalarTraits<char>
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
-  static inline magnitudeType magnitude(char a) { return static_cast<char>(::fabs(static_cast<double>(a))); }
+  static inline magnitudeType magnitude(char a) { return static_cast<char>(std::fabs(static_cast<double>(a))); }
   static inline char zero()  { return 0; }
   static inline char one()   { return 1; }
   static inline char conjugate(char x) { return x; }
@@ -181,7 +181,7 @@ struct ScalarTraits<char>
   //static inline char random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
   static inline char random() { return rand(); }             // RAB: This version should be used for an unsigned char, not char
   static inline std::string name() { return "char"; }
-  static inline char squareroot(char x) { return (char) ::sqrt((double) x); }
+  static inline char squareroot(char x) { return (char) std::sqrt((double) x); }
   static inline char pow(char x, char y) { return (char) ::pow((double)x,(double)y); }
 };
 
@@ -193,7 +193,7 @@ struct ScalarTraits<int>
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
-  static inline magnitudeType magnitude(int a) { return static_cast<int>(::fabs(static_cast<double>(a))); }
+  static inline magnitudeType magnitude(int a) { return static_cast<int>(std::fabs(static_cast<double>(a))); }
   static inline int zero()  { return 0; }
   static inline int one()   { return 1; }
   static inline int conjugate(int x) { return x; }
@@ -203,7 +203,7 @@ struct ScalarTraits<int>
   //static inline int random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
   static inline int random() { return rand(); }             // RAB: This version should be used for an unsigned int, not int
   static inline std::string name() { return "int"; }
-  static inline int squareroot(int x) { return (int) ::sqrt((double) x); }
+  static inline int squareroot(int x) { return (int) std::sqrt((double) x); }
   static inline int pow(int x, int y) { return (int) ::pow((double)x,(double)y); }
 };
 
@@ -294,7 +294,7 @@ struct ScalarTraits<float>
       TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
         a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
 #endif      
-      return fabs(a);
+      return std::fabs(a);
     }    
   static inline float zero()  { return(0.0); }
   static inline float one()   { return(1.0); }    
@@ -324,7 +324,7 @@ struct ScalarTraits<float>
         x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
 #endif
       errno = 0;
-      const float rtn = ::sqrt(x);
+      const float rtn = std::sqrt(x);
       if (errno)
         return nan();
       return rtn;
@@ -419,7 +419,7 @@ struct ScalarTraits<double>
       TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
         a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
 #endif      
-      return fabs(a);
+      return std::fabs(a);
     }
   static inline double zero()  { return 0.0; }
   static inline double one()   { return 1.0; }
@@ -449,7 +449,7 @@ struct ScalarTraits<double>
         x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
 #endif      
       errno = 0;
-      const double rtn = ::sqrt(x);
+      const double rtn = std::sqrt(x);
       if (errno)
         return nan();
       return rtn;
@@ -469,7 +469,7 @@ struct ScalarTraits<mpf_class>
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
-  static magnitudeType magnitude(mpf_class a) { return abs(a); }
+  static magnitudeType magnitude(mpf_class a) { return std::abs(a); }
   static inline mpf_class zero() { mpf_class zero = 0.0; return zero; }
   static inline mpf_class one() { mpf_class one = 1.0; return one; }    
   static inline mpf_class conjugate(mpf_class x) { return x; }
@@ -484,7 +484,7 @@ struct ScalarTraits<mpf_class>
     return gmp_rng.get_f(); 
   }
   static inline std::string name() { return "mpf_class"; }
-  static inline mpf_class squareroot(mpf_class x) { return sqrt(x); }
+  static inline mpf_class squareroot(mpf_class x) { return std::sqrt(x); }
   static inline mpf_class pow(mpf_class x, mpf_class y) { return pow(x,y); }
   // Todo: RAB: 2004/05/28: Add nan() and isnaninf() functions when needed!
 };
@@ -501,7 +501,7 @@ struct ScalarTraits<mp_real>
   static const bool isComparable = true;
   static const bool hasMachineParameters = false;
   // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
-  static magnitudeType magnitude(mp_real a) { return abs(a); }
+  static magnitudeType magnitude(mp_real a) { return std::abs(a); }
   static inline mp_real zero() { mp_real zero = 0.0; return zero; }
   static inline mp_real one() { mp_real one = 1.0; return one; }    
   static inline mp_real conjugate(mp_real x) { return x; }
@@ -514,7 +514,7 @@ struct ScalarTraits<mp_real>
   }
   static inline mp_real random() { return mp_rand(); }
   static inline std::string name() { return "mp_real"; }
-  static inline mp_real squareroot(mp_real x) { return sqrt(x); }
+  static inline mp_real squareroot(mp_real x) { return std::sqrt(x); }
   static inline mp_real pow(mp_real x, mp_real y) { return pow(x,y); }
   // Todo: RAB: 2004/05/28: Add nan() and isnaninf() functions when needed!
 };
@@ -523,20 +523,20 @@ struct ScalarTraits<mp_real>
  
 #if ( defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H) ) && defined(HAVE_TEUCHOS_COMPLEX)
 
-// Partial specialization for complex numbers templated on real type T
+// Partial specialization for std::complex numbers templated on real type T
 template<class T> 
 struct ScalarTraits<
 #if defined(HAVE_COMPLEX)
   std::complex<T>
 #elif  defined(HAVE_COMPLEX_H)
-::complex<T>
+std::complex<T>
 #endif
 >
 {
 #if defined(HAVE_COMPLEX)
   typedef std::complex<T>  ComplexT;
 #elif  defined(HAVE_COMPLEX_H)
-  typedef ::complex<T>     ComplexT;
+  typedef std::complex<T>     ComplexT;
 #endif
   typedef typename ScalarTraits<T>::magnitudeType magnitudeType;
   static const bool isComplex = true;

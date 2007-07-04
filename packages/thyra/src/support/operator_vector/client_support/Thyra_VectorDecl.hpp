@@ -63,16 +63,16 @@ namespace Thyra
    * combinations of vectors or operators times vectors.
    *
    * This interface is key to efficient overloaded operators. Operators do not
-   * perform vector operations directly; rather, they construct Converter subtypes
+   * perform std::vector operations directly; rather, they construct Converter subtypes
    * (such as LC2 or OpTimesLC) that represent the operation to be performed. The
-   * actual operations are carried out only upon either (a) assignment to a vector,   
-   * or (b) the Converter is used in a context in which its vector value is required,
+   * actual operations are carried out only upon either (a) assignment to a std::vector,   
+   * or (b) the Converter is used in a context in which its std::vector value is required,
    * for instance, when an operation such as a norm is to be performed.
    * 
    * Because overloaded operators must always create and return temporary objects,
    * returning constant-size deferred-evaluation Converter subtypes rather than
    * vectors results in constant-time overhead rather than the \f$O(N)\f$ 
-   * overhead that would be incurred with vector return values.
+   * overhead that would be incurred with std::vector return values.
    *
    * \ingroup Thyra_Op_Vec_ANA_Development_grp
    */
@@ -85,13 +85,13 @@ namespace Thyra
     /** \brief Convert to the specified target type (e.g., Vector or ConstVector). */
     virtual TargetType convert() const = 0 ;
 
-    /** \brief Evaluate this object, writing the results into the acceptor vector. */
+    /** \brief Evaluate this object, writing the results into the acceptor std::vector. */
     virtual void evalInto(Vector<Scalar>& acceptor) const = 0 ;
 
-    /** \brief Determine whether this object contains the given vector. */
+    /** \brief Determine whether this object contains the given std::vector. */
     virtual bool containsVector(const Thyra::VectorBase<Scalar>* vec) const = 0 ;
 
-    /** \brief Evaluate this object, adding the results into the argument vector. 
+    /** \brief Evaluate this object, adding the results into the argument std::vector. 
      * The sign argument indicates whether this operation is an addition
      * or a subtraction. */
     virtual void addInto(Vector<Scalar>& other, Thyra::LCSign sign) const = 0 ;
@@ -110,7 +110,7 @@ namespace Thyra
 
     TEUCHOS_CONST_HANDLE_CTORS(ConstVector<Scalar>, VectorBase<Scalar>);
 
-    /** \brief Construct a vector from the result of an overloaded operator.  */
+    /** \brief Construct a std::vector from the result of an overloaded operator.  */
     ConstVector(const Thyra::ConvertibleToVector<Scalar>& x);
 
     /** \brief . */
@@ -139,26 +139,26 @@ namespace Thyra
 
     /** \name Block-related functions */
     //@{
-    /** \brief Return number the of blocks in this vector. If the vector is not
-     * a product vector, this function will return 1. */
+    /** \brief Return number the of blocks in this std::vector. If the std::vector is not
+     * a product std::vector, this function will return 1. */
     int numBlocks() const ;
       
-    /** \brief Read-only access to the \f$i\f$-th block. If the vector is not
-     * a product vector, this function will throw an exception if \f$i\ne 0\f$,
-     * or otherwise return the whole vector. */
+    /** \brief Read-only access to the \f$i\f$-th block. If the std::vector is not
+     * a product std::vector, this function will throw an std::exception if \f$i\ne 0\f$,
+     * or otherwise return the whole std::vector. */
     ConstVector<Scalar> getBlock(Index i) const ;
     //@}
     
   };
 
-  /** \brief Return the dimension of the vector.
+  /** \brief Return the dimension of the std::vector.
    *
    * \relates ConstVector
    */
   template <class Scalar> 
   Index dim(const ConstVector<Scalar>& x) ;
   
-  /** \brief Return the vector space for a vector.
+  /** \brief Return the std::vector space for a std::vector.
    *
    * \relates ConstVector
    */
@@ -193,7 +193,7 @@ namespace Thyra
 
     TEUCHOS_HANDLE_CTORS(Vector<Scalar>, VectorBase<Scalar>);
 
-    /** \brief Construct from a vector space . */
+    /** \brief Construct from a std::vector space . */
     Vector( const VectorSpace<Scalar> &space );
 
     /** \brief Allows an element to be changed using <tt>operator=()</tt>. */
@@ -211,7 +211,7 @@ namespace Thyra
           valGotten_(other.valGotten_), val_(other.val_), i_(other.i_)
       {
         *Teuchos::VerboseObjectBase::getDefaultOStream()
-          << "IO copy ctor" << endl;
+          << "IO copy ctor" << std::endl;
         (*count_)++;
       }
       /** \brief Writes back the value if it changed. */
@@ -244,31 +244,31 @@ namespace Thyra
       IndexObject& operator=(const IndexObject& other);
     };
 
-    /** \brief Construct a vector from a 2-term LC */
+    /** \brief Construct a std::vector from a 2-term LC */
     template<class Node1, class Node2>
     Vector(const Thyra::LC2<Scalar, Node1, Node2>& x);
 
-    /** \brief  Construct a vector from an operator times a linear combination */
+    /** \brief  Construct a std::vector from an operator times a linear combination */
     template<class Node>
     Vector(const Thyra::OpTimesLC<Scalar, Node>& x);
 
-    /**  \brief Assign a linear combination of vectors to this vector */
+    /**  \brief Assign a linear combination of vectors to this std::vector */
     template<class Node1, class Node2>
     Vector& operator=(const Thyra::LC2<Scalar, Node1, Node2>& x);
 
-    /**  \brief Add and assign a linear combination of vectors to this vector */
+    /**  \brief Add and assign a linear combination of vectors to this std::vector */
     template<class Node1, class Node2>
     Vector& operator+=(const Thyra::LC2<Scalar, Node1, Node2>& x);
 
-    /**  \brief Assign a scaled linear combination to this vector */
+    /**  \brief Assign a scaled linear combination to this std::vector */
     template<class Node>
     Vector& operator=(const Thyra::OpTimesLC<Scalar, Node>& x);
 
-    /**  \brief Add and assign a scaled linear combination to this vector */
+    /**  \brief Add and assign a scaled linear combination to this std::vector */
     template<class Node>
     Vector& operator+=(const Thyra::OpTimesLC<Scalar, Node>& x);
 
-    /** Write the contents of another vector into this vector */
+    /** Write the contents of another std::vector into this std::vector */
     Vector<Scalar>& acceptCopyOf(const ConstVector<Scalar>& x);
 
     /** \brief . */
@@ -287,7 +287,7 @@ namespace Thyra
       return IndexObject(this->ptr(), globalIndex);
     }
 
-    /** \name Product vector operations */
+    /** \name Product std::vector operations */
     //@{
     /**  \brief set block  */
     void setBlock(int i, const ConstVector<Scalar>& v);

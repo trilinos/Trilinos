@@ -42,7 +42,7 @@ int main(int argc, char** argv)
   /* return value */
   int state=0;
 
-  cout << Teuchos::Teuchos_Version() << endl << endl;
+  std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   try
     {
@@ -58,9 +58,9 @@ int main(int argc, char** argv)
           /* Try some code that will fail on one of the processors */
           try
             {
-              /* Generate an exception on proc 1 */
-              TEST_FOR_EXCEPTION(comm.getRank()==1, runtime_error,
-                                 "exception [expected] detected on proc="
+              /* Generate an std::exception on proc 1 */
+              TEST_FOR_EXCEPTION(comm.getRank()==1, std::runtime_error,
+                                 "std::exception [expected] detected on proc="
                                  << comm.getRank());
               /* On all other procs, do some calculation */
               double x=0;
@@ -69,10 +69,10 @@ int main(int argc, char** argv)
             }
           catch(std::exception& ex1)
             {
-              /* If we catch an exception, report the failure to the other 
+              /* If we catch an std::exception, report the failure to the other 
                * processors. This call to reportFailure() must be
                * paired with a call to pollForFailures() in the 
-               * branch that did not detect an exception.
+               * branch that did not detect an std::exception.
                */
               ErrorPolling::reportFailure(comm);
               TEUCHOS_TRACE(ex1);
@@ -81,12 +81,12 @@ int main(int argc, char** argv)
           /* 
            * Here we poll for the state of other processors. If all processors
            * report OK, pollForFailures() will return zero and an
-           * exception will not be thrown. If another
+           * std::exception will not be thrown. If another
            * processor has called reportFailure(), then pollForFailures()
-           * will return a nonzero number and an exception will be thrown.
+           * will return a nonzero number and an std::exception will be thrown.
            */
           TEST_FOR_EXCEPTION(ErrorPolling::pollForFailures(comm),
-                             runtime_error, 
+                             std::runtime_error, 
                              "off-processor error [expected] detected "
                              "on proc=" << comm.getRank());
 
@@ -95,35 +95,35 @@ int main(int argc, char** argv)
           /* Do a collective operation. In the present example,
            * this code should never be reached
            * because all processors should have detected either a local
-           * exception or a remote exception. */
-          cerr << "this is bad! Processor=" << comm.getRank() 
-               << "should not have reached this point" << endl;
+           * std::exception or a remote std::exception. */
+          std::cerr << "this is bad! Processor=" << comm.getRank() 
+               << "should not have reached this point" << std::endl;
 
           /* report the bad news to the testharness 
            * using the return value... */
           state = 1;
 
-          /* Throw an exception. This is not a drill!!! */
-          TEST_FOR_EXCEPTION(state, runtime_error,
-                             "exception [UNEXPECTED!!!] detected in test "
+          /* Throw an std::exception. This is not a drill!!! */
+          TEST_FOR_EXCEPTION(state, std::runtime_error,
+                             "std::exception [UNEXPECTED!!!] detected in test "
                              "of polling on processor=" << comm.getRank());
 
           /* This collective operation would fail if executed here, because
-           * one of the processors has thrown an exception and never
+           * one of the processors has thrown an std::exception and never
            * reached this point. Good thing we've polled for errors! */
           int x=comm.getRank();
           int sum;
           comm.allReduce( (void*) &x, (void*) &sum, 1, MPIComm::INT,
                           MPIComm::SUM);
-          cerr << "sum=" << sum << endl;
+          std::cerr << "sum=" << sum << std::endl;
         }
       catch(std::exception& ex)
         {
-          cerr << ex.what() << endl;
+          std::cerr << ex.what() << std::endl;
         }
 
-      cerr << "p=" << MPIComm::world().getRank() 
-           << ": exception polling successful" << endl;
+      std::cerr << "p=" << MPIComm::world().getRank() 
+           << ": std::exception polling successful" << std::endl;
 
 
       /*-- Demonstrate safe pass-through when no off-proc error happens --- */
@@ -140,10 +140,10 @@ int main(int argc, char** argv)
             }
           catch(std::exception& ex1)
             {
-              /* If we catch an exception, report the failure to the other 
+              /* If we catch an std::exception, report the failure to the other 
                * processors. This call to reportFailure() must be
                * paired with a call to pollForFailures() in the 
-               * branch that did not detect an exception.
+               * branch that did not detect an std::exception.
                */
               ErrorPolling::reportFailure(comm);
               TEUCHOS_TRACE(ex1);
@@ -152,12 +152,12 @@ int main(int argc, char** argv)
           /* 
            * Here we poll for the state of other processors. If all processors
            * report OK, pollForFailures() will return zero and an
-           * exception will not be thrown. If another
+           * std::exception will not be thrown. If another
            * processor has called reportFailure(), then pollForFailures()
-           * will return a nonzero number and an exception will be thrown.
+           * will return a nonzero number and an std::exception will be thrown.
            */
           TEST_FOR_EXCEPTION(ErrorPolling::pollForFailures(comm),
-                             runtime_error, 
+                             std::runtime_error, 
                              "off-processor error [UNEXPECTED!!!] detected "
                              "on proc=" << comm.getRank());
 
@@ -166,10 +166,10 @@ int main(int argc, char** argv)
           /* 
            * Do a collective operation. In the present example,
            * this code will be reached on all processors because
-           * no exception has been thrown by any processor.
+           * no std::exception has been thrown by any processor.
            */
-          cerr << "Processor=" << comm.getRank() 
-               << "ready to do collective operation" << endl;
+          std::cerr << "Processor=" << comm.getRank() 
+               << "ready to do collective operation" << std::endl;
 
           /* 
            * This collective operation is safe because we have polled
@@ -179,18 +179,18 @@ int main(int argc, char** argv)
           int sum;
           comm.allReduce( (void*) &x, (void*) &sum, 1, MPIComm::INT,
                           MPIComm::SUM);
-          if (comm.getRank()==0) cerr << "sum=" << sum << endl;
+          if (comm.getRank()==0) std::cerr << "sum=" << sum << std::endl;
         }
       catch(std::exception& ex)
         {
-          cerr << "exception [UNEXPECTED!!!] detected" << endl;
-          cerr << ex.what() << endl;
+          std::cerr << "std::exception [UNEXPECTED!!!] detected" << std::endl;
+          std::cerr << ex.what() << std::endl;
           state = 1;
         }
     }
   catch(std::exception& e)
     {
-      cerr << e.what() << endl;
+      std::cerr << e.what() << std::endl;
       state = 1;
     }
   MPISession::finalize();

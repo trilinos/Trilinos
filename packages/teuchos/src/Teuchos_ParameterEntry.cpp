@@ -103,7 +103,7 @@ bool ParameterEntry::isList() const
 }
 
 
-ostream& ParameterEntry::leftshift(ostream& os, bool printFlags) const
+std::ostream& ParameterEntry::leftshift(std::ostream& os, bool printFlags) const
 {
   if( !this->isList() ) os << val_;
 

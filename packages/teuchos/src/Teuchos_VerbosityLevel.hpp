@@ -55,7 +55,7 @@ enum EVerbosityLevel {
 };
 
 
-/** \brief Return a string representation of the verbosity level.
+/** \brief Return a std::string representation of the verbosity level.
  *
  * \ingroup teuchos_outputting_grp
  */

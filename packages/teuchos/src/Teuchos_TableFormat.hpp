@@ -94,14 +94,14 @@ namespace Teuchos
      * Originally called <tt>hbar</tt>, but changed to avoid 
      * possible confusion for physicists expecting <tt>hbar()</tt> to return 
      * \f$1.05457168e-34\f$ :-).  */
-    string thinline() const ;
+    std::string thinline() const ;
 
     /** \brief Return a thick horizontal line in equal signs "====" the 
      * width of the page */
-    string thickline() const ;
+    std::string thickline() const ;
 
-    /** \brief Return a string full of blanks up to the requested size */
-    string blanks(int size) const ;
+    /** \brief Return a std::string full of blanks up to the requested size */
+    std::string blanks(int size) const ;
 
     /** \brief Computes the column width required to write all values
      * to the required precision.
@@ -110,7 +110,7 @@ namespace Teuchos
      *
      * Postcondition: colString.size()==values.size()
      */
-    int computeRequiredColumnWidth(const string& name,
+    int computeRequiredColumnWidth(const std::string& name,
                                    const TableColumn& column) const ;
 
     /** \brief Set the column widths to be used for subsequent rows */
@@ -139,8 +139,8 @@ namespace Teuchos
 
     /** */
     void writeWholeTable(RCP<std::ostream>& out,
-                         const string& tableTitle,
-                         const Array<string>& columnNames,
+                         const std::string& tableTitle,
+                         const Array<std::string>& columnNames,
                          const Array<TableColumn>& columns) const ;
 
 

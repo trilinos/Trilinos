@@ -52,7 +52,7 @@ using namespace Teuchos;
 // * empty element tags, e.g.   <hello />
 // * entity references: &amp; &lt; &gt; &apos; &quot;
 // * numeric character references: &#32;
-// * exception/error handling on parse errors
+// * std::exception/error handling on parse errors
 
 
 /* From the W3C XML 1.0 Third Edition
@@ -93,7 +93,7 @@ using namespace Teuchos;
      
      Char      ::=  #x9 | #xA | #xD | [#x20-#xFF]   
      CharData  ::= [^<&]* - ([^<&]* ']]>' [^<&]*)
-                   that is, some string of characters not containing '<' or '&' or ']]>'
+                   that is, some std::string of characters not containing '<' or '&' or ']]>'
      Comment   ::= '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
                    that is, '<!--' txt '-->', where txt does not contain '--' 
      
@@ -127,9 +127,9 @@ XMLObject XMLParser::parse()
 
   while (!done) {
     
-    string tag, cdata;
+    std::string tag, cdata;
     unsigned char c1, c2;
-    Teuchos::map<string,string> attrs;
+    Teuchos::map<std::string,string> attrs;
     
     // Consume any whitespace
     if (curopen == 0) {
@@ -189,12 +189,12 @@ XMLObject XMLParser::parse()
       }
     }
     else if ( (curopen > 0) && (c1 == '&') ) {
-      string chars = "";
+      std::string chars = "";
       getReference(chars);
       handler->characters(chars);
     }
     else if ( (curopen > 0) ) {
-      string chars = "";
+      std::string chars = "";
       chars.push_back(c1);
       handler->characters(chars);
     }
@@ -210,7 +210,7 @@ XMLObject XMLParser::parse()
 }
 
 
-void XMLParser::getETag(string &tag)
+void XMLParser::getETag(std::string &tag)
 {
   /* Recall from the specification:
         ETag  ::=  '</' Name S? '>'
@@ -248,7 +248,7 @@ void XMLParser::getETag(string &tag)
 }
 
 
-void XMLParser::getSTag(unsigned char lookahead, string &tag, Teuchos::map<string,string> &attrs, bool &emptytag) 
+void XMLParser::getSTag(unsigned char lookahead, std::string &tag, Teuchos::map<std::string,string> &attrs, bool &emptytag) 
 {
   
   /* Recall from the specification:
@@ -302,7 +302,7 @@ void XMLParser::getSTag(unsigned char lookahead, string &tag, Teuchos::map<strin
       
       // Attribute
       // get attribute name, starting with contents of c
-      string attname, attval;
+      std::string attname, attval;
       attname = c;
       do {
         TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getSTag(): EOF before start element was terminated");
@@ -356,7 +356,7 @@ void XMLParser::getSTag(unsigned char lookahead, string &tag, Teuchos::map<strin
         }
         else if ( c == '&' ) {
           // finish: need to add support for Reference
-          string refstr;
+          std::string refstr;
           getReference(refstr);
           attval += refstr;
         }
@@ -425,7 +425,7 @@ void XMLParser::getComment()
 }
 
 
-void XMLParser::getReference(string &refstr) {
+void XMLParser::getReference(std::string &refstr) {
   // finish: does CharRef support only dec, or hex as well?
   unsigned char c;
   unsigned int num, base;
@@ -463,7 +463,7 @@ void XMLParser::getReference(string &refstr) {
   else if (isLetter(c) || c=='_' || c==':') {
     // get an EntityRef
     // EntityRef ::= '&' Name ';'
-    string entname = "";
+    std::string entname = "";
     entname.push_back(c);
     do {
       TEST_FOR_EXCEPTION(_is->readBytes(&c,1) < 1, std::runtime_error , "XMLParser::getReference(): EOF before reference was terminated");

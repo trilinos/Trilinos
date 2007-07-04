@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
 #ifdef HAVE_COMPLEX
   typedef std::complex<double> ST;
 #elif HAVE_COMPLEX_H
-  typedef ::complex<double> ST;
+  typedef std::complex<double> ST;
 #else
   typedef double ST;
 #endif
@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
   // Declare global dimension of the linear operator
   OT globalDim = 500;
 
-  // Create the element space and vector space
+  // Create the element space and std::vector space
   const Tpetra::ElementSpace<OT> elementSpace(globalDim,0,ordinalPlatform);
   const Tpetra::VectorSpace<OT,ST> vectorSpace(elementSpace,scalarPlatform);
   
@@ -185,7 +185,7 @@ int main(int argc, char* argv[])
   // Number of random right-hand sides we will be solving for.
   int numRhs = 5;
 
-  // Create smart pointer to right-hand side and solution vector to be filled in below.
+  // Create smart pointer to right-hand side and solution std::vector to be filled in below.
   Teuchos::RCP<Thyra::MultiVectorBase<ST> > x, b;
 
   if (numRhs==1) {
@@ -193,31 +193,31 @@ int main(int argc, char* argv[])
     // In this case we can construct vectors using Tpetra and just "wrap" them in Thyra objects.
     //
 
-    // Create RHS vector
+    // Create RHS std::vector
     Teuchos::RCP<Tpetra::Vector<OT,ST> > tpetra_b =
       Teuchos::rcp( new Tpetra::Vector<OT,ST>(vectorSpace) );
 
-    // Randomize RHS vector
+    // Randomize RHS std::vector
     tpetra_b->setAllToRandom();
 
-    // Wrap Tpetra vector as Thyra vector
+    // Wrap Tpetra std::vector as Thyra std::vector
     b = Thyra::create_Vector(tpetra_b);
     
-    // Create solution (LHS) vector
+    // Create solution (LHS) std::vector
     Teuchos::RCP<Tpetra::Vector<OT,ST> > tpetra_x =
       Teuchos::rcp( new Tpetra::Vector<OT,ST>(vectorSpace) );
 
     // Initialize solution to zero
     tpetra_x->setAllToScalar( zero );
 
-    // Wrap Tpetra vector as Thyra vector
+    // Wrap Tpetra std::vector as Thyra std::vector
     x = Thyra::create_Vector(tpetra_x);
 
   } 
   else {
     //
     // In this case we can construct the multivector using Thyra and extract columns of
-    // the multivector as Tpetra vector, which can then be filled.  This is because
+    // the multivector as Tpetra std::vector, which can then be filled.  This is because
     // Tpetra does not have a multivector object and Thyra will emulate the multivector.
     //
     
@@ -228,25 +228,25 @@ int main(int argc, char* argv[])
     x = Thyra::createMembers(domain, numRhs);
     b = Thyra::createMembers(domain, numRhs);
 
-    // Extract the Tpetra vector from the columns of the multivector and fill them with 
+    // Extract the Tpetra std::vector from the columns of the multivector and fill them with 
     // random numbers (b) or zeros (x).
 
     for ( int j=0; j<numRhs; ++j ) {
       //
-      // Get the j-th column from b as a Tpetra vector and randomize it.
+      // Get the j-th column from b as a Tpetra std::vector and randomize it.
       // 
       Teuchos::RCP<Tpetra::Vector<OT,ST> > 
 	tpetra_b_j = Thyra::get_Tpetra_Vector(vectorSpace,b->col(j));
       tpetra_b_j->setAllToRandom();
       // 
-      // Get the j-th column from x as a Tpetra vector and set it to zero.
+      // Get the j-th column from x as a Tpetra std::vector and set it to zero.
       //
       Teuchos::RCP<Tpetra::Vector<OT,ST> > 
 	tpetra_x_j = Thyra::get_Tpetra_Vector(vectorSpace,x->col(j));
       tpetra_x_j->setAllToScalar( zero );
       //
       // NOTE: Tpetra vectors have element access via the [] operator.
-      //       So and additional approach for filling in a Tpetra vector is:
+      //       So and additional approach for filling in a Tpetra std::vector is:
       //
       for ( int i=0; i<numMyElements; ++i ) {
 	//
@@ -293,7 +293,7 @@ int main(int argc, char* argv[])
   solveStatus = Thyra::solve( *nsA, Thyra::NONCONJ_ELE, *b, &*x );
   
   // Print out status of solve.
-  *out << "\nBelos LOWS Status: "<< solveStatus << endl;
+  *out << "\nBelos LOWS Status: "<< solveStatus << std::endl;
   
   // --------------------------------------------------------------------------------
   // Compute residual and check convergence.
@@ -330,13 +330,13 @@ int main(int argc, char* argv[])
 
   // Print out the final relative residual norms.
   MT rel_res = 0.0;
-  *out << "Final relative residual norms" << endl;  
+  *out << "Final relative residual norms" << std::endl;  
   for (int i=0; i<numRhs; ++i) {
     rel_res = Teuchos::ScalarTraits<ST>::real(norm_res[i]/norm_b[i]);
     if (rel_res > maxResid)
       success = false;
     *out << "RHS " << i+1 << " : " 
-         << std::setw(16) << std::right << rel_res << endl;
+         << std::setw(16) << std::right << rel_res << std::endl;
   }
   
   return ( success ? 0 : 1 );

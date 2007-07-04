@@ -55,10 +55,10 @@ namespace Belos {
     /*! \brief The current preconditioned residual. */
     Teuchos::RCP<MV> Z;
 
-    /*! \brief The current decent direction vector */
+    /*! \brief The current decent direction std::vector */
     Teuchos::RCP<MV> P;
 
-    /*! \brief The matrix A applied to current decent direction vector */
+    /*! \brief The matrix A applied to current decent direction std::vector */
     Teuchos::RCP<MV> AP;
     
     CGIterationState() : R(Teuchos::null), Z(Teuchos::null), 
@@ -72,11 +72,11 @@ namespace Belos {
   /** \brief CGIterationInitFailure is thrown when the CGIteration object is unable to
    * generate an initial iterate in the CGIteration::initialize() routine. 
    *
-   * This exception is thrown from the CGIteration::initialize() method, which is
+   * This std::exception is thrown from the CGIteration::initialize() method, which is
    * called by the user or from the CGIteration::iterate() method if isInitialized()
    * == \c false.
    *
-   * In the case that this exception is thrown, 
+   * In the case that this std::exception is thrown, 
    * CGIteration::isInitialized() will be \c false and the user will need to provide
    * a new initial iterate to the iteration.
    */
@@ -87,7 +87,7 @@ namespace Belos {
   /** \brief CGIterateFailure is thrown when the CGIteration object is unable to
    * compute the next iterate in the CGIteration::iterate() routine. 
    *
-   * This exception is thrown from the CGIteration::iterate() method.
+   * This std::exception is thrown from the CGIteration::iterate() method.
    *
    */
   class CGIterateFailure : public BelosError {public:
@@ -97,7 +97,7 @@ namespace Belos {
   /** \brief CGIterationOrthoFailure is thrown when the CGIteration object is unable to
    * compute independent direction vectors in the CGIteration::iterate() routine. 
    *
-   * This exception is thrown from the CGIteration::iterate() method.
+   * This std::exception is thrown from the CGIteration::iterate() method.
    *
    */
   class CGIterationOrthoFailure : public BelosError {public:
@@ -107,7 +107,7 @@ namespace Belos {
   /** \brief CGIterationLAPACKFailure is thrown when a nonzero return value is passed back
    * from an LAPACK routine.
    *
-   * This exception is thrown from the CGIteration::iterate() method.
+   * This std::exception is thrown from the CGIteration::iterate() method.
    *
    */
   class CGIterationLAPACKFailure : public BelosError {public:

@@ -31,7 +31,7 @@
 
 #include "Rythmos_ConfigDefs.h"
 
-	string Rythmos_Version() { 
+	std::string Rythmos_Version() { 
 		return("Rythmos Version 0.1 - 05/02/2005"); 
 	};
 

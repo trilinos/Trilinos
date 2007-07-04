@@ -87,7 +87,7 @@ MultiVec<double>* EpetraMultiVec::Clone ( const int numvecs ) const
 }
 //
 //  the following is a virtual copy constructor returning
-//  a pointer to the pure virtual class. vector values are
+//  a pointer to the pure virtual class. std::vector values are
 //  copied.
 //
 

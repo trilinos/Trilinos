@@ -51,7 +51,7 @@ static Time& sqrtTimer() {static RCP<Time> t = TimeMonitor::getNewTimer("square 
 
 static Time& factTimer() {static RCP<Time> t = TimeMonitor::getNewTimer("factorials"); return *t;}
 
-static Time& exceptTimer() {static RCP<Time> t = TimeMonitor::getNewTimer("func with exception"); return *t;}
+static Time& exceptTimer() {static RCP<Time> t = TimeMonitor::getNewTimer("func with std::exception"); return *t;}
 
 static Time& localTimer() {static RCP<Time> t = TimeMonitor::getNewTimer("a function that is not called on all procs"); return *t;}
 
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 {
   bool verbose = 0;
   int procRank = 0;
-  int FailedTests = 1; // This will be set to 0, if the exception is caught!
+  int FailedTests = 1; // This will be set to 0, if the std::exception is caught!
 
 #ifdef HAVE_MPI 
   /* initialize MPI if we are running in parallel */
@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
   if (verbose && procRank==0)
-    cout << Teuchos::Teuchos_Version() << endl << endl;
+    std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   try
   {
@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
       }
     }
 
-    /* time a function that throws an exception */
+    /* time a function that throws an std::exception */
     for (int i=0; i<100; i++)
     {
       double x = 0.0;
@@ -137,9 +137,9 @@ int main(int argc, char* argv[])
   catch(std::exception& e)
   {
     if (verbose && procRank==0)
-      cerr << "Caught exception [expected]:  " << e.what() << endl;
+      std::cerr << "Caught std::exception [expected]:  " << e.what() << std::endl;
 
-    // Return 0 since we caught the exception
+    // Return 0 since we caught the std::exception
     FailedTests = 0;
   }
 
@@ -154,16 +154,16 @@ int main(int argc, char* argv[])
 #endif
 
   if (FailedTests != 0) {
-    cout << "End Result: TEST FAILED" << endl;
+    std::cout << "End Result: TEST FAILED" << std::endl;
     return 1;
   }
 
-  cout << "End Result: TEST PASSED" << endl;
+  std::cout << "End Result: TEST PASSED" << std::endl;
   return FailedTests;
 }
 
 
-/* sum sqrt(x), x=[0, 10000). */
+/* sum std::sqrt(x), x=[0, 10000). */
 double sqrtFunc()
 {
   /* construct a time monitor. This starts the timer. It will stop when leaving scope */
@@ -174,7 +174,7 @@ double sqrtFunc()
   for (int i=0; i<10000; i++) 
   {
     TEST_FOR_EXCEPTION(ScalarTraits<double>::squareroot(as<double>(i)) > 1000.0, std::runtime_error,
-      "throw an exception");
+      "throw an std::exception");
     sum += ScalarTraits<double>::squareroot(as<double>(i));
   }
 
@@ -194,7 +194,7 @@ double factFunc(int x)
 }
 
 
-/* sum sqrt(x), x=[0, 10000). */
+/* sum std::sqrt(x), x=[0, 10000). */
 double exceptFunc()
 {
   /* construct a time monitor. This starts the timer. It will stop when leaving scope */
@@ -205,7 +205,7 @@ double exceptFunc()
   {
     TEST_FOR_EXCEPTION(
       ScalarTraits<double>::squareroot(as<double>(i)) > 60.0, std::runtime_error,
-      "throw an exception");
+      "throw an std::exception");
     sum += ScalarTraits<double>::squareroot(as<double>(i));
   }
   return sum;

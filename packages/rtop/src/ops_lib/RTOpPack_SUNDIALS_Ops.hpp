@@ -42,7 +42,7 @@ namespace RTOpPack
    * RTOp implementation of operations required by the SUNDIALS N_Vector interface
    * but not present in the Thyra StdVectorOps set. A few of these methods are
    * minor variations on the standard ops and could be composed from them, but 
-   * composing them in that way requires vector copies not required by the operations
+   * composing them in that way requires std::vector copies not required by the operations
    * themselves. Thus for the sake of performance, we've implemented specialized RTOps
    * for all N_Vector functions not supported exactly as standard ops. 
    *
@@ -50,7 +50,7 @@ namespace RTOpPack
    * 
    * N_VLinearSum   -->  Thyra::linear_combination()
    * N_VConst       -->  Thyra::put_scalar()
-   * N_VAbs         -->  Thyra::abs()
+   * N_VAbs         -->  Thyrastd::abs()
    * N_VInv         -->  Thyra::reciprocal() 
    * N_VDotProd     -->  Thyra::dot() 
    * N_VL1Norm      -->  Thyra::norm_1() 
@@ -73,11 +73,11 @@ namespace RTOpPack
    * Sqrt[Sum[w_i x_i^2]],  but SUNDIALS wants Sqrt[Sum[w_i^2 x_i^2]]. 
    * 
    * N_VWL2Norm         - weighted 2-norm
-   * N_VWrmsNorm        - weighted norm, normalized by vector length
+   * N_VWrmsNorm        - weighted norm, normalized by std::vector length
    * N_VWrmsNormMask    - weighted rms norm, ignoring certain masked elements
    *
    * Notice that because RTOps work with chunks of data, 
-   * the normalization by vector length *cannot* be performed inside
+   * the normalization by std::vector length *cannot* be performed inside
    * the RTOp and must be deferred until the Thyra wrapper functions. 
    *
    * 
@@ -241,9 +241,9 @@ namespace RTOpPack
 
   /** 
    * Returns the weighted root mean square norm of x with weight
-   * vector w:
+   * std::vector w:
    * \code
-   *         sqrt [(sum (i = 0 to N-1) {(x[i]*w[i])^2})/N]
+   *         std::sqrt [(sum (i = 0 to N-1) {(x[i]*w[i])^2})/N]
    * \endcode
    * Note that this is a different definition of the weighted norm than
    * used in ROp_WeightedNorm2(). 
@@ -296,9 +296,9 @@ namespace RTOpPack
 
   /** 
    * Returns the weighted root mean square norm of x with weight
-   * vector w:
+   * std::vector w:
    * \code
-   *         sqrt [(sum (i = 0 to N-1) {(x[i]*w[i])^2})/N]
+   *         std::sqrt [(sum (i = 0 to N-1) {(x[i]*w[i])^2})/N]
    * \endcode
    * Note that this is a *different* definition of the weighted norm than
    * used in ROp_WeightedNorm2(). 
@@ -370,7 +370,7 @@ namespace RTOpPack
    * \endcode
    *   This routine returns a boolean FALSE if any element failed
    *   the constraint test, TRUE if all passed. It also sets a
-   *   mask vector m, with elements equal to 1.0 where the
+   *   mask std::vector m, with elements equal to 1.0 where the
    *   corresponding constraint test failed, and equal to 0.0
    *   where the constraint test passed.
    *   This routine is specialized in that it is used only for
@@ -431,7 +431,7 @@ namespace RTOpPack
             }
           else
             {
-              TEST_FOR_EXCEPTION(true, runtime_error,
+              TEST_FOR_EXCEPTION(true, std::runtime_error,
                                  "illegal constraint flag = " << c_i
                                  << ". Allowed values are {-2.0, -1.0, 1.0, 2.0}");
             }
@@ -618,7 +618,7 @@ namespace RTOpPack
       const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
       for( index_type i = 0; i < subDim; ++i,  v0_val += v0_s,  z0_val += z0_s ) 
         {
-          if (fabs(*v0_val) >= alpha()) *z0_val = one;
+          if (std::fabs(*v0_val) >= alpha()) *z0_val = one;
           else *z0_val = zero;
         }
     }

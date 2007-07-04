@@ -33,9 +33,9 @@
 
 namespace Teuchos {
 
-/** \brief Map a string to an enumeration.
+/** \brief Map a std::string to an enumeration.
  *
- * The purpose of this class is to simplify mapping a standard string
+ * The purpose of this class is to simplify mapping a standard std::string
  * to an integer which can be interpreted as an enumeration.
  *
  * Here is an example of its use.
@@ -69,9 +69,9 @@ namespace Teuchos {
  * 
  * The number of strings passed to the constructor must equal the number of
  * options in the enumeration.  If there are duplicate strings
- * (capitalization concidered) then the exception <tt>AlreadyExists</tt> is
- * throw.  If a string that was not passed in the constructor if given to
- * <tt>operator()( const std::string& str )</tt> then the exception
+ * (capitalization concidered) then the std::exception <tt>AlreadyExists</tt> is
+ * throw.  If a std::string that was not passed in the constructor if given to
+ * <tt>operator()( const std::string& str )</tt> then the std::exception
  * <tt>DoesNotExist</tt> is thrown.
  *
  * In the constructor, <tt>defaultGroupName</tt> is used in error messages in
@@ -122,12 +122,12 @@ private:
 template<class EnumType>
 inline
 EnumType get(
-  StringToIntMap   const& map
-  ,std::string     const& option
-  ,std::string     const& groupName = ""
+  StringToIntMap const& theMap
+  ,std::string const& option
+  ,std::string const& groupName = ""
   )
 {
-  return static_cast<EnumType>(map.get(option,groupName));
+  return static_cast<EnumType>(theMap.get(option,groupName));
 }
 
 // ////////////////////////////////////////////

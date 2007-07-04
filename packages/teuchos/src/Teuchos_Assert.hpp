@@ -37,12 +37,12 @@
  * <tt>TEST_FOR_EXCEPTION()</tt> that is easier to call.
  *
  * @param  throw_exception_test
- *               [in] Test for when to throw the exception.  This can and
+ *               [in] Test for when to throw the std::exception.  This can and
  *               should be an expression that may mean something to the user.
  *               The text verbatim of this expression is included in the
- *               formed error string.
+ *               formed error std::string.
  *
- * \note The exception thrown is <tt>std::logic_error</tt>.
+ * \note The std::exception thrown is <tt>std::logic_error</tt>.
  *
  * \ingroup TestForException_grp
  */
@@ -53,12 +53,12 @@
  * <tt>TEST_FOR_EXCEPTION()</tt> that is easier to call.
  *
  * @param  throw_exception_test
- *               [in] Test for when to throw the exception.  This can and
+ *               [in] Test for when to throw the std::exception.  This can and
  *               should be an expression that may mean something to the user.
  *               The text verbatim of this expression is included in the
- *               formed error string.
+ *               formed error std::string.
  *
- * \note The exception thrown is <tt>std::logic_error</tt>.
+ * \note The std::exception thrown is <tt>std::logic_error</tt>.
  *
  * \ingroup TestForException_grp
  */

@@ -61,7 +61,7 @@ int main( int argc, char* argv[] )
     Teuchos::CommandLineProcessor::EParseCommandLineReturn
       parse_return = clp.parse(argc,argv);
     if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) {
-      cout << "\nEnd Result: TEST FAILED" << endl;
+      std::cout << "\nEnd Result: TEST FAILED" << std::endl;
       return parse_return;
     }
 
@@ -75,9 +75,9 @@ int main( int argc, char* argv[] )
     }
     
     if(extraXmlStr.length()) {
-      std::cout << "\nUpdating the parameter list given the extra XML string:\n\n"<<extraXmlStr<<"\n";
+      std::cout << "\nUpdating the parameter list given the extra XML std::string:\n\n"<<extraXmlStr<<"\n";
       Teuchos::updateParametersFromXmlString(extraXmlStr,&paramList);
-      std::cout << "\nParameter list after ammending extra XML string:\n\n";
+      std::cout << "\nParameter list after ammending extra XML std::string:\n\n";
       paramList.print(std::cout,2,true,true);
     }
 
@@ -88,9 +88,9 @@ int main( int argc, char* argv[] )
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
 
   if(success)
-    std::cout << "\nEnd Result: TEST PASSED" << endl;
+    std::cout << "\nEnd Result: TEST PASSED" << std::endl;
   else
-    std::cout << "\nEnd Result: TEST FAILED" << endl;
+    std::cout << "\nEnd Result: TEST FAILED" << std::endl;
 
   return ( success ? 0 : 1 );
 

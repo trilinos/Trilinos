@@ -873,12 +873,12 @@ RCP<T2> rcp_const_cast(const RCP<T1>& p1);
  *
  * @param  p1             [in] The smart pointer casting from
  * @param  throw_on_fail  [in] If <tt>true</tt> then if the cast fails (for <tt>p1.get()!=NULL) then
- *                        a <tt>std::bad_cast</tt> exception is thrown with a very informative
+ *                        a <tt>std::bad_cast</tt> std::exception is thrown with a very informative
  *                        error message.
  *
  * <b>Postconditions:</b><ul>
  * <li> If <tt>( p1.get()!=NULL && throw_on_fail==true && dynamic_cast<T2*>(p1.get())==NULL ) == true</tt>
- *      then an <tt>std::bad_cast</tt> exception is thrown with a very informative error message.
+ *      then an <tt>std::bad_cast</tt> std::exception is thrown with a very informative error message.
  * <li> If <tt>( p1.get()!=NULL && dynamic_cast<T2*>(p1.get())!=NULL ) == true</tt>
  *      then <tt>return.get() == dynamic_cast<T2*>(p1.get())</tt>.
  * <li> If <tt>( p1.get()!=NULL && throw_on_fail==false && dynamic_cast<T2*>(p1.get())==NULL ) == true</tt>
@@ -923,7 +923,7 @@ template<class T2, class T1> inline RCP<T2> rcp_dynamic_cast( const RCP<T1>& p1 
  * @param  force_unique
  *               [in] Determines if this type and name pair must be unique
  *               in which case if an object with this same type and name
- *               already exists, then an exception will be thrown.
+ *               already exists, then an std::exception will be thrown.
  *               The default is <tt>true</tt> for safety.
  *
  * If there is a call to this function with the same type of extra
@@ -950,9 +950,9 @@ template<class T2, class T1> inline RCP<T2> rcp_dynamic_cast( const RCP<T1>& p1 
  * <b>Preconditions:</b><ul>
  * <li> <tt>p->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
  * <li> If this function has already been called with the same template
- *      type <tt>T1</tt> for <tt>extra_data</tt> and the same string <tt>name</tt>
+ *      type <tt>T1</tt> for <tt>extra_data</tt> and the same std::string <tt>name</tt>
  *      and <tt>force_unique==true</tt>, then an <tt>std::invalid_argument</tt>
- *      exception will be thrown.
+ *      std::exception will be thrown.
  * </ul>
  *
  * Note, this function is made a non-member function to be consistent

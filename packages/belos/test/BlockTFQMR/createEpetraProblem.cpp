@@ -86,7 +86,7 @@ int Belos::createEpetraProblem(
   //
   int NumMyElements = N_update; // # local rows of matrix on processor
   //
-  // Create an integer vector NumNz that is used to build the Petra Matrix.
+  // Create an integer std::vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
   // on this processor
   //

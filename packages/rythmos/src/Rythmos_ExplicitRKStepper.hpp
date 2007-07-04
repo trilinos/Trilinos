@@ -441,7 +441,7 @@ void ExplicitRKStepper<Scalar>::setParameterList(Teuchos::RCP<Teuchos::Parameter
 {
   parameterList_ = paramList;
   int outputLevel = parameterList_->get( "outputLevel", int(-1) );
-  outputLevel = min(max(outputLevel,-1),4);
+  outputLevel = std::min(std::max(outputLevel,-1),4);
   this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
 }
 

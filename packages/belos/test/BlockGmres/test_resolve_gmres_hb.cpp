@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
   bool set = problem.setProblem();
   if (set == false) {
     if (proc_verbose)
-      cout << endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << endl;
+      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return -1;
   }
   //
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
 
   if (ret!=Belos::Converged) {
     if (proc_verbose)
-      cout << "End Result: TEST FAILED" << endl;	
+      std::cout << "End Result: TEST FAILED" << std::endl;	
     return -1;
   }
   //
@@ -161,9 +161,9 @@ int main(int argc, char *argv[]) {
   MVT::MvNorm( resid, &actual_resids );
   MVT::MvNorm( *B, &rhs_norm );
   if (proc_verbose) {
-    cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
     for ( int i=0; i<numrhs; i++) {
-      cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
+      std::cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<std::endl;
     }
   }
   //
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
   set = problem2.setProblem();
   if (set == false) {
     if (proc_verbose)
-      cout << endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << endl;
+      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return -1;
   }
   //
@@ -197,11 +197,11 @@ int main(int argc, char *argv[]) {
   // Get the valid list of parameters from the solver and print it.
   RCP<const Teuchos::ParameterList> validList = solver->getValidParameters();
   if (pseudo) 
-    cout << endl << "Valid parameters from the pseudo-block Gmres solver manager:" << endl;
+    std::cout << std::endl << "Valid parameters from the pseudo-block Gmres solver manager:" << std::endl;
   else 
-    cout << endl << "Valid parameters from the block Gmres solver manager:" << endl;
+    std::cout << std::endl << "Valid parameters from the block Gmres solver manager:" << std::endl;
 
-  cout << *validList << endl;
+  std::cout << *validList << std::endl;
 
   // Set the parameter list after the solver construction.
   belosList.set( "Timer Label", "Belos Resolve" );         // Set timer label to discern between the two solvers.
@@ -221,9 +221,9 @@ int main(int argc, char *argv[]) {
   MVT::MvNorm( resid2, &actual_resids2 );
   MVT::MvNorm( *B, &rhs_norm );
   if (proc_verbose) {
-    cout<< "---------- Actual Residuals 2 (normalized) ----------"<<endl<<endl;
+    std::cout<< "---------- Actual Residuals 2 (normalized) ----------"<<std::endl<<std::endl;
     for ( int i=0; i<numrhs; i++) {
-      cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<endl;
+      std::cout<<"Problem "<<i<<" : \t"<< actual_resids2[i]/rhs_norm[i] <<std::endl;
       if ( ( actual_resids2[i] - actual_resids[i] ) > SCT::prec() ) { 
         badRes = true;
       }
@@ -233,26 +233,26 @@ int main(int argc, char *argv[]) {
   // **********Print out information about problem*******************
   //
   if (proc_verbose) {
-    cout << endl << endl;
-    cout << "Dimension of matrix: " << NumGlobalElements << endl;
-    cout << "Number of right-hand sides: " << numrhs << endl;
-    cout << "Block size used by solver: " << blocksize << endl;
-    cout << "Number of restarts allowed: " << maxrestarts << endl;
-    cout << "Max number of Gmres iterations per restart cycle: " << maxiters << endl; 
-    cout << "Relative residual tolerance: " << tol << endl;
-    cout << endl;
+    std::cout << std::endl << std::endl;
+    std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
+    std::cout << "Number of right-hand sides: " << numrhs << std::endl;
+    std::cout << "Block size used by solver: " << blocksize << std::endl;
+    std::cout << "Number of restarts allowed: " << maxrestarts << std::endl;
+    std::cout << "Max number of Gmres iterations per restart cycle: " << maxiters << std::endl; 
+    std::cout << "Relative residual tolerance: " << tol << std::endl;
+    std::cout << std::endl;
   }
 
   if (ret!=Belos::Converged || badRes) {
     if (proc_verbose)
-      cout << "End Result: TEST FAILED" << endl;	
+      std::cout << "End Result: TEST FAILED" << std::endl;	
     return -1;
   }
   //
   // Default return value
   //
   if (proc_verbose)
-    cout << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;
   //
 } // end test_resolve_gmres_hb.cpp

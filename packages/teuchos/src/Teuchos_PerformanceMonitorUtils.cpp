@@ -34,16 +34,16 @@ using namespace Teuchos;
 
 
 void PerformanceMonitorUtils::synchNames(const MPIComm& comm,
-                                        const Array<string>& localNames,
-                                        Array<string>& allNames)
+                                        const Array<std::string>& localNames,
+                                        Array<std::string>& allNames)
 {
   if (comm.getNProc() > 1)
     {
       /* gather names of counters from all processors */
       int root = 0;
-      std::set<string> nameSet;
-      Array<Array<string> > namesForAllProcs;
-      MPIContainerComm<string>::gatherv(localNames, namesForAllProcs, 
+      std::set<std::string> nameSet;
+      Array<Array<std::string> > namesForAllProcs;
+      MPIContainerComm<std::string>::gatherv(localNames, namesForAllProcs, 
                                         root, comm);
       
       /* on the root processor, compile the set union of all names */
@@ -60,12 +60,12 @@ void PerformanceMonitorUtils::synchNames(const MPIComm& comm,
       
       /* convert the set to an array so we can send it out by MPI */
       allNames.resize(0);
-      for (std::set<string>::const_iterator i=nameSet.begin(); i!=nameSet.end(); i++)
+      for (std::set<std::string>::const_iterator i=nameSet.begin(); i!=nameSet.end(); i++)
         {
           allNames.append(*i);
         }
       /* broadcast the union of all names to all processors */
-      MPIContainerComm<string>::bcast(allNames, root, comm); 
+      MPIContainerComm<std::string>::bcast(allNames, root, comm); 
     }
   else
     {
@@ -75,12 +75,12 @@ void PerformanceMonitorUtils::synchNames(const MPIComm& comm,
 
 void PerformanceMonitorUtils
 ::synchValues(const MPIComm& comm,
-              const Array<string>& localNames,
+              const Array<std::string>& localNames,
               const Array<Array<double> >& localValues,
-              Array<string>& allNames,
+              Array<std::string>& allNames,
               Array<Array<double> >& allValues)
 {
-  std::map<string, Array<double> > localNameToValMap;
+  std::map<std::string, Array<double> > localNameToValMap;
 
   for (unsigned int i=0; i<localNames.size(); i++)
     {
@@ -102,7 +102,7 @@ void PerformanceMonitorUtils
 
   for (unsigned int i=0; i<allNames.size(); i++)
     {
-      const string& name = allNames[i];
+      const std::string& name = allNames[i];
       if (localNameToValMap.find(name) != localNameToValMap.end()) 
         {
           const Array<double>& tmp = localNameToValMap[name];

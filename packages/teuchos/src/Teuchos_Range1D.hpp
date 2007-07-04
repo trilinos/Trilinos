@@ -50,7 +50,7 @@ namespace Teuchos {
  * respectively.
  *
  * Constructing using <tt>Range1D()</tt> yields a range that represents the
- * entire dimension of an object <tt>[0, max_ubound-1]</tt> (an entire vector,
+ * entire dimension of an object <tt>[0, max_ubound-1]</tt> (an entire std::vector,
  * all the rows in a matrix, or all the columns in a matrix etc.).
  *
  * Constructing using <tt>\ref Range1D::Range1D "Range1D(INVALID)"</tt> yields

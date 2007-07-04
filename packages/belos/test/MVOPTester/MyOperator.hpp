@@ -10,7 +10,7 @@
  * This is a simple, single processor example of user's defined
  * Belos::Operator-derived class. The class is templated with ScalarType;
  * possible choices are, for example, "float", "double", or
- * "complex<double>".
+ * "std::complex<double>".
  *
  * This file can be easily extended to tackle more interesting cases.
  *

@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
   if (verbose)
-    cout << Teuchos::Teuchos_Version() << endl << endl;
+    std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   Teuchos::LAPACK<int,double> L;
 #ifdef HAVE_TEUCHOS_BLASFLOAT
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
   xf[0] = -2; xf[1] = 1; xf[2] = 1; xf[3] = 1;
   bf[1] = 2; bf[2] = 1; bf[3] = 2;
 
-  if (verbose) cout << "GESV test ... ";
+  if (verbose) std::cout << "GESV test ... ";
   L.GESV(4, 1, Ad, 4, IPIV, bd, 4, &info);
 #ifdef HAVE_TEUCHOS_BLASFLOAT
   M.GESV(4, 1, Af, 4, IPIV, bf, 4, &info);
@@ -88,15 +88,15 @@ int main(int argc, char* argv[])
       if (bd[i] == bd[i]) {
         // 2007/06/22: rabartl: These tests fail on my machine!
 #endif
-        if (verbose && i==3) cout << "passed!" << endl;
+        if (verbose && i==3) std::cout << "passed!" << std::endl;
       } else {
-        if (verbose) cout << "FAILED" << endl;
+        if (verbose) std::cout << "FAILED" << std::endl;
         numberFailedTests++;	
 	break;
       }
     }
 
-  if (verbose) cout << "LAPY2 test ... ";
+  if (verbose) std::cout << "LAPY2 test ... ";
   float fx = 3, fy = 4;
 #ifdef HAVE_TEUCHOS_BLASFLOAT
   float flapy = M.LAPY2(fx, fy);
@@ -110,9 +110,9 @@ int main(int argc, char* argv[])
     // 2007/06/22: rabartl: This is a terrible test in the first place and it
     // fails on my 64 bit linux machine.
 #endif
-    if (verbose) cout << "passed!" << endl;
+    if (verbose) std::cout << "passed!" << std::endl;
   } else {
-    if (verbose) cout << "FAILED" << endl;
+    if (verbose) std::cout << "FAILED" << std::endl;
     numberFailedTests++;
   }  
 
@@ -121,13 +121,13 @@ int main(int argc, char* argv[])
   // Check ILAENV with similarity transformation routine:  dsytrd
   // NOTE:  Do not need to put floating point specifier [s,d,c,z] before routine name, 
   //        this is handled through templating.
-  if (verbose) cout << "ILAENV test ... ";
+  if (verbose) std::cout << "ILAENV test ... ";
   int n1 = 100;
   int size = L.ILAENV(1, "sytrd", "u", n1);
   if (size > 0) {
-    if (verbose) cout << "passed!" << endl;
+    if (verbose) std::cout << "passed!" << std::endl;
   } else {
-    if (verbose) cout << "FAILED!" << endl;
+    if (verbose) std::cout << "FAILED!" << std::endl;
     numberFailedTests++;
   }
 
@@ -136,13 +136,13 @@ int main(int argc, char* argv[])
   if(numberFailedTests > 0)
     {
       if (verbose) {
-        cout << "Number of failed tests: " << numberFailedTests << endl;
-        cout << "End Result: TEST FAILED" << endl;
+        std::cout << "Number of failed tests: " << numberFailedTests << std::endl;
+        std::cout << "End Result: TEST FAILED" << std::endl;
         return -1;
       }
     }
   if(numberFailedTests==0)
-    cout << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;
 
 }

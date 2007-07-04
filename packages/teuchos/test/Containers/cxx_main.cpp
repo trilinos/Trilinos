@@ -41,7 +41,7 @@ using std::string;
 
 int main(int argc, char** argv)
 {
-  cout << Teuchos::Teuchos_Version() << endl << endl;
+  std::cout << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
   try
     {
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
 
           /* there is a toString() method of Array that writes a list bounded by
            * curly braces */
-          cerr << "x = " << x.toString() << endl;
+          std::cerr << "x = " << x.toString() << std::endl;
 
 
           /* You can create an array of a specified size */
@@ -88,23 +88,23 @@ int main(int argc, char** argv)
               catch(std::exception& eb)
                 {
                   caughtBoundsError = true;
-                  cerr << "caught [expected] bounds error: \n" <<  eb.what() << endl;
+                  std::cerr << "caught [expected] bounds error: \n" <<  eb.what() << std::endl;
                 }
               if (!caughtBoundsError)
                 {
-                  cerr << "FAILED TO CATCH BOUNDS ERROR" << endl;
+                  std::cerr << "FAILED TO CATCH BOUNDS ERROR" << std::endl;
                 }
             }
           else
             {
-              cerr << "Teuchos compiled w/o array boundschecking" << endl;
+              std::cerr << "Teuchos compiled w/o array boundschecking" << std::endl;
             }
 
 
           /*------------ test packing of Arrays ------------------- */
 
-          cerr << "testing packing of arrays..." << endl;
-          Array<string> schools;
+          std::cerr << "testing packing of arrays..." << std::endl;
+          Array<std::string> schools;
           schools.append("Cornell");
           schools.append("Princeton");
           schools.append("Carnegie Mellon");
@@ -114,10 +114,10 @@ int main(int argc, char** argv)
           schools.append("Chicago");
 
           Array<char> packed;
-          MPIContainerComm<string>::pack(schools, packed);
+          MPIContainerComm<std::string>::pack(schools, packed);
 
-          Array<string> unpacked;
-          MPIContainerComm<string>::unpack(packed, unpacked);
+          Array<std::string> unpacked;
+          MPIContainerComm<std::string>::unpack(packed, unpacked);
 
           bool ok = true;
           if (unpacked.size() != schools.size())
@@ -137,19 +137,19 @@ int main(int argc, char** argv)
       
           if (!ok)
             {
-              cerr << "pack/unpack FAILED!" << endl;
-              cerr << "original: " << schools << endl;
-              cerr << "unpacked: " << unpacked << endl;
+              std::cerr << "pack/unpack FAILED!" << std::endl;
+              std::cerr << "original: " << schools << std::endl;
+              std::cerr << "unpacked: " << unpacked << std::endl;
             }
           else
             {
-              cerr << "pack/unpack OK" << endl;
+              std::cerr << "pack/unpack OK" << std::endl;
             }
         }
 
       /*------------ test gathering of Arrays ------------------- */
       
-      Array<string> teams;
+      Array<std::string> teams;
       int rank = MPIComm::world().getRank();
       if (rank==0)
         {
@@ -171,12 +171,12 @@ int main(int argc, char** argv)
           teams.append("Rangers");
         }
 
-      Array<Array<string> > allTeams;
-      MPIContainerComm<string>::gatherv(teams, allTeams, 0, MPIComm::world());
+      Array<Array<std::string> > allTeams;
+      MPIContainerComm<std::string>::gatherv(teams, allTeams, 0, MPIComm::world());
 
       if (rank==0)
         {
-          cout << "all teams = " << allTeams << endl;
+          std::cout << "all teams = " << allTeams << std::endl;
         }
       
 
@@ -187,13 +187,13 @@ int main(int argc, char** argv)
           try
             {
               TEST_FOR_EXCEPTION(MPIComm::world().getRank()==1,
-                              runtime_error, 
-                              "exception [expected]");
+                              std::runtime_error, 
+                              "std::exception [expected]");
             }
           catch(std::exception& ex1)
             {
-              cerr << "successful detection of exception on proc="
-                   << MPIComm::world().getRank() << endl;
+              std::cerr << "successful detection of std::exception on proc="
+                   << MPIComm::world().getRank() << std::endl;
               ErrorPolling::reportFailure(MPIComm::world());
               TEUCHOS_TRACE(ex1);
             }
@@ -201,10 +201,10 @@ int main(int argc, char** argv)
         }
       catch(std::exception& ex)
         {
-          cerr << ex.what() << endl;
+          std::cerr << ex.what() << std::endl;
         }
-      cerr << "p=" << MPIComm::world().getRank() 
-           << ": exception polling successful" << endl;
+      std::cerr << "p=" << MPIComm::world().getRank() 
+           << ": std::exception polling successful" << std::endl;
 
       if (MPIComm::world().getRank()==0)
         {
@@ -213,7 +213,7 @@ int main(int argc, char** argv)
           /*-------- do several tests of the HashSet class ------------- */
       
           /* Add entries to a set using the put method */
-          HashSet<string> trilinosPackages;
+          HashSet<std::string> trilinosPackages;
           trilinosPackages.put("epetra");
           trilinosPackages.put("ml");
           trilinosPackages.put("TSF");
@@ -223,34 +223,34 @@ int main(int argc, char** argv)
           /* count entries using the size() method */
           fprintf(stderr, "trilinos has %d packages\n", trilinosPackages.size());
 
-          /* write to a string using the toString() method */
-          cerr << "trilinos packages are: " << trilinosPackages.toString() << endl;
+          /* write to a std::string using the toString() method */
+          std::cerr << "trilinos packages are: " << trilinosPackages.toString() << std::endl;
 
           /* test for the presence of a member using the containsKey() method */
       
           if (trilinosPackages.containsKey("epetra"))
             {
-              cerr << "epetra is in the list of trilinos packages" << endl;
+              std::cerr << "epetra is in the list of trilinos packages" << std::endl;
             }
           else
             {
-              cerr << "epetra is not in the list of trilinos packages" << endl;
+              std::cerr << "epetra is not in the list of trilinos packages" << std::endl;
             }
 
           if (trilinosPackages.containsKey("Space Invaders"))
             {
-              cerr << "Space Invaders is in the list of trilinos packages" << endl;
+              std::cerr << "Space Invaders is in the list of trilinos packages" << std::endl;
             }
           else
             {
-              cerr << "Space Invaders is not in the list of trilinos packages" << endl;
+              std::cerr << "Space Invaders is not in the list of trilinos packages" << std::endl;
             }
 
 
           /*-------------- do several tests of the Hashtable class -------- */
 
           /* add entries using the put() method */
-          Hashtable<string, int> battles;
+          Hashtable<std::string, int> battles;
       
           battles.put("hastings",    1066);
           battles.put("waterloo",    1815);
@@ -259,8 +259,8 @@ int main(int argc, char** argv)
           battles.put("midway",      1942);
           battles.put("normandy",    1944);
 
-          /* write to a string using the toString() method */
-          cerr << "hashtable is: " << battles.toString() << endl;
+          /* write to a std::string using the toString() method */
+          std::cerr << "hashtable is: " << battles.toString() << std::endl;
       
           /* test for the presence of a key using the containsKey() method */
           if (battles.containsKey("cannae"))
@@ -269,7 +269,7 @@ int main(int argc, char** argv)
             }
           else
             {
-              cerr << "cannae is not in our hashtable" << endl;
+              std::cerr << "cannae is not in our hashtable" << std::endl;
             }
 
           /* test for the presence of a key using the containsKey() method */
@@ -279,40 +279,40 @@ int main(int argc, char** argv)
             }
           else
             {
-              cerr << "verdun is not in our hashtable" << endl;
+              std::cerr << "verdun is not in our hashtable" << std::endl;
             }
 
           /* remove a member of the hashtable (bug# 2983)*/
           battles.remove( "waterloo" );
 
-          /* write to a string using the toString() method */
-          cerr << "hashtable is (after removal of waterloo): " << battles.toString() << endl;
+          /* write to a std::string using the toString() method */
+          std::cerr << "hashtable is (after removal of waterloo): " << battles.toString() << std::endl;
    
 
           /*-------------- do several tests of the StrUtils class --------- */
 
-          /* stringTokenizer() splits a string into whitespace-delimited tokens */
-          string test = "Sandia National Laboratories";
+          /* stringTokenizer() splits a std::string into whitespace-delimited tokens */
+          std::string test = "Sandia National Laboratories";
 
-          Array<string> tokens = StrUtils::stringTokenizer(test);
+          Array<std::string> tokens = StrUtils::stringTokenizer(test);
 
-          cerr << "tokens = " << tokens.toString() << endl;
+          std::cerr << "tokens = " << tokens.toString() << std::endl;
 
-          /* atof() converts a string to its double value */
+          /* atof() converts a std::string to its double value */
           double pi = StrUtils::atof("3.14159265358");
           fprintf(stderr, "pi = %g, tan(pi/4)=%g\n", pi, tan(pi/4.0));
 
-          /* atoi() converts a string to its integer value */
+          /* atoi() converts a std::string to its integer value */
           int a = StrUtils::atoi("-101");
           fprintf(stderr, "a = %d\n", a);
 
           /* allCaps() converts to upper case */
-          cerr << "all caps: " << StrUtils::allCaps(test) << endl;
+          std::cerr << "all caps: " << StrUtils::allCaps(test) << std::endl;
         }      
     }
   catch(std::exception& e)
     {
-      cerr << e.what() << endl;
+      std::cerr << e.what() << std::endl;
     }
   MPISession::finalize();
 }

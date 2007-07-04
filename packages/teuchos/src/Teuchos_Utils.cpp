@@ -35,7 +35,7 @@ double Utils::chopVal_ = 1.0e-16;
 
 double Utils::chop(const double& x) 
 {
-	if (fabs(x) < chopVal_) return 0;
+	if (std::fabs(x) < chopVal_) return 0;
 	return x;
 }
 
@@ -60,32 +60,32 @@ std::string Utils::trimWhiteSpace( const std::string& str )
   // Above, if only whitespace is found, last_non_white==0 on termination of
   // the loop!
   if( first_non_white > last_non_white )
-    return std::string(""); // The string is all whitespace!
+    return std::string(""); // The std::string is all whitespace!
   return str.substr(first_non_white,last_non_white-first_non_white+1);
 }
 
-string Utils::toString(const int& x)
+std::string Utils::toString(const int& x)
 {
 	char s[100];
 	sprintf(s, "%d", x);
-	return string(s);
+	return std::string(s);
 }
 
-string Utils::toString(const unsigned int& x)
+std::string Utils::toString(const unsigned int& x)
 {
 	char s[100];
 	sprintf(s, "%d", x);
-	return string(s);
+	return std::string(s);
 }
 
-string Utils::toString(const double& x)
+std::string Utils::toString(const double& x)
 {
 	char s[100];
 	sprintf(s, "%g", x);
-	return string(s);
+	return std::string(s);
 }
 
-string Utils::getParallelExtension(
+std::string Utils::getParallelExtension(
   int         procRank_in
   ,int        numProcs_in
   )

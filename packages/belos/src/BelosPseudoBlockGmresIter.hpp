@@ -111,11 +111,11 @@ namespace Belos {
   /** \brief PseudoBlockGmresIterInitFailure is thrown when the PseudoBlockGmresIter object is unable to
    * generate an initial iterate in the PseudoBlockGmresIter::initialize() routine. 
    *
-   * This exception is thrown from the PseudoBlockGmresIter::initialize() method, which is
+   * This std::exception is thrown from the PseudoBlockGmresIter::initialize() method, which is
    * called by the user or from the PseudoBlockGmresIter::iterate() method if isInitialized()
    * == \c false.
    *
-   * In the case that this exception is thrown, 
+   * In the case that this std::exception is thrown, 
    * PseudoBlockGmresIter::isInitialized() will be \c false and the user will need to provide
    * a new initial iterate to the iteration.
    *
@@ -127,7 +127,7 @@ namespace Belos {
   /** \brief PseudoBlockGmresIterOrthoFailure is thrown when the orthogonalization manager is
    * unable to generate orthonormal columns from the new basis vectors.
    *
-   * This exception is thrown from the PseudoBlockGmresIter::iterate() method.
+   * This std::exception is thrown from the PseudoBlockGmresIter::iterate() method.
    *
    */
   class PseudoBlockGmresIterOrthoFailure : public BelosError {public:
@@ -177,7 +177,7 @@ namespace Belos {
     
     /*! \brief This method performs block Gmres iterations until the status
      * test indicates the need to stop or an error occurs (in which case, an
-     * exception is thrown).
+     * std::exception is thrown).
      *
      * iterate() will first determine whether the solver is inintialized; if
      * not, it will call initialize() using default arguments. After
@@ -268,13 +268,13 @@ namespace Belos {
     void resetNumIters() { iter_ = 0; }
     
     //! Get the norms of the residuals native to the solver.
-    //! \return A vector of length blockSize containing the native residuals.
+    //! \return A std::vector of length blockSize containing the native residuals.
     Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const;
     
     //! Get the current update to the linear system.
     /*! \note Some solvers, like GMRES, do not compute updates to the solution every iteration.
       This method forces its computation.  Other solvers, like CG, update the solution
-      each iteration, so this method will return a zero vector indicating that the linear
+      each iteration, so this method will return a zero std::vector indicating that the linear
       problem contains the current solution.
     */
     Teuchos::RCP<MV> getCurrentUpdate() const;
@@ -345,7 +345,7 @@ namespace Belos {
     std::vector<Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > > sn_;
     std::vector<Teuchos::RCP<Teuchos::SerialDenseVector<int,MagnitudeType> > > cs_;
     
-    // Pointers to a work vector used to improve aggregate performance.
+    // Pointers to a work std::vector used to improve aggregate performance.
     RCP<MV> U_vec_, AU_vec_;    
 
     // Pointers to the current right-hand side and solution multivecs being solved for.
@@ -467,12 +467,12 @@ namespace Belos {
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Get the native residuals stored in this iteration.  
-  // Note:  No residual vector will be returned by Gmres.
+  // Note:  No residual std::vector will be returned by Gmres.
   template <class ScalarType, class MV, class OP>
   Teuchos::RCP<const MV> PseudoBlockGmresIter<ScalarType,MV,OP>::getNativeResiduals( std::vector<MagnitudeType> *norms ) const 
   {
     //
-    // NOTE: Make sure the incoming vector is the correct size!
+    // NOTE: Make sure the incoming std::vector is the correct size!
     //
     if ( norms && (int)norms->size() < numRHS_ )                         
       norms->resize( numRHS_ );                                          
@@ -523,11 +523,11 @@ namespace Belos {
     // If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
     V_.resize(numRHS_);
     for (int i=0; i<numRHS_; ++i) {
-      // Create a new vector if we need to.
+      // Create a new std::vector if we need to.
       if (V_[i] == Teuchos::null || MVT::GetNumberVecs(*V_[i]) < numBlocks_+1 ) {
         V_[i] = MVT::Clone(*tmp,numBlocks_+1);
       }
-      // Check that the newstate vector is consistent.
+      // Check that the newstate std::vector is consistent.
       TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V[i]) != MVT::GetVecLength(*V_[i]),
                           std::invalid_argument, errstr );
       TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V[i]) < newstate.curDim,
@@ -538,8 +538,8 @@ namespace Belos {
         // Cnly copy over the first block and print a warning.
         if (curDim_ == 0 && lclDim > 1) {
           om_->stream(Warnings) << "Belos::PseudoBlockGmresIter::initialize(): the solver was initialized with a kernel of " 
-                                << lclDim << endl << "The block size however is only " << 1 << endl
-                                << "The last " << lclDim - 1 << " vectors will be discarded." << endl;
+                                << lclDim << std::endl << "The block size however is only " << 1 << std::endl
+                                << "The last " << lclDim - 1 << " vectors will be discarded." << std::endl;
         }
 	std::vector<int> nevind(curDim_+1);
 	for (int j=0; j<curDim_+1; j++) nevind[j] = j;
@@ -556,7 +556,7 @@ namespace Belos {
     // Check size of Z
     Z_.resize(numRHS_);
     for (int i=0; i<numRHS_; ++i) {
-      // Create a vector if we need to.
+      // Create a std::vector if we need to.
       if (Z_[i] == Teuchos::null) {
 	Z_[i] = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>() );
       }
@@ -564,7 +564,7 @@ namespace Belos {
 	Z_[i]->shapeUninitialized(numBlocks_+1, 1); 
       }
       
-      // Check that the newstate vector is consistent.
+      // Check that the newstate std::vector is consistent.
       TEST_FOR_EXCEPTION(newstate.Z[i]->numRows() < curDim_, std::invalid_argument, errstr);
       
       // Put data into Z_, make sure old information is not still hanging around.
@@ -679,7 +679,7 @@ namespace Belos {
     int searchDim = numBlocks_;
     //
     // Associate each initial block of V_[i] with U_vec[i]
-    // Reset the index vector (this might have been changed if there was a restart)
+    // Reset the index std::vector (this might have been changed if there was a restart)
     //
     std::vector<int> index(1);
     std::vector<int> index2(1);
@@ -702,7 +702,7 @@ namespace Belos {
     // also break if our basis is full
     //
     while (stest_->checkStatus(this) != Passed && curDim_+1 <= searchDim) {
-      //stest_->print(cout);
+      //stest_->print(std::cout);
 
       iter_++;
       //
@@ -719,7 +719,7 @@ namespace Belos {
 	index[i] = i; 
       }
       //
-      // Orthogonalize next Krylov vector for each right-hand side.
+      // Orthogonalize next Krylov std::vector for each right-hand side.
       //
       for (int i=0; i<numRHS_; ++i) {
 	//
@@ -728,7 +728,7 @@ namespace Belos {
 	RCP<MV> V_prev = MVT::CloneView( *V_[i], index );
 	Teuchos::Array< RCP<const MV> > V_array( 1, V_prev );
 	//
-	// Get a view of the new candidate vector.
+	// Get a view of the new candidate std::vector.
 	//
 	index2[0] = i;
 	RCP<MV> V_new = MVT::CloneView( *AU_vec, index2 );
@@ -745,11 +745,11 @@ namespace Belos {
 			  ( Teuchos::View, *H_[i], 1, 1, num_prev, curDim_ ) );
 	//
 	// Orthonormalize the new block of the Krylov expansion
-	// NOTE:  Rank deficiencies are not checked because this is a single-vector Krylov method.
+	// NOTE:  Rank deficiencies are not checked because this is a single-std::vector Krylov method.
 	//
 	ortho_->projectAndNormalize( *V_new, h_array, r_new, V_array );
 	//
-	// NOTE:  V_new is a copy of the iter+1 vector in V_[i], so the normalized vector has to be
+	// NOTE:  V_new is a copy of the iter+1 std::vector in V_[i], so the normalized std::vector has to be
 	// be copied back in when V_new is changed.  
 	//
 	index2[0] = curDim_+1;
@@ -758,7 +758,7 @@ namespace Belos {
       }
       // 
       // Now _AU_vec is the new _U_vec, so swap these two vectors.
-      // NOTE: This alleviates the need for allocating a vector for AU_vec each iteration.
+      // NOTE: This alleviates the need for allocating a std::vector for AU_vec each iteration.
       // 
       RCP<MV> tmp_AU_vec = U_vec;
       U_vec = AU_vec;

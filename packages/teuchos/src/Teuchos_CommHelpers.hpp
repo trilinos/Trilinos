@@ -57,7 +57,7 @@ enum EReductionType {
   ,REDUCE_AND    ///< Logical AND
 };
 
-/** \brief Convert to string representation.
+/** \brief Convert to std::string representation.
  *
  * \relates EReductionType
  */
@@ -358,7 +358,7 @@ public:
 
 /** \brief Standard min operator for types with value semantics.
  *
- * Note, this class object will throw an exception when used with a packet
+ * Note, this class object will throw an std::exception when used with a packet
  * type where <tt>ScalarTraits<Packet>::isComparable==false</tt> but it will
  * still compile.
  *
@@ -378,7 +378,7 @@ public:
 
 /** \brief Standard Max operator for types with value semantics.
  *
- * Note, this class object will throw an exception when used with a packet
+ * Note, this class object will throw an std::exception when used with a packet
  * type where <tt>ScalarTraits<Packet>::isComparable==false</tt> but it will
  * still compile.
  *

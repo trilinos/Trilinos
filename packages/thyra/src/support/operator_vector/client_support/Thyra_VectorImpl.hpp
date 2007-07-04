@@ -138,9 +138,9 @@ namespace Thyra
       dynamic_cast <const Thyra::ProductVectorBase<Scalar>* >(this->constPtr().get());
     if (pv==0) 
       {
-        TEST_FOR_EXCEPTION(i != 0, runtime_error,
-                           "Nonzero block index " << i << " into a vector that is not "
-                           "a product vector");
+        TEST_FOR_EXCEPTION(i != 0, std::runtime_error,
+                           "Nonzero block index " << i << " into a std::vector that is not "
+                           "a product std::vector");
         return *this;
       }
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > b = pv->getVectorBlock(i);
@@ -155,9 +155,9 @@ namespace Thyra
       dynamic_cast <Thyra::ProductVectorBase<Scalar>* >(this->ptr().get());
     if (pv==0) 
       {
-        TEST_FOR_EXCEPTION(i != 0, runtime_error,
-                           "Nonzero block index " << i << " into a vector that is not "
-                           "a product vector");
+        TEST_FOR_EXCEPTION(i != 0, std::runtime_error,
+                           "Nonzero block index " << i << " into a std::vector that is not "
+                           "a product std::vector");
         return *this;
       }
     Teuchos::RCP<Thyra::VectorBase<Scalar> > b = pv->getNonconstVectorBlock(i);
@@ -170,8 +170,8 @@ namespace Thyra
   {
     Thyra::DefaultProductVector<Scalar>* pv = 
       dynamic_cast <Thyra::DefaultProductVector<Scalar>* >(this->ptr().get());
-    TEST_FOR_EXCEPTION(pv == 0, runtime_error,
-                       "setBlock() called on a vector that is not a default product vector");
+    TEST_FOR_EXCEPTION(pv == 0, std::runtime_error,
+                       "setBlock() called on a std::vector that is not a default product std::vector");
     pv->setBlock(i, b.constPtr());
     
   }
@@ -182,8 +182,8 @@ namespace Thyra
   {
     Thyra::DefaultProductVector<Scalar>* pv = 
       dynamic_cast <Thyra::DefaultProductVector<Scalar>* >(this->ptr().get());
-    TEST_FOR_EXCEPTION(pv == 0, runtime_error,
-                       "setBlock() called on a vector that is not a default product vector");
+    TEST_FOR_EXCEPTION(pv == 0, std::runtime_error,
+                       "setBlock() called on a std::vector that is not a default product std::vector");
     pv->setNonconstBlock(i, b.ptr());
     
   }

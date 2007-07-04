@@ -54,10 +54,10 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_COMPLEX
   typedef std::complex<double> ST;
 #elif HAVE_COMPLEX_H
-  typedef ::complex<double> ST;
+  typedef std::complex<double> ST;
 #else
-  cout << "Not compiled with complex support." << endl;
-  cout << "End Result: TEST FAILED" << endl;
+  std::cout << "Not compiled with std::complex support." << std::endl;
+  std::cout << "End Result: TEST FAILED" << std::endl;
   return -1;
 #endif
 
@@ -110,19 +110,19 @@ int main(int argc, char *argv[]) {
   
   proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
   if (proc_verbose) {
-    cout << Belos::Belos_Version() << endl << endl;
+    std::cout << Belos::Belos_Version() << std::endl << std::endl;
   }
   if (!verbose)
     frequency = -1;  // reset frequency if test is not verbose
   
   
 #ifndef HAVE_BELOS_TRIUTILS
-  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
+  std::cout << "This test requires Triutils. Please configure with --enable-triutils." << std::endl;
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
   if (MyPID==0) {
-    cout << "End Result: TEST FAILED" << endl;	
+    std::cout << "End Result: TEST FAILED" << std::endl;	
   }
   return -1;
 #endif
@@ -137,15 +137,15 @@ int main(int argc, char *argv[]) {
                               &colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
     if (MyPID==0) {
-      cout << "Error reading '" << filename << "'" << endl;
-      cout << "End Result: TEST FAILED" << endl;
+      std::cout << "Error reading '" << filename << "'" << std::endl;
+      std::cout << "End Result: TEST FAILED" << std::endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
     return -1;
   }
-  // Convert interleaved doubles to complex values
+  // Convert interleaved doubles to std::complex values
   cvals = new ST[nnz];
   for (int ii=0; ii<nnz; ii++) {
     cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
   bool set = problem->setProblem();
   if (set == false) {
     if (proc_verbose)
-      cout << endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << endl;
+      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return -1;
   }
   //
@@ -205,13 +205,13 @@ int main(int argc, char *argv[]) {
   // **********Print out information about problem*******************
   //
   if (proc_verbose) {
-    cout << endl << endl;
-    cout << "Dimension of matrix: " << dim << endl;
-    cout << "Number of right-hand sides: " << numrhs << endl;
-    cout << "Block size used by solver: " << blocksize << endl;
-    cout << "Max number of CG iterations: " << maxits << endl; 
-    cout << "Relative residual tolerance: " << tol << endl;
-    cout << endl;
+    std::cout << std::endl << std::endl;
+    std::cout << "Dimension of matrix: " << dim << std::endl;
+    std::cout << "Number of right-hand sides: " << numrhs << std::endl;
+    std::cout << "Block size used by solver: " << blocksize << std::endl;
+    std::cout << "Max number of CG iterations: " << maxits << std::endl; 
+    std::cout << "Relative residual tolerance: " << tol << std::endl;
+    std::cout << std::endl;
   }
   //
   // Perform solve
@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
   MVT::MvNorm( *rhs, &norm_denom );
   for (int i=0; i<numrhs; ++i) {
     if (proc_verbose) 
-      cout << "Relative residual "<<i<<" : " << norm_num[i] / norm_denom[i] << endl;
+      std::cout << "Relative residual "<<i<<" : " << norm_num[i] / norm_denom[i] << std::endl;
     if ( norm_num[i] / norm_denom[i] > tol ) {
       norm_failure = true;
     }
@@ -242,14 +242,14 @@ int main(int argc, char *argv[]) {
 
   if ( ret!=Belos::Converged || norm_failure ) {
     if (proc_verbose)
-      cout << "End Result: TEST FAILED" << endl;	
+      std::cout << "End Result: TEST FAILED" << std::endl;	
     return -1;
   }
   //
   // Default return value
   //
   if (proc_verbose)
-    cout << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;
 
 #ifdef HAVE_MPI

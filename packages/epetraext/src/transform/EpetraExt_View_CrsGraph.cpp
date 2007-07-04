@@ -50,7 +50,7 @@ operator()( OriginalTypeRef orig )
   //Error, must be local indices
   assert( !orig.IndicesAreGlobal() );
 
-  //test maps, new map must be left subset of old
+  //test maps, new std::map must be left subset of old
   const Epetra_BlockMap & oRowMap = orig.RowMap();
   const Epetra_BlockMap & oColMap = orig.ColMap();
 
@@ -65,12 +65,12 @@ operator()( OriginalTypeRef orig )
     for( int i = 0; i < nNumCols; ++i )
       matched = matched && ( oColMap.GID(i) == NewColMap_->GID(i) );
 
-  if( !matched ) cout << "EDT_CrsGraph_View: Bad Row or Col Mapping\n";
+  if( !matched ) std::cout << "EDT_CrsGraph_View: Bad Row or Col Mapping\n";
   assert( matched );
 
   //intial construction of graph
-  vector<int> numIndices( nNumRows );
-  vector<int*> indices( nNumRows );
+  std::vector<int> numIndices( nNumRows );
+  std::vector<int*> indices( nNumRows );
   for( int i = 0; i < nNumRows; ++i )
   {
     orig.ExtractMyRowView( i, numIndices[i], indices[i] );

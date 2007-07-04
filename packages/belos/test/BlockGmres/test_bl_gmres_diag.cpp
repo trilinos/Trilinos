@@ -224,7 +224,7 @@ public:
   
   Iterative_Inverse_Operator(int n, int blocksize, 
 			     const Teuchos::RCP<Vector_Operator>& pA, 
-			     string opString="Iterative Solver", bool print=false);              
+			     std::string opString="Iterative Solver", bool print=false);              
   
   virtual ~Iterative_Inverse_Operator() {}
   
@@ -233,7 +233,7 @@ public:
 private:
   
   Teuchos::RCP<Vector_Operator> pA;       // operator which will be inverted 
-  // supplies a matrix vector multiply
+  // supplies a matrix std::vector multiply
   const bool print;
   
   Teuchos::Time timer;
@@ -248,7 +248,7 @@ private:
 
 Iterative_Inverse_Operator::Iterative_Inverse_Operator(int n, int blocksize,
                                                        const Teuchos::RCP<Vector_Operator>& pA, 
-                                                       string opString, bool print)
+                                                       std::string opString, bool print)
   : Vector_Operator(n, n),      // square operator
     pA(pA), 
     print(print),
@@ -306,12 +306,12 @@ void Iterative_Inverse_Operator::operator () (const Epetra_MultiVector &b, Epetr
   if (pid == 0 && print)
     if (ret == Belos::Converged)
       {
-	cout << endl << "pid[" << pid << "] Block GMRES converged" << endl;
-	cout << "Solution time: " << timer.totalElapsedTime() << endl;
+	std::cout << std::endl << "pid[" << pid << "] Block GMRES converged" << std::endl;
+	std::cout << "Solution time: " << timer.totalElapsedTime() << std::endl;
 	
       }
     else 
-      cout << endl << "pid[" << pid << "] Block GMRES did not converge" << endl;
+      std::cout << std::endl << "pid[" << pid << "] Block GMRES did not converge" << std::endl;
 }
 
 //************************************************************************************************
@@ -385,7 +385,7 @@ int main(int argc, char *argv[])
   Y.Norm2(&norm_Y[0]);
 
   if (pid==0)
-    std::cout << "Two-norm of vector (Y-1.0) : "<< norm_Y[0] << std::endl;
+    std::cout << "Two-norm of std::vector (Y-1.0) : "<< norm_Y[0] << std::endl;
   
 #ifdef EPETRA_MPI
   MPI_Finalize(); 
@@ -393,7 +393,7 @@ int main(int argc, char *argv[])
   
   if (norm_Y[0] > 1e-10 || Teuchos::ScalarTraits<double>::isnaninf( norm_Y[0] ) ) {
     if (pid==0)
-      cout << "End Result: TEST FAILED" << endl;
+      std::cout << "End Result: TEST FAILED" << std::endl;
     return -1;
   }
   
@@ -401,6 +401,6 @@ int main(int argc, char *argv[])
   // Default return value
   //
   if (pid==0)
-    cout << "End Result: TEST PASSED" << endl;
+    std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;
 }

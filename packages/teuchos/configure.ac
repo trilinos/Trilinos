@@ -181,91 +181,14 @@ TAC_ARG_CHECK_MPI
 # Checks for header files - used in Teuchos_ConfigDefs.hpp
 # ------------------------------------------------------------------------
 
-AC_CHECK_HEADERS([cerrno errno.h], [break],)
-AC_CHECK_HEADERS([limits.h climits], [break],)
-AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
-AC_CHECK_HEADERS([cstdio stdio.h], [break],)
-AC_CHECK_HEADERS([cassert assert.h], [break],)
-AC_CHECK_HEADERS([cmath math.h], [break],)
-AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
-AC_CHECK_HEADERS([iostream iostream.h], [break],)
-AC_CHECK_HEADERS([string],,)
-AC_CHECK_HEADERS([cstring string.h], [break],)
-AC_CHECK_HEADERS([complex complex.h], [break],)
-AC_CHECK_HEADERS([algorithm algo.h algorithm.h], [break],)
-AC_CHECK_HEADERS([map map.h], [break],)
-AC_CHECK_HEADERS([list list.h], [break],)
-AC_CHECK_HEADERS([set set.h], [break],)
-AC_CHECK_HEADERS([vector vector.h], [break],)
-AC_CHECK_HEADERS([sstream sstream.h strstream strstream.h], [break],)
-AC_CHECK_HEADERS([stdexcept stdexcept.h], [break],)
-AC_CHECK_HEADERS([cstdarg stdarg.h], [break],)
-AC_CHECK_HEADERS([typeinfo],,)
+AC_CHECK_HEADERS(
+ [cerrno climits cstdlib cassert cmath iomanip iostream string  cstring complex algorithm map list set vector sstream stdexcept cstdarg typeinfo memory],,
+  AC_MSG_ERROR([[Cannot find standard header (see above).]])
+)
+# 2007/06/28: rabartl: Note that above you can not have a newline in the [...] 
+# that gives the names of the header files!
+
 AC_CHECK_HEADERS([fpu_control.h],,)
-AC_CHECK_HEADERS([memory],,)
-
-if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Teuchos requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_cstdio" != "Xyes" && test "X$ac_cv_header_stdio_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  Teuchos requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_cstdarg" != "Xyes" && test "X$ac_cv_header_stdarg_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdarg or stdarg.h.  Teuchos requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cassert or assert.h.  Teuchos requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  Teuchos requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find string or string.h.  Teuchos requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_complex" != "Xyes" && test "X$ac_cv_header_complex_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find complex or complex.h.  Teuchos requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_algorithm" != "Xyes" && test "X$ac_cv_header_algo_h" != "Xyes" && test "X$ac_cv_header_algorithm_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find algorithm, algo.h, or algorithm.h.  Teuchos requires at least one of these.]])
-fi
-
-if test "X$ac_cv_header_map" != "Xyes" && test "X$ac_cv_header_map_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find map or map.h.  Teuchos requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_list" != "Xyes" && test "X$ac_cv_header_list_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find list or list.h.  Teuchos requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find vector or vector.h.  Teuchos requires at least one or the other.]])
-fi
-
-if test "X${host}" != "Xtflop"; then
-  if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find cmath or math.h.  Teuchos requires at least one or the other.]])
-  fi
-else
-  # TFLOP
-  if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  Teuchos requires at least one or the other.]])
-  fi
-fi  
-
-if test "X$ac_cv_header_sstream" != "Xyes" && test "X$ac_cv_header_strstream" != "Xyes" && test "X$ac_cv_header_sstream" != "Xyes" && test "X$ac_cv_header_strstream" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find sstream, strstream, sstream.h, or strstream.h.  Teuchos requires at least one of these.]])
-fi
-
-if test "X$ac_cv_header_typeinfo" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find typeinfo.  Teuchos requires this header.]])
-fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE

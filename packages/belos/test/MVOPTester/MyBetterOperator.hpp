@@ -11,7 +11,7 @@
  * This is a simple, single processor example of user's defined
  * Belos::Operator-derived class. The class is templated with ScalarType;
  * possible choices are, for example, "float", "double", or
- * "complex<double>".
+ * "std::complex<double>".
  *
  * This class is based on the MyOperator class written by
  * Oscar Chinallato (ETHZ/ICOS) and Marzio Sala (ETHZ/COLAB)
@@ -52,7 +52,7 @@ public:
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
     assert (MyY != 0);
 
-    // Initialize output vector to zero.
+    // Initialize output std::vector to zero.
     MyY->MvInit( Teuchos::ScalarTraits<ScalarType>::zero() );
     
     assert (X.GetNumberVecs() == Y.GetNumberVecs());
@@ -77,12 +77,12 @@ public:
     }
   }
 
-  void Print( ostream& os ) {
+  void Print( std::ostream& os ) {
     for (int j=0; j<_nr; j++) {
       int IA1 = _cptr[j]-1;
       int IA2 = _cptr[j+1]-1;
       for (int i=IA1; i<IA2; i++) {
-        os << "("<<_rind[i]-1<<","<<j<<")\t"<<_vals[i]<< endl;
+        os << "("<<_rind[i]-1<<","<<j<<")\t"<<_vals[i]<< std::endl;
       }
     }	
   }
