@@ -1375,6 +1375,7 @@ namespace Anasazi {
       {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
         int rank = orthman_->projectAndNormalize(*H_,MH_,C,Teuchos::null,Q);
+        // our views are currently in place; it is safe to throw an exception
         TEST_FOR_EXCEPTION(rank != blockSize_,LOBPCGOrthoFailure,
                            "Anasazi::LOBPCG::iterate(): unable to compute orthonormal basis for H.");
       }
@@ -1543,6 +1544,18 @@ namespace Anasazi {
         // (i.e., how much of KK,MM used by directSolver)
         // we will not tolerate any indefiniteness, and will throw an exception if it was 
         // detected by directSolver
+        //
+        if (nevLocal_ != localSize) {
+          // before throwing the exception, and thereby leaving iterate(), setup the views again
+          // first, clear the const views
+          cXHP   = Teuchos::null;
+          cK_XHP = Teuchos::null;
+          cM_XHP = Teuchos::null;
+          cHP    = Teuchos::null;
+          cK_HP  = Teuchos::null;
+          cM_HP  = Teuchos::null;
+          setupViews();
+        }
         TEST_FOR_EXCEPTION(nevLocal_ != localSize, LOBPCGRitzFailure, 
             "Anasazi::LOBPCG::iterate(): indefiniteness detected in projected mass matrix." );
       }
@@ -1653,6 +1666,16 @@ namespace Anasazi {
         // compute R (cholesky) of tmp2
         int info;
         lapack.POTRF('U',twoBlocks,tmp2.values(),tmp2.stride(),&info);
+        // our views ARE NOT currently in place; we must reestablish them before throwing an exception
+        if (info != 0) {
+          cXHP = Teuchos::null;
+          cHP = Teuchos::null;
+          cK_XHP = Teuchos::null;
+          cK_HP = Teuchos::null;
+          cM_XHP = Teuchos::null;
+          cM_HP = Teuchos::null;
+          setupViews();
+        }
         TEST_FOR_EXCEPTION(info != 0, LOBPCGOrthoFailure, 
                            "Anasazi::LOBPCG::iterate(): Cholesky factorization failed during full orthogonalization.");
         // compute C = C inv(R)
