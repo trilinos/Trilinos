@@ -37,13 +37,13 @@
 // data container and iterators to find a dataset with a given name
 struct FindDataset_t
 {
-  string name;
+  std::string name;
   bool found;
 };
 
 static herr_t FindDataset(hid_t loc_id, const char *name, void *opdata)
 {
-  string& token = ((FindDataset_t*)opdata)->name;
+  std::string& token = ((FindDataset_t*)opdata)->name;
   if (token == name)
     ((FindDataset_t*)opdata)->found = true;
 
@@ -58,7 +58,7 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
   Teuchos::ParameterList::ConstIterator it = params.begin();
   for (; it != params.end(); ++ it) 
   {
-    string key(params.name(it));
+    std::string key(params.name(it));
     if (params.isSublist(key)) 
     {
       // Sublist
@@ -81,9 +81,9 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
       bool found = false; // to avoid a compiler error on MAC OS X GCC 4.0.0
 
       // Write the dataset.
-      if (params.isType<string>(key)) 
+      if (params.isType<std::string>(key)) 
       {
-        string value = params.get<string>(key);
+        std::string value = params.get<std::string>(key);
         hsize_t len = value.size() + 1;
         dataspace_id = H5Screate_simple(1, &len, NULL);
         dataset_id = H5Dcreate(group_id, key.c_str(), H5T_C_S1, dataspace_id, H5P_DEFAULT);
@@ -223,7 +223,7 @@ EpetraExt::HDF5::HDF5(const Epetra_Comm& Comm) :
 {}
 
 // ==========================================================================
-void EpetraExt::HDF5::Create(const string FileName)
+void EpetraExt::HDF5::Create(const std::string FileName)
 {
   if (IsOpen())
     throw(Exception(__FILE__, __LINE__,
@@ -253,7 +253,7 @@ void EpetraExt::HDF5::Create(const string FileName)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Open(const string FileName, int AccessType)
+void EpetraExt::HDF5::Open(const std::string FileName, int AccessType)
 {
   if (IsOpen())
     throw(Exception(__FILE__, __LINE__,
@@ -275,7 +275,7 @@ void EpetraExt::HDF5::Open(const string FileName, int AccessType)
 }
 
 // ==========================================================================
-bool EpetraExt::HDF5::IsContained(string Name)
+bool EpetraExt::HDF5::IsContained(std::string Name)
 {
   if (!IsOpen())
     throw(Exception(__FILE__, __LINE__, "no file open yet"));
@@ -294,7 +294,7 @@ bool EpetraExt::HDF5::IsContained(string Name)
 // ============================ //
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& Name, const Epetra_BlockMap& BlockMap)
+void EpetraExt::HDF5::Write(const std::string& Name, const Epetra_BlockMap& BlockMap)
 {
   int NumMyPoints       = BlockMap.NumMyPoints();
   int NumMyElements     = BlockMap.NumMyElements();
@@ -303,10 +303,10 @@ void EpetraExt::HDF5::Write(const string& Name, const Epetra_BlockMap& BlockMap)
   int* MyGlobalElements = BlockMap.MyGlobalElements();
   int* ElementSizeList  = BlockMap.ElementSizeList();
 
-  vector<int> NumMyElements_v(Comm_.NumProc());
+  std::vector<int> NumMyElements_v(Comm_.NumProc());
   Comm_.GatherAll(&NumMyElements, &NumMyElements_v[0], 1);
 
-  vector<int> NumMyPoints_v(Comm_.NumProc());
+  std::vector<int> NumMyPoints_v(Comm_.NumProc());
   Comm_.GatherAll(&NumMyPoints, &NumMyPoints_v[0], 1);
 
   Write(Name, "MyGlobalElements", NumMyElements, NumGlobalElements, 
@@ -325,15 +325,15 @@ void EpetraExt::HDF5::Write(const string& Name, const Epetra_BlockMap& BlockMap)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, Epetra_BlockMap*& BlockMap)
+void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_BlockMap*& BlockMap)
 {
   int NumGlobalElements, NumGlobalPoints, IndexBase, NumProc;
 
   ReadBlockMapProperties(GroupName, NumGlobalElements, NumGlobalPoints,
                         IndexBase, NumProc);
 
-  vector<int> NumMyPoints_v(Comm_.NumProc());
-  vector<int> NumMyElements_v(Comm_.NumProc());
+  std::vector<int> NumMyPoints_v(Comm_.NumProc());
+  std::vector<int> NumMyElements_v(Comm_.NumProc());
 
   Read(GroupName, "NumMyElements", H5T_NATIVE_INT, Comm_.NumProc(), &NumMyElements_v[0]);
   Read(GroupName, "NumMyPoints", H5T_NATIVE_INT, Comm_.NumProc(), &NumMyPoints_v[0]);
@@ -346,8 +346,8 @@ void EpetraExt::HDF5::Read(const string& GroupName, Epetra_BlockMap*& BlockMap)
                     "processors, " + toString(Comm_.NumProc()) + 
                     " vs. " + toString(NumProc)));
 
-  vector<int> MyGlobalElements(NumMyElements);
-  vector<int> ElementSizeList(NumMyElements);
+  std::vector<int> MyGlobalElements(NumMyElements);
+  std::vector<int> ElementSizeList(NumMyElements);
 
   Read(GroupName, "MyGlobalElements", NumMyElements, NumGlobalElements, 
        H5T_NATIVE_INT, &MyGlobalElements[0]);
@@ -361,7 +361,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, Epetra_BlockMap*& BlockMap)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadBlockMapProperties(const string& GroupName, 
+void EpetraExt::HDF5::ReadBlockMapProperties(const std::string& GroupName, 
                                           int& NumGlobalElements,
                                           int& NumGlobalPoints,
                                           int& IndexBase,
@@ -371,7 +371,7 @@ void EpetraExt::HDF5::ReadBlockMapProperties(const string& GroupName,
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
-  string Label;
+  std::string Label;
   Read(GroupName, "__type__", Label);
 
   if (Label != "Epetra_BlockMap")
@@ -386,13 +386,13 @@ void EpetraExt::HDF5::ReadBlockMapProperties(const string& GroupName,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& Name, const Epetra_Map& Map)
+void EpetraExt::HDF5::Write(const std::string& Name, const Epetra_Map& Map)
 {
   int MySize = Map.NumMyElements();
   int GlobalSize = Map.NumGlobalElements();
   int* MyGlobalElements = Map.MyGlobalElements();
 
-  vector<int> NumMyElements(Comm_.NumProc());
+  std::vector<int> NumMyElements(Comm_.NumProc());
   Comm_.GatherAll(&MySize, &NumMyElements[0], 1);
 
   Write(Name, "MyGlobalElements", MySize, GlobalSize, 
@@ -405,13 +405,13 @@ void EpetraExt::HDF5::Write(const string& Name, const Epetra_Map& Map)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, Epetra_Map*& Map)
+void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_Map*& Map)
 {
   int NumGlobalElements, IndexBase, NumProc;
 
   ReadMapProperties(GroupName, NumGlobalElements, IndexBase, NumProc);
 
-  vector<int> NumMyElements_v(Comm_.NumProc());
+  std::vector<int> NumMyElements_v(Comm_.NumProc());
 
   Read(GroupName, "NumMyElements", H5T_NATIVE_INT, Comm_.NumProc(), &NumMyElements_v[0]);
   int NumMyElements = NumMyElements_v[Comm_.MyPID()];
@@ -422,7 +422,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, Epetra_Map*& Map)
                     "processors, " + toString(Comm_.NumProc()) + 
                     " vs. " + toString(NumProc)));
 
-  vector<int> MyGlobalElements(NumMyElements);
+  std::vector<int> MyGlobalElements(NumMyElements);
 
   Read(GroupName, "MyGlobalElements", NumMyElements, NumGlobalElements, 
        H5T_NATIVE_INT, &MyGlobalElements[0]);
@@ -431,7 +431,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, Epetra_Map*& Map)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadMapProperties(const string& GroupName, 
+void EpetraExt::HDF5::ReadMapProperties(const std::string& GroupName, 
                                      int& NumGlobalElements,
                                      int& IndexBase,
                                      int& NumProc)
@@ -440,7 +440,7 @@ void EpetraExt::HDF5::ReadMapProperties(const string& GroupName,
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
-  string Label;
+  std::string Label;
   Read(GroupName, "__type__", Label);
 
   if (Label != "Epetra_Map")
@@ -458,7 +458,7 @@ void EpetraExt::HDF5::ReadMapProperties(const string& GroupName,
 // ================ //
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& Name, const Epetra_IntVector& x)
+void EpetraExt::HDF5::Write(const std::string& Name, const Epetra_IntVector& x)
 {
   if (x.Map().LinearMap())
   {
@@ -485,9 +485,9 @@ void EpetraExt::HDF5::Write(const string& Name, const Epetra_IntVector& x)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, Epetra_IntVector*& X)
+void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_IntVector*& X)
 {
-  // gets the length of the vector
+  // gets the length of the std::vector
   int GlobalLength;
   ReadIntVectorProperties(GroupName, GlobalLength);
 
@@ -500,10 +500,10 @@ void EpetraExt::HDF5::Read(const string& GroupName, Epetra_IntVector*& X)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
+void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
                         Epetra_IntVector*& X)
 {
-  // gets the length of the vector
+  // gets the length of the std::vector
   int GlobalLength;
   ReadIntVectorProperties(GroupName, GlobalLength);
 
@@ -517,7 +517,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
   }
   else
   {
-    // we need to first create a linear map, read the vector,
+    // we need to first create a linear map, read the std::vector,
     // then import it to the actual nonlinear map
     Epetra_Map LinearMap(GlobalLength, 0, Comm_);
     Epetra_IntVector LinearX(LinearMap);
@@ -533,14 +533,14 @@ void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadIntVectorProperties(const string& GroupName, 
+void EpetraExt::HDF5::ReadIntVectorProperties(const std::string& GroupName, 
                                            int& GlobalLength)
 {
   if (!IsContained(GroupName))
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
-  string Label;
+  std::string Label;
   Read(GroupName, "__type__", Label);
 
   if (Label != "Epetra_IntVector")
@@ -556,7 +556,7 @@ void EpetraExt::HDF5::ReadIntVectorProperties(const string& GroupName,
 // =============== //
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& Name, const Epetra_CrsGraph& Graph)
+void EpetraExt::HDF5::Write(const std::string& Name, const Epetra_CrsGraph& Graph)
 {
   if (!Graph.Filled())
     throw(Exception(__FILE__, __LINE__,
@@ -565,8 +565,8 @@ void EpetraExt::HDF5::Write(const string& Name, const Epetra_CrsGraph& Graph)
   // like RowMatrix, only without values
   int MySize = Graph.NumMyNonzeros();
   int GlobalSize = Graph.NumGlobalNonzeros();
-  vector<int> ROW(MySize);
-  vector<int> COL(MySize);
+  std::vector<int> ROW(MySize);
+  std::vector<int> COL(MySize);
 
   int count = 0;
   int* RowIndices;
@@ -594,7 +594,7 @@ void EpetraExt::HDF5::Write(const string& Name, const Epetra_CrsGraph& Graph)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, Epetra_CrsGraph*& Graph)
+void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_CrsGraph*& Graph)
 {
   int NumGlobalRows, NumGlobalCols;
   int NumGlobalNonzeros, NumGlobalDiagonals, MaxNumIndices;
@@ -610,7 +610,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, Epetra_CrsGraph*& Graph)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadCrsGraphProperties(const string& GroupName, 
+void EpetraExt::HDF5::ReadCrsGraphProperties(const std::string& GroupName, 
                                           int& NumGlobalRows,
                                           int& NumGlobalCols,
                                           int& NumGlobalNonzeros,
@@ -621,7 +621,7 @@ void EpetraExt::HDF5::ReadCrsGraphProperties(const string& GroupName,
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
-  string Label;
+  std::string Label;
   Read(GroupName, "__type__", Label);
 
   if (Label != "Epetra_CrsGraph")
@@ -637,14 +637,14 @@ void EpetraExt::HDF5::ReadCrsGraphProperties(const string& GroupName,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& DomainMap, 
+void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& DomainMap, 
                         const Epetra_Map& RangeMap, Epetra_CrsGraph*& Graph)
 {
   if (!IsContained(GroupName))
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found in database"));
 
-  string Label;
+  std::string Label;
   Read(GroupName, "__type__", Label);
 
   if (Label != "Epetra_CrsGraph")
@@ -662,10 +662,10 @@ void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& DomainMap,
   if (Comm_.MyPID() == 0)
     NumMyNonzeros += NumGlobalNonzeros % Comm_.NumProc();
 
-  vector<int> ROW(NumMyNonzeros);
+  std::vector<int> ROW(NumMyNonzeros);
   Read(GroupName, "ROW", NumMyNonzeros, NumGlobalNonzeros, H5T_NATIVE_INT, &ROW[0]);
 
-  vector<int> COL(NumMyNonzeros);
+  std::vector<int> COL(NumMyNonzeros);
   Read(GroupName, "COL", NumMyNonzeros, NumGlobalNonzeros, H5T_NATIVE_INT, &COL[0]);
 
   Epetra_FECrsGraph* Graph2 = new Epetra_FECrsGraph(Copy, DomainMap, 0);
@@ -690,7 +690,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& DomainMap,
 // ================ //
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& Name, const Epetra_RowMatrix& Matrix)
+void EpetraExt::HDF5::Write(const std::string& Name, const Epetra_RowMatrix& Matrix)
 {
   if (!Matrix.Filled())
     throw(Exception(__FILE__, __LINE__,
@@ -698,14 +698,14 @@ void EpetraExt::HDF5::Write(const string& Name, const Epetra_RowMatrix& Matrix)
 
   int MySize = Matrix.NumMyNonzeros();
   int GlobalSize = Matrix.NumGlobalNonzeros();
-  vector<int> ROW(MySize);
-  vector<int> COL(MySize);
-  vector<double> VAL(MySize);
+  std::vector<int> ROW(MySize);
+  std::vector<int> COL(MySize);
+  std::vector<double> VAL(MySize);
 
   int count = 0;
   int Length = Matrix.MaxNumEntries();
-  vector<int> Indices(Length);
-  vector<double> Values(Length);
+  std::vector<int> Indices(Length);
+  std::vector<double> Values(Length);
   int NumEntries;
 
   for (int i = 0; i < Matrix.NumMyRows(); ++i)
@@ -734,7 +734,7 @@ void EpetraExt::HDF5::Write(const string& Name, const Epetra_RowMatrix& Matrix)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, Epetra_CrsMatrix*& A)
+void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_CrsMatrix*& A)
 {
   int NumGlobalRows, NumGlobalCols, NumGlobalNonzeros;
   int NumGlobalDiagonals, MaxNumEntries;
@@ -752,7 +752,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, Epetra_CrsMatrix*& A)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& DomainMap, 
+void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& DomainMap, 
                         const Epetra_Map& RangeMap, Epetra_CrsMatrix*& A)
 {
   int NumGlobalRows, NumGlobalCols, NumGlobalNonzeros;
@@ -767,13 +767,13 @@ void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& DomainMap,
   if (Comm_.MyPID() == 0)
     NumMyNonzeros += NumGlobalNonzeros % Comm_.NumProc();
 
-  vector<int> ROW(NumMyNonzeros);
+  std::vector<int> ROW(NumMyNonzeros);
   Read(GroupName, "ROW", NumMyNonzeros, NumGlobalNonzeros, H5T_NATIVE_INT, &ROW[0]);
 
-  vector<int> COL(NumMyNonzeros);
+  std::vector<int> COL(NumMyNonzeros);
   Read(GroupName, "COL", NumMyNonzeros, NumGlobalNonzeros, H5T_NATIVE_INT, &COL[0]);
 
-  vector<double> VAL(NumMyNonzeros);
+  std::vector<double> VAL(NumMyNonzeros);
   Read(GroupName, "VAL", NumMyNonzeros, NumGlobalNonzeros, H5T_NATIVE_DOUBLE, &VAL[0]);
 
   Epetra_FECrsMatrix* A2 = new Epetra_FECrsMatrix(Copy, DomainMap, 0);
@@ -794,7 +794,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& DomainMap,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadCrsMatrixProperties(const string& GroupName, 
+void EpetraExt::HDF5::ReadCrsMatrixProperties(const std::string& GroupName, 
                                            int& NumGlobalRows,
                                            int& NumGlobalCols,
                                            int& NumGlobalNonzeros,
@@ -807,7 +807,7 @@ void EpetraExt::HDF5::ReadCrsMatrixProperties(const string& GroupName,
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
-  string Label;
+  std::string Label;
   Read(GroupName, "__type__", Label);
 
   if (Label != "Epetra_RowMatrix")
@@ -829,7 +829,7 @@ void EpetraExt::HDF5::ReadCrsMatrixProperties(const string& GroupName,
 // ============= //
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& GroupName, const Teuchos::ParameterList& params)
+void EpetraExt::HDF5::Write(const std::string& GroupName, const Teuchos::ParameterList& params)
 {
   if (!IsOpen())
     throw(Exception(__FILE__, __LINE__, "no file open yet"));
@@ -847,12 +847,12 @@ void EpetraExt::HDF5::Write(const string& GroupName, const Teuchos::ParameterLis
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, Teuchos::ParameterList& params) 
+void EpetraExt::HDF5::Read(const std::string& GroupName, Teuchos::ParameterList& params) 
 {
   if (!IsOpen())
     throw(Exception(__FILE__, __LINE__, "no file open yet"));
 
-  string Label;
+  std::string Label;
   Read(GroupName, "__type__", Label);
 
   if (Label != "Teuchos::ParameterList")
@@ -869,7 +869,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, Teuchos::ParameterList& para
   CHECK_HID(group_id);
 
   // Iterate through parameter list 
-  string xxx = "/" + GroupName;
+  std::string xxx = "/" + GroupName;
   status = H5Giterate(group_id, xxx.c_str() , NULL, f_operator, &params);
   CHECK_STATUS(status);
 
@@ -883,7 +883,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, Teuchos::ParameterList& para
 // ================== //
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& GroupName, const Epetra_MultiVector& X)
+void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVector& X)
 {
   if (!IsOpen())
     throw(Exception(__FILE__, __LINE__, "no file open yet"));
@@ -955,7 +955,7 @@ void EpetraExt::HDF5::Write(const string& GroupName, const Epetra_MultiVector& X
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
+void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
                         Epetra_MultiVector*& X)
 {
   // first read it with linear distribution
@@ -972,7 +972,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, Epetra_MultiVector*& LinearX)
+void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& LinearX)
 {
   int GlobalLength, NumVectors;
 
@@ -1028,7 +1028,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, Epetra_MultiVector*& LinearX
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadMultiVectorProperties(const string& GroupName, 
+void EpetraExt::HDF5::ReadMultiVectorProperties(const std::string& GroupName, 
                                              int& GlobalLength,
                                              int& NumVectors)
 {
@@ -1036,7 +1036,7 @@ void EpetraExt::HDF5::ReadMultiVectorProperties(const string& GroupName,
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
-  string Label;
+  std::string Label;
   Read(GroupName, "__type__", Label);
 
   if (Label != "Epetra_MultiVector")
@@ -1053,7 +1053,7 @@ void EpetraExt::HDF5::ReadMultiVectorProperties(const string& GroupName,
 // ========================= //
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& GroupName, const DistArray<int>& x)
+void EpetraExt::HDF5::Write(const std::string& GroupName, const DistArray<int>& x)
 {
   if (x.Map().LinearMap())
   {
@@ -1083,10 +1083,10 @@ void EpetraExt::HDF5::Write(const string& GroupName, const DistArray<int>& x)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
+void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
                            DistArray<int>*& X)
 {
-  // gets the length of the vector
+  // gets the length of the std::vector
   int GlobalLength, RowSize;
   ReadIntDistArrayProperties(GroupName, GlobalLength, RowSize);
 
@@ -1099,7 +1099,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
   }
   else
   {
-    // we need to first create a linear map, read the vector,
+    // we need to first create a linear map, read the std::vector,
     // then import it to the actual nonlinear map
     Epetra_Map LinearMap(GlobalLength, 0, Comm_);
     EpetraExt::DistArray<int> LinearX(LinearMap, RowSize);
@@ -1115,9 +1115,9 @@ void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, DistArray<int>*& X)
+void EpetraExt::HDF5::Read(const std::string& GroupName, DistArray<int>*& X)
 {
-  // gets the length of the vector
+  // gets the length of the std::vector
   int GlobalLength, RowSize;
   ReadIntDistArrayProperties(GroupName, GlobalLength, RowSize);
 
@@ -1130,7 +1130,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, DistArray<int>*& X)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadIntDistArrayProperties(const string& GroupName, 
+void EpetraExt::HDF5::ReadIntDistArrayProperties(const std::string& GroupName, 
                                                  int& GlobalLength,
                                                  int& RowSize)
 {
@@ -1138,7 +1138,7 @@ void EpetraExt::HDF5::ReadIntDistArrayProperties(const string& GroupName,
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
-  string Label;
+  std::string Label;
   Read(GroupName, "__type__", Label);
 
   if (Label != "EpetraExt::DistArray<int>")
@@ -1155,7 +1155,7 @@ void EpetraExt::HDF5::ReadIntDistArrayProperties(const string& GroupName,
 // ============================ //
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& GroupName, const DistArray<double>& x)
+void EpetraExt::HDF5::Write(const std::string& GroupName, const DistArray<double>& x)
 {
   if (x.Map().LinearMap())
   {
@@ -1185,10 +1185,10 @@ void EpetraExt::HDF5::Write(const string& GroupName, const DistArray<double>& x)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
+void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
                            DistArray<double>*& X)
 {
-  // gets the length of the vector
+  // gets the length of the std::vector
   int GlobalLength, RowSize;
   ReadDoubleDistArrayProperties(GroupName, GlobalLength, RowSize);
 
@@ -1201,7 +1201,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
   }
   else
   {
-    // we need to first create a linear map, read the vector,
+    // we need to first create a linear map, read the std::vector,
     // then import it to the actual nonlinear map
     Epetra_Map LinearMap(GlobalLength, 0, Comm_);
     EpetraExt::DistArray<double> LinearX(LinearMap, RowSize);
@@ -1217,9 +1217,9 @@ void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, DistArray<double>*& X)
+void EpetraExt::HDF5::Read(const std::string& GroupName, DistArray<double>*& X)
 {
-  // gets the length of the vector
+  // gets the length of the std::vector
   int GlobalLength, RowSize;
   ReadDoubleDistArrayProperties(GroupName, GlobalLength, RowSize);
 
@@ -1232,7 +1232,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, DistArray<double>*& X)
 }
 //
 // ==========================================================================
-void EpetraExt::HDF5::ReadDoubleDistArrayProperties(const string& GroupName, 
+void EpetraExt::HDF5::ReadDoubleDistArrayProperties(const std::string& GroupName, 
                                                     int& GlobalLength,
                                                     int& RowSize)
 {
@@ -1240,7 +1240,7 @@ void EpetraExt::HDF5::ReadDoubleDistArrayProperties(const string& GroupName,
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
-  string Label;
+  std::string Label;
   Read(GroupName, "__type__", Label);
 
   if (Label != "EpetraExt::DistArray<double>")
@@ -1257,7 +1257,7 @@ void EpetraExt::HDF5::ReadDoubleDistArrayProperties(const string& GroupName,
 // ======================= //
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& GroupName, const string& DataSetName,
+void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& DataSetName,
                             int what)
 {
   if (!IsContained(GroupName))
@@ -1279,7 +1279,7 @@ void EpetraExt::HDF5::Write(const string& GroupName, const string& DataSetName,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& GroupName, const string& DataSetName,
+void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& DataSetName,
                             double what)
 {
   if (!IsContained(GroupName))
@@ -1301,7 +1301,7 @@ void EpetraExt::HDF5::Write(const string& GroupName, const string& DataSetName,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, const string& DataSetName, int& data)
+void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& DataSetName, int& data)
 {
   if (!IsContained(GroupName))
     throw(Exception(__FILE__, __LINE__,
@@ -1323,7 +1323,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, const string& DataSetName, i
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, const string& DataSetName, double& data)
+void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& DataSetName, double& data)
 {
   if (!IsContained(GroupName))
     throw(Exception(__FILE__, __LINE__,
@@ -1345,9 +1345,9 @@ void EpetraExt::HDF5::Read(const string& GroupName, const string& DataSetName, d
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& GroupName, 
-                            const string& DataSetName, 
-                            const string& data)
+void EpetraExt::HDF5::Write(const std::string& GroupName, 
+                            const std::string& DataSetName, 
+                            const std::string& data)
 {
   if (!IsContained(GroupName))
     CreateGroup(GroupName);
@@ -1376,9 +1376,9 @@ void EpetraExt::HDF5::Write(const string& GroupName,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, 
-                           const string& DataSetName, 
-                           string& data)
+void EpetraExt::HDF5::Read(const std::string& GroupName, 
+                           const std::string& DataSetName, 
+                           std::string& data)
 {
   if (!IsContained(GroupName))
     throw(Exception(__FILE__, __LINE__,
@@ -1394,7 +1394,7 @@ void EpetraExt::HDF5::Read(const string& GroupName,
 
   if(typeclass_id != H5T_STRING) 
     throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " is not a string"));
+                    "requested group " + GroupName + " is not a std::string"));
   char data2[160];
   CHECK_STATUS(H5Dread(dataset_id, datatype_id, H5S_ALL, H5S_ALL,
                        H5P_DEFAULT, data2));
@@ -1409,7 +1409,7 @@ void EpetraExt::HDF5::Read(const string& GroupName,
 // ============= //
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& GroupName, const string& DataSetName,
+void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& DataSetName,
                          const int type, const int Length, 
                          void* data)
 {
@@ -1436,7 +1436,7 @@ void EpetraExt::HDF5::Write(const string& GroupName, const string& DataSetName,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, const string& DataSetName,
+void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& DataSetName,
                         const int type, const int Length, 
                         void* data)
 {
@@ -1467,7 +1467,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, const string& DataSetName,
 // ================== //
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& GroupName, const string& DataSetName,
+void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& DataSetName,
                          int MySize, int GlobalSize, int type, const void* data)
 {
   int Offset;
@@ -1517,7 +1517,7 @@ void EpetraExt::HDF5::Write(const string& GroupName, const string& DataSetName,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, const string& DataSetName,
+void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& DataSetName,
                         int MySize, int GlobalSize,
                         const int type, void* data)
 {

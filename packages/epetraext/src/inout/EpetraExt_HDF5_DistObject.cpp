@@ -25,7 +25,7 @@
                     "function H5Giterater returned a negative value")); }
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const string& GroupName, 
+void EpetraExt::HDF5::Write(const std::string& GroupName, 
                             const Handle& obj)
 {
   int NumMyElements = obj.NumMyElements();
@@ -35,9 +35,9 @@ void EpetraExt::HDF5::Write(const string& GroupName,
   // first get global info //
   // ===================== //
   
-  vector<string> IntLabels, DoubleLabels;
-  vector<int> IntLabelsData;
-  vector<double> DoubleLabelsData;
+  std::vector<std::string> IntLabels, DoubleLabels;
+  std::vector<int> IntLabelsData;
+  std::vector<double> DoubleLabelsData;
 
   obj.GetLabels(IntLabels, IntLabelsData, DoubleLabels, DoubleLabelsData);
 
@@ -53,13 +53,13 @@ void EpetraExt::HDF5::Write(const string& GroupName,
   // not compute the storage required by each local element //
   // ====================================================== //
   
-  vector<int> IntSize(NumMyElements);
-  vector<int> DoubleSize(NumMyElements);
+  std::vector<int> IntSize(NumMyElements);
+  std::vector<int> DoubleSize(NumMyElements);
 
   int TotalIntSize = 0, TotalDoubleSize = 0;
 
-  vector<int> IntData;
-  vector<double> DoubleData;
+  std::vector<int> IntData;
+  std::vector<double> DoubleData;
 
   for (int i = 0; i < NumMyElements; ++i)
   {
@@ -112,16 +112,16 @@ void EpetraExt::HDF5::Write(const string& GroupName,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const string& GroupName, Handle& obj)
+void EpetraExt::HDF5::Read(const std::string& GroupName, Handle& obj)
 {
   int NumMyElements = obj.NumMyElements();
   int NumGlobalElements = obj.NumGlobalElements();
 
-  vector<string> IntLabels, DoubleLabels;
+  std::vector<std::string> IntLabels, DoubleLabels;
 
   obj.GetLabels(IntLabels, DoubleLabels);
-  vector<int> IntLabelsData(IntLabels.size());
-  vector<double> DoubleLabelsData(DoubleLabels.size());
+  std::vector<int> IntLabelsData(IntLabels.size());
+  std::vector<double> DoubleLabelsData(DoubleLabels.size());
 
   for (unsigned int i = 0; i < IntLabels.size(); ++i)
     Read(GroupName, IntLabels[i], IntLabelsData[i]);
@@ -129,8 +129,8 @@ void EpetraExt::HDF5::Read(const string& GroupName, Handle& obj)
   for (unsigned int i = 0; i < DoubleLabels.size(); ++i)
     Read(GroupName, DoubleLabels[i], DoubleLabelsData[i]);
 
-  vector<int> IntSize(NumMyElements);
-  vector<int> DoubleSize(NumMyElements);
+  std::vector<int> IntSize(NumMyElements);
+  std::vector<int> DoubleSize(NumMyElements);
 
   int TotalIntSize = 0, TotalDoubleSize = 0;
   int GrandTotalIntSize = 0, GrandTotalDoubleSize = 0;
@@ -156,8 +156,8 @@ void EpetraExt::HDF5::Read(const string& GroupName, Handle& obj)
     Comm().SumAll(&TotalDoubleSize, &GrandTotalDoubleSize, 1);
   }
 
-  vector<int> IntData(TotalIntSize + 1);
-  vector<double> DoubleData(TotalDoubleSize + 1);
+  std::vector<int> IntData(TotalIntSize + 1);
+  std::vector<double> DoubleData(TotalDoubleSize + 1);
 
   // read actual data
   if (obj.HasInt())
@@ -185,8 +185,8 @@ void EpetraExt::HDF5::Read(const string& GroupName, Handle& obj)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadHandleProperties(const string& GroupName, 
-                                           string& Type,
+void EpetraExt::HDF5::ReadHandleProperties(const std::string& GroupName, 
+                                           std::string& Type,
                                            int& NumGlobalElements)
 {
   if (!IsContained(GroupName))

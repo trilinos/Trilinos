@@ -100,12 +100,12 @@ COO(i, j) = 1.24
       }
 
       //! Prints the array on the specified stream.
-      void Print(ostream& os) const
+      void Print(std::ostream& os) const
       {
-        os << "DistArray object, label   = " << this->Label() << endl;
-        os << "Number of local elements  = " << Map().NumMyElements() << endl;
-        os << "Number of global elements = " << Map().NumGlobalElements() << endl;
-        os << endl;
+        os << "DistArray object, label   = " << this->Label() << std::endl;
+        os << "Number of local elements  = " << Map().NumMyElements() << std::endl;
+        os << "Number of global elements = " << Map().NumGlobalElements() << std::endl;
+        os << std::endl;
 
         for (int iproc=0; iproc < Comm().NumProc(); iproc++) 
         {
@@ -113,7 +113,7 @@ COO(i, j) = 1.24
           {
             os << "GEID\t";
             for (int i = 0; i < RowSize(); ++i) os << "V\t";
-            os << endl;
+            os << std::endl;
           }
 
           if (Comm().MyPID() == iproc) 
@@ -123,11 +123,11 @@ COO(i, j) = 1.24
               os << Map().GID(i) << '\t';
               for (int j = 0; j < RowSize_; ++j)
                 os << values_[i * RowSize_ + j] << '\t';
-              os << endl;
+              os << std::endl;
             }
           }
         }
-        os << endl;
+        os << std::endl;
       }
 
       int NextGID()
@@ -146,7 +146,7 @@ COO(i, j) = 1.24
       }
 
       //! Extracts a view of the array.
-      const vector<T>& ExtractView() const
+      const std::vector<T>& ExtractView() const
       {
         return(values_);
       }
@@ -180,9 +180,9 @@ COO(i, j) = 1.24
                                  const Epetra_OffsetIndex * Indexor)
       {
         const DistArray& S = dynamic_cast<const DistArray&>(Source);
-        const vector<T>& From = S.ExtractView();
+        const std::vector<T>& From = S.ExtractView();
 
-        vector<T>& To = values_;
+        std::vector<T>& To = values_;
 
         //int * ToFirstPointInElementList = 0;
         //int * FromFirstPointInElementList = 0;
@@ -194,7 +194,7 @@ COO(i, j) = 1.24
 
         NumSameEntries = NumSameIDs;
 
-        // Short circuit for the case where the source and target vector is the same.
+        // Short circuit for the case where the source and target std::vector is the same.
         if (To==From) NumSameEntries = 0;
 
         // Do copy first
@@ -228,9 +228,9 @@ COO(i, j) = 1.24
                                  Epetra_Distributor& Distor)
       {
         const DistArray& S = dynamic_cast<const DistArray&>(Source);
-        const vector<T>& From = S.ExtractView();
+        const std::vector<T>& From = S.ExtractView();
 
-        vector<T> To = values_;
+        std::vector<T> To = values_;
 
         //int * FromFirstPointInElementList = 0;
         //int * FromElementSizeList = 0;
@@ -272,7 +272,7 @@ COO(i, j) = 1.24
         if (CombineMode != Insert)
           EPETRA_CHK_ERR(-1); //Unsupported CombinedMode, will default to Zero
 
-        cout << NumImportIDs << endl;
+        std::cout << NumImportIDs << std::endl;
         if (NumImportIDs<=0) return(0);
 
         T* To = &values_[0];
@@ -295,7 +295,7 @@ COO(i, j) = 1.24
       // @{ \name Private data
       
       //! Container of local data
-      vector<T> values_;
+      std::vector<T> values_;
       //! Length of the locally owned array.
       int MyLength_;
       //! Length of the global array.

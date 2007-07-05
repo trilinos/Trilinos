@@ -51,7 +51,7 @@ int main (int argc, char **argv)
     List.set("bool type", true);
     List.set("int type", 2);
     List.set("double type", 3.0);
-    List.set("string type", "a string");
+    List.set("std::string type", "a std::string");
 
     // This is the HDF5 file manager
     EpetraExt::HDF5 HDF5(Comm);
@@ -64,7 +64,7 @@ int main (int argc, char **argv)
     // =========================== //
 
     if (Comm.MyPID() == 0)
-      cout << "Writing objects to HDF5 file myfile.h5..." << endl << endl;
+      std::cout << "Writing objects to HDF5 file myfile.h5..." << std::endl << std::endl;
 
     // We first write the map, whose name contains the number of processors
     HDF5.Write("map-" + EpetraExt::toString(Comm.NumProc()), Map);
@@ -87,11 +87,11 @@ int main (int argc, char **argv)
     HDF5.Write("List", List);
     // We can also write integers/doubles/arrays. All these quantities are
     // supposed to have the same value on all processors.
-    vector<int> iarray(3); 
+    std::vector<int> iarray(3); 
     iarray[0] = 0, iarray[1] = 1; iarray[2] = 2;
     HDF5.Write("my parameters", "int array", H5T_NATIVE_INT, 3, &iarray[0]);
 
-    vector<double> darray(3); 
+    std::vector<double> darray(3); 
     darray[0] = 0.1, darray[1] = 1.1; darray[2] = 2.1;
     HDF5.Write("my parameters", "double array", H5T_NATIVE_DOUBLE, 3, &darray[0]);
 
@@ -103,7 +103,7 @@ int main (int argc, char **argv)
     // ============================ //
 
     if (Comm.MyPID() == 0)
-      cout << "Reading objects from HDF5 file myfile.h5..." << endl << endl;
+      std::cout << "Reading objects from HDF5 file myfile.h5..." << std::endl << std::endl;
 
     Epetra_Map* NewMap = 0;
     Epetra_CrsMatrix* NewMatrix = 0;
@@ -137,36 +137,36 @@ int main (int argc, char **argv)
 
     // the int/double values, and the int/double arrays
     int new_latitude, new_longitude;
-    vector<int>    new_iarray(3);
-    vector<double> new_darray(3);
+    std::vector<int>    new_iarray(3);
+    std::vector<double> new_darray(3);
     HDF5.Read("my parameters", "latitude", new_latitude);
     HDF5.Read("my parameters", "longitude", new_longitude);
     HDF5.Read("my parameters", "int array", H5T_NATIVE_INT, 3, &new_iarray[0]);
     HDF5.Read("my parameters", "double array", H5T_NATIVE_DOUBLE, 3, &new_darray[0]);
-    // and the string values associated with group "matrix", recordered
+    // and the std::string values associated with group "matrix", recordered
     // with dataset "package name".
-    string PackageName;
+    std::string PackageName;
     HDF5.Read("matrix", "package name", PackageName);
 
     Teuchos::ParameterList newList;
     HDF5.Read("List", newList);
     if (Comm.MyPID() == 0)
     {
-      cout << "New list as read from file is:" << endl;
-      cout << "bool type = " << newList.get("bool type", false) << endl;
-      cout << "int type = " << newList.get("int type", -1) << endl;
-      cout << "double type = " << newList.get("double type", -1.0) << endl;
-      cout << "string type = " << newList.get("string type", "not-set") << endl;
-      cout << endl;
+      std::cout << "New list as read from file is:" << std::endl;
+      std::cout << "bool type = " << newList.get("bool type", false) << std::endl;
+      std::cout << "int type = " << newList.get("int type", -1) << std::endl;
+      std::cout << "double type = " << newList.get("double type", -1.0) << std::endl;
+      std::cout << "std::string type = " << newList.get("std::string type", "not-set") << std::endl;
+      std::cout << std::endl;
 
-      cout << "Checking some read and written data..." << endl;
+      std::cout << "Checking some read and written data..." << std::endl;
       for (int i = 0; i < 3; ++i)
-        cout << "iarray[" << i << "] = " << iarray[i] << " should be " << new_iarray[i] << endl;
+        std::cout << "iarray[" << i << "] = " << iarray[i] << " should be " << new_iarray[i] << std::endl;
       for (int i = 0; i < 3; ++i)
-        cout << "darray[" << i << "] = " << darray[i] << " should be " << new_darray[i] << endl;
-      cout << endl;
-      cout << "Try to print out the content of myfile.h5 using the command" << endl;
-      cout << "    h5dump myfile.h5" << endl;
+        std::cout << "darray[" << i << "] = " << darray[i] << " should be " << new_darray[i] << std::endl;
+      std::cout << std::endl;
+      std::cout << "Try to print out the content of myfile.h5 using the command" << std::endl;
+      std::cout << "    h5dump myfile.h5" << std::endl;
     }
 
     // We finally close the file. Better to close it before calling
@@ -186,7 +186,7 @@ int main (int argc, char **argv)
   }
   catch (...) 
   {
-    cerr << "Caught generic exception" << endl;
+    std::cerr << "Caught generic std::exception" << std::endl;
   }
 
 

@@ -47,7 +47,7 @@ class Handle
     virtual int NumGlobalElements() const = 0;
 
     //! Returns the identifier of the distributed object.
-    virtual string Type() const = 0;
+    virtual std::string Type() const = 0;
 
     virtual bool HasInt() const = 0;
 
@@ -60,16 +60,16 @@ class Handle
     virtual int DoubleSize(const int EID) const = 0;
 
     //! Packs all global information.
-    virtual int GetLabels(vector<string>& IntLabels, 
-                  vector<string>& DoubleLabels) const = 0;
+    virtual int GetLabels(std::vector<std::string>& IntLabels, 
+                  std::vector<std::string>& DoubleLabels) const = 0;
 
     //! Packs all global information.
-    virtual int GetLabels(vector<string>& IntLabels, vector<int>& IntLabelsData,
-                  vector<string>& DoubleLabels, vector<double>& DoubleLabelsData) const = 0;
+    virtual int GetLabels(std::vector<std::string>& IntLabels, std::vector<int>& IntLabelsData,
+                  std::vector<std::string>& DoubleLabels, std::vector<double>& DoubleLabelsData) const = 0;
 
     //! Sets global information
-    virtual int SetLabels(const vector<int>& IntLabelsData,
-                  const vector<double>& DoubleLabelsData) = 0;
+    virtual int SetLabels(const std::vector<int>& IntLabelsData,
+                  const std::vector<double>& DoubleLabelsData) = 0;
 
     //! Packs all data for local element \c EID in the specified arrays.
     virtual int Pack(const int EID, int* IntData, double* DoubleData) const = 0;
@@ -107,7 +107,7 @@ class Epetra_Vector_Handle : public Handle
     }
 
     //! Returns the identifier of the distributed object.
-    string Type() const
+    std::string Type() const
     {
       return("Handle<Epetra_Vector>");
     }
@@ -135,8 +135,8 @@ class Epetra_Vector_Handle : public Handle
     }
 
     //! Packs all global information.
-    int GetLabels(vector<string>& IntLabels, 
-                  vector<string>& DoubleLabels) const
+    int GetLabels(std::vector<std::string>& IntLabels, 
+                  std::vector<std::string>& DoubleLabels) const
     {
       IntLabels.resize(0);
       DoubleLabels.resize(0);
@@ -145,15 +145,15 @@ class Epetra_Vector_Handle : public Handle
     }
 
     //! Packs all global information.
-    int GetLabels(vector<string>& IntLabels, vector<int>& IntLabelsData,
-                  vector<string>& DoubleLabels, vector<double>& DoubleLabelsData) const
+    int GetLabels(std::vector<std::string>& IntLabels, std::vector<int>& IntLabelsData,
+                  std::vector<std::string>& DoubleLabels, std::vector<double>& DoubleLabelsData) const
     {
       return(0);
     }
 
     //! Sets global information
-    int SetLabels(const vector<int>& IntLabelsData,
-                  const vector<double>& DoubleLabelsData)
+    int SetLabels(const std::vector<int>& IntLabelsData,
+                  const std::vector<double>& DoubleLabelsData)
     {
       return(0);
     }
