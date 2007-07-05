@@ -72,19 +72,63 @@ all-local:
 ## Subdirectories to be make'd recursively
 ## #######################################################################
 
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+
 #The test for AztecOO depends on an example, so we just build the examples
 #if the tests are going to be built.
 
-if BUILD_TESTS
+if SUB_TEST
 TEST_SUBDIR=test
-EXAMPLE_SUBDIR=example
 else
 
-if BUILD_EXAMPLES
+if SUB_EXAMPLE
 EXAMPLE_SUBDIR=example
 endif
 
 endif
+
+#Here we define the make targets that will build and clean tests and examples
+
+if BUILD_TESTS
+tests:
+	cd $(top_builddir)/example ; $(MAKE) ; cd ../test; $(MAKE)
+else
+tests:
+	@echo "aztecoo tests were disabled at configure time"
+endif
+	
+if BUILD_EXAMPLES
+examples:
+	cd $(top_builddir)/example ; $(MAKE)
+
+install-examples:
+	cd $(top_builddir)/example ; $(MAKE) install
+else
+examples:
+	@echo "aztecoo examples were disabled at configure time"
+
+install-examples:
+	@echo "aztecoo examples were disabled at configure time"
+endif
+
+clean-tests:
+	cd $(top_builddir)/example ; $(MAKE) clean ; cd ../test ; $(MAKE) clean
+
+clean-examples:
+	cd $(top_builddir)/example ; $(MAKE) clean
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
