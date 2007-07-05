@@ -151,18 +151,6 @@ TAC_ARG_WITH_AR
 TAC_ARG_CHECK_MPI
 
 # ------------------------------------------------------------------------
-# Special check for case of running on TFLOP
-# ------------------------------------------------------------------------
-
-AC_MSG_CHECKING([if host is TFLOP (and therefore needs special TFLOP define statement)])
-if test "X${host}" = "Xtflop"; then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(TFLOP,,[define if compiling for ASCI Red, aka TFLOP])
-else
-  AC_MSG_RESULT(no)
-fi
-
-# ------------------------------------------------------------------------
 # Checks for header files
 # ------------------------------------------------------------------------
 
@@ -221,8 +209,20 @@ AC_CXX_STD_SPRINTF
 TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 
 # ------------------------------------------------------------------------
-# Checks for special package flags
+# Checks if tests and examples should be built
 # ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_FEATURE(examples, [Make examples for all Trilinos packages buildable with 'make examples'], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( komplex, examples, [Make Komplex examples buildable with 'make examples'], KOMPLEX_EXAMPLES)
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_komplex_examples" != "Xno")
+
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though SUB_TEST and SUB_EXAMPLE will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+#AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
+AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
 # ------------------------------------------------------------------------
 # Specify other directories 

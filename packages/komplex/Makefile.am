@@ -62,5 +62,48 @@ all-local:
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-#SUBDIRS = src example doc
-SUBDIRS = src example
+
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.  (Komplex does not have any tests at this time.)
+
+if SUB_EXAMPLE
+EXAMPLE_SUBDIR=example
+endif
+
+tests:
+	@echo "komplex does not have any tests yet"
+
+if BUILD_EXAMPLES
+examples:
+	cd $(top_builddir)/example ; $(MAKE)
+
+install-examples:
+	cd $(top_builddir)/example ; $(MAKE) install
+else
+examples:
+	@echo "komplex examples were disabled at configure time"
+
+install-examples:
+	@echo "komplex examples were disabled at configure time"
+endif
+
+clean-tests:
+	@echo "komplex does not have any tests yet"
+
+clean-examples:
+	cd $(top_builddir)/example ; $(MAKE) clean
+
+everything:
+	$(MAKE) ; $(MAKE) examples
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
+
+SUBDIRS = src $(EXAMPLE_SUBDIR)
+

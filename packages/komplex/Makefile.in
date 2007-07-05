@@ -77,6 +77,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_compiler_options.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
@@ -104,7 +106,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = src example
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -243,8 +245,13 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	$(AUX_DIST) 
 
 
-#SUBDIRS = src example doc
-SUBDIRS = src example
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.  (Komplex does not have any tests at this time.)
+@SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
+SUBDIRS = src $(EXAMPLE_SUBDIR)
 all: all-recursive
 
 .SUFFIXES:
@@ -667,6 +674,35 @@ uninstall-am:
 
 all-local:
 	@echo "Trilinos package komplex built successfully"
+
+tests:
+	@echo "komplex does not have any tests yet"
+
+@BUILD_EXAMPLES_TRUE@examples:
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example ; $(MAKE)
+
+@BUILD_EXAMPLES_TRUE@install-examples:
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example ; $(MAKE) install
+@BUILD_EXAMPLES_FALSE@examples:
+@BUILD_EXAMPLES_FALSE@	@echo "komplex examples were disabled at configure time"
+
+@BUILD_EXAMPLES_FALSE@install-examples:
+@BUILD_EXAMPLES_FALSE@	@echo "komplex examples were disabled at configure time"
+
+clean-tests:
+	@echo "komplex does not have any tests yet"
+
+clean-examples:
+	cd $(top_builddir)/example ; $(MAKE) clean
+
+everything:
+	$(MAKE) ; $(MAKE) examples
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

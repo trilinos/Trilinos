@@ -35,6 +35,9 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
+/* Define if want to build examples */
+#undef HAVE_EXAMPLES
+
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
 
@@ -46,6 +49,9 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define if want to build komplex-examples */
+#undef HAVE_KOMPLEX_EXAMPLES
 
 /* Define to 1 if your system has a GNU libc compatible `malloc' function, and
    to 0 otherwise. */
@@ -134,9 +140,6 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* define if compiling for ASCI Red, aka TFLOP */
-#undef TFLOP
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
