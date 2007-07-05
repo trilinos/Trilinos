@@ -529,7 +529,7 @@ namespace Teuchos
       {
         char* start = recvBuf + recvDisplacements[j];
         char* tmp = new char[recvCounts[j]+1];
-        memcpy(tmp, start, recvCounts[j]);
+        std::memcpy(tmp, start, recvCounts[j]);
         tmp[recvCounts[j]] = '\0';
         incoming[j] = std::string(tmp);
         delete [] tmp;
@@ -596,7 +596,7 @@ namespace Teuchos
           {
             char* start = &(recvBuf[0]) + recvDisplacements[j];
             Array<char> tmp(recvCounts[j]+1);
-            memcpy(&(tmp[0]), start, recvCounts[j]);
+            std::memcpy(&(tmp[0]), start, recvCounts[j]);
             tmp[recvCounts[j]] = '\0';
             unpack(tmp, incoming[j]);
           }

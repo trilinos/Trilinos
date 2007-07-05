@@ -32,7 +32,7 @@
 using namespace Teuchos;
 
 FileInputStream::FileInputStream(const std::string& filename)
-	: XMLInputStream(), file_(fopen(filename.c_str(), "rb"))
+	: XMLInputStream(), file_(std::fopen(filename.c_str(), "rb"))
 {
   TEST_FOR_EXCEPTION(file_ == NULL,
                      std::runtime_error,
@@ -43,11 +43,11 @@ FileInputStream::FileInputStream(const std::string& filename)
 unsigned int FileInputStream::readBytes(unsigned char* const toFill, 
 																				const unsigned int maxToRead)
 {
-	if (feof(file_)) return (size_t)0;
-	int n = ::fread((void*) toFill, sizeof(char), maxToRead, file_);
+	if (std::feof(file_)) return (size_t)0;
+	int n = std::fread((void*) toFill, sizeof(char), maxToRead, file_);
     if (n==0) return (size_t)0; 
 
-	TEST_FOR_EXCEPTION(n < 0 || (n<(int) maxToRead && !feof(file_)),
+	TEST_FOR_EXCEPTION(n < 0 || (n<(int) maxToRead && !std::feof(file_)),
                      std::runtime_error,
                      "FileInputStream::readBytes error");
 	

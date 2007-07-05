@@ -177,12 +177,12 @@ struct ScalarTraits<char>
   static inline char conjugate(char x) { return x; }
   static inline char real(char x) { return x; }
   static inline char imag(char x) { return 0; }
-  static inline void seedrandom(unsigned int s) { srand(s); }
-  //static inline char random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
-  static inline char random() { return rand(); }             // RAB: This version should be used for an unsigned char, not char
+  static inline void seedrandom(unsigned int s) { std::srand(s); }
+  //static inline char random() { return (-1 + 2*rand()); } // RAB: This version should be used to be consistent with others
+  static inline char random() { return std::rand(); } // RAB: This version should be used for an unsigned char, not char
   static inline std::string name() { return "char"; }
   static inline char squareroot(char x) { return (char) std::sqrt((double) x); }
-  static inline char pow(char x, char y) { return (char) ::pow((double)x,(double)y); }
+  static inline char pow(char x, char y) { return (char) std::pow((double)x,(double)y); }
 };
 
 template<>
@@ -199,12 +199,12 @@ struct ScalarTraits<int>
   static inline int conjugate(int x) { return x; }
   static inline int real(int x) { return x; }
   static inline int imag(int x) { return 0; }
-  static inline void seedrandom(unsigned int s) { srand(s); }
+  static inline void seedrandom(unsigned int s) { std::srand(s); }
   //static inline int random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
-  static inline int random() { return rand(); }             // RAB: This version should be used for an unsigned int, not int
+  static inline int random() { return std::rand(); }             // RAB: This version should be used for an unsigned int, not int
   static inline std::string name() { return "int"; }
   static inline int squareroot(int x) { return (int) std::sqrt((double) x); }
-  static inline int pow(int x, int y) { return (int) ::pow((double)x,(double)y); }
+  static inline int pow(int x, int y) { return (int) std::pow((double)x,(double)y); }
 };
 
 #ifndef __sun
@@ -303,7 +303,7 @@ struct ScalarTraits<float>
   static inline float imag(float x) { return 0; }
   static inline float nan() {
 #ifdef __sun
-    return 0.0/sin(0.0);
+    return 0.0/std::sin(0.0);
 #else
     return flt_nan;
 #endif
@@ -314,8 +314,8 @@ struct ScalarTraits<float>
     float z=0.0*x; if( !(z <= tol) && !(z > tol) ) return true;  // Use fact that Inf*0 = NaN
     return false;
   }
-  static inline void seedrandom(unsigned int s) { srand(s); }
-  static inline float random() { float rnd = (float) rand() / RAND_MAX; return (float)(-1.0 + 2.0 * rnd); }
+  static inline void seedrandom(unsigned int s) { std::srand(s); }
+  static inline float random() { float rnd = (float) std::rand() / RAND_MAX; return (float)(-1.0 + 2.0 * rnd); }
   static inline std::string name() { return "float"; }
   static inline float squareroot(float x)
     {
@@ -329,7 +329,7 @@ struct ScalarTraits<float>
         return nan();
       return rtn;
     }
-  static inline float pow(float x, float y) { return ::pow(x,y); }
+  static inline float pow(float x, float y) { return std::pow(x,y); }
 };
 
 #ifndef __sun
@@ -428,7 +428,7 @@ struct ScalarTraits<double>
   static inline double imag(double x) { return(0); }
   static inline double nan() {
 #ifdef __sun
-    return 0.0/sin(0.0);
+    return 0.0/std::sin(0.0);
 #else
     return dbl_nan;
 #endif
@@ -439,8 +439,8 @@ struct ScalarTraits<double>
     double z=0.0*x; if( !(z <= tol) && !(z > tol) ) return true;  // Use fact that Inf*0 = NaN
     return false;
   }
-  static inline void seedrandom(unsigned int s) { srand(s); }
-  static inline double random() { double rnd = (double) rand() / RAND_MAX; return (double)(-1.0 + 2.0 * rnd); }
+  static inline void seedrandom(unsigned int s) { std::srand(s); }
+  static inline double random() { double rnd = (double) std::rand() / RAND_MAX; return (double)(-1.0 + 2.0 * rnd); }
   static inline std::string name() { return "double"; }
   static inline double squareroot(double x)
     {
@@ -454,7 +454,7 @@ struct ScalarTraits<double>
         return nan();
       return rtn;
     }
-  static inline double pow(double x, double y) { return ::pow(x,y); }
+  static inline double pow(double x, double y) { return std::pow(x,y); }
 };
 
 #ifdef HAVE_TEUCHOS_GNU_MP

@@ -90,7 +90,7 @@ void Object::setLabel(const char* label)
 { 
   if (label_ != 0)
     delete [] label_;
-  label_ = new char[strlen(label) + 1];
-  strcpy(label_, label);
+  label_ = new char[std::strlen(label) + 1];
+  std::strcpy(label_, label);
 }
 } // namespace Teuchos

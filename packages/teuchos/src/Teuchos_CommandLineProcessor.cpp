@@ -222,10 +222,10 @@ CommandLineProcessor::parse(
         *(any_cast<bool*>(opt_val_val.opt_val)) = false;
         break;
       case OPT_INT:
-        *(any_cast<int*>(opt_val_val.opt_val)) = ::atoi(opt_val_str.c_str());
+        *(any_cast<int*>(opt_val_val.opt_val)) = std::atoi(opt_val_str.c_str());
         break;
       case OPT_DOUBLE:
-        *(any_cast<double*>(opt_val_val.opt_val)) = ::atof(opt_val_str.c_str());
+        *(any_cast<double*>(opt_val_val.opt_val)) = std::atof(opt_val_str.c_str());
         break;
       case OPT_STRING:
         *(any_cast<std::string*>(opt_val_val.opt_val)) = remove_quotes(opt_val_str);
@@ -580,7 +580,7 @@ bool CommandLineProcessor::get_opt_val(
   ,std::string   *opt_val_str
   ) const
 {
-  const int len = strlen(str);
+  const int len = std::strlen(str);
   if( len < 3 )
     return false; // Can't be an option with '--' followed by at least one char
   if( str[0] != '-' || str[1] != '-' )

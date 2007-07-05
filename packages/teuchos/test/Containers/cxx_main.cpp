@@ -74,7 +74,7 @@ int main(int argc, char** argv)
           /* Array elements can be read using the const [] indexing operator */
           for (int i=0; i<y.length(); i++)
             {
-              fprintf(stderr, "%d %g\n", i, y[i]);
+              std::fprintf(stderr, "%d %g\n", i, y[i]);
             }
 
           /* If compiled with boundschecking, Array will catch bounds violations. */
@@ -221,7 +221,7 @@ int main(int argc, char** argv)
           trilinosPackages.put("meros");
       
           /* count entries using the size() method */
-          fprintf(stderr, "trilinos has %d packages\n", trilinosPackages.size());
+          std::fprintf(stderr, "trilinos has %d packages\n", trilinosPackages.size());
 
           /* write to a std::string using the toString() method */
           std::cerr << "trilinos packages are: " << trilinosPackages.toString() << std::endl;
@@ -265,7 +265,7 @@ int main(int argc, char** argv)
           /* test for the presence of a key using the containsKey() method */
           if (battles.containsKey("cannae"))
             {
-              fprintf(stderr, "the battle of cannae occured in %d\n", battles.get("cannae"));
+              std::fprintf(stderr, "the battle of cannae occured in %d\n", battles.get("cannae"));
             }
           else
             {
@@ -275,7 +275,7 @@ int main(int argc, char** argv)
           /* test for the presence of a key using the containsKey() method */
           if (battles.containsKey("verdun"))
             {
-              fprintf(stderr, "the battle of verdun occured in %d\n", battles.get("verdun"));
+              std::fprintf(stderr, "the battle of verdun occured in %d\n", battles.get("verdun"));
             }
           else
             {
@@ -300,11 +300,11 @@ int main(int argc, char** argv)
 
           /* atof() converts a std::string to its double value */
           double pi = StrUtils::atof("3.14159265358");
-          fprintf(stderr, "pi = %g, tan(pi/4)=%g\n", pi, tan(pi/4.0));
+          std::fprintf(stderr, "pi = %g, tan(pi/4)=%g\n", pi, std::tan(pi/4.0));
 
           /* atoi() converts a std::string to its integer value */
           int a = StrUtils::atoi("-101");
-          fprintf(stderr, "a = %d\n", a);
+          std::fprintf(stderr, "a = %d\n", a);
 
           /* allCaps() converts to upper case */
           std::cerr << "all caps: " << StrUtils::allCaps(test) << std::endl;

@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
   SType2 convertTo = ScalarTraits<SType2>::zero();
   SType2 TOL = 1e-5;
   
-  srand(time(NULL));
+  std::srand(time(NULL));
 
 #ifdef HAVE_TEUCHOS_ARPREC
   mp::mp_init(200);

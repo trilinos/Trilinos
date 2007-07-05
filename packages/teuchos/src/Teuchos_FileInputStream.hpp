@@ -52,14 +52,14 @@ namespace Teuchos
       FileInputStream(const std::string& filename);
 
       /** \brief Destructor */
-      virtual ~FileInputStream() { if( file_ ) { fclose(file_); } }
+      virtual ~FileInputStream() { if( file_ ) { std::fclose(file_); } }
 
       /** \brief Read up to maxToRead bytes */
       virtual unsigned int readBytes(unsigned char* const toFill,
                                      const unsigned int maxToRead);
 
     private:
-      FILE* file_;
+      std::FILE* file_;
     };
 }
 #endif

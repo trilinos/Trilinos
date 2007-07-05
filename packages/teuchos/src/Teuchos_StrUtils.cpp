@@ -270,7 +270,7 @@ std::string StrUtils::before(const std::string& str, const std::string& sub)
   TEST_FOR_EXCEPTION(sub.c_str()==0,
                      std::runtime_error, "String::before: arg is null pointer");
 
-  char* p = strstr((char*) str.c_str(), (char*) sub.c_str());
+  char* p = std::strstr((char*) str.c_str(), (char*) sub.c_str());
   if (p==0) return str;
   int subLen = p-str.c_str();
   std::string rtn(str.c_str(), subLen);
@@ -283,17 +283,17 @@ std::string StrUtils::after(const std::string& str, const std::string& sub)
                      std::runtime_error, "String::after: arg is null pointer");
 
   // find beginning of substring
-  char* p = strstr((char*) str.c_str(), (char*) sub.c_str()) ;
+  char* p = std::strstr((char*) str.c_str(), (char*) sub.c_str()) ;
   // if substring not found, return empty std::string
   if (p==0) return std::string();
   // offset to end of substring
-  p+= strlen(sub.c_str());
+  p+= std::strlen(sub.c_str());
   return std::string(p);
 }
 
 int StrUtils::find(const std::string& str, const std::string& sub)
 {
-  char* p = strstr((char*) str.c_str(), (char*) sub.c_str());
+  char* p = std::strstr((char*) str.c_str(), (char*) sub.c_str());
   if (p==0) return -1;
   return p-str.c_str();
 }
@@ -364,12 +364,12 @@ std::string StrUtils::allCaps(const std::string& s)
 
 double StrUtils::atof(const std::string& s)
 {
-	return ::atof(s.c_str());
+	return std::atof(s.c_str());
 }
 
 int StrUtils::atoi(const std::string& s)
 {
-	return ::atoi(s.c_str());
+	return std::atoi(s.c_str());
 }
 
 std::ostream& StrUtils::printLines(

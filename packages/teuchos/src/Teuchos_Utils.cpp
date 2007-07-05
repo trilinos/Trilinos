@@ -67,21 +67,21 @@ std::string Utils::trimWhiteSpace( const std::string& str )
 std::string Utils::toString(const int& x)
 {
 	char s[100];
-	sprintf(s, "%d", x);
+	std::sprintf(s, "%d", x);
 	return std::string(s);
 }
 
 std::string Utils::toString(const unsigned int& x)
 {
 	char s[100];
-	sprintf(s, "%d", x);
+	std::sprintf(s, "%d", x);
 	return std::string(s);
 }
 
 std::string Utils::toString(const double& x)
 {
 	char s[100];
-	sprintf(s, "%g", x);
+	std::sprintf(s, "%g", x);
 	return std::string(s);
 }
 

@@ -143,7 +143,7 @@ int AnyNumberParameterEntryValidator::getInt(
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
     return static_cast<int>(any_cast<double>(anyValue));
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
-    return ::atoi(any_cast<std::string>(anyValue).c_str());
+    return std::atoi(any_cast<std::string>(anyValue).c_str());
   throwTypeError(entry,paramName,sublistName);
   return 0; // Will never get here!
 }
@@ -160,7 +160,7 @@ double AnyNumberParameterEntryValidator::getDouble(
   if( acceptedTypes_.allowDouble() && anyValue.type() == typeid(double) )
     return any_cast<double>(anyValue);
   if( acceptedTypes_.allowString() && anyValue.type() == typeid(std::string) )
-    return ::atof(any_cast<std::string>(anyValue).c_str());
+    return std::atof(any_cast<std::string>(anyValue).c_str());
   throwTypeError(entry,paramName,sublistName);
   return 0.0; // Will never get here!
 }

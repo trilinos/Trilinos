@@ -95,11 +95,11 @@ public:
 
   //! Get a required attribute, returning it as a double
   double getRequiredDouble(const std::string& name) const 
-    {return atof(getRequired(name).c_str());}
+    {return std::atof(getRequired(name).c_str());}
 
   //! Get a required attribute, returning it as an int
   int getRequiredInt(const std::string& name) const 
-    {return atoi(getRequired(name).c_str());}
+    {return std::atoi(getRequired(name).c_str());}
 
   //! Get a required attribute, returning it as a bool
   bool getRequiredBool(const std::string& name) const ;
