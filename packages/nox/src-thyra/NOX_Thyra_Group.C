@@ -191,13 +191,10 @@ NOX::Abstract::Group::ReturnType NOX::Thyra::Group::computeF()
 
   in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
   out_args_.set_f(f_vec_->getThyraRCPVector().assert_not_null());
+  //model_->setVerbLevel(Teuchos::VERB_EXTREME);
   model_->evalModel(in_args_, out_args_);
   in_args_.set_x(Teuchos::null);
   out_args_.set_f(Teuchos::null);
-
-  *Teuchos::VerboseObjectBase::getDefaultOStream()
-    << "\nNOX::Thyra::Group::computeF() : f = \n"
-    << Teuchos::describe(*f_vec_->getThyraRCPVector(),Teuchos::VERB_EXTREME);
 
   is_valid_f_ = true;
 
@@ -332,7 +329,7 @@ bool NOX::Thyra::Group::isF() const
 
 bool NOX::Thyra::Group::isJacobian() const 
 {  
-  return ((shared_jacobian_->isOwner(this)) && (this->isJacobian()));
+  return ((shared_jacobian_->isOwner(this)) && (is_valid_jacobian_));
 }
 
 bool NOX::Thyra::Group::isNewton() const 

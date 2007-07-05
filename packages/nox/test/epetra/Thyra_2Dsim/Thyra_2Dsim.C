@@ -134,16 +134,12 @@ int main(int argc, char *argv[])
     epetraThyraModel;
 
   // Create the initial guess
-  Teuchos::RCP< ::Thyra::VectorBase<double> > initial_guess = 
-    ::Thyra::createMember( *(thyraModel->get_x_space()) );
+  Teuchos::RCP< ::Thyra::VectorBase<double> >
+    initial_guess = thyraModel->getNominalValues().get_x()->clone_v();
 
   // Create the NOX::Thyra::Group
   Teuchos::RCP<NOX::Thyra::Group> nox_group = 
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel));
-
-
-
-
 
 //   nox_group->computeF();
 //   cout << "ComputedF!" << endl;
