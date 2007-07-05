@@ -96,18 +96,46 @@ all-local:
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  At present, new_package only offers src and example.
-#  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
 
-#if BUILD_TESTS
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+
+#if SUB_TEST 
 #TEST_SUBDIR=test
 #endif
 
-#if BUILD_EXAMPLES
+#if SUB_EXAMPLE
 #EXAMPLE_SUBDIR=example
 #endif
 
+#Here we define the make targets that will build and clean tests and examples
+
+tests:
+	@echo "claps does not have any tests yet"
+
+examples:
+	@echo "claps does not have any examples yet"
+
+clean-tests:
+	@echo "claps does not have any tests yet"
+
+clean-examples:
+	@echo "claps does not have any examples yet"
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-examples:
+	@echo "claps does not have any examples yet"
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
+
 #SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
-#SUBDIRS = src $(EXAMPLE_SUBDIR)
 SUBDIRS = src
