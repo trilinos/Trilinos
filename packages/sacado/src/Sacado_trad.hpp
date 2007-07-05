@@ -119,7 +119,7 @@ extern "C" int RAD_Const_Warn(const void*);// outside any namespace for
 #endif // RAD_Const_WARN
 
 #ifdef RAD_DEBUG
-#include <stdio.h>
+#include <cstdio>
 #include <stdlib.h>
 #endif
 

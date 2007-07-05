@@ -30,7 +30,7 @@
 // Individually check concistency among Hv products via rad2.h, trad2.hpp,
 // Fad<Rad> and Rad<Fad> for all unary and binary ops.
 
-#include <stdio.h>
+#include <cstdio>
 #include <float.h>	// for DBL_MAX
 #define SACADO_NAMESPACE
 #include "Sacado_trad.hpp"

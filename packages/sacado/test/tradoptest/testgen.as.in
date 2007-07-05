@@ -9,7 +9,7 @@ cat <<\!
 #endif
 
 #include "Sacado_trad.hpp"
-#include <stdio.h>
+#include <cstdio>
 
 typedef ADT_RAD IndepADvar<double> AI;
 typedef ADT_RAD ADvar<double> A;
