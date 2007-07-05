@@ -740,6 +740,10 @@ BUILD_EXAMPLES_TRUE
 BUILD_EXAMPLES_FALSE
 BUILD_TESTS_TRUE
 BUILD_TESTS_FALSE
+SUB_TEST_TRUE
+SUB_TEST_FALSE
+SUB_EXAMPLE_TRUE
+SUB_EXAMPLE_FALSE
 BUILD_TEUCHOS_COMPLEX_TRUE
 BUILD_TEUCHOS_COMPLEX_FALSE
 BUILD_BELOS_EXPERIMENTAL_TRUE
@@ -1364,17 +1368,16 @@ Optional Features:
                           always created and used in the build directory, but
                           will not be installable without this option to
                           change the paths. (default is yes)
-  --enable-examples       Build examples for all Trilinos packages (not all
-                          packages are sensitive to this option) (default is
-                          yes)
+  --enable-examples       Make examples for all Trilinos packages buildable
+                          with 'make examples' (default is yes)
 
-  --enable-belos-examples Build Belos examples (default is yes if
-                          --disable-examples is not specified)
-  --enable-tests          Build tests for all Trilinos packages (not all
-                          packages are sensitive to this option) (default is
-                          yes)
-  --enable-belos-tests    Build Belos tests (default is yes if --disable-tests
-                          is not specified)
+  --enable-belos-examples Make Belos examples buildable with 'make examples'
+                          (default is yes if --disable-examples is not
+                          specified)
+  --enable-tests          Make tests for all Trilinos packages buildable with
+                          'make tests' (default is yes)
+  --enable-belos-tests    Make Belos testsbuildable with 'make tests' (default
+                          is yes if --disable-tests is not specified)
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
@@ -7666,6 +7669,28 @@ else
 fi
 
 
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though SUB_TEST and SUB_EXAMPLE will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+ if test "X$ac_cv_use_sub_test" = "Xyes"; then
+  SUB_TEST_TRUE=
+  SUB_TEST_FALSE='#'
+else
+  SUB_TEST_TRUE='#'
+  SUB_TEST_FALSE=
+fi
+
+ if test "X$ac_cv_use_sub_example" = "Xyes"; then
+  SUB_EXAMPLE_TRUE=
+  SUB_EXAMPLE_FALSE='#'
+else
+  SUB_EXAMPLE_TRUE='#'
+  SUB_EXAMPLE_FALSE=
+fi
+
+
 
 # Check whether --enable-libcheck was given.
 if test "${enable_libcheck+set}" = set; then
@@ -11300,6 +11325,20 @@ echo "$as_me: error: conditional \"BUILD_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${SUB_TEST_TRUE}" && test -z "${SUB_TEST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"SUB_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"SUB_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${SUB_EXAMPLE_TRUE}" && test -z "${SUB_EXAMPLE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"SUB_EXAMPLE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"SUB_EXAMPLE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_TEUCHOS_COMPLEX_TRUE}" && test -z "${BUILD_TEUCHOS_COMPLEX_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TEUCHOS_COMPLEX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -12043,6 +12082,10 @@ BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim
 BUILD_EXAMPLES_FALSE!$BUILD_EXAMPLES_FALSE$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
 BUILD_TESTS_FALSE!$BUILD_TESTS_FALSE$ac_delim
+SUB_TEST_TRUE!$SUB_TEST_TRUE$ac_delim
+SUB_TEST_FALSE!$SUB_TEST_FALSE$ac_delim
+SUB_EXAMPLE_TRUE!$SUB_EXAMPLE_TRUE$ac_delim
+SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
 BUILD_TEUCHOS_COMPLEX_TRUE!$BUILD_TEUCHOS_COMPLEX_TRUE$ac_delim
 BUILD_TEUCHOS_COMPLEX_FALSE!$BUILD_TEUCHOS_COMPLEX_FALSE$ac_delim
 BUILD_BELOS_EXPERIMENTAL_TRUE!$BUILD_BELOS_EXPERIMENTAL_TRUE$ac_delim
@@ -12061,7 +12104,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 44; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 48; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
