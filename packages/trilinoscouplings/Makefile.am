@@ -98,15 +98,6 @@ all-local:
 	@echo "Trilinos package trilinoscouplings built successfully"
 
 ## #######################################################################
-## Target for circular dependencies
-## #######################################################################
-all-libs:
-	cd src ; make all-libs
-
-libs:
-	cd src ; make
-
-## #######################################################################
 ## Export Makefile Installation
 ## #######################################################################
 if USING_EXPORT_MAKEFILES
@@ -138,17 +129,45 @@ endif
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  At present, trilinoscouplings only offers src and example.
-#  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
 
-if BUILD_TESTS
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though SUB_TEST and SUB_EXAMPLE will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.  (Triutils does not currently have any examples.)
+
+if SUB_TEST
 TEST_SUBDIR=test
 endif
 
-#if BUILD_EXAMPLES
-#EXAMPLE_SUBDIR=example
-#endif
+if BUILD_TESTS
+tests:
+	cd $(top_builddir)/test; $(MAKE)
+else
+tests:
+	@echo "trilinoscouplings tests were disabled at configure time"
+endif
+
+examples:
+	@echo "trilinoscouplings does not have any examples yet"
+
+install-examples:
+	@echo "trilinoscouplings does not have any examples yet"
+
+clean-tests:
+	cd $(top_builddir)/test ; $(MAKE) clean
+
+clean-examples:
+	@echo "trilinoscouplings does not have any examples yet"
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
 
 SUBDIRS = src $(TEST_SUBDIR)
 

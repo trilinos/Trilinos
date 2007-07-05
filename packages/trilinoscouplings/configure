@@ -740,6 +740,8 @@ HAVE_NEWP_SWAHILI_TRUE
 HAVE_NEWP_SWAHILI_FALSE
 BUILD_TESTS_TRUE
 BUILD_TESTS_FALSE
+SUB_TEST_TRUE
+SUB_TEST_FALSE
 FLIBS
 BUILD_IFPACK_ML_TRUE
 BUILD_IFPACK_ML_FALSE
@@ -1356,13 +1358,13 @@ Optional Features:
                           will not be installable without this option to
                           change the paths. (default is yes)
   --enable-newp_swahili   enable swahili support (default is no)
-  --enable-tests          Build tests for all Trilinos packages (not all
-                          packages are sensitive to this option) (default is
-                          yes)
+  --enable-tests          Make tests for all Trilinos packages buildable with
+                          'make tests' (default is yes)
 
   --enable-trilinoscouplings-tests
-                          Build TrilinosCouplings tests (default is yes if
-                          --disable-tests is not specified)
+                          Make TrilinosCouplings tests buildable with 'make
+                          tests' (default is yes if --disable-tests is not
+                          specified)
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
@@ -6941,6 +6943,21 @@ fi
 #TAC_ARG_ENABLE_FEATURE_SUB_CHECK( trilinoscouplings, examples, [Build TrilinosCouplings examples], TRILINOSCOUPLINGS_EXAMPLES)
 #AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_trilinoscouplings_examples" != "Xno")
 
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though SUB_TEST and SUB_EXAMPLE will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.  (Triutils does not currently have any examples.)
+ if test "X$ac_cv_use_sub_test" = "Xyes"; then
+  SUB_TEST_TRUE=
+  SUB_TEST_FALSE='#'
+else
+  SUB_TEST_TRUE='#'
+  SUB_TEST_FALSE=
+fi
+
+#AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
+
 
 # Check whether --enable-libcheck was given.
 if test "${enable_libcheck+set}" = set; then
@@ -10068,6 +10085,13 @@ echo "$as_me: error: conditional \"BUILD_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${SUB_TEST_TRUE}" && test -z "${SUB_TEST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"SUB_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"SUB_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_IFPACK_ML_TRUE}" && test -z "${BUILD_IFPACK_ML_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_IFPACK_ML\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -10776,6 +10800,8 @@ HAVE_NEWP_SWAHILI_TRUE!$HAVE_NEWP_SWAHILI_TRUE$ac_delim
 HAVE_NEWP_SWAHILI_FALSE!$HAVE_NEWP_SWAHILI_FALSE$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
 BUILD_TESTS_FALSE!$BUILD_TESTS_FALSE$ac_delim
+SUB_TEST_TRUE!$SUB_TEST_TRUE$ac_delim
+SUB_TEST_FALSE!$SUB_TEST_FALSE$ac_delim
 FLIBS!$FLIBS$ac_delim
 BUILD_IFPACK_ML_TRUE!$BUILD_IFPACK_ML_TRUE$ac_delim
 BUILD_IFPACK_ML_FALSE!$BUILD_IFPACK_ML_FALSE$ac_delim
@@ -10785,7 +10811,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 35; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 37; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
