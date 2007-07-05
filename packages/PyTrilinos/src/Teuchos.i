@@ -102,6 +102,7 @@ ParameterList will accept a python dictionary.
 #include "Teuchos_PythonParameter.h"
 
 // Namespace flattening
+using std::string;
 using Teuchos::RCP;
 %}
 
@@ -282,12 +283,12 @@ Teuchos::ParameterList &
 %teuchos_exception(XMLObject, toString         )
 %ignore Teuchos::XMLObject(XMLObjectImplem*);
 %extend Teuchos::XMLObject {
-  std::string __str__() const {
+  string __str__() const {
     try {
       return self->toString();
     }
     catch(std::logic_error e) {
-      return std::string("");
+      return string("");
     }
   }
 }
