@@ -250,7 +250,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	src/common/config-h.in src/common/stamp-h.in \
 	$(AUX_DIST) 
 
-@BUILD_TESTS_TRUE@TEST_SUBDIR = test
+@SUB_TEST_TRUE@TEST_SUBDIR = test
 SUBDIRS = src $(TEST_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
@@ -684,11 +684,31 @@ uninstall-am:
 all-local:
 	@echo "Trilinos package triutils built successfully"
 
-all-libs:
-	cd src ; $(MAKE) all-libs
+@BUILD_TESTS_TRUE@tests:
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/test; $(MAKE)
+@BUILD_TESTS_FALSE@tests:
+@BUILD_TESTS_FALSE@	@echo "triutils tests were disabled at configure time"
 
-libs:
-	cd src ; $(MAKE)
+examples:
+	@echo "triutils does not have any examples yet"
+
+install-examples:
+	@echo "triutils does not have any examples yet"
+
+clean-tests:
+	cd $(top_builddir)/test ; $(MAKE) clean
+
+clean-examples:
+	@echo "triutils does not have any examples yet"
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.triutils $(exec_prefix)/include/.

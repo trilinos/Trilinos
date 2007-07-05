@@ -64,20 +64,41 @@ all-local:
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-if BUILD_TESTS
+
+if SUB_TEST
 TEST_SUBDIR=test
 endif
 
+if BUILD_TESTS
+tests:
+	cd $(top_builddir)/test; $(MAKE)
+else
+tests:
+	@echo "triutils tests were disabled at configure time"
+endif
+
+examples:
+	@echo "triutils does not have any examples yet"
+
+install-examples:
+	@echo "triutils does not have any examples yet"
+
+clean-tests:
+	cd $(top_builddir)/test ; $(MAKE) clean
+
+clean-examples:
+	@echo "triutils does not have any examples yet"
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
+
 SUBDIRS = src $(TEST_SUBDIR)
-
-## #######################################################################
-## Target for circular dependencies
-## #######################################################################
-all-libs:
-	cd src ; $(MAKE) all-libs
-
-libs:
-	cd src ; $(MAKE)
 
 ## #######################################################################
 ## The below targets allow you to use the new

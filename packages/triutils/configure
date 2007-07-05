@@ -738,6 +738,8 @@ GREP
 EGREP
 BUILD_TESTS_TRUE
 BUILD_TESTS_FALSE
+SUB_TEST_TRUE
+SUB_TEST_FALSE
 FLIBS
 LIBOBJS
 BLAS_LIBS
@@ -1353,12 +1355,11 @@ Optional Features:
                           always created and used in the build directory, but
                           will not be installable without this option to
                           change the paths. (default is yes)
-  --enable-tests          Build tests for all Trilinos packages (not all
-                          packages are sensitive to this option) (default is
-                          yes)
+  --enable-tests          Make tests for all Trilinos packages buildable with
+                          'make tests' (default is yes)
 
-  --enable-triutils-tests Build Triutils tests (default is yes if
-                          --disable-tests is not specified)
+  --enable-triutils-tests Make Triutils tests buildable with 'make tests'
+                          (default is yes if --disable-tests is not specified)
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
@@ -7910,6 +7911,21 @@ else
 fi
 
 
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though SUB_TEST and SUB_EXAMPLE will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.  (Triutils does not currently have any examples.)
+ if test "X$ac_cv_use_sub_test" = "Xyes"; then
+  SUB_TEST_TRUE=
+  SUB_TEST_FALSE='#'
+else
+  SUB_TEST_TRUE='#'
+  SUB_TEST_FALSE=
+fi
+
+#AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
+
 
 # Check whether --enable-libcheck was given.
 if test "${enable_libcheck+set}" = set; then
@@ -11242,6 +11258,13 @@ echo "$as_me: error: conditional \"BUILD_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${SUB_TEST_TRUE}" && test -z "${SUB_TEST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"SUB_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"SUB_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 : ${CONFIG_STATUS=./config.status}
 ac_clean_files_save=$ac_clean_files
@@ -11942,6 +11965,8 @@ GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
 BUILD_TESTS_FALSE!$BUILD_TESTS_FALSE$ac_delim
+SUB_TEST_TRUE!$SUB_TEST_TRUE$ac_delim
+SUB_TEST_FALSE!$SUB_TEST_FALSE$ac_delim
 FLIBS!$FLIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 BLAS_LIBS!$BLAS_LIBS$ac_delim
@@ -11951,7 +11976,7 @@ ac_aux_dir!$ac_aux_dir$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 33; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 35; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
