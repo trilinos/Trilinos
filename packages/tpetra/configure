@@ -746,6 +746,10 @@ HAVE_TRIUTILS_TRUE
 HAVE_TRIUTILS_FALSE
 BUILD_PROFILE_EXAMPLE_TRUE
 BUILD_PROFILE_EXAMPLE_FALSE
+SUB_TEST_TRUE
+SUB_TEST_FALSE
+SUB_EXAMPLE_TRUE
+SUB_EXAMPLE_FALSE
 FLIBS
 BLAS_LIBS
 LAPACK_LIBS
@@ -1360,18 +1364,17 @@ Optional Features:
                           always created and used in the build directory, but
                           will not be installable without this option to
                           change the paths. (default is yes)
-  --enable-tests          Build tests for all Trilinos packages (not all
-                          packages are sensitive to this option) (default is
-                          yes)
+  --enable-tests          Make tests for all Trilinos packages buildable with
+                          'make tests' (default is yes)
 
-  --enable-tpetra-tests   Build Tpetra tests (default is yes if
-                          --disable-tests is not specified)
-  --enable-examples       Build examples for all Trilinos packages (not all
-                          packages are sensitive to this option) (default is
-                          yes)
+  --enable-tpetra-tests   Make Tpetra tests buildable with 'make tests'
+                          (default is yes if --disable-tests is not specified)
+  --enable-examples       Make examples for all Trilinos packages buildable
+                          with 'make examples' (default is yes)
   --enable-tpetra-examples
-                          Build Tpetra examples (default is yes if
-                          --disable-examples is not specified)
+                          Make Tpetra examples buildable with 'make examples'
+                          (default is yes if --disable-examples is not
+                          specified)
   --enable-epetra         Enable examples that require Epetra. Can be
                           overridden with --disable-tpetra-epetra.
   --enable-tpetra-epetra  Enable examples that require Epetra.
@@ -8464,6 +8467,28 @@ else
 fi
 
 
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though SUB_TEST and SUB_EXAMPLE will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+ if test "X$ac_cv_use_sub_test" = "Xyes"; then
+  SUB_TEST_TRUE=
+  SUB_TEST_FALSE='#'
+else
+  SUB_TEST_TRUE='#'
+  SUB_TEST_FALSE=
+fi
+
+ if test "X$ac_cv_use_sub_example" = "Xyes"; then
+  SUB_EXAMPLE_TRUE=
+  SUB_EXAMPLE_FALSE='#'
+else
+  SUB_EXAMPLE_TRUE='#'
+  SUB_EXAMPLE_FALSE=
+fi
+
+
 
 # Check whether --enable-libcheck was given.
 if test "${enable_libcheck+set}" = set; then
@@ -11764,6 +11789,20 @@ echo "$as_me: error: conditional \"BUILD_PROFILE_EXAMPLE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${SUB_TEST_TRUE}" && test -z "${SUB_TEST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"SUB_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"SUB_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${SUB_EXAMPLE_TRUE}" && test -z "${SUB_EXAMPLE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"SUB_EXAMPLE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"SUB_EXAMPLE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 : ${CONFIG_STATUS=./config.status}
 ac_clean_files_save=$ac_clean_files
@@ -12486,6 +12525,10 @@ HAVE_TRIUTILS_TRUE!$HAVE_TRIUTILS_TRUE$ac_delim
 HAVE_TRIUTILS_FALSE!$HAVE_TRIUTILS_FALSE$ac_delim
 BUILD_PROFILE_EXAMPLE_TRUE!$BUILD_PROFILE_EXAMPLE_TRUE$ac_delim
 BUILD_PROFILE_EXAMPLE_FALSE!$BUILD_PROFILE_EXAMPLE_FALSE$ac_delim
+SUB_TEST_TRUE!$SUB_TEST_TRUE$ac_delim
+SUB_TEST_FALSE!$SUB_TEST_FALSE$ac_delim
+SUB_EXAMPLE_TRUE!$SUB_EXAMPLE_TRUE$ac_delim
+SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
 FLIBS!$FLIBS$ac_delim
 BLAS_LIBS!$BLAS_LIBS$ac_delim
 LAPACK_LIBS!$LAPACK_LIBS$ac_delim
@@ -12494,7 +12537,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 40; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 44; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

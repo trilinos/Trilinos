@@ -226,16 +226,16 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 # Checks if tests should be built
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( tpetra, tests, [Build Tpetra tests], TPETRA_TESTS)
+TAC_ARG_ENABLE_FEATURE(tests, [Make tests for all Trilinos packages buildable with 'make tests'], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( tpetra, tests, [Make Tpetra tests buildable with 'make tests'], TPETRA_TESTS)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tpetra_tests" != "Xno")
 
 # ------------------------------------------------------------------------
 # Checks if examples should be built
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( tpetra, examples, [Build Tpetra examples], TPETRA_EXAMPLES)
+TAC_ARG_ENABLE_FEATURE(examples, [Make examples for all Trilinos packages buildable with 'make examples'], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( tpetra, examples, [Make Tpetra examples buildable with 'make examples'], TPETRA_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_tpetra_examples" != "Xno")
 
 # Check to see if we should build the EpetraTpetraProfile example. This should only be done if
@@ -247,6 +247,14 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(tpetra, triutils, TRIUTILS, HAVE_TRIUTILS, yes,
 [Enable examples that require Triutils.],
 [Enable examples that require Triutils.  Can be overridden with --disable-tpetra-triutils.])
 AM_CONDITIONAL(BUILD_PROFILE_EXAMPLE, test "X$ac_cv_use_epetra" != "Xno" && test "X$ac_cv_use_triutils" != "Xno")
+
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though SUB_TEST and SUB_EXAMPLE will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
+AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
