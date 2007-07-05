@@ -64,8 +64,14 @@ namespace Anasazi {
 
   public:
 
+    using MatOrthoManager<ScalarType,MV,OP>::innerProd;
     using MatOrthoManager<ScalarType,MV,OP>::norm;
-    
+    using MatOrthoManager<ScalarType,MV,OP>::project;
+    using MatOrthoManager<ScalarType,MV,OP>::normalize;
+    using MatOrthoManager<ScalarType,MV,OP>::projectAndNormalize;
+    using MatOrthoManager<ScalarType,MV,OP>::orthonormError;
+    using MatOrthoManager<ScalarType,MV,OP>::orthogError;
+
     //! @name Constructor/Destructor
     //@{ 
     //! Constructor specifying re-orthogonalization tolerance.
@@ -84,7 +90,7 @@ namespace Anasazi {
      * takes a multivector \c X and projects it onto the space orthogonal to the individual <tt>Q[i]</tt>, 
      * optionally returning the coefficients of \c X for the individual <tt>Q[i]</tt>. All of this is done with respect
      * to the inner product innerProd().
-     *  
+     *
      * After calling this routine, \c X will be orthogonal to each of the <tt>Q[i]</tt>.
      *
      @param X [in/out] The multivector to be modified.
@@ -106,16 +112,6 @@ namespace Anasazi {
     void project ( MV &X, Teuchos::RCP<MV> MX, 
                    Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                    Teuchos::Array<Teuchos::RCP<const MV> > Q) const;
-
-
-    /*! \brief This method calls project(X,Teuchos::null,C,Q); see documentation for that function.
-    */
-    void project ( MV &X, 
-                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                   Teuchos::Array<Teuchos::RCP<const MV> > Q) const {
-      project(X,Teuchos::null,C,Q);
-    }
-
 
     /*! \brief This method takes a multivector \c X and attempts to compute an orthonormal basis for \f$colspan(X)\f$, with respect to innerProd().
      *
@@ -146,13 +142,6 @@ namespace Anasazi {
     */
     int normalize ( MV &X, Teuchos::RCP<MV> MX, 
                     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const;
-
-
-    /*! \brief This method calls normalize(X,Teuchos::null,B); see documentation for that function.
-    */
-    int normalize ( MV &X, Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const {
-      return normalize(X,Teuchos::null,B);
-    }
 
 
     /*! \brief Given a set of bases <tt>Q[i]</tt> and a multivector \c X, this method computes an orthonormal basis for \f$colspan(X) - \sum_i colspan(Q[i])\f$.
@@ -195,15 +184,6 @@ namespace Anasazi {
                               Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
                               Teuchos::Array<Teuchos::RCP<const MV> > Q ) const;
 
-    /*! \brief This method calls projectAndNormalize(X,Teuchos::null,C,B,Q); see documentation for that function.
-    */
-    int projectAndNormalize ( MV &X, 
-                              Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                              Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                              Teuchos::Array<Teuchos::RCP<const MV> > Q ) const {
-      return projectAndNormalize(X,Teuchos::null,C,B,Q);
-    }
-
     //@}
 
     //! @name Error methods
@@ -211,26 +191,10 @@ namespace Anasazi {
 
     /*! \brief This method computes the error in orthonormality of a multivector, measured
      * as the Frobenius norm of the difference <tt>innerProd(X,Y) - I</tt>.
-     */
-    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
-    orthonormError(const MV &X) const {
-      return orthonormError(X,Teuchos::null);
-    }
-
-    /*! \brief This method computes the error in orthonormality of a multivector, measured
-     * as the Frobenius norm of the difference <tt>innerProd(X,Y) - I</tt>.
      *  The method has the option of exploiting a caller-provided \c MX.
      */
     typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
     orthonormError(const MV &X, Teuchos::RCP<const MV> MX) const;
-
-    /*! \brief This method computes the error in orthogonality of two multivectors, measured
-     * as the Frobenius norm of <tt>innerProd(X,Y)</tt>.
-     */
-    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
-    orthogError(const MV &X1, const MV &X2) const {
-      return orthogError(X1,Teuchos::null,X2);
-    }
 
     /*! \brief This method computes the error in orthogonality of two multivectors, measured
      * as the Frobenius norm of <tt>innerProd(X,Y)</tt>.
