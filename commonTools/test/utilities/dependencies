@@ -352,6 +352,11 @@ IF PACKAGE thyra SUBDIRECTORY python THEN
 INSERT --disable-thyra-python
 DONE
 
+# TrilinosCouplings ------------------------------------------------------------
+IF PACKAGE trilinoscouplings THEN
+REMOVE --enable-trilinoscouplings
+DONE
+
 # TriUtils ---------------------------------------------------------------------
 IF PACKAGE triutils THEN
 REMOVE --enable-triutils
