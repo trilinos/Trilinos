@@ -100,12 +100,51 @@ all-local:
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  At present, new_package only offers src and example.
-#  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
 
-if BUILD_EXAMPLES
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+
+if SUB_EXAMPLE
 EXAMPLE_SUBDIR=examples
 endif
+
+#Here we define the make targets that will build and clean tests and examples
+
+tests:
+	@echo "capo does not have any tests yet"
+
+if BUILD_EXAMPLES
+examples: FORCE
+	cd $(top_builddir)/examples ; $(MAKE)
+
+install-examples:
+	cd $(top_builddir)/examples ; $(MAKE) install
+else
+examples: FORCE
+	@echo "capo examples were disabled at configure time"
+
+install-examples:
+	@echo "capo examples were disabled at configure time"
+endif
+
+FORCE:
+
+clean-tests:
+	@echo "capo does not have any tests yet"
+
+clean-examples:
+	cd $(top_builddir)/examples ; $(MAKE) clean
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
 
 SUBDIRS = src $(EXAMPLE_SUBDIR)
