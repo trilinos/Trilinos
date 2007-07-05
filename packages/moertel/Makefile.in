@@ -275,16 +275,17 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	$(AUX_DIST) 
 
 
-#if BUILD_TESTS
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+#(Moertel does not yet have tests.)
+
+#SUB_TEST
 #TEST_SUBDIR=test
 #endif
-@BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
-
-#if PYTHON_USE
-#PYTHON_SUBDIR=python
-#endif
-
-#SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
+@SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
 SUBDIRS = src $(EXAMPLE_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
@@ -746,6 +747,35 @@ libs:
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 
 @USING_EXPORT_MAKEFILES_FALSE@uninstall-hook:
+
+tests:
+	@echo "moertel does not have any tests yet"
+
+@BUILD_EXAMPLES_TRUE@examples:
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example ; $(MAKE)
+
+@BUILD_EXAMPLES_TRUE@install-examples:
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example ; $(MAKE) install
+@BUILD_EXAMPLES_FALSE@examples:
+@BUILD_EXAMPLES_FALSE@	@echo "moertel examples were disabled at configure time"
+
+@BUILD_EXAMPLES_FALSE@install-examples:
+@BUILD_EXAMPLES_FALSE@	@echo "moertel examples were disabled at configure time"
+
+clean-tests:
+	@echo "moertel does not have any tests yet"
+
+clean-examples:
+	cd $(top_builddir)/example ; $(MAKE) clean
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

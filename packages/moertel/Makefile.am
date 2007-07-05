@@ -136,19 +136,53 @@ endif
 ## Subdirectories to be make'd recursively
 ## #######################################################################
 
-#if BUILD_TESTS
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+#(Moertel does not yet have tests.)
+
+#SUB_TEST
 #TEST_SUBDIR=test
 #endif
 
-if BUILD_EXAMPLES
+if SUB_EXAMPLE
 EXAMPLE_SUBDIR=example
 endif
 
-#if PYTHON_USE
-#PYTHON_SUBDIR=python
-#endif
+tests:
+	@echo "moertel does not have any tests yet"
 
-#SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
+if BUILD_EXAMPLES
+examples:
+	cd $(top_builddir)/example ; $(MAKE)
+
+install-examples:
+	cd $(top_builddir)/example ; $(MAKE) install
+else
+examples:
+	@echo "moertel examples were disabled at configure time"
+
+install-examples:
+	@echo "moertel examples were disabled at configure time"
+endif
+
+clean-tests:
+	@echo "moertel does not have any tests yet"
+
+clean-examples:
+	cd $(top_builddir)/example ; $(MAKE) clean
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
+
 SUBDIRS = src $(EXAMPLE_SUBDIR)
 
 TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
