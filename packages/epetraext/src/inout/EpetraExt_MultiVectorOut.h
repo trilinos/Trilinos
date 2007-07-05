@@ -91,7 +91,7 @@ namespace EpetraExt {
       \return Returns 0 if no error, -1 if any problems with file system.
 
   */
-  int MultiVectorToMatrixMarketHandle(FILE * handle, const Epetra_MultiVector & A);
+  int MultiVectorToMatrixMarketHandle(std::FILE * handle, const Epetra_MultiVector & A);
 
   //! Writes an Epetra_MultiVector object that is compatible with Matlab to a file handle.
   /*! This function takes an Epetra_MultiVector and writes it
@@ -104,11 +104,11 @@ namespace EpetraExt {
       \return Returns 0 if no error, -1 if any problems with file system.
 
   */
-  int MultiVectorToMatlabHandle(FILE * handle, const Epetra_MultiVector & A);
+  int MultiVectorToMatlabHandle(std::FILE * handle, const Epetra_MultiVector & A);
 
   // Internal functions
-  int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A, bool mmFormat);
-  int writeMultiVector(FILE * handle, const Epetra_MultiVector & A, bool mmFormat);
+  int MultiVectorToHandle(std::FILE * handle, const Epetra_MultiVector & A, bool mmFormat);
+  int writeMultiVector(std::FILE * handle, const Epetra_MultiVector & A, bool mmFormat);
 
 } // namespace EpetraExt
 #endif /* EPETRAEXT_MULTIVECTOROUT_H */

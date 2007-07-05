@@ -42,7 +42,7 @@ namespace EpetraExt {
 
 int MultiVectorToMatlabFile( const char *filename, const Epetra_MultiVector & A) {
 
-  FILE * handle = 0;
+  std::FILE * handle = 0;
   if (A.Map().Comm().MyPID()==0) { // Only PE 0 does this section
     handle = fopen(filename,"w");
     if (!handle) return(-1);

@@ -113,7 +113,7 @@ Write(const std::string& Label, const Epetra_RowMatrix& Matrix)
 
         for (int j = 0; j < NumMyEntries; ++j)
           of << GRID << " " << Matrix.RowMatrixColMap().GID(Indices[j])
-             << " " << setiosflags(std::ios::scientific) << Values[j] << std::endl;
+             << " " << std::setiosflags(std::ios::scientific) << Values[j] << std::endl;
       }
       of.close();
     }
@@ -159,7 +159,7 @@ Write(const std::string& Label, const Epetra_MultiVector& MultiVector)
       for (int i = 0; i < MultiVector.MyLength(); ++i)
       {
         for (int j = 0; j < NumVectors; ++j)
-          of << setiosflags(std::ios::scientific) << MultiVector[j][i] << " ";
+          of << std::setiosflags(std::ios::scientific) << MultiVector[j][i] << " ";
         of << std::endl;
       }
       of.close();

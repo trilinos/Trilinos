@@ -75,10 +75,10 @@ namespace EpetraExt {
       \return Returns 0 if no error, -1 if any problems with file system.
 
   */
-  int BlockMapToHandle(FILE * handle, const Epetra_BlockMap & blockMap);
+  int BlockMapToHandle(std::FILE * handle, const Epetra_BlockMap & blockMap);
 
   // Internal function
-  int writeBlockMap(FILE * handle, int length, const int * v1, const int * v2, bool doSizes);
+  int writeBlockMap(std::FILE * handle, int length, const int * v1, const int * v2, bool doSizes);
 
 } // namespace EpetraExt
 #endif /* EPETRAEXT_BLOCKMAPOUT_H */

@@ -111,8 +111,8 @@ namespace EpetraExt {
       \return Returns 0 if no error, -1 if any problems with file system.
 
   */
-  int VectorToHandle(FILE * handle, const Epetra_Vector & A);
-  int writeVector(FILE * handle, const Epetra_Vector & A);
+  int VectorToHandle(std::FILE * handle, const Epetra_Vector & A);
+  int writeVector(std::FILE * handle, const Epetra_Vector & A);
 
 } // namespace EpetraExt
 #endif /* EPETRAEXT_VECTOROUT_H */

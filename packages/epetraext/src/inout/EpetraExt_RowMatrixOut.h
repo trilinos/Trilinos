@@ -47,11 +47,11 @@ namespace EpetraExt {
                     that implements the Epetra_RowMatrix interface can be passed in.  In particular, the 
 		    Epetra_CrsMatrix, Epetra_VbrMatrix, Epetra_FECrsMatrix, Epetra_FEVbrMatrix and Epetra_MsrMatrix
 		    classes are compatible with this interface.
-      \param matrixName (In) A C-style string pointer to a name that will be stored in the comment field of the file.
+      \param matrixName (In) A C-style std::string pointer to a name that will be stored in the comment field of the file.
                          This is not a required argument.  Note that it is possible to pass in the method A.Label() if 
 			 the matrix is one of the four types: Epetra_CrsMatrix, Epetra_VbrMatrix, Epetra_FECrsMatrix, 
 			 Epetra_FEVbrMatrix.
-      \param matrixDescription (In) A C-style string pointer to a matrix description that will be stored in the comment 
+      \param matrixDescription (In) A C-style std::string pointer to a matrix description that will be stored in the comment 
                                     field of the file.
       \param writeHeader (In) If true, the header will be written, otherwise only the matrix entries will be written.
 
@@ -111,8 +111,8 @@ namespace EpetraExt {
       \return Returns 0 if no error, -1 if any problems with file system.
 
   */
-  int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A);
-  int writeRowMatrix(FILE * handle, const Epetra_RowMatrix & A);
+  int RowMatrixToHandle(std::FILE * handle, const Epetra_RowMatrix & A);
+  int writeRowMatrix(std::FILE * handle, const Epetra_RowMatrix & A);
 
 } // namespace EpetraExt
 #endif /* EPETRAEXT_ROWMATRIXOUT_H */

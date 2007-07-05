@@ -116,8 +116,8 @@ namespace EpetraExt {
       \return Returns 0 if no error, -1 if any problems with file system.
 
   */
-  int OperatorToHandle(FILE * handle, const Epetra_Operator & A);
-  int writeOperatorStrip(FILE * handle, const Epetra_MultiVector & y, const Epetra_Map & rootDomainMap, const Epetra_Map & rootRangeMap, int startColumn);
+  int OperatorToHandle(std::FILE * handle, const Epetra_Operator & A);
+  int writeOperatorStrip(std::FILE * handle, const Epetra_MultiVector & y, const Epetra_Map & rootDomainMap, const Epetra_Map & rootRangeMap, int startColumn);
   int get_nz(const Epetra_Operator & A, int & nz);
 
 } // namespace EpetraExt
