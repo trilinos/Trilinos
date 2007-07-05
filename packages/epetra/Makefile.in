@@ -249,8 +249,14 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	src/common/config-h.in src/common/stamp-h.in \
 	$(AUX_DIST) 
 
-@BUILD_TESTS_TRUE@TEST_SUBDIR = test
-@BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
+
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+@SUB_TEST_TRUE@TEST_SUBDIR = test
+@SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
@@ -693,6 +699,37 @@ all-local:
 	@echo "contained in Trilinos/doc/check_installation.txt"
 	@echo ""
 
+@BUILD_TESTS_TRUE@tests:
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/test; $(MAKE)
+@BUILD_TESTS_FALSE@tests:
+@BUILD_TESTS_FALSE@	@echo "epetra tests were disabled at configure time"
+
+@BUILD_EXAMPLES_TRUE@examples:
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example ; $(MAKE)
+
+@BUILD_EXAMPLES_TRUE@install-examples:
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example ; $(MAKE) install
+@BUILD_EXAMPLES_FALSE@examples:
+@BUILD_EXAMPLES_FALSE@	@echo "epetra examples were disabled at configure time"
+
+@BUILD_EXAMPLES_FALSE@install-examples:
+@BUILD_EXAMPLES_FALSE@	@echo "epetra examples were disabled at configure time"
+
+clean-tests:
+	cd $(top_builddir)/test ; $(MAKE) clean
+
+clean-examples:
+	cd $(top_builddir)/example ; $(MAKE) clean
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
+
 runtests-serial :
 	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
   --trilinos-dir=$(TRILINOS_HOME_DIR) \
@@ -715,12 +752,6 @@ runtests-mpi :
   --verbosity=1 \
   --packages=epetra
 
-all-libs:
-	cd $(top_builddir)/src ; $(MAKE)
-
-libs:
-	cd $(top_builddir)/src ; $(MAKE)
-
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.epetra $(exec_prefix)/include/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
@@ -728,7 +759,8 @@ libs:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.epetra \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-top-srcdir=@abs_top_srcdir@ \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
-@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
+@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../teuchos
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRA > $(exec_prefix)/include/Makefile.export.epetra.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
