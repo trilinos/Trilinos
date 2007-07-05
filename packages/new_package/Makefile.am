@@ -138,17 +138,61 @@ endif
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  At present, new_package only offers src and example.
-#  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
+#  #np# - Most packages should have examples and a full suite of tests. 
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball. 
 
-if BUILD_TESTS
+if SUB_TEST
 TEST_SUBDIR=test
 endif
 
-if BUILD_EXAMPLES
+if SUB_EXAMPLE
 EXAMPLE_SUBDIR=example
 endif
+
+#  #np# - The following make targets must be defined for all packages.
+#  #np# - If the package does not have tests or examples, replace the
+#  #np# - corresponding rules with something like:
+#  #np# - @echo "new_package does not have any tests yet"
+if BUILD_TESTS
+tests:
+	cd $(top_builddir)/test; $(MAKE)
+else
+tests:
+	@echo "new_package tests were disabled at configure time"
+endif
+
+if BUILD_EXAMPLES
+examples:
+	cd $(top_builddir)/example ; $(MAKE)
+
+install-examples:
+	cd $(top_builddir)/example ; $(MAKE) install
+else
+examples:
+	@echo "new_package examples were disabled at configure time"
+
+install-examples:
+	@echo "new_package examples were disabled at configure time"
+endif
+
+clean-tests:
+	cd $(top_builddir)/test ; $(MAKE) clean
+
+clean-examples:
+	cd $(top_builddir)/example ; $(MAKE) clean
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
 
 SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 
