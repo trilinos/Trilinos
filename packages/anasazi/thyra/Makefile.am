@@ -33,16 +33,12 @@ all-local:
 	@echo "Trilinos package anasazi subdirectory thyra built successfully."
 	@echo ""
 
-if BUILD_TESTS
-if BUILD_EPETRA_THYRA
+if SUB_TEST
 TEST_SUBDIR=test
 endif
-endif
 
-if BUILD_EXAMPLES
-if BUILD_EPETRA_THYRA
+if SUB_EXAMPLE
 EXAMPLE_SUBDIR=example
-endif
 endif
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)

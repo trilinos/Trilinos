@@ -26,4 +26,11 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = MVOPTester LOBPCG BlockDavidson BlockKrylovSchur 
+if BUILD_EPETRA_THYRA
+if BUILD_ANASAZI_THYRA
+THYRA_TEST_SUBDIRS = MVOPTester LOBPCG BlockDavidson BlockKrylovSchur
+endif
+endif
+
+SUBDIRS = $(THYRA_TEST_SUBDIRS)
+ 

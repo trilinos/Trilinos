@@ -86,42 +86,64 @@ all-local:
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  At present, new_package only offers src and example.
-# SUBDIRS = src example test 
 
-if BUILD_EXAMPLES
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+
+if SUB_TEST
+TEST_SUBDIR=test
+UTIL_SUBDIR=util
+endif
+
+if SUB_EXAMPLE
 EXAMPLE_SUBDIR=example
 endif
 
 if BUILD_TESTS
-TEST_SUBDIR=test
+tests:
+	cd $(top_builddir)/util; $(MAKE); cd ../test; $(MAKE); cd ../thyra/test; $(MAKE)
+else
+tests:
+	@echo "anasazi tests were disabled at configure time"
 endif
 
 if BUILD_EXAMPLES
-UTIL_SUBDIR=util
+examples:
+	cd $(top_builddir)/util; $(MAKE); cd ../example ; $(MAKE); cd ../thyra/example; $(MAKE)
+
+install-examples:
+	cd $(top_builddir)/util; $(MAKE); cd ../example ; $(MAKE) install; cd ../thyra/example; $(MAKE) install
 else
-if BUILD_TESTS
-UTIL_SUBDIR=util
-else
-UTIL_SUBDIR=
+examples:
+	@echo "anasazi examples were disabled at configure time"
+
+install-examples:
+	@echo "anasazi examples were disabled at configure time"
 endif
-endif
+
+clean-tests:
+	cd $(top_builddir)/util; $(MAKE) clean; cd ../test ; $(MAKE) clean; cd ../thyra/test; $(MAKE) clean
+
+clean-examples:
+	cd $(top_builddir)/util; $(MAKE) clean; cd ../example ; $(MAKE) clean; cd ../thyra/example; $(MAKE) clean
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	        $(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
 
 if BUILD_ANASAZI_THYRA
 THYRA_SUBDIR = thyra
 endif
 
 SUBDIRS = src $(UTIL_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(THYRA_SUBDIR)
-
-## #######################################################################
-## Target for circular dependencies
-## #######################################################################
-all-libs:
-	cd src ; $(MAKE) all-libs
-
-libs:
-	cd src ; $(MAKE)
 
 ## #######################################################################
 ## The below targets allow you to use the new

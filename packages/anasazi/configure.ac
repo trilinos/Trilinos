@@ -298,13 +298,21 @@ AC_CXX_STD_SPRINTF
 # Checks if examples should be built or which ones should be built
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( anasazi, examples, [Build Anasazi examples], ANASAZI_EXAMPLES)
+TAC_ARG_ENABLE_FEATURE(examples, [Make examples for all Trilinos packages buildable with 'make examples'], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( anasazi, examples, [Make Anasazi examples buildable with 'make examples'], ANASAZI_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, [test "X$ac_cv_use_anasazi_examples" != "Xno"])
 
-TAC_ARG_ENABLE_FEATURE(test, [Build test for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( anasazi, tests, [Build Anasazi tests], ANASAZI_TESTS)
+TAC_ARG_ENABLE_FEATURE(tests, [Make tests for all Trilinos packages buildable with 'make tests'], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( anasazi, tests, [Make Anasazi tests buildable with 'make tests'], ANASAZI_TESTS)
 AM_CONDITIONAL(BUILD_TESTS, [test "X$ac_cv_use_anasazi_tests" != "Xno"])
+
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though SUB_TEST and SUB_EXAMPLE will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
+AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
