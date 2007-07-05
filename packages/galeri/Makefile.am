@@ -1,8 +1,3 @@
-#np# Typically the only line that needs to be edited in this file is the last 
-#np# line.  Set 'SUBDIRS= (list all subdirectories that are autotool'ed here)'
-#np# List all subdirectories even if one or more are configured/built only
-#np# conditionally.
-
 # @HEADER
 # ************************************************************************
 #
@@ -125,23 +120,60 @@ all-local:
 	@echo "        +----------------------------------------------------+"
 	@echo 
 
-all-libs:
-	cd $(top_builddir)/src ; $(MAKE) all-libs
-
-libs:
-	cd $(top_builddir)/src ; $(MAKE)
-
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
 
-if BUILD_TESTS
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+
+if SUB_TEST
 TEST_SUBDIR=test
 endif
 
-if BUILD_EXAMPLES
+if SUB_EXAMPLE
 EXAMPLE_SUBDIR=example example-fem
 endif
+
+if BUILD_TESTS
+tests:
+	cd $(top_builddir)/test; $(MAKE)
+else
+tests:
+	@echo "galeri tests were disabled at configure time"
+endif
+
+if BUILD_EXAMPLES
+examples:
+	cd $(top_builddir)/example; $(MAKE); cd ../example-fem; $(MAKE)
+
+install-examples:
+	cd $(top_builddir)/example ; $(MAKE) install; cd ../example-fem; $(MAKE) install
+else
+examples:
+	@echo "galeri examples were disabled at configure time"
+
+install-examples:
+	@echo "galeri examples were disabled at configure time"
+endif
+
+clean-tests:
+	cd $(top_builddir)/test ; $(MAKE) clean
+
+clean-examples:
+	cd $(top_builddir)/example ; $(MAKE) clean; cd ../example-fem; $(MAKE) clean
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
 
 SUBDIRS = src src-fem $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 
