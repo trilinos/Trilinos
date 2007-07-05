@@ -52,9 +52,6 @@
 
 #include "Teuchos_RCP.hpp"
 
-/** \example MVOPTester/MVOPTesterEx.cpp
-    This is an example of how to use the Anasazi::TestMultiVecTraits() and Anasazi::TestOperatorTraits() methods.
-*/
 
 namespace Anasazi {
 
