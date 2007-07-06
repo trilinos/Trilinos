@@ -172,7 +172,7 @@ namespace Anasazi {
   /** \brief LOBPCGOrthoFailure is thrown when an orthogonalization attempt 
    * fails.
    *
-   * This is thrown in one of two scenarios. After preconditioning the residual,
+   * This is thrown in one of two scenarstd::ios. After preconditioning the residual,
    * the orthogonalization manager is asked to orthogonalize the preconditioned
    * residual (H) against the auxiliary vectors. If full orthogonalization
    * is enabled, H is also orthogonalized against X and P and normalized.
@@ -453,7 +453,7 @@ namespace Anasazi {
     //@{
 
     //! This method requests that the solver print out its current status to screen.
-    void currentStatus(ostream &os);
+    void currentStatus(std::ostream &os);
 
     //@}
 
@@ -489,7 +489,7 @@ namespace Anasazi {
     //
     // Internal methods
     //
-    string accuracyCheck(const CheckList &chk, const string &where) const;
+    std::string accuracyCheck(const CheckList &chk, const std::string &where) const;
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
@@ -1692,11 +1692,11 @@ namespace Anasazi {
                                                      tmp2(oneBlock,oneBlock);
           MagnitudeType tmp;
           int teuchosret;
-          stringstream os;
+          std::stringstream os;
           os.precision(2);
-          os.setf(ios::scientific, ios::floatfield);
+          os.setf(std::ios::scientific, std::ios::floatfield);
 
-          os << " Checking Full Ortho: iteration " << iter_ << endl;
+          os << " Checking Full Ortho: iteration " << iter_ << std::endl;
 
           // check CX^T MM CX == I
           // compute tmp1 = MM*CX
@@ -1710,7 +1710,7 @@ namespace Anasazi {
           // subtrace tmp2 - I == CX^H * MM * CX - I
           for (int i=0; i<oneBlock; i++) tmp2(i,i) -= ONE;
           tmp = tmp2.normFrobenius();          
-          os << " >> Error in CX^H MM CX == I : " << tmp << endl;
+          os << " >> Error in CX^H MM CX == I : " << tmp << std::endl;
 
           // check CP^T MM CP == I
           // compute tmp1 = MM*CP
@@ -1724,7 +1724,7 @@ namespace Anasazi {
           // subtrace tmp2 - I == CP^H * MM * CP - I
           for (int i=0; i<oneBlock; i++) tmp2(i,i) -= ONE;
           tmp = tmp2.normFrobenius();          
-          os << " >> Error in CP^H MM CP == I : " << tmp << endl;
+          os << " >> Error in CP^H MM CP == I : " << tmp << std::endl;
 
           // check CX^T MM CP == 0
           // compute tmp1 = MM*CP
@@ -1735,9 +1735,9 @@ namespace Anasazi {
           TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // subtrace tmp2 == CX^H * MM * CP
           tmp = tmp2.normFrobenius();          
-          os << " >> Error in CX^H MM CP == 0 : " << tmp << endl;
+          os << " >> Error in CX^H MM CP == 0 : " << tmp << std::endl;
 
-          os << endl;
+          os << std::endl;
           om_->print(Debug,os.str());
         }
       }
@@ -1961,11 +1961,13 @@ namespace Anasazi {
   //  add checkTheta 
   //
   template <class ScalarType, class MV, class OP>
-  std::string LOBPCG<ScalarType,MV,OP>::accuracyCheck( const CheckList &chk, const string &where ) const 
+  std::string LOBPCG<ScalarType,MV,OP>::accuracyCheck( const CheckList &chk, const std::string &where ) const 
   {
-    stringstream os;
+    using std::endl;
+
+    std::stringstream os;
     os.precision(2);
-    os.setf(ios::scientific, ios::floatfield);
+    os.setf(std::ios::scientific, std::ios::floatfield);
     MagnitudeType tmp;
 
     os << " Debugging checks: iteration " << iter_ << where << endl;
@@ -2064,9 +2066,11 @@ namespace Anasazi {
   // Print the current status of the solver
   template <class ScalarType, class MV, class OP>
   void 
-  LOBPCG<ScalarType,MV,OP>::currentStatus(ostream &os) 
+  LOBPCG<ScalarType,MV,OP>::currentStatus(std::ostream &os) 
   {
-    os.setf(ios::scientific, ios::floatfield);  
+    using std::endl;
+
+    os.setf(std::ios::scientific, std::ios::floatfield);  
     os.precision(6);
     os <<endl;
     os <<"================================================================================" << endl;
@@ -2081,7 +2085,7 @@ namespace Anasazi {
     os <<"The number of operations M*x    is " << count_ApplyM_    << endl;
     os <<"The number of operations Prec*x is " << count_ApplyPrec_ << endl;
 
-    os.setf(ios_base::right, ios_base::adjustfield);
+    os.setf(std::ios_base::right, std::ios_base::adjustfield);
 
     if (initialized_) {
       os << endl;

@@ -54,11 +54,11 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #endif
 
-using namespace std;
-
 int main(int argc, char *argv[])
 {
 
+  using std::cout;
+  using std::endl;
   using Teuchos::rcp_implicit_cast;
 
   int i;

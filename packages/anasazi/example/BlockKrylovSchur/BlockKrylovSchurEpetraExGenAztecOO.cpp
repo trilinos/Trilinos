@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
     
     if (MyPID==0) {
       double compeval = 0.0;
-      cout.setf(ios_base::right, ios_base::adjustfield);
+      cout.setf(std::ios_base::right, std::ios_base::adjustfield);
       cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
       cout<<"------------------------------------------------------"<<endl;
       cout<<std::setw(16)<<"Real Part"

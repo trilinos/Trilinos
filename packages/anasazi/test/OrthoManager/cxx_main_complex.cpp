@@ -66,8 +66,8 @@ using namespace Anasazi;
   typedef double ST;
   // no complex. quit with failure.
 int main() {
-  cout << "Not compiled with complex support." << endl;
-  cout << "End Result: TEST FAILED" << endl;
+  std::cout << "Not compiled with complex support." << std::endl;
+  std::cout << "End Result: TEST FAILED" << std::endl;
   return -1;
 }
 #endif
@@ -98,6 +98,8 @@ MT MVDiff(const MV &X, const MV &Y);
 
 int main(int argc, char *argv[]) 
 {
+  using std::cout;
+  using std::endl;
   int info = 0;
   int MyPID;
   
@@ -423,6 +425,7 @@ int main(int argc, char *argv[])
 int testProjectAndNormalize(RCP<MatOrthoManager<ST,MV,OP> > OM, 
                             RCP<MV> X, RCP<const MV> Q) {
 
+  using std::endl;
   const int sizeX = MVT::GetNumberVecs(*X);
   const int sizeQ = MVT::GetNumberVecs(*Q);
   MT err;
@@ -574,6 +577,7 @@ int testProjectAndNormalize(RCP<MatOrthoManager<ST,MV,OP> > OM,
 int testProject(RCP<MatOrthoManager<ST,MV,OP> > OM, 
                 RCP<const MV> X, RCP<const MV> Q) {
 
+  using std::endl;
   const int sizeX = MVT::GetNumberVecs(*X);
   const int sizeQ = MVT::GetNumberVecs(*Q);
   MT err;
@@ -674,6 +678,7 @@ int testProject(RCP<MatOrthoManager<ST,MV,OP> > OM,
 //////////////////////////////////////////////////////////////////////
 int testNormalize(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<MV> X) {
 
+  using std::endl;
   const int sizeX = MVT::GetNumberVecs(*X);
   MT err;
   int rank;

@@ -228,7 +228,7 @@ namespace Anasazi {
     Teuchos::LAPACK<int,MagnitudeType> lapack;
     eps_ = lapack.LAMCH('E');
     if (debug_) {
-      std::cout << "eps_ == " << eps_ << endl;
+      std::cout << "eps_ == " << eps_ << std::endl;
     }
   }
 
@@ -510,7 +510,7 @@ namespace Anasazi {
         // check that vectors are normalized now
         if (debug_) {
           std::vector<MagnitudeType> nrm2(xc);
-          cout << dbgstr << "max post-scale norm: (with/without MX) : ";
+          std::cout << dbgstr << "max post-scale norm: (with/without MX) : ";
           MagnitudeType maxpsnw = ZERO, maxpsnwo = ZERO;
           norm(X,MX,&nrm2);
           for (int i=0; i<xc; i++) {
@@ -520,7 +520,7 @@ namespace Anasazi {
           for (int i=0; i<xc; i++) {
             maxpsnwo = (nrm2[i] > maxpsnwo ? nrm2[i] : maxpsnwo);
           }
-          cout << "(" << maxpsnw << "," << maxpsnwo << ")" << endl;
+          std::cout << "(" << maxpsnw << "," << maxpsnwo << ")" << std::endl;
         }
         // project the vectors onto the Qi
         for (int i=0; i<nq; i++) {
@@ -626,11 +626,11 @@ namespace Anasazi {
           TEST_FOR_EXCEPTION( info != 0, OrthoError, 
                               "Anasazi::SVQBOrthoManager::findBasis(): Error code from HEEV" );
           if (debug_) {
-            cout << dbgstr << "eigenvalues of XtMX: (";
+            std::cout << dbgstr << "eigenvalues of XtMX: (";
             for (int i=0; i<xc-1; i++) {
-              cout << lambda[i] << ",";
+              std::cout << lambda[i] << ",";
             }
-            cout << lambda[xc-1] << ")" << endl;
+            std::cout << lambda[xc-1] << ")" << std::endl;
           }
 
           // remember, HEEV orders the eigenvalues from smallest to largest
@@ -710,7 +710,7 @@ namespace Anasazi {
           // check iZeroMax (rank indicator)
           if (iZeroMax >= 0) {
             if (debug_) {
-              cout << dbgstr << "augmenting multivec with " << iZeroMax+1 << " random directions" << endl;
+              std::cout << dbgstr << "augmenting multivec with " << iZeroMax+1 << " random directions" << std::endl;
             }
 
             numRand++;
@@ -736,7 +736,7 @@ namespace Anasazi {
 
           condT = SCTM::magnitude(maxLambda / minLambda);
           if (debug_) {
-            cout << dbgstr << "condT: " << condT << endl;
+            std::cout << dbgstr << "condT: " << condT << std::endl;
           }
           
         } // end while (condT >= tolerance)
@@ -750,11 +750,11 @@ namespace Anasazi {
     } // end while (doGramSchmidt)
 
     if (debug_) {
-      cout << dbgstr << "(numGS,numSVQB,numRand)                : " 
+      std::cout << dbgstr << "(numGS,numSVQB,numRand)                : " 
            << "(" << numGS 
            << "," << numSVQB 
            << "," << numRand 
-           << ")" << endl;
+           << ")" << std::endl;
     }
 
     return xc;

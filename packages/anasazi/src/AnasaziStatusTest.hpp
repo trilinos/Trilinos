@@ -105,7 +105,7 @@ class StatusTest {
   //@{ 
   
   //! Output formatted description of stopping test to output stream.
-  virtual ostream& print(ostream& os, int indent = 0) const = 0;
+  virtual std::ostream& print(std::ostream& os, int indent = 0) const = 0;
  
   //@}
 

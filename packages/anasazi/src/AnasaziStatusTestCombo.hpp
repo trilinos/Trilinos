@@ -183,7 +183,7 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
   //@{ 
   
   //! Output formatted description of stopping test to output stream.
-  ostream& print(ostream& os, int indent = 0) const;
+  std::ostream& print(std::ostream& os, int indent = 0) const;
  
   //@}
   private:
@@ -250,18 +250,18 @@ void StatusTestCombo<ScalarType,MV,OP>::clearStatus() {
 }
 
 template <class ScalarType, class MV, class OP>
-ostream& StatusTestCombo<ScalarType,MV,OP>::print(ostream& os, int indent) const {
-  string ind(indent,' ');
+std::ostream& StatusTestCombo<ScalarType,MV,OP>::print(std::ostream& os, int indent) const {
+  std::string ind(indent,' ');
   os << ind << "- StatusTestCombo: ";
   switch (state_) {
   case Passed:
-    os << "Passed" << endl;
+    os << "Passed" << std::endl;
     break;
   case Failed:
-    os << "Failed" << endl;
+    os << "Failed" << std::endl;
     break;
   case Undefined:
-    os << "Undefined" << endl;
+    os << "Undefined" << std::endl;
     break;
   }
   // print children, with extra indention

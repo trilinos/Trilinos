@@ -173,7 +173,7 @@ class Eigensolver {
   //@{ 
 
   //! This method requests that the solver print out its current status to screen.
-  virtual void currentStatus(ostream &os) = 0;
+  virtual void currentStatus(std::ostream &os) = 0;
 
   //@}
   

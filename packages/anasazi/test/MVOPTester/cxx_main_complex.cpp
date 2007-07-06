@@ -55,6 +55,8 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[])
 {
+  using std::cout;
+  using std::endl;
   bool ierr, gerr;
   gerr = true;
 

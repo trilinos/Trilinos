@@ -196,7 +196,7 @@ namespace Anasazi {
 
     /*! \brief Print the matrix \c dm to the output stream \c os.
      */
-    static void DMPrint( const DM& dm, ostream& os )
+    static void DMPrint( const DM& dm, std::ostream& os )
     { UndefinedDenseMatTraits<ScalarType, DM>::notDefined(); }     
 
     //@}

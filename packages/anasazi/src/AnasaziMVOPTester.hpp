@@ -65,6 +65,8 @@ namespace Anasazi {
                 const Teuchos::RCP<OutputManager<ScalarType> > &om,
                 const Teuchos::RCP<const MV> &A ) {
 
+    using std::endl;
+
     /* MVT Contract:
 
          Clone(MV,int)
@@ -817,7 +819,7 @@ namespace Anasazi {
       const int p = 7;
       const int q = 9;
       Teuchos::RCP<MV> B, C;
-      vector<ScalarType> iprods(p+q);
+      std::vector<ScalarType> iprods(p+q);
       std::vector<MagType> normsB(numvecs), normsC(numvecs);
 
       B = MVT::Clone(*A,p);
@@ -1348,6 +1350,8 @@ namespace Anasazi {
                 const Teuchos::RCP<OutputManager<ScalarType> > &om,
                 const Teuchos::RCP<const MV> &A,
                 const Teuchos::RCP<const OP> &M) {
+
+    using std::endl;
 
     /* OPT Contract:
        Apply()

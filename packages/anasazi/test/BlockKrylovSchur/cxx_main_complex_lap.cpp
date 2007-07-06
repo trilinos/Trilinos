@@ -50,6 +50,8 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[]) 
 {
+  using std::cout;
+  using std::endl;
   int MyPID = 0;
   bool boolret;
 
@@ -98,6 +100,8 @@ int main(int argc, char *argv[])
   typedef Anasazi::Operator<ST>               OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
+  using std::cout;
+  using std::endl;
   ST ONE  = SCT::one();
 
   if (verbose && MyPID == 0) {
@@ -180,8 +184,8 @@ int main(int argc, char *argv[])
 
   if (numev > 0) {
 
-    ostringstream os;
-    os.setf(ios::scientific, ios::floatfield);
+    std::ostringstream os;
+    os.setf(std::ios::scientific, std::ios::floatfield);
     os.precision(6);
 
     // Compute the direct residual
@@ -204,7 +208,7 @@ int main(int argc, char *argv[])
       if ( SCT::magnitude(sol.Evals[i].realpart) != SCT::zero() ) {
         normV[i] = SCT::magnitude(normV[i]/sol.Evals[i].realpart);
       }
-      os << setw(20) << sol.Evals[i].realpart << setw(20) << normV[i] << endl;
+      os << std::setw(20) << sol.Evals[i].realpart << std::setw(20) << normV[i] << endl;
       if ( normV[i] > tol ) {
         testFailed = true;
       }

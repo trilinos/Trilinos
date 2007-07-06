@@ -194,7 +194,7 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
   //@{ 
   
   //! Output formatted description of stopping test to output stream.
-  ostream& print(ostream& os, int indent = 0) const;
+  std::ostream& print(std::ostream& os, int indent = 0) const;
  
   //@}
   private:
@@ -267,18 +267,18 @@ TestStatus StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<ScalarT
 
 
 template <class ScalarType, class MV, class OP>
-ostream& StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) const {
-  string ind(indent,' ');
+std::ostream& StatusTestResNorm<ScalarType,MV,OP>::print(std::ostream& os, int indent) const {
+  std::string ind(indent,' ');
   os << ind << "- StatusTestResNorm: ";
   switch (state_) {
   case Passed:
-    os << "Passed" << endl;
+    os << "Passed" << std::endl;
     break;
   case Failed:
-    os << "Failed" << endl;
+    os << "Failed" << std::endl;
     break;
   case Undefined:
-    os << "Undefined" << endl;
+    os << "Undefined" << std::endl;
     break;
   }
   os << ind << "  (Tolerance,WhichNorm,Scaled,Quorum): " 
@@ -296,16 +296,16 @@ ostream& StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) con
   }
   os        << "," << (scaled_   ? "true" : "false")
             << "," << quorum_ 
-            << ")" << endl;
+            << ")" << std::endl;
 
   if (state_ != Undefined) {
     os << ind << "  Which vectors: ";
     if (ind_.size() > 0) {
       for (unsigned int i=0; i<ind_.size(); i++) os << ind_[i] << " ";
-      os << endl;
+      os << std::endl;
     }
     else {
-      os << "[empty]" << endl;
+      os << "[empty]" << std::endl;
     }
   }
   return os;

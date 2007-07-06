@@ -478,9 +478,9 @@ namespace Anasazi {
           // Treat error messages
           //
           if (info < 0) {
-            cerr << endl;
-            cerr << "Anasazi::SolverUtils::directSolver(): In HEGV, argument " << -info << "has an illegal value.\n";
-            cerr << endl;
+            std::cerr << std::endl;
+            std::cerr << "Anasazi::SolverUtils::directSolver(): In HEGV, argument " << -info << "has an illegal value.\n";
+            std::cerr << std::endl;
             return -20;
           }
           if (info > 0) {
@@ -516,12 +516,12 @@ namespace Anasazi {
             }
           }
           /*        if (verbose > 4) {
-                    cout << " >> Local eigensolve >> Size: " << rank;
-                    cout.precision(2);
-                    cout.setf(ios::scientific, ios::floatfield);
-                    cout << " Normalization error: " << maxNorm;
-                    cout << " Orthogonality error: " << maxOrth;
-                    cout << endl;
+                    std::cout << " >> Local eigensolve >> Size: " << rank;
+                    std::cout.precision(2);
+                    std::cout.setf(std::ios::scientific, std::ios::floatfield);
+                    std::cout << " Normalization error: " << maxNorm;
+                    std::cout << " Orthogonality error: " << maxOrth;
+                    std::cout << endl;
                     }*/
           if ((maxNorm <= tol) && (maxOrth <= tol)) {
             break;
@@ -531,7 +531,7 @@ namespace Anasazi {
         // Copy the computed eigenvectors and eigenvalues
         // ( they may be less than the number requested because of deflation )
         //
-        // cout << "directSolve    rank: " << rank << "\tsize: " << size << endl;
+        // std::cout << "directSolve    rank: " << rank << "\tsize: " << size << endl;
         nev = (rank < nev) ? rank : nev;
         EV.putScalar( zero );
         std::copy(tt.begin(),tt.begin()+nev,theta.begin());
@@ -559,18 +559,18 @@ namespace Anasazi {
         // Treat error messages
         //
         if (info < 0) {
-          cerr << endl;
-          cerr << "Anasazi::SolverUtils::directSolver(): In HEGV, argument " << -info << "has an illegal value.\n";
-          cerr << endl;
+          std::cerr << std::endl;
+          std::cerr << "Anasazi::SolverUtils::directSolver(): In HEGV, argument " << -info << "has an illegal value.\n";
+          std::cerr << std::endl;
           return -20;
         }
         if (info > 0) {
           if (info > size)
             nev = 0;
           else {
-            cerr << endl;
-            cerr << "Anasazi::SolverUtils::directSolver(): In HEGV, DPOTRF or DHEEV returned an error code (" << info << ").\n";
-            cerr << endl;
+            std::cerr << std::endl;
+            std::cerr << "Anasazi::SolverUtils::directSolver(): In HEGV, DPOTRF or DHEEV returned an error code (" << info << ").\n";
+            std::cerr << std::endl;
             return -20; 
           }
         }
@@ -597,12 +597,12 @@ namespace Anasazi {
         //
         // Treat error messages
         if (info != 0) {
-          cerr << endl;
+          std::cerr << std::endl;
           if (info < 0) 
-            cerr << "Anasazi::SolverUtils::directSolver(): In DHEEV, argument " << -info << " has an illegal value\n";
+            std::cerr << "Anasazi::SolverUtils::directSolver(): In DHEEV, argument " << -info << " has an illegal value\n";
           else
-            cerr << "Anasazi::SolverUtils::directSolver(): In DHEEV, the algorithm failed to converge (" << info << ").\n";
-          cerr << endl;
+            std::cerr << "Anasazi::SolverUtils::directSolver(): In DHEEV, the algorithm failed to converge (" << info << ").\n";
+          std::cerr << std::endl;
           info = -20;
           break;
         }

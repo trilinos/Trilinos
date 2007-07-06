@@ -650,7 +650,10 @@ double ModeLaplace2DQ2::getFirstMassEigenValue() const {
 
 
 int ModeLaplace2DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda, 
-                                double *normWeight, bool smallest) const { 
+                                double *normWeight, bool smallest) const {
+  
+  using std::cout;
+  using std::ios;
 
   int info = 0;
   int qc = Q.NumVectors();
@@ -673,7 +676,7 @@ int ModeLaplace2DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
   int numY = (int) ceil(sqrt(Ly*Ly*lambda[qc-1]/M_PI/M_PI));
   numY = (numY > 2*nY) ? 2*nY : numY;
   int newSize = (numX-1)*(numY-1);
-  double *discrete = new (nothrow) double[2*newSize];
+  double *discrete = new (std::nothrow) double[2*newSize];
   if (discrete == 0) {
     return -1;
   }
@@ -710,7 +713,7 @@ int ModeLaplace2DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
   // Sort the eigenvalues in ascending order
   mySort.sortScalars(newSize, continuous);
 
-  int *used = new (nothrow) int[newSize];
+  int *used = new (std::nothrow) int[newSize];
   if (used == 0) {
     delete[] discrete;
     return -1;
@@ -718,7 +721,7 @@ int ModeLaplace2DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
 
   mySort.sortScalars(newSize, discrete, used);
 
-  int *index = new (nothrow) int[newSize];
+  int *index = new (std::nothrow) int[newSize];
   if (index == 0) {
     delete[] discrete;
     delete[] used;
@@ -734,7 +737,7 @@ int ModeLaplace2DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
 
   // Define the exact discrete eigenvectors
   int localSize = Map->NumMyElements();
-  double *vQ = new (nothrow) double[(nMax+1)*localSize + nMax];
+  double *vQ = new (std::nothrow) double[(nMax+1)*localSize + nMax];
   if (vQ == 0) {
     delete[] discrete;
     delete[] index;
@@ -848,6 +851,9 @@ int ModeLaplace2DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
 
 void ModeLaplace2DQ2::memoryInfo() const {
 
+  using std::cout;
+  using std::ios;
+
   int myPid = MyComm.MyPID();
 
   Epetra_RowMatrix *Mat = dynamic_cast<Epetra_RowMatrix *>(M);
@@ -879,11 +885,13 @@ void ModeLaplace2DQ2::memoryInfo() const {
     cout << memSize/1024.0/1024.0/MyComm.NumProc() << " MB " << endl;
     cout << endl;
   }
-
 }
 
 
-void ModeLaplace2DQ2::problemInfo() const { 
+void ModeLaplace2DQ2::problemInfo() const {
+
+  using std::cout;
+  using std::ios;
 
   int myPid = MyComm.MyPID();
 
@@ -906,5 +914,3 @@ void ModeLaplace2DQ2::problemInfo() const {
   }
 
 }
-
-

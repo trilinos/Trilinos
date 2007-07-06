@@ -100,7 +100,7 @@ void checks( RCP<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize, int nu
     TEST_FOR_EXCEPTION(solver->getRes2Norms().size() != (unsigned int)blocksize,get_out,"getRes2Norms.size() does not match block.");
     TEST_FOR_EXCEPTION(solver->getRitzRes2Norms().size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzRes2Norms.size() does not match getCurSubpsaceDim().");
     // check ritz values
-    vector<Value<ScalarType> > theta = solver->getRitzValues();
+    std::vector<Value<ScalarType> > theta = solver->getRitzValues();
     TEST_FOR_EXCEPTION(theta.size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzValues().size() does not match getCurSubspaceDim().");
     for (unsigned int i=0; i<theta.size(); i++) {
       TEST_FOR_EXCEPTION(theta[i].imagpart != MT::zero(),get_out,"getRitzValues() returned complex eigenvalues.");

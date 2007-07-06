@@ -49,7 +49,6 @@
 
 using namespace Teuchos;
 using namespace Anasazi;
-using namespace std;
 
 typedef double                    ST;
 typedef double                    MT;
@@ -58,14 +57,14 @@ typedef Operator<ST>              OP;
 typedef ScalarTraits<ST>         SCT;
 
 
-class get_out : public logic_error {
-  public: get_out(const string &whatarg) : logic_error(whatarg) {}
+class get_out : public std::logic_error {
+  public: get_out(const std::string &whatarg) : std::logic_error(whatarg) {}
 };
 
 template <class MT>
 class MySWO {
   public:
-  MySWO(string which) : which_(which) {}
+  MySWO(std::string which) : which_(which) {}
   bool operator()(MT p1, MT p2) {
     if ( !which_.compare("SM") ) {
       return SCT::magnitude(p1) < SCT::magnitude(p2);
@@ -83,14 +82,14 @@ class MySWO {
     return false;
   }
   private: 
-  string which_;
+  std::string which_;
 };
 
 template <class MT>
 class MyPairSWO {
   public:
-  MyPairSWO(string which) : which_(which) {}
-  bool operator()(pair<MT,MT> p1, pair<MT,MT> p2) {
+  MyPairSWO(std::string which) : which_(which) {}
+  bool operator()(std::pair<MT,MT> p1, std::pair<MT,MT> p2) {
     LAPACK<int,MT> lapack;
     if ( !which_.compare("SM") ) {
       return lapack.LAPY2(p1.first,p1.second) < lapack.LAPY2(p2.first,p2.second);
@@ -114,7 +113,7 @@ class MyPairSWO {
     return false;
   }
   private: 
-  string which_;
+  std::string which_;
 };
 
 namespace std {
@@ -124,8 +123,8 @@ namespace std {
   }
 }
 
-bool checkPermValid(int howmany, const vector<int> &perm) {
-  vector<bool> hit(howmany,false);
+bool checkPermValid(int howmany, const std::vector<int> &perm) {
+  std::vector<bool> hit(howmany,false);
   for (int i=0; i<howmany; i++) {
     if (perm[i] < 0 || perm[i] >= howmany) return false;
     hit[perm[i]] = true;
@@ -137,7 +136,7 @@ bool checkPermValid(int howmany, const vector<int> &perm) {
 }
 
 template <class MT>
-bool checkPermMatch(int howmany, const vector<int> &perm, const vector<MT> &vref, const vector<MT> &vind) {
+bool checkPermMatch(int howmany, const std::vector<int> &perm, const std::vector<MT> &vref, const std::vector<MT> &vind) {
   for (int i=0; i<howmany; i++) {
     if ( vref[perm[i]] != vind[i] ) return false;
   }
@@ -145,7 +144,7 @@ bool checkPermMatch(int howmany, const vector<int> &perm, const vector<MT> &vref
 }
 
 template <class MT>
-bool checkValsMatch(const vector<MT> &vals1, const vector<MT> &vals2) {
+bool checkValsMatch(const std::vector<MT> &vals1, const std::vector<MT> &vals2) {
   for (unsigned int i=0; i<vals1.size(); i++) {
     if ( vals1[i] != vals2[i] ) return false;
   }
@@ -154,6 +153,15 @@ bool checkValsMatch(const vector<MT> &vals1, const vector<MT> &vals2) {
 
 int main(int argc, char *argv[])
 {
+
+  using std::endl;
+  using std::string;
+  using std::pair;
+  using std::vector;
+  using std::copy;
+  using std::sort;
+  using std::ostream_iterator;
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
@@ -214,7 +222,7 @@ int main(int argc, char *argv[])
         BasicSort<ST,MV,OP> sorter("??");
         caught_expected_exception = false;
       }
-      catch (invalid_argument ia) {
+      catch (std::invalid_argument ia) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort accepted invalid sort string without throwing exception.");
@@ -266,7 +274,7 @@ int main(int argc, char *argv[])
         sorter.sort(NULL,6,vals);
         caught_expected_exception = false;
       }
-      catch (invalid_argument ia) {
+      catch (std::invalid_argument ia) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted too small value vector without throwing exception.");
@@ -284,7 +292,7 @@ int main(int argc, char *argv[])
         sorter.sort(NULL,5,vals,&perm);
         caught_expected_exception = false;
       }
-      catch (invalid_argument ia) {
+      catch (std::invalid_argument ia) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(real) accepted too small perm vector without throwing exception.");
@@ -301,7 +309,7 @@ int main(int argc, char *argv[])
         sorter.sort(NULL,6,rvals,ivals);
         caught_expected_exception = false;
       }
-      catch (invalid_argument ia) {
+      catch (std::invalid_argument ia) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small rvalue vector without throwing exception.");
@@ -318,7 +326,7 @@ int main(int argc, char *argv[])
         sorter.sort(NULL,6,rvals,ivals);
         caught_expected_exception = false;
       }
-      catch (invalid_argument ia) {
+      catch (std::invalid_argument ia) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small ivalue vector without throwing exception.");
@@ -336,7 +344,7 @@ int main(int argc, char *argv[])
         sorter.sort(NULL,6,rvals,ivals,&perm);
         caught_expected_exception = false;
       }
-      catch (invalid_argument ia) {
+      catch (std::invalid_argument ia) {
         caught_expected_exception = true;
       }
       TEST_FOR_EXCEPTION(caught_expected_exception == false,get_out,"BasicSort::sort(complex) accepted too small perm vector without throwing exception.");

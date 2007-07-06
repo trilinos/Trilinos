@@ -115,7 +115,7 @@ void checks( RCP<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool fullorth
       Mevecs = MVT::Clone(*evecs,blocksize);
       OPT::Apply(*problem->getM(),*evecs,*Mevecs);
     }
-    vector<Value<ScalarType> > theta = solver->getRitzValues();
+    std::vector<Value<ScalarType> > theta = solver->getRitzValues();
     TEST_FOR_EXCEPTION(theta.size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzValues() has incorrect size.");
     SerialDenseMatrix<int,ScalarType> T(blocksize,blocksize);
     for (int i=0; i<blocksize; i++) T(i,i) = theta[i].realpart;

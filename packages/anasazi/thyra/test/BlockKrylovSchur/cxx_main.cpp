@@ -63,6 +63,8 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[]) 
 {
+  using std::cout;
+  using std::endl;
   bool boolret;
   int MyPID;
 
@@ -243,8 +245,8 @@ int main(int argc, char *argv[])
 
   if (numev > 0) {
 
-    ostringstream os;
-    os.setf(ios::scientific, ios::floatfield);
+    std::ostringstream os;
+    os.setf(std::ios::scientific, std::ios::floatfield);
     os.precision(6);
 
     // Compute the direct residual
@@ -272,7 +274,7 @@ int main(int argc, char *argv[])
       else {
         resnorm[i] = SCT::magnitude( SCT::squareroot( resnorm[i] ) );
       }
-      os << setw(20) << evals[i].realpart << setw(20) << resnorm[i] << endl;
+      os << std::setw(20) << evals[i].realpart << std::setw(20) << resnorm[i] << endl;
       if ( resnorm[i] > tol ) {
         testFailed = true;
       }

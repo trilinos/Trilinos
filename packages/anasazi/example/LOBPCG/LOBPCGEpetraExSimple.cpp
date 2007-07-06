@@ -313,8 +313,8 @@ int main(int argc, char *argv[]) {
 
   // Print the results
   //
-  ostringstream os;
-  os.setf(ios_base::right, ios_base::adjustfield);
+  std::ostringstream os;
+  os.setf(std::ios_base::right, std::ios_base::adjustfield);
   os<<"Solver manager returned " << (returnCode == Converged ? "converged." : "unconverged.") << endl;
   os<<endl;
   os<<"------------------------------------------------------"<<endl;

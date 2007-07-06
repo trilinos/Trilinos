@@ -56,10 +56,9 @@
 
 using namespace Teuchos;
 using namespace Anasazi;
-using namespace std;
 
-class get_out : public logic_error {
-  public: get_out(const string &whatarg) : logic_error(whatarg) {}
+class get_out : public std::logic_error {
+  public: get_out(const string &whatarg) : std::logic_error(whatarg) {}
 };
 
 int main(int argc, char *argv[])
@@ -122,7 +121,7 @@ int main(int argc, char *argv[])
   RCP< MatOrthoManager<ST,MV,OP> > ortho = 
     rcp( new SVQBOrthoManager<ST,MV,OP>() );
 
-  printer->stream(Warnings) << Anasazi_Version() << endl << endl;
+  printer->stream(Warnings) << Anasazi_Version() << std::endl << std::endl;
 
   //
   // Create an identity matrix
@@ -508,7 +507,7 @@ int main(int argc, char *argv[])
 
   } // end of try
   catch (get_out go) {
-    printer->stream(Warnings) << go.what() << endl;
+    printer->stream(Warnings) << go.what() << std::endl;
     testFailed = true;
   }
 

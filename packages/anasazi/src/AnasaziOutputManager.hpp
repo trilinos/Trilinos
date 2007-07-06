@@ -83,10 +83,10 @@ class OutputManager {
   virtual bool isVerbosity( MsgType type ) const = 0;
 
   //! Send output to the output manager.
-  virtual void print( MsgType type, const string output ) = 0;
+  virtual void print( MsgType type, const std::string output ) = 0;
 
   //! Create a stream for outputting to.
-  virtual ostream &stream( MsgType type ) = 0;
+  virtual std::ostream &stream( MsgType type ) = 0;
 
   //@}
 

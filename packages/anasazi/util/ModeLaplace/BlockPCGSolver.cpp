@@ -67,33 +67,25 @@ BlockPCGSolver::BlockPCGSolver(const Epetra_Comm &_Comm, const Epetra_Operator *
                  maxIter(0),
                  sumIter(0),
                  minIter(10000)
-               {
-
-}
+               {}
 
 
 BlockPCGSolver::~BlockPCGSolver() {
-
   if (workSpace) {
     delete[] workSpace;
     workSpace = 0;
     lWorkSpace = 0;
   }
-
 }
 
 
 void BlockPCGSolver::setPreconditioner(Epetra_Operator *PP) {
-
   Prec = PP;
-
 }
 
 
 int BlockPCGSolver::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-
   return K->Apply(X, Y);
-
 }
 
 
@@ -109,7 +101,6 @@ int BlockPCGSolver::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector
   info = (xcol == 1) ? Solve(X, Y) : Solve(X, Y, xcol);
 
   return info;
-
 }
 
 
@@ -241,7 +232,6 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y) co
   sumIter += iter;
 
   return info;
-
 }
 
 
@@ -499,7 +489,6 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
   } // for (iRHS = 0; iRHS < xcol; iRHS += blkSize)
 
   return info;
-
 }
 
 

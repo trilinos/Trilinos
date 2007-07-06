@@ -582,6 +582,10 @@ namespace Anasazi {
                 MV &X, Teuchos::RCP<MV> MX, 
                 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
                 bool completeBasis, int howMany ) const {
+
+    using std::cout;
+    using std::endl;
+
     // For the inner product defined by the operator Op or the identity (Op == 0)
     //   -> Orthonormalize X 
     // Modify MX accordingly

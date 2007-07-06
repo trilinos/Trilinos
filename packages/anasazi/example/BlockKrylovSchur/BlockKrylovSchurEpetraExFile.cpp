@@ -52,6 +52,8 @@
 #include "Epetra_Map.h"
 
 int main(int argc, char *argv[]) {
+  using std::cout;
+
   //
   bool haveM = false;
 
@@ -287,7 +289,7 @@ int main(int argc, char *argv[]) {
     
     // Output computed eigenvalues and their direct residuals
     if (verbose && MyPID==0) {
-      cout.setf(ios_base::right, ios_base::adjustfield);	
+      cout.setf(std::ios_base::right, std::ios_base::adjustfield);	
       cout<<endl<< "Actual Residuals"<<endl;
       if (MyProblem->isHermitian()) {
 	cout<< std::setw(16) << "Real Part"

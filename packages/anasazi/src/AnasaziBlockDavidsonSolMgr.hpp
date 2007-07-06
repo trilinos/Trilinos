@@ -153,7 +153,7 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
   private:
   Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > problem_;
 
-  string whch_; 
+  std::string whch_; 
 
   MagnitudeType convtol_, locktol_;
   int maxRestarts_;
@@ -459,7 +459,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         }
         numRestarts++;
 
-        printer->stream(IterationDetails) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << endl << endl;
+        printer->stream(IterationDetails) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << std::endl << std::endl;
 
         BlockDavidsonState<ScalarType,MV> state = bd_solver->getState();
         int curdim = state.curDim;
@@ -546,7 +546,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
                 R(i,j) = ZERO;
               }
             }
-            printer->stream(Debug) << "||Triangular factor of Sr - I||: " << R.normFrobenius() << endl;
+            printer->stream(Debug) << "||Triangular factor of Sr - I||: " << R.normFrobenius() << std::endl;
           }
           // 
           // perform implicit oldV*Sr
@@ -698,7 +698,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
                 R(i,j) = ZERO;
               }
             }
-            printer->stream(Debug) << "||Triangular factor of Su - I||: " << R.normFrobenius() << endl;
+            printer->stream(Debug) << "||Triangular factor of Su - I||: " << R.normFrobenius() << std::endl;
           }
           // 
           // perform implicit oldV*Su
@@ -885,8 +885,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       }
     }
     catch (std::exception e) {
-      printer->stream(Errors) << "Error! Caught exception in BlockDavidson::iterate() at iteration " << bd_solver->getNumIters() << endl 
-                              << e.what() << endl;
+      printer->stream(Errors) << "Error! Caught exception in BlockDavidson::iterate() at iteration " << bd_solver->getNumIters() << std::endl 
+                              << e.what() << std::endl;
       throw;
     }
   }
@@ -974,7 +974,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
 
   problem_->setSolution(sol);
-  printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << endl;
+  printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;
 
   if (sol.numVecs < nev) {
     return Unconverged; // return from BlockDavidsonSolMgr::solve() 

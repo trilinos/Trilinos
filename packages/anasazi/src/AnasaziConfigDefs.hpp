@@ -151,8 +151,6 @@
 #include <math.h>
 #endif /* JANUS_STLPORT */
 
-using namespace std;
-
 #else /*HAVE_CONFIG_H is not defined*/
 
 #include <iterator>
@@ -181,8 +179,6 @@ using namespace std;
 #include <algorithm>
 #include <numeric>
 
-using namespace std;
-
 #endif /*HAVE_CONFIG_H*/
 
 /* Define some macros */
@@ -194,7 +190,7 @@ using namespace std;
  * Anasazi_Version() method 
  */
 namespace Anasazi {
-  string Anasazi_Version();
+  std::string Anasazi_Version();
 }
 
 #endif /*ANASAZI_CONFIGDEFS_HPP*/

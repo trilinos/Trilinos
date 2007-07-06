@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
   // Create an Anasazi output manager
   //
   Anasazi::BasicOutputManager<double> printer;
-  printer.stream(Anasazi::Errors) << Anasazi::Anasazi_Version() << endl << endl;
+  printer.stream(Anasazi::Errors) << Anasazi::Anasazi_Version() << std::endl << std::endl;
 
   // Get the sorting string from the command line
   //
@@ -162,21 +162,21 @@ int main(int argc, char *argv[]) {
 
   // Print the results
   //
-  ostringstream os;
-  os.setf(ios_base::right, ios_base::adjustfield);
-  os<<"Solver manager returned " << (returnCode == Anasazi::Converged ? "converged." : "unconverged.") << endl;
-  os<<endl;
-  os<<"------------------------------------------------------"<<endl;
+  std::ostringstream os;
+  os.setf(std::ios_base::right, std::ios_base::adjustfield);
+  os<<"Solver manager returned " << (returnCode == Anasazi::Converged ? "converged." : "unconverged.") << std::endl;
+  os<<std::endl;
+  os<<"------------------------------------------------------"<<std::endl;
   os<<std::setw(16)<<"Eigenvalue"
     <<std::setw(18)<<"Direct Residual"
-    <<endl;
-  os<<"------------------------------------------------------"<<endl;
+    <<std::endl;
+  os<<"------------------------------------------------------"<<std::endl;
   for (int i=0; i<sol.numVecs; i++) {
     os<<std::setw(16)<<evals[i].realpart
       <<std::setw(18)<<normR[i]/evals[i].realpart
-      <<endl;
+      <<std::endl;
   }
-  os<<"------------------------------------------------------"<<endl;
+  os<<"------------------------------------------------------"<<std::endl;
   printer.print(Anasazi::Errors,os.str());
 
 #ifdef HAVE_MPI

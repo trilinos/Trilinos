@@ -223,8 +223,8 @@ int main(int argc, char *argv[])
 
   if (numev > 0) {
 
-    ostringstream os;
-    os.setf(ios::scientific, ios::floatfield);
+    std::ostringstream os;
+    os.setf(std::ios::scientific, std::ios::floatfield);
     os.precision(6);
 
     // Check the problem against the analytical solutions
@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
       else {
         normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) );
       }
-      os << setw(20) << evals[i].realpart << setw(20) << normV[i] << endl;
+      os << std::setw(20) << evals[i].realpart << std::setw(20) << normV[i] << endl;
       if ( normV[i] > tol ) {
         testFailed = true;
       }

@@ -167,7 +167,7 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   private:
   Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > problem_;
 
-  string whch_; 
+  std::string whch_; 
 
   MagnitudeType convtol_, locktol_;
   int maxIters_;
@@ -548,12 +548,12 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         // if we are already using full orthogonalization, there isn't much we can do here. 
         // the most recent information in the status tests is still valid, and can be used to extract/return the 
         // eigenpairs that have converged.
-        printer->stream(Warnings) << "Error! Caught LOBPCGRitzFailure at iteration " << lobpcg_solver->getNumIters() << endl
-                                << "Will not try to recover." << endl;
+        printer->stream(Warnings) << "Error! Caught LOBPCGRitzFailure at iteration " << lobpcg_solver->getNumIters() << std::endl
+                                << "Will not try to recover." << std::endl;
         break; // while(1)
       }
-      printer->stream(Warnings) << "Error! Caught LOBPCGRitzFailure at iteration " << lobpcg_solver->getNumIters() << endl
-                              << "Full orthogonalization is off; will try to recover." << endl;
+      printer->stream(Warnings) << "Error! Caught LOBPCGRitzFailure at iteration " << lobpcg_solver->getNumIters() << std::endl
+                              << "Full orthogonalization is off; will try to recover." << std::endl;
       // get the current "basis" from the solver, orthonormalize it, do a rayleigh-ritz, and restart with the ritz vectors
       // if there aren't enough, break and quit with what we have
       //
@@ -633,7 +633,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       if (rank < blockSize_) {
         // quit
         printer->stream(Errors) << "Error! Recovered basis only rank " << rank << ". Block size is " << blockSize_ << ".\n"
-                                << "Recovery failed." << endl;
+                                << "Recovery failed." << std::endl;
         break;
       }
       // reduce multivec size if necessary
@@ -668,7 +668,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       if (rank < blockSize_) {
         printer->stream(Errors) << "Error! Recovered basis of rank " << rank << " produced only " << rank << "ritz vectors.\n"
                                 << "Block size is " << blockSize_ << ".\n"
-                                << "Recovery failed." << endl;
+                                << "Recovery failed." << std::endl;
         break;
       }
       theta.resize(rank);
@@ -785,7 +785,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
 
   problem_->setSolution(sol);
-  printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << endl;
+  printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;
 
   if (sol.numVecs < nev) return Unconverged; // return from LOBPCGSolMgr::solve() 
   return Converged; // return from LOBPCGSolMgr::solve() 

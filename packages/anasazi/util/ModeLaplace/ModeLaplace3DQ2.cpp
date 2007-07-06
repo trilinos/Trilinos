@@ -1007,7 +1007,10 @@ double ModeLaplace3DQ2::getFirstMassEigenValue() const {
 
 
 int ModeLaplace3DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda, 
-                                double *normWeight, bool smallest) const { 
+                                double *normWeight, bool smallest) const {
+
+  using std::cout;
+  using std::ios;
 
   int info = 0;
   int qc = Q.NumVectors();
@@ -1032,7 +1035,7 @@ int ModeLaplace3DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
   int numZ = (int) ceil(sqrt(Lz*Lz*lambda[qc-1]/M_PI/M_PI));
   numZ = (numZ > 2*nZ) ? 2*nZ : numZ;
   int newSize = (numX-1)*(numY-1)*(numZ-1);
-  double *discrete = new (nothrow) double[2*newSize];
+  double *discrete = new (std::nothrow) double[2*newSize];
   if (discrete == 0) {
     return -1;
   }
@@ -1081,7 +1084,7 @@ int ModeLaplace3DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
   // Sort the eigenvalues in ascending order
   mySort.sortScalars(newSize, continuous);
 
-  int *used = new (nothrow) int[newSize];
+  int *used = new (std::nothrow) int[newSize];
   if (used == 0) {
     delete[] discrete;
     return -1;
@@ -1089,7 +1092,7 @@ int ModeLaplace3DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
 
   mySort.sortScalars(newSize, discrete, used);
 
-  int *index = new (nothrow) int[newSize];
+  int *index = new (std::nothrow) int[newSize];
   if (index == 0) {
     delete[] discrete;
     delete[] used;
@@ -1105,7 +1108,7 @@ int ModeLaplace3DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
 
   // Define the exact discrete eigenvectors
   int localSize = Map->NumMyElements();
-  double *vQ = new (nothrow) double[(nMax+1)*localSize + nMax];
+  double *vQ = new (std::nothrow) double[(nMax+1)*localSize + nMax];
   if (vQ == 0) {
     delete[] discrete;
     delete[] index;
@@ -1235,11 +1238,13 @@ int ModeLaplace3DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
   delete[] vQ;
 
   return info;
-
 }
 
 
 void ModeLaplace3DQ2::memoryInfo() const {
+
+  using std::cout;
+  using std::ios;
 
   int myPid = MyComm.MyPID();
 
@@ -1276,7 +1281,10 @@ void ModeLaplace3DQ2::memoryInfo() const {
 }
 
 
-void ModeLaplace3DQ2::problemInfo() const { 
+void ModeLaplace3DQ2::problemInfo() const {
+
+  using std::cout;
+  using std::ios;
 
   int myPid = MyComm.MyPID();
 
@@ -1301,5 +1309,3 @@ void ModeLaplace3DQ2::problemInfo() const {
   }
 
 }
-
-

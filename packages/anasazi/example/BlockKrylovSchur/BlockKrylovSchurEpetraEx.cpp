@@ -51,6 +51,8 @@
 
 int main(int argc, char *argv[]) {
 
+  using std::cout;
+
 #ifdef EPETRA_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
@@ -332,7 +334,7 @@ int main(int argc, char *argv[]) {
   // Output computed eigenvalues and their direct residuals
   if (verbose && MyPID==0) {
     int numritz = (int)ritzValues.size();
-    cout.setf(ios_base::right, ios_base::adjustfield);	
+    cout.setf(std::ios_base::right, std::ios_base::adjustfield);	
     cout<<endl<< "Computed Ritz Values"<< endl;
     if (MyProblem->isHermitian()) {
       cout<< std::setw(16) << "Real Part"
@@ -458,7 +460,7 @@ int main(int argc, char *argv[]) {
 
     // Output computed eigenvalues and their direct residuals
     if (verbose && MyPID==0) {
-      cout.setf(ios_base::right, ios_base::adjustfield);	
+      cout.setf(std::ios_base::right, std::ios_base::adjustfield);	
       cout<<endl<< "Actual Residuals"<<endl;
       if (MyProblem->isHermitian()) {
 	cout<< std::setw(16) << "Real Part"

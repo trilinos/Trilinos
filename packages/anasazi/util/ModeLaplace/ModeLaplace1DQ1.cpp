@@ -350,7 +350,10 @@ double ModeLaplace1DQ1::getFirstMassEigenValue() const {
 
 
 int ModeLaplace1DQ1::eigenCheck(const Epetra_MultiVector &Q, double *lambda, 
-                                double *normWeight, bool smallest) const { 
+                                double *normWeight, bool smallest) const {
+
+  using std::cout;
+  using std::ios;
 
   int info = 0;
   int qc = Q.NumVectors();
@@ -371,7 +374,7 @@ int ModeLaplace1DQ1::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
   int numX = (int) ceil(sqrt(Lx*Lx*lambda[qc-1]/M_PI/M_PI));
   numX = (numX > nX) ? nX : numX;
   int newSize = (numX-1);
-  double *discrete = new (nothrow) double[2*newSize];
+  double *discrete = new (std::nothrow) double[2*newSize];
   if (discrete == 0) {
     return -1;
   }
@@ -388,7 +391,7 @@ int ModeLaplace1DQ1::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
   // Sort the eigenvalues in ascending order
   mySort.sortScalars(newSize, continuous);
 
-  int *used = new (nothrow) int[newSize];
+  int *used = new (std::nothrow) int[newSize];
   if (used == 0) {
     delete[] discrete;
     return -1;
@@ -396,7 +399,7 @@ int ModeLaplace1DQ1::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
 
   mySort.sortScalars(newSize, discrete, used);
 
-  int *index = new (nothrow) int[newSize];
+  int *index = new (std::nothrow) int[newSize];
   if (index == 0) {
     delete[] discrete;
     delete[] used;
@@ -409,7 +412,7 @@ int ModeLaplace1DQ1::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
   delete[] used;
 
   // sort the eigenvalues/vectors in ascending order
-  double *lambdasorted = new (nothrow) double[qc];
+  double *lambdasorted = new (std::nothrow) double[qc];
   if (lambdasorted == 0) {
     delete[] discrete;
     return -1;
@@ -426,7 +429,7 @@ int ModeLaplace1DQ1::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
 
   // Define the exact discrete eigenvectors
   int localSize = Map->NumMyElements();
-  double *vQ = new (nothrow) double[(nMax+2)*localSize];
+  double *vQ = new (std::nothrow) double[(nMax+2)*localSize];
   if (vQ == 0) {
     delete[] discrete;
     delete[] index;
@@ -545,6 +548,9 @@ int ModeLaplace1DQ1::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
 
 void ModeLaplace1DQ1::memoryInfo() const {
 
+  using std::cout;
+  using std::ios;
+
   int myPid = MyComm.MyPID();
 
   Epetra_RowMatrix *Mat = dynamic_cast<Epetra_RowMatrix *>(M);
@@ -580,7 +586,10 @@ void ModeLaplace1DQ1::memoryInfo() const {
 }
 
 
-void ModeLaplace1DQ1::problemInfo() const { 
+void ModeLaplace1DQ1::problemInfo() const {
+
+  using std::cout;
+  using std::ios;
 
   int myPid = MyComm.MyPID();
 
@@ -601,5 +610,3 @@ void ModeLaplace1DQ1::problemInfo() const {
   }
 
 }
-
-

@@ -54,8 +54,6 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #endif
 
-using namespace std;
-
 int main(int argc, char *argv[])
 {
   int i;

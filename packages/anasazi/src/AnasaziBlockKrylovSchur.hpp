@@ -388,7 +388,7 @@ namespace Anasazi {
     //@{ 
     
     //! This method requests that the solver print out its current status to screen.
-    void currentStatus(ostream &os);
+    void currentStatus(std::ostream &os);
 
     //@}
 
@@ -447,7 +447,7 @@ namespace Anasazi {
     //
     // Internal methods
     //
-    string accuracyCheck(const CheckList &chk, const string &where) const;
+    std::string accuracyCheck(const CheckList &chk, const std::string &where) const;
     void sortSchurForm( Teuchos::SerialDenseMatrix<int,ScalarType>& H,
                         Teuchos::SerialDenseMatrix<int,ScalarType>& Q,
                         std::vector<int>& order );
@@ -960,9 +960,9 @@ namespace Anasazi {
       TEST_FOR_EXCEPTION(newstate.H->numRows() < curDim_ || newstate.H->numCols() < curDim_, std::invalid_argument, errstr);
       
       if (curDim_ == 0 && lclDim > blockSize_) {
-        om_->stream(Warnings) << "Anasazi::BlockKrylovSchur::initialize(): the solver was initialized with a kernel of " << lclDim << endl
-                                  << "The block size however is only " << blockSize_ << endl
-                                  << "The last " << lclDim - blockSize_ << " vectors of the kernel will be overwritten on the first call to iterate()." << endl;
+        om_->stream(Warnings) << "Anasazi::BlockKrylovSchur::initialize(): the solver was initialized with a kernel of " << lclDim << std::endl
+                                  << "The block size however is only " << blockSize_ << std::endl
+                                  << "The last " << lclDim - blockSize_ << " vectors of the kernel will be overwritten on the first call to iterate()." << std::endl;
       }
 
 
@@ -1234,14 +1234,14 @@ namespace Anasazi {
   // NOTE:  This method needs to check the current dimension of the subspace, since it is possible to
   //        call this method when curDim_ = 0 (after initialization).
   template <class ScalarType, class MV, class OP>
-  std::string BlockKrylovSchur<ScalarType,MV,OP>::accuracyCheck( const CheckList &chk, const string &where ) const 
+  std::string BlockKrylovSchur<ScalarType,MV,OP>::accuracyCheck( const CheckList &chk, const std::string &where ) const 
   {
-    stringstream os;
+    std::stringstream os;
     os.precision(2);
-    os.setf(ios::scientific, ios::floatfield);
+    os.setf(std::ios::scientific, std::ios::floatfield);
     MagnitudeType tmp;
 
-    os << " Debugging checks: iteration " << iter_ << where << endl;
+    os << " Debugging checks: iteration " << iter_ << where << std::endl;
 
     // index vectors for V and F
     std::vector<int> lclind(curDim_);
@@ -1257,21 +1257,21 @@ namespace Anasazi {
     if (chk.checkV) {
       if (curDim_) {
         tmp = orthman_->orthonormError(*lclV);
-        os << " >> Error in V^H M V == I  : " << tmp << endl;
+        os << " >> Error in V^H M V == I  : " << tmp << std::endl;
       }
       tmp = orthman_->orthonormError(*lclF);
-      os << " >> Error in F^H M F == I  : " << tmp << endl;
+      os << " >> Error in F^H M F == I  : " << tmp << std::endl;
       if (curDim_) {
         tmp = orthman_->orthogError(*lclV,*lclF);
-        os << " >> Error in V^H M F == 0  : " << tmp << endl;
+        os << " >> Error in V^H M F == 0  : " << tmp << std::endl;
       }
       for (unsigned int i=0; i<auxVecs_.size(); i++) {
         if (curDim_) {
           tmp = orthman_->orthogError(*lclV,*auxVecs_[i]);
-          os << " >> Error in V^H M Aux[" << i << "] == 0 : " << tmp << endl;
+          os << " >> Error in V^H M Aux[" << i << "] == 0 : " << tmp << std::endl;
         }
         tmp = orthman_->orthogError(*lclF,*auxVecs_[i]);
-        os << " >> Error in F^H M Aux[" << i << "] == 0 : " << tmp << endl;
+        os << " >> Error in F^H M Aux[" << i << "] == 0 : " << tmp << std::endl;
       }
     }
     
@@ -1299,7 +1299,7 @@ namespace Anasazi {
         orthman_->norm( *lclAV, &arnNorms );
         
         for (int i=0; i<curDim_; i++) {        
-        os << " >> Error in Krylov-Schur factorization (R = AV-VS-FB^H), ||R[" << i << "]|| : " << arnNorms[i] << endl;
+        os << " >> Error in Krylov-Schur factorization (R = AV-VS-FB^H), ||R[" << i << "]|| : " << arnNorms[i] << std::endl;
         }
       }
     }
@@ -1307,15 +1307,15 @@ namespace Anasazi {
     if (chk.checkAux) {
       for (unsigned int i=0; i<auxVecs_.size(); i++) {
         tmp = orthman_->orthonormError(*auxVecs_[i]);
-        os << " >> Error in Aux[" << i << "]^H M Aux[" << i << "] == I : " << tmp << endl;
+        os << " >> Error in Aux[" << i << "]^H M Aux[" << i << "] == I : " << tmp << std::endl;
         for (unsigned int j=i+1; j<auxVecs_.size(); j++) {
           tmp = orthman_->orthogError(*auxVecs_[i],*auxVecs_[j]);
-          os << " >> Error in Aux[" << i << "]^H M Aux[" << j << "] == 0 : " << tmp << endl;
+          os << " >> Error in Aux[" << i << "]^H M Aux[" << j << "] == 0 : " << tmp << std::endl;
         }
       }
     }
 
-    os << endl;
+    os << std::endl;
 
     return os.str();
   }
@@ -1766,9 +1766,11 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Print the current status of the solver
   template <class ScalarType, class MV, class OP>
-  void BlockKrylovSchur<ScalarType,MV,OP>::currentStatus(ostream &os) 
+  void BlockKrylovSchur<ScalarType,MV,OP>::currentStatus(std::ostream &os) 
   {
-    os.setf(ios::scientific, ios::floatfield);
+    using std::endl;
+
+    os.setf(std::ios::scientific, std::ios::floatfield);
     os.precision(6);
     os <<"================================================================================" << endl;
     os << endl;
@@ -1782,7 +1784,7 @@ namespace Anasazi {
     os <<"The number of auxiliary vectors is    " << numAuxVecs_ << endl;
     os <<"The number of operations Op*x   is "<<count_ApplyOp_<<endl;
 
-    os.setf(ios_base::right, ios_base::adjustfield);
+    os.setf(std::ios_base::right, std::ios_base::adjustfield);
 
     os << endl;
     if (initialized_) {

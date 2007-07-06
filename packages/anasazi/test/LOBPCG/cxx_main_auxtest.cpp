@@ -53,12 +53,11 @@
 
 #include "ModeLaplace1DQ1.h"
 
-using namespace std;
 using namespace Teuchos;
 
 
-class get_out : public logic_error {
-  public: get_out(const string &whatarg) : logic_error(whatarg) {}
+class get_out : public std::logic_error {
+  public: get_out(const string &whatarg) : std::logic_error(whatarg) {}
 };
 
 
@@ -109,9 +108,9 @@ int main(int argc, char *argv[])
 
   //  Problem information
   int space_dim = 1;
-  vector<double> brick_dim( space_dim );
+  std::vector<double> brick_dim( space_dim );
   brick_dim[0] = 1.0;
-  vector<int> elements( space_dim );
+  std::vector<int> elements( space_dim );
   elements[0] = 100;
 
   // Create problem
@@ -204,7 +203,7 @@ int main(int argc, char *argv[])
       returnCode = solverman21.solve();
       TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "Second/1 problem was not fully solved.");
       sol21 = problem->getSolution();
-      vector<int> bsind1(FIRST_BS);
+      std::vector<int> bsind1(FIRST_BS);
       for (int i=0; i<FIRST_BS; i++) bsind1[i] = i;
       MVT::SetBlock(*sol21.Evecs,bsind1,*ev2);
       cpoint = MVT::CloneView(*ev2,bsind1);
@@ -234,10 +233,10 @@ int main(int argc, char *argv[])
       returnCode = solverman22.solve();
       TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "Second/2 problem was not fully solved." );
       sol22 = problem->getSolution();
-      vector<int> bsind2(SECOND_BS);
+      std::vector<int> bsind2(SECOND_BS);
       for (int i=0; i<SECOND_BS; i++) bsind2[i] = FIRST_BS+i;
       MVT::SetBlock(*sol22.Evecs,bsind2,*ev2);
-      vector<int> bsind12(FIRST_BS+SECOND_BS);
+      std::vector<int> bsind12(FIRST_BS+SECOND_BS);
       for (int i=0; i<FIRST_BS+SECOND_BS; i++) bsind12[i] = i;
       cpoint = MVT::CloneView(*ev2,bsind12);
     }
@@ -266,7 +265,7 @@ int main(int argc, char *argv[])
       returnCode = solverman23.solve();
       TEST_FOR_EXCEPTION(returnCode != Anasazi::Converged, get_out, "Second/3 problem was not fully solved." );
       sol23 = problem->getSolution();
-      vector<int> bsind3(THIRD_BS);
+      std::vector<int> bsind3(THIRD_BS);
       for (int i=0; i<THIRD_BS; i++) bsind3[i] = FIRST_BS+SECOND_BS+i;
       MVT::SetBlock(*sol23.Evecs,bsind3,*ev2);
       cpoint = Teuchos::null;
@@ -280,7 +279,7 @@ int main(int argc, char *argv[])
   }
 
   if (testFailed == false) {
-    cout.setf(ios::scientific, ios::floatfield);  
+    cout.setf(std::ios::scientific, std::ios::floatfield);  
     cout.precision(6);
     //
     // check the checkpointed solution against the non-checkpointed solution
@@ -289,22 +288,22 @@ int main(int argc, char *argv[])
     //
     // unless we altogether missed an eigenvalue, then 
     // {sol21.Evals  sol22.Evals  sol23.Evals}  ==  {sol1.Evals}
-    vector<Anasazi::Value<double> > Evals1 = sol1.Evals;
-    vector<Anasazi::Value<double> > Evals2 = sol21.Evals;
+    std::vector<Anasazi::Value<double> > Evals1 = sol1.Evals;
+    std::vector<Anasazi::Value<double> > Evals2 = sol21.Evals;
     Evals2.insert(Evals2.end(),sol22.Evals.begin(),sol22.Evals.end());
     Evals2.insert(Evals2.end(),sol23.Evals.begin(),sol23.Evals.end());
     // compare the differences
     double maxd = 0;
     if (verbose && MyPID==0) {
-      cout << setw(40) << "Computed Eigenvalues" << endl;
-      cout << setw(20) << "Without c/p" << setw(20) << "With c/p" << setw(20) << "Rel. error" << endl;
+      cout << std::setw(40) << "Computed Eigenvalues" << endl;
+      cout << std::setw(20) << "Without c/p" << std::setw(20) << "With c/p" << std::setw(20) << "Rel. error" << endl;
       cout << "============================================================" << endl;
     }
     for (int i=0; i<NEV; i++) {
       double tmpd = SCT::magnitude((Evals1[i].realpart - Evals2[i].realpart)/Evals1[i].realpart);
       maxd = (tmpd > maxd ? tmpd : maxd);
       if (verbose && MyPID==0) {
-        cout << setw(20) << Evals1[i].realpart << setw(20) << Evals2[i].realpart << setw(20) << tmpd << endl;
+        cout << std::setw(20) << Evals1[i].realpart << std::setw(20) << Evals2[i].realpart << std::setw(20) << tmpd << endl;
       }
     }
     if (maxd > tol) {
@@ -328,8 +327,8 @@ int main(int argc, char *argv[])
     for (int i=0; i<NEV; i++) vtv(i,i) = SCT::magnitude(vtv(i,i)) - 1.0;
     maxd = vtv.normFrobenius();
     if (verbose && MyPID==0) {
-      cout << setw(20) << "|| EV1^H M EV2 - I ||_F" << endl;
-      cout << setw(20) << maxd << endl;
+      cout << std::setw(20) << "|| EV1^H M EV2 - I ||_F" << endl;
+      cout << std::setw(20) << maxd << endl;
       cout << endl;
     }
     if (maxd > SCT::squareroot(tol)*10) {

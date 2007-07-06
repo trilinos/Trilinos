@@ -160,7 +160,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
   Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > _problem;
   Teuchos::RCP<SortManager<ScalarType,MV,OP> > _sort;
 
-  string _whch, _ortho; 
+  std::string _whch, _ortho; 
   MagnitudeType _ortho_kappa;
 
   MagnitudeType _convtol;
@@ -418,7 +418,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
           }
           numRestarts++;
   
-          printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << _maxRestarts << endl << endl;
+          printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << _maxRestarts << std::endl << std::endl;
   
           // Update the Schur form of the projected eigenproblem, then sort it.
           if (!bks_solver->isSchurCurrent())
@@ -487,7 +487,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
                   R(i,j) = zero;
                 }
               }
-              printer->stream(Debug) << "||Triangular factor of Su - I||: " << R.normFrobenius() << endl;
+              printer->stream(Debug) << "||Triangular factor of Su - I||: " << R.normFrobenius() << std::endl;
             }
             // 
             // perform implicit V*Qnev
@@ -579,8 +579,8 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
         }
       }
       catch (std::exception e) {
-        printer->stream(Errors) << "Error! Caught exception in BlockKrylovSchur::iterate() at iteration " << bks_solver->getNumIters() << endl 
-                                << e.what() << endl;
+        printer->stream(Errors) << "Error! Caught exception in BlockKrylovSchur::iterate() at iteration " << bks_solver->getNumIters() << std::endl 
+                                << e.what() << std::endl;
         throw;
       }
     }
@@ -620,7 +620,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
 
   _problem->setSolution(sol);
-  printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << endl;
+  printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;
 
   if (sol.numVecs < nev) {
     return Unconverged; // return from BlockKrylovSchurSolMgr::solve() 

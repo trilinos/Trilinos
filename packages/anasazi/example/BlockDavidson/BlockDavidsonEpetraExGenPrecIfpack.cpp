@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
     verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
   }
   BasicOutputManager<double> printer(verbosity);
-  printer.stream(Errors) << Anasazi_Version() << endl << endl;
+  printer.stream(Errors) << Anasazi_Version() << std::endl << std::endl;
 
   //************************************
   // Some useful typedefs
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
   Teuchos::RCP<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   // tell the user that we're done
-  printer.stream(Errors) << " done." << endl;
+  printer.stream(Errors) << " done." << std::endl;
 
 
   //************************************
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
     IFPACK_CHK_ERR(prec->Compute());
     //
     printer.stream(Errors) 
-      << " done." << endl;
+      << " done." << std::endl;
     // encapsulate this preconditioner into a IFPACKPrecOp class
     PrecOp = Teuchos::rcp( new IFPACKPrecOp(prec) );
   }
@@ -244,11 +244,11 @@ int main(int argc, char *argv[]) {
   // Solve the problem
   //************************************
   //
-  printer.stream(Errors) << "Solving eigenvalue problem..." << endl;
+  printer.stream(Errors) << "Solving eigenvalue problem..." << std::endl;
   ReturnType returnCode = MySolverMan.solve();
   // print some precond info
   if (usePrec) {
-    printer.stream(FinalSummary) << *prec << endl;
+    printer.stream(FinalSummary) << *prec << std::endl;
   }
 
 
@@ -285,21 +285,21 @@ int main(int argc, char *argv[]) {
   // Print the results
   //************************************
   //
-  ostringstream os;
-  os.setf(ios_base::right, ios_base::adjustfield);
-  os<<"Solver manager returned " << (returnCode == Converged ? "converged." : "unconverged.") << endl;
-  os<<endl;
-  os<<"------------------------------------------------------"<<endl;
+  std::ostringstream os;
+  os.setf(std::ios_base::right, std::ios_base::adjustfield);
+  os<<"Solver manager returned " << (returnCode == Converged ? "converged." : "unconverged.") << std::endl;
+  os<<std::endl;
+  os<<"------------------------------------------------------"<<std::endl;
   os<<std::setw(16)<<"Eigenvalue"
     <<std::setw(18)<<"Direct Residual"
-    <<endl;
-  os<<"------------------------------------------------------"<<endl;
+    <<std::endl;
+  os<<"------------------------------------------------------"<<std::endl;
   for (int i=0; i<sol.numVecs; i++) {
     os<<std::setw(16)<<evals[i].realpart
       <<std::setw(18)<<normR[i]/evals[i].realpart
-      <<endl;
+      <<std::endl;
   }
-  os<<"------------------------------------------------------"<<endl;
+  os<<"------------------------------------------------------"<<std::endl;
   printer.print(Errors,os.str());
 
 #ifdef HAVE_MPI

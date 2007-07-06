@@ -176,29 +176,29 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
   //@{ 
   
   //! Output formatted description of stopping test to output stream.
-  ostream& print(ostream& os, int indent = 0) const {
-    string ind(indent,' ');
+  std::ostream& print(std::ostream& os, int indent = 0) const {
+    std::string ind(indent,' ');
     os << ind << "- StatusTestOutput: ";
     switch (state_) {
     case Passed:
-      os << "Passed" << endl;
+      os << "Passed" << std::endl;
       break;
     case Failed:
-      os << "Failed" << endl;
+      os << "Failed" << std::endl;
       break;
     case Undefined:
-      os << "Undefined" << endl;
+      os << "Undefined" << std::endl;
       break;
     }
     os << ind << "  (Num calls,Mod test,State test): " << "(" << numCalls_ << ", " << modTest_ << ",";
     if (stateTest_ == 0) {
-      os << " none )" << endl;
+      os << " none )" << std::endl;
     }
     else {
       if ( (stateTest_ & Passed) == Passed ) os << " Passed";
       if ( (stateTest_ & Failed) == Failed ) os << " Failed";
       if ( (stateTest_ & Undefined) == Undefined ) os << " Undefined";
-      os << " )" << endl;
+      os << " )" << std::endl;
     }
     // print child, with extra indention
     test_->print(os,indent+3);

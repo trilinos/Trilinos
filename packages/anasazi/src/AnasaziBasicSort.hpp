@@ -64,7 +64,7 @@ namespace Anasazi {
        <li> "SI" - Smallest Imaginary 
        </ul>
     */
-    BasicSort( const string which = "LM" ) {
+    BasicSort( const std::string which = "LM" ) {
       setSortType(which);
     }
 
@@ -83,7 +83,7 @@ namespace Anasazi {
        <li> "SI" - Smallest Imaginary 
        </ul>
     */
-    void setSortType( const string which ) { 
+    void setSortType( const std::string which ) { 
       which_ = which; 
       TEST_FOR_EXCEPTION(which_.compare("LM") && which_.compare("SM") &&
                          which_.compare("LR") && which_.compare("SR") &&
@@ -138,7 +138,7 @@ namespace Anasazi {
        <li> "SI" - Smallest Imaginary 
        </ul>
     */
-    string which_;
+    std::string which_;
 
   };
 

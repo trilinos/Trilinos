@@ -397,17 +397,17 @@ public:
     }
   }
   
-  void MvPrint (ostream &os) const
+  void MvPrint (std::ostream &os) const
   {
-    os << "Object MyMultiVec" << endl;
-    os << "Number of rows = " << Length_ << endl;
-    os << "Number of vecs = " << NumberVecs_ << endl;
+    os << "Object MyMultiVec" << std::endl;
+    os << "Number of rows = " << Length_ << std::endl;
+    os << "Number of vecs = " << NumberVecs_ << std::endl;
     
     for (int i = 0 ; i < Length_ ; ++i)
       {
         for (int v = 0 ; v < NumberVecs_ ; ++v)
           os << (*this)(i, v) << " ";
-        os << endl;
+        os << std::endl;
       }
   }
   

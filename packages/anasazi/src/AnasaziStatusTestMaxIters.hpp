@@ -154,21 +154,21 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
   //@{ 
   
   //! Output formatted description of stopping test to output stream.
-  ostream& print(ostream& os, int indent = 0) const {
-    string ind(indent,' ');
+  std::ostream& print(std::ostream& os, int indent = 0) const {
+    std::string ind(indent,' ');
     os << ind << "- StatusTestMaxIters: ";
     switch (state_) {
     case Passed:
-      os << "Passed" << endl;
+      os << "Passed" << std::endl;
       break;
     case Failed:
-      os << "Failed" << endl;
+      os << "Failed" << std::endl;
       break;
     case Undefined:
-      os << "Undefined" << endl;
+      os << "Undefined" << std::endl;
       break;
     }
-    os << ind << "  MaxIters: " << maxIters_ << endl;
+    os << ind << "  MaxIters: " << maxIters_ << std::endl;
     return os;
   }
  

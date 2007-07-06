@@ -187,7 +187,7 @@ public:
 	//@{ 
 	/*! \brief Print \c *this multivector to the \c os output stream.
 	*/
-	virtual void MvPrint ( ostream& os ) const = 0;
+	virtual void MvPrint ( std::ostream& os ) const = 0;
 	//@}
 
 };
@@ -357,7 +357,7 @@ public:
 
     /*! \brief Print the \c mv multi-vector to the \c os output stream.
      */
-    static void MvPrint( const MultiVec<ScalarType>& mv, ostream& os )
+    static void MvPrint( const MultiVec<ScalarType>& mv, std::ostream& os )
     { mv.MvPrint(os); }
 
     //@}

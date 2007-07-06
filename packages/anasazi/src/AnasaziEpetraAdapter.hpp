@@ -220,7 +220,7 @@ namespace Anasazi {
     //@{ 
     /*! \brief Print \c *this EpetraMultiVec.
      */
-    void MvPrint( ostream& os ) const { os << *this << endl; };
+    void MvPrint( std::ostream& os ) const { os << *this << std::endl; };
     //@}
 
   private:
@@ -719,8 +719,8 @@ namespace Anasazi {
 
     /*! \brief Print the \c mv multi-vector to the \c os output stream.
      */
-    static void MvPrint( const Epetra_MultiVector& mv, ostream& os )
-    { os << mv << endl; }
+    static void MvPrint( const Epetra_MultiVector& mv, std::ostream& os )
+    { os << mv << std::endl; }
 
     //@}
   };        

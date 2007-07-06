@@ -138,7 +138,7 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   private:
   Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > problem_;
-  string whch_; 
+  std::string whch_; 
   MagnitudeType tol_;
   int verb_;
   int blockSize_;
@@ -254,7 +254,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
     }
     catch (std::exception e) {
       // we are a simple solver manager. we don't catch exceptions. set solution empty, then rethrow.
-      printer->stream(Anasazi::Errors) << "Exception: " << e.what() << endl;
+      printer->stream(Anasazi::Errors) << "Exception: " << e.what() << std::endl;
       Eigensolution<ScalarType,MV> sol;
       sol.numVecs = 0;
       problem_->setSolution(sol);
@@ -383,7 +383,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // send the solution to the eigenproblem
   problem_->setSolution(sol);
-  printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << endl;
+  printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;
 
   // return from SolMgr::solve()
   if (sol.numVecs < nev) return Unconverged;

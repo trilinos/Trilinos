@@ -141,6 +141,9 @@ double CheckingTools::errorEquality(const Epetra_MultiVector *X,
 int CheckingTools::errorSubspaces(const Epetra_MultiVector &Q, const Epetra_MultiVector &Qex,
                                   const Epetra_Operator *M) const {
 
+  using std::cout;
+  using std::ios;
+
   int info = 0;
   int myPid = MyComm.MyPID();
 
@@ -257,6 +260,9 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
                                   const Epetra_Operator *K, const Epetra_Operator *M,
                                   double *normWeight) const {
 
+  using std::cout;
+  using std::ios;
+
   if ((K == 0) || (lambda == 0))
     return;
 
@@ -358,6 +364,9 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
                                   const Epetra_Operator *K, const Epetra_Operator *M,
                                   const Epetra_Operator *Msolver) const {
 
+  using std::cout;
+  using std::ios;
+
   if ((K == 0) || (lambda == 0) || (Msolver == 0))
     return;
 
@@ -449,6 +458,9 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
 
 int CheckingTools::errorLambda(double *continuous, double *discrete, int numDiscrete,
                                double *lambda, int nev, bool smallest) const {
+
+  using std::cout;
+  using std::ios;
 
   int myPid = MyComm.MyPID();
   int nMax = 0;
@@ -607,6 +619,9 @@ int CheckingTools::inputArguments(const int &numEigen, const Epetra_Operator *K,
                             const Epetra_Operator *M, const Epetra_Operator *P,
                             const Epetra_MultiVector &Q, const int &minSize) const {
 
+  using std::cout;
+  using std::ios;
+
   // Routine to check some arguments
   // 
   // info = -  1 >> The stiffness matrix K has not been specified.
@@ -689,5 +704,3 @@ int CheckingTools::inputArguments(const int &numEigen, const Epetra_Operator *K,
   return 0;
 
 }
-
-

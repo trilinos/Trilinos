@@ -34,7 +34,7 @@
 
 namespace Anasazi {
 
-	string Anasazi_Version() { 
+  std::string Anasazi_Version() { 
 		return("Anasazi Version 2.1d - 8/8/2006"); 
 	}
 

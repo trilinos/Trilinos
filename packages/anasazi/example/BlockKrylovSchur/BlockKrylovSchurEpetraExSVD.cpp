@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
     Av.MvTimesMatAddMv( -one, u, S, one );
     Av.MvNorm( &directnrm );
     if (MyPID==0) {
-      cout.setf(ios_base::right, ios_base::adjustfield);
+      cout.setf(std::ios_base::right, std::ios_base::adjustfield);
       cout<<std::setw(16)<<"Singular Value"
 	  <<std::setw(20)<<"Direct Residual"
 	  <<endl;
