@@ -618,7 +618,7 @@ inline bool VectorOpTester<Scalar>
   {
     if (!indexIsLocal(this->space(), i)) continue;
     Scalar a_i = a[i];
-    y[i] = fabs(a_i) >= s ;
+    y[i] = std::fabs(a_i) >= s ;
   }
     
   err = normInf(x-y);
