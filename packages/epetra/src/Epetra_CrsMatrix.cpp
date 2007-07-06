@@ -926,7 +926,7 @@ int Epetra_CrsMatrix::OptimizeStorage() {
 
   bool Contiguous = true; // Assume contiguous is true
   for (i=1; i<NumMyRows_; i++){
-    int NumEntries = Graph().NumMyIndices(i);
+    int NumEntries = Graph().NumMyIndices(i-1);
 		
     // check if end of beginning of current row starts immediately after end of previous row.
     if (Values_[i]!=Values_[i-1]+NumEntries) {

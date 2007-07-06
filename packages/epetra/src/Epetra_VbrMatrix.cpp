@@ -1016,8 +1016,8 @@ int Epetra_VbrMatrix::OptimizeStorage() {
 
      bool Contiguous = true; // Assume contiguous is true
      for (i=1; i<NumMyBlockRows_; i++){
-     int NumEntries = NumBlockEntriesPerRow_[i];
-     int NumAllocatedEntries = NumAllocatedBlockEntriesPerRow_[i];
+     int NumEntries = NumBlockEntriesPerRow_[i-1];
+     int NumAllocatedEntries = NumAllocatedBlockEntriesPerRow_[i-1];
       
      // Check if NumEntries is same as NumAllocatedEntries and 
      // check if end of beginning of current row starts immediately after end of previous row.
