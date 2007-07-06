@@ -36,11 +36,11 @@
 #include "Epetra_Map.h"
 #include "Epetra_FECrsMatrix.h"
 
-using namespace std;
-using namespace Teuchos;
+using Teuchos::RCP;
+using Teuchos::rcp;
 using namespace MLAPI;
 
-class PyMatrix : public Operator
+class PyMatrix : public MLAPI::Operator
 {
 
 public:

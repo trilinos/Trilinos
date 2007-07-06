@@ -28,13 +28,6 @@
 
 #include "Epetra_NumPyMultiVector.h"
 
-#define DEBUG 0
-#if DEBUG
-#include <iostream>
-#include <string>
-using namespace std;
-#endif
-
 #if NDARRAY_VERSION == 0x00090504
 #define PyArray_ANYORDER -1
 #endif
