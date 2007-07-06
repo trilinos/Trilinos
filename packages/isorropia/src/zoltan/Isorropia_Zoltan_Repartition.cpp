@@ -192,6 +192,13 @@ load_balance(MPI_Comm comm,
     paramlist.set(dbg_level_str, "0");
   }
 
+  //if LB_APPROACH has not been specified, then set it to "partition". 
+  //(Zoltan's default is repartition, which we wish to override.)
+  std::string lb_approach_str("LB_APPROACH");
+  if (!paramlist.isParameter(lb_approach_str)) {
+    paramlist.set(lb_approach_str, "PARTITION");
+  }
+
   //check for the value of LB_METHOD (using "HYPERGRAPH" by default)
   std::string lb_method_str("LB_METHOD");
   std::string lb_meth = paramlist.get(lb_method_str, "HYPERGRAPH");
@@ -217,6 +224,14 @@ load_balance(MPI_Comm comm,
       paramlist.set("OBJ_WEIGHT_DIM", "1");
     }
   }
+  else {
+    // If no user weights, weight rows (vertices) by #nonzeros.
+    // This ensures we balance nonzeros not rows.
+    if (!paramlist.isParameter("ADD_OBJ_WEIGHT")) {
+      paramlist.set("ADD_OBJ_WEIGHT", "nonzeros");
+    }
+  }
+
 
   if (queryObject.haveGraphEdgeWeights() ||
       queryObject.haveHypergraphEdgeWeights()) {
