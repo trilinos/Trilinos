@@ -84,16 +84,83 @@ all-local:
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.
 
-if BUILD_TESTS
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+
+if SUB_TEST
 TEST_SUBDIR=test
 endif
 
-if BUILD_EXAMPLES 
+if SUB_EXAMPLE
 EXAMPLE_SUBDIR=example
 endif
+
+if ENABLE_STRATIMIKOS_THYRA_EPETRA
+BUILD_STRATIMIKOS_BELOS_TESTS=cd adapters/belos/test ; $(MAKE)
+CLEAN_CMD1=clean
+endif
+
+if ENABLE_STRATIMIKOS_THYRA_TPETRA
+BUILD_STRATIMIKOS_BELOS_EXAMPLES=cd adapters/belos/example ; $(MAKE)
+CLEAN_CMD2=clean
+INSTALL_CMD=install
+endif
+
+if ENABLE_STRATIMIKOS_THYRA_EPETRAEXT
+BUILD_STRATIMIKOS_AMESOS_TESTS=cd adapters/amesos/test ; $(MAKE)
+BUILD_STRATIMIKOS_AZTECOO_TESTS=cd adapters/aztecoo/test ; $(MAKE)
+CLEAN_CMD3=clean
+endif
+
+if BUILD_TESTS
+tests:
+	cd $(top_builddir)/test; $(MAKE)
+	$(BUILD_STRATIMIKOS_BELOS_TESTS)
+	$(BUILD_STRATIMIKOS_AMESOS_TESTS)
+	$(BUILD_STRATIMIKOS_AZTECOO_TESTS)
+else
+tests:
+	@echo "stratimikos tests were disabled at configure time"
+endif
+
+if BUILD_EXAMPLES
+examples:
+	cd $(top_builddir)/example ; $(MAKE)
+	$(BUILD_STRATIMIKOS_BELOS_EXAMPLES)
+
+install-examples:
+	cd $(top_builddir)/example ; $(MAKE) install
+	$(BUILD_STRATIMIKOS_BELOS_EXAMPLES) $(INSTALL_CMD)
+else
+examples:
+	@echo "stratimikos examples were disabled at configure time"
+
+install-examples:
+	@echo "stratimikos examples were disabled at configure time"
+endif
+
+clean-tests:
+	cd $(top_builddir)/test ; $(MAKE) clean
+	$(BUILD_STRATIMIKOS_BELOS_TESTS) $(CLEAN_CMD1)
+	$(BUILD_STRATIMIKOS_AMESOS_TESTS) $(CLEAN_CMD3)
+	$(BUILD_STRATIMIKOS_AZTECOO_TESTS) $(CLEAN_CMD3)
+
+clean-examples:
+	cd $(top_builddir)/example ; $(MAKE) clean
+	$(BUILD_STRATIMIKOS_BELOS_EXAMPLES) $(CLEAN_CMD2)
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
 
 SUBDIRS = src adapters $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 

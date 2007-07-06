@@ -332,7 +332,7 @@ TAC_ARG_INFORM_SUBPACKAGE_USED(
 # 09/20/06 tscoffe:  The examples are handled the same as tests below.
 AC_ARG_ENABLE([examples],, ac_cv_use_examples=$enableval, ac_cv_use_examples=yes)
 AC_ARG_ENABLE([rythmos-examples],
-    AC_HELP_STRING([--enable-rythmos-examples],[Build Rythmos Examples (default is yes if --disable-examples is not specified), note:  the examples will not be built unless the following packages are also enabled:  epetraext, amesos, aztecoo, stratimikos, and epetraext-thyra]),ac_cv_use_rythmos_examples=$enableval, ac_cv_use_rythmos_examples=${ac_cv_use_examples})
+    AC_HELP_STRING([--enable-rythmos-examples],[Make Rythmos examples buildable with 'make examples' (default is yes if --disable-examples is not specified), note:  the examples will not be built unless the following packages are also enabled:  epetraext, amesos, aztecoo, stratimikos, and epetraext-thyra]),ac_cv_use_rythmos_examples=$enableval, ac_cv_use_rythmos_examples=${ac_cv_use_examples})
 AC_MSG_CHECKING(whether to build [rythmos-examples])
 
 if test "X$ac_cv_use_rythmos_examples" != "Xno" &&
@@ -354,7 +354,7 @@ fi
 # printing the correct message at configure time.
 AC_ARG_ENABLE([tests],, ac_cv_use_tests=$enableval, ac_cv_use_tests=yes)
 AC_ARG_ENABLE([rythmos-tests],
-    AC_HELP_STRING([--enable-rythmos-tests],[Build Rythmos Tests (default is yes if --disable-tests is not specified), note:  all of the tests come from the examples, so if tests are enabled, the examples will be built (assuming all the dependencies are enabled)]),ac_cv_use_rythmos_tests=$enableval, ac_cv_use_rythmos_tests=${ac_cv_use_tests})
+    AC_HELP_STRING([--enable-rythmos-tests],[Make Rythmos tests buildable with 'make tests' (default is yes if --disable-tests is not specified), note:  all of the tests come from the examples, so if tests are enabled, the examples will be built (assuming all the dependencies are enabled)]),ac_cv_use_rythmos_tests=$enableval, ac_cv_use_rythmos_tests=${ac_cv_use_tests})
 AC_MSG_CHECKING(whether to build [rythmos-tests])
 
 if test "X$ac_cv_use_rythmos_tests" != "Xno" &&
@@ -372,6 +372,14 @@ else
   AC_MSG_RESULT(no)
   AM_CONDITIONAL(BUILD_TESTS, false)
 fi
+
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though SUB_TEST and SUB_EXAMPLE will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
+AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 

@@ -84,16 +84,68 @@ all-local:
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.
 
-if BUILD_TESTS
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+
+if SUB_TEST
 TEST_SUBDIR=test
 endif
 
-if BUILD_EXAMPLES 
+if SUB_EXAMPLE
 EXAMPLE_SUBDIR=example
 endif
+
+if ENABLE_THYRA_EPETRA
+BUILD_THYRA_EPETRA_TESTS=cd adapters/epetra/test ; $(MAKE)
+BUILD_THYRA_EPETRA_EXAMPLES=cd adapters/epetra/example ; $(MAKE)
+CLEAN_CMD=clean
+INSTALL_CMD=install
+endif
+
+if BUILD_TESTS
+tests:
+	cd $(top_builddir)/test; $(MAKE)
+	$(BUILD_THYRA_EPETRA_TESTS)
+else
+tests:
+	@echo "thyra tests were disabled at configure time"
+endif
+
+if BUILD_EXAMPLES
+examples:
+	cd $(top_builddir)/example ; $(MAKE)
+	$(BUILD_THYRA_EPETRA_EXAMPLES)
+install-examples:
+	cd $(top_builddir)/example ; $(MAKE) install
+	$(BUILD_THYRA_EPETRA_EXAMPLES) $(INSTALL_CMD)
+else
+examples:
+	@echo "thyra examples were disabled at configure time"
+
+install-examples:
+	@echo "thyra examples were disabled at configure time"
+endif
+
+clean-tests:
+	cd $(top_builddir)/test ; $(MAKE) clean
+	$(BUILD_THYRA_EPETRA_TESTS) $(CLEAN_CMD)
+
+clean-examples:
+	cd $(top_builddir)/example ; $(MAKE) clean
+	$(BUILD_THYRA_EPETRA_EXAMPLES) $(CLEAN_CMD)
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
 
 SUBDIRS = src adapters $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 

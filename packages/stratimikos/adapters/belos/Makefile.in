@@ -182,8 +182,8 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@BUILD_TESTS_TRUE@@ENABLE_STRATIMIKOS_THYRA_EPETRA_TRUE@TEST_SUBDIR = test
-@BUILD_EXAMPLES_TRUE@@ENABLE_STRATIMIKOS_THYRA_TPETRA_TRUE@EXAMPLE_SUBDIR = example
+@SUB_TEST_TRUE@TEST_SUBDIR = test
+@SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 all: all-recursive
 

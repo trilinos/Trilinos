@@ -26,10 +26,8 @@
 # ************************************************************************
 # @HEADER
 
-if BUILD_TESTS
-if ENABLE_STRATIMIKOS_THYRA_EPETRAEXT
+if SUB_TEST 
 TEST_SUBDIR=test
-endif
 endif
 
 SUBDIRS = src $(TEST_SUBDIR)

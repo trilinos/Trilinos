@@ -272,6 +272,10 @@ WEBTRILINOS_ALL_LIBS_BUILD_CMND = echo "WebTrilinos does not support all-libs ta
 endif
 
 # Must list the packages in the order that they are built!
+# This order must be the same as the order that the packages appear in
+# for the various top level make targets (ex make tests, make examples,
+# etc.), so if you change this order, you must change the order of the
+# packages in Trilinos/Makefile.am also or the test harness will break.
 
 SUBDIRS = \
 	$(TEUCHOS_SUBDIR)      \

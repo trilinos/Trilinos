@@ -766,6 +766,10 @@ BUILD_EXAMPLES_TRUE
 BUILD_EXAMPLES_FALSE
 BUILD_TESTS_TRUE
 BUILD_TESTS_FALSE
+SUB_TEST_TRUE
+SUB_TEST_FALSE
+SUB_EXAMPLE_TRUE
+SUB_EXAMPLE_FALSE
 PYTHON_USE_TRUE
 PYTHON_USE_FALSE
 PYTHON
@@ -1440,16 +1444,17 @@ Optional Features:
   --enable-nox-epetra     See nox/configure --help
 
   --enable-rythmos-examples
-                          Build Rythmos Examples (default is yes if
-                          --disable-examples is not specified), note: the
-                          examples will not be built unless the following
-                          packages are also enabled: epetraext, amesos,
-                          aztecoo, stratimikos, and epetraext-thyra
-  --enable-rythmos-tests  Build Rythmos Tests (default is yes if
-                          --disable-tests is not specified), note: all of the
-                          tests come from the examples, so if tests are
-                          enabled, the examples will be built (assuming all
-                          the dependencies are enabled)
+                          Make Rythmos examples buildable with 'make examples'
+                          (default is yes if --disable-examples is not
+                          specified), note: the examples will not be built
+                          unless the following packages are also enabled:
+                          epetraext, amesos, aztecoo, stratimikos, and
+                          epetraext-thyra
+  --enable-rythmos-tests  Make Rythmos tests buildable with 'make tests'
+                          (default is yes if --disable-tests is not
+                          specified), note: all of the tests come from the
+                          examples, so if tests are enabled, the examples will
+                          be built (assuming all the dependencies are enabled)
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
@@ -8719,6 +8724,28 @@ fi
 
 fi
 
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though SUB_TEST and SUB_EXAMPLE will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+ if test "X$ac_cv_use_sub_test" = "Xyes"; then
+  SUB_TEST_TRUE=
+  SUB_TEST_FALSE='#'
+else
+  SUB_TEST_TRUE='#'
+  SUB_TEST_FALSE=
+fi
+
+ if test "X$ac_cv_use_sub_example" = "Xyes"; then
+  SUB_EXAMPLE_TRUE=
+  SUB_EXAMPLE_FALSE='#'
+else
+  SUB_EXAMPLE_TRUE='#'
+  SUB_EXAMPLE_FALSE=
+fi
+
+
 
 # Check whether --enable-libcheck was given.
 if test "${enable_libcheck+set}" = set; then
@@ -12819,6 +12846,20 @@ echo "$as_me: error: conditional \"BUILD_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${SUB_TEST_TRUE}" && test -z "${SUB_TEST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"SUB_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"SUB_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${SUB_EXAMPLE_TRUE}" && test -z "${SUB_EXAMPLE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"SUB_EXAMPLE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"SUB_EXAMPLE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${PYTHON_USE_TRUE}" && test -z "${PYTHON_USE_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"PYTHON_USE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -13637,6 +13678,10 @@ BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim
 BUILD_EXAMPLES_FALSE!$BUILD_EXAMPLES_FALSE$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
 BUILD_TESTS_FALSE!$BUILD_TESTS_FALSE$ac_delim
+SUB_TEST_TRUE!$SUB_TEST_TRUE$ac_delim
+SUB_TEST_FALSE!$SUB_TEST_FALSE$ac_delim
+SUB_EXAMPLE_TRUE!$SUB_EXAMPLE_TRUE$ac_delim
+SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
 PYTHON_USE_TRUE!$PYTHON_USE_TRUE$ac_delim
 PYTHON_USE_FALSE!$PYTHON_USE_FALSE$ac_delim
 PYTHON!$PYTHON$ac_delim
@@ -13661,7 +13706,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 76; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 80; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -370,6 +370,14 @@ REQUIRE_LIB_CHECK=no
 # Checks for Regression Testing
 # ------------------------------------------------------------------------
 
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though SUB_TEST and SUB_EXAMPLE will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+AM_CONDITIONAL(SUB_TEST, test "X$ac_cv_use_sub_test" = "Xyes")
+AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
+
   AC_DEFUN([NOX_TESTING],
   [
     AC_MSG_CHECKING(whether we should build the nox $1 regression tests)
@@ -403,11 +411,11 @@ REQUIRE_LIB_CHECK=no
   # See if testing is enabled
   AC_MSG_CHECKING(whether we should build the regression tests)
   AC_ARG_ENABLE(nox-tests,
-  [AC_HELP_STRING([--enable-nox-tests],[compile regression tests, over-rides the trilinos flag "--enable-tests" so that nox tests can be built separately from other trilinos package tests])],
+  [AC_HELP_STRING([--enable-nox-tests],[compile regression tests with "make tests", over-rides the trilinos flag "--enable-tests" so that nox tests can be built separately from other trilinos package tests])],
   [ADDON_TESTS=$enableval],
   [
      AC_ARG_ENABLE(tests,
-     [AC_HELP_STRING([--enable-tests],[compile regression tests, will be ignored if "--enable-nox-tests" is specified])],
+     [AC_HELP_STRING([--enable-tests],[compile regression tests with "make tests", will be ignored if "--enable-nox-tests" is specified])],
      [ADDON_TESTS=$enableval],
      [ADDON_TESTS=no]
      )
@@ -494,11 +502,11 @@ REQUIRE_LIB_CHECK=no
   # See if examples are enabled
   AC_MSG_CHECKING(whether we should build the examples)
   AC_ARG_ENABLE(nox-examples,
-  [AC_HELP_STRING([--enable-nox-examples],[compile examples, over-rides the trilinos flag "--enable-examples" so that nox examples can be built separately from other trilinos package examples])],
+  [AC_HELP_STRING([--enable-nox-examples],[compile examples with "make examples", over-rides the trilinos flag "--enable-examples" so that nox examples can be built separately from other trilinos package examples])],
   [ADDON_EXAMPLES=$enableval],
   [
      AC_ARG_ENABLE(examples,
-     [AC_HELP_STRING([--enable-examples],[compile examples, will be ignored if "--enable-nox-examples" is specified])],
+     [AC_HELP_STRING([--enable-examples],[compile examples with "make examples", will be ignored if "--enable-nox-examples" is specified])],
      [ADDON_EXAMPLES=$enableval],
      [ADDON_EXAMPLES=no]
      )
@@ -506,6 +514,7 @@ REQUIRE_LIB_CHECK=no
   )
   AC_MSG_RESULT([${ADDON_EXAMPLES}])
 
+  AM_CONDITIONAL(BUILD_NOX_EXAMPLES, test X${ADDON_EXAMPLES} = Xyes) 
   # lapack 
   NOX_EXAMPLES(lapack)
   AM_CONDITIONAL(BUILD_LAPACK_EXAMPLES, test X${ADDON_lapack_EXAMPLES} = Xyes)

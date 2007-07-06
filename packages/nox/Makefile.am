@@ -72,8 +72,61 @@ all-local:
 ## Subdirectories to be make'd recursively
 ## #######################################################################
 
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+
+if SUB_TEST
+TEST_SUBDIR=test
+endif
+
+if SUB_EXAMPLE
+EXAMPLE_SUBDIR=examples
+endif
+
+if BUILD_NOX_TESTS 
+tests:
+	cd $(top_builddir)/test; $(MAKE)
+else
+tests:
+	@echo "nox tests were disabled at configure time"
+endif
+
+if BUILD_NOX_EXAMPLES
+examples: FORCE
+	cd $(top_builddir)/examples ; $(MAKE)
+
+install-examples:
+	cd $(top_builddir)/examples ; $(MAKE) install
+else
+examples: FORCE
+	@echo "nox examples were disabled at configure time"
+
+install-examples:
+	@echo "nox examples were disabled at configure time"
+endif
+
+FORCE:
+
+clean-tests:
+	cd $(top_builddir)/test ; $(MAKE) clean
+
+clean-examples:
+	cd $(top_builddir)/examples ; $(MAKE) clean
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
+
 SUBDIRS = doc src src-lapack src-epetra src-petsc src-belos src-thyra \
-	  src-loca test examples
+	  src-loca $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) 
 
 ## #######################################################################
 ## Documentation

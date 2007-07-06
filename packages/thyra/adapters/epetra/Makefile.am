@@ -1,9 +1,9 @@
 
-if BUILD_TESTS
+if SUB_TEST 
 TEST_SUBDIR=test
 endif
 
-if BUILD_EXAMPLES 
+if SUB_EXAMPLE
 EXAMPLE_SUBDIR=example
 endif
 

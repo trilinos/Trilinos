@@ -185,7 +185,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 #TEST_SUBDIR=test
-@BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
+@SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
 SUBDIRS = $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 all: all-recursive
 

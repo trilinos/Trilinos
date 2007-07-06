@@ -756,6 +756,10 @@ BUILD_LIBLOCALAPACK_TRUE
 BUILD_LIBLOCALAPACK_FALSE
 BUILD_LIBLOCAEPETRA_TRUE
 BUILD_LIBLOCAEPETRA_FALSE
+SUB_TEST_TRUE
+SUB_TEST_FALSE
+SUB_EXAMPLE_TRUE
+SUB_EXAMPLE_FALSE
 BUILD_NOX_TESTS_TRUE
 BUILD_NOX_TESTS_FALSE
 BUILD_LOCA_TESTS_TRUE
@@ -786,6 +790,8 @@ BUILD_THYRA_TESTS_FALSE
 ADDON_thyra_TESTS
 BUILD_TESTUTILS_TRUE
 BUILD_TESTUTILS_FALSE
+BUILD_NOX_EXAMPLES_TRUE
+BUILD_NOX_EXAMPLES_FALSE
 BUILD_LAPACK_EXAMPLES_TRUE
 BUILD_LAPACK_EXAMPLES_FALSE
 BUILD_LOCA_LAPACK_EXAMPLES_TRUE
@@ -1458,17 +1464,18 @@ Optional Features:
   --enable-nox-petsc      compile nox-petsc interface libraries
   --enable-nox-belos      compile nox-belos interface libraries
   --enable-nox-thyra      compile nox-thyra interface libraries
-  --enable-nox-tests      compile regression tests, over-rides the trilinos
-                          flag "--enable-tests" so that nox tests can be built
-                          separately from other trilinos package tests
-  --enable-tests          compile regression tests, will be ignored if
-                          "--enable-nox-tests" is specified
-  --enable-nox-examples   compile examples, over-rides the trilinos flag
-                          "--enable-examples" so that nox examples can be
-                          built separately from other trilinos package
-                          examples
-  --enable-examples       compile examples, will be ignored if
-                          "--enable-nox-examples" is specified
+  --enable-nox-tests      compile regression tests with "make tests",
+                          over-rides the trilinos flag "--enable-tests" so
+                          that nox tests can be built separately from other
+                          trilinos package tests
+  --enable-tests          compile regression tests with "make tests", will be
+                          ignored if "--enable-nox-tests" is specified
+  --enable-nox-examples   compile examples with "make examples", over-rides
+                          the trilinos flag "--enable-examples" so that nox
+                          examples can be built separately from other trilinos
+                          package examples
+  --enable-examples       compile examples with "make examples", will be
+                          ignored if "--enable-nox-examples" is specified
   --enable-anasazi        Implicitly build anasazi support into the loca
                           library. Can be overridden with
                           --<en|dis>able-loca-anasazi.
@@ -8885,6 +8892,28 @@ REQUIRE_LIB_CHECK=no
 # Checks for Regression Testing
 # ------------------------------------------------------------------------
 
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though SUB_TEST and SUB_EXAMPLE will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+ if test "X$ac_cv_use_sub_test" = "Xyes"; then
+  SUB_TEST_TRUE=
+  SUB_TEST_FALSE='#'
+else
+  SUB_TEST_TRUE='#'
+  SUB_TEST_FALSE=
+fi
+
+ if test "X$ac_cv_use_sub_example" = "Xyes"; then
+  SUB_EXAMPLE_TRUE=
+  SUB_EXAMPLE_FALSE='#'
+else
+  SUB_EXAMPLE_TRUE='#'
+  SUB_EXAMPLE_FALSE=
+fi
+
+
 
 
   # See if testing is enabled
@@ -9232,6 +9261,14 @@ fi
 
   { echo "$as_me:$LINENO: result: ${ADDON_EXAMPLES}" >&5
 echo "${ECHO_T}${ADDON_EXAMPLES}" >&6; }
+
+   if test X${ADDON_EXAMPLES} = Xyes; then
+  BUILD_NOX_EXAMPLES_TRUE=
+  BUILD_NOX_EXAMPLES_FALSE='#'
+else
+  BUILD_NOX_EXAMPLES_TRUE='#'
+  BUILD_NOX_EXAMPLES_FALSE=
+fi
 
   # lapack
 
@@ -16773,6 +16810,20 @@ echo "$as_me: error: conditional \"BUILD_LIBLOCAEPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${SUB_TEST_TRUE}" && test -z "${SUB_TEST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"SUB_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"SUB_TEST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${SUB_EXAMPLE_TRUE}" && test -z "${SUB_EXAMPLE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"SUB_EXAMPLE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"SUB_EXAMPLE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_NOX_TESTS_TRUE}" && test -z "${BUILD_NOX_TESTS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_NOX_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -16847,6 +16898,13 @@ if test -z "${BUILD_TESTUTILS_TRUE}" && test -z "${BUILD_TESTUTILS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TESTUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_TESTUTILS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_NOX_EXAMPLES_TRUE}" && test -z "${BUILD_NOX_EXAMPLES_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_NOX_EXAMPLES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_NOX_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -17722,6 +17780,10 @@ BUILD_LIBLOCALAPACK_TRUE!$BUILD_LIBLOCALAPACK_TRUE$ac_delim
 BUILD_LIBLOCALAPACK_FALSE!$BUILD_LIBLOCALAPACK_FALSE$ac_delim
 BUILD_LIBLOCAEPETRA_TRUE!$BUILD_LIBLOCAEPETRA_TRUE$ac_delim
 BUILD_LIBLOCAEPETRA_FALSE!$BUILD_LIBLOCAEPETRA_FALSE$ac_delim
+SUB_TEST_TRUE!$SUB_TEST_TRUE$ac_delim
+SUB_TEST_FALSE!$SUB_TEST_FALSE$ac_delim
+SUB_EXAMPLE_TRUE!$SUB_EXAMPLE_TRUE$ac_delim
+SUB_EXAMPLE_FALSE!$SUB_EXAMPLE_FALSE$ac_delim
 BUILD_NOX_TESTS_TRUE!$BUILD_NOX_TESTS_TRUE$ac_delim
 BUILD_NOX_TESTS_FALSE!$BUILD_NOX_TESTS_FALSE$ac_delim
 BUILD_LOCA_TESTS_TRUE!$BUILD_LOCA_TESTS_TRUE$ac_delim
@@ -17752,6 +17814,8 @@ BUILD_THYRA_TESTS_FALSE!$BUILD_THYRA_TESTS_FALSE$ac_delim
 ADDON_thyra_TESTS!$ADDON_thyra_TESTS$ac_delim
 BUILD_TESTUTILS_TRUE!$BUILD_TESTUTILS_TRUE$ac_delim
 BUILD_TESTUTILS_FALSE!$BUILD_TESTUTILS_FALSE$ac_delim
+BUILD_NOX_EXAMPLES_TRUE!$BUILD_NOX_EXAMPLES_TRUE$ac_delim
+BUILD_NOX_EXAMPLES_FALSE!$BUILD_NOX_EXAMPLES_FALSE$ac_delim
 BUILD_LAPACK_EXAMPLES_TRUE!$BUILD_LAPACK_EXAMPLES_TRUE$ac_delim
 BUILD_LAPACK_EXAMPLES_FALSE!$BUILD_LAPACK_EXAMPLES_FALSE$ac_delim
 BUILD_LOCA_LAPACK_EXAMPLES_TRUE!$BUILD_LOCA_LAPACK_EXAMPLES_TRUE$ac_delim
@@ -17769,12 +17833,6 @@ BUILD_PETSC_EXAMPLES_FALSE!$BUILD_PETSC_EXAMPLES_FALSE$ac_delim
 ADDON_petsc_EXAMPLES!$ADDON_petsc_EXAMPLES$ac_delim
 BUILD_BELOS_EXAMPLES_TRUE!$BUILD_BELOS_EXAMPLES_TRUE$ac_delim
 BUILD_BELOS_EXAMPLES_FALSE!$BUILD_BELOS_EXAMPLES_FALSE$ac_delim
-ADDON_belos_EXAMPLES!$ADDON_belos_EXAMPLES$ac_delim
-BUILD_LOCAANASAZI_TRUE!$BUILD_LOCAANASAZI_TRUE$ac_delim
-BUILD_LOCAANASAZI_FALSE!$BUILD_LOCAANASAZI_FALSE$ac_delim
-BUILD_LIBLOCAMF_TRUE!$BUILD_LIBLOCAMF_TRUE$ac_delim
-BUILD_LIBLOCAMF_FALSE!$BUILD_LIBLOCAMF_FALSE$ac_delim
-MF_INCDIR!$MF_INCDIR$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -17816,6 +17874,12 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+ADDON_belos_EXAMPLES!$ADDON_belos_EXAMPLES$ac_delim
+BUILD_LOCAANASAZI_TRUE!$BUILD_LOCAANASAZI_TRUE$ac_delim
+BUILD_LOCAANASAZI_FALSE!$BUILD_LOCAANASAZI_FALSE$ac_delim
+BUILD_LIBLOCAMF_TRUE!$BUILD_LIBLOCAMF_TRUE$ac_delim
+BUILD_LIBLOCAMF_FALSE!$BUILD_LIBLOCAMF_FALSE$ac_delim
+MF_INCDIR!$MF_INCDIR$ac_delim
 MF_LIBDIR!$MF_LIBDIR$ac_delim
 MF_LIBS!$MF_LIBS$ac_delim
 BUILD_NOX_EPETRAEXT_SUPPORT_TRUE!$BUILD_NOX_EPETRAEXT_SUPPORT_TRUE$ac_delim
@@ -17844,7 +17908,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 26; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 32; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

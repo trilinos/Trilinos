@@ -109,17 +109,62 @@ all-local:
 ## Subdirectories to be make'd recursively
 ## #######################################################################
 
-if BUILD_TESTS
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+
+if SUB_TEST
 TEST_SUBDIR=test
 endif
 
-if ML_BUILD_EXAMPLES
+if SUB_EXAMPLE
 EXAMPLE_SUBDIR=examples
 endif
 
 if BUILD_ML_MATLAB
 MATLAB_SUBDIR=matlab
 endif
+
+if BUILD_TESTS
+tests:
+	cd $(top_builddir)/test; $(MAKE)
+else
+tests:
+	@echo "ml tests were disabled at configure time"
+endif
+
+if ML_BUILD_EXAMPLES
+examples: FORCE
+	cd $(top_builddir)/examples ; $(MAKE)
+
+install-examples:
+	cd $(top_builddir)/examples ; $(MAKE) install
+else
+examples: FORCE
+	@echo "ml examples were disabled at configure time"
+
+install-examples:
+	@echo "ml examples were disabled at configure time"
+endif
+
+FORCE:
+
+clean-tests:
+	cd $(top_builddir)/test ; $(MAKE) clean
+
+clean-examples:
+	cd $(top_builddir)/examples ; $(MAKE) clean
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(MATLAB_SUBDIR)
 
