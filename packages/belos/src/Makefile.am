@@ -31,6 +31,7 @@ CORE_H = \
 	$(srcdir)/BelosGCRODRSolMgr.hpp \
         $(srcdir)/BelosGmresIteration.hpp \
 	$(srcdir)/BelosICGSOrthoManager.hpp \
+	$(srcdir)/BelosIMGSOrthoManager.hpp \
 	$(srcdir)/BelosIteration.hpp \
 	$(srcdir)/BelosLinearProblem.hpp \
 	$(srcdir)/BelosMatOrthoManager.hpp \
