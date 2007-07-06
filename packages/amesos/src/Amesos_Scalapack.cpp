@@ -261,7 +261,7 @@ int Amesos_Scalapack::RedistributeA( ) {
 				  &FatColumnIndices[ pcol_i ][0] );
       }
     }
-    FatIn.FillComplete();
+    FatIn.FillComplete( false );
     
     if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:260" << endl;
     if (  debug_ == 1) cout  << "Amesos_Scalapack.cpp:265B" 
@@ -390,7 +390,7 @@ int Amesos_Scalapack::RedistributeA( ) {
     if (  debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalapack.cpp:360" << endl;
     
     FatOut_->Export( FatIn, ExportToFatOut, Add );
-    FatOut_->FillComplete();
+    FatOut_->FillComplete( false );
     
     //
     //  Create a map to allow us to redistribute the vectors X and B 
@@ -433,7 +433,7 @@ int Amesos_Scalapack::RedistributeA( ) {
     
     ScaLAPACK1DMatrix_->Export( *RowMatrixA, ExportToScaLAPACK1D_, Add ); 
     
-    ScaLAPACK1DMatrix_->FillComplete() ; 
+    ScaLAPACK1DMatrix_->FillComplete( false ) ; 
   }
   if (  debug_ == 1) cout  << "iam_ = " << iam_  << " Amesos_Scalapack.cpp:417 debug_ = "
 			   << debug_ << endl;
