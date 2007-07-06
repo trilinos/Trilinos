@@ -696,10 +696,10 @@ clean-examples:
 	cd $(top_builddir)/example ; $(MAKE) clean
 
 everything:
-	$(MAKE) ; $(MAKE) examples
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
 
 clean-everything:
-	$(MAKE) clean-examples ; $(MAKE) clean
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
 
 install-everything:
 	$(MAKE) install ; $(MAKE) install-examples
