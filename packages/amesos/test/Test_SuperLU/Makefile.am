@@ -24,6 +24,3 @@ Test_SuperLU_SOURCES      = $(srcdir)/cxx_main.cpp
 Test_SuperLU_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 Test_SuperLU_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 Test_SuperLU_LDADD        = $(EXAMPLE_LIBS)
-
-all-libs:
-	cd $(top_builddir)/src ; $(MAKE) all-libs 

@@ -2825,16 +2825,6 @@ all-local:
 #	      $(SLUSERIAL_CPPFLAGS)
 
 include $(top_builddir)/Makefile.export.amesos
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-all-libs:
-	$(MAKE) libamesos.a
-	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs 
-	cd $(top_builddir)/../epetra ; $(MAKE) all-libs 
-@HAVE_AMESOS_TRIUTILS_TRUE@	cd $(top_builddir)/../triutils ; $(MAKE) all-libs 
-@HAVE_AMESOS_EPETRAEXT_TRUE@	cd $(top_builddir)/../epetraext ; $(MAKE) all-libs 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

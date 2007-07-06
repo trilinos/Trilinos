@@ -100,5 +100,3 @@ execincludedir = $(exec_prefix)/include
 # --------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
-
-all-libs : $(IFPACK_THYRA_LIB)

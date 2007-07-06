@@ -191,14 +191,6 @@ endif
 ## Export makefile stuff
 ## #######################################################################
 
-all-libs:
-	cd $(top_builddir)/src ; $(MAKE) all-libs
-	cd $(top_builddir)/adapters ; $(MAKE) all-libs
-
-libs:
-	cd $(top_builddir)/src ; $(MAKE)
-	cd $(top_builddir)/adapters ; $(MAKE) libs
-
 sample-output:
 	cd test ; ../example/generate-sample-output.pl
 	cd example/external ; $(MAKE) sample-makefile

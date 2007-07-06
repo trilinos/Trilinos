@@ -17,17 +17,26 @@
 }
 
 # Scalar Backward Euler
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK,INSTALL,RythmosAmesos) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Scalar ImplicitBDF with forcing term
-(FRAMEWORK,INSTALL) {
+
+(FRAMEWORK,INSTALL,RythmosAmesos) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3  --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
+    X-HOST = gabriel.sandia.gov;
+}
+
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosBDF1Gabriel) {
+    TESTS = ../example/basicExample/basicExample_amesos.exe;
+    ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3 --max-restep-error=1e-9  --verbose --echo-command-line;
+    COMM = SERIAL, MPI(1);
+    HOST = gabriel.sandia.gov;
 }
 
 # Vector Explicit Runge-Kutta 4 stage
@@ -45,14 +54,14 @@
 }
 
 # Vector Backward Euler
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK,INSTALL,RythmosAmesos) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Scalar Backward Euler using Amesos
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK,INSTALL,RythmosAmesos) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=1 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml --echo-command-line;
     COMM = SERIAL, MPI(1);
@@ -66,7 +75,7 @@
 }
 
 # Vector Backward Euler using Amesos
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK,INSTALL,RythmosAmesos) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml --echo-command-line;
     COMM = SERIAL, MPI(1);
@@ -94,21 +103,21 @@
 }
 
 # Vector Backward Euler with same accuracy as ERK
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK,INSTALL,RythmosAmesos) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --numelements=10 --method=BE --T=0.1 --numsteps=5000 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Vector Implicit BDF
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK,INSTALL,RythmosAmesos) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --numelements=10 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Vector Backward Euler
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK,INSTALL,RythmosAmesos) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BDF --maxorder=1 --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
@@ -129,7 +138,7 @@
 }
 
 # Vector 1DfemTransient with Backward Euler 
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK,INSTALL,RythmosAmesos) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_amesos.exe;
     ARGS = --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
@@ -150,7 +159,7 @@
 }
 
 # Vector 1DfemTransient with ImplicitBDF
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK,INSTALL,RythmosAmesos) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_amesos.exe;
     ARGS = --verbose --method=BDF --echo-command-line;
     COMM = SERIAL, MPI(1);
@@ -171,7 +180,7 @@
 }
 
 
-(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL0) {
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL0,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
@@ -194,7 +203,7 @@
 }
 
 
-(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL1) {
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL1,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
@@ -298,7 +307,7 @@
 }
 
 
-(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL3) {
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL3,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
@@ -340,7 +349,7 @@
 }
 
 
-(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL4) {
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL4,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
@@ -382,7 +391,7 @@
 }
 
 
-(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL5) {
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL5,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
@@ -425,7 +434,7 @@
 
 
 # Solve state problem with fixed time steps using BDF stepper
-(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL6) {
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL6,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
@@ -461,7 +470,7 @@
 
 
 # Solve state problem with variable time steps using BDF stepper
-(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL7) {
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL7,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
@@ -499,7 +508,7 @@
 # 2007/06/19: rabartl: Here I have set --max-restate-error=1e-8 to
 # allow this check (which should be zero) to pass.  In this way, I am
 # only really testing DxDp integrated vs. finite differences.
-(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL8) {
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL8,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="
@@ -546,7 +555,7 @@
 # the BDF time stepper and seems to work great for DxDp but the state
 # recomputation is not the same binary number.  This must be some type of bug
 # and this needs to be fixed.
-(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL9,FAILING,FAILING1) {
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL9,FAILING,FAILING1,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="

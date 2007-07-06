@@ -741,12 +741,6 @@ clean-everything:
 install-everything:
 	$(MAKE) install ; $(MAKE) install-examples
 
-all-libs:
-	cd src ; $(MAKE) all-libs
-
-libs:
-	cd src ; $(MAKE)
-
 runtests-serial :
 	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
   --trilinos-dir=$(TRILINOS_HOME_DIR) \

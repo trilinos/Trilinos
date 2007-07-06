@@ -890,12 +890,6 @@ MAINTAINERCLEANFILES = Makefile.in
 # Files to be deleted by 'make clean'
 # ------------------------------------------------------------------------
 MOSTLYCLEANFILES = $(TRILINOS_TEMPLATE_OBJS)
-@BUILD_EPETRAEXT_TRIUTILS_FALSE@BUILD_TRIUTILS_LIBS = 
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-@BUILD_EPETRAEXT_TRIUTILS_TRUE@BUILD_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; $(MAKE) all-libs 
 all: EpetraExt_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -2286,10 +2280,6 @@ all-local:
 #     -I$(top_srcdir)/../epetraext/src/block
 
 include $(top_builddir)/Makefile.export.epetraext
-
-all-libs:
-	$(MAKE) libepetraext.a
-	$(BUILD_TRIUTILS_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

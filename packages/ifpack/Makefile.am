@@ -142,16 +142,6 @@ install-everything:
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
 ## #######################################################################
-## Target for circular dependencies
-## #######################################################################
-
-all-libs:
-	cd src ; $(MAKE) all-libs
-
-libs:
-	cd src ; $(MAKE)
-
-## #######################################################################
 ## Export Makefile Installation
 ## #######################################################################
 if USING_EXPORT_MAKEFILES

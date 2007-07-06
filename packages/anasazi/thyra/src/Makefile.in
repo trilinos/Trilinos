@@ -583,20 +583,6 @@ uninstall-am: uninstall-includeHEADERS
 #np# List locations of include files within Trilinos but outside of this 
 #np# package
 include $(top_builddir)/Makefile.export.anasazi
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-
-#all-libs:
-#	$(MAKE) libanasazi.a
-#	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
-#	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
-#	$(BUILD_TRIUTILS_LIBS)
-#	$(BUILD_BELOS_LIBS)
-#	$(BUILD_AZTECOO_LIBS)
-#	$(BUILD_IFPACK_LIBS)
-#	$(BUILD_THYRA_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

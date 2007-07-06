@@ -395,10 +395,3 @@ nodist_execinclude_HEADERS = Teuchos_config.h
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-
-all-libs:
-	$(MAKE) libteuchos.a

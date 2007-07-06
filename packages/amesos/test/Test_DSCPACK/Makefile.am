@@ -24,6 +24,3 @@ Test_DSCPACK_SOURCES      = $(srcdir)/cxx_main.cpp
 Test_DSCPACK_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 Test_DSCPACK_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 Test_DSCPACK_LDADD        = $(EXAMPLE_LIBS)
-
-all-libs:
-	cd $(top_builddir)/src ; $(MAKE) all-libs 

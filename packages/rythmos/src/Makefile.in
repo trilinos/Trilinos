@@ -439,12 +439,6 @@ nodist_execinclude_HEADERS = Rythmos_config.h
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-ENABLE_RYTHMOS_THYRA_LIBS = cd $(top_builddir)/../thyra ; $(MAKE) all-libs
-ENABLE_RYTHMOS_EPETRA_LIBS = cd $(top_builddir)/../epetra ; $(MAKE) all-libs
 all: Rythmos_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -792,11 +786,6 @@ all-local:
 #Specify locations of include files within Trilinos
 
 include $(top_builddir)/Makefile.export.rythmos
-
-all-libs:
-	$(MAKE) librythmos.a
-	$(ENABLE_RYTHMOS_THYRA_LIBS)
-	$(ENABLE_RYTHMOS_EPETRA_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

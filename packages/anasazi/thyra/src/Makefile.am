@@ -172,18 +172,3 @@ execincludedir = $(exec_prefix)/include
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
-
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-
-#all-libs:
-#	$(MAKE) libanasazi.a
-#	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
-#	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
-#	$(BUILD_TRIUTILS_LIBS)
-#	$(BUILD_BELOS_LIBS)
-#	$(BUILD_AZTECOO_LIBS)
-#	$(BUILD_IFPACK_LIBS)
-#	$(BUILD_THYRA_LIBS)

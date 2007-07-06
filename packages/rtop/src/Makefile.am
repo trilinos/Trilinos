@@ -197,10 +197,3 @@ nodist_execinclude_HEADERS = RTOp_Config.h $(RTOP_H)
 # --------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-all-libs:
-	$(MAKE) librtop.a
-	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs

@@ -244,20 +244,3 @@ nodist_execinclude_HEADERS = Rythmos_config.h
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
-
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-ENABLE_RYTHMOS_THYRA_LIBS = cd $(top_builddir)/../thyra ; $(MAKE) all-libs
-ENABLE_RYTHMOS_EPETRA_LIBS = cd $(top_builddir)/../epetra ; $(MAKE) all-libs
-
-all-libs:
-	$(MAKE) librythmos.a
-	$(ENABLE_RYTHMOS_THYRA_LIBS)
-	$(ENABLE_RYTHMOS_EPETRA_LIBS)
-
-
-
-
-

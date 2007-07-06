@@ -20,6 +20,3 @@ Test_Performance_SOURCES      = $(srcdir)/Amesos_Performance.cpp
 Test_Performance_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 Test_Performance_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 Test_Performance_LDADD        = $(EXAMPLE_LIBS)
-
-all-libs:
-	cd $(top_builddir)/src ; $(MAKE) all-libs 

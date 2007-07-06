@@ -24,6 +24,3 @@ Test_MultipleSolves_SOURCES      = $(srcdir)/cxx_main.cpp
 Test_MultipleSolves_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 Test_MultipleSolves_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 Test_MultipleSolves_LDADD        = $(EXAMPLE_LIBS)
-
-all-libs:
-	cd $(top_builddir)/src ; $(MAKE) all-libs 

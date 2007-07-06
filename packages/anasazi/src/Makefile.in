@@ -448,20 +448,6 @@ nodist_execinclude_HEADERS = Anasazi_config.h
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
-@BUILD_TRIUTILS_FALSE@BUILD_TRIUTILS_LIBS = 
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-@BUILD_TRIUTILS_TRUE@BUILD_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; $(MAKE) all-libs
-@BUILD_BELOS_FALSE@BUILD_BELOS_LIBS = 
-@BUILD_BELOS_TRUE@BUILD_BELOS_LIBS = cd $(top_builddir)/../belos ; $(MAKE) all-libs
-@BUILD_AZTECOO_FALSE@BUILD_AZTECOO_LIBS = 
-@BUILD_AZTECOO_TRUE@BUILD_AZTECOO_LIBS = cd $(top_builddir)/../aztecoo ; $(MAKE) all-libs
-@BUILD_IFPACK_FALSE@BUILD_IFPACK_LIBS = 
-@BUILD_IFPACK_TRUE@BUILD_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; $(MAKE) all-libs
-@BUILD_ANASAZI_THYRA_FALSE@BUILD_THYRA_LIBS = 
-@BUILD_ANASAZI_THYRA_TRUE@BUILD_THYRA_LIBS = cd $(top_builddir)/../thyra ; $(MAKE) all-libs
 all: Anasazi_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -827,16 +813,6 @@ all-local:
 #np# List locations of include files within Trilinos but outside of this 
 #np# package
 include $(top_builddir)/Makefile.export.anasazi
-
-all-libs:
-	$(MAKE) libanasazi.a
-	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
-	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
-	$(BUILD_TRIUTILS_LIBS)
-	$(BUILD_BELOS_LIBS)
-	$(BUILD_AZTECOO_LIBS)
-	$(BUILD_IFPACK_LIBS)
-	$(BUILD_THYRA_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

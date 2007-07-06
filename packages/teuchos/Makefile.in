@@ -282,7 +282,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 
 #We now build tests and examples through separate make targets, rather than
 #during "make".  We still need to conditionally include the test and example
-#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#in SUBDIRS, even though SUB_TESTS and SUB_EXAMPLES will never be
 #defined, so that the tests and examples are included in the distribution
 #tarball.
 @SUB_TEST_TRUE@TEST_SUBDIR = test
@@ -777,12 +777,6 @@ runtests-mpi :
   --output-dir=@abs_top_builddir@/test/runtests-results \
   --verbosity=1 \
   --packages=teuchos
-
-all-libs:
-	cd $(top_builddir)/src ; $(MAKE) all-libs
-
-libs:
-	cd $(top_builddir)/src ; $(MAKE)
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.teuchos $(exec_prefix)/include/. ; \

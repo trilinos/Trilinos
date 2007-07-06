@@ -229,7 +229,3 @@ clean:  clean-am
 	Suppressions \
 	SST.* \
 	AME.* 
-
-all-libs:
-	cd $(top_builddir)/src ; $(MAKE) all-libs 
-

@@ -204,21 +204,3 @@ nodist_execinclude_HEADERS = Belos_config.h
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
-
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-if BUILD_IFPACK
-BUILD_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; $(MAKE) all-libs
-else
-BUILD_IFPACK_LIBS =
-endif
-
-all-libs:
-	$(MAKE) libbelos.a
-	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
-	cd $(top_builddir)/../triutils ; $(MAKE) all-libs
-	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
-	$(BUILD_IFPACK_LIBS)
-#	$(BUILD_TSFCORE_EPETRA_LIBS)

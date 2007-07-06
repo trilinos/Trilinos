@@ -53,12 +53,6 @@ AM_CPPFLAGS += \
   -I$(top_srcdir)/example/model_evaluator/2dsim \
   -I$(top_srcdir)/example/model_evaluator/4dopt
 
-$(top_builddir)/../amesos/src/libamesos.a:
-	cd $(top_builddir)/../amesos ; make all-libs
-
-$(top_builddir)/../amesos/thyra/src/libamesosthyra.a:
-	cd $(top_builddir)/../amesos/thyra/src ; make
-
 EXTRA_DIST = \
    $(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.hpp \
    $(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.hpp

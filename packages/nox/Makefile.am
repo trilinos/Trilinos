@@ -136,33 +136,6 @@ dox:
 	cd doc;	$(MAKE) dox; 
 
 ## #######################################################################
-## Target for circular dependencies
-## #######################################################################
-all-libs:
-	cd src ; $(MAKE) all-libs
-	cd ../src-lapack; $(MAKE)
-	cd ../src-epetra; $(MAKE)
-	cd ../src-petsc; $(MAKE)
-	cd ../src-belos; $(MAKE)
-	cd ../src-thyra; $(MAKE)
-	cd ../src-loca/src; $(MAKE)
-	cd ../src-loca/src-lapack; $(MAKE)
-	cd ../src-loca/src-epetra; $(MAKE)
-	cd ../src-loca/src-mf; $(MAKE)
-
-libs:
-	cd src ; $(MAKE)
-	cd ../src-lapack; $(MAKE)
-	cd ../src-epetra; $(MAKE)
-	cd ../src-petsc; $(MAKE)
-	cd ../src-belos; $(MAKE)
-	cd ../src-thyra; $(MAKE)
-	cd ../src-loca/src; $(MAKE)
-	cd ../src-loca/src-lapack; $(MAKE)
-	cd ../src-loca/src-epetra; $(MAKE)
-	cd ../src-loca/src-mf; $(MAKE)
-
-## #######################################################################
 ## Export Makefile Installation
 ## #######################################################################
 if USING_EXPORT_MAKEFILES

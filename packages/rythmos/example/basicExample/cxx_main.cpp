@@ -121,6 +121,7 @@ int main(int argc, char *argv[])
     const char * step_method_names[] = { "fixed", "variable" };
     EStepMethod step_method_val = FIXED_STEP;
     double maxError = 1e-6;
+    double maxRestepError = 1.0e4*Teuchos::ScalarTraits<double>::prec();
     bool version = false;  // display version information 
     double reltol = 1.0e-2;
     double abstol = 1.0e-4;
@@ -147,6 +148,7 @@ int main(int argc, char *argv[])
     clp.setOption( "stepmethod", &step_method_val, num_step_methods, step_method_values, step_method_names, "Stepping method" );
     clp.setOption( "numsteps", &N, "Number of integration steps to take" );
     clp.setOption( "maxerror", &maxError, "Maximum error" );
+    clp.setOption( "max-restep-error", &maxRestepError, "Maximum error between solutions of two steppers" );
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not" );
     clp.setOption( "version", "run", &version, "Version of this code" );
     clp.setOption( "reltol", &reltol, "Relative Error Tolerance" );
@@ -447,11 +449,11 @@ int main(int argc, char *argv[])
             }
             TEST_FOR_EXCEPT(stepStatusMaster.order != stepStatusSlave.order);
             // We will allow a difference of some multiplier of machine epsilon:
-            double eps = 1.0e4*Teuchos::ScalarTraits<double>::prec();
-            double normLETDiff = std::abs(stepStatusMaster.stepLETValue - stepStatusSlave.stepLETValue);
+            const double
+              normLETDiff = std::abs(stepStatusMaster.stepLETValue - stepStatusSlave.stepLETValue);
             TEST_FOR_EXCEPTION(
-              normLETDiff > eps, std::logic_error,
-              "Error, normLETDiff = " << normLETDiff << " > eps = " << eps << "!" );
+              normLETDiff > maxRestepError, std::logic_error,
+              "Error, normLETDiff = " << normLETDiff << " > maxRestepError = " << maxRestepError << "!" );
             // Create a non-const Thyra VectorBase to use as a temp vector
             RCP<Thyra::VectorBase<double> > vec_temp = stepStatusSlave.solution->clone_v();
             // Check that the solution matches exactly
@@ -460,6 +462,7 @@ int main(int argc, char *argv[])
             if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
               *out << "normSolutionDiff = " << normSolutionDiff << endl;
             }
+            const double eps = 1.0e4*Teuchos::ScalarTraits<double>::prec();
             TEST_FOR_EXCEPT(normSolutionDiff > eps);
             // Check that solution dot matches exactly
             Thyra::V_StVpStV<double>(&*vec_temp,1.0,*stepStatusMaster.solutionDot,-1.0,*stepStatusSlave.solutionDot);

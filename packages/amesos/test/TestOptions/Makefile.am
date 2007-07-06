@@ -62,6 +62,3 @@ EXTRA_TestOptions_SOURCES = \
 
 TestOptions_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 TestOptions_LDADD = $(EXAMPLE_LIBS)
-
-all-libs:
-	cd $(top_builddir)/src ; $(MAKE) all-libs 

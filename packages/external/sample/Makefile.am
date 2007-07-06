@@ -43,12 +43,6 @@ all-local:
 	@echo "Trilinos package external built successfully"
 
 ## #######################################################################
-## Target for circular dependencies
-## #######################################################################
-#all-libs:
-#	cd src ; make all-libs
-
-## #######################################################################
 ## Export Makefile Installation
 ## #######################################################################
 #if USING_EXPORT_MAKEFILES

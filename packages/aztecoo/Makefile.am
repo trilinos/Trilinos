@@ -100,7 +100,7 @@ else
 tests:
 	@echo "aztecoo tests were disabled at configure time"
 endif
-	
+
 if BUILD_EXAMPLES
 examples:
 	cd $(top_builddir)/example ; $(MAKE)
@@ -132,15 +132,6 @@ install-everything:
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
-## #######################################################################
-## Target for circular dependencies
-## #######################################################################
-
-all-libs:
-	cd $(top_builddir)/src ; $(MAKE) all-libs
-
-libs:
-	cd $(top_builddir)/src ; $(MAKE)
 
 ## #######################################################################
 ## Export Makefile Installation

@@ -587,18 +587,6 @@ nodist_execinclude_HEADERS = Ifpack_config.h
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
-@HAVE_IFPACK_AZTECOO_FALSE@HAVE_IFPACK_AZTECOO_LIBS = 
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-@HAVE_IFPACK_AZTECOO_TRUE@HAVE_IFPACK_AZTECOO_LIBS = cd $(top_builddir)/../aztecoo ; $(MAKE) all-libs
-@HAVE_IFPACK_GALERI_FALSE@HAVE_IFPACK_GALERI_LIBS = 
-@HAVE_IFPACK_GALERI_TRUE@HAVE_IFPACK_GALERI_LIBS = cd $(top_builddir)/../galeri ; $(MAKE) all-libs
-@HAVE_IFPACK_AMESOS_FALSE@HAVE_IFPACK_AMESOS_LIBS = 
-@HAVE_IFPACK_AMESOS_TRUE@HAVE_IFPACK_AMESOS_LIBS = cd $(top_builddir)/../amesos ; $(MAKE) all-libs
-@HAVE_IFPACK_EPETRAEXT_FALSE@HAVE_IFPACK_EPETRAEXT_LIBS = 
-@HAVE_IFPACK_EPETRAEXT_TRUE@HAVE_IFPACK_EPETRAEXT_LIBS = cd $(top_builddir)/../epetraext ; $(MAKE) all-libs
 all: Ifpack_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -1562,15 +1550,6 @@ all-local:
 # NOTE:  Amesos path is conditionally added for AMD
 # ------------------------------------------------------------------------
 include $(top_builddir)/Makefile.export.ifpack
-
-all-libs:
-	$(MAKE) libifpack.a
-	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
-	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
-	$(HAVE_IFPACK_AZTECOO_LIBS)
-	$(HAVE_IFPACK_GALERI_LIBS)
-	$(HAVE_IFPACK_AMESOS_LIBS)
-	$(HAVE_IFPACK_EPETRAEXT_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

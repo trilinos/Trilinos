@@ -375,12 +375,6 @@ nodist_execinclude_HEADERS = Belos_config.h
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
-@BUILD_IFPACK_FALSE@BUILD_IFPACK_LIBS = 
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-@BUILD_IFPACK_TRUE@BUILD_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; $(MAKE) all-libs
 all: Belos_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -761,14 +755,6 @@ all-local:
 # Includes for required and optional library dependencies
 # ------------------------------------------------------------------------
 include $(top_builddir)/Makefile.export.belos
-
-all-libs:
-	$(MAKE) libbelos.a
-	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
-	cd $(top_builddir)/../triutils ; $(MAKE) all-libs
-	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
-	$(BUILD_IFPACK_LIBS)
-#	$(BUILD_TSFCORE_EPETRA_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

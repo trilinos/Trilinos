@@ -736,28 +736,6 @@ nodist_execinclude_HEADERS = ml_config.h
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
-@ML_USING_EPETRA_FALSE@ML_USING_EPETRA_LIBS = 
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-@ML_USING_EPETRA_TRUE@ML_USING_EPETRA_LIBS = cd $(top_builddir)/../epetra ; $(MAKE) all-libs 
-@ML_USING_AMESOS_FALSE@ML_USING_AMESOS_LIBS = 
-@ML_USING_AMESOS_TRUE@ML_USING_AMESOS_LIBS = cd $(top_builddir)/../amesos ; $(MAKE) all-libs 
-@ML_USING_IFPACK_FALSE@ML_USING_IFPACK_LIBS = 
-@ML_USING_IFPACK_TRUE@ML_USING_IFPACK_LIBS = cd $(top_builddir)/../ifpack ; $(MAKE) all-libs 
-@ML_USING_TEUCHOS_FALSE@ML_USING_TEUCHOS_LIBS = 
-@ML_USING_TEUCHOS_TRUE@ML_USING_TEUCHOS_LIBS = cd $(top_builddir)/../teuchos ; $(MAKE) all-libs 
-@ML_USING_AZTECOO_FALSE@ML_USING_AZTECOO_LIBS = 
-
-#if ML_USING_ANASAZI
-#ML_USING_ANASAZI_LIBS = cd $(top_builddir)/../anasazi ; $(MAKE) all-libs 
-#else
-#ML_USING_ANASAZI_LIBS = 
-#endif
-@ML_USING_AZTECOO_TRUE@ML_USING_AZTECOO_LIBS = cd $(top_builddir)/../aztecoo ; $(MAKE) all-libs 
-@ML_USING_EPETRAEXT_FALSE@ML_USING_EPETRAEXT_LIBS = 
-@ML_USING_EPETRAEXT_TRUE@ML_USING_EPETRAEXT_LIBS = cd $(top_builddir)/../epetraext ; $(MAKE) all-libs 
 all: ml_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -2872,16 +2850,6 @@ all-local:
 	@echo ""
 
 include $(top_builddir)/Makefile.export.ml
-
-all-libs:
-	$(MAKE) libml.a
-	$(ML_USING_EPETRA_LIBS)
-	$(ML_USING_AMESOS_LIBS)
-	$(ML_USING_IFPACK_LIBS)
-	$(ML_USING_TEUCHOS_LIBS)
-	$(ML_USING_ANASAZI_LIBS)
-	$(ML_USING_AZTECOO_LIBS)
-	$(ML_USING_EPETRAEXT_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

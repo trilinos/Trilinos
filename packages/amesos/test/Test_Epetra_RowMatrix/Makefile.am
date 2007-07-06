@@ -24,6 +24,3 @@ Test_Epetra_RowMatrix_SOURCES      = $(srcdir)/cxx_main.cpp
 Test_Epetra_RowMatrix_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 Test_Epetra_RowMatrix_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 Test_Epetra_RowMatrix_LDADD        = $(EXAMPLE_LIBS)
-
-all-libs:
-	cd $(top_builddir)/src ; $(MAKE) all-libs 

@@ -162,12 +162,3 @@ nodist_execinclude_HEADERS = Galeri_config.h
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-
-all-libs:
-	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
-	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
-	$(MAKE) libgaleri.a

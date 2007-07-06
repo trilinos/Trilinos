@@ -537,22 +537,3 @@ nodist_execinclude_HEADERS = Amesos_config.h
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-all-libs:
-	$(MAKE) libamesos.a
-	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs 
-	cd $(top_builddir)/../epetra ; $(MAKE) all-libs 
-if HAVE_AMESOS_TRIUTILS
-	cd $(top_builddir)/../triutils ; $(MAKE) all-libs 
-endif
-if HAVE_AMESOS_EPETRAEXT
-	cd $(top_builddir)/../epetraext ; $(MAKE) all-libs 
-endif
-
-
-
-
-

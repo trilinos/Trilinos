@@ -722,12 +722,6 @@ all-local:
 	@echo "        |    Trilinos package Moertel built successfully     |"
 	@echo "        +----------------------------------------------------+"
 
-all-libs:
-	cd src ; make all-libs
-
-libs:
-	cd src ; make
-
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.moertel $(exec_prefix)/include/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
