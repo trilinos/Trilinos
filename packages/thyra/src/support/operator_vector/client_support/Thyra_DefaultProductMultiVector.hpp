@@ -236,7 +236,7 @@ DefaultProductMultiVector<Scalar>::subView(
 
 
 template<class Scalar>
-void DefaultProductMultiVector<Scalar>::applyOp(
+void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
   const RTOpPack::RTOpT<Scalar> &primary_op,
   const int num_multi_vecs,
   const MultiVectorBase<Scalar>*const multi_vecs_in[],
@@ -265,11 +265,11 @@ void DefaultProductMultiVector<Scalar>::applyOp(
   TEST_FOR_EXCEPT( num_multi_vecs > 0 && multi_vecs_in == 0 );
   for ( int j = 0; j < num_multi_vecs; ++j ) {
     THYRA_ASSERT_VEC_SPACES(
-      "DefaultProductMultiVector<Scalar>::applyOp(...)",
+      "DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(...)",
       *this->range(), *multi_vecs_in[j]->range()
       );
     THYRA_ASSERT_VEC_SPACES(
-      "DefaultProductMultiVector<Scalar>::applyOp(...)",
+      "DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(...)",
       *this->domain(), *multi_vecs_in[j]->domain()
       );
   }
@@ -277,11 +277,11 @@ void DefaultProductMultiVector<Scalar>::applyOp(
   TEST_FOR_EXCEPT( num_targ_multi_vecs > 0 && targ_multi_vecs_inout == 0 );
   for ( int j = 0; j < num_targ_multi_vecs; ++j ) {
     THYRA_ASSERT_VEC_SPACES(
-      "DefaultProductMultiVector<Scalar>::applyOp(...)",
+      "DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(...)",
       *this->range(), *targ_multi_vecs_inout[j]->range()
       );
     THYRA_ASSERT_VEC_SPACES(
-      "DefaultProductMultiVector<Scalar>::applyOp(...)",
+      "DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(...)",
       *this->domain(), *targ_multi_vecs_inout[j]->domain()
       );
   }
@@ -447,7 +447,7 @@ void DefaultProductMultiVector<Scalar>::applyOp(
     // then the spaces said that they are compatible so fall back on the
     // column-by-column implementation that will work correctly in serial.
 
-    MultiVectorDefaultBase<Scalar>::applyOp(
+    MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
       primary_op,
       num_multi_vecs, multi_vecs_in,
       num_targ_multi_vecs, targ_multi_vecs_inout,
@@ -462,45 +462,48 @@ void DefaultProductMultiVector<Scalar>::applyOp(
 
 
 template<class Scalar>
-void DefaultProductMultiVector<Scalar>::acquireDetachedView(
+void DefaultProductMultiVector<Scalar>::acquireDetachedMultiVectorViewImpl(
   const Range1D &rowRng,
   const Range1D &colRng,
   RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
   ) const
 {
-  return MultiVectorDefaultBase<Scalar>::acquireDetachedView(rowRng,colRng,sub_mv);
+  return MultiVectorDefaultBase<Scalar>::acquireDetachedMultiVectorViewImpl(
+    rowRng, colRng, sub_mv );
   // ToDo: Override this implementation if needed!
 }
 
 
 template<class Scalar>
-void DefaultProductMultiVector<Scalar>::releaseDetachedView(
+void DefaultProductMultiVector<Scalar>::releaseDetachedMultiVectorViewImpl(
   RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
   ) const
 {
-  return MultiVectorDefaultBase<Scalar>::releaseDetachedView(sub_mv);
+  return MultiVectorDefaultBase<Scalar>::releaseDetachedMultiVectorViewImpl(
+    sub_mv );
   // ToDo: Override this implementation if needed!
 }
 
 
 template<class Scalar>
-void DefaultProductMultiVector<Scalar>::acquireDetachedView(
+void DefaultProductMultiVector<Scalar>::acquireNonconstDetachedMultiVectorViewImpl(
   const Range1D &rowRng,
   const Range1D &colRng,
   RTOpPack::SubMultiVectorView<Scalar> *sub_mv
   )
 {
-  return MultiVectorDefaultBase<Scalar>::acquireDetachedView(rowRng,colRng,sub_mv);
+  return MultiVectorDefaultBase<Scalar>::acquireNonconstDetachedMultiVectorViewImpl(
+    rowRng,colRng,sub_mv );
   // ToDo: Override this implementation if needed!
 }
 
 
 template<class Scalar>
-void DefaultProductMultiVector<Scalar>::commitDetachedView(
+void DefaultProductMultiVector<Scalar>::commitNonconstDetachedMultiVectorViewImpl(
   RTOpPack::SubMultiVectorView<Scalar>* sub_mv
   )
 {
-  return MultiVectorDefaultBase<Scalar>::commitDetachedView(sub_mv);
+  return MultiVectorDefaultBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(sub_mv);
   // ToDo: Override this implementation if needed!
 }
 
@@ -584,7 +587,7 @@ void DefaultProductMultiVector<Scalar>::apply(
     ProductMultiVectorBase<Scalar>
       &Y = dyn_cast<ProductMultiVectorBase<Scalar> >(*Y_inout);
     for ( int k = 0; k < numBlocks_; ++k ) {
-      apply(
+      Thyra::apply(
         *multiVecs_[k].getConstObj(), M_trans,
         X_in, &*Y.getNonconstMultiVectorBlock(k),
         alpha, beta
@@ -606,10 +609,10 @@ void DefaultProductMultiVector<Scalar>::apply(
         M_k = multiVecs_[k].getConstObj(),
         X_k = X.getMultiVectorBlock(k);
       if ( 0 == k ) {
-        apply( *M_k, M_trans, *X_k, &*Y_inout, alpha, beta ); 
+        Thyra::apply( *M_k, M_trans, *X_k, &*Y_inout, alpha, beta ); 
       }
       else {
-        apply( *M_k, M_trans, *X_k, &*Y_inout, alpha, ST::one() ); 
+        Thyra::apply( *M_k, M_trans, *X_k, &*Y_inout, alpha, ST::one() ); 
       }
     }
   }

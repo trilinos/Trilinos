@@ -479,7 +479,7 @@ public:
 
   /** \brief . */
   using LinearOpBase<Scalar>::describe;
-  
+
   /** @name Provide access to the columns as VectorBase objects */
   //@{
 
@@ -647,6 +647,29 @@ public:
   /** @name Collective reduction/transformation operator apply functions */
   //@{
 
+  /** \brief Temporary NVI function. */
+  void applyOp(
+    const RTOpPack::RTOpT<Scalar> &primary_op,
+    const int num_multi_vecs,
+    const MultiVectorBase<Scalar>*const multi_vecs[],
+    const int num_targ_multi_vecs,
+    MultiVectorBase<Scalar>*const targ_multi_vecs[],
+    RTOpPack::ReductTarget*const reduct_objs[],
+    const Index primary_first_ele_offset,
+    const Index primary_sub_dim,
+    const Index primary_global_offset,
+    const Index secondary_first_ele_offset,
+    const Index secondary_sub_dim
+    ) const
+    {
+      mvMultiReductApplyOpImpl(
+        primary_op, num_multi_vecs, multi_vecs, num_targ_multi_vecs,
+        targ_multi_vecs, reduct_objs,
+        primary_first_ele_offset, primary_sub_dim,
+        primary_global_offset, secondary_first_ele_offset, secondary_sub_dim
+        );
+    }
+
   /** \brief Apply a reduction/transformation operator column by column and
    * return an array of the reduction objects.
    *
@@ -668,7 +691,7 @@ public:
    * each column <tt>this->col(j)</tt> for <tt>j = 0
    * ... this->range()->dim()-1</tt>.
    */
-  virtual void applyOp(
+  virtual void mvMultiReductApplyOpImpl(
     const RTOpPack::RTOpT<Scalar> &primary_op,
     const int num_multi_vecs,
     const MultiVectorBase<Scalar>*const multi_vecs[],
@@ -681,6 +704,31 @@ public:
     const Index secondary_first_ele_offset,
     const Index secondary_sub_dim
     ) const = 0;
+
+  /** \brief Temporary NVI function. */
+  void applyOp(
+    const RTOpPack::RTOpT<Scalar> &primary_op,
+    const RTOpPack::RTOpT<Scalar> &secondary_op,
+    const int num_multi_vecs,
+    const MultiVectorBase<Scalar>*const multi_vecs[],
+    const int num_targ_multi_vecs,
+    MultiVectorBase<Scalar>*const targ_multi_vecs[],
+    RTOpPack::ReductTarget *reduct_obj,
+    const Index primary_first_ele_offset,
+    const Index primary_sub_dim,
+    const Index primary_global_offset,
+    const Index secondary_first_ele_offset,
+    const Index secondary_sub_dim
+    ) const
+    {
+      mvSingleReductApplyOpImpl(
+        primary_op, secondary_op, num_multi_vecs, multi_vecs,
+        num_targ_multi_vecs, targ_multi_vecs, reduct_obj,
+        primary_first_ele_offset, primary_sub_dim,
+        primary_global_offset, secondary_first_ele_offset,
+        secondary_sub_dim
+        );
+    }
 
   /** \brief Apply a reduction/transformation operator column by column and
    * reduce the intermediate reduction objects into a single reduction object.
@@ -702,7 +750,7 @@ public:
    * The default implementation calls <tt>applyOp()</tt> where an
    * array of reduction objects is taken.
    */
-  virtual void applyOp(
+  virtual void mvSingleReductApplyOpImpl(
     const RTOpPack::RTOpT<Scalar> &primary_op,
     const RTOpPack::RTOpT<Scalar> &secondary_op,
     const int num_multi_vecs,
@@ -721,6 +769,16 @@ public:
 
   /** @name Explicit sub-multi-vector access */
   //@{
+
+  /** \brief Temporary NVI function. */
+  void acquireDetachedView(
+    const Range1D &rowRng,
+    const Range1D &colRng,
+    RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
+    ) const
+    {
+      acquireDetachedMultiVectorViewImpl( rowRng, colRng, sub_mv );
+    }
 
   /** \brief Get a non-changeable explicit view of a sub-multi-vector.
    *
@@ -781,11 +839,19 @@ public:
    * override <tt>releaseDetachedView()</tt> which has a default implementation
    * which is a companion to this function's default implementation.
    */
-  virtual void acquireDetachedView(
+  virtual void acquireDetachedMultiVectorViewImpl(
     const Range1D &rowRng,
     const Range1D &colRng,
     RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
     ) const = 0;
+
+  /** \brief Temporary NVI function. */
+  void releaseDetachedView(
+    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
+    ) const
+    {
+      releaseDetachedMultiVectorViewImpl(sub_mv);
+    }
 
   /** \brief Free a non-changeable explicit view of a sub-multi-vector.
    *
@@ -812,9 +878,19 @@ public:
    * <tt>acquireDetachedView()</tt> is overridden by a subclass then this
    * function must be overridden also!
    */
-  virtual void releaseDetachedView(
+  virtual void releaseDetachedMultiVectorViewImpl(
     RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
     ) const = 0;
+
+  /** \brief Temporary NVI function. */
+  void acquireDetachedView(
+    const Range1D &rowRng,
+    const Range1D &colRng,
+    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
+    )
+    {
+      acquireNonconstDetachedMultiVectorViewImpl(rowRng,colRng,sub_mv);
+    }
 
   /** \brief Get a changeable explicit view of a sub-multi-vector.
    *
@@ -885,11 +961,19 @@ public:
    * implementation which is a companion to this function's default
    * implementation.
    */
-  virtual void acquireDetachedView(
+  virtual void acquireNonconstDetachedMultiVectorViewImpl(
     const Range1D &rowRng,
     const Range1D &colRng,
     RTOpPack::SubMultiVectorView<Scalar> *sub_mv
     ) = 0;
+
+  /** \brief Temporary NVI function. */
+  void commitDetachedView(
+    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
+    )
+    {
+      commitNonconstDetachedMultiVectorViewImpl(sub_mv);
+    }
 
   /** \brief Commit changes for a changeable explicit view of a sub-multi-vector.
    *
@@ -919,7 +1003,7 @@ public:
    * <tt>acquireDetachedView()</tt> is overridden by a subclass then this
    * function must be overridden also!
    */
-  virtual void commitDetachedView(
+  virtual void commitNonconstDetachedMultiVectorViewImpl(
     RTOpPack::SubMultiVectorView<Scalar>* sub_mv
     ) = 0;
 

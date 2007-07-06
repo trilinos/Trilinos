@@ -263,38 +263,38 @@ void DefaultMultiVectorProductVector<Scalar>::applyOp(
 
 
 template <class Scalar>
-void DefaultMultiVectorProductVector<Scalar>::acquireDetachedView(
+void DefaultMultiVectorProductVector<Scalar>::acquireDetachedVectorViewImpl(
   const Range1D& rng_in, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
   ) const
 {
-  this->getDefaultProductVector()->acquireDetachedView(rng_in,sub_vec);
+  this->getDefaultProductVector()->acquireDetachedVectorViewImpl(rng_in,sub_vec);
 }
 
 
 template <class Scalar>
-void DefaultMultiVectorProductVector<Scalar>::releaseDetachedView(
+void DefaultMultiVectorProductVector<Scalar>::releaseDetachedVectorViewImpl(
   RTOpPack::ConstSubVectorView<Scalar>* sub_vec
   ) const
 {
-  this->getDefaultProductVector()->releaseDetachedView(sub_vec);
+  this->getDefaultProductVector()->releaseDetachedVectorViewImpl(sub_vec);
 }
 
 
 template <class Scalar>
-void DefaultMultiVectorProductVector<Scalar>::acquireDetachedView(
+void DefaultMultiVectorProductVector<Scalar>::acquireNonconstDetachedVectorViewImpl(
   const Range1D& rng_in, RTOpPack::SubVectorView<Scalar>* sub_vec
   )
 {
-  TEST_FOR_EXCEPT("ToDo: Implement DefaultMultiVectorProductVector<Scalar>::acquireDetachedView(...)!");
+  TEST_FOR_EXCEPT("ToDo: Implement DefaultMultiVectorProductVector<Scalar>::acquireNonconstDetachedVectorViewImpl(...)!");
 }
 
 
 template <class Scalar>
-void DefaultMultiVectorProductVector<Scalar>::commitDetachedView(
+void DefaultMultiVectorProductVector<Scalar>::commitNonconstDetachedVectorViewImpl(
   RTOpPack::SubVectorView<Scalar>* sub_vec
   )
 {
-  TEST_FOR_EXCEPT("ToDo: Implement DefaultMultiVectorProductVector<Scalar>::commitDetachedView(...)!");
+  TEST_FOR_EXCEPT("ToDo: Implement DefaultMultiVectorProductVector<Scalar>::commitNonconstDetachedVectorViewImpl(...)!");
 }
 
 

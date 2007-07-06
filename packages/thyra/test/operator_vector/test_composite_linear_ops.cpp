@@ -328,11 +328,14 @@ bool run_composite_linear_ops_tests(
   if(result) success = false;
 #endif // TEUCHOS_DEBUG
 
+  RCP<const Thyra::LinearOpBase<Scalar> >
+    nullOp = null;
+
   if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A9 = [ A6, A1^H; A1, null ] ...\n";
   RCP<const Thyra::LinearOpBase<Scalar> >
     A9 = Thyra::block2x2<Scalar>(
       A6,  adjoint(A1)
-      ,A1, null
+      ,A1, nullOp
       );
   if(out.get()) *out << "\nA9 =\n" << describe(*A9,verbLevel);
   
@@ -393,8 +396,8 @@ bool run_composite_linear_ops_tests(
   if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A9a = [ null, A1^H; A1, null ] ...\n";
   RCP<const Thyra::LinearOpBase<Scalar> >
     A9a = Thyra::block2x2<Scalar>(
-      null,  adjoint(A1)
-      ,A1,   null
+      nullOp,  adjoint(A1),
+      A1,      nullOp
       );
   if(out.get()) *out << "\nA9a =\n" << describe(*A9a,verbLevel);
   
@@ -410,8 +413,8 @@ bool run_composite_linear_ops_tests(
   try {
     RCP<const Thyra::LinearOpBase<Scalar> >
       A9b = Thyra::block2x2<Scalar>(
-        A6,  adjoint(A1)
-        ,A1, A1
+        A6,  adjoint(A1),
+        A1,  A1
         );
     result = true;
   }
@@ -426,8 +429,8 @@ bool run_composite_linear_ops_tests(
   try {
     RCP<const Thyra::LinearOpBase<Scalar> >
       A9c = Thyra::block2x2<Scalar>(
-        A1,    A1
-        ,null, null
+        A1,       A1,
+        nullOp,   nullOp
         );
     result = true;
   }
@@ -442,8 +445,8 @@ bool run_composite_linear_ops_tests(
   try {
     RCP<const Thyra::LinearOpBase<Scalar> >
       A9d = Thyra::block2x2<Scalar>(
-        A1,  null
-        ,A1, null
+        A1,  nullOp,
+        A1,  nullOp
         );
     result = true;
   }
@@ -456,8 +459,8 @@ bool run_composite_linear_ops_tests(
   if(out.get()) *out << "\nCreating a blocked 2x1 linear operator A10 = [ A6; A1 ] ...\n";
   RCP<const Thyra::LinearOpBase<Scalar> >
     A10 = Thyra::block2x1<Scalar>(
-      A6
-      ,A1
+      A6,
+      A1
       );
   if(out.get()) *out << "\nA10 =\n" << describe(*A10,verbLevel);
   
@@ -489,8 +492,8 @@ bool run_composite_linear_ops_tests(
   if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A13 = [ zero, A1^H; A1, zero ] ...\n";
   RCP<const Thyra::LinearOpBase<Scalar> >
     A13 = Thyra::block2x2<Scalar>(
-      Thyra::zero(A1->domain(),A1->domain()),  adjoint(A1)
-      ,A1,                                     Thyra::zero(A1->range(),A1->range())
+      Thyra::zero(A1->domain(),A1->domain()),   adjoint(A1),
+      A1,                                       Thyra::zero(A1->range(),A1->range())
       );
   if(out.get()) *out << "\nA13 =\n" << describe(*A13,verbLevel);
   

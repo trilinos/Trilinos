@@ -29,19 +29,24 @@
 #ifndef THYRA_PRODUCT_VECTOR_HPP
 #define THYRA_PRODUCT_VECTOR_HPP
 
+
 #include "Thyra_DefaultProductVectorDecl.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Teuchos_Workspace.hpp"
 
+
 namespace Thyra {
 
+
 // Constructors/initializers/accessors
+
 
 template <class Scalar>
 DefaultProductVector<Scalar>::DefaultProductVector()
 {
   uninitialize();
 }
+
 
 template <class Scalar>
 DefaultProductVector<Scalar>::DefaultProductVector(
@@ -50,6 +55,7 @@ DefaultProductVector<Scalar>::DefaultProductVector(
 {
   initialize(productSpace);
 }
+
 
 template <class Scalar>
 DefaultProductVector<Scalar>::DefaultProductVector(
@@ -60,6 +66,7 @@ DefaultProductVector<Scalar>::DefaultProductVector(
   initialize(productSpace,vecs);
 }
 
+
 template <class Scalar>
 DefaultProductVector<Scalar>::DefaultProductVector(
   const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
@@ -68,6 +75,7 @@ DefaultProductVector<Scalar>::DefaultProductVector(
 {
   initialize(productSpace,vecs);
 }
+
 
 template <class Scalar>
 void DefaultProductVector<Scalar>::initialize(
@@ -82,6 +90,7 @@ void DefaultProductVector<Scalar>::initialize(
     vecs_[k].initialize(createMember(productSpace->getBlock(k)));
 }
 
+
 template <class Scalar>
 void DefaultProductVector<Scalar>::initialize(
   const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
@@ -95,6 +104,7 @@ void DefaultProductVector<Scalar>::initialize(
   for( int k = 0; k < numBlocks_; ++k )
     vecs_[k].initialize(vecs[k]);
 }
+
 
 template <class Scalar>
 void DefaultProductVector<Scalar>::initialize(
@@ -110,6 +120,7 @@ void DefaultProductVector<Scalar>::initialize(
     vecs_[k].initialize(vecs[k]);
 }
 
+
 template <class Scalar>
 void DefaultProductVector<Scalar>::uninitialize()
 {
@@ -118,7 +129,9 @@ void DefaultProductVector<Scalar>::uninitialize()
   numBlocks_ = 0;
 }
 
+
 // Overridden from Teuchos::Describable
+
                                                 
 template<class Scalar>
 std::string DefaultProductVector<Scalar>::description() const
@@ -132,6 +145,7 @@ std::string DefaultProductVector<Scalar>::description() const
     << "}";
   return oss.str();
 }
+
 
 template<class Scalar>
 void DefaultProductVector<Scalar>::describe(
@@ -174,7 +188,9 @@ void DefaultProductVector<Scalar>::describe(
   }
 }
 
+
 // Overridden from ProductVectorBase
+
 
 template <class Scalar>
 Teuchos::RCP<VectorBase<Scalar> >
@@ -184,6 +200,7 @@ DefaultProductVector<Scalar>::getNonconstVectorBlock(const int k)
   return vecs_[k].getNonconstObj();
 }
 
+
 template <class Scalar>
 Teuchos::RCP<const VectorBase<Scalar> >
 DefaultProductVector<Scalar>::getVectorBlock(const int k) const
@@ -192,7 +209,9 @@ DefaultProductVector<Scalar>::getVectorBlock(const int k) const
   return vecs_[k].getConstObj();
 }
 
+
 // Overridden from ProductMultiVectorBase
+
 
 template <class Scalar>
 Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >
@@ -201,6 +220,7 @@ DefaultProductVector<Scalar>::productSpace() const
   return productSpace_;
 }
 
+
 template <class Scalar>
 bool DefaultProductVector<Scalar>::blockIsConst(const int k) const
 {
@@ -208,12 +228,14 @@ bool DefaultProductVector<Scalar>::blockIsConst(const int k) const
   return vecs_[k].isConst();
 }
 
+
 template <class Scalar>
 Teuchos::RCP<MultiVectorBase<Scalar> >
 DefaultProductVector<Scalar>::getNonconstMultiVectorBlock(const int k)
 {
   return getNonconstVectorBlock(k);
 }
+
 
 template <class Scalar>
 void DefaultProductVector<Scalar>
@@ -225,6 +247,7 @@ void DefaultProductVector<Scalar>
   vecs_[i] = b;
 }
 
+
 template <class Scalar>
 void DefaultProductVector<Scalar>
 ::setNonconstBlock(int i, 
@@ -235,6 +258,7 @@ void DefaultProductVector<Scalar>
   vecs_[i] = b;
 }
 
+
 template <class Scalar>
 Teuchos::RCP<const MultiVectorBase<Scalar> >
 DefaultProductVector<Scalar>::getMultiVectorBlock(const int k) const
@@ -242,7 +266,9 @@ DefaultProductVector<Scalar>::getMultiVectorBlock(const int k) const
   return getVectorBlock(k);
 }
 
+
 // Overridden from VectorBase
+
 
 template <class Scalar>
 Teuchos::RCP< const VectorSpaceBase<Scalar> >
@@ -250,6 +276,7 @@ DefaultProductVector<Scalar>::space() const
 {
   return productSpace_;
 }
+
 
 template <class Scalar>
 void DefaultProductVector<Scalar>::applyOp(
@@ -429,8 +456,9 @@ void DefaultProductVector<Scalar>::applyOp(
   TEST_FOR_EXCEPT(!(num_elements_remaining==0));
 }
 
+
 template <class Scalar>
-void DefaultProductVector<Scalar>::acquireDetachedView(
+void DefaultProductVector<Scalar>::acquireDetachedVectorViewImpl(
   const Range1D& rng_in, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
   ) const
 {
@@ -459,12 +487,13 @@ void DefaultProductVector<Scalar>::acquireDetachedView(
     // two or more constituent vectors but this would be a lot of work.
     // However, this would require the use of temporary memory but
     // so what.
-    VectorDefaultBase<Scalar>::acquireDetachedView(rng_in,sub_vec);
+    VectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(rng_in,sub_vec);
   }
 }
 
+
 template <class Scalar>
-void DefaultProductVector<Scalar>::releaseDetachedView(
+void DefaultProductVector<Scalar>::releaseDetachedVectorViewImpl(
   RTOpPack::ConstSubVectorView<Scalar>* sub_vec
   ) const
 {
@@ -486,12 +515,13 @@ void DefaultProductVector<Scalar>::releaseDetachedView(
   }
   else {
     // This sub_vec was created by the default implementation!
-    VectorDefaultBase<Scalar>::releaseDetachedView(sub_vec);
+    VectorDefaultBase<Scalar>::releaseDetachedVectorViewImpl(sub_vec);
   }
 }
 
+
 template <class Scalar>
-void DefaultProductVector<Scalar>::acquireDetachedView(
+void DefaultProductVector<Scalar>::acquireNonconstDetachedVectorViewImpl(
   const Range1D& rng_in, RTOpPack::SubVectorView<Scalar>* sub_vec
   )
 {
@@ -520,12 +550,13 @@ void DefaultProductVector<Scalar>::acquireDetachedView(
     // two or more constituent vectors but this would be a lot of work.
     // However, this would require the use of temporary memory but
     // so what.
-    VectorDefaultBase<Scalar>::acquireDetachedView(rng_in,sub_vec);
+    VectorDefaultBase<Scalar>::acquireNonconstDetachedVectorViewImpl(rng_in,sub_vec);
   }
 }
 
+
 template <class Scalar>
-void DefaultProductVector<Scalar>::commitDetachedView(
+void DefaultProductVector<Scalar>::commitNonconstDetachedVectorViewImpl(
   RTOpPack::SubVectorView<Scalar>* sub_vec
   )
 {
@@ -547,9 +578,10 @@ void DefaultProductVector<Scalar>::commitDetachedView(
   }
   else {
     // This sub_vec was created by the default implementation!
-    VectorDefaultBase<Scalar>::commitDetachedView(sub_vec);
+    VectorDefaultBase<Scalar>::commitNonconstDetachedVectorViewImpl(sub_vec);
   }
 }
+
 
 template <class Scalar>
 void DefaultProductVector<Scalar>::setSubVector(
@@ -580,6 +612,8 @@ void DefaultProductVector<Scalar>::setSubVector(
   }
 }
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_PRODUCT_VECTOR_HPP

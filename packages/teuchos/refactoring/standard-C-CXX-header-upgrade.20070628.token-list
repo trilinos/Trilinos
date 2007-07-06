@@ -31,6 +31,7 @@ setioflags   std::setioflags
 cout         std::cout
 cerr         std::cerr
 endl         std::endl
+FILE         std::FILE
 sqrt         std::sqrt
 abs          std::abs
 fabs         std::fabs

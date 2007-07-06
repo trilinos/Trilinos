@@ -105,8 +105,6 @@ public:
   using SingleScalarEuclideanLinearOpBase<Scalar>::euclideanApply;
   /** \brief . */
   using SingleScalarEuclideanLinearOpBase<Scalar>::apply;
-  /** \brief . */
-  using MultiVectorDefaultBase<Scalar>::applyOp;
 
   /** @name  Constructors / initializers / accessors */
   //@{
@@ -127,11 +125,13 @@ public:
   /** \brief Returns a non-<tt>const</tt> pointer to a Fortran-style view of
    * the local multi-vector data.
    *
-   * @param  localValues [out] On output <tt>*localValues</tt> will point to 
-   *                     the first element in the first column of the local multi-vector
-   *                     stored as a column-major dense Fortran-style matrix.
-   * @param  leadingDim  [out] On output <tt>*leadingDim</tt> gives the leading dimension
-   *                     of the Fortran-style local multi-vector.
+   * @param  localValues
+   *           [out] On output <tt>*localValues</tt> will point to the first
+   *           element in the first column of the local multi-vector stored as
+   *           a column-major dense Fortran-style matrix.
+   * @param  leadingDim
+   *           [out] On output <tt>*leadingDim</tt> gives the leading
+   *           dimension of the Fortran-style local multi-vector.
    *
    * Preconditions:<ul>
    * <li> <tt>localValues!=NULL</tt>
@@ -163,13 +163,16 @@ public:
    */
   virtual void commitLocalData( Scalar *localValues ) = 0;
 
-  /** \brief Returns a <tt>const</tt>  pointer to a Fortran-style view of the local multi-vector data.
+  /** \brief Returns a <tt>const</tt> pointer to a Fortran-style view of the
+   * local multi-vector data.
    *
-   * @param  localValues [out] On output <tt>*localValues</tt> will point to 
-   *                     the first element in the first column of the local multi-vector
-   *                     stored as a column-major dense Fortran-style matrix.
-   * @param  leadingDim  [out] On output <tt>*leadingDim</tt> gives the leading dimension
-   *                     of the Fortran-style local multi-vector.
+   * @param  localValues
+   *           [out] On output <tt>*localValues</tt> will point to the first
+   *           element in the first column of the local multi-vector stored as
+   *           a column-major dense Fortran-style matrix.
+   * @param  leadingDim
+   *           [out] On output <tt>*leadingDim</tt> gives the leading
+   *           dimension of the Fortran-style local multi-vector.
    *
    * Preconditions:<ul>
    * <li> <tt>localValues!=NULL</tt>
@@ -181,12 +184,15 @@ public:
    * <li> <tt>*leadingDim!=0</tt>
    * </ul>
    */
-  virtual void getLocalData( const Scalar **localValues, Index *leadingDim ) const = 0;
+  virtual void getLocalData(
+    const Scalar **localValues, Index *leadingDim
+    ) const = 0;
 
   /** \brief Free view of local data that was gotten from <tt>getLocalData()</tt>.
    *
-   * @param  localValues [in/out] On input <tt>localValues</tt> must be the pointer set
-   *                     by <tt>getLocalData()</tt>.
+   * @param  localValues
+   *           [in/out] On input <tt>localValues</tt> must be the pointer set
+   *           by <tt>getLocalData()</tt>.
    *
    * Preconditions:<ul>
    * <li> <tt>localValues!=NULL</tt>
@@ -211,14 +217,15 @@ public:
   /** @name Overridden from LinearOpBase */
   //@{
 
-  /** \brief Calls <tt>EuclideanLinearOpBase::apply()</tt> to disambiguate <tt>apply()</tt>
+  /** \brief Calls <tt>EuclideanLinearOpBase::apply()</tt> to disambiguate
+   * <tt>apply()</tt>
    */
   void apply(
-    const ETransp                     M_trans
-    ,const MultiVectorBase<Scalar>    &X
-    ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                     alpha
-    ,const Scalar                     beta
+    const ETransp M_trans,
+    const MultiVectorBase<Scalar> &X,
+    MultiVectorBase<Scalar> *Y,
+    const Scalar alpha,
+    const Scalar beta
     ) const;
 
   //@}
@@ -226,35 +233,39 @@ public:
   /** @name Overridden from MultiVectorBase */
   //@{
   /** \brief . */
-  void applyOp(
-    const RTOpPack::RTOpT<Scalar>         &primary_op
-    ,const int                            num_multi_vecs
-    ,const MultiVectorBase<Scalar>*const  multi_vecs[]
-    ,const int                            num_targ_multi_vecs
-    ,MultiVectorBase<Scalar>*const        targ_multi_vecs[]
-    ,RTOpPack::ReductTarget*const         reduct_objs[]
-    ,const Index                          primary_first_ele
-    ,const Index                          primary_sub_dim
-    ,const Index                          primary_global_offset
-    ,const Index                          secondary_first_ele
-    ,const Index                          secondary_sub_dim
+  void mvMultiReductApplyOpImpl(
+    const RTOpPack::RTOpT<Scalar> &primary_op,
+    const int num_multi_vecs,
+    const MultiVectorBase<Scalar>*const multi_vecs[],
+    const int num_targ_multi_vecs,
+    MultiVectorBase<Scalar>*const targ_multi_vecs[],
+    RTOpPack::ReductTarget*const reduct_objs[],
+    const Index primary_first_ele,
+    const Index primary_sub_dim,
+    const Index primary_global_offset,
+    const Index secondary_first_ele,
+    const Index secondary_sub_dim
     ) const;
   /** \brief . */
-  void acquireDetachedView(
-    const Range1D                       &rowRng
-    ,const Range1D                      &colRng
-    ,RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
+  void acquireDetachedMultiVectorViewImpl(
+    const Range1D &rowRng,
+    const Range1D &colRng
+    ,RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
     ) const;
   /** \brief . */
-  void releaseDetachedView( RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv ) const;
+  void releaseDetachedMultiVectorViewImpl(
+    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
+    ) const;
   /** \brief . */
-  void acquireDetachedView(
-    const Range1D                                &rowRng
-    ,const Range1D                               &colRng
-    ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
+  void acquireNonconstDetachedMultiVectorViewImpl(
+    const Range1D &rowRng,
+    const Range1D &colRng,
+    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
     );
   /** \brief . */
-  void commitDetachedView( RTOpPack::SubMultiVectorView<Scalar>* sub_mv );
+  void commitNonconstDetachedMultiVectorViewImpl(
+    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
+    );
   //@}
 
 protected:

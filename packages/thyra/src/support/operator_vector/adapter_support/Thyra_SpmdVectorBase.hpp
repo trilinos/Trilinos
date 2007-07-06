@@ -29,6 +29,7 @@
 #ifndef THYRA_SPMD_VECTOR_BASE_HPP
 #define THYRA_SPMD_VECTOR_BASE_HPP
 
+
 #include "Thyra_SpmdVectorBaseDecl.hpp"
 #include "Thyra_VectorDefaultBase.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBase.hpp"
@@ -39,11 +40,14 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
+
 #ifdef THYRA_SPMD_VECTOR_BASE_DUMP
 #  include "Teuchos_VerboseObject.hpp"
 #endif // THYRA_SPMD_VECTOR_BASE_DUMP
 
+
 namespace Thyra {
+
 
 template<class Scalar>
 SpmdVectorBase<Scalar>::SpmdVectorBase()
@@ -53,7 +57,9 @@ SpmdVectorBase<Scalar>::SpmdVectorBase()
   ,localSubDim_(0)
 {}
 
+
 // Virtual methods with default implementations
+
 
 template<class Scalar>
 void SpmdVectorBase<Scalar>::getLocalData( const Scalar** values, Index* stride ) const
@@ -61,11 +67,13 @@ void SpmdVectorBase<Scalar>::getLocalData( const Scalar** values, Index* stride 
   const_cast<SpmdVectorBase<Scalar>*>(this)->getLocalData(const_cast<Scalar**>(values),stride);
 }
 
+
 template<class Scalar>
 void SpmdVectorBase<Scalar>::freeLocalData( const Scalar* values ) const
 {
   const_cast<SpmdVectorBase<Scalar>*>(this)->commitLocalData(const_cast<Scalar*>(values));
 }
+
 
 template<class Scalar>
 void SpmdVectorBase<Scalar>::applyOp(
@@ -197,7 +205,9 @@ void SpmdVectorBase<Scalar>::applyOp(
 #endif // THYRA_SPMD_VECTOR_BASE_DUMP
 }
 
+
 // Overridden from Teuchos::Describable
+
 
 template<class Scalar>
 std::string SpmdVectorBase<Scalar>::description() const
@@ -209,6 +219,7 @@ std::string SpmdVectorBase<Scalar>::description() const
   return ostr.str();
 }
 
+
 // Overridden from VectorBase
 
 template<class Scalar>
@@ -217,6 +228,7 @@ SpmdVectorBase<Scalar>::space() const
 {
   return spmdSpace();
 }
+
 
 template<class Scalar>
 void SpmdVectorBase<Scalar>::applyOp(
@@ -238,8 +250,11 @@ void SpmdVectorBase<Scalar>::applyOp(
     );
 }
 
+
 template<class Scalar>
-void SpmdVectorBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const
+void SpmdVectorBase<Scalar>::acquireDetachedVectorViewImpl(
+  const Range1D& rng_in, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+  ) const
 {
   if( rng_in == Range1D::Invalid ) {
     // Just return an null view
@@ -252,9 +267,14 @@ void SpmdVectorBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpPac
     return;
   }
   const Range1D rng = validateRange(rng_in);
-  if( rng.lbound() < localOffset_ || localOffset_+localSubDim_-1 < rng.ubound() ) {
+  if(
+    rng.lbound() < localOffset_ 
+    ||
+    localOffset_+localSubDim_-1 < rng.ubound()
+    )
+  {
     // rng consists of off-processor elements so use the default implementation!
-    VectorDefaultBase<Scalar>::acquireDetachedView(rng_in,sub_vec);
+    VectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(rng_in,sub_vec);
     return;
   }
   // rng consists of all local data so get it!
@@ -269,27 +289,37 @@ void SpmdVectorBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpPac
     );
 }
 
+
 template<class Scalar>
-void SpmdVectorBase<Scalar>::releaseDetachedView( RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const
+void SpmdVectorBase<Scalar>::releaseDetachedVectorViewImpl(
+  RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+  ) const
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     sub_vec==NULL || sub_vec->globalOffset() < 0 || sub_vec->globalOffset() + sub_vec->subDim() > globalDim_
     ,std::logic_error
-    ,"SpmdVectorBase<Scalar>::releaseDetachedView(...) : Error, this sub vector was not gotten from acquireDetachedView(...)!"
+    ,"SpmdVectorBase<Scalar>::releaseDetachedVectorViewImpl(...) : Error, this sub vector was not gotten from acquireDetachedView(...)!"
     );
 #endif
-  if( sub_vec->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_vec->globalOffset()+sub_vec->subDim() ) {
+  if(
+    sub_vec->globalOffset() < localOffset_ 
+    || localOffset_+localSubDim_ < sub_vec->globalOffset()+sub_vec->subDim()
+    )
+  {
     // Let the default implementation handle it!
-    VectorDefaultBase<Scalar>::releaseDetachedView(sub_vec);
+    VectorDefaultBase<Scalar>::releaseDetachedVectorViewImpl(sub_vec);
     return;
   }
   // Nothing to deallocate!
   sub_vec->set_uninitialized();
 }
 
+
 template<class Scalar>
-void SpmdVectorBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpPack::SubVectorView<Scalar>* sub_vec )
+void SpmdVectorBase<Scalar>::acquireNonconstDetachedVectorViewImpl(
+  const Range1D& rng_in, RTOpPack::SubVectorView<Scalar>* sub_vec
+  )
 {
   if( rng_in == Range1D::Invalid ) {
     // Just return an null view
@@ -302,9 +332,14 @@ void SpmdVectorBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpPac
     return;
   }
   const Range1D rng = validateRange(rng_in);
-  if( rng.lbound() < localOffset_ || localOffset_+localSubDim_-1 < rng.ubound() ) {
+  if(
+    rng.lbound() < localOffset_ 
+    ||
+    localOffset_+localSubDim_-1 < rng.ubound()
+    )
+  {
     // rng consists of off-processor elements so use the default implementation!
-    VectorDefaultBase<Scalar>::acquireDetachedView(rng_in,sub_vec);
+    VectorDefaultBase<Scalar>::acquireNonconstDetachedVectorViewImpl(rng_in,sub_vec);
     return;
   }
   // rng consists of all local data so get it!
@@ -319,8 +354,11 @@ void SpmdVectorBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpPac
     );
 }
 
+
 template<class Scalar>
-void SpmdVectorBase<Scalar>::commitDetachedView( RTOpPack::SubVectorView<Scalar>* sub_vec )
+void SpmdVectorBase<Scalar>::commitNonconstDetachedVectorViewImpl(
+  RTOpPack::SubVectorView<Scalar>* sub_vec
+  )
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
@@ -329,15 +367,22 @@ void SpmdVectorBase<Scalar>::commitDetachedView( RTOpPack::SubVectorView<Scalar>
     ,"SpmdVectorBase<Scalar>::commitDetachedView(...) : Error, this sub vector was not gotten from acquireDetachedView(...)!"
     );
 #endif
-  if( sub_vec->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_vec->globalOffset()+sub_vec->subDim() ) {
+  if(
+    sub_vec->globalOffset() < localOffset_
+    ||
+    localOffset_+localSubDim_ < sub_vec->globalOffset()+sub_vec->subDim()
+    )
+  {
     // Let the default implementation handle it!
-    VectorDefaultBase<Scalar>::commitDetachedView(sub_vec);
+    VectorDefaultBase<Scalar>::commitNonconstDetachedVectorViewImpl(sub_vec);
     return;
   }
   sub_vec->set_uninitialized();  // Nothing to deallocate!
 }
 
+
 // protected
+
 
 template<class Scalar>
 void SpmdVectorBase<Scalar>::updateSpmdSpace()
@@ -357,7 +402,9 @@ void SpmdVectorBase<Scalar>::updateSpmdSpace()
   }
 }
 
+
 // private
+
 
 template<class Scalar>
 Range1D SpmdVectorBase<Scalar>::validateRange( const Range1D &rng_in ) const
@@ -374,11 +421,14 @@ Range1D SpmdVectorBase<Scalar>::validateRange( const Range1D &rng_in ) const
   return rng;
 }
 
+
 #ifdef THYRA_SPMD_VECTOR_BASE_DUMP
 template<class Scalar>
 bool SpmdVectorBase<Scalar>::show_dump = false;
 #endif // THYRA_SPMD_VECTOR_BASE_DUMP
 
+
 } // end namespace Thyra
+
 
 #endif // THYRA_SPMD_VECTOR_BASE_HPP

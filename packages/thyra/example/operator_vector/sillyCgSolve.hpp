@@ -72,7 +72,7 @@ bool sillyCgSolve(
   const ScalarMag r0_nrm = norm(*r);
   if(r0_nrm==zero) return true;
   VectorPtr p = createMember(space), q = createMember(space);
-  Scalar rho_old;
+  Scalar rho_old = -one;
   // Perform the iterations
   for( int iter = 0; iter <= maxNumIters; ++iter ) {
     // Check convergence and output iteration

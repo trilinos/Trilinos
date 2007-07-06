@@ -156,7 +156,7 @@ public:
   Teuchos::RCP<MultiVectorBase<Scalar> >
   subView( const int numCols, const int cols[] );
   /** \brief . */
-  void applyOp(
+  void mvMultiReductApplyOpImpl(
     const RTOpPack::RTOpT<Scalar> &primary_op,
     const int num_multi_vecs,
     const MultiVectorBase<Scalar>*const multi_vecs[],
@@ -170,23 +170,23 @@ public:
     const Index secondary_sub_dim
     ) const;
   /** \brief . */
-  void acquireDetachedView(
+  void acquireDetachedMultiVectorViewImpl(
     const Range1D &rowRng,
     const Range1D &colRng,
     RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
     ) const;
   /** \brief . */
-  void releaseDetachedView(
+  void releaseDetachedMultiVectorViewImpl(
     RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
     ) const;
   /** \brief . */
-  void acquireDetachedView(
+  void acquireNonconstDetachedMultiVectorViewImpl(
     const Range1D &rowRng,
     const Range1D &colRng,
     RTOpPack::SubMultiVectorView<Scalar> *sub_mv
     );
   /** \brief . */
-  void commitDetachedView(
+  void commitNonconstDetachedMultiVectorViewImpl(
     RTOpPack::SubMultiVectorView<Scalar>* sub_mv
     );
   /** \brief . */

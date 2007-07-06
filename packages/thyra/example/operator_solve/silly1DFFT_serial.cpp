@@ -27,6 +27,8 @@
 // @HEADER
 
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 #ifndef __sun
 
@@ -37,7 +39,6 @@
 #include "Thyra_LinearOpWithSolveTester.hpp"
 #include "Thyra_ListedMultiVectorRandomizer.hpp"
 #include "Thyra_DefaultSerialVectorSpaceConverter.hpp"
-#include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_arrayArg.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_ScalarTraits.hpp"

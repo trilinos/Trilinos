@@ -154,19 +154,19 @@ public:
     const Index global_offset
     ) const;
   /** \brief . */
-  void acquireDetachedView(
+  void acquireDetachedVectorViewImpl(
     const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
     ) const;
   /** \brief . */
-  void releaseDetachedView(
+  void releaseDetachedVectorViewImpl(
     RTOpPack::ConstSubVectorView<Scalar>* sub_vec
     ) const;
   /** \brief . */
-  void acquireDetachedView(
+  void acquireNonconstDetachedVectorViewImpl(
     const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec
     );
   /** \brief . */
-  void commitDetachedView(
+  void commitNonconstDetachedVectorViewImpl(
     RTOpPack::SubVectorView<Scalar>* sub_vec
     );
   /** \brief . */

@@ -62,15 +62,6 @@ class DefaultProductVector
 {
 public:
 
-  /** \brief . */
-  using ProductVectorBase<Scalar>::applyOp;
-  /** \brief . */
-  using VectorDefaultBase<Scalar>::acquireDetachedView;
-  /** \brief . */
-  using VectorDefaultBase<Scalar>::releaseDetachedView;
-  /** \brief . */
-  using VectorDefaultBase<Scalar>::commitDetachedView;
-
   /** @name Constructors/initializers/accessors */
   //@{
 
@@ -191,15 +182,25 @@ public:
     ,const Index                     global_offset
     ) const;
   /** \brief . */
-  void acquireDetachedView( const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const;
+  void acquireDetachedVectorViewImpl(
+    const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+    ) const;
   /** \brief . */
-  void releaseDetachedView( RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const;
+  void releaseDetachedVectorViewImpl(
+    RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+    ) const;
   /** \brief . */
-  void acquireDetachedView( const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec );
+  void acquireNonconstDetachedVectorViewImpl(
+    const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec
+    );
   /** \brief . */
-  void commitDetachedView( RTOpPack::SubVectorView<Scalar>* sub_vec );
+  void commitNonconstDetachedVectorViewImpl(
+    RTOpPack::SubVectorView<Scalar>* sub_vec
+    );
   /** \brief . */
-  void setSubVector( const RTOpPack::SparseSubVectorT<Scalar>& sub_vec );
+  void setSubVector(
+    const RTOpPack::SparseSubVectorT<Scalar>& sub_vec
+    );
 
   //@}
 

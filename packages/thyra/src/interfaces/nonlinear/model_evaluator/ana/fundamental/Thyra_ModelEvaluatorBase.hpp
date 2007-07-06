@@ -940,7 +940,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
         *out << "x_dot = ";
         CV_ptr x_dot = this->get_x_dot();
         if(x_dot.get())
-          *out << describe(*x_dot,verbLevel);
+          *out << Teuchos::describe(*x_dot,verbLevel);
         else
           *out << " NULL\n";
       }
@@ -948,7 +948,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
         *out << "x = ";
         CV_ptr x = this->get_x();
         if(x.get())
-          *out << describe(*x,verbLevel);
+          *out << Teuchos::describe(*x,verbLevel);
         else
           *out << " NULL\n";
       }
@@ -956,7 +956,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
         *out << "p("<<l<<") = ";
         CV_ptr p_l = this->get_p(l);
         if(p_l.get())
-          *out << describe(*p_l,verbLevel);
+          *out << Teuchos::describe(*p_l,verbLevel);
         else
           *out << " NULL\n";
       }
@@ -1408,7 +1408,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
         *out << "f =";
         CV_ptr f = this->get_f();
         if(f.get())
-          *out << describe(*f,verbLevel);
+          *out << Teuchos::describe(*f,verbLevel);
         else
           *out << " NULL\n";
       }
@@ -1416,7 +1416,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
         *out << "g("<<j<<") = ";
         CV_ptr g_j = this->get_g(j);
         if(g_j.get())
-          *out << describe(*g_j,verbLevel);
+          *out << Teuchos::describe(*g_j,verbLevel);
         else
           *out << " NULL\n";
       }
@@ -1424,7 +1424,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
         *out << "W = ";
         CLOWS_ptr W = this->get_W();
         if(W.get())
-          *out << describe(*W,verbLevel);
+          *out << Teuchos::describe(*W,verbLevel);
         else
           *out << " NULL\n";
       }

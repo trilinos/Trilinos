@@ -204,10 +204,10 @@ protected:
 
 private:
   
-  Teuchos::RCP<const VectorSpaceBase<Scalar> >        range_;
-  Teuchos::RCP<const VectorSpaceBase<Scalar> >        domain_;
-  std::vector< Teuchos::RCP<VectorBase<Scalar> > >    col_vecs_;
-  int                                                         num_cols_;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > range_;
+  Teuchos::RCP<const VectorSpaceBase<Scalar> > domain_;
+  std::vector< Teuchos::RCP<VectorBase<Scalar> > > col_vecs_;
+  int num_cols_;
   
 }; // end class DefaultColumnwiseMultiVector
 

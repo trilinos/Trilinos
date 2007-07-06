@@ -29,6 +29,7 @@
 #ifndef THYRA_SPMD_MULTI_VECTOR_BASE_HPP
 #define THYRA_SPMD_MULTI_VECTOR_BASE_HPP
 
+
 #include "Thyra_SpmdMultiVectorBaseDecl.hpp"
 #include "Thyra_MultiVectorDefaultBase.hpp"
 #include "Thyra_SingleScalarEuclideanLinearOpBase.hpp"
@@ -41,10 +42,13 @@
 #include "Teuchos_Time.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
+
 // Define to see some timing output!
 //#define THYRA_SPMD_MULTI_VECTOR_BASE_PRINT_TIMES
 
+
 namespace Thyra {
+
 
 template<class Scalar>
 SpmdMultiVectorBase<Scalar>::SpmdMultiVectorBase()
@@ -57,7 +61,9 @@ SpmdMultiVectorBase<Scalar>::SpmdMultiVectorBase()
   ,localValuesViewPtr_(0)
 {}
 
+
 // Overridden from EuclideanLinearOpBase
+
 
 template<class Scalar>
 Teuchos::RCP< const ScalarProdVectorSpaceBase<Scalar> >
@@ -68,7 +74,9 @@ SpmdMultiVectorBase<Scalar>::rangeScalarProdVecSpc() const
     );
 }
 
+
 // Overridden from LinearOpBase
+
 
 template<class Scalar>
 void SpmdMultiVectorBase<Scalar>::apply(
@@ -82,10 +90,12 @@ void SpmdMultiVectorBase<Scalar>::apply(
   this->single_scalar_euclidean_apply_impl(M_trans,X,Y,alpha,beta);
 }
 
+
 // Overridden from MultiVectorBase
 
+
 template<class Scalar>
-void SpmdMultiVectorBase<Scalar>::applyOp(
+void SpmdMultiVectorBase<Scalar>::mvMultiReductApplyOpImpl(
   const RTOpPack::RTOpT<Scalar>         &pri_op
   ,const int                            num_multi_vecs
   ,const MultiVectorBase<Scalar>*const  multi_vecs[]
@@ -107,12 +117,12 @@ void SpmdMultiVectorBase<Scalar>::applyOp(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     in_applyOp_, std::invalid_argument
-    ,"SpmdMultiVectorBase<>::applyOp(...): Error, this method is being entered recursively which is a "
+    ,"SpmdMultiVectorBase<>::mvMultiReductApplyOpImpl(...): Error, this method is being entered recursively which is a "
     "clear sign that one of the methods acquireDetachedView(...), releaseDetachedView(...) or commitDetachedView(...) "
     "was not implemented properly!"
     );
   apply_op_validate_input(
-    "SpmdMultiVectorBase<>::applyOp(...)", *this->domain(), *this->range()
+    "SpmdMultiVectorBase<>::mvMultiReductApplyOpImpl(...)", *this->domain(), *this->range()
     ,pri_op,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
     ,reduct_objs,pri_first_ele_offset_in,pri_sub_dim_in,pri_global_offset_in
     ,sec_first_ele_offset_in,sec_sub_dim_in
@@ -181,18 +191,21 @@ void SpmdMultiVectorBase<Scalar>::applyOp(
   in_applyOp_ = false;
 }
 
+
 template<class Scalar>
-void SpmdMultiVectorBase<Scalar>::acquireDetachedView(
-  const Range1D                       &rowRng_in
-  ,const Range1D                      &colRng_in
-  ,RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
+void SpmdMultiVectorBase<Scalar>::acquireDetachedMultiVectorViewImpl(
+  const Range1D &rowRng_in,
+  const Range1D &colRng_in,
+  RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
   ) const
 {
   const Range1D rowRng = validateRowRange(rowRng_in);
   const Range1D colRng = validateColRange(colRng_in);
   if( rowRng.lbound() < localOffset_ || localOffset_+localSubDim_-1 < rowRng.ubound() ) {
     // rng consists of off-processor elements so use the default implementation!
-    MultiVectorDefaultBase<Scalar>::acquireDetachedView(rowRng_in,colRng_in,sub_mv);
+    MultiVectorDefaultBase<Scalar>::acquireDetachedMultiVectorViewImpl(
+      rowRng_in,colRng_in,sub_mv
+      );
     return;
   }
   /*
@@ -223,14 +236,20 @@ void SpmdMultiVectorBase<Scalar>::acquireDetachedView(
     );
 }
 
+
 template<class Scalar>
-void SpmdMultiVectorBase<Scalar>::releaseDetachedView(
+void SpmdMultiVectorBase<Scalar>::releaseDetachedMultiVectorViewImpl(
   RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
   ) const
 {
-  if( sub_mv->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_mv->globalOffset()+sub_mv->subDim() ) {
+  if(
+    sub_mv->globalOffset() < localOffset_ 
+    ||
+    localOffset_+localSubDim_ < sub_mv->globalOffset()+sub_mv->subDim()
+    )
+  {
     // Let the default implementation handle it!
-    MultiVectorDefaultBase<Scalar>::releaseDetachedView(sub_mv);
+    MultiVectorDefaultBase<Scalar>::releaseDetachedMultiVectorViewImpl(sub_mv);
     return;
   }
   /*
@@ -244,18 +263,26 @@ void SpmdMultiVectorBase<Scalar>::releaseDetachedView(
   sub_mv->set_uninitialized();
 }
 
+
 template<class Scalar>
-void SpmdMultiVectorBase<Scalar>::acquireDetachedView(
-  const Range1D                                &rowRng_in
-  ,const Range1D                               &colRng_in
-  ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
+void SpmdMultiVectorBase<Scalar>::acquireNonconstDetachedMultiVectorViewImpl(
+  const Range1D &rowRng_in,
+  const Range1D &colRng_in,
+  RTOpPack::SubMultiVectorView<Scalar> *sub_mv
   )
 {
   const Range1D rowRng = validateRowRange(rowRng_in);
   const Range1D colRng = validateColRange(colRng_in);
-  if( rowRng.lbound() < localOffset_ || localOffset_+localSubDim_-1 < rowRng.ubound() ) {
+  if(
+    rowRng.lbound() < localOffset_
+    ||
+    localOffset_+localSubDim_-1 < rowRng.ubound()
+    )
+  {
     // rng consists of off-processor elements so use the default implementation!
-    MultiVectorDefaultBase<Scalar>::acquireDetachedView(rowRng_in,colRng_in,sub_mv);
+    MultiVectorDefaultBase<Scalar>::acquireNonconstDetachedMultiVectorViewImpl(
+      rowRng_in, colRng_in, sub_mv
+      );
     return;
   }
   // rng consists of all local data so get it!
@@ -282,14 +309,20 @@ void SpmdMultiVectorBase<Scalar>::acquireDetachedView(
     );
 }
 
+
 template<class Scalar>
-void SpmdMultiVectorBase<Scalar>::commitDetachedView(
+void SpmdMultiVectorBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(
   RTOpPack::SubMultiVectorView<Scalar>* sub_mv
   )
 {
-  if( sub_mv->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_mv->globalOffset()+sub_mv->subDim() ) {
+  if(
+    sub_mv->globalOffset() < localOffset_
+    ||
+    localOffset_+localSubDim_ < sub_mv->globalOffset()+sub_mv->subDim()
+    )
+  {
     // Let the default implementation handle it!
-    MultiVectorDefaultBase<Scalar>::commitDetachedView(sub_mv);
+    MultiVectorDefaultBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(sub_mv);
     return;
   }
   /*
@@ -303,7 +336,9 @@ void SpmdMultiVectorBase<Scalar>::commitDetachedView(
   sub_mv->set_uninitialized();
 }
 
+
 // protected
+
 
 template<class Scalar>
 void SpmdMultiVectorBase<Scalar>::euclideanApply(
@@ -572,7 +607,9 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
 
 }
 
+
 // Overridden from SingleScalarEuclideanLinearOpBase
+
 
 template<class Scalar>
 bool SpmdMultiVectorBase<Scalar>::opSupported(ETransp M_trans) const
@@ -601,6 +638,7 @@ void SpmdMultiVectorBase<Scalar>::updateSpmdSpace()
   }
 }
 
+
 template<class Scalar>
 Range1D SpmdMultiVectorBase<Scalar>::validateRowRange( const Range1D &rowRng_in ) const
 {
@@ -615,6 +653,7 @@ Range1D SpmdMultiVectorBase<Scalar>::validateRowRange( const Range1D &rowRng_in 
 #endif
   return rowRng;
 }
+
 
 template<class Scalar>
 Range1D SpmdMultiVectorBase<Scalar>::validateColRange( const Range1D &colRng_in ) const
@@ -631,6 +670,8 @@ Range1D SpmdMultiVectorBase<Scalar>::validateColRange( const Range1D &colRng_in 
   return colRng;
 }
 
+
 } // end namespace Thyra
+
 
 #endif // THYRA_SPMD_MULTI_VECTOR_BASE_HPP

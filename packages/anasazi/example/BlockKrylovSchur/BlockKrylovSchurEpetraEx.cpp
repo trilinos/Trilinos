@@ -43,7 +43,6 @@
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
-#include <mpi.h>
 #else
 #include "Epetra_SerialComm.h"
 #endif

@@ -27,6 +27,7 @@
 // @HEADER
 
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 #ifndef __sun
 
@@ -271,7 +272,7 @@ int main( int argc, char* argv[] ) {
 #else // ifndef __sun
 
   if (verbose) {
-    std::c*out << "\nError, the test was never run since __sun was defined and this test does not build on the Sun compiler!\n";
+    std::cout << "\nError, the test was never run since __sun was defined and this test does not build on the Sun compiler!\n";
   }
   
   return 1;

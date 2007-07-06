@@ -84,11 +84,7 @@ BlockKrylovSchurEpetraEx_DEPENDENCIES = \
 BlockKrylovSchurEpetraEx_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
-BlockKrylovSchurEpetraEx_LDADD = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+BlockKrylovSchurEpetraEx_LDADD = $(EXPORT_LIBS)
 
 BlockKrylovSchurEpetraExSVD_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \

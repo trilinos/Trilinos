@@ -131,17 +131,7 @@ class VectorBase : virtual public MultiVectorBase<Scalar>
 public:
 
   /** \brief . */
-  using MultiVectorBase<Scalar>::describe;
-  /** \brief . */
-  using MultiVectorBase<Scalar>::applyOp;
-  /** \brief . */
   using MultiVectorBase<Scalar>::col;
-  /** \brief . */
-  using MultiVectorBase<Scalar>::acquireDetachedView;
-  /** \brief . */
-  using MultiVectorBase<Scalar>::releaseDetachedView;
-  /** \brief . */
-  using MultiVectorBase<Scalar>::commitDetachedView;
 
   /** @name Space membership */
   //@{
@@ -220,6 +210,14 @@ public:
 
   //@}
 
+  /** \brief Temporary NVI function. */
+  void acquireDetachedView(
+    const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+    ) const
+    {
+      acquireDetachedVectorViewImpl(rng,sub_vec);
+    }
+
   /** @name Explicit sub-vector access */
   //@{
 
@@ -263,9 +261,17 @@ public:
    * memory.  Of course, the same <tt>sub_vec</tt> object must be passed to
    * the same vector object for this to work correctly.
    */
-  virtual void acquireDetachedView(
+  virtual void acquireDetachedVectorViewImpl(
     const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
     ) const = 0;
+
+  /** \brief Temporary NVI function. */
+  void releaseDetachedView(
+    RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+    ) const
+    {
+      releaseDetachedVectorViewImpl(sub_vec);
+    }
 
   /** \brief Free an explicit view of a sub-vector.
    *
@@ -286,9 +292,17 @@ public:
    *
    * The sub-vector view must have been allocated by <tt>this->acquireDetachedView()</tt> first.
    */
-  virtual void releaseDetachedView(
+  virtual void releaseDetachedVectorViewImpl(
     RTOpPack::ConstSubVectorView<Scalar>* sub_vec
     ) const = 0;
+
+  /** \brief Temporary NVI function. */
+  void acquireDetachedView(
+    const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec
+    )
+    {
+      acquireNonconstDetachedVectorViewImpl(rng,sub_vec);
+    }
 
   /** \brief Get a mutable explicit view of a sub-vector.
    *
@@ -337,9 +351,17 @@ public:
    * permanent until <tt>this->acquireDetachedView(...,sub_vec)</tt> is called again,
    * or <tt>this->commitDetachedView(sub_vec)</tt> is called.
    */
-  virtual void acquireDetachedView(
+  virtual void acquireNonconstDetachedVectorViewImpl(
     const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec
     ) = 0;
+
+  /** \brief Temporary NVI function. */
+  void commitDetachedView(
+    RTOpPack::SubVectorView<Scalar>* sub_vec
+    )
+    {
+      commitNonconstDetachedVectorViewImpl(sub_vec);
+    }
 
   /** \brief Commit changes for a mutable explicit view of a sub-vector.
    *
@@ -364,7 +386,7 @@ public:
    * The sub-vector view must have been allocated by
    * <tt>this->acquireDetachedView()</tt> first.
    */
-  virtual void commitDetachedView(
+  virtual void commitNonconstDetachedVectorViewImpl(
     RTOpPack::SubVectorView<Scalar>* sub_vec
     ) = 0;
 

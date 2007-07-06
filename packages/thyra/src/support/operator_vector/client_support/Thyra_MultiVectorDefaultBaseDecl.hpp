@@ -59,8 +59,6 @@ class MultiVectorDefaultBase
 public:
 
   /** \brief . */
-  using MultiVectorBase<Scalar>::applyOp;
-  /** \brief . */
   using MultiVectorBase<Scalar>::col;
   /** \brief . */
   using MultiVectorBase<Scalar>::subView;
@@ -82,7 +80,7 @@ public:
    * This implementation calls <tt>VectorBase::applyOp()</tt> on each column
    * <tt>this->col(j)</tt> for <tt>j = 0 ... this->range()->dim()-1</tt>.
    */
-  virtual void applyOp(
+  virtual void mvMultiReductApplyOpImpl(
     const RTOpPack::RTOpT<Scalar>         &primary_op
     ,const int                            num_multi_vecs
     ,const MultiVectorBase<Scalar>*const  multi_vecs[]
@@ -100,7 +98,7 @@ public:
    * This implementation calls <tt>applyOp()</tt> where an array of reduction
    * objects is taken.
    */
-  virtual void applyOp(
+  virtual void mvSingleReductApplyOpImpl(
     const RTOpPack::RTOpT<Scalar>         &primary_op
     ,const RTOpPack::RTOpT<Scalar>        &secondary_op
     ,const int                            num_multi_vecs
@@ -129,10 +127,10 @@ public:
    * override <tt>releaseDetachedView()</tt> which has an implementation
    * which is a companion to this function's implementation.
    */
-  virtual void acquireDetachedView(
-    const Range1D                       &rowRng
-    ,const Range1D                      &colRng
-    ,RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
+  virtual void acquireDetachedMultiVectorViewImpl(
+    const Range1D &rowRng,
+    const Range1D &colRng,
+    RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
     ) const;
   /** \brief .
    *
@@ -140,7 +138,9 @@ public:
    * <tt>acquireDetachedView()</tt>.  If <tt>acquireDetachedView()</tt> is
    * overridden by a subclass then this function must be overridden also!
    */
-  virtual void releaseDetachedView( RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv ) const;
+  virtual void releaseDetachedMultiVectorViewImpl(
+    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
+    ) const;
   /** \brief .
    *
    * This implementation is based on the vector operation
@@ -156,10 +156,10 @@ public:
    * override <tt>commitDetachedView()</tt> which has an implementation
    * which is a companion to this function's implementation.
    */
-  virtual void acquireDetachedView(
-    const Range1D                                &rowRng
-    ,const Range1D                               &colRng
-    ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
+  virtual void acquireNonconstDetachedMultiVectorViewImpl(
+    const Range1D &rowRng,
+    const Range1D &colRng,
+    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
     );
   /** \brief .
    *
@@ -167,7 +167,9 @@ public:
    * <tt>acquireDetachedView()</tt>.  If <tt>acquireDetachedView()</tt> is
    * overridden by a subclass then this function must be overridden also!
    */
-  virtual void commitDetachedView( RTOpPack::SubMultiVectorView<Scalar>* sub_mv );
+  virtual void commitNonconstDetachedMultiVectorViewImpl(
+    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
+    );
   /** \brief .
    *
    * This implementation uses the vector space to create a new multi-vector

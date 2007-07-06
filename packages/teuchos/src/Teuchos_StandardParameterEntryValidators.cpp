@@ -103,29 +103,22 @@ namespace Teuchos {
 // Constructors
 
 
+AnyNumberParameterEntryValidator::AnyNumberParameterEntryValidator()
+  :preferredType_(PREFER_DOUBLE),
+   acceptedTypes_(AcceptedTypes())
+{
+  finishInitialization();
+}
+
+
 AnyNumberParameterEntryValidator::AnyNumberParameterEntryValidator(
   EPreferredType const preferredType,
   AcceptedTypes const& acceptedTypes
   )
-  :preferredType_(preferredType), acceptedTypes_(acceptedTypes)
+  :preferredType_(preferredType),
+   acceptedTypes_(acceptedTypes)
 {
-  std::ostringstream oss;
-  bool addedType = false;
-  if(acceptedTypes_.allowInt()) {
-    oss << "\"int\"";
-    addedType = true;
-  }
-  if(acceptedTypes_.allowDouble()) {
-    if(addedType) oss << ", ";
-    oss << "\"double\"";
-    addedType = true;
-  }
-  if(acceptedTypes_.allowString()) {
-    if(addedType) oss << ", ";
-    oss << "\"std::string\"";
-    addedType = true;
-  }
-  acceptedTypesString_ = oss.str();
+  finishInitialization();
 }
 
 
@@ -280,6 +273,29 @@ void AnyNumberParameterEntryValidator::validateAndModify(
 
 
 // private
+
+
+void AnyNumberParameterEntryValidator::finishInitialization()
+{
+
+  std::ostringstream oss;
+  bool addedType = false;
+  if(acceptedTypes_.allowInt()) {
+    oss << "\"int\"";
+    addedType = true;
+  }
+  if(acceptedTypes_.allowDouble()) {
+    if(addedType) oss << ", ";
+    oss << "\"double\"";
+    addedType = true;
+  }
+  if(acceptedTypes_.allowString()) {
+    if(addedType) oss << ", ";
+    oss << "\"std::string\"";
+    addedType = true;
+  }
+  acceptedTypesString_ = oss.str();
+}
 
 
 void AnyNumberParameterEntryValidator::throwTypeError(

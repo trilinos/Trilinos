@@ -563,7 +563,7 @@ void StatusTestResNorm<ScalarType,MV,OP>::print(std::ostream& os, int indent) co
 template <class ScalarType, class MV, class OP>
 void StatusTestResNorm<ScalarType,MV,OP>::printStatus(std::ostream& os, StatusType type) const 
 {
-  os << setiosflags(std::ios::left) << std::setw(13) << std::setfill('.');
+  os << std::setiosflags(std::ios::left) << std::setw(13) << std::setfill('.');
   switch (type) {
   case  Passed:
     os << "Converged";
@@ -576,7 +576,7 @@ void StatusTestResNorm<ScalarType,MV,OP>::printStatus(std::ostream& os, StatusTy
     os << "**";
     break;
   }
-  os << setiosflags(std::ios::left) << std::setfill(' ');
+  os << std::setiosflags(std::ios::left) << std::setfill(' ');
     return;
 }
 

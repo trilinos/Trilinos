@@ -432,8 +432,8 @@ public:
   /** \brief Determines what type is the preferred type. */
   enum EPreferredType { PREFER_INT, PREFER_DOUBLE, PREFER_STRING };
 
-  /** \brief Determines the types that are accepted.
-   */
+
+  /** \brief Determines the types that are accepted.  */
   class AcceptedTypes {
   public:
     /** \brief Allow all types or not on construction. */
@@ -462,23 +462,30 @@ public:
     bool  allowString_;
   };
 
+
+
   //@}
 
   /** \name Constructors */
   //@{
 
+  /** \brief Construct with a preferrded type of double and accept all
+   * types.
+   */
+  AnyNumberParameterEntryValidator();
+
   /** \brief Construct with allowed input and output types and the preferred
    * type.
    *
-   * \param acceptedType
-   *          [in] Determines the types that are allowed in the parameter list.
    * \param preferredType
    *          [in] Determines the preferred type.  This enum value is used to 
    *          set the default value in the override <tt>validateAndModify()</tt>.
+   * \param acceptedType
+   *          [in] Determines the types that are allowed in the parameter list.
    */
   AnyNumberParameterEntryValidator(
-    EPreferredType const preferredType = PREFER_DOUBLE,
-    AcceptedTypes const& acceptedTypes = AcceptedTypes()
+    EPreferredType const preferredType,
+    AcceptedTypes const& acceptedTypes
     );
 
   //@}
@@ -561,9 +568,17 @@ public:
 
 private:
 
+  // ////////////////////////////
+  // Private data members
+
   EPreferredType preferredType_;
   const AcceptedTypes acceptedTypes_;
   std::string acceptedTypesString_;
+
+  // ////////////////////////////
+  // Private member functions
+
+  void finishInitialization();
 
   void throwTypeError(
     ParameterEntry const& entry,

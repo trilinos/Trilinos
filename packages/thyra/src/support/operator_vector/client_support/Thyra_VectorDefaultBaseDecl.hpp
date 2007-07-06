@@ -68,16 +68,6 @@ class VectorDefaultBase
 public:
 
   /** \brief . */
-  using VectorBase<Scalar>::acquireDetachedView;
-  /** \brief . */
-  using VectorBase<Scalar>::releaseDetachedView;
-  /** \brief . */
-  using VectorBase<Scalar>::commitDetachedView;
-  /** \brief . */
-  using MultiVectorDefaultBase<Scalar>::describe;
-  /** \brief . */
-  using MultiVectorDefaultBase<Scalar>::applyOp;
-  /** \brief . */
   using MultiVectorDefaultBase<Scalar>::col;
   /** \brief . */
   using SingleRhsLinearOpBase<Scalar>::apply;
@@ -140,21 +130,25 @@ public:
   /// Returns <tt>Teuchos::rcp(this,false)</tt>
   Teuchos::RCP<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] );
   /// Implemented in terms of <tt>this->acquireDetachedView()</tt>
-  void acquireDetachedView(
-    const Range1D                       &rowRng
-    ,const Range1D                      &colRng
-    ,RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
+  void acquireDetachedMultiVectorViewImpl(
+    const Range1D &rowRng,
+    const Range1D &colRng,
+    RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
     ) const;
   /// Implemented in terms of <tt>this->releaseDetachedView()</tt>
-  void releaseDetachedView( RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv ) const;
+  void releaseDetachedMultiVectorViewImpl(
+    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
+    ) const;
   /// Implemented in terms of <tt>this->acquireDetachedView()</tt>
-  void acquireDetachedView(
-    const Range1D                                &rowRng
-    ,const Range1D                               &colRng
-    ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
+  void acquireNonconstDetachedMultiVectorViewImpl(
+    const Range1D &rowRng,
+    const Range1D &colRng,
+    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
     );
   /// Implemented in terms of <tt>this->commitDetachedView()</tt>
-  void commitDetachedView( RTOpPack::SubMultiVectorView<Scalar>* sub_mv );
+  void commitNonconstDetachedMultiVectorViewImpl(
+    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
+    );
   //@}
 
   /** \name Overridden from VectorBase */
@@ -176,7 +170,9 @@ public:
    * <tt>releaseDetachedView()</tt> which has a implementation which is a companion
    * to this function's implementation.
    */
-  virtual void acquireDetachedView( const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const;
+  virtual void acquireDetachedVectorViewImpl(
+    const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+    ) const;
   /** \brief .
    *
    * This implementation is a companion to the implementation for the
@@ -184,7 +180,9 @@ public:
    * <tt>acquireDetachedView()</tt> is overridden by a subclass then this function
    * must be overridden also!
    */
-  virtual void releaseDetachedView( RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const;
+  virtual void releaseDetachedVectorViewImpl(
+    RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+    ) const;
   /** \brief .
    *
    * This implementation is based on a vector reduction operator class (see
@@ -198,14 +196,18 @@ public:
    * which has a implementation which is a companion to this function's
    * implementation.
    */
-  virtual void acquireDetachedView( const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec );
+  virtual void acquireNonconstDetachedVectorViewImpl(
+    const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec
+    );
   /** \brief .
    *
    * This function has an implementation which is a companion to the
    * implementation for <tt>acquireDetachedView()</tt>.  If <tt>acquireDetachedView()</tt>
    * is overridden by a subclass then this function must be overridden also!
    */
-  virtual void commitDetachedView( RTOpPack::SubVectorView<Scalar>* sub_vec );
+  virtual void commitNonconstDetachedVectorViewImpl(
+    RTOpPack::SubVectorView<Scalar>* sub_vec
+    );
   /** \brief .
    *
    * This implementation uses a transformation operator class (see
@@ -232,11 +234,11 @@ protected:
 
   /** \brief. Applies vector or its adjoint (transpose) as a linear operator. */
   void apply(
-    const ETransp                M_trans
-    ,const VectorBase<Scalar>    &x
-    ,VectorBase<Scalar>          *y
-    ,const Scalar                alpha
-    ,const Scalar                beta
+    const ETransp M_trans,
+    const VectorBase<Scalar> &x,
+    VectorBase<Scalar> *y,
+    const Scalar alpha,
+    const Scalar beta
     ) const;
 
   //@}

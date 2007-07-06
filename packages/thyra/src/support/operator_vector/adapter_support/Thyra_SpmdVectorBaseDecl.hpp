@@ -29,12 +29,16 @@
 #ifndef THYRA_SPMD_VECTOR_BASE_DECL_HPP
 #define THYRA_SPMD_VECTOR_BASE_DECL_HPP
 
+
 #include "Thyra_VectorDefaultBaseDecl.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBaseDecl.hpp"
 
+
 //#define THYRA_SPMD_VECTOR_BASE_DUMP
 
+
 namespace Thyra {
+
 
 /** \brief Base class for SPMD vectors that can provide views of contiguous
  * elements in a process.
@@ -100,15 +104,6 @@ namespace Thyra {
 template<class Scalar>
 class SpmdVectorBase : virtual public VectorDefaultBase<Scalar> {
 public:
-
-  /** \brief . */
-  using VectorDefaultBase<Scalar>::applyOp;
-  /** \brief . */
-  using VectorDefaultBase<Scalar>::acquireDetachedView;
-  /** \brief . */
-  using VectorDefaultBase<Scalar>::releaseDetachedView;
-  /** \brief . */
-  using VectorDefaultBase<Scalar>::commitDetachedView;
 
   /** \brief . */
   SpmdVectorBase();
@@ -274,13 +269,21 @@ public:
     ,const Index                    global_offset
     ) const;
   /** \brief Implemented through <tt>this->getLocalData()</tt> */
-  void acquireDetachedView( const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const;
+  void acquireDetachedVectorViewImpl(
+    const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+    ) const;
   /** \brief Implemented through <tt>this->freeLocalData()</tt> */
-  void releaseDetachedView( RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const;
+  void releaseDetachedVectorViewImpl(
+    RTOpPack::ConstSubVectorView<Scalar>* sub_vec
+    ) const;
   /** \brief Implemented through <tt>this->getLocalData()</tt> */
-  void acquireDetachedView( const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec );
+  void acquireNonconstDetachedVectorViewImpl(
+    const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec
+    );
   /** \brief Implemented through <tt>this->commitLocalData()</tt> */
-  void commitDetachedView( RTOpPack::SubVectorView<Scalar>* sub_vec );
+  void commitNonconstDetachedVectorViewImpl(
+    RTOpPack::SubVectorView<Scalar>* sub_vec
+    );
 
   //@}
 
@@ -315,6 +318,8 @@ public:
 
 }; // end class SpmdVectorBase
 
+
 } // end namespace Thyra
+
 
 #endif // THYRA_SPMD_VECTOR_BASE_DECL_HPP
