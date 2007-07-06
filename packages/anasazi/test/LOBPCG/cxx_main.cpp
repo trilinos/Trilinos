@@ -72,6 +72,7 @@ int main(int argc, char *argv[])
   bool fullOrtho = true;
   bool testRecovery = false;
   std::string which("LM");
+  int numElements = 100;
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -80,6 +81,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
   cmdp.setOption("testrecovery","notestrecovery",&testRecovery,"Test the LOBPCGRitzError recovery code in LOBPCGSolMgr.");
   cmdp.setOption("fullortho","nofullortho",&fullOrtho,"Use full orthogonalization.");
+  cmdp.setOption("numElements",&numElements,"Number of elements in discretization.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -106,7 +108,7 @@ int main(int argc, char *argv[])
   std::vector<double> brick_dim( space_dim );
   brick_dim[0] = 1.0;
   std::vector<int> elements( space_dim );
-  elements[0] = 100;
+  elements[0] = numElements;
 
   // Create problem
   RCP<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
