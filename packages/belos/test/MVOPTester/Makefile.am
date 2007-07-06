@@ -87,4 +87,9 @@ MVOPComplexTester_test_LDADD = $(EXPORT_LIBS)
 # Dummy for new export makefiles
 LIBS = 
 
-
+EXTRA_DIST = \
+	$(srcdir)/MyMultiVec.hpp \
+        $(srcdir)/MyBetterOperator.hpp \
+        $(srcdir)/MyOperator.hpp \
+        $(srcdir)/mhd1280a.cua \
+        $(srcdir)/mhd1280b.cua

@@ -27,8 +27,8 @@ endif
 noinst_PROGRAMS = $(BELOS_BCG_NOPREC_EX) $(BELOS_BCG_IFPACK_EX)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/bcsstk14.hb bcsstk14.hb
-	cp  $(srcdir)/bcsstk15.hb bcsstk15.hb
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/bcsstk14.hb bcsstk14.hb; fi
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/bcsstk15.hb bcsstk15.hb; fi
 
 Dummy_SOURCES = Dummy
 
@@ -58,3 +58,7 @@ BlockPrecCGEpetraExFile_LDADD = $(EXPORT_LIBS)
 # Dummy for new export makefiles
 LIBS = 
 #
+
+EXTRA_DIST = \
+	$(srcdir)/bcsstk14.hb \
+        $(srcdir)/bcsstk15.hb

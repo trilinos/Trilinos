@@ -27,8 +27,8 @@ endif
 noinst_PROGRAMS = $(BELOS_BGMRES_NOPREC_EX) $(BELOS_BGMRES_IFPACK_EX)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/orsirr1.hb orsirr1.hb
-	cp  $(srcdir)/fidap036.hb fidap036.hb
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/orsirr1.hb orsirr1.hb; fi
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/fidap036.hb fidap036.hb; fi
 
 Dummy_SOURCES = Dummy
 
@@ -93,3 +93,6 @@ PseudoBlockPrecGmresEpetraExFile_LDADD = $(EXPORT_LIBS)
 # Dummy for new export makefiles
 LIBS = 
 #
+EXTRA_DIST = \
+        $(srcdir)/orsirr1.hb \
+        $(srcdir)/fidap036.hb

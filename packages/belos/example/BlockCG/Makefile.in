@@ -253,6 +253,11 @@ BlockCGEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src
 BlockPrecCGEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
 BlockCGEpetraExFile_LDADD = $(EXPORT_LIBS)
 BlockPrecCGEpetraExFile_LDADD = $(EXPORT_LIBS)
+#
+EXTRA_DIST = \
+	$(srcdir)/bcsstk14.hb \
+        $(srcdir)/bcsstk15.hb
+
 all: all-am
 
 .SUFFIXES:
@@ -525,9 +530,8 @@ uninstall-am:
 include $(top_builddir)/Makefile.export.belos
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/bcsstk14.hb bcsstk14.hb
-	cp  $(srcdir)/bcsstk15.hb bcsstk15.hb
-#
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/bcsstk14.hb bcsstk14.hb; fi
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/bcsstk15.hb bcsstk15.hb; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
