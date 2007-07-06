@@ -178,38 +178,6 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	src/common/config-h.in src/common/stamp-h.in \
 	$(AUX_DIST) 
 
-
-#all-libs:
-#	cd src ; make all-libs
-
-#if USING_EXPORT_MAKEFILES
-
-#Fix this as necessary!
-#install-exec-hook:
-#	cp $(top_builddir)/Makefile.export.new_package $(exec_prefix)/include/.
-#	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
-#		--exec-prefix=$(exec_prefix) \
-#		--my-export-makefile=Makefile.export.new_package \
-#		--my-abs-top-srcdir=@abs_top_srcdir@ \
-#		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
-#		--my-abs-lib-dirs=@abs_top_builddir@/src \
-#		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra
-#	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
-#		new_package > $(exec_prefix)/include/Makefile.export.new_package.macros
-
-#uninstall-hook:
-#	rm -f $(exec_prefix)/include/Makefile.export.new_package
-#	rm -f $(exec_prefix)/include/Makefile.export.new_package.macros
-
-#else
-
-#install-exec-hook:
-
-#uninstall-hook:
-
-#endif
-
-#TEST_SUBDIR=EXTERNAL_PACKAGE_NAME
 SUBDIRS = sample 
 all: all-recursive
 
@@ -631,6 +599,57 @@ uninstall-am:
 
 all-local:
 	@echo "Trilinos package external built successfully"
+
+#if USING_EXPORT_MAKEFILES
+
+#Fix this as necessary!
+#install-exec-hook:
+#	cp $(top_builddir)/Makefile.export.new_package $(exec_prefix)/include/.
+#	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
+#		--exec-prefix=$(exec_prefix) \
+#		--my-export-makefile=Makefile.export.new_package \
+#		--my-abs-top-srcdir=@abs_top_srcdir@ \
+#		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
+#		--my-abs-lib-dirs=@abs_top_builddir@/src \
+#		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra
+#	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
+#		new_package > $(exec_prefix)/include/Makefile.export.new_package.macros
+
+#uninstall-hook:
+#	rm -f $(exec_prefix)/include/Makefile.export.new_package
+#	rm -f $(exec_prefix)/include/Makefile.export.new_package.macros
+
+#else
+
+#install-exec-hook:
+
+#uninstall-hook:
+
+#endif
+
+tests:
+	@echo "external does not have any tests yet"
+
+examples:
+	@echo "external does not have any examples yet"
+
+install-examples:
+	@echo "external does not have any examples yet"
+
+clean-tests:
+	@echo "external does not have any tests yet"
+
+clean-examples:
+	@echo "external does not have any examples yet"
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
 
 #TRILINOS_HOME_DIR=@abs_top_srcdir@/../../..
 #TRILINOS_BUILD_DIR=@abs_top_builddir@/../../..

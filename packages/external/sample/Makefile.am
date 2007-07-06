@@ -82,6 +82,57 @@ all-local:
 ## Subdirectories to be make'd recursively
 ## #######################################################################
 
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+
+#if SUB_TEST
+#TEST_SUBDIR=test
+#endif
+
+#if SUB_EXAMPLE
+#EXAMPLE_SUBDIR=example
+#endif
+
+#if BUILD_TESTS
+#tests:
+#	cd $(top_builddir)/test; $(MAKE)
+#else
+#tests:
+#	@echo "sample tests were disabled at configure time"
+#endif
+
+#if BUILD_EXAMPLES
+#examples:
+#	cd $(top_builddir)/example ; $(MAKE)
+
+#install-examples:
+#	cd $(top_builddir)/example ; $(MAKE) install
+#else
+#examples:
+#	@echo "sample examples were disabled at configure time"
+
+#install-examples:
+#	@echo "sample examples were disabled at configure time"
+#endif
+
+#clean-tests:
+#	cd $(top_builddir)/test ; $(MAKE) clean
+
+#clean-examples:
+#	cd $(top_builddir)/example ; $(MAKE) clean
+
+#everything:
+#	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+#clean-everything:
+#	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+#install-everything:
+#	$(MAKE) install ; $(MAKE) install-examples
+
 #TEST_SUBDIR=EXTERNAL_PACKAGE_NAME
 
 #SUBDIRS = $(TEST_SUBDIR)

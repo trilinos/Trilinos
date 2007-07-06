@@ -43,12 +43,6 @@ all-local:
 	@echo "Trilinos package external built successfully"
 
 ## #######################################################################
-## Target for circular dependencies
-## #######################################################################
-#all-libs:
-#	cd src ; make all-libs
-
-## #######################################################################
 ## Export Makefile Installation
 ## #######################################################################
 #if USING_EXPORT_MAKEFILES
@@ -82,7 +76,29 @@ all-local:
 ## Subdirectories to be make'd recursively
 ## #######################################################################
 
-#TEST_SUBDIR=EXTERNAL_PACKAGE_NAME
+tests:
+	@echo "external does not have any tests yet"
+
+examples:
+	@echo "external does not have any examples yet"
+
+install-examples:
+	@echo "external does not have any examples yet"
+
+clean-tests:
+	@echo "external does not have any tests yet"
+
+clean-examples:
+	@echo "external does not have any examples yet"
+
+everything:
+	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+
+clean-everything:
+	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+
+install-everything:
+	$(MAKE) install ; $(MAKE) install-examples
 
 SUBDIRS = sample 
 
