@@ -73,7 +73,7 @@
 #include<cstdlib>
 
 #ifdef HAVE_MALLOC_H
-#include<cmalloc>
+#include<malloc.h>
 #endif
 
 int readHB_info(const char* filename, int* M, int* N, int* nz, char** Type, 
