@@ -347,7 +347,7 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
       std::cout << std::endl;
       std::cout << " Vectors " << iRHS << " to " << iRHS + numVec - 1 << std::endl;
       if (localVerbose > 2) {
-        fprintf(stderr,"\n");
+        std::fprintf(stderr,"\n");
         for (ii = 0; ii < numVec; ++ii) {
           std::cout << " ... Initial Residual Norm " << ii << " = " << initNorm[ii] << std::endl;
         }
