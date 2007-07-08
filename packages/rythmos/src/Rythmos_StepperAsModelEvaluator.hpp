@@ -321,8 +321,8 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
         solutionDot = stepStatus.solutionDot;
       
       if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
-        *out << "\nsolution = \n" << describe(*solution,verbLevel);
-        *out << "\nsolutionDot = \n" << describe(*solutionDot,verbLevel);
+        *out << "\nsolution = \n" << Teuchos::describe(*solution,verbLevel);
+        *out << "\nsolutionDot = \n" << Teuchos::describe(*solutionDot,verbLevel);
       }
       
     }
@@ -361,8 +361,8 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
         solutionDot = stepStatus.solutionDot;
       
       if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
-        *out << "\nsolution = \n" << describe(*solution,verbLevel);
-        *out << "\nsolutionDot = \n" << describe(*solutionDot,verbLevel);
+        *out << "\nsolution = \n" << Teuchos::describe(*solution,verbLevel);
+        *out << "\nsolutionDot = \n" << Teuchos::describe(*solutionDot,verbLevel);
       }
       
     }

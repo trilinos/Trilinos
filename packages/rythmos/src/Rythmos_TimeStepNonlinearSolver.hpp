@@ -401,7 +401,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
   if(out.get() && showNewtonDetails)
     *out
       << "\nEntering TimeStepNonlinearSolver::solve(...) ...\n"
-      << "\nmodel = " << describe(*model_,verbLevel);
+      << "\nmodel = " << Teuchos::describe(*model_,verbLevel);
 
   if(out.get() && dumpAll) {
     *out << "\nInitial guess:\n";
@@ -455,11 +455,11 @@ TimeStepNonlinearSolver<Scalar>::solve(
       *out << "\nLinear solve status:\n" << linearSolveStatus;
     Thyra::Vt_S(&*dx,Scalar(-ST::one()));
     if(out.get() && dumpAll)
-      *out << "\ndx = " << describe(*dx,verbLevel);
+      *out << "\ndx = " << Teuchos::describe(*dx,verbLevel);
     if (delta != NULL) {
       Thyra::Vp_V(delta,*dx);
       if(out.get() && dumpAll)
-        *out << "\ndelta = " << describe(*delta,verbLevel);
+        *out << "\ndelta = " << Teuchos::describe(*delta,verbLevel);
     }
     // Check the linear solve
     if(linearSolveStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) {
@@ -477,7 +477,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
     // Update the solution: x_curr = x_curr + dx
     Vp_V( &*x_curr, *dx );
     if(out.get() && dumpAll)
-      *out << "\nUpdated solution x = " << describe(*x_curr,verbLevel);
+      *out << "\nUpdated solution x = " << Teuchos::describe(*x_curr,verbLevel);
     // Convergence test
     nrm_dx = Thyra::norm(*dx);
     if ( R*nrm_dx <= nonlinearSafetyFactor_*tol )
@@ -516,7 +516,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
   Thyra::assign(x,*x_curr);
   
   if(out.get() && dumpAll)
-    *out << "\nFinal solution x = " << describe(*x,verbLevel);
+    *out << "\nFinal solution x = " << Teuchos::describe(*x,verbLevel);
 
   // Check the status
 

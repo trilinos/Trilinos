@@ -254,17 +254,17 @@ SolveStatus<Scalar> LinearNonlinearSolver<Scalar>::solve(
     *out << "\nLinear solve status:\n" << linearSolveStatus;
   Vt_S( &*dx, Scalar(-ST::one()) );
   if(out.get() && dumpAll)
-    *out << "\ndx = " << describe(*dx,verbLevel);
+    *out << "\ndx = " << Teuchos::describe(*dx,verbLevel);
   if (delta != NULL) {
     Thyra::assign( delta, *dx );
     if(out.get() && dumpAll)
-      *out << "\ndelta = " << describe(*delta,verbLevel);
+      *out << "\ndelta = " << Teuchos::describe(*delta,verbLevel);
   }
 
   // Update the solution: x += dx
   Vp_V( x, *dx );
   if(out.get() && dumpAll)
-    *out << "\nUpdated solution x = " << describe(*x,verbLevel);
+    *out << "\nUpdated solution x = " << Teuchos::describe(*x,verbLevel);
   
   if(out.get() && showTrace)
     *out << "\nLeaving LinearNonlinearSolver::solve(...) ...\n";

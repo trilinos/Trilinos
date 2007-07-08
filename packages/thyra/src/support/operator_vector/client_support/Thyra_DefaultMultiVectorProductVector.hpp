@@ -165,7 +165,7 @@ void DefaultMultiVectorProductVector<Scalar>::describe(
         << "dim=" << this->space()->dim()
         << "}\n";
       OSTab tab(out);
-      *out <<  "multiVec = " << describe(*multiVec_.getConstObj(),verbLevel);
+      *out <<  "multiVec = " << Teuchos::describe(*multiVec_.getConstObj(),verbLevel);
       break;
     }
     default:
