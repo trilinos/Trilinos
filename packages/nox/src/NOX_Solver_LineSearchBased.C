@@ -78,14 +78,15 @@ void NOX::Solver::LineSearchBased::init()
   //   generated teuchos parameter list, so we need to convert int
   //   values to enum if they exist parameter list.
   if (Teuchos::isParameterType<int>(*paramsPtr, "Status Test Check Type")) {
-    checkType = static_cast<NOX::StatusTest::CheckType>
-      (paramsPtr->sublist("Solver Options").get<int>("Status Test Check Type", 
-						     0));
+    checkType = static_cast<NOX::StatusTest::CheckType>(
+      Teuchos::get<int>(paramsPtr->sublist("Solver Options"),"Status Test Check Type")
+      );
   }
   else {
-    checkType = static_cast<NOX::StatusTest::CheckType>
-      (paramsPtr->sublist("Solver Options").get("Status Test Check Type", 
-						NOX::StatusTest::Minimal));
+    checkType = static_cast<NOX::StatusTest::CheckType>(
+      paramsPtr->sublist("Solver Options").get("Status Test Check Type", 
+        NOX::StatusTest::Minimal)
+      );
   }
 
   // Print out parameters
