@@ -67,7 +67,7 @@ namespace Belos {
     //! Constructor specifying re-orthogonalization tolerance.
     IMGSOrthoManager( const std::string& label = "Belos",
                       Teuchos::RCP<const OP> Op = Teuchos::null,
-		      const int max_ortho_steps = 2,
+		      const int max_ortho_steps = 1,
 		      const MagnitudeType blk_tol = 10*MGT::squareroot( MGT::eps() ),
 		      const MagnitudeType sing_tol = 10*MGT::eps() )
       : MatOrthoManager<ScalarType,MV,OP>(Op), 
