@@ -24,13 +24,17 @@
       <li><a href="index.html#interfaces_nonlinear_solvers_ana_fundamental">Fundamental ANA Nonlinear Solver Interfaces</a>
       </ul>
     </ul>
-  <li>\ref thyra_user_interface_sec
   <li>\ref thyra_support_sec
     <ul>
     <li><a href="index.html#support_operator_vector">Operator/Vector Support</a>
     <li><a href="index.html#support_operator_solve">Operator Solve Support</a>
     <li><a href="index.html#support_nonlinear_model_evaluator">Nonlinear Model Evaluator Support</a>
     <li><a href="index.html#support_nonlinear_solvers">Nonlinear Solvers Support</a>
+    </ul>
+  <li>\ref thyra_adapters_sec
+    <ul>
+    <li><a href="index.html#epetra_thyra_adpaters">Epetra/Thyra adpaters</a>
+    <li><a href="index.html#epetraext_thyra_adpaters">EpetraExt/Thyra adpaters</a>
     </ul>
   <li>\ref thyra_browse_sec
   </ul>
@@ -64,7 +68,8 @@ collections as described in the next section.
 
 The Doxygen-generated documentation is broken up into a number of different
 doxygen collections in an attempt to make each individual collection more
-manageable to browse and comprehend.
+manageable to browse and comprehend.  To access each separate collection, just
+click on the [doxygen collection] next to each header below.
 
 The thrya package is broadly divided into interoperability interfaces and
 support software and the directory structure and the doxygen documentation is
@@ -161,15 +166,6 @@ structure of thyra</a>.
 
 </ul>
 
-\subsection thyra_user_interface_sec Thyra user interface with overloaded operators
- 
-<ul>
-<li> <b> Support for overloaded operators
-      [<a href="???">
-  doxygen collection</a>]</b><a name="handle_support_with_overloaded_operators"></a>
-
-</ul>
-
 \subsection thyra_support_sec Thyra support software and examples
 
 <ul>
@@ -218,6 +214,29 @@ structure of thyra</a>.
   equation solver implementations include examples
   <tt>Thyra::LinearNonlinearSolver</tt>
   and <tt>Thyra::DampenedNewtonNonlinearSolver</tt>.
+
+</ul>
+
+
+\subsection thyra_adapters_sec Thyra adapters to other packages
+
+<ul>
+
+<li> <b>Epetra/Thyra adapters
+  [<a href="../../adapters/epetra/doc/html/index.html">
+  doxygen collection</a>]</b><a name="epetra_thyra_adpaters"></a>
+
+This software allows the creation of <tt>Thyra::VectorSpaceBase</tt>,
+<tt>Thyra::VectorBase</tt>, <tt>Thyra::MultiVectorBase</tt>, and
+<tt>Thyra::LinearOpBase</tt> objects out of Epetra objects.
+
+<li> <b>EpetraExt/Thyra adapters
+  [<a href="../../adapters/epetraext/doc/html/index.html">
+  doxygen collection</a>]</b><a name="epetraext_thyra_adpaters"></a>
+
+Included here are various adapters between Epetra and EpetraExt based code and
+Thyra interfaces.  For example, one will find the
+<tt>Thyra::EpetraModelEvaluator</tt> class in this collection of code.
 
 </ul>
 
@@ -290,7 +309,8 @@ exceptions should inherit from the standard base class
 the macros <tt>TEST_FOR_EXCEPTION()</tt> or <tt>TEST_FOR_EXCEPT()</tt>.  By
 consistently using these macros it is easy to set a breakpoint in a debugger
 just before an exception is thrown by setting a breakpoint on the function
-<tt>TestForException_break()</tt>.  If Trilinos is configured with
+<tt>TestForException_break()</tt> (e.g. by typing <tt>break
+TestForException_break</tt> in gdb).  If Trilinos is configured with
 <tt>--enable-teuchos-debug</tt> then a lot of runtime error checking is
 performed in %Thyra support software, as well as in many other software
 packages.  Whenever development work is being performed this option should
@@ -489,12 +509,6 @@ Below is a partial list of software related to Thyra.
 
 <ul>
 
-<li><b><a href="../../../epetra/thyra/doc/html/index.html">Thyra ANA
-Operator/Vector Adapters for Epetra</a></b>: This software allows the creation
-of <tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt>,
-<tt>Thyra::MultiVectorBase</tt>, and <tt>Thyra::LinearOpBase</tt> objects out
-of Epetra objects.
-
 <li><b><a href="../../../epetraext/thyra/doc/html/index.html">Various Thyra
 Adapters for EpetraExt</a></b>: Included here are adapters and interfaces that
 allow a perspective nonlinear application to specify everything needed to
@@ -502,23 +516,6 @@ define a wide range of nonlinear problems in terms by subclassing an
 Epetra-based version of the <tt>Thyra::ModelEvaluator</tt> interface (called
 <tt>EpetraExt::ModelEvaluator</tt>).  Also included is an example that solves
 a set of nonlinear equations using a Newton method.
-
-<li><b><a href="../../../amesos/thyra/doc/html/index.html">Thyra ANA Linear
-Solver Adapters for Amesos</a></b>: This software defines the implementation
-of the extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
-<tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of
-<tt>Amesos_BaseSolver</tt> implementations.  These adapters allow a client to
-take any <tt>Epetra_RowMatrix</tt> object embedded in a
-<tt>Thyra::EpetraLinearOp</tt> object and immediately use to to define a
-direct linear solver.
-
-<li><b><a href="../../../aztecoo/thyra/doc/html/index.html">Thyra ANA Linear
-Solver Adapters for AztecOO</a></b>: This software defines the implementation
-of the extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
-<tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of the <tt>AztecOO</tt>
-class.  These adapters allow a client to take any <tt>Epetra_RowMatrix</tt>
-object embedded in a <tt>Thyra::EpetraLinearOp</tt> object and immediately use
-to to define an iterative linear solver such as GMRES and CG.
 
 <li><b><a href="../../../stratimikos/doc/html/index.html">Stratimikos: Unified
 Wrappers for Thyra Linear Solver and Preconditioner Adapters</a></b>:

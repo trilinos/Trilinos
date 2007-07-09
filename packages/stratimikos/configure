@@ -710,6 +710,8 @@ ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_TRUE
 ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_FALSE
 ENABLE_STRATIMIKOS_ML_NOX_TRUE
 ENABLE_STRATIMIKOS_ML_NOX_FALSE
+BUILD_TEUCHOS_COMPLEX_TRUE
+BUILD_TEUCHOS_COMPLEX_FALSE
 BUILD_TESTS_TRUE
 BUILD_TESTS_FALSE
 BUILD_EXAMPLES_TRUE
@@ -1367,6 +1369,9 @@ Optional Features:
   --enable-ml             See ml/configure --help
   --enable-nox            See ml/configure --help
   --enable-ml-nox         See ml/configure --help
+  --enable-teuchos-complex
+                          Build examples/tests which use complex scalar type
+                          (default is yes)
   --enable-tests          Make tests for all Trilinos packages buildable with
                           'make tests' (default is yes)
 
@@ -5886,6 +5891,40 @@ fi
 
 
 
+
+# Check whether --enable-teuchos-complex was given.
+if test "${enable_teuchos_complex+set}" = set; then
+  enableval=$enable_teuchos_complex; ac_cv_use_teuchos_complex=$enableval
+else
+  ac_cv_use_teuchos_complex=yes
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use teuchos-complex" >&5
+echo $ECHO_N "checking whether to use teuchos-complex... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_teuchos_complex" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TEUCHOS_COMPLEX
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_teuchos_complex" != "Xno"; then
+  BUILD_TEUCHOS_COMPLEX_TRUE=
+  BUILD_TEUCHOS_COMPLEX_FALSE='#'
+else
+  BUILD_TEUCHOS_COMPLEX_TRUE='#'
+  BUILD_TEUCHOS_COMPLEX_FALSE=
+fi
+
+
 # ------------------------------------------------------------------------
 # Checks if examples should be built
 # ------------------------------------------------------------------------
@@ -7087,6 +7126,13 @@ echo "$as_me: error: conditional \"ENABLE_STRATIMIKOS_ML_NOX\" was never defined
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${BUILD_TEUCHOS_COMPLEX_TRUE}" && test -z "${BUILD_TEUCHOS_COMPLEX_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TEUCHOS_COMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TEUCHOS_COMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_TESTS_TRUE}" && test -z "${BUILD_TESTS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -7865,6 +7911,8 @@ ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_TRUE!$ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_TRUE
 ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_FALSE!$ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_FALSE$ac_delim
 ENABLE_STRATIMIKOS_ML_NOX_TRUE!$ENABLE_STRATIMIKOS_ML_NOX_TRUE$ac_delim
 ENABLE_STRATIMIKOS_ML_NOX_FALSE!$ENABLE_STRATIMIKOS_ML_NOX_FALSE$ac_delim
+BUILD_TEUCHOS_COMPLEX_TRUE!$BUILD_TEUCHOS_COMPLEX_TRUE$ac_delim
+BUILD_TEUCHOS_COMPLEX_FALSE!$BUILD_TEUCHOS_COMPLEX_FALSE$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
 BUILD_TESTS_FALSE!$BUILD_TESTS_FALSE$ac_delim
 BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim
@@ -7888,7 +7936,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 55; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 57; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

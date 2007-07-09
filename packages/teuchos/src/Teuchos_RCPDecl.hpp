@@ -29,6 +29,10 @@
 #ifndef TEUCHOS_RCP_DECL_HPP
 #define TEUCHOS_RCP_DECL_HPP
 
+/*! \file Teuchos_RCPDecl.hpp
+    \brief Reference-counted pointer class and non-member templated function implementations.
+*/
+
 #include "Teuchos_any.hpp"
 
 #ifdef REFCOUNTPTR_INLINE_FUNCS

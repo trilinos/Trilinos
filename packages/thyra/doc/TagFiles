@@ -9,4 +9,6 @@ TAGFILES += \
   $(TRILINOS_HOME)/packages/common/tag_files/ThyraSupportOperatorVector.tag=$(TRILINOS_HOME)/packages/thyra/src/support/operator_vector/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/ThyraSupportOperatorSolve.tag=$(TRILINOS_HOME)/packages/thyra/src/support/operator_solve/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/ThyraSupportNonlinearModelEvaluator.tag=$(TRILINOS_HOME)/packages/thyra/src/support/nonlinear/model_evaluator/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/ThyraSupportNonlinearSolvers.tag=$(TRILINOS_HOME)/packages/thyra/src/support/nonlinear/solvers/doc/html
+  $(TRILINOS_HOME)/packages/common/tag_files/ThyraSupportNonlinearSolvers.tag=$(TRILINOS_HOME)/packages/thyra/src/support/nonlinear/solvers/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/EpetraThyra.tag=$(TRILINOS_HOME)/packages/thyra/adapters/epetra/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/EpetraExtThyra.tag=$(TRILINOS_HOME)/packages/thyra/adapters/epetraext/doc/html

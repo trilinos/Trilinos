@@ -1,19 +1,10 @@
 /*! \mainpage EpetraExt/Thyra Adapters
 
-\section EpetraExt_Thyra_outline_sec Outline
-
-<ul>
-<li> \ref EpetraExt_Thyra_intro_sec
-<li> \ref EpetraExt_Thyra_software_sec
-<li> \ref EpetraExt_Thyra_examples_sec
-<li> \ref EpetraExt_Thyra_links_sec
-</ul>
-
-\section EpetraExt_Thyra_intro_sec Introduction
+\section Thyra_EpetraExt_intro_sec Introduction
 
 This doxygen collection documents versions EpetraExt/Thyra adpaters.
 
-\section EpetraExt_Thyra_software_sec Software
+\section Thyra_EpetraExt_software_sec Software
 
 <ul>
 
@@ -30,7 +21,7 @@ This doxygen collection documents versions EpetraExt/Thyra adpaters.
 
 </ul>
 
-\section EpetraExt_Thyra_examples_sec Examples
+\section Thyra_EpetraExt_examples_sec Examples
 
 <ul>
 
@@ -38,16 +29,16 @@ This doxygen collection documents versions EpetraExt/Thyra adpaters.
 
 </ul>
 
-\section EpetraExt_Thyra_links_sec Links to other documentation
+\section Thyra_EpetraExt_links_sec Links to other documentation
 
 <ul>
 
 <li><a
-href="../../../../thyra/src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html/index.html">Thyra ANA
+href="../../../../../thyra/src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html/index.html">Thyra ANA
 Nonlinear Interfaces</a>
 
 <li><a
-href="../../../doc/html/index.html">Main EpetraExt Documentation</a>
+href="../../../../../epetraext/doc/html/index.html">Main EpetraExt Documentation</a>
 
 </ul>
 

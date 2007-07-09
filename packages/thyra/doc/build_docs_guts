@@ -75,6 +75,18 @@ echo
 doxygen ../src/support/nonlinear/solvers/doc/Doxyfile
 
 echo
+echo "Generating doxygen documentation for adapters/epetra ..."
+echo
+
+doxygen ../adapters/epetra/doc/Doxyfile
+
+echo
+echo "Generating doxygen documentation for adapters/epetraext ..."
+echo
+
+doxygen ../adapters/epetraext/doc/Doxyfile
+
+echo
 echo "Generating browser doxygen documentation for all of Thyra as a single doxygen documentation collection ..."
 echo
 

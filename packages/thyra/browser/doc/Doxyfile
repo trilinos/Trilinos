@@ -22,7 +22,8 @@ INPUT                  = ../browser/doc/index.doc \
                          ./dirs.doc \
                          ../src \
                          ../example \
-                         ../test
+                         ../test \
+                         ../adapters
 FILE_PATTERNS          = *.h *c *.hpp *.cpp groups.doc
 RECURSIVE              = YES
 EXCLUDE                = 

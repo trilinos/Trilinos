@@ -521,7 +521,8 @@ ModelEvaluatorBase::OutArgs<double> EpetraModelEvaluator::createOutArgs() const
 
 
 void EpetraModelEvaluator::evalModel(
-  const InArgs<double>& inArgs_in, const OutArgs<double>& outArgs
+  const ModelEvaluatorBase::InArgs<double>& inArgs_in,
+  const ModelEvaluatorBase::OutArgs<double>& outArgs
   ) const
 {
 

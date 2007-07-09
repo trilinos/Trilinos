@@ -43,17 +43,17 @@ wrap (or adapt) Epetra objects:
 
 <ul>
 
-<li><tt>Thyra::create_MPIVectorSpaceBase()</tt> accepts an <tt>Epetra_Map</tt>
-object and returns a <tt>Thyra::MPIVectorSpaceBase</tt> object.
+<li><tt>Thyra::create_VectorSpace()</tt> accepts an <tt>Epetra_Map</tt> object
+and returns a <tt>Thyra::VectorSpaceBase</tt> object.
 
-<li><tt>Thyra::create_MPIVectorBase()</tt> accepts an <tt>Epetra_Vector</tt>
-object and returns a <tt>Thyra::MPIMVectorBase</tt> object.
+<li><tt>Thyra::create_Vector()</tt> accepts an <tt>Epetra_Vector</tt> object
+and returns a <tt>Thyra::VectorBase</tt> object.
 
-<li><tt>Thyra::create_MPIMultiVectorBase()</tt> accepts an
+<li><tt>Thyra::create_MultiVector()</tt> accepts an
 <tt>Epetra_MultiVector</tt> object and returns a
-<tt>Thyra::MPIMultiVectorBase</tt> object.
+<tt>Thyra::MultiVectorBase</tt> object.
 
-<li><tt>Thyra::EpetraLinearOp</tt> adapts an <tt>Epetra_Operator</tt> object
+<li><tt>Thyra::epetraLinearOp()</tt> adapts an <tt>Epetra_Operator</tt> object
 to form a <tt>Thyra::EpetraLinearOp</tt> object.
 
 </ul>
@@ -439,12 +439,12 @@ Thyra::assign( &*eV1, *neV2 );
 Thyra::assign( &*neV1, *eV2 );
 \endverbatim
 
-Developer's that really want to understand how this type of
-interoperability between different concrete types works are cautiously
-encouraged to step look at the implementations of the functions
+Developer's that really want to understand how this type of interoperability
+between different concrete types works are cautiously encouraged to look at
+the implementations of the functions
 <tt>Thyra::SerialVectorBase::applyOp()</tt> and
-<tt>Thyra::SerialMultiVectorBase::applyOp()</tt> in a serial build
-and <tt>Thyra::MPIVectorBase::applyOp()</tt> and
+<tt>Thyra::SerialMultiVectorBase::applyOp()</tt> in a serial build and
+<tt>Thyra::MPIVectorBase::applyOp()</tt> and
 <tt>Thyra::MPIMultiVectorBase::applyOp()</tt>.
 
 The <tt>Thyra::LinearOpBase</tt> interface that all vectors and

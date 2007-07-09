@@ -364,26 +364,31 @@ private:
   // //////////////////////////
   // Private member functions
 
+  /** \brief . */
   void convertInArgsFromEpetraToThyra(
     const EpetraExt::ModelEvaluator::InArgs &epetraInArgs,
     ModelEvaluatorBase::InArgs<double> *inArgs
     ) const;
 
+  /** \brief . */
   void convertInArgsFromThyraToEpetra(
     const ModelEvaluatorBase::InArgs<double> &inArgs,
     EpetraExt::ModelEvaluator::InArgs *epetraInArgs
     ) const;
 
+  /** \brief . */
   void convertOutArgsFromThyraToEpetra(
     const ModelEvaluatorBase::OutArgs<double> &outArgs,
     EpetraExt::ModelEvaluator::OutArgs *epetraOutArgs
     ) const;
 
+  /** \brief . */
   void convertOutArgsFromEpetraToThyra(
     const EpetraExt::ModelEvaluator::OutArgs &epetraOutArgs,
     ModelEvaluatorBase::OutArgs<double> *outArgs
     ) const;
 
+  /** \brief . */
   void updateNominalValuesAndBounds() const;
   
 };

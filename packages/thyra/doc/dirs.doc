@@ -79,8 +79,6 @@ also provided.
 
 /** \dir src/support/operator_vector/adapter_support/serial Support code for creating concrete serial implementations of operators (i.e. matrices) and vectors */
 
-/** \dir src/support/operator_vector/adapter_support/mpi Support code for creating concrete MPI implementations of operators (i.e. matrices) and vectors */
-
 /** \dir src/support/nonlinear Base directory for support code related to nonlinear problems */
 
 /** \dir src/support/nonlinear/model_evaluator Base directory for support code related to nonlinear models */

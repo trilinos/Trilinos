@@ -17,6 +17,22 @@ Ifpack, and ML for Epetra-based linear operators.
 
 </ul>
 
+\section stratimikos_adapters_sec Thyra adapters
+
+<ul>
+
+<li><tt>Thyra::AmesosLinearOpWithSolveFactory</tt>
+
+<li><tt>Thyra::AztecOOLinearOpWithSolveFactory</tt>
+
+<li><tt>Thyra::BelosLinearOpWithSolveFactory</tt>
+
+<li><tt>Thyra::IfpackPreconditionerFactory</tt>
+
+<li><tt>Thyra::MLPreconditionerFactory</tt>
+
+</ul>
+
 \section stratimikos_examples_sec Stratimikos examples
 
 <ul>

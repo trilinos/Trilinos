@@ -25,7 +25,12 @@ OUTPUT_DIRECTORY       = .
 #
 # What and how documentation is extracted
 #
-INPUT                  = ./index.doc ./groups.doc ../src
+INPUT                  = ./index.doc ./groups.doc ../src \
+                         ../adapters/amesos/src \
+                         ../adapters/aztecoo/src \
+                         ../adapters/belos/src \
+                         ../adapters/ifpack/src \
+                         ../adapters/ml/src
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 

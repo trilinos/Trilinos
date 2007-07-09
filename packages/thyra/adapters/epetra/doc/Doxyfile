@@ -8,18 +8,18 @@
 #
 PROJECT_NAME           = "Epetra to Thyra Adapter Software"
 PROJECT_NUMBER         = "Version of the Day"
-OUTPUT_DIRECTORY       = ../thyra/doc
+OUTPUT_DIRECTORY       = ../adapters/epetra/doc
 #
 # What and how documentation is extracted
 #
-INPUT                  = ../thyra/doc/index.doc \
-                         ../thyra/src
+INPUT                  = ../adapters/epetra/doc/index.doc \
+                         ../adapters/epetra/src
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           = ../thyra/example \
-                         ../thyra/test
+EXAMPLE_PATH           = ../adapters/epetra/example \
+                         ../adapters/epetra/test
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 INPUT_FILTER           = 
 ALPHABETICAL_INDEX     = YES

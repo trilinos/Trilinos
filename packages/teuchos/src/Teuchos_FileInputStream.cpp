@@ -43,14 +43,36 @@ FileInputStream::FileInputStream(const std::string& filename)
 unsigned int FileInputStream::readBytes(unsigned char* const toFill, 
 																				const unsigned int maxToRead)
 {
-	if (std::feof(file_)) return (size_t)0;
+	if (
+#ifdef ICL
+    feof(file_)
+#else
+    std::feof(file_)
+#endif
+    )
+    return (size_t)0;
 	int n = std::fread((void*) toFill, sizeof(char), maxToRead, file_);
-    if (n==0) return (size_t)0; 
+  if (n==0) return (size_t)0; 
 
-	TEST_FOR_EXCEPTION(n < 0 || (n<(int) maxToRead && !std::feof(file_)),
-                     std::runtime_error,
-                     "FileInputStream::readBytes error");
+  const bool
+    is_eof
+#ifdef ICL
+    = feof(file_)
+#else
+    = std::feof(file_)
+#endif
+    ;
+
+	TEST_FOR_EXCEPTION(
+    n < 0 || (n<(int) maxToRead && !is_eof),
+    std::runtime_error,
+    "FileInputStream::readBytes error"
+    );
 	
 	return (size_t) n;
 }
 
+// 2007/07/08: rabartl: Above, for some reason the header <cstdio> on the
+// Intel C++ compiler 8.0 for Windows XP just does not have the function
+// feof(...) in the correct std namespace.  On this compiler, you just have to
+// access it from the global namespace.

@@ -315,7 +315,7 @@ public:
 
 	/** \brief Return object for only const access to data.
    *
-   * This function should compile only successfully if the type <tt>T</tt> is
+   * This function should only compile successfully if the type <tt>T</tt> is
    * not already declared <tt>const</tt>!
    */
 	ArrayRCP<const T> getConst() const;
