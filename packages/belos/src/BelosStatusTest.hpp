@@ -111,7 +111,7 @@ class StatusTest {
  
   //! Output the result of the most recent CheckStatus call.
   virtual void printStatus(std::ostream& os, StatusType type) const {
-    os << std::setiosflags(std::ios::left) << std::setw(13) << std::setfill('.');
+    os << std::left << std::setw(13) << std::setfill('.');
     switch (type) {
     case  Passed:
       os << "Passed";
@@ -124,7 +124,7 @@ class StatusTest {
       os << "**";
       break;
     }
-    os << std::setiosflags(std::ios::left) << std::setfill(' ');
+    os << std::left << std::setfill(' ');
     return;
   };
   //@}

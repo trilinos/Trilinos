@@ -37,6 +37,8 @@
 #define __cplusplus
 #endif
 
+#ifdef HAVE_CONFIG_H
+
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
  * be undef'd here to avoid warnings when this file is included from another package.
@@ -79,6 +81,34 @@
 #endif
 
 #include "Teuchos_ConfigDefs.hpp"
+
+#else
+
+#include <iostream>
+#include <string>
+#include <stdexcept>
+#include <vector>
+
+#if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT) || defined(TFLOP)
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+#include <math.h>
+#include <complex.h>
+
+#else
+
+#include <cstdlib>
+#include <cstdio>
+#include <cassert>
+#include <cmath>
+#include <complex>
+
+#endif 
+
+#endif /*HAVE_CONFIG_H*/
+
 
 /* Define some macros */
 #define BELOS_MAX(x,y) (( (x) > (y) ) ? (x)  : (y) )     /* max function  */

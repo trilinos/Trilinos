@@ -239,11 +239,7 @@ public:
   
   // Compute a dense matrix B through the matrix-matrix multiply alpha * A^H * (*this). 
   void MvTransMv (ScalarType alpha, const Belos::MultiVec<ScalarType>& A, 
-                  Teuchos::SerialDenseMatrix< int, ScalarType >& B
-#ifdef HAVE_BELOS_EXPERIMENTAL
-                  , Belos::ConjType conj
-#endif
-                 ) const
+                  Teuchos::SerialDenseMatrix< int, ScalarType >& B) const
   {
     MyMultiVec* MyA;
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A)); 
@@ -253,9 +249,6 @@ public:
     assert (NumberVecs_ <= B.numCols());
     assert (A.GetNumberVecs() <= B.numRows());
     
-#ifdef HAVE_BELOS_EXPERIMENTAL
-    if (conj == Belos::CONJ) {
-#endif
       for (int v = 0 ; v < A.GetNumberVecs() ; ++v) {
         for (int w = 0 ; w < NumberVecs_ ; ++w) {
           ScalarType value = 0.0;
@@ -265,28 +258,11 @@ public:
           B(v, w) = alpha * value;
         }
       }
-#ifdef HAVE_BELOS_EXPERIMENTAL
-    } else {
-      for (int v = 0 ; v < A.GetNumberVecs() ; ++v) {
-        for (int w = 0 ; w < NumberVecs_ ; ++w) {
-          ScalarType value = 0.0;
-          for (int i = 0 ; i < Length_ ; ++i) {
-            value += (*MyA)(i, v) * (*this)(i, w);
-          }
-          B(v, w) = alpha * value;
-        }
-      }
-    }
-#endif
   }
   
   
   // Compute a std::vector b where the components are the individual dot-products, i.e.b[i] = A[i]^H*this[i] where A[i] is the i-th column of A. 
-  void MvDot (const Belos::MultiVec<ScalarType>& A, std::vector<ScalarType>* b
-#ifdef HAVE_BELOS_EXPERIMENTAL
-              , Belos::ConjType conj
-#endif
-             ) const
+  void MvDot (const Belos::MultiVec<ScalarType>& A, std::vector<ScalarType>* b) const
   {
     MyMultiVec* MyA;
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A)); 
@@ -296,9 +272,6 @@ public:
     assert (NumberVecs_ == A.GetNumberVecs());
     assert (Length_ == A.GetVecLength());
     
-#ifdef HAVE_BELOS_EXPERIMENTAL
-    if (conj == Belos::CONJ) {
-#endif
       for (int v = 0 ; v < NumberVecs_ ; ++v) {
         ScalarType value = 0.0;
         for (int i = 0 ; i < Length_ ; ++i) {
@@ -306,17 +279,6 @@ public:
         }
         (*b)[v] = value;
       }
-#ifdef HAVE_BELOS_EXPERIMENTAL
-    } else {
-      for (int v = 0 ; v < NumberVecs_ ; ++v) {
-        ScalarType value = 0.0;
-        for (int i = 0 ; i < Length_ ; ++i) {
-          value += (*this)(i, v) * (*MyA)(i, v);
-        }
-        (*b)[v] = value;
-      }
-    }
-#endif
   }  
   
   

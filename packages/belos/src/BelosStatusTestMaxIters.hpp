@@ -170,7 +170,7 @@ private:
   template <class ScalarType, class MV, class OP>
   void StatusTestMaxIters<ScalarType,MV,OP>::printStatus(std::ostream& os, StatusType type) const 
   {
-    os << std::setiosflags(std::ios::left) << std::setw(13) << std::setfill('.');
+    os << std::left << std::setw(13) << std::setfill('.');
     switch (type) {
     case  Passed:
       os << "Failed";
@@ -183,7 +183,7 @@ private:
       os << "**";
       break;
     }
-    os << std::setiosflags(std::ios::left) << std::setfill(' ');
+    os << std::left << std::setfill(' ');
     return;
   } 
 

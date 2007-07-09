@@ -146,7 +146,10 @@ AC_CHECK_HEADERS([cstdio stdio.h], [break],)
 AC_CHECK_HEADERS([cassert assert.h], [break],)
 AC_CHECK_HEADERS([cmath math.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
+AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
+AC_CHECK_HEADERS([vector vector.h], [break],)
 AC_CHECK_HEADERS([string string.h], [break],)
+AC_CHECK_HEADERS([stdexcept stdexcept.h], [break],)
 AC_CHECK_HEADERS([complex complex.h], [break],)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
@@ -169,12 +172,24 @@ if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" 
   AC_MSG_ERROR([[Cannot find iostream or iostream.h.  Belos requires at least one or the other.]])
 fi
 
+if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  Belos requires at least one or the other.]])
+fi
+
 if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cmath or math.h.  Belos requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_complex" != "Xyes" && test "X$ac_cv_header_complex_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find complex or complex.h.  Belos requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find vector or vector.h.  Belos requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_stdexcept" != "Xyes" && test "X$ac_cv_header_stdexcept_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find stdexcept or stdexcept.h.  Belos requires at least one or the other.]])
 fi
 
 
@@ -229,9 +244,6 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 
 TAC_ARG_ENABLE_FEATURE_SUB(teuchos, complex, [Build examples/tests which use complex scalar type], TEUCHOS_COMPLEX, yes)
 AM_CONDITIONAL(BUILD_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno"])
-
-TAC_ARG_ENABLE_FEATURE_SUB(belos, experimental, [Build examples/tests which use experimental code], BELOS_EXPERIMENTAL, no)
-AM_CONDITIONAL(BUILD_BELOS_EXPERIMENTAL, [test "X$ac_cv_use_belos_experimental" != "Xno"])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, triutils, BELOS_TRIUTILS, BUILD_TRIUTILS, yes, [Build tests that use Triutils. Can be overridden with --disable-belos-triutils.], [Build tests that use Triutils.])
 
