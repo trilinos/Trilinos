@@ -441,7 +441,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solve(
     &X = dyn_cast<ProductMultiVectorBase<Scalar> >(*X_inout);
   
   for ( int i = 0; i < numDiagBlocks_; ++ i ) {
-    solve( *diagonalBlocks_[i].getConstObj(), M_trans,
+    Thyra::solve( *diagonalBlocks_[i].getConstObj(), M_trans,
       *B.getMultiVectorBlock(i),
       &*X.getNonconstMultiVectorBlock(i)
       );
@@ -518,7 +518,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::apply(
     &Y = dyn_cast<ProductMultiVectorBase<Scalar> >(*Y_inout);
   
   for ( int i = 0; i < numDiagBlocks_; ++ i ) {
-    apply( *diagonalBlocks_[i].getConstObj(), M_trans,
+    Thyra::apply( *diagonalBlocks_[i].getConstObj(), M_trans,
       *X.getMultiVectorBlock(i),
       &*Y.getNonconstMultiVectorBlock(i)
       );
