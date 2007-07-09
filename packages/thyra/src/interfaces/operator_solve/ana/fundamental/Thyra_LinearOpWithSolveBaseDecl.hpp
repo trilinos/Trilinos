@@ -579,7 +579,7 @@ solve(
   ,const MultiVectorBase<Scalar>        &B
   ,MultiVectorBase<Scalar>              *X
   ,const SolveCriteria<Scalar>          *solveCriteria
-#ifndef __sun
+#ifndef SUN_CXX
                                                         = NULL
 #endif
   )
@@ -589,7 +589,7 @@ solve(
   return solveTranspose(A,transToConj(A_trans),B,X,solveCriteria);
 }
 
-#ifdef __sun
+#ifdef SUN_CXX
 
 template<class Scalar>
 SolveStatus<Scalar>
@@ -603,7 +603,7 @@ solve(
   return solve(A,A_trans,B,X,NULL);
 }
 
-#endif // __sun
+#endif // SUN_CXX
 
 /** \brief Solve a set of forward linear systems with a single set of
  * tolerances.
@@ -621,7 +621,7 @@ solve(
   ,MultiVectorBase<DomainScalar>                          *X
   ,const SolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
                                                           *solveCriteria
-#ifndef __sun
+#ifndef SUN_CXX
                                                                           = NULL
 #endif
   )
@@ -641,7 +641,7 @@ solve(
   return blockSolveStatus[0];
 }
 
-#ifdef __sun
+#ifdef SUN_CXX
 
 template<class RangeScalar, class DomainScalar>
 SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
@@ -655,7 +655,7 @@ solve(
   return solve(A,conj,B,X,NULL);
 }
 
-#endif // __sun
+#endif // SUN_CXX
 
 /** \brief Solve a set of transpose linear systems with a single set of
  * tolerances.
@@ -673,7 +673,7 @@ solveTranspose(
   ,MultiVectorBase<RangeScalar>                           *X
   ,const SolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
                                                           *solveCriteria
-#ifndef __sun
+#ifndef SUN_CXX
                                                                           = NULL
 #endif
   )
@@ -693,7 +693,7 @@ solveTranspose(
   return blockSolveStatus[0];
 }
 
-#ifdef __sun
+#ifdef SUN_CXX
 
 template <class RangeScalar, class DomainScalar>
 SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
@@ -707,7 +707,7 @@ solveTranspose(
   return solveTranspose(A,conj,B,X,NULL);
 }
 
-#endif // __sun
+#endif // SUN_CXX
 
 /** \brief Solve a set of forward linear systems with two or more sets of
  * tolerances.
@@ -725,12 +725,12 @@ void solve(
   ,const int                                              numBlocks
   ,const BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
                                                           blockSolveCriteria[]
-#ifndef __sun
+#ifndef SUN_CXX
                                                                                 = NULL
 #endif
   ,SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
                                                           blockSolveStatus[]
-#ifndef __sun
+#ifndef SUN_CXX
                                                                                 = NULL
 #endif
   )
@@ -738,7 +738,7 @@ void solve(
   A.solve(conj,B,X,numBlocks,blockSolveCriteria,blockSolveStatus);
 }
 
-#ifdef __sun
+#ifdef SUN_CXX
 
 template<class RangeScalar, class DomainScalar>
 void solve(
@@ -766,7 +766,7 @@ void solve(
   solve(A,conj,B,X,numBlcoks,NULL,NULL);
 }
 
-#endif // __sun
+#endif // SUN_CXX
 
 /** \brief Solve a set of transpose linear systems with two or more sets of
  * tolerances.
@@ -784,12 +784,12 @@ void solveTranspose(
   ,const int                                              numBlocks
   ,const BlockSolveCriteria<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
                                                           blockSolveCriteria[]
-#ifndef __sun
+#ifndef SUN_CXX
                                                                                 = NULL
 #endif
   ,SolveStatus<typename LinearOpWithSolveBase<RangeScalar,DomainScalar>::PromotedScalar>
                                                           blockSolveStatus[]
-#ifndef __sun
+#ifndef SUN_CXX
                                                                                 = NULL
 #endif
   )
@@ -797,7 +797,7 @@ void solveTranspose(
   A.solveTranspose(conj,B,X,numBlocks,blockSolveCriteria,blockSolveStatus);
 }
 
-#ifdef __sun
+#ifdef SUN_CXX
 
 template <class RangeScalar, class DomainScalar>
 void solveTranspose(
@@ -825,7 +825,7 @@ void solveTranspose(
   solveTranspose(A,conj,B,X,numBlocks,NULL,NULL);
 }
 
-#endif // __sun
+#endif // SUN_CXX
 
 //@}
 

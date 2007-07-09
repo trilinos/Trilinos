@@ -79,7 +79,7 @@
 int readHB_info(const char* filename, int* M, int* N, int* nz, char** Type, 
                                                       int* Nrhs);
 
-int readHB_header(FILE* in_file, char* Title, char* Key, char* Type, 
+int readHB_header(std::FILE* in_file, char* Title, char* Key, char* Type, 
                     int* Nrow, int* Ncol, int* Nnzero, int* Nrhs,
                     char* Ptrfmt, char* Indfmt, char* Valfmt, char* Rhsfmt, 
                     int* Ptrcrd, int* Indcrd, int* Valcrd, int* Rhscrd, 

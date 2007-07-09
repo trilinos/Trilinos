@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __sun
+#ifndef SUN_CXX
 
 #include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
 #include "Thyra_DefaultDiagonalLinearOpWithSolve.hpp"
@@ -165,7 +165,7 @@ DiagonalEpetraLinearOpWithSolveFactory::getValidParameters() const
 
 } // namespace Thyra
 
-#endif // __sun
+#endif // SUN_CXX
 
 
 

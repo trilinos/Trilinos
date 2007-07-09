@@ -30,7 +30,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
-#ifndef __sun
+#ifndef SUN_CXX
 
 #include "ComplexFFTLinearOp.hpp"
 #include "RealComplexFFTLinearOp.hpp"
@@ -188,7 +188,7 @@ bool run1DFFTExample(
 
 } // end run1DFFTExample()
 
-#endif // __sun
+#endif // SUN_CXX
 
 //
 // Actual main driver program
@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
-#ifndef __sun
+#ifndef SUN_CXX
 
     TEST_FOR_EXCEPTION( N < 0, std::logic_error, "Error, N=" << N << " < 1 is not allowed!" );
 
@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
 
 #endif // HAVE_TEUCHOS_GNU_MP
 
-#endif // ifndef __sun
+#endif // ifndef SUN_CXX
 
   }
   catch( const std::exception &excpt ) {
@@ -260,7 +260,7 @@ int main(int argc, char *argv[])
     success = false;
   }
 
-#ifndef __sun
+#ifndef SUN_CXX
 
   if (verbose) {
     if(success)   *out << "\nCongratulations! All of the tests checked out!\n";
@@ -269,14 +269,14 @@ int main(int argc, char *argv[])
   
   return success ? 0 : 1;
 
-#else // ifndef __sun
+#else // ifndef SUN_CXX
 
   if (verbose) {
-    *out << "\nError, the test was never run since __sun was defined and this test does not build on the Sun compiler!\n";
+    *out << "\nError, the test was never run since SUN_CXX was defined and this test does not build on the Sun compiler!\n";
   }
   
   return 1;
 
-#endif // __sun
+#endif // SUN_CXX
 
 } // end main()

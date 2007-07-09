@@ -28,7 +28,7 @@
 // @HEADER
 */
 
-#ifndef __sun
+#ifndef SUN_CXX
 
 #include "Thyra_AmesosLinearOpWithSolve.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -340,4 +340,4 @@ void AmesosLinearOpWithSolve::solve(
 
 }	// end namespace Thyra
 
-#endif // __sun
+#endif // SUN_CXX

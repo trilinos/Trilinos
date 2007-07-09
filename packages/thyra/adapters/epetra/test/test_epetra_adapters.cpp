@@ -663,7 +663,7 @@ int main( int argc, char* argv[] )
       if(verbose && dumpAll) *out << "\nt_view =\n" << *t_view;
 
 /*
-#ifndef __sun // The sun compiler Forte Developer 5.4 does not destory temporaries properly and this does not work
+#ifndef SUN_CXX // The sun compiler Forte Developer 5.4 does not destory temporaries properly and this does not work
       std::fill_n( t_raw_values.begin(), t_raw_values.size(), ST::zero() );
       Thyra::assign( &*T->range()->Thyra::VectorSpaceBase<Scalar>::createMemberView(t_raw), scalar );
       t_view = T->range()->Thyra::VectorSpaceBase<Scalar>::createMemberView(static_cast<RTOpPack::ConstSubVectorView<Scalar>&>(t_raw));
@@ -685,7 +685,7 @@ int main( int argc, char* argv[] )
       if(verbose && dumpAll) *out << "\nT_view =\n" << *T_view;
 
 /*
-#ifndef __sun // The sun compiler Forte Developer 5.4 does not destory temporaries properly and this does not work
+#ifndef SUN_CXX // The sun compiler Forte Developer 5.4 does not destory temporaries properly and this does not work
       std::fill_n( T_raw_values.begin(), T_raw_values.size(), ST::zero() );
       Thyra::assign( &*T->range()->Thyra::VectorSpaceBase<Scalar>::createMembersView(T_raw), scalar );
       T_view = T->range()->Thyra::VectorSpaceBase<Scalar>::createMembersView(static_cast<RTOpPack::ConstSubMultiVectorView<Scalar>&>(T_raw));
@@ -812,7 +812,7 @@ int main( int argc, char* argv[] )
 
     }
 
-#ifndef __sun
+#ifndef SUN_CXX
 
     if(verbose) *out << "\n*** (B.12) Test DiagonalEpetraLinearOpWithSolveFactory \n";
 
@@ -837,7 +837,7 @@ int main( int argc, char* argv[] )
     
     }
 
-#endif // __sun
+#endif // SUN_CXX
 
     if(verbose)
       *out

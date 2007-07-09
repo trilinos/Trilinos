@@ -260,12 +260,12 @@ void Vp_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar
  */
 template<class Scalar>
 void Vp_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x, const Scalar& beta
-#ifndef __sun
+#ifndef SUN_CXX
    = Teuchos::ScalarTraits<Scalar>::one()
 #endif
   );
 
-#ifdef __sun
+#ifdef SUN_CXX
 
 template<class Scalar>
 inline

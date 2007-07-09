@@ -1,5 +1,5 @@
 
-#ifndef __sun
+#ifndef SUN_CXX
 
 #ifndef THYRA_BELOS_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 #define THYRA_BELOS_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
@@ -708,4 +708,4 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 
 #endif // THYRA_BELOS_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 
-#endif // __sun
+#endif // SUN_CXX

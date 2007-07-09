@@ -27,7 +27,7 @@
 //@HEADER
 */
 
-#ifndef __sun
+#ifndef SUN_CXX
 
 #include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
 #include "Thyra_AztecOOLinearOpWithSolve.hpp"
@@ -843,4 +843,4 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
 
 } // namespace Thyra
 
-#endif // __sun
+#endif // SUN_CXX

@@ -28,7 +28,7 @@
 */
 #include "test_single_aztecoo_thyra_solver.hpp"
 
-#ifndef __sun
+#ifndef SUN_CXX
 
 #include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
@@ -49,7 +49,7 @@
 #  include "Epetra_MpiComm.h"
 #endif
 
-#endif // __sun
+#endif // SUN_CXX
 
 bool Thyra::test_single_aztecoo_thyra_solver(
   const std::string                       matrixFile
@@ -74,7 +74,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
   try {
 
-#ifndef __sun
+#ifndef SUN_CXX
 
     if(out.get()) {
       *out
@@ -394,12 +394,12 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
   }
 
-#else // __sun
+#else // SUN_CXX
     
-    if(out.get()) *out << "\nTest failed since is was not even compiled since __sun was defined!\n";
+    if(out.get()) *out << "\nTest failed since is was not even compiled since SUN_CXX was defined!\n";
     success = false;
 
-#endif // __sun
+#endif // SUN_CXX
 
   }
   catch( const std::exception &excpt ) {

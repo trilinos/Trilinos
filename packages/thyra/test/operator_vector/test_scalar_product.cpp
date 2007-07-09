@@ -29,7 +29,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
-#ifndef __sun
+#ifndef SUN_CXX
 
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultSpmdMultiVector.hpp"
@@ -194,7 +194,7 @@ bool run_scalar_product_tests(
 
 } // end run_scalar_product_tests() [Doxygen looks for this!]
 
-#endif // __sun
+#endif // SUN_CXX
 
 int main( int argc, char* argv[] ) {
 
@@ -224,7 +224,7 @@ int main( int argc, char* argv[] ) {
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
-#ifndef __sun
+#ifndef SUN_CXX
 
     //
     // Run the tests
@@ -244,7 +244,7 @@ int main( int argc, char* argv[] ) {
     if( !run_scalar_product_tests<mpf_class>(n,mpf_class(1e-14),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 
-#endif // ifndef __sun
+#endif // ifndef SUN_CXX
 
   } // end try
   catch( const std::exception &excpt ) {
@@ -258,7 +258,7 @@ int main( int argc, char* argv[] ) {
     success = false;
   }
 
-#ifndef __sun
+#ifndef SUN_CXX
 
   if(verbose) {
     if(success)
@@ -269,14 +269,14 @@ int main( int argc, char* argv[] ) {
   
   return success ? 0 : 1;
 
-#else // ifndef __sun
+#else // ifndef SUN_CXX
 
   if (verbose) {
-    std::cout << "\nError, the test was never run since __sun was defined and this test does not build on the Sun compiler!\n";
+    std::cout << "\nError, the test was never run since SUN_CXX was defined and this test does not build on the Sun compiler!\n";
   }
   
   return 1;
 
-#endif //ifndef __sun
+#endif //ifndef SUN_CXX
 
 } // end main() [Doxygen looks for this!]

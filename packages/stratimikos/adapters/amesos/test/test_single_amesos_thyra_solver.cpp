@@ -28,7 +28,7 @@
 
 #include "test_single_amesos_thyra_solver.hpp"
 
-#ifndef __sun
+#ifndef SUN_CXX
 
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
@@ -41,7 +41,7 @@
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Epetra_SerialComm.h"
 
-#endif // __sun
+#endif // SUN_CXX
 
 bool Thyra::test_single_amesos_thyra_solver(
   const std::string                       matrixFile
@@ -63,7 +63,7 @@ bool Thyra::test_single_amesos_thyra_solver(
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::rcp(out_arg,false);
 
-#ifndef __sun
+#ifndef SUN_CXX
 
   if(out.get()) {
     *out
@@ -247,12 +247,12 @@ bool Thyra::test_single_amesos_thyra_solver(
   result = linearOpTester.check(*invA,out.get());
   if(!result) success = false;
 
-#else // __sun
+#else // SUN_CXX
   
-  if(out.get()) *out << "\nTest failed since is was not even compiled since __sun was defined!\n";
+  if(out.get()) *out << "\nTest failed since is was not even compiled since SUN_CXX was defined!\n";
   success = false;
 
-#endif // __sun
+#endif // SUN_CXX
 
   return success;
 

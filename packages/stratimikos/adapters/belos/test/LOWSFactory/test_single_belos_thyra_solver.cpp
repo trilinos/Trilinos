@@ -1,6 +1,6 @@
 #include "test_single_belos_thyra_solver.hpp"
 
-#ifndef __sun
+#ifndef SUN_CXX
 
 #include "Thyra_BelosLinearOpWithSolveFactory.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
@@ -15,7 +15,7 @@
 #  include "Thyra_IfpackPreconditionerFactory.hpp"
 #endif
 
-#endif // __sun
+#endif // SUN_CXX
 
 bool Thyra::test_single_belos_thyra_solver(
   const std::string                       matrixFile
@@ -40,7 +40,7 @@ bool Thyra::test_single_belos_thyra_solver(
 
   try {
 
-#ifndef __sun
+#ifndef SUN_CXX
 
     if(out.get()) {
       *out << "\n***"
@@ -166,12 +166,12 @@ bool Thyra::test_single_belos_thyra_solver(
       belosLOWSFPL->print(OSTab(out).o(),0,true);
     }
     
-#else // __sun
+#else // SUN_CXX
     
-    if(out.get()) *out << "\nTest failed since is was not even compiled since __sun was defined!\n";
+    if(out.get()) *out << "\nTest failed since is was not even compiled since SUN_CXX was defined!\n";
     success = false;
 
-#endif // __sun
+#endif // SUN_CXX
 
   }
   catch( const std::exception &excpt ) {

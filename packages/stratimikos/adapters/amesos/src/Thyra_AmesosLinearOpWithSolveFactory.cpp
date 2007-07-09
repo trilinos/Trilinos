@@ -28,7 +28,7 @@
 // @HEADER
 */
 
-#ifndef __sun
+#ifndef SUN_CXX
 
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 
@@ -494,4 +494,4 @@ AmesosLinearOpWithSolveFactory::generateAndGetValidParameters()
 
 } // namespace Thyra
 
-#endif // __sun
+#endif // SUN_CXX
