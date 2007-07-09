@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   }
   std::ostream &out = *fancyOut;
 #else
-  std::ostream &out = std::cout
+  std::ostream &out = std::cout;
 #endif
 
   Comm.SetTracebackMode(0); // This should shut down any error tracing

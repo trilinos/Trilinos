@@ -44,7 +44,7 @@
     fancyOut = Teuchos::VerboseObjectBase::getDefaultOStream();
   std::ostream &out = *fancyOut;
 #else
-  std::ostream &out = std::cout
+  std::ostream &out = std::cout;
 #endif
 
     int NumVectors = 1;
@@ -226,7 +226,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
     fancyOut = Teuchos::VerboseObjectBase::getDefaultOStream();
   std::ostream &out = *fancyOut;
 #else
-  std::ostream &out = std::cout
+  std::ostream &out = std::cout;
 #endif
   
   Epetra_BLAS BLAS;
@@ -460,7 +460,7 @@ int BadResidual(bool verbose, double * Residual)
     fancyOut = Teuchos::VerboseObjectBase::getDefaultOStream();
   std::ostream &out = *fancyOut;
 #else
-  std::ostream &out = std::cout
+  std::ostream &out = std::cout;
 #endif
 
   double threshold = 5.0E-6;
