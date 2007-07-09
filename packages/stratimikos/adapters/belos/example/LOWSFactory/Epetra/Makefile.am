@@ -31,7 +31,7 @@ belos_epetra_thyra_lowsf_hb_LDADD = $(common_ldadd)
 
 orsirr1.hb:
 	cp  $(top_srcdir)/../belos/example/BlockGmres/orsirr1.hb orsirr1.hb                               
-	cp  $(top_srcdir)/../belos/test/BlockCG/bcsstk14.hb bcsstk14.hb                              
+	cp  $(top_srcdir)/../belos/example/BlockCG/bcsstk14.hb bcsstk14.hb
 
 #
 # Common stuff

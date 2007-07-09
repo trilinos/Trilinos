@@ -473,7 +473,7 @@ include $(top_builddir)/Makefile.export.stratimikos
 
 orsirr1.hb:
 	cp  $(top_srcdir)/../belos/example/BlockGmres/orsirr1.hb orsirr1.hb                               
-	cp  $(top_srcdir)/../belos/test/BlockCG/bcsstk14.hb bcsstk14.hb                              
+	cp  $(top_srcdir)/../belos/example/BlockCG/bcsstk14.hb bcsstk14.hb
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
