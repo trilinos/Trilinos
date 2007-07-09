@@ -37,9 +37,9 @@ typedef struct ML_Comm_Envelope_Struct ML_Comm_Envelope;
 
 struct ML_NeighborList_Struct 
 {
-   int ML_id;
-   int N_rcv, N_send;
-   int *rcv_list, *send_list;
+   int ML_id; /*Process id*/
+   int N_rcv, N_send; /*how many doubles sent and recived to this process id.  One of these could be zero for someone only sending or recieving*/
+   int *rcv_list, *send_list; /*local unknowns that are sent and recieved these are vectors*/
 };
 
 /* -------------------------------------------------------------------- */
@@ -59,9 +59,9 @@ struct ML_NeighborList_Struct
 struct ML_CommInfoOP_Struct {
    int             N_neighbors;
    ML_NeighborList *neighbors;
-   int             add_rcvd;
-   int             *remap;
-   int             total_rcv_length;
+   int             add_rcvd; /*This is for the weird matvec mult*/
+   int             *remap; /*This is for the weird matvec mult*/
+   int             total_rcv_length; /*sum of all individual recieves not always computed so if <= 0 can be computed by a routine*/
    int             minimum_vec_size, remap_length, remap_max;
    double          time;
    int             NumActiveProc;
