@@ -63,6 +63,9 @@ config/tac_arg_enable_feature_sub_check.m4 \
 config/acx_blas.m4 \
 config/tac_arg_with_flags.m4 \
 config/tac_arg_with_incdirs.m4 \
+config/strip_dup_incl_paths.pl          config/strip_dup_libs.pl \
+config/tac_arg_enable_export-makefiles.m4 \
+config/tac_arg_with_perl.m4
 config/config.guess                     config/tac_arg_with_libdirs.m4 \
 config/config.sub \
 bootstrap 
