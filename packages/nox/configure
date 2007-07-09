@@ -756,6 +756,8 @@ BUILD_LIBLOCALAPACK_TRUE
 BUILD_LIBLOCALAPACK_FALSE
 BUILD_LIBLOCAEPETRA_TRUE
 BUILD_LIBLOCAEPETRA_FALSE
+BUILD_LIBLOCATHYRA_TRUE
+BUILD_LIBLOCATHYRA_FALSE
 SUB_TEST_TRUE
 SUB_TEST_FALSE
 SUB_EXAMPLE_TRUE
@@ -787,7 +789,10 @@ BUILD_BELOS_TESTS_FALSE
 ADDON_belos_TESTS
 BUILD_THYRA_TESTS_TRUE
 BUILD_THYRA_TESTS_FALSE
+BUILD_LOCA_THYRA_TESTS_TRUE
+BUILD_LOCA_THYRA_TESTS_FALSE
 ADDON_thyra_TESTS
+ADDON_loca_thyra_TESTS
 BUILD_TESTUTILS_TRUE
 BUILD_TESTUTILS_FALSE
 BUILD_NOX_EXAMPLES_TRUE
@@ -8881,6 +8886,15 @@ else
   BUILD_LIBLOCAEPETRA_FALSE=
 fi
 
+ if test X${ADDON_thyra} = Xyes &&
+                                    test X${BUILD_LIBLOCA} = Xyes; then
+  BUILD_LIBLOCATHYRA_TRUE=
+  BUILD_LIBLOCATHYRA_FALSE='#'
+else
+  BUILD_LIBLOCATHYRA_TRUE='#'
+  BUILD_LIBLOCATHYRA_FALSE=
+fi
+
 
 # ------------------------------------------------------------------------
 # Library check variable.  This can be set to yes by examples or tests
@@ -9220,6 +9234,15 @@ else
   BUILD_THYRA_TESTS_TRUE='#'
   BUILD_THYRA_TESTS_FALSE=
 fi
+
+   if test X${ADDON_loca_thyra_TESTS} = Xyes; then
+  BUILD_LOCA_THYRA_TESTS_TRUE=
+  BUILD_LOCA_THYRA_TESTS_FALSE='#'
+else
+  BUILD_LOCA_THYRA_TESTS_TRUE='#'
+  BUILD_LOCA_THYRA_TESTS_FALSE=
+fi
+
 
 
 
@@ -16578,7 +16601,7 @@ echo "${ECHO_T}$WITH_PRERELEASE" >&6; }
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile Makefile.export.nox doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile src-epetra/Makefile src-petsc/Makefile src-belos/Makefile src-thyra/Makefile src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-mf/Makefile examples/Makefile examples/lapack/Makefile examples/lapack/NOX_SimpleExamples/Makefile examples/lapack/LOCA_Chan/Makefile examples/lapack/LOCA_Brusselator/Makefile examples/lapack/LOCA_1DFDPitchfork/Makefile examples/epetra/Makefile examples/epetra/NOX_1DFEMNonlinear/Makefile examples/epetra/NOX_Sacado_FEApp/Makefile examples/epetra/LOCA_Tcubed/Makefile examples/epetra/LOCA_Brusselator_xyzt/Makefile examples/epetra/LOCA_Sacado_FEApp/Makefile examples/petsc/Makefile examples/petsc/DS6.5.1/Makefile examples/petsc/1DFiniteDifference/Makefile test/Makefile test/basic/Makefile test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_TestProblems/Makefile test/lapack/LOCA_UnitTests/Makefile test/lapack/LOCA_ChanProblem/Makefile test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Operators/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_TestProblems/Makefile test/epetra/LOCA_UnitTests/Makefile test/epetra/LOCA_Tcubed/Makefile test/epetra/LOCA_Pitchfork/Makefile test/epetra/LOCA_Brusselator/Makefile test/epetra/LOCA_Brusselator_xyzt/Makefile test/epetra/LOCA_MultiPoint_Tcubed/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/epetra/DS6.5.1/Makefile test/epetra/Brusselator/Makefile test/epetra/PelletTransport/Makefile test/epetra/FiniteDifferenceColoring/Makefile test/epetra/Thyra_2Dsim/Makefile test/petsc/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.nox doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile src-epetra/Makefile src-petsc/Makefile src-belos/Makefile src-thyra/Makefile src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-thyra/Makefile src-loca/src-mf/Makefile examples/Makefile examples/lapack/Makefile examples/lapack/NOX_SimpleExamples/Makefile examples/lapack/LOCA_Chan/Makefile examples/lapack/LOCA_Brusselator/Makefile examples/lapack/LOCA_1DFDPitchfork/Makefile examples/epetra/Makefile examples/epetra/NOX_1DFEMNonlinear/Makefile examples/epetra/NOX_Sacado_FEApp/Makefile examples/epetra/LOCA_Tcubed/Makefile examples/epetra/LOCA_Brusselator_xyzt/Makefile examples/epetra/LOCA_Sacado_FEApp/Makefile examples/petsc/Makefile examples/petsc/DS6.5.1/Makefile examples/petsc/1DFiniteDifference/Makefile test/Makefile test/basic/Makefile test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_TestProblems/Makefile test/lapack/LOCA_UnitTests/Makefile test/lapack/LOCA_ChanProblem/Makefile test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Operators/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_TestProblems/Makefile test/epetra/LOCA_UnitTests/Makefile test/epetra/LOCA_Tcubed/Makefile test/epetra/LOCA_Pitchfork/Makefile test/epetra/LOCA_Brusselator/Makefile test/epetra/LOCA_Brusselator_xyzt/Makefile test/epetra/LOCA_MultiPoint_Tcubed/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/epetra/DS6.5.1/Makefile test/epetra/Brusselator/Makefile test/epetra/PelletTransport/Makefile test/epetra/FiniteDifferenceColoring/Makefile test/epetra/Thyra_2Dsim/Makefile test/petsc/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -16810,6 +16833,13 @@ echo "$as_me: error: conditional \"BUILD_LIBLOCAEPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${BUILD_LIBLOCATHYRA_TRUE}" && test -z "${BUILD_LIBLOCATHYRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_LIBLOCATHYRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_LIBLOCATHYRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${SUB_TEST_TRUE}" && test -z "${SUB_TEST_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"SUB_TEST\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -16891,6 +16921,13 @@ if test -z "${BUILD_THYRA_TESTS_TRUE}" && test -z "${BUILD_THYRA_TESTS_FALSE}"; 
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_THYRA_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_THYRA_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_LOCA_THYRA_TESTS_TRUE}" && test -z "${BUILD_LOCA_THYRA_TESTS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_LOCA_THYRA_TESTS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_LOCA_THYRA_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -17490,6 +17527,7 @@ do
     "src-loca/src/Makefile") CONFIG_FILES="$CONFIG_FILES src-loca/src/Makefile" ;;
     "src-loca/src-epetra/Makefile") CONFIG_FILES="$CONFIG_FILES src-loca/src-epetra/Makefile" ;;
     "src-loca/src-lapack/Makefile") CONFIG_FILES="$CONFIG_FILES src-loca/src-lapack/Makefile" ;;
+    "src-loca/src-thyra/Makefile") CONFIG_FILES="$CONFIG_FILES src-loca/src-thyra/Makefile" ;;
     "src-loca/src-mf/Makefile") CONFIG_FILES="$CONFIG_FILES src-loca/src-mf/Makefile" ;;
     "examples/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
     "examples/lapack/Makefile") CONFIG_FILES="$CONFIG_FILES examples/lapack/Makefile" ;;
@@ -17780,6 +17818,8 @@ BUILD_LIBLOCALAPACK_TRUE!$BUILD_LIBLOCALAPACK_TRUE$ac_delim
 BUILD_LIBLOCALAPACK_FALSE!$BUILD_LIBLOCALAPACK_FALSE$ac_delim
 BUILD_LIBLOCAEPETRA_TRUE!$BUILD_LIBLOCAEPETRA_TRUE$ac_delim
 BUILD_LIBLOCAEPETRA_FALSE!$BUILD_LIBLOCAEPETRA_FALSE$ac_delim
+BUILD_LIBLOCATHYRA_TRUE!$BUILD_LIBLOCATHYRA_TRUE$ac_delim
+BUILD_LIBLOCATHYRA_FALSE!$BUILD_LIBLOCATHYRA_FALSE$ac_delim
 SUB_TEST_TRUE!$SUB_TEST_TRUE$ac_delim
 SUB_TEST_FALSE!$SUB_TEST_FALSE$ac_delim
 SUB_EXAMPLE_TRUE!$SUB_EXAMPLE_TRUE$ac_delim
@@ -17811,7 +17851,10 @@ BUILD_BELOS_TESTS_FALSE!$BUILD_BELOS_TESTS_FALSE$ac_delim
 ADDON_belos_TESTS!$ADDON_belos_TESTS$ac_delim
 BUILD_THYRA_TESTS_TRUE!$BUILD_THYRA_TESTS_TRUE$ac_delim
 BUILD_THYRA_TESTS_FALSE!$BUILD_THYRA_TESTS_FALSE$ac_delim
+BUILD_LOCA_THYRA_TESTS_TRUE!$BUILD_LOCA_THYRA_TESTS_TRUE$ac_delim
+BUILD_LOCA_THYRA_TESTS_FALSE!$BUILD_LOCA_THYRA_TESTS_FALSE$ac_delim
 ADDON_thyra_TESTS!$ADDON_thyra_TESTS$ac_delim
+ADDON_loca_thyra_TESTS!$ADDON_loca_thyra_TESTS$ac_delim
 BUILD_TESTUTILS_TRUE!$BUILD_TESTUTILS_TRUE$ac_delim
 BUILD_TESTUTILS_FALSE!$BUILD_TESTUTILS_FALSE$ac_delim
 BUILD_NOX_EXAMPLES_TRUE!$BUILD_NOX_EXAMPLES_TRUE$ac_delim
@@ -17828,11 +17871,6 @@ BUILD_LOCA_EPETRA_EXAMPLES_TRUE!$BUILD_LOCA_EPETRA_EXAMPLES_TRUE$ac_delim
 BUILD_LOCA_EPETRA_EXAMPLES_FALSE!$BUILD_LOCA_EPETRA_EXAMPLES_FALSE$ac_delim
 ADDON_epetra_EXAMPLES!$ADDON_epetra_EXAMPLES$ac_delim
 ADDON_loca_epetra_EXAMPLES!$ADDON_loca_epetra_EXAMPLES$ac_delim
-BUILD_PETSC_EXAMPLES_TRUE!$BUILD_PETSC_EXAMPLES_TRUE$ac_delim
-BUILD_PETSC_EXAMPLES_FALSE!$BUILD_PETSC_EXAMPLES_FALSE$ac_delim
-ADDON_petsc_EXAMPLES!$ADDON_petsc_EXAMPLES$ac_delim
-BUILD_BELOS_EXAMPLES_TRUE!$BUILD_BELOS_EXAMPLES_TRUE$ac_delim
-BUILD_BELOS_EXAMPLES_FALSE!$BUILD_BELOS_EXAMPLES_FALSE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -17874,6 +17912,11 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BUILD_PETSC_EXAMPLES_TRUE!$BUILD_PETSC_EXAMPLES_TRUE$ac_delim
+BUILD_PETSC_EXAMPLES_FALSE!$BUILD_PETSC_EXAMPLES_FALSE$ac_delim
+ADDON_petsc_EXAMPLES!$ADDON_petsc_EXAMPLES$ac_delim
+BUILD_BELOS_EXAMPLES_TRUE!$BUILD_BELOS_EXAMPLES_TRUE$ac_delim
+BUILD_BELOS_EXAMPLES_FALSE!$BUILD_BELOS_EXAMPLES_FALSE$ac_delim
 ADDON_belos_EXAMPLES!$ADDON_belos_EXAMPLES$ac_delim
 BUILD_LOCAANASAZI_TRUE!$BUILD_LOCAANASAZI_TRUE$ac_delim
 BUILD_LOCAANASAZI_FALSE!$BUILD_LOCAANASAZI_FALSE$ac_delim
@@ -17908,7 +17951,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 32; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 37; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

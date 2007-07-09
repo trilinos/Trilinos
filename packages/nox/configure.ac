@@ -359,6 +359,8 @@ AM_CONDITIONAL(BUILD_LIBLOCALAPACK, test X${ADDON_lapack} = Xyes &&
                                     test X${BUILD_LIBLOCA} = Xyes)
 AM_CONDITIONAL(BUILD_LIBLOCAEPETRA, test X${ADDON_epetra} = Xyes && 
                                     test X${BUILD_LIBLOCA} = Xyes)
+AM_CONDITIONAL(BUILD_LIBLOCATHYRA,  test X${ADDON_thyra} = Xyes && 
+                                    test X${BUILD_LIBLOCA} = Xyes)
 
 # ------------------------------------------------------------------------
 # Library check variable.  This can be set to yes by examples or tests
@@ -460,7 +462,9 @@ AM_CONDITIONAL(SUB_EXAMPLE, test "X$ac_cv_use_sub_example" = "Xyes")
   # thyra testing
   NOX_TESTING(thyra)
   AM_CONDITIONAL(BUILD_THYRA_TESTS, test X${ADDON_thyra_TESTS} = Xyes)
+  AM_CONDITIONAL(BUILD_LOCA_THYRA_TESTS, test X${ADDON_loca_thyra_TESTS} = Xyes)
   AC_SUBST(ADDON_thyra_TESTS)
+  AC_SUBST(ADDON_loca_thyra_TESTS)
 
   # Determine whether to build the new test utils library
   AM_CONDITIONAL(BUILD_TESTUTILS, test X${REQUIRE_LIB_CHECK} = Xyes)
@@ -902,6 +906,7 @@ AC_CONFIG_FILES([
 		src-loca/src/Makefile
                 src-loca/src-epetra/Makefile
 		src-loca/src-lapack/Makefile
+		src-loca/src-thyra/Makefile
 		src-loca/src-mf/Makefile
 		examples/Makefile
 		examples/lapack/Makefile

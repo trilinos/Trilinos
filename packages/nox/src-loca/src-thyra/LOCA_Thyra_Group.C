@@ -1,0 +1,313 @@
+// $Id$ 
+// $Source$ 
+
+//@HEADER
+// ************************************************************************
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
+//            LOCA: Library of Continuation Algorithms Package
+//                 Copyright (2005) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
+// ************************************************************************
+//  CVS Information
+//  $Source$
+//  $Author$
+//  $Date$
+//  $Revision$
+// ************************************************************************
+//@HEADER
+
+#include "LOCA_Thyra_Group.H"	          // class definition
+#include "Teuchos_TestForException.hpp"
+#include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_SolveSupportTypes.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "LOCA_GlobalData.H"
+#include "LOCA_ErrorCheck.H"
+
+LOCA::Thyra::Group::Group(
+	    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+	    const NOX::Thyra::Vector& initial_guess,
+	    const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
+	    const LOCA::ParameterVector& p,
+	    int p_index) :
+  NOX::Thyra::Group(initial_guess, model),
+  LOCA::Abstract::Group(global_data),
+  globalData(global_data),
+  params(p),
+  param_index(p_index)
+{
+  //param_thyra_vec = Teuchos::rcp(new ::Thyra::VectorBase<double>());
+}
+
+LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source, 
+			   NOX::CopyType type) :
+  NOX::Thyra::Group(source, type),
+  LOCA::Abstract::Group(source, type),
+  globalData(source.globalData),
+  params(source.params)
+{
+}
+
+LOCA::Thyra::Group::~Group() 
+{
+}
+
+LOCA::Thyra::Group& 
+LOCA::Thyra::Group::operator=(const LOCA::Thyra::Group& source)
+{
+  if (this != &source) {
+    NOX::Thyra::Group::operator=(source);
+    LOCA::Abstract::Group::copy(source);
+    params = source.params;
+  }
+  return *this;
+}
+
+NOX::Abstract::Group& 
+LOCA::Thyra::Group::operator=(const NOX::Abstract::Group& source)
+{
+  operator=(dynamic_cast<const Group&> (source));
+  return *this;
+}
+
+NOX::Abstract::Group& 
+LOCA::Thyra::Group::operator=(const NOX::Thyra::Group& source)
+{
+  operator=(dynamic_cast<const Group&> (source));
+  return *this;
+}
+
+Teuchos::RCP<NOX::Abstract::Group>
+LOCA::Thyra::Group::clone(NOX::CopyType type) const 
+{
+  return Teuchos::rcp(new LOCA::Thyra::Group(*this, type));
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Thyra::Group::computeF() 
+{
+  if (this->isF())
+    return NOX::Abstract::Group::Ok;
+
+  in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
+  in_args_.set_p(param_index, param_thyra_vec);
+  out_args_.set_f(f_vec_->getThyraRCPVector().assert_not_null());
+
+  model_->evalModel(in_args_, out_args_);
+
+  in_args_.set_x(Teuchos::null);
+  in_args_.set_p(param_index, Teuchos::null);
+  out_args_.set_f(Teuchos::null);
+
+  is_valid_f_ = true;
+
+  if (out_args_.isFailed())
+    return NOX::Abstract::Group::Failed;
+  
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::Thyra::Group::computeJacobian() 
+{
+  if (this->isJacobian())
+    return NOX::Abstract::Group::Ok;
+
+  in_args_.set_x(x_vec_->getThyraRCPVector());
+  in_args_.set_p(param_index, param_thyra_vec);
+  out_args_.set_W(shared_jacobian_->getObject(this));
+
+  model_->evalModel(in_args_, out_args_);
+
+  in_args_.set_x(Teuchos::null);
+  in_args_.set_p(param_index, Teuchos::null);
+  out_args_.set_W(Teuchos::null);
+
+  is_valid_jacobian_ = true;
+
+  if (out_args_.isFailed())
+    return NOX::Abstract::Group::Failed;
+
+  return NOX::Abstract::Group::Ok;
+}
+
+void
+LOCA::Thyra::Group::copy(const NOX::Abstract::Group& source)
+{
+  *this = source;
+}
+
+void 
+LOCA::Thyra::Group::setParams(const LOCA::ParameterVector& p)
+{
+  this->resetIsValidFlags();
+  params = p;
+}
+
+void
+LOCA::Thyra::Group::setParam(int paramID, double val)
+{
+  this->resetIsValidFlags();
+  params.setValue(paramID, val);
+}
+
+void
+LOCA::Thyra::Group::setParam(string paramID, double val)
+{
+  this->resetIsValidFlags();
+  params.setValue(paramID, val);
+}
+
+const LOCA::ParameterVector& 
+LOCA::Thyra::Group::getParams() const 
+{
+  return params;
+}
+
+double
+LOCA::Thyra::Group::getParam(int paramID) const
+{
+  return params.getValue(paramID);
+}
+
+double
+LOCA::Thyra::Group::getParam(string paramID) const
+{
+  return params.getValue(paramID);
+}
+
+void
+LOCA::Thyra::Group::printSolution(const double conParam) const
+{
+  printSolution(*x_vec_, conParam);
+}
+
+void
+LOCA::Thyra::Group::printSolution(const NOX::Abstract::Vector& x_,
+				  const double conParam) const
+{
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Thyra::Group::computeShiftedMatrix(double alpha, double beta)
+{
+  in_args_.set_x(x_vec_->getThyraRCPVector());
+  in_args_.set_p(param_index, param_thyra_vec);
+  in_args_.set_alpha(beta);
+  in_args_.set_beta(alpha);
+  out_args_.set_W(shared_jacobian_->getObject(this));
+
+  model_->evalModel(in_args_, out_args_);
+
+  in_args_.set_x(Teuchos::null);
+  in_args_.set_p(param_index, Teuchos::null);
+  in_args_.set_alpha(0.0);
+  in_args_.set_beta(1.0);
+  out_args_.set_W(Teuchos::null);
+
+  is_valid_jacobian_ = false;
+
+  if (out_args_.isFailed())
+    return NOX::Abstract::Group::Failed;
+
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Thyra::Group::applyShiftedMatrix(const NOX::Abstract::Vector& input,
+                                        NOX::Abstract::Vector& result) const
+{
+  const NOX::Thyra::Vector& thyra_input = 
+    dynamic_cast<const NOX::Thyra::Vector&>(input);
+  NOX::Thyra::Vector& thyra_result = 
+    dynamic_cast<NOX::Thyra::Vector&>(result);
+
+  ::Thyra::apply(*shared_jacobian_->getObject(), ::Thyra::NOTRANS,
+		 thyra_input.getThyraVector(), &thyra_result.getThyraVector());
+
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Thyra::Group::applyShiftedMatrixMultiVector(
+				     const NOX::Abstract::MultiVector& input,
+				     NOX::Abstract::MultiVector& result) const
+{
+  string callingFunction = 
+    "LOCA::Thyra::Group::applyShiftedMatrixMultiVector()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  for (int i=0; i<input.numVectors(); i++) {
+    status = applyShiftedMatrix(input[i], result[i]);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+  }
+
+  return finalStatus;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Thyra::Group::applyShiftedMatrixInverseMultiVector(
+			        Teuchos::ParameterList& lsParams, 
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const
+{
+  const NOX::Thyra::Vector* thyra_input;
+  NOX::Thyra::Vector* thyra_result; 
+  bool status;
+  bool finalStatus = true;
+
+  ::Thyra::SolveCriteria<double> solveCriteria;
+  solveCriteria.requestedTol = lsParams.get("Tolerance", 1.0e-6);
+  solveCriteria.solveMeasureType = 
+    ::Thyra::SolveMeasureType(::Thyra::SOLVE_MEASURE_NORM_RESIDUAL,
+			      ::Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL );
+  // ToDo: Above, check param list for the exact form of the solve
+  // measure.
+
+  for (int i=0; i<input.numVectors(); i++) {
+    thyra_input = dynamic_cast<const NOX::Thyra::Vector*>(&input[i]);
+    thyra_result = dynamic_cast<NOX::Thyra::Vector*>(&result[i]);
+
+    const ::Thyra::SolveStatus<double> solve_status = 
+      ::Thyra::solve(*shared_jacobian_->getObject(), 
+		     ::Thyra::NOTRANS, thyra_input->getThyraVector(), 
+		     &(thyra_result->getThyraVector()), 
+		     &solveCriteria);
+    status = false;
+    if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
+      status = true;
+    finalStatus = finalStatus && status;
+  }
+    
+  if (finalStatus)
+    return NOX::Abstract::Group::Ok;
+  else
+    return NOX::Abstract::Group::NotConverged;
+}

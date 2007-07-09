@@ -32,7 +32,7 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = doc src src-epetra src-lapack src-mf
+SUBDIRS = doc src src-epetra src-lapack src-thyra src-mf
 
 ## #######################################################################
 ## Documentation

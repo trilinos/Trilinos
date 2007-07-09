@@ -182,6 +182,7 @@ ADDON_loca_epetra_TESTS = @ADDON_loca_epetra_TESTS@
 ADDON_loca_lapack_EXAMPLES = @ADDON_loca_lapack_EXAMPLES@
 ADDON_loca_lapack_TESTS = @ADDON_loca_lapack_TESTS@
 ADDON_loca_petsc_TESTS = @ADDON_loca_petsc_TESTS@
+ADDON_loca_thyra_TESTS = @ADDON_loca_thyra_TESTS@
 ADDON_petsc_EXAMPLES = @ADDON_petsc_EXAMPLES@
 ADDON_petsc_TESTS = @ADDON_petsc_TESTS@
 ADDON_thyra_TESTS = @ADDON_thyra_TESTS@

@@ -46,12 +46,7 @@
 # ************************************************************************
 # @HEADER
 
-# ------------------------------------------------------------------------
-# For each category, create two variables - NAME and NAME_H. The
-# second is the list of headers to be installed, i.e., any header that
-# might someday be needed by some other code outside NOX. The first is
-# the list of all source and any other header files.
-# ------------------------------------------------------------------------
+# The following line helps the test harness recover from build errors.
 
 
 VPATH = @srcdir@
@@ -73,7 +68,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-subdir = src-loca/src-lapack
+subdir = src-loca/src-thyra
 DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -116,14 +111,11 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 ARFLAGS = cru
 am__DEPENDENCIES_1 =
-liblocalapack_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__objects_1 = LOCA_LAPACK_Group.$(OBJEXT) \
-	LOCA_Eigensolver_DGGEVStrategy.$(OBJEXT) \
-	LOCA_BorderedSolver_LAPACKDirectSolve.$(OBJEXT) \
-	LOCA_LAPACK_Factory.$(OBJEXT)
+liblocathyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__objects_1 = LOCA_Thyra_Group.$(OBJEXT)
 am__objects_2 =
-am_liblocalapack_a_OBJECTS = $(am__objects_1) $(am__objects_2)
-liblocalapack_a_OBJECTS = $(am_liblocalapack_a_OBJECTS)
+am_liblocathyra_a_OBJECTS = $(am__objects_1) $(am__objects_2)
+liblocathyra_a_OBJECTS = $(am_liblocathyra_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -136,14 +128,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(liblocalapack_a_SOURCES)
-DIST_SOURCES = $(liblocalapack_a_SOURCES)
-am__include_HEADERS_DIST = $(srcdir)/LOCA_LAPACK.H \
-	$(srcdir)/LOCA_LAPACK_Group.H \
-	$(srcdir)/LOCA_LAPACK_Interface.H \
-	$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.H \
-	$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.H \
-	$(srcdir)/LOCA_LAPACK_Factory.H
+SOURCES = $(liblocathyra_a_SOURCES)
+DIST_SOURCES = $(liblocathyra_a_SOURCES)
+am__include_HEADERS_DIST = $(srcdir)/LOCA_Thyra.H \
+	$(srcdir)/LOCA_Thyra_Group.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -290,25 +278,25 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-LOCA_LAPACK_H = \
-	$(srcdir)/LOCA_LAPACK.H \
-	$(srcdir)/LOCA_LAPACK_Group.H \
-	$(srcdir)/LOCA_LAPACK_Interface.H \
-	$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.H \
-	$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.H \
-	$(srcdir)/LOCA_LAPACK_Factory.H
 
-LOCA_LAPACK = \
-	$(srcdir)/LOCA_LAPACK_Group.C \
-	$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C \
-	$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C \
-	$(srcdir)/LOCA_LAPACK_Factory.C
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside NOX. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
+THYRA_H = \
+	$(srcdir)/LOCA_Thyra.H \
+	$(srcdir)/LOCA_Thyra_Group.H
+
+THYRA = \
+	$(srcdir)/LOCA_Thyra_Group.C
 
 
 # ------------------------------------------------------------------------
-# localapack library specifications
+# locathyra library specifications
 # ------------------------------------------------------------------------
-liblocalapack_a_SOURCES = $(LOCA_LAPACK) $(LOCA_LAPACK_H)
+liblocathyra_a_SOURCES = $(THYRA) $(THYRA_H)
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(LOCA_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
@@ -318,11 +306,11 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # ------------------------------------------------------------------------
 
 # List of all libraries to install in $(libexecdir)
-@BUILD_LIBLOCALAPACK_TRUE@lib_LIBRARIES = liblocalapack.a
+@BUILD_LIBLOCATHYRA_TRUE@lib_LIBRARIES = liblocathyra.a
 
 # List of all headers to install in $(includedir)
-@BUILD_LIBLOCALAPACK_TRUE@include_HEADERS = $(LOCA_LAPACK_H)
-@USE_ALTERNATE_AR_FALSE@liblocalapack_a_AR = $(AR) cru
+@BUILD_LIBLOCATHYRA_TRUE@include_HEADERS = $(THYRA_H)
+@USE_ALTERNATE_AR_FALSE@liblocathyra_a_AR = $(AR) cru
 
 # ------------------------------------------------------------------------
 # For using a special archiver
@@ -331,13 +319,13 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # SPECIAL NOTE: Why is the "else" there?  For some reason, automake
 # fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
 # define it manually.
-@USE_ALTERNATE_AR_TRUE@liblocalapack_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_TRUE@liblocathyra_a_AR = $(ALTERNATE_AR)
 
 # ------------------------------------------------------------------------
 # Some C++ compilers create extra .o-files for templates. We need to
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
-liblocalapack_a_LIBADD = $(CXXREPOS) $(XTRALDADD)
+liblocathyra_a_LIBADD = $(CXXREPOS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -361,9 +349,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src-loca/src-lapack/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src-loca/src-thyra/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  src-loca/src-lapack/Makefile
+	  $(AUTOMAKE) --foreign  src-loca/src-thyra/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -410,10 +398,10 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-liblocalapack.a: $(liblocalapack_a_OBJECTS) $(liblocalapack_a_DEPENDENCIES) 
-	-rm -f liblocalapack.a
-	$(liblocalapack_a_AR) liblocalapack.a $(liblocalapack_a_OBJECTS) $(liblocalapack_a_LIBADD)
-	$(RANLIB) liblocalapack.a
+liblocathyra.a: $(liblocathyra_a_OBJECTS) $(liblocathyra_a_DEPENDENCIES) 
+	-rm -f liblocathyra.a
+	$(liblocathyra_a_AR) liblocathyra.a $(liblocathyra_a_OBJECTS) $(liblocathyra_a_LIBADD)
+	$(RANLIB) liblocathyra.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -421,10 +409,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_LAPACK_Factory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_LAPACK_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Thyra_Group.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -440,61 +425,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-LOCA_LAPACK_Group.o: $(srcdir)/LOCA_LAPACK_Group.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_LAPACK_Group.o -MD -MP -MF $(DEPDIR)/LOCA_LAPACK_Group.Tpo -c -o LOCA_LAPACK_Group.o `test -f '$(srcdir)/LOCA_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Group.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCA_LAPACK_Group.Tpo $(DEPDIR)/LOCA_LAPACK_Group.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Group.C' object='LOCA_LAPACK_Group.o' libtool=no @AMDEPBACKSLASH@
+LOCA_Thyra_Group.o: $(srcdir)/LOCA_Thyra_Group.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Thyra_Group.o -MD -MP -MF $(DEPDIR)/LOCA_Thyra_Group.Tpo -c -o LOCA_Thyra_Group.o `test -f '$(srcdir)/LOCA_Thyra_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Thyra_Group.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCA_Thyra_Group.Tpo $(DEPDIR)/LOCA_Thyra_Group.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Thyra_Group.C' object='LOCA_Thyra_Group.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_LAPACK_Group.o `test -f '$(srcdir)/LOCA_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Group.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Thyra_Group.o `test -f '$(srcdir)/LOCA_Thyra_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Thyra_Group.C
 
-LOCA_LAPACK_Group.obj: $(srcdir)/LOCA_LAPACK_Group.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_LAPACK_Group.obj -MD -MP -MF $(DEPDIR)/LOCA_LAPACK_Group.Tpo -c -o LOCA_LAPACK_Group.obj `if test -f '$(srcdir)/LOCA_LAPACK_Group.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_LAPACK_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_LAPACK_Group.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCA_LAPACK_Group.Tpo $(DEPDIR)/LOCA_LAPACK_Group.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Group.C' object='LOCA_LAPACK_Group.obj' libtool=no @AMDEPBACKSLASH@
+LOCA_Thyra_Group.obj: $(srcdir)/LOCA_Thyra_Group.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Thyra_Group.obj -MD -MP -MF $(DEPDIR)/LOCA_Thyra_Group.Tpo -c -o LOCA_Thyra_Group.obj `if test -f '$(srcdir)/LOCA_Thyra_Group.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Thyra_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Thyra_Group.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCA_Thyra_Group.Tpo $(DEPDIR)/LOCA_Thyra_Group.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Thyra_Group.C' object='LOCA_Thyra_Group.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_LAPACK_Group.obj `if test -f '$(srcdir)/LOCA_LAPACK_Group.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_LAPACK_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_LAPACK_Group.C'; fi`
-
-LOCA_Eigensolver_DGGEVStrategy.o: $(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Eigensolver_DGGEVStrategy.o -MD -MP -MF $(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Tpo -c -o LOCA_Eigensolver_DGGEVStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Tpo $(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' object='LOCA_Eigensolver_DGGEVStrategy.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Eigensolver_DGGEVStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
-
-LOCA_Eigensolver_DGGEVStrategy.obj: $(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Eigensolver_DGGEVStrategy.obj -MD -MP -MF $(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Tpo -c -o LOCA_Eigensolver_DGGEVStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Tpo $(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' object='LOCA_Eigensolver_DGGEVStrategy.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Eigensolver_DGGEVStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; fi`
-
-LOCA_BorderedSolver_LAPACKDirectSolve.o: $(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_BorderedSolver_LAPACKDirectSolve.o -MD -MP -MF $(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Tpo -c -o LOCA_BorderedSolver_LAPACKDirectSolve.o `test -f '$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Tpo $(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C' object='LOCA_BorderedSolver_LAPACKDirectSolve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_BorderedSolver_LAPACKDirectSolve.o `test -f '$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C
-
-LOCA_BorderedSolver_LAPACKDirectSolve.obj: $(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_BorderedSolver_LAPACKDirectSolve.obj -MD -MP -MF $(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Tpo -c -o LOCA_BorderedSolver_LAPACKDirectSolve.obj `if test -f '$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Tpo $(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C' object='LOCA_BorderedSolver_LAPACKDirectSolve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_BorderedSolver_LAPACKDirectSolve.obj `if test -f '$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C'; fi`
-
-LOCA_LAPACK_Factory.o: $(srcdir)/LOCA_LAPACK_Factory.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_LAPACK_Factory.o -MD -MP -MF $(DEPDIR)/LOCA_LAPACK_Factory.Tpo -c -o LOCA_LAPACK_Factory.o `test -f '$(srcdir)/LOCA_LAPACK_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Factory.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCA_LAPACK_Factory.Tpo $(DEPDIR)/LOCA_LAPACK_Factory.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Factory.C' object='LOCA_LAPACK_Factory.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_LAPACK_Factory.o `test -f '$(srcdir)/LOCA_LAPACK_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Factory.C
-
-LOCA_LAPACK_Factory.obj: $(srcdir)/LOCA_LAPACK_Factory.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_LAPACK_Factory.obj -MD -MP -MF $(DEPDIR)/LOCA_LAPACK_Factory.Tpo -c -o LOCA_LAPACK_Factory.obj `if test -f '$(srcdir)/LOCA_LAPACK_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_LAPACK_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_LAPACK_Factory.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCA_LAPACK_Factory.Tpo $(DEPDIR)/LOCA_LAPACK_Factory.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_LAPACK_Factory.C' object='LOCA_LAPACK_Factory.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_LAPACK_Factory.obj `if test -f '$(srcdir)/LOCA_LAPACK_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_LAPACK_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_LAPACK_Factory.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Thyra_Group.obj `if test -f '$(srcdir)/LOCA_Thyra_Group.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Thyra_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Thyra_Group.C'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
@@ -589,7 +532,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(HEADERS)
+all-am: Makefile $(LIBRARIES) $(HEADERS) all-local
 installdirs:
 	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
@@ -679,12 +622,12 @@ uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am \
+.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
+	clean-generic clean-libLIBRARIES ctags distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
 	install-includeHEADERS install-info install-info-am \
 	install-libLIBRARIES install-man install-pdf install-pdf-am \
 	install-ps install-ps-am install-strip installcheck \
@@ -693,6 +636,11 @@ uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-includeHEADERS uninstall-libLIBRARIES
 
+
+all-local:
+	@echo ""
+	@echo "Trilinos package nox subdirectory src-loca/src-thyra built successfully."
+	@echo ""
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies
