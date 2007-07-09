@@ -74,7 +74,7 @@ namespace Sacado {
 
     //! Implementation of < for type_info objects
     struct type_info_less {
-      bool operator() (const type_info* a, const type_info* b) {
+      bool operator() (const std::type_info* a, const std::type_info* b) {
 	return a->before(*b);
       }
     };
