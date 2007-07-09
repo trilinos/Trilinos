@@ -149,16 +149,21 @@ int main(int argc, char *argv[]) {
   // Set up Belos Block GMRES operator for inner iteration
   //*******************************************************/
   //
-  int blockSize = 3;  // block size used by linear solver and eigensolver [ not required to be the same ]
-  int maxits = K->NumGlobalRows()/blockSize - 1; // maximum number of iterations to run
-  double btol = 1.0e-7;  // relative residual tolerance
+  int blockSize = 3; // block size used by linear solver and eigensolver [ not required to be the same ]
+  double tol = 1.0e-8;
+  int maxits = K->NumGlobalRows(); // maximum number of iterations to run
   //
   // Create the Belos::LinearProblem
   //
   Teuchos::RCP<Belos::LinearProblem<double,Epetra_MultiVector,Epetra_Operator> > 
 	  My_LP = Teuchos::rcp( new Belos::LinearProblem<double,Epetra_MultiVector,Epetra_Operator>() );
   My_LP->setOperator( K );
-  My_LP->setLeftPrec( ICT );
+
+  // Create the Belos preconditioned operator from the Ifpack preconditioner.
+  // NOTE:  This is necessary because Belos expects an operator to apply the 
+  //        preconditioner with Apply() NOT ApplyInverse().
+  Teuchos::RCP<Belos::EpetraPrecOp> belosPrec = Teuchos::rcp( new Belos::EpetraPrecOp( ICT ) );
+  My_LP->setLeftPrec( belosPrec );
   //
   // Create the ParameterList for the Belos Operator
   // 
@@ -166,7 +171,7 @@ int main(int argc, char *argv[]) {
   My_List->set( "Solver", "BlockCG" );
   My_List->set( "Maximum Iterations", maxits );
   My_List->set( "Block Size", blockSize );
-  My_List->set( "Convergence Tolerance", btol );
+  My_List->set( "Convergence Tolerance", tol/100 );
   //
   // Create the Belos::EpetraOperator
   //
@@ -183,7 +188,6 @@ int main(int argc, char *argv[]) {
   int numBlocks = 3*nev/blockSize;
   int maxRestarts = 5;
   //int step = 5;
-  double tol = 1.0e-6;
   std::string which = "LM";
   int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::FinalSummary;
   //
