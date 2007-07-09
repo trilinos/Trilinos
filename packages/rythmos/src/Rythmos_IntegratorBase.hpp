@@ -38,10 +38,11 @@
 namespace Rythmos {
 
 
-/** \brief Concrete subclass of <tt>InterpolationBufferBase</tt> implemented in terms of
- * a <tt>StepperBase</tt> object and a trailing <tt>InterpolationBufferBase</tt> object.
+/** \brief Abstract interface for time integrators.
  *
- * This class is really the beginnings of a 
+ * A time integrator accepts a fully initialized stepper object and then
+ * carries out the time integrator in some fasion.  The client drives the
+ * integrator by requesting value of the state at different points in time.
  */
 template<class Scalar> 
 class IntegratorBase
@@ -62,7 +63,7 @@ public:
 
   /** \brief . */
   virtual void setStepper(
-    const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stepper_
+    const Teuchos::RCP<Rythmos::StepperBase<Scalar> > &stepper
     ) =0;
 
   /** \brief This is a non-const version of getPoints which allows the
