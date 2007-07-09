@@ -52,7 +52,7 @@ namespace Sacado {
     //! Constructor
     TemplateIterator(
 	    Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>& m,
-	    typename std::vector< Teuchos::RefCountPtr<BaseT> >::iterator p) :
+	    typename std::vector< Teuchos::RCP<BaseT> >::iterator p) :
       manager(&m), object_iterator(p) {}
     
     // No default constructor
@@ -99,7 +99,7 @@ namespace Sacado {
     Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>* manager;
 
     //! Underlying object iterator
-    typename std::vector< Teuchos::RefCountPtr<BaseT> >::iterator object_iterator;
+    typename std::vector< Teuchos::RCP<BaseT> >::iterator object_iterator;
     
   };
 
@@ -119,7 +119,7 @@ namespace Sacado {
     //! Constructor
     ConstTemplateIterator(
        const Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>& m,
-       typename std::vector< Teuchos::RefCountPtr<BaseT> >::const_iterator p) :
+       typename std::vector< Teuchos::RCP<BaseT> >::const_iterator p) :
       manager(&m), object_iterator(p) {}
     
     // No default constructor
@@ -166,7 +166,7 @@ namespace Sacado {
     const Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>* manager;
 
     //! Underlying object iterator
-    typename std::vector< Teuchos::RefCountPtr<BaseT> >::const_iterator object_iterator;
+    typename std::vector< Teuchos::RCP<BaseT> >::const_iterator object_iterator;
     
   };
 

@@ -32,7 +32,7 @@
 #ifndef SACADO_TEMPLATEMANAGER_HPP
 #define SACADO_TEMPLATEMANAGER_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 #include "Sacado_ConfigDefs.h"
 
@@ -81,9 +81,9 @@ namespace Sacado {
 
     template <typename BuilderOpT>
     struct BuildObject {
-      mutable std::vector< Teuchos::RefCountPtr<BaseT> >& objects;
+      mutable std::vector< Teuchos::RCP<BaseT> >& objects;
       const BuilderOpT& builder;
-      BuildObject(std::vector< Teuchos::RefCountPtr<BaseT> >& objects_,
+      BuildObject(std::vector< Teuchos::RCP<BaseT> >& objects_,
 		  const BuilderOpT& builder_) :
 	objects(objects_), builder(builder_) {}
       template <typename T> void operator()(T) const {
@@ -108,7 +108,7 @@ namespace Sacado {
 
       //! Returns a new rcp for an object of type ObjectT<ScalarT>
       template<class ScalarT>
-      Teuchos::RefCountPtr<BaseT> build() const {
+      Teuchos::RCP<BaseT> build() const {
 	return Teuchos::rcp( dynamic_cast<BaseT*>( new ObjectT<ScalarT> ) );
       }
 
@@ -129,19 +129,19 @@ namespace Sacado {
 
     //! Get RCP to object corrensponding to ScalarT as BaseT
     template<typename ScalarT>
-    Teuchos::RefCountPtr<BaseT> getAsBase();
+    Teuchos::RCP<BaseT> getAsBase();
 
     //! Get RCP to object corrensponding to ScalarT as BaseT
     template<typename ScalarT>
-    Teuchos::RefCountPtr<const BaseT> getAsBase() const;
+    Teuchos::RCP<const BaseT> getAsBase() const;
 
     //! Get RCP to object corrensponding to ScalarT as ObjectT<ScalarT>
     template<typename ScalarT>
-    Teuchos::RefCountPtr< ObjectT<ScalarT> > getAsObject();
+    Teuchos::RCP< ObjectT<ScalarT> > getAsObject();
 
     //! Get RCP to object corrensponding to ScalarT as ObjectT<ScalarT>
     template<typename ScalarT>
-    Teuchos::RefCountPtr< const ObjectT<ScalarT> > getAsObject() const;
+    Teuchos::RCP< const ObjectT<ScalarT> > getAsObject() const;
 
     //! Return an iterator that points to the first type object
     typename Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::iterator begin();
@@ -160,7 +160,7 @@ namespace Sacado {
   private:
 
     //! Stores array of rcp's to objects of each type
-    std::vector< Teuchos::RefCountPtr<BaseT> > objects;
+    std::vector< Teuchos::RCP<BaseT> > objects;
 
   };
 

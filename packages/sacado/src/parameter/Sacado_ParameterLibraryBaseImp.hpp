@@ -82,10 +82,10 @@ addParameterFamily(const std::string& name,
   if (isParameter(name))
     return false;
 
-  Teuchos::RefCountPtr<FamilyType> f = 
+  Teuchos::RCP<FamilyType> f = 
     Teuchos::rcp(new FamilyType(name, supports_ad, supports_analytic));
   library.insert(std::pair< std::string, 
-		            Teuchos::RefCountPtr<FamilyType> >(name, f));
+		            Teuchos::RCP<FamilyType> >(name, f));
 
   return true;
 }
@@ -95,7 +95,7 @@ template <class ValueType>
 bool
 Sacado::ParameterLibraryBase<FamilyType,EntryType>::
 addEntry(const std::string& name, 
-	 const Teuchos::RefCountPtr< EntryType<ValueType> >& entry)
+	 const Teuchos::RCP< EntryType<ValueType> >& entry)
 {
   // Get family
   typename FamilyMap::iterator it = library.find(name);
@@ -113,7 +113,7 @@ addEntry(const std::string& name,
 
 template <typename FamilyType, template<typename> class EntryType>
 template <class ValueType>
-Teuchos::RefCountPtr< EntryType<ValueType> >
+Teuchos::RCP< EntryType<ValueType> >
 Sacado::ParameterLibraryBase<FamilyType,EntryType>::
 getEntry(const std::string& name)
 {

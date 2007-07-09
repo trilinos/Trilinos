@@ -51,7 +51,7 @@ namespace Sacado {
   protected:
 
     //! Map of all parameter families
-    typedef std::map<string, Teuchos::RefCountPtr<FamilyType> > FamilyMap;
+    typedef std::map<string, Teuchos::RCP<FamilyType> > FamilyMap;
 
   public:
 
@@ -90,11 +90,11 @@ namespace Sacado {
      */
     template <typename ValueType>
     bool addEntry(const std::string& name, 
-		  const Teuchos::RefCountPtr< EntryType<ValueType> >& entry);
+		  const Teuchos::RCP< EntryType<ValueType> >& entry);
 
     //! Return parameter entry
     template <typename ValueType>
-    Teuchos::RefCountPtr< EntryType<ValueType> >
+    Teuchos::RCP< EntryType<ValueType> >
     getEntry(const std::string& name);
 
     //! Return number of parameters in library

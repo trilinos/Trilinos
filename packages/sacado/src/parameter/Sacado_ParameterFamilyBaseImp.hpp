@@ -95,7 +95,7 @@ template <typename EntryBase, template<typename> class EntryType>
 template <class ValueType>
 bool
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
-addEntry(const Teuchos::RefCountPtr< EntryType<ValueType> >& entry)
+addEntry(const Teuchos::RCP< EntryType<ValueType> >& entry)
 {
   // Get string representation of ValueType
   std::string valueTypeString = getTypeName<ValueType>();
@@ -106,7 +106,7 @@ addEntry(const Teuchos::RefCountPtr< EntryType<ValueType> >& entry)
   // If it does not, add it
   if (it == family.end()) {
     family.insert(std::pair<std::string, 
-		  Teuchos::RefCountPtr<EntryBase> >(valueTypeString, entry));
+		  Teuchos::RCP<EntryBase> >(valueTypeString, entry));
   }
 
   else {
@@ -118,7 +118,7 @@ addEntry(const Teuchos::RefCountPtr< EntryType<ValueType> >& entry)
 
 template <typename EntryBase, template<typename> class EntryType>
 template <class ValueType>
-Teuchos::RefCountPtr< EntryType<ValueType> >
+Teuchos::RCP< EntryType<ValueType> >
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
 getEntry() {
 
@@ -135,7 +135,7 @@ getEntry() {
 		     + valueTypeString);
 
   // Cast entry to LOCA::Parameter::Entry<ValueType>
-  Teuchos::RefCountPtr< EntryType<ValueType> > entry = 
+  Teuchos::RCP< EntryType<ValueType> > entry = 
     Teuchos::rcp_dynamic_cast< EntryType<ValueType> >((*it).second);
   TEST_FOR_EXCEPTION(entry == Teuchos::null, 
 		     std::logic_error,
@@ -149,7 +149,7 @@ getEntry() {
 
 template <typename EntryBase, template<typename> class EntryType>
 template <class ValueType>
-Teuchos::RefCountPtr< const EntryType<ValueType> >
+Teuchos::RCP< const EntryType<ValueType> >
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
 getEntry() const {
 
@@ -166,7 +166,7 @@ getEntry() const {
 		     + valueTypeString);
 
   // Cast entry to LOCA::Parameter::Entry<ValueType>
-  Teuchos::RefCountPtr< const EntryType<ValueType> > entry =
+  Teuchos::RCP< const EntryType<ValueType> > entry =
     Teuchos::rcp_dynamic_cast< const EntryType<ValueType> >((*it).second);
   TEST_FOR_EXCEPTION(entry == Teuchos::null, 
 		     std::logic_error,

@@ -33,7 +33,7 @@
 #define SACADO_PARAMETERFAMILYBASE_HPP
 
 #include "Sacado_ConfigDefs.h"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace Sacado {
   
@@ -73,15 +73,15 @@ namespace Sacado {
      * otherwise.
      */
     template <typename ValueType>
-    bool addEntry(const Teuchos::RefCountPtr< EntryType<ValueType> >& entry);
+    bool addEntry(const Teuchos::RCP< EntryType<ValueType> >& entry);
 
     //! Gets the entry corresponding to type \em ValueType
     template <typename ValueType>
-    Teuchos::RefCountPtr< EntryType<ValueType> > getEntry();
+    Teuchos::RCP< EntryType<ValueType> > getEntry();
 
     //! Gets the entry corresponding to type \em ValueType
     template <typename ValueType>
-    Teuchos::RefCountPtr< const EntryType<ValueType> > getEntry() const;
+    Teuchos::RCP< const EntryType<ValueType> > getEntry() const;
 
     //! Print the family
     void printFamily(std::ostream& os) const;
@@ -89,7 +89,7 @@ namespace Sacado {
   protected: 
 
     //! Map of entries for a parameter name
-    typedef std::map<std::string, Teuchos::RefCountPtr<EntryBase> > ValueMap;
+    typedef std::map<std::string, Teuchos::RCP<EntryBase> > ValueMap;
 
     //! Const iterator for ValueMap
     typedef typename ValueMap::const_iterator const_iterator;

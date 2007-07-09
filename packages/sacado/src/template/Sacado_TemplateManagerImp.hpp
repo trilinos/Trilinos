@@ -64,7 +64,7 @@ buildObjects()
 
 template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
 template<typename ScalarT>
-Teuchos::RefCountPtr<BaseT>
+Teuchos::RCP<BaseT>
 Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::
 getAsBase()
 {
@@ -74,7 +74,7 @@ getAsBase()
 
 template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
 template<typename ScalarT>
-Teuchos::RefCountPtr<const BaseT>
+Teuchos::RCP<const BaseT>
 Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::getAsBase() const
 {
   int idx = mpl::find<TypeSeq,ScalarT>::value;
@@ -83,7 +83,7 @@ Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::getAsBase() const
 
 template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
 template<typename ScalarT>
-Teuchos::RefCountPtr< ObjectT<ScalarT> >
+Teuchos::RCP< ObjectT<ScalarT> >
 Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::
 getAsObject()
 {
@@ -93,7 +93,7 @@ getAsObject()
 
 template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
 template<typename ScalarT>
-Teuchos::RefCountPtr< const ObjectT<ScalarT> >
+Teuchos::RCP< const ObjectT<ScalarT> >
 Sacado::TemplateManager<TypeSeq,BaseT,ObjectT>::
 getAsObject() const
 {

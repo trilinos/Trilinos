@@ -52,13 +52,13 @@ namespace Sacado {
     struct Entry {
 
       //! Pointer to family
-      Teuchos::RefCountPtr<FamilyType> family;
+      Teuchos::RCP<FamilyType> family;
 
       //! Base value of parameter family
       BaseValueType baseValue;
 
       //! Constructor
-      Entry(const Teuchos::RefCountPtr<FamilyType>& f, BaseValueType bv) :
+      Entry(const Teuchos::RCP<FamilyType>& f, BaseValueType bv) :
 	family(f), baseValue(bv) {}
 
     };
@@ -91,7 +91,7 @@ namespace Sacado {
       params = source.params; return *this; }
 
     //! Add entry
-    void addParam(const Teuchos::RefCountPtr<FamilyType>& family,
+    void addParam(const Teuchos::RCP<FamilyType>& family,
 		  BaseValueType baseValue) { 
       params.push_back(Entry(family, baseValue));
     }
