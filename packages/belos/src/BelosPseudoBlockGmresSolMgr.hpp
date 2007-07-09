@@ -141,7 +141,7 @@ namespace Belos {
     
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const { return defaultParams_; }
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
    
     /*! \brief Get a parameter list containing the current parameters for this object.
      */
@@ -201,9 +201,6 @@ namespace Belos {
     
   private:
 
-    // Method to set the default parameters.
-    void setDefaultParams();
-
     // Method to convert std::string to enumerated type for residual.
     typename StatusTestResNorm<ScalarType,MV,OP>::ScaleType convertStringToScaleType( std::string& scaleType ) {
       typedef Belos::StatusTestResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
@@ -238,7 +235,7 @@ namespace Belos {
     Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_; 
 
      // Current parameter list.
-    Teuchos::RCP<ParameterList> params_, defaultParams_;
+    Teuchos::RCP<ParameterList> params_;
    
     // Default solver values.
     static const MagnitudeType convtol_default_;
@@ -345,14 +342,7 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr() :
   expResScale_(expResScale_default_),
   label_(label_default_),
   isSet_(false)
-{
-  // Set the default parameter list.
-  setDefaultParams();
-
-  // Set the current parameter list to the default parameter list, don't set parameters 
-  // just in case the user decides to set them later with a call to setParameters().
-  params_ = defaultParams_;
-}
+{}
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
@@ -380,14 +370,8 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr(
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
 
-  // Set the default parameter list.
-  setDefaultParams();
-
   // If the parameter list pointer is null, then set the current parameters to the default parameter list.
-  if (pl == Teuchos::null) {
-    params_ = defaultParams_;
-  }
-  else {
+  if (!is_null(pl)) {
     // Set the parameters using the list that was passed in.
     setParameters( pl );  
   }
@@ -399,6 +383,9 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
   // Create the internal parameter list if ones doesn't already exist.
   if (params_ == Teuchos::null) {
     params_ = Teuchos::rcp( new Teuchos::ParameterList() );
+  }
+  else {
+    params->validateParameters(*getValidParameters());
   }
 
   // Check for maximum number of restarts
@@ -693,28 +680,61 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
 
     
 template<class ScalarType, class MV, class OP>
-void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setDefaultParams()
+Teuchos::RCP<const Teuchos::ParameterList>
+PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
 {
-  defaultParams_ = Teuchos::rcp( new Teuchos::ParameterList() );
-  
+  static Teuchos::RCP<const Teuchos::ParameterList> validPL;
+  if (is_null(validPL)) {
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   // Set all the valid parameters and their default values.
-  defaultParams_->set("Convergence Tolerance", convtol_default_);
-  defaultParams_->set("Maximum Restarts", maxRestarts_default_);
-  defaultParams_->set("Maximum Iterations", maxIters_default_);
-  defaultParams_->set("Num Blocks", numBlocks_default_);
-  defaultParams_->set("Block Size", blockSize_default_);
-  defaultParams_->set("Adaptive Block Size", adaptiveBlockSize_default_);
-  defaultParams_->set("Verbosity", verbosity_default_);
-  defaultParams_->set("Output Frequency", outputFreq_default_);  
-  defaultParams_->set("Deflation Quorum", defQuorum_default_);
-  defaultParams_->set("Output Stream", outputStream_default_);
-  defaultParams_->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_);
-  defaultParams_->set("Implicit Residual Scaling", impResScale_default_);
-  defaultParams_->set("Explicit Residual Scaling", expResScale_default_);
-  defaultParams_->set("Timer Label", label_default_);
-  //  defaultParams_->set("Restart Timers", restartTimers_);
-  defaultParams_->set("Orthogonalization", orthoType_default_);
-  defaultParams_->set("Orthogonalization Constant",orthoKappa_default_);
+    pl= Teuchos::rcp( new Teuchos::ParameterList() );
+    pl->set("Convergence Tolerance", convtol_default_,
+      "The relative residual tolerance that needs to be achieved by the\n"
+      "iterative solver in order for the linera system to be declared converged.");
+    pl->set("Maximum Restarts", maxRestarts_default_,
+      "The maximum number of restarts allowed for each\n"
+      "set of RHS solved.");
+    pl->set("Maximum Iterations", maxIters_default_,
+      "The maximum number of block iterations allowed for each\n"
+      "set of RHS solved.");
+    pl->set("Num Blocks", numBlocks_default_,
+      "The maximum number of vectors allowed in the Krylov subspace\n"
+      "for each set of RHS solved.");
+    pl->set("Block Size", blockSize_default_,
+      "The number of RHS solved simultaneously.");
+    pl->set("Adaptive Block Size", adaptiveBlockSize_default_,
+      "Whether the solver manager should adapt the block size\n"
+      "based on the number of RHS to solve.");
+    pl->set("Verbosity", verbosity_default_,
+      "What type(s) of solver information should be outputted\n"
+      "to the output stream.");
+    pl->set("Output Frequency", outputFreq_default_,
+      "How often convergence information should be outputted\n"
+      "to the output stream.");  
+    pl->set("Deflation Quorum", defQuorum_default_,
+      "The number of linear systems that need to converge before\n"
+      "they are deflated.  This number should be <= block size.");
+    pl->set("Output Stream", outputStream_default_,
+      "A reference-counted pointer to the output stream where all\n"
+      "solver output is sent.");
+    pl->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_,
+      "When convergence information is printed, only show the maximum\n"
+      "relative residual norm when the block size is greater than one.");
+    pl->set("Implicit Residual Scaling", impResScale_default_,
+      "The type of scaling used in the implicit residual convergence test.");
+    pl->set("Explicit Residual Scaling", expResScale_default_,
+      "The type of scaling used in the explicit residual convergence test.");
+    pl->set("Timer Label", label_default_,
+      "The string to use as a prefix for the timer labels.");
+    //  defaultParams_->set("Restart Timers", restartTimers_);
+    pl->set("Orthogonalization", orthoType_default_,
+      "The type of orthogonalization to use: DGKS, ICGS, IMGS.");
+    pl->set("Orthogonalization Constant",orthoKappa_default_,
+      "The constant used by DGKS orthogonalization to determine\n"
+      "whether another step of classical Gram-Schmidt is necessary.");
+    validPL = pl;
+  }
+  return validPL;
 }
 
 

@@ -396,27 +396,52 @@ BlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    pl->set("Convergence Tolerance", convtol_default_);
-    pl->set("Maximum Restarts", maxRestarts_default_);
+    pl->set("Convergence Tolerance", convtol_default_,
+      "The relative residual tolerance that needs to be achieved by the\n"
+      "iterative solver in order for the linear system to be declared converged." );
+    pl->set("Maximum Restarts", maxRestarts_default_,
+      "The maximum number of restarts allowed for each\n"
+      "set of RHS solved.");
     pl->set(
       "Maximum Iterations", maxIters_default_,
       "The maximum number of block iterations allowed for each\n"
-      "set of RHS solved."
-      );
-    pl->set("Num Blocks", numBlocks_default_);
-    pl->set("Block Size", blockSize_default_);
-    pl->set("Adaptive Block Size", adaptiveBlockSize_default_);
-    pl->set("Verbosity", verbosity_default_);
-    pl->set("Output Frequency", outputFreq_default_);  
-    pl->set("Output Stream", outputStream_default_);
-    pl->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_);
-    pl->set("Flexible Gmres", flexibleGmres_default_);
-    pl->set("Implicit Residual Scaling", impResScale_default_);
-    pl->set("Explicit Residual Scaling", expResScale_default_);
-    pl->set("Timer Label", label_default_);
+      "set of RHS solved.");
+    pl->set("Num Blocks", numBlocks_default_,
+      "The maximum number of blocks allowed in the Krylov subspace\n"
+      "for each set of RHS solved.");
+    pl->set("Block Size", blockSize_default_,
+      "The number of vectors in each block.  This number times the\n"
+      "number of blocks is the total Krylov subspace dimension.");
+    pl->set("Adaptive Block Size", adaptiveBlockSize_default_,
+      "Whether the solver manager should adapt the block size\n"
+      "based on the number of RHS to solve.");
+    pl->set("Verbosity", verbosity_default_,
+      "What type(s) of solver information should be outputted\n"
+      "to the output stream.");
+    pl->set("Output Frequency", outputFreq_default_,
+      "How often convergence information should be outputted\n"
+      "to the output stream.");  
+    pl->set("Output Stream", outputStream_default_,
+      "A reference-counted pointer to the output stream where all\n"
+      "solver output is sent.");
+    pl->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_,
+      "When convergence information is printed, only show the maximum\n"
+      "relative residual norm when the block size is greater than one.");
+    pl->set("Flexible Gmres", flexibleGmres_default_,
+      "Whether the solver manager should use the flexible variant\n"
+      "of GMRES.");
+    pl->set("Implicit Residual Scaling", impResScale_default_,
+      "The type of scaling used in the implicit residual convergence test.");
+    pl->set("Explicit Residual Scaling", expResScale_default_,
+      "The type of scaling used in the explicit residual convergence test.");
+    pl->set("Timer Label", label_default_,
+      "The string to use as a prefix for the timer labels.");
     //  pl->set("Restart Timers", restartTimers_);
-    pl->set("Orthogonalization", orthoType_default_);
-    pl->set("Orthogonalization Constant",orthoKappa_default_);
+    pl->set("Orthogonalization", orthoType_default_,
+      "The type of orthogonalization to use: DGKS, ICGS, or IMGS.");
+    pl->set("Orthogonalization Constant",orthoKappa_default_,
+      "The constant used by DGKS orthogonalization to determine\n"
+      "whether another step of classical Gram-Schmidt is necessary.");
     validPL = pl;
   }
   return validPL;

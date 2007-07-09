@@ -256,7 +256,7 @@ namespace Belos {
 	    system and doesn't need to be considered for convergence.
       \note The std::vector returned from this method is valid if isProblemSet() returns true.
     */
-    std::vector<int> getLSIndex() const { return(rhsIndex_); }
+    const std::vector<int> getLSIndex() const { return(rhsIndex_); }
 
     //! Get the number of linear systems that have been set with this LinearProblem object.
     /* This can be used by status test classes to determine if the solver manager has advanced 
