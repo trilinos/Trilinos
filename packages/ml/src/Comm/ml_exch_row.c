@@ -492,6 +492,9 @@ example (with nonutilized ghost variables still works
      (*Pappended)->getrow->Nrows = i+1;
      (*Pappended)->outvec_leng   = i+1;
   }
+  /*if the new matrix is global we need to remeber this*/
+  if (Pmatrix->getrow->use_loc_glob_map == ML_YES)
+    (*Pappended)->getrow->columns_loc_glob = ML_GLOBAL_INDICES;
 } /* ML_exchange_rows */
 #ifdef ML_FUNCTION_NAME
 #undef ML_FUNCTION_NAME
