@@ -1685,16 +1685,18 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        j = 0;
        kk = 0;
        k = 0;
+       rows_sent = 0;
        if(in_matrix->getrow->pre_comm->neighbors[i].N_send > 0)
        {
          while(j < in_matrix->getrow->pre_comm->neighbors[i].N_send)
          {
            kk = 0;
+           rows_sent++;
            while(out_data->rpntr[kk] <= in_matrix->getrow->pre_comm->neighbors[i].send_list[j])
            {
              kk++;
            }
-             send_buffer[j] = out_data->rpntr[kk] - out_data->rpntr[kk - 1];
+             send_buffer[rows_sent-1] = out_data->rpntr[kk] - out_data->rpntr[kk - 1];
              j += out_data->rpntr[kk] - out_data->rpntr[kk - 1];
          }
          k++;
@@ -1751,11 +1753,11 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
              bindx[kk] = cur_data->columns[ll]/col_block_size;
              indx[kk+1] = indx[kk]+col_block_size*(rpntr[i] - rpntr[i-1]);
              /*loop over a block and store data columns then rows*/
-             for(ii = 0; ii < all_rpntr[k][j]; ii++) 
+             for(jj = 0; jj < col_block_size; jj++)
              {
-               for(jj = 0; jj < col_block_size; jj++)
+               for(ii = 0; ii < all_rpntr[k][j]; ii++) 
                {
-                 vals[indx[kk]+jj+(cur_data->columns[ii+i*col_block_size]%col_block_size)*col_block_size] = cur_data->values[ll+ii+jj*(cur_data->rowptr[rpntr[i-1]+1]-cur_data->rowptr[rpntr[i-1]])];
+                 vals[indx[kk]+ii+(cur_data->columns[kk*col_block_size+jj+(i-1)*col_block_size]%col_block_size)*all_rpntr[k][j]] = cur_data->values[ll+jj+ii*(cur_data->rowptr[rpntr[i-1]+1]-cur_data->rowptr[rpntr[i-1]])];
                }
              }
              ll += col_block_size;
@@ -1829,6 +1831,8 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    }
    if (col_block_size == 0)
    { 
+     Nghost_nodes = in_matrix->getrow->pre_comm->total_rcv_length;
+     total_cols = in_matrix->invec_leng+Nghost_nodes;
      if(cpntr == NULL)
      {
        pr_error("In function convert2vbr cpntr is NULL when expecting column blocking data.\n");
