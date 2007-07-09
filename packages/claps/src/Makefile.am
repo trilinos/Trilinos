@@ -136,15 +136,16 @@ MPI_H =
 MPI =
 
 endif
-#np# This section should come out, or be modified to reflect options in the 
-#np# package being autotool'ed
 
-#np# List locations of include files within Trilinos but outside of this 
-#np# package
-#np# - Add packages that this package is dependent on
-#np#   Remove epetra if this package does not need it
-#  
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(srcdir)/preconditioners -I$(top_srcdir)/../epetraext/src -I$(top_srcdir)/../epetraext/src/inout -I$(top_builddir)/../epetraext/src -I$(top_builddir)/../epetraext/src/inout 
+include $(top_builddir)/Makefile.export.claps
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(CLAPS_INCLUDES))
+else
+EXPORT_INCLUDES = $(CLAPS_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.
