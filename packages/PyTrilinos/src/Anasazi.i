@@ -84,6 +84,7 @@ package:
 
 %{
 // System includes
+#include <ostream>
 #include <sstream>
 
 // Configuration includes

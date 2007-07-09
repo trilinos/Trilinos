@@ -299,7 +299,11 @@ AC_SUBST(GNU_HAVE_SWIG, ${WITH_SWIG})
 # ------------------------------------------------------------------------
 
 AC_CONFIG_FILES([
-		Makefile 
+		Makefile
+		util/MakefileVariables.py
+		util/SharedUtils.py
+		util/pkg_info.py
+		shared/Makefile
 		src/Makefile
 		src/.deps/dummy
 		src/PyTrilinos/.dummy

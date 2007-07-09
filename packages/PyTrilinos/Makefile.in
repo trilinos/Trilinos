@@ -69,9 +69,12 @@ DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(top_srcdir)/src/PyTrilinos/LOCA/.dummy.in \
 	$(top_srcdir)/src/PyTrilinos/NOX/.dummy.in \
 	$(top_srcdir)/src/PyTrilinos/NOX/Epetra/.dummy.in \
-	$(top_srcdir)/src/PyTrilinos/NOX/LAPACK/.dummy.in INSTALL \
-	config/config.guess config/config.sub config/depcomp \
-	config/install-sh config/missing config/mkinstalldirs
+	$(top_srcdir)/src/PyTrilinos/NOX/LAPACK/.dummy.in \
+	$(top_srcdir)/util/MakefileVariables.py.in \
+	$(top_srcdir)/util/SharedUtils.py.in \
+	$(top_srcdir)/util/pkg_info.py.in INSTALL config/config.guess \
+	config/config.sub config/depcomp config/install-sh \
+	config/missing config/mkinstalldirs
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/ac_python_module.m4 \
@@ -90,7 +93,8 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/PyTrilinos_config.h
-CONFIG_CLEAN_FILES = src/.deps/dummy src/PyTrilinos/.dummy \
+CONFIG_CLEAN_FILES = util/MakefileVariables.py util/SharedUtils.py \
+	util/pkg_info.py src/.deps/dummy src/PyTrilinos/.dummy \
 	src/PyTrilinos/NOX/.dummy src/PyTrilinos/NOX/Epetra/.dummy \
 	src/PyTrilinos/NOX/LAPACK/.dummy src/PyTrilinos/LOCA/.dummy \
 	src-boost/PyTrilinos/.dummy
@@ -310,6 +314,12 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+util/MakefileVariables.py: $(top_builddir)/config.status $(top_srcdir)/util/MakefileVariables.py.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+util/SharedUtils.py: $(top_builddir)/config.status $(top_srcdir)/util/SharedUtils.py.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+util/pkg_info.py: $(top_builddir)/config.status $(top_srcdir)/util/pkg_info.py.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 src/.deps/dummy: $(top_builddir)/config.status $(top_srcdir)/src/.deps/dummy.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 src/PyTrilinos/.dummy: $(top_builddir)/config.status $(top_srcdir)/src/PyTrilinos/.dummy.in
