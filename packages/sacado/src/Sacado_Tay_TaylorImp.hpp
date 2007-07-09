@@ -31,15 +31,18 @@
 
 #include "Sacado_DynamicArrayTraits.hpp"
 
+namespace Sacado {
+namespace Tay {
+
 template <typename T> 
-Sacado::Tay::Taylor<T>::TaylorData::
+Taylor<T>::TaylorData::
 TaylorData() :
   coeff_(NULL), deg_(-1), len_(0) 
 {
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>::TaylorData::
+Taylor<T>::TaylorData::
 TaylorData(const T& x) :
   coeff_(), deg_(0), len_(1) 
 {
@@ -48,7 +51,7 @@ TaylorData(const T& x) :
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>::TaylorData::
+Taylor<T>::TaylorData::
 TaylorData(unsigned int d, const T& x) :
   coeff_(), deg_(d), len_(d+1) 
 {
@@ -57,7 +60,7 @@ TaylorData(unsigned int d, const T& x) :
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>::TaylorData::
+Taylor<T>::TaylorData::
 TaylorData(unsigned int d) :
   coeff_(), deg_(d), len_(d+1) 
 {
@@ -65,15 +68,15 @@ TaylorData(unsigned int d) :
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>::TaylorData::
-TaylorData(const typename Sacado::Tay::Taylor<T>::TaylorData& x) :
+Taylor<T>::TaylorData::
+TaylorData(const typename Taylor<T>::TaylorData& x) :
   coeff_(), deg_(x.deg_), len_(x.deg_+1) 
 {
   coeff_ = Sacado::ds_array<T>::get_and_fill(x.coeff_, len_);
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>::TaylorData::
+Taylor<T>::TaylorData::
 ~TaylorData()
 {
   if (len_ > 0)
@@ -81,9 +84,9 @@ Sacado::Tay::Taylor<T>::TaylorData::
 }
 
 template <typename T> 
-typename Sacado::Tay::Taylor<T>::TaylorData&
-Sacado::Tay::Taylor<T>::TaylorData::
-operator=(const typename Sacado::Tay::Taylor<T>::TaylorData& x) 
+typename Taylor<T>::TaylorData&
+Taylor<T>::TaylorData::
+operator=(const typename Taylor<T>::TaylorData& x) 
 {
   if (len_ < x.deg_+1) {
     Sacado::ds_array<T>::destroy_and_release(coeff_, len_);
@@ -100,49 +103,49 @@ operator=(const typename Sacado::Tay::Taylor<T>::TaylorData& x)
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>::
+Taylor<T>::
 Taylor() :
   th(new TaylorData)
 {
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>::
+Taylor<T>::
 Taylor(const T& x) :
   th(new TaylorData(x))
 {
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>::
+Taylor<T>::
 Taylor(unsigned int d, const T& x) :
   th(new TaylorData(d, x))
 {
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>::
+Taylor<T>::
 Taylor(unsigned int d) :
   th(new TaylorData(d))
 {
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>::
-Taylor(const Sacado::Tay::Taylor<T>& x) :
+Taylor<T>::
+Taylor(const Taylor<T>& x) :
   th(x.th)
 {
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>::
+Taylor<T>::
 ~Taylor()
 {
 }
 
 template <typename T> 
 void
-Sacado::Tay::Taylor<T>::
+Taylor<T>::
 resize(unsigned int d)
 {
   if (d+1 > length()) {
@@ -154,8 +157,8 @@ resize(unsigned int d)
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>& 
-Sacado::Tay::Taylor<T>::
+Taylor<T>& 
+Taylor<T>::
 operator=(const T& val) 
 {
   th.makeOwnCopy();
@@ -173,25 +176,25 @@ operator=(const T& val)
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>& 
-Sacado::Tay::Taylor<T>::
-operator=(const Sacado::Tay::Taylor<T>& x) 
+Taylor<T>& 
+Taylor<T>::
+operator=(const Taylor<T>& x) 
 {
   th = x.th;
   return *this;
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>
-Sacado::Tay::Taylor<T>::
+Taylor<T>
+Taylor<T>::
 operator+() const
 {
   return *this;
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T> 
-Sacado::Tay::Taylor<T>::
+Taylor<T> 
+Taylor<T>::
 operator-() const
 {
   Taylor<T> x;
@@ -205,8 +208,8 @@ operator-() const
 }
 
 template <typename T> 
- Sacado::Tay::Taylor<T>& 
-Sacado::Tay::Taylor<T>::
+ Taylor<T>& 
+Taylor<T>::
 operator+=(const T& val)
 {
   th.makeOwnCopy();
@@ -217,8 +220,8 @@ operator+=(const T& val)
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>& 
-Sacado::Tay::Taylor<T>::
+Taylor<T>& 
+Taylor<T>::
 operator-=(const T& val)
 {
   th.makeOwnCopy();
@@ -229,8 +232,8 @@ operator-=(const T& val)
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>& 
-Sacado::Tay::Taylor<T>::
+Taylor<T>& 
+Taylor<T>::
 operator*=(const T& val)
 {
   th.makeOwnCopy();
@@ -242,8 +245,8 @@ operator*=(const T& val)
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>& 
-Sacado::Tay::Taylor<T>::
+Taylor<T>& 
+Taylor<T>::
 operator/=(const T& val)
 {
   th.makeOwnCopy();
@@ -255,8 +258,8 @@ operator/=(const T& val)
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>& 
-Sacado::Tay::Taylor<T>::
+Taylor<T>& 
+Taylor<T>::
 operator+=(const Taylor<T>& x)
 {
   th.makeOwnCopy();
@@ -295,8 +298,8 @@ operator+=(const Taylor<T>& x)
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>& 
-Sacado::Tay::Taylor<T>::
+Taylor<T>& 
+Taylor<T>::
 operator-=(const Taylor<T>& x)
 {
   th.makeOwnCopy();
@@ -335,8 +338,8 @@ operator-=(const Taylor<T>& x)
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>& 
-Sacado::Tay::Taylor<T>::
+Taylor<T>& 
+Taylor<T>::
 operator*=(const Taylor<T>& x)
 {
   unsigned int d = degree();
@@ -386,8 +389,8 @@ operator*=(const Taylor<T>& x)
 }
 
 template <typename T> 
-Sacado::Tay::Taylor<T>& 
-Sacado::Tay::Taylor<T>::
+Taylor<T>& 
+Taylor<T>::
 operator/=(const Taylor<T>& x)
 {
   unsigned int d = degree();
@@ -437,7 +440,7 @@ operator/=(const Taylor<T>& x)
 
 template <typename T>
 void
-Sacado::Tay::Taylor<T>::
+Taylor<T>::
 resizeCoeffs(unsigned int len)
 {
   if (th->coeff_)
@@ -447,10 +450,9 @@ resizeCoeffs(unsigned int len)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-operator+(const Sacado::Tay::Taylor<T>& a, 
-	  const Sacado::Tay::Taylor<T>& b)
+Taylor<T>
+operator+(const Taylor<T>& a, 
+	  const Taylor<T>& b)
 {
   unsigned int da = a.degree();
   unsigned int db = b.degree();
@@ -461,7 +463,7 @@ operator+(const Sacado::Tay::Taylor<T>& a,
     throw "operator+():  Arguments have incompatible degrees!";
 #endif
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* ca = a.coeff();
   const T* cb = b.coeff();
   T* cc = c.coeff();
@@ -485,13 +487,12 @@ operator+(const Sacado::Tay::Taylor<T>& a,
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-operator+(const T& a, const Sacado::Tay::Taylor<T>& b)
+Taylor<T>
+operator+(const T& a, const Taylor<T>& b)
 {
   unsigned int dc = b.degree();
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* cb = b.coeff();
   T* cc = c.coeff();
 
@@ -503,13 +504,12 @@ operator+(const T& a, const Sacado::Tay::Taylor<T>& b)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-operator+(const Sacado::Tay::Taylor<T>& a, const T& b)
+Taylor<T>
+operator+(const Taylor<T>& a, const T& b)
 {
   unsigned int dc = a.degree();
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* ca = a.coeff();
   T* cc = c.coeff();
 
@@ -521,10 +521,9 @@ operator+(const Sacado::Tay::Taylor<T>& a, const T& b)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-operator-(const Sacado::Tay::Taylor<T>& a, 
-	  const Sacado::Tay::Taylor<T>& b)
+Taylor<T>
+operator-(const Taylor<T>& a, 
+	  const Taylor<T>& b)
 {
   unsigned int da = a.degree();
   unsigned int db = b.degree();
@@ -535,7 +534,7 @@ operator-(const Sacado::Tay::Taylor<T>& a,
     throw "operator+():  Arguments have incompatible degrees!";
 #endif
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* ca = a.coeff();
   const T* cb = b.coeff();
   T* cc = c.coeff();
@@ -559,13 +558,12 @@ operator-(const Sacado::Tay::Taylor<T>& a,
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-operator-(const T& a, const Sacado::Tay::Taylor<T>& b)
+Taylor<T>
+operator-(const T& a, const Taylor<T>& b)
 {
   unsigned int dc = b.degree();
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* cb = b.coeff();
   T* cc = c.coeff();
 
@@ -577,13 +575,12 @@ operator-(const T& a, const Sacado::Tay::Taylor<T>& b)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-operator-(const Sacado::Tay::Taylor<T>& a, const T& b)
+Taylor<T>
+operator-(const Taylor<T>& a, const T& b)
 {
   unsigned int dc = a.degree();
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* ca = a.coeff();
   T* cc = c.coeff();
 
@@ -595,10 +592,9 @@ operator-(const Sacado::Tay::Taylor<T>& a, const T& b)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-operator*(const Sacado::Tay::Taylor<T>& a, 
-	  const Sacado::Tay::Taylor<T>& b)
+Taylor<T>
+operator*(const Taylor<T>& a, 
+	  const Taylor<T>& b)
 {
   unsigned int da = a.degree();
   unsigned int db = b.degree();
@@ -609,7 +605,7 @@ operator*(const Sacado::Tay::Taylor<T>& a,
     throw "operator+():  Arguments have incompatible degrees!";
 #endif
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* ca = a.coeff();
   const T* cb = b.coeff();
   T* cc = c.coeff();
@@ -636,13 +632,12 @@ operator*(const Sacado::Tay::Taylor<T>& a,
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-operator*(const T& a, const Sacado::Tay::Taylor<T>& b)
+Taylor<T>
+operator*(const T& a, const Taylor<T>& b)
 {
   unsigned int dc = b.degree();
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* cb = b.coeff();
   T* cc = c.coeff();
 
@@ -653,13 +648,12 @@ operator*(const T& a, const Sacado::Tay::Taylor<T>& b)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-operator*(const Sacado::Tay::Taylor<T>& a, const T& b)
+Taylor<T>
+operator*(const Taylor<T>& a, const T& b)
 {
   unsigned int dc = a.degree();
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* ca = a.coeff();
   T* cc = c.coeff();
 
@@ -670,10 +664,9 @@ operator*(const Sacado::Tay::Taylor<T>& a, const T& b)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-operator/(const Sacado::Tay::Taylor<T>& a, 
-	  const Sacado::Tay::Taylor<T>& b)
+Taylor<T>
+operator/(const Taylor<T>& a, 
+	  const Taylor<T>& b)
 {
   unsigned int da = a.degree();
   unsigned int db = b.degree();
@@ -684,7 +677,7 @@ operator/(const Sacado::Tay::Taylor<T>& a,
     throw "operator+():  Arguments have incompatible degrees!";
 #endif
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* ca = a.coeff();
   const T* cb = b.coeff();
   T* cc = c.coeff();
@@ -717,13 +710,12 @@ operator/(const Sacado::Tay::Taylor<T>& a,
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-operator/(const T& a, const Sacado::Tay::Taylor<T>& b)
+Taylor<T>
+operator/(const T& a, const Taylor<T>& b)
 {
   unsigned int dc = b.degree();
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* cb = b.coeff();
   T* cc = c.coeff();
 
@@ -740,13 +732,12 @@ operator/(const T& a, const Sacado::Tay::Taylor<T>& b)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-operator/(const Sacado::Tay::Taylor<T>& a, const T& b)
+Taylor<T>
+operator/(const Taylor<T>& a, const T& b)
 {
   unsigned int dc = a.degree();
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* ca = a.coeff();
   T* cc = c.coeff();
 
@@ -757,13 +748,12 @@ operator/(const Sacado::Tay::Taylor<T>& a, const T& b)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-exp(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+exp(const Taylor<T>& a)
 {
   unsigned int dc = a.degree();
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* ca = a.coeff();
   T* cc = c.coeff();
 
@@ -780,13 +770,12 @@ exp(const Sacado::Tay::Taylor<T>& a)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-log(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+log(const Taylor<T>& a)
 {
   unsigned int dc = a.degree();
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* ca = a.coeff();
   T* cc = c.coeff();
 
@@ -803,21 +792,19 @@ log(const Sacado::Tay::Taylor<T>& a)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-log10(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+log10(const Taylor<T>& a)
 {
   return log(a) / std::log(10.0);
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-sqrt(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+sqrt(const Taylor<T>& a)
 {
   unsigned int dc = a.degree();
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* ca = a.coeff();
   T* cc = c.coeff();
 
@@ -834,27 +821,24 @@ sqrt(const Sacado::Tay::Taylor<T>& a)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-pow(const Sacado::Tay::Taylor<T>& a,
-    const Sacado::Tay::Taylor<T>& b)
+Taylor<T>
+pow(const Taylor<T>& a,
+    const Taylor<T>& b)
 {
   return exp(b*log(a));
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
+Taylor<T>
 pow(const T& a,
-    const Sacado::Tay::Taylor<T>& b)
+    const Taylor<T>& b)
 {
   return exp(b*log(a));
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-pow(const Sacado::Tay::Taylor<T>& a,
+Taylor<T>
+pow(const Taylor<T>& a,
     const T& b)
 {
   return exp(b*log(a));
@@ -862,10 +846,9 @@ pow(const Sacado::Tay::Taylor<T>& a,
 
 template <typename T>
 void
-Sacado::Tay::
-sincos(const Sacado::Tay::Taylor<T>& a,
-       Sacado::Tay::Taylor<T>& s,
-       Sacado::Tay::Taylor<T>& c)
+sincos(const Taylor<T>& a,
+       Taylor<T>& s,
+       Taylor<T>& c)
 {
   unsigned int dc = a.degree();
   if (s.degree() != dc)
@@ -894,39 +877,36 @@ sincos(const Sacado::Tay::Taylor<T>& a,
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-sin(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+sin(const Taylor<T>& a)
 {
   unsigned int dc = a.degree();
-  Sacado::Tay::Taylor<T> s(dc);
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> s(dc);
+  Taylor<T> c(dc);
   sincos(a, s, c);
 
   return s;
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-cos(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+cos(const Taylor<T>& a)
 {
   unsigned int dc = a.degree();
-  Sacado::Tay::Taylor<T> s(dc);
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> s(dc);
+  Taylor<T> c(dc);
   sincos(a, s, c);
 
   return c;
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-tan(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+tan(const Taylor<T>& a)
 {
   unsigned int dc = a.degree();
-  Sacado::Tay::Taylor<T> s(dc);
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> s(dc);
+  Taylor<T> c(dc);
   
   sincos(a, s, c);
 
@@ -935,10 +915,9 @@ tan(const Sacado::Tay::Taylor<T>& a)
 
 template <typename T>
 void
-Sacado::Tay::
-sinhcosh(const Sacado::Tay::Taylor<T>& a,
-	 Sacado::Tay::Taylor<T>& s,
-	 Sacado::Tay::Taylor<T>& c)
+sinhcosh(const Taylor<T>& a,
+	 Taylor<T>& s,
+	 Taylor<T>& c)
 {
   unsigned int dc = a.degree();
   if (s.degree() != dc)
@@ -967,39 +946,36 @@ sinhcosh(const Sacado::Tay::Taylor<T>& a,
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-sinh(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+sinh(const Taylor<T>& a)
 {
   unsigned int dc = a.degree();
-  Sacado::Tay::Taylor<T> s(dc);
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> s(dc);
+  Taylor<T> c(dc);
   sinhcosh(a, s, c);
 
   return s;
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-cosh(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+cosh(const Taylor<T>& a)
 {
   unsigned int dc = a.degree();
-  Sacado::Tay::Taylor<T> s(dc);
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> s(dc);
+  Taylor<T> c(dc);
   sinhcosh(a, s, c);
 
   return c;
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-tanh(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+tanh(const Taylor<T>& a)
 {
   unsigned int dc = a.degree();
-  Sacado::Tay::Taylor<T> s(dc);
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> s(dc);
+  Taylor<T> c(dc);
   
   sinhcosh(a, s, c);
 
@@ -1007,15 +983,14 @@ tanh(const Sacado::Tay::Taylor<T>& a)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
+Taylor<T>
 quad(const T& c0,
-     const Sacado::Tay::Taylor<T>& a,
-     const Sacado::Tay::Taylor<T>& b)
+     const Taylor<T>& a,
+     const Taylor<T>& b)
 {
   unsigned int dc = a.degree();
 
-  Sacado::Tay::Taylor<T> c(dc);
+  Taylor<T> c(dc);
   const T* ca = a.coeff();
   const T* cb = b.coeff();
   T* cc = c.coeff();
@@ -1033,93 +1008,83 @@ quad(const T& c0,
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-acos(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+acos(const Taylor<T>& a)
 {
-  Sacado::Tay::Taylor<T> b = -1.0 / sqrt(1.0 - a*a);
+  Taylor<T> b = -1.0 / sqrt(1.0 - a*a);
   return quad(std::acos(a.coeff(0)), a, b);
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-asin(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+asin(const Taylor<T>& a)
 {
-  Sacado::Tay::Taylor<T> b = 1.0 / sqrt(1.0 - a*a);
+  Taylor<T> b = 1.0 / sqrt(1.0 - a*a);
   return quad(std::asin(a.coeff(0)), a, b);
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-atan(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+atan(const Taylor<T>& a)
 {
-  Sacado::Tay::Taylor<T> b = 1.0 / (1.0 + a*a);
+  Taylor<T> b = 1.0 / (1.0 + a*a);
   return quad(std::atan(a.coeff(0)), a, b);
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-atan2(const Sacado::Tay::Taylor<T>& a,
-      const Sacado::Tay::Taylor<T>& b)
+Taylor<T>
+atan2(const Taylor<T>& a,
+      const Taylor<T>& b)
 {
-  Sacado::Tay::Taylor<T> c = atan(a/b);
+  Taylor<T> c = atan(a/b);
   c.fastAccessCoeff(0) = atan2(a.coeff(0),b.coeff(0));
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
+Taylor<T>
 atan2(const T& a,
-      const Sacado::Tay::Taylor<T>& b)
+      const Taylor<T>& b)
 {
-  Sacado::Tay::Taylor<T> c = atan(a/b);
+  Taylor<T> c = atan(a/b);
   c.fastAccessCoeff(0) = atan2(a,b.coeff(0));
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-atan2(const Sacado::Tay::Taylor<T>& a,
+Taylor<T>
+atan2(const Taylor<T>& a,
       const T& b)
 {
-  Sacado::Tay::Taylor<T> c = atan(a/b);
+  Taylor<T> c = atan(a/b);
   c.fastAccessCoeff(0) = atan2(a.coeff(0),b);
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-acosh(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+acosh(const Taylor<T>& a)
 {
-  Sacado::Tay::Taylor<T> b = -1.0 / sqrt(1.0 - a*a);
+  Taylor<T> b = -1.0 / sqrt(1.0 - a*a);
   return quad(std::acosh(a.coeff(0)), a, b);
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-asinh(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+asinh(const Taylor<T>& a)
 {
-  Sacado::Tay::Taylor<T> b = 1.0 / sqrt(a*a - 1.0);
+  Taylor<T> b = 1.0 / sqrt(a*a - 1.0);
   return quad(std::asinh(a.coeff(0)), a, b);
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-atanh(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+atanh(const Taylor<T>& a)
 {
-  Sacado::Tay::Taylor<T> b = 1.0 / (1.0 - a*a);
+  Taylor<T> b = 1.0 / (1.0 - a*a);
   return quad(std::atanh(a.coeff(0)), a, b);
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-fabs(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+fabs(const Taylor<T>& a)
 {
   if (a.coeff(0) >= 0)
     return a;
@@ -1128,9 +1093,8 @@ fabs(const Sacado::Tay::Taylor<T>& a)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-abs(const Sacado::Tay::Taylor<T>& a)
+Taylor<T>
+abs(const Taylor<T>& a)
 {
   if (a.coeff(0) >= 0)
     return a;
@@ -1139,10 +1103,9 @@ abs(const Sacado::Tay::Taylor<T>& a)
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-max(const Sacado::Tay::Taylor<T>& a,
-    const Sacado::Tay::Taylor<T>& b)
+Taylor<T>
+max(const Taylor<T>& a,
+    const Taylor<T>& b)
 {
   if (a.coeff(0) >= b.coeff(0))
     return a;
@@ -1151,10 +1114,9 @@ max(const Sacado::Tay::Taylor<T>& a,
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
+Taylor<T>
 max(const T& a,
-    const Sacado::Tay::Taylor<T>& b)
+    const Taylor<T>& b)
 {
   if (a >= b.coeff(0))
     return Taylor<T>(b.degree(), a);
@@ -1163,9 +1125,8 @@ max(const T& a,
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-max(const Sacado::Tay::Taylor<T>& a,
+Taylor<T>
+max(const Taylor<T>& a,
     const T& b)
 {
   if (a.coeff(0) >= b)
@@ -1175,10 +1136,9 @@ max(const Sacado::Tay::Taylor<T>& a,
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-min(const Sacado::Tay::Taylor<T>& a,
-    const Sacado::Tay::Taylor<T>& b)
+Taylor<T>
+min(const Taylor<T>& a,
+    const Taylor<T>& b)
 {
   if (a.coeff(0) <= b.coeff(0))
     return a;
@@ -1187,10 +1147,9 @@ min(const Sacado::Tay::Taylor<T>& a,
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
+Taylor<T>
 min(const T& a,
-    const Sacado::Tay::Taylor<T>& b)
+    const Taylor<T>& b)
 {
   if (a <= b.coeff(0))
     return Taylor<T>(b.degree(), a);
@@ -1199,9 +1158,8 @@ min(const T& a,
 }
 
 template <typename T>
-Sacado::Tay::Taylor<T>
-Sacado::Tay::
-min(const Sacado::Tay::Taylor<T>& a,
+Taylor<T>
+min(const Taylor<T>& a,
     const T& b)
 {
   if (a.coeff(0) <= b)
@@ -1212,26 +1170,23 @@ min(const Sacado::Tay::Taylor<T>& a,
 
 template <typename T>
 bool
-Sacado::Tay::
-operator==(const Sacado::Tay::Taylor<T>& a, 
-	   const Sacado::Tay::Taylor<T>& b)
+operator==(const Taylor<T>& a, 
+	   const Taylor<T>& b)
 {
   return a.coeff(0) == b.coeff(0);
 }
 
 template <typename T>
 bool
-Sacado::Tay::
 operator==(const T& a, 
-	   const Sacado::Tay::Taylor<T>& b)
+	   const Taylor<T>& b)
 {
   return a == b.coeff(0);
 }
 
 template <typename T>
 bool
-Sacado::Tay::
-operator==(const Sacado::Tay::Taylor<T>& a, 
+operator==(const Taylor<T>& a, 
 	   const T& b)
 {
   return a.coeff(0) == b;
@@ -1239,26 +1194,23 @@ operator==(const Sacado::Tay::Taylor<T>& a,
 
 template <typename T>
 bool
-Sacado::Tay::
-operator!=(const Sacado::Tay::Taylor<T>& a, 
-	   const Sacado::Tay::Taylor<T>& b)
+operator!=(const Taylor<T>& a, 
+	   const Taylor<T>& b)
 {
   return a.coeff(0) != b.coeff(0);
 }
 
 template <typename T>
 bool
-Sacado::Tay::
 operator!=(const T& a, 
-	   const Sacado::Tay::Taylor<T>& b)
+	   const Taylor<T>& b)
 {
   return a != b.coeff(0);
 }
 
 template <typename T>
 bool
-Sacado::Tay::
-operator!=(const Sacado::Tay::Taylor<T>& a, 
+operator!=(const Taylor<T>& a, 
 	   const T& b)
 {
   return a.coeff(0) != b;
@@ -1266,26 +1218,23 @@ operator!=(const Sacado::Tay::Taylor<T>& a,
 
 template <typename T>
 bool
-Sacado::Tay::
-operator<=(const Sacado::Tay::Taylor<T>& a, 
-	   const Sacado::Tay::Taylor<T>& b)
+operator<=(const Taylor<T>& a, 
+	   const Taylor<T>& b)
 {
   return a.coeff(0) <= b.coeff(0);
 }
 
 template <typename T>
 bool
-Sacado::Tay::
 operator<=(const T& a, 
-	   const Sacado::Tay::Taylor<T>& b)
+	   const Taylor<T>& b)
 {
   return a <= b.coeff(0);
 }
 
 template <typename T>
 bool
-Sacado::Tay::
-operator<=(const Sacado::Tay::Taylor<T>& a, 
+operator<=(const Taylor<T>& a, 
 	   const T& b)
 {
   return a.coeff(0) <= b;
@@ -1293,26 +1242,23 @@ operator<=(const Sacado::Tay::Taylor<T>& a,
 
 template <typename T>
 bool
-Sacado::Tay::
-operator>=(const Sacado::Tay::Taylor<T>& a, 
-	   const Sacado::Tay::Taylor<T>& b)
+operator>=(const Taylor<T>& a, 
+	   const Taylor<T>& b)
 {
   return a.coeff(0) >= b.coeff(0);
 }
 
 template <typename T>
 bool
-Sacado::Tay::
 operator>=(const T& a, 
-	   const Sacado::Tay::Taylor<T>& b)
+	   const Taylor<T>& b)
 {
   return a >= b.coeff(0);
 }
 
 template <typename T>
 bool
-Sacado::Tay::
-operator>=(const Sacado::Tay::Taylor<T>& a, 
+operator>=(const Taylor<T>& a, 
 	   const T& b)
 {
   return a.coeff(0) >= b;
@@ -1320,26 +1266,23 @@ operator>=(const Sacado::Tay::Taylor<T>& a,
 
 template <typename T>
 bool
-Sacado::Tay::
-operator<(const Sacado::Tay::Taylor<T>& a, 
-	  const Sacado::Tay::Taylor<T>& b)
+operator<(const Taylor<T>& a, 
+	  const Taylor<T>& b)
 {
   return a.coeff(0) < b.coeff(0);
 }
 
 template <typename T>
 bool
-Sacado::Tay::
 operator<(const T& a, 
-	  const Sacado::Tay::Taylor<T>& b)
+	  const Taylor<T>& b)
 {
   return a < b.coeff(0);
 }
 
 template <typename T>
 bool
-Sacado::Tay::
-operator<(const Sacado::Tay::Taylor<T>& a, 
+operator<(const Taylor<T>& a, 
 	  const T& b)
 {
   return a.coeff(0) < b;
@@ -1347,26 +1290,23 @@ operator<(const Sacado::Tay::Taylor<T>& a,
 
 template <typename T>
 bool
-Sacado::Tay::
-operator>(const Sacado::Tay::Taylor<T>& a, 
-	  const Sacado::Tay::Taylor<T>& b)
+operator>(const Taylor<T>& a, 
+	  const Taylor<T>& b)
 {
   return a.coeff(0) > b.coeff(0);
 }
 
 template <typename T>
 bool
-Sacado::Tay::
 operator>(const T& a, 
-	  const Sacado::Tay::Taylor<T>& b)
+	  const Taylor<T>& b)
 {
   return a > b.coeff(0);
 }
 
 template <typename T>
 bool
-Sacado::Tay::
-operator>(const Sacado::Tay::Taylor<T>& a, 
+operator>(const Taylor<T>& a, 
 	  const T& b)
 {
   return a.coeff(0) > b;
@@ -1374,8 +1314,7 @@ operator>(const Sacado::Tay::Taylor<T>& a,
 
 template <typename T>
 std::ostream& 
-Sacado::Tay::
-operator << (std::ostream& os, const Sacado::Tay::Taylor<T>& a)
+operator << (std::ostream& os, const Taylor<T>& a)
 {
   os << "[ ";
       
@@ -1386,3 +1325,6 @@ operator << (std::ostream& os, const Sacado::Tay::Taylor<T>& a)
   os << "]\n";
   return os;
 }
+
+} // namespace Tay
+} // namespace Sacado
