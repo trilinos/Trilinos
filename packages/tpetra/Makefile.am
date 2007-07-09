@@ -80,7 +80,7 @@ endif
 
 if BUILD_TESTS
 tests:
-	cd $(top_builddir)/test; $(MAKE)
+	cd $(top_builddir)/test && $(MAKE)
 else
 tests:
 	@echo "tpetra tests were disabled at configure time"
@@ -88,10 +88,10 @@ endif
 
 if BUILD_EXAMPLES
 examples:
-	cd $(top_builddir)/example ; $(MAKE)
+	cd $(top_builddir)/example && $(MAKE)
 
 install-examples:
-	cd $(top_builddir)/example ; $(MAKE) install
+	cd $(top_builddir)/example && $(MAKE) install
 else
 examples:
 	@echo "tpetra examples were disabled at configure time"
@@ -101,19 +101,19 @@ install-examples:
 endif
 
 clean-tests:
-	cd $(top_builddir)/test ; $(MAKE) clean
+	cd $(top_builddir)/test && $(MAKE) clean
 
 clean-examples:
-	cd $(top_builddir)/example ; $(MAKE) clean
+	cd $(top_builddir)/example && $(MAKE) clean
 
 everything:
-	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+	$(MAKE) && $(MAKE) examples && $(MAKE) tests
 
 clean-everything:
-	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
 
 install-everything:
-	$(MAKE) install ; $(MAKE) install-examples
+	$(MAKE) install && $(MAKE) install-examples
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 

@@ -100,15 +100,15 @@ EXAMPLE_SUBDIR=example
 endif
 
 if ENABLE_THYRA_EPETRA
-BUILD_THYRA_EPETRA_TESTS=cd adapters/epetra/test ; $(MAKE)
-BUILD_THYRA_EPETRA_EXAMPLES=cd adapters/epetra/example ; $(MAKE)
+BUILD_THYRA_EPETRA_TESTS=cd adapters/epetra/test && $(MAKE)
+BUILD_THYRA_EPETRA_EXAMPLES=cd adapters/epetra/example && $(MAKE)
 CLEAN_CMD=clean
 INSTALL_CMD=install
 endif
 
 if BUILD_TESTS
 tests:
-	cd $(top_builddir)/test; $(MAKE)
+	cd $(top_builddir)/test && $(MAKE)
 	$(BUILD_THYRA_EPETRA_TESTS)
 else
 tests:
@@ -117,10 +117,10 @@ endif
 
 if BUILD_EXAMPLES
 examples:
-	cd $(top_builddir)/example ; $(MAKE)
+	cd $(top_builddir)/example && $(MAKE)
 	$(BUILD_THYRA_EPETRA_EXAMPLES)
 install-examples:
-	cd $(top_builddir)/example ; $(MAKE) install
+	cd $(top_builddir)/example && $(MAKE) install
 	$(BUILD_THYRA_EPETRA_EXAMPLES) $(INSTALL_CMD)
 else
 examples:
@@ -131,21 +131,21 @@ install-examples:
 endif
 
 clean-tests:
-	cd $(top_builddir)/test ; $(MAKE) clean
+	cd $(top_builddir)/test && $(MAKE) clean
 	$(BUILD_THYRA_EPETRA_TESTS) $(CLEAN_CMD)
 
 clean-examples:
-	cd $(top_builddir)/example ; $(MAKE) clean
+	cd $(top_builddir)/example && $(MAKE) clean
 	$(BUILD_THYRA_EPETRA_EXAMPLES) $(CLEAN_CMD)
 
 everything:
-	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+	$(MAKE) && $(MAKE) examples && $(MAKE) tests
 
 clean-everything:
-	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
 
 install-everything:
-	$(MAKE) install ; $(MAKE) install-examples
+	$(MAKE) install && $(MAKE) install-examples
 
 SUBDIRS = src adapters $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 

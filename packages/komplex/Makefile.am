@@ -78,10 +78,10 @@ tests:
 
 if BUILD_EXAMPLES
 examples:
-	cd $(top_builddir)/example ; $(MAKE)
+	cd $(top_builddir)/example && $(MAKE)
 
 install-examples:
-	cd $(top_builddir)/example ; $(MAKE) install
+	cd $(top_builddir)/example && $(MAKE) install
 else
 examples:
 	@echo "komplex examples were disabled at configure time"
@@ -94,16 +94,16 @@ clean-tests:
 	@echo "komplex does not have any tests yet"
 
 clean-examples:
-	cd $(top_builddir)/example ; $(MAKE) clean
+	cd $(top_builddir)/example && $(MAKE) clean
 
 everything:
-	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+	$(MAKE) && $(MAKE) examples && $(MAKE) tests
 
 clean-everything:
-	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
 
 install-everything:
-	$(MAKE) install ; $(MAKE) install-examples
+	$(MAKE) install && $(MAKE) install-examples
 
 SUBDIRS = src $(EXAMPLE_SUBDIR)
 

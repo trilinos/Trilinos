@@ -399,11 +399,11 @@ clean-tests:
 	@if [ -d packages/external    ]; then cd packages/external;    $(MAKE) clean-tests; fi
 
 everything:
-	 $(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+	 $(MAKE) && $(MAKE) examples && $(MAKE) tests
 
 install-everything:
-	$(MAKE) install; $(MAKE) install-examples
+	$(MAKE) install && $(MAKE) install-examples
 
 clean-everything:
-	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
 

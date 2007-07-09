@@ -576,12 +576,6 @@ nodist_execinclude_HEADERS = AztecOO_config.h
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
-@HAVE_AZTECOO_TEUCHOS_FALSE@HAVE_AZTECOO_TEUCHOS_LIBS = 
-
-# ------------------------------------------------------------------------
-# Library Target for Circular Dependencies
-# ------------------------------------------------------------------------
-@HAVE_AZTECOO_TEUCHOS_TRUE@HAVE_AZTECOO_TEUCHOS_LIBS = cd $(top_builddir)/../teuchos ; $(MAKE) all-libs 
 all: AztecOO_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -1788,12 +1782,6 @@ all-local:
 ### Making this optional is one step toward removing the current
 ### dependency on Epetra when only Aztec is needed
 include $(top_builddir)/Makefile.export.aztecoo
-
-all-libs:
-	$(MAKE) libaztecoo.a
-	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
-	cd $(top_builddir)/../triutils ; $(MAKE) all-libs
-	$(HAVE_AZTECOO_TEUCHOS_LIBS)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

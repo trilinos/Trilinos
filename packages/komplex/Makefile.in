@@ -679,10 +679,10 @@ tests:
 	@echo "komplex does not have any tests yet"
 
 @BUILD_EXAMPLES_TRUE@examples:
-@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example ; $(MAKE)
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE)
 
 @BUILD_EXAMPLES_TRUE@install-examples:
-@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example ; $(MAKE) install
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE) install
 @BUILD_EXAMPLES_FALSE@examples:
 @BUILD_EXAMPLES_FALSE@	@echo "komplex examples were disabled at configure time"
 
@@ -693,16 +693,16 @@ clean-tests:
 	@echo "komplex does not have any tests yet"
 
 clean-examples:
-	cd $(top_builddir)/example ; $(MAKE) clean
+	cd $(top_builddir)/example && $(MAKE) clean
 
 everything:
-	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+	$(MAKE) && $(MAKE) examples && $(MAKE) tests
 
 clean-everything:
-	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
 
 install-everything:
-	$(MAKE) install ; $(MAKE) install-examples
+	$(MAKE) install && $(MAKE) install-examples
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

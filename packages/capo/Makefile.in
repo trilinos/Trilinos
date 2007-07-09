@@ -736,10 +736,10 @@ tests:
 	@echo "capo does not have any tests yet"
 
 @BUILD_EXAMPLES_TRUE@examples: FORCE
-@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/examples ; $(MAKE)
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/examples && $(MAKE)
 
 @BUILD_EXAMPLES_TRUE@install-examples:
-@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/examples ; $(MAKE) install
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/examples && $(MAKE) install
 @BUILD_EXAMPLES_FALSE@examples: FORCE
 @BUILD_EXAMPLES_FALSE@	@echo "capo examples were disabled at configure time"
 
@@ -752,16 +752,16 @@ clean-tests:
 	@echo "capo does not have any tests yet"
 
 clean-examples:
-	cd $(top_builddir)/examples ; $(MAKE) clean
+	cd $(top_builddir)/examples && $(MAKE) clean
 
 everything:
-	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+	$(MAKE) && $(MAKE) examples && $(MAKE) tests
 
 clean-everything:
-	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
 
 install-everything:
-	$(MAKE) install ; $(MAKE) install-examples
+	$(MAKE) install && $(MAKE) install-examples
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

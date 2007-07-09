@@ -126,16 +126,16 @@ clean-examples:
 	@echo "claps does not have any examples yet"
 
 everything:
-	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+	$(MAKE) && $(MAKE) examples && $(MAKE) tests
 
 clean-everything:
-	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
 
 install-examples:
 	@echo "claps does not have any examples yet"
 
 install-everything:
-	$(MAKE) install ; $(MAKE) install-examples
+	$(MAKE) install && $(MAKE) install-examples
 
 #SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 SUBDIRS = src

@@ -708,15 +708,15 @@ all-local:
 #Here we define the make targets that will build and clean tests and examples
 
 @BUILD_TESTS_TRUE@tests:
-@BUILD_TESTS_TRUE@	cd $(top_builddir)/example ; $(MAKE) ; cd ../test; $(MAKE)
+@BUILD_TESTS_TRUE@	cd $(top_builddir)/example && $(MAKE) && cd ../test && $(MAKE)
 @BUILD_TESTS_FALSE@tests:
 @BUILD_TESTS_FALSE@	@echo "aztecoo tests were disabled at configure time"
 
 @BUILD_EXAMPLES_TRUE@examples:
-@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example ; $(MAKE)
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE)
 
 @BUILD_EXAMPLES_TRUE@install-examples:
-@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example ; $(MAKE) install
+@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE) install
 @BUILD_EXAMPLES_FALSE@examples:
 @BUILD_EXAMPLES_FALSE@	@echo "aztecoo examples were disabled at configure time"
 
@@ -724,25 +724,19 @@ all-local:
 @BUILD_EXAMPLES_FALSE@	@echo "aztecoo examples were disabled at configure time"
 
 clean-tests:
-	cd $(top_builddir)/example ; $(MAKE) clean ; cd ../test ; $(MAKE) clean
+	cd $(top_builddir)/example && $(MAKE) clean && cd ../test && $(MAKE) clean
 
 clean-examples:
-	cd $(top_builddir)/example ; $(MAKE) clean
+	cd $(top_builddir)/example && $(MAKE) clean
 
 everything:
-	$(MAKE) ; $(MAKE) examples ; $(MAKE) tests
+	$(MAKE) && $(MAKE) examples && $(MAKE) tests
 
 clean-everything:
-	$(MAKE) clean-examples ; $(MAKE) clean-tests ; $(MAKE) clean
+	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
 
 install-everything:
-	$(MAKE) install ; $(MAKE) install-examples
-
-all-libs:
-	cd $(top_builddir)/src ; $(MAKE) all-libs
-
-libs:
-	cd $(top_builddir)/src ; $(MAKE)
+	$(MAKE) install && $(MAKE) install-examples
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.aztecoo $(exec_prefix)/include/.
