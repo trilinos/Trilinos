@@ -181,11 +181,16 @@ COMP =
 #np# List locations of include files within Trilinos but outside of this 
 #np# package
 #  
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+include $(top_builddir)/Makefile.export.pliris
 
-#np# The following section can be duplicated for building multiple libraries -
-#np# make sure to list the correct categories with each library.
-#np# replace new_package with the name of the package being autotool'ed here
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PLIRIS_INCLUDES))
+else
+EXPORT_INCLUDES = $(PLIRIS_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
 # ------------------------------------------------------------------------
 # Pliris library specifications
 # ------------------------------------------------------------------------

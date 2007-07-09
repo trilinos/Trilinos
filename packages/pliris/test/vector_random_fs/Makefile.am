@@ -28,12 +28,23 @@
 #Builds a simple tester program.  Note that executables must end with a .exe
 #to allow certain proprietary operating systems to use them.
 
+include $(top_builddir)/Makefile.export.pliris
+
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(PLIRIS_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PLIRIS_INCLUDES))
+else
+EXPORT_LIBS = $(PLIRIS_LIBS)
+EXPORT_INC_PATH = $(PLIRIS_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
+
 bin_PROGRAMS = vector_random_fs_test.exe
 
 vector_random_fs_test_exe_SOURCES = $(srcdir)/cxx_main.cpp
 
 vector_random_fs_test_exe_DEPENDENCIES = $(top_builddir)/src/libdpliris.a $(top_builddir)/../epetra/src/libepetra.a
 
-vector_random_fs_test_exe_LDADD = $(top_builddir)/src/libdpliris.a $(top_builddir)/../epetra/src/libepetra.a $(LIBS) $(BLAS_LIBS) $(FLIBS)
+vector_random_fs_test_exe_LDADD = $(EXPORT_LIBS)
 
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(top_srcdir)/src -I$(top_builddir)/src
