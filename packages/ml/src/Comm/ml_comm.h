@@ -75,7 +75,7 @@ typedef struct ml_DblLoc_struct {
 
 typedef struct ML_Comm_Struct
 {
-   int      ML_id;
+   int      ML_id; 
    int      ML_mypid;
    int      ML_nprocs;
    USR_COMM USR_comm;
@@ -134,6 +134,7 @@ extern int    ML_Comm_ErrorHandlerSet(USR_COMM, USR_ERRHANDLER);
 extern int    ML_Comm_ErrorHandlerCreate(
                  void *(*HandlerFcn)(USR_COMM*,int*),
                  USR_ERRHANDLER*);
+                 exit(1);
 */
 extern int    ML_Comm_ErrorHandlerCreate(
                  USR_ERRHANDLER_FUNCTION (*HandlerFcn),
