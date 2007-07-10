@@ -1,3 +1,5 @@
+## $Id$ 
+## $Source$ 
 #@HEADER
 # ************************************************************************
 # 
@@ -30,8 +32,50 @@
 # ************************************************************************
 #@HEADER
 
-NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Operators NOX_Group 1Dfem DS6.5.1 Brusselator PelletTransport FiniteDifferenceColoring MultiPhysics Thyra_2Dsim 
+# ------------------------------------------------------------------------
+# FEApp Sources
+# ------------------------------------------------------------------------
+include $(top_srcdir)/../sacado/example/FEApp/MakefileFEAppStub.am
 
-LOCA_SUBDIRS = LOCA_TestProblems LOCA_UnitTests LOCA_Tcubed LOCA_Pitchfork LOCA_Brusselator LOCA_Brusselator_xyzt LOCA_MultiPoint_Tcubed LOCA_EpetraExt_ModelEvaluator
+# Include export Makefiles for correct paths
+include $(top_builddir)/Makefile.export.nox
 
-SUBDIRS = $(NOX_SUBDIRS) $(LOCA_SUBDIRS)
+EXEEXT = .exe
+
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_EPETRA_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_EPETRA_TEST_INCLUDES))
+else
+TEST_LIBS     = $(LOCA_EPETRA_TEST_LIBS)
+TEST_INCLUDES = $(LOCA_EPETRA_TEST_INCLUDES)
+endif
+
+if BUILD_EPETRA_TESTS
+if ENABLE_LOCA_SACADO
+if BUILD_NOX_EPETRAEXT_SUPPORT
+include $(top_builddir)/../sacado/Makefile.export.sacado
+noinst_PROGRAMS = tcubed
+endif
+endif
+endif
+
+tcubed_SOURCES = \
+	$(srcdir)/tcubed.C \
+	$(FEAPP_H) \
+	$(FEAPP)
+
+tcubed_CXXFLAGS = \
+	-I$(FEAPP_PATH) \
+	$(TEST_INCLUDES) \
+	$(SACADO_INCLUDES)
+
+tcubed_LDADD = \
+	$(TEST_LIBS) \
+	$(SACADO_LIBS)
+
+tcubed_DEPENDENCIES = \
+        $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-epetra/libnoxepetra.a \
+	$(top_builddir)/test/utils/libnoxtestutils.a \
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-epetra/liblocaepetra.a

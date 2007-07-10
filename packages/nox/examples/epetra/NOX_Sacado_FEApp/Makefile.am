@@ -44,8 +44,10 @@ EXEEXT = .exe
 
 if BUILD_EPETRA_EXAMPLES
 if ENABLE_NOX_SACADO
+if BUILD_NOX_EPETRAEXT_SUPPORT
 include $(top_builddir)/../sacado/Makefile.export.sacado
 noinst_PROGRAMS = brusselator
+endif
 endif
 endif
 
