@@ -84,6 +84,11 @@ int main(int argc, char *argv[])
   // scale factor to test arc-length scaling
   double scale = 1.0;
 
+  // Create output file to save solutions
+  std::ofstream outFile("t3.dat");
+  outFile.setf(ios::scientific, ios::floatfield);
+  outFile.precision(14);
+
   // Initialize MPI
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -118,7 +123,7 @@ int main(int argc, char *argv[])
   // Create the FiniteElementProblem class.  This creates all required
   // Epetra objects for the problem and allows calls to the 
   // function (RHS) and Jacobian evaluation routines.
-  FiniteElementProblem Problem(NumGlobalElements, Comm, scale);
+  FiniteElementProblem Problem(NumGlobalElements, Comm, scale, &outFile);
 
   // Get the vector from the Problem
   Epetra_Vector& soln = Problem.getSolution();

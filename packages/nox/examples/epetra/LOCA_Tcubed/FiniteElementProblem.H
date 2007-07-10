@@ -50,6 +50,8 @@
 #ifndef _NOX_EXAMPLE_EPETRA_NONLINEAR_FINITEELEMENTPROBLEM_H
 #define _NOX_EXAMPLE_EPETRA_NONLINEAR_FINITEELEMENTPROBLEM_H
 
+#include <fstream>
+
 // Forward Declarations
 class Epetra_Comm;
 class Epetra_Map; 
@@ -68,7 +70,7 @@ public:
 
   // Constructor
   FiniteElementProblem(int NumGlobalElements, Epetra_Comm& Comm, 
-		       double s = 1.0);
+		       double s = 1.0, std::ofstream* file = NULL);
   
   // Destructor
   ~FiniteElementProblem();
@@ -88,6 +90,9 @@ public:
 
   // Set a bifurcation parameter in the application physics
   bool set(string label, double value);
+
+  //! Print solution to output file
+  void printSolution(const Epetra_Vector& x_, double conParam);
 
 private:
 
@@ -123,6 +128,20 @@ private:
   double leftBC;          // value of the essential BC at x = 0.
   double rightBC;         // value of the essential BC at x = 1.
   double scale;           // scale factor to test parameter scaling
+
+private:
+
+  //! Stores pointer to output file stream
+  std::ofstream* outputFile;
+
+  //! Epetra_Map for printing solution to output file
+  Epetra_Map* outputMap;
+
+  //! Epetra_Vector for printint solution to output file
+  Epetra_Vector* outputVector;
+
+  //! Importer for printing solution to ouput file
+  Epetra_Import* outputImporter;
 
 };
 #endif

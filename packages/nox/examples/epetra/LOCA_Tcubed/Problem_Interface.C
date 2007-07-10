@@ -59,7 +59,8 @@ Problem_Interface::Problem_Interface(FiniteElementProblem& Problem) :
 }
 
 Problem_Interface::~Problem_Interface()
-{ }
+{ 
+}
 
 bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& F, FillType flag)
 {
@@ -78,6 +79,11 @@ void Problem_Interface::setParameters(const LOCA::ParameterVector& params)
     //problem.set(params.getLabel(i), params.getValue(i)); 
     paramLib.setValue(params.getLabel(i), params.getValue(i));
   }
+}
+
+void Problem_Interface::printSolution(const Epetra_Vector& x, double conParam)
+{
+  problem.printSolution(x, conParam);
 }
 //-----------------------------------------------------------------------------
 

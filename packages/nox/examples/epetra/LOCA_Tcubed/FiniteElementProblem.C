@@ -50,7 +50,8 @@
 // Constructor - creates the Epetra objects (maps and vectors) 
 FiniteElementProblem::FiniteElementProblem(int numGlobalElements, 
 					   Epetra_Comm& comm,
-					   double s) :
+					   double s, 
+					   std::ofstream* file) :
   flag(F_ONLY),
   StandardMap(NULL),
   OverlapMap(NULL),
@@ -67,7 +68,11 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements,
   factor(0.0),
   leftBC(0.0),
   rightBC(0.0),
-  scale(s)
+  scale(s),
+  outputFile(file),
+  outputMap(NULL),
+  outputVector(NULL),
+  outputImporter(NULL)
 {
 
   // Commonly used variables
@@ -129,6 +134,25 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements,
   factor = 0.1;
   leftBC = 1.0;
   rightBC = 1.0;
+
+  // Set up maps for printing solution to output file
+  if (outputFile != NULL) {
+    // Create map with all entries on proc 0
+    int NumMyElementsOutput = 0;
+    if (MyPID == 0)
+      NumMyElementsOutput = NumGlobalElements;
+    outputMap = new Epetra_Map(NumGlobalElements, NumMyElementsOutput, 0, 
+			       *Comm);
+
+    // Create importer
+    outputImporter = new Epetra_Import(*outputMap, *StandardMap);
+
+    // Create vector to store imported solution
+    outputVector = new Epetra_Vector(*outputMap);
+
+    // Save size of discretizations
+    *outputFile << NumGlobalElements << std::endl;
+  }
 }
 
 // Destructor
@@ -140,6 +164,11 @@ FiniteElementProblem::~FiniteElementProblem()
   delete Importer;
   delete OverlapMap;
   delete StandardMap;
+  if (outputFile) {
+    delete outputMap;
+    delete outputVector;
+    delete outputImporter;
+  }
 }
 
 // Matrix and Residual Fills
@@ -302,6 +331,25 @@ bool FiniteElementProblem::set(string label, double value)
     exit(-1);
   }
   return true;
+}
+
+void FiniteElementProblem::printSolution(const Epetra_Vector& x, 
+					 double conParam)
+{
+  // Save solution in output file, first entry in each row is conParam
+  if (outputFile) {
+    
+    // Import x to proc 0
+    outputVector->Import(x, *outputImporter, Insert);
+
+    if (MyPID == 0) {
+      (*outputFile) << conParam << " ";
+      for (int i=0; i<outputVector->MyLength(); i++)
+	(*outputFile) << x[i] << " ";
+      (*outputFile) << std::endl;
+    }
+
+  }
 }
 
 Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AAA)

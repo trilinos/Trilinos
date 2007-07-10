@@ -45,6 +45,7 @@
 
 // ---------- Standard Includes ----------
 #include <iostream>
+
 #include "Epetra_Vector.h"
 #include "LOCA_Epetra.H"
 
@@ -74,6 +75,9 @@ public:
   //! Set a parameter in the user's code.
   void setParameters(const LOCA::ParameterVector& params);
 
+  //! Print solution to output file
+  virtual void printSolution(const Epetra_Vector& x_, double conParam);
+
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 
    *  auxiliary data required by the user's application for function/Jacobian
@@ -83,6 +87,8 @@ public:
   FiniteElementProblem& problem;
 
   LOCA::Parameter::Library paramLib;
+
+  
 };
 
 #endif
