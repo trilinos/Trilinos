@@ -343,6 +343,7 @@ __version__ = Anasazi_Version().split()[2]
 //////////////////////////////////
 // Anasazi OrthoManager support //
 //////////////////////////////////
+%ignore Anasazi::OrthoManager::project;
 %include "AnasaziOrthoManager.hpp"
 
 /////////////////////////////////////
