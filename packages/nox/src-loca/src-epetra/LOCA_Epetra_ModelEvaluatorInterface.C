@@ -41,6 +41,8 @@
 
 #include "LOCA_Epetra_ModelEvaluatorInterface.H"
 #include "LOCA_Parameter_Vector.H"
+#include "NOX_Epetra_MultiVector.H"
+#include "LOCA_MultiContinuation_AbstractGroup.H"
 
 #include "EpetraExt_ModelEvaluator.h"
 #include "Epetra_Operator.h"
@@ -49,8 +51,11 @@
 // *****************************************************************
 LOCA::Epetra::ModelEvaluatorInterface::
 ModelEvaluatorInterface(
-		   const Teuchos::RefCountPtr<EpetraExt::ModelEvaluator>& m) :
+		   const Teuchos::RCP<LOCA::GlobalData>& global_data,
+		   const Teuchos::RefCountPtr<EpetraExt::ModelEvaluator>& m,
+		   double perturb) :
   NOX::Epetra::ModelEvaluatorInterface(m),
+  LOCA::DerivUtils(global_data, perturb),
   param_vec(*(m->get_p_init(0))),
   loca_param_vec(),
   x_dot(NULL)
@@ -214,4 +219,79 @@ computeShiftedMatrix(double alpha, double beta, const Epetra_Vector& x,
   model_->evalModel(inargs, outargs);
 
   return true;
+}
+
+LOCA::Epetra::ModelEvaluatorInterface::
+ModelEvaluatorInterface(const LOCA::Epetra::ModelEvaluatorInterface& m) :
+  NOX::Epetra::ModelEvaluatorInterface(m),
+  LOCA::DerivUtils(m),
+  param_vec(m.param_vec),
+  loca_param_vec(m.loca_param_vec),
+  x_dot(NULL)
+{
+  if (m.x_dot != NULL) {
+    x_dot = new Epetra_Vector(*m.x_dot);
+  }
+}
+
+Teuchos::RCP<LOCA::DerivUtils> 
+LOCA::Epetra::ModelEvaluatorInterface::
+clone(NOX::CopyType type) const
+{
+  return Teuchos::rcp(new LOCA::Epetra::ModelEvaluatorInterface(*this));
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::Epetra::ModelEvaluatorInterface::
+computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp, 
+	    const vector<int>& param_ids,
+	    NOX::Abstract::MultiVector& result,
+	    bool isValidF) const
+{
+  // Break result into f and df/dp
+  NOX::Epetra::Vector& f = dynamic_cast<NOX::Epetra::Vector&>(result[0]);
+  Epetra_Vector& epetra_f = f.getEpetraVector();
+
+  std::vector<int> dfdp_index(result.numVectors()-1);
+  for (unsigned int i=0; i<dfdp_index.size(); i++)
+    dfdp_index[i] = i+1;
+  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> dfdp =
+    Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(result.subView(dfdp_index));
+  Epetra_MultiVector& epetra_dfdp = dfdp->getEpetraMultiVector();
+
+  // Create inargs
+  EpetraExt::ModelEvaluator::InArgs inargs = model_->createInArgs();
+  const NOX::Epetra::Vector& x = 
+    dynamic_cast<const NOX::Epetra::Vector&>(grp.getX());
+  const Epetra_Vector& epetra_x = x.getEpetraVector();
+  inargs.set_x(Teuchos::rcp(&epetra_x, false));
+  inargs.set_p(0, Teuchos::rcp(&param_vec, false));
+  if (inargs.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot)) {
+    // Create x_dot, filled with zeros
+    if (x_dot == NULL)
+      x_dot = new Epetra_Vector(epetra_x.Map());
+    inargs.set_x_dot(Teuchos::rcp(x_dot, false));
+  }
+
+  // Create outargs
+  EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
+  if (!isValidF) {
+    EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> eval_f;
+    Teuchos::RefCountPtr<Epetra_Vector> F = Teuchos::rcp(&epetra_f, false);
+    eval_f.reset(F, EpetraExt::ModelEvaluator::EVAL_TYPE_EXACT); 
+    outargs.set_f(eval_f);
+  }
+  Teuchos::RefCountPtr<Epetra_MultiVector> DfDp = 
+    Teuchos::rcp(&epetra_dfdp, false);
+  Teuchos::Array<int> param_indexes(param_ids.size());
+  for (unsigned int i=0; i<param_ids.size(); i++)
+    param_indexes[i] = param_ids[i];
+  EpetraExt::ModelEvaluator::DerivativeMultiVector dmv(DfDp, EpetraExt::ModelEvaluator::DERIV_MV_BY_COL,
+						       param_indexes);
+  EpetraExt::ModelEvaluator::Derivative deriv(dmv);
+  outargs.set_DfDp(0, deriv);
+
+  model_->evalModel(inargs, outargs);
+
+  return NOX::Abstract::Group::Ok;
 }

@@ -44,6 +44,7 @@
 
 #include "NOX_Epetra_ModelEvaluatorInterface.H"
 #include "LOCA_Epetra_Interface_TimeDependent.H"
+#include "LOCA_DerivUtils.H"
 #include "LOCA_Parameter_Vector.H"
 #include "Epetra_LocalMap.h"
 #include "Epetra_Vector.h"
@@ -61,13 +62,16 @@ namespace LOCA {
      */
     class ModelEvaluatorInterface : 
       public LOCA::Epetra::Interface::TimeDependent,
-      public NOX::Epetra::ModelEvaluatorInterface {
+      public NOX::Epetra::ModelEvaluatorInterface,
+      public LOCA::DerivUtils {
     
     public:
     
       //! Constructor
       ModelEvaluatorInterface(
-		     const Teuchos::RefCountPtr<EpetraExt::ModelEvaluator>& m);
+		     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+		     const Teuchos::RefCountPtr<EpetraExt::ModelEvaluator>& m,
+		     double perturb = 1.0e-6);
     
       //! Destructor
       virtual ~ModelEvaluatorInterface();
@@ -89,6 +93,26 @@ namespace LOCA {
       virtual bool computeShiftedMatrix(double alpha, double beta, 
 					const Epetra_Vector& x,
 					Epetra_Operator& A);
+
+      // LOCA::DerivUtils interface
+
+      //! Copy constructor
+      ModelEvaluatorInterface(const ModelEvaluatorInterface&);
+
+      //! Clone
+      virtual Teuchos::RCP<DerivUtils> 
+      clone(NOX::CopyType type = NOX::DeepCopy) const;
+
+      /*! 
+       * \brief Compute derivative of f with respect to parameter, identified 
+       * by param_id
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp, 
+		  const vector<int>& param_ids,
+		  NOX::Abstract::MultiVector& result,
+		  bool isValidF) const;
+      
     
     protected:
 
@@ -99,7 +123,7 @@ namespace LOCA {
       LOCA::ParameterVector loca_param_vec;
 
       //! Epetra vector storing x_dot, filled with zeros
-      Epetra_Vector *x_dot;
+      mutable Epetra_Vector *x_dot;
     
     };
 

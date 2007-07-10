@@ -106,17 +106,6 @@ int main(int argc, char *argv[]) {
     Teuchos::RefCountPtr<const Epetra_Vector> u = app->getInitialSolution();
     NOX::Epetra::Vector nox_u(*u);
 
-    // Create model evaluator
-    Teuchos::RefCountPtr<FEApp::ModelEvaluator> model = 
-      Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names));
-
-    // Create LOCA interface
-    Teuchos::RefCountPtr<LOCA::Epetra::ModelEvaluatorInterface> interface =
-      Teuchos::rcp(new LOCA::Epetra::ModelEvaluatorInterface(model));
-
-    // Get LOCA parameter vector
-    LOCA::ParameterVector pVector = interface->getLOCAParameterVector();
-
     // Set up LOCA parameters
     Teuchos::RefCountPtr<Teuchos::ParameterList> locaParams =
       Teuchos::rcp(&(appParams->sublist("LOCA")),false);
@@ -211,6 +200,26 @@ int main(int argc, char *argv[]) {
     lsParams.set("Output Frequency", 50);
     lsParams.set("Preconditioner", "Ifpack");
 
+    // Create model evaluator
+    Teuchos::RefCountPtr<FEApp::ModelEvaluator> model = 
+      Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names));
+
+    // Create Epetra factory
+    Teuchos::RefCountPtr<LOCA::Abstract::Factory> epetraFactory =
+      Teuchos::rcp(new LOCA::Epetra::Factory);
+
+    // Create global data object
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData = 
+      LOCA::createGlobalData(appParams, epetraFactory);
+
+    // Create LOCA interface
+    Teuchos::RefCountPtr<LOCA::Epetra::ModelEvaluatorInterface> interface =
+      Teuchos::rcp(new LOCA::Epetra::ModelEvaluatorInterface(globalData,
+							     model));
+
+    // Get LOCA parameter vector
+    LOCA::ParameterVector pVector = interface->getLOCAParameterVector();
+
     // Create the Jacobian matrix
     Teuchos::RefCountPtr<Epetra_Operator> A = model->create_W(); 
 
@@ -232,19 +241,12 @@ int main(int argc, char *argv[]) {
     Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent> iTime =
       interface;
 
-    // Create Epetra factory
-    Teuchos::RefCountPtr<LOCA::Abstract::Factory> epetraFactory =
-      Teuchos::rcp(new LOCA::Epetra::Factory);
-
-    // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData = 
-      LOCA::createGlobalData(appParams, epetraFactory);
-
     // Create the Group
     Teuchos::RefCountPtr<LOCA::Epetra::Group> grp =
       Teuchos::rcp(new LOCA::Epetra::Group(globalData, printParams, iTime, 
 					   nox_u, linsys, shiftedLinSys,
 					   pVector)); 
+    grp->setDerivUtils(interface);
 
     // Create the Solver convergence test
     Teuchos::RefCountPtr<NOX::StatusTest::NormF> wrms = 
