@@ -101,6 +101,14 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
+  // Check we have only one processor since this problem doesn't work
+  // for more than one proc
+  if (Comm.NumProc() > 1) {
+    std::cerr << "Error!  Problem can only be run with at most 1 processor!"
+	      << std::endl;
+    return -1;
+  }
+
   // Create the EpetraExt model evaluator object
   double d = 10.0;
   double p0 = 2.0;
@@ -108,7 +116,8 @@ int main(int argc, char *argv[])
   double x00 = 0.0;
   double x01 = 1.0;
   Teuchos::RCP<EpetraExt::ModelEvaluator> epetraModel = 
-    rcp(new EpetraModelEval2DSim(d,p0,p1,x00,x01,false));
+    rcp(new EpetraModelEval2DSim(Teuchos::rcp(&Comm,false),
+				 d,p0,p1,x00,x01));
 
   // Create the linear solver type with Stratimikos
   //Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
@@ -178,6 +187,9 @@ int main(int argc, char *argv[])
   // Create the solver
   NOX::Solver::Manager solver(nox_group, combo, nl_params);
   NOX::StatusTest::StatusType solvStatus = solver.solve();
+
+  if (solvStatus == NOX::StatusTest::Converged)
+    std::cout << "Test passed!" << std::endl;
 
   // Get the Epetra_Vector with the final solution from the solver
   /*

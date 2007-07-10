@@ -38,8 +38,7 @@
 (FRAMEWORK,INSTALL) {
     DIRS = epetra/Thyra_2Dsim;
     EXIT-STATUS = STRING-COMPARISON(Test passed!);
-    ARGS = -v;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # NOX Epetra test that is limited to 2 processors

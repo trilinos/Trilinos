@@ -50,10 +50,7 @@ if BUILD_EPETRA_TESTS
 
 if BUILD_NOX_EPETRAEXT_SUPPORT
 
-if HAVE_MPI
-else
 noinst_PROGRAMS = Thyra_2Dsim
-endif
 
 endif
 endif

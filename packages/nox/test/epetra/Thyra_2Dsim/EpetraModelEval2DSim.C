@@ -1,21 +1,18 @@
 #include "EpetraModelEval2DSim.H"
 #include "Teuchos_ScalarTraits.hpp"
-#include "Epetra_SerialComm.h"
 #include "Epetra_CrsMatrix.h"
 
 EpetraModelEval2DSim::EpetraModelEval2DSim(
-  const double         d
+  const Teuchos::RCP<const Epetra_Comm>& comm
+  ,const double         d
   ,const double        p0
   ,const double        p1
   ,const double        x00
   ,const double        x01
-  ,const bool          showGetInvalidArg
   )
-  :d_(d),showGetInvalidArg_(showGetInvalidArg)
+  :d_(d), epetra_comm_(comm)
 {
   using Teuchos::rcp;
-
-	epetra_comm_ = rcp(new Epetra_SerialComm());
 
   const int nx = 2;
 
@@ -101,9 +98,6 @@ void EpetraModelEval2DSim::evalModel( const InArgs& inArgs, const OutArgs& outAr
   //
   Epetra_Vector       *f_out = outArgs.get_f().get();
   Epetra_Operator     *W_out = outArgs.get_W().get();
-  if(showGetInvalidArg_) {
-    Epetra_Vector *g_out = outArgs.get_g(0).get();
-  }
   //
   // Compute the functions
   //
