@@ -293,6 +293,7 @@ CORE_H = \
 	$(srcdir)/Rythmos_InterpolationBufferBase.hpp\
 	$(srcdir)/Rythmos_InterpolatorBase.hpp\
 	$(srcdir)/Rythmos_LinearInterpolator.hpp\
+	$(srcdir)/Rythmos_SimpleIntegrator.hpp\
 	$(srcdir)/Rythmos_SingleResidualModelEvaluator.hpp\
 	$(srcdir)/Rythmos_SingleResidualModelEvaluatorBase.hpp\
 	$(srcdir)/Rythmos_SolverAcceptingStepperBase.hpp\

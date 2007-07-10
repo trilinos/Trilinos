@@ -180,6 +180,13 @@
 }
 
 
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL00,RythmosAmesos) {
+    TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}
+
+
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL0,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =

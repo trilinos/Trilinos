@@ -45,12 +45,311 @@ class SimpleIntegrator : virtual public IntegratorBase<Scalar>
 {
 public:
 
+  
+  /** \brief . */
+  typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
+
+  /** \name Constructors, Initializers, Misc */
+  //@{
+  
+  /** \brief . */
+  SimpleIntegrator();
+
+  //@}
+
+  /** \name Overridden from IntegratorBase */
+  //@{
+  
+  /** \brief . */
+  void setInterpolationBuffer(
+    const RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer
+    );
+
+  /** \brief . */
+  void setStepper(
+    const RCP<StepperBase<Scalar> > &stepper
+    );
+
+  /** \brief . */
+  bool getFwdPoints(
+    const Array<Scalar>& time_vec,
+    Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    Array<ScalarMag>* accuracy_vec
+    );
+
+  /** \brief . */
+  TimeRange<Scalar> getFwdTimeRange() const;
+
+  //@}
+
+  /** \name Overridden from InterpolationBufferBase */
+  //@{
+    
+  /** \brief . */
+  bool setPoints(
+    const Array<Scalar>& time_vec,
+    const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
+    const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+    const Array<ScalarMag> & accuracy_vec 
+    );
+
+  /** \brief . */
+  bool getPoints(
+    const Array<Scalar>& time_vec,
+    Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+    Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+    Array<ScalarMag>* accuracy_vec
+    ) const;
+
+  /** \brief . */
+  bool setRange(
+    const TimeRange<Scalar>& range,
+    const InterpolationBufferBase<Scalar>& interpBuffer
+    );
+
+  /** \brief . */
+  TimeRange<Scalar> getTimeRange() const;
+
+  /** \brief . */
+  bool getNodes(Array<Scalar>* time_vec) const;
+
+  /** \brief . */
+  bool removeNodes(Array<Scalar>& time_vec);
+
+  /** \brief . */
+  int getOrder() const;
+
+  //@}
+
+  /** \name Overridden from Teuchos::Describable */
+  //@{
+
+  /** \brief . */
+  void describe(
+    Teuchos::FancyOStream &out,
+    const Teuchos::EVerbosityLevel verbLevel
+    ) const;
+
+  //@}
+
+  /** \name Overridden from ParameterListAcceptor */
+  //@{
+
+  /** \brief . */
+  void setParameterList(RCP<ParameterList> const& paramList);
+
+  /** \brief . */
+  RCP<ParameterList> getParameterList();
+
+  /** \brief . */
+  RCP<ParameterList> unsetParameterList();
+
+  /** \brief . */
+  RCP<const ParameterList> getValidParameters() const;
+
+  //@}
+
+private:
+
+  RCP<StepperBase<Scalar> > stepper_;
+  RCP<ParameterList> paramList_;
+  bool takeVariableSteps_;
+  Scalar fixed_dt_;
+  Scalar finalTime_;
 
 };
 
 
+/** \brief .
+ *
+ * \relates SimpleIntegrator
+ */
+template<class Scalar> 
+RCP<SimpleIntegrator<Scalar> > simpleIntegrator()
+{
+  return Teuchos::rcp(new SimpleIntegrator<Scalar>());
+}
+
+
 // ////////////////////////////
 // Defintions
+
+
+// Constructors, Initializers, Misc
+
+
+template<class Scalar> 
+SimpleIntegrator<Scalar>::SimpleIntegrator()
+  :takeVariableSteps_(true),
+   fixed_dt_(ScalarTraits<Scalar>::zero()),
+   finalTime_(ScalarTraits<Scalar>::zero())
+{}
+
+
+// Overridden from IntegratorBase
+
+
+template<class Scalar> 
+void SimpleIntegrator<Scalar>::setInterpolationBuffer(
+    const RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer
+    )
+{
+  TEST_FOR_EXCEPT(true); // We will never implement this function in this class!
+}
+
+
+template<class Scalar> 
+void SimpleIntegrator<Scalar>::setStepper(
+  const RCP<StepperBase<Scalar> > &stepper
+  )
+{
+  TEST_FOR_EXCEPT(is_null(stepper));
+  // ToDo: Validate state of the stepper
+  stepper_ = stepper;
+}
+
+
+template<class Scalar> 
+bool SimpleIntegrator<Scalar>::getFwdPoints(
+  const Array<Scalar>& time_vec,
+  Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+  Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+  Array<ScalarMag>* accuracy_vec
+  )
+{
+  TEST_FOR_EXCEPT("ToDo: Implement the forward integration method");
+  return false;
+}
+
+
+template<class Scalar> 
+TimeRange<Scalar>
+SimpleIntegrator<Scalar>::getFwdTimeRange() const
+{
+  return timeRange(
+    stepper_->getTimeRange().lower(),
+    finalTime_
+    );
+}
+
+
+// Overridden from InterpolationBufferBase
+
+
+template<class Scalar> 
+bool SimpleIntegrator<Scalar>::setPoints(
+  const Array<Scalar>& time_vec,
+  const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec,
+  const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec,
+  const Array<ScalarMag> & accuracy_vec 
+  )
+{
+  TEST_FOR_EXCEPT(true);
+  return false;
+}
+
+
+template<class Scalar> 
+bool SimpleIntegrator<Scalar>::getPoints(
+  const Array<Scalar>& time_vec,
+  Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec,
+  Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec,
+  Array<ScalarMag>* accuracy_vec
+  ) const
+{
+  return stepper_->getPoints(time_vec,x_vec,xdot_vec,accuracy_vec);
+}
+
+
+template<class Scalar> 
+bool SimpleIntegrator<Scalar>::setRange(
+  const TimeRange<Scalar>& range,
+  const InterpolationBufferBase<Scalar>& interpBuffer
+  )
+{
+  return stepper_->setRange(range,interpBuffer);
+}
+
+
+template<class Scalar> 
+TimeRange<Scalar> SimpleIntegrator<Scalar>::getTimeRange() const
+{
+  return stepper_->getTimeRange();
+}
+
+
+template<class Scalar> 
+bool SimpleIntegrator<Scalar>::getNodes(Array<Scalar>* time_vec) const
+{
+  return stepper_->getNodes(time_vec);
+}
+
+
+template<class Scalar> 
+bool SimpleIntegrator<Scalar>::removeNodes(Array<Scalar>& time_vec)
+{
+  return stepper_->removeNodes(time_vec);
+}
+
+
+template<class Scalar> 
+int SimpleIntegrator<Scalar>::getOrder() const
+{
+  return stepper_->getOrder();
+}
+
+
+// Overridden from Teuchos::Describable
+
+
+template<class Scalar> 
+void SimpleIntegrator<Scalar>::describe(
+  Teuchos::FancyOStream &out,
+  const Teuchos::EVerbosityLevel verbLevel
+  ) const
+{
+  TEST_FOR_EXCEPT(true);
+}
+
+
+// Overridden from ParameterListAcceptor
+
+
+template<class Scalar> 
+void SimpleIntegrator<Scalar>::setParameterList(
+  RCP<ParameterList> const& paramList
+  )
+{
+  TEST_FOR_EXCEPT(true);
+}
+
+
+template<class Scalar> 
+RCP<ParameterList>
+SimpleIntegrator<Scalar>::getParameterList()
+{
+  return paramList_;
+}
+
+
+template<class Scalar> 
+RCP<ParameterList>
+SimpleIntegrator<Scalar>::unsetParameterList()
+{
+  RCP<ParameterList> tempParamList = paramList_;
+  paramList_ = Teuchos::null;
+  return tempParamList;
+}
+
+
+template<class Scalar> 
+RCP<const ParameterList>
+SimpleIntegrator<Scalar>::getValidParameters() const
+{
+  return paramList_;
+}
+
 
 } // namespace Rythmos
 

@@ -32,6 +32,7 @@
 #include "Rythmos_ImplicitBDFStepper.hpp"
 #include "Rythmos_ForwardSensitivityStepper.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
+#include "Rythmos_SimpleIntegrator.hpp"
 #include "Rythmos_StepperAsModelEvaluator.hpp"
 #include "Thyra_DefaultRealLinearSolverBuilder.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
@@ -142,7 +143,7 @@ int main(int argc, char *argv[])
     clp.setOption( "max-state-error", &maxStateError,
       "The maximum allowed error in the integrated state in relation to the exact state solution" );
 
-    double finalTime = 1.0;
+    double finalTime = 1e-3;
     clp.setOption( "final-time", &finalTime,
       "Final integration time (initial time is 0.0)" );
 
@@ -297,6 +298,14 @@ int main(int argc, char *argv[])
       state_ic = stateModel->getNominalValues();
     *out << "\nstate_ic:\n" << describe(state_ic,verbLevel);
     
+    RCP<Rythmos::IntegratorBase<Scalar> >
+      integrator = Rythmos::simpleIntegrator<Scalar>();
+
+    // 2007/07/09: rabartl: ToDo: I need to break off a parameter sublist to
+    // give to the above simple integrator to tell it what to do, how far to
+    // integrat etc.  Then I need to give this integrator to the belos
+    // stateIntegratorAsModel object!
+
     RCP<Rythmos::StepperAsModelEvaluator<Scalar> >
       stateIntegratorAsModel = Rythmos::stepperAsModelEvaluator(
         stateStepper, state_ic
