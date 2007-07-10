@@ -189,6 +189,7 @@ int VBR_block_getrow(ML_Operator *data, int requested_row,
    int *bindx_old, *indx_old, *bpntr, start, finish;
    double *val;
    int done = 0;
+   int col_size;
    ML_Operator *place_holder;
                              
    place_holder = data;
@@ -252,9 +253,10 @@ int VBR_block_getrow(ML_Operator *data, int requested_row,
    /*if we need to convert to global ids this will only be with the right B matrix*/
    if(place_holder->getrow->use_loc_glob_map == ML_YES)
    {
-     for(i = 0; i < *blocks; i++)
+     col_size = input_matrix->cpntr[1]-input_matrix->cpntr[0];
+     for(i = -*blocks; i < 0; i++)
      {
-       bindx[i-*blocks] = place_holder->getrow->loc_glob_map[bindx[i-*blocks]*(input_matrix->cpntr[1]-input_matrix->cpntr[0])]/(input_matrix->cpntr[1]-input_matrix->cpntr[0]);
+       bindx[i] = place_holder->getrow->loc_glob_map[bindx[i]*col_size]/col_size;
      }
    }
                                                                                                                 
