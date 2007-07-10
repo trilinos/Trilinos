@@ -498,7 +498,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           Teuchos::Array<Teuchos::RCP<const MV> > curauxvecs = lobpcg_solver->getAuxVecs();
           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
           // ortho X against the aux vectors
-          ortho->projectAndNormalize(*newstateX,newstateMX,dummy,Teuchos::null,curauxvecs);
+          ortho->projectAndNormalizeMat(*newstateX,newstateMX,dummy,Teuchos::null,curauxvecs);
 
           if (hadP) {
             //
@@ -518,11 +518,11 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
             if (fullOrtho_) {
               // ortho P against the new aux vectors and new X
               curauxvecs.push_back(newstateX);
-              ortho->projectAndNormalize(*newstateP,newstateMP,dummy,Teuchos::null,curauxvecs);
+              ortho->projectAndNormalizeMat(*newstateP,newstateMP,dummy,Teuchos::null,curauxvecs);
             }
             else {
               // ortho P against the new aux vectors
-              ortho->projectAndNormalize(*newstateP,newstateMP,dummy,Teuchos::null,curauxvecs);
+              ortho->projectAndNormalizeMat(*newstateP,newstateMP,dummy,Teuchos::null,curauxvecs);
             }
           }
           // set the new state
@@ -629,7 +629,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           Q.push_back(probauxvecs);
         }
       }
-      int rank = ortho->projectAndNormalize(*restart,Mrestart,dummy,Teuchos::null,Q);
+      int rank = ortho->projectAndNormalizeMat(*restart,Mrestart,dummy,Teuchos::null,Q);
       if (rank < blockSize_) {
         // quit
         printer->stream(Errors) << "Error! Recovered basis only rank " << rank << ". Block size is " << blockSize_ << ".\n"

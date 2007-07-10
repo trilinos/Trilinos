@@ -424,7 +424,7 @@ int testProjectAndNormalize(RCP<MatOrthoManager<ST,MV,OP> > OM,
     }
 
     try {
-      rank = OM->projectAndNormalize(*xcopy,mxcopy,
+      rank = OM->projectAndNormalizeMat(*xcopy,mxcopy,
                                      tuple< RCP< SerialDenseMatrix<int,ST> > >(C),R,
                                      tuple<RCP<const MV> >(Q) );
 
@@ -567,7 +567,7 @@ int testProject(RCP<MatOrthoManager<ST,MV,OP> > OM,
     }
 
     try {
-      OM->project(*xcopy,mxcopy,
+      OM->projectMat(*xcopy,mxcopy,
                   tuple<RCP<SerialDenseMatrix<int,ST> > >(C),
                   tuple<RCP<const MV> >(Q));
       // MX == M*X
@@ -672,7 +672,7 @@ int testNormalize(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<MV> X) {
     }
 
     try {
-      rank = OM->normalize(*xcopy,mxcopy,R);
+      rank = OM->normalizeMat(*xcopy,mxcopy,R);
       sout << "normalize() returned rank " << rank << endl;
   
       ind.resize(rank);

@@ -105,8 +105,8 @@ namespace Anasazi {
      * Optionally allows the provision of \f$M y\f$. See OrthoManager::innerProd() for more details.
      *
      */
-    void innerProd( const MV& X, const MV& Y, Teuchos::RCP<const MV> MY, 
-                     Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const;
+    void innerProdMat( const MV& X, const MV& Y, Teuchos::RCP<const MV> MY, 
+                         Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const;
 
     /*! \brief Provides the norm induced by the matrix-based inner product.
      *
@@ -116,47 +116,52 @@ namespace Anasazi {
      *  \f]
      *  Optionally allows the provision of \f$M x\f$. See OrthoManager::norm() for more details.
      */
-    void norm(const MV& X, Teuchos::RCP<const MV> MX, 
-              std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const;
+    void normMat(const MV& X, Teuchos::RCP<const MV> MX, 
+              std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > *normvec ) const;
 
     /*! \brief Provides matrix-based projection method.
      *
      * This method optionally allows the provision of \f$M X\f$. See OrthoManager::project() for more details.
      */
-    virtual void project ( MV &X, Teuchos::RCP<MV> MX, 
-                           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                           Teuchos::Array<Teuchos::RCP<const MV> > Q) const = 0;
+    virtual void projectMat ( 
+        MV &X, 
+        Teuchos::RCP<MV> MX = Teuchos::null, 
+        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C = Teuchos::tuple(Teuchos::null), 
+        Teuchos::Array<Teuchos::RCP<const MV> > Q = Teuchos::tuple(Teuchos::null) ) const = 0;
 
     /*! \brief Provides matrix-based orthonormalization method.
      *
      * This method optionally allows the provision of \f$M X\f$. See orthoManager::normalize() for more details.
     */
-    virtual int normalize ( MV &X, Teuchos::RCP<MV> MX, 
-                            Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const = 0;
+    virtual int normalizeMat ( 
+        MV &X, 
+        Teuchos::RCP<MV> MX = Teuchos::null, 
+        Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null ) const = 0;
 
 
     /*! \brief Provides matrix-based projection/orthonormalization method.
      *
      * This method optionally allows the provision of \f$M X\f$. See orthoManager::projectAndNormalize() for more details.
     */
-    virtual int projectAndNormalize ( MV &X, Teuchos::RCP<MV> MX, 
-                                      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                      Teuchos::Array<Teuchos::RCP<const MV> > Q ) const = 0;
+    virtual int projectAndNormalizeMat ( 
+        MV &X, Teuchos::RCP<MV> MX = Teuchos::null, 
+        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C = Teuchos::tuple(Teuchos::null), 
+        Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null, 
+        Teuchos::Array<Teuchos::RCP<const MV> > Q = Teuchos::tuple(Teuchos::null) ) const = 0;
 
     /*! \brief This method computes the error in orthonormality of a multivector.
      *
      *  This method optionally allows optionally exploits a caller-provided \c MX.
      */
     virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
-    orthonormError(const MV &X, Teuchos::RCP<const MV> MX) const = 0;
+    orthonormErrorMat(const MV &X, Teuchos::RCP<const MV> MX = Teuchos::null) const = 0;
 
     /*! \brief This method computes the error in orthogonality of two multivectors.
      *
      *  This method optionally allows optionally exploits a caller-provided \c MX.
      */
     virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
-    orthogError(const MV &X1, Teuchos::RCP<const MV> MX1, const MV &X2) const = 0;
+    orthogErrorMat(const MV &X1, Teuchos::RCP<const MV> MX1, const MV &X2) const = 0;
 
     //@}
 
@@ -167,7 +172,7 @@ namespace Anasazi {
      *
      * This method calls 
      * \code
-     * innerProd(X,Teuchos::null,Y,Z);
+     * innerProdMat(X,Teuchos::null,Y,Z);
      * \endcode
      */
     void innerProd( const MV& X, const MV& Y, Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const;
@@ -176,48 +181,48 @@ namespace Anasazi {
      *
      * This method calls 
      * \code
-     * norm(X,Teuchos::null,normvec);
+     * normMat(X,Teuchos::null,normvec);
      * \endcode
      */
-    void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const;
+    void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > *normvec ) const;
     
     /*! \brief Implements the interface OrthoManager::project(). 
      *
      * This method calls 
      * \code
-     * project(X,Teuchos::null,C,Z);
+     * projectMat(X,Teuchos::null,C,Z);
      * \endcode
      */
     void project ( MV &X, 
-                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                   Teuchos::Array<Teuchos::RCP<const MV> > Q) const;
+                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C = Teuchos::tuple(Teuchos::null), 
+                   Teuchos::Array<Teuchos::RCP<const MV> > Q = Teuchos::tuple(Teuchos::null)) const;
 
     /*! \brief Implements the interface OrthoManager::normalize(). 
      *
      * This method calls 
      * \code
-     * normalize(X,Teuchos::null,B);
+     * normalizeMat(X,Teuchos::null,B);
      * \endcode
      */
-    int normalize ( MV &X, Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const;
+    int normalize ( MV &X, Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null) const;
 
     /*! \brief Implements the interface OrthoManager::projectAndNormalize(). 
      *
      * This method calls 
      * \code
-     * projectAndNormalize(X,Teuchos::null,C,B,Q);
+     * projectAndNormalizeMat(X,Teuchos::null,C,B,Q);
      * \endcode
      */
     int projectAndNormalize ( MV &X, 
-                              Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                              Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                              Teuchos::Array<Teuchos::RCP<const MV> > Q ) const;
+                              Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C = Teuchos::tuple(Teuchos::null), 
+                              Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null, 
+                              Teuchos::Array<Teuchos::RCP<const MV> > Q = Teuchos::tuple(Teuchos::null) ) const;
 
     /*! \brief Implements the interface OrthoManager::orthonormError(). 
      *
      * This method calls 
      * \code
-     * orthonormError(X,Teuchos::null);
+     * orthonormErrorMat(X,Teuchos::null);
      * \endcode
      */
     typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
@@ -227,7 +232,7 @@ namespace Anasazi {
      *
      * This method calls 
      * \code
-     * orthogError(X1,Teuchos::null,X2);
+     * orthogErrorMat(X1,Teuchos::null,X2);
      * \endcode
      */
     typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
@@ -308,7 +313,7 @@ namespace Anasazi {
   }
 
   template <class ScalarType, class MV, class OP>
-  void MatOrthoManager<ScalarType,MV,OP>::innerProd( 
+  void MatOrthoManager<ScalarType,MV,OP>::innerProdMat( 
       const MV& X, const MV& Y, Teuchos::RCP<const MV> MY, Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const 
   {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
@@ -332,15 +337,15 @@ namespace Anasazi {
 
   template <class ScalarType, class MV, class OP>
   void MatOrthoManager<ScalarType,MV,OP>::norm( 
-      const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const 
+      const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > *normvec ) const 
   {
-    norm(X,Teuchos::null,normvec);
+    this->normMat(X,Teuchos::null,normvec);
   }
 
   template <class ScalarType, class MV, class OP>
-  void MatOrthoManager<ScalarType,MV,OP>::norm( 
+  void MatOrthoManager<ScalarType,MV,OP>::normMat( 
       const MV& X, Teuchos::RCP<const MV> MX, 
-      std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const 
+      std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > *normvec ) const 
   {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef MultiVecTraits<ScalarType,MV>     MVT;
@@ -374,14 +379,14 @@ namespace Anasazi {
       Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
       Teuchos::Array<Teuchos::RCP<const MV> > Q) const 
   {
-    this->project(X,Teuchos::null,C,Q);
+    this->projectMat(X,Teuchos::null,C,Q);
   }
 
   template <class ScalarType, class MV, class OP>
   int MatOrthoManager<ScalarType,MV,OP>::normalize ( 
       MV &X, Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const 
   {
-    return this->normalize(X,Teuchos::null,B);
+    return this->normalizeMat(X,Teuchos::null,B);
   }
 
   template <class ScalarType, class MV, class OP>
@@ -391,21 +396,21 @@ namespace Anasazi {
       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
       Teuchos::Array<Teuchos::RCP<const MV> > Q ) const 
   {
-    return this->projectAndNormalize(X,Teuchos::null,C,B,Q);
+    return this->projectAndNormalizeMat(X,Teuchos::null,C,B,Q);
   }
 
   template <class ScalarType, class MV, class OP>
   typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
   MatOrthoManager<ScalarType,MV,OP>::orthonormError(const MV &X) const 
   {
-    return this->orthonormError(X,Teuchos::null);
+    return this->orthonormErrorMat(X,Teuchos::null);
   }
 
   template <class ScalarType, class MV, class OP>
   typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
   MatOrthoManager<ScalarType,MV,OP>::orthogError(const MV &X1, const MV &X2) const 
   {
-    return this->orthogError(X1,Teuchos::null,X2);
+    return this->orthogErrorMat(X1,Teuchos::null,X2);
   }
 
 } // end of Anasazi namespace

@@ -106,9 +106,9 @@ namespace Anasazi {
      * This computes the norm for each column of a multivector. The norm is that induced by innerProd(), where
      * \f[ \|x\| = \sqrt{\langle x, x \rangle} \f]
      *
-     * @param normvec [out] Pointer to a vector of norms, whose \c i-th entry corresponds to the \c i-th column of \c X
+     * @param normvec [out] Vector of norms, whose \c i-th entry corresponds to the \c i-th column of \c X
      */
-    virtual void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const = 0;
+    virtual void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > *normvec ) const = 0;
 
     /*! \brief Given a list of (mutually and internally) orthonormal bases \c Q, this method
      * takes a multivector \c X and projects it onto the space orthogonal to the individual <tt>Q[i]</tt>, 
@@ -133,9 +133,10 @@ namespace Anasazi {
      @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
      orthonormal columns, and the <tt>Q[i]</tt> are assumed to be mutually orthogonal.
     */
-    virtual void project ( MV &X, 
-                           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                           Teuchos::Array<Teuchos::RCP<const MV> > Q) const = 0;
+    virtual void project ( 
+        MV &X, 
+        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C = Teuchos::tuple(Teuchos::null), 
+        Teuchos::Array<Teuchos::RCP<const MV> > Q = Teuchos::tuple(Teuchos::null) ) const = 0;
 
     /*! \brief This method takes a multivector \c X and attempts to compute an orthonormal basis for \f$colspan(X)\f$, with respect to innerProd().
      *
@@ -157,7 +158,9 @@ namespace Anasazi {
 
      @return Rank of the basis computed by this method, less than or equal to the number of columns in \c X.
     */
-    virtual int normalize ( MV &X, Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const = 0;
+    virtual int normalize ( 
+        MV &X, 
+        Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null) const = 0;
 
 
     /*! \brief Given a set of bases <tt>Q[i]</tt> and a multivector \c X, this method computes an orthonormal basis for \f$colspan(X) - \sum_i colspan(Q[i])\f$.
@@ -201,10 +204,11 @@ namespace Anasazi {
 
      @return Rank of the basis computed by this method.
     */
-    virtual int projectAndNormalize ( MV &X, 
-                                      Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                      Teuchos::Array<Teuchos::RCP<const MV> > Q ) const = 0;
+    virtual int projectAndNormalize ( 
+        MV &X, 
+        Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C = Teuchos::tuple(Teuchos::null), 
+        Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null, 
+        Teuchos::Array<Teuchos::RCP<const MV> > Q = Teuchos::tuple(Teuchos::null) ) const = 0;
 
     //@}
 

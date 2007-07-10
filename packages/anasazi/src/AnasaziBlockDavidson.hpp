@@ -1016,14 +1016,14 @@ namespace Anasazi {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 
         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
-        int rank = orthman_->projectAndNormalize(*lclV,tmpVecs,dummy,Teuchos::null,auxVecs_);
+        int rank = orthman_->projectAndNormalizeMat(*lclV,tmpVecs,dummy,Teuchos::null,auxVecs_);
         TEST_FOR_EXCEPTION(rank != curDim_,BlockDavidsonInitFailure,
                            "Anasazi::BlockDavidson::initialize(): Couldn't generate initial basis of full rank.");
       }
       else {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 
-        int rank = orthman_->normalize(*lclV,tmpVecs,Teuchos::null);
+        int rank = orthman_->normalizeMat(*lclV,tmpVecs,Teuchos::null);
         TEST_FOR_EXCEPTION(rank != curDim_,BlockDavidsonInitFailure,
                            "Anasazi::BlockDavidson::initialize(): Couldn't generate initial basis of full rank.");
       }
@@ -1305,7 +1305,7 @@ namespace Anasazi {
 
         Teuchos::Array<Teuchos::RCP<const MV> > against = auxVecs_;
         against.push_back(Vprev);
-        int rank = orthman_->projectAndNormalize(*H_,MH_,
+        int rank = orthman_->projectAndNormalizeMat(*H_,MH_,
                                             Teuchos::tuple<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null),
                                             Teuchos::null,against);
         TEST_FOR_EXCEPTION(rank != blockSize_,BlockDavidsonOrthoFailure,

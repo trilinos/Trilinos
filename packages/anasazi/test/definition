@@ -10,7 +10,7 @@
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests) {
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
     TESTS = LOBPCG/LOBPCG_test.exe,
             LOBPCG/LOBPCG_solvertest.exe,
             LOBPCG/LOBPCG_auxtest.exe,
@@ -27,7 +27,7 @@
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests) {
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
     TESTS = BlockDavidson/BlockDavidson_test.exe,
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --insitu --locking, 
@@ -41,7 +41,7 @@
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests) {
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
     TESTS = BlockKrylovSchur/BlockKrylovSchur_test.exe,
             BlockKrylovSchur/BlockKrylovSchur_nh_test.exe;
     EXIT-STATUS = STRING-COMPARISON;

@@ -1066,13 +1066,13 @@ namespace Anasazi {
       if (numAuxVecs_ > 0) {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
-        int rank = orthman_->projectAndNormalize(*X_,MX_,dummy,Teuchos::null,auxVecs_);
+        int rank = orthman_->projectAndNormalizeMat(*X_,MX_,dummy,Teuchos::null,auxVecs_);
         TEST_FOR_EXCEPTION(rank != blockSize_, LOBPCGInitFailure,
                            "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
       }
       else {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
-        int rank = orthman_->normalize(*X_,MX_,Teuchos::null);
+        int rank = orthman_->normalizeMat(*X_,MX_,Teuchos::null);
         TEST_FOR_EXCEPTION(rank != blockSize_, LOBPCGInitFailure,
                            "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
       }
@@ -1374,7 +1374,7 @@ namespace Anasazi {
       }
       {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
-        int rank = orthman_->projectAndNormalize(*H_,MH_,C,Teuchos::null,Q);
+        int rank = orthman_->projectAndNormalizeMat(*H_,MH_,C,Teuchos::null,Q);
         // our views are currently in place; it is safe to throw an exception
         TEST_FOR_EXCEPTION(rank != blockSize_,LOBPCGOrthoFailure,
                            "Anasazi::LOBPCG::iterate(): unable to compute orthonormal basis for H.");

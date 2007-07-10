@@ -774,7 +774,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           if (problem_->getM() != Teuchos::null) {
             OPT::Apply(*problem_->getM(),*augV,*augTmp);
           }
-          ortho->projectAndNormalize(*augV,augTmp,dummy,Teuchos::null,against);
+          ortho->projectAndNormalizeMat(*augV,augTmp,dummy,Teuchos::null,against);
         }
 
         //

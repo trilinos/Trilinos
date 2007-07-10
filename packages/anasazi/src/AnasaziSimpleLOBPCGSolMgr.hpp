@@ -305,7 +305,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         // copy the converged eigenvectors
         Teuchos::RCP<MV> newvecs = MVT::CloneCopy(*lobpcg_solver->getRitzVectors(),ind);
         // orthornormalize to be safe
-        ortho->normalize(*newvecs,Teuchos::null,Teuchos::null);
+        ortho->normalizeMat(*newvecs,Teuchos::null,Teuchos::null);
         // store them
         foundvecs.push_back(newvecs);
         // don't bother adding them as auxiliary vectors; we have reached maxiters and are going to quit

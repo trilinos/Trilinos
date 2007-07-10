@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
   RCP<MV> Q1  = MVT::Clone(*X,sizeQ);
   MVT::MvRandom(*Q1);
   int dummy = 0;
-  dummy = OM_M->normalize(*Q1,null);
+  dummy = OM_M->normalize(*Q1);
   tfail = false;
   if ( dummy != sizeQ ) {
     MyOM->stream(Errors) << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! normalize() returned " << dummy << " . Further tests will not be valid." << endl;
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
   RCP<MV> Q2 = MVT::Clone(*X,sizeQ);
   MVT::MvRandom(*Q2);
   tfail = false;
-  dummy = OM->normalize(*Q2,null);
+  dummy = OM->normalize(*Q2);
   if ( dummy != sizeQ ) {
     MyOM->stream(Errors) << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! normalize() returned " << dummy << " . Further tests will not be valid." << endl;
     numFailed += 1;
@@ -482,11 +482,11 @@ int testProjectAndNormalize(RCP<MatOrthoManager<ST,MV,OP> > OM,
     }
 
     try {
-      rank = OM->projectAndNormalize(*xcopy,mxcopy,
+      rank = OM->projectAndNormalizeMat(*xcopy,mxcopy,
                                      tuple< RCP< SerialDenseMatrix<int,ST> > >(C),R,
                                      tuple<RCP<const MV> >(Q) );
 
-      sout << "projectAndNormalize() returned rank " << rank << endl;
+      sout << "projectAndNormalizeMat() returned rank " << rank << endl;
 
       ind.resize(rank);
       for (int i=0; i<rank; i++) {
@@ -624,7 +624,7 @@ int testProject(RCP<MatOrthoManager<ST,MV,OP> > OM,
     }
 
     try {
-      OM->project(*xcopy,mxcopy,
+      OM->projectMat(*xcopy,mxcopy,
                   tuple<RCP<SerialDenseMatrix<int,ST> > >(C),
                   tuple<RCP<const MV> >(Q));
       // MX == M*X
@@ -729,8 +729,8 @@ int testNormalize(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<MV> X) {
     }
 
     try {
-      rank = OM->normalize(*xcopy,mxcopy,R);
-      sout << "normalize() returned rank " << rank << endl;
+      rank = OM->normalizeMat(*xcopy,mxcopy,R);
+      sout << "normalizeMat() returned rank " << rank << endl;
   
       ind.resize(rank);
       for (int i=0; i<rank; i++) {
