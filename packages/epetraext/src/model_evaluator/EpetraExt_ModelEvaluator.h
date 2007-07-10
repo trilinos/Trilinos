@@ -283,7 +283,8 @@ public:
     DerivativeMultiVector(
       const Teuchos::RefCountPtr<Epetra_MultiVector> &mv
       ,const EDerivativeMultiVectorOrientation orientation = DERIV_MV_BY_COL
-      ) : mv_(mv), orientation_(orientation) {}
+      ,const Teuchos::Array<int> &paramIndexes = Teuchos::Array<int>()
+      ) : mv_(mv), orientation_(orientation), paramIndexes_(paramIndexes) {}
     /** \brief . */
     void changeOrientation( const EDerivativeMultiVectorOrientation orientation )
       { orientation_ = orientation; };
@@ -293,9 +294,13 @@ public:
     /** \brief . */
     EDerivativeMultiVectorOrientation getOrientation() const
       { return orientation_; }
+    /** \brief . */
+    const Teuchos::Array<int>& getParamIndexes() const
+      { return paramIndexes_; }
   private:
     Teuchos::RefCountPtr<Epetra_MultiVector> mv_;
     EDerivativeMultiVectorOrientation orientation_;
+    Teuchos::Array<int> paramIndexes_;
   };
 
   /** \brief Simple aggregate class that stores a derivative object
