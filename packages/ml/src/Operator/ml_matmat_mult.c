@@ -1579,7 +1579,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 /*Where data is being exchanged things can become more efficient with an isend though this has risks*/
 void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int col_block_size, int cpntr[], int submatrix)
 {
-   int i, j, k, kk, ii, ll;
+   int i, j, k, kk, ii, ll, m;
    int jj = 0;
    int blockrows = 0;
    int blockcolumns = 0;
@@ -1598,6 +1598,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    int *bindx, *indx, *bpntr; /*quick links to needed structures
                                                 also makes the code look prettier*/
    int iplus1 = 0;
+   int iminus1 = 0;
    double x;
    double *temp_double;
    struct ML_vbrdata *out_data;
@@ -1613,6 +1614,8 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    int *recv_lens;
    int neighbors;
    int mats = 0;
+   ML_CommInfoOP *pre_comm;
+   USR_COMM USR_comm;     
 
    if(submatrix == 1)
    {
@@ -1637,7 +1640,9 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
          mats++;
          cur_matrix = cur_matrix->sub_matrix;
        }
-       neighbors = in_matrix->getrow->pre_comm->N_neighbors;
+       USR_comm = cur_matrix->comm->USR_comm;
+       pre_comm = in_matrix->getrow->pre_comm;
+       neighbors = pre_comm->N_neighbors;
        out_data = (struct ML_vbrdata *)cur_matrix->data;
        all_rpntr = (int**)ML_allocate(neighbors*sizeof (int*));
        recv_lens = (int*)ML_allocate(neighbors*sizeof(int));
@@ -1653,10 +1658,10 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
 
        for(i = 0; i < neighbors; i++)
        {
-         if(in_matrix->getrow->pre_comm->neighbors[i].N_rcv > 0)
+         if(pre_comm->neighbors[i].N_rcv > 0)
          {
            /*This will get how much data is coming*/
-           ML_Comm_Irecv(&recv_lens[i], sizeof(int), &(in_matrix->getrow->pre_comm->neighbors[i].ML_id), &(in_matrix->getrow->pre_comm->neighbors[i].ML_id), cur_matrix->comm->USR_comm, &recv_requests[i]);
+           ML_Comm_Irecv(&recv_lens[i], sizeof(int), &(pre_comm->neighbors[i].ML_id), &(pre_comm->neighbors[i].ML_id), USR_comm, &recv_requests[i]);
          }
        }
        /*this could be done later as the max actually sent but probably is not worth the few bytes savings*/
@@ -1668,37 +1673,37 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
 
        for(i = 0; i < neighbors; i++)
        {
-         if(in_matrix->getrow->pre_comm->neighbors[i].N_send > 0)
+         if(pre_comm->neighbors[i].N_send > 0)
          {
            k = 0;
            kk = 0;
            rows_sent = 0;
            /*figure out what needs to be sent*/
-           while(k < in_matrix->getrow->pre_comm->neighbors[i].N_send)
+           while(k < pre_comm->neighbors[i].N_send)
            {
              kk = 0;
              rows_sent++;
-             while(out_data->rpntr[kk] <= in_matrix->getrow->pre_comm->neighbors[i].send_list[k])
+             while(out_data->rpntr[kk] <= pre_comm->neighbors[i].send_list[k])
              {
                kk++;
              }
              k += out_data->rpntr[kk] - out_data->rpntr[kk - 1];
            }
-           k =ML_Comm_Send(&rows_sent, sizeof(int), in_matrix->getrow->pre_comm->neighbors[i].ML_id, cur_matrix->comm->ML_mypid, cur_matrix->comm->USR_comm);
+           k =ML_Comm_Send(&rows_sent, sizeof(int), pre_comm->neighbors[i].ML_id, cur_matrix->comm->ML_mypid, USR_comm);
          }
        }
      }
      for(i = 0; i < neighbors; i++)
      {
-       if(in_matrix->getrow->pre_comm->neighbors[i].N_rcv > 0)
+       if(pre_comm->neighbors[i].N_rcv > 0)
        {
-         ML_Comm_CheapWait(send_buffer, j, &src, &mid, cur_matrix->comm->USR_comm, &recv_requests[i]);
+         ML_Comm_CheapWait(send_buffer, j, &src, &mid, USR_comm, &recv_requests[i]);
          all_rpntr[i] = (int*)ML_allocate((recv_lens[i])*sizeof(int));
          if(send_buffer == NULL)
          {
            pr_error("Not enough space to allocate %d ints in convert2vbr.\n", recv_lens[i]);
          }
-         ML_Comm_Irecv(all_rpntr[i], recv_lens[i]*sizeof(int), &(in_matrix->getrow->pre_comm->neighbors[i].ML_id), &(in_matrix->getrow->pre_comm->neighbors[i].ML_id), cur_matrix->comm->USR_comm, &recv_requests[i]);
+         ML_Comm_Irecv(all_rpntr[i], recv_lens[i]*sizeof(int), &(pre_comm->neighbors[i].ML_id), &(pre_comm->neighbors[i].ML_id), USR_comm, &recv_requests[i]);
        }
      }
      for(i = 0; i < neighbors; i++)
@@ -1707,13 +1712,13 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        kk = 0;
        k = 0;
        rows_sent = 0;
-       if(in_matrix->getrow->pre_comm->neighbors[i].N_send > 0)
+       if(pre_comm->neighbors[i].N_send > 0)
        {
-         while(j < in_matrix->getrow->pre_comm->neighbors[i].N_send)
+         while(j < pre_comm->neighbors[i].N_send)
          {
            kk = 0;
            rows_sent++;
-           while(out_data->rpntr[kk] <= in_matrix->getrow->pre_comm->neighbors[i].send_list[j])
+           while(out_data->rpntr[kk] <= pre_comm->neighbors[i].send_list[j])
            {
              kk++;
            }
@@ -1721,24 +1726,25 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
              j += out_data->rpntr[kk] - out_data->rpntr[kk - 1];
          }
          k++;
-         k =ML_Comm_Send(send_buffer, (rows_sent)*sizeof(int), in_matrix->getrow->pre_comm->neighbors[i].ML_id, cur_matrix->comm->ML_mypid, cur_matrix->comm->USR_comm);
+         k =ML_Comm_Send(send_buffer, (rows_sent)*sizeof(int), pre_comm->neighbors[i].ML_id, cur_matrix->comm->ML_mypid, USR_comm);
        }
      }
       for(i = 0; i < neighbors; i++)
      {
-       if(in_matrix->getrow->pre_comm->neighbors[i].N_rcv > 0)
+       if(pre_comm->neighbors[i].N_rcv > 0)
        {
-         ML_Comm_CheapWait(send_buffer, j, &src, &mid, cur_matrix->comm->USR_comm, &recv_requests[i]);
+         ML_Comm_CheapWait(send_buffer, j, &src, &mid, USR_comm, &recv_requests[i]);
        }
      }
      ML_free(recv_requests);
      ML_free(send_buffer);
      /*loop over submatrices*/
-     while(mats > 0)
+     m = mats;
+     while(m > 0)
      {
-       mats--;
+       m--;
        cur_matrix = in_matrix;
-       for(j = 0; j < mats; j++)
+       for(j = 0; j < m; j++)
          cur_matrix = cur_matrix->sub_matrix;
        cur_data = (struct ML_CSR_MSRdata *)cur_matrix->data;
        i = 0; /*which blockrow*/
@@ -1770,20 +1776,21 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
          for(j = 0; j < recv_lens[k]; j++)
          {
            i++; /*blockrow*/
-           rpntr[i] = rpntr[i-1] + all_rpntr[k][j]; 
-           bpntr[i] = bpntr[i-1] + (cur_data->rowptr[rpntr[i-1]+1]-cur_data->rowptr[rpntr[i-1]])/col_block_size;
-           ll = indx[bpntr[i-1]];
+           iminus1 = i - 1;
+           rpntr[i] = rpntr[iminus1] + all_rpntr[k][j]; 
+           bpntr[i] = bpntr[iminus1] + (cur_data->rowptr[rpntr[iminus1]+1]-cur_data->rowptr[rpntr[iminus1]])/col_block_size;
+           ll = indx[bpntr[iminus1]];
            /*loop over one blockrow*/
-           for(kk = bpntr[i-1]; kk < bpntr[i]; kk++)
+           for(kk = bpntr[iminus1]; kk < bpntr[i]; kk++)
            { 
              bindx[kk] = cur_data->columns[ll]/col_block_size;
-             indx[kk+1] = indx[kk]+col_block_size*(rpntr[i] - rpntr[i-1]);
+             indx[kk+1] = indx[kk]+col_block_size*(rpntr[i] - rpntr[iminus1]);
              /*loop over a block and store data columns then rows*/
              for(jj = 0; jj < col_block_size; jj++)
              {
                for(ii = 0; ii < all_rpntr[k][j]; ii++) 
                {
-                 vals[indx[kk]+ii+(cur_data->columns[kk*col_block_size+jj+(i-1)*col_block_size]%col_block_size)*all_rpntr[k][j]] = cur_data->values[ll+jj+ii*(cur_data->rowptr[rpntr[i-1]+1]-cur_data->rowptr[rpntr[i-1]])];
+                 vals[indx[kk]+ii+(cur_data->columns[kk*col_block_size+jj+(iminus1)*col_block_size]%col_block_size)*all_rpntr[k][j]] = cur_data->values[ll+jj+ii*(cur_data->rowptr[rpntr[iminus1]+1]-cur_data->rowptr[rpntr[iminus1]])];
                }
              }
              ll += col_block_size;
@@ -1804,16 +1811,22 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        out_data->cpntr = cpntr;
        out_data->rpntr = rpntr;
        out_data->val = vals;
-       cur_matrix->getrow->N_block_rows = i+cur_matrix->sub_matrix->getrow->N_block_rows;
        cur_matrix->getrow->func_ptr = VBR_getrows;
        cur_matrix->getrow->data = (void *)out_data;
        cur_matrix->data = (void *)out_data;
        for(i = 0; i < neighbors; i++)
-         if (in_matrix->getrow->pre_comm->neighbors[i].N_rcv > 0)
+         if (pre_comm->neighbors[i].N_rcv > 0)
            ML_free(all_rpntr[i]);
        ML_free(all_rpntr);
        ML_free(recv_lens);
        cur_data = NULL;
+     }
+     for(i = mats; i > 0; i--)
+     {
+       cur_matrix = in_matrix;
+       for(j = 1; j < i; j++)
+         cur_matrix = cur_matrix->sub_matrix;
+       cur_matrix->getrow->N_block_rows = i+cur_matrix->sub_matrix->getrow->N_block_rows;
      }
    }
    else
