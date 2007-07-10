@@ -1611,6 +1611,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    struct ML_CSR_MSRdata *cur_data;
    int src, mid;
    int *recv_lens;
+   int neighbors;
    int mats = 0;
 
    if(submatrix == 1)
@@ -1630,16 +1631,27 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
      else
      {
        cur_matrix = in_matrix;
+       /*how many submatrices we have*/
        while(cur_matrix->sub_matrix != NULL)
        {
          mats++;
          cur_matrix = cur_matrix->sub_matrix;
        }
+       neighbors = in_matrix->getrow->pre_comm->N_neighbors;
        out_data = (struct ML_vbrdata *)cur_matrix->data;
-       all_rpntr = (int**)ML_allocate(in_matrix->getrow->pre_comm->N_neighbors*sizeof (int*));
-       recv_lens = (int*)ML_allocate(in_matrix->getrow->pre_comm->N_neighbors*sizeof(int));
-       recv_requests = (USR_REQ*)ML_allocate(in_matrix->getrow->pre_comm->N_neighbors*sizeof(USR_REQ));
-       for(i = 0; i < in_matrix->getrow->pre_comm->N_neighbors; i++)
+       all_rpntr = (int**)ML_allocate(neighbors*sizeof (int*));
+       recv_lens = (int*)ML_allocate(neighbors*sizeof(int));
+       if((recv_lens == NULL) || (all_rpntr == NULL))
+       {
+          pr_error("Not enough space to allocate %d int pointers and ints in convert2vbr.\n", neighbors);
+       }
+       recv_requests = (USR_REQ*)ML_allocate(neighbors*sizeof(USR_REQ));
+       if(recv_requests == NULL)
+       {
+          pr_error("Not enough space to allocate %d requests in convert2vbr.\n", neighbors);
+       }
+
+       for(i = 0; i < neighbors; i++)
        {
          if(in_matrix->getrow->pre_comm->neighbors[i].N_rcv > 0)
          {
@@ -1649,7 +1661,12 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        }
        /*this could be done later as the max actually sent but probably is not worth the few bytes savings*/
        send_buffer = (int*)ML_allocate((cur_matrix->getrow->N_block_rows)*sizeof(int));
-       for(i = 0; i < in_matrix->getrow->pre_comm->N_neighbors; i++)
+       if(send_buffer == NULL)
+       {
+          pr_error("Not enough space to allocate %d ints in convert2vbr.\n", cur_matrix->getrow->N_block_rows);
+       }
+
+       for(i = 0; i < neighbors; i++)
        {
          if(in_matrix->getrow->pre_comm->neighbors[i].N_send > 0)
          {
@@ -1671,16 +1688,20 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
          }
        }
      }
-     for(i = 0; i < in_matrix->getrow->pre_comm->N_neighbors; i++)
+     for(i = 0; i < neighbors; i++)
      {
        if(in_matrix->getrow->pre_comm->neighbors[i].N_rcv > 0)
        {
          ML_Comm_CheapWait(send_buffer, j, &src, &mid, cur_matrix->comm->USR_comm, &recv_requests[i]);
          all_rpntr[i] = (int*)ML_allocate((recv_lens[i])*sizeof(int));
+         if(send_buffer == NULL)
+         {
+           pr_error("Not enough space to allocate %d ints in convert2vbr.\n", recv_lens[i]);
+         }
          ML_Comm_Irecv(all_rpntr[i], recv_lens[i]*sizeof(int), &(in_matrix->getrow->pre_comm->neighbors[i].ML_id), &(in_matrix->getrow->pre_comm->neighbors[i].ML_id), cur_matrix->comm->USR_comm, &recv_requests[i]);
        }
      }
-     for(i = 0; i < in_matrix->getrow->pre_comm->N_neighbors; i++)
+     for(i = 0; i < neighbors; i++)
      {
        j = 0;
        kk = 0;
@@ -1703,14 +1724,15 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
          k =ML_Comm_Send(send_buffer, (rows_sent)*sizeof(int), in_matrix->getrow->pre_comm->neighbors[i].ML_id, cur_matrix->comm->ML_mypid, cur_matrix->comm->USR_comm);
        }
      }
-      for(i = 0; i < in_matrix->getrow->pre_comm->N_neighbors; i++)
+      for(i = 0; i < neighbors; i++)
      {
        if(in_matrix->getrow->pre_comm->neighbors[i].N_rcv > 0)
        {
          ML_Comm_CheapWait(send_buffer, j, &src, &mid, cur_matrix->comm->USR_comm, &recv_requests[i]);
        }
      }
-     
+     ML_free(recv_requests);
+     ML_free(send_buffer);
      /*loop over submatrices*/
      while(mats > 0)
      {
@@ -1730,6 +1752,10 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        bindx = (int*)ML_allocate(jj*sizeof(int));
        indx = (int*)ML_allocate((jj+1)*sizeof(int));
        vals = (double*)ML_allocate(cur_data->rowptr[cur_matrix->outvec_leng - cur_matrix->sub_matrix->outvec_leng]*sizeof(double));
+       if(vals == NULL)
+       {
+          pr_error("Not enough space to allocate %d doubles and some integers in convert2vbr.\n", cur_data->rowptr[cur_matrix->outvec_leng - cur_matrix->sub_matrix->outvec_leng]);
+       }
        cpntr[0] = 0;
        /*set up column pointer for submatrix*/
        for(kk = 1; kk <= (cur_matrix->invec_leng+cur_matrix->getrow->pre_comm->total_rcv_length)/col_block_size; kk++)
@@ -1764,7 +1790,13 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
            }
          }
          k++;
-       }        
+       }
+       iplus1= i + 1;
+       rpntr = (int*)realloc((void*)rpntr, iplus1*sizeof(int));
+       bpntr = (int*)realloc((void*)bpntr, iplus1*sizeof(int));
+       bindx = (int*)realloc((void*)bindx, bpntr[iplus1]*sizeof(int));
+       indx = (int*)realloc((void*)indx, (bpntr[iplus1]+1)*sizeof(int));
+        
        out_data = (struct ML_vbrdata *)ML_allocate(sizeof(struct ML_vbrdata)); 
        out_data->bindx = bindx;
        out_data->indx = indx;
@@ -1772,16 +1804,16 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        out_data->cpntr = cpntr;
        out_data->rpntr = rpntr;
        out_data->val = vals;
-       cur_matrix->getrow->N_block_rows = i;
+       cur_matrix->getrow->N_block_rows = i+cur_matrix->sub_matrix->getrow->N_block_rows;
        cur_matrix->getrow->func_ptr = VBR_getrows;
        cur_matrix->getrow->data = (void *)out_data;
        cur_matrix->data = (void *)out_data;
-       bindx = NULL;
-       indx = NULL;
-       bpntr = NULL;
-       cpntr = NULL;
-       rpntr = NULL;
-       vals = NULL;
+       for(i = 0; i < neighbors; i++)
+         if (in_matrix->getrow->pre_comm->neighbors[i].N_rcv > 0)
+           ML_free(all_rpntr[i]);
+       ML_free(all_rpntr);
+       ML_free(recv_lens);
+       cur_data = NULL;
      }
    }
    else
@@ -1886,7 +1918,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    A_i_cols  = (int    *) ML_allocate(A_i_allocated * sizeof(int) );
    accum_val = (double *) ML_allocate(A_i_allocated * sizeof(double));
    
-   if((A_i_cols == NULL) || (accum_val == NULL)) 
+   if(accum_val == NULL)
    { 
      pr_error("Not enough space to allocate %d doubles and ints in convert2vbr.\n", A_i_allocated);
    }
