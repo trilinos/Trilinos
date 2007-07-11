@@ -165,8 +165,8 @@ int main(int argc, char *argv[]) {
   Epetra_MultiVector resid(Map, numrhs);
   OPT::Apply( *A, *X, resid );
   MVT::MvAddMv( -1.0, resid, 1.0, *B, resid ); 
-  MVT::MvNorm( resid, &actual_resids );
-  MVT::MvNorm( *B, &rhs_norm );
+  MVT::MvNorm( resid, actual_resids );
+  MVT::MvNorm( *B, rhs_norm );
   if (proc_verbose) {
     std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
     for ( int i=0; i<numrhs; i++) {

@@ -229,12 +229,23 @@ namespace Belos {
     
   private:
 
-    //  Computes harmonic eigenpairs of projected matrix during priming solve.
+    //  Computes harmonic eigenpairs of projected matrix created during the priming solve.
     //  HH is the projected problem from the initial cycle of Gmres, it is (at least) of dimension m+1 x m.
     //  PP contains the harmonic eigenvectors corresponding to the recycledBlocks eigenvalues of smallest magnitude.
-    //  The return value is true if the routine needed to store an additional vector.
-    bool getHarmonicVecs1(int m, const Teuchos::SerialDenseMatrix<int,ScalarType>& HH, 
-			  Teuchos::SerialDenseMatrix<int,ScalarType>& PP);
+    //  The return value is the number of vectors needed to be stored, recycledBlocks or recycledBlocks+1.
+    int getHarmonicVecs1(int m, 
+			 const Teuchos::SerialDenseMatrix<int,ScalarType>& HH, 
+			 Teuchos::SerialDenseMatrix<int,ScalarType>& PP);
+
+    //  Computes harmonic eigenpairs of projected matrix created during one cycle.
+    //  HH is the total block projected problem from the GCRO-DR algorithm, it is (at least) of dimension keff+m+1 x keff+m.
+    //  VV is the Krylov vectors from the projected GMRES algorithm, which has (at least) m+1 vectors.
+    //  PP contains the harmonic eigenvectors corresponding to the recycledBlocks eigenvalues of smallest magnitude.
+    //  The return value is the number of vectors needed to be stored, recycledBlocks or recycledBlocks+1.
+    int getHarmonicVecs2(int keff, int m, 
+			 const Teuchos::SerialDenseMatrix<int,ScalarType>& HH, 
+			 const Teuchos::RCP<const MV>& VV,
+			 Teuchos::SerialDenseMatrix<int,ScalarType>& PP);
 
     // Sort list of n floating-point numbers and return permutation vector
     void sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm);
@@ -934,10 +945,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
 	  int info = 0;
 	  Teuchos::SerialDenseMatrix<int,ScalarType> PP( p, recycledBlocks_+1 );  
-	  bool xtraVec = getHarmonicVecs1( p, *oldState.H, PP );
-
-	  // Check to see if we needed to save an extra vector because of a complex harmonic Ritz pair.
-	  if (xtraVec) { keff++; }
+	  keff = getHarmonicVecs1( p, *oldState.H, PP );
 
 	  // We can generate a subspace to recycle and we know its size, so intialize U_ and C_;
 	  if (U_ == Teuchos::null) {
@@ -1090,7 +1098,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  //
 	  // check convergence first
-	  //
+	 //
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  if ( convTest_->getStatus() == Passed ) {
 	    // we have convergence
@@ -1120,32 +1128,146 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    numRestarts++;
 	    
 	    printer_->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << endl << endl;
-	    
-	    // Update the linear problem.
+	  
+            // Update the linear problem.
 	    Teuchos::RCP<MV> update = gcrodr_iter->getCurrentUpdate();
 	    problem_->updateSolution( update, true );
 	    
 	    // Get the state.
 	    GCRODRIterState<ScalarType,MV> oldState = gcrodr_iter->getState();
+            int p = oldState.curDim;	   
+ 
+            // Take the norm of the recycled vectors
+            std::vector<MagnitudeType> d(keff);
+            MVT::MvNorm( *U_, d );
+            for (int i=0; i<keff; ++i) {
+	      d[i] = one / d[i];
+	    }
+	    MVT::MvScale( *U_, d );
+          
+            // Construct the full block upper Hessenberg matrix
+            Teuchos::SerialDenseMatrix<int,ScalarType> H2(p+keff+1, p+keff);
+
+            // Insert D into the leading keff block of H2
+            for (int i=0; i<keff; ++i) {
+              H2(i,i) = d[i];
+            }
+            
+	    // Insert B into the upper right-hand keff by p block of H2
+	    Teuchos::SerialDenseMatrix<int,ScalarType> H2temp(Teuchos::View, H2, keff, p, 0, keff);
+            H2temp.assign(*oldState.B);
+
+            // Insert H into the lower p+1 by p block of H2
+            Teuchos::SerialDenseMatrix<int,ScalarType> H2temp2(Teuchos::View, H2, p+1, p, keff, keff);
+            H2temp2.assign(*oldState.H);
+
+            // Compute the harmoic Ritz pairs for the generalized eigenproblem
+	    Teuchos::SerialDenseMatrix<int,ScalarType> PP( p+keff, recycledBlocks_+1 );  
+	    int keff_new = getHarmonicVecs2( keff, p, H2, oldState.V, PP );
+
+	    // Code to form new U, C
+	    // U = [U V(:,1:p)] * P; (in two steps)
 	    
+	    // U(:,1:keff) = matmul(U(:,1:keff_old),PP(1:keff_old,1:keff)) (step 1)
+	    Teuchos::RCP<MV> tempU = MVT::Clone( *U_, keff_new );
+	    Teuchos::SerialDenseMatrix<int,ScalarType> tempPP( Teuchos::View, PP, keff, keff_new );
+	    MVT::MvTimesMatAddMv( one, *U_, tempPP, zero, *tempU );
+	    
+	    // U(:,1:keff) = U(:,1:keff) + matmul(V(:,1:m-k),PP(keff_old+1:m-k+keff_old,1:keff)) (step 2)
+	    std::vector<int> index(p);
+	    for (int i=0; i < p; i++) { index[i] = i; }
+	    Teuchos::RCP<const MV> Vp = MVT::CloneView( *oldState.V, index );
+	    Teuchos::SerialDenseMatrix<int,ScalarType> tempPP2( Teuchos::View, PP, p, keff_new, keff );
+	    MVT::MvTimesMatAddMv( one, *Vp, tempPP2, one, *tempU );
+	   
+	    // Form HP = H*P
+	    Teuchos::SerialDenseMatrix<int,ScalarType> HP(H2.numRows(),PP.numCols());
+	    HP.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,H2,PP,zero);
+	   
+	    // Workspace size query for QR factorization of HP (the worksize will be placed in tau[0])
+	    int info = 0, lwork = -1;
+	    std::vector<ScalarType> tau(keff_new);
+	    lapack.GEQRF(HP.numRows(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
+			 &tau[0],lwork,&info);
+	    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
+			       "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
+	    
+	    lwork = (int)tau[0];
+	    std::vector<ScalarType> work(lwork);
+	    lapack.GEQRF(HP.numRows(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
+			 &work[0],lwork,&info);
+	    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
+			       "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
+
+	    // Explicitly construct Q and R factors 
+	    // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
+	    Teuchos::SerialDenseMatrix<int,ScalarType> R( Teuchos::Copy, HP, keff, keff );
+	    lapack.ORGQR(HP.numRows(),HP.numCols(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
+			 &work[0],lwork,&info);
+	    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
+			       "Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
+
+	    // Form orthonormalized C and adjust U accordingly so that C = A*U	    
+	    // C = [C V] * Q;
+
+	    // C(:,1:keff) = matmul(C(:,1:keff_old),QQ(1:keff_old,1:keff))
+	    index.resize(keff_new);
+	    for (int i=0; i < keff_new; i++) { index[i] = i; }
+	    Teuchos::RCP<MV> tempC = MVT::Clone( *C_, keff_new );
+	    Teuchos::SerialDenseMatrix<int,ScalarType> tempQ( Teuchos::View, HP, keff, keff_new );
+	    MVT::MvTimesMatAddMv( one, *C_, tempQ, zero, *tempC );
+
+	    // Now compute C = V(:,1:p+1) * Q 
+	    index.resize( p+1 );
+	    for (int i=0; i < p+1; ++i) { index[i] = i; }
+	    Vp = MVT::CloneView( *oldState.V, index );
+	    Teuchos::SerialDenseMatrix<int,ScalarType> tempQ2( Teuchos::View, HP, p+1, keff_new, keff );
+	    MVT::MvTimesMatAddMv( one, *Vp, tempQ2, one, *tempC );
+            C_ = tempC;	    
+
+	    // Finally, compute U_ = U_*R^{-1}	
+	    // First, compute LU factorization of R
+	    std::vector<int> ipiv(R.numRows());
+	    lapack.GETRF(R.numRows(),R.numCols(),R.values(),R.numRows(),&ipiv[0],&info);
+	    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
+			       "Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+	    
+	    // Now, form inv(R)
+	    lwork = R.numRows();
+	    work.resize(lwork);
+	    lapack.GETRI(R.numRows(),R.values(),R.numRows(),&ipiv[0],&work[0],lwork,&info);
+	    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
+			       "Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to compute an LU factorization.");
+	  
+	    if (keff != keff_new) {
+	      U_ = MVT::Clone( *problem_->getRHS(), keff_new );
+	    }
+	    MVT::MvTimesMatAddMv( one, *tempU, R, zero, *U_ );
+ 
 	    // Compute the restart vector.
-	    // Get a view of the current Krylov basis.
-	    Teuchos::RCP<MV> V_0  = MVT::Clone( *(oldState.V), 1 );
-	    problem_->computeCurrResVec( &*V_0 );
+	    if (r_ == Teuchos::null)
+	      r_ = MVT::Clone( *(problem_->getRHS()), 1 );
+	    problem_->computeCurrResVec( &*r_ );
 	    
-	    // Get a view of the first block of the Krylov basis.
-            Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > z_0 = 
-              rcp( new Teuchos::SerialDenseVector<int,ScalarType>(1) );
+	    // Get a matrix to hold the orthonormalization coefficients.
+	    Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > z_0 = 
+	      rcp( new Teuchos::SerialDenseVector<int,ScalarType>(1) );
 	    
-	    // Orthonormalize the new V_0
-	    int rank = ortho_->normalize( *V_0, z_0 );
+	    // Orthonormalize the new r_
+	    int rank = ortho_->normalize( *r_, z_0 );
 	    TEST_FOR_EXCEPTION(rank != 1,GCRODRSolMgrOrthoFailure,
 			       "Belos::GCRODRSolMgr::solve(): Failed to compute initial block of orthonormal vectors after restart.");
 	    
+	    // Set the current number of recycled blocks and subspace dimension with the GCRO-DR iteration.
+	    keff = keff_new;
+	    gcrodr_iter->setSize( keff, numBlocks_ );
+
 	    // Set the new state and initialize the solver.
 	    GCRODRIterState<ScalarType,MV> newstate;
-	    newstate.V = V_0;
+	    newstate.V = r_;
 	    newstate.z = z_0;
+	    newstate.U = U_;
+	    newstate.C = C_;
 	    newstate.curDim = 0;
 	    gcrodr_iter->initialize(newstate);
 	    
@@ -1204,8 +1326,9 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
 //  Compute the harmonic eigenpairs of the projected, dense system.
 template<class ScalarType, class MV, class OP>
-bool GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m, const Teuchos::SerialDenseMatrix<int,ScalarType>& HH, 
-						      Teuchos::SerialDenseMatrix<int,ScalarType>& PP)
+int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m, 
+						     const Teuchos::SerialDenseMatrix<int,ScalarType>& HH, 
+						     Teuchos::SerialDenseMatrix<int,ScalarType>& PP)
 {
   int i, j;
   bool xtraVec = false;
@@ -1216,13 +1339,13 @@ bool GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m, const Teuchos::Seri
   Teuchos::LAPACK<int,ScalarType> lapack;
   
   // Real and imaginary eigenvalue components
-  std::vector<ScalarType> wr(m), wi(m);
+  std::vector<MagnitudeType> wr(m), wi(m);
 
   // Real and imaginary (right) eigenvectors
   Teuchos::SerialDenseMatrix<int,ScalarType> vr(m,m);
 
   // Magnitude of harmonic Ritz values
-  std::vector<ScalarType> w(m);
+  std::vector<MagnitudeType> w(m);
 
   // Sorted order of harmonic Ritz values, also used for DGEEV
   std::vector<int> iperm(m);
@@ -1251,8 +1374,8 @@ bool GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m, const Teuchos::Seri
 
   // Revise to do query for optimal workspace first
   // Create simple storage for the left eigenvectors, which we don't care about.
-  const int ldvl = 1;
-  ScalarType vl[ ldvl ];
+  const int ldvl = m;
+  ScalarType* vl = 0;
   lapack.GEEV('N', 'V', m, harmHH.values(), harmHH.stride(), &wr[0], &wi[0],
 	      vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &info);
   TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
@@ -1299,7 +1422,142 @@ bool GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m, const Teuchos::Seri
   }
 
   // Return whether we needed to store an additional vector
-  return xtraVec;
+  if (xtraVec) {
+    return recycledBlocks_+1;
+  }
+  return recycledBlocks_;
+}
+
+//  Compute the harmonic eigenpairs of the projected, dense system.
+template<class ScalarType, class MV, class OP>
+int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m, 
+						     const Teuchos::SerialDenseMatrix<int,ScalarType>& HH, 
+						     const Teuchos::RCP<const MV>& VV,
+						     Teuchos::SerialDenseMatrix<int,ScalarType>& PP)
+{
+  int i, j;
+  int m2 = HH.numCols();
+  bool xtraVec = false;
+  ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+  ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+  std::vector<int> index;
+  
+  // The LAPACK interface
+  Teuchos::LAPACK<int,ScalarType> lapack;
+  
+  // Real and imaginary eigenvalue components
+  std::vector<ScalarType> wr(m2), wi(m2);
+
+  // Magnitude of harmonic Ritz values
+  std::vector<MagnitudeType> w(m2);
+
+  // Real and imaginary (right) eigenvectors
+  Teuchos::SerialDenseMatrix<int,ScalarType> vr(m2,m2);
+
+  // Sorted order of harmonic Ritz values
+  std::vector<int> iperm(m2);
+
+  // Form matrices for generalized eigenproblem
+  
+  // B = H2' * H2;
+  Teuchos::SerialDenseMatrix<int,ScalarType> B;
+  B.shape(m2,m2);
+  B.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,HH,HH,zero);
+  
+  // A_tmp = | C'*U        0 |
+  //         | V_{m+1}'*U  I |
+  Teuchos::SerialDenseMatrix<int,ScalarType> A_tmp( keff+m+1, keff+m );
+
+  // A_tmp(1:keff,1:keff) = C' * U;
+  Teuchos::SerialDenseMatrix<int,ScalarType> A11( Teuchos::View, A_tmp, keff, keff );
+  MVT::MvTransMv( one, *C_, *U_, A11 );
+  
+  // A_tmp(keff+1:m-k+keff+1,1:keff) = V' * U;
+  Teuchos::SerialDenseMatrix<int,ScalarType> A21( Teuchos::View, A_tmp, m+1, keff, keff );
+  index.resize(m+1);
+  for (i=0; i < m+1; i++) { index[i] = i; }
+  Teuchos::RCP<const MV> Vp = MVT::CloneView( *VV, index );
+  MVT::MvTransMv( one, *Vp, *U_, A21 );
+
+  // A_tmp(keff+1:m-k+keff,keff+1:m-k+keff) = eye(m-k);
+  for( i=keff; i<keff+m; i++ ) {
+    A_tmp(i,i) = one;
+  }
+  
+  // A = H2' * A_tmp;
+  Teuchos::SerialDenseMatrix<int,ScalarType> A( m2, A_tmp.numCols() );
+  A.multiply( Teuchos::TRANS, Teuchos::NO_TRANS, one, HH, A_tmp, zero );
+  
+  // Compute k smallest harmonic Ritz pairs
+  // SUBROUTINE DGGEVX( BALANC, JOBVL, JOBVR, SENSE, N, A, LDA, B, LDB,
+  //                   ALPHAR, ALPHAI, BETA, VL, LDVL, VR, LDVR, ILO,
+  //                   IHI, LSCALE, RSCALE, ABNRM, BBNRM, RCONDE,
+  //                   RCONDV, WORK, LWORK, IWORK, BWORK, INFO )
+  // MLP : 'SCALING' in DGGEVX generates incorrect eigenvalues. Therefore, only permuting (for now)
+  int ld = A.numRows();
+  int lwork = 6*ld;
+  int ldvl = ld, ldvr = ld;
+  int info,ilo,ihi;
+  ScalarType abnrm, bbnrm;
+  ScalarType *vl = 0; // This is never referenced by dggevx if jobvl == 'N'
+  std::vector<ScalarType> beta(ld);
+  std::vector<ScalarType> work(lwork);
+  std::vector<MagnitudeType> lscale(ld), rscale(ld);  
+  std::vector<MagnitudeType> rconde(ld), rcondv(ld);
+  std::vector<int> iwork(ld+6);
+  int *bwork = 0; // If sense == 'N', bwork is never referenced
+  lapack.GGEVX('P','N','V','N', ld, A.values(), ld, B.values(), ld, &wr[0], &wi[0], 
+		&beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0], 
+		&abnrm, &bbnrm, &rconde[0], &rcondv[0], &work[0], lwork, &iwork[0], bwork, &info);
+  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
+		     "Belos::GCRODRSolMgr::solve(): LAPACK GGEVX failed to compute eigensolutions.");
+  
+  // Construct magnitude of each harmonic Ritz value
+  // NOTE : Forming alpha/beta *should* be okay here, given assumptions on construction of matrix pencil above
+  for( i=0; i<ld; i++ ) {
+    w[i] = Teuchos::ScalarTraits<ScalarType>::squareroot(wr[i]/beta[i])*(wr[i]/beta[i]) + (wi[i]/beta[i])*(wi[i]/beta[i]);
+  }
+
+  // Construct magnitude of each harmonic Ritz value
+  this->sort(w,ld,iperm);
+  
+  // Determine exact size for PP (i.e., determine if we need to store an additional vector)
+  if (wi[iperm[recycledBlocks_-1]] != zero) {
+    int countImag = 0;
+    for ( i=0; i<recycledBlocks_; ++i ) {
+      if (wi[iperm[i]] != zero)
+	countImag++;
+    }
+    // Check to see if this count is even or odd:
+    if (countImag % 2)
+      xtraVec = true;
+  }
+  
+  // Select recycledBlocks_ smallest eigenvectors
+  for( i=0; i<recycledBlocks_; ++i ) {
+    for( j=0; j<m2; ++j ) {
+      PP(j,i) = vr(j,iperm[i]);
+    }
+  }
+  
+  if (xtraVec) { // we need to store one more vector
+    if (wi[iperm[recycledBlocks_-1]] > 0) { // I picked the "real" component
+      for( j=0; j<m2; ++j ) {   // so get the "imag" component
+	PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_]+1);
+      }
+    }
+    else {
+      for( j=0; j<m2; ++j ) {   // so get the "imag" component
+	PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_]-1);
+      }
+    }
+  }
+  
+  // Return whether we needed to store an additional vector
+  if (xtraVec) {
+    return recycledBlocks_+1;
+  }
+  return recycledBlocks_;
 }
 
 

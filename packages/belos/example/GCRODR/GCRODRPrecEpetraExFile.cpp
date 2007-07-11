@@ -35,7 +35,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
-#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosGCRODRSolMgr.hpp"
 
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Epetra_Map.h"
@@ -78,7 +78,6 @@ int main(int argc, char *argv[]) {
   bool verbose = false, proc_verbose = false;
   bool leftprec = true;      // left preconditioning or right.
   int frequency = -1;        // frequency of status test output.
-  int blocksize = 1;         // blocksize
   int numrhs = 1;            // number of right-hand sides to solve for
   int maxrestarts = 15;      // maximum number of restarts allowed 
   int maxiters = -1;         // maximum number of iterations allowed per linear system
@@ -93,7 +92,6 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
   cmdp.setOption("max-subspace",&maxsubspace,"Maximum number of blocks the solver can use for the subspace.");
   cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
@@ -173,11 +171,10 @@ int main(int argc, char *argv[]) {
   //
   const int NumGlobalElements = B->GlobalLength();
   if (maxiters == -1)
-    maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
+    maxiters = NumGlobalElements - 1; // maximum number of iterations to run
   //
   ParameterList belosList;
   belosList.set( "Num Blocks", maxsubspace );               // Maximum number of blocks in Krylov factorization
-  belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
@@ -212,7 +209,7 @@ int main(int argc, char *argv[]) {
   
   // Create an iterative solver manager.
   RCP< Belos::SolverManager<double,MV,OP> > solver
-    = rcp( new Belos::BlockGmresSolMgr<double,MV,OP>(problem, rcp(&belosList,false)));
+    = rcp( new Belos::GCRODRSolMgr<double,MV,OP>(problem, rcp(&belosList,false)));
   
   //
   // *******************************************************************
@@ -223,7 +220,6 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << std::endl;
     std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-    std::cout << "Block size used by solver: " << blocksize << std::endl;
     std::cout << "Number of restarts allowed: " << maxrestarts << std::endl;
     std::cout << "Max number of Gmres iterations per restart cycle: " << maxiters << std::endl; 
     std::cout << "Relative residual tolerance: " << tol << std::endl;
@@ -242,8 +238,8 @@ int main(int argc, char *argv[]) {
   Epetra_MultiVector resid(*Map, numrhs);
   OPT::Apply( *A, *X, resid );
   MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
-  MVT::MvNorm( resid, &actual_resids );
-  MVT::MvNorm( *B, &rhs_norm );
+  MVT::MvNorm( resid, actual_resids );
+  MVT::MvNorm( *B, rhs_norm );
   if (proc_verbose) {
     std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
     for ( int i=0; i<numrhs; i++) {
@@ -269,4 +265,4 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
 #endif
   //
-} 
+}

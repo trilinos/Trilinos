@@ -455,7 +455,7 @@ namespace Belos {
           B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
         }
         std::vector<ScalarType> diag(xc);
-        MVT::MvDot( X, *MX, &diag );
+        MVT::MvDot( X, *MX, diag );
         (*B)(0,0) = SCT::squareroot(SCT::magnitude(diag[0]));
         rank = 1; 
         MVT::MvAddMv( ONE/(*B)(0,0), X, ZERO, X, X );
@@ -729,7 +729,7 @@ namespace Belos {
       // Save old MXj std::vector and compute Op-norm
       //
       Teuchos::RCP<MV> oldMXj = MVT::CloneCopy( *MXj ); 
-      MVT::MvDot( *Xj, *MXj, &oldDot );
+      MVT::MvDot( *Xj, *MXj, oldDot );
       // Xj^H Op Xj should be real and positive, by the hermitian positive definiteness of Op
       TEST_FOR_EXCEPTION( SCT::real(oldDot[0]) < ZERO, OrthoError, 
 			  "Belos::ICGSOrthoManager::findBasis(): Negative definiteness discovered in inner product" );
@@ -772,7 +772,7 @@ namespace Belos {
       } // if (numX > 0)
 
       // Compute Op-norm with old MXj
-      MVT::MvDot( *Xj, *oldMXj, &newDot );
+      MVT::MvDot( *Xj, *oldMXj, newDot );
 
       // Check to see if the new std::vector is dependent.
       if (completeBasis) {
@@ -797,7 +797,7 @@ namespace Belos {
 	  else {
 	    tempMXj = tempXj;
 	  }
-	  MVT::MvDot( *tempXj, *tempMXj, &oldDot );
+	  MVT::MvDot( *tempXj, *tempMXj, oldDot );
 	  //
 	  for (int num_orth=0; num_orth<max_ortho_steps_; num_orth++){
             {
@@ -814,7 +814,7 @@ namespace Belos {
 	    }
 	  }
 	  // Compute new Op-norm
-	  MVT::MvDot( *tempXj, *tempMXj, &newDot );
+	  MVT::MvDot( *tempXj, *tempMXj, newDot );
 	  //
 	  if ( SCT::magnitude(newDot[0]) >= SCT::magnitude(oldDot[0]*sing_tol_) ) {
 	    // Copy std::vector into current column of _basisvecs
@@ -972,7 +972,7 @@ namespace Belos {
     
     // Compute the initial Op-norms
     std::vector<ScalarType> oldDot( xc );
-    MVT::MvDot( X, *MX, &oldDot );
+    MVT::MvDot( X, *MX, oldDot );
 
     Teuchos::Array<Teuchos::RCP<MV> > MQ(nq);
     // Define the product Q^T * (Op*X)
@@ -1034,7 +1034,7 @@ namespace Belos {
   
     // Compute new Op-norms
     std::vector<ScalarType> newDot(xc);
-    MVT::MvDot( X, *MX, &newDot );
+    MVT::MvDot( X, *MX, newDot );
  
     // Check to make sure the new block of vectors are not dependent on previous vectors
     for (int i=0; i<xc; i++){
@@ -1104,7 +1104,7 @@ namespace Belos {
       }
       
       // Compute the initial Op-norms
-      MVT::MvDot( *Xj, *MXj, &oldDot );
+      MVT::MvDot( *Xj, *MXj, oldDot );
       
       Teuchos::Array<Teuchos::RCP<MV> > MQ(Q.length());
       // Define the product Q^T * (Op*X)
@@ -1189,7 +1189,7 @@ namespace Belos {
 	else {
 	  tempMXj = tempXj;
 	}
-	MVT::MvDot( *tempXj, *tempMXj, &oldDot );
+	MVT::MvDot( *tempXj, *tempMXj, oldDot );
 	//
 	for (int num_orth=0; num_orth<max_ortho_steps_; num_orth++) {
 	  
@@ -1216,7 +1216,7 @@ namespace Belos {
 	}
 	
 	// Compute the Op-norms after the correction step.
-	MVT::MvDot( *tempXj, *tempMXj, &newDot );
+	MVT::MvDot( *tempXj, *tempMXj, newDot );
 	
 	// Copy std::vector into current column of Xj
 	if ( SCT::magnitude(newDot[0]) >= SCT::magnitude(oldDot[0]*sing_tol_) ) {

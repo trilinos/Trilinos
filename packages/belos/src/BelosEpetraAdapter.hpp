@@ -122,6 +122,14 @@ namespace Belos {
     //
     void MvAddMv ( const double alpha, const MultiVec<double>& A, const double beta,
 		   const MultiVec<double>& B);
+
+    /*! \brief Scale each element of the vectors in \c *this with \c alpha.
+     */
+    void MvScale ( double alpha ) { int ret = this->Scale( alpha ); assert(ret == 0); }
+
+    /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
+     */
+    void MvScale ( const std::vector<double>& alpha );
     //
     // B <- alpha * A^T * (*this)
     //
@@ -129,11 +137,11 @@ namespace Belos {
     //
     // b[i] = A[i]^T * this[i]
     // 
-    void MvDot ( const MultiVec<double>& A, std::vector<double>* b ) const;
+    void MvDot ( const MultiVec<double>& A, std::vector<double>& b ) const;
     //
     // alpha[i] = norm of i-th column of (*this)
     //	
-    void MvNorm ( std::vector<double>* normvec, NormType norm_type = TwoNorm ) const;
+    void MvNorm ( std::vector<double>& normvec, NormType norm_type = TwoNorm ) const;
     //
     // random vectors in i-th column of (*this)
     //
@@ -276,6 +284,32 @@ namespace Belos {
       TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 			 "Belos::MultiVecTraits<double,Epetra_MultiVec>::MvAddMv call to Update() returned a nonzero value.");
     }
+
+    /*! \brief Scale each element of the vectors in \c mv with \c alpha.
+     */
+    static void MvScale ( Epetra_MultiVector& mv, double alpha )
+    { int ret = mv.Scale( alpha );
+      assert( ret == 0 );
+    }
+
+    /*! \brief Scale each element of the \c i-th vector in \c mv with \c alpha[i].
+     */
+    static void MvScale ( Epetra_MultiVector& mv, const std::vector<double>& alpha )
+    {
+      // Check to make sure the vector is as long as the multivector has columns.
+      int numvecs = mv.NumVectors();
+      assert( (int)alpha.size() == numvecs );
+
+      int ret = 0;
+      std::vector<int> tmp_index( 1, 0 );
+      for (int i=0; i<numvecs; i++) {
+        Epetra_MultiVector temp_vec(::View, mv, &tmp_index[0], 1);
+        ret = temp_vec.Scale( alpha[i] );
+        assert (ret == 0);
+        tmp_index[0]++;
+      }
+    }
+
     ///
     static void MvTransMv( const double alpha, const Epetra_MultiVector& A, const Epetra_MultiVector& mv, Teuchos::SerialDenseMatrix<int,double>& B )
     { 
@@ -287,26 +321,26 @@ namespace Belos {
 			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvTransMv call to Multiply() returned a nonzero value.");
     }
     ///
-    static void MvDot( const Epetra_MultiVector& mv, const Epetra_MultiVector& A, std::vector<double>* b )
+    static void MvDot( const Epetra_MultiVector& mv, const Epetra_MultiVector& A, std::vector<double>& b )
     {
-      int info = mv.Dot( A, &(*b)[0] );
+      int info = mv.Dot( A, &b[0] );
       TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::MvDot call to Dot() returned a nonzero value.");   
     }
     ///
-    static void MvNorm( const Epetra_MultiVector& mv, std::vector<double>* normvec, NormType type = TwoNorm )
+    static void MvNorm( const Epetra_MultiVector& mv, std::vector<double>& normvec, NormType type = TwoNorm )
     { 
-      if (normvec && ((int)normvec->size() >= mv.NumVectors())) {
+      if ((int)normvec.size() >= mv.NumVectors()) {
         int info = 0;
 	switch( type ) {
 	case ( OneNorm ) :
-	  info = mv.Norm1(&(*normvec)[0]);
+	  info = mv.Norm1(&normvec[0]);
 	  break;
 	case ( TwoNorm ) :
-	  info = mv.Norm2(&(*normvec)[0]);
+	  info = mv.Norm2(&normvec[0]);
 	  break;
 	case ( InfNorm ) :	
-	  info = mv.NormInf(&(*normvec)[0]);
+	  info = mv.NormInf(&normvec[0]);
 	  break;
 	default:
 	  break;

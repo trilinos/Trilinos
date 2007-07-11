@@ -237,6 +237,27 @@ public:
     }
   }
   
+  // Replace each element of the vectors in *this with (*this)*alpha.
+  void MvScale (const ScalarType alpha)
+  {
+    for (int v = 0 ; v < NumberVecs_ ; ++v) {
+      for (int i = 0 ; i < Length_ ; ++i) {
+        (*this)(i, v) *= alpha;
+      }
+    }
+  }
+  
+  // Replace each element of the vectors in *this with (*this)*alpha[i].
+  void MvScale (const std::vector<ScalarType>& alpha)
+  {
+    assert((int)alpha.size() >= NumberVecs_);
+    for (int v = 0 ; v < NumberVecs_ ; ++v) {
+      for (int i = 0 ; i < Length_ ; ++i) {
+        (*this)(i, v) *= alpha[v];
+      }
+    }
+  }
+  
   // Compute a dense matrix B through the matrix-matrix multiply alpha * A^H * (*this). 
   void MvTransMv (ScalarType alpha, const Belos::MultiVec<ScalarType>& A, 
                   Teuchos::SerialDenseMatrix< int, ScalarType >& B) const
@@ -262,13 +283,13 @@ public:
   
   
   // Compute a std::vector b where the components are the individual dot-products, i.e.b[i] = A[i]^H*this[i] where A[i] is the i-th column of A. 
-  void MvDot (const Belos::MultiVec<ScalarType>& A, std::vector<ScalarType>* b) const
+  void MvDot (const Belos::MultiVec<ScalarType>& A, std::vector<ScalarType>& b) const
   {
     MyMultiVec* MyA;
     MyA = dynamic_cast<MyMultiVec*>(&const_cast<Belos::MultiVec<ScalarType> &>(A)); 
     assert (MyA != 0);
     
-    assert (NumberVecs_ <= (int)b->size());
+    assert (NumberVecs_ <= (int)b.size());
     assert (NumberVecs_ == A.GetNumberVecs());
     assert (Length_ == A.GetVecLength());
     
@@ -277,16 +298,15 @@ public:
         for (int i = 0 ; i < Length_ ; ++i) {
           value += (*this)(i, v) * Teuchos::ScalarTraits<ScalarType>::conjugate((*MyA)(i, v));
         }
-        (*b)[v] = value;
+        b[v] = value;
       }
   }  
   
   
-  void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec,
+  void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& normvec,
 		Belos::NormType type = Belos::TwoNorm ) const 
   {
-    assert (normvec != 0);
-    assert (NumberVecs_ <= (int)normvec->size());
+    assert (NumberVecs_ <= (int)normvec.size());
 
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     
@@ -296,7 +316,7 @@ public:
         MagnitudeType val = Teuchos::ScalarTraits<ScalarType>::magnitude((*this)(i, v));
         value += val * val;
       }
-      (*normvec)[v] = Teuchos::ScalarTraits<MagnitudeType>::squareroot(value);
+      normvec[v] = Teuchos::ScalarTraits<MagnitudeType>::squareroot(value);
     }
   }
   

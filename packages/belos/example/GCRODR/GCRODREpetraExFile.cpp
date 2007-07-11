@@ -76,7 +76,6 @@ int main(int argc, char *argv[]) {
 
   bool verbose = false, proc_verbose = false;
   int frequency = -1;        // frequency of status test output.
-  int blocksize = 1;         // blocksize
   int numrhs = 1;            // number of right-hand sides to solve for
   int maxiters = -1;         // maximum number of iterations allowed per linear system
   int maxsubspace = 50;      // maximum number of blocks the solver can use for the subspace
@@ -128,7 +127,7 @@ int main(int argc, char *argv[]) {
   //
   const int NumGlobalElements = B->GlobalLength();
   if (maxiters == -1)
-    maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
+    maxiters = NumGlobalElements - 1; // maximum number of iterations to run
   //
   ParameterList belosList;
   belosList.set( "Num Blocks", maxsubspace);             // Maximum number of blocks in Krylov factorization
@@ -171,7 +170,6 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << std::endl;
     std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-    std::cout << "Block size used by solver: " << blocksize << std::endl;
     std::cout << "Max number of restarts allowed: " << maxrestarts << std::endl;
     std::cout << "Max number of iterations per restart cycle: " << maxiters << std::endl; 
     std::cout << "Relative residual tolerance: " << tol << std::endl;
@@ -190,8 +188,8 @@ int main(int argc, char *argv[]) {
   Epetra_MultiVector resid(*Map, numrhs);
   OPT::Apply( *A, *X, resid );
   MVT::MvAddMv( -1.0, resid, 1.0, *B, resid ); 
-  MVT::MvNorm( resid, &actual_resids );
-  MVT::MvNorm( *B, &rhs_norm );
+  MVT::MvNorm( resid, actual_resids );
+  MVT::MvNorm( *B, rhs_norm );
   if (proc_verbose) {
     std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
     for ( int i=0; i<numrhs; i++) {

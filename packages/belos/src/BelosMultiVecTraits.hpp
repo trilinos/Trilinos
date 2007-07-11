@@ -76,13 +76,23 @@ namespace Belos {
     static void MvAddMv( const ScalarType alpha, const MV& A, const ScalarType beta, const MV& B, MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
+    /*! \brief Scale each element of the vectors in \c mv with \c alpha.
+     */
+    static void MvScale ( MV& mv, const ScalarType alpha )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    
+    /*! \brief Scale each element of the \c i-th vector in \c mv with \c alpha[i].
+     */
+    static void MvScale ( MV& mv, const std::vector<ScalarType>& alpha )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+    
     static void MvTransMv( const ScalarType alpha, const MV& A, const MV& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void MvDot ( const MV& mv, const MV& A, std::vector<ScalarType>* b ) 
+    static void MvDot ( const MV& mv, const MV& A, std::vector<ScalarType>& b ) 
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void MvNorm( const MV& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec, NormType type = TwoNorm )
+    static void MvNorm( const MV& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& normvec, NormType type = TwoNorm )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
     static void SetBlock( const MV& A, const std::vector<int>& index, MV& mv )

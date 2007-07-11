@@ -169,6 +169,26 @@ void EpetraMultiVec::MvAddMv ( const double alpha , const MultiVec<double>& A,
 
 //-------------------------------------------------------------
 //
+// this[i] = alpha[i] * this[i]
+//
+//-------------------------------------------------------------
+void EpetraMultiVec::MvScale ( const std::vector<double>& alpha )
+{
+  // Check to make sure the vector is as long as the multivector has columns.
+  int numvecs = this->NumVectors();
+  assert( (int)alpha.size() == numvecs );
+  int ret = 0;
+  std::vector<int> tmp_index( 1, 0 );
+  for (int i=0; i<numvecs; i++) {
+    Epetra_MultiVector temp_vec(View, *this, &tmp_index[0], 1);
+    ret = temp_vec.Scale( alpha[i] );
+    assert (ret == 0);
+    tmp_index[0]++;
+  }
+}
+
+//-------------------------------------------------------------
+//
 // dense B <- alpha * A^T * (*this)
 //
 //-------------------------------------------------------------
@@ -194,11 +214,11 @@ void EpetraMultiVec::MvTransMv ( const double alpha, const MultiVec<double>& A,
 // 
 //-------------------------------------------------------------
 
-void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>* b ) const
+void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>& b ) const
 {
   EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
-  if (A_vec && b && ( (int)b->size() >= A_vec->NumVectors() ) ) {
-     int info = this->Dot( *A_vec, &(*b)[0] );
+  if (A_vec && ( (int)b.size() >= A_vec->NumVectors() ) ) {
+     int info = this->Dot( *A_vec, &b[0] );
      TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 			"Belos::EpetraMultiVec::MvDot call to Dot() returned a nonzero value.");   
   }
@@ -210,18 +230,18 @@ void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>* b )
 //
 //-------------------------------------------------------------
 
-void EpetraMultiVec::MvNorm ( std::vector<double>* normvec, NormType norm_type ) const {
-  if (normvec && ((int)normvec->size() >= GetNumberVecs())) {
+void EpetraMultiVec::MvNorm ( std::vector<double>& normvec, NormType norm_type ) const {
+  if ((int)normvec.size() >= GetNumberVecs()) {
     int info = 0;
     switch( norm_type ) {
     case ( OneNorm ) :
-      info = Norm1(&(*normvec)[0]);
+      info = Norm1(&normvec[0]);
       break;
     case ( TwoNorm ) :
-      info = Norm2(&(*normvec)[0]);
+      info = Norm2(&normvec[0]);
       break;
     case ( InfNorm ) :	
-      info = NormInf(&(*normvec)[0]);
+      info = NormInf(&normvec[0]);
       break;
     default:
       break;

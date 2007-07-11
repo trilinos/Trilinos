@@ -230,8 +230,8 @@ int main(int argc, char *argv[]) {
   OPT::Apply( *A, *soln, *temp );
   MVT::MvAddMv( one, *rhs, -one, *temp, *temp );
   std::vector<MT> norm_num(numrhs), norm_denom(numrhs);
-  MVT::MvNorm( *temp, &norm_num );
-  MVT::MvNorm( *rhs, &norm_denom );
+  MVT::MvNorm( *temp, norm_num );
+  MVT::MvNorm( *rhs, norm_denom );
   for (int i=0; i<numrhs; ++i) {
     if (proc_verbose) 
       std::cout << "Relative residual "<<i<<" : " << norm_num[i] / norm_denom[i] << std::endl;

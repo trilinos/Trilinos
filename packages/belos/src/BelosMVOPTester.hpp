@@ -216,7 +216,7 @@ namespace Belos {
           << "Did not allocate requested number of vectors." << std::endl;
         return false;
       }
-      MVT::MvNorm(*B, &norms);
+      MVT::MvNorm(*B, norms);
       if ( norms.size() != 2*numvecs && ResizeWarning==false ) {
         om->stream(Warnings)
           << "*** WARNING *** MultiVecTraits::MvNorm()." << std::endl
@@ -254,7 +254,7 @@ namespace Belos {
       std::vector<MagType> norms(numvecs), norms2(numvecs);
 
       MVT::MvInit(*B);
-      MVT::MvNorm(*B, &norms);
+      MVT::MvNorm(*B, norms);
       for (i=0; i<numvecs; i++) {
         if ( norms[i] != zero_mag ) {
           om->stream(Warnings)
@@ -265,9 +265,9 @@ namespace Belos {
         }
       }
       MVT::MvRandom(*B);
-      MVT::MvNorm(*B, &norms);
+      MVT::MvNorm(*B, norms);
       MVT::MvRandom(*B);
-      MVT::MvNorm(*B, &norms2);
+      MVT::MvNorm(*B, norms2);
       for (i=0; i<numvecs; i++) {
         if ( norms[i] == zero_mag || norms2[i] == zero_mag ) {
           om->stream(Warnings)
@@ -309,7 +309,7 @@ namespace Belos {
       std::vector<MagType> norms(numvecs);
 
       MVT::MvInit(*B,one);
-      MVT::MvNorm(*B, &norms);
+      MVT::MvNorm(*B, norms);
       bool BadNormWarning = false;
       for (i=0; i<numvecs; i++) {
         if ( norms[i] < zero_mag ) {
@@ -341,7 +341,7 @@ namespace Belos {
       Teuchos::RCP<MV> B = MVT::Clone(*A,numvecs);
       std::vector<MagType> norms(numvecs);
       MVT::MvInit(*B, zero_mag);
-      MVT::MvNorm(*B, &norms);
+      MVT::MvNorm(*B, norms);
       for (i=0; i<numvecs; i++) {
         if ( norms[i] < zero_mag ) {
           om->stream(Warnings)
@@ -370,9 +370,9 @@ namespace Belos {
 
       B = MVT::Clone(*A,numvecs);
       MVT::MvRandom(*B);
-      MVT::MvNorm(*B, &norms);
+      MVT::MvNorm(*B, norms);
       C = MVT::CloneCopy(*B,ind);
-      MVT::MvNorm(*C, &norms2);
+      MVT::MvNorm(*C, norms2);
       if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << std::endl
@@ -395,7 +395,7 @@ namespace Belos {
         }
       }
       MVT::MvInit(*B,zero);
-      MVT::MvNorm(*C, &norms); 
+      MVT::MvNorm(*C, norms); 
       for (i=0; i<numvecs_2; i++) {
         if ( norms2[i] != norms[i] ) {
           om->stream(Warnings)
@@ -418,9 +418,9 @@ namespace Belos {
 
       B = MVT::Clone(*A,numvecs);
       MVT::MvRandom(*B);
-      MVT::MvNorm(*B, &norms);
+      MVT::MvNorm(*B, norms);
       C = MVT::CloneCopy(*B);
-      MVT::MvNorm(*C, &norms2);
+      MVT::MvNorm(*C, norms2);
       if ( MVT::GetNumberVecs(*C) != numvecs ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::CloneCopy()." << std::endl
@@ -436,7 +436,7 @@ namespace Belos {
         }
       }
       MVT::MvInit(*B,zero);
-      MVT::MvNorm(*C, &norms); 
+      MVT::MvNorm(*C, norms); 
       for (i=0; i<numvecs; i++) {
         if ( norms2[i] != norms[i] ) {
           om->stream(Warnings)
@@ -460,9 +460,9 @@ namespace Belos {
 
       B = MVT::Clone(*A,numvecs); 
       MVT::MvRandom(*B);
-      MVT::MvNorm(*B, &norms);
+      MVT::MvNorm(*B, norms);
       C = MVT::CloneView(*B,ind);
-      MVT::MvNorm(*C, &norms2);
+      MVT::MvNorm(*C, norms2);
       if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::CloneView(ind)." << std::endl
@@ -512,9 +512,9 @@ namespace Belos {
       MVT::MvRandom( *B );
       // need a const MV to test const CloneView
       constB = MVT::CloneView(*B,allind);
-      MVT::MvNorm(*constB, &normsB);
+      MVT::MvNorm(*constB, normsB);
       C = MVT::CloneView(*constB,ind);
-      MVT::MvNorm(*C, &normsC);
+      MVT::MvNorm(*C, normsC);
       if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
         om->stream(Warnings)
           << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << std::endl
@@ -571,11 +571,11 @@ namespace Belos {
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
 
-      MVT::MvNorm(*B,&normsB1);
-      MVT::MvNorm(*C,&normsC1);
+      MVT::MvNorm(*B,normsB1);
+      MVT::MvNorm(*C,normsC1);
       MVT::SetBlock(*C,ind,*B);
-      MVT::MvNorm(*B,&normsB2);
-      MVT::MvNorm(*C,&normsC2);
+      MVT::MvNorm(*B,normsB2);
+      MVT::MvNorm(*C,normsC2);
 
       // check that C was not changed by SetBlock
       for (i=0; i<numvecs_2; i++) {
@@ -609,7 +609,7 @@ namespace Belos {
         }
       }
       MVT::MvInit(*C,zero);
-      MVT::MvNorm(*B,&normsB1);
+      MVT::MvNorm(*B,normsB1);
       // verify that we copied and didn't reference
       for (i=0; i<numvecs; i++) {
         if ( normsB1[i] != normsB2[i] ) {
@@ -656,11 +656,11 @@ namespace Belos {
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
 
-      MVT::MvNorm(*B,&normsB1);
-      MVT::MvNorm(*C,&normsC1);
+      MVT::MvNorm(*B,normsB1);
+      MVT::MvNorm(*C,normsC1);
       MVT::SetBlock(*C,ind,*B);
-      MVT::MvNorm(*B,&normsB2);
-      MVT::MvNorm(*C,&normsC2);
+      MVT::MvNorm(*B,normsB2);
+      MVT::MvNorm(*C,normsC2);
 
       // check that C was not changed by SetBlock
       for (i=0; i<CSize; i++) {
@@ -694,7 +694,7 @@ namespace Belos {
         }
       }
       MVT::MvInit(*C,zero);
-      MVT::MvNorm(*B,&normsB1);
+      MVT::MvNorm(*B,normsB1);
       // verify that we copied and didn't reference
       for (i=0; i<numvecs; i++) {
         if ( normsB1[i] != normsB2[i] ) {
@@ -738,9 +738,9 @@ namespace Belos {
    
       // randomize the multivectors
       MVT::MvRandom(*B);
-      MVT::MvNorm(*B,&normsB);
+      MVT::MvNorm(*B,normsB);
       MVT::MvRandom(*C);
-      MVT::MvNorm(*C,&normsC);
+      MVT::MvNorm(*C,normsC);
    
       // perform SDM  = zero() * B^H * C
       MVT::MvTransMv( zero, *B, *C, SDM );
@@ -828,9 +828,9 @@ namespace Belos {
 
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
-      MVT::MvNorm(*B,&normsB);
-      MVT::MvNorm(*C,&normsC);
-      MVT::MvDot( *B, *C, &iprods );
+      MVT::MvNorm(*B,normsB);
+      MVT::MvNorm(*C,normsC);
+      MVT::MvDot( *B, *C, iprods );
       if ( iprods.size() != p+q ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::MvDot." << std::endl
@@ -848,7 +848,7 @@ namespace Belos {
       }
       MVT::MvInit(*B);
       MVT::MvRandom(*C);
-      MVT::MvDot( *B, *C, &iprods );
+      MVT::MvDot( *B, *C, iprods );
       for (i=0; i<p; i++) {
         if ( iprods[i] != zero ) {
           om->stream(Warnings)
@@ -859,7 +859,7 @@ namespace Belos {
       }
       MVT::MvInit(*C);
       MVT::MvRandom(*B);
-      MVT::MvDot( *B, *C, &iprods );
+      MVT::MvDot( *B, *C, iprods );
       for (i=0; i<p; i++) {
         if ( iprods[i] != zero ) {
           om->stream(Warnings)
@@ -893,14 +893,14 @@ namespace Belos {
 
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
-      MVT::MvNorm(*B,&normsB1);
-      MVT::MvNorm(*C,&normsC1);
+      MVT::MvNorm(*B,normsB1);
+      MVT::MvNorm(*C,normsC1);
    
       // check that 0*B+1*C == C
       MVT::MvAddMv(zero,*B,one,*C,*D);
-      MVT::MvNorm(*B,&normsB2);
-      MVT::MvNorm(*C,&normsC2);
-      MVT::MvNorm(*D,&normsD1);
+      MVT::MvNorm(*B,normsB2);
+      MVT::MvNorm(*C,normsC2);
+      MVT::MvNorm(*D,normsD1);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
@@ -924,9 +924,9 @@ namespace Belos {
 
       // check that 1*B+0*C == B
       MVT::MvAddMv(one,*B,zero,*C,*D);
-      MVT::MvNorm(*B,&normsB2);
-      MVT::MvNorm(*C,&normsC2);
-      MVT::MvNorm(*D,&normsD1);
+      MVT::MvNorm(*B,normsB2);
+      MVT::MvNorm(*C,normsC2);
+      MVT::MvNorm(*D,normsD1);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
@@ -952,9 +952,9 @@ namespace Belos {
       // first, try random D
       MVT::MvRandom(*D);
       MVT::MvAddMv(alpha,*B,beta,*C,*D);
-      MVT::MvNorm(*B,&normsB2);
-      MVT::MvNorm(*C,&normsC2);
-      MVT::MvNorm(*D,&normsD1);
+      MVT::MvNorm(*B,normsB2);
+      MVT::MvNorm(*C,normsC2);
+      MVT::MvNorm(*D,normsD1);
       // check that input args are not modified
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
@@ -973,9 +973,9 @@ namespace Belos {
       // next, try zero D
       MVT::MvInit(*D);
       MVT::MvAddMv(alpha,*B,beta,*C,*D);
-      MVT::MvNorm(*B,&normsB2);
-      MVT::MvNorm(*C,&normsC2);
-      MVT::MvNorm(*D,&normsD2);
+      MVT::MvNorm(*B,normsB2);
+      MVT::MvNorm(*C,normsC2);
+      MVT::MvNorm(*D,normsD2);
       // check that input args are not modified and that D is the same
       // as the above test
       for (i=0; i<p; i++) {
@@ -1031,11 +1031,11 @@ namespace Belos {
       D = MVT::CloneView(*B,lclindex);
 
       MVT::MvRandom(*B);
-      MVT::MvNorm(*B,&normsB);
+      MVT::MvNorm(*B,normsB);
    
       // check that 0*B+1*C == C
       MVT::MvAddMv(zero,*B,one,*C,*D);
-      MVT::MvNorm(*D,&normsD);
+      MVT::MvNorm(*D,normsD);
       for (i=0; i<p; i++) {
         if ( normsB[i] != normsD[i] ) {
           om->stream(Warnings)
@@ -1047,7 +1047,7 @@ namespace Belos {
 
       // check that 1*B+0*C == B
       MVT::MvAddMv(one,*B,zero,*C,*D);
-      MVT::MvNorm(*D,&normsD);
+      MVT::MvNorm(*D,normsD);
       for (i=0; i<p; i++) {
         if ( normsB[i] != normsD[i] ) {
           om->stream(Warnings)
@@ -1082,12 +1082,12 @@ namespace Belos {
       // Test 1: alpha==0, SDM!=0, beta==1 and check that C is unchanged
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
-      MVT::MvNorm(*B,&normsB1);
-      MVT::MvNorm(*C,&normsC1);
+      MVT::MvNorm(*B,normsB1);
+      MVT::MvNorm(*C,normsC1);
       SDM.random();
       MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
-      MVT::MvNorm(*B,&normsB2);
-      MVT::MvNorm(*C,&normsC2);
+      MVT::MvNorm(*B,normsB2);
+      MVT::MvNorm(*C,normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
@@ -1108,12 +1108,12 @@ namespace Belos {
       // Test 2: alpha==0, SDM!=0, beta==0 and check that C is set to zero
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
-      MVT::MvNorm(*B,&normsB1);
-      MVT::MvNorm(*C,&normsC1);
+      MVT::MvNorm(*B,normsB1);
+      MVT::MvNorm(*C,normsC1);
       SDM.random();
       MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
-      MVT::MvNorm(*B,&normsB2);
-      MVT::MvNorm(*C,&normsC2);
+      MVT::MvNorm(*B,normsB2);
+      MVT::MvNorm(*C,normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
@@ -1139,15 +1139,15 @@ namespace Belos {
       //                        |0|
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
-      MVT::MvNorm(*B,&normsB1);
-      MVT::MvNorm(*C,&normsC1);
+      MVT::MvNorm(*B,normsB1);
+      MVT::MvNorm(*C,normsC1);
       SDM.scale(zero);
       for (i=0; i<q; i++) {
         SDM(i,i) = one;
       }
       MVT::MvTimesMatAddMv(one,*B,SDM,zero,*C);
-      MVT::MvNorm(*B,&normsB2);
-      MVT::MvNorm(*C,&normsC2);
+      MVT::MvNorm(*B,normsB2);
+      MVT::MvNorm(*C,normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
@@ -1172,12 +1172,12 @@ namespace Belos {
       // Test 4: alpha==1, SDM==0, beta==1 and check that C is unchanged
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
-      MVT::MvNorm(*B,&normsB1);
-      MVT::MvNorm(*C,&normsC1);
+      MVT::MvNorm(*B,normsB1);
+      MVT::MvNorm(*C,normsC1);
       SDM.scale(zero);
       MVT::MvTimesMatAddMv(one,*B,SDM,one,*C);
-      MVT::MvNorm(*B,&normsB2);
-      MVT::MvNorm(*C,&normsC2);
+      MVT::MvNorm(*B,normsB2);
+      MVT::MvNorm(*C,normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
@@ -1218,12 +1218,12 @@ namespace Belos {
       // Test 5: alpha==0, SDM!=0, beta==1 and check that C is unchanged
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
-      MVT::MvNorm(*B,&normsB1);
-      MVT::MvNorm(*C,&normsC1);
+      MVT::MvNorm(*B,normsB1);
+      MVT::MvNorm(*C,normsC1);
       SDM.random();
       MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
-      MVT::MvNorm(*B,&normsB2);
-      MVT::MvNorm(*C,&normsC2);
+      MVT::MvNorm(*B,normsB2);
+      MVT::MvNorm(*C,normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
@@ -1244,12 +1244,12 @@ namespace Belos {
       // Test 6: alpha==0, SDM!=0, beta==0 and check that C is set to zero
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
-      MVT::MvNorm(*B,&normsB1);
-      MVT::MvNorm(*C,&normsC1);
+      MVT::MvNorm(*B,normsB1);
+      MVT::MvNorm(*C,normsC1);
       SDM.random();
       MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
-      MVT::MvNorm(*B,&normsB2);
-      MVT::MvNorm(*C,&normsC2);
+      MVT::MvNorm(*B,normsB2);
+      MVT::MvNorm(*C,normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
@@ -1274,15 +1274,15 @@ namespace Belos {
       // Test 7: alpha==1, SDM==[I 0], beta==0 and check that C is set to B
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
-      MVT::MvNorm(*B,&normsB1);
-      MVT::MvNorm(*C,&normsC1);
+      MVT::MvNorm(*B,normsB1);
+      MVT::MvNorm(*C,normsC1);
       SDM.scale(zero);
       for (i=0; i<p; i++) {
         SDM(i,i) = one;
       }
       MVT::MvTimesMatAddMv(one,*B,SDM,zero,*C);
-      MVT::MvNorm(*B,&normsB2);
-      MVT::MvNorm(*C,&normsC2);
+      MVT::MvNorm(*B,normsB2);
+      MVT::MvNorm(*C,normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
@@ -1311,12 +1311,12 @@ namespace Belos {
       // Test 8: alpha==1, SDM==0, beta==1 and check that C is unchanged
       MVT::MvRandom(*B);
       MVT::MvRandom(*C);
-      MVT::MvNorm(*B,&normsB1);
-      MVT::MvNorm(*C,&normsC1);
+      MVT::MvNorm(*B,normsB1);
+      MVT::MvNorm(*C,normsC1);
       SDM.scale(zero);
       MVT::MvTimesMatAddMv(one,*B,SDM,one,*C);
-      MVT::MvNorm(*B,&normsB2);
-      MVT::MvNorm(*C,&normsC2);
+      MVT::MvNorm(*B,normsB2);
+      MVT::MvNorm(*C,normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
@@ -1384,10 +1384,10 @@ namespace Belos {
     *********************************************************************/
     MVT::MvInit(*B);
     MVT::MvRandom(*C);
-    MVT::MvNorm(*B,&normsB1);
+    MVT::MvNorm(*B,normsB1);
     OPT::Apply(*M,*B,*C);
-    MVT::MvNorm(*B,&normsB2);
-    MVT::MvNorm(*C,&normsC2);
+    MVT::MvNorm(*B,normsB2);
+    MVT::MvNorm(*C,normsC2);
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
         om->stream(Warnings)
@@ -1405,10 +1405,10 @@ namespace Belos {
 
     // If we send in a random matrix, we should not get a zero return
     MVT::MvRandom(*B);
-    MVT::MvNorm(*B,&normsB1);
+    MVT::MvNorm(*B,normsB1);
     OPT::Apply(*M,*B,*C);
-    MVT::MvNorm(*B,&normsB2);
-    MVT::MvNorm(*C,&normsC2);
+    MVT::MvNorm(*B,normsB2);
+    MVT::MvNorm(*C,normsC2);
     bool ZeroWarning = false;
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
@@ -1427,11 +1427,11 @@ namespace Belos {
 
     // Apply operator with C init'd to zero
     MVT::MvRandom(*B);
-    MVT::MvNorm(*B,&normsB1);
+    MVT::MvNorm(*B,normsB1);
     MVT::MvInit(*C);
     OPT::Apply(*M,*B,*C);
-    MVT::MvNorm(*B,&normsB2);
-    MVT::MvNorm(*C,&normsC1);
+    MVT::MvNorm(*B,normsB2);
+    MVT::MvNorm(*C,normsC1);
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
         om->stream(Warnings)
@@ -1448,8 +1448,8 @@ namespace Belos {
     //   stochastic operator.
     MVT::MvRandom(*C);
     OPT::Apply(*M,*B,*C);
-    MVT::MvNorm(*B,&normsB2);
-    MVT::MvNorm(*C,&normsC2);
+    MVT::MvNorm(*B,normsB2);
+    MVT::MvNorm(*C,normsC2);
     NonDeterministicWarning = false;
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {

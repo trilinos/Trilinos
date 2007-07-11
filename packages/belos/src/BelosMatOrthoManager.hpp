@@ -156,14 +156,14 @@ namespace Belos {
 
     /*! \brief Provides the norm induced by innerProd().
      */
-    void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const {
+    void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > normvec ) const {
       norm(X,Teuchos::null,normvec);
     }
 
     /*! \brief Provides the norm induced by innerProd().
      *  The method has the options of exploiting a caller-provided \c MX.
      */
-    void norm( const MV& X, Teuchos::RCP<const MV> MX, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const {
+    void norm( const MV& X, Teuchos::RCP<const MV> MX, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > normvec ) const {
 
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;
@@ -186,7 +186,7 @@ namespace Belos {
         Xi = MVT::CloneView(X,ind);
         MXi = MVT::CloneView(*MX,ind);
         MVT::MvTransMv(SCT::one(),*Xi,*MXi,z);
-        (*normvec)[i] = SCT::magnitude( SCT::squareroot( z(0,0) ) );
+        normvec[i] = SCT::magnitude( SCT::squareroot( z(0,0) ) );
       }
     }
 

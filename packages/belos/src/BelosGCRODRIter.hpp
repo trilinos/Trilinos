@@ -90,15 +90,17 @@ namespace Belos {
      * The \c curDim by \c curDim leading submatrix of H is the
      * projection of problem->getOperator() by the first \c curDim vectors in V.
      */
-
     Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > H;
+
+    /*! \brief The projection of the Krylov subspace against the recycled subspace
+     */
+    Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > B;
+
     /*! \brief The current upper-triangular matrix from the QR reduction of H. */
-
     Teuchos::RCP<const Teuchos::SerialDenseMatrix<int,ScalarType> > R;
+
     /*! \brief The current right-hand side of the least squares system RY = Z. */
-
     Teuchos::RCP<const Teuchos::SerialDenseVector<int,ScalarType> > z;
-
 
     GCRODRIterState() : curDim(0), V(Teuchos::null), 
 			U(Teuchos::null), C(Teuchos::null),
@@ -257,6 +259,7 @@ namespace Belos {
       state.U = U_;
       state.C = C_;
       state.H = H_;
+      state.B = B_;
       state.R = R_;
       state.z = z_;
       return state;

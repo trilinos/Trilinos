@@ -219,8 +219,8 @@ int main(int argc, char *argv[]) {
   Epetra_MultiVector initR( Map, init_numrhs );
   OPT::Apply( *A, *initX, initR );
   MVT::MvAddMv( -1.0, initR, 1.0, *initB, initR ); 
-  MVT::MvNorm( initR, &actual_resids );
-  MVT::MvNorm( *initB, &rhs_norm );
+  MVT::MvNorm( initR, actual_resids );
+  MVT::MvNorm( *initB, rhs_norm );
   if (proc_verbose) {
     std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
     for (int i=0; i<init_numrhs; i++) {
@@ -315,8 +315,8 @@ int main(int argc, char *argv[]) {
   Epetra_MultiVector augR( Map, total_numrhs );
   OPT::Apply( *A, *augX, augR );
   MVT::MvAddMv( -1.0, augR, 1.0, *augB, augR ); 
-  MVT::MvNorm( augR, &actual_resids );
-  MVT::MvNorm( *augB, &rhs_norm );
+  MVT::MvNorm( augR, actual_resids );
+  MVT::MvNorm( *augB, rhs_norm );
   if (proc_verbose) {
     std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
     for ( int i=0; i<total_numrhs; i++) {
