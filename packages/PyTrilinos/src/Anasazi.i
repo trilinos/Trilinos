@@ -262,6 +262,7 @@ __version__ = Anasazi_Version().split()[2]
 ////////////////////////////////////////
 // Anasazi BasicOutputManager support //
 ////////////////////////////////////////
+namespace std { struct ostream; }
 %include "AnasaziBasicOutputManager.hpp"
 %template (BasicOutputManagerDouble)
   Anasazi::BasicOutputManager<double>;
@@ -344,6 +345,9 @@ __version__ = Anasazi_Version().split()[2]
 // Anasazi OrthoManager support //
 //////////////////////////////////
 %ignore Anasazi::OrthoManager::project;
+%ignore Anasazi::OrthoManager::projectAndNormalize;
+%ignore Anasazi::OrthoManager::projectMat;
+%ignore Anasazi::OrthoManager::projectAndNormalizeMat;
 %include "AnasaziOrthoManager.hpp"
 
 /////////////////////////////////////
@@ -354,11 +358,13 @@ __version__ = Anasazi_Version().split()[2]
 ///////////////////////////////////////
 // Anasazi BasicOrthoManager support //
 ///////////////////////////////////////
+%ignore Anasazi::BasicOrthoManager::normalizeMat;
 %include "AnasaziBasicOrthoManager.hpp"
 
 //////////////////////////////////////
 // Anasazi SVQBOrthoManager support //
 //////////////////////////////////////
+%ignore Anasazi::SVQBOrthoManager::normalizeMat;
 %include "AnasaziSVQBOrthoManager.hpp"
 
 /////////////////////////////////

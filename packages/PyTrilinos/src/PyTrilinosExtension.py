@@ -57,6 +57,11 @@ def makePyTrilinosExtensions(moduleName):
     libVar          = moduleNameUpper + "_LIBS"
     interfaceVar    = moduleNameUpper + "_INTERFACES"
 
+    # Illegal compile options that will be removed from the lists of compile
+    # arguments
+    illegalArgs = ["-ansi",
+                   "-pedantic"]
+
     # Parse and evaluate all of the Makefile variables in the current directory
     vars   = processMakefile("Makefile")
     srcdir = vars["srcdir"]
@@ -91,6 +96,17 @@ def makePyTrilinosExtensions(moduleName):
                          vars["CXXFLAGS"].split()
     uniquifyList(extra_compile_args)
     extra_link_args    = extra_compile_args[:]    # Shallow copy
+
+    # Remove illegal arguments
+    for arg in illegalArgs:
+        try:
+            extra_compile_args.remove(arg)
+        except ValueError:
+            pass
+        try:
+            extra_link_args.remove(arg)
+        except ValueError:
+            pass
 
     # Set all of the define macros
     define_macros.append(("HAVE_CONFIG_H","1"))
