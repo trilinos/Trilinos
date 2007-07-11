@@ -92,7 +92,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - "Block Size" - a \c int specifying the block size to be used by the underlying block Krylov-Schur solver. Default: 1
    *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 3*nev
    *   - "Extra NEV Blocks" - a \c int specifying the number of extra blocks the solver should keep in addition to those
-   *   -  required to compute the number of eigenvalues requested.  Default: 0
+          required to compute the number of eigenvalues requested.  Default: 0
    *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
    *   - "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS and SVQB. Default: "SVQB"
    *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
