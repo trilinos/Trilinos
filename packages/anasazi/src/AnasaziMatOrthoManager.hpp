@@ -72,10 +72,10 @@ namespace Anasazi {
     //! @name Accessor routines
     //@{ 
 
-    //! Set operator.
+    //! Set operator used for inner product.
     void setOp( Teuchos::RCP<const OP> Op );
 
-    //! Get operator.
+    //! Get operator used for inner product.
     Teuchos::RCP<const OP> getOp() const;
 
     //! Retrieve operator counter.
@@ -86,7 +86,7 @@ namespace Anasazi {
      */
     int getOpCounter() const;
 
-    //! Reset the operator counter.
+    //! Reset the operator counter to zero.
     /*! See getOpCounter() for more details.
      */
     void resetOpCounter();
@@ -165,7 +165,7 @@ namespace Anasazi {
 
     //@}
 
-    //! @name Methods implementing OrthoManager
+    //! @name Methods implementing Anasazi::OrthoManager
     //@{ 
 
     /*! \brief Implements the interface OrthoManager::innerProd(). 

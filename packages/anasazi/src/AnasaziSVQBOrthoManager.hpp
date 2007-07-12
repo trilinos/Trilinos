@@ -37,7 +37,9 @@
 
 /*!   \class Anasazi::SVQBOrthoManager
       \brief An implementation of the Anasazi::MatOrthoManager that performs orthogonalization
-      using the SVQB iterative orthogonalization technique described by Stathapoulos and Wu.
+      using the SVQB iterative orthogonalization technique described by Stathapoulos and Wu. This orthogonalization routine,
+      while not returning the upper triangular factors of the popular Gram-Schmidt method, has a communication 
+      cost (measured in number of communication calls) that is independent of the number of columns in the basis.
       
       \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
@@ -69,69 +71,98 @@ namespace Anasazi {
     //! Constructor specifying re-orthogonalization tolerance.
     SVQBOrthoManager( Teuchos::RCP<const OP> Op = Teuchos::null, bool debug = false );
 
+
     //! Destructor
     ~SVQBOrthoManager() {};
     //@}
 
 
-    //! @name Orthogonalization methods
+    //! @name Methods implementing Anasazi::MatOrthoManager
     //@{ 
 
 
-    /*! \brief Given a list of (mutually and internally) orthonormal bases \c Q, this method
-     * takes a multivector \c X and projects it onto the space orthogonal to the individual <tt>Q[i]</tt>, 
+    /*! \brief Given a list of mutually orthogonal and internally orthonormal bases \c Q, this method
+     * projects a multivector \c X onto the space orthogonal to the individual <tt>Q[i]</tt>, 
      * optionally returning the coefficients of \c X for the individual <tt>Q[i]</tt>. All of this is done with respect
      * to the inner product innerProd().
      *
      * After calling this routine, \c X will be orthogonal to each of the <tt>Q[i]</tt>.
      *
-     @param X [in/out] The multivector to be modified.
-       On output, \c X will be orthogonal to <tt>Q[i]</tt> with respect to innerProd().
+     @param X [in/out] The multivector to be modified.<br>
+       On output, the columns of \c X will be orthogonal to each <tt>Q[i]</tt>, satisfying
+       \f[
+       X_{out} = X_{in} - \sum_i Q[i] \langle Q[i], X_{in} \rangle
+       \f]
 
-     @param MX [in/out] The image of \c X under the specified operator \c Op. 
-       If <tt>MX != 0</tt>: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
-       If <tt>MX == 0</tt> or <tt>Op == 0</tt>: \c MX is not referenced.
+     @param MX [in/out] The image of \c X under the inner product operator \c Op. 
+       If \f$ MX != 0\f$: On input, this is expected to be consistent with \c Op \cdot X. On output, this is updated consistent with updates to \c X.
+       If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
 
-     @param C [out] The coefficients of \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
-       and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
-       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
-       \c X and \c *Q[i], then a std::invalid_argument exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
-       pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them. 
+     @param C [out] The coefficients of \c X in the bases <tt>Q[i]</tt>. If <tt>C[i]</tt> is a non-null pointer 
+       and <tt>C[i]</tt> matches the dimensions of \c X and <tt>Q[i]</tt>, then the coefficients computed during the orthogonalization
+       routine will be stored in the matrix <tt>C[i]</tt>, similar to calling
+       \code
+          innerProd( Q[i], X, C[i] );
+       \endcode
+       If <tt>C[i]</tt> points to a Teuchos::SerialDenseMatrix with size
+       inconsitent with \c X and \c <tt>Q[i]</tt>, then a std::invalid_argument
+       exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or
+       <tt>C[i]</tt> is a null pointer, the caller will not have access to the
+       computed coefficients.
 
-     @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
-     orthonormal columns, and the <tt>Q[i]</tt> are assumed to be mutually orthogonal.
+     @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against, satisfying 
+     \f[
+        \langle Q[i], Q[j] \rangle = I \quad\textrm{if}\quad i=j
+     \f]
+     and
+     \f[
+        \langle Q[i], Q[j] \rangle = 0 \quad\textrm{if}\quad i \neq j\ .
+     \f]
     */
-    void projectMat ( MV &X, 
+    void projectMat ( 
+        MV &X, 
         Teuchos::RCP<MV> MX = Teuchos::null, 
         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C = Teuchos::tuple(Teuchos::null), 
         Teuchos::Array<Teuchos::RCP<const MV> > Q = Teuchos::tuple(Teuchos::null) ) const;
 
+
     /*! \brief This method takes a multivector \c X and attempts to compute an orthonormal basis for \f$colspan(X)\f$, with respect to innerProd().
      *
-     * The method does not compute an upper triangular coefficient matrix \c B.
+     * This method does not compute an upper triangular coefficient matrix \c B.
      *
      * This routine returns an integer \c rank stating the rank of the computed basis. If \c X does not have full rank and the normalize() routine does 
      * not attempt to augment the subspace, then \c rank may be smaller than the number of columns in \c X. In this case, only the first \c rank columns of 
      * output \c X and first \c rank rows of \c B will be valid.
      *  
-     * The method attempts to find a basis with dimension the same as the number of columns in \c X. It does this by augmenting linearly dependant 
+     * The method attempts to find a basis with dimension equal to the number of columns in \c X. It does this by augmenting linearly dependant 
      * vectors in \c X with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the 
      * computed basis is less than the number of vectors in \c X.
      *
-     @param X [in/out] The multivector to the modified. 
-       On output, \c X will have some number of orthonormal columns (with respect to innerProd()).
+     @param X [in/out] The multivector to be modified.<br>
+       On output, the first \c rank columns of \c X satisfy
+       \f[
+          \langle X[i], X[j] \rangle = \delta_{ij}\ .
+       \f]
+       Also, 
+       \f[
+          X_{in}(1:m,1:n) = X_{out}(1:m,1:rank) B(1:rank,1:n)
+       \f]
+       where \c m is the number of rows in \c X and \c n is the number of columns in \c X.
 
-     @param MX [in/out] The image of \c X under the specified operator \c Op. 
-       If \f$ MX != 0\f$: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
+     @param MX [in/out] The image of \c X under the inner product operator \c Op. 
+       If \f$ MX != 0\f$: On input, this is expected to be consistent with \c Op \cdot X. On output, this is updated consistent with updates to \c X.
        If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
 
-     @param B [out] The coefficients of \c X in the computed basis. If \c B is a non-null pointer 
-       and \c *B has appropriate dimensions, then the coefficients computed during the orthogonalization
-       routine will be stored in the matrix \c *B. If \c B is a non-null pointer whose size does not match the dimensions of 
-       \c X, then a std::invalid_argument exception will be thrown. Otherwise, 
-       the orthogonalization manager will declare storage for the coefficients and the user will not have access to them. <b>This matrix will not be triangular in general.</b>
+     @param B [out] The coefficients of the original \c X with respect to the computed basis. If \c B is a non-null pointer and \c B matches the dimensions of \c B, then the
+     coefficients computed during the orthogonalization routine will be stored in \c B, similar to calling 
+       \code
+          innerProd( Xout, Xin, B );
+       \endcode
+     If \c B points to a Teuchos::SerialDenseMatrix with size inconsistent with \c X, then a std::invalid_argument exception will be thrown. Otherwise, if \c B is null, the caller will not have
+     access to the computed coefficients. This matrix is not necessarily triangular (as in a QR factorization); see the documentation of specific orthogonalization managers.<br>
+     In general, \c B has no non-zero structure.
 
-     @return Rank of the basis computed by this method.
+     @return Rank of the basis computed by this method, less than or equal to the number of columns in \c X. This specifies how many columns in the returned \c X and rows in the returned \c B are valid.
     */
     int normalizeMat ( 
         MV &X, 
@@ -150,29 +181,53 @@ namespace Anasazi {
      * vectors with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the 
      * computed basis is less than the number of vectors in \c X.
      *
-     @param X [in/out] The multivector to the modified. 
-       On output, the relevant rows of \c X will be orthogonal to the <tt>Q[i]</tt> and will have orthonormal columns (with respect to innerProd()).
+     @param X [in/out] The multivector to be modified.<br>
+       On output, the first \c rank columns of \c X satisfy
+       \f[
+            \langle X[i], X[j] \rangle = \delta_{ij} \quad \textrm{and} \quad \langle X, Q[i] \rangle = 0\ .
+       \f]
+       Also, 
+       \f[
+          X_{in}(1:m,1:n) = X_{out}(1:m,1:rank) B(1:rank,1:n) + \sum_i Q[i] C[i]
+       \f]
+       where \c m is the number of rows in \c X and \c n is the number of columns in \c X.
 
-     @param MX [in/out] The image of \c X under the operator \c Op. 
-       If \f$ MX != 0\f$: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
+     @param MX [in/out] The image of \c X under the inner product operator \c Op. 
+       If \f$ MX != 0\f$: On input, this is expected to be consistent with \c Op \cdot X. On output, this is updated consistent with updates to \c X.
        If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
 
-     @param C [out] The coefficients of the original \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
-       and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
-       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
-       \c X and \c *Q[i], then a std::invalid_argument exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
-       pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
+     @param C [out] The coefficients of \c X in the <tt>Q[i]</tt>. If <tt>C[i]</tt> is a non-null pointer 
+       and <tt>C[i]</tt> matches the dimensions of \c X and <tt>Q[i]</tt>, then the coefficients computed during the orthogonalization
+       routine will be stored in the matrix <tt>C[i]</tt>, similar to calling
+       \code
+          innerProd( Q[i], X, C[i] );
+       \endcode
+       If <tt>C[i]</tt> points to a Teuchos::SerialDenseMatrix with size
+       inconsitent with \c X and \c <tt>Q[i]</tt>, then a std::invalid_argument
+       exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or
+       <tt>C[i]</tt> is a null pointer, the caller will not have access to the
+       computed coefficients.
 
-     @param B [out] The coefficients of \c X in the computed basis. If \c B is a non-null pointer 
-       and \c *B has appropriate dimensions, then the coefficients computed during the orthogonalization
-       routine will be stored in the matrix \c *B. If \c B is a non-null pointer whose size does not match the dimensions of 
-       \c X, then a std::invalid_argument exception will be thrown. Otherwise, 
-       the orthogonalization manager will declare storage for the coefficients and the user will not have access to them. <b>This matrix will not be triangular in general.</b>
+     @param B [out] The coefficients of the original \c X with respect to the computed basis. If \c B is a non-null pointer and \c B matches the dimensions of \c B, then the
+     coefficients computed during the orthogonalization routine will be stored in \c B, similar to calling 
+       \code
+          innerProd( Xout, Xin, B );
+       \endcode
+     If \c B points to a Teuchos::SerialDenseMatrix with size inconsistent with \c X, then a std::invalid_argument exception will be thrown. Otherwise, if \c B is null, the caller will not have
+     access to the computed coefficients. This matrix is not necessarily triangular (as in a QR factorization); see the documentation of specific orthogonalization managers.<br>
+     In general, \c B has no non-zero structure.
 
-     @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
-     orthonormal columns, and the <tt>Q[i]</tt> are assumed to be mutually orthogonal.
+     @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against, satisfying 
+     \f[
+        \langle Q[i], Q[j] \rangle = I \quad\textrm{if}\quad i=j
+     \f]
+     and
+     \f[
+        \langle Q[i], Q[j] \rangle = 0 \quad\textrm{if}\quad i \neq j\ .
+     \f]
 
-     @return Rank of the basis computed by this method.
+     @return Rank of the basis computed by this method, less than or equal to the number of columns in \c X. This specifies how many columns in the returned \c X and rows in the returned \c B are valid.
+
     */
     int projectAndNormalizeMat ( 
         MV &X, 
