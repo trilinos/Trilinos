@@ -1419,31 +1419,25 @@ Optional Features:
 
 CAN'T FIND THE OPTION YOU NEED?
 
-The options listed above are specific to the Trilinos level.
-These options are limited to deciding which packages should
-be built.  All other options such as compilers and compiler
-flags are set at the package level.
-For a list of all options for all packages, type
-"configure --help=recursive".  The output for this command
-is bulky.  Consider using the "more" or "grep" command to
-find a specific option.
+The options listed above are specific to the top Trilinos
+level.  These options are limited to deciding which packages
+should be built.  All other options such as compilers and
+compiler flags are set at the package level.  For a list of
+all options for all packages, type "configure --help=recursive".
+The output for this command is bulky.  Consider using the
+"more" or "grep" command to find a specific option.
 
 To view a list of options for a specific package, cd to
 "Trilinos/package/package_name" (replacing "package_name"
 with the name of the package) and type "configure --help".
 
-A list of configuration options that are common to all
-Trilinos packages can be found on the web at
-"http://software.sandia.gov/trilinos/configuration_manual.html".
-Many of the descriptions of the options found at this
-webpage are more detailed than those found using
-"configure --help".
-
 THE TRILINOS USER GUIDE contains a lot of additional information
-about configuring and build Trilinos, as well as other
+about configuring and building Trilinos, as well as other
 topics that will be helpful for Trilinos Users.  The Trilinos
-User Guide can be found at:
-"http://software.sandia.gov/trilinos/publications.html".
+User Guide, as well as other useful documents, can be found at:
+
+  http://trilinos.sandia.gov/documentation.html
+
 
 
 Report bugs to <maherou@sandia.gov>.
