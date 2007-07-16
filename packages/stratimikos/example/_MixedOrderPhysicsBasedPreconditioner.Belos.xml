@@ -5,14 +5,13 @@
     <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
     <ParameterList name="Linear Solver Types">
       <ParameterList name="Belos">
-        <Parameter name="Default Rel Res Norm" type="double" value="1e-08"/>
-        <Parameter name="Maximum Iterations" type="int" value="400"/>
         <Parameter name="Solver Type" type="string" value="Block CG"/>
-        <ParameterList name="GMRES">
-          <Parameter name="Variant" type="string" value="Standard"/>
-        </ParameterList>
-        <ParameterList name="Outputter">
-          <Parameter name="Output Frequency" type="int" value="5"/>
+        <ParameterList name="Solver Types">
+          <ParameterList name="Block CG">
+            <Parameter name="Convergence Tolerance" type="double" value="1e-08"/>
+            <Parameter name="Maximum Iterations" type="int" value="400"/>
+            <Parameter name="Output Frequency" type="int" value="5"/>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="none"/>
@@ -37,14 +36,13 @@
     <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
     <ParameterList name="Linear Solver Types">
       <ParameterList name="Belos">
-        <Parameter name="Default Rel Res Norm" type="double" value="1e-14"/>
-        <Parameter name="Maximum Iterations" type="int" value="400"/>
         <Parameter name="Solver Type" type="string" value="Block CG"/>
-        <ParameterList name="GMRES">
-          <Parameter name="Variant" type="string" value="Standard"/>
-        </ParameterList>
-        <ParameterList name="Outputter">
-          <Parameter name="Output Frequency" type="int" value="5"/>
+        <ParameterList name="Solver Types">
+          <ParameterList name="Block CG">
+            <Parameter name="Convergence Tolerance" type="double" value="1e-14"/>
+            <Parameter name="Maximum Iterations" type="int" value="400"/>
+            <Parameter name="Output Frequency" type="int" value="5"/>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="none"/>
@@ -69,14 +67,13 @@
     <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
     <ParameterList name="Linear Solver Types">
       <ParameterList name="Belos">
-        <Parameter name="Default Rel Res Norm" type="double" value="1e-08"/>
-        <Parameter name="Maximum Iterations" type="int" value="400"/>
         <Parameter name="Solver Type" type="string" value="Block GMRES"/>
-        <ParameterList name="GMRES">
-          <Parameter name="Variant" type="string" value="Standard"/>
-        </ParameterList>
-        <ParameterList name="Outputter">
-          <Parameter name="Output Frequency" type="int" value="2"/>
+        <ParameterList name="Solver Types">
+          <ParameterList name="Block GMRES">
+            <Parameter name="Convergence Tolerance" type="double" value="1e-08"/>
+            <Parameter name="Maximum Iterations" type="int" value="400"/>
+            <Parameter name="Output Frequency" type="int" value="2"/>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="medium"/>
@@ -102,14 +99,14 @@
     <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
     <ParameterList name="Linear Solver Types">
       <ParameterList name="Belos">
-        <Parameter name="Default Rel Res Norm" type="double" value="1e-08"/>
-        <Parameter name="Maximum Iterations" type="int" value="400"/>
         <Parameter name="Solver Type" type="string" value="Block GMRES"/>
-        <ParameterList name="GMRES">
-          <Parameter name="Variant" type="string" value="Flexible"/>
-        </ParameterList>
-        <ParameterList name="Outputter">
-          <Parameter name="Output Frequency" type="int" value="1"/>
+        <ParameterList name="Solver Types">
+          <ParameterList name="Block GMRES">
+            <Parameter name="Convergence Tolerance" type="double" value="1e-08"/>
+            <Parameter name="Maximum Iterations" type="int" value="400"/>
+            <Parameter name="Flexible Gmres" type="bool" value="true"/>
+            <Parameter name="Output Frequency" type="int" value="1"/>
+          </ParameterList>
         </ParameterList>
         <ParameterList name="VerboseObject">
           <Parameter name="Verbosity Level" type="string" value="medium"/>

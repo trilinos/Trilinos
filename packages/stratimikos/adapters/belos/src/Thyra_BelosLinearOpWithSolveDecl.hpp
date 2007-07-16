@@ -41,7 +41,6 @@ public:
   /// Calls <tt>initialize()</tt>
   BelosLinearOpWithSolve(
     const Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
-    ,const int                                                                  maxNumberOfKrylovVectors
     ,const Teuchos::RCP<Teuchos::ParameterList>                         &solverPL
     ,const Teuchos::RCP<Belos::SolverManager<Scalar,MV_t,LO_t> >        &iterativeSolver
     ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >      &fwdOpSrc
@@ -55,9 +54,6 @@ public:
    *
    * \param lp   [in] The linear problem that was used to initialize the iterative solver.
    *             The RHS and LHS arguments are set on this object to solve a linear system.
-   * \param maxNumberOfKrylovVectors
-   *             [in] Total number of Krylov vectors that can be stored and manipulated.  This more-or-less
-   *             bounds the total amount of storage that the algorithm can use.
    * \param solverPL
    *             [in] Parameter list that is used by the iterative solver.
    * \param iterativeSolver
@@ -89,7 +85,6 @@ public:
    */
   void initialize(
     const Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
-    ,const int                                                          maxNumberOfKrylovVectors
     ,const Teuchos::RCP<Teuchos::ParameterList>                         &solverPL
     ,const Teuchos::RCP<Belos::SolverManager<Scalar,MV_t,LO_t> >        &iterativeSolver
     ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
@@ -120,7 +115,6 @@ public:
    */
   void uninitialize(
     Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         *lp                        = NULL
-    ,int                                                          *maxNumberOfKrylovVectors  = NULL
     ,Teuchos::RCP<Teuchos::ParameterList>                         *solverPL                   = NULL
     ,Teuchos::RCP<Belos::SolverManager<Scalar,MV_t,LO_t> >        *iterativeSolver           = NULL
     ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >              *fwdOpSrc                  = NULL
@@ -209,7 +203,6 @@ private:
 
 
   Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >           lp_;
-  int                                                             maxNumberOfKrylovVectors_;
   Teuchos::RCP<Teuchos::ParameterList>                            solverPL_;
   Teuchos::RCP<Belos::SolverManager<Scalar,MV_t,LO_t> >           iterativeSolver_;
 

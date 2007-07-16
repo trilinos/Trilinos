@@ -33,60 +33,6 @@ const std::string  BelosLinearOpWithSolveFactory<Scalar>::PseudoBlockGMRES_name 
 template<class Scalar>
 const std::string  BelosLinearOpWithSolveFactory<Scalar>::BlockCG_name = "Block CG";
 
-
-
-
-
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::MaxIters_name = "Maximum Iterations";
-template<class Scalar>
-const int         BelosLinearOpWithSolveFactory<Scalar>::MaxIters_default = 400;
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::MaxRestarts_name = "Maximum Restarts";
-template<class Scalar>
-const int         BelosLinearOpWithSolveFactory<Scalar>::MaxRestarts_default = 25;
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::BlockSize_name = "Block Size";
-template<class Scalar>
-const int         BelosLinearOpWithSolveFactory<Scalar>::BlockSize_default = 1; // ToDo: We need to make Belos robust when BlockSize > 1 !!!
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::AdaptiveBlockSize_name = "Adaptive Block Size";
-template<class Scalar>
-const bool        BelosLinearOpWithSolveFactory<Scalar>::AdaptiveBlockSize_default = true;
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::DefaultRelResNorm_name = "Default Rel Res Norm";
-template<class Scalar>
-const typename BelosLinearOpWithSolveFactory<Scalar>::MagnitudeType
-                  BelosLinearOpWithSolveFactory<Scalar>::DefaultRelResNorm_default = 1e-6;
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::OrthoType_name = "Orthogonalization";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::OrthoType_default = "DGKS";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::Restart_Timers_name= "Restart Timers";
-template<class Scalar>
-const bool        BelosLinearOpWithSolveFactory<Scalar>::Restart_Timers_default = "true";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_name = "GMRES";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_MaxNumberOfKrylovVectors_name = "Max Number of Krylov Vectors";
-template<class Scalar>
-const int         BelosLinearOpWithSolveFactory<Scalar>::GMRES_MaxNumberOfKrylovVectors_default = 300; // Consistent with NOX::LinearSystemAztecOO
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_Variant_name = "Variant";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_Variant_default = "Standard";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::Outputter_name = "Outputter";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputFrequency_name = "Output Frequency";
-template<class Scalar>
-const int         BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputFrequency_default = 10;
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputMaxResOnly_name = "Show Maximum Residual Norm Only";
-template<class Scalar>
-const bool        BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputMaxResOnly_default = true;
-
 // Constructors/initializers/accessors
 
 template<class Scalar>
@@ -386,21 +332,6 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
         *mgr.getValidParameters()
         );
     }
-    validParamList->set(MaxIters_name, MaxIters_default);
-    validParamList->set(MaxRestarts_name,MaxRestarts_default);
-    validParamList->set(BlockSize_name,BlockSize_default);
-    validParamList->set(AdaptiveBlockSize_name,AdaptiveBlockSize_default);
-    validParamList->set(DefaultRelResNorm_name,DefaultRelResNorm_default);
-    validParamList->set(OrthoType_name,OrthoType_default);
-    Teuchos::ParameterList
-      &gmresSL = validParamList->sublist(GMRES_name);
-    gmresSL.set(GMRES_MaxNumberOfKrylovVectors_name,GMRES_MaxNumberOfKrylovVectors_default);
-    gmresSL.set(GMRES_Variant_name,GMRES_Variant_default);
-    //gmresSL.set(Restart_Timers_name,Restart_Timers_default);
-    Teuchos::ParameterList
-      &outputterSL = validParamList->sublist(Outputter_name);
-    outputterSL.set(Outputter_OutputFrequency_name,Outputter_OutputFrequency_default);
-    outputterSL.set(Outputter_OutputMaxResOnly_name,Outputter_OutputMaxResOnly_default);
   }
   return validParamList;
 }
@@ -504,7 +435,6 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   //
   // Uninitialize the current solver object
   //
-  int oldMaxNumberOfKrylovVectors = 0;
   bool oldIsExternalPrec = false;
   RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >     oldLP = Teuchos::null;
   RCP<Belos::SolverManager<Scalar,MV_t,LO_t> >     oldIterSolver = Teuchos::null;
@@ -513,7 +443,6 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   ESupportSolveUse                                 oldSupportSolveUse = SUPPORT_SOLVE_UNSPECIFIED;
 
   belosOp->uninitialize( &oldLP,
-                         &oldMaxNumberOfKrylovVectors,
                          NULL,
                          &oldIterSolver,
                          &oldFwdOpSrc,
@@ -570,85 +499,39 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
 								    &lp, Teuchos::POST_DESTROY, false);
   }
   //
-  // Generate the parameter list
+  // Generate the parameter list.
   //
   typedef Belos::SolverManager<Scalar,MV_t,LO_t> IterativeSolver_t;
   RCP<IterativeSolver_t> iterativeSolver = Teuchos::null;
   RCP<Teuchos::ParameterList> solverPL = Teuchos::rcp( new Teuchos::ParameterList() );
-
-  // Set the block size
-  int blockSize = BlockSize_default;
-  if(paramList_.get()) {
-    blockSize = paramList_->get(BlockSize_name,blockSize);
-  }
-  solverPL->set(BlockSize_name, blockSize);
-
-  const bool adaptiveBlockSize =
-    ( paramList_.get()
-      ? paramList_->get(AdaptiveBlockSize_name,AdaptiveBlockSize_default)
-      : AdaptiveBlockSize_default );
-  solverPL->set(AdaptiveBlockSize_name, adaptiveBlockSize);
-
-  // Set the verbosity
-  const int belosVerbLevel =
-    (
-      verbLevel == Teuchos::VERB_DEFAULT || static_cast<int>(verbLevel)>=static_cast<int>(Teuchos::VERB_LOW)
-      ? Belos::Warnings | Belos::FinalSummary | Belos::IterationDetails
-      : Belos::Errors 
-      );
-  solverPL->set("Verbosity", belosVerbLevel);
-
-  // Set the status test parameters
-  int         defaultMaxIterations = MaxIters_default;
-  int         defaultMaxRestarts   = MaxRestarts_default;
-  ScalarMag   defaultResNorm       = DefaultRelResNorm_default;
-  int         outputFrequency      = Outputter_OutputFrequency_default;
-  bool        outputMaxResOnly     = Outputter_OutputMaxResOnly_default;
-  if(paramList_.get()) {
-    defaultMaxIterations = paramList_->get(MaxIters_name,defaultMaxIterations);
-    defaultMaxRestarts = paramList_->get(MaxRestarts_name,defaultMaxRestarts);
-    defaultResNorm = paramList_->get(DefaultRelResNorm_name,defaultResNorm);
-    Teuchos::ParameterList &outputterSL = paramList_->sublist(Outputter_name);
-    outputFrequency = outputterSL.get(Outputter_OutputFrequency_name,outputFrequency);
-    outputMaxResOnly = outputterSL.get(Outputter_OutputMaxResOnly_name,outputMaxResOnly);
-  }
-  solverPL->set(MaxIters_name,defaultMaxIterations);
-  solverPL->set(MaxRestarts_name,defaultMaxRestarts);
-  solverPL->set("Convergence Tolerance", defaultResNorm);
-  solverPL->set(Outputter_OutputFrequency_name, outputFrequency);
-  solverPL->set(Outputter_OutputMaxResOnly_name, outputMaxResOnly);
   
-  // Set orthogonalization parameter
-  std::string orthoType = OrthoType_default;
-  if(paramList_.get()) {
-    orthoType = paramList_->get(OrthoType_name,OrthoType_default);
-  }
-  solverPL->set(OrthoType_name, orthoType);
-
-  int maxNumberOfKrylovVectors = -1; // Only gets used if getPL.get()!=NULL
-  //bool restartTimers = Restart_Timers_default;
   switch(solverType_) {
-    case SOLVER_TYPE_BLOCK_GMRES:
-      // fall through
+    case SOLVER_TYPE_BLOCK_GMRES: 
+    {
+      // Set the PL
+      if(paramList_.get()) {
+        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+        Teuchos::ParameterList &gmresPL = solverTypesPL.sublist(BlockGMRES_name);
+        solverPL = Teuchos::rcp( &gmresPL, false );
+      }
+      // Create the solver
+      if (oldIterSolver != Teuchos::null) {
+        iterativeSolver = oldIterSolver;
+        iterativeSolver->setProblem( lp );
+        iterativeSolver->setParameters( solverPL );
+      } 
+      else {
+        iterativeSolver = rcp(new Belos::BlockGmresSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
+      }
+      break;
+    }
     case SOLVER_TYPE_PSEUDO_BLOCK_GMRES:
     {
       // Set the PL
-      solverPL->set("Num Blocks",1);
-      // Note, the "Length" will be reset based on the number of RHS in the
-      // BelosLOWS::solve(...) function!  This is needed to avoid memory
-      // problems!  Above I just set it to 1 to avoid any memory allocation
-      // problems!
-      maxNumberOfKrylovVectors = GMRES_MaxNumberOfKrylovVectors_default;
-      std::string GMRES_Variant = GMRES_Variant_default;
       if(paramList_.get()) {
-        Teuchos::ParameterList &_gmresPL = paramList_->sublist(GMRES_name);
-        maxNumberOfKrylovVectors = _gmresPL.get(GMRES_MaxNumberOfKrylovVectors_name,GMRES_MaxNumberOfKrylovVectors_default);
-        GMRES_Variant = _gmresPL.get(GMRES_Variant_name,GMRES_Variant_default);
-        //restartTimers = _gmresPL.get(Restart_Timers_name,Restart_Timers_default);
-      }
-      //solverPL->set(Restart_Timers_name, restartTimers);
-      if (GMRES_Variant == "Flexible") {
-        solverPL->set("Flexible Gmres", true);
+        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+        Teuchos::ParameterList &pbgmresPL = solverTypesPL.sublist(PseudoBlockGMRES_name);
+        solverPL = Teuchos::rcp( &pbgmresPL, false );
       }
       // 
       // Create the solver
@@ -658,19 +541,28 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
         iterativeSolver->setProblem( lp );
         iterativeSolver->setParameters( solverPL );
       }
-      else {    
-        if (GMRES_Variant == "Pseudo") {
-          iterativeSolver = rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-        }
-        else {
-          iterativeSolver = rcp(new Belos::BlockGmresSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
-        }
+      else {
+        iterativeSolver = rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
       }
       break;
     }
     case SOLVER_TYPE_BLOCK_CG:
     {
-      iterativeSolver = rcp(new Belos::BlockCGSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
+      // Set the PL
+      if(paramList_.get()) {
+        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+        Teuchos::ParameterList &cgPL = solverTypesPL.sublist(BlockCG_name);
+        solverPL = Teuchos::rcp( &cgPL, false );
+      }
+      // Create the solver
+      if (oldIterSolver != Teuchos::null) {
+        iterativeSolver = oldIterSolver;
+        iterativeSolver->setProblem( lp );
+        iterativeSolver->setParameters( solverPL );
+      }
+      else {
+        iterativeSolver = rcp(new Belos::BlockCGSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
+      }
       break;
     }
     case SOLVER_TYPE_GCRODR:
@@ -688,7 +580,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   // Initialize the LOWS object
   //
   belosOp->initialize(
-    lp,maxNumberOfKrylovVectors,solverPL,iterativeSolver
+    lp,solverPL,iterativeSolver
     ,fwdOpSrc,prec,myPrec.get()==NULL,approxFwdOpSrc,supportSolveUse
     );
   belosOp->setOStream(out);

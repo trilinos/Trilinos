@@ -21,7 +21,6 @@ BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve()
 template<class Scalar>
 BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve(
   const Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
-  ,const int                                                          maxNumberOfKrylovVectors
   ,const Teuchos::RCP<Teuchos::ParameterList>                         &solverPL
   ,const Teuchos::RCP<Belos::SolverManager<Scalar,MV_t,LO_t> >        &iterativeSolver
   ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
@@ -32,7 +31,7 @@ BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve(
   )
 {
   initialize(
-    lp,maxNumberOfKrylovVectors,iterativeSolver
+    lp,solverPL,iterativeSolver
     ,fwdOpSrc,prec,isExternalPrec,approxFwdOpSrc,supportSolveUse
     );
 }
@@ -40,7 +39,6 @@ BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve(
 template<class Scalar>
 void BelosLinearOpWithSolve<Scalar>::initialize(
   const Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
-  ,const int                                                          maxNumberOfKrylovVectors
   ,const Teuchos::RCP<Teuchos::ParameterList>                         &solverPL
   ,const Teuchos::RCP<Belos::SolverManager<Scalar,MV_t,LO_t> >        &iterativeSolver
   ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
@@ -53,7 +51,6 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   this->setLinePrefix("BELOS/T");
   // ToDo: Validate input
   lp_ = lp;
-  maxNumberOfKrylovVectors_ = maxNumberOfKrylovVectors;
   solverPL_ = solverPL;
   iterativeSolver_ = iterativeSolver;
   fwdOpSrc_ = fwdOpSrc;
@@ -109,7 +106,6 @@ ESupportSolveUse BelosLinearOpWithSolve<Scalar>::supportSolveUse() const
 template<class Scalar>
 void BelosLinearOpWithSolve<Scalar>::uninitialize(
   Teuchos::RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> >         *lp
-  ,int                                                          *maxNumberOfKrylovVectors
   ,Teuchos::RCP<Teuchos::ParameterList>                         *solverPL
   ,Teuchos::RCP<Belos::SolverManager<Scalar,MV_t,LO_t> >        *iterativeSolver
   ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >              *fwdOpSrc
@@ -120,7 +116,6 @@ void BelosLinearOpWithSolve<Scalar>::uninitialize(
   )
 {
   if(lp) *lp = lp_;
-  if(maxNumberOfKrylovVectors) *maxNumberOfKrylovVectors = maxNumberOfKrylovVectors_;
   if(solverPL) *solverPL = solverPL_;
   if(iterativeSolver) *iterativeSolver = iterativeSolver_;
   if(fwdOpSrc) *fwdOpSrc = fwdOpSrc_;
@@ -130,7 +125,6 @@ void BelosLinearOpWithSolve<Scalar>::uninitialize(
   if(supportSolveUse) *supportSolveUse = supportSolveUse_;
 
   lp_ = Teuchos::null;
-  maxNumberOfKrylovVectors_ = 0;
   solverPL_ = Teuchos::null;
   iterativeSolver_ = Teuchos::null;
   fwdOpSrc_ = Teuchos::null;
@@ -350,20 +344,29 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   //
   Teuchos::RCP<const Teuchos::ParameterList> solverParams = iterativeSolver_->getCurrentParameters();
   const int currBlockSize = Teuchos::getParameter<int>(*solverParams, "Block Size");
+  bool isNumBlocks = false;
+  int currNumBlocks = 0;
+  if (Teuchos::isParameterType<int>(*solverParams, "Num Blocks")) {
+    currNumBlocks = Teuchos::getParameter<int>(*solverParams, "Num Blocks");
+    isNumBlocks = true;
+  }
   const int newBlockSize = TEUCHOS_MIN(currBlockSize,numEquations/2);
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE) && newBlockSize != currBlockSize)
     *out << "\nAdjusted block size = " << newBlockSize << "\n";
   //
-  // Set the number of Krylov blocks if we are using GMRES!
-  //
-  const int BlockGmres_length = maxNumberOfKrylovVectors_/newBlockSize;
   tmpPL->set("Block Size",newBlockSize);
-  tmpPL->set("Num Blocks",BlockGmres_length);
-  if(newBlockSize != currBlockSize) {
-    if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
-      *out
-        << "\nAdjusted max number of GMRES Krylov basis blocks (maxNumberOfKrylovVectors/blockSize) = ("
-        << maxNumberOfKrylovVectors_ << ")/(" << newBlockSize << ") = " << BlockGmres_length << "\n";
+  //
+  // Set the number of Krylov blocks if we are using a GMRES solver, or a solver
+  // that recognizes "Num Blocks". Otherwise the solver will throw an error!
+  if (isNumBlocks) {
+    const int Krylov_length = (currNumBlocks*currBlockSize)/newBlockSize;
+    tmpPL->set("Num Blocks",Krylov_length);
+  
+    if(newBlockSize != currBlockSize) {
+      if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
+        *out
+          << "\nAdjusted max number of Krylov basis blocks = " << Krylov_length << "\n";
+    }
   }
   //
   // Solve the linear system

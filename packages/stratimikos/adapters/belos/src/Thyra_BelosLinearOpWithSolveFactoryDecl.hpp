@@ -29,7 +29,7 @@ public:
 
   //@}
 
-  /** \name Parameter names for Paramter List */
+  /** \name Parameter names for Parameter List */
   //@{
 
   /** \brief . */
@@ -44,58 +44,6 @@ public:
   static const std::string  PseudoBlockGMRES_name;
   /** \brief . */
   static const std::string  BlockCG_name;
-
-
-
-
-  /** \brief . */           
-  static const std::string  MaxIters_name;
-  /** \brief . */           
-  static const int          MaxIters_default;
-  /** \brief . */           
-  static const std::string  MaxRestarts_name;
-  /** \brief . */           
-  static const int          MaxRestarts_default;
-  /** \brief . */           
-  static const std::string  BlockSize_name;
-  /** \brief . */           
-  static const int          BlockSize_default;
-  /** \brief . */           
-  static const std::string  AdaptiveBlockSize_name;
-  /** \brief . */           
-  static const bool         AdaptiveBlockSize_default;
-  /** \brief . */           
-  static const std::string  DefaultRelResNorm_name;
-  /** \brief . */
-  static const MagnitudeType DefaultRelResNorm_default;
-  /** \brief . */
-  static const std::string  OrthoType_name;
-  /** \brief . */           
-  static const std::string  OrthoType_default;
-  /** \brief . */           
-  static const std::string  Restart_Timers_name;
-  /** \brief . */           
-  static const bool         Restart_Timers_default;
-  /** \brief . */
-  static const std::string  GMRES_name;
-  /** \brief . */           
-  static const std::string  GMRES_MaxNumberOfKrylovVectors_name;
-  /** \brief . */           
-  static const int          GMRES_MaxNumberOfKrylovVectors_default;
-  /** \brief . */           
-  static const std::string  GMRES_Variant_name;
-  /** \brief . */           
-  static const std::string  GMRES_Variant_default;
-  /** \brief . */           
-  static const std::string  Outputter_name;
-  /** \brief . */           
-  static const std::string  Outputter_OutputFrequency_name;
-  /** \brief . */           
-  static const int          Outputter_OutputFrequency_default;
-  /** \brief . */           
-  static const std::string  Outputter_OutputMaxResOnly_name;
-  /** \brief . */           
-  static const bool         Outputter_OutputMaxResOnly_default;
 
   //@}
 
