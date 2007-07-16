@@ -334,7 +334,7 @@ template<class ScalarType, class MV, class OP>
 const int GCRODRSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
 
 template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 25;
+const int GCRODRSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 300;
 
 template<class ScalarType, class MV, class OP>
 const int GCRODRSolMgr<ScalarType,MV,OP>::recycledBlocks_default_ = 5;
@@ -416,7 +416,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
 {
   // Create the internal parameter list if ones doesn't already exist.
   if (params_ == Teuchos::null) {
-    params_ = Teuchos::rcp( new Teuchos::ParameterList() );
+    params_ = Teuchos::rcp( new Teuchos::ParameterList(*getValidParameters()) );
   }
   else {
     params->validateParameters(*getValidParameters());

@@ -196,12 +196,14 @@ int main(int argc, char *argv[]) {
 
   // Get the valid list of parameters from the solver and print it.
   RCP<const Teuchos::ParameterList> validList = solver->getValidParameters();
-  if (pseudo) 
-    std::cout << std::endl << "Valid parameters from the pseudo-block Gmres solver manager:" << std::endl;
-  else 
-    std::cout << std::endl << "Valid parameters from the block Gmres solver manager:" << std::endl;
+  if (proc_verbose) {
+    if (pseudo) 
+      std::cout << std::endl << "Valid parameters from the pseudo-block Gmres solver manager:" << std::endl;
+    else 
+      std::cout << std::endl << "Valid parameters from the block Gmres solver manager:" << std::endl;
 
-  std::cout << *validList << std::endl;
+    std::cout << *validList << std::endl;
+  }
 
   // Set the parameter list after the solver construction.
   belosList.set( "Timer Label", "Belos Resolve" );         // Set timer label to discern between the two solvers.

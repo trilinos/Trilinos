@@ -186,9 +186,10 @@ int main(int argc, char *argv[]) {
 
   // Get the valid list of parameters from the solver and print it.
   RCP<const Teuchos::ParameterList> validList = solver->getValidParameters();
-  std::cout << std::endl << "Valid parameters from the block CG solver manager:" << std::endl;
-  std::cout << *validList << std::endl;
-
+  if (proc_verbose) {
+    std::cout << std::endl << "Valid parameters from the block CG solver manager:" << std::endl;
+    std::cout << *validList << std::endl;
+  }
   //
   // Set the problem after the solver construction.
   solver->setProblem( rcp( &problem2, false ) );

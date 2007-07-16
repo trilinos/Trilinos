@@ -117,15 +117,28 @@ namespace Belos {
      *
      * This constructor accepts the LinearProblem to be solved in addition
      * to a parameter list of options for the solver manager. These options include the following:
-     *   - "Block Size" - a \c int specifying the block size to be used by the underlying block Krylov-Schur solver. Default: 1
-     *   - "Adaptive Block Size" - a \c bool specifying whether the block size can be modified throughout the solve. Default: true
-     *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 3*nev
-     *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 300
-     *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
-     *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:  DGKS ,ICGS, and IMGS. Default: "DGKS"
+     *   - "Block Size" - an \c int specifying the block size to be used by the underlying block 
+     *                    conjugate-gradient solver. Default: 1
+     *   - "Adaptive Block Size" - a \c bool specifying whether the block size can be modified 
+     *                             throughout the solve. Default: true
+     *   - "Maximum Iterations" - an \c int specifying the maximum number of iterations the 
+     *                            underlying solver is allowed to perform. Default: 1000
+     *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms 
+     *                               must reach to decide convergence. Default: 1e-8.
+     *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:  
+     *                           DGKS ,ICGS, and IMGS. Default: "DGKS"
+     *   - "Orthogonalization Constant" - a \c MagnitudeType used by DGKS orthogonalization to 
+     *                                    determine whether another step of classical Gram-Schmidt 
+     *                                    is necessary.  Default: -1 (use DGKS default)
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
-     *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
-     *   - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled for the purposing of deciding convergence. Default: true
+     *   - "Output Stream" - a reference-counted pointer to the output stream where all
+     *                       solver output is sent.  Default: Teuchos::rcp(&std::cout,false)
+     *   - "Output Frequency" - an \c int specifying how often convergence information should be 
+     *                          outputted.  Default: -1 (never)
+     *   - "Show Maximum Residual Norm Only" - a \c bool specifying whether that only the maximum
+     *                                         relative residual norm is printed if convergence 
+     *                                         information is printed. Default: false
+     *   - "Timer Label" - a \c std::string to use as a prefix for the timer labels.  Default: "Belos"
      */
     BlockCGSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 		   const Teuchos::RCP<Teuchos::ParameterList> &pl );
@@ -172,18 +185,18 @@ namespace Belos {
     //! @name Solver application methods
     //@{ 
     
-    /*! \brief This method performs possibly repeated calls to the underlying linear solver's iterate() routine
-     * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 
-     * quit.
+    /*! \brief This method performs possibly repeated calls to the underlying linear solver's 
+     *         iterate() routine until the problem has been solved (as decided by the solver manager) 
+     *         or the solver manager decides to quit.
      *
-     * This method calls BlockCGIter::iterate(), which will return either because a specially constructed status test evaluates to 
-     * ::Passed or an std::exception is thrown.
+     * This method calls BlockCGIter::iterate() or CGIter::iterate(), which will return either because a 
+     * specially constructed status test evaluates to ::Passed or an std::exception is thrown.
      *
      * A return from BlockCGIter::iterate() signifies one of the following scenarios:
-     *    - the maximum number of restarts has been exceeded. In this scenario, the current solutions to the linear system
-     *      will be placed in the linear problem and return ::Unconverged.
-     *    - global convergence has been met. In this case, the current solutions to the linear system will be placed in the linear
-     *      problem and the solver manager will return ::Converged
+     *    - the maximum number of iterations has been exceeded. In this scenario, the current solutions 
+     *      to the linear system will be placed in the linear problem and return ::Unconverged.
+     *    - global convergence has been met. In this case, the current solutions to the linear system 
+     *      will be placed in the linear problem and the solver manager will return ::Converged
      *
      * \returns ::ReturnType specifying:
      *     - ::Converged: the linear problem was solved to the specification required by the solver manager.
@@ -336,7 +349,7 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos:
 {
   // Create the internal parameter list if ones doesn't already exist.
   if (params_ == Teuchos::null) {
-    params_ = Teuchos::rcp( new Teuchos::ParameterList() );
+    params_ = Teuchos::rcp( new Teuchos::ParameterList(*getValidParameters()) );
   }
   else {
     params->validateParameters(*getValidParameters());

@@ -702,7 +702,6 @@ namespace Belos {
     // also break if our basis is full
     //
     while (stest_->checkStatus(this) != Passed && curDim_+1 <= searchDim) {
-      //stest_->print(std::cout);
 
       iter_++;
       //

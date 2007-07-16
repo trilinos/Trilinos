@@ -307,7 +307,7 @@ template<class ScalarType, class MV, class OP>
 const int BlockGmresSolMgr<ScalarType,MV,OP>::blockSize_default_ = 1;
 
 template<class ScalarType, class MV, class OP>
-const int BlockGmresSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 25;
+const int BlockGmresSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 300;
 
 template<class ScalarType, class MV, class OP>
 const int BlockGmresSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
@@ -454,7 +454,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
 
   // Create the internal parameter list if ones doesn't already exist.
   if (params_ == Teuchos::null) {
-    params_ = Teuchos::rcp( new Teuchos::ParameterList() );
+    params_ = Teuchos::rcp( new Teuchos::ParameterList(*getValidParameters()) );
   }
   else {
     params->validateParameters(*getValidParameters());

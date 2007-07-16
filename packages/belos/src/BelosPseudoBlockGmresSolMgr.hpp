@@ -42,6 +42,7 @@
 #include "BelosPseudoBlockGmresIter.hpp"
 #include "BelosDGKSOrthoManager.hpp"
 #include "BelosICGSOrthoManager.hpp"
+#include "BelosIMGSOrthoManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
@@ -117,13 +118,12 @@ namespace Belos {
      * to a parameter list of options for the solver manager. These options include the following:
      *   - "Block Size" - a \c int specifying the block size to be used by the underlying block Krylov-Schur solver. Default: 1
      *   - "Adaptive Block Size" - a \c bool specifying whether the block size can be modified throughout the solve. Default: true
-     *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 3*nev
-     *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 300
-     *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
-     *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:  DGKS and ICGS. Default: "DGKS"
+     *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. 
+     *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. 
+     *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. 
+     *   - "Orthogonalization" - a \c std::string specifying the desired orthogonalization:  DGKS, ICGS, and IMGS. Default: "DGKS"
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
-     *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
-     *   - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled for the purposing of deciding convergence. Default: true
+     *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence.
      */
     PseudoBlockGmresSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
 		            const Teuchos::RCP<Teuchos::ParameterList> &pl );
@@ -295,7 +295,7 @@ template<class ScalarType, class MV, class OP>
 const int PseudoBlockGmresSolMgr<ScalarType,MV,OP>::blockSize_default_ = 1;
 
 template<class ScalarType, class MV, class OP>
-const int PseudoBlockGmresSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 25;
+const int PseudoBlockGmresSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 300;
 
 template<class ScalarType, class MV, class OP>
 const int PseudoBlockGmresSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
@@ -382,7 +382,7 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
 {
   // Create the internal parameter list if ones doesn't already exist.
   if (params_ == Teuchos::null) {
-    params_ = Teuchos::rcp( new Teuchos::ParameterList() );
+    params_ = Teuchos::rcp( new Teuchos::ParameterList(*getValidParameters()) );
   }
   else {
     params->validateParameters(*getValidParameters());
@@ -450,8 +450,9 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
     std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
-    TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS", std::invalid_argument,
-			"Belos::BlockGmresSolMgr: \"Orthogonalization\" must be either \"DGKS\" or \"ICGS\".");
+    TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS", 
+                        std::invalid_argument,
+			"Belos::BlockGmresSolMgr: \"Orthogonalization\" must be either \"DGKS\",\"ICGS\", or \"IMGS\".");
     if (tempOrthoType != orthoType_) {
       orthoType_ = tempOrthoType;
       // Create orthogonalization manager
@@ -466,6 +467,9 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
       }
       else if (orthoType_=="ICGS") {
 	ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
+      } 
+      else if (orthoType_=="IMGS") {
+	ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
       } 
     }  
   }
@@ -662,8 +666,11 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
     else if (orthoType_=="ICGS") {
       ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
     } 
+    else if (orthoType_=="IMGS") {
+      ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
+    } 
     else {
-      TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS",std::logic_error,
+      TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
 			 "Belos::BlockGmresSolMgr(): Invalid orthogonalization type.");
     }  
   }
