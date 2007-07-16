@@ -6,7 +6,7 @@
  
 RUN (beowulf-nightly-serial) {
     
-    BUILD-LABEL         = default;
+    BUILD-LABEL         = make_target_refactor;
     BUILD-DIR           = SERIAL;
     COMM                = serial;
     INVOKE-CONFIGURE    = linux-beowulf;

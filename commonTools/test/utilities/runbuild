@@ -371,6 +371,74 @@ exit $exitStatus;
             
         } # while (!$makePassed)
         
+        # Now we have to run `make examples` and `make tests` since `make` now
+        # only compiles the libraries.  For now, we are not going to attempt
+        # any recovery for tests and examples.
+
+        # Make Examples
+        $cmd  = "perl runconfigure ";
+        $cmd .= "--trilinos-dir=$trilinosDir ";
+        $cmd .= "--build-dir=$buildDir ";
+        $cmd .= "--resume ";
+        $cmd .= "--output-dir=$resultsDir ";
+        $cmd .= "--verbosity=$argVerbosity ";
+        $cmd .= "--log-verbosity=$argLogVerbosity ";
+        $status = system($cmd);
+        $status = $status >> 8;
+        if ($status == 86) {
+            return 86;
+        } elsif ($status != 0 && !$recover) { 
+            return 1;
+        }            
+        (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
+        $yr = sprintf("%02d", $yr % 100); $mo = sprintf("%02d", $mo+1);
+        $da = sprintf("%02d", $da); $hr = sprintf("%02d", $hr);
+        $mn = sprintf("%02d", $mn); $se = sprintf("%02d", $se);
+        my $makeStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
+        $cmd  = "perl runmake ";
+        $cmd .= "--trilinos-dir=$trilinosDir ";
+        $cmd .= "--build-dir=$buildDir ";
+        $cmd .= "--make-cmd=".($makeCmd?"\"$makeCmd examples\" ":"\"make examples\" ");
+        $cmd .= ($noBlameMake?"--no-blame ":"");
+        $cmd .= "--output-dir=$resultsDir ";
+        $cmd .= "--verbosity=$argVerbosity ";
+        $cmd .= "--log-verbosity=$argLogVerbosity ";
+        $cmd .= "--start-time=$makeStartTimeForFilename ";
+        $status = system($cmd);
+        $status = $status >> 8;
+        
+        # Make Tests
+        $cmd  = "perl runconfigure ";
+        $cmd .= "--trilinos-dir=$trilinosDir ";
+        $cmd .= "--build-dir=$buildDir ";
+        $cmd .= "--resume ";
+        $cmd .= "--output-dir=$resultsDir ";
+        $cmd .= "--verbosity=$argVerbosity ";
+        $cmd .= "--log-verbosity=$argLogVerbosity ";
+        $status = system($cmd);
+        $status = $status >> 8;
+        if ($status == 86) {
+            return 86;
+        } elsif ($status != 0 && !$recover) { 
+            return 1;
+        }            
+        ($se, $mn, $hr, $da, $mo, $yr) = (localtime)[0..5];
+        $yr = sprintf("%02d", $yr % 100); $mo = sprintf("%02d", $mo+1);
+        $da = sprintf("%02d", $da); $hr = sprintf("%02d", $hr);
+        $mn = sprintf("%02d", $mn); $se = sprintf("%02d", $se);
+        $makeStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
+        $cmd  = "perl runmake ";
+        $cmd .= "--trilinos-dir=$trilinosDir ";
+        $cmd .= "--build-dir=$buildDir ";
+        $cmd .= "--make-cmd=".($makeCmd?"\"$makeCmd tests\" ":"\"make tests\" ");
+        $cmd .= ($noBlameMake?"--no-blame ":"");
+        $cmd .= "--output-dir=$resultsDir ";
+        $cmd .= "--verbosity=$argVerbosity ";
+        $cmd .= "--log-verbosity=$argLogVerbosity ";
+        $cmd .= "--start-time=$makeStartTimeForFilename ";
+        $status = system($cmd);
+        $status = $status >> 8;
+        
         return 0;
         
     } # run()

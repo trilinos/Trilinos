@@ -29,6 +29,7 @@ my $trilinosDir;        # Trilinos directory        (required argument)
 my $buildDir;           # build directory           (required argument) 
 my $invokeConfigure;    # complete invoke-configure (required argument)
 my $recover;            # recover mode?
+my $resume;             # resume mode? (use existing invoke-configure)
 my $makeBrokenPackage;  # package the failed to make
 my $makeBrokenSubdir;   # package subdirectory in which make failed
 
@@ -86,6 +87,7 @@ exit $exitStatus;
                     "build-dir=s" => \$buildDir,
                     "invoke-configure=s" => \$invokeConfigure,
                     "recover" => \$recover,
+                    "resume" => \$resume,
                     "make-broken-package=s" => \$makeBrokenPackage,
                     "make-broken-subdir=s" => \$makeBrokenSubdir,
                     "output-dir=s" => \$outputDir,
@@ -120,15 +122,29 @@ exit $exitStatus;
             if ($buildDir !~ m/^\//) {
                 $buildDir = "$trilinosDir/$buildDir";
             }
-            if (!$makeBrokenPackage) {
+            if (!$makeBrokenPackage && !$resume) {
                 system ("rm -rf $buildDir");
                 system("mkdir $buildDir") == 0 or die "cannot create build-dir: $buildDir\n";
             }
         }
         
+        # Prevent problems with uninitialized value
+        if (!$recover) {
+            $recover = "";
+        }
+        
+        # Prevent problems with uninitialized value
+        if (!$resume) {
+            $resume = "";
+        }
+        
         # Check for existance of invoke-configure argument and actual file
-        if (!$invokeConfigure) {
+        if (!$invokeConfigure && !$resume) {
             die "invoke-configure value required, see --help for more information\n"; 
+        } elsif ($invokeConfigure && $resume) {
+            die "invoke-configure and resume options mutually exclusive\n";
+        } elsif ($resume) {
+            $invokeConfigure = "";
         } else {
             if ($invokeConfigure !~ m/^\//) {
                 $invokeConfigure = "$trilinosDir/commonTools/test/utilities/$invokeConfigure";
@@ -136,11 +152,6 @@ exit $exitStatus;
             if (!stat($invokeConfigure)) {
                 die "cannot stat invoke-configure: $invokeConfigure\n";
             } 
-        }
-        
-        # Prevent problems with uninitialized value
-        if (!$recover) {
-            $recover = "";
         }
         
         # Check for existance of output directory, use it to create the
@@ -226,6 +237,7 @@ exit $exitStatus;
         $message .= "  \$makeBrokenPackage = ".($makeBrokenPackage?$makeBrokenPackage:"")."\n";      
         $message .= "  \$makeBrokenSubdir = ".($makeBrokenSubdir?$makeBrokenSubdir:"")."\n"; 
         $message .= "  \$recover = $recover\n";
+        $message .= "  \$resume = $resume\n";
         $message .= "  \$outputDir = $outputDir\n";
         $message .= "  \$verbosity = $verbosity\n";
         $message .= "  \$logVerbosity = $logVerbosity\n";
@@ -248,10 +260,10 @@ exit $exitStatus;
     sub run {
         
         # Copy invoke-configure
-        if (!$makeBrokenPackage) {
+        if (!$makeBrokenPackage && !$resume) {
             system("cp $invokeConfigure $buildDir/invoke-configure") == 0
                 or die "cannot copy invoke-configure, died";
-        } else {                
+        } elsif (!$resume) {                
             # Move aside current, broken invoke-configure.  Serialize
             # broken invoke-configures so that all are preserved.
             my $icBrokenNumber = "00";
