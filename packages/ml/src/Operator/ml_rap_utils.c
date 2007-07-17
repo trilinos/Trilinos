@@ -371,8 +371,7 @@ void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
    }
    if (next != NULL) row -= next->getrow->Nrows;
 
-   context = (struct aztec_context *) input_matrix->data;
-   matrix =  (struct ML_vbrdata *)    context->getrowstuff;
+   matrix =  (struct ML_vbrdata *)    input_matrix->data;
    rowptr = matrix->bpntr;
    itemp   = rowptr[row];
    bindx   = &(matrix->bindx[itemp]);
