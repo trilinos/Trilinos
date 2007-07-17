@@ -82,7 +82,7 @@ namespace Sacado {
       //@{
 
       //! Default constructor
-      GeneralFad() : s_(T(0)) {}
+      GeneralFad() : s_(T(0.)) {}
 
       //! Constructor with supplied value \c x
       /*!
@@ -177,7 +177,7 @@ namespace Sacado {
 
       //! Returns derivative component \c i with bounds checking
       T dx(int i) const { 
-	return s_.size() ? s_.dx_[i] : T(0); }
+	return s_.size() ? s_.dx_[i] : T(0.); }
     
       //! Returns derivative component \c i without bounds checking
       T& fastAccessDx(int i) { return s_.dx_[i];}

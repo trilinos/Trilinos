@@ -81,9 +81,16 @@ namespace Sacado {
 
       //! Resize polynomial to degree d
       /*!
-       * All coefficients are reset to zero.
+       * Coefficients are preserved if \c keep_coeffs is \c true, otherwise 
+       * all coefficients are reset to zero.
        */
-      void resize(unsigned int d);
+      void resize(unsigned int d, bool keep_coeffs);
+
+      //! Reserve space for a degree d polynomial
+      /*!
+       * Coefficients are preserved.
+       */
+      void reserve(unsigned int d);
 
       //! Prepare polynomial for writing 
       /*!
@@ -142,7 +149,7 @@ namespace Sacado {
 
       //! Returns degree \c i term with bounds checking
       T coeff(unsigned int i) const { 
-	T tmp= i<=th->deg_ ? th->coeff_[i]:T(0); return tmp;}
+	T tmp= i<=th->deg_ ? th->coeff_[i]:T(0.); return tmp;}
     
       //! Returns degree \c i term without bounds checking
       T& fastAccessCoeff(unsigned int i) { return th->coeff_[i];}
@@ -221,6 +228,9 @@ namespace Sacado {
 
 	//! Constructor with degree d
 	TaylorData(unsigned int d);
+
+	//! Constructor with degree d and length l
+	TaylorData(unsigned int d, unsigned int l);
 
 	//! Copy constructor
 	TaylorData(const TaylorData& x);

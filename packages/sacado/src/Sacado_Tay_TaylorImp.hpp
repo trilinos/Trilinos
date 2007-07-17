@@ -69,6 +69,14 @@ TaylorData(unsigned int d) :
 
 template <typename T> 
 Taylor<T>::TaylorData::
+TaylorData(unsigned int d, unsigned int l) :
+  coeff_(), deg_(d), len_(l) 
+{
+  coeff_ = Sacado::ds_array<T>::get_and_fill(len_);
+}
+
+template <typename T> 
+Taylor<T>::TaylorData::
 TaylorData(const typename Taylor<T>::TaylorData& x) :
   coeff_(), deg_(x.deg_), len_(x.deg_+1) 
 {
@@ -146,14 +154,32 @@ Taylor<T>::
 template <typename T> 
 void
 Taylor<T>::
-resize(unsigned int d)
+resize(unsigned int d, bool keep_coeffs)
 {
   if (d+1 > length()) {
     Sacado::Handle<TaylorData> h(new TaylorData(d));
+    if (keep_coeffs)
+      Sacado::ds_array<T>::copy(th->coeff_, h->coeff_, th->deg_+1);
     th = h;
   }
-  else
-    Sacado::ds_array<T>::zero(coeff(), degree()+1);
+  else {
+    th.makeOwnCopy();
+    if (!keep_coeffs)
+      Sacado::ds_array<T>::zero(coeff(), degree()+1);
+    th->deg_ = d;
+  }
+}
+
+template <typename T> 
+void
+Taylor<T>::
+reserve(unsigned int d)
+{
+  if (d+1 > length()) {
+    Sacado::Handle<TaylorData> h(new TaylorData(th->deg_,d+1));
+    Sacado::ds_array<T>::copy(th->coeff_, h->coeff_, th->deg_+1);
+    th = h;
+  }
 }
 
 template <typename T> 
@@ -852,9 +878,9 @@ sincos(const Taylor<T>& a,
 {
   unsigned int dc = a.degree();
   if (s.degree() != dc)
-    s.resize(dc);
+    s.resize(dc, false);
   if (c.degree() != dc)
-    c.resize(dc);
+    c.resize(dc, false);
 
   const T* ca = a.coeff();
   T* cs = s.coeff();
@@ -921,9 +947,9 @@ sinhcosh(const Taylor<T>& a,
 {
   unsigned int dc = a.degree();
   if (s.degree() != dc)
-    s.resize(dc);
+    s.resize(dc, false);
   if (c.degree() != dc)
-    c.resize(dc);
+    c.resize(dc, false);
 
   const T* ca = a.coeff();
   T* cs = s.coeff();

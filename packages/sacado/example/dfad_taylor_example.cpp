@@ -38,9 +38,12 @@
 //     prints the results of computing a single Taylor series expansion of
 //     the solution to:
 //
-//           dx/dt = 1 + x^2,    x(0) = 1.0;
+//           dx/dt = 1 + x^2,    x(0) = x0 = 1.0;
 //
-//     The exact solution is x(t) = tan(t + pi/4)
+//     The exact solution is x(t) = tan(t + atan(x0)) = tan(t + pi/4)
+//     Also computes the derivative of the Taylor series solution with
+//     respect to x0.  The exact series derivative is 
+//     dx/dx0(t) = 1/2 * sec^2(t + atan(x0))
 
 #include "Sacado.hpp"
 
@@ -72,9 +75,26 @@ int main(int argc, char **argv)
     x.fastAccessCoeff(k+1) = f.coeff(k) / (k+1);
   }
 
+  // Compute derivative w.r.t. x0
+  Sacado::Fad::DFad< Sacado::Tay::Taylor<double> > x_fad(1, 0, x);
+  Sacado::Fad::DFad< Sacado::Tay::Taylor<double> > f_fad;
+  func(f_fad, x_fad);
+  Sacado::Tay::Taylor<double> dxdx0(deg);
+  dxdx0.fastAccessCoeff(0) = 1.0;
+  for (unsigned int k=0; k<deg; k++) {
+    dxdx0.fastAccessCoeff(k+1) = 0.0;
+    for (unsigned int j=0; j<=k; j++)
+      dxdx0.fastAccessCoeff(k+1) += f_fad.dx(0).coeff(k-j) * dxdx0.coeff(j);
+    dxdx0.fastAccessCoeff(k+1) /= k+1;
+  }
+
   // Print Taylor series solution
   std::cout << "Taylor series solution = " << std::endl 
 	    << x << std::endl;
+
+  // Print Taylor series solution derivative
+  std::cout << "Taylor series solution derivative= " << std::endl 
+	    << dxdx0 << std::endl;
 
   // Compute Taylor series expansion of solution x(t) = tan(t+pi/4)
   double pi = std::atan(1.0)*4.0;
@@ -83,9 +103,16 @@ int main(int argc, char **argv)
   t.fastAccessCoeff(1) = 1.0;
   Sacado::Tay::Taylor<double> u = std::tan(t);
 
+  // Compute Taylor series expansion of derivative
+  Sacado::Tay::Taylor<double> dudx0 = 0.5*(1.0+u*u);
+
   // Print expansion of solution
   std::cout << "Exact expansion = " << std::endl
 	    << u << std::endl;
+
+  // Print expansion of solution
+  std::cout << "Exact expansion derivative = " << std::endl
+	    << dudx0 << std::endl;
 
   // Compute maximum relative error
   double max_err = 0.0;
@@ -96,8 +123,19 @@ int main(int argc, char **argv)
   }
   std::cout << "Maximum relative error = " << max_err << std::endl;
 
+  // Compute maximum derivative relative error
+  double deriv_max_err = 0.0;
+  double deriv_err = 0.0;
+  for (unsigned int k=0; k<=deg; k++) {
+    deriv_err = std::fabs(dxdx0.coeff(k) - dudx0.coeff(k)) / 
+      (1.0 + fabs(dudx0.coeff(k)));
+    if (deriv_err > deriv_max_err) deriv_max_err = deriv_err;
+  }
+  std::cout << "Maximum derivative relative error = " << deriv_max_err 
+	    << std::endl;
+
   double tol = 1.0e-12;
-  if (max_err < tol)
+  if ((max_err < tol) && (deriv_max_err < tol))
     return 0;
   else
     return 1;

@@ -62,7 +62,7 @@ namespace Sacado {
       typedef T value_type;
 
       //! Default constructor
-      CacheTaylorImplementation() : coeff_(T(0),1) {}
+      CacheTaylorImplementation() : coeff_(T(0.),1) {}
 
       //! Constructor with supplied value \c x
       /*!
@@ -75,7 +75,7 @@ namespace Sacado {
        * Initializes first coeffienct to \c x and of a polynomial of degree d
        */
       CacheTaylorImplementation(unsigned int d, const T & x) : 
-	coeff_(T(0),d+1) {
+	coeff_(T(0.),d+1) {
 	coeff_[0] = x;
       }
 
@@ -115,11 +115,11 @@ namespace Sacado {
 
       //! Returns degree \c i term with bounds checking
       const T coeff(unsigned int i) const { 
-	T tmp= i<coeff_.size() ? coeff_[i]:T(0); return tmp;}
+	T tmp= i<coeff_.size() ? coeff_[i]:T(0.); return tmp;}
 
       //! Returns degree \c i term with bounds checking
       T coeff(unsigned int i) { 
-	T tmp= i<coeff_.size() ? coeff_[i]:T(0); return tmp;}
+	T tmp= i<coeff_.size() ? coeff_[i]:T(0.); return tmp;}
     
       //! Returns degree \c i term without bounds checking
       T& fastAccessCoeff(unsigned int i) { return coeff_[i];}
@@ -138,7 +138,7 @@ namespace Sacado {
       void resizeCoeffs(unsigned int dnew) {
 	std::valarray<T> tmp = coeff_;
 	std::slice s(0,coeff_.size(),1);
-	coeff_.resize(dnew+1,T(0));
+	coeff_.resize(dnew+1,T(0.));
 	coeff_[s] = tmp;
       }
 

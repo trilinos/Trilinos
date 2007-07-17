@@ -54,7 +54,7 @@
 template <typename T, typename Storage> 
 template <typename S> 
 inline Sacado::Fad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x) :
-  s_(T(0))
+  s_(T(0.))
 {
   int sz = x.size();
 

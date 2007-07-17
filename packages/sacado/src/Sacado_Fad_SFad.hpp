@@ -89,7 +89,7 @@ namespace Sacado {
       //@{
 
       //! Default constructor
-      Expr() : val_( T(0)) { ss_array<T>::zero(dx_, Num); }
+      Expr() : val_( T(0.)) { ss_array<T>::zero(dx_, Num); }
 
       //! Constructor with supplied value \c x
       /*!

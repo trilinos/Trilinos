@@ -32,7 +32,7 @@
 template <typename T> 
 template <typename S> 
 inline Sacado::Tay::CacheTaylor<T>::CacheTaylor(const Expr<S>& x) : 
-  Expr< CacheTaylorImplementation<T> >(x.degree(), T(0))
+  Expr< CacheTaylorImplementation<T> >(x.degree(), T(0.))
 {
   unsigned int d = this->degree();
 
@@ -215,14 +215,14 @@ Sacado::Tay::CacheTaylor<T>::operator *= (const S& x)
       T tmp;
       if (x.hasFastAccess(dfinal))
 	for(int i=dfinal; i>=0; --i) {
-	  tmp = T(0);
+	  tmp = T(0.);
 	  for (int k=0; k<=i; ++k)
 	    tmp += this->coeff_[k]*x.fastAccessCoeff(i-k);
 	  this->coeff_[i] = tmp;
 	}
       else
 	for(int i=dfinal; i>=0; --i) {
-	  tmp = T(0);
+	  tmp = T(0.);
 	  for (int k=0; k<=i; ++k)
 	    tmp += this->coeff_[k]*x.coeff(i-k);
 	  this->coeff_[i] = tmp;
