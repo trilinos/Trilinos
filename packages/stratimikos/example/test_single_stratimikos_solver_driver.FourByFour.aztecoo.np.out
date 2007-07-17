@@ -25,7 +25,7 @@ Creating a Thyra::DefaultRealLinearSolverBuilder object ...
 
 Valid parameters for DefaultRealLinearSolverBuilder ...
   Linear Solver Type : string = Amesos
-  Preconditioner Type : string = ML
+  Preconditioner Type : string = Ifpack
   Linear Solver Types -> 
     Amesos -> 
       Refactorization Policy : string = RepivotOnRefactorization
@@ -125,20 +125,54 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
         Output File : string = none
         Verbosity Level : string = default
     Belos -> 
-      Adaptive Block Size : bool = 1
-      Block Size : int = 1
-      Default Rel Res Norm : double = 1e-06
-      Maximum Iterations : int = 400
-      Maximum Restarts : int = 25
-      Orthogonalization : string = DGKS
-      Solver Type : string = GMRES
-      GMRES -> 
-        Max Number of Krylov Vectors : int = 300
-        Restart Timers : bool = 1
-        Variant : string = Standard
-      Outputter -> 
-        Output Frequency : int = 10
-        Show Maximum Residual Norm Only : bool = 1
+      Solver Type : string = Block GMRES
+      Solver Types -> 
+        Block CG -> 
+          Adaptive Block Size : bool = 1
+          Block Size : int = 1
+          Convergence Tolerance : double = 1e-08
+          Maximum Iterations : int = 1000
+          Orthogonalization : string = DGKS
+          Orthogonalization Constant : double = -1
+          Output Frequency : int = -1
+          Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb6f280,node=0xb7d8b0,count=4}
+          Show Maximum Residual Norm Only : bool = 0
+          Timer Label : string = Belos
+          Verbosity : int = 0
+        Block GMRES -> 
+          Adaptive Block Size : bool = 1
+          Block Size : int = 1
+          Convergence Tolerance : double = 1e-08
+          Explicit Residual Scaling : string = Norm of Initial Residual
+          Flexible Gmres : bool = 0
+          Implicit Residual Scaling : string = Norm of Preconditioned Initial Residual
+          Maximum Iterations : int = 1000
+          Maximum Restarts : int = 20
+          Num Blocks : int = 300
+          Orthogonalization : string = DGKS
+          Orthogonalization Constant : double = -1
+          Output Frequency : int = -1
+          Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb6f280,node=0xb7d670,count=4}
+          Show Maximum Residual Norm Only : bool = 0
+          Timer Label : string = Belos
+          Verbosity : int = 0
+        Pseudo Block GMRES -> 
+          Adaptive Block Size : bool = 1
+          Block Size : int = 1
+          Convergence Tolerance : double = 1e-08
+          Deflation Quorum : int = 1
+          Explicit Residual Scaling : string = Norm of Initial Residual
+          Implicit Residual Scaling : string = Norm of Preconditioned Initial Residual
+          Maximum Iterations : int = 1000
+          Maximum Restarts : int = 20
+          Num Blocks : int = 300
+          Orthogonalization : string = DGKS
+          Orthogonalization Constant : double = -1
+          Output Frequency : int = -1
+          Output Stream : RCP<std::ostream> = RCP<std::ostream>{ptr=0xb6f280,node=0xb7d790,count=4}
+          Show Maximum Residual Norm Only : bool = 0
+          Timer Label : string = Belos
+          Verbosity : int = 0
       VerboseObject -> 
         Output File : string = none
         Verbosity Level : string = default
@@ -197,8 +231,8 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
         max levels : int = 10
         prec type : string = MGV
         smoother: Aztec as solver : bool = 0
-        smoother: Aztec options : int* = 0xb59ba0
-        smoother: Aztec params : double* = 0xb5a460
+        smoother: Aztec options : int* = 0xb96f60
+        smoother: Aztec params : double* = 0xb97820
         smoother: Hiptmair efficient symmetric : bool = 1
         smoother: damping factor : double = 1
         smoother: pre or post : string = both
@@ -226,7 +260,7 @@ Running example use cases ...
       solveStatus = SOLVE_STATUS_UNKNOWN
       achievedTol = unknownTolerance()
       message:
-        AztecOO solver converged on m = 1 RHSs using 4 cumulative iterations for an average of 4 iterations/RHS and total CPU time of 0.00172 sec.
+        AztecOO solver converged on m = 1 RHSs using 4 cumulative iterations for an average of 4 iterations/RHS and total CPU time of 0.001733 sec.
       extraParameters: NONE
     
     Performing a solve, changing the operator, then performing another solve ...
