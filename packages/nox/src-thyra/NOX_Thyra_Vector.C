@@ -40,7 +40,7 @@
 //@HEADER
 
 #include "NOX_Thyra_Vector.H"
-//#include "NOX_Thyra_MultiVector.H"
+#include "NOX_Thyra_MultiVector.H"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
@@ -196,64 +196,64 @@ clone(CopyType type) const
   return Teuchos::rcp(new NOX::Thyra::Vector(*this, type));
 }
 
-// Teuchos::RCP<NOX::Abstract::MultiVector>
-// NOX::Thyra::Vector::
-// createMultiVector(const NOX::Abstract::Vector* const* vecs,
-// 		  int numVecs, NOX::CopyType type) const
-// {
-//   // Get vector space
-//   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > space = 
-//     thyraVec->space();
+Teuchos::RCP<NOX::Abstract::MultiVector>
+NOX::Thyra::Vector::
+createMultiVector(const NOX::Abstract::Vector* const* vecs,
+		  int numVecs, NOX::CopyType type) const
+{
+  // Get vector space
+  Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > space = 
+    thyraVec->space();
 
-//   // Create Thyra multivector
-//   Teuchos::RCP< ::Thyra::MultiVectorBase<double> > mv = 
-//     ::Thyra::createMembers(*space, numVecs+1);
+  // Create Thyra multivector
+  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > mv = 
+    ::Thyra::createMembers(*space, numVecs+1);
 
-//   // Copy vectors
-//   if (type == NOX::DeepCopy) {
-//     Teuchos::RCP< ::Thyra::VectorBase<double> > v = mv->col(0);
-//     ::Thyra::copy(*thyraVec, v.get());
-//     for (int i=0; i<numVecs; i++) {
-//       const NOX::Thyra::Vector* tv = 
-// 	dynamic_cast<const NOX::Thyra::Vector*>(vecs[i]);
-//       v = mv->col(i+1);
-//       ::Thyra::copy(*(tv->thyraVec), v.get());
-//     }
-//   }
+  // Copy vectors
+  if (type == NOX::DeepCopy) {
+    Teuchos::RCP< ::Thyra::VectorBase<double> > v = mv->col(0);
+    ::Thyra::copy(*thyraVec, v.get());
+    for (int i=0; i<numVecs; i++) {
+      const NOX::Thyra::Vector* tv = 
+	dynamic_cast<const NOX::Thyra::Vector*>(vecs[i]);
+      v = mv->col(i+1);
+      ::Thyra::copy(*(tv->thyraVec), v.get());
+    }
+  }
   
-//   // Create multi-vector
-//   Teuchos::RCP<NOX::Thyra::MultiVector> nmv = 
-//     Teuchos::rcp(new NOX::Thyra::MultiVector(mv));
+  // Create multi-vector
+  Teuchos::RCP<NOX::Thyra::MultiVector> nmv = 
+    Teuchos::rcp(new NOX::Thyra::MultiVector(mv));
 
-//   return nmv;
-// }
+  return nmv;
+}
 
-// Teuchos::RCP<NOX::Abstract::MultiVector>
-// NOX::Thyra::Vector::
-// createMultiVector(int numVecs, NOX::CopyType type) const
-// {
-//   // Get vector space
-//   Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > space = 
-//     thyraVec->space();
+Teuchos::RCP<NOX::Abstract::MultiVector>
+NOX::Thyra::Vector::
+createMultiVector(int numVecs, NOX::CopyType type) const
+{
+  // Get vector space
+  Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > space = 
+    thyraVec->space();
 
-//   // Create Thyra multivector
-//   Teuchos::RCP< ::Thyra::MultiVectorBase<double> > mv = 
-//     createMembers(*space, numVecs);
+  // Create Thyra multivector
+  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > mv = 
+    createMembers(*space, numVecs);
 
-//   // Copy vectors
-//   if (type == NOX::DeepCopy) {
-//     for (int i=0; i<numVecs; i++) {
-//       Teuchos::RCP< ::Thyra::VectorBase<double> > v = mv->col(i);
-//       ::Thyra::copy(*thyraVec, v.get());
-//     }
-//   }
+  // Copy vectors
+  if (type == NOX::DeepCopy) {
+    for (int i=0; i<numVecs; i++) {
+      Teuchos::RCP< ::Thyra::VectorBase<double> > v = mv->col(i);
+      ::Thyra::copy(*thyraVec, v.get());
+    }
+  }
   
-//   // Create multi-vector
-//   Teuchos::RCP<NOX::Thyra::MultiVector> nmv = 
-//     Teuchos::rcp(new NOX::Thyra::MultiVector(mv));
+  // Create multi-vector
+  Teuchos::RCP<NOX::Thyra::MultiVector> nmv = 
+    Teuchos::rcp(new NOX::Thyra::MultiVector(mv));
 
-//   return nmv;
-// }
+  return nmv;
+}
 
 double 
 NOX::Thyra::Vector::
@@ -296,7 +296,8 @@ void
 NOX::Thyra::Vector::
 print(std::ostream& stream) const
 {
-  stream << *thyraVec;
+  //stream << *thyraVec;
+  thyraVec->describe(*Teuchos::fancyOStream<char>(Teuchos::rcp(&stream,false)), Teuchos::VERB_HIGH);
   return;
 }
 

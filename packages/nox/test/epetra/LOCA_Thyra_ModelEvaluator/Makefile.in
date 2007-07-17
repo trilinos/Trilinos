@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# @HEADER
+#@HEADER
 # ************************************************************************
 # 
 #            NOX: An Object-Oriented Nonlinear Solver Package
@@ -44,10 +44,40 @@
 # Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
 # Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 # ************************************************************************
+#@HEADER
+
+# @HEADER
+# ************************************************************************
+# 
+#                           Sacado Package
+#                 Copyright (2006) Sandia Corporation
+# 
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
+# (etphipp@sandia.gov).
+# 
+# ************************************************************************
 # @HEADER
 
-# The following line helps the test harness recover from build errors.
-
+# ------------------------------------------------------------------------
+# FEApp Sources
+# ------------------------------------------------------------------------
 
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
@@ -68,9 +98,11 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-subdir = src-thyra
-DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(top_srcdir)/../sacado/example/FEApp/MakefileFEAppStub.am
+@BUILD_EPETRA_TESTS_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@BUILD_THYRA_TESTS_TRUE@@ENABLE_LOCA_SACADO_TRUE@noinst_PROGRAMS = tcubed$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@BUILD_THYRA_TESTS_TRUE@@ENABLE_LOCA_SACADO_TRUE@	tcubedTP$(EXEEXT)
+subdir = test/epetra/LOCA_Thyra_ModelEvaluator
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/ac_cxx_invalid_template_qualifier.m4 \
@@ -100,23 +132,20 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
-libLIBRARIES_INSTALL = $(INSTALL_DATA)
-LIBRARIES = $(lib_LIBRARIES)
-ARFLAGS = cru
+PROGRAMS = $(noinst_PROGRAMS)
+am_tcubed_OBJECTS = tcubed-tcubed.$(OBJEXT)
+tcubed_OBJECTS = $(am_tcubed_OBJECTS)
 am__DEPENDENCIES_1 =
-libnoxthyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__objects_1 = NOX_Thyra_Vector.$(OBJEXT) \
-	NOX_Thyra_MultiVector.$(OBJEXT) NOX_Thyra_Group.$(OBJEXT)
-am__objects_2 =
-am_libnoxthyra_a_OBJECTS = $(am__objects_1) $(am__objects_2)
-libnoxthyra_a_OBJECTS = $(am_libnoxthyra_a_OBJECTS)
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(LOCA_EPETRA_TEST_LIBS))
+tcubed_LINK = $(CXXLD) $(tcubed_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_tcubedTP_OBJECTS = tcubedTP-tcubedTP.$(OBJEXT)
+tcubedTP_OBJECTS = $(am_tcubedTP_OBJECTS)
+am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
+tcubedTP_LINK = $(CXXLD) $(tcubedTP_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -125,17 +154,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libnoxthyra_a_SOURCES)
-DIST_SOURCES = $(libnoxthyra_a_SOURCES)
-am__include_HEADERS_DIST = $(srcdir)/NOX_Thyra.H \
-	$(srcdir)/NOX_Thyra_Vector.H $(srcdir)/NOX_Thyra_MultiVector.H \
-	$(srcdir)/NOX_Thyra_Group.H
-includeHEADERS_INSTALL = $(INSTALL_HEADER)
-HEADERS = $(include_HEADERS)
+SOURCES = $(tcubed_SOURCES) $(tcubedTP_SOURCES)
+DIST_SOURCES = $(tcubed_SOURCES) $(tcubedTP_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -179,7 +199,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = @EXEEXT@
+EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -280,73 +300,163 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+FEAPP_PATH = $(top_srcdir)/../sacado/example/FEApp
+ELEMENT_H = \
+	$(FEAPP_PATH)/FEApp_AbstractElement.hpp \
+	$(FEAPP_PATH)/FEApp_LinearElement.hpp \
+	$(FEAPP_PATH)/FEApp_ElementFactory.hpp
 
-# ------------------------------------------------------------------------
-# For each category, create two variables - NAME and NAME_H. The
-# second is the list of headers to be installed, i.e., any header that
-# might someday be needed by some other code outside NOX. The first is
-# the list of all source and any other header files.
-# ------------------------------------------------------------------------
-THYRA_H = \
-	$(srcdir)/NOX_Thyra.H \
-	$(srcdir)/NOX_Thyra_Vector.H \
-	$(srcdir)/NOX_Thyra_MultiVector.H \
-	$(srcdir)/NOX_Thyra_Group.H
+ELEMENT = \
+	$(FEAPP_PATH)/FEApp_LinearElement.cpp \
+	$(FEAPP_PATH)/FEApp_ElementFactory.cpp
 
-THYRA = \
-	$(srcdir)/NOX_Thyra_Vector.C \
-	$(srcdir)/NOX_Thyra_MultiVector.C \
-	$(srcdir)/NOX_Thyra_Group.C 
+QUADRATURE_H = \
+	$(FEAPP_PATH)/FEApp_AbstractQuadrature.hpp \
+	$(FEAPP_PATH)/FEApp_GaussianQuadrature2.hpp \
+	$(FEAPP_PATH)/FEApp_QuadratureFactory.hpp
 
+QUADRATURE = \
+	$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp \
+	$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp
 
-# ------------------------------------------------------------------------
-# Noxthyra library specifications
-# ------------------------------------------------------------------------
-libnoxthyra_a_SOURCES = $(THYRA) $(THYRA_H)
-@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(NOX_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
-AM_CPPFLAGS = $(EXPORT_INCLUDES)
+SOURCE_H = \
+	$(FEAPP_PATH)/FEApp_AbstractSourceFunction.hpp \
+	$(FEAPP_PATH)/FEApp_QuadraticSourceFunction.hpp \
+	$(FEAPP_PATH)/FEApp_CubicSourceFunction.hpp \
+	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.hpp \
+	$(FEAPP_PATH)/FEApp_SourceFunctionFactoryImpl.hpp
 
-# ------------------------------------------------------------------------
-# When to turn it on
-# ------------------------------------------------------------------------
+SOURCE = \
+	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp
 
-# List of all libraries to install in $(libexecdir)
-@BUILD_LIBNOXTHYRA_TRUE@lib_LIBRARIES = libnoxthyra.a
+PDE_H = \
+	$(FEAPP_PATH)/FEApp_AbstractPDE_NTBase.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractPDE.hpp \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.hpp \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDEImpl.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorPDE.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorPDEImpl.hpp
 
-# List of all headers to install in $(includedir)
-@BUILD_LIBNOXTHYRA_TRUE@include_HEADERS = $(THYRA_H)
-@USE_ALTERNATE_AR_FALSE@libnoxthyra_a_AR = $(AR) cru
+PDE = \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp
 
-# ------------------------------------------------------------------------
-# For using a special archiver
-# ------------------------------------------------------------------------
+BC_H = \
+	$(FEAPP_PATH)/FEApp_AbstractNodeBCStrategy_NTBase.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractNodeBCStrategy.hpp \
+	$(FEAPP_PATH)/FEApp_NodeBC.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategyImpl.hpp \
+	$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.hpp \
+	$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategyImpl.hpp
 
-# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
-# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
-# define it manually.
-@USE_ALTERNATE_AR_TRUE@libnoxthyra_a_AR = $(ALTERNATE_AR)
+BC = \
+	$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp \
+	$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp
 
-# ------------------------------------------------------------------------
-# Some C++ compilers create extra .o-files for templates. We need to
-# be sure to include these, and this is the hack to do it.
-# ------------------------------------------------------------------------
-libnoxthyra_a_LIBADD = $(CXXREPOS) $(XTRALDADD)
+PROBLEM_H = \
+	$(FEAPP_PATH)/FEApp_TemplateTypes.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractProblem.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorProblem.hpp \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.hpp \
+	$(FEAPP_PATH)/FEApp_ProblemFactory.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorParameters.hpp
 
-# ------------------------------------------------------------------------
-# Files to be deleted by 'make maintainer-clean'
-# ------------------------------------------------------------------------
-MAINTAINERCLEANFILES = Makefile.in 
+PROBLEM = \
+	$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp \
+	$(FEAPP_PATH)/FEApp_ProblemFactory.cpp
 
-# ------------------------------------------------------------------------
-# Files to be deleted by 'make clean'
-# ------------------------------------------------------------------------
-MOSTLYCLEANFILES = $(CXXREPOS)
+MESH_H = \
+	$(FEAPP_PATH)/FEApp_Mesh.hpp
+
+MESH = \
+	$(FEAPP_PATH)/FEApp_Mesh.cpp
+
+FILL_H = \
+	$(FEAPP_PATH)/FEApp_AbstractInitPostOp.hpp \
+	$(FEAPP_PATH)/FEApp_InitPostOps.hpp \
+	$(FEAPP_PATH)/FEApp_GlobalFill.hpp \
+	$(FEAPP_PATH)/FEApp_GlobalFillImpl.hpp
+
+FILL = \
+	$(FEAPP_PATH)/FEApp_InitPostOps.cpp \
+	$(FEAPP_PATH)/FEApp_GlobalFill.cpp
+
+DISC_H = \
+	$(FEAPP_PATH)/FEApp_AbstractDiscretization.hpp \
+	$(FEAPP_PATH)/FEApp_CZeroDiscretization.hpp \
+	$(FEAPP_PATH)/FEApp_DiscretizationFactory.hpp
+
+DISC = \
+	$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp \
+	$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
+
+APP_H = \
+	$(FEAPP_PATH)/FEApp_Application.hpp \
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp
+
+APP = \
+	$(FEAPP_PATH)/FEApp_Application.cpp \
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
+
+FEAPP_H = \
+	$(ELEMENT_H) \
+	$(QUADRATURE_H) \
+	$(SOURCE_H) \
+	$(PDE_H) \
+	$(BC_H) \
+	$(PROBLEM_H) \
+	$(MESH_H) \
+	$(FILL_H) \
+	$(DISC_H) \
+	$(APP_H)
+
+FEAPP = \
+	$(ELEMENT) \
+	$(QUADRATURE) \
+	$(SOURCE) \
+	$(PDE) \
+	$(BC) \
+	$(PROBLEM) \
+	$(MESH) \
+	$(FILL) \
+	$(DISC) \
+	$(APP)
+
+@USING_GNUMAKE_FALSE@TEST_LIBS = $(LOCA_EPETRA_TEST_LIBS)
+@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_EPETRA_TEST_LIBS))
+@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(LOCA_EPETRA_TEST_INCLUDES)
+@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_EPETRA_TEST_INCLUDES))
+tcubed_SOURCES = \
+	$(srcdir)/tcubed.C 
+
+tcubed_CXXFLAGS = \
+	-I$(FEAPP_PATH) \
+	$(TEST_INCLUDES) \
+	$(SACADO_INCLUDES)
+
+tcubed_LDADD = \
+	$(TEST_LIBS) \
+	$(SACADO_LIBS)
+
+tcubed_DEPENDENCIES = \
+        $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-thyra/libnoxthyra.a \
+	$(top_builddir)/test/utils/libnoxtestutils.a \
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-thyra/liblocathyra.a \
+	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.a
+
+tcubedTP_SOURCES = $(srcdir)/tcubedTP.C 
+tcubedTP_CXXFLAGS = $(tcubed_CXXFLAGS)
+tcubedTP_LDADD = $(tcubed_LDADD)
+tcubedTP_DEPENDENCIES = $(tcubed_DEPENDENCIES)
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .C .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/../sacado/example/FEApp/MakefileFEAppStub.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -355,9 +465,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src-thyra/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/epetra/LOCA_Thyra_ModelEvaluator/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  src-thyra/Makefile
+	  $(AUTOMAKE) --foreign  test/epetra/LOCA_Thyra_ModelEvaluator/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -375,39 +485,15 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-install-libLIBRARIES: $(lib_LIBRARIES)
-	@$(NORMAL_INSTALL)
-	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    f=$(am__strip_dir) \
-	    echo " $(libLIBRARIES_INSTALL) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
-	    $(libLIBRARIES_INSTALL) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
-	  else :; fi; \
-	done
-	@$(POST_INSTALL)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    p=$(am__strip_dir) \
-	    echo " $(RANLIB) '$(DESTDIR)$(libdir)/$$p'"; \
-	    $(RANLIB) "$(DESTDIR)$(libdir)/$$p"; \
-	  else :; fi; \
-	done
 
-uninstall-libLIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  p=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(libdir)/$$p'"; \
-	  rm -f "$(DESTDIR)$(libdir)/$$p"; \
-	done
-
-clean-libLIBRARIES:
-	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libnoxthyra.a: $(libnoxthyra_a_OBJECTS) $(libnoxthyra_a_DEPENDENCIES) 
-	-rm -f libnoxthyra.a
-	$(libnoxthyra_a_AR) libnoxthyra.a $(libnoxthyra_a_OBJECTS) $(libnoxthyra_a_LIBADD)
-	$(RANLIB) libnoxthyra.a
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+tcubed$(EXEEXT): $(tcubed_OBJECTS) $(tcubed_DEPENDENCIES) 
+	@rm -f tcubed$(EXEEXT)
+	$(tcubed_LINK) $(tcubed_OBJECTS) $(tcubed_LDADD) $(LIBS)
+tcubedTP$(EXEEXT): $(tcubedTP_OBJECTS) $(tcubedTP_DEPENDENCIES) 
+	@rm -f tcubedTP$(EXEEXT)
+	$(tcubedTP_LINK) $(tcubedTP_OBJECTS) $(tcubedTP_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -415,9 +501,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Thyra_Group.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Thyra_MultiVector.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Thyra_Vector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcubed-tcubed.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcubedTP-tcubedTP.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -433,64 +518,33 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-NOX_Thyra_Vector.o: $(srcdir)/NOX_Thyra_Vector.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Thyra_Vector.o -MD -MP -MF $(DEPDIR)/NOX_Thyra_Vector.Tpo -c -o NOX_Thyra_Vector.o `test -f '$(srcdir)/NOX_Thyra_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Thyra_Vector.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/NOX_Thyra_Vector.Tpo $(DEPDIR)/NOX_Thyra_Vector.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Thyra_Vector.C' object='NOX_Thyra_Vector.o' libtool=no @AMDEPBACKSLASH@
+tcubed-tcubed.o: $(srcdir)/tcubed.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tcubed_CXXFLAGS) $(CXXFLAGS) -MT tcubed-tcubed.o -MD -MP -MF $(DEPDIR)/tcubed-tcubed.Tpo -c -o tcubed-tcubed.o `test -f '$(srcdir)/tcubed.C' || echo '$(srcdir)/'`$(srcdir)/tcubed.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/tcubed-tcubed.Tpo $(DEPDIR)/tcubed-tcubed.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/tcubed.C' object='tcubed-tcubed.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Thyra_Vector.o `test -f '$(srcdir)/NOX_Thyra_Vector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Thyra_Vector.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tcubed_CXXFLAGS) $(CXXFLAGS) -c -o tcubed-tcubed.o `test -f '$(srcdir)/tcubed.C' || echo '$(srcdir)/'`$(srcdir)/tcubed.C
 
-NOX_Thyra_Vector.obj: $(srcdir)/NOX_Thyra_Vector.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Thyra_Vector.obj -MD -MP -MF $(DEPDIR)/NOX_Thyra_Vector.Tpo -c -o NOX_Thyra_Vector.obj `if test -f '$(srcdir)/NOX_Thyra_Vector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Thyra_Vector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Thyra_Vector.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/NOX_Thyra_Vector.Tpo $(DEPDIR)/NOX_Thyra_Vector.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Thyra_Vector.C' object='NOX_Thyra_Vector.obj' libtool=no @AMDEPBACKSLASH@
+tcubed-tcubed.obj: $(srcdir)/tcubed.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tcubed_CXXFLAGS) $(CXXFLAGS) -MT tcubed-tcubed.obj -MD -MP -MF $(DEPDIR)/tcubed-tcubed.Tpo -c -o tcubed-tcubed.obj `if test -f '$(srcdir)/tcubed.C'; then $(CYGPATH_W) '$(srcdir)/tcubed.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tcubed.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/tcubed-tcubed.Tpo $(DEPDIR)/tcubed-tcubed.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/tcubed.C' object='tcubed-tcubed.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Thyra_Vector.obj `if test -f '$(srcdir)/NOX_Thyra_Vector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Thyra_Vector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Thyra_Vector.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tcubed_CXXFLAGS) $(CXXFLAGS) -c -o tcubed-tcubed.obj `if test -f '$(srcdir)/tcubed.C'; then $(CYGPATH_W) '$(srcdir)/tcubed.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tcubed.C'; fi`
 
-NOX_Thyra_MultiVector.o: $(srcdir)/NOX_Thyra_MultiVector.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Thyra_MultiVector.o -MD -MP -MF $(DEPDIR)/NOX_Thyra_MultiVector.Tpo -c -o NOX_Thyra_MultiVector.o `test -f '$(srcdir)/NOX_Thyra_MultiVector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Thyra_MultiVector.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/NOX_Thyra_MultiVector.Tpo $(DEPDIR)/NOX_Thyra_MultiVector.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Thyra_MultiVector.C' object='NOX_Thyra_MultiVector.o' libtool=no @AMDEPBACKSLASH@
+tcubedTP-tcubedTP.o: $(srcdir)/tcubedTP.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tcubedTP_CXXFLAGS) $(CXXFLAGS) -MT tcubedTP-tcubedTP.o -MD -MP -MF $(DEPDIR)/tcubedTP-tcubedTP.Tpo -c -o tcubedTP-tcubedTP.o `test -f '$(srcdir)/tcubedTP.C' || echo '$(srcdir)/'`$(srcdir)/tcubedTP.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/tcubedTP-tcubedTP.Tpo $(DEPDIR)/tcubedTP-tcubedTP.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/tcubedTP.C' object='tcubedTP-tcubedTP.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Thyra_MultiVector.o `test -f '$(srcdir)/NOX_Thyra_MultiVector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Thyra_MultiVector.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tcubedTP_CXXFLAGS) $(CXXFLAGS) -c -o tcubedTP-tcubedTP.o `test -f '$(srcdir)/tcubedTP.C' || echo '$(srcdir)/'`$(srcdir)/tcubedTP.C
 
-NOX_Thyra_MultiVector.obj: $(srcdir)/NOX_Thyra_MultiVector.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Thyra_MultiVector.obj -MD -MP -MF $(DEPDIR)/NOX_Thyra_MultiVector.Tpo -c -o NOX_Thyra_MultiVector.obj `if test -f '$(srcdir)/NOX_Thyra_MultiVector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Thyra_MultiVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Thyra_MultiVector.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/NOX_Thyra_MultiVector.Tpo $(DEPDIR)/NOX_Thyra_MultiVector.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Thyra_MultiVector.C' object='NOX_Thyra_MultiVector.obj' libtool=no @AMDEPBACKSLASH@
+tcubedTP-tcubedTP.obj: $(srcdir)/tcubedTP.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tcubedTP_CXXFLAGS) $(CXXFLAGS) -MT tcubedTP-tcubedTP.obj -MD -MP -MF $(DEPDIR)/tcubedTP-tcubedTP.Tpo -c -o tcubedTP-tcubedTP.obj `if test -f '$(srcdir)/tcubedTP.C'; then $(CYGPATH_W) '$(srcdir)/tcubedTP.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tcubedTP.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/tcubedTP-tcubedTP.Tpo $(DEPDIR)/tcubedTP-tcubedTP.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/tcubedTP.C' object='tcubedTP-tcubedTP.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Thyra_MultiVector.obj `if test -f '$(srcdir)/NOX_Thyra_MultiVector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Thyra_MultiVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Thyra_MultiVector.C'; fi`
-
-NOX_Thyra_Group.o: $(srcdir)/NOX_Thyra_Group.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Thyra_Group.o -MD -MP -MF $(DEPDIR)/NOX_Thyra_Group.Tpo -c -o NOX_Thyra_Group.o `test -f '$(srcdir)/NOX_Thyra_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Thyra_Group.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/NOX_Thyra_Group.Tpo $(DEPDIR)/NOX_Thyra_Group.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Thyra_Group.C' object='NOX_Thyra_Group.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Thyra_Group.o `test -f '$(srcdir)/NOX_Thyra_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Thyra_Group.C
-
-NOX_Thyra_Group.obj: $(srcdir)/NOX_Thyra_Group.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Thyra_Group.obj -MD -MP -MF $(DEPDIR)/NOX_Thyra_Group.Tpo -c -o NOX_Thyra_Group.obj `if test -f '$(srcdir)/NOX_Thyra_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Thyra_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Thyra_Group.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/NOX_Thyra_Group.Tpo $(DEPDIR)/NOX_Thyra_Group.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Thyra_Group.C' object='NOX_Thyra_Group.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Thyra_Group.obj `if test -f '$(srcdir)/NOX_Thyra_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Thyra_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Thyra_Group.C'; fi`
-install-includeHEADERS: $(include_HEADERS)
-	@$(NORMAL_INSTALL)
-	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
-	@list='$(include_HEADERS)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f=$(am__strip_dir) \
-	  echo " $(includeHEADERS_INSTALL) '$$d$$p' '$(DESTDIR)$(includedir)/$$f'"; \
-	  $(includeHEADERS_INSTALL) "$$d$$p" "$(DESTDIR)$(includedir)/$$f"; \
-	done
-
-uninstall-includeHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(include_HEADERS)'; for p in $$list; do \
-	  f=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(includedir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(includedir)/$$f"; \
-	done
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tcubedTP_CXXFLAGS) $(CXXFLAGS) -c -o tcubedTP-tcubedTP.obj `if test -f '$(srcdir)/tcubedTP.C'; then $(CYGPATH_W) '$(srcdir)/tcubedTP.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tcubedTP.C'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -568,11 +622,8 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(HEADERS) all-local
+all-am: Makefile $(PROGRAMS)
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
-	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
-	done
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -588,7 +639,6 @@ install-strip:
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
-	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 
@@ -598,10 +648,9 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -619,11 +668,11 @@ info: info-am
 
 info-am:
 
-install-data-am: install-includeHEADERS
+install-data-am:
 
 install-dvi: install-dvi-am
 
-install-exec-am: install-libLIBRARIES
+install-exec-am:
 
 install-html: install-html-am
 
@@ -654,34 +703,32 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES
+uninstall-am:
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
-	clean-generic clean-libLIBRARIES ctags distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-includeHEADERS install-info install-info-am \
-	install-libLIBRARIES install-man install-pdf install-pdf-am \
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
 	install-ps install-ps-am install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-includeHEADERS uninstall-libLIBRARIES
+	uninstall-am
 
-
-all-local:
-	@echo ""
-	@echo "Trilinos package nox subdirectory src-thyra built successfully."
-	@echo ""
 
 # ------------------------------------------------------------------------
-# Includes for required and optional library dependencies
+# FEApp Sources
 # ------------------------------------------------------------------------
+
+# Include export Makefiles for correct paths
 include $(top_builddir)/Makefile.export.nox
+
+@BUILD_EPETRA_TESTS_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@BUILD_THYRA_TESTS_TRUE@@ENABLE_LOCA_SACADO_TRUE@include $(top_builddir)/../sacado/Makefile.export.sacado
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

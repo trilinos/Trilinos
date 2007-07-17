@@ -449,7 +449,7 @@ FEAPP = \
 	$(APP)
 
 brusselator_SOURCES = \
-	$(srcdir)/brusselator.cpp \
+	$(srcdir)/brusselator.C \
 	$(FEAPP_H) \
 	$(FEAPP)
 
@@ -465,7 +465,7 @@ brusselator_LDADD = \
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .C .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/../sacado/example/FEApp/MakefileFEAppStub.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -529,33 +529,33 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-FEApp_SourceFunctionFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator-brusselator.Po@am__quote@
 
-.cpp.o:
+.C.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
 
-.cpp.obj:
+.C.obj:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-brusselator-brusselator.o: $(srcdir)/brusselator.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-brusselator.o -MD -MP -MF $(DEPDIR)/brusselator-brusselator.Tpo -c -o brusselator-brusselator.o `test -f '$(srcdir)/brusselator.cpp' || echo '$(srcdir)/'`$(srcdir)/brusselator.cpp
+brusselator-brusselator.o: $(srcdir)/brusselator.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-brusselator.o -MD -MP -MF $(DEPDIR)/brusselator-brusselator.Tpo -c -o brusselator-brusselator.o `test -f '$(srcdir)/brusselator.C' || echo '$(srcdir)/'`$(srcdir)/brusselator.C
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-brusselator.Tpo $(DEPDIR)/brusselator-brusselator.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/brusselator.cpp' object='brusselator-brusselator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/brusselator.C' object='brusselator-brusselator.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-brusselator.o `test -f '$(srcdir)/brusselator.cpp' || echo '$(srcdir)/'`$(srcdir)/brusselator.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-brusselator.o `test -f '$(srcdir)/brusselator.C' || echo '$(srcdir)/'`$(srcdir)/brusselator.C
 
-brusselator-brusselator.obj: $(srcdir)/brusselator.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-brusselator.obj -MD -MP -MF $(DEPDIR)/brusselator-brusselator.Tpo -c -o brusselator-brusselator.obj `if test -f '$(srcdir)/brusselator.cpp'; then $(CYGPATH_W) '$(srcdir)/brusselator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/brusselator.cpp'; fi`
+brusselator-brusselator.obj: $(srcdir)/brusselator.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-brusselator.obj -MD -MP -MF $(DEPDIR)/brusselator-brusselator.Tpo -c -o brusselator-brusselator.obj `if test -f '$(srcdir)/brusselator.C'; then $(CYGPATH_W) '$(srcdir)/brusselator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/brusselator.C'; fi`
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/brusselator-brusselator.Tpo $(DEPDIR)/brusselator-brusselator.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/brusselator.cpp' object='brusselator-brusselator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/brusselator.C' object='brusselator-brusselator.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-brusselator.obj `if test -f '$(srcdir)/brusselator.cpp'; then $(CYGPATH_W) '$(srcdir)/brusselator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/brusselator.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-brusselator.obj `if test -f '$(srcdir)/brusselator.C'; then $(CYGPATH_W) '$(srcdir)/brusselator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/brusselator.C'; fi`
 
 brusselator-FEApp_LinearElement.o: $(FEAPP_PATH)/FEApp_LinearElement.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -MT brusselator-FEApp_LinearElement.o -MD -MP -MF $(DEPDIR)/brusselator-FEApp_LinearElement.Tpo -c -o brusselator-FEApp_LinearElement.o `test -f '$(FEAPP_PATH)/FEApp_LinearElement.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_LinearElement.cpp
@@ -822,6 +822,20 @@ brusselator-FEApp_ModelEvaluator.obj: $(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp' object='brusselator-FEApp_ModelEvaluator.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(brusselator_CXXFLAGS) $(CXXFLAGS) -c -o brusselator-FEApp_ModelEvaluator.obj `if test -f '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; fi`
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

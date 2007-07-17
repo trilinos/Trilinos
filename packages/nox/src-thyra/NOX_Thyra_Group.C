@@ -45,6 +45,7 @@
 #include "NOX_Common.H"
 #include "NOX_Thyra_Group.H"	// class definition
 #include "NOX_Abstract_MultiVector.H"
+#include "NOX_Thyra_MultiVector.H"
 
 NOX::Thyra::Group::
 Group(const NOX::Thyra::Vector& initial_guess,
@@ -257,11 +258,37 @@ NOX::Abstract::Group::ReturnType
 NOX::Thyra::Group::applyJacobian(const Vector& input, Vector& result) const
 {
   if ( !(this->isJacobian()) ) {
-    TEST_FOR_EXCEPTION(true, std::logic_error, "NOX Error - Jacobian is not valid.  Call computeJacobian before calling applyJacobian!");
+    TEST_FOR_EXCEPTION(true, std::logic_error, 
+		       "NOX Error - Jacobian is not valid.  " <<
+		       "Call computeJacobian before calling applyJacobian!");
   }
   
   ::Thyra::apply(*shared_jacobian_->getObject(), ::Thyra::NOTRANS,
 		 input.getThyraVector(), &result.getThyraVector());
+
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType 
+NOX::Thyra::Group::applyJacobianMultiVector(
+				 const NOX::Abstract::MultiVector& input, 
+				 NOX::Abstract::MultiVector& result) const
+{
+  if ( !(this->isJacobian()) ) {
+    TEST_FOR_EXCEPTION(true, std::logic_error, 
+		       "NOX Error - Jacobian is not valid.  " <<
+		       "Call computeJacobian before calling applyJacobian!");
+  }
+
+  const NOX::Thyra::MultiVector& nt_input = 
+    Teuchos::dyn_cast<const NOX::Thyra::MultiVector>(input);
+  NOX::Thyra::MultiVector& nt_result = 
+    Teuchos::dyn_cast<NOX::Thyra::MultiVector>(result);
+
+  ::Thyra::apply(*shared_jacobian_->getObject(), 
+		 ::Thyra::NOTRANS,
+		 nt_input.getThyraMultiVector(), 
+		 &nt_result.getThyraMultiVector());
 
   return NOX::Abstract::Group::Ok;
 }
@@ -279,12 +306,45 @@ NOX::Abstract::Group::ReturnType
 NOX::Thyra::Group::applyJacobianTranspose(const NOX::Thyra::Vector& input,
 					  NOX::Thyra::Vector& result) const
 {
+  if ( !(this->isJacobian()) ) {
+    TEST_FOR_EXCEPTION(true, std::logic_error, 
+		       "NOX Error - Jacobian is not valid.  " <<
+		       "Call computeJacobian before calling applyJacobian!");
+  }
+
   if ( ::Thyra::opSupported(*shared_jacobian_->getObject(), ::Thyra::TRANS) ) {
     ::Thyra::apply(*shared_jacobian_->getObject(), ::Thyra::TRANS,
 		   input.getThyraVector(), &result.getThyraVector());
     return NOX::Abstract::Group::Ok;
   }
   return NOX::Abstract::Group::Failed;
+}
+
+NOX::Abstract::Group::ReturnType 
+NOX::Thyra::Group::applyJacobianTransposeMultiVector(
+				 const NOX::Abstract::MultiVector& input, 
+				 NOX::Abstract::MultiVector& result) const
+{
+  if ( !(this->isJacobian()) ) {
+    TEST_FOR_EXCEPTION(true, std::logic_error, 
+		       "NOX Error - Jacobian is not valid.  " <<
+		       "Call computeJacobian before calling applyJacobian!");
+  }
+
+  if (! ::Thyra::opSupported(*shared_jacobian_->getObject(), ::Thyra::TRANS) )
+    return NOX::Abstract::Group::Failed;
+
+  const NOX::Thyra::MultiVector& nt_input = 
+    Teuchos::dyn_cast<const NOX::Thyra::MultiVector>(input);
+  NOX::Thyra::MultiVector& nt_result = 
+    Teuchos::dyn_cast<NOX::Thyra::MultiVector>(result);
+
+  ::Thyra::apply(*shared_jacobian_->getObject(), 
+		 ::Thyra::TRANS,
+		 nt_input.getThyraMultiVector(), 
+		 &nt_result.getThyraMultiVector());
+
+  return NOX::Abstract::Group::Ok;
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -311,15 +371,14 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 				const NOX::Abstract::MultiVector& input, 
 				NOX::Abstract::MultiVector& result) const 
 {
-  using Teuchos::dyn_cast;
-  // ToDo: Uncomment this once we have a working
-  // NOX::Thyra::MultiVector class!
-  /*
-    return applyJacobianInverseMultiVector( p, dyn_cast<MultiVector>(input).getThyraVector(),
-    dyn_cast<MultiVector>(result).getThyraVector() );
-  */
-  TEST_FOR_EXCEPTION(true, std::logic_error, "NOX Error - MultiVector support for Thyra groups has not been implemented yet!");
-  return NOX::Abstract::Group::Failed;
+  const NOX::Thyra::MultiVector& nt_input = 
+    Teuchos::dyn_cast<const NOX::Thyra::MultiVector>(input);
+  NOX::Thyra::MultiVector& nt_result = 
+    Teuchos::dyn_cast<NOX::Thyra::MultiVector>(result);
+
+  return applyJacobianInverseMultiVector(p, 
+					 nt_input.getThyraMultiVector(),
+					 nt_result.getThyraMultiVector());
 }
 
 bool NOX::Thyra::Group::isF() const 
@@ -388,12 +447,18 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
 {
   ::Thyra::SolveCriteria<double> solveCriteria;
   solveCriteria.requestedTol = p.get("Tolerance", 1.0e-6);
+
+  std::string numer_measure = p.get("Solve Measure Numerator",
+				    "Norm Residual");
+  std::string denom_measure = p.get("Solve Measure Denominator",
+				    "Norm Initial Residual");
   solveCriteria.solveMeasureType = 
-    ::Thyra::SolveMeasureType(::Thyra::SOLVE_MEASURE_NORM_RESIDUAL,
-			      ::Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL );
-  // ToDo: Above, check param list for the exact form of the solve
-  // measure.
-  
+    ::Thyra::SolveMeasureType(getThyraNormType(numer_measure),
+			      getThyraNormType(denom_measure));
+
+  // Initialize result to zero to remove possible NaNs
+  ::Thyra::assign(&result, 0.0);
+
   const ::Thyra::SolveStatus<double> solve_status = 
     ::Thyra::solve(*shared_jacobian_->getObject(), 
 		   ::Thyra::NOTRANS, input, &result, 
@@ -408,3 +473,22 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
   return NOX::Abstract::Group::Failed;
 }
 
+::Thyra::ESolveMeasureNormType 
+NOX::Thyra::Group::getThyraNormType(const string& name) const
+{
+  if (name == "None")
+    return ::Thyra::SOLVE_MEASURE_ONE;
+  else if (name == "Norm Residual")
+    return ::Thyra::SOLVE_MEASURE_NORM_RESIDUAL;
+  else if (name == "Norm Solution")
+    return ::Thyra::SOLVE_MEASURE_NORM_SOLUTION;
+  else if (name == "Norm Initial Residual")
+    return ::Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL;
+  else if (name == "Norm RHS")
+    return ::Thyra::SOLVE_MEASURE_NORM_RHS;
+  else {
+    TEST_FOR_EXCEPTION(true,  std::logic_error, 
+		       "NOX Error - unknown solve measure " << name);
+    return ::Thyra::SOLVE_MEASURE_ONE;
+  }
+}

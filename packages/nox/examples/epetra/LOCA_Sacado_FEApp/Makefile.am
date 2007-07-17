@@ -52,7 +52,7 @@ endif
 endif
 
 brusselator_SOURCES = \
-	$(srcdir)/brusselator.cpp \
+	$(srcdir)/brusselator.C \
 	$(FEAPP_H) \
 	$(FEAPP)
 

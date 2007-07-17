@@ -83,6 +83,9 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::ExtendedGroup(
 {
   const char *func = "LOCA::Pitchfork::MooreSpence::ExtendedGroup()";
 
+  // Set x
+  *(xMultiVec.getColumn(0)->getXVec()) = g->getX();
+
   if (!pitchforkParams->isParameter("Bifurcation Parameter")) {
     globalData->locaErrorCheck->throwError(func,
 				 "\"Bifurcation Parameter\" name is not set!");

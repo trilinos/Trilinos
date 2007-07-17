@@ -144,24 +144,20 @@ namespace NOX {
       Teuchos::RCP<NOX::Abstract::Vector> 
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-      // The NOX::Thyra::MultiVector is not currently used because 
-      // Thyra::MultiVectorBase views are not compatible with the way LOCA
-      // uses views
+      /*! 
+       * \brief Create a MultiVector with \c numVecs+1 columns out of an array 
+       * of Vectors.  The vector stored under \c this will be the first column 
+       * with the remaining \c numVecs columns given by \c vecs.
+       */
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector>
+      createMultiVector(const NOX::Abstract::Vector* const* vecs,
+			int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 
-//       /*! 
-//        * \brief Create a MultiVector with \c numVecs+1 columns out of an array 
-//        * of Vectors.  The vector stored under \c this will be the first column 
-//        * with the remaining \c numVecs columns given by \c vecs.
-//        */
-//       virtual Teuchos::RCP<NOX::Abstract::MultiVector>
-//       createMultiVector(const NOX::Abstract::Vector* const* vecs,
-// 			int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
-
-//       /*! 
-//        * \brief Create a MultiVector with \c numVecs columns.  
-//        */
-//       virtual Teuchos::RCP<NOX::Abstract::MultiVector>
-//       createMultiVector(int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
+      /*! 
+       * \brief Create a MultiVector with \c numVecs columns.  
+       */
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector>
+      createMultiVector(int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
   
       //@}
   

@@ -81,6 +81,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
 {
   const char *func = "LOCA::TurningPoint::MooreSpence::ExtendedGroup()";
 
+  // Set x
+  *(xMultiVec.getColumn(0)->getXVec()) = g->getX();
+
   if (!turningPointParams->isParameter("Bifurcation Parameter")) {
     globalData->locaErrorCheck->throwError(func,
 				 "\"Bifurcation Parameter\" name is not set!");

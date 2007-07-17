@@ -189,6 +189,9 @@ namespace LOCA {
       //! Pointer to Thyra vector storing parameters
       Teuchos::RCP< ::Thyra::VectorBase<double> > param_thyra_vec;
 
+      //! Pointer to x_dot vector of zeros
+      Teuchos::RCP< ::Thyra::VectorBase<double> > x_dot_vec;
+
     };
 
   } // namespace Thyra

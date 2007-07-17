@@ -32,6 +32,6 @@
 
 NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Operators NOX_Group 1Dfem DS6.5.1 Brusselator PelletTransport FiniteDifferenceColoring MultiPhysics Thyra_2Dsim 
 
-LOCA_SUBDIRS = LOCA_TestProblems LOCA_UnitTests LOCA_Tcubed LOCA_Pitchfork LOCA_Brusselator LOCA_Brusselator_xyzt LOCA_MultiPoint_Tcubed LOCA_EpetraExt_ModelEvaluator
+LOCA_SUBDIRS = LOCA_TestProblems LOCA_UnitTests LOCA_Tcubed LOCA_Pitchfork LOCA_Brusselator LOCA_Brusselator_xyzt LOCA_MultiPoint_Tcubed LOCA_EpetraExt_ModelEvaluator LOCA_Thyra_ModelEvaluator
 
 SUBDIRS = $(NOX_SUBDIRS) $(LOCA_SUBDIRS)

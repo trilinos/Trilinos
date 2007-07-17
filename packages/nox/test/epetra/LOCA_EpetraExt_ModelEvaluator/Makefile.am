@@ -60,9 +60,7 @@ endif
 endif
 
 tcubed_SOURCES = \
-	$(srcdir)/tcubed.C \
-	$(FEAPP_H) \
-	$(FEAPP)
+	$(srcdir)/tcubed.C 
 
 tcubed_CXXFLAGS = \
 	-I$(FEAPP_PATH) \
@@ -78,4 +76,6 @@ tcubed_DEPENDENCIES = \
         $(top_builddir)/src-epetra/libnoxepetra.a \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
 	$(top_builddir)/src-loca/src/libloca.a \
-        $(top_builddir)/src-loca/src-epetra/liblocaepetra.a
+        $(top_builddir)/src-loca/src-epetra/liblocaepetra.a \
+	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.a
+

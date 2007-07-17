@@ -42,25 +42,49 @@ include $(top_builddir)/Makefile.export.nox
 
 EXEEXT = .exe
 
-if BUILD_EPETRA_EXAMPLES
-if ENABLE_NOX_SACADO
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_EPETRA_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_EPETRA_TEST_INCLUDES))
+else
+TEST_LIBS     = $(LOCA_EPETRA_TEST_LIBS)
+TEST_INCLUDES = $(LOCA_EPETRA_TEST_INCLUDES)
+endif
+
+if BUILD_THYRA_TESTS
+if BUILD_EPETRA_TESTS
+if ENABLE_LOCA_SACADO
 if BUILD_NOX_EPETRAEXT_SUPPORT
 include $(top_builddir)/../sacado/Makefile.export.sacado
-noinst_PROGRAMS = brusselator
+noinst_PROGRAMS = tcubed tcubedTP
+endif
 endif
 endif
 endif
 
-brusselator_SOURCES = \
-	$(srcdir)/brusselator.C \
-	$(FEAPP_H) \
-	$(FEAPP)
+tcubed_SOURCES = \
+	$(srcdir)/tcubed.C 
 
-brusselator_CXXFLAGS = \
+tcubed_CXXFLAGS = \
 	-I$(FEAPP_PATH) \
-	$(NOX_INCLUDES) \
+	$(TEST_INCLUDES) \
 	$(SACADO_INCLUDES)
 
-brusselator_LDADD = \
-	$(NOX_LIBS) \
+tcubed_LDADD = \
+	$(TEST_LIBS) \
 	$(SACADO_LIBS)
+
+tcubed_DEPENDENCIES = \
+        $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-thyra/libnoxthyra.a \
+	$(top_builddir)/test/utils/libnoxtestutils.a \
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-thyra/liblocathyra.a \
+	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.a
+
+tcubedTP_SOURCES = $(srcdir)/tcubedTP.C 
+
+tcubedTP_CXXFLAGS = $(tcubed_CXXFLAGS)
+
+tcubedTP_LDADD = $(tcubed_LDADD)
+
+tcubedTP_DEPENDENCIES = $(tcubed_DEPENDENCIES)

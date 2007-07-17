@@ -126,6 +126,10 @@ namespace NOX {
       NOX::Abstract::Group::ReturnType 
       applyJacobian(const NOX::Thyra::Vector& input, 
 		    NOX::Thyra::Vector& result) const;
+
+      NOX::Abstract::Group::ReturnType 
+      applyJacobianMultiVector(const NOX::Abstract::MultiVector& input, 
+			       NOX::Abstract::MultiVector& result) const;
       
       NOX::Abstract::Group::ReturnType 
       applyJacobianTranspose(const NOX::Abstract::Vector& input, 
@@ -134,6 +138,11 @@ namespace NOX {
       NOX::Abstract::Group::ReturnType 
       applyJacobianTranspose(const NOX::Thyra::Vector& input, 
 			     NOX::Thyra::Vector& result) const;
+
+      NOX::Abstract::Group::ReturnType 
+      applyJacobianTransposeMultiVector(
+				     const NOX::Abstract::MultiVector& input, 
+				     NOX::Abstract::MultiVector& result) const;
       
       NOX::Abstract::Group::ReturnType 
       applyJacobianInverse(Teuchos::ParameterList& params, 
@@ -203,6 +212,9 @@ namespace NOX {
 			      Teuchos::ParameterList& p, 
 			      const ::Thyra::MultiVectorBase<double>& input, 
 			      ::Thyra::MultiVectorBase<double>& result) const;
+
+      ::Thyra::ESolveMeasureNormType 
+      getThyraNormType(const string& name) const;
 
     protected:
 

@@ -63,7 +63,8 @@
            epetra/LOCA_Tcubed,
            epetra/LOCA_Pitchfork,
 	   epetra/LOCA_Brusselator,
-	   epetra/LOCA_EpetraExt_ModelEvaluator;
+	   epetra/LOCA_EpetraExt_ModelEvaluator,
+	   epetra/LOCA_Thyra_ModelEvaluator;
     EXIT-STATUS = STRING-COMPARISON(All tests passed);
     ARGS = -v;
     COMM = SERIAL, MPI(1-6);

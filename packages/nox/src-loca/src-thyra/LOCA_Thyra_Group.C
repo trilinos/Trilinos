@@ -40,9 +40,12 @@
 //@HEADER
 
 #include "LOCA_Thyra_Group.H"	          // class definition
+#include "NOX_Thyra_MultiVector.H"
 #include "Teuchos_TestForException.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
+#include "Thyra_DetachedMultiVectorView.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
@@ -59,7 +62,19 @@ LOCA::Thyra::Group::Group(
   params(p),
   param_index(p_index)
 {
-  //param_thyra_vec = Teuchos::rcp(new ::Thyra::VectorBase<double>());
+  // Create thyra vector to store parameters that is a view of LOCA
+  // parameter vector
+  RTOpPack::SubVectorView<double> pv(0,params.length(),
+				     params.getDoubleArrayPointer(),1);
+  Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > ps = 
+    model_->get_p_space(param_index);
+  param_thyra_vec = ::Thyra::createMemberView(ps,pv);
+
+  // Create x_dot vector of zeros
+  Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > xs = 
+    model_->get_x_space();
+  x_dot_vec = ::Thyra::createMember(xs);
+  ::Thyra::put_scalar(0.0, x_dot_vec.get());
 }
 
 LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source, 
@@ -67,8 +82,22 @@ LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
   NOX::Thyra::Group(source, type),
   LOCA::Abstract::Group(source, type),
   globalData(source.globalData),
-  params(source.params)
+  params(source.params),
+  param_index(source.param_index)
 {
+  // Create thyra vector to store parameters that is a view of LOCA
+  // parameter vector
+  RTOpPack::SubVectorView<double> pv(0,params.length(),
+				     params.getDoubleArrayPointer(),1);
+  Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > ps = 
+    model_->get_p_space(param_index);
+  param_thyra_vec = ::Thyra::createMemberView(ps,pv);
+
+  // Create x_dot vector of zeros
+  Teuchos::RCP<const ::Thyra::VectorSpaceBase<double> > xs = 
+    model_->get_x_space();
+  x_dot_vec = ::Thyra::createMember(xs);
+  ::Thyra::put_scalar(0.0, x_dot_vec.get());
 }
 
 LOCA::Thyra::Group::~Group() 
@@ -82,6 +111,9 @@ LOCA::Thyra::Group::operator=(const LOCA::Thyra::Group& source)
     NOX::Thyra::Group::operator=(source);
     LOCA::Abstract::Group::copy(source);
     params = source.params;
+    param_index = source.param_index;
+
+    // Because param_thyra_vec is a view of params, we don't need to copy
   }
   return *this;
 }
@@ -113,6 +145,8 @@ LOCA::Thyra::Group::computeF()
     return NOX::Abstract::Group::Ok;
 
   in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
+  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
+    in_args_.set_x_dot(x_dot_vec);
   in_args_.set_p(param_index, param_thyra_vec);
   out_args_.set_f(f_vec_->getThyraRCPVector().assert_not_null());
 
@@ -137,6 +171,12 @@ LOCA::Thyra::Group::computeJacobian()
     return NOX::Abstract::Group::Ok;
 
   in_args_.set_x(x_vec_->getThyraRCPVector());
+  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
+    in_args_.set_x_dot(x_dot_vec);
+  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_alpha))
+    in_args_.set_alpha(0.0);
+  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_beta))
+    in_args_.set_beta(1.0);
   in_args_.set_p(param_index, param_thyra_vec);
   out_args_.set_W(shared_jacobian_->getObject(this));
 
@@ -215,8 +255,10 @@ NOX::Abstract::Group::ReturnType
 LOCA::Thyra::Group::computeShiftedMatrix(double alpha, double beta)
 {
   in_args_.set_x(x_vec_->getThyraRCPVector());
+  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
+    in_args_.set_x_dot(x_dot_vec);
   in_args_.set_p(param_index, param_thyra_vec);
-  in_args_.set_alpha(beta);
+  in_args_.set_alpha(-beta);
   in_args_.set_beta(alpha);
   out_args_.set_W(shared_jacobian_->getObject(this));
 
@@ -256,20 +298,17 @@ LOCA::Thyra::Group::applyShiftedMatrixMultiVector(
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const
 {
-  string callingFunction = 
-    "LOCA::Thyra::Group::applyShiftedMatrixMultiVector()";
-  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
-  NOX::Abstract::Group::ReturnType status;
+  const NOX::Thyra::MultiVector& nt_input = 
+    Teuchos::dyn_cast<const NOX::Thyra::MultiVector>(input);
+  NOX::Thyra::MultiVector& nt_result = 
+    Teuchos::dyn_cast<NOX::Thyra::MultiVector>(result);
 
-  for (int i=0; i<input.numVectors(); i++) {
-    status = applyShiftedMatrix(input[i], result[i]);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
-  }
+  ::Thyra::apply(*shared_jacobian_->getObject(), 
+		 ::Thyra::NOTRANS,
+		 nt_input.getThyraMultiVector(), 
+		 &nt_result.getThyraMultiVector());
 
-  return finalStatus;
+  return NOX::Abstract::Group::Ok;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -278,36 +317,5 @@ LOCA::Thyra::Group::applyShiftedMatrixInverseMultiVector(
 				const NOX::Abstract::MultiVector& input,
 				NOX::Abstract::MultiVector& result) const
 {
-  const NOX::Thyra::Vector* thyra_input;
-  NOX::Thyra::Vector* thyra_result; 
-  bool status;
-  bool finalStatus = true;
-
-  ::Thyra::SolveCriteria<double> solveCriteria;
-  solveCriteria.requestedTol = lsParams.get("Tolerance", 1.0e-6);
-  solveCriteria.solveMeasureType = 
-    ::Thyra::SolveMeasureType(::Thyra::SOLVE_MEASURE_NORM_RESIDUAL,
-			      ::Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL );
-  // ToDo: Above, check param list for the exact form of the solve
-  // measure.
-
-  for (int i=0; i<input.numVectors(); i++) {
-    thyra_input = dynamic_cast<const NOX::Thyra::Vector*>(&input[i]);
-    thyra_result = dynamic_cast<NOX::Thyra::Vector*>(&result[i]);
-
-    const ::Thyra::SolveStatus<double> solve_status = 
-      ::Thyra::solve(*shared_jacobian_->getObject(), 
-		     ::Thyra::NOTRANS, thyra_input->getThyraVector(), 
-		     &(thyra_result->getThyraVector()), 
-		     &solveCriteria);
-    status = false;
-    if (solve_status.solveStatus == ::Thyra::SOLVE_STATUS_CONVERGED)
-      status = true;
-    finalStatus = finalStatus && status;
-  }
-    
-  if (finalStatus)
-    return NOX::Abstract::Group::Ok;
-  else
-    return NOX::Abstract::Group::NotConverged;
+  return this->applyJacobianInverseMultiVector(lsParams, input, result);
 }

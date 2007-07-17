@@ -241,6 +241,11 @@ namespace NOX {
 
     protected:
 
+      //! Check whether an index array is contiguous
+      bool isContiguous(const vector<int>& index) const;
+
+    protected:
+
        //! Pointer to petra vector owned by this object
       Teuchos::RCP< ::Thyra::MultiVectorBase<double> > thyraMultiVec;
 

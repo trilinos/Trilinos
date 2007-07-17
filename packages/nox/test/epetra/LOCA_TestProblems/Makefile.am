@@ -32,6 +32,16 @@
 # ************************************************************************
 # @HEADER
 
+# ------------------------------------------------------------------------
+# FEApp Sources
+# ------------------------------------------------------------------------
+include $(top_srcdir)/../sacado/example/FEApp/MakefileFEAppStub.am
+
+if ENABLE_LOCA_SACADO
+if BUILD_NOX_EPETRAEXT_SUPPORT
+include $(top_builddir)/../sacado/Makefile.export.sacado
+endif
+endif
 
 # ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
@@ -47,7 +57,8 @@ LOCA_TESTPROBLEMS_H = \
 	$(srcdir)/Tcubed_FiniteElementProblem.H \
 	$(srcdir)/Pitchfork_FiniteElementProblem.H \
 	$(srcdir)/NormConstraint.H \
-	$(srcdir)/LinearConstraint.H 
+	$(srcdir)/LinearConstraint.H \
+	$(FEAPP_H)
 
 LOCA_TESTPROBLEMS = \
 	$(srcdir)/Basis.C \
@@ -55,7 +66,8 @@ LOCA_TESTPROBLEMS = \
 	$(srcdir)/Tcubed_FiniteElementProblem.C \
 	$(srcdir)/Pitchfork_FiniteElementProblem.C \
 	$(srcdir)/NormConstraint.C \
-	$(srcdir)/LinearConstraint.C
+	$(srcdir)/LinearConstraint.C \
+	$(FEAPP)
 
 # ------------------------------------------------------------------------
 # Include NOX export makefile
@@ -70,7 +82,7 @@ TEST_LIBS     = $(LOCA_EPETRA_TEST_LIBS)
 TEST_INCLUDES = $(LOCA_EPETRA_TEST_INCLUDES)
 endif
 
-AM_CPPFLAGS = $(TEST_INCLUDES)
+AM_CPPFLAGS = $(TEST_INCLUDES) -I$(FEAPP_PATH) $(SACADO_INCLUDES)
 
 # ------------------------------------------------------------------------
 # locatestproblems library specifications

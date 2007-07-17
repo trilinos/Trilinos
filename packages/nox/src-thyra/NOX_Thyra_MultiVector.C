@@ -48,7 +48,8 @@
 NOX::Thyra::MultiVector::
 MultiVector(
        const Teuchos::RCP< ::Thyra::MultiVectorBase<double> >& source)
-  : thyraMultiVec(source)
+  : thyraMultiVec(source),
+    noxThyraVectors(thyraMultiVec->domain()->dim())
 {
 }
 
@@ -121,8 +122,12 @@ setBlock(const NOX::Abstract::MultiVector& src, const vector<int>& index)
     dynamic_cast<const NOX::Thyra::MultiVector&>(src);
 
   // Create view
-  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > v = 
-    thyraMultiVec->subView(index.size(), &index[0]);
+  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > v;
+  if (isContiguous(index))
+    v = thyraMultiVec->subView(::Thyra::Range1D(index[0],
+						index[index.size()-1]));
+  else
+    v = thyraMultiVec->subView(index.size(), &index[0]);
 
   // Assign
   ::Thyra::assign(v.get(), *source.thyraMultiVec);
@@ -231,17 +236,25 @@ update(Teuchos::ETransp transb, double alpha,
   
   int m = b.numRows();
   int n = b.numCols();
-  Teuchos::RCP<const ::Thyra::MultiVectorBase<double> > bb =
-    ::Thyra::createMembersView(
+  Teuchos::RCP<const ::Thyra::MultiVectorBase<double> > bb;
+  if (transb == Teuchos::NO_TRANS) {
+    bb = ::Thyra::createMembersView(
 	aa.thyraMultiVec->domain(), 
 	RTOpPack::ConstSubMultiVectorView<double>(0,m,0,n,&b(0,0),b.stride()));
-    
-  if (transb == Teuchos::NO_TRANS)
-    aa.thyraMultiVec->apply(::Thyra::NONCONJ_ELE, *bb, thyraMultiVec.get(),
-			    alpha, gamma);
- //  else
-//     aa.thyraMultiVec->apply(::Thyra::NONCONJ_ELE, ::Thyra::trans(*bb), 
-// 			    thyraMultiVec.get(), alpha, gamma);
+  }
+  else {
+    // Make a copy of the transpose of b
+    NOX::Abstract::MultiVector::DenseMatrix btrans(n, m);
+    for (int i=0; i<m; i++)
+      for (int j=0; j<n; j++)
+	btrans(j,i) = b(i,j);
+    bb = ::Thyra::createMembersView(
+	aa.thyraMultiVec->domain(), 
+	RTOpPack::ConstSubMultiVectorView<double>(0,n,0,n,&btrans(0,0),
+						  btrans.stride()));
+  }
+  aa.thyraMultiVec->apply(::Thyra::NONCONJ_ELE, *bb, thyraMultiVec.get(),
+			  alpha, gamma);
 
   return *this;
 }
@@ -266,8 +279,13 @@ Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Thyra::MultiVector::
 subCopy(const vector<int>& index) const
 {
-  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > mv =
-    thyraMultiVec->subView(index.size(), &index[0]);
+  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > mv;
+  if (isContiguous(index))
+    mv = thyraMultiVec->subView(::Thyra::Range1D(index[0],
+						 index[index.size()-1]));
+  else
+    mv = thyraMultiVec->subView(index.size(), &index[0]);
+
   return Teuchos::rcp(new NOX::Thyra::MultiVector(*mv));
 }
 
@@ -275,8 +293,13 @@ Teuchos::RCP<NOX::Abstract::MultiVector>
 NOX::Thyra::MultiVector::
 subView(const vector<int>& index) const
 {
-  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > mv =
-    thyraMultiVec->subView(index.size(), &index[0]);
+  Teuchos::RCP< ::Thyra::MultiVectorBase<double> > mv;
+  if (isContiguous(index))
+    mv = thyraMultiVec->subView(::Thyra::Range1D(index[0],
+						 index[index.size()-1]));
+  else
+     mv = thyraMultiVec->subView(index.size(), &index[0]);
+  
   return Teuchos::rcp(new NOX::Thyra::MultiVector(mv));
 }
 
@@ -330,7 +353,20 @@ void
 NOX::Thyra::MultiVector::
 print(std::ostream& stream) const
 {
-  stream << *thyraMultiVec;
+  //stream << *thyraMultiVec;
+  thyraMultiVec->describe(*Teuchos::fancyOStream<char>(Teuchos::rcp(&stream,false)), Teuchos::VERB_EXTREME);
   return;
 }
 
+bool
+NOX::Thyra::MultiVector::
+isContiguous(const vector<int>& index) const
+{
+  if (index.size()==0)
+    return true;
+  int i0 = index[0];
+  for (unsigned int i=1; i<index.size(); i++)
+    if (index[i] != i0+i)
+      return false;
+  return true;
+}
