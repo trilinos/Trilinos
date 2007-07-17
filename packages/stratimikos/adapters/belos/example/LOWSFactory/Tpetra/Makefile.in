@@ -527,7 +527,7 @@ uninstall-am:
 include $(top_builddir)/Makefile.export.stratimikos
 
 mhd1280b.cua:
-	cp  $(top_srcdir)/../belos/test/BlockCG/mhd1280b.cua mhd1280b.cua
+	cp  $(top_srcdir)/../belos/test/MVOPTester/mhd1280b.cua mhd1280b.cua
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

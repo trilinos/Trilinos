@@ -40,7 +40,7 @@ belos_tpetra_thyra_lowsf_hb_DEPENDENCIES= $(common_dependencies)
 belos_tpetra_thyra_lowsf_hb_LDADD = $(common_ldadd)
 
 mhd1280b.cua:
-	cp  $(top_srcdir)/../belos/test/BlockCG/mhd1280b.cua mhd1280b.cua
+	cp  $(top_srcdir)/../belos/test/MVOPTester/mhd1280b.cua mhd1280b.cua
 
 #
 # Common stuff
