@@ -122,7 +122,6 @@ dnl AC_REVISION($Revision$)
 
 TAC_ARG_CONFIG_MPI
 
-
 # ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
@@ -704,6 +703,11 @@ fi
 #  =========  #
 
 if test "X$ac_cv_use_amesos_paraklete" != "Xno"; then
+
+  # paraklete cannot be enabled if mpi is not enabled.
+  if test "X${HAVE_PKG_MPI}" != "Xyes"; then
+    AC_MSG_ERROR([[Paraklete CANNOT be built because MPI is required!]])
+  fi
 
   if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
