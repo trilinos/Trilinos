@@ -28,7 +28,7 @@
 
 
 /*! \file BelosDGKSOrthoManager.hpp
-  \brief DGKS implementation of the Belos::OrthoManager class
+  \brief Classical Gram-Schmidt (with DGKS correction) implementation of the Belos::OrthoManager class
 */
 
 #ifndef BELOS_DGKS_ORTHOMANAGER_HPP

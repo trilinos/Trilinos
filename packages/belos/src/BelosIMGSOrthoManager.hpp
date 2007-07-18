@@ -28,7 +28,7 @@
 
 
 /*! \file BelosIMGSOrthoManager.hpp
-  \brief IMGS implementation of the Belos::OrthoManager class
+  \brief Iterated Modified Gram-Schmidt (IMGS) implementation of the Belos::OrthoManager class
 */
 
 #ifndef BELOS_IMGS_ORTHOMANAGER_HPP

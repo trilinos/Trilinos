@@ -29,7 +29,7 @@
 #ifndef BELOS_PSEUDO_BLOCK_GMRES_ITER_HPP
 #define BELOS_PSEUDO_BLOCK_GMRES_ITER_HPP
 
-/*! \file BelosBlockGmresIter.hpp
+/*! \file BelosPseudoBlockGmresIter.hpp
     \brief Belos concrete class for performing the pseudo-block GMRES iteration.
 */
 

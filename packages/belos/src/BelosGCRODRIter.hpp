@@ -29,7 +29,7 @@
 #ifndef BELOS_GCRODR_ITER_HPP
 #define BELOS_GCRODR_ITER_HPP
 
-/*! \file BelosBlockGmresIter.hpp
+/*! \file BelosGCRODRIter.hpp
     \brief Belos concrete class for performing the GCRO-DR iteration.
 */
 

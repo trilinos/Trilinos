@@ -29,6 +29,10 @@
 #ifndef BELOS_MULTI_VEC_TRAITS_HPP
 #define BELOS_MULTI_VEC_TRAITS_HPP
 
+/*! \file BelosMultiVecTraits.hpp
+    \brief Virtual base class which defines basic traits for the multivector type
+*/
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "BelosTypes.hpp"

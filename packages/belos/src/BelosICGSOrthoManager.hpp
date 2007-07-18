@@ -28,7 +28,7 @@
 
 
 /*! \file BelosICGSOrthoManager.hpp
-  \brief ICGS implementation of the Belos::OrthoManager class
+  \brief Iterated Classical Gram-Schmidt (ICGS) implementation of the Belos::OrthoManager class
 */
 
 #ifndef BELOS_ICGS_ORTHOMANAGER_HPP

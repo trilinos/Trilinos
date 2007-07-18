@@ -29,6 +29,10 @@
 #ifndef BELOS_MULTI_VEC_HPP
 #define BELOS_MULTI_VEC_HPP
 
+/*! \file BelosMultiVec.hpp
+  \brief Templated virtual class for creating multi-vectors that can interface with the Belos::MultiVecTraits class
+*/
+
 #include "BelosMultiVecTraits.hpp"
 #include "BelosTypes.hpp"
 #include "BelosConfigDefs.hpp"
