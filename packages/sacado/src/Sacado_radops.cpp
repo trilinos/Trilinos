@@ -33,9 +33,8 @@
 
 #include "Sacado_rad.hpp"
 
-//#ifndef SACADO_NO_NAMESPACE
-//namespace Sacado {
-//#endif
+namespace Sacado {
+namespace Radnt {
 
 #ifdef RAD_AUTO_AD_Const
 ADvari *ADvari::First_ADvari, **ADvari::Last_ADvari = &ADvari::First_ADvari;
@@ -735,6 +734,5 @@ ADfn(double f, int n, const ADvar *x, const double *g) {
 	return *(new ADvarn(f, n, x, g));
 	}
 
-//#ifndef SACADO_NO_NAMESPACE
-//} /* namespace Sacado */
-//#endif
+} // namespace Radnt
+} // namespace Sacado

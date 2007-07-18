@@ -125,14 +125,12 @@ extern "C" int RAD_Const_Warn(const void*);// outside any namespace for
 
 #ifndef RAD_AUTO_AD_Const
 #ifdef RAD_DEBUG_BLOCKKEEP
-#include <complex>	// must be here when SACADO_NAMESPACE is #defined
+#include <complex>	// must come before namespace Sacado
 #endif
 #endif
 
-#ifdef SACADO_NAMESPACE
 namespace Sacado {
 namespace Rad {
-#endif
 
 // -DRAD_NO_USING_STDCC is needed, e.g., with Sun CC 5.7
 #ifdef RAD_NO_USING_STDCC
@@ -2552,13 +2550,9 @@ T F copy(Ai x)
 #undef Ttype
 #undef Dtype
 
-#ifdef SACADO_NAMESPACE
 } /* namespace Rad */
 } /* namespace Sacado */
 #define SNS Sacado::Rad
-#else
-#define SNS // nothing
-#endif
 namespace std {
   using SNS::exp;
   using SNS::log;

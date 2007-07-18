@@ -38,9 +38,8 @@
 #include <cmath>
 #include <math.h>
 
-//#ifndef SACADO_NO_NAMESPACE
-//namespace Sacado {
-//#endif
+namespace Sacado {
+namespace Radnt {	// nontemplated RAD
 
   // Bring math functions into scope
   using std::exp;
@@ -617,7 +616,6 @@ T1(fabs)
 #undef T
 #undef A
 
-//#ifndef SACADO_NO_NAMESPACE
-//} /* namespace Sacado */
-//#endif
+} // namespace Radnt
+} // namespace Sacado
 #endif /* SACADO_RAD_H */
