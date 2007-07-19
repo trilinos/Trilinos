@@ -654,9 +654,18 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
         current->getrow->func_ptr = VBR_getrows;
                                                                                                                  
         current->matvec->ML_id = ML_NONEMPTY;
-        current->matvec->Nrows = RowOffset;
-        current->getrow->Nrows = RowOffset;
-        current->getrow->N_block_rows = RowOffsetBlocks;
+        if(previous_matrix != NULL)
+        {
+          current->matvec->Nrows = RowOffset +previous_matrix->getrow->Nrows;
+          current->getrow->Nrows = RowOffset + previous_matrix->getrow->Nrows;
+          current->getrow->N_block_rows = RowOffsetBlocks + previous_matrix->getrow->N_block_rows;
+        }
+        else
+        {
+          current->matvec->Nrows = RowOffset;
+          current->getrow->Nrows = RowOffset;
+          current->getrow->N_block_rows = RowOffsetBlocks;
+        }
 
 	    /*ML_Operator_Set_Getrow(current, RowOffset, 
                                az_vbrgetrow_wrapper);*/
@@ -704,36 +713,36 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
       allzeros = 1;
       for (k = 0; k < Ncols; k++) {
-  	  Cbindx[next_nz] = accum_col[k];
-	  Cindx[next_nz]  = next_value;
-	  next_nz++;
-	  allzeros = 0;
-	  kkk=0;
-	  for (iii = 0; iii < NcolsPerBlock; iii++) {
-	    for (jjj = 0; jjj < NrowsPerBlock; jjj++) {
-	      Cvalues[next_value++] = accum_val[k*NnzPerBlock+kkk];
-	      kkk++;
+  	    Cbindx[next_nz] = accum_col[k];
+	    Cindx[next_nz]  = next_value;
+	    next_nz++;
+	    allzeros = 0;
+	    kkk=0;
+	    for (iii = 0; iii < NcolsPerBlock; iii++) {
+	      for (jjj = 0; jjj < NrowsPerBlock; jjj++) {
+	        Cvalues[next_value++] = accum_val[k*NnzPerBlock+kkk];
+	        kkk++;
+	      }
 	    }
-	  }
-    }
+      }
       /* if entire row is zero, store one entry to avoid empty row */
 
-    if (Ncols == 0) {
-	  Cbindx[next_nz] = nearbyIndex;
-	  Cindx[next_nz] = next_value;
-	  next_nz++;
-	  for (iii = 0; iii < NcolsPerBlock; iii++) {
-	    for (jjj = 0; jjj < NrowsPerBlock; jjj++) {
-	      Cvalues[next_value++] = accum_val[k*NnzPerBlock+kkk];
-	      kkk++;
+      if (Ncols == 0) {
+	    Cbindx[next_nz] = nearbyIndex;
+	    Cindx[next_nz] = next_value;
+	    next_nz++;
+	    for (iii = 0; iii < NcolsPerBlock; iii++) {
+	      for (jjj = 0; jjj < NrowsPerBlock; jjj++) {
+	        Cvalues[next_value++] = accum_val[k*NnzPerBlock+kkk];
+	        kkk++;
+	      }
 	    }
-	  }
-    }
-    Cbpntr[sub_i+1] = next_nz;
-    sub_i++;
-    if (Ncols > max_nz_row_new) max_nz_row_new = Ncols;
-    RowOffset += NrowsPerBlock;
-    RowOffsetBlocks++;
+      }
+      Cbpntr[sub_i+1] = next_nz;
+      sub_i++;
+      if (Ncols > max_nz_row_new) max_nz_row_new = Ncols;
+      RowOffset += NrowsPerBlock;
+      RowOffsetBlocks++;
     }
     oldstart = start;
     start = end;
