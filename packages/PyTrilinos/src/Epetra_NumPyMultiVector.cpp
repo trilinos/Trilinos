@@ -275,7 +275,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
   // This shouldn't happen, but it does . . .
   if (NULL == src_array) nd = 2;
   else nd = src_array->nd;
-  intp dims[nd];
+  intp * dims = new intp[nd];
   dims[0] = NumVectors();
   if (NULL == src_array) dims[1] = source.MyLength();
   else for (int i=1; i<nd; i++) dims[i] = src_array->dimensions[i];
@@ -284,6 +284,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
   Epetra_MultiVector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_SimpleNewFromData(nd,dims,PyArray_DOUBLE,
 						      (void *)v[0]);
+  delete [] dims;
 
   // We're done with the tmp_range array
   Py_XDECREF(tmp_range);

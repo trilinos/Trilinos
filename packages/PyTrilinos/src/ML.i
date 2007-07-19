@@ -86,7 +86,9 @@ example subdirectory of the PyTrilinos package:
 #include "Teuchos_PythonParameter.h"
 
 // Epetra includes
+#include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
+#include "Epetra_LocalMap.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_InvOperator.h"
