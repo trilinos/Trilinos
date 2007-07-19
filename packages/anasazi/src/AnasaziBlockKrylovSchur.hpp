@@ -57,14 +57,14 @@
 #endif
 
 /*!     \class Anasazi::BlockKrylovSchur
-  
+
   \brief This class implements the block Krylov-Schur iteration,
-  for solving eigenvalue problems.
-  
+  for solving linear eigenvalue problems.
+
   This method is a block version of the iteration presented by G.W. Stewart 
   in "A Krylov-Schur Algorithm for Large Eigenproblems", 
   SIAM J. Matrix Anal. Appl., Vol 23(2001), No. 3, pp. 601-614.
-  
+
   \ingroup anasazi_solver_framework
 
   \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist

@@ -69,18 +69,17 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 /*!     \class Anasazi::LOBPCG
-        
-        \brief This class implements the Locally-Optimal Block Preconditioned
-        Conjugate Gradient (%LOBPCG) method for solving Hermitian eigenvalue problems.
-        
+
+        \brief This class provides the Locally Optimal Block Preconditioned Conjugate Gradient (%LOBPCG) iteration, a preconditioned iteration for solving linear Hermitian eigenproblems.
+
         This implementation is a modification of the one found in 
         A. Knyazev, "Toward the optimal preconditioned eigensolver:
         Locally optimal block preconditioner conjugate gradient method",
         SIAM J. Sci. Comput., vol 23, n 2, pp. 517-541.
-        
+
         The modification consists of the orthogonalization steps recommended in
         U. Hetmaniuk and R. Lehoucq, "Basis Selection in LOBPCG", Journal of Computational Physics. 
-        
+
         These modifcation are referred to as full orthogonalization, and consist of also conducting
         the local optimization using an orthonormal basis.
 

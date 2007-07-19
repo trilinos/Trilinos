@@ -24,8 +24,9 @@ framework: orthogonalization, sorting/selection, eigenvalue iterations,
 restarting methodologies, etc. 
 %Anasazi's extensibility comes via 
 the abstract interfaces describing these entities. %Anasazi currently provides
-a robust set of options, and users are able to expand this set as their
-research and/or application needs demand. The ability to interact directly with
+a robust set of options, and users are able to expand this set to suit specific 
+research and/or application needs.
+The ability to interact directly with
 these objects provides great flexibility in computation, while the existence of
 solver managers allow convenient programming for standard use cases.
 

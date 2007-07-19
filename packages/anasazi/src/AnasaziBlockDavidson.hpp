@@ -51,8 +51,13 @@
 
 /*!     \class Anasazi::BlockDavidson
   
-        \brief This class implements the block Davidson method, an iterative
-        method for solving symmetric eigenvalue problems.
+        \brief This class implements a Block Davidson iteration, a preconditioned iteration for solving linear Hermitian eigenproblems.
+
+        This method is described in <em>A Comparison of Eigensolvers for
+        Large-scale 3D Modal Analysis Using AMG-Preconditioned Iterative
+        Methods</em>, P. Arbenz, U. L. Hetmaniuk, R. B. Lehoucq, R. S.
+        Tuminaro, Internat. J. for Numer. Methods Engrg., 64, pp. 204-236
+        (2005)
         
         \ingroup anasazi_solver_framework
 
