@@ -60,7 +60,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   struct aztec_context *Acontext, *Bcontext;
   struct ML_vbrdata *A_VBR, *B_VBR;
   int NrowsPerBlock, NcolsPerBlock, Nghost = 0, InnerDim,iii,jjj,kkk;
-  int LargestRowsPerBlock = 1, NnzPerBlock, RowOffset, next_value;
+  int LargestRowsPerBlock = 1, NnzPerBlock, RowOffset, RowOffsetBlocks, next_value;
   double sum, *Cvalues;
   double *tmp_val_ptr;
   int    *Ccpntr, *Crpntr, oldstart = 0;
@@ -127,7 +127,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   /* nor a constant height for the right matrix.         */
 
 
-  N  = Amatrix->getrow->N_block_rows;
+  N = Amatrix->getrow->N_block_rows;
 
   if (Bmatrix->invec_leng+Nghost > 0)
     NcolsPerBlock = B_VBR->cpntr[1] - B_VBR->cpntr[0];
@@ -202,7 +202,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   /* matrix. NOTE: These arrays can be increased later in the computation   */
   /*------------------------------------------------------------------------*/
 
-  if ( Amatrix->getrow->Nrows > 0 ) {
+  if ( Amatrix->getrow->N_block_rows > 0 ) {
     row = 0;
     Agetrow(Amatrix,1, &row, &A_i_allocated , &A_i_cols, &Aindx, &i,0);
     row = (Amatrix->getrow->N_block_rows-1)/2;
@@ -382,6 +382,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
   hash_used = 0;
   RowOffset = 0;
+  RowOffsetBlocks = 0;
   while (start < N) {
 
     itemp = 0;
@@ -633,12 +634,9 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
            Ccpntr[kkk] = Ccpntr[kkk-1] + NcolsPerBlock;
     	Cvbr_mat->cpntr       = Ccpntr;
     	Cvbr_mat->rpntr       = Crpntr;
-    	Ccontext->getrowstuff = (void *) Cvbr_mat;
     	current = ML_Operator_Create(Amatrix->comm);
 	    ML_Operator_Set_1Levels(current, Bmatrix->from, Amatrix->to);
 
-    	ML_Operator_Set_ApplyFuncData(current, save_ints[5],save_ints[1], 
-				      Ccontext, RowOffset,NULL,0);
                                                                                                                  
         if(current->ML_id != ML_ID_OP ) {
           printf("ML_Operator_Set_ApplyFunc error : wrong object.\n");
@@ -653,14 +651,15 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
         current->invec_leng = save_ints[5];
         current->outvec_leng = save_ints[1];
         current->data = (void*)Cvbr_mat;
-        current->matvec->func_ptr = NULL;
+        current->getrow->func_ptr = VBR_getrows;
                                                                                                                  
         current->matvec->ML_id = ML_NONEMPTY;
         current->matvec->Nrows = RowOffset;
-                                                                                                                 
+        current->getrow->Nrows = RowOffset;
+        current->getrow->N_block_rows = RowOffsetBlocks;
 
-	    ML_Operator_Set_Getrow(current, RowOffset, 
-                               az_vbrgetrow_wrapper);
+	    /*ML_Operator_Set_Getrow(current, RowOffset, 
+                               az_vbrgetrow_wrapper);*/
 
 
         /* current->data_destroy = AZ_ML_FullClean; */
@@ -692,6 +691,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
     	  exit(1);
     	}
         RowOffset = 0;
+        RowOffsetBlocks = 0;
     	next_nz   = 0;
         next_value = 0;
     	Cbpntr[0]  = next_nz;
@@ -733,6 +733,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
     sub_i++;
     if (Ncols > max_nz_row_new) max_nz_row_new = Ncols;
     RowOffset += NrowsPerBlock;
+    RowOffsetBlocks++;
     }
     oldstart = start;
     start = end;
@@ -800,14 +801,16 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    (*Cmatrix)->invec_leng = save_ints[5];
    (*Cmatrix)->outvec_leng = save_ints[1];
    (*Cmatrix)->data = (void*)Cvbr_mat;
-   (*Cmatrix)->matvec->func_ptr = NULL;
+   (*Cmatrix)->getrow->func_ptr = VBR_getrows;
                                                                                                                  
    (*Cmatrix)->matvec->ML_id = ML_NONEMPTY;
    (*Cmatrix)->matvec->Nrows = RowOffset+NrowsPerBlock;
+   (*Cmatrix)->getrow->Nrows = RowOffset+NrowsPerBlock;
+   (*Cmatrix)->getrow->N_block_rows = RowOffsetBlocks+1;;
 
 
-  ML_Operator_Set_Getrow((*Cmatrix), RowOffset+NrowsPerBlock, 
-			 az_vbrgetrow_wrapper);
+  /*ML_Operator_Set_Getrow((*Cmatrix), RowOffset+NrowsPerBlock, 
+			 az_vbrgetrow_wrapper);*/
 
 
   /* (*Cmatrix)->data_destroy = AZ_ML_FullClean; */
@@ -1817,7 +1820,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    {
    /*settings to change since we now have a vbr matrix*/
    in_matrix->type = ML_TYPE_VBR_MATRIX;
-   in_matrix->matvec->func_ptr = NULL;
+   in_matrix->matvec->func_ptr = VBR_getrows;
    /*in_matrix->matvec->func_ptr = VBR_matvec;  this needs to be put back in at some point once the function exists*/
 
    /*find number of block rows and block columnsi and their location if using a fixed width*/
