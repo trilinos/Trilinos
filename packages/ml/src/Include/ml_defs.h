@@ -140,6 +140,7 @@
 
 /*MS*/
 /* those are for the aggregate ordering within METIS or ParMETIS */
+/*IK Also used for columns_loc_glob in the get row structure*/
 #define ML_LOCAL_INDICES     0
 #define ML_GLOBAL_INDICES    1
 /*ms*/
