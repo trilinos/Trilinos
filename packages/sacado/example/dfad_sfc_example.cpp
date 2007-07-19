@@ -29,16 +29,15 @@
 // ***********************************************************************
 // @HEADER
 
-// trad_example
+// dfad_sfc_example
 //
 //  usage: 
-//     trad_example
+//     dfad_sfc_example
 //
 //  output:  
-//     prints the results of differentiating a simple function with reverse
-//     mode AD using the Sacado::Rad::ADvar class.
+//     Uses the scalar flop counter to count the flops for a derivative
+//     of a simple function using DFad
 
-#define SACADO_NAMESPACE
 #include "Sacado.hpp"
 
 // The function to differentiate
@@ -50,11 +49,16 @@ ScalarT func(const ScalarT& a, const ScalarT& b, const ScalarT& c) {
 }
 
 // The analytic derivative of func(a,b,c) with respect to a and b
-void func_deriv(double a, double b, double c, double& drda, double& drdb)
+template <typename ScalarT>
+void func_deriv(const ScalarT& a, const ScalarT& b, const ScalarT& c, 
+		ScalarT& drda, ScalarT& drdb)
 {
   drda = -(c*std::log(b+1.)/std::pow(std::sin(a),2))*std::cos(a);
   drdb = c / ((b+1.)*std::sin(a));
 }
+
+typedef Sacado::FlopCounterPack::ScalarFlopCounter<double> SFC;
+typedef Sacado::Fad::DFad<SFC> FAD_SFC;
 
 int main(int argc, char **argv)
 {
@@ -65,35 +69,56 @@ int main(int argc, char **argv)
   double b = 2.0;
   double c = 3.0;
 
-  // Rad objects
-  Sacado::Rad::ADvar<double> arad = a; 
-  Sacado::Rad::ADvar<double> brad = b; 
-  Sacado::Rad::ADvar<double> crad = c;              // Passive variable
-  Sacado::Rad::ADvar<double> rrad;                  // Result
+  // Number of independent variables
+  int num_deriv = 2;
 
   // Compute function
-  double r = func(a, b, c);
+  SFC as(a);
+  SFC bs(b);
+  SFC cs(c);
+  SFC::resetCounters();
+  SFC rs = func(as, bs, cs);
+  SFC::finalizeCounters();
+
+  std::cout << "Flop counts for function evaluation:";
+  SFC::printCounters(std::cout);
 
   // Compute derivative analytically
-  double drda, drdb;
-  func_deriv(a, b, c, drda, drdb);
+  SFC drdas, drdbs;
+  SFC::resetCounters();
+  func_deriv(as, bs, cs, drdas, drdbs);
+  SFC::finalizeCounters();
+
+  std::cout << "\nFlop counts for analytic derivative evaluation:";
+  SFC::printCounters(std::cout);
 
   // Compute function and derivative with AD
-  rrad = func(arad, brad, crad);
+  FAD_SFC afad(num_deriv, 0, a); 
+  FAD_SFC bfad(num_deriv, 1, b); 
+  FAD_SFC cfad(c);               
+  SFC::resetCounters();
+  FAD_SFC rfad = func(afad, bfad, cfad);
+  SFC::finalizeCounters();
 
-  Sacado::Rad::ADvar<double>::Gradcomp();
+  std::cout << "\nFlop counts for AD function and derivative evaluation:";
+  SFC::printCounters(std::cout);
 
   // Extract value and derivatives
-  double r_ad = rrad.val();     // r
-  double drda_ad = arad.adj();  // dr/da
-  double drdb_ad = brad.adj();  // dr/db
+  double r = rs.val();               // r
+  double drda = drdas.val();         // dr/da
+  double drdb = drdbs.val();         // dr/db
+
+  double r_ad = rfad.val().val();     // r
+  double drda_ad = rfad.dx(0).val();  // dr/da
+  double drdb_ad = rfad.dx(1).val();  // dr/db
 
   // Print the results
   int p = 4;
   int w = p+7;
   std::cout.setf(std::ios::scientific);
   std::cout.precision(p);
-  std::cout << "    r =  " << r << " (original) == " << std::setw(w) << r_ad
+  std::cout << "\nValues/derivatives of computation" << std::endl
+	    << "    r =  " << r << " (original) == " << std::setw(w) << r_ad
 	    << " (AD) Error = " << std::setw(w) << r - r_ad << std::endl
 	    << "dr/da = " << std::setw(w) << drda << " (analytic) == " 
 	    << std::setw(w) << drda_ad << " (AD) Error = " << std::setw(w) 
@@ -103,10 +128,11 @@ int main(int argc, char **argv)
 	    << drdb - drdb_ad << std::endl;
 
   double tol = 1.0e-14;
-  
+  Sacado::FlopCounterPack::FlopCounts fc = SFC::getCounters();
   if (std::fabs(r - r_ad)       < tol &&
       std::fabs(drda - drda_ad) < tol &&
-      std::fabs(drdb - drdb_ad) < tol) {
+      std::fabs(drdb - drdb_ad) < tol &&
+      fc.totalFlopCount == 48) {
     std::cout << "\nExample passed!" << std::endl;
     return 0;
   }

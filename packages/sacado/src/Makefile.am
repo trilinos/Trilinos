@@ -144,7 +144,11 @@ SACADO_MPL_H = \
 	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp
 
 SACADO_SFC_H = \
-	$(srcdir)/Sacado_ScalarFlopCounter.hpp
+	$(srcdir)/Sacado_ScalarFlopCounter.hpp \
+	$(srcdir)/Sacado_ScalarFlopCounterTraits.hpp
+
+SACADO_SFC = \
+	$(srcdir)/Sacado_ScalarFlopCounter.cpp
 
 SACADO_H = \
 	$(srcdir)/Sacado_ConfigDefs.h \
@@ -163,7 +167,8 @@ SACADO_H = \
 
 SACADO = \
 	$(SACADO_RAD) \
-	$(SACADO_PARAMETER)
+	$(SACADO_PARAMETER) \
+	$(SACADO_SFC)
 
 include $(top_builddir)/Makefile.export.sacado
 

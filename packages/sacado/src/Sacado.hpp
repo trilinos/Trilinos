@@ -40,6 +40,7 @@
 #include "Sacado_Tay_Taylor.hpp"
 #include "Sacado_Tay_CacheTaylor.hpp"
 #include "Sacado_trad.hpp"
+#include "Sacado_ScalarFlopCounter.hpp"
 
 #include "Sacado_Fad_MemPoolManager.hpp"
 #include "Sacado_Fad_DMFad.hpp"

@@ -140,8 +140,12 @@ int main(int argc, char **argv)
       std::fabs(drdb - drdb_ad)       < tol &&
       std::fabs(d2rda2 - d2rda2_ad)   < tol &&
       std::fabs(d2rdb2 - d2rdb2_ad)   < tol &&
-      std::fabs(d2rdadb - d2rdadb_ad) < tol)
+      std::fabs(d2rdadb - d2rdadb_ad) < tol) {
+    std::cout << "\nExample passed!" << std::endl;
     return 0;
-  else
+  }
+  else {
+    std::cout <<"\nSomething is wrong, example failed!" << std::endl;
     return 1;
+  }
 }

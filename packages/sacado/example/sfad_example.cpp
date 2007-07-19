@@ -107,8 +107,12 @@ int main(int argc, char **argv)
   double tol = 1.0e-14;
   if (std::fabs(r - r_ad)       < tol &&
       std::fabs(drda - drda_ad) < tol &&
-      std::fabs(drdb - drdb_ad) < tol)
+      std::fabs(drdb - drdb_ad) < tol) {
+    std::cout << "\nExample passed!" << std::endl;
     return 0;
-  else
+  }
+  else {
+    std::cout <<"\nSomething is wrong, example failed!" << std::endl;
     return 1;
+  }
 }

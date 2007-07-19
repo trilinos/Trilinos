@@ -97,12 +97,14 @@ int main(int argc, char **argv)
   std::cout << "Maximum relative error = " << max_err << std::endl;
 
   double tol = 1.0e-12;
-  if (max_err < tol)
+  if (max_err < tol){
+    std::cout << "\nExample passed!" << std::endl;
     return 0;
-  else
+  }
+  else {
+    std::cout <<"\nSomething is wrong, example failed!" << std::endl;
     return 1;
-
-  return 0;
+  }
 }
 
   
