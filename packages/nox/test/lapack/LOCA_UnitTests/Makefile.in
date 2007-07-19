@@ -66,7 +66,8 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 @BUILD_LOCA_LAPACK_TESTS_TRUE@noinst_PROGRAMS = $(am__EXEEXT_1) \
-@BUILD_LOCA_LAPACK_TESTS_TRUE@	$(am__EXEEXT_2) $(am__EXEEXT_3)
+@BUILD_LOCA_LAPACK_TESTS_TRUE@	$(am__EXEEXT_2) $(am__EXEEXT_3) \
+@BUILD_LOCA_LAPACK_TESTS_TRUE@	$(am__EXEEXT_4)
 subdir = test/lapack/LOCA_UnitTests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -100,8 +101,9 @@ CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 @BUILD_LOCAANASAZI_TRUE@am__EXEEXT_1 =  \
 @BUILD_LOCAANASAZI_TRUE@	anasaziJacobianInverse$(EXEEXT)
-am__EXEEXT_2 = borderedSolve$(EXEEXT)
-am__EXEEXT_3 = transposeBorderedSolve$(EXEEXT)
+@BUILD_LOCAANASAZI_TRUE@am__EXEEXT_2 = anasaziNotConverged$(EXEEXT)
+am__EXEEXT_3 = borderedSolve$(EXEEXT)
+am__EXEEXT_4 = transposeBorderedSolve$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_anasaziJacobianInverse_OBJECTS = AnasaziJacobianInverse.$(OBJEXT)
 anasaziJacobianInverse_OBJECTS = $(am_anasaziJacobianInverse_OBJECTS)
@@ -109,6 +111,8 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(LOCA_LAPACK_TEST_LIBS))
+am_anasaziNotConverged_OBJECTS = AnasaziNotConverged.$(OBJEXT)
+anasaziNotConverged_OBJECTS = $(am_anasaziNotConverged_OBJECTS)
 am_borderedSolve_OBJECTS = BorderedSolve.$(OBJEXT)
 borderedSolve_OBJECTS = $(am_borderedSolve_OBJECTS)
 am_transposeBorderedSolve_OBJECTS = TransposeBorderedSolve.$(OBJEXT)
@@ -121,10 +125,12 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(anasaziJacobianInverse_SOURCES) $(borderedSolve_SOURCES) \
+SOURCES = $(anasaziJacobianInverse_SOURCES) \
+	$(anasaziNotConverged_SOURCES) $(borderedSolve_SOURCES) \
 	$(transposeBorderedSolve_SOURCES)
 DIST_SOURCES = $(anasaziJacobianInverse_SOURCES) \
-	$(borderedSolve_SOURCES) $(transposeBorderedSolve_SOURCES)
+	$(anasaziNotConverged_SOURCES) $(borderedSolve_SOURCES) \
+	$(transposeBorderedSolve_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -276,6 +282,8 @@ top_srcdir = @top_srcdir@
 AM_CPPFLAGS = $(TEST_INCLUDES)
 @BUILD_LOCAANASAZI_FALSE@ANASAZIJACOBIANINVERSE = 
 @BUILD_LOCAANASAZI_TRUE@ANASAZIJACOBIANINVERSE = anasaziJacobianInverse
+@BUILD_LOCAANASAZI_FALSE@ANASAZINOTCONVERGED = 
+@BUILD_LOCAANASAZI_TRUE@ANASAZINOTCONVERGED = anasaziNotConverged
 BORDEREDSOLVE = borderedSolve
 TRANSBORDEREDSOLVE = transposeBorderedSolve
 anasaziJacobianInverse_SOURCES = \
@@ -290,6 +298,13 @@ anasaziJacobianInverse_DEPENDENCIES = \
 	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.a
 
 anasaziJacobianInverse_LDADD = $(TEST_LIBS)
+anasaziNotConverged_SOURCES = \
+	$(srcdir)/AnasaziNotConverged.C 
+
+anasaziNotConverged_DEPENDENCIES = \
+	$(anasaziJacobianInverse_DEPENDENCIES)
+
+anasaziNotConverged_LDADD = $(TEST_LIBS)
 borderedSolve_SOURCES = \
 	$(srcdir)/BorderedSolve.C
 
@@ -353,6 +368,9 @@ clean-noinstPROGRAMS:
 anasaziJacobianInverse$(EXEEXT): $(anasaziJacobianInverse_OBJECTS) $(anasaziJacobianInverse_DEPENDENCIES) 
 	@rm -f anasaziJacobianInverse$(EXEEXT)
 	$(CXXLINK) $(anasaziJacobianInverse_OBJECTS) $(anasaziJacobianInverse_LDADD) $(LIBS)
+anasaziNotConverged$(EXEEXT): $(anasaziNotConverged_OBJECTS) $(anasaziNotConverged_DEPENDENCIES) 
+	@rm -f anasaziNotConverged$(EXEEXT)
+	$(CXXLINK) $(anasaziNotConverged_OBJECTS) $(anasaziNotConverged_LDADD) $(LIBS)
 borderedSolve$(EXEEXT): $(borderedSolve_OBJECTS) $(borderedSolve_DEPENDENCIES) 
 	@rm -f borderedSolve$(EXEEXT)
 	$(CXXLINK) $(borderedSolve_OBJECTS) $(borderedSolve_LDADD) $(LIBS)
@@ -367,6 +385,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AnasaziJacobianInverse.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AnasaziNotConverged.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BorderedSolve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TransposeBorderedSolve.Po@am__quote@
 
@@ -397,6 +416,20 @@ AnasaziJacobianInverse.obj: $(srcdir)/AnasaziJacobianInverse.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AnasaziJacobianInverse.C' object='AnasaziJacobianInverse.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AnasaziJacobianInverse.obj `if test -f '$(srcdir)/AnasaziJacobianInverse.C'; then $(CYGPATH_W) '$(srcdir)/AnasaziJacobianInverse.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AnasaziJacobianInverse.C'; fi`
+
+AnasaziNotConverged.o: $(srcdir)/AnasaziNotConverged.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AnasaziNotConverged.o -MD -MP -MF $(DEPDIR)/AnasaziNotConverged.Tpo -c -o AnasaziNotConverged.o `test -f '$(srcdir)/AnasaziNotConverged.C' || echo '$(srcdir)/'`$(srcdir)/AnasaziNotConverged.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/AnasaziNotConverged.Tpo $(DEPDIR)/AnasaziNotConverged.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AnasaziNotConverged.C' object='AnasaziNotConverged.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AnasaziNotConverged.o `test -f '$(srcdir)/AnasaziNotConverged.C' || echo '$(srcdir)/'`$(srcdir)/AnasaziNotConverged.C
+
+AnasaziNotConverged.obj: $(srcdir)/AnasaziNotConverged.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AnasaziNotConverged.obj -MD -MP -MF $(DEPDIR)/AnasaziNotConverged.Tpo -c -o AnasaziNotConverged.obj `if test -f '$(srcdir)/AnasaziNotConverged.C'; then $(CYGPATH_W) '$(srcdir)/AnasaziNotConverged.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AnasaziNotConverged.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/AnasaziNotConverged.Tpo $(DEPDIR)/AnasaziNotConverged.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AnasaziNotConverged.C' object='AnasaziNotConverged.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AnasaziNotConverged.obj `if test -f '$(srcdir)/AnasaziNotConverged.C'; then $(CYGPATH_W) '$(srcdir)/AnasaziNotConverged.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AnasaziNotConverged.C'; fi`
 
 BorderedSolve.o: $(srcdir)/BorderedSolve.C
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BorderedSolve.o -MD -MP -MF $(DEPDIR)/BorderedSolve.Tpo -c -o BorderedSolve.o `test -f '$(srcdir)/BorderedSolve.C' || echo '$(srcdir)/'`$(srcdir)/BorderedSolve.C

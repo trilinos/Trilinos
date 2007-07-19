@@ -154,14 +154,23 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   // Obtain the eigenvalues / eigenvectors
   const Anasazi::Eigensolution<double,MV>& anasaziSolution = 
     LOCAProblem->getSolution();
+  int numVecs = anasaziSolution.numVecs;
   evals_r = 
-    Teuchos::rcp(new std::vector<double>(nev));
+    Teuchos::rcp(new std::vector<double>(numVecs));
   evals_i = 
-    Teuchos::rcp(new std::vector<double>(nev));
-  for (int i=0; i<nev; i++) {
+    Teuchos::rcp(new std::vector<double>(numVecs));
+  for (int i=0; i<numVecs; i++) {
     (*evals_r)[i] = anasaziSolution.Evals[i].realpart;
     (*evals_i)[i] = anasaziSolution.Evals[i].imagpart;
   }
+
+  if (returnCode != Anasazi::Converged)
+    globalData->locaUtils->out() << 
+      globalData->locaUtils->fill(72, '*') << std::endl << 
+      "WARNING:  Anasazi eigensolver did not converge." << std::endl <<
+      "          Only " << numVecs << " of " << nev << 
+      " eigenvalues were computed!" << std::endl << 
+      globalData->locaUtils->fill(72, '*') << std::endl << std::endl;
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) 
      globalData->locaUtils->out() << 
@@ -170,9 +179,10 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   
   // Obtain the eigenvectors
   Teuchos::RCP<MV> evecs = anasaziSolution.Evecs;
-  evecs_r = evecs->clone(nev);
-  evecs_i = evecs->clone(nev);
-  for (int i=0; i<nev; i++) {
+
+  evecs_r = evecs->clone(numVecs);
+  evecs_i = evecs->clone(numVecs);
+  for (int i=0; i<numVecs; i++) {
 
     // Eigenvalue is real
     if (anasaziSolution.index[i] == 0) {
@@ -180,7 +190,7 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
       (*evecs_i)[i].init(0.0);
     }
     
-    // Complex conjugate pair.  We must have i<nev-1 for this to be true
+    // Complex conjugate pair.  We must have i<numVecs-1 for this to be true
     else if (anasaziSolution.index[i] == 1) {
       (*evecs_r)[i] = (*evecs)[i];
       (*evecs_i)[i] = (*evecs)[i+1];
@@ -194,14 +204,16 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
     }
     else {
       string func = "LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues()";
-      globalData->locaErrorCheck->throwError(func, "Unknown anasazi index");
+      stringstream ss;
+      ss << "Unknown anasazi index " << anasaziSolution.index[i];
+      globalData->locaErrorCheck->throwError(func, ss.str());
     }
   }
 
   // Real & imaginary components of Rayleigh quotient
   double rq_r, rq_i;
 
-  for (int i=0; i<nev; i++) {
+  for (int i=0; i<numVecs; i++) {
 
     // Un-transform eigenvalues
     anasaziOp->transformEigenvalue((*evals_r)[i], (*evals_i)[i]);
@@ -228,11 +240,11 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
     LOCABlockKrylovSchur.getRitzValues();
   int numRitz = ritzValues.size();
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration) && 
-      numRitz>nev) {
+      numRitz>numVecs) {
     globalData->locaUtils->out() << 
       "~~~~~~~ remaining eigenvalue approximations ~~~~~~~~~~~~" << std::endl;
   }
-  for (int i=nev; i<numRitz; i++) {
+  for (int i=numVecs; i<numRitz; i++) {
 
       // Un-transform eigenvalues
     anasaziOp->transformEigenvalue(ritzValues[i].realpart, 

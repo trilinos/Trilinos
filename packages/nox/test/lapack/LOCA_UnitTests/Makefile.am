@@ -50,10 +50,12 @@ EXEEXT = .exe
 if BUILD_LOCAANASAZI
 
 ANASAZIJACOBIANINVERSE = anasaziJacobianInverse
+ANASAZINOTCONVERGED = anasaziNotConverged
 
 else
 
 ANASAZIJACOBIANINVERSE = 
+ANASAZINOTCONVERGED = 
 
 endif
 
@@ -63,6 +65,7 @@ TRANSBORDEREDSOLVE = transposeBorderedSolve
 if BUILD_LOCA_LAPACK_TESTS
 noinst_PROGRAMS = \
 	$(ANASAZIJACOBIANINVERSE) \
+	$(ANASAZINOTCONVERGED) \
 	$(BORDEREDSOLVE) \
 	$(TRANSBORDEREDSOLVE)
 endif
@@ -79,6 +82,14 @@ anasaziJacobianInverse_DEPENDENCIES = \
 	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.a
 
 anasaziJacobianInverse_LDADD = $(TEST_LIBS)
+
+anasaziNotConverged_SOURCES = \
+	$(srcdir)/AnasaziNotConverged.C 
+
+anasaziNotConverged_DEPENDENCIES = \
+	$(anasaziJacobianInverse_DEPENDENCIES)
+
+anasaziNotConverged_LDADD = $(TEST_LIBS)
 
 borderedSolve_SOURCES = \
 	$(srcdir)/BorderedSolve.C
