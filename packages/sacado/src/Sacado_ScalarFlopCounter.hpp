@@ -34,6 +34,8 @@
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_ScalarFlopCounterTraits.hpp"
+#include <algorithm>	// for std::min and std::max
+#include <ostream>	// for std::ostream
 
 namespace Sacado {
 

@@ -56,6 +56,8 @@
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_Fad_Expression.hpp"
+#include <algorithm>	// for std::min and std::max
+#include <ostream>	// for std::ostream
 
 // Import the standard math functions into the Sacado::Fad namespace
 namespace Sacado {

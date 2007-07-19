@@ -30,6 +30,7 @@
 // @HEADER
 
 #include "Sacado_DynamicArrayTraits.hpp"
+#include <ostream>	// for std::ostream
 
 namespace Sacado {
 namespace Tay {

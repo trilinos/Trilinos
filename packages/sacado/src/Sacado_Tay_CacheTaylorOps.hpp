@@ -34,6 +34,8 @@
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_Tay_CacheTaylorExpr.hpp"
+#include <algorithm>	// for std::min and std::max
+#include <ostream>	// for std::ostream
 
 // Import the standard math functions into the Sacado::Taylor namespace
 namespace Sacado {
