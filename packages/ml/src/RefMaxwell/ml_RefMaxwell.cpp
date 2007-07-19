@@ -18,30 +18,6 @@ static int c_iteration=0;//DEBUG
 #define BASE_IDX 0
 #define NO_OUTPUT
 
-extern "C"{
-  void cms_vec_dump3(double *x,int N,char* fname, int iteration);
-  void cms_vec_dump2(double *x,int N,char* fname){    
-#ifndef NO_OUTPUT
-    cms_vec_dump3(x,N,fname,c_iteration);
-#endif
-  }
-}
-
-/* Stuff to avoid errors wrt rpc.cpp */
-#ifdef NO_OUTPUT
-#define MVOUT2(x,y,z) ;
-#define MVOUT(x,y) ;
-#define Epetra_CrsMatrix_Print(x,y) ;
-#else
-void cms_vec_dump3(double *x,int N,char* fname, int iteration){
-  char fn[80];
-  sprintf(fn,"%s.%d.dat",fname,iteration);
-  FILE *f=fopen(fn,"w");
-  for(int i=0;i<N;i++)
-    fprintf(f,"%22.16e\n",x[i]);
-  fclose(f);
-}
-
 void MVOUT(const Epetra_MultiVector & A, char *of){
   ofstream os(of);
   int i,j;
@@ -124,7 +100,6 @@ void IVOUT(const Epetra_IntVector & A, char *of){
 void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname){
   ML_Operator_Print(ML,fname);
 }
-#endif
 
 
 
@@ -137,8 +112,8 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
                                                               const Teuchos::ParameterList& List,
                                                               const bool ComputePrec):
   ML_Preconditioner(),SM_Matrix_(&SM_Matrix),D0_Matrix_(0), D0_Clean_Matrix_(&D0_Clean_Matrix),Ms_Matrix_(&Ms_Matrix),
-  M0inv_Matrix_(&M0inv_Matrix),M1_Matrix_(&M1_Matrix),TMT_Matrix_(0),TMT_Agg_Matrix_(0),
-  BCrows(0),numBCrows(0),HasOnlyDirichletNodes(false),Operator11_(0),EdgePC(0),NodePC(0),PreEdgeSmoother(0),PostEdgeSmoother(0),verbose_(false),aggregate_with_sigma(false)
+  M0inv_Matrix_(&M0inv_Matrix),M1_Matrix_((Epetra_CrsMatrix*)&M1_Matrix),TMT_Matrix_(0),TMT_Agg_Matrix_(0),
+  BCrows(0),numBCrows(0),HasOnlyDirichletNodes(false),Operator11_(0),EdgePC(0),NodePC(0),PreEdgeSmoother(0),PostEdgeSmoother(0),verbose_(false),aggregate_with_sigma(false),lump_m1(false)
 {
   /* Set the Epetra Goodies */
   Comm_ = &(SM_Matrix_->Comm());
@@ -199,13 +174,13 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   /* Validate List */
   ValidateRefMaxwellParameters(List_);
   
-  /* Pull Solver Mode, verbosity */
-  mode=List_.get("refmaxwell: mode","212");
+  /* Pull Solver Mode, verbosity, matrix output */
+  mode=List_.get("refmaxwell: mode","additive");
+  print_hierarchy=(bool) List_.get("print hierarchy",0);  
   int vb_level=List_.get("output",0);
   if(vb_level >= 5) verbose_=true;
   else verbose_=false;
-  aggregate_with_sigma=(bool) List_.get("refmaxwell: aggregate with sigma",0);
-
+  aggregate_with_sigma=(bool) List_.get("refmaxwell: aggregate with sigma",0);  
   
   /* Nuke everything if we've done this already */
   if(IsComputePreconditionerOK_) DestroyPreconditioner();
@@ -218,15 +193,12 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   for(int i=0;i<Nn;i++){
     if((*BCnodes)[i]) numBCnodes++;
   }
-
   
   /* Sanity Check: We have at least some Dirichlet nodes */
-  /* NTS: This should get fixed later for robustness */
   int HasInterior = numBCnodes != Nn;
   if(verbose_) printf("[%d] HasInterior = %d %d/%d\n",Comm_->MyPID(),HasInterior,Nn-numBCnodes,Nn);
   int globalInterior=HasInterior;
   Comm_->MaxAll(&HasInterior,&globalInterior,1);  
-
   if(!globalInterior){
     HasOnlyDirichletNodes=true;
     if(!Comm_->MyPID()) printf("WARNING: All nodes are Dirichlet nodes.\n");
@@ -238,48 +210,42 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   Apply_BCsToMatrixColumns(*BCnodes,*D0_Matrix_);   
   D0_Matrix_->OptimizeStorage();
 
+  /* EXPERIMENTAL - Lump M1, if requested */
+  lump_m1 = (bool) List_.get("refmaxwell: lump m1",0);
+  if(lump_m1){
+    Epetra_Vector mvec1(*RangeMap_,false), mvec2(*RangeMap_,false);
+    mvec1.PutScalar(1.0);
+    M1_Matrix_->Multiply(false,mvec1,mvec2);
+    M1_Matrix_ = new Epetra_CrsMatrix(Copy,*RangeMap_,1);
+    for(int i=0;i<mvec2.MyLength();i++){
+       int idx = RangeMap_->GID(i);     
+       M1_Matrix_->InsertGlobalValues(idx,1,&(mvec2[i]),&idx);
+    
+     }
+    M1_Matrix_->FillComplete();
+    M1_Matrix_->OptimizeStorage();
+
+  }/*end if*/  
+
+
+
 
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[0]));
 #endif
   
-#ifdef BUILD_WITH_EPETRAEXT
-  /* Build the TMT Matrix */  
-  /* NTS: When ALEGRA builds this matrix itself, we get rid of these lines */
-  if(!HasOnlyDirichletNodes){
-    Epetra_CrsMatrix temp1(Copy,*RangeMap_,BASE_IDX);
-    TMT_Matrix_=new Epetra_CrsMatrix(Copy,*NodeMap_,BASE_IDX);
-    //    EpetraExt::MatrixMatrix::Multiply(*Ms_Matrix_,false,*D0_Matrix_,false,temp1);
-    EpetraExt::MatrixMatrix::Multiply(*SM_Matrix_,false,*D0_Matrix_,false,temp1);
-    EpetraExt::MatrixMatrix::Multiply(*D0_Matrix_,true,temp1,false,*TMT_Matrix_);
-    TMT_Matrix_->OptimizeStorage();
-    Remove_Zeroed_Rows(*TMT_Matrix_);
-  }/*end if*/
-#else
   /* Build the TMT Matrix */
   if(!HasOnlyDirichletNodes){
     //    ML_Epetra_PtAP(*Ms_Matrix_,*D0_Matrix_,TMT_Matrix_,verbose_);
     ML_Epetra_PtAP(*SM_Matrix_,*D0_Matrix_,TMT_Matrix_,verbose_);
     Remove_Zeroed_Rows(*TMT_Matrix_,1e-10);
   }/*end if */
-#endif        
   
-#ifdef BUILD_WITH_EPETRAEXT  
-  /* Build the TMT-Agg Matrix  (used for aggregating the (1,1) block*/
-  /* NTS: When ALEGRA builds this matrix itself, we get rid of these lines */
-  Epetra_CrsMatrix temp2(Copy,*RangeMap_,0);
-  TMT_Agg_Matrix_=new Epetra_CrsMatrix(Copy,*NodeMap_,0);  
-  if(aggregate_with_sigma) EpetraExt::MatrixMatrix::Multiply(*Ms_Matrix_,false,*D0_Clean_Matrix_,false,temp2);
-  e;se EpetraExt::MatrixMatrix::Multiply(*M1_Matrix_,false,*D0_Clean_Matrix_,false,temp2);
-  EpetraExt::MatrixMatrix::Multiply(*D0_Clean_Matrix_,true,temp2,false,*TMT_Agg_Matrix_);
-  Remove_Zeroed_Rows(*TMT_Agg_Matrix_);
-#else
   /* Build the TMT-Agg Matrix */
   if(aggregate_with_sigma) ML_Epetra_PtAP(*Ms_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
   else ML_Epetra_PtAP(*M1_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
   Remove_Zeroed_Rows(*TMT_Agg_Matrix_);
-#endif
-
+  
 #ifndef NO_OUTPUT
   if(TMT_Matrix_) Epetra_CrsMatrix_Print(*TMT_Matrix_,"tmt_matrix.dat");
   Epetra_CrsMatrix_Print(*TMT_Agg_Matrix_,"tmt_agg_matrix.dat");
@@ -295,14 +261,15 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 
 
   /* DEBUG: Output matrices */
-#ifndef NO_OUTPUT
-  Epetra_CrsMatrix_Print(*SM_Matrix_,"sm_matrix.dat");
-  Epetra_CrsMatrix_Print(*Ms_Matrix_,"ms_matrix.dat");  
-  Epetra_CrsMatrix_Print(*M1_Matrix_,"m1_nuked.dat");
-  Epetra_CrsMatrix_Print(*M0inv_Matrix_,"m0inv_nuked.dat");  
-  Epetra_CrsMatrix_Print(*D0_Matrix_,"d0_nuked.dat");  
-  Epetra_CrsMatrix_Print(*D0_Clean_Matrix_,"d0_clean.dat");  
-#endif
+  if(print_hierarchy){
+    if(verbose_ && !Comm_->MyPID()) printf("Dumping Matrices to Disk\n");
+    Epetra_CrsMatrix_Print(*SM_Matrix_,"sm_matrix.dat");
+    Epetra_CrsMatrix_Print(*Ms_Matrix_,"ms_matrix.dat");  
+    Epetra_CrsMatrix_Print(*M1_Matrix_,"m1_nuked.dat");
+    Epetra_CrsMatrix_Print(*M0inv_Matrix_,"m0inv_nuked.dat");  
+    Epetra_CrsMatrix_Print(*D0_Matrix_,"d0_nuked.dat");  
+    Epetra_CrsMatrix_Print(*D0_Clean_Matrix_,"d0_clean.dat");  
+  }
 
   /* Cleanup from the Boundary Conditions */
   delete BCnodes; 
@@ -376,7 +343,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
     if(Comm_->MyPID()==0 && min_val <1e-16) {printf("ERROR: Minimum Estimated Diagonal <1e-16 (%6.4e)\n",min_val);return -2;}
   }/*end if*/
   else{
-    // THIS IS A HACK!!!!!
+    /* This is just placeholder code that should probably be removed */
     Diagonal_=new Epetra_Vector(*DomainMap_,false);
     Diagonal_->PutScalar(1.0);
   }
@@ -394,9 +361,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[5]));
 #endif
-#ifndef NO_OUTPUT
-  EdgePC->Print();
-#endif
+  if(print_hierarchy) EdgePC->Print();
 
   
   /* Build the (2,2) Block Preconditioner */
@@ -407,16 +372,12 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
     if(solver22=="multilevel") NodePC=new MultiLevelPreconditioner(*TMT_Matrix_,List22);
     else {printf("RefMaxwellPreconditioner: ERROR - Illegal (2,2) block preconditioner\n");return -1;}
     //NTS: Add Adaptive, MatrixFree
-#ifndef NO_OUTPUT
-    NodePC->Print();
-#endif
+    if(print_hierarchy) NodePC->Print();
   }/*end if*/
 
   
   /* Setup the Hiptmair smoother in additive mode */
-  if(mode=="additive"){
-    SetEdgeSmoother(List_);
-  }/*end if*/
+  if(mode=="additive") SetEdgeSmoother(List_);
 
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[6]));
@@ -460,7 +421,7 @@ int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
   if(BCrows) {delete [] BCrows; BCrows=0;numBCrows=0;}
   if(PreEdgeSmoother)  {delete PreEdgeSmoother; PreEdgeSmoother=0;}
   if(PostEdgeSmoother) {delete PostEdgeSmoother; PostEdgeSmoother=0;}
-
+  if(lump_m1) {delete M1_Matrix_; M1_Matrix_=0;}
 #ifdef ML_TIMING
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);
@@ -581,25 +542,6 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
 
 // ================================================ ====== ==== ==== == = 
 
-void cms_residual_check(const char * tag, const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs){
-  int NumVectors=rhs.NumVectors();
-  double *norm_old, *norm_new;
-  norm_old=new double[NumVectors];
-  norm_new=new double[NumVectors];
-
-  Epetra_MultiVector temp(rhs);
-  op->Apply(lhs,temp);
-  temp.Update(1.0,rhs,-1.0);
-  
-  rhs.Norm2(norm_old);
-  temp.Norm2(norm_new);
-  if(op->Comm().MyPID()==0)
-    for(int i=0;i<NumVectors;i++)
-      printf("%s[%d]: Norm Reduction %6.4e [%6.4e]\n",tag,i,norm_new[i] / norm_old[i],norm_old[i]);  
-
-  delete [] norm_old; delete [] norm_new;
-}
-
 double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs){
   int NumVectors=rhs.NumVectors();
   double *norm_old, *norm_new;
@@ -626,9 +568,10 @@ int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_212(const Epetra_
   int NumVectors=B.NumVectors();
   double r0=1,r1=1,r2=1,r3=1,r4=1;
 
+#ifndef NO_OUTPUT  
   MVOUT2(B,"b",c_iteration);//DEBUG
-
-  r0=cms_compute_residual(SM_Matrix_,B,X);//DEBUG  
+#endif
+  if(verbose_) r0=cms_compute_residual(SM_Matrix_,B,X);//DEBUG  
   
   /* Setup Temps */  
   Epetra_MultiVector node_sol1(*NodeMap_,NumVectors,true);
@@ -640,48 +583,57 @@ int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_212(const Epetra_
 
   /* Build Nodal RHS  (nrhs = D0'*b) */
   ML_CHK_ERR(D0_Matrix_->Multiply(true,B,node_rhs));
-
+#ifndef NO_OUTPUT
   MVOUT2(node_rhs,"nrhs1",c_iteration);//DEBUG
-  
+  #endif
   /* (2,2) Block Solve (xn1 = TMT^{-1} nrhs) */
   ML_reseed_random_vec(8675309);  
   ML_CHK_ERR(NodePC->ApplyInverse(node_rhs,node_sol1));
+#ifndef NO_OUTPUT
   MVOUT2(node_sol1,"xn1",c_iteration);//DEBUG
+#endif
 
-  r1=cms_compute_residual(TMT_Matrix_,node_rhs,node_sol1);//DEBUG
+  if(verbose_) r1=cms_compute_residual(TMT_Matrix_,node_rhs,node_sol1);//DEBUG
   
   /* Build Edge RHS  (erhs = b - Ms *D0 * xn1) */
   ML_CHK_ERR(D0_Matrix_->Multiply(false,node_sol1,edge_temp1));
   ML_CHK_ERR(Ms_Matrix_->Multiply(false,edge_temp1,edge_rhs));
   ML_CHK_ERR(edge_rhs.Update(1.0,B,-1.0));
+#ifndef NO_OUTPUT
   MVOUT2(edge_rhs,"erhs",c_iteration);//DEBUG
+#endif
   
   /* (1,1) Block Solve (xe = (S+M+Addon)^{-1} erhs) */
   ML_CHK_ERR(EdgePC->ApplyInverse(edge_rhs,edge_sol));
-  r2=cms_compute_residual(SM_Matrix_,edge_rhs,edge_sol);//DEBUG
+  if(verbose_) r2=cms_compute_residual(SM_Matrix_,edge_rhs,edge_sol);//DEBUG
+#ifndef NO_OUTPUT
   MVOUT2(edge_sol,"xe1",c_iteration);//DEBUG
+#endif
   
   /* Build Nodal RHS  (nrhs = D0'* (erhs - Ms * xe)) */
   ML_CHK_ERR(Ms_Matrix_->Multiply(false,edge_sol,edge_temp1));
   ML_CHK_ERR(edge_temp1.Update(1.0,edge_rhs,-1.0));
   ML_CHK_ERR(D0_Matrix_->Multiply(true,edge_temp1,node_rhs));
+#ifndef NO_OUTPUT
   MVOUT2(node_rhs,"nrhs2",c_iteration);//DEBUG
+#endif
   
   /* (2,2) Block Solve (xn2 = TMT^{-1} nrhs) */
   ML_CHK_ERR(NodePC->ApplyInverse(node_rhs,node_sol2));
+#ifndef NO_OUTPUT
   MVOUT2(node_sol2,"xn2",c_iteration);//DEBUG
+#endif
   
   /* Assemble solution (x = xe + T*(xn1 + xn2)) */
   ML_CHK_ERR(node_sol1.Update(1.0,node_sol2,1.0));
 
-  r3=cms_compute_residual(TMT_Matrix_,node_rhs,node_sol1);//DEBUG
-
+  if(verbose_) r3=cms_compute_residual(TMT_Matrix_,node_rhs,node_sol1);//DEBUG
   
   ML_CHK_ERR(D0_Matrix_->Multiply(false,node_sol1,X));
   ML_CHK_ERR(X.Update(1.0,edge_sol,1.0));
-
+#ifndef NO_OUTPUT
   MVOUT2(X,"x",c_iteration);//DEBUG
-  
+  #endif
   r4=cms_compute_residual(SM_Matrix_,B,X);//DEBUG  
   if(verbose_ && Comm_->MyPID()==0)
     printf("Residual Norms: %22.16e / %22.16e / %22.16e / %22.16e\n",r1,r2,r3,r4/r0);
@@ -708,15 +660,18 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const E
   Epetra_MultiVector Resid(B);
   
   double r0=1,r1=1,r2=1,r3=1,r4=1,r5=1;
-  r0=cms_compute_residual(SM_Matrix_,B,X);//DEBUG
+  if(verbose_) r0=cms_compute_residual(SM_Matrix_,B,X);//DEBUG
 
+#ifndef NO_OUTPUT
   MVOUT2(X,"a-x0",c_iteration);//DEBUG 
   MVOUT2(B,"a-b1",c_iteration);//DEBUG 
+#endif
   
   /* Pre-Smoothing */
   ML_CHK_ERR(PreEdgeSmoother->ApplyInverse(B,X));
-
-  MVOUT2(X,"a-x1",c_iteration);//DEBUG 
+#ifndef NO_OUTPUT
+  MVOUT2(X,"a-x1",c_iteration);//DEBUG
+#endif
   if(verbose_) r1=cms_compute_residual(SM_Matrix_,B,X);//DEBUG
   
   /* Build Residual */
@@ -724,21 +679,27 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const E
   ML_CHK_ERR(Resid.Update(-1.0,TempE1,1.0));  
   if(!HasOnlyDirichletNodes){
     ML_CHK_ERR(D0_Matrix_->Multiply(true,Resid,TempN1));
+#ifndef NO_OUTPUT
     MVOUT2(TempN1,"a-nr1",c_iteration);//DEBUG
+#endif
   }
+#ifndef NO_OUTPUT  
   MVOUT2(Resid,"a-r1",c_iteration);//DEBUG
-    
+#endif
+  
   /* Precondition (1,1) block (additive)*/
   ML_CHK_ERR(EdgePC->ApplyInverse(Resid,TempE2));
-
-  MVOUT2(TempE2,"a-p11",c_iteration);//DEBUG  
+#ifndef NO_OUTPUT
+  MVOUT2(TempE2,"a-p11",c_iteration);//DEBUG
+#endif
   if(verbose_) r2=cms_compute_residual(SM_Matrix_,Resid,TempE2);//DEBUG
   
   /* Precondition (2,2) block (additive)*/
   if(!HasOnlyDirichletNodes){
     ML_CHK_ERR(NodePC->ApplyInverse(TempN1,TempN2));             
-    
+#ifndef NO_OUTPUT    
     MVOUT2(TempN2,"a-p22",c_iteration);//DEBUG  
+#endif
     if(verbose_) r3=cms_compute_residual(TMT_Matrix_,TempN1,TempN2);//DEBUG
     D0_Matrix_->Multiply(false,TempN2,TempE1);
   }/*end if*/
@@ -746,12 +707,16 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const E
   /* Update solution */
   if(HasOnlyDirichletNodes) X.Update(1.0,TempE2,1.0);
   else X.Update(1.0,TempE1,1.0,TempE2,1.0);
+#ifndef NO_OUTPUT
   MVOUT2(X,"a-x2",c_iteration);//DEBUG
+#endif
   if(verbose_) r4=cms_compute_residual(SM_Matrix_,B,X);//DEBUG
   
   /* Post-Smoothing */
   ML_CHK_ERR(PostEdgeSmoother->ApplyInverse(B,X));
-  MVOUT2(X,"a-x3",c_iteration);//DEBUG    
+#ifndef NO_OUTPUT
+  MVOUT2(X,"a-x3",c_iteration);//DEBUG
+#endif
   if(verbose_) r5=cms_compute_residual(SM_Matrix_,B,X);//DEBUG  
   c_iteration++;
   

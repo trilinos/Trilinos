@@ -182,7 +182,7 @@ namespace ML_Epetra
     //! Matrix: M0^{-1}
     const Epetra_CrsMatrix * M0inv_Matrix_;
     //! Matrix: M1(1)
-    const Epetra_CrsMatrix * M1_Matrix_;
+    Epetra_CrsMatrix * M1_Matrix_;
     //! Matrix: D0' M1(sigma) D0
     Epetra_CrsMatrix * TMT_Matrix_;
     //! Matrix: D0' M1(1) D0
@@ -235,7 +235,10 @@ namespace ML_Epetra
 
     //! Aggregation info
     bool aggregate_with_sigma;
-    
+   
+    //! Mass lumping
+    bool lump_m1;   
+ 
     //! Domain Map
     const Epetra_Map* DomainMap_;
     //! Range Map
@@ -247,7 +250,10 @@ namespace ML_Epetra
     const Epetra_Comm* Comm_;
 
     //! Verbosity flag
-    bool verbose_;    
+    bool verbose_;
+
+    //! Print hierarchy flag
+    bool print_hierarchy;
     //@}
 
 

@@ -186,7 +186,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("output",0,"Output Level",PL);
   setIntParameter("smoother: polynomial order",2,"Unlisted option",PL);
   setIntParameter("refmaxwell: aggregate with sigma",0,"Unlisted option",PL);
-  return PL;
+  setIntParameter("refmaxwell: lump m1",0,"Unlisted option",PL); 
+ return PL;
 }
 
 
