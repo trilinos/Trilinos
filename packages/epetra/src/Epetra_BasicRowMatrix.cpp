@@ -255,13 +255,13 @@ int Epetra_BasicRowMatrix::LeftScale(const Epetra_Vector & x) {
     Epetra_Vector xtmp(RowMatrixRowMap());
     xtmp.Import(x,*Exporter(),Insert);
     for (int i=0; i<NumMyNonzeros_; i++) {
-      ExtractMyEntryView(i, curValue, curRowIndex, curColIndex);
+      EPETRA_CHK_ERR(ExtractMyEntryView(i, curValue, curRowIndex, curColIndex));
       *curValue *= xtmp[curRowIndex];
     }
   }
   else if (RowMatrixRowMap().SameAs(x.Map()))
     for (int i=0; i<NumMyNonzeros_; i++) {
-      ExtractMyEntryView(i, curValue, curRowIndex, curColIndex);
+      EPETRA_CHK_ERR(ExtractMyEntryView(i, curValue, curRowIndex, curColIndex));
       *curValue *= x[curRowIndex];
     }
   else {
@@ -329,13 +329,13 @@ int Epetra_BasicRowMatrix::RightScale(const Epetra_Vector & x) {
     Epetra_Vector xtmp(RowMatrixColMap());
     xtmp.Import(x,*Importer(),Insert);
     for (int i=0; i<NumMyNonzeros_; i++) {
-      ExtractMyEntryView(i, curValue, curRowIndex, curColIndex);
+      EPETRA_CHK_ERR(ExtractMyEntryView(i, curValue, curRowIndex, curColIndex));
       *curValue *= xtmp[curColIndex];
     }
   }
   else if (RowMatrixColMap().SameAs(x.Map()))
     for (int i=0; i<NumMyNonzeros_; i++) {
-      ExtractMyEntryView(i, curValue, curRowIndex, curColIndex);
+      EPETRA_CHK_ERR(ExtractMyEntryView(i, curValue, curRowIndex, curColIndex));
       *curValue *= x[curColIndex];
     }
   else {

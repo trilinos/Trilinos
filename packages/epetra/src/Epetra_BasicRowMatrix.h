@@ -50,13 +50,21 @@ class Epetra_Export;
 /*! The Epetra_BasicRowMatrix is an adapter class for Epetra_RowMatrix that implements most of the Epetra_RowMatrix
     methods using reasonable default implementations.  The Epetra_RowMatrix class has 39 pure virtual methods, requiring
     the adapter class to implement all of them. 
-    Epetra_BasicRowMatrix has only 4 pure virtual methods that must be implemented:
+    Epetra_BasicRowMatrix has only 4 pure virtual methods that must be implemented (See Epetra_JadMatrix for an example):
 <ol>
 <li> ExtractMyRowCopy: Provide a row of values and indices for a specified local row.
-<li> ExtractMyEntriyView (const and non-const versions): Provide the memory address of the ith nonzero term stored on the
+<li> ExtractMyEntryView (const and non-const versions): Provide the memory address of the ith nonzero term stored on the
      calling processor, along with its corresponding local row and column index, where i goes from 0 to the NumMyNonzeros()-1.
      The order in which the nonzeros are traversed is not specified and is up to the adapter implementation.
 <li> NumMyRowEntries: Provide the number of entries for a specified local row.
+</ol>
+
+     An alternative is possible if you do not want to provide a non-trivial implementation of the ExtraMyEntryView 
+     methods (See Epetra_VbrRowMatrix for and example):
+<ol>
+<li> Implement ExtractMyRowCopy and NumMyRowEntries as above.
+<li> Implement ExtractMyEntryView (both versions) returning a -1 integer code with no other executable code.
+<li> Implement the RightScale and LeftScale methods non-trivially.
 </ol>
 
 In addition, most adapters will probably re-implement the Multiply() method and perhaps the Solve() method, although one or the other
