@@ -38,7 +38,7 @@ using namespace std;
 
 typedef Sacado::Fad::DFad<double>	F;	// FAD with # of ind. vars given later
 typedef Sacado::Fad::SFad<double,2>	F2;	// FAD with # of ind. vars fixed at 2
-typedef ADvar<double>			R;	// for RAD
+typedef Sacado::Rad::ADvar<double>			R;	// for RAD
 
 template <typename T>
 const T func2(T &a, T &b)	// sample function of 2 variables
