@@ -2,11 +2,7 @@
 cat <<\!
 /* Try to test all combinations of types and operations */
 
-#ifdef SACADO_NAMESPACE
 #define ADT_RAD Sacado::Rad::
-#else
-#define ADT_RAD /*nothing*/
-#endif
 
 #include "Sacado_trad.hpp"
 #include <cstdio>
