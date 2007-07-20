@@ -55,13 +55,7 @@ void Trilinos_Util_read_hb(char *data_file, int MyPID,
   int MAXBLOCKSIZE = 1;
   
   if(MyPID == 0)  { 
-      in_file = fopen( data_file, "r");
-      if (in_file == NULL)
-	{
-	  printf("Error: Cannot open file: %s\n",data_file);
-	  exit(1);
-	}
-
+      
       /* Get information about the array stored in the file specified in the  */
       /* argument list:                                                       */
 
