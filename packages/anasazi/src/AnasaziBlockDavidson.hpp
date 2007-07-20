@@ -697,7 +697,7 @@ namespace Anasazi {
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // retunr number of iterations
+  // return number of iterations
   template <class ScalarType, class MV, class OP>
   int BlockDavidson<ScalarType,MV,OP>::getNumIters() const { 
     return(iter_); 
@@ -891,7 +891,7 @@ namespace Anasazi {
     // partitioned according to the amount of work required to produce the
     // items in a level.
     //
-    // inconsitent multivectors widths and lengths will not be tolerated, and
+    // inconsistent multivectors widths and lengths will not be tolerated, and
     // will be treated with exceptions.
     //
     // for multivector pointers in newstate which point directly (as opposed to indirectly, via a view) to 
@@ -939,7 +939,7 @@ namespace Anasazi {
         lclKK->assign(newKK);
       }
       //
-      // make lclKK hermitian in memory (copy the upper half to the lower half)
+      // make lclKK Hermitian in memory (copy the upper half to the lower half)
       for (int j=0; j<curDim_; ++j) {
         for (int i=j+1; i<curDim_; ++i) {
           (*lclKK)(i,j) = SCT::conjugate((*lclKK)(j,i));
@@ -1048,7 +1048,7 @@ namespace Anasazi {
       tmpVecs = Teuchos::null;
     }
 
-    // X,theta require Ritz analisys; if we have to generate one of these, we might as well generate both
+    // X,theta require Ritz analysis; if we have to generate one of these, we might as well generate both
     if (newstate.X != Teuchos::null && newstate.T != Teuchos::null) {
       TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*newstate.X) != blockSize_ || MVT::GetVecLength(*newstate.X) != MVT::GetVecLength(*X_),
                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): Size of X must be consistent with block size and length of V.");
@@ -1351,7 +1351,7 @@ namespace Anasazi {
       nextKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,blockSize_,blockSize_,curDim_,curDim_) );
       MVT::MvTransMv(ONE,*H_,*KH_,*nextKK);
       // 
-      // make sure that KK_ is hermitian in memory
+      // make sure that KK_ is Hermitian in memory
       nextKK = Teuchos::null;
       for (int i=curDim_; i<curDim_+blockSize_; ++i) {
         for (int j=0; j<i; ++j) {
@@ -1619,7 +1619,7 @@ namespace Anasazi {
       os << " >> Error in MH == M*H     : " << tmp << endl;
     }
 
-    // R: this is not M-orthogonality, but standard euclidean orthogonality
+    // R: this is not M-orthogonality, but standard Euclidean orthogonality
     if (chk.checkR && initialized_) {
       Teuchos::SerialDenseMatrix<int,ScalarType> xTx(blockSize_,blockSize_);
       MVT::MvTransMv(ONE,*X_,*R_,xTx);

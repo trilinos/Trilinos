@@ -720,12 +720,24 @@ all-local:
 	@echo "Trilinos package anasazi built successfully"
 
 @BUILD_TESTS_TRUE@tests:
+@BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	@echo "Now building anasazi tests."
+@BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/util && $(MAKE) && cd ../test && $(MAKE) && cd ../thyra/test && $(MAKE)
+@BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	@echo "Finished building anasazi tests."
+@BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_FALSE@tests:
 @BUILD_TESTS_FALSE@	@echo "anasazi tests were disabled at configure time"
 
 @BUILD_EXAMPLES_TRUE@examples:
+@BUILD_EXAMPLES_TRUE@	@echo ""
+@BUILD_EXAMPLES_TRUE@	@echo "Now building anasazi examples."
+@BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/util && $(MAKE) && cd ../example && $(MAKE) && cd ../thyra/example && $(MAKE)
+@BUILD_EXAMPLES_TRUE@	@echo ""
+@BUILD_EXAMPLES_TRUE@	@echo "Finished building anasazi examples."
+@BUILD_EXAMPLES_TRUE@	@echo ""
 
 @BUILD_EXAMPLES_TRUE@install-examples:
 @BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/util && $(MAKE) && cd ../example && $(MAKE) install && cd ../thyra/example && $(MAKE) install

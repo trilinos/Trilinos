@@ -104,7 +104,13 @@ endif
 
 if BUILD_TESTS
 tests:
+	@echo ""
+	@echo "Now building anasazi tests."
+	@echo ""
 	cd $(top_builddir)/util && $(MAKE) && cd ../test && $(MAKE) && cd ../thyra/test && $(MAKE)
+	@echo ""
+	@echo "Finished building anasazi tests."
+	@echo ""
 else
 tests:
 	@echo "anasazi tests were disabled at configure time"
@@ -112,7 +118,13 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building anasazi examples."
+	@echo ""
 	cd $(top_builddir)/util && $(MAKE) && cd ../example && $(MAKE) && cd ../thyra/example && $(MAKE)
+	@echo ""
+	@echo "Finished building anasazi examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/util && $(MAKE) && cd ../example && $(MAKE) install && cd ../thyra/example && $(MAKE) install

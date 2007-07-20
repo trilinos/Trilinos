@@ -370,7 +370,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   // vectors are locked, they are deflated from the current basis and replaced with randomly generated 
   // vectors.
   //     [S,L] = eig(KK)
-  //     S = [Sl Su]  // paritioned: "l"ocked and "u"nlocked
+  //     S = [Sl Su]  // partitioned: "l"ocked and "u"nlocked
   //     newL = V*Sl = X(locked)
   //     defV = V*Su
   //     augV = rand(numnew)  // orthogonal to oldL,newL,defV,auxvecs

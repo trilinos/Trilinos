@@ -36,7 +36,7 @@
 /*! \class Anasazi::OrthoManager
   
   \brief Anasazi's templated virtual class for providing routines for orthogonalization and 
-  orthonormzalition of multivectors. 
+  orthonormalization of multivectors. 
 
   This class defines concepts of orthogonality through the definition of an
   inner product. It also provides computational routines for orthogonalization.
@@ -130,7 +130,7 @@ namespace Anasazi {
           innerProd( Q[i], X, C[i] );
        \endcode
        If <tt>C[i]</tt> points to a Teuchos::SerialDenseMatrix with size
-       inconsitent with \c X and \c <tt>Q[i]</tt>, then a std::invalid_argument
+       inconsistent with \c X and \c <tt>Q[i]</tt>, then a std::invalid_argument
        exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or
        <tt>C[i]</tt> is a null pointer, the caller will not have access to the
        computed coefficients.
@@ -188,7 +188,7 @@ namespace Anasazi {
      *  may be smaller than the number of columns of \c X. In this case, only the first \c rank columns of output \c X and first \c rank rows of \c B will 
      *  be valid.
      *
-     * \note This routine guarantees both the orthgonality of the returned basis against the <tt>Q[i]</tt> as well as the orthonormality of the returned basis. Therefore, 
+     * \note This routine guarantees both the orthogonality of the returned basis against the <tt>Q[i]</tt> as well as the orthonormality of the returned basis. Therefore, 
      * this method is not necessarily equivalent to calling project() followed by a call to normalize(); see the documentation for specific orthogonalization managers.
      *
      @param X [in/out] 
@@ -209,7 +209,7 @@ namespace Anasazi {
           innerProd( Q[i], X, C[i] );
        \endcode
        If <tt>C[i]</tt> points to a Teuchos::SerialDenseMatrix with size
-       inconsitent with \c X and \c <tt>Q[i]</tt>, then a std::invalid_argument
+       inconsistent with \c X and \c <tt>Q[i]</tt>, then a std::invalid_argument
        exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or
        <tt>C[i]</tt> is a null pointer, the caller will not have access to the
        computed coefficients.

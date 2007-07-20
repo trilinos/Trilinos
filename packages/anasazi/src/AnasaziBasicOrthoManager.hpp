@@ -76,10 +76,10 @@ namespace Anasazi {
     //! @name Accessor routines
     //@{ 
 
-    //! Set parameter for re-orthogonalization threshhold.
+    //! Set parameter for re-orthogonalization threshold.
     void setKappa( typename Teuchos::ScalarTraits<ScalarType>::magnitudeType kappa ) { kappa_ = kappa; }
 
-    //! Return parameter for re-orthogonalization threshhold.
+    //! Return parameter for re-orthogonalization threshold.
     typename Teuchos::ScalarTraits<ScalarType>::magnitudeType getKappa() const { return kappa_; } 
 
     //@} 
@@ -113,7 +113,7 @@ namespace Anasazi {
           innerProd( Q[i], X, C[i] );
        \endcode
        If <tt>C[i]</tt> points to a Teuchos::SerialDenseMatrix with size
-       inconsitent with \c X and \c <tt>Q[i]</tt>, then a std::invalid_argument
+       inconsistent with \c X and \c <tt>Q[i]</tt>, then a std::invalid_argument
        exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or
        <tt>C[i]</tt> is a null pointer, the caller will not have access to the
        computed coefficients.
@@ -142,7 +142,7 @@ namespace Anasazi {
      * not attempt to augment the subspace, then \c rank may be smaller than the number of columns in \c X. In this case, only the first \c rank columns of 
      * output \c X and first \c rank rows of \c B will be valid.
      *  
-     * The method attempts to find a basis with dimension equal to the number of columns in \c X. It does this by augmenting linearly dependant 
+     * The method attempts to find a basis with dimension equal to the number of columns in \c X. It does this by augmenting linearly dependent 
      * vectors in \c X with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the 
      * computed basis is less than the number of vectors in \c X.
      *
@@ -185,7 +185,7 @@ namespace Anasazi {
      *  may be smaller than the number of columns of \c X. In this case, only the first \c rank columns of output \c X and first \c rank rows of \c B will 
      *  be valid.
      *
-     * The method attempts to find a basis with dimension the same as the number of columns in \c X. It does this by augmenting linearly dependant 
+     * The method attempts to find a basis with dimension the same as the number of columns in \c X. It does this by augmenting linearly dependent 
      * vectors with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the 
      * computed basis is less than the number of vectors in \c X.
      *
@@ -211,7 +211,7 @@ namespace Anasazi {
           innerProd( Q[i], X, C[i] );
        \endcode
        If <tt>C[i]</tt> points to a Teuchos::SerialDenseMatrix with size
-       inconsitent with \c X and \c <tt>Q[i]</tt>, then a std::invalid_argument
+       inconsistent with \c X and \c <tt>Q[i]</tt>, then a std::invalid_argument
        exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or
        <tt>C[i]</tt> is a null pointer, the caller will not have access to the
        computed coefficients.
@@ -335,7 +335,7 @@ namespace Anasazi {
     int xr = MVT::GetVecLength( X );
     int rank;
 
-    /* if the user doesn't want to store the coefficienets, 
+    /* if the user doesn't want to store the coefficients, 
      * allocate some local memory for them 
      */
     if ( B == Teuchos::null ) {
@@ -496,7 +496,7 @@ namespace Anasazi {
     //
     // MX : Image of the block vector X by the mass matrix
     //
-    // Q  : Bases to orthogonalize against. These are assumed orthonormal, mutually and independenty.
+    // Q  : Bases to orthogonalize against. These are assumed orthonormal, mutually and independently.
     //
 
     ScalarType    ONE  = SCT::one();
@@ -682,7 +682,7 @@ namespace Anasazi {
       }
     }
 
-    /* if the user doesn't want to store the coefficienets, 
+    /* if the user doesn't want to store the coefficients, 
      * allocate some local memory for them 
      */
     if ( B == Teuchos::null ) {
@@ -764,7 +764,7 @@ namespace Anasazi {
         //
         Teuchos::RCP<MV> oldMXj = MVT::CloneCopy( *MXj ); 
         MVT::MvDot( *Xj, *MXj, &oldDot );
-        // Xj^H Op Xj should be real and positive, by the hermitian positive definiteness of Op
+        // Xj^H Op Xj should be real and positive, by the Hermitian positive definiteness of Op
         TEST_FOR_EXCEPTION( SCT::real(oldDot[0]) < ZERO, OrthoError, 
                             "Anasazi::BasicOrthoManager::findBasis(): Negative definiteness discovered in inner product" );
 

@@ -176,7 +176,7 @@ namespace Anasazi {
       }
     }
     //
-    // These methods use an insertion sort method to circument recursive calls.
+    // These methods use an insertion sort method to circumvent recursive calls.
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of magnitude
     //---------------------------------------------------------------
@@ -318,7 +318,7 @@ namespace Anasazi {
       }
     }
     //
-    // These methods use an insertion sort method to circument recursive calls.
+    // These methods use an insertion sort method to circumvent recursive calls.
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of magnitude
     //---------------------------------------------------------------

@@ -105,7 +105,7 @@ namespace Anasazi {
           innerProd( Q[i], X, C[i] );
        \endcode
        If <tt>C[i]</tt> points to a Teuchos::SerialDenseMatrix with size
-       inconsitent with \c X and \c <tt>Q[i]</tt>, then a std::invalid_argument
+       inconsistent with \c X and \c <tt>Q[i]</tt>, then a std::invalid_argument
        exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or
        <tt>C[i]</tt> is a null pointer, the caller will not have access to the
        computed coefficients.
@@ -134,7 +134,7 @@ namespace Anasazi {
      * not attempt to augment the subspace, then \c rank may be smaller than the number of columns in \c X. In this case, only the first \c rank columns of 
      * output \c X and first \c rank rows of \c B will be valid.
      *  
-     * The method attempts to find a basis with dimension equal to the number of columns in \c X. It does this by augmenting linearly dependant 
+     * The method attempts to find a basis with dimension equal to the number of columns in \c X. It does this by augmenting linearly dependent 
      * vectors in \c X with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the 
      * computed basis is less than the number of vectors in \c X.
      *
@@ -177,7 +177,7 @@ namespace Anasazi {
      *  may be smaller than the number of columns of \c X. In this case, only the first \c rank columns of output \c X and first \c rank rows of \c B will 
      *  be valid.
      *
-     * The method attempts to find a basis with dimension the same as the number of columns in \c X. It does this by augmenting linearly dependant 
+     * The method attempts to find a basis with dimension the same as the number of columns in \c X. It does this by augmenting linearly dependent 
      * vectors with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the 
      * computed basis is less than the number of vectors in \c X.
      *
@@ -203,7 +203,7 @@ namespace Anasazi {
           innerProd( Q[i], X, C[i] );
        \endcode
        If <tt>C[i]</tt> points to a Teuchos::SerialDenseMatrix with size
-       inconsitent with \c X and \c <tt>Q[i]</tt>, then a std::invalid_argument
+       inconsistent with \c X and \c <tt>Q[i]</tt>, then a std::invalid_argument
        exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or
        <tt>C[i]</tt> is a null pointer, the caller will not have access to the
        computed coefficients.
@@ -641,7 +641,7 @@ namespace Anasazi {
         }
       }
       else { // qsize == 0... don't perform projection
-        // don't do anymore outer loops; all we need is to call the normalize code below
+        // don't do any more outer loops; all we need is to call the normalize code below
         doGramSchmidt = false;
       }
 

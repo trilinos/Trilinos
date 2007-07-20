@@ -1444,7 +1444,7 @@ namespace Anasazi {
 
     // Apply operator with C init'd to random
     // Check that result is the same as before; warn if not.
-    // This could be a result of a bug, or a stochastic
+    // This could be a result of a bug, or a non-constant
     //   operator. We do not want to prejudice against a 
     //   stochastic operator.
     MVT::MvRandom(*C);

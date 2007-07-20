@@ -403,7 +403,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
         ////////////////////////////////////////////////////////////////////////////////////
         // this is for the Hermitian case, or non-Hermitian conjugate split situation.
         // --> for the Hermitian case the current subspace dimension needs to match the maximum subspace dimension
-        // --> for the non-Hermitican case:
+        // --> for the non-Hermitian case:
         //     --> if a conjugate pair was detected in the previous restart then the current subspace dimension needs to match the
         //         maximum subspace dimension (the BKS solver keeps one extra vector if the problem is non-Hermitian).
         //     --> if a conjugate pair was not detected in the previous restart then the current subspace dimension will be one less

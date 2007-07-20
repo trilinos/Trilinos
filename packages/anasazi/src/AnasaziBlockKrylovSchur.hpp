@@ -496,8 +496,8 @@ namespace Anasazi {
     bool initialized_;
     //
     // curDim_ reflects how much of the current basis is valid 
-    // NOTE: for hermitian, 0 <= curDim_ <= blockSize_*numBlocks_
-    //   for non-hermitian, 0 <= curDim_ <= blockSize_*numBlocks_ + 1
+    // NOTE: for Hermitian, 0 <= curDim_ <= blockSize_*numBlocks_
+    //   for non-Hermitian, 0 <= curDim_ <= blockSize_*numBlocks_ + 1
     // this also tells us how many of the values in _theta are valid Ritz values
     int curDim_;
     //
@@ -935,7 +935,7 @@ namespace Anasazi {
     // in BlockKrylovSchur, V and H are required.  
     // if either doesn't exist, then we will start with the initial vector.
     //
-    // inconsitent multivectors widths and lengths will not be tolerated, and
+    // inconsistent multivectors widths and lengths will not be tolerated, and
     // will be treated with exceptions.
     //
     std::string errstr("Anasazi::BlockKrylovSchur::initialize(): specified multivectors must have a consistent length and width.");
@@ -1458,7 +1458,7 @@ namespace Anasazi {
           tmpritzVectors_ = Teuchos::null;
           view_ritzVectors = Teuchos::null;
           
-          // Scale the Ritz vectors to have euclidean norm.
+          // Scale the Ritz vectors to have Euclidean norm.
           ScalarType ritzScale = ST_ONE;
           for (int i=0; i<numRitzVecs_; i++) {
             
@@ -1607,7 +1607,7 @@ namespace Anasazi {
             TEST_FOR_EXCEPTION(info != 0, std::logic_error,
                                "Anasazi::BlockKrylovSchur::computeSchurForm(): TREVC returned info != 0.");
             //
-            // Scale the eigenvectors so that their euclidean norms are all one.
+            // Scale the eigenvectors so that their Euclidean norms are all one.
             //
             scaleRitzVectors( tmp_iRitzValues, &S );
             //
@@ -1619,8 +1619,8 @@ namespace Anasazi {
                        ST_ZERO, ritzRes.values(), ritzRes.stride() );
 
             /* TO DO:  There's be an incorrect assumption made in the computation of the Ritz residuals.
-                       This assumption is that the next vector in the Krylov subspace is euclidean orthonormal.
-                       It may not be normalized using euclidean norm.
+                       This assumption is that the next vector in the Krylov subspace is Euclidean orthonormal.
+                       It may not be normalized using Euclidean norm.
             Teuchos::RCP<MV> ritzResVecs = MVT::Clone( *V_, curDim_ );
             std::vector<int> curind(blockSize_);
             for (int i=0; i<blockSize_; i++) { curind[i] = curDim_ + i; }

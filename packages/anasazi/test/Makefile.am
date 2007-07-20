@@ -29,9 +29,6 @@
 # The following line helps the test harness recover from build errors.
 
 all-local:
-	@echo ""
-	@echo "Trilinos package anasazi subdirectory test built successfully."
-	@echo ""
 
 DISABLED = 
 SUBDIRS = ModalSolverUtils LOBPCG MVOPTester OrthoManager scripts BlockDavidson BlockKrylovSchur StatusTest SortManager ARPACKExamples 
