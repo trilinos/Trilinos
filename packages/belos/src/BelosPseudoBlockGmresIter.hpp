@@ -480,7 +480,7 @@ namespace Belos {
     if (norms) {
       Teuchos::BLAS<int,ScalarType> blas;
       for (int j=0; j<numRHS_; j++) {
-        (*norms)[j] = blas.NRM2( numRHS_, &(*Z_[j])(curDim_), 1);
+        (*norms)[j] = Teuchos::ScalarTraits<ScalarType>::magnitude( (*Z_[j])(curDim_) );
       }
     }
     return Teuchos::null;
@@ -701,7 +701,7 @@ namespace Belos {
     //
     // also break if our basis is full
     //
-    while (stest_->checkStatus(this) != Passed && curDim_+1 <= searchDim) {
+    while (stest_->checkStatus(this) != Passed && curDim_ < searchDim) {
 
       iter_++;
       //
@@ -818,21 +818,21 @@ namespace Belos {
       //
       // QR factorization of Least-Squares system with Givens rotations
       //
-      for (j=0; j<curDim_; j++) {
+      for (j=0; j<curDim; j++) {
 	//
 	// Apply previous Givens rotations to new column of Hessenberg matrix
 	//
-	blas.ROT( 1, &(*H_[i])(j,curDim_), 1, &(*H_[i])(j+1, curDim_), 1, &(*cs_[i])[j], &(*sn_[i])[j] );
+	blas.ROT( 1, &(*H_[i])(j,curDim), 1, &(*H_[i])(j+1, curDim), 1, &(*cs_[i])[j], &(*sn_[i])[j] );
       }
       //
       // Calculate new Givens rotation
       //
-      blas.ROTG( &(*H_[i])(curDim_,curDim_), &(*H_[i])(curDim_+1,curDim_), &(*cs_[i])[curDim_], &(*sn_[i])[curDim_] );
-      (*H_[i])(curDim_+1,curDim_) = zero;
+      blas.ROTG( &(*H_[i])(curDim,curDim), &(*H_[i])(curDim+1,curDim), &(*cs_[i])[curDim], &(*sn_[i])[curDim] );
+      (*H_[i])(curDim+1,curDim) = zero;
       //
       // Update RHS w/ new transformation
       //
-      blas.ROT( 1, &(*Z_[i])(curDim_), 1, &(*Z_[i])(curDim_+1), 1, &(*cs_[i])[curDim_], &(*sn_[i])[curDim_] );
+      blas.ROT( 1, &(*Z_[i])(curDim), 1, &(*Z_[i])(curDim+1), 1, &(*cs_[i])[curDim], &(*sn_[i])[curDim] );
     }
 
   } // end updateLSQR()
