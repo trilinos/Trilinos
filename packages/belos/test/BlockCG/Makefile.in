@@ -283,6 +283,9 @@ bl_pcg_hb_LDADD = $(EXPORT_LIBS)
 bl_cg_hb_LDADD = $(EXPORT_LIBS)
 resolve_cg_hb_LDADD = $(EXPORT_LIBS)
 bl_cg_complex_hb_LDADD = $(EXPORT_LIBS)
+EXTRA_DIST = \
+	$(srcdir)/createEpetraProblem.hpp
+
 all: all-am
 
 .SUFFIXES:

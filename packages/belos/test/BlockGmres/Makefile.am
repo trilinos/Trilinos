@@ -126,4 +126,7 @@ bl_gmres_complex_hb_LDADD = $(EXPORT_LIBS)
 
 # Dummy for new export makefiles
 LIBS = 
+
+EXTRA_DIST = \
+	$(srcdir)/createEpetraProblem.hpp
 #
