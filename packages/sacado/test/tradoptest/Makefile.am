@@ -40,11 +40,25 @@ testall : $(noinst_PROGRAMS) tradoptest.exe
 	./hesopcheck.exe
 	for i in `ls tradoptest_*.exe`; do ./$$i; done
 
-INCLUDES = -I$(top_srcdir)/src/mpl
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/mpl
 hesopcheck_SOURCES = hesopcheck.cpp
 hesopcheck_CXXFLAGS = 
 hesopcheck_DEPENDENCIES = $(top_builddir)/src/libsacado.a tradoptest.exe
 hesopcheck_LDADD = -L$(top_builddir)/src -lsacado $(LIBS)
+
+# If we are configured with --with-gnumake, use GNU's extensions to make 
+# to compile all of the tradoptests a lot faster if using -j xx for
+# parallel make
+if USING_GNUMAKE
+
+export CXXCOMPILE
+
+tradoptest.exe : testgen.as tradoptest.c0
+	$(SHELL) testgen.as $(srcdir)/tradoptest.c0
+	$(MAKE) -f $(srcdir)/GNUMakefile
+	echo -e '#!/bin/sh\necho OK' > tradoptest.exe; chmod +x tradoptest.exe
+
+else
 
 tradoptest.exe : testgen.as tradoptest.c0
 	$(SHELL) testgen.as $(srcdir)/tradoptest.c0
@@ -59,6 +73,8 @@ tradoptest.exe : testgen.as tradoptest.c0
 		done;\
 	echo -e '#!/bin/sh\necho OK' > tradoptest.exe; chmod +x tradoptest.exe
 
+endif
+
 CLEANFILES = tradoptest*.cpp *.exe *.o *.obj
 
-EXTRA_DIST = tradoptest.c0
+EXTRA_DIST = tradoptest.c0 GNUMakefile
