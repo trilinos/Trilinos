@@ -1,8 +1,0 @@
-BINTEST operator+  1.  2.  3.   1.   1.
-BINTEST operator-  7.  4   3.   1.  -1.
-BINTEST operator*  6.  7. 42.   7.   6.
-BINTEST operator/ 24. 6.  4.  1/6. -2./3.
-BINTEST +  1.  2.  3.   1.   1.		1
-BINTEST -  7.  4   3.   1.  -1.		1
-BINTEST *  6.  7. 42.   7.   6.		1
-BINTEST / 24. 6.  4.  1/6. -2./3.	1
