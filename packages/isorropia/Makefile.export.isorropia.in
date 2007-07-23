@@ -3,8 +3,8 @@ include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 
 # Optional dependancy on epetra and epetraext
 
-@ENABLE_EPETRA_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.epetra
-@ENABLE_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+@HAVE_EPETRA_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.epetra
+@HAVE_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
 
 _ISORROPIA_INCLUDES = -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
 	           $(TEUCHOS_INCLUDES) $(EPETRA_INCLUDES) \
