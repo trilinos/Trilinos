@@ -238,6 +238,9 @@ belos_tpetra_thyra_lowsf_hb_LDADD = $(common_ldadd)
 #
 common_dependencies = $(top_builddir)/../belos/src/libbelos.a mhd1280b.cua
 common_ldadd = $(EXPORT_LIBS)
+EXTRA_DIST = \
+	$(srcdir)/MyOperator.hpp
+
 all: all-am
 
 .SUFFIXES:

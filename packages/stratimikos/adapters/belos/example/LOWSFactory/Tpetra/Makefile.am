@@ -52,4 +52,7 @@ common_ldadd = $(EXPORT_LIBS)
 
 # This is already added part of BELOS_LIBS and therefore automake does not
 # need to add this again!
-LIBS =
+LIBS = 
+
+EXTRA_DIST = \
+	$(srcdir)/MyOperator.hpp
