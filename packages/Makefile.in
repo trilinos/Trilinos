@@ -89,9 +89,9 @@ ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = teuchos rtop kokkos epetra triutils tpetra epetraext \
 	thyra isorropia aztecoo galeri amesos ifpack komplex claps \
-	belos anasazi rbgen pliris ml aristos moertel stratimikos \
-	meros sacado nox capo rythmos trilinoscouplings new_package \
-	moocho PyTrilinos didasko WebTrilinos external
+	belos anasazi pliris ml moertel stratimikos meros sacado nox \
+	rythmos trilinoscouplings new_package moocho PyTrilinos \
+	didasko WebTrilinos external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -178,12 +178,13 @@ ACLOCAL_AMFLAGS = -I config
 #	configure config.status config.log \
 #	src/common/config-h.in src/common/stamp-h.in \
 #	$(AUX_DIST) 
+
+# 2007/07/18: rabartl: Note: Adding or removing a package now only requires
+# changing three lines!
 @BUILD_AMESOS_TRUE@AMESOS_SUBDIR = amesos
 @BUILD_ANASAZI_TRUE@ANASAZI_SUBDIR = anasazi
-@BUILD_ARISTOS_TRUE@ARISTOS_SUBDIR = aristos
 @BUILD_AZTECOO_TRUE@AZTECOO_SUBDIR = aztecoo
 @BUILD_BELOS_TRUE@BELOS_SUBDIR = belos
-@BUILD_CAPO_TRUE@CAPO_SUBDIR = capo
 @BUILD_CLAPS_TRUE@CLAPS_SUBDIR = claps
 @BUILD_DIDASKO_TRUE@DIDASKO_SUBDIR = didasko
 @BUILD_EPETRA_TRUE@EPETRA_SUBDIR = epetra
@@ -202,7 +203,6 @@ ACLOCAL_AMFLAGS = -I config
 @BUILD_NOX_TRUE@NOX_SUBDIR = nox
 @BUILD_PLIRIS_TRUE@PLIRIS_SUBDIR = pliris
 @BUILD_PYTRILINOS_TRUE@PYTRILINOS_SUBDIR = PyTrilinos 
-@BUILD_RBGEN_TRUE@RBGEN_SUBDIR = rbgen
 @BUILD_RYTHMOS_TRUE@RYTHMOS_SUBDIR = rythmos
 @BUILD_SACADO_TRUE@SACADO_SUBDIR = sacado
 @BUILD_TEUCHOS_TRUE@TEUCHOS_SUBDIR = teuchos
@@ -214,12 +214,17 @@ ACLOCAL_AMFLAGS = -I config
 @BUILD_TRIUTILS_TRUE@TRIUTILS_SUBDIR = triutils
 @BUILD_WEBTRILINOS_TRUE@WEBTRILINOS_SUBDIR = WebTrilinos
 
-# Must list the packages in the order that they are built!
-# This order must be the same as the order that the packages appear in
-# for the various top level make targets (ex make tests, make examples,
-# etc.), so if you change this order, you must change the order of the
-# packages in Trilinos/Makefile.am also or the test harness will break.
-SUBDIRS = \
+#
+# This list of pacakges to be built are roughly in the order of lower-level to
+# higher-level pacakges.
+#
+# Listing the packages from lower level to higher level allows the test
+# harness to perform more efficiently as it disables broken packagess and
+# therefore disable higher-level pacakges.  In general, these packages should
+# be listed in the reverse order that the libraries would be listed on the
+# link line.
+#
+PACKAGE_NAMES = \
 	$(TEUCHOS_SUBDIR)      \
 	$(RTOP_SUBDIR)         \
 	$(KOKKOS_SUBDIR)       \
@@ -237,16 +242,13 @@ SUBDIRS = \
 	$(CLAPS_SUBDIR)        \
 	$(BELOS_SUBDIR)        \
 	$(ANASAZI_SUBDIR)      \
-        $(RBGEN_SUBDIR)        \
 	$(PLIRIS_SUBDIR)       \
 	$(ML_SUBDIR)           \
-	$(ARISTOS_SUBDIR)      \
 	$(MOERTEL_SUBDIR)      \
 	$(STRATIMIKOS_SUBDIR)  \
 	$(MEROS_SUBDIR)        \
 	$(SACADO_SUBDIR)       \
 	$(NOX_SUBDIR)          \
-	$(CAPO_SUBDIR)         \
 	$(RYTHMOS_SUBDIR)      \
 	$(TRILINOSCOUPLINGS_SUBDIR) \
 	$(NEW_PACKAGE_SUBDIR)  \
@@ -256,6 +258,7 @@ SUBDIRS = \
 	$(WEBTRILINOS_SUBDIR) \
 	$(EXTERNAL_SUBDIR)
 
+SUBDIRS = $(PACKAGE_NAMES)
 all: all-recursive
 
 .SUFFIXES:
@@ -562,6 +565,42 @@ uninstall-am:
 	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags \
 	tags-recursive uninstall uninstall-am
 
+
+#
+# Standard build targets which build tests and examples
+#
+
+examples:
+	$(top_srcdir)/config/makeall $(MAKE) $@ $(PACKAGE_NAMES)
+
+install-examples:
+	$(top_srcdir)/config/makeall $(MAKE) $@ $(PACKAGE_NAMES)
+
+clean-examples:
+	$(top_srcdir)/config/makeall $(MAKE) $@ $(PACKAGE_NAMES)
+
+tests:
+	$(top_srcdir)/config/makeall $(MAKE) $@ $(PACKAGE_NAMES)
+
+clean-tests:
+	$(top_srcdir)/config/makeall $(MAKE) $@ $(PACKAGE_NAMES)
+
+everything:
+	 $(MAKE) && $(MAKE) examples && $(MAKE) tests
+
+install-everything:
+	$(MAKE) install && $(MAKE) install-examples
+
+clean-everything:
+	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
+
+# 2007/07/18: rabartl: Above, a simple script makeall has to be used since a
+# for loop with shell variables is employed.  I tried to put the for look
+# directly in the make target but 'make' simply replaced the shell varibles
+# names (with empty values) before the shell command was even executed.  This
+# made it necessary to call a shell script so that the shell variables would
+# not be replaced.  The use of the script 'makeall' also results in very clean
+# target rules as shown above and improves maintenance.
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# This command is needed to be called from the makefile in order to allow the
+# use of shell variables
+
+#echo "Number of arguments = $#"
+_MAKE_CMND=$1
+#echo "_MAKE_CMND = $_MAKE_CMND"
+shift
+_MAKE_TARGET=$1
+#echo "_MAKE_TARGET = $_MAKE_TARGET"
+shift
+#echo "Number of arguments = $#"
+for package in $@ ;
+  do cd $package ;
+  echo
+  echo "Making target $_MAKE_TARGET in $PWD" ;
+  echo
+  $_MAKE_CMND $_MAKE_TARGET
+  cd .. ;
+done

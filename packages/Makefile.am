@@ -61,8 +61,11 @@ ACLOCAL_AMFLAGS = -I config
 #	$(AUX_DIST) 
 
 ## #######################################################################
-## Subdirectories to be make'd recursively
+## Names of package subdirectories to be make'd recursively
 ## #######################################################################
+
+# 2007/07/18: rabartl: Note: Adding or removing a package now only requires
+# changing three lines!
 
 if BUILD_AMESOS
 AMESOS_SUBDIR = amesos
@@ -72,20 +75,12 @@ if BUILD_ANASAZI
 ANASAZI_SUBDIR = anasazi
 endif
 
-if BUILD_ARISTOS
-ARISTOS_SUBDIR = aristos
-endif
-
 if BUILD_AZTECOO
 AZTECOO_SUBDIR = aztecoo
 endif
 
 if BUILD_BELOS
 BELOS_SUBDIR = belos
-endif
-
-if BUILD_CAPO
-CAPO_SUBDIR = capo
 endif
 
 if BUILD_CLAPS
@@ -160,10 +155,6 @@ if BUILD_PYTRILINOS
 PYTRILINOS_SUBDIR = PyTrilinos 
 endif
 
-if BUILD_RBGEN
-RBGEN_SUBDIR = rbgen
-endif
-
 if BUILD_RYTHMOS
 RYTHMOS_SUBDIR = rythmos
 endif
@@ -204,13 +195,22 @@ if BUILD_WEBTRILINOS
 WEBTRILINOS_SUBDIR = WebTrilinos
 endif
 
-# Must list the packages in the order that they are built!
-# This order must be the same as the order that the packages appear in
-# for the various top level make targets (ex make tests, make examples,
-# etc.), so if you change this order, you must change the order of the
-# packages in Trilinos/Makefile.am also or the test harness will break.
+## #######################################################################
+## Single list of configured pacakges
+## #######################################################################
 
-SUBDIRS = \
+#
+# This list of pacakges to be built are roughly in the order of lower-level to
+# higher-level pacakges.
+#
+# Listing the packages from lower level to higher level allows the test
+# harness to perform more efficiently as it disables broken packagess and
+# therefore disable higher-level pacakges.  In general, these packages should
+# be listed in the reverse order that the libraries would be listed on the
+# link line.
+#
+
+PACKAGE_NAMES = \
 	$(TEUCHOS_SUBDIR)      \
 	$(RTOP_SUBDIR)         \
 	$(KOKKOS_SUBDIR)       \
@@ -228,16 +228,13 @@ SUBDIRS = \
 	$(CLAPS_SUBDIR)        \
 	$(BELOS_SUBDIR)        \
 	$(ANASAZI_SUBDIR)      \
-        $(RBGEN_SUBDIR)        \
 	$(PLIRIS_SUBDIR)       \
 	$(ML_SUBDIR)           \
-	$(ARISTOS_SUBDIR)      \
 	$(MOERTEL_SUBDIR)      \
 	$(STRATIMIKOS_SUBDIR)  \
 	$(MEROS_SUBDIR)        \
 	$(SACADO_SUBDIR)       \
 	$(NOX_SUBDIR)          \
-	$(CAPO_SUBDIR)         \
 	$(RYTHMOS_SUBDIR)      \
 	$(TRILINOSCOUPLINGS_SUBDIR) \
 	$(NEW_PACKAGE_SUBDIR)  \
@@ -246,3 +243,42 @@ SUBDIRS = \
 	$(DIDASKO_SUBDIR) \
 	$(WEBTRILINOS_SUBDIR) \
 	$(EXTERNAL_SUBDIR)
+
+SUBDIRS = $(PACKAGE_NAMES)
+
+
+#
+# Standard build targets which build tests and examples
+#
+
+examples:
+	$(top_srcdir)/config/makeall $(MAKE) $@ $(PACKAGE_NAMES)
+
+install-examples:
+	$(top_srcdir)/config/makeall $(MAKE) $@ $(PACKAGE_NAMES)
+
+clean-examples:
+	$(top_srcdir)/config/makeall $(MAKE) $@ $(PACKAGE_NAMES)
+
+tests:
+	$(top_srcdir)/config/makeall $(MAKE) $@ $(PACKAGE_NAMES)
+
+clean-tests:
+	$(top_srcdir)/config/makeall $(MAKE) $@ $(PACKAGE_NAMES)
+
+everything:
+	 $(MAKE) && $(MAKE) examples && $(MAKE) tests
+
+install-everything:
+	$(MAKE) install && $(MAKE) install-examples
+
+clean-everything:
+	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
+
+# 2007/07/18: rabartl: Above, a simple script makeall has to be used since a
+# for loop with shell variables is employed.  I tried to put the for look
+# directly in the make target but 'make' simply replaced the shell varibles
+# names (with empty values) before the shell command was even executed.  This
+# made it necessary to call a shell script so that the shell variables would
+# not be replaced.  The use of the script 'makeall' also results in very clean
+# target rules as shown above and improves maintenance.

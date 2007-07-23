@@ -91,7 +91,7 @@ EXTRA_DIST = \
 ## #######################################################################
 ## Tools in the auxillary directory 
 ## #######################################################################
-AUX_DIST = config/install-sh config/missing config/mkinstalldirs
+AUX_DIST = config/install-sh config/missing config/mkinstalldirs config/makeall
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -144,28 +144,7 @@ runtests-mpi :
   --mpi-go=$(TRILINOS_MPI_GO) \
   --max-proc=$(TRILINOS_MPI_MAX_PROC) \
   --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=$(TRILINOS_TEST_CATEGORY) \
-  --output-dir=@abs_top_builddir@/runtests-results
-
-run-examples: all-am
-	@if [ -d packages/epetra    ]; then cd packages/epetra;    $(MAKE) run-examples; fi
-	@if [ -d packages/epetraext ]; then cd packages/epetraext; $(MAKE) run-examples; fi
-	@if [ -d packages/aztecoo   ]; then cd packages/aztecoo;   $(MAKE) run-examples; fi
-	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    $(MAKE) run-examples; fi
-	@if [ -d packages/amesos    ]; then cd packages/amesos;    $(MAKE) run-examples; fi
-	@if [ -d packages/ml        ]; then cd packages/ml;        $(MAKE) run-examples; fi
-	@if [ -d packages/nox       ]; then cd packages/nox;       $(MAKE) run-examples; fi
-	@if [ -d packages/didasko   ]; then cd packages/didasko;   $(MAKE) run-examples; fi
-
-run-tests: all-am
-	@if [ -d packages/epetra    ]; then cd packages/epetra;    $(MAKE) run-tests; fi
-	@if [ -d packages/epetraext ]; then cd packages/epetraext; $(MAKE) run-tests; fi
-	@if [ -d packages/aztecoo   ]; then cd packages/aztecoo;   $(MAKE) run-tests; fi
-	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    $(MAKE) run-tests; fi
-	@if [ -d packages/amesos    ]; then cd packages/amesos;    $(MAKE) run-tests; fi
-	@if [ -d packages/ml        ]; then cd packages/ml;        $(MAKE) run-tests; fi
-	@if [ -d packages/nox       ]; then cd packages/nox;       $(MAKE) run-tests; fi
-	@if [ -d packages/didasko   ]; then cd packages/didasko;   $(MAKE) run-tests; fi
+  --category=$(TRILINOS_TEST_CATEGORY) \  --output-dir=@abs_top_builddir@/runtests-results
 
 run-pytests: all-am
 	@if [ -d packages/teuchos     ]; then cd packages/teuchos;     $(MAKE) run-pytests; fi
@@ -213,197 +192,32 @@ clean-python: all-am
 	@if [ -d packages/nox/python         ]; then cd packages/nox/python;         $(MAKE) clean; fi
 	@if [ -d packages/new_package/python ]; then cd packages/new_package/python; $(MAKE) clean; fi
 
+#
+# General targets to build tests and examples etc. since the default target
+# now just builds the libraries.
+#
+
 examples:
-	@if [ -d packages/teuchos     ]; then cd packages/teuchos;     $(MAKE) examples; fi
-	@if [ -d packages/rtop        ]; then cd packages/rtop;        $(MAKE) examples; fi
-	@if [ -d packages/kokkos      ]; then cd packages/kokkos;      $(MAKE) examples; fi
-	@if [ -d packages/epetra      ]; then cd packages/epetra;      $(MAKE) examples; fi
-	@if [ -d packages/triutils    ]; then cd packages/triutils;    $(MAKE) examples; fi
-	@if [ -d packages/tpetra      ]; then cd packages/tpetra;      $(MAKE) examples; fi
-	@if [ -d packages/epetraext   ]; then cd packages/epetraext;   $(MAKE) examples; fi
-	@if [ -d packages/thyra       ]; then cd packages/thyra;       $(MAKE) examples; fi
-	@if [ -d packages/isorropia   ]; then cd packages/isorropia;   $(MAKE) examples; fi
-	@if [ -d packages/aztecoo     ]; then cd packages/aztecoo;     $(MAKE) examples; fi
-	@if [ -d packages/galeri      ]; then cd packages/galeri;      $(MAKE) examples; fi
-	@if [ -d packages/amesos      ]; then cd packages/amesos;      $(MAKE) examples; fi
-	@if [ -d packages/ifpack      ]; then cd packages/ifpack;      $(MAKE) examples; fi
-	@if [ -d packages/komplex     ]; then cd packages/komplex;     $(MAKE) examples; fi
-	@if [ -d packages/claps       ]; then cd packages/claps;       $(MAKE) examples; fi
-	@if [ -d packages/belos       ]; then cd packages/belos;       $(MAKE) examples; fi
-	@if [ -d packages/anasazi     ]; then cd packages/anasazi;     $(MAKE) examples; fi
-	@if [ -d packages/rbgen       ]; then cd packages/rbgen;       $(MAKE) examples; fi
-	@if [ -d packages/pliris      ]; then cd packages/pliris;      $(MAKE) examples; fi
-	@if [ -d packages/ml          ]; then cd packages/ml;          $(MAKE) examples; fi
-	@if [ -d packages/aristos     ]; then cd packages/aristos;     $(MAKE) examples; fi
-	@if [ -d packages/moertel     ]; then cd packages/moertel;     $(MAKE) examples; fi
-	@if [ -d packages/stratimikos ]; then cd packages/stratimikos; $(MAKE) examples; fi
-	@if [ -d packages/meros       ]; then cd packages/meros;       $(MAKE) examples; fi
-	@if [ -d packages/sacado      ]; then cd packages/sacado;      $(MAKE) examples; fi
-	@if [ -d packages/nox         ]; then cd packages/nox;         $(MAKE) examples; fi
-	@if [ -d packages/capo        ]; then cd packages/capo;        $(MAKE) examples; fi
-	@if [ -d packages/rythmos     ]; then cd packages/rythmos;     $(MAKE) examples; fi
-	@if [ -d packages/trilinoscouplings ]; then cd packages/trilinoscouplings; $(MAKE) examples; fi
-	@if [ -d packages/new_package ]; then cd packages/new_package; $(MAKE) examples; fi
-	@if [ -d packages/moocho      ]; then cd packages/moocho;      $(MAKE) examples; fi
-	@if [ -d packages/PyTrilinos  ]; then cd packages/PyTrilinos;  $(MAKE) examples; fi
-	@if [ -d packages/didasko     ]; then cd packages/didasko;     $(MAKE) examples; fi
-	@if [ -d packages/WebTrilinos ]; then cd packages/WebTrilinos; $(MAKE) examples; fi
-	@if [ -d packages/external    ]; then cd packages/external;    $(MAKE) examples; fi
+	cd packages && $(MAKE) $@
 
 install-examples:
-	@if [ -d packages/teuchos     ]; then cd packages/teuchos;     $(MAKE) install-examples; fi
-	@if [ -d packages/rtop        ]; then cd packages/rtop;        $(MAKE) install-examples; fi
-	@if [ -d packages/kokkos      ]; then cd packages/kokkos;      $(MAKE) install-examples; fi
-	@if [ -d packages/epetra      ]; then cd packages/epetra;      $(MAKE) install-examples; fi
-	@if [ -d packages/triutils    ]; then cd packages/triutils;    $(MAKE) install-examples; fi
-	@if [ -d packages/tpetra      ]; then cd packages/tpetra;      $(MAKE) install-examples; fi
-	@if [ -d packages/epetraext   ]; then cd packages/epetraext;   $(MAKE) install-examples; fi
-	@if [ -d packages/thyra       ]; then cd packages/thyra;       $(MAKE) install-examples; fi
-	@if [ -d packages/isorropia   ]; then cd packages/isorropia;   $(MAKE) install-examples; fi
-	@if [ -d packages/aztecoo     ]; then cd packages/aztecoo;     $(MAKE) install-examples; fi
-	@if [ -d packages/galeri      ]; then cd packages/galeri;      $(MAKE) install-examples; fi
-	@if [ -d packages/amesos      ]; then cd packages/amesos;      $(MAKE) install-examples; fi
-	@if [ -d packages/ifpack      ]; then cd packages/ifpack;      $(MAKE) install-examples; fi
-	@if [ -d packages/komplex     ]; then cd packages/komplex;     $(MAKE) install-examples; fi
-	@if [ -d packages/claps       ]; then cd packages/claps;       $(MAKE) install-examples; fi
-	@if [ -d packages/belos       ]; then cd packages/belos;       $(MAKE) install-examples; fi
-	@if [ -d packages/anasazi     ]; then cd packages/anasazi;     $(MAKE) install-examples; fi
-	@if [ -d packages/rbgen       ]; then cd packages/rbgen;       $(MAKE) install-examples; fi
-	@if [ -d packages/pliris      ]; then cd packages/pliris;      $(MAKE) install-examples; fi
-	@if [ -d packages/ml          ]; then cd packages/ml;          $(MAKE) install-examples; fi
-	@if [ -d packages/aristos     ]; then cd packages/aristos;     $(MAKE) install-examples; fi
-	@if [ -d packages/moertel     ]; then cd packages/moertel;     $(MAKE) install-examples; fi
-	@if [ -d packages/stratimikos ]; then cd packages/stratimikos; $(MAKE) install-examples; fi
-	@if [ -d packages/meros       ]; then cd packages/meros;       $(MAKE) install-examples; fi
-	@if [ -d packages/sacado      ]; then cd packages/sacado;      $(MAKE) install-examples; fi
-	@if [ -d packages/nox         ]; then cd packages/nox;         $(MAKE) install-examples; fi
-	@if [ -d packages/capo        ]; then cd packages/capo;        $(MAKE) install-examples; fi
-	@if [ -d packages/rythmos     ]; then cd packages/rythmos;     $(MAKE) install-examples; fi
-	@if [ -d packages/trilinoscouplings ]; then cd packages/trilinoscouplings; $(MAKE) install-examples; fi
-	@if [ -d packages/new_package ]; then cd packages/new_package; $(MAKE) install-examples; fi
-	@if [ -d packages/moocho      ]; then cd packages/moocho;      $(MAKE) install-examples; fi
-	@if [ -d packages/PyTrilinos  ]; then cd packages/PyTrilinos;  $(MAKE) install-examples; fi
-	@if [ -d packages/didasko     ]; then cd packages/didasko;     $(MAKE) install-examples; fi
-	@if [ -d packages/WebTrilinos ]; then cd packages/WebTrilinos; $(MAKE) install-examples; fi
-	@if [ -d packages/external    ]; then cd packages/external;    $(MAKE) install-examples; fi
+	cd packages && $(MAKE) $@
 
 clean-examples:
-	@if [ -d packages/teuchos     ]; then cd packages/teuchos;     $(MAKE) clean-examples; fi
-	@if [ -d packages/rtop        ]; then cd packages/rtop;        $(MAKE) clean-examples; fi
-	@if [ -d packages/kokkos      ]; then cd packages/kokkos;      $(MAKE) clean-examples; fi
-	@if [ -d packages/epetra      ]; then cd packages/epetra;      $(MAKE) clean-examples; fi
-	@if [ -d packages/triutils    ]; then cd packages/triutils;    $(MAKE) clean-examples; fi
-	@if [ -d packages/tpetra      ]; then cd packages/tpetra;      $(MAKE) clean-examples; fi
-	@if [ -d packages/epetraext   ]; then cd packages/epetraext;   $(MAKE) clean-examples; fi
-	@if [ -d packages/thyra       ]; then cd packages/thyra;       $(MAKE) clean-examples; fi
-	@if [ -d packages/isorropia   ]; then cd packages/isorropia;   $(MAKE) clean-examples; fi
-	@if [ -d packages/aztecoo     ]; then cd packages/aztecoo;     $(MAKE) clean-examples; fi
-	@if [ -d packages/galeri      ]; then cd packages/galeri;      $(MAKE) clean-examples; fi
-	@if [ -d packages/amesos      ]; then cd packages/amesos;      $(MAKE) clean-examples; fi
-	@if [ -d packages/ifpack      ]; then cd packages/ifpack;      $(MAKE) clean-examples; fi
-	@if [ -d packages/komplex     ]; then cd packages/komplex;     $(MAKE) clean-examples; fi
-	@if [ -d packages/claps       ]; then cd packages/claps;       $(MAKE) clean-examples; fi
-	@if [ -d packages/belos       ]; then cd packages/belos;       $(MAKE) clean-examples; fi
-	@if [ -d packages/anasazi     ]; then cd packages/anasazi;     $(MAKE) clean-examples; fi
-	@if [ -d packages/rbgen       ]; then cd packages/rbgen;       $(MAKE) clean-examples; fi
-	@if [ -d packages/pliris      ]; then cd packages/pliris;      $(MAKE) clean-examples; fi
-	@if [ -d packages/ml          ]; then cd packages/ml;          $(MAKE) clean-examples; fi
-	@if [ -d packages/aristos     ]; then cd packages/aristos;     $(MAKE) clean-examples; fi
-	@if [ -d packages/moertel     ]; then cd packages/moertel;     $(MAKE) clean-examples; fi
-	@if [ -d packages/stratimikos ]; then cd packages/stratimikos; $(MAKE) clean-examples; fi
-	@if [ -d packages/meros       ]; then cd packages/meros;       $(MAKE) clean-examples; fi
-	@if [ -d packages/sacado      ]; then cd packages/sacado;      $(MAKE) clean-examples; fi
-	@if [ -d packages/nox         ]; then cd packages/nox;         $(MAKE) clean-examples; fi
-	@if [ -d packages/capo        ]; then cd packages/capo;        $(MAKE) clean-examples; fi
-	@if [ -d packages/rythmos     ]; then cd packages/rythmos;     $(MAKE) clean-examples; fi
-	@if [ -d packages/trilinoscouplings ]; then cd packages/trilinoscouplings; $(MAKE) clean-examples; fi
-	@if [ -d packages/new_package ]; then cd packages/new_package; $(MAKE) clean-examples; fi
-	@if [ -d packages/moocho      ]; then cd packages/moocho;      $(MAKE) clean-examples; fi
-	@if [ -d packages/PyTrilinos  ]; then cd packages/PyTrilinos;  $(MAKE) clean-examples; fi
-	@if [ -d packages/didasko     ]; then cd packages/didasko;     $(MAKE) clean-examples; fi
-	@if [ -d packages/WebTrilinos ]; then cd packages/WebTrilinos; $(MAKE) clean-examples; fi
-	@if [ -d packages/external    ]; then cd packages/external;    $(MAKE) clean-examples; fi
+	cd packages && $(MAKE) $@
 
 tests:
-	@if [ -d packages/teuchos     ]; then cd packages/teuchos;     $(MAKE) tests; fi
-	@if [ -d packages/rtop        ]; then cd packages/rtop;        $(MAKE) tests; fi
-	@if [ -d packages/kokkos      ]; then cd packages/kokkos;      $(MAKE) tests; fi
-	@if [ -d packages/epetra      ]; then cd packages/epetra;      $(MAKE) tests; fi
-	@if [ -d packages/triutils    ]; then cd packages/triutils;    $(MAKE) tests; fi
-	@if [ -d packages/tpetra      ]; then cd packages/tpetra;      $(MAKE) tests; fi
-	@if [ -d packages/epetraext   ]; then cd packages/epetraext;   $(MAKE) tests; fi
-	@if [ -d packages/thyra       ]; then cd packages/thyra;       $(MAKE) tests; fi
-	@if [ -d packages/isorropia   ]; then cd packages/isorropia;   $(MAKE) tests; fi
-	@if [ -d packages/aztecoo     ]; then cd packages/aztecoo;     $(MAKE) tests; fi
-	@if [ -d packages/galeri      ]; then cd packages/galeri;      $(MAKE) tests; fi
-	@if [ -d packages/amesos      ]; then cd packages/amesos;      $(MAKE) tests; fi
-	@if [ -d packages/ifpack      ]; then cd packages/ifpack;      $(MAKE) tests; fi
-	@if [ -d packages/komplex     ]; then cd packages/komplex;     $(MAKE) tests; fi
-	@if [ -d packages/claps       ]; then cd packages/claps;       $(MAKE) tests; fi
-	@if [ -d packages/belos       ]; then cd packages/belos;       $(MAKE) tests; fi
-	@if [ -d packages/anasazi     ]; then cd packages/anasazi;     $(MAKE) tests; fi
-	@if [ -d packages/rbgen       ]; then cd packages/rbgen;       $(MAKE) tests; fi
-	@if [ -d packages/pliris      ]; then cd packages/pliris;      $(MAKE) tests; fi
-	@if [ -d packages/ml          ]; then cd packages/ml;          $(MAKE) tests; fi
-	@if [ -d packages/aristos     ]; then cd packages/aristos;     $(MAKE) tests; fi
-	@if [ -d packages/moertel     ]; then cd packages/moertel;     $(MAKE) tests; fi
-	@if [ -d packages/stratimikos ]; then cd packages/stratimikos; $(MAKE) tests; fi
-	@if [ -d packages/meros       ]; then cd packages/meros;       $(MAKE) tests; fi
-	@if [ -d packages/sacado      ]; then cd packages/sacado;      $(MAKE) tests; fi
-	@if [ -d packages/nox         ]; then cd packages/nox;         $(MAKE) tests; fi
-	@if [ -d packages/capo        ]; then cd packages/capo;        $(MAKE) tests; fi
-	@if [ -d packages/rythmos     ]; then cd packages/rythmos;     $(MAKE) tests; fi
-	@if [ -d packages/trilinoscouplings ]; then cd packages/trilinoscouplings; $(MAKE) tests; fi
-	@if [ -d packages/new_package ]; then cd packages/new_package; $(MAKE) tests; fi
-	@if [ -d packages/moocho      ]; then cd packages/moocho;      $(MAKE) tests; fi
-	@if [ -d packages/PyTrilinos  ]; then cd packages/PyTrilinos;  $(MAKE) tests; fi
-	@if [ -d packages/didasko     ]; then cd packages/didasko;     $(MAKE) tests; fi
-	@if [ -d packages/WebTrilinos ]; then cd packages/WebTrilinos; $(MAKE) tests; fi
-	@if [ -d packages/external    ]; then cd packages/external;    $(MAKE) tests; fi
+	cd packages && $(MAKE) $@
 
 clean-tests:
-	@if [ -d packages/teuchos     ]; then cd packages/teuchos;     $(MAKE) clean-tests; fi
-	@if [ -d packages/rtop        ]; then cd packages/rtop;        $(MAKE) clean-tests; fi
-	@if [ -d packages/kokkos      ]; then cd packages/kokkos;      $(MAKE) clean-tests; fi
-	@if [ -d packages/epetra      ]; then cd packages/epetra;      $(MAKE) clean-tests; fi
-	@if [ -d packages/triutils    ]; then cd packages/triutils;    $(MAKE) clean-tests; fi
-	@if [ -d packages/tpetra      ]; then cd packages/tpetra;      $(MAKE) clean-tests; fi
-	@if [ -d packages/epetraext   ]; then cd packages/epetraext;   $(MAKE) clean-tests; fi
-	@if [ -d packages/thyra       ]; then cd packages/thyra;       $(MAKE) clean-tests; fi
-	@if [ -d packages/isorropia   ]; then cd packages/isorropia;   $(MAKE) clean-tests; fi
-	@if [ -d packages/aztecoo     ]; then cd packages/aztecoo;     $(MAKE) clean-tests; fi
-	@if [ -d packages/galeri      ]; then cd packages/galeri;      $(MAKE) clean-tests; fi
-	@if [ -d packages/amesos      ]; then cd packages/amesos;      $(MAKE) clean-tests; fi
-	@if [ -d packages/ifpack      ]; then cd packages/ifpack;      $(MAKE) clean-tests; fi
-	@if [ -d packages/komplex     ]; then cd packages/komplex;     $(MAKE) clean-tests; fi
-	@if [ -d packages/claps       ]; then cd packages/claps;       $(MAKE) clean-tests; fi
-	@if [ -d packages/belos       ]; then cd packages/belos;       $(MAKE) clean-tests; fi
-	@if [ -d packages/anasazi     ]; then cd packages/anasazi;     $(MAKE) clean-tests; fi
-	@if [ -d packages/rbgen       ]; then cd packages/rbgen;       $(MAKE) clean-tests; fi
-	@if [ -d packages/pliris      ]; then cd packages/pliris;      $(MAKE) clean-tests; fi
-	@if [ -d packages/ml          ]; then cd packages/ml;          $(MAKE) clean-tests; fi
-	@if [ -d packages/aristos     ]; then cd packages/aristos;     $(MAKE) clean-tests; fi
-	@if [ -d packages/moertel     ]; then cd packages/moertel;     $(MAKE) clean-tests; fi
-	@if [ -d packages/stratimikos ]; then cd packages/stratimikos; $(MAKE) clean-tests; fi
-	@if [ -d packages/meros       ]; then cd packages/meros;       $(MAKE) clean-tests; fi
-	@if [ -d packages/sacado      ]; then cd packages/sacado;      $(MAKE) clean-tests; fi
-	@if [ -d packages/nox         ]; then cd packages/nox;         $(MAKE) clean-tests; fi
-	@if [ -d packages/capo        ]; then cd packages/capo;        $(MAKE) clean-tests; fi
-	@if [ -d packages/rythmos     ]; then cd packages/rythmos;     $(MAKE) clean-tests; fi
-	@if [ -d packages/trilinoscouplings ]; then cd packages/trilinoscouplings; $(MAKE) clean-tests; fi
-	@if [ -d packages/new_package ]; then cd packages/new_package; $(MAKE) clean-tests; fi
-	@if [ -d packages/moocho      ]; then cd packages/moocho;      $(MAKE) clean-tests; fi
-	@if [ -d packages/PyTrilinos  ]; then cd packages/PyTrilinos;  $(MAKE) clean-tests; fi
-	@if [ -d packages/didasko     ]; then cd packages/didasko;     $(MAKE) clean-tests; fi
-	@if [ -d packages/WebTrilinos ]; then cd packages/WebTrilinos; $(MAKE) clean-tests; fi
-	@if [ -d packages/external    ]; then cd packages/external;    $(MAKE) clean-tests; fi
+	cd packages && $(MAKE) $@
 
 everything:
-	 $(MAKE) && $(MAKE) examples && $(MAKE) tests
+	cd packages && $(MAKE) $@
 
 install-everything:
-	$(MAKE) install && $(MAKE) install-examples
+	cd packages && $(MAKE) $@
 
 clean-everything:
-	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
+	cd packages && $(MAKE) $@
 
