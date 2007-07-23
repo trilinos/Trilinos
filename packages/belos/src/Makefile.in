@@ -253,6 +253,7 @@ CORE_H = \
 	$(srcdir)/BelosMatOrthoManager.hpp \
 	$(srcdir)/BelosMultiVec.hpp \
 	$(srcdir)/BelosMultiVecTraits.hpp \
+	$(srcdir)/BelosMVOPTester.hpp \
 	$(srcdir)/BelosOperator.hpp \
 	$(srcdir)/BelosOperatorTraits.hpp \
 	$(srcdir)/BelosOrthoManager.hpp \
