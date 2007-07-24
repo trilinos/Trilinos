@@ -843,7 +843,7 @@ float he_wgt;
   }
 
   if (nparts > 0){
-    /* Implied hyperedge is vertex plus it's neighbors */
+    /* Implied hyperedge is vertex plus its neighbors */
     if (ewgts && zz->Edge_Weight_Dim){
       he_wgt = 0.0;
       for (j=0; j<nedges; j++){
