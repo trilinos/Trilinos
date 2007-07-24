@@ -1,0 +1,43 @@
+#!/bin/tcsh
+#PBS -l walltime=00:10:00
+#PBS -l nodes=8:ppn=2
+#PBS -A 68917/01.031
+
+# Run using default compiler/MPI configuration.
+mpicxx -o defcommdup commdup.c
+mpiexec -np 1 defcommdup > defdup01
+mpiexec -np 2 defcommdup > defdup02
+mpiexec -np 4 defcommdup > defdup04
+mpiexec -np 8 defcommdup > defdup08
+mpiexec -np 16 defcommdup > defdup16
+
+mpicxx -o defcommsplit commsplit.c
+mpiexec -np 1 defcommsplit > defsplit01
+mpiexec -np 2 defcommsplit > defsplit02
+mpiexec -np 4 defcommsplit > defsplit04
+mpiexec -np 8 defcommsplit > defsplit08
+mpiexec -np 16 defcommsplit > defsplit16
+
+# Run using Mike Glass' compiler/MPI configuration.
+module purge
+module load mpi/mvapich-0.9.8-ofed-gcc-3.4.6
+module load compilers/gcc-3.4.6
+
+mpicxx -o mwgcommdup commdup.c
+mpiexec -np 1 mwgcommdup > mwgdup01
+mpiexec -np 2 mwgcommdup > mwgdup02
+mpiexec -np 4 mwgcommdup > mwgdup04
+mpiexec -np 8 mwgcommdup > mwgdup08
+mpiexec -np 16 mwgcommdup > mwgdup16
+
+module purge
+module load mpi/mvapich-0.9.8-ofed-gcc-3.4.6
+module load compilers/gcc-3.4.6
+
+mpicxx -o mwgcommsplit commsplit.c
+mpiexec -np 1 mwgcommsplit > mwgsplit01
+mpiexec -np 2 mwgcommsplit > mwgsplit02
+mpiexec -np 4 mwgcommsplit > mwgsplit04
+mpiexec -np 8 mwgcommsplit > mwgsplit08
+mpiexec -np 16 mwgcommsplit > mwgsplit16
+
