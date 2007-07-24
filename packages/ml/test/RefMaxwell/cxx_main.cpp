@@ -227,7 +227,7 @@ int main(int argc, char* argv[]){
   
   matrix_read(Comm);
 
-#ifdef USE_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
   return 0;
