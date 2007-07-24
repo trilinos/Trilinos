@@ -443,6 +443,10 @@ extern "C" {
 #include "jostle.h"
 #endif
 
+#ifdef HAVE_ML_PARMETIS_3x
+#include "parmetis.h"
+#endif
+
 int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
                          int *pnode_part, ML_Partitioner which_partitioner, 
 			 double *x_coord, double *y_coord, double *z_coord)
