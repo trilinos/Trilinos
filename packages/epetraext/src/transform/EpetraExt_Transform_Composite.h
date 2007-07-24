@@ -93,10 +93,10 @@ class Transform_Composite : public SameTypeTransform<T>
 
  protected:
 
-  typedef typename list<TransformTypePtr>::iterator         TransListIter;
-  typedef typename list<TransformTypePtr>::reverse_iterator TransListRvsIter;
+  typedef typename std::list<TransformTypePtr>::iterator         TransListIter;
+  typedef typename std::list<TransformTypePtr>::reverse_iterator TransListRvsIter;
 
-  list<TransformTypePtr> transList_;
+  std::list<TransformTypePtr> transList_;
 
 }; // end class Tranform_Composite
 
