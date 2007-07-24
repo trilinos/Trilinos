@@ -493,12 +493,12 @@ int Amesos_Klu::PerformNumericFactorization( )
       const  bool refactor_ok = result == 1 && PrivateKluData_->common_->status == KLU_OK ;
       if ( refactor_ok ) { 
 	
-	double rcond ;
-	
 	klu_rcond (&*PrivateKluData_->Symbolic_,
 		   &*PrivateKluData_->Numeric_,
-		   &rcond, &*PrivateKluData_->common_) ;
-	
+		   &*PrivateKluData_->common_) ;
+       
+	double rcond = PrivateKluData_->common_->rcond;
+ 	
 	if ( rcond > rcond_threshold_ ) {
 	  // factorizing without pivot worked fine.  We are done.
 	  factor_with_pivoting = false ;

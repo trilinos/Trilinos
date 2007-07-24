@@ -1,18 +1,56 @@
 /* ========================================================================== */
-/* === MAXTRANS ============================================================= */
+/* === BTF_MAXTRANS ========================================================= */
 /* ========================================================================== */
 
 /* Finds a column permutation that maximizes the number of entries on the
  * diagonal of a sparse matrix.  See btf.h for more information.
+ *
+ * This function is identical to cs_maxtrans in CSparse, with the following
+ * exceptions:
+ *
+ *  (1) cs_maxtrans finds both jmatch and imatch, where jmatch [i] = j and
+ *	imatch [j] = i if row i is matched to column j.  This function returns
+ *	just jmatch (the Match array).  The MATLAB interface to cs_maxtrans
+ *	(the single-output cs_dmperm) returns imatch, not jmatch to the MATLAB
+ *	caller.
+ *
+ *  (2) cs_maxtrans includes a pre-pass that counts the number of non-empty
+ *	rows and columns (m2 and n2, respectively), and computes the matching
+ *	using the transpose of A if m2 < n2.  cs_maxtrans also returns quickly
+ *	if the diagonal of the matrix is already zero-free.  This pre-pass
+ *	allows cs_maxtrans to be much faster than maxtrans, if the use of the
+ *	transpose is warranted.
+ *
+ *	However, for square structurally non-singular matrices with one or more
+ *	zeros on the diagonal, the pre-pass is a waste of time, and for these
+ *	matrices, maxtrans can be twice as fast as cs_maxtrans.  Since the
+ *	maxtrans function is intended primarily for square matrices that are
+ *	typically structurally nonsingular, the pre-pass is not included here.
+ *	If this maxtrans function is used on a matrix with many more columns
+ *	than rows, consider passing the transpose to this function, or use
+ *	cs_maxtrans instead.
+ *
+ *  (3) cs_maxtrans can operate as a randomized algorithm, to help avoid
+ *	rare cases of excessive run-time.
+ *
+ *  (4) this maxtrans function includes an option that limits the total work
+ *	performed.  If this limit is reached, the maximum transveral might not
+ *	be found.
+ *
+ * Thus, for general usage, cs_maxtrans is preferred.  For square matrices that
+ * are typically structurally non-singular, maxtrans is preferred.  A partial
+ * maxtrans can still be very useful when solving a sparse linear system.
+ *
+ * Copyright (c) 2004-2007.  Tim Davis, University of Florida,
+ * with support from Sandia National Laboratories.  All Rights Reserved.
  */ 
 
 #include "btf.h"
 #include "btf_internal.h"
 
-#ifndef RECURSIVE
 
 /* ========================================================================== */
-/* === dfs: non-recursive version (default) ================================= */
+/* === augment ============================================================== */
 /* ========================================================================== */
 
 /* Perform a depth-first-search starting at column k, to find an augmenting
@@ -33,8 +71,17 @@
  * Once a row is matched with a column it remains matched with some column, but
  * not necessarily the column it was first matched with.
  *
+ * In the worst case, this function can examine every nonzero in A.  Since it
+ * is called n times by maxtrans, the total time of maxtrans can be as high as
+ * O(n*nnz(A)).  To limit this work, pass a value of maxwork > 0.  Then at
+ * most O((maxwork+1)*nnz(A)) work will be performed; the maximum matching might
+ * not be found, however.
+ *
  * This routine is very similar to the dfs routine in klu_kernel.c, in the
- * KLU sparse LU factorization package.
+ * KLU sparse LU factorization package.  It is essentially identical to the
+ * cs_augment routine in CSparse, and its recursive version (augment function
+ * in cs_maxtransr_mex.c), except that this routine allows for the search to be
+ * terminated early if too much work is being performed.
  *
  * The algorithm is based on the paper "On Algorithms for obtaining a maximum
  * transversal" by Iain Duff, ACM Trans. Mathematical Software, vol 7, no. 1,
@@ -54,7 +101,7 @@
  * Ai		ICN	    row / column indices
  * Ap[n]	LICN	    length of index array (# of nonzeros in A)
  * Match	IPERM	    output column / row permutation
- * nfound	NUMNZ	    # of nonzeros on diagonal of permuted matrix
+ * nmatch	NUMNZ	    # of nonzeros on diagonal of permuted matrix
  * Flag		CV	    mark a node as visited by the depth-first-search
  *
  * The following are different, but analogous:
@@ -83,32 +130,38 @@
  * for (p = head ; ...)		DO 90 K=1,JORD
  */
 
-static int dfs
+static Int augment
 (
-    int k,		/* which stage of the main loop we're in */
-    int Ap [ ],		/* column pointers, size n+1 */
-    int Ai [ ],		/* row indices, size nz = Ap [n] */
-    int Match [ ],	/* size n,  Match [i] = j if col j matched to i */
-    int Cheap [ ],	/* rows Ai [Ap [j] .. Cheap [j]-1] alread matched */
-    int Flag [ ],	/* Flag [j] = k if j already visited this stage */
-    int Istack [ ],	/* size n.  Row index stack. */
-    int Jstack [ ],	/* size n.  Column index stack. */
-    int Pstack [ ]	/* size n.  Keeps track of position in adjacency list */
+    Int k,		/* which stage of the main loop we're in */
+    Int Ap [ ],		/* column pointers, size n+1 */
+    Int Ai [ ],		/* row indices, size nz = Ap [n] */
+    Int Match [ ],	/* size n,  Match [i] = j if col j matched to i */
+    Int Cheap [ ],	/* rows Ai [Ap [j] .. Cheap [j]-1] alread matched */
+    Int Flag [ ],	/* Flag [j] = k if j already visited this stage */
+    Int Istack [ ],	/* size n.  Row index stack. */
+    Int Jstack [ ],	/* size n.  Column index stack. */
+    Int Pstack [ ],	/* size n.  Keeps track of position in adjacency list */
+    double *work,	/* work performed by the depth-first-search */
+    double maxwork	/* maximum work allowed */
 )
 {
     /* local variables, but "global" to all DFS levels: */
-    int found ;	/* true if match found.  */
-    int head ;	/* top of stack */
+    Int found ;	/* true if match found.  */
+    Int head ;	/* top of stack */
 
     /* variables that are purely local to any one DFS level: */
-    int j2 ;	/* the next DFS goes to node j2 */
-    int pend ;	/* one past the end of the adjacency list for node j */
+    Int j2 ;	/* the next DFS goes to node j2 */
+    Int pend ;	/* one past the end of the adjacency list for node j */
+    Int pstart ;
+    Int quick ;
 
     /* variables that need to be pushed then popped from the stack: */
-    int i ;	/* the row tentatively matched to i if DFS successful */
-    int j ;	/* the DFS is at the current node j */
-    int p ;	/* current index into the adj. list for node j */
+    Int i ;	/* the row tentatively matched to i if DFS successful */
+    Int j ;	/* the DFS is at the current node j */
+    Int p ;	/* current index into the adj. list for node j */
     /* the variables i, j, and p are stacked in Istack, Jstack, and Pstack */
+
+    quick = (maxwork > 0) ;
 
     /* start a DFS to find a match for column k */
     found = FALSE ;
@@ -131,7 +184,9 @@ static int dfs
 
 	    /* first time that j has been visited */
 	    Flag [j] = k ;
-	    /* cheap assignment: find the next unmatched row in col j */
+	    /* cheap assignment: find the next unmatched row in col j.  This
+	     * loop takes at most O(nnz(A)) time for the sum total of all
+	     * calls to augment. */
 	    for (p = Cheap [j] ; p < pend && !found ; p++)
 	    {
 		i = Ai [p] ;
@@ -153,26 +208,41 @@ static int dfs
 	}
 
 	/* ------------------------------------------------------------------ */
+	/* quick return if too much work done */
+	/* ------------------------------------------------------------------ */
+
+	if (quick && *work > maxwork)
+	{
+	    /* too much work has been performed; abort the search */
+	    return (EMPTY) ;
+	}
+
+	/* ------------------------------------------------------------------ */
 	/* DFS for nodes adjacent to j */
 	/* ------------------------------------------------------------------ */
 
-	/* If cheap assignment not made, continue the dfs.  All rows in column
-	 * j are already matched.  Add the adjacent nodes to the stack by
-	 * iterating through until finding another non-visited node. */
-	for (p = Pstack [head] ; p < pend ; p++)
+	/* If cheap assignment not made, continue the depth-first search.  All
+	 * rows in column j are already matched.  Add the adjacent nodes to the
+	 * stack by iterating through until finding another non-visited node.
+	 *
+	 * It is the following loop that can force maxtrans to take
+	 * O(n*nnz(A)) time. */
+
+	pstart = Pstack [head] ;
+	for (p = pstart ; p < pend ; p++)
 	{
 	    i = Ai [p] ;
 	    j2 = Match [i] ;
 	    ASSERT (j2 != EMPTY) ;
 	    if (Flag [j2] != k)
 	    {
-		/* Node j2 is not yet visited, start a dfs on node j2.
-		 * Keep track of where we left off in the scan of adjacency list
-		 * of node j so we can restart j where we left off. */
+		/* Node j2 is not yet visited, start a depth-first search on
+		 * node j2.  Keep track of where we left off in the scan of adj
+		 * list of node j so we can restart j where we left off. */
 		Pstack [head] = p + 1 ;
-		/* Push j2 onto the stack and immediately break
-		 * so we can recurse on node j2.  Also keep track of row i
-		 * which (if this dfs works) will be matched with the
+		/* Push j2 onto the stack and immediately break so we can
+		 * recurse on node j2.  Also keep track of row i which (if this
+		 * search for an augmenting path works) will be matched with the
 		 * current node j. */
 		Istack [head] = i ;
 		Jstack [++head] = j2 ;
@@ -180,7 +250,16 @@ static int dfs
 	    }
 	}
 
+	/* ------------------------------------------------------------------ */
+	/* determine how much work was just performed */
+	/* ------------------------------------------------------------------ */
+
+	*work += (p - pstart + 1) ;
+
+	/* ------------------------------------------------------------------ */
 	/* node j is done, but the postwork is postponed - see below */
+	/* ------------------------------------------------------------------ */
+
 	if (p == pend)
 	{
 	    /* If all adjacent nodes of j are already visited, pop j from
@@ -208,125 +287,34 @@ static int dfs
     return (found) ;
 }
 
-#else
-
-/* ========================================================================== */
-/* === dfs: recursive version (only for illustration) ======================= */
-/* ========================================================================== */
-
-/* The following is a recursive version of dfs, which computes identical results
- * as the non-recursive dfs.  It is included here because it is easier to read.
- * Compare the comments in the code below with the identical comments in the
- * non-recursive code above, and that will help you see the correlation between
- * the two routines.
- *
- * This routine can cause stack overflow, and is thus not recommended for heavy
- * usage, particularly for large matrices.  To help in delaying stack overflow,
- * global variables are used, reducing the amount of information each call to
- * dfs places on the call/return stack (the integers i, j, p, and the return
- * address).  To try this version, compile the code with -DRECURSIVE or include
- * the following line at the top of this file:
-#define RECURSIVE
- */
-
-static int found, *Ap, *Ai, *Match, k, *Cheap, *Flag ;
-
-static void dfs
-(
-    int j		/* at column j in the DFS */
-)
-{
-    int p, i ;
-
-    /* ---------------------------------------------------------------------- */
-    /* prework for node j */
-    /* ---------------------------------------------------------------------- */
-
-    /* first time that j has been visited */
-    Flag [j] = k ;
-
-    /* cheap assignment: find the next unmatched row in col j */
-    for (p = Cheap [j] ; p < Ap [j+1] && !found ; p++)
-    {
-	i = Ai [p] ;
-	found = (Match [i] == EMPTY) ;
-    }
-    Cheap [j] = p ;
-
-    /* ---------------------------------------------------------------------- */
-    /* DFS for nodes adjacent to j */
-    /* ---------------------------------------------------------------------- */
-
-    /* If cheap assignment not made, continue the dfs.  All rows in column
-     * j are already matched.  Add the adjacent nodes to the stack by
-     * iterating through until finding another non-visited node. */
-    for (p = Ap [j] ; p < Ap [j+1] && !found ; p++)
-    {
-	i = Ai [p] ;
-	if (Flag [Match [i]] != k)
-	{
-	    dfs (Match [i]) ;
-	}
-    }
-
-    /* ---------------------------------------------------------------------- */
-    /* postwork for node j */
-    /* ---------------------------------------------------------------------- */
-
-    /* if found, match row i with column j */
-    if (found)
-    {
-	Match [i] = j ;
-    }
-}
-
-#endif
-
 
 /* ========================================================================== */
 /* === maxtrans ============================================================= */
 /* ========================================================================== */
 
-#ifndef RECURSIVE
-
-int maxtrans	    /* returns # of columns in the matching */
+Int BTF(maxtrans)   /* returns # of columns in the matching */
 (
-    int nrow,	    /* A is nrow-by-ncol in compressed column form */
-    int ncol,
-    int Ap [ ],	    /* size ncol+1 */
-    int Ai [ ],	    /* size nz = Ap [ncol] */
+    /* --- input --- */
+    Int nrow,	    /* A is nrow-by-ncol in compressed column form */
+    Int ncol,
+    Int Ap [ ],	    /* size ncol+1 */
+    Int Ai [ ],	    /* size nz = Ap [ncol] */
+    double maxwork, /* do at most maxwork*nnz(A) work; no limit if <= 0.  This
+		     * work limit excludes the O(nnz(A)) cheap-match phase. */
 
-    /* output, not defined on input */
-    int Match [ ],  /* size nrow.  Match [i] = j if column j matched to row i */
+    /* --- output --- */
+    double *work,   /* work = -1 if maxwork > 0 and the total work performed
+		     * reached the maximum of maxwork*nnz(A)).
+		     * Otherwise, work = the total work performed. */
 
-    /* workspace, not defined on input or output */
-    int Work [ ]    /* size 5*ncol */
+    Int Match [ ],  /* size nrow.  Match [i] = j if column j matched to row i */
+
+    /* --- workspace --- */
+    Int Work [ ]    /* size 5*ncol */
 )
-
-#else
-
-int maxtrans	    /* recursive version - same as above except for Work size */
-(
-    int nrow,
-    int ncol,
-    int Ap_in [ ],
-    int Ai_in [ ],
-    int Match_in [ ],
-    int Work [ ]    /* size 2*ncol */
-)
-
-#endif
-
 {
-    int i, j, nfound, nbadcol ;
-
-#ifndef RECURSIVE
-    int k, *Cheap, *Flag, *Istack, *Jstack, *Pstack ;
-#else
-    Ap = Ap_in ;
-    Ai = Ai_in ;
-    Match = Match_in ;
-#endif
+    Int *Cheap, *Flag, *Istack, *Jstack, *Pstack ;
+    Int i, j, k, nmatch, work_limit_reached, result ;
 
     /* ---------------------------------------------------------------------- */
     /* get workspace and initialize */
@@ -335,12 +323,10 @@ int maxtrans	    /* recursive version - same as above except for Work size */
     Cheap  = Work ; Work += ncol ;
     Flag   = Work ; Work += ncol ;
 
-#ifndef RECURSIVE
-    /* stack for non-recursive dfs */
+    /* stack for non-recursive depth-first search in augment function */
     Istack = Work ; Work += ncol ;
     Jstack = Work ; Work += ncol ;
     Pstack = Work ;
-#endif
 
     /* in column j, rows Ai [Ap [j] .. Cheap [j]-1] are known to be matched */
     for (j = 0 ; j < ncol ; j++)
@@ -355,70 +341,32 @@ int maxtrans	    /* recursive version - same as above except for Work size */
 	Match [i] = EMPTY ;
     }
 
+    if (maxwork > 0)
+    {
+	maxwork *= Ap [ncol] ;
+    }
+    *work = 0 ;
+
     /* ---------------------------------------------------------------------- */
     /* find a matching row for each column k */
     /* ---------------------------------------------------------------------- */
 
-    nfound = 0 ;
+    nmatch = 0 ;
+    work_limit_reached = FALSE ;
     for (k = 0 ; k < ncol ; k++)
     {
 	/* find an augmenting path to match some row i to column k */
-#ifndef RECURSIVE
-	/* non-recursive dfs (default) */
-	if (dfs (k, Ap, Ai, Match, Cheap, Flag, Istack, Jstack, Pstack))
-#else
-	/* recursive dfs (for illustration only) */
-	found = FALSE ;
-	dfs (k) ;
-	if (found)
-#endif
+	result = augment (k, Ap, Ai, Match, Cheap, Flag, Istack, Jstack, Pstack,
+	    work, maxwork) ;
+	if (result == TRUE)
 	{
 	    /* we found it.  Match [i] = k for some row i has been done. */
-	    nfound++ ;
+	    nmatch++ ;
 	}
-    }
-
-    /* ---------------------------------------------------------------------- */
-    /* complete the permutation if the matrix is structurally singular */
-    /* ---------------------------------------------------------------------- */
-
-    /* note that at this point, all entries in Flag are less than ncol */
-
-    if (nfound < ncol)
-    {
-	/* flag all matched columns */
-	for (i = 0 ; i < nrow ; i++)
+	else if (result == EMPTY)
 	{
-	    j = Match [i] ;
-	    if (j != EMPTY)
-	    {
-		/* printf ("i is OK %d matched to j %d\n", i, j) ; */
-		/* row i and column j are matched */
-		Flag [j] = ncol ;
-	    }
-	}
-	/* make a list of all unmatched columns (use Cheap as workspace) */
-	nbadcol = 0 ;
-	for (j = 0 ; j < ncol ; j++)
-	{
-	    if (Flag [j] != ncol)
-	    {
-		Cheap [nbadcol++] = j ;
-		/* printf ("j is matched to nobody %d\n", j) ; */
-	    }
-	}
-	ASSERT (nfound + nbadcol == ncol) ;
-	/* make an assignment for each unmatched row */
-	for (i = 0 ; i < nrow ; i++)
-	{
-	    if (Match [i] == EMPTY && nbadcol > 0)
-	    {
-		/* get an unmatched column j */
-		j = Cheap [--nbadcol] ;
-		/* assign j to row i and flag the entry by "flipping" it */
-		Match [i] = MAXTRANS_FLIP (j) ;
-		/* printf ("need to force i %d with j %d\n", i, j) ; */
-	    }
+	    /* augment gave up because of too much work, and no match found */
+	    work_limit_reached = TRUE ;
 	}
     }
 
@@ -427,13 +375,13 @@ int maxtrans	    /* recursive version - same as above except for Work size */
     /* ---------------------------------------------------------------------- */
 
     /* At this point, row i is matched to j = Match [i] if j >= 0.  i is an
-     * unmatched row if Match [i] < 0.
-     *
-     * the permutation can be recovered as follows: Row i is
-     * matched with column j, where j = MAXTRANS_UNFLIP (Match [i]) and where j
-     * will always be in the valid range 0 to ncol-1.  The entry A(i,j) is zero
-     * if MAXTRANS_ISFLIPPED (Match [i]) is true, and nonzero otherwise.  nfound
-     * is the number of entries in the Match array that are non-negative. */
+     * unmatched row if Match [i] == EMPTY. */
 
-    return (nfound) ;
+    if (work_limit_reached)
+    {
+	/* return -1 if the work limit of maxwork*nnz(A) was reached */
+	*work = EMPTY ;
+    }
+
+    return (nmatch) ;
 }

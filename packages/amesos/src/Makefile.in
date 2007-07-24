@@ -152,8 +152,8 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Status.cpp \
 	$(srcdir)/UFsparse/KLU/Source/klu_sort.c \
 	$(srcdir)/UFsparse/KLU/Source/klu_tsolve.c \
 	$(srcdir)/UFsparse/BTF/Source/btf_order.c \
-	$(srcdir)/UFsparse/BTF/Source/maxtrans.c \
-	$(srcdir)/UFsparse/BTF/Source/strongcomp.c \
+	$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c \
+	$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c \
 	$(srcdir)/UFsparse/PARAKLETE/memory.c \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete_analyze.c \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete_factorize.c \
@@ -238,8 +238,9 @@ am__objects_8 = amd_1.$(OBJEXT) amd_2.$(OBJEXT) amd_aat.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_refactor.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_scale.$(OBJEXT) klu_solve.$(OBJEXT) \
 @HAVE_AMESOS_KLU_TRUE@	klu_sort.$(OBJEXT) klu_tsolve.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	btf_order.$(OBJEXT) maxtrans.$(OBJEXT) \
-@HAVE_AMESOS_KLU_TRUE@	strongcomp.$(OBJEXT)
+@HAVE_AMESOS_KLU_TRUE@	btf_order.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	btf_maxtrans.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	btf_strongcomp.$(OBJEXT)
 @HAVE_AMESOS_PARAKLETE_TRUE@am__objects_11 = memory.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_analyze.$(OBJEXT) \
 @HAVE_AMESOS_PARAKLETE_TRUE@	paraklete_factorize.$(OBJEXT) \
@@ -607,8 +608,8 @@ SUPPORT = $(srcdir)/Amesos_Status.cpp  $(srcdir)/Amesos_Control.cpp $(srcdir)/Am
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/UFsparse/KLU/Source/klu_sort.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/UFsparse/KLU/Source/klu_tsolve.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/UFsparse/BTF/Source/btf_order.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/UFsparse/BTF/Source/maxtrans.c \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/UFsparse/BTF/Source/strongcomp.c
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c
 
 @HAVE_AMESOS_MUMPS_FALSE@MUMPS_H = 
 #-------------------------------------------------------------------------------
@@ -1029,7 +1030,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_postorder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_preprocess.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_valid.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/btf_maxtrans.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/btf_order.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/btf_strongcomp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/camd_aat.Po@am__quote@
@@ -1091,7 +1094,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_solve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_sort.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_tsolve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/maxtrans.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_analyze.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_factorize.Po@am__quote@
@@ -1100,7 +1102,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_node.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_solve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_usolve_node.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strongcomp.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -1578,33 +1579,33 @@ btf_order.obj: $(srcdir)/UFsparse/BTF/Source/btf_order.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o btf_order.obj `if test -f '$(srcdir)/UFsparse/BTF/Source/btf_order.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/BTF/Source/btf_order.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/BTF/Source/btf_order.c'; fi`
 
-maxtrans.o: $(srcdir)/UFsparse/BTF/Source/maxtrans.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT maxtrans.o -MD -MP -MF $(DEPDIR)/maxtrans.Tpo -c -o maxtrans.o `test -f '$(srcdir)/UFsparse/BTF/Source/maxtrans.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/BTF/Source/maxtrans.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/maxtrans.Tpo $(DEPDIR)/maxtrans.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/BTF/Source/maxtrans.c' object='maxtrans.o' libtool=no @AMDEPBACKSLASH@
+btf_maxtrans.o: $(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT btf_maxtrans.o -MD -MP -MF $(DEPDIR)/btf_maxtrans.Tpo -c -o btf_maxtrans.o `test -f '$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/btf_maxtrans.Tpo $(DEPDIR)/btf_maxtrans.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c' object='btf_maxtrans.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o maxtrans.o `test -f '$(srcdir)/UFsparse/BTF/Source/maxtrans.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/BTF/Source/maxtrans.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o btf_maxtrans.o `test -f '$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c
 
-maxtrans.obj: $(srcdir)/UFsparse/BTF/Source/maxtrans.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT maxtrans.obj -MD -MP -MF $(DEPDIR)/maxtrans.Tpo -c -o maxtrans.obj `if test -f '$(srcdir)/UFsparse/BTF/Source/maxtrans.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/BTF/Source/maxtrans.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/BTF/Source/maxtrans.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/maxtrans.Tpo $(DEPDIR)/maxtrans.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/BTF/Source/maxtrans.c' object='maxtrans.obj' libtool=no @AMDEPBACKSLASH@
+btf_maxtrans.obj: $(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT btf_maxtrans.obj -MD -MP -MF $(DEPDIR)/btf_maxtrans.Tpo -c -o btf_maxtrans.obj `if test -f '$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/btf_maxtrans.Tpo $(DEPDIR)/btf_maxtrans.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c' object='btf_maxtrans.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o maxtrans.obj `if test -f '$(srcdir)/UFsparse/BTF/Source/maxtrans.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/BTF/Source/maxtrans.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/BTF/Source/maxtrans.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o btf_maxtrans.obj `if test -f '$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c'; fi`
 
-strongcomp.o: $(srcdir)/UFsparse/BTF/Source/strongcomp.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT strongcomp.o -MD -MP -MF $(DEPDIR)/strongcomp.Tpo -c -o strongcomp.o `test -f '$(srcdir)/UFsparse/BTF/Source/strongcomp.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/BTF/Source/strongcomp.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/strongcomp.Tpo $(DEPDIR)/strongcomp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/BTF/Source/strongcomp.c' object='strongcomp.o' libtool=no @AMDEPBACKSLASH@
+btf_strongcomp.o: $(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT btf_strongcomp.o -MD -MP -MF $(DEPDIR)/btf_strongcomp.Tpo -c -o btf_strongcomp.o `test -f '$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/btf_strongcomp.Tpo $(DEPDIR)/btf_strongcomp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c' object='btf_strongcomp.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o strongcomp.o `test -f '$(srcdir)/UFsparse/BTF/Source/strongcomp.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/BTF/Source/strongcomp.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o btf_strongcomp.o `test -f '$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c
 
-strongcomp.obj: $(srcdir)/UFsparse/BTF/Source/strongcomp.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT strongcomp.obj -MD -MP -MF $(DEPDIR)/strongcomp.Tpo -c -o strongcomp.obj `if test -f '$(srcdir)/UFsparse/BTF/Source/strongcomp.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/BTF/Source/strongcomp.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/BTF/Source/strongcomp.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/strongcomp.Tpo $(DEPDIR)/strongcomp.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/BTF/Source/strongcomp.c' object='strongcomp.obj' libtool=no @AMDEPBACKSLASH@
+btf_strongcomp.obj: $(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT btf_strongcomp.obj -MD -MP -MF $(DEPDIR)/btf_strongcomp.Tpo -c -o btf_strongcomp.obj `if test -f '$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/btf_strongcomp.Tpo $(DEPDIR)/btf_strongcomp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c' object='btf_strongcomp.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o strongcomp.obj `if test -f '$(srcdir)/UFsparse/BTF/Source/strongcomp.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/BTF/Source/strongcomp.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/BTF/Source/strongcomp.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o btf_strongcomp.obj `if test -f '$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c'; fi`
 
 memory.o: $(srcdir)/UFsparse/PARAKLETE/memory.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT memory.o -MD -MP -MF $(DEPDIR)/memory.Tpo -c -o memory.o `test -f '$(srcdir)/UFsparse/PARAKLETE/memory.c' || echo '$(srcdir)/'`$(srcdir)/UFsparse/PARAKLETE/memory.c

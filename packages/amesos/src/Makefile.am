@@ -158,8 +158,8 @@ KLU = \
 	$(srcdir)/UFsparse/KLU/Source/klu_sort.c \
 	$(srcdir)/UFsparse/KLU/Source/klu_tsolve.c \
 	$(srcdir)/UFsparse/BTF/Source/btf_order.c \
-	$(srcdir)/UFsparse/BTF/Source/maxtrans.c \
-	$(srcdir)/UFsparse/BTF/Source/strongcomp.c
+	$(srcdir)/UFsparse/BTF/Source/btf_maxtrans.c \
+	$(srcdir)/UFsparse/BTF/Source/btf_strongcomp.c
 
 
 else

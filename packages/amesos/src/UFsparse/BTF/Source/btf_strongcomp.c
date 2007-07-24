@@ -1,11 +1,13 @@
 /* ========================================================================== */
-/* === STRONGCOMP =========================================================== */
+/* === BTF_STRONGCOMP ======================================================= */
 /* ========================================================================== */
 
 /* Finds the strongly connected components of a graph, or equivalently, permutes
- * the matrix into upper block triangular form.  
- * See btf.h for more details.
+ * the matrix into upper block triangular form.  See btf.h for more details.
  * Input matrix and Q are not checked on input.
+ *
+ * Copyright (c) 2004-2007.  Tim Davis, University of Florida,
+ * with support from Sandia National Laboratories.  All Rights Reserved.
  */
 
 #include "btf.h"
@@ -18,6 +20,9 @@
 			     * range 0 to nblocks-1) if node j has been visited
 			     * (and completed, with its postwork done) and
 			     * assigned to component k. */
+
+/* This file contains two versions of the depth-first-search, a recursive one
+ * and a non-recursive one.  By default, the non-recursive one is used. */
 
 #ifndef RECURSIVE
 
@@ -33,13 +38,12 @@
  * not be in any particular order.  If an input column permutation is given,
  * node j (in the permuted matrix A*Q) is located in
  * Ai [Ap[Q[j]] ... Ap[Q[j]+1]-1].  This Q can be the same as the Match array
- * output from the maxtrans routine.  If Q [j] is less than zero, it means
- * that the corresponding diagonal entry A*Q (the entry A (j,jj) to be precise)
- * is structurally zero, where jj = MAXTRANS_UNFLIP (Q [j]).
+ * output from the maxtrans routine, for a square matrix that is structurally
+ * full rank.
  *
  * The algorithm is from the paper by Robert E. Tarjan, "Depth-first search and
  * linear graph algorithms," SIAM Journal on Computing, vol. 1, no. 2,
- * pp. 146-160, 1972.
+ * pp. 146-160, 1972.  The time taken by strongcomp is O(nnz(A)).
  *
  * See also MC13A/B in the Harwell subroutine library (Iain S. Duff and John
  * K. Reid, "Algorithm 529: permutations to block triangular form," ACM Trans.
@@ -54,22 +58,22 @@
 static void dfs
 (
     /* inputs, not modified on output: */
-    int j,		/* start the DFS at node j */
-    int Ap [ ],		/* size n+1, column pointers for the matrix A */
-    int Ai [ ],		/* row indices, size nz = Ap [n] */
-    int Q [ ],		/* input column permutation */
+    Int j,		/* start the DFS at node j */
+    Int Ap [ ],		/* size n+1, column pointers for the matrix A */
+    Int Ai [ ],		/* row indices, size nz = Ap [n] */
+    Int Q [ ],		/* input column permutation */
 
     /* inputs, modified on output (each array is of size n): */
-    int Time [ ],	/* Time [j] = "time" that node j was first visited */
-    int Flag [ ],	/* Flag [j]: see above */
-    int Low [ ],	/* Low [j]: see definition below */
-    int *p_nblocks,	/* number of blocks (aka strongly-connected-comp.)*/
-    int *p_timestamp,	/* current "time" */
+    Int Time [ ],	/* Time [j] = "time" that node j was first visited */
+    Int Flag [ ],	/* Flag [j]: see above */
+    Int Low [ ],	/* Low [j]: see definition below */
+    Int *p_nblocks,	/* number of blocks (aka strongly-connected-comp.)*/
+    Int *p_timestamp,	/* current "time" */
 
     /* workspace, not defined on input or output: */
-    int Cstack [ ],	/* size n, output stack to hold nodes of components */
-    int Jstack [ ],	/* size n, stack for the variable j */
-    int Pstack [ ]	/* size n, stack for the variable p */
+    Int Cstack [ ],	/* size n, output stack to hold nodes of components */
+    Int Jstack [ ],	/* size n, stack for the variable j */
+    Int Pstack [ ]	/* size n, stack for the variable p */
 )
 {
     /* ---------------------------------------------------------------------- */
@@ -77,22 +81,22 @@ static void dfs
     /* ---------------------------------------------------------------------- */
 
     /* local variables, but "global" to all DFS levels: */
-    int chead ;	    /* top of Cstack */
-    int jhead ;	    /* top of Jstack and Pstack */
+    Int chead ;	    /* top of Cstack */
+    Int jhead ;	    /* top of Jstack and Pstack */
 
     /* variables that are purely local to any one DFS level: */
-    int i ;	    /* edge (j,i) considered; i can be next node to traverse */
-    int parent ;    /* parent of node j in the DFS tree */
-    int pend ;	    /* one past the end of the adjacency list for node j */
-    int jj ;	    /* column j of A*Q is column jj of the input matrix A */
+    Int i ;	    /* edge (j,i) considered; i can be next node to traverse */
+    Int parent ;    /* parent of node j in the DFS tree */
+    Int pend ;	    /* one past the end of the adjacency list for node j */
+    Int jj ;	    /* column j of A*Q is column jj of the input matrix A */
 
     /* variables that need to be pushed then popped from the stack: */
-    int p ;	    /* current index into the adj. list for node j */
+    Int p ;	    /* current index into the adj. list for node j */
     /* the variables j and p are stacked in Jstack and Pstack */
 
     /* local copies of variables in the calling routine */
-    int nblocks   = *p_nblocks ;
-    int timestamp = *p_timestamp ;
+    Int nblocks   = *p_nblocks ;
+    Int timestamp = *p_timestamp ;
 
     /* ---------------------------------------------------------------------- */
     /* start a DFS at node j (same as the recursive call dfs (EMPTY, j)) */
@@ -108,7 +112,7 @@ static void dfs
 	j = Jstack [jhead] ;	    /* grab the node j from the top of Jstack */
 
 	/* determine which column jj of the A is column j of A*Q */
-	jj = (Q == (int *) NULL) ? (j) : (MAXTRANS_UNFLIP (Q [j])) ;
+	jj = (Q == (Int *) NULL) ? (j) : (BTF_UNFLIP (Q [j])) ;
 	pend = Ap [jj+1] ;	    /* j's row index list ends at Ai [pend-1] */
 
 	if (Flag [j] == UNVISITED)
@@ -224,23 +228,27 @@ static void dfs
  * usage, particularly for large matrices.  To help in delaying stack overflow,
  * global variables are used, reducing the amount of information each call to
  * dfs places on the call/return stack (the integers i, j, p, parent, and the
- * return address).  To try this version, compile the code with -DRECURSIVE or
- * include the following line at the top of this file:
+ * return address).  Note that this means the recursive code is not thread-safe.
+ * To try this version, compile the code with -DRECURSIVE or include the
+ * following line at the top of this file:
+
 #define RECURSIVE
+
  */
 
-static int chead, timestamp, nblocks, n, *Ap, *Ai, *Flag, *Cstack, *Time, *Low,
+static Int  /* for recursive illustration only, not for production use */
+    chead, timestamp, nblocks, n, *Ap, *Ai, *Flag, *Cstack, *Time, *Low,
     *P, *R, *Q ;
 
 static void dfs
 (
-    int parent,		/* came from parent node */
-    int j		/* at node j in the DFS */
+    Int parent,		/* came from parent node */
+    Int j		/* at node j in the DFS */
 )
 {
-    int p ;	    /* current index into the adj. list for node j */
-    int i ;	    /* edge (j,i) considered; i can be next node to traverse */
-    int jj ;	    /* column j of A*Q is column jj of the input matrix A */
+    Int p ;	    /* current index into the adj. list for node j */
+    Int i ;	    /* edge (j,i) considered; i can be next node to traverse */
+    Int jj ;	    /* column j of A*Q is column jj of the input matrix A */
 
     /* ---------------------------------------------------------------------- */
     /* prework at node j */
@@ -258,7 +266,7 @@ static void dfs
     /* ---------------------------------------------------------------------- */
 
     /* determine which column jj of the A is column j of A*Q */
-    jj = (Q == (int *) NULL) ? (j) : (MAXTRANS_UNFLIP (Q [j])) ;
+    jj = (Q == (Int *) NULL) ? (j) : (BTF_UNFLIP (Q [j])) ;
     for (p = Ap [jj] ; p < Ap [jj+1] ; p++)
     {
 	i = Ai [p] ;    /* examine the edge from node j to node i */
@@ -307,51 +315,55 @@ static void dfs
 #endif
 
 /* ========================================================================== */
-/* === strongcomp =========================================================== */
+/* === btf_strongcomp ======================================================= */
 /* ========================================================================== */
 
 #ifndef RECURSIVE
 
-int strongcomp	    /* return # of strongly connected components */
+Int BTF(strongcomp) /* return # of strongly connected components */
 (
     /* input, not modified: */
-    int n,	    /* A is n-by-n in compressed column form */
-    int Ap [ ],	    /* size n+1 */
-    int Ai [ ],	    /* size nz = Ap [n] */
+    Int n,	    /* A is n-by-n in compressed column form */
+    Int Ap [ ],	    /* size n+1 */
+    Int Ai [ ],	    /* size nz = Ap [n] */
 
     /* optional input, modified (if present) on output: */
-    int Q [ ],	    /* size n, input column permutation */
+    Int Q [ ],	    /* size n, input column permutation.  The permutation Q can
+		     * include a flag which indicates an unmatched row.
+		     * jold = BTF_UNFLIP (Q [jnew]) is the permutation;
+		     * this function ingnores these flags.  On output, it is
+		     * modified according to the permutation P. */
 
     /* output, not defined on input: */
-    int P [ ],	    /* size n.  P [k] = j if row and column j are kth row/col
+    Int P [ ],	    /* size n.  P [k] = j if row and column j are kth row/col
 		     * in permuted matrix. */
-    int R [ ],	    /* size n+1.  kth block is in rows/cols R[k] ... R[k+1]-1
+    Int R [ ],	    /* size n+1.  kth block is in rows/cols R[k] ... R[k+1]-1
 		     * of the permuted matrix. */
 
     /* workspace, not defined on input or output: */
-    int Work [ ]    /* size 4n */
+    Int Work [ ]    /* size 4n */
 )
 
 #else
 
-int strongcomp	    /* recursive version - same as above except for Work size */
+Int BTF(strongcomp) /* recursive version - same as above except for Work size */
 (
-    int n_in,
-    int Ap_in [ ],
-    int Ai_in [ ],
-    int Q_in [ ],
-    int P_in [ ],
-    int R_in [ ],
-    int Work [ ]    /* size 2n */
+    Int n_in,
+    Int Ap_in [ ],
+    Int Ai_in [ ],
+    Int Q_in [ ],
+    Int P_in [ ],
+    Int R_in [ ],
+    Int Work [ ]    /* size 2n */
 )
 
 #endif
 
 {
-    int j, k, b ;
+    Int j, k, b ;
 
 #ifndef RECURSIVE
-    int timestamp, nblocks, *Flag, *Cstack, *Time, *Low, *Jstack, *Pstack ;
+    Int timestamp, nblocks, *Flag, *Cstack, *Time, *Low, *Jstack, *Pstack ;
 #else
     n = n_in ;
     Ap = Ap_in ;
@@ -505,7 +517,7 @@ int strongcomp	    /* recursive version - same as above except for Work size */
     /* if Q is present on input, set Q = Q*P' */
     /* ---------------------------------------------------------------------- */
 
-    if (Q != (int *) NULL)
+    if (Q != (Int *) NULL)
     {
 	/* We found a symmetric permutation P for the matrix A*Q.  The overall
 	 * permutation is thus P*(A*Q)*P'.  Set Q=Q*P' so that the final
@@ -561,27 +573,16 @@ int strongcomp	    /* recursive version - same as above except for Work size */
      *		}
      *	    }
      *
-     * If Q is present and a permutation of 0 to n-1, replace the statement
-     *
+     * If Q is present replace the above statement
      *		jold = P [jnew] ;
-     *
      * with
-     *
      *		jold = Q [jnew] ;
+     * or
+     *		jold = BTF_UNFLIP (Q [jnew]) ;
      *
      * then entry A (iold,jold) in the old (unpermuted) matrix is at (inew,jnew)
      * in the permuted matrix P*A*Q.  Everything else remains the same as the
      * above (simply replace P*A*P' with P*A*Q in the above comments).
-     *
-     * If the column permutation Q is the Match array output of maxtrans,
-     * then use the following statement instead:
-     *
-     *		jold = MAXTRANS_UNFLIP (Q [jnew]) ;
-     *
-     * If the expression MAXTRANS_ISFLIPPED (Q [jnew]) is true, then the
-     * diagonal entry (jnew,jnew) of the permuted matrix P*A*Q' and the
-     * corresponding entry A(P[jnew],jold) of the original matrix A are both
-     * structurally zero (not present in the data structure).
      */
 
     /* ---------------------------------------------------------------------- */
