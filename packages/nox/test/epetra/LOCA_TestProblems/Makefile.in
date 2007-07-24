@@ -134,6 +134,74 @@ LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 am__DEPENDENCIES_1 =
 liblocatestproblems_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__liblocatestproblems_a_SOURCES_DIST = $(srcdir)/Basis.C \
+	$(srcdir)/Problem_Interface.C \
+	$(srcdir)/Tcubed_FiniteElementProblem.C \
+	$(srcdir)/Pitchfork_FiniteElementProblem.C \
+	$(srcdir)/NormConstraint.C $(srcdir)/LinearConstraint.C \
+	$(FEAPP_PATH)/FEApp_LinearElement.cpp \
+	$(FEAPP_PATH)/FEApp_ElementFactory.cpp \
+	$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp \
+	$(FEAPP_PATH)/FEApp_QuadratureFactory.cpp \
+	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.cpp \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.cpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorPDE.cpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.cpp \
+	$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.cpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorProblem.cpp \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp \
+	$(FEAPP_PATH)/FEApp_ProblemFactory.cpp \
+	$(FEAPP_PATH)/FEApp_Mesh.cpp \
+	$(FEAPP_PATH)/FEApp_InitPostOps.cpp \
+	$(FEAPP_PATH)/FEApp_GlobalFill.cpp \
+	$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp \
+	$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp \
+	$(FEAPP_PATH)/FEApp_Application.cpp \
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp $(srcdir)/Basis.H \
+	$(srcdir)/FiniteElementProblem.H $(srcdir)/Problem_Interface.H \
+	$(srcdir)/Tcubed_FiniteElementProblem.H \
+	$(srcdir)/Pitchfork_FiniteElementProblem.H \
+	$(srcdir)/NormConstraint.H $(srcdir)/LinearConstraint.H \
+	$(FEAPP_PATH)/FEApp_AbstractElement.hpp \
+	$(FEAPP_PATH)/FEApp_LinearElement.hpp \
+	$(FEAPP_PATH)/FEApp_ElementFactory.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractQuadrature.hpp \
+	$(FEAPP_PATH)/FEApp_GaussianQuadrature2.hpp \
+	$(FEAPP_PATH)/FEApp_QuadratureFactory.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractSourceFunction.hpp \
+	$(FEAPP_PATH)/FEApp_QuadraticSourceFunction.hpp \
+	$(FEAPP_PATH)/FEApp_CubicSourceFunction.hpp \
+	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.hpp \
+	$(FEAPP_PATH)/FEApp_SourceFunctionFactoryImpl.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractPDE_NTBase.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractPDE.hpp \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDE.hpp \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourcePDEImpl.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorPDE.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorPDEImpl.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractNodeBCStrategy_NTBase.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractNodeBCStrategy.hpp \
+	$(FEAPP_PATH)/FEApp_NodeBC.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategy.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorNodeBCStrategyImpl.hpp \
+	$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategy.hpp \
+	$(FEAPP_PATH)/FEApp_ConstantNodeBCStrategyImpl.hpp \
+	$(FEAPP_PATH)/FEApp_TemplateTypes.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractProblem.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorProblem.hpp \
+	$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.hpp \
+	$(FEAPP_PATH)/FEApp_ProblemFactory.hpp \
+	$(FEAPP_PATH)/FEApp_BrusselatorParameters.hpp \
+	$(FEAPP_PATH)/FEApp_Mesh.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractInitPostOp.hpp \
+	$(FEAPP_PATH)/FEApp_InitPostOps.hpp \
+	$(FEAPP_PATH)/FEApp_GlobalFill.hpp \
+	$(FEAPP_PATH)/FEApp_GlobalFillImpl.hpp \
+	$(FEAPP_PATH)/FEApp_AbstractDiscretization.hpp \
+	$(FEAPP_PATH)/FEApp_CZeroDiscretization.hpp \
+	$(FEAPP_PATH)/FEApp_DiscretizationFactory.hpp \
+	$(FEAPP_PATH)/FEApp_Application.hpp \
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp
 am__objects_1 = FEApp_LinearElement.$(OBJEXT) \
 	FEApp_ElementFactory.$(OBJEXT)
 am__objects_2 = FEApp_GaussianQuadrature2.$(OBJEXT) \
@@ -156,18 +224,20 @@ am__objects_11 = $(am__objects_1) $(am__objects_2) $(am__objects_3) \
 	$(am__objects_4) $(am__objects_5) $(am__objects_6) \
 	$(am__objects_7) $(am__objects_8) $(am__objects_9) \
 	$(am__objects_10)
-am__objects_12 = Basis.$(OBJEXT) Problem_Interface.$(OBJEXT) \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@am__objects_12 = $(am__objects_11)
+am__objects_13 = Basis.$(OBJEXT) Problem_Interface.$(OBJEXT) \
 	Tcubed_FiniteElementProblem.$(OBJEXT) \
 	Pitchfork_FiniteElementProblem.$(OBJEXT) \
 	NormConstraint.$(OBJEXT) LinearConstraint.$(OBJEXT) \
-	$(am__objects_11)
-am__objects_13 =
-am__objects_14 = $(am__objects_13) $(am__objects_13) $(am__objects_13) \
-	$(am__objects_13) $(am__objects_13) $(am__objects_13) \
-	$(am__objects_13) $(am__objects_13) $(am__objects_13) \
-	$(am__objects_13)
-am__objects_15 = $(am__objects_14)
-am_liblocatestproblems_a_OBJECTS = $(am__objects_12) $(am__objects_15)
+	$(am__objects_12)
+am__objects_14 =
+am__objects_15 = $(am__objects_14) $(am__objects_14) $(am__objects_14) \
+	$(am__objects_14) $(am__objects_14) $(am__objects_14) \
+	$(am__objects_14) $(am__objects_14) $(am__objects_14) \
+	$(am__objects_14)
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@am__objects_16 = $(am__objects_15)
+am__objects_17 = $(am__objects_16)
+am_liblocatestproblems_a_OBJECTS = $(am__objects_13) $(am__objects_17)
 liblocatestproblems_a_OBJECTS = $(am_liblocatestproblems_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -182,7 +252,7 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(liblocatestproblems_a_SOURCES)
-DIST_SOURCES = $(liblocatestproblems_a_SOURCES)
+DIST_SOURCES = $(am__liblocatestproblems_a_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -451,6 +521,8 @@ FEAPP = \
 	$(DISC) \
 	$(APP)
 
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@LOCA_TSP_FEAPP_H = $(FEAPP_H)
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@LOCA_TSP_FEAPP = $(FEAPP)
 
 # ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
@@ -466,7 +538,7 @@ LOCA_TESTPROBLEMS_H = \
 	$(srcdir)/Pitchfork_FiniteElementProblem.H \
 	$(srcdir)/NormConstraint.H \
 	$(srcdir)/LinearConstraint.H \
-	$(FEAPP_H)
+	$(LOCA_TSP_FEAPP_H)
 
 LOCA_TESTPROBLEMS = \
 	$(srcdir)/Basis.C \
@@ -475,7 +547,7 @@ LOCA_TESTPROBLEMS = \
 	$(srcdir)/Pitchfork_FiniteElementProblem.C \
 	$(srcdir)/NormConstraint.C \
 	$(srcdir)/LinearConstraint.C \
-	$(FEAPP)
+	$(LOCA_TSP_FEAPP)
 
 @USING_GNUMAKE_FALSE@TEST_LIBS = $(LOCA_EPETRA_TEST_LIBS)
 @USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_EPETRA_TEST_LIBS))

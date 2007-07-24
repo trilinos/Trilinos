@@ -40,6 +40,8 @@ include $(top_srcdir)/../sacado/example/FEApp/MakefileFEAppStub.am
 if ENABLE_LOCA_SACADO
 if BUILD_NOX_EPETRAEXT_SUPPORT
 include $(top_builddir)/../sacado/Makefile.export.sacado
+LOCA_TSP_FEAPP_H = $(FEAPP_H)
+LOCA_TSP_FEAPP   = $(FEAPP)
 endif
 endif
 
@@ -58,7 +60,7 @@ LOCA_TESTPROBLEMS_H = \
 	$(srcdir)/Pitchfork_FiniteElementProblem.H \
 	$(srcdir)/NormConstraint.H \
 	$(srcdir)/LinearConstraint.H \
-	$(FEAPP_H)
+	$(LOCA_TSP_FEAPP_H)
 
 LOCA_TESTPROBLEMS = \
 	$(srcdir)/Basis.C \
@@ -67,7 +69,7 @@ LOCA_TESTPROBLEMS = \
 	$(srcdir)/Pitchfork_FiniteElementProblem.C \
 	$(srcdir)/NormConstraint.C \
 	$(srcdir)/LinearConstraint.C \
-	$(FEAPP)
+	$(LOCA_TSP_FEAPP)
 
 # ------------------------------------------------------------------------
 # Include NOX export makefile
