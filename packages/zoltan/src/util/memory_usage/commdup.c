@@ -16,6 +16,7 @@ MPI_Comm local_comm, tmp_comm;
 int myproc, nprocs;               // MPI info wrt MPI_COMM_WORLD.
 size_t oldheap, newheap;
 static int itercnt = 0;
+int ierr;
 
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
   MPI_Comm_rank(MPI_COMM_WORLD, &myproc);
@@ -25,8 +26,9 @@ static int itercnt = 0;
   std::cout << "KDD " << myproc 
             << " ITER " << itercnt
             << " BEFORE Comm_dup:  " << oldheap << std::endl;
-  MPI_Comm_dup(MPI_COMM_WORLD,&local_comm);
+  ierr = MPI_Comm_dup(MPI_COMM_WORLD,&local_comm);
   newheap = get_heap_usage();
+  if (ierr != MPI_SUCCESS) std::cout << " ERROR DUP " << ierr << std::endl;
   std::cout << "KDD " << myproc 
             << " ITER " << itercnt
             << " AFTER  Comm_dup:  " << newheap 
@@ -38,7 +40,8 @@ static int itercnt = 0;
             << " ITER " << itercnt
             << " BEFORE final Comm_free:  " << oldheap
             << std::endl;
-  MPI_Comm_free(&local_comm);
+  ierr = MPI_Comm_free(&local_comm);
+  if (ierr != MPI_SUCCESS) std::cout << " ERROR FREE " << ierr << std::endl;
   newheap = get_heap_usage();
   std::cout << "KDD " << myproc 
             << " ITER " << itercnt
