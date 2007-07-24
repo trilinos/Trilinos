@@ -249,10 +249,11 @@ example (with nonutilized ghost variables still works
 
   allocated_space = total_send+1;
   ibuff    = (int    *) ML_allocate( allocated_space*sizeof(int   ));
-  if (ibuff == NULL) 
-  {
-     pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d ints (Nneighbors = %d)\n", mypid, __FILE__,__LINE__, ML_FUNCTION_NAME, allocated_space,Nneighbors);
-  }
+  /* dummy1 was allocated with a length that may no longer be correct */
+  if (dummy1) ML_free(dummy1);
+  dummy1 = (double *) ML_allocate(allocated_space*sizeof(double));
+  if (dummy1 == NULL) 
+    pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d ints (Nneighbors = %d)\n", mypid, __FILE__,__LINE__, ML_FUNCTION_NAME, allocated_space,Nneighbors);
 
   /* pack up the integer information to be sent and send it */
 
@@ -263,10 +264,8 @@ example (with nonutilized ghost variables still works
      for (jj = 0 ; jj < comm_info->neighbors[ii].N_send; jj++) 
      {
         j = comm_info->neighbors[ii].send_list[jj];
-	iptr = &(ibuff[i]);
-/*FIXME*/
-        ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, &iptr,
-                          &dummy1, &row_length, 0);
+        ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, &ibuff,
+                          &dummy1, &row_length, i);
         i += row_length;
      }
      actual_send_length[ii] = i - start_send_proc[ii];
@@ -317,9 +316,7 @@ example (with nonutilized ghost variables still works
   ML_free(ibuff);
   dbuff    = (double *) ML_allocate( allocated_space*sizeof(double));
   if (dbuff == NULL) 
-    {
-     pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d doubles (Nneighbors = %d)\n", mypid, __FILE__,__LINE__, ML_FUNCTION_NAME, allocated_space,Nneighbors);
-    }
+    pr_error("(%d) %s, line %d: Out of space in %s\n   tried to allocate %d doubles (Nneighbors = %d)\n", mypid, __FILE__,__LINE__, ML_FUNCTION_NAME, allocated_space,Nneighbors);
 
   /* pack up the float information to be sent and send it */
 
@@ -329,10 +326,8 @@ example (with nonutilized ghost variables still works
      for (jj = 0 ; jj < comm_info->neighbors[ii].N_send; jj++) 
      {
         j = comm_info->neighbors[ii].send_list[jj];
-	dptr = &(dbuff[i]);
-/*FIXME*/
-        ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, (int **) &dummy1,
-                          &dptr, &row_length, 0);
+        ML_get_matrix_row(Pmatrix, 1, &j, &allocated_space, (int**) &dummy1,
+                          &dbuff, &row_length, i);
         i += row_length;
      } 
   } 
