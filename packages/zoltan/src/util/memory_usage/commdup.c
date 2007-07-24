@@ -9,12 +9,15 @@
 
 #define NUM_ITER 10
 
+size_t total_leak = 0;
+
 /////////////////////////////////////////////////////////////////////////////
 void test_function()
 {
-MPI_Comm local_comm, tmp_comm;
+MPI_Comm local_comm;
 int myproc, nprocs;               // MPI info wrt MPI_COMM_WORLD.
 size_t oldheap, newheap;
+size_t used, freed;
 static int itercnt = 0;
 int ierr;
 
@@ -28,11 +31,12 @@ int ierr;
             << " BEFORE Comm_dup:  " << oldheap << std::endl;
   ierr = MPI_Comm_dup(MPI_COMM_WORLD,&local_comm);
   newheap = get_heap_usage();
+  used = newheap - oldheap;
   if (ierr != MPI_SUCCESS) std::cout << " ERROR DUP " << ierr << std::endl;
   std::cout << "KDD " << myproc 
             << " ITER " << itercnt
             << " AFTER  Comm_dup:  " << newheap 
-            << " Used: " << newheap - oldheap << std::endl;
+            << " Used: " << used << std::endl;
 
   // Free local_comm.
   oldheap = get_heap_usage();
@@ -43,11 +47,14 @@ int ierr;
   ierr = MPI_Comm_free(&local_comm);
   if (ierr != MPI_SUCCESS) std::cout << " ERROR FREE " << ierr << std::endl;
   newheap = get_heap_usage();
+  freed = oldheap - newheap;
   std::cout << "KDD " << myproc 
             << " ITER " << itercnt
             << " AFTER  final Comm_free:  " << newheap
-            << " Freed: " << oldheap - newheap << std::endl;
+            << " Freed: " << freed 
+            << " Leaked: " << used-freed << std::endl;
 
+  if (itercnt) total_leak += (used - freed);
   itercnt++;
 }
 
@@ -75,7 +82,7 @@ main(int argc, char *argv[])
             << std::endl;
   std::cout << "KDDEND " << myproc 
             << " Subsequent MPI_Comm_dups leaked (total) " 
-            << finalheap - initheap << std::endl;
+            << finalheap - initheap << " = " << total_leak << std::endl;
   std::cout << "KDDEND " << myproc 
             << " Avg per Subsequent MPI_Comm_dup " 
             << (finalheap - initheap) / NUM_ITER
