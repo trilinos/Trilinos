@@ -1829,7 +1829,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    {
    /*settings to change since we now have a vbr matrix*/
    in_matrix->type = ML_TYPE_VBR_MATRIX;
-   in_matrix->matvec->func_ptr = VBR_getrows;
+   in_matrix->getrow->func_ptr = VBR_getrows;
    /*in_matrix->matvec->func_ptr = VBR_matvec;  this needs to be put back in at some point once the function exists*/
 
    /*find number of block rows and block columnsi and their location if using a fixed width*/
@@ -1975,7 +1975,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
      x = 1.9;
      for(i = 9; i >= 0; i--)
      {
-       temp_alc = nnz*x*sizeof(double);
+       temp_alc = (int) (nnz*x*sizeof(double));
        vals = (double *) ML_allocate(temp_alc);
        if(vals != NULL)
          break;
