@@ -36,7 +36,7 @@ void *ml_void_mem_ptr;
 /* memory allocation function                                           */
 /* -------------------------------------------------------------------- */
 
-#define ML_FUNCTION_NAME ML_memory_alloc
+#define ML_FUNCTION_NAME "ML_memory_alloc"
 int ML_memory_alloc( void **memptr, unsigned int leng, char *name )
 {
    int  i, *int_ptr, nchunks, ndouble=sizeof(double);
