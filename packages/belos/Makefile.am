@@ -98,7 +98,13 @@ endif
 
 if BUILD_TESTS
 tests:
+	@echo ""
+	@echo "Now building belos tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building belos tests."
+	@echo ""
 else
 tests:
 	@echo "belos tests were disabled at configure time"
@@ -106,7 +112,13 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building belos examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
+	@echo ""
+	@echo "Finished building belos examples."
+	@echo ""
 
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install

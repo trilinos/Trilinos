@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  bool verbose = false, proc_verbose = false;
+  bool verbose = false, debug = false, proc_verbose = false;
   bool leftprec = true;      // left preconditioning or right.
   int frequency = -1;        // frequency of status test output.
   int numrhs = 1;            // number of right-hand sides to solve for
@@ -87,6 +87,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("debug","nondebug",&debug, "Print debugging information from solver.");
   cmdp.setOption("left-prec","right-prec",&leftprec,"Left preconditioning or right.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
@@ -181,14 +182,16 @@ int main(int argc, char *argv[]) {
   if (numrhs > 1) {
     belosList.set( "Show Maximum Residual Norm Only", true );  // Show only the maximum residual norm
   }
+  int verbosity = Belos::Errors + Belos::Warnings;
   if (verbose) {
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
-		   Belos::TimingDetails + Belos::StatusTestDetails );
+    verbosity += Belos::TimingDetails + Belos::StatusTestDetails;
     if (frequency > 0)
       belosList.set( "Output Frequency", frequency );
   }
-  else
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + Belos::FinalSummary );
+  if (debug) {
+    verbosity += Belos::Debug;
+  }
+  belosList.set( "Verbosity", verbosity );
   //
   // *******Construct a preconditioned linear problem********
   //

@@ -319,10 +319,12 @@ namespace Belos {
     //! \brief Set the maximum number of blocks used by the iterative solver.
     void setNumBlocks(int numBlocks) { setSize( recycledBlocks_, numBlocks ); };
     
-    //! Get the maximum number of blocks used by the iterative solver in solving this linear problem.
+    //! Get the maximum number of recycled blocks used by the iterative solver in solving this linear problem.
     int getRecycledBlocks() const { return recycledBlocks_; }
-    
 
+    //! \brief Set the maximum number of recycled blocks used by the iterative solver.
+    void setRecycledBlocks(int recycledBlocks) { setSize( recycledBlocks, numBlocks_ ); };
+    
     //! Get the blocksize to be used by the iterative solver in solving this linear problem.
     int getBlockSize() const { return 1; }
     
@@ -421,6 +423,7 @@ namespace Belos {
     stest_(tester),
     ortho_(ortho),
     numBlocks_(0),
+    recycledBlocks_(0),
     initialized_(false),
     stateStorageInitialized_(false),
     curDim_(0),
@@ -428,11 +431,15 @@ namespace Belos {
   {
     // Get the maximum number of blocks allowed for this Krylov subspace
     TEST_FOR_EXCEPTION(!params.isParameter("Num Blocks"), std::invalid_argument,
-                       "Belos::GCRODRIter::constructor: mandatory parameter 'Num Blocks' is not specified.");
+                       "Belos::GCRODRIter::constructor: mandatory parameter \"Num Blocks\" is not specified.");
     int nb = Teuchos::getParameter<int>(params, "Num Blocks");
-    
+
+    TEST_FOR_EXCEPTION(!params.isParameter("Recycled Blocks"), std::invalid_argument,
+                       "Belos::GCRODRIter::constructor: mandatory parameter \"Recycled Blocks\" is not specified.");
+    int rb = Teuchos::getParameter<int>(params, "Recycled Blocks");
+
     // Set the number of blocks and allocate data
-    setNumBlocks( nb );
+    setSize( rb, nb );
   }
   
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -443,7 +450,10 @@ namespace Belos {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
 
-    TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument, "Belos::GCRODRIter::setNumBlocks was passed a non-positive argument.");
+    TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument, "Belos::GCRODRIter::setSize() was passed a non-positive argument for \"Num Blocks\".");
+    TEST_FOR_EXCEPTION(recycledBlocks <= 0, std::invalid_argument, "Belos::GCRODRIter::setSize() was passed a non-positive argument for \"Recycled Blocks\".");
+    TEST_FOR_EXCEPTION(recycledBlocks >= numBlocks, std::invalid_argument, "Belos::GCRODRIter::setSize() the number of recycled blocks is larger than the allowable subspace.");
+
     if (numBlocks == numBlocks_ && recycledBlocks == recycledBlocks_) {
       // do nothing
       return;

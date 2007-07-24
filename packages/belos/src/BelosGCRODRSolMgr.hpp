@@ -791,13 +791,13 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::ParameterList plist;
   
   plist.set("Num Blocks",numBlocks_);
+  plist.set("Recycled Blocks",recycledBlocks_);
   
   //////////////////////////////////////////////////////////////////////////////////////
   // GCRODR solver
   
   Teuchos::RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_iter;
   gcrodr_iter = Teuchos::rcp( new GCRODRIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
-  
 
   // Enter solve() iterations
   {
@@ -813,10 +813,10 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       
       // If there is a subspace to recycle, recycle it, otherwise generate the initial recycled subspace.
       if (keff > 0) {
-     
 	TEST_FOR_EXCEPTION(keff < recycledBlocks_,GCRODRSolMgrRecyclingFailure,
 			   "Belos::GCRODRSolMgr::solve(): Requested size of recycled subspace is not consistent with the current recycle subspace.");
 
+	printer_->stream(Debug) << " Now solving RHS index " << currIdx[0] << " using recycled subspace of dimension " << keff << std::endl << std::endl;
 	// Compute image of U_ under the new operator
 	std::vector<int> index(keff);
 	for (int i=0; i<keff; ++i) { index[i] = i; }
@@ -867,6 +867,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       else {
 	
 	// Do one cycle of Gmres to "prime the pump" if there is no subspace to recycle
+	printer_->stream(Debug) << " Now generating recycled subspace using RHS index " << currIdx[0] << std::endl << std::endl;
 	
 	Teuchos::ParameterList primeList;
 	
@@ -905,7 +906,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	bool primeConverged = false;
 	try {
 	  gmres_iter->iterate();
-	  
+
 	  // Check convergence first
 	  if ( convTest_->getStatus() == Passed ) {
 	    // we have convergence
@@ -942,7 +943,6 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	// NOTE:  Generate a recycled subspace only if we have enough vectors.  If we converged
 	//        too early, move on to the next linear system and try to generate a subspace again.
 	if (recycledBlocks_ < p+1) {
-
 	  int info = 0;
 	  Teuchos::SerialDenseMatrix<int,ScalarType> PP( p, recycledBlocks_+1 );  
 	  keff = getHarmonicVecs1( p, *oldState.H, PP );
@@ -1033,6 +1033,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	  MVT::MvTimesMatAddMv( one, *Up, R, zero, *tempU );
 	  U_ = tempU;
 
+	  printer_->stream(Debug) << " Generated recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
 	}
 
         // Return to outer loop if the priming solve converged, set the next linear system.
@@ -1053,9 +1054,6 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       
       // Prepare for the Gmres iterations with the recycled subspace.
 
-      // Reset the number of calls that the status test output knows about.
-      outputTest_->resetNumCalls();
-	
       // Set the current number of recycled blocks and subspace dimension with the GCRO-DR iteration.
       gcrodr_iter->setSize( keff, numBlocks_ );
       
@@ -1088,7 +1086,6 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       newstate.curDim = 0;
       gcrodr_iter->initialize(newstate);
       int numRestarts = 0;
-      
       while(1) {
 	
 	// tell gcrodr_iter to iterate
@@ -1120,19 +1117,9 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	  //
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  else if ( gcrodr_iter->getCurSubspaceDim() == gcrodr_iter->getMaxSubspaceDim() ) {
-	    
-	    if ( numRestarts >= maxRestarts_ ) {
-	      isConverged = false;
-	      break; // break from while(1){gcrodr_iter->iterate()}
-	    }
-	    numRestarts++;
-	    
-	    printer_->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << endl << endl;
-	  
-            // Update the linear problem.
-	    Teuchos::RCP<MV> update = gcrodr_iter->getCurrentUpdate();
-	    problem_->updateSolution( update, true );
-	    
+	 
+            // Update the recycled subspace even if we have hit the maximum number of restarts.
+ 
 	    // Get the state.
 	    GCRODRIterState<ScalarType,MV> oldState = gcrodr_iter->getState();
             int p = oldState.curDim;	   
@@ -1164,6 +1151,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
             // Compute the harmoic Ritz pairs for the generalized eigenproblem
 	    Teuchos::SerialDenseMatrix<int,ScalarType> PP( p+keff, recycledBlocks_+1 );  
 	    int keff_new = getHarmonicVecs2( keff, p, H2, oldState.V, PP );
+	    printer_->stream(Debug) << " Generated new recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff_new << std::endl << std::endl;
 
 	    // Code to form new U, C
 	    // U = [U V(:,1:p)] * P; (in two steps)
@@ -1172,7 +1160,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    Teuchos::RCP<MV> tempU = MVT::Clone( *U_, keff_new );
 	    Teuchos::SerialDenseMatrix<int,ScalarType> tempPP( Teuchos::View, PP, keff, keff_new );
 	    MVT::MvTimesMatAddMv( one, *U_, tempPP, zero, *tempU );
-	    
+
 	    // U(:,1:keff) = U(:,1:keff) + matmul(V(:,1:m-k),PP(keff_old+1:m-k+keff_old,1:keff)) (step 2)
 	    std::vector<int> index(p);
 	    for (int i=0; i < p; i++) { index[i] = i; }
@@ -1181,9 +1169,10 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    MVT::MvTimesMatAddMv( one, *Vp, tempPP2, one, *tempU );
 	   
 	    // Form HP = H*P
-	    Teuchos::SerialDenseMatrix<int,ScalarType> HP(H2.numRows(),PP.numCols());
-	    HP.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,H2,PP,zero);
-	   
+            Teuchos::SerialDenseMatrix<int,ScalarType> tempPP3( Teuchos::View, PP, p+keff, keff_new );
+	    Teuchos::SerialDenseMatrix<int,ScalarType> HP(H2.numRows(),tempPP3.numCols());
+	    HP.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,H2,tempPP3,zero);
+
 	    // Workspace size query for QR factorization of HP (the worksize will be placed in tau[0])
 	    int info = 0, lwork = -1;
 	    std::vector<ScalarType> tau(keff_new);
@@ -1201,7 +1190,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
 	    // Explicitly construct Q and R factors 
 	    // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
-	    Teuchos::SerialDenseMatrix<int,ScalarType> R( Teuchos::Copy, HP, keff, keff );
+	    Teuchos::SerialDenseMatrix<int,ScalarType> R( Teuchos::Copy, HP, keff_new, keff_new );
 	    lapack.ORGQR(HP.numRows(),HP.numCols(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
 			 &work[0],lwork,&info);
 	    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
@@ -1243,7 +1232,20 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	      U_ = MVT::Clone( *problem_->getRHS(), keff_new );
 	    }
 	    MVT::MvTimesMatAddMv( one, *tempU, R, zero, *U_ );
- 
+
+            // NOTE:  If we have hit the maximum number of restarts then QUIT! 
+	    if ( numRestarts >= maxRestarts_ ) {
+	      isConverged = false;
+	      break; // break from while(1){gcrodr_iter->iterate()}
+	    }
+	    numRestarts++;
+	    
+	    printer_->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << std::endl << std::endl;
+	  
+            // Update the linear problem.
+	    Teuchos::RCP<MV> update = gcrodr_iter->getCurrentUpdate();
+	    problem_->updateSolution( update, true );
+	    
 	    // Compute the restart vector.
 	    if (r_ == Teuchos::null)
 	      r_ = MVT::Clone( *(problem_->getRHS()), 1 );
@@ -1302,11 +1304,27 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
           throw;
 	}
       }
-      
+     
       // Compute the current solution.
-      // Set the next indices.
-      problem_->setLSIndex( currIdx );
-      
+      // Update the linear problem.
+      Teuchos::RCP<MV> update = gcrodr_iter->getCurrentUpdate();
+      problem_->updateSolution( update, true );
+
+      // Inform the linear problem that we are finished with this block linear system.
+      problem_->setCurrLS();
+
+      // Update indices for the linear systems to be solved.
+      numRHS2Solve -= 1;
+      if ( numRHS2Solve > 0 ) {
+	currIdx[0]++;
+
+        // Set the next indices.
+        problem_->setLSIndex( currIdx );
+      }
+      else {
+        currIdx.resize( numRHS2Solve );
+      }
+ 
     }// while ( numRHS2Solve > 0 )
     
   }

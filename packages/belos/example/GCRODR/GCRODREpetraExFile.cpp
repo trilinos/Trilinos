@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  bool verbose = false, proc_verbose = false;
+  bool verbose = false, debug = false, proc_verbose = false;
   int frequency = -1;        // frequency of status test output.
   int numrhs = 1;            // number of right-hand sides to solve for
   int maxiters = -1;         // maximum number of iterations allowed per linear system
@@ -85,6 +85,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("debug","nodebug",&debug,"Print debugging information from the solver.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
@@ -134,14 +135,17 @@ int main(int argc, char *argv[]) {
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+
+  int verbosity = Belos::Errors + Belos::Warnings;
   if (verbose) {
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
-		   Belos::TimingDetails + Belos::StatusTestDetails );
+    verbosity += Belos::TimingDetails + Belos::StatusTestDetails;
     if (frequency > 0)
       belosList.set( "Output Frequency", frequency );
   }
-  else
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings );
+  if (debug) {
+    verbosity += Belos::Debug;
+  }
+  belosList.set( "Verbosity", verbosity );
   //
   // Construct an unpreconditioned linear problem instance.
   //
