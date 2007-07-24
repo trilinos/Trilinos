@@ -32,7 +32,6 @@
 #ifndef SACADO_FAD_DYNAMICSTORAGE_HPP
 #define SACADO_FAD_DYNAMICSTORAGE_HPP
 
-#include "Sacado_ConfigDefs.h"
 #include "Sacado_Traits.hpp"
 #include "Sacado_DynamicArrayTraits.hpp"
 

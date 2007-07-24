@@ -32,8 +32,8 @@
 #ifndef SACADO_TAY_TAYLOR_HPP
 #define SACADO_TAY_TAYLOR_HPP
 
-#include "Sacado_ConfigDefs.h"
 #include "Sacado_Handle.hpp"
+#include <cmath>
 #include <algorithm>	// for std::min and std::max
 #include <ostream>	// for std::ostream
 

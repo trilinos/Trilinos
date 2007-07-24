@@ -40,6 +40,9 @@
 //     allocation for number of derivative components using a custom memory
 //     manager).
 
+#include <iostream>
+#include <iomanip>
+
 #include "Sacado.hpp"
 
 template <>

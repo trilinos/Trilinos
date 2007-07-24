@@ -32,7 +32,8 @@
 #ifndef SACADO_FAD_MEMPOOLMANAGER_HPP
 #define SACADO_FAD_MEMPOOLMANAGER_HPP
 
-#include "Sacado_ConfigDefs.h"
+#include <map>
+
 #include "Sacado_Fad_MemPool.hpp"
 
 namespace Sacado {

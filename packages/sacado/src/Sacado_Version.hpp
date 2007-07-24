@@ -32,6 +32,8 @@
 #ifndef SACADO_VERSION_HPP
 #define SACADO_VERSION_HPP
 
+#include <string>
+
 #include "Sacado_ConfigDefs.h"
 
 inline std::string Sacado_Version() { 

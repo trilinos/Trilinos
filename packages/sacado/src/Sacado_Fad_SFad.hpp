@@ -54,7 +54,6 @@
 #ifndef SACADO_FAD_SFAD_HPP
 #define SACADO_FAD_SFAD_HPP
 
-#include "Sacado_ConfigDefs.h"
 #include "Sacado_Fad_SFadTraits.hpp"
 #include "Sacado_Fad_Expression.hpp"
 #include "Sacado_StaticArrayTraits.hpp"

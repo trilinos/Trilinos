@@ -32,7 +32,7 @@
 #ifndef SACADO_RANDOM_HPP
 #define SACADO_RANDOM_HPP
 
-#include "Sacado_ConfigDefs.h"
+#include <string>
 
 namespace Sacado {
 

@@ -38,8 +38,9 @@
 //     prints the results of computing the second derivative a simple function //     with forward nested forward and reverse mode AD using the 
 //     Sacado::Fad::DFad and Sacado::Rad::ADvar classes.
 
-#define SACADO_NAMESPACE
-#define RAD_double_ops
+#include <iostream>
+#include <iomanip>
+
 #include "Sacado.hpp"
 
 // The function to differentiate

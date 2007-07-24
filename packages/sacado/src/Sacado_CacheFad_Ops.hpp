@@ -55,7 +55,7 @@
 #define SACADO_CACHEFAD_OPS_HPP
 
 #include "Sacado_CacheFad_Expression.hpp"
-#include "Sacado_ConfigDefs.h"
+#include <cmath>
 #include <algorithm>	// for std::min and std::max
 #include <ostream>	// for std::ostream
 

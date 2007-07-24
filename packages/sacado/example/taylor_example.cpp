@@ -42,6 +42,8 @@
 //
 //     The exact solution is x(t) = tan(t + pi/4)
 
+#include <iostream>
+
 #include "Sacado.hpp"
 
 // Function implementing RHS of ODE

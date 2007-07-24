@@ -29,6 +29,7 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Sacado_ConfigDefs.h"
 #include "Sacado_DynamicArrayTraits.hpp"
 #include <ostream>	// for std::ostream
 

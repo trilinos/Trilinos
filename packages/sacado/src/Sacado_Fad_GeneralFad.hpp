@@ -54,7 +54,6 @@
 #ifndef SACADO_FAD_GENERALFAD_HPP
 #define SACADO_FAD_GENERALFAD_HPP
 
-#include "Sacado_ConfigDefs.h"
 #include "Sacado_Fad_Expression.hpp"
 
 namespace Sacado {

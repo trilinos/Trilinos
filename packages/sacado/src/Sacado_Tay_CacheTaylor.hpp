@@ -32,7 +32,8 @@
 #ifndef SACADO_TAY_CACHETAYLOR_HPP
 #define SACADO_TAY_CACHETAYLOR_HPP
 
-#include "Sacado_ConfigDefs.h"
+#include <valarray>
+
 #include "Sacado_Tay_CacheTaylorExpr.hpp"
 
 // forward decalarations

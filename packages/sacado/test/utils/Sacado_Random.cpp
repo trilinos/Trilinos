@@ -29,6 +29,9 @@
 // ***********************************************************************
 // @HEADER
 
+#include <cmath>
+#include <iostream>
+
 #include "Sacado_Random.hpp"
 
 Sacado::Random::Random(double a_, double b_) :

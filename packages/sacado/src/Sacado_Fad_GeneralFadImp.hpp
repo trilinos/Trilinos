@@ -51,6 +51,8 @@
 //********************************************************
 // @HEADER
 
+#include "Sacado_ConfigDefs.h"
+
 template <typename T, typename Storage> 
 template <typename S> 
 inline Sacado::Fad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x) :

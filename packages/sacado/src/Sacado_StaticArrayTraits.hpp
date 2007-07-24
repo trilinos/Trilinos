@@ -32,7 +32,6 @@
 #ifndef SACADO_STATICARRAYTRAITS_HPP
 #define SACADO_STATICARRAYTRAITS_HPP
 
-#include "Sacado_ConfigDefs.h"
 #include "Sacado_Traits.hpp"
 
 namespace Sacado {

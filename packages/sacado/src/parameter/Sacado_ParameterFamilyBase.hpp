@@ -32,7 +32,9 @@
 #ifndef SACADO_PARAMETERFAMILYBASE_HPP
 #define SACADO_PARAMETERFAMILYBASE_HPP
 
-#include "Sacado_ConfigDefs.h"
+#include <map>
+#include <string>
+
 #include "Teuchos_RCP.hpp"
 
 namespace Sacado {

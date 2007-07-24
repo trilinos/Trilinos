@@ -32,8 +32,8 @@
 #ifndef SACADO_SCALAR_FLOP_COUNTER_HPP
 #define SACADO_SCALAR_FLOP_COUNTER_HPP
 
-#include "Sacado_ConfigDefs.h"
 #include "Sacado_ScalarFlopCounterTraits.hpp"
+#include <cmath>
 #include <algorithm>	// for std::min and std::max
 #include <ostream>	// for std::ostream
 

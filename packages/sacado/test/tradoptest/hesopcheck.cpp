@@ -32,7 +32,6 @@
 
 #include <cstdio>
 #include <float.h>	// for DBL_MAX
-#define SACADO_NAMESPACE
 #include "Sacado_trad.hpp"
 #include "Sacado_trad2.hpp"
 #include "Sacado_rad2.hpp"

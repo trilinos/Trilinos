@@ -32,6 +32,7 @@
 #ifndef SACADO_FAD_STATICSTORAGE_HPP
 #define SACADO_FAD_STATICSTORAGE_HPP
 
+#include "Sacado_ConfigDefs.h"
 #include "Sacado_StaticArrayTraits.hpp"
 
 namespace Sacado {

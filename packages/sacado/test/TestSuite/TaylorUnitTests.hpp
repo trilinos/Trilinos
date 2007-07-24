@@ -32,15 +32,15 @@
 #ifndef TAYLORUNITTESTS_HPP
 #define TAYLORUNITTESTS_HPP
 
+// ADOL-C includes
+#include "adouble.h"
+#include "interfaces.h"
+
 // Sacado includes
 #include "Sacado.hpp"
 #include "Sacado_Random.hpp"
 
 typedef Sacado::Tay::Taylor<double> TaylorType;
-
-// ADOL-C includes
-#include "adouble.h"
-#include "interfaces.h"
 
 inline adouble max(const adouble& a, const adouble& b) { return fmax(a,b); }
 inline adouble max(const adouble& a, double v) { return fmax(a,v); }

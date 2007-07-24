@@ -45,6 +45,8 @@
 //     respect to x0.  The exact series derivative is 
 //     dx/dx0(t) = 1/2 * sec^2(t + atan(x0))
 
+#include <iostream>
+
 #include "Sacado.hpp"
 
 // Function implementing RHS of ODE

@@ -29,6 +29,10 @@
 // ***********************************************************************
 // @HEADER
 
+#include <cassert>
+#include <iomanip>
+#include <vector>
+
 #include "Sacado_ScalarFlopCounter.hpp"
 
 // Initialization of static members

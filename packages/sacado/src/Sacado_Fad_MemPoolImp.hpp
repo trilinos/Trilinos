@@ -29,7 +29,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Sacado_ConfigDefs.h"
+#include <new>
 
 inline
 Sacado::Fad::MemPool::MemPool(unsigned int elem_size, unsigned int n_elem,

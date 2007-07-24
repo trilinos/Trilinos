@@ -6,15 +6,6 @@
 /* Define to 1 if you have the <algorithm> header file. */
 #undef HAVE_ALGORITHM
 
-/* Define to 1 if you have the <algorithm.h> header file. */
-#undef HAVE_ALGORITHM_H
-
-/* Define to 1 if you have the <algo.h> header file. */
-#undef HAVE_ALGO_H
-
-/* Define to 1 if you have the <assert.h> header file. */
-#undef HAVE_ASSERT_H
-
 /* Define to 1 if you have the <cassert> header file. */
 #undef HAVE_CASSERT
 
@@ -26,6 +17,9 @@
 
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
+
+/* Define to 1 if you have the <cstring> header file. */
+#undef HAVE_CSTRING
 
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
@@ -42,32 +36,17 @@
 /* Define to 1 if you have the <iomanip> header file. */
 #undef HAVE_IOMANIP
 
-/* Define to 1 if you have the <iomanip.h> header file. */
-#undef HAVE_IOMANIP_H
-
 /* Define to 1 if you have the <iostream> header file. */
 #undef HAVE_IOSTREAM
 
-/* Define to 1 if you have the <iostream.h> header file. */
-#undef HAVE_IOSTREAM_H
-
 /* Define to 1 if you have the <iterator> header file. */
 #undef HAVE_ITERATOR
-
-/* Define to 1 if you have the <iterator.h> header file. */
-#undef HAVE_ITERATOR_H
 
 /* Define if want to build libcheck */
 #undef HAVE_LIBCHECK
 
 /* Define to 1 if you have the <map> header file. */
 #undef HAVE_MAP
-
-/* Define to 1 if you have the <map.h> header file. */
-#undef HAVE_MAP_H
-
-/* Define to 1 if you have the <math.h> header file. */
-#undef HAVE_MATH_H
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -77,9 +56,6 @@
 
 /* Define to 1 if you have the <new> header file. */
 #undef HAVE_NEW
-
-/* Define to 1 if you have the <new.h> header file. */
-#undef HAVE_NEW_H
 
 /* Define if want to build sacado-examples */
 #undef HAVE_SACADO_EXAMPLES
@@ -92,9 +68,6 @@
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
-
-/* Define to 1 if you have the <stdio.h> header file. */
-#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
@@ -120,23 +93,14 @@
 /* Define to 1 if you have the <typeinfo> header file. */
 #undef HAVE_TYPEINFO
 
-/* Define to 1 if you have the <typeinfo.h> header file. */
-#undef HAVE_TYPEINFO_H
-
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
 /* Define to 1 if you have the <valarray> header file. */
 #undef HAVE_VALARRAY
 
-/* Define to 1 if you have the <valarray.h> header file. */
-#undef HAVE_VALARRAY_H
-
 /* Define to 1 if you have the <vector> header file. */
 #undef HAVE_VECTOR
-
-/* Define to 1 if you have the <vector.h> header file. */
-#undef HAVE_VECTOR_H
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT

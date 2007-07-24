@@ -54,7 +54,6 @@
 #ifndef SACADO_CACHEFAD_GENERALFAD_HPP
 #define SACADO_CACHEFAD_GENERALFAD_HPP
 
-#include "Sacado_ConfigDefs.h"
 #include "Sacado_CacheFad_Expression.hpp"
 
 namespace Sacado {

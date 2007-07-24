@@ -38,7 +38,9 @@
 //     prints the results of differentiating a simple function with reverse
 //     mode AD using the Sacado::Rad::ADvar class.
 
-#define SACADO_NAMESPACE
+#include <iostream>
+#include <iomanip>
+
 #include "Sacado.hpp"
 
 // The function to differentiate

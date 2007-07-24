@@ -38,7 +38,9 @@
 //     Uses the scalar flop counter to count the flops for a derivative
 //     of a simple function using Sacado::Rad::ADvar
 
-#define SACADO_NAMESPACE
+#include <iostream>
+#include <iomanip>
+
 #include "Sacado.hpp"
 
 // The function to differentiate

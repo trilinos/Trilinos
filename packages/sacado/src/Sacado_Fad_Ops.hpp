@@ -54,8 +54,8 @@
 #ifndef SACADO_FAD_OPS_HPP
 #define SACADO_FAD_OPS_HPP
 
-#include "Sacado_ConfigDefs.h"
 #include "Sacado_Fad_Expression.hpp"
+#include <cmath>
 #include <algorithm>	// for std::min and std::max
 #include <ostream>	// for std::ostream
 

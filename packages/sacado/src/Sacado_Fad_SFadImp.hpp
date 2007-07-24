@@ -51,6 +51,8 @@
 //********************************************************
 // @HEADER
 
+#include "Sacado_ConfigDefs.h"
+
 template <typename T, int Num> 
 inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
 Expr(const int sz, const T & x) : val_(x)

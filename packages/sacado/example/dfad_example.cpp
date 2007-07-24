@@ -39,6 +39,9 @@
 //     mode AD using the Sacado::Fad::DFad class (uses dynamic memory
 //     allocation for number of derivative components).
 
+#include <iostream>
+#include <iomanip>
+
 #include "Sacado.hpp"
 
 // The function to differentiate

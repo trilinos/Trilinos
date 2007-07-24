@@ -32,7 +32,9 @@
 #ifndef SACADO_FAD_MEMPOOLSTORAGE_HPP
 #define SACADO_FAD_MEMPOOLSTORAGE_HPP
 
-#include "Sacado_ConfigDefs.h"
+#include <new>
+#include <cstring>
+
 #include "Sacado_Traits.hpp"
 #include "Sacado_Fad_MemPool.hpp"
 
@@ -107,7 +109,7 @@ namespace Sacado {
       static inline T* get_and_fill(int sz, MemPool* pool) {
 	if (sz) {
 	  T* m = static_cast<T*>(pool->alloc());
-	  memset(m,0,sz*sizeof(T));
+	  std::memset(m,0,sz*sizeof(T));
 	  return m;
 	}
 	else
@@ -132,12 +134,12 @@ namespace Sacado {
 
       //! Copy array from \c src to \c dest of length \c sz
       static inline void copy(const T* src, T* dest, int sz) {
-	memcpy(dest,src,sz*sizeof(T));
+	std::memcpy(dest,src,sz*sizeof(T));
       }
 
       //! Zero out array \c dest of length \c sz
       static inline void zero(T* dest, int sz) {
-	memset(dest,0,sz*sizeof(T));
+	std::memset(dest,0,sz*sizeof(T));
       }
 
       //! Destroy array elements and release memory

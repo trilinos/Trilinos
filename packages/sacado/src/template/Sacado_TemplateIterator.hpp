@@ -32,6 +32,9 @@
 #ifndef SACADO_TEMPLATEITERATOR_HPP
 #define SACADO_TEMPLATEITERATOR_HPP
 
+#include <vector>
+#include <iterator>
+
 #include "Sacado_TemplateManager.hpp"
 
 namespace Sacado {

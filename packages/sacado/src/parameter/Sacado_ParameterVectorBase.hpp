@@ -32,6 +32,8 @@
 #ifndef SACADO_PARAMETERVECTORBASE_HPP
 #define SACADO_PARAMETERVECTORBASE_HPP
 
+#include <vector>
+
 #include "Teuchos_Array.hpp"
 
 #include "Sacado_ParameterFamilyBase.hpp"

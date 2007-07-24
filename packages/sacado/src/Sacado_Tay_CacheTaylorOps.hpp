@@ -32,8 +32,10 @@
 #ifndef SACADO_TAY_CACHETAYLOROPS_HPP
 #define SACADO_TAY_CACHETAYLOROPS_HPP
 
-#include "Sacado_ConfigDefs.h"
 #include "Sacado_Tay_CacheTaylorExpr.hpp"
+
+#include <cmath>
+#include <valarray>
 #include <algorithm>	// for std::min and std::max
 #include <ostream>	// for std::ostream
 

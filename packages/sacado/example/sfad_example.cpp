@@ -40,6 +40,9 @@
 //     for the number of derivative components, meaning this must be known
 //     at compile time.
 
+#include <iostream>
+#include <iomanip>
+
 #include "Sacado.hpp"
 
 // The function to differentiate
