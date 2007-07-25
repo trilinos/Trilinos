@@ -1478,8 +1478,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   // Form matrices for generalized eigenproblem
   
   // B = H2' * H2;
-  Teuchos::SerialDenseMatrix<int,ScalarType> B;
-  B.shape(m2,m2);
+  Teuchos::SerialDenseMatrix<int,ScalarType> B(m2,m2);
   B.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,HH,HH,zero);
   
   // A_tmp = | C'*U        0 |
@@ -1512,11 +1511,12 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   //                   IHI, LSCALE, RSCALE, ABNRM, BBNRM, RCONDE,
   //                   RCONDV, WORK, LWORK, IWORK, BWORK, INFO )
   // MLP : 'SCALING' in DGGEVX generates incorrect eigenvalues. Therefore, only permuting (for now)
+  char balanc='P', jobvl='N', jobvr='V', sense='N';	
   int ld = A.numRows();
   int lwork = 6*ld;
   int ldvl = ld, ldvr = ld;
-  int info,ilo,ihi;
-  ScalarType abnrm, bbnrm;
+  int info = 0,ilo = 0,ihi = 0;
+  ScalarType abnrm = zero, bbnrm = zero;
   ScalarType *vl = 0; // This is never referenced by dggevx if jobvl == 'N'
   std::vector<ScalarType> beta(ld);
   std::vector<ScalarType> work(lwork);
@@ -1524,9 +1524,9 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   std::vector<MagnitudeType> rconde(ld), rcondv(ld);
   std::vector<int> iwork(ld+6);
   int *bwork = 0; // If sense == 'N', bwork is never referenced
-  lapack.GGEVX('P','N','V','N', ld, A.values(), ld, B.values(), ld, &wr[0], &wi[0], 
-		&beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0], 
-		&abnrm, &bbnrm, &rconde[0], &rcondv[0], &work[0], lwork, &iwork[0], bwork, &info);
+  lapack.GGEVX(balanc, jobvl, jobvr, sense, ld, A.values(), ld, B.values(), ld, &wr[0], &wi[0], 
+               &beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0], 
+               &abnrm, &bbnrm, &rconde[0], &rcondv[0], &work[0], lwork, &iwork[0], bwork, &info);
   TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
 		     "Belos::GCRODRSolMgr::solve(): LAPACK GGEVX failed to compute eigensolutions.");
   
