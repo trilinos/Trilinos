@@ -166,6 +166,4 @@ namespace Sacado {
 
 } // namespace Sacado
 
-#undef SNS
-
 #endif // SACADO_TRAD_TRAITS_HPP
