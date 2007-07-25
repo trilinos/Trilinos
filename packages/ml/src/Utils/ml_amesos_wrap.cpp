@@ -23,6 +23,10 @@
 #include "ml_amesos_wrap.h"
 #include "Teuchos_ParameterList.hpp"
 
+#ifdef HAVE_ML_EPETRAEXT
+#include "EpetraExt_RowMatrixOut.h"
+#endif
+
 static double TimeForSolve__ = 0.0;
 static int Level__ = -1;
 static int NumSolves__ = 0;
@@ -211,8 +215,16 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
   //A_Base->SymbolicFactorization();
   //double Time1 = Time.ElapsedTime();
   Time.ResetStartTime();
-  A_Base->NumericFactorization();
+  int rv=A_Base->NumericFactorization();
   double Time2 = Time.ElapsedTime();
+  
+  if(!rv){
+    if(!Amesos_Matrix->Comm().MyPID())
+     printf("ERROR: Amesos NumericFactorization failed... dumping relevant matrix for post-mortem\n");
+#ifdef HAVE_ML_EPETRAEXT
+     EpetraExt::RowMatrixToMatlabFile("amesos-failure.dat",*Amesos_Matrix);
+#endif
+  }
 
   Level__ = -1;
 
