@@ -45,6 +45,25 @@
 #include "Epetra_LocalMap.h"
 
 namespace Anasazi {
+
+  //! @name Epetra Adapter Exceptions
+  //@{
+
+  /** \brief EpetraMultiVecFailure is thrown when a return value from an Epetra
+   * call on an Epetra_MultiVector is non-zero.
+   */
+  class EpetraMultiVecFailure : public AnasaziError {public:
+    EpetraMultiVecFailure(const std::string& what_arg) : AnasaziError(what_arg)
+    {}};
+
+  /** \brief EpetraOpFailure is thrown when a return value from an Epetra
+   * call on an Epetra_Operator is non-zero.
+   */
+  class EpetraOpFailure : public AnasaziError {public:
+    EpetraOpFailure(const std::string& what_arg) : AnasaziError(what_arg)
+    {}};
+
+  //@}
   
   ///////////////////////////////////////////////////////////////
   //
@@ -177,7 +196,10 @@ namespace Anasazi {
 
     /*! \brief Scale each element of the vectors in \c *this with \c alpha.
      */
-    void MvScale ( double alpha ) { int ret = this->Scale( alpha ); assert(ret == 0); }
+    void MvScale ( double alpha ) { 
+      TEST_FOR_EXCEPTION( this->Scale( alpha )!=0, EpetraMultiVecFailure,
+			  "Anasazi::EpetraMultiVec::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value.");
+    }
     
     /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
      */
@@ -192,16 +214,16 @@ namespace Anasazi {
     */
     void MvNorm ( std::vector<double>* normvec ) const {
       if ((normvec!=NULL) && ((int)normvec->size() >= GetNumberVecs()) ) {
-        int ret = Norm2(&(*normvec)[0]);
-        assert( ret == 0 );
+	TEST_FOR_EXCEPTION( this->Norm2(&(*normvec)[0])!=0, EpetraMultiVecFailure,
+			    "Anasazi::EpetraMultiVec::MvNorm call to Epetra_MultiVector::Norm2() returned a nonzero value.");
       }
     };
     //@}
-
+    
     //! @name Initialization methods
     //@{ 
     /*! \brief Copy the vectors in \c A to a set of vectors in \c *this.  
-
+      
     The \c numvecs vectors in \c A are copied to a subset of vectors in \c *this
     indicated by the indices given in \c index.
     */
@@ -209,12 +231,18 @@ namespace Anasazi {
 
     /*! \brief Fill the vectors in \c *this with random numbers.
      */
-    void MvRandom() { int ret = Random(); assert( ret == 0 ); };
+    void MvRandom() { 
+      TEST_FOR_EXCEPTION( this->Random()!=0, EpetraMultiVecFailure,
+			  "Anasazi::EpetraMultiVec::MvRandom call to Epetra_MultiVector::Random() returned a nonzero value.");
+    };
 
     /*! \brief Replace each element of the vectors in \c *this with \c alpha.
      */
-    void MvInit ( double alpha ) { int ret = PutScalar( alpha ); assert( ret == 0 ); };
-
+    void MvInit ( double alpha ) { 
+      TEST_FOR_EXCEPTION( this->PutScalar( alpha )!=0, EpetraMultiVecFailure,
+			  "Anasazi::EpetraMultiVec::MvInit call to Epetra_MultiVector::PutScalar() returned a nonzero value.");
+    };
+    
     //@}
     //! @name Print method
     //@{ 
@@ -598,16 +626,16 @@ namespace Anasazi {
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
       Epetra_MultiVector B_Pvec(::Copy, LocalMap, B.values(), B.stride(), B.numCols());
 
-      int ret = mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta );
-      assert( ret == 0 );   
+      TEST_FOR_EXCEPTION( mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta )!=0, EpetraMultiVecFailure,
+			  "MultiVecTraits<double, Epetra_MultiVector>::MvNorm call to Epetra_MultiVector::Multiply() returned a nonzero value.");
     }
 
     /*! \brief Replace \c mv with \f$\alpha A + \beta B\f$.
      */
     static void MvAddMv( double alpha, const Epetra_MultiVector& A, double beta, const Epetra_MultiVector& B, Epetra_MultiVector& mv )
     { 
-      int ret = mv.Update( alpha, A, beta, B, 0.0 );
-      assert( ret == 0 );
+      TEST_FOR_EXCEPTION( mv.Update( alpha, A, beta, B, 0.0 )!=0, EpetraMultiVecFailure,
+			  "MultiVecTraits<double, Epetra_MultiVector>::MvAddMv call to Epetra_MultiVector::Update() returned a nonzero value.");
     }
 
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Tmv \f$.
@@ -621,8 +649,8 @@ namespace Anasazi {
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
       Epetra_MultiVector B_Pvec(::View, LocalMap, B.values(), B.stride(), B.numCols());
       
-      int ret = B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 );
-      assert( ret == 0 );
+      TEST_FOR_EXCEPTION( B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 )!=0, EpetraMultiVecFailure,
+			  "MultiVecTraits<double, Epetra_MultiVector>::MvTransMv call to Epetra_MultiVector::Multiply() returned a nonzero value.");
     }
     
     /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Tmv[i]\f$.
@@ -633,8 +661,8 @@ namespace Anasazi {
 #endif
                       )
     {
-      int ret = mv.Dot( A, &(*b)[0] );
-      assert( ret == 0 );
+      TEST_FOR_EXCEPTION( mv.Dot( A, &(*b)[0] )!=0, EpetraMultiVecFailure,
+			  "MultiVecTraits<double, Epetra_MultiVector>::MvDot call to Epetra_MultiVector::Dot() returned a nonzero value.");     
     }
 
     //@}
@@ -646,12 +674,12 @@ namespace Anasazi {
     */
     static void MvNorm( const Epetra_MultiVector& mv, std::vector<double>* normvec )
     { 
-      int ret = mv.Norm2(&(*normvec)[0]);
-      assert( ret == 0 );
+      TEST_FOR_EXCEPTION( mv.Norm2(&(*normvec)[0])!=0, EpetraMultiVecFailure,
+			  "MultiVecTraits<double, Epetra_MultiVector>::MvNorm call to Epetra_MultiVector::Norm2() returned a nonzero value."); 
     }
 
     //@}
-
+    
     //! @name Initialization methods
     //@{ 
     /*! \brief Copy the vectors in \c A to a set of vectors in \c mv indicated by the indices given in \c index.
@@ -668,20 +696,21 @@ namespace Anasazi {
         for(int i=0; i<numvecs; i++)
           index2[i] = i;
         Epetra_MultiVector A_vec(::View, A, &index2[0], numvecs);      
-        int ret = temp_vec.Update( 1.0, A_vec, 0.0, A_vec, 0.0 );
-        assert( ret == 0 );
+	TEST_FOR_EXCEPTION( temp_vec.Update( 1.0, A_vec, 0.0, A_vec, 0.0 )!=0, EpetraMultiVecFailure,
+			    "MultiVecTraits<double, Epetra_MultiVector>::SetBlock call to Epetra_MultiVector::Update() returned a nonzero value."); 
       }
       else {
-        int ret = temp_vec.Update( 1.0, A, 0.0, A, 0.0 );
-        assert( ret == 0 );
+	TEST_FOR_EXCEPTION( temp_vec.Update( 1.0, A, 0.0, A, 0.0 )!=0, EpetraMultiVecFailure,
+			    "MultiVecTraits<double, Epetra_MultiVector>::SetBlock call to Epetra_MultiVector::Update() returned a nonzero value.");
       }
     }
-
+    
     /*! \brief Scale each element of the vectors in \c mv with \c alpha.
      */
     static void MvScale ( Epetra_MultiVector& mv, double alpha ) 
-    { int ret = mv.Scale( alpha ); 
-      assert( ret == 0 );
+    { 
+      TEST_FOR_EXCEPTION( mv.Scale( alpha )!=0, EpetraMultiVecFailure,
+			  "MultiVecTraits<double, Epetra_MultiVector>::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value."); 
     }
     
     /*! \brief Scale each element of the \c i-th vector in \c mv with \c alpha[i].
@@ -692,12 +721,11 @@ namespace Anasazi {
       int numvecs = mv.NumVectors();
       assert( (int)alpha.size() == numvecs );
 
-      int ret = 0;
       std::vector<int> tmp_index( 1, 0 );
       for (int i=0; i<numvecs; i++) {
         Epetra_MultiVector temp_vec(::View, mv, &tmp_index[0], 1);
-        ret = temp_vec.Scale( alpha[i] );
-        assert (ret == 0);
+	TEST_FOR_EXCEPTION( temp_vec.Scale( alpha[i] )!=0, EpetraMultiVecFailure,
+			    "MultiVecTraits<double, Epetra_MultiVector>::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value.");
         tmp_index[0]++;
       }
     }
@@ -705,13 +733,19 @@ namespace Anasazi {
     /*! \brief Replace the vectors in \c mv with random vectors.
      */
     static void MvRandom( Epetra_MultiVector& mv )
-    { int ret = mv.Random(); assert( ret == 0 ); }
+    { 
+      TEST_FOR_EXCEPTION( mv.Random()!=0, EpetraMultiVecFailure,
+			  "MultiVecTraits<double, Epetra_MultiVector>::MvRandom call to Epetra_MultiVector::Random() returned a nonzero value.");
+    }
 
     /*! \brief Replace each element of the vectors in \c mv with \c alpha.
      */
     static void MvInit( Epetra_MultiVector& mv, double alpha = Teuchos::ScalarTraits<double>::zero() )
-    { int ret = mv.PutScalar(alpha); assert( ret == 0 ); }
-
+    { 
+      TEST_FOR_EXCEPTION( mv.PutScalar(alpha)!=0, EpetraMultiVecFailure,
+			  "MultiVecTraits<double, Epetra_MultiVector>::MvInit call to Epetra_MultiVector::PutScalar() returned a nonzero value.");
+    }
+    
     //@}
 
     //! @name Print method
