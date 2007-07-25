@@ -1613,6 +1613,8 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
   double diagvalue, omega, *thediagonal = NULL;
   double *xptr = NULL, *x2 = NULL, *valptr = NULL;
   register double dtemp;
+  int ierr=0;
+  static int firstTime=1;
 
   ML_Operator    *Amat;
   ML_Comm        *comm;
@@ -1689,10 +1691,17 @@ int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
   }
 
 #ifdef ML_WITH_EPETRA
-  if ((Amat_MsrBindx == NULL) && (Amat_CrsBindx == NULL)){
-    Epetra_ML_GetCrsDataptrs(Amat, &Amat_CrsVal, &Amat_CrsBindx,&Amat_CrsRowptr);
-  }
+  if ((Amat_MsrBindx == NULL) && (Amat_CrsBindx == NULL))
+  {
+    ierr = Epetra_ML_GetCrsDataptrs(Amat, &Amat_CrsVal, &Amat_CrsBindx,&Amat_CrsRowptr);
 
+    if (ierr != 0 && ML_Get_PrintLevel() > 0
+        && Amat->comm->ML_mypid == 0 && firstTime)
+    {
+      printf("ML_Smoother_NewGS: can't get Crs data pointers (return code %d, mat_type = %d\n",ierr,Amat->type);
+      firstTime = 0;
+    }
+  }
 #endif /*ifdef ML_WITH_EPETRA*/
 
   if (Amat->getrow->post_comm != NULL)

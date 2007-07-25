@@ -348,6 +348,7 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->subspace            = original->subspace;
    if (mat->aux_data != NULL) ML_Aux_Data_Destroy(&(mat->aux_data));
    mat->aux_data = ML_Aux_Data_Clone(original->aux_data);
+   mat->type                = original->type;
 
    return 1;
 }

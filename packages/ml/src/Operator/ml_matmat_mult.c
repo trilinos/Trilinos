@@ -1252,6 +1252,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    {
      int ilm1 = index_length-1;
      for (i = 0; i < subB_Nnz; i++) {
+/*
        if (hash_used >= ((int) (.5 * index_length)) ) {
 #ifdef charles
          printf("%d: running out of hashing space: row = %d, tcols=%d"
@@ -1260,7 +1261,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
          fflush(stdout);
 #endif
          ML_free(accum_index);
-         if (index_length >= 1073741824) /* 2^30 */
+         if (index_length >= 1073741824) // 2^30 
            pr_error("Exceeded largest possible hash table size\n");
          accum_index = (int *) ML_allocate(sizeof(int)*2*index_length);
          tptr = (int *) ML_allocate(sizeof(int)*2*index_length);
@@ -1281,6 +1282,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
            Bcols[j] = hash_val;
          }
        }
+*/
        ML_fast_hash(Bcols[i], col_inds, ilm1, &hash_used, &hash_val);
        if (col_inds[hash_val] == -1) tcols++;
        col_inds[hash_val] = Bcols[i];

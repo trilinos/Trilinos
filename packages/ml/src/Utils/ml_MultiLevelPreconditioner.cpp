@@ -1151,16 +1151,19 @@ agg_->keep_P_tentative = 1;
     const Epetra_CrsMatrix *Acrs = dynamic_cast<const Epetra_CrsMatrix*>(EdgeMatrix_);
 
     if (Acrs != 0) {
-      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) Acrs);
+      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows,
+                      (void *) (const_cast<Epetra_CrsMatrix*>(Acrs)));
       ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_CrsMatrix_getrow,
               ML_Epetra_CrsMatrix_comm_wrapper, NumMyRows+N_ghost);
       ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_CrsMatrix_matvec);
+      ml_->Amat[LevelID_[0]].type = ML_TYPE_CRS_MATRIX;
     }
     else {
       ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows,NumMyRows,(void *) EdgeMatrix_);
       ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_getrow,
               ML_Epetra_comm_wrapper, NumMyRows+N_ghost);
       ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_matvec);
+      ml_->Amat[LevelID_[0]].type = ML_TYPE_ROW_MATRIX;
     }
 
     // create hierarchy for nodes
@@ -1179,10 +1182,12 @@ agg_->keep_P_tentative = 1;
     Acrs = dynamic_cast<const Epetra_CrsMatrix*>(NodeMatrix_);
 
     if (Acrs != 0) {
-      ML_Init_Amatrix(ml_nodes_,LevelID_[0],NumMyRows,NumMyRows,(void *) Acrs);
+      ML_Init_Amatrix(ml_nodes_,LevelID_[0],NumMyRows,NumMyRows,
+                      (void *) (const_cast<Epetra_CrsMatrix*>(Acrs)));
       ML_Set_Amatrix_Getrow(ml_nodes_, LevelID_[0], ML_Epetra_CrsMatrix_getrow,
                 ML_Epetra_CrsMatrix_comm_wrapper, NumMyRows+N_ghost);
       ML_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], ML_Epetra_CrsMatrix_matvec);
+      ml_nodes_->Amat[LevelID_[0]].type = ML_TYPE_CRS_MATRIX;
     }
     else {
       ML_Init_Amatrix(ml_nodes_,LevelID_[0],NumMyRows, NumMyRows,
@@ -1190,6 +1195,7 @@ agg_->keep_P_tentative = 1;
       ML_Set_Amatrix_Getrow(ml_nodes_, LevelID_[0], ML_Epetra_getrow,
                 ML_Epetra_comm_wrapper, NumMyRows+N_ghost);
       ML_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], ML_Epetra_matvec);
+      ml_nodes_->Amat[LevelID_[0]].type = ML_TYPE_ROW_MATRIX;
     }
     ml_nodes_->Amat[LevelID_[0]].N_nonzeros = NodeMatrix_->NumMyNonzeros();
 

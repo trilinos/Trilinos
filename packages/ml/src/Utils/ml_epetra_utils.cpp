@@ -58,28 +58,56 @@ typedef struct {
 
 static ML_Filter_Data Filter_;
 
-// ====================================================================== 
-int Epetra_ML_GetCrsDataptrs(ML_Operator *data, double **values, int **cols, int **rowptr)
-{
-  ML_Operator *mat_in;
+// ======================================================================
+// Epetra_ML_GetCrsDataptrs() extracts the raw data pointers from an
+// Epetra_CrsMatrix that is wrapped as an ML_Operator.  Return code is 0
+// if successful, [-5,...,-1] otherwise.
+// ======================================================================
 
+int Epetra_ML_GetCrsDataptrs(ML_Operator *mlA, double **values, int **cols,
+                             int **rowptr)
+{
   *values = NULL;
   *cols   = NULL;
-  mat_in = (ML_Operator *) data;
+  *rowptr = NULL;
 
-  if ( (mat_in->matvec->func_ptr != ML_Epetra_matvec) && 
-       (mat_in->matvec->func_ptr != ML_Epetra_CrsMatrix_matvec)) return 0;
+  if ( (mlA->matvec->func_ptr != ML_Epetra_matvec) &&
+       (mlA->matvec->func_ptr != ML_Epetra_CrsMatrix_matvec)) return -1;
 
-  Epetra_RowMatrix *A = (Epetra_RowMatrix *) ML_Get_MyMatvecData(mat_in);
+  // First check the type field of the ML_Operator.  The ML_Operator may have
+  // already been dynamically cast to an Epetra_CrsMatrix for efficiency
+  // reasons, so immediately casting (void *) data to an Epetra_RowMatrix*
+  // is potentially fatal.
+  Epetra_RowMatrix *A = 0;
+  Epetra_CrsMatrix * CrsA=0;
+  int ierr = 0;
+  switch (mlA->type) {
 
-  Epetra_CrsMatrix * CrsA = NULL;
+    case ML_TYPE_CRS_MATRIX:
+      CrsA = (Epetra_CrsMatrix *) ML_Get_MyMatvecData(mlA);
+      if (CrsA == 0) ierr = -2;
+      if (CrsA && !CrsA->StorageOptimized()) ierr = -5;
+      break;
 
-  CrsA = dynamic_cast<Epetra_CrsMatrix *>(A);
-  if( CrsA != NULL ) 
-    CrsA->ExtractCrsDataPointers(*rowptr, *cols, *values);
+    case ML_TYPE_ROW_MATRIX:
+      A = (Epetra_RowMatrix *) ML_Get_MyMatvecData(mlA);
+      CrsA = dynamic_cast<Epetra_CrsMatrix *>(A);
+      if (CrsA == 0) ierr = -3;
+      if (CrsA && !CrsA->StorageOptimized()) ierr = -5;
+      break;
 
-  return 0;
-}
+    case ML_TYPE_UNKNOWN:
+    default:
+      ierr = -4;
+      break;
+  } //switch
+
+
+  if (ierr == 0)
+     return(CrsA->ExtractCrsDataPointers(*rowptr, *cols, *values));
+  else
+     return ierr;
+} //Epetra_ML_GetCrsDataptrs()
 
 int ML_Epetra_matvec(ML_Operator *data, int in, double *p, int out, double *ap)
 {
