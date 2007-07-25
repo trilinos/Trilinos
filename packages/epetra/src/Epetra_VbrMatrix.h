@@ -1185,6 +1185,8 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
 
   // Internal utilities
 
+  int DoMultiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  int DoSolve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   void InitializeDefaults();
   int Allocate();
   int BeginInsertValues(int BlockRow, int NumBlockEntries, 

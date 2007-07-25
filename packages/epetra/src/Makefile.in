@@ -245,8 +245,8 @@ am__include_HEADERS_DIST = $(srcdir)/Epetra_BLAS.h \
 	$(srcdir)/Epetra_FECrsGraph.h $(srcdir)/Epetra_FECrsMatrix.h \
 	$(srcdir)/Epetra_FEVbrMatrix.h $(srcdir)/Epetra_FEVector.h \
 	$(srcdir)/Epetra_IntVector.h $(srcdir)/Epetra_BasicRowMatrix.h \
-	$(srcdir)/Epetra_JadMatrix.h $(srcdir)/Epetra_MpiComm.h \
-	$(srcdir)/Epetra_MpiCommData.h \
+	$(srcdir)/Epetra_JadMatrix.h $(srcdir)/Epetra_VbrRowMatrix.h \
+	$(srcdir)/Epetra_MpiComm.h $(srcdir)/Epetra_MpiCommData.h \
 	$(srcdir)/Epetra_MpiDistributor.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
@@ -514,7 +514,7 @@ DIST_H = \
 	$(srcdir)/Epetra_LocalMap.h \
 	$(srcdir)/Epetra_Map.h \
 	$(srcdir)/Epetra_MapColoring.h \
-        $(srcdir)/Epetra_OffsetIndex.h
+     $(srcdir)/Epetra_OffsetIndex.h
 
 DIST = \
 	$(srcdir)/Epetra_BasicDirectory.cpp \
@@ -526,7 +526,7 @@ DIST = \
 	$(srcdir)/Epetra_LocalMap.cpp \
 	$(srcdir)/Epetra_Map.cpp \
 	$(srcdir)/Epetra_MapColoring.cpp \
-        $(srcdir)/Epetra_OffsetIndex.cpp
+     $(srcdir)/Epetra_OffsetIndex.cpp
 
 COMP_H = \
 	$(srcdir)/Epetra_CompObject.h \
@@ -544,7 +544,8 @@ COMP_H = \
 	$(srcdir)/Epetra_FEVector.h \
 	$(srcdir)/Epetra_IntVector.h \
 	$(srcdir)/Epetra_BasicRowMatrix.h \
-	$(srcdir)/Epetra_JadMatrix.h
+	$(srcdir)/Epetra_JadMatrix.h \
+     $(srcdir)/Epetra_VbrRowMatrix.h
 
 COMP = \
 	$(srcdir)/Epetra_CompObject.cpp \

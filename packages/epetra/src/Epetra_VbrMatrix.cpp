@@ -1667,7 +1667,7 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
 }
 
 //=============================================================================
-int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+int Epetra_VbrMatrix::DoMultiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
   //
   // This function forms the product Y = A * Y or Y = A' * X
   //
@@ -1691,7 +1691,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 
   bool x_and_y_same = false;
   Epetra_MultiVector* Ytemp = 0;
-  if (Xp == Yp) {
+  if (*Xp == *Yp) {
     x_and_y_same = true;
     Ytemp = new Epetra_MultiVector(Y.Map(), NumVectors);
     Yp = (double**)Ytemp->Pointers();
@@ -2320,7 +2320,7 @@ void Epetra_VbrMatrix::BlockRowMultiply(bool TransA,
   return;
 }
 //=============================================================================
-int Epetra_VbrMatrix::Solve(bool Upper, bool TransA,
+int Epetra_VbrMatrix::DoSolve(bool Upper, bool TransA,
 			    bool UnitDiagonal,
 			    const Epetra_MultiVector& X,
 			    Epetra_MultiVector& Y) const
@@ -2499,7 +2499,7 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
     if (Importer()!=0){
       Epetra_Vector  *x_blocked = 0;
       if(hasOperatorMap)
-        x_blocked = new Epetra_Vector( ::View, DoRows ? Graph().RangeMap() : Graph().DomainMap(), &x[0] );
+        x_blocked = new Epetra_Vector( ::View, DomainMap(), &x[0] );
       else
         x_blocked = &x;
       x_blocked->PutScalar(0.0);
@@ -2565,7 +2565,7 @@ int Epetra_VbrMatrix::Scale(bool DoRows, const Epetra_Vector& x) {
   int ierr = 0;
   int * NumBlockEntriesPerRow = NumBlockEntriesPerRow_;
   int ** Indices = Indices_;
-  Epetra_SerialDenseMatrix*** Entries = Entries_;
+  Epetra_SerialDenseMatrix*** Entries = Entries_; 
   
   int * RowElementSizeList = ElementSizeList_;
   int * RowFirstPointInElementList = FirstPointInElementList_;
@@ -2582,8 +2582,13 @@ int Epetra_VbrMatrix::Scale(bool DoRows, const Epetra_Vector& x) {
   Epetra_Vector * x_tmp = 0;
   if (!DoRows) {
     if (Importer()!=0) {
+      Epetra_Vector  *x_blocked = 0;
+      if(hasOperatorMap)
+        x_blocked = new Epetra_Vector( ::View, Graph().DomainMap(), (double *) &x[0] );
+      else
+        x_blocked = (Epetra_Vector *) &x;
       x_tmp = new Epetra_Vector(ColMap()); // Create import vector if needed
-      EPETRA_CHK_ERR(x_tmp->Import(x,*Importer(), Insert)); // x_tmp will have all the values we need
+      EPETRA_CHK_ERR(x_tmp->Import(*x_blocked,*Importer(), Insert)); // x_tmp will have all the values we need
       xp = (double*)x_tmp->Values();
     }
   }
@@ -3196,11 +3201,11 @@ int Epetra_VbrMatrix::Apply(const Epetra_MultiVector& X,
 {
   if (!Epetra_VbrMatrix::UseTranspose()) {
     EPETRA_CHK_ERR(UpdateOperatorXY(X,Y)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
-    EPETRA_CHK_ERR(Epetra_VbrMatrix::Multiply(Epetra_VbrMatrix::UseTranspose(), *OperatorX_, *OperatorY_));
+    EPETRA_CHK_ERR(Epetra_VbrMatrix::DoMultiply(Epetra_VbrMatrix::UseTranspose(), *OperatorX_, *OperatorY_));
   } 
   else { // Swap role of OperatorX_ and OperatorY_ to remain compatible with domain and range spaces.
     EPETRA_CHK_ERR(UpdateOperatorXY(Y,X)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
-    EPETRA_CHK_ERR(Epetra_VbrMatrix::Multiply(Epetra_VbrMatrix::UseTranspose(), *OperatorY_, *OperatorX_));
+    EPETRA_CHK_ERR(Epetra_VbrMatrix::DoMultiply(Epetra_VbrMatrix::UseTranspose(), *OperatorY_, *OperatorX_));
   }
   return(0);
 }
@@ -3210,11 +3215,39 @@ int Epetra_VbrMatrix::ApplyInverse(const Epetra_MultiVector& X,
 {
   if (!Epetra_VbrMatrix::UseTranspose()) {
     EPETRA_CHK_ERR(UpdateOperatorXY(X,Y)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
-    EPETRA_CHK_ERR(Solve(UpperTriangular(), Epetra_VbrMatrix::UseTranspose(), NoDiagonal(), *OperatorX_, *OperatorY_));
+    EPETRA_CHK_ERR(DoSolve(UpperTriangular(), Epetra_VbrMatrix::UseTranspose(), NoDiagonal(), *OperatorX_, *OperatorY_));
   }
   else { // Swap role of OperatorX_ and OperatorY_ to remain compatible with domain and range spaces.
     EPETRA_CHK_ERR(UpdateOperatorXY(Y,X)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
-    EPETRA_CHK_ERR(Solve(UpperTriangular(), Epetra_VbrMatrix::UseTranspose(), NoDiagonal(), *OperatorY_, *OperatorX_));
+    EPETRA_CHK_ERR(DoSolve(UpperTriangular(), Epetra_VbrMatrix::UseTranspose(), NoDiagonal(), *OperatorY_, *OperatorX_));
+  }
+  return(0);
+}
+//=========================================================================
+int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X,
+			    Epetra_MultiVector& Y) const
+{
+  if (!TransA) {
+    EPETRA_CHK_ERR(UpdateOperatorXY(X,Y)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
+    EPETRA_CHK_ERR(Epetra_VbrMatrix::DoMultiply(TransA, *OperatorX_, *OperatorY_));
+  } 
+  else { // Swap role of OperatorX_ and OperatorY_ to remain compatible with domain and range spaces.
+    EPETRA_CHK_ERR(UpdateOperatorXY(Y,X)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
+    EPETRA_CHK_ERR(Epetra_VbrMatrix::DoMultiply(TransA, *OperatorY_, *OperatorX_));
+  }
+  return(0);
+}
+//=========================================================================
+int Epetra_VbrMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X,
+				   Epetra_MultiVector& Y) const
+{
+  if (!Trans) {
+    EPETRA_CHK_ERR(UpdateOperatorXY(X,Y)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
+    EPETRA_CHK_ERR(DoSolve(Upper, Trans, UnitDiagonal, *OperatorX_, *OperatorY_));
+  }
+  else { // Swap role of OperatorX_ and OperatorY_ to remain compatible with domain and range spaces.
+    EPETRA_CHK_ERR(UpdateOperatorXY(Y,X)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
+    EPETRA_CHK_ERR(DoSolve(Upper, Trans, UnitDiagonal, *OperatorY_, *OperatorX_));
   }
   return(0);
 }

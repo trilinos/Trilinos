@@ -359,6 +359,12 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
     
     delete [] tmp_send;
     delete [] tmp_recv;
+
+    // Check for constant element size
+    if (BlockMapData_->MinElementSize_==BlockMapData_->MaxElementSize_) {
+      BlockMapData_->ElementSize_ = BlockMapData_->MinElementSize_;
+      BlockMapData_->ConstantElementSize_ = true;
+    }
     
     if (BlockMapData_->MinAllGID_ < BlockMapData_->IndexBase_)
       throw ReportError("Minimum global element index = " + toString(BlockMapData_->MinAllGID_) + 

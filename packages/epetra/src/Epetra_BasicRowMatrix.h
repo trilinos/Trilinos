@@ -387,7 +387,7 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
 
     \return Always returns 0.
   */
-  virtual int SetUseTranspose(bool UseTranspose) {return(UseTranspose_ = UseTranspose);}
+  virtual int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);}
 
   //! Returns a character string describing the operator
   virtual const char* Label() const {return(Epetra_Object::Label());}
