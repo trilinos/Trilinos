@@ -26,7 +26,7 @@ using namespace std;
 
 namespace FAD {
 
-void error(char* );     
+void error( const char* );     
     
 } // namespace FAD
  

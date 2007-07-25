@@ -44,7 +44,7 @@
 template <>
 Sacado::Fad::MemPool* Sacado::Fad::MemPoolStorage<double>::defaultPool_ = NULL;
 
-void FAD::error(char *msg) {
+void FAD::error(const char *msg) {
   std::cout << msg << std::endl;
 }
 

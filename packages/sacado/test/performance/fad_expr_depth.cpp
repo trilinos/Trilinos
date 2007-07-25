@@ -38,7 +38,7 @@
 // A simple performance test that computes the derivative of expressions of
 // various depths.
 
-void FAD::error(char *msg) {
+void FAD::error(const char *msg) {
   std::cout << msg << std::endl;
 }
 

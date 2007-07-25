@@ -33,7 +33,7 @@
 
 CPPUNIT_TEST_SUITE_REGISTRATION( DFadOpsUnitTest );
 
-void FAD::error(char *msg) {
+void FAD::error(const char *msg) {
   std::cout << msg << endl;
 }
 
