@@ -49,7 +49,7 @@
 
 NOX::Thyra::Group::
 Group(const NOX::Thyra::Vector& initial_guess,
-      const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model):
+      const Teuchos::RCP< const ::Thyra::ModelEvaluator<double> >& model):
   model_(model)
 {
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, DeepCopy));

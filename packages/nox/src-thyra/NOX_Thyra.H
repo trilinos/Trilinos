@@ -31,3 +31,4 @@
 
 #include "NOX_Thyra_Vector.H"
 #include "NOX_Thyra_Group.H"
+#include "Thyra_NonlinearSolver_NOX.hpp"

@@ -65,7 +65,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@BUILD_EPETRA_TESTS_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@BUILD_THYRA_TESTS_TRUE@noinst_PROGRAMS = Thyra_2Dsim$(EXEEXT)
+@BUILD_EPETRA_TESTS_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@BUILD_THYRA_TESTS_TRUE@noinst_PROGRAMS = Thyra_2Dsim$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@BUILD_THYRA_TESTS_TRUE@	Thyra_NonlinearSolver_NOX_2Dsim$(EXEEXT)
 subdir = test/epetra/Thyra_2Dsim
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -105,6 +106,11 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(NOX_TEST_LIBS))
+am_Thyra_NonlinearSolver_NOX_2Dsim_OBJECTS =  \
+	EpetraModelEval2DSim.$(OBJEXT) \
+	Thyra_NonlinearSolver_NOX_2Dsim.$(OBJEXT)
+Thyra_NonlinearSolver_NOX_2Dsim_OBJECTS =  \
+	$(am_Thyra_NonlinearSolver_NOX_2Dsim_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -117,8 +123,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(Thyra_2Dsim_SOURCES)
-DIST_SOURCES = $(Thyra_2Dsim_SOURCES)
+SOURCES = $(Thyra_2Dsim_SOURCES) \
+	$(Thyra_NonlinearSolver_NOX_2Dsim_SOURCES)
+DIST_SOURCES = $(Thyra_2Dsim_SOURCES) \
+	$(Thyra_NonlinearSolver_NOX_2Dsim_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -278,6 +286,16 @@ Thyra_2Dsim_DEPENDENCIES = \
                      $(top_builddir)/src-thyra/libnoxthyra.a
 
 Thyra_2Dsim_LDADD = $(TEST_LIBS)
+Thyra_NonlinearSolver_NOX_2Dsim_SOURCES = \
+	        $(srcdir)/EpetraModelEval2DSim.H \
+                $(srcdir)/EpetraModelEval2DSim.C \
+                $(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C
+
+Thyra_NonlinearSolver_NOX_2Dsim_DEPENDENCIES = \
+                     $(top_builddir)/src/libnox.a \
+                     $(top_builddir)/src-thyra/libnoxthyra.a
+
+Thyra_NonlinearSolver_NOX_2Dsim_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -317,6 +335,9 @@ clean-noinstPROGRAMS:
 Thyra_2Dsim$(EXEEXT): $(Thyra_2Dsim_OBJECTS) $(Thyra_2Dsim_DEPENDENCIES) 
 	@rm -f Thyra_2Dsim$(EXEEXT)
 	$(CXXLINK) $(Thyra_2Dsim_OBJECTS) $(Thyra_2Dsim_LDADD) $(LIBS)
+Thyra_NonlinearSolver_NOX_2Dsim$(EXEEXT): $(Thyra_NonlinearSolver_NOX_2Dsim_OBJECTS) $(Thyra_NonlinearSolver_NOX_2Dsim_DEPENDENCIES) 
+	@rm -f Thyra_NonlinearSolver_NOX_2Dsim$(EXEEXT)
+	$(CXXLINK) $(Thyra_NonlinearSolver_NOX_2Dsim_OBJECTS) $(Thyra_NonlinearSolver_NOX_2Dsim_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -326,6 +347,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraModelEval2DSim.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_2Dsim.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_NonlinearSolver_NOX_2Dsim.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -368,6 +390,20 @@ Thyra_2Dsim.obj: $(srcdir)/Thyra_2Dsim.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_2Dsim.C' object='Thyra_2Dsim.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_2Dsim.obj `if test -f '$(srcdir)/Thyra_2Dsim.C'; then $(CYGPATH_W) '$(srcdir)/Thyra_2Dsim.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_2Dsim.C'; fi`
+
+Thyra_NonlinearSolver_NOX_2Dsim.o: $(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_NonlinearSolver_NOX_2Dsim.o -MD -MP -MF $(DEPDIR)/Thyra_NonlinearSolver_NOX_2Dsim.Tpo -c -o Thyra_NonlinearSolver_NOX_2Dsim.o `test -f '$(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C' || echo '$(srcdir)/'`$(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_NonlinearSolver_NOX_2Dsim.Tpo $(DEPDIR)/Thyra_NonlinearSolver_NOX_2Dsim.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C' object='Thyra_NonlinearSolver_NOX_2Dsim.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_NonlinearSolver_NOX_2Dsim.o `test -f '$(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C' || echo '$(srcdir)/'`$(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C
+
+Thyra_NonlinearSolver_NOX_2Dsim.obj: $(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_NonlinearSolver_NOX_2Dsim.obj -MD -MP -MF $(DEPDIR)/Thyra_NonlinearSolver_NOX_2Dsim.Tpo -c -o Thyra_NonlinearSolver_NOX_2Dsim.obj `if test -f '$(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C'; then $(CYGPATH_W) '$(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_NonlinearSolver_NOX_2Dsim.Tpo $(DEPDIR)/Thyra_NonlinearSolver_NOX_2Dsim.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C' object='Thyra_NonlinearSolver_NOX_2Dsim.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_NonlinearSolver_NOX_2Dsim.obj `if test -f '$(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C'; then $(CYGPATH_W) '$(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

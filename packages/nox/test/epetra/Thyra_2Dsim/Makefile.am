@@ -50,7 +50,7 @@ if BUILD_EPETRA_TESTS
 
 if BUILD_NOX_EPETRAEXT_SUPPORT
 
-noinst_PROGRAMS = Thyra_2Dsim
+noinst_PROGRAMS = Thyra_2Dsim Thyra_NonlinearSolver_NOX_2Dsim
 
 endif
 endif
@@ -66,3 +66,14 @@ Thyra_2Dsim_DEPENDENCIES = \
                      $(top_builddir)/src-thyra/libnoxthyra.a
 
 Thyra_2Dsim_LDADD = $(TEST_LIBS)
+
+Thyra_NonlinearSolver_NOX_2Dsim_SOURCES = \
+	        $(srcdir)/EpetraModelEval2DSim.H \
+                $(srcdir)/EpetraModelEval2DSim.C \
+                $(srcdir)/Thyra_NonlinearSolver_NOX_2Dsim.C
+
+Thyra_NonlinearSolver_NOX_2Dsim_DEPENDENCIES = \
+                     $(top_builddir)/src/libnox.a \
+                     $(top_builddir)/src-thyra/libnoxthyra.a
+
+Thyra_NonlinearSolver_NOX_2Dsim_LDADD = $(TEST_LIBS)

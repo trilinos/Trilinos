@@ -50,12 +50,14 @@ THYRA_H = \
 	$(srcdir)/NOX_Thyra.H \
 	$(srcdir)/NOX_Thyra_Vector.H \
 	$(srcdir)/NOX_Thyra_MultiVector.H \
-	$(srcdir)/NOX_Thyra_Group.H
+	$(srcdir)/NOX_Thyra_Group.H \
+	$(srcdir)/Thyra_NonlinearSolver_NOX.hpp
 
 THYRA = \
 	$(srcdir)/NOX_Thyra_Vector.C \
 	$(srcdir)/NOX_Thyra_MultiVector.C \
-	$(srcdir)/NOX_Thyra_Group.C 
+	$(srcdir)/NOX_Thyra_Group.C \
+	$(srcdir)/Thyra_NonlinearSolver_NOX.cpp
 
 # ------------------------------------------------------------------------
 # Noxthyra library specifications

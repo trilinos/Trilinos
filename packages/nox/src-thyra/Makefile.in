@@ -113,7 +113,8 @@ ARFLAGS = cru
 am__DEPENDENCIES_1 =
 libnoxthyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 = NOX_Thyra_Vector.$(OBJEXT) \
-	NOX_Thyra_MultiVector.$(OBJEXT) NOX_Thyra_Group.$(OBJEXT)
+	NOX_Thyra_MultiVector.$(OBJEXT) NOX_Thyra_Group.$(OBJEXT) \
+	Thyra_NonlinearSolver_NOX.$(OBJEXT)
 am__objects_2 =
 am_libnoxthyra_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libnoxthyra_a_OBJECTS = $(am_libnoxthyra_a_OBJECTS)
@@ -133,7 +134,8 @@ SOURCES = $(libnoxthyra_a_SOURCES)
 DIST_SOURCES = $(libnoxthyra_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/NOX_Thyra.H \
 	$(srcdir)/NOX_Thyra_Vector.H $(srcdir)/NOX_Thyra_MultiVector.H \
-	$(srcdir)/NOX_Thyra_Group.H
+	$(srcdir)/NOX_Thyra_Group.H \
+	$(srcdir)/Thyra_NonlinearSolver_NOX.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -291,12 +293,14 @@ THYRA_H = \
 	$(srcdir)/NOX_Thyra.H \
 	$(srcdir)/NOX_Thyra_Vector.H \
 	$(srcdir)/NOX_Thyra_MultiVector.H \
-	$(srcdir)/NOX_Thyra_Group.H
+	$(srcdir)/NOX_Thyra_Group.H \
+	$(srcdir)/Thyra_NonlinearSolver_NOX.hpp
 
 THYRA = \
 	$(srcdir)/NOX_Thyra_Vector.C \
 	$(srcdir)/NOX_Thyra_MultiVector.C \
-	$(srcdir)/NOX_Thyra_Group.C 
+	$(srcdir)/NOX_Thyra_Group.C \
+	$(srcdir)/Thyra_NonlinearSolver_NOX.cpp
 
 
 # ------------------------------------------------------------------------
@@ -345,7 +349,7 @@ MOSTLYCLEANFILES = $(CXXREPOS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .C .o .obj
+.SUFFIXES: .C .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -418,6 +422,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Thyra_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Thyra_MultiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Thyra_Vector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_NonlinearSolver_NOX.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -474,6 +479,34 @@ NOX_Thyra_Group.obj: $(srcdir)/NOX_Thyra_Group.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Thyra_Group.C' object='NOX_Thyra_Group.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Thyra_Group.obj `if test -f '$(srcdir)/NOX_Thyra_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Thyra_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Thyra_Group.C'; fi`
+
+Thyra_NonlinearSolver_NOX.o: $(srcdir)/Thyra_NonlinearSolver_NOX.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_NonlinearSolver_NOX.o -MD -MP -MF $(DEPDIR)/Thyra_NonlinearSolver_NOX.Tpo -c -o Thyra_NonlinearSolver_NOX.o `test -f '$(srcdir)/Thyra_NonlinearSolver_NOX.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_NonlinearSolver_NOX.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_NonlinearSolver_NOX.Tpo $(DEPDIR)/Thyra_NonlinearSolver_NOX.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_NonlinearSolver_NOX.cpp' object='Thyra_NonlinearSolver_NOX.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_NonlinearSolver_NOX.o `test -f '$(srcdir)/Thyra_NonlinearSolver_NOX.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_NonlinearSolver_NOX.cpp
+
+Thyra_NonlinearSolver_NOX.obj: $(srcdir)/Thyra_NonlinearSolver_NOX.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_NonlinearSolver_NOX.obj -MD -MP -MF $(DEPDIR)/Thyra_NonlinearSolver_NOX.Tpo -c -o Thyra_NonlinearSolver_NOX.obj `if test -f '$(srcdir)/Thyra_NonlinearSolver_NOX.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_NonlinearSolver_NOX.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_NonlinearSolver_NOX.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_NonlinearSolver_NOX.Tpo $(DEPDIR)/Thyra_NonlinearSolver_NOX.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_NonlinearSolver_NOX.cpp' object='Thyra_NonlinearSolver_NOX.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_NonlinearSolver_NOX.obj `if test -f '$(srcdir)/Thyra_NonlinearSolver_NOX.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_NonlinearSolver_NOX.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_NonlinearSolver_NOX.cpp'; fi`
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

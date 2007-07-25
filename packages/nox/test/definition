@@ -36,7 +36,8 @@
 
 # NOX Epetra SERIAL tests
 (FRAMEWORK,INSTALL) {
-    DIRS = epetra/Thyra_2Dsim;
+    DIRS = epetra/Thyra_2Dsim,
+           epetra/Thyra_NonlinearSolver_NOX_2Dsim;
     EXIT-STATUS = STRING-COMPARISON(Test passed!);
     COMM = SERIAL, MPI(1);
 }

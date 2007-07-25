@@ -73,7 +73,7 @@ namespace NOX {
 
       //! Constructor
       Group(const NOX::Thyra::Vector& initial_guess,
-	    const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model);
+	    const Teuchos::RCP< const ::Thyra::ModelEvaluator<double> >& model);
 
       //! Copy constructor
       Group(const NOX::Thyra::Group& source, NOX::CopyType type = DeepCopy);
@@ -219,7 +219,7 @@ namespace NOX {
     protected:
 
       //! Problem interface
-      Teuchos::RCP< ::Thyra::ModelEvaluator<double> > model_;
+      Teuchos::RCP< const ::Thyra::ModelEvaluator<double> > model_;
       
       /** @name IsValid flags 
        *  
