@@ -65,6 +65,8 @@ const std::string DiagonalTransientModel_name = "DiagonalTransientModel";
 
 const std::string RythmosStepper_name = "Rythmos Stepper";
 
+const std::string RythmosIntegrator_name = "Rythmos Integrator";
+
 const std::string FdCalc_name = "FD Calc";
 
 
@@ -79,6 +81,7 @@ getValidParameters()
     pl->sublist(Stratimikos_name);
     pl->sublist(DiagonalTransientModel_name);
     pl->sublist(RythmosStepper_name);
+    pl->sublist(RythmosIntegrator_name);
     pl->sublist(FdCalc_name);
     validPL = pl;
   }
@@ -297,20 +300,24 @@ int main(int argc, char *argv[])
     const MEB::InArgs<Scalar>
       state_ic = stateModel->getNominalValues();
     *out << "\nstate_ic:\n" << describe(state_ic,verbLevel);
-    
-    RCP<Rythmos::IntegratorBase<Scalar> >
-      integrator = Rythmos::simpleIntegrator<Scalar>();
 
-    // 2007/07/09: rabartl: ToDo: I need to break off a parameter sublist to
-    // give to the above simple integrator to tell it what to do, how far to
-    // integrat etc.  Then I need to give this integrator to the belos
-    // stateIntegratorAsModel object!
+    RCP<Rythmos::IntegratorBase<Scalar> > integrator;
+    {
+      RCP<ParameterList>
+        integratorPL = sublist(paramList,RythmosIntegrator_name);
+      integratorPL->set( "Take Variable Steps", as<bool>(numTimeSteps < 0) );
+      integratorPL->set( "Fixed dt", as<double>((finalTime - state_ic.get_t())/numTimeSteps) );
+
+      RCP<Rythmos::IntegratorBase<Scalar> >
+        simpleIntegrator = Rythmos::simpleIntegrator<Scalar>(integratorPL);
+
+      integrator = simpleIntegrator;
+    }
 
     RCP<Rythmos::StepperAsModelEvaluator<Scalar> >
       stateIntegratorAsModel = Rythmos::stepperAsModelEvaluator(
-        stateStepper, state_ic
+        stateStepper, integrator, state_ic
         );
-    stateIntegratorAsModel->numTimeSteps(numTimeSteps);
     stateIntegratorAsModel->setVerbLevel(verbLevel);
     
     *out << "\nUse the StepperAsModelEvaluator to integrate state x(p,finalTime) ... \n";
@@ -414,9 +421,8 @@ int main(int argc, char *argv[])
       RCP<Rythmos::StepperAsModelEvaluator<Scalar> >
         stateAndSensIntegratorAsModel = Rythmos::stepperAsModelEvaluator(
           rcp_implicit_cast<Rythmos::StepperBase<Scalar> >(stateAndSensStepper),
-          state_and_sens_ic
+          integrator, state_and_sens_ic
           );
-      stateAndSensIntegratorAsModel->numTimeSteps(numTimeSteps);
       stateAndSensIntegratorAsModel->setVerbLevel(verbLevel);
     
       *out << "\nUse the StepperAsModelEvaluator to integrate state + sens x_bar(p,finalTime) ... \n";

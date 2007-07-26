@@ -350,6 +350,8 @@ private:
 
 template<class Scalar>
 ImplicitBDFStepper<Scalar>::ImplicitBDFStepper()
+  :time_(ScalarTraits<Scalar>::nan()),
+   usedStep_(ScalarTraits<Scalar>::zero())
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->setMaxLenLinePrefix(30);
@@ -364,6 +366,8 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   ,const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
   ,Teuchos::RCP<Teuchos::ParameterList> &parameterList
   )
+  :time_(ScalarTraits<Scalar>::nan()),
+   usedStep_(ScalarTraits<Scalar>::zero())
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->setMaxLenLinePrefix(30);
@@ -381,6 +385,8 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
   ,const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
+  :time_(ScalarTraits<Scalar>::nan()),
+   usedStep_(ScalarTraits<Scalar>::zero())
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->setMaxLenLinePrefix(30);
@@ -753,7 +759,7 @@ bool ImplicitBDFStepper<Scalar>::setRange(
 template<class Scalar>
 TimeRange<Scalar> ImplicitBDFStepper<Scalar>::getTimeRange() const
 {
-  return invalidTimeRange<Scalar>();
+  return timeRange<Scalar>(time_-usedStep_,time_);
 }
 
 
@@ -766,17 +772,26 @@ bool ImplicitBDFStepper<Scalar>::getPoints(
 {
   using Teuchos::as;
   bool status;
+  if (x_vec)
+    x_vec->clear();
+  if (xdot_vec)
+    xdot_vec->clear();
   for (unsigned int i=0 ; i<time_vec.size() ; ++i) {
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > x_temp = xn0_->clone_v();
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot_temp = xn0_->clone_v();
+    Teuchos::RCP<Thyra::VectorBase<Scalar> >
+      x_temp = createMember(xn0_->space());
+    Teuchos::RCP<Thyra::VectorBase<Scalar> >
+      xdot_temp = createMember(xn0_->space());
     ScalarMag accuracy;
     status = interpolateSolution_(time_vec[i],&*x_temp,&*xdot_temp,&accuracy);
     if (!status) {
       return(status);
     }
-    x_vec->push_back(x_temp);
-    xdot_vec->push_back(xdot_temp);
-    accuracy_vec->push_back(accuracy);
+    if (x_vec)
+      x_vec->push_back(x_temp);
+    if (xdot_vec)
+      xdot_vec->push_back(xdot_temp);
+    if (accuracy_vec)
+      accuracy_vec->push_back(accuracy);
   }
   if ( as<int>(this->getVerbLevel()) >= as<int>(Teuchos::VERB_HIGH) ) {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -784,15 +799,21 @@ bool ImplicitBDFStepper<Scalar>::getPoints(
     *out << "Passing out the interpolated values:" << std::endl;
     for (unsigned int i=0; i<time_vec.size() ; ++i) {
       *out << "time_[" << i << "] = " << time_vec[i] << std::endl;
-      *out << "x_vec[" << i << "] = " << std::endl;
-      (*x_vec)[i]->describe(*out,this->getVerbLevel());
-      if ( (*xdot_vec)[i] == Teuchos::null) {
-        *out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
-      } else {
-        *out << "xdot_vec[" << i << "] = " << std::endl;
-        (*xdot_vec)[i]->describe(*out,this->getVerbLevel());
+      if (x_vec) {
+        *out << "x_vec[" << i << "] = " << std::endl;
+        (*x_vec)[i]->describe(*out,this->getVerbLevel());
       }
-      *out << "accuracy[" << i << "] = " << (*accuracy_vec)[i] << std::endl;
+      if (xdot_vec) {
+        *out << "xdot_vec[" << i << "] = ";
+        if ( (*xdot_vec)[i] == Teuchos::null) {
+          *out << "Teuchos::null" << std::endl;
+        }
+        else {
+          *out << std::endl << Teuchos::describe(*(*xdot_vec)[i],this->getVerbLevel());
+        }
+      }
+      if (accuracy_vec)
+        *out << "accuracy[" << i << "] = " << (*accuracy_vec)[i] << std::endl;
     }
   }
   return(status);

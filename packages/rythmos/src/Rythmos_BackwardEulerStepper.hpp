@@ -585,6 +585,58 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
     *out << "\nt_ = " << t_ << std::endl;
   }
 
+#ifdef TEUCHOS_DEBUG
+
+  if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
+    *out << "\nChecking to make sure that solution and the interpolated solution are the same! ...\n";
+
+  {
+
+    typedef ScalarTraits<Scalar> ST;
+    typedef typename ST::magnitudeType ScalarMag;
+    typedef ScalarTraits<ScalarMag> SMT;
+    
+    Teuchos::OSTab tab(out);
+
+    const StepStatus<Scalar> stepStatus = this->getStepStatus();
+
+    RCP<const Thyra::VectorBase<Scalar> >
+      x = stepStatus.solution,
+      xdot = stepStatus.solutionDot;
+
+    Array<Scalar> time_vec = Teuchos::tuple(stepStatus.time);
+    Array<RCP<const Thyra::VectorBase<Scalar> > > x_vec, xdot_vec;
+    this->getPoints(time_vec,&x_vec,&xdot_vec,0);
+
+    RCP<const Thyra::VectorBase<Scalar> >
+      x_interp = x_vec[0],
+      xdot_interp = xdot_vec[0];
+
+    TEST_FOR_EXCEPT(
+      !Thyra::testRelNormDiffErr(
+        "x", *x, "x_interp", *x_interp,
+        "2*epsilon", ScalarMag(100.0*SMT::eps()),
+        "2*epsilon", ScalarMag(100.0*SMT::eps()),
+        includesVerbLevel(verbLevel,Teuchos::VERB_HIGH) ? out.get() : 0
+        )
+      );
+
+    TEST_FOR_EXCEPT(
+      !Thyra::testRelNormDiffErr(
+        "xdot", *xdot, "xdot_interp", *xdot_interp,
+        "2*epsilon", ScalarMag(100.0*SMT::eps()),
+        "2*epsilon", ScalarMag(100.0*SMT::eps()),
+        includesVerbLevel(verbLevel,Teuchos::VERB_HIGH) ? out.get() : 0
+        )
+      );
+
+  }
+
+  // 2007/07/25: rabartl: ToDo: Move the above test into a helper function so
+  // that it can be used from lots of different places!
+
+#endif
+
   if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
     *out
       << "\nLeaving " << Teuchos::TypeNameTraits<BackwardEulerStepper<Scalar> >::name()
@@ -769,8 +821,8 @@ bool BackwardEulerStepper<Scalar>::getPoints(
     TEST_FOR_EXCEPT(
       !Thyra::testRelErr(
         "dt", dt, "dt_", dt_,
-        "2*epsilon", ScalarMag(100.0*SMT::eps()),
-        "2*epsilon", ScalarMag(100.0*SMT::eps()),
+        "1e+4*epsilon", ScalarMag(1e+4*SMT::eps()),
+        "1e+2*epsilon", ScalarMag(1e+2*SMT::eps()),
         as<int>(verbLevel) >= as<int>(Teuchos::VERB_MEDIUM) ? out.get() : 0
         )
       );

@@ -823,7 +823,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
     << "\",type=\""<<entry.getAny(activeQuery).typeName()<<"\"}"
     << "\nin the sublist \"" << sublistName << "\""
     << "\nhas the wrong type."
-    << "\n\nThe correct type is \"std::string\"!"
+    << "\n\nThe correct type is \"string\"!"
     );
   const std::string
     &strValue = any_cast<std::string>(entry.getAny(activeQuery)); // This cast should not fail!

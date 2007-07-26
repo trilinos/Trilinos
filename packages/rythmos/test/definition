@@ -17,7 +17,7 @@
 }
 
 # Scalar Backward Euler
-(FRAMEWORK,INSTALL,RythmosAmesos) {
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos0) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
@@ -25,14 +25,14 @@
 
 # Scalar ImplicitBDF with forcing term
 
-(FRAMEWORK,INSTALL,RythmosAmesos) {
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos1) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3  --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
     X-HOST = gabriel.sandia.gov;
 }
 
-(FRAMEWORK,INSTALL,RythmosAmesos,RythmosBDF1Gabriel) {
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosBDF1Gabriel,,RythmosAmesos2) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3 --max-restep-error=1e-9  --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
@@ -54,14 +54,14 @@
 }
 
 # Vector Backward Euler
-(FRAMEWORK,INSTALL,RythmosAmesos) {
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos3) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Scalar Backward Euler using Amesos
-(FRAMEWORK,INSTALL,RythmosAmesos) {
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos4) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BE --maxerror=1e-1 --numelements=1 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml --echo-command-line;
     COMM = SERIAL, MPI(1);
@@ -75,9 +75,9 @@
 }
 
 # Vector Backward Euler using Amesos
-(FRAMEWORK,INSTALL,RythmosAmesos) {
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos5) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
-    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml --echo-command-line;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml --echo-command-line --verb-level=VERB_MEDIUM;
     COMM = SERIAL, MPI(1);
 }
 
@@ -91,7 +91,23 @@
 # Vector Backward Euler using Belos
 (FRAMEWORK,INSTALL,RythmosBelos) {
     TESTS = ../example/basicExample/basicExample_belos.exe;
-    ARGS = --method=BE --maxerror=1e-1 --numelements=100 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=100 --verbose \
+      --extra-linear-solver-params="
+        <ParameterList>
+          <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/>
+          <ParameterList name=\"Linear Solver Types\">
+            <ParameterList name=\"Belos\">
+              <Parameter name=\"Solver Type\" type=\"string\" value=\"Block GMRES\"/>
+              <ParameterList name=\"Solver Types\">
+                <ParameterList name=\"Block GMRES\">
+                  <Parameter name=\"Convergence Tolerance\" type=\"double\" value=\"1e-12\"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+       --linear-solver-params-used-file=lowsf.belos.used.xml
+      ;
     COMM = SERIAL,MPI(1);
 }
 
@@ -103,21 +119,21 @@
 }
 
 # Vector Backward Euler with same accuracy as ERK
-(FRAMEWORK,INSTALL,RythmosAmesos) {
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos6) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
-    ARGS = --numelements=10 --method=BE --T=0.1 --numsteps=5000 --verbose --echo-command-line;
+    ARGS = --numelements=10 --method=BE --T=0.1 --numsteps=5000 --verbose --echo-command-line --verb-level=VERB_MEDIUM;
     COMM = SERIAL, MPI(1);
 }
 
 # Vector Implicit BDF
-(FRAMEWORK,INSTALL,RythmosAmesos) {
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos7) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --numelements=10 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
 }
 
 # Vector Backward Euler
-(FRAMEWORK,INSTALL,RythmosAmesos) {
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos8) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BDF --maxorder=1 --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
@@ -133,12 +149,28 @@
 # Vector Implicit BDF with Belos
 (FRAMEWORK,INSTALL,RythmosBelos) {
     TESTS = ../example/basicExample/basicExample_belos.exe;
-    ARGS = --numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
+    ARGS = --numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose \
+      --extra-linear-solver-params="
+        <ParameterList>
+          <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/>
+          <ParameterList name=\"Linear Solver Types\">
+            <ParameterList name=\"Belos\">
+              <Parameter name=\"Solver Type\" type=\"string\" value=\"Block GMRES\"/>
+              <ParameterList name=\"Solver Types\">
+                <ParameterList name=\"Block GMRES\">
+                  <Parameter name=\"Convergence Tolerance\" type=\"double\" value=\"1e-12\"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+      --linear-solver-params-used-file=lowsf.belos.used.xml
+      ;
     COMM = SERIAL,MPI(1);
 }
 
 # Vector 1DfemTransient with Backward Euler 
-(FRAMEWORK,INSTALL,RythmosAmesos) {
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosAmesos9) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_amesos.exe;
     ARGS = --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
@@ -154,7 +186,22 @@
 # Vector 1DfemTransient with Backward Euler using Belos
 (FRAMEWORK,INSTALL,RythmosBelos) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_belos.exe;
-    ARGS = --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
+    ARGS = --verbose --extra-linear-solver-params="
+        <ParameterList>
+          <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/>
+          <ParameterList name=\"Linear Solver Types\">
+            <ParameterList name=\"Belos\">
+              <Parameter name=\"Solver Type\" type=\"string\" value=\"Block GMRES\"/>
+              <ParameterList name=\"Solver Types\">
+                <ParameterList name=\"Block GMRES\">
+                  <Parameter name=\"Convergence Tolerance\" type=\"double\" value=\"1e-12\"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+      --linear-solver-params-used-file=lowsf.belos.used.xml
+      ;
     COMM = SERIAL,MPI(1);
 }
 
@@ -175,7 +222,21 @@
 # Vector 1DfemTransient with ImplicitBDF with Belos
 (FRAMEWORK,INSTALL,RythmosBelos) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient_belos.exe;
-    ARGS = --verbose --method=BDF --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
+    ARGS = --verbose --method=BDF --extra-linear-solver-params="
+        <ParameterList>
+          <Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/>
+          <ParameterList name=\"Linear Solver Types\">
+            <ParameterList name=\"Belos\">
+              <Parameter name=\"Solver Type\" type=\"string\" value=\"Block GMRES\"/>
+              <ParameterList name=\"Solver Types\">
+                <ParameterList name=\"Block GMRES\">
+                  <Parameter name=\"Convergence Tolerance\" type=\"double\" value=\"1e-12\"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>" \
+        --linear-solver-params-used-file=lowsf.belos.used.xml;
     COMM = SERIAL,MPI(1);
 }
 
@@ -504,17 +565,15 @@
         </ParameterList>" \
       --final-time=1e-4 --num-time-steps=-1 --verb-level=VERB_EXTREME \
       --echo-command-line \
-      --max-state-error=1e-6 \
+      --max-state-error=5e-6 \
       --dump-final-solutions \
       --use-BDF;
     COMM = SERIAL, MPI(1);
     EXIT-STATUS = STRING-COMPARISON;
 }
 
-# Test the computation of DxDp using the BDF stepper
-# 2007/06/19: rabartl: Here I have set --max-restate-error=1e-8 to
-# allow this check (which should be zero) to pass.  In this way, I am
-# only really testing DxDp integrated vs. finite differences.
+
+# Sensitivity solve using BDF stepper using fixed time steps
 (FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL8,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
@@ -558,11 +617,8 @@
 }
 
 
-# 2007/06/14: rabartl: This tests the sensitivity computation for DxDp using
-# the BDF time stepper and seems to work great for DxDp but the state
-# recomputation is not the same binary number.  This must be some type of bug
-# and this needs to be fixed.
-(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL9,FAILING,FAILING1,RythmosAmesos) {
+# Sensitivity solve using BDF stepper using fixed time steps
+(FRAMEWORK,INSTALL,DIAGONAL,DIAGONAL9,RythmosAmesos) {
     TESTS = ../example/diagonalTransient/diagonalTransient_amesos.exe;
     ARGS =
       --linear-solver-extra-params="

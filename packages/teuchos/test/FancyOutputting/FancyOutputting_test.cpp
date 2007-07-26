@@ -216,14 +216,14 @@ void AlgorithmA::doAlgorithm()
   // be that a called function will set its own indent.  This convention makes
   // the most sense.
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-  if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
     *out << "\nEntering AlgorithmA::doAlgorithm() with verbLevel="<<Teuchos::toString(verbLevel)<<"\n";
   {
     // Here I use a simple macro for the typical case of one tab indent to
     // save typing.  The idea is that this should be as easy to write as
     // OSTab tab; but is more general.
     TEUCHOS_OSTAB;
-    if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
       *out
         << "\nI am \"smart\" code that knows about FancyOStream and OSTab ...\n"
         << "\nDoing algorithm of type \""<<toString(algoType_)<<"\""
@@ -231,10 +231,10 @@ void AlgorithmA::doAlgorithm()
     {
       // Here I temporaraly turn off tabbing so that I can print an imporant warning message.
       OSTab tab = this->getOSTab(OSTab::DISABLE_TABBING);
-      if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
         *out << "\n***\n*** Warning, I am doing something very dangerous so watch out!!!\n***\n";
     }
-    if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
       *out << "\nHere I am doing some more stuff and printing with indenting turned back on!\n";
     {
       // Here I am going to be calling a dumb piece of code that does not
@@ -257,7 +257,7 @@ void AlgorithmA::doAlgorithm()
     // indent.
     someLessDumbFunction(*out);
   }
-  if(out.get() && verbLevel!=Teuchos::VERB_NONE)
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))
     *out << "\nLeaving AlgorithmA::doAlgorithm()\n";
 }
 

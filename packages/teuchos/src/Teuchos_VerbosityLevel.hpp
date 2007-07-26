@@ -62,6 +62,26 @@ enum EVerbosityLevel {
 std::string toString(const EVerbosityLevel verbLevel);
 
 
+/** \brief Return true if the verbosity level includes the given level.
+ *
+ * \param  verbLevel
+ *           [in] The verbosity level that is in effect.
+ * \param  requestedVerbLevel
+ *           [in] The verbosity level the client is asking if
+ *           is included in <tt>verbLevel</tt>.
+ * \param  isDefaultLevel
+ *           [in] Set to <tt>true</tt> if the level in
+ *           <tt>requestedVerbLevel</tt> is the default verbosity level.  In
+ *           this case, if <tt>verbLevel==VERB_DEFAULT</tt>, then this function
+ *           will return <tt>true</tt>.  The default value is <tt>false</tt>.
+ */
+bool includesVerbLevel(
+  const EVerbosityLevel verbLevel,
+  const EVerbosityLevel requestedVerbLevel,
+  const bool isDefaultLevel = false
+  );
+
+
 /** \brief Return an increased or decreased verbosity level.
  *
  * \param  inputVerbLevel

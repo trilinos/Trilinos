@@ -70,6 +70,20 @@ std::string Teuchos::toString(const EVerbosityLevel verbLevel)
 }
 
 
+bool Teuchos::includesVerbLevel(
+  const EVerbosityLevel verbLevel,
+  const EVerbosityLevel requestedVerbLevel,
+  const bool isDefaultLevel
+  )
+{
+  return (
+    ( as<int>(verbLevel) >= as<int>(requestedVerbLevel) )
+    ||
+    ( verbLevel == VERB_DEFAULT && isDefaultLevel )
+    );
+}
+
+
 Teuchos::EVerbosityLevel
 Teuchos::incrVerbLevel(
   const EVerbosityLevel inputVerbLevel,

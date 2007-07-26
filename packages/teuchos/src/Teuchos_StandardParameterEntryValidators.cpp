@@ -291,7 +291,7 @@ void AnyNumberParameterEntryValidator::finishInitialization()
   }
   if(acceptedTypes_.allowString()) {
     if(addedType) oss << ", ";
-    oss << "\"std::string\"";
+    oss << "\"string\"";
     addedType = true;
   }
   acceptedTypesString_ = oss.str();

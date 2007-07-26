@@ -67,6 +67,14 @@ public:
   Time lower() const { return lower_; }
   /** \brief . */
   Time upper() const { return upper_; }
+  /** \brief . */
+  Time length() const { return (upper_ - lower_); }
+  /** \brief . */
+  bool isInRange ( const Time &t ) const
+    {
+      return ( lower_ <= t && t <= upper_ );
+    }
+
 private:
   Time lower_;
   Time upper_;

@@ -160,8 +160,9 @@ bool LinearInterpolator<Scalar>::interpolate(
   std::list<Scalar> local_t_values;
   local_t_values.insert(local_t_values.end(),t_values.begin(),t_values.end());
   local_t_values.sort();
-  // Check for node values to pass out directly:
   typename std::list<Scalar>::iterator time_it = local_t_values.begin();
+/* 2007/07/25: rabartl: I have commented this out to test the interpolator!
+  // Check for node values to pass out directly:
   while (time_it != local_t_values.end()) {
     typename DataStore<Scalar>::DataStoreVector_t::iterator data_in_it;
     data_in_it = std::find(local_data_in.begin(),local_data_in.end(),*time_it);
@@ -175,6 +176,7 @@ bool LinearInterpolator<Scalar>::interpolate(
       time_it++;
     }
   }
+*/
   if (local_t_values.size() == 0) {
     return(true);
   }
@@ -188,49 +190,67 @@ bool LinearInterpolator<Scalar>::interpolate(
            (local_data_in.back()  >= local_t_values.back() ) )    ) {
     return(false);
   }
+
   // Find t values on either side of time
   time_it = local_t_values.begin();
   for (unsigned int i=0 ; i<local_data_in.size()-1 ; ++i) {
-    while ( (local_data_in[i] <= *time_it) && (local_data_in[i+1] >= *time_it) ) {
-      Scalar& t = *time_it;
-      Scalar& ti = local_data_in[i].time;
-      Scalar& tip1 = local_data_in[i+1].time;
+
+    const Scalar& ti = local_data_in[i].time;
+    const Scalar& tip1 = local_data_in[i+1].time;
+    const Scalar h = tip1-ti;
+
+    TEST_FOR_EXCEPT( *time_it < ti );
+    TEST_FOR_EXCEPT( *time_it > tip1 );
+
+    while (
+      time_it != local_t_values.end()
+      &&
+      ( ti <= *time_it && *time_it <=tip1 )
+      )
+    {
+
+      const Scalar& t = *time_it;
+
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > xi = local_data_in[i].x;
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > xip1 = local_data_in[i+1].x;
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdoti = local_data_in[i].xdot;
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotip1 = local_data_in[i+1].xdot;
 
-      // 10/10/06 tscoffe:  this could be expensive:
-      Teuchos::RCP<Thyra::VectorBase<Scalar> > tmp_vec = xi->clone_v(); 
-
       // interpolate this point
+      //
+      // x(t) = (t-ti)/(tip1-ti) * xip1 + (1-(t-ti)/(tip1-ti)) * xi
+      //
+      // Above, it is easy to see that:
+      //
+      //    x(ti) = xi
+      //    x(tip1) = xip1
+      //
       DataStore<Scalar> DS;
       DS.time = t;
-      Scalar h = tip1-ti;
-      // First we work on x.
-      Thyra::V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),*xi,Scalar(-ST::one()/h),*xip1);
-      Teuchos::RCP<Thyra::VectorBase<Scalar> > x = xi->clone_v();
-      Thyra::V_StVpStV(&*x, ST::one(), *xi, t-ti, *tmp_vec);
+      const Scalar dt = t-ti;
+      const Scalar dt_over_h = dt / h;
+      const Scalar one_minus_dt_over_h = ST::one() - dt_over_h;
+      // x
+      RCP<Thyra::VectorBase<Scalar> > x = createMember(xi->space());
+      Thyra::V_StVpStV(&*x,dt_over_h,*xip1,one_minus_dt_over_h,*xi);
       DS.x = x;
-      // Check that xdot != Teuchos::null
-      if ( (xdoti != Teuchos::null) && (xdotip1 != Teuchos::null) ) {
-        // Then we work on xdot.
-        Thyra::V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),*xdoti,Scalar(-ST::one()/h),*xdotip1);
-        Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot = xdoti->clone_v();
-        Thyra::V_StVpStV(&*xdot, ST::one(), *xdoti, t-ti, *tmp_vec);
-        DS.xdot = xdot;
-      } else {
-        DS.xdot = xdoti;
-      }
+      // xdot
+      RCP<Thyra::VectorBase<Scalar> > xdot = createMember(xdoti->space());
+      Thyra::V_StVpStV(&*xdot,dt_over_h,*xdotip1,one_minus_dt_over_h,*xdoti);
+      DS.xdot = xdot;
       // And finally we estimate our order of accuracy
       DS.accuracy = h;
       // Push DataStore object onto vector:
       data_out->push_back(DS);
-      // Increment time_it:
+      // Move to the next time to consider!
       time_it++;
+
     }
+
   }
+
   return(true);
+
 }
 
 template<class Scalar>

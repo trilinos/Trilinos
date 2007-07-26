@@ -60,10 +60,11 @@ CORE_H = \
 	$(srcdir)/Rythmos_ForwardSensitivityStepper.hpp\
 	$(srcdir)/Rythmos_HermiteInterpolator.hpp\
 	$(srcdir)/Rythmos_ImplicitBDFStepper.hpp\
-	$(srcdir)/Rythmos_InterpolationBuffer.hpp\
 	$(srcdir)/Rythmos_IntegratorBase.hpp\
 	$(srcdir)/Rythmos_IntegratorDefault.hpp\
+	$(srcdir)/Rythmos_InterpolationBuffer.hpp\
 	$(srcdir)/Rythmos_InterpolationBufferBase.hpp\
+	$(srcdir)/Rythmos_InterpolationBufferHelpers.hpp\
 	$(srcdir)/Rythmos_InterpolatorBase.hpp\
 	$(srcdir)/Rythmos_LinearInterpolator.hpp\
 	$(srcdir)/Rythmos_SimpleIntegrator.hpp\

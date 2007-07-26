@@ -75,7 +75,8 @@ public:
 
   /** \brief . */
   void setStepper(
-    const Teuchos::RCP<StepperBase<Scalar> > &stepper_
+    const Teuchos::RCP<StepperBase<Scalar> > &stepper,
+    const Scalar &finalTime
     );
 
   //@}
@@ -215,7 +216,7 @@ IntegratorDefault<Scalar>::IntegratorDefault(
   if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH)) {
     *out << "Calling setStepper..." << std::endl;
   }
-  setStepper(stepper);
+  setStepper(stepper,0.0);
   if (as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH)) {
     *out << "Calling setInterpolationBuffer..." << std::endl;
   }
@@ -249,7 +250,8 @@ void IntegratorDefault<Scalar>::setInterpolationBuffer(
 
 template<class Scalar>
 void IntegratorDefault<Scalar>::setStepper(
-  const Teuchos::RCP<StepperBase<Scalar> > &stepper
+  const Teuchos::RCP<StepperBase<Scalar> > &stepper,
+  const Scalar &finalTime
   )
 {
   using Teuchos::as;

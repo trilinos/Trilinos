@@ -981,6 +981,12 @@ bool ForwardSensitivityStepper<Scalar>::getPoints(
   const int numTimePoints = time_vec.size();
 
   bool result = false;
+
+  if (x_bar_vec)
+    x_bar_vec->clear();
+
+  if (x_bar_dot_vec)
+    x_bar_dot_vec->clear();
   
   Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >
     x_vec, x_dot_vec;

@@ -34,6 +34,7 @@
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
 #include "Rythmos_StepperBase.hpp"
+#include "Rythmos_IntegratorBase.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_Assert.hpp"
 
@@ -62,11 +63,9 @@ public:
   /** \brief . */
   void initialize(
     const Teuchos::RCP<StepperBase<Scalar> > &stepper,
+    const Teuchos::RCP<IntegratorBase<Scalar> > &integrator,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
     );
-
-  // ToDo: Replace this with a real time integrator!
-  STANDARD_MEMBER_COMPOSITION_MEMBERS(int,numTimeSteps);
 
   //@}
 
@@ -107,6 +106,7 @@ private:
   // Private data members
 
   Teuchos::RCP<StepperBase<Scalar> > stepper_;
+  Teuchos::RCP<IntegratorBase<Scalar> > integrator_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> initialCondition_;
 
   int Np_;
@@ -125,13 +125,14 @@ template<class Scalar>
 Teuchos::RCP<StepperAsModelEvaluator<Scalar> >
 stepperAsModelEvaluator(
   const Teuchos::RCP<StepperBase<Scalar> > &stepper,
+  const Teuchos::RCP<IntegratorBase<Scalar> > &integrator,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
   )
 {
   using Teuchos::RCP; using Teuchos::rcp;
   RCP<StepperAsModelEvaluator<Scalar> >
     stepperAsModelEvaluator = rcp(new StepperAsModelEvaluator<Scalar>());
-  stepperAsModelEvaluator->initialize(stepper,initialCondition);
+  stepperAsModelEvaluator->initialize(stepper,integrator,initialCondition);
   return stepperAsModelEvaluator;
 }
 
@@ -145,23 +146,25 @@ stepperAsModelEvaluator(
 
 template<class Scalar>
 StepperAsModelEvaluator<Scalar>::StepperAsModelEvaluator()
-  :numTimeSteps_(-1),
-   Np_(0),
-   Ng_(0)
+  : Np_(0), Ng_(0)
 {}
 
 
 template<class Scalar>
 void StepperAsModelEvaluator<Scalar>::initialize(
   const Teuchos::RCP<StepperBase<Scalar> > &stepper,
+  const Teuchos::RCP<IntegratorBase<Scalar> > &integrator,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
   )
 {
+
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(is_null(stepper));
   TEST_FOR_EXCEPT(is_null(stepper->getModel()));
+  TEST_FOR_EXCEPT(is_null(integrator));
 #endif
   stepper_ = stepper;
+  integrator_ = integrator;
   initialCondition_ = initialCondition;
   currentInitialCondition_ = initialCondition;
 
@@ -259,7 +262,8 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(
     "Rythmos::StepperAsModelEvaluator", inArgs, outArgs, Teuchos::null
     );
-  VOTSSB stepper_outputTempState(stepper_,out,incrVerbLevel(verbLevel,-1));
+  VOTSSB integrator_outputTempState(integrator_,out,incrVerbLevel(verbLevel,-1));
+  //VOTSSB stepper_outputTempState(stepper_,out,incrVerbLevel(verbLevel,-1));
 
   // InArgs
 
@@ -285,9 +289,12 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
 
 #endif
   
-  // Do the integration
+  // Set up the integrator
 
   stepper_->setInitialCondition(currentInitialCondition_);
+  integrator_->setStepper(stepper_,finalTime);
+
+/*
 
   Scalar t0 = currentInitialCondition_.get_t();
   Scalar time = t0;
@@ -369,13 +376,19 @@ void StepperAsModelEvaluator<Scalar>::evalModel(
 
   }
 
-  // Retrieve the final solution
+*/
+
+  // Compute the desired response
 
   if (!is_null(g_out)) {
-    Thyra::assign(
-      &*g_out,
-      *stepper_->getStepStatus().solution
-      );
+
+    // Get x and xdot at the end time
+    Array<Scalar> time_vec = Teuchos::tuple<Scalar>(finalTime);
+    Array<RCP<const Thyra::VectorBase<Scalar> > > x_vec, xdot_vec;
+    integrator_->getFwdPoints( time_vec, &x_vec, &xdot_vec, 0 );
+
+    Thyra::V_V( &*g_out, *x_vec[0] );
+
   }
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
