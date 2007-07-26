@@ -242,6 +242,10 @@ void ML_rap_check(ML *ml, ML_Operator *RAP, ML_Operator *R,
 /*                  On output, row_lengths[i] is the of nonzeros in  */
 /*                  'requested_row[i]'.                              */
 /*                                                                   */
+/*   index        On input, the first unused location in *columns.   */
+/*                On output, the starting index in *columns where    */
+/*                the current row's column indices should be stored. */
+/*                                                                   */
 /*********************************************************************/
 
 void ML_get_matrix_row(ML_Operator *input_matrix, int N_requested_rows,
