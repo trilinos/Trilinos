@@ -362,6 +362,8 @@ namespace Sacado {
     template <typename T> std::ostream& operator << (std::ostream& os,
 						     const Taylor<T>& a);
 
+// -DRAD_NO_USING_STDCC is needed, e.g., with Sun CC 5.7
+#ifndef RAD_NO_USING_STDCC
     using std::exp;
     using std::log;
     using std::log10;
@@ -381,6 +383,7 @@ namespace Sacado {
     using std::pow;
     using std::max;
     using std::min;
+#endif //!RAD_NO_USING_STDCC
 
   } // namespace Tay
 

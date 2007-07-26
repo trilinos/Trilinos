@@ -427,6 +427,7 @@ namespace Sacado {
     SCALAR_FLOP_COUNTER_BINARY_COMPARISON_OP(<=,FlopCounts::LESS_THAN_EQUAL)
     SCALAR_FLOP_COUNTER_BINARY_COMPARISON_OP(==,FlopCounts::EQUAL)
 
+#ifndef RAD_NO_USING_STDCC
     using std::exp;
     using std::log;
     using std::log10;
@@ -446,10 +447,10 @@ namespace Sacado {
     using std::pow;
     using std::max;
     using std::min;
+#endif //RAD_NO_USING_STDCC
 
   } // namespace FlopCounterPack
-  
-} // namespace Sacado
+  } // namespace Sacado
 
 namespace std {
   using Sacado::FlopCounterPack::exp;

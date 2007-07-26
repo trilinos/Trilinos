@@ -133,14 +133,7 @@ namespace Sacado {
 namespace Rad {
 
 // -DRAD_NO_USING_STDCC is needed, e.g., with Sun CC 5.7
-#ifdef RAD_NO_USING_STDCC
-#ifdef NO_STDCC
-#define STDCC /*nothing*/
-#else
-#define STDCC std::
-#endif
-#else // !RAD_NO_USING_STDCC
-#define STDCC /*nothing*/
+#ifndef RAD_NO_USING_STDCC
   // Bring math functions into scope
   using std::exp;
   using std::log;
@@ -159,7 +152,7 @@ namespace Rad {
   using std::fabs;
   using std::atan2;
   using std::pow;
-#endif //NO_USING_STDCC
+#endif //!RAD_NO_USING_STDCC
 
 #ifdef RAD_AUTO_AD_Const
 #undef RAD_DEBUG_BLOCKKEEP
@@ -2172,67 +2165,67 @@ ADvar<Double>::operator/=(Double R) {
  ADvari<Double>&
 acos(const ADvari<Double> &v) {
 	Double t = v.Val;
-	return *(new ADvar1s<Double>(STDCC acos(t), -1./STDCC sqrt(1. - t*t), &v));
+	return *(new ADvar1s<Double>(std::acos(t), -1./std::sqrt(1. - t*t), &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 acosh(const ADvari<Double> &v) {
-	Double t = v.Val, t1 = STDCC sqrt(t*t - 1.);
-	return *(new ADvar1s<Double>(STDCC log(t + t1), 1./t1, &v));
+	Double t = v.Val, t1 = std::sqrt(t*t - 1.);
+	return *(new ADvar1s<Double>(std::log(t + t1), 1./t1, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 asin(const ADvari<Double> &v) {
 	Double t = v.Val;
-	return *(new ADvar1s<Double>(STDCC asin(t), 1./STDCC sqrt(1. - t*t), &v));
+	return *(new ADvar1s<Double>(std::asin(t), 1./std::sqrt(1. - t*t), &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 asinh(const ADvari<Double> &v) {
-	Double t = v.Val, td = 1., t1 = STDCC sqrt(t*t + 1.);
+	Double t = v.Val, td = 1., t1 = std::sqrt(t*t + 1.);
 	if (t < 0.) {
 		t = -t;
 		td = -1.;
 		}
-	return *(new ADvar1s<Double>(td*STDCC log(t + t1), 1./t1, &v));
+	return *(new ADvar1s<Double>(td*std::log(t + t1), 1./t1, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 atan(const ADvari<Double> &v) {
 	Double t = v.Val;
-	return *(new ADvar1s<Double>(STDCC atan(t), 1./(1. + t*t), &v));
+	return *(new ADvar1s<Double>(std::atan(t), 1./(1. + t*t), &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 atanh(const ADvari<Double> &v) {
 	Double t = v.Val;
-	return *(new ADvar1s<Double>(0.5*STDCC log((1.+t)/(1.-t)), 1./(1. - t*t), &v));
+	return *(new ADvar1s<Double>(0.5*std::log((1.+t)/(1.-t)), 1./(1. - t*t), &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 atan2(const ADvari<Double> &L, const ADvari<Double> &R) {
 	Double x = L.Val, y = R.Val, t = x*x + y*y;
-	return *(new ADvar2q<Double>(STDCC atan2(x,y), y/t, -x/t, &L, &R));
+	return *(new ADvar2q<Double>(std::atan2(x,y), y/t, -x/t, &L, &R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 atan2(Double x, const ADvari<Double> &R) {
 	Double y = R.Val, t = x*x + y*y;
-	return *(new ADvar1s<Double>(STDCC atan2(x,y), -x/t, &R));
+	return *(new ADvar1s<Double>(std::atan2(x,y), -x/t, &R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 atan2(const ADvari<Double> &L, Double y) {
 	Double x = L.Val, t = x*x + y*y;
-	return *(new ADvar1s<Double>(STDCC atan2(x,y), y/t, &L));
+	return *(new ADvar1s<Double>(std::atan2(x,y), y/t, &L));
 	}
 
  template<typename Double>
@@ -2284,23 +2277,23 @@ min(const ADvari<Double> &L, Double R) {
  template<typename Double>
  ADvari<Double>&
 cos(const ADvari<Double> &v) {
-	return *(new ADvar1s<Double>(STDCC cos(v.Val), -STDCC sin(v.Val), &v));
+	return *(new ADvar1s<Double>(std::cos(v.Val), -std::sin(v.Val), &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 cosh(const ADvari<Double> &v) {
-	return *(new ADvar1s<Double>(STDCC cosh(v.Val), STDCC sinh(v.Val), &v));
+	return *(new ADvar1s<Double>(std::cosh(v.Val), std::sinh(v.Val), &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 exp(const ADvari<Double> &v) {
 #if RAD_REINIT > 0
-	Double t = STDCC exp(v.Val);
+	Double t = std::exp(v.Val);
 	return *(new ADvar1s<Double>(t, t, &v));
 #else
-	ADvar1<Double>* rcv = new ADvar1<Double>(STDCC exp(v.Val), &v);
+	ADvar1<Double>* rcv = new ADvar1<Double>(std::exp(v.Val), &v);
 	rcv->d.a = &rcv->Val;
 	rcv->d.b = rcv;
 	return *rcv;
@@ -2311,69 +2304,69 @@ exp(const ADvari<Double> &v) {
  ADvari<Double>&
 log(const ADvari<Double> &v) {
 	Double x = v.Val;
-	return *(new ADvar1s<Double>(STDCC log(x), 1. / x, &v));
+	return *(new ADvar1s<Double>(std::log(x), 1. / x, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 log10(const ADvari<Double> &v) {
-	static double num = 1. / STDCC log(10.);
+	static double num = 1. / std::log(10.);
 	Double x = v.Val;
-	return *(new ADvar1s<Double>(STDCC log10(x), num / x, &v));
+	return *(new ADvar1s<Double>(std::log10(x), num / x, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 pow(const ADvari<Double> &L, const ADvari<Double> &R) {
-	Double x = L.Val, y = R.Val, t = STDCC pow(x,y);
-	return *(new ADvar2q<Double>(t, y*t/x, t*STDCC log(x), &L, &R));
+	Double x = L.Val, y = R.Val, t = std::pow(x,y);
+	return *(new ADvar2q<Double>(t, y*t/x, t*std::log(x), &L, &R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 pow(Double x, const ADvari<Double> &R) {
-	Double t = STDCC pow(x,R.Val);
-	return *(new ADvar1s<Double>(t, t*STDCC log(x), &R));
+	Double t = std::pow(x,R.Val);
+	return *(new ADvar1s<Double>(t, t*std::log(x), &R));
 	}
 
  template<typename Double>
  ADvari<Double>&
 pow(const ADvari<Double> &L, Double y) {
-	Double x = L.Val, t = STDCC pow(x,y);
+	Double x = L.Val, t = std::pow(x,y);
 	return *(new ADvar1s<Double>(t, y*t/x, &L));
 	}
 
  template<typename Double>
  ADvari<Double>&
 sin(const ADvari<Double> &v) {
-	return *(new ADvar1s<Double>(STDCC sin(v.Val), STDCC cos(v.Val), &v));
+	return *(new ADvar1s<Double>(std::sin(v.Val), std::cos(v.Val), &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 sinh(const ADvari<Double> &v) {
-	return *(new ADvar1s<Double>(STDCC sinh(v.Val), STDCC cosh(v.Val), &v));
+	return *(new ADvar1s<Double>(std::sinh(v.Val), std::cosh(v.Val), &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 sqrt(const ADvari<Double> &v) {
-	Double t = STDCC sqrt(v.Val);
+	Double t = std::sqrt(v.Val);
 	return *(new ADvar1s<Double>(t, 0.5/t, &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 tan(const ADvari<Double> &v) {
-	Double t = STDCC cos(v.Val);
-	return *(new ADvar1s<Double>(STDCC tan(v.Val), 1./(t*t), &v));
+	Double t = std::cos(v.Val);
+	return *(new ADvar1s<Double>(std::tan(v.Val), 1./(t*t), &v));
 	}
 
  template<typename Double>
  ADvari<Double>&
 tanh(const ADvari<Double> &v) {
-	Double t = 1. / STDCC cosh(v.Val);
-	return *(new ADvar1s<Double>(STDCC tanh(v.Val), t*t, &v));
+	Double t = 1. / std::cosh(v.Val);
+	return *(new ADvar1s<Double>(std::tanh(v.Val), t*t, &v));
 	}
 
  template<typename Double>
@@ -2546,7 +2539,6 @@ T F copy(Ai x)
 #undef T
 #undef A
 #undef C
-#undef STDCC
 #undef Ttype
 #undef Dtype
 

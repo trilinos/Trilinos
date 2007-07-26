@@ -41,6 +41,8 @@
 namespace Sacado {
 namespace Radnt {	// nontemplated RAD
 
+// -DRAD_NO_USING_STDCC is needed, e.g., with Sun CC 5.7
+#ifndef RAD_NO_USING_STDCC
   // Bring math functions into scope
   using std::exp;
   using std::log;
@@ -59,6 +61,7 @@ namespace Radnt {	// nontemplated RAD
   using std::fabs;
   using std::atan2;
   using std::pow;
+#endif //!RAD_NO_USING_STDCC
 
  class ADvar;
  class ADvari;

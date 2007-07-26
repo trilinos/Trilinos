@@ -59,6 +59,8 @@
 #include <algorithm>	// for std::min and std::max
 #include <ostream>	// for std::ostream
 
+// -DRAD_NO_USING_STDCC is needed, e.g., with Sun CC 5.7
+#ifndef RAD_NO_USING_STDCC
 // Import the standard math functions into the Sacado::Fad namespace
 namespace Sacado {
   namespace Fad {
@@ -83,6 +85,7 @@ namespace Sacado {
     using std::min;
   }
 }
+#endif //!RAD_NO_USING_STDCC
 
 #define FAD_UNARYOP_MACRO(OPNAME,OP,VALUE,DX,FASTACCESSDX)		\
 namespace Sacado {							\
@@ -136,86 +139,86 @@ FAD_UNARYOP_MACRO(operator-,
 		  -expr.fastAccessDx(i))
 FAD_UNARYOP_MACRO(exp,
 		  ExpOp, 
-		  exp(expr.val()),
-		  exp(expr.val())*expr.dx(i),
-		  exp(expr.val())*expr.fastAccessDx(i))
+		  std::exp(expr.val()),
+		  std::exp(expr.val())*expr.dx(i),
+		  std::exp(expr.val())*expr.fastAccessDx(i))
 FAD_UNARYOP_MACRO(log,
 		  LogOp, 
-		  log(expr.val()),
+		  std::log(expr.val()),
 		  expr.dx(i)/expr.val(),
 		  expr.fastAccessDx(i)/expr.val())
 FAD_UNARYOP_MACRO(log10,
 		  Log10Op, 
-		  log10(expr.val()),
-		  expr.dx(i)/(log(value_type(10))*expr.val()),
-		  expr.fastAccessDx(i) / (log(value_type(10))*expr.val()))
+		  std::log10(expr.val()),
+		  expr.dx(i)/( std::log(value_type(10))*expr.val()),
+		  expr.fastAccessDx(i) / ( std::log(value_type(10))*expr.val()))
 FAD_UNARYOP_MACRO(sqrt,
 		  SqrtOp, 
-		  sqrt(expr.val()),
-		  expr.dx(i)/(value_type(2)*sqrt(expr.val())),
-		  expr.fastAccessDx(i)/(value_type(2)*sqrt(expr.val())))
+		  std::sqrt(expr.val()),
+		  expr.dx(i)/(value_type(2)* std::sqrt(expr.val())),
+		  expr.fastAccessDx(i)/(value_type(2)* std::sqrt(expr.val())))
 FAD_UNARYOP_MACRO(cos,
 		  CosOp, 
-		  cos(expr.val()),
-		  -expr.dx(i)*sin(expr.val()),
-		  -expr.fastAccessDx(i)*sin(expr.val()))
+		  std::cos(expr.val()),
+		  -expr.dx(i)* std::sin(expr.val()),
+		  -expr.fastAccessDx(i)* std::sin(expr.val()))
 FAD_UNARYOP_MACRO(sin,
 		  SinOp, 
-		  sin(expr.val()),
-		  expr.dx(i)*cos(expr.val()),
-		  expr.fastAccessDx(i)*cos(expr.val()))
+		  std::sin(expr.val()),
+		  expr.dx(i)* std::cos(expr.val()),
+		  expr.fastAccessDx(i)* std::cos(expr.val()))
 FAD_UNARYOP_MACRO(tan,
 		  TanOp, 
-		  tan(expr.val()),
+		  std::tan(expr.val()),
 		  expr.dx(i)*
-		    (value_type(1)+tan(expr.val())*tan(expr.val())),
+		    (value_type(1)+ std::tan(expr.val())* std::tan(expr.val())),
 		  expr.fastAccessDx(i)*
-		    (value_type(1)+tan(expr.val())*tan(expr.val())))
+		    (value_type(1)+ std::tan(expr.val())* std::tan(expr.val())))
 FAD_UNARYOP_MACRO(acos,
 		  ACosOp, 
-		  acos(expr.val()),
-		  -expr.dx(i)/sqrt(value_type(1)-expr.val()*expr.val()),
+		  std::acos(expr.val()),
+		  -expr.dx(i)/ std::sqrt(value_type(1)-expr.val()*expr.val()),
 		  -expr.fastAccessDx(i) /
-		    sqrt(value_type(1)-expr.val()*expr.val()))
+		    std::sqrt(value_type(1)-expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(asin,
 		  ASinOp, 
-		  asin(expr.val()),
-		  expr.dx(i)/sqrt(value_type(1)-expr.val()*expr.val()),
+		  std::asin(expr.val()),
+		  expr.dx(i)/ std::sqrt(value_type(1)-expr.val()*expr.val()),
 		  expr.fastAccessDx(i) /
-		    sqrt(value_type(1)-expr.val()*expr.val()))
+		    std::sqrt(value_type(1)-expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(atan,
 		  ATanOp, 
-		  atan(expr.val()),
+		  std::atan(expr.val()),
 		  expr.dx(i)/(value_type(1)+expr.val()*expr.val()),
 		  expr.fastAccessDx(i)/(value_type(1)+expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(cosh,
 		  CoshOp, 
-		  cosh(expr.val()),
-		  expr.dx(i)*sinh(expr.val()),
-		  expr.fastAccessDx(i)*sinh(expr.val()))
+		  std::cosh(expr.val()),
+		  expr.dx(i)* std::sinh(expr.val()),
+		  expr.fastAccessDx(i)* std::sinh(expr.val()))
 FAD_UNARYOP_MACRO(sinh,
 		  SinhOp, 
-		  sinh(expr.val()),
-		  expr.dx(i)*cosh(expr.val()),
-		  expr.fastAccessDx(i)*cosh(expr.val()))
+		  std::sinh(expr.val()),
+		  expr.dx(i)* std::cosh(expr.val()),
+		  expr.fastAccessDx(i)* std::cosh(expr.val()))
 FAD_UNARYOP_MACRO(tanh,
 		  TanhOp, 
-		  tanh(expr.val()),
-		  expr.dx(i)/(cosh(expr.val())*cosh(expr.val())),
+		  std::tanh(expr.val()),
+		  expr.dx(i)/( std::cosh(expr.val())* std::cosh(expr.val())),
 		  expr.fastAccessDx(i) / 
-		    (cosh(expr.val())*cosh(expr.val())))
+		    ( std::cosh(expr.val())* std::cosh(expr.val())))
 FAD_UNARYOP_MACRO(acosh,
 		  ACoshOp, 
 		  acosh(expr.val()),
-		  expr.dx(i)/sqrt((expr.val()-value_type(1)) * 
+		  expr.dx(i)/ std::sqrt((expr.val()-value_type(1)) * 
 				       (expr.val()+value_type(1))),
-		  expr.fastAccessDx(i)/sqrt((expr.val()-value_type(1)) * 
+		  expr.fastAccessDx(i)/ std::sqrt((expr.val()-value_type(1)) * 
 						 (expr.val()+value_type(1))))
 FAD_UNARYOP_MACRO(asinh,
 		  ASinhOp, 
 		  asinh(expr.val()),
-		  expr.dx(i)/sqrt(value_type(1)+expr.val()*expr.val()),
-		  expr.fastAccessDx(i)/sqrt(value_type(1)+
+		  expr.dx(i)/ std::sqrt(value_type(1)+expr.val()*expr.val()),
+		  expr.fastAccessDx(i)/ std::sqrt(value_type(1)+
 						 expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(atanh,
 		  ATanhOp, 
@@ -225,14 +228,14 @@ FAD_UNARYOP_MACRO(atanh,
 						 expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(abs,
 		  AbsOp, 
-		  abs(expr.val()),
+		  std::abs(expr.val()),
 		  expr.val() >= 0 ? value_type(+expr.dx(i)) : 
 		    value_type(-expr.dx(i)),
 		  expr.val() >= 0 ? value_type(+expr.fastAccessDx(i)) : 
 		    value_type(-expr.fastAccessDx(i)))
 FAD_UNARYOP_MACRO(fabs,
 		  FAbsOp, 
-		  fabs(expr.val()),
+		  std::fabs(expr.val()),
 		  expr.val() >= 0 ? value_type(+expr.dx(i)) : 
 		    value_type(-expr.dx(i)),
 		  expr.val() >= 0 ? value_type(+expr.fastAccessDx(i)) : 
@@ -413,7 +416,7 @@ FAD_BINARYOP_MACRO(operator/,
 		   expr1.fastAccessDx(i)/expr2.val())
 FAD_BINARYOP_MACRO(atan2,
 		   Atan2Op,
-		   atan2(expr1.val(), expr2.val()),
+		   std::atan2(expr1.val(), expr2.val()),
 		   (expr2.val()*expr1.dx(i) - expr1.val()*expr2.dx(i))/
 			(expr1.val()*expr1.val() + expr2.val()*expr2.val()),
 		   (expr2.val()*expr1.fastAccessDx(i) - expr1.val()*expr2.fastAccessDx(i))/
@@ -428,20 +431,20 @@ FAD_BINARYOP_MACRO(atan2,
 			(expr1.val()*expr1.val() + expr2.val()*expr2.val()))
 FAD_BINARYOP_MACRO(pow,
 		   PowerOp,
-		   pow(expr1.val(), expr2.val()),
-		   (expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/
-		    expr1.val())*pow(expr1.val(),expr2.val()),
-		   (expr2.fastAccessDx(i)*log(expr1.val())+
+		   std::pow(expr1.val(), expr2.val()),
+		   (expr2.dx(i)* std::log(expr1.val())+expr2.val()*expr1.dx(i)/
+		    expr1.val())* std::pow(expr1.val(),expr2.val()),
+		   (expr2.fastAccessDx(i)* std::log(expr1.val())+
 		    expr2.val()*expr1.fastAccessDx(i)/
-		    expr1.val())*pow(expr1.val(),expr2.val()),
-		   expr2.dx(i)*log(expr1.val()) *
-		     pow(expr1.val(),expr2.val()),
+		    expr1.val())* std::pow(expr1.val(),expr2.val()),
+		   expr2.dx(i)* std::log(expr1.val()) *
+		     std::pow(expr1.val(),expr2.val()),
 		   expr2.val()*expr1.dx(i)/
-		   expr1.val()*pow(expr1.val(),expr2.val()),
-		   expr2.fastAccessDx(i)*log(expr1.val()) *
-		     pow(expr1.val(),expr2.val()),
+		   expr1.val()* std::pow(expr1.val(),expr2.val()),
+		   expr2.fastAccessDx(i)* std::log(expr1.val()) *
+		     std::pow(expr1.val(),expr2.val()),
 		   expr2.val()*expr1.fastAccessDx(i)/
-		     expr1.val()*pow(expr1.val(),expr2.val()))
+		     expr1.val()* std::pow(expr1.val(),expr2.val()))
 
 #undef FAD_BINARYOP_MACRO
 
@@ -587,7 +590,7 @@ namespace std {                                                         \
 
 FAD_SFINAE_BINARYOP_MACRO(max,
                    MaxOp,
-                   max(expr1.val(), expr2.val()),
+                   std::max(expr1.val(), expr2.val()),
                    expr1.val() >= expr2.val() ? expr1.dx(i) : expr2.dx(i),
                    expr1.val() >= expr2.val() ? expr1.fastAccessDx(i) : 
                                                 expr2.fastAccessDx(i),
@@ -599,7 +602,7 @@ FAD_SFINAE_BINARYOP_MACRO(max,
                                                 value_type(0))
 FAD_SFINAE_BINARYOP_MACRO(min,
                    MinOp,
-                   min(expr1.val(), expr2.val()),
+                   std::min(expr1.val(), expr2.val()),
                    expr1.val() <= expr2.val() ? expr1.dx(i) : expr2.dx(i),
                    expr1.val() <= expr2.val() ? expr1.fastAccessDx(i) : 
                                                 expr2.fastAccessDx(i),

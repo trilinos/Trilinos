@@ -39,6 +39,8 @@
 #include <algorithm>	// for std::min and std::max
 #include <ostream>	// for std::ostream
 
+// -DRAD_NO_USING_STDCC is needed, e.g., with Sun CC 5.7
+#ifndef RAD_NO_USING_STDCC
 // Import the standard math functions into the Sacado::Taylor namespace
 namespace Sacado {
   namespace Tay {
@@ -62,6 +64,7 @@ namespace Sacado {
     using std::min;
   }
 }
+#endif //!RAD_NO_USING_STDCC
 
 namespace Sacado {
 
