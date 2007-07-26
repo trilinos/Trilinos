@@ -126,6 +126,7 @@ struct ML_Operator_Struct {
    ML_DVector    *diagonal;      /** diagonal of matrix.     */
    int           N_nonzeros;
    int           max_nz_per_row;
+   int           blocks; /*only used for VBR matricies to say number of blocks*/
    int           from_an_ml_operator;
    ML_Operator   *sub_matrix;
    ML_BdryPts    *bc;
