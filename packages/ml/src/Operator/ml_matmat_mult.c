@@ -43,7 +43,8 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   void   (*Bgetrow)(ML_Operator *,int,int *,int *,int **,int **,int *,int);
   int    *B_indx;
   int    *Bptr, *Bcols;
-  int *col_inds, B_total_Nnz, itemp, B_allocated, hash_val, *accum_index, lots_of_space;
+  double *Bvals;
+  int *col_inds, B_total_Nnz, itemp,itemp2, B_allocated, B_allocated_int, hash_val, *accum_index, lots_of_space;
   int rows_that_fit, rows_length, *rows, NBrows, end, start = 0;
   int subB_Nnz, Next_est, total_cols = 0;
   /*
@@ -68,6 +69,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   struct ML_vbrdata     *Cvbr_mat;
   int hashTableIsPowerOfTwo = 0;
   int nearbyIndex;
+  int blocks;
 
 
   printf("This is an experimental routine. It basically works but ...\n");
@@ -347,20 +349,26 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
   Bptr      = (int    *) ML_allocate( (Bmatrix->getrow->N_block_rows+1)*sizeof(int));
   B_allocated = B_total_Nnz * 2;
+  B_allocated_int = Bmatrix->blocks + 1;
+  B_allocated_int = B_allocated_int*2;
   lots_of_space = 0;
 
-  Bcols     = NULL; B_indx = NULL;
-  while (B_indx == NULL) {
+  Bcols     = NULL; B_indx = NULL; Bvals = NULL;
+  while (Bvals == NULL || B_indx == NULL) {
     lots_of_space++;
     if (Bcols != NULL) ML_free(Bcols);
-    Bcols     = (int    *) ML_allocate( B_allocated * sizeof(int));
-    B_indx    = (int    *) ML_allocate( B_allocated * sizeof(int));
+    if (B_indx != NULL) ML_free(B_indx);
+    Bcols     = (int    *) ML_allocate( B_allocated_int * sizeof(int));
+    B_indx    = (int    *) ML_allocate( B_allocated_int * sizeof(int));
+    Bvals    = (double *) ML_allocate( B_allocated * sizeof(double));
     B_allocated /= 2;
+    B_allocated_int /=2; 
   }
   ML_free(B_indx); ML_free(Bcols);
 
-  Bcols     = (int    *) ML_allocate( B_allocated * sizeof(int));
-  B_indx    = (int    *) ML_allocate( B_allocated * sizeof(int));
+  Bcols     = (int    *) ML_allocate( B_allocated_int * sizeof(int));
+  B_indx    = (int    *) ML_allocate( B_allocated_int * sizeof(int));
+  Bvals    = (double *) ML_allocate( B_allocated * sizeof(double));
   if (lots_of_space != 1) lots_of_space = 0;
 
   if (Bmatrix->getrow->N_block_rows != 0) {
@@ -386,12 +394,13 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   while (start < N) {
 
     itemp = 0;
-
+    itemp2 = 0;
     Bptr[0] = 0;
     if (lots_of_space) {
       for (i = 0; i < Bmatrix->getrow->N_block_rows; i++ ) {
-	    Bgetrow(Bmatrix, 1, &i, &B_allocated, &Bcols, &B_indx, &row2_N, itemp);
-	    itemp += row2_N;
+	    VBR_block_getrow_ind(Bmatrix, i, &B_allocated_int, &B_allocated, &blocks, &Bcols, &B_indx, &Bvals, &row2_N, itemp, itemp2);
+	    itemp += blocks;
+        itemp2 += row2_N;
 	    Bptr[i+1] = itemp;
       }
       subB_Nnz = itemp;
@@ -562,7 +571,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 	    Bcol_ptr = &(Bcols[jj]);
         /*multiply a block of a row of A times a block row of B*/
 	    while (jj++ < Bptr[A_i_cols[k]+1]) {
-	      StartBblock = &(Bvalues[(int) *Bval_ptr]); 
+	      StartBblock = &(Bvals[(int) *Bval_ptr]); 
           /*we have a new block*/
 	      if (accum_index[*Bcol_ptr] < 0) {
 	        *acc_col_ptr = *Bcol_ptr; acc_col_ptr++;
@@ -1796,7 +1805,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
          }
          k++;
        }
-       iplus1= i + 1;
+       iplus1 = i+1;
        rpntr = (int*)realloc((void*)rpntr, iplus1*sizeof(int));
        bpntr = (int*)realloc((void*)bpntr, iplus1*sizeof(int));
        bindx = (int*)realloc((void*)bindx, bpntr[i]*sizeof(int));
@@ -1812,6 +1821,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        cur_matrix->getrow->func_ptr = VBR_getrows;
        cur_matrix->getrow->data = (void *)out_data;
        cur_matrix->data = (void *)out_data;
+       cur_matrix->blocks = cur_matrix->sub_matrix->blocks + bpntr[i];
        for(i = 0; i < neighbors; i++)
          if (pre_comm->neighbors[i].N_rcv > 0)
            ML_free(all_rpntr[i]);
@@ -1831,7 +1841,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    {
    /*settings to change since we now have a vbr matrix*/
    in_matrix->type = ML_TYPE_VBR_MATRIX;
-   in_matrix->getrow->func_ptr = VBR_getrows;
+   in_matrix->matvec->func_ptr = NULL;
    /*in_matrix->matvec->func_ptr = VBR_matvec;  this needs to be put back in at some point once the function exists*/
 
    /*find number of block rows and block columnsi and their location if using a fixed width*/
@@ -2080,6 +2090,8 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
    out_data->rpntr = rpntr;
    out_data->val = vals;
    in_matrix->getrow->N_block_rows = blockrows;
+   in_matrix->N_nonzeros = indx[bpntr[iplus1]];
+   in_matrix->blocks = bpntr[iplus1];
    /*delete old csr matrix*/
 
    if ((in_matrix->data_destroy != NULL) && (in_matrix->data != NULL)) {
