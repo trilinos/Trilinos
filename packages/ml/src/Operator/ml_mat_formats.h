@@ -118,6 +118,8 @@ extern int VBR_getrows(ML_Operator *data, int N_requested_rows,  int requested_r
 
 extern int VBR_block_getrow(ML_Operator *Amat, int requested_row, int bindx_space, int indx_space, int values_space, int *blocks, int bindx[], int indx[],  double values[], int *row_length);
 
+extern int VBR_block_getrow_ind(ML_Operator *Amat, int requested_row, int *int_space, int *values_space, int *blocks, int **bindx, int **indx,  double **values, int *row_length, int index, int index2);
+
 #ifdef WKC
 /* WKC -- double * happen to be Epetra_MultiVectors in cognito */
 extern int MSR_matvec_WKC(ML_Operator *Amat, int, double *p, int, double *ap);

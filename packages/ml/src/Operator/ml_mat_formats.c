@@ -270,6 +270,188 @@ int VBR_block_getrow(ML_Operator *data, int requested_row,
 }
 
 /*********************************************************************/
+/* Get one block matrix row(requested_row)                           */
+/* from the user's matrix and return this information  in            */
+/* 'blocks, bindx, indx, values, row_length, blocks'.                */
+/* If there is not enough space to complete this operation, allocate */
+/* it.  Otherwise, return 1.                                         */
+/*                                                                   */
+/* Parameters                                                        */
+/* ==========                                                        */
+/* data             On input, points to user's data containing       */
+/*                  matrix values.                                   */
+/* requested_row    On input, requested_row                          */
+/*                  gives the row indice of the block row for which  */
+/*                  nonzero blocks are returned.                     */
+/* row_length       On output, row_length is the number of           */
+/*                  elements in the nonzero blocks in the row        */
+/*                  'requested_row'                                  */
+/* blocks           On output, blocks is the number of nonzero blocks*/
+/*                  in the row 'requested_row'                       */
+/* bindx, indx, values                                               */
+/*                  On output, bindx[columns] is the number of c and */
+/*                  values[k] contains the                           */
+/*                  column number and value of a matrix nonzero where*/
+/*                  all the nonzeros for requested_rows[0] appear    */
+/*                  first followed by the nonzeros for               */
+/*                  requested_rows[1], etc. NOTE: these arrays are   */
+/*                  of size 'allocated_space'.                       */
+/*                  Blocksize[k] contains the number of elements in  */
+/*                  each non-zero block                              */
+/* int_space, values_space                                           */
+/*                  On input, int_space indicates the space available*/
+/*                  in 'bindx', 'indx' and values_space the space in */
+/*                  'values' for storing nonzeros.  If more space is */
+/*                  needed, it is allocated.  The size of the arrays */
+/*                  are returned on output                           */
+/* index, index2    If index and index are not zero then tack the row*/
+/*                  being retireved onto the end of the bindx, indx  */
+/*                  and values arrays.  index is used for bindx and  */
+/*                  indx while index2 is used for values.            */
+/*********************************************************************/
+
+int VBR_block_getrow_ind(ML_Operator *data, int requested_row,
+   int *int_space, int *values_space, int *blocks, int **bindx,
+   int **indx, double **values, int *row_length, int index, int index2)
+{
+   struct ML_vbrdata *input_matrix;
+   int  i, bpntr_rows, bpntr_rows_1;
+   int *t1, *t2, *bindx_ptr, *indx_ptr;
+   int *bindx_old, *indx_old, *bpntr, start, finish;
+   double *val, *t3, *values_ptr;
+   int done = 0;
+   int col_size;
+   ML_Operator *place_holder;
+   
+
+#ifdef DEBUG2
+   if ( (requested_row >= input_matrix->getrow->N_block_rows) || (requested_row < 0) ) {
+      row_length = 0;
+      return;
+   }
+#endif
+
+   /*cathing a potential problem but not sure if this is a problem or would ever happen*/
+   /*if (data->getrow->row_map != NULL) 
+   {
+     printf("It is unclear as to what a non-NULL rowmap means in a blockrow matrix.\n");
+     exit(1);
+   }*/
+   /*it is unclear what this does especially in the block case so it is commented out and trapped as an error*/
+   /*if (data->getrow->row_map != NULL) {
+      if (data->getrow->row_map[requested_row] != -1)
+         requested_row = data->getrow->row_map[requested_row];
+      else { row_length = 0;
+    ML_avoid_unused_param( (void *) &row_length);
+    return;}
+   }*/
+
+                          
+   place_holder = data;
+   /*Find matrix to query*/
+   while(!done)
+   {
+     if(place_holder->sub_matrix == NULL)
+       done = 1;
+     else
+     {
+       if(requested_row < place_holder->sub_matrix->getrow->N_block_rows)
+         place_holder = place_holder->sub_matrix;
+       else
+       {
+         requested_row -= place_holder->sub_matrix->getrow->N_block_rows;
+         done = 1;
+       }
+     }
+   }
+
+   /*set alliases*/
+   input_matrix = (struct ML_vbrdata *) ML_Get_MyGetrowData(place_holder);
+   bpntr  = input_matrix->bpntr;
+   indx_old = input_matrix->indx;
+
+   /*store frquently used data for faster access*/
+   bpntr_rows = bpntr[requested_row];
+   bpntr_rows_1 = bpntr[requested_row+1];
+   start = indx_old[bpntr_rows];
+   finish = indx_old[bpntr_rows_1];
+
+   /*calculate block row information*/
+   *row_length = finish - start;
+   *blocks = bpntr_rows_1 - bpntr_rows;   
+   
+   /*Make sure we have enough space to store the block row variables we need 
+     one more space for the last spot of the indx*/
+   if(*blocks + index >= *int_space){
+     *int_space = 2*(*int_space) +1;
+     if(*blocks + index >= *int_space)\
+        *int_space = *int_space + 5 + index;
+      t1 = (int    *) ML_allocate(*int_space*sizeof(int   ));
+      t2 = (int    *) ML_allocate(*int_space*sizeof(int   ));
+      if (t2 == NULL) {
+         printf("Not enough space to get a matrix blockrow. A row length of \n");
+         printf("%d was not sufficient\n",(*int_space-1)/2);
+         fflush(stdout);
+         exit(1);
+      }
+      for (i = 0; i < index; i++) t1[i] = (*indx)[i];
+      for (i = 0; i < index; i++) t2[i] = (*bindx)[i];
+      ML_free(*indx); ML_free(*bindx);
+      *indx = t1;
+      *bindx = t2;
+   }
+   if (*row_length + index2 > *values_space) {
+     *values_space = 2*(*values_space) +1;
+     if(*row_length + index2 > *values_space)\
+        *values_space = *values_space + 5 + index2;
+      t3 = (double *) ML_allocate(*values_space*sizeof(double));
+      if (t3 == NULL) {
+         printf("Not enough space to get a matrix blockrow. A row length of \n");
+         printf("%d was not sufficient\n",(*values_space-1)/2);
+         fflush(stdout);
+         exit(1);
+      }
+      for (i = 0; i < index2; i++) t3[i] = (*values)[i];
+      ML_free(*values);
+      *values = t3;
+   }
+   
+   /*iterate over the blocking data and store it*/
+   bindx_old = &(input_matrix->bindx[bpntr_rows]); 
+   indx_old = &(input_matrix->indx[bpntr_rows]);
+   if(index == 0){
+     **indx = 0;
+     /*indx_old++;*/
+   }
+   bindx_ptr = &((*bindx)[index]);
+   indx_ptr = &((*indx)[index+1]);
+   for(i = 0; i < *blocks; i++)
+   {
+     *bindx_ptr++ = *bindx_old++;
+     *indx_ptr = indx_ptr[-1] - *indx_old++;
+     *indx_ptr++ += *indx_old;
+   }
+
+   /*if we need to convert to global ids this will only be with the right B matrix*/
+   if(place_holder->getrow->use_loc_glob_map == ML_YES)
+   {
+     col_size = input_matrix->cpntr[1]-input_matrix->cpntr[0];
+     for(i = -*blocks; i < 0; i++)
+     {
+       bindx_ptr[i] = place_holder->getrow->loc_glob_map[bindx_ptr[i]*col_size]/col_size;
+     }
+   }
+                                                                 
+   /*iterate over the data and copy it*/
+   val = &(input_matrix->val[start]);
+   values_ptr = &((*values)[index2]);
+   for(i = start; i < finish; i++)
+   {
+     *values_ptr++ = *val++;
+   }
+   return(1);
+}
+/*********************************************************************/
 /* Get some matrix rows ( requested_rows[0 ... N_requested_rows-1] ) */
 /* from the user's matrix and return this information  in            */
 /* 'row_lengths, columns, values'.                                   */
