@@ -1,14 +1,13 @@
 #!/bin/sh
 # Lines ending in \n\ work around a bug in gawk
-# Sun's cstdio isn't a fully functional stdio.h, so we
-# avoid trouble in general by including stdio.h rather than cstdio.
 @AWK@ 'BEGIN { ftop = "\n\
 /* Try to test all combinations of types and operations */\n\
 \n\
 #define ADT_RAD Sacado::Rad::\n\
 \n\
 #include \"Sacado_trad.hpp\"\n\
-#include <stdio.h>\n\
+#include <cstdio>\n\
+using std::printf\n\
 \n\
 typedef ADT_RAD IndepADvar<double> AI;\n\
 typedef ADT_RAD ADvar<double> A;\n\
