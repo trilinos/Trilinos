@@ -166,7 +166,7 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 
 AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
 AC_CHECK_HEADERS([cstdio stdio.h], [break],)
-AC_CHECK_HEADERS([cassert assert.h], [break],)
+# AC_CHECK_HEADERS([cassert assert.h], [break],)
 AC_CHECK_HEADERS([cmath math.h], [break],)
 AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
@@ -186,9 +186,9 @@ if test "X$ac_cv_header_cstdio" != "Xyes" && test "X$ac_cv_header_stdio_h" != "X
   AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  Anasazi requires at least one or the other.]])
 fi
 
-if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cassert or assert.h.  Anasazi requires at least one or the other.]])
-fi
+#if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != "Xyes"; then
+#  AC_MSG_ERROR([[Cannot find cassert or assert.h.  Anasazi requires at least one or the other.]])
+#fi
 
 if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find string or string.h.  Anasazi requires at least one or the other.]])

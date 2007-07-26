@@ -93,12 +93,6 @@
 #include <stdio.h>
 #endif
 
-#ifdef HAVE_CASSERT
-#include <cassert>
-#else
-#include <assert.h>
-#endif
-
 #ifdef HAVE_STRING
 #include <string>
 #else
@@ -161,14 +155,12 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <assert.h>
 #include <math.h>
 
 #else
 
 #include <cstdlib>
 #include <cstdio>
-#include <cassert>
 #include <cmath>
 
 #endif

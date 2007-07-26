@@ -498,11 +498,13 @@ namespace Anasazi {
             }
           }
           // U = 0*U + 1*MMcopy*KKcopy = MMcopy * KKcopy
-          int ret = U->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*MMcopy,*KKcopy,zero);
-          assert( ret == 0 );
+          TEST_FOR_EXCEPTION( 
+              U->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*MMcopy,*KKcopy,zero) != 0,
+              std::logic_error, "Anasazi::SolverUtils::directSolver() call to Teuchos::SerialDenseMatrix::multiply() returned an error.");
           // MMcopy = 0*MMcopy + 1*KKcopy^H*U = KKcopy^H * MMcopy * KKcopy
-          ret = MMcopy->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,one,*KKcopy,*U,zero);
-          assert( ret == 0 );
+          TEST_FOR_EXCEPTION( 
+              MMcopy->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,one,*KKcopy,*U,zero) != 0,
+              std::logic_error, "Anasazi::SolverUtils::directSolver() call to Teuchos::SerialDenseMatrix::multiply() returned an error.");
           MagnitudeType maxNorm = SCT::magnitude(zero);
           MagnitudeType maxOrth = SCT::magnitude(zero);
           for (int i = 0; i < rank; ++i) {

@@ -43,7 +43,7 @@ namespace Anasazi {
   // Construction/Destruction
   
   EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map, double * array, 
-				                         const int numvecs, const int stride)
+                                 const int numvecs, const int stride)
     : Epetra_MultiVector(Copy, Map, array, stride, numvecs) 
   {
   }
@@ -56,8 +56,8 @@ namespace Anasazi {
   
   
   EpetraMultiVec::EpetraMultiVec(Epetra_DataAccess CV, 
-                                 const Epetra_MultiVector& P_vec, 				
-				                         const std::vector<int>& index )
+                                 const Epetra_MultiVector& P_vec, 
+                                 const std::vector<int>& index )
     : Epetra_MultiVector(CV, P_vec, &(const_cast<std::vector<int> &>(index))[0], index.size())
   {
   }
@@ -111,23 +111,24 @@ namespace Anasazi {
   
   
   void EpetraMultiVec::SetBlock( const MultiVec<double>& A, const std::vector<int>& index ) 
-  {	
+  {
+    // this should be revisited to e
     EpetraMultiVec temp_vec(View, *this, index);
 
     int numvecs = index.size();
     if ( A.GetNumberVecs() != numvecs ) {
       std::vector<int> index2( numvecs );
       for(int i=0; i<numvecs; i++)
-	index2[i] = i;
+        index2[i] = i;
       EpetraMultiVec *tmp_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-      assert(tmp_vec!=NULL);
+      TEST_FOR_EXCEPTION( tmp_vec==NULL, std::invalid_argument, "Anasazi::EpetraMultiVec::SetBlocks() cast of MultiVec<double> to EpetraMultiVec failed.");
       EpetraMultiVec A_vec(View, *tmp_vec, index2);
       temp_vec.MvAddMv( 1.0, A_vec, 0.0, A_vec );
     }
     else {
       temp_vec.MvAddMv( 1.0, A, 0.0, A );
     }
-  }								
+  }
 
   //-------------------------------------------------------------
   //
@@ -142,10 +143,11 @@ namespace Anasazi {
     Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
     
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-    assert(A_vec!=NULL);
+    TEST_FOR_EXCEPTION( A_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::SetBlocks() cast of MultiVec<double> to EpetraMultiVec failed.");
     
-    int ret = Multiply( 'N', 'N', alpha, *A_vec, B_Pvec, beta );
-    assert( ret == 0 );
+    TEST_FOR_EXCEPTION( 
+        Multiply( 'N', 'N', alpha, *A_vec, B_Pvec, beta ) != 0,
+        EpetraMultiVecFailure, "Anasazi::EpetraMultiVec::MvTimesMatAddMv() call to Epetra_MultiVec::Multiply() returned a nonzero value.");
   }
 
   //-------------------------------------------------------------
@@ -155,15 +157,16 @@ namespace Anasazi {
   //-------------------------------------------------------------
   
   void EpetraMultiVec::MvAddMv ( double alpha , const MultiVec<double>& A, 
-				 double beta, const MultiVec<double>& B) 
+                                 double beta, const MultiVec<double>& B) 
   {
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-    assert(A_vec!=NULL);
+    TEST_FOR_EXCEPTION( A_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::MvAddMv() cast of MultiVec<double> to EpetraMultiVec failed.");
     EpetraMultiVec *B_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(B)); 
-    assert(B_vec!=NULL);
+    TEST_FOR_EXCEPTION( B_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::MvAddMv() cast of MultiVec<double> to EpetraMultiVec failed.");
     
-    int ret = Update( alpha, *A_vec, beta, *B_vec, 0.0 );
-    assert( ret == 0 ); 
+    TEST_FOR_EXCEPTION( 
+        Update( alpha, *A_vec, beta, *B_vec, 0.0 ) != 0,
+        EpetraMultiVecFailure, "Anasazi::EpetraMultiVec::MvAddMv() call to Epetra_MultiVec::Update() returned a nonzero value.");
   }
 
   //-------------------------------------------------------------
@@ -173,11 +176,11 @@ namespace Anasazi {
   //-------------------------------------------------------------
   
   void EpetraMultiVec::MvTransMv ( double alpha, const MultiVec<double>& A,
-				   Teuchos::SerialDenseMatrix<int,double>& B
+                                   Teuchos::SerialDenseMatrix<int,double>& B
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
-				   , ConjType conj
+                                   , ConjType conj
 #endif
-				   ) const
+                                  ) const
   {    
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A));
     
@@ -185,8 +188,9 @@ namespace Anasazi {
       Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
       Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
       
-      int ret = B_Pvec.Multiply( 'T', 'N', alpha, *A_vec, *this, 0.0 );
-      assert( ret == 0 ); 
+    TEST_FOR_EXCEPTION( 
+        B_Pvec.Multiply( 'T', 'N', alpha, *A_vec, *this, 0.0 ) != 0,
+        EpetraMultiVecFailure, "Anasazi::EpetraMultiVec::MvTransMv() call to Epetra_MultiVec::Multiply() returned a nonzero value.");
     }
   }
   
@@ -198,15 +202,17 @@ namespace Anasazi {
   
   void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>* b
 #ifdef HAVE_ANASAZI_EXPERIMENTAL
-			       , ConjType conj
+                               , ConjType conj
 #endif
-			       ) const
+                             ) const
   {
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
-    assert(A_vec!=NULL);
-    if ((A_vec!=NULL) && (b!=NULL) && ( (int)b->size() >= A_vec->NumVectors() ) ) {
-      int ret = this->Dot( *A_vec, &(*b)[0] );
-      assert( ret == 0 );
+    TEST_FOR_EXCEPTION( A_vec==NULL,  std::invalid_argument, "Anasazi::EpetraMultiVec::MvDot() cast of MultiVec<double> to EpetraMultiVec failed.");
+
+    if ((b!=NULL) && ( (int)b->size() >= A_vec->NumVectors() ) ) {
+      TEST_FOR_EXCEPTION( 
+          this->Dot( *A_vec, &(*b)[0] ) != 0,
+          EpetraMultiVecFailure, "Anasazi::EpetraMultiVec::MvDot() call to Epetra_MultiVec::Dot() returned a nonzero value.");
     }
   }
 
@@ -219,14 +225,15 @@ namespace Anasazi {
   {
     // Check to make sure the vector is as long as the multivector has columns.
     int numvecs = this->NumVectors();
-    assert( (int)alpha.size() == numvecs );
+    TEST_FOR_EXCEPTION( (int)alpha.size() != numvecs, std::invalid_argument, 
+        "Anasazi::EpetraMultiVec::MvScale() alpha argument size was inconsistent with number of vectors in mv.");
     
-    int ret = 0;
     std::vector<int> tmp_index( 1, 0 );
     for (int i=0; i<numvecs; i++) {
       Epetra_MultiVector temp_vec(View, *this, &tmp_index[0], 1);
-      ret = temp_vec.Scale( alpha[i] );
-      assert (ret == 0);
+      TEST_FOR_EXCEPTION( 
+          temp_vec.Scale( alpha[i] ) != 0,
+          EpetraMultiVecFailure, "Anasazi::EpetraMultiVec::MvScale() call to Epetra_MultiVec::Scale() returned a nonzero value.");
       tmp_index[0]++;
     }
   }
@@ -252,7 +259,7 @@ namespace Anasazi {
   // AnasaziOperator applications
   //
   void EpetraOp::Apply ( const MultiVec<double>& X, 
-			       MultiVec<double>& Y ) const 
+                         MultiVec<double>& Y ) const 
   {
     //
     // This standard operator computes Y = A*X
@@ -261,7 +268,8 @@ namespace Anasazi {
     Epetra_MultiVector* vec_X = dynamic_cast<Epetra_MultiVector* >(&temp_X);
     Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
     
-    assert( vec_X!=NULL && vec_Y!=NULL );
+    TEST_FOR_EXCEPTION( vec_X==NULL, std::invalid_argument, "Anasazi::EpetraOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
+    TEST_FOR_EXCEPTION( vec_Y==NULL, std::invalid_argument, "Anasazi::EpetraOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
 
     int info = Epetra_Op->Apply( *vec_X, *vec_Y );
     TEST_FOR_EXCEPTION( info != 0, OperatorError, 
@@ -279,8 +287,8 @@ namespace Anasazi {
   //
   
   EpetraGenOp::EpetraGenOp(const Teuchos::RCP<Epetra_Operator> &AOp,
-			                     const Teuchos::RCP<Epetra_Operator> &MOp,
-			                     bool isAInverse_) 
+                           const Teuchos::RCP<Epetra_Operator> &MOp,
+                           bool isAInverse_) 
     : isAInverse( isAInverse_ ), Epetra_AOp(AOp), Epetra_MOp(MOp) 
   {
   }
@@ -302,7 +310,8 @@ namespace Anasazi {
     Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
     Epetra_MultiVector temp_Y(*vec_Y); 
     
-    assert( vec_X!=NULL && vec_Y!=NULL );
+    TEST_FOR_EXCEPTION( vec_X==NULL, std::invalid_argument, "Anasazi::EpetraGenOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
+    TEST_FOR_EXCEPTION( vec_Y==NULL, std::invalid_argument, "Anasazi::EpetraGenOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
     //
     // Need to cast away constness because the member function Apply is not declared const.  
     // Change the transpose setting for the operator if necessary and change it back when done.
@@ -374,7 +383,7 @@ namespace Anasazi {
   // AnasaziOperator constructors
   //
   EpetraSymOp::EpetraSymOp(const Teuchos::RCP<Epetra_Operator> &Op, 
-			                     bool isTrans) 
+                           bool isTrans) 
     : Epetra_Op(Op), isTrans_(isTrans)
   {
   }
@@ -386,18 +395,20 @@ namespace Anasazi {
   // AnasaziOperator applications
   //
   void EpetraSymOp::Apply ( const MultiVec<double>& X, 
-				                          MultiVec<double>& Y ) const 
+                            MultiVec<double>& Y ) const 
   {
     int info=0;
     MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
     Epetra_MultiVector* vec_X = dynamic_cast<Epetra_MultiVector* >(&temp_X);
     Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
     Epetra_MultiVector* temp_vec = new Epetra_MultiVector( 
-							  (isTrans_) ? Epetra_Op->OperatorDomainMap() 
-							  : Epetra_Op->OperatorRangeMap(), 
-							  vec_X->NumVectors() );
+        (isTrans_) ? Epetra_Op->OperatorDomainMap() 
+        : Epetra_Op->OperatorRangeMap(), 
+        vec_X->NumVectors() );
     
-    assert( vec_X!=NULL && vec_Y!=NULL && temp_vec!=NULL );
+    TEST_FOR_EXCEPTION( vec_X==NULL   , std::invalid_argument, "Anasazi::EpetraSymOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
+    TEST_FOR_EXCEPTION( vec_Y==NULL   , std::invalid_argument, "Anasazi::EpetraSymOp::Apply() cast of MultiVec<double> to Epetra_MultiVector failed.");
+    TEST_FOR_EXCEPTION( temp_vec==NULL, std::invalid_argument, "Anasazi::EpetraSymOp::Apply() allocation Epetra_MultiVector failed.");
     //
     // Need to cast away constness because the member function Apply
     // is not declared const.

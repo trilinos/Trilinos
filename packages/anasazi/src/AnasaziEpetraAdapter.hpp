@@ -198,7 +198,7 @@ namespace Anasazi {
      */
     void MvScale ( double alpha ) { 
       TEST_FOR_EXCEPTION( this->Scale( alpha )!=0, EpetraMultiVecFailure,
-			  "Anasazi::EpetraMultiVec::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value.");
+          "Anasazi::EpetraMultiVec::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value.");
     }
     
     /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
@@ -214,8 +214,8 @@ namespace Anasazi {
     */
     void MvNorm ( std::vector<double>* normvec ) const {
       if ((normvec!=NULL) && ((int)normvec->size() >= GetNumberVecs()) ) {
-	TEST_FOR_EXCEPTION( this->Norm2(&(*normvec)[0])!=0, EpetraMultiVecFailure,
-			    "Anasazi::EpetraMultiVec::MvNorm call to Epetra_MultiVector::Norm2() returned a nonzero value.");
+        TEST_FOR_EXCEPTION( this->Norm2(&(*normvec)[0])!=0, EpetraMultiVecFailure,
+            "Anasazi::EpetraMultiVec::MvNorm call to Epetra_MultiVector::Norm2() returned a nonzero value.");
       }
     };
     //@}
@@ -233,14 +233,14 @@ namespace Anasazi {
      */
     void MvRandom() { 
       TEST_FOR_EXCEPTION( this->Random()!=0, EpetraMultiVecFailure,
-			  "Anasazi::EpetraMultiVec::MvRandom call to Epetra_MultiVector::Random() returned a nonzero value.");
+          "Anasazi::EpetraMultiVec::MvRandom call to Epetra_MultiVector::Random() returned a nonzero value.");
     };
 
     /*! \brief Replace each element of the vectors in \c *this with \c alpha.
      */
     void MvInit ( double alpha ) { 
       TEST_FOR_EXCEPTION( this->PutScalar( alpha )!=0, EpetraMultiVecFailure,
-			  "Anasazi::EpetraMultiVec::MvInit call to Epetra_MultiVector::PutScalar() returned a nonzero value.");
+          "Anasazi::EpetraMultiVec::MvInit call to Epetra_MultiVector::PutScalar() returned a nonzero value.");
     };
     
     //@}
@@ -627,7 +627,7 @@ namespace Anasazi {
       Epetra_MultiVector B_Pvec(::Copy, LocalMap, B.values(), B.stride(), B.numCols());
 
       TEST_FOR_EXCEPTION( mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta )!=0, EpetraMultiVecFailure,
-			  "MultiVecTraits<double, Epetra_MultiVector>::MvNorm call to Epetra_MultiVector::Multiply() returned a nonzero value.");
+          "MultiVecTraits<double, Epetra_MultiVector>::MvNorm call to Epetra_MultiVector::Multiply() returned a nonzero value.");
     }
 
     /*! \brief Replace \c mv with \f$\alpha A + \beta B\f$.
@@ -635,7 +635,7 @@ namespace Anasazi {
     static void MvAddMv( double alpha, const Epetra_MultiVector& A, double beta, const Epetra_MultiVector& B, Epetra_MultiVector& mv )
     { 
       TEST_FOR_EXCEPTION( mv.Update( alpha, A, beta, B, 0.0 )!=0, EpetraMultiVecFailure,
-			  "MultiVecTraits<double, Epetra_MultiVector>::MvAddMv call to Epetra_MultiVector::Update() returned a nonzero value.");
+          "MultiVecTraits<double, Epetra_MultiVector>::MvAddMv call to Epetra_MultiVector::Update() returned a nonzero value.");
     }
 
     /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Tmv \f$.
@@ -650,7 +650,7 @@ namespace Anasazi {
       Epetra_MultiVector B_Pvec(::View, LocalMap, B.values(), B.stride(), B.numCols());
       
       TEST_FOR_EXCEPTION( B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 )!=0, EpetraMultiVecFailure,
-			  "MultiVecTraits<double, Epetra_MultiVector>::MvTransMv call to Epetra_MultiVector::Multiply() returned a nonzero value.");
+          "MultiVecTraits<double, Epetra_MultiVector>::MvTransMv call to Epetra_MultiVector::Multiply() returned a nonzero value.");
     }
     
     /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Tmv[i]\f$.
@@ -662,7 +662,7 @@ namespace Anasazi {
                       )
     {
       TEST_FOR_EXCEPTION( mv.Dot( A, &(*b)[0] )!=0, EpetraMultiVecFailure,
-			  "MultiVecTraits<double, Epetra_MultiVector>::MvDot call to Epetra_MultiVector::Dot() returned a nonzero value.");     
+          "MultiVecTraits<double, Epetra_MultiVector>::MvDot call to Epetra_MultiVector::Dot() returned a nonzero value.");     
     }
 
     //@}
@@ -675,7 +675,7 @@ namespace Anasazi {
     static void MvNorm( const Epetra_MultiVector& mv, std::vector<double>* normvec )
     { 
       TEST_FOR_EXCEPTION( mv.Norm2(&(*normvec)[0])!=0, EpetraMultiVecFailure,
-			  "MultiVecTraits<double, Epetra_MultiVector>::MvNorm call to Epetra_MultiVector::Norm2() returned a nonzero value."); 
+          "MultiVecTraits<double, Epetra_MultiVector>::MvNorm call to Epetra_MultiVector::Norm2() returned a nonzero value."); 
     }
 
     //@}
@@ -696,12 +696,12 @@ namespace Anasazi {
         for(int i=0; i<numvecs; i++)
           index2[i] = i;
         Epetra_MultiVector A_vec(::View, A, &index2[0], numvecs);      
-	TEST_FOR_EXCEPTION( temp_vec.Update( 1.0, A_vec, 0.0, A_vec, 0.0 )!=0, EpetraMultiVecFailure,
-			    "MultiVecTraits<double, Epetra_MultiVector>::SetBlock call to Epetra_MultiVector::Update() returned a nonzero value."); 
+        TEST_FOR_EXCEPTION( temp_vec.Update( 1.0, A_vec, 0.0, A_vec, 0.0 )!=0, EpetraMultiVecFailure,
+            "MultiVecTraits<double, Epetra_MultiVector>::SetBlock call to Epetra_MultiVector::Update() returned a nonzero value."); 
       }
       else {
-	TEST_FOR_EXCEPTION( temp_vec.Update( 1.0, A, 0.0, A, 0.0 )!=0, EpetraMultiVecFailure,
-			    "MultiVecTraits<double, Epetra_MultiVector>::SetBlock call to Epetra_MultiVector::Update() returned a nonzero value.");
+        TEST_FOR_EXCEPTION( temp_vec.Update( 1.0, A, 0.0, A, 0.0 )!=0, EpetraMultiVecFailure,
+            "MultiVecTraits<double, Epetra_MultiVector>::SetBlock call to Epetra_MultiVector::Update() returned a nonzero value.");
       }
     }
     
@@ -710,7 +710,7 @@ namespace Anasazi {
     static void MvScale ( Epetra_MultiVector& mv, double alpha ) 
     { 
       TEST_FOR_EXCEPTION( mv.Scale( alpha )!=0, EpetraMultiVecFailure,
-			  "MultiVecTraits<double, Epetra_MultiVector>::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value."); 
+          "MultiVecTraits<double, Epetra_MultiVector>::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value."); 
     }
     
     /*! \brief Scale each element of the \c i-th vector in \c mv with \c alpha[i].
@@ -719,13 +719,14 @@ namespace Anasazi {
     { 
       // Check to make sure the vector is as long as the multivector has columns.
       int numvecs = mv.NumVectors();
-      assert( (int)alpha.size() == numvecs );
+      TEST_FOR_EXCEPTION( (int)alpha.size() != numvecs, std::invalid_argument,
+                          "MultiVecTraits<double, Epetra_MultiVector>::MvScale(MV mv,vector alpha) alpha argument size was inconsistent with number of vectors in mv.")
 
       std::vector<int> tmp_index( 1, 0 );
       for (int i=0; i<numvecs; i++) {
         Epetra_MultiVector temp_vec(::View, mv, &tmp_index[0], 1);
-	TEST_FOR_EXCEPTION( temp_vec.Scale( alpha[i] )!=0, EpetraMultiVecFailure,
-			    "MultiVecTraits<double, Epetra_MultiVector>::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value.");
+        TEST_FOR_EXCEPTION( temp_vec.Scale( alpha[i] )!=0, EpetraMultiVecFailure,
+            "MultiVecTraits<double, Epetra_MultiVector>::MvScale call to Epetra_MultiVector::Scale() returned a nonzero value.");
         tmp_index[0]++;
       }
     }
@@ -735,7 +736,7 @@ namespace Anasazi {
     static void MvRandom( Epetra_MultiVector& mv )
     { 
       TEST_FOR_EXCEPTION( mv.Random()!=0, EpetraMultiVecFailure,
-			  "MultiVecTraits<double, Epetra_MultiVector>::MvRandom call to Epetra_MultiVector::Random() returned a nonzero value.");
+          "MultiVecTraits<double, Epetra_MultiVector>::MvRandom call to Epetra_MultiVector::Random() returned a nonzero value.");
     }
 
     /*! \brief Replace each element of the vectors in \c mv with \c alpha.
@@ -743,7 +744,7 @@ namespace Anasazi {
     static void MvInit( Epetra_MultiVector& mv, double alpha = Teuchos::ScalarTraits<double>::zero() )
     { 
       TEST_FOR_EXCEPTION( mv.PutScalar(alpha)!=0, EpetraMultiVecFailure,
-			  "MultiVecTraits<double, Epetra_MultiVector>::MvInit call to Epetra_MultiVector::PutScalar() returned a nonzero value.");
+          "MultiVecTraits<double, Epetra_MultiVector>::MvInit call to Epetra_MultiVector::PutScalar() returned a nonzero value.");
     }
     
     //@}
