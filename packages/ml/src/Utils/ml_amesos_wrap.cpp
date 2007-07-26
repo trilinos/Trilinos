@@ -218,7 +218,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
   int rv=A_Base->NumericFactorization();
   double Time2 = Time.ElapsedTime();
   
-  if(!rv){
+  if(rv){
     if(!Amesos_Matrix->Comm().MyPID())
      printf("ERROR: Amesos NumericFactorization failed... dumping relevant matrix for post-mortem\n");
 #ifdef HAVE_ML_EPETRAEXT
