@@ -7,7 +7,7 @@
 \n\
 #include \"Sacado_trad.hpp\"\n\
 #include <cstdio>\n\
-using std::printf\n\
+using std::printf;\n\
 \n\
 typedef ADT_RAD IndepADvar<double> AI;\n\
 typedef ADT_RAD ADvar<double> A;\n\
