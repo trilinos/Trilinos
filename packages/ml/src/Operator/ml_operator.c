@@ -78,6 +78,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->data                = NULL;
    mat->diagonal            = NULL;      
    mat->N_nonzeros          = -1;
+   mat->blocks              = -1;
    mat->max_nz_per_row      = 0;
    mat->sub_matrix          = NULL;
    mat->from_an_ml_operator = 0;
@@ -321,6 +322,7 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    /*   mat->diagonal = original->diagonal; */
    mat->diagonal            = NULL;
    mat->N_nonzeros          = original->N_nonzeros;
+   mat->blocks              = original->blocks;
    mat->max_nz_per_row      = original->max_nz_per_row;
    mat->sub_matrix          = original->sub_matrix;
    mat->from_an_ml_operator = original->from_an_ml_operator;
