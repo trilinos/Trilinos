@@ -339,6 +339,7 @@ void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
    int    *rowptr, *bindx, *col_ptr, itemp, j;
    int    *val_start;
    int    *val_ptr;
+   int col_size;
 
 #ifdef DEBUG2
    if (N_requested_rows != 1) {
@@ -350,7 +351,7 @@ void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
 
    row = requested_rows[0]; 
 #ifdef DEBUG2
-   if ( (row >= input_matrix->getrow->Nrows) || (row < 0) ) {
+   if ( (row >= input_matrix->getrow->N_block_rows) || (row < 0) ) {
       row_lengths[0] = 0;
       return;
    }
@@ -365,11 +366,11 @@ void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
    }
 
    next = input_matrix->sub_matrix;
-   while ( (next != NULL) && (row < next->getrow->Nrows) ) {
+   while ( (next != NULL) && (row < next->getrow->N_block_rows) ) {
       input_matrix = next;
       next = next->sub_matrix;
    }
-   if (next != NULL) row -= next->getrow->Nrows;
+   if (next != NULL) row -= next->getrow->N_block_rows;
 
    matrix =  (struct ML_vbrdata *)    input_matrix->data;
    rowptr = matrix->bpntr;
@@ -409,9 +410,12 @@ void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
    }
 
    if ( (input_matrix->getrow->use_loc_glob_map == ML_YES)) {
-      mapper       = input_matrix->getrow->loc_glob_map;
+      col_size = matrix->cpntr[1]-matrix->cpntr[0];
+/*mapper       = input_matrix->getrow->loc_glob_map;*/
       for (i = 0; i < row_lengths[0]; i++) 
-         (*columns)[i+index] = mapper[(*columns)[index+i]];
+         (*columns)[i+index] = input_matrix->getrow->loc_glob_map[(*columns)[i+index]*col_size]/col_size;
+
+         /*(*columns)[i+index] = mapper[(*columns)[index+i]];*/
    }
 }
 #endif /*ifdef HAVE_ML_AZTECOO*/
