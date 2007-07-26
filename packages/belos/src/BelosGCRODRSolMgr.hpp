@@ -878,7 +878,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	
 	//  Create Gmres iteration object to perform one cycle of Gmres.
 	Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > gmres_iter;
-	gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
+	gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,primeList) );
 	
 	// Create the first block in the current Krylov basis (residual).
 	if (r_ == Teuchos::null)
