@@ -26,9 +26,8 @@
 # ************************************************************************
 #@HEADER
 
-#EPETRA_AMESOS_EXAMPLES = model_evaluator
-EPETRA_AMESOS_EXAMPLES = 
-# 2007/06/13: rabartl: ToDo: Add the above directory back once we get the new
-# make system working where we don't need to do recursive builds.
+if ENABLE_THYRA_STRATIMIKOS_AMESOS
+EPETRA_AMESOS_EXAMPLES = model_evaluator
+endif
 
 SUBDIRS = $(EPETRA_AMESOS_EXAMPLES)

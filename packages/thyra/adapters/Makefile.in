@@ -67,7 +67,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = epetra/src epetraext/src epetra tpetra epetraext
+DIST_SUBDIRS = epetra/src epetraext/src
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -196,10 +196,7 @@ top_srcdir = @top_srcdir@
 @ENABLE_THYRA_EPETRAEXT_TRUE@EPETRAEXT_SUBDIR = epetraext
 SUBDIRS = \
   $(EPETRA_SRC_SUBDIR) \
-  $(EPETRAEXT_SRC_SUBDIR) \
-  $(EPETRA_SUBDIR) \
-  $(TPETRA_SUBDIR) \
-  $(EPETRAEXT_SUBDIR)
+  $(EPETRAEXT_SRC_SUBDIR)
 
 all: all-recursive
 
@@ -507,6 +504,10 @@ uninstall-am:
 	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags \
 	tags-recursive uninstall uninstall-am
 
+
+#  $(EPETRA_SUBDIR) \
+#  $(TPETRA_SUBDIR) \
+#  $(EPETRAEXT_SUBDIR)
 
 sample-output:
 	$(BUILD_THYRA_EPETRA_SAMPLE_OUTPUT)

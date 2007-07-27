@@ -2,11 +2,12 @@
 #include "EpetraModelEval4DOpt.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_DefaultModelEvaluatorWithSolveFactory.hpp"
-#include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
+#include "Thyra_DefaultRealLinearSolverBuilder.hpp"
 #include "Thyra_DampenedNewtonNonlinearSolver.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_VerbosityLevelCommandLineProcessorHelpers.hpp"
 
 int main( int argc, char* argv[] )
 {
@@ -44,46 +45,35 @@ int main( int argc, char* argv[] )
       "You can get different levels of detail about the Newton method by adjustingthe command-line\n"
       "option \"verb-level\" (see above)\n"
       );
-    
-    double       d           = 10.0;
-    double       p0          = 2.0;
-    double       p1          = 0.0;
-    double       x00         = 0.0;
-    double       x01         = 1.0;
 
-    const int numVerbLevels = 6;
-    const Teuchos::EVerbosityLevel verbLevelValues[numVerbLevels]
-      = { Teuchos::VERB_DEFAULT, Teuchos::VERB_NONE, Teuchos::VERB_LOW
-          ,Teuchos::VERB_MEDIUM, Teuchos::VERB_HIGH, Teuchos::VERB_EXTREME };
-    const char* verbLevelNames[numVerbLevels]
-      = {"default","none","low","medium","high","extreme"};
-    Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
-
-    double       tol         = 1e-10;
-    int          maxIters    = 100;
-
-    bool         use4DOpt    = false;
-    bool         externalFactory = false;
-
-    bool showSetInvalidArg = false;
-    bool showGetInvalidArg = false;
-
+    double d = 10.0;
     clp.setOption( "d", &d, "Model constant d" );
+    double p0 = 2.0;
     clp.setOption( "p0", &p0, "Model constant p[0]" );
+    double p1 = 0.0;
     clp.setOption( "p1", &p1, "Model constant p[1]" );
+    double x00 = 0.0;
     clp.setOption( "x00", &x00, "Initial guess for x[0]" );
+    double x01 = 1.0;
     clp.setOption( "x01", &x01, "Initial guess for x[1]" );
-    clp.setOption( "verb-level", &verbLevel, numVerbLevels, verbLevelValues, verbLevelNames, "Verbosity level" );
+    Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
+    setVerbosityLevelOption( "verb-level", &verbLevel, "Verbosity level.", &clp );
+    double tol = 1e-10;
     clp.setOption( "tol", &tol, "Nonlinear solve tolerance" );
+    int maxIters = 100;
     clp.setOption( "max-iters", &maxIters, "Maximum number of nonlinear iterations" );
-    clp.setOption( "use-4D-opt", "use-2D-sim", &use4DOpt
-                   ,"Determines if the EpetraModelEval4DOpt or EpetraModelEval2DSim subclasses are used"  );
-    clp.setOption( "external-lowsf", "internal-lowsf", &externalFactory
-                   ,"Determines of the Thyra::LinearOpWithSolveFactory is used externally or internally to the Thyra::EpetraModelEvaluator object"  );
-    clp.setOption( "show-set-invalid-arg", "no-show-set-invalid-arg", &showSetInvalidArg
-                   ,"Determines if an attempt is made to set an invalid/unsupported ModelEvaluator input argument"  );
-    clp.setOption( "show-get-invalid-arg", "no-show-get-invalid-arg", &showGetInvalidArg
-                   ,"Determines if an attempt is made to get an invalid/unsupported ModelEvaluator output argument (2DSim only)"  );
+    bool use4DOpt = false;
+    clp.setOption( "use-4D-opt", "use-2D-sim", &use4DOpt,
+      "Determines if the EpetraModelEval4DOpt or EpetraModelEval2DSim subclasses are used" );
+    bool externalFactory = false;
+    clp.setOption( "external-lowsf", "internal-lowsf", &externalFactory,
+      "Determines of the Thyra::LinearOpWithSolveFactory is used externally or internally to the Thyra::EpetraModelEvaluator object" );
+    bool showSetInvalidArg = false;
+    clp.setOption( "show-set-invalid-arg", "no-show-set-invalid-arg", &showSetInvalidArg,
+      "Determines if an attempt is made to set an invalid/unsupported ModelEvaluator input argument" );
+    bool showGetInvalidArg = false;
+    clp.setOption( "show-get-invalid-arg", "no-show-get-invalid-arg", &showGetInvalidArg,
+      "Determines if an attempt is made to get an invalid/unsupported ModelEvaluator output argument (2DSim only)" );
   
     CommandLineProcessor::EParseCommandLineReturn
       parse_return = clp.parse(argc,argv,&std::cerr);
@@ -104,8 +94,16 @@ int main( int argc, char* argv[] )
       epetraModel = rcp(new EpetraModelEval2DSim(d,p0,p1,x00,x01,showGetInvalidArg));
     }
 
+    *out << "\nCreating linear solver strategy ...\n";
+
+    Thyra::DefaultRealLinearSolverBuilder linearSolverBuilder;
+    linearSolverBuilder.setParameterList(Teuchos::parameterList());
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
-      lowsFactory = rcp(new Thyra::AmesosLinearOpWithSolveFactory());
+      lowsFactory = linearSolverBuilder.createLinearSolveStrategy("Amesos");
+    // Above, we are just using the stratimkikos class
+    // DefaultRealLinearSolverBuilder to create a default Amesos solver
+    // (typically KLU) with a default set of options.  By setting a parameter
+    // list on linearSolverBuilder, you build from a number of solvers.
 
     Teuchos::RCP<Thyra::EpetraModelEvaluator>
       epetraThyraModel = rcp(new Thyra::EpetraModelEvaluator());

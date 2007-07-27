@@ -212,6 +212,11 @@ TAC_ARG_INFORM_SUBPACKAGE_USED(
   [Determines if float support is enabled or not.  See thyra/configure --help],
   [Determines if float support is enabled or not.  See thyra/configure --help])
 
+TAC_ARG_INFORM_SUBPACKAGE_USED(
+  stratimikos, amesos, THYRA_STRATIMIKOS_AMESOS, ENABLE_THYRA_STRATIMIKOS_AMESOS, yes,
+  [See stratimkos/configure --help],
+  [See stratimkos/configure --help])
+
 # ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
@@ -329,14 +334,8 @@ AC_CONFIG_FILES([
     adapters/epetraext/Makefile
     adapters/epetraext/src/Makefile
     adapters/epetraext/example/Makefile
+    adapters/epetraext/example/model_evaluator/Makefile
     ])
-
-#     adapters/epetraext/example/model_evaluator/Makefile
-
-# 2007/06/21: rabartl: ToDo: In need to add the above Makefile back once we
-# get the new make system working where we don't need to do recursive builds.
-# I had to remove this temporary since is was breaking the testing of the
-# tarball
 
 AC_OUTPUT()
 

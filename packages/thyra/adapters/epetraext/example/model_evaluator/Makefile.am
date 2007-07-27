@@ -32,28 +32,24 @@ noinst_PROGRAMS = ForwardSolveEpetraModelEval2DSim
 
 ForwardSolveEpetraModelEval2DSim_SOURCES = \
   $(srcdir)/ForwardSolveEpetraModelEval2DSimMain.cpp\
-  $(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp \
-  $(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp
+  $(top_srcdir)/../epetraext/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp \
+  $(top_srcdir)/../epetraext/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp
 ForwardSolveEpetraModelEval2DSim_DEPENDENCIES = $(common_dependencies)
 ForwardSolveEpetraModelEval2DSim_LDADD = $(common_ldadd)
 
 common_dependencies = \
   $(top_builddir)/../amesos/src/libamesos.a \
-  $(top_builddir)/../amesos/thyra/src/libamesosthyra.a
+  $(top_builddir)/adapters/epetraext/src/libthyraepetraext.a
 
-include $(top_builddir)/../amesos/Makefile.export.amesos # Includes epetraext also!
+include $(top_builddir)/../stratimikos/Makefile.export.stratimikos
+# Above includes thyra and all of the other packages needed!
 
-AM_CPPFLAGS = $(AMESOS_INCLUDES)
-common_ldadd = $(AMESOS_LIBS)
+AM_CPPFLAGS = $(STRATIMIKOS_INCLUDES)
+common_ldadd = $(STRATIMIKOS_LIBS)
 
 # This is already added part of AMESOS_LIBS and therefore automake does not need to add this again!
 LIBS =
 
 AM_CPPFLAGS += \
-  -I$(top_srcdir)/example/model_evaluator/2dsim \
-  -I$(top_srcdir)/example/model_evaluator/4dopt
-
-EXTRA_DIST = \
-   $(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.hpp \
-   $(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.hpp
-
+  -I$(top_srcdir)/../epetraext/example/model_evaluator/2dsim \
+  -I$(top_srcdir)/../epetraext/example/model_evaluator/4dopt

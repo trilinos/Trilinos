@@ -102,14 +102,26 @@ endif
 if ENABLE_THYRA_EPETRA
 BUILD_THYRA_EPETRA_TESTS=cd adapters/epetra/test && $(MAKE)
 BUILD_THYRA_EPETRA_EXAMPLES=cd adapters/epetra/example && $(MAKE)
-CLEAN_CMD=clean
-INSTALL_CMD=install
+BUILD_THYRA_EPETRA_CLEAN_CMD=clean
+BUILD_THYRA_EPETRA_INSTALL_CMD=install
+endif
+
+if ENABLE_THYRA_EPETRAEXT
+BUILD_THYRA_EPETRAEXT_EXAMPLES=cd adapters/epetraext/example && $(MAKE)
+BUILD_THYRA_EPETRAEXT_CLEAN_CMD=clean
+BUILD_THYRA_EPETRAEXT_INSTALL_CMD=install
 endif
 
 if BUILD_TESTS
-tests:
+tests: examples
+	@echo ""
+	@echo "Now building thyra tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
 	$(BUILD_THYRA_EPETRA_TESTS)
+	@echo ""
+	@echo "Finished building thyra tests."
+	@echo ""
 else
 tests:
 	@echo "thyra tests were disabled at configure time"
@@ -117,11 +129,19 @@ endif
 
 if BUILD_EXAMPLES
 examples:
+	@echo ""
+	@echo "Now building thyra examples."
+	@echo ""
 	cd $(top_builddir)/example && $(MAKE)
 	$(BUILD_THYRA_EPETRA_EXAMPLES)
+	$(BUILD_THYRA_EPETRAEXT_EXAMPLES)
+	@echo ""
+	@echo "Finished building thyra examples."
+	@echo ""
 install-examples:
 	cd $(top_builddir)/example && $(MAKE) install
-	$(BUILD_THYRA_EPETRA_EXAMPLES) $(INSTALL_CMD)
+	$(BUILD_THYRA_EPETRA_EXAMPLES) $(BUILD_THYRA_EPETRA_INSTALL_CMD)
+	$(BUILD_THYRA_EPETRAEXT_EXAMPLES) $(BUILD_THYRA_EPETRAEXT_INSTALL_CMD)
 else
 examples:
 	@echo "thyra examples were disabled at configure time"
@@ -132,11 +152,12 @@ endif
 
 clean-tests:
 	cd $(top_builddir)/test && $(MAKE) clean
-	$(BUILD_THYRA_EPETRA_TESTS) $(CLEAN_CMD)
+	$(BUILD_THYRA_EPETRA_TESTS) $(BUILD_THYRA_EPETRA_CLEAN_CMD)
 
 clean-examples:
 	cd $(top_builddir)/example && $(MAKE) clean
-	$(BUILD_THYRA_EPETRA_EXAMPLES) $(CLEAN_CMD)
+	$(BUILD_THYRA_EPETRA_EXAMPLES) $(BUILD_THYRA_EPETRA_CLEAN_CMD)
+	$(BUILD_THYRA_EPETRAEXT_EXAMPLES) $(BUILD_THYRA_EPETRAEXT_CLEAN_CMD)
 
 everything:
 	$(MAKE) && $(MAKE) examples && $(MAKE) tests

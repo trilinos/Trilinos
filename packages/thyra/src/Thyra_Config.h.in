@@ -27,6 +27,9 @@
 /* Define if want to build thyra-examples */
 #undef HAVE_THYRA_EXAMPLES
 
+/* Define if want to build with stratimikos enabled */
+#undef HAVE_THYRA_STRATIMIKOS_AMESOS
+
 /* Define if want to build thyra-tests */
 #undef HAVE_THYRA_TESTS
 

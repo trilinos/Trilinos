@@ -95,7 +95,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = model_evaluator
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -211,11 +211,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-
-#EPETRA_AMESOS_EXAMPLES = model_evaluator
-EPETRA_AMESOS_EXAMPLES = 
-# 2007/06/13: rabartl: ToDo: Add the above directory back once we get the new
-# make system working where we don't need to do recursive builds.
+@ENABLE_THYRA_STRATIMIKOS_AMESOS_TRUE@EPETRA_AMESOS_EXAMPLES = model_evaluator
 SUBDIRS = $(EPETRA_AMESOS_EXAMPLES)
 all: all-recursive
 

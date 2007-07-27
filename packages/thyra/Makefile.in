@@ -270,8 +270,11 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
 @ENABLE_THYRA_EPETRA_TRUE@BUILD_THYRA_EPETRA_TESTS = cd adapters/epetra/test && $(MAKE)
 @ENABLE_THYRA_EPETRA_TRUE@BUILD_THYRA_EPETRA_EXAMPLES = cd adapters/epetra/example && $(MAKE)
-@ENABLE_THYRA_EPETRA_TRUE@CLEAN_CMD = clean
-@ENABLE_THYRA_EPETRA_TRUE@INSTALL_CMD = install
+@ENABLE_THYRA_EPETRA_TRUE@BUILD_THYRA_EPETRA_CLEAN_CMD = clean
+@ENABLE_THYRA_EPETRA_TRUE@BUILD_THYRA_EPETRA_INSTALL_CMD = install
+@ENABLE_THYRA_EPETRAEXT_TRUE@BUILD_THYRA_EPETRAEXT_EXAMPLES = cd adapters/epetraext/example && $(MAKE)
+@ENABLE_THYRA_EPETRAEXT_TRUE@BUILD_THYRA_EPETRAEXT_CLEAN_CMD = clean
+@ENABLE_THYRA_EPETRAEXT_TRUE@BUILD_THYRA_EPETRAEXT_INSTALL_CMD = install
 SUBDIRS = src adapters $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
@@ -707,18 +710,32 @@ uninstall-am:
 all-local:
 	@echo "Trilinos package thyra built successfully"
 
-@BUILD_TESTS_TRUE@tests:
+@BUILD_TESTS_TRUE@tests: examples
+@BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	@echo "Now building thyra tests."
+@BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE)
 @BUILD_TESTS_TRUE@	$(BUILD_THYRA_EPETRA_TESTS)
+@BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	@echo "Finished building thyra tests."
+@BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_FALSE@tests:
 @BUILD_TESTS_FALSE@	@echo "thyra tests were disabled at configure time"
 
 @BUILD_EXAMPLES_TRUE@examples:
+@BUILD_EXAMPLES_TRUE@	@echo ""
+@BUILD_EXAMPLES_TRUE@	@echo "Now building thyra examples."
+@BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE)
 @BUILD_EXAMPLES_TRUE@	$(BUILD_THYRA_EPETRA_EXAMPLES)
+@BUILD_EXAMPLES_TRUE@	$(BUILD_THYRA_EPETRAEXT_EXAMPLES)
+@BUILD_EXAMPLES_TRUE@	@echo ""
+@BUILD_EXAMPLES_TRUE@	@echo "Finished building thyra examples."
+@BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@install-examples:
 @BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE) install
-@BUILD_EXAMPLES_TRUE@	$(BUILD_THYRA_EPETRA_EXAMPLES) $(INSTALL_CMD)
+@BUILD_EXAMPLES_TRUE@	$(BUILD_THYRA_EPETRA_EXAMPLES) $(BUILD_THYRA_EPETRA_INSTALL_CMD)
+@BUILD_EXAMPLES_TRUE@	$(BUILD_THYRA_EPETRAEXT_EXAMPLES) $(BUILD_THYRA_EPETRAEXT_INSTALL_CMD)
 @BUILD_EXAMPLES_FALSE@examples:
 @BUILD_EXAMPLES_FALSE@	@echo "thyra examples were disabled at configure time"
 
@@ -727,11 +744,12 @@ all-local:
 
 clean-tests:
 	cd $(top_builddir)/test && $(MAKE) clean
-	$(BUILD_THYRA_EPETRA_TESTS) $(CLEAN_CMD)
+	$(BUILD_THYRA_EPETRA_TESTS) $(BUILD_THYRA_EPETRA_CLEAN_CMD)
 
 clean-examples:
 	cd $(top_builddir)/example && $(MAKE) clean
-	$(BUILD_THYRA_EPETRA_EXAMPLES) $(CLEAN_CMD)
+	$(BUILD_THYRA_EPETRA_EXAMPLES) $(BUILD_THYRA_EPETRA_CLEAN_CMD)
+	$(BUILD_THYRA_EPETRAEXT_EXAMPLES) $(BUILD_THYRA_EPETRAEXT_CLEAN_CMD)
 
 everything:
 	$(MAKE) && $(MAKE) examples && $(MAKE) tests

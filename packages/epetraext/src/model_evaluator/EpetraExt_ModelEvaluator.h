@@ -121,7 +121,7 @@ public:
     // types
     typedef Teuchos::Array<Teuchos::RefCountPtr<const Epetra_Vector> > p_t;
     // data
-    std::string                                modelEvalDescription_;
+    std::string modelEvalDescription_;
     Teuchos::RefCountPtr<const Epetra_Vector>  x_dot_;
     Teuchos::RefCountPtr<const Epetra_Vector>  x_;
     Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > x_dot_poly_;

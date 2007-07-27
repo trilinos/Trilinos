@@ -101,8 +101,14 @@ endif
 #endif
 
 if BUILD_TESTS
-tests:
+tests: examples
+	@echo ""
+	@echo "Now building rtop tests."
+	@echo ""
 	cd $(top_builddir)/test && $(MAKE)
+	@echo ""
+	@echo "Finished building rtop tests."
+	@echo ""
 else
 tests:
 	@echo "rtop tests were disabled at configure time"

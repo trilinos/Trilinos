@@ -719,8 +719,14 @@ all-local:
 #EXAMPLE_SUBDIR=example
 #endif
 
-@BUILD_TESTS_TRUE@tests:
+@BUILD_TESTS_TRUE@tests: examples
+@BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	@echo "Now building rtop tests."
+@BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE)
+@BUILD_TESTS_TRUE@	@echo ""
+@BUILD_TESTS_TRUE@	@echo "Finished building rtop tests."
+@BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_FALSE@tests:
 @BUILD_TESTS_FALSE@	@echo "rtop tests were disabled at configure time"
 

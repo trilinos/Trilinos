@@ -708,6 +708,8 @@ ENABLE_THYRA_EPETRAEXT_TRUE
 ENABLE_THYRA_EPETRAEXT_FALSE
 ENABLE_THYRA_TEUCHOS_BLASFLOAT_TRUE
 ENABLE_THYRA_TEUCHOS_BLASFLOAT_FALSE
+ENABLE_THYRA_STRATIMIKOS_AMESOS_TRUE
+ENABLE_THYRA_STRATIMIKOS_AMESOS_FALSE
 USING_EXPORT_MAKEFILES_TRUE
 USING_EXPORT_MAKEFILES_FALSE
 PERL_EXE
@@ -1354,6 +1356,10 @@ Optional Features:
   --enable-teuchos-blasfloat
                           Determines if float support is enabled or not. See
                           thyra/configure --help
+  --enable-stratimikos    See stratimkos/configure --help
+  --enable-amesos         See stratimkos/configure --help
+  --enable-stratimikos-amesos
+                          See stratimkos/configure --help
   --enable-export-makefiles
                           Creates export makefiles in the install (prefix)
                           directory. This option requires perl to be set in
@@ -5718,6 +5724,69 @@ fi
 
 
 
+
+
+# Check whether --enable-stratimikos was given.
+if test "${enable_stratimikos+set}" = set; then
+  enableval=$enable_stratimikos; ac_cv_implicit_use_stratimikos=$enableval
+else
+  ac_cv_implicit_use_stratimikos=no
+fi
+
+
+# Check whether --enable-amesos was given.
+if test "${enable_amesos+set}" = set; then
+  enableval=$enable_amesos; ac_cv_implicit_use_amesos=$enableval
+else
+  ac_cv_implicit_use_amesos=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  if test "X$ac_cv_implicit_use_stratimikos" != "Xno"; then
+    ac_cv_stratimikos_using_amesos_default=$ac_cv_implicit_use_amesos
+  else
+    ac_cv_stratimikos_using_amesos_default=no
+  fi
+else
+  ac_cv_stratimikos_using_amesos_default=no
+fi
+
+# Check whether --enable-stratimikos-amesos was given.
+if test "${enable_stratimikos_amesos+set}" = set; then
+  enableval=$enable_stratimikos_amesos; ac_cv_use_amesos=$enableval
+else
+  ac_cv_use_amesos=$ac_cv_stratimikos_using_amesos_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional amesos dependent code in stratimikos" >&5
+echo $ECHO_N "checking whether to build optional amesos dependent code in stratimikos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_amesos" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_THYRA_STRATIMIKOS_AMESOS 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_amesos" = "Xyes"; then
+  ENABLE_THYRA_STRATIMIKOS_AMESOS_TRUE=
+  ENABLE_THYRA_STRATIMIKOS_AMESOS_FALSE='#'
+else
+  ENABLE_THYRA_STRATIMIKOS_AMESOS_TRUE='#'
+  ENABLE_THYRA_STRATIMIKOS_AMESOS_FALSE=
+fi
+
+
+
+
 # ------------------------------------------------------------------------
 # Specify other directories
 # ------------------------------------------------------------------------
@@ -6540,15 +6609,8 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile Makefile.export.thyra src/Makefile example/Makefile example/generate-sample-output.pl.stub example/operator_vector/Makefile example/operator_solve/Makefile example/external/Makefile example/external/Makefile.external.stub test/Makefile test/operator_vector/Makefile adapters/Makefile adapters/epetra/Makefile adapters/epetra/src/Makefile adapters/epetra/example/Makefile adapters/epetra/example/generate-sample-output.pl.stub adapters/epetra/test/Makefile adapters/tpetra/Makefile adapters/tpetra/example/Makefile adapters/epetraext/Makefile adapters/epetraext/src/Makefile adapters/epetraext/example/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.thyra src/Makefile example/Makefile example/generate-sample-output.pl.stub example/operator_vector/Makefile example/operator_solve/Makefile example/external/Makefile example/external/Makefile.external.stub test/Makefile test/operator_vector/Makefile adapters/Makefile adapters/epetra/Makefile adapters/epetra/src/Makefile adapters/epetra/example/Makefile adapters/epetra/example/generate-sample-output.pl.stub adapters/epetra/test/Makefile adapters/tpetra/Makefile adapters/tpetra/example/Makefile adapters/epetraext/Makefile adapters/epetraext/src/Makefile adapters/epetraext/example/Makefile adapters/epetraext/example/model_evaluator/Makefile"
 
-
-#     adapters/epetraext/example/model_evaluator/Makefile
-
-# 2007/06/21: rabartl: ToDo: In need to add the above Makefile back once we
-# get the new make system working where we don't need to do recursive builds.
-# I had to remove this temporary since is was breaking the testing of the
-# tarball
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -6755,6 +6817,13 @@ if test -z "${ENABLE_THYRA_TEUCHOS_BLASFLOAT_TRUE}" && test -z "${ENABLE_THYRA_T
   { { echo "$as_me:$LINENO: error: conditional \"ENABLE_THYRA_TEUCHOS_BLASFLOAT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"ENABLE_THYRA_TEUCHOS_BLASFLOAT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_THYRA_STRATIMIKOS_AMESOS_TRUE}" && test -z "${ENABLE_THYRA_STRATIMIKOS_AMESOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_THYRA_STRATIMIKOS_AMESOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_THYRA_STRATIMIKOS_AMESOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -7270,6 +7339,7 @@ do
     "adapters/epetraext/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetraext/Makefile" ;;
     "adapters/epetraext/src/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetraext/src/Makefile" ;;
     "adapters/epetraext/example/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetraext/example/Makefile" ;;
+    "adapters/epetraext/example/model_evaluator/Makefile") CONFIG_FILES="$CONFIG_FILES adapters/epetraext/example/model_evaluator/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -7502,6 +7572,8 @@ ENABLE_THYRA_EPETRAEXT_TRUE!$ENABLE_THYRA_EPETRAEXT_TRUE$ac_delim
 ENABLE_THYRA_EPETRAEXT_FALSE!$ENABLE_THYRA_EPETRAEXT_FALSE$ac_delim
 ENABLE_THYRA_TEUCHOS_BLASFLOAT_TRUE!$ENABLE_THYRA_TEUCHOS_BLASFLOAT_TRUE$ac_delim
 ENABLE_THYRA_TEUCHOS_BLASFLOAT_FALSE!$ENABLE_THYRA_TEUCHOS_BLASFLOAT_FALSE$ac_delim
+ENABLE_THYRA_STRATIMIKOS_AMESOS_TRUE!$ENABLE_THYRA_STRATIMIKOS_AMESOS_TRUE$ac_delim
+ENABLE_THYRA_STRATIMIKOS_AMESOS_FALSE!$ENABLE_THYRA_STRATIMIKOS_AMESOS_FALSE$ac_delim
 USING_EXPORT_MAKEFILES_TRUE!$USING_EXPORT_MAKEFILES_TRUE$ac_delim
 USING_EXPORT_MAKEFILES_FALSE!$USING_EXPORT_MAKEFILES_FALSE$ac_delim
 PERL_EXE!$PERL_EXE$ac_delim
@@ -7517,7 +7589,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 45; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 47; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -936,8 +936,8 @@ void EpetraModelEvaluator::evalModel(
             )
           {
             // We must do an explicit multi-vector transpose copy here!
-            RCP<Epetra_MultiVector>
-              e_DgDp_mv_j_l = e_DgDp_j_l.getDerivativeMultiVector().getMultiVector();
+            RCP<const Epetra_MultiVector>
+              e_DgDp_mv_j_l = e_DgDp_j_l.getMultiVector();
             DetachedMultiVectorView<double>
               d_DgDp_mv_j_l(*DgDp_mv_j_l);
             const int m = d_DgDp_mv_j_l.subDim();
@@ -945,10 +945,10 @@ void EpetraModelEvaluator::evalModel(
             TEST_FOR_EXCEPT( m != e_DgDp_mv_j_l->NumVectors() );
             TEST_FOR_EXCEPT( n != e_DgDp_mv_j_l->Map().NumMyElements() );
             for( int i = 0; i < m; ++i ) {
-              for( int j = 0; j < n; ++j ) {
-                (*e_DgDp_mv_j_l)[i][j] = d_DgDp_mv_j_l(i,j);
-                // Note: Above [i][j] returns the entry for the ith column and
-                // the jth row for the Epetra_MultiVector object!  This looks
+              for( int k = 0; k < n; ++k ) {
+                d_DgDp_mv_j_l(i,k) = (*e_DgDp_mv_j_l)[i][k];
+                // Note: Above [i][k] returns the entry for the ith column and
+                // the kth row for the Epetra_MultiVector object!  This looks
                 // very backward but that is how Epetra_MultiVector is
                 // defined!
               }

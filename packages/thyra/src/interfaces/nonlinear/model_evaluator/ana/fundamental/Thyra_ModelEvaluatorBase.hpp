@@ -757,6 +757,7 @@ condCloneVec(
 
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>::InArgs()
+  :modelEvalDescription_("WARNING!  THIS INARGS OBJECT IS UNINITALIZED!")
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Teuchos::ScalarTraits<typename ST::magnitudeType> SMT;
@@ -1082,7 +1083,8 @@ void ModelEvaluatorBase::DerivativeMultiVector<Scalar>::describe(
 
 template<class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>::OutArgs()
-  :isFailed_(false)
+  :isFailed_(false),
+   modelEvalDescription_("WARNING!  THIS OUTARGS OBJECT IS UNINITALIZED!")
 { std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false); }
 
 template<class Scalar>
