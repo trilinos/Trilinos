@@ -44,6 +44,7 @@
 #include "NOX_Solver_Manager.H"
 #include "Teuchos_ParameterList.hpp"
 #include "NOX_StatusTest_Generic.H"
+#include "NOX_StatusTest_Factory.H"
 #include "NOX_StatusTest_Combo.H"
 #include "NOX_StatusTest_NormF.H"
 #include "NOX_StatusTest_FiniteValue.H"

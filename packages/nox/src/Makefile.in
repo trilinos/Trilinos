@@ -139,6 +139,7 @@ am__objects_4 = libnox_a-NOX_Solver_Manager.$(OBJEXT) \
 	libnox_a-NOX_Solver_PrePostOperator.$(OBJEXT)
 am__objects_5 = libnox_a-NOX_MeritFunction_SumOfSquares.$(OBJEXT)
 am__objects_6 = libnox_a-NOX_StatusTest_Generic.$(OBJEXT) \
+	libnox_a-NOX_StatusTest_Factory.$(OBJEXT) \
 	libnox_a-NOX_StatusTest_NormF.$(OBJEXT) \
 	libnox_a-NOX_StatusTest_FiniteValue.$(OBJEXT) \
 	libnox_a-NOX_StatusTest_NormUpdate.$(OBJEXT) \
@@ -481,6 +482,7 @@ MERITFUNCTION = \
 
 STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Generic.H \
+	$(srcdir)/NOX_StatusTest_Factory.H \
 	$(srcdir)/NOX_StatusTest_NormF.H \
 	$(srcdir)/NOX_StatusTest_FiniteValue.H \
 	$(srcdir)/NOX_StatusTest_NormUpdate.H \
@@ -492,6 +494,7 @@ STATUSTEST_H = \
 
 STATUSTEST = \
 	$(srcdir)/NOX_StatusTest_Generic.C \
+	$(srcdir)/NOX_StatusTest_Factory.C \
 	$(srcdir)/NOX_StatusTest_NormF.C \
 	$(srcdir)/NOX_StatusTest_FiniteValue.C \
 	$(srcdir)/NOX_StatusTest_NormUpdate.C \
@@ -690,6 +693,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Solver_TrustRegionBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_StatusTest_Combo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_StatusTest_Divergence.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_StatusTest_Factory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_StatusTest_FiniteValue.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_StatusTest_Generic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_StatusTest_MaxIters.Po@am__quote@
@@ -1077,6 +1081,20 @@ libnox_a-NOX_StatusTest_Generic.obj: $(srcdir)/NOX_StatusTest_Generic.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_StatusTest_Generic.C' object='libnox_a-NOX_StatusTest_Generic.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_StatusTest_Generic.obj `if test -f '$(srcdir)/NOX_StatusTest_Generic.C'; then $(CYGPATH_W) '$(srcdir)/NOX_StatusTest_Generic.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_StatusTest_Generic.C'; fi`
+
+libnox_a-NOX_StatusTest_Factory.o: $(srcdir)/NOX_StatusTest_Factory.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_StatusTest_Factory.o -MD -MP -MF $(DEPDIR)/libnox_a-NOX_StatusTest_Factory.Tpo -c -o libnox_a-NOX_StatusTest_Factory.o `test -f '$(srcdir)/NOX_StatusTest_Factory.C' || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_Factory.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libnox_a-NOX_StatusTest_Factory.Tpo $(DEPDIR)/libnox_a-NOX_StatusTest_Factory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_StatusTest_Factory.C' object='libnox_a-NOX_StatusTest_Factory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_StatusTest_Factory.o `test -f '$(srcdir)/NOX_StatusTest_Factory.C' || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_Factory.C
+
+libnox_a-NOX_StatusTest_Factory.obj: $(srcdir)/NOX_StatusTest_Factory.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_StatusTest_Factory.obj -MD -MP -MF $(DEPDIR)/libnox_a-NOX_StatusTest_Factory.Tpo -c -o libnox_a-NOX_StatusTest_Factory.obj `if test -f '$(srcdir)/NOX_StatusTest_Factory.C'; then $(CYGPATH_W) '$(srcdir)/NOX_StatusTest_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_StatusTest_Factory.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libnox_a-NOX_StatusTest_Factory.Tpo $(DEPDIR)/libnox_a-NOX_StatusTest_Factory.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_StatusTest_Factory.C' object='libnox_a-NOX_StatusTest_Factory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_StatusTest_Factory.obj `if test -f '$(srcdir)/NOX_StatusTest_Factory.C'; then $(CYGPATH_W) '$(srcdir)/NOX_StatusTest_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_StatusTest_Factory.C'; fi`
 
 libnox_a-NOX_StatusTest_NormF.o: $(srcdir)/NOX_StatusTest_NormF.C
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_StatusTest_NormF.o -MD -MP -MF $(DEPDIR)/libnox_a-NOX_StatusTest_NormF.Tpo -c -o libnox_a-NOX_StatusTest_NormF.o `test -f '$(srcdir)/NOX_StatusTest_NormF.C' || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_NormF.C

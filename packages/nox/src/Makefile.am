@@ -208,6 +208,7 @@ MERITFUNCTION = \
 
 STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Generic.H \
+	$(srcdir)/NOX_StatusTest_Factory.H \
 	$(srcdir)/NOX_StatusTest_NormF.H \
 	$(srcdir)/NOX_StatusTest_FiniteValue.H \
 	$(srcdir)/NOX_StatusTest_NormUpdate.H \
@@ -219,6 +220,7 @@ STATUSTEST_H = \
 
 STATUSTEST = \
 	$(srcdir)/NOX_StatusTest_Generic.C \
+	$(srcdir)/NOX_StatusTest_Factory.C \
 	$(srcdir)/NOX_StatusTest_NormF.C \
 	$(srcdir)/NOX_StatusTest_FiniteValue.C \
 	$(srcdir)/NOX_StatusTest_NormUpdate.C \

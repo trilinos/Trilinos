@@ -156,7 +156,7 @@ public:
 
   //! Constructor where ATOL is a vector
   NormWRMS(double rtol,
-	   const Teuchos::RCP<NOX::Abstract::Vector>& atol,
+	   const Teuchos::RCP<const NOX::Abstract::Vector>& atol,
 	   double BDFMultiplier = 1.0, 
 	   double tolerance = 1.0,
 	   double alpha = 1.0,
@@ -218,7 +218,7 @@ private:
   double atol;
 
   //! Absolute tolerance for convergence (vector).
-  Teuchos::RCP<NOX::Abstract::Vector> atolVec;
+  Teuchos::RCP<const NOX::Abstract::Vector> atolVec;
 
   //! Time integration method multiplier (BDF Multiplier).
   double factor;

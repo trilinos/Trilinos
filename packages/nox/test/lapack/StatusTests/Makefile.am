@@ -30,5 +30,28 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = NOX_NewTest NOX_Group NOX StatusTests \
-          LOCA_TestProblems LOCA_UnitTests LOCA_ChanProblem
+# Include NOX export makefile
+include $(top_builddir)/Makefile.export.nox
+
+if USING_GNUMAKE
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_TEST_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES))
+else
+TEST_LIBS     = $(NOX_TEST_LIBS)
+TEST_INCLUDES = $(NOX_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(TEST_INCLUDES)
+
+EXEEXT = .exe
+
+if BUILD_LAPACK_TESTS
+noinst_PROGRAMS = StatusTests
+endif
+
+StatusTests_SOURCES = \
+			$(srcdir)/StatusTests.C
+
+StatusTests_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
+
+StatusTests_LDADD = $(TEST_LIBS)

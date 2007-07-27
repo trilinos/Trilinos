@@ -7,17 +7,18 @@
     DIRS = basic;
     EXIT-STATUS = STRING-COMPARISON(Test passed!);
     ARGS = -v;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # NOX LAPACK tests
 (FRAMEWORK,INSTALL) {
     DIRS = lapack/NOX,
            lapack/NOX_Group,
-           lapack/NOX_NewTest;
+           lapack/NOX_NewTest,
+           lapack/StatusTests;
     EXIT-STATUS = STRING-COMPARISON(Test passed!);
     ARGS = -v;
-    COMM = SERIAL;
+    COMM = SERIAL, MPI(1);
 }
 
 # NOX Epetra tests
