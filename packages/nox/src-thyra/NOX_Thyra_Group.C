@@ -77,6 +77,9 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
     Teuchos::rcp(new NOX::Thyra::Vector(*source.newton_vec_, type));
   gradient_vec_ = 
     Teuchos::rcp(new NOX::Thyra::Vector(*source.gradient_vec_, type));
+
+  in_args_ = model_->createInArgs();
+  out_args_ = model_->createOutArgs();
   
   if (type == NOX::DeepCopy) {
     is_valid_f_ = source.is_valid_f_;
