@@ -51,4 +51,5 @@ RAD_Const_Warn(void *v)
 	if (++RAD_Const_Warn_warned <= RAD_Const_Warn_warnlim)
 		fprintf(stderr, "RAD_Const_Warn var #%lx had gcgen = %d, opno = %d\n",
 			(unsigned long)V->var, V->gcgen, -1 - V->opno);
+	return 1;
 	}
