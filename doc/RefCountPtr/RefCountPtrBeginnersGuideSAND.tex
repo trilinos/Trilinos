@@ -24,7 +24,7 @@
 %
 
 \title{\center
-{\Huge\bf Teuchos::RefCountPtr Beginner's Guide}\\[1.5ex]
+{\Huge\bf Teuchos::RCP Beginner's Guide}\\[1.5ex]
 An Introduction to the Trilinos Smart Reference-Counted Pointer
 Class for (Almost) Automatic Dynamic Memory Management in C++
 }
@@ -80,7 +80,7 @@ The improper use of operator {}\texttt{new} and operator
 {}\texttt{delete} is arguably the most common cause of incorrect
 program behavior and segmentation faults in C++ programs.  Here we
 introduce a templated concrete C++ class
-{}\texttt{Teuchos\-::Ref\-Count\-Ptr<>}, which is part of the Trilinos
+{}\texttt{Teuchos\-::RCP}, which is part of the Trilinos
 tools package {}\texttt{Teuchos}, that combines the concepts of smart
 pointers and reference counting to build a low-overhead but effective
 tool for simplifying dynamic memory management in C++.  We discuss why
@@ -88,19 +88,19 @@ the use of raw pointers for memory management, managed through
 explicit calls to operator {}\texttt{new} and operator
 {}\texttt{delete}, is so difficult to accomplish without making
 mistakes and how programs that use raw pointers for memory management
-can easily be modified to use {}\texttt{Ref\-Count\-Ptr<>}.  In
+can easily be modified to use {}\texttt{RCP}.  In
 addition, explicit calls to operator {}\texttt{delete} is fragile and
 results in memory leaks in the presents of C++ exceptions.  In its
-most basic usage, {}\texttt{Ref\-Count\-Ptr<>} automatically
+most basic usage, {}\texttt{RCP} automatically
 determines when operator {}\texttt{delete} should be called to free an
 object allocated with operator {}\texttt{new} and is not fragile in
 the presents of exceptions.  The class also supports more
 sophisticated use cases as well.  This document describes just the
-most basic usage of {}\texttt{Ref\-Count\-Ptr<>} to allow developers
+most basic usage of {}\texttt{RCP} to allow developers
 to get started using it right away.  However, more detailed
 information on the design and advanced features of
-{}\texttt{Ref\-Count\-Ptr<>} is provided by the companion document
-``Teuchos::RefCountPtr : The Trilinos Smart Reference-Counted Pointer
+{}\texttt{RCP} is provided by the companion document
+``Teuchos::RCP : The Trilinos Smart Reference-Counted Pointer
 Class for (Almost) Automatic Dynamic Memory Management in C++''
 {}\cite{ref:RefCountPtr}.
 %
@@ -143,14 +143,14 @@ in~\cite{Sand98-0730}.
 
 The main purpose of this document is to provide a quick-start guide on
 how to incorporate the reference-counting smart pointer class
-{}\texttt{Teuchos\-::Ref\-Count\-Ptr<>} into C++ programs that use
+{}\texttt{Teuchos\-::RCP} into C++ programs that use
 dynamic memory allocation and object orientation.  This code is
 included in the Trilinos {}\cite{ref:Trilinos-Overview} tools package
 {}\texttt{Teuchos}.  The design of
-{}\texttt{Teuchos\-::Ref\-Count\-Ptr<>} is based partly on the
+{}\texttt{Teuchos\-::RCP} is based partly on the
 interface for {}\texttt{std\-::auto\-\_ptr<>} and Items 28 and 29 in
 "More Effective C++" {}\cite{ref:meyers_1996}.  In short,
-{}\texttt{Ref\-Count\-Ptr<>} allows one client to dynamically create
+{}\texttt{RCP} allows one client to dynamically create
 an object (using operator {}\texttt{new} for instance), pass the
 object around to other clients that need to access the object and
 never require any client to explicitly call operator
@@ -159,11 +159,11 @@ all of the clients remove their references to the object.  In
 principle, this is very similar to the type of garbage collection that
 is in languages like Perl and Java.  There are some pathological cases
 (such as the classic problem of circular references, see {}\cite[Item
-29, page 212]{ref:meyers_1996}) where {}\texttt{Ref\-Count\-Ptr<>}
+29, page 212]{ref:meyers_1996}) where {}\texttt{RCP}
 will result in a memory leak, but these situations can be avoided
-through the careful use of {}\texttt{Ref\-Count\-Ptr<>}.  However,
+through the careful use of {}\texttt{RCP}.  However,
 realizing the potential of hands-off garbage collection with
-{}\texttt{Ref\-Count\-Ptr<>} requires following some rules.  These
+{}\texttt{RCP} requires following some rules.  These
 rules are partially spelled out in the form of commandments in
 Appendix {}\ref{rcpqs:apdx:commandments}.
 
@@ -199,12 +199,12 @@ void someFunction() {
 will occur.  However, {}\texttt{std::auto\_\-ptr<>} can not be used to
 share a resource between two or more clients and therefore is not an
 answer to the issue of general garbage collection.  The class
-{}\texttt{Ref\-Count\-Ptr<>} not only is robust in the event of
+{}\texttt{RCP} not only is robust in the event of
 exceptions but also implements reference counting and is therefore
 more general (but admittedly more complex and expensive) than
 {}\texttt{std::auto\_\-ptr<>}.
 
-The use of {}\texttt{Ref\-Count\-Ptr<>} is critically important in the
+The use of {}\texttt{RCP} is critically important in the
 development and maintenance of large complex object-oriented programs
 composed of many separately-developed pieces (such as Trilinos).  This
 discussion assumes that the reader has a basic familiarity and some
@@ -215,40 +215,40 @@ Furthermore, the reader should be comfortable with the use of C++
 pointers and references.
 
 The appendices contain basic reference material for
-{}\texttt{Ref\-Count\-Ptr<>}.  In many respects, the appendices are
+{}\texttt{RCP}.  In many respects, the appendices are
 the most important contribution of this document.  For those readers
 that like to see the C++ declarations right away, Appendix
 {}\ref{rcpqs:apdx:c++decl} contains the C++ declarations for the
-template class {}\texttt{Ref\-Count\-Ptr<>} and some important
+template class {}\texttt{RCP} and some important
 associated non-member templated functions.  Appendix
 {}\ref{rcpqs:apdx:quickstart} is a short reference-card-like
-quick-start for the use of {}\texttt{Ref\-Count\-Ptr<>}.  The
+quick-start for the use of {}\texttt{RCP}.  The
 quick-start in this appendix shows how to create
-{}\texttt{Ref\-Count\-Ptr<>} objects from raw C++ pointers, how to
+{}\texttt{RCP} objects from raw C++ pointers, how to
 represent different forms on constantness, cast from one pointer type
 to another, access the underlying reference-counted object as well as
 to associate and manage extra data.  Appendix
 {}\ref{rcpqs:apdx:commandments} gives some commandments for the use of
-{}\texttt{Ref\-Count\-Ptr<>} and reinforces the material in Appendix
+{}\texttt{RCP} and reinforces the material in Appendix
 {}\ref{rcpqs:apdx:quickstart}.  Appendix
 {}\ref{rcpqs:apdx:passing-args} gives tables of recommended idioms for
-how to pass raw C++ objects and {}\texttt{Ref\-Count\-Ptr<>}-wrapped
+how to pass raw C++ objects and {}\texttt{RCP}-wrapped
 objects to and from functions.  More detailed discussions of all of
 the material in the appendices is contained in the design document for
-{}\texttt{Ref\-Count\-Ptr<>} {}\cite{ref:RefCountPtr}.  Appendix
+{}\texttt{RCP} {}\cite{ref:RefCountPtr}.  Appendix
 {}\ref{rcpqs:apdx:ex-prg} gives a listing for an example program that
 uses raw pointer variables and direct calls to operator {}\texttt{new}
 and operator {}\texttt{delete} while Appendix
 {}\ref{rcpqs:apdx:ex-prg-refactored} shows a refactoring of this
-example program to use {}\texttt{Ref\-Count\-Ptr<>}.
+example program to use {}\texttt{RCP}.
 
 {}\textbf{Note!}  Anxious readers are encouraged to jump directly to
 Appendix {}\ref{rcpqs:apdx:ex-prg} and
 {}\ref{rcpqs:apdx:ex-prg-refactored} to get an idea of what
-{}\texttt{Ref\-Count\-Ptr<>} is all about.  This example, together
+{}\texttt{RCP} is all about.  This example, together
 with the reference material in the appendices, should be enough for
 semi-experienced C++ developers to start using
-{}\texttt{Ref\-Count\-Ptr<>} right away.
+{}\texttt{RCP} right away.
 
 For less anxious readers, in the following section, we describe why
 the use of raw C++ pointers and raw calls to operator {}\texttt{new}
@@ -257,21 +257,21 @@ correctly in even moderately complex C++ programs.  We then discuss
 the different ways C++ pointers are used in such programs and describe
 how to refactor these programs to replace some of the raw C++ pointers
 and raw calls to operator {}\texttt{delete} with
-{}\texttt{Ref\-Count\-Ptr<>}.  In the following discussion we will
+{}\texttt{RCP}.  In the following discussion we will
 define {}\textit{persisting} and {}\textit{non-persisting}
 associations and will make a distinction between them (see page
-{}\pageref{rcp:non-persisting-defined}).  {}\texttt{Ref\-Count\-Ptr<>}
+{}\pageref{rcp:non-persisting-defined}).  {}\texttt{RCP}
 is recommended for use only with {}\textit{persisting} associations.
-The consistent use of {}\texttt{Ref\-Count\-Ptr<>} extends the
+The consistent use of {}\texttt{RCP} extends the
 vocabulary of C++ in helping to distinguish between these two types of
-relationships.  In addition, {}\texttt{Ref\-Count\-Ptr<>} is designed
+relationships.  In addition, {}\texttt{RCP} is designed
 for the memory management of individual objects, not raw C++ arrays of
 objects.  Array allocation and deallocation should be performed using
 standard C++ containers such as {}\texttt{std\-::vector<>},
 {}\texttt{std\-::valarray<>} or some other such convenient C++ array
 class.  However, it is quite common to dynamically allocate arrays of
-{}\texttt{Ref\-Count\-Ptr<>} objects and use
-{}\texttt{Ref\-Count\-Ptr<>} to manage the lifetime of such array
+{}\texttt{RCP} objects and use
+{}\texttt{RCP} to manage the lifetime of such array
 class objects.
 
 %
@@ -279,7 +279,7 @@ class objects.
 %
 
 The use of object-oriented (OO) programing in C++ is the major
-motivation for the development of {}\texttt{Ref\-Count\-Ptr<>}.  OO
+motivation for the development of {}\texttt{RCP}.  OO
 programs are characterized by the use of abstract classes
 (i.e.~interfaces) and concrete subclasses (i.e.~implementations).  In
 OO programs it is common that the selection of which concrete
@@ -381,17 +381,17 @@ public:
 // Client that maintains pointers to UtilityFactory and Utility objects
 class ClientC {
   const UtilityBaseFactory *utilityFactory_;
-  UtilityBase              *utility_;
-  bool                     shareUtility_;
+  UtilityBase *utility_;
+  bool shareUtility_;
 public:
   ClientC( const UtilityBaseFactory *utilityFactory, bool shareUtility )
-    :utilityFactory_(utilityFactory)
-    ,utility_(utilityFactory->createUtility())
+    :utilityFactory_(utilityFactory),
+    utility_(utilityFactory->createUtility())
     ,shareUtility_(shareUtility) {}
   ~ClientC() { delete utilityFactory_; delete utility_; }
   void h( ClientB *b ) {
     if( shareUtility_ ) b->initialize(utility_);
-    else                b->initialize(utilityFactory_->createUtility());
+    else  b->initialize(utilityFactory_->createUtility());
   }
 };
 \end{verbatim}}
@@ -470,27 +470,27 @@ complex programs, trying to dynamically arbitrate ownership at run
 time is much more difficult and error prone if done manually.
 
 %
-\subsection{Refactored example C++ program using {}\texttt{Ref\-Count\-Ptr<>}}
+\subsection{Refactored example C++ program using {}\texttt{Teuchos::RCP}}
 \label{rcpbg:sec:refactored-program}
 %
 
-Now we describe how {}\texttt{Ref\-Count\-Ptr<>} can be used to
+Now we describe how {}\texttt{RCP} can be used to
 greatly simplify dynamic memory management in these types of OO
 programs.  Appendix {}\ref{rcpqs:apdx:ex-prg-refactored} shows the
 refactoring of the program in Appendix {}\ref{rcpqs:apdx:ex-prg} to
-use {}\texttt{Ref\-Count\-Ptr<>} for all persisting relationships.
+use {}\texttt{RCP} for all persisting relationships.
 In general, refactoring software that uses raw C++ pointers to use
-{}\texttt{Ref\-Count\-Ptr<>} is as simple as replacing the type
-{}\texttt{T*} with {}\texttt{Ref\-Count\-Ptr<T>}, where {}\texttt{T}
+{}\texttt{RCP} is as simple as replacing the type
+{}\texttt{T*} with {}\texttt{RCP<T>}, where {}\texttt{T}
 is nearly any class or built-in data type.
 
 The first persisting relationship for which
-{}\texttt{Ref\-Count\-Ptr<>} is used is the relationship between a
+{}\texttt{RCP} is used is the relationship between a
 {}\texttt{Utility\-Base\-Factory} object and a client that uses it.
 The refactoring changes the return type of
 {}\texttt{Utility\-Base\-Factory\-::createUtility()} from a raw
 {}\texttt{Utility\-Base*} pointer to a
-{}\texttt{Ref\-Count\-Ptr<Utility\-Base>} object.  The new ``Abstract
+{}\texttt{RCP<Utility\-Base>} object.  The new ``Abstract
 Factory'' class declarations (assuming that the symbols from the
 {}\texttt{Teuchos} namespace are in scope so that explicit
 {}\texttt{Teuchos::} qualification is not necessary) become
@@ -498,17 +498,17 @@ Factory'' class declarations (assuming that the symbols from the
 {\small\begin{verbatim}
 class UtilityBaseFactory {
 public:
-  virtual RefCountPtr<UtilityBase> createUtility() const = 0;
+  virtual RCP<UtilityBase> createUtility() const = 0;
 };
 
 class UtilityAFactory : public UtilityBaseFactory {
 public:
-  RefCountPtr<UtilityBase> createUtility() const { return rcp(new UtilityA()); }
+  RCP<UtilityBase> createUtility() const { return rcp(new UtilityA()); }
 };
 
 class UtilityBFactory : public UtilityBaseFactory {
 public:
-  RefCountPtr<UtilityBase> createUtility() const { return rcp(new UtilityB()); }
+  RCP<UtilityBase> createUtility() const { return rcp(new UtilityB()); }
 };
 \end{verbatim}}
 
@@ -524,24 +524,24 @@ other objects.  However, the definitions of the classes
 
 {\small\begin{verbatim}
 class ClientB {
-  RefCountPtr<UtilityBase> utility_;
+  RCP<UtilityBase> utility_;
 public:
-  void initialize(const RefCountPtr<UtilityBase> &utility) { utility_=utility; }
+  void initialize(const RCP<UtilityBase> &utility) { utility_=utility; }
   void g( const ClientA &a ) { a.f(*utility_); }
 };
 
 class ClientC {
-  RefCountPtr<UtilityBaseFactory> utilityFactory_;
-  RefCountPtr<UtilityBase>        utility_;
-  bool                            shareUtility_;
+  RCP<UtilityBaseFactory> utilityFactory_;
+  RCP<UtilityBase> utility_;
+  bool shareUtility_;
 public:
-  ClientC( const RefCountPtr<UtilityBaseFactory> &utilityFactory, bool shareUtility )
-    :utilityFactory_(utilityFactory)
-    ,utility_(utilityFactory->createUtility())
+  ClientC( const RCP<UtilityBaseFactory> &utilityFactory, bool shareUtility )
+    :utilityFactory_(utilityFactory),
+    utility_(utilityFactory->createUtility())
     ,shareUtility_(shareUtility) {}
   void h( ClientB *b ) {
     if( shareUtility_ ) b->initialize(utility_);
-    else                b->initialize(utilityFactory_->createUtility());
+    else b->initialize(utilityFactory_->createUtility());
   }
 };
 \end{verbatim}}
@@ -550,32 +550,32 @@ The first thing that one should notice about the refactored
 {}\texttt{ClientB} and {}\texttt{ClientC} classes is that their
 destructors are gone.  It turns out that the compiler-generated
 destructors do exactly the correct thing (i.e.~call the destructor on
-the {}\texttt{Ref\-Count\-Ptr<>} data members which in turns calls
+the {}\texttt{RCP} data members which in turns calls
 operator {}\texttt{delete} on the underlying reference-counted object
 when the reference count goes to zero).  The second thing that one
 should notice is that the old default constructor
 {}\texttt{ClientB::ClientB()} which initialized the raw C++ pointer
 {}\texttt{utility\_} to null is no longer needed since
-{}\texttt{Ref\-Count\-Ptr<>} has a default constructor that does that.
+{}\texttt{RCP} has a default constructor that does that.
 A third thing to notice about these refactored client classes is that
-the {}\texttt{Ref\-Count\-Ptr<>} objects are passed by
+the {}\texttt{RCP} objects are passed by
 {}\texttt{const} reference (see Appendix
 {}\ref{rcpqs:apdx:passing-args}) and not by value as the corresponding
 raw pointers where in the original unfactored classes.  Passing
-{}\texttt{Ref\-Count\-Ptr<>} objects by {}\texttt{const} reference
+{}\texttt{RCP} objects by {}\texttt{const} reference
 yields slightly more efficient code and simplifies stepping through
 the code in a debugger.  For example, a function declared as
 
 {\small\begin{verbatim}
-void someFunction( RefCountPtr<A> a );
+void someFunction( RCP<A> a );
 \end{verbatim}}
 
 {}\noindent{}will always result in the copy constructor for
-{}\texttt{Ref\-Count\-Ptr<>} being called (and therefore stepped into
+{}\texttt{RCP} being called (and therefore stepped into
 in a debugger) while this same function declared as:
 
 {\small\begin{verbatim}
-void someFunction( const RefCountPtr<A> &a );
+void someFunction( const RCP<A> &a );
 \end{verbatim}}
 
 {}\noindent{}will often not require the copy constructor be called
@@ -585,27 +585,27 @@ easing debugging.
 
 As an aside, note that Appendix {}\ref{rcpqs:apdx:passing-args} gives
 recommended idioms for how to pass raw C++ objects and
-{}\texttt{Ref\-Count\-Ptr<>}-wrapped objects to and from functions in
+{}\texttt{RCP}-wrapped objects to and from functions in
 a way that result in function prototypes becoming as self documenting
 as possible, help to avoid coding errors and increase the readability
 of C++ code.  Also, in addition to the benefit that
-{}\texttt{Ref\-Count\-Ptr<>} eases dynamic memory management, the
-selective use of {}\texttt{Ref\-Count\-Ptr<>} and raw C++ object
+{}\texttt{RCP} eases dynamic memory management, the
+selective use of {}\texttt{RCP} and raw C++ object
 references extends the vocabulary of the C++ language by helping to
 distinguish between persisting and non-persisting associations.  For
 example, when a one sees a function prototype where an object is
-passed through a {}\texttt{Ref\-Count\-Ptr<>} such as
+passed through a {}\texttt{RCP} such as
 
 {\small\begin{verbatim}
 class SomeClass {
 public:
-  void someFunction( const RefCountPtr<A> &a );
+  void someFunction( const RCP<A> &a );
 }
 \end{verbatim}}
 
 {}\noindent{}one can automatically deduce that ``memory'' of the
 {}\texttt{A} object will be retained (through a private
-{}\texttt{Ref\-Count\-Ptr<A>} data member in {}\texttt{Some\-Class} no
+{}\texttt{RCP<A>} data member in {}\texttt{Some\-Class} no
 doubt) and that should automatically alter how the developer plans on
 calling that function and passing the {}\texttt{A} object.  The
 refactored C++ program in Appendix
@@ -614,10 +614,10 @@ idioms presented in Appendix {}\ref{rcpqs:apdx:passing-args} are put
 to use.
 
 %
-\section{Additional and advanced features of {}\texttt{Ref\-Count\-Ptr<>}}
+\section{Additional and advanced features of {}\texttt{RCP}}
 %
 
-The use cases for {}\texttt{Ref\-Count\-Ptr<>} described above
+The use cases for {}\texttt{RCP} described above
 comprise a large majority of the relavent use cases in most programs,
 but there there are some other use cases that require additional and
 more advanced features.  Some of these additional features (the C++
@@ -628,7 +628,7 @@ declarations for which are shown in Appendix
 
 \item \textbf{Casting}
 
-{}\texttt{Ref\-Count\-Ptr<>} objects can be casted in a manner similar
+{}\texttt{RCP} objects can be casted in a manner similar
 to casting raw C++ pointers and the same types of conversion rules
 apply.  Analogs of the built-in casts {}\texttt{static\_\-cast<>},
 {}\texttt{const\_\-cast<>} and {}\texttt{dynamic\_\-cast<>} are
@@ -639,8 +639,8 @@ and {}\texttt{rcp\_\-dynamic\_\-cast<>} respectively.  See Appendix
 
 \item \textbf{Reference-count information}
 
-The function {}\texttt{Ref\-Count\-Ptr<>\-::count()} returns the
-number of {}\texttt{Ref\-Count\-Ptr<>} objects that point to the
+The function {}\texttt{RCP\-::count()} returns the
+number of {}\texttt{RCP} objects that point to the
 underlying reference-counted object.  This information can be useful
 in some cases.
 
@@ -657,7 +657,7 @@ deleted.  The non-member templated functions
 
 \item \textbf{Customized deallocation policies}
 
-The default behavior of {}\texttt{Ref\-Count\-Ptr<>} is to call
+The default behavior of {}\texttt{RCP} is to call
 operator {}\texttt{delete} on reference-counted objects once the
 reference count goes to zero.  While this is the most commonly needed
 behavior, there are use cases where more specialized dellocation
@@ -675,16 +675,16 @@ These features are discussed in detail in the design document
 \section{Summary}
 %
 
-The templated C++ class {}\texttt{Ref\-Count\-Ptr<>} provides a
+The templated C++ class {}\texttt{RCP} provides a
 low-overhead option for (almost) automatic memory management in C++.
 This class has been developed and refined over many years and has been
 instrumental in improving the quality of software projects that use it
 consistently (for example see MOOCHO {}\cite{ref:moochouserguide}).
-Careful use of {}\texttt{Ref\-Count\-Ptr<>} eliminates the need to
+Careful use of {}\texttt{RCP} eliminates the need to
 manually call operator {}\texttt{delete} when dynamically allocated
 objects are no longer needed.  Furthermore, it helps to reduce the
 amount of code that developers have to write.  For example, most
-classes that use {}\texttt{Ref\-Count\-Ptr<>} for dynamically
+classes that use {}\texttt{RCP} for dynamically
 allocated memory do not need developer-supplied destructors.  This
 because the compiler-generated destructors do the exactly correct
 thing which is to call destructors on an object's constituent data
@@ -693,7 +693,7 @@ and refactored classes {}\texttt{ClientB} and {}\texttt{ClientC}
 described in Sections {}\ref{rcpbg:sec:original-program} and
 {}\ref{rcpbg:sec:refactored-program}.
 
-The class {}\texttt{Ref\-Count\-Ptr<>} also has advanced features not
+The class {}\texttt{RCP} also has advanced features not
 found in other smart-pointer implementations such as the ability to
 attach extra data and the customization of the deallocation policy.
 
@@ -713,7 +713,7 @@ attach extra data and the customization of the deallocation policy.
 \appendix
 
 %
-\section{C++ declarations for {}\texttt{Ref\-Count\-Ptr<>}}
+\section{C++ declarations for {}\texttt{RCP}}
 \label{rcpqs:apdx:c++decl}
 %
 
@@ -731,14 +731,15 @@ template<class T>
 class DeallocArrayDelete { public: void free( T* ptr ) { if(ptr) delete [] ptr; }  };
 
 template<class T>
-class RefCountPtr {
+class RCP {
 public:
   typedef T  element_type;
-  RefCountPtr( ENull null_arg = null );
-  RefCountPtr(const RefCountPtr<T>& r_ptr);
-  template<class T2> RefCountPtr(const RefCountPtr<T2>& r_ptr);
-  ~RefCountPtr();
-  RefCountPtr<T>& operator=(const RefCountPtr<T>& r_ptr);
+  explicit RCP( T* ptr, bool owns_mem = true );
+  RCP( ENull null_arg = null );
+  RCP(const RCP<T>& r_ptr);
+  template<class T2> RCP(const RCP<T2>& r_ptr);
+  ~RCP();
+  RCP<T>& operator=(const RCP<T>& r_ptr);
   T* operator->() const;
   T& operator*() const;
   T* get() const;
@@ -746,63 +747,63 @@ public:
   int count() const;
   void set_has_ownership();
   bool has_ownership() const;
-  bool shares_resource(const RefCountPtr<T>& r_ptr) const;
+  bool shares_resource(const RCP<T>& r_ptr) const;
 private:
   ...
 };
 
-template<class T>            RefCountPtr<T>   rcp( T* p );
-template<class T>            RefCountPtr<T>   rcp( T* p, bool owns_mem);
+template<class T>            RCP<T>   rcp( T* p );
+template<class T>            RCP<T>   rcp( T* p, bool owns_mem);
 template<class T
-  ,class Dealloc_T>          RefCountPtr<T>   rcp( T* p, Dealloc_T dealloc, bool owns_mem );
-template<class T>            bool             is_null(const RefCountPtr<T>& p);
-template<class T>            bool             operator==(const RefCountPtr<T>& p, ENull);
-template<class T>            bool             operator!=(const RefCountPtr<T>& p, ENull);
-template<class T2, class T1> bool             operator==(const RefCountPtr<T1>& p1
-                                                         ,const RefCountPtr<T2>& p2 );
-template<class T2, class T1> bool             operator!=(const RefCountPtr<T1>& p1
-                                                         ,const RefCountPtr<T2>& p2 );
-template<class T2, class T1> RefCountPtr<T2>  rcp_implicit_cast(const RefCountPtr<T1>& p1);
-template<class T2, class T1> RefCountPtr<T2>  rcp_static_cast(const RefCountPtr<T1>& p1);
-template<class T2, class T1> RefCountPtr<T2>  rcp_const_cast(const RefCountPtr<T1>& p1);
-template<class T2, class T1> RefCountPtr<T2>  rcp_dynamic_cast(const RefCountPtr<T1>& p1
+  ,class Dealloc_T>          RCP<T>   rcp( T* p, Dealloc_T dealloc, bool owns_mem );
+template<class T>            bool     is_null(const RCP<T>& p);
+template<class T>            bool     operator==(const RCP<T>& p, ENull);
+template<class T>            bool     operator!=(const RCP<T>& p, ENull);
+template<class T2, class T1> bool     operator==(const RCP<T1>& p1
+                                                 ,const RCP<T2>& p2 );
+template<class T2, class T1> bool     operator!=(const RCP<T1>& p1
+                                                 ,const RCP<T2>& p2 );
+template<class T2, class T1> RCP<T2>  rcp_implicit_cast(const RCP<T1>& p1);
+template<class T2, class T1> RCP<T2>  rcp_static_cast(const RCP<T1>& p1);
+template<class T2, class T1> RCP<T2>  rcp_const_cast(const RCP<T1>& p1);
+template<class T2, class T1> RCP<T2>  rcp_dynamic_cast(const RCP<T1>& p1
                                                 ,bool throw_on_fail = false );
 \end{verbatim}}
 \pagebreak
 {\scriptsize\begin{verbatim}
-template<class T1, class T2> int              set_extra_data( const T1 &extra_data
-                                                ,const std::string& name, RefCountPtr<T2> *p
-                                                ,bool force_unique = true
-                                                ,EPrePostDestruction destroy_when = POST_DESTROY );
-template<class T1, class T2> T1&              get_extra_data( RefCountPtr<T2>& p
-                                                ,const std::string& name );
-template<class T1, class T2> const T1&        get_extra_data( const RefCountPtr<T2>& p
-                                                ,const std::string& name );
-template<class T1, class T2> T1*              get_optional_extra_data( RefCountPtr<T2>& p
-                                                ,const std::string& name );
-template<class T1, class T2> const T1*        get_optional_extra_data( const RefCountPtr<T2>& p
-                                                ,const std::string& name );
+template<class T1, class T2> int              set_extra_data( const T1 &extra_data,
+                                                const std::string& name, RCP<T2> *p,
+                                                bool force_unique = true,
+                                                EPrePostDestruction destroy_when = POST_DESTROY );
+template<class T1, class T2> T1&              get_extra_data( RCP<T2>& p,
+                                                const std::string& name );
+template<class T1, class T2> const T1&        get_extra_data( const RCP<T2>& p,
+                                                const std::string& name );
+template<class T1, class T2> T1*              get_optional_extra_data( RCP<T2>& p,
+                                                const std::string& name );
+template<class T1, class T2> const T1*        get_optional_extra_data( const RCP<T2>& p,
+                                                const std::string& name );
 template<class Dealloc_T
-  , class T>                 Dealloc_T&       get_dealloc( RefCountPtr<T>& p );
+  , class T>                 Dealloc_T&       get_dealloc( RCP<T>& p );
 template<class Dealloc_T
-  , class T>                 const Dealloc_T& get_dealloc( const RefCountPtr<T>& p );
+  , class T>                 const Dealloc_T& get_dealloc( const RCP<T>& p );
 template<class Dealloc_T
-  , class T>                 Dealloc_T*       get_optional_dealloc( RefCountPtr<T>& p );
+  , class T>                 Dealloc_T*       get_optional_dealloc( RCP<T>& p );
 template<class Dealloc_T
-  , class T>                 const Dealloc_T* get_optional_dealloc( const RefCountPtr<T>& p );
+  , class T>                 const Dealloc_T* get_optional_dealloc( const RCP<T>& p );
 
 }
 \end{verbatim}}
 
 %
-\section{\texttt{RefCountPtr<>} quick-start and reference}
+\section{\texttt{RCP} quick-start and reference}
 \label{rcpqs:apdx:quickstart}
 %
 
 This appendix presents a short, but fairly comprehensive, quick-start
-for the use of {}\texttt{Ref\-Count\-Ptr<>}.  The use cases described
+for the use of {}\texttt{RCP}.  The use cases described
 here should cover the overwhelming majority of the use instances of
-{}\texttt{Ref\-Count\-Ptr<>} in a typical program.
+{}\texttt{RCP} in a typical program.
 
 The following class hierarchy will be used in the C++ examples given
 below.
@@ -828,50 +829,54 @@ which means that checking will only be performed in a debug build
 
 \begin{enumerate}
 
-\item {\bf Creation of \texttt{RefCountPtr<>} objects}
+\item {\bf Creation of \texttt{RCP} objects}
 
 \begin{enumerate}
 
-\item {\bf Initializing a \texttt{RefCountPtr<>} object to NULL}
+\item {\bf Initializing a \texttt{RCP} object to NULL}
 \label{rcpqs:apdx:qs:null}
 %
 {\small\begin{verbatim}
-RefCountPtr<C> c_ptr;
+RCP<C> c_ptr;
 \end{verbatim}}
 or
 {\small\begin{verbatim}
-RefCountPtr<C> c_ptr = null;
+RCP<C> c_ptr = null;
 \end{verbatim}}
 
-\item {\bf Creating a \texttt{RefCountPtr<>} object using \texttt{new}}
+\item {\bf Creating a \texttt{RCP} object using \texttt{new}}
 \label{rcpqs:apdx:qs:new}
 %
- {\small\begin{verbatim}
-RefCountPtr<C> c_ptr = rcp(new C);
+{\small\begin{verbatim}
+RCP<C> c_ptr = rcp(new C);
+\end{verbatim}}
+or
+{\small\begin{verbatim}
+RCP<C> c_ptr(new C);
 \end{verbatim}}
 %
-\item {\bf Creating a \texttt{RefCountPtr<>} object to an array allocated using \texttt{new[n]}}
+\item {\bf Creating a \texttt{RCP} object to an array allocated using \texttt{new[n]}}
 \label{rcpqs:apdx:qs:array-new}
 %
  {\small\begin{verbatim}
-RefCountPtr<C> c_ptr = rcp(new C[n],DeallocArrayDelete<C>(),true);
+RCP<C> c_ptr = rcp(new C[n],DeallocArrayDelete<C>(),true);
 \end{verbatim}}
 %
-\item {\bf Initializing a \texttt{RefCountPtr<>} object to an object
+\item {\bf Initializing a \texttt{RCP} object to an object
        \underline{not} allocated with \texttt{new}}
 \label{rcpqs:apdx:qs:not-new}
 %
 {\small\begin{verbatim}
-C              c;
-RefCountPtr<C> c_ptr = rcp(&c,false);
+C      c;
+RCP<C> c_ptr = rcp(&c,false);
 \end{verbatim}}
 %
 \item {\bf Copy constructor (implicit casting)}
 %
 {\small\begin{verbatim}
-RefCountPtr<C>       c_ptr  = rcp(new C); // No cast
-RefCountPtr<A>       a_ptr  = c_ptr;      // Cast to base class
-RefCountPtr<const A> ca_ptr = a_ptr;      // Cast from non-const to const
+RCP<C>       c_ptr  = rcp(new C); // No cast
+RCP<A>       a_ptr  = c_ptr;      // Cast to base class
+RCP<const A> ca_ptr = a_ptr;      // Cast from non-const to const
 \end{verbatim}}
 %
 \item {\bf Representing constantness and non-constantness}
@@ -880,51 +885,51 @@ RefCountPtr<const A> ca_ptr = a_ptr;      // Cast from non-const to const
 %
 \item {\bf Non-constant pointer to non-constant object }
 {\small\begin{verbatim}
-RefCountPtr<C> c_ptr;
+RCP<C> c_ptr;
 \end{verbatim}}
 %
 \item {\bf Constant pointer to non-constant object }
 {\small\begin{verbatim}
-const RefCountPtr<C> c_ptr;
+const RCP<C> c_ptr;
 \end{verbatim}}
 %
 \item {\bf Non-Constant pointer to constant object }
 {\small\begin{verbatim}
-RefCountPtr<const C> c_ptr;
+RCP<const C> c_ptr;
 \end{verbatim}}
 %
 \item {\bf Constant pointer to constant object }
 {\small\begin{verbatim}
-const RefCountPtr<const C> c_ptr;
+const RCP<const C> c_ptr;
 \end{verbatim}}
 %
 \end{enumerate}
 %
 \end{enumerate}
 
-\item {\bf Reinitialization of \texttt{RefCountPtr<>} objects (using assignment operator)}
+\item {\bf Reinitialization of \texttt{RCP} objects (using assignment operator)}
 %
 \begin{enumerate}
 %
 \item {\bf Resetting from a raw pointer}
 %
 {\small\begin{verbatim}
-RefCountPtr<A> a_ptr;
+RCP<A> a_ptr;
 a_ptr = rcp(new A());
 \end{verbatim}}
 %
 \item {\bf Resetting to null}
 %
 {\small\begin{verbatim}
-RefCountPtr<A> a_ptr = rcp(new A());
+RCP<A> a_ptr = rcp(new A());
 a_ptr = null; // The A object will be deleted here
 \end{verbatim}}
 %
-\item {\bf Assigning from a \texttt{RefCountPtr<>} object}
+\item {\bf Assigning from a \texttt{RCP} object}
 %
 {\small\begin{verbatim}
-RefCountPtr<A> a_ptr1;
-RefCountPtr<A> a_ptr2 = rcp(new A());
+RCP<A> a_ptr1;
+RCP<A> a_ptr2 = rcp(new A());
 a_ptr1 = a_ptr2; // Now a_ptr1 and a_ptr2 point to same A object
 \end{verbatim}}
 %
@@ -1005,9 +1010,9 @@ if( is_null(a_ptr) ) std::cout << "a_ptr is null!\n";
 \item {\bf Using conversion function}
 %
 {\small\begin{verbatim}
-RefCountPtr<C>       c_ptr  = rcp(new C);                       // No cast
-RefCountPtr<A>       a_ptr  = rcp_implicit_cast<A>(c_ptr);      // To base
-RefCountPtr<const A> ca_ptr = rcp_implicit_cast<const A>(a_ptr);// To const
+RCP<C>       c_ptr  = rcp(new C);                       // No cast
+RCP<A>       a_ptr  = rcp_implicit_cast<A>(c_ptr);      // To base
+RCP<const A> ca_ptr = rcp_implicit_cast<const A>(a_ptr);// To const
 \end{verbatim}}
 %
 \end{enumerate}
@@ -1015,33 +1020,33 @@ RefCountPtr<const A> ca_ptr = rcp_implicit_cast<const A>(a_ptr);// To const
 \item {\bf Casting away \texttt{const}}
 %
 {\small\begin{verbatim}
-RefCountPtr<const A>  ca_ptr = rcp(new C);
-RefCountPtr<A>        a_ptr  = rcp_const_cast<A>(ca_ptr); // cast away const!
+RCP<const A>  ca_ptr = rcp(new C);
+RCP<A>        a_ptr  = rcp_const_cast<A>(ca_ptr); // cast away const!
 \end{verbatim}}
 %
 \item {\bf Static cast (no runtime check)}
 %
 {\small\begin{verbatim}
-RefCountPtr<D>  d_ptr = rcp(new E);
-RefCountPtr<E>  e_ptr = rcp_static_cast<E>(d_ptr); // Unchecked, unsafe?
+RCP<D>  d_ptr = rcp(new E);
+RCP<E>  e_ptr = rcp_static_cast<E>(d_ptr); // Unchecked, unsafe?
 \end{verbatim}}
 %
 \item {\bf Dynamic cast (runtime checked, failed cast allowed)}
 %
 {\small\begin{verbatim}
-RefCountPtr<A>  a_ptr  = rcp(new C);
-RefCountPtr<B1> b1_ptr = rcp_dynamic_cast<B1>(a_ptr);  // Checked, safe!
-RefCountPtr<B2> b2_ptr = rcp_dynamic_cast<B2>(b1_ptr); // Checked, safe!
-RefCountPtr<C>  c_ptr  = rcp_dynamic_cast<C>(b2_ptr);  // Checked, safe!
+RCP<A>  a_ptr  = rcp(new C);
+RCP<B1> b1_ptr = rcp_dynamic_cast<B1>(a_ptr);  // Checked, safe!
+RCP<B2> b2_ptr = rcp_dynamic_cast<B2>(b1_ptr); // Checked, safe!
+RCP<C>  c_ptr  = rcp_dynamic_cast<C>(b2_ptr);  // Checked, safe!
 \end{verbatim}}
 %
 \item {\bf Dynamic cast (runtime checked, failed cast not allowed)}
 %
 {\small\begin{verbatim}
-RefCountPtr<A>  a_ptr1  = rcp(new C);
-RefCountPtr<A>  a_ptr2  = rcp(new A);
-RefCountPtr<B1> b1_ptr1 = rcp_dynamic_cast<B1>(a_ptr1,true); // Success!
-RefCountPtr<B1> b1_ptr2 = rcp_dynamic_cast<B1>(a_ptr2,true); // Throw std::bad_cast!
+RCP<A>  a_ptr1  = rcp(new C);
+RCP<A>  a_ptr2  = rcp(new A);
+RCP<B1> b1_ptr1 = rcp_dynamic_cast<B1>(a_ptr1,true); // Success!
+RCP<B1> b1_ptr2 = rcp_dynamic_cast<B1>(a_ptr2,true); // Throw std::bad_cast!
 \end{verbatim}}
 %
 \end{enumerate}
@@ -1053,10 +1058,10 @@ RefCountPtr<B1> b1_ptr2 = rcp_dynamic_cast<B1>(a_ptr2,true); // Throw std::bad_c
 %
 \begin{enumerate}
 %
-\item {\bf Creating a \texttt{RefCountPtr<>} object with a custom deallocator }
+\item {\bf Creating a \texttt{RCP} object with a custom deallocator }
 %
 {\small\begin{verbatim}
-RefCountPtr<C> c_ptr = rcp(new C[N],DeallocArrayDelete<C>(),true);
+RCP<C> c_ptr = rcp(new C[N],DeallocArrayDelete<C>(),true);
 \end{verbatim}}
 %
 \item {\bf Access customized deallocator (runtime checked, throws on failure)}
@@ -1096,20 +1101,19 @@ set_extra_data(rcp(new B1),"A:B1",&a_ptr,PRE_DESTORY);
 \item {\bf Retrieving extra data}
 %
 {\small\begin{verbatim}
-get_extra_data<RefCountPtr<B1> >(a_ptr,"A:B1")->f();
+get_extra_data<RCP<B1> >(a_ptr,"A:B1")->f();
 \end{verbatim}}
 %
 \item {\bf Resetting extra data}
 %
 {\small\begin{verbatim}
-get_extra_data<RefCountPtr<B1> >(a_ptr,"A:B1") = rcp(new C);
+get_extra_data<RCP<B1> >(a_ptr,"A:B1") = rcp(new C);
 \end{verbatim}}
 %
 \item {\bf Retrieving optional extra data}
 %
 {\small\begin{verbatim}
-const RefCountPtr<B1>
-  *b1 = get_optional_extra_data<RefCountPtr<B1> >(a_ptr,"A:B1");
+const RCP<B1> *b1 = get_optional_extra_data<RCP<B1> >(a_ptr,"A:B1");
 if(b1) (*b1)->f();
 \end{verbatim}}
 %
@@ -1118,57 +1122,57 @@ if(b1) (*b1)->f();
 \end{enumerate}
 
 %
-\section{Commandments for the use of {}\texttt{Ref\-Count\-Ptr<>}}
+\section{Commandments for the use of {}\texttt{RCP}}
 \label{rcpqs:apdx:commandments}
 %
 
 Here are listed commandments for the use of
-{}\texttt{Ref\-Count\-Ptr<>}.  These commandments reinforce some of
+{}\texttt{RCP}.  These commandments reinforce some of
 the material in the quick-start in Appendix
 {}\ref{rcpqs:apdx:quickstart}.  The reasoning behind these
 commandments can be found in the design document for
-{}\texttt{Ref\-Count\-Ptr<>} {}\cite{ref:RefCountPtr}.  Along with
+{}\texttt{RCP} {}\cite{ref:RefCountPtr}.  Along with
 each commandment is one or more anti-commandments stating the negative
 of the commandment.  C++ code fragments are also included to
 demonstrate each commandment and anti-commandment.
 
 \begin{commandment}\label{rcp:cmd:rcp-new}
 Thou shall put a pointer for an object allocated with operator
-{}\texttt{new} into a {}\texttt{Ref\-Count\-Ptr<>} object only once.
+{}\texttt{new} into a {}\texttt{RCP} object only once.
 The best way to insure this is to call operator {}\texttt{new}
 directly in a call to {}\texttt{rcp(...)} to create a dynamically
 allocated object that is to be managed by a
-{}\texttt{Ref\-Count\-Ptr<>} object.  See item
+{}\texttt{RCP} object.  See item
 ({}\ref{rcpqs:apdx:qs:new}) in Appendix
 {}\ref{rcpqs:apdx:quickstart}.
 \end{commandment}
 
 \begin{anticommandment}
 Thou shall never give a raw C++ pointer returned from operator
-{}\texttt{new} to more than one {}\texttt{Ref\-Count\-Ptr<>} object.
+{}\texttt{new} to more than one {}\texttt{RCP} object.
 \end{anticommandment}
 
 {}\noindent{}Example:
 {\small\begin{verbatim}
   A *ra_ptr = new C;
-  RefCountPtr<A> a_ptr1 = rcp(ra_ptr); // Okay
-  RefCountPtr<A> a_ptr2 = rcp(ra_ptr); // no, No, NO !!!!
+  RCP<A> a_ptr1 = rcp(ra_ptr); // Okay
+  RCP<A> a_ptr2 = rcp(ra_ptr); // no, No, NO !!!!
 \end{verbatim}}
 
 \begin{anticommandment}
 Thou shall never give a raw C++ pointer to an array of objects
 returned from operator {}\texttt{new[]} to a
-{}\texttt{Ref\-Count\-Ptr<>} object using {}\texttt{rcp(new C[n])}.
+{}\texttt{RCP} object using {}\texttt{rcp(new C[n])}.
 \end{anticommandment}
 
 {}\noindent{}Example:
 {\small\begin{verbatim}
-  RefCountPtr<std::vector<C> > c_array_ptr1 = rcp(new std::vector<C>(N)); // Okay
-  RefCountPtr<C>               c_array_ptr3 = rcp(new C[n]);              // no, No, NO!
+  RCP<std::vector<C> > c_array_ptr1 = rcp(new std::vector<C>(N)); // Okay
+  RCP<C>               c_array_ptr3 = rcp(new C[n]);              // no, No, NO!
 \end{verbatim}}
 
 \begin{commandment}
-Thou shall only create a {}\texttt{NULL} {}\texttt{Ref\-Count\-Ptr<>}
+Thou shall only create a {}\texttt{NULL} {}\texttt{RCP}
 object by using the default constructor or by using the
 {}\texttt{null} enum (and its associated special constructor) (see
 item ({}\ref{rcpqs:apdx:qs:null}) in Appendix
@@ -1177,21 +1181,21 @@ or {}\texttt{0} will not compile.
 \end{commandment}
 
 \begin{anticommandment}
-Thou shall not create a {}\texttt{NULL} {}\texttt{Ref\-Count\-Ptr<>}
+Thou shall not create a {}\texttt{NULL} {}\texttt{RCP}
 object using the templated function {}\texttt{rcp(...)} since it is
 very verbose and complicates maintenance.
 \end{anticommandment}
 
 {}\noindent{}Example:
 {\small\begin{verbatim}
-  RefCountPtr<A> a_ptr1 = null;          // Yes :-)
-  RefCountPtr<A> a_ptr2 = rcp<A>(NULL);  // No, too verbose :-(
+  RCP<A> a_ptr1 = null;          // Yes :-)
+  RCP<A> a_ptr2 = rcp<A>(NULL);  // No, too verbose :-(
 \end{verbatim}}
 
 \begin{commandment}
 Thou shall only pass a raw pointer for an object that is
 {}\underline{not} allocated by operator {}\texttt{new} (e.g.~allocated
-on the stack) into a {}\texttt{Ref\-Count\-Ptr<>} object by using the
+on the stack) into a {}\texttt{RCP} object by using the
 templated function {}\texttt{rcp<T>(T* p, bool owns\_mem)} and setting
 {}\texttt{owns\_mem} to {}\texttt{false} (see item
 ({}\ref{rcpqs:apdx:qs:not-new}) in Appendix
@@ -1201,19 +1205,19 @@ templated function {}\texttt{rcp<T>(T* p, bool owns\_mem)} and setting
 \begin{anticommandment}
 Thou shall never pass a pointer for an object {}\underline{not}
 allocated with operator {}\texttt{new} into a
-{}\texttt{Ref\-Count\-Ptr<>} object without setting
+{}\texttt{RCP} object without setting
 {}\texttt{owns\_mem} to {}\texttt{false}.
 \end{anticommandment}
 
 {}\noindent{}Example:
 {\small\begin{verbatim}
   C c;
-  RefCountPtr<A> a_ptr1 = rcp(&c,false);  // Yes :-)
-  RefCountPtr<A> a_ptr2 = rcp(&c);        // no, No, NO !!!!
+  RCP<A> a_ptr1 = rcp(&c,false);  // Yes :-)
+  RCP<A> a_ptr2 = rcp(&c);        // no, No, NO !!!!
 \end{verbatim}}
 
 \begin{commandment}\label{rcp:cmnd:converstion}
-Thou shall only cast between {}\texttt{Ref\-Count\-Ptr<>} objects
+Thou shall only cast between {}\texttt{RCP} objects
 using the default copy constructor (for implicit conversions) and the
 nonmember template functions {}\texttt{rcp\-\_implicit\-\_cast<>(\-...)},
 {}\texttt{rcp\-\_static\-\_cast<>(\-...)},
@@ -1224,15 +1228,15 @@ nonmember template functions {}\texttt{rcp\-\_implicit\-\_cast<>(\-...)},
 \end{commandment}
 
 \begin{anticommandment}
-Thou shall never convert between {}\texttt{Ref\-Count\-Ptr<>} objects
+Thou shall never convert between {}\texttt{RCP} objects
 using raw pointer access.
 \end{anticommandment}
 
 {}\noindent{}Example:
 {\small\begin{verbatim}
-  RefCountPtr<A>     a_ptr   = rcp(new C);
-  RefCountPtr<B1>    b1_ptr1 = rcp_dynamic_cast<B1>(a_ptr);         // Yes :-)
-  RefCountPtr<B1>    b1_ptr2 = rcp(dynamic_cast<B1*>(a_ptr.get())); // no, No, NO !!!
+  RCP<A>     a_ptr   = rcp(new C);
+  RCP<B1>    b1_ptr1 = rcp_dynamic_cast<B1>(a_ptr);         // Yes :-)
+  RCP<B1>    b1_ptr2 = rcp(dynamic_cast<B1*>(a_ptr.get())); // no, No, NO !!!
 \end{verbatim}}
 
 %
@@ -1248,10 +1252,10 @@ for various use cases and different types of objects.  These idioms
 show how to write function arguments prototypes which exploit the C++
 language in a way that makes these function prototypes as self
 documenting as possible, avoid coding errors and increase readability
-of C++ code.  In general, {}\texttt{Ref\-Count\-Ptr<T>} objects should
+of C++ code.  In general, {}\texttt{RCP<T>} objects should
 be passed and manipulated as though they where raw C++ pointer
 {}\texttt{T*} objects.  However, while raw C++ pointer objects should
-generally be passed by value, {}\texttt{Ref\-Count\-Ptr<>} objects
+generally be passed by value, {}\texttt{RCP} objects
 should generally be passed by reference for several reasons (see
 {}\cite{ref:RefCountPtr} for more details).
 
@@ -1278,23 +1282,23 @@ non-changeable object (required$^1$)
     {\tiny .}
     \end{center}
   \end{minipage}
-& {}\texttt{const RefCountPtr<const S> \&s} \\
+& {}\texttt{const RCP<const S> \&s} \\
 \hline
 non-changeable object (optional$^2$)
 & {}\texttt{const S *s}
-& {}\texttt{const RefCountPtr<const S> \&s} \\
+& {}\texttt{const RCP<const S> \&s} \\
 \hline
 changeable object
 & {}\texttt{S *s}
-& {}\texttt{const RefCountPtr<S> \&s} \\
+& {}\texttt{const RCP<S> \&s} \\
 \hline
 array of non-changeable objects
 & {}\texttt{const S s[]}
-& {}\texttt{const RefCountPtr<const S> s[]} \\
+& {}\texttt{const RCP<const S> s[]} \\
 \hline
 array of changeable objects
 & {}\texttt{S s[]}
-& {}\texttt{const RefCountPtr<S> s[]} \\
+& {}\texttt{const RCP<S> s[]} \\
 \hline
 \end{tabular}
 \begin{center}
@@ -1320,23 +1324,23 @@ Argument purpose
 \hline
 non-changeable object (required$^1$)
 & {}\texttt{const A \&a}
-& {}\texttt{const RefCountPtr<const A> \&a} \\
+& {}\texttt{const RCP<const A> \&a} \\
 \hline
 non-changeable object (optional$^2$)
 & {}\texttt{const A *a}
-& {}\texttt{const RefCountPtr<const A> \&a} \\
+& {}\texttt{const RCP<const A> \&a} \\
 \hline
 changeable object
 & {}\texttt{A *a}
-& {}\texttt{const RefCountPtr<A> \&a} \\
+& {}\texttt{const RCP<A> \&a} \\
 \hline
 array of non-changeable objects
 & {}\texttt{const A*const a[]}
-& {}\texttt{const RefCountPtr<const A> a[]} \\
+& {}\texttt{const RCP<const A> a[]} \\
 \hline
 array of changeable objects
 & {}\texttt{A*const a[]}
-& {}\texttt{const RefCountPtr<A> a[]} \\
+& {}\texttt{const RCP<A> a[]} \\
 \hline
 \end{tabular}
 \begin{center}
@@ -1399,8 +1403,8 @@ public:
 };
 class ClientC {
   const UtilityBaseFactory *utilityFactory_;
-  UtilityBase              *utility_;
-  bool                     shareUtility_;
+  UtilityBase *utility_;
+  bool shareUtility_;
 public:
   ClientC( const UtilityBaseFactory *utilityFactory, bool shareUtility )
     :utilityFactory_(utilityFactory)
@@ -1409,7 +1413,7 @@ public:
   ~ClientC() { delete utilityFactory_; delete utility_; }
   void h( ClientB *b ) {
     if( shareUtility_ ) b->initialize(utility_);
-    else                b->initialize(utilityFactory_->createUtility());
+    else b->initialize(utilityFactory_->createUtility());
   }
 };
 
@@ -1438,16 +1442,16 @@ int main( int argc, char* argv[] )
 \end{verbatim}}
 
 %
-\section{Listing: Refactored example C++ program using {}\texttt{Ref\-Count\-Ptr<>}}
+\section{Listing: Refactored example C++ program using {}\texttt{RCP}}
 \label{rcpqs:apdx:ex-prg-refactored}
 %
 
 {\small\begin{verbatim}
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "example_get_args.hpp"
 
-// Inject symbols for RefCountPtr so we don't need Teuchos:: qualification
-using Teuchos::RefCountPtr;
+// Inject symbols for RCP so we don't need Teuchos:: qualification
+using Teuchos::RCP;
 using Teuchos::rcp;
 
 // Abstract interfaces
@@ -1457,7 +1461,7 @@ public:
 };
 class UtilityBaseFactory {
 public:
-  virtual RefCountPtr<UtilityBase> createUtility() const = 0;
+  virtual RCP<UtilityBase> createUtility() const = 0;
 };
 
 // Concrete implementations
@@ -1471,11 +1475,11 @@ public:
 };
 class UtilityAFactory : public UtilityBaseFactory {
 public:
-  RefCountPtr<UtilityBase> createUtility() const { return rcp(new UtilityA()); }
+  RCP<UtilityBase> createUtility() const { return rcp(new UtilityA()); }
 };
 class UtilityBFactory : public UtilityBaseFactory {
 public:
-  RefCountPtr<UtilityBase> createUtility() const { return rcp(new UtilityB()); }
+  RCP<UtilityBase> createUtility() const { return rcp(new UtilityB()); }
 };
 
 // Client classes
@@ -1484,23 +1488,23 @@ public:
   void f( const UtilityBase &utility ) const { utility.f(); }
 };
 class ClientB {
-  RefCountPtr<UtilityBase> utility_;
+  RCP<UtilityBase> utility_;
 public:
-  void initialize(const RefCountPtr<UtilityBase> &utility) { utility_=utility; }
+  void initialize(const RCP<UtilityBase> &utility) { utility_=utility; }
   void g( const ClientA &a ) { a.f(*utility_); }
 };
 class ClientC {
-  RefCountPtr<const UtilityBaseFactory> utilityFactory_;
-  RefCountPtr<UtilityBase>              utility_;
-  bool                                  shareUtility_;
+  RCP<const UtilityBaseFactory> utilityFactory_;
+  RCP<UtilityBase> utility_;
+  bool shareUtility_;
 public:
-  ClientC( const RefCountPtr<const UtilityBaseFactory> &utilityFactory, bool shareUtility )
+  ClientC( const RCP<const UtilityBaseFactory> &utilityFactory, bool shareUtility )
     :utilityFactory_(utilityFactory)
     ,utility_(utilityFactory->createUtility())
     ,shareUtility_(shareUtility) {}
   void h( ClientB *b ) {
     if( shareUtility_ ) b->initialize(utility_);
-    else                b->initialize(utilityFactory_->createUtility());
+    else b->initialize(utilityFactory_->createUtility());
   }
 };
 
@@ -1511,7 +1515,7 @@ int main( int argc, char* argv[] )
   bool useA, shareUtility;
   example_get_args(argc,argv,&useA,&shareUtility);
   // Create factory
-  RefCountPtr<UtilityBaseFactory> utilityFactory;
+  RCP<UtilityBaseFactory> utilityFactory;
   if(useA) utilityFactory = rcp(new UtilityAFactory());
   else     utilityFactory = rcp(new UtilityBFactory());
   // Create clients
