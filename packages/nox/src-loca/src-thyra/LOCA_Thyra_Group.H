@@ -46,6 +46,7 @@
 #include "NOX_Thyra_Group.H"                   // base class
 #include "LOCA_Parameter_Vector.H"             // class data element
 #include "Thyra_VectorBase.hpp"                // class data element
+#include "LOCA_Thyra_SaveDataStrategy.H"       // class data element
 
 // Forward declares
 namespace Teuchos {
@@ -135,12 +136,29 @@ namespace LOCA {
       //! Return copy of parameter indexed by paramID
       virtual double getParam(string paramID) const;
 
+      //! Compute a scaled dot product
+      /*! 
+       * The implementation here uses the standard dot product divided
+       * by the length of the vectors.
+       */
+      virtual double
+      computeScaledDotProduct(const NOX::Abstract::Vector& a,
+			      const NOX::Abstract::Vector& b) const;
+
       //! Call the user interface print() routine, solution vector
       virtual void printSolution(const double conParam) const;
 
       //! Call the user interface print() routine, any vector
       virtual void printSolution(const NOX::Abstract::Vector& x,
                                  const double conParam) const;
+
+      //! Scales a vector using scaling vector
+      /*! 
+       * The implementation here rescales the vector by the square root of 
+       * its length.
+       */
+      virtual void
+      scaleVector(NOX::Abstract::Vector& x) const;
 
       //@}
 
@@ -175,6 +193,10 @@ namespace LOCA {
 				NOX::Abstract::MultiVector& result) const;
       //@}
 
+      //! Set strategy object for saving continuation data
+      void setSaveDataStrategy(
+			 const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy>& s);
+
     protected:
 
       //! Global data
@@ -191,6 +213,9 @@ namespace LOCA {
 
       //! Pointer to x_dot vector of zeros
       Teuchos::RCP< ::Thyra::VectorBase<double> > x_dot_vec;
+
+      //! Strategy object for saving continuation data
+      Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> saveDataStrategy;
 
     };
 

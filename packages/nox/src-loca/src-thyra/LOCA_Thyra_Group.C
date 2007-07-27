@@ -60,7 +60,8 @@ LOCA::Thyra::Group::Group(
   LOCA::Abstract::Group(global_data),
   globalData(global_data),
   params(p),
-  param_index(p_index)
+  param_index(p_index),
+  saveDataStrategy()
 {
   // Create thyra vector to store parameters that is a view of LOCA
   // parameter vector
@@ -83,7 +84,8 @@ LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
   LOCA::Abstract::Group(source, type),
   globalData(source.globalData),
   params(source.params),
-  param_index(source.param_index)
+  param_index(source.param_index),
+  saveDataStrategy(source.saveDataStrategy)
 {
   // Create thyra vector to store parameters that is a view of LOCA
   // parameter vector
@@ -112,6 +114,7 @@ LOCA::Thyra::Group::operator=(const LOCA::Thyra::Group& source)
     LOCA::Abstract::Group::copy(source);
     params = source.params;
     param_index = source.param_index;
+    saveDataStrategy = source.saveDataStrategy;
 
     // Because param_thyra_vec is a view of params, we don't need to copy
   }
@@ -239,6 +242,14 @@ LOCA::Thyra::Group::getParam(string paramID) const
   return params.getValue(paramID);
 }
 
+double
+LOCA::Thyra::Group::computeScaledDotProduct(
+				       const NOX::Abstract::Vector& a,
+				       const NOX::Abstract::Vector& b) const
+{
+  return a.innerProduct(b) / a.length();
+}
+
 void
 LOCA::Thyra::Group::printSolution(const double conParam) const
 {
@@ -249,6 +260,14 @@ void
 LOCA::Thyra::Group::printSolution(const NOX::Abstract::Vector& x_,
 				  const double conParam) const
 {
+  if (saveDataStrategy != Teuchos::null)
+    saveDataStrategy->saveSolution(x_, conParam);
+}
+
+void
+LOCA::Thyra::Group::scaleVector(NOX::Abstract::Vector& x) const
+{
+  x.scale(1.0 / sqrt(static_cast<double>(x.length())));
 }
 
 NOX::Abstract::Group::ReturnType
@@ -318,4 +337,11 @@ LOCA::Thyra::Group::applyShiftedMatrixInverseMultiVector(
 				NOX::Abstract::MultiVector& result) const
 {
   return this->applyJacobianInverseMultiVector(lsParams, input, result);
+}
+
+void
+LOCA::Thyra::Group::setSaveDataStrategy(
+			 const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy>& s)
+{
+  saveDataStrategy = s;
 }

@@ -48,7 +48,8 @@ all-local:
 
 THYRA_H = \
 	$(srcdir)/LOCA_Thyra.H \
-	$(srcdir)/LOCA_Thyra_Group.H
+	$(srcdir)/LOCA_Thyra_Group.H \
+	$(srcdir)/LOCA_Thyra_SaveDataStrategy.H
 
 THYRA = \
 	$(srcdir)/LOCA_Thyra_Group.C
