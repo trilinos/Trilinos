@@ -49,6 +49,7 @@ FFLAGS=-O3 \
 --enable-nox-lapack \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
+--enable-nox-thyra \
 --enable-pytrilinos \
 --enable-pliris \
 --enable-rythmos \
