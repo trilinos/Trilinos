@@ -42,11 +42,11 @@ testall : $(noinst_PROGRAMS) tradoptest.exe
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/mpl
 hesopcheck_SOURCES = hesopcheck.cpp
-hesopcheck_CXXFLAGS = 
+hesopcheck_CXXFLAGS =
 hesopcheck_DEPENDENCIES = $(top_builddir)/src/libsacado.a tradoptest.exe
 hesopcheck_LDADD = -L$(top_builddir)/src -lsacado $(LIBS)
 
-# If we are configured with --with-gnumake, use GNU's extensions to make 
+# If we are configured with --with-gnumake, use GNU's extensions to make
 # to compile all of the tradoptests a lot faster if using -j xx for
 # parallel make
 if USING_GNUMAKE
@@ -65,11 +65,11 @@ tradoptest.exe : testgen.as tradoptest.c0
 	set -e;\
 	for i in `ls tradoptest_*.cpp | sed 's/\.cpp//'`; do \
 		echo $$i: ;\
-		$(CXXCOMPILE) -o $$i.exe $$i.cpp;\
-		$(CXXCOMPILE) -o $$i"_ADC.exe" -DRAD_AUTO_AD_Const $$i.cpp;\
-		$(CXXCOMPILE) -o $$i"_EQA.exe" -DRAD_EQ_ALIAS $$i.cpp;\
-		$(CXXCOMPILE) -o $$i"_RE1.exe" -DRAD_REINIT=1 $$i.cpp;\
-		$(CXXCOMPILE) -o $$i"_RE2.exe" -DRAD_REINIT=2 $$i.cpp;\
+		$(CXXCOMPILE) -o $$i.exe $$i.cpp $(LIBS);\
+		$(CXXCOMPILE) -o $$i"_ADC.exe" -DRAD_AUTO_AD_Const $$i.cpp $(LIBS);\
+		$(CXXCOMPILE) -o $$i"_EQA.exe" -DRAD_EQ_ALIAS $$i.cpp $(LIBS);\
+		$(CXXCOMPILE) -o $$i"_RE1.exe" -DRAD_REINIT=1 $$i.cpp $(LIBS);\
+		$(CXXCOMPILE) -o $$i"_RE2.exe" -DRAD_REINIT=2 $$i.cpp $(LIBS);\
 		done;\
 	echo -e '#!/bin/sh\necho OK' > tradoptest.exe; chmod +x tradoptest.exe
 
