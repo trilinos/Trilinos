@@ -119,7 +119,7 @@ RefCountPtr<Epetra_MapColoring>  NLNML::Collapsedcoloring(Epetra_CrsGraph* cgrap
   new_nummyrows /= bsize;
   new_numglobalrows /= bsize;
   //int* myRows = new int [new_nummyrows];
-  vector<int> myRows(new_nummyrows);
+  std::vector<int> myRows(new_nummyrows);
   int  counter=0;
   // calculate which global rows are mine
   lok=1;
@@ -170,7 +170,7 @@ RefCountPtr<Epetra_MapColoring>  NLNML::Collapsedcoloring(Epetra_CrsGraph* cgrap
   // loop over NumMyElements in old graph and insert every bsize row in
   // new graph
   int  new_length=200;
-  vector<int> new_gindices(new_length);
+  std::vector<int> new_gindices(new_length);
   //int* new_gindices = new int[new_length];
   
   lok=1;
@@ -275,7 +275,7 @@ RefCountPtr<Epetra_MapColoring>  NLNML::Collapsedcoloring(Epetra_CrsGraph* cgrap
   int  node_ncolors = node_colorMap->NumColors();
   int* node_colors  = node_colorMap->ElementColors();
   int* node_loc     = node_colorMap->ListOfColors();
-  vector<int> col_colors(cgraph->ColMap().NumMyElements());
+  std::vector<int> col_colors(cgraph->ColMap().NumMyElements());
 
   // node_ncolors is a local value, we need the global highest color number here
   int lmax = 0;
@@ -372,7 +372,7 @@ RefCountPtr<Epetra_CrsMatrix> NLNML::StripZeros(
       int lcol = lindices[j];  
       int gcol = in->GCID(lcol); 
       if (gcol<0) { cout << "ERROR: gcol<0 \n"; exit(0); }
-      if (abs(values[j])<eps && gcol != grow)
+      if (fabs(values[j])<eps && gcol != grow)
         continue;
       int err = out->InsertGlobalValues(grow,1,&values[j],&gcol);
       if (err) { cout << "InsertGlobalValues returned " << err << endl; exit(0);}
