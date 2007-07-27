@@ -29,16 +29,17 @@
 
 // Brief demo of Fad and Rad for computing first derivatives
 
-#include <Sacado.hpp>		/* for FAD and RAD */
-#include <stdio.h>		/* nicer than streams in some respects */
+#include <Sacado.hpp>		// for FAD and RAD
+#include <cstdio>		// nicer than streams in some respects
+using std::printf;
 
 using namespace std;
 
 // Typedefs reduce gobbledygook below
 
-typedef Sacado::Fad::DFad<double>	F;	// FAD with # of ind. vars given later
-typedef Sacado::Fad::SFad<double,2>	F2;	// FAD with # of ind. vars fixed at 2
-typedef Sacado::Rad::ADvar<double>			R;	// for RAD
+typedef Sacado::Fad::DFad<double>   F;  // FAD with # of ind. vars given later
+typedef Sacado::Fad::SFad<double,2> F2; // FAD with # of ind. vars fixed at 2
+typedef Sacado::Rad::ADvar<double>  R;  // for RAD
 
 template <typename T>
 const T func2(T &a, T &b)	// sample function of 2 variables
