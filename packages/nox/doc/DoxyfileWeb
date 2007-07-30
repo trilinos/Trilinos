@@ -55,7 +55,7 @@ TAGFILES              += ../../common/tag_files/teuchos.tag=../../../teuchos/doc
 
 GENERATE_TAGFILE       = ../../common/tag_files/nox.tag
 
-EXTRA_PACKAGES         = amsmath
+EXTRA_PACKAGES         = amsmath amsfonts
 
 
 
