@@ -391,6 +391,31 @@ T F copy(Ai);
 #undef T
 #undef AI
 #undef Ai
+} /* namespace Rad */
+} /* namespace Sacado */
+#define SNS Sacado::Rad
+namespace std {	// Moved here from bottom for use in testing nesting of Rad with itself.
+  using SNS::exp;
+  using SNS::log;
+  using SNS::log10;
+  using SNS::sqrt;
+  using SNS::cos;
+  using SNS::sin;
+  using SNS::tan;
+  using SNS::acos;
+  using SNS::asin;
+  using SNS::atan;
+  using SNS::cosh;
+  using SNS::sinh;
+  using SNS::tanh;
+  using SNS::abs;
+  using SNS::fabs;
+  using SNS::atan2;
+  using SNS::pow;
+}
+#undef SNS
+namespace Sacado {
+namespace Rad {
 
  template<typename Double>ADvari<Double>& ADf1(Double f, Double g, const IndepADvar<Double> &x);
  template<typename Double>ADvari<Double>& ADf2(Double f, Double gx, Double gy,

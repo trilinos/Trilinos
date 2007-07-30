@@ -322,6 +322,32 @@ T F copy(Ai);
 #undef AI
 #undef Ai
 
+} /* namespace Rad2 */
+} /* namespace Sacado */
+#define SNS Sacado::Rad2
+namespace std {	// Moved here from bottom for use in testing nesting of Rad with itself.
+  using SNS::exp;
+  using SNS::log;
+  using SNS::log10;
+  using SNS::sqrt;
+  using SNS::cos;
+  using SNS::sin;
+  using SNS::tan;
+  using SNS::acos;
+  using SNS::asin;
+  using SNS::atan;
+  using SNS::cosh;
+  using SNS::sinh;
+  using SNS::tanh;
+  using SNS::abs;
+  using SNS::fabs;
+  using SNS::atan2;
+  using SNS::pow;
+}
+#undef SNS
+namespace Sacado {
+namespace Rad2 {
+
  template<typename Double>ADvari<Double>& ADf1(Double f, Double g, const IndepADvar<Double> &x);
  template<typename Double>ADvari<Double>& ADf2(Double f, Double gx, Double gy,
 	const IndepADvar<Double> &x, const IndepADvar<Double> &y);
@@ -2281,26 +2307,5 @@ T F copy(Ai x)
 
 } /* namespace Rad2 */
 } /* namespace Sacado */
-#define SNS Sacado::Rad2
-namespace std {
-  using SNS::exp;
-  using SNS::log;
-  using SNS::log10;
-  using SNS::sqrt;
-  using SNS::cos;
-  using SNS::sin;
-  using SNS::tan;
-  using SNS::acos;
-  using SNS::asin;
-  using SNS::atan;
-  using SNS::cosh;
-  using SNS::sinh;
-  using SNS::tanh;
-  using SNS::abs;
-  using SNS::fabs;
-  using SNS::atan2;
-  using SNS::pow;
-}
-#undef SNS
 
 #endif /* SACADO_TRAD2_H */
