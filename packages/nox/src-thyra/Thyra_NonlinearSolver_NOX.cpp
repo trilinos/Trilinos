@@ -94,7 +94,7 @@ solve(VectorBase<double> *x,
   TEST_FOR_EXCEPT(param_list_.get()==NULL);
  
   Teuchos::RCP< ::Thyra::VectorBase<double> >
-    initial_guess = model_->getNominalValues().get_x()->clone_v();
+    initial_guess = x->clone_v();
   
   Teuchos::RCP<NOX::Thyra::Group> nox_group = 
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model_));
@@ -130,6 +130,20 @@ solve(VectorBase<double> *x,
     t_status.solveStatus = SOLVE_STATUS_UNCONVERGED;
   else
     t_status.solveStatus = SOLVE_STATUS_UNCONVERGED;
+
+
+  const NOX::Abstract::Group& final_group = solver.getSolutionGroup();
+  const NOX::Abstract::Vector& final_solution = final_group.getX();
+
+  const NOX::Thyra::Vector& vec = 
+    dynamic_cast<const NOX::Thyra::Vector&>(final_solution);
+
+  const ::Thyra::VectorBase<double>& new_x = 
+    vec.getThyraVector();
+
+  Thyra::V_StVpStV<double>(delta,1.0,new_x,-1.0,*x);
+
+  *x = new_x;
 
   // Return default status
   return t_status;
