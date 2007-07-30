@@ -267,7 +267,11 @@ TAC_ARG_ENABLE_FEATURE(ifpack, [Make ifpack available for use in trilinoscouplin
 
 TAC_ARG_ENABLE_FEATURE(ml, [Make ml available for use in trilinoscouplings interfaces], ML)
 
+TAC_ARG_ENABLE_FEATURE(nox, [Make nox available for use in trilinoscouplings interfaces], NOX)
+
 AM_CONDITIONAL(BUILD_IFPACK_ML, test "X$ac_cv_use_ml" = "Xyes" && test "X$ac_cv_use_ifpack" = "Xyes")
+
+AM_CONDITIONAL(BUILD_NOX_ML, test "X$ac_cv_use_ml" = "Xyes" && test "X$ac_cv_use_nox" = "Xyes")
 
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
@@ -330,6 +334,8 @@ AC_CONFIG_FILES([
 		Makefile.export.trilinoscouplings
 		src/Makefile
 		test/Makefile
+        example/Makefile
+        example/ml/NonlinML/Makefile
 		])
 
 AC_OUTPUT()

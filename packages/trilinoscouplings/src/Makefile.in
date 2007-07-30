@@ -101,12 +101,25 @@ AR = ar
 ARFLAGS = cru
 libtrilinoscouplings_a_DEPENDENCIES =
 am__libtrilinoscouplings_a_SOURCES_DIST =  \
+	$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp \
+	$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp \
+	$(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp \
+	$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp \
+	$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp \
+	$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp \
+	$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp \
 	$(srcdir)/ifpack/Ifpack_ML.cpp
 am__objects_1 =
-am__objects_2 = Ifpack_ML.$(OBJEXT)
-@BUILD_IFPACK_ML_TRUE@am__objects_3 = $(am__objects_2)
-am_libtrilinoscouplings_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
-	$(am__objects_3)
+am__objects_2 = nlnml_prepostoperator.$(OBJEXT) \
+	nlnml_ConstrainedMultiLevelOperator.$(OBJEXT) \
+	nlnml_linearsystem.$(OBJEXT) nlnml_nonlinearlevel.$(OBJEXT) \
+	nlnml_coarselevelnoxinterface.$(OBJEXT) \
+	nlnml_preconditioner1.$(OBJEXT) \
+	nlnml_preconditioner_utils.$(OBJEXT)
+am__objects_3 = Ifpack_ML.$(OBJEXT)
+@BUILD_IFPACK_ML_TRUE@am__objects_4 = $(am__objects_3)
+am_libtrilinoscouplings_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
+	$(am__objects_4)
 libtrilinoscouplings_a_OBJECTS = $(am_libtrilinoscouplings_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -126,6 +139,14 @@ DIST_SOURCES = $(am__libtrilinoscouplings_a_SOURCES_DIST) \
 	$(EXTRA_libtrilinoscouplings_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/TrilinosCouplings_ConfigDefs.h \
 	$(srcdir)/TrilinosCouplings_Version.h \
+	$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.H \
+	$(srcdir)/ml/NonlinML/nlnml_finelevelnoxinterface.H \
+	$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.H \
+	$(srcdir)/ml/NonlinML/nlnml_preconditioner.H \
+	$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.H \
+	$(srcdir)/ml/NonlinML/nlnml_linearsystem.H \
+	$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.H \
+	$(srcdir)/ml/NonlinML/nlnml_prepostoperator.H \
 	$(srcdir)/ifpack/Ifpack_ML.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
@@ -270,9 +291,25 @@ CORE_H = \
 
 CORE = 
 UTIL_H = \
-	$(srcdir)/TrilinosCouplings_Version.h
+	$(srcdir)/TrilinosCouplings_Version.h \
+    $(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.H \
+    $(srcdir)/ml/NonlinML/nlnml_finelevelnoxinterface.H         \
+    $(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.H       \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner.H                \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.H          \
+    $(srcdir)/ml/NonlinML/nlnml_linearsystem.H                  \
+    $(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.H                \
+    $(srcdir)/ml/NonlinML/nlnml_prepostoperator.H
 
-UTIL = 
+UTIL = \
+    $(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp                     \
+    $(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp       \
+    $(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp                        \
+    $(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp                      \
+    $(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp             \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp                     \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp
+
 
 #
 #  Files which are included in select builds are typically have
@@ -297,6 +334,15 @@ EXTRA_IFPACK_ML = \
 @BUILD_IFPACK_ML_TRUE@	$(EXTRA_IFPACK_ML)
 
 
+#EXTRA_NOX_ML_H = \
+#   -I$(top_srcdir)/../nox/src -I$(top_srcdir)/../nox/src-epetra -I$(top_builddir)/../nox/src
+#if BUILD_NOX_ML
+#NOX_ML_H = \
+#  $(EXTRA_NOX_ML_H)
+#else
+#NOX_ML_H =
+#endif
+
 #AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 
 # ------------------------------------------------------------------------
@@ -309,7 +355,8 @@ TRILINOSCOUPLINGS_LIB = libtrilinoscouplings.a
 TRILINOSCOUPLINGS_H = \
 	$(CORE_H) \
 	$(UTIL_H) \
-	$(IFPACK_ML_H)
+	$(IFPACK_ML_H) \
+	$(NOX_ML_H)
 
 
 #np# replace trilinoscouplings with the name of the package being autotool'ed here
@@ -320,7 +367,8 @@ libtrilinoscouplings_a_SOURCES = \
 
 EXTRA_libtrilinoscouplings_a_SOURCES = \
 	$(EXTRA_IFPACK_ML) \
-	$(EXTRA_IFPACK_ML_H)
+	$(EXTRA_IFPACK_ML_H) \
+	$(EXTRA_NOX_ML_H)
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(TRILINOSCOUPLINGS_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(TRILINOSCOUPLINGS_INCLUDES))
@@ -461,6 +509,13 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ML.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nlnml_ConstrainedMultiLevelOperator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nlnml_coarselevelnoxinterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nlnml_linearsystem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nlnml_nonlinearlevel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nlnml_preconditioner1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nlnml_preconditioner_utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nlnml_prepostoperator.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -475,6 +530,104 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+nlnml_prepostoperator.o: $(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_prepostoperator.o -MD -MP -MF $(DEPDIR)/nlnml_prepostoperator.Tpo -c -o nlnml_prepostoperator.o `test -f '$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/nlnml_prepostoperator.Tpo $(DEPDIR)/nlnml_prepostoperator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp' object='nlnml_prepostoperator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_prepostoperator.o `test -f '$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp
+
+nlnml_prepostoperator.obj: $(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_prepostoperator.obj -MD -MP -MF $(DEPDIR)/nlnml_prepostoperator.Tpo -c -o nlnml_prepostoperator.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/nlnml_prepostoperator.Tpo $(DEPDIR)/nlnml_prepostoperator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp' object='nlnml_prepostoperator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_prepostoperator.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp'; fi`
+
+nlnml_ConstrainedMultiLevelOperator.o: $(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_ConstrainedMultiLevelOperator.o -MD -MP -MF $(DEPDIR)/nlnml_ConstrainedMultiLevelOperator.Tpo -c -o nlnml_ConstrainedMultiLevelOperator.o `test -f '$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/nlnml_ConstrainedMultiLevelOperator.Tpo $(DEPDIR)/nlnml_ConstrainedMultiLevelOperator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp' object='nlnml_ConstrainedMultiLevelOperator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_ConstrainedMultiLevelOperator.o `test -f '$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp
+
+nlnml_ConstrainedMultiLevelOperator.obj: $(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_ConstrainedMultiLevelOperator.obj -MD -MP -MF $(DEPDIR)/nlnml_ConstrainedMultiLevelOperator.Tpo -c -o nlnml_ConstrainedMultiLevelOperator.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/nlnml_ConstrainedMultiLevelOperator.Tpo $(DEPDIR)/nlnml_ConstrainedMultiLevelOperator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp' object='nlnml_ConstrainedMultiLevelOperator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_ConstrainedMultiLevelOperator.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp'; fi`
+
+nlnml_linearsystem.o: $(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_linearsystem.o -MD -MP -MF $(DEPDIR)/nlnml_linearsystem.Tpo -c -o nlnml_linearsystem.o `test -f '$(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/nlnml_linearsystem.Tpo $(DEPDIR)/nlnml_linearsystem.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp' object='nlnml_linearsystem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_linearsystem.o `test -f '$(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp
+
+nlnml_linearsystem.obj: $(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_linearsystem.obj -MD -MP -MF $(DEPDIR)/nlnml_linearsystem.Tpo -c -o nlnml_linearsystem.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/nlnml_linearsystem.Tpo $(DEPDIR)/nlnml_linearsystem.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp' object='nlnml_linearsystem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_linearsystem.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp'; fi`
+
+nlnml_nonlinearlevel.o: $(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_nonlinearlevel.o -MD -MP -MF $(DEPDIR)/nlnml_nonlinearlevel.Tpo -c -o nlnml_nonlinearlevel.o `test -f '$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/nlnml_nonlinearlevel.Tpo $(DEPDIR)/nlnml_nonlinearlevel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp' object='nlnml_nonlinearlevel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_nonlinearlevel.o `test -f '$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp
+
+nlnml_nonlinearlevel.obj: $(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_nonlinearlevel.obj -MD -MP -MF $(DEPDIR)/nlnml_nonlinearlevel.Tpo -c -o nlnml_nonlinearlevel.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/nlnml_nonlinearlevel.Tpo $(DEPDIR)/nlnml_nonlinearlevel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp' object='nlnml_nonlinearlevel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_nonlinearlevel.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp'; fi`
+
+nlnml_coarselevelnoxinterface.o: $(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_coarselevelnoxinterface.o -MD -MP -MF $(DEPDIR)/nlnml_coarselevelnoxinterface.Tpo -c -o nlnml_coarselevelnoxinterface.o `test -f '$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/nlnml_coarselevelnoxinterface.Tpo $(DEPDIR)/nlnml_coarselevelnoxinterface.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp' object='nlnml_coarselevelnoxinterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_coarselevelnoxinterface.o `test -f '$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp
+
+nlnml_coarselevelnoxinterface.obj: $(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_coarselevelnoxinterface.obj -MD -MP -MF $(DEPDIR)/nlnml_coarselevelnoxinterface.Tpo -c -o nlnml_coarselevelnoxinterface.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/nlnml_coarselevelnoxinterface.Tpo $(DEPDIR)/nlnml_coarselevelnoxinterface.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp' object='nlnml_coarselevelnoxinterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_coarselevelnoxinterface.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp'; fi`
+
+nlnml_preconditioner1.o: $(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_preconditioner1.o -MD -MP -MF $(DEPDIR)/nlnml_preconditioner1.Tpo -c -o nlnml_preconditioner1.o `test -f '$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/nlnml_preconditioner1.Tpo $(DEPDIR)/nlnml_preconditioner1.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp' object='nlnml_preconditioner1.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_preconditioner1.o `test -f '$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp
+
+nlnml_preconditioner1.obj: $(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_preconditioner1.obj -MD -MP -MF $(DEPDIR)/nlnml_preconditioner1.Tpo -c -o nlnml_preconditioner1.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/nlnml_preconditioner1.Tpo $(DEPDIR)/nlnml_preconditioner1.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp' object='nlnml_preconditioner1.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_preconditioner1.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp'; fi`
+
+nlnml_preconditioner_utils.o: $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_preconditioner_utils.o -MD -MP -MF $(DEPDIR)/nlnml_preconditioner_utils.Tpo -c -o nlnml_preconditioner_utils.o `test -f '$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/nlnml_preconditioner_utils.Tpo $(DEPDIR)/nlnml_preconditioner_utils.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp' object='nlnml_preconditioner_utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_preconditioner_utils.o `test -f '$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp' || echo '$(srcdir)/'`$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp
+
+nlnml_preconditioner_utils.obj: $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nlnml_preconditioner_utils.obj -MD -MP -MF $(DEPDIR)/nlnml_preconditioner_utils.Tpo -c -o nlnml_preconditioner_utils.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/nlnml_preconditioner_utils.Tpo $(DEPDIR)/nlnml_preconditioner_utils.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp' object='nlnml_preconditioner_utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nlnml_preconditioner_utils.obj `if test -f '$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp'; then $(CYGPATH_W) '$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp'; fi`
 
 Ifpack_ML.o: $(srcdir)/ifpack/Ifpack_ML.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ML.o -MD -MP -MF $(DEPDIR)/Ifpack_ML.Tpo -c -o Ifpack_ML.o `test -f '$(srcdir)/ifpack/Ifpack_ML.cpp' || echo '$(srcdir)/'`$(srcdir)/ifpack/Ifpack_ML.cpp

@@ -54,9 +54,24 @@ CORE_H = \
 CORE =
 
 UTIL_H = \
-	$(srcdir)/TrilinosCouplings_Version.h
+	$(srcdir)/TrilinosCouplings_Version.h \
+    $(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.H \
+    $(srcdir)/ml/NonlinML/nlnml_finelevelnoxinterface.H         \
+    $(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.H       \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner.H                \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.H          \
+    $(srcdir)/ml/NonlinML/nlnml_linearsystem.H                  \
+    $(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.H                \
+    $(srcdir)/ml/NonlinML/nlnml_prepostoperator.H
 
-UTIL = 
+UTIL = \
+    $(srcdir)/ml/NonlinML/nlnml_prepostoperator.cpp                     \
+    $(srcdir)/ml/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp       \
+    $(srcdir)/ml/NonlinML/nlnml_linearsystem.cpp                        \
+    $(srcdir)/ml/NonlinML/nlnml_nonlinearlevel.cpp                      \
+    $(srcdir)/ml/NonlinML/nlnml_coarselevelnoxinterface.cpp             \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner1.cpp                     \
+    $(srcdir)/ml/NonlinML/nlnml_preconditioner_utils.cpp
 
 #
 #  Files which are included in select builds are typically have
@@ -86,6 +101,17 @@ IFPACK_ML =
 
 endif
 
+##conditional NOX dependencies
+#EXTRA_NOX_ML_H = \
+#   -I$(top_srcdir)/../nox/src -I$(top_srcdir)/../nox/src-epetra -I$(top_builddir)/../nox/src
+#if BUILD_NOX_ML
+#NOX_ML_H = \
+#  $(EXTRA_NOX_ML_H)
+#else
+#NOX_ML_H =
+#endif
+
+
 #AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 
 # ------------------------------------------------------------------------
@@ -98,7 +124,8 @@ TRILINOSCOUPLINGS_LIB = libtrilinoscouplings.a
 TRILINOSCOUPLINGS_H = \
 	$(CORE_H) \
 	$(UTIL_H) \
-	$(IFPACK_ML_H)
+	$(IFPACK_ML_H) \
+	$(NOX_ML_H)
 
 #np# replace trilinoscouplings with the name of the package being autotool'ed here
 libtrilinoscouplings_a_SOURCES = \
@@ -108,7 +135,8 @@ libtrilinoscouplings_a_SOURCES = \
 
 EXTRA_libtrilinoscouplings_a_SOURCES = \
 	$(EXTRA_IFPACK_ML) \
-	$(EXTRA_IFPACK_ML_H)
+	$(EXTRA_IFPACK_ML_H) \
+	$(EXTRA_NOX_ML_H)
 
 include $(top_builddir)/Makefile.export.trilinoscouplings
 

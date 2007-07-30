@@ -745,6 +745,8 @@ SUB_TEST_FALSE
 FLIBS
 BUILD_IFPACK_ML_TRUE
 BUILD_IFPACK_ML_FALSE
+BUILD_NOX_ML_TRUE
+BUILD_NOX_ML_FALSE
 BLAS_LIBS
 ac_aux_dir
 LIBOBJS
@@ -1371,6 +1373,8 @@ Optional Features:
   --enable-ifpack         Make ifpack available for use in trilinoscouplings
                           interfaces (default is )
   --enable-ml             Make ml available for use in trilinoscouplings
+                          interfaces (default is )
+  --enable-nox            Make nox available for use in trilinoscouplings
                           interfaces (default is )
 
 Optional Packages:
@@ -7914,12 +7918,47 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
+
+# Check whether --enable-nox was given.
+if test "${enable_nox+set}" = set; then
+  enableval=$enable_nox; ac_cv_use_nox=$enableval
+else
+  ac_cv_use_nox=
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use nox" >&5
+echo $ECHO_N "checking whether to use nox... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_nox" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_NOX
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
  if test "X$ac_cv_use_ml" = "Xyes" && test "X$ac_cv_use_ifpack" = "Xyes"; then
   BUILD_IFPACK_ML_TRUE=
   BUILD_IFPACK_ML_FALSE='#'
 else
   BUILD_IFPACK_ML_TRUE='#'
   BUILD_IFPACK_ML_FALSE=
+fi
+
+
+ if test "X$ac_cv_use_ml" = "Xyes" && test "X$ac_cv_use_nox" = "Xyes"; then
+  BUILD_NOX_ML_TRUE=
+  BUILD_NOX_ML_FALSE='#'
+else
+  BUILD_NOX_ML_TRUE='#'
+  BUILD_NOX_ML_FALSE=
 fi
 
 
@@ -9902,7 +9941,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile Makefile.export.trilinoscouplings src/Makefile test/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.trilinoscouplings src/Makefile test/Makefile example/Makefile example/ml/NonlinML/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10096,6 +10135,13 @@ if test -z "${BUILD_IFPACK_ML_TRUE}" && test -z "${BUILD_IFPACK_ML_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_IFPACK_ML\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_IFPACK_ML\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_NOX_ML_TRUE}" && test -z "${BUILD_NOX_ML_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_NOX_ML\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_NOX_ML\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -10572,6 +10618,8 @@ do
     "Makefile.export.trilinoscouplings") CONFIG_FILES="$CONFIG_FILES Makefile.export.trilinoscouplings" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
+    "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
+    "example/ml/NonlinML/Makefile") CONFIG_FILES="$CONFIG_FILES example/ml/NonlinML/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -10805,13 +10853,15 @@ SUB_TEST_FALSE!$SUB_TEST_FALSE$ac_delim
 FLIBS!$FLIBS$ac_delim
 BUILD_IFPACK_ML_TRUE!$BUILD_IFPACK_ML_TRUE$ac_delim
 BUILD_IFPACK_ML_FALSE!$BUILD_IFPACK_ML_FALSE$ac_delim
+BUILD_NOX_ML_TRUE!$BUILD_NOX_ML_TRUE$ac_delim
+BUILD_NOX_ML_FALSE!$BUILD_NOX_ML_FALSE$ac_delim
 BLAS_LIBS!$BLAS_LIBS$ac_delim
 ac_aux_dir!$ac_aux_dir$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 37; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 39; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
