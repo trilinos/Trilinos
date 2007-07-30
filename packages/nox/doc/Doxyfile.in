@@ -467,6 +467,7 @@ INPUT                  = ../src \
                          ../src-belos \
                          ../src-loca/src \
                          ../src-loca/src-lapack \
+                         ../src-loca/src-thyra \
                          ../src-loca/src-epetra
 
 # If the value of the INPUT tag contains directories, you can use the 
@@ -477,7 +478,9 @@ INPUT                  = ../src \
 # *.hpp *.h++ *.idl *.odl *.cs *.php *.php3 *.inc *.m *.mm *.py
 
 FILE_PATTERNS          = *.H \
-                         *.C
+                         *.C \
+                         *.hpp \
+                         *.cpp
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories 
 # should be searched for input files as well. Possible values are YES and NO. 

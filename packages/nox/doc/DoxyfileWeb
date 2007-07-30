@@ -48,6 +48,10 @@ INPUT                 += ../src-epetra
 INPUT                 += ../src-thyra
 INPUT                 += ../src-petsc
 INPUT                 += ../src-lapack
+INPUT                 += ../src-loca/src
+INPUT                 += ../src-loca/src-lapack
+INPUT                 += ../src-loca/src-epetra
+INPUT                 += ../src-loca/src-thyra
 
 FILE_PATTERNS          = *.H *.C
 
