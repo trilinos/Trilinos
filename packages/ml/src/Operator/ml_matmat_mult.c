@@ -630,16 +630,10 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 	    Cvbr_mat->val         = Cvalues;
     	Cvbr_mat->bpntr       = Cbpntr;
 	    Cvbr_mat->indx        = Cindx; 
-        /* Only set locals. Only the first two of cpntr are used in the */
-        /* right matrix within matmat_mult(). It is also not clear   */
-        /* what should be set as the column indices are global and   */
-        /* the exch_row() has added some columns for which we do     */
-        /* not have a Ccpntr. Since we don't use it ... I think      */
-        /* it is okay. However the back_to_local routine will have   */
-        /* to put something in for Cpntr[]                           */
-        Ccpntr = (int *) ML_allocate(sizeof(int)*(end-start+3));
+     
+        Ccpntr = (int *) ML_allocate(sizeof(int)*hash_used);
         Ccpntr[0] = 0;
-        for (kkk = 1; kkk < end-start+3; kkk++) 
+        for (kkk = 1; kkk <= hash_used; kkk++) 
            Ccpntr[kkk] = Ccpntr[kkk-1] + NcolsPerBlock;
     	Cvbr_mat->cpntr       = Ccpntr;
     	Cvbr_mat->rpntr       = Crpntr;
@@ -769,7 +763,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   ML_free(A_i_cols);
 
   /*test output*/
-  for (i = 0; i <2; i++)
+  /*for (i = 0; i <2; i++)
   {
     for (j = 0; j < 32; j++)
       printf("%lf\n", Cvalues[j+i*16]); fflush(stdout);
@@ -779,7 +773,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       printf("bindx %d\n", Cbindx[j+i*3]);fflush(stdout);
       printf("indx %d\n", Cindx[j+1+i*3]);fflush(stdout);
     }
-  }
+  }*/
 
 
   /* create 'parent' object corresponding to the resulting matrix */
@@ -790,16 +784,12 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   Cvbr_mat->val         = Cvalues;
   Cvbr_mat->bpntr       = Cbpntr;
   Cvbr_mat->indx        =  Cindx; 
-  /* Only set two of these. Only the first two are used in the */
-  /* right matrix within matmat_mult(). It is also not clear   */
-  /* what should be set as the column indices are global and   */
-  /* the exch_row() has added some columns for which we do     */
-  /* not have a Ccpntr. Since we don't use it ... I think      */
-  /* it is okay. However the back_to_local routine will have   */
-  /* to put something in for Cpntr[]                           */
-  Ccpntr = (int *) ML_allocate(sizeof(int)*(end-oldstart+3));
+  
+
+
+  Ccpntr = (int *) ML_allocate(sizeof(int)*hash_used);
   Ccpntr[0] = 0;
-  for (kkk = 1; kkk < end-oldstart+3; kkk++) 
+  for (kkk = 1; kkk <= hash_used; kkk++) 
      Ccpntr[kkk] = Ccpntr[kkk-1] + NcolsPerBlock;
   Cvbr_mat->cpntr       = Ccpntr;
   Cvbr_mat->rpntr       = Crpntr;
@@ -1583,7 +1573,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
                                   */
 /*********************************************************************************/
 
-/*Where data is being exchanged things can become more efficient with an isend though this has risks*/
+/*Where data is being exchanged things can become more efficient with an isend though this has risks.  Only works on matrices with one submatrix*/
 void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int col_block_size, int cpntr[], int submatrix)
 {
    int i, j, k, kk, ii, ll, m;
@@ -1745,7 +1735,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
      }
      ML_free(recv_requests);
      ML_free(send_buffer);
-     /*loop over submatrices*/
+     /*loop over submatricesi this will only happen once but was left in from when functionality for more than one sub_matrix was attempted but there should never be more than one submatrix*/
      m = mats;
      while(m > 0)
      {
@@ -1822,20 +1812,15 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        cur_matrix->getrow->data = (void *)out_data;
        cur_matrix->data = (void *)out_data;
        cur_matrix->blocks = cur_matrix->sub_matrix->blocks + bpntr[i];
-       for(i = 0; i < neighbors; i++)
-         if (pre_comm->neighbors[i].N_rcv > 0)
-           ML_free(all_rpntr[i]);
+       for(j = 0; j < neighbors; j++)
+         if (pre_comm->neighbors[j].N_rcv > 0)
+           ML_free(all_rpntr[j]);
        ML_free(all_rpntr);
        ML_free(recv_lens);
        cur_data = NULL;
      }
-     for(i = mats; i > 0; i--)
-     {
-       cur_matrix = in_matrix;
-       for(j = 1; j < i; j++)
-         cur_matrix = cur_matrix->sub_matrix;
-       cur_matrix->getrow->N_block_rows = i+cur_matrix->sub_matrix->getrow->N_block_rows;
-     }
+     cur_matrix = in_matrix;
+     cur_matrix->getrow->N_block_rows = i+cur_matrix->sub_matrix->getrow->N_block_rows;
    }
    else
    {
