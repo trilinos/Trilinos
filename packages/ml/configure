@@ -13649,7 +13649,7 @@ fi
 #                test/scripts/daily/mpi/Makefile
 #                test/scripts/daily/serial/Makefile
 #		])
-ac_config_files="$ac_config_files Makefile Makefile.export.ml src/Makefile examples/Makefile examples/Advanced/Makefile examples/BasicExamples/Makefile examples/Elasticity/Makefile examples/MatrixFormats/Makefile examples/MatrixReading/Makefile examples/MatrixFree/Makefile examples/StandAlone/Makefile examples/TwoLevelDD/Makefile examples/Maxwell/Makefile examples/Visualization/Makefile examples/MultipleRHS/Makefile examples/MLAPI/Makefile examples/NonlinML/Makefile examples/XML/Makefile examples/Other/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/MultiLevelPreconditioner_Aux/Makefile test/MultiLevelPreconditioner_GetRow/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/3d_Poisson/Makefile test/IFPACKSmoothers/Makefile test/MLAPICompare/Makefile test/MLAPILinearCombination/Makefile test/MLAPISerialMatrix/Makefile test/MLAPIDistributedMatrix/Makefile test/Communicator/Makefile test/SelfSmoother/Makefile test/METISCoarsening/Makefile test/MatrixFree/Makefile test/Miscellaneous/Makefile test/RefMaxwell/Makefile test/Scalability/Makefile matlab/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.ml src/Makefile examples/Makefile examples/Advanced/Makefile examples/BasicExamples/Makefile examples/Elasticity/Makefile examples/MatrixFormats/Makefile examples/MatrixReading/Makefile examples/MatrixFree/Makefile examples/StandAlone/Makefile examples/TwoLevelDD/Makefile examples/Maxwell/Makefile examples/Visualization/Makefile examples/MultipleRHS/Makefile examples/MLAPI/Makefile examples/XML/Makefile examples/Other/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/MultiLevelPreconditioner_Aux/Makefile test/MultiLevelPreconditioner_GetRow/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/3d_Poisson/Makefile test/IFPACKSmoothers/Makefile test/MLAPICompare/Makefile test/MLAPILinearCombination/Makefile test/MLAPISerialMatrix/Makefile test/MLAPIDistributedMatrix/Makefile test/Communicator/Makefile test/SelfSmoother/Makefile test/METISCoarsening/Makefile test/MatrixFree/Makefile test/Miscellaneous/Makefile test/RefMaxwell/Makefile test/Scalability/Makefile matlab/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -14499,7 +14499,6 @@ do
     "examples/Visualization/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Visualization/Makefile" ;;
     "examples/MultipleRHS/Makefile") CONFIG_FILES="$CONFIG_FILES examples/MultipleRHS/Makefile" ;;
     "examples/MLAPI/Makefile") CONFIG_FILES="$CONFIG_FILES examples/MLAPI/Makefile" ;;
-    "examples/NonlinML/Makefile") CONFIG_FILES="$CONFIG_FILES examples/NonlinML/Makefile" ;;
     "examples/XML/Makefile") CONFIG_FILES="$CONFIG_FILES examples/XML/Makefile" ;;
     "examples/Other/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Other/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
