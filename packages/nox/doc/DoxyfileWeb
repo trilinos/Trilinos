@@ -45,6 +45,7 @@ PROJECT_NAME           = NOX
 INPUT                  = ../src
 INPUT                 += ../src-loca
 INPUT                 += ../src-epetra
+INPUT                 += ../src-thyra
 INPUT                 += ../src-petsc
 INPUT                 += ../src-lapack
 

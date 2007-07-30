@@ -55,7 +55,7 @@
   inexact linear solvers such as Krylov subspace techniques. %NOX is
   designed to work with any linear algebra package and to be easily
   customized.  %NOX is part of Sandia's <A
-  HREF="http://software.sandia.gov/trilinos/">Trilinos project</a>.
+  HREF="http://trilinos.sandia.gov/">Trilinos project</a>.
 
   %LOCA, distributed as part of %NOX,
   is short for <em>Library of Continuation Algorithms</em>, and its
@@ -88,9 +88,9 @@
 
   \section downloads Downloads
 
-  %NOX and %LOCA are packaged and released as part of the <a href="http://software.sandia.gov/trilinos">Trilinos Solver Framework</a>.  You may download %NOX (which includes %LOCA) by downloading a copy of Trilinos.  Please see the <a href="http://software.sandia.gov/trilinos/downloads/index.html">Trilinos downloads page</a> for the latest releases. <br />
+  %NOX and %LOCA are packaged and released as part of the <a href="http://trilinos.sandia.gov/">Trilinos Solver Framework</a>.  You may download %NOX (which includes %LOCA) by downloading a copy of Trilinos.  Please see the <a href="http://trilinos.sandia.gov/download">Trilinos downloads page</a> for the latest releases. <br />
 
-If you are a Sandia employee you can download the development branch of Trilinos (either without repository information at the <a href="http://software.sandia.gov/trilinos/downloads/index.html">Trilinos downloads page</a>, or directly checked-out of the repository--read about it in the <a href="http://software.sandia.gov/trilinos/developer/TrilinosDevGuide.pdf" target="_blank">Trilinos Developer Guide</a>, the <a href="http://software.sandia.gov/trilinos/developer/cvs.html">CVS page</a>, or <a href="http://software.sandia.gov/trilinos/developer/faq.html">developer FAQ</a>).  (If you are not a Sandia employee, to gain access to either option, send a request to <a href="mailto:trilinos-help@software.sandia.gov" target="_blank">trilinos-help@software.sandia.gov</a>.)
+If you are a Sandia employee you can download the development branch of Trilinos (either without repository information at the <a href="http://trilinos.sandia.gov/download">Trilinos downloads page</a>, or directly checked-out of the repository.  Documentation on Trilinos can be found <a href="http://trilinos.sandia.gov/documentation.html">here</a>.  (If you are not a Sandia employee, to gain access to either option, send a request to <a href="mailto:trilinos-help@software.sandia.gov" target="_blank">trilinos-help@software.sandia.gov</a>.)
 
   \section bugs Reporting Bugs and Making Enhancement Requests
 
@@ -156,7 +156,7 @@ To get started with %NOX, you'll want to follow these four steps.
 \section documentation  Generating Documentation
 
 The documentation is available online at 
-<a href="http://software.sandia.gov/nox/">http://software.sandia.gov/nox/</a>.
+<a href="http://trilinos.sandia.gov/packages/nox/">http://trilinos.sandia.gov/packages/nox/</a>.
 
 To generate a local copy of the documentation, you'll need to have doxygen installed. 
 Then follow the instructions in \c nox/doc/README.
@@ -171,7 +171,9 @@ The documentation is generated in the source directory tree.  The main page is \
 - \ref bugs
 - \ref epetra_interface
 - \ref nox_epetra_tutorial
+- \ref thyra_interface
 - \ref petsc_interface
+- \ref nox_class_overview
 
 */
 
@@ -184,15 +186,14 @@ The documentation is generated in the source directory tree.  The main page is \
 
 \section step1_download Downloading and Unpacking NOX
 
-%NOX is a package in the <a href="http://software.sandia.gov/trilinos">Trilinos Solver Framework</a>.  You will have to <a href="http://software.sandia.gov/trilinos/downloads/index.html">download</a> the Trilinos software, configure for your machine, build the libraries, and install them into your working directories.
+%NOX is a package in the <a href="http://trilinos.sandia.gov">Trilinos Solver Framework</a>.  You will have to <a href="http://trilinos.sandia.gov/download">download</a> the Trilinos software, configure for your machine, build the libraries, and install them into your working directories.
 
-The <a href="http://software.sandia.gov/trilinos/getting_started.html">Getting Started With Trilinos</a> page is an excellent resource for configuring and building Trilinos. Two links of importance on this page are:
+The <a href="http://trilinos.sandia.gov/getting_started.html">Getting Started With Trilinos</a> page is an excellent resource for configuring and building Trilinos. Imporatant links include:
 <ul>
-<li> <a href="http://software.sandia.gov/trilinos/installation_manual.html">Installation Manual</a> - Instructions on how to download, unpack, and configure Trilinos.
-<li> <a href="http://software.sandia.gov/trilinos/configuration_manual.html">Configuration Manual</a> - General options when invoking the configure script. 
+<li> <a href="http://trilinos.sandia.gov/TrilinosUserGuide.pdf">Trilinos User Guide</a>
 </ul>
 
-The configure command creates machine specific Makefiles for each Trilinos package including %NOX and %LOCA.  The configure script also enables specific options in each code.  There are many options that can be passed to the configure script.  The above link for the <a href="http://software.sandia.gov/trilinos/configuration_manual.html">Trilinos Configuration Manual"</a> gives the general links that are recognized by the top-level of Trilinos and most packages.  %NOX and %LOCA specific configuration flags are given on the \ref nox_configuration_options page.
+The configure command creates machine specific Makefiles for each Trilinos package including %NOX and %LOCA.  The configure script also enables specific options in each code.  %NOX and %LOCA specific configuration flags are given on the \ref nox_configuration_options page.
 
 A typical configure script file for building nox and loca with epetra support enabled (for debian linux) is:
 <pre>
@@ -306,7 +307,7 @@ Go on to \ref step2.
   The NOX::Epetra instantiation is an interface to the Trilinos/Epetra
   linear algebra library.  It is Sandia's workhorse code for parallel
   applications.  For more information see the <a
-  href="http://software.sandia.gov/trilinos/epetra">Epetra Home
+  href="http://trilinos.sandia.gov/packages/epetra">Epetra Home
   Page</a>. When you download %NOX as part of Trilinos (see \ref
   downloads), Epetra is included in the distribution.  To compile the
   NOX::Epetra library, use the --enable-nox-epetra option to
@@ -316,7 +317,26 @@ Go on to \ref step2.
   requires 3 Trilinos libraries: %Epetra, %AztecOO, and %Ifpack.  All
   three of these libraries must be enabled during configure.
   Optionally, it can also use two other libraries, the %EpetraExt and
-  %ML libraries.\
+  %ML libraries.
+  <li>
+  The NOX::Thyra instantiation is an interface to the Trilinos/Thyra
+  package.  The Thyra package contains a set of interfaces and
+  supporting code that defines basic interoperability mechanisms
+  between different types of numerical software. The foundation of all
+  the interfaces related to abstract numerical algorithms (ANAs) are
+  the mathematical concepts of vectors, vector spaces, and linear
+  operators. All other ANA interfaces and support software are built
+  on these fundamental operator/vector interfaces.  We expect this
+  interface to supersceed the Epetra interface above when all
+  functionality is moved into the Trilinos/Stratimikos layer.  For
+  more information see the <a
+  href="http://trilinos.sandia.gov/packages/thyra">Thyra Home
+  Page</a>. When you download %NOX as part of Trilinos (see \ref
+  downloads), Thyra is included in the distribution.  To compile the
+  NOX::Thyra library, use the --enable-nox-thyra option during
+  configure; see \ref nox_configuration_options.  For instructions on
+  interfacing your code to the thyra implementation see \ref
+  thyra_interface.
   <li>
   The NOX::PETSc instantiation is an interface with the PETSc
   library. PETSc was developed at <a href="http://www.anl.gov">Argonne
@@ -365,7 +385,7 @@ Teuchos::RCP<UserConcreteGroup> grp =
   Teuchos::rcp(new UserConcreteGroup);
 \endcode
 
-Note that the group is not handled as a raw pointer, but is wrapped in a reference counter smart pointer (RCP).  RCPs enforce strict memory management in %NOX and %LOCA and can prevent many errors that users have encountered with objects going out of scope.  We use the RCP implementation in the %Trilinos package <a href="http://software.sandia.gov/Trilinos/packages/teuchos">Teuchos</a>.  For information on the use of smart pointers, see <a href="http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf">Teuchos Reference Counted Pointer Beginners Guide</a>.
+Note that the group is not handled as a raw pointer, but is wrapped in a reference counter smart pointer (RCP).  RCPs enforce strict memory management in %NOX and %LOCA and can prevent many errors that users have encountered with objects going out of scope.  We use the RCP implementation in the %Trilinos package <a href="http://trilinos.sandia.gov/packages/teuchos">Teuchos</a>.  For information on the use of smart pointers, see <a href="http://trilinos.sandia.gov/RefCountPtrBeginnersGuideSAND.pdf">Teuchos Reference Counted Pointer Beginners Guide</a>.
 
 \section step3_stepb Step B: Construct the status tests
 
@@ -384,6 +404,8 @@ failure. For example...
 These and other status tests can be combined using the
 NOX::StatusTest::Combo object. It takes an arbitrary number of status
 tests and either AND's or OR's them together.  
+
+Alternatively, users can build a set of status tests from a Teuchos::ParameterList by using the NOX::StatusTest::Factory object.  See NOX::StatusTest::Factory for parameter list arguments and examples.
 
 Finally, the user can create their own status tests, so long as they
 derive from NOX::StatusTest::Generic.
@@ -469,7 +491,7 @@ Go on to \ref step4.
 
 \section step4_export_makefiles Using the Export Makefile System
 
-%NOX and %LOCA support the export makefile system to streamline issues dealing with linking against user applications.  When %NOX and %LOCA are installed using the "make install" command, it will install 2 Makefiles that contain all flags needed to link an application against the solvers.  The first Makefile is Makefile.export.nox.  The important flags are NOX_INCLUDES, NOX_LIBS, LOCA_INCLUDES, and LOCA_LIBS.  These make variables contain all paths and libraries needed to link against %NOX and %LOCA.
+%NOX and %LOCA support the export makefile system to streamline issues dealing with linking against user applications.  When %NOX and %LOCA are installed using the "make install" command, it will install two Makefiles that contain all flags needed to link an application against the solvers.  The first Makefile is Makefile.export.nox.  The important flags are NOX_INCLUDES, NOX_LIBS, LOCA_INCLUDES, and LOCA_LIBS.  These make variables contain all paths and libraries needed to link against %NOX and %LOCA.
 
 The second makefile is Makefile.export.nox.macros.  This file contains all the flags and compiler options that the Trilinos libraries were built with.  One challenge in linking applications against Trilinos is using a consistent set of compiler flags.  This file take all the guesswork out of the process.  Just include this file in your own makefile and use the associated flags.
 
@@ -586,14 +608,21 @@ The following pages are relevant to developers.
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page nox_release_information NOX and LOCA Release Information
+/*! \page nox_release_information NOX and LOCA Release Information (Last updated July 30th 2007)
+
+ %NOX/%LOCA version 8.0 will be release as part of Trilinos 8.0 in late August 2007.  Current changes/additions:
+<ul>
+  <li> A support group/vector has been added for Thyra.  The group leverages the Stratimikos library to build the linear solver and preconditioner.
+  <li> A Thyra::NolinearSolver::NOX object has been added to allow Thyra users to call %NOX as a nonlinear solver for Thyra.
+  <li> A NOX::StatusTest::Factory has been added to allow for the construction of an entire status test set via a parameter list.
+</ul>
 
  %NOX/%LOCA version 7.0 will be release as part of Trilinos 7.0 in early September 2006.  %NOX and %LOCA have undergone many important changes between the 6.0 and 7.0 release:
 
 <ul>
   <li> %NOX is now using reference counted smart pointers (RCPs) for memory management.  Passing an RCP wrapped object through a method call implies a persisting relationship.  We are using the Teuchos::RCP object for the RCP.
   <li> The NOX::Parameter::List has been removed.  We are now using the Teuchos::ParameterList object.  This has the same functionality with minor changes to the syntax of method calls.
-  <li> %NOX now has a non-optional dependency on the <a href="http://software.sandia.gov/Trilinos/packages/teuchos">Teuchos</a> package (also part of Trilinos).  While it can be built stand-alone, we recomend building %NOX as part of Trilinos with the teuchos library enabled to simplify dependencies.
+  <li> %NOX now has a non-optional dependency on the <a href="http://trilinos.sandia.gov/packages/teuchos">Teuchos</a> package (also part of Trilinos).  While it can be built stand-alone, we recomend building %NOX as part of Trilinos with the teuchos library enabled to simplify dependencies.
   <li> %NOX and %LOCA now generate Makefiles that users can include in their own makefiles to get all dependencies correct.  For example if %NOX is built with Epetra support enabled, nox depends on epetra, aztecoo and ifpack headers and libraries.  To keep the user from having to learn about those packages so they can link nox into their codes, just include the %NOX file Makefile.export.nox file to get variables that have all sub package dependencies correct. In the installation directory, look at the files include/Makefiles.export.nox and include/Makefiles.export.nox.macros.  The important flags in Makefile.export.nox are NOX_INCLUDES, NOX_LIBS, LOCA_INCLUDES, and LOCA_LIBS flags.  The Makefile.export.nmox.macros file contains the compiler flags that were used to build the %NOX and %LOCA packages.  It is very important to use consistent flags when linking your application against Trilinos.
   <li> Multivector support is no longer a configure option, but is automatically built as part of the library.
   <li> The epetra interfaces (NOX::Epetra::Interface namespace) have been changed.  They now take an Epetra_Operator as an argument when evaluating the Jacobian and preconditioner objects.  While this is redundant for our base epetra group (since it shares the same operator between groups), this allows users to override the eptra group and use separate operators for each group if desired.
@@ -674,7 +703,7 @@ NOX release 4.0 notes:
 
 /*! \page nox_configuration_options NOX Configuration Options 
 
-Here is a list and explanation of %NOX specific configuration options.  See the Trilinos <a href="http://software.sandia.gov/trilinos/configuration_manual.html">Configuration Manual</a> for general options supported by all packages in %Trilinos.
+Here is a list and explanation of %NOX specific configuration options.  See the <a href="http://trilinos.sandia.gov/TrilinosUserGuide.pdf">Trilinos User Guide</a> for general options supported by all packages in %Trilinos.
 
 To get a complete list of all configure options supported by %NOX and %LOCA, go to the top-level %NOX source directory:
 \code
@@ -721,6 +750,15 @@ Then run configure's help mode:
     </ul>
 </ul>
 
+\section thyra_options Thyra-Related Options
+
+<ul>
+  <li> \c --enable-nox-thyra         
+    <ul>
+      <li> Compile noxthyra library (libnoxthyra.a). Default is not to compile the library.
+    </ul>
+</ul>
+
 \section petsc_options PETSc-Related Options
 
 <ul>
@@ -742,12 +780,12 @@ Then run configure's help mode:
     <ul>
       <li> Compile the loca library (libloca.a). Default is not to compile the library.
            Also compiles appropriate interfaces if they have been enabled (e.g., lapack and epetra).  
-      <li> %LOCA requires the Trilinos package <a href="http://software.sandia.gov/Trilinos/packages/teuchos/index.html"> Teuchos</a>, and Trilinos must be configured with \c --enable-teuchos to use %LOCA.  
+      <li> %LOCA requires the Trilinos package <a href="http://trilinos.sandia.gov/packages/teuchos/index.html"> Teuchos</a>, and Trilinos must be configured with \c --enable-teuchos to use %LOCA.  
       <li> If %LAPACK support is enabled, Trilinos must be configured with \c --enable-teuchos-complex.
     </ul>
   <li> \c --with-loca-anasazi
     <ul>
-      <li> Enable <a href="http://software.sandia.gov/Trilinos/packages/anasazi/index.html"> Anasazi </a> eigensolver support in %LOCA.
+      <li> Enable <a href="http://trilinos.sandia.gov/packages/anasazi/index.html"> Anasazi </a> eigensolver support in %LOCA.
       <li> %LOCA has a generic interface to Anasazi allowing it to compute eigenvalues/eigenvectors for any group/vector implementation.
       <li> Trilinos must be configured with \c --enable-anasazi to use this option.
     </ul>
@@ -797,6 +835,10 @@ Then run configure's help mode:
 </ul>
 
 */
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
 
 /*! \page prerelease NOX Developer's Guide to Prerelease Code
 
@@ -1425,7 +1467,7 @@ immediately before the word that is causing the link. For example,
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/* \page nox_class_overview NOX Class Overview
+/*! \page nox_class_overview NOX Class Overview
 
   %NOX's flexibility is based on the fact that it does not depend on
   any particular linear algebra package. In order to interface to %NOX,
@@ -1441,10 +1483,11 @@ immediately before the word that is causing the link. For example,
   optionally, the Jacobian. Complete details are provided in
   the class description.
 
-  Included with %NOX are three such interfaces:
+  Included with %NOX are four such interfaces:
 
   - NOX::LAPACK
   - NOX::Epetra
+  - NOX::Thyra
   - NOX::Petsc
 
   The \b LAPACK interface is an interface to the BLAS/LAPACK library.
@@ -1455,7 +1498,13 @@ immediately before the word that is causing the link. For example,
   Trilinos/Epetra library developed by 
   <a href="http://www.sandia.gov">Sandia National Labs</a>; 
   for more information see the 
-  <a href="http://software.sandia.gov/trilinos">Trilinos Home Page</a>.
+  <a href="http://trilinos.sandia.gov/trilinos">Trilinos Home Page</a>.
+
+  The \b Thyra interface is an interface to the
+  Trilinos/Thyra library developed by 
+  <a href="http://www.sandia.gov">Sandia National Labs</a>; 
+  for more information see the 
+  <a href="http://trilinos.sandia.gov/trilinos">Trilinos Home Page</a>.
 
   The \b PETSc interface is an interface with the PETSc library. PETSc
   was developed at 
@@ -1702,7 +1751,7 @@ immediately before the word that is causing the link. For example,
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page epetra_interface The Epetra interface
+/*! \page epetra_interface The Epetra Interface
 
  \section epetra_interface_derived Implementing the Interfaces
 
@@ -1825,7 +1874,29 @@ immediately before the word that is causing the link. For example,
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page petsc_interface The PETSc interface
+/*! \page thyra_interface The Thyra Interface
+
+ \section thyra_interface_derived Implementing the Interfaces
+
+ The Thyra support code in %NOX implements a concrete Group and Vector
+ class using thyra objects.  The user must implement a
+ Thyra::ModelEvaluator that supplies the nonlinear equations in
+ residual form, \f$ F(x)=0 \f$ and the Jacobian (optional but highly
+ recommended).
+
+ To link your code to %NOX using the thyra interface, you must write a
+ concrete class derived from the Thyra::ModelEvaluator
+ object.  
+
+  The directory Trilinos/packages/nox/test/epetra/Thyra_2Dsim contains
+  examples and is the best resource on how to use %NOX with %Thyra.
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page petsc_interface The PETSc Interface
 
 At present, %NOX supports a concrete implementation of the
 <b>NOX::Abstract::Group</b> and <b>NOX::Abstract::Vector</b> using

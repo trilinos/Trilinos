@@ -183,7 +183,7 @@ buildComboTest(Teuchos::ParameterList& p, const NOX::Utils& u,
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildNormFTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 {
-  double tolerance = p.get("Tolerance", 1.0);
+  double tolerance = p.get("Tolerance", 1.0e-8);
   
   // Norm Type
   std::string norm_type_string = p.get("Norm Type", "Two Norm");
@@ -245,7 +245,7 @@ buildNormFTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
 buildNormUpdateTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 {
-  double tolerance = p.get("Tolerance", 1.0);
+  double tolerance = p.get("Tolerance", 1.0e-3);
   
   // Norm Type
   std::string norm_type_string = p.get("Norm Type", "Two Norm");
@@ -290,7 +290,7 @@ buildNormWRMSTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
   double tolerance = p.get("Tolerance", 1.0);
   double alpha = p.get("Alpha", 1.0);
   double beta = p.get("Beta", 0.5);
-  double rel_tol = p.get("Relative Tolerance", 1.0);
+  double rel_tol = p.get("Relative Tolerance", 1.0e-5);
 
   bool abs_tol_is_vector = false;
   Teuchos::RCP<const NOX::Abstract::Vector> abs_tol_vector;
@@ -303,7 +303,7 @@ buildNormWRMSTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
     abs_tol_is_vector = true;
   }
   else {
-    abs_tol = p.get("absolute Tolerance", 1.0e-8);
+    abs_tol = p.get("Absolute Tolerance", 1.0e-8);
   }
     
   Teuchos::RCP<NOX::StatusTest::NormWRMS> status_test;

@@ -462,6 +462,7 @@ WARN_LOGFILE           =
 INPUT                  = ../src \
                          ../src-lapack \
                          ../src-epetra \
+                         ../src-thyra \
                          ../src-petsc \
                          ../src-belos \
                          ../src-loca/src \
