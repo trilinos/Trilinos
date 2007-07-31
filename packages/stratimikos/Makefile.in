@@ -709,7 +709,7 @@ uninstall-am:
 all-local:
 	@echo "Trilinos package stratimikos built successfully"
 
-@BUILD_TESTS_TRUE@tests:
+@BUILD_TESTS_TRUE@tests: examples
 @BUILD_TESTS_TRUE@	@echo ""
 @BUILD_TESTS_TRUE@	@echo "Now building stratimikos tests."
 @BUILD_TESTS_TRUE@	@echo ""

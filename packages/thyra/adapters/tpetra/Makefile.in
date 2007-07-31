@@ -183,10 +183,13 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-
-#TEST_SUBDIR=test
 @SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
 SUBDIRS = $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+EXTRA_DIST = src/Thyra_TpetraThyraWrappers.hpp \
+             src/Thyra_TpetraLinearOpBase.hpp  \
+             src/Thyra_TpetraTypes.hpp \
+             src/Thyra_TpetraLinearOp.hpp
+
 all: all-recursive
 
 .SUFFIXES:

@@ -1,5 +1,5 @@
 
-if BUILD_EXAMPLES 
+if SUB_EXAMPLE 
 EXAMPLE_SUBDIR=example
 endif
 

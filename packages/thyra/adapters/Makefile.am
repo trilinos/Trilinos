@@ -1,10 +1,8 @@
 
 if ENABLE_THYRA_EPETRA
-EPETRA_SRC_SUBDIR=epetra/src
 EPETRA_SUBDIR=epetra
 BUILD_THYRA_EPETRA_SAMPLE_OUTPUT=cd $(top_builddir)/test ; ../adapters/epetra/example/generate-sample-output.pl
 else
-EPETRA_SRC_SUBDIR=
 EPETRA_SUBDIR=
 endif
 
@@ -15,20 +13,15 @@ TPETRA_SUBDIR=
 endif
 
 if ENABLE_THYRA_EPETRAEXT
-EPETRAEXT_SRC_SUBDIR=epetraext/src
 EPETRAEXT_SUBDIR=epetraext
 else
-EPETRAEXT_SRC_SUBDIR=
 EPETRAEXT_SUBDIR=
 endif
 
 SUBDIRS = \
-  $(EPETRA_SRC_SUBDIR) \
-  $(EPETRAEXT_SRC_SUBDIR)
-
-#  $(EPETRA_SUBDIR) \
-#  $(TPETRA_SUBDIR) \
-#  $(EPETRAEXT_SUBDIR)
+  $(EPETRA_SUBDIR) \
+  $(TPETRA_SUBDIR) \
+  $(EPETRAEXT_SUBDIR)
 
 sample-output:
 	$(BUILD_THYRA_EPETRA_SAMPLE_OUTPUT)
