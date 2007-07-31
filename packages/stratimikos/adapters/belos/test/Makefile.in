@@ -67,7 +67,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = MVOPTester LOWSFactory
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -183,7 +183,8 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = MVOPTester LOWSFactory
+@ENABLE_STRATIMIKOS_THYRA_EPETRAEXT_TRUE@EPETRAEXT_DIRS = MVOPTester LOWSFactory
+SUBDIRS = $(EPETRAEXT_DIRS)
 all: all-recursive
 
 .SUFFIXES:

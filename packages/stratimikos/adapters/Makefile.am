@@ -1,34 +1,32 @@
 
 if ENABLE_STRATIMIKOS_AMESOS
-AMESOS_SUBDIR=amesos
-else
-AMESOS_SUBDIR=
+AMESOS_SUBDIR = amesos
+BUILD_AMESOS_TESTS = cd amesos/test; $(MAKE)
+CLEAN_AMESOS_TESTS = cd amesos/test; $(MAKE) clean
 endif
 
 if ENABLE_STRATIMIKOS_AZTECOO
 AZTECOO_SUBDIR=aztecoo
-else
-AZTECOO_SUBDIR=
+BUILD_AZTECOO_TESTS = cd aztecoo/test; $(MAKE)
+CLEAN_AZTECOO_TESTS = cd aztecoo/test; $(MAKE) clean
 endif
 
 if ENABLE_STRATIMIKOS_BELOS
 BELOS_SUBDIR=belos
-else
-BELOS_SUBDIR=
+BUILD_BELOS_TESTS = cd belos/test; $(MAKE)
+CLEAN_BELOS_TESTS = cd belos/test; $(MAKE) clean
+BUILD_BELOS_EXAMPLES = cd belos/example; $(MAKE)
+CLEAN_BELOS_EXAMPLES = cd belos/example; $(MAKE) clean
 endif
 
 if ENABLE_STRATIMIKOS_IFPACK
 IFPACK_SUBDIR=ifpack
-else
-IFPACK_SUBDIR=
 endif
 
 if ENABLE_STRATIMIKOS_ML
 ML_SUBDIR=ml
-else
-ML_SRC_SUBDIR=
-ML_SUBDIR=
 endif
+
 
 SUBDIRS = \
   $(AMESOS_SUBDIR) \
@@ -36,3 +34,23 @@ SUBDIRS = \
   $(BELOS_SUBDIR) \
   $(IFPACK_SUBDIR) \
   $(ML_SUBDIR)
+
+
+tests:
+	$(BUILD_AMESOS_TESTS)
+	$(BUILD_AZTECOO_TESTS)
+	$(BUILD_BELOS_TESTS)
+
+
+clean-tests:
+	$(CLEAN_AMESOS_TESTS)
+	$(CLEAN_AZTECOO_TESTS)
+	$(CLEAN_BELOS_TESTS)
+
+
+examples:
+	$(BUILD_BELOS_EXAMPLES)
+
+
+clean-examples:
+	$(CLEAN_BELOS_EXAMPLES)
