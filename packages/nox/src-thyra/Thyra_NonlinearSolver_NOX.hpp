@@ -4,11 +4,20 @@
 #ifndef THYRA_NONLINEARSOLVER_NOX
 #define THYRA_NONLINEARSOLVER_NOX
 
-
+#include "Teuchos_RCP.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
 
 namespace NOX {
   class SolverManager;
+  namespace Thyra {
+    class Group;
+  }
+  namespace StatusTest {
+    class Generic;
+  }
+  namespace Solver {
+    class Manager;
+  }
 }
 
 namespace Thyra {
@@ -50,8 +59,12 @@ public:
 
 private:
 
-  //! Called to rebuild the solver if a new parameter list 
+  //! Called to rebuild the solver if a new parameter list is set.
   void resetSolver();
+
+  //! Builds status tests - first looks for parameter list to use, otherwise builds a default set of status tests.
+  Teuchos::RCP<NOX::StatusTest::Generic> 
+  buildStatusTests(Teuchos::ParameterList& p);
 
 private:
 
@@ -60,7 +73,9 @@ private:
   Teuchos::RCP<const ModelEvaluator<double> > model_;
   Teuchos::RCP<LinearOpWithSolveBase<double> > J_;
 
-  Teuchos::RCP<NOX::SolverManager> solver_;
+  Teuchos::RCP<NOX::Thyra::Group> nox_group_;
+  Teuchos::RCP<NOX::StatusTest::Generic> status_test_;
+  Teuchos::RCP<NOX::Solver::Manager> solver_;
 
 };
 

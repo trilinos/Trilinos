@@ -28,6 +28,7 @@ setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& p)
 {
   TEST_FOR_EXCEPT(Teuchos::is_null(p));
   param_list_ = p;
+  this->resetSolver();
 }
 
 // ****************************************************************
@@ -87,38 +88,29 @@ Thyra::NOXNonlinearSolver::getModel() const
 Thyra::SolveStatus<double> Thyra::NOXNonlinearSolver::
 solve(VectorBase<double> *x,
       const SolveCriteria<double> *solveCriteria,
-      VectorBase<double> *delta
-      )
+      VectorBase<double> *delta)
 {
   TEST_FOR_EXCEPT(model_.get()==NULL);
   TEST_FOR_EXCEPT(param_list_.get()==NULL);
  
-  Teuchos::RCP< ::Thyra::VectorBase<double> >
-    initial_guess = x->clone_v();
-  
-  Teuchos::RCP<NOX::Thyra::Group> nox_group = 
-    Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model_));
-    
-  Teuchos::RCP<NOX::StatusTest::NormF> absresid =
-    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
-    Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
-  Teuchos::RCP<NOX::StatusTest::Combo> converged =
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
-  converged->addStatusTest(absresid);
-  converged->addStatusTest(wrms);
-  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
-  Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
-    Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RCP<NOX::StatusTest::Combo> combo =
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
-  combo->addStatusTest(fv);
-  combo->addStatusTest(converged);
-  combo->addStatusTest(maxiters);
+  NOX::Thyra::Vector initial_guess(Teuchos::rcp(x, false));  // View of x
 
-  NOX::Solver::Manager solver(nox_group, combo, param_list_);
-  NOX::StatusTest::StatusType solvStatus = solver.solve();
+  if (Teuchos::is_null(nox_group_)) {
+    nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_));
+  }
+  else
+    nox_group_->setX(initial_guess);
+
+  if (Teuchos::is_null(status_test_))
+    status_test_ = this->buildStatusTests(*param_list_);
+
+  if (Teuchos::is_null(solver_))
+    solver_ = Teuchos::rcp(new NOX::Solver::Manager(nox_group_, status_test_, 
+						    param_list_));
+  else
+    solver_->reset(nox_group_);
+
+  NOX::StatusTest::StatusType solvStatus = solver_->solve();
   
   Thyra::SolveStatus<double> t_status;
 
@@ -131,13 +123,13 @@ solve(VectorBase<double> *x,
   else
     t_status.solveStatus = SOLVE_STATUS_UNCONVERGED;
 
-
-  const NOX::Abstract::Group& final_group = solver.getSolutionGroup();
+  // Get the solution and update
+  const NOX::Abstract::Group& final_group = solver_->getSolutionGroup();
   const NOX::Abstract::Vector& final_solution = final_group.getX();
-
+  
   const NOX::Thyra::Vector& vec = 
     dynamic_cast<const NOX::Thyra::Vector&>(final_solution);
-
+  
   const ::Thyra::VectorBase<double>& new_x = 
     vec.getThyraVector();
 
@@ -146,9 +138,7 @@ solve(VectorBase<double> *x,
 
   *x = new_x;
 
-  // Return default status
   return t_status;
-
 }
 
 
@@ -163,6 +153,53 @@ Teuchos::RCP<const Thyra::LinearOpWithSolveBase<double> >
 Thyra::NOXNonlinearSolver::get_W() const
 {
   return J_;
+}
+
+// ****************************************************************
+// ****************************************************************
+Teuchos::RCP<NOX::StatusTest::Generic> Thyra::NOXNonlinearSolver::
+buildStatusTests(Teuchos::ParameterList& p)
+{
+  Teuchos::RCP<NOX::StatusTest::Generic> status_test;
+
+  NOX::Utils utils(p.sublist("Printing"));
+
+  if (p.isSublist("Status Tests")) {
+    NOX::StatusTest::Factory stf;
+    status_test = stf.buildStatusTests(p.sublist("Status Tests"), utils);
+  }
+  else { // Default status test
+    Teuchos::RCP<NOX::StatusTest::NormF> absresid =
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
+    Teuchos::RCP<NOX::StatusTest::NormWRMS> wrms =
+      Teuchos::rcp(new NOX::StatusTest::NormWRMS(1.0e-2, 1.0e-8));
+    Teuchos::RCP<NOX::StatusTest::Combo> converged =
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
+    converged->addStatusTest(absresid);
+    converged->addStatusTest(wrms);
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
+    Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
+      Teuchos::rcp(new NOX::StatusTest::FiniteValue);
+    Teuchos::RCP<NOX::StatusTest::Combo> combo =
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+    combo->addStatusTest(fv);
+    combo->addStatusTest(converged);
+    combo->addStatusTest(maxiters);
+
+    status_test = combo;
+  }
+
+  return status_test;
+}
+
+// ****************************************************************
+// ****************************************************************
+void Thyra::NOXNonlinearSolver::resetSolver()
+{
+  nox_group_ = Teuchos::null;
+  status_test_ = Teuchos::null;
+  solver_ = Teuchos::null;
 }
 
 // ****************************************************************
