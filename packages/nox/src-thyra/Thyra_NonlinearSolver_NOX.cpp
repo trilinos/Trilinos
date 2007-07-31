@@ -141,7 +141,8 @@ solve(VectorBase<double> *x,
   const ::Thyra::VectorBase<double>& new_x = 
     vec.getThyraVector();
 
-  Thyra::V_StVpStV<double>(delta,1.0,new_x,-1.0,*x);
+  if (delta)
+    Thyra::V_StVpStV<double>(delta,1.0,new_x,-1.0,*x);
 
   *x = new_x;
 
