@@ -681,6 +681,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 	    current->max_nz_per_row = max_nz_row_new; 
     	current->N_nonzeros     = total_nz; 
     	current->sub_matrix   = previous_matrix;
+        current->getrow->columns_loc_glob = ML_GLOBAL_INDICES;
 
 	    /* allocate space for new matrix */
 
@@ -810,11 +811,12 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    (*Cmatrix)->outvec_leng = save_ints[1];
    (*Cmatrix)->data = (void*)Cvbr_mat;
    (*Cmatrix)->getrow->func_ptr = VBR_getrows;
+   (*Cmatrix)->getrow->columns_loc_glob = ML_GLOBAL_INDICES;
                                                                                                                  
    (*Cmatrix)->matvec->ML_id = ML_NONEMPTY;
-   (*Cmatrix)->matvec->Nrows = RowOffset+NrowsPerBlock;
-   (*Cmatrix)->getrow->Nrows = RowOffset+NrowsPerBlock;
-   (*Cmatrix)->getrow->N_block_rows = RowOffsetBlocks+1;;
+   (*Cmatrix)->matvec->Nrows = RowOffset+previous_matrix->getrow->Nrows;
+   (*Cmatrix)->getrow->Nrows = RowOffset+previous_matrix->getrow->Nrows;
+   (*Cmatrix)->getrow->N_block_rows = RowOffsetBlocks+previous_matrix->getrow->N_block_rows;
 
 
   /*ML_Operator_Set_Getrow((*Cmatrix), RowOffset+NrowsPerBlock, 
