@@ -83,6 +83,7 @@ EXTRA_DIST = \
 	sampleScripts/sgi64_serial_atlantis \
 	sampleScripts/solaris_mpi_conejo sampleScripts/solaris_serial_paul \
 	sampleScripts/README config/AutotoolsVersionInfo \
+	config/makeall \
 	sampleScripts/cygwin_icl.pl sampleScripts/stratus_ar.pl \
 	doc/Tutorial/README RELEASE_NOTES \
 	doc/build_docs.pl \
@@ -219,5 +220,8 @@ install-everything:
 	cd packages && $(MAKE) $@
 
 clean-everything:
+	cd packages && $(MAKE) $@
+
+partial-clean:
 	cd packages && $(MAKE) $@
 

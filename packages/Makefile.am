@@ -275,6 +275,11 @@ install-everything:
 clean-everything:
 	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
 
+partial-clean:
+	find . -name "*.a" -exec rm {} \;
+	find . -name "*.exe" -exec rm {} \; 
+	find . -name "*.xml" -exec rm {} \; 
+
 # 2007/07/18: rabartl: Above, a simple script makeall has to be used since a
 # for loop with shell variables is employed.  I tried to put the for look
 # directly in the make target but 'make' simply replaced the shell varibles
