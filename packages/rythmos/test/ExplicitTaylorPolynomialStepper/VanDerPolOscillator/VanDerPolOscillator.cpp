@@ -151,10 +151,10 @@ void VanDerPolOscillator::evalModel( const InArgs& inArgs,
     outArgs.get_f_poly();
   if ( (x_poly != Teuchos::null) && (f_poly != Teuchos::null) ) {
     unsigned int d = x_poly->degree();
-    Sacado::Tay::CacheTaylor<double> x1(d,0.0);
-    Sacado::Tay::CacheTaylor<double> x2(d,0.0);
-    Sacado::Tay::CacheTaylor<double> f1(d,0.0);
-    Sacado::Tay::CacheTaylor<double> f2(d,0.0);
+    Sacado::Tay::Taylor<double> x1(d,0.0);
+    Sacado::Tay::Taylor<double> x2(d,0.0);
+    Sacado::Tay::Taylor<double> f1(d,0.0);
+    Sacado::Tay::Taylor<double> f2(d,0.0);
 
     for (unsigned int i=0; i<=d; i++) {
       x1.fastAccessCoeff(i) = (*(x_poly->getCoefficient(i)))[0];
