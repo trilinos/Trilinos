@@ -55,13 +55,15 @@ LOCA::Thyra::Group::Group(
 	    const NOX::Thyra::Vector& initial_guess,
 	    const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
 	    const LOCA::ParameterVector& p,
-	    int p_index) :
+	    int p_index,
+	    bool impl_dfdp) :
   NOX::Thyra::Group(initial_guess, model),
   LOCA::Abstract::Group(global_data),
   globalData(global_data),
   params(p),
   param_index(p_index),
-  saveDataStrategy()
+  saveDataStrategy(),
+  implement_dfdp(impl_dfdp)
 {
   // Create thyra vector to store parameters that is a view of LOCA
   // parameter vector
@@ -85,7 +87,8 @@ LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
   globalData(source.globalData),
   params(source.params),
   param_index(source.param_index),
-  saveDataStrategy(source.saveDataStrategy)
+  saveDataStrategy(source.saveDataStrategy),
+  implement_dfdp(source.implement_dfdp)
 {
   // Create thyra vector to store parameters that is a view of LOCA
   // parameter vector
@@ -115,6 +118,7 @@ LOCA::Thyra::Group::operator=(const LOCA::Thyra::Group& source)
     params = source.params;
     param_index = source.param_index;
     saveDataStrategy = source.saveDataStrategy;
+    implement_dfdp = source.implement_dfdp;
 
     // Because param_thyra_vec is a view of params, we don't need to copy
   }
@@ -242,6 +246,106 @@ LOCA::Thyra::Group::getParam(string paramID) const
   return params.getValue(paramID);
 }
 
+NOX::Abstract::Group::ReturnType
+LOCA::Thyra::Group::computeDfDpMulti(const vector<int>& paramIDs, 
+				     NOX::Abstract::MultiVector& fdfdp, 
+				     bool isValidF)
+{
+  // Currently this does not work because the thyra modelevaluator is not
+  // setting the parameter names correctly in the epetraext modelevalator, 
+  // so we are disabling this for now
+  implement_dfdp = false;
+
+  // Use default implementation if we don't want to use model evaluator, or
+  // it doesn't support it
+  if (!implement_dfdp || 
+      !out_args_.supports(::Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,
+			  param_index).supports(::Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL)) {
+    NOX::Abstract::Group::ReturnType res = 
+      LOCA::Abstract::Group::computeDfDpMulti(paramIDs, fdfdp, isValidF);
+    return res;
+  }
+
+  // Split fdfdp into f and df/dp
+  int num_vecs = fdfdp.numVectors()-1;
+  std::vector<int> index_dfdp(num_vecs);
+  for (int i=0; i<num_vecs; i++)
+    index_dfdp[i] = i+1;
+  NOX::Thyra::Vector& f = dynamic_cast<NOX::Thyra::Vector&>(fdfdp[0]);
+  Teuchos::RCP<NOX::Abstract::MultiVector> dfdp =
+    fdfdp.subView(index_dfdp);
+
+  // Right now this isn't very efficient because we have to compute
+  // derivatives with respect to all of the parameters, not just
+  // paramIDs.  Will have to work out with Ross how to selectively get
+  // parameter derivatives
+  int np = params.length();
+  Teuchos::RCP<NOX::Thyra::MultiVector> dfdp_full =
+    Teuchos::rcp_dynamic_cast<NOX::Thyra::MultiVector>(dfdp->clone(np));
+
+  ::Thyra::ModelEvaluatorBase::DerivativeMultiVector<double> dmv(dfdp_full->getThyraMultiVector(), ::Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL);
+  ::Thyra::ModelEvaluatorBase::Derivative<double> deriv(dmv);
+
+  in_args_.set_x(x_vec_->getThyraRCPVector().assert_not_null());
+  if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
+    in_args_.set_x_dot(x_dot_vec);
+  in_args_.set_p(param_index, param_thyra_vec);
+  if (!isValidF)
+    out_args_.set_f(f.getThyraRCPVector().assert_not_null());
+  out_args_.set_DfDp(param_index, deriv);
+
+  // Evaluate model
+  model_->evalModel(in_args_, out_args_);
+
+  // Copy back dfdp
+  for (int i=0; i<num_vecs; i++)
+    (*dfdp)[i] = (*dfdp_full)[paramIDs[i]];
+
+  // Reset inargs/outargs
+  in_args_.set_x(Teuchos::null);
+  in_args_.set_p(param_index, Teuchos::null);
+  out_args_.set_f(Teuchos::null);
+  out_args_.set_DfDp(param_index, 
+		     ::Thyra::ModelEvaluatorBase::Derivative<double>());
+
+  if (out_args_.isFailed())
+    return NOX::Abstract::Group::Failed;
+  
+  return NOX::Abstract::Group::Ok;
+}
+
+void
+LOCA::Thyra::Group::preProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  if (saveDataStrategy != Teuchos::null)
+    saveDataStrategy->preProcessContinuationStep(stepStatus);
+}
+
+void
+LOCA::Thyra::Group::postProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  if (saveDataStrategy != Teuchos::null)
+    saveDataStrategy->postProcessContinuationStep(stepStatus);
+}
+
+void
+LOCA::Thyra::Group::projectToDraw(const NOX::Abstract::Vector& x,
+				  double *px) const
+{
+  if (saveDataStrategy != Teuchos::null)
+    saveDataStrategy->projectToDraw(x, px);
+}
+
+int
+LOCA::Thyra::Group::projectToDrawDimension() const
+{
+  if (saveDataStrategy != Teuchos::null)
+    return saveDataStrategy->projectToDrawDimension();
+  return 0;
+}
+
 double
 LOCA::Thyra::Group::computeScaledDotProduct(
 				       const NOX::Abstract::Vector& a,
@@ -324,8 +428,8 @@ LOCA::Thyra::Group::applyShiftedMatrixMultiVector(
 
   ::Thyra::apply(*shared_jacobian_->getObject(), 
 		 ::Thyra::NOTRANS,
-		 nt_input.getThyraMultiVector(), 
-		 &nt_result.getThyraMultiVector());
+		 *nt_input.getThyraMultiVector(), 
+		 nt_result.getThyraMultiVector().get());
 
   return NOX::Abstract::Group::Ok;
 }

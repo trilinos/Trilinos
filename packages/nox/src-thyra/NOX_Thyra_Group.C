@@ -290,8 +290,8 @@ NOX::Thyra::Group::applyJacobianMultiVector(
 
   ::Thyra::apply(*shared_jacobian_->getObject(), 
 		 ::Thyra::NOTRANS,
-		 nt_input.getThyraMultiVector(), 
-		 &nt_result.getThyraMultiVector());
+		 *nt_input.getThyraMultiVector(), 
+		 nt_result.getThyraMultiVector().get());
 
   return NOX::Abstract::Group::Ok;
 }
@@ -344,8 +344,8 @@ NOX::Thyra::Group::applyJacobianTransposeMultiVector(
 
   ::Thyra::apply(*shared_jacobian_->getObject(), 
 		 ::Thyra::TRANS,
-		 nt_input.getThyraMultiVector(), 
-		 &nt_result.getThyraMultiVector());
+		 *nt_input.getThyraMultiVector(), 
+		 nt_result.getThyraMultiVector().get());
 
   return NOX::Abstract::Group::Ok;
 }
@@ -380,8 +380,8 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
     Teuchos::dyn_cast<NOX::Thyra::MultiVector>(result);
 
   return applyJacobianInverseMultiVector(p, 
-					 nt_input.getThyraMultiVector(),
-					 nt_result.getThyraMultiVector());
+					 *nt_input.getThyraMultiVector(),
+					 *nt_result.getThyraMultiVector());
 }
 
 bool NOX::Thyra::Group::isF() const 

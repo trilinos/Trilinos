@@ -81,12 +81,12 @@ namespace NOX {
 
       //@{ \name Access to underlying Thyra multivector.
 
-      //! Get reference to underlying Thyra vector.
-      virtual ::Thyra::MultiVectorBase<double>& 
+      //! Get RCP to underlying Thyra vector.
+      virtual Teuchos::RCP< ::Thyra::MultiVectorBase<double> >
       getThyraMultiVector();
 
-      //! Get const reference to underlying Thyra vector.
-      virtual const ::Thyra::MultiVectorBase<double>& 
+      //! Get const RCP to underlying Thyra vector.
+      virtual Teuchos::RCP<const ::Thyra::MultiVectorBase<double> >
       getThyraMultiVector() const;
  
       //@}

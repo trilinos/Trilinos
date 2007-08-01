@@ -69,7 +69,8 @@ namespace LOCA {
 	    const NOX::Thyra::Vector& initial_guess,
 	    const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
 	    const LOCA::ParameterVector& p,
-	    int p_index);
+	    int p_index,
+	    bool implement_dfdp = false);
 
       /*! 
        * \brief Copy constructor. If type is DeepCopy, takes ownership of
@@ -135,6 +136,34 @@ namespace LOCA {
 
       //! Return copy of parameter indexed by paramID
       virtual double getParam(string paramID) const;
+
+      /*! 
+       * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
+       * indexed by paramIDs.  The first column of \em dfdp holds F,
+       * which is valid if \em isValidF is true.  Otherwise F must be
+       * computed.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeDfDpMulti(const vector<int>& paramIDs, 
+		       NOX::Abstract::MultiVector& dfdp, 
+		       bool isValidF);
+
+      //! Perform any preprocessing before a continuation step starts.
+      virtual void 
+      preProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus);
+
+      //! Perform any postprocessing after a continuation step finishes.
+      virtual void 
+      postProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus);
+
+      //! Projects solution to a few scalars for multiparameter continuation
+      virtual void projectToDraw(const NOX::Abstract::Vector& x,
+				 double *px) const;
+
+      //! Returns the dimension of the project to draw array
+      virtual int projectToDrawDimension() const;
 
       //! Compute a scaled dot product
       /*! 
@@ -216,6 +245,9 @@ namespace LOCA {
 
       //! Strategy object for saving continuation data
       Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> saveDataStrategy;
+
+      //! Whether we should implement df/dp, or use DerivUtils
+      bool implement_dfdp;
 
     };
 

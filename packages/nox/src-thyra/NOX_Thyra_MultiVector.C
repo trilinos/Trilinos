@@ -82,18 +82,18 @@ operator=(const NOX::Abstract::MultiVector& src)
   return *this;
 }
 
-::Thyra::MultiVectorBase<double>& 
+Teuchos::RCP< ::Thyra::MultiVectorBase<double> > 
 NOX::Thyra::MultiVector::
 getThyraMultiVector()
 {
-  return *thyraMultiVec;
+  return thyraMultiVec;
 }
 
-const ::Thyra::MultiVectorBase<double>& 
+Teuchos::RCP< const ::Thyra::MultiVectorBase<double> >
 NOX::Thyra::MultiVector::
 getThyraMultiVector() const
 {
-  return *thyraMultiVec;
+  return thyraMultiVec;
 }
 
 NOX::Abstract::MultiVector& 
