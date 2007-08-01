@@ -183,7 +183,7 @@ namespace Sacado {							\
 					 const ADvari<T>&);		\
     template <typename T> ADvari<T>& OP (T,				\
 					 const ADvari<T>&);		\
-    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::dtype&, \
+    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::dtype, \
 					 const ADvari<T>&);		\
     template <typename T> ADvari<T>& OP (int,				\
 					 const ADvari<T>&);		\
@@ -194,7 +194,7 @@ namespace Sacado {							\
     template <typename T> ADvari<T>& OP (const ADvari<T>&,		\
 					 T);				\
     template <typename T> ADvari<T>& OP (const ADvari<T>&,		\
-					 typename DoubleAvoid<T>::dtype&); \
+					 typename DoubleAvoid<T>::dtype); \
     template <typename T> ADvari<T>& OP (const ADvari<T>&,		\
 					 int);				\
     template <typename T> ADvari<T>& OP (const ADvari<T>&,		\
@@ -203,7 +203,7 @@ namespace Sacado {							\
 					 const IndepADvar<T>&);		\
     template <typename T> ADvari<T>& OP (T,				\
 					 const IndepADvar<T>&);		\
-    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::dtype&,	\
+    template <typename T> ADvari<T>& OP (typename DoubleAvoid<T>::dtype, \
 					 const IndepADvar<T>&);		\
     template <typename T> ADvari<T>& OP (int,				\
 					 const IndepADvar<T>&);		\
@@ -212,7 +212,7 @@ namespace Sacado {							\
     template <typename T> ADvari<T>& OP (const IndepADvar<T>&,		\
 					 T);				\
     template <typename T> ADvari<T>& OP (const IndepADvar<T>&,		\
-					 typename DoubleAvoid<T>::dtype&); \
+					 typename DoubleAvoid<T>::dtype); \
     template <typename T> ADvari<T>& OP (const IndepADvar<T>&,		\
 					 int);				\
     template <typename T> ADvari<T>& OP (const IndepADvar<T>&,		\
