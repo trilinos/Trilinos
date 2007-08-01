@@ -333,29 +333,29 @@ int main(int argc, char *argv[]) {
   // Output computed eigenvalues and their direct residuals
   if (verbose && MyPID==0) {
     int numritz = (int)ritzValues.size();
-    cout.setf(std::ios_base::right, std::ios_base::adjustfield);	
+    cout.setf(std::ios_base::right, std::ios_base::adjustfield);
     cout<<endl<< "Computed Ritz Values"<< endl;
     if (MyProblem->isHermitian()) {
       cout<< std::setw(16) << "Real Part"
-	  << endl;
+        << endl;
       cout<<"-----------------------------------------------------------"<<endl;
       for (int i=0; i<numritz; i++) {
-	cout<< std::setw(16) << ritzValues[i].realpart 
-	    << endl;
-	}  
-	cout<<"-----------------------------------------------------------"<<endl;
-      } 
-      else {
-	cout<< std::setw(16) << "Real Part"
-	    << std::setw(16) << "Imag Part"
-	    << endl;
-	cout<<"-----------------------------------------------------------"<<endl;
-	for (int i=0; i<numritz; i++) {
-	  cout<< std::setw(16) << ritzValues[i].realpart 
-	      << std::setw(16) << ritzValues[i].imagpart 
-	      << endl;
-	}  
-	cout<<"-----------------------------------------------------------"<<endl;
+        cout<< std::setw(16) << ritzValues[i].realpart 
+          << endl;
+      }  
+      cout<<"-----------------------------------------------------------"<<endl;
+    } 
+    else {
+      cout<< std::setw(16) << "Real Part"
+        << std::setw(16) << "Imag Part"
+        << endl;
+      cout<<"-----------------------------------------------------------"<<endl;
+      for (int i=0; i<numritz; i++) {
+        cout<< std::setw(16) << ritzValues[i].realpart 
+          << std::setw(16) << ritzValues[i].imagpart 
+          << endl;
+      }  
+      cout<<"-----------------------------------------------------------"<<endl;
       }  
     }
 
@@ -387,7 +387,7 @@ int main(int argc, char *argv[]) {
       
       // Scale the norms by the eigenvalue
       for (int i=0; i<numev; i++) {
-	normA[i] /= Teuchos::ScalarTraits<double>::magnitude( evals[i].realpart );
+        normA[i] /= Teuchos::ScalarTraits<double>::magnitude( evals[i].realpart );
       }
     } else {
       // The problem is non-Hermitian.
@@ -402,86 +402,86 @@ int main(int argc, char *argv[]) {
       
       Teuchos::SerialDenseMatrix<int,double> Breal(1,1), Bimag(1,1);
       while (i<numev) {
-	if (index[i]==0) {
-	  // Get a view of the current eigenvector (evecr)
-	  curind[0] = i;
-	  evecr = MVT::CloneView( *evecs, curind );
-	  
-	  // Get a copy of A*evecr
-	  tempAevec = MVT::CloneCopy( Aevec, curind );
-	  
-	  // Compute A*evecr - lambda*evecr
-	  Breal(0,0) = evals[i].realpart;
-	  MVT::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, *tempAevec );
-	  
-	  // Compute the norm of the residual and increment counter
-	  MVT::MvNorm( *tempAevec, &resnorm );
-	  normA[i] = resnorm[0]/Teuchos::ScalarTraits<MagnitudeType>::magnitude( evals[i].realpart );
-	  i++;
-	} else {
-	  // Get a view of the real part of the eigenvector (evecr)
-	  curind[0] = i;
-	  evecr = MVT::CloneView( *evecs, curind );
-	  
-	  // Get a copy of A*evecr
-	  tempAevec = MVT::CloneCopy( Aevec, curind );
-	  
-	  // Get a view of the imaginary part of the eigenvector (eveci)
-	  curind[0] = i+1;
-	  eveci = MVT::CloneView( *evecs, curind );
-	  
-	  // Set the eigenvalue into Breal and Bimag
-	  Breal(0,0) = evals[i].realpart;
-	  Bimag(0,0) = evals[i].imagpart;
-	  
-	  // Compute A*evecr - evecr*lambdar + eveci*lambdai
-	  MVT::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, *tempAevec );
-	  MVT::MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0, *tempAevec );
-	  MVT::MvNorm( *tempAevec, &tempnrm );
-	  
-	  // Get a copy of A*eveci
-	  tempAevec = MVT::CloneCopy( Aevec, curind );
-	  
-	  // Compute A*eveci - eveci*lambdar - evecr*lambdai
-	  MVT::MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0, *tempAevec );
-	  MVT::MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0, *tempAevec );
-	  MVT::MvNorm( *tempAevec, &resnorm );
-	  
-	  // Compute the norms and scale by magnitude of eigenvalue
-	  normA[i] = lapack.LAPY2( tempnrm[i], resnorm[i] ) /
-	  lapack.LAPY2( evals[i].realpart, evals[i].imagpart );
-	  normA[i+1] = normA[i];
-	  
-	  i=i+2;
-	}
+        if (index[i]==0) {
+          // Get a view of the current eigenvector (evecr)
+          curind[0] = i;
+          evecr = MVT::CloneView( *evecs, curind );
+
+          // Get a copy of A*evecr
+          tempAevec = MVT::CloneCopy( Aevec, curind );
+
+          // Compute A*evecr - lambda*evecr
+          Breal(0,0) = evals[i].realpart;
+          MVT::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, *tempAevec );
+
+          // Compute the norm of the residual and increment counter
+          MVT::MvNorm( *tempAevec, &resnorm );
+          normA[i] = resnorm[0]/Teuchos::ScalarTraits<MagnitudeType>::magnitude( evals[i].realpart );
+          i++;
+        } else {
+          // Get a view of the real part of the eigenvector (evecr)
+          curind[0] = i;
+          evecr = MVT::CloneView( *evecs, curind );
+
+          // Get a copy of A*evecr
+          tempAevec = MVT::CloneCopy( Aevec, curind );
+
+          // Get a view of the imaginary part of the eigenvector (eveci)
+          curind[0] = i+1;
+          eveci = MVT::CloneView( *evecs, curind );
+
+          // Set the eigenvalue into Breal and Bimag
+          Breal(0,0) = evals[i].realpart;
+          Bimag(0,0) = evals[i].imagpart;
+
+          // Compute A*evecr - evecr*lambdar + eveci*lambdai
+          MVT::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, *tempAevec );
+          MVT::MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0, *tempAevec );
+          MVT::MvNorm( *tempAevec, &tempnrm );
+
+          // Get a copy of A*eveci
+          tempAevec = MVT::CloneCopy( Aevec, curind );
+
+          // Compute A*eveci - eveci*lambdar - evecr*lambdai
+          MVT::MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0, *tempAevec );
+          MVT::MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0, *tempAevec );
+          MVT::MvNorm( *tempAevec, &resnorm );
+
+          // Compute the norms and scale by magnitude of eigenvalue
+          normA[i] = lapack.LAPY2( tempnrm[i], resnorm[i] ) /
+            lapack.LAPY2( evals[i].realpart, evals[i].imagpart );
+          normA[i+1] = normA[i];
+
+          i=i+2;
+        }
       }
     }
 
     // Output computed eigenvalues and their direct residuals
     if (verbose && MyPID==0) {
-      cout.setf(std::ios_base::right, std::ios_base::adjustfield);	
+      cout.setf(std::ios_base::right, std::ios_base::adjustfield);
       cout<<endl<< "Actual Residuals"<<endl;
       if (MyProblem->isHermitian()) {
-	cout<< std::setw(16) << "Real Part"
-	    << std::setw(20) << "Direct Residual"<< endl;
-	cout<<"-----------------------------------------------------------"<<endl;
-	for (int i=0; i<numev; i++) {
-	  cout<< std::setw(16) << evals[i].realpart 
-	      << std::setw(20) << normA[i] << endl;
-	}  
-	cout<<"-----------------------------------------------------------"<<endl;
+        cout<< std::setw(16) << "Real Part"
+          << std::setw(20) << "Direct Residual"<< endl;
+        cout<<"-----------------------------------------------------------"<<endl;
+        for (int i=0; i<numev; i++) {
+          cout<< std::setw(16) << evals[i].realpart 
+            << std::setw(20) << normA[i] << endl;
+        }  
+        cout<<"-----------------------------------------------------------"<<endl;
       } 
       else {
-	cout<< std::setw(16) << "Real Part"
-	    << std::setw(16) << "Imag Part"
-	    << std::setw(20) << "Direct Residual"<< endl;
-	cout<<"-----------------------------------------------------------"<<endl;
-	for (int i=0; i<numev; i++) {
-	  cout<< std::setw(16) << evals[i].realpart 
-	      << std::setw(16) << evals[i].imagpart 
-	      << std::setw(20) << normA[i] << endl;
-	}  
-	cout<<"-----------------------------------------------------------"<<endl;
+        cout<< std::setw(16) << "Real Part"
+          << std::setw(16) << "Imag Part"
+          << std::setw(20) << "Direct Residual"<< endl;
+        cout<<"-----------------------------------------------------------"<<endl;
+        for (int i=0; i<numev; i++) {
+          cout<< std::setw(16) << evals[i].realpart 
+            << std::setw(16) << evals[i].imagpart 
+            << std::setw(20) << normA[i] << endl;
+        }  
+        cout<<"-----------------------------------------------------------"<<endl;
       }  
     }
   }

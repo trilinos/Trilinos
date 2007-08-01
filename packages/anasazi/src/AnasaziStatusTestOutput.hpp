@@ -67,6 +67,9 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
    * The StatusTestOutput requires an OutputManager for printing the underlying StatusTest on
    * calls to checkStatus(), as well as an underlying StatusTest.
    *
+   * StatusTestOutput can be initialized with a null pointer for argument \c test. However, calling checkStatus() with a null child pointer 
+   * will result in a StatusTestError exception being thrown. See checkStatus() for more information.
+   *
    * The last two parameters, described below, in addition to the verbosity level of the OutputManager, control when printing is 
    * called. When both the \c mod criterion and the \c printStates criterion are satisfied, the status test will be printed to the 
    * OutputManager with ::MsgType of ::StatusTestDetails.
@@ -80,7 +83,8 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
                    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test,
                    int mod = 1,
                    int printStates = Passed)
-    : printer_(printer), test_(test), state_(Undefined), stateTest_(printStates), modTest_(mod), numCalls_(0) {}
+    : printer_(printer), test_(test), state_(Undefined), stateTest_(printStates), modTest_(mod), numCalls_(0) 
+    { }
 
   //! Destructor
   virtual ~StatusTestOutput() {};
@@ -127,6 +131,17 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
   TestStatus getStatus() const {
     return state_;
   }
+
+  //! Get the indices for the vectors that passed the test.
+  std::vector<int> whichVecs() const {
+    return std::vector<int>(0);
+  }
+
+  //! Get the number of vectors that passed the test.
+  int howMany() const {
+    return 0;
+  }
+
   //@}
 
 
@@ -159,7 +174,9 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
    */
   void reset() { 
     state_ = Undefined;
-    test_->reset();
+    if (test_ != Teuchos::null) {
+      test_->reset();
+    }
     numCalls_ = 0;
   }
 
@@ -167,7 +184,9 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
   //! This resets the cached state to an ::Undefined state and calls clearStatus() on the underlying test.
   void clearStatus() {
     state_ = Undefined;
-    test_->clearStatus();
+    if (test_ != Teuchos::null) {
+      test_->clearStatus();
+    }
   }
 
   //@}

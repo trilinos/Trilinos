@@ -41,7 +41,7 @@
 
 #include "AnasaziStatusTestCombo.hpp"
 #include "AnasaziStatusTestMaxIters.hpp"
-#include "AnasaziStatusTestOrderedResNorm.hpp"
+#include "AnasaziStatusTestWithOrdering.hpp"
 #include "AnasaziStatusTestResNorm.hpp"
 #include "AnasaziStatusTestOutput.hpp"
 

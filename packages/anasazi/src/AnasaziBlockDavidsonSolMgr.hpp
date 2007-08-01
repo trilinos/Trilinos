@@ -43,37 +43,63 @@
 #include "AnasaziBlockDavidson.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
-#include "AnasaziStatusTestMaxIters.hpp"
 #include "AnasaziStatusTestResNorm.hpp"
-#include "AnasaziStatusTestOrderedResNorm.hpp"
+#include "AnasaziStatusTestWithOrdering.hpp"
 #include "AnasaziStatusTestCombo.hpp"
 #include "AnasaziStatusTestOutput.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 
 /** \example BlockDavidson/BlockDavidsonEpetraEx.cpp
-    This is an example of how to use the Anasazi::BlockDavidsonSolMgr solver manager to solve a standard eigenvalue problem.
+    This is an example of how to use the Anasazi::BlockDavidsonSolMgr solver manager to solve a standard eigenvalue problem, using Epetra data structures.
 */
 
 /** \example BlockDavidson/BlockDavidsonEpetraExGen.cpp
-    This is an example of how to use the Anasazi::BlockDavidsonSolMgr solver manager to solve a generalized eigenvalue problem.
+    This is an example of how to use the Anasazi::BlockDavidsonSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data stuctures.
 */
 
-/*! \class Anasazi::BlockDavidsonSolMgr
+/** \example BlockDavidson/BlockDavidsonEpetraExGenPrecIfpack.cpp
+    This is an example of how to use the Anasazi::BlockDavidsonSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data structures and exploiting a incomplete Cholesky preconditioner from IFPACK.
+*/
+
+
+namespace Anasazi {
+
+
+/*! \class BlockDavidsonSolMgr
  *
- *  \brief The Anasazi::BlockDavidsonSolMgr provides a powerful and fully-featured solver manager over the BlockDavidson eigensolver.
+ *  \brief The BlockDavidsonSolMgr provides a powerful solver manager over the BlockDavidson eigensolver.
  *
  * This solver manager implements a hard-locking mechanism, whereby eigenpairs designated to be locked are moved from the eigensolver and placed in
- * auxiliary storage. The eigensolver is then restarted and continues to iterate, always orthogonal to the locked eigenvectors.
+ * auxilliary storage. The eigensolver is then restarted and continues to iterate, orthogonal to the locked eigenvectors.
+ *
+ * The solver manager provides to the solver a StatusTestCombo object constructed as follows:<br>
+ *    &nbsp;&nbsp;&nbsp;<tt>combo = globaltest OR lockingtest OR debugtest</tt><br>
+ * where
+ *    - \c globaltest terminates computation when global convergence has been detected.<br>
+ *      It is encapsulated in a StatusTestWithOrdering object, to ensure that computation is terminated
+ *      only after the most significant eigenvalues/eigenvectors have met the convergence criteria.<br>
+ *      If not specified via setGlobalStatusTest(), \c globaltest is a StatusTestResNorm object which tests the
+ *      M-norms of the direct residuals relative to the Ritz values.
+ *    - \c lockingtest halts BlockDavidson::iterate() in order to deflate converged eigenpairs for locking.<br>
+ *      It will query the underlying BlockDavidson eigensolver to determine when eigenvectors should be locked.<br>
+ *      If not specified via setLockingStatusTest(), \c lockingtest is a StatusTestResNorm object.
+ *    - \c debugtest allows a user to specify additional monitoring of the iteration, encapsulated in a StatusTest object<br>
+ *      If not specified via setDebugStatusTest(), \c debugtest is ignored.<br> 
+ *      In most cases, it should return ::Failed; if it returns ::Passed, solve() will throw an AnasaziError exception.
+ *
+ * Additionally, the solver manager will terminate solve() after a specified number of restarts.
+ * 
+ * Much of this behavior is controlled via parameters and options passed to the
+ * solver manager. For more information, see BlockDavidsonSolMgr().
 
  \ingroup anasazi_solver_framework
 
  \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
  */
-
-namespace Anasazi {
 
 template<class ScalarType, class MV, class OP>
 class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
@@ -94,18 +120,21 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
    *
    * This constructor accepts the Eigenproblem to be solved in addition
    * to a parameter list of options for the solver manager. These options include the following:
-   *   - "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: "SR"
-   *   - "Block Size" - a \c int specifying the block size to be used by the underlying block Davidson solver. Default: problem->getNEV()
-   *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 2
-   *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
-   *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
-   *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
-   *   - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
-   *   - "Use Locking" - a \c bool specifying whether the algorithm should employ locking of converged eigenpairs. Default: false
-   *   - "Max Locked" - a \c int specifying the maximum number of eigenpairs to be locked. Default: problem->getNEV()
-   *   - "Locking Quorum" - a \c int specifying the number of eigenpairs that must meet the locking criteria before locking actually occurs. Default: 1
-   *   - "Locking Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide locking. Default: 0.1*convergence tolerance
-   *   - "Relative Locking Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding locking. Default: true
+   *   - Solver parameters
+   *      - \c "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: "SR"
+   *      - \c "Block Size" - a \c int specifying the block size to be used by the underlying block Davidson solver. Default: problem->getNEV()
+   *      - \c "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 2
+   *      - \c "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
+   *      - \c "Verbosity" - a sum of MsgType specifying the verbosity. Default: ::Errors
+   *   - Convergence parameters (if using default convergence test; see setGlobalStatusTest())
+   *      - \c "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
+   *      - \c "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
+   *   - Locking parameters (if using default locking test; see setLockingStatusTest())
+   *      - \c "Use Locking" - a \c bool specifying whether the algorithm should employ locking of converged eigenpairs. Default: false
+   *      - \c "Max Locked" - a \c int specifying the maximum number of eigenpairs to be locked. Default: problem->getNEV()
+   *      - \c "Locking Quorum" - a \c int specifying the number of eigenpairs that must meet the locking criteria before locking actually occurs. Default: 1
+   *      - \c "Locking Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide locking. Default: 0.1*convergence tolerance
+   *      - \c "Relative Locking Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding locking. Default: true
    */
   BlockDavidsonSolMgr( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
@@ -148,6 +177,25 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
    *     - ::Unconverged: the eigenproblem was not solved to the specification desired by the solver manager.
   */
   ReturnType solve();
+
+  //! Set the status test defining global convergence.
+  void setGlobalStatusTest(const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &global);
+
+  //! Get the status test defining global convergence.
+  const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & getGlobalStatusTest() const;
+
+  //! Set the status test defining locking.
+  void setLockingStatusTest(const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &locking);
+
+  //! Get the status test defining locking.
+  const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & getLockingStatusTest() const;
+
+  //! Set the status test for debugging.
+  void setDebugStatusTest(const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &debug);
+
+  //! Get the status test for debugging.
+  const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & getDebugStatusTest() const;
+
   //@}
 
   private:
@@ -165,6 +213,10 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
   int lockQuorum_;
   bool inSituRestart_;
   int numRestartBlocks_;
+
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > globalTest_;
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > lockingTest_; 
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugTest_;
 };
 
 
@@ -175,8 +227,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
         Teuchos::ParameterList &pl ) : 
   problem_(problem),
   whch_("SR"),
-  convtol_(0),
-  locktol_(0),
+  convtol_(MT::prec()),
   maxRestarts_(20),
   useLocking_(false),
   relconvtol_(true),
@@ -187,25 +238,31 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   verbosity_(Anasazi::Errors),
   lockQuorum_(1),
   inSituRestart_(false),
-  numRestartBlocks_(1)
+  numRestartBlocks_(1),
+  globalTest_(Teuchos::null),
+  lockingTest_(Teuchos::null),
+  debugTest_(Teuchos::null)
 {
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,               std::invalid_argument, "Problem not given to solver manager.");
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),               std::invalid_argument, "Problem not set.");
-  TEST_FOR_EXCEPTION(!problem_->isHermitian(),                std::invalid_argument, "Problem not symmetric.");
-  TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null, std::invalid_argument, "Problem does not contain initial vectors to clone from.");
+  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
+  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
+  TEST_FOR_EXCEPTION(!problem_->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
+  TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
+
 
   // which values to solve for
   whch_ = pl.get("Which",whch_);
   TEST_FOR_EXCEPTION(whch_ != "SM" && whch_ != "LM" && whch_ != "SR" && whch_ != "LR",std::invalid_argument, "Invalid sorting string.");
 
   // convergence tolerance
-  convtol_ = pl.get("Convergence Tolerance",MT::prec());
+  convtol_ = pl.get("Convergence Tolerance",convtol_);
   relconvtol_ = pl.get("Relative Convergence Tolerance",relconvtol_);
   
   // locking tolerance
   useLocking_ = pl.get("Use Locking",useLocking_);
   rellocktol_ = pl.get("Relative Locking Tolerance",rellocktol_);
-  locktol_ = pl.get("Locking Tolerance",convtol_/10.0);
+  // default: should be less than convtol_
+  locktol_ = convtol_/10;
+  locktol_ = pl.get("Locking Tolerance",locktol_);
 
   // maximum number of restarts
   maxRestarts_ = pl.get("Maximum Restarts",maxRestarts_);
@@ -280,6 +337,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   const int nev = problem_->getNEV();
 
+
+
   //////////////////////////////////////////////////////////////////////////////////////
   // Sort manager
   Teuchos::RCP<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(whch_) );
@@ -292,24 +351,41 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   // Status tests
   //
   // convergence
-  Teuchos::RCP<StatusTestOrderedResNorm<ScalarType,MV,OP> > convtest 
-      = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(sorter,convtol_,nev,StatusTestOrderedResNorm<ScalarType,MV,OP>::RES_ORTH,relconvtol_) );
-  // locking
-  Teuchos::RCP<StatusTestResNorm<ScalarType,MV,OP> > locktest;
-  if (useLocking_) {
-    locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(locktol_,lockQuorum_,StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH,rellocktol_) );
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convtest;
+  if (globalTest_ == Teuchos::null) {
+    convtest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(convtol_,nev,StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH,relconvtol_) );
   }
-  // combo class
+  else {
+    convtest = globalTest_;
+  }
+  Teuchos::RCP<StatusTestWithOrdering<ScalarType,MV,OP> > ordertest 
+    = Teuchos::rcp( new StatusTestWithOrdering<ScalarType,MV,OP>(convtest,sorter,nev) );
+  // locking
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > locktest;
+  if (useLocking_) {
+    if (lockingTest_ == Teuchos::null) {
+      locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(locktol_,lockQuorum_,StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH,rellocktol_) );
+    }
+    else {
+      locktest = lockingTest_;
+    }
+  }
+  // for a non-short-circuited OR test, the order doesn't matter
   Teuchos::Array<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > alltests;
-  // for an OR test, the order doesn't matter
-  alltests.push_back(convtest);
-  if (locktest != Teuchos::null)   alltests.push_back(locktest);
-  // combo: convergence || locking 
+  alltests.push_back(ordertest);
+  if (locktest != Teuchos::null) alltests.push_back(locktest);
+  if (debugTest_ != Teuchos::null) alltests.push_back(debugTest_);
+
   Teuchos::RCP<StatusTestCombo<ScalarType,MV,OP> > combotest
     = Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP>( StatusTestCombo<ScalarType,MV,OP>::OR, alltests) );
   // printing StatusTest
-  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputtest
-    = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combotest,1,Passed ) );
+  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputtest;
+  if ( printer->isVerbosity(Debug) ) {
+    outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combotest,1,Passed+Failed+Undefined ) );
+  }
+  else {
+    outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combotest,1,Passed ) );
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
@@ -334,7 +410,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Storage
-  // for locked vectors
+  // 
+  // lockvecs will contain eigenvectors that have been determined "locked" by the status test
   int curNumLocked = 0;
   Teuchos::RCP<MV> lockvecs;
   // lockvecs is used to hold the locked eigenvectors, as well as for temporary storage when locking.
@@ -438,13 +515,21 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
       ////////////////////////////////////////////////////////////////////////////////////
       //
-      // check convergence first
+      // check user-specified debug test; if it passed, return an exception
       //
       ////////////////////////////////////////////////////////////////////////////////////
-      if (convtest->getStatus() == Passed ) {
+      if (debugTest_ != Teuchos::null && debugTest_->getStatus() == Passed) {
+        throw AnasaziError("Anasazi::BlockDavidsonSolMgr::solve(): User-specified debug status test returned Passed.");
+      }
+      ////////////////////////////////////////////////////////////////////////////////////
+      //
+      // check convergence next
+      //
+      ////////////////////////////////////////////////////////////////////////////////////
+      else if (ordertest->getStatus() == Passed ) {
         // we have convergence
-        // convtest->whichVecs() tells us which vectors from lockvecs and solver state are the ones we want
-        // convtest->howMany() will tell us how many
+        // ordertest->whichVecs() tells us which vectors from lockvecs and solver state are the ones we want
+        // ordertest->howMany() will tell us how many
         break;
       }
       ////////////////////////////////////////////////////////////////////////////////////
@@ -597,9 +682,12 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         //
         // get number,indices of vectors to be locked
         TEST_FOR_EXCEPTION(locktest->howMany() <= 0,std::logic_error,
-            "Anasazi::BlockDavidsonSolMgr::solve(): status test mistake.");
+            "Anasazi::BlockDavidsonSolMgr::solve(): status test mistake: howMany() non-positive.");
         TEST_FOR_EXCEPTION(locktest->howMany() != (int)locktest->whichVecs().size(),std::logic_error,
-            "Anasazi::BlockDavidsonSolMgr::solve(): status test mistake.");
+            "Anasazi::BlockDavidsonSolMgr::solve(): status test mistake: howMany() not consistent with whichVecs().");
+        // we should have room to lock vectors; otherwise, locking should have been deactivated
+        TEST_FOR_EXCEPTION(curNumLocked == maxLocked_,std::logic_error,
+            "Anasazi::BlockDavidsonSolMgr::solve(): status test mistake: locking not deactivated.");
         //
         // don't lock more than maxLocked_; we didn't allocate enough space.
         std::vector<int> tmp_vector_int;
@@ -841,10 +929,10 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           curlocked = MVT::CloneView(*lockvecs,curlockind);
         }
         // add locked vecs as aux vecs, along with aux vecs from problem
-        // add lockvals to convtest
+        // add lockvals to ordertest
         // disable locktest if curNumLocked == maxLocked
         {
-          convtest->setAuxVals(lockvals);
+          ordertest->setAuxVals(lockvals);
 
           Teuchos::Array< Teuchos::RCP<const MV> > aux;
           if (probauxvecs != Teuchos::null) aux.push_back(probauxvecs);
@@ -852,8 +940,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           bd_solver->setAuxVecs(aux);
 
           if (curNumLocked == maxLocked_) {
-            // disabled locking now by setting quorum to unreachable number
-            locktest->setQuorum(blockSize_+1);
+            // disabled locking now
+            combotest->removeTest(locktest);
           }
         }
 
@@ -894,7 +982,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   // clear temp space
   workMV = Teuchos::null;
 
-  sol.numVecs = convtest->howMany();
+  sol.numVecs = ordertest->howMany();
   if (sol.numVecs > 0) {
     sol.Evecs = MVT::Clone(*problem_->getInitVec(),sol.numVecs);
     sol.Espace = sol.Evecs;
@@ -902,19 +990,20 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
     std::vector<MagnitudeType> vals(sol.numVecs);
 
     // copy them into the solution
-    std::vector<int> which = convtest->whichVecs();
+    std::vector<int> which = ordertest->whichVecs();
     // indices between [0,blockSize) refer to vectors/values in the solver
-    // indices between [blockSize,blocksize+curNumLocked) refer to locked vectors/values
+    // indices between [-curNumLocked,-1] refer to locked vectors/values [0,curNumLocked)
     // everything has already been ordered by the solver; we just have to partition the two references
     std::vector<int> inlocked(0), insolver(0);
     for (unsigned int i=0; i<which.size(); i++) {
-      if (which[i] < blockSize_) {
+      if (which[i] >= 0) {
+        TEST_FOR_EXCEPTION(which[i] >= blockSize_,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): positive indexing mistake from ordertest.");
         insolver.push_back(which[i]);
       }
       else {
         // sanity check
-        TEST_FOR_EXCEPTION(which[i] >= curNumLocked+blockSize_,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): indexing mistake.");
-        inlocked.push_back(which[i] - blockSize_);
+        TEST_FOR_EXCEPTION(which[i] < -curNumLocked,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): negative indexing mistake from ordertest.");
+        inlocked.push_back(which[i] + curNumLocked);
       }
     }
 
@@ -982,6 +1071,51 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   return Converged; // return from BlockDavidsonSolMgr::solve() 
 }
 
+
+template <class ScalarType, class MV, class OP>
+void 
+BlockDavidsonSolMgr<ScalarType,MV,OP>::setGlobalStatusTest(
+    const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &global) 
+{
+  globalTest_ = global;
+}
+
+template <class ScalarType, class MV, class OP>
+const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & 
+BlockDavidsonSolMgr<ScalarType,MV,OP>::getGlobalStatusTest() const 
+{
+  return globalTest_;
+}
+
+template <class ScalarType, class MV, class OP>
+void 
+BlockDavidsonSolMgr<ScalarType,MV,OP>::setDebugStatusTest(
+    const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &debug)
+{
+  debugTest_ = debug;
+}
+
+template <class ScalarType, class MV, class OP>
+const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & 
+BlockDavidsonSolMgr<ScalarType,MV,OP>::getDebugStatusTest() const
+{
+  return debugTest_;
+}
+
+template <class ScalarType, class MV, class OP>
+void 
+BlockDavidsonSolMgr<ScalarType,MV,OP>::setLockingStatusTest(
+    const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &locking) 
+{
+  lockingTest_ = locking;
+}
+
+template <class ScalarType, class MV, class OP>
+const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & 
+BlockDavidsonSolMgr<ScalarType,MV,OP>::getLockingStatusTest() const 
+{
+  return lockingTest_;
+}
 
 } // end Anasazi namespace
 

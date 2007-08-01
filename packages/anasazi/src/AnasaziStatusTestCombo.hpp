@@ -39,23 +39,23 @@
 #include "AnasaziTypes.hpp"
 #include "AnasaziStatusTest.hpp"
 #include "Teuchos_Array.hpp"
+namespace Anasazi {
+
 
   /*! 
-    \class Anasazi::StatusTestCombo
+    \class StatusTestCombo
     \brief Status test for forming logical combinations of other status tests.
     
-    Test types include OR, AND, SEQOR and SEQAND.  The OR and AND tests
+    Test types include StatusTestCombo::OR, StatusTestCombo::AND, StatusTestCombo::SEQOR and StatusTestCombo::SEQAND.  The StatusTestCombo::OR and StatusTestCombo::AND tests
     evaluate all of the tests, in the order they were passed to the
-    StatusTestCombo.  The SEQOR and SEQAND run only the tests necessary to
+    StatusTestCombo.  The StatusTestCombo::SEQOR and StatusTestCombo::SEQAND run only the tests necessary to
     determine the final outcome, short-circuiting on the first test that
-    conclusively decides the outcome. More formally, SEQAND runs the tests in
+    conclusively decides the outcome. More formally, StatusTestCombo::SEQAND runs the tests in
     the order they were given to the StatusTestCombo class and stops after the
-    first test that evaluates ::Failed. SEQOR run the tests in the order they
+    first test that evaluates ::Failed. StatusTestCombo::SEQOR run the tests in the order they
     were given to the StatusTestCombo class and stops after the first test that
     evaluates ::Passed.
   */
-
-namespace Anasazi {
 
 
 template <class ScalarType, class MV, class OP>
@@ -89,11 +89,11 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   //! Constructor
-  //! \brief Default constructor has no tests and initializes to ComboType OR.
+  //! \brief Default constructor has no tests and initializes to StatusTestCombo::ComboType StatusTestCombo::OR.
   StatusTestCombo() : state_(Undefined) {}
 
   //! Constructor
-  //! \brief Constructor specifying the ComboType and the tests.
+  //! \brief Constructor specifying the StatusTestCombo::ComboType and the tests.
   StatusTestCombo(ComboType type, Teuchos::Array< Teuchos::RCP< StatusTest<ScalarType,MV,OP> > > tests) :
     state_(Undefined), 
     type_(type)
@@ -117,6 +117,26 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
   TestStatus getStatus() const {
     return state_;
   }
+
+  //! Get the indices for the vectors that passed the test.
+  /*!
+   * This returns some combination of the passing vectors from the 
+   * tests comprising the StatusTestCombo. The nature of the combination depends on the 
+   * StatusTestCombo::ComboType:
+   *    - StatusTestCombo::SEQOR, StatusTestCombo::OR - whichVecs() returns the union of whichVecs() from all evaluated constituent tests
+   *    - StatusTestCombo::SEQAND, StatusTestCombo::AND - whichVecs() returns the intersection of whichVecs() from all evaluated constituent tests
+   */
+  std::vector<int> whichVecs() const {
+    return ind_;
+  }
+
+  //! Get the number of vectors that passed the test.
+  //
+  // See whichVecs()
+  int howMany() const {
+    return ind_.size();
+  }
+
   //@}
 
   //! @name Accessor methods
@@ -171,7 +191,7 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
 
   //! \brief Clears the results of the last status test.
   /*! This should be distinguished from the reset() method, as it only clears the cached result from the last 
-   * status test, so that a call to getStatus() will return ::Undefined. This is necessary for the SEQOR and SEQAND
+   * status test, so that a call to getStatus() will return ::Undefined. This is necessary for the StatusTestCombo::SEQOR and StatusTestCombo::SEQAND
    * tests in the StatusTestCombo class, which may short circuit and not evaluate all of the StatusTests contained
    * in them.
   */
@@ -196,6 +216,7 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
   TestStatus state_;
   ComboType type_;
   STPArray tests_;
+  std::vector<int> ind_;
 
 };
 
@@ -235,6 +256,7 @@ TestStatus StatusTestCombo<ScalarType,MV,OP>::checkStatus( Eigensolver<ScalarTyp
 
 template <class ScalarType, class MV, class OP>
 void StatusTestCombo<ScalarType,MV,OP>::reset() {
+  ind_.resize(0);
   state_ = Undefined;
   for (iterator i=tests_.begin(); i != tests_.end(); i++) {
     (*i)->reset();
@@ -243,6 +265,7 @@ void StatusTestCombo<ScalarType,MV,OP>::reset() {
 
 template <class ScalarType, class MV, class OP>
 void StatusTestCombo<ScalarType,MV,OP>::clearStatus() {
+  ind_.resize(0);
   state_ = Undefined;
   for (iterator i=tests_.begin(); i != tests_.end(); i++) {
     (*i)->clearStatus();
@@ -276,6 +299,24 @@ TestStatus StatusTestCombo<ScalarType,MV,OP>::evalOR( Eigensolver<ScalarType,MV,
   state_ = Failed;
   for (iterator i=tests_.begin(); i != tests_.end(); i++) {
     TestStatus r = (*i)->checkStatus(solver);
+    if (i == tests_.begin()) {
+      ind_ = (*i)->whichVecs();
+      // sort ind_ for use below
+      std::sort(ind_.begin(),ind_.end());
+    }
+    else {
+      // to use set_union, ind_ must have room for the result, which will have size() <= end.size() + iwv.size()
+      // also, ind and iwv must be in ascending order; only ind_ is
+      // lastly, the return from set_union points to the last element in the union, which tells us how big the union is
+      std::vector<int> iwv = (*i)->whichVecs();
+      std::sort(iwv.begin(),iwv.end());
+      std::vector<int> tmp(ind_.size() + iwv.size());
+      std::vector<int>::iterator end;
+      end = std::set_union(ind_.begin(),ind_.end(),iwv.begin(),iwv.end(),tmp.begin());
+      tmp.resize(end - tmp.begin());
+      // ind_ will be sorted coming from set_union
+      ind_ = tmp;
+    }
     if (r == Passed) {
       state_ = Passed;
     }
@@ -292,6 +333,24 @@ TestStatus StatusTestCombo<ScalarType,MV,OP>::evalSEQOR( Eigensolver<ScalarType,
   state_ = Failed;
   for (iterator i=tests_.begin(); i != tests_.end(); i++) {
     TestStatus r = (*i)->checkStatus(solver);
+    if (i == tests_.begin()) {
+      ind_ = (*i)->whichVecs();
+      // sort ind_ for use below
+      std::sort(ind_.begin(),ind_.end());
+    }
+    else {
+      // to use set_union, ind_ must have room for the result, which will have size() <= end.size() + iwv.size()
+      // also, ind and iwv must be in ascending order; only ind_ is
+      // lastly, the return from set_union points to the last element in the union, which tells us how big the union is
+      std::vector<int> iwv = (*i)->whichVecs();
+      std::sort(iwv.begin(),iwv.end());
+      std::vector<int> tmp(ind_.size() + iwv.size());
+      std::vector<int>::iterator end;
+      end = std::set_union(ind_.begin(),ind_.end(),iwv.begin(),iwv.end(),tmp.begin());
+      tmp.resize(end - tmp.begin());
+      // ind_ will be sorted coming from set_union
+      ind_ = tmp;
+    }
     if (r == Passed) {
       state_ = Passed;
       break;
@@ -309,6 +368,24 @@ TestStatus StatusTestCombo<ScalarType,MV,OP>::evalAND( Eigensolver<ScalarType,MV
   state_ = Passed;
   for (iterator i=tests_.begin(); i != tests_.end(); i++) {
     TestStatus r = (*i)->checkStatus(solver);
+    if (i == tests_.begin()) {
+      ind_ = (*i)->whichVecs();
+      // sort ind_ for use below
+      std::sort(ind_.begin(),ind_.end());
+    }
+    else {
+      // to use set_intersection, ind_ must have room for the result, which will have size() <= end.size() + iwv.size()
+      // also, ind and iwv must be in ascending order; only ind_ is
+      // lastly, the return from set_intersection points to the last element in the intersection, which tells us how big the intersection is
+      std::vector<int> iwv = (*i)->whichVecs();
+      std::sort(iwv.begin(),iwv.end());
+      std::vector<int> tmp(ind_.size() + iwv.size());
+      std::vector<int>::iterator end;
+      end = std::set_intersection(ind_.begin(),ind_.end(),iwv.begin(),iwv.end(),tmp.begin());
+      tmp.resize(end - tmp.begin());
+      // ind_ will be sorted coming from set_intersection
+      ind_ = tmp;
+    }
     if (r == Failed) {
       state_ = Failed;
     }
@@ -325,6 +402,24 @@ TestStatus StatusTestCombo<ScalarType,MV,OP>::evalSEQAND( Eigensolver<ScalarType
   state_ = Passed;
   for (iterator i=tests_.begin(); i != tests_.end(); i++) {
     TestStatus r = (*i)->checkStatus(solver);
+    if (i == tests_.begin()) {
+      ind_ = (*i)->whichVecs();
+      // sort ind_ for use below
+      std::sort(ind_.begin(),ind_.end());
+    }
+    else {
+      // to use set_intersection, ind_ must have room for the result, which will have size() <= end.size() + iwv.size()
+      // also, ind and iwv must be in ascending order; only ind_ is
+      // lastly, the return from set_intersection points to the last element in the intersection, which tells us how big the intersection is
+      std::vector<int> iwv = (*i)->whichVecs();
+      std::sort(iwv.begin(),iwv.end());
+      std::vector<int> tmp(ind_.size() + iwv.size());
+      std::vector<int>::iterator end;
+      end = std::set_intersection(ind_.begin(),ind_.end(),iwv.begin(),iwv.end(),tmp.begin());
+      tmp.resize(end - tmp.begin());
+      // ind_ will be sorted coming from set_intersection
+      ind_ = tmp;
+    }
     if (r == Failed) {
       state_ = Failed;
       break;

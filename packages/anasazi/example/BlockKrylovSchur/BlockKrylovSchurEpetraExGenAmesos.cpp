@@ -82,9 +82,9 @@ class AmesosGenOp : public virtual Epetra_Operator
 public:
   // Basic constructor
   AmesosGenOp( Epetra_LinearProblem& problem,
-	       const Teuchos::RCP<Amesos_BaseSolver>& solver,
-	       const Teuchos::RCP<Epetra_Operator>& massMtx,
-	       bool useTranspose = false );
+               const Teuchos::RCP<Amesos_BaseSolver>& solver,
+               const Teuchos::RCP<Epetra_Operator>& massMtx,
+               bool useTranspose = false );
   // Destructor
   ~AmesosGenOp() {};
   
@@ -213,8 +213,8 @@ int main(int argc, char *argv[]) {
   MVT::MvRandom( *ivec );
   
   // Create the Epetra_Operator for the spectral transformation using the Amesos direct solver.
-  Teuchos::RCP<AmesosGenOp> Aop = Teuchos::rcp( new AmesosGenOp(AmesosProblem,
-									AmesosSolver, M) );	
+  Teuchos::RCP<AmesosGenOp> Aop 
+    = Teuchos::rcp( new AmesosGenOp(AmesosProblem, AmesosSolver, M) );
   
   Teuchos::RCP<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, M, ivec) );
@@ -261,7 +261,7 @@ int main(int argc, char *argv[]) {
     int numev = sol.numVecs;
     
     Teuchos::SerialDenseMatrix<int,double> dmatr(numev,numev);
-    Epetra_MultiVector tempvec(K->Map(), MVT::GetNumberVecs( *evecs ));	
+    Epetra_MultiVector tempvec(K->Map(), MVT::GetNumberVecs( *evecs ));
     OPT::Apply( *K, *evecs, tempvec );
     MVT::MvTransMv( 1.0, tempvec, *evecs, dmatr );
     
@@ -271,13 +271,13 @@ int main(int argc, char *argv[]) {
       cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
       cout<<"------------------------------------------------------"<<endl;
       cout<<std::setw(16)<<"Real Part"
-	  <<std::setw(16)<<"Rayleigh Error"<<endl;
+        <<std::setw(16)<<"Rayleigh Error"<<endl;
       cout<<"------------------------------------------------------"<<endl;
       for (i=0; i<numev; i++) {
-	compeval = dmatr(i,i);
-	cout<<std::setw(16)<<compeval
-	    <<std::setw(16)<<Teuchos::ScalarTraits<double>::magnitude(compeval-1.0/evals[i].realpart)
-	    <<endl;
+        compeval = dmatr(i,i);
+        cout<<std::setw(16)<<compeval
+          <<std::setw(16)<<Teuchos::ScalarTraits<double>::magnitude(compeval-1.0/evals[i].realpart)
+          <<endl;
       }
       cout<<"------------------------------------------------------"<<endl;
     }
@@ -301,9 +301,9 @@ int main(int argc, char *argv[]) {
 
 
 AmesosGenOp::AmesosGenOp( Epetra_LinearProblem& problem,
-			  const Teuchos::RCP<Amesos_BaseSolver>& solver,
-			  const Teuchos::RCP<Epetra_Operator>& massMtx,
-			  bool useTranspose )
+                          const Teuchos::RCP<Amesos_BaseSolver>& solver,
+                          const Teuchos::RCP<Epetra_Operator>& massMtx,
+                          bool useTranspose )
   : useTranspose_(useTranspose),
     solver_(solver),
     massMtx_(massMtx)

@@ -231,13 +231,13 @@ int main(int argc, char *argv[]) {
     if (MyPID==0) {
       cout.setf(std::ios_base::right, std::ios_base::adjustfield);
       cout<<std::setw(16)<<"Singular Value"
-	  <<std::setw(20)<<"Direct Residual"
-	  <<endl;
+        <<std::setw(20)<<"Direct Residual"
+        <<endl;
       cout<<"------------------------------------------------------"<<endl;
       for (i=0; i<numev; i++) {
-	cout<<std::setw(16)<<evals[i].realpart
-	    <<std::setw(20)<<directnrm[i] 
-	    <<endl;
+        cout<<std::setw(16)<<evals[i].realpart
+          <<std::setw(20)<<directnrm[i] 
+          <<endl;
       }  
       cout<<"------------------------------------------------------"<<endl;
     }

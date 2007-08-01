@@ -93,12 +93,24 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
   //! @name Status methods
   //@{ 
   /*! Check status as defined by test.
+
     \return TestStatus indicating whether the test passed or failed.
   */
   TestStatus checkStatus( Eigensolver<ScalarType,MV,OP>* solver );
 
-  //! Return the result of the most recent checkStatus call.
+  //! Return the result of the most recent checkStatus call, or undefined if it has not been run.
   TestStatus getStatus() const { return state_; }
+
+  //! Get the indices for the vectors that passed the test.
+  std::vector<int> whichVecs() const {
+    return ind_;
+  }
+
+  //! Get the number of vectors that passed the test.
+  int howMany() const {
+    return ind_.size();
+  }
+
   //@}
 
   //! @name Accessor methods
@@ -116,7 +128,7 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
 
   /*! \brief Get quorum.
    */
-  int getQuorum() {
+  int getQuorum() const {
     return quorum_;
   }
 
@@ -153,17 +165,6 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
 
   //! Returns true if the test scales the norms by the eigenvalue estimates (relative scale).
   bool getScale() {return scaled_;}
-
-  //! Get the indices for the vectors that passed the test.
-  std::vector<int> whichVecs() {
-    return ind_;
-  }
-
-  //! Get the number of vectors that passed the test.
-  int howMany() {
-    return ind_.size();
-  }
-
   //@}
 
   //! @name Reset methods
@@ -175,6 +176,7 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
     that the convergence test uses will remain.
   */
   void reset() { 
+    ind_.resize(0);
     state_ = Undefined;
   }
 
@@ -185,6 +187,7 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
    * in them.
   */
   void clearStatus() {
+    ind_.resize(0);
     state_ = Undefined;
   }
 

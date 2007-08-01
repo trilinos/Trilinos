@@ -317,9 +317,12 @@ namespace Anasazi {
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRes2Norms();
 
 
-    /*! \brief Get the 2-norms of the Ritz residuals.
+    /*! \brief Get the 2-norms of the residuals.
+     * 
+     * The Ritz residuals are not defined for the %LOBPCG iteration. Hence, this method returns the 
+     * 2-norms of the direct residuals, and is equivalent to calling getRes2Norms().
      *
-     *  \return A vector of length getCurSubspaceDim() containing the 2-norms of the current Ritz residuals.
+     *  \return A vector of length getBlockSize() containing the 2-norms of the direct residuals.
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms();
 
@@ -339,6 +342,11 @@ namespace Anasazi {
     //! @name Accessor routines from Eigensolver
     //@{ 
 
+    //! Set a new StatusTest for the solver.
+    void setStatusTest(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test);
+
+    //! Get the current StatusTest used by the solver.
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > getStatusTest() const;
 
     //! Get a constant reference to the eigenvalue problem.
     const Eigenproblem<ScalarType,MV,OP>& getProblem() const;
@@ -436,7 +444,7 @@ namespace Anasazi {
     const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
     const Teuchos::RCP<SortManager<ScalarType,MV,OP> >      sm_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       tester_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       tester_;
     const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> >  orthman_;
     //
     // Information obtained from the eigenproblem
@@ -500,7 +508,7 @@ namespace Anasazi {
     int iter_;
     // 
     // Current eigenvalues, residual norms
-    std::vector<MagnitudeType> theta_, Rnorms_, R2norms_, ritz2norms_;
+    std::vector<MagnitudeType> theta_, Rnorms_, R2norms_;
     // 
     // are the residual norms current with the residual?
     bool Rnorms_current_, R2norms_current_;
@@ -652,9 +660,7 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> 
   BlockDavidson<ScalarType,MV,OP>::getRitzRes2Norms() {
-    std::vector<MagnitudeType> ret = ritz2norms_;
-    ret.resize(curDim_);
-    return ret;
+    return this->getRes2Norms();
   }
 
 
@@ -812,7 +818,6 @@ namespace Anasazi {
     //
     int newsd = blockSize_*numBlocks_;
     theta_.resize(blockSize_*numBlocks_,NANVAL);
-    ritz2norms_.resize(blockSize_*numBlocks_,NANVAL);
     om_->print(Debug," >> Allocating V_\n");
     V_ = MVT::Clone(*tmp,newsd);
     KK_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );
@@ -857,7 +862,6 @@ namespace Anasazi {
    *
    * V_ is orthonormal, orthogonal to auxVecs_, for first curDim_ vectors
    * theta_ contains Ritz w.r.t. V_(1:curDim_)
-   * ritz2norms_ contains Ritz residuals w.r.t. V(1:curDim_)
    * X is Ritz vectors w.r.t. V_(1:curDim_)
    * KX = Op*X
    * MX = M*X if hasM_
@@ -1060,9 +1064,6 @@ namespace Anasazi {
       }
 
       std::copy(newstate.T->begin(),newstate.T->end(),theta_.begin());
-
-      // we don't have primitive ritz vector
-      for (int i=0; i<curDim_; ++i) ritz2norms_[i] = NANVAL;
     }
     else {
       // compute ritz vecs/vals
@@ -1086,20 +1087,6 @@ namespace Anasazi {
         //
         // apply the same ordering to the primitive ritz vectors
         Utils::permuteVectors(order,S);
-      }
-      // compute ritz residual norms
-      {
-        Teuchos::BLAS<int,ScalarType> blas;
-        Teuchos::SerialDenseMatrix<int,ScalarType> R(curDim_,curDim_), T(curDim_,curDim_);
-        // R = S*diag(theta) - KK*S
-        for (int i=0; i<curDim_; ++i) T(i,i) = theta_[i];
-        int info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,S,T,ZERO);
-        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidson::initialize(): Logic error calling SerialDenseMatrix::multiply.");
-        info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,*lclKK,S,ONE);
-        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidson::initialize(): Logic error calling SerialDenseMatrix::multiply.");
-        for (int i=0; i<curDim_; ++i) {
-          ritz2norms_[i] = blas.NRM2(curDim_,R[i],1);
-        }
       }
 
       // compute eigenvectors
@@ -1399,23 +1386,6 @@ namespace Anasazi {
         Utils::permuteVectors(order,curS);
       }
 
-      // compute ritz residual norms
-      {
-        Teuchos::BLAS<int,ScalarType> blas;
-        Teuchos::SerialDenseMatrix<int,ScalarType> R(curDim_,curDim_), T(curDim_,curDim_);
-        Teuchos::SerialDenseMatrix<int,ScalarType> curKK(Teuchos::View,*KK_,curDim_,curDim_),
-                                                    curS(Teuchos::View,S,curDim_,curDim_);
-        // R = S*diag(theta) - KK*S
-        for (int i=0; i<curDim_; ++i) T(i,i) = theta_[i];
-        int info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,curS,T,ZERO);
-        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidson::iterate(): Logic error calling SerialDenseMatrix::multiply.");
-        info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,curKK,curS,ONE);
-        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidson::iterate(): Logic error calling SerialDenseMatrix::multiply.");
-        for (int i=0; i<curDim_; ++i) {
-          ritz2norms_[i] = blas.NRM2(curDim_,R[i],1);
-        }
-      }
-
       // Create a view matrix of the first blockSize_ vectors
       Teuchos::SerialDenseMatrix<int,ScalarType> S1( Teuchos::View, S, curDim_, blockSize_ );
 
@@ -1511,6 +1481,22 @@ namespace Anasazi {
     return R2norms_;
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Set a new StatusTest for the solver.
+  template <class ScalarType, class MV, class OP>
+  void BlockDavidson<ScalarType,MV,OP>::setStatusTest(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) {
+    TEST_FOR_EXCEPTION(test == Teuchos::null,std::invalid_argument,
+        "Anasazi::BlockDavidson::setStatusTest() was passed a null StatusTest.");
+    tester_ = test;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Get the current StatusTest used by the solver.
+  template <class ScalarType, class MV, class OP>
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > BlockDavidson<ScalarType,MV,OP>::getStatusTest() const {
+    return tester_;
+  }
+  
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Check accuracy, orthogonality, and other debugging stuff

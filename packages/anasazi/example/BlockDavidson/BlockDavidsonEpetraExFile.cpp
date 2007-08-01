@@ -220,14 +220,14 @@ int main(int argc, char *argv[]) {
     
     // Output computed eigenvalues and their direct residuals
     if (verbose && MyPID==0) {
-      cout.setf(std::ios_base::right, std::ios_base::adjustfield);	
+      cout.setf(std::ios_base::right, std::ios_base::adjustfield);
       cout<<std::endl<< "Actual Residuals"<<std::endl;
       cout<< std::setw(16) << "Real Part"
-	  << std::setw(20) << "Direct Residual"<< std::endl;
+        << std::setw(20) << "Direct Residual"<< std::endl;
       cout<<"-----------------------------------------------------------"<<std::endl;
       for (int i=0; i<numev; i++) {
-	cout<< std::setw(16) << evals[i].realpart 
-	    << std::setw(20) << normR[i] << std::endl;
+        cout<< std::setw(16) << evals[i].realpart 
+          << std::setw(20) << normR[i] << std::endl;
       }  
       cout<<"-----------------------------------------------------------"<<std::endl;
     }

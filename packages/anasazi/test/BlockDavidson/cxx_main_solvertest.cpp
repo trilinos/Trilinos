@@ -96,9 +96,15 @@ void checks( RCP<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize, int nu
 
   if (solver->isInitialized()) 
   {
-    TEST_FOR_EXCEPTION(solver->getResNorms().size() != (unsigned int)blocksize,get_out,"getResNorms.size() does not match block.");
-    TEST_FOR_EXCEPTION(solver->getRes2Norms().size() != (unsigned int)blocksize,get_out,"getRes2Norms.size() does not match block.");
-    TEST_FOR_EXCEPTION(solver->getRitzRes2Norms().size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzRes2Norms.size() does not match getCurSubpsaceDim().");
+    TEST_FOR_EXCEPTION(solver->getResNorms().size() != (unsigned int)blocksize,get_out,"getResNorms.size() does not match block size.");
+    TEST_FOR_EXCEPTION(solver->getRes2Norms().size() != (unsigned int)blocksize,get_out,"getRes2Norms.size() does not match block size.");
+    TEST_FOR_EXCEPTION(solver->getRitzRes2Norms().size() != (unsigned int)blocksize,get_out,"getRitzRes2Norms.size() does not match size.");
+    // check residual norms for consitency
+    std::vector<double> RN2 = solver->getRes2Norms();
+    std::vector<double> RR2 = solver->getRitzRes2Norms();
+    for (int i=0; i<blocksize; i++) {
+      TEST_FOR_EXCEPTION(RN2[i] != RR2[i],get_out,"getRitzRes2Norms() values do not match getRes2Norms() values.");
+    }
     // check ritz values
     std::vector<Value<ScalarType> > theta = solver->getRitzValues();
     TEST_FOR_EXCEPTION(theta.size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzValues().size() does not match getCurSubspaceDim().");

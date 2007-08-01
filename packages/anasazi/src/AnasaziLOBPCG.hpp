@@ -97,37 +97,51 @@ namespace Anasazi {
    *
    * This struct is utilized by LOBPCG::initialize() and LOBPCG::getState().
    */
-  template <class ScalarType, class MV>
+  template <class ScalarType, class MultiVector>
   struct LOBPCGState {
+    //! The current test basis.
+    Teuchos::RCP<const MultiVector> V; 
+    //! The image of the current test basis under K.
+    Teuchos::RCP<const MultiVector> KV; 
+    //! The image of the current test basis under M, or Teuchos::null if M was not specified.
+    Teuchos::RCP<const MultiVector> MV;
+
     //! The current eigenvectors.
-    Teuchos::RCP<const MV> X; 
+    Teuchos::RCP<const MultiVector> X; 
     //! The image of the current eigenvectors under K.
-    Teuchos::RCP<const MV> KX; 
+    Teuchos::RCP<const MultiVector> KX; 
     //! The image of the current eigenvectors under M, or Teuchos::null if M was not specified.
-    Teuchos::RCP<const MV> MX;
+    Teuchos::RCP<const MultiVector> MX;
+
     //! The current search direction.
-    Teuchos::RCP<const MV> P; 
+    Teuchos::RCP<const MultiVector> P; 
     //! The image of the current search direction under K.
-    Teuchos::RCP<const MV> KP; 
+    Teuchos::RCP<const MultiVector> KP; 
     //! The image of the current search direction under M, or Teuchos::null if M was not specified.
-    Teuchos::RCP<const MV> MP;
+    Teuchos::RCP<const MultiVector> MP;
+
     /*! \brief The current preconditioned residual vectors.
      *
      *  H is only useful when LOBPCG::iterate() throw a LOBPCGRitzFailure exception.
      */
-    Teuchos::RCP<const MV> H; 
+    Teuchos::RCP<const MultiVector> H; 
     //! The image of the current preconditioned residual vectors under K.
-    Teuchos::RCP<const MV> KH; 
+    Teuchos::RCP<const MultiVector> KH; 
     //! The image of the current preconditioned residual vectors under M, or Teuchos::null if M was not specified.
-    Teuchos::RCP<const MV> MH;
+    Teuchos::RCP<const MultiVector> MH;
+
     //! The current residual vectors.
-    Teuchos::RCP<const MV> R;
+    Teuchos::RCP<const MultiVector> R;
+
     //! The current Ritz values.
     Teuchos::RCP<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
-    LOBPCGState() : X(Teuchos::null),KX(Teuchos::null),MX(Teuchos::null),
-                    P(Teuchos::null),KP(Teuchos::null),MP(Teuchos::null),
-                    H(Teuchos::null),KH(Teuchos::null),MH(Teuchos::null),
-                    R(Teuchos::null),T(Teuchos::null) {};
+
+    LOBPCGState() : 
+      V(Teuchos::null),KV(Teuchos::null),MV(Teuchos::null),
+      X(Teuchos::null),KX(Teuchos::null),MX(Teuchos::null),
+      P(Teuchos::null),KP(Teuchos::null),MP(Teuchos::null),
+      H(Teuchos::null),KH(Teuchos::null),MH(Teuchos::null),
+      R(Teuchos::null),T(Teuchos::null) {};
   };
 
   //@}
@@ -252,9 +266,11 @@ namespace Anasazi {
     /*! \brief Initialize the solver to an iterate, optionally providing the
      * Ritz values, residual, and search direction.
      *
+     * \note LOBPCGState contains fields V, KV and MV: These are ignored by initialize()
+     *
      * The %LOBPCG eigensolver contains a certain amount of state relating to
      * the current iterate, including the current residual, the current search
-     * direction, and the images of these spaces under the operators.
+     * direction, and the images of these spaces under the eigenproblem operators.
      *
      * initialize() gives the user the opportunity to manually set these,
      * although this must be done with caution, abiding by the rules
@@ -289,7 +305,7 @@ namespace Anasazi {
      *   - MX == M*X if M != Teuchos::null\n
      *     Otherwise, MX == Teuchos::null
      *   - getRitzValues() returns the sorted Ritz values with respect to X
-     *   - getResidualVecs() returns the residual vectors with respect to X
+     *   - getResNorms(), getRes2Norms(), getRitzResNorms() are correct
      *   - If hasP() == \c true,
      *      - P orthogonal to auxiliary vectors
      *      - If getFullOrtho() == \c true,
@@ -351,7 +367,7 @@ namespace Anasazi {
 
     /*! \brief Get the current residual norms
      *
-     *  \return A vector of length getCurSubspaceDim() containing the norms of the
+     *  \return A vector of length getBlockSize() containing the norms of the
      *  residuals, with respect to the orthogonalization manager norm() method.
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getResNorms();
@@ -359,15 +375,18 @@ namespace Anasazi {
 
     /*! \brief Get the current residual 2-norms
      *
-     *  \return A vector of length getCurSubspaceDim() containing the 2-norms of the
+     *  \return A vector of length getBlockSize() containing the 2-norms of the
      *  residuals. 
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRes2Norms();
 
 
-    /*! \brief Get the 2-norms of the Ritz residuals.
+    /*! \brief Get the 2-norms of the residuals.
+     * 
+     * The Ritz residuals are not defined for the %LOBPCG iteration. Hence, this method returns the 
+     * 2-norms of the direct residuals, and is equivalent to calling getRes2Norms().
      *
-     *  \return A vector of length getCurSubspaceDim() containing the 2-norms of the Ritz residuals.
+     *  \return A vector of length getBlockSize() containing the 2-norms of the direct residuals.
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms();
 
@@ -392,6 +411,11 @@ namespace Anasazi {
     //!  @name Accessor routines from Eigensolver
     //@{
 
+    //! Set a new StatusTest for the solver.
+    void setStatusTest(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test);
+
+    //! Get the current StatusTest used by the solver.
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > getStatusTest() const;
 
     //! Get a constant reference to the eigenvalue problem.
     const Eigenproblem<ScalarType,MV,OP>& getProblem() const;
@@ -495,7 +519,7 @@ namespace Anasazi {
     const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
     const Teuchos::RCP<SortManager<ScalarType,MV,OP> >      sm_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       tester_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       tester_;
     const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> >  orthman_;
     //
     // Information obtained from the eigenproblem
@@ -571,7 +595,7 @@ namespace Anasazi {
     int iter_;
     // 
     // Current eigenvalues, residual norms
-    std::vector<MagnitudeType> theta_, Rnorms_, R2norms_, ritz2norms_;
+    std::vector<MagnitudeType> theta_, Rnorms_, R2norms_;
     // 
     // are the residual norms current with the residual?
     bool Rnorms_current_, R2norms_current_;
@@ -737,7 +761,6 @@ namespace Anasazi {
 
       // these are shrink operations which preserve their data
       theta_.resize(3*newBS);
-      ritz2norms_.resize(3*newBS);
       Rnorms_.resize(newBS);
       R2norms_.resize(newBS);
 
@@ -807,7 +830,6 @@ namespace Anasazi {
 
       // allocate scalar vectors
       theta_.resize(3*newBS,NANVAL);
-      ritz2norms_.resize(3*newBS,NANVAL);
       Rnorms_.resize(newBS,NANVAL);
       R2norms_.resize(newBS,NANVAL);
       
@@ -1089,7 +1111,6 @@ namespace Anasazi {
     // set up Ritz values
     //----------------------------------------
     theta_.resize(3*blockSize_,NANVAL);
-    ritz2norms_.resize(3*blockSize_,NANVAL);
     if (newstate.T != Teuchos::null) {
       TEST_FOR_EXCEPTION( (signed int)(newstate.T->size()) < blockSize_,
                           std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.T must contain at least block size Ritz values.");
@@ -1131,24 +1152,6 @@ namespace Anasazi {
         //
         // apply the same ordering to the primitive ritz vectors
         Utils::permuteVectors(order,S);
-      }
-
-      // compute ritz residual norms
-      {
-        Teuchos::BLAS<int,ScalarType> blas;
-        Teuchos::SerialDenseMatrix<int,ScalarType> R(blockSize_,blockSize_);
-        // R = MM*S*diag(theta) - KK*S
-        int info;
-        info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,MM,S,ZERO);
-        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::LOBPCG::initialize(): Logic error calling SerialDenseMatrix::multiply.");
-        for (int i=0; i<blockSize_; i++) {
-          blas.SCAL(blockSize_,theta_[i],R[i],1);
-        }
-        info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,KK,S,ONE);
-        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::LOBPCG::initialize(): Logic error calling SerialDenseMatrix::multiply.");
-        for (int i=0; i<blockSize_; i++) {
-          ritz2norms_[i] = blas.NRM2(blockSize_,R[i],1);
-        }
       }
 
       // update the solution, use R for storage
@@ -1416,8 +1419,8 @@ namespace Anasazi {
       //    P' [KP]
       //    P' [MP]
       //    [X H P] CX
-      //    { [X H P] CP    if  fullOrtho
-      //    {   [H P] CP    if !fullOrtho
+      //       [X H P] CP    if  fullOrtho
+      //         [H P] CP    if !fullOrtho
       //
       // since M[X H P] is potentially the same memory as [X H P], and 
       // because we are not allowed to have overlapping non-const views of 
@@ -1575,26 +1578,6 @@ namespace Anasazi {
         //
         // Sort the primitive ritz vectors
         Utils::permuteVectors(order,lclS);
-      }
-
-      //
-      //----------------------------------------
-      // Compute ritz residual norms
-      //----------------------------------------
-      {
-        Teuchos::SerialDenseMatrix<int,ScalarType> R(nevLocal_,nevLocal_);
-        // R = MM*S*diag(theta) - KK*S
-        int info;
-        info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,lclS,ZERO);
-        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply.");
-        for (int i=0; i<nevLocal_; i++) {
-          blas.SCAL(nevLocal_,theta_[i],R[i],1);
-        }
-        info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,lclKK,lclS,ONE);
-        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply.");
-        for (int i=0; i<nevLocal_; i++) {
-          ritz2norms_[i] = blas.NRM2(nevLocal_,R[i],1);
-        }
       }
 
       //
@@ -2174,9 +2157,7 @@ namespace Anasazi {
   std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> 
   LOBPCG<ScalarType,MV,OP>::getRitzRes2Norms() 
   {
-    std::vector<MagnitudeType> ret = ritz2norms_;
-    ret.resize(nevLocal_);
-    return ret;
+    return this->getRes2Norms();
   }
 
   
@@ -2201,6 +2182,21 @@ namespace Anasazi {
     return ret;
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Set a new StatusTest for the solver.
+  template <class ScalarType, class MV, class OP>
+  void LOBPCG<ScalarType,MV,OP>::setStatusTest(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) {
+    TEST_FOR_EXCEPTION(test == Teuchos::null,std::invalid_argument,
+        "Anasazi::LOBPCG::setStatusTest() was passed a null StatusTest.");
+    tester_ = test;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Get the current StatusTest used by the solver.
+  template <class ScalarType, class MV, class OP>
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > LOBPCG<ScalarType,MV,OP>::getStatusTest() const {
+    return tester_;
+  }
   
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // return the current ritz vectors
@@ -2231,6 +2227,8 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   LOBPCGState<ScalarType,MV> LOBPCG<ScalarType,MV,OP>::getState() const {
     LOBPCGState<ScalarType,MV> state;
+    state.V = V_;
+    state.KV = KV_;
     state.X = X_;
     state.KX = KX_;
     state.P = P_;
@@ -2240,6 +2238,7 @@ namespace Anasazi {
     state.R = R_;
     state.T = Teuchos::rcp(new std::vector<MagnitudeType>(theta_));
     if (hasM_) {
+      state.MV = MV_;
       state.MX = MX_;
       state.MP = MP_;
       state.MH = MH_;

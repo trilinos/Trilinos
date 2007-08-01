@@ -322,6 +322,12 @@ namespace Anasazi {
     //! @name Accessor routines
     //@{ 
 
+    //! Set a new StatusTest for the solver.
+    void setStatusTest(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test);
+
+    //! Get the current StatusTest used by the solver.
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > getStatusTest() const;
+
     //! Get a constant reference to the eigenvalue problem.
     const Eigenproblem<ScalarType,MV,OP>& getProblem() const { return(*problem_); };
 
@@ -457,7 +463,7 @@ namespace Anasazi {
     const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> >     problem_;
     const Teuchos::RCP<SortManager<ScalarType,MV,OP> >      sm_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       tester_;
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       tester_;
     const Teuchos::RCP<OrthoManager<ScalarType,MV> >        orthman_;
     //
     // Information obtained from the eigenproblem
@@ -769,6 +775,14 @@ namespace Anasazi {
   {     
     TEST_FOR_EXCEPTION(problem_ == Teuchos::null,std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user specified null problem pointer.");
+    TEST_FOR_EXCEPTION(sm_ == Teuchos::null,std::invalid_argument,
+                       "Anasazi::BlockKrylovSchur::constructor: user passed null sort manager pointer.");
+    TEST_FOR_EXCEPTION(om_ == Teuchos::null,std::invalid_argument,
+                       "Anasazi::BlockKrylovSchur::constructor: user passed null output manager pointer.");
+    TEST_FOR_EXCEPTION(tester_ == Teuchos::null,std::invalid_argument,
+                       "Anasazi::BlockKrylovSchur::constructor: user passed null status test pointer.");
+    TEST_FOR_EXCEPTION(orthman_ == Teuchos::null,std::invalid_argument,
+                       "Anasazi::BlockKrylovSchur::constructor: user passed null orthogonalization manager pointer.");
     TEST_FOR_EXCEPTION(problem_->isProblemSet() == false, std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user specified problem is not set.");
 
@@ -1492,6 +1506,23 @@ namespace Anasazi {
       } // if (!ritzVecsCurrent_)      
     } // if (curDim_)    
   } // computeRitzVectors()
+
+  
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Set a new StatusTest for the solver.
+  template <class ScalarType, class MV, class OP>
+  void BlockKrylovSchur<ScalarType,MV,OP>::setStatusTest(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) {
+    TEST_FOR_EXCEPTION(test == Teuchos::null,std::invalid_argument,
+        "Anasazi::BlockKrylovSchur::setStatusTest() was passed a null StatusTest.");
+    tester_ = test;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Get the current StatusTest used by the solver.
+  template <class ScalarType, class MV, class OP>
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > BlockKrylovSchur<ScalarType,MV,OP>::getStatusTest() const {
+    return tester_;
+  }
   
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1702,7 +1733,7 @@ namespace Anasazi {
   
     } // if (curDim_) ...
   
-    } // computeSchurForm( ... )
+  } // computeSchurForm( ... )
   
 
   //////////////////////////////////////////////////////////////////////////////////////////////////

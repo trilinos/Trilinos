@@ -72,13 +72,20 @@ class StatusTest {
   //! @name Status methods
   //@{ 
   /*! Check status as defined by test.
-    
+
     \return TestStatus indicating whether the test passed or failed.
   */
   virtual TestStatus checkStatus( Eigensolver<ScalarType,MV,OP>* solver ) = 0;
 
   //! Return the result of the most recent checkStatus call, or undefined if it has not been run.
   virtual TestStatus getStatus() const = 0;
+
+  //! Get the indices for the vectors that passed the test.
+  virtual std::vector<int> whichVecs() const = 0;
+
+  //! Get the number of vectors that passed the test.
+  virtual int howMany() const = 0;
+
   //@}
 
   //! @name Reset methods

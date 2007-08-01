@@ -38,36 +38,70 @@
 
 #include "AnasaziEigenproblem.hpp"
 #include "AnasaziSolverManager.hpp"
+#include "AnasaziSolverUtils.hpp"
 
 #include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "AnasaziBasicOrthoManager.hpp"
-#include "AnasaziStatusTestMaxIters.hpp"
 #include "AnasaziStatusTestResNorm.hpp"
-#include "AnasaziStatusTestOrderedResNorm.hpp"
+#include "AnasaziStatusTestWithOrdering.hpp"
 #include "AnasaziStatusTestCombo.hpp"
 #include "AnasaziStatusTestOutput.hpp"
 #include "AnasaziBasicOutputManager.hpp"
-#include "AnasaziSolverUtils.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+
 /** \example BlockKrylovSchur/BlockKrylovSchurEpetraEx.cpp
-    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager.
+    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager, using Epetra data structures.
 */
 
-/*! \class Anasazi::BlockKrylovSchurSolMgr
+/** \example BlockKrylovSchur/BlockKrylovSchurEpetraExGenAmesos.cpp
+    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data stuctures and the Amesos solver package.
+*/
+
+/** \example BlockKrylovSchur/BlockKrylovSchurEpetraExGenAztecOO.cpp
+    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data stuctures and the AztecOO solver package.
+*/
+
+/** \example BlockKrylovSchur/BlockKrylovSchurEpetraExGenBelos.cpp
+    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data stuctures and the Belos solver package.
+*/
+
+/** \example BlockKrylovSchur/BlockKrylovSchurEpetraExSVD.cpp
+    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager to compute an SVD, using Epetra data structures.
+*/
+
+namespace Anasazi {
+
+
+/*! \class BlockKrylovSchurSolMgr
  *
- *  \brief The Anasazi::BlockKrylovSchurSolMgr provides a powerful and fully-featured solver manager over the BlockKrylovSchur eigensolver.
+ *  \brief The Anasazi::BlockKrylovSchurSolMgr provides a flexible solver manager over the BlockKrylovSchur eigensolver.
+ *
+ * The solver manager provides to the solver a StatusTestCombo object constructed as follows:<br>
+ *    &nbsp;&nbsp;&nbsp;<tt>combo = globaltest OR debugtest</tt><br>
+ * where
+ *    - \c globaltest terminates computation when global convergence has been detected.<br>
+ *      It is encapsulated in a StatusTestWithOrdering object, to ensure that computation is terminated
+ *      only after the most significant eigenvalues/eigenvectors have met the convergence criteria.<br>
+ *      If not specified via setGlobalStatusTest(), this test is a StatusTestResNorm object which tests the
+ *      2-norms of the Ritz residuals relative to the Ritz values.
+ *    - \c debugtest allows a user to specify additional monitoring of the iteration, encapsulated in a StatusTest object<br>
+ *      If not specified via setDebugStatusTest(), \c debugtest is ignored.<br> 
+ *      In most cases, it should return ::Failed; if it returns ::Passed, solve() will throw an AnasaziError exception.
+ *
+ * Additionally, the solver manager will terminate solve() after a specified number of restarts.
+ * 
+ * Much of this behavior is controlled via parameters and options passed to the
+ * solver manager. For more information, see BlockKrylovSchurSolMgr().
 
  \ingroup anasazi_solver_framework
 
  \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
  */
-
-namespace Anasazi {
 
 template<class ScalarType, class MV, class OP>
 class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
@@ -88,16 +122,19 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
    *
    * This constructor accepts the Eigenproblem to be solved in addition
    * to a parameter list of options for the solver manager. These options include the following:
-   *   - "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: "LM"
-   *   - "Block Size" - a \c int specifying the block size to be used by the underlying block Krylov-Schur solver. Default: 1
-   *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 3*nev
-   *   - "Extra NEV Blocks" - a \c int specifying the number of extra blocks the solver should keep in addition to those
-          required to compute the number of eigenvalues requested.  Default: 0
-   *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
-   *   - "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS and SVQB. Default: "SVQB"
-   *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
-   *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
-   *   - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
+   *   - Solver parameters
+   *      - "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: "LM"
+   *      - "Block Size" - a \c int specifying the block size to be used by the underlying block Krylov-Schur solver. Default: 1
+   *      - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 3*nev
+   *      - "Extra NEV Blocks" - a \c int specifying the number of extra blocks the solver should keep in addition to those
+             required to compute the number of eigenvalues requested.  Default: 0
+   *      - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
+   *      - "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS and SVQB. Default: "SVQB"
+   *      - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
+   *   - Convergence parameters
+   *      - Locking parameters (if using default locking test; see setLockingStatusTest())
+   *      - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
+   *      - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
    */
   BlockKrylovSchurSolMgr( const Teuchos::RCP<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
@@ -152,8 +189,21 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
    * \returns ::ReturnType specifying:
    *     - ::Converged: the eigenproblem was solved to the specification required by the solver manager.
    *     - ::Unconverged: the eigenproblem was not solved to the specification desired by the solver manager.
-   */
+  */
   ReturnType solve();
+
+  //! Set the status test defining global convergence.
+  void setGlobalStatusTest(const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &global);
+
+  //! Get the status test defining global convergence.
+  const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & getGlobalStatusTest() const;
+
+  //! Set the status test for debugging.
+  void setDebugStatusTest(const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &debug);
+
+  //! Get the status test for debugging.
+  const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & getDebugStatusTest() const;
+
   //@}
 
   private:
@@ -174,6 +224,8 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   Teuchos::RCP<Teuchos::Time> _timerSolve, _timerRestarting;
 
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > globalTest_;
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugTest_;
 };
 
 
@@ -304,16 +356,34 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   // Status tests
   //
   // convergence
-  Teuchos::RCP<StatusTestOrderedResNorm<ScalarType,MV,OP> > convtest 
-    = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(_sort,_convtol,nev,StatusTestOrderedResNorm<ScalarType,MV,OP>::RITZRES_2NORM,_relconvtol) );
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convtest;
+  if (globalTest_ == Teuchos::null) {
+    convtest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(_convtol,nev,StatusTestResNorm<ScalarType,MV,OP>::RITZRES_2NORM,_relconvtol) );
+  }
+  else {
+    convtest = globalTest_;
+  }
+  Teuchos::RCP<StatusTestWithOrdering<ScalarType,MV,OP> > ordertest 
+    = Teuchos::rcp( new StatusTestWithOrdering<ScalarType,MV,OP>(convtest,_sort,nev) );
+  // for a non-short-circuited OR test, the order doesn't matter
+  Teuchos::Array<Teuchos::RCP<StatusTest<ScalarType,MV,OP> > > alltests;
+  alltests.push_back(ordertest);
 
+  if (debugTest_ != Teuchos::null) alltests.push_back(debugTest_);
+
+  Teuchos::RCP<StatusTestCombo<ScalarType,MV,OP> > combotest
+    = Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP>( StatusTestCombo<ScalarType,MV,OP>::OR, alltests) );
   // printing StatusTest
-  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputtest
-    = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,convtest,1,Passed ) );
+  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputtest;
+  if ( printer->isVerbosity(Debug) ) {
+    outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combotest,1,Passed+Failed+Undefined ) );
+  }
+  else {
+    outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combotest,1,Passed ) );
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
-  //
   Teuchos::RCP<OrthoManager<ScalarType,MV> > ortho; 
   if (_ortho=="SVQB") {
     ortho = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(_problem->getM()) );
@@ -390,10 +460,10 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
         // check convergence first
         //
         ////////////////////////////////////////////////////////////////////////////////////
-        if (convtest->getStatus() == Passed ) {
+        if (ordertest->getStatus() == Passed ) {
           // we have convergence
-          // convtest->whichVecs() tells us which vectors from solver state are the ones we want
-          // convtest->howMany() will tell us how many
+          // ordertest->whichVecs() tells us which vectors from solver state are the ones we want
+          // ordertest->howMany() will tell us how many
           break;
         }
         ////////////////////////////////////////////////////////////////////////////////////
@@ -588,11 +658,11 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
     //
     // free temporary space
     workMV = Teuchos::null;
-  
+
     // Get the most current Ritz values before we return
     _ritzValues = bks_solver->getRitzValues();
-    
-    sol.numVecs = convtest->howMany();
+
+    sol.numVecs = ordertest->howMany();
     if (sol.numVecs > 0) {
       sol.index = bks_solver->getRitzIndex();
       sol.Evals = bks_solver->getRitzValues();
@@ -628,6 +698,36 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   return Converged; // return from BlockKrylovSchurSolMgr::solve() 
 }
 
+
+template <class ScalarType, class MV, class OP>
+void 
+BlockKrylovSchurSolMgr<ScalarType,MV,OP>::setGlobalStatusTest(
+    const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &global) 
+{
+  globalTest_ = global;
+}
+
+template <class ScalarType, class MV, class OP>
+const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & 
+BlockKrylovSchurSolMgr<ScalarType,MV,OP>::getGlobalStatusTest() const 
+{
+  return globalTest_;
+}
+
+template <class ScalarType, class MV, class OP>
+void 
+BlockKrylovSchurSolMgr<ScalarType,MV,OP>::setDebugStatusTest(
+    const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > &debug)
+{
+  debugTest_ = debug;
+}
+
+template <class ScalarType, class MV, class OP>
+const Teuchos::RCP< StatusTest<ScalarType,MV,OP> > & 
+BlockKrylovSchurSolMgr<ScalarType,MV,OP>::getDebugStatusTest() const
+{
+  return debugTest_;
+}
 
 } // end Anasazi namespace
 

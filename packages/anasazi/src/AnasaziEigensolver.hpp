@@ -149,6 +149,12 @@ class Eigensolver {
     //! @name Accessor methods
   //@{ 
 
+  //! Set a new StatusTest for the solver.
+  virtual void setStatusTest(Teuchos::RCP<StatusTest<ScalarType,MV,OP> > test) = 0;
+
+  //! Get the current StatusTest used by the solver.
+  virtual Teuchos::RCP<StatusTest<ScalarType,MV,OP> > getStatusTest() const = 0;
+
   //! Get a constant reference to the eigenvalue problem.
   virtual const Eigenproblem<ScalarType,MV,OP>& getProblem() const = 0;
 

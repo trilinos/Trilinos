@@ -100,9 +100,15 @@ void checks( RCP<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool fullorth
 
   if (solver->isInitialized()) 
   {
-    TEST_FOR_EXCEPTION(solver->getResNorms().size() != (unsigned int)blocksize,get_out,"getResNorms.size() does not match block.");
-    TEST_FOR_EXCEPTION(solver->getRes2Norms().size() != (unsigned int)blocksize,get_out,"getRes2Norms.size() does not match block.");
-    TEST_FOR_EXCEPTION(solver->getRitzRes2Norms().size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzRes2Norms.size() does not match getCurSubpsaceDim().");
+    TEST_FOR_EXCEPTION(solver->getResNorms().size() != (unsigned int)blocksize,get_out,"getResNorms.size() does not match block size.");
+    TEST_FOR_EXCEPTION(solver->getRes2Norms().size() != (unsigned int)blocksize,get_out,"getRes2Norms.size() does not match block size.");
+    TEST_FOR_EXCEPTION(solver->getRitzRes2Norms().size() != (unsigned int)blocksize,get_out,"getRitzRes2Norms.size() does not match block size.");
+    // check residual norms for consitency
+    std::vector<double> RN2 = solver->getRes2Norms();
+    std::vector<double> RR2 = solver->getRitzRes2Norms();
+    for (int i=0; i<blocksize; i++) {
+      TEST_FOR_EXCEPTION(RN2[i] != RR2[i],get_out,"getRitzRes2Norms() values do not match getRes2Norms() values.");
+    }
     // check residuals
     RCP<const MV> evecs = state.X;
     RCP<MV> Kevecs, Mevecs;

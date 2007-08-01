@@ -80,7 +80,7 @@ CORE_H = \
 	$(srcdir)/AnasaziStatusTestDecl.hpp \
 	$(srcdir)/AnasaziStatusTestCombo.hpp \
 	$(srcdir)/AnasaziStatusTestMaxIters.hpp \
-	$(srcdir)/AnasaziStatusTestOrderedResNorm.hpp \
+	$(srcdir)/AnasaziStatusTestWithOrdering.hpp \
 	$(srcdir)/AnasaziStatusTestOutput.hpp \
 	$(srcdir)/AnasaziStatusTestResNorm.hpp \
 	$(srcdir)/AnasaziSVQBOrthoManager.hpp \

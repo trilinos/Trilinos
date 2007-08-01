@@ -95,6 +95,17 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
   TestStatus getStatus() const {
     return state_;
   }
+
+  //! Get the indices for the vectors that passed the test.
+  std::vector<int> whichVecs() const {
+    return std::vector<int>(0);
+  }
+
+  //! Get the number of vectors that passed the test.
+  int howMany() const {
+    return 0;
+  }
+
   //@}
 
   //! @name Accessor methods

@@ -172,8 +172,8 @@ int main(int argc, char *argv[])
   MyPL.set( "Verbosity", verbosity );
   MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Maximum Iterations", maxIters );
   MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set( "Maximum Iterations", maxIters );
   MyPL.set( "Use Locking", true );
   MyPL.set( "Locking Tolerance", tol/10 );
   MyPL.set( "Full Ortho", fullOrtho );

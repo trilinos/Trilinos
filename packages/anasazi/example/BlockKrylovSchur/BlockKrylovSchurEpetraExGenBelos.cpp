@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
   // Create the Belos::LinearProblem
   //
   Teuchos::RCP<Belos::LinearProblem<double,Epetra_MultiVector,Epetra_Operator> > 
-	  My_LP = Teuchos::rcp( new Belos::LinearProblem<double,Epetra_MultiVector,Epetra_Operator>() );
+    My_LP = Teuchos::rcp( new Belos::LinearProblem<double,Epetra_MultiVector,Epetra_Operator>() );
   My_LP->setOperator( K );
 
   // Create the Belos preconditioned operator from the Ifpack preconditioner.
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
   MVT::MvRandom( *ivec );
   
   // Call the ctor that calls the petra ctor for a matrix
-  Teuchos::RCP<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(BelosOp, M, false) );	
+  Teuchos::RCP<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(BelosOp, M, false) );
   
   Teuchos::RCP<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, M, ivec) );
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
   if (numev > 0) {
 
     Teuchos::SerialDenseMatrix<int,double> dmatr(numev,numev);
-    Epetra_MultiVector tempvec(K->Map(), MVT::GetNumberVecs( *evecs ));	
+    Epetra_MultiVector tempvec(K->Map(), MVT::GetNumberVecs( *evecs ));
     OPT::Apply( *K, *evecs, tempvec );
     MVT::MvTransMv( 1.0, tempvec, *evecs, dmatr );
     
@@ -264,13 +264,13 @@ int main(int argc, char *argv[]) {
       cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
       cout<<"------------------------------------------------------"<<endl;
       cout<<std::setw(16)<<"Real Part"
-	  <<std::setw(16)<<"Rayleigh Error"<<endl;
+        <<std::setw(16)<<"Rayleigh Error"<<endl;
       cout<<"------------------------------------------------------"<<endl;
       for (i=0; i<numev; i++) {
-	compeval = dmatr(i,i);
-	cout<<std::setw(16)<<compeval
-	    <<std::setw(16)<<Teuchos::ScalarTraits<double>::magnitude(compeval-1.0/evals[i].realpart)
-	    <<endl;
+        compeval = dmatr(i,i);
+        cout<<std::setw(16)<<compeval
+          <<std::setw(16)<<Teuchos::ScalarTraits<double>::magnitude(compeval-1.0/evals[i].realpart)
+          <<endl;
       }
       cout<<"------------------------------------------------------"<<endl;
     }
