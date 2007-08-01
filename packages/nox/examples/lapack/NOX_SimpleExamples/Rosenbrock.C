@@ -195,10 +195,11 @@ int main()
   lineSearchParameters.set("Method","More'-Thuente");
 
   // Create the solver
-  NOX::Solver::Manager solver(grp, statusTestsCombo, solverParametersPtr);
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(grp, statusTestsCombo, solverParametersPtr);
 
   // Solve the nonlinesar system
-  NOX::StatusTest::StatusType status = solver.solve();
+  NOX::StatusTest::StatusType status = solver->solve();
 
   // Warn user if solve failed
   if (status != NOX::StatusTest::Converged)
@@ -206,11 +207,11 @@ int main()
 
   // Print the parameter list
   cout << "\n" << "-- Parameter List From Solver --" << "\n";
-  solver.getList().print(cout);
+  solver->getList().print(cout);
 
   // Get the answer
   NOX::LAPACK::Group solnGrp = 
-    dynamic_cast<const NOX::LAPACK::Group&>(solver.getSolutionGroup());
+    dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup());
   
   // Print the answer
   cout << "\n" << "-- Final Solution From Solver --" << "\n";

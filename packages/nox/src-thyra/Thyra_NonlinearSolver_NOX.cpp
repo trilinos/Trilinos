@@ -95,20 +95,13 @@ solve(VectorBase<double> *x,
  
   NOX::Thyra::Vector initial_guess(Teuchos::rcp(x, false));  // View of x
 
-  if (Teuchos::is_null(nox_group_)) {
+  if (Teuchos::is_null(solver_)) {
     nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_));
+    status_test_ = this->buildStatusTests(*param_list_);
+    solver_ = NOX::Solver::buildSolver(nox_group_, status_test_, param_list_);
   }
   else
-    nox_group_->setX(initial_guess);
-
-  if (Teuchos::is_null(status_test_))
-    status_test_ = this->buildStatusTests(*param_list_);
-
-  if (Teuchos::is_null(solver_))
-    solver_ = Teuchos::rcp(new NOX::Solver::Manager(nox_group_, status_test_, 
-						    param_list_));
-  else
-    solver_->reset(nox_group_);
+    solver_->reset(initial_guess);
 
   NOX::StatusTest::StatusType solvStatus = solver_->solve();
   

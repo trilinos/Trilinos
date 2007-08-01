@@ -518,7 +518,8 @@ int main(int argc, char *argv[])
 #endif
 
   // Create the solver
-  NOX::Solver::Manager solver(grpPtr, combo, nlParamsPtr);
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
 
   // Overall status flag
   int ierr = 0;
@@ -530,7 +531,7 @@ int main(int argc, char *argv[])
 
     utils.out() << "Time Step: " << timeStep << ",\tTime: " << time << endl;
   
-    NOX::StatusTest::StatusType status = solver.solve();
+    NOX::StatusTest::StatusType status = solver->solve();
 
     // Check for convergence
     if (status != NOX::StatusTest::Converged) {
@@ -541,7 +542,7 @@ int main(int argc, char *argv[])
 
     
     // Get the Epetra_Vector with the final solution from the solver
-    const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+    const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
     const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
     //Epetra_Vector& exactSolution = interface->getExactSoln(time);
     
@@ -560,7 +561,7 @@ int main(int argc, char *argv[])
 
     interface->reset(finalSolution);
     grp.setX(finalSolution);
-    solver.reset(grpPtr, combo, nlParamsPtr);
+    solver->reset(grp.getX(), combo);
     grp.computeF();
 
   } // end time step while loop
@@ -569,7 +570,7 @@ int main(int argc, char *argv[])
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     utils.out() << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    solver.getList().print(utils.out());
+    solver->getList().print(utils.out());
     utils.out() << endl;
   }
 
@@ -578,12 +579,12 @@ int main(int argc, char *argv[])
 #ifndef HAVE_MPI 
   // 1. Linear solve iterations on final time step (30)- SERIAL TEST ONLY!
   //    The number of linear iterations changes with # of procs.
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 30) {
+  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 30) {
     ierr = 1;
   }
 #endif
   // 2. Nonlinear solve iterations on final time step (3)
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Output").get("Nonlinear Iterations", 0) != 3)
+  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 3)
     ierr = 2;
 
   // Summarize test results  

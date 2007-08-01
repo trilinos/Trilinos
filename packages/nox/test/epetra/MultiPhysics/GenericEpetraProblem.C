@@ -159,7 +159,7 @@ GenericEpetraProblem::createMaps()
 //-----------------------------------------------------------------------------
 
 void 
-GenericEpetraProblem::outputResults(NOX::Solver::Manager& solver, 
+GenericEpetraProblem::outputResults(const NOX::Solver::Generic& solver, 
                    Teuchos::ParameterList& printParams)
 {
   // Output the parameter list

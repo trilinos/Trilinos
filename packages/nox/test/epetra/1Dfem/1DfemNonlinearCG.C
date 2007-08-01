@@ -232,14 +232,15 @@ int main(int argc, char *argv[])
   combo->addStatusTest(maxiters);
 
   // Create the solver
-  NOX::Solver::Manager solver(grpPtr, combo, nlParamsPtr);
-  NOX::StatusTest::StatusType solvStatus = solver.solve();
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
+  NOX::StatusTest::StatusType solvStatus = solver->solve();
 
   // End Nonlinear Solver **************************************
 
   // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& finalGroup = 
-    dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+    dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
   const Epetra_Vector& finalSolution = 
     (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).
     getEpetraVector();
@@ -250,7 +251,7 @@ int main(int argc, char *argv[])
     if (printing.isPrintType(NOX::Utils::Parameters)) {
       printing.out() << endl << "Final Parameters" << endl
 	   << "****************" << endl;
-      solver.getList().print(printing.out());
+      solver->getList().print(printing.out());
       printing.out() << endl;
     }
   }
@@ -277,7 +278,7 @@ int main(int argc, char *argv[])
 	printing.out() << "Nonlinear solver failed to converge!" << endl;
   }
   // 2. Nonlinear solve iterations (10)
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Output").get("Nonlinear Iterations", 0) > 13)
+  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) > 13)
     status = 2;
 
   // Summarize test results 

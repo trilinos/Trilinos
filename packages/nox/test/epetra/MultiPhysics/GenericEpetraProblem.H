@@ -179,7 +179,8 @@ public:
   { return AA; }
 
   // Output results 
-  virtual void outputResults(NOX::Solver::Manager& solver, Teuchos::ParameterList& printParams);
+  virtual void outputResults(const NOX::Solver::Generic& solver, 
+			     Teuchos::ParameterList& printParams);
 
   // Output problem description
   virtual void outputStatus( ostream & os ) 

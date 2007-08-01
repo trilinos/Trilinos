@@ -285,14 +285,15 @@ int main(int argc, char *argv[])
   combo->addStatusTest(maxiters);
 
   // Create the solver
-  NOX::Solver::Manager solver(grpPtr, combo, nlParamsPtr);
-  NOX::StatusTest::StatusType solvStatus = solver.solve();
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
+  NOX::StatusTest::StatusType solvStatus = solver->solve();
 
   // End Nonlinear Solver **************************************
 
   // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& finalGroup = 
-    dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+    dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
   const Epetra_Vector& finalSolution = 
     (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).
     getEpetraVector();
@@ -302,7 +303,7 @@ int main(int argc, char *argv[])
     if (printing.isPrintType(NOX::Utils::Parameters)) {
       printing.out() << endl << "Final Parameters" << endl
 	   << "****************" << endl;
-      solver.getList().print(printing.out());
+      solver->getList().print(printing.out());
       printing.out() << endl;
     }
   }
@@ -330,12 +331,12 @@ int main(int argc, char *argv[])
 #ifndef HAVE_MPI 
   // 2. Linear solve iterations (278 with ML) - SERIAL TEST ONLY!
   //    The number of linear iterations changes with # of procs.
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 278) {
+  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 278) {
     status = 2;
   }
 #endif
   // 3. Nonlinear solve iterations (10)
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Output").get("Nonlinear Iterations", 0) != 10)
+  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 10)
     status = 3;
   // Summarize test results 
   if (status == 0)

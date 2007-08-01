@@ -43,6 +43,7 @@
 
 // LOCA Includes
 #include "NOX_Utils.H"
+#include "NOX_Solver_Factory.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_Factory.H"
@@ -239,10 +240,8 @@ LOCA::Stepper::reset(
   curGroupPtr->setPrevX(curGroupPtr->getX());
 
   // Create solver using initial conditions
-  solverPtr = Teuchos::rcp(new NOX::Solver::Manager(
-					   curGroupPtr, 
-					   statusTestPtr,
-					   parsedParams->getSublist("NOX")));
+  solverPtr = NOX::Solver::buildSolver(curGroupPtr, statusTestPtr,
+				       parsedParams->getSublist("NOX"));
 
   printInitializationInfo();
 
@@ -331,9 +330,8 @@ LOCA::Stepper::start() {
     Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(curGroupPtr->getPredictorTangent()[0].clone(NOX::ShapeCopy));
 
   // Create new solver using new continuation groups and combo status test
-  solverPtr = Teuchos::rcp(new NOX::Solver::Manager(
-					   curGroupPtr, statusTestPtr,
-					   parsedParams->getSublist("NOX")));
+  solverPtr = NOX::Solver::buildSolver(curGroupPtr, statusTestPtr,
+				       parsedParams->getSublist("NOX"));
 
   return LOCA::Abstract::Iterator::NotFinished;
 }
@@ -416,9 +414,8 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
     printStartStep();
 
     // Create new solver
-    solverPtr = Teuchos::rcp(new NOX::Solver::Manager(
-					   curGroupPtr, statusTestPtr,
-					   parsedParams->getSublist("NOX")));
+    solverPtr = NOX::Solver::buildSolver(curGroupPtr, statusTestPtr,
+					 parsedParams->getSublist("NOX"));
 
     // Solve step
     NOX::StatusTest::StatusType solverStatus = solverPtr->solve();
@@ -476,12 +473,8 @@ LOCA::Stepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
   curGroupPtr->preProcessContinuationStep(stepStatus);
 
   // Reset solver to compute new solution
-//   solverPtr->reset(*curGroupPtr, *statusTestPtr,
-// 		   parsedParams->getSublist("NOX"));
-
-  solverPtr = Teuchos::rcp(new NOX::Solver::Manager(
-					    curGroupPtr, statusTestPtr,
-					    parsedParams->getSublist("NOX")));
+  solverPtr = NOX::Solver::buildSolver(curGroupPtr, statusTestPtr,
+				       parsedParams->getSublist("NOX"));
 
   return stepStatus;
 }

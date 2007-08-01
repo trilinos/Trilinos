@@ -242,7 +242,8 @@ int main()
 					    statusTestA, statusTestB));
 
   // Create the solver
-  NOX::Solver::Manager solver(grp, statusTestsCombo, solverParametersPtr);
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(grp, statusTestsCombo, solverParametersPtr);
 
   // Print the starting point
   cout << "\n" << "-- Starting Point --" << "\n";
@@ -250,7 +251,7 @@ int main()
   // grp.print();
 
   // Solve the nonlinear system
-  NOX::StatusTest::StatusType status = solver.solve();
+  NOX::StatusTest::StatusType status = solver->solve();
 
   // Warn user if solve failed
   if (status != NOX::StatusTest::Converged)
@@ -258,12 +259,12 @@ int main()
 
   // Get the answer
   NOX::LAPACK::Group solnGrp = 
-    dynamic_cast<const NOX::LAPACK::Group&>(solver.getSolutionGroup());
+    dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup());
 
   // Output the parameter list
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     cout << "\n" << "-- Parameter List Used in Solver --" << endl;
-    solver.getList().print(cout);
+    solver->getList().print(cout);
     cout << endl;
   }
 

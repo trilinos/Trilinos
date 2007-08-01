@@ -247,32 +247,13 @@ void NOX::Solver::InexactTrustRegionBased::throwError(const string& method,
 }
 
 //*************************************************************************
-//**** reset
-//*************************************************************************
-bool NOX::Solver::InexactTrustRegionBased::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-      const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
-      const Teuchos::RCP<Teuchos::ParameterList>& p) 
-{
-  globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
-  utils = globalDataPtr->getUtils();
-  meritFuncPtr = globalDataPtr->getMeritFunction();
-  solnPtr = grp;
-  testPtr = t;
-  paramsPtr = p;		
-  prePostOperator.reset(utils, paramsPtr->sublist("Solver Options"));
-  init();
-  return true;
-}
-
-//*************************************************************************
 //**** reset (without reparsing of parameter list)
 //*************************************************************************
-bool NOX::Solver::InexactTrustRegionBased::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+void NOX::Solver::InexactTrustRegionBased::
+reset(const NOX::Abstract::Vector& initialGuess, 
       const Teuchos::RCP<NOX::StatusTest::Generic>& t)
 {
-  solnPtr = grp;
+  solnPtr->setX(initialGuess);
   testPtr = t;
 
   // Initialize 
@@ -301,16 +282,15 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& grp,
     testPtr->print(utils->out(), 5);
     utils->out() <<"\n" << NOX::Utils::fill(72) << "\n";
   }
-  return true;
 }
 
 //*************************************************************************
 //**** reset (without reparsing of parameter list or status tests)
 //*************************************************************************
-bool NOX::Solver::InexactTrustRegionBased::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& grp)
+void NOX::Solver::InexactTrustRegionBased::
+reset(const NOX::Abstract::Vector& initialGuess)
 {
-  solnPtr = grp;
+  solnPtr->setX(initialGuess);
 
   // Initialize 
   nIter = 0;
@@ -338,7 +318,6 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& grp)
     testPtr->print(utils->out(), 5);
     utils->out() <<"\n" << NOX::Utils::fill(72) << "\n";
   }
-  return true;
 }
 
 //*************************************************************************

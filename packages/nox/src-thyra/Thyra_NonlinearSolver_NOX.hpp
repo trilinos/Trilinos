@@ -16,7 +16,7 @@ namespace NOX {
     class Generic;
   }
   namespace Solver {
-    class Manager;
+    class Generic;
   }
 }
 
@@ -75,7 +75,7 @@ private:
 
   Teuchos::RCP<NOX::Thyra::Group> nox_group_;
   Teuchos::RCP<NOX::StatusTest::Generic> status_test_;
-  Teuchos::RCP<NOX::Solver::Manager> solver_;
+  Teuchos::RCP<NOX::Solver::Generic> solver_;
 
 };
 

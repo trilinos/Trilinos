@@ -496,7 +496,8 @@ Problem_Manager::registerComplete()
     // Needed to establish initial convergence state
     Groups[probId]->computeF(); 
    
-    Solvers[probId] = Teuchos::rcp( new NOX::Solver::Manager(Groups[probId], statusTest, nlParams) );
+    Solvers[probId] = 
+      NOX::Solver::buildSolver(Groups[probId], statusTest, nlParams);
 
     ++iter;
   }
@@ -677,7 +678,8 @@ Problem_Manager::registerComplete()
 					composite_linearSystem));
   compositeGroup->computeF();
 
-  compositeSolver = Teuchos::rcp( new NOX::Solver::Manager(compositeGroup, statusTest, nlParams) );
+  compositeSolver = 
+    NOX::Solver::buildSolver(compositeGroup, statusTest, nlParams);
 
 #ifdef HAVE_MATLAB
   // Just a test to see if the Matlab engine is working - RWH
@@ -1151,7 +1153,7 @@ Problem_Manager::copyGroupCurrentXtoProblemX(int probId)
     throw "Problem_Manager ERROR";
   }
 
-  Teuchos::RCP<NOX::Solver::Manager> solver = Solvers[probId];
+  Teuchos::RCP<NOX::Solver::Generic> solver = Solvers[probId];
 
   if( Teuchos::is_null(solver) ) 
   {
@@ -1197,7 +1199,7 @@ Problem_Manager::resetCurrentGroupX(int probId)
 {
   // Reset each solvers current solution group X vector with itself, thereby resetting all valid flags
 
-  Teuchos::RCP<NOX::Solver::Manager> solver = Solvers[probId];
+  Teuchos::RCP<NOX::Solver::Generic> solver = Solvers[probId];
 
   if( Teuchos::is_null(solver) ) 
   {
@@ -1615,7 +1617,7 @@ Problem_Manager::solve()
       int probId = problem.getId();
 
       Teuchos::RCP<NOX::Epetra::Group> problemGroup = Groups[probId];
-      NOX::Solver::Manager & problemSolver = *(Solvers[probId]);
+      NOX::Solver::Generic & problemSolver = *(Solvers[probId]);
     
       // Sync all dependent data with this problem 
       problem.doTransfer();
@@ -1624,7 +1626,7 @@ Problem_Manager::solve()
       // Reset the solver for this problem and solve
       //problemSolver.reset(problemGroup, *statusTest, *nlParams);
 
-      problemSolver.reset(problemGroup, combo, nlParams);
+      problemSolver.reset(problemGroup->getX(), combo);
       status = problemSolver.solve();
       if( status != NOX::StatusTest::Converged )
       { 
@@ -1674,7 +1676,7 @@ Problem_Manager::solveMF()
 
   compositeGroup->setX( compositeGroup->getX() );
 
-  compositeSolver->reset(compositeGroup, statusTest, nlParams);
+  compositeSolver->reset(compositeGroup->getX(), statusTest);
 
   NOX::StatusTest::StatusType status = compositeSolver->solve();
   if( status != NOX::StatusTest::Converged )

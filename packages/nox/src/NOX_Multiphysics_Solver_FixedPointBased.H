@@ -119,7 +119,7 @@ public:
   /*!
     See reset(NOX::Abstract::Group&, NOX::StatusTest::Generic&, Teuchos::ParameterList&) for description
    */
-  FixedPointBased(const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers,
+  FixedPointBased(const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers,
 		  const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& interface, 
 		  const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
 		  const Teuchos::RCP<Teuchos::ParameterList>& params);
@@ -127,16 +127,13 @@ public:
   //! Destructor
   virtual ~FixedPointBased();
 
-  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
-		     const Teuchos::RCP<Teuchos::ParameterList>& params);
-  virtual bool reset(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+  virtual bool reset(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
 		     const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& interface, 
 		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
 		     const Teuchos::RCP<Teuchos::ParameterList>& params);
-  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+  virtual void reset(const NOX::Abstract::Vector& initialGuess, 
 		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
-  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp);
+  virtual void reset(const NOX::Abstract::Vector& initialGuess);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
@@ -162,7 +159,7 @@ protected:
   SOLVE_TYPE solveType;
 
   //! Pointer to the container of solvers for each problem to be coupled
-  Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > > solversVecPtr;
+  Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > > solversVecPtr;
 
   //! Pointer to the callback interface needed to echange data among solvers
   Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface> dataExInterface;

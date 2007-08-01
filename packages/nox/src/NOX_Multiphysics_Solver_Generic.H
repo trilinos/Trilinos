@@ -41,7 +41,7 @@
 
 #include "NOX_StatusTest_Generic.H"  // base class
 #include "NOX_Multiphysics_DataExchange_Interface.H"
-#include "NOX_Solver_Manager.H"  // for NOX::StatusTest::StatusType
+#include "NOX_Solver_Generic.H"  
 
 // Forward declarations
 namespace NOX {
@@ -112,22 +112,18 @@ public:
     call reset() again with the modified objects.
   */
   virtual bool 
-  reset(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+  reset(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
 	const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& interface, 
 	const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
 	const Teuchos::RCP<Teuchos::ParameterList>& params) = 0;
 
   //! reset methods inherited from NOX::Solver::Generic and needed here to avoid hiding this overloaded virtual method
-  virtual bool 
-  reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-	const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
-	const Teuchos::RCP<Teuchos::ParameterList>& params) = 0;
 
-  virtual bool 
-  reset(const Teuchos::RCP<NOX::Abstract::Group>& grp) = 0;
+  virtual void 
+  reset(const NOX::Abstract::Vector& initialGuess) = 0;
 
-  virtual bool 
-  reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+  virtual void 
+  reset(const NOX::Abstract::Vector& initialGuess, 
 	const Teuchos::RCP<NOX::StatusTest::Generic>& tests) = 0;
 
 };

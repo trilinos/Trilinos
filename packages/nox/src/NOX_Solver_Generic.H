@@ -50,6 +50,7 @@ namespace Teuchos {
 }
 namespace NOX {
   namespace Abstract {
+    class Vector;
     class Group;
   }
 }
@@ -91,61 +92,12 @@ public:
   //! Destructor (does nothing)
   virtual ~Generic() {};
 
-  /*! 
-    \brief Reset the nonlinear solver for a new solve
+  //! Resets the solver and sets a new initial guess.
+  virtual void reset(const NOX::Abstract::Vector& initial_guess) = 0;
 
-    \param grp On input, contains the intial guess. On output,
-    contains the solution. 
-
-    \param tests Status tests to check for convergence or
-    failure. These tests will be modified by the solver.
-
-    \param params List of parameters. These parameters will be
-    modified by the solver.
-
-    \note All the objects passed to reset() will be modified. 
-
-    \note The group object will be cloned via
-    NOX::Abstract::Group::clone(), and the vectors within will also be
-    individually cloned via NOX::Abstract::Vector::clone().
-
-    \warning If the contents of grp, tests, or params are modified by
-    the calling program after calling reset(), then the behavior of
-    iterate() and solve() are completely undefined. To remedy this,
-    call reset() again with the modified objects.
-  */
-  virtual bool 
-  reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-	const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
-	const Teuchos::RCP<Teuchos::ParameterList>& params) = 0;
-
-  /*! 
-    \brief An even softer reset of the nonlinear solver for a new problem.
-  
-    This is a light-weight version of reset that takes no
-    parameter list or status tests.  Therefore, this reset only resets 
-    counters and the initial guess (contained in the grp argument).
-
-    This reset allows problems to bypass the potentially time consuming
-    parsing of the parameter lists and to re-use existing status tests.
-  */
-  virtual bool 
-  reset(const Teuchos::RCP<NOX::Abstract::Group>& grp) = 0;
-
-  /*! 
-    \brief A soft reset of the nonlinear solver for a new problem.
-  
-    This is a light-weight version of reset that takes no
-    parameter list.  Therefore, this reset only resets counters,
-    the initial guess (contained in the grp argument) and new status 
-    tests (contained in the tests argument).
-
-    This reset allows problems to bypass the potentially time consuming
-    parsing of the parameter lists.
-  */
-  virtual bool 
-  reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-	const Teuchos::RCP<NOX::StatusTest::Generic>& tests) = 0;
+  //! Resets the solver, sets a new status test, and sets a new initial guess.
+  virtual void reset(const NOX::Abstract::Vector& initial_guess,
+		     const Teuchos::RCP<NOX::StatusTest::Generic>& test) = 0;
 
   //! Check current convergence and failure status. 
   virtual NOX::StatusTest::StatusType getStatus() = 0;

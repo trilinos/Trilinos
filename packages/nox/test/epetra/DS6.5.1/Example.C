@@ -230,12 +230,13 @@ int main(int argc, char *argv[])
 					    testNormF, testMaxIters));
 
   // Create the method
-  NOX::Solver::Manager solver(grpPtr, combo, nlParamsPtr);
-  NOX::StatusTest::StatusType status = solver.solve();
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
+  NOX::StatusTest::StatusType status = solver->solve();
 
   // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& finalGroup = 
-      dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+      dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
   const Epetra_Vector& finalSolution = 
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
@@ -245,7 +246,7 @@ int main(int argc, char *argv[])
   if (printing.isPrintType(NOX::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    solver.getList().print(cout);
+    solver->getList().print(cout);
     cout << endl;
   }
 
@@ -269,23 +270,23 @@ int main(int argc, char *argv[])
     testStatus = 1;
   }
   // 2. Nonlinear Iterations (7)
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Output").get("Nonlinear Iterations",0) != 7) {
+  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations",0) != 7) {
     testStatus = 2;
   }
   // 3. Linear Iterations (14)
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 14) {
+  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 14) {
     testStatus = 3;
   }
   // 4. Number of Non-trivial Line Searches (2)
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Line Search").sublist("Output").get("Total Number of Non-trivial Line Searches",0) != 2) {
+  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Line Search").sublist("Output").get("Total Number of Non-trivial Line Searches",0) != 2) {
     testStatus = 4;
   }
   // 5. Number of Line Search Inner Iterations (4)
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Line Search").sublist("Output").get("Total Number of Line Search Inner Iterations",0) != 4) {
+  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Line Search").sublist("Output").get("Total Number of Line Search Inner Iterations",0) != 4) {
     testStatus = 5;
   }
   // 6. Number of Failed Line Searches (0)
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Line Search").sublist("Output").get("Total Number of Failed Line Searches",-1) != 0) {
+  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Line Search").sublist("Output").get("Total Number of Failed Line Searches",-1) != 0) {
     testStatus = 6;
   }
 

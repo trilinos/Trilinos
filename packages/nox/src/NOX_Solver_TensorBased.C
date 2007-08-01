@@ -259,22 +259,20 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   return true;
 }
 
-bool NOX::Solver::TensorBased::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
+void NOX::Solver::TensorBased::
+reset(const NOX::Abstract::Vector& initialGuess,
       const Teuchos::RCP<NOX::StatusTest::Generic>& t)
 {
-  solnPtr = xGrp;
+  solnPtr->setX(initialGuess);
   testPtr = t;
   init();
-  return true;
 }
 
-bool NOX::Solver::TensorBased::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp)
+void NOX::Solver::TensorBased::
+reset(const NOX::Abstract::Vector& initialGuess)
 {
-  solnPtr = xGrp;
+  solnPtr->setX(initialGuess);
   init();
-  return true;
 }
 
 NOX::Solver::TensorBased::~TensorBased() 

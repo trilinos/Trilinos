@@ -125,11 +125,11 @@ public:
     { return compositeMap; }
 
   // Get the container of solver managers
-  map<int, Teuchos::RCP<NOX::Solver::Manager> > & getSolvers()
+  map<int, Teuchos::RCP<NOX::Solver::Generic> > & getSolvers()
   {  return Solvers; }
 
   // Get the composite NOX solver
-  Teuchos::RCP<NOX::Solver::Manager> & getCompositeSolver()
+  Teuchos::RCP<NOX::Solver::Generic> & getCompositeSolver()
   {  return compositeSolver; }
 
   // Get mapping of problem indices to composite
@@ -344,7 +344,7 @@ private:
   					    // Linear Systems container
   map<int, Teuchos::RCP<NOX::Epetra::Group> >Groups;     // Groups container
   map<int, Teuchos::RCP<Problem_Interface>  >Interfaces; // Interfaces container
-  map<int, Teuchos::RCP<NOX::Solver::Manager> > Solvers; // Solvers container
+  map<int, Teuchos::RCP<NOX::Solver::Generic> > Solvers; // Solvers container
   map<int, Teuchos::RCP<Epetra_IntVector> > ProblemToCompositeIndices;
     // Essentially a mapping from a problems indices to the composite indices
 
@@ -353,7 +353,7 @@ private:
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> jacInterface;
   Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> precInterface;
   Teuchos::RCP<NOX::Epetra::Group> compositeGroup  ; // The composite solution group
-  Teuchos::RCP<NOX::Solver::Manager> compositeSolver ; // The composite solver
+  Teuchos::RCP<NOX::Solver::Generic> compositeSolver ; // The composite solver
 
 #ifdef HAVE_NOX_EPETRAEXT
   // Additional containers to allow each problem to use FD Coloring

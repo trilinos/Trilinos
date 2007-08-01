@@ -291,12 +291,9 @@ public:
   //! Destructor
   virtual ~InexactTrustRegionBased();
 
-  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
-		     const Teuchos::RCP<Teuchos::ParameterList>& params);
-  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+  virtual void reset(const NOX::Abstract::Vector& initialGuess, 
 		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
-  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp);
+  virtual void reset(const NOX::Abstract::Vector& initialGuess);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();

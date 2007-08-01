@@ -46,7 +46,7 @@
 
 #include "LOCA_Abstract_Iterator.H"    // for status
 #include "Teuchos_ParameterList.hpp"	       // class data element
-#include "NOX_Solver_Manager.H"	       // class data element
+#include "NOX_Solver_Generic.H"	       // class data element
 #include "NOX_StatusTest_Generic.H"    // for enum StatusType
 #include "NOX_Common.H"                // for <string> class
 
@@ -152,7 +152,7 @@ namespace LOCA {
     Teuchos::RCP<Teuchos::ParameterList> stepperList;
 
     //! Solver (a.k.a corrector)
-    Teuchos::RCP<NOX::Solver::Manager> solverPtr;
+    Teuchos::RCP<NOX::Solver::Generic> solverPtr;
 
     //! Stores continuation parameter vector
     LOCA::ParameterVector paramVec;

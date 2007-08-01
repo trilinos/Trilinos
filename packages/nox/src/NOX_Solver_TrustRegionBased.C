@@ -164,27 +164,12 @@ invalid(const string& name, double value) const
   throw "NOX Error";
 }
 
-bool TrustRegionBased::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-      const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
-      const Teuchos::RCP<Teuchos::ParameterList>& p) 
-{
-  globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
-  utilsPtr = globalDataPtr->getUtils(); 
-  solnPtr = grp;
-  testPtr = t;
-  paramsPtr = p;			
-  prePostOperator.reset(utilsPtr, paramsPtr->sublist("Solver Options"));
-  init();
-  return true;
-}
-
-bool TrustRegionBased::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& grp,
+void TrustRegionBased::
+reset(const NOX::Abstract::Vector& initialGuess,
       const Teuchos::RCP<NOX::StatusTest::Generic>& t)
 {
   // New initial guess and status test
-  solnPtr = grp;
+  solnPtr->setX(initialGuess);
   testPtr = t;
 
   // Initialize 
@@ -198,15 +183,13 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& grp,
     utilsPtr->out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
     paramsPtr->print(utilsPtr->out(),5);
   }
-
-  return true;
 }
 
-bool TrustRegionBased::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& grp)
+void TrustRegionBased::
+reset(const NOX::Abstract::Vector& initialGuess)
 {
   // New initial guess and status test
-  solnPtr = grp;
+  solnPtr->setX(initialGuess);
 
   // Initialize 
   nIter = 0;
@@ -219,8 +202,6 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& grp)
     utilsPtr->out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
     paramsPtr->print(utilsPtr->out(),5);
   }
-
-  return true;
 }
 
 TrustRegionBased::~TrustRegionBased() 

@@ -39,7 +39,7 @@
 #ifndef _NOX_MULTIPHYSICS_SOLVER_MANAGER_H
 #define _NOX_MULTIPHYSICS_SOLVER_MANAGER_H
 
-#include "NOX_Solver_Manager.H"	// base class
+#include "NOX_Solver_Generic.H"	// base class
 #include "NOX_Multiphysics_Solver_Generic.H"	// base class
 #include "NOX_Common.H"		// class data element (string)
 #include "NOX_Utils.H"          // class data element
@@ -73,7 +73,7 @@ namespace Solver{
   \author Russell Hooper (SNL 1416)
 */
 
-class Manager : public NOX::Solver::Manager {
+class Manager : public NOX::Solver::Generic {
 
 public:
 
@@ -85,7 +85,7 @@ public:
 
     See reset() for a full description.
   */
-  Manager(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+  Manager(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
           const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
 	  const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
 	  const Teuchos::RCP<Teuchos::ParameterList>& p);
@@ -102,19 +102,15 @@ public:
   //! Destructor.
   virtual ~Manager();
 
-  virtual bool reset(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+  virtual bool reset(const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
                      const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
 	             const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
 	             const Teuchos::RCP<Teuchos::ParameterList>& params);
   
-  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-	             const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
-	             const Teuchos::RCP<Teuchos::ParameterList>& params);
-  
-  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp,
+  virtual void reset(const NOX::Abstract::Vector& initialGuess,
 	             const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
 
-  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp);
+  virtual void reset(const NOX::Abstract::Vector& initialGuess);
 
   virtual NOX::StatusTest::StatusType getStatus();
 

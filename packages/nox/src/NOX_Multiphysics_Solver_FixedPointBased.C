@@ -44,7 +44,7 @@
 #include "NOX_GlobalData.H"
 
 NOX::Multiphysics::Solver::FixedPointBased::
-FixedPointBased(const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+FixedPointBased(const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
 		const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
 		const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
 		const Teuchos::RCP<Teuchos::ParameterList>& p) :
@@ -113,7 +113,7 @@ NOX::Multiphysics::Solver::FixedPointBased::init()
 
 bool 
 NOX::Multiphysics::Solver::FixedPointBased::reset(
-      const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+      const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
       const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
       const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
       const Teuchos::RCP<Teuchos::ParameterList>& p) 
@@ -134,28 +134,21 @@ NOX::Multiphysics::Solver::FixedPointBased::reset(
   return false;
 }
 
-bool 
+void
 NOX::Multiphysics::Solver::FixedPointBased::reset(
-      const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
-      const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
-      const Teuchos::RCP<Teuchos::ParameterList>& p) 
-{
-  return false;
-}
-
-bool 
-NOX::Multiphysics::Solver::FixedPointBased::reset(
-      const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
+      const NOX::Abstract::Vector& initialGuess, 
       const Teuchos::RCP<NOX::StatusTest::Generic>& t)
 {
-  return false;
+  std::string msg = "Error - NOX::Multiphysics::Solver::FixedPointBased::reset() - this reset method is not valid for a Multiphysics Solver!";
+  TEST_FOR_EXCEPTION(true, std::logic_error, msg);
 }
 
-bool 
+void 
 NOX::Multiphysics::Solver::FixedPointBased::reset(
-      const Teuchos::RCP<NOX::Abstract::Group>& xGrp)
+      const NOX::Abstract::Vector& initialGuess)
 {
-  return false;
+  std::string msg = "Error - NOX::Multiphysics::Solver::FixedPointBased::reset() - this reset method is not valid for a Multiphysics Solver!";
+  TEST_FOR_EXCEPTION(true, std::logic_error, msg);
 }
 
 NOX::Multiphysics::Solver::FixedPointBased::~FixedPointBased() 
@@ -214,7 +207,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
 
   NOX::StatusTest::StatusType status = NOX::StatusTest::Unconverged;
 
-  vector<Teuchos::RCP<NOX::Solver::Manager> >::iterator iter = (*solversVecPtr).begin(),
+  vector<Teuchos::RCP<NOX::Solver::Generic> >::iterator iter = (*solversVecPtr).begin(),
                                                             iter_end = (*solversVecPtr).end()   ;
   
   for( int i = 0; iter_end != iter; ++iter, ++i )
@@ -231,7 +224,7 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
     const Teuchos::RCP<NOX::Abstract::Group> sameGrp = 
         Teuchos::rcp( const_cast<NOX::Abstract::Group*>(&(*iter)->getSolutionGroup()), false );
 
-    (*iter)->reset( sameGrp );
+    (*iter)->reset( sameGrp->getX() );
   
     status = (*iter)->solve();
 

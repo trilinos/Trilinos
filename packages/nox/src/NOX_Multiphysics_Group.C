@@ -39,7 +39,7 @@
 #include "NOX_Multiphysics_Group.H"
 
 NOX::Multiphysics::Group::Group(
-          const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+          const Teuchos::RCP< vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
           const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
           const Teuchos::RCP<Teuchos::ParameterList>& p) :
   solversVecPtr(solvers),

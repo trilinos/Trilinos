@@ -63,34 +63,21 @@ LOCA::Solver::Wrapper::~Wrapper()
 {
 }
 
-bool
+void 
 LOCA::Solver::Wrapper::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-      const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
-      const Teuchos::RCP<Teuchos::ParameterList>& params)
-{
-  bool res = solverPtr->reset(grp, tests, params);
-  resetWrapper();
-  return res;
-}
-
-bool 
-LOCA::Solver::Wrapper::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+reset(const NOX::Abstract::Vector& initialGuess, 
       const Teuchos::RCP<NOX::StatusTest::Generic>& tests) 
 {
-  bool res =  solverPtr->reset(grp, tests);
+  solverPtr->reset(initialGuess, tests);
   resetWrapper();
-  return res;
 }
 
-bool 
+void 
 LOCA::Solver::Wrapper::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& grp) 
+reset(const NOX::Abstract::Vector& initialGuess) 
 {
-  bool res =  solverPtr->reset(grp);
+  solverPtr->reset(initialGuess);
   resetWrapper();
-  return res;
 }
 
 NOX::StatusTest::StatusType 

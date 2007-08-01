@@ -103,15 +103,10 @@ namespace LOCA {
       ~Wrapper();
 
       //! Implementation of reset method (forwarded to wrapped solver)
-      bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-		 const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
-		 const Teuchos::RCP<Teuchos::ParameterList>& params);
-
-      //! Implementation of reset method (forwarded to wrapped solver)
-      bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp);
+      void reset(const NOX::Abstract::Vector& initialGuess);
   
       //! Implementation of reset method (forwarded to wrapped solver)
-      bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+      void reset(const NOX::Abstract::Vector& initialGuess, 
 		 const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
       
       //! Implementation of getStatus method (forwarded to wrapped solver)

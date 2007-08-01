@@ -151,10 +151,9 @@ LOCA::MultiStepper::reset(
   curGroupPtr->setPrevX(curGroupPtr->getX());
 
   // Create solver using initial conditions
-  solverPtr = Teuchos::rcp(new NOX::Solver::Manager(
-					   curGroupPtr, 
-					   statusTestPtr,
-					   parsedParams->getSublist("NOX")));
+  solverPtr = NOX::Solver::buildSolver(curGroupPtr, 
+				       statusTestPtr,
+				       parsedParams->getSublist("NOX"));
 
   printInitializationInfo();
 
@@ -197,9 +196,8 @@ LOCA::MultiStepper::run() {
   curGroupPtr->printSolution();
 
   // Create new solver using new continuation groups and combo status test
-  solverPtr = Teuchos::rcp(new NOX::Solver::Manager(
-					   curGroupPtr, statusTestPtr,
-					   parsedParams->getSublist("NOX")));
+  solverPtr = NOX::Solver::buildSolver(curGroupPtr, statusTestPtr,
+				       parsedParams->getSublist("NOX"));
 
   MFImplicitMF M;
   MFNRegion Omega;

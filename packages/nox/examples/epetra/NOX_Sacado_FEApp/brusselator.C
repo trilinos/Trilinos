@@ -179,17 +179,18 @@ int main(int argc, char *argv[]) {
     combo->addStatusTest(maxiters);
 
     // Create the solver
-    NOX::Solver::Manager solver(grp, combo, noxParams);
+    Teuchos::RCP<NOX::Solver::Generic> solver = 
+      NOX::Solver::buildSolver(grp, combo, noxParams);
 
     // Solve
-    NOX::StatusTest::StatusType status = solver.solve();
+    NOX::StatusTest::StatusType status = solver->solve();
     if (status != NOX::StatusTest::Converged)
       if (MyPID==0) 
 	utils.out() << "Nonlinear solver failed to converge!" << endl;
 
     // Get the Epetra_Vector with the final solution from the solver
     const NOX::Epetra::Group& finalGroup = 
-      dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+      dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
     const Epetra_Vector& finalSolution = 
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 

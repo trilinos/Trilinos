@@ -187,8 +187,7 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
   data->grp->preProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
 
   data->grp->computeF();
-  data->solver->reset(data->grp, data->status, 
-		      Teuchos::rcp(&(data->p->sublist("NOX")),false));
+  data->solver->reset(data->grp->getX());
   NOX::StatusTest::StatusType status = data->solver->solve();
     
   if (status != NOX::StatusTest::Converged) {

@@ -303,8 +303,9 @@ int main(int argc, char *argv[])
   combo->addStatusTest(maxiters);
 
   // Create the method
-  NOX::Solver::Manager solver(grpPtr, combo, nlParamsPtr);
-  NOX::StatusTest::StatusType status = solver.solve();
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
+  NOX::StatusTest::StatusType status = solver->solve();
 
   if (verbose) {
     if (status != NOX::StatusTest::Converged)
@@ -313,7 +314,7 @@ int main(int argc, char *argv[])
   }
 
   // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
   const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
   // End Nonlinear Solver **************************************
@@ -324,7 +325,7 @@ int main(int argc, char *argv[])
     if (utils.isPrintType(NOX::Utils::Parameters)) {
       cout << endl << "Final Parameters" << endl
 	   << "****************" << endl;
-      solver.getList().print(cout);
+      solver->getList().print(cout);
       cout << endl;
     }
   }

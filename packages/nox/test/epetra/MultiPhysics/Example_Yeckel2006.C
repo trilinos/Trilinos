@@ -435,10 +435,10 @@ int main(int argc, char *argv[])
     default            :
     {
       // Create the loose coupling solver manager
-      Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > > solversVec =
-        Teuchos::rcp( new vector<Teuchos::RCP<NOX::Solver::Manager> > );
+      Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > > solversVec =
+        Teuchos::rcp( new vector<Teuchos::RCP<NOX::Solver::Generic> > );
 
-      map<int, Teuchos::RCP<NOX::Solver::Manager> >::iterator iter = problemManager.getSolvers().begin(),
+      map<int, Teuchos::RCP<NOX::Solver::Generic> >::iterator iter = problemManager.getSolvers().begin(),
                                                                   iter_end = problemManager.getSolvers().end()   ;
       for( ; iter_end != iter; ++iter )
       {

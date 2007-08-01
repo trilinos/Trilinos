@@ -121,42 +121,20 @@ void NOX::Solver::TensorBasedTest::init()
 
 }
 
-
-bool NOX::Solver::TensorBasedTest::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& xgrp,
-      const Teuchos::RCP<NOX::StatusTest::Generic>& t,
-      const Teuchos::RCP<Teuchos::ParameterList>& p)
-{
-  globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
-  utilsPtr = globalDataPtr->getUtils(); 
-  solnptr = xgrp;
-  testptr = t;
-  paramsPtr = p;
-  utilsPtr->reset(paramsPtr->sublist("Printing"));
-  lineSearch.reset(globalDataPtr, paramsPtr->sublist("Line Search"));
-  direction.reset(globalDataPtr, paramsPtr->sublist("Direction"));
-  prePostOperator.reset(utilsPtr, paramsPtr->sublist("Solver Options"));
-  init();
-
-  return true;
-}
-
-bool NOX::Solver::TensorBasedTest::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& xgrp,
+void NOX::Solver::TensorBasedTest::
+reset(const NOX::Abstract::Vector& initialGuess,
       const Teuchos::RCP<NOX::StatusTest::Generic>& t)
 {
-  solnptr = xgrp;
+  solnptr->setX(initialGuess);;
   testptr = t;
   init();
-  return true;
 }
 
-bool NOX::Solver::TensorBasedTest::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& xgrp)
+void NOX::Solver::TensorBasedTest::
+reset(const NOX::Abstract::Vector& initialGuess)
 {
-  solnptr = xgrp;
+  solnptr->setX(initialGuess);
   init();
-  return true;
 }
 
 NOX::Solver::TensorBasedTest::~TensorBasedTest() 

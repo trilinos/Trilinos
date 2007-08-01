@@ -48,7 +48,7 @@
 #endif
 
 NOX::Multiphysics::Solver::Manager::Manager(
-        const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+        const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
         const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& i, 
 	const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
 	const Teuchos::RCP<Teuchos::ParameterList>& p) :
@@ -67,7 +67,7 @@ NOX::Multiphysics::Solver::Manager::Manager(
   method(""),
   cplPtr(NULL)
 {
-  reset(grp, t, p);
+  
 }
 
 NOX::Multiphysics::Solver::Manager::Manager() :
@@ -81,16 +81,8 @@ NOX::Multiphysics::Solver::Manager::~Manager()
   delete cplPtr;
 }
 
-bool NOX::Multiphysics::Solver::Manager::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-      const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
-      const Teuchos::RCP<Teuchos::ParameterList>& params)
-{
-  return false;
-}
-
 bool NOX::Multiphysics::Solver::Manager::reset(
-      const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Manager> > >& solvers, 
+      const Teuchos::RCP<vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
       const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& interface, 
       const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
       const Teuchos::RCP<Teuchos::ParameterList>& params)
@@ -135,18 +127,19 @@ bool NOX::Multiphysics::Solver::Manager::reset(
   }
 }
 
-bool 
+void
 NOX::Multiphysics::Solver::Manager::reset(
-      const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+      const NOX::Abstract::Vector& initialGuess, 
       const Teuchos::RCP<NOX::StatusTest::Generic>& tests)
 {
-  return cplPtr->reset(grp, tests);
+  cplPtr->reset(initialGuess, tests);
 }
 
-bool 
-NOX::Multiphysics::Solver::Manager::reset( const Teuchos::RCP<Abstract::Group>& grp )
+void 
+NOX::Multiphysics::Solver::Manager::
+reset(const Abstract::Vector& initialGuess)
 {
-  return cplPtr->reset(grp);
+  cplPtr->reset(initialGuess);
 }
 
 // PRIVATE

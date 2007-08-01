@@ -277,12 +277,9 @@ public:
   //! Destructor
   virtual ~TensorBased();
 
-  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
-		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
-		     const Teuchos::RCP<Teuchos::ParameterList>& params);
-  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& xgrp, 
+  virtual void reset(const NOX::Abstract::Vector& initialGuess, 
 		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
-  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& xgrp);
+  virtual void reset(const NOX::Abstract::Vector& initialGuess);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();
@@ -299,6 +296,10 @@ protected:
   //! Prints the current iteration information.
   virtual void printUpdate();
 
+  //! Constructor initialization routine.
+  virtual bool reset(const Teuchos::RCP<NOX::Abstract::Group>& grp, 
+		     const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
+		     const Teuchos::RCP<Teuchos::ParameterList>& params);
 protected:
 
   //! Subroutine for computing the tensor and Newton directions

@@ -185,20 +185,12 @@ int main(int argc, char *argv[])
   nl_params->set("Nonlinear Solver", "Line Search Based");
 
   // Create the solver
-  NOX::Solver::Manager solver(nox_group, combo, nl_params);
-  NOX::StatusTest::StatusType solvStatus = solver.solve();
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(nox_group, combo, nl_params);
+  NOX::StatusTest::StatusType solvStatus = solver->solve();
 
   if (solvStatus == NOX::StatusTest::Converged)
     std::cout << "Test passed!" << std::endl;
-
-  // Get the Epetra_Vector with the final solution from the solver
-  /*
-  const NOX::Epetra::Group& finalGroup =
-    dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
-  const Epetra_Vector& finalSolution =
-    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).
-    getEpetraVector();
-  */
 
   // Final return value (0 = successfull, non-zero = failure)
   return status;

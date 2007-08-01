@@ -99,41 +99,20 @@ void NOX::Solver::LineSearchBased::init()
 
 }
 
-bool NOX::Solver::LineSearchBased::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
-      const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
-      const Teuchos::RCP<Teuchos::ParameterList>& p) 
-{
-  globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
-  solnPtr = xGrp;
-  testPtr = t;
-  paramsPtr = p;		
-  utilsPtr = globalDataPtr->getUtils();
-  lineSearch.reset(globalDataPtr, paramsPtr->sublist("Line Search"));	
-  direction.reset(globalDataPtr, paramsPtr->sublist("Direction"));
-  prePostOperator.reset(utilsPtr, paramsPtr->sublist("Solver Options"));
-
-  init();
-
-  return true;
-}
-
-bool NOX::Solver::LineSearchBased::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
+void NOX::Solver::LineSearchBased::
+reset(const NOX::Abstract::Vector& initialGuess, 
       const Teuchos::RCP<NOX::StatusTest::Generic>& t)
 {
-  solnPtr = xGrp;
+  solnPtr->setX(initialGuess);
   testPtr = t;
   init();
-  return true;
 }
 
-bool NOX::Solver::LineSearchBased::
-reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp)
+void NOX::Solver::LineSearchBased::
+reset(const NOX::Abstract::Vector& initialGuess)
 {
-  solnPtr = xGrp;
+  solnPtr->setX(initialGuess);
   init();
-  return true;
 }
 
 NOX::Solver::LineSearchBased::~LineSearchBased() 

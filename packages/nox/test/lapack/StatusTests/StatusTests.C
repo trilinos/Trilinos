@@ -287,14 +287,15 @@ int main(int argc, char *argv[])
   // **************************************
   
   // Create the solver
-  NOX::Solver::Manager solver(grp, statusTestsCombo, solverParametersPtr);
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(grp, statusTestsCombo, solverParametersPtr);
 
   // Solve the nonlinear system
-  NOX::StatusTest::StatusType status = solver.solve();
+  NOX::StatusTest::StatusType status = solver->solve();
 
   // Print final status
   if (status == NOX::StatusTest::Converged && 
-      solver.getNumIterations() == 12) {
+      solver->getNumIterations() == 12) {
     final_status_value += 0;
     cout << "Convergence tests passed!" << endl;
   }
@@ -357,10 +358,11 @@ int main(int argc, char *argv[])
     ParameterList p;
     p.set("Test Type", "MaxIters");
     p.set("Maximum Iterations", 5);
-    NOX::Solver::Manager solver(group, 
-				st_factory.buildStatusTests(p, utils), 
-				solverParametersPtr);
-    status = solver.solve();
+    Teuchos::RCP<NOX::Solver::Generic> solver = 
+      NOX::Solver::buildSolver(group, 
+			       st_factory.buildStatusTests(p, utils), 
+			       solverParametersPtr);
+    status = solver->solve();
     
     // A failure reported by max iters is a passing test
     if (status == NOX::StatusTest::Failed) {
@@ -388,8 +390,9 @@ int main(int argc, char *argv[])
     combo->addStatusTest(fvst);
     combo->addStatusTest(mist);
 
-    NOX::Solver::Manager solver(group, combo, solverParametersPtr);
-    status = solver.solve();
+    Teuchos::RCP<NOX::Solver::Generic> solver = 
+      NOX::Solver::buildSolver(group, combo, solverParametersPtr);
+    status = solver->solve();
 
     // A failure reported by finite value is a passing test
     if (status == NOX::StatusTest::Failed && 
@@ -418,8 +421,9 @@ int main(int argc, char *argv[])
     combo->addStatusTest(divst);
     combo->addStatusTest(mist);
 
-    NOX::Solver::Manager solver(group, combo, solverParametersPtr);
-    status = solver.solve();
+    Teuchos::RCP<NOX::Solver::Generic> solver = 
+      NOX::Solver::buildSolver(group, combo, solverParametersPtr);
+    status = solver->solve();
     
     // A failure reported by divergence is a passing test
     if (status == NOX::StatusTest::Failed &&
@@ -449,8 +453,9 @@ int main(int argc, char *argv[])
     combo->addStatusTest(stagst);
     combo->addStatusTest(mist);
     
-    NOX::Solver::Manager solver(group, combo, solverParametersPtr);
-    status = solver.solve();
+    Teuchos::RCP<NOX::Solver::Generic> solver = 
+      NOX::Solver::buildSolver(group, combo, solverParametersPtr);
+    status = solver->solve();
     
     // A failure reported by stagnation is a passing test
     if (status == NOX::StatusTest::Failed &&

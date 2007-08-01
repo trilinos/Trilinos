@@ -263,15 +263,16 @@ int main(int argc, char *argv[])
 #endif
 
   // Create the method
-  NOX::Solver::Manager solver(grp, combo, finalParamsPtr);
-  NOX::StatusTest::StatusType status = solver.solve();
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(grp, combo, finalParamsPtr);
+  NOX::StatusTest::StatusType status = solver->solve();
 
   if (status != NOX::StatusTest::Converged)
     if (MyPID==0) 
       utils.out() << "Nonlinear solver failed to converge!" << endl;
 
   // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
   const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
   // End Nonlinear Solver **************************************
@@ -280,7 +281,7 @@ int main(int argc, char *argv[])
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     utils.out() << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    solver.getList().print(utils.out());
+    solver->getList().print(utils.out());
     utils.out() << endl;
   }
 

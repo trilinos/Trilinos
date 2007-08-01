@@ -335,7 +335,8 @@ int main(int argc, char *argv[])
   combo->addStatusTest(finiteval);
 
   // Create the method
-  NOX::Solver::Manager solver(grpPtr, combo, nlParamsPtr);
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
 
   // Initialize time integration parameters
   int maxTimeSteps = 10000000;
@@ -367,7 +368,7 @@ int main(int argc, char *argv[])
       utils.out() << "Time Step: " << timeStep << ",\tTime: " << time << endl;
   
     status = NOX::StatusTest::Unconverged;
-    status = solver.solve();
+    status = solver->solve();
   
     if (verbose)
       if (status != NOX::StatusTest::Converged)
@@ -376,7 +377,7 @@ int main(int argc, char *argv[])
 
     // Get the Epetra_Vector with the final solution from the solver
     const NOX::Epetra::Group& finalGroup = 
-      dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+      dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
     const Epetra_Vector& finalSolution = 
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
@@ -420,7 +421,7 @@ int main(int argc, char *argv[])
 
     Problem->reset(finalSolution);
     grp.setX(finalSolution);
-    solver.reset(grpPtr, combo, nlParamsPtr);
+    solver->reset(grp.getX(), combo);
     grp.computeF();
 
   } // end time step while loop
@@ -433,7 +434,7 @@ int main(int argc, char *argv[])
     if (utils.isPrintType(NOX::Utils::Parameters)) {
       utils.out() << endl << "Final Parameters" << endl
 	   << "****************" << endl;
-      solver.getList().print(utils.out());
+      solver->getList().print(utils.out());
       utils.out() << endl;
     }
   }

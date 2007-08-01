@@ -229,18 +229,19 @@ int main(int argc, char *argv[]) {
      cout << "Using unchanged parameters " << endl;
   
   // Create the solver
-  NOX::Solver::Manager solver(grp, statusTestsCombo, noxParamsPtr);
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(grp, statusTestsCombo, noxParamsPtr);
 
   // Solve the nonlinesar system
-  NOX::StatusTest::StatusType status = solver.solve();
+  NOX::StatusTest::StatusType status = solver->solve();
 
   // Print the answer
   cout << "\n" << "-- Parameter List From Solver --" << "\n";
-  solver.getList().print(cout);
+  solver->getList().print(cout);
 
   // Get the answer
   NOX::LAPACK::Group solnGrp = 
-    dynamic_cast<const NOX::LAPACK::Group&>(solver.getSolutionGroup());
+    dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup());
   
   // Final return value (0 = succefull, non-zero = failure)
   //return status;
