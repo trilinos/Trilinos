@@ -13,7 +13,7 @@ using namespace ML_Epetra;
 bool ML_Epetra::ValidateMLPParameters(const Teuchos::ParameterList &inList){
   Teuchos::ParameterList List,*validList;
   bool rv=true;
-  
+    
   /* Build a list with level-specific stuff stripped */
   for(ParameterList::ConstIterator param=inList.begin(); param!=inList.end(); param++){
     const std::string pname=inList.name(param);
@@ -164,10 +164,10 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   PL->set("read XML",true); 
   PL->set("XML input file","ml_ParameterList.xml",std::string(""));
   PL->set("zero starting solution",true);
-  setIntParameter("print hierarchy",0,"Unlisted option",PL);  
-
+  PL->set("print hierarchy",false);  
   PL->set("smoother: self list",dummy);
-
+  PL->set("aggregation: block scaling",false);
+  
   // From ml_Multilevel_Smoothers.cpp:
   setIntParameter("smoother: ParaSails matrix",0,"Unlisted option",PL);
   setIntParameter("smoother: ParaSails levels",0,"Unlisted option",PL);
@@ -185,9 +185,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   /* Unlisted options that should probably go away */
   setIntParameter("output",0,"Output Level",PL);
   setIntParameter("smoother: polynomial order",2,"Unlisted option",PL);
-  setIntParameter("refmaxwell: aggregate with sigma",0,"Unlisted option",PL);
-  setIntParameter("refmaxwell: lump m1",0,"Unlisted option",PL); 
- return PL;
+ 
+  return PL;
 }
 
 
@@ -198,12 +197,14 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inList){
   Teuchos::ParameterList List,*validList;
   bool rv=true;
+  
   /* Build a list with level-specific stuff stripped */
   for(ParameterList::ConstIterator param=inList.begin(); param!=inList.end(); param++){
     const std::string pname=inList.name(param);
     if(pname.find("(level",0) == std::string::npos)
       List.setEntry(pname,inList.entry(param));
-  }  
+  }
+
   /* Get Defaults + Validate */
   try{
   validList=GetValidRefMaxwellParameters();
@@ -224,7 +225,7 @@ bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inLis
 Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   Teuchos::ParameterList dummy;
   ParameterList * PL = GetValidMLPParameters();
-  
+
   /* RefMaxwell Options - This should get added to the manual */
   setStringToIntegralParameter<int>("refmaxwell: 11solver","edge matrix free","(1,1) Block Solver",tuple<std::string>("edge matrix free"),PL);
   setStringToIntegralParameter<int>("refmaxwell: 22solver","multilevel","(2,2) Block Solver",tuple<std::string>("multilevel"),PL);
@@ -233,8 +234,11 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   PL->set("refmaxwell: 22list",dummy);
 
   /* RefMaxwell Options - Unsupported */
-  /*setIntParameter("refmaxwell: aggregate with sigma",0,"Unlisted option",PL);
-    PL->set("refmaxwell: aggregate with sigma",false); */
+  PL->set("refmaxwell: aggregate with sigma",false);
+  PL->set("refmaxwell: lump m1",false);
+  PL->set("refmaxwell: disable addon",false); 
+  PL->set("aggregation: respect materials",false);
+  PL->set("aggregation: material type",(int*)0); 
   return PL;
 }
 
