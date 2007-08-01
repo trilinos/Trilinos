@@ -946,7 +946,6 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	  int info = 0;
 	  Teuchos::SerialDenseMatrix<int,ScalarType> PP( p, recycledBlocks_+1 );  
 	  keff = getHarmonicVecs1( p, *oldState.H, PP );
-
 	  // We can generate a subspace to recycle and we know its size, so intialize U_ and C_;
 	  if (U_ == Teuchos::null) {
 	    U_ = MVT::Clone( *problem_->getRHS(), keff );
@@ -1000,6 +999,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
           // Explicitly construct Q and R factors 
 	  // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
 	  Teuchos::SerialDenseMatrix<int,ScalarType> R( Teuchos::Copy, HP, keff, keff );
+          for(int i=1;i<keff;i++) { for(int j=0;j<i;j++) R(i,j) = zero; }
           lapack.ORGQR(HP.numRows(),HP.numCols(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
 		       &work[0],lwork,&info);
 	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
@@ -1090,12 +1090,13 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	
 	// tell gcrodr_iter to iterate
 	try {
+          printf("********** Calling iterate...\n");
 	  gcrodr_iter->iterate();
 	  
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  //
 	  // check convergence first
-	 //
+ 	  //
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  if ( convTest_->getStatus() == Passed ) {
 	    // we have convergence
@@ -1123,7 +1124,11 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    // Get the state.
 	    GCRODRIterState<ScalarType,MV> oldState = gcrodr_iter->getState();
             int p = oldState.curDim;	   
- 
+
+            // Update the linear problem.
+            Teuchos::RCP<MV> update = gcrodr_iter->getCurrentUpdate();
+            problem_->updateSolution( update, true );
+
             // Take the norm of the recycled vectors
             std::vector<MagnitudeType> d(keff);
             MVT::MvNorm( *U_, d );
@@ -1191,6 +1196,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    // Explicitly construct Q and R factors 
 	    // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
 	    Teuchos::SerialDenseMatrix<int,ScalarType> R( Teuchos::Copy, HP, keff_new, keff_new );
+            for(int i=1;i<keff_new;i++) { for(int j=0;j<i;j++) R(i,j) = zero; }
 	    lapack.ORGQR(HP.numRows(),HP.numCols(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
 			 &work[0],lwork,&info);
 	    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
@@ -1241,11 +1247,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    numRestarts++;
 	    
 	    printer_->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << std::endl << std::endl;
-	  
-            // Update the linear problem.
-	    Teuchos::RCP<MV> update = gcrodr_iter->getCurrentUpdate();
-	    problem_->updateSolution( update, true );
-	    
+
 	    // Compute the restart vector.
 	    if (r_ == Teuchos::null)
 	      r_ = MVT::Clone( *(problem_->getRHS()), 1 );
@@ -1488,7 +1490,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   // A_tmp(1:keff,1:keff) = C' * U;
   Teuchos::SerialDenseMatrix<int,ScalarType> A11( Teuchos::View, A_tmp, keff, keff );
   MVT::MvTransMv( one, *C_, *U_, A11 );
-  
+
   // A_tmp(keff+1:m-k+keff+1,1:keff) = V' * U;
   Teuchos::SerialDenseMatrix<int,ScalarType> A21( Teuchos::View, A_tmp, m+1, keff, keff );
   index.resize(m+1);
@@ -1500,11 +1502,11 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   for( i=keff; i<keff+m; i++ ) {
     A_tmp(i,i) = one;
   }
-  
+
   // A = H2' * A_tmp;
   Teuchos::SerialDenseMatrix<int,ScalarType> A( m2, A_tmp.numCols() );
   A.multiply( Teuchos::TRANS, Teuchos::NO_TRANS, one, HH, A_tmp, zero );
-  
+
   // Compute k smallest harmonic Ritz pairs
   // SUBROUTINE DGGEVX( BALANC, JOBVL, JOBVR, SENSE, N, A, LDA, B, LDB,
   //                   ALPHAR, ALPHAI, BETA, VL, LDVL, VR, LDVR, ILO,
@@ -1533,16 +1535,16 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   // Construct magnitude of each harmonic Ritz value
   // NOTE : Forming alpha/beta *should* be okay here, given assumptions on construction of matrix pencil above
   for( i=0; i<ld; i++ ) {
-    w[i] = Teuchos::ScalarTraits<ScalarType>::squareroot(wr[i]/beta[i])*(wr[i]/beta[i]) + (wi[i]/beta[i])*(wi[i]/beta[i]);
+    w[i] = Teuchos::ScalarTraits<ScalarType>::squareroot( (wr[i]/beta[i])*(wr[i]/beta[i]) + (wi[i]/beta[i])*(wi[i]/beta[i]) );
   }
 
   // Construct magnitude of each harmonic Ritz value
   this->sort(w,ld,iperm);
-  
+
   // Determine exact size for PP (i.e., determine if we need to store an additional vector)
-  if (wi[iperm[recycledBlocks_-1]] != zero) {
+  if (wi[iperm[ld-recycledBlocks_]] != zero) {
     int countImag = 0;
-    for ( i=0; i<recycledBlocks_; ++i ) {
+    for ( i=ld-recycledBlocks_; i<ld; i++ ) {
       if (wi[iperm[i]] != zero)
 	countImag++;
     }
@@ -1552,21 +1554,21 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   }
   
   // Select recycledBlocks_ smallest eigenvectors
-  for( i=0; i<recycledBlocks_; ++i ) {
-    for( j=0; j<m2; ++j ) {
-      PP(j,i) = vr(j,iperm[i]);
+  for( i=0; i<recycledBlocks_; i++ ) {
+    for( j=0; j<ld; j++ ) {
+      PP(j,i) = vr(j,iperm[ld-recycledBlocks_+i]);
     }
   }
   
   if (xtraVec) { // we need to store one more vector
-    if (wi[iperm[recycledBlocks_-1]] > 0) { // I picked the "real" component
-      for( j=0; j<m2; ++j ) {   // so get the "imag" component
-	PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_]+1);
+    if (wi[iperm[ld-recycledBlocks_]] > 0) { // I picked the "real" component
+      for( j=0; j<ld; j++ ) {   // so get the "imag" component
+	PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]+1);
       }
     }
-    else {
-      for( j=0; j<m2; ++j ) {   // so get the "imag" component
-	PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_]-1);
+    else { // I picked the "imag" component
+      for( j=0; j<ld; j++ ) {   // so get the "real" component
+	PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]-1);
       }
     }
   }

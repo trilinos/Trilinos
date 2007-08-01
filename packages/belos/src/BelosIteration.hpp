@@ -103,8 +103,8 @@ class Iteration {
   //! \brief Get the current iteration count.
   virtual int getNumIters() const = 0;
   
-  //! \brief Reset the iteration count.
-  virtual void resetNumIters() = 0;
+  //! \brief Reset the iteration count to iter.
+  virtual void resetNumIters( int iter = 0 ) = 0;
 
   //! Get the residuals native to the solver.
   //! \return A multivector with blockSize vectors containing the native residuals, else the native residual norm is returned.

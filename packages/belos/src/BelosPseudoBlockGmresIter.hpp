@@ -265,7 +265,7 @@ namespace Belos {
     int getNumIters() const { return iter_; }
     
     //! \brief Reset the iteration count.
-    void resetNumIters() { iter_ = 0; }
+    void resetNumIters( int iter = 0 ) { iter_ = iter; }
     
     //! Get the norms of the residuals native to the solver.
     //! \return A std::vector of length blockSize containing the native residuals.

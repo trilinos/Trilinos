@@ -275,7 +275,7 @@ namespace Belos {
     int getNumIters() const { return iter_; }
     
     //! \brief Reset the iteration count.
-    void resetNumIters() { iter_ = 0; }
+    void resetNumIters( int iter = 0 ) { iter_ = iter; }
     
     //! Get the norms of the residuals native to the solver.
     //! \return A std::vector of length blockSize containing the native residuals.
@@ -587,7 +587,7 @@ namespace Belos {
       Teuchos::SerialDenseMatrix<int,ScalarType> z(recycledBlocks_,1);
       Teuchos::SerialDenseMatrix<int,ScalarType> subB( Teuchos::View, *B_, recycledBlocks_, curDim_ );
       z.multiply( Teuchos::NO_TRANS, Teuchos::NO_TRANS, one, subB, y, zero );
-      MVT::MvTimesMatAddMv( one, *U_, z, one, *currentUpdate );
+      MVT::MvTimesMatAddMv( -one, *U_, z, one, *currentUpdate );
     }
     return currentUpdate;
   }
