@@ -218,6 +218,12 @@ int ML_Operator_Clean( ML_Operator *mat)
      ML_free(mat->subspace->res1); ML_free(mat->subspace->res2);
      ML_free(mat->subspace);
    }
+
+   if ((mat->data_destroy != NULL) && (mat->data != NULL)) {
+      mat->data_destroy(mat->data);
+      mat->data = NULL;                                                         
+   }                                                                            
+
    if (mat->diagonal != NULL) {
       ML_DVector_Destroy( &(mat->diagonal) );
    }
@@ -261,6 +267,8 @@ int ML_Operator_Clean( ML_Operator *mat)
    mat->num_rigid           = 1;
    mat->halfclone           = ML_FALSE;
 
+
+   
    /* MS * Added on 18-Mar-05 */
    if (mat->aux_data != NULL) 
    {
