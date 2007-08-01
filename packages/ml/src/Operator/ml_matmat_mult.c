@@ -72,7 +72,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   int blocks;
 
 
-  printf("This is an experimental routine. It basically works but ...\n");
+/*  printf("This is an experimental routine. It basically works but ...\n");
   printf("there are some things hardwired and some thing would need\n");
   printf("to be added for both post and pre processing\n");
   printf("Here is a list:\n");
@@ -95,7 +95,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   printf("       why this is hardwired and not simply kicked off by the\n");
   printf("       operators destroy function. Anyway, we would need an\n");
   printf("       appropriate destroy for VBR with recursion. \n");
-
+*/
 
   save_ints[0] = Amatrix->getrow->Nrows;
   save_ints[1] = Amatrix->outvec_leng;  
@@ -814,10 +814,18 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    (*Cmatrix)->getrow->columns_loc_glob = ML_GLOBAL_INDICES;
                                                                                                                  
    (*Cmatrix)->matvec->ML_id = ML_NONEMPTY;
-   (*Cmatrix)->matvec->Nrows = RowOffset+previous_matrix->getrow->Nrows;
-   (*Cmatrix)->getrow->Nrows = RowOffset+previous_matrix->getrow->Nrows;
-   (*Cmatrix)->getrow->N_block_rows = RowOffsetBlocks+previous_matrix->getrow->N_block_rows;
-
+   if(previous_matrix != NULL)
+   {
+     (*Cmatrix)->matvec->Nrows = RowOffset+previous_matrix->getrow->Nrows;
+     (*Cmatrix)->getrow->Nrows = RowOffset+previous_matrix->getrow->Nrows;
+     (*Cmatrix)->getrow->N_block_rows = RowOffsetBlocks+previous_matrix->getrow->N_block_rows;
+   }
+   else
+   {
+     (*Cmatrix)->matvec->Nrows = RowOffset;
+     (*Cmatrix)->getrow->Nrows = RowOffset;
+     (*Cmatrix)->getrow->N_block_rows = RowOffsetBlocks;
+   }
 
   /*ML_Operator_Set_Getrow((*Cmatrix), RowOffset+NrowsPerBlock, 
 			 az_vbrgetrow_wrapper);*/
