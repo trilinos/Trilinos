@@ -109,6 +109,7 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/Sacado_ScalarFlopCounter.cpp \
 	$(srcdir)/Sacado_ConfigDefs.h $(srcdir)/Sacado_Version.hpp \
 	$(srcdir)/Sacado_Traits.hpp $(srcdir)/Sacado.hpp \
+	$(srcdir)/Sacado_MathFunctions.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFad.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFadExpr.hpp \
@@ -210,7 +211,8 @@ DIST_SOURCES = $(am__libsacado_a_SOURCES_DIST) \
 	$(EXTRA_libsacado_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_Version.hpp $(srcdir)/Sacado_Traits.hpp \
-	$(srcdir)/Sacado.hpp $(srcdir)/Sacado_Fad_GeneralFad.hpp \
+	$(srcdir)/Sacado.hpp $(srcdir)/Sacado_MathFunctions.hpp \
+	$(srcdir)/Sacado_Fad_GeneralFad.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFadExpr.hpp \
 	$(srcdir)/Sacado_Fad_ExpressionTraits.hpp \
@@ -528,6 +530,7 @@ SACADO_H = \
 	$(srcdir)/Sacado_Version.hpp \
 	$(srcdir)/Sacado_Traits.hpp \
 	$(srcdir)/Sacado.hpp \
+	$(srcdir)/Sacado_MathFunctions.hpp \
 	$(SACADO_FAD_H) \
 	$(SACADO_CACHEFAD_H) \
 	$(SACADO_TAYLOR_H) \

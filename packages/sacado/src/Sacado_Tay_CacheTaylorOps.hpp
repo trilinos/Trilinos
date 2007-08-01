@@ -39,33 +39,6 @@
 #include <algorithm>	// for std::min and std::max
 #include <ostream>	// for std::ostream
 
-// -DRAD_NO_USING_STDCC is needed, e.g., with Sun CC 5.7
-#ifndef RAD_NO_USING_STDCC
-// Import the standard math functions into the Sacado::Taylor namespace
-namespace Sacado {
-  namespace Tay {
-    using std::exp;
-    using std::log;
-    using std::log10;
-    using std::sqrt;
-    using std::cos;
-    using std::sin;
-    using std::tan;
-    using std::acos;
-    using std::asin;
-    using std::atan;
-    using std::cosh;
-    using std::sinh;
-    using std::tanh;
-    using std::abs;
-    using std::fabs;
-    using std::pow;
-    using std::max;
-    using std::min;
-  }
-}
-#endif //!RAD_NO_USING_STDCC
-
 namespace Sacado {
 
   namespace Tay {
@@ -1079,7 +1052,7 @@ namespace Sacado {
       computeCoeff(unsigned int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
-	  return max(expr1.coeff(0), expr2.coeff(0));
+	  return std::max(expr1.coeff(0), expr2.coeff(0));
 	else
 	  return expr1.coeff(0) >= expr2.coeff(0) ? expr1.coeff(i) : 
 	    expr2.coeff(i);
@@ -1089,7 +1062,7 @@ namespace Sacado {
       computeFastAccessCoeff(unsigned int i, const ExprT1& expr1, 
 			     const ExprT2& expr2) const {
 	if (i == 0)
-	  return max(expr1.fastAccessCoeff(0), expr2.fastAccessCoeff(0));
+	  return std::max(expr1.fastAccessCoeff(0), expr2.fastAccessCoeff(0));
 	else
 	  return expr1.fastAccessCoeff(0) >= expr2.fastAccessCoeff(0) ? 
 	    expr1.fastAccessoeff(i) : expr2.fastAccessCoeff(i);
@@ -1112,7 +1085,7 @@ namespace Sacado {
       computeCoeff(unsigned int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
-	  return max(expr1.coeff(0), expr2.value());
+	  return std::max(expr1.coeff(0), expr2.value());
 	else
 	  return expr1.coeff(0) >= expr2.value() ? expr1.coeff(i) : 
 	    value_type(0);
@@ -1122,7 +1095,7 @@ namespace Sacado {
       computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	if (i == 0)
-	  return max(expr1.fastAccessCoeff(0), expr2.value());
+	  return std::max(expr1.fastAccessCoeff(0), expr2.value());
 	else
 	  return expr1.fastAccessCoeff(0) >= expr2.value() ? 
 	    expr1.fastAccessCoeff(i) : value_type(0);
@@ -1145,7 +1118,7 @@ namespace Sacado {
       computeCoeff(unsigned int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
-	  return max(expr1.value(), expr2.coeff(0));
+	  return std::max(expr1.value(), expr2.coeff(0));
 	else
 	  return expr1.value() >= expr2.coeff(0) ? value_type(0) : 
 	    expr2.coeff(i);
@@ -1155,7 +1128,7 @@ namespace Sacado {
       computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	if (i == 0)
-	  return max(expr1.value(), expr2.fastAccessCoeff(0));
+	  return std::max(expr1.value(), expr2.fastAccessCoeff(0));
 	else
 	  return expr1.value() >= expr2.fastAccessCoeff(0) ? value_type(0) : 
 	    expr2.fastAccessCoeff(i);
@@ -1215,7 +1188,7 @@ namespace Sacado {
       computeCoeff(unsigned int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
-	  return min(expr1.coeff(0), expr2.value());
+	  return std::min(expr1.coeff(0), expr2.value());
 	else
 	  return expr1.coeff(0) <= expr2.value() ? expr1.coeff(i) : 
 	    value_type(0);
@@ -1225,7 +1198,7 @@ namespace Sacado {
       computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	if (i == 0)
-	  return min(expr1.fastAccessCoeff(0), expr2.value());
+	  return std::min(expr1.fastAccessCoeff(0), expr2.value());
 	else
 	  return expr1.fastAccessCoeff(0) <= expr2.value() ? 
 	    expr1.fastAccessCoeff(i) : value_type(0);
@@ -1248,7 +1221,7 @@ namespace Sacado {
       computeCoeff(unsigned int i, const ExprT1& expr1, 
 		   const ExprT2& expr2) const {
 	if (i == 0)
-	  return min(expr1.value(), expr2.coeff(0));
+	  return std::min(expr1.value(), expr2.coeff(0));
 	else
 	  return expr1.value() <= expr2.coeff(0) ? value_type(0) : 
 	    expr2.coeff(i);
@@ -1258,7 +1231,7 @@ namespace Sacado {
       computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
 			     const ExprT2& expr2) const {
 	if (i == 0)
-	  return min(expr1.value(), expr2.fastAccessCoeff(0));
+	  return std::min(expr1.value(), expr2.fastAccessCoeff(0));
 	else
 	  return expr1.value() <= expr2.fastAccessCoeff(0) ? value_type(0) : 
 	    expr2.fastAccessCoeff(i);

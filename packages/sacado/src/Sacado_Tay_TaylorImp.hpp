@@ -861,7 +861,7 @@ Taylor<T>
 pow(const T& a,
     const Taylor<T>& b)
 {
-  return exp(b*log(a));
+  return exp(b*std::log(a));
 }
 
 template <typename T>
@@ -1091,7 +1091,7 @@ Taylor<T>
 acosh(const Taylor<T>& a)
 {
   Taylor<T> b = -1.0 / sqrt(1.0 - a*a);
-  return quad(std::acosh(a.coeff(0)), a, b);
+  return quad(acosh(a.coeff(0)), a, b);
 }
 
 template <typename T>
@@ -1099,7 +1099,7 @@ Taylor<T>
 asinh(const Taylor<T>& a)
 {
   Taylor<T> b = 1.0 / sqrt(a*a - 1.0);
-  return quad(std::asinh(a.coeff(0)), a, b);
+  return quad(asinh(a.coeff(0)), a, b);
 }
 
 template <typename T>
@@ -1107,7 +1107,7 @@ Taylor<T>
 atanh(const Taylor<T>& a)
 {
   Taylor<T> b = 1.0 / (1.0 - a*a);
-  return quad(std::atanh(a.coeff(0)), a, b);
+  return quad(atanh(a.coeff(0)), a, b);
 }
 
 template <typename T>

@@ -39,6 +39,7 @@
 // Sacado includes
 #include "Sacado.hpp"
 #include "Sacado_Random.hpp"
+#include "Sacado_Tay_CacheTaylor.hpp"
 
 typedef Sacado::Tay::CacheTaylor<double> TaylorType;
 
@@ -51,6 +52,8 @@ inline adouble min(double v, const adouble& b) { return fmin(v,b); }
 
 // Cppunit includes
 #include <cppunit/extensions/HelperMacros.h>
+
+using namespace std;
 
 #define BINARY_OP2_TEST(TESTNAME,OP)	    \
   void TESTNAME () {			    \

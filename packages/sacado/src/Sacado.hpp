@@ -33,18 +33,21 @@
 #define SACADO_HPP
 
 #include "Sacado_Version.hpp"
+
+#include "Sacado_MathFunctions.hpp"
+
 #include "Sacado_Fad_DFad.hpp"
 #include "Sacado_CacheFad_DFad.hpp"
 #include "Sacado_Fad_SFad.hpp"
 #include "Sacado_Fad_SLFad.hpp"
-#include "Sacado_Tay_Taylor.hpp"
-#include "Sacado_Tay_CacheTaylor.hpp"
-#include "Sacado_trad.hpp"
-#include "Sacado_ScalarFlopCounter.hpp"
-
 #include "Sacado_Fad_MemPoolManager.hpp"
 #include "Sacado_Fad_DMFad.hpp"
-
 #include "Sacado_Fad_ExpressionTraits.hpp"
+
+#include "Sacado_trad.hpp"
+
+#include "Sacado_Tay_Taylor.hpp"
+
+#include "Sacado_ScalarFlopCounter.hpp"
 
 #endif // SACADO_HPP 

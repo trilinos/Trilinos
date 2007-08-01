@@ -427,51 +427,7 @@ namespace Sacado {
     SCALAR_FLOP_COUNTER_BINARY_COMPARISON_OP(<=,FlopCounts::LESS_THAN_EQUAL)
     SCALAR_FLOP_COUNTER_BINARY_COMPARISON_OP(==,FlopCounts::EQUAL)
 
-#ifndef RAD_NO_USING_STDCC
-    using std::exp;
-    using std::log;
-    using std::log10;
-    using std::sqrt;
-    using std::cos;
-    using std::sin;
-    using std::tan;
-    using std::acos;
-    using std::asin;
-    using std::atan;
-    using std::atan2;
-    using std::cosh;
-    using std::sinh;
-    using std::tanh;
-    using std::abs;
-    using std::fabs;
-    using std::pow;
-    using std::max;
-    using std::min;
-#endif //RAD_NO_USING_STDCC
-
   } // namespace FlopCounterPack
-  } // namespace Sacado
-
-namespace std {
-  using Sacado::FlopCounterPack::exp;
-  using Sacado::FlopCounterPack::log;
-  using Sacado::FlopCounterPack::log10;
-  using Sacado::FlopCounterPack::sqrt;
-  using Sacado::FlopCounterPack::cos;
-  using Sacado::FlopCounterPack::sin;
-  using Sacado::FlopCounterPack::tan;
-  using Sacado::FlopCounterPack::acos;
-  using Sacado::FlopCounterPack::asin;
-  using Sacado::FlopCounterPack::atan;
-  using Sacado::FlopCounterPack::atan2;
-  using Sacado::FlopCounterPack::cosh;
-  using Sacado::FlopCounterPack::sinh;
-  using Sacado::FlopCounterPack::tanh;
-  using Sacado::FlopCounterPack::abs;
-  using Sacado::FlopCounterPack::fabs;
-  using Sacado::FlopCounterPack::pow;
-  using Sacado::FlopCounterPack::max;
-  using Sacado::FlopCounterPack::min;
-}
+} // namespace Sacado
 
 #endif // SACADO_SCALAR_FLOP_COUNTER_HPP

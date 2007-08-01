@@ -132,28 +132,6 @@ extern "C" int RAD_Const_Warn(const void*);// outside any namespace for
 namespace Sacado {
 namespace Rad {
 
-// -DRAD_NO_USING_STDCC is needed, e.g., with Sun CC 5.7
-#ifndef RAD_NO_USING_STDCC
-  // Bring math functions into scope
-  using std::exp;
-  using std::log;
-  using std::log10;
-  using std::sqrt;
-  using std::cos;
-  using std::sin;
-  using std::tan;
-  using std::acos;
-  using std::asin;
-  using std::atan;
-  using std::cosh;
-  using std::sinh;
-  using std::tanh;
-  using std::abs;
-  using std::fabs;
-  using std::atan2;
-  using std::pow;
-#endif //!RAD_NO_USING_STDCC
-
 #ifdef RAD_AUTO_AD_Const
 #undef RAD_DEBUG_BLOCKKEEP
 #else /*!RAD_AUTO_AD_Const*/
@@ -391,31 +369,6 @@ T F copy(Ai);
 #undef T
 #undef AI
 #undef Ai
-} /* namespace Rad */
-} /* namespace Sacado */
-#define SNS Sacado::Rad
-namespace std {	// Moved here from bottom for use in testing nesting of Rad with itself.
-  using SNS::exp;
-  using SNS::log;
-  using SNS::log10;
-  using SNS::sqrt;
-  using SNS::cos;
-  using SNS::sin;
-  using SNS::tan;
-  using SNS::acos;
-  using SNS::asin;
-  using SNS::atan;
-  using SNS::cosh;
-  using SNS::sinh;
-  using SNS::tanh;
-  using SNS::abs;
-  using SNS::fabs;
-  using SNS::atan2;
-  using SNS::pow;
-}
-#undef SNS
-namespace Sacado {
-namespace Rad {
 
  template<typename Double>ADvari<Double>& ADf1(Double f, Double g, const IndepADvar<Double> &x);
  template<typename Double>ADvari<Double>& ADf2(Double f, Double gx, Double gy,
@@ -2569,26 +2522,7 @@ T F copy(Ai x)
 
 } /* namespace Rad */
 } /* namespace Sacado */
-#define SNS Sacado::Rad
-namespace std {
-  using SNS::exp;
-  using SNS::log;
-  using SNS::log10;
-  using SNS::sqrt;
-  using SNS::cos;
-  using SNS::sin;
-  using SNS::tan;
-  using SNS::acos;
-  using SNS::asin;
-  using SNS::atan;
-  using SNS::cosh;
-  using SNS::sinh;
-  using SNS::tanh;
-  using SNS::abs;
-  using SNS::fabs;
-  using SNS::atan2;
-  using SNS::pow;
-}
+
 #undef SNS
 #undef RAD_REINIT_2
 #undef Allow_noderiv

@@ -155,6 +155,7 @@ SACADO_H = \
 	$(srcdir)/Sacado_Version.hpp \
 	$(srcdir)/Sacado_Traits.hpp \
 	$(srcdir)/Sacado.hpp \
+	$(srcdir)/Sacado_MathFunctions.hpp \
 	$(SACADO_FAD_H) \
 	$(SACADO_CACHEFAD_H) \
 	$(SACADO_TAYLOR_H) \

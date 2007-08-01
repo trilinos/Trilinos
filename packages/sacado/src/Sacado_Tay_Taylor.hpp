@@ -362,54 +362,9 @@ namespace Sacado {
     template <typename T> std::ostream& operator << (std::ostream& os,
 						     const Taylor<T>& a);
 
-// -DRAD_NO_USING_STDCC is needed, e.g., with Sun CC 5.7
-#ifndef RAD_NO_USING_STDCC
-    using std::exp;
-    using std::log;
-    using std::log10;
-    using std::sqrt;
-    using std::cos;
-    using std::sin;
-    using std::tan;
-    using std::acos;
-    using std::asin;
-    using std::atan;
-    using std::atan2;
-    using std::cosh;
-    using std::sinh;
-    using std::tanh;
-    using std::abs;
-    using std::fabs;
-    using std::pow;
-    using std::max;
-    using std::min;
-#endif //!RAD_NO_USING_STDCC
-
   } // namespace Tay
 
 } // namespace Sacado
-
-namespace std {
-  using Sacado::Tay::exp;
-  using Sacado::Tay::log;
-  using Sacado::Tay::log10;
-  using Sacado::Tay::sqrt;
-  using Sacado::Tay::cos;
-  using Sacado::Tay::sin;
-  using Sacado::Tay::tan;
-  using Sacado::Tay::acos;
-  using Sacado::Tay::asin;
-  using Sacado::Tay::atan;
-  using Sacado::Tay::atan2;
-  using Sacado::Tay::cosh;
-  using Sacado::Tay::sinh;
-  using Sacado::Tay::tanh;
-  using Sacado::Tay::abs;
-  using Sacado::Tay::fabs;
-  using Sacado::Tay::pow;
-  using Sacado::Tay::max;
-  using Sacado::Tay::min;
-}
 
 #include "Sacado_Tay_TaylorTraits.hpp"
 #include "Sacado_Tay_TaylorImp.hpp"

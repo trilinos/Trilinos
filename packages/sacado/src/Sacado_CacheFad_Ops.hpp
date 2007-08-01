@@ -59,34 +59,6 @@
 #include <algorithm>	// for std::min and std::max
 #include <ostream>	// for std::ostream
 
-// -DRAD_NO_USING_STDCC is needed, e.g., with Sun CC 5.7
-#ifndef RAD_NO_USING_STDCC
-// Import the standard math functions into the Sacado::CacheFad namespace
-namespace Sacado {
-  namespace CacheFad {
-    using std::exp;
-    using std::log;
-    using std::log10;
-    using std::sqrt;
-    using std::cos;
-    using std::sin;
-    using std::tan;
-    using std::acos;
-    using std::asin;
-    using std::atan;
-    using std::atan2;
-    using std::cosh;
-    using std::sinh;
-    using std::tanh;
-    using std::abs;
-    using std::fabs;
-    using std::pow;
-    using std::max;
-    using std::min;
-  }
-}
-#endif //!RAD_NO_USING_STDCC
-
 #define FAD_UNARYOP_MACRO(OPNAME,OP,PARTIAL,VALUE,DX,FASTACCESSDX)	\
 namespace Sacado {							\
   namespace CacheFad {							\
@@ -128,10 +100,6 @@ namespace Sacado {							\
       return Expr<expr_t>(expr_t(expr));				\
     }									\
   }									\
-}                                                                       \
-                                                                        \
-namespace std {                                                         \
-  using Sacado::CacheFad::OPNAME;                                       \
 }
 
 FAD_UNARYOP_MACRO(operator+,
@@ -155,31 +123,31 @@ FAD_UNARYOP_MACRO(exp,
 FAD_UNARYOP_MACRO(log,
 		  LogOp, 
 		  ;,
-		 std::log(v),
+		  std::log(v),
 		  expr.dx(i)/v,
 		  expr.fastAccessDx(i)/v)
 FAD_UNARYOP_MACRO(log10,
 		  Log10Op, 
-		  a = log(value_type(10))*v,
-		 std::log10(v),
+		  a = std::log(value_type(10))*v,
+		  std::log10(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(sqrt,
 		  SqrtOp,
 		  a = value_type(2)*std::sqrt(v),
-		 std::sqrt(v),
+		  std::sqrt(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(cos,
 		  CosOp, 
 		  a = std::sin(v),
-		 std::cos(v),
+		  std::cos(v),
 		  -expr.dx(i)*a,
 		  -expr.fastAccessDx(i)*a)
 FAD_UNARYOP_MACRO(sin,
 		  SinOp, 
 		  a = std::cos(v),
-		 std::sin(v),
+		  std::sin(v),
 		  expr.dx(i)*a,
 		  expr.fastAccessDx(i)*a)
 FAD_UNARYOP_MACRO(tan,
@@ -413,10 +381,6 @@ namespace Sacado {							\
       return Expr<expr_t>(expr_t(expr, ConstT(c)));			\
     }									\
   }									\
-}                                                                       \
-                                                                        \
-namespace std {                                                         \
-  using Sacado::CacheFad::OPNAME;                                       \
 }
 
 FAD_BINARYOP_MACRO(operator+,
@@ -471,7 +435,7 @@ FAD_BINARYOP_MACRO(atan2,
 		   (expr1.fastAccessDx(i)*v2)/a)
 FAD_BINARYOP_MACRO(pow,
 		   PowerOp,
-		   value_type c= std::pow(v1,v2); a=c*v2/v1; b=c*log(v1),
+		   value_type c= std::pow(v1,v2); a=c*v2/v1; b=c*std::log(v1),
 		   c,
 		   expr1.dx(i)*a + expr2.dx(i)*b,
 		   expr1.fastAccessDx(i)*a + expr2.fastAccessDx(i)*b,
@@ -479,6 +443,32 @@ FAD_BINARYOP_MACRO(pow,
 		   expr1.dx(i)*a,
 		   expr2.fastAccessDx(i)*b,
 		   expr1.fastAccessDx(i)*a)
+FAD_BINARYOP_MACRO(max,
+		   MaxOp,
+		   ;,
+		   std::max(expr1.val(), expr2.val()),
+		   expr1.val() >= expr2.val() ? expr1.dx(i) : expr2.dx(i),
+		   expr1.val() >= expr2.val() ? expr1.fastAccessDx(i) : 
+		                                expr2.fastAccessDx(i),
+		   expr1.val() >= expr2.val() ? value_type(0) : expr2.dx(i),
+		   expr1.val() >= expr2.val() ? expr1.dx(i) : value_type(0),
+		   expr1.val() >= expr2.val() ? value_type(0) : 
+		                                expr2.fastAccessDx(i),
+		   expr1.val() >= expr2.val() ? expr1.fastAccessDx(i) : 
+		                                value_type(0))
+FAD_BINARYOP_MACRO(min,
+		   MinOp,
+		   ;,
+		   std::min(expr1.val(), expr2.val()),
+		   expr1.val() <= expr2.val() ? expr1.dx(i) : expr2.dx(i),
+		   expr1.val() <= expr2.val() ? expr1.fastAccessDx(i) : 
+		                                expr2.fastAccessDx(i),
+		   expr1.val() <= expr2.val() ? value_type(0) : expr2.dx(i),
+		   expr1.val() <= expr2.val() ? expr1.dx(i) : value_type(0),
+		   expr1.val() <= expr2.val() ? value_type(0) : 
+		                                expr2.fastAccessDx(i),
+		   expr1.val() <= expr2.val() ? expr1.fastAccessDx(i) : 
+		                                value_type(0))
 
 #undef FAD_BINARYOP_MACRO
   
@@ -646,38 +636,34 @@ namespace Sacado {							\
       return Expr<expr_t>(expr_t(expr, ConstT(c)));			\
     }									\
   }									\
-}                                                                       \
-                                                                        \
-namespace std {                                                         \
-  using Sacado::CacheFad::OPNAME;                                       \
 }
 
-FAD_SFINAE_BINARYOP_MACRO(max,
-		   MaxOp,
-		   ;,
-		   std::max(expr1.val(), expr2.val()),
-		   expr1.val() >= expr2.val() ? expr1.dx(i) : expr2.dx(i),
-		   expr1.val() >= expr2.val() ? expr1.fastAccessDx(i) : 
-		                                expr2.fastAccessDx(i),
-		   expr1.val() >= expr2.val() ? value_type(0) : expr2.dx(i),
-		   expr1.val() >= expr2.val() ? expr1.dx(i) : value_type(0),
-		   expr1.val() >= expr2.val() ? value_type(0) : 
-		                                expr2.fastAccessDx(i),
-		   expr1.val() >= expr2.val() ? expr1.fastAccessDx(i) : 
-		                                value_type(0))
-FAD_SFINAE_BINARYOP_MACRO(min,
-		   MinOp,
-		   ;,
-		   std::min(expr1.val(), expr2.val()),
-		   expr1.val() <= expr2.val() ? expr1.dx(i) : expr2.dx(i),
-		   expr1.val() <= expr2.val() ? expr1.fastAccessDx(i) : 
-		                                expr2.fastAccessDx(i),
-		   expr1.val() <= expr2.val() ? value_type(0) : expr2.dx(i),
-		   expr1.val() <= expr2.val() ? expr1.dx(i) : value_type(0),
-		   expr1.val() <= expr2.val() ? value_type(0) : 
-		                                expr2.fastAccessDx(i),
-		   expr1.val() <= expr2.val() ? expr1.fastAccessDx(i) : 
-		                                value_type(0))
+// FAD_SFINAE_BINARYOP_MACRO(max,
+// 		   MaxOp,
+// 		   ;,
+// 		   std::max(expr1.val(), expr2.val()),
+// 		   expr1.val() >= expr2.val() ? expr1.dx(i) : expr2.dx(i),
+// 		   expr1.val() >= expr2.val() ? expr1.fastAccessDx(i) : 
+// 		                                expr2.fastAccessDx(i),
+// 		   expr1.val() >= expr2.val() ? value_type(0) : expr2.dx(i),
+// 		   expr1.val() >= expr2.val() ? expr1.dx(i) : value_type(0),
+// 		   expr1.val() >= expr2.val() ? value_type(0) : 
+// 		                                expr2.fastAccessDx(i),
+// 		   expr1.val() >= expr2.val() ? expr1.fastAccessDx(i) : 
+// 		                                value_type(0))
+// FAD_SFINAE_BINARYOP_MACRO(min,
+// 		   MinOp,
+// 		   ;,
+// 		   std::min(expr1.val(), expr2.val()),
+// 		   expr1.val() <= expr2.val() ? expr1.dx(i) : expr2.dx(i),
+// 		   expr1.val() <= expr2.val() ? expr1.fastAccessDx(i) : 
+// 		                                expr2.fastAccessDx(i),
+// 		   expr1.val() <= expr2.val() ? value_type(0) : expr2.dx(i),
+// 		   expr1.val() <= expr2.val() ? expr1.dx(i) : value_type(0),
+// 		   expr1.val() <= expr2.val() ? value_type(0) : 
+// 		                                expr2.fastAccessDx(i),
+// 		   expr1.val() <= expr2.val() ? expr1.fastAccessDx(i) : 
+// 		                                value_type(0))
 
 #undef FAD_SFINAE_BINARYOP_MACRO
 

@@ -498,7 +498,7 @@ testall : $(noinst_PROGRAMS) tradoptest.exe
 	./hesopcheck.exe
 	for i in `ls tradoptest_*.exe`; do ./$$i; done
 
-# If we are configured with --with-gnumake, use GNU's extensions to make 
+# If we are configured with --with-gnumake, use GNU's extensions to make
 # to compile all of the tradoptests a lot faster if using -j xx for
 # parallel make
 
@@ -514,11 +514,11 @@ testall : $(noinst_PROGRAMS) tradoptest.exe
 @USING_GNUMAKE_FALSE@	set -e;\
 @USING_GNUMAKE_FALSE@	for i in `ls tradoptest_*.cpp | sed 's/\.cpp//'`; do \
 @USING_GNUMAKE_FALSE@		echo $$i: ;\
-@USING_GNUMAKE_FALSE@		$(CXXCOMPILE) -o $$i.exe $$i.cpp;\
-@USING_GNUMAKE_FALSE@		$(CXXCOMPILE) -o $$i"_ADC.exe" -DRAD_AUTO_AD_Const $$i.cpp;\
-@USING_GNUMAKE_FALSE@		$(CXXCOMPILE) -o $$i"_EQA.exe" -DRAD_EQ_ALIAS $$i.cpp;\
-@USING_GNUMAKE_FALSE@		$(CXXCOMPILE) -o $$i"_RE1.exe" -DRAD_REINIT=1 $$i.cpp;\
-@USING_GNUMAKE_FALSE@		$(CXXCOMPILE) -o $$i"_RE2.exe" -DRAD_REINIT=2 $$i.cpp;\
+@USING_GNUMAKE_FALSE@		$(CXXCOMPILE) -o $$i.exe $$i.cpp $(LIBS);\
+@USING_GNUMAKE_FALSE@		$(CXXCOMPILE) -o $$i"_ADC.exe" -DRAD_AUTO_AD_Const $$i.cpp $(LIBS);\
+@USING_GNUMAKE_FALSE@		$(CXXCOMPILE) -o $$i"_EQA.exe" -DRAD_EQ_ALIAS $$i.cpp $(LIBS);\
+@USING_GNUMAKE_FALSE@		$(CXXCOMPILE) -o $$i"_RE1.exe" -DRAD_REINIT=1 $$i.cpp $(LIBS);\
+@USING_GNUMAKE_FALSE@		$(CXXCOMPILE) -o $$i"_RE2.exe" -DRAD_REINIT=2 $$i.cpp $(LIBS);\
 @USING_GNUMAKE_FALSE@		done;\
 @USING_GNUMAKE_FALSE@	echo -e '#!/bin/sh\necho OK' > tradoptest.exe; chmod +x tradoptest.exe
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
