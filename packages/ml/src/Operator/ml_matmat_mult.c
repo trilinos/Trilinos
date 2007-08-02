@@ -422,8 +422,9 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 	    if (rows[jj] == i) {
 	      jj++;
 	      k = B_allocated;
-	      Bgetrow(Bmatrix,1, &i, &B_allocated, &Bcols, &B_indx, &row2_N, itemp);
-    	  itemp += row2_N;
+	      VBR_block_getrow_ind(Bmatrix, i, &B_allocated_int, &B_allocated, &blocks, &Bcols, &B_indx, &Bvals, &row2_N, itemp, itemp2);
+    	  itemp += blocks;
+          itemp2 += row2_N;
     	}
     	Bptr[i+1] = itemp;
       }
@@ -1805,6 +1806,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
          }
          k++;
        }
+       ML_CSR_MSRdata_Destroy(cur_matrix->data);
        iplus1 = i+1;
        rpntr = (int*)realloc((void*)rpntr, iplus1*sizeof(int));
        bpntr = (int*)realloc((void*)bpntr, iplus1*sizeof(int));
@@ -1822,6 +1824,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
        cur_matrix->getrow->data = (void *)out_data;
        cur_matrix->data = (void *)out_data;
        cur_matrix->blocks = cur_matrix->sub_matrix->blocks + bpntr[i];
+       cur_matrix->data_destroy = ML_RECUR_VBRdata_Destroy; 
        for(j = 0; j < neighbors; j++)
          if (pre_comm->neighbors[j].N_rcv > 0)
            ML_free(all_rpntr[j]);
@@ -1918,13 +1921,10 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
      if(in_matrix->N_nonzeros < spaceneeded)
        spaceneeded = in_matrix->N_nonzeros;
    }*/
-   bindx = (int*)ML_allocate(spaceneeded*sizeof(int));
-   indx = (int*)ML_allocate((spaceneeded+1)*sizeof(int));
 
    /*the number of blockrows is either exact or close enough however*/
    bpntr = (int*)ML_allocate((blockrows+1)*sizeof(int));
 
-   indx[0] = bpntr[0] = 0;
 
    /*Space for each point row being read in*/ 
    /*if(in_matrix->max_nz_per_row > 0)
@@ -1948,11 +1948,15 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
      in_matrix->getrow->func_ptr(in_matrix, 1, &(i), A_i_allocated, A_i_cols, accum_val, &row_length);
      nnz += row_length;
    }
+   spaceneeded = nnz;
+   bindx = (int*)ML_allocate(spaceneeded*sizeof(int));
+   indx = (int*)ML_allocate((spaceneeded+1)*sizeof(int));
+   indx[0] = bpntr[0] = 0;
    /*else lets use our good estimate we already have
      nnz = in_matrix->N_nonzeros;*/
 
    /*10 is a complete guess.  One would hope the matrix resulting block matrix was more dense than this but there is no gareentee*/
-   vals = (double *) ML_allocate(nnz*10*sizeof(double));
+   vals = (double *) ML_allocate(nnz*3*sizeof(double));
    i = 10;
    if(vals == NULL) /*if we don't have 10 times the space lets start trying smaller*/
    {
@@ -2096,8 +2100,7 @@ void ML_convert2vbr(ML_Operator *in_matrix, int row_block_size, int rpntr[], int
 
    in_matrix->data = (void *)out_data;
    in_matrix->getrow->data = (void *)out_data;
-   in_matrix->data_destroy = NULL; /*at some point this needs to be set to the new vbr destroy*/
-
+   in_matrix->data_destroy = ML_RECUR_VBRdata_Destroy; 
    /*memory cleanup*/
    ML_free(A_i_cols);
    ML_free(accum_val);
