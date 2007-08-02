@@ -71,7 +71,7 @@ tradoptest.exe : testgen.as tradoptest.c0
 		$(CXXCOMPILE) -o $$i"_RE1.exe" -DRAD_REINIT=1 $$i.cpp $(LIBS);\
 		$(CXXCOMPILE) -o $$i"_RE2.exe" -DRAD_REINIT=2 $$i.cpp $(LIBS);\
 		done;\
-	echo -e '#!/bin/sh\necho OK' > tradoptest.exe; chmod +x tradoptest.exe
+	echo '#!/bin/sh' >tradoptest.exe; echo 'echo OK' >>tradoptest.exe; chmod +x tradoptest.exe
 
 endif
 
