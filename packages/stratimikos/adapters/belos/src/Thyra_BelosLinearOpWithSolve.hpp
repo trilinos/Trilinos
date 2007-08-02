@@ -58,7 +58,16 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   isExternalPrec_ = isExternalPrec;
   approxFwdOpSrc_ = approxFwdOpSrc;
   supportSolveUse_ = supportSolveUse;
-  defaultTol_ = solverPL_->get<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>("Convergence Tolerance");
+  // Check if "Convergence Tolerance" is in the solver parameter list.  If not, use the default from the solver.
+  if ( !is_null(solverPL_) ) {
+    if (solverPL_->isParameter("Convergence Tolerance")) {
+      defaultTol_ = solverPL_->get<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>("Convergence Tolerance");
+    }
+  }
+  else {
+    Teuchos::RCP<const Teuchos::ParameterList> defaultPL = iterativeSolver->getValidParameters();
+    defaultTol_ = defaultPL->get<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>("Convergence Tolerance");
+  }
 }
 
 template<class Scalar>
