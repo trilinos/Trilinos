@@ -100,8 +100,6 @@ int main(int argc, char *argv[])
   typedef Anasazi::Operator<ST>               OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
-  using std::cout;
-  using std::endl;
   ST ONE  = SCT::one();
 
   if (verbose && MyPID == 0) {
