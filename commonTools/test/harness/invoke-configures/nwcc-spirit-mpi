@@ -1,42 +1,12 @@
-#spirit1
-#NWCC: INTEL_LICENSE_FILE = /apps/intel/cce_80/licenses
-#      LD_LIBRARY_PATH = /apps/intel/cce_80/lib:/opt/gm/lib
-#      PATH = /apps/intel/cce_80/bin /apps/intel/fce_80/bin /apps/mpich-intel-8.1/bin
-#  cd /projects/alegra/rich_work/TPL/trilinos/5.0/build/nwcc && /projects/alegra/rich_work/TPL/trilinos/5.0/TrilinosCVS/Trilinos/configure
-../configure \
-        --prefix=/home/jmwille/TrilinosTestHarness/install \
-        --enable-nox-epetra \
-        --disable-aztecoo-azlu \
-        --enable-amesos \
-        --without-ml_superlu \
-        --without-ml_zoltan \
-        --enable-teuchos \
-        --enable-triutils \
-        --enable-anasazi \
-        --enable-epetraext-transform \
-        --disable-ml_enrich \
-        --disable-dependency-tracking \
-        --with-blas="-L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/nwcc -llapack -L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/nwcc -lblas" \
-        --with-lapack="-L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/nwcc -llapack -L/projects/alegra/rich_work/TPL/lapackblas/3.0/lib/nwcc -lblas" \
-        --with-incdirs="-I/projects/alegra/rich_work/TPL/trilinos/5.0/DSuperLU/SRC" \
-        --with-ldflags="-L/projects/alegra/rich_work/TPL/trilinos/5.0/y12m -L/projects/alegra/rich_work/TPL/trilinos/5.0/DSuperLU" \
-        --with-libs="-L/dev/null" \
-        --enable-mpi \
-        --with-mpi-incdir="" \
-        --with-mpi-libdir="" \
-        --with-mpi-libs="" \
-        CC="mpicc " \
-        CXX="mpiCC " \
-        F77="mpif77 " \
-        CPPFLAGS="-DCODE_MP -DMPICH_SKIP_MPICXX -DLC_FLINK -I/projects/alegra/rich_work/TPL/zoltan/1.54/include -I/projects/alegra/rich_work/TPL/trilinos/5.0/DSuperLU/SRC" \
-        CFLAGS="" \
-        CXXFLAGS="" \
-        FFLAGS="" \
-        LDFLAGS=" " \
-        --with-ar="ar -rcv" \
+.././configure \
+--with-blas="-L/projects/global/x86_64/libraries/l_mkl_p_9.1.018/lib/em64t -lmkl -lguide" \
+--with-lapack="-L/projects/global/x86_64/libraries/l_mkl_p_9.1.018/lib/em64t -lmkl_lapack -lmkl" \
+--with-mpi-compilers \
+--disable-default-packages \
+--enable-amesos \
+--enable-anasazi \
 --enable-aztecoo \
 --enable-belos \
---enable-capo \
 --enable-claps \
 --enable-didasko \
 --enable-epetra \
@@ -47,20 +17,30 @@
 --enable-kokkos \
 --enable-komplex \
 --enable-loca \
+--with-loca-anasazi \
 --enable-meros \
 --enable-ml \
 --enable-moertel \
---enable-new-package \
+--enable-moocho \
+--enable-new_package \
 --enable-nox \
+--enable-nox-epetra \
+--enable-nox-epetra-examples \
+--enable-nox-lapack \
+--enable-nox-lapack-examples \
+--enable-nox-tests \
 --enable-pliris \
 --enable-rtop \
 --enable-rythmos \
---enable-moocho \
+--enable-teuchos \
 --enable-thyra \
---enable-tpetra \
---enable-teuchos-complex \
+--enable-trilinoscouplings \
+--enable-triutils \
 --enable-sacado \
 --enable-sacado-alltests \
 --enable-stratimikos \
---disable-default-packages
+--with-gnumake \
+--config-cache \
+CFLAGS=-O3 CXXFLAGS=-O3 \
+FFLAGS=-O3 CPPFLAGS="-DCODE_MP -DHAVE_CONFIG_H"
 
