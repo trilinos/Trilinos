@@ -73,6 +73,8 @@ extern void ML_OnlyFreeTopLevelDataPtr(void *data);
 extern void ML_CSR_MSRdata_Destroy(void *data);
 extern void ML_CSR_MSRdata_Destroy_StructOnly(void *data);
 
+extern void ML_RECUR_VBRdata_Destroy(ML_Operator *matrix);
+extern void ML_VBRdata_Destroy(void *data);
 extern void ML_restricted_MSR_mult(ML_Operator *matrix, int Nrows,
                                    double b[], double c[], int Nsend);
 

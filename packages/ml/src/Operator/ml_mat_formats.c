@@ -105,6 +105,32 @@ void ML_CSR_MSRdata_Destroy_StructOnly(void *data)
    }
 }
 /*********************************************************************/
+/* Free a 'struct ML_VBRdata' associated with the matrix->data field */
+/*********************************************************************/
+
+void ML_RECUR_VBRdata_Destroy(ML_Operator *matrix)
+{
+   if (matrix->sub_matrix != NULL) 
+      ML_VBRdata_Destroy(matrix->sub_matrix);
+   ML_VBRdata_Destroy(matrix->data);
+}
+
+void ML_VBRdata_Destroy(void *data)
+{
+   struct ML_vbrdata *temp;
+
+   temp = (struct ML_vbrdata *) data;
+   if (temp != NULL) {
+      if (temp->bindx != NULL) ML_free(temp->bindx);
+      if (temp->val  != NULL) ML_free(temp->val);
+      if (temp->rpntr  != NULL) ML_free(temp->rpntr);
+      if (temp->cpntr  != NULL) ML_free(temp->cpntr);
+      if (temp->bpntr  != NULL) ML_free(temp->bpntr);
+      if (temp->indx  != NULL) ML_free(temp->indx);
+      ML_free(temp);
+   }
+}
+/*********************************************************************/
 /* Scale the rows of the generalized CSR matrix using scale_factors. */
 /*********************************************************************/
 
