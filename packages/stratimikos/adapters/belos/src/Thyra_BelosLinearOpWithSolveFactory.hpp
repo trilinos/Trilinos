@@ -207,7 +207,7 @@ template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
   TEST_FOR_EXCEPT(paramList.get()==NULL);
-  paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
+  paramList->validateParametersAndSetDefaults(*this->getValidParameters(),1);
   paramList_ = paramList;
   //
   if(precFactory_.get()) {
