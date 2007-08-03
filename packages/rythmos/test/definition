@@ -29,14 +29,14 @@
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3  --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
-    X-HOST = gabriel.sandia.gov;
+    X-HOST = gabriel.sandia.gov s858352.srn.sandia.gov; 
 }
 
-(FRAMEWORK,INSTALL,RythmosAmesos,RythmosBDF1Gabriel,,RythmosAmesos2) {
+(FRAMEWORK,INSTALL,RythmosAmesos,RythmosBDF1Gabriel,RythmosAmesos1Loose) {
     TESTS = ../example/basicExample/basicExample_amesos.exe;
     ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3 --max-restep-error=1e-9  --verbose --echo-command-line;
     COMM = SERIAL, MPI(1);
-    HOST = gabriel.sandia.gov;
+    HOST = gabriel.sandia.gov s858352.srn.sandia.gov;
 }
 
 # Vector Explicit Runge-Kutta 4 stage
