@@ -608,13 +608,28 @@ The following pages are relevant to developers.
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page nox_release_information NOX and LOCA Release Information (Last updated July 30th 2007)
+/*! \page nox_release_information NOX and LOCA Release Information (Last updated August 2nd 2007)
 
  %NOX/%LOCA version 8.0 will be release as part of Trilinos 8.0 in late August 2007.  Current changes/additions:
 <ul>
   <li> A support group/vector has been added for Thyra.  The group leverages the Stratimikos library to build the linear solver and preconditioner.
   <li> A Thyra::NolinearSolver::NOX object has been added to allow Thyra users to call %NOX as a nonlinear solver for Thyra.
   <li> A NOX::StatusTest::Factory has been added to allow for the construction of an entire status test set via a parameter list.
+  <li> The NOX::Utils object can now take a parameter sublist to enable the print options specified with the "Output Information" parameter.  Previously the user had to sum the print options into an integer that was set in the parameter list.  Now the user can just specify a sublist of print options for the "output Information" parameter.  Setting the integer still works.  Here is an example:
+\code
+Teuchos::ParameterList p; 
+p.set("MyPID", myPID);
+p.set("Output Processor", printProc);
+p.set("Output Precision", 3);
+p.set("Output Stream", outputstream);
+p.set("Error Stream", outputstream);   
+Teuchos::ParameterList& info = p.sublist("Output Information");
+info.set("Error", true);
+info.set("Details", true);
+info.set("Outer Iteration StatusTest", true);
+info.set("Outer Iteration", true);
+NOX::Utils utils3(p);
+\endcode
 </ul>
 
  %NOX/%LOCA version 7.0 will be release as part of Trilinos 7.0 in early September 2006.  %NOX and %LOCA have undergone many important changes between the 6.0 and 7.0 release:
@@ -1735,10 +1750,25 @@ immediately before the word that is causing the link. For example,
 
      <ul>
 
-     <li> "Output Information"
-     <li> "MyPID"
-     <li> "Output Processor"
-     <li> "Output Precision"
+     <li> "Output Information" Sublist or <int>
+        <ul>
+	<li> "Error" <boolean>
+	<li> "Warning" <boolean>
+	<li> "Outer Iteration" <boolean>
+	<li> "Inner Iteration" <boolean>
+	<li> "Parameters" <boolean>
+	<li> "Details" <boolean>
+	<li> "Outer Iteration StatusTest" <boolean>
+	<li> "Linear Solver Details" <boolean>
+	<li> "Test Details" <boolean>
+	<li> "Stepper Iteration" <boolean>
+	<li> "Stepper Details" <boolean>
+	<li> "Stepper Parameters" <boolean>
+	<li> "Debug" <boolean>
+	</ul>
+     <li> "MyPID" <int>
+     <li> "Output Processor" <int>
+     <li> "Output Precision" <int>
      
      </ul>
 

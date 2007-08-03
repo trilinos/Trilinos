@@ -100,13 +100,40 @@ NOX::Utils& NOX::Utils::operator=(const NOX::Utils& source)
 
 void NOX::Utils::reset(Teuchos::ParameterList& p)
 {
-  // Basic info
+  using namespace Teuchos;
 
-  // "Output Information" may be stored as an int or as NOX::Utils::MsgType
-  if (p.INVALID_TEMPLATE_QUALIFIER
-      isType<NOX::Utils::MsgType>("Output Information"))
-    printTest = p.INVALID_TEMPLATE_QUALIFIER
-      get<NOX::Utils::MsgType>("Output Information");
+  // "Output Information" may be stored as a sublist, an int, or as
+  // a NOX::Utils::MsgType
+  if (p.isSublist("Output Information")) {
+
+    ParameterList& printList = p.sublist("Output Information");
+    typedef std::map<std::string, NOX::Utils::MsgType> OptionMap;
+    OptionMap output_options;
+    output_options["Error"] = NOX::Utils::Error;
+    output_options["Warning"] = NOX::Utils::Warning;
+    output_options["Outer Iteration"] = NOX::Utils::OuterIteration;
+    output_options["Inner Iteration"] = NOX::Utils::InnerIteration;
+    output_options["Parameters"] = NOX::Utils::Parameters;
+    output_options["Details"] = NOX::Utils::Details;
+    output_options["Outer Iteration StatusTest"] = NOX::Utils::OuterIterationStatusTest;
+    output_options["Linear Solver Details"] = NOX::Utils::LinearSolverDetails;
+    output_options["Test Details"] = NOX::Utils::TestDetails;
+    output_options["Stepper Iteration"] = NOX::Utils::StepperIteration;
+    output_options["Stepper Details"] = NOX::Utils::StepperDetails;
+    output_options["Stepper Parameters"] = NOX::Utils::StepperParameters;
+    output_options["Debug"] = NOX::Utils::Debug;
+
+    bool add_test = false;
+    OptionMap::const_iterator start = output_options.begin();
+    OptionMap::const_iterator stop = output_options.end();
+    for (OptionMap::const_iterator i = start; i != stop; ++i) {
+      add_test = printList.get(i->first, false);
+      if (add_test)
+	printTest += i->second;
+    }
+  }
+  else if (isParameterType<NOX::Utils::MsgType>(p, "Output Information"))
+    printTest = get<NOX::Utils::MsgType>(p, "Output Information");
   else
     printTest = p.get("Output Information", 0xf);
 

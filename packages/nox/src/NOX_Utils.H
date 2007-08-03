@@ -59,10 +59,25 @@ namespace NOX {
   The following parameters are valid for this class and should be
   defined in the "Printing" sublist of the solver parameter list.
 
-  - "Output Information" - An integer which is a sum of MsgType's to
-    specify how much information to show. Defaults to
-    NOX::Utils::Warning + NOX::Utils::OuterIteration +
-    NOX::Utils::InnerIteration + NOX::Utils::Parameters = 0xf = 15.
+  - "Output Information" - Can be a sublist or an integer.  If it is
+  an integer, this value is a sum of MsgType's to specify how much
+  information to show. Defaults to NOX::Utils::Warning +
+  NOX::Utils::OuterIteration + NOX::Utils::InnerIteration +
+  NOX::Utils::Parameters = 0xf = 15.  If this is a sublist, the
+  following booleans are valid (set to true to enable print option):
+       - "Error"
+       - "Warning"
+       - "Outer Iteration"
+       - "Inner Iteration"
+       - "Parameters"
+       - "Details"
+       - "Outer Iteration StatusTest"
+       - "Linear Solver Details"
+       - "Test Details"
+       - "Stepper Iteration"
+       - "Stepper Details"
+       - "Stepper Parameters"
+       - "Debug"
 
   - "Output Processor" - Specifies the designated print process. Defaults to 0.
 

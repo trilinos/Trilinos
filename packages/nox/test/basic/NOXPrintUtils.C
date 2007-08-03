@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList p;
   p.set("Output Information", outputInfo);
   p.set("MyPID", myPID);
-  p.set("OutputProcessor", printProc);
+  p.set("Output Processor", printProc);
   p.set("Output Precision", 3);
   p.set("Output Stream", outputstream);
   p.set("Error Stream", outputstream);
@@ -250,6 +250,34 @@ int main(int argc, char *argv[])
       status = 1;
   }
   
+#ifdef HAVE_MPI
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+  if (myPID == printProc) {
+    cout << "\nTest #12: ctor 2 with plist for Output Information" << endl;
+    cout << "**************************" << endl;
+    cout << "Building utils2 using ctor #2...";
+  }
+  {
+    Teuchos::ParameterList pp;
+    Teuchos::ParameterList& info = pp.sublist("Output Information");
+    info.set("Error", true);
+    info.set("Details", true);
+    info.set("Outer Iteration StatusTest", true);
+    info.set("Outer Iteration", true);
+    pp.set("MyPID", myPID);
+    pp.set("Output Processor", printProc);
+    pp.set("Output Precision", 3);
+    pp.set("Output Stream", outputstream);
+    pp.set("Error Stream", outputstream);
+    NOX::Utils utils3(pp);
+    pp.print(std::cout);
+    cout << "\n" << utils3 << endl;
+    if (myPID == printProc)
+      cout << "Done!" << endl;
+  }
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
