@@ -455,17 +455,18 @@ initial guess, the status tests, and the solver parameters.
 
 \code
 // Create the solver
-NOX::Solver::Manager solver(grp, statusTestsCombo, solverParametersPtr);
+Teuchos::RCP<NOX::Solver::Generic> solver = 
+  NOX::Solver::buildSolver(grp, statusTestsCombo, solverParametersPtr);
 
 // Solve the nonlinear system
-NOX::StatusTest::StatusType status = solver.solve();
+NOX::StatusTest::StatusType status = solver->solve();
 
 // Print the parameter list
 cout << "\n" << "-- Parameter List From Solver --" << "\n";
-solver.getList().print(cout);
+solver->getList().print(cout);
 
 // Get the answer
-grp = solver.getSolutionGroup();
+grp = solver->getSolutionGroup();
 
 // Print the answer
 cout << "\n" << "-- Final Solution From Solver --" << "\n";
@@ -1528,8 +1529,7 @@ immediately before the word that is causing the link. For example,
   <a href="http://www-fp.mcs.anl.gov/petsc">PETSc Home Page</a>
 
   All solvers are in the NOX::Solver namespace. The solvers are
-  accessed via the NOX::Solver::Manager. The NOX::Solver::Manager 
-  is a combination of a handle and a factory class.  The recommended solver is
+  constructed via the NOX::Solver::Factory. The recommended solver is
   NOX::Solver::LineSearchBased, which is a basic nonlinear solver
   based on a line search. Each solver has a number of options that can
   be specified, as documented in each class or on the \ref parameters.
@@ -1566,14 +1566,14 @@ immediately before the word that is causing the link. For example,
   Teuchos::ParameterList class.
 
   Here is the basic hierarchical structure of the top level list that
-  is passed to a NOX::Solver::Manager object constructor reset call.
+  is passed to a NOX::Solver::Factory object.
 
   \note These parameters are valid for the general %NOX library.  The
   LAPACK and Epetra support objects have their own set of parameters
   that are documented on each object's doxygen page.
 
 <ul>
-<li> "Nonlinear Solver" - see NOX::Solver::Manager for options
+<li> "Nonlinear Solver" - see NOX::Solver::Factory for options and subsequent valid sublists for each solver type.
 
 <li> "Direction" sublist - used by NOX::Solver::LineSearchBased,
      NOX::Solver::TrustRegionBased
@@ -1733,7 +1733,12 @@ immediately before the word that is causing the link. For example,
     <NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", ppo);
      \endcode
 
-     <li> "Status Test Check Type" - an enumerated type (NOX::StatusTest::CheckType) that determines if all or just a minimal set of status tests should be run at each iteration.  The status tests can be run efficiently if set to NOX::StatusTest::Minimal and all test run every iteration is set to NOX::StatusTest::Complete.  
+     <li> "Status Test Check Type" <std::string> - References a NOX::StatusTest::CheckType that determines if all ("Complete") or just a minimal ("Minimal") set of status tests should be run at each iteration.  The status tests can be run efficiently if set to NOX::StatusTest::Minimal and all test run every iteration if it is set to NOX::StatusTest::Complete.  Options are:
+     <ul>
+     <li> "Complete" <std::string> - All status tests are checked at each iteration.  Use this if you want to monitor progess in certain values computed in a status test.
+     <li> "Minimal" <std::string> - Compute only enough tests as necessary.  This is useful if some status tests are expensive.  For example, if you have 3 convergence tests in an "AND" Combo, a minimal check will only check enough tests until one is not converged.  It will then not check the others since it can't return a convecged status. 
+     <li> "None" <std::string> - Use internally to turn off tests that should not be checked when using the "Minimal" option.  Users should not call this!
+     </ul>
 
      <li> "User Defined Merit Function" - Teuchos::RCP<NOX::MeritFunction::Generic> object that allows the user to define their own merit function for use in the globalization algorithms.  The user must implement a derived class from NOX::MeritFunction::Generic and then pass it into %NOX through the parameter list.  
 
@@ -2258,8 +2263,9 @@ int main(int argc, char *argv[])
 
 \code
   // Create the solver
-  NOX::Solver::Manager solver(grpPtr, combo, nlParamsPtr);
-  NOX::StatusTest::StatusType solvStatus = solver.solve();
+  Teuchos::RCP<NOX::Solver::Generic> solver = 
+    NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
+  NOX::StatusTest::StatusType solvStatus = solver->solve();
 
   // End Nonlinear Solver **************************************
  
@@ -2270,7 +2276,7 @@ int main(int argc, char *argv[])
 \code
   // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& finalGroup = 
-    dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+    dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
   const Epetra_Vector& finalSolution = 
     (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).
     getEpetraVector();
