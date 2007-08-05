@@ -46,6 +46,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
+#include "NOX_Solver_SolverUtils.H"
 
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member
 #include "NOX_LineSearch_Utils_Counters.H"  // class data member
@@ -147,20 +148,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
   // Initialize direction parameters for this object
   doRescue = teParams.get("Rescue Bad Newton Solve", true);
 
-  // Get the checktype
-  //   Python interface can't create enumerated types in a python
-  //   generated teuchos parameter list, so we need to convert int
-  //   values to enum if they exist parameter list.
-  if (Teuchos::isParameterType<int>(*paramsPtr, "Status Test Check Type")) {
-    checkType = static_cast<NOX::StatusTest::CheckType>
-      (paramsPtr->sublist("Solver Options").get("Status Test Check Type", 
-        int(0)));
-  }
-  else {
-    checkType = static_cast<NOX::StatusTest::CheckType>
-      (paramsPtr->sublist("Solver Options").get("Status Test Check Type", 
-						NOX::StatusTest::Minimal));
-  }
+  checkType = parseStatusTestCheckType(paramsPtr->sublist("Solver Options"));
 
   // Determine whether we should use the Modified Tensor method
   useModifiedMethod = false;

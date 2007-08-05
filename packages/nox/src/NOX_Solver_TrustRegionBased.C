@@ -47,6 +47,7 @@
 #include "NOX_MeritFunction_Generic.H"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
+#include "NOX_Solver_SolverUtils.H"
 
 using namespace NOX;
 using namespace NOX::Solver;
@@ -132,20 +133,7 @@ void TrustRegionBased::init()
   if (recoveryStep < 0) 
     invalid("Recovery Step", recoveryStep);
 
-  // Get the checktype
-  //   Python interface can't create enumerated types in a python
-  //   generated teuchos parameter list, so we need to convert int
-  //   values to enum if they exist parameter list.
-  if (Teuchos::isParameterType<int>(*paramsPtr, "Status Test Check Type")) {
-    checkType = static_cast<NOX::StatusTest::CheckType>
-      (paramsPtr->sublist("Solver Options").get("Status Test Check Type", 
-        int(0)));
-  }
-  else {
-    checkType = static_cast<NOX::StatusTest::CheckType>
-      (paramsPtr->sublist("Solver Options").get("Status Test Check Type", 
-						NOX::StatusTest::Minimal));
-  }
+  checkType = parseStatusTestCheckType(paramsPtr->sublist("Solver Options"));
 
   // Check for the using Homer Walker's Ared/Pred ratio calculation
   useAredPredRatio = 

@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
   lsParams.set("Preconditioner Reuse Policy", "Recompute");
 
   // Let's force all status tests to do a full check
-  nlParams.sublist("Solver Options").set("Status Test Check Type", NOX::StatusTest::Complete);
+  nlParams.sublist("Solver Options").set("Status Test Check Type", "Complete");
 
   // 1. User supplied (Epetra_RowMatrix)
   Teuchos::RCP<Epetra_RowMatrix> Analytic = interface->getJacobian();

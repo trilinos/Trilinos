@@ -76,6 +76,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
+#include "NOX_Solver_SolverUtils.H"
 
 #include "stdio.h"  // for printf()
 
@@ -106,10 +107,7 @@ void NOX::Solver::TensorBasedTest::init()
   niter = 0;
   status = NOX::StatusTest::Unconverged;
 
-  // Get the checktype
-  checkType = (NOX::StatusTest::CheckType) paramsPtr->
-    sublist("Solver Options").get("Status Test Check Type", 
-					   NOX::StatusTest::Minimal);
+  checkType = parseStatusTestCheckType(paramsPtr->sublist("Solver Options"));
 
   // Print out initialization information
   if (utilsPtr->isPrintType(NOX::Utils::Parameters)) {

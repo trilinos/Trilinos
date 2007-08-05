@@ -46,6 +46,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
+#include "NOX_Solver_SolverUtils.H"
 
 NOX::Solver::LineSearchBased::
 LineSearchBased(const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
@@ -72,22 +73,7 @@ void NOX::Solver::LineSearchBased::init()
   stepSize = 0.0;
   nIter = 0;
   status = NOX::StatusTest::Unconverged;
-
-  // Get the checktype 
-  //   Python interface can't create enumerated types in a python
-  //   generated teuchos parameter list, so we need to convert int
-  //   values to enum if they exist parameter list.
-  if (Teuchos::isParameterType<int>(*paramsPtr, "Status Test Check Type")) {
-    checkType = static_cast<NOX::StatusTest::CheckType>(
-      Teuchos::get<int>(paramsPtr->sublist("Solver Options"),"Status Test Check Type")
-      );
-  }
-  else {
-    checkType = static_cast<NOX::StatusTest::CheckType>(
-      paramsPtr->sublist("Solver Options").get("Status Test Check Type", 
-        NOX::StatusTest::Minimal)
-      );
-  }
+  checkType = parseStatusTestCheckType(paramsPtr->sublist("Solver Options"));
 
   // Print out parameters
   if (utilsPtr->isPrintType(NOX::Utils::Parameters)) 

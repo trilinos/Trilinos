@@ -199,8 +199,7 @@ int main(int argc, char *argv[])
 					 ppo);
 
   // Let's force all status tests to do a full check
-  nlParams.sublist("Solver Options").
-    set("Status Test Check Type", NOX::StatusTest::Complete);
+  nlParams.sublist("Solver Options").set("Status Test Check Type", "Complete");
 
   // Create all possible Epetra_Operators.
   // 1. User supplied (Epetra_RowMatrix)

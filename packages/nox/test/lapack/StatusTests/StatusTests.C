@@ -277,6 +277,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_TEUCHOS_EXTENDED
   cout << "Writing parameter list to \"input.xml\"" << endl;
   Teuchos::writeParameterListToXmlFile(stl, "input.xml");
+  cout << "Reading parameter list from \"input.xml\"" << endl;
   statusTestsCombo = st_factory.buildStatusTests("input.xml", utils);
 #else
   statusTestsCombo = st_factory.buildStatusTests(stl, utils);
@@ -302,6 +303,53 @@ int main(int argc, char *argv[])
   else {
     final_status_value += 1;
     cout << "Convergence tests Failed!" << endl;
+  }
+
+  // Basic declarations to clean up the code
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ParameterList;
+  using NOX::StatusTest::Combo;
+  using NOX::StatusTest::FiniteValue;
+  using NOX::StatusTest::MaxIters;
+  using NOX::StatusTest::Divergence;
+  using NOX::StatusTest::Stagnation;
+
+  // Re-run test with complete checks of status tests
+  {
+    cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+    cout << "re-runningConvergence tests (NormF, NormUpdate, NormWRMS)\n"
+	 << "with NOX::Solver::CheckType = Complete"
+	 << endl;
+    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+    
+    Broyden interface(100,0.99);
+    RCP<NOX::LAPACK::Group> group = rcp(new NOX::LAPACK::Group(interface));
+ 
+    Teuchos::RCP<Teuchos::ParameterList> tmpParams =
+      Teuchos::rcp(new Teuchos::ParameterList);
+    
+    tmpParams = solverParametersPtr;
+
+    tmpParams->sublist("Solver Options").
+      set("Status Test Check Type", "Complete");
+    
+    Teuchos::RCP<NOX::Solver::Generic> solver = 
+      NOX::Solver::buildSolver(group, statusTestsCombo, tmpParams);
+  
+    status = solver->solve();
+
+    if (status == NOX::StatusTest::Converged && 
+	solver->getNumIterations() == 12) {
+      final_status_value += 0;
+      cout << "Convergence (Complete) tests passed!" << endl;
+    }
+    else {
+      final_status_value += 1;
+      cout << "Convergence (Complete)tests Failed!" << endl;
+    }
+    cout << *tmpParams << endl;
+
   }
 
   // Tagging
@@ -337,16 +385,6 @@ int main(int argc, char *argv[])
   // **********************
   // Individual status test options - for failure tests
   // **********************
-
-  // Basic declarations to clean up the code
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::ParameterList;
-  using NOX::StatusTest::Combo;
-  using NOX::StatusTest::FiniteValue;
-  using NOX::StatusTest::MaxIters;
-  using NOX::StatusTest::Divergence;
-  using NOX::StatusTest::Stagnation;
 
   // Max Iters
   {

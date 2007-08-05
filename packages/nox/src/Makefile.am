@@ -185,6 +185,7 @@ DIRECTION = \
 SOLVER_H = \
 	$(srcdir)/NOX_Solver_Generic.H \
 	$(srcdir)/NOX_Solver_Factory.H \
+	$(srcdir)/NOX_Solver_SolverUtils.H \
 	$(srcdir)/NOX_Solver_LineSearchBased.H \
 	$(srcdir)/NOX_Solver_TrustRegionBased.H \
 	$(srcdir)/NOX_Solver_InexactTrustRegionBased.H \
@@ -193,6 +194,7 @@ SOLVER_H = \
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Factory.C \
+	$(srcdir)/NOX_Solver_SolverUtils.C \
 	$(srcdir)/NOX_Solver_LineSearchBased.C \
 	$(srcdir)/NOX_Solver_TrustRegionBased.C \
 	$(srcdir)/NOX_Solver_InexactTrustRegionBased.C \
