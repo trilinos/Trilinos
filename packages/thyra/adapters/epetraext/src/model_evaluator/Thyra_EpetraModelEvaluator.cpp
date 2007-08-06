@@ -793,6 +793,10 @@ void EpetraModelEvaluator::evalModel(
         << "\nCreating a temporary Epetra W to compute scale factors"
         << " for f(...) ...\n";
     epetraUnscaledOutArgs.set_W(epetraModel_->create_W());
+    if( epetraInArgs.supports(EME::IN_ARG_beta) )
+      epetraInArgs.set_beta(1.0);
+    if( epetraInArgs.supports(EME::IN_ARG_alpha) )
+      epetraInArgs.set_alpha(0.0);
     createdTempEpetraW = true; // This flag will tell us to delete W later!
   }
 
