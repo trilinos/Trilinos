@@ -243,7 +243,7 @@ ostream& NormWRMS::print(ostream& stream, int indent) const
   stream << "WRMS-Norm = " << Utils::sciformat(value, 3) << " < " << tolerance;
   if (printCriteria2Info) {
     stream << "\n";
-    for (int j = 0; j < indent + 13; j ++, 3)
+    for (int j = 0; j < indent + 13; j ++)
       stream << ' ';
     stream << "(Min Step Size:  " << Utils::sciformat(computedStepSize, 3) << " >= " << alpha << ")";
   }

@@ -131,11 +131,7 @@ int main(int argc, char *argv[])
 #endif
 
   // Get the number of elements from the command line
-  if (argc<2) { 
-    cout << "Usage: " << argv[0] << " number_of_elements" << endl;
-    exit(1);
-  }
-  int NumGlobalNodes = atoi(argv[1]) + 1;
+  int NumGlobalNodes = 100 + 1;
 
 #ifdef DO_XYZT
   // MPI MANIPULATION FOR XYZT PROBLEMS
@@ -205,7 +201,7 @@ int main(int argc, char *argv[])
   locaStepperList.set("Max Value", 100.0);
   locaStepperList.set("Min Value", 0.05);
 #ifdef DO_XYZT
-  locaStepperList.set("Max Steps", 4);
+  locaStepperList.set("Max Steps", 7);
 #else
   locaStepperList.set("Max Steps", 0);// must be 0 so just a nonlinear solver
 #endif
@@ -501,7 +497,9 @@ int main(int argc, char *argv[])
 //    NOX::StatusTest::StatusType status = solver.solve();
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-    if (status != LOCA::Abstract::Iterator::Finished)
+    if (status == LOCA::Abstract::Iterator::Finished)
+      globalData->locaUtils->out() << "All tests passed" << endl;
+    else
        globalData->locaUtils->out() << "Stepper failed to converge!" << endl;
 
 

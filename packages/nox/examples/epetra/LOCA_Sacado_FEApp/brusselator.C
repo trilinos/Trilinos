@@ -265,7 +265,9 @@ int main(int argc, char *argv[]) {
     // Run the stepper
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-    if (status != LOCA::Abstract::Iterator::Finished) {
+    if (status == LOCA::Abstract::Iterator::Finished) 
+      globalData->locaUtils->out() << "All tests passed" << endl;
+    else {
       if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
 	globalData->locaUtils->out() 
 	  << "Stepper failed to converge!" << std::endl;

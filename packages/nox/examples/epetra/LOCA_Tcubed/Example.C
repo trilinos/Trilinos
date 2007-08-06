@@ -106,11 +106,7 @@ int main(int argc, char *argv[])
   int NumProc = Comm.NumProc();
 
   // Get the number of elements from the command line
-  if (argc!=2) { 
-    cout << "Usage: " << argv[0] << " number_of_elements" << endl;
-    exit(1);
-  }
-  int NumGlobalElements = atoi(argv[1]) + 1;
+  int NumGlobalElements = 100 + 1;
 
   // The number of unknowns must be at least equal to the 
   // number of processors.
@@ -285,7 +281,9 @@ int main(int argc, char *argv[])
   LOCA::Stepper stepper(globalData, grp, combo, paramList);
   LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-  if (status != LOCA::Abstract::Iterator::Finished) {
+  if (status == LOCA::Abstract::Iterator::Finished) 
+    globalData->locaUtils->out() << "\nAll tests passed" << endl;
+  else {
     if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
       globalData->locaUtils->out() 
 	<< "Stepper failed to converge!" << std::endl;

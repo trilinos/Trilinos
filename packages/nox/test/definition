@@ -92,3 +92,48 @@
     ARGS = -v;
     COMM = MPI(1-6);
 }
+
+# NOX LAPACK examples
+(FRAMEWORK,INSTALL) {
+    DIRS = ../examples/lapack/NOX_SimpleExamples,
+           ../examples/lapack/NOX_ExportMakefile;
+    EXIT-STATUS = STRING-COMPARISON(Example passed!);
+    ARGS = -v;
+    COMM = SERIAL, MPI(1);
+}
+
+# LOCA LAPACK examples
+(FRAMEWORK,INSTALL) {
+    DIRS = ../examples/lapack/LOCA_Chan,
+           ../examples/lapack/LOCA_Brusselator,
+           ../examples/lapack/LOCA_1DFDPitchfork;
+    EXIT-STATUS = STRING-COMPARISON(All examples passed);
+    ARGS = -v;
+    COMM = SERIAL, MPI(1);
+}
+
+# NOX Epetra examples
+(FRAMEWORK,INSTALL) {
+    DIRS = ../examples/epetra/NOX_1DFEMNonlinear,
+           ../examples/epetra/NOX_Sacado_FEApp;
+    EXIT-STATUS = STRING-COMPARISON(Test Passed!);
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
+# LOCA Epetra examples
+(FRAMEWORK,INSTALL) {
+    DIRS = ../examples/epetra/LOCA_Sacado_FEApp;
+    EXIT-STATUS = STRING-COMPARISON(All tests passed);
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
+# LOCA Epetra examples (one processor)
+(FRAMEWORK,INSTALL) {
+    DIRS = ../examples/epetra/LOCA_Tcubed,
+           ../examples/epetra/LOCA_Brusselator_xyzt;
+    EXIT-STATUS = STRING-COMPARISON(All tests passed);
+    ARGS = -v;
+    COMM = SERIAL, MPI(1);
+}

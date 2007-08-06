@@ -87,7 +87,7 @@ EXAMPLE_SUBDIR=examples
 endif
 
 if BUILD_NOX_TESTS 
-tests:
+tests:  examples
 	cd $(top_builddir)/test && $(MAKE)
 else
 tests:

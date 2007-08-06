@@ -153,7 +153,9 @@ int main()
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
     // Check for convergence
-    if (status != LOCA::Abstract::Iterator::Finished) {
+    if (status == LOCA::Abstract::Iterator::Finished) 
+      cout << "All examples passed" << endl;
+    else {
       if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
 	globalData->locaUtils->out() 
 	  << "Stepper failed to converge!" << std::endl;

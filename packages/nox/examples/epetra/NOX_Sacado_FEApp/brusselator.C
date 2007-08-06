@@ -184,9 +184,11 @@ int main(int argc, char *argv[]) {
 
     // Solve
     NOX::StatusTest::StatusType status = solver->solve();
-    if (status != NOX::StatusTest::Converged)
-      if (MyPID==0) 
+    if (status == NOX::StatusTest::Converged) 
+      utils.out() << "Test Passed!" << endl;
+    else {
 	utils.out() << "Nonlinear solver failed to converge!" << endl;
+    }
 
     // Get the Epetra_Vector with the final solution from the solver
     const NOX::Epetra::Group& finalGroup = 

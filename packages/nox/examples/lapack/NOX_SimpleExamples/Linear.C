@@ -303,24 +303,18 @@ private:
 //! Main subroutine in example Linear.C
 int main(int argc, char* argv[])
 {
-  if (argc < 2)
-  {
-    cout << "Usage: " << argv[0] << " <problem size> [line search type] [direction type] [memory size]" << endl;
-    exit(1);
-  }
 
   // ** Problem Set Up **
 
   // Set problem size and type
-  int n = atoi(argv[1]);
+  int n = 10;
   bool useDefaultProblem = false;
 
-  if (n == 0)
+  if (n < 1)
   {
     n = 4;
     useDefaultProblem = true;
   }
-
 
   // Set up the problem interface
   Linear linear(n, useDefaultProblem);
@@ -348,7 +342,8 @@ int main(int argc, char* argv[])
   // -- Output Level --
   solverParams.sublist("Printing").set("Output Information", 
 						    NOX::Utils::Warning + 
-						    NOX::Utils::OuterIteration + 
+						    NOX::Utils::OuterIteration +
+						    NOX::Utils::OuterIterationStatusTest + 
 						    NOX::Utils::InnerIteration + 
 						    NOX::Utils::Parameters);
 
@@ -358,14 +353,13 @@ int main(int argc, char* argv[])
   // -- Line Search --
   Teuchos::ParameterList& lineSearchParams = solverParams.sublist("Line Search");
 
-
-  string lineSearchType = (argc >= 3) ? argv[2] : "Exact";
+  string lineSearchType = "Polynomial";
 
   if (lineSearchType == "None")
   {
     lineSearchParams.set("Method", "Full Step");
   }
-  else if (lineSearchType == "Poly")
+  else if (lineSearchType == "Polynomial")
   {
     lineSearchParams.set("Method", "Polynomial");
   }
@@ -377,7 +371,7 @@ int main(int argc, char* argv[])
   {
     lineSearchParams.set("Method", "Polynomial");
     Teuchos::ParameterList& polyParams = lineSearchParams.sublist("Polynomial");
-    polyParams.set("Force Interpolation", true);
+    //polyParams.set("Force Interpolation", true);
     polyParams.set("Sufficient Decrease Condition", "None");
     polyParams.set("Default Step", 1.0);
     polyParams.set("Min Bounds Factor", 0.0);
@@ -387,12 +381,8 @@ int main(int argc, char* argv[])
   Teuchos::ParameterList& directionParams = solverParams.sublist("Direction");
   
   // Set direction type
-  string directionMethod = (argc >= 4) ? argv[3] : "Newton";
+  string directionMethod = "Newton";
   directionParams.set("Method", directionMethod);
-
-  // Set memory size
-  if (argc >= 5) 
-    directionParams.sublist(directionMethod).set("Memory", atoi(argv[4]));
 
   // One last detail
   if ((directionMethod == "Broyden") && (lineSearchType == "Poly"))
@@ -406,10 +396,6 @@ int main(int argc, char* argv[])
 
   // Solve the nonlinesar system
   NOX::StatusTest::StatusType status = solver->solve();
-
-  // Warn user if solve failed
-  if (status != NOX::StatusTest::Converged)
-    cout << "Error: Solve failed to converge!" << endl;
 
   // ** Output solution **
 
@@ -430,6 +416,13 @@ int main(int argc, char* argv[])
   solnGrp.computeF();
   cout << "\n" << "-- Expected Solution --" << "\n";
   solnGrp.print();
+
+  // Warn user if solve failed
+  if (status == NOX::StatusTest::Converged)
+    cout << "Example Passed!" << endl;
+  else
+    cout << "Error: Solve failed to converge!" << endl;
+
 }
 
 #endif

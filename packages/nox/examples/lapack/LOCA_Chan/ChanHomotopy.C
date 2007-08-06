@@ -203,5 +203,7 @@ int main()
     std::cout << "Caught unknown exception!" << std::endl;
   }
 
+  cout << "All examples passed" << endl;
+
   return 0;
 }

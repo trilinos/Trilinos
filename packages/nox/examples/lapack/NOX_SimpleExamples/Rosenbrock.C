@@ -202,7 +202,9 @@ int main()
   NOX::StatusTest::StatusType status = solver->solve();
 
   // Warn user if solve failed
-  if (status != NOX::StatusTest::Converged)
+  if (status == NOX::StatusTest::Converged)
+    cout << "Example Passed!" << endl;
+  else
     cout << "Error: Solve failed to converge!" << endl;
 
   // Print the parameter list

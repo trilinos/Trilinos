@@ -723,7 +723,7 @@ uninstall-am:
 all-local:
 	@echo "Trilinos package nox built successfully"
 
-@BUILD_NOX_TESTS_TRUE@tests:
+@BUILD_NOX_TESTS_TRUE@tests:  examples
 @BUILD_NOX_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE)
 @BUILD_NOX_TESTS_FALSE@tests:
 @BUILD_NOX_TESTS_FALSE@	@echo "nox tests were disabled at configure time"

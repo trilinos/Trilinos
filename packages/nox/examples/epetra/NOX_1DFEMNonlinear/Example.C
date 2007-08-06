@@ -97,11 +97,7 @@ int main(int argc, char *argv[])
   int NumProc = Comm.NumProc();
 
   // Get the number of elements from the command line
-  if (argc!=2) { 
-    cout << "Usage: " << argv[0] << " number_of_elements" << endl;
-    exit(1);
-  }
-  int NumGlobalElements = atoi(argv[1]) + 1;
+  int NumGlobalElements = 100 + 1;
 
   // The number of unknowns must be at least equal to the 
   // number of processors.
@@ -267,9 +263,12 @@ int main(int argc, char *argv[])
     NOX::Solver::buildSolver(grp, combo, finalParamsPtr);
   NOX::StatusTest::StatusType status = solver->solve();
 
-  if (status != NOX::StatusTest::Converged)
+  if (status == NOX::StatusTest::Converged)
+    utils.out() << "Test Passed!" << endl;
+  else {
     if (MyPID==0) 
       utils.out() << "Nonlinear solver failed to converge!" << endl;
+  }
 
   // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());

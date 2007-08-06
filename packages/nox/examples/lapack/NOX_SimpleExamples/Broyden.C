@@ -246,16 +246,13 @@ int main()
     NOX::Solver::buildSolver(grp, statusTestsCombo, solverParametersPtr);
 
   // Print the starting point
+  grp->computeF();
   cout << "\n" << "-- Starting Point --" << "\n";
   cout << "|| F(x0) || = " << utils.sciformat(grp->getNormF()) << endl;
   // grp.print();
 
   // Solve the nonlinear system
   NOX::StatusTest::StatusType status = solver->solve();
-
-  // Warn user if solve failed
-  if (status != NOX::StatusTest::Converged)
-    cout << "Error: Solve failed to converge!" << endl;
 
   // Get the answer
   NOX::LAPACK::Group solnGrp = 
@@ -274,5 +271,11 @@ int main()
     cout << "|| F(x*) || = " << utils.sciformat(solnGrp.getNormF()) << endl;
     // solnGrp.print();
   }
-  
+
+  // Warn user if solve failed
+  if (status == NOX::StatusTest::Converged)
+    cout << "\nExample Passed!\n" << endl;
+  else
+    cout << "Error: Solve failed to converge!" << endl;
+
 }
