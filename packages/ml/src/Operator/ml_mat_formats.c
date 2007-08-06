@@ -108,9 +108,10 @@ void ML_CSR_MSRdata_Destroy_StructOnly(void *data)
 /* Free a 'struct ML_VBRdata' associated with the matrix->data field */
 /*********************************************************************/
 
-void ML_RECUR_VBRdata_Destroy(ML_Operator *matrix)
+void ML_RECUR_VBRdata_Destroy(void *data)
 {
-   if (matrix->sub_matrix != NULL) 
+   ML_Operator *matrix = (ML_Operator*) data;
+   if (matrix->sub_matrix != NULL)
       ML_VBRdata_Destroy(matrix->sub_matrix);
    ML_VBRdata_Destroy(matrix->data);
 }
