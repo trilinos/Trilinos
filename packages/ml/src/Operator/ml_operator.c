@@ -221,8 +221,8 @@ int ML_Operator_Clean( ML_Operator *mat)
 
    if ((mat->data_destroy != NULL) && (mat->data != NULL)) {
       mat->data_destroy(mat->data);
-      mat->data = NULL;                                                         
-   }                                                                            
+      mat->data = NULL;
+   }
 
    if (mat->diagonal != NULL) {
       ML_DVector_Destroy( &(mat->diagonal) );
@@ -268,7 +268,7 @@ int ML_Operator_Clean( ML_Operator *mat)
    mat->halfclone           = ML_FALSE;
 
 
-   
+
    /* MS * Added on 18-Mar-05 */
    if (mat->aux_data != NULL) 
    {
@@ -1043,12 +1043,27 @@ int ML_implicitvscale_Getrow(ML_Operator *data, int N_requested_rows,
 int ML_implicitvscale_Matvec(ML_Operator *Amat_in, int ilen, double p[], 
 			    int olen, double ap[])
 {
-  int    status = 1;
+/*
+ * Implemented by Jacob Schroder, as this is my first day coding in ML, 
+ * Don't assume that this function works!  Although my tests indicated that 
+ * it does work in serial. 
+*/
+  struct ml_matvscale *temp;
+  double * scale_vec;
+  int    status = 1, i;
+  struct ml_matvscale * tempdata;
 
-  printf("ML_implicitvscale_Matvec is not implemented yet\n"
-         "(file %s, line %d)\n",
-         __FILE__, __LINE__);
-  exit(EXIT_FAILURE);
+  temp = (struct ml_matscale *) ML_Get_MyGetrowData(Amat_in);
+
+  /* This is where the vector to diagonally scale by resides  *
+   * scale_vec = (Amat_in->data)->scale;                      */
+  tempdata = Amat_in->data;
+  scale_vec = tempdata->scale;
+
+  status = ML_Operator_Apply(temp->Amat, ilen, p, olen, ap);
+  
+  /* Apply Diagonal scaling */
+  for (i = 0; i < olen; i++) ap[i] *= scale_vec[i]; 
 
   return(status);
 }
@@ -2023,10 +2038,32 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
     temp->columns = columns;
     temp->values  = values;
     temp->rowptr   = rowptr;
+ 
+    /* ---------------------------------------------------------------------*/
+    /* ---------------------  Added by JBS ---------------------------------*/
+    /* Allow the user to write to matrix A or B, i.e. allow for A = A + B   */
+    /* B = A + B                                                            */
+    if( (C == A) || (C == B) )
+    {
+	int invector_length = B->invec_leng;
+	int outvector_length = A->outvec_leng;
+	ML_Comm * temp_comm = C->comm;
 
-    ML_Operator_Set_ApplyFuncData(C, B->invec_leng, A->outvec_leng, 
+	ML_Operator_Clean(C);
+	ML_Operator_Init(C, temp_comm);
+	
+	ML_Operator_Set_ApplyFuncData(C, invector_length, outvector_length, 
+				  temp, outvector_length, NULL,0);
+	ML_Operator_Set_Getrow(C, outvector_length, CSR_getrow);
+
+    }
+    /* ---------------------------------------------------------------------*/
+    else
+    {
+       ML_Operator_Set_ApplyFuncData(C, B->invec_leng, A->outvec_leng, 
 				  temp,A->outvec_leng, NULL,0);
-    ML_Operator_Set_Getrow(C, A->outvec_leng, CSR_getrow);
+       ML_Operator_Set_Getrow(C, A->outvec_leng, CSR_getrow);
+    }
     ML_Operator_Set_ApplyFunc (C, CSR_matvec);
     ML_globalcsr2localcsr(C, max_per_proc);
     C->data_destroy = ML_CSR_MSRdata_Destroy;
