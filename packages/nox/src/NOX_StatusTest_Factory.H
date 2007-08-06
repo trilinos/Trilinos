@@ -63,11 +63,11 @@ namespace StatusTest {
     The tagged_tests field in the constructors allows users to store
     tests from the tree in a flat list in case they want to change the
     tolerance values during a run.  The tagged_tests flag is optional.
-
     
-    A set of status tests can be constructed via a parameter list.
-    Use the NOX::StatusTest::Factory to build the status tests.  Valid
-    parameters are as follows:
+    Please use the related nonmember functions instead of calling the
+    factory directly (See example below).
+    
+    Valid parameters are as follows:
 
     <ul>
       <li> "Test Type" <std::string> Type of test this list contains.  Valid tests include:
@@ -80,6 +80,7 @@ namespace StatusTest {
 	 <li> "FiniteValue" - NOX::StatusTest::FiniteValue
 	 <li> "Divergence" - NOX::StatusTest::Divergence
 	 <li> "Stagnation" - NOX::StatusTest::Stagnation
+	 <li> "User Defined" - A user constructed test, derived from NOX::StatusTest::Generic.  
        </ul>
 
        <li> "Tag" <std::string> A unique identifier that will place the test in the map for tagged_tests.  This allows users to access individual tests to change tolerances on the fly or query values while still using the factory to build objects.
@@ -181,6 +182,11 @@ namespace StatusTest {
        <li> "Consecutive Iterations" <int> (default = 1)
      </ul>
 
+     Additional parameters valid for a "User Defined" test: 
+     <ul> 
+       <li> "User Status Test" < Teuchos::RCP<NOX::StatusTest::Generic> > A status test suppied by the user.  It is very important that when registering this status test, that the user set it as a "Generic" object since there is no implicit casting on the ParameterList's get method.  See the example below.
+     </ul>
+
      Example usage:
      \code
      Teuchos::ParameterList stl;
@@ -195,10 +201,11 @@ namespace StatusTest {
      
      conv.set("Test Type", "Combo");
      conv.set("Combo Type", "AND");
-     conv.set("Number of Tests", 3);
+     conv.set("Number of Tests", 4);
      Teuchos::ParameterList& normF = conv.sublist("Test 0");
      Teuchos::ParameterList& normWRMS = conv.sublist("Test 1");
      Teuchos::ParameterList& normUpdate = conv.sublist("Test 2");
+     Teuchos::ParameterList& userDefined = conv.sublist("Test 3");
      normF.set("Test Type", "NormF");
      normF.set("Tolerance", 1.0e-12);
      normF.set("Norm Type", "Two Norm");
@@ -213,6 +220,11 @@ namespace StatusTest {
      normUpdate.set("Test Type", "NormUpdate");
      normUpdate.set("Norm Type", "One Norm");
      normUpdate.set("Scale Type", "Scaled");
+     userDefined.set("Test Type", "User Defined");
+     Teuchos::RCP<NOX::StatusTest::Generic> myTest =
+       Teuchos::rcp(new MyTest(1.0e-3));
+     userDefined.set("User Status Test", myTest);
+
      
      fv.set("Test Type", "FiniteValue");
      fv.set("Vector Type", "F Vector");
@@ -229,9 +241,8 @@ namespace StatusTest {
      maxiters.set("Test Type", "MaxIters");
      maxiters.set("Maximum Iterations", 20);
      
-     NOX::StatusTest::Factory st_factory;
      Teuchos::RCP<NOX::StatusTest::Generic> status_tests = 
-        st_factory.buildStatusTests(stl, utils);
+       NOX::StatusTest::buildStatusTests(stl, utils);
      \endcode
 
     \author Roger Pawlowski (SNL 1416)
@@ -294,13 +305,37 @@ private:
   buildStagnationTest(Teuchos::ParameterList& p, 
 		      const NOX::Utils& utils) const;
 
+  Teuchos::RCP<NOX::StatusTest::Generic> 
+  buildUserDefinedTest(Teuchos::ParameterList& p, 
+		       const NOX::Utils& utils) const;
+
   //! Checks if a tag is present in the param list and adds the test to the tagged_test std::map if true.  Returns true if a tag was present. 
   bool checkAndTagTest(const Teuchos::ParameterList& p,
 		       const Teuchos::RCP<NOX::StatusTest::Generic>& test,
          std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >* 
 		       tagged_tests) const;
 };
-
+  
+/*! \brief Nonmember helper function for the NOX::StatusTest::Factory.
+  
+\relates NOX::StatusTest::Factory
+  
+*/
+Teuchos::RCP<NOX::StatusTest::Generic> 
+buildStatusTests(const std::string& file_name, const NOX::Utils& utils,
+	     std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
+		 tagged_tests=0);
+  
+/*! \brief Nonmember helper function for the NOX::StatusTest::Factory.
+  
+\relates NOX::StatusTest::Factory
+  
+*/
+Teuchos::RCP<NOX::StatusTest::Generic> 
+buildStatusTests(Teuchos::ParameterList& p, const NOX::Utils& utils,
+	     std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
+		 tagged_tests=0);
+  
 } // namespace StatusTest
 } // namespace NOX
 

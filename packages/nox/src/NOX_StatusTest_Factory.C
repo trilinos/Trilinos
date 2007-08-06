@@ -129,6 +129,8 @@ buildStatusTests(Teuchos::ParameterList& p, const NOX::Utils& u,
     status_test = this->buildDivergenceTest(p, u);
   else if (test_type == "Stagnation")
     status_test = this->buildStagnationTest(p, u);
+  else if (test_type == "User Defined")
+    status_test = this->buildUserDefinedTest(p, u);
   else {
     std::ostringstream msg;
     msg << "Error - the test type \"" << test_type << "\" is invalid!";
@@ -407,6 +409,23 @@ buildMaxItersTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
 
 // ************************************************************************
 // ************************************************************************
+Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::Factory::
+buildUserDefinedTest(Teuchos::ParameterList& p, const NOX::Utils& u) const
+{
+  RCP<NOX::StatusTest::Generic> status_test;
+  
+  if (isParameterType< RCP<NOX::StatusTest::Generic> >(p, "User Status Test"))
+    status_test = get< RCP<NOX::StatusTest::Generic> >(p, "User Status Test");
+  else {
+    std::string msg = "Error - NOX::StatusTest::Factory::buildUserDefinedTest() - a user defined status test has been selected, but the test has not been supplied as an RCP<NOX::StatusTest::Generic> in the parameter list.  please make sure it is set as a \"Generic\" object in the parameter list.";
+    TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+  }
+  
+  return status_test;
+}
+
+// ************************************************************************
+// ************************************************************************
 bool NOX::StatusTest::Factory::
 checkAndTagTest(const Teuchos::ParameterList& p,
 		const Teuchos::RCP<NOX::StatusTest::Generic>& test,
@@ -419,6 +438,30 @@ checkAndTagTest(const Teuchos::ParameterList& p,
   }
 
   return false;
+}
+
+// ************************************************************************
+// ************************************************************************
+// Nonmember function
+Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::
+buildStatusTests(const std::string& file_name, const NOX::Utils& utils,
+	     std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
+		 tagged_tests)
+{
+  NOX::StatusTest::Factory factory;
+  return factory.buildStatusTests(file_name, utils, tagged_tests);
+}
+
+// ************************************************************************
+// ************************************************************************
+// Nonmember function
+Teuchos::RCP<NOX::StatusTest::Generic> NOX::StatusTest::
+buildStatusTests(Teuchos::ParameterList& p, const NOX::Utils& utils,
+	     std::map<std::string, Teuchos::RCP<NOX::StatusTest::Generic> >*
+		 tagged_tests)
+{
+  NOX::StatusTest::Factory factory;
+  return factory.buildStatusTests(p, utils, tagged_tests);
 }
 
 // ************************************************************************

@@ -177,25 +177,82 @@ private:
 
 };
 
+class MyTest : public NOX::StatusTest::Generic {
+
+public:
+
+  MyTest(double tol) : status(NOX::StatusTest::Unconverged), tolerance(tol) {}
+
+  ~MyTest() {}
+
+  NOX::StatusTest::StatusType 
+  checkStatus(const NOX::Solver::Generic &problem, 
+	      NOX::StatusTest::CheckType checkType) 
+  {
+    
+    if (!problem.getSolutionGroup().isF()) {
+      std::string msg = "Error - MyTest::checkStatus() - The residual F is not up-to-date with the solution.  Please fix your algorithm!";
+      TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    }
+    
+
+    switch (checkType) {
+    case NOX::StatusTest::Complete:
+    case NOX::StatusTest::Minimal:
+      norm_f = problem.getSolutionGroup().getNormF();
+      status = (norm_f < tolerance) ? NOX::StatusTest::Converged : NOX::StatusTest::Unconverged;
+      break;      
+    case NOX::StatusTest::None:
+    default:
+      norm_f = -1.0;
+      status = NOX::StatusTest::Unevaluated;
+      break;
+    }
+    
+    return status;
+  }
+  
+  NOX::StatusTest::StatusType getStatus() const 
+  { return status; }
+
+  std::ostream& print(std::ostream &stream, int indent) const 
+  {
+    for (int j = 0; j < indent; j ++)
+      stream << ' ';
+    stream << status;
+    stream << "MyTest = " << norm_f << " < " << tolerance;
+    stream << endl;
+    return stream;
+  }
+    
+private:
+  NOX::StatusTest::StatusType status;
+  double tolerance;
+  double norm_f;
+};
+
+
 //! Main subroutine of Broyden.C
 int main(int argc, char *argv[])
 {
+  // Basic declarations to clean up the code
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ParameterList;
+  using NOX::StatusTest::Combo;
+  using NOX::StatusTest::FiniteValue;
+  using NOX::StatusTest::MaxIters;
+  using NOX::StatusTest::Divergence;
+  using NOX::StatusTest::Stagnation;
+  using namespace NOX::StatusTest;
+
   cout << "Started" << endl;
 
   int final_status_value = 0; // zero = success, !0 = failed
 
-  // Set up the problem interface
-  Broyden broyden(100,0.99);
-  
-  // Create a group which uses that problem interface. The group will
-  // be initialized to contain the default initial guess for the
-  // specified problem.
-  Teuchos::RCP<NOX::LAPACK::Group> grp = 
-    Teuchos::rcp(new NOX::LAPACK::Group(broyden));
-
   // Create the top level parameter list
-  Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr =
-    Teuchos::rcp(new Teuchos::ParameterList);
+  RCP<Teuchos::ParameterList> solverParametersPtr =
+    rcp(new Teuchos::ParameterList);
   Teuchos::ParameterList& solverParameters = *solverParametersPtr;
 
   // Set the nonlinear solver method
@@ -216,10 +273,21 @@ int main(int argc, char *argv[])
 			NOX::Utils::Warning);
   NOX::Utils utils(printParams);
 
+
+  // Convergence tests and factory
+
   cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
   cout << "Testing Convergence tests (NormF, NormUpdate, NormWRMS) ..."
        << endl;
   cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+
+  // Set up the problem interface
+  Broyden broyden(100,0.99);
+  
+  // Create a group which uses that problem interface. The group will
+  // be initialized to contain the default initial guess for the
+  // specified problem.
+  RCP<NOX::LAPACK::Group> grp = rcp(new NOX::LAPACK::Group(broyden));
 
   // **************************************
   // Create the convergence tests
@@ -272,15 +340,14 @@ int main(int argc, char *argv[])
 
   Teuchos::RCP<NOX::StatusTest::Generic> statusTestsCombo;
   Teuchos::RCP<Teuchos::ParameterList> st_params;
-  NOX::StatusTest::Factory st_factory;
 
 #ifdef HAVE_TEUCHOS_EXTENDED
   cout << "Writing parameter list to \"input.xml\"" << endl;
   Teuchos::writeParameterListToXmlFile(stl, "input.xml");
   cout << "Reading parameter list from \"input.xml\"" << endl;
-  statusTestsCombo = st_factory.buildStatusTests("input.xml", utils);
+  statusTestsCombo = NOX::StatusTest::buildStatusTests("input.xml", utils);
 #else
-  statusTestsCombo = st_factory.buildStatusTests(stl, utils);
+  statusTestsCombo = NOX::StatusTest::buildStatusTests(stl, utils);
 #endif
 
   // **************************************
@@ -304,16 +371,6 @@ int main(int argc, char *argv[])
     final_status_value += 1;
     cout << "Convergence tests Failed!" << endl;
   }
-
-  // Basic declarations to clean up the code
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::ParameterList;
-  using NOX::StatusTest::Combo;
-  using NOX::StatusTest::FiniteValue;
-  using NOX::StatusTest::MaxIters;
-  using NOX::StatusTest::Divergence;
-  using NOX::StatusTest::Stagnation;
 
   // Re-run test with complete checks of status tests
   {
@@ -352,6 +409,50 @@ int main(int argc, char *argv[])
 
   }
 
+  // Test the user defined status test
+  {
+    cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+    cout << "Testing User Defined Status Test" << endl;
+    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" << endl;
+    Broyden interface(100,0.99);
+    RCP<NOX::LAPACK::Group> group = rcp(new NOX::LAPACK::Group(interface));
+    
+    ParameterList tmp_list;
+    tmp_list.set("Test Type", "Combo");
+    tmp_list.set("Combo Type", "OR");
+    tmp_list.set("Number of Tests", 2);
+    ParameterList& max_iters = tmp_list.sublist("Test 0");
+    ParameterList& user_defined = tmp_list.sublist("Test 1");
+
+    max_iters.set("Test Type", "MaxIters");
+    max_iters.set("Maximum Iterations", 20);
+
+    user_defined.set("Test Type", "User Defined");
+    Teuchos::RCP<NOX::StatusTest::Generic> myTest = 
+      Teuchos::rcp(new MyTest(1.0e-3));
+    user_defined.set("User Status Test", myTest);
+
+    std::cout << tmp_list << endl;
+
+    RCP<NOX::StatusTest::Generic> combo = buildStatusTests(tmp_list, utils);
+
+    Teuchos::RCP<NOX::Solver::Generic> solver = 
+      NOX::Solver::buildSolver(group, combo, solverParametersPtr);
+  
+    status = solver->solve();
+
+    if (status == NOX::StatusTest::Converged && 
+	solver->getNumIterations() == 11) {
+      final_status_value += 0;
+      cout << "User Defined test passed!" << endl;
+    }
+    else {
+      final_status_value += 1;
+      cout << "User Defined test failed!" << endl;
+    }
+  }
+
+
   // Tagging
   {
     cout << "\n\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
@@ -362,7 +463,7 @@ int main(int argc, char *argv[])
     normF.set("Tag", "Norm F Status Test");
 
     Teuchos::RCP<NOX::StatusTest::Generic> all_tests = 
-      st_factory.buildStatusTests(stl, utils, &my_map);
+      NOX::StatusTest::buildStatusTests(stl, utils, &my_map);
     
     Teuchos::RCP<NOX::StatusTest::Generic> my_test = 
       my_map["Norm F Status Test"];
@@ -398,7 +499,7 @@ int main(int argc, char *argv[])
     p.set("Maximum Iterations", 5);
     Teuchos::RCP<NOX::Solver::Generic> solver = 
       NOX::Solver::buildSolver(group, 
-			       st_factory.buildStatusTests(p, utils), 
+			       NOX::StatusTest::buildStatusTests(p, utils), 
 			       solverParametersPtr);
     status = solver->solve();
     

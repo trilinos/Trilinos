@@ -158,8 +158,8 @@ buildStatusTests(Teuchos::ParameterList& p)
   NOX::Utils utils(p.sublist("Printing"));
 
   if (p.isSublist("Status Tests")) {
-    NOX::StatusTest::Factory stf;
-    status_test = stf.buildStatusTests(p.sublist("Status Tests"), utils);
+    status_test = 
+      NOX::StatusTest::buildStatusTests(p.sublist("Status Tests"), utils);
   }
   else { // Default status test
     Teuchos::RCP<NOX::StatusTest::NormF> absresid =

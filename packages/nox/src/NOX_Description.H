@@ -615,7 +615,7 @@ The following pages are relevant to developers.
 <ul>
   <li> A support group/vector has been added for Thyra.  The group leverages the Stratimikos library to build the linear solver and preconditioner.
   <li> A Thyra::NolinearSolver::NOX object has been added to allow Thyra users to call %NOX as a nonlinear solver for Thyra.
-  <li> A NOX::StatusTest::Factory has been added to allow for the construction of an entire status test set via a parameter list.
+  <li> A NOX::StatusTest::Factory has been added to allow for the construction of an entire status test set via a parameter list.  Please use the nonmember functions to build parameter lists instead of using the Factory object directly.
   <li> The NOX::Utils object can now take a parameter sublist to enable the print options specified with the "Output Information" parameter.  Previously the user had to sum the print options into an integer that was set in the parameter list.  Now the user can just specify a sublist of print options for the "output Information" parameter.  Setting the integer still works.  Here is an example:
 \code
 Teuchos::ParameterList p; 
