@@ -277,7 +277,10 @@ fineJac_(fineJac)
   create_Nox_Convergencetest(norm,norm,1);
   
   // create the solver
-  solver_ = rcp(new NOX::Solver::Manager(group_,combo2_,nlparams_));
+  //JJH
+  //solver_ = rcp(new NOX::Solver::Manager(group_,combo2_,nlparams_));
+  solver_ = NOX::Solver::buildSolver(group_,combo2_,nlparams_);
+  
   
   return;
 }
@@ -433,7 +436,9 @@ bool NLNML::NLNML_NonlinearLevel::Iterate(Epetra_Vector* f,
   create_Nox_Convergencetest(*norm,*norm,numiter);
   
   // make a soft reset of the NOX solver
-  solver_->reset(group_,combo2_);
+  //JJH
+  //solver_->reset(group_,combo2_);
+  solver_->reset(group_->getX(),combo2_);
   
   if (OutLevel() && !Comm().MyPID() && !coarseinterface_->isFAS())
   {

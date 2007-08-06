@@ -81,7 +81,8 @@
 // NOX-headers
 #include "NOX_Epetra_Interface_Preconditioner.H"
 #include "NOX_Epetra_Group.H"
-#include "NOX_Solver_Manager.H"
+//JJH
+//#include "NOX_Solver_Manager.H"
 #include "NOX_Epetra_FiniteDifferenceColoring.H"
 #include "NOX_Epetra_Vector.H"
 
@@ -211,10 +212,12 @@ public:
    nonlinear preconditioner with current solution and residual. Necessary only
    in the nonlinear preconditioner case and when used as a preconditioner. If used as
    stand-alone solver, this is not necessary.
-   \param s   (In) : rcptr to the NOX::Solver::Manager of the outer
+   \param s   (In) : rcptr to the NOX::Solver::Generic of the outer
                      Nox iterative method.
   */
-  void SetNoxSolver(RefCountPtr<NOX::Solver::Manager> s) { noxsolver_ = s; } 
+  //JJH
+  //void SetNoxSolver(RefCountPtr<NOX::Solver::Manager> s) { noxsolver_ = s; } 
+  void SetNoxSolver(RefCountPtr<NOX::Solver::Generic> s) { noxsolver_ = s; }
   
   //! Returns the label of this class.
   /*! 
@@ -365,7 +368,9 @@ private:
   const Epetra_Comm&                                              comm_;
   RefCountPtr<NLNML::NLNML_FineLevelNoxInterface>                 interface_;
   RefCountPtr<Teuchos::ParameterList>                             params_;
-  RefCountPtr<NOX::Solver::Manager>                               noxsolver_;
+  //JJH
+  //RefCountPtr<NOX::Solver::Manager>                               noxsolver_;
+  RCP<NOX::Solver::Generic>                                       noxsolver_;
   RefCountPtr<Epetra_CrsMatrix>                                   fineJac_;
   RefCountPtr<Epetra_Map>                                         rowmap_;
   RefCountPtr<ML_Epetra::MultiLevelOperator>                      linPrec_;

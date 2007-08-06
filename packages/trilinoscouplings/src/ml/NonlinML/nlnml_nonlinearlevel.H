@@ -194,7 +194,9 @@ private:
   RefCountPtr<NLNML::NLNML_LinearSystem>                  thislevel_linSys_;
   RefCountPtr<NOX::Epetra::LinearSystemAztecOO>           azlinSys_;
   RefCountPtr<NOX::Epetra::Group>                         group_;
-  RefCountPtr<NOX::Solver::Manager>                       solver_;
+  //JJH
+  //RefCountPtr<NOX::Solver::Manager>                       solver_;
+  RCP<NOX::Solver::Generic>                               solver_;
 
   RefCountPtr<NOX::StatusTest::NormF>                     absresid_;
   RefCountPtr<NOX::StatusTest::NormUpdate>                nupdate_;
