@@ -132,10 +132,13 @@ int main(int argc, char **argv)
 
   double tol = 1.0e-14;
   Sacado::FlopCounterPack::FlopCounts fc = SFC::getCounters();
+  // The Solaris and Irix CC compilers get higher counts for operator=
+  // than does g++, which avoids an extra copy when returning a function value.
+  // The test on fc.totalFlopCount allows for this variation.
   if (std::fabs(r - r_ad)       < tol &&
       std::fabs(drda - drda_ad) < tol &&
       std::fabs(drdb - drdb_ad) < tol &&
-      fc.totalFlopCount == 48) {
+      (fc.totalFlopCount == 48 || fc.totalFlopCount == 51)) {
     std::cout << "\nExample passed!" << std::endl;
     return 0;
   }
