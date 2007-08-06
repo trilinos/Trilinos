@@ -72,6 +72,7 @@
 #include "NOX_Utils.H"
 #include "NOX_LAPACK_Group.H"
 #include "NOX_TestUtils.H"
+#include "Teuchos_ScalarTraits.hpp"
 #ifdef HAVE_TEUCHOS_EXTENDED
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #endif
@@ -118,7 +119,7 @@ public:
   void setNaNSolution()
   {
     for (int i=0; i < 100; ++i)
-      initialGuess(i) = 1.0/0.0;
+      initialGuess(i) = 1.0 / Teuchos::ScalarTraits<double>::zero();
   };
 
   bool computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x)

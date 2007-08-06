@@ -45,6 +45,7 @@
 #endif
 
 #include "NOX_StatusTest_FiniteValue.H"
+#include "Teuchos_ScalarTraits.hpp"
 
 using namespace std;
 
@@ -71,7 +72,7 @@ int main(int argc, char *argv[])
 
   double finite = 1.0e-100;
   double nan = sqrt(-1.0);
-  double infinity = 1.0/0.0;
+  double infinity = 1.0 / Teuchos::ScalarTraits<double>::zero();
 
   // Test return codes: 0 = finite, -1 = NaN, -2 = Inf
   int result = fv_test.finiteNumberTest(finite);
