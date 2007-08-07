@@ -281,6 +281,9 @@ reset(Teuchos::ParameterList& linearSolverParams)
   outputSolveDetails = 
     linearSolverParams.get("Output Solver Details", true);
 
+  throwErrorOnPrecFailure = 
+    linearSolverParams.get("Throw Error on Prec Failure", true);
+
   // The first time a SetProblem is used on the AztecOO solver
   // it sets all aztec options based on the Epetra_LinearProblem
   // options. Subsequent calls do not.  We call this here so we
@@ -802,8 +805,17 @@ applyRightPreconditioning(bool useTranspose,
     throwError("applyRightPreconditioning", 
 	       "Parameter \"preconditioner\" is not vaild for this method");
 
-  if (errorCode != 0) 
+  if (errorCode != 0) {
+    std::string msg = "Error - NOX::Epetra::LinearSystemAztecOO::applyRightPreconditioning() - A non-zero error code has been returned from the preconditioner.";
+    if (throwErrorOnPrecFailure) {
+      TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+    }
+    else {
+      if (utils.isPrintType(NOX::Utils::Warning))
+	utils.out() << msg << endl;
+    }
     return false;
+  }
   
   return true;
 }
@@ -1001,8 +1013,14 @@ createIfpackPreconditioner(Teuchos::ParameterList& p) const
       Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
     ifpackPreconditionerPtr->SetAbsoluteThreshold(p.get("Absolute Threshold", 0.0));
     ifpackPreconditionerPtr->SetRelativeThreshold(p.get("Relative Threshold", 1.0));
-    ifpackPreconditionerPtr->InitValues(*vbr);
-    ifpackPreconditionerPtr->Factor();
+    int err = ifpackPreconditionerPtr->InitValues(*vbr);
+    if (err != 0)
+      precError(err, "createIfpackPreconditioner()", "Ifpack", "InitValues");
+
+    err = ifpackPreconditionerPtr->Factor();
+    if (err != 0)
+      precError(err, "createIfpackPreconditioner()", "Ifpack", "Factor");
+
   }
 
   // check to see if it is a Crs matrix
@@ -1028,8 +1046,14 @@ createIfpackPreconditioner(Teuchos::ParameterList& p) const
       Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
     ifpackPreconditionerPtr->SetAbsoluteThreshold(p.get("Absolute Threshold", 0.0));
     ifpackPreconditionerPtr->SetRelativeThreshold(p.get("Relative Threshold", 1.0));
-    ifpackPreconditionerPtr->InitValues(*crs);
-    ifpackPreconditionerPtr->Factor();
+    int err = ifpackPreconditionerPtr->InitValues(*crs);
+    if (err != 0)
+      precError(err, "createIfpackPreconditioner()", "Ifpack", "InitValues");
+
+    err = ifpackPreconditionerPtr->Factor();
+    if (err != 0)
+      precError(err, "createIfpackPreconditioner()", "Ifpack", "Factor");
+
   }
   
   // check to see if it is an operator that contains a Crs matrix
@@ -1061,8 +1085,14 @@ createIfpackPreconditioner(Teuchos::ParameterList& p) const
       Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
     ifpackPreconditionerPtr->SetAbsoluteThreshold(p.get("Absolute Threshold", 0.0));
     ifpackPreconditionerPtr->SetRelativeThreshold(p.get("Relative Threshold", 1.0));
-    ifpackPreconditionerPtr->InitValues(*crs);
-    ifpackPreconditionerPtr->Factor();
+    int err = ifpackPreconditionerPtr->InitValues(*crs);
+    if (err != 0)
+      precError(err, "createIfpackPreconditioner()", "Ifpack", "InitValues");
+
+    err = ifpackPreconditionerPtr->Factor();
+    if (err != 0)
+      precError(err, "createIfpackPreconditioner()", "Ifpack", "InitValues");
+
   }
 
   else {
@@ -1128,8 +1158,15 @@ createNewIfpackPreconditioner(Teuchos::ParameterList& p) const
       row, 
       p.get("Overlap", 0) ));
     newIfpackPreconditionerPtr->SetParameters(teuchosParams);
-    newIfpackPreconditionerPtr->Initialize();
-    newIfpackPreconditionerPtr->Compute();
+    int err = newIfpackPreconditionerPtr->Initialize();
+    if (err != 0)
+      precError(err, "createNewIfpackPreconditioner()", "Ifpack", "Initialize");
+    
+
+    err = newIfpackPreconditionerPtr->Compute();
+    if (err != 0)
+      precError(err, "createNewIfpackPreconditioner()", "Ifpack", "Compute");
+
     return true;
   }
   
@@ -1223,7 +1260,9 @@ recomputePreconditioner(const NOX::Epetra::Vector& x,
       precInterfacePtr->computePreconditioner(x.getEpetraVector(),
 					      *precPtr, &linearSolverParams);
 
-    newIfpackPreconditionerPtr->Compute();
+    int err = newIfpackPreconditionerPtr->Compute();
+    if (err != 0)
+      precError(err, "recomputePreconditioner", "Ifpack", "Compute");
 
   }
 #ifdef HAVE_NOX_ML_EPETRA
@@ -1233,7 +1272,13 @@ recomputePreconditioner(const NOX::Epetra::Vector& x,
       precInterfacePtr->computePreconditioner(x.getEpetraVector(),
 					      *precPtr, &linearSolverParams);
     
-    MLPreconditionerPtr->ReComputePreconditioner();
+    int err = MLPreconditionerPtr->ReComputePreconditioner();
+
+    if (err != 0)
+      precError(err, "recomputePreconditioner", "ML", 
+		"ReComputePreconditioner");
+    
+
   }
 #endif
   else if (precAlgorithm == UserDefined_) {
@@ -1522,6 +1567,32 @@ NOX::Epetra::LinearSystemAztecOO::setAztecOOPreconditioner() const
 {
   if ( !Teuchos::is_null(solvePrecOpPtr) && precAlgorithm != AztecOO_)
     aztecSolverPtr->SetPrecOperator(solvePrecOpPtr.get());
+}
+
+//***********************************************************************
+void NOX::Epetra::LinearSystemAztecOO::
+precError(int error_code, 
+	  const std::string& nox_function,
+	  const std::string& prec_type,
+	  const std::string& prec_function) const
+{
+  if (error_code != 0) {
+    
+    std::ostringstream msg;
+
+    if (throwErrorOnPrecFailure) 
+      msg << "Error - ";
+    else 
+      msg << "Warning - ";
+
+    msg << "NOX::Epetra::LinearSystemAztecOO::" << nox_function << " - The " << prec_type << " preconditioner has returned a nonzero error code of " << error_code << " for the function \"" << prec_function << "\".  Please consult the preconditioner documentation for this error type.";
+    
+    if (throwErrorOnPrecFailure) {
+      TEST_FOR_EXCEPTION(true, std::logic_error, msg.str());
+    }
+    else
+      utils.out() << msg.str() << endl; 
+  }
 }
 
 //***********************************************************************

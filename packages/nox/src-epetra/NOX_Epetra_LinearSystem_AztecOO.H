@@ -171,6 +171,8 @@ linear solve.  Default is 400.
 
 <li> "Zero Initial Guess" - boolean.  Zero out the initial guess for linear solves performed through applyJacobianInverse calls (i.e. zero out the result vector before the linear solve).  Defaults to false.
 
+<li> "Throw Error on Prec Failure" - boolean.  If set to true, an exception will be thrown if the preconditioner fails to initialize or recompute/refactor.  If set to false, a warning will br printed if the NOX::Utils::Warning is enabled in the printing utilities (NOX::Utils). Defaults to true.
+
 <li> "Output Frequency" - number of linear solve iterations between
 output of the linear solve residual. Takes an integer, or one of the
 AztecOO flags: AZ_none, AZ_last, or AZ_all as a value. Defaults to
@@ -566,6 +568,12 @@ protected:
   virtual void throwError(const string& functionName, 
 			  const string& errorMsg) const;
 
+  //! Prints a warning for ifpack preconditioner failures (error_code != 0).
+  virtual void precError(int error_code, 
+			 const std::string& nox_function,
+			 const std::string& prec_type,
+			 const std::string& prec_function) const;
+
 protected:
 
   //! Printing Utilities object
@@ -666,6 +674,9 @@ protected:
 
   //! Preconditioner operator that will be used in solves.
   mutable Teuchos::RCP<Epetra_Operator> solvePrecOpPtr;
+
+  //! If true, any preconditioner error will cause a throw instead of a warning.
+  bool throwErrorOnPrecFailure;
 
 #ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT
