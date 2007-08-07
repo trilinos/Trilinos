@@ -75,7 +75,7 @@ void checks( RCP<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocksize, int
              RCP<MatOrthoManager<ScalarType,MV,OP> > ortho,
              SolverUtils<ScalarType,MV,OP> &msutils) {
   BlockKrylovSchurState<ScalarType,MV> state = solver->getState();
-	
+
   // Remember that block Krylov-Schur needs to keep an extra vector for F, 
   // the next block of the factorization (AV=VH+FB^T).
   TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.V)-solver->getBlockSize() != solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match allocated size for V");
@@ -84,7 +84,14 @@ void checks( RCP<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocksize, int
 
   TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
 
-  TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != blocksize*numblocks+1,get_out,"BlockKrylovSchur::getMaxSubspaceDim() should always be one vector more than the blocksize times the number of blocks");
+  if (solver->getProblem().isHermitian()) {
+    TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != blocksize*numblocks,get_out,
+        "BlockKrylovSchur::getMaxSubspaceDim() should be blocksize times the number of blocks.");
+  }
+  else {
+    TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != blocksize*numblocks+1,get_out,
+        "BlockKrylovSchur::getMaxSubspaceDim() should be one vector more than the blocksize times the number of blocks.");
+  }
 
   if (solver->isInitialized()) 
   {
@@ -122,8 +129,8 @@ void checks( RCP<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocksize, int
       MVT::MvNorm( *ritzVectors, &ritzVecNrm );
       MagnitudeType error;
       for (int i=0; i<numRitzVecs; i++) {
-	error = Teuchos::ScalarTraits<MagnitudeType>::magnitude( ritzVecNrm[i] - 1.0 );
-	TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Ritz vectors are not normalized.");
+        error = Teuchos::ScalarTraits<MagnitudeType>::magnitude( ritzVecNrm[i] - 1.0 );
+        TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Ritz vectors are not normalized.");
       }      
 
       /* TO DO: Fix the iteration to compute residuals in the event of a non-euclidean normalization of the basis.
@@ -131,9 +138,9 @@ void checks( RCP<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocksize, int
       std::vector<MagnitudeType> ritzResNrm( MVT::GetNumberVecs( *ritzResiduals ) );
       MVT::MvNorm( *ritzResiduals, &ritzResNrm );
       for (int i=0; i<(int)ritzResNrm.size(); i++) {
-	error = Teuchos::ScalarTraits<MagnitudeType>::magnitude( ritzResids[i] - ritzResNrm[i] );
-	cout << error/ritzResNrm[i] << endl;
-	TEST_FOR_EXCEPTION(error > 1e-13,get_out,"Ritz residuals from iteration do not compare to those computed.");
+      error = Teuchos::ScalarTraits<MagnitudeType>::magnitude( ritzResids[i] - ritzResNrm[i] );
+      cout << error/ritzResNrm[i] << endl;
+      TEST_FOR_EXCEPTION(error > 1e-13,get_out,"Ritz residuals from iteration do not compare to those computed.");
       }
       */
     }
@@ -148,13 +155,27 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
                  RCP< OutputManager<ScalarType> > printer,
                  RCP< MatOrthoManager<ScalarType,MV,OP> > ortho,
                  RCP< SortManager<ScalarType,MV,OP> > sorter,
-                 ParameterList &pls)
+                 ParameterList &pls,bool invalid,
+                 BlockKrylovSchurState<ScalarType,MV> initstate, bool invalidinit)
 {
   // create a status tester
   RCP< StatusTest<ScalarType,MV,OP> > tester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
 
   // create the solver
-  RCP< BlockKrylovSchur<ScalarType,MV,OP> > solver = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
+  RCP< BlockKrylovSchur<ScalarType,MV,OP> > solver;
+  try {
+    solver = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
+    TEST_FOR_EXCEPTION(invalid, get_out, "Instantiating with invalid parameters failed to throw exception.")
+  }
+  catch (std::invalid_argument ia) {
+    if (!invalid) {
+      printer->stream(Warnings) << "Error thrown at instantiation: " << ia.what() << endl;
+    }
+    TEST_FOR_EXCEPTION(!invalid, get_out, "Instantiating with valid parameters unexpectadly threw exception.");
+
+    // caught expected exception
+    return;
+  }
 
   const int  blocksize = pls.get<int>("Block Size");
   const int  numblocks = pls.get<int>("Num Blocks");
@@ -169,7 +190,16 @@ void testsolver( RCP<BasicEigenproblem<ScalarType,MV,OP> > problem,
   checks(solver,blocksize,numblocks,problem,ortho,msutils);
 
   // initialize solver and perform checks
-  solver->initialize();
+  try {
+    solver->initialize(initstate);
+    TEST_FOR_EXCEPTION(invalidinit, get_out, "Initializing with invalid data failed to throw exception.")
+  }
+  catch (std::invalid_argument ia) {
+    TEST_FOR_EXCEPTION(!invalidinit, get_out, "Initializing with valid data unexpectadly threw exception.");
+    // caught expected exception
+    return;
+  }
+
   TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
   TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero.")
   TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
@@ -217,7 +247,7 @@ int main(int argc, char *argv[])
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("debug","non-debug",&debug,"Print debugging output from iteration.");
+  cmdp.setOption("debug","nodebug",&debug,"Print debugging output from iteration.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -228,22 +258,23 @@ int main(int argc, char *argv[])
 
   // create the output manager
   int verbosity = Anasazi::Errors;
+  if (verbose) {
+    verbosity += Anasazi::Warnings;
+  }
   if (debug) {
     verbosity += Anasazi::Debug;
   }
   RCP< OutputManager<ScalarType> > printer = 
     rcp( new BasicOutputManager<ScalarType>( verbosity ) );
 
-  if (verbose||debug) {
-    printer->stream(Errors) << Anasazi_Version() << endl << endl;
-  }
+  printer->stream(Debug) << Anasazi_Version() << endl << endl;
 
   //  Problem information
   int space_dim = 1;
   std::vector<double> brick_dim( space_dim );
   brick_dim[0] = 1.0;
   std::vector<int> elements( space_dim );
-  elements[0] = 100;
+  elements[0] = 100+1;
 
   // Create problem
   RCP<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
@@ -253,7 +284,7 @@ int main(int argc, char *argv[])
   RCP<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   //
   // Create the initial vectors
-  const int nev = 4;
+  const int nev = 5;
   RCP<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), nev) );
   ivec->Random();
   //
@@ -271,10 +302,8 @@ int main(int argc, char *argv[])
   //
   // Inform the eigenproblem that you are finishing passing it information
   if ( probstd->setProblem() != true || probgen->setProblem() != true ) {
-    if (verbose) {
-      printer->stream(Errors) << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-                              << "End Result: TEST FAILED" << endl;	
-    }
+    printer->stream(Warnings) << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
+      << "End Result: TEST FAILED" << endl;
 #ifdef HAVE_MPI
     MPI_Finalize() ;
 #endif
@@ -294,80 +323,190 @@ int main(int argc, char *argv[])
 
   try 
   {
+    BlockKrylovSchurState<ScalarType,MV> istate;
 
     pls.set<int>("Block Size",nev);
     pls.set<int>("Num Blocks",3);
     pls.set<int>("Step Size", 2);
     pls.set<int>("Number of Ritz Vectors",nev);
-    if (verbose||debug) {
-      printer->stream(Errors) << "Testing solver(nev,3) with standard eigenproblem..." << endl << endl;
-    }
-    testsolver(probstd,printer,orthostd,sorter,pls);
+    printer->stream(Warnings) << "Testing solver(nev,3) with standard eigenproblem..." << endl << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Num Blocks",3);
-    if (verbose||debug) {
-      printer->stream(Errors) << "Testing solver(nev,3) with generalized eigenproblem..." << endl << endl;
-    }
-    testsolver(probgen,printer,orthogen,sorter,pls);
+    printer->stream(Warnings) << "Testing solver(nev,3) with generalized eigenproblem..." << endl << endl;
+    testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Block Size",nev);
     pls.set<int>("Num Blocks",4);
-    if (verbose||debug) {
-      printer->stream(Errors) << "Testing solver(nev,4) with standard eigenproblem..." << endl << endl;
-    }
-    testsolver(probstd,printer,orthostd,sorter,pls);
+    printer->stream(Warnings) << "Testing solver(nev,4) with standard eigenproblem..." << endl << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Num Blocks",4);
-    if (verbose||debug) {
-      printer->stream(Errors) << "Testing solver(nev,4) with generalized eigenproblem..." << endl << endl;
-    }
-    testsolver(probgen,printer,orthogen,sorter,pls);
+    printer->stream(Warnings) << "Testing solver(nev,4) with generalized eigenproblem..." << endl << endl;
+    testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Block Size",2*nev);
     pls.set<int>("Num Blocks",3);
-    if (verbose||debug) {
-      printer->stream(Errors) << "Testing solver(2*nev,3) with standard eigenproblem..." << endl << endl;
-    }
-    testsolver(probstd,printer,orthostd,sorter,pls);
+    printer->stream(Warnings) << "Testing solver(2*nev,3) with standard eigenproblem..." << endl << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Num Blocks",3);
-    if (verbose||debug) {
-      printer->stream(Errors) << "Testing solver(2*nev,3) with generalized eigenproblem..." << endl << endl;
-    }
-    testsolver(probgen,printer,orthogen,sorter,pls);
+    printer->stream(Warnings) << "Testing solver(2*nev,3) with generalized eigenproblem..." << endl << endl;
+    testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Block Size",2*nev);
     pls.set<int>("Num Blocks",4);
-    if (verbose||debug) {
-      printer->stream(Errors) << "Testing solver(2*nev,4) with standard eigenproblem..." << endl << endl;
-    }
-    testsolver(probstd,printer,orthostd,sorter,pls);
+    printer->stream(Warnings) << "Testing solver(2*nev,4) with standard eigenproblem..." << endl << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Num Blocks",4);
-    if (verbose||debug) {
-      printer->stream(Errors) << "Testing solver(2*nev,4) with generalized eigenproblem..." << endl << endl;
-    }
-    testsolver(probgen,printer,orthogen,sorter,pls);
+    printer->stream(Warnings) << "Testing solver(2*nev,4) with generalized eigenproblem..." << endl << endl;
+    testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Block Size",nev/2);
     pls.set<int>("Num Blocks",3);
-    if (verbose||debug) {
-      printer->stream(Errors) << "Testing solver(nev/2,3) with standard eigenproblem..." << endl << endl;
-    }
-    testsolver(probstd,printer,orthostd,sorter,pls);
+    printer->stream(Warnings) << "Testing solver(nev/2,3) with standard eigenproblem..." << endl << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Num Blocks",3);
-    if (verbose||debug) {
-      printer->stream(Errors) << "Testing solver(nev/2,3) with generalized eigenproblem..." << endl << endl;
-    }
-    testsolver(probgen,printer,orthogen,sorter,pls);
+    printer->stream(Warnings) << "Testing solver(nev/2,3) with generalized eigenproblem..." << endl << endl;
+    testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Block Size",nev/2);
     pls.set<int>("Num Blocks",4);
-    if (verbose||debug) {
-      printer->stream(Errors) << "Testing solver(nev/2,4) with standard eigenproblem..." << endl << endl;
-    }
-    testsolver(probstd,printer,orthostd,sorter,pls);
+    printer->stream(Warnings) << "Testing solver(nev/2,4) with standard eigenproblem..." << endl << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Num Blocks",4);
-    if (verbose||debug) {
-      printer->stream(Errors) << "Testing solver(nev/2,4) with generalized eigenproblem..." << endl << endl;
+    printer->stream(Warnings) << "Testing solver(nev/2,4) with generalized eigenproblem..." << endl << endl;
+    testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
+
+    // try with an invalid blocksize
+    pls.set<int>("Block Size",0);
+    pls.set<int>("Num Blocks",4);
+    printer->stream(Warnings) << "Testing solver(0,4) with standard eigenproblem..." << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
+
+    // try with an invalid numblocks: invalid because it is less than the minimum (3) allowed
+    pls.set<int>("Block Size",nev);
+    pls.set<int>("Num Blocks",2);
+    printer->stream(Warnings) << "Testing solver(4,2) with standard eigenproblem..." << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
+
+    // try with a too-large subspace: Hermitian
+    // subspace will be BlockSize*NumBlocks
+    probstd->setHermitian(true);
+    probstd->setProblem();
+    pls.set<int>("Block Size",4);
+    pls.set<int>("Num Blocks",100/4+1);
+    printer->stream(Warnings) << "Testing solver(4,toomany,Hermitian) with standard eigenproblem..." << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
+
+    // try with a too-large subspace: non-Hermitian, blocksize != 1
+    // allocated subspace will be BlockSize*NumBlocks+1 >= 100
+    probstd->setHermitian(false);
+    probstd->setProblem();
+    pls.set<int>("Block Size",4);
+    pls.set<int>("Num Blocks",25);
+    printer->stream(Warnings) << "Testing solver(4,toomany,non-Hermitian) with standard eigenproblem..." << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
+
+    // try with a too-large subspace: non-Hermitian, blocksize == 1
+    // allocated subspace will be BlockSize*NumBlocks+1 >= 100
+    probstd->setHermitian(false);
+    probstd->setProblem();
+    pls.set<int>("Block Size",1);
+    pls.set<int>("Num Blocks",100);
+    printer->stream(Warnings) << "Testing solver(1,toomany,non-Hermitian) with standard eigenproblem..." << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
+
+    // try with an unset problem
+    // setHermitian will mark the problem as unset
+    probstd->setHermitian(true);
+    printer->stream(Warnings) << "Testing solver with unset eigenproblem..." << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
+    // set problem: now hermitian
+    probstd->setProblem();
+
+    // try with a too-small initial basis
+    printer->stream(Warnings) << "Initializing solver with too-small basis..." << endl;
+    pls.set("Block Size",4);
+    pls.set("Num Blocks",3);
+    istate.V  = MVT::Clone(*ivec,3);
+    istate.H = rcp( new SerialDenseMatrix<int,ScalarType>(3,3) );
+    istate.curDim = 3;
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,true);
+
+    // try with a too-large initial basis
+    // problem is Hermitian, maxSubSpaceSize is BlockSize*NumBlocks
+    printer->stream(Warnings) << "Initializing solver with too-large basis..." << endl;
+    pls.set("Block Size",4);
+    pls.set("Num Blocks",3);
+    istate.V  = MVT::Clone(*ivec,4*3+1);
+    istate.H = rcp( new SerialDenseMatrix<int,ScalarType>(13,13) );
+    istate.curDim = 13;
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,true);
+
+    // try with a inconsistent curDim and H
+    printer->stream(Warnings) << "Initializing solver with inconsistent H and V..." << endl;
+    pls.set("Block Size",4);
+    pls.set("Num Blocks",3);
+    istate.V  = MVT::Clone(*ivec,4);
+    istate.H = rcp( new SerialDenseMatrix<int,ScalarType>(3,3) );
+    istate.curDim = 4;
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,true);
+
+    // create a dummy status tester
+    RCP< StatusTest<ScalarType,MV,OP> > dumtester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
+
+    // try with a null problem
+    printer->stream(Warnings) << "Testing solver with null eigenproblem..." << endl;
+    try {
+      RCP< BlockKrylovSchur<ScalarType,MV,OP> > solver 
+        = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(Teuchos::null,sorter,printer,dumtester,orthostd,pls) );
+      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
-    testsolver(probgen,printer,orthogen,sorter,pls);
+    catch (std::invalid_argument ia) {
+      // caught expected exception
+    }
+
+    // try with a null sortman
+    printer->stream(Warnings) << "Testing solver with null sort manager..." << endl;
+    try {
+      RCP< BlockKrylovSchur<ScalarType,MV,OP> > solver 
+        = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(probstd,Teuchos::null,printer,dumtester,orthostd,pls) );
+      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
+    }
+    catch (std::invalid_argument ia) {
+      // caught expected exception
+    }
+
+    // try with a output man problem
+    printer->stream(Warnings) << "Testing solver with null output manager..." << endl;
+    try {
+      RCP< BlockKrylovSchur<ScalarType,MV,OP> > solver 
+        = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(probstd,sorter,Teuchos::null,dumtester,orthostd,pls) );
+      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
+    }
+    catch (std::invalid_argument ia) {
+      // caught expected exception
+    }
+
+    // try with a null status test
+    printer->stream(Warnings) << "Testing solver with null status test..." << endl;
+    try {
+      RCP< BlockKrylovSchur<ScalarType,MV,OP> > solver 
+        = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(probstd,sorter,printer,Teuchos::null,orthostd,pls) );
+      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
+    }
+    catch (std::invalid_argument ia) {
+      // caught expected exception
+    }
+
+    // try with a null orthoman
+    printer->stream(Warnings) << "Testing solver with null ortho manager..." << endl;
+    try {
+      RCP< BlockKrylovSchur<ScalarType,MV,OP> > solver 
+        = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(probstd,sorter,printer,dumtester,Teuchos::null,pls) );
+      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
+    }
+    catch (std::invalid_argument ia) {
+      // caught expected exception
+    }
 
   }
   catch (get_out go) {
@@ -385,17 +524,13 @@ int main(int argc, char *argv[])
 #endif
 
   if (testFailed) {
-    if (verbose) {
-      printer->stream(Errors) << endl << "End Result: TEST FAILED" << endl;	
-    }
+    printer->stream(Warnings) << endl << "End Result: TEST FAILED" << endl;
     return -1;
   }
   //
   // Default return value
   //
-  if (verbose) {
-    printer->stream(Errors) << endl << "End Result: TEST PASSED" << endl;
-  }
+  printer->stream(Warnings) << endl << "End Result: TEST PASSED" << endl;
   return 0;
 
-}	
+}

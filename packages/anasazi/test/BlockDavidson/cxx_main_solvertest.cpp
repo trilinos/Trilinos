@@ -76,7 +76,7 @@ void checks( RCP<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize, int nu
              RCP<MatOrthoManager<ScalarType,MV,OP> > ortho,
              SolverUtils<ScalarType,MV,OP> &msutils) {
   BlockDavidsonState<ScalarType,MV> state = solver->getState();
-  
+
   TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.V)  != solver->getMaxSubspaceDim(),get_out,     "getMaxSubspaceDim() does not match allocated size for V.");
   TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.X)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for X.");
   TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.KX) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for KX.");
@@ -260,25 +260,31 @@ int main(int argc, char *argv[])
 
   bool testFailed;
   bool verbose = false;
+  bool debug = false;
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("debug","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("debug","nodebug",&debug,"Print debugging output from iteration.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
     return -1;
   }
+  if (debug) verbose = true;
 
   // create the output manager
-  RCP< OutputManager<ScalarType> > printer = rcp( new BasicOutputManager<ScalarType>() );
+  int verbosity = Anasazi::Errors;
+  if (debug) {
+    verbosity += Anasazi::Debug;
+  }
+  RCP< OutputManager<ScalarType> > printer = 
+    rcp( new BasicOutputManager<ScalarType>( verbosity ) );
 
-  if (verbose) printer->stream(Errors) << Anasazi_Version() << endl << endl;
-
-  const int veclength = 99;
+  printer->stream(Debug) << Anasazi_Version() << endl << endl;
 
   //  Problem information
+  const int veclength = 99;
   int space_dim = 1;
   std::vector<double> brick_dim( space_dim );
   brick_dim[0] = 1.0;
@@ -314,7 +320,7 @@ int main(int argc, char *argv[])
   if ( probstd->setProblem() != true || probgen->setProblem() != true ) {
     if (verbose) {
       printer->stream(Errors) << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-                              << "End Result: TEST FAILED" << endl;	
+                              << "End Result: TEST FAILED" << endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -402,26 +408,21 @@ int main(int argc, char *argv[])
     if (verbose) printer->stream(Errors) << "Testing solver(4,toomany) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
 
+    // try with a non-Hermitian problem
+    probstd->setHermitian(false);
+    probstd->setProblem();
+    if (verbose) printer->stream(Errors) << "Testing solver with non-Hermitian eigenproblem..." << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
+    // fix it now
+    probstd->setHermitian(true);
+    probstd->setProblem();
+
     // try with an unset problem
     // setHermitian will mark the problem as unset
     probstd->setHermitian(false);
     if (verbose) printer->stream(Errors) << "Testing solver with unset eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
-
-    // set the problem, and try with a non-Hermitian problem
-    if ( probstd->setProblem() != true ) {
-      if (verbose) {
-        printer->stream(Errors) << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-                                << "End Result: TEST FAILED" << endl;	
-      }
-#ifdef HAVE_MPI
-      MPI_Finalize() ;
-#endif
-      return -1;
-    }
-    if (verbose) printer->stream(Errors) << "Testing solver with non-Hermitian eigenproblem..." << endl;
-    testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
-    // fix it now
+    // restore to hermitian, set problem
     probstd->setHermitian(true);
     probstd->setProblem();
 
@@ -441,8 +442,8 @@ int main(int argc, char *argv[])
     istate.KK = rcp( new SerialDenseMatrix<int,ScalarType>(5,5) );
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,true);
 
-    // try with a incongruent KK and V
-    if (verbose) printer->stream(Errors) << "Initializing solver with incongruent KK and V..." << endl;
+    // try with a inconsistent KK and V
+    if (verbose) printer->stream(Errors) << "Initializing solver with inconsistent KK and V..." << endl;
     pls.set("Block Size",4);
     pls.set("Num Blocks",2);
     istate.V  = MVT::Clone(*ivec,4);
@@ -525,7 +526,7 @@ int main(int argc, char *argv[])
 
   if (testFailed) {
     if (verbose) {
-      printer->stream(Errors) << endl << "End Result: TEST FAILED" << endl;	
+      printer->stream(Errors) << endl << "End Result: TEST FAILED" << endl;
     }
     return -1;
   }
@@ -537,4 +538,4 @@ int main(int argc, char *argv[])
   }
   return 0;
 
-}	
+}

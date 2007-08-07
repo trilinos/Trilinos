@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
   }
 
   // Eigensolver parameters
-  int numBlocks = 2;
+  int numBlocks = 3;
   int maxRestarts = 100;
   MT tol = 1.0e-6;
   //

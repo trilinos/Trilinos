@@ -48,7 +48,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-#ifdef HAVE_TEUCHOS_COMPLEX	
+#ifdef HAVE_TEUCHOS_COMPLEX
 #if defined(HAVE_COMPLEX)
 #define ANSZI_CPLX_CLASS std::complex
 #elif  defined(HAVE_COMPLEX_H)
@@ -595,7 +595,7 @@ namespace Anasazi {
     }
   }
   
-#ifdef HAVE_TEUCHOS_COMPLEX	
+#ifdef HAVE_TEUCHOS_COMPLEX
   // Template specialization for the complex scalar type.
   void sortRitzValues( const std::vector<double>& rRV, 
                        const std::vector<double>& iRV,
@@ -651,7 +651,7 @@ namespace Anasazi {
     }
   }
 
-#ifdef HAVE_TEUCHOS_COMPLEX	
+#ifdef HAVE_TEUCHOS_COMPLEX
   // Template specialization for the complex scalar type.
   void scaleRitzVectors( const std::vector<double>& iRV,
                          Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<double> >* S )
@@ -677,9 +677,9 @@ namespace Anasazi {
   // This allows us to use template specialization to ensure the Ritz residuals are correct.
   template<class ScalarType>
   void computeRitzResiduals( const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& iRV,
-			     const Teuchos::SerialDenseMatrix<int, ScalarType>& S,
-			     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* RR
-			     )
+                             const Teuchos::SerialDenseMatrix<int, ScalarType>& S,
+                             std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* RR
+                             )
   {
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     MagnitudeType MT_ZERO = Teuchos::ScalarTraits<MagnitudeType>::zero();
@@ -695,23 +695,23 @@ namespace Anasazi {
 
     while( i < s_cols ) {
       if ( iRV[i] != MT_ZERO ) {
-	(*RR)[i] = lapack_mag.LAPY2( blas.NRM2(s_rows, s_ptr + i*s_stride, 1),
-				     blas.NRM2(s_rows, s_ptr + (i+1)*s_stride, 1) );
-	(*RR)[i+1] = (*RR)[i];
-	i = i+2;
+        (*RR)[i] = lapack_mag.LAPY2( blas.NRM2(s_rows, s_ptr + i*s_stride, 1),
+                                     blas.NRM2(s_rows, s_ptr + (i+1)*s_stride, 1) );
+        (*RR)[i+1] = (*RR)[i];
+        i = i+2;
       } else {
-	(*RR)[i] = blas.NRM2(s_rows, s_ptr + i*s_stride, 1);
-	i++;
+        (*RR)[i] = blas.NRM2(s_rows, s_ptr + i*s_stride, 1);
+        i++;
       }
     }          
   }
 
-#ifdef HAVE_TEUCHOS_COMPLEX	
+#ifdef HAVE_TEUCHOS_COMPLEX
   // Template specialization for the complex scalar type.
   void computeRitzResiduals( const std::vector<double>& iRV,
-			     const Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<double> >& S,
-			     std::vector<double>* RR
-			     )
+                             const Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<double> >& S,
+                             std::vector<double>* RR
+                             )
   {
     Teuchos::BLAS<int,ANSZI_CPLX_CLASS<double> > blas;
     
@@ -749,7 +749,6 @@ namespace Anasazi {
     om_(printer),
     tester_(tester),
     orthman_(ortho),
-    Op_(problem_->getOperator()),
     // timers, counters
     timerOp_(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
     timerSortRitzVal_(Teuchos::TimeMonitor::getNewTimer("Sorting Ritz values")),
@@ -785,6 +784,17 @@ namespace Anasazi {
                        "Anasazi::BlockKrylovSchur::constructor: user passed null orthogonalization manager pointer.");
     TEST_FOR_EXCEPTION(problem_->isProblemSet() == false, std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user specified problem is not set.");
+    TEST_FOR_EXCEPTION(sorter == Teuchos::null,std::invalid_argument,
+                       "Anasazi::BlockKrylovSchur::constructor: user specified null sort manager pointer.");
+    TEST_FOR_EXCEPTION(printer == Teuchos::null,std::invalid_argument,
+                       "Anasazi::BlockKrylovSchur::constructor: user specified null output manager pointer.");
+    TEST_FOR_EXCEPTION(tester == Teuchos::null,std::invalid_argument,
+                       "Anasazi::BlockKrylovSchur::constructor: user specified null status test pointer.");
+    TEST_FOR_EXCEPTION(ortho == Teuchos::null,std::invalid_argument,
+                       "Anasazi::BlockKrylovSchur::constructor: user specified null ortho manager pointer.");
+
+    // Get problem operator
+    Op_ = problem_->getOperator();
 
     // get the step size
     TEST_FOR_EXCEPTION(!params.isParameter("Step Size"), std::invalid_argument,
@@ -858,6 +868,7 @@ namespace Anasazi {
     // any change in size will invalidate the state of the solver.
 
     TEST_FOR_EXCEPTION(numBlocks <= 0 || blockSize <= 0, std::invalid_argument, "Anasazi::BlockKrylovSchur::setSize was passed a non-positive argument.");
+    TEST_FOR_EXCEPTION(numBlocks < 3, std::invalid_argument, "Anasazi::BlockKrylovSchur::setSize(): numBlocks must be at least three.");
     if (blockSize == blockSize_ && numBlocks == numBlocks_) {
       // do nothing
       return;
@@ -870,15 +881,17 @@ namespace Anasazi {
     // grab some Multivector to Clone
     // in practice, getInitVec() should always provide this, but it is possible to use a 
     // Eigenproblem with nothing in getInitVec() by manually initializing with initialize(); 
-    // in case of that strange scenario, we will try to Clone from V_ first, then resort to getInitVec()
-    if (V_ != Teuchos::null) { // this is equivalent to blockSize_ > 0
-      tmp = V_;
+    // in case of that strange scenario, we will try to Clone from V_; first resort to getInitVec(), 
+    // because we would like to clear the storage associated with V_ so we have room for the new V_
+    if (problem_->getInitVec() != Teuchos::null) {
+      tmp = problem_->getInitVec();
     }
     else {
-      tmp = problem_->getInitVec();
+      tmp = V_;
       TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
-                         "Anasazi::BlockKrylovSchur::setSize(): eigenproblem did not specify initial vectors to clone from.");
+          "Anasazi::BlockKrylovSchur::setSize(): eigenproblem did not specify initial vectors to clone from.");
     }
+
 
     //////////////////////////////////
     // blockSize*numBlocks dependent
@@ -889,6 +902,10 @@ namespace Anasazi {
     } else {
       newsd = blockSize_*numBlocks_+1;
     }
+    // check that new size is valid
+    TEST_FOR_EXCEPTION(newsd > MVT::GetVecLength(*tmp),std::invalid_argument,
+        "Anasazi::BlockKrylovSchur::setSize(): maximum basis size is larger than problem dimension.");
+
     ritzValues_.resize(newsd);
     ritzResiduals_.resize(newsd,MT_ONE);
     ritzOrder_.resize(newsd);
@@ -896,7 +913,7 @@ namespace Anasazi {
     V_ = MVT::Clone(*tmp,newsd+blockSize_);
     H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd+blockSize_,newsd) );
     Q_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );
-    
+
     initialized_ = false;
     curDim_ = 0;
   }
@@ -962,9 +979,13 @@ namespace Anasazi {
 
       TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_),
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < blockSize_,
-                          std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( newstate.curDim > blockSize_*numBlocks_+1,
+      if (newstate.V != V_) {
+        TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < blockSize_,
+            std::invalid_argument, errstr );
+        TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) > getMaxSubspaceDim(),
+            std::invalid_argument, errstr );
+      }
+      TEST_FOR_EXCEPTION( newstate.curDim > getMaxSubspaceDim(),
                           std::invalid_argument, errstr );
 
       curDim_ = newstate.curDim;
@@ -1124,7 +1145,7 @@ namespace Anasazi {
     // Compute the current search dimension. 
     // If the problem is non-Hermitian and the blocksize is one, let the solver use the extra vector.
     int searchDim = blockSize_*numBlocks_;
-    if (blockSize_==1 && !problem_->isHermitian()) {
+    if (problem_->isHermitian() == false) {
       searchDim++;
     } 
 
@@ -1675,7 +1696,7 @@ namespace Anasazi {
             //
             // Compute the Ritz residuals for each Ritz value.
             // 
-	    computeRitzResiduals( tmp_iRitzValues, ritzRes, &ritzResiduals_ );
+            computeRitzResiduals( tmp_iRitzValues, ritzRes, &ritzResiduals_ );
           }
           //
           // Sort the Ritz values.
