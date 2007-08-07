@@ -1053,14 +1053,12 @@ int ML_implicitvscale_Matvec(ML_Operator *Amat_in, int ilen, double p[],
   int    status = 1, i;
   struct ml_matvscale * tempdata;
 
-  temp = (struct ml_matscale *) ML_Get_MyGetrowData(Amat_in);
-
   /* This is where the vector to diagonally scale by resides  *
    * scale_vec = (Amat_in->data)->scale;                      */
-  tempdata = Amat_in->data;
+  tempdata = (struct ml_matvscale *) Amat_in->data;
   scale_vec = tempdata->scale;
 
-  status = ML_Operator_Apply(temp->Amat, ilen, p, olen, ap);
+  status = ML_Operator_Apply(tempdata->Amat, ilen, p, olen, ap);
   
   /* Apply Diagonal scaling */
   for (i = 0; i < olen; i++) ap[i] *= scale_vec[i]; 
