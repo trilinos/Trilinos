@@ -119,8 +119,11 @@ public:
   
   //! Returns the Epetra_Map object associated with the range of this operator.
   virtual const Epetra_Map& OperatorRangeMap() const {return(*RangeMap_);};
-  //@}
 
+  //! EXPERIMENTAL: Return SM Matrix
+  virtual const Epetra_CrsMatrix & SM_Matrix(){return *SM_Matrix_;}
+  //@}
+  
 private:
   //! Private Data
   //@{

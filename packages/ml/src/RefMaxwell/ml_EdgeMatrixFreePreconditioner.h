@@ -201,7 +201,8 @@ namespace ML_Epetra
     int num_cycles;
     int MaxLevels;
     bool verbose_;
-
+    bool print_hierarchy;
+    
     
     //@}  
   };//ML_EdgeMatrixFreePreconditioner
