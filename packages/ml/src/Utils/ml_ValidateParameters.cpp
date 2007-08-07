@@ -185,6 +185,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   /* Unlisted options that should probably go away */
   setIntParameter("output",0,"Output Level",PL);
   setIntParameter("smoother: polynomial order",2,"Unlisted option",PL);
+  setIntParameter("smoother: MLS polynomial order",2,"Unlisted option",PL);  
  
   return PL;
 }
