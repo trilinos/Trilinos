@@ -176,11 +176,11 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   
   /* Pull Solver Mode, verbosity, matrix output */
   mode=List_.get("refmaxwell: mode","additive");
-  print_hierarchy=(bool) List_.get("print hierarchy",0);  
+  print_hierarchy= List_.get("print hierarchy",false);  
   int vb_level=List_.get("output",0);
   if(vb_level >= 5) verbose_=true;
   else verbose_=false;
-  aggregate_with_sigma=(bool) List_.get("refmaxwell: aggregate with sigma",0);  
+  aggregate_with_sigma= List_.get("refmaxwell: aggregate with sigma",false);  
   
   /* Nuke everything if we've done this already */
   if(IsComputePreconditionerOK_) DestroyPreconditioner();
@@ -211,7 +211,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   D0_Matrix_->OptimizeStorage();
 
   /* EXPERIMENTAL - Lump M1, if requested */
-  lump_m1 = (bool) List_.get("refmaxwell: lump m1",0);
+  lump_m1 = List_.get("refmaxwell: lump m1",false);
   if(lump_m1){
     Epetra_Vector mvec1(*RangeMap_,false), mvec2(*RangeMap_,false);
     mvec1.PutScalar(1.0);
@@ -219,12 +219,10 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
     M1_Matrix_ = new Epetra_CrsMatrix(Copy,*RangeMap_,1);
     for(int i=0;i<mvec2.MyLength();i++){
        int idx = RangeMap_->GID(i);     
-       M1_Matrix_->InsertGlobalValues(idx,1,&(mvec2[i]),&idx);
-    
+       M1_Matrix_->InsertGlobalValues(idx,1,&(mvec2[i]),&idx);    
      }
     M1_Matrix_->FillComplete();
     M1_Matrix_->OptimizeStorage();
-
   }/*end if*/  
 
 
@@ -246,11 +244,6 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   else ML_Epetra_PtAP(*M1_Matrix_,*D0_Clean_Matrix_,TMT_Agg_Matrix_,verbose_);
   Remove_Zeroed_Rows(*TMT_Agg_Matrix_);
   
-#ifndef NO_OUTPUT
-  if(TMT_Matrix_) Epetra_CrsMatrix_Print(*TMT_Matrix_,"tmt_matrix.dat");
-  Epetra_CrsMatrix_Print(*TMT_Agg_Matrix_,"tmt_agg_matrix.dat");
-#endif
-      
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[1]));
 #endif
@@ -269,6 +262,8 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
     Epetra_CrsMatrix_Print(*M0inv_Matrix_,"m0inv_nuked.dat");  
     Epetra_CrsMatrix_Print(*D0_Matrix_,"d0_nuked.dat");  
     Epetra_CrsMatrix_Print(*D0_Clean_Matrix_,"d0_clean.dat");  
+    if(TMT_Matrix_) Epetra_CrsMatrix_Print(*TMT_Matrix_,"tmt_matrix.dat");
+    Epetra_CrsMatrix_Print(*TMT_Agg_Matrix_,"tmt_agg_matrix.dat");
   }
 
   /* Cleanup from the Boundary Conditions */
